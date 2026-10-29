@@ -121,7 +121,7 @@ pub struct FieldedMark {
     /// byte a formation slot's `position` holds.
     pub position: u8,
     /// The violation is an Error (`error_fg_color`); else a Warning
-    /// (`warn_fg_color`).
+    /// (`Palette::pitch_warn`).
     pub error: bool,
     /// Its `violation_line`: the cross's tooltip shows the marks' lines,
     /// one per line.

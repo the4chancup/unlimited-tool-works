@@ -2159,40 +2159,61 @@ fn the_cross_draws_only_on_a_formation_the_preset_fields() {
     }
 }
 
-// A mark that is only a Warning paints the warning colour (the
-// severity's colour is the highest among the spot's marks).
+// A mark that is only a Warning paints the pitch's warning colour (the
+// severity's colour is the highest among the spot's marks): the dark
+// theme's orange on both themes, since the turf under it is the same in
+// both, where the light theme's own warning colour is darkened for its panel.
 #[test]
-fn a_warning_only_mark_paints_the_warn_colour() {
-    let mut window = Headless::sized(600.0, 450.0);
-    let mut tactics = fixture_tactics(PesVersion::Pes21);
-    let mut view = TacticsView::default();
-    let rows = fixture_rows(PesVersion::Pes21);
-    let mut roster = roster_rows(&rows);
-    let index = 4;
-    let slot = usize::from(tactics.starting_eleven[index]);
-    let position = tactics.presets[0].formations[0].players[index].position;
-    let marks = [fielded(
-        0,
-        position,
-        false,
-        "FieldedNotA: fielded at AMF in preset 1 without an A rating",
-    )];
-    roster[slot].fielded = &marks;
-
-    let (_, shapes) = window.pitch_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
-    let found = crosses(&shapes);
-    let [color] = found.as_slice() else {
-        panic!("expected one cross, got {}", found.len())
-    };
-    assert_eq!(
-        *color,
-        window
-            .ctx
-            .style_of(window.ctx.theme())
-            .visuals
-            .warn_fg_color,
-        "the warning colour"
+fn a_warning_only_mark_paints_the_pitchs_warn_colour_on_both_themes() {
+    let light_warn = Headless::sized(600.0, 450.0)
+        .ctx
+        .style_of(egui::Theme::Light)
+        .visuals
+        .warn_fg_color;
+    assert_ne!(
+        Palette::LIGHT.pitch_warn,
+        light_warn,
+        "premise: the light theme's own warning colour is not the pitch's"
     );
+    for (theme, palette) in [
+        (egui::Theme::Dark, &Palette::DARK),
+        (egui::Theme::Light, &Palette::LIGHT),
+    ] {
+        let mut window = Headless::sized(600.0, 450.0);
+        window.ctx.set_theme(theme);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let mut roster = roster_rows(&rows);
+        let index = 4;
+        let slot = usize::from(tactics.starting_eleven[index]);
+        let position = tactics.presets[0].formations[0].players[index].position;
+        let marks = [fielded(
+            0,
+            position,
+            false,
+            "FieldedNotA: fielded at AMF in preset 1 without an A rating",
+        )];
+        roster[slot].fielded = &marks;
+
+        let (_, shapes) = window.pitch_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
+        let found = crosses(&shapes);
+        let [color] = found.as_slice() else {
+            panic!(
+                "expected one cross on the {theme:?} theme, got {}",
+                found.len()
+            )
+        };
+        assert_eq!(
+            *color, palette.pitch_warn,
+            "the pitch's warning colour on the {theme:?} theme"
+        );
+        assert_eq!(
+            *color,
+            egui::Color32::from_rgb(0xFF, 0x8F, 0x00),
+            "the dark theme's orange on the {theme:?} theme"
+        );
+    }
 }
 
 // The hover over the crossed portrait shows the marks' `line`s, one per

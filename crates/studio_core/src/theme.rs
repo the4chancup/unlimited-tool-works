@@ -4,9 +4,10 @@
 //! at window creation and every view test's harness calls it too, so a size a
 //! test measures is the size a member sees. The spacing and both themes'
 //! widget states are egui 0.36's, the look the drafts were reviewed in, but
-//! for the light fills, which keep the dark ones' contrast with the panel;
-//! the rest of the presets stays egui's own `Visuals` until the curated one
-//! lands.
+//! for the light fills, each a step lighter than the grey that keeps the dark
+//! fill's contrast with the panel. The rest of the presets stays egui's own
+//! `Visuals` until the curated one lands, but for the light warning colour,
+//! darkened to read at 4.5 on the light panel.
 
 use crate::settings::Theme;
 use crate::status::NoticeKind;
@@ -103,6 +104,12 @@ pub struct Palette {
     /// The outline under Live AATF's pitch cross, so the cross stays seen over
     /// a portrait of its own colour.
     pub cross_outline: egui::Color32,
+    /// Live AATF's pitch cross over a Warning's portrait: the dark theme's
+    /// warning orange in both themes, because it sits on the turf and the
+    /// badges, which do not follow the theme. The light theme's warning colour,
+    /// darkened for the light panel, would read at 1.5 to 1.8 on the turf's
+    /// bands, where this one reads at 3.2 to 3.7.
+    pub pitch_warn: egui::Color32,
     /// The captain mark's box over his portrait.
     pub captain_fill: egui::Color32,
     /// The captain mark's `C`.
@@ -158,6 +165,7 @@ impl Palette {
         candidate_corners: egui::Color32::from_rgb(0xff, 0x4e, 0x7f),
         pitch_text: egui::Color32::WHITE,
         cross_outline: egui::Color32::BLACK,
+        pitch_warn: egui::Color32::from_rgb(0xff, 0x8f, 0x00),
         captain_fill: egui::Color32::WHITE,
         captain_text: egui::Color32::BLACK,
         lit_dim: egui::Color32::from_black_alpha(153),
@@ -199,6 +207,7 @@ impl Palette {
         candidate_corners: egui::Color32::from_rgb(0xff, 0x4e, 0x7f),
         pitch_text: egui::Color32::WHITE,
         cross_outline: egui::Color32::BLACK,
+        pitch_warn: egui::Color32::from_rgb(0xff, 0x8f, 0x00),
         captain_fill: egui::Color32::WHITE,
         captain_text: egui::Color32::BLACK,
         lit_dim: egui::Color32::from_black_alpha(153),
@@ -582,6 +591,7 @@ mod tests {
             candidate_corners,
             pitch_text,
             cross_outline,
+            pitch_warn,
             captain_fill,
             captain_text,
             lit_dim,
@@ -618,6 +628,7 @@ mod tests {
             ("candidate_corners", *candidate_corners),
             ("pitch_text", *pitch_text),
             ("cross_outline", *cross_outline),
+            ("pitch_warn", *pitch_warn),
             ("captain_fill", *captain_fill),
             ("captain_text", *captain_text),
             ("lit_dim", *lit_dim),
