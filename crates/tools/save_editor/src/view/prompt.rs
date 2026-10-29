@@ -325,24 +325,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         let chrome = modal_frame(ui.style()).total_margin().sum().x;
         ui.set_max_width((ui.ctx().content_rect().width() * 0.9 - chrome).max(0.0));
         egui::ScrollArea::both().max_height(240.0).show(ui, |ui| {
-            egui::Grid::new("unsaved changes")
-                .num_columns(3)
-                .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
-                .show(ui, |ui| {
-                    fn cell(ui: &mut egui::Ui, text: egui::WidgetText) {
-                        ui.add(egui::Label::new(text).wrap_mode(egui::TextWrapMode::Extend));
-                    }
-                    for head in ["Item", "Old value", "New value"] {
-                        cell(ui, egui::RichText::new(head).weak().into());
-                    }
-                    ui.end_row();
-                    for (item, label, old, new) in &prompt.rows {
-                        cell(ui, format!("{item} · {label}").into());
-                        cell(ui, egui::RichText::new(old).monospace().into());
-                        cell(ui, egui::RichText::new(new).monospace().into());
-                        ui.end_row();
-                    }
-                });
+            changes_table(ui, "unsaved changes", &prompt.rows, false);
         });
         modal_buttons(ui, |ui| {
             if ui.button("Cancel").clicked() {
@@ -375,6 +358,52 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         }
         None => {}
     }
+}
+
+/// The changes table (the draft's `changesTable`), the prompt's and the
+/// patch panel's: a grid with the weak header row `Item`, `Old value`,
+/// `New value`, then one row per `(item, label, old, new)`, the Item cell
+/// `<item> · <label>` and the values in monospace, every cell on one line.
+/// `selectable` makes each Item cell a click target selecting the row's
+/// player; the index of the row whose Item cell was clicked.
+pub(super) fn changes_table<'a>(
+    ui: &mut egui::Ui,
+    id: &str,
+    rows: impl IntoIterator<Item = &'a (String, String, String, String)>,
+    selectable: bool,
+) -> Option<usize> {
+    egui::Grid::new(id)
+        .num_columns(3)
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .show(ui, |ui| {
+            fn cell(text: impl Into<egui::WidgetText>) -> egui::Label {
+                egui::Label::new(text).wrap_mode(egui::TextWrapMode::Extend)
+            }
+            for head in ["Item", "Old value", "New value"] {
+                ui.add(cell(egui::RichText::new(head).weak()));
+            }
+            ui.end_row();
+            let mut clicked = None;
+            for (index, (item, label, old, new)) in rows.into_iter().enumerate() {
+                let item = cell(format!("{item} · {label}"));
+                if selectable {
+                    if ui
+                        .add(item.sense(egui::Sense::click()))
+                        .on_hover_text("Select this player")
+                        .clicked()
+                    {
+                        clicked = Some(index);
+                    }
+                } else {
+                    ui.add(item);
+                }
+                ui.add(cell(egui::RichText::new(old).monospace()));
+                ui.add(cell(egui::RichText::new(new).monospace()));
+                ui.end_row();
+            }
+            clicked
+        })
+        .inner
 }
 
 /// The pending action once Save or Discard answers it, or at once when

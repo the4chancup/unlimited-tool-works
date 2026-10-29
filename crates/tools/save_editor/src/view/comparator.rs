@@ -226,21 +226,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         false
     };
     let mut open = comparator.open;
-    // The panel first opens where the draft's `.panel` stands: its right
-    // edge 1 inside the window's, its top 90 below, over the views' right
-    // columns rather than the player list a member picks from while it is
-    // open. egui places a window by its default once, then keeps where
-    // the member drags it.
-    let screen = ui.ctx().content_rect();
-    egui::Window::new(studio_core::theme::window_title_text("Comparator"))
-        .id(egui::Id::unique("save_editor_comparator"))
-        .default_pos(egui::pos2(
-            screen.right() - 1.0 - PANEL_WIDTH,
-            screen.top() + 90.0,
-        ))
-        .default_width(PANEL_WIDTH)
-        .collapsible(false)
-        .resizable(true)
+    panel_window(ui, "Comparator", "save_editor_comparator")
         .open(&mut open)
         .show(ui.ctx(), |ui| {
             // One line: the label, the path truncated to the room the
@@ -423,6 +409,25 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     comparator.open = open;
 }
 
+/// A floating panel's window (the Comparator's, the patch panel's), titled
+/// `title`, with `id` its own. It first opens where the draft's `.panel`
+/// stands: its right edge 1 inside the window's, its top 90 below, over
+/// the views' right columns rather than the player list a member picks
+/// from while it is open. egui places a window by its default once, then
+/// keeps where the member drags it.
+pub(super) fn panel_window<'open>(ui: &egui::Ui, title: &str, id: &str) -> egui::Window<'open> {
+    let screen = ui.ctx().content_rect();
+    egui::Window::new(studio_core::theme::window_title_text(title))
+        .id(egui::Id::unique(id))
+        .default_pos(egui::pos2(
+            screen.right() - 1.0 - PANEL_WIDTH,
+            screen.top() + 90.0,
+        ))
+        .default_width(PANEL_WIDTH)
+        .collapsible(false)
+        .resizable(true)
+}
+
 /// The pick's refusal for a save of another version (the CLI's
 /// `version_mismatch_sentence`, the picked first as the report has it).
 fn mismatch_refusal(picked: PesVersion, open: PesVersion) -> String {
@@ -464,7 +469,7 @@ fn spawn_compare(
 
 /// A player's place on the first roster holding him.
 #[derive(Clone, Copy)]
-struct Place {
+pub(super) struct Place {
     /// The team's index in its file's team order (the groups' order).
     index: usize,
     /// The team's id.
@@ -477,7 +482,7 @@ struct Place {
 
 impl Place {
     /// The player a click on his lines selects.
-    fn select(self) -> SelectedPlayer {
+    pub(super) fn select(self) -> SelectedPlayer {
         SelectedPlayer {
             team_id: self.team_id,
             slot: self.slot,
@@ -489,7 +494,7 @@ impl Place {
 /// The first team in `file`'s order whose roster holds each player (the
 /// `strip_again` precedent: one group per player, not one per roster — a
 /// player on a club and a national team reads once).
-fn roster_of(file: &EditFile) -> HashMap<u32, Place> {
+pub(super) fn roster_of(file: &EditFile) -> HashMap<u32, Place> {
     let mut roster = HashMap::new();
     for (index, team) in file.teams().iter().enumerate() {
         for (slot, entry) in team.roster.iter().enumerate() {

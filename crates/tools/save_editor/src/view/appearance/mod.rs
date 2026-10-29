@@ -99,10 +99,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // (whose `push_id` salts the same pair): two scopes with one salt would
     // hand two widgets one id — an in-progress edit and its undo key would
     // cross between the sections.
+    let mut open_patch = false;
     ui.push_id(("appearance", generation, player_id), |ui| {
         cutscenes(ui, session, player_id, &player.stats);
         if setting {
-            ownership_line(ui, version);
+            open_patch = ownership_line(ui, version);
             studio_core::widgets::checkbox(ui, edit_aesthetics, "Edit aesthetics anyway");
             if *edit_aesthetics {
                 ui.weak(match version.engine() {
@@ -135,6 +136,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         .response
         .on_disabled_hover_text(ownership_tip(version));
     });
+    // One floating panel at a time, as the Savefile menu's entries.
+    if open_patch {
+        view.patch.open = true;
+        view.comparator.open = false;
+    }
 }
 
 /// The five groups, the draft's order.
@@ -191,20 +197,18 @@ fn cutscenes(ui: &mut egui::Ui, session: &mut Session, player_id: u32, stats: &P
         });
 }
 
-/// The ownership row: the sentence itself (pre-Fox carries the patch step
-/// and the Apply aesthetics patch link; the panel is a later slice's, so
-/// the link opens nothing and its hover says so).
-fn ownership_line(ui: &mut egui::Ui, version: PesVersion) {
+/// The ownership row: the sentence itself, and on pre-Fox the patch step
+/// and the Apply aesthetics patch link. Whether the link was clicked: the
+/// caller opens the patch panel.
+fn ownership_line(ui: &mut egui::Ui, version: PesVersion) -> bool {
     ui.horizontal_wrapped(|ui| {
         ui.label(ownership_tip(version));
         match version.engine() {
-            Engine::PreFox => {
-                ui.link("Apply aesthetics patch")
-                    .on_hover_text("The patch panel is not built yet");
-            }
-            Engine::Fox => {}
+            Engine::PreFox => ui.link("Apply aesthetics patch").clicked(),
+            Engine::Fox => false,
         }
-    });
+    })
+    .inner
 }
 
 /// The ownership sentence (the draft's `ownershipTip`): the line over the
