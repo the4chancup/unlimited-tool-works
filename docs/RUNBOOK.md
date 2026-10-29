@@ -239,6 +239,13 @@ lock on a shared folder serializes builds but does not stop this, so a shared fo
 every sidekick's test results suspect. Each folder costs a full build and its disk; three at 4
 jobs each keep within the machine's memory, where three at 8 would not.
 
+**A headless `claude -p` sidekick runs its builds and tests in the foreground.** Its session
+ends with its turn, so a run it started in the background and a notification it waits for die
+with it: on 2026-10-29 an Opus sidekick ended on "Waiting for the test run's notification",
+with no report and its test run killed, and a resume had to finish it. The launch prompt says
+so ("every cargo command in the foreground, a timeout up to 600000 ms; split the packages over
+several calls if one would take longer").
+
 ## Review rounds
 
 **Second opinion.** A model reviewing its own work is bounded by its own training: same data, same
