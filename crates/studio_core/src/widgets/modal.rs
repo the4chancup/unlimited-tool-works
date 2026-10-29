@@ -14,10 +14,37 @@ pub fn modal<R>(
     title: impl Into<egui::RichText>,
     body: impl FnOnce(&mut egui::Ui) -> R,
 ) -> egui::ModalResponse<R> {
+    modal_with_min_width(ctx, id, title, Some(360.0), body)
+}
+
+/// `modal` without the 360-point minimum: the window is as wide as its title and body. For a
+/// dialog whose draft sizes the window to its contents, where the minimum would leave room
+/// unused right of them. Every other dialog takes `modal`, whose minimum keeps a short
+/// prompt from shrinking to a narrow box around its sentence and buttons.
+pub fn modal_fit_contents<R>(
+    ctx: &egui::Context,
+    id: egui::Id,
+    title: impl Into<egui::RichText>,
+    body: impl FnOnce(&mut egui::Ui) -> R,
+) -> egui::ModalResponse<R> {
+    modal_with_min_width(ctx, id, title, None, body)
+}
+
+/// The modal both helpers draw, at least `min_width` wide with its margins and stroke when
+/// one is given.
+fn modal_with_min_width<R>(
+    ctx: &egui::Context,
+    id: egui::Id,
+    title: impl Into<egui::RichText>,
+    min_width: Option<f32>,
+    body: impl FnOnce(&mut egui::Ui) -> R,
+) -> egui::ModalResponse<R> {
     egui::Modal::new(id)
         .frame(modal_frame(&ctx.global_style()))
         .show(ctx, |ui| {
-            ui.set_min_width(360.0 - modal_frame(ui.style()).total_margin().sum().x);
+            if let Some(min_width) = min_width {
+                ui.set_min_width(min_width - modal_frame(ui.style()).total_margin().sum().x);
+            }
             crate::theme::window_title(ui, title);
             ui.add_space(8.0 - ui.spacing().item_spacing.y);
             body(ui)
@@ -76,6 +103,16 @@ mod tests {
     fn draw<R>(
         ctx: &egui::Context,
         title: &str,
+        body: impl FnMut(&mut egui::Ui) -> R,
+    ) -> (R, egui::Rect, egui::Rect) {
+        draw_through(ctx, title, false, body)
+    }
+
+    /// `draw`, through `modal_fit_contents` when `fit_contents`.
+    fn draw_through<R>(
+        ctx: &egui::Context,
+        title: &str,
+        fit_contents: bool,
         mut body: impl FnMut(&mut egui::Ui) -> R,
     ) -> (R, egui::Rect, egui::Rect) {
         let mut last = None;
@@ -89,7 +126,13 @@ mod tests {
                 ..Default::default()
             };
             let mut output = ctx.run_ui(input, |ui| {
-                last = Some(modal(ui.ctx(), egui::Id::unique(ID), title, &mut body).inner);
+                let id = egui::Id::unique(ID);
+                let response = if fit_contents {
+                    modal_fit_contents(ui.ctx(), id, title, &mut body)
+                } else {
+                    modal(ui.ctx(), id, title, &mut body)
+                };
+                last = Some(response.inner);
             });
             nodes = output
                 .platform_output
@@ -142,6 +185,22 @@ mod tests {
         assert_near(ok.right(), outer.right() - 13.0, "OK's right");
         assert_near(ok.top(), label.bottom() + 10.0, "OK's top");
         assert_near(outer.bottom(), ok.bottom() + 9.0, "the modal's bottom");
+    }
+
+    #[test]
+    fn a_short_dialog_fitting_its_contents_is_as_wide_as_its_widest_line() {
+        let ctx = context();
+        let (label, outer, title) = draw_through(&ctx, "Kit slot assignments", true, |ui| {
+            let label = ui.weak("(this version does not store kit slots)").rect;
+            modal_buttons(ui, |ui| ui.button("OK"));
+            label
+        });
+        assert!(outer.width() < 360.0, "the modal's width {}", outer.width());
+        assert_near(
+            outer.width(),
+            label.width().max(title.width()) + 26.0,
+            "the modal's width",
+        );
     }
 
     #[test]

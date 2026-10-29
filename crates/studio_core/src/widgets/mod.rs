@@ -31,7 +31,7 @@ pub use dock::BottomDock;
 pub use ink::ink_span;
 pub use log_panel::{LogLine, LogPanel, well_frame};
 pub use menu_button::menu_button;
-pub use modal::{modal, modal_buttons, modal_frame, modal_sentence_gap};
+pub use modal::{modal, modal_buttons, modal_fit_contents, modal_frame, modal_sentence_gap};
 pub(crate) use settings_row::{PathCommit, path_row_commit, row_label};
 pub use settings_row::{PathKind, path_row};
 pub use text_box::{text_box, text_box_border};

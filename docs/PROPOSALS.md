@@ -18,7 +18,10 @@ P16 to P38 were ruled on 2026-10-26 (`DECISIONS.md`'s entries "Usability proposa
 and P32-P38 accepted", "A folder per PES version", "Red's settings are not imported on
 first run" and "Live AATF stays off by default"). P39 (a window closed maximized reopens
 maximized) was accepted on 2026-10-27 (`DECISIONS.md` "A window closed maximized reopens
-maximized").
+maximized"). P43 (stats named as each PES version names them) was accepted on 2026-10-29
+(`DECISIONS.md` "Stats are named as the save's PES version names them").
+P44 (the help's text column capped at a reading width) was accepted on 2026-10-29
+(`DECISIONS.md` "The help's text wraps at 720 points").
 
 ## P40 — The Music export editor reorders its players
 
@@ -58,15 +61,4 @@ Adds: the picker's hex field accepts `#RRGGBB`, `0xRRGGBB` and `RRGGBB` alike in
 that uses it, so a pasted value from an old habit lands instead of being refused. Costs: one
 parse with three prefixes in `color_tools`; the field still shows `#RRGGBB`.
 
-## P43 — Stats named as each PES version names them
 
-From the AATF texts' sweep (8.29d1, 2026-10-29). The player view, the AATF rows and the
-Comparator name every ability stat one way, PES 2017's (`Attacking Prowess`, `Ball Winning`),
-while PES 2020 and 2021 call several of them otherwise (`Offensive Awareness`, `Tackling`,
-`GK Awareness`, `Curl`, `Acceleration`); today those names live only in
-`pes_savefile/src/model/player.rs`'s doc comments.
-
-Adds: a PES 2021 manager reads the names his game shows, in the player view, the AATF rows and
-the Comparator alike. Costs: a per-version label table in `pes_savefile` (about ten renamed
-stats), every surface that names a stat taking the version, and the drafts following; a
-ruleset still writes the one id (`attacking_prowess`).

@@ -171,6 +171,13 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
   save is from PES 2017, so the editor will keep treating it as a PES 2017 save." A member reads the
   dry version twice and still wonders what to do; the review of a change that adds such text
   reads each new line aloud.
+- **A help topic is read in pieces, one subject each**: a paragraph holds one subject in a
+  few sentences, a topic with several subjects gives each its own subheading (a line of bold
+  text alone, `**Teams and players**`, which the window and the drafts draw alike), and
+  parallel items (a menu's entries, a dialog's options, the steps of a procedure) are a list,
+  one item per line. A paragraph that runs through five facts one after the other reads as one
+  long line in the help window's wide pane, and a member scanning for one fact finds none
+  (the maintainer, of the Save editor's chapters).
 - **No em dashes in text a user reads**: the README, the help chapters, message catalog text,
   UI strings, the comments injected into `settings.toml`/`config.toml`/`materials.toml`, the Team
   creator's `README.txt`. Use a comma, a colon, parentheses or a new sentence. The character has
@@ -273,6 +280,8 @@ Rules for the justfile, so it stays a command list and not a second build system
   keep working without it; the justfile is the definition, not a requirement to build. `maturin`
   (`pip install maturin`) is the same kind of tool for `just bindings`; `scripts/bindings_check.py`
   runs it and reads the wheel path from its output, so the recipe never hardcodes `target/wheels`.
+  Pillow (`pip install pillow`) is the same for `just test`: the drafts tooling's tests
+  (`scripts/draft_compare_test.py`) measure text ink in images through it.
 
 Requirements:
 

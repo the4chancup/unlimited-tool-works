@@ -2852,3 +2852,7 @@ worklog passed 7,000 lines.
   compiler's warning and both helps state the same facts (8.9m m5). The maintainer looked at
   Live AATF in the built app: the crosses and warnings work; its rows' rules-file spellings
   go, in the window and in `check-aatf`, for the game's names (8.29d1 planned).
+- **2026-10-29** — CI installs Pillow before the gates: the drafts tooling's ink tests read images through it, and both runners had failed on the import.
+- **2026-10-29** — The boots and gloves dialog is as wide as its groups again; the help
+  window's paragraphs stand 8 points apart, its text wraps at 720, and it first opens at
+  1000 × 600 (0.0.1ov2j2-ov2j5).
