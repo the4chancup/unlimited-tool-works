@@ -42,8 +42,16 @@ const ENTRY_HEIGHT: f32 = 30.0;
 /// margin 4 above and below it.
 const SEPARATOR_SPACING: f32 = 9.0;
 /// The side of the logo's square, the draft's `.logo` 32 square, and so its row's
-/// height: its "4cc" sits centred on it, 1 point lower than on an entry's 30.
+/// height.
 const LOGO_SIZE: f32 = 32.0;
+/// The 4cc clover's ring, a private-use glyph of the symbols font. It is one em
+/// across and centred on the line, so the font size is the clover's diameter.
+const CLOVER_RING: &str = "\u{F100}";
+/// The 4cc clover's four leaves, the symbols font's glyph drawn on the ring's place
+/// in a green of its own: one glyph takes one colour.
+const CLOVER_LEAVES: &str = "\u{F101}";
+/// The clover's diameter, the draft's `.clover` 28 inside the logo's 32 square.
+const CLOVER_SIZE: f32 = 28.0;
 /// Seconds the pointer rests on the rail before the overlay opens: a short delay.
 const HOVER_DELAY: f64 = 0.15;
 /// The accent bar on the active entry's left edge (draft: 3 px).
@@ -717,7 +725,8 @@ fn widest_label(ui: &egui::Ui, args: &SidebarFrame) -> f32 {
 /// The logo, the About click target: the draft's `.logo` square, centred in the icon
 /// cell `cell` wide at the row's left, the same in the rail and in the overlay. The
 /// row is `width` wide like the entries', but only the square senses the pointer and
-/// fills while in use. "4cc" sits centred on it in the accent colour.
+/// fills while in use. The 4cc clover sits centred on it, its ring and its leaves
+/// in the palette's two clover greens, hovered or not.
 fn logo(ui: &mut egui::Ui, width: f32, cell: f32) -> egui::Response {
     let (id, row) = ui.allocate_space(egui::vec2(width, LOGO_SIZE));
     let square = egui::Rect::from_center_size(
@@ -725,20 +734,20 @@ fn logo(ui: &mut egui::Ui, width: f32, cell: f32) -> egui::Response {
         egui::Vec2::splat(LOGO_SIZE),
     );
     let response = ui.interact(square, id, egui::Sense::click());
-    let text_color = paint_in_use_frame(ui, square, &response, false);
-    let galley = egui::WidgetText::from(
-        egui::RichText::new("4cc")
-            .color(ui.visuals().selection.stroke.color)
-            .size(15.0),
-    )
-    .into_galley(
-        ui,
-        Some(egui::TextWrapMode::Extend),
-        f32::INFINITY,
-        egui::TextStyle::Body,
-    );
-    ui.painter()
-        .galley(square.center() - galley.size() / 2.0, galley, text_color);
+    paint_in_use_frame(ui, square, &response, false);
+    let palette = crate::theme::palette(ui.visuals());
+    for (glyph, color) in [
+        (CLOVER_RING, palette.clover_ring),
+        (CLOVER_LEAVES, palette.clover_leaf),
+    ] {
+        let galley = ui.painter().layout_no_wrap(
+            glyph.to_owned(),
+            egui::FontId::proportional(CLOVER_SIZE),
+            color,
+        );
+        ui.painter()
+            .galley(square.center() - galley.size() / 2.0, galley, color);
+    }
     response
 }
 
