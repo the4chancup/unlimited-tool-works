@@ -1928,7 +1928,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               "The rail's version selector centred without its arrow; the hover delay 100
               ms"; `plans/core/gui.md` "Sidebar" items 2 and 4; the draft's `#sidebar
               select`, lead, done, `.tmp/8_9l/pairs/rail_selector.png`); brief
-              `.tmp/8_9l/brief_l3d3i.md`, after l3d3h (the same file)
+              `.tmp/8_9l/brief_l3d3i.md`, after l3d3h (the same file). The delay became 120
+              ms while it ran (DECISIONS "The sidebar's hover delay 120 ms"): the lead moves
+              `HOVER_DELAY` to 0.12 and the test's two sides to 0.11 and 0.13 at the merge
             - [x] l3d3g 2026-10-29 (lead, `712966d8`) the Windows title bar without the icon
               (DECISIONS "The title bar draws no icon on Windows" and "The title bar's icon
               slot stays blank"): `window_size::hide_title_bar_icon`, one `unsafe` call. On the

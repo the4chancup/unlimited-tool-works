@@ -23,16 +23,16 @@ names where the question came from so the context can be read there.
   the toolbar's Open menu and Save as are built (8.9l), the drafts take egui's spacing for
   menus, the toolbar and a view's margin, and the ability stats' labels go left-aligned. Still to look at in the built app: the windows' titles
   at 14 in the strong grey (220, 0.0.1ov14); the preview's icon where the lead cannot capture it (worklog 0.0.1v and 8.9l3d3g, the
-  title bar now drawing none: the taskbar
+  title bar now drawing none, its slot left blank on Windows 10, unverified on Windows 11: the taskbar
   button and Alt+Tab show the tight crop of the head; Explorer's file icon on the exe). Live
   AATF's whole look, every element it draws rendered from the drafts with what each shows
   and its tooltips (worklog 0.0.1ov6): `.tmp/0_0_1ov/live/`, images 01 to 13 (no 06: a rules
   file is checked when imported, so the dock has no failed state). Then the confirmation that
   freezes logic version 1's hash (0.0.1f2).
-- **Does the sidebar's 100 ms hover delay feel right?** (worklog 8.9l3d3i, DECISIONS "The
-  rail's version selector centred without its arrow; the hover delay 100 ms"). It was 150,
-  which felt slow; the draft opens at 100 now, the build once l3d3i lands. A shorter one
-  opens the sidebar more often when the pointer only crosses the rail.
+- **Does the sidebar's 120 ms hover delay feel right?** (worklog 8.9l3d3i, DECISIONS "The
+  sidebar's hover delay 120 ms"). It was 150, which felt slow, then 100, too quick in the
+  draft; the draft opens at 120 now, the build once l3d3i lands. A shorter one opens the
+  sidebar more often when the pointer only crosses the rail.
 - **When do you rename the GitHub repository to `unlimited-tool-works`?** (worklog 0.0.1rn,
   `plans/core/development_plan.md` "The project's name: Unlimited Tool Works"). It is a step
   on GitHub only you take (the lead never touches the remote); GitHub redirects the old
