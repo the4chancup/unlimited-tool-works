@@ -4529,7 +4529,16 @@ briefs, review loops, gates and mutation runs as for any step.
       stands 20 higher), and the colour swatches 22 × 16 (`input[type=color]`; egui's colour
       button is 40 wide, which moves the row's right half 31 to 57 points right). Planned
       2026-10-29 (DECISIONS "The team view's line under its fields, the colour buttons 22 ×
-      16"); brief `.tmp/0_0_1ov/brief_ov2l.md`, after ov2j lands (same file)
+      16"); brief `.tmp/0_0_1ov/brief_ov2l.md`, after ov2j lands (same file). Round 1: the
+      button landed, the line stopped on the fold (743.5 against 740), and the row's offset
+      found to be egui's 8-point spacing too (DECISIONS "The team row's gaps as drafted; its
+      line waits for the Tactics' height"; the draft's `.cbtn` set to 22 × 16); rework 1
+      `.tmp/0_0_1ov/rework_ov2l.md`: the row's gaps, the line moved to ov2u
+    - [ ] ov2u the team view's Tactics at the draft's height (the build's stands about 23
+      points taller: with ov2l's line its last control ends 3.5 under the pane's fold, the
+      draft's 8 over it; measure block by block, `rect_compare.py`), then the line under the
+      fields' row as the plan's team view bullet draws it (ov2l's parked
+      `wt-ov2l/.tmp/ov2l/separator_test.rs`)
     - [ ] ov2m the player list as drafted (`plans/save_editor.md` "Player list", "The quick
       actions"): a player row 18 high, its place in the weak colour, the position and name in
       their own columns (the build draws one string, 21 high); the quick actions in two columns

@@ -468,8 +468,14 @@ all side by side.
   version that stores none says so in it). The ids share the fields' row, not one of their
   own, because the Tactics editor below needs the height: with a heading-size title and the
   ids on a second row its last row ended about 5 points past the 1280 x 800 window's pane.
-  A stroke line under the row, 8 points above and below it, sets the team's fields apart from
-  the Tactics (the draft's `.sep`). Then the Tactics editor (below), whose bench list shows the
+  The row's units stand 6 points apart, as in every row of the drafts (the Name and Short
+  labels are units of their own, 6 from their boxes), and a colour's label,
+  picker and hex, or an id's label and its box, a space apart (3 points), the ids' grid cells
+  padded 4 points on each side (so 10 before Manager ID, 8 between the ids): egui's 8-point item
+  spacing put the row's right end 30 points right of the draft's. A stroke line under the row
+  sets the team's fields apart from the Tactics (the draft's `.sep`, 8 points from the boxes
+  around it): drawn 11 points under the row's controls and 10.5 over the Tactics' first, since
+  the draft's id cells pad their boxes and its Tactics bar is taller than its buttons. Then the Tactics editor (below), whose bench list shows the
   players only (12 for a 4cc team), not the 21 bench-order entries with 9 `(empty)`.
 - Version-gated widgets render disabled with a tooltip ("PES 19+") rather than
   disappearing, so the UI stays spatially stable across versions.

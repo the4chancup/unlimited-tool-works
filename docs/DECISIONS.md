@@ -13383,3 +13383,19 @@ Why: about 250 prose uses, many inside terms the code's comments share; no membe
 and rewriting them would set the docs apart from the code they describe. Every member-facing
 text in the code was checked: none says "Studio".
 Plan: `plans/core/development_plan.md` "The project's name: Unlimited Tool Works".
+
+## 2026-10-29 — save_editor — The team row's gaps as drafted; its line waits for the Tactics' height
+Decision: the team view's fields' row spaces its units 6 points apart (the drafts' rows' gap,
+the Name and Short labels units of their own), a colour's label, picker and hex and an id's
+label and its box 3 apart (a space), the ids' grid cells padded 4 on each side; the Save
+editor draft's colour button is 22 x 16, as the Ruleset draft's and the plan's. The line
+under the row is drawn where the draft draws it, 11 points under the row's controls and 10.5
+over the Tactics' first (8 from the boxes around it), and lands with the fix of the build's
+Tactics, which stands about 23 points taller than the draft's: with the line alone the
+Tactics' last control ends 3.5 points under the pane's fold, where the draft's view ends 8
+over it.
+Why: ov2l's sidekick measured the build's row against the draft piece by piece: the 22-point
+button closed only part of the offset (Col. 2's swatch still 23 points right, the Manager ID
+box 31), the rest egui's 8-point item spacing where the draft's rows space 6 and a label's
+space 3; and the draft's own button was 26 x 18, the two drafts disagreeing.
+Plan: `plans/save_editor.md` "Editing UI", the team view bullet.

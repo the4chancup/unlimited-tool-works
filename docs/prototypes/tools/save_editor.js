@@ -351,7 +351,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .palette .swatch:hover { outline: 1px solid var(--hover); }
 .palette.off { pointer-events: none; }
 /* the colour picker (color_tools' color_field) */
-.cbtn { width: 26px; height: 15px; border: 1px solid var(--stroke);
+.cbtn { width: 22px; height: 16px; min-height: 16px; border: 1px solid var(--stroke);
   border-radius: 2px; padding: 0; vertical-align: middle; }
 .cbtn:hover { border-color: var(--hover); }
 .pkfield { position: relative; display: inline-block; }
