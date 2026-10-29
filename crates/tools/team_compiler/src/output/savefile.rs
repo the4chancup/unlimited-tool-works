@@ -4,8 +4,8 @@
 //! second savefile write path, so the local result and the savefile builder's later
 //! `apply-patch` are the same bytes by construction. The save is skipped while the compile
 //! target's PES runs, unless the run was given `--edit-mode-closed`: the game writes the
-//! save it holds over the file when the member leaves Edit mode, so a write made with it
-//! closed stands. Every outcome is a finding.
+//! save it holds over the file when the member leaves Edit mode after changing anything
+//! there, so a write made with it closed stands. Every outcome is a finding.
 
 use std::path::{Path, PathBuf};
 

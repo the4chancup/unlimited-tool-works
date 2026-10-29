@@ -480,8 +480,8 @@ pub(super) fn go_on(view: &mut SaveView, pending: Pending) {
 }
 
 /// The running-game question `view.edit_mode_question` holds open
-/// (SE-GUI-21's window rule): `<game> is running` asks the member to make
-/// sure the game's Edit mode is closed. Save writes with his answer — a
+/// (SE-GUI-21's window rule): `<game> is running` says how to keep the
+/// write, the game's Edit mode open or closed. Save writes — a
 /// prompt's pending action then goes on; Cancel, or a dismissal, writes
 /// nothing and a prompt stays up.
 pub(super) fn edit_mode_dialog(
@@ -501,12 +501,12 @@ pub(super) fn edit_mode_dialog(
     let id = egui::Id::unique("save_editor_edit_mode");
     let response = modal(ui.ctx(), id, format!("{game} is running"), |ui| {
         ui.label(
-            "If the game's Edit mode is open, close it before saving. The game writes its own \
-             copy of the save when you leave Edit mode, so a save written while it is open \
-             would be lost.",
+            "If the game's Edit mode is open, use its Data Management > Load after saving, \
+             before you leave Edit mode: leaving it after changing anything there writes the \
+             game's own copy over this save.",
         );
         modal_sentence_gap(ui);
-        ui.label("After saving, use the Load option in Edit mode to see the changes in game.");
+        ui.label("If Edit mode is closed, the changes show when you open it.");
         modal_buttons(ui, |ui| {
             if ui.button("Cancel").clicked() {
                 cancel = true;

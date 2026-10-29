@@ -20,12 +20,13 @@ which may be the same file. A file already at `--out` (or `--bins-out` for the C
 level deep: the next write replaces that copy). No command creates a save from nothing.
 
 While the PES of the save's version is running, the game writes the save it holds over the
-file when you leave its Edit mode, so a save written while Edit mode is open is lost then. A
-command that writes a save therefore writes it while the game runs only when you add
-`--edit-mode-closed`, which says you have closed Edit mode. Without it, the command writes
-nothing and names the running game: close Edit mode, then run the command again with
-`--edit-mode-closed`. Edit mode's Load then reads the save in without restarting the game. A
-PES of another version running does not count.
+file when you leave its Edit mode after changing anything there, so a save written while Edit
+mode is open is lost then unless Edit mode's Load reads it in first. A command that writes a
+save therefore writes it while the game runs only when you add `--edit-mode-closed`, which
+says you have closed Edit mode. Without it, the command writes nothing and names the running
+game: close Edit mode, then run the command again with `--edit-mode-closed`. Opening Edit mode
+then reads the save in without restarting the game. A PES of another version running does not
+count.
 
 `export-toml` writes a team of the save as a Team TOML file: the team's names, colors, manager
 and stadium, its tactics, and every rostered player with every field, the look included (on

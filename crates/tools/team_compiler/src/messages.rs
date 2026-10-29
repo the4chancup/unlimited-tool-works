@@ -473,7 +473,8 @@ pub(crate) enum Code {
     /// Savefile changes pending, the compile target's PES running and `compile` not given
     /// `--edit-mode-closed` (a PES of another version does not count; context: `path`,
     /// `version`, `flag`): the game writes the save it holds over this one when the member
-    /// leaves Edit mode; applied by the next compile given the flag or made with PES closed.
+    /// leaves Edit mode after changing anything there; applied by the next compile given the
+    /// flag or made with PES closed.
     SavefileSkippedPesRunning,
     /// The savefile could not be updated: the patch's `apply` refused it, or `EditFile`
     /// could not write it back (context: `path`, `error`); Fatal (`AbortRun`) after a

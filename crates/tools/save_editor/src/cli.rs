@@ -224,8 +224,8 @@ fn invalid(error: anyhow::Error) -> CliError {
 
 /// The refusal a writing command makes while the PES of the save's `version` runs and it was
 /// not given `--edit-mode-closed` (`edit_mode_closed`): the game writes the save it holds over
-/// the file when its Edit mode closes. A game of another version never writes this save, so it
-/// does not refuse.
+/// the file when the member leaves its Edit mode after changing anything there. A game of
+/// another version never writes this save, so it does not refuse.
 fn refuse_while_running(
     running: &[RunningPes],
     version: PesVersion,
