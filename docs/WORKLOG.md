@@ -4770,7 +4770,23 @@ briefs, review loops, gates and mutation runs as for any step.
       outlines them is a question for the maintainer once seen); the lineup lists' position
       text in the pitch's colours (`position_colour`, the keeper's `#ffde00`), which ov11a
       gave one value for both themes though the lists draw them on the panel: a light value
-      for each by the contrast rule, or a dark chip, once seen
+      for each by the contrast rule, or a dark chip, once seen. Looked at 2026-10-29 (lead,
+      release build of `4c448424` switched to light in the sandbox's settings; captures
+      `.tmp/0_0_1ov/light/`: the empty view, player, team, team with Live AATF, Settings,
+      Help): what reads poorly is the resting widgets (unchecked checkboxes, radios, number
+      boxes, buttons at grey 230 on 248, contrast 1.18 against the dark theme's 1.56), the
+      text boxes with no edge (white on 248: ov2x's border, the light stroke grey 190), and
+      the lineup lists' position codes (the keeper's yellow at 1.26). Ruled (DECISIONS "The
+      light theme's widget fills keep the dark theme's contrast; its text colours read at
+      4.5", values from `.tmp/0_0_1ov/light_contrast.py`): code in ov11c, after ov2x lands
+      (both edit `theme.rs`). The players' name colour codes: none drawn in teams 701 and
+      702 of the sandbox save, the ones captured, so not yet seen in light (they stay the
+      maintainer's question once seen)
+    - [ ] ov11c the light rulings built (sidekick, after ov2x): `theme.rs`'s light widget
+      states (resting 201, hovered 186, pressed 208, open 223), the palette's four lineup
+      list colours (dark: the pitch's; light: `#847200`, `#007d99`, `#2f8314`, `#d92464`)
+      drawn by `team_widgets` `pitch/lineup.rs`, tests of each value's contrast; then the
+      light captures again
   - [x] ov12 the Tactics popover's X and Y as steppers (DECISIONS "The Tactics popover's X
     and Y step by arrows inside the number box's width" and "The popover's stepper arrows
     take clicks, not the keyboard's focus"; `plans/save_editor.md`, the Tactics editor's

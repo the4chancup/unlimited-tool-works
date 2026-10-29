@@ -13413,3 +13413,21 @@ and its buttons 10, so the drafts follow it and the app adds only the sentence's
 Messages table's rows are text, not controls, so egui's `Grid` minimum row of a control's 18
 put them 3 lower than the draft's each row.
 Plan: `plans/core/gui.md` "Other UI components" (Modals, Form grids).
+
+## 2026-10-29 — gui — The light theme's widget fills keep the dark theme's contrast; its text colours read at 4.5
+Decision: a light value keeps the dark one's contrast with its background for a fill or a quiet
+grey (a ratio under 4.5); a text colour whose dark ratio is above 4.5 reads at 4.5 on the light
+panel, its hue kept. The light widget states take the dark ones' contrast with the panel:
+resting 201, hovered 186, pressed 208, an open menu's button 223 (egui 0.36's strokes and text
+colours kept). The lineup lists' position text takes light list colours at 4.5 (the keeper's
+`#847200`, a defender's `#007d99`, a midfielder's `#2f8314`, a forward's `#d92464`); the pitch
+keeps its own on its badges.
+Why: the first light captures (a release build of `4c448424`, `.tmp/0_0_1ov/light/`) showed
+unchecked checkboxes, radios and number boxes at grey 230 on 248, a contrast of 1.18 where the
+dark theme's 60 on 27 is 1.56, and the keeper's yellow at 1.26 on the lists' light panel.
+Matching the position colours' dark ratios (9.6 to 12.9) instead gives near-black browns and
+greens that no longer tell the lines apart, so the success green's precedent (5.6 on light,
+not its dark ratio) becomes the rule for text, at the usual floor for body text. Only the light
+theme moves.
+Plan: `plans/core/gui.md` the Dark/light theme row, the sentence starting "A light value keeps
+the dark one's contrast ratio".
