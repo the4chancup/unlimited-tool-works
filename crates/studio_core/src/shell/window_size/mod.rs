@@ -24,13 +24,13 @@ pub(super) const DEFAULT_SIZE: egui::Vec2 = egui::vec2(1280.0, 780.0);
 #[cfg(not(target_arch = "wasm32"))]
 pub(super) const MIN_SIZE: egui::Vec2 = egui::vec2(960.0, 600.0);
 
-/// The preview's icon, Archer on a transparent background in the tight crop on
+/// The icon, Archer on a transparent background in the tight crop on
 /// the head at 64 pixels (`resources/icon/small.png`): the window's icon on
 /// Windows, where the title bar draws it at 16 pixels.
 #[cfg(not(target_arch = "wasm32"))]
 const SMALL_ICON_PNG: &[u8] = include_bytes!("../../../../../resources/icon/small.png");
 
-/// The preview's icon, the whole Archer picture at 256 pixels
+/// The icon, the whole Archer picture at 256 pixels
 /// (`resources/icon/window.png`): the window's icon everywhere but Windows,
 /// where one image serves every size.
 #[cfg(not(target_arch = "wasm32"))]
@@ -237,11 +237,13 @@ fn window_icon() -> egui::IconData {
 /// jumps there; `Place` creates it at the record's position (its pixels over its scale, the
 /// points winit converts with the scale of the monitor it creates the window on) and inner
 /// size, not centered (`NativeOptions`' default), and maximized when the record says so, the
-/// place then being the one its restore button gives back. Both carry the `MIN_SIZE` minimum
-/// and the preview's icon.
+/// place then being the one its restore button gives back. Both carry the `MIN_SIZE` minimum,
+/// the icon and the app id.
 #[cfg(not(target_arch = "wasm32"))]
 pub(super) fn native_options(opening: &Opening) -> eframe::NativeOptions {
     let viewport = egui::ViewportBuilder::default()
+        // A Linux desktop entry matches the window by this id, not by the title eframe uses.
+        .with_app_id("unlimited-tool-works")
         .with_icon(window_icon())
         .with_min_inner_size(MIN_SIZE);
     match opening {

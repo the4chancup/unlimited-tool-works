@@ -2231,7 +2231,7 @@ fn a_midcup_markerless_player_is_not_checked_for_the_gloves_rule() {
 
 /// Team 714's record of which shared folder took which of its block's shared IDs, at a path
 /// no game reads.
-pub(crate) const SHARED_IDS_714: &str = "4cc_studio/shared_ids/714.toml";
+pub(crate) const SHARED_IDS_714: &str = "unlimited-tool-works/shared_ids/714.toml";
 
 /// The record file's text for `boots` (shared ID, folder name); the `[gloves]` table is
 /// always written, here empty.

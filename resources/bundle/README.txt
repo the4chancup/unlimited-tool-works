@@ -13,7 +13,7 @@ The first time
 --------------
 
 1. Unpack this archive into a folder of its own, anywhere you like.
-2. Open UnlimitedToolWorks.exe. It keeps its settings in the data folder beside it, so
+2. Open UTW.exe. It keeps its settings in the data folder beside it, so
    everything it needs stays in this one folder.
 3. On the left bar, pick your PES. The window starts on PES 2019, the game VGL is played on.
    DBC is played on PES 2017, so DBC's testers pick PES 2017 there before opening a save.
@@ -55,16 +55,16 @@ Compiling
 4. The game needs the cup's official DpFileList.bin. If the report says dpfilelist_outdated
    or dpfilelist_not_official, yours is another list, and the report names the command that
    installs the official one. To run it, close PES, open the folder that holds
-   UnlimitedToolWorks.exe, click the address bar at the top of the window, type cmd and press
+   UTW.exe, click the address bar at the top of the window, type cmd and press
    Enter. In the black window that opens, type
 
-       UnlimitedToolWorks.exe team-compiler upgrade-dpfl
+       UTW.exe team-compiler upgrade-dpfl
 
    and press Enter. It changes nothing yet: it lists what it would do (CPKs renamed to their
    official names, empty placeholders for the ones missing, the list replaced and the old one
    kept as DpFileList.bin.bak). If that reads right, run it again with --yes at the end:
 
-       UnlimitedToolWorks.exe team-compiler upgrade-dpfl --yes
+       UTW.exe team-compiler upgrade-dpfl --yes
 
    This is needed once per game folder.
 
@@ -104,6 +104,6 @@ When something goes wrong
 -------------------------
 
 Every message names a code, such as export_disabled. The help explains each one: open
-UnlimitedToolWorks.exe and click the ? at the bottom of the left bar.
+UTW.exe and click the ? at the bottom of the left bar.
 
 If a problem stops you, compile with Red as usual, and tell us what happened.

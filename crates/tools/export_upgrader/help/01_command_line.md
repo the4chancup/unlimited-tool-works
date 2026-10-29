@@ -1,10 +1,10 @@
 The Export upgrader migrates an export in the old (AET) layout to the new
 format the Team compiler reads. Its commands run from a terminal opened in the
-folder that holds `UnlimitedToolWorks.exe`.
+folder that holds `UTW.exe`.
 
 ```text
-UnlimitedToolWorks export-upgrader upgrade <export> [--savefile <EDIT> | --loose] [--coverage full|midcup] [-o <dir>]
-UnlimitedToolWorks export-upgrader upgrade-models <folder> [-o <dir>]
+UTW export-upgrader upgrade <export> [--savefile <EDIT> | --loose] [--coverage full|midcup] [-o <dir>]
+UTW export-upgrader upgrade-models <folder> [-o <dir>]
 ```
 
 `upgrade` takes one old export: a folder, a `.zip` or a `.7z`. A team export

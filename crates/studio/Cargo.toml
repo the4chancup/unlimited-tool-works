@@ -1,6 +1,6 @@
 [package]
 name = "studio"
-description = "The 4cc Studio binary: registers the tools, launches the GUI or dispatches the CLI"
+description = "The Unlimited Tool Works binary: registers the tools, launches the GUI or dispatches the CLI"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,7 +8,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [[bin]]
-name = "4cc-studio"
+name = "utw"
 path = "src/main.rs"
 
 [dependencies]

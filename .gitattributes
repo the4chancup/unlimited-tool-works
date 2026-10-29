@@ -21,5 +21,5 @@ resources/templates/uniform.mtl -text
 # The pre-Fox referee template tree, copied byte for byte from Red (three `.mtl` files are CRLF)
 resources/templates/referees_prefox/** -text
 
-# The preview's icon, images made by scripts/make_icon.py: binary, never normalized
+# The icon, images made by scripts/make_icon.py: binary, never normalized
 resources/icon/** -text

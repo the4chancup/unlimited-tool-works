@@ -52,7 +52,7 @@ pub(crate) fn write(
     };
     let patch = AestheticsPatch {
         pes_version: version,
-        studio_version: env!("CARGO_PKG_VERSION").to_owned(),
+        tool_version: env!("CARGO_PKG_VERSION").to_owned(),
         allocation_scheme_version: ALLOCATION_SCHEME_VERSION,
         cpks: cpks.iter().map(deploy::cpk_file_name).collect(),
         compiled: utc_datetime(unix),

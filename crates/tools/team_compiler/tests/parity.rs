@@ -660,11 +660,11 @@ fn assert_matches_reference(sandbox: &Sandbox, exports_root: &Path) {
 
     // The team's shared-IDs record, at a path no game reads: a Midcup over no installed CPK
     // with no shared folder taking an ID writes none, and the tracer links none.
-    assert!(!ours.contains_key("4cc_studio/shared_ids/792.toml"));
+    assert!(!ours.contains_key("unlimited-tool-works/shared_ids/792.toml"));
     // The compiler's own records, at paths no game reads.
     let ours: BTreeMap<_, _> = ours
         .into_iter()
-        .filter(|(path, _)| !path.starts_with("4cc_studio/"))
+        .filter(|(path, _)| !path.starts_with("unlimited-tool-works/"))
         .collect();
     let mut failures = Vec::new();
     compare_table(&mut failures, TABLE, &ours, &reference, EGG_RELOCATED);
