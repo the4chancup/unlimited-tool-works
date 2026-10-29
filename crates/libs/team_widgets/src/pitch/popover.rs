@@ -20,11 +20,11 @@ use crate::tactics::{RosterRow, TacticsView, raw_name};
 /// (`drop_rule::spot_choices`, as the game's Select Position menu lists
 /// them; his own first when the spot offers neither) with Make GK beside
 /// it at its own width, the two filling the popover's width, and the X
-/// (0 to 104) and Y (0 to 48) fields and Close. A change of X or Y sets
-/// his position by the drop rule at the new spot, as a release there
-/// does. The keeper's slot shows a
-/// disabled "GK", the two fields disabled under "The goalkeeper's spot is
-/// fixed" and Make GK disabled. Make GK exchanges the slot's
+/// (0 to 104) and Y (0 to 48) steppers (`stepper`) and Close. A change of
+/// X or Y, typed or stepped, sets his position by the drop rule at the
+/// new spot, as a release there does. The keeper's slot shows a
+/// disabled "GK", the two steppers disabled under "The goalkeeper's spot
+/// is fixed" and Make GK disabled. Make GK exchanges the slot's
 /// `starting_eleven` entry with the keeper slot's — the formation slots
 /// stay — and closes the popover, as does Close; `pitch` also closes it
 /// when the preset, the formation or the team changes.
@@ -186,33 +186,9 @@ pub(super) fn slot_popover(
             // A step needs no `mark_changed`: the move below compares the
             // spot with the slot's.
             ui.label("X");
-            let x = ui
-                .add_enabled(
-                    !keeper,
-                    egui::DragValue::new(&mut formation.players[index].x)
-                        .range(0..=GRID_X)
-                        .clamp_existing_to_range(false),
-                )
-                .on_disabled_hover_text("The goalkeeper's spot is fixed");
-            step_number(
-                &mut formation.players[index].x,
-                wheel_steps(ui, &x),
-                0..=GRID_X,
-            );
+            stepper(ui, &mut formation.players[index].x, GRID_X, !keeper);
             ui.label("Y");
-            let y = ui
-                .add_enabled(
-                    !keeper,
-                    egui::DragValue::new(&mut formation.players[index].y)
-                        .range(0..=GRID_Y)
-                        .clamp_existing_to_range(false),
-                )
-                .on_disabled_hover_text("The goalkeeper's spot is fixed");
-            step_number(
-                &mut formation.players[index].y,
-                wheel_steps(ui, &y),
-                0..=GRID_Y,
-            );
+            stepper(ui, &mut formation.players[index].y, GRID_Y, !keeper);
             if ui.button("Close").clicked() {
                 view.popover = None;
             }
@@ -226,15 +202,112 @@ pub(super) fn slot_popover(
     });
 }
 
+/// The hover of the keeper's X and Y fields and their arrows.
+const SPOT_FIXED: &str = "The goalkeeper's spot is fixed";
+
+/// A stepper over `value` in `0..=max` (the draft's `.spin`): `⏴`, the
+/// number and `⏵` joined into one box as wide as the number box alone
+/// was, so the popover is no wider. An arrow's click steps the value by
+/// one, clamped into the range, so a stored value past it steps back to
+/// the range's end; each arrow is disabled at its end of the range. The
+/// number keeps the wheel's step and does not clamp a stored value on
+/// draw. `enabled` false (the keeper's spot) disables all three under
+/// `SPOT_FIXED`.
+fn stepper(ui: &mut egui::Ui, value: &mut u8, max: u8, enabled: bool) {
+    // The draft's widths, 52 points in all: `104` fits the number's 28.
+    // An arrow's cell is 12, but the glyph's advance at the button font is
+    // 12.5, which widens the button by half a point, its glyph centred:
+    // within the one pixel a match allows.
+    const ARROW_WIDTH: f32 = 12.0;
+    const NUMBER_WIDTH: f32 = 28.0;
+    let round = ui.visuals().widgets.inactive.corner_radius;
+    ui.scope(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
+        // The padding would widen an arrow past its 12 points, and the
+        // number past its 28 with `104`.
+        ui.spacing_mut().button_padding.x = 0.0;
+        let arrow = |ui: &mut egui::Ui, glyph: &str, corner_radius, can_step: bool| {
+            let response = cell(ui, ARROW_WIDTH, |ui| {
+                ui.add_enabled(
+                    enabled && can_step,
+                    // Clicks only, as a system spinner's arrows: Tab goes
+                    // from X to Y, and the focused number steps with the
+                    // arrow keys.
+                    egui::Button::new(glyph)
+                        .corner_radius(corner_radius)
+                        .sense(egui::Sense::CLICK),
+                )
+            });
+            // An arrow disabled at its end of the range is no fixed spot.
+            if enabled {
+                response
+            } else {
+                response.on_disabled_hover_text(SPOT_FIXED)
+            }
+        };
+        let left = egui::CornerRadius {
+            ne: 0,
+            se: 0,
+            ..round
+        };
+        if arrow(ui, "⏴", left, *value > 0).clicked() {
+            step_number(value, -1, 0..=max);
+        }
+        let number = cell(ui, NUMBER_WIDTH, |ui| {
+            // Square, so the arrows join it into one box.
+            let widgets = &mut ui.visuals_mut().widgets;
+            for visuals in [
+                &mut widgets.noninteractive,
+                &mut widgets.inactive,
+                &mut widgets.hovered,
+                &mut widgets.active,
+                &mut widgets.open,
+            ] {
+                visuals.corner_radius = egui::CornerRadius::ZERO;
+            }
+            let size = ui.available_size();
+            ui.add_enabled(
+                enabled,
+                egui::DragValue::new(&mut *value)
+                    .range(0..=max)
+                    .clamp_existing_to_range(false)
+                    .min_size(size),
+            )
+            .on_disabled_hover_text(SPOT_FIXED)
+        });
+        step_number(value, wheel_steps(ui, &number), 0..=max);
+        let right = egui::CornerRadius {
+            nw: 0,
+            sw: 0,
+            ..round
+        };
+        if arrow(ui, "⏵", right, *value < max).clicked() {
+            step_number(value, 1, 0..=max);
+        }
+    });
+}
+
+/// `add` in a cell `width` points wide and a widget's row high, its widget
+/// filling the cell with its content centred.
+fn cell<R>(ui: &mut egui::Ui, width: f32, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
+    ui.allocate_ui_with_layout(
+        egui::vec2(width, ui.spacing().interact_size.y),
+        egui::Layout::centered_and_justified(egui::Direction::LeftToRight),
+        add,
+    )
+    .inner
+}
+
 #[cfg(test)]
 mod tests {
-    use egui::accesskit::Role;
+    use egui::accesskit::{self, Role};
     use pes_version::PesVersion;
 
     use super::*;
-    use crate::pitch::tests::marker_point;
+    use crate::pitch::tests::{marker_point, party_hard};
     use crate::test_support::{
-        Headless, centre, controls_right_of, entry, fixture_rows, fixture_tactics, roster_rows,
+        Headless, centre, control_right_of, controls_right_of, entry, fixture_rows,
+        fixture_tactics, roster_rows,
     };
 
     // The draft's `slotPopover`: a click opens the player's slot details —
@@ -556,5 +629,423 @@ mod tests {
             nodes.iter().all(|node| node.label() != Some("Close")),
             "no popover is drawn"
         );
+    }
+
+    /// The stepper's two arrows right of `label` (`"X"` or `"Y"`): `⏴`,
+    /// then `⏵`. A marker under the popover can share the row, so the
+    /// other buttons are left out.
+    fn arrows<'a>(nodes: &'a [accesskit::Node], label: &str) -> [&'a accesskit::Node; 2] {
+        let found: Vec<&accesskit::Node> = controls_right_of(nodes, label, Role::Button)
+            .into_iter()
+            .filter(|node| matches!(node.label(), Some("⏴" | "⏵")))
+            .collect();
+        match found.as_slice() {
+            [down, up, ..] if down.label() == Some("⏴") && up.label() == Some("⏵") => {
+                [down, up]
+            }
+            found => panic!(
+                "no ⏴ ⏵ right of {label:?}: {:?}",
+                found.iter().map(|node| node.label()).collect::<Vec<_>>()
+            ),
+        }
+    }
+
+    /// Opens the popover of slot `index` of preset 1's Kick-off with a
+    /// click on his marker.
+    fn open(
+        window: &mut Headless,
+        tactics: &mut TeamTactics,
+        view: &mut TacticsView,
+        roster: &[RosterRow<'_>],
+        index: usize,
+    ) {
+        let players = tactics.presets[0].formations[0].players;
+        let (nodes, _) = window.pitch(PesVersion::Pes21, tactics, view, roster, vec![]);
+        let at = marker_point(&nodes, &players, index);
+        window.click_pitch(at, PesVersion::Pes21, tactics, view, roster);
+    }
+
+    /// A click on the open popover's arrow `arrow` (0 for `⏴`, 1 for `⏵`)
+    /// right of `label`; answers whether the click's frame changed the
+    /// record.
+    fn click_arrow(
+        window: &mut Headless,
+        label: &str,
+        arrow: usize,
+        tactics: &mut TeamTactics,
+        view: &mut TacticsView,
+        roster: &[RosterRow<'_>],
+    ) -> bool {
+        let (nodes, _) = window.pitch(PesVersion::Pes21, tactics, view, roster, vec![]);
+        let at = centre(arrows(&nodes, label)[arrow]);
+        window
+            .click_pitch(at, PesVersion::Pes21, tactics, view, roster)
+            .1
+    }
+
+    // A click on X's `⏴` lowers the slot's x by one, a click on Y's `⏵`
+    // raises its y by one, each click one edit; nothing else changes.
+    #[test]
+    fn the_arrows_step_x_down_and_y_up_by_one() {
+        let mut window = Headless::sized(600.0, 450.0);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let index = 4;
+        let before = tactics.clone();
+        let slot = before.presets[0].formations[0].players[index];
+        assert!(slot.position != 0, "premise: not the keeper's slot");
+        assert!(slot.x > 0 && slot.y < GRID_Y, "premise: room to step");
+
+        open(&mut window, &mut tactics, &mut view, &roster, index);
+        assert!(
+            click_arrow(&mut window, "X", 0, &mut tactics, &mut view, &roster),
+            "the click on X's ⏴ is an edit"
+        );
+        let mut expect = before.clone();
+        expect.presets[0].formations[0].players[index].x = slot.x - 1;
+        assert_eq!(tactics, expect, "x down by one, alone");
+
+        assert!(
+            click_arrow(&mut window, "Y", 1, &mut tactics, &mut view, &roster),
+            "the click on Y's ⏵ is an edit"
+        );
+        expect.presets[0].formations[0].players[index].y = slot.y + 1;
+        assert_eq!(tactics, expect, "y up by one, alone");
+        assert_eq!(
+            view.popover.map(|open| open.slot),
+            Some(index),
+            "it stays open"
+        );
+    }
+
+    // The arrows take clicks, never the keyboard's focus: with X's number
+    // focused, Tab moves the keyboard straight to Y's number.
+    #[test]
+    fn tab_from_x_moves_the_keyboard_to_y_past_the_arrows() {
+        let mut window = Headless::sized(600.0, 450.0);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        open(&mut window, &mut tactics, &mut view, &roster, 4);
+        let (with_ids, _) = window.frame_at_ids(None, vec![], |ui| {
+            crate::pitch::pitch(
+                ui,
+                "pitch",
+                PesVersion::Pes21,
+                &mut tactics,
+                &mut view,
+                &roster,
+            );
+        });
+        let nodes: Vec<accesskit::Node> = with_ids.iter().map(|(_, node)| node.clone()).collect();
+        // The number field's id right of `label`, matched by its bounds.
+        let field_id = |label: &str| {
+            let bounds = control_right_of(&nodes, label, Role::SpinButton).bounds();
+            with_ids
+                .iter()
+                .find(|(_, node)| node.role() == Role::SpinButton && node.bounds() == bounds)
+                .map(|(id, _)| *id)
+                .unwrap_or_else(|| panic!("no {label} field id"))
+        };
+        let (x_id, y_id) = (field_id("X"), field_id("Y"));
+        let focused = |window: &Headless| {
+            window
+                .ctx
+                .memory(|memory| memory.focused().map(|id| id.accesskit_id()))
+        };
+
+        let x_field = control_right_of(&nodes, "X", Role::SpinButton);
+        window.click_pitch(
+            centre(x_field),
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+        );
+        assert_eq!(
+            focused(&window),
+            Some(x_id),
+            "premise: X's number is focused"
+        );
+        window.pitch(
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+            vec![egui::Event::Key {
+                key: egui::Key::Tab,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            }],
+        );
+        assert_eq!(focused(&window), Some(y_id), "Tab moved the keyboard to Y");
+    }
+
+    // A step applies the drop rule as a typed Y does: PARTY HARD, team
+    // 718's LMF in slot 8 at (20, 26), stays an LMF while Y's `⏵` takes
+    // him up to 34, the midfield band's top; the next click puts him at
+    // 35, in the forwards' band, which offers SS and LWF, and his higher
+    // overall makes him an LWF, 86 against 84.
+    #[test]
+    fn a_y_stepped_into_the_forwards_band_makes_party_hard_an_lwf() {
+        let rows = fixture_rows(PesVersion::Pes21);
+        let mut roster = roster_rows(&rows);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        party_hard(&mut tactics, &mut roster);
+        let mut window = Headless::sized(600.0, 450.0);
+        let mut view = TacticsView::default();
+        let index = 8;
+        let before = tactics.clone();
+        let slot = before.presets[0].formations[0].players[index];
+        assert_eq!(
+            (position_label(slot.position), slot.x, slot.y),
+            ("LMF", 20, 26),
+            "premise: PARTY HARD's spot"
+        );
+
+        open(&mut window, &mut tactics, &mut view, &roster, index);
+        for _ in 26..34 {
+            click_arrow(&mut window, "Y", 1, &mut tactics, &mut view, &roster);
+        }
+        let stepped = tactics.presets[0].formations[0].players[index];
+        assert_eq!(
+            (position_label(stepped.position), stepped.x, stepped.y),
+            ("LMF", 20, 34),
+            "an LMF up to the midfield band's top"
+        );
+        click_arrow(&mut window, "Y", 1, &mut tactics, &mut view, &roster);
+        let stepped = tactics.presets[0].formations[0].players[index];
+        assert_eq!(
+            (position_label(stepped.position), stepped.x, stepped.y),
+            ("LWF", 20, 35),
+            "an LWF at 35"
+        );
+        let mut expect = before;
+        expect.presets[0].formations[0].players[index] = stepped;
+        assert_eq!(tactics, expect, "his slot alone changes");
+    }
+
+    // A stored x past the range (110) steps back into it: `⏵` is
+    // disabled and one click on `⏴` gives 104, the range's end.
+    #[test]
+    fn a_stored_x_past_the_range_steps_back_to_its_end() {
+        let mut window = Headless::sized(600.0, 450.0);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let index = 4;
+        tactics.presets[0].formations[0].players[index].x = 110;
+
+        open(&mut window, &mut tactics, &mut view, &roster, index);
+        let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+        let [down, up] = arrows(&nodes, "X");
+        assert!(!down.is_disabled(), "⏴ is enabled past the range");
+        assert!(up.is_disabled(), "⏵ is disabled past the range");
+        assert!(
+            click_arrow(&mut window, "X", 0, &mut tactics, &mut view, &roster),
+            "the click is an edit"
+        );
+        assert_eq!(
+            tactics.presets[0].formations[0].players[index].x, GRID_X,
+            "one ⏴ from 110 gives 104"
+        );
+    }
+
+    // Each arrow is disabled at its end of the range: at x 0 `⏴`, at x
+    // 104 `⏵`, and a click on the disabled one writes nothing. Neither
+    // shows the keeper's hover: the spot is not fixed.
+    #[test]
+    fn each_arrow_is_disabled_at_its_end_of_the_range() {
+        let mut window = Headless::sized(600.0, 450.0);
+        window
+            .ctx
+            .global_style_mut(|style| style.interaction.tooltip_delay = 0.0);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let index = 4;
+        open(&mut window, &mut tactics, &mut view, &roster, index);
+
+        for (x, disabled) in [(0, 0), (GRID_X, 1)] {
+            tactics.presets[0].formations[0].players[index].x = x;
+            let (nodes, _) =
+                window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+            let pair = arrows(&nodes, "X");
+            assert!(
+                pair[disabled].is_disabled(),
+                "at x {x} arrow {disabled} is disabled"
+            );
+            assert!(
+                !pair[1 - disabled].is_disabled(),
+                "at x {x} the other is enabled"
+            );
+            let at = centre(pair[disabled]);
+            assert!(
+                !click_arrow(&mut window, "X", disabled, &mut tactics, &mut view, &roster),
+                "at x {x} the disabled arrow's click writes nothing"
+            );
+            assert_eq!(tactics.presets[0].formations[0].players[index].x, x);
+            assert_eq!(
+                window.pitch_tooltip(
+                    at,
+                    "goalkeeper",
+                    PesVersion::Pes21,
+                    &mut tactics,
+                    &mut view,
+                    &roster,
+                ),
+                None,
+                "at x {x} no keeper's hover"
+            );
+        }
+    }
+
+    // The keeper's popover: all four arrows disabled, under the fields'
+    // hover "The goalkeeper's spot is fixed".
+    #[test]
+    fn the_keepers_four_arrows_are_disabled() {
+        let mut window = Headless::sized(600.0, 450.0);
+        window
+            .ctx
+            .global_style_mut(|style| style.interaction.tooltip_delay = 0.0);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let keeper = tactics.presets[0].formations[0]
+            .players
+            .iter()
+            .position(|slot| slot.position == 0)
+            .expect("the fixture has a keeper slot");
+        let slot = tactics.presets[0].formations[0].players[keeper];
+        assert!(
+            slot.x > 0 && slot.x < GRID_X && slot.y > 0 && slot.y < GRID_Y,
+            "premise: no arrow is at its end of the range"
+        );
+
+        open(&mut window, &mut tactics, &mut view, &roster, keeper);
+        for label in ["X", "Y"] {
+            for arrow in 0..2 {
+                let (nodes, _) =
+                    window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+                let node = arrows(&nodes, label)[arrow];
+                assert!(node.is_disabled(), "the keeper's {label} arrow {arrow}");
+                assert_eq!(
+                    window.pitch_tooltip(
+                        centre(node),
+                        "goalkeeper",
+                        PesVersion::Pes21,
+                        &mut tactics,
+                        &mut view,
+                        &roster,
+                    ),
+                    Some("The goalkeeper's spot is fixed".to_owned()),
+                    "the {label} arrow {arrow}'s hover"
+                );
+            }
+        }
+    }
+
+    // The draft's `.spin`: each stepper is one box 52 wide and 18 high,
+    // `⏴` 12, the number 28 and `⏵` 12, each touching the next; the
+    // outer corners rounded as a button's, the inner ones and the
+    // number's square. An arrow measures 12.5, its glyph's advance, and
+    // the box 53: within the one point allowed.
+    #[test]
+    fn each_stepper_is_one_box_as_wide_as_the_number_box_was() {
+        let mut window = Headless::sized(600.0, 450.0);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        open(&mut window, &mut tactics, &mut view, &roster, 4);
+        let (nodes, shapes) = window.frame(vec![], |ui| {
+            crate::pitch::pitch(
+                ui,
+                "pitch",
+                PesVersion::Pes21,
+                &mut tactics,
+                &mut view,
+                &roster,
+            );
+        });
+        let round = window
+            .ctx
+            .global_style()
+            .visuals
+            .widgets
+            .inactive
+            .corner_radius;
+        let left = egui::CornerRadius {
+            ne: 0,
+            se: 0,
+            ..round
+        };
+        let right = egui::CornerRadius {
+            nw: 0,
+            sw: 0,
+            ..round
+        };
+        // The corners of the frame painted over `bounds`.
+        let corners = |bounds: accesskit::Rect| {
+            shapes
+                .iter()
+                .find_map(|clipped| match &clipped.shape {
+                    egui::Shape::Rect(shape)
+                        if (f64::from(shape.rect.min.x) - bounds.x0).abs() <= 0.5
+                            && (f64::from(shape.rect.max.x) - bounds.x1).abs() <= 0.5
+                            && (f64::from(shape.rect.min.y) - bounds.y0).abs() <= 0.5
+                            && (f64::from(shape.rect.max.y) - bounds.y1).abs() <= 0.5 =>
+                    {
+                        Some(shape.corner_radius)
+                    }
+                    _ => None,
+                })
+                .unwrap_or_else(|| panic!("no frame painted over {bounds:?}"))
+        };
+        for label in ["X", "Y"] {
+            let [down, up] = arrows(&nodes, label).map(|node| node.bounds().expect("bounds"));
+            let number = control_right_of(&nodes, label, Role::SpinButton)
+                .bounds()
+                .expect("bounds");
+            for (part, bounds, width) in
+                [("⏴", down, 12.0), ("number", number, 28.0), ("⏵", up, 12.0)]
+            {
+                assert!(
+                    (bounds.x1 - bounds.x0 - width).abs() <= 1.0,
+                    "{label}'s {part} is {width} wide: {bounds:?}"
+                );
+                assert!(
+                    (bounds.y1 - bounds.y0 - 18.0).abs() <= 1.0,
+                    "{label}'s {part} is 18 high: {bounds:?}"
+                );
+                assert!(
+                    (bounds.y0 - down.y0).abs() <= 1.0,
+                    "{label}'s {part} is on the box's row: {bounds:?} vs {down:?}"
+                );
+            }
+            assert!(
+                (number.x0 - down.x1).abs() <= 1.0 && (up.x0 - number.x1).abs() <= 1.0,
+                "{label}'s three parts touch: {down:?} {number:?} {up:?}"
+            );
+            assert!(
+                (up.x1 - down.x0 - 52.0).abs() <= 1.0,
+                "{label}'s stepper is 52 wide: {down:?} to {up:?}"
+            );
+            assert_eq!(corners(down), left, "{label}'s ⏴ rounds its outer corners");
+            assert_eq!(
+                corners(number),
+                egui::CornerRadius::ZERO,
+                "{label}'s number is square"
+            );
+            assert_eq!(corners(up), right, "{label}'s ⏵ rounds its outer corners");
+        }
     }
 }

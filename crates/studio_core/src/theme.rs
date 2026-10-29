@@ -464,7 +464,7 @@ mod tests {
 
     #[test]
     fn every_symbol_the_views_draw_resolves_a_glyph_after_install() {
-        const SYMBOLS: &str = "→↓↻∉−≠≡≤ⓘ⏷▶▸▾●⚠✔✕✖⠇…›•";
+        const SYMBOLS: &str = "→↓↻∉−≠≡≤ⓘ⏴⏵⏷▶▸▾●⚠✔✕✖⠇…›•";
         let ctx = egui::Context::default();
         install(&ctx);
         ctx.run_ui(egui::RawInput::default(), |_| {})
