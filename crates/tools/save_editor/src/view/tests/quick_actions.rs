@@ -707,7 +707,7 @@ fn the_quick_actions_reach_the_panes_bottom() {
     // The quick actions' band: the bottom panel's painted frame under the
     // list — a shallow strip inside the pane's x range near its bottom.
     let band = frame(&shapes, &|shape| {
-        shape.rect.min.x > 10.0
+        shape.rect.min.x >= pane.min.x
             && shape.rect.max.x < pane.max.x - 1.0
             && shape.rect.height() < 200.0
             && shape.rect.max.y > pane.max.y - 100.0

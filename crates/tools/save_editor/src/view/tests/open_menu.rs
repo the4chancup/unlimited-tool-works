@@ -112,7 +112,7 @@ fn entries(nodes: &[accesskit::Node], first: &str) -> Vec<String> {
 }
 
 /// The PES 19 entry's label, the first of the menu.
-const PES19_ENTRY: &str = "PES 2019  (292733975847239680)";
+const PES19_ENTRY: &str = "PES 2019 (292733975847239680)";
 
 // SE-GUI-26
 #[test]
@@ -131,8 +131,8 @@ fn the_open_menu_lists_the_discovered_saves_the_recent_file_and_the_picker() {
         entries(&nodes, PES19_ENTRY),
         [
             PES19_ENTRY.to_owned(),
-            "PES 2021  (76561199320748656)".to_owned(),
-            "PES 2021  (292733975847239680)".to_owned(),
+            "PES 2021 (76561199320748656)".to_owned(),
+            "PES 2021 (292733975847239680)".to_owned(),
             recent.to_owned(),
             "Choose file\u{2026}".to_owned(),
         ],
@@ -145,11 +145,11 @@ fn the_open_menu_lists_the_discovered_saves_the_recent_file_and_the_picker() {
     for (label, tip) in [
         (PES19_ENTRY, tree.pes19.display().to_string()),
         (
-            "PES 2021  (76561199320748656)",
+            "PES 2021 (76561199320748656)",
             tree.pes21_new.display().to_string(),
         ),
         (
-            "PES 2021  (292733975847239680)",
+            "PES 2021 (292733975847239680)",
             tree.pes21_old.display().to_string(),
         ),
         (recent, tree.elsewhere.display().to_string()),

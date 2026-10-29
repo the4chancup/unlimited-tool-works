@@ -922,13 +922,13 @@ const DEFAULT_PANE: egui::Vec2 = egui::vec2(1224.0, 756.0);
 /// A `CentralPanel`'s inner margin on each side (egui's
 /// `Frame::central_panel`, `inner_margin(8)`): the shell's panel and the
 /// view's own each take one off the pane's edge, but at the right, where
-/// the view's own is 4 (`PANE_RIGHT`).
+/// the view has none (`PANE_RIGHT`).
 const PANEL_MARGIN: f32 = 8.0;
 
-/// The detail pane's right edge at `DEFAULT_PANE`: 12 points short of the
-/// window's edge, as the draft's `.detail` content ends (1268 of the
-/// 1280-point client).
-const PANE_RIGHT: f32 = DEFAULT_PANE.x - 12.0;
+/// The detail pane's right edge at `DEFAULT_PANE`: the view's, the shell's
+/// margin short of the window's edge, as the draft's `.detail` content
+/// ends (1272 of the 1280-point client).
+const PANE_RIGHT: f32 = DEFAULT_PANE.x - PANEL_MARGIN;
 
 /// The bounds of the Label node showing `value` (a grid's label cell).
 fn label_bounds(nodes: &[accesskit::Node], value: &str) -> accesskit::Rect {
