@@ -76,7 +76,7 @@ Neither will write over the save that is open.
 
 **Importing a team file**
 
-Below that row, **Pick…** opens a team file to import into the selected team: a
+Below the panel's top row, **Pick…** opens a team file to import into the selected team: a
 Team TOML (`.toml`), a squad file (`.4ccs`), a tactics file (`.4cct`) or a
 Texport. A squad file lists which record goes to which player.
 

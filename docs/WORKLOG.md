@@ -2863,10 +2863,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         → verify: `studio`'s help tests and the help export; every topic read in the built
         window. Done 2026-10-30 (Opus sidekick, merged `be189f7f`): a subheading per subject,
         menus, choices, rules and exit codes as lists; the lead read every new chapter and the
-        sidekick's word audit (each reworded sentence, old and new) and found no fact changed; `help/*.md`, `help/core/{install,data_location}.md`, `index.html`'s
-        `HELP`. The drafts' `md()` draws no numbered list (none used yet: it learns them with
-        the first chapter that needs one). Open: the read in the built window (the built-window
-        check before the next candidate); the SWE-2 round (an Opus slice)
+        sidekick's word audit (each reworded sentence, old and new) and found no fact
+        changed; `help/*.md`, `help/core/{install,data_location}.md`, `index.html`'s `HELP`.
+        The drafts' `md()` draws no numbered list (none used yet: it learns them with the
+        first chapter that needs one). SWE-2 S1e1: 4 accepted, the loop ended; the three
+        wording fixes landed with the rulings (`.tmp/8_29d/rulings_e1.md`). Open: the read in
+        the built window (the built-window check before the next candidate)
+        - [ ] e1r the help search's labels as plain text (S1a-4; DECISIONS "A help search
+          hit's label is plain text", drafted in `index.html`'s `helpSearch`):
+          `help_window.rs` `search` drops `**`, backticks and a list item's leading dash
+          from the label's line → verify: a test searching "writing a save" gets the label
+          `Save editor › Running from a terminal › Writing a save`, and "next to the program"
+          one starting `… › Next to the program puts`
       - [ ] e2 after 0.0.1: the Team compiler's, the Export upgrader's and the other tools'
         chapters
   - [ ] 8.21 the app's font in the drafts (`core/gui.md` "The host's other review aids"; after

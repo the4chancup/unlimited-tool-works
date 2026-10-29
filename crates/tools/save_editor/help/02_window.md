@@ -37,9 +37,9 @@ shirt name or id, so you can find someone without knowing their team first.
 
 **Reordering a team**
 
-With the filter empty, drag a player row onto another row of his team to move him to that
-place; a drop on another team's row does nothing. The shirt number and the in-game face and
-hairstyle belong to the place, so they stay where they were.
+With the filter box empty, drag a player row onto another row of his team to move him to
+that place; a drop on another team's row does nothing. The shirt number and the in-game face
+and hairstyle belong to the place, so they stay where they were.
 
 **Editing**
 

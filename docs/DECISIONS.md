@@ -13955,3 +13955,19 @@ shows.
 Plan: `plans/aatf_rules.md` "The ruleset schema"; `plans/save_editor.md` "Editing UI",
 "The event logo"; `plans/ruleset_editor.md` "The editor", General; SE-GUI-44, RE-GUI-19,
 RE-FILE-09.
+
+## 2026-10-30 — gui — A help search hit's label is plain text
+The help search labels a paragraph hit with its matching line, shown without its Markdown
+marks: no `**`, no backticks, no list item's dash. The window and the draft both strip
+them.
+Why: since the help chapters gained bold subheadings and lists, a search for "saving" lists
+"**Saving**" with its asterisks, and a list item's hit starts with "- ": a label draws no
+Markdown, so the marks only clutter it. Found by the SWE-2 review of 8.29e1 (S1a-4).
+Plan: `plans/core/gui.md` "Help window", the Search bullet.
+
+## 2026-10-30 — save_editor — The event logo's tooltip says a click opens the page
+With a page, the event logo's tooltip is the event's name, a blank line, "Click here to open
+the event's page:", and the address on its own line; without one, the name alone.
+Why: the maintainer's wording, replacing the draft's "Opens <address>": it tells a member
+the logo is a link and what it leads to before the address.
+Plan: `plans/save_editor.md` "Editing UI", "The event logo"; SE-GUI-44.

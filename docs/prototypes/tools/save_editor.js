@@ -3894,7 +3894,7 @@ function eventLogo() {
   const rs = RULESETS[D.ruleset];
   if (!rs || !rs.logo) return null;
   const img = h("img", { class: "event-logo" + (rs.page ? " link" : ""), id: "event-logo", src: rs.logo,
-    alt: rs.label, title: rs.page ? rs.label + "\nOpens " + rs.page : rs.label,
+    alt: rs.label, title: rs.page ? rs.label + "\n\nClick here to open the event's page:\n" + rs.page : rs.label,
     onclick: rs.page ? () => window.open(rs.page, "_blank", "noopener") : null });
   requestAnimationFrame(() => {
     const bar = document.querySelector(".toolbar");
