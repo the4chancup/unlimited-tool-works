@@ -23,7 +23,7 @@ use pes_savefile::model::names::display_name;
 use studio_core::widgets::{checkbox, menu_button};
 use team_widgets::pitch::{self, FORMATIONS};
 use team_widgets::tactics::{self, FieldedMark, Medal, RosterRow};
-use team_widgets::violations::violation_line;
+use team_widgets::violations::{Wording, violation_line};
 
 use crate::session::Session;
 use crate::view::worker::{Pending, WorkerResult};
@@ -179,7 +179,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                             preset: usize::from(preset) - 1,
                             position: position.byte(),
                             error: violation.severity == aatf::Severity::Error,
-                            line: violation_line(violation, team_id, active.rules.ruleset()),
+                            line: violation_line(
+                                violation,
+                                team_id,
+                                Wording {
+                                    ruleset: active.rules.ruleset(),
+                                    version: session.version(),
+                                },
+                            ),
                         })
                     } else {
                         None

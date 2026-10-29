@@ -17,7 +17,7 @@ use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::tactics::TeamTactics;
 use team_widgets::tactics::TacticsView;
 use team_widgets::violations::{
-    ListUse, ListedPlayer, SelectedPlayer, TeamViolations, violations_list,
+    ListUse, ListedPlayer, SelectedPlayer, TeamViolations, Wording, violations_list,
 };
 
 use crate::session::rules::{self, TeamCheck};
@@ -158,8 +158,9 @@ pub(super) fn team_name(file: &EditFile, id: u32) -> &str {
 
 /// The check's results: one error-coloured line per team whose check
 /// failed (as `check-aatf` reports it), then the `violations_list` itself,
-/// its rows worded under `ruleset` (the active one) and drawn for
-/// `list_use`. Returns the player whose row was clicked this frame.
+/// its rows worded under `ruleset` (the active one) and `file`'s version,
+/// and drawn for `list_use`. Returns the player whose row was clicked this
+/// frame.
 pub(super) fn results(
     ui: &mut egui::Ui,
     file: &EditFile,
@@ -205,7 +206,11 @@ pub(super) fn results(
             }),
         }
     }
-    violations_list(ui, id_salt, &teams, ruleset, list_use)
+    let wording = Wording {
+        ruleset,
+        version: file.version(),
+    };
+    violations_list(ui, id_salt, &teams, wording, list_use)
 }
 
 /// Team `id`'s rostered players as the list's `ListedPlayer`s, in slot

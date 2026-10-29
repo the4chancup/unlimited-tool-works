@@ -316,6 +316,29 @@ fn the_stats_fill_one_column_in_the_games_order() {
     }
 }
 
+// The stats are named as the save's game names them: PES 2017 calls
+// heading Header, PES 2021 keeps Heading. The Other stats read Injury
+// Resistance and Weak Foot: Usage on both. The Skills panel's Heading is a
+// card, a checkbox, so only the labels are read.
+#[test]
+fn the_stats_are_named_as_the_saves_game_names_them() {
+    for (version, heading, other) in [
+        (PesVersion::Pes17, "Header", "Heading"),
+        (PesVersion::Pes21, "Heading", "Header"),
+    ] {
+        let path = fixture(version, &format!("stat_names_{}", version.number()));
+        let mut view = SaveView::new();
+        view.open(&path);
+        let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        assert!(label_value(&nodes, heading), "{version:?}: {heading} drawn");
+        assert!(!label_value(&nodes, other), "{version:?}: no {other} label");
+        for label in ["Injury Resistance", "Weak Foot: Usage"] {
+            assert!(label_value(&nodes, label), "{version:?}: {label} drawn");
+        }
+    }
+}
+
 // The ability stats' labels stand left-aligned in one column: every
 // label's left edge at the label cell's, the cell padding (6) in from the
 // panel's title, a short label (Jump) at the same x as a long one
@@ -901,14 +924,14 @@ fn the_shifted_fields_show_one_above_stored_and_store_one_below() {
     for (appearance, label, shown, typed, expected) in [
         (
             false,
-            "Injury resistance",
+            "Injury Resistance",
             "1",
             "3",
             (7, 2, 1, 1, Some(0), Some(0)),
         ),
         (
             false,
-            "Weak foot: Usage",
+            "Weak Foot: Usage",
             "2",
             "4",
             (7, 2, 3, 1, Some(0), Some(0)),
@@ -2294,8 +2317,8 @@ fn the_player_view_lays_out_its_three_columns_at_1280() {
         ("Height", Role::SpinButton),
         ("Weight", Role::SpinButton),
         ("Age", Role::SpinButton),
-        ("Injury resistance", Role::SpinButton),
-        ("Weak foot: Usage", Role::SpinButton),
+        ("Injury Resistance", Role::SpinButton),
+        ("Weak Foot: Usage", Role::SpinButton),
     ] {
         let bounds = right_of_label(&nodes, label, role)[0]
             .bounds()
@@ -2353,8 +2376,8 @@ fn the_player_view_lays_out_its_three_columns_at_1280() {
             ("Shirt number", Role::SpinButton),
             ("Nation", Role::SpinButton),
             ("Captain", Role::RadioButton),
-            ("Injury resistance", Role::SpinButton),
-            ("Weak foot: Usage", Role::SpinButton),
+            ("Injury Resistance", Role::SpinButton),
+            ("Weak Foot: Usage", Role::SpinButton),
             ("Form", Role::SpinButton),
             ("Accuracy", Role::SpinButton),
         ],
@@ -2610,10 +2633,10 @@ fn general_info_and_other_stats_stand_six_in_from_their_titles() {
         );
     }
     let other = label_bounds(&nodes, "Other stats").x0;
-    let injury = label_bounds(&nodes, "Injury resistance").x0;
+    let injury = label_bounds(&nodes, "Injury Resistance").x0;
     assert!(
         (injury - other - 6.0).abs() <= 0.5,
-        "Injury resistance 6 in from Other stats' title ({injury} vs {other})"
+        "Injury Resistance 6 in from Other stats' title ({injury} vs {other})"
     );
 }
 

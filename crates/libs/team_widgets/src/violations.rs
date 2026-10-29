@@ -3,7 +3,8 @@
 //! per player, a row's click reporting the player to select. The AATF panel,
 //! the Live AATF dock and the Team creator all draw this list.
 
-use pes_savefile::interchange::team_toml::labels::title_case;
+use pes_savefile::interchange::team_toml::labels::{stat_name, title_case};
+use pes_version::PesVersion;
 
 /// The failing glyph (`✖`, U+2716): egui's bundled emoji fonts hold
 /// it, and the theme keeps those fonts in the fallback chain. The icon
@@ -83,15 +84,26 @@ pub enum ListUse {
     Report,
 }
 
-/// The AATF results of `teams` under `ruleset`, the rules they were checked
-/// against (the rows name its tiers, brackets and systems by their labels),
-/// grouped per player, as `list_use` says. Returns the player whose row was
-/// clicked this frame.
+/// What the rows name things from: the rules a check ran under, whose
+/// labels name its tiers, brackets and height systems, and the PES version
+/// of the save it checked, whose game names the stats (PES 2017's Header).
+#[derive(Clone, Copy)]
+pub struct Wording<'a> {
+    /// The rules the check ran under.
+    pub ruleset: &'a aatf::Ruleset,
+    /// The checked save's PES version.
+    pub version: PesVersion,
+}
+
+/// The AATF results of `teams`, worded as `wording` says (the rules they
+/// were checked against and the checked save's version), grouped per
+/// player, as `list_use` says. Returns the player whose row was clicked
+/// this frame.
 pub fn violations_list(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,
     teams: &[TeamViolations<'_>],
-    ruleset: &aatf::Ruleset,
+    wording: Wording<'_>,
     list_use: ListUse,
 ) -> Option<SelectedPlayer> {
     ui.push_id(id_salt, |ui| {
@@ -121,7 +133,7 @@ pub fn violations_list(
             for (slot, violations) in groups {
                 group_header(ui, team, slot);
                 for violation in violations {
-                    if let Some(player) = row(ui, team.team_id, violation, ruleset, selects) {
+                    if let Some(player) = row(ui, team.team_id, violation, wording, selects) {
                         selected = Some(player);
                     }
                 }
@@ -151,7 +163,7 @@ pub fn violations_list(
                         .iter()
                         .filter(|v| v.slot == slot && v.severity == aatf::Severity::Suggestion)
                     {
-                        if let Some(player) = row(ui, team.team_id, violation, ruleset, selects) {
+                        if let Some(player) = row(ui, team.team_id, violation, wording, selects) {
                             selected = Some(player);
                         }
                     }
@@ -216,15 +228,11 @@ pub fn player_head(id: u32, number: u16, name: &str) -> String {
 /// `sentence` (`Height: height 185 takes no bracket`): the row's
 /// accessible label, and the line a Live AATF cross's tooltip shows so
 /// both read the same.
-pub fn violation_line(
-    violation: &aatf::Violation,
-    team_id: u32,
-    ruleset: &aatf::Ruleset,
-) -> String {
+pub fn violation_line(violation: &aatf::Violation, team_id: u32, wording: Wording<'_>) -> String {
     format!(
         "{}: {}",
         rule_name(&violation.kind),
-        sentence(violation, team_id, ruleset)
+        sentence(violation, team_id, wording)
     )
 }
 
@@ -246,9 +254,9 @@ pub fn rule_name(kind: &aatf::ViolationKind) -> &'static str {
         K::Stat { .. } => "Stat",
         K::StatTotal { .. } => "Stat total",
         K::Form { .. } => "Form",
-        K::InjuryResistance { .. } => "Injury resistance",
-        K::WeakFootUsage { .. } => "Weak foot usage",
-        K::WeakFootAccuracy { .. } => "Weak foot accuracy",
+        K::InjuryResistance { .. } => "Injury Resistance",
+        K::WeakFootUsage { .. } => "Weak Foot Usage",
+        K::WeakFootAccuracy { .. } => "Weak Foot Accuracy",
         K::NameColor { .. } => "Name colour",
         K::Cards { .. } | K::MinCards { .. } => "Cards",
         K::SkillCardCap { .. } => "Skill cards",
@@ -315,7 +323,7 @@ fn row(
     ui: &mut egui::Ui,
     team_id: u32,
     violation: &aatf::Violation,
-    ruleset: &aatf::Ruleset,
+    wording: Wording<'_>,
     selects: bool,
 ) -> Option<SelectedPlayer> {
     let (rule_color, strong_color) = {
@@ -337,7 +345,7 @@ fn row(
         rule_color,
         egui::text::TextWrapping::truncate_at_width(RULE_COL),
     );
-    let text = sentence(violation, team_id, ruleset);
+    let text = sentence(violation, team_id, wording);
     let sentence_galley = layout(
         ui,
         text.clone(),
@@ -370,7 +378,7 @@ fn row(
             egui::Sense::hover()
         },
     );
-    let label = violation_line(violation, team_id, ruleset);
+    let label = violation_line(violation, team_id, wording);
     // A report's rows select nothing, so no tooltip talks of selecting.
     let hover = match (select, selects) {
         (Some(_), _) => Some("Select this player"),
@@ -523,14 +531,16 @@ fn setting_words(setting: &str) -> &str {
 }
 
 /// What is wrong with `violation`, in the draft's `violationSentence` wording:
-/// one arm per `ViolationKind`, each stat and card named as the game names
-/// it (Attacking Prowess) and each tier, bracket and height system by its
-/// label in `ruleset`, the rules the check ran under. `team_id` is the
+/// one arm per `ViolationKind`, each stat named as the game of
+/// `wording.version` names it (PES 2017's Header), each card as the game
+/// names it (Heading) and each tier, bracket and height system by its
+/// label in `wording.ruleset`, the rules the check ran under. `team_id` is the
 /// team's, for the rules whose expected value it sets (the roster order's
 /// `team id x 100 + slot + 1`). The row's text after the rule's name; a host
 /// writing the list out as text writes it so.
-pub fn sentence(violation: &aatf::Violation, team_id: u32, ruleset: &aatf::Ruleset) -> String {
+pub fn sentence(violation: &aatf::Violation, team_id: u32, wording: Wording<'_>) -> String {
     use aatf::ViolationKind as K;
+    let ruleset = wording.ruleset;
     match &violation.kind {
         K::RegisteredNotA { rated_a } => format!(
             "the registered position is not rated A{}",
@@ -574,7 +584,7 @@ pub fn sentence(violation: &aatf::Violation, team_id: u32, ruleset: &aatf::Rules
             target,
             ..
         } => {
-            let stat = title_case(stat.label());
+            let stat = stat_name(wording.version, stat.label());
             // A warning is an `at_most` stat inside its band; an error, over
             // a maximum or off an exact target, reads as any bound does.
             if violation.severity == aatf::Severity::Warning {
@@ -586,10 +596,23 @@ pub fn sentence(violation: &aatf::Violation, team_id: u32, ruleset: &aatf::Rules
         K::StatTotal { total, limit } => {
             format!("the stats add up to {total}, over the limit of {limit}")
         }
-        K::Form { value, target } => format!("form {value}, where the rules want {target}"),
-        K::InjuryResistance { value, max } => bound("injury resistance", *value, *max),
-        K::WeakFootUsage { value, max } => bound("weak foot usage", *value, *max),
-        K::WeakFootAccuracy { value, max } => bound("weak foot accuracy", *value, *max),
+        K::Form { value, target } => format!(
+            "{} {value}, where the rules want {target}",
+            stat_name(wording.version, "form")
+        ),
+        K::InjuryResistance { value, max } => bound(
+            &stat_name(wording.version, "injury_resistance"),
+            *value,
+            *max,
+        ),
+        K::WeakFootUsage { value, max } => {
+            bound(&stat_name(wording.version, "weak_foot_usage"), *value, *max)
+        }
+        K::WeakFootAccuracy { value, max } => bound(
+            &stat_name(wording.version, "weak_foot_accuracy"),
+            *value,
+            *max,
+        ),
         K::NameColor { color, expected } => match expected.as_deref() {
             Some(expected) => format!(
                 "name colour {}, where his tier wants {}",
@@ -710,7 +733,7 @@ pub fn sentence(violation: &aatf::Violation, team_id: u32, ruleset: &aatf::Rules
             allowance,
             used,
             allowed,
-        } => unused_sentence(allowance, *used, *allowed),
+        } => unused_sentence(allowance, *used, *allowed, wording.version),
         K::UnusedChoice { special } => format!("no option of {special} taken"),
         K::RosterOrder { player } => match violation.slot {
             Some(slot) => format!(
@@ -725,19 +748,17 @@ pub fn sentence(violation: &aatf::Violation, team_id: u32, ruleset: &aatf::Rules
 /// An `Unused` suggestion's sentence, the draft's `unusedSentence`: an
 /// allowance the rules give that the player leaves unspent, in the words the
 /// Ruleset editor's Suggestions form uses for it; a card group's free cards
-/// under the group's name.
-fn unused_sentence(allowance: &str, used: u8, allowed: u8) -> String {
+/// under the group's name, a stat under the name the game of `version`
+/// gives it.
+fn unused_sentence(allowance: &str, used: u8, allowed: u8, version: PesVersion) -> String {
     match allowance {
         "cards" => format!("{used} of {allowed} paid cards used"),
         "a_positions" => format!("{used} of {allowed} A positions used"),
         "free_cards" => format!("{used} of {allowed} free cards held"),
-        "weak_foot_usage" => format!("weak foot usage {used}, where the rules allow {allowed}"),
-        "weak_foot_accuracy" => {
-            format!("weak foot accuracy {used}, where the rules allow {allowed}")
-        }
-        "injury_resistance" => {
-            format!("injury resistance {used}, where the rules allow {allowed}")
-        }
+        "weak_foot_usage" | "weak_foot_accuracy" | "injury_resistance" => format!(
+            "{} {used}, where the rules allow {allowed}",
+            stat_name(version, allowance)
+        ),
         "height" => format!("height {used}, where the bracket allows {allowed}"),
         "com" => format!("{used} of {allowed} free COM styles held"),
         group => format!("{used} of {allowed} free {} cards held", title_case(group)),
@@ -771,7 +792,7 @@ mod tests {
                     ui,
                     "list",
                     teams,
-                    official(),
+                    official_17(),
                     ListUse::Editing { show_suggestions },
                 ));
             });
@@ -824,6 +845,15 @@ mod tests {
         static OFFICIAL: std::sync::LazyLock<aatf::Ruleset> =
             std::sync::LazyLock::new(|| aatf::Rules::official().ruleset().clone());
         &OFFICIAL
+    }
+
+    /// The official ruleset's wording on a PES 2017 save: the fixture
+    /// save's version, whose game names the stats.
+    fn official_17() -> Wording<'static> {
+        Wording {
+            ruleset: official(),
+            version: PesVersion::Pes17,
+        }
     }
 
     /// A `Violation` on `slot` of `severity` and `kind`.
@@ -992,7 +1022,7 @@ mod tests {
                     ui,
                     "list",
                     &teams,
-                    official(),
+                    official_17(),
                     ListUse::Report,
                 ));
             });
@@ -1207,16 +1237,16 @@ mod tests {
                 "Suggestions",
                 "Player 73410  46 DFW",
                 "Unused: 4 of 5 paid cards used",
-                "Unused: weak foot usage 2, where the rules allow 4",
+                "Unused: Weak Foot Usage 2, where the rules allow 4",
                 "Player 73411  1 Start With the Greeks",
                 "Unused: 5 of 6 paid cards used",
-                "Unused: weak foot usage 2, where the rules allow 4",
+                "Unused: Weak Foot Usage 2, where the rules allow 4",
                 "Player 73415  87 A.M. Pinecone",
                 "Unused: 4 of 5 paid cards used",
-                "Unused: weak foot usage 2, where the rules allow 4",
+                "Unused: Weak Foot Usage 2, where the rules allow 4",
                 "Player 73423  2 my diary desu",
                 "Unused: 4 of 5 paid cards used",
-                "Unused: weak foot usage 2, where the rules allow 4",
+                "Unused: Weak Foot Usage 2, where the rules allow 4",
             ]
         );
         assert_eq!(
@@ -1234,7 +1264,7 @@ mod tests {
         use aatf::Severity::{Error, Warning};
         use aatf::ViolationKind as K;
         let player = |severity, kind| violation(Some(1), severity, kind);
-        let sent = |v: &aatf::Violation| sentence(v, 701, official());
+        let sent = |v: &aatf::Violation| sentence(v, 701, official_17());
         assert_eq!(
             sent(&player(
                 Error,
@@ -1328,23 +1358,23 @@ mod tests {
         for (kind, expected) in [
             (
                 K::WeakFootUsage { value: 3, max: 4 },
-                "weak foot usage 3, under the 4 the rules require",
+                "Weak Foot Usage 3, under the 4 the rules require",
             ),
             (
                 K::WeakFootAccuracy { value: 3, max: 4 },
-                "weak foot accuracy 3, under the 4 the rules require",
+                "Weak Foot Accuracy 3, under the 4 the rules require",
             ),
             (
                 K::InjuryResistance { value: 1, max: 3 },
-                "injury resistance 1, under the 3 the rules require",
+                "Injury Resistance 1, under the 3 the rules require",
             ),
             (
                 K::WeakFootUsage { value: 4, max: 2 },
-                "weak foot usage 4, over the 2 the rules allow",
+                "Weak Foot Usage 4, over the 2 the rules allow",
             ),
             (
                 K::WeakFootUsage { value: 3, max: 2 },
-                "weak foot usage 3, over the 2 the rules allow",
+                "Weak Foot Usage 3, over the 2 the rules allow",
             ),
             (
                 K::MinCards { paid: 2, min: 5 },
@@ -1367,7 +1397,7 @@ mod tests {
             sentence(
                 &violation(Some(4), Error, K::RosterOrder { player: 70106 }),
                 701,
-                official()
+                official_17()
             ),
             "the slot holds player 70106, not 70105"
         );
@@ -1384,7 +1414,7 @@ mod tests {
             sentence(
                 &violation(Some(1), aatf::Severity::Error, kind),
                 701,
-                official(),
+                official_17(),
             )
         };
         let positions = |names: &[&str]| names.iter().map(|name| position(name)).collect();
@@ -1521,15 +1551,18 @@ mod tests {
         use aatf::Severity::{Error, Suggestion, Warning};
         use aatf::ViolationKind as K;
         let dbc7 = aatf::builtin("dbc7").expect("dbc7 is built in");
-        let dbc7 = dbc7.ruleset();
+        let dbc7 = Wording {
+            ruleset: dbc7.ruleset(),
+            version: PesVersion::Pes17,
+        };
         let positions = |names: &[&str]| names.iter().map(|name| position(name)).collect();
         let unused = |allowance: &str, used, allowed| K::Unused {
             allowance: allowance.to_string(),
             used,
             allowed,
         };
-        let a26 = official();
-        let rows: Vec<(&aatf::Ruleset, aatf::Severity, K, &str, &str)> = vec![
+        let a26 = official_17();
+        let rows: Vec<(Wording, aatf::Severity, K, &str, &str)> = vec![
             (
                 a26,
                 Error,
@@ -1659,6 +1692,33 @@ mod tests {
             (
                 a26,
                 Error,
+                K::Stat {
+                    stat: stat("heading"),
+                    value: 82,
+                    target: 77,
+                    at_most: true,
+                },
+                "Stat",
+                "Header 82, over the 77 the rules allow",
+            ),
+            (
+                Wording {
+                    version: PesVersion::Pes21,
+                    ..a26
+                },
+                Error,
+                K::Stat {
+                    stat: stat("heading"),
+                    value: 82,
+                    target: 77,
+                    at_most: true,
+                },
+                "Stat",
+                "Heading 82, over the 77 the rules allow",
+            ),
+            (
+                a26,
+                Error,
                 K::StatTotal {
                     total: 1772,
                     limit: 1771,
@@ -1674,28 +1734,28 @@ mod tests {
                     target: 4,
                 },
                 "Form",
-                "form 8, where the rules want 4",
+                "Form 8, where the rules want 4",
             ),
             (
                 a26,
                 Error,
                 K::InjuryResistance { value: 3, max: 1 },
-                "Injury resistance",
-                "injury resistance 3, over the 1 the rules allow",
+                "Injury Resistance",
+                "Injury Resistance 3, over the 1 the rules allow",
             ),
             (
                 a26,
                 Error,
                 K::WeakFootUsage { value: 3, max: 4 },
-                "Weak foot usage",
-                "weak foot usage 3, under the 4 the rules require",
+                "Weak Foot Usage",
+                "Weak Foot Usage 3, under the 4 the rules require",
             ),
             (
                 a26,
                 Error,
                 K::WeakFootAccuracy { value: 3, max: 2 },
-                "Weak foot accuracy",
-                "weak foot accuracy 3, over the 2 the rules allow",
+                "Weak Foot Accuracy",
+                "Weak Foot Accuracy 3, over the 2 the rules allow",
             ),
             (
                 a26,
@@ -1908,21 +1968,21 @@ mod tests {
                 Suggestion,
                 unused("weak_foot_usage", 2, 4),
                 "Unused",
-                "weak foot usage 2, where the rules allow 4",
+                "Weak Foot Usage 2, where the rules allow 4",
             ),
             (
                 a26,
                 Suggestion,
                 unused("weak_foot_accuracy", 2, 4),
                 "Unused",
-                "weak foot accuracy 2, where the rules allow 4",
+                "Weak Foot Accuracy 2, where the rules allow 4",
             ),
             (
                 a26,
                 Suggestion,
                 unused("injury_resistance", 1, 3),
                 "Unused",
-                "injury resistance 1, where the rules allow 3",
+                "Injury Resistance 1, where the rules allow 3",
             ),
             (
                 a26,
@@ -1965,11 +2025,11 @@ mod tests {
         let kinds: std::collections::BTreeSet<&str> =
             rows.iter().map(|(_, _, kind, ..)| kind.rule().0).collect();
         assert_eq!(kinds.len(), 36, "one row or more for each of the 36 kinds");
-        for (ruleset, severity, kind, name, expected) in rows {
+        for (wording, severity, kind, name, expected) in rows {
             // Slot 4 of team 734: the roster order's player 73405.
             let violation = violation(Some(4), severity, kind);
             assert_eq!(rule_name(&violation.kind), name, "{:?}", violation.kind);
-            let text = sentence(&violation, 734, ruleset);
+            let text = sentence(&violation, 734, wording);
             assert_eq!(text, expected, "{:?}", violation.kind);
             let camel = name
                 .as_bytes()
@@ -1978,19 +2038,22 @@ mod tests {
             assert!(!name.contains('_') && !camel, "{name:?}");
             assert!(!text.contains('_') && !text.contains('['), "{text:?}");
             let words: Vec<&str> = text.split(|c: char| !c.is_alphanumeric()).collect();
-            let labelled = ruleset
+            let labelled = wording
+                .ruleset
                 .tiers
                 .iter()
                 .map(|tier| (&tier.id, &tier.label))
                 .chain(
-                    ruleset
+                    wording
+                        .ruleset
                         .heights
                         .brackets
                         .iter()
                         .map(|bracket| (&bracket.id, &bracket.label)),
                 )
                 .chain(
-                    ruleset
+                    wording
+                        .ruleset
                         .heights
                         .systems
                         .iter()
@@ -2024,7 +2087,7 @@ mod tests {
             sentence(
                 &violation(None, aatf::Severity::Error, kind),
                 734,
-                official()
+                official_17()
             ),
             "0 players in the Tall bracket of the purple system, where its quota is 10"
         );

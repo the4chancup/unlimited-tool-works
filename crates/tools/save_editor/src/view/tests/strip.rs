@@ -199,7 +199,7 @@ fn the_pair_rows_stand_22_apart() {
     for pair in [
         ["Height", "Weight"],
         ["Weight", "Age"],
-        ["Injury resistance", "Weak foot: Usage"],
+        ["Injury Resistance", "Weak Foot: Usage"],
     ] {
         let upper = label_bounds(&nodes, pair[0]).y0;
         let lower = label_bounds(&nodes, pair[1]).y0;
@@ -247,8 +247,8 @@ fn general_infos_blocks_stand_6_apart_as_the_drafts() {
         "Registered position",
         "Playing style",
         "Other stats",
-        "Injury resistance",
-        "Weak foot: Usage",
+        "Injury Resistance",
+        "Weak Foot: Usage",
     ] {
         offsets.push((label, label_bounds(&nodes, label).y0 - title));
     }
@@ -262,8 +262,8 @@ fn general_infos_blocks_stand_6_apart_as_the_drafts() {
         ("Registered position", 180.5),
         ("Playing style", 202.5),
         ("Other stats", 233.0),
-        ("Injury resistance", 255.5),
-        ("Weak foot: Usage", 277.5),
+        ("Injury Resistance", 255.5),
+        ("Weak Foot: Usage", 277.5),
     ];
     for ((label, offset), (_, expected)) in offsets.iter().zip(draft) {
         assert!(
@@ -1455,7 +1455,7 @@ fn the_player_header_tops_the_player_view_alone() {
             "Stronger hand",
             "Registered position",
             "Playing style",
-            "Injury resistance",
+            "Injury Resistance",
             "Form",
         ] {
             assert!(label_value(&nodes, label), "{label} drawn");
@@ -1522,8 +1522,8 @@ fn the_field_labels_paint_the_normal_text_colour() {
         "Stronger hand",
         "Registered position",
         "Playing style",
-        "Injury resistance",
-        "Weak foot: Usage",
+        "Injury Resistance",
+        "Weak Foot: Usage",
         "Form",
         "Accuracy",
     ] {
