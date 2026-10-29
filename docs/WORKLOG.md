@@ -2843,7 +2843,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [ ] d3 the stats named as each version names them (P43, accepted 2026-10-29; DECISIONS
         "Stats are named as the save's PES version names them", "Before 0.0.1, only PES
         2017's stat names are checked"):
-        - [ ] d3a before 0.0.1, after d1a (drafted 2026-10-29, the drafts' `statLabel`; DECISIONS
+        - [x] d3a before 0.0.1, after d1a (drafted 2026-10-29, the drafts' `statLabel`; DECISIONS
           "PES 2017's stat names, read off its Edit screen"): a stat-name function in
           `pes_savefile` taking the version, PES 2017's `heading` Header, and Form, Injury
           Resistance, Weak Foot Usage, Weak Foot Accuracy in title case, read by the player
@@ -2851,7 +2851,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           `unused_sentence`, the drafts' `RULE_NAME` and sentences title case), `check-aatf`,
           the Comparator and the changes lists → verify:
           its test per stat for PES 2017 against the maintainer's captures (2026-10-29, the
-          27 names of the Edit screen's ability list)
+          27 names of the Edit screen's ability list). Done 2026-10-30 (Opus sidekick, merged
+          `02796a4a`): `pes_savefile` `labels::stat_name(version, stat)`, one exhaustive match
+          per version; `team_widgets::violations::Wording { ruleset, version }` in every AATF
+          host; `SMALL_STATS` labels title case; files `labels.rs`, `violations.rs`, the save
+          editor's `cli.rs`, `messages.rs`, `abilities.rs`, `terms.rs`, `live_marks.rs`,
+          `multi_aatf.rs`, `aatf_check.rs`, `tactics.rs` and their tests. Open: the SWE-2
+          round (an Opus slice), then the Astra round over d1a + d3a
         - [ ] d3b after 0.0.1: every other version's names, gathered from each game (the
           player.rs doc comments name no versions; Marco's RE reports for PES 2021, the
           games on F: for the rest) → verify: a test per version against the gathered names

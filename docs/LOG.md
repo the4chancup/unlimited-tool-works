@@ -2862,3 +2862,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — The Save editor's help chapters and the two core topics give each subject
   its own subheading and short paragraphs, and put menus, choices and rules in lists; no fact
   changed (8.29e1).
+- **2026-10-30** — Stats are named as PES 2017's Edit screen names them (Header for heading;
+  Form, Injury Resistance and the weak foot in title case) in the player view, the changes
+  lists and every AATF row, through one `stat_name` (8.29d3a).
