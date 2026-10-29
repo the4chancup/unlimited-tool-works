@@ -510,7 +510,7 @@ const savefilePicker = () => picker("pick-savefile", "Savefile",
   v => { S.savefile = v; S.savefileEdited = true; });
 const outputPicker = () => picker("pick-output", "Output into",
   [["C:\\Users\\you\\Downloads", "C:\\Users\\you\\Downloads"],
-    ["C:\\4cc\\4cc-studio\\exports", "C:\\4cc\\4cc-studio\\exports"]],
+    ["C:\\4cc\\unlimited-tool-works-0.0.1\\exports", "C:\\4cc\\unlimited-tool-works-0.0.1\\exports"]],
   v => { S.outputInto = v; S.outputEdited = true; });
 
 // The close stub shown at a run's end after Close when it ends (EU-GUI-07);

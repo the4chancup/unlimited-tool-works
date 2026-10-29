@@ -13292,3 +13292,37 @@ row: the drafts pad a grid cell 2 above and below, egui's `Grid` spaces rows by
 `item_spacing.y`, 3. The theme's `item_spacing` is not changed: it spaces every other layout
 (the lists' rows, the toolbars) the drafts approved at 3.
 Plan: `plans/core/gui.md` "Other UI components" (Form grids).
+
+## 2026-10-29 — core — The project's name in every spelling
+Decision: Unlimited Tool Works, the 0.0.1 preview's codename, is the project's name from 0.0.1
+on (the maintainer's ruling), spelled: `Unlimited Tool Works` for display, including a written
+CPK's `Tvers`; the exe `UTW.exe` on Windows, `utw` on Linux (cargo's bin `utw`, named `UTW.exe`
+by the release recipe); `unlimited-tool-works` for the settings folder, the bundle's folder
+and archives, the CPKs' shared-IDs folder and the window's app id; `utw.log` (`utw.old.log`,
+`utw.dmp`) for the log. The aesthetics patch's `studio_version` key becomes `tool_version`, a
+format's text naming no product. Nothing is read under the old names. The crates, their
+types, the `STUDIO_*` variables and the local folder keep the working name; the docs name the
+project UTW and the glossary keeps "Studio" for the code's names.
+Why: the first release fixes the exe's, the settings folder's and the bundle's names, which a
+later rename would migrate on every member's machine, while no release has written the old
+ones yet (the maintainer's test installs are compiled again). The log is a file a member
+finds and posts, so it carries the shorthand; the crate names reach no user and sit on 268
+lines in 129 files that every slice in flight edits, and renaming them later needs no
+migration.
+Plan: `plans/core/development_plan.md` "The project's name: Unlimited Tool Works";
+`plans/core/distribution.md` "Distribution: portable .7z bundle".
+
+## 2026-10-29 — save_editor — Correction: the quick actions in halves, the player rows 18 high in columns
+Decision: the quick actions' two columns are halves of the list's frame, 6 apart, as the
+draft's `1fr 1fr`, a label longer than its half elided with the tier in its tooltip; the plan
+had them as wide as their widest cells, "not halves always", because egui's text was wider than
+the draft's. A player row's place, position and name are columns (the place weak, the position
+28 wide, the name elided before its dot and mark), every list row 18 high with no gap; the
+Cards left badge's tier and count stand in the draft's chip.
+Why: ov1 measured the build's columns at 81 and 105, ending 50 points short of the frame that
+the column's other controls reach (the maintainer's ruling that they end at the frame), while
+"Make Goalkeeper" now fits a half; the rows were 21 high (a selectable's 18 plus egui's item
+spacing), one string where the draft has columns, and the badge plain text where the draft
+frames it.
+Plan: `plans/save_editor.md` "Editing UI": the Player list and quick actions bullets, the
+skills' Cards left badge.

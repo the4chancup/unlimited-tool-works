@@ -359,7 +359,9 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   `[text](tool-id#topic-slug)` so a topic can point at another tool's topic without knowing where
   it renders.
 - **Window.** An in-app egui window — non-modal and resizable, chapter tree left, rendered topic
-  right, the search box above both. It first opens at 90% of Studio's window (its whole frame,
+  right, the search box above both. The tree is 220 points wide, its padding included (the
+  drafts' `.help-tree`), so the longest chapter and topic names (`First run and data
+  location`, `Running from a terminal`) show whole. It first opens at 90% of Studio's window (its whole frame,
   title bar included, in whole points), centered in it, so it fits whatever size that window
   has (`spec/core/gui.md` "Shell layout", "The window's size"), rather than at a fixed size a small window cuts off. Its position and size hold while the program runs (egui
   keeps a window's rectangle by its id, across a close and a reopen), not across restarts: a
@@ -482,8 +484,8 @@ still working, and what it just finished. Red did this with the console title (`
 `Done - …`); the Studio does the same with more detail, from the same typed items the status bar
 uses, so it costs no new API:
 
-`<app>` is the suite's display name, Unlimited Tool Works in every release before 1.0.0
-(`development_plan.md` "The preview's codename"), the same here and in ST-TTL:
+`<app>` is the suite's display name, Unlimited Tool Works (`development_plan.md` "The
+project's name"), the same here and in ST-TTL:
 
 | State | Title |
 |---|---|

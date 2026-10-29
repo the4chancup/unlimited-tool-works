@@ -962,7 +962,7 @@ function wrapItem(obj, indent, width) {
 }
 function dataBlock(r) {
   const d = rulesetData(r);
-  const L = ["// 4cc Studio AATF ruleset. Open it in the Ruleset editor to change it.", "const RULESET = #{"];
+  const L = ["// AATF ruleset, a Rhai script. Open it in the Ruleset editor to change it.", "const RULESET = #{"];
   const I = "    ", W = 76;
   // `head` then the list's items, wrapped under it when the line would pass W.
   const listLines = (indent, head, items) => {
@@ -1016,7 +1016,7 @@ function dataBlock(r) {
     L.push(`${I}],`, "");
   }
   if (d.suggestions.length) L.push(...listLines(I, "suggestions: ", d.suggestions));
-  L.push("};", "", "// ==== LOGIC (ruleset-logic 1): written by 4cc Studio; the Ruleset editor replaces this section ====",
+  L.push("};", "", "// ==== LOGIC (ruleset-logic 1): the Ruleset editor replaces this section ====",
     "// (the interpreter, a few hundred lines, not shown in this draft)");
   if (r.custom_checks) {
     L.push("", "// ==== CUSTOM CHECKS: optional, hand-written; the Ruleset editor keeps this section as it is ====");
@@ -1384,13 +1384,13 @@ function save() {
       [button("OK", closeWindow)], "not-saved");
   } else {
     saved = JSON.stringify(R);
-    window_("Saved", h("div", {}, `In Studio this writes ${R.name.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean).join("_")}.4ccrules: the data block, the current logic, and the custom checks unchanged. This draft writes nothing.`), [button("OK", () => { closeWindow(); render(); })], "saved");
+    window_("Saved", h("div", {}, `In the app this writes ${R.name.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean).join("_")}.4ccrules: the data block, the current logic, and the custom checks unchanged. This draft writes nothing.`), [button("OK", () => { closeWindow(); render(); })], "saved");
   }
   render(); // the link carries the open window's name
 }
 function startPage() {
   // The `start` window's name is the link's mark for the start page open.
-  window_("4cc Studio: Ruleset editor", h("div", { class: "col" },
+  window_("Ruleset editor - Unlimited Tool Works", h("div", { class: "col" },
     strong("New from template"),
     button("4cc Autumn 26 (the official rules)", () => loadTemplate("autumn26")),
     button("4cc Spring 26", () => loadTemplate("spring26")),
