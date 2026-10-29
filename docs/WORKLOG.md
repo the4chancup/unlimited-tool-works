@@ -1820,17 +1820,32 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] 8.9m the maintainer's pass over the 0.0.1 candidate (`d317b6da`), 2026-10-29:
       - [x] the drafts take the app's grey for a plain player name and a planned tool
         (DECISIONS 2026-10-29)
-      - [ ] m1 the code fixes (brief `.tmp/8_9m/brief_m1.md`): the badges' medal outlines
+      - [x] m1 the code fixes (brief `.tmp/8_9m/brief_m1.md`): the badges' medal outlines
         computed off the UI thread (`player_tier` ×23 took ~95 ms of the team view's first
         frame on the real save); the player list's scroll track without its black fill; the
         list pane's and the quick actions' separator lines gone, widths kept; the lineup
         lists filled in the extreme colour, as the drafts' `.llist`; the lineup lists'
         rects unchanged by the Live AATF dock
+        Done (`77502f57`, merged `c83d8d28`): the medals on `worker.rs`'s cycle
+        (`tactics::Medals`, started once an edit settles); the scroll area in a scope
+        clearing `extreme_bg_color`; both separators off, the list pane's right margin 3 → 4;
+        `lineup::list` filled and `min_scrolled_height(LIST_HEIGHT)` (the detail's scroll
+        area gave the lists only its visible height, egui's 64-point minimum took them to
+        74). SWE-2 round S1m: 1 counted (`.tmp/8_9m/rulings_m.md`), which proved wrong
+        (S1m3-2). Files: `save_editor/src/view/{mod,tactics,player_list,ruleset_picker,
+        worker}.rs`, `team_widgets/src/pitch/lineup.rs`, their tests
       - [x] the drafts round the pitch's, the lineup lists' and the player list's corners
         by 2, as the other framed panels (DECISIONS 2026-10-29)
-      - [ ] m3 the app rounds them too (after m1, which touches the same frames): the
+      - [x] m3 the app rounds them too (after m1, which touches the same frames): the
         player list's rows frame and the pitch's border at the noninteractive corner radius,
         the turf clipped to the border's inner curve; the lineup lists already round theirs
+        Done (`22a7d0f6`, `9211b365`, merged `c83d8d28`): the rows frame's fill and stroke
+        and the pitch's border at radius 2, the turf a textured `RectShape` at 1. A row the
+        viewport cuts, and the first team row's faint backdrop, reach under a pixel past
+        the curve (egui clips to rectangles only): accepted. SWE-2 round S1m3: 1 counted,
+        the quick actions' `.resizable(false)` dropped (egui's `Panel::bottom` is not
+        resizable). Files: `save_editor/src/view/{player_list,worker}.rs`,
+        `team_widgets/src/pitch/mod.rs`, their tests
       - [ ] m4 the light theme's widget greys and warning colour (the maintainer, 2026-10-29;
         DECISIONS "The light theme's widget greys a step lighter, its warning colour at
         4.5"): `theme.rs` `widgets_light` resting 207, hovered 192, pressed 214, the light
