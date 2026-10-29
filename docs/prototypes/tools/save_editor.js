@@ -3308,7 +3308,7 @@ const WALK = [
 // sample wording: the menu's labels and the picker's entry.
 function openMenu() {
   const items = DISCOVERED.map(d => {
-    const label = "PES " + d.version + (d.account ? "  (" + d.account + ")" : "");
+    const label = "PES " + d.version + (d.account ? " (" + d.account + ")" : "");
     const key = d.version === "2017" ? "pes17" : d.version === "2021" ? "pes21" : null;
     return [label, () => key ? requestOpen(key, d.path)
       : dlgOpenSave(d), false, d.path];

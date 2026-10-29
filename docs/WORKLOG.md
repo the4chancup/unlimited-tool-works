@@ -1800,7 +1800,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           the tool switched to); `ActionEffect::SwitchVersion` through `pick_version`, disabled
           under a blocker with the selector's hover (ST-BAR-07, ST-BAR-08). Files:
           `studio_core/src/{tool,status}.rs`, `studio_core/src/shell/{mod,status_bar,
-          test_harness}.rs`. Astra's critique of the plan and this code: under way
+          test_harness}.rs`. Astra's critique of the plan and this code: one concern, the
+          title test, added in `cdfb3fd9`
         - [ ] l3b the Save editor's version warning as a standing notice (SE-GUI-28), after
           l3a
         - [x] l3c 2026-10-29 (Opus sidekick): the toolbar's Open menu (every discovered save
@@ -1812,8 +1813,16 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           skipping the 17-digit Steam ID64 folder of PES 2020 (fixed in `196de046`). Help
           `02_window.md`. Files: `save_editor/src/view/{open_menu,mod,prompt,comparator}.rs`,
           `save_editor/src/{lib,session/mod}.rs`, `save_editor/src/view/tests/{open_menu,
-          prompt,tactics,toolbar,overlap}.rs`. Not yet: the built window rendered against the
-          draft's Open menu (`.tmp/8_9l/draft/open_menu.png`)
+          prompt,tactics,toolbar,overlap}.rs`. Rendered against the draft's Open menu
+          (`.tmp/8_9l/{draft,built}/open_menu.png`): the entries and the PES 2020 save as
+          drawn, the geometry off in every menu and the toolbar (l3d)
+        - [ ] l3d the menus and the Save editor's toolbar at the draft's pixels, seen in l3c's
+          render (`.tmp/8_9l/draft_menu_rects.py`, `.tmp/8_9l/measure_toolbar.py`): every
+          menu's entries 21 apart for the draft's 19, inset 7 from the menu's edge for 5, the
+          text 2 inside the entry for 8, a separator 3 + 1 + 3 in the draft; the toolbar 4 left
+          of the draft's 68 and its buttons 8 apart for 6 (Live AATF 22 right); the Open menu's
+          discovered entries with two spaces before the account, the draft's render one. Brief
+          `.tmp/8_9l/brief_l3d.md`
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
         The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by
