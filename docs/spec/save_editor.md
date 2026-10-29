@@ -367,9 +367,11 @@ The commands:
   the player; an error-severity violation makes the exit code 1, a warning alone leaves it 0. A rules file that fails load-time validation is
   refused with its findings (line or key path), so `check-aatf` doubles as the CLI's rules
   validation. Each violation is one finding line, `aatf_violation`, at the violation's severity:
-  the team, the player's id for a player's violation, the rule (the violation's kind as a rules
-  file names it, `FieldedNotA`) and the kind's own fields in their rules-file spelling
-  (`position=CF`, `stat=dribbling`), teams in id order, each team's lines in the order its check
+  the team, the player's id for a player's violation, the rule named in words (`rule=Fielded
+  position`) and what is wrong, the sentence the window's AATF rows print (`problem=Attacking
+  Prowess 82, over the 77 the rules allow`; `aatf_rules.md` "Hints at a valid value"): the
+  rules file's spellings (`FieldedNotA`, `attacking_prowess`) are for the program alone. Teams
+  in id order, each team's lines in the order its check
   returns them. Suggestions are not printed: the CLI has no "Show suggestions" toggle, and an
   unused allowance is not something to fix. A team whose check fails (a bug in the logic or in a
   custom check) is an `aatf_check_failed` error line and the other teams are still checked.
@@ -435,7 +437,7 @@ finding that drops something says so with its own code.
 | `teams_list_written` | Info | `export-teams-list`: the merged list was written (`path`) | informational; goes on |
 | `teams_list_not_written` | Info | `export-teams-list` without `--yes`: the summary only, the file untouched (`path`) | nothing is written |
 | `teams_list_read_only` | Error | `export-teams-list --yes`: the data directory cannot take the file (`path`, `error`) | nothing is written; exit 1 |
-| `aatf_violation` | the violation's (Error or Warning) | `check-aatf`: one rule the team breaks under the ruleset (`team`; `player` for a player's violation; `rule`, then the rule's own fields) | printed; an error-severity violation makes the exit code 1 |
+| `aatf_violation` | the violation's (Error or Warning) | `check-aatf`: one rule the team breaks under the ruleset (`team`; `player` for a player's violation; `rule`, the rule's name in words; `problem`, what is wrong) | printed; an error-severity violation makes the exit code 1 |
 | `aatf_check_failed` | Error | `check-aatf`: the ruleset's check itself failed on the team, which the other teams' results do not cover (`team`, `error`) | the other teams are still checked; exit 1 |
 | `aatf_ruleset_gone` | Warning | `check-aatf` without `--rules`: the `aatf_ruleset` setting names a ruleset that is gone from the data folder or no longer loads (`ruleset`, `used`) | the first embedded ruleset, which the line names, is checked instead |
 | `appearance_id_restored` | Error, or Info once re-stripped | `check-stripped`: the player's appearance id is set again while another player's is stripped, so the game shows his save record, not the database rows (`player`, `name`) | exit 1 while he stands listed; reported at Info and exit 0 once `--strip-again` has stripped him |

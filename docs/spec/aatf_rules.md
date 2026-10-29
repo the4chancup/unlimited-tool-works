@@ -828,7 +828,7 @@ catalog; only `Special` and `Custom` carry text, the ruleset author's.
 
 **Hints at a valid value.** A violation whose sentence would not otherwise name a value to
 reach carries one, computed by the logic so every surface (Live AATF's rows, the marks'
-tooltips, Multi-team AATF's copy, `check-aatf`'s fields) shows the same: most kinds already
+tooltips, Multi-team AATF's copy, `check-aatf`'s lines) shows the same: most kinds already
 name theirs (a range, a target, a limit, a count); `Height`, `NoTier`, `RegisteredNotA`,
 `FieldedNotA`, `APositions`, `GkSecondA`, `BRating` and `TeamSetting` carry the fields above.
 Each hint reads what the check has already read, never a search for a value that passes every
@@ -839,17 +839,15 @@ brackets' room is counted once and handed to the per-player checks; `card_summar
 walks every position's rating, collects the A and B lists. The sentences (`team_widgets`'
 `violations.rs` and the drafts' `violationSentence`): `height 183 takes no bracket (180 or 185
 have room)`, `(up to 175, 180 or 185)` without room, `(175 to 210)` under a pool; `fits no
-tier (the tiers take 180, 185, 190 or 195)`; `the registered position is not rated A (rated A
+tier (the tiers take heights 180, 185, 190 or 195)`; `the registered position is not rated A (rated A
 at CF and SS)`, `(no position rated A)` when none; the same list after FieldedNotA's and
-APositions' sentences; `a second A rating at GK (also A at CB)`; `a B rating where the ruleset
-refuses one (B at LB and RB)`; `team setting No man marking: man marking should be off`, the
+APositions' sentences; `a second A rating at GK (also A at CB)`; `a B rating, which the rules
+refuse (B at LB and RB)`; `team setting No man marking: man marking should be off`, the
 setting in words. A range of one height prints once, one from the bottom `up to` its top. No
 hint for PositionRange and PlayingStyleRange (the editor's controls offer only valid values),
 Captain, FormationShape (any other shape is valid), Special and Custom (the ruleset author's
 words) and UnusedChoice (naming a choice's options would need a sentence for every kind of
-effect). `check-aatf` prints a list field as it prints `MedalSystem`'s systems, `[a, b]`, a
-height range as `low-high` (`fits=[0-175, 180-180]`, 0 being an `up to` range's bottom), so
-its line keeps one comma-separated field per key and a script reading it needs no second rule.
+effect). `check-aatf` prints the same sentence as its line's `problem`.
 
 The map names the variant in `kind` (`"Stat"`) and carries its fields under their names: closed
 sets as the labels the file uses (`stat: "speed"`, `position: "CB"`, `card: "malicia"`), ids as
