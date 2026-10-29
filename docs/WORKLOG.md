@@ -4959,12 +4959,17 @@ briefs, review loops, gates and mutation runs as for any step.
     `theme.rs`' symbols test. Each arrow measures 12.5, its glyph's advance (the box 53),
     within the one-pixel match. `0df81c08` with rework 1, merge `6e546261`. Not yet seen in
     a built window (ov1)
-  - [ ] ov13 the ability stats' labels left-aligned (the maintainer's pick, 2026-10-29;
+  - [x] ov13 the ability stats' labels left-aligned (the maintainer's pick, 2026-10-29;
     DECISIONS "The ability stats' labels left-aligned, as the approved draft shows";
     `plans/save_editor.md` "Editing UI", the Ability stats item): the draft's CSS made to say
     what it renders (render unchanged, pixel for pixel); the build's labels from
     right-aligned (ov2i) to one left column, the marks still at the label cell's left edge.
-    Brief `.tmp/8_9l/brief_ov13.md`
+    Brief `.tmp/8_9l/brief_ov13.md`. Done 2026-10-29 (Opus sidekick, reviewed; merge
+    `8060aeef`): the label a bare cell of the grid's first column, the measured label width
+    gone (the grid's own sizing pass sizes the column; Jump's box at 1147.6 before and after);
+    `the_stats_labels_start_at_one_x_and_their_boxes_at_another`. Measured on its release
+    build with `scripts/draft_compare.py player`: every ability label within 1 px of the
+    draft; over 2 px only the known Appearance header and the rail's logo
   - [x] ov3 a general overlap test: a headless pass over every modal and view failing when two
     widgets' rectangles intersect (catches collisions, not a draft mismatch: ov1 does that;
     `plans/core/gui.md` "No two widgets overlap"; Opus sidekick, brief

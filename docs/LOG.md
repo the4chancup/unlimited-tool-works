@@ -2824,3 +2824,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The Save editor opens saves from an Open menu listing the saves found under Documents for every version and this run's files, and gains Save as (8.9l3c).
 - **2026-10-29** — A save of another PES version than the sidebar's opens with a status-bar warning naming both, which follows the selector and offers the switch until seen (8.9l3b).
 - **2026-10-29** — The drafts take egui's spacing for menus, the toolbar and a view's margin, and the Save editor's view drops the margins it added to reach the old drafts (8.9l3d1, l3d2).
+- **2026-10-29** — The Save editor's ability stats' labels start at one x, as the approved draft shows (0.0.1ov13); `scripts/draft_compare.py` measures a built screen against its draft and sorts every offset into over 2 px, 1 to 2 px and within 1 px.
