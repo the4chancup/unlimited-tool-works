@@ -178,7 +178,11 @@ half lost five mutants. **At each phase's close**, after its last mutation run, 
 removes the clone's build cache, `~/studio-mutants/tree/target` (22 GB after two phases; only
 `just gates-remote` builds there, which then starts cold) with `scripts/remote_clean_target.sh`
 (its header has the two ssh lines: a dry run first, then `--delete`); it refuses while a half,
-the gates or a cargo process runs.
+the gates or a cargo process runs. The same cleanup frees the folder whenever the guard refuses
+for the budget or the floor between closes (2026-10-29: 35 GB, the disk from 13 to 47 GB
+free). Claude Code's auto-mode classifier refuses the two ssh lines unless the project's
+`.claude/settings.local.json` allows them, which it does on the maintainer's machine, each
+exactly as the header writes it.
 
 ## Agents and harness
 
