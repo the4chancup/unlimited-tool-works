@@ -13619,3 +13619,12 @@ Why: the maintainer's asks: the number sat off-centre beside an arrow the 44 poi
 held, and 150 ms felt slow. 100 keeps a quick crossing of the 56-point rail from opening it
 (the maintainer is to confirm the feel, QUESTIONS).
 Plan: `plans/core/gui.md` "Sidebar" items 2 and 4.
+
+## 2026-10-29 — gui — The sidebar's hover delay 120 ms
+
+Decision: the rail opens the sidebar after the pointer rests on it 120 ms. This replaces the
+100 ms of the entry "The rail's version selector centred without its arrow; the hover delay
+100 ms"; that entry's selector half stands.
+Why: the maintainer tried 100 in the draft and found it a little too quick; 150 had felt
+slow.
+Plan: `plans/core/gui.md` "Sidebar" item 4.

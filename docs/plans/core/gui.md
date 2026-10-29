@@ -253,7 +253,8 @@ Top to bottom:
    the preview's list goes when the views land.
 4. **A rail that opens on hover** — the sidebar is always an icon-only rail (~56 px) beside the
    tool's view, which takes the rest of the window. The pointer resting on the rail (a short
-   delay, 100 ms, so a pointer crossing it on its way elsewhere opens nothing; 150 felt slow) opens the full
+   delay, 120 ms, so a pointer crossing it on its way elsewhere opens nothing; 150 felt slow,
+   100 too quick) opens the full
    sidebar (the labels, the version dropdown; as wide as the longest label needs on one line,
    "Player aesthetics editor", since its width costs the view nothing) **over** the tool's left
    edge, as a

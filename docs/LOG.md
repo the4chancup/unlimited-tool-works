@@ -2831,3 +2831,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The team view's colour codes take the weak grey and the colour field outlines its swatch like a text box (8.9l3d3d); the sidebar's logo is the 4cc clover, centred on its square (8.9l3d3e).
 - **2026-10-29** — The opened sidebar casts no shadow, edged by the rail's line (8.9l3d3f); on Windows the title bar draws no icon, its slot left blank so the window menu stays (8.9l3d3g).
 - **2026-10-29** — The loop's mutation run left two layout values under the draft tests' tolerance; both are pinned exactly now (8.9l3mut).
+- **2026-10-29** — The opened sidebar's labels start 6 after the icon, as the draft's do, and the layer narrows to the draft's 190.6 (8.9l3d3h).
