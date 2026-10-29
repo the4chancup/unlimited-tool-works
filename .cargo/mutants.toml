@@ -74,6 +74,11 @@ exclude_re = [
     # headless through `StudioApp`'s `logic`/`ui`; these two are what the manual TC-GUI-01 run
     # proves.
     "replace run_gui(_mode)? -> ",
+    # `window_size::hide_title_bar_icon` takes the native window's handle, which only
+    # `run_gui`'s creator has, and changes what Windows draws in the title bar, which nothing
+    # in the process can read back; its `()` replacement is unkillable for the same reason as
+    # `run_gui`'s. The release build's title bar is checked by eye when the call changes.
+    "window_size/mod\\.rs:\\d+:\\d+: replace hide_title_bar_icon with \\(\\)",
     # `dds_convert`'s wasm stand-in for the GPU encoder (`lib.rs`, `mod gpu` under
     # `cfg(target_arch = "wasm32")`): an uninhabited enum whose methods no value can reach,
     # compiled on no tested OS, so its mutants build and "pass" untouched. The native encoder's

@@ -1971,6 +1971,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               tests' 1-point tolerance (`id_cell_padding_before`'s `-` to `/`, the quick
               actions' `top: 3`), now pinned exactly, each red with its mutant. Files:
               `save_editor/src/view/tests/{team,quick_actions}.rs`
+            - [x] l3mut2 2026-10-29 (lead) the second loop's `mutants-diff d28e93d0` over
+              l3d3d to l3d3k (52 mutants: 41 caught, 1 missed, 8 unviable, results
+              `.tmp/8_9l/mutants_r4/`): the miss, `hide_title_bar_icon` replaced with `()`,
+              needs the native window's handle and changes only what Windows draws, so no
+              headless test can see it; excluded in `.cargo/mutants.toml` beside `run_gui`
+              (checked: listed with `--no-config`, gone with it). Files: `.cargo/mutants.toml`
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
         The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by
