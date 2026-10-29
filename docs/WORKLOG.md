@@ -4518,7 +4518,7 @@ briefs, review loops, gates and mutation runs as for any step.
       spacing. Its report's leftovers: the help window's Messages table (ov2q) and the Ruleset
       editor's four grids (its view, not in 0.0.1) also draw a draft `table.grid`; General
       info still stands 4 to 0.5 points above the draft (ov2s)
-    - [ ] ov2s General info against the draft after ov2k (offsets in the ov2k report,
+    - [x] ov2s General info against the draft after ov2k (offsets in the ov2k report,
       `wt-ov2k/.tmp/sidelead/sk_ov2k.report.md`): the draft's Name and Shirt number boxes 19
       tall (ov2r set text boxes and combos to 18, not number boxes), its `.gen` blocks 6 apart
       where the build's are 4, and its Stronger foot and hand toggles plain spans 15 tall where
@@ -4528,6 +4528,9 @@ briefs, review loops, gates and mutation runs as for any step.
       every row 22 apart in its block, Height 68.5, Stronger foot 136.5, Other stats 233 below
       the title); the Name and Shirt boxes were already 18 since ov2r. Left for the build
       (ov2q's brief): the blocks 6 apart where it has 4, which brings each label to the draft's
+      place. Built with ov2q; re-measured 2026-10-29 on a release build of `4c448424`
+      (`rect_compare.py player`): every General info label and box within 1.4 points of the
+      draft's
     - [x] ov2l the team view's header as drafted: the stroke line between the fields' row and
       the Tactics, 8 above and below (`teamView`'s `.sep`; the build has none, so the Preset row
       stands 20 higher), and the colour swatches 22 × 16 (`input[type=color]`; egui's colour
@@ -4630,7 +4633,27 @@ briefs, review loops, gates and mutation runs as for any step.
       buttons ran into the border); the help window first sized and centred on the client
       area (it measured `#win`, title bar included: 5 taller and 23 higher than the build's
       1152 × 702 at (64, 39), which follows the plan)
-  - [ ] ov6 Live AATF's whole look (the maintainer, 2026-10-28): every element rendered from
+    - [ ] ov2w the team view against the draft after ov2u, re-measured 2026-10-29 on a
+      release build of `4c448424` (`rect_compare.py team`, pixel rows of
+      `.tmp/0_0_1ov/{draft,built}/team.png`): the fields' row 1 point high (its boxes 56 to 73,
+      the draft's 57 to 74), the line and the Tactics' buttons each another point closer
+      (line at 84, buttons 95 to 112; the draft's 86 and 98 to 115), so the whole Tactics 3
+      high; the pane's bottom 2 high (the Tactics' last stroke at 739, the draft's at 741,
+      the status bar's line at 756 in both); the bars' items (the preset buttons 15 wide for
+      the draft's 17.1, 23 apart for its 19.1; the phase tabs about 3 narrower with 8-point
+      gaps for its 2; Fluid formation 11 right); Player assignments 2 right. Brief
+      `.tmp/0_0_1ov/brief_ov2w.md`
+    - [ ] ov2x the player view and the text boxes against the draft, re-measured 2026-10-29
+      (`rect_compare.py player`): every text box without the draft's 1-point border
+      (`input[type=text]`: `border: 1px solid var(--stroke)`, radius 3; egui's resting text
+      edit draws none); Playable positions' groups 70 apart for the draft's 66, its rows 42
+      apart for 43, its cells 18 tall for 17; Skills' header row 18 tall for the draft's 15,
+      so its checkboxes, Tricks and COM playing styles 2.5 low; the Appearance header about 4
+      low; the quick actions 4 high (ending at 746, the draft's at 750) and Set stats 56 wide
+      for 61.5. General info fits within 1.4 (ov2s's offsets gone). Not mismatches: a
+      checkbox's hit area (the draft's label spans its cell; egui's is its content), the
+      toolbar's Open menu and Save as (8.9l slice l3), the ability stats' labels (QUESTIONS).
+      Brief `.tmp/0_0_1ov/brief_ov2x.md` (the maintainer, 2026-10-28): every element rendered from
     the drafts, `.tmp/0_0_1ov/live_gallery.py` → `.tmp/0_0_1ov/live/`; the first rulings
     drafted and planned (ov2f; the dock's kind codes kept). The two points left for later (a
     rules file that fails to load surfaced when it is loaded; switching between rules files,
@@ -4794,9 +4817,14 @@ briefs, review loops, gates and mutation runs as for any step.
       Ruleset editor's `not-saved` (no template has a problem) and the Save editor's
       `picture-save-settings` (its window writes back `picture-save`). Its test needs Pillow,
       so it stays out of the gates. `4e156a27`, merge `83a25a08`
-    - [ ] ov4c the first captures (lead): the Save editor's screens from the release build
+    - [x] ov4c the first captures (lead): the Save editor's screens from the release build
       after the next checkpoint, each dated in its corner, by a capture script beside
-      `rect_compare.py`
+      `rect_compare.py`. Done 2026-10-29 on a release build of `4c448424` (checkpoint
+      `gates-changed c6d17d9b` green, 5,206 tests): `save_editor_player.png` (player 701.1)
+      and `save_editor_team.png` (team 701), PES 21 sandbox save, Live AATF off as the draft's
+      default, by `.tmp/0_0_1ov/capture_built.py` (`gui.py shot`, the date stamped). Both
+      load in the Overlay over and beside (`.tmp/0_0_1ov/overlay_real.py`); the team's shows
+      ov2w's bar offsets doubled. The sidebar's rounded bar (z3) seen in the same build
   - [x] ov5 the vetting renderer into `scripts/` (the maintainer, 2026-10-28: "useful enough
     to keep"): `.tmp/0_0_1ov/vet.py`, which renders a draft change's before and after from
     `git archive` exports side by side (stacked when side by side would be over four times
