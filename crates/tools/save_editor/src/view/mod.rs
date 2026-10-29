@@ -39,7 +39,9 @@ use std::sync::Arc;
 use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::{Engine, PesVersion};
-use studio_core::widgets::{modal, modal_buttons, modal_sentence_gap, toolbar_separator};
+use studio_core::widgets::{
+    collapsing_header, modal, modal_buttons, modal_sentence_gap, toolbar_separator,
+};
 use studio_core::{ActionEffect, Notice, NoticeAction, NoticeKind, RunningPes};
 use team_widgets::names::append_name;
 
@@ -593,7 +595,7 @@ fn appearance_section(ui: &mut egui::Ui, view: &mut SaveView) {
         header.indent = APPEARANCE_INDENT;
         header.interact_size.y = text_height;
         header.button_padding.y = 0.0;
-        egui::CollapsingHeader::new("Appearance")
+        collapsing_header("Appearance")
             .id_salt("appearance")
             .icon(appearance_arrow)
             .show_unindented(ui, |ui| {

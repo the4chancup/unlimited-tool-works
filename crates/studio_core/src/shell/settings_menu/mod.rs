@@ -110,8 +110,8 @@ impl SettingsMenu {
                 if tool.default_settings().is_empty() || cli_only.contains(&tool.id()) {
                     continue;
                 }
-                let mut header =
-                    egui::CollapsingHeader::new(tool.label()).id_salt(("settings", tool.id()));
+                let mut header = crate::widgets::collapsing_header(tool.label())
+                    .id_salt(("settings", tool.id()));
                 // Each opening expands the active tool's section and collapses the rest;
                 // without a pending one the stored state stands, so the member's toggles
                 // hold while the menu stays open.
