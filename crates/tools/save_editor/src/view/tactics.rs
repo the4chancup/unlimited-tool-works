@@ -32,6 +32,10 @@ const SETTINGS_WIDTH: f32 = 422.0;
 const COLUMN_GAP: f32 = 10.0;
 /// The gap between the grid's rows (the draft's `row-gap: 6px`).
 const ROW_GAP: f32 = 6.0;
+/// The preset and formation bars' height (the draft's `.tacbar`): its
+/// tallest item is the preset selector's `.row`, 17 points with a 3-point
+/// margin above and below, so the bar is 5 taller than its buttons.
+const BAR_HEIGHT: f32 = 23.0;
 
 /// One roster slot's row data before the `RosterRow`s borrow it: the
 /// display name, the raw name, the registered position, the thirteen
@@ -212,16 +216,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         // Row 1: the preset bar on column 1 (the draft's `presetSel`,
         // `fluid`, `presetMenu`), the formation bar over columns 2-3
         // starting at the pitch's left (`formationSel`, `formationMenu`,
-        // `scrollNames`) — each one line of `interact_size.y`, their
-        // contents centred on it (a full-height cell would centre the
-        // line in the cell, not on the row).
-        let line = ui.spacing().interact_size.y;
+        // `scrollNames`) — each `BAR_HEIGHT` tall, their contents centred
+        // in it (a full-height cell would centre them in the cell, not on
+        // the row).
         let bar = |ui: &mut egui::Ui, left: f32, right_edge: f32| {
             ui.new_child(
                 egui::UiBuilder::new()
                     .max_rect(egui::Rect::from_min_max(
                         egui::pos2(left, top_left.y),
-                        egui::pos2(right_edge, top_left.y + line),
+                        egui::pos2(right_edge, top_left.y + BAR_HEIGHT),
                     ))
                     .layout(egui::Layout::left_to_right(egui::Align::Center)),
             )
@@ -234,7 +237,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         pitch::formation_selector(&mut formbar_ui, &edited, tactics);
         copy_swap_formation_menu(&mut formbar_ui, session, team_id, tactics);
         checkbox(&mut formbar_ui, &mut tactics.scroll_names, "Scroll names");
-        let row2_top = top_left.y + line + ROW_GAP;
+        let row2_top = top_left.y + BAR_HEIGHT + ROW_GAP;
 
         // Row 2: Formation settings, the pitch, Player assignments —
         // the panels exactly as tall as the pitch (the draft's `.tacgrid`
@@ -285,7 +288,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         let mut stack_ui = cell(ui, top_left.x, row3_top, SETTINGS_WIDTH, lists_bottom);
         changed[3] =
             tactics::advanced_instructions(&mut stack_ui, version, &mut edited, tactics, &roster);
-        stack_ui.add_space(ROW_GAP);
+        // `add_space` adds to the item gap the panel above already left.
+        stack_ui.add_space(ROW_GAP - stack_ui.spacing().item_spacing.y);
         changed[4] = tactics::automatic_settings(&mut stack_ui, version, &mut edited);
 
         // One advance covering the grid's block (the tallest cell).

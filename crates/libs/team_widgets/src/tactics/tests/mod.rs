@@ -1002,16 +1002,9 @@ fn the_side_panels_rows_start_title_gap_under_the_headings() {
         let instructions = label_y(&nodes, "Advanced instructions");
         let first_top = match version {
             PesVersion::Pes15 | PesVersion::Pes16 => label_y(&nodes, "(none on this version)").y0,
-            // The header cells centre their text in the control-height
-            // row: the row's top is the text's less the centring offset
-            // (the number column's "1" and the first combo's bounds give
-            // the same offset another way).
-            _ => {
-                let attack = label_y(&nodes, "Attack");
-                let inset =
-                    label_y(&nodes, "1").y0 - combo_row(&nodes, 0)[0].bounds().expect("bounds").y0;
-                attack.y0 - inset
-            }
+            // The header row is one line of text (the draft's header
+            // cells are plain text), so its top is the text's.
+            _ => label_y(&nodes, "Attack").y0,
         };
         assert!(
             (first_top - instructions.y1 - f64::from(TITLE_GAP)).abs() < 0.5,

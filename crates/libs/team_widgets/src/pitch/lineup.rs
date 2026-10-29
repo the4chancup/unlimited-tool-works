@@ -110,10 +110,17 @@ pub fn lineup(
 fn list(ui: &mut egui::Ui, id_salt: &'static str, add: impl FnOnce(&mut egui::Ui)) {
     // No margin left of the rows: a row runs from the frame, as the draft's
     // `.lrow` from its list's border, so its handle's inset is its own.
+    // None above or below either: the draft's `.llist` pads its rows by
+    // `LIST_PADDING` alone inside its border.
     let frame = egui::Frame::group(ui.style());
     let margin = frame.inner_margin;
     frame
-        .inner_margin(egui::Margin { left: 0, ..margin })
+        .inner_margin(egui::Margin {
+            left: 0,
+            top: 0,
+            bottom: 0,
+            ..margin
+        })
         .show(ui, |ui| {
             // No gaps between the padding and the scroll either: the inner
             // height is exactly `LIST_HEIGHT` plus the two pads.
@@ -724,10 +731,11 @@ mod tests {
         let mut view = TacticsView::default();
         let rows = fixture_rows(PesVersion::Pes21);
         let roster = roster_rows(&rows);
+        // The border alone adds to the padded rows: the draft's `.llist`
+        // keeps no margin above or below them.
         let mut margin = 0.0;
         window.frame(vec![], |ui| {
-            let frame = egui::Frame::group(ui.style());
-            margin = f64::from(frame.total_margin().top + frame.total_margin().bottom);
+            margin = 2.0 * f64::from(egui::Frame::group(ui.style()).stroke.width);
         });
         let (nodes, shapes) =
             window.lineup_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
