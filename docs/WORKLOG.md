@@ -4779,12 +4779,17 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] ov4c the first captures (lead): the Save editor's screens from the release build
       after the next checkpoint, each dated in its corner, by a capture script beside
       `rect_compare.py`
-  - [ ] ov5 the vetting renderer into `scripts/` (the maintainer, 2026-10-28: "useful enough
+  - [x] ov5 the vetting renderer into `scripts/` (the maintainer, 2026-10-28: "useful enough
     to keep"): `.tmp/0_0_1ov/vet.py`, which renders a draft change's before and after from
     `git archive` exports side by side (stacked when side by side would be over four times
     as wide as tall: the maintainer, 2026-10-28), each sheet carrying the change's reason under
     its caption (the maintainer, 2026-10-28), generalized from its cases list to a
-    revision pair and a link, with its test
+    revision pair and a link, with its test. Done 2026-10-29 (merge `4daed600`; Opus sidekick,
+    brief `.tmp/0_0_1ov/brief_ov5.md`): `scripts/vet_drafts.py --before REV --after REV
+    --link FRAGMENT --why TEXT [--crop CSS] [--pad N] [--click TEXT]`, exports under
+    `.tmp/vet_exports/` (the lead's change from the brief's fixed Windows path), and
+    `vet_drafts_test.py` (7 tests, run by hand: it needs Pillow, which `just test` does not
+    install); `vet.py`'s one-case crops (a combo's popup, an uneven box) are not reproduced
 - [x] 0.0.1rn the project renamed Unlimited Tool Works (the maintainer, 2026-10-28: "when most
   convenient"): `unlimited-tool-works` as the name in paths and packages, UTW as the shorthand,
   the exe `UTW.exe` (`utw` on Linux; DECISIONS "The final pass's second rulings"). Before the
