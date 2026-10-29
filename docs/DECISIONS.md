@@ -13863,3 +13863,17 @@ from the draft on 2026-10-28 ("Set boots and gloves IDs takes 4ccEditor's layout
 same evening) and built so; the next day's one modal helper (0.0.1ov2j) gave every modal the
 draft's 360 minimum without the draft's exception, and no check measured a frame.
 Plan: `plans/core/gui.md` "Other UI components", the Modals row.
+
+## 2026-10-29 — save_editor — Stats are named as the save's PES version names them
+
+Decision: every surface that names an ability stat (the player view, the AATF rows and their
+tooltips, `check-aatf`, the Comparator and the changes lists) names it as the save's PES version
+does, from one per-version table in `pes_savefile`; a ruleset still writes the one id
+(`attacking_prowess`). This replaces the one spelling for every version the AATF rows' entry of
+the same day took.
+Why: the maintainer accepted proposal P43: a PES 2021 manager reads Offensive Awareness in his
+game, not Attacking Prowess. The table is gathered from each version's own screens, not
+inferred: the names changed in more than one release (PES 2015's Saving, PES 2016's Body
+Balance, the later Awareness names), and `pes_savefile/src/model/player.rs`'s doc comments,
+today's only record, do not say which version introduced each.
+Plan: `plans/save_editor.md` "Editing UI", the Ability stats item.

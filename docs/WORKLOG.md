@@ -2816,6 +2816,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           preview's undrawn fields in words, the team file notes in the catalog's member text
           and its section boxes capitalized, the badge's and quick actions' refusals, the
           card and playing-style labels' spellings (`GK Long Throw`, `Classic No. 10`)
+      - [ ] d3 after d1a (P43, accepted 2026-10-29; DECISIONS "Stats are named as the save's
+        PES version names them"): a per-version stat-name table in `pes_savefile`, gathered
+        from each version's own screens or text (the player.rs doc comments name no versions;
+        Marco's RE reports for PES 2021, the games on F: for the rest), read by the player
+        view, the AATF rows, `check-aatf`, the Comparator and the changes lists; the drafts'
+        `STAT_LABEL` per version → verify: a test per version over the table against the
+        gathered names; the player view's labels in the draft and the built window for PES 17
+        and 21
       - [ ] d2 after 0.1.0, with Phase 20 (the maintainer, 2026-10-29): the Ruleset editor
         shows the game's names (Attacking Prowess) and writes the rules-file ids
         (`attacking_prowess`)
