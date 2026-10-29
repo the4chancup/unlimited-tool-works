@@ -19,10 +19,15 @@ use super::sidebar::HELP_LABEL;
 const PARAGRAPH_SPACING: f32 = 8.0;
 
 /// The widest a topic's paragraph, list or code block is drawn, the drafts' reading width:
-/// about 110 characters at the body size. The pane is about 900 points wide at the default
-/// window, and on a line much longer than this the eye loses the next line's start. The
-/// Messages table keeps the pane's width.
+/// about 110 characters at the body size: on a line much longer than this the eye loses the
+/// next line's start. The Messages table keeps the pane's width.
 const READING_WIDTH: f32 = 720.0;
+
+/// The window's first outer size, title bar and frame included, before the cap at 90% of
+/// Studio's window. 1000 points hold the 220-point chapter tree and a `READING_WIDTH` text
+/// column with a scroll bar beside it; a wider window would only add empty room right of
+/// the text.
+const FIRST_SIZE: egui::Vec2 = egui::vec2(1000.0, 600.0);
 
 /// The window's state across frames: the chapters it was built over, whether it is open,
 /// where it is (chapter index; the topic index in the list the tree shows — the written
@@ -156,10 +161,11 @@ impl HelpWindow {
         let mut open = true;
         // `default_rect` counts the whole window — `default_size` is the *outer*
         // size, egui subtracts the frame's margins and the title bar inside
-        // `Window::show` — so the first rect is 90% of Studio's, centered in it.
-        // A moved or resized rect is kept by the window's id afterwards.
+        // `Window::show` — so the first rect is `FIRST_SIZE`, or 90% of Studio's
+        // on a side where that is smaller, centered in it. A moved or resized
+        // rect is kept by the window's id afterwards.
         let screen = egui_ctx.content_rect();
-        let size = (screen.size() * 0.9).round();
+        let size = FIRST_SIZE.min((screen.size() * 0.9).round());
         egui::Window::new(crate::theme::window_title_text(HELP_LABEL))
             .id(egui::Id::unique("help-window"))
             .default_rect(egui::Rect::from_center_size(screen.center(), size))
@@ -858,7 +864,7 @@ mod tests {
 
     // ST-HELP-05
     #[test]
-    fn the_help_window_first_opens_at_ninety_percent_of_the_shells_window() {
+    fn the_help_window_first_opens_at_1000_by_600_capped_at_ninety_percent_of_the_shells_window() {
         let dir = TestDir::new("studio_core_help_size");
         for (screen, min, size) in [
             (
@@ -868,8 +874,8 @@ mod tests {
             ),
             (
                 egui::vec2(1280.0, 800.0),
-                egui::pos2(64.0, 40.0),
-                egui::vec2(1152.0, 720.0),
+                egui::pos2(140.0, 100.0),
+                egui::vec2(1000.0, 600.0),
             ),
         ] {
             // One context per screen: a kept area rect is per-Context, and each
