@@ -27,6 +27,10 @@ class BundleError(Exception):
     pass
 
 
+# The built window's captures folder, which the host's Overlay control names once by this
+# literal and completes at run time: it is kept as it is, since the captures do not travel
+# with an attachment (the bundled overlay shows its missing-file line).
+CAPTURES = "assets/captures/"
 SCRIPT_TAG = re.compile(r'^[ \t]*<script src="([^"]+)"></script>[ \t]*$', re.M)
 ASSET = re.compile(r'"(assets/[^"\n]+)"')
 SRC_ATTR = re.compile(r'src="([^"]*)"')
@@ -70,6 +74,8 @@ def bundle(drafts: Path) -> tuple[str, int, int]:
     def inline_asset(match: re.Match) -> str:
         nonlocal images
         literal = match.group(1)
+        if literal == CAPTURES:
+            return match.group(0)
         mime = MIME.get(Path(literal).suffix.lower())
         if mime is None:
             raise BundleError(f'"{literal}": an extension with no MIME type')
@@ -88,7 +94,7 @@ def bundle(drafts: Path) -> tuple[str, int, int]:
             raise BundleError(f'src="{value}": a source left that was not inlined')
     for match in QUOTED_ASSET.finditer(text):
         # A data URI's base64 can spell "assets/" by chance; only a real literal is an error.
-        if not match.group(0).startswith('"data:'):
+        if not match.group(0).startswith('"data:') and match.group(0) != f'"{CAPTURES}"':
             raise BundleError(f"{match.group(0)}: an assets/ path left in a literal")
     match = SINGLE_QUOTED_ASSET.search(text)
     if match:
