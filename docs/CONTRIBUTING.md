@@ -280,6 +280,8 @@ Rules for the justfile, so it stays a command list and not a second build system
   keep working without it; the justfile is the definition, not a requirement to build. `maturin`
   (`pip install maturin`) is the same kind of tool for `just bindings`; `scripts/bindings_check.py`
   runs it and reads the wheel path from its output, so the recipe never hardcodes `target/wheels`.
+  Pillow (`pip install pillow`) is the same for `just test`: the drafts tooling's tests
+  (`scripts/draft_compare_test.py`) measure text ink in images through it.
 
 Requirements:
 
