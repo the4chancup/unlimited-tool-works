@@ -1868,15 +1868,22 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               `team.rs` `ROW_GAP`, `abilities.rs` `HEADER_GAP`, `menus.rs` `BOGLO_RANGE_GAP`,
               `player_list.rs` `CONTROL_GAP`, `quick_actions.rs` `COLUMN_GAP` (egui's 8),
               `studio_core` sidebar `RAIL_GAP`; re-measured with `draft_compare.py player|team`
-            - [ ] l3d3c the rest the measurement found: the Kit slots dialog's sentence and OK
-              4 and 7 points higher than the draft's (done, lead: the draft's sentence was a
-              `.row`, whose margins the dialog's own spacing doubled; 3 of 3 within 1 point
-              after); the Formation settings' rows drifting
-              to 1.5 lower in the draft (its rows 58.5 apart, the build's 58: both share the
-              panel's free height, `1fr`, the frames themselves within a point; accepted at 1
-              to 2, the cause of the build's 3 points less not found); the colour
-              codes' grey and the black swatch's outline (QUESTIONS "The team view's colour
-              codes"); a menus pass added to `draft_compare.py`
+            - [x] l3d3c 2026-10-29 (lead) the rest the measurement found: the Kit slots
+              dialog's sentence and OK 4 and 7 points higher than the draft's (the draft's
+              sentence was a `.row`, whose margins the dialog's own spacing doubled; 3 of 3
+              within 1 point after); the Formation settings' rows drifting to 1.5 lower in the
+              draft (its rows 58.5 apart, the build's 58: both share the panel's free height,
+              `1fr`, the frames themselves within a point; accepted at 1 to 2, the cause of
+              the build's 3 points less not found). `draft_compare.py --menu TEXT` measures an
+              open toolbar menu (the draft's clicked, the build's rows kept where the draft's
+              menu stands); `uia_dump.ps1` writes UTF-8 (the console's code page had turned
+              `…` and `⏷` into `.` and `?`, so no such name paired) and a draft menu entry's
+              shortcut is joined with a space, as egui names it. On the `3cd0f907` build:
+              Player 7 and Team 6 entries within 1 point; Savefile and Open differ only by
+              entries not built yet (8.9k slice 5, 8.33) or the draft's sample recent file,
+              which widen the draft's menu and push the rows under them
+            - [ ] l3d3d the team view's colour codes' grey and the black swatch's outline, once
+              QUESTIONS "The team view's colour codes" is answered
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
         The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by

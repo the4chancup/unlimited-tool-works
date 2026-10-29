@@ -40,10 +40,15 @@ then the ink findings and the unmatched texts; writes every pair with its band, 
 colours, step and weight, to `.tmp/draft_compare/<screen>.tsv`.
 Open the screen in the built window first (the default 1280 x 780 client area, the draft's).
 
-    python scripts/draft_compare.py SCREEN [--modal CSS] [--app FRAGMENT]
+    python scripts/draft_compare.py SCREEN [--modal CSS | --menu TEXT] [--app FRAGMENT]
 
 --modal compares only a dialog: CSS selects the draft's dialog element (`#overlay .window`,
 `.help-win`), and both sides are measured from the dialog's title text.
+
+--menu compares only a toolbar menu: TEXT is its button's label (`Player`); the draft's button
+is clicked and its open menu measured, and the build's rows are kept where the draft's menu
+stands (30 points around it), so open the same menu in the build first. A menu stands in the
+same place on both sides, so no title realigns them.
 
 Needs Windows (UI Automation), Python's `playwright` with its Chromium and `psutil`; a
 developer tool, not a gate. Its pure parts are tested by `draft_compare_test.py`.
@@ -106,8 +111,10 @@ DRAFT_JS = """(sel) => {
   for (const el of root.querySelectorAll('input, select, button, textarea')) {
     const st = getComputedStyle(el);
     if (st.visibility === 'hidden' || st.display === 'none') continue;
+    // A menu entry's shortcut is a span of its own, which egui's name joins with a space.
     const name = el.tagName === 'SELECT' ? el.options[el.selectedIndex]?.text
-      : el.tagName === 'BUTTON' ? el.textContent : (el.value || el.placeholder);
+      : el.tagName === 'BUTTON' ? [...el.childNodes].map(n => n.textContent.trim()).filter(Boolean).join(' ')
+      : (el.value || el.placeholder);
     push(name, el.getBoundingClientRect(), el.tagName.toLowerCase());
   }
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -360,7 +367,20 @@ def app_side(fragment):
     return parse_dump(dump, origin), capture(hwnd)
 
 
-def draft_side(screen, modal):
+def within(draft, app, margin=30):
+    """The app's rows named on the draft's side and standing inside the draft rows' bounding
+    box, `margin` points around it: an open menu's entries, not the view's texts of the same
+    name under it."""
+    left = min(r[2] for r in draft) - margin
+    top = min(r[3] for r in draft) - margin
+    right = max(r[2] + r[4] for r in draft) + margin
+    bottom = max(r[3] + r[5] for r in draft) + margin
+    names = {r[1] for r in draft}
+    return [r for r in app if r[1] in names and left <= r[2] and r[2] + r[4] <= right
+            and top <= r[3] and r[3] + r[5] <= bottom]
+
+
+def draft_side(screen, modal, menu=None):
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as pw:
@@ -378,7 +398,10 @@ def draft_side(screen, modal):
         page.goto(DRAFTS + link)
         page.evaluate("() => document.fonts.ready")
         page.wait_for_timeout(800)
-        rows = page.evaluate(DRAFT_JS, modal)
+        if menu:
+            page.locator("button", has_text=f"{menu} ⏷").first.click()
+            page.wait_for_timeout(300)
+        rows = page.evaluate(DRAFT_JS, ".menu" if menu else modal)
         body = page.evaluate("() => { const r = document.getElementById('win-body')"
                              ".getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; }")
         shot = page.screenshot(clip={"x": body[0], "y": body[1], "width": body[2], "height": body[3]})
@@ -394,12 +417,17 @@ def option(name):
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in SCREENS:
-        sys.exit(f"usage: draft_compare.py SCREEN [--modal CSS] [--app FRAGMENT]; SCREEN one of "
-                 f"{', '.join(SCREENS)}")
-    screen, modal = sys.argv[1], option("--modal")
-    (app, built_image), (draft, draft_image) = app_side(option("--app")), draft_side(screen, modal)
+        sys.exit(f"usage: draft_compare.py SCREEN [--modal CSS | --menu TEXT] [--app FRAGMENT]; "
+                 f"SCREEN one of {', '.join(SCREENS)}")
+    screen, modal, menu = sys.argv[1], option("--modal"), option("--menu")
+    (app, built_image), (draft, draft_image) = (app_side(option("--app")),
+                                                draft_side(screen, modal, menu))
     shifts = ((0, 0), (0, 0))
-    if modal:
+    if menu:
+        assert draft, f"the draft opened no menu {menu!r}"
+        app = within(draft, app)
+        screen = f"{screen}-menu-{menu.lower()}"
+    elif modal:
         draft, app, line, shifts = to_dialog(draft, app)
         print(line)
     pairs, unmatched = pair(draft, app)

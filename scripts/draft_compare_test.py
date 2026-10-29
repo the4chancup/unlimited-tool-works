@@ -77,6 +77,24 @@ class Pair(unittest.TestCase):
         self.assertEqual(unmatched, [("Few", 2, 1)])
 
 
+class Within(unittest.TestCase):
+    def test_only_the_rows_inside_the_menu_named_by_it_are_kept(self):
+        # The Player menu's entries, and the view's own Save button under the toolbar's.
+        draft = [["button", "Make Gold", 348.0, 26.0, 160.0, 18.0],
+                 ["button", "Save", 348.0, 47.0, 160.0, 18.0]]
+        app = [["Button", "Make Gold", 349.0, 26.0, 160.0, 18.0],
+               ["Button", "Save", 349.0, 47.0, 160.0, 18.0],
+               ["Button", "Save", 128.0, 8.0, 34.0, 18.0],
+               ["Button", "Make Gold", 64.0, 684.0, 118.0, 20.0],
+               ["Text", "General info", 339.0, 57.0, 67.0, 15.0]]
+        self.assertEqual(draft_compare.within(draft, app), app[:2])
+
+    def test_a_row_reaching_past_the_margin_is_dropped(self):
+        draft = [["button", "Save", 100.0, 100.0, 50.0, 18.0]]
+        app = [["Button", "Save", 69.0, 100.0, 50.0, 18.0], ["Button", "Save", 70.0, 100.0, 50.0, 18.0]]
+        self.assertEqual(draft_compare.within(draft, app), app[1:])
+
+
 def text_image(colour, stem_width, x=10):
     """A 60 x 20 image on the dark panel's grey (27) holding one 'glyph': a vertical stem of
     `stem_width` columns in `colour`, with a half-strength edge column on each side."""
