@@ -156,7 +156,7 @@ input[type=range]:focus { outline: none; }
   border-radius: 7px; overflow: hidden; box-sizing: border-box; }
 .pbar .fill { height: 100%; background: var(--sel-bg); }
 /* save editor view */
-.toolbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+.toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
 .master { display: flex; gap: 12px; align-items: flex-start; }
 .plist { width: 255px; flex: none; display: flex; flex-direction: column; gap: 4px; }
 /* The list's scroll bar stands outside its frame, as egui's solid bar does (4 points from
@@ -211,12 +211,12 @@ input[type=range]:focus { outline: none; }
    gaps share the room the columns leave: after the list, between the
    columns, after Ability stats. The first counts from the list's frame, 22
    points left of this pane (the list's 10-point bar strip and the 12 before
-   the pane), the last to the window's edge, 12 right of the pane (the views'
+   the pane), the last to the window's edge, 8 right of the pane (the views'
    right margin), so the grid spans both: centred in the pane alone, the gap
    after the list read wider than the two between the columns. The header
    and Appearance line up with General info's title. */
 #player-view { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
-  align-items: start; margin: 0 -12px 0 -22px; }
+  align-items: start; margin: 0 -8px 0 -22px; }
 #player-view > :first-child { grid-column: 2 / 7; grid-row: 1; }
 #player-view > :last-child { grid-column: 2 / 7; grid-row: 3; }
 .pcols { display: contents; }
@@ -490,9 +490,9 @@ table.grid.stats-grid td { padding: 2px 6px; }
    back as padding, so its content ends where the view's other rows do, at
    the width the app gives it (egui's scroll bar floats and takes none). The
    pane holds the scroll; the view itself keeps no strip of its own. */
-.center.filled { scrollbar-gutter: auto; padding-right: calc(12px + var(--sbw, 0px)); }
+.center.filled { scrollbar-gutter: auto; padding-right: calc(8px + var(--sbw, 0px)); }
 .center.filled .detail { overflow: auto; min-height: 0; scrollbar-gutter: stable;
-  margin-right: calc(-12px - var(--sbw, 0px)); padding-right: 12px; }
+  margin-right: calc(-8px - var(--sbw, 0px)); padding-right: 8px; }
 .live-panel { flex: none; margin-top: 6px; }
 .live-divider { height: 4px; cursor: ns-resize; }
 .live-divider:hover { background: var(--hover); }

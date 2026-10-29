@@ -1822,19 +1822,25 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           prompt,tactics,toolbar,overlap}.rs`. Rendered against the draft's Open menu
           (`.tmp/8_9l/{draft,built}/open_menu.png`): the entries and the PES 2020 save as
           drawn, the geometry off in every menu and the toolbar (l3d)
-        - [ ] l3d the menus and the Save editor's toolbar at the draft's pixels, seen in l3c's
-          render (`.tmp/8_9l/draft_menu_rects.py`, `.tmp/8_9l/measure_toolbar.py`): every
-          menu's entries 21 apart for the draft's 19, inset 7 from the menu's edge for 5, the
-          text 2 inside the entry for 8, a separator 3 + 1 + 3 in the draft; the toolbar 4 left
-          of the draft's 68 and its buttons 8 apart for 6 (Live AATF 22 right); the Open menu's
-          discovered entries with two spaces before the account, the draft's render one. Brief
-          `.tmp/8_9l/brief_l3d.md`. Root causes: the menus are egui's own `menu_style`, the
-          drafts' `.menu` never made a style; the toolbar's gap is the theme's item spacing;
-          its 4 is the shell's 8-point central margin against the drafts' 12-point `.center`
-          padding, which the Save editor's panes each make up by hand. Open after l3d: whether
-          the shell's margin should be the drafts' 12 instead (every tool's view measured for
-          the same 4, the panes' hand-made 4s removed), and a menus pass in `rect_compare.py`
-          (closed menus were never measured)
+        - [ ] l3d the drafts take egui's spacing (DECISIONS 2026-10-29 "The drafts take egui's
+          spacing"), seen in l3c's render: every menu's entries 21 apart against the draft's
+          19, the toolbar's buttons 8 apart for 6, every view 8 from the central panel's edges
+          for 12, because the drafts' spacing was picked in a browser and each difference was
+          made up in the app or missed (the menus were never measured: `rect_compare.py` sees
+          closed menus only). A first brief, the app following the drafts, was stopped
+          (`wt-l3d`, dropped).
+          - [x] l3d1 2026-10-29 (lead): the drafts' `.menu`, the menu's place under its button,
+            `.center`'s side padding, the Save editor's `.toolbar` gap and right margins at the
+            theme's values; the draft's menus and toolbar then within a point of the built
+            window (`.tmp/8_9l/draft_menu_rects.py`, `measure_toolbar.py`); the discovered
+            entry's one space in the draft's source. Plan: `plans/core/gui.md` "Prototypes
+            before implementation", the Look bullet
+          - [ ] l3d2 the Save editor drops its panes' hand-added 4 points (the list's left
+            margin, `PANE_RIGHT_MARGIN`) and the Open menu's label takes one space; the player
+            and team views re-measured with `rect_compare.py`
+          - [ ] l3d3 every other draft spacing that differs from the theme's (`.row`'s gap 6,
+            for one) listed, each changed to the theme's or kept with its reason in the
+            stylesheet; a menus pass added to `rect_compare.py`
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
         The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by

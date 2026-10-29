@@ -313,7 +313,7 @@
   @font-face { font-family: "Phosphor"; src: url("assets/fonts/phosphor-subset.ttf"); }
   .ph { font-family: "Phosphor"; font-size: 24px; line-height: 1; }
   /* Its scroll bar in the window's strip, kept while nothing scrolls (the .win comment). */
-  .center { flex: 1; overflow: auto; padding: 8px 12px 40px; min-width: 0; scrollbar-gutter: stable; }
+  .center { flex: 1; overflow: auto; padding: 8px 8px 40px; min-width: 0; scrollbar-gutter: stable; }
   .data { width: 590px; border-left: 1px solid var(--stroke); display: flex; flex-direction: column; min-height: 0; }
   .data pre { flex: 1; margin: 0; overflow: auto; background: var(--extreme); padding: 6px; font: 12px/1.2 var(--font-mono); color: #b4b4b4; }
   .data pre div { white-space: pre; min-height: 14px; }
@@ -418,8 +418,11 @@
   .sep { border-top: 1px solid var(--stroke); margin: 8px 0; }
   .handle { cursor: grab; color: #6e6e6e; padding: 0 4px; user-select: none; }
   .dragover { outline: 1px solid var(--sel-fg); }
-  .menu { position: fixed; background: var(--panel); border: 1px solid var(--stroke); border-radius: 6px; padding: 4px; z-index: 130; box-shadow: 0 4px 16px #000a; display: flex; flex-direction: column; min-width: 160px; }
-  .menu button { text-align: left; background: transparent; padding: 2px 8px; }
+  /* A menu as egui 0.37 draws one (its menu_style, the theme's spacing): the frame's margin 6
+     (menu_margin), entries a control's 18 high and 3 apart (interact_size, item_spacing), their
+     text 2 in (menu_style's button_padding), a separator 6 with the spacing either side. */
+  .menu { position: fixed; background: var(--panel); border: 1px solid var(--stroke); border-radius: 6px; padding: 6px; gap: 3px; z-index: 130; box-shadow: 0 4px 16px #000a; display: flex; flex-direction: column; min-width: 160px; }
+  .menu button { text-align: left; background: transparent; padding: 0 2px; min-height: 18px; }
   .menu button:hover:not(:disabled) { background: var(--hover); }
   /* A menu item's shortcut (egui's shortcut_text): right-aligned in the weak colour, at least
      8 after the label (the icon spacing's 4 on each side of the stretch between them). */
@@ -904,10 +907,10 @@ function menu(label, items, opts = {}) {
   const open = btn => {
     closeMenus();
     const r = btn.getBoundingClientRect();
-    const [left, top] = inWin(r.left, r.top), below = top + r.height + 2;
+    const [left, top] = inWin(r.left, r.top), below = top + r.height + 1;
     const m = h("div", { class: "menu", style: `left:${left}px; top:${below}px` },
       items.map(([text, fn, disabled, title]) => {
-        if (text === "-") return h("div", { class: "sep", style: "margin:3px 0" });
+        if (text === "-") return h("div", { class: "sep", style: "margin:2.5px 0" });
         const [name, keys] = text.split("\t");
         return h("button", { disabled, title, onclick: ev => { ev.stopPropagation(); closeMenus(); fn(); } },
           name, keys ? h("span", { class: "shortcut" }, keys) : null);

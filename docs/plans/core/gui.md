@@ -756,7 +756,14 @@ to the table first (a new dependency, asked for first):
   checkbox and radio button (a 14-point box or circle on the widget fill, the tick a
   polyline), the slider, a combo's open list (egui's popup under its button, opened by the
   draft's own code over the `select`), and a scroll bar where the app reserves a band for its
-  floating one (the browser's hidden, the band kept clear).
+  floating one (the browser's hidden, the band kept clear). Spacing starts from the theme's
+  the same way: a draft's margins, gaps and paddings are the ones egui draws with the suite's
+  theme (a panel's margin 8, the item spacing 8 across and 3 down, a menu's margin 6 with its
+  entries a control's 18 high), so a view built from the draft needs no override. A draft
+  that wants another value says why in the stylesheet's comment, and the app takes it as one
+  theme or shared widget value, never as a margin each view adds by hand: the drafts first
+  padded a view 12, spaced the toolbar 6 and drew their own menus, which the built views
+  either made up for pane by pane or missed, and both looked equally fine.
 - **Behaviour:** what a control does beyond its look (the wheel stepping a value, a drag, a
   key) is written in the plan with an acceptance scenario, not left to the draft alone: a
   comparison of the built window with the draft sees pixels, so a behaviour only the draft

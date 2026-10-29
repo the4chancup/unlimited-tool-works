@@ -77,3 +77,14 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   slot 24's real count (marked uncertain)?
 - **Which PES version was the 15/16 pattern table measured on?** And is there a log from the
   other one, to say whether the two share it?
+
+## Machinery
+
+- **The VPS's scratch folder is over its budget: clear it, or let the lead do it?** (worklog
+  8.9l3d's line; RUNBOOK "The scratch folder"). On 2026-10-29 `just mutants-diff` found
+  `~/studio-mutants` at 34.2 GiB (budget 30) and the disk at 12.6 GiB free (floor 20), so no
+  run can split with the VPS. The cleanup the RUNBOOK names removes the gates' build cache,
+  `~/studio-mutants/tree/target`, with `scripts/remote_clean_target.sh` (a dry run first:
+  `ssh bonfire "bash -s" < scripts/remote_clean_target.sh`, then the same with
+  `"bash -s -- --delete"`); the harness's classifier refused the lead's dry run. Until then
+  every mutation run is local only (`STUDIO_MUTANTS_REMOTE` empty), about twice as long.

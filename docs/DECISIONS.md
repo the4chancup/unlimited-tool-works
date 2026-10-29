@@ -13477,3 +13477,20 @@ not list it and the Team compiler's `savefile_path = auto` would not find it for
 game; the digits alone keep `WEPES` and other folders out, and the save inside marks an account.
 Found by the 8.9l3c sidekick, whose Open menu test used the real folder name.
 Plan: `spec/pes_savefile/codec.md` "Savefile discovery", the layouts table's 19-21 row.
+
+## 2026-10-29 — gui — The drafts take egui's spacing; the app keeps the theme's defaults
+
+Decision: the drafts' menus, the Save editor's toolbar gap and every view's side padding change
+to what egui draws with the suite's theme (a menu's margin 6, entries 18 high and 3 apart with
+their text 2 in, a separator 6 with the spacing either side; the toolbar's buttons 8 apart; a
+view 8 from the central panel's edges), and the Save editor drops the 4 points its panes added
+to reach the drafts' 12. The app's theme is not changed to the drafts' old values. From now on
+a draft takes the theme's spacing unless it states a reason.
+Why: measuring the built Open menu against its draft showed every menu and the toolbar off by
+more than the tolerance (entries 21 apart for 19, the toolbar's last button 22 to the right),
+because the drafts' spacing was picked in a browser and each difference became an override or
+a hand-added margin in the app, or was missed. The maintainer found both looks equally fine and
+asked for whichever is simpler and more reliable to maintain: egui's defaults need no style
+code and no compensation, so they win. The sidekick slice that was making the app follow the
+drafts (one menu style, the toolbar gap) was stopped and its work dropped.
+Plan: `plans/core/gui.md` "Prototypes before implementation", the Look bullet.
