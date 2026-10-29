@@ -13,6 +13,11 @@ use crate::widgets::{FORM_ROW_SPACING, text_box};
 
 use super::sidebar::HELP_LABEL;
 
+/// The space between two of a topic's paragraphs, the drafts' `.help-topic p` margin. Each
+/// paragraph is its own viewer, so search can highlight one, and only egui's item spacing
+/// would stand between them: a paragraph break would read as a line break.
+const PARAGRAPH_SPACING: f32 = 8.0;
+
 /// The window's state across frames: the chapters it was built over, whether it is open,
 /// where it is (chapter index; the topic index in the list the tree shows — the written
 /// topics, then `Messages` when the chapter has catalog rows), the paragraph or catalog
@@ -247,10 +252,10 @@ impl HelpWindow {
     }
 
     /// The right pane's topic (the draft's `drawHelpTopic`): its title as a heading,
-    /// then the body rendered paragraph by paragraph, the highlighted one inside a
-    /// filled frame and scrolled into view once, on the first drawn frame after the
-    /// jump. A Messages topic is the catalog table instead. After the draw, an
-    /// in-doc link whose hook reported a click jumps to its target.
+    /// then the body rendered paragraph by paragraph, `PARAGRAPH_SPACING` apart, the
+    /// highlighted one inside a filled frame and scrolled into view once, on the first
+    /// drawn frame after the jump. A Messages topic is the catalog table instead. After
+    /// the draw, an in-doc link whose hook reported a click jumps to its target.
     fn draw_topic(&mut self, ui: &mut egui::Ui) {
         let mut clicked_link = None;
         let mut applied = false;
@@ -274,6 +279,9 @@ impl HelpWindow {
             } else if let Some(topic) = section.topics.get(self.topic) {
                 ui.heading(topic.title);
                 for (index, para) in paragraphs(topic.body).iter().enumerate() {
+                    if index > 0 {
+                        ui.add_space(PARAGRAPH_SPACING - ui.spacing().item_spacing.y);
+                    }
                     // A paragraph's `show` resets every link hook at its start, so the
                     // click's flag is read after each call, not once at the end.
                     let cache = &mut self.cache;
@@ -1502,6 +1510,38 @@ mod tests {
         nodes.iter().find(|node| {
             node.role() == Role::Label && node.value().is_some_and(|v| v.contains(text))
         })
+    }
+
+    #[test]
+    fn a_topics_paragraphs_stand_8_apart() {
+        let dir = TestDir::new("studio_core_help_paragap");
+        let (_, alpha) = sections().remove(0);
+        let (a, calls_a) = stub_help("a", "Alpha", None, alpha);
+        let Shell { mut app, .. } = shell_with(
+            test_settings(dir.path()),
+            vec![a],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a],
+        );
+        let egui_ctx = test_context();
+
+        frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
+        let nodes = idle(&egui_ctx, &mut app, 15).nodes;
+        assert_eq!(app.help_window.showing(), Some(("a", "a-one")));
+        let bounds = |text: &str| {
+            label_bounds(&nodes, text)
+                .and_then(accesskit::Node::bounds)
+                .unwrap_or_else(|| panic!("the paragraph {text:?} has bounds"))
+        };
+        let first = bounds("Alpha writes TEAMS.");
+        let second = bounds("Second paragraph.");
+        assert!(
+            first.y0 >= pane_top(&nodes),
+            "premise: the first paragraph is in the pane"
+        );
+        let gap = second.y0 - first.y1;
+        assert!((gap - 8.0).abs() <= 0.5, "the paragraphs' gap: {gap}");
     }
 
     #[test]
