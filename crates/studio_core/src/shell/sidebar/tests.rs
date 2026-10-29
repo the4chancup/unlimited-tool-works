@@ -56,17 +56,26 @@ fn filled_at(out: &FrameOutput, bounds: accesskit::Rect) -> bool {
     })
 }
 
-/// Whether the frame paints a `color` fill `ACTIVE_BAR_WIDTH` wide over the
-/// full height at `bounds`' left edge: the active entry's accent bar.
-fn accent_bar_at(out: &FrameOutput, bounds: accesskit::Rect, color: egui::Color32) -> bool {
-    out.shapes.iter().any(|clipped| {
-        matches!(&clipped.shape, egui::Shape::Rect(shape)
-            if shape.fill == color
+/// The frame's `color` fill `ACTIVE_BAR_WIDTH` wide over the full height at
+/// `bounds`' left edge: the active entry's accent bar.
+fn accent_bar_at(
+    out: &FrameOutput,
+    bounds: accesskit::Rect,
+    color: egui::Color32,
+) -> Option<&egui::epaint::RectShape> {
+    out.shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) => Some(shape),
+            _ => None,
+        })
+        .find(|shape| {
+            shape.fill == color
                 && (f64::from(shape.rect.min.x) - bounds.x0).abs() <= 0.5
                 && (f64::from(shape.rect.min.y) - bounds.y0).abs() <= 0.5
                 && (f64::from(shape.rect.width()) - f64::from(ACTIVE_BAR_WIDTH)).abs() <= 0.5
-                && (f64::from(shape.rect.height()) - (bounds.y1 - bounds.y0)).abs() <= 0.5)
-    })
+                && (f64::from(shape.rect.height()) - (bounds.y1 - bounds.y0)).abs() <= 0.5
+        })
 }
 
 /// How many of the frame's `Shape::Text` carry exactly `text`.
@@ -711,15 +720,37 @@ fn the_accent_bar_marks_only_the_active_row() {
     let out = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9));
     let color = egui_ctx.global_style().visuals.selection.stroke.color;
     assert!(
-        accent_bar_at(&out, entry(&out.nodes, "A").bounds().unwrap(), color),
+        accent_bar_at(&out, entry(&out.nodes, "A").bounds().unwrap(), color).is_some(),
         "the active row carries the accent bar"
     );
     for label in ["B", "Help", "Settings"] {
         assert!(
-            !accent_bar_at(&out, entry(&out.nodes, label).bounds().unwrap(), color),
+            accent_bar_at(&out, entry(&out.nodes, label).bounds().unwrap(), color).is_none(),
             "the {label} row carries no accent bar"
         );
     }
+}
+
+// The accent bar's two left corners are rounded as the entry's, the draft's
+// `.tool.on` border, and its right ones square against the fill.
+#[test]
+fn the_accent_bar_rounds_its_left_corners_only() {
+    let Shell { mut app, _dir, .. } = shell();
+    let egui_ctx = test_context();
+
+    let out = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9));
+    let color = egui_ctx.global_style().visuals.selection.stroke.color;
+    let bar = accent_bar_at(&out, entry(&out.nodes, "A").bounds().unwrap(), color)
+        .expect("the active row carries the accent bar");
+    assert_eq!(
+        bar.corner_radius,
+        egui::CornerRadius {
+            nw: 2,
+            ne: 0,
+            sw: 2,
+            se: 0
+        }
+    );
 }
 
 // ST-SIDE-02's "while the pointer is on it": the overlay's rect reaches past

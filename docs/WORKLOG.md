@@ -4148,8 +4148,12 @@ briefs, review loops, gates and mutation runs as for any step.
       pass would centre with the input's monitor size: one frame, accepted. Built window checked
       2026-10-28 at `8978a0be`: from 1100 × 800 the click restored 1280 × 800 at (312, 120),
       the button gone after it
-  - [ ] z3 the sidebar's active-tool bar: the draft rounds its left corners, egui draws it
-    square (the maintainer, 2026-10-27, "for later")
+  - [x] z3 the sidebar's active-tool bar: the draft rounds its left corners, egui draws it
+    square (the maintainer, 2026-10-27, "for later"). Planned 2026-10-29 (`core/gui.md`
+    "Sidebar" item 3: the bar's left corners rounded 2, the right square). Done 2026-10-29
+    (Opus, brief `.tmp/0_0_1ov/brief_z3.md`, reviewed): `sidebar/mod.rs`
+    `ACTIVE_BAR_CORNER` 2 on `nw`/`sw`; test `the_accent_bar_rounds_its_left_corners_only`.
+    Seen on screen at the release rebuild (ov4c's captures)
   - [x] z4 the maintainer's second look (2026-10-27 ~21:55), drafts and plan: Reset window
     drawn only while the window is maximized or off its active class's design size
     (`core/gui.md` "Status bar", ST-BAR-01's GIVEN, ST-BAR-06 new); the unsaved-changes prompt
@@ -4524,7 +4528,7 @@ briefs, review loops, gates and mutation runs as for any step.
       every row 22 apart in its block, Height 68.5, Stronger foot 136.5, Other stats 233 below
       the title); the Name and Shirt boxes were already 18 since ov2r. Left for the build
       (ov2q's brief): the blocks 6 apart where it has 4, which brings each label to the draft's
-    - [ ] ov2l the team view's header as drafted: the stroke line between the fields' row and
+    - [x] ov2l the team view's header as drafted: the stroke line between the fields' row and
       the Tactics, 8 above and below (`teamView`'s `.sep`; the build has none, so the Preset row
       stands 20 higher), and the colour swatches 22 × 16 (`input[type=color]`; egui's colour
       button is 40 wide, which moves the row's right half 31 to 57 points right). Planned
@@ -4533,7 +4537,13 @@ briefs, review loops, gates and mutation runs as for any step.
       button landed, the line stopped on the fold (743.5 against 740), and the row's offset
       found to be egui's 8-point spacing too (DECISIONS "The team row's gaps as drafted; its
       line waits for the Tactics' height"; the draft's `.cbtn` set to 22 × 16); rework 1
-      `.tmp/0_0_1ov/rework_ov2l.md`: the row's gaps, the line moved to ov2u
+      `.tmp/0_0_1ov/rework_ov2l.md`: the row's gaps, the line moved to ov2u; rework 2
+      `rework2_ov2l.md`: the id boxes 46 (the draft's `.info-grid`). Done 2026-10-29
+      (`85cd3c11`, merge `05911b62`; lead gates in its target after merging
+      main: save_editor 455 + 50, color_tools 70, team_widgets 181, ruleset_editor 110 + 13,
+      clippy, fmt): `ROW_GAP` 6, `SPACE_GAP` 3, `ID_CELL_PADDING` 4, `ID_BOX_WIDTH` 46, the
+      row's six controls within a point of the draft's on PES 21 and still on PES 17
+    - [ ] ov2u briefed 2026-10-29 (`.tmp/0_0_1ov/brief_ov2u.md`, worktree `wt-ov2u`)
     - [ ] ov2u the team view's Tactics at the draft's height (the build's stands about 23
       points taller: with ov2l's line its last control ends 3.5 under the pane's fold, the
       draft's 8 over it; measure block by block, `rect_compare.py`), then the line under the
@@ -4591,10 +4601,15 @@ briefs, review loops, gates and mutation runs as for any step.
       row (DECISIONS "A dialog's sentence stands 8 from what is around it; the help's
       Messages rows 19 apart"). Its report found the dialogs' sentences 12.5 from the
       title and the control in the draft, 8 and 3 in the build: ov2v
-    - [ ] ov2v a dialog's sentence 8 over the control under it (`plans/core/gui.md` "Other UI
+    - [x] ov2v a dialog's sentence 8 over the control under it (`plans/core/gui.md` "Other UI
       components", Modals; the drafts' `.window p` set to 8 by the lead, rendered
       `.tmp/0_0_1ov/vet/p_setstats.png`): the modals whose body has a sentence over a control
-      (Set and Bump all stats, Copy and Swap stats, the others the drafts' `h("p"` lists)
+      (Set and Bump all stats, Copy and Swap stats, the others the drafts' `h("p"` lists).
+      Done 2026-10-29 (merge of `ov/2v`; Opus sidekick, brief `brief_ov2v.md`; lead gates in
+      its target after merging main: studio_core 287, save_editor 455 + 50, clippy, fmt):
+      `widgets::modal_sentence_gap` in Set/Bump, Copy/Swap, strip-again and the rules-file
+      errors dialog, and (its contradiction, applied by the lead) between the game-running
+      prompt's two sentences
     - [x] ov2r the drafts brought to the plan (lead): the settings menu's FPC hide boots and
       gloves IDs (common rows, `plans/core/gui.md` "Settings menu") and the active tool's
       section open on opening (the Save editor's, with Aesthetics from exports), both of which
@@ -4613,7 +4628,11 @@ briefs, review loops, gates and mutation runs as for any step.
     awkward) are answered by ov7: a file is validated when imported, and the toolbar's
     dropdown switches. `live_gallery.py`, broken since `cd40003a`, also expects its image 11's
     "fielded at DMF in preset 1" from the PES 17 sample under DBC7, gone with ov9: the
-    gallery moves a starter under a ruleset that checks fielded positions instead
+    gallery moves a starter under a ruleset that checks fielded positions instead. Rendered
+    again 2026-10-29 (lead): image 06 dropped (no failed state since ov7), image 11 under the
+    official rules with team 718's sixth starter made a B where preset 1 fields him (the
+    gallery's copy only); looked at by the lead (02, 07, 11). Waits for the maintainer's look
+    (QUESTIONS "The final pass over the built app's UI")
   - [x] ov7 Live AATF replaces the AATF panel (the maintainer, 2026-10-28; DECISIONS "Live AATF
     replaces the AATF panel; the final pass's fourth rulings"; drafts and plan done,
     `plans/save_editor.md` "Configurable AATF rules", SE-GUI-15 and SE-GUI-32 rewritten, their
@@ -4750,12 +4769,36 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] ov4 8.20's host control (lead, drafts): the captures in
     `docs/prototypes/assets/captures/`, the Overlay control over the draft (8.20's brief,
     `.tmp/8_20/brief_8_20.md`, written for a worktree since gone: rebase it on main)
-  - [ ] ov5 the vetting renderer into `scripts/` (the maintainer, 2026-10-28: "useful enough
+    - [x] ov4a the Overlay control (lead): `index.html`'s Layout group, `overlay=over|beside`
+      in the link, the capture over the window body at half opacity (clicks through) or
+      beside the window level with its body, a missing one naming its file;
+      `assets/captures/README.md`; `bundle_drafts.py` keeps the folder's literal (test red
+      first: "an extension with no MIME type"). Checked on a scratch copy with a stand-in
+      (`.tmp/0_0_1ov/overlay_check.py`: over at (0, 0) 1280 × 780, beside level with the
+      body, the missing line). `acc23548`, merge `670f46dc`
+    - [x] ov4b `scripts/draft_shots.py` and each tool script's `shots` list (8.20's
+      deliverables 2-3, sidekick). Done 2026-10-29 (Opus, brief `.tmp/0_0_1ov/brief_ov4b.md`,
+      reviewed; the lead added `shots` to the host's view contract comment): 55 links, 110
+      shots at the default and smallest window on a 1920 × 1080 monitor, the page clock
+      frozen; a link the draft does not write back is an error. A one-line `.window` padding
+      edit changed 50 shots, every dialog's; two identical runs changed none. Not listed: the
+      Ruleset editor's `not-saved` (no template has a problem) and the Save editor's
+      `picture-save-settings` (its window writes back `picture-save`). Its test needs Pillow,
+      so it stays out of the gates. `4e156a27`, merge `83a25a08`
+    - [ ] ov4c the first captures (lead): the Save editor's screens from the release build
+      after the next checkpoint, each dated in its corner, by a capture script beside
+      `rect_compare.py`
+  - [x] ov5 the vetting renderer into `scripts/` (the maintainer, 2026-10-28: "useful enough
     to keep"): `.tmp/0_0_1ov/vet.py`, which renders a draft change's before and after from
     `git archive` exports side by side (stacked when side by side would be over four times
     as wide as tall: the maintainer, 2026-10-28), each sheet carrying the change's reason under
     its caption (the maintainer, 2026-10-28), generalized from its cases list to a
-    revision pair and a link, with its test
+    revision pair and a link, with its test. Done 2026-10-29 (merge `4daed600`; Opus sidekick,
+    brief `.tmp/0_0_1ov/brief_ov5.md`): `scripts/vet_drafts.py --before REV --after REV
+    --link FRAGMENT --why TEXT [--crop CSS] [--pad N] [--click TEXT]`, exports under
+    `.tmp/vet_exports/` (the lead's change from the brief's fixed Windows path), and
+    `vet_drafts_test.py` (7 tests, run by hand: it needs Pillow, which `just test` does not
+    install); `vet.py`'s one-case crops (a combo's popup, an uneven box) are not reproduced
 - [x] 0.0.1rn the project renamed Unlimited Tool Works (the maintainer, 2026-10-28: "when most
   convenient"): `unlimited-tool-works` as the name in paths and packages, UTW as the shorthand,
   the exe `UTW.exe` (`utw` on Linux; DECISIONS "The final pass's second rulings"). Before the
