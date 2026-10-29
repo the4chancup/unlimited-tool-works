@@ -291,6 +291,10 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 .inner_margin(LIST_MARGIN)
                 .show(ui, |ui| {
                     ui.set_width(LIST_WIDTH - chrome.x);
+                    // egui's solid scroll bar stands beside the rows, as
+                    // the draft's `.live-body` bar does: a floating one lies
+                    // over each row's right end and its last words.
+                    ui.spacing_mut().scroll = egui::style::ScrollStyle::solid();
                     egui::ScrollArea::vertical()
                         .id_salt("save_editor_multi_rows")
                         .auto_shrink([false, false])

@@ -1461,6 +1461,7 @@ mod generate;
 mod list;
 mod live_aatf;
 mod live_marks;
+mod overlap;
 mod player;
 mod prompt;
 mod quick_actions;

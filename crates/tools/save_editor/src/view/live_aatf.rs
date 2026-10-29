@@ -111,6 +111,10 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         },
         |ui| {
             // The list scrolls inside the dock: a long one does not grow it.
+            // egui's solid scroll bar stands beside the rows, as the
+            // draft's `.live-body` bar does: a floating one lies over each
+            // row's right end, its hover and its sentence's last words.
+            ui.spacing_mut().scroll = egui::style::ScrollStyle::solid();
             let clicked = egui::ScrollArea::vertical()
                 .id_salt("save_editor_live_results")
                 .auto_shrink([false, false])
