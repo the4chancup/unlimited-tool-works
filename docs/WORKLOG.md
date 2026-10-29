@@ -4149,7 +4149,9 @@ briefs, review loops, gates and mutation runs as for any step.
       2026-10-28 at `8978a0be`: from 1100 × 800 the click restored 1280 × 800 at (312, 120),
       the button gone after it
   - [ ] z3 the sidebar's active-tool bar: the draft rounds its left corners, egui draws it
-    square (the maintainer, 2026-10-27, "for later")
+    square (the maintainer, 2026-10-27, "for later"). Planned 2026-10-29 (`core/gui.md`
+    "Sidebar" item 3: the bar's left corners rounded 2, the right square); brief
+    `.tmp/0_0_1ov/brief_z3.md`
   - [x] z4 the maintainer's second look (2026-10-27 ~21:55), drafts and plan: Reset window
     drawn only while the window is maximized or off its active class's design size
     (`core/gui.md` "Status bar", ST-BAR-01's GIVEN, ST-BAR-06 new); the unsaved-changes prompt
@@ -4597,10 +4599,15 @@ briefs, review loops, gates and mutation runs as for any step.
       row (DECISIONS "A dialog's sentence stands 8 from what is around it; the help's
       Messages rows 19 apart"). Its report found the dialogs' sentences 12.5 from the
       title and the control in the draft, 8 and 3 in the build: ov2v
-    - [ ] ov2v a dialog's sentence 8 over the control under it (`plans/core/gui.md` "Other UI
+    - [x] ov2v a dialog's sentence 8 over the control under it (`plans/core/gui.md` "Other UI
       components", Modals; the drafts' `.window p` set to 8 by the lead, rendered
       `.tmp/0_0_1ov/vet/p_setstats.png`): the modals whose body has a sentence over a control
-      (Set and Bump all stats, Copy and Swap stats, the others the drafts' `h("p"` lists)
+      (Set and Bump all stats, Copy and Swap stats, the others the drafts' `h("p"` lists).
+      Done 2026-10-29 (merge of `ov/2v`; Opus sidekick, brief `brief_ov2v.md`; lead gates in
+      its target after merging main: studio_core 287, save_editor 455 + 50, clippy, fmt):
+      `widgets::modal_sentence_gap` in Set/Bump, Copy/Swap, strip-again and the rules-file
+      errors dialog, and (its contradiction, applied by the lead) between the game-running
+      prompt's two sentences
     - [x] ov2r the drafts brought to the plan (lead): the settings menu's FPC hide boots and
       gloves IDs (common rows, `plans/core/gui.md` "Settings menu") and the active tool's
       section open on opening (the Save editor's, with Aesthetics from exports), both of which

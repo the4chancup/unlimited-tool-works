@@ -221,7 +221,9 @@ Top to bottom:
    of the 776-point rail at the default window, leaving the logo, the version dropdown, the help
    and the gear their room; at 32 they would take about 600 with 12-point side margins, and a
    rail that overflows scrolls its entries out of sight. The active tool is highlighted with an
-   accent-colored left border bar plus a filled background. The suite's planned tools not in
+   accent-colored left border bar plus a filled background, the bar 3 points wide with its two
+   left corners rounded as the entry's (2 points; the draft's `.tool.on` border), the right
+   ones square against the fill. The suite's planned tools not in
    this build (the registry's, `architecture.md` "Tool plugin interface") are listed after the
    registered ones, grayed and not clickable, each tooltip saying the tool is not in this build:
    the list communicates the suite roadmap. A registered tool the registry marks **CLI-only**
