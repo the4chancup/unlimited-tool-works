@@ -17,7 +17,7 @@ use super::StudioApp;
 use crate::events::{PipelineEvent, PipelineEventEnvelope, RunId};
 use crate::help::{HelpSection, HelpTarget};
 use crate::settings::Settings;
-use crate::status::ToolActivity;
+use crate::status::{Notice, ToolActivity};
 use crate::tool::{AppPaths, CliError, PlannedTool, StudioTool, ToolContext};
 use crate::widgets::{LogLine, LogPanel, PathKind, checkbox_without_text, path_row};
 
@@ -73,6 +73,11 @@ pub(super) struct Calls {
     /// The `Ui::max_rect` the last `view` ran against: where the tool's view sits
     /// and how wide it is (the sidebar's overlay must never move it).
     pub(super) view_rect: Mutex<Option<egui::Rect>>,
+    /// What `standing_notice` returns; `standing_notice_ended` clears it, as a real tool
+    /// stops returning its notice once told.
+    pub(super) standing: Mutex<Option<Notice>>,
+    /// How often the shell called `standing_notice_ended`.
+    pub(super) standing_ends: AtomicUsize,
 }
 
 impl Calls {
@@ -105,6 +110,10 @@ impl Calls {
     /// The rect the last `view` was given.
     pub(super) fn view_rect(&self) -> Option<egui::Rect> {
         *self.view_rect.lock().unwrap()
+    }
+    /// How often the stub was told its standing notice ended.
+    pub(super) fn standing_ends(&self) -> usize {
+        self.standing_ends.load(Ordering::SeqCst)
     }
 }
 
@@ -253,6 +262,13 @@ impl StudioTool for StubTool {
     }
     fn title_detail(&self) -> Option<String> {
         self.calls.title_detail.lock().unwrap().clone()
+    }
+    fn standing_notice(&self, _ctx: &ToolContext) -> Option<Notice> {
+        self.calls.standing.lock().unwrap().clone()
+    }
+    fn standing_notice_ended(&mut self) {
+        self.calls.standing_ends.fetch_add(1, Ordering::SeqCst);
+        *self.calls.standing.lock().unwrap() = None;
     }
 }
 
