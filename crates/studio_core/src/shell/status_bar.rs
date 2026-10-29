@@ -1279,6 +1279,49 @@ mod tests {
         );
     }
 
+    // ST-BAR-07
+    #[test]
+    fn a_standing_notice_never_reaches_the_window_title() {
+        let Shell {
+            mut app,
+            ctx,
+            calls,
+            _dir,
+            ..
+        } = shell();
+        let egui_ctx = test_context();
+        let out = frame(&egui_ctx, &mut app, Vec::new(), false);
+        let idle = format!("A - {}", crate::APP_NAME);
+        assert_eq!(titles(&out), [idle], "the idle title first");
+
+        // Unfocused, a standing notice shows in the bar and leaves the idle title alone.
+        *calls[0].standing.lock().unwrap() = Some(warning("standing one", false));
+        let out = frame(&egui_ctx, &mut app, Vec::new(), false);
+        assert!(has_text(&out.nodes, "standing one"), "the bar shows it");
+        assert!(
+            titles(&out).is_empty(),
+            "the title stays idle: {:?}",
+            titles(&out)
+        );
+
+        // An event's notice held in the title stays there when a standing notice takes
+        // the bar from it.
+        *calls[0].standing.lock().unwrap() = None;
+        frame(&egui_ctx, &mut app, Vec::new(), false);
+        ctx.notify(info("Compiled 48 teams"));
+        let out = frame(&egui_ctx, &mut app, Vec::new(), false);
+        let held = format!("Compiled 48 teams - {}", crate::APP_NAME);
+        assert_eq!(titles(&out), [held], "the event's notice holds the title");
+        *calls[0].standing.lock().unwrap() = Some(warning("standing two", false));
+        let out = frame(&egui_ctx, &mut app, Vec::new(), false);
+        assert!(has_text(&out.nodes, "standing two"), "the bar shows it");
+        assert!(
+            titles(&out).is_empty(),
+            "the held title is not replaced: {:?}",
+            titles(&out)
+        );
+    }
+
     // ST-BAR-08
     #[test]
     fn a_switch_version_action_picks_the_version_unless_a_tool_blocks_it() {

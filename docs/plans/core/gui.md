@@ -1180,7 +1180,9 @@ ST-BAR-07   GIVEN stub tool A active, returning the Warning notice "standing one
                  leaves A untold; GIVEN A active again and returning it, and a notice
                  published THEN that notice shows and A is told once
                  (`standing_notice_ended`); likewise once for its dismiss clicked, and once for
-                 its action clicked
+                 its action clicked; GIVEN the window unfocused THEN the standing notice shows
+                 in the bar and the window title stays idle, or keeps an event's notice it
+                 holds
 ST-BAR-08   GIVEN the selector at PES 19 and a notice whose action is
                  `SwitchVersion(PES 21)`
             WHEN its action is clicked
