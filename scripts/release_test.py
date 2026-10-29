@@ -8,6 +8,8 @@ import unittest
 from pathlib import Path
 
 from release import (
+    EMPTY_FOLDERS,
+    LAUNCHERS,
     PACKAGE,
     existing_glob,
     expected_entries,
@@ -68,6 +70,8 @@ class Pure(unittest.TestCase):
         # DBC7's, for DBC's window testers; a stem `aatf` does not build in would fall back
         # to the first built-in with a notice on every start.
         self.assertEqual(settings["save-editor"]["aatf_ruleset"], "dbc7")
+        # PES 2017, DBC's game, so the window opens on the save its testers bring.
+        self.assertEqual(settings["common"]["pes_version"], 17)
         source = (ROOT / "crates/libs/aatf/src/templates.rs").read_text(encoding="utf-8")
         blocks = source.split("const BLOCKS: &[(&str, &str)] = &[", 1)[1].split("];", 1)[0]
         stems = re.findall(r'^\s*\("([a-z0-9]+)",', blocks, re.MULTILINE)
@@ -82,17 +86,23 @@ class Pure(unittest.TestCase):
             {
                 "unlimited-tool-works-0.0.1",
                 "unlimited-tool-works-0.0.1/UTW.exe",
-                "unlimited-tool-works-0.0.1/quick_compile.bat",
-                "unlimited-tool-works-0.0.1/quick_upgrade.bat",
                 "unlimited-tool-works-0.0.1/README.txt",
                 "unlimited-tool-works-0.0.1/LICENSE-MIT",
                 "unlimited-tool-works-0.0.1/LICENSE-APACHE",
-                "unlimited-tool-works-0.0.1/exports",
-                "unlimited-tool-works-0.0.1/old_exports",
                 "unlimited-tool-works-0.0.1/data",
                 "unlimited-tool-works-0.0.1/data/settings.toml",
             },
         )
+
+    def test_the_bundle_ships_no_launcher_and_no_export_folder(self) -> None:
+        # 0.0.1 is the Save editor's alone: a launcher put back by habit fails here, not
+        # in a member's unpacked folder.
+        self.assertEqual(LAUNCHERS, ())
+        self.assertEqual(EMPTY_FOLDERS, ())
+        entries = expected_entries("UTW", "0.0.1")
+        self.assertEqual([entry for entry in entries if entry.endswith(".bat")], [])
+        for folder in ("exports", "old_exports"):
+            self.assertNotIn(f"unlimited-tool-works-0.0.1/{folder}", entries)
 
     def test_sha256_line(self) -> None:
         self.assertEqual(sha256_line("ab12cd", "a.7z"), "ab12cd  a.7z\n")
@@ -138,14 +148,10 @@ class Listing(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             stage = Path(tmp)
             top = stage / f"{PACKAGE}-9.9.9"
-            (top / "exports").mkdir(parents=True)
-            (top / "old_exports").mkdir()
-            (top / "data").mkdir()
+            (top / "data").mkdir(parents=True)
             (top / "data/settings.toml").write_bytes(b"x")
             for bundled in (
                 "Tiny.exe",
-                "quick_compile.bat",
-                "quick_upgrade.bat",
                 "README.txt",
                 "LICENSE-MIT",
                 "LICENSE-APACHE",
