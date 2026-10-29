@@ -233,15 +233,19 @@ session that stalled after its one allowed resume is not resumed again; the lead
 brief's remaining items itself or briefs a fresh session.
 
 **Sidekicks in parallel worktrees never share a `target/`.** Each worktree's builds go to its
-own `CARGO_TARGET_DIR` (`../4cc-studio-temp/wt-<x>/target`), at `CARGO_BUILD_JOBS=4` while
-three or four build at once. Cargo names a workspace crate's build output by its path relative
+own `CARGO_TARGET_DIR` (`../4cc-studio-temp/wt-<x>/target`), at `CARGO_BUILD_JOBS=4`. Cargo names a workspace crate's build output by its path relative
 to the workspace root, so every worktree writes the same file name for the same crate, and a
 build in one worktree takes another's output as up to date: on 2026-10-28 one `save_editor`
 build linked another worktree's `aatf` (a constant reported missing in a tree that has it), and
 a doc-test linked a `studio_core` without the function its own tree had just added. Cargo's
 lock on a shared folder serializes builds but does not stop this, so a shared folder makes
-every sidekick's test results suspect. Each folder costs a full build and its disk; three at 4
-jobs each keep within the machine's memory, where three at 8 would not.
+every sidekick's test results suspect. Each folder costs a full build and its disk.
+
+**At most two cargo builds at once, on the whole machine** (the maintainer, 2026-10-29): a
+sidekick's, a mutation run's local half, the lead's gates or package tests and a release
+build each count as one. Two already fill the CPU almost entirely, so a third makes nothing
+faster and only risks exhausting the memory and crashing the system. Before starting a
+build, count the ones running; a third waits for one to end.
 
 **A headless `claude -p` sidekick runs its builds and tests in the foreground.** Its session
 ends with its turn, so a run it started in the background and a notification it waits for die
