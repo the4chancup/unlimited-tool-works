@@ -7,7 +7,7 @@ use pes_version::PesVersion;
 
 use super::{
     ACTIVE_BAR_WIDTH, CLOVER_LEAVES, CLOVER_RING, ExeCheck, ICON_SIZE, LABEL_END_PADDING,
-    LABEL_GAP, RAIL_WIDTH, overlay_frame, overlay_id, selector_color,
+    LABEL_GAP, RAIL_WIDTH, overlay_frame, overlay_id, selector_color, version_label,
 };
 use crate::help::{HelpSection, HelpTarget, HelpTopic};
 use crate::pes_process::RunningPes;
@@ -214,7 +214,7 @@ fn the_rail_opens_the_sidebar_over_the_view_on_hover_and_closes_on_leave() {
         "the rail's entries are icon cells"
     );
 
-    // The pointer at a rail entry at t = 1.00 and still there at 1.10: closed.
+    // The pointer at a rail entry at t = 1.00 and still there at 1.09: closed.
     let rail_pos = centre(entry(&nodes, "A"));
     frame_at(
         &egui_ctx,
@@ -223,7 +223,7 @@ fn the_rail_opens_the_sidebar_over_the_view_on_hover_and_closes_on_leave() {
         true,
         Some(1.00),
     );
-    let closed = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.10)).nodes;
+    let closed = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.09)).nodes;
     let view_closed = calls[0].view_rect().unwrap();
     assert_eq!(
         entry(&closed, "A").bounds().unwrap().width(),
@@ -231,8 +231,8 @@ fn the_rail_opens_the_sidebar_over_the_view_on_hover_and_closes_on_leave() {
         "a rest shorter than the delay keeps the rail"
     );
 
-    // At 1.16, past the delay: open, every entry the overlay's inner width.
-    let opened = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.16)).nodes;
+    // At 1.11, past the delay: open, every entry the overlay's inner width.
+    let opened = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.11)).nodes;
     let inner = overlay_inner_width(&egui_ctx, cell, &["A", "B", "Help", "Settings"]);
     for label in ["A", "B", "Help", "Settings"] {
         let width = entry(&opened, label).bounds().unwrap().width();
@@ -2341,6 +2341,69 @@ fn the_rails_logo_selector_and_line_sit_at_the_drafts_rows() {
     assert_at_draft(f64::from(start.y), 66.5, "the line under the selector");
     assert_at_draft(f64::from(start.x), 6.0, "the line's left end");
     assert_at_draft(f64::from(end.x), 49.0, "the line's right end");
+}
+
+/// The selector's button: its node's bounds.
+fn combo_rect(nodes: &[accesskit::Node]) -> egui::Rect {
+    let bounds = combo(nodes).bounds().expect("the selector has bounds");
+    egui::Rect::from_min_max(
+        egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
+        egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
+    )
+}
+
+/// How many triangles the frame paints inside `rect`: egui's combo arrow is a
+/// filled triangle, a closed three-point `Shape::Path`.
+fn triangles_in(out: &FrameOutput, rect: egui::Rect) -> usize {
+    out.shapes
+        .iter()
+        .filter(|clipped| {
+            matches!(&clipped.shape, egui::Shape::Path(path)
+                if path.closed
+                    && path.points.len() == 3
+                    && path.points.iter().all(|point| rect.contains(*point)))
+        })
+        .count()
+}
+
+// The draft's `#sidebar select`: on the rail the selector shows its year alone,
+// centred on the button, with no arrow. Opened, its full name starts at the
+// button's left, past the button's padding, and the arrow follows it.
+#[test]
+fn the_rails_selector_centres_its_year_without_an_arrow_and_the_opened_one_keeps_both() {
+    let (rail, open) = rail_and_open_at_draft_window("Save editor");
+    let version = Settings::default().common.pes_version;
+
+    let button = combo_rect(&rail.nodes);
+    assert_eq!(
+        triangles_in(&rail, button),
+        0,
+        "the rail's selector paints no arrow"
+    );
+    let year = text_shape_in(&rail, &version_label(version, true), button)
+        .expect("the rail's selector paints its year");
+    let year_centre = year.pos.x + year.galley.size().x / 2.0;
+    assert!(
+        (year_centre - button.center().x).abs() <= 0.5,
+        "the year is centred on the button ({year_centre} vs {})",
+        button.center().x
+    );
+
+    let button = combo_rect(&open.nodes);
+    assert_eq!(
+        triangles_in(&open, button),
+        1,
+        "the opened selector paints its arrow"
+    );
+    let name = text_shape_in(&open, &version_label(version, false), button)
+        .expect("the opened selector paints its full name");
+    let padding = test_context().global_style().spacing.button_padding.x;
+    assert!(
+        (name.pos.x - (button.min.x + padding)).abs() <= 0.5,
+        "the full name starts at the button's left, past its padding ({} vs {})",
+        name.pos.x,
+        button.min.x + padding
+    );
 }
 
 // The entries are the draft's 30-point rows 3 apart (`.rail` gap 3, egui's item
