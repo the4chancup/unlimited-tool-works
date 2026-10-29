@@ -13311,3 +13311,18 @@ lines in 129 files that every slice in flight edits, and renaming them later nee
 migration.
 Plan: `plans/core/development_plan.md` "The project's name: Unlimited Tool Works";
 `plans/core/distribution.md` "Distribution: portable .7z bundle".
+
+## 2026-10-29 — save_editor — Correction: the quick actions in halves, the player rows 18 high in columns
+Decision: the quick actions' two columns are halves of the list's frame, 6 apart, as the
+draft's `1fr 1fr`, a label longer than its half elided with the tier in its tooltip; the plan
+had them as wide as their widest cells, "not halves always", because egui's text was wider than
+the draft's. A player row's place, position and name are columns (the place weak, the position
+28 wide, the name elided before its dot and mark), every list row 18 high with no gap; the
+Cards left badge's tier and count stand in the draft's chip.
+Why: ov1 measured the build's columns at 81 and 105, ending 50 points short of the frame that
+the column's other controls reach (the maintainer's ruling that they end at the frame), while
+"Make Goalkeeper" now fits a half; the rows were 21 high (a selectable's 18 plus egui's item
+spacing), one string where the draft has columns, and the badge plain text where the draft
+frames it.
+Plan: `plans/save_editor.md` "Editing UI": the Player list and quick actions bullets, the
+skills' Cards left badge.
