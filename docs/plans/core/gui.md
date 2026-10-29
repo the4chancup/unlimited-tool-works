@@ -224,7 +224,9 @@ Top to bottom:
      when the exe's folder is a folder on this system: under Wine or Proton the probe reports the
      game's Windows path, which a Linux setting cannot use.
 3. **Tool list** — vertical nav, one entry per tool: its icon at **24 points**, its label in the
-   body text beside it once the sidebar opens (item 4), populated from the registered
+   body text beside it once the sidebar opens (item 4), 6 points after the icon's 24-point box
+   with 6 points of the row after the longest label (the draft's `.sidebar .tool` gap and
+   `.rail .sel` padding), populated from the registered
    `StudioTool` list. The rail shows the icons alone, so they are drawn at about twice the body
    text (12.5) for the rail by itself to tell the tools apart, and at the same size and place in
    the opened sidebar, so nothing moves when it opens. 24 rather than larger because the rail

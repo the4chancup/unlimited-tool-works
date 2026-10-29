@@ -1915,9 +1915,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               `the_overlay_casts_no_shadow_and_ends_on_the_rails_line` (red twice: the shadow,
               then the missing line). On the release build: one grey-60 column at x 194, no
               shadow. Files: `studio_core/src/shell/sidebar/{mod,tests}.rs`
-            - [ ] l3d3h the opened sidebar measures 195 wide in the build (194 before l3d3f's
-              line), the draft's `#sb-open` 190.6 with its border: find which of the label
-              width, the icon cell and the gaps differs, then fix the side that is wrong
+            - [ ] l3d3h the opened sidebar's labels where the draft puts them: the build's
+              start 10 points right of the draft's (57 against 47: after the whole icon
+              cell plus egui's 8, where the draft has 6 after the 24-point icon box) and
+              the layer ends 4 wider (195 against 190.6: the draft also pads the row 6 after
+              the label); `plans/core/gui.md` "Sidebar" item 3 now gives the numbers;
+              brief `.tmp/8_9l/brief_l3d3h.md`
             - [x] l3d3g 2026-10-29 (lead, `712966d8`) the Windows title bar without the icon
               (DECISIONS "The title bar draws no icon on Windows" and "The title bar's icon
               slot stays blank"): `window_size::hide_title_bar_icon`, one `unsafe` call. On the
