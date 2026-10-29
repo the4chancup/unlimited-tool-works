@@ -1418,6 +1418,41 @@ fn the_lists_frame_stands_where_the_drafts_does() {
     );
 }
 
+// The list's column stands where the draft's `.plist` does at the
+// 1280 x 780 window: the team combo's top 30, 4 under the toolbar's
+// buttons, then the filter box and the rows' frame each 4 under the
+// last, the frame's top at 74.
+#[test]
+fn the_lists_controls_stand_4_apart_from_the_drafts_top() {
+    let path = fixture(PesVersion::Pes21, "list_column_tops");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let frame = list_frame(&window, &shapes);
+    let top_of = |role: Role| {
+        nodes
+            .iter()
+            .filter(|node| node.role() == role)
+            .filter_map(accesskit::Node::bounds)
+            .find(|bounds| bounds.x0 < f64::from(frame.max.x))
+            .unwrap_or_else(|| panic!("the list's {role:?}"))
+            .y0
+    };
+    let tops = [
+        top_of(Role::ComboBox),
+        top_of(Role::TextInput),
+        f64::from(frame.min.y),
+    ];
+    for (top, draft) in tops.iter().zip([30.0, 52.0, 74.0]) {
+        assert!(
+            (top - draft).abs() <= 0.5,
+            "the combo, the filter and the frame at the draft's 30, 52 and 74 ({tops:?})"
+        );
+    }
+}
+
 // The bar's strip stays while a filter leaves nothing to scroll, so the
 // list keeps its width: with a filter leaving three rows the frame is as
 // wide as with the whole list, its rows as wide as it, and no bar shows.
