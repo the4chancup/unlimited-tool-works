@@ -1,4 +1,4 @@
-# 4cc Studio — Match tracker plan: GUI view
+# Unlimited Tool Works — Match tracker plan: GUI view
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

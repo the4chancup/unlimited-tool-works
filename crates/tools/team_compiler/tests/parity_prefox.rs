@@ -627,9 +627,9 @@ fn assert_matches_reference(
     // The team's shared-IDs record, at a path no game reads: a Midcup over no installed CPK
     // with no shared folder taking an ID writes none, on pre-Fox too, and the tracer links
     // none.
-    assert!(!ours.contains_key("4cc_studio/shared_ids/731.toml"));
+    assert!(!ours.contains_key("unlimited-tool-works/shared_ids/731.toml"));
     for path in ours.keys() {
-        if !path.starts_with("4cc_studio/") && !accounted.contains(path) {
+        if !path.starts_with("unlimited-tool-works/") && !accounted.contains(path) {
             failures.push(format!("our CPK holds {path}, not in the tables' rows"));
         }
     }

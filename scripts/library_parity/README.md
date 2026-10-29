@@ -19,7 +19,7 @@ cannot print); Windows, for Red. Each script's docstring has its exact usage.
 2. **Find the inputs** (only when the library changed; the lists are reused otherwise):
    `find_folders.py` (Everything, seconds) writes `census/folders.tsv`; `find_archives.py`
    lists every archive Everything knows with 7-Zip into `census/archives.tsv`.
-3. **Upgrade census**: `census.py target/release/4cc-studio.exe <tag>` writes
+3. **Upgrade census**: `census.py target/release/utw.exe <tag>` writes
    `census/outcomes_<tag>.tsv`, `reports_<tag>.txt` and the tally `census_<tag>.txt`.
    `regress_check.py <previous tag> <tag>` lists every input whose outcome changed and the
    finding lines it lost and gained; each change is diagnosed (`analyze.py <tag> <code>` groups

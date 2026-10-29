@@ -1,4 +1,4 @@
-# 4cc Studio — Team compiler plan
+# Unlimited Tool Works — Team compiler plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -248,7 +248,7 @@ TC-GUI-17  manual  GIVEN the sideload mode selected and PES 21 installed in pes_
                    WHEN Launch PES is clicked
                    THEN PES2021.exe starts from that folder, not through Steam, and the button
                         is disabled while it runs
-TC-GUI-18  GIVEN `4cc-studio --gui team-compiler compile` with an export in the exports folder
+TC-GUI-18  GIVEN `UTW --gui team-compiler compile` with an export in the exports folder
            WHEN the initial check completes
            THEN the compile starts by itself, its grid and log indistinguishable from a click's;
                 GIVEN quick_compile_close_on_success set THEN the window closes when the run

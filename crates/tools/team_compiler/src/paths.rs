@@ -363,7 +363,7 @@ pub(crate) fn kit_texture(engine: Engine, name: &str) -> String {
 
 /// The folder of one team's shared-IDs record in the CPK, a path no game reads. A later
 /// `Midcup` export of the team reads the record to keep the shared IDs the team already has.
-pub(crate) const SHARED_IDS: &str = "4cc_studio/shared_ids/";
+pub(crate) const SHARED_IDS: &str = "unlimited-tool-works/shared_ids/";
 
 /// The CPK path of team `team_id`'s shared-IDs record (`<team id>.toml` under `SHARED_IDS`).
 pub(crate) fn shared_ids(team_id: u16) -> String {

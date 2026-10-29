@@ -1,4 +1,4 @@
-# 4cc Studio — Library crates plan: `libs/pipeline`
+# Unlimited Tool Works — Library crates plan: `libs/pipeline`
 
 Part of the [Library crates plan](README.md). The shared scaffolding every compiling tool (Team
 compiler, Balls compiler, Stadium compiler) runs on. The reasons behind each piece are in the core

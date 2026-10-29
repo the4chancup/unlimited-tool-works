@@ -1,6 +1,6 @@
-# 4cc Studio — Core plan
+# Unlimited Tool Works — Core plan
 
-This is the core architectural plan for 4cc Studio: the goals, the platform (crate
+This is the core architectural plan for Unlimited Tool Works: the goals, the platform (crate
 structure, tool plugin system, GUI shell, parallelism), and the cross-cutting
 decisions. The tools and the major library crates have their own documents, listed in the
 [index](../README.md).
@@ -20,7 +20,7 @@ single-file plan.
 
 ## Overview
 
-4cc Studio is a Rust-based **suite of all the tools used by the 4cc community**, built around two
+Unlimited Tool Works is a Rust-based **suite of all the tools used by the 4cc community**, built around two
 tightly integrated main tools, the first of which exists:
 
 1. **The Team compiler** (successor to the AET Compiler) — compiles aesthetics exports into CPK archives,
@@ -33,7 +33,7 @@ into the Team compiler, which converts models to the target PES version's format
 The plan documents form a standalone architectural plan derived from a feasibility analysis of the
 existing codebases.
 
-**Relationship to legacy tools:** 4cc Studio is an independent reimplementation of their useful
+**Relationship to legacy tools:** Unlimited Tool Works is an independent reimplementation of their useful
 ideas and required observable results, not a translation of their source. Its implementation,
 internal data layout, module organization, and UI are designed anew around this plan. Legacy file
 and function names identify behavioral/format evidence, not code or application structure to copy.
@@ -62,7 +62,7 @@ Three prior compiler implementations exist:
 | Red | Python | Mature, feature-complete; direct batch translation, works by moving files on storage | `4cc-aet-compiler-red` |
 | Blue | Python (free-threaded 3.14t) | LLM-made prototype of an in-memory parallel pipeline; missing referee support | `4cc-aet-compiler-blue` |
 
-All three are stopgaps towards 4cc Studio: they define *what* the compiler must produce (Red's CPK
+All three are stopgaps towards Unlimited Tool Works: they define *what* the compiler must produce (Red's CPK
 output is the golden standard for parity), not *how* the new implementation works (see "Relationship
 to the older compilers" in the [Team compiler plan](../team_compiler/README.md)).
 
@@ -89,7 +89,7 @@ Two Blender addons provide import/export for the community:
 | pes-fmdl | FMDL | `Blender/2.79/scripts/addons/pes-fmdl` |
 | pes-model | .model | `Blender/2.79/scripts/addons/pes-model` |
 
-4cc Studio consolidates all projects into a single Rust application with a GUI.
+Unlimited Tool Works consolidates all projects into a single Rust application with a GUI.
 
 ### Language choice: Rust
 
@@ -212,7 +212,7 @@ pattern and the schema-driven save codec collapsing 4ccEditor's six per-version 
 | Crate architecture | Minimal core + tool crates + lib crates | `studio_core` = shell/trait/settings only; every tool its own crate; all shared functionality in lib crates |
 | Tool crate granularity | One crate per tool, no companion libs | Even the Team compiler (15–25k lines) stays one crate with internal modules; only genuinely shared parts move down — hence `libs/aesthetics_export` (compiler + upgrader + kit config editor + refs arranger + future tools), not a single-consumer `team_compiler_lib` |
 | Tool modularity | Tools own their GUI, settings, CLI, and help | `StudioTool` trait: view, settings section (injected into settings menu), clap subcommand, help chapter (injected into the help window, Messages topic generated from the catalog) |
-| CLI shape | `4cc-studio <tool-id> <command>` subcommands | Standard clap subcommands; better help/completion than flag-style dispatch |
+| CLI shape | `UTW <tool-id> <command>` subcommands | Standard clap subcommands; better help/completion than flag-style dispatch |
 | License | `MIT OR Apache-2.0`; game-derived data excluded and named as Konami's | The suite is libraries first, for a community that writes tools in every language; copyleft would confine the libs to GPL consumers for a protection this community has never needed. See `distribution.md` "License" |
 | Data location | First-run choice: `data/` next to the exe (fully portable) or the user config dir; presence-based resolution, no marker files | EGG-Translator's wizard mechanism; portable users get delete/move-the-folder semantics, config-dir users survive program-folder replacement |
 | Save codec | Schema tables + one engine | Collapses 4ccEditor's six per-version files; mechanically verifiable |

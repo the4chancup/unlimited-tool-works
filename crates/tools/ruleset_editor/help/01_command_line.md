@@ -1,12 +1,12 @@
 The Ruleset editor's commands run from a terminal opened in the folder that holds
-`UnlimitedToolWorks.exe`. A rules file (a `.4ccrules` file) is what a cup's teams are checked
+`UTW.exe`. A rules file (a `.4ccrules` file) is what a cup's teams are checked
 against: tiers, stat targets, heights, cards and special rules, plus the code that runs
 the check.
 
 ```text
-UnlimitedToolWorks ruleset-editor validate <file>
-UnlimitedToolWorks ruleset-editor update-logic <file>
-UnlimitedToolWorks ruleset-editor summary <file> [-o <out>]
+UTW ruleset-editor validate <file>
+UTW ruleset-editor update-logic <file>
+UTW ruleset-editor summary <file> [-o <out>]
 ```
 
 `validate` checks that a rules file loads: the text parses, the rules hold together (no

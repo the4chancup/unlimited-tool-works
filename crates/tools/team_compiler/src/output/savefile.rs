@@ -282,7 +282,7 @@ mod tests {
     fn empty_patch() -> AestheticsPatch {
         AestheticsPatch {
             pes_version: PesVersion::Pes21,
-            studio_version: "test".to_owned(),
+            tool_version: "test".to_owned(),
             allocation_scheme_version: ALLOCATION_SCHEME_VERSION,
             cpks: Vec::new(),
             compiled: utc_datetime(0),

@@ -1,4 +1,4 @@
-# 4cc Studio — Export upgrader plan
+# Unlimited Tool Works — Export upgrader plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -43,7 +43,7 @@ What exists of this is in `spec/export_upgrader.md` "CLI". Step 13 adds `--conve
 `upgrade` (off by default):
 
 ```text
-4cc-studio export-upgrader upgrade <export>... [--savefile <EDIT>] [--loose] [--coverage full|midcup] [--convert-to-gltf] [-o <dir>]
+UTW export-upgrader upgrade <export>... [--savefile <EDIT>] [--loose] [--coverage full|midcup] [--convert-to-gltf] [-o <dir>]
 ```
 
 One addition to the built commands (the coverage tag and the staging folder's sweep are

@@ -1,6 +1,7 @@
 //! The widgets several tools' views share: `BottomDock`, the collapsible bottom
 //! panel's frame, `LogPanel`,
-//! the run log drawn in it, the settings rows (`settings_row`) the menu's
+//! the run log drawn in it, `well_frame`, the log's well a dock's rows sit in,
+//! the settings rows (`settings_row`) the menu's
 //! sections share, the checkbox and radio button every view draws
 //! (`choice`), a tool's toolbar row with its group separator
 //! (`toolbar`), the measure that places text by its ink (`ink`), the
@@ -23,7 +24,7 @@ mod wheel;
 pub use choice::{checkbox, checkbox_without_text, radio, radio_value};
 pub use dock::BottomDock;
 pub use ink::ink_span;
-pub use log_panel::{LogLine, LogPanel};
+pub use log_panel::{LogLine, LogPanel, well_frame};
 pub use menu_button::menu_button;
 pub use modal::{modal, modal_buttons, modal_frame};
 pub(crate) use settings_row::{PathCommit, path_row_commit, row_label};

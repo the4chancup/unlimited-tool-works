@@ -1044,9 +1044,12 @@ fn paint_marker(
     // The name in its colour codes' colours (white where it has none),
     // centred under the badge or cut at its right when wider.
     let mut job = egui::text::LayoutJob::default();
-    append_name(&mut job, raw_name_at(roster, roster_slot));
+    append_name(
+        &mut job,
+        raw_name_at(roster, roster_slot),
+        &egui::FontId::proportional(12.0),
+    );
     for section in &mut job.sections {
-        section.format.font_id = egui::FontId::proportional(12.0);
         if section.format.color == egui::Color32::PLACEHOLDER {
             section.format.color = palette.pitch_text;
         }

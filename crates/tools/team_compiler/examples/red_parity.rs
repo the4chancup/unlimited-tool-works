@@ -20,7 +20,7 @@
 //! (the compiler plans its own IDs), else by content among our packages of the same shape,
 //! the nearest unpaired one once every equal pair is made; a `*.fpk.xml` is `dropped_fpk_xml`
 //! without a lookup; anything else unpaired is `red_only`, and every entry of ours no Red
-//! entry pairs with is `ours_only` (`studio_record` for the compiler's own `4cc_studio/`
+//! entry pairs with is `ours_only` (`studio_record` for the compiler's own `unlimited-tool-works/`
 //! records, which no game reads).
 //!
 //! How a paired entry is compared, by what it is:
@@ -516,7 +516,7 @@ fn compare_side(
         if consumed.contains(path) || named.contains(path) {
             continue;
         }
-        let class = if path.starts_with("4cc_studio/") {
+        let class = if path.starts_with("unlimited-tool-works/") {
             "studio_record"
         } else {
             "ours_only"

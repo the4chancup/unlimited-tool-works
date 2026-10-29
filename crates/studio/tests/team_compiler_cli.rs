@@ -28,7 +28,7 @@ impl Sandbox {
             fs::remove_dir_all(&root).unwrap();
         }
         fs::create_dir_all(root.join("data")).unwrap();
-        let built = Path::new(env!("CARGO_BIN_EXE_4cc-studio"));
+        let built = Path::new(env!("CARGO_BIN_EXE_utw"));
         let exe = root.join(built.file_name().unwrap());
         // A hard link, not a copy: a copy holds the file open for writing, and on Linux a
         // child another test thread forks in that instant inherits the handle, so running

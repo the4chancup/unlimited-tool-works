@@ -2,10 +2,10 @@
 //!
 //! | Invocation | Mode |
 //! |---|---|
-//! | `4cc-studio` | GUI, last-used tool active |
-//! | `4cc-studio <tool-id> <command> [args]` | headless CLI |
-//! | `4cc-studio --gui <tool-id> <command> [args]` | GUI autorun: the GUI opens on the tool and runs the command |
-//! | `4cc-studio help [chapter] [topic] [--export <dir>]` | prints or exports the help's Markdown |
+//! | `UTW` | GUI, last-used tool active |
+//! | `UTW <tool-id> <command> [args]` | headless CLI |
+//! | `UTW --gui <tool-id> <command> [args]` | GUI autorun: the GUI opens on the tool and runs the command |
+//! | `UTW help [chapter] [topic] [--export <dir>]` | prints or exports the help's Markdown |
 //!
 //! Every tool contributes one clap subcommand named after its id; `--gui` and `-v` are the
 //! shell's own flags and `help` its own subcommand, parsed here so no tool's command knows
@@ -65,10 +65,10 @@ pub enum LaunchMode {
     },
 }
 
-/// The root `4cc-studio` command with one subcommand per registered tool plus the shell's own
+/// The root `UTW` command with one subcommand per registered tool plus the shell's own
 /// `help`, which replaces clap's built-in one. clap's switch is global, so the tools' own
-/// generated `help` subcommands go with it: `4cc-studio <tool-id> help` is a usage error,
-/// and `4cc-studio <tool-id> --help` prints the tool's usage as before.
+/// generated `help` subcommands go with it: `UTW <tool-id> help` is a usage error,
+/// and `UTW <tool-id> --help` prints the tool's usage as before.
 ///
 /// # Panics
 /// If two tools share an id, or a tool uses the reserved settings key `common` or the help

@@ -1,4 +1,4 @@
-# 4cc Studio - Glossary
+# Unlimited Tool Works - Glossary
 
 One line per term, with the plan section that owns the full definition. This file defines nothing
 on its own: if a line and its plan section disagree, the plan is right and the line gets fixed.
@@ -10,6 +10,8 @@ terms next to each other rather than in alphabetical order; adjacency is what ma
 | Term | Meaning | Owner |
 |---|---|---|
 | **4cc** | The 4chan Cup community: PES-based virtual football cups between board teams. Studio is its tool suite. | `spec/core/README.md` "Overview" |
+| **Unlimited Tool Works (UTW)** | The suite's name, wherever a member sees it: the window, the help, the executable `UTW.exe` (`utw` on Linux), the `unlimited-tool-works` folders, `utw.log`. | `plans/core/development_plan.md` "The project's name: Unlimited Tool Works" |
+| **Studio** | The project's working name, which the crates (`studio`, `studio_core`), the types (`StudioTool`) and the docs' and code's prose keep as the suite's shorthand; no member-facing text uses it. | `plans/core/development_plan.md` "The project's name: Unlimited Tool Works" |
 | **Acceptance ID** | Stable identifier (`TC-KIT-03`) of one testable, user-observable behavior in a tool plan's "Acceptance" section; tests cite it. | `CONTRIBUTING.md` "Testing" |
 | **ATF** | The Autism Task Force ("autism" in the meme sense, obsessively dedicated): the community members who checked every tactical export by hand before each cup. **AATF**, the Auto ATF, is the rules check that does that job now (`libs/aatf`). The **Aesthetics ATF** is the semi-manual check of a cup's aesthetics exports, aided by the maintainer's aes-atf-bot. | `spec/aatf_rules.md`; `plans/core/development_plan.md` "Unscheduled tools" |
 | **Converge** | End-of-phase audit of code against the plan section and acceptance IDs; gaps become worklog steps. | `AGENTS.md` "Working documents" |
@@ -28,7 +30,7 @@ terms next to each other rather than in alphabetical order; adjacency is what ma
 | **`PipelineEvent`** | The typed progress/result event tools emit (`ExportStarted`, `FolderStatus`, `Message`, `Progress`, `Complete`); GUI and CLI render it. | `spec/core/architecture.md` "Event system" |
 | **`ScopePath`** | `vtree`'s canonical, platform-neutral, validated path inside an export; addresses events, findings and grid cells. | `spec/libs/README.md` "`vtree` path types" |
 | **Stale-result envelope** | `PipelineEventEnvelope` carrying `run_id` and `export_revision`, so results from an outdated filesystem snapshot cannot overwrite newer state. | `spec/core/architecture.md` "Event system" |
-| **`studio`** | The crate of the single binary, `4cc-studio`: registers tools, launches the GUI or dispatches `4cc-studio <tool-id> <command>`. | `spec/core/architecture.md` "Crate structure" |
+| **`studio`** | The crate of the single binary, `utw` (`UTW.exe` in the Windows bundle): registers tools, launches the GUI or dispatches `UTW <tool-id> <command>`. | `spec/core/architecture.md` "Crate structure" |
 | **`studio_core`** | The platform crate: shell, `StudioTool` trait, settings framework, common widgets, event types. Holds only what runs with zero tools installed; its module tree is closed. | `spec/core/architecture.md` "Architecture" |
 | **`StudioTool` / `ToolContext`** | The plugin trait every tool implements (id, settings, `cli_run`, `gui_run`) and the platform services handed to it. | `spec/core/architecture.md` "Tool plugin interface" |
 | **Studio Web** | Post-release, deliberately lite browser edition; the reason every lib crate stays `wasm32`-checkable. | `spec/core/gui.md` "Browser deployment" |

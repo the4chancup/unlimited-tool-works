@@ -257,12 +257,13 @@ mod tests {
 
     // The draft's `.firstrun` row: two columns 299 points wide and 16 apart, each a
     // button as wide as its column and 38 tall, then its hint wrapped inside the
-    // column on two lines at most. The user folder is the draft's own sample path: a
-    // user name a few letters longer pushes that hint to a third line.
+    // column on as many lines as its text needs. The user folder is the draft's own
+    // sample path, whose hint takes three lines, as in the draft; a longer user name
+    // takes more.
     #[test]
     fn the_two_choices_are_equal_columns_with_full_width_buttons_and_wrapped_hints() {
         let dir = TestDir::new("studio_core_first_run_layout");
-        let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\4cc-studio");
+        let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\unlimited-tool-works");
         let Shell { mut app, .. } = first_run_shell(
             test_settings(dir.path()),
             dir.path().join("exe"),
@@ -302,8 +303,8 @@ mod tests {
                 "a hint wraps inside its column {button:?}: {hint:?}"
             );
             assert!(
-                hint.height() <= 2.0 * row_height + 0.5,
-                "a hint takes at most two lines of {row_height}: {hint:?}"
+                hint.height() <= 3.0 * row_height + 0.5,
+                "the sample hints take at most three lines of {row_height}: {hint:?}"
             );
         }
         let gap = buttons[1].x0 - buttons[0].x1;
@@ -356,7 +357,7 @@ mod tests {
     #[test]
     fn the_choices_row_sits_8_under_the_title_and_8_above_the_footer() {
         let dir = TestDir::new("studio_core_first_run_margins");
-        let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\4cc-studio");
+        let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\unlimited-tool-works");
         let Shell { mut app, .. } = first_run_shell(
             test_settings(dir.path()),
             dir.path().join("exe"),

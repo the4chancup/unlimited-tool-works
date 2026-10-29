@@ -16,7 +16,7 @@ const CO_SLOT_3: u32 = 71403;
 /// A patch text for `version` under `scheme`, holding `teams` (`[[teams]]` blocks).
 fn patch_text(version: u16, scheme: u32, teams: &str) -> String {
     format!(
-        "pes_version = {version}\nstudio_version = \"0.1.0\"\nallocation_scheme_version = {scheme}\ncpks = []\ncompiled = 2026-10-13T00:00:00Z\n{teams}"
+        "pes_version = {version}\ntool_version = \"0.1.0\"\nallocation_scheme_version = {scheme}\ncpks = []\ncompiled = 2026-10-13T00:00:00Z\n{teams}"
     )
 }
 

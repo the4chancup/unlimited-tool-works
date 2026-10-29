@@ -29,6 +29,14 @@ pub(super) const DOT_MARK_GAP: f32 = 4.0;
 /// draft's `.prow .handle`): the name gets the room.
 const HANDLE_INSET: f32 = 4.0;
 
+/// The gap between a player row's columns, the place, the position and
+/// the name (the draft's `.prow` gap).
+const COLUMN_GAP: f32 = 5.0;
+
+/// The position's column width (the draft's `.pos`): the names start at
+/// one x whatever the position's letters.
+const POSITION_WIDTH: f32 = 28.0;
+
 /// The `●` of a row with unsaved changes (the draft's `.plist .dot`: the
 /// warning colour, pushed to the row's right end): its galley at the
 /// body font. `None` on a clean row.
@@ -139,6 +147,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     let session = view.session.as_mut().expect("checked above");
     let rows = selection::list(session.file(), &view.team, &view.filter);
     ui.spacing_mut().scroll = scroll;
+    // The rows touch, as the draft's do: `show_rows` adds the item
+    // spacing's 3 points under each row, which made them 21 apart.
+    ui.spacing_mut().item_spacing.y = 0.0;
     // The frame's fill goes under the rows, painted once the scroll area
     // has its rect.
     let background = ui.painter().add(egui::Shape::Noop);
@@ -319,9 +330,10 @@ fn team_row(
         let centre = rect.center().y;
         let mut x = rect.min.x + padding;
         let weak = ui.visuals().weak_text_color();
-        let id_galley =
-            ui.painter()
-                .layout_no_wrap(team_id.to_string(), egui::FontId::default(), weak);
+        let font = egui::TextStyle::Body.resolve(ui.style());
+        let id_galley = ui
+            .painter()
+            .layout_no_wrap(team_id.to_string(), font.clone(), weak);
         ui.painter().galley(
             egui::pos2(x, centre - id_galley.size().y / 2.0),
             id_galley.clone(),
@@ -349,7 +361,7 @@ fn team_row(
         }
         x += ui.spacing().item_spacing.x;
         let mut job = egui::text::LayoutJob::default();
-        append_name(&mut job, &team.name);
+        append_name(&mut job, &team.name, &font);
         // The end's room (the gap, the dot, the mark and what sits
         // between them) comes off the truncation width, so a long name
         // never runs under either.
@@ -385,7 +397,7 @@ fn team_row(
             hint.append(
                 "[click for tactics]",
                 0.0,
-                egui::TextFormat::simple(egui::FontId::default(), weak),
+                egui::TextFormat::simple(font, weak),
             );
             hint.wrap = egui::text::TextWrapping::truncate_at_width(hint_room);
             let hint_galley = ui.painter().layout_job(hint);
@@ -445,11 +457,16 @@ fn player_row(
     let dirty = session.player_dirty(row.team_id, row.slot);
     let is_selected = *selected == Some(Selection::Player(row.team_id, row.slot));
     let row_height = layout.row_height;
-    let mut job = row_text(player, row);
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    let RowText {
+        place,
+        position,
+        mut name,
+    } = row_text(player, row, &font);
     // The unsaved dot paints at the row's right end, never inside the
     // text: a row the name overflows keeps it. The label and the hover
     // keep its text.
-    let mut label = job.text.clone();
+    let mut label = format!("{place} {position} {}", name.text);
     if dirty {
         label.push_str(" \u{25cf}");
     }
@@ -484,34 +501,42 @@ fn player_row(
         // row's right end, as the team row's does).
         let dot = dirty_dot(ui, dirty);
         let room = end_room(ui, dot.as_ref().map(|galley| galley.size().x), mark_width);
-        // The handle, then the text, placed by their ink, which starts a
+        // The handle, then the place, placed by their ink, which starts a
         // glyph's side bearing in from its box: boxes alone left the place
         // a point off on the rows from 10 to 19.
-        let handle = ui.painter().layout_no_wrap(
-            "\u{2261}".to_owned(),
-            egui::TextStyle::Body.resolve(ui.style()),
-            ui.visuals().weak_text_color(),
-        );
+        let weak = ui.visuals().weak_text_color();
+        let handle = ui
+            .painter()
+            .layout_no_wrap("\u{2261}".to_owned(), font.clone(), weak);
         let handle_ink = ink_span(&handle);
         let handle_x = rect.min.x + HANDLE_INSET - handle_ink.min;
-        let text_ink_x = handle_x + handle_ink.max + HANDLE_INSET;
-        job.wrap = egui::text::TextWrapping::truncate_at_width(
-            (rect.max.x - text_ink_x - padding - room).max(0.0),
+        let place_ink_x = handle_x + handle_ink.max + HANDLE_INSET;
+        // The place in the weak colour, then the position and the name
+        // in the row's text colour, each a column `COLUMN_GAP` after the
+        // last (the draft's `.num`, `.pos` and `.pname`).
+        let place = ui.painter().layout_no_wrap(place, font.clone(), weak);
+        let place_x = place_ink_x - ink_span(&place).min;
+        let position_x = place_x + place.size().x + COLUMN_GAP;
+        let position =
+            ui.painter()
+                .layout_no_wrap(position.to_owned(), font, visuals.fg_stroke.color);
+        let name_x = position_x + POSITION_WIDTH + COLUMN_GAP;
+        name.wrap = egui::text::TextWrapping::truncate_at_width(
+            (rect.max.x - name_x - padding - room).max(0.0),
         );
-        let galley = ui.painter().layout_job(job);
+        let name = ui.painter().layout_job(name);
         ui.painter().galley(
             egui::pos2(handle_x, rect.center().y - handle.size().y / 2.0),
             handle,
             visuals.fg_stroke.color,
         );
-        ui.painter().galley(
-            egui::pos2(
-                text_ink_x - ink_span(&galley).min,
-                rect.center().y - galley.size().y / 2.0,
-            ),
-            galley.clone(),
-            visuals.fg_stroke.color,
-        );
+        for (x, galley) in [(place_x, place), (position_x, position), (name_x, name)] {
+            ui.painter().galley(
+                egui::pos2(x, rect.center().y - galley.size().y / 2.0),
+                galley,
+                visuals.fg_stroke.color,
+            );
+        }
         // The dot at the row's right end in the warning colour, one item
         // spacing plus `DOT_MARK_GAP` before the mark when the row has
         // one.
@@ -557,27 +582,37 @@ fn player_row(
     }
 }
 
-/// The row's text as one `LayoutJob`: his place in the roster, position,
-/// then the name's runs, each colored as `name_spans` gives it (`None`
-/// runs the normal text color, `append_name`). The place is the slot's
-/// `01` to `23`, the `NN` of his id and of his export's `NN - Name`
-/// folder, not his shirt number (General info shows that): two digits on
-/// every row, so the places line up with no column kept to right-align
-/// them.
-fn row_text(player: Option<&PlayerEntry>, row: &Row) -> egui::text::LayoutJob {
-    let mut job = egui::text::LayoutJob::default();
-    let place = u32::from(row.slot) + 1;
+/// A player row's three columns' text.
+struct RowText {
+    /// His place in the roster, the slot's `01` to `23`: the `NN` of his
+    /// id and of his export's `NN - Name` folder, not his shirt number
+    /// (General info shows that). Two digits on every row, so the places
+    /// line up with no column kept to right-align them.
+    place: String,
+    /// His registered position's label, `?` when the slot holds no
+    /// player.
+    position: &'static str,
+    /// The name's runs, each colored as `name_spans` gives it (`None`
+    /// runs the normal text color, `append_name`); `?` when the slot
+    /// holds no player.
+    name: egui::text::LayoutJob,
+}
+
+/// The row's place, position and name for `row`'s player, the name's
+/// runs at `font`.
+fn row_text(player: Option<&PlayerEntry>, row: &Row, font: &egui::FontId) -> RowText {
     let position = player
         .and_then(|player| POSITIONS.get(usize::from(player.positions.registered)))
         .copied()
         .unwrap_or("?");
-    job.append(&format!("{place:02} {position}"), 0.0, plain_format());
+    let mut name = egui::text::LayoutJob::default();
     match player {
-        Some(player) => {
-            job.append(" ", 0.0, plain_format());
-            append_name(&mut job, &player.name);
-        }
-        None => job.append(" ?", 0.0, plain_format()),
+        Some(player) => append_name(&mut name, &player.name, font),
+        None => name.append("?", 0.0, plain_format(font.clone())),
     }
-    job
+    RowText {
+        place: format!("{:02}", u32::from(row.slot) + 1),
+        position,
+        name,
+    }
 }

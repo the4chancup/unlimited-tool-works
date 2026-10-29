@@ -1899,7 +1899,6 @@ fn shared_boots_folders_compile_once_each_under_the_shared_ids_in_name_order() {
     assert_eq!(
         paths,
         [
-            "4cc_studio/shared_ids/714.toml",
             "Asset/model/character/boots/k0631/#Win/boots.fpk",
             "Asset/model/character/boots/k0631/#Win/boots.fpkd",
             "Asset/model/character/boots/k0631/#windx11/shirt.ftex",
@@ -1914,6 +1913,7 @@ fn shared_boots_folders_compile_once_each_under_the_shared_ids_in_name_order() {
             "Asset/model/character/face/real/71411/#Win/face.fpkd",
             "common/character0/model/character/uniform/team/UniColor.bin",
             "common/etc/TeamColor.bin",
+            "unlimited-tool-works/shared_ids/714.toml",
         ],
         "no k0623 or k0627 for the linking slots; each one's face is blank"
     );

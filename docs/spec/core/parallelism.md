@@ -1,4 +1,4 @@
-# 4cc Studio — Core plan: Parallelism
+# Unlimited Tool Works — Core plan: Parallelism
 
 Part of the [Core plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
