@@ -1100,8 +1100,10 @@ and no switch drawn; on, the editor **does not edit aesthetics** but through the
   it writes and their players, and `Apply`; a refusal is the CLI's sentence (`<path>: the patch
   is for PES 2021, the save is PES 2017`) in the error colour; each skipped team or player is a
   warning line (`Team 714 /co/ is not in this save: its players are skipped.`). The preview is
-  the open save as it stands against the patch applied to a copy of it, in the views' terms,
-  each player's head as the comparator draws it and a row's click selecting him, recomputed
+  the open save as it stands against the patch applied to a copy of it, laid out as the
+  unsaved-changes table: the columns Item, Old value and New value, the item the player's
+  display name and the field's label in the views' terms (`TAKUMI · Free kick`), the values
+  in monospace, the item's click selecting the player, recomputed
   when the save changes (an edit, an undo, another save opened), not frozen at Open: Apply
   writes what the preview shows, never a list an edit since made stale. So after Apply the
   list is empty and `Applied. The changes stay unsaved until Save.` stands in its place until
