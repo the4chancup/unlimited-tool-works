@@ -13504,3 +13504,14 @@ for it is not needed; a half's own build copies and tests take about 10, and 2 m
 the host's system, since a run ending on a full disk kills the half (2026-10-22: five mutants
 lost at 99%). The maintainer picked 12 over 10 for that reason.
 Plan: `RUNBOOK.md` "The scratch folder"; `scripts/mutants.py`'s `REMOTE_FREE_FLOOR`.
+
+## 2026-10-29 — save_editor — The ability stats' labels left-aligned, as the approved draft shows
+
+Decision: the player view's Ability stats labels are left-aligned in one column, their numbers
+in another, as General info's are and as the draft the maintainer approved renders them; the
+build, which right-aligned them against their numbers, follows. The draft's CSS now says
+`text-align: left` (it said right and lost to a more specific rule, so its render is unchanged).
+Why: the maintainer's pick between the two (QUESTIONS "Ability stats' labels: left as the draft
+shows, or right?"), having compared both: one left edge over a short label standing close to
+its number.
+Plan: `plans/save_editor.md` "Editing UI", the player view's Ability stats item.

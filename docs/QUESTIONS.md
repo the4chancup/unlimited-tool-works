@@ -19,22 +19,15 @@ names where the question came from so the context can be read there.
   commit; started once from a copy, so the folder itself is as fresh as a download). Every
   screen the drafts and the build share was measured against the drafts at 1 point (2 where
   needed) in both themes (worklog 0.0.1ov1 to ov2z, ov11b to ov11d); what is left differs by
-  ruling (the rail's order, a combo's arrow, the checkboxes' hit areas, the toolbar's Open
-  menu and Save as, which wait for 8.9l). Still to look at in the built app: the windows' titles
+  ruling (the rail's order, a combo's arrow, the checkboxes' hit areas). Since the candidate,
+  the toolbar's Open menu and Save as are built (8.9l), the drafts take egui's spacing for
+  menus, the toolbar and a view's margin, and the ability stats' labels go left-aligned. Still to look at in the built app: the windows' titles
   at 14 in white; the preview's icon where the lead cannot capture it (worklog 0.0.1v: the taskbar
   button and Alt+Tab show the tight crop of the head; Explorer's file icon on the exe). Live
   AATF's whole look, every element it draws rendered from the drafts with what each shows
   and its tooltips (worklog 0.0.1ov6): `.tmp/0_0_1ov/live/`, images 01 to 13 (no 06: a rules
   file is checked when imported, so the dock has no failed state). Then the confirmation that
   freezes logic version 1's hash (0.0.1f2).
-- **Ability stats' labels: left as the draft shows, or right?** (worklog 0.0.1ov1, DECISIONS
-  "Correction: the approved draft draws the ability stats' labels left-aligned"). The draft you
-  approved shows them left-aligned, one column starting at one x; its CSS meant them
-  right-aligned against their numbers, and the build follows the CSS (ov2i): a short label
-  such as Jump then sits beside its box instead of far from it. The General info labels are
-  left-aligned in both. Compare the Ability stats column in
-  `.tmp/0_0_1ov/draft/player.png` (left) and `.tmp/0_0_1ov/built/player.png` (right). Until
-  you pick, the build stays right-aligned.
 - **When do you rename the GitHub repository to `unlimited-tool-works`?** (worklog 0.0.1rn,
   `plans/core/development_plan.md` "The project's name: Unlimited Tool Works"). It is a step
   on GitHub only you take (the lead never touches the remote); GitHub redirects the old

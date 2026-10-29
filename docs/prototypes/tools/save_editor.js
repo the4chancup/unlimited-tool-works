@@ -308,7 +308,7 @@ input[type=range]:focus { outline: none; }
 #team-fields #team-name { width: 140px; }
 #team-fields #team-short { width: 40px; }
 .info-grid input[type=number] { width: 46px; }
-td.ilabel { text-align: right; padding-left: 10px; }
+td.ilabel { text-align: left; padding-left: 10px; }
 td.ilabel:first-child { padding-left: 0; }
 /* Each cell 6 a side, so a label and its box are at least 12 apart (the host's
    table.grid td rule, 4 a side, would win over a plainer selector). */
@@ -519,9 +519,9 @@ button.livebtn.on { background: var(--sel-bg); color: var(--sel-fg); }
 .xmark { display: inline-block; width: 11px; text-align: center; }
 .marked { position: relative; }
 .marked > .xmark { position: absolute; right: calc(100% + 2px); top: 50%; transform: translateY(-50%); }
-/* A stat's mark stands at its label cell's left edge, the labels being right-aligned against
-   their numbers, so a column of stats' marks lines up whatever the labels' lengths; drawn
-   over the cell's 6 px padding and the gap before it, it moves no label. */
+/* A stat's mark stands at its label cell's left edge, where every label of the column
+   starts, so a column of stats' marks lines up whatever the labels' lengths; drawn over the
+   cell's 6 px padding and the gap before it, it moves no label. */
 [data-panel=ability-stats] td.ilabel { position: relative; }
 [data-panel=ability-stats] td.ilabel .xmark { position: absolute; right: calc(100% - 4px); top: 50%;
   transform: translateY(-50%); margin: 0; }

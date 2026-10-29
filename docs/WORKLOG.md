@@ -4950,6 +4950,12 @@ briefs, review loops, gates and mutation runs as for any step.
     `theme.rs`' symbols test. Each arrow measures 12.5, its glyph's advance (the box 53),
     within the one-pixel match. `0df81c08` with rework 1, merge `6e546261`. Not yet seen in
     a built window (ov1)
+  - [ ] ov13 the ability stats' labels left-aligned (the maintainer's pick, 2026-10-29;
+    DECISIONS "The ability stats' labels left-aligned, as the approved draft shows";
+    `plans/save_editor.md` "Editing UI", the Ability stats item): the draft's CSS made to say
+    what it renders (render unchanged, pixel for pixel); the build's labels from
+    right-aligned (ov2i) to one left column, the marks still at the label cell's left edge.
+    Brief `.tmp/8_9l/brief_ov13.md`
   - [x] ov3 a general overlap test: a headless pass over every modal and view failing when two
     widgets' rectangles intersect (catches collisions, not a draft mismatch: ov1 does that;
     `plans/core/gui.md` "No two widgets overlap"; Opus sidekick, brief
