@@ -1092,6 +1092,8 @@ const VIEWS = {};
 //               keys, run once when the page opens on a link naming the tool,
 //               after firstShow and before the first draw; a key or value it
 //               does not know is ignored with a console.warn, never an error
+//   shots       the links (without the #) of the screens scripts/draft_shots.py
+//               captures, each one the view writes back once open
 // A document-level listener a tool script adds itself checks the view's own
 // state before acting: it fires while another tool is active.
 function registerTool(view) {

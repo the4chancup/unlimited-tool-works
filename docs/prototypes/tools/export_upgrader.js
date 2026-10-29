@@ -748,5 +748,15 @@ function linkOpen(scr, keys) {
   }
 }
 registerTool({ id: "export-upgrader", css: EXPORT_UPGRADER_CSS, draw: drawView,
-  controls: draftControls, closeRequest, screen, linkKeys, linkOpen });
+  controls: draftControls, closeRequest, screen, linkKeys, linkOpen,
+  // The screens scripts/draft_shots.py captures, as the links this view writes.
+  shots: ["export_upgrader/main", "export_upgrader/main?input=egg",
+    "export_upgrader/main?input=models", "export_upgrader/main?input=refs",
+    "export_upgrader/main?input=egg&run=done", "export_upgrader/main?input=egg&exists=1&run=done",
+    "export_upgrader/main?input=co&run=done", "export_upgrader/main?input=at&run=done",
+    "export_upgrader/main?input=at&loose=1&run=done", "export_upgrader/main?input=refs&run=done",
+    "export_upgrader/main?input=models&run=done", "export_upgrader/main?input=models_old&run=done",
+    "export_upgrader/main?dialog=pick-export", "export_upgrader/main?dialog=pick-models",
+    "export_upgrader/main?input=egg&dialog=pick-savefile",
+    "export_upgrader/main?input=egg&dialog=pick-output"] });
 })();

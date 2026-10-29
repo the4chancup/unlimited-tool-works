@@ -1864,5 +1864,12 @@ function linkOpen(scr, keys) {
     else linkWarn("dialog=" + keys.dialog);
   }
 }
-registerTool({ id: "ruleset-editor", css: RULESET_CSS, draw: drawView, firstShow, onKey, commit, screen, linkKeys, linkOpen });
+registerTool({ id: "ruleset-editor", css: RULESET_CSS, draw: drawView, firstShow, onKey, commit, screen, linkKeys, linkOpen,
+  // The screens scripts/draft_shots.py captures, as the links this view writes.
+  shots: ["ruleset_editor/general", "ruleset_editor/general?start=0", "ruleset_editor/tiers?start=0",
+    "ruleset_editor/heights?start=0", "ruleset_editor/cards?start=0",
+    "ruleset_editor/universal?start=0", "ruleset_editor/specials?start=0",
+    "ruleset_editor/suggestions?start=0", "ruleset_editor/custom?ruleset=custom-check&start=0",
+    "ruleset_editor/summary?start=0", "ruleset_editor/general?preview=1&start=0",
+    "ruleset_editor/general?dialog=saved&start=0"] });
 })();
