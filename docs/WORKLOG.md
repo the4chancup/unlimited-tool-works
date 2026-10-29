@@ -1762,11 +1762,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         the sections the file holds offered, the legacy formats read-only, the version
         mismatch's warning list, the aesthetics section under the ownership setting. The
         lib applies a Team TOML whole (no section choice), so two sub-slices:
-        - [ ] k5b1 the section filter: a save_editor function that keeps only the chosen
+        - [x] k5b1 2026-10-29 the section filter: a save_editor function that keeps only the chosen
           sections' keys of a `TeamToml` before `Session::import_team`, split as the plan's
           "Interchange formats in the UI" says (4ccEditor's `PlayerImport`, re-read
           2026-10-29: `mo_fk` under `importStats`); the draft's writers corrected to it the
-          same day (they carried the free-kick motion with aesthetics)
+          same day (they carried the free-kick motion with aesthetics). Done:
+          `session/import_sections.rs` (`Sections`, `keep_sections`, every struct
+          destructured with no `..`, emptied player tables dropped), 7 tests on the PES 19
+          fixture's /co/ and /3/ (PES 21's are identical placeholders); the module is
+          `#[cfg(test)]` until k5b2 calls it
         - [ ] k5b2 the panel's import half on it (`legacy::read_squad`/`read_tactics`,
           `Texport::from_bytes` + `to_team_toml`, the notes list, the `.4ccs` pairing), the
           file pick row as the Comparator's, the floating panels' open flags folded into one
