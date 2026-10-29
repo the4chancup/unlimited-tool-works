@@ -1856,6 +1856,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         their tests; the Live AATF pitch's warning cross in `Palette::pitch_warn`, `#FF8F00`
         on both themes, since the turf does not follow the theme. SWE-2 round S1m4: 2
         counted (`.tmp/8_9m/rulings_m.md`). Open: the built window's check
+      - [ ] m5 the running-game texts (the maintainer's PES 2017 check of SE-GUI-21,
+        2026-10-29; DECISIONS "The running-game dialog says how to keep the write, Edit mode
+        open or closed"): the window's dialog and help say to Load before leaving an open
+        Edit mode, and that a closed one shows the changes when opened; the Save editor's
+        CLI refusal and help, and the compiler's `savefile_skipped_pes_running` text and
+        help, state the corrected facts, `--edit-mode-closed` unchanged (brief
+        `.tmp/8_9m/brief_m5.md`) → verify: the texts' tests, the help export
       - [ ] m2 `scripts/draft_compare.py` compares the fill and text colours of the boxes it
         pairs, not only their rects: the fills and greys above passed every geometry check
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or

@@ -1587,9 +1587,10 @@ describes behavior, not a serial scheduling requirement:
   savefile stays a warning (`savefile_missing`, naming the patch): even the DLC builder is expected
   to compile against a template save, to test the DLC in PES. **While the compile target's PES
   runs, the savefile is written only when `compile` is given `--edit-mode-closed`**, in any
-  output mode: PES writes the save it holds over the file when the member leaves Edit mode, so a
-  write made while Edit mode is open is lost then, while one made with Edit mode closed stands,
-  and Edit mode's **Load** reads it in without restarting the game. The flag is the member's
+  output mode: PES writes the save it holds over the file when the member leaves Edit mode
+  after changing anything there, so a write made while Edit mode is open is lost then unless
+  Edit mode's **Load** reads it in first, while one made with Edit mode closed stands, and
+  opening Edit mode reads it in without restarting the game. The flag is the member's
   word that Edit mode is closed. Without it the step is skipped with `savefile_skipped_pes_running`
   (W), whose line names the game and the flag (`version=PES 2021, flag=--edit-mode-closed`,
   as `savefile_missing` carries the command that applies the patch: a console line prints a

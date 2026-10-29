@@ -315,8 +315,10 @@ Rules every command shares:
   of that save's version is running (the source save's version, read before anything is
   written), a command that writes a save writes only when given `--edit-mode-closed`, the
   member's word that the game's Edit mode is closed: the game writes the save it holds over the
-  file when Edit mode closes, so a write made while it is open is lost then, while one made with
-  it closed stands and Edit mode's Load reads it in without restarting the game. Without the
+  file when the member leaves Edit mode after changing anything there, so a write made while it
+  is open is lost then unless Edit mode's Load reads it in first, while one made with it closed
+  stands and opening Edit mode reads it in without restarting the game. Closed is the state
+  the flag asks for: the only one that keeps the write with no step in game after it. Without the
   flag the command writes nothing and exits 2, its message naming the game and the flag. Not a
   warning followed by the write: a write made while Edit mode is open is lost without a word,
   and the warning would come after it. A running PES of another version needs no flag, because

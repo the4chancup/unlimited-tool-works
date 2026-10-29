@@ -555,22 +555,27 @@ Improvements policy: each of the above exists to remove a real friction point
 The command line's half is built: `spec/save_editor.md` "CLI", the bullet "Writing a save",
 and SE-CLI-03. What follows is the window's.
 
-A save can be written while its own version's PES runs, as long as the game's Edit mode is
-closed: PES writes the save it holds over the file when the member leaves Edit mode, so a
-write made while Edit mode is open is lost then, while a write made with it closed stands, and
-Edit mode's **Load** option reads it in without restarting the game.
-So the tool asks the member to make sure Edit mode is closed rather than refusing. We do not
+A save can be written while its own version's PES runs. PES writes the save it holds over
+the file when the member leaves Edit mode after changing anything there, even a change
+undone again (with nothing changed, leaving Edit mode leaves the file alone), so a write made
+while Edit mode is open is lost then unless Edit mode's **Load** (Data Management > Load)
+reads it in first; a write made with Edit mode closed stands, and opening Edit mode reads it
+in without restarting the game (seen on PES 2017; on PES 2021 the check used Load after
+reopening Edit mode). So the tool tells the member, before writing, how to keep the write
+rather than refusing. We do not
 refuse, as the first rule did on the belief that the game writes its save back when it exits:
 that made a member close the whole game for every edit, which Load makes unnecessary. A PES of
 another version asks nothing, since a game only writes its own version's save.
 
 - **The window.** Save, Save as and the unsaved-changes prompt's Save, with the save's own PES
-  running, first show a dialog naming the game: it asks the member to make sure the game's
-  Edit mode is closed, closing it if it is open, and says that Edit mode's Load reads the saved
-  file in. Its buttons are Save, which writes, and Cancel, which writes nothing (and, under the
+  running, first show a dialog naming the game: if its Edit mode is open, use Data Management >
+  Load after saving, before leaving Edit mode, since leaving it after changing anything there
+  writes the game's own copy over the save; if Edit mode is closed, the changes show when it
+  is opened. Its buttons are Save, which writes, and Cancel, which writes nothing (and, under the
   unsaved-changes prompt, keeps that prompt open).
-- **The command line**, which cannot ask, takes `--edit-mode-closed`, the member's answer to
-  the window's question (`spec/save_editor.md` "CLI", "Writing a save").
+- **The command line**, which cannot ask, takes `--edit-mode-closed`, the member's word that
+  Edit mode is closed: the one state that keeps the write with no step in game after it, which
+  a run from a script or a launcher cannot remind the member of (`spec/save_editor.md` "CLI", "Writing a save").
 - The Team compiler's savefile step follows the same rule (`spec/team_compiler/pipeline.md`
   "Savefile update").
 - Scenario: SE-GUI-21 (the Acceptance section).
@@ -1664,9 +1669,11 @@ SE-GUI-20  GIVEN a Fox save where some players' appearance ids are set and the r
                 ids to -1 as one undoable edit
 SE-GUI-21  manual  GIVEN the save's game running
                    WHEN Save is clicked
-                   THEN a dialog naming the game asks to make sure its Edit mode is closed;
-                        Cancel leaves the file unchanged; Save writes it, and Edit mode's Load
-                        then shows the edit in game without a restart
+                   THEN a dialog naming the game says to use Edit mode's Data Management >
+                        Load before leaving it if it is open, and that a closed Edit mode shows
+                        the changes when opened; Cancel leaves the file unchanged; Save writes
+                        it, and the edit then shows in game without a restart, by opening Edit
+                        mode, or by Load inside it
 SE-GUI-22  GIVEN the save open with "Aesthetics from exports" on and "Edit aesthetics
                 anyway" off (every start of the tool)
            WHEN the Appearance section (open), the team operations menu, the Savefile menu

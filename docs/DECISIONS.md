@@ -13798,3 +13798,20 @@ carry the product's names), and a rename touches 268 lines in 129 files and ever
 flight for nothing a member notices; the docs' prose already uses Studio as the suite's
 shorthand. The plan's earlier "waits for a quiet tree" read as a rename deferred.
 Plan: `plans/core/development_plan.md` "The project's name: Unlimited Tool Works".
+
+## 2026-10-29 — save_editor — The running-game dialog says how to keep the write, Edit mode
+open or closed
+
+Decision: with the save's own PES running, the window's Save dialog no longer asks the member
+to close Edit mode: it says to use Data Management > Load before leaving Edit mode if it is
+open, and that a closed Edit mode shows the changes when opened. The command line and the
+compiler keep `--edit-mode-closed` as it is, their texts corrected to the same facts.
+Why: the maintainer's PES 2017 checks found the game more lenient than the plan said. Leaving
+Edit mode overwrites the file only after a change made there (even one undone), Load inside
+Edit mode reads a write made while it was open, and opening Edit mode reads one made while it
+was closed. So an open Edit mode is no reason to hold the write back, only to Load before
+leaving. The flag stays a word that Edit mode is closed: a run from a script or a launcher
+cannot remind the member to Load, and closed is the one state that needs no step after.
+Plan: `plans/save_editor.md` "Writing a save while its game runs", SE-GUI-21;
+`spec/save_editor.md` "CLI", "Writing a save"; `spec/team_compiler/pipeline.md`
+"Savefile update".
