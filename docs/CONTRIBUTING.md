@@ -158,7 +158,10 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
   and what the member can do about it, as easy to follow as the fact allows. None of the code's
   or the docs' own vocabulary reaches them: no disposition names (`DropExport`), no pointers into
   `docs/`, no internal field or type names, no legacy tool names; a file, folder or setting the
-  member handles is named as they see it. A member who cannot follow a message asks in the cup's
+  member handles is named as they see it. A value the program spells for itself (a rules file's
+  `attacking_prowess` or `a_positions`, a violation kind's `FieldedNotA`, a `{:?}` print) is
+  shown as the game names it (Attacking Prowess), on the command line too: those spellings are
+  for the program, and rule makers read the game's names as members do. A member who cannot follow a message asks in the cup's
   chat instead of fixing the export, which is the cost the rule exists to avoid.
 - **That text flows naturally**, as a person would say it: whole sentences in ordinary word order,
   a cause joined to its effect with *because*, *so* or *although* rather than facts stacked behind

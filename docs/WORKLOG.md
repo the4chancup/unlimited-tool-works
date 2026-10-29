@@ -1856,13 +1856,24 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         their tests; the Live AATF pitch's warning cross in `Palette::pitch_warn`, `#FF8F00`
         on both themes, since the turf does not follow the theme. SWE-2 round S1m4: 2
         counted (`.tmp/8_9m/rulings_m.md`). Open: the built window's check
-      - [ ] m5 the running-game texts (the maintainer's PES 2017 check of SE-GUI-21,
+      - [x] m5 2026-10-29 the running-game texts (the maintainer's PES 2017 check of SE-GUI-21,
         2026-10-29; DECISIONS "The running-game dialog says how to keep the write, Edit mode
         open or closed"): the window's dialog and help say to Load before leaving an open
         Edit mode, and that a closed one shows the changes when opened; the Save editor's
         CLI refusal and help, and the compiler's `savefile_skipped_pes_running` text and
         help, state the corrected facts, `--edit-mode-closed` unchanged (brief
         `.tmp/8_9m/brief_m5.md`) → verify: the texts' tests, the help export
+        Done (`1cf906e5`, merged `003dc3df`; Opus sidekick): the texts as briefed, test
+        `the_question_says_how_to_keep_the_write` (red: "the open Edit mode's sentence");
+        the lead reworded three doc comments ("when the member leaves Edit mode after
+        changing anything there"); the sidekick's contradiction accepted:
+        `spec/team_compiler/pipeline.md` "Savefile update" quoted the old shared words. The dialog's state keeps the name
+        `EditModeQuestion`. Gates in its worktree: `save_editor`, `team_compiler`, `studio`
+        tests, clippy, fmt, `comment_refs` green (`.tmp/8_9m/m5_gates.log`). Open: the
+        dialog in the built window
+        Files: `save_editor/src/{cli,session/mod,view/prompt}.rs`, `view/tests/prompt.rs`,
+        `save_editor/help/0{1,2}_*.md`, `team_compiler/src/{messages,messages/catalog,
+        output/savefile}.rs`, `team_compiler/help/01_command_line.md`
       - [ ] m2 `scripts/draft_compare.py` compares the fill and text colours of the boxes it
         pairs, not only their rects: the fills and greys above passed every geometry check
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
@@ -2775,6 +2786,22 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         (`toml_form.rs`, `config.toml`), outside side-lead U's locks: for whoever holds those
         crates (no code writes comments into `materials.toml` today)
     - [ ] d `libs/aatf`'s violation texts and the other tools' catalogs and help
+      - [ ] d1 before 0.0.1 (the maintainer, 2026-10-29, from the built app's Live AATF:
+        "a sweep for user-unfriendly prints"): the AATF lists show rules-file spellings and
+        kind names (`Unused` / "only 1 of 3 a_positions used", `Stat` / "attacking_prowess 82
+        over the maximum 77", "ball_control 82, above the 77 the rule sets"). Every GUI text
+        that can show an internal identifier (a rules-file id, a kind name, a `{:?}` print, a
+        code or key) or reads badly once filled is listed first (inventory
+        `.tmp/8_29d/inventory.md`), then drafted, planned and built. The CLI's `check-aatf`
+        lines too (the maintainer: "the spellings are only for the program, both managers and
+        rule makers prefer to see regular text like Attacking Prowess"), so
+        `spec/save_editor.md` "CLI"'s rules-file spelling of its lines is replaced in the
+        plan → verify: no list row, tooltip, notice or CLI line prints a snake_case id or a
+        kind name, pinned by a test over every `ViolationKind`; the rows read in the draft and
+        the built window
+      - [ ] d2 after 0.1.0, with Phase 20 (the maintainer, 2026-10-29): the Ruleset editor
+        shows the game's names (Attacking Prowess) and writes the rules-file ids
+        (`attacking_prowess`)
   - [ ] 8.21 the app's font in the drafts (`core/gui.md` "The host's other review aids"; after
     8.9f4e picks the bundled font): `@font-face` rules at egui's sizes → verify: one width
     constant's row (`TOP_ROW_ONE_LINE`) measured in the draft and in the built window agree
@@ -5072,8 +5099,9 @@ briefs, review loops, gates and mutation runs as for any step.
     gallery moves a starter under a ruleset that checks fielded positions instead. Rendered
     again 2026-10-29 (lead): image 06 dropped (no failed state since ov7), image 11 under the
     official rules with team 718's sixth starter made a B where preset 1 fields him (the
-    gallery's copy only); looked at by the lead (02, 07, 11). Waits for the maintainer's look
-    (QUESTIONS "The final pass over the built app's UI")
+    gallery's copy only); looked at by the lead (02, 07, 11). Looked at by the maintainer in
+    the built app (2026-10-29): the fielded-position crosses under the official rules and the
+    warnings work as drawn; the rows' texts go to 8.29d1
   - [x] ov7 Live AATF replaces the AATF panel (the maintainer, 2026-10-28; DECISIONS "Live AATF
     replaces the AATF panel; the final pass's fourth rulings"; drafts and plan done,
     `plans/save_editor.md` "Configurable AATF rules", SE-GUI-15 and SE-GUI-32 rewritten, their

@@ -2847,3 +2847,8 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The team view's first frame no longer waits on the medal outlines, the player list and the lineup lists are drawn as the drafts draw them, and the player list and the pitch round their corners (8.9m m1, m3).
 - **2026-10-29** — The Save editor's `• unsaved changes` opens the list of changes under it, the close prompt's table without its answers, a team colour's values each after its swatch (8.31).
 - **2026-10-29** — The sidebar draws the suite's own icons, one per tool, from `icons.ttf`; the light theme's input greys are a step lighter and its warning orange darker (8.14, 8.9m m4).
+- **2026-10-29** — The running-game dialog says how to keep a write while the save's PES
+  runs: Load before leaving an open Edit mode, or open a closed one; the CLI refusal, the
+  compiler's warning and both helps state the same facts (8.9m m5). The maintainer looked at
+  Live AATF in the built app: the crosses and warnings work; its rows' rules-file spellings
+  go, in the window and in `check-aatf`, for the game's names (8.29d1 planned).

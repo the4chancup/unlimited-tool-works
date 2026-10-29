@@ -13815,3 +13815,20 @@ cannot remind the member to Load, and closed is the one state that needs no step
 Plan: `plans/save_editor.md` "Writing a save while its game runs", SE-GUI-21;
 `spec/save_editor.md` "CLI", "Writing a save"; `spec/team_compiler/pipeline.md`
 "Savefile update".
+
+## 2026-10-29 — save_editor — The AATF lists and `check-aatf` name every rule, stat and card in the game's words
+
+Decision: the AATF lists (Live AATF, Multi-team AATF) and the command line's `check-aatf`
+lines show each rule's name in words and each stat, card, playing style and allowance as the
+game names it (Attacking Prowess), never a rules file's spelling (`attacking_prowess`,
+`a_positions`) or a violation kind's (`FieldedNotA`). The window and the command line print
+the same names and sentences. This replaces the earlier rule that a row shows the rule's name
+as a rules file writes it and that `check-aatf` prints the kind and its fields in rules-file
+spelling. The Ruleset editor will in time show the game's names too while writing the ids.
+Why: the maintainer, from the built app's Live AATF ("Unused" over "only 1 of 3 a_positions
+used", "Stat" over "attacking_prowess 82 over the maximum 77"): the spellings are only for
+the program; managers and rule makers both prefer the regular text. CONTRIBUTING already kept
+internal names out of a member's text; the rule now names these spellings.
+Plan: `plans/save_editor.md` "`libs/team_widgets`", `violations`; `CONTRIBUTING.md` "Text a
+member reads is written for a layman"; the `check-aatf` passage of `spec/save_editor.md`
+"CLI" is replaced when the change is built.

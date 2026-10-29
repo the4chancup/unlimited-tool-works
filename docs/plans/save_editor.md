@@ -1011,9 +1011,13 @@ Contents:
   `FieldedNotA` one on the team row, its preset shown). The groups keep `check_team`'s order (the players by slot, then the team's
   own rows), each group's errors before its warnings; a team header heads each team's rows;
   suggestions are drawn only when the host asks, in their own group after the violations. A row
-  is the rule's name as a rules file writes it and a sentence saying what is wrong; the
-  sentences are the widget's, one per `ViolationKind`, so both hosts word a violation alike
-  (the CLI prints the name and the fields only, `aatf`'s `ViolationKind::rule`, which both use).
+  is the rule's name in words and a sentence saying what is wrong, each stat, card, playing
+  style and allowance in it named as the game names it (Attacking Prowess, never the rules
+  file's `attacking_prowess`; `FieldedNotA` is a rules file's word, never the member's). The
+  names and sentences are the widget's, one per `ViolationKind`, and `check-aatf`'s lines print
+  the same ones, so the window and the command line word a violation alike: the rules-file
+  spellings are for the program alone, since managers and rule makers both read the game's
+  names. The exact names and sentences are drafted first, in the draft's `violationSentence`.
 
 Stock-formation constants stay in the Team creator (its only consumer) until this editor wants
 an "apply stock formation" action, at which point they move here.

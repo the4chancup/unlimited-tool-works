@@ -27,10 +27,7 @@ names where the question came from so the context can be read there.
     - the icon where the lead cannot capture it (worklog 0.0.1v and 8.9l3d3g): the taskbar
       button and Alt+Tab (both show the tight crop of the head), Explorer's file icon on the
       exe, and the title bar's icon slot, now left blank (checked on Windows 10, not on
-      Windows 11);
-    - Live AATF's whole look (worklog 0.0.1ov6): every element it draws, rendered from the
-      drafts with what each shows and its tooltips, in `.tmp/0_0_1ov/live/`, images 01 to 13
-      (no 06: a rules file is checked when imported, so the dock has no failed state).
+      Windows 11).
   - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
 
 ## Cup practice

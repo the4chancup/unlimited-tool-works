@@ -1611,7 +1611,7 @@ describes behavior, not a serial scheduling requirement:
   the Save editor's writing commands, so the two read as one rule: the flag's `--help` line is
   "The game's Edit mode is closed: write the savefile even while its PES runs."; the message
   names the game and the flag and says "Close the game's Edit mode, then <run> again with
-  `--edit-mode-closed`. The save is then written, and Edit mode's Load reads it in without
+  `--edit-mode-closed`. The save is then written, and opening Edit mode reads it in without
   restarting the game." The tests never read the machine's process list: the tool carries its
   running-PES probe (`Tool::with_running_probe`), which the in-process command-line tests set,
   and a unit test's is one reporting no game. The check uses the same running-PES detection as the core plan's
