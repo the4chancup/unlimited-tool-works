@@ -120,17 +120,6 @@ fn assert_same_bytes(written: &[u8], expected: &[u8]) {
     }
 }
 
-/// Team `team_id`'s rostered players in roster order, as the session holds
-/// them.
-fn rostered(view: &SaveView, team_id: u32) -> Vec<PlayerEntry> {
-    team_entry(view, team_id)
-        .roster
-        .iter()
-        .filter(|slot| slot.player_id != 0)
-        .map(|slot| player_entry(view, slot.player_id))
-        .collect()
-}
-
 #[test]
 fn the_export_row_names_the_team_and_offers_both_formats_above_a_separator() {
     let (mut view, mut window) = open_on(PesVersion::Pes21, "export_row", CO);
@@ -244,12 +233,11 @@ fn the_team_toml_written_is_the_command_lines_export() {
     assert!(view.refusal.is_none(), "no refusal");
 }
 
-/// Team `/co/` of `version`'s fixture exported as a Texport, then picked in
-/// the import half with every section chosen and applied.
-fn texport_round_trip(version: PesVersion, test: &str) {
+/// Team `/co/` of `version`'s fixture exported as a Texport, its suggested
+/// name `suggested_name` (the fixture's short name), then picked in the
+/// import half with every section chosen, which then changes nothing.
+fn texport_round_trip(version: PesVersion, test: &str, suggested_name: &str) {
     let (mut view, mut window) = open_on(version, test, CO);
-    let before_team = team_entry(&view, CO);
-    let before_players = rostered(&view, CO);
     let folder = save_folder(&view);
     let written = folder.join("panel.ted");
 
@@ -263,7 +251,7 @@ fn texport_round_trip(version: PesVersion, test: &str) {
     );
     assert_eq!(
         suggested,
-        folder.join("CO.ted"),
+        folder.join(suggested_name),
         "<short name>.ted beside the save"
     );
     let bytes = std::fs::read(&written).unwrap();
@@ -297,40 +285,42 @@ fn texport_round_trip(version: PesVersion, test: &str) {
         ["aesthetics", "gameplay", "tactics"],
         "every section"
     );
-    let apply = button(&mut window, &mut view, "Apply");
-    assert!(!apply.is_disabled(), "premise: Apply is enabled");
-    click(&mut window, &apply, &mut view);
+    // Read back onto the team it came from, every section changes nothing.
     let lines = panel_lines(&mut window, &mut view);
     assert_eq!(
         lines.last().map(String::as_str),
-        Some("Applied panel.ted. The changes stay unsaved until Save."),
-        "Apply ran"
+        Some("The team already holds every value of the chosen sections."),
+        "{lines:#?}"
     );
+    assert!(
+        button(&mut window, &mut view, "Apply").is_disabled(),
+        "Apply is disabled"
+    );
+}
 
-    let team = team_entry(&view, CO);
-    assert_eq!(team.name, before_team.name, "the team's name");
-    assert_eq!(team.short_name, before_team.short_name, "its short name");
-    assert_eq!(team.roster, before_team.roster, "its roster");
-    assert_eq!(team.tactics, before_team.tactics, "its tactics");
-    assert_eq!(team, before_team, "the team");
-    for (slot, (after, before)) in rostered(&view, CO).iter().zip(&before_players).enumerate() {
-        assert_eq!(after.stats, before.stats, "slot {slot}: abilities");
-        assert_eq!(after.appearance, before.appearance, "slot {slot}: the look");
-        assert_eq!(after, before, "slot {slot}");
-    }
-    assert_eq!(undo_entries(&mut window, &mut view), 0, "no undo entry");
+// SE-GUI-17
+#[test]
+fn a_pes_18_texport_reads_back_to_the_same_team() {
+    // Team 714 of the PES 18 fixture is `DIY` by its short name.
+    texport_round_trip(PesVersion::Pes18, "export_texport_18", "DIY.ted");
 }
 
 // SE-GUI-17
 #[test]
 fn a_pes_19_texport_reads_back_to_the_same_team() {
-    texport_round_trip(PesVersion::Pes19, "export_texport_19");
+    texport_round_trip(PesVersion::Pes19, "export_texport_19", "CO.ted");
+}
+
+// SE-GUI-17
+#[test]
+fn a_pes_20_texport_reads_back_to_the_same_team() {
+    texport_round_trip(PesVersion::Pes20, "export_texport_20", "CO.ted");
 }
 
 // SE-GUI-17
 #[test]
 fn a_pes_21_texport_reads_back_to_the_same_team() {
-    texport_round_trip(PesVersion::Pes21, "export_texport_21");
+    texport_round_trip(PesVersion::Pes21, "export_texport_21", "CO.ted");
 }
 
 #[test]
@@ -355,8 +345,30 @@ fn a_team_without_a_short_name_suggests_its_id_and_a_cancel_writes_nothing() {
 
     let suggested = asked.try_recv().expect("the Save dialog opened");
     assert_eq!(suggested, save_folder(&view).join("714.ted"));
+    assert!(!suggested.exists(), "no file written");
     assert!(view.notice.is_none(), "no Wrote notice");
     assert!(view.refusal.is_none(), "no refusal");
+}
+
+#[test]
+fn a_write_that_fails_is_refused_in_the_command_lines_words() {
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "export_write_fails", CO);
+    // A folder that does not exist: the write fails.
+    let written = save_folder(&view).join("missing").join("panel.toml");
+    let error = std::fs::write(&written, b"").expect_err("premise: the write fails");
+
+    export(&mut window, &mut view, "Team TOML\u{2026}", &written);
+
+    assert_eq!(
+        view.refusal
+            .as_ref()
+            .map(|refusal| (refusal.title, refusal.message.clone())),
+        Some((
+            "Cannot export the team",
+            format!("{}: cannot write the file ({error})", written.display())
+        ))
+    );
+    assert!(view.notice.is_none(), "no Wrote notice");
 }
 
 // SE-GUI-17
@@ -392,10 +404,9 @@ fn the_open_save_is_refused_as_the_destination() {
             std::fs::read(&save).unwrap() == before,
             "{label}: the save's bytes are unchanged"
         );
-        // The refusal lands inside the panel, after `refusal_dialog` ran
-        // that frame, so the modal's first drawn frame is its sizing pass;
-        // the second holds the nodes.
-        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        // The panel is drawn before the refusal's modal, so the modal's
+        // first frame is the click's own, its sizing pass; the next one
+        // holds the nodes.
         let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         let sentence = format!(
             "{}: that is the save being read, and a {format} written over it would lose it",

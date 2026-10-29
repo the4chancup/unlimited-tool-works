@@ -771,6 +771,81 @@ fn an_edit_after_apply_takes_the_applied_line_away() {
     );
 }
 
+#[test]
+fn the_previews_values_are_in_the_monospace_font() {
+    let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_monospace");
+    previewed(
+        &mut window,
+        &mut view,
+        &patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block()),
+    );
+    let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let monospace = egui::TextStyle::Monospace.resolve(&window.ctx.style_of(window.ctx.theme()));
+    // The Name row's new value, a text no other cell starts with.
+    let painted = text_shape(&shapes, "PATCHED");
+    assert!(
+        !painted.galley.job.sections.is_empty(),
+        "premise: painted sections"
+    );
+    for section in &painted.galley.job.sections {
+        assert_eq!(section.format.font_id, monospace, "the value's font");
+    }
+}
+
+#[test]
+fn a_patch_opened_after_an_apply_says_the_save_holds_it() {
+    let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_reopened_after_apply");
+    let path = previewed(
+        &mut window,
+        &mut view,
+        &patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block()),
+    );
+    let apply = panel_button(&mut window, &mut view, "Apply").expect("the Apply button");
+    click(&mut window, &apply, &mut view);
+    assert_eq!(
+        panel_lines(&mut window, &mut view)[3..],
+        ["Applied. The changes stay unsaved until Save."],
+        "premise: the Applied line stands"
+    );
+    let before = revision(&view);
+
+    // Patch B: slot 03's motions alone, which the save now holds.
+    let motions =
+        "\n[teams.players.03.appearance.motion]\nhunching_dribbling = 2\ncorner_kick = 3\n";
+    std::fs::write(
+        &path,
+        patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block_of(motions)),
+    )
+    .unwrap();
+    open_patch(&mut window, &mut view, path);
+    assert_eq!(revision(&view), before, "premise: the save is unchanged");
+
+    assert_eq!(
+        panel_lines(&mut window, &mut view),
+        [
+            "Open patch\u{2026}",
+            "patch.toml: team 714 /co/, players 03",
+            "Apply",
+            "The save already holds every value this patch writes.",
+        ]
+    );
+}
+
+#[test]
+fn the_close_button_closes_the_panel() {
+    let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_close");
+    open_panel(&mut window, &mut view);
+    assert_eq!(view.panel, Some(Panel::Patch), "premise: open");
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let close = panel_nodes(&pairs)
+        .into_iter()
+        .find(|node| node.role() == Role::Button && node.label() == Some("Close window"))
+        .expect("the close button")
+        .clone();
+    click(&mut window, &close, &mut view);
+    assert_eq!(view.panel, None, "the panel closes");
+}
+
 // SE-GUI-18
 #[test]
 fn apply_recomputes_a_preview_held_through_a_gesture() {
