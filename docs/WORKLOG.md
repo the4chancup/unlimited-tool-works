@@ -4845,8 +4845,27 @@ briefs, review loops, gates and mutation runs as for any step.
       220 (open combos and menu buttons fill with `weak_bg_fill`); the panel's grey text on
       a hovered row's 186 reads at 4.15 (the dark theme's 2.8 there); a negative cards
       count's red on the resting 201 at 2.41 (the dark's 2.76); a position past the table
-      stays white in the lists (corrupt data only). The light captures again come with the
-      release re-measure
+      stays white in the lists (corrupt data only). The light captures again on the release
+      build of `daed1a3d` (`.tmp/0_0_1ov/light2/`: empty, player, team, team with Live AATF,
+      Settings, Help, Set all stats, the Player menu), each looked at: the resting controls
+      and the text boxes' edges read, the lineup codes read in their darker hues, the modal
+      and the help read; nothing new for the light theme
+    - [x] ov11d seen in the light captures, both themes: with the pointer still on the rail
+      after a click on the gear, the opened sidebar (`Order::Foreground`, sent to the front)
+      draws over the Settings modal's dimmed backdrop, undimmed, and from a reading of egui's
+      `Modal` its entries stay clickable behind the modal; the draft's `#sb-open` is "above the
+      view, below menus and modals". Ruled (DECISIONS "The opened sidebar sits below modals";
+      `plans/core/gui.md` "Sidebar" item 4). Brief `.tmp/0_0_1ov/brief_ov11d.md`, run beside
+      ov2z (the same module, other functions: the layers, not the layout). Done 2026-10-29
+      (Opus, reviewed; `97765099`, merge `22fcb3b3`): reproduced headless first (the overlay
+      ranked above the Settings modal; a click on an entry switched tools, a click on Help
+      opened it, behind the modal); `overlay_order` makes the overlay `Order::Middle` while
+      egui reports a top modal layer, `Foreground` otherwise (egui sends a `Foreground` area to
+      the front on every open and click, so it could not stay under the modal there); four
+      tests (two red first, two guards: About above the overlay and taking clicks, the overlay
+      above the Help window). Not tested: a modal shown again in the very frame of a click on
+      the overlay could draw under it for that one frame (egui's top modal layer is the last
+      frame's), without taking the click
   - [x] ov12 the Tactics popover's X and Y as steppers (DECISIONS "The Tactics popover's X
     and Y step by arrows inside the number box's width" and "The popover's stepper arrows
     take clicks, not the keyboard's focus"; `plans/save_editor.md`, the Tactics editor's

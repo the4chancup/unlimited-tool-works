@@ -13431,3 +13431,15 @@ not its dark ratio) becomes the rule for text, at the usual floor for body text.
 theme moves.
 Plan: `plans/core/gui.md` the Dark/light theme row, the sentence starting "A light value keeps
 the dark one's contrast ratio".
+
+## 2026-10-29 — gui — The opened sidebar sits below modals
+
+Decision: while a modal is open (Settings, About, a tool's dialog), the opened sidebar is drawn
+under the modal's dimmed backdrop and takes no input, as the view does.
+Why: the light captures of 0.0.1ov11c showed it, opened by the pointer still on the rail after a
+click on the gear, drawn over the Settings modal's backdrop, undimmed; it is an
+`Order::Foreground` area sent to the front, and egui lets a layer above the top modal layer take
+input, so its entries could switch tools or open Help behind a dialog waiting for an answer. The
+draft's `#sb-open` is above the view, below menus and modals. The code had put it in
+`Foreground` to stand above the Help window, a `Middle` window; it still stands above that.
+Plan: `plans/core/gui.md` "Sidebar" item 4, the sentence starting "While a modal is open".
