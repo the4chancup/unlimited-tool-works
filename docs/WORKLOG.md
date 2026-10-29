@@ -1822,6 +1822,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           prompt,tactics,toolbar,overlap}.rs`. Rendered against the draft's Open menu
           (`.tmp/8_9l/{draft,built}/open_menu.png`): the entries and the PES 2020 save as
           drawn, the geometry off in every menu and the toolbar (l3d)
+        - [x] l3a-c's mutation run (`mutants-diff 7f23e772` at `39c0de34`, local, the minimum
+          test timeout 120 s): pes_savefile 3 caught; save_editor 32 caught, 3 unviable;
+          studio_core 18 caught, 3 unviable, 1 timeout (`take_standing_end` -> `true`), which
+          a quiet rerun catches in 1.3 s (`a_standing_notice_stays_while_its_tool_returns_it_and
+          _its_tool_hears_when_it_ends`): load, not a hang. No survivor, no rework
         - [ ] l3d the drafts take egui's spacing (DECISIONS 2026-10-29 "The drafts take egui's
           spacing"), seen in l3c's render: every menu's entries 21 apart against the draft's
           19, the toolbar's buttons 8 apart for 6, every view 8 from the central panel's edges
