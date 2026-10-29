@@ -13,6 +13,22 @@ use crate::widgets::{FORM_ROW_SPACING, text_box};
 
 use super::sidebar::HELP_LABEL;
 
+/// The space between two of a topic's paragraphs, the drafts' `.help-topic p` margin. Each
+/// paragraph is its own viewer, so search can highlight one, and only egui's item spacing
+/// would stand between them: a paragraph break would read as a line break.
+const PARAGRAPH_SPACING: f32 = 8.0;
+
+/// The widest a topic's paragraph, list or code block is drawn, the drafts' reading width:
+/// about 110 characters at the body size: on a line much longer than this the eye loses the
+/// next line's start. The Messages table keeps the pane's width.
+const READING_WIDTH: f32 = 720.0;
+
+/// The window's first outer size, title bar and frame included, before the cap at 90% of
+/// Studio's window. 1000 points hold the 220-point chapter tree and a `READING_WIDTH` text
+/// column with a scroll bar beside it; a wider window would only add empty room right of
+/// the text.
+const FIRST_SIZE: egui::Vec2 = egui::vec2(1000.0, 600.0);
+
 /// The window's state across frames: the chapters it was built over, whether it is open,
 /// where it is (chapter index; the topic index in the list the tree shows — the written
 /// topics, then `Messages` when the chapter has catalog rows), the paragraph or catalog
@@ -145,10 +161,11 @@ impl HelpWindow {
         let mut open = true;
         // `default_rect` counts the whole window — `default_size` is the *outer*
         // size, egui subtracts the frame's margins and the title bar inside
-        // `Window::show` — so the first rect is 90% of Studio's, centered in it.
-        // A moved or resized rect is kept by the window's id afterwards.
+        // `Window::show` — so the first rect is `FIRST_SIZE`, or 90% of Studio's
+        // on a side where that is smaller, centered in it. A moved or resized
+        // rect is kept by the window's id afterwards.
         let screen = egui_ctx.content_rect();
-        let size = (screen.size() * 0.9).round();
+        let size = FIRST_SIZE.min((screen.size() * 0.9).round());
         egui::Window::new(crate::theme::window_title_text(HELP_LABEL))
             .id(egui::Id::unique("help-window"))
             .default_rect(egui::Rect::from_center_size(screen.center(), size))
@@ -247,10 +264,11 @@ impl HelpWindow {
     }
 
     /// The right pane's topic (the draft's `drawHelpTopic`): its title as a heading,
-    /// then the body rendered paragraph by paragraph, the highlighted one inside a
-    /// filled frame and scrolled into view once, on the first drawn frame after the
-    /// jump. A Messages topic is the catalog table instead. After the draw, an
-    /// in-doc link whose hook reported a click jumps to its target.
+    /// then the body rendered paragraph by paragraph, `PARAGRAPH_SPACING` apart and at
+    /// most `READING_WIDTH` wide, the highlighted one inside a filled frame and scrolled
+    /// into view once, on the first drawn frame after the jump. A Messages topic is the
+    /// catalog table instead. After the draw, an in-doc link whose hook reported a click
+    /// jumps to its target.
     fn draw_topic(&mut self, ui: &mut egui::Ui) {
         let mut clicked_link = None;
         let mut applied = false;
@@ -274,11 +292,15 @@ impl HelpWindow {
             } else if let Some(topic) = section.topics.get(self.topic) {
                 ui.heading(topic.title);
                 for (index, para) in paragraphs(topic.body).iter().enumerate() {
+                    if index > 0 {
+                        ui.add_space(PARAGRAPH_SPACING - ui.spacing().item_spacing.y);
+                    }
                     // A paragraph's `show` resets every link hook at its start, so the
                     // click's flag is read after each call, not once at the end.
                     let cache = &mut self.cache;
                     let response = ui
                         .push_id(("help-para", index), |ui| {
+                            ui.set_max_width(ui.available_width().min(READING_WIDTH));
                             if self.highlight_para == Some(index) {
                                 egui::Frame::new()
                                     .fill(ui.visuals().selection.bg_fill)
@@ -842,7 +864,7 @@ mod tests {
 
     // ST-HELP-05
     #[test]
-    fn the_help_window_first_opens_at_ninety_percent_of_the_shells_window() {
+    fn the_help_window_first_opens_at_1000_by_600_capped_at_ninety_percent_of_the_shells_window() {
         let dir = TestDir::new("studio_core_help_size");
         for (screen, min, size) in [
             (
@@ -852,8 +874,8 @@ mod tests {
             ),
             (
                 egui::vec2(1280.0, 800.0),
-                egui::pos2(64.0, 40.0),
-                egui::vec2(1152.0, 720.0),
+                egui::pos2(140.0, 100.0),
+                egui::vec2(1000.0, 600.0),
             ),
         ] {
             // One context per screen: a kept area rect is per-Context, and each
@@ -1502,6 +1524,93 @@ mod tests {
         nodes.iter().find(|node| {
             node.role() == Role::Label && node.value().is_some_and(|v| v.contains(text))
         })
+    }
+
+    #[test]
+    fn a_topics_paragraphs_stand_8_apart() {
+        let dir = TestDir::new("studio_core_help_paragap");
+        let (_, alpha) = sections().remove(0);
+        let (a, calls_a) = stub_help("a", "Alpha", None, alpha);
+        let Shell { mut app, .. } = shell_with(
+            test_settings(dir.path()),
+            vec![a],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a],
+        );
+        let egui_ctx = test_context();
+
+        frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
+        let nodes = idle(&egui_ctx, &mut app, 15).nodes;
+        assert_eq!(app.help_window.showing(), Some(("a", "a-one")));
+        let bounds = |text: &str| {
+            label_bounds(&nodes, text)
+                .and_then(accesskit::Node::bounds)
+                .unwrap_or_else(|| panic!("the paragraph {text:?} has bounds"))
+        };
+        let first = bounds("Alpha writes TEAMS.");
+        let second = bounds("Second paragraph.");
+        assert!(
+            first.y0 >= pane_top(&nodes),
+            "premise: the first paragraph is in the pane"
+        );
+        let gap = second.y0 - first.y1;
+        assert!((gap - 8.0).abs() <= 0.5, "the paragraphs' gap: {gap}");
+    }
+
+    #[test]
+    fn a_long_paragraph_wraps_at_720_in_a_wider_pane() {
+        let dir = TestDir::new("studio_core_help_readwidth");
+        let body = "A sentence long enough to wrap the paragraph over several lines. ".repeat(20);
+        let section = HelpSection {
+            title: "Alpha",
+            topics: vec![HelpTopic {
+                slug: "alpha-long",
+                title: "Alpha long",
+                body: Box::leak(body.into_boxed_str()),
+            }],
+            messages: Vec::new(),
+        };
+        let (a, calls_a) = stub_help("a", "Alpha", None, section);
+        let Shell { mut app, .. } = shell_with(
+            test_settings(dir.path()),
+            vec![a],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a],
+        );
+        let egui_ctx = test_context();
+        let input = |events: Vec<egui::Event>| {
+            let mut input = raw_input(events, true, None, None);
+            input.screen_rect = Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(1280.0, 800.0),
+            ));
+            input
+        };
+
+        run_frame(&egui_ctx, &mut app, input(vec![key(egui::Key::F1, true)]));
+        let mut out = run_frame(&egui_ctx, &mut app, input(Vec::new()));
+        for _ in 0..15 {
+            out = run_frame(&egui_ctx, &mut app, input(Vec::new()));
+        }
+        let pane_right = help_window_node(&out.nodes)
+            .and_then(accesskit::Node::bounds)
+            .expect("the help window's bounds")
+            .x1;
+        let paragraph = label_bounds(&out.nodes, "A sentence long enough")
+            .and_then(accesskit::Node::bounds)
+            .expect("the paragraph's bounds");
+        assert!(
+            pane_right - paragraph.x0 > 760.0,
+            "premise: the pane is wider than 720 ({} from the paragraph's left)",
+            pane_right - paragraph.x0
+        );
+        let width = paragraph.width();
+        assert!(
+            width > 700.0 && width <= 720.0,
+            "the paragraph wraps at 720: {width}"
+        );
     }
 
     #[test]

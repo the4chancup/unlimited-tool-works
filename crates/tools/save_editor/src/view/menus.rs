@@ -12,8 +12,8 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{
-    menu_button, modal, modal_buttons, modal_sentence_gap, radio_value, step_choice, step_number,
-    wheel_steps,
+    menu_button, modal, modal_buttons, modal_fit_contents, modal_sentence_gap, radio_value,
+    step_choice, step_number, wheel_steps,
 };
 
 use crate::session::Session;
@@ -558,7 +558,8 @@ fn readout(ui: &mut egui::Ui, value: u64) {
 /// each option's field in one column across both, the incremental
 /// range's last ID read-only beside its start and following it; the last
 /// refusal under the groups. Set applies and closes, a refusal keeps it
-/// open, and Close or Escape closes it.
+/// open, and Close or Escape closes it. The window is as wide as its
+/// groups (the draft's `.window:has(.boglo)`), not the modals' 360.
 pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.boglo.is_none() {
         return;
@@ -572,7 +573,7 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     let boglo = view.boglo.as_mut().expect("checked above");
     let mut close = false;
     let id = egui::Id::unique("save_editor_boglo");
-    let response = modal(
+    let response = modal_fit_contents(
         ui.ctx(),
         id,
         "Set boots and gloves IDs for everyone",

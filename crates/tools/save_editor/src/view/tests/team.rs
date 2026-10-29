@@ -1268,6 +1268,40 @@ fn the_boglo_dialogs_fields_share_one_column_across_both_groups() {
     }
 }
 
+// The dialog is as wide as its contents (the draft's `.window:has(.boglo)`):
+// no wider than the groups, whose right edge stands the group frame's
+// margin and stroke past the range's end box, or the title if it is wider,
+// plus the modal frame's margin and stroke.
+#[test]
+fn the_boglo_dialog_is_as_wide_as_its_groups() {
+    let (_, window, nodes) = open_boglo("boglo_width");
+    // The dialog's node carries no bounds, so its width is its area's.
+    let outer = window
+        .ctx
+        .memory(|memory| memory.area_rect(egui::Id::unique("save_editor_boglo")))
+        .expect("the dialog's area has a rect");
+    let fields = boglo_fields(&nodes);
+    let title = nodes
+        .iter()
+        .find(|node| node.value() == Some("Set boots and gloves IDs for everyone"))
+        .and_then(accesskit::Node::bounds)
+        .expect("the title's bounds");
+    let style = window.ctx.global_style();
+    let groups_right = fields.end.bounds().expect("the end box's bounds").x1 as f32
+        + egui::Frame::group(&style).total_margin().right;
+    let contents_right = groups_right.max(title.x1 as f32);
+    let expected = contents_right
+        + studio_core::widgets::modal_frame(&style)
+            .total_margin()
+            .right;
+    assert!(
+        outer.right() <= expected + 1.0,
+        "the dialog's right edge {} stands past its contents' {contents_right} plus the frame's \
+         margin and stroke ({expected})",
+        outer.right()
+    );
+}
+
 // The range's dash stands 8 from its start box and from its end box,
 // egui's item spacing, as the draft's `.row`: the end box starts 22.4
 // past the start box's right (the dash 6.4 wide), and the one-ID boxes
