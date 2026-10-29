@@ -5,22 +5,27 @@ your PES install's save folder, or a copy of it), and no command picks one for y
 ```text
 UTW save-editor export-toml <save> --team <id> --out <file>
 UTW save-editor export-toml <save> --all-teams --out-dir <folder>
-UTW save-editor import-toml <team.toml> --base <save> --out <save>
-UTW save-editor apply-patch <aesthetics_patch.toml> --base <save> --out <save>
+UTW save-editor import-toml <team.toml> --base <save> --out <save> [--edit-mode-closed]
+UTW save-editor apply-patch <aesthetics_patch.toml> --base <save> --out <save> [--edit-mode-closed]
 UTW save-editor diff <first save> <second save> [--aesthetics | --gameplay] [--json]
 UTW save-editor check-aatf <save> [--teams <list>] [--rules <file>]
-UTW save-editor strip-and-seed --base <save> --bins <cpk> --out <save> --bins-out <cpk>
-UTW save-editor check-stripped <save> [--strip-again --out <save>]
+UTW save-editor strip-and-seed --base <save> --bins <cpk> --out <save> --bins-out <cpk> [--edit-mode-closed]
+UTW save-editor check-stripped <save> [--strip-again --out <save> [--edit-mode-closed]]
 UTW save-editor export-teams-list <save> [--yes]
 ```
 
 A command that writes a save reads the one `--base` names and writes the one `--out` names,
 which may be the same file. A file already at `--out` (or `--bins-out` for the CPK
 `strip-and-seed` writes) is first copied to `<file>.bak` (one
-level deep: the next write replaces that copy). No command creates a save from nothing, and
-each of them refuses while the PES of the save's version is running, because the game writes
-its own save back when it closes, over the one the command wrote. A PES of another version
-can stay running.
+level deep: the next write replaces that copy). No command creates a save from nothing.
+
+While the PES of the save's version is running, the game writes the save it holds over the
+file when you leave its Edit mode, so a save written while Edit mode is open is lost then. A
+command that writes a save therefore writes it while the game runs only when you add
+`--edit-mode-closed`, which says you have closed Edit mode. Without it, the command writes
+nothing and names the running game: close Edit mode, then run the command again with
+`--edit-mode-closed`. Edit mode's Load then reads the save in without restarting the game. A
+PES of another version running does not count.
 
 `export-toml` writes a team of the save as a Team TOML file: the team's names, colors, manager
 and stadium, its tactics, and every rostered player with every field, the look included (on

@@ -499,9 +499,7 @@ impl Session {
         running: &[RunningPes],
         edit_mode_closed: bool,
     ) -> anyhow::Result<()> {
-        if !edit_mode_closed {
-            refuse_while_running(running, self.version())?;
-        }
+        refuse_while_running(running, self.version(), edit_mode_closed)?;
         self.write(&self.path)?;
         (self.baseline_players, self.baseline_teams) = baselines(&self.file);
         self.dirty = false;
@@ -679,18 +677,26 @@ fn baselines(file: &EditFile) -> (HashMap<u32, PlayerEntry>, HashMap<u32, TeamEn
     )
 }
 
-/// The refusal a writing operation makes while the PES of `version` runs: the
-/// game writes its own save back when it closes, over the one just written.
-/// A game of another version never writes this save, so it does not refuse
-/// (the CLI's rule: `spec/save_editor.md` "CLI" SE-CLI-02).
+/// The refusal a writing operation makes while the PES of `version` runs and
+/// `edit_mode_closed`, the member's word that the game's Edit mode is closed,
+/// is not given: the game writes the save it holds over the file when Edit
+/// mode closes, so a write made while it is open is lost. A game of another
+/// version never writes this save, so it does not refuse
+/// (`spec/save_editor.md` "CLI").
 pub(crate) fn refuse_while_running(
     running: &[RunningPes],
     version: PesVersion,
+    edit_mode_closed: bool,
 ) -> anyhow::Result<()> {
+    if edit_mode_closed {
+        return Ok(());
+    }
     match running.iter().find(|game| game.version == version) {
         Some(game) => Err(anyhow!(
-            "{} is running: it writes its own save back when it closes, over this one; \
-             close the game first",
+            "{} is running: the game writes the save it holds over the file when its Edit \
+             mode closes, so nothing was written. Close the game's Edit mode, then run the \
+             command again with `--edit-mode-closed`. The save is then written, and Edit \
+             mode's Load reads it in without restarting the game.",
             game.version
         )),
         None => Ok(()),
@@ -1066,13 +1072,16 @@ mod tests {
 
     #[test]
     fn refuse_while_running_refuses_only_the_saves_own_version() {
-        assert!(refuse_while_running(&[], PesVersion::Pes21).is_ok());
+        assert!(refuse_while_running(&[], PesVersion::Pes21, false).is_ok());
         let game = |version| RunningPes { version, exe: None };
         // Another version's game never writes this save.
-        assert!(refuse_while_running(&[game(PesVersion::Pes15)], PesVersion::Pes21).is_ok());
+        assert!(refuse_while_running(&[game(PesVersion::Pes15)], PesVersion::Pes21, false).is_ok());
         let running = [game(PesVersion::Pes15), game(PesVersion::Pes21)];
-        let error = refuse_while_running(&running, PesVersion::Pes21).unwrap_err();
+        let error = refuse_while_running(&running, PesVersion::Pes21, false).unwrap_err();
         assert!(error.to_string().contains("PES 2021"), "{error}");
+        assert!(error.to_string().contains("--edit-mode-closed"), "{error}");
+        // The member's word that Edit mode is closed lets the write through.
+        assert!(refuse_while_running(&running, PesVersion::Pes21, true).is_ok());
     }
 
     #[test]

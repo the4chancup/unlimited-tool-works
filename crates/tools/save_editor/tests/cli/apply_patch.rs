@@ -7,7 +7,7 @@ use pes_savefile::interchange::aesthetics_patch::{ALLOCATION_SCHEME_VERSION, Aes
 use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_version::PesVersion;
 
-use crate::{Sandbox, payload, payload_after};
+use crate::{Sandbox, WritingCommand, payload, payload_after};
 
 /// Team `/co/`, 714 in the PES 21 fixture, whose slot 3 is player 71403.
 const CO: u32 = 714;
@@ -224,4 +224,45 @@ fn an_out_that_cannot_be_written_prints_only_the_failure() {
     sandbox
         .apply("patch.toml", "EDIT", "OUT_DIR")
         .assert_refused(3, &["OUT_DIR"]);
+}
+
+/// `apply-patch` writing in place a patch that renames `/co/`'s slot 3.
+const APPLY_PATCH: WritingCommand = WritingCommand {
+    name: "patch_running",
+    setup: |sandbox| {
+        sandbox.fixture(PesVersion::Pes21, "EDIT");
+        let text = patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block());
+        fs::write(sandbox.path("patch.toml"), text).unwrap();
+    },
+    args: |sandbox| {
+        let edit = sandbox.arg("EDIT");
+        vec![
+            "apply-patch".to_owned(),
+            sandbox.arg("patch.toml"),
+            "--base".to_owned(),
+            edit.clone(),
+            "--out".to_owned(),
+            edit,
+        ]
+    },
+    saves: &["EDIT"],
+    files: &[],
+};
+
+// SE-CLI-03
+#[test]
+fn a_patch_is_refused_while_the_saves_own_pes_runs() {
+    APPLY_PATCH.assert_refused_while_its_game_runs();
+}
+
+// SE-CLI-03
+#[test]
+fn a_patch_is_written_while_its_pes_runs_given_edit_mode_closed() {
+    APPLY_PATCH.assert_written_given_edit_mode_closed();
+}
+
+// SE-CLI-03
+#[test]
+fn a_patch_is_written_while_only_another_versions_pes_runs() {
+    APPLY_PATCH.assert_written_while_another_version_runs();
 }

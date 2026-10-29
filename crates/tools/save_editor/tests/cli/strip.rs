@@ -13,7 +13,7 @@ use pes_savefile::player_tables::{AppearanceTable, ItemList, PlayerTableFile};
 use pes_version::PesVersion;
 
 use crate::common::Run;
-use crate::{Sandbox, TEST_SALT, payload, payload_after};
+use crate::{Sandbox, TEST_SALT, WritingCommand, payload, payload_after};
 
 /// `UniColor.bin`'s path in the CPK: the unrelated file the tests' archives carry.
 const UNI_COLOR: &str = "common/character0/model/character/uniform/team/UniColor.bin";
@@ -435,4 +435,88 @@ fn a_strip_again_whose_out_cannot_be_written_reports_nobody_fixed() {
     // assert_refused asserts no event was emitted: no appearance_id_restored line, so no
     // player is reported fixed.
     run.assert_refused(3, &["OUT_DIR"]);
+}
+
+/// `strip-and-seed` writing the save and the CPK in place, the CPK holding no player table
+/// yet.
+const STRIP_AND_SEED: WritingCommand = WritingCommand {
+    name: "strip_seed_running",
+    setup: |sandbox| {
+        sandbox.fixture(PesVersion::Pes21, "EDIT");
+        write_cpk(&sandbox.path("BINS"), &[(UNI_COLOR, b"unicolor".to_vec())]);
+    },
+    args: |sandbox| {
+        let (edit, bins) = (sandbox.arg("EDIT"), sandbox.arg("BINS"));
+        vec![
+            "strip-and-seed".to_owned(),
+            "--base".to_owned(),
+            edit.clone(),
+            "--bins".to_owned(),
+            bins.clone(),
+            "--out".to_owned(),
+            edit,
+            "--bins-out".to_owned(),
+            bins,
+        ]
+    },
+    saves: &["EDIT"],
+    files: &["BINS"],
+};
+
+/// `check-stripped --strip-again` writing in place a save where one player is stripped and
+/// every other one's id came back.
+const STRIP_AGAIN: WritingCommand = WritingCommand {
+    name: "strip_again_running",
+    setup: |sandbox| {
+        let probe = EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
+        pre_stripped_fixture(sandbox, PesVersion::Pes21, "EDIT", probe.players()[0].id);
+    },
+    args: |sandbox| {
+        let edit = sandbox.arg("EDIT");
+        vec![
+            "check-stripped".to_owned(),
+            edit.clone(),
+            "--strip-again".to_owned(),
+            "--out".to_owned(),
+            edit,
+        ]
+    },
+    saves: &["EDIT"],
+    files: &[],
+};
+
+// SE-CLI-03
+#[test]
+fn strip_and_seed_is_refused_while_the_saves_own_pes_runs() {
+    STRIP_AND_SEED.assert_refused_while_its_game_runs();
+}
+
+// SE-CLI-03
+#[test]
+fn strip_and_seed_writes_while_its_pes_runs_given_edit_mode_closed() {
+    STRIP_AND_SEED.assert_written_given_edit_mode_closed();
+}
+
+// SE-CLI-03
+#[test]
+fn strip_and_seed_writes_while_only_another_versions_pes_runs() {
+    STRIP_AND_SEED.assert_written_while_another_version_runs();
+}
+
+// SE-CLI-03
+#[test]
+fn a_strip_again_is_refused_while_the_saves_own_pes_runs() {
+    STRIP_AGAIN.assert_refused_while_its_game_runs();
+}
+
+// SE-CLI-03
+#[test]
+fn a_strip_again_writes_while_its_pes_runs_given_edit_mode_closed() {
+    STRIP_AGAIN.assert_written_given_edit_mode_closed();
+}
+
+// SE-CLI-03
+#[test]
+fn a_strip_again_writes_while_only_another_versions_pes_runs() {
+    STRIP_AGAIN.assert_written_while_another_version_runs();
 }

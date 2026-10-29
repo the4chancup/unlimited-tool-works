@@ -7,9 +7,8 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::TeamToml;
 use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_version::PesVersion;
-use studio_core::RunningPes;
 
-use crate::{Sandbox, payload, payload_after};
+use crate::{Sandbox, WritingCommand, payload, payload_after};
 
 /// Team `/co/`, 714 in the PES 21 fixture, whose slot 3 is player 71403.
 const CO: u32 = 714;
@@ -279,58 +278,44 @@ fn a_team_the_save_lacks_or_a_document_with_no_id_is_refused() {
     assert!(!sandbox.path("OUT").exists());
 }
 
-/// `import-toml <file> --base <base> --out <base>` with `running` as the running-game probe.
-fn import_in_place_while(
-    sandbox: &Sandbox,
-    running: fn() -> Vec<RunningPes>,
-) -> crate::common::Run {
-    sandbox.run_with_running(
-        running,
-        &[
-            "import-toml",
-            &sandbox.arg("co.toml"),
-            "--base",
-            &sandbox.arg("EDIT"),
-            "--out",
-            &sandbox.arg("EDIT"),
-        ],
-    )
-}
+/// `import-toml` writing in place a document that renames `/co/`'s slot 3.
+const IMPORT_TOML: WritingCommand = WritingCommand {
+    name: "import_running",
+    setup: |sandbox| {
+        sandbox.fixture(PesVersion::Pes21, "EDIT");
+        let text = format!("[team]\nid = {CO}\n\n[players.03]\nname = \"PATCH\"\n");
+        fs::write(sandbox.path("co.toml"), text).unwrap();
+    },
+    args: |sandbox| {
+        let edit = sandbox.arg("EDIT");
+        let file = sandbox.arg("co.toml");
+        vec![
+            "import-toml".to_owned(),
+            file,
+            "--base".to_owned(),
+            edit.clone(),
+            "--out".to_owned(),
+            edit,
+        ]
+    },
+    saves: &["EDIT"],
+    files: &[],
+};
 
-// SE-CLI-02
+// SE-CLI-03
 #[test]
 fn a_write_is_refused_while_the_saves_own_pes_runs() {
-    let sandbox = Sandbox::new("import_pes_running");
-    sandbox.fixture(PesVersion::Pes21, "EDIT");
-    sandbox.export("EDIT", CO, "co.toml");
-    let before = fs::read(sandbox.path("EDIT")).unwrap();
-
-    import_in_place_while(&sandbox, || {
-        vec![RunningPes {
-            version: PesVersion::Pes21,
-            exe: None,
-        }]
-    })
-    .assert_refused(2, &["PES 2021 is running", "close the game first"]);
-    assert_eq!(fs::read(sandbox.path("EDIT")).unwrap(), before);
-    assert!(!sandbox.path("EDIT.bak").exists());
+    IMPORT_TOML.assert_refused_while_its_game_runs();
 }
 
-// SE-CLI-02
+// SE-CLI-03
+#[test]
+fn a_write_goes_ahead_while_its_pes_runs_given_edit_mode_closed() {
+    IMPORT_TOML.assert_written_given_edit_mode_closed();
+}
+
+// SE-CLI-03
 #[test]
 fn a_write_goes_ahead_while_only_another_versions_pes_runs() {
-    let sandbox = Sandbox::new("import_other_pes_running");
-    sandbox.fixture(PesVersion::Pes21, "EDIT");
-    sandbox.export("EDIT", CO, "co.toml");
-    let before = fs::read(sandbox.path("EDIT")).unwrap();
-
-    let run = import_in_place_while(&sandbox, || {
-        vec![RunningPes {
-            version: PesVersion::Pes19,
-            exe: None,
-        }]
-    });
-    assert_eq!(run.exit_code(), 0, "{:?}", run.messages());
-    assert_eq!(fs::read(sandbox.path("EDIT.bak")).unwrap(), before);
-    assert_ne!(fs::read(sandbox.path("EDIT")).unwrap(), before);
+    IMPORT_TOML.assert_written_while_another_version_runs();
 }
