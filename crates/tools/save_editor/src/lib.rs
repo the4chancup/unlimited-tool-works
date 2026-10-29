@@ -128,6 +128,7 @@ impl StudioTool for Tool {
         self.view.tactics.scroll_names = tool_settings.scroll_names;
         let common = ctx.common();
         self.view.hide_ids = common.fpc_hide_ids();
+        self.view.pes_version = common.pes_version;
         self.view
             .select_portraits(ui.ctx(), &common.pes_folder(), common.pes_version);
         view::show(ui, &mut self.view, &self.running);
