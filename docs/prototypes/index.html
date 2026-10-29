@@ -2693,11 +2693,15 @@ function renderStatus() {
   if (n) {
     mid.append(h("span", { class: "notice-txt " + n.kind, title: n.text }, n.text));
     if (n.action) {
+      // An action that switches the PES version (SwitchVersion) is the
+      // selector's change, so the selector's blocker disables it, with the
+      // blocked reason on a hover-sensing wrapper, and the notice stays.
+      const blocked = n.action.switchesVersion && !!S.blocker;
       const actBtn = button(n.action.label, () => {
         const act = n.action; dismissNotice(); act.run();
-      });
+      }, { disabled: blocked });
       actBtn.id = "notice-action";
-      mid.append(actBtn);
+      mid.append(blocked ? h("span", { title: pesSelectorTip() }, actBtn) : actBtn);
     }
     const x = button("\uE4F6", dismissNotice, { frame0: true, title: "Dismiss" });
     x.id = "notice-dismiss";

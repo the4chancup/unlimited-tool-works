@@ -13443,3 +13443,25 @@ input, so its entries could switch tools or open Help behind a dialog waiting fo
 draft's `#sb-open` is above the view, below menus and modals. The code had put it in
 `Foreground` to stand above the Help window, a `Middle` window; it still stands above that.
 Plan: `plans/core/gui.md` "Sidebar" item 4, the sentence starting "While a modal is open".
+
+## 2026-10-29 — gui — A tool can keep a standing status-bar notice; a notice can switch the PES version
+
+Decision: the `StudioTool` trait gets `standing_notice(&self, ctx) -> Option<Notice>`, asked of
+the active tool every frame, and `standing_notice_ended(&mut self)`, called once when the
+standing notice was seen (its action or dismiss clicked, or another notice replacing it while
+shown). It takes the bar when it appears, never expires by time, shows in its own tool's view
+only, and never reaches the window title. "Standing", not "held": the window title's notice
+kept while the window is unfocused is already the held one.
+`ActionEffect::SwitchVersion(PesVersion)` makes the selector's manual pick, its button disabled
+with the selector's reason while a tool reports a version-change blocker.
+Why: the Save editor's version warning (SE-GUI-28) lives until seen, follows the selector and
+must learn when it ended; a published `Notice` can be neither reworded nor withdrawn, and its
+publisher never learns of a dismiss. Polling, as `activity()` does, needs no handle that can go
+stale between a publish and the frame that draws it, unlike the draft's `publishNotice` /
+`noticeShown` pair, whose behavior in the bar it keeps (the draft also put the warning in the
+title when unfocused, which it does not: the title is for events). A blocked switch disabled rather than refused on
+click: a click that does nothing reads as a broken button, and the selector already shows the
+same reason the same way.
+Plan: `plans/core/gui.md` "Status bar", the bullets starting "A tool can keep a standing
+notice" and "A notice can switch the PES version"; `plans/save_editor.md` the paragraph starting "A save of
+another version than the sidebar's selector".
