@@ -565,11 +565,6 @@ const TITLE_MARGIN: i8 = 6;
 /// toolbar's buttons, the draft's toolbar margin.
 const LIST_TOP_MARGIN: i8 = 1;
 
-/// The detail pane's margin at its right. With the shell's own 8-point
-/// margin past it, a view ends 12 points short of the window's edge, as
-/// the list starts 12 after the sidebar: the draft's `.detail` padding.
-const PANE_RIGHT_MARGIN: i8 = 4;
-
 /// The room between the panes' bottom and the status bar (the draft's
 /// `.center.filled` bottom padding).
 const PANE_BOTTOM_MARGIN: f32 = 6.0;
@@ -662,15 +657,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         if view.live_aatf {
             live_aatf::show(ui, view);
         }
-        // 4 points before the list and 3 after it: with the shell's
-        // 8-point margin before the panel, and its 1-point separator line
-        // and the detail's own 8-point margin after it, the list stands 12
-        // from the pane's edge and the detail 12 after the list's scroll
-        // bar, the draft's gaps. No bottom margin: the quick actions' band
-        // is the panel's content's last item and runs to the pane's
-        // bottom, so the pane gets no scroll bar of its own.
+        // No margin before the list, so its frame stands at the view's
+        // left edge, and 3 points after it: with the panel's 1-point
+        // separator line and the detail's own 8-point margin, the detail
+        // stands 12 after the list's scroll bar, the draft's gap. No bottom
+        // margin: the quick actions' band is the panel's content's last
+        // item and runs to the pane's bottom, so the pane gets no scroll
+        // bar of its own.
         let margin = egui::Margin {
-            left: 4,
+            left: 0,
             right: 3,
             top: LIST_TOP_MARGIN,
             bottom: 0,
@@ -689,10 +684,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         let frame_right = list_panel.inner;
         // 6 points over the view, not egui's 8: a view's title then stands
         // as far below the toolbar's buttons as its first row stands below
-        // the title, in ink (`info_strip::view_title`).
+        // the title, in ink (`info_strip::view_title`). None at the right:
+        // the shell's own margin past the pane is the view's edge.
         let detail = egui::Frame::central_panel(ui.style()).inner_margin(egui::Margin {
             left: 8,
-            right: PANE_RIGHT_MARGIN,
+            right: 0,
             top: TITLE_MARGIN,
             bottom: 8,
         });

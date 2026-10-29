@@ -129,11 +129,11 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     }
 }
 
-/// A discovered save's entry: `PES 2019`, then its account folder after
-/// two spaces when it has one.
+/// A discovered save's entry: `PES 2019`, then its account folder in
+/// brackets when it has one.
 fn discovered_label(version: PesVersion, candidate: &SavefileCandidate) -> String {
     match &candidate.account {
-        Some(account) => format!("{version}  ({account})"),
+        Some(account) => format!("{version} ({account})"),
         None => version.to_string(),
     }
 }

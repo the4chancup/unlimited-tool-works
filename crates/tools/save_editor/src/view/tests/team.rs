@@ -724,11 +724,12 @@ fn the_line_under_the_fields_stands_11_from_the_row_and_11_5_from_the_tactics() 
     );
 }
 
-// The team view's pane ends where the draft's `.detail` content does, 12
-// points short of the window's edge: the line under the fields, which
-// spans the pane, ends there, as the draft's `.sep` does at 1268.
+// The team view's pane ends where the draft's `.detail` content does, at
+// the view's right edge, 8 points short of the window's: the line under
+// the fields, which spans the pane, ends there, as the draft's `.sep`
+// does at 1272.
 #[test]
-fn the_team_views_line_ends_12_from_the_windows_edge() {
+fn the_team_views_line_ends_8_from_the_windows_edge() {
     let path = fixture(PesVersion::Pes21, "team_pane_right");
     let mut view = SaveView::new();
     view.open(&path);
@@ -757,7 +758,7 @@ fn the_team_views_line_ends_12_from_the_windows_edge() {
         .expect("the line under the fields, across the pane");
     assert!(
         (line_right - f64::from(PANE_RIGHT)).abs() <= 1.0,
-        "the line ends at {PANE_RIGHT}, the draft's 1268 ({line_right})"
+        "the line ends at {PANE_RIGHT}, the draft's 1272 ({line_right})"
     );
 }
 

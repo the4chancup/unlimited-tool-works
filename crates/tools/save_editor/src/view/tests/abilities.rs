@@ -2456,7 +2456,7 @@ fn the_player_view_lays_out_its_three_columns_at_1280() {
 
 // The room the three fixed columns leave is split into four equal gaps:
 // after the player list, counted from its frame, between the columns, and
-// after Ability stats to the window's edge; 29.4 points each at the
+// after Ability stats to the window's edge; 30.4 points each at the
 // 1280 x 780 window, and still equal on a wider one. The title line and
 // Appearance start at General info's title.
 // The gaps read the columns' widths the previous frame measured (egui
@@ -2495,8 +2495,8 @@ fn the_player_view_splits_its_room_into_four_equal_gaps() {
         if screen_w == DEFAULT_PANE.x {
             for gap in gaps {
                 assert!(
-                    (gap - 29.4).abs() <= 0.5,
-                    "each gap 29.4 at the 1280 x 780 window: {gaps:?}, the frame's right {frame_right}, the columns {widths:?}"
+                    (gap - 30.4).abs() <= 0.5,
+                    "each gap 30.4 at the 1280 x 780 window: {gaps:?}, the frame's right {frame_right}, the columns {widths:?}"
                 );
             }
         }
@@ -2523,10 +2523,11 @@ fn the_player_view_splits_its_room_into_four_equal_gaps() {
 }
 
 // The player view's pane ends where the draft's `.detail` content does,
-// 12 points short of the window's edge: with Appearance open the pane
-// scrolls, and its floating bar's right edge is the pane's.
+// at the view's right edge, 8 points short of the window's: with
+// Appearance open the pane scrolls, and its floating bar's right edge is
+// the pane's.
 #[test]
-fn the_player_views_pane_ends_12_from_the_windows_edge() {
+fn the_player_views_pane_ends_8_from_the_windows_edge() {
     let path = fixture(PesVersion::Pes21, "player_pane_right");
     let mut view = SaveView::new();
     view.open(&path);
@@ -2552,7 +2553,7 @@ fn the_player_views_pane_ends_12_from_the_windows_edge() {
     );
     assert!(
         (bar.x1 - f64::from(PANE_RIGHT)).abs() <= 1.0,
-        "the pane's right edge at {PANE_RIGHT}, the draft's 1268 ({bar:?})"
+        "the pane's right edge at {PANE_RIGHT}, the draft's 1272 ({bar:?})"
     );
 }
 

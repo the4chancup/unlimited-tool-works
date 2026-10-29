@@ -1400,9 +1400,10 @@ fn the_lists_scroll_bar_stands_outside_its_frame() {
 }
 
 // The list's frame stands where the draft's does at the 1280 x 780
-// window: its left edge 12 points into the pane and its right edge 245
-// further (the draft's `.rows`, its border included), the 255-point list
-// column being the frame and the bar's 10-point strip.
+// window: its left edge at the view's, the shell's margin into the pane
+// (64 in the window), and its right edge 245 further (the draft's `.rows`,
+// its border included), the 255-point list column being the frame and the
+// bar's 10-point strip.
 #[test]
 fn the_lists_frame_stands_where_the_drafts_does() {
     let path = fixture(PesVersion::Pes21, "list_frame_edges");
@@ -1412,9 +1413,11 @@ fn the_lists_frame_stands_where_the_drafts_does() {
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let frame = list_frame(&window, &shapes);
+    let right = PANEL_MARGIN + 245.0;
     assert!(
-        (frame.min.x - 12.0).abs() <= 0.5 && (frame.max.x - 257.0).abs() <= 0.5,
-        "the frame from 12 to 257, as the draft's ({frame:?})"
+        (frame.min.x - PANEL_MARGIN).abs() <= 0.5 && (frame.max.x - right).abs() <= 0.5,
+        "the frame from the view's left edge {PANEL_MARGIN} to {right}, as the draft's \
+         ({frame:?})"
     );
 }
 

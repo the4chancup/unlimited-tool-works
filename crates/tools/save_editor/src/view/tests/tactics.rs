@@ -1460,49 +1460,49 @@ fn the_tactics_bars_items_stand_where_the_drafts_do() {
 
     let rail = 1280.0 - f64::from(DEFAULT_PANE.x);
     let items: [(&str, accesskit::Rect, f64, Option<f64>); 10] = [
-        ("1", button_bounds(&nodes, "1"), 372.48, Some(17.13)),
-        ("2", button_bounds(&nodes, "2"), 391.61, Some(17.13)),
-        ("3", button_bounds(&nodes, "3"), 410.73, Some(17.13)),
+        ("1", button_bounds(&nodes, "1"), 368.48, Some(17.13)),
+        ("2", button_bounds(&nodes, "2"), 387.61, Some(17.13)),
+        ("3", button_bounds(&nodes, "3"), 406.73, Some(17.13)),
         (
             "Fluid formation",
             check_bounds(&nodes, "Fluid formation"),
-            435.86,
+            431.86,
             None,
         ),
         (
             "Kick-off",
             button_bounds(&nodes, "Kick-off"),
-            767.0,
+            763.0,
             Some(52.92),
         ),
         (
             "In-possession",
             button_bounds(&nodes, "In-possession"),
-            821.92,
+            817.92,
             Some(88.5),
         ),
         (
             "Out-of-possession",
             button_bounds(&nodes, "Out-of-possession"),
-            912.42,
+            908.42,
             Some(113.77),
         ),
         (
             "the formations' Copy/swap",
             copy_swap_bounds(&nodes)[1],
-            1034.19,
+            1030.19,
             None,
         ),
         (
             "Scroll names",
             check_bounds(&nodes, "Scroll names"),
-            1127.55,
+            1123.55,
             None,
         ),
         (
             "Player assignments",
             label_bounds(&nodes, "Player assignments"),
-            1104.0,
+            1100.0,
             None,
         ),
     ];
