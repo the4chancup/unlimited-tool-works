@@ -4,7 +4,7 @@
 
 use aatf::{NON_STAT_TARGETS, Ruleset, Stat};
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
-use studio_core::widgets::checkbox;
+use studio_core::widgets::{checkbox, text_box};
 
 use super::Section;
 use super::widgets;
@@ -26,7 +26,9 @@ pub(crate) fn show(ui: &mut egui::Ui, ruleset: &mut Ruleset) {
         .num_columns(2)
         .show(ui, |ui| {
             ui.label("Name");
-            ui.add(egui::TextEdit::singleline(&mut ruleset.name).desired_width(220.0));
+            ui.add(text_box(
+                egui::TextEdit::singleline(&mut ruleset.name).desired_width(220.0),
+            ));
             ui.end_row();
             ui.label("Squad size");
             widgets::number(ui, &mut ruleset.squad_size, 1..=32);

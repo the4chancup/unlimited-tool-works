@@ -467,6 +467,49 @@ const LIST_WIDTH: f32 = 255.0;
 /// The detail pane's margin over a view's title.
 const TITLE_MARGIN: i8 = 6;
 
+/// How far the Appearance header's text stands after its left edge: the
+/// draft's `summary::before` arrow box, 14px wide, where egui indents 18.
+const APPEARANCE_INDENT: f32 = 14.0;
+
+/// How far the Appearance header's arrow stands from the middle of the box
+/// egui centres it in (the indent's middle, on the header's centre line):
+/// the draft's arrow is a symbol at the box's left, on the text's baseline,
+/// so it sits left of that middle and below the line's centre.
+const APPEARANCE_ARROW_OFFSET: egui::Vec2 = egui::vec2(-3.5, 2.0);
+
+/// The Appearance section under the player's columns, closed by default,
+/// its header as the draft's `details > summary`: one line of text high,
+/// the text `APPEARANCE_INDENT` in, the arrow where the draft's stands
+/// (`appearance_arrow`). The section's content keeps the view's spacing
+/// and its width (the grids are sized for it, the body's indent would push
+/// them past it).
+fn appearance_section(ui: &mut egui::Ui, view: &mut SaveView) {
+    let spacing = ui.spacing().clone();
+    ui.scope(|ui| {
+        let text_height = ui.text_style_height(&egui::TextStyle::Button);
+        let header = ui.spacing_mut();
+        header.indent = APPEARANCE_INDENT;
+        header.interact_size.y = text_height;
+        header.button_padding.y = 0.0;
+        egui::CollapsingHeader::new("Appearance")
+            .id_salt("appearance")
+            .icon(appearance_arrow)
+            .show_unindented(ui, |ui| {
+                *ui.spacing_mut() = spacing;
+                appearance::show(ui, view);
+            });
+    });
+}
+
+/// egui's collapsing arrow, moved by `APPEARANCE_ARROW_OFFSET` from the box
+/// egui gives it (`response`'s rect).
+fn appearance_arrow(ui: &mut egui::Ui, openness: f32, response: &egui::Response) {
+    let moved = response
+        .clone()
+        .with_new_rect(response.rect.translate(APPEARANCE_ARROW_OFFSET));
+    egui::collapsing_header::paint_default_icon(ui, openness, &moved);
+}
+
 /// Shows the window for one frame. `running` is the running-PES probe,
 /// called only when Save runs (a process snapshot is not a frame's cost).
 /// The ruleset is resolved from `view.aatf_ruleset` on the first frame and
@@ -569,13 +612,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
                                 ui.set_width(columns + 2.0 * gap);
                                 info_strip::show(ui, view);
                                 abilities::show(ui, view, gap);
-                                egui::CollapsingHeader::new("Appearance")
-                                    .id_salt("appearance")
-                                    // The section's content keeps the
-                                    // view's width (the grids are sized
-                                    // for it, the body's indent would push
-                                    // them past it).
-                                    .show_unindented(ui, |ui| appearance::show(ui, view));
+                                appearance_section(ui, view);
                             });
                         });
                     }

@@ -12,7 +12,7 @@ use egui::{
     Sense, Shape, Stroke, StrokeKind, TextEdit, TextStyle, Ui, WidgetInfo, pos2, vec2,
 };
 use studio_core::theme;
-use studio_core::widgets::{step_number, wheel_steps};
+use studio_core::widgets::{step_number, text_box, wheel_steps};
 
 /// The most recent colors the session keeps: newest first, no duplicates.
 const MAX_RECENTS: usize = 8;
@@ -562,12 +562,12 @@ fn popup_body(
     if !ui.memory(|memory| memory.has_focus(hex_id)) {
         state.hex = format_hex(rgb_of(state.hsva));
     }
-    let hex_response = ui.add(
+    let hex_response = ui.add(text_box(
         TextEdit::singleline(&mut state.hex)
             .id(hex_id)
             .font(TextStyle::Monospace)
             .desired_width(f32::INFINITY),
-    );
+    ));
     let hex_lost_focus = hex_response.lost_focus();
     state.hex_focused = ui.memory(|memory| memory.has_focus(hex_id));
 

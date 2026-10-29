@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use pes_savefile::settings_toml::PlayerSettings;
-use studio_core::widgets::{modal, modal_buttons};
+use studio_core::widgets::{modal, modal_buttons, text_box};
 use studio_core::{Notice, NoticeKind};
 
 use crate::session::is_stripped;
@@ -179,7 +179,9 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         let text = text(file, generate.player_id, generate.file, &folder);
         ui.horizontal(|ui| {
             ui.label("Folder");
-            ui.add(egui::TextEdit::singleline(&mut generate.folder).desired_width(320.0));
+            ui.add(text_box(
+                egui::TextEdit::singleline(&mut generate.folder).desired_width(320.0),
+            ));
             if ui.button("Pick\u{2026}").clicked()
                 && let Some(path) = pick_folder_dialog()
             {

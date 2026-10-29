@@ -9,7 +9,7 @@
 use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 
 use crate::help::{HelpSection, HelpTarget, MESSAGES_SLUG};
-use crate::widgets::FORM_ROW_SPACING;
+use crate::widgets::{FORM_ROW_SPACING, text_box};
 
 /// The window's state across frames: the chapters it was built over, whether it is open,
 /// where it is (chapter index; the topic index in the list the tree shows — the written
@@ -163,11 +163,11 @@ impl HelpWindow {
     /// as the shell's own layout is: a `ui.horizontal` row would cap the scroll areas
     /// at one widget height and clip their interact rects out of the hit test.
     fn contents(&mut self, ui: &mut egui::Ui) {
-        ui.add(
+        ui.add(text_box(
             egui::TextEdit::singleline(&mut self.search)
                 .hint_text("Search the help")
                 .desired_width(f32::INFINITY),
-        );
+        ));
         ui.separator();
         egui::Panel::left("help-tree")
             .resizable(false)

@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use aatf::{MedalSystem, Ruleset, Stat, Tier, TierId};
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
-use studio_core::widgets::{checkbox, step_choice, step_number, wheel_steps};
+use studio_core::widgets::{checkbox, step_choice, step_number, text_box, wheel_steps};
 
 use super::Section;
 use super::widgets;
@@ -146,11 +146,11 @@ fn tier_row(
         .data_mut(|data| data.get_temp::<String>(buffer_id))
         .unwrap_or_else(|| ruleset.tiers[index].id.clone());
     let response = cell(ui, index, drop, |ui| {
-        ui.add(
+        ui.add(text_box(
             egui::TextEdit::singleline(&mut id)
                 .desired_width(80.0)
                 .font(egui::TextStyle::Monospace),
-        )
+        ))
         .on_hover_text("What conditions and other tiers refer to")
     });
     if response.lost_focus() && id != ruleset.tiers[index].id {
@@ -356,11 +356,11 @@ fn name_color_cell(ui: &mut egui::Ui, ruleset: &mut Ruleset, index: usize) {
         tier.name_color = Some(code_with_alpha(rgb, tier.name_color.as_deref()));
     }
     if let Some(code) = &mut tier.name_color {
-        ui.add(
+        ui.add(text_box(
             egui::TextEdit::singleline(code)
                 .desired_width(76.0)
                 .font(egui::TextStyle::Monospace),
-        )
+        ))
         .on_hover_text("The eight bytes after \\x11c in the name");
     }
 }
