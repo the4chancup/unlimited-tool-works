@@ -31,6 +31,10 @@ use crate::view::{
     Refusal, SaveView, aatf_check, edit_settled, player_list, surrender_focus, terms,
 };
 
+/// The panel's first width in points, its whole frame included (the
+/// draft's `.panel`).
+const PANEL_WIDTH: f32 = 620.0;
+
 /// The pick's Open dialog (`rfd` in the window, a stub in the tests — a
 /// native dialog cannot be driven headless; `SaveFileDialog`'s pattern).
 pub(crate) type OpenSaveDialog = Box<dyn FnMut() -> Option<PathBuf>>;
@@ -223,9 +227,19 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         false
     };
     let mut open = comparator.open;
+    // The panel first opens where the draft's `.panel` stands: its right
+    // edge 1 inside the window's, its top 90 below, over the views' right
+    // columns rather than the player list a member picks from while it is
+    // open. egui places a window by its default once, then keeps where
+    // the member drags it.
+    let screen = ui.ctx().content_rect();
     egui::Window::new(studio_core::theme::window_title_text("Comparator"))
         .id(egui::Id::unique("save_editor_comparator"))
-        .default_width(620.0)
+        .default_pos(egui::pos2(
+            screen.right() - 1.0 - PANEL_WIDTH,
+            screen.top() + 90.0,
+        ))
+        .default_width(PANEL_WIDTH)
         .collapsible(false)
         .resizable(true)
         .open(&mut open)

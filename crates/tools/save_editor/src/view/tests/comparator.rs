@@ -1276,3 +1276,63 @@ fn the_panels_title_is_14_points_and_strong() {
         "the title's strong colour"
     );
 }
+
+/// The panel's outer rect, from its AccessKit window node.
+fn panel_rect(nodes: &[accesskit::Node]) -> accesskit::Rect {
+    nodes
+        .iter()
+        .find(|node| node.role() == Role::Window && node.label() == Some("Comparator"))
+        .and_then(accesskit::Node::bounds)
+        .expect("the panel's window")
+}
+
+/// Whether `rect`'s left and top are `left` and `top`, within a point.
+fn placed_at(rect: &accesskit::Rect, left: f64, top: f64) -> bool {
+    (rect.x0 - left).abs() <= 1.0 && (rect.y0 - top).abs() <= 1.0
+}
+
+// A floating panel first opens where the drafts' `.panel` stands: at the
+// 1280 x 780 client, 620 wide, its top 90 below the window's and its right
+// edge 1 inside it, so (659, 90). Dragged, it stays where the member left
+// it, across a close and a reopen.
+#[test]
+fn the_panel_first_opens_at_the_right_and_stays_where_dragged() {
+    let (mut view, _) = open_734_with("comparator_place", &[73401], 183);
+    let mut window = Headless::sized(1280.0, 780.0);
+    open_comparator(&mut window, &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let rect = panel_rect(&nodes);
+    assert!(
+        placed_at(&rect, 659.0, 90.0) && (rect.x1 - rect.x0 - 620.0).abs() <= 1.0,
+        "the panel's first rect: {rect:?}"
+    );
+
+    // Dragged by its title bar, left of the title.
+    let from = egui::pos2(rect.x0 as f32 + 8.0, rect.y0 as f32 + 10.0);
+    drag(
+        &mut window,
+        from,
+        from + egui::vec2(-300.0, 100.0),
+        &mut view,
+    );
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let dragged = panel_rect(&nodes);
+    assert!(
+        placed_at(&dragged, 359.0, 190.0),
+        "the dragged panel: {dragged:?}"
+    );
+
+    view.comparator.open = false;
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    view.comparator.open = true;
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let reopened = panel_rect(&nodes);
+    assert!(
+        placed_at(&reopened, 359.0, 190.0),
+        "the reopened panel: {reopened:?}"
+    );
+}
