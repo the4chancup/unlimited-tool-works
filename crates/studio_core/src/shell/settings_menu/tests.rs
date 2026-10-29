@@ -6,6 +6,7 @@ use pes_version::PesVersion;
 
 use crate::pes_process::RunningPes;
 use crate::settings::{CommonSettings, Settings, Theme, pes_folder_pattern};
+use crate::shell::sidebar::SETTINGS_LABEL;
 use crate::shell::test_harness::*;
 use crate::status::{ActionEffect, Notice, NoticeAction, NoticeKind};
 use crate::tool::AppPaths;
@@ -98,7 +99,7 @@ fn the_gear_opens_the_menu_on_the_active_tools_section_and_resets_each_opening()
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     assert_eq!(app.active, 1);
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     // The collapsing animation settles over a few frames.
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     assert!(has_text(&nodes, "Threads"), "the common grid is drawn");
@@ -171,7 +172,7 @@ fn the_gear_opens_the_menu_on_the_active_tools_section_and_resets_each_opening()
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     assert_eq!(app.active, 0);
     assert!(!has_text(&nodes, "B settings body"), "the menu is closed");
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     // B's collapse animates out over 0.2 s of frames before its body stops drawing.
     let nodes = idle(&egui_ctx, &mut app, 15).nodes;
     assert!(
@@ -212,7 +213,7 @@ fn a_cli_only_tool_has_no_section_even_with_settings() {
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     assert_eq!(labeled(&nodes, "C"), 0, "C is in no planned list: no entry");
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     assert!(has_text(&nodes, "Threads"), "the menu is open");
     assert_eq!(labeled(&nodes, "A"), 2, "A's sidebar entry and its header");
@@ -247,7 +248,7 @@ fn a_threads_change_writes_the_common_setting_and_keeps_the_tool_tables() {
     );
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     // A click on a DragValue turns it into a text field; type and press Enter.
     click(
@@ -307,7 +308,7 @@ fn the_memory_cap_row_accepts_a_fraction_of_a_percent() {
     let egui_ctx = test_context();
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     click(
         &egui_ctx,
@@ -340,7 +341,7 @@ fn the_memory_cap_box_holds_the_number_and_the_percent_sign_follows_it() {
     let egui_ctx = test_context();
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     let field = widget_on_row(&nodes, "Memory cap", Role::SpinButton);
     let text = field.value().expect("the box shows its value");
@@ -386,7 +387,7 @@ fn the_hide_id_rows_write_the_common_settings() {
     let egui_ctx = test_context();
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     for (label, min, max) in [
         ("FPC hide boots ID", 1.0, 100.0),
@@ -446,7 +447,7 @@ fn the_update_check_rows_are_not_drawn_yet() {
     let egui_ctx = test_context();
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     assert!(has_text(&nodes, "Theme"), "the menu is open");
     assert!(
@@ -478,7 +479,7 @@ fn opening_the_menu_keeps_a_thread_count_above_the_core_count() {
     let egui_ctx = test_context();
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     assert!(has_text(&nodes, "Threads"), "the menu is open");
     assert_eq!(ctx.common().thread_count, 4096);
@@ -520,7 +521,7 @@ fn the_theme_setting_decides_and_a_pick_applies_at_the_next_frame() {
         Some(egui::Theme::Light),
     )
     .nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     assert_eq!(
         widget_on_row(&nodes, "Theme", Role::ComboBox).value(),
@@ -577,7 +578,7 @@ fn a_path_row_commits_on_enter_not_per_keystroke() {
     // the `20**` rule a Browse pick goes through.
     let pes_folder = dir.join("PES2019").display().to_string();
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     click(
         &egui_ctx,
@@ -638,7 +639,7 @@ fn a_path_row_edit_survives_the_window_losing_focus() {
 
     let pes_folder = dir.join("pes19").display().to_string();
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     click(
         &egui_ctx,
@@ -695,7 +696,7 @@ fn a_path_row_draws_browse_right_of_the_edit() {
     let egui_ctx = test_context();
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     let edit = widget_on_row(&nodes, "PES folder", Role::TextInput);
     let browse = widget_on_row(&nodes, "PES folder", Role::Button);
@@ -723,7 +724,7 @@ fn the_common_rows_stand_22_apart() {
     let egui_ctx = test_context();
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     let row_centre = |role: Role, text: &str| {
         let node = nodes
@@ -776,7 +777,7 @@ fn a_menu_pick_writes_pes_version_and_spends_the_auto_switch() {
     let egui_ctx = test_context();
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     click(
         &egui_ctx,
@@ -816,7 +817,7 @@ fn a_blocking_tool_disables_the_menu_version_row_with_its_reason() {
     egui_ctx.all_styles_mut(|style| style.interaction.tooltip_delay = 0.0);
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     let combo = widget_on_row(&nodes, "PES version", Role::ComboBox);
     assert!(combo.is_disabled(), "the blocked row is disabled");
@@ -884,7 +885,7 @@ fn a_row_labels_tooltip_leads_with_the_settings_key() {
     egui_ctx.all_styles_mut(|style| style.interaction.tooltip_delay = 0.0);
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     // The gear click leaves the pointer on the rail, the sidebar's overlay
     // open over the menu's left edge on the test's 800-point screen (the app
@@ -994,7 +995,7 @@ fn a_folder_per_version_overrides_the_main_row_until_emptied() {
     let egui_ctx = test_context();
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     assert!(has_text(&nodes, "PES folder"), "the menu is open");
     assert!(
@@ -1149,7 +1150,7 @@ fn emptying_the_last_folder_of_a_version_leaves_the_rows_shown() {
     let egui_ctx = test_context();
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     assert!(
         entry(&nodes, "A folder per version").is_disabled(),
@@ -1227,7 +1228,7 @@ fn every_path_edit_shows_steams_pes_2019_folder_whole() {
     let egui_ctx = test_context();
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     // The fonts exist once the first frame has run.
     let font = egui::TextStyle::Body.resolve(&egui_ctx.global_style());
@@ -1315,12 +1316,12 @@ fn the_menu_starts_its_grid_8_under_the_title_and_ends_in_close_at_the_right() {
     let egui_ctx = test_context();
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     let outer = egui_ctx
         .memory(|memory| memory.area_rect(egui::Id::unique("settings-menu")))
         .expect("the menu's modal has an area");
-    let title = text_node(&nodes, "Settings")
+    let title = text_node(&nodes, "Settings (WIP)")
         .bounds()
         .expect("the title has bounds");
     let label = text_node(&nodes, "PES version")

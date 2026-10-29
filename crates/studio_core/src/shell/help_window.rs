@@ -11,6 +11,8 @@ use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 use crate::help::{HelpSection, HelpTarget, MESSAGES_SLUG};
 use crate::widgets::{FORM_ROW_SPACING, text_box};
 
+use super::sidebar::HELP_LABEL;
+
 /// The window's state across frames: the chapters it was built over, whether it is open,
 /// where it is (chapter index; the topic index in the list the tree shows — the written
 /// topics, then `Messages` when the chapter has catalog rows), the paragraph or catalog
@@ -147,7 +149,7 @@ impl HelpWindow {
         // A moved or resized rect is kept by the window's id afterwards.
         let screen = egui_ctx.content_rect();
         let size = (screen.size() * 0.9).round();
-        egui::Window::new(crate::theme::window_title_text("Help"))
+        egui::Window::new(crate::theme::window_title_text(HELP_LABEL))
             .id(egui::Id::unique("help-window"))
             .default_rect(egui::Rect::from_center_size(screen.center(), size))
             .collapsible(false)
@@ -622,6 +624,7 @@ mod tests {
     use super::*;
     use crate::events::{MessageCode, Severity};
     use crate::help::{CatalogRow, HelpTopic};
+    use crate::shell::sidebar::SETTINGS_LABEL;
     use crate::shell::test_harness::*;
     use crate::status::{ActionEffect, Notice, NoticeAction, NoticeKind};
     use crate::widgets::LogLine;
@@ -788,19 +791,18 @@ mod tests {
         }
     }
 
-    /// The help window's own node: a `Role::Window` labeled `Help`.
+    /// The help window's own node: a `Role::Window` labeled with the help's name.
     fn help_window_node(nodes: &[accesskit::Node]) -> Option<&accesskit::Node> {
         nodes
             .iter()
-            .find(|node| node.role() == Role::Window && node.label() == Some("Help"))
+            .find(|node| node.role() == Role::Window && node.label() == Some(HELP_LABEL))
     }
 
-    /// The sidebar's `?` button: a `Role::Button` labeled `Help` (the About popup's
-    /// link and the window's title share the label; the role tells them apart).
+    /// The sidebar's `?` button: a `Role::Button` labeled with the help entry's label.
     fn help_button(nodes: &[accesskit::Node]) -> &accesskit::Node {
         nodes
             .iter()
-            .find(|node| node.role() == Role::Button && node.label() == Some("Help"))
+            .find(|node| node.role() == Role::Button && node.label() == Some(HELP_LABEL))
             .expect("the sidebar's ? button")
     }
 
@@ -1159,7 +1161,7 @@ mod tests {
 
         // Opening the help while the settings menu is open closes the menu.
         let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-        click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+        click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
         let nodes = idle(&egui_ctx, &mut app, 10).nodes;
         assert!(has_text(&nodes, "Threads"), "the settings menu is open");
         frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
@@ -1431,7 +1433,7 @@ mod tests {
         let titles: Vec<(f32, egui::Color32)> = shapes
             .iter()
             .filter_map(|clipped| match &clipped.shape {
-                egui::Shape::Text(shape) if shape.galley.text() == "Help" => {
+                egui::Shape::Text(shape) if shape.galley.text() == "Help (WIP)" => {
                     let format = &shape.galley.job.sections[0].format;
                     Some((format.font_id.size, format.color))
                 }
@@ -1440,7 +1442,7 @@ mod tests {
             .collect();
         assert!(
             titles.contains(&(14.0, strong)),
-            "the title among the texts \"Help\": {titles:?}"
+            "the title among the texts \"Help (WIP)\": {titles:?}"
         );
     }
 

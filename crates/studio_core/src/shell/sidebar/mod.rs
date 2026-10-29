@@ -70,6 +70,18 @@ const LABEL_GAP: f32 = 6.0;
 const LABEL_END_PADDING: f32 = 6.0;
 /// Seconds between running-PES polls of the auto-switch.
 const PES_POLL_SECONDS: f64 = 5.0;
+/// The tooltip of every grayed entry: a tool of the suite this build does not have,
+/// or a registered tool whose window is not built yet. Either way its window is what
+/// is coming; how to run a tool from the command line is the help's to say.
+const PLANNED_TOOLTIP: &str = "Coming soon™";
+/// The help's name: the `?` entry's label in the opened sidebar, its accessible name,
+/// open or not, and the help window's title, so the entry names the window it opens.
+/// "(WIP)" until the help is complete.
+pub(super) const HELP_LABEL: &str = "Help (WIP)";
+/// The settings menu's name: the gear's label in the opened sidebar, its accessible
+/// name, open or not, and the menu's title. "(WIP)" until the settings menu is
+/// complete.
+pub(super) const SETTINGS_LABEL: &str = "Settings (WIP)";
 
 /// What one frame of the sidebar draws from: the registered tools in sidebar
 /// order, the active one's index, the planned entries, the CLI-only ids and the
@@ -414,17 +426,8 @@ impl Sidebar {
                     }
                 }
                 for entry in drawn_planned(args) {
-                    // In the registry's order: a CLI-only tool's entry is here,
-                    // its tooltip saying it runs from the command line in this
-                    // version (ST-SIDE-08).
-                    let tooltip = if cli_only.contains(&entry.id) {
-                        format!(
-                            "{} has no window in this version, so it runs from the command line.",
-                            entry.label
-                        )
-                    } else {
-                        format!("{} is not in this build", entry.label)
-                    };
+                    // In the registry's order: a CLI-only tool's entry is here
+                    // (ST-SIDE-08).
                     let response = ui
                         .add_enabled_ui(false, |ui| {
                             entry_row(
@@ -441,7 +444,7 @@ impl Sidebar {
                     response.widget_info(|| {
                         egui::WidgetInfo::labeled(egui::Role::Label, false, entry.label)
                     });
-                    response.on_disabled_hover_text(tooltip);
+                    response.on_disabled_hover_text(PLANNED_TOOLTIP);
                 }
 
                 // The bottom rows, pinned to the sidebar's foot: the help `?` above
@@ -453,12 +456,12 @@ impl Sidebar {
                         row_width,
                         cell,
                         egui::RichText::new(crate::icons::GEAR).size(ICON_SIZE),
-                        (!rail).then_some("Settings"),
+                        (!rail).then_some(SETTINGS_LABEL),
                         false,
                         true,
                     );
                     gear.widget_info(|| {
-                        egui::WidgetInfo::labeled(egui::Role::Button, true, "Settings")
+                        egui::WidgetInfo::labeled(egui::Role::Button, true, SETTINGS_LABEL)
                     });
                     if gear.has_focus() {
                         self.focus_label = Some("Settings");
@@ -471,12 +474,12 @@ impl Sidebar {
                         row_width,
                         cell,
                         egui::RichText::new(crate::icons::QUESTION).size(ICON_SIZE),
-                        (!rail).then_some("Help"),
+                        (!rail).then_some(HELP_LABEL),
                         false,
                         true,
                     );
                     help.widget_info(|| {
-                        egui::WidgetInfo::labeled(egui::Role::Button, true, "Help")
+                        egui::WidgetInfo::labeled(egui::Role::Button, true, HELP_LABEL)
                     });
                     if help.has_focus() {
                         self.focus_label = Some("Help");
@@ -731,8 +734,8 @@ fn drawn_planned<'a>(args: &'a SidebarFrame<'a>) -> impl Iterator<Item = &'a Pla
 
 /// The widest body-text galley among the labels the open sidebar shows, since the overlay
 /// is as wide as the longest label needs on one line: the registered tools', the planned
-/// entries' as `contents` draws them, `Help` and `Settings`. Measured each frame with the
-/// fonts; no constant.
+/// entries' as `contents` draws them, the help's and the gear's. Measured each frame with
+/// the fonts; no constant.
 fn widest_label(ui: &egui::Ui, args: &SidebarFrame) -> f32 {
     let font = egui::TextStyle::Body.resolve(ui.style());
     let mut widest: f32 = 0.0;
@@ -752,8 +755,8 @@ fn widest_label(ui: &egui::Ui, args: &SidebarFrame) -> f32 {
     for entry in drawn_planned(args) {
         measure(entry.label);
     }
-    measure("Help");
-    measure("Settings");
+    measure(HELP_LABEL);
+    measure(SETTINGS_LABEL);
     widest
 }
 
