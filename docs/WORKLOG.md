@@ -4656,7 +4656,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] ov2y seen by ov2w, outside its brief: the detail pane's right edge at 1264 against
       the draft's 1268, the player list's frame top at 73 against 74; measure and fix after
       ov2x
-    - [ ] ov2x the player view and the text boxes against the draft, re-measured 2026-10-29
+    - [x] ov2x the player view and the text boxes against the draft, re-measured 2026-10-29
       (`rect_compare.py player`): every text box without the draft's 1-point border
       (`input[type=text]`: `border: 1px solid var(--stroke)`, radius 3; egui's resting text
       edit draws none); Playable positions' groups 70 apart for the draft's 66, its rows 42
@@ -4666,7 +4666,21 @@ briefs, review loops, gates and mutation runs as for any step.
       for 61.5. General info fits within 1.4 (ov2s's offsets gone). Not mismatches: a
       checkbox's hit area (the draft's label spans its cell; egui's is its content), the
       toolbar's Open menu and Save as (8.9l slice l3), the ability stats' labels (QUESTIONS).
-      Brief `.tmp/0_0_1ov/brief_ov2x.md` (the maintainer, 2026-10-28): every element rendered from
+      Brief `.tmp/0_0_1ov/brief_ov2x.md`. Done 2026-10-29 (Opus, reviewed; merge of `ov/2x`,
+      the lead's merge commit `2f112988` also wrapping the team view's Name and Short boxes,
+      which were ov2w's file then): `studio_core::widgets::text_box` (the border, radius 3,
+      egui's outer size; `core/gui.md` the Dark/light theme row) at every text box but a
+      test's; positions grid 4 apart within a row, rows 9 apart, label rows a line of text
+      (`POS_CELL_GAP`, `POS_ROW_GAP`, `POS_LABEL_GAP`); the Skills header a line of text, its
+      items 6 apart (`HEADER_GAP`); the Appearance header a line of text, indented 14, its
+      arrow at the draft's place. Rulings on its contradictions: COM playing styles' first row
+      stands 1.5 high (the draft's browser checkbox sits 0.5 lower per card panel than the
+      plan's 6-point title rule): accepted under "2 where needed", the rule kept; a hovered
+      text box keeps egui's hover stroke (the drafts have no hover rule); no clippy lint for
+      bare text edits (`text_box` takes a caller-built `TextEdit`, so a lint on its
+      constructors would flag every wrapped call); the text's 4-point inset (the draft's 5)
+      within the tolerance; other collapsing headers keep egui's look (only Appearance was
+      measured) (the maintainer, 2026-10-28): every element rendered from
     the drafts, `.tmp/0_0_1ov/live_gallery.py` → `.tmp/0_0_1ov/live/`; the first rulings
     drafted and planned (ov2f; the dock's kind codes kept). The two points left for later (a
     rules file that fails to load surfaced when it is loaded; switching between rules files,
