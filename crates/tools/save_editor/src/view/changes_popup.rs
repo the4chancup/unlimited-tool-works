@@ -59,21 +59,39 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     };
     // The draft's `.chpop`: the panel's fill and stroke, under the label
     // at its left edge. Only that one placement, so a list wider than the
-    // room left of the window's edge slides left (egui keeps an area on
-    // screen) rather than flipping to the label's right edge.
+    // room left of the window's edge slides left rather than flipping to
+    // the label's right edge. The draft stops it 8 points inside the
+    // window's edge, where egui's own constraint would stop it flush, so
+    // the anchor slides by the overhang of the list's width as last drawn
+    // (on the frame it opens, egui's sizing pass draws nothing, so the
+    // label's left edge stands then).
+    let popup_id = egui::Popup::default_response_id(&label);
+    let width = ui
+        .ctx()
+        .memory(|memory| memory.area_rect(popup_id))
+        .map_or(0.0, |rect| rect.width());
+    let right_limit = ui.ctx().content_rect().right() - 8.0;
+    let anchor = egui::pos2(
+        label.rect.left().min(right_limit - width),
+        label.rect.bottom(),
+    );
     let frame = egui::Frame::popup(ui.style())
         .fill(ui.visuals().panel_fill)
         .stroke(ui.visuals().widgets.noninteractive.bg_stroke)
         .corner_radius(6)
         .inner_margin(8);
+    // The draft's 460 to 640 points measure the whole box: the content gets
+    // what the frame's margins and stroke leave of them.
+    let chrome = frame.total_margin().sum().x;
     let shown = egui::Popup::from_response(&label)
+        .anchor(egui::PopupAnchor::Position(anchor))
         .align_alternatives(&[])
         .gap(3.0)
         .frame(frame)
         .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside)
         .show(|ui| {
-            ui.set_min_width(460.0);
-            ui.set_max_width(640.0);
+            ui.set_min_width(460.0 - chrome);
+            ui.set_max_width(640.0 - chrome);
             egui::ScrollArea::both().max_height(240.0).show(ui, |ui| {
                 prompt::changes_table(ui, "save_editor_changes_list", &list.rows, false);
             });

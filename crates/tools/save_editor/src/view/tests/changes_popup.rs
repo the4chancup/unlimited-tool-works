@@ -47,6 +47,39 @@ fn click_label(window: &mut Headless, view: &mut SaveView) {
     window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
 }
 
+/// One frame of the open list: the label's bounds and the popup's outer
+/// box, the frame's painted rect (the draft's `.chpop`: corners rounded 6,
+/// the panel's fill, the noninteractive stroke, painted inside the box).
+/// egui paints a shadowed frame as a `Shape::Vec` of the shadow and the
+/// rect, so the shapes are walked into.
+fn label_and_popup(window: &mut Headless, view: &mut SaveView) -> (accesskit::Rect, egui::Rect) {
+    fn rects<'a>(shape: &'a egui::Shape, found: &mut Vec<&'a egui::epaint::RectShape>) {
+        match shape {
+            egui::Shape::Rect(rect) => found.push(rect),
+            egui::Shape::Vec(shapes) => shapes.iter().for_each(|shape| rects(shape, found)),
+            _ => {}
+        }
+    }
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let label = label_bounds(&nodes, LABEL);
+    let visuals = window.ctx.global_style().visuals.clone();
+    let mut found = Vec::new();
+    for clipped in &shapes {
+        rects(&clipped.shape, &mut found);
+    }
+    let frames: Vec<egui::Rect> = found
+        .into_iter()
+        .filter(|rect| {
+            rect.corner_radius == egui::CornerRadius::same(6)
+                && rect.fill == visuals.panel_fill
+                && rect.stroke == visuals.widgets.noninteractive.bg_stroke
+        })
+        .map(|rect| rect.rect)
+        .collect();
+    assert_eq!(frames.len(), 1, "one popup frame painted: {frames:?}");
+    (label, frames[0])
+}
+
 /// Asserts that the value cell reading `hex` among `nodes` paints its
 /// swatch: a 12 × 12 rect filled `colour`, its corners rounded 2, its
 /// 1-point stroke the theme's swatch edge, 5 points left of the hex and
@@ -303,5 +336,61 @@ fn the_labels_hover_shows_the_pointing_hand_and_the_tooltip() {
     assert_eq!(
         tooltip_containing(&mut window, &mut view, at, "Lists the changes").as_deref(),
         Some("Lists the changes since the save was opened or last saved")
+    );
+}
+
+/// The popup's outer box is the draft's `.chpop` width, 460 to 640
+/// points with its margins and stroke counted in: three short rows hold
+/// it at the 460 floor.
+#[test]
+fn the_list_is_460_points_wide_with_its_margins() {
+    let (mut view, _) = three_changes("changes_list_width");
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let (_, popup) = label_and_popup(&mut window, &mut view);
+    assert!(
+        (popup.width() - 460.0).abs() <= 0.5,
+        "the outer box is 460 wide: {popup:?}"
+    );
+}
+
+// SE-GUI-43: the list opens 3 points under the label at its left edge
+// where the window has room; at the default pane, where the label sits
+// too far right for a 460-point list, it slides left to 8 points inside
+// the window's edge (the draft's `changesPopup`).
+#[test]
+fn the_list_opens_under_the_label_at_its_left_edge() {
+    let (mut view, _) = three_changes("changes_list_place");
+    let mut window = Headless::sized(1600.0, DEFAULT_PANE.y);
+    click_label(&mut window, &mut view);
+    let (label, popup) = label_and_popup(&mut window, &mut view);
+    assert!(
+        label.x0 + 460.0 < 1600.0,
+        "premise: the list fits right of the label"
+    );
+    assert!(
+        (f64::from(popup.left()) - label.x0).abs() <= 0.5,
+        "the left edges meet: popup {popup:?}, label {label:?}"
+    );
+    assert!(
+        (f64::from(popup.top()) - (label.y1 + 3.0)).abs() <= 0.5,
+        "3 points under the label: popup {popup:?}, label {label:?}"
+    );
+
+    let (mut view, _) = three_changes("changes_list_slide");
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let (label, popup) = label_and_popup(&mut window, &mut view);
+    assert!(
+        label.x0 + 460.0 > f64::from(DEFAULT_PANE.x - 8.0),
+        "premise: the list would pass 8 points inside the window's edge"
+    );
+    assert!(
+        (popup.right() - (DEFAULT_PANE.x - 8.0)).abs() <= 0.5,
+        "slid left to 8 points inside the window's edge: popup {popup:?}, label {label:?}"
+    );
+    assert!(
+        (f64::from(popup.top()) - (label.y1 + 3.0)).abs() <= 0.5,
+        "still 3 points under the label: popup {popup:?}, label {label:?}"
     );
 }
