@@ -13929,3 +13929,12 @@ shared label), in the player view, the Comparator and the AATF rows alike.
 Why: the maintainer's captures of PES 2017's Edit screen list every stat so; the build wrote
 the four in sentence case.
 Plan: `plans/save_editor.md` "Editing UI", the Ability stats item.
+
+## 2026-10-29 — gui — The help window first opens at 1000 × 600
+
+Decision: the help window first opens at 1000 × 600 points, or at 90% of Studio's window
+where that is smaller (each side on its own), centered; before, always at 90%.
+Why: the maintainer asked for about 960 × 600 once the text wraps at 720. At 960 the
+topic's text column came out 714 wide in the drafts, 699 beside a scroll bar; 1000 holds the
+220-point tree and the 720 column with a scroll bar beside it.
+Plan: `plans/core/gui.md` "Help window", the Window bullet; ST-HELP-05.

@@ -4934,6 +4934,10 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] ov2j4 the help's text wrapped at 720 points (P44, accepted 2026-10-29; DECISIONS
       "The help's text wraps at 720 points"; drafted, `.help-topic` `max-width`) → verify: a
       headless test of a long paragraph's width; the Messages table at the pane's width
+    - [ ] ov2j5 the help window first opened at 1000 × 600, or 90% of Studio's window where
+      smaller (the maintainer, 2026-10-29; DECISIONS "The help window first opens at 1000 ×
+      600"; drafted, `drawHelp`) → verify: ST-HELP-05's test at 1280 × 800 (red at HEAD) and
+      1037 × 648
     - [x] ov2k the form grids' rows 22 apart, the draft's `table.grid` (its `td` padded 2 above
       and below an 18-point control), where egui's `Grid` spaces them by `item_spacing.y`, 3:
       each row lands a point higher than the last, 25 by the Ability stats' last row, 17 by
