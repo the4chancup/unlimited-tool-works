@@ -1802,8 +1802,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         (S1g): an import that changes nothing disables Apply and says so (drafted, plan,
         DECISIONS 2026-10-29), the notes in a scroll area, the no-team line `Pick a team row
         to export or import.`, the missing tests. Merged 2026-10-29 (`06c2a6b4`;
-        `view/interchange.rs`, `view/patch.rs`, their tests). SWE-2 round 2 on k5b2's tests
-        under way
+        `view/interchange.rs`, `view/patch.rs`, their tests). SWE-2 round 2 on k5b2's tests: 2
+        accepted, the loop ends (S2c); its four tests merged `0c5571d3` (the squad's shirt
+        numbers, the lock flipped after a pick, the intro line, a player row's team)
       - [ ] k5d SE-GUI-29 manual: each Texport imported by the game's own team import in PES
         18, 19, 20 and 21 (21 on E:; 18-20 on F:, connected on request; saves backed up first)
       - [ ] k5rev the cross-family review loop (the slices are Opus sidekicks', so the lead's
@@ -1819,17 +1820,38 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] 8.9m the maintainer's pass over the 0.0.1 candidate (`d317b6da`), 2026-10-29:
       - [x] the drafts take the app's grey for a plain player name and a planned tool
         (DECISIONS 2026-10-29)
-      - [ ] m1 the code fixes (brief `.tmp/8_9m/brief_m1.md`): the badges' medal outlines
+      - [x] m1 the code fixes (brief `.tmp/8_9m/brief_m1.md`): the badges' medal outlines
         computed off the UI thread (`player_tier` ×23 took ~95 ms of the team view's first
         frame on the real save); the player list's scroll track without its black fill; the
         list pane's and the quick actions' separator lines gone, widths kept; the lineup
         lists filled in the extreme colour, as the drafts' `.llist`; the lineup lists'
         rects unchanged by the Live AATF dock
+        Done (`77502f57`, merged `c83d8d28`): the medals on `worker.rs`'s cycle
+        (`tactics::Medals`, started once an edit settles); the scroll area in a scope
+        clearing `extreme_bg_color`; both separators off, the list pane's right margin 3 → 4;
+        `lineup::list` filled and `min_scrolled_height(LIST_HEIGHT)` (the detail's scroll
+        area gave the lists only its visible height, egui's 64-point minimum took them to
+        74). SWE-2 round S1m: 1 counted (`.tmp/8_9m/rulings_m.md`), which proved wrong
+        (S1m3-2). Files: `save_editor/src/view/{mod,tactics,player_list,ruleset_picker,
+        worker}.rs`, `team_widgets/src/pitch/lineup.rs`, their tests
       - [x] the drafts round the pitch's, the lineup lists' and the player list's corners
         by 2, as the other framed panels (DECISIONS 2026-10-29)
-      - [ ] m3 the app rounds them too (after m1, which touches the same frames): the
+      - [x] m3 the app rounds them too (after m1, which touches the same frames): the
         player list's rows frame and the pitch's border at the noninteractive corner radius,
         the turf clipped to the border's inner curve; the lineup lists already round theirs
+        Done (`22a7d0f6`, `9211b365`, merged `c83d8d28`): the rows frame's fill and stroke
+        and the pitch's border at radius 2, the turf a textured `RectShape` at 1. A row the
+        viewport cuts, and the first team row's faint backdrop, reach under a pixel past
+        the curve (egui clips to rectangles only): accepted. SWE-2 round S1m3: 1 counted,
+        the quick actions' `.resizable(false)` dropped (egui's `Panel::bottom` is not
+        resizable). Files: `save_editor/src/view/{player_list,worker}.rs`,
+        `team_widgets/src/pitch/mod.rs`, their tests
+      - [ ] m4 the light theme's widget greys and warning colour (the maintainer, 2026-10-29;
+        DECISIONS "The light theme's widget greys a step lighter, its warning colour at
+        4.5"): `theme.rs` `widgets_light` resting 207, hovered 192, pressed 214, the light
+        `warn_fg_color` `#C54B00`; its tests pin the values (the contrast-matching test
+        rewritten to the new rule) → verify: the built window's light theme, the sidebar's
+        version badge and a number box
       - [ ] m2 `scripts/draft_compare.py` compares the fill and text colours of the boxes it
         pairs, not only their rects: the fills and greys above passed every geometry check
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
@@ -5306,7 +5328,7 @@ briefs, review loops, gates and mutation runs as for any step.
     files and the repository's and developers' folders untouched. The bare "Studio" stays the
     working name in prose (the plan amended: rewriting ~250 of them buys a member nothing and
     sets the docs apart from the code); GLOSSARY rows for both names
-- [ ] 0.0.1g the bundle for DBC alone (the maintainer, 2026-10-29; `plans/core/development_plan.md`
+- [x] 0.0.1g the bundle for DBC alone (the maintainer, 2026-10-29; `plans/core/development_plan.md`
   "Divegrass Before Christmas", "The /vg/ League 27 (VGL)"; DECISIONS "0.0.1 is the Save
   editor for DBC alone; VGL's tools wait for 0.0.2"): `scripts/release.py` stages neither
   launcher nor `exports/` and `old_exports/`, `resources/bundle/data/settings.toml` picks PES
@@ -5314,6 +5336,14 @@ briefs, review loops, gates and mutation runs as for any step.
   rules file and the compiler's settings lines kept; `release_test.py` follows → verify: the
   staged bundle's file list; the readme read through once. 0.0.2 restores the launchers,
   folders and VGL section from git as they are now
+    Done (`7f8de3b9`, merged `e8d3ca2f`): `release.py`'s `LAUNCHERS` and `EMPTY_FOLDERS`,
+    both empty, drive the staging, the launcher check and `expected_entries`;
+    `data/settings.toml` opens `[common]` with `pes_version = 17` (`studio_core`
+    `the_bundled_settings_start_on_pes_2017` proves the app reads it there); the readme
+    rewritten for DBC's testers; `release_test.py` 12 tests, with
+    `test_the_bundle_ships_no_launcher_and_no_export_folder`, which 0.0.2 rewrites (not
+    deletes) when it names the launchers again. The staged list is checked by the tests and
+    the listing test; a real `just release` staging is 0.0.1f's. SWE-2 round: 0 counted
 - [ ] 0.0.1f the cut, once the Save editor's view is done (the Ruleset editor left 0.0.1 on
   2026-10-24, `plans/core/development_plan.md` "Development Plan"): the bundled settings picking
   DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`

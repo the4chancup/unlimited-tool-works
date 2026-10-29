@@ -13773,3 +13773,17 @@ Why: the maintainer's pass over the 0.0.1 candidate found these four boxes squar
 panels around them are rounded; the drafts drew all four square, the app the lineup lists
 rounded (egui's group frame) and the other two square.
 Plan: `plans/save_editor.md` "Tactics editor", the item starting "**Formation settings**, the pitch".
+
+## 2026-10-29 — studio_core — The light theme's widget greys a step lighter, its warning colour at 4.5
+
+Decision: the light theme's widget fills are resting 207 (`#cfcfcf`), hovered 192 and pressed
+214, each 6 lighter than the dark fills' contrast with the panel gives (201, 186, 208); the
+light warning colour is `#C54B00`, egui's light `#FF6400` darkened in linear light to read at
+4.5 on the panel.
+Why: the maintainer's look at the light theme found the input grey a little too dark and the
+warning orange (the sidebar's version badge) too bright; egui's light warning colour read at
+2.8 on the panel, under the 4.5 the plan asks of light text colours, which it had escaped.
+The three fills move together so the states stay as far apart as they were; the contrast
+rule loosens from "the dark ones' contrast" to "a step lighter than it", by the maintainer's
+eye (1.47 for a resting box, against egui's own 1.18 that left one invisible).
+Plan: `plans/core/gui.md`, the "Dark/light theme" row.

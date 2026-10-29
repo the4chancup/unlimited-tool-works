@@ -1,3 +1,6 @@
+[common]
+pes_version = 17
+
 [save-editor]
 aatf_ruleset = "dbc7"
 

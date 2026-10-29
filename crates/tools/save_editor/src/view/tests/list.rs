@@ -1399,6 +1399,154 @@ fn the_lists_scroll_bar_stands_outside_its_frame() {
     }
 }
 
+/// One frame of the PES 21 fixture under ALL, the list scrolling, after a
+/// frame that measured the rows: the frame's nodes and shapes.
+fn scrolling_list(
+    test: &str,
+) -> (
+    Headless,
+    Vec<accesskit::Node>,
+    Vec<egui::epaint::ClippedShape>,
+) {
+    let path = fixture(PesVersion::Pes21, test);
+    let mut view = SaveView::new();
+    view.open(&path);
+    assert_eq!(view.team, TeamChoice::All, "premise: ALL selected");
+    let mut window = Headless::new();
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    (window, nodes, shapes)
+}
+
+// The draft's `.vbar` has no track fill: the panel shows through the
+// scroll bar's strip, so nothing in the extreme background is painted
+// there while the list scrolls (the rows' frame, its fill, ends at the
+// strip's left edge). The handle still paints, in the widgets' fill.
+#[test]
+fn the_lists_scroll_strip_paints_no_track() {
+    let (window, nodes, shapes) = scrolling_list("list_no_track");
+    let frame = list_frame(&window, &shapes);
+    let bar = list_scroll_bar(&nodes);
+    assert!(
+        bar.x0 > f64::from(frame.max.x),
+        "premise: the list scrolls, its bar right of the frame"
+    );
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let extreme = visuals.extreme_bg_color;
+    let bar_rect = egui::Rect::from_min_max(
+        egui::pos2(bar.x0 as f32, bar.y0 as f32),
+        egui::pos2(bar.x1 as f32, bar.y1 as f32),
+    );
+    let handle = shapes.iter().find_map(|clipped| match &clipped.shape {
+        egui::Shape::Rect(shape)
+            if shape.fill == visuals.widgets.inactive.bg_fill
+                && bar_rect.contains_rect(shape.rect) =>
+        {
+            Some(shape.rect)
+        }
+        _ => None,
+    });
+    assert!(
+        handle.is_some_and(|rect| rect.height() > 10.0),
+        "the handle paints in the widgets' fill inside the bar {bar_rect:?} ({handle:?})"
+    );
+    let strip = egui::Rect::from_min_max(
+        egui::pos2(frame.max.x, frame.min.y),
+        egui::pos2(bar.x1 as f32, frame.max.y),
+    );
+    let track = shapes.iter().find_map(|clipped| match &clipped.shape {
+        egui::Shape::Rect(shape)
+            if shape.fill == extreme && shape.rect.intersect(strip).width() > 0.5 =>
+        {
+            Some(shape.rect)
+        }
+        _ => None,
+    });
+    assert_eq!(track, None, "no extreme fill inside the strip {strip:?}");
+}
+
+// The draft's `.plist .rows` has `border-radius: 2px`, as every framed
+// panel: the rows' frame, its fill and its stroke, is drawn at the
+// widgets' 2-point radius.
+#[test]
+fn the_lists_frame_rounds_its_corners() {
+    let (window, _, shapes) = scrolling_list("list_frame_radius");
+    let frame = list_frame(&window, &shapes);
+    let extreme = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .extreme_bg_color;
+    let frame_shapes: Vec<&egui::epaint::RectShape> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) if shape.rect == frame => Some(shape),
+            _ => None,
+        })
+        .collect();
+    let fill = frame_shapes
+        .iter()
+        .find(|shape| shape.fill == extreme)
+        .expect("the frame's fill");
+    let stroke = frame_shapes
+        .iter()
+        .find(|shape| !shape.stroke.is_empty())
+        .expect("the frame's stroke");
+    for (what, shape) in [("fill", fill), ("stroke", stroke)] {
+        assert_eq!(
+            shape.corner_radius,
+            egui::CornerRadius::same(2),
+            "the frame's {what} radius"
+        );
+    }
+}
+
+// The draft draws no separator lines in the list's column: none at the
+// list pane's right edge, between the scroll bar and the detail, and none
+// across the column at the quick actions' top, under the rows' frame.
+// The column's geometry stays: the frame's right edge (pinned by
+// `the_lists_frame_stands_where_the_drafts_does`), the bar (by
+// `the_lists_scroll_bar_stands_outside_its_frame`), and the detail pane
+// 4 after the bar, its content 12 after it with its own 8-point margin.
+#[test]
+fn the_lists_column_draws_no_separator_lines() {
+    let (window, nodes, shapes) = scrolling_list("list_no_separators");
+    let frame = list_frame(&window, &shapes);
+    let bar = list_scroll_bar(&nodes);
+    let (pane_left, _) = pane_frame(&shapes, window.screen);
+    assert!(
+        (pane_left - bar.x1 - 4.0).abs() <= 0.5,
+        "the detail pane 4 after the bar ({pane_left} vs {})",
+        bar.x1
+    );
+    // A painted line's two ends, as `vline` and `hline` paint them.
+    let lines: Vec<[egui::Pos2; 2]> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke } if !stroke.is_empty() => Some(*points),
+            _ => None,
+        })
+        .collect();
+    let vertical_at_edge = lines.iter().find(|[a, b]| {
+        (a.x - b.x).abs() < 0.5
+            && f64::from(a.x) > bar.x1 - 0.5
+            && f64::from(a.x) < pane_left + 0.5
+            && (a.y - b.y).abs() > window.screen.y * 0.5
+    });
+    assert_eq!(vertical_at_edge, None, "no line at the pane's right edge");
+    let across_column = lines.iter().find(|[a, b]| {
+        (a.y - b.y).abs() < 0.5
+            && a.y >= frame.max.y - 0.5
+            && a.x.min(b.x) <= frame.min.x + 0.5
+            && f64::from(a.x.max(b.x)) <= bar.x1 + 0.5
+            && f64::from(a.x.max(b.x)) >= f64::from(frame.max.x) - 0.5
+    });
+    assert_eq!(
+        across_column, None,
+        "no line across the column at the quick actions' top"
+    );
+}
+
 // The list's frame stands where the draft's does at the 1280 x 780
 // window: its left edge at the view's, the shell's margin into the pane
 // (64 in the window), and its right edge 245 further (the draft's `.rows`,
