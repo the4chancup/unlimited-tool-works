@@ -37,7 +37,7 @@ row's, and writes every filled roster slot in one undoable step:
   takes the hide ID from Settings (55 and 11 unless changed, while a model's own
   ID is kept, as in the Appearance section).
 - **Remove FPC invisibility** writes the show preset on them all, and on PES
-  2015 to 2017 both also turn a Custom skin into Light.
+  2015 to 2017 both FPC items also turn a Custom skin into Light.
 - **Import / export team file…** opens a panel beside the views.
 
 The boots and gloves item, Clear visual flags and the FPC items stay disabled

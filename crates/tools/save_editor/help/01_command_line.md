@@ -116,7 +116,7 @@ copy in the data folder's `rules` folder. When that copy is gone, the warning li
 Autumn 26, is used instead.
 
 Each violation prints as one `aatf_violation` line with the team, the player's id for a
-player's violation, the rule and what it measured, and the teams print in id order. A team
+player's violation, the rule and what is wrong, and the teams print in id order. A team
 whose check cannot run is the error line `aatf_check_failed`, and the rest are still checked.
 An error-severity violation makes the command exit 1, while warnings alone leave it at 0.
 
