@@ -123,6 +123,12 @@ pub struct Palette {
     /// The edge around the colour picker's marks, so they show on a light
     /// colour as on a dark one.
     pub picker_marker_edge: egui::Color32,
+    /// The 4cc clover's ring, the rail's logo (`#129648`). The cup's mark is
+    /// drawn in its own colours, so its light value is the dark one.
+    pub clover_ring: egui::Color32,
+    /// The 4cc clover's four leaves inside its ring (`#8cc642`). Like the
+    /// ring, they are the cup's mark, so the light value is the dark one.
+    pub clover_leaf: egui::Color32,
 }
 
 impl Palette {
@@ -160,6 +166,8 @@ impl Palette {
         medal_bronze: egui::Color32::from_rgb(0x8c, 0x4a, 0x20),
         picker_marker: egui::Color32::WHITE,
         picker_marker_edge: egui::Color32::BLACK,
+        clover_ring: egui::Color32::from_rgb(0x12, 0x96, 0x48),
+        clover_leaf: egui::Color32::from_rgb(0x8c, 0xc6, 0x42),
     };
 
     /// The light theme's colours. Only the ones drawn on the theme's own panel
@@ -199,6 +207,8 @@ impl Palette {
         medal_bronze: egui::Color32::from_rgb(0x8c, 0x4a, 0x20),
         picker_marker: egui::Color32::WHITE,
         picker_marker_edge: egui::Color32::BLACK,
+        clover_ring: egui::Color32::from_rgb(0x12, 0x96, 0x48),
+        clover_leaf: egui::Color32::from_rgb(0x8c, 0xc6, 0x42),
     };
 }
 
@@ -571,6 +581,8 @@ mod tests {
             medal_bronze,
             picker_marker,
             picker_marker_edge,
+            clover_ring,
+            clover_leaf,
         } = palette;
         vec![
             ("success", *success),
@@ -605,6 +617,8 @@ mod tests {
             ("medal_bronze", *medal_bronze),
             ("picker_marker", *picker_marker),
             ("picker_marker_edge", *picker_marker_edge),
+            ("clover_ring", *clover_ring),
+            ("clover_leaf", *clover_leaf),
         ]
     }
 

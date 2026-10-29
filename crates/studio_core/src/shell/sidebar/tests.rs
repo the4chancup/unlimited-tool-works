@@ -5,7 +5,10 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use egui::accesskit::{self, Role, Toggled};
 use pes_version::PesVersion;
 
-use super::{ACTIVE_BAR_WIDTH, ExeCheck, RAIL_WIDTH, overlay_frame, overlay_id, selector_color};
+use super::{
+    ACTIVE_BAR_WIDTH, CLOVER_LEAVES, CLOVER_RING, ExeCheck, RAIL_WIDTH, overlay_frame, overlay_id,
+    selector_color,
+};
 use crate::help::{HelpSection, HelpTarget, HelpTopic};
 use crate::pes_process::RunningPes;
 use crate::settings::Settings;
@@ -690,9 +693,9 @@ fn the_labels_are_painted_in_the_overlay_and_never_on_the_rail() {
 
     let rail = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9));
     assert_eq!(
-        painted_text_count(&rail, "4cc"),
+        painted_text_count(&rail, "\u{F100}"),
         1,
-        "the rail paints its logo (the frame's shapes are collected)"
+        "the rail paints its logo's ring (the frame's shapes are collected)"
     );
     for label in ["A", "B", "Music player", "Help", "Settings"] {
         assert_eq!(
@@ -2442,11 +2445,16 @@ fn every_rail_icon_centres_right_of_the_accent_bar_on_the_rail_and_open() {
 
 // The logo is the draft's `.logo` 32-point square: it alone senses and fills on
 // hover, centred in the icon cell on the rail and at the same place open (the
-// draft's 11.5 and 12), its "4cc" centred on it where it was.
+// draft's 11.5 in both), so the hover that opens the sidebar moves nothing.
 #[test]
 fn the_logo_is_a_32_point_square_on_the_rail_and_open() {
     let (rail, open) = rail_and_open_at_draft_window("4cc");
-    for (state, out, draft_left) in [("rail", &rail, 11.5), ("open", &open, 12.0)] {
+    assert_eq!(
+        rail_bounds(&open.nodes, "4cc").x0,
+        rail_bounds(&rail.nodes, "4cc").x0,
+        "the logo keeps its place when the sidebar opens"
+    );
+    for (state, out, draft_left) in [("rail", &rail, 11.5), ("open", &open, 11.5)] {
         let logo = rail_bounds(&out.nodes, "4cc");
         assert_at_draft(logo.x0, draft_left, &format!("the logo's left ({state})"));
         assert_at_draft(
@@ -2458,13 +2466,98 @@ fn the_logo_is_a_32_point_square_on_the_rail_and_open() {
             filled_at(out, logo),
             "the hovered logo fills its square ({state})"
         );
-        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 780.0));
-        let text = text_shape_in(out, "4cc", screen).expect("the logo's text is painted");
-        let text_rect = egui::Rect::from_min_size(text.pos, text.galley.size());
-        assert!(
-            (text_rect.center().x - 27.5).abs() <= 0.5
-                && (text_rect.center().y - 22.0).abs() <= 0.5,
-            "the logo's text stays centred at (27.5, 22) ({state}): {text_rect:?}"
-        );
     }
+}
+
+/// The ink of `shape`'s painted glyphs: each glyph's bitmap where the
+/// tessellator places it (the galley's row, the glyph's baseline position and
+/// its bitmap's offset), glyphs that paint nothing skipped.
+fn ink(shape: &egui::epaint::TextShape) -> egui::Rect {
+    let mut rect = egui::Rect::NOTHING;
+    for row in &shape.galley.rows {
+        for glyph in &row.row.glyphs {
+            if glyph.uv_rect.is_nothing() {
+                continue;
+            }
+            let min = shape.pos + row.pos.to_vec2() + glyph.pos.to_vec2() + glyph.uv_rect.offset;
+            rect = rect.union(egui::Rect::from_min_size(min, glyph.uv_rect.size));
+        }
+    }
+    rect
+}
+
+/// The logo's square and the frame's `Shape::Text` drawing `glyph`, the one
+/// the logo paints: the screen holds no other.
+fn logo_glyph<'a>(
+    out: &'a FrameOutput,
+    glyph: &str,
+    state: &str,
+) -> (egui::Rect, &'a egui::epaint::TextShape) {
+    let logo = rail_bounds(&out.nodes, "4cc");
+    let square = egui::Rect::from_min_max(
+        egui::pos2(logo.x0 as f32, logo.y0 as f32),
+        egui::pos2(logo.x1 as f32, logo.y1 as f32),
+    );
+    let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 780.0));
+    let shape = text_shape_in(out, glyph, screen)
+        .unwrap_or_else(|| panic!("the logo paints {glyph:?} ({state})"));
+    (square, shape)
+}
+
+// The logo is the 4cc clover: the symbols font's ring (U+F100) and leaves
+// (U+F101) at 28 points, the clover's diameter, each in its own green, both
+// galleys centred on the logo's square, on the rail and open.
+#[test]
+fn the_logo_draws_the_clover_in_its_two_greens_centred_on_its_square() {
+    let (rail, open) = rail_and_open_at_draft_window("4cc");
+    for (state, out) in [("rail", &rail), ("open", &open)] {
+        for (glyph, color) in [
+            ("\u{F100}", egui::Color32::from_rgb(0x12, 0x96, 0x48)),
+            ("\u{F101}", egui::Color32::from_rgb(0x8c, 0xc6, 0x42)),
+        ] {
+            let (square, shape) = logo_glyph(out, glyph, state);
+            let format = &shape.galley.job.sections[0].format;
+            assert_eq!(
+                (&format.font_id, format.color),
+                (&egui::FontId::proportional(28.0), color),
+                "{glyph:?}'s font and colour ({state})"
+            );
+            let galley = egui::Rect::from_min_size(shape.pos, shape.galley.size());
+            assert!(
+                (galley.center() - square.center()).length() <= 0.5,
+                "{glyph:?}'s galley {galley:?} is centred on the logo's square {square:?} \
+                 ({state})"
+            );
+        }
+    }
+}
+
+// The clover's glyphs are the symbols font's, not the replacement box a font
+// draws for a codepoint it lacks: the ring's ink is the clover's 28-point
+// diameter, the leaves' the 16.9 points they span inside it, which their bitmap
+// rounds out to 18 whole pixels, and both inks are centred on the logo's square.
+// The glyphs are the ones the logo draws, so a codepoint the font lacks fails
+// here; every glyph's mismatch is listed, so one cannot hide another's.
+#[test]
+fn the_logos_clover_inks_28_points_across_centred_on_its_square() {
+    let (rail, open) = rail_and_open_at_draft_window("4cc");
+    let mut mismatches = Vec::new();
+    for (state, out) in [("rail", &rail), ("open", &open)] {
+        for (glyph, across) in [(CLOVER_RING, 28.0), (CLOVER_LEAVES, 18.0)] {
+            let (square, shape) = logo_glyph(out, glyph, state);
+            let ink = ink(shape);
+            if (ink.width() - across).abs() > 1.0 || (ink.height() - across).abs() > 1.0 {
+                mismatches.push(format!(
+                    "{glyph:?}'s ink {ink:?} is not {across} points across ({state})"
+                ));
+            }
+            if (ink.center() - square.center()).length() > 0.5 {
+                mismatches.push(format!(
+                    "{glyph:?}'s ink {ink:?} is not centred on the logo's square {square:?} \
+                     ({state})"
+                ));
+            }
+        }
+    }
+    assert!(mismatches.is_empty(), "{}", mismatches.join("\n"));
 }
