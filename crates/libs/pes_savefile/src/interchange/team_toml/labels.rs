@@ -3,6 +3,8 @@
 //! index tables for positions, instructions, ratings, styles, skills and COM
 //! styles. Pure data.
 
+use pes_version::PesVersion;
+
 /// `[tactics.preset_N.style]`: `(key, [false label, true label])` in emit order.
 pub const STYLE_SWITCHES: [(&str, [&str; 2]); 7] = [
     ("attacking_style", ["counter_attack", "possession"]),
@@ -186,6 +188,31 @@ pub fn title_case(name: &str) -> String {
         .join(" ")
 }
 
+/// The name the game of `version` shows for the stat spelled `stat` (an
+/// `ABILITY_STATS` entry, or `form`, `injury_resistance`, `weak_foot_usage`,
+/// `weak_foot_accuracy`): the one place a stat's shown name comes from, so
+/// the player view, the changes lists and the AATF rows all read the names
+/// the member's game shows. PES 2017's Edit screen calls `heading` Header
+/// and every other stat by its spelling title-cased. The other versions'
+/// names are not read off their games yet, so they fall back to the title
+/// case.
+pub fn stat_name(version: PesVersion, stat: &str) -> String {
+    // Each version's stats whose name is not their spelling title-cased.
+    let renamed: &[(&str, &str)] = match version {
+        PesVersion::Pes17 => &[("heading", "Header")],
+        PesVersion::Pes15
+        | PesVersion::Pes16
+        | PesVersion::Pes18
+        | PesVersion::Pes19
+        | PesVersion::Pes20
+        | PesVersion::Pes21 => &[],
+    };
+    renamed
+        .iter()
+        .find(|(spelling, _)| *spelling == stat)
+        .map_or_else(|| title_case(stat), |(_, name)| (*name).to_owned())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -302,6 +329,47 @@ mod tests {
         assert_eq!(title_case("speeding_bullet"), "Speeding Bullet");
         assert_eq!(title_case("goal_poacher"), "Goal Poacher");
         assert_eq!(title_case("sombrero"), "Sombrero");
+    }
+
+    /// PES 2017's Edit screen lists its 23 abilities, then the weak foot's
+    /// two, form and injury resistance, in this order and under these
+    /// names. Another version's `heading` keeps the title case until its
+    /// names are read off its game.
+    #[test]
+    fn pes_2017_names_its_stats_as_its_edit_screen_does() {
+        let edit_screen = [
+            ("attacking_prowess", "Attacking Prowess"),
+            ("ball_control", "Ball Control"),
+            ("dribbling", "Dribbling"),
+            ("low_pass", "Low Pass"),
+            ("lofted_pass", "Lofted Pass"),
+            ("finishing", "Finishing"),
+            ("place_kicking", "Place Kicking"),
+            ("swerve", "Swerve"),
+            ("heading", "Header"),
+            ("defensive_prowess", "Defensive Prowess"),
+            ("ball_winning", "Ball Winning"),
+            ("kicking_power", "Kicking Power"),
+            ("speed", "Speed"),
+            ("explosive_power", "Explosive Power"),
+            ("body_control", "Body Control"),
+            ("physical_contact", "Physical Contact"),
+            ("jump", "Jump"),
+            ("goalkeeping", "Goalkeeping"),
+            ("catching", "Catching"),
+            ("clearing", "Clearing"),
+            ("reflexes", "Reflexes"),
+            ("coverage", "Coverage"),
+            ("stamina", "Stamina"),
+            ("weak_foot_usage", "Weak Foot Usage"),
+            ("weak_foot_accuracy", "Weak Foot Accuracy"),
+            ("form", "Form"),
+            ("injury_resistance", "Injury Resistance"),
+        ];
+        for (stat, name) in edit_screen {
+            assert_eq!(stat_name(PesVersion::Pes17, stat), name, "{stat}");
+        }
+        assert_eq!(stat_name(PesVersion::Pes21, "heading"), "Heading");
     }
 
     #[test]

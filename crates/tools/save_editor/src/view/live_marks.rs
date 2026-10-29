@@ -6,8 +6,8 @@
 //! labels. `held_violations` is the one read of the held check every mark
 //! goes through.
 
-use team_widgets::violations::violation_line;
 pub(super) use team_widgets::violations::{CROSS, MARK_GAP};
+use team_widgets::violations::{Wording, violation_line};
 
 use crate::view::aatf_check::TeamsCheck;
 
@@ -179,8 +179,9 @@ fn severity_color(severity: aatf::Severity, visuals: &egui::Visuals) -> egui::Co
 
 /// What a field's mark draws from: the held team's violations, the
 /// selected player's slot and team (`violation_line`'s team id) and the
-/// active ruleset its lines name tiers and brackets from, bundled so the
-/// view's field sites take one parameter. `None` at a site while
+/// wording its lines take (the active ruleset's tiers and brackets, the
+/// open save's stat names), bundled so the view's field sites take one
+/// parameter. `None` at a site while
 /// `held_violations` names another team or no result — the view's
 /// players are not checked then.
 #[derive(Clone, Copy)]
@@ -191,8 +192,8 @@ pub(super) struct Marks<'a> {
     pub(super) slot: u8,
     /// His team.
     pub(super) team_id: u32,
-    /// The active ruleset, for `violation_line`.
-    pub(super) ruleset: &'a aatf::Ruleset,
+    /// The active ruleset and the open save's version, for `violation_line`.
+    pub(super) wording: Wording<'a>,
 }
 
 impl Marks<'_> {
@@ -272,7 +273,7 @@ fn field_mark(marks: &Marks<'_>, field: MarkedField) -> Option<FieldMark> {
         severity: highest(marked.iter().map(|violation| violation.severity))?,
         tooltip: marked
             .iter()
-            .map(|violation| violation_line(violation, marks.team_id, marks.ruleset))
+            .map(|violation| violation_line(violation, marks.team_id, marks.wording))
             .collect::<Vec<_>>()
             .join("\n"),
     })

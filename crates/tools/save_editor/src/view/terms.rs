@@ -6,7 +6,7 @@
 //! word the unsaved-changes table's team rows (`team_row_terms`).
 
 use pes_savefile::interchange::team_toml::labels::{
-    ABILITY_STATS, COM_STYLES, PLAYABLE_POSITIONS, POSITIONS, SKILLS, title_case,
+    ABILITY_STATS, COM_STYLES, PLAYABLE_POSITIONS, POSITIONS, SKILLS, stat_name, title_case,
 };
 use pes_savefile::model::TeamEntry;
 use pes_savefile::ops::compare::{PlayerDiff, TeamDiff};
@@ -270,7 +270,7 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
         return numbers(small.label, old + shift, new + shift);
     }
     if let Some(index) = ABILITY_FIELDS.iter().position(|ability| *ability == field) {
-        return numbers(title_case(ABILITY_STATS[index]), old, new);
+        return numbers(stat_name(version, ABILITY_STATS[index]), old, new);
     }
     if let Some(motion) = fields::MOTIONS.iter().find(|row| row.field == field) {
         let shift = u32::from(motion.one_based);
@@ -623,8 +623,8 @@ mod tests {
         );
     }
 
-    /// The small stats' +1 shift, and the ability stats' title-cased table
-    /// names with the stored number.
+    /// The small stats' +1 shift, and the ability stats' names as the
+    /// save's game shows them (PES 2017's Header) with the stored number.
     #[test]
     fn the_small_stats_and_abilities_rows() {
         let version = PesVersion::Pes17;
@@ -633,13 +633,13 @@ mod tests {
         // A weak foot usage stored 2 shows 3.
         assert_term(
             &row_term(version, &field(PlayerField::WeakFootUsage, 1, 2)),
-            "Weak foot usage",
+            "Weak Foot Usage",
             "2",
             "3",
         );
         assert_term(
             &row_term(version, &field(PlayerField::WeakFootAccuracy, 3, 0)),
-            "Weak foot accuracy",
+            "Weak Foot Accuracy",
             "4",
             "1",
         );
@@ -651,7 +651,7 @@ mod tests {
         );
         assert_term(
             &row_term(version, &field(PlayerField::InjuryResistance, 0, 2)),
-            "Injury resistance",
+            "Injury Resistance",
             "1",
             "3",
         );
@@ -683,6 +683,19 @@ mod tests {
             "Attacking Prowess",
             "90",
             "99",
+        );
+        assert_eq!(player.stats.heading, 77, "premise");
+        assert_term(
+            &row_term(version, &field(PlayerField::Heading, 77, 80)),
+            "Header",
+            "77",
+            "80",
+        );
+        assert_term(
+            &row_term(PesVersion::Pes21, &field(PlayerField::Heading, 77, 80)),
+            "Heading",
+            "77",
+            "80",
         );
     }
 

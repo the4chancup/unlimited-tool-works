@@ -15,7 +15,7 @@ use pes_savefile::model::names::display_name;
 use pes_savefile::ops::compare::PlayerDiff;
 use pes_version::PesVersion;
 use studio_core::{CatalogRow, Disposition, Message, MessageCode, Scope, Severity};
-use team_widgets::violations::{rule_name, sentence};
+use team_widgets::violations::{Wording, rule_name, sentence};
 
 /// The tool's id: its CLI subcommand, its settings section and the owner of its message codes.
 pub(crate) const TOOL_ID: &str = "save-editor";
@@ -529,13 +529,13 @@ pub(crate) fn patch_skip(skip: PatchSkip) -> Message {
 /// word it: `player` is the rostered player's id when the violation names a slot,
 /// `severity` the violation's (a suggestion is filtered by the caller, which prints nothing
 /// for it), `rule` the rule's name in words and `problem` the sentence saying what is
-/// wrong, which names tiers, brackets and systems by their labels in `ruleset`, the rules
-/// the check ran under.
+/// wrong, worded as `wording` says: tiers, brackets and systems by their labels in the rules
+/// the check ran under, stats as the checked save's game names them.
 pub(crate) fn aatf_violation(
     team: u32,
     player: Option<u32>,
     violation: &Violation,
-    ruleset: &aatf::Ruleset,
+    wording: Wording<'_>,
     severity: Severity,
 ) -> Message {
     let mut context = vec![("team", team.to_string())];
@@ -543,7 +543,7 @@ pub(crate) fn aatf_violation(
         context.push(("player", player.to_string()));
     }
     context.push(("rule", rule_name(&violation.kind).to_owned()));
-    context.push(("problem", sentence(violation, team, ruleset)));
+    context.push(("problem", sentence(violation, team, wording)));
     let mut message = message(Code::AatfViolation, context);
     message.severity = severity;
     message
@@ -791,7 +791,10 @@ mod tests {
     #[test]
     fn a_violation_line_names_the_rule_in_words_and_the_problem() {
         let rules = aatf::Rules::official();
-        let ruleset = rules.ruleset();
+        let wording = Wording {
+            ruleset: rules.ruleset(),
+            version: PesVersion::Pes17,
+        };
         let violation = |slot, severity, kind| Violation {
             slot,
             severity,
@@ -812,7 +815,7 @@ mod tests {
                 718,
                 Some(71802),
                 &stat,
-                ruleset,
+                wording,
                 Severity::Error
             )),
             "Error aatf_violation (team=718, player=71802, rule=Stat, \
@@ -830,7 +833,7 @@ mod tests {
                 718,
                 Some(71802),
                 &roster_order,
-                ruleset,
+                wording,
                 Severity::Error
             )),
             "Error aatf_violation (team=718, player=71802, rule=Roster order, \
@@ -851,7 +854,7 @@ mod tests {
                 734,
                 None,
                 &quota,
-                ruleset,
+                wording,
                 Severity::Warning
             )),
             "Warning aatf_violation (team=734, rule=Height quota, \
