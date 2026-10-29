@@ -13728,3 +13728,14 @@ Why: `export-toml` already refuses it (a Team TOML written over the save would l
 one rule guards the same thing in every tool; the Save dialog makes the slip as easy as
 `--out` does.
 Plan: `plans/save_editor.md` "Interchange formats in the UI", the first bullet.
+
+## 2026-10-29 — save_editor — An import that changes nothing disables Apply and says so
+
+Decision: when the chosen sections of the picked file would leave the selected team as it is
+(its own export, or a file applied already), the team file panel draws Apply disabled and the
+weak line `The team already holds every value of the chosen sections.`; the Applied line
+stands only after an Apply that wrote.
+Why: the panel drew `Applied <file>. The changes stay unsaved until Save.` after an Apply
+that changed nothing, with no undo entry behind it; the patch panel already disables Apply
+on an empty list and says the save holds every value, and one rule serves both panels.
+Plan: `plans/save_editor.md` "Interchange formats in the UI", the first bullet.

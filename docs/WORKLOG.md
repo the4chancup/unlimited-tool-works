@@ -1787,7 +1787,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           SWE-2 round's rework
       - [ ] k5c its export half (SE-GUI-16's export, SE-GUI-17's export): Team TOML equal to
         the CLI's export; Texport for PES 18-21 read back to the same team values; disabled on
-        PES 15-17 with the missing template in its tooltip
+        PES 15-17 with the missing template in its tooltip. Built and merged 2026-10-29
+        (`c8fe3e1a`): the export row (Save dialogs, the open save refused as `export-toml`
+        refuses it, a success notice), `pes_savefile::file::fresh_salt` public for the
+        Texport's key; 8 tests (`view/tests/interchange_export.rs`: the Team TOML byte-equal
+        to the CLI's; PES 19 and 21 Texports read back with no value changed). Open: the
+        built-window check, its SWE-2 round
+      - [ ] k5b2r the rework of SWE-2 round 1 on k5b2 and round 2 on k5a
+        (`.tmp/8_9k5/rulings_k5.md` S1d-1, S1e-1, S1f, S2b-1 to 3, L1): an import that
+        changes nothing disables Apply and says so (drafted, plan, DECISIONS 2026-10-29), the
+        notes in a scroll area, the no-team line `Pick a team row to export or import.`, the
+        missing tests; then SWE-2 round 2 on k5b2's tests
       - [ ] k5d SE-GUI-29 manual: each Texport imported by the game's own team import in PES
         18, 19, 20 and 21 (21 on E:; 18-20 on F:, connected on request; saves backed up first)
       - [ ] k5rev the cross-family review loop (the slices are Opus sidekicks', so the lead's

@@ -2841,3 +2841,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The Save editor's Apply aesthetics patch panel: a Team compiler's patch previewed in the unsaved-changes table's columns, applied as one undoable edit, another version's patch refused with the save untouched (8.9k5a).
 - **2026-10-29** — The Save editor's import keeps only the chosen sections of a team file (gameplay, aesthetics, tactics), split as 4ccEditor's squad load splits them, the free-kick motion with gameplay (8.9k5b1).
 - **2026-10-29** — The Save editor imports a team file onto the selected team: Team TOML, 4ccEditor's .4ccs and .4cct, or a Texport, with the sections to load chosen, the import's notes listed and one undoable Apply (8.9k5b2).
+- **2026-10-29** — The Save editor exports the selected team as a Team TOML (the command line's text) or a PES 2018-2021 Texport, never over the open save (8.9k5c).

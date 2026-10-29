@@ -1242,7 +1242,10 @@ the editor exposes them as:
   name too long, with gameplay; a shirt number past the field's range, with aesthetics) is
   drawn under the section choices with Apply disabled, the choices still drawn, since
   unticking that section is how the member imports the rest; only a `.4ccs` with more records
-  than the target's roster is refused whatever the choices, drawn alone.
+  than the target's roster is refused whatever the choices, drawn alone. An import that would
+  change nothing (the team's own file, or one applied already) draws Apply disabled and
+  `The team already holds every value of the chosen sections.`, as the patch panel's empty
+  list says so, rather than recording an edit that changes nothing.
 - **Legacy import**: `.4ccs` and `.4cct` open through the same import dialog,
   read-only.
 - **Texport import/export** (export is new; PES itself can import the file). Export writes
