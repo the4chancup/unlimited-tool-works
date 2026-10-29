@@ -12,16 +12,20 @@ names where the question came from so the context can be read there.
 
 - **The final pass over the built app's UI** (worklog 0.0.1f1c; the maintainer asked for it on
   2026-10-28), under way since 2026-10-28 ~14:00; what changes it asks for is drafted first,
-  looked at in the drafts, then built. **The 0.0.1 candidate is ready for it** (2026-10-29):
-  branch `release/0.0.1-candidate`, and the bundle `just release` would pack, unpacked, at
-  `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1\unlimited-tool-works-0.0.1\`
+  looked at in the drafts, then built. **The 0.0.1 candidate is ready for it**, restaged 2026-10-29 with the day's
+  changes: branch `release/0.0.1-candidate` (at `d317b6da`), and the bundle `just release`
+  would pack, unpacked, at
+  `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1b\unlimited-tool-works-0.0.1\`
   (`UTW.exe`, built after a green checkpoint; `COMMIT.txt` beside the folder names its
   commit; started once from a copy, so the folder itself is as fresh as a download). Every
   screen the drafts and the build share was measured against the drafts at 1 point (2 where
   needed) in both themes (worklog 0.0.1ov1 to ov2z, ov11b to ov11d); what is left differs by
-  ruling (the rail's order, a combo's arrow, the checkboxes' hit areas). Since the candidate,
-  the toolbar's Open menu and Save as are built (8.9l), the drafts take egui's spacing for
-  menus, the toolbar and a view's margin, and the ability stats' labels go left-aligned. Still to look at in the built app: the windows' titles
+  ruling (the rail's order, a combo's arrow, the checkboxes' hit areas). In this candidate:
+  the toolbar's Open menu and Save as (8.9l), the drafts on egui's spacing for menus, the
+  toolbar and a view's margin, the ability stats' labels left-aligned, the clover logo, the
+  sidebar's polish (no shadow, labels where the draft has them, the rail's year centred, a
+  press on it opening the sidebar, "Coming soon™", Help and Settings marked WIP), the title
+  bar without its icon, and SE-GUI-21 checked in game. Still to look at in the built app: the windows' titles
   at 14 in the strong grey (220, 0.0.1ov14); the preview's icon where the lead cannot capture it (worklog 0.0.1v and 8.9l3d3g, the
   title bar now drawing none, its slot left blank on Windows 10, unverified on Windows 11: the taskbar
   button and Alt+Tab show the tight crop of the head; Explorer's file icon on the exe). Live
