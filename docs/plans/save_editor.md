@@ -1233,7 +1233,11 @@ the editor exposes them as:
   the free-kick motion, height, weight, star, playing attitude and stronger hand go with
   gameplay (`editor.h` `PlayerImport`, read 2026-10-21), so a file that loads
   with 4ccEditor's choices loads the same here. The file's `[team]` keys, which the squad file
-  never carried, go with gameplay.
+  never carried, go with gameplay. A refusal that comes from a chosen section's keys (a team
+  name too long, with gameplay; a shirt number past the field's range, with aesthetics) is
+  drawn under the section choices with Apply disabled, the choices still drawn, since
+  unticking that section is how the member imports the rest; only a `.4ccs` with more records
+  than the target's roster is refused whatever the choices, drawn alone.
 - **Legacy import**: `.4ccs` and `.4cct` open through the same import dialog,
   read-only.
 - **Texport import/export** (export is new; PES itself can import the file). Export writes

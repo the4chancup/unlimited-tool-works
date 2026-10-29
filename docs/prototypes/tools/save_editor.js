@@ -7483,20 +7483,29 @@ function interchangePanel() {
     c.append(h("div", { class: "grp weak" }, "Who gets which record"), list);
   }
   const refusal = ixRefusal(d);
+  // A .4ccs with more records than the roster is refused whatever the
+  // choices. Any other refusal comes from a chosen section's keys (a team
+  // name too long comes with gameplay, a number out of range with
+  // aesthetics), so the choices stay drawn: unticking that section is how
+  // the member imports the rest.
+  if (d.format === "4ccs" && d.legacy.players.length > t.players.length) {
+    c.append(h("div", { class: "row err", id: "ix-refused" }, refusal));
+    return c;
+  }
+  const sec = (key, label) => {
+    const lockOut = key === "aesthetics" && !aesUnlocked();
+    return h("span", { title: lockOut ? ownershipTip() : "" },
+      h("label", { class: "cb" },
+        h("input", { type: "checkbox", id: "ix-sec-" + key,
+          checked: lockOut ? false : S.ix.sections[key],
+          disabled: lockOut,
+          onchange: e => { S.ix.sections[key] = e.target.checked; render(); } }),
+        " " + label));
+  };
+  c.append(h("div", { class: "row" }, weak("Sections "), held.map(k => sec(k, k))));
   if (refusal)
     c.append(h("div", { class: "row err", id: "ix-refused" }, refusal));
   else {
-    const sec = (key, label) => {
-      const lockOut = key === "aesthetics" && !aesUnlocked();
-      return h("span", { title: lockOut ? ownershipTip() : "" },
-        h("label", { class: "cb" },
-          h("input", { type: "checkbox", id: "ix-sec-" + key,
-            checked: lockOut ? false : S.ix.sections[key],
-            disabled: lockOut,
-            onchange: e => { S.ix.sections[key] = e.target.checked; render(); } }),
-          " " + label));
-    };
-    c.append(h("div", { class: "row" }, weak("Sections "), held.map(k => sec(k, k))));
     const warnings = ixWarnings(d);
     if (warnings.length) {
       const grp = h("div", { id: "ix-warnings" },
@@ -7506,14 +7515,15 @@ function interchangePanel() {
       c.append(h("div", { class: "grp weak" },
         "Import notes (PES " + d.version + " file onto a PES " + version() + " save)"), grp);
     }
-    c.append(h("div", { class: "row" },
-      button("Apply", () => { ixApply(d); S.ix.applied = d.label; render(); },
-        { disabled: !held.some(k => S.ix.sections[k] && (k !== "aesthetics" || aesUnlocked())),
-          title: "Write the chosen sections as one undoable edit" }),
-      weak("one undoable edit; the changes stay unsaved until Save.")));
-    if (S.ix.applied)
-      c.append(h("div", { class: "row" }, weak("Applied " + S.ix.applied + ". The changes stay unsaved until Save.")));
   }
+  c.append(h("div", { class: "row" },
+    button("Apply", () => { ixApply(d); S.ix.applied = d.label; render(); },
+      { disabled: !!refusal
+          || !held.some(k => S.ix.sections[k] && (k !== "aesthetics" || aesUnlocked())),
+        title: "Write the chosen sections as one undoable edit" }),
+    weak("one undoable edit; the changes stay unsaved until Save.")));
+  if (S.ix.applied)
+    c.append(h("div", { class: "row" }, weak("Applied " + S.ix.applied + ". The changes stay unsaved until Save.")));
   return c;
 }
 

@@ -13707,3 +13707,14 @@ an async runtime in the workspace; the preview's extra egui work is a one-off on
 kept small by its glance-only scope.
 Plan: `spec/core/README.md` "GUI framework choice: egui"; `plans/core/README.md`, the bullet
 "3D preview requires `wgpu`".
+
+## 2026-10-29 — save_editor — An import refused by a chosen section keeps the section choices drawn
+
+Decision: in the import dialog, a refusal that comes from the keys of a chosen section (a team
+name too long for the save's field comes with gameplay, a shirt number past the field's range
+with aesthetics) is drawn under the section choices, Apply disabled; the choices stay drawn.
+Only a `.4ccs` with more records than the target's roster, refused whatever the choices, is
+drawn alone.
+Why: the draft hid the choices under any refusal, so a file refused for its aesthetics could
+not be imported for its gameplay, the one way out being to untick the section it hid.
+Plan: `plans/save_editor.md` "Interchange formats in the UI", the first bullet.
