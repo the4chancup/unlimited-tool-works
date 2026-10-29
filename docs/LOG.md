@@ -2817,3 +2817,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The Save editor's detail pane ends where the draft's does, 12 points short of the window's edge, and the player list's controls stand 4 apart at the draft's tops (0.0.1ov2y).
 - **2026-10-29** — The light theme's resting widgets stand out from the panel as the dark theme's do, and the lineup lists' position codes read at 4.5 on it (0.0.1ov11c).
 - **2026-10-29** — The opened sidebar draws below an open modal and takes no input there; a click on it no longer switches tools or opens Help behind Settings (0.0.1ov11d).
+- **2026-10-29** — The sidebar's rail stands at the draft's pixels: the logo, the version selector and the tools' icons where the draft puts them, and a line above Help (0.0.1ov2z).

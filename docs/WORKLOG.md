@@ -4672,12 +4672,21 @@ briefs, review loops, gates and mutation runs as for any step.
       target" 2 high), but the known (checkbox hit areas, the toolbar's Open menu and Save as,
       the ability labels' alignment); the Ability stats' boxes at the draft's pixels in the
       built window (the 1244.6 was the headless probe's)
-    - [ ] ov2z the sidebar's rail against the draft, seen in the same re-measure (ink rows of
+    - [x] ov2z the sidebar's rail against the draft, seen in the same re-measure (ink rows of
       `.tmp/0_0_1ov/{draft,built}/team.png`, `.tmp/0_0_1ov/rail_rows.py`): the logo, the
       version selector and the line under it 5 points high (logo ink 11 for the draft's 16),
       the selector 40 wide for the draft's 44, the entries 33 apart for its 32, no line above
       Help (the draft's at 681), Help and the gear 3 to 6 low. The rail's order differs by
-      design (ov1). Brief `.tmp/0_0_1ov/brief_ov2z.md`
+      design (ov1). Brief `.tmp/0_0_1ov/brief_ov2z.md`, rework `brief_ov2z_r1.md`. Done
+      2026-10-29 (Opus, reviewed, one rework; `529f9c37`, merge `094023ed`): the rail's panel
+      and the overlay in `rail_frame` (the draft's `.rail` padding 6, not egui's side-panel 8
+      by 2), its items 2 apart (`RAIL_GAP`), its lines 9 tall (`SEPARATOR_SPACING`), the line
+      above Help drawn, the logo the draft's 32-point square, the only part of its row that
+      senses the pointer and fills, every icon centred right of the accent bar's 3 points
+      (the draft's border on every entry: x 29 on the rail and opened); six tests. The
+      sidekick's two contradictions over the tolerance (the icons 1.5 left, the logo's hover
+      box the whole row) were the rework; kept: the selector 43 wide for the draft's 44 (its
+      select overhangs its 43-point box), the opened logo at 11.5 for the draft's 12
     - [x] ov2x the player view and the text boxes against the draft, re-measured 2026-10-29
       (`rect_compare.py player`): every text box without the draft's 1-point border
       (`input[type=text]`: `border: 1px solid var(--stroke)`, radius 3; egui's resting text
