@@ -648,6 +648,7 @@ mod tests {
     use super::test_harness::*;
     use super::*;
     use crate::settings::Settings;
+    use crate::shell::sidebar::SETTINGS_LABEL;
     use crate::status::{Notice, NoticeKind};
 
     /// `apply_requests` outside a frame: a default egui context.
@@ -883,7 +884,7 @@ mod tests {
 
         // The settings menu open over B's view when the close is asked.
         let nodes = idle(&egui_ctx, &mut app, 2).nodes;
-        click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+        click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
         let nodes = idle(&egui_ctx, &mut app, 10).nodes;
         assert!(has_text(&nodes, "Threads"), "the menu is open");
 

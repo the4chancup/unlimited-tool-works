@@ -26,7 +26,7 @@ use crate::widgets::{
     step_choice, step_number, wheel_steps,
 };
 
-use super::sidebar::{Sidebar, exe_tooltip, version_blocker, version_label};
+use super::sidebar::{SETTINGS_LABEL, Sidebar, exe_tooltip, version_blocker, version_label};
 
 /// The modal's width, the draft's `.settings-body`, which the common grid's
 /// widest row (the label column, the path edit and Browse) fits.
@@ -102,7 +102,7 @@ impl SettingsMenu {
             return;
         }
         let id = egui::Id::unique("settings-menu");
-        let modal = crate::widgets::modal(egui_ctx, id, "Settings", |ui| {
+        let modal = crate::widgets::modal(egui_ctx, id, SETTINGS_LABEL, |ui| {
             ui.set_min_width(WIDTH);
             self.common_grid(ui, tools, ctx, sidebar);
             let pending = self.pending.take();

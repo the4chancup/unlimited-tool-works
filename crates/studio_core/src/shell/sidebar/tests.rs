@@ -6,8 +6,9 @@ use egui::accesskit::{self, Role, Toggled};
 use pes_version::PesVersion;
 
 use super::{
-    ACTIVE_BAR_WIDTH, CLOVER_LEAVES, CLOVER_RING, ExeCheck, ICON_SIZE, LABEL_END_PADDING,
-    LABEL_GAP, RAIL_WIDTH, overlay_frame, overlay_id, selector_color, version_label,
+    ACTIVE_BAR_WIDTH, CLOVER_LEAVES, CLOVER_RING, ExeCheck, HELP_LABEL, ICON_SIZE,
+    LABEL_END_PADDING, LABEL_GAP, RAIL_WIDTH, SETTINGS_LABEL, overlay_frame, overlay_id,
+    selector_color, version_label,
 };
 use crate::help::{HelpSection, HelpTarget, HelpTopic};
 use crate::pes_process::RunningPes;
@@ -185,7 +186,11 @@ fn the_gui_opens_on_the_tool_last_tool_names_and_lists_all_tools() {
     // span its inner width.
     let cell = entry(&nodes, "A").bounds().unwrap().width();
     let nodes = open_sidebar(&egui_ctx, &mut app, entry(&nodes, "A"), 1.0).nodes;
-    let inner = overlay_inner_width(&egui_ctx, cell, &["A", "B", "C", "Help", "Settings"]);
+    let inner = overlay_inner_width(
+        &egui_ctx,
+        cell,
+        &["A", "B", "C", HELP_LABEL, SETTINGS_LABEL],
+    );
     for label in ["A", "B", "C"] {
         let width = entry(&nodes, label).bounds().unwrap().width();
         assert!(
@@ -233,8 +238,8 @@ fn the_rail_opens_the_sidebar_over_the_view_on_hover_and_closes_on_leave() {
 
     // At 1.11, past the delay: open, every entry the overlay's inner width.
     let opened = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.11)).nodes;
-    let inner = overlay_inner_width(&egui_ctx, cell, &["A", "B", "Help", "Settings"]);
-    for label in ["A", "B", "Help", "Settings"] {
+    let inner = overlay_inner_width(&egui_ctx, cell, &["A", "B", HELP_LABEL, SETTINGS_LABEL]);
+    for label in ["A", "B", HELP_LABEL, SETTINGS_LABEL] {
         let width = entry(&opened, label).bounds().unwrap().width();
         assert!(
             (width - inner).abs() < 0.5,
@@ -253,7 +258,7 @@ fn the_rail_opens_the_sidebar_over_the_view_on_hover_and_closes_on_leave() {
 
     // Nothing moved when it opened: the logo's, each entry's, the help's and the
     // gear's top-left is the same open and closed (the widths differ).
-    for label in ["4cc", "A", "B", "Help", "Settings"] {
+    for label in ["4cc", "A", "B", HELP_LABEL, SETTINGS_LABEL] {
         let before = entry(&closed, label).bounds().unwrap();
         let after = entry(&opened, label).bounds().unwrap();
         assert!(
@@ -708,7 +713,7 @@ fn the_overlay_is_as_wide_as_the_longest_label_on_one_line() {
     let inner = overlay_inner_width(
         &egui_ctx,
         cell,
-        &["A", "Player aesthetics editor", "Help", "Settings"],
+        &["A", "Player aesthetics editor", HELP_LABEL, SETTINGS_LABEL],
     );
     assert!(
         (width - inner).abs() < 0.5,
@@ -778,7 +783,7 @@ fn the_labels_are_painted_in_the_overlay_and_never_on_the_rail() {
         1,
         "the rail paints its logo's ring (the frame's shapes are collected)"
     );
-    for label in ["A", "B", "Music player", "Help", "Settings"] {
+    for label in ["A", "B", "Music player", HELP_LABEL, SETTINGS_LABEL] {
         assert_eq!(
             painted_text_count(&rail, label),
             0,
@@ -787,7 +792,7 @@ fn the_labels_are_painted_in_the_overlay_and_never_on_the_rail() {
     }
 
     let open = open_sidebar(&egui_ctx, &mut app, entry(&rail.nodes, "A"), 1.0);
-    for label in ["A", "B", "Music player", "Help", "Settings"] {
+    for label in ["A", "B", "Music player", HELP_LABEL, SETTINGS_LABEL] {
         assert_eq!(
             painted_text_count(&open, label),
             1,
@@ -858,7 +863,7 @@ fn the_accent_bar_marks_only_the_active_row() {
         accent_bar_at(&out, entry(&out.nodes, "A").bounds().unwrap(), color).is_some(),
         "the active row carries the accent bar"
     );
-    for label in ["B", "Help", "Settings"] {
+    for label in ["B", HELP_LABEL, SETTINGS_LABEL] {
         assert!(
             accent_bar_at(&out, entry(&out.nodes, label).bounds().unwrap(), color).is_none(),
             "the {label} row carries no accent bar"
@@ -911,7 +916,7 @@ fn the_overlay_holds_while_the_pointer_is_anywhere_on_it() {
         .x;
     let style = egui_ctx.global_style();
     let margins = overlay_frame(&style).total_margin().sum().x;
-    let inner = overlay_inner_width(&egui_ctx, cell, &["A", "B", "Help", "Settings"]);
+    let inner = overlay_inner_width(&egui_ctx, cell, &["A", "B", HELP_LABEL, SETTINGS_LABEL]);
     let right = f64::from(outer_left) + inner + f64::from(margins);
 
     // On the margin band, right of the drawn content but inside the outer
@@ -1256,7 +1261,7 @@ fn the_planned_tools_follow_the_registered_ones_grayed_and_inert() {
     click(&egui_ctx, &mut app, planned("Planned one"));
     assert_eq!(app.active, 0);
 
-    // Its tooltip says the tool is not in this build.
+    // Its tooltip says the tool is coming, and nothing more.
     idle(&egui_ctx, &mut app, 10);
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     let node = nodes
@@ -1266,8 +1271,10 @@ fn the_planned_tools_follow_the_registered_ones_grayed_and_inert() {
     frame(&egui_ctx, &mut app, hover(node), true);
     let nodes = idle(&egui_ctx, &mut app, 8).nodes;
     assert!(
-        has_text(&nodes, "Planned one is not in this build"),
-        "the tooltip names the tool and the build"
+        nodes
+            .iter()
+            .any(|node| node.value() == Some("Coming soon™")),
+        "the tooltip reads exactly \"Coming soon™\""
     );
 }
 
@@ -1379,18 +1386,17 @@ fn a_cli_only_tool_is_a_planned_entry_never_active_and_still_registered() {
     assert_eq!(app.active, 1);
     assert_eq!(calls[0].views(), 0, "C's view never ran");
 
-    // Its tooltip says it runs from the command line in this version.
+    // Its tooltip is a planned entry's: its window is what is coming.
     idle(&egui_ctx, &mut app, 10);
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     let node = nodes.iter().find(|node| node.value() == Some("C")).unwrap();
     frame(&egui_ctx, &mut app, hover(node), true);
     let nodes = idle(&egui_ctx, &mut app, 8).nodes;
     assert!(
-        has_text(
-            &nodes,
-            "C has no window in this version, so it runs from the command line."
-        ),
-        "the tooltip is the CLI-only one"
+        nodes
+            .iter()
+            .any(|node| node.value() == Some("Coming soon™")),
+        "the tooltip reads exactly \"Coming soon™\""
     );
 
     // A switch request naming it is ignored, as an unknown id is.
@@ -1408,7 +1414,7 @@ fn a_cli_only_tool_is_a_planned_entry_never_active_and_still_registered() {
             .count()
     };
     let (before_a, before_c) = (labeled(&nodes, "A"), labeled(&nodes, "C"));
-    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
     let nodes = idle(&egui_ctx, &mut app, 10).nodes;
     assert_eq!(
         labeled(&nodes, "A"),
@@ -1513,13 +1519,12 @@ fn the_logo_opens_about_and_copy_puts_the_version_block_on_the_clipboard() {
     click(&egui_ctx, &mut app, entry(&nodes, "Close"));
     assert!(!app.sidebar.about_open, "Close dismisses the popup");
 
-    // The popup's Help link closes it and opens the help window on Setting up. The
-    // sidebar's `?` button shares the label; the About one is the link.
+    // The popup's Help link closes it and opens the help window on Setting up.
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     click(&egui_ctx, &mut app, entry(&nodes, "4cc"));
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     // egui reports a `ui.link` as a `Link` node carrying its text in `label`
-    // (egui 0.37's `Role`); the sidebar's `?` is the `Button` sharing the label.
+    // (egui 0.37's `Role`).
     let link = nodes
         .iter()
         .find(|node| node.role() == Role::Link && node.label() == Some("Help"))
@@ -1612,7 +1617,7 @@ fn settings_open_with_the_pointer_on_the_rail(
     app: &mut StudioApp,
 ) -> Vec<accesskit::Node> {
     let nodes = frame_at(egui_ctx, app, Vec::new(), true, Some(0.9)).nodes;
-    let gear = entry(&nodes, "Settings");
+    let gear = entry(&nodes, SETTINGS_LABEL);
     frame_at(egui_ctx, app, pointer(gear, true), true, Some(1.0));
     frame_at(egui_ctx, app, pointer(gear, false), true, Some(1.02));
     let mut nodes = Vec::new();
@@ -1645,7 +1650,7 @@ fn the_opened_sidebar_is_drawn_below_an_open_modal() {
 
 #[test]
 fn a_click_on_the_opened_sidebar_under_a_modal_switches_and_opens_nothing() {
-    for label in ["B", "Help"] {
+    for label in ["B", HELP_LABEL] {
         let Shell { mut app, _dir, .. } = shell();
         let egui_ctx = test_context();
         let nodes = settings_open_with_the_pointer_on_the_rail(&egui_ctx, &mut app);
@@ -1706,6 +1711,51 @@ fn the_about_block_opened_from_the_overlay_is_above_it_and_takes_clicks() {
     );
 }
 
+// The help and the gear read "(WIP)" until the help and the settings menu are
+// complete: painted in the opened sidebar and as the entries' accessible names, on
+// the rail as when open. The help window the entry opens carries the same name.
+#[test]
+fn the_help_and_the_gear_are_marked_wip_as_the_help_window_is() {
+    let Shell { mut app, _dir, .. } = shell();
+    let egui_ctx = test_context();
+    let rail = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9));
+    let open = open_sidebar(&egui_ctx, &mut app, entry(&rail.nodes, "A"), 1.0);
+    let button = |nodes: &[accesskit::Node], label: &str| {
+        nodes
+            .iter()
+            .any(|node| node.role() == Role::Button && node.label() == Some(label))
+    };
+    for label in ["Help (WIP)", "Settings (WIP)"] {
+        assert_eq!(
+            painted_text_count(&open, label),
+            1,
+            "the opened sidebar paints {label:?}"
+        );
+        assert!(
+            button(&rail.nodes, label) && button(&open.nodes, label),
+            "{label:?} is the entry's accessible name, on the rail and open"
+        );
+    }
+
+    let help = open
+        .nodes
+        .iter()
+        .find(|node| node.role() == Role::Button && node.label() == Some("Help (WIP)"))
+        .expect("the overlay's help entry");
+    frame_at(&egui_ctx, &mut app, pointer(help, true), true, Some(1.30));
+    frame_at(&egui_ctx, &mut app, pointer(help, false), true, Some(1.32));
+    let mut nodes = Vec::new();
+    for time in [1.40, 1.50, 1.60] {
+        nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(time)).nodes;
+    }
+    assert!(
+        nodes
+            .iter()
+            .any(|node| node.role() == Role::Window && node.label() == Some("Help (WIP)")),
+        "the help window opened from the entry is titled \"Help (WIP)\""
+    );
+}
+
 #[test]
 fn the_opened_sidebar_stays_above_the_help_window() {
     let Shell { mut app, _dir, .. } = shell();
@@ -1714,7 +1764,7 @@ fn the_opened_sidebar_stays_above_the_help_window() {
     let nodes = open_sidebar(&egui_ctx, &mut app, entry(&nodes, "A"), 1.0).nodes;
     let help = nodes
         .iter()
-        .find(|node| node.role() == Role::Button && node.label() == Some("Help"))
+        .find(|node| node.role() == Role::Button && node.label() == Some(HELP_LABEL))
         .expect("the overlay's Help entry");
     frame_at(&egui_ctx, &mut app, pointer(help, true), true, Some(1.30));
     frame_at(&egui_ctx, &mut app, pointer(help, false), true, Some(1.32));
@@ -2355,8 +2405,8 @@ fn rail_and_open_at_draft_window(node_text: &str) -> (FrameOutput, FrameOutput) 
     let open = draft_window_frame(&egui_ctx, &mut app, Vec::new(), Some(1.2));
     assert_eq!(
         (
-            painted_text_count(&rail, "Help"),
-            painted_text_count(&open, "Help")
+            painted_text_count(&rail, HELP_LABEL),
+            painted_text_count(&open, HELP_LABEL)
         ),
         (0, 1),
         "the first frame is the rail, the second the opened sidebar with its labels"
@@ -2552,9 +2602,13 @@ fn a_line_above_the_help_matches_the_line_under_the_selector() {
 #[test]
 fn the_help_and_the_gear_sit_at_the_drafts_rows() {
     let out = rail_at_draft_window();
-    assert_at_draft(rail_bounds(&out.nodes, "Help").y0, 688.0, "the help's top");
     assert_at_draft(
-        rail_bounds(&out.nodes, "Settings").y0,
+        rail_bounds(&out.nodes, HELP_LABEL).y0,
+        688.0,
+        "the help's top",
+    );
+    assert_at_draft(
+        rail_bounds(&out.nodes, SETTINGS_LABEL).y0,
         720.0,
         "the gear's top",
     );
@@ -2602,7 +2656,7 @@ fn the_opened_sidebars_labels_and_width_match_the_draft() {
     draft_window_frame(&egui_ctx, &mut app, hovered, Some(1.0));
     let open = draft_window_frame(&egui_ctx, &mut app, Vec::new(), Some(1.2));
     assert_eq!(
-        painted_text_count(&open, "Help"),
+        painted_text_count(&open, HELP_LABEL),
         1,
         "premise: the sidebar is open"
     );
@@ -2611,7 +2665,7 @@ fn the_opened_sidebars_labels_and_width_match_the_draft() {
     let labels = REGISTRY
         .iter()
         .map(|entry| entry.label)
-        .chain(["Help", "Settings"]);
+        .chain([HELP_LABEL, SETTINGS_LABEL]);
     for label in labels {
         let shape = text_shape_in(&open, label, screen)
             .unwrap_or_else(|| panic!("the opened sidebar paints {label:?}"));
