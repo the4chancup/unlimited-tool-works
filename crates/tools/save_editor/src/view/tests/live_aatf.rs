@@ -903,11 +903,21 @@ fn a_fielded_rows_click_selects_the_team_row_on_the_crosss_formation() {
         .as_mut()
         .expect("the save opened")
         .edit_team(2, team);
-    let nodes = live_checked(&mut window, &mut view, &[734]);
+    live_checked(&mut window, &mut view, &[734]);
     view.selected = Some(Selection::Player(734, 0));
     view.tactics.preset = 2;
     view.tactics.formation = 1;
-    click(&mut window, fielded_row_below(&nodes, &header), &mut view);
+    // His row now lists below the dock's 150-point well, past its clip,
+    // where a pointer click lands on nothing: the click is the AccessKit
+    // action, which reaches the row's response wherever it is drawn.
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes: Vec<accesskit::Node> = pairs.iter().map(|(_, node)| node.clone()).collect();
+    let row = fielded_row_below(&nodes, &header);
+    let (target, _) = pairs
+        .iter()
+        .find(|(_, node)| node.label() == row.label() && node.bounds() == row.bounds())
+        .expect("the row's node id");
+    action_click(&mut window, &mut view, *target);
     assert_eq!(
         view.selected,
         Some(Selection::Team(734)),
@@ -917,5 +927,77 @@ fn a_fielded_rows_click_selects_the_team_row_on_the_crosss_formation() {
         (view.tactics.preset, view.tactics.formation),
         (0, 2),
         "preset 1's third formation shown"
+    );
+}
+
+/// The painted wells: every `Rect` shape in the extreme fill with the
+/// window stroke (the log panel's `well_frame`).
+fn wells(shapes: &[egui::epaint::ClippedShape], visuals: &egui::Visuals) -> Vec<egui::Rect> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if shape.fill == visuals.extreme_bg_color
+                    && shape.stroke == visuals.window_stroke() =>
+            {
+                Some(shape.rect)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// The dock's rows sit in the log's well (the drafts' `.live-body`), and
+/// the well is 150 points high when the dock first opens (`LIVE.height`):
+/// measured on the first frame, right under the dock's header, and again
+/// around the rows once the check lists them.
+#[test]
+fn the_rows_sit_in_a_150_point_well_when_the_dock_opens() {
+    // 70201 made too tall for a bracket, so team 702 lists a row.
+    let path = fixture(PesVersion::Pes21, "live_aatf_well");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.player_mut(70201).unwrap().basic.height = 183;
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(702);
+    view.selected = Some(Selection::Player(702, 0));
+    view.live_aatf = true;
+    let mut window = Headless::new();
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let title = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("Live AATF"))
+        .and_then(accesskit::Node::bounds)
+        .expect("the dock's title");
+    let first = wells(&shapes, &visuals)
+        .into_iter()
+        .find(|well| f64::from(well.top()) >= title.y1 && f64::from(well.top()) <= title.y1 + 20.0)
+        .unwrap_or_else(|| panic!("no well under the dock's header: {title:?}"));
+    assert!(
+        (first.height() - 150.0).abs() <= 1.0,
+        "the well's height on the first frame: {first:?}"
+    );
+
+    live_checked(&mut window, &mut view, &[702]);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let header = nodes
+        .iter()
+        .find(|node| node.value() == Some("Team 702 /a/"))
+        .and_then(accesskit::Node::bounds)
+        .expect("team 702's group header");
+    let centre = egui::pos2(
+        ((header.x0 + header.x1) / 2.0) as f32,
+        ((header.y0 + header.y1) / 2.0) as f32,
+    );
+    let around = wells(&shapes, &visuals)
+        .into_iter()
+        .find(|well| well.contains(centre))
+        .expect("a well around the rows");
+    assert!(
+        (around.top() - first.top()).abs() <= 1.0 && (around.height() - 150.0).abs() <= 1.0,
+        "the well around the rows: {around:?}, first {first:?}"
     );
 }

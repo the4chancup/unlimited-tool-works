@@ -294,7 +294,9 @@ input[type=range]:focus { outline: none; }
   row-gap: 4px; align-items: center; width: calc(109px + 12px + 54px + 28px + 73px + 9px + 54px); }
 .gen .combos > span:not(.gl), .gen .combos .gate > span { display: block; }
 .gen .combos .rate.lr { display: grid; grid-template-columns: 1fr 1fr; }
-.gen .combos .rate.lr .sel { text-align: center; }
+/* Each side 18 tall, a control's height, so the toggles' rows stand 22 apart as the
+   combos' do. */
+.gen .combos .rate.lr .sel { text-align: center; height: 18px; line-height: 18px; }
 /* The chosen side in the quiet grey of the positions grid's C, not the
    accent: a foot or hand is rarely what a member looks for. */
 .gen .combos .rate.lr .sel.on { background: #5a5a5a; color: var(--text); }
@@ -349,7 +351,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .palette .swatch:hover { outline: 1px solid var(--hover); }
 .palette.off { pointer-events: none; }
 /* the colour picker (color_tools' color_field) */
-.cbtn { width: 26px; height: 15px; border: 1px solid var(--stroke);
+.cbtn { width: 22px; height: 16px; min-height: 16px; border: 1px solid var(--stroke);
   border-radius: 2px; padding: 0; vertical-align: middle; }
 .cbtn:hover { border-color: var(--hover); }
 .pkfield { position: relative; display: inline-block; }

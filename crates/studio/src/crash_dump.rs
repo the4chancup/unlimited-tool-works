@@ -2,8 +2,8 @@
 //! access violation in native code leaves a log that simply stops. The window starts a copy of its own exe as
 //! a monitor (`--crash-monitor`), connects to it over a socket file named after the
 //! process id in the temp folder, and the `crash-handler` hook asks the connected
-//! monitor for a dump when a crash comes: the monitor writes `studio.dmp` beside
-//! `studio.log`, appends a line naming it, and exits with the window's process. The
+//! monitor for a dump when a crash comes: the monitor writes `utw.dmp` beside
+//! `utw.log`, appends a line naming it, and exits with the window's process. The
 //! crash test's trigger (`--crash-test stack`) is `overflow_the_stack`, run once the
 //! monitor is up and before any window, so the test needs no display (ST-RUN-10).
 
@@ -23,12 +23,11 @@ use studio_core::EXE_NAME;
 
 use crate::gui_log;
 
-/// `studio.dmp`'s name in the data location, beside `studio.log`.
-pub(crate) const DUMP_FILE_NAME: &str = "studio.dmp";
+/// `utw.dmp`'s name in the data location, beside `utw.log`.
+pub(crate) const DUMP_FILE_NAME: &str = "utw.dmp";
 /// The monitor's last log line after a dump written beside the log (ST-RUN-10): the
 /// next start reads it to name the dump in the unclean-session dialog.
-pub(crate) const DUMP_WRITTEN_LINE: &str =
-    "the crash dump was written to studio.dmp beside this log";
+pub(crate) const DUMP_WRITTEN_LINE: &str = "the crash dump was written to utw.dmp beside this log";
 /// The monitor's line when the dump could not be written: the next start reports the
 /// session as simply unclean.
 const DUMP_FAILED_LINE: &str = "the crash dump could not be written";
@@ -45,7 +44,7 @@ const MONITOR_CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
 /// the crash test's trigger (ST-RUN-10).
 pub(crate) enum HiddenLaunch {
     /// `--crash-monitor <data dir> <socket path>`: serve dump requests over `socket`,
-    /// writing `studio.dmp` and the log line into `data_dir`.
+    /// writing `utw.dmp` and the log line into `data_dir`.
     Monitor { data_dir: PathBuf, socket: PathBuf },
     /// `--crash-test stack`: run the window's start, then overflow the stack.
     CrashTest,
@@ -67,7 +66,7 @@ pub(crate) fn hidden_launch(args: &[OsString]) -> Option<HiddenLaunch> {
     }
 }
 
-/// The monitor's `ServerHandler`: `studio.dmp` beside `studio.log`, replacing the
+/// The monitor's `ServerHandler`: `utw.dmp` beside `utw.log`, replacing the
 /// previous one, and the log line a later start reads to tell a dumped crash from an
 /// unclean one.
 struct DumpWriter {
@@ -104,7 +103,7 @@ impl minidumper::ServerHandler for DumpWriter {
     }
 }
 
-/// Appends one `crash_dump` line to `data_dir`'s `studio.log`, the home folder written
+/// Appends one `crash_dump` line to `data_dir`'s `utw.log`, the home folder written
 /// as `~`. Append without create: a monitor whose window never opened a log adds none.
 fn append_line(data_dir: &Path, home: Option<&str>, level: Level, text: &str) {
     let line = gui_log::redact_home(&gui_log::log_line(level, "crash_dump", &text), home);
@@ -359,7 +358,7 @@ mod tests {
     }
 
     // ST-RUN-10: the next start's dialog text is built from what the monitor leaves:
-    // its line in `studio.log` and `studio.dmp` beside it.
+    // its line in `utw.log` and `utw.dmp` beside it.
     #[test]
     fn a_written_dump_appends_the_line_the_next_start_names() {
         let dir = TestDir::new("dump_written");
@@ -400,7 +399,7 @@ mod tests {
         };
         assert_eq!(installed.dump_path(), Some(dir.path().join(DUMP_FILE_NAME)));
         let text = unclean_text(&installed.old_path(), installed.dump_path().as_deref());
-        assert!(text.contains("studio.old.log"), "{text}");
+        assert!(text.contains("utw.old.log"), "{text}");
         assert!(text.contains(DUMP_FILE_NAME), "{text}");
     }
 
@@ -422,7 +421,7 @@ mod tests {
     }
 
     // ST-RUN-10: a dump that fails appends the failure's line with its error, and a
-    // folder holding no `studio.log` gets none.
+    // folder holding no `utw.log` gets none.
     #[test]
     fn a_failed_dump_appends_the_failure_line_and_no_log_gets_none() {
         let dir = TestDir::new("dump_failed");

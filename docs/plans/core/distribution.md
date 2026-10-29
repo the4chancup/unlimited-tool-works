@@ -1,4 +1,4 @@
-# 4cc Studio — Core plan: Distribution and updates
+# Unlimited Tool Works — Core plan: Distribution and updates
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -19,7 +19,7 @@ There is no installer. Each release is a `.7z` archive containing:
   League 27 (VGL)"); the launchers' sources are `resources/bundle/`, checked out with CRLF
   line ends (`.gitattributes`), since cmd misreads a batch file's labels with LF ones
 - a basic readme (pointing into the app: the full help and the changelog live in the help window
-  — see `gui.md` "Help window" under GUI Design — and `4cc-studio help --export` produces the same text as
+  — see `gui.md` "Help window" under GUI Design — and `UTW help --export` produces the same text as
   files for the release page), with the two license files beside it; `README.txt`, not
   `.md`, because a double-click opens a `.txt` in Notepad on any Windows, where a `.md` opens
   whatever app claimed it, or asks
@@ -94,7 +94,7 @@ storage.
 Red updates by downloading the new release's 7z, extracting it as a **sibling folder**, and
 migrating user data into it (settings via a transfer table, `teams_list.txt` via an interactive
 diff, `exports/` contents, state files) — necessary because Red's install folder is a pile of
-engine files that must be replaced wholesale, with user data interleaved. 4cc Studio's folder is
+engine files that must be replaced wholesale, with user data interleaved. Unlimited Tool Works' folder is
 a few files, so the update inverts: **the folder stays, the binary is swapped in place**, and there
 is almost nothing to migrate.
 
@@ -114,7 +114,7 @@ arrive in Phase 16:
 2. **Offer**: if a newer version exists and it isn't the `skipped_version`, show a dialog with the
    release notes inline and the options *Update now* / *Skip this version* / *Remind me later*; a
    *Disable update checks* option lives in settings (kept out of the dialog — Red's `fuckoff`). The
-   CLI equivalent is a one-line notice plus a `4cc-studio update` subcommand that performs the
+   CLI equivalent is a one-line notice plus a `UTW update` subcommand that performs the
    check+apply non-interactively.
 3. **Download + verify**: fetch the release's `.7z` asset (the same artifact users download manually
    — one artifact serves both paths) into a temp folder, verify its SHA256 against a checksum asset,
@@ -152,7 +152,7 @@ arrive in Phase 16:
 
 ### Rollback
 
-`old/4cc-studio.exe` is kept (one version deep — each update replaces it), and the settings menu gets a
+`old/UTW.exe` is kept (one version deep — each update replaces it), and the settings menu gets a
 **"Roll back to previous version"** button that swaps the two binaries back and relaunches. This
 covers the "new version is broken" case that Red handles by preserving the entire old folder.
 
@@ -191,7 +191,7 @@ appears:
 
 - **Status bar empty state** — the one always-visible place, and the line to paste into a report.
 - **About** (logo click) — the detailed block with Copy (see `gui.md` "Sidebar" item 1).
-- **`4cc-studio --version`** — the same one-liner on stdout (CLI equivalence); built,
+- **`UTW --version`** — the same one-liner on stdout (CLI equivalence); built,
   `spec/core/distribution.md` "Versioning: one workspace version, one exception".
 - **Not the title bar**: the title is what the taskbar and alt-tab show — the surface for what
   the Studio is *doing* while the window is not in front (see `gui.md` "Window title"), and it is outside

@@ -1,5 +1,5 @@
-//! The 4cc Studio binary: registers the tools, then launches the GUI or dispatches the CLI.
-//! With no arguments it opens the shell on the registered tools; `--gui` autorun arrives with
+//! The Unlimited Tool Works binary: registers the tools, then launches the GUI or dispatches the
+//! CLI. With no arguments it opens the shell on the registered tools; `--gui` autorun arrives with
 //! the GUI phase. Two hidden arguments are not commands a member types: `--crash-monitor`
 //! runs the crash-dump monitor a window spawns, and `--crash-test` its crash trigger. On
 //! Windows the exe is a GUI-subsystem application on every build, so a double-click opens no
@@ -134,7 +134,7 @@ fn tools() -> Vec<Box<dyn StudioTool>> {
 }
 
 /// The CLI modes' diagnostic sink: `-v` sets the level,
-/// `RUST_LOG` overrides it. The GUI mode gets its own sink, `studio.log`
+/// `RUST_LOG` overrides it. The GUI mode gets its own sink, `utw.log`
 /// (`gui_log::install_gui_logger`), installed once the data location resolves.
 fn install_cli_logger(verbosity: u8) {
     env_logger::Builder::new()
@@ -252,7 +252,7 @@ fn run_cli_mode(tools: &[Box<dyn StudioTool>], tool: &str, matches: &ArgMatches)
     }
 }
 
-/// `4cc-studio help`: prints or exports the help's Markdown, no settings load (the help reads
+/// `UTW help`: prints or exports the help's Markdown, no settings load (the help reads
 /// none). A refusal prints as `error: …` with its exit code, as a tool's does.
 #[expect(clippy::print_stderr, reason = "CLI result output is the binary's job")]
 fn run_help_mode(

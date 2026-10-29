@@ -11,7 +11,7 @@
 
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
-use studio_core::widgets::{step_choice, wheel_steps};
+use studio_core::widgets::{modal, modal_buttons, step_choice, wheel_steps};
 use studio_core::{Notice, NoticeKind};
 use team_widgets::violations::{ListUse, issue_groups, sentence};
 
@@ -259,80 +259,80 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         aatf_check::update_check(&mut multi.check, ui.ctx(), file, &active.rules, key, true);
     let listed = multi.check.result.as_ref().filter(|_| !reversed);
     let mut close = false;
-    let response =
-        egui::Modal::new(egui::Id::unique("save_editor_multi_aatf")).show(ui.ctx(), |ui| {
-            studio_core::theme::window_title(ui, format!("Multi-team AATF ({description})"));
-            ui.horizontal(|ui| {
-                ui.weak("Teams");
-                team_combo(ui, "save_editor_multi_first", file, &mut first);
-                ui.weak("to");
-                team_combo(ui, "save_editor_multi_last", file, &mut last);
-            });
-            ui.horizontal(|ui| {
-                if reversed {
-                    ui.colored_label(
-                        ui.visuals().warn_fg_color,
-                        "The first team comes after the last",
-                    );
-                    return;
-                }
-                if let Some((_, checks)) = listed {
-                    ui.weak(summary(checks));
-                }
-                if checking {
-                    ui.weak("checking\u{2026}");
-                }
-            });
-            let stroke = ui.visuals().widgets.noninteractive.bg_stroke;
-            let chrome = LIST_MARGIN.sum() + egui::Vec2::splat(2.0 * stroke.width);
-            egui::Frame::new()
-                .fill(ui.visuals().extreme_bg_color)
-                .stroke(stroke)
-                .inner_margin(LIST_MARGIN)
-                .show(ui, |ui| {
-                    ui.set_width(LIST_WIDTH - chrome.x);
-                    // egui's solid scroll bar stands beside the rows, as
-                    // the draft's `.live-body` bar does: a floating one lies
-                    // over each row's right end and its last words.
-                    ui.spacing_mut().scroll = egui::style::ScrollStyle::solid();
-                    egui::ScrollArea::vertical()
-                        .id_salt("save_editor_multi_rows")
-                        .auto_shrink([false, false])
-                        .max_height(LIST_HEIGHT - chrome.y)
-                        .show(ui, |ui| {
-                            if let Some((key, checks)) = listed {
-                                // A report: its rows select nothing, so the
-                                // click it returns is always `None`.
-                                aatf_check::results(
-                                    ui,
-                                    file,
-                                    "aatf_multi",
-                                    key,
-                                    checks,
-                                    ListUse::Report,
-                                );
-                            }
-                        });
-                });
-            ui.horizontal(|ui| {
-                if ui
-                    .add_enabled(listed.is_some(), egui::Button::new("Copy to clipboard"))
-                    .clicked()
-                    && let Some((key, checks)) = listed
-                {
-                    ui.ctx()
-                        .copy_text(copy_text(file, description, key, checks));
-                    *notice = Some(Notice {
-                        text: format!("Copied the results of {}.", counted(checks.len(), "team")),
-                        kind: NoticeKind::Success,
-                        action: None,
-                    });
-                }
-                if ui.button("Close").clicked() {
-                    close = true;
-                }
-            });
+    let id = egui::Id::unique("save_editor_multi_aatf");
+    let title = format!("Multi-team AATF ({description})");
+    let response = modal(ui.ctx(), id, title, |ui| {
+        ui.horizontal(|ui| {
+            ui.weak("Teams");
+            team_combo(ui, "save_editor_multi_first", file, &mut first);
+            ui.weak("to");
+            team_combo(ui, "save_editor_multi_last", file, &mut last);
         });
+        ui.horizontal(|ui| {
+            if reversed {
+                ui.colored_label(
+                    ui.visuals().warn_fg_color,
+                    "The first team comes after the last",
+                );
+                return;
+            }
+            if let Some((_, checks)) = listed {
+                ui.weak(summary(checks));
+            }
+            if checking {
+                ui.weak("checking\u{2026}");
+            }
+        });
+        let stroke = ui.visuals().widgets.noninteractive.bg_stroke;
+        let chrome = LIST_MARGIN.sum() + egui::Vec2::splat(2.0 * stroke.width);
+        egui::Frame::new()
+            .fill(ui.visuals().extreme_bg_color)
+            .stroke(stroke)
+            .inner_margin(LIST_MARGIN)
+            .show(ui, |ui| {
+                ui.set_width(LIST_WIDTH - chrome.x);
+                // egui's solid scroll bar stands beside the rows, as
+                // the draft's `.live-body` bar does: a floating one lies
+                // over each row's right end and its last words.
+                ui.spacing_mut().scroll = egui::style::ScrollStyle::solid();
+                egui::ScrollArea::vertical()
+                    .id_salt("save_editor_multi_rows")
+                    .auto_shrink([false, false])
+                    .max_height(LIST_HEIGHT - chrome.y)
+                    .show(ui, |ui| {
+                        if let Some((key, checks)) = listed {
+                            // A report: its rows select nothing, so the
+                            // click it returns is always `None`.
+                            aatf_check::results(
+                                ui,
+                                file,
+                                "aatf_multi",
+                                key,
+                                checks,
+                                ListUse::Report,
+                            );
+                        }
+                    });
+            });
+        modal_buttons(ui, |ui| {
+            if ui.button("Close").clicked() {
+                close = true;
+            }
+            if ui
+                .add_enabled(listed.is_some(), egui::Button::new("Copy to clipboard"))
+                .clicked()
+                && let Some((key, checks)) = listed
+            {
+                ui.ctx()
+                    .copy_text(copy_text(file, description, key, checks));
+                *notice = Some(Notice {
+                    text: format!("Copied the results of {}.", counted(checks.len(), "team")),
+                    kind: NoticeKind::Success,
+                    action: None,
+                });
+            }
+        });
+    });
     multi.range = Some((first, last));
     if close || response.should_close() {
         multi.open = false;

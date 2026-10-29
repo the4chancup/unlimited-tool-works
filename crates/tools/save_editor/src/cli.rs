@@ -15,7 +15,7 @@ use pes_savefile::interchange::team_toml::TeamToml;
 use pes_savefile::ops::compare::{CompareError, DiffScope};
 use pes_savefile::player_tables::{AppearanceTable, ItemList, PlayerTable, PlayerTableFile};
 use pes_version::{Engine, PesVersion};
-use studio_core::{CliError, RunningPes, Severity, ToolContext};
+use studio_core::{CliError, RunningPes, Severity, TOOL_VERSION, ToolContext};
 
 use crate::events::Report;
 use crate::messages::{
@@ -35,10 +35,6 @@ const ERRORS: u8 = 1;
 const INVALID: u8 = 2;
 /// Exit code of a command whose write failed; what was already written stands.
 const WRITE_FAILED: u8 = 3;
-
-/// The `Tvers` string a CPK this tool writes carries (the Team compiler's `TOOL_VERSION`
-/// spelling).
-const TOOL_VERSION: &str = concat!("4cc Studio ", env!("CARGO_PKG_VERSION"));
 
 #[derive(Debug, Subcommand)]
 enum SaveEditorCommand {

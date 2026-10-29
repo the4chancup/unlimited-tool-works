@@ -1,4 +1,4 @@
-# 4cc Studio — Core plan: Development plan
+# Unlimited Tool Works — Core plan: Development plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -114,13 +114,14 @@ name, which a later rename would have to migrate on every member's machine. The 
 (Fate/stay night's reality marble, where every sword once seen is traced) is the community's
 own and fits a suite that traces every tool its cups have used. Its spellings:
 
-- **`Unlimited Tool Works`**, the display name: the window title, the About box, `--version`,
-  the log's first line, the exe's version details, and a written CPK's `Tvers` field
+- **`Unlimited Tool Works`**, the display name: the window title, the About box, the log's
+  first line, the exe's version details, and a written CPK's `Tvers` field
   (`Unlimited Tool Works <version>`, the tool that wrote it).
 - **`UTW.exe`** on Windows, **`utw`** on Linux, the executable: cargo builds the bin `utw`,
   and the release recipe names it `UTW.exe` in the bundle. The command line is second-class,
   so its users can type the capitals (Windows ignores their case anyway), and the CLI's usage
-  lines print the platform's spelling.
+  lines and `--version` (`UTW v0.0.1 pre-alpha`, the executable's name before the version,
+  as a CLI's own line reads) print the platform's spelling.
 - **`unlimited-tool-works`** in paths and packages: the settings folder under the user's
   config directory (`%APPDATA%\unlimited-tool-works`, `~/.config/unlimited-tool-works`), the
   bundle's top folder and its archives (`unlimited-tool-works-<version>-windows.7z`, the
@@ -148,8 +149,11 @@ local checkout's folder (`4cc-studio`, until 1.0.0). Renaming those needs no mig
 waits for a quiet tree: the crate names alone sit on 268 lines in 129 files, which would
 collide with every slice in flight. The repository becomes `the4chancup/unlimited-tool-works`
 when the maintainer renames it on GitHub, which redirects the old address; `Cargo.toml`'s
-`repository` follows in the same commit. The docs name the project UTW; the glossary keeps
-"Studio" as the working name, which the code's names still carry.
+`repository` follows in the same commit. The docs spell the product's names where they
+name what a member sees (the titles, the CLI's examples, the folders, the log); in their prose
+and the code's comments "Studio", the working name, stays the suite's shorthand, as the crates
+carry it, and the glossary says so. Rewriting the prose's ~250 "Studio" (the Studio format, a
+Studio export) would buy a member nothing and set the docs apart from the code they describe.
 
 **The icon** goes with the name: Archer, the reality marble's caster, from the
 maintainer's picture, on a transparent background: the whole picture at 32 pixels and up, and
@@ -180,8 +184,7 @@ face alone. Three files under `resources/icon/` carry it:
   compositor's default until a package does.
 
 `scripts/make_icon.py` makes the three once from the picture, checking each of the ICO's
-sizes holds its own crop, and they are committed, so a build needs no image tool. At 1.0.0 the
-icon switches back with the name.
+sizes holds its own crop, and they are committed, so a build needs no image tool.
 
 ### Phase 7: glTF support
 
@@ -218,7 +221,7 @@ this phase completes it. Its scenarios are written: the shell's under `gui.md` "
 - Complete the `studio_core` app shell (sidebar, tool registry rendering, settings menu with per-tool
   collapsible sections, status bar with its three slots and static empty state, window title
   from activities and the held notice, help window with chapter tree, generated Messages topics,
-  search, log-panel message links, and `4cc-studio help`), and the first-run data-location dialog
+  search, log-panel message links, and `UTW help`), and the first-run data-location dialog
   (`spec/core/distribution.md` "Data location: asked on first run")
 - Build the common widgets: progress grid, log panel (auto-scroll, filters, grid cross-linking),
   run strip; and the console printer's progress line and run summary for CLI mode, drawn on
@@ -288,7 +291,7 @@ A later test release (or a later `0.x`; "Releases" above), with what a wide audi
 tester told in person does not:
 
 - Help chapters for the shipped tools beyond their views' topics (Red's two readmes migrated
-  into the Team compiler and core chapters, "Updates" and "What's new"); `4cc-studio help
+  into the Team compiler and core chapters, "Updates" and "What's new"); `UTW help
   --export` wired into the release process
 - The updater's check and notice (`distribution.md` "Self-update: in-place binary swap", step 1,
   and step 2 reduced to a notice): the release notes and a link to the release page, with *Skip
@@ -429,7 +432,7 @@ with the teams-list merge; this phase completes them and writes the maintenance-
 - Release bundling: the Linux bundle joins the `just release <version>` recipe (see
   `distribution.md` "Distribution and updates", `distribution.md` "Changelog and version
   display"); Linux tested on a real machine
-- Self-updater, the rest of it: the *Update now* option, download/verify/swap, `4cc-studio
+- Self-updater, the rest of it: the *Update now* option, download/verify/swap, `UTW
   update`, rollback button (see `distribution.md` "Distribution and updates")
 - Desktop GPU BC7 on Phase 4's texture step (`libs/README.md` "First-release desktop GPU BC7"):
   cold pipeline creation and upload/readback measured first, then bounded batches, the Auto/CPU

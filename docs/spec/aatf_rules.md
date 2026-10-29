@@ -1,4 +1,4 @@
-# 4cc Studio — AATF rules plan
+# Unlimited Tool Works — AATF rules plan
 
 The AATF rules (the 4cc player rules a team's savefile data must satisfy; the community calls the
 check "Auto-ATF") are checked and applied by `libs/aatf`. A ruleset is **data**: one Rhai map

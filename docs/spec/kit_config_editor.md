@@ -1,4 +1,4 @@
-# 4cc Studio — Kit config editor plan
+# Unlimited Tool Works — Kit config editor plan
 
 This plan specifies **`libs/kit_config`**, the lib crate holding the format
 knowledge, shared by the Kit config editor, the [Team compiler](team_compiler/README.md) (config

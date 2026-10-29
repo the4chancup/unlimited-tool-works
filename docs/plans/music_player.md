@@ -1,4 +1,4 @@
-# 4cc Studio — Music player plan
+# Unlimited Tool Works — Music player plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

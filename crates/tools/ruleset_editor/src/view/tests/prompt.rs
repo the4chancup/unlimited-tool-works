@@ -503,3 +503,25 @@ fn the_prompts_title_is_14_points_and_strong() {
         "the title's strong colour"
     );
 }
+
+// The drafts' window: the prompt's last button, Cancel, stands at its right,
+// inside the stroke and the 12-point margin.
+#[test]
+fn the_prompts_last_button_stands_at_its_right() {
+    let (dir, ctx, mut window) = prompt_setup("prompt_buttons_right");
+    let mut view = dirty_view(&ctx, &dir);
+    menu_pick(&mut window, &mut view, &ctx, "File", "Open…");
+    let frame = window.draw(&mut view, &ctx);
+    let outer = window
+        .ctx
+        .memory(|memory| memory.area_rect(egui::Id::unique("ruleset_unsaved")))
+        .expect("the prompt's modal has an area");
+    let cancel = node(&frame.nodes, "Cancel")
+        .bounds()
+        .expect("Cancel has bounds");
+    let right = f64::from(outer.right()) - cancel.x1;
+    assert!(
+        (right - 13.0).abs() <= 0.5,
+        "Cancel's right is 13 inside the prompt's, not {right}"
+    );
+}

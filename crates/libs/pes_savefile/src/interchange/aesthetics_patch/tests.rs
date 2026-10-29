@@ -4,7 +4,7 @@ use super::*;
 /// does not mutate the header starts from them.
 const KEYS: &str = "\
 pes_version = 21
-studio_version = \"0.1.0\"
+tool_version = \"0.1.0\"
 allocation_scheme_version = 1
 cpks = [\"4cc_69.cpk\"]
 compiled = 2026-09-12T14:03:00Z
@@ -21,7 +21,7 @@ fn doc(tail: &str) -> String {
 const GOLDEN: &str = "\
 # aesthetics_patch.toml, written by the Team compiler to its output folder
 pes_version = 21
-studio_version = \"0.1.0\"
+tool_version = \"0.1.0\"
 allocation_scheme_version = 1
 cpks = [\"4cc_69.cpk\"]
 compiled = 2026-09-12T14:03:00Z
@@ -48,7 +48,7 @@ dribbling = 2                   # 0 to 3, PES 20 and 21 only
 fn golden() -> AestheticsPatch {
     AestheticsPatch {
         pes_version: PesVersion::Pes21,
-        studio_version: "0.1.0".to_string(),
+        tool_version: "0.1.0".to_string(),
         allocation_scheme_version: 1,
         cpks: vec!["4cc_69.cpk".to_string()],
         compiled: "2026-09-12T14:03:00Z".parse().expect("a datetime"),
@@ -169,7 +169,7 @@ fn every_motion_key_round_trips() {
         };
         let patch = AestheticsPatch {
             pes_version,
-            studio_version: "0.1.0".to_string(),
+            tool_version: "0.1.0".to_string(),
             allocation_scheme_version: ALLOCATION_SCHEME_VERSION,
             cpks: vec!["4cc_69.cpk".to_string()],
             compiled: "2026-09-12T14:03:00Z".parse().expect("a datetime"),
@@ -213,7 +213,7 @@ fn refusals() {
     // header keys where a case does not mutate them.
     let cases: Vec<(String, PatchError)> = vec![
         (
-            "pes_version = 17\nstudio_version = \"0.1.0\"\nallocation_scheme_version = 1\ncpks = []\ncompiled = 2026-09-12T14:03:00Z\n".to_string(),
+            "pes_version = 17\ntool_version = \"0.1.0\"\nallocation_scheme_version = 1\ncpks = []\ncompiled = 2026-09-12T14:03:00Z\n".to_string(),
             PatchError::PreFox {
                 version: PesVersion::Pes17,
             },
@@ -235,9 +235,9 @@ fn refusals() {
             .into(),
         ),
         (
-            doc("").replace("studio_version = \"0.1.0\"\n", ""),
+            doc("").replace("tool_version = \"0.1.0\"\n", ""),
             PatchError::MissingKey {
-                key: "studio_version".to_string(),
+                key: "tool_version".to_string(),
             },
         ),
         (
@@ -384,7 +384,7 @@ use crate::test_support::{open, test_salt};
 fn patch_at(version: PesVersion, teams: Vec<PatchTeam>) -> AestheticsPatch {
     AestheticsPatch {
         pes_version: version,
-        studio_version: "0.1.0".to_string(),
+        tool_version: "0.1.0".to_string(),
         allocation_scheme_version: ALLOCATION_SCHEME_VERSION,
         cpks: vec!["4cc_69.cpk".to_string()],
         compiled: "2026-09-12T14:03:00Z".parse().expect("a datetime"),

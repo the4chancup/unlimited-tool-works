@@ -37,8 +37,8 @@ pub struct AestheticsPatch {
     /// The PES version the compile targeted; a patch applies only to a save
     /// of the same version.
     pub pes_version: PesVersion,
-    /// The 4cc Studio version that wrote the patch.
-    pub studio_version: String,
+    /// The version of the suite that wrote the patch.
+    pub tool_version: String,
     /// The `ALLOCATION_SCHEME_VERSION` the compile ran under; a mismatch
     /// refuses the patch.
     pub allocation_scheme_version: u32,
@@ -84,7 +84,7 @@ pub enum PatchError {
     /// A key a present table requires is absent.
     #[error("{key}: required in this table")]
     MissingKey {
-        /// The dotted key path (`studio_version`, `teams[0].id`).
+        /// The dotted key path (`tool_version`, `teams[0].id`).
         key: String,
     },
     /// `pes_version` names a pre-Fox version; the pre-Fox patch is not
@@ -196,7 +196,7 @@ impl AestheticsPatch {
         let root = document.as_table();
         let pes_version = version(required(root, "", "pes_version")?)?;
         fox_only(pes_version)?;
-        let studio_version = string(required(root, "", "studio_version")?, "studio_version")?;
+        let tool_version = string(required(root, "", "tool_version")?, "tool_version")?;
         let allocation_scheme_version = u32_value(
             required(root, "", "allocation_scheme_version")?,
             "allocation_scheme_version",
@@ -206,7 +206,7 @@ impl AestheticsPatch {
         for (name, _) in root.iter() {
             const KNOWN: [&str; 6] = [
                 "pes_version",
-                "studio_version",
+                "tool_version",
                 "allocation_scheme_version",
                 "cpks",
                 "compiled",
@@ -225,7 +225,7 @@ impl AestheticsPatch {
         }
         Ok(AestheticsPatch {
             pes_version,
-            studio_version,
+            tool_version,
             allocation_scheme_version,
             cpks,
             compiled,
@@ -246,8 +246,8 @@ impl AestheticsPatch {
         let mut out = HEADER.to_string();
         out.push_str(&format!("pes_version = {}\n", self.pes_version.number()));
         out.push_str(&format!(
-            "studio_version = {}\n",
-            Value::from(self.studio_version.as_str())
+            "tool_version = {}\n",
+            Value::from(self.tool_version.as_str())
         ));
         out.push_str(&format!(
             "allocation_scheme_version = {}\n",
@@ -477,7 +477,7 @@ fn table_like<'a>(item: &'a Item, key: &str) -> Result<&'a dyn TableLike, PatchE
     })
 }
 
-/// `item` as a string (`studio_version`, team and player names).
+/// `item` as a string (`tool_version`, team and player names).
 fn string(item: &Item, key: &str) -> Result<String, PatchError> {
     item.as_value()
         .and_then(|v| v.as_str())

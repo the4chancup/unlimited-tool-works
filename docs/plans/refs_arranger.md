@@ -1,4 +1,4 @@
-# 4cc Studio — Refs arranger plan
+# Unlimited Tool Works — Refs arranger plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -317,7 +317,7 @@ fixable in Notepad on a match night — one format, one home, a few lines of par
 side:
 
 ```
-# ref_lists.txt — written by 4cc Studio Refs arranger
+# ref_lists.txt — written by Unlimited Tool Works Refs arranger
 # one list per line: five referee slot ids, positions 0..4 as the game writes them
 # optional selector after the ids: team=<id>; blank and # lines ignored
 3 7 1 5 2
@@ -396,12 +396,12 @@ maintained by cup staff as folders.
 
 ### CLI
 
-`4cc-studio refs-arranger chances ./exports/refs_export` — prints the
+`UTW refs-arranger chances ./exports/refs_export` — prints the
 per-referee appearance estimates (and per-slot assignments), labeled as probability for PES 15/16
 or expected count for PES 17–21 (on 18–21 additionally the per-list, per-position counts from
 `ref_lists.txt`), derived from the export's current files, using the active PES version's table.
 
-`4cc-studio refs-arranger randomize ./exports/refs_export --lists 12` — writes `ref_lists.txt`
+`UTW refs-arranger randomize ./exports/refs_export --lists 12` — writes `ref_lists.txt`
 with *n* randomized lists over the export's referees (same algorithm as the button; refuses
 to overwrite without `--yes`), for the staff member who rotates from a script. Arrangement by
 hand is GUI-only; drag-and-drop has no meaningful CLI analogue.

@@ -1,17 +1,17 @@
 The Save editor's batch commands run from a terminal opened in the folder that holds
-`UnlimitedToolWorks.exe`. Every command names the save it reads (the `EDIT00000000` file of
+`UTW.exe`. Every command names the save it reads (the `EDIT00000000` file of
 your PES install's save folder, or a copy of it), and no command picks one for you.
 
 ```text
-UnlimitedToolWorks save-editor export-toml <save> --team <id> --out <file>
-UnlimitedToolWorks save-editor export-toml <save> --all-teams --out-dir <folder>
-UnlimitedToolWorks save-editor import-toml <team.toml> --base <save> --out <save>
-UnlimitedToolWorks save-editor apply-patch <aesthetics_patch.toml> --base <save> --out <save>
-UnlimitedToolWorks save-editor diff <first save> <second save> [--aesthetics | --gameplay] [--json]
-UnlimitedToolWorks save-editor check-aatf <save> [--teams <list>] [--rules <file>]
-UnlimitedToolWorks save-editor strip-and-seed --base <save> --bins <cpk> --out <save> --bins-out <cpk>
-UnlimitedToolWorks save-editor check-stripped <save> [--strip-again --out <save>]
-UnlimitedToolWorks save-editor export-teams-list <save> [--yes]
+UTW save-editor export-toml <save> --team <id> --out <file>
+UTW save-editor export-toml <save> --all-teams --out-dir <folder>
+UTW save-editor import-toml <team.toml> --base <save> --out <save>
+UTW save-editor apply-patch <aesthetics_patch.toml> --base <save> --out <save>
+UTW save-editor diff <first save> <second save> [--aesthetics | --gameplay] [--json]
+UTW save-editor check-aatf <save> [--teams <list>] [--rules <file>]
+UTW save-editor strip-and-seed --base <save> --bins <cpk> --out <save> --bins-out <cpk>
+UTW save-editor check-stripped <save> [--strip-again --out <save>]
+UTW save-editor export-teams-list <save> [--yes]
 ```
 
 A command that writes a save reads the one `--base` names and writes the one `--out` names,

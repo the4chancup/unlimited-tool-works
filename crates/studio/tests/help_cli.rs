@@ -1,4 +1,4 @@
-//! `4cc-studio help`, run through the real binary: the Markdown a chapter, the `--export`
+//! `UTW help`, run through the real binary: the Markdown a chapter, the `--export`
 //! files and a refusal's `error: ` line. The help reads no settings, so the binary runs as
 //! built, in place.
 
@@ -9,7 +9,7 @@ use std::process::{Command, Output};
 use studio_core::EXE_NAME;
 
 fn studio(args: &[&str]) -> Output {
-    Command::new(env!("CARGO_BIN_EXE_4cc-studio"))
+    Command::new(env!("CARGO_BIN_EXE_utw"))
         .args(args)
         .output()
         .unwrap()
@@ -130,10 +130,11 @@ fn commands_of(help: &str) -> Vec<String> {
     commands
 }
 
-// The preview goes by its codename, so no help text a member sees names 4cc Studio.
+// The project is Unlimited Tool Works, so no help text a member sees names 4cc Studio, and
+// none spells the executable `UnlimitedToolWorks`: it is `UTW`.
 #[test]
 fn no_member_visible_text_names_4cc_studio() {
-    let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join("help_cli_codename");
+    let dir = Path::new(env!("CARGO_TARGET_TMPDIR")).join("help_cli_names");
     if dir.exists() {
         fs::remove_dir_all(&dir).unwrap();
     }
@@ -187,14 +188,12 @@ fn no_member_visible_text_names_4cc_studio() {
     pages.push(("--help".to_owned(), root_help.clone()));
 
     for (source, text) in &pages {
-        // The settings folder keeps its name by the ruling: the only `4cc-studio` left.
-        let text = text
-            .replace("%APPDATA%\\4cc-studio", "")
-            .replace("~/.config/4cc-studio", "");
         for (number, line) in text.lines().enumerate() {
             let lower = line.to_ascii_lowercase();
             assert!(
-                !lower.contains("4cc studio") && !lower.contains("4cc-studio"),
+                !lower.contains("4cc studio")
+                    && !lower.contains("4cc-studio")
+                    && !line.contains("UnlimitedToolWorks"),
                 "{source}:{}: {line}",
                 number + 1
             );
@@ -212,17 +211,23 @@ fn no_member_visible_text_names_4cc_studio() {
         .lines()
         .find(|line| line.starts_with("Usage:"))
         .expect("the root --help has a usage line");
+    let expected = if cfg!(windows) {
+        "Usage: UTW "
+    } else {
+        "Usage: utw "
+    };
     assert!(
-        usage.starts_with("Usage: UnlimitedToolWorks"),
-        "the usage line names the executable: {usage}"
+        usage.starts_with(expected),
+        "the usage line names the platform's executable: {usage}"
     );
     let compiler = &pages
         .iter()
         .find(|(source, _)| source == "team-compiler.md")
         .expect("the export wrote the Team compiler's page")
         .1;
+    // A Markdown page cannot follow the platform, so the pages spell `UTW` on both.
     assert!(
-        compiler.contains(&format!("{EXE_NAME} team-compiler compile")),
+        compiler.contains("UTW team-compiler compile"),
         "the Team compiler's page names the executable"
     );
 }

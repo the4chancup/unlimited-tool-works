@@ -364,6 +364,35 @@ fn the_stats_labels_stand_right_aligned_twelve_before_their_boxes() {
     );
 }
 
+// The ability stats' rows stand 22 apart, as the draft's grid rows do: an
+// 18-point box with its cell's 2 points above and below.
+#[test]
+fn the_stats_rows_stand_22_apart() {
+    let path = fixture(PesVersion::Pes21, "stats_row_pitch");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let labels: Vec<String> = pes_savefile::interchange::team_toml::labels::ABILITY_STATS
+        .iter()
+        .map(|name| pes_savefile::interchange::team_toml::labels::title_case(name))
+        .collect();
+    for pair in labels.windows(2) {
+        let upper = label_bounds(&nodes, &pair[0]).y0;
+        let lower = label_bounds(&nodes, &pair[1]).y0;
+        assert!(
+            (lower - upper - 22.0).abs() <= 0.5,
+            "{} stands 22 below {}, not {}",
+            pair[1],
+            pair[0],
+            lower - upper
+        );
+    }
+}
+
 // The playable positions' C/B/A ratings: a click stores its rating in the
 // position's own `playable` slot, as one undoable edit.
 #[test]

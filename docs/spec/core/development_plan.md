@@ -1,4 +1,4 @@
-# 4cc Studio — Core plan: Development plan
+# Unlimited Tool Works — Core plan: Development plan
 
 Part of the [Core plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -87,7 +87,7 @@ registration are Phase 3's shell slice; the rest of the GUI is Phase 8's).
 **Verification (done):** all four gates green on the workspace and `just deps-check` green; 38
 unit tests, including settings round-trip and recursive default-merge, `ScopePath` rejection and
 collision cases, and a stub tool registered through the trait and dispatched from
-`4cc-studio stub ping x`. CI's first green run and one deliberately red run are recorded in the
+`UTW stub ping x`. CI's first green run and one deliberately red run are recorded in the
 worklog when the first push happens.
 
 ### Phase 2: Library crates
@@ -253,7 +253,7 @@ export](../aesthetics_export/object_model.md) plan's "Validation semantics".
 - The pipeline orchestration (reader, coordinator, writer) on `rayon`, over `libs/pipeline`'s
   memory budget, thread count and `CpkStem`; the run driver's shapes are the Team compiler
   plan's "Run driver shapes" (`pipeline.md`).
-- CLI execution with console output (`4cc-studio team-compiler compile ...`), one line per
+- CLI execution with console output (`UTW team-compiler compile ...`), one line per
   finding (`spec/core/architecture.md` "Event system").
 - **Shell slice, last.** The thinnest GUI path that runs: `studio_core`'s app shell reduced to a
   window, the sidebar listing the registered tools, and the selected tool's `view()`; the
@@ -277,7 +277,7 @@ export](../aesthetics_export/object_model.md) plan's "Validation semantics".
 `aesthetics_export` structure pass and `team_compiler`'s `check` and `compile` against the TC
 scenarios, run in-process over Studio-format fixtures (folders, a `.zip` and a solid `.7z`),
 with the binary's own seams (settings location, exit codes, the console printer) run through
-the built `4cc-studio`; `scripts/acceptance.py` proving every automated scenario cited by a
+the built `UTW`; `scripts/acceptance.py` proving every automated scenario cited by a
 test; the shell slice's two manual scenarios (TC-GUI-01/02; the second automated at 8.0) checked by the maintainer on Windows
 (Linux not yet, no machine with a display). Converge ran a whole-crate mutation run over each of
 the phase's crates, every survivor triaged. At the close (2026-10-02): `just gates` green, 1402

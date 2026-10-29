@@ -37,7 +37,7 @@ use std::sync::Arc;
 
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::{Engine, PesVersion};
-use studio_core::widgets::toolbar_separator;
+use studio_core::widgets::{modal, modal_buttons, toolbar_separator};
 use studio_core::{Notice, NoticeKind, RunningPes};
 use team_widgets::names::append_name;
 
@@ -888,14 +888,15 @@ pub(crate) fn selected_team(view: &SaveView) -> Option<(u32, PesVersion, TeamEnt
 fn refusal_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     let mut close = false;
     if let Some(refusal) = view.refusal.as_ref() {
-        let response =
-            egui::Modal::new(egui::Id::unique("save_editor_refusal")).show(ui.ctx(), |ui| {
-                studio_core::theme::window_title(ui, refusal.title);
-                ui.label(&refusal.message);
+        let id = egui::Id::unique("save_editor_refusal");
+        let response = modal(ui.ctx(), id, refusal.title, |ui| {
+            ui.label(&refusal.message);
+            modal_buttons(ui, |ui| {
                 if ui.button("OK").clicked() {
                     close = true;
                 }
             });
+        });
         close |= response.should_close();
     }
     if close {
@@ -912,9 +913,12 @@ fn strip_again_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         return;
     };
     let mut close = false;
-    let response =
-        egui::Modal::new(egui::Id::unique("save_editor_strip_again")).show(ui.ctx(), |ui| {
-            studio_core::theme::window_title(ui, "Appearance ids set on a stripped save");
+    let id = egui::Id::unique("save_editor_strip_again");
+    let response = modal(
+        ui.ctx(),
+        id,
+        "Appearance ids set on a stripped save",
+        |ui| {
             ui.label(format!(
                 "{} {} an appearance id set while the rest are stripped:",
                 rows.len(),
@@ -951,18 +955,19 @@ fn strip_again_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                         });
                     }
                 });
-            ui.horizontal(|ui| {
+            modal_buttons(ui, |ui| {
+                if ui.button("Close").clicked() {
+                    close = true;
+                }
                 if ui.button("Strip again").clicked()
                     && let Some(session) = view.session.as_mut()
                 {
                     session.strip(&rows.iter().map(|row| row.id).collect::<Vec<_>>());
                     close = true;
                 }
-                if ui.button("Close").clicked() {
-                    close = true;
-                }
             });
-        });
+        },
+    );
     if close || response.should_close() {
         view.strip_again = None;
     }

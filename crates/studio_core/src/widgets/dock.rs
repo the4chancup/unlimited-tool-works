@@ -24,6 +24,9 @@ pub struct BottomDock {
     noun: &'static str,
     /// Whether the body is shown; the chevron flips it.
     expanded: bool,
+    /// The open body's height when the dock first opens, if the caller set one;
+    /// `None` opens the panel at `DEFAULT_HEIGHT`.
+    body_height: Option<f32>,
 }
 
 impl BottomDock {
@@ -38,6 +41,16 @@ impl BottomDock {
             title,
             noun,
             expanded: true,
+            body_height: None,
+        }
+    }
+
+    /// The dock first opens with a body `height` points high, the panel sized to
+    /// hold it under the header row; the member's resize replaces it afterwards.
+    pub fn body_height(self, height: f32) -> BottomDock {
+        BottomDock {
+            body_height: Some(height),
+            ..self
         }
     }
 
@@ -51,6 +64,7 @@ impl BottomDock {
     ) {
         // Read before the closure borrows the field it flips.
         let expanded = self.expanded;
+        let default_size = self.default_size(ui.style());
         let header_row = |ui: &mut egui::Ui| {
             ui.horizontal(|ui| {
                 let (chevron, tooltip) = if self.expanded {
@@ -72,7 +86,7 @@ impl BottomDock {
         if expanded {
             egui::Panel::bottom(self.id)
                 .resizable(true)
-                .default_size(DEFAULT_HEIGHT)
+                .default_size(default_size)
                 .min_size(MIN_HEIGHT)
                 .show(ui, |ui| {
                     header_row(ui);
@@ -83,6 +97,20 @@ impl BottomDock {
             // for the return.
             egui::Panel::bottom(self.id.with("collapsed")).show(ui, header_row);
         }
+    }
+
+    /// The open panel's first height: `DEFAULT_HEIGHT`, or the asked body height plus
+    /// what the panel draws around it. A bottom `Panel`'s size is its outer one: the
+    /// default panel frame's margins, the separator line egui reserves on its top
+    /// edge, the header row (a horizontal row is at least `interact_size` high) and
+    /// the spacing below it.
+    fn default_size(&self, style: &egui::Style) -> f32 {
+        let Some(body) = self.body_height else {
+            return DEFAULT_HEIGHT;
+        };
+        let frame = egui::Frame::side_top_panel(style).total_margin().sum().y;
+        let separator = style.visuals.widgets.noninteractive.bg_stroke.width.round();
+        frame + separator + style.spacing.interact_size.y + style.spacing.item_spacing.y + body
     }
 
     /// The open and collapsed panels' egui ids, in that order — since egui 0.37 the

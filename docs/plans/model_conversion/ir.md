@@ -1,4 +1,4 @@
-# 4cc Studio — Model conversion plan: Intermediate representation
+# Unlimited Tool Works — Model conversion plan: Intermediate representation
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

@@ -1,4 +1,4 @@
-# 4cc Studio — Match tracker plan
+# Unlimited Tool Works — Match tracker plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -176,7 +176,7 @@ reference:
   client years ago (the 1.3.0 rebuild's live output is HTTP; its `tools/senpai_tap.c` reads
   the pipe only to verify).
 
-**Licensing constraint.** Both SEN:P-AI repositories are GPLv3. 4cc Studio uses an
+**Licensing constraint.** Both SEN:P-AI repositories are GPLv3. Unlimited Tool Works uses an
 independent reimplementation based on independently verified factual layouts and observable
 behavior; the legacy source is a reverse-engineering reference, not a code source. Do not
 copy or adapt the fork's rendering or reducer code. The core plan's future
@@ -185,7 +185,7 @@ that file.
 
 **Status:** pre-implementation architectural plan. The Rust crates and APIs shown below
 are proposed contracts; legacy-source claims are evidence to verify, not implemented
-4cc Studio behavior.
+Unlimited Tool Works behavior.
 
 ---
 
@@ -251,7 +251,7 @@ Placement rules:
 | Poll rate | 100ms | acquisition + diff cadence; bounded to a safe supported range |
 | Autosave on match end | off | optional named autosave on finalization, not raw table loss; every finalization path first guarantees a durable safety/recovery file |
 | Timed autosave + interval | off / 10s | interval is bounded; resets after a successful write |
-| Autosave directory | platform documents directory / `4cc Studio/Matches` | user-selectable |
+| Autosave directory | platform documents directory / `Unlimited Tool Works/Matches` | user-selectable |
 | Autosave filename pattern | `%HOME vs %AWAY %Y-%m-%d.match.json` | deterministic suffix on collision |
 | Show benched by default | off | |
 | QR sync widget | off | |

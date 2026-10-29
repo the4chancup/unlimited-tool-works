@@ -13,6 +13,7 @@ use std::path::{Path, PathBuf};
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use pes_savefile::settings_toml::PlayerSettings;
+use studio_core::widgets::{modal, modal_buttons};
 use studio_core::{Notice, NoticeKind};
 
 use crate::session::is_stripped;
@@ -160,80 +161,81 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         .expect("the dialog's player");
     let name = display_name(&player.name);
     let mut close = false;
-    let response =
-        egui::Modal::new(egui::Id::unique("save_editor_generate")).show(ui.ctx(), |ui| {
-            studio_core::theme::window_title(ui, generate.file.title());
-            if is_stripped(file, generate.player_id) {
-                ui.label(format!(
-                    "{name} is stripped, so the game reads the database tables rather \
-                     than his save data, and nothing is generated for him."
-                ));
+    let id = egui::Id::unique("save_editor_generate");
+    let response = modal(ui.ctx(), id, generate.file.title(), |ui| {
+        if is_stripped(file, generate.player_id) {
+            ui.label(format!(
+                "{name} is stripped, so the game reads the database tables rather \
+                 than his save data, and nothing is generated for him."
+            ));
+            modal_buttons(ui, |ui| {
                 if ui.button("OK").clicked() {
                     close = true;
                 }
-                return;
-            }
-            let folder = PathBuf::from(&generate.folder);
-            let text = text(file, generate.player_id, generate.file, &folder);
-            ui.horizontal(|ui| {
-                ui.label("Folder");
-                ui.add(egui::TextEdit::singleline(&mut generate.folder).desired_width(320.0));
-                if ui.button("Pick\u{2026}").clicked()
-                    && let Some(path) = pick_folder_dialog()
-                {
-                    generate.folder = path.display().to_string();
-                }
             });
-            ui.weak(generate.file.file_name());
-            egui::ScrollArea::both()
-                .id_salt("save_editor_generate_text")
-                .max_width(600.0)
-                .max_height(300.0)
-                .show(ui, |ui| match &text {
-                    Ok(text) => {
-                        ui.add(
-                            egui::Label::new(egui::RichText::new(text.as_str()).monospace())
-                                .selectable(false),
-                        );
-                    }
-                    Err(error) => {
-                        ui.colored_label(ui.visuals().error_fg_color, error.as_str());
-                    }
-                });
-            ui.horizontal(|ui| {
-                let writeable = folder.is_dir() && text.is_ok();
-                if ui
-                    .add_enabled(writeable, egui::Button::new("Write"))
-                    .clicked()
-                    && let Ok(text) = &text
-                {
-                    let path = folder.join(generate.file.file_name());
-                    match std::fs::write(&path, text) {
-                        Ok(()) => {
-                            *notice = Some(Notice {
-                                text: format!(
-                                    "Wrote {} for {name} into {}",
-                                    generate.file.file_name(),
-                                    generate.folder
-                                ),
-                                kind: NoticeKind::Success,
-                                action: None,
-                            });
-                            close = true;
-                        }
-                        Err(error) => {
-                            generate.error = Some(format!("{}: {error}", path.display()));
-                        }
-                    }
-                }
-                if ui.button("Cancel").clicked() {
-                    close = true;
-                }
-            });
-            if let Some(error) = &generate.error {
-                ui.colored_label(ui.visuals().error_fg_color, error.as_str());
+            return;
+        }
+        let folder = PathBuf::from(&generate.folder);
+        let text = text(file, generate.player_id, generate.file, &folder);
+        ui.horizontal(|ui| {
+            ui.label("Folder");
+            ui.add(egui::TextEdit::singleline(&mut generate.folder).desired_width(320.0));
+            if ui.button("Pick\u{2026}").clicked()
+                && let Some(path) = pick_folder_dialog()
+            {
+                generate.folder = path.display().to_string();
             }
         });
+        ui.weak(generate.file.file_name());
+        egui::ScrollArea::both()
+            .id_salt("save_editor_generate_text")
+            .max_width(600.0)
+            .max_height(300.0)
+            .show(ui, |ui| match &text {
+                Ok(text) => {
+                    ui.add(
+                        egui::Label::new(egui::RichText::new(text.as_str()).monospace())
+                            .selectable(false),
+                    );
+                }
+                Err(error) => {
+                    ui.colored_label(ui.visuals().error_fg_color, error.as_str());
+                }
+            });
+        modal_buttons(ui, |ui| {
+            if ui.button("Cancel").clicked() {
+                close = true;
+            }
+            let writeable = folder.is_dir() && text.is_ok();
+            if ui
+                .add_enabled(writeable, egui::Button::new("Write"))
+                .clicked()
+                && let Ok(text) = &text
+            {
+                let path = folder.join(generate.file.file_name());
+                match std::fs::write(&path, text) {
+                    Ok(()) => {
+                        *notice = Some(Notice {
+                            text: format!(
+                                "Wrote {} for {name} into {}",
+                                generate.file.file_name(),
+                                generate.folder
+                            ),
+                            kind: NoticeKind::Success,
+                            action: None,
+                        });
+                        close = true;
+                    }
+                    Err(error) => {
+                        generate.error = Some(format!("{}: {error}", path.display()));
+                    }
+                }
+            }
+        });
+        if let Some(error) = &generate.error {
+            ui.colored_label(ui.visuals().error_fg_color, error.as_str());
+        }
+    });
     if close || response.should_close() {
         view.generate = None;
     }
