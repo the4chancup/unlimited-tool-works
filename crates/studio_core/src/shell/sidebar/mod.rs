@@ -52,8 +52,10 @@ const CLOVER_RING: &str = "\u{F100}";
 const CLOVER_LEAVES: &str = "\u{F101}";
 /// The clover's diameter, the draft's `.clover` 28 inside the logo's 32 square.
 const CLOVER_SIZE: f32 = 28.0;
-/// Seconds the pointer rests on the rail before the overlay opens: a short delay.
-const HOVER_DELAY: f64 = 0.15;
+/// Seconds the pointer rests on the rail before the overlay opens: short enough not
+/// to feel slow, long enough that a pointer crossing the rail on its way elsewhere
+/// opens nothing.
+const HOVER_DELAY: f64 = 0.10;
 /// The accent bar on the active entry's left edge (draft: 3 px).
 const ACTIVE_BAR_WIDTH: f32 = 3.0;
 /// The radius of the accent bar's two left corners: the draft entry's 2 px
@@ -499,7 +501,8 @@ impl Sidebar {
     /// The PES version selector: a compact combo bound to the common `pes_version`, disabled
     /// with the blocking tool's reason while a `version_change_blocker` reports one, colored
     /// by the live exe check. A change writes the common setting and asks the shell to save.
-    /// `rail` picks the short labels (item 4: `21` in the rail, `PES 2021` in the overlay).
+    /// `rail` picks the rail's form, the year alone (`21`) centred on the button without
+    /// the arrow; the overlay shows `PES 2021` at the left with the arrow.
     fn version_selector(&mut self, ui: &mut egui::Ui, args: &SidebarFrame, rail: bool) {
         let common = args.ctx.common();
         let blocker = version_blocker(args.tools);
@@ -512,15 +515,28 @@ impl Sidebar {
             .add_enabled_ui(blocker.is_none(), |ui| {
                 ui.scope(|ui| {
                     ui.visuals_mut().override_text_color = selector_color(check, ui.visuals());
+                    let combo = egui::ComboBox::from_id_salt("pes-version");
+                    let selected = version_label(picked, rail);
+                    // The combo always lays out an arrow slot `icon_width` wide after
+                    // its text, growing into the spare width. On the rail that slot is
+                    // zero wide and paints nothing, and an empty growing atom before
+                    // the year takes the same share of the spare width, so the year
+                    // sits on the button's centre.
+                    let combo = if rail {
+                        ui.spacing_mut().icon_width = 0.0;
+                        combo
+                            .icon(|_, _, _, _| {})
+                            .selected_text((egui::Atom::grow(), selected))
+                    } else {
+                        combo.selected_text(selected)
+                    };
                     // The combo spans the sidebar's width: the default `combo_width` (~100)
                     // overflows the rail and widens the layout region past its edge.
-                    let response = egui::ComboBox::from_id_salt("pes-version")
+                    let response = combo
                         .width(ui.available_width())
-                        // Extend, not wrap: the rail's narrow button would lay the
-                        // dropdown arrow on a second row, and the selector row's
-                        // height must be the same open and closed (item 3).
+                        // Extend, not wrap: the text stays on one line, so the
+                        // selector row's height is the same open and closed (item 3).
                         .wrap_mode(egui::TextWrapMode::Extend)
-                        .selected_text(version_label(picked, rail))
                         .show_ui(ui, |ui| {
                             for version in PesVersion::ALL {
                                 ui.selectable_value(
