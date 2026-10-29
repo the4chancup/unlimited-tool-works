@@ -1,7 +1,7 @@
 //! Help chapter types. The help window is assembled from the tools: every registered tool
 //! contributes one `HelpSection` through `StudioTool::help()`, and `studio_core` contributes the
 //! core chapters. `chapters` lists them; `export` renders the
-//! Markdown `4cc-studio help` prints. The search and the window live in `shell::help_window`.
+//! Markdown `UTW help` prints. The search and the window live in `shell::help_window`.
 
 mod export;
 
@@ -75,7 +75,7 @@ pub struct CatalogRow {
     pub effect: &'static str,
 }
 
-/// The chapter list the help window and `4cc-studio help` share: the core chapters first,
+/// The chapter list the help window and `UTW help` share: the core chapters first,
 /// then each registered tool's `help()` under its id, in registry order.
 pub(crate) fn chapters(tools: &[Box<dyn StudioTool>]) -> Vec<(&'static str, HelpSection)> {
     let mut chapters = vec![

@@ -53,7 +53,7 @@ Run every command from the repository root. Screenshots go under `.tmp/` (gitign
 
 1. Compile the export without installing it, as the test slot's CPK so the compile reads the
    install's kit configs and colors: `cpk_name = '4cc_90_test'` in the `[team-compiler]`
-   settings, then `4cc-studio team-compiler compile --no-deploy --export <export folder>`. The
+   settings, then `UTW team-compiler compile --no-deploy --export <export folder>`. The
    CPK lands in the output folder (the `output_folder_path` setting, beside the executable).
 2. With the game closed, put it into the test slot:
    `python scripts/ingame/install.py install 17 <output folder>/4cc_90_test.cpk`.

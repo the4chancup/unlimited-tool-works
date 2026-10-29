@@ -125,7 +125,6 @@ fn one_export_as_a_folder_a_zip_and_a_7z_reports_and_compiles_the_same() {
     assert_eq!(
         paths,
         [
-            "4cc_studio/shared_ids/714.toml".to_owned(),
             kit_texture("u0714g1"),
             kit_texture("u0714p2"),
             "common/character0/model/character/uniform/team/714/714_DEF_2nd_realUni.bin".to_owned(),
@@ -134,6 +133,7 @@ fn one_export_as_a_folder_a_zip_and_a_7z_reports_and_compiles_the_same() {
             "common/character0/model/character/uniform/team/UniColor.bin".to_owned(),
             "common/character0/model/character/uniform/team/UniformParameter.bin".to_owned(),
             "common/etc/TeamColor.bin".to_owned(),
+            "unlimited-tool-works/shared_ids/714.toml".to_owned(),
         ]
     );
     assert!(

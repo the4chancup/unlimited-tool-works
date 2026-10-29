@@ -518,6 +518,25 @@ fn both_openings_carry_the_platform_icon() {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+fn both_openings_carry_the_app_id() {
+    let place = WindowPlace {
+        x: 100.0,
+        y: 50.0,
+        width: 1100.0,
+        height: 700.0,
+        scale: 1.0,
+        maximized: false,
+    };
+    for opening in [Opening::Fit, Opening::Place(place)] {
+        assert_eq!(
+            native_options(&opening).viewport.app_id.as_deref(),
+            Some("unlimited-tool-works")
+        );
+    }
+}
+
 // ST-WIN-01
 #[test]
 fn the_first_frame_with_a_monitor_size_fits_and_centers_the_window_once() {

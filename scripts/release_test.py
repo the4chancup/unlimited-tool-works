@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from release import (
+    PACKAGE,
     existing_glob,
     expected_entries,
     exe_name,
@@ -24,7 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 HELP = """Unlimited Tool Works: the 4cc community's PES tools
 
-Usage: UnlimitedToolWorks [OPTIONS] [COMMAND]
+Usage: UTW [OPTIONS] [COMMAND]
 
 Commands:
   help  Print a help chapter, or export them all as Markdown
@@ -40,14 +41,14 @@ class Pure(unittest.TestCase):
         self.assertEqual(workspace_version('[workspace.package]\nversion = "9.9.9"\n'), "9.9.9")
 
     def test_exe_name(self) -> None:
-        self.assertEqual(exe_name(HELP), "UnlimitedToolWorks")
+        self.assertEqual(exe_name(HELP), "UTW")
         self.assertIsNone(exe_name("no usage line\n"))
 
     def test_launcher_calls(self) -> None:
         for bat in ("quick_compile.bat", "quick_upgrade.bat"):
             text = (ROOT / "resources/bundle" / bat).read_text(encoding="utf-8")
-            self.assertTrue(launcher_calls(text, "UnlimitedToolWorks"), bat)
-            self.assertFalse(launcher_calls(text, "4cc-studio"), bat)
+            self.assertTrue(launcher_calls(text, "UTW"), bat)
+            self.assertFalse(launcher_calls(text, "UnlimitedToolWorks"), bat)
 
     def test_readme_names_version(self) -> None:
         # The shipped readme against the workspace's version, which every release bumps with it.
@@ -57,8 +58,8 @@ class Pure(unittest.TestCase):
         self.assertTrue(readme_names_version("Unlimited Tool Works 0.0.1\n===\n", "0.0.1"))
         self.assertFalse(readme_names_version("Unlimited Tool Works 0.0.1\n===\n", "0.0.2"))
         # The program's name is not the script's to check: any name before the version.
-        self.assertTrue(readme_names_version("4cc Studio 1.0.0\n", "1.0.0"))
-        self.assertFalse(readme_names_version("4cc Studio 1.0.0.1\n", "1.0.0"))
+        self.assertTrue(readme_names_version("UTW 1.0.0\n", "1.0.0"))
+        self.assertFalse(readme_names_version("UTW 1.0.0.1\n", "1.0.0"))
 
     def test_the_bundled_settings_name_a_builtin_ruleset(self) -> None:
         settings = tomllib.loads(
@@ -77,19 +78,19 @@ class Pure(unittest.TestCase):
 
     def test_expected_entries(self) -> None:
         self.assertEqual(
-            expected_entries("UnlimitedToolWorks", "0.0.1"),
+            expected_entries("UTW", "0.0.1"),
             {
-                "UnlimitedToolWorks-0.0.1",
-                "UnlimitedToolWorks-0.0.1/UnlimitedToolWorks.exe",
-                "UnlimitedToolWorks-0.0.1/quick_compile.bat",
-                "UnlimitedToolWorks-0.0.1/quick_upgrade.bat",
-                "UnlimitedToolWorks-0.0.1/README.txt",
-                "UnlimitedToolWorks-0.0.1/LICENSE-MIT",
-                "UnlimitedToolWorks-0.0.1/LICENSE-APACHE",
-                "UnlimitedToolWorks-0.0.1/exports",
-                "UnlimitedToolWorks-0.0.1/old_exports",
-                "UnlimitedToolWorks-0.0.1/data",
-                "UnlimitedToolWorks-0.0.1/data/settings.toml",
+                "unlimited-tool-works-0.0.1",
+                "unlimited-tool-works-0.0.1/UTW.exe",
+                "unlimited-tool-works-0.0.1/quick_compile.bat",
+                "unlimited-tool-works-0.0.1/quick_upgrade.bat",
+                "unlimited-tool-works-0.0.1/README.txt",
+                "unlimited-tool-works-0.0.1/LICENSE-MIT",
+                "unlimited-tool-works-0.0.1/LICENSE-APACHE",
+                "unlimited-tool-works-0.0.1/exports",
+                "unlimited-tool-works-0.0.1/old_exports",
+                "unlimited-tool-works-0.0.1/data",
+                "unlimited-tool-works-0.0.1/data/settings.toml",
             },
         )
 
@@ -98,8 +99,8 @@ class Pure(unittest.TestCase):
 
     def test_symbols_entries(self) -> None:
         self.assertEqual(
-            symbols_entries("UnlimitedToolWorks"),
-            {"UnlimitedToolWorks.exe", "4cc_studio.pdb"},
+            symbols_entries("UTW"),
+            {"UTW.exe", "utw.pdb"},
         )
 
     def test_existing_glob_covers_the_bundle_and_the_symbols(self) -> None:
@@ -136,7 +137,7 @@ class Listing(unittest.TestCase):
             self.fail("7-Zip not found: neither `7z` on PATH nor C:\\Program Files\\7-Zip\\7z.exe")
         with tempfile.TemporaryDirectory() as tmp:
             stage = Path(tmp)
-            top = stage / "Tiny-9.9.9"
+            top = stage / f"{PACKAGE}-9.9.9"
             (top / "exports").mkdir(parents=True)
             (top / "old_exports").mkdir()
             (top / "data").mkdir()
@@ -167,7 +168,7 @@ class Listing(unittest.TestCase):
             found = listing_paths(listing.stdout)
             expected = expected_entries("Tiny", "9.9.9")
             self.assertEqual(found, expected)
-            self.assertNotEqual(found, expected - {"Tiny-9.9.9/README.txt"})
+            self.assertNotEqual(found, expected - {f"{PACKAGE}-9.9.9/README.txt"})
 
     def test_a_packed_symbols_archive_lists_its_two_entries(self) -> None:
         # The same argv `release.py` packs the symbols with: two bare names under the
@@ -178,10 +179,10 @@ class Listing(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             stage = Path(tmp)
             (stage / "Tiny.exe").write_bytes(b"x")
-            (stage / "4cc_studio.pdb").write_bytes(b"y")
+            (stage / "utw.pdb").write_bytes(b"y")
             archive = stage / "tiny-symbols.7z"
             subprocess.run(
-                [seven_z, "a", "-t7z", "-mx=9", str(archive), "Tiny.exe", "4cc_studio.pdb"],
+                [seven_z, "a", "-t7z", "-mx=9", str(archive), "Tiny.exe", "utw.pdb"],
                 cwd=stage,
                 check=True,
                 capture_output=True,

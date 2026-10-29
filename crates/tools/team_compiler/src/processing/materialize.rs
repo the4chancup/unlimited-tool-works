@@ -11,10 +11,9 @@ use std::io::Cursor;
 use cpk::CpkWriter;
 use fpk::{FpkFile, FpkKind};
 use pes_version::Engine;
-use studio_core::ExportId;
+use studio_core::{ExportId, TOOL_VERSION};
 
 use super::Entry;
-use crate::output::sink::TOOL_VERSION;
 use crate::paths::{self, PackageKey};
 use crate::plan::roles::ModelPackage;
 use crate::plan::{BuildTask, TaskKind};

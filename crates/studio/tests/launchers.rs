@@ -1,6 +1,6 @@
 //! The 0.0.1 bundle's two launchers run against the real binary named as the bundle names
 //! it, in a sandbox shaped like the extracted bundle: `exports/` and `old_exports/` beside
-//! `UnlimitedToolWorks.exe`, `data/settings.toml` making the data location portable.
+//! `UTW.exe`, `data/settings.toml` making the data location portable.
 #![cfg(windows)] // the bats are the Windows bundle's; 0.0.1 is Windows only
 
 use std::fs;
@@ -10,7 +10,7 @@ use std::process::{Command, Output, Stdio};
 use pes_version::PesVersion;
 
 /// A fresh folder standing in for the extracted bundle: the binary as
-/// `UnlimitedToolWorks.exe`, the two launchers, `data/` making the data location portable,
+/// `UTW.exe`, the two launchers, `data/` making the data location portable,
 /// and `exports/`/`old_exports/` beside them.
 struct Sandbox {
     root: PathBuf,
@@ -28,7 +28,7 @@ impl Sandbox {
         fs::create_dir_all(root.join("exports")).unwrap();
         fs::create_dir_all(root.join("old_exports")).unwrap();
         fs::copy(
-            env!("CARGO_BIN_EXE_4cc-studio"),
+            env!("CARGO_BIN_EXE_utw"),
             root.join(format!("{}.exe", studio_core::EXE_NAME)),
         )
         .unwrap();

@@ -35,6 +35,6 @@ exit /b 1
 :upgrade
 echo.
 echo Upgrading %~nx1
-"%~dp0UnlimitedToolWorks.exe" export-upgrader upgrade "%~1" --savefile "%savefile%" -o "%~dp0exports"
+"%~dp0UTW.exe" export-upgrader upgrade "%~1" --savefile "%savefile%" -o "%~dp0exports"
 if errorlevel 1 (set /a "not_upgraded+=1") else (set /a "upgraded+=1")
 exit /b

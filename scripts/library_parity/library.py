@@ -36,7 +36,7 @@ from concurrent.futures import ThreadPoolExecutor
 import config
 
 HERE = config.LIBRARY_DIR
-BUILT_EXE = os.path.join(config.REPO, "target", "release", "4cc-studio.exe")
+BUILT_EXE = os.path.join(config.REPO, "target", "release", "utw.exe")
 BUILT_PARITY = os.path.join(config.REPO, "target", "release", "examples", "red_parity.exe")
 BIN = os.path.join(HERE, "bin")
 JOBS = os.path.join(HERE, "jobs")
@@ -86,7 +86,7 @@ def freeze_binaries():
             f"{target} is older than the build: remove bin/ by hand for a new binary")
         if not os.path.exists(target):
             shutil.copy2(built, target)
-    return os.path.join(BIN, "4cc-studio.exe"), os.path.join(BIN, "red_parity.exe")
+    return os.path.join(BIN, "utw.exe"), os.path.join(BIN, "red_parity.exe")
 
 
 def prepare_bin(exe, worker, version):
@@ -94,7 +94,7 @@ def prepare_bin(exe, worker, version):
     and a savefile that do not exist, so nothing of the maintainer's is read or written."""
     root = os.path.join(BIN, f"{version}_{worker}")
     os.makedirs(os.path.join(root, "data"), exist_ok=True)
-    target = os.path.join(root, "4cc-studio.exe")
+    target = os.path.join(root, "utw.exe")
     if not os.path.exists(target):
         shutil.copy2(exe, target)
     output = os.path.join(root, "output")
@@ -319,7 +319,7 @@ def main():
     os.makedirs(HERE, exist_ok=True)
     check_red()
     if args.frozen:
-        exe, parity_exe = os.path.join(BIN, "4cc-studio.exe"), os.path.join(BIN, "red_parity.exe")
+        exe, parity_exe = os.path.join(BIN, "utw.exe"), os.path.join(BIN, "red_parity.exe")
         assert os.path.isfile(exe) and os.path.isfile(parity_exe), f"{BIN} holds no frozen binaries"
     else:
         exe, parity_exe = freeze_binaries()

@@ -7,10 +7,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use cpk::CpkWriter;
-
-/// The CPK header's tool-version string, the output CPK's and a pre-Fox face CPK's nested in
-/// it. One string per release, so a release compiling the same exports writes the same bytes.
-pub(crate) const TOOL_VERSION: &str = concat!("4cc Studio ", env!("CARGO_PKG_VERSION"));
+use studio_core::TOOL_VERSION;
 
 /// Where the writer puts each entry, by its path in the output: the sink knows nothing of game
 /// paths or modes.
