@@ -434,9 +434,9 @@ fn the_overlay_casts_no_shadow_and_ends_on_the_rails_line() {
 }
 
 // ST-SIDE-02's popup rule: the overlay stays open while a popup it opened is
-// open, and the popup survives the move.
+// open.
 #[test]
-fn the_version_popup_survives_the_overlay_opening_and_holds_it_open() {
+fn the_open_version_popup_holds_the_overlay_open() {
     let Shell {
         mut app,
         calls,
@@ -445,8 +445,8 @@ fn the_version_popup_survives_the_overlay_opening_and_holds_it_open() {
     } = shell();
     let egui_ctx = test_context();
 
-    // The version combo clicked on the rail: the popup opens with the rail's
-    // short labels.
+    // The version combo clicked on the rail: the press opens the overlay, and
+    // the release opens the popup from the overlay's selector.
     let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9)).nodes;
     let cell = entry(&nodes, "A").bounds().unwrap().width();
     frame_at(
@@ -465,7 +465,7 @@ fn the_version_popup_survives_the_overlay_opening_and_holds_it_open() {
     );
 
     // The pointer resting at the selector, past the delay: the overlay is open
-    // and the popup is still open — now with the full labels.
+    // and so is the popup, with the full labels.
     let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.20)).nodes;
     entry(&nodes, "PES 2021");
     assert!(
@@ -505,6 +505,84 @@ fn the_version_popup_survives_the_overlay_opening_and_holds_it_open() {
         "the overlay closed with the popup"
     );
     assert!(!has_label(&nodes, "PES 2021"), "the popup is closed");
+}
+
+// A press on the rail's selector opens the overlay without the hover delay, so the
+// release lands on the overlay's selector and its list always shows the full names.
+#[test]
+fn a_press_on_the_rails_selector_opens_the_sidebar_at_once_with_the_full_names() {
+    let Shell {
+        mut app,
+        calls,
+        _dir,
+        ..
+    } = shell();
+    let egui_ctx = test_context();
+
+    let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9)).nodes;
+    let cell = entry(&nodes, "A").bounds().unwrap().width();
+    frame_at(&egui_ctx, &mut app, hover(combo(&nodes)), true, Some(1.00));
+    frame_at(
+        &egui_ctx,
+        &mut app,
+        pointer(combo(&nodes), true),
+        true,
+        Some(1.01),
+    );
+
+    // Still pressed, 20 ms after the pointer arrived: the overlay is open.
+    let held = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.02)).nodes;
+    assert!(
+        entry(&held, "A").bounds().unwrap().width() > f64::from(RAIL_WIDTH),
+        "the press opened the overlay before the hover delay"
+    );
+
+    // The release opens the popup from the overlay's selector, drawn from the
+    // next frame on: full names only.
+    frame_at(
+        &egui_ctx,
+        &mut app,
+        pointer(combo(&nodes), false),
+        true,
+        Some(1.03),
+    );
+    let out = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.04));
+    for version in PesVersion::ALL {
+        entry(&out.nodes, &version.to_string());
+        let year = version.number().to_string();
+        assert!(
+            !out.nodes
+                .iter()
+                .any(|node| node.label() == Some(year.as_str())
+                    || node.value() == Some(year.as_str())),
+            "no node reads {year}"
+        );
+        assert_eq!(painted_text_count(&out, &year), 0, "no text paints {year}");
+    }
+
+    // Escape closes the popup; the pointer moved to the view closes the overlay.
+    frame_at(
+        &egui_ctx,
+        &mut app,
+        key(egui::Key::Escape),
+        true,
+        Some(1.05),
+    );
+    let middle = calls[0].view_rect().unwrap().center();
+    let nodes = frame_at(
+        &egui_ctx,
+        &mut app,
+        vec![egui::Event::PointerMoved(middle)],
+        true,
+        Some(1.06),
+    )
+    .nodes;
+    assert!(!has_label(&nodes, "PES 2021"), "the popup is closed");
+    assert_eq!(
+        entry(&nodes, "A").bounds().unwrap().width(),
+        cell,
+        "the overlay closed"
+    );
 }
 
 // ST-SIDE-02's keyboard rule: while a sidebar widget holds a focus the keyboard
