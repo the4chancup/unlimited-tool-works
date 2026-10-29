@@ -1145,7 +1145,7 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
     // The assignments' column starts 10 past the pitch's 320-point track,
     // which the pitch's border overflows.
     let assigns_left = pitch_left + 320.0 + 10.0;
-    let pane_right = f64::from(DEFAULT_PANE.x - 2.0 * PANEL_MARGIN);
+    let pane_right = f64::from(PANE_RIGHT);
     let assigns = box_at(&rects, assigns_left, 1.0);
     assert!(
         (f64::from(assigns.max.x) - pane_right).abs() <= 1.0,

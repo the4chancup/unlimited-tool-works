@@ -724,6 +724,43 @@ fn the_line_under_the_fields_stands_11_from_the_row_and_11_5_from_the_tactics() 
     );
 }
 
+// The team view's pane ends where the draft's `.detail` content does, 12
+// points short of the window's edge: the line under the fields, which
+// spans the pane, ends there, as the draft's `.sep` does at 1268.
+#[test]
+fn the_team_views_line_ends_12_from_the_windows_edge() {
+    let path = fixture(PesVersion::Pes21, "team_pane_right");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let line_right = shapes
+        .iter()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s }
+                if *s == stroke
+                    && points[0].y == points[1].y
+                    && (points[0].x - points[1].x).abs() > window.screen.x * 0.5 =>
+            {
+                Some(f64::from(points[0].x.max(points[1].x)))
+            }
+            _ => None,
+        })
+        .expect("the line under the fields, across the pane");
+    assert!(
+        (line_right - f64::from(PANE_RIGHT)).abs() <= 1.0,
+        "the line ends at {PANE_RIGHT}, the draft's 1268 ({line_right})"
+    );
+}
+
 // The Tactics bars' choices (the draft's `.sel`s, 17 tall, centred in the
 // 23-point `.tacbar` 8 under the line) stand 12 under the line's painted
 // row and end 29 under it: the draft's 98 to 115 under its row 86.
