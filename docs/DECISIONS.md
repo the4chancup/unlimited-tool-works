@@ -13272,3 +13272,23 @@ right?").
 Why: ov1's measured comparison of the built player view with the draft's render (every stat's
 label at one x in the draft).
 Plan: `plans/save_editor.md` "Editing UI" (the player view's Ability stats).
+
+## 2026-10-29 — gui — Every modal through one helper in the drafts' window frame
+Decision: every modal draws through one `studio_core` helper giving the drafts' `.window`:
+12 points of margin across and 8 down, at least 360 wide, the title 8 above the body, the
+buttons right-aligned in one row 10 under it.
+Why: ov1 measured every built modal 6 to 9 points off its draft at once (egui's default
+frame, egui's 3-point gap under the title, Close at the left), one cause in each modal's own
+code; a helper fixes them together and keeps a new dialog from drifting the same way.
+Plan: `plans/core/gui.md` "Other UI components" (Modals).
+
+## 2026-10-29 — gui — Form grids space their rows 22 apart
+Decision: a form that draws a drafts' `table.grid` spaces its rows 22 apart (row spacing 4
+under 18-point controls), one `studio_core` constant being an `egui::Grid`'s row spacing and
+the `item_spacing.y` of a section whose rows are stacked in a vertical layout (General info's
+pairs). A constant, not a grid constructor: the forms' grids set their own column gaps.
+Why: ov1 measured each form row a point higher than its draft's, 25 by the Ability stats' last
+row: the drafts pad a grid cell 2 above and below, egui's `Grid` spaces rows by
+`item_spacing.y`, 3. The theme's `item_spacing` is not changed: it spaces every other layout
+(the lists' rows, the toolbars) the drafts approved at 3.
+Plan: `plans/core/gui.md` "Other UI components" (Form grids).
