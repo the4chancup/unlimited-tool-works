@@ -221,6 +221,8 @@
     --hover: #464646; --active: #373737; --stroke: #3c3c3c; --text: #8c8c8c;
     --strong: #dcdcdc; --sel-bg: #005c80; --sel-fg: #c0deff; --link: #5aaaff;
     --warn: #ff8f00; --error: #ff0000; --changed: #2a3a1e; --success: #4cd964;
+    /* The 4cc clover's two greens, its own in both themes. */
+    --clover-ring: #129648; --clover-leaf: #8cc642;
     /* The app's own font chains (plans/core/gui.md, the Dark/light theme row), the files
        in assets/fonts/; no system font and no generic family, so a glyph none of them has
        shows as the browser's fallback, which scripts/draft_fonts.py reports. */
@@ -476,6 +478,13 @@
   .icon { display: inline-block; width: 16px; text-align: center; flex: none; }
   .logo { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: var(--sel-fg); font-size: 15px; border-radius: 2px; user-select: none; }
   .logo:hover { background: var(--hover); }
+  /* The 4cc clover: two glyphs of the symbols font (U+F100 the ring, U+F101 the leaves),
+     one em across and centred on the line, drawn on one place in their two greens; the
+     font size is the clover's diameter. */
+  .clover { position: relative; width: 28px; height: 28px; font: 400 28px/28px "Symbols"; }
+  .clover > span { position: absolute; left: 0; top: 0; }
+  .clover .ring { color: var(--clover-ring); }
+  .clover .leaves { color: var(--clover-leaf); }
   .sidebar .sep { align-self: stretch; margin: 4px 0; }
   .sidebar .tail { display: flex; gap: 3px; }
   .sidebar .tail { flex-direction: column; align-items: center; }
@@ -2491,7 +2500,9 @@ const ph = glyph => h("span", { class: "ph" }, glyph);
 // selector for the labelled one (the labels stay hidden in the rail).
 function sidebarItems(full) {
   const items = [
-    h("div", { class: "logo", title: "About " + APP_NAME, onclick: openAbout }, "4cc")];
+    h("div", { class: "logo", title: "About " + APP_NAME, onclick: openAbout },
+      h("span", { class: "clover" }, h("span", { class: "ring" }, "\uF100"),
+        h("span", { class: "leaves" }, "\uF101")))];
   const pesSel = combo(
     PES_VERSIONS.map(v => [v, full ? "PES " + v : v.slice(2)]),
     S.pesVersion, setPesVersion,

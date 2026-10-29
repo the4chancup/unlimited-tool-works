@@ -13559,3 +13559,18 @@ draft against the build), after the draft comparison's ink measurement found the
 without an outline a colour as dark as the panel (a black team colour) shows no box at all.
 Plan: `plans/save_editor.md` "Editing UI", the team view's fields row;
 `plans/libs/color_tools.md`, the field's paragraph.
+
+## 2026-10-29 — gui — The rail's logo is the 4cc clover, two glyphs of the symbols font
+
+Decision: the rail's logo slot draws the 4cc clover from the maintainer's
+`4cc-cloverleaf-logo.svg` (a `#129648` ring around four `#8cc642` leaves), 28 points across in
+its 32-point square, the same in both themes, where the drafts and the build drew the word
+"4cc" in the accent colour. It is two glyphs of the symbols font (U+F100 the ring, U+F101
+the leaves, private use, built from the SVG's own shapes by `make_symbols.py`) drawn on one
+place in two palette colours, not an image.
+Why: the maintainer's original idea for the slot, which the plan had written only as "4cc
+logo"; the size is the maintainer's pick from renders of 24 and 28. Glyphs draw sharp at
+every scale the UI takes (a narrow window scales it down, a 200% monitor up) with no image
+decoder in `studio_core`, and the drafts draw them from the same file; a picture would be one
+resolution, and egui fills only convex shapes, which the leaves are not.
+Plan: `plans/core/gui.md` "Sidebar" item 1, and the Dark/light theme row's symbols font.
