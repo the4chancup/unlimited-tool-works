@@ -13355,3 +13355,11 @@ is unchanged.
 Why: every modal now draws through `studio_core`'s modal helper, which takes a title (0.0.1ov2j),
 and this dialog had none: the sidekick's pick, accepted, the siblings' wording.
 Plan: `plans/core/gui.md` "Other UI components" (Modals).
+
+## 2026-10-29 — gui — The log panel opens with the drafts' 180-point body
+Decision: the log panel's dock is sized so its well first opens 180 points high, the drafts'
+`logHeight`, as the Live AATF dock is sized for its 150; the panel's 220-point default goes.
+Why: 0.0.1ov2nop measured the log's well at 194 under the 220-point panel (the frame, the top
+line, the header row and its spacing taking 26), 14 points taller than the approved drafts.
+Plan: `plans/core/gui.md` "GUI Design", the code block under "A pipeline tool subdivides",
+its `Panel::bottom` comment.

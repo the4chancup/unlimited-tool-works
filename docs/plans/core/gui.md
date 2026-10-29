@@ -155,7 +155,8 @@ deprecated, and deprecations are errors here, `spec/core/gui.md` "egui version d
 
 ```rust
 // team_compiler::view, inside `view()`; the log's `BottomDock` claims its own
-// `Panel::bottom` (resizable, 220 by default), so the dock's frame is one widget
+// `Panel::bottom` (resizable, sized so its body first opens 180 high, the drafts'
+// `logHeight`), so the dock's frame is one widget
 self.log_panel.show(ui, &self.run.lines);
 egui::Panel::bottom("toolbar").exact_size(32.0)
     .show(ui, |ui| toolbar::show(ui, &self.run));
