@@ -5,6 +5,7 @@
 use std::path::PathBuf;
 
 use studio_core::ToolContext;
+use studio_core::widgets::modal_buttons;
 
 use crate::settings::RulesetEditorSettings;
 use crate::view::{RulesetView, modal, run, save_now};
@@ -50,29 +51,33 @@ pub(crate) fn show(
         return;
     }
     let mut answer = None;
+    let name = view
+        .document
+        .as_ref()
+        .map(|document| document.ruleset.name.clone())
+        .unwrap_or_default();
     // The body returns false: a clicked answer decides below what
     // happens, and only a dismissal (Esc, the backdrop) counts as
     // Cancel.
-    let dismissed = modal(ui, "ruleset_unsaved", |ui| {
-        let name = view
-            .document
-            .as_ref()
-            .map(|document| document.ruleset.name.clone())
-            .unwrap_or_default();
-        studio_core::theme::window_title(ui, format!("Save changes to {name}?"));
-        ui.horizontal(|ui| {
-            if ui.button("Save").clicked() {
-                answer = Some(Answer::Save);
-            }
-            if ui.button("Discard").clicked() {
-                answer = Some(Answer::Discard);
-            }
-            if ui.button("Cancel").clicked() {
-                answer = Some(Answer::Cancel);
-            }
-        });
-        false
-    });
+    let dismissed = modal(
+        ui,
+        "ruleset_unsaved",
+        format!("Save changes to {name}?"),
+        |ui| {
+            modal_buttons(ui, |ui| {
+                if ui.button("Cancel").clicked() {
+                    answer = Some(Answer::Cancel);
+                }
+                if ui.button("Discard").clicked() {
+                    answer = Some(Answer::Discard);
+                }
+                if ui.button("Save").clicked() {
+                    answer = Some(Answer::Save);
+                }
+            });
+            false
+        },
+    );
     if dismissed {
         answer = Some(Answer::Cancel);
     }

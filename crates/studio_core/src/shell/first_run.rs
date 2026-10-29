@@ -41,10 +41,6 @@ const CHOICE_TEXT_SIZE: f32 = 15.0;
 /// The space between a choice's button and its hint.
 #[cfg(not(target_arch = "wasm32"))]
 const HINT_GAP: f32 = 4.0;
-/// The space between the title and the choices' row (the draft's `.firstrun`
-/// top margin).
-#[cfg(not(target_arch = "wasm32"))]
-const ROW_TOP_GAP: f32 = 2.0;
 /// The space between the choices' row and the footer line (the draft's
 /// `.firstrun` bottom margin).
 #[cfg(not(target_arch = "wasm32"))]
@@ -72,19 +68,16 @@ impl FirstRun {
     /// unanswered: the dialog leaves only through a write that lands.
     pub(super) fn show(&mut self, egui_ctx: &egui::Context, ctx: &mut ToolContext) {
         let mut choice = None;
-        egui::Modal::new(egui::Id::unique("first-run-data-location")).show(egui_ctx, |ui| {
+        let title = format!(
+            "Where should {} keep its settings and data?",
+            crate::APP_NAME
+        );
+        let id = egui::Id::unique("first-run-data-location");
+        crate::widgets::modal(egui_ctx, id, title, |ui| {
             // egui puts a widget's item spacing after it, so the gap under the
-            // title and the one under the row are set before each is drawn; the
-            // footer and the error line keep egui's own.
+            // row is set before it is drawn; the footer and the error line keep
+            // egui's own.
             let item_spacing = ui.spacing().item_spacing.y;
-            ui.spacing_mut().item_spacing.y = ROW_TOP_GAP;
-            crate::theme::window_title(
-                ui,
-                format!(
-                    "Where should {} keep its settings and data?",
-                    crate::APP_NAME
-                ),
-            );
             ui.spacing_mut().item_spacing.y = ROW_BOTTOM_GAP;
             ui.horizontal_top(|ui| {
                 ui.spacing_mut().item_spacing.x = CHOICE_GAP;
@@ -317,11 +310,11 @@ mod tests {
         );
     }
 
-    // The draft's `.firstrun { margin: 2px 0 8px }`, box to box: the choices'
-    // row starts 2 points under the title's line, and the footer line 8 points
-    // under the row's lowest hint.
+    // The draft's `.firstrun { margin: 2px 0 8px }`, box to box: its top margin
+    // collapses into the title's 8, so the choices' row starts 8 points under
+    // the title's line, and the footer line 8 points under the row's lowest hint.
     #[test]
-    fn the_choices_row_sits_2_under_the_title_and_8_above_the_footer() {
+    fn the_choices_row_sits_8_under_the_title_and_8_above_the_footer() {
         let dir = TestDir::new("studio_core_first_run_margins");
         let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\4cc-studio");
         let Shell { mut app, .. } = first_run_shell(
@@ -352,8 +345,8 @@ mod tests {
 
         let above = row_top - title.y1;
         assert!(
-            (above - 2.0).abs() <= 0.5,
-            "the row starts 2 under the title, not {above}"
+            (above - 8.0).abs() <= 0.5,
+            "the row starts 8 under the title, not {above}"
         );
         let below = footer.y0 - row_bottom;
         assert!(

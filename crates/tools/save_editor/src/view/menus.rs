@@ -11,7 +11,9 @@ use std::ops::RangeInclusive;
 use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::names::display_name;
-use studio_core::widgets::{menu_button, radio_value, step_choice, step_number, wheel_steps};
+use studio_core::widgets::{
+    menu_button, modal, modal_buttons, radio_value, step_choice, step_number, wheel_steps,
+};
 
 use crate::session::Session;
 use crate::session::database;
@@ -330,24 +332,23 @@ pub(crate) fn fix_database_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         return;
     }
     let mut close = false;
-    let response =
-        egui::Modal::new(egui::Id::unique("save_editor_fix_database")).show(ui.ctx(), |ui| {
-            studio_core::theme::window_title(ui, "Fix database");
-            if let Some(session) = view.session.as_ref() {
-                ui.label(fix_database_question(session.file()));
+    let id = egui::Id::unique("save_editor_fix_database");
+    let response = modal(ui.ctx(), id, "Fix database", |ui| {
+        if let Some(session) = view.session.as_ref() {
+            ui.label(fix_database_question(session.file()));
+        }
+        modal_buttons(ui, |ui| {
+            if ui.button("Cancel").clicked() {
+                close = true;
             }
-            ui.horizontal(|ui| {
-                if ui.button("Fix database").clicked()
-                    && let Some(session) = view.session.as_mut()
-                {
-                    session.fix_database();
-                    close = true;
-                }
-                if ui.button("Cancel").clicked() {
-                    close = true;
-                }
-            });
+            if ui.button("Fix database").clicked()
+                && let Some(session) = view.session.as_mut()
+            {
+                session.fix_database();
+                close = true;
+            }
         });
+    });
     if close || response.should_close() {
         view.fix_database = false;
     }
@@ -554,108 +555,113 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     };
     let boglo = view.boglo.as_mut().expect("checked above");
     let mut close = false;
-    let response = egui::Modal::new(egui::Id::unique("save_editor_boglo")).show(ui.ctx(), |ui| {
-        studio_core::theme::window_title(ui, "Set boots and gloves IDs for everyone");
-        let columns = BogloColumns::measure(ui);
-        let field_size =
-            |ui: &egui::Ui, width: f32| egui::vec2(width, ui.spacing().interact_size.y);
-        boglo_group(ui, "Boot IDs", |ui| {
-            ui.horizontal(|ui| {
-                option_cell(ui, columns.option, |ui| {
-                    radio_value(ui, &mut boglo.boots, BootsPick::Unchanged, "Unchanged");
+    let id = egui::Id::unique("save_editor_boglo");
+    let response = modal(
+        ui.ctx(),
+        id,
+        "Set boots and gloves IDs for everyone",
+        |ui| {
+            let columns = BogloColumns::measure(ui);
+            let field_size =
+                |ui: &egui::Ui, width: f32| egui::vec2(width, ui.spacing().interact_size.y);
+            boglo_group(ui, "Boot IDs", |ui| {
+                ui.horizontal(|ui| {
+                    option_cell(ui, columns.option, |ui| {
+                        radio_value(ui, &mut boglo.boots, BootsPick::Unchanged, "Unchanged");
+                    });
                 });
-            });
-            ui.horizontal(|ui| {
-                option_cell(ui, columns.option, |ui| {
-                    radio_value(
-                        ui,
-                        &mut boglo.boots,
-                        BootsPick::Incremental,
-                        "Set incremental value:",
+                ui.horizontal(|ui| {
+                    option_cell(ui, columns.option, |ui| {
+                        radio_value(
+                            ui,
+                            &mut boglo.boots,
+                            BootsPick::Incremental,
+                            "Set incremental value:",
+                        );
+                    });
+                    let start = ui.add_sized(
+                        field_size(ui, BOGLO_BOX),
+                        egui::DragValue::new(&mut boglo.start),
                     );
+                    step_number(&mut boglo.start, wheel_steps(ui, &start), 0..=u32::MAX);
+                    ui.add_space(BOGLO_RANGE_GAP);
+                    ui.label("\u{2013}");
+                    ui.add_space(BOGLO_RANGE_GAP);
+                    readout(ui, u64::from(boglo.start) + RANGE_SPAN);
                 });
-                let start = ui.add_sized(
-                    field_size(ui, BOGLO_BOX),
-                    egui::DragValue::new(&mut boglo.start),
-                );
-                step_number(&mut boglo.start, wheel_steps(ui, &start), 0..=u32::MAX);
-                ui.add_space(BOGLO_RANGE_GAP);
-                ui.label("\u{2013}");
-                ui.add_space(BOGLO_RANGE_GAP);
-                readout(ui, u64::from(boglo.start) + RANGE_SPAN);
-            });
-            ui.horizontal(|ui| {
-                option_cell(ui, columns.option, |ui| {
-                    radio_value(
-                        ui,
-                        &mut boglo.boots,
-                        BootsPick::Same,
-                        "Set all to the same ID:",
+                ui.horizontal(|ui| {
+                    option_cell(ui, columns.option, |ui| {
+                        radio_value(
+                            ui,
+                            &mut boglo.boots,
+                            BootsPick::Same,
+                            "Set all to the same ID:",
+                        );
+                    });
+                    let boots_id = ui.add_sized(
+                        field_size(ui, columns.field),
+                        egui::DragValue::new(&mut boglo.boots_id),
                     );
-                });
-                let boots_id = ui.add_sized(
-                    field_size(ui, columns.field),
-                    egui::DragValue::new(&mut boglo.boots_id),
-                );
-                step_number(
-                    &mut boglo.boots_id,
-                    wheel_steps(ui, &boots_id),
-                    0..=u32::MAX,
-                );
-            });
-        });
-        boglo_group(ui, "Glove IDs", |ui| {
-            ui.horizontal(|ui| {
-                option_cell(ui, columns.option, |ui| {
-                    radio_value(ui, &mut boglo.gloves, GlovesPick::Unchanged, "Unchanged");
-                });
-            });
-            ui.horizontal(|ui| {
-                option_cell(ui, columns.option, |ui| {
-                    radio_value(
-                        ui,
-                        &mut boglo.gloves,
-                        GlovesPick::LikeBoots,
-                        "Set like boot IDs",
+                    step_number(
+                        &mut boglo.boots_id,
+                        wheel_steps(ui, &boots_id),
+                        0..=u32::MAX,
                     );
                 });
             });
-            ui.horizontal(|ui| {
-                option_cell(ui, columns.option, |ui| {
-                    radio_value(
-                        ui,
-                        &mut boglo.gloves,
-                        GlovesPick::Same,
-                        "Set all to the same ID:",
+            boglo_group(ui, "Glove IDs", |ui| {
+                ui.horizontal(|ui| {
+                    option_cell(ui, columns.option, |ui| {
+                        radio_value(ui, &mut boglo.gloves, GlovesPick::Unchanged, "Unchanged");
+                    });
+                });
+                ui.horizontal(|ui| {
+                    option_cell(ui, columns.option, |ui| {
+                        radio_value(
+                            ui,
+                            &mut boglo.gloves,
+                            GlovesPick::LikeBoots,
+                            "Set like boot IDs",
+                        );
+                    });
+                });
+                ui.horizontal(|ui| {
+                    option_cell(ui, columns.option, |ui| {
+                        radio_value(
+                            ui,
+                            &mut boglo.gloves,
+                            GlovesPick::Same,
+                            "Set all to the same ID:",
+                        );
+                    });
+                    let gloves_id = ui.add_sized(
+                        field_size(ui, columns.field),
+                        egui::DragValue::new(&mut boglo.gloves_id),
+                    );
+                    step_number(
+                        &mut boglo.gloves_id,
+                        wheel_steps(ui, &gloves_id),
+                        0..=u32::MAX,
                     );
                 });
-                let gloves_id = ui.add_sized(
-                    field_size(ui, columns.field),
-                    egui::DragValue::new(&mut boglo.gloves_id),
-                );
-                step_number(
-                    &mut boglo.gloves_id,
-                    wheel_steps(ui, &gloves_id),
-                    0..=u32::MAX,
-                );
             });
-        });
-        if let Some(error) = &boglo.error {
-            ui.colored_label(ui.visuals().error_fg_color, error.as_str());
-        }
-        ui.horizontal(|ui| {
-            if ui.button("Set").clicked() {
-                let (boots, gloves) = boglo.modes();
-                match session.set_boots_and_gloves(team_id, boots, gloves) {
-                    Ok(()) => close = true,
-                    Err(error) => boglo.error = Some(format!("{error:#}")),
+            if let Some(error) = &boglo.error {
+                ui.colored_label(ui.visuals().error_fg_color, error.as_str());
+            }
+            modal_buttons(ui, |ui| {
+                if ui.button("Close").clicked() {
+                    close = true;
                 }
-            }
-            if ui.button("Close").clicked() {
-                close = true;
-            }
-        });
-    });
+                if ui.button("Set").clicked() {
+                    let (boots, gloves) = boglo.modes();
+                    match session.set_boots_and_gloves(team_id, boots, gloves) {
+                        Ok(()) => close = true,
+                        Err(error) => boglo.error = Some(format!("{error:#}")),
+                    }
+                }
+            });
+        },
+    );
     if close || response.should_close() {
         view.boglo = None;
     }
@@ -769,28 +775,28 @@ pub(crate) fn stat_num_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     }
     let mut close = false;
     let mut bumped = None;
-    let response =
-        egui::Modal::new(egui::Id::unique("save_editor_stat_num")).show(ui.ctx(), |ui| {
-            let stat_num = view.stat_num.as_mut().expect("checked above");
-            studio_core::theme::window_title(ui, stat_num.title());
-            let range = stat_num.range();
-            ui.horizontal(|ui| {
-                ui.label(&stat_num.line);
-                let field = ui.add(egui::DragValue::new(&mut stat_num.value).range(range.clone()));
-                step_number(&mut stat_num.value, wheel_steps(ui, &field), range);
-            });
-            ui.horizontal(|ui| {
-                if ui.button("OK").clicked()
-                    && let Some(session) = view.session.as_mut()
-                {
-                    bumped = stat_num.apply(session);
-                    close = true;
-                }
-                if ui.button("Cancel").clicked() {
-                    close = true;
-                }
-            });
+    let title = view.stat_num.as_ref().expect("checked above").title();
+    let id = egui::Id::unique("save_editor_stat_num");
+    let response = modal(ui.ctx(), id, title, |ui| {
+        let stat_num = view.stat_num.as_mut().expect("checked above");
+        let range = stat_num.range();
+        ui.horizontal(|ui| {
+            ui.label(&stat_num.line);
+            let field = ui.add(egui::DragValue::new(&mut stat_num.value).range(range.clone()));
+            step_number(&mut stat_num.value, wheel_steps(ui, &field), range);
         });
+        modal_buttons(ui, |ui| {
+            if ui.button("Cancel").clicked() {
+                close = true;
+            }
+            if ui.button("OK").clicked()
+                && let Some(session) = view.session.as_mut()
+            {
+                bumped = stat_num.apply(session);
+                close = true;
+            }
+        });
+    });
     if let Some(n) = bumped {
         view.bump = n;
     }
@@ -907,13 +913,16 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         return;
     }
     let mut close = false;
-    let response =
-        egui::Modal::new(egui::Id::unique("save_editor_copy_swap")).show(ui.ctx(), |ui| {
+    let title = view.copy_swap.as_ref().expect("checked above").title();
+    let response = modal(
+        ui.ctx(),
+        egui::Id::unique("save_editor_copy_swap"),
+        title,
+        |ui| {
             let (Some(session), Some(dialog)) = (view.session.as_mut(), view.copy_swap.as_mut())
             else {
                 return;
             };
-            studio_core::theme::window_title(ui, dialog.title());
             let name = session
                 .file()
                 .player(dialog.player_id)
@@ -979,16 +988,17 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 }
                 dialog.other_id = picked;
             });
-            ui.horizontal(|ui| {
+            modal_buttons(ui, |ui| {
+                if ui.button("Cancel").clicked() {
+                    close = true;
+                }
                 if ui.button("OK").clicked() {
                     dialog.apply(session);
                     close = true;
                 }
-                if ui.button("Cancel").clicked() {
-                    close = true;
-                }
             });
-        });
+        },
+    );
     if close || response.should_close() {
         view.copy_swap = None;
     }

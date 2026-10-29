@@ -19,7 +19,7 @@ use pes_savefile::model::{TeamColor, TeamEntry};
 use pes_savefile::schema::fields::{TeamField, TeamText};
 use pes_savefile::schema::{VersionSchema, first_version_with_team, schema_for};
 use pes_version::PesVersion;
-use studio_core::widgets::{FORM_ROW_SPACING, step_number, wheel_steps};
+use studio_core::widgets::{FORM_ROW_SPACING, modal, modal_buttons, step_number, wheel_steps};
 
 use crate::session::Session;
 use crate::view::{SaveView, edit_team, info_strip, selected_team, tactics};
@@ -161,16 +161,17 @@ pub(crate) fn kit_slots_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     // The rows' widget ids are the team's within this open, as the view's
     // are.
     let generation = view.generation;
-    let response =
-        egui::Modal::new(egui::Id::unique("save_editor_kit_slots")).show(ui.ctx(), |ui| {
-            studio_core::theme::window_title(ui, "Kit slot assignments");
-            ui.push_id(("team", generation, team_id), |ui| {
-                kit_slots(ui, session, team_id, schema, &team);
-            });
+    let id = egui::Id::unique("save_editor_kit_slots");
+    let response = modal(ui.ctx(), id, "Kit slot assignments", |ui| {
+        ui.push_id(("team", generation, team_id), |ui| {
+            kit_slots(ui, session, team_id, schema, &team);
+        });
+        modal_buttons(ui, |ui| {
             if ui.button("OK").clicked() {
                 close = true;
             }
         });
+    });
     if close || response.should_close() {
         view.kit_slots = None;
     }

@@ -7,6 +7,7 @@ use std::sync::OnceLock;
 
 use aatf::Template;
 use studio_core::ToolContext;
+use studio_core::widgets::modal_buttons;
 
 use crate::settings::RulesetEditorSettings;
 use crate::view::{Pending, RulesetView, file_label, guard, refused_block};
@@ -38,10 +39,9 @@ pub(crate) fn modal(
     ctx: &ToolContext,
     settings: &RulesetEditorSettings,
 ) {
-    if super::modal(ui, "ruleset_start", |ui| {
-        studio_core::theme::window_title(ui, "Ruleset editor");
+    if super::modal(ui, "ruleset_start", "Ruleset editor", |ui| {
         body(ui, view, ctx, settings);
-        ui.button("Close").clicked()
+        modal_buttons(ui, |ui| ui.button("Close").clicked())
     }) {
         view.start_open = false;
     }

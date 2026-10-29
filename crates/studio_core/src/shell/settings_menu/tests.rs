@@ -1261,3 +1261,48 @@ fn every_path_edit_shows_steams_pes_2019_folder_whole() {
          ({section_right} - {menu_left})"
     );
 }
+
+// The drafts' window: the common grid's first row starts 8 points under the
+// title, and Close stands at the right, inside the stroke and the 12-point
+// margin.
+#[test]
+fn the_menu_starts_its_grid_8_under_the_title_and_ends_in_close_at_the_right() {
+    let dir = TestDir::new("studio_core_settings_window");
+    let (a, calls_a) = stub("a", "A", None);
+    let Shell { mut app, .. } = shell_with(
+        test_settings(dir.path()),
+        vec![a],
+        &[],
+        Some(dir.path().to_path_buf()),
+        vec![calls_a],
+    );
+    let egui_ctx = test_context();
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+    let outer = egui_ctx
+        .memory(|memory| memory.area_rect(egui::Id::unique("settings-menu")))
+        .expect("the menu's modal has an area");
+    let title = text_node(&nodes, "Settings")
+        .bounds()
+        .expect("the title has bounds");
+    let label = text_node(&nodes, "PES version")
+        .bounds()
+        .expect("the label has bounds");
+    let selector = widget_on_row(&nodes, "PES version", Role::ComboBox)
+        .bounds()
+        .expect("the selector has bounds");
+    let close = entry(&nodes, "Close").bounds().expect("Close has bounds");
+
+    let gap = label.y0.min(selector.y0) - title.y1;
+    assert!(
+        (gap - 8.0).abs() <= 0.5,
+        "the first row starts 8 under the title, not {gap}"
+    );
+    let right = f64::from(outer.right()) - close.x1;
+    assert!(
+        (right - 13.0).abs() <= 0.5,
+        "Close's right is 13 inside the menu's, not {right}"
+    );
+}

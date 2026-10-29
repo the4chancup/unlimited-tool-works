@@ -14,7 +14,7 @@ use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_savefile::ops::compare::{PlayerDiff, TeamDiff};
 use pes_savefile::schema::fields::RosterField;
 use studio_core::RunningPes;
-use studio_core::widgets::FORM_ROW_SPACING;
+use studio_core::widgets::{FORM_ROW_SPACING, modal, modal_buttons, modal_frame};
 use team_widgets::tactics::RosterRow;
 
 use crate::session::Session;
@@ -310,14 +310,14 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         return;
     };
     let mut answer = None;
-    let response = egui::Modal::new(egui::Id::unique("save_editor_unsaved")).show(ui.ctx(), |ui| {
+    let id = egui::Id::unique("save_editor_unsaved");
+    let response = modal(ui.ctx(), id, "Unsaved changes", |ui| {
         // The modal is as wide as its widest row, at most nine tenths of
         // the window's width: `set_max_width` caps the content (the frame's
         // margins and stroke make up the rest), and a wider row scrolls
         // sideways inside the table, every cell on one line.
-        let chrome = egui::Frame::popup(ui.style()).total_margin().sum().x;
+        let chrome = modal_frame(ui.style()).total_margin().sum().x;
         ui.set_max_width((ui.ctx().content_rect().width() * 0.9 - chrome).max(0.0));
-        studio_core::theme::window_title(ui, "Unsaved changes");
         egui::ScrollArea::both().max_height(240.0).show(ui, |ui| {
             egui::Grid::new("unsaved changes")
                 .num_columns(3)
@@ -338,15 +338,15 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
                     }
                 });
         });
-        ui.horizontal(|ui| {
-            if ui.button("Save").clicked() {
-                answer = Some(Answer::Save);
+        modal_buttons(ui, |ui| {
+            if ui.button("Cancel").clicked() {
+                answer = Some(Answer::Cancel);
             }
             if ui.button("Discard").clicked() {
                 answer = Some(Answer::Discard);
             }
-            if ui.button("Cancel").clicked() {
-                answer = Some(Answer::Cancel);
+            if ui.button("Save").clicked() {
+                answer = Some(Answer::Save);
             }
         });
     });
@@ -403,24 +403,23 @@ pub(super) fn edit_mode_dialog(
     };
     let mut write = false;
     let mut cancel = false;
-    let response =
-        egui::Modal::new(egui::Id::unique("save_editor_edit_mode")).show(ui.ctx(), |ui| {
-            studio_core::theme::window_title(ui, format!("{game} is running"));
-            ui.label(
-                "If the game's Edit mode is open, close it before saving. The game writes its own \
-                 copy of the save when you leave Edit mode, so a save written while it is open \
-                 would be lost.",
-            );
-            ui.label("After saving, use the Load option in Edit mode to see the changes in game.");
-            ui.horizontal(|ui| {
-                if ui.button("Save").clicked() {
-                    write = true;
-                }
-                if ui.button("Cancel").clicked() {
-                    cancel = true;
-                }
-            });
+    let id = egui::Id::unique("save_editor_edit_mode");
+    let response = modal(ui.ctx(), id, format!("{game} is running"), |ui| {
+        ui.label(
+            "If the game's Edit mode is open, close it before saving. The game writes its own \
+             copy of the save when you leave Edit mode, so a save written while it is open \
+             would be lost.",
+        );
+        ui.label("After saving, use the Load option in Edit mode to see the changes in game.");
+        modal_buttons(ui, |ui| {
+            if ui.button("Cancel").clicked() {
+                cancel = true;
+            }
+            if ui.button("Save").clicked() {
+                write = true;
+            }
         });
+    });
     if write {
         write_now(view, running, true);
         // A written file unblocks the pending action (a failed write's
