@@ -2007,8 +2007,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     2026-10-29: the final set drafted, each tool's (p) on the page and the rail's default
     (DECISIONS "A tool's kind shows as one mark on its icon"; `plans/core/README.md` "GUI
     framework choice: egui"), built as filled outlines by `.tmp/0_0_1ov/icons/final_icons.py`
-    (skia-pathops: strokes outlined, the mark's cut subtracted); waiting for the maintainer's
-    confirmation (QUESTIONS "Is the final icon set confirmed?"). The font script then takes
+    (skia-pathops: strokes outlined, the mark's cut subtracted). All approved but two, redrawn
+    the same day (DECISIONS "The final icons approved; the upgrader's folder turned, the Refs
+    arranger's refresh sign"), which wait for a look (QUESTIONS "Are the two redrawn icons
+    right?"). The font script then takes
     that outline build into `scripts/` with its test, rather than expanding strokes itself
   - [ ] 8.15 (code done 2026-10-25 with 8.9f4c's rework r2; the built window's check open) the window's default to 1280 × 800 (the maintainer, 2026-10-25; `spec/core/gui.md`
     "The window's size", ST-WIN-01, ST-HELP-05; DECISIONS "Studio opens at 1280 × 800

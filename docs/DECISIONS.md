@@ -13187,3 +13187,15 @@ shirt or a figure, and a mark at one place lets the kind read the same everywher
 is computed as one filled outline (skia-pathops), the form the font takes, rather than an SVG
 mask, which the draft page's many copies of each icon would repeat.
 Plan: `plans/core/README.md` "GUI framework choice: egui".
+
+## 2026-10-29 — gui — The final icons approved; the upgrader's folder turned, the Refs arranger's refresh sign
+Decision: every final icon is approved but two, redrawn as asked: the Export upgrader's
+folder turned half round, so its tab stands out of the right edge at the bottom, its body
+widened from 120 to 136 with the chevrons still pointing up and centred on it; the Refs
+arranger's striped shirt gains a refresh sign, two arrows each bending along half a circle,
+in the marks' bottom-right place (a ring of radius 26 centred at (196, 196), the plus's
+centre), hiding what lies under it as the other marks do, the disc inside its ring included,
+so no stripe shows through the ring.
+Why: the maintainer's review of the final set. The disc is hidden whole because the stripes
+crossing the ring's middle would read as part of the sign at 24 px.
+Plan: `plans/core/README.md` "GUI framework choice: egui".

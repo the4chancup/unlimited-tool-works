@@ -56,7 +56,7 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
 
 ## Small confirmations
 
-- **Is the final icon set confirmed?** (worklog 8.14.) Open `docs/prototypes/icons.html`:
-  the rail at the top opens on the final set, drawn to the editor, compiler and creator
-  marks; each tool's pick is its (p) further down. The font build and the glyph constants
-  wait on the confirmation.
+- **Are the two redrawn icons right?** (worklog 8.14.) In `docs/prototypes/icons.html`, the
+  Export upgrader's (p), its folder turned so the tab is at the bottom right and widened,
+  and the Refs arranger's (p), its shirt with the refresh sign. Every other icon is
+  approved; the font build and the glyph constants wait on these two.

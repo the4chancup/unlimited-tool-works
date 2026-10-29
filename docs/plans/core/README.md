@@ -97,9 +97,11 @@ Trade-offs accepted:
   kind before the subject and no line runs through the mark. Each icon is one filled outline
   (the strokes outlined, the cut subtracted, the mark added), the form the font takes. The
   picks: the Save editor a floppy disk, the Export upgrader (c)'s two chevrons on an upright
-  folder, the Music player Phosphor's music notes and the Music export editor the same with
-  the pencil, the Match tracker a live feed on a monitor, the Kit config editor a shirt and
-  the Refs arranger the same shirt striped its full length, the Balls compiler a ball dropping
+  folder, its tab at the bottom right, the Music player Phosphor's music notes and the Music
+  export editor the same with the pencil, the Match tracker a live feed on a monitor, the Kit
+  config editor a shirt and the Refs arranger the same shirt striped its full length with a
+  refresh sign (two arrows bending along half a circle each) as its mark, hiding the disc
+  inside its ring too, the Balls compiler a ball dropping
   into the box, the Player aesthetics editor the stickman, the Team creator Phosphor's three
   figures, the Ruleset editor a clipboard of ticks, the DB generator a database; the Stadium
   compiler keeps Phosphor's buildings for now (`docs/prototypes/icons.html`, each tool's (p)),
