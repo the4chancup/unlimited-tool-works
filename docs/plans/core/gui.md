@@ -889,7 +889,8 @@ its plan section.
   borders apart, and chasing the last pixel costs code a maintainer then owns); a larger one
   is a mismatch, fixed or ruled. A layout test pinning a draft measure may allow the same.
 - **Draft measure.** `scripts/draft_compare.py SCREEN` measures a screen open in the built
-  window against its draft: every element named on both sides (the app's through UI
+  window against its draft (`--modal` one dialog, `--menu` one open toolbar menu): every
+  element named on both sides (the app's through UI
   Automation, `scripts/uia_dump.ps1`; the draft's from its DOM in Chromium) is paired by its
   text, and each pair's largest offset is sorted into the tolerance's bands, over 2 px (a
   mismatch), 1 to 2 px (accepted only where matching closer costs code, so each is looked at)

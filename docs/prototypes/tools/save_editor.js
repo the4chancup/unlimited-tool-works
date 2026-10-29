@@ -123,9 +123,9 @@ input[type=range]:focus { outline: none; }
 /* Set boot/glove IDs: per group its title, then the options stacked, each one's field in a
    column beside it (egui::Grid in a ui.group). Both groups' option columns are at least the
    widest option's (Set incremental value:, 142.2) and their field columns the range's (two
-   boxes and the dash, 122.4), so every field starts at one x and the one-ID boxes end where
+   boxes and the dash, 126.4), so every field starts at one x and the one-ID boxes end where
    the range does, as in the 4ccEditor layout (egui: the grids' min_col_width). */
-.boglo { display: grid; grid-template-columns: minmax(143px, max-content) minmax(123px, max-content);
+.boglo { display: grid; grid-template-columns: minmax(143px, max-content) minmax(127px, max-content);
   justify-content: start; align-items: center; gap: 6px 12px; margin-top: 6px; }
 /* Each group as wide as its options and fields, and the window as wide as the groups, as an
    egui modal sizes to its contents: the drafts' 360 minimum left 42 unused on the groups'
@@ -325,7 +325,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
 /* A clickable label: egui draws it in the resting widgets' grey, a button's text. */
 #pos-grid .plabel { margin-bottom: 2px; text-align: center; cursor: pointer; padding: 0 3px; border-radius: 2px;
   color: #b4b4b4; }
-#pos-grid .plabel:hover { background: var(--hover); color: var(--strong); }
+#pos-grid .plabel:hover { background: var(--hover); color: #f0f0f0; }
 .rate { display: inline-flex; gap: 1px; }
 .rate .sel { padding: 0 5px; }
 /* In the positions grid each grade is a square of its own, so the chosen
@@ -4243,7 +4243,7 @@ function kitSlotsTable(t) {
             onchange: e => { const v = parseInt(e.target.value, 10);
               if (!Number.isNaN(v)) { edit("kit slot binding", () => { ks.binding = v; }); render(); } } }))))), "kit-slots")
     : h("span", { class: "gate", title: "PES 17 only" },
-        h("div", { class: "row weak" }, "(this version does not store kit slots)"));
+        h("div", { class: "weak" }, "(this version does not store kit slots)"));
 }
 function dlgKitSlots() {
   dlg("kit-slots", "Kit slot assignments", kitSlotsTable(selTeam()), [button("OK", closeWindow)]);

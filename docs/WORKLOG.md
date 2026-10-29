@@ -1822,6 +1822,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           prompt,tactics,toolbar,overlap}.rs`. Rendered against the draft's Open menu
           (`.tmp/8_9l/{draft,built}/open_menu.png`): the entries and the PES 2020 save as
           drawn, the geometry off in every menu and the toolbar (l3d)
+        - [x] l3a-c's mutation run (`mutants-diff 7f23e772` at `39c0de34`, local, the minimum
+          test timeout 120 s): pes_savefile 3 caught; save_editor 32 caught, 3 unviable;
+          studio_core 18 caught, 3 unviable, 1 timeout (`take_standing_end` -> `true`), which
+          a quiet rerun catches in 1.3 s (`a_standing_notice_stays_while_its_tool_returns_it_and
+          _its_tool_hears_when_it_ends`): load, not a hang. No survivor, no rework
         - [ ] l3d the drafts take egui's spacing (DECISIONS 2026-10-29 "The drafts take egui's
           spacing"), seen in l3c's render: every menu's entries 21 apart against the draft's
           19, the toolbar's buttons 8 apart for 6, every view 8 from the central panel's edges
@@ -1863,11 +1868,22 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               `team.rs` `ROW_GAP`, `abilities.rs` `HEADER_GAP`, `menus.rs` `BOGLO_RANGE_GAP`,
               `player_list.rs` `CONTROL_GAP`, `quick_actions.rs` `COLUMN_GAP` (egui's 8),
               `studio_core` sidebar `RAIL_GAP`; re-measured with `draft_compare.py player|team`
-            - [ ] l3d3c the rest the measurement found: the Kit slots dialog's sentence and OK
-              4 and 7 points higher than the draft's; the Formation settings' rows drifting
-              to 1.5 lower in the draft (its rows 58.5 apart, the build's 58); the colour
-              codes' grey and the black swatch's outline (QUESTIONS "The team view's colour
-              codes"); a menus pass added to `draft_compare.py`
+            - [x] l3d3c 2026-10-29 (lead) the rest the measurement found: the Kit slots
+              dialog's sentence and OK 4 and 7 points higher than the draft's (the draft's
+              sentence was a `.row`, whose margins the dialog's own spacing doubled; 3 of 3
+              within 1 point after); the Formation settings' rows drifting to 1.5 lower in the
+              draft (its rows 58.5 apart, the build's 58: both share the panel's free height,
+              `1fr`, the frames themselves within a point; accepted at 1 to 2, the cause of
+              the build's 3 points less not found). `draft_compare.py --menu TEXT` measures an
+              open toolbar menu (the draft's clicked, the build's rows kept where the draft's
+              menu stands); `uia_dump.ps1` writes UTF-8 (the console's code page had turned
+              `…` and `⏷` into `.` and `?`, so no such name paired) and a draft menu entry's
+              shortcut is joined with a space, as egui names it. On the `3cd0f907` build:
+              Player 7 and Team 6 entries within 1 point; Savefile and Open differ only by
+              entries not built yet (8.9k slice 5, 8.33) or the draft's sample recent file,
+              which widen the draft's menu and push the rows under them
+            - [ ] l3d3d the team view's colour codes' grey and the black swatch's outline, once
+              QUESTIONS "The team view's colour codes" is answered
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
         The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by
@@ -4988,11 +5004,20 @@ briefs, review loops, gates and mutation runs as for any step.
     `the_stats_labels_start_at_one_x_and_their_boxes_at_another`. Measured on its release
     build with `scripts/draft_compare.py player`: every ability label within 1 px of the
     draft; over 2 px only the known Appearance header and the rail's logo
-  - [ ] ov14 the text colours the draft comparison measured (DECISIONS "Titles and collapsing
+  - [x] ov14 the text colours the draft comparison measured (DECISIONS "Titles and collapsing
     headers at the drafts' strong grey"; `plans/core/gui.md` the Dark/light theme row): the
-    drafts' `.sel` and position labels at egui's 180 (done, lead); the dark theme's strong text
-    220 and every collapsing header's title in it (brief `.tmp/8_9l/brief_ov14.md`); renders
-    `.tmp/8_9l/pairs/colour_*.png`
+    drafts' `.sel` and position labels at egui's 180 (lead); the dark theme's strong text 220
+    (the pressed widgets' text colour, which egui's strong colour is) and every collapsing
+    header's title in it through `studio_core::widgets::collapsing_header`, five sites (the
+    Team compiler's settings added at review); the drafts' pressed checkbox label at the strong
+    grey and hovered position label at egui's hovered 240 (the sidekick's contradictions).
+    Re-measured on a release build of `3cd0f907`: the player view's ink lists no colour (the
+    7 titles and Appearance gone); the titles' weight reads 13 to 21% under the body text's
+    (egui's heavier rasterizing shows less on bright text: Skills, at 21%, is listed and is
+    the same in the renders). Files: `studio_core/src/{theme.rs,widgets/{mod,
+    collapsing_header}.rs,shell/{help_window.rs,settings_menu/mod.rs}}`,
+    `ruleset_editor/src/view/sections/tiers.rs`, `save_editor/src/view/mod.rs`,
+    `team_compiler/src/view/mod.rs`; renders `.tmp/8_9l/pairs/colour_*.png`
   - [x] ov3 a general overlap test: a headless pass over every modal and view failing when two
     widgets' rectangles intersect (catches collisions, not a draft mismatch: ov1 does that;
     `plans/core/gui.md` "No two widgets overlap"; Opus sidekick, brief

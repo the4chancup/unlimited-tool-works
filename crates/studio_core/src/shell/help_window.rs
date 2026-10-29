@@ -211,7 +211,7 @@ impl HelpWindow {
         let mut clicked = None;
         for (chapter, (id, section)) in self.chapters.iter().enumerate() {
             let mut header =
-                egui::CollapsingHeader::new(section.title).id_salt(("help-chapter", *id));
+                crate::widgets::collapsing_header(section.title).id_salt(("help-chapter", *id));
             if pending == Some(chapter) {
                 header = header.open(Some(true));
             }

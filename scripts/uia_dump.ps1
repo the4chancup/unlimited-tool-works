@@ -5,6 +5,8 @@
 # widgets through AccessKit, which Windows exposes there).
 # Usage (Windows PowerShell 5.1): powershell -NoProfile -File scripts/uia_dump.ps1 <process id>
 param([int]$ProcessId)
+# UTF-8 out, as the caller decodes it: the console's code page turns `…` and `⏷` into `.` and `?`.
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
 $A = [System.Windows.Automation.AutomationElement]
 $T = [System.Windows.Automation.TreeScope]
