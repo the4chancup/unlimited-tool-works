@@ -467,6 +467,10 @@ const LIST_WIDTH: f32 = 255.0;
 /// The detail pane's margin over a view's title.
 const TITLE_MARGIN: i8 = 6;
 
+/// The room between the panes' bottom and the status bar (the draft's
+/// `.center.filled` bottom padding).
+const PANE_BOTTOM_MARGIN: f32 = 6.0;
+
 /// Shows the window for one frame. `running` is the running-PES probe,
 /// called only when Save runs (a process snapshot is not a frame's cost).
 /// The ruleset is resolved from `view.aatf_ruleset` on the first frame and
@@ -497,6 +501,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     if view.session.is_none() {
         ui.weak("No save is open.");
     } else {
+        // The panes under the toolbar end `PANE_BOTTOM_MARGIN` over the
+        // status bar, the draft's padding under the view, where the
+        // shell's central panel keeps its own margin: they reach into
+        // that margin by the difference. The shell's panel clips to its
+        // whole rect, margins included, so nothing of theirs is cut.
+        let mut panes = ui.available_rect_before_wrap();
+        panes.max.y += f32::from(egui::Frame::central_panel(ui.style()).inner_margin.bottom)
+            - PANE_BOTTOM_MARGIN;
+        let ui = &mut ui.new_child(egui::UiBuilder::new().max_rect(panes));
         // Before the left panel, so the dock spans the view's width under
         // the player list and the detail view (egui lays a panel out
         // against the space the earlier panels left).

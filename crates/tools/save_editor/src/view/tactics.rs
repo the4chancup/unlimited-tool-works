@@ -30,6 +30,10 @@ use crate::view::{MedalKey, SaveView, edit_team, live_marks, selected_team};
 const SETTINGS_WIDTH: f32 = 422.0;
 /// The gap between the grid's columns (the draft's `column-gap: 10px`).
 const COLUMN_GAP: f32 = 10.0;
+/// The pitch's column (the draft's `.tacgrid` second track): the canvas
+/// alone, its 1-point border a side overflowing it, so the assignments'
+/// column starts 8 past the pitch's border, not 10.
+const PITCH_TRACK: f32 = 320.0;
 /// The gap between the grid's rows (the draft's `row-gap: 6px`).
 const ROW_GAP: f32 = 6.0;
 /// The preset and formation bars' height (the draft's `.tacbar`): its
@@ -192,8 +196,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         let mut edited = team.tactics.clone();
         let mut changed = [false; 6];
         // The draft's `.tacgrid`: the settings column's 422, the pitch's
-        // own width (its canvas and border), the assignments' the rest —
-        // a cell a child `Ui` like the old columns', each row's height
+        // track (its canvas, the border overflowing it), the assignments'
+        // the rest — a cell a child `Ui` like the old columns', each row's height
         // its tallest cell's (row 2's cells end at the pitch's bottom,
         // row 3's run to the pane's; the `min_rect`s read back the drawn
         // height).
@@ -202,7 +206,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         let bottom = ui.max_rect().right_bottom().y;
         let settings_right = top_left.x + SETTINGS_WIDTH;
         let pitch_left = settings_right + COLUMN_GAP;
-        let assigns_left = pitch_left + pitch::PITCH_BOX.x + COLUMN_GAP;
+        let assigns_left = pitch_left + PITCH_TRACK + COLUMN_GAP;
         let cell = |ui: &mut egui::Ui, left: f32, top: f32, width: f32, bottom: f32| {
             ui.new_child(
                 egui::UiBuilder::new()

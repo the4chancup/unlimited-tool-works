@@ -26,13 +26,11 @@ fn painted_label<'a>(
 /// The two columns' natural widths for `left`'s and `right`'s labels: each
 /// its widest cell's, a label plus the button padding. Computed here from
 /// the labels alone, never the code's own function. `right`'s last is the
-/// Set stats cell (its button, the item spacing and the field's two
-/// digits).
+/// Set stats cell (its button, the 6-point gap and the number's 52-point
+/// box).
 fn natural_columns(window: &Headless, left: &[&str], right: &[&str]) -> [f64; 2] {
     let style = window.ctx.global_style();
     let button = egui::TextStyle::Button.resolve(&style);
-    // The DragValue's text is `drag_value_text_style` (`TextStyle::Button`).
-    let field = egui::TextStyle::Button.resolve(&style);
     let padding = 2.0 * f64::from(style.spacing.button_padding.x);
     let natural = |text: &str, font: &egui::FontId| {
         window.ctx.fonts_mut(|fonts| {
@@ -49,11 +47,7 @@ fn natural_columns(window: &Headless, left: &[&str], right: &[&str]) -> [f64; 2]
             .iter()
             .map(|&label| {
                 if label == "Set stats" {
-                    natural("Set stats", &button)
-                        + padding
-                        + f64::from(style.spacing.item_spacing.x)
-                        + natural("99", &field)
-                        + padding
+                    natural("Set stats", &button) + padding + 6.0 + 52.0
                 } else {
                     natural(label, &button) + padding
                 }
@@ -153,20 +147,11 @@ fn assert_quick_actions(
                     .size()
                     .x
             });
-            // Set stats' button is drawn the cell less the item spacing
-            // and the field's two-digit width (the field takes the rest),
-            // not the whole cell as a Make button is.
+            // Set stats' button is drawn the cell less the 6-point gap and
+            // the number's 52-point box (the draft's number input), not the
+            // whole cell as a Make button is.
             let room = if *label == "Set stats" {
-                let field_font = egui::TextStyle::Button.resolve(&style);
-                let digits = ctx.fonts_mut(|fonts| {
-                    fonts
-                        .layout_no_wrap("99".to_owned(), field_font, egui::Color32::WHITE)
-                        .size()
-                        .x
-                });
-                cell - f64::from(style.spacing.item_spacing.x)
-                    - f64::from(digits)
-                    - 2.0 * f64::from(style.spacing.button_padding.x)
+                cell - 6.0 - 52.0
             } else {
                 cell
             };
@@ -732,6 +717,63 @@ fn the_quick_actions_reach_the_panes_bottom() {
         "the quick actions' bottom within a point of the pane's ({:?} vs {:?})",
         band,
         pane
+    );
+}
+
+// The quick actions stand where the draft's do on either view: their rows'
+// tops at 684, 707 and 730 of the 1280 x 780 client, whose y the pane
+// shares, so 72, 49 and 26 over the pane's bottom (the status bar's line);
+// the last row then ends 6 over it, the draft's padding under the view.
+#[test]
+fn the_quick_actions_stand_where_the_drafts_do_on_either_view() {
+    const ROWS: [[&str; 2]; 3] = [
+        ["Make Gold", "Make Goalkeeper"],
+        ["Make Silver", "Make Regular"],
+        ["Make Bronze", "Set stats"],
+    ];
+    const OVER_THE_BOTTOM: [f64; 3] = [72.0, 49.0, 26.0];
+    for team in [false, true] {
+        let (_path, mut view, _window) = open_701("quick_draft_tops");
+        let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+        if team {
+            open_team_view(&mut window, &mut view, 701);
+        }
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        for (labels, over) in ROWS.iter().zip(OVER_THE_BOTTOM) {
+            for label in labels {
+                let top = node_labeled(&nodes, Role::Button, label)
+                    .bounds()
+                    .expect("bounds")
+                    .y0;
+                let shown = f64::from(DEFAULT_PANE.y) - top;
+                assert!(
+                    (shown - over).abs() <= 1.0,
+                    "{label} stands {over} over the pane's bottom on the {} view, got {shown}",
+                    if team { "team" } else { "player" }
+                );
+            }
+        }
+    }
+}
+
+// Set stats' cell is the draft's `.row`: the number's box at the draft's
+// 52-point number width, the button taking the rest of the 119.5-point
+// half less the 6-point gap, 61.5.
+#[test]
+fn set_stats_takes_what_the_number_box_leaves() {
+    let (_path, mut view, mut window) = open_701("quick_set_stats_split");
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let button = node_labeled(&nodes, Role::Button, "Set stats")
+        .bounds()
+        .expect("bounds");
+    let field = set_stats_field(&nodes).bounds().expect("bounds");
+    assert!(
+        (button.x1 - button.x0 - 61.5).abs() <= 1.0,
+        "Set stats is 61.5 wide ({button:?})"
+    );
+    assert!(
+        (field.x1 - field.x0 - 52.0).abs() <= 1.0,
+        "its number's box is 52 wide ({field:?})"
     );
 }
 
