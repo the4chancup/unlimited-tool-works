@@ -1744,12 +1744,19 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       `ixExportTed`; Team menu "Import / export team file…", Savefile menu "Apply aesthetics
       patch…"). Slices, each one review (draft check against the app's theme first, brief,
       sidekick, review, merge, release-build check):
-      - [ ] k5a Apply aesthetics patch, the Savefile menu's floating panel (SE-GUI-18, and
+      - [x] k5a 2026-10-29 Apply aesthetics patch, the Savefile menu's floating panel (SE-GUI-18, and
         SE-GUI-22's "Apply aesthetics patch is enabled"): the preview of every player it
         changes, old and new, Apply as one undoable edit, another version's patch refused
         with the save untouched; drafted 2026-10-29 (a skipped team's warning line, the
         preview following the open save, its rows in the unsaved-changes table's columns: plan
-        "Read-only aesthetics", DECISIONS)
+        "Read-only aesthetics", DECISIONS). Done: `view/patch.rs` (the panel, its pure
+        `preview`), `prompt::changes_table` shared with the unsaved-changes prompt,
+        `comparator::panel_window` shared with the Comparator, the Savefile entry and the
+        pre-Fox ownership link opening it, one floating panel at a time; 12 view tests
+        (`view/tests/patch.rs`). Release build checked on the real PES 21 save, read-only:
+        the preview of team 739 with team 999's warning line, a row's click selecting
+        TAKUMI, a PES 2020 patch refused with the save untouched; the lead's fix there, the
+        table's scroll area shrunk to its rows (the panel had grown ~200 points of blank)
       - [ ] k5b the interchange panel's import half (SE-GUI-16's import, SE-GUI-17's import,
         SE-GUI-22's and SE-GUI-35's import-dialog parts): the file picked decides the format,
         the sections the file holds offered, the legacy formats read-only, the version

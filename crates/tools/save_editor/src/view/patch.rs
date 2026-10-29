@@ -370,13 +370,15 @@ fn summary_line(path: &Path, preview: &Preview) -> String {
     }
 }
 
-/// The changes table in a scroll area taking the panel's remaining
-/// height, so a long patch scrolls inside the panel; the player whose
-/// Item cell was clicked.
+/// The changes table in a scroll area as tall as its rows, up to the
+/// panel's remaining height, so a long patch scrolls inside the panel and a
+/// short one leaves no empty room under it (the height not shrunk, the
+/// panel grew some 200 points of blank under a five-row patch); the player
+/// whose Item cell was clicked.
 fn table(ui: &mut egui::Ui, rows: &[PatchRow]) -> Option<SelectedPlayer> {
     egui::ScrollArea::both()
         .id_salt("save_editor_patch_rows")
-        .auto_shrink([false, false])
+        .auto_shrink([false, true])
         .show(ui, |ui| {
             prompt::changes_table(
                 ui,

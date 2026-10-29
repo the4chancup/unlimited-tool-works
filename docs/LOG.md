@@ -2838,3 +2838,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The sidebar loop's mutation run caught 41 of 42 viable mutants; the one miss, the title bar call no headless test can see, is excluded like `run_gui` (8.9l3mut2).
 - **2026-10-29** — SE-GUI-21 checked in game: with PES 2021 running, Save asks to close Edit mode first, Cancel writes nothing, and Edit mode's Load shows the saved edit without a restart (8.9l4).
 - **2026-10-29** — 8.9l closed: the Save editor's open and save scenarios, the drafts on egui's spacing, the sidebar's polish and SE-GUI-21 in game.
+- **2026-10-29** — The Save editor's Apply aesthetics patch panel: a Team compiler's patch previewed in the unsaved-changes table's columns, applied as one undoable edit, another version's patch refused with the save untouched (8.9k5a).
