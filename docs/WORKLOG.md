@@ -4543,12 +4543,21 @@ briefs, review loops, gates and mutation runs as for any step.
       main: save_editor 455 + 50, color_tools 70, team_widgets 181, ruleset_editor 110 + 13,
       clippy, fmt): `ROW_GAP` 6, `SPACE_GAP` 3, `ID_CELL_PADDING` 4, `ID_BOX_WIDTH` 46, the
       row's six controls within a point of the draft's on PES 21 and still on PES 17
-    - [ ] ov2u briefed 2026-10-29 (`.tmp/0_0_1ov/brief_ov2u.md`, worktree `wt-ov2u`)
-    - [ ] ov2u the team view's Tactics at the draft's height (the build's stands about 23
+    - [x] ov2u the team view's Tactics at the draft's height (the build's stands about 23
       points taller: with ov2l's line its last control ends 3.5 under the pane's fold, the
       draft's 8 over it; measure block by block, `rect_compare.py`), then the line under the
       fields' row as the plan's team view bullet draws it (ov2l's parked
-      `wt-ov2l/.tmp/ov2l/separator_test.rs`)
+      `wt-ov2l/.tmp/ov2l/separator_test.rs`). Done 2026-10-29 (Opus, brief
+      `.tmp/0_0_1ov/brief_ov2u.md`, reviewed; `b7e33105`, merge `ef99c5cb`): measured from the
+      Tactics' first control the build stood 9.5 taller, not 23 (the gap above the Tactics was
+      15 tighter than the draft's, which hid most of it): the bars 23 tall (`BAR_HEIGHT`, the
+      preset selector's 3-point margins), the lineup lists without the group frame's margins
+      above and below, Advanced instructions' header row a line of text, the stack's gap 6
+      with the item spacing counted. Every block within a point of the draft's (test
+      `the_tactics_blocks_stand_where_the_drafts_do_from_the_first_control`); the line 11
+      under the row's controls and 10.5 over the Tactics (`LINE_ABOVE`, `LINE_BELOW`), its
+      centre measured, so it stands 0.5 higher than the draft's pixel line; the lowest
+      stroke at 739.5 against the 740 limit (the build's pane is 719 high, the draft's 720)
     - [x] ov2m the player list as drafted (`plans/save_editor.md` "Player list", "The quick
       actions"): a player row 18 high, its place in the weak colour, the position and name in
       their own columns (the build draws one string, 21 high); the quick actions in two columns

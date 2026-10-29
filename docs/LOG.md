@@ -2809,3 +2809,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — `scripts/vet_drafts.py` renders a draft change's before and after side by side from a revision pair and a link (0.0.1ov5); Live AATF's gallery rendered again for the maintainer's look (0.0.1ov6).
 - **2026-10-29** — The sidebar's active-tool bar has its two left corners rounded 2, as the draft's entry (0.0.1z3).
 - **2026-10-29** — `scripts/draft_shots.py` captures the drafts' 55 screens at two window sizes and lists those a host edit changed (0.0.1ov4b).
+- **2026-10-29** — The team view's Tactics stand at the draft's height, block by block, and the line under the team's fields is drawn at the draft's gaps (0.0.1ov2u).
