@@ -57,7 +57,8 @@ enum SaveEditorCommand {
     ExportTeamsList(ExportTeamsListArgs),
 }
 
-/// `strip-and-seed --base <save> --bins <cpk> --out <save> --bins-out <cpk>`.
+/// `strip-and-seed --base <save> --bins <cpk> --out <save> --bins-out <cpk>
+/// [--edit-mode-closed]`.
 #[derive(Debug, Args)]
 struct StripAndSeedArgs {
     /// The save to strip (EDIT00000000), which is never written unless it is also --out.
@@ -72,9 +73,12 @@ struct StripAndSeedArgs {
     /// Where the seeded CPK goes. An existing file there is kept as <bins-out>.bak.
     #[arg(long, value_name = "CPK")]
     bins_out: PathBuf,
+    /// The game's Edit mode is closed: write the savefile even while its PES runs.
+    #[arg(long)]
+    edit_mode_closed: bool,
 }
 
-/// `check-stripped <save> [--strip-again --out <save>]`.
+/// `check-stripped <save> [--strip-again --out <save>] [--edit-mode-closed]`.
 #[derive(Debug, Args)]
 struct CheckStrippedArgs {
     /// The save to check (EDIT00000000).
@@ -85,6 +89,10 @@ struct CheckStrippedArgs {
     /// Where the re-stripped save goes. An existing file there is kept as <out>.bak.
     #[arg(long, value_name = "SAVE", requires = "strip_again")]
     out: Option<PathBuf>,
+    /// The game's Edit mode is closed: write the savefile even while its PES runs. It
+    /// matters only with --strip-again, the one form that writes the save.
+    #[arg(long)]
+    edit_mode_closed: bool,
 }
 
 /// `check-aatf <save> [--teams <list>] [--rules <file>]`.
@@ -131,9 +139,9 @@ struct DiffArgs {
     json: bool,
 }
 
-/// `<file> --base <save> --out <save>`: the file to apply, the save it is applied to, and
-/// where the result goes (`--out` may be `--base`; an existing file there is first copied to
-/// `<out>.bak`).
+/// `<file> --base <save> --out <save> [--edit-mode-closed]`: the file to apply, the save it
+/// is applied to, and where the result goes (`--out` may be `--base`; an existing file there
+/// is first copied to `<out>.bak`).
 #[derive(Debug, Args)]
 struct ApplyArgs {
     /// The Team TOML or aesthetics patch to apply.
@@ -144,6 +152,9 @@ struct ApplyArgs {
     /// Where the patched save goes. An existing file there is kept as <out>.bak.
     #[arg(long, value_name = "SAVE")]
     out: PathBuf,
+    /// The game's Edit mode is closed: write the savefile even while its PES runs.
+    #[arg(long)]
+    edit_mode_closed: bool,
 }
 
 /// `export-toml <save> --team <id> --out <file>` or `--all-teams --out-dir <folder>`: the
@@ -211,11 +222,16 @@ fn invalid(error: anyhow::Error) -> CliError {
     CliError::new(INVALID, error)
 }
 
-/// The refusal a writing command makes while the PES of the save's `version` runs: the game
-/// writes its own save back when it closes, over the one the command wrote. A game of another
-/// version never writes this save, so it does not refuse.
-fn refuse_while_running(running: &[RunningPes], version: PesVersion) -> Result<(), CliError> {
-    session::refuse_while_running(running, version).map_err(invalid)
+/// The refusal a writing command makes while the PES of the save's `version` runs and it was
+/// not given `--edit-mode-closed` (`edit_mode_closed`): the game writes the save it holds over
+/// the file when its Edit mode closes. A game of another version never writes this save, so it
+/// does not refuse.
+fn refuse_while_running(
+    running: &[RunningPes],
+    version: PesVersion,
+    edit_mode_closed: bool,
+) -> Result<(), CliError> {
+    session::refuse_while_running(running, version, edit_mode_closed).map_err(invalid)
 }
 
 /// Opens the save a command reads; an unreadable one is a refusal.
@@ -260,7 +276,7 @@ fn import_toml(
     report: &mut Report,
 ) -> Result<(), CliError> {
     let mut session = open(&args.base)?;
-    refuse_while_running(&running(), session.version())?;
+    refuse_while_running(&running(), session.version(), args.edit_mode_closed)?;
     let document = TeamToml::parse(&read_text(&args.file)?)
         .map_err(|error| invalid(anyhow!("{}: {error}", args.file.display())))?;
     let notes = session.import_team(&document).map_err(invalid)?;
@@ -282,7 +298,7 @@ fn apply_patch(
     report: &mut Report,
 ) -> Result<(), CliError> {
     let mut session = open(&args.base)?;
-    refuse_while_running(&running(), session.version())?;
+    refuse_while_running(&running(), session.version(), args.edit_mode_closed)?;
     let patch = AestheticsPatch::parse(&read_text(&args.file)?)
         .map_err(|error| invalid(anyhow!("{}: {error}", args.file.display())))?;
     let summary = session
@@ -541,7 +557,7 @@ fn strip_and_seed(
 ) -> Result<(), CliError> {
     let mut session = open(&args.base)?;
     refuse_pre_fox(session.version())?;
-    refuse_while_running(&running(), session.version())?;
+    refuse_while_running(&running(), session.version(), args.edit_mode_closed)?;
     let mut archive = open_cpk(&args.bins)?;
     let mut appearance: AppearanceTable =
         read_table(&mut archive, PlayerTableFile::PlayerAppearance)?;
@@ -590,7 +606,7 @@ fn check_stripped(
     let mut session = open(&args.save)?;
     refuse_pre_fox(session.version())?;
     if args.strip_again {
-        refuse_while_running(&running(), session.version())?;
+        refuse_while_running(&running(), session.version(), args.edit_mode_closed)?;
     }
     let restored = session.restored_players();
     if let Some(out) = &args.out {
@@ -846,12 +862,13 @@ mod tests {
     #[test]
     fn refuse_while_running_refuses_only_the_saves_own_version() {
         let game = |version| RunningPes { version, exe: None };
-        assert!(refuse_while_running(&[], PesVersion::Pes21).is_ok());
-        assert!(refuse_while_running(&[game(PesVersion::Pes15)], PesVersion::Pes21).is_ok());
+        assert!(refuse_while_running(&[], PesVersion::Pes21, false).is_ok());
+        assert!(refuse_while_running(&[game(PesVersion::Pes15)], PesVersion::Pes21, false).is_ok());
         let error =
-            refuse_while_running(&[game(PesVersion::Pes21)], PesVersion::Pes21).unwrap_err();
+            refuse_while_running(&[game(PesVersion::Pes21)], PesVersion::Pes21, false).unwrap_err();
         assert_eq!(error.exit_code, 2);
         assert!(error.error.to_string().contains("PES 2021"));
+        assert!(refuse_while_running(&[game(PesVersion::Pes21)], PesVersion::Pes21, true).is_ok());
     }
 
     #[test]
