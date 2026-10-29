@@ -9,7 +9,11 @@ implementation, more a mismatch to fix or rule):
 - **1 to 2 px**: accepted only where matching closer costs code, so each is looked at;
 - **within 1 px**: accepted (an offset of exactly 1 included).
 
-A pair's offset is the largest of its left, top, width and height differences.
+A pair's offset is the largest of its left, top, width and height differences. A pair whose
+draft side is a text's ink and whose app side is a widget holding it (a collapsing header's
+button, its arrow included) is listed apart, under "box kinds differ": the two boxes differ by
+design, so its offset says nothing; look at it in the two captures instead. A checkbox's
+width is not compared: the draft's label spans its grid cell, egui's checkbox its content.
 
 - The app's side: the running build's UI Automation tree (`uia_dump.ps1`: control type, name,
   screen rectangle; egui publishes its widgets through AccessKit, which Windows exposes there),
@@ -69,6 +73,7 @@ SCREENS = {
 INIT = {"aatf": "localStorage.setItem('save_editor.live_aatf', 'true')"}
 
 BANDS = ("over 2 px", "1 to 2 px", "within 1 px")
+KINDS_DIFFER = "box kinds differ"
 
 # A dump row's last column, the rectangle: `x,y wxh`, negative on a monitor left of the main one.
 RECT = re.compile(r"(-?\d+),(-?\d+) (\d+)x(\d+)")
@@ -112,8 +117,17 @@ DRAFT_JS = """(sel) => {
 }"""
 
 
-def band(delta):
-    """The band of a pair whose left, top, width and height differ by `delta`."""
+def band(draft_kind, app_kind, delta):
+    """The band of a pair whose left, top, width and height differ by `delta`; `KINDS_DIFFER`
+    when the draft measured a text's ink and the app a widget holding it (a collapsing
+    header's button, its arrow included; the rail's logo button), whose boxes differ by
+    design however well the two line up."""
+    if draft_kind == "text" and app_kind != "Text":
+        return KINDS_DIFFER
+    # A checkbox's label in the draft spans its grid cell, where egui's checkbox is as wide as
+    # its box and text: its width says nothing, its place and height do.
+    if draft_kind == "check":
+        delta = [delta[0], delta[1], 0.0, delta[3]]
     worst = max(abs(v) for v in delta)
     if worst > 2:
         return BANDS[0]
@@ -277,16 +291,16 @@ def main():
     pairs, unmatched = pair(draft, app)
     banded = defaultdict(list)
     for p in pairs:
-        banded[band(p[3])].append(p)
+        banded[band(p[1][0], p[2][0], p[3])].append(p)
     OUT.mkdir(parents=True, exist_ok=True)
     with open(OUT / f"{screen}.tsv", "w", encoding="utf-8", newline="\n") as handle:
         handle.write("band\tname\tdraft kind\tapp kind\tdraft x\ty\tw\th\tapp x\ty\tw\th\tdx\tdy\tdw\tdh\n")
         for name, d, a, delta in sorted(pairs, key=lambda p: (p[1][3], p[1][2])):
-            cells = [band(delta), name, d[0], a[0]] + [f"{v:.1f}" for v in d[2:] + a[2:] + delta]
+            cells = [band(d[0], a[0], delta), name, d[0], a[0]] + [f"{v:.1f}" for v in d[2:] + a[2:] + delta]
             handle.write("\t".join(cells) + "\n")
-    counts = ", ".join(f"{len(banded[b])} {b}" for b in BANDS)
+    counts = ", ".join(f"{len(banded[b])} {b}" for b in BANDS + (KINDS_DIFFER,))
     print(f"{screen}: {len(pairs)} matched ({counts}), {len(unmatched)} texts unmatched")
-    for name in BANDS[:2]:
+    for name in BANDS[:2] + (KINDS_DIFFER,):
         if banded[name]:
             print(f"{name}:")
         for text, d, a, delta in sorted(banded[name], key=lambda p: -max(abs(v) for v in p[3])):

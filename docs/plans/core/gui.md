@@ -893,7 +893,10 @@ its plan section.
   Automation, `scripts/uia_dump.ps1`; the draft's from its DOM in Chromium) is paired by its
   text, and each pair's largest offset is sorted into the tolerance's bands, over 2 px (a
   mismatch), 1 to 2 px (accepted only where matching closer costs code, so each is looked at)
-  and within 1 px; the whole table lands in `.tmp/draft_compare/`. A closed menu or a popup
+  and within 1 px; a pair whose boxes differ by design (a text's ink against the widget
+  holding it, a collapsing header's button with its arrow) is listed apart, and a checkbox's
+  width is not compared (the draft's label spans its cell); the whole table lands in
+  `.tmp/draft_compare/`. A closed menu or a popup
   shows no elements, so it is measured open, as its own screen.
 - **Draft shots.** `scripts/draft_shots.py` captures every screen of every tool (the list from
   the tool scripts' registrations, reached through their links) at the default and the
