@@ -13739,3 +13739,13 @@ Why: the panel drew `Applied <file>. The changes stay unsaved until Save.` after
 that changed nothing, with no undo entry behind it; the patch panel already disables Apply
 on an empty list and says the save holds every value, and one rule serves both panels.
 Plan: `plans/save_editor.md` "Interchange formats in the UI", the first bullet.
+
+## 2026-10-29 — save_editor — The app's grey for plain player names and planned tools stays; the drafts follow
+
+Decision: a player row's plain name (no colour code) is drawn in the resting widgets' grey
+(#b4b4b4), as the app paints it, and a planned tool in the sidebar in the grey egui's
+disabled entry fades to (#3d3d3d); the drafts change to these, the app does not.
+Why: the maintainer's pass over the 0.0.1 candidate found the app's name brighter and its
+planned icons darker than the drafts' (body grey #8c8c8c, weak grey #6e6e6e), and preferred
+the app's in both cases.
+Plan: none; the drafts are the colours' reference (`docs/prototypes/`).
