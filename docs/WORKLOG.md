@@ -4918,26 +4918,24 @@ briefs, review loops, gates and mutation runs as for any step.
       empty button row under a dialog with none (fixed in the drafts, the first run's bottom
       now 9 under its footer as the build's). Rejected: the drafts' settings window capped at
       640 (ov2r had already fixed it; the worktree predated it)
-    - [ ] ov2j2 the boots and gloves dialog as wide as its groups again (the maintainer,
-      2026-10-29, from the built app: the unused right margin the draft removed on
-      2026-10-28 was back; DECISIONS "The modal helper's 360-point minimum has a
-      contents-wide exception"): ov2j's helper gave every modal the 360 minimum without the
-      draft's `.window:has(.boglo)` exception, and `draft_compare.py` never measured a frame
-      (it matches by text) → verify: a headless test of the dialog's width against its
-      groups' (red at HEAD); `draft_compare.py --modal` pairs the dialog's frame, run over
-      every modal in the built window
-    - [ ] ov2j3 the help window's paragraphs 8 apart (the maintainer, 2026-10-29: "no
-      newlines when needed"; DECISIONS "The help window's paragraphs stand 8 points
-      apart"): one viewer per paragraph left egui's 3 between them; the overlay pass never
-      measured a topic's body → verify: a headless test of two paragraphs' gap (red at
-      HEAD); `draft_compare.py help --modal .help-win` in the built-window check
-    - [ ] ov2j4 the help's text wrapped at 720 points (P44, accepted 2026-10-29; DECISIONS
-      "The help's text wraps at 720 points"; drafted, `.help-topic` `max-width`) → verify: a
-      headless test of a long paragraph's width; the Messages table at the pane's width
-    - [ ] ov2j5 the help window first opened at 1000 × 600, or 90% of Studio's window where
+    - [x] ov2j2 the boots and gloves dialog as wide as its groups again (the maintainer,
+      2026-10-29, from the built app; DECISIONS "The modal helper's 360-point minimum has a
+      contents-wide exception"): `studio_core::widgets::modal_fit_contents`, which
+      `boglo_dialog` draws through; headless tests of the dialog's width against its groups'
+      (red at 792 vs 752.6) and of a short fitted dialog (`widgets/modal.rs`, `view/menus.rs`,
+      `view/tests/team.rs`). Open: `draft_compare.py --modal` pairing a dialog's frame, run
+      over every modal in the built-window check
+    - [x] ov2j3 the help window's paragraphs 8 apart (DECISIONS "The help window's paragraphs
+      stand 8 points apart"): `PARAGRAPH_SPACING` in `shell/help_window.rs`, a headless test
+      of two paragraphs' gap (red at 3). Open: `draft_compare.py help --modal .help-win` in
+      the built-window check
+    - [x] ov2j4 the help's text wrapped at 720 points (P44; DECISIONS "The help's text wraps
+      at 720 points"): `READING_WIDTH` caps each paragraph, a headless test of a long
+      paragraph's width (red at 898); the Messages table's tests unchanged
+    - [x] ov2j5 the help window first opened at 1000 × 600, or 90% of Studio's window where
       smaller (the maintainer, 2026-10-29; DECISIONS "The help window first opens at 1000 ×
-      600"; drafted, `drawHelp`) → verify: ST-HELP-05's test at 1280 × 800 (red at HEAD) and
-      1037 × 648
+      600"): `FIRST_SIZE` in `shell/help_window.rs`; ST-HELP-05's test at 1280 × 800 (red at
+      1152 × 720) and 1037 × 648
     - [x] ov2k the form grids' rows 22 apart, the draft's `table.grid` (its `td` padded 2 above
       and below an 18-point control), where egui's `Grid` spaces them by `item_spacing.y`, 3:
       each row lands a point higher than the last, 25 by the Ability stats' last row, 17 by
