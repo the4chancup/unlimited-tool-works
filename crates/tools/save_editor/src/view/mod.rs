@@ -40,7 +40,7 @@ use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::{Engine, PesVersion};
 use studio_core::widgets::{modal, modal_buttons, modal_sentence_gap, toolbar_separator};
-use studio_core::{Notice, NoticeKind, RunningPes};
+use studio_core::{ActionEffect, Notice, NoticeAction, NoticeKind, RunningPes};
 use team_widgets::names::append_name;
 
 use crate::session::Session;
@@ -145,6 +145,11 @@ pub(crate) struct SaveView {
     /// The status-bar notice the last action raised; `Tool::view` forwards
     /// it to the shell's `notify` after the frame.
     pub(crate) notice: Option<Notice>,
+    /// The version warning lives: set by every open, so a new save starts
+    /// it over, and cleared once the member has seen it (its action, its
+    /// dismiss, or another notice taking the bar from it). The selector
+    /// matching the save only hides it: it shows again when they part.
+    pub(crate) version_warning: bool,
     /// The Live AATF toolbar toggle's state: `Tool::view` refreshes it
     /// from the `live_aatf` setting and writes the setting back when the
     /// toggle changes it; off in the tests' view-only frames.
@@ -390,6 +395,7 @@ impl SaveView {
             generate: None,
             pick_folder_dialog: generate::default_pick_folder(),
             notice: None,
+            version_warning: false,
             live_aatf: false,
             live_suggestions: false,
             live: live_aatf::LiveAatf::new(),
@@ -491,6 +497,7 @@ impl SaveView {
                 open_menu::push_recent(&mut self.recents, path);
                 self.session = Some(session);
                 self.generation += 1;
+                self.version_warning = true;
                 // A view setting, not the save's: `scroll_names` is the
                 // member's, so it survives the open (the rest is the
                 // save's: back to preset 1 and kick-off).
@@ -517,6 +524,33 @@ impl SaveView {
             }
         }
     }
+
+    /// The version warning while it lives and the sidebar's `selector`
+    /// names another version than the open save's: a Warning whose action
+    /// switches the selector to the save's version. `None` otherwise.
+    pub(crate) fn version_notice(&self, selector: PesVersion) -> Option<Notice> {
+        let save = self.session.as_ref()?.version();
+        if !self.version_warning || selector == save {
+            return None;
+        }
+        Some(Notice {
+            text: version_warning_text(selector, save),
+            kind: NoticeKind::Warning,
+            action: Some(NoticeAction {
+                label: format!("Switch to {save}"),
+                effect: ActionEffect::SwitchVersion(save),
+            }),
+        })
+    }
+}
+
+/// The version warning's sentence: the save opened under its own version,
+/// whatever the sidebar's selector names.
+pub(crate) fn version_warning_text(selector: PesVersion, save: PesVersion) -> String {
+    format!(
+        "Although the sidebar is set to {selector}, this save is from {save}, so the editor \
+         will keep treating it as a {save} save."
+    )
 }
 
 /// The player list's column, the draft's `.plist`: the rows' frame and
