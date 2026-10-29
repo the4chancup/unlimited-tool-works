@@ -2459,7 +2459,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     ids to names (which versions share the ids, and where the names come from, first).
     Drafted (`side/drafts2`); answered 2026-10-27 (DECISIONS 2026-10-27 "Formation pictures, the formation's name and the nation names: the maintainer's answers"): 4cc's nations in PES 16's
     table, PES 20 read as 21; the draft revised (side-lead D's step 5), then the look
-  - [ ] 8.31 in 0.0.1 (the maintainer, 2026-10-29: "it's a small thing"; first placed after
+  - [x] 8.31 in 0.0.1 (the maintainer, 2026-10-29: "it's a small thing"; first placed after
     it, 2026-10-27): a click on the toolbar's `• unsaved
     changes` opens the list of the changes, the table the close prompt already shows
     (`plans/save_editor.md`, the "Closing, or opening another save" bullet: Item, Old value,
@@ -2471,6 +2471,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     2026-10-28: the draft on main (`ed81bdb3`, `aaae3d1e`), the plan written
     (`plans/save_editor.md` "Editing UI", the bullet after the close prompt's); left: the
     code (brief `.tmp/8_31/brief_8_31.md`), its scenario SE-GUI-43 written 2026-10-29
+    Done (`09fa86e2`, `e0c7a32a`, merged `3bbe1c61`): `view/changes_popup.rs`, the label a
+    click target opening an `egui::Popup` under it with `prompt::changes_table`, its rows
+    computed once per opening, closed by a click outside, Esc, the label again or any
+    revision move; `terms::Term` carries a team colour's two swatches, drawn before the hex
+    in the list and the close prompt. The box is 460 to 640 points with its margins and
+    slides to 8 points inside the window's edge, as the draft's. SWE-2 round S1u: 2
+    counted (`.tmp/8_31/rulings_8_31.md`). Not yet seen in a built window. Files:
+    `save_editor/src/view/{changes_popup,mod,prompt,terms,patch}.rs`, its tests
   - [x] 8.32 approved 2026-10-28 as built in 0.0.1x (the maintainer, 2026-10-27): the pitch draws the formation's name
     (`4-3-3`) in its corner, exactly as PES's formation screen draws it. First: the game's
     rule for the name from the slots' positions and the label's look, from in-game captures

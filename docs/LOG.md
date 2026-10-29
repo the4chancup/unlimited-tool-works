@@ -2845,3 +2845,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The Save editor's team file panel disables Apply when an import would change nothing and scrolls its notes; the help chapters cover the patch and team file panels (8.9k5b2r).
 - **2026-10-29** — The 0.0.1 bundle is the Save editor's for DBC alone: no launchers or export folders, the window opening on PES 2017, the readme for DBC's testers (0.0.1g).
 - **2026-10-29** — The team view's first frame no longer waits on the medal outlines, the player list and the lineup lists are drawn as the drafts draw them, and the player list and the pitch round their corners (8.9m m1, m3).
+- **2026-10-29** — The Save editor's `• unsaved changes` opens the list of changes under it, the close prompt's table without its answers, a team colour's values each after its swatch (8.31).
