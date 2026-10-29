@@ -16,6 +16,7 @@ mod appearance;
 mod comparator;
 mod generate;
 mod info_strip;
+mod interchange;
 mod live_aatf;
 mod live_marks;
 mod menus;
@@ -58,6 +59,17 @@ pub(crate) enum Selection {
     Team(u32),
     /// A player row: the team he is rostered on and his roster slot.
     Player(u32, u8),
+}
+
+/// The floating panels, of which one at a time is open (`SaveView::panel`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Panel {
+    /// The Savefile menu's Comparator.
+    Comparator,
+    /// The Savefile menu's Apply aesthetics patch.
+    Patch,
+    /// The Team menu's team file panel.
+    Interchange,
 }
 
 /// The window's state: the open save and what the master-detail shows of it.
@@ -134,16 +146,26 @@ pub(crate) struct SaveView {
     /// outlines and Live AATF use, resolved from `aatf_ruleset` on the
     /// first frame and again only when the setting changes.
     rules: Option<ActiveRules>,
-    /// The comparator panel's state; closed at start.
+    /// The floating panel drawn over the views, if one is open: one at a
+    /// time, since each would otherwise stand under the other; none at
+    /// start.
+    panel: Option<Panel>,
+    /// The comparator panel's state.
     comparator: comparator::Comparator,
     /// The comparator's Pick dialog (`rfd`, stubbed in tests — the
     /// toolbar's Open dialog pattern).
     open_save_dialog: comparator::OpenSaveDialog,
-    /// The Apply aesthetics patch panel's state; closed at start.
+    /// The Apply aesthetics patch panel's state.
     patch: patch::Patch,
     /// The patch panel's Open patch dialog (`rfd` on `.toml` files,
     /// stubbed in tests: the `open_save_dialog` pattern).
     patch_dialog: comparator::OpenSaveDialog,
+    /// The team file panel's state (the Team menu's `Import / export team
+    /// file…`).
+    interchange: interchange::Interchange,
+    /// The team file panel's Pick dialog (`rfd` on the team file formats,
+    /// stubbed in tests: the `open_save_dialog` pattern).
+    interchange_dialog: comparator::OpenSaveDialog,
     /// The Generate dialog's state while it is open (the Player menu's
     /// `settings.toml` and in-game face items); `None` while it is closed.
     generate: Option<generate::Generate>,
@@ -398,10 +420,13 @@ impl SaveView {
             rules_file_dialog: ruleset_picker::default_rules_dialog(),
             rules_dialog: None,
             rules: None,
+            panel: None,
             comparator: comparator::Comparator::new(),
             open_save_dialog: comparator::default_open_dialog(),
             patch: patch::Patch::new(),
             patch_dialog: patch::default_patch_dialog(),
+            interchange: interchange::Interchange::new(),
+            interchange_dialog: interchange::default_interchange_dialog(),
             generate: None,
             pick_folder_dialog: generate::default_pick_folder(),
             notice: None,
@@ -751,6 +776,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     generate::dialog(ui, view);
     comparator::show(ui, view);
     patch::show(ui, view);
+    interchange::show(ui, view);
     prompt::show(ui, view, running);
     prompt::edit_mode_dialog(ui, view, running);
     ruleset_picker::dialog(ui, view);

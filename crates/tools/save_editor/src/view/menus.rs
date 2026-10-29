@@ -21,11 +21,12 @@ use crate::session::database;
 use crate::session::team_ops::{BootsMode, GlovesMode};
 use crate::view::appearance::ownership_tip;
 use crate::view::generate;
-use crate::view::{Refusal, SaveView, selected_player, selected_team_id};
+use crate::view::{Panel, Refusal, SaveView, selected_player, selected_team_id};
 
 /// The Team menu button (the draft's `teamMenu`): Set edited flag, the
 /// boots/gloves dialog, Set player names to positions, Clear visual flags
-/// (its Ctrl+F drawn beside) and the two FPC items. Every item acts on the
+/// (its Ctrl+F drawn beside), the two FPC items, then Import / export team
+/// file opening the team file panel (`interchange`). Every item acts on the
 /// selected row's team — a player's or a team row's own — so the menu is
 /// disabled only with no row selected; the boots/gloves dialog prefills
 /// from the selected player, on a team row from the team's first filled
@@ -109,6 +110,11 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             && let Ok(ids) = hide_ids
         {
             session.team_fpc(team_id, fpc::Preset::Unhide, ids);
+            ui.close();
+        }
+        ui.separator();
+        if ui.button("Import / export team file\u{2026}").clicked() {
+            view.panel = Some(Panel::Interchange);
             ui.close();
         }
     });
@@ -248,16 +254,12 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         let Some(session) = view.session.as_mut() else {
             return;
         };
-        // One floating panel at a time: each closes the other, which would
-        // otherwise stand under it.
         if ui.button("Comparator\u{2026}").clicked() {
-            view.comparator.open = true;
-            view.patch.open = false;
+            view.panel = Some(Panel::Comparator);
             ui.close();
         }
         if ui.button("Apply aesthetics patch\u{2026}").clicked() {
-            view.patch.open = true;
-            view.comparator.open = false;
+            view.panel = Some(Panel::Patch);
             ui.close();
         }
         ui.separator();

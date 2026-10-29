@@ -1,11 +1,11 @@
-//! The import's section choice: which parts of a Team TOML document a squad load writes.
+//! The import's section choice: which parts of a Team TOML document an import writes.
 
 use pes_savefile::interchange::team_toml::{
     EditFlagsSection, PlayerSection, TeamSection, TeamToml,
 };
 use pes_savefile::settings_toml::{AppearanceSettings, MotionSettings};
 
-/// The squad load's three choices: which parts of a team file an import writes.
+/// The import's three section choices: which parts of a team file it writes.
 /// Gameplay is the team's own keys and each player's body, abilities, positions, skills
 /// and free-kick motion; aesthetics is each player's names, shirt number, nationality,
 /// age and look; tactics is the formation, the set-piece takers and the presets.
@@ -44,8 +44,9 @@ fn kept<T: Default>(chosen: bool, value: T) -> T {
 }
 
 /// The `[team]` table (name, short name, manager, stadium, colours, kits) loads with
-/// gameplay: none of it is a player's look or a tactic. The id stays whatever the choice,
-/// since it names the team the file came from and the import never writes it.
+/// gameplay: none of it is a player's look or a tactic. The id stays whatever the choice:
+/// the import never writes it, and `apply` reads it as the team the file came from, whose
+/// `id × 100 + slot` base-copy id means "none" and becomes the target player's own id.
 fn kept_team(team: TeamSection, gameplay: bool) -> TeamSection {
     let TeamSection {
         id,
@@ -357,8 +358,9 @@ mod tests {
         ]
     }
 
-    /// The keys PES 19 does not store, absent from every document `from_team` builds for it:
-    /// the premise checks skip them, since an absent key proves nothing about the filter.
+    /// The keys absent from /co/'s PES 19 document: the first three PES 19 does not store,
+    /// and `stripped` no /co/ player is. The premise checks skip them, since an absent key
+    /// proves nothing about the filter.
     const NOT_IN_PES_19: [&str; 4] = [
         "team.kit_slots",
         "edit_flags.base_copy",
