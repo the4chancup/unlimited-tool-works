@@ -272,7 +272,8 @@ all side by side.
   points wide, its top 90 below the window's and its right edge 1 inside the window's, over
   the views' right columns rather than the player list a member picks from while it is open
   (egui's own first place put the Comparator at the bottom left, over the list); then where
-  the member leaves it, while the program runs. A menu item's shortcut is drawn right of its label in the weak colour
+  the member leaves it, while the program runs. One floating panel is open at a time, as in
+  the drafts: opening one closes the other, which would otherwise open on top of it. A menu item's shortcut is drawn right of its label in the weak colour
   (`Button::shortcut_text`): Bump all stats `Ctrl+B`, Toggle FPC settings `Ctrl+I`, Clear
   visual flags `Ctrl+F`.
 - **No view draws the tool's name** (`core/gui.md` "Window title": the title bar carries it),
@@ -1094,7 +1095,18 @@ and no switch drawn; on, the editor **does not edit aesthetics** but through the
   version must match the save and the allocation scheme the suite's (refused otherwise, save
   untouched); the comparator's preview lists every player the patch will change with old → new;
   applied through the undo pipeline; saved only when the user saves. A team the save lacks is
-  reported and skipped; the rest applies. Patches apply cleanly in sequence — a midcup patch
+  reported and skipped; the rest applies. The panel (the Savefile menu's entry, and the
+  ownership line's link on pre-Fox) holds `Open patch…`, then the file's name with the teams
+  it writes and their players, and `Apply`; a refusal is the CLI's sentence (`<path>: the patch
+  is for PES 2021, the save is PES 2017`) in the error colour; each skipped team or player is a
+  warning line (`Team 714 /co/ is not in this save: its players are skipped.`). The preview is
+  the open save as it stands against the patch applied to a copy of it, in the views' terms,
+  each player's head as the comparator draws it and a row's click selecting him, recomputed
+  when the save changes (an edit, an undo, another save opened), not frozen at Open: Apply
+  writes what the preview shows, never a list an edit since made stale. So after Apply the
+  list is empty and `Applied. The changes stay unsaved until Save.` stands in its place until
+  the next change; a patch whose values the save already holds lists nothing and says so, and
+  Apply is disabled whenever the list is empty. An undo of the Apply brings the list back. Patches apply cleanly in sequence — a midcup patch
   carries only the teams it recompiled and only the fields their compile resolved.
 - **Unlock: "Edit aesthetics anyway"**, a switch in the Appearance section, drawn only while the
   setting is on, off at every start of the tool. Turning it on re-enables all the paths above for the session, with the note that on

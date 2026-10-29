@@ -1747,7 +1747,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [ ] k5a Apply aesthetics patch, the Savefile menu's floating panel (SE-GUI-18, and
         SE-GUI-22's "Apply aesthetics patch is enabled"): the preview of every player it
         changes, old and new, Apply as one undoable edit, another version's patch refused
-        with the save untouched
+        with the save untouched; drafted 2026-10-29 (a skipped team's warning line, the
+        preview following the open save: plan "Read-only aesthetics", DECISIONS)
       - [ ] k5b the interchange panel's import half (SE-GUI-16's import, SE-GUI-17's import,
         SE-GUI-22's and SE-GUI-35's import-dialog parts): the file picked decides the format,
         the sections the file holds offered, the legacy formats read-only, the version

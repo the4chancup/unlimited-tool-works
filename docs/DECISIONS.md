@@ -13669,3 +13669,17 @@ like their sidebar entries, until the maintainer calls them complete. This exten
 titles plain.
 Why: the maintainer's ask.
 Plan: `plans/core/gui.md` "Sidebar" item 5.
+
+## 2026-10-29 — save_editor — The patch panel's preview follows the open save; skips are warning lines
+
+Decision: Apply aesthetics patch's preview is the open save as it stands against the patch
+applied to a copy of it, recomputed whenever the save changes, rather than a list taken once
+at Open patch; Apply is disabled while the list is empty, and after Apply the list gives way
+to "Applied. The changes stay unsaved until Save." until the next change (an undo brings the
+list back). Each team or player of the patch the save lacks is a warning line under the
+summary ("Team 714 /co/ is not in this save: its players are skipped."), and the summary
+names only the teams that apply.
+Why: the plan said a skipped team is "reported" and the draft drew no report; a preview taken
+at Open goes stale with the first edit, and Apply would then write values the member never saw
+listed.
+Plan: `plans/save_editor.md` "Read-only aesthetics".
