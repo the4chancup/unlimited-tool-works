@@ -640,6 +640,23 @@ a wrapper per widget kind would leave out every control built with egui's own co
 drafts do the same for every `select` and number input (`docs/prototypes/index.html`, the
 wheel listener), so a draft can be tried as the app behaves (ST-WHEEL-01 to ST-WHEEL-04).
 
+### No two widgets overlap
+
+A headless test draws every screen of the Save editor at the default pane, on a PES 21 and a
+PES 17 save: the player view with Appearance closed and open, the team view, and every dialog,
+prompt and window the views open (each opened as its own tests open it). It fails when two
+widgets' rectangles intersect. It reads the frame's AccessKit nodes of the widget and label
+roles (those the pane-fit test reads), and compares every pair of which neither contains the
+other: a node drawn inside another (a combo's text, a header's label) is part of it, not a
+collision. An intersection counts once it is more than one point deep in both directions, the
+draft tolerance (two rows touching share an edge). An overlap a screen means (a marker's badge
+over the pitch) is listed in the test by role and label, with why, never by position: a
+position would excuse whatever moved there next. Why a test and not the overlay alone: the
+overlay shows a mismatch where a capture of the screen exists and someone looks at it, while a
+collision a later change brings (a longer label, a widened field) shows on no capture until the
+next look, and egui draws a row too wide for its room over its neighbour rather than refusing
+it. Another tool's views join the test when they are built.
+
 ### Prototypes before implementation
 
 Every tool's GUI, and every new shell element, is drafted first as an interactive web page and
