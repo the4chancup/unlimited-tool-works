@@ -888,6 +888,13 @@ its plan section.
   matching closer would complicate the implementation (a browser and egui round text and
   borders apart, and chasing the last pixel costs code a maintainer then owns); a larger one
   is a mismatch, fixed or ruled. A layout test pinning a draft measure may allow the same.
+- **Draft measure.** `scripts/draft_compare.py SCREEN` measures a screen open in the built
+  window against its draft: every element named on both sides (the app's through UI
+  Automation, `scripts/uia_dump.ps1`; the draft's from its DOM in Chromium) is paired by its
+  text, and each pair's largest offset is sorted into the tolerance's bands, over 2 px (a
+  mismatch), 1 to 2 px (accepted only where matching closer costs code, so each is looked at)
+  and within 1 px; the whole table lands in `.tmp/draft_compare/`. A closed menu or a popup
+  shows no elements, so it is measured open, as its own screen.
 - **Draft shots.** `scripts/draft_shots.py` captures every screen of every tool (the list from
   the tool scripts' registrations, reached through their links) at the default and the
   smallest default size with Playwright, and lists those whose pixels changed since its last
