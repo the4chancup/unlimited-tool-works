@@ -630,7 +630,10 @@ Win32 original hurt the most):
      ("Formation pictures" below), a quicker check across teams than the view. Their Copy/swap menu
      stays, a copy into them being how a member prepares them before switching it on.
   2. **Formation settings**, the pitch and **Player assignments**, the two panels exactly as
-     tall as the pitch (386 points with its border) and level with it. Formation settings
+     tall as the pitch (386 points with its border) and level with it. The pitch's border, the
+     lineup lists' frames and the player list's rows frame round their corners by 2 points,
+     as every framed panel does (egui's group frame, the drafts' `.group`), the turf clipped
+     to the border's inner curve. Formation settings
      runs row by row, each offensive setting beside its defensive pair (Attacking style beside
      Defensive style, Buildup beside Containment area, Attacking zone beside Pressure,
      Positioning beside Defensive line, Support range beside Compactness, Numbers in attack
@@ -1490,6 +1493,15 @@ SE-GUI-05  GIVEN the save open with unsaved changes
                 save; discard closes or opens it and the open file is unchanged; GIVEN the
                 Team compiler's view active when the window is closed THEN the close waits,
                 the Save editor becomes the active view and shows the same prompt
+SE-GUI-43  GIVEN the save open with a player's Height and Speed edited and team 701's colour 1
+           edited
+           WHEN the toolbar's `• unsaved changes` is clicked
+           THEN a popup under it lists SE-GUI-05's table (three rows: the two fields named
+                with the player, old and new values as the view shows them, and the colour
+                whose old and new values each draw their swatch before the hex) and none of
+                the prompt's save, discard and cancel; a click outside it, Esc, a second click
+                on the label or another edit closes it; GIVEN the toolbar's Undo clicked
+                THEN it closes and a click on the label reopens it two rows long
 SE-GUI-06  GIVEN a PES 17 save
            WHEN the player view is drawn, its Appearance section open
            THEN the stronger hand control (General info) and the star and playing attitude

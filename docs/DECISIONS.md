@@ -13749,3 +13749,41 @@ Why: the maintainer's pass over the 0.0.1 candidate found the app's name brighte
 planned icons darker than the drafts' (body grey #8c8c8c, weak grey #6e6e6e), and preferred
 the app's in both cases.
 Plan: none; the drafts are the colours' reference (`docs/prototypes/`).
+
+## 2026-10-29 — release — 0.0.1 is the Save editor for DBC alone; VGL's tools wait for 0.0.2
+
+Decision: the 0.0.1 preview targets DBC7 alone: its bundle drops `quick_compile.bat`,
+`quick_upgrade.bat`, the empty `exports/` and `old_exports/` folders and the readme's VGL
+section, keeps VGL27's rules file and the Team compiler's settings lines, and its settings
+pick PES 2017 (DBC's game) as `pes_version`. A preview 0.0.2 brings the Team compiler and
+the Export upgrader to VGL 27's organizer through their CLI, with the launchers as they are
+written now.
+Why: the maintainer wants the Save editor out to DBC's managers before the two tools are
+tested for the league; a launcher nobody tested for the release has no place in its bundle,
+and a bundle for DBC alone can open on DBC's game.
+Plan: `plans/core/development_plan.md` "Divegrass Before Christmas", "The /vg/ League 27
+(VGL)"; `plans/core/distribution.md`; `plans/core/architecture.md` "Launch modes".
+
+## 2026-10-29 — save_editor — The pitch, the lineup lists and the player list round their corners
+
+Decision: the Tactics pitch's border, the two lineup lists' frames and the player list's rows
+frame are drawn with corners rounded by 2 points, the radius of every other framed panel
+(egui's group frame, the drafts' `.group`), in the drafts and in the app.
+Why: the maintainer's pass over the 0.0.1 candidate found these four boxes square where the
+panels around them are rounded; the drafts drew all four square, the app the lineup lists
+rounded (egui's group frame) and the other two square.
+Plan: `plans/save_editor.md` "Tactics editor", the item starting "**Formation settings**, the pitch".
+
+## 2026-10-29 — studio_core — The light theme's widget greys a step lighter, its warning colour at 4.5
+
+Decision: the light theme's widget fills are resting 207 (`#cfcfcf`), hovered 192 and pressed
+214, each 6 lighter than the dark fills' contrast with the panel gives (201, 186, 208); the
+light warning colour is `#C54B00`, egui's light `#FF6400` darkened in linear light to read at
+4.5 on the panel.
+Why: the maintainer's look at the light theme found the input grey a little too dark and the
+warning orange (the sidebar's version badge) too bright; egui's light warning colour read at
+2.8 on the panel, under the 4.5 the plan asks of light text colours, which it had escaped.
+The three fills move together so the states stay as far apart as they were; the contrast
+rule loosens from "the dark ones' contrast" to "a step lighter than it", by the maintainer's
+eye (1.47 for a resting box, against egui's own 1.18 that left one invisible).
+Plan: `plans/core/gui.md`, the "Dark/light theme" row.

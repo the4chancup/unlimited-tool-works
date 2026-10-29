@@ -37,17 +37,17 @@ above. Members get the Save editor as a **preview build, 0.0.1**, cut once its v
 the shell with that tool active, and the Team compiler, the Export upgrader and the Ruleset
 editor, whose views come later, greyed out on the sidebar as the planned tools are. The exe
 embeds every cup's current rulesets (`spec/aatf_rules.md` "Embedded rulesets"), DBC7 and VGL27
-among them, and the bundle's settings pick DBC7 as the Save editor's `aatf_ruleset`: 0.0.1's
-window testers are DBC's managers. VGL's organizer, in case he checks his teams in the Save
-editor, picks `/vg/ League 27` in the toolbar's ruleset dropdown, as the readme's VGL section
-says. No rules file rides beside the exe: one in the data folder's `rules/` would list as an
+among them, and the bundle's settings pick DBC7 as the Save editor's `aatf_ruleset` and PES
+2017, DBC's game, as the sidebar's `pes_version`: 0.0.1 is DBC's alone, its testers DBC's
+managers, whose first open shows no version warning (the app's own default stays PES 2019).
+No rules file rides beside the exe: one in the data folder's `rules/` would list as an
 import, the same ruleset twice in the dropdown, its copy one × from deleted. The settings file
 lives in the bundle's `data/` folder, `data/settings.toml`, which makes the bundle portable
 (`spec/core/distribution.md` "Data location: asked on first run"), so 0.0.1's first start asks
 nothing: the location choice is what a preview's testers lose, against a check that is DBC's
 from the first open. The settings file also carries the Team compiler's
-`multicpk_mode` and `cpk_name` at their defaults, the two lines VGL's organizer changes (below),
-so the readme can say which line to edit rather than what to add. It needs from Release 0.1.0's list the Windows
+`multicpk_mode` and `cpk_name` at their defaults, the two lines VGL's organizer changes in
+0.0.2 (below), so that readme can say which line to edit rather than what to add. It needs from Release 0.1.0's list the Windows
 bundle (`just release`, the `.7z` and its checksum), and from Phase 8's the GUI-subsystem exe
 (`architecture.md` "Windows subsystem": no console window beside the window, ST-RUN-04) with
 the window's diagnostic log (`architecture.md` "Diagnostic logging"), since without a console
@@ -60,13 +60,19 @@ The Ruleset editor (Phase 20) was pulled forward for DBC at first and runs after
 instead: DBC's organizers already have their ruleset, the template the suite embeds, and a
 second tool in the preview would split the time the check needs.
 
-**The /vg/ League 27 (VGL).** The league starts in late November 2026 on PES 2019 with FoxDen,
-and its organizer tests the Team compiler there: managers send their exports in the old format,
-as for any cup; the maintainer and the organizer upgrade them with the Export upgrader, compile
-them, and fall back to Red if a major issue surfaces. So 0.0.1 also carries those two tools
-through their CLI. They need no view for it, and the window stays as above, the two greyed
-out. The bundle's launchers run the CLI in their console window, as Red's own bat runs its
-CLI, and wait for a key at the end so the report can be read:
+**The /vg/ League 27 (VGL): preview 0.0.2.** The league starts in late November 2026 on PES
+2019 with FoxDen, and its organizer tests the Team compiler there: managers send their exports
+in the old format, as for any cup; the maintainer and the organizer upgrade them with the
+Export upgrader, compile them, and fall back to Red if a major issue surfaces. So a second
+preview, 0.0.2, carries those two tools through their CLI. 0.0.1 goes out without them: the
+Save editor reaches DBC's managers before the two tools are tested for the league, and a
+launcher nobody tested for the release has no place in its bundle. Its bundle therefore has
+neither launcher, nor the `exports/` and `old_exports/` folders, nor the readme's VGL section;
+0.0.2 adds them back, as they are written now, with a readme that has the organizer pick PES
+2019. The tools' CLI is in 0.0.1's exe all the same, as every tool's is. They need no view
+for it, and the window stays as above, the two greyed out. The bundle's launchers run the CLI
+in their console window, as Red's own bat runs its CLI, and wait for a key at the end so the
+report can be read:
 
 - `quick_compile.bat` runs `team-compiler compile` over the bundle's `exports/` (through
   `UTW.exe`, "The project's name" below).

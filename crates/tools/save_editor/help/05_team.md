@@ -38,6 +38,29 @@ team row's, and writes every filled roster slot in one undoable step:
   model's own ID is kept, as in the Appearance section). **Remove FPC
   invisibility** writes the show preset on them all. On PES 2015 to 2017
   both also turn a Custom skin into Light.
+- **Import / export team file…** opens a panel beside the views. Its top
+  row exports the team: **Team TOML…** writes the team, its tactics and
+  its players with every value, the same file the command line's
+  `export-toml` writes; **Texport…** writes a `.ted` file the game's own
+  team import reads (PES 2018 to 2021; PES 2015 to 2017 have no Texport
+  template, so the button stays disabled). Neither will write over the
+  save that is open. Below it, **Pick…** opens a team file to import into
+  the selected team: a Team TOML (`.toml`), a squad file (`.4ccs`), a
+  tactics file (`.4cct`) or a Texport. A squad file lists which record
+  goes to which player. Tick the sections to bring in: **gameplay**
+  (abilities, skills, height and the like, and the team's name, short
+  name, manager and stadium),
+  **aesthetics** (names, shirt numbers, the look) and **tactics**; only the
+  sections the file holds are offered, and aesthetics stays off while
+  the aesthetics lock is on. A file from another PES version is
+  converted, and the values that could not carry over are listed as
+  notes, grouped, each group opening to its lines. If a ticked section
+  holds a value the save cannot take, the reason stands under the
+  choices and Apply is disabled; untick that section to import the rest.
+  **Apply** writes the ticked sections as one undoable step, unsaved until
+  you save. When the team already holds every value the ticked sections
+  would write (its own file, or a file applied already), Apply stays
+  disabled and the panel says so.
 
 The boots and gloves item, Clear visual flags and the FPC items stay
 disabled while the aesthetics lock is on (see the Appearance section), because

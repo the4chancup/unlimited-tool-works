@@ -275,13 +275,12 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             }
         }
         Some(Action::Select(player)) => {
-            // A listed player's team is one of the open file's.
-            let team_tactics = session
-                .file()
-                .team(player.team_id)
-                .map(|entry| &entry.tactics)
-                .expect("a listed row's team is in the open file");
-            aatf_check::select_player(player, selected, team, filter, team_tactics, tactics);
+            // A row drawn before another save opened can name a team that
+            // save lacks: its click does nothing.
+            let Some(entry) = session.file().team(player.team_id) else {
+                return;
+            };
+            aatf_check::select_player(player, selected, team, filter, &entry.tactics, tactics);
         }
         None => {}
     }

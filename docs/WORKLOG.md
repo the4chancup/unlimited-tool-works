@@ -133,7 +133,8 @@ documents".
 | 6 | Export upgrader | `export_upgrader` | done |
 | 7 | glTF support (runs after Release 0.1.0) | `model_convert` (glTF half) | todo |
 | 8 | GUI | `studio_core` shell, `studio`, tool views, `color_tools` widget | todo |
-| 0.0.1 | Preview build: the Save editor for DBC, with DBC7's rules file, the Team compiler and Export upgrader through their CLI for VGL 27 (`core/development_plan.md` "Divegrass Before Christmas", "The /vg/ League 27 (VGL)") | `just release`, the launchers, the console's progress line | todo |
+| 0.0.1 | Preview build: the Save editor for DBC alone, with DBC7's rules file and PES 2017 picked (`core/development_plan.md` "Divegrass Before Christmas") | `just release` | todo |
+| 0.0.2 | Preview build: 0.0.1 plus the Team compiler and Export upgrader through their CLI for VGL 27, with the launchers (`core/development_plan.md` "The /vg/ League 27 (VGL)") | `just release`, the launchers, the console's progress line | todo |
 | 0.1.0 | Release 0.1.0, after Phase 8, a test release (`core/development_plan.md` "Release 0.1.0") | `just release`, `CHANGELOG.md` | todo |
 | 0.2.0 | Release 0.2.0 or a later `0.x` (`core/development_plan.md` "Release 0.2.0") | help chapters, update check + notice, teams-list merge | todo |
 | 9 | Stadium compiler | `stadium_compiler` | todo |
@@ -1782,9 +1783,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           the base-copy own-id test the lead's, from S1c-1). Versions read `PES 2021` as the
           rest of the app (the draft followed). Release build checked on the real PES 21
           save, read-only: a PES 21 Team TOML, a real `.4ccs` (98HU's) with its pairing, a
-          PES 17 Team TOML with its notes (`.tmp/8_9k5/built/b2_0*.png`). Open: the notes in
-          a scroll area (expanded, they push Apply off the window; rulings L1), with the
-          SWE-2 round's rework
+          PES 17 Team TOML with its notes (`.tmp/8_9k5/built/b2_0*.png`). The notes'
+          scroll area (rulings L1) landed with k5b2r
       - [ ] k5c its export half (SE-GUI-16's export, SE-GUI-17's export): Team TOML equal to
         the CLI's export; Texport for PES 18-21 read back to the same team values; disabled on
         PES 15-17 with the missing template in its tooltip. Built and merged 2026-10-29
@@ -1793,13 +1793,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         Texport's key; 8 tests (`view/tests/interchange_export.rs`: the Team TOML byte-equal
         to the CLI's; PES 19 and 21 Texports read back with no value changed). SWE-2 round
         1: 3 accepted, the loop ends (rulings S1g; its code and tests ride k5b2r's part 2,
-        `.tmp/8_9k5/brief_k5b2r2.md`). Open: the built-window check; the `help/` paragraphs
-        for the patch panel and the team file panel (S1g-2, the lead, after k5b2r)
-      - [ ] k5b2r the rework of SWE-2 round 1 on k5b2 and round 2 on k5a
-        (`.tmp/8_9k5/rulings_k5.md` S1d-1, S1e-1, S1f, S2b-1 to 3, L1): an import that
-        changes nothing disables Apply and says so (drafted, plan, DECISIONS 2026-10-29), the
-        notes in a scroll area, the no-team line `Pick a team row to export or import.`, the
-        missing tests; then SWE-2 round 2 on k5b2's tests
+        `.tmp/8_9k5/brief_k5b2r2.md`, merged with k5b2r: the key seeded from ids, the
+        CLI's write-failure words, PES 18 to 21 round trips); the `help/` paragraphs for the
+        patch panel (`07_savefile.md`) and the team file panel (`05_team.md`). Open: the
+        built-window check
+      - [x] k5b2r the rework of SWE-2 round 1 on k5b2 and round 2 on k5a
+        (`.tmp/8_9k5/rulings_k5.md` S1d-1, S1e-1, S1f, S2b-1 to 3, L1) and of k5c's round 1
+        (S1g): an import that changes nothing disables Apply and says so (drafted, plan,
+        DECISIONS 2026-10-29), the notes in a scroll area, the no-team line `Pick a team row
+        to export or import.`, the missing tests. Merged 2026-10-29 (`06c2a6b4`;
+        `view/interchange.rs`, `view/patch.rs`, their tests). SWE-2 round 2 on k5b2's tests: 2
+        accepted, the loop ends (S2c); its four tests merged `0c5571d3` (the squad's shirt
+        numbers, the lock flipped after a pick, the intro line, a player row's team)
       - [ ] k5d SE-GUI-29 manual: each Texport imported by the game's own team import in PES
         18, 19, 20 and 21 (21 on E:; 18-20 on F:, connected on request; saves backed up first)
       - [ ] k5rev the cross-family review loop (the slices are Opus sidekicks', so the lead's
@@ -1821,6 +1826,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         list pane's and the quick actions' separator lines gone, widths kept; the lineup
         lists filled in the extreme colour, as the drafts' `.llist`; the lineup lists'
         rects unchanged by the Live AATF dock
+      - [x] the drafts round the pitch's, the lineup lists' and the player list's corners
+        by 2, as the other framed panels (DECISIONS 2026-10-29)
+      - [ ] m3 the app rounds them too (after m1, which touches the same frames): the
+        player list's rows frame and the pitch's border at the noninteractive corner radius,
+        the turf clipped to the border's inner curve; the lineup lists already round theirs
+      - [ ] m4 the light theme's widget greys and warning colour (the maintainer, 2026-10-29;
+        DECISIONS "The light theme's widget greys a step lighter, its warning colour at
+        4.5"): `theme.rs` `widgets_light` resting 207, hovered 192, pressed 214, the light
+        `warn_fg_color` `#C54B00`; its tests pin the values (the contrast-matching test
+        rewritten to the new rule) → verify: the built window's light theme, the sidebar's
+        version badge and a number box
       - [ ] m2 `scripts/draft_compare.py` compares the fill and text colours of the boxes it
         pairs, not only their rects: the fills and greys above passed every geometry check
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
@@ -2428,7 +2444,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     ids to names (which versions share the ids, and where the names come from, first).
     Drafted (`side/drafts2`); answered 2026-10-27 (DECISIONS 2026-10-27 "Formation pictures, the formation's name and the nation names: the maintainer's answers"): 4cc's nations in PES 16's
     table, PES 20 read as 21; the draft revised (side-lead D's step 5), then the look
-  - [ ] 8.31 after 0.0.1 (the maintainer, 2026-10-27): a click on the toolbar's `• unsaved
+  - [ ] 8.31 in 0.0.1 (the maintainer, 2026-10-29: "it's a small thing"; first placed after
+    it, 2026-10-27): a click on the toolbar's `• unsaved
     changes` opens the list of the changes, the table the close prompt already shows
     (`plans/save_editor.md`, the "Closing, or opening another save" bullet: Item, Old value,
     New value) without its save, discard and cancel. Drafted first, then the plan. A popup,
@@ -2438,7 +2455,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     draw a swatch; the list has no footer line"; draft `side/drafts2` `30842fa2`). Approved
     2026-10-28: the draft on main (`ed81bdb3`, `aaae3d1e`), the plan written
     (`plans/save_editor.md` "Editing UI", the bullet after the close prompt's); left: the
-    code, its SE-GUI scenario written with it
+    code (brief `.tmp/8_31/brief_8_31.md`), its scenario SE-GUI-43 written 2026-10-29
   - [x] 8.32 approved 2026-10-28 as built in 0.0.1x (the maintainer, 2026-10-27): the pitch draws the formation's name
     (`4-3-3`) in its corner, exactly as PES's formation screen draws it. First: the game's
     rule for the name from the slots' positions and the label's look, from in-game captures
@@ -5296,6 +5313,22 @@ briefs, review loops, gates and mutation runs as for any step.
     files and the repository's and developers' folders untouched. The bare "Studio" stays the
     working name in prose (the plan amended: rewriting ~250 of them buys a member nothing and
     sets the docs apart from the code); GLOSSARY rows for both names
+- [x] 0.0.1g the bundle for DBC alone (the maintainer, 2026-10-29; `plans/core/development_plan.md`
+  "Divegrass Before Christmas", "The /vg/ League 27 (VGL)"; DECISIONS "0.0.1 is the Save
+  editor for DBC alone; VGL's tools wait for 0.0.2"): `scripts/release.py` stages neither
+  launcher nor `exports/` and `old_exports/`, `resources/bundle/data/settings.toml` picks PES
+  2017 (`pes_version`), the readme loses its VGL section and the "pick your PES" step, VGL27's
+  rules file and the compiler's settings lines kept; `release_test.py` follows → verify: the
+  staged bundle's file list; the readme read through once. 0.0.2 restores the launchers,
+  folders and VGL section from git as they are now
+    Done (`7f8de3b9`, merged `e8d3ca2f`): `release.py`'s `LAUNCHERS` and `EMPTY_FOLDERS`,
+    both empty, drive the staging, the launcher check and `expected_entries`;
+    `data/settings.toml` opens `[common]` with `pes_version = 17` (`studio_core`
+    `the_bundled_settings_start_on_pes_2017` proves the app reads it there); the readme
+    rewritten for DBC's testers; `release_test.py` 12 tests, with
+    `test_the_bundle_ships_no_launcher_and_no_export_folder`, which 0.0.2 rewrites (not
+    deletes) when it names the launchers again. The staged list is checked by the tests and
+    the listing test; a real `just release` staging is 0.0.1f's. SWE-2 round: 0 counted
 - [ ] 0.0.1f the cut, once the Save editor's view is done (the Ruleset editor left 0.0.1 on
   2026-10-24, `plans/core/development_plan.md` "Development Plan"): the bundled settings picking
   DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`

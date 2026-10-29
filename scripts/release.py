@@ -3,23 +3,23 @@
 
 The recipe builds `studio` with `--locked`, reads the executable's name from the built exe's
 `--help` usage line (the name lives in `studio_core`'s `EXE_NAME`, not in this script),
-stages `unlimited-tool-works-<version>/` — the exe as `<name>.exe`, the two launchers, the
-readme, the two licenses, the bundled `data/settings.toml`, and the empty `exports/` and
-`old_exports/` — under a temporary folder in cargo's target directory (asked of `cargo
-metadata`, since a developer may have moved it), packs it as
-`<target>/dist/unlimited-tool-works-<version>-windows.7z` with a `sha256sum`-format `.sha256`
-beside it, then lists the archive and refuses unless the listing equals the staged set
-exactly, the empty folders included. Beside it it packs `unlimited-tool-works-<version>-symbols.7z` (the exe and
+stages `unlimited-tool-works-<version>/` — the exe as `<name>.exe`, the launchers it ships
+(`LAUNCHERS`, none in 0.0.1), the readme, the two licenses, the bundled `data/settings.toml`,
+and the empty folders it ships (`EMPTY_FOLDERS`, none in 0.0.1) — under a temporary folder in
+cargo's target directory (asked of `cargo metadata`, since a developer may have moved it),
+packs it as `<target>/dist/unlimited-tool-works-<version>-windows.7z` with a
+`sha256sum`-format `.sha256` beside it, then lists the archive and refuses unless the listing
+equals the staged set exactly, the empty folders included. Beside it it packs `unlimited-tool-works-<version>-symbols.7z` (the exe and
 its `.pdb`, the symbols `symbolize_log.py` names a posted `utw.log`'s backtrace with), never
 in the bundle.
 
 Every refusal prints one `error: <what>` line on stderr and exits 1: a platform that is not
 Windows, a version that is not the workspace's, a readme whose first line names another
 version, an archive that already exists (a release is never overwritten), a dirty tree, a
-`--help` with no usage line, a launcher that does not call the exe's name, a 7-Zip that
-cannot be found, and a listing that differs from the staged set (that archive is left for
-inspection). The pure helpers take their input as text so `release_test.py` can call them
-without git, cargo or 7-Zip.
+`--help` with no usage line, a launcher it ships (none in 0.0.1) that does not call the exe's
+name, a 7-Zip that cannot be found, and a listing that differs from the staged set (that
+archive is left for inspection). The pure helpers take their input as text so
+`release_test.py` can call them without git, cargo or 7-Zip.
 """
 
 import argparse
@@ -41,6 +41,10 @@ PDB_NAME = "utw.pdb"
 # The bundle's top folder and its archives' name. No built file states it, so it is the
 # recipe's own; the exe's name, which does live in the code, comes from its usage line.
 PACKAGE = "unlimited-tool-works"
+# 0.0.1 is the Save editor's alone; the 0.0.2 preview ships `quick_compile.bat` and
+# `quick_upgrade.bat` again, with the empty `exports/` and `old_exports/` they work in.
+LAUNCHERS: tuple[str, ...] = ()
+EMPTY_FOLDERS: tuple[str, ...] = ()
 
 
 class Refusal(Exception):
@@ -82,15 +86,13 @@ def expected_entries(name: str, version: str) -> set[str]:
     return {
         top,
         f"{top}/{name}.exe",
-        f"{top}/quick_compile.bat",
-        f"{top}/quick_upgrade.bat",
         f"{top}/README.txt",
         f"{top}/LICENSE-MIT",
         f"{top}/LICENSE-APACHE",
-        f"{top}/exports",
-        f"{top}/old_exports",
         f"{top}/data",
         f"{top}/data/settings.toml",
+        *(f"{top}/{launcher}" for launcher in LAUNCHERS),
+        *(f"{top}/{folder}" for folder in EMPTY_FOLDERS),
     }
 
 
@@ -165,7 +167,7 @@ def release(version: str) -> None:
     name = exe_name(help_text)
     if name is None:
         raise Refusal(f"{exe} --help shows no usage line")
-    for bat in ("quick_compile.bat", "quick_upgrade.bat"):
+    for bat in LAUNCHERS:
         path = ROOT / "resources/bundle" / bat
         if not launcher_calls(path.read_text(encoding="utf-8"), name):
             raise Refusal(f'{path.relative_to(ROOT)} does not call "%~dp0{name}.exe"')
@@ -177,7 +179,7 @@ def release(version: str) -> None:
         top = staging / f"{PACKAGE}-{version}"
         top.mkdir()
         shutil.copyfile(exe, top / f"{name}.exe")
-        for bundled in ("quick_compile.bat", "quick_upgrade.bat", "README.txt"):
+        for bundled in LAUNCHERS + ("README.txt",):
             shutil.copyfile(ROOT / "resources/bundle" / bundled, top / bundled)
         (top / "data").mkdir()
         shutil.copyfile(
@@ -185,8 +187,8 @@ def release(version: str) -> None:
         )
         for license_file in ("LICENSE-MIT", "LICENSE-APACHE"):
             shutil.copyfile(ROOT / license_file, top / license_file)
-        (top / "exports").mkdir()
-        (top / "old_exports").mkdir()
+        for folder in EMPTY_FOLDERS:
+            (top / folder).mkdir()
         seven_z = find_7z()
         if seven_z is None:
             raise Refusal(
