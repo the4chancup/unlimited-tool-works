@@ -1010,9 +1010,10 @@ fn save_to(view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>, target: P
 
 /// `session.save_to(target)` and the refusal its error takes (the draft's
 /// `writeSave`); a written file goes to the top of the Open menu's recent
-/// files. `edit_mode_closed` is the member's answer the caller holds: the
-/// toolbar's Save has none (the own-game check ran first), the question's
-/// Save has the confirmed `true`.
+/// files. `edit_mode_closed` lets the write go ahead while the save's own
+/// PES runs: the toolbar's Save passes `false` (the own-game check ran
+/// first), the running-game dialog's Save `true`, the dialog having told
+/// the member how to keep the write.
 pub(super) fn write_now(
     view: &mut SaveView,
     running: &dyn Fn() -> Vec<RunningPes>,

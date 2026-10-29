@@ -3037,18 +3037,26 @@ function dirtyTeam(t) {
 function teamOf(p) { return curSave().teams.find(t => t.players.includes(p)); }
 
 // ---- Save and Save as (SE-GUI-03, 21, 26) ----
-// Refused while the save's own game runs (the CLI's rule: the game writes its
-// save back on exit over ours); another version's game does not block it.
-// sample wording: the refusal's text and the status lines.
-function dlgSaveRefused() {
-  dlg("save-refused", "Save refused", h("div", {},
-    h("p", {}, "PES20" + version() + ".exe is running. The game writes its save back when it closes, over this one."),
-    h("p", {}, weak("Close the game, then save again."))),
-    [button("OK", closeWindow)]);
+// While the save's own game runs, Save first says how to keep the write: the
+// game writes its own copy over the file when the member leaves Edit mode
+// after changing anything there, so an open Edit mode needs its Data
+// Management > Load before leaving, and a closed one reads the file when
+// opened. Save writes and the pending action goes on; Cancel writes nothing.
+// Another version's game asks nothing.
+// sample wording: the dialog's text and the status lines.
+function dlgGameRunning(then) {
+  dlg("game-running", "PES 20" + version() + " is running", h("div", {},
+    h("p", {}, "If the game's Edit mode is open, use its Data Management > Load after saving, "
+      + "before you leave Edit mode: leaving it after changing anything there writes the "
+      + "game's own copy over this save."),
+    h("p", {}, "If Edit mode is closed, the changes show when you open it.")),
+    [button("Cancel", closeWindow),
+     button("Save", () => { closeWindow(); writeSave(S.path); if (then) then(); render(); })]);
 }
-function saveFile() {
-  if (D.gameRunning) return dlgSaveRefused();
+function saveFile(then) {
+  if (D.gameRunning) return dlgGameRunning(then);
   writeSave(S.path);
+  if (then) then();
 }
 function writeSave(path) {
   S.path = path;
@@ -3146,7 +3154,7 @@ function changesTable() {
 function drawUnsavedPrompt(then) {
   window_("Unsaved changes", h("div", {},
     changesTable()),
-    [button("Save", () => { closeWindow(); saveFile(); if (!D.gameRunning) { then(); } render(); }),
+    [button("Save", () => { closeWindow(); saveFile(then); render(); }),
      button("Discard", () => { closeWindow(); then(); render(); }),
      button("Cancel", closeWindow)], "unsaved-changes");
 }
@@ -7739,7 +7747,7 @@ const DLGS = { "set-stats": dlgSetStats, "bump-stats": dlgBumpStats, "multi-aatf
   "kit-slots": dlgKitSlots,
   "picture-save": () => dlgPictureSave(false), "picture-save-settings": () => dlgPictureSave(true),
   "pictures-range": dlgPicturesRange,
-  "choose-file": dlgChooseFile, "save-refused": dlgSaveRefused,
+  "choose-file": dlgChooseFile, "game-running": () => dlgGameRunning(),
   "save-as": saveAs, "export-toml": ixExportToml, "export-ted": ixExportTed,
   "open-save": () => dlgOpenSave(openStub
     || DISCOVERED.find(d => d.version === D.selectorVersion) || DISCOVERED[0]) };
@@ -7823,7 +7831,7 @@ registerTool({ id: "save-editor", css: SAVE_EDITOR_CSS, draw: renderView, firstS
     "save_editor/player?dialog=tsv", "save_editor/player?dialog=fixdb",
     "save_editor/player?dialog=kit-slots", "save_editor/player?dialog=picture-save",
     "save_editor/player?dialog=pictures-range", "save_editor/player?dialog=choose-file",
-    "save_editor/player?dialog=save-refused", "save_editor/player?dialog=save-as",
+    "save_editor/player?dialog=game-running", "save_editor/player?dialog=save-as",
     "save_editor/player?dialog=export-toml", "save_editor/player?dialog=export-ted",
     "save_editor/player?dialog=open-save&open=2019"] });
 })();

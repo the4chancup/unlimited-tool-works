@@ -492,9 +492,10 @@ impl Session {
 
     /// Writes the save to `path` (Save as; Save passes the session's own
     /// path), then makes `path` the session's file, where the next Save
-    /// writes, and the current model the baseline. `edit_mode_closed` is
-    /// the member's answer to the running-game question: refused only when
-    /// the save's own PES runs and the answer is `false` (the game writes
+    /// writes, and the current model the baseline. `edit_mode_closed` lets
+    /// the write go ahead while the save's own PES runs (the command line's
+    /// `--edit-mode-closed`, the window's running-game dialog's Save):
+    /// refused only when that PES runs and it is `false` (the game writes
     /// its save back over ours when the member leaves Edit mode after
     /// changing anything there); a game of another version does not block
     /// it.
@@ -684,12 +685,12 @@ fn baselines(file: &EditFile) -> (HashMap<u32, PlayerEntry>, HashMap<u32, TeamEn
 }
 
 /// The refusal a writing operation makes while the PES of `version` runs and
-/// `edit_mode_closed`, the member's word that the game's Edit mode is closed,
-/// is not given: the game writes the save it holds over the file when the
-/// member leaves Edit mode after changing anything there, so a write made
-/// while it is open is lost unless Edit mode's Load reads it in first. A game of another
-/// version never writes this save, so it does not refuse
-/// (`spec/save_editor.md` "CLI").
+/// `edit_mode_closed` is not given (the command line's word that the game's
+/// Edit mode is closed, or the window's running-game dialog's Save): the game
+/// writes the save it holds over the file when the member leaves Edit mode
+/// after changing anything there, so a write made while it is open is lost
+/// unless Edit mode's Load reads it in first. A game of another version never
+/// writes this save, so it does not refuse (`spec/save_editor.md` "CLI").
 pub(crate) fn refuse_while_running(
     running: &[RunningPes],
     version: PesVersion,

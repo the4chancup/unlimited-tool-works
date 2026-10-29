@@ -1600,10 +1600,16 @@ const HELP = [
       "A command that writes a save reads the one `--base` names and writes the one `--out` names,",
       "which may be the same file; a file already at `--out` (or `--bins-out` for the CPK",
       "`strip-and-seed` writes) is first copied to `<file>.bak` (one",
-      "level: the next write replaces that copy). No command creates a save from nothing, and",
-      "each of them refuses while the PES of the save's version is running: the game writes its own",
-      "save back when it closes, over the one the command wrote. A PES of another version running",
-      "does not stop it."
+      "level: the next write replaces that copy). No command creates a save from nothing.",
+      "",
+      "While the PES of the save's version is running, the game writes the save it holds over the",
+      "file when you leave its Edit mode after changing anything there, so a save written while Edit",
+      "mode is open is lost then unless Edit mode's Load reads it in first. A command that writes a",
+      "save therefore writes it while the game runs only when you add `--edit-mode-closed`, which",
+      "says you have closed Edit mode. Without it, the command writes nothing and names the running",
+      "game: close Edit mode, then run the command again with `--edit-mode-closed`. Opening Edit mode",
+      "then reads the save in without restarting the game. A PES of another version running does not",
+      "count."
     ].join("\n") },
   ] },
   { id: "export-upgrader", title: "Export upgrader", topics: [

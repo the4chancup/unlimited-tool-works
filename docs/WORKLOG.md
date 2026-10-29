@@ -1869,8 +1869,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         changing anything there"); the sidekick's contradiction accepted:
         `spec/team_compiler/pipeline.md` "Savefile update" quoted the old shared words. The dialog's state keeps the name
         `EditModeQuestion`. Gates in its worktree: `save_editor`, `team_compiler`, `studio`
-        tests, clippy, fmt, `comment_refs` green (`.tmp/8_9m/m5_gates.log`). Open: the
-        dialog in the built window
+        tests, clippy, fmt, `comment_refs` green (`.tmp/8_9m/m5_gates.log`). SWE-2 round
+        S1m5: 4 counted, the loop's end (`.tmp/8_9m/rulings_m.md`): the drafts now draw the
+        running-game dialog where they still refused, the host's CLI help copy follows, and
+        four comments no longer call the dialog's Save the member's word. Open: the dialog in
+        the built window
         Files: `save_editor/src/{cli,session/mod,view/prompt}.rs`, `view/tests/prompt.rs`,
         `save_editor/help/0{1,2}_*.md`, `team_compiler/src/{messages,messages/catalog,
         output/savefile}.rs`, `team_compiler/help/01_command_line.md`

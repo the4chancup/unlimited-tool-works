@@ -253,7 +253,7 @@ fn save_asks_the_edit_mode_question_while_the_saves_own_pes_runs() {
         "Cancel closes the question"
     );
 
-    // Its Save writes with the member's answer.
+    // Its Save writes, the dialog having said how to keep the write.
     assert!(!save(&mut view, &running_own));
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     click(
