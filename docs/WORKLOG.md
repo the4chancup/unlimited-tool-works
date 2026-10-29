@@ -1915,12 +1915,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               `the_overlay_casts_no_shadow_and_ends_on_the_rails_line` (red twice: the shadow,
               then the missing line). On the release build: one grey-60 column at x 194, no
               shadow. Files: `studio_core/src/shell/sidebar/{mod,tests}.rs`
-            - [ ] l3d3h the opened sidebar's labels where the draft puts them: the build's
-              start 10 points right of the draft's (57 against 47: after the whole icon
-              cell plus egui's 8, where the draft has 6 after the 24-point icon box) and
-              the layer ends 4 wider (195 against 190.6: the draft also pads the row 6 after
-              the label); `plans/core/gui.md` "Sidebar" item 3 now gives the numbers;
-              brief `.tmp/8_9l/brief_l3d3h.md`
+            - [x] l3d3h 2026-10-29 (sidekick Opus, `2b156a29`) the opened sidebar's labels
+              where the draft puts them, 6 after the 24-point icon box (they were after the
+              whole icon cell plus egui's 8, at 57) with 6 of padding after the longest:
+              `label_offset`, `LABEL_GAP`, `LABEL_END_PADDING`; test
+              `the_opened_sidebars_labels_and_width_match_the_draft` (every label at 47, the
+              layer 190.63, within 1). On the release build: label ink at 47-48 and the
+              layer's line at x 189, as the draft's. Files:
+              `studio_core/src/shell/sidebar/{mod,tests}.rs`
             - [ ] l3d3i the rail's version selector: its year centred under the logo with no
               arrow (the opened sidebar's unchanged), and the hover delay 100 ms (DECISIONS
               "The rail's version selector centred without its arrow; the hover delay 100
