@@ -2003,7 +2003,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     it does not show at 24 px (the maintainer). The stickman is a filled outline with
     `stroke="none"`: the font build takes it as it is, where the other glyphs' strokes are
     expanded to outlines. The maintainer picked (g) (DECISIONS "The Team compiler's icon is
-    the stickman dropping into an open box"); the other tools' picks still wait
+    the stickman dropping into an open box"); the other tools' picks still wait.
+    2026-10-29: the final set drafted, each tool's (p) on the page and the rail's default
+    (DECISIONS "A tool's kind shows as one mark on its icon"; `plans/core/README.md` "GUI
+    framework choice: egui"), built as filled outlines by `.tmp/0_0_1ov/icons/final_icons.py`
+    (skia-pathops: strokes outlined, the mark's cut subtracted); waiting for the maintainer's
+    confirmation (QUESTIONS "Is the final icon set confirmed?"). The font script then takes
+    that outline build into `scripts/` with its test, rather than expanding strokes itself
   - [ ] 8.15 (code done 2026-10-25 with 8.9f4c's rework r2; the built window's check open) the window's default to 1280 × 800 (the maintainer, 2026-10-25; `spec/core/gui.md`
     "The window's size", ST-WIN-01, ST-HELP-05; DECISIONS "Studio opens at 1280 × 800
     points"): `studio_core`'s `DEFAULT_SIZE` and its tests, the help window's; the Save
