@@ -380,7 +380,9 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   structure pass's codes it reports (the Export upgrader's) with its own severity and text.
 - **Search.** One text box above the chapter tree, case-insensitive substring over every topic's
   paragraphs and every catalog row; results list as *Chapter › Topic › matching line*, click to
-  jump with the hit highlighted. No index and no fuzzy matching: the whole corpus is tens of
+  jump with the hit highlighted. The line is shown as plain text without its Markdown marks
+  (`**`, backticks, a list item's leading dash and indent), since a label draws none: a
+  subheading's hit reads "Saving", not "\*\*Saving\*\*". No index and no fuzzy matching: the whole corpus is tens of
   kilobytes, and a linear scan per keystroke costs nothing. Its first job is the one Red's users
   did by hand — paste a message ID from the log and find out what it means.
 - **Opening.** The sidebar's `?` button or F1 opens the window on the **active tool's chapter**

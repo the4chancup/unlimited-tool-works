@@ -13938,3 +13938,36 @@ Why: the maintainer asked for about 960 × 600 once the text wraps at 720. At 96
 topic's text column came out 714 wide in the drafts, 699 beside a scroll bar; 1000 holds the
 220-point tree and the 720 column with a scroll bar beside it.
 Plan: `plans/core/gui.md` "Help window", the Window bullet; ST-HELP-05.
+
+## 2026-10-30 — save_editor — A ruleset carries its event's logo and page (P45 accepted)
+
+Decision: a rules file may carry its event's logo (a base64 PNG of at most 64 KB) and page
+(an http(s) address) in its data section; while it is the active ruleset, the Save editor
+draws the logo at its top right, the clover mirrored (28 high, 14 from the right, 8 from the
+top, up to 84 wide), over the toolbar row's empty end, moving nothing, hidden where the
+toolbar reaches it; a click opens the page. The Ruleset editor's General section edits
+both; the embedded rulesets carry their events' logos. Built before 0.0.1.
+Why: the maintainer proposed it, placed it at the top right with a page link so it moves
+nothing and needs no shell hook, sized it as the clover, and put it before 0.0.1: polish
+that improves the first impression. Logos are made for any background, so one look on both
+themes. A bad logo is refused at load, not dropped, so its organizer learns why it never
+shows.
+Plan: `plans/aatf_rules.md` "The ruleset schema"; `plans/save_editor.md` "Editing UI",
+"The event logo"; `plans/ruleset_editor.md` "The editor", General; SE-GUI-44, RE-GUI-19,
+RE-FILE-09.
+
+## 2026-10-30 — gui — A help search hit's label is plain text
+The help search labels a paragraph hit with its matching line, shown without its Markdown
+marks: no `**`, no backticks, no list item's dash. The window and the draft both strip
+them.
+Why: since the help chapters gained bold subheadings and lists, a search for "saving" lists
+"**Saving**" with its asterisks, and a list item's hit starts with "- ": a label draws no
+Markdown, so the marks only clutter it. Found by the SWE-2 review of 8.29e1 (S1a-4).
+Plan: `plans/core/gui.md` "Help window", the Search bullet.
+
+## 2026-10-30 — save_editor — The event logo's tooltip says a click opens the page
+With a page, the event logo's tooltip is the event's name, a blank line, "Click here to open
+the event's page:", and the address on its own line; without one, the name alone.
+Why: the maintainer's wording, replacing the draft's "Opens <address>": it tells a member
+the logo is a link and what it leads to before the address.
+Plan: `plans/save_editor.md` "Editing UI", "The event logo"; SE-GUI-44.
