@@ -550,8 +550,8 @@ Improvements policy: each of the above exists to remove a real friction point
 
 ## Writing a save while its game runs
 
-This changes what `spec/save_editor.md` "CLI" says under "Writing a save" (the refusal, and
-SE-CLI-02, which SE-CLI-03 replaces once built).
+The command line's half is built: `spec/save_editor.md` "CLI", the bullet "Writing a save",
+and SE-CLI-03. What follows is the window's.
 
 A save can be written while its own version's PES runs, as long as the game's Edit mode is
 closed: PES writes the save it holds over the file when the member leaves Edit mode, so a
@@ -567,15 +567,11 @@ another version asks nothing, since a game only writes its own version's save.
   Edit mode is closed, closing it if it is open, and says that Edit mode's Load reads the saved
   file in. Its buttons are Save, which writes, and Cancel, which writes nothing (and, under the
   unsaved-changes prompt, keeps that prompt open).
-- **The command line**, which cannot ask: a writing command (`import-toml`, `apply-patch`,
-  `strip-and-seed`, `check-stripped --strip-again`) with the save's own PES running writes
-  only when given `--edit-mode-closed`, the member's answer to the window's question. Without
-  it, the command writes nothing and exits 2, its message naming the game and the flag. Not a
-  warning followed by the write: a write made while Edit mode is open is lost without a word,
-  and the warning would come after it.
+- **The command line**, which cannot ask, takes `--edit-mode-closed`, the member's answer to
+  the window's question (`spec/save_editor.md` "CLI", "Writing a save").
 - The Team compiler's savefile step follows the same rule (`spec/team_compiler/pipeline.md`
   "Savefile update").
-- Scenarios: SE-GUI-21 and SE-CLI-03 (the Acceptance section).
+- Scenario: SE-GUI-21 (the Acceptance section).
 
 ---
 
@@ -1632,13 +1628,6 @@ SE-GUI-21  manual  GIVEN the save's game running
                    THEN a dialog naming the game asks to make sure its Edit mode is closed;
                         Cancel leaves the file unchanged; Save writes it, and Edit mode's Load
                         then shows the edit in game without a restart
-SE-CLI-03  GIVEN a running PES of the save's version (the tests' running-PES probe)
-           WHEN import-toml, apply-patch, strip-and-seed or check-stripped --strip-again is
-                run on that save
-           THEN without --edit-mode-closed nothing is written, the exit code is 2 and the
-                message names the game and the flag; with it, --out is written as with no
-                game running; with only a PES of another version running, the command writes
-                without the flag
 SE-GUI-22  GIVEN the save open with "Aesthetics from exports" on and "Edit aesthetics
                 anyway" off (every start of the tool)
            WHEN the Appearance section (open), the team operations menu, the Savefile menu

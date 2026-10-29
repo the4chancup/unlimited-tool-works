@@ -2818,3 +2818,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The light theme's resting widgets stand out from the panel as the dark theme's do, and the lineup lists' position codes read at 4.5 on it (0.0.1ov11c).
 - **2026-10-29** — The opened sidebar draws below an open modal and takes no input there; a click on it no longer switches tools or opens Help behind Settings (0.0.1ov11d).
 - **2026-10-29** — The sidebar's rail stands at the draft's pixels: the logo, the version selector and the tools' icons where the draft puts them, and a line above Help (0.0.1ov2z).
+- **2026-10-29** — The Save editor's writing commands write a save while its PES runs when given `--edit-mode-closed`, and without it name the game and the flag, as the compiler does (8.9l5a).

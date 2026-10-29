@@ -1804,10 +1804,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by
         the Edit mode question ("Writing a save while its game runs", DECISIONS 2026-10-25):
         the check is redone on l2's build, Edit mode's Load included
-      - [ ] l5 the same rule for the command line and the compiler
-        - [ ] l5a the Save editor's writing commands take `--edit-mode-closed` (SE-CLI-03,
-          replacing SE-CLI-02 in the spec once built), its message in the words
-          `spec/team_compiler/pipeline.md` "6. Post-processing" gives both tools
+      - [x] l5 the same rule for the command line and the compiler
+        - [x] l5a 2026-10-29 (Opus sidekick): the Save editor's `import-toml`, `apply-patch`,
+          `strip-and-seed` and `check-stripped --strip-again` take `--edit-mode-closed`; with
+          the save's own PES running they write only with it, and without it write nothing and
+          exit 2 in the words both tools share. `session::refuse_while_running` takes the flag
+          (the window's `Session::save` passes its answer through it). SE-CLI-03 built, one
+          shared test checker over the four commands (saves compared by payload: each write
+          re-encrypts under a fresh salt), and moved to the spec in SE-CLI-02's place (now
+          withdrawn); the spec's "Writing a save" says the rule, the plan section keeps the
+          window's half. Help: `01_command_line.md`. Files: `save_editor/src/{cli,session/mod}.rs`,
+          `save_editor/tests/cli/{main,import_toml,apply_patch,strip}.rs`,
+          `save_editor/help/01_command_line.md`
         - [x] l5b 2026-10-27 (side-lead U, SWE-2): the Team compiler's `compile` takes
           `--edit-mode-closed`, and with it the savefile step writes the save while the target's
           PES runs; without it `savefile_skipped_pes_running` skips as before, its line naming

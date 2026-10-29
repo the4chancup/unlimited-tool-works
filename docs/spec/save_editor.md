@@ -311,13 +311,19 @@ Rules every command shares:
 - **Writing a save.** A command that writes a save reads its source save (`--base`, or
   `check-stripped`'s one save) and writes `--out`, which may be the same path; an existing
   output save or CPK (`--out`, `--bins-out`) is first copied to `<file>.bak` (one level, as every
-  save does). There is no implicit base save and no command creates a whole EDIT. A command that
-  writes a save refuses while the PES of that save's version is running (the source save's
-  version, read before anything is written): the game writes its own copy back on exit, over
-  ours. A running PES of another version does not block it, because a game only ever writes its
-  own version's save; refusing on any running game would refuse every edit of another version's
-  save, and a copy of one, for no protection. The compiler's savefile step skips under the same
-  danger (`team_compiler/pipeline.md`, `savefile_skipped_pes_running`).
+  save does). There is no implicit base save and no command creates a whole EDIT. While the PES
+  of that save's version is running (the source save's version, read before anything is
+  written), a command that writes a save writes only when given `--edit-mode-closed`, the
+  member's word that the game's Edit mode is closed: the game writes the save it holds over the
+  file when Edit mode closes, so a write made while it is open is lost then, while one made with
+  it closed stands and Edit mode's Load reads it in without restarting the game. Without the
+  flag the command writes nothing and exits 2, its message naming the game and the flag. Not a
+  warning followed by the write: a write made while Edit mode is open is lost without a word,
+  and the warning would come after it. A running PES of another version needs no flag, because
+  a game only ever writes its own version's save; refusing on any running game would refuse
+  every edit of another version's save, and a copy of one, for no protection. The compiler's
+  savefile step follows the same rule (`team_compiler/pipeline.md`,
+  `savefile_skipped_pes_running`).
 - **A stripped player is marked.** On a Fox save, `diff` marks a player at -1 as stripped
   ("Stripped save") beside his rows, `export-toml` with `stripped = true` in his table
   (informational; import ignores it).
@@ -460,12 +466,15 @@ SE-CLI-01  GIVEN the PES 21 fixture save, a Team TOML of one of its teams, and a
            at --out
            WHEN import-toml writes --out, then again with --out equal to --base
            THEN each time <out>.bak holds the file the write replaced, and the exit code is 0
-SE-CLI-02  manual  GIVEN a running PES of the save's version
-                   WHEN import-toml, apply-patch, strip-and-seed or check-stripped
-                        --strip-again is run on that save
-                   THEN it is refused naming the running game, with exit code 2, and nothing is
-                        written; with only a PES of another version running, the same command
-                        writes --out
+SE-CLI-02  withdrawn: restated as SE-CLI-03, the save written while its game runs
+           when the command is given --edit-mode-closed (step 8.9l5a)
+SE-CLI-03  GIVEN a running PES of the save's version (the tests' running-PES probe)
+           WHEN import-toml, apply-patch, strip-and-seed or check-stripped --strip-again is
+                run on that save
+           THEN without --edit-mode-closed nothing is written, the exit code is 2 and the
+                message names the game and the flag; with it, --out is written as with no
+                game running; with only a PES of another version running, the command writes
+                without the flag
 ```
 
 **Team TOML**
