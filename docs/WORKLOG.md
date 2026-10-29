@@ -4686,7 +4686,12 @@ briefs, review loops, gates and mutation runs as for any step.
       (the draft's border on every entry: x 29 on the rail and opened); six tests. The
       sidekick's two contradictions over the tolerance (the icons 1.5 left, the logo's hover
       box the whole row) were the rework; kept: the selector 43 wide for the draft's 44 (its
-      select overhangs its 43-point box), the opened logo at 11.5 for the draft's 12
+      select overhangs its 43-point box), the opened logo at 11.5 for the draft's 12. Seen in
+      the built window 2026-10-29 (release build of `5378f359`, after a green checkpoint:
+      3,194 tests): the rail's ink rows at the draft's within a point (logo 16 to 27, selector
+      40 to 57, lines at 64 and 681, entries 32 apart), Help and the gear within 2 (their
+      glyphs); the opened sidebar under the Settings modal's backdrop (ov11d); the Overlay's
+      player and team captures retaken
     - [x] ov2x the player view and the text boxes against the draft, re-measured 2026-10-29
       (`rect_compare.py player`): every text box without the draft's 1-point border
       (`input[type=text]`: `border: 1px solid var(--stroke)`, radius 3; egui's resting text
