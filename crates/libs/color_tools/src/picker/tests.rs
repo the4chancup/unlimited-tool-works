@@ -390,6 +390,25 @@ fn format_hex_is_upper_case_rrggbb() {
     assert_eq!(format_hex([255, 130, 0]), "#FF8200");
 }
 
+// The button is the drafts' colour input, 22 x 16, both in its response and its
+// AccessKit bounds.
+#[test]
+fn the_field_button_is_22_by_16() {
+    let mut window = Headless::new();
+    let mut color = [255, 130, 0];
+    let (nodes, out) = window.field(&mut color, &[], Vec::new());
+    let size = out.response.rect.size();
+    assert!(
+        (size.x - 22.0).abs() <= 1.0 && (size.y - 16.0).abs() <= 1.0,
+        "the button's response rect is 22 x 16, got {size:?}"
+    );
+    let bounds = egui_rect(field_button(&nodes, 0)).size();
+    assert!(
+        (bounds.x - 22.0).abs() <= 1.0 && (bounds.y - 16.0).abs() <= 1.0,
+        "the button's bounds are 22 x 16, got {bounds:?}"
+    );
+}
+
 // A committed hex text is one change.
 #[test]
 fn hex_text_committed_with_enter_is_one_change() {

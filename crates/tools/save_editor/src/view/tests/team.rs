@@ -506,6 +506,108 @@ fn the_fields_ids_and_kit_slots_button_share_one_row_at_the_default_pane() {
     );
 }
 
+// The row's controls stand where the draft's do, measured from the Name
+// box's left edge (the draft at 1280 x 780, PES 21 save, team 701): the
+// units 6 apart, a colour's or an id's parts a space apart, the ids' cells
+// padded 4 on each side.
+#[test]
+fn the_rows_controls_stand_where_the_drafts_do_from_the_name_box() {
+    let path = fixture(PesVersion::Pes21, "team_row_offsets");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    let name = bar_name_field(&nodes).bounds().expect("bounds").x0;
+    let left_of = |label: &str, role: Role| {
+        right_of_label(&nodes, label, role)
+            .first()
+            .copied()
+            .unwrap_or_else(|| panic!("no {role:?} right of {label:?}"))
+            .bounds()
+            .expect("bounds")
+            .x0
+    };
+    let kit_slots = node_labeled(&nodes, Role::Button, crate::view::team::KIT_SLOTS_LABEL)
+        .bounds()
+        .expect("bounds")
+        .x0;
+    let edges = [
+        ("the Short box", left_of("Short", Role::TextInput), 182.5),
+        ("Col. 1's swatch", left_of("Col. 1", Role::ColorWell), 264.0),
+        ("Col. 2's swatch", left_of("Col. 2", Role::ColorWell), 381.1),
+        (
+            "the Manager ID box",
+            left_of("Manager ID", Role::SpinButton),
+            534.9,
+        ),
+        (
+            "the Stadium ID box",
+            left_of("Stadium ID", Role::SpinButton),
+            653.6,
+        ),
+        ("the Kit slots button", kit_slots, 709.6),
+    ];
+    for (control, left, draft) in edges {
+        assert!(
+            (left - name - draft).abs() <= 1.0,
+            "{control} stands {draft} right of the Name box, got {}",
+            left - name
+        );
+    }
+}
+
+/// The left edges of the team row's Short box, colour swatches, id
+/// controls and `Kit slots…` button, from the Name box's, on `version`'s
+/// fixture: the id controls are the first control right of their labels,
+/// the number box or its disabled stand-in.
+fn row_edges(version: PesVersion, test: &str) -> [f64; 6] {
+    let path = fixture(version, test);
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let name = bar_name_field(&nodes).bounds().expect("bounds").x0;
+    let left = |node: &accesskit::Node| node.bounds().expect("bounds").x0 - name;
+    [
+        left(control_right_of(&nodes, "Short")),
+        left(control_right_of(&nodes, "Col. 1")),
+        left(control_right_of(&nodes, "Col. 2")),
+        left(control_right_of(&nodes, "Manager ID")),
+        left(control_right_of(&nodes, "Stadium ID")),
+        left(node_labeled(
+            &nodes,
+            Role::Button,
+            crate::view::team::KIT_SLOTS_LABEL,
+        )),
+    ]
+}
+
+// On PES 17, whose save stores no manager or stadium ID, the ids' disabled
+// stand-ins take the number boxes' width: the row's controls stand where
+// they do on PES 21.
+#[test]
+fn the_rows_controls_stand_still_on_a_version_without_the_ids() {
+    const CONTROLS: [&str; 6] = [
+        "the Short box",
+        "Col. 1's swatch",
+        "Col. 2's swatch",
+        "the Manager ID control",
+        "the Stadium ID control",
+        "the Kit slots button",
+    ];
+    let stored = row_edges(PesVersion::Pes21, "team_row_edges_21");
+    let gated = row_edges(PesVersion::Pes17, "team_row_edges_17");
+    for ((control, gated), stored) in CONTROLS.iter().zip(gated).zip(stored) {
+        assert!(
+            (gated - stored).abs() <= 1.0,
+            "{control} stands {gated} on PES 17 against {stored} on PES 21"
+        );
+    }
+}
+
 // The ids share the fields' row because the Tactics editor below needs
 // the height: at the default pane the view's lowest drawn stroke — the
 // lists' and Automatic settings' frame bottoms — ends inside the pane's
