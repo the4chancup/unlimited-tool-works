@@ -14,8 +14,11 @@ names where the question came from so the context can be read there.
   2026-10-28), under way since 2026-10-28 ~14:00; what changes it asks for is drafted first,
   looked at in the drafts, then built. Still to look at in the built app: the windows' titles
   at 14 in white; the preview's icon where the lead cannot capture it (worklog 0.0.1v: the taskbar
-  button and Alt+Tab show the tight crop of the head; Explorer's file icon on the exe). Then
-  the confirmation that freezes logic version 1's hash (0.0.1f2).
+  button and Alt+Tab show the tight crop of the head; Explorer's file icon on the exe). Live
+  AATF's whole look, every element it draws rendered from the drafts with what each shows
+  and its tooltips (worklog 0.0.1ov6): `.tmp/0_0_1ov/live/`, images 01 to 13 (no 06: a rules
+  file is checked when imported, so the dock has no failed state). Then the confirmation that
+  freezes logic version 1's hash (0.0.1f2).
 - **Ability stats' labels: left as the draft shows, or right?** (worklog 0.0.1ov1, DECISIONS
   "Correction: the approved draft draws the ability stats' labels left-aligned"). The draft you
   approved shows them left-aligned, one column starting at one x; its CSS meant them
