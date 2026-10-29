@@ -1,4 +1,4 @@
-# 4cc Studio — Spec index
+# Unlimited Tool Works — Spec index
 
 What the suite does now, and why: one document per concern, with the same files and headings as
 the [plans](../plans/README.md), which hold the work not built yet. A section partly built

@@ -1,4 +1,4 @@
-//! Compiles the preview's icon into the executable on Windows: the file icon Explorer, a
+//! Compiles the icon into the executable on Windows: the file icon Explorer, a
 //! shortcut and the unpacked bundle show before the program runs, which Windows reads only
 //! from the exe's own resources. Those need a resource compiler at build time, which
 //! `winresource` drives.

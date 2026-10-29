@@ -11,7 +11,7 @@ use std::fs;
 /// IMAGE_SUBSYSTEM_WINDOWS_GUI is 2; 3 is IMAGE_SUBSYSTEM_WINDOWS_CUI, the console's.
 #[test]
 fn the_binary_is_a_gui_subsystem_executable() {
-    let bytes = fs::read(env!("CARGO_BIN_EXE_4cc-studio")).unwrap();
+    let bytes = fs::read(env!("CARGO_BIN_EXE_utw")).unwrap();
     let e_lfanew = u32::from_le_bytes(bytes[0x3C..0x40].try_into().unwrap()) as usize;
     assert_eq!(
         &bytes[e_lfanew..e_lfanew + 4],

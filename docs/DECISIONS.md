@@ -13363,3 +13363,39 @@ Why: 0.0.1ov2nop measured the log's well at 194 under the 220-point panel (the f
 line, the header row and its spacing taking 26), 14 points taller than the approved drafts.
 Plan: `plans/core/gui.md` "GUI Design", the code block under "A pipeline tool subdivides",
 its `Panel::bottom` comment.
+
+## 2026-10-29 — save_editor — Names and the player list's rows in the body text
+Decision: the player list's rows and every name drawn through `team_widgets`' name helpers
+(the lineup lists, the pitch's popover, the view's title) take the font their caller gives,
+the body text (12.5) for all but the pitch's markers, which keep their own size.
+Why: 0.0.1ov2m found the list's text and the name helpers laid out with egui's default font,
+14, where the drafts draw 12.5: at 14 DMF, CMF, AMF and RWF overflow the 28-point position
+column.
+Plan: `plans/save_editor.md` "Editing UI", the Player list bullet.
+
+## 2026-10-29 — core — "Studio" stays the working name in the docs' prose
+Decision: the docs spell the product's names where they name what a member sees (titles, the
+CLI's examples, the folders, the log, `LICENSE-MIT`'s contributors), and keep "Studio" in their
+prose as the suite's shorthand ("the Studio format", "a Studio export"), as the code's comments
+and crate names do; the glossary defines both. This replaces the plan's "the docs name the
+project UTW".
+Why: about 250 prose uses, many inside terms the code's comments share; no member reads them,
+and rewriting them would set the docs apart from the code they describe. Every member-facing
+text in the code was checked: none says "Studio".
+Plan: `plans/core/development_plan.md` "The project's name: Unlimited Tool Works".
+
+## 2026-10-29 — save_editor — The team row's gaps as drafted; its line waits for the Tactics' height
+Decision: the team view's fields' row spaces its units 6 points apart (the drafts' rows' gap,
+the Name and Short labels units of their own), a colour's label, picker and hex and an id's
+label and its box 3 apart (a space), the ids' grid cells padded 4 on each side; the Save
+editor draft's colour button is 22 x 16, as the Ruleset draft's and the plan's. The line
+under the row is drawn where the draft draws it, 11 points under the row's controls and 10.5
+over the Tactics' first (8 from the boxes around it), and lands with the fix of the build's
+Tactics, which stands about 23 points taller than the draft's: with the line alone the
+Tactics' last control ends 3.5 points under the pane's fold, where the draft's view ends 8
+over it.
+Why: ov2l's sidekick measured the build's row against the draft piece by piece: the 22-point
+button closed only part of the offset (Col. 2's swatch still 23 points right, the Manager ID
+box 31), the rest egui's 8-point item spacing where the draft's rows space 6 and a label's
+space 3; and the draft's own button was 26 x 18, the two drafts disagreeing.
+Plan: `plans/save_editor.md` "Editing UI", the team view bullet.

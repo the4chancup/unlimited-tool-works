@@ -1,4 +1,4 @@
-# 4cc Studio — Music export editor plan
+# Unlimited Tool Works — Music export editor plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

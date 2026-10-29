@@ -24,12 +24,12 @@ pub fn resolve_data_dir(exe_dir: &Path, config_dir: Option<&Path>) -> Option<Pat
         .then(|| config_dir.to_path_buf())
 }
 
-/// The user config location: `%APPDATA%\4cc-studio` on Windows, `~/.config/4cc-studio`
-/// on Linux. `None` when the OS reports no home.
+/// The user config location: `%APPDATA%\unlimited-tool-works` on Windows,
+/// `~/.config/unlimited-tool-works` on Linux. `None` when the OS reports no home.
 pub fn user_config_dir() -> Option<PathBuf> {
     // `BaseDirs`, not `ProjectDirs`: the latter appends `\config` on Windows, and the settings
-    // belong in `%APPDATA%\4cc-studio` itself.
-    Some(BaseDirs::new()?.config_dir().join("4cc-studio"))
+    // belong in `%APPDATA%\unlimited-tool-works` itself.
+    Some(BaseDirs::new()?.config_dir().join("unlimited-tool-works"))
 }
 
 /// Whether the data directory's settings file opens for writing — the CLI's source of
@@ -141,7 +141,7 @@ mod tests {
 
     #[test]
     fn user_config_dir_ends_in_the_app_folder() {
-        assert!(user_config_dir().unwrap().ends_with("4cc-studio"));
+        assert!(user_config_dir().unwrap().ends_with("unlimited-tool-works"));
     }
 
     #[test]

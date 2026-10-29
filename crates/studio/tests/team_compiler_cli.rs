@@ -16,14 +16,19 @@ struct Sandbox {
 
 impl Sandbox {
     fn new(name: &str, settings: &str) -> Sandbox {
-        let root = Path::new(env!("CARGO_TARGET_TMPDIR"))
+        // Rebuilt from its components, so every separator is the platform's: a target folder
+        // set as `C:/...` on Windows would otherwise keep its slashes, and the paths the
+        // binary prints, all backslashes, would not match the ones the tests expect.
+        let root: PathBuf = Path::new(env!("CARGO_TARGET_TMPDIR"))
             .join("team_compiler_cli")
-            .join(name);
+            .join(name)
+            .components()
+            .collect();
         if root.exists() {
             fs::remove_dir_all(&root).unwrap();
         }
         fs::create_dir_all(root.join("data")).unwrap();
-        let built = Path::new(env!("CARGO_BIN_EXE_4cc-studio"));
+        let built = Path::new(env!("CARGO_BIN_EXE_utw"));
         let exe = root.join(built.file_name().unwrap());
         // A hard link, not a copy: a copy holds the file open for writing, and on Linux a
         // child another test thread forks in that instant inherits the handle, so running

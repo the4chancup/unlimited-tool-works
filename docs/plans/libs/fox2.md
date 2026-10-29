@@ -1,4 +1,4 @@
-# 4cc Studio — Library crates plan: fox2
+# Unlimited Tool Works — Library crates plan: fox2
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

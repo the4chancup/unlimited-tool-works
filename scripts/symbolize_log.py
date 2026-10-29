@@ -1,9 +1,9 @@
-"""`python scripts/symbolize_log.py <studio.log> <symbols folder>`: names the exe's
-backtrace frames in a posted `studio.log` against the release's kept symbols, the
+"""`python scripts/symbolize_log.py <utw.log> <symbols folder>`: names the exe's
+backtrace frames in a posted `utw.log` against the release's kept symbols, the
 symbols archive `just release` leaves beside the bundle extracted into a folder (core
 plan, "Diagnostic logging").
 
-`studio.log`'s panic records write each frame as `<index>: 0x<base>+0x<offset>` (the
+`utw.log`'s panic records write each frame as `<index>: 0x<base>+0x<offset>` (the
 module's base and the offset into it), because the bundle ships no `.pdb`. Each
 record's frames are a run of consecutive such lines starting at `0:`; frame 0 is
 always inside the exe (the `backtrace` crate is linked into it), so its base is the
@@ -153,7 +153,7 @@ def find_symbolizer() -> str | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("log", type=Path, help="a studio.log holding panic records")
+    parser.add_argument("log", type=Path, help="a utw.log holding panic records")
     parser.add_argument(
         "symbols", type=Path, help="the extracted symbols archive's folder"
     )

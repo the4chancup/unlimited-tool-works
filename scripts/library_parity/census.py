@@ -11,7 +11,7 @@ Outcome class: the exit code, then the sorted distinct Error and Warning codes.
 Writes outcomes_<tag>.tsv (path, exit, class, files, bytes, seconds),
 reports_<tag>.txt (every run's output) and census_<tag>.txt (tally per class
 with up to three example paths, then every code's count of exports and lines).
-Usage: census.py <4cc-studio exe> <tag>
+Usage: census.py <utw exe> <tag>
 """
 import os
 import re

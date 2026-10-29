@@ -9,6 +9,7 @@
 use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 
 use crate::help::{HelpSection, HelpTarget, MESSAGES_SLUG};
+use crate::widgets::FORM_ROW_SPACING;
 
 /// The window's state across frames: the chapters it was built over, whether it is open,
 /// where it is (chapter index; the topic index in the list the tree shows — the written
@@ -504,8 +505,12 @@ fn messages(
     );
     let mut consumed = false;
     let mut clicked_link = None;
+    // The drafts' `table.grid` rows: a line of text with 2 points above and below. A grid's
+    // rows are otherwise at least a control's height, 3 points more than a line of text.
     egui::Grid::new(("help-messages", section.title))
         .num_columns(4)
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .min_row_height(ui.text_style_height(&egui::TextStyle::Body))
         .show(ui, |ui| {
             if scroll && !ui.is_sizing_pass() {
                 consumed = true;
@@ -1316,6 +1321,52 @@ mod tests {
             third.y0,
             second.y1
         );
+    }
+
+    // The Messages table is a drafts' `table.grid`: its one-line rows stand 19 apart, a
+    // 15-point line of text and the forms' row spacing of 4, as the draft's header row
+    // measures in a browser.
+    #[test]
+    fn one_line_catalog_rows_stand_19_apart() {
+        let dir = TestDir::new("studio_core_help_rowpitch");
+        let mut section = alpha_section();
+        section.messages = ["first_code", "second_code", "third_code"]
+            .into_iter()
+            .map(|code| CatalogRow {
+                code,
+                severity: "Info",
+                when: "short",
+                effect: "short effect",
+            })
+            .collect();
+        let (a, calls_a) = stub_help("a", "Alpha", None, section);
+        let Shell { mut app, .. } = shell_with(
+            test_settings(dir.path()),
+            vec![a],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a],
+        );
+        let egui_ctx = test_context();
+
+        frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
+        let nodes = idle(&egui_ctx, &mut app, 15).nodes;
+        click(&egui_ctx, &mut app, entry(&nodes, "Messages"));
+        let nodes = idle(&egui_ctx, &mut app, 15).nodes;
+
+        let top = |code: &str| {
+            label_bounds(&nodes, code)
+                .and_then(accesskit::Node::bounds)
+                .unwrap_or_else(|| panic!("the {code} row"))
+                .y0
+        };
+        for (upper, lower) in [("first_code", "second_code"), ("second_code", "third_code")] {
+            let pitch = top(lower) - top(upper);
+            assert!(
+                (pitch - 19.0).abs() <= 0.5,
+                "{lower} stands 19 under {upper}, not {pitch}"
+            );
+        }
     }
 
     #[test]

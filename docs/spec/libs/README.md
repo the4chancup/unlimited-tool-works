@@ -1,4 +1,4 @@
-# 4cc Studio — Library crates plan
+# Unlimited Tool Works — Library crates plan
 
 Covers the small shared lib crates: the binary format parsers (`cpk`, `fpk`, `fmdl`,
 `pes_model`, `ftex`, `fox2`, `uniparam`, `wezlib`), `dds_convert`, `color_tools`,

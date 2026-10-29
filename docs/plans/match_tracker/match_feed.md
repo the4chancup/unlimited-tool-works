@@ -1,4 +1,4 @@
-# 4cc Studio — Match tracker plan: Match feed
+# Unlimited Tool Works — Match tracker plan: Match feed
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -564,7 +564,7 @@ the reliable-event cursor.
   lag-dropping watch lane
   prevents high-frequency ticks from accumulating in a subscriber's queue.
 - **No built-in pipe/socket server**: the old named pipe's only consumer is gone.
-  `4cc-studio match-tracker watch` runs the tracker headlessly in that CLI process and emits
+  `UTW match-tracker watch` runs the tracker headlessly in that CLI process and emits
   its own JSON-lines stream; it does not attach to or expose a concurrently running GUI
   instance. Each line is a separately versioned feed-wire envelope
   (`{"feed_schema": {"major": 1, "minor": 0}, "message": ...}`). Feed schema 1.0

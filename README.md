@@ -1,4 +1,4 @@
-# 4cc Studio
+# Unlimited Tool Works
 
 One suite for every tool the 4chan Cup community uses to run its PES (2015-2021) cups: a
 Team compiler (aesthetics exports to CPK archives), a save editor, and the smaller tools around
@@ -26,7 +26,7 @@ to ship the save editor and the ruleset editor. The `.4ccm` music format (Rigdio
 phase.
 
 4,261 tests, all gates green. Every finished tool also runs from the command line
-(`4cc-studio <tool> <command>`), the way to use those the window does not show yet.
+(`UTW <tool> <command>`), the way to use those the window does not show yet.
 
 The architectural plan lives in `docs/plans/` (start at `docs/plans/README.md`). `AGENTS.md` is
 the short orientation for anyone working on the code; `docs/CONTRIBUTING.md` holds the coding

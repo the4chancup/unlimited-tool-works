@@ -40,17 +40,30 @@ use self::sidebar::{Sidebar, SidebarClick};
 use self::status_bar::StatusBar;
 use self::title::WindowTitle;
 
-/// The executable's name in every release before 1.0.0, the preview's codename. It is a
-/// literal so a `&'static str` table can `concat!` it; `EXE_NAME` is the same name for code
-/// that formats at run time.
+/// The executable's name: `UTW` on Windows, `utw` elsewhere, the spelling the CLI's usage
+/// lines print. It is a literal so a `&'static str` table can `concat!` it; `EXE_NAME` is
+/// the same name for code that formats at run time.
+#[cfg(windows)]
 #[macro_export]
 macro_rules! exe_name {
     () => {
-        "UnlimitedToolWorks"
+        "UTW"
     };
 }
 
-/// The display name, ditto (`app_name!` for `concat!`).
+/// The executable's name: `UTW` on Windows, `utw` elsewhere, the spelling the CLI's usage
+/// lines print. It is a literal so a `&'static str` table can `concat!` it; `EXE_NAME` is
+/// the same name for code that formats at run time.
+#[cfg(not(windows))]
+#[macro_export]
+macro_rules! exe_name {
+    () => {
+        "utw"
+    };
+}
+
+/// The display name, the one the window title, the About box and the log's first line
+/// show. A literal for `concat!`, like `exe_name!`.
 #[macro_export]
 macro_rules! app_name {
     () => {
@@ -63,9 +76,14 @@ pub const EXE_NAME: &str = exe_name!();
 /// The display name: `app_name!()` where a `concat!` needs the literal (the tools' catalogs
 /// use the macro, so the constant serves the shell alone).
 pub(crate) const APP_NAME: &str = app_name!();
+/// The `Tvers` field of every CPK the suite writes (the Team compiler's output CPK and the
+/// pre-Fox face CPKs nested in it, the Save editor's bins CPK): the display name and the
+/// version, naming the tool that wrote the file. One string per release, so a release
+/// compiling the same exports writes the same bytes.
+pub const TOOL_VERSION: &str = concat!(app_name!(), " ", env!("CARGO_PKG_VERSION"));
 
 /// The version line the shell shows in four places: the status bar's left slot, the About
-/// block's first line, `4cc-studio --version` and the window's log's first line. It reads
+/// block's first line, `UTW --version` and the window's log's first line. It reads
 /// `v{version}`, the release stage while there is one (`pre-alpha` for 0.0.x,
 /// `alpha` for 0.y.z, nothing from 1.0.0), then ` (debug)` for a debug build.
 pub fn version_label() -> String {

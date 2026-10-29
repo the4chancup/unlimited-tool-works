@@ -4529,7 +4529,16 @@ briefs, review loops, gates and mutation runs as for any step.
       stands 20 higher), and the colour swatches 22 × 16 (`input[type=color]`; egui's colour
       button is 40 wide, which moves the row's right half 31 to 57 points right). Planned
       2026-10-29 (DECISIONS "The team view's line under its fields, the colour buttons 22 ×
-      16"); brief `.tmp/0_0_1ov/brief_ov2l.md`, after ov2j lands (same file)
+      16"); brief `.tmp/0_0_1ov/brief_ov2l.md`, after ov2j lands (same file). Round 1: the
+      button landed, the line stopped on the fold (743.5 against 740), and the row's offset
+      found to be egui's 8-point spacing too (DECISIONS "The team row's gaps as drafted; its
+      line waits for the Tactics' height"; the draft's `.cbtn` set to 22 × 16); rework 1
+      `.tmp/0_0_1ov/rework_ov2l.md`: the row's gaps, the line moved to ov2u
+    - [ ] ov2u the team view's Tactics at the draft's height (the build's stands about 23
+      points taller: with ov2l's line its last control ends 3.5 under the pane's fold, the
+      draft's 8 over it; measure block by block, `rect_compare.py`), then the line under the
+      fields' row as the plan's team view bullet draws it (ov2l's parked
+      `wt-ov2l/.tmp/ov2l/separator_test.rs`)
     - [ ] ov2m the player list as drafted (`plans/save_editor.md` "Player list", "The quick
       actions"): a player row 18 high, its place in the weak colour, the position and name in
       their own columns (the build draws one string, 21 high); the quick actions in two columns
@@ -4725,7 +4734,7 @@ briefs, review loops, gates and mutation runs as for any step.
     as wide as tall: the maintainer, 2026-10-28), each sheet carrying the change's reason under
     its caption (the maintainer, 2026-10-28), generalized from its cases list to a
     revision pair and a link, with its test
-- [ ] 0.0.1rn the project renamed Unlimited Tool Works (the maintainer, 2026-10-28: "when most
+- [x] 0.0.1rn the project renamed Unlimited Tool Works (the maintainer, 2026-10-28: "when most
   convenient"): `unlimited-tool-works` as the name in paths and packages, UTW as the shorthand,
   the exe `UTW.exe` (`utw` on Linux; DECISIONS "The final pass's second rulings"). Before the
   cut is the convenient time: the first release fixes the exe's name, the data folder
@@ -4735,12 +4744,19 @@ briefs, review loops, gates and mutation runs as for any step.
   keeps the working name `4cc-studio` until 1.0.0 (the maintainer, 2026-10-28). Planned
   2026-10-29: `plans/core/development_plan.md` "The project's name: Unlimited Tool Works",
   DECISIONS "The project's name in every spelling"; inventory `.tmp/0_0_1rn/inventory.md`
-  - [ ] rn1 the code and the files a user receives (a sidekick): the two name constants
+  - [x] rn1 the code and the files a user receives (a sidekick): the two name constants
     (`exe_name!` by platform), cargo's bin `utw` (`CARGO_BIN_EXE_utw`, `utw.pdb`), the
     settings folder, `utw.log`/`utw.old.log`/`utw.dmp`, the app id, `Tvers`, the shared-IDs
     folder, `tool_version`, the help pages, the launchers, the readme, `build.rs`, the release
     recipe and its test, the justfile and the scripts naming the exe or the folder; the
-    `help_cli` guard widened to `UnlimitedToolWorks` and the old folder's name
+    `help_cli` guard widened to `UnlimitedToolWorks` and the old folder's name. Done 2026-10-29
+    (merge `c6d17d9b`; Opus sidekick, landed first time; lead check in its target: studio 9
+    test binaries, studio_core 277, clippy, fmt, `release_test.py`, `symbolize_log_test.py`):
+    `Tvers` from one `studio_core::TOOL_VERSION`; the first-run layout test's sample path renamed
+    by the lead, its hint allowed three lines (the draft's own wraps to three with the new
+    folder name). Its contradictions: `--version` prints `UTW v…` as the spec has it (the plan
+    corrected); the plan's stale "the icon switches back" removed; `LICENSE-MIT`'s "the 4cc
+    Studio contributors" and the spec's `studio_version` sample go to rn3
   - [x] rn2 the drafts (the lead): `index.html`'s title, exe and folder names, help text
     (`UTW.exe`, `unlimited-tool-works`) and the draft controls' "Studio"; the Ruleset editor
     draft's file header and logic banner copied from the code's (no product named), its
@@ -4748,10 +4764,16 @@ briefs, review loops, gates and mutation runs as for any step.
     shared group `**General**` (`plans/core/distribution.md`, was `**Studio**`). The drafts'
     code comments keep "Studio" until rn3. Files: `docs/prototypes/{index.html,
     tools/ruleset_editor.js,tools/export_upgrader.js}`
-  - [ ] rn3 the docs (the lead, after rn1 lands): every plan and spec file's title, the CLI
+  - [x] rn3 the docs (the lead, after rn1 lands): every plan and spec file's title, the CLI
     examples (`UTW <tool-id> ...`), the settings folder's and the log's names, "Studio" as the
     project's name in prose; README, AGENTS, CONTRIBUTING, RUNBOOK; the glossary's "Studio"
-    entry kept for the code's names
+    entry kept for the code's names. Done 2026-10-29 by `.tmp/0_0_1rn/rn3_docs2.py` (dry run read line by line):
+    "4cc Studio" → Unlimited Tool Works in every plan/spec title and prose, `UTW` in the CLI's
+    examples, `UTW.exe`, the `unlimited-tool-works` folders, `utw.log`, `tool_version`, the
+    shared-IDs path, `LICENSE-MIT`'s contributors; the rename's own plan section, the history
+    files and the repository's and developers' folders untouched. The bare "Studio" stays the
+    working name in prose (the plan amended: rewriting ~250 of them buys a member nothing and
+    sets the docs apart from the code); GLOSSARY rows for both names
 - [ ] 0.0.1f the cut, once the Save editor's view is done (the Ruleset editor left 0.0.1 on
   2026-10-24, `plans/core/development_plan.md` "Development Plan"): the bundled settings picking
   DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`

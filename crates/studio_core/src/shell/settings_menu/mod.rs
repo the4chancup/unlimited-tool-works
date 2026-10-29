@@ -270,13 +270,19 @@ impl SettingsMenu {
                      of physical memory.",
                 );
                 let mut memory_cap = common.memory_cap_percent;
+                // The box holds the number alone and `%` follows it as the row's text,
+                // where a suffix would draw it inside the box.
                 let mut response = ui
-                    .add(
-                        egui::DragValue::new(&mut memory_cap)
-                            .range(0.1..=100.0)
-                            .clamp_existing_to_range(false)
-                            .suffix(" %"),
-                    )
+                    .horizontal(|ui| {
+                        let response = ui.add(
+                            egui::DragValue::new(&mut memory_cap)
+                                .range(0.1..=100.0)
+                                .clamp_existing_to_range(false),
+                        );
+                        ui.label("%");
+                        response
+                    })
+                    .inner
                     .labelled_by(memory.id);
                 if step_number(&mut memory_cap, wheel_steps(ui, &response), 0.1..=100.0) {
                     response.mark_changed();

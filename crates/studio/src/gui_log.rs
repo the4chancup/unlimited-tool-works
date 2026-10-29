@@ -1,5 +1,5 @@
-//! The window's diagnostic sink: `studio.log` in the data location, the previous run's
-//! renamed to `studio.old.log` at start, every line flushed as it is written and the
+//! The window's diagnostic sink: `utw.log` in the data location, the previous run's
+//! renamed to `utw.old.log` at start, every line flushed as it is written and the
 //! user's home folder written as `~`, because the file is what a member posts with a bug
 //! report (ST-RUN-07). A panic is written to it with a
 //! backtrace of module bases and offsets by the panic hook, and a panic that ends the
@@ -21,14 +21,14 @@ use directories::BaseDirs;
 use log::{Level, LevelFilter, Metadata, Record};
 use studio_core::version_label;
 
-/// `studio.log`'s name in the data location.
-pub(crate) const LOG_FILE_NAME: &str = "studio.log";
+/// `utw.log`'s name in the data location.
+pub(crate) const LOG_FILE_NAME: &str = "utw.log";
 /// What the previous run's log is renamed to, so a crash followed by a relaunch keeps
 /// the crash's log.
-const OLD_LOG_FILE_NAME: &str = "studio.old.log";
+const OLD_LOG_FILE_NAME: &str = "utw.old.log";
 
 /// The session's last log line on a normal close and on a crash that was shown to the
-/// member (ST-RUN-09): the next start's `studio.old.log` ending with neither means the
+/// member (ST-RUN-09): the next start's `utw.old.log` ending with neither means the
 /// session crashed in a way the hook cannot see or was ended by Windows, and a dialog
 /// says so before the window opens.
 const CLOSING_LINE: &str = "the window closed normally";
@@ -87,15 +87,15 @@ fn last_session(log: &str) -> LastSession {
     }
 }
 
-/// What `open_log` opened: `studio.log`'s file, and how the previous run's log it
+/// What `open_log` opened: `utw.log`'s file, and how the previous run's log it
 /// rotated away ended (ST-RUN-09, ST-RUN-10).
 pub(crate) struct OpenedLog {
     file: File,
     pub(crate) last_session: LastSession,
 }
 
-/// Creates `data_dir/studio.log` with `first_line` as its first line, the previous run's
-/// renamed to `studio.old.log` first: `fs::rename` replaces the older file on Windows
+/// Creates `data_dir/utw.log` with `first_line` as its first line, the previous run's
+/// renamed to `utw.old.log` first: `fs::rename` replaces the older file on Windows
 /// and Linux alike, so a crash followed by a relaunch keeps the crash's log. The old
 /// log is read before the rename: its lines are what tell an ended session from a clean
 /// one (`last_session`; ST-RUN-09, ST-RUN-10).
@@ -117,7 +117,7 @@ pub(crate) fn open_log(data_dir: &Path, first_line: &str) -> io::Result<OpenedLo
     Ok(OpenedLog { file, last_session })
 }
 
-/// The `log::Log` writing `studio.log`, at most `Info`, since a double-click passes no `-v`
+/// The `log::Log` writing `utw.log`, at most `Info`, since a double-click passes no `-v`
 /// or `RUST_LOG`. A struct, not a closure, so the tests can drive the
 /// `log` method — a process holds one logger and `main`'s tests already install the
 /// CLI's.
@@ -168,23 +168,23 @@ impl log::Log for FileLog {
     }
 }
 
-/// What `install_gui_logger` reports back: `studio.log`'s path, and how the previous
+/// What `install_gui_logger` reports back: `utw.log`'s path, and how the previous
 /// run's log ended, the signal for the unclean-shutdown dialog the next start shows
 /// before the window opens (ST-RUN-09).
 pub(crate) struct InstalledLog {
-    /// `studio.log`'s path in the data location.
+    /// `utw.log`'s path in the data location.
     pub(crate) path: PathBuf,
-    /// How the previous run's `studio.log` ended (ST-RUN-09, ST-RUN-10).
+    /// How the previous run's `utw.log` ended (ST-RUN-09, ST-RUN-10).
     pub(crate) last_session: LastSession,
 }
 
 impl InstalledLog {
-    /// `studio.old.log`'s path: the previous run's `studio.log` as `open_log` renamed it.
+    /// `utw.old.log`'s path: the previous run's `utw.log` as `open_log` renamed it.
     pub(crate) fn old_path(&self) -> PathBuf {
         self.path.with_file_name(OLD_LOG_FILE_NAME)
     }
 
-    /// `studio.dmp`'s path beside the log when the previous session's monitor said it
+    /// `utw.dmp`'s path beside the log when the previous session's monitor said it
     /// wrote one and the file is still there (ST-RUN-10), else `None`.
     pub(crate) fn dump_path(&self) -> Option<PathBuf> {
         if self.last_session != LastSession::Dumped {
@@ -195,7 +195,7 @@ impl InstalledLog {
     }
 }
 
-/// Installs `studio.log` as the `log` sink at level `Info` and returns what it opened.
+/// Installs `utw.log` as the `log` sink at level `Info` and returns what it opened.
 /// `None` means no log this run: no data location yet (a first run, whose dialog has
 /// not chosen one — a log written elsewhere would leave a folder behind that the
 /// portable choice promised not to), or the file cannot be opened (a read-only location
@@ -305,8 +305,8 @@ fn panic_message(payload: &(dyn Any + Send)) -> String {
 
 /// The next start's dialog when the previous session left no closing line (ST-RUN-09):
 /// the session may have crashed in a way the hook cannot see, or Windows may have ended
-/// it, and the wording stays neutral between the two. `old_log` is `studio.old.log`'s
-/// path; `dump` is `studio.dmp`'s when a crashed session's monitor wrote one
+/// it, and the wording stays neutral between the two. `old_log` is `utw.old.log`'s
+/// path; `dump` is `utw.dmp`'s when a crashed session's monitor wrote one
 /// (ST-RUN-10), asked for beside the log; the dump may still show the member's user
 /// name (its module list holds the exe's full path), which the log writes as `~`.
 pub(crate) fn unclean_text(old_log: &Path, dump: Option<&Path>) -> String {
@@ -609,7 +609,7 @@ mod tests {
         let dialog = events.clone();
         let code = guard_gui(
             || panic!("probe 8"),
-            Some(Path::new("C:\\data\\studio.log")),
+            Some(Path::new("C:\\data\\utw.log")),
             move |text| dialog.lock().unwrap().push(format!("dialog|{text}")),
             &OrderedLog(events.clone()),
         );
@@ -618,7 +618,7 @@ mod tests {
         assert_eq!(events.len(), 3, "{events:?}");
         assert!(events[0].starts_with("dialog|"), "{events:?}");
         assert!(events[0].contains("probe 8"), "{}", events[0]);
-        assert!(events[0].contains("studio.log"), "{}", events[0]);
+        assert!(events[0].contains("utw.log"), "{}", events[0]);
         assert_eq!(events[1], format!("session|{CRASH_REPORTED_LINE}"));
         assert_eq!(events[2], "flush");
     }
@@ -740,24 +740,24 @@ mod tests {
     // ST-RUN-09
     #[test]
     fn unclean_text_names_the_old_log() {
-        let text = unclean_text(Path::new("C:\\data\\studio.old.log"), None);
+        let text = unclean_text(Path::new("C:\\data\\utw.old.log"), None);
         assert!(text.contains("did not close normally"), "{text}");
-        assert!(text.contains("C:\\data\\studio.old.log"), "{text}");
+        assert!(text.contains("C:\\data\\utw.old.log"), "{text}");
     }
 
     // ST-RUN-10
     #[test]
     fn unclean_text_with_a_dump_names_the_log_and_the_dump() {
         let text = unclean_text(
-            Path::new("C:\\data\\studio.old.log"),
-            Some(Path::new("C:\\data\\studio.dmp")),
+            Path::new("C:\\data\\utw.old.log"),
+            Some(Path::new("C:\\data\\utw.dmp")),
         );
         assert!(text.contains("did not close normally"), "{text}");
-        assert!(text.contains("C:\\data\\studio.old.log"), "{text}");
-        assert!(text.contains("C:\\data\\studio.dmp"), "{text}");
+        assert!(text.contains("C:\\data\\utw.old.log"), "{text}");
+        assert!(text.contains("C:\\data\\utw.dmp"), "{text}");
         assert_eq!(
-            unclean_text(Path::new("C:\\data\\studio.old.log"), None),
-            "The last session did not close normally. If it crashed, please post this file where you report problems: C:\\data\\studio.old.log. Your home folder is written in it as ~."
+            unclean_text(Path::new("C:\\data\\utw.old.log"), None),
+            "The last session did not close normally. If it crashed, please post this file where you report problems: C:\\data\\utw.old.log. Your home folder is written in it as ~."
         );
     }
 
@@ -856,7 +856,7 @@ mod tests {
         let dir = TestDir::new("install_log");
         assert!(install_gui_logger(None).is_none());
         let installed = install_gui_logger(Some(dir.path())).unwrap();
-        assert_eq!(installed.path, dir.path().join(LOG_FILE_NAME));
+        assert_eq!(installed.path, dir.path().join("utw.log"));
         assert_eq!(installed.last_session, LastSession::Closed);
         log::info!("install probe");
         let written = fs::read_to_string(&installed.path).unwrap();

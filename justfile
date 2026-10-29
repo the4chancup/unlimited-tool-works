@@ -1,4 +1,4 @@
-# 4cc Studio developer recipes. Rules: CONTRIBUTING.md "Testing and verification".
+# Unlimited Tool Works developer recipes. Rules: CONTRIBUTING.md "Testing and verification".
 # A recipe is a list of commands, never logic; anything with a branch or a loop is a script
 # under scripts/ that the recipe calls.
 
@@ -123,7 +123,7 @@ deps-check:
     {{python}} scripts/deps_check.py
     cargo deny check licenses
 
-# The portable release bundle, target/dist/UnlimitedToolWorks-<version>-windows.7z, its .sha256
+# The portable release bundle, target/dist/unlimited-tool-works-<version>-windows.7z, its .sha256
 # and the kept symbols' -symbols.7z beside it; Windows only
 release version:
     {{python}} scripts/release_test.py

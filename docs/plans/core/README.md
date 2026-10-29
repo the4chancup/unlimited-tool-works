@@ -1,4 +1,4 @@
-# 4cc Studio — Core plan
+# Unlimited Tool Works — Core plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -164,7 +164,7 @@ What exists of this is in `spec/core/README.md` "Key Decisions Summary".
 | Refs tooling | Arranger + handoff, no engine split | The Refs arranger edits the refs export's `players.txt` (via `aesthetics_export`) and switches to the Team compiler for the compile — a compile-engine lib crate would have one thin extra consumer |
 | Balls tooling | Standalone compiler + balls export | Ball content shares nothing with aesthetics exports (own paths, bins, CPK), so the Balls compiler owns its compile on the shared libs; balls become the third export kind in `exports/` (first word `balls`, skipped by the Team compiler) |
 | Distribution | Portable `.7z` (binary + `quick_compile.bat` + exports/ + teams list + readme), no installer | Extract anywhere and run; no elevation, no registry. Extract-and-run with no external runtime is the requirement, not file count — Red's many-file bundle causes users no trouble |
-| Quick-compile launcher | `quick_compile.bat` → `4cc-studio --gui team-compiler compile`; GUI-subsystem exe + `AttachConsole` for CLI output; `exports/` beside the exe in both data modes | Red's `0_all_in_one.bat` is the one script users actually run; the GUI autorun keeps that double-click habit while showing the grid/log instead of a console. `gui_run` trait hook reuses the tool's CLI grammar, so no second command surface |
+| Quick-compile launcher | `quick_compile.bat` → `UTW --gui team-compiler compile`; GUI-subsystem exe + `AttachConsole` for CLI output; `exports/` beside the exe in both data modes | Red's `0_all_in_one.bat` is the one script users actually run; the GUI autorun keeps that double-click habit while showing the grid/log instead of a console. `gui_run` trait hook reuses the tool's CLI grammar, so no second command surface |
 | Studio Web | Post-release lite browser edition, not a first-release gate; lib crates `wasm32`-checked in CI from Phase 1 | Convenience for compiling/editing one's own team from another PC via a bookmark, never full-cup compilation (4 GB `wasm32` ceiling); the cheap file-picking tier ships first, the pipeline tier needs adapters + COOP/COEP hosting on the community server |
 | Self-update | In-place binary swap (move-running-exe pattern) + teams-list merge; previous binary kept in `old/` with a rollback button | Inverts Red's sibling-folder update: the folder is a few files, user data stays put; settings need no transfer (default-merge handles new keys); the `old/` subfolder keeps the previous binary out of misclick range |
 | Save editor scope | Full 4ccEditor parity + direct-manipulation tactics UI | Every 4ccEditor feature carried over; drag-and-drop replaces spinner/dropdown friction |

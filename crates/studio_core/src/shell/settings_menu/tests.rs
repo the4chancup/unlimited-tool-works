@@ -324,6 +324,42 @@ fn the_memory_cap_row_accepts_a_fraction_of_a_percent() {
     assert_eq!(ctx.common().memory_cap_percent, 0.5);
 }
 
+// The draft's `Memory cap` row: the box holds the number alone, and `%` stands
+// after it as the row's own text.
+#[test]
+fn the_memory_cap_box_holds_the_number_and_the_percent_sign_follows_it() {
+    let dir = TestDir::new("studio_core_settings_memcap_percent");
+    let (a, calls_a) = stub("a", "A", None);
+    let Shell { mut app, .. } = shell_with(
+        test_settings(dir.path()),
+        vec![a],
+        &[],
+        Some(dir.path().to_path_buf()),
+        vec![calls_a],
+    );
+    let egui_ctx = test_context();
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+    let field = widget_on_row(&nodes, "Memory cap", Role::SpinButton);
+    let text = field.value().expect("the box shows its value");
+    assert!(
+        text.parse::<f64>().is_ok(),
+        "the box's text {text:?} is the number alone"
+    );
+    let field = field.bounds().expect("the box has bounds");
+    let percent = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("%"))
+        .and_then(accesskit::Node::bounds)
+        .expect("a % label is drawn");
+    assert!(
+        percent.x0 >= field.x1 && percent.y0 < field.y1 && percent.y1 > field.y0,
+        "the % {percent:?} stands right of the box {field:?}, on its row"
+    );
+}
+
 // The FPC hide ID rows, after the memory cap: the boots row's entry range is
 // the stock band (1 to 100), the gloves row's its own (11 to 100), and a
 // typed value writes the common setting.

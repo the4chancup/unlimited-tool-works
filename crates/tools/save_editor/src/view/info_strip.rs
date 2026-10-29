@@ -59,6 +59,10 @@ pub(super) const FIELD_ROW_GAP: f32 = 12.0;
 /// The gap between a pair row's two halves (the draft's `.pairs`
 /// `column-gap`, 28 points).
 const PAIR_HALF_GAP: f32 = 28.0;
+/// The gap between General info's blocks (Name and Shirt, the pairs, the
+/// combos): the draft's `.gen` gap, 2 points more than the rows' own, so
+/// each block reads as one.
+const BLOCK_GAP: f32 = 6.0;
 
 /// A player name as the strip draws it: its `\x11` spelled as the four
 /// characters `\\x11` (the draft's `escName`); the field turns it back on
@@ -105,10 +109,9 @@ pub(super) fn view_title(ui: &mut egui::Ui, id: u32, name: &str, space_below: f3
         0.0,
         egui::TextFormat::simple(body.clone(), ui.visuals().weak_text_color()),
     );
-    append_name(&mut title, name);
+    append_name(&mut title, name, &body);
     let strong = ui.visuals().strong_text_color();
     for section in &mut title.sections {
-        section.format.font_id = body.clone();
         if section.format.color == egui::Color32::PLACEHOLDER {
             section.format.color = strong;
         }
@@ -295,6 +298,7 @@ pub(super) fn general(
     // The label-left pairs on two halves: each label at its half's left,
     // its 54-wide box on the first half's right edge, after the label
     // column on the second.
+    ui.add_space(BLOCK_GAP - ui.spacing().item_spacing.y);
     pair_row(ui, |ui| {
         pair_half(
             ui,
@@ -392,6 +396,7 @@ pub(super) fn general(
     });
 
     // The combos, on the same label-left rows as Name's and Shirt's.
+    ui.add_space(BLOCK_GAP - ui.spacing().item_spacing.y);
     combos(
         ui,
         session,
