@@ -467,6 +467,43 @@ fn the_title_is_the_teams_name_in_the_bodys_strong_weight() {
     );
 }
 
+// Each team colour's `#RRGGBB` beside its swatch is in the weak grey, as the
+// draft draws it, and in the monospace font.
+#[test]
+fn the_colour_codes_are_in_the_weak_grey() {
+    let path = fixture(PesVersion::Pes21, "team_colour_codes_weak");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (weak, monospace) = {
+        let style = window.ctx.style_of(window.ctx.theme());
+        (
+            style.visuals.weak_text_color(),
+            egui::TextStyle::Monospace.resolve(&style),
+        )
+    };
+    for label in ["Col. 1", "Col. 2"] {
+        let hex = right_of_label(&nodes, label, Role::Label)
+            .into_iter()
+            .find(|node| node.value().is_some_and(|v| v.starts_with('#')))
+            .unwrap_or_else(|| panic!("{label}'s hex"))
+            .value()
+            .expect("the hex's text")
+            .to_owned();
+        assert_eq!(
+            painted_label_color(&nodes, &shapes, &hex),
+            weak,
+            "{label}'s {hex} in the weak grey"
+        );
+        let painted = label_shape(&nodes, &shapes, &hex);
+        for section in &painted.galley.job.sections {
+            assert_eq!(section.format.font_id, monospace, "{label}'s {hex} font");
+        }
+    }
+}
+
 // At the 1280 x 780 default pane the team view's fields, the ids and the
 // `Kit slots…` button share one row, the name box is the draft's 140
 // points and the colours are labelled `Col. 1`/`Col. 2`.

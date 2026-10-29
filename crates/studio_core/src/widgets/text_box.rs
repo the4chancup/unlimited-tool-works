@@ -4,11 +4,24 @@
 /// `border-radius`), where the theme rounds a resting widget by 2.
 const CORNER_RADIUS: u8 = 3;
 
+/// A resting text box's outline under `visuals`: the 1-point border in the
+/// theme's quiet line colour (the noninteractive stroke, grey 60 on the dark
+/// theme) and the corner radius of 3 a text box keeps in every state. A
+/// widget that should read as a field (the colour field's swatch) outlines
+/// itself with it, so it stays visible on a fill as dark as the panel.
+pub fn text_box_border(visuals: &egui::Visuals) -> (egui::Stroke, egui::CornerRadius) {
+    (
+        visuals.widgets.noninteractive.bg_stroke,
+        egui::CornerRadius::same(CORNER_RADIUS),
+    )
+}
+
 /// `edit` drawn as the drafts' `input[type=text]`: at rest, a 1-point border
 /// in the theme's quiet line colour (the noninteractive stroke, grey 60 on
-/// the dark theme), its corners rounded by 3; hovered and focused as egui
-/// draws them, the focus outline in the selection's stroke. The box's outer
-/// size is egui's: the border takes its width off the inner margin.
+/// the dark theme), its corners rounded by 3 (`text_box_border`); hovered
+/// and focused as egui draws them, the focus outline in the selection's
+/// stroke. The box's outer size is egui's: the border takes its width off
+/// the inner margin.
 /// egui draws a resting text box with the resting widgets' stroke, which the
 /// buttons share and which is none, and its hook for a text box's look is
 /// public only behind its `experimental` feature, so the border is set on
@@ -17,7 +30,7 @@ const CORNER_RADIUS: u8 = 3;
 pub fn text_box<'t>(edit: egui::TextEdit<'t>) -> impl egui::Widget + 't {
     move |ui: &mut egui::Ui| {
         let widgets = ui.visuals().widgets.clone();
-        let border = widgets.noninteractive.bg_stroke;
+        let (border, corner_radius) = text_box_border(ui.visuals());
         let shaped = &mut ui.visuals_mut().widgets;
         shaped.inactive.bg_stroke = border;
         for state in [
@@ -25,7 +38,7 @@ pub fn text_box<'t>(edit: egui::TextEdit<'t>) -> impl egui::Widget + 't {
             &mut shaped.hovered,
             &mut shaped.active,
         ] {
-            state.corner_radius = egui::CornerRadius::same(CORNER_RADIUS);
+            state.corner_radius = corner_radius;
         }
         let response = ui.add(edit);
         ui.visuals_mut().widgets = widgets;

@@ -409,6 +409,74 @@ fn the_field_button_is_22_by_16() {
     );
 }
 
+/// The field's swatch as painted last frame: its outline (the rect shape over
+/// `rect` with no fill) and its fill (the one over `rect` shrunk by 1).
+fn swatch_shapes(
+    shapes: &[egui::epaint::ClippedShape],
+    rect: egui::Rect,
+) -> (&egui::epaint::RectShape, &egui::epaint::RectShape) {
+    let rect_shape = |wanted: egui::Rect, outline: bool| {
+        shapes
+            .iter()
+            .find_map(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape)
+                    if shape.rect == wanted && (shape.fill == Color32::TRANSPARENT) == outline =>
+                {
+                    Some(shape)
+                }
+                _ => None,
+            })
+            .unwrap_or_else(|| panic!("no swatch shape over {wanted:?} (outline: {outline})"))
+    };
+    (rect_shape(rect, true), rect_shape(rect.shrink(1.0), false))
+}
+
+// At rest the swatch is outlined as a resting text box is (the theme's quiet
+// line, grey 60 on the dark theme, corners rounded by 3), so a black colour
+// on the dark panel still shows its box; hovered, it takes the hovered
+// widgets' stroke, its corners still 3.
+#[test]
+fn the_swatch_is_outlined_as_a_resting_text_box() {
+    let mut window = Headless::new();
+    let mut color = [0, 0, 0];
+    let (_, out) = window.field(&mut color, &[], Vec::new());
+    let widgets = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .widgets
+        .clone();
+    assert_eq!(
+        widgets.noninteractive.bg_stroke,
+        Stroke::new(1.0, Color32::from_gray(60)),
+        "premise: the dark theme's quiet line"
+    );
+    let rect = out.response.rect;
+    let (outline, fill) = swatch_shapes(&window.shapes, rect);
+    assert_eq!(
+        outline.stroke, widgets.noninteractive.bg_stroke,
+        "the resting outline"
+    );
+    assert_eq!(outline.corner_radius, egui::CornerRadius::same(3));
+    assert_eq!(fill.fill, Color32::BLACK, "the swatch carries the colour");
+    assert_eq!(fill.corner_radius, egui::CornerRadius::same(3));
+
+    let hover = vec![egui::Event::PointerMoved(rect.center())];
+    window.field(&mut color, &[], hover.clone());
+    let (_, out) = window.field(&mut color, &[], hover);
+    assert!(
+        out.response.hovered(),
+        "premise: the pointer is over the field"
+    );
+    let (outline, fill) = swatch_shapes(&window.shapes, rect);
+    assert_eq!(
+        outline.stroke, widgets.hovered.bg_stroke,
+        "the hovered outline"
+    );
+    assert_eq!(outline.corner_radius, egui::CornerRadius::same(3));
+    assert_eq!(fill.corner_radius, egui::CornerRadius::same(3));
+}
+
 // A committed hex text is one change.
 #[test]
 fn hex_text_committed_with_enter_is_one_change() {
