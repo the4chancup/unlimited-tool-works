@@ -213,6 +213,66 @@ fn the_pair_rows_stand_22_apart() {
     }
 }
 
+// General info's three blocks (Name and Shirt; the pairs; Stronger foot to
+// Playing style) stand 6 apart, 2 more than their rows, as the draft's
+// `.gen` blocks: each label's top below the panel title's top is the
+// draft's, measured in a browser, and Other stats
+// under the panel moves with them.
+#[test]
+fn general_infos_blocks_stand_6_apart_as_the_drafts() {
+    let path = fixture(PesVersion::Pes21, "general_blocks");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let title = label_bounds(&nodes, "General info").y0;
+    let name = nodes
+        .iter()
+        .find(|node| {
+            node.role() == Role::Label && node.value().is_some_and(|v| v.starts_with("Name ("))
+        })
+        .and_then(accesskit::Node::bounds)
+        .expect("the Name (n/max) label")
+        .y0;
+    let mut offsets = vec![("Name", name - title)];
+    for label in [
+        "Height",
+        "Weight",
+        "Age",
+        "Stronger foot",
+        "Stronger hand",
+        "Registered position",
+        "Playing style",
+        "Other stats",
+        "Injury resistance",
+        "Weak foot: Usage",
+    ] {
+        offsets.push((label, label_bounds(&nodes, label).y0 - title));
+    }
+    let draft = [
+        ("Name", 22.5),
+        ("Height", 68.5),
+        ("Weight", 90.5),
+        ("Age", 112.5),
+        ("Stronger foot", 136.5),
+        ("Stronger hand", 158.5),
+        ("Registered position", 180.5),
+        ("Playing style", 202.5),
+        ("Other stats", 233.0),
+        ("Injury resistance", 255.5),
+        ("Weak foot: Usage", 277.5),
+    ];
+    for ((label, offset), (_, expected)) in offsets.iter().zip(draft) {
+        assert!(
+            (offset - expected).abs() <= 1.0,
+            "{label} stands {offset} under the title, the draft's {expected}"
+        );
+    }
+}
+
 // A name or shirt name edit sets the player's edited-player flag, in the
 // same undo entry.
 #[test]

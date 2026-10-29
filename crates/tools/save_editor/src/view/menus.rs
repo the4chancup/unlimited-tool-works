@@ -766,7 +766,7 @@ impl StatNum {
 }
 
 /// The number dialog while `view.stat_num` holds one (the draft's
-/// `dlgNum`): the line, the field on it inside the operation's range, OK
+/// `dlgNum`): the line, the field under it inside the operation's range, OK
 /// and Cancel; OK applies and closes (a Bump's N stays as `view.bump`),
 /// Cancel or Escape closes.
 pub(crate) fn stat_num_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
@@ -780,11 +780,9 @@ pub(crate) fn stat_num_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     let response = modal(ui.ctx(), id, title, |ui| {
         let stat_num = view.stat_num.as_mut().expect("checked above");
         let range = stat_num.range();
-        ui.horizontal(|ui| {
-            ui.label(&stat_num.line);
-            let field = ui.add(egui::DragValue::new(&mut stat_num.value).range(range.clone()));
-            step_number(&mut stat_num.value, wheel_steps(ui, &field), range);
-        });
+        ui.label(&stat_num.line);
+        let field = ui.add(egui::DragValue::new(&mut stat_num.value).range(range.clone()));
+        step_number(&mut stat_num.value, wheel_steps(ui, &field), range);
         modal_buttons(ui, |ui| {
             if ui.button("Cancel").clicked() {
                 close = true;

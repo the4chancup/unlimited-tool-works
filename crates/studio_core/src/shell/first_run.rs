@@ -139,7 +139,10 @@ fn choice_column(ui: &mut egui::Ui, label: &str, hint: &str) -> bool {
     ui.vertical(|ui| {
         ui.set_width(CHOICE_WIDTH);
         ui.spacing_mut().item_spacing.y = HINT_GAP;
-        let button = egui::Button::new(egui::RichText::new(label).size(CHOICE_TEXT_SIZE))
+        // A button wider than its label draws the label at its left unless the label
+        // grows to fill it, where egui centres it.
+        let text = egui::RichText::new(label).size(CHOICE_TEXT_SIZE);
+        let button = egui::Button::new(egui::AtomExt::atom_grow(text, true))
             .min_size(egui::vec2(CHOICE_WIDTH, CHOICE_BUTTON_HEIGHT));
         let clicked = ui.add(button).clicked();
         ui.weak(hint);
@@ -308,6 +311,43 @@ mod tests {
             (gap - 16.0).abs() <= 0.5,
             "the columns stand 16 apart, not {gap}"
         );
+    }
+
+    // The draft's choice buttons (`.firstrun button`) centre their labels across, as a
+    // browser's button does.
+    #[test]
+    fn each_choice_buttons_label_is_centred_in_it() {
+        let dir = TestDir::new("studio_core_first_run_centred");
+        let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\4cc-studio");
+        let Shell { mut app, .. } = first_run_shell(
+            test_settings(dir.path()),
+            dir.path().join("exe"),
+            Some(config),
+        );
+        let egui_ctx = test_context();
+
+        let output = idle(&egui_ctx, &mut app, 2);
+        for label in ["Next to the program", "In my user folder"] {
+            let button = entry(&output.nodes, label)
+                .bounds()
+                .expect("a drawn button has bounds");
+            let text = output
+                .shapes
+                .iter()
+                .find_map(|clipped| match &clipped.shape {
+                    egui::Shape::Text(shape) if shape.galley.text() == label => {
+                        Some(shape.galley.rect.translate(shape.pos.to_vec2()))
+                    }
+                    _ => None,
+                })
+                .unwrap_or_else(|| panic!("no text {label:?} painted"));
+            let button_centre = (button.x0 + button.x1) / 2.0;
+            let text_centre = f64::from(text.center().x);
+            assert!(
+                (text_centre - button_centre).abs() <= 1.0,
+                "{label:?}'s centre {text_centre} is its button's {button_centre}"
+            );
+        }
     }
 
     // The draft's `.firstrun { margin: 2px 0 8px }`, box to box: its top margin
