@@ -13347,3 +13347,11 @@ with 1.5 points of spacing, so the fields and the Tactics ran together) and its 
 Tactics' last row still fits the 1280 × 800 pane with the line's room is measured when it is
 built; the draft, which fits, draws it.
 Plan: `plans/save_editor.md` "Editing UI", the team view; `plans/libs/color_tools.md`.
+
+## 2026-10-29 — ruleset_editor — The refused-open dialog is titled "Not opened"
+Decision: the Ruleset editor's dialog for a rules file it refuses to open is titled "Not
+opened", beside its siblings "Not saved" and "Not saved: the ruleset has problems"; its body
+is unchanged.
+Why: every modal now draws through `studio_core`'s modal helper, which takes a title (0.0.1ov2j),
+and this dialog had none: the sidekick's pick, accepted, the siblings' wording.
+Plan: `plans/core/gui.md` "Other UI components" (Modals).

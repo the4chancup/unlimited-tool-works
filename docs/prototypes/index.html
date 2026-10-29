@@ -927,7 +927,9 @@ function window_(title, body, buttons, name) {
   const ov = document.getElementById("overlay");
   ov.innerHTML = "";
   ov.append(h("div", { class: "modal-bg" }, h("div", { class: "window", ...(name ? { "data-dlg": name } : {}) },
-    h("div", { class: "title" }, title), body, h("div", { class: "row", style: "justify-content:flex-end; margin-top:10px" }, buttons))));
+    h("div", { class: "title" }, title), body,
+    // No buttons, no row: an empty one would still add its 10-point margin under the body.
+    [buttons].flat().length ? h("div", { class: "row", style: "justify-content:flex-end; margin-top:10px" }, buttons) : null)));
   sidebarCloseCheck();
 }
 // A closing window can end what held the layer (the About's Close): the same

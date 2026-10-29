@@ -4479,7 +4479,7 @@ briefs, review loops, gates and mutation runs as for any step.
       Save as (l3), the Savefile menu's Apply aesthetics patch and the Team menu's Import /
       export team file (8.9k slice 5), Save a picture of the formations and the pictures
       range dialog, its range on one row (8.33, 8.34). Not yet seen in a built window (ov1)
-    - [ ] ov2j every modal in the draft's `.window` frame (`docs/prototypes/index.html`): 12
+    - [x] ov2j every modal in the draft's `.window` frame (`docs/prototypes/index.html`): 12
       points of margin across and 8 down (egui's modal frame keeps about 6), the title 8 above
       the body (`.window .title`'s margin; the build leaves egui's 3: Settings' first row 20
       under its title against the draft's 28.8, About's body 19 against 24.8, Kit slots' 19
@@ -4488,7 +4488,18 @@ briefs, review loops, gates and mutation runs as for any step.
       (the draft's `window_()`; the build puts Close at the left, where DECISIONS "Set boots and
       gloves IDs takes 4ccEditor's layout" keeps "the buttons right-aligned as every dialog's
       are"); one `studio_core` helper every modal draws through: Settings, About, the first-run
-      prompt, the Save editor's and the Ruleset editor's dialogs and prompts
+      prompt, the Save editor's and the Ruleset editor's dialogs and prompts. Done 2026-10-29
+      (merge `46320cdc`; Opus sidekick, landed first time; lead gates green in its target,
+      merged state too: save_editor 447 + 50, studio_core 280, ruleset_editor 110 + 13,
+      clippy, fmt): `studio_core::widgets::{modal, modal_frame, modal_buttons}`, all 20
+      modals through it, reading orders kept; tests: a short and a wide dialog, Settings,
+      Kit slots, the Ruleset editor's prompt (red at HEAD). Its contradictions, accepted: the
+      first-run row stands 8 under its title (the draft's margins collapse: its test moved
+      from 2); the Ruleset editor's refused-open dialog titled "Not opened" (DECISIONS); the
+      Ruleset editor's scroll bound also takes the title off; the drafts' `window_` drew an
+      empty button row under a dialog with none (fixed in the drafts, the first run's bottom
+      now 9 under its footer as the build's). Rejected: the drafts' settings window capped at
+      640 (ov2r had already fixed it; the worktree predated it)
     - [x] ov2k the form grids' rows 22 apart, the draft's `table.grid` (its `td` padded 2 above
       and below an 18-point control), where egui's `Grid` spaces them by `item_spacing.y`, 3:
       each row lands a point higher than the last, 25 by the Ability stats' last row, 17 by
@@ -4525,15 +4536,27 @@ briefs, review loops, gates and mutation runs as for any step.
       as wide as the list, 119.5 each, ending at the frame's right edge as the plan says (the
       build's are as wide as their labels, 81 and 105, and end 50 short); Skills' `Goalkeeper:
       0 of 2` in its chip (the draft's `Cards left for` badge)
-    - [ ] ov2n the Live AATF dock as drafted: its rows in the log panel's well (`.live-body`:
+    - [x] ov2n the Live AATF dock as drafted: its rows in the log panel's well (`.live-body`:
       the extreme fill, the stroke, 6 × 2 margins; the build lists them on the panel), its body
       150 high when it opens (`LIVE.height`; the build's dock opens at the log panel's 220)
-    - [ ] ov2o the help window's chapter tree 220 wide, its 6-point padding included
+    - [x] ov2o the help window's chapter tree 220 wide, its 6-point padding included
       (`.help-win .help-tree`; the build's is 160, so `First run and data location` and
       `Running from a terminal` are cut)
-    - [ ] ov2p a floating panel (the Comparator, the patch, the interchange) opens where the
+    - [x] ov2p a floating panel (the Comparator, the patch, the interchange) opens where the
       draft's `.panel` stands, 16 from the window's right edge and 90 from its top, 620 wide
-      (the build's Comparator opens bottom-left, over the player list)
+      (the build's Comparator opens bottom-left, over the player list). ov2n, ov2o and ov2p
+      done 2026-10-29 in one slice (merge `052f4e6b`; Opus sidekick, its first run ended
+      waiting on a background test run and a resume finished it; lead gates green in its
+      target: save_editor 446 + 50, studio_core 277, clippy, fmt): `widgets::well_frame`
+      shared by the log and the Live AATF dock, `BottomDock::body_height` (150 for Live
+      AATF, computed from the style), the help tree 220, the Comparator's `default_pos` from
+      the content rect (kept where dragged); tests red at HEAD. Its report found the log's
+      own body 194 at the 220 default, where the drafts' is 180 (ov2t)
+    - [ ] ov2t the log panel opens with the drafts' 180-point body (`index.html`
+      `logHeight: 180`, the well's outer height), where the build's 220-point panel gives
+      194: the log's dock through `BottomDock::body_height(180)` (ov2nop's report,
+      `wt-ov2nop/.tmp/sidelead/sk_ov2nop.report.md`), the plan's `Panel::bottom` comment in
+      `plans/core/gui.md` (its 220 by default) to the body height
     - [ ] ov2q the small ones: Set all stats' number on its own line under its sentence (the
       draft's `dlgSetStats`; the build sets it on the sentence's line); the first-run prompt's
       two choice buttons with their labels centred; Settings' Memory cap `%` after its box, not
