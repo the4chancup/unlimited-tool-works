@@ -11,28 +11,38 @@ names where the question came from so the context can be read there.
 ## Before the release
 
 - **The final pass over the built app's UI** (worklog 0.0.1f1c; the maintainer asked for it on
-  2026-10-28), under way since 2026-10-28 ~14:00; what changes it asks for is drafted first,
-  looked at in the drafts, then built. **The 0.0.1 candidate is ready for it**, restaged 2026-10-29 with the day's
-  changes: branch `release/0.0.1-candidate` (at `d317b6da`), and the bundle `just release`
-  would pack, unpacked, at
-  `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1b\unlimited-tool-works-0.0.1\`
-  (`UTW.exe`, built after a green checkpoint; `COMMIT.txt` beside the folder names its
-  commit; started once from a copy, so the folder itself is as fresh as a download). Every
-  screen the drafts and the build share was measured against the drafts at 1 point (2 where
-  needed) in both themes (worklog 0.0.1ov1 to ov2z, ov11b to ov11d); what is left differs by
-  ruling (the rail's order, a combo's arrow, the checkboxes' hit areas). In this candidate:
-  the toolbar's Open menu and Save as (8.9l), the drafts on egui's spacing for menus, the
-  toolbar and a view's margin, the ability stats' labels left-aligned, the clover logo, the
-  sidebar's polish (no shadow, labels where the draft has them, the rail's year centred, a
-  press on it opening the sidebar, "Coming soon™", Help and Settings marked WIP), the title
-  bar without its icon, and SE-GUI-21 checked in game. Still to look at in the built app: the windows' titles
-  at 14 in the strong grey (220, 0.0.1ov14); the preview's icon where the lead cannot capture it (worklog 0.0.1v and 8.9l3d3g, the
-  title bar now drawing none, its slot left blank on Windows 10, unverified on Windows 11: the taskbar
-  button and Alt+Tab show the tight crop of the head; Explorer's file icon on the exe). Live
-  AATF's whole look, every element it draws rendered from the drafts with what each shows
-  and its tooltips (worklog 0.0.1ov6): `.tmp/0_0_1ov/live/`, images 01 to 13 (no 06: a rules
-  file is checked when imported, so the dock has no failed state). Then the confirmation that
-  freezes logic version 1's hash (0.0.1f2).
+  2026-10-28; under way since 2026-10-28 ~14:00). Any change it asks for is drafted first,
+  looked at in the drafts, then built.
+  - **Where the candidate is** (restaged 2026-10-29 with the day's changes):
+    - branch `release/0.0.1-candidate`, at `d317b6da`;
+    - the bundle `just release` would pack, unpacked:
+      `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1b\unlimited-tool-works-0.0.1\`
+      (`UTW.exe`, built after a green checkpoint; `COMMIT.txt` beside the folder names its
+      commit; started once from a copy, so the folder itself is as fresh as a download).
+  - **Already measured:** every screen the drafts and the build share, against the drafts at
+    1 point (2 where needed), in both themes (worklog 0.0.1ov1 to ov2z, ov11b to ov11d). What
+    still differs does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit
+    areas.
+  - **New in this candidate:**
+    - the toolbar's Open menu and Save as (8.9l);
+    - the drafts on egui's spacing for menus, the toolbar and a view's margin;
+    - the ability stats' labels left-aligned;
+    - the clover logo;
+    - the sidebar's polish: no shadow, labels where the draft has them, the rail's year
+      centred, a press on it opening the sidebar, "Coming soon™", Help and Settings marked
+      WIP;
+    - the title bar without its icon;
+    - SE-GUI-21 checked in game.
+  - **Still to look at in the built app:**
+    - the windows' titles at 14 in the strong grey (220; 0.0.1ov14);
+    - the icon where the lead cannot capture it (worklog 0.0.1v and 8.9l3d3g): the taskbar
+      button and Alt+Tab (both show the tight crop of the head), Explorer's file icon on the
+      exe, and the title bar's icon slot, now left blank (checked on Windows 10, not on
+      Windows 11);
+    - Live AATF's whole look (worklog 0.0.1ov6): every element it draws, rendered from the
+      drafts with what each shows and its tooltips, in `.tmp/0_0_1ov/live/`, images 01 to 13
+      (no 06: a rules file is checked when imported, so the dock has no failed state).
+  - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
 - **When do you rename the GitHub repository to `unlimited-tool-works`?** (worklog 0.0.1rn,
   `plans/core/development_plan.md` "The project's name: Unlimited Tool Works"). It is a step
   on GitHub only you take (the lead never touches the remote); GitHub redirects the old
