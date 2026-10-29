@@ -13199,3 +13199,14 @@ so no stripe shows through the ring.
 Why: the maintainer's review of the final set. The disc is hidden whole because the stripes
 crossing the ring's middle would read as part of the sign at 24 px.
 Plan: `plans/core/README.md` "GUI framework choice: egui".
+
+## 2026-10-29 — gui — The tools' icons live in resources/icons; the picking page is retired
+Decision: the approved icons are committed as `resources/icons/<tool id>.svg`, each one filled
+outline on the 256 grid (the Team compiler's (g) and the Match tracker's (b) outlined the same
+way as the final set), with a README saying how they were drawn; the icon font build reads
+them. `docs/prototypes/icons.html`, the picking page, is removed, git keeping it.
+Why: the maintainer approved the two redrawn icons and dismissed the page. The picks existed
+only on the page and in the lead's gitignored scratch scripts, so they needed a home in the
+repository before the page went; outlines rather than strokes, since that is what a glyph is
+and what the marks' cuts already computed.
+Plan: `plans/core/README.md` "GUI framework choice: egui".

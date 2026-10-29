@@ -86,17 +86,17 @@ Trade-offs accepted:
   reason). Icon glyphs for sidebar/toolbar/status icons from the suite's own single-colour
   icon font, registered through `FontDefinitions` like any font: one SVG per icon, each tool's
   drawn to say what the tool does (the Team compiler's: the maintainer's running stickman
-  dropping into an open box drawn from the front, flaps out, `docs/prototypes/icons.html`
-  candidate (g); a box in perspective reads as a pedestal at 24 px, and an arrow does not show
-  there; the stickman is a filled outline traced from the maintainer's drawing, which the build
-  takes as it is rather than expanding a stroke). A tool's kind shows as one mark on its icon:
+  dropping into an open box drawn from the front, flaps out; a box in perspective reads as a
+  pedestal at 24 px, and an arrow does not show there; the stickman is a filled outline traced from the maintainer's drawing, which the build
+  takes as it is). A tool's kind shows as one mark on its icon:
   an editor's carries a pencil (Phosphor's note-and-pencil pencil, redrawn smaller), a
   compiler's the open box of the Team compiler's, a creator's or generator's a plus; each mark
   is one shape at one size and place, the bottom-right corner, and hides what lies under it
   with a 12-unit gap cut around it, as Phosphor's note-and-pencil does, so a member reads the
   kind before the subject and no line runs through the mark. Each icon is one filled outline
-  (the strokes outlined, the cut subtracted, the mark added), the form the font takes. The
-  picks: the Save editor a floppy disk, the Export upgrader (c)'s two chevrons on an upright
+  (the strokes outlined, the cut subtracted, the mark added), the form the font takes, kept
+  as `resources/icons/<tool id>.svg` (its README says how they were drawn), the font build's
+  input. The icons: the Save editor a floppy disk, the Export upgrader (c)'s two chevrons on an upright
   folder, its tab at the bottom right, the Music player Phosphor's music notes and the Music
   export editor the same with the pencil, the Match tracker a live feed on a monitor, the Kit
   config editor a shirt and the Refs arranger the same shirt striped its full length with a
@@ -104,8 +104,8 @@ Trade-offs accepted:
   inside its ring too, the Balls compiler a ball dropping
   into the box, the Player aesthetics editor the stickman, the Team creator Phosphor's three
   figures, the Ruleset editor a clipboard of ticks, the DB generator a database; the Stadium
-  compiler keeps Phosphor's buildings for now (`docs/prototypes/icons.html`, each tool's (p)),
-  built into `resources/fonts/` by a fontTools script, the
+  compiler keeps Phosphor's buildings for now. They are built into `resources/fonts/` by a
+  fontTools script, the
   general ones (help, settings, dismiss, warning, download) copied from Phosphor (MIT). A glyph
   takes the text colour, so hover and selection need no code of their own; multi-colour icons
   (SVG drawn at run time, `egui_extras`' `svg` feature) wait until after 1.0.0. Not the

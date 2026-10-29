@@ -53,10 +53,3 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   slot 24's real count (marked uncertain)?
 - **Which PES version was the 15/16 pattern table measured on?** And is there a log from the
   other one, to say whether the two share it?
-
-## Small confirmations
-
-- **Are the two redrawn icons right?** (worklog 8.14.) In `docs/prototypes/icons.html`, the
-  Export upgrader's (p), its folder turned so the tab is at the bottom right and widened,
-  and the Refs arranger's (p), its shirt with the refresh sign. Every other icon is
-  approved; the font build and the glyph constants wait on these two.

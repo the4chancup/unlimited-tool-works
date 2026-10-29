@@ -1982,36 +1982,19 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     and a `render_version` test. Files: `studio_core/src/shell/{mod.rs,status_bar.rs,about.rs,
     launch.rs,sidebar/tests.rs}`, `studio/tests/help_cli.rs`
   - [ ] 8.14 the shell's own icon font (the maintainer's request of 2026-10-23;
-    `plans/core/README.md` "GUI framework choice: egui"): single-colour icons, one SVG each; each tool's
-    drawn to say what it does, the general ones (help, settings, dismiss, warning, download)
-    copied from Phosphor (MIT, its licence beside them). First a draft page,
-    `docs/prototypes/icons.html`, with candidates per tool at the rail's sizes, for the
-    maintainer to pick; then a fontTools script in `scripts/` building the TTF into
-    `resources/fonts/` from the picked SVGs, replacing 8.11's `phosphor-subset.ttf`, and
-    `studio_core`'s glyph constants → verify: the script rebuilds the committed TTF byte for
-    byte; every `icon()` glyph exists in the font (a unit test over the registry); the rail
-    seen in the built window, the rail and opened, dark and light
-    The draft page done 2026-10-23 (SWE-2, one rework): three candidates for each of the 14
-    tools in both themes, a mock rail drawing the picks, all in Phosphor regular's grid and
-    stroke (`.tmp/8_14/check_icons.py`); regenerated 2026-10-25 at the rail's 24-point icons
-    (24, 36, 48 px for 100/150/200% scaling, 96 for judging; the mock rail without the
-    collapse button, 8.25); waiting for the maintainer's picks (QUESTIONS "Which icon does each
-    tool get"). 2026-10-26: the Team compiler gains (e) to (h), the maintainer's running
-    stickman over a box, traced from their `Stickman.png` with potrace (within 1 px of its
-    outline at 1024 px; scripts in `.tmp/icons/`): (e) on (a)'s 3D tray, (f) into an open box
-    seen from the front, (g) the same with its flaps open, (h) on a closed parcel. No arrow:
-    it does not show at 24 px (the maintainer). The stickman is a filled outline with
-    `stroke="none"`: the font build takes it as it is, where the other glyphs' strokes are
-    expanded to outlines. The maintainer picked (g) (DECISIONS "The Team compiler's icon is
-    the stickman dropping into an open box"); the other tools' picks still wait.
-    2026-10-29: the final set drafted, each tool's (p) on the page and the rail's default
-    (DECISIONS "A tool's kind shows as one mark on its icon"; `plans/core/README.md` "GUI
-    framework choice: egui"), built as filled outlines by `.tmp/0_0_1ov/icons/final_icons.py`
-    (skia-pathops: strokes outlined, the mark's cut subtracted). All approved but two, redrawn
-    the same day (DECISIONS "The final icons approved; the upgrader's folder turned, the Refs
-    arranger's refresh sign"), which wait for a look (QUESTIONS "Are the two redrawn icons
-    right?"). The font script then takes
-    that outline build into `scripts/` with its test, rather than expanding strokes itself
+    `plans/core/README.md` "GUI framework choice: egui"): single-colour icons, one SVG each;
+    each tool's drawn to say what it does, the general ones (help, settings, dismiss, warning,
+    download) copied from Phosphor (MIT, its licence beside them). The tools' icons are
+    picked and approved (2026-10-29; DECISIONS "A tool's kind shows as one mark on its icon"
+    and "The final icons approved; the upgrader's folder turned, the Refs arranger's refresh
+    sign"): `resources/icons/<tool id>.svg`, 13 filled outlines (the Stadium compiler keeps
+    Phosphor's buildings), drawn on a picking page with candidates per tool at the rail's
+    sizes, since retired (in git history before its removal). Left: a fontTools script in
+    `scripts/` building the TTF into `resources/fonts/` from those SVGs and the five general
+    Phosphor glyphs, replacing 8.11's `phosphor-subset.ttf`, and `studio_core`'s glyph
+    constants → verify: the script rebuilds the committed TTF byte for byte; every `icon()`
+    glyph exists in the font (a unit test over the registry); the rail seen in the built
+    window, the rail and opened, dark and light
   - [ ] 8.15 (code done 2026-10-25 with 8.9f4c's rework r2; the built window's check open) the window's default to 1280 × 800 (the maintainer, 2026-10-25; `spec/core/gui.md`
     "The window's size", ST-WIN-01, ST-HELP-05; DECISIONS "Studio opens at 1280 × 800
     points"): `studio_core`'s `DEFAULT_SIZE` and its tests, the help window's; the Save
