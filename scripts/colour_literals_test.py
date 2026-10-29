@@ -121,6 +121,7 @@ class ProductFilesTest(unittest.TestCase):
             kept,
             [
                 "crates/studio_core/src/lib.rs",
+                "crates/libs/color_tools/src/picker.rs",
                 "crates/libs/team_widgets/src/lib.rs",
                 "crates/libs/team_widgets/src/pitch/mod.rs",
                 "crates/libs/team_widgets/src/pitch/lineup.rs",

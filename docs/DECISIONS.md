@@ -13142,3 +13142,13 @@ inputs' current widths", later eased to "a little more width if needed": the ren
 none needed, `104` fitting the 28 left.
 Plan: `plans/save_editor.md` "Tactics editor" (the popover); `plans/core/gui.md` (the
 Dark/light theme row's symbols).
+
+## 2026-10-29 — gui — The colour picker's markers come from the palette after all
+Decision: the colour-literal check has no exception for the colour picker: its markers (a
+white ring and bar edged in black) become palette fields, the same in both instances. This
+replaces the picker part of "What the colour-literal check lets through" (same day).
+Why: that entry's premise was wrong. `plans/core/gui.md` "The wheel over a value" already
+had `color_tools` depend on `studio_core`, and the architecture lets a shared widget lib
+use egui; ov2e's wheel made the dependency real. With the palette in reach, an exception
+would only be a second rule to remember.
+Plan: `plans/core/gui.md` (the Dark/light theme row).

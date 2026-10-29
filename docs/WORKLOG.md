@@ -4381,11 +4381,21 @@ briefs, review loops, gates and mutation runs as for any step.
       egui's panel margins and separator, which `default_size(255)` had counted (17 points:
       the frame now at 12..257 in the pane, as the draft's); a team row with an elided name
       draws no hint
-    - [ ] ov2e the wheel over a combo box or a drag value steps it (the maintainer, 2026-10-28;
+    - [x] ov2e the wheel over a combo box or a drag value steps it (the maintainer, 2026-10-28;
       DECISIONS "The wheel over a combo box or a drag value steps its value"; drafts done):
-      one `studio_core` widgets function, called on every combo box and drag value of the
-      suite (about 37 call sites in 10 crates, `team_widgets` and `color_tools` included),
-      ST-WHEEL-01 to ST-WHEEL-03 (`plans/core/gui.md` "The wheel over a value")
+      `studio_core::widgets::{wheel_steps, step_choice, step_number}` (`widgets/wheel.rs`),
+      called at 36 of the suite's 38 combo box and drag value sites (the two left are always
+      disabled: the keeper's `GK` combo, the dribbling stand-in), `color_tools` now
+      depending on `studio_core`; ST-WHEEL-01 to 03 in `wheel.rs`, a notch one undo step in
+      both editors (`save_editor` tests/abilities.rs, `ruleset_editor` tests/tiers.rs), the
+      picker's commit. `e6d53ee0`, merge `e9dbb1ab`. Left as is: a pane scrolled while no
+      combo or drag value is drawn is not recorded, so a control under the pointer within
+      500 ms steps (rare: some control is on nearly every pane)
+      - [ ] ov2e2 a wheel step while a text field or a drag value in typing mode holds the
+        keyboard joins that field's undo entry, where `plans/core/gui.md` "The wheel over a
+        value" has one undo step per notch: the editors (`edit_settled`, `seal_gesture`)
+        seal only with nothing focused. Fix in the editors' sealing, with a test: a typed
+        name, the Name field still focused, then a notch over a stat: two Ctrl+Z steps
     - [x] ov2f Live AATF's marks as ruled (the maintainer, 2026-10-28; DECISIONS "The final
       pass's second rulings"; drafts done; `plans/save_editor.md` the Live AATF bullet): the
       list's check mark orange for a Warning, blue for suggestions alone; a field's mark left
@@ -4550,8 +4560,8 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] ov11a the palette (`plans/core/gui.md`, the Dark/light theme row): `Palette` in
       `studio_core::theme` with `DARK` and `LIGHT`, every colour constant and inline
       colour of the product code moved into it (`SUCCESS_FG`/`_LIGHT`, the pitch's,
-      the ratings' fills, `COUNT_GREY`, the boots readout, the medals...; the script lists
-      46 sites at `0c5277a9`), each light value by the contrast rule; measuring layouts
+      the ratings' fills, `COUNT_GREY`, the boots readout, the medals, the colour picker's
+      markers...; the script lists 46 sites at `e9dbb1ab`), each light value by the contrast rule; measuring layouts
       take `PLACEHOLDER`; `scripts/colour_literals.py` with its test, in `gates` and
       `gates-changed` (lead: a lint; committed and perturbation-proven, joining the
       gates with the migration, since it fails until then). Cross-crate: after ov2e lands. ov2h's rework gives the three dark-only

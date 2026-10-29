@@ -12,8 +12,7 @@ literals or constants (`from_rgb(0x5a, 0x5a, 0x5a)`, `from_gray(GREY)`). Exit 1 
 matches, 0 when nothing does.
 
 What passes:
-- `crates/studio_core/src/theme.rs`, the palette's home, and the colour picker's file, whose
-  crate cannot reach the palette (`OWN_COLOURS`);
+- `crates/studio_core/src/theme.rs`, the palette's home;
 - a colour computed from data (`from_rgb(r, g, b)`, a name's colour codes, the colour
   picker's value), since it has no fixed value to give a light twin;
 - `Color32::PLACEHOLDER` and `Color32::TRANSPARENT`, which are no colour: egui's "the text's
@@ -38,12 +37,6 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # The palette's home, where every literal colour lives.
 THEME = "crates/studio_core/src/theme.rs"
-
-# Files outside the palette's reach that keep their own colours, each with its reason. The
-# colour picker is in `color_tools`, a leaf crate that does not depend on `studio_core`; its
-# markers (a white ring and bar edged in black) are drawn on the colour field itself, which
-# both themes share, so they have no light value to give.
-OWN_COLOURS = {"crates/libs/color_tools/src/picker.rs"}
 
 # Named `Color32` constants that are no colour.
 NOT_COLOURS = {"PLACEHOLDER", "TRANSPARENT"}
@@ -186,7 +179,7 @@ def product_files(paths: list[str], manifests: list[str], read) -> list[str]:
     for path in paths:
         root = crate_root(path, roots)
         inside = path[len(root) + 1 :] if root else path
-        if path == THEME or path in OWN_COLOURS or inside.startswith(("tests/", "examples/", "benches/")):
+        if path == THEME or inside.startswith(("tests/", "examples/", "benches/")):
             continue
         if any(path == prefix or (prefix.endswith("/") and path.startswith(prefix)) for prefix in exempt):
             continue
