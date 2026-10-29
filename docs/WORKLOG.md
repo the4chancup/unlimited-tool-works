@@ -4664,7 +4664,20 @@ briefs, review loops, gates and mutation runs as for any step.
       0.5-point test, as the Goal named it. Left for the re-measure: the list frame's bottom
       679 for the draft's 680 (within 1), the player view's Ability stats ending at 1244.6
       for the draft's 1250.6 (its columns are centred between the list and the window's
-      edge, so the pane's margin does not move them)
+      edge, so the pane's margin does not move them). Re-measured 2026-10-29 on a release
+      build of `daed1a3d` (`rect_compare.py player|team`, tables
+      `.tmp/0_0_1ov/rects/{player,team}_daed.txt`; the Overlay's captures retaken): the
+      player and team views within 1 point, 2 where needed (the Tactics bars' choices' hit
+      boxes 18 tall for the draft's 20, their fill as drawn; Advanced instructions' "No
+      target" 2 high), but the known (checkbox hit areas, the toolbar's Open menu and Save as,
+      the ability labels' alignment); the Ability stats' boxes at the draft's pixels in the
+      built window (the 1244.6 was the headless probe's)
+    - [ ] ov2z the sidebar's rail against the draft, seen in the same re-measure (ink rows of
+      `.tmp/0_0_1ov/{draft,built}/team.png`, `.tmp/0_0_1ov/rail_rows.py`): the logo, the
+      version selector and the line under it 5 points high (logo ink 11 for the draft's 16),
+      the selector 40 wide for the draft's 44, the entries 33 apart for its 32, no line above
+      Help (the draft's at 681), Help and the gear 3 to 6 low. The rail's order differs by
+      design (ov1). Brief `.tmp/0_0_1ov/brief_ov2z.md`
     - [x] ov2x the player view and the text boxes against the draft, re-measured 2026-10-29
       (`rect_compare.py player`): every text box without the draft's 1-point border
       (`input[type=text]`: `border: 1px solid var(--stroke)`, radius 3; egui's resting text
