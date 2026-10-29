@@ -4992,11 +4992,20 @@ briefs, review loops, gates and mutation runs as for any step.
     `the_stats_labels_start_at_one_x_and_their_boxes_at_another`. Measured on its release
     build with `scripts/draft_compare.py player`: every ability label within 1 px of the
     draft; over 2 px only the known Appearance header and the rail's logo
-  - [ ] ov14 the text colours the draft comparison measured (DECISIONS "Titles and collapsing
+  - [x] ov14 the text colours the draft comparison measured (DECISIONS "Titles and collapsing
     headers at the drafts' strong grey"; `plans/core/gui.md` the Dark/light theme row): the
-    drafts' `.sel` and position labels at egui's 180 (done, lead); the dark theme's strong text
-    220 and every collapsing header's title in it (brief `.tmp/8_9l/brief_ov14.md`); renders
-    `.tmp/8_9l/pairs/colour_*.png`
+    drafts' `.sel` and position labels at egui's 180 (lead); the dark theme's strong text 220
+    (the pressed widgets' text colour, which egui's strong colour is) and every collapsing
+    header's title in it through `studio_core::widgets::collapsing_header`, five sites (the
+    Team compiler's settings added at review); the drafts' pressed checkbox label at the strong
+    grey and hovered position label at egui's hovered 240 (the sidekick's contradictions).
+    Re-measured on a release build of `3cd0f907`: the player view's ink lists no colour (the
+    7 titles and Appearance gone); the titles' weight reads 13 to 21% under the body text's
+    (egui's heavier rasterizing shows less on bright text: Skills, at 21%, is listed and is
+    the same in the renders). Files: `studio_core/src/{theme.rs,widgets/{mod,
+    collapsing_header}.rs,shell/{help_window.rs,settings_menu/mod.rs}}`,
+    `ruleset_editor/src/view/sections/tiers.rs`, `save_editor/src/view/mod.rs`,
+    `team_compiler/src/view/mod.rs`; renders `.tmp/8_9l/pairs/colour_*.png`
   - [x] ov3 a general overlap test: a headless pass over every modal and view failing when two
     widgets' rectangles intersect (catches collisions, not a draft mismatch: ov1 does that;
     `plans/core/gui.md` "No two widgets overlap"; Opus sidekick, brief
