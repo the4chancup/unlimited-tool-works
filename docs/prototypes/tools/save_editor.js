@@ -7218,11 +7218,16 @@ function ixWarnings(d) {
       for (const sk of src.skills || [])
         if (skillMinVersion(SKILLS.indexOf(sk)) > v)
           warn("import_key_not_in_version (path=" + key + ".skills.skills." + sk + ")");
+      const fk = ((src.appearance || {}).motion || {}).free_kick;
+      if (fk !== undefined && fk > motionTop(v, "free_kick"))
+        warn("import_value_capped (path=" + key + ".appearance.motion.free_kick, from="
+          + fk + ", to=" + motionTop(v, "free_kick") + ")");
     }
     if (s.aesthetics) {
       const ap = src.appearance || {};
       for (const [k, x] of Object.entries(ap.motion || {}))
-        if (k === "dribbling" && v < 20)
+        if (k === "free_kick") continue;
+        else if (k === "dribbling" && v < 20)
           warn("import_key_not_in_version (path=" + key + ".appearance.motion.dribbling)");
         else if (motionTop(v, k) !== undefined && x > motionTop(v, k))
           warn("import_value_capped (path=" + key + ".appearance.motion." + k
@@ -7328,6 +7333,13 @@ function ixWriteGameplay(src, dst, fv) {
     skillMinVersion(SKILLS.indexOf(s)) <= v));
   dst.com_styles = clone(src.com_styles || []);
   dst.height = src.height; dst.weight = src.weight;
+  // The free-kick motion rides with the stats (the reference's PlayerImport
+  // copies mo_fk under importStats), the other motions with aesthetics.
+  const fk = ((src.appearance || {}).motion || {}).free_kick;
+  if (fk !== undefined) {
+    const top = motionTop(v, "free_kick");
+    dst.appearance.motion.free_kick = top !== undefined && fk > top ? top : fk;
+  }
   for (const k of GP_FLAGS)
     if (src.edit_flags && src.edit_flags[k] !== undefined)
       dst.edit_flags[k] = src.edit_flags[k];
@@ -7348,7 +7360,7 @@ function ixWriteAesthetics(src, dst, d) {
   Object.assign(da.physique, ap.physique || {});
   Object.assign(da.strip, ap.strip || {});
   for (const [k, x] of Object.entries(ap.motion || {})) {
-    if (k === "dribbling" && v < 20) continue;
+    if (k === "free_kick" || (k === "dribbling" && v < 20)) continue;
     const top = motionTop(v, k);
     da.motion[k] = top !== undefined && x > top ? top : x;
   }

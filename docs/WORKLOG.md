@@ -1760,7 +1760,16 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [ ] k5b the interchange panel's import half (SE-GUI-16's import, SE-GUI-17's import,
         SE-GUI-22's and SE-GUI-35's import-dialog parts): the file picked decides the format,
         the sections the file holds offered, the legacy formats read-only, the version
-        mismatch's warning list, the aesthetics section under the ownership setting
+        mismatch's warning list, the aesthetics section under the ownership setting. The
+        lib applies a Team TOML whole (no section choice), so two sub-slices:
+        - [ ] k5b1 the section filter: a save_editor function that keeps only the chosen
+          sections' keys of a `TeamToml` before `Session::import_team`, split as the plan's
+          "Interchange formats in the UI" says (4ccEditor's `PlayerImport`, re-read
+          2026-10-29: `mo_fk` under `importStats`); the draft's writers corrected to it the
+          same day (they carried the free-kick motion with aesthetics)
+        - [ ] k5b2 the panel's import half on it (`legacy::read_squad`/`read_tactics`,
+          `Texport::from_bytes` + `to_team_toml`, the notes list, the `.4ccs` pairing), the
+          file pick row as the Comparator's, the floating panels' open flags folded into one
       - [ ] k5c its export half (SE-GUI-16's export, SE-GUI-17's export): Team TOML equal to
         the CLI's export; Texport for PES 18-21 read back to the same team values; disabled on
         PES 15-17 with the missing template in its tooltip
@@ -5820,6 +5829,15 @@ points there.
   `import_toml`'s two tests refuse under a stub reporting the save's PES and write under one
   reporting PES 2019, and CONTRIBUTING's "A test never reaches the developer's own files"
   names the running games. A sandbox default reporting PES 2021 fails 18 tests
+
+- open 2026-10-29 — `studio`'s `tests/crash_dump.rs`
+  `a_stack_overflow_leaves_a_dump_and_the_monitors_line` failed in k5a's checkpoint
+  (`gates-changed 17c23789`, four test binaries at once beside `save_editor`'s): the crashed
+  run took 51.9 s and left no `data/utw.dmp` (`Minidump::read_path` → `FileNotFound`); alone
+  it passes in 0.16 s. So the crash monitor's dump fails or times out under load, which a
+  member's machine running PES may also be. Not k5a's (it touches no crash path). Diagnose
+  before trusting a dump on a loaded machine: rerun under the gates' load, read the
+  monitor's own wait and the log it leaves; do not loosen the test
 
 - open 2026-10-28 — `studio_core`'s first-run tests depend on the portable hint's width
   (8.29b): a hint of about 100 characters made three of them fail as if a click were lost
