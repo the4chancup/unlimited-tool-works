@@ -13363,3 +13363,12 @@ Why: 0.0.1ov2nop measured the log's well at 194 under the 220-point panel (the f
 line, the header row and its spacing taking 26), 14 points taller than the approved drafts.
 Plan: `plans/core/gui.md` "GUI Design", the code block under "A pipeline tool subdivides",
 its `Panel::bottom` comment.
+
+## 2026-10-29 — save_editor — Names and the player list's rows in the body text
+Decision: the player list's rows and every name drawn through `team_widgets`' name helpers
+(the lineup lists, the pitch's popover, the view's title) take the font their caller gives,
+the body text (12.5) for all but the pitch's markers, which keep their own size.
+Why: 0.0.1ov2m found the list's text and the name helpers laid out with egui's default font,
+14, where the drafts draw 12.5: at 14 DMF, CMF, AMF and RWF overflow the 28-point position
+column.
+Plan: `plans/save_editor.md` "Editing UI", the Player list bullet.

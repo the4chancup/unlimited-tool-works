@@ -4735,12 +4735,19 @@ briefs, review loops, gates and mutation runs as for any step.
   keeps the working name `4cc-studio` until 1.0.0 (the maintainer, 2026-10-28). Planned
   2026-10-29: `plans/core/development_plan.md` "The project's name: Unlimited Tool Works",
   DECISIONS "The project's name in every spelling"; inventory `.tmp/0_0_1rn/inventory.md`
-  - [ ] rn1 the code and the files a user receives (a sidekick): the two name constants
+  - [x] rn1 the code and the files a user receives (a sidekick): the two name constants
     (`exe_name!` by platform), cargo's bin `utw` (`CARGO_BIN_EXE_utw`, `utw.pdb`), the
     settings folder, `utw.log`/`utw.old.log`/`utw.dmp`, the app id, `Tvers`, the shared-IDs
     folder, `tool_version`, the help pages, the launchers, the readme, `build.rs`, the release
     recipe and its test, the justfile and the scripts naming the exe or the folder; the
-    `help_cli` guard widened to `UnlimitedToolWorks` and the old folder's name
+    `help_cli` guard widened to `UnlimitedToolWorks` and the old folder's name. Done 2026-10-29
+    (merge `c6d17d9b`; Opus sidekick, landed first time; lead check in its target: studio 9
+    test binaries, studio_core 277, clippy, fmt, `release_test.py`, `symbolize_log_test.py`):
+    `Tvers` from one `studio_core::TOOL_VERSION`; the first-run layout test's sample path renamed
+    by the lead, its hint allowed three lines (the draft's own wraps to three with the new
+    folder name). Its contradictions: `--version` prints `UTW v…` as the spec has it (the plan
+    corrected); the plan's stale "the icon switches back" removed; `LICENSE-MIT`'s "the 4cc
+    Studio contributors" and the spec's `studio_version` sample go to rn3
   - [x] rn2 the drafts (the lead): `index.html`'s title, exe and folder names, help text
     (`UTW.exe`, `unlimited-tool-works`) and the draft controls' "Studio"; the Ruleset editor
     draft's file header and logic banner copied from the code's (no product named), its

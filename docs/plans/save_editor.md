@@ -205,6 +205,9 @@ all side by side.
   A player row shows his place in the roster (`01` to `23`, the slot `NN` of his id, always
   two digits, so no column is kept for right-aligning a one-digit number), position and name,
   with no team name under ALL or a filter: the team row above its players already names it.
+  The rows' text, as every name the views draw (the lineup lists, the popover, the view's
+  title), is the body text, 12.5 as the drafts', not egui's 14-point default font, at which
+  DMF and CMF overflow the position's column.
   The three are columns, as the draft's `.prow`: the place in the weak colour, the position
   in a 28-point column, the name after it, elided when too long with the dot and the mark
   kept after it, each 5 points from the last. A row (a team row too) is 18 high, its text

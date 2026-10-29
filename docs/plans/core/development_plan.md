@@ -114,13 +114,14 @@ name, which a later rename would have to migrate on every member's machine. The 
 (Fate/stay night's reality marble, where every sword once seen is traced) is the community's
 own and fits a suite that traces every tool its cups have used. Its spellings:
 
-- **`Unlimited Tool Works`**, the display name: the window title, the About box, `--version`,
-  the log's first line, the exe's version details, and a written CPK's `Tvers` field
+- **`Unlimited Tool Works`**, the display name: the window title, the About box, the log's
+  first line, the exe's version details, and a written CPK's `Tvers` field
   (`Unlimited Tool Works <version>`, the tool that wrote it).
 - **`UTW.exe`** on Windows, **`utw`** on Linux, the executable: cargo builds the bin `utw`,
   and the release recipe names it `UTW.exe` in the bundle. The command line is second-class,
   so its users can type the capitals (Windows ignores their case anyway), and the CLI's usage
-  lines print the platform's spelling.
+  lines and `--version` (`UTW v0.0.1 pre-alpha`, the executable's name before the version,
+  as a CLI's own line reads) print the platform's spelling.
 - **`unlimited-tool-works`** in paths and packages: the settings folder under the user's
   config directory (`%APPDATA%\unlimited-tool-works`, `~/.config/unlimited-tool-works`), the
   bundle's top folder and its archives (`unlimited-tool-works-<version>-windows.7z`, the
@@ -180,8 +181,7 @@ face alone. Three files under `resources/icon/` carry it:
   compositor's default until a package does.
 
 `scripts/make_icon.py` makes the three once from the picture, checking each of the ICO's
-sizes holds its own crop, and they are committed, so a build needs no image tool. At 1.0.0 the
-icon switches back with the name.
+sizes holds its own crop, and they are committed, so a build needs no image tool.
 
 ### Phase 7: glTF support
 
