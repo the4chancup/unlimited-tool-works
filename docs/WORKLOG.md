@@ -1835,9 +1835,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
             window (`.tmp/8_9l/draft_menu_rects.py`, `measure_toolbar.py`); the discovered
             entry's one space in the draft's source. Plan: `plans/core/gui.md` "Prototypes
             before implementation", the Look bullet
-          - [ ] l3d2 the Save editor drops its panes' hand-added 4 points (the list's left
-            margin, `PANE_RIGHT_MARGIN`) and the Open menu's label takes one space; the player
-            and team views re-measured with `rect_compare.py`
+          - [x] l3d2 2026-10-29 (Opus sidekick): the Save editor drops its panes' hand-added 4
+            points (the list's left margin 0; `PANE_RIGHT_MARGIN` gone, the detail frame's
+            right margin 0, since its own 8 would double the shell's: the brief's "egui's" was
+            wrong) and the Open menu's label takes one space; the tests pinning the old
+            geometry follow the draft (the list frame 64 to 309, the pane's right 1272, the
+            four gaps 30.4, the Tactics bars 4 left). Files: `save_editor/src/view/{mod,
+            open_menu}.rs`, `save_editor/src/view/tests{,/abilities,/list,/open_menu,
+            /quick_actions,/tactics,/team}.rs`. Re-measured on a release build of `8a13c577`
+            (`rect_compare.py player|team`, `.tmp/8_9l/measure_toolbar.py`): every delta the
+            same as ov2y's accepted table (the views moved with the draft), the ability labels
+            left to ov13; the toolbar's runs the draft's to the pixel but the ruleset combo 2
+            wider (as before); the Open menu's entries 1 high
           - [ ] l3d3 every other draft spacing that differs from the theme's (`.row`'s gap 6,
             for one) listed, each changed to the theme's or kept with its reason in the
             stylesheet; a menus pass added to `rect_compare.py`
