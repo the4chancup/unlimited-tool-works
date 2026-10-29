@@ -4148,10 +4148,12 @@ briefs, review loops, gates and mutation runs as for any step.
       pass would centre with the input's monitor size: one frame, accepted. Built window checked
       2026-10-28 at `8978a0be`: from 1100 × 800 the click restored 1280 × 800 at (312, 120),
       the button gone after it
-  - [ ] z3 the sidebar's active-tool bar: the draft rounds its left corners, egui draws it
+  - [x] z3 the sidebar's active-tool bar: the draft rounds its left corners, egui draws it
     square (the maintainer, 2026-10-27, "for later"). Planned 2026-10-29 (`core/gui.md`
-    "Sidebar" item 3: the bar's left corners rounded 2, the right square); brief
-    `.tmp/0_0_1ov/brief_z3.md`
+    "Sidebar" item 3: the bar's left corners rounded 2, the right square). Done 2026-10-29
+    (Opus, brief `.tmp/0_0_1ov/brief_z3.md`, reviewed): `sidebar/mod.rs`
+    `ACTIVE_BAR_CORNER` 2 on `nw`/`sw`; test `the_accent_bar_rounds_its_left_corners_only`.
+    Seen on screen at the release rebuild (ov4c's captures)
   - [x] z4 the maintainer's second look (2026-10-27 ~21:55), drafts and plan: Reset window
     drawn only while the window is maximized or off its active class's design size
     (`core/gui.md` "Status bar", ST-BAR-01's GIVEN, ST-BAR-06 new); the unsaved-changes prompt

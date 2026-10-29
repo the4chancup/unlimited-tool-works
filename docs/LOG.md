@@ -2807,3 +2807,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The team row stands as drafted: colour buttons 22 × 16, its units 6 apart, id boxes 46 wide (0.0.1ov2l). The drafts' Overlay control lays the built window's capture over a draft or beside it (0.0.1ov4a).
 - **2026-10-29** — A dialog's sentence stands 8 over what follows it, as the drafts' paragraphs (0.0.1ov2v).
 - **2026-10-29** — `scripts/vet_drafts.py` renders a draft change's before and after side by side from a revision pair and a link (0.0.1ov5); Live AATF's gallery rendered again for the maintainer's look (0.0.1ov6).
+- **2026-10-29** — The sidebar's active-tool bar has its two left corners rounded 2, as the draft's entry (0.0.1z3).
