@@ -114,11 +114,12 @@ pub struct LogPanel {
 
 impl LogPanel {
     /// A panel titled `Log` whose egui state (the dock height, the scroll offset)
-    /// is keyed under `id_salt`: pass the tool's own id, or a salt of its own.
+    /// is keyed under `id_salt`: pass the tool's own id, or a salt of its own. Its
+    /// body opens 180 points high (the drafts' `logHeight`).
     pub fn new(id_salt: impl egui::AsIdSalt) -> LogPanel {
         let id = egui::Id::unique(id_salt);
         LogPanel {
-            dock: BottomDock::new(id, "Log", "the log"),
+            dock: BottomDock::new(id, "Log", "the log", 180.0),
             salt: id.with("body"),
             filter: Filter::All,
             follow: Follow {
