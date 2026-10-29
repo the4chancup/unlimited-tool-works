@@ -317,7 +317,7 @@ impl RowMark {
             .layout_no_wrap(
                 glyph.to_string(),
                 egui::TextStyle::Body.resolve(ui.style()),
-                egui::Color32::WHITE,
+                egui::Color32::PLACEHOLDER,
             )
             .size()
             .x

@@ -670,7 +670,7 @@ fn widest_label(ui: &egui::Ui, args: &SidebarFrame) -> f32 {
     let mut measure = |label: &str| {
         widest = widest.max(
             ui.painter()
-                .layout_no_wrap(label.to_owned(), font.clone(), egui::Color32::WHITE)
+                .layout_no_wrap(label.to_owned(), font.clone(), egui::Color32::PLACEHOLDER)
                 .size()
                 .x,
         );

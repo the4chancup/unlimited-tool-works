@@ -299,7 +299,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     let font = egui::TextStyle::Button.resolve(ui.style());
     let text_width = |text: &str| {
         ui.painter()
-            .layout_no_wrap(text.to_owned(), font.clone(), egui::Color32::WHITE)
+            .layout_no_wrap(text.to_owned(), font.clone(), egui::Color32::PLACEHOLDER)
             .size()
             .x
     };

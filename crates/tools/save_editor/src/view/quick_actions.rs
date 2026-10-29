@@ -220,7 +220,7 @@ struct SetStatsWidths {
 /// padding.
 fn cell_width(ui: &egui::Ui, text: &str) -> f32 {
     let button = egui::TextStyle::Button.resolve(ui.style());
-    ui.fonts_mut(|fonts| fonts.layout_no_wrap(text.to_owned(), button, egui::Color32::WHITE))
+    ui.fonts_mut(|fonts| fonts.layout_no_wrap(text.to_owned(), button, egui::Color32::PLACEHOLDER))
         .size()
         .x
         + 2.0 * ui.spacing().button_padding.x
@@ -233,7 +233,9 @@ fn set_stats_widths(ui: &egui::Ui) -> SetStatsWidths {
     SetStatsWidths {
         button: cell_width(ui, "Set stats"),
         field: ui
-            .fonts_mut(|fonts| fonts.layout_no_wrap("99".to_owned(), field, egui::Color32::WHITE))
+            .fonts_mut(|fonts| {
+                fonts.layout_no_wrap("99".to_owned(), field, egui::Color32::PLACEHOLDER)
+            })
             .size()
             .x
             + 2.0 * ui.spacing().button_padding.x,

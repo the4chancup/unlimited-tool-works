@@ -21,7 +21,7 @@ use team_widgets::names::append_name;
 
 use crate::session::Session;
 use crate::view::abilities::{
-    self, PLAYING_STYLE_LABEL, REGISTERED_POSITION_LABEL, SMALL_STATS, STRONGER_FOOT_LABEL,
+    PLAYING_STYLE_LABEL, REGISTERED_POSITION_LABEL, SMALL_STATS, STRONGER_FOOT_LABEL,
     STRONGER_HAND_LABEL, SmallStat, gating_tooltip, position_label,
 };
 use crate::view::live_marks::{MarkedField, Marks};
@@ -476,7 +476,7 @@ fn pair_half(
 pub(super) fn label_width(ui: &egui::Ui, label: &str) -> f32 {
     let body = egui::TextStyle::Body.resolve(ui.style());
     ui.painter()
-        .layout_no_wrap(label.to_owned(), body, egui::Color32::WHITE)
+        .layout_no_wrap(label.to_owned(), body, egui::Color32::PLACEHOLDER)
         .size()
         .x
 }
@@ -730,7 +730,7 @@ fn side_row(ui: &mut egui::Ui, field_width: f32, held: u8) -> Option<(u8, u64)> 
                     true,
                     egui::RichText::new(label).color(ui.visuals().text_color()),
                 )
-                .fill(abilities::rating_c_fill(ui.visuals()))
+                .fill(studio_core::theme::palette(ui.visuals()).rating_c_fill)
             } else {
                 egui::Button::selectable(false, label)
             };
@@ -743,30 +743,11 @@ fn side_row(ui: &mut egui::Ui, field_width: f32, held: u8) -> Option<(u8, u64)> 
     picked
 }
 
-/// The grey of a counted label's count under its limit (the draft's
-/// `.gen .count`, a disabled card label's `#5a5a5a`): quiet, so a count
-/// draws the eye only once the field reaches its limit.
-const COUNT_GREY: egui::Color32 = egui::Color32::from_rgb(0x5a, 0x5a, 0x5a);
-
-/// `COUNT_GREY` on the light theme's panel: the same quiet contrast, 2.5,
-/// as the dark grey has on the dark one, where the dark grey itself would
-/// read at 6.5, as loud as the text.
-const COUNT_GREY_LIGHT: egui::Color32 = egui::Color32::from_gray(0x9f);
-
-/// A count's grey under its limit on the theme `visuals` draw.
-fn count_grey(visuals: &egui::Visuals) -> egui::Color32 {
-    if visuals.dark_mode {
-        COUNT_GREY
-    } else {
-        COUNT_GREY_LIGHT
-    }
-}
-
 /// How near `limit` a count of `n` is, as its colour: the grey under it,
 /// the warning colour on it, the error colour past it.
 fn count_color(visuals: &egui::Visuals, n: usize, limit: usize) -> egui::Color32 {
     match n.cmp(&limit) {
-        std::cmp::Ordering::Less => count_grey(visuals),
+        std::cmp::Ordering::Less => studio_core::theme::palette(visuals).count_grey,
         std::cmp::Ordering::Equal => visuals.warn_fg_color,
         std::cmp::Ordering::Greater => visuals.error_fg_color,
     }

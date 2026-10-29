@@ -1014,7 +1014,11 @@ mod tests {
         let egui_ctx = test_context();
         let visuals = egui_ctx.global_style().visuals.clone();
         let cases = [
-            (NoticeKind::Success, "did it", crate::theme::SUCCESS_FG),
+            (
+                NoticeKind::Success,
+                "did it",
+                crate::theme::Palette::DARK.success,
+            ),
             (NoticeKind::Info, "heads up", visuals.hyperlink_color),
             (NoticeKind::Warning, "careful", visuals.warn_fg_color),
         ];

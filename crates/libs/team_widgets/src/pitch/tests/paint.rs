@@ -114,7 +114,7 @@ fn the_marker_box_centres_on_the_badge_and_stays_inside() {
 // deviation about 3.5, deterministic.
 #[test]
 fn the_turf_is_the_game_textures_bands_with_its_grain() {
-    let image = turf_image();
+    let image = turf_image(&Palette::DARK);
     assert_eq!(image.size, TURF_SIZE);
     // A row's or band's mean channel.
     let mean = |rows: &[usize], channel: usize| {
@@ -132,8 +132,11 @@ fn the_turf_is_the_game_textures_bands_with_its_grain() {
             .filter(|&y| y * TURF_BANDS / image.height() == band)
             .collect::<Vec<usize>>()
     };
+    let channels = |colour: egui::Color32| [colour.r(), colour.g(), colour.b()];
+    let dark = channels(Palette::DARK.turf_dark_band);
+    let light = channels(Palette::DARK.turf_light_band);
     for band in 0..TURF_BANDS {
-        let base = if band % 2 == 0 { TURF_DARK } else { TURF_LIGHT };
+        let base = if band % 2 == 0 { dark } else { light };
         for (channel, &base) in base.iter().enumerate() {
             assert!(
                 (mean(&rows_of(band), channel) - f64::from(base)).abs() <= 1.0,
@@ -142,7 +145,7 @@ fn the_turf_is_the_game_textures_bands_with_its_grain() {
         }
     }
     // Bands 0 and 10 are dark (both ends), band 5 light.
-    for (row, base) in [(0usize, TURF_DARK), (575, TURF_DARK), (288, TURF_LIGHT)] {
+    for (row, base) in [(0usize, dark), (575, dark), (288, light)] {
         for (channel, &base) in base.iter().enumerate() {
             assert!(
                 (mean(&[row], channel) - f64::from(base)).abs() <= 1.0,
@@ -162,14 +165,18 @@ fn the_turf_is_the_game_textures_bands_with_its_grain() {
         (3.0..=4.0).contains(&std),
         "the grain's luma deviation {std}"
     );
-    assert_eq!(turf_image().pixels, image.pixels, "deterministic");
+    assert_eq!(
+        turf_image(&Palette::DARK).pixels,
+        image.pixels,
+        "deterministic"
+    );
 }
 
 // The grain itself, pixel-exact on row 0's dark band: the fixed-seed
 // xorshift32's known answer.
 #[test]
 fn the_turf_grain_is_the_fixed_seed_xorshift() {
-    let image = turf_image();
+    let image = turf_image(&Palette::DARK);
     for (x, expected) in [
         egui::Color32::from_rgb(43, 85, 27),
         egui::Color32::from_rgb(50, 92, 34),
@@ -201,7 +208,9 @@ fn the_painted_lines_are_the_screens_markings() {
     let mut segments: Vec<egui::Rect> = shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::LineSegment { points, stroke } if stroke.color == LINES => {
+            egui::Shape::LineSegment { points, stroke }
+                if stroke.color == Palette::DARK.pitch_lines =>
+            {
                 assert_eq!(stroke.width, 2.0, "every line 2 px");
                 Some(egui::Rect::from_two_pos(points[0], points[1]))
             }
@@ -236,7 +245,7 @@ fn the_painted_lines_are_the_screens_markings() {
     let circles: Vec<(egui::Pos2, f32)> = shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::Circle(shape) if shape.stroke.color == LINES => {
+            egui::Shape::Circle(shape) if shape.stroke.color == Palette::DARK.pitch_lines => {
                 assert_eq!(shape.stroke.width, 2.0);
                 Some((shape.center, shape.radius))
             }
@@ -250,7 +259,7 @@ fn the_painted_lines_are_the_screens_markings() {
             egui::Shape::Path(shape)
                 if matches!(
                     shape.stroke.color,
-                    egui::epaint::ColorMode::Solid(color) if color == LINES
+                    egui::epaint::ColorMode::Solid(color) if color == Palette::DARK.pitch_lines
                 ) =>
             {
                 assert_eq!(shape.stroke.width, 2.0);
@@ -292,36 +301,40 @@ fn the_painted_lines_are_the_screens_markings() {
 #[test]
 fn the_position_colours_follow_the_game_s_groups() {
     assert_eq!(
-        position_colour(0),
+        position_colour(&Palette::DARK, 0),
         egui::Color32::from_rgb(0xff, 0xde, 0x00),
         "GK"
     );
     for position in 1..=3 {
         assert_eq!(
-            position_colour(position),
+            position_colour(&Palette::DARK, position),
             egui::Color32::from_rgb(0x00, 0xd2, 0xff),
             "{position} a defender"
         );
     }
     for position in 4..=8 {
         assert_eq!(
-            position_colour(position),
+            position_colour(&Palette::DARK, position),
             egui::Color32::from_rgb(0x57, 0xe4, 0x2b),
             "{position} a midfielder"
         );
     }
     for position in 9..=12 {
         assert_eq!(
-            position_colour(position),
+            position_colour(&Palette::DARK, position),
             egui::Color32::from_rgb(0xff, 0x2c, 0x77),
             "{position} a forward"
         );
     }
-    assert_eq!(position_colour(13), egui::Color32::WHITE, "past the table");
+    assert_eq!(
+        position_colour(&Palette::DARK, 13),
+        egui::Color32::WHITE,
+        "past the table"
+    );
 }
 
-// The markers on the fixture's formation: a 50 x 14 badge of
-// `BADGE_FILL` centred on the slot's clamped centre (the keeper's the
+// The markers on the fixture's formation: a 50 x 14 badge of `#242b2d`
+// centred on the slot's clamped centre (the keeper's the
 // screen's spot), the position's abbreviation in its group's colour, the
 // captain's mark on his marker alone, a row's portrait drawn when the
 // host hands one.
@@ -377,7 +390,11 @@ fn the_markers_paint_badge_position_captain_and_portrait() {
             })
             .next()
             .unwrap_or_else(|| panic!("no badge for marker {index}"));
-        assert_eq!(rect.fill, BADGE_FILL, "marker {index}'s badge");
+        assert_eq!(
+            rect.fill,
+            egui::Color32::from_rgb(0x24, 0x2b, 0x2d),
+            "marker {index}'s badge"
+        );
         // The position's abbreviation at the badge's left, in the
         // position's group's colour.
         let label = position_label(slot.position);
@@ -398,7 +415,7 @@ fn the_markers_paint_badge_position_captain_and_portrait() {
             .unwrap_or_else(|| panic!("no position text for marker {index}"));
         assert_eq!(
             painted_color(text),
-            position_colour(slot.position),
+            position_colour(&Palette::DARK, slot.position),
             "marker {index}'s {label} in its group's colour"
         );
     }
@@ -417,7 +434,7 @@ fn the_markers_paint_badge_position_captain_and_portrait() {
             })
             .collect::<Vec<(usize, egui::Rect)>>()
     };
-    let outlines = marks(BADGE_FILL, egui::vec2(14.0, 13.0));
+    let outlines = marks(Palette::DARK.badge_fill, egui::vec2(14.0, 13.0));
     let [(outline_at, outline)] = outlines.as_slice() else {
         panic!("the badge-coloured outline above the captain's badge alone")
     };
@@ -504,7 +521,7 @@ fn a_markers_name_keeps_its_colour_codes_colours() {
 // The formation screen's selection marks, reused for the editor's
 // states: the open popover's marker gets the selected corners, no other
 // does. Every marker gets the candidates' while an assignment mode is
-// armed, and a join member's badge is `JOIN_FILL` under the armed join
+// armed, and a join member's badge is `Palette::DARK.join_fill` under the armed join
 // mode.
 #[test]
 fn the_corners_and_the_join_fill_mark_the_states() {
@@ -572,7 +589,7 @@ fn the_corners_and_the_join_fill_mark_the_states() {
             );
         }
     };
-    let selected = corners(&shapes, SELECTED_CORNERS);
+    let selected = corners(&shapes, Palette::DARK.selected_corners);
     assert_eq!(selected.len(), 8, "the open marker's four corner arms");
     assert_corner_arms(&selected, portrait_box);
     for points in selected {
@@ -584,7 +601,7 @@ fn the_corners_and_the_join_fill_mark_the_states() {
         }
     }
     assert_eq!(
-        corners(&shapes, CANDIDATE_CORNERS).len(),
+        corners(&shapes, Palette::DARK.candidate_corners).len(),
         0,
         "no candidate corners with nothing armed"
     );
@@ -595,13 +612,13 @@ fn the_corners_and_the_join_fill_mark_the_states() {
     view.popover = None;
     view.assign = Some(Assign::Role(5));
     let (nodes, shapes) = window.pitch_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
-    let candidates = corners(&shapes, CANDIDATE_CORNERS);
+    let candidates = corners(&shapes, Palette::DARK.candidate_corners);
     assert_eq!(
         candidates.len(),
         88,
         "the candidates' corners on all eleven"
     );
-    assert_eq!(corners(&shapes, SELECTED_CORNERS).len(), 0);
+    assert_eq!(corners(&shapes, Palette::DARK.selected_corners).len(), 0);
     let canvas = canvas_rect(&nodes);
     let badge =
         egui::Rect::from_center_size(centres_of(canvas, &players)[index], egui::vec2(50.0, 14.0));
@@ -626,8 +643,8 @@ fn the_corners_and_the_join_fill_mark_the_states() {
     assert_eq!(own.len(), 8, "the marker's own four corner arms");
     assert_corner_arms(&own, portrait_box);
 
-    // Join armed: a member's badge fills JOIN_FILL, a non-member's
-    // stays BADGE_FILL.
+    // Join armed: a member's badge fills Palette::DARK.join_fill, a non-member's
+    // stays Palette::DARK.badge_fill.
     view.assign = Some(Assign::Join);
     tactics.players_to_join_attack = [tactics.starting_eleven[3], u8::MAX, u8::MAX];
     let (nodes, shapes) = window.pitch_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
@@ -644,14 +661,14 @@ fn the_corners_and_the_join_fill_mark_the_states() {
             .next()
             .unwrap_or_else(|| panic!("no badge for marker {index}"))
     };
-    assert_eq!(fill_of(3), JOIN_FILL, "the member's badge");
-    assert_eq!(fill_of(4), BADGE_FILL, "a non-member's badge");
+    assert_eq!(fill_of(3), Palette::DARK.join_fill, "the member's badge");
+    assert_eq!(fill_of(4), Palette::DARK.badge_fill, "a non-member's badge");
 
     // Nothing armed: no corners at all.
     view.assign = None;
     let (_, shapes) = window.pitch_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
-    assert_eq!(corners(&shapes, CANDIDATE_CORNERS).len(), 0);
-    assert_eq!(corners(&shapes, SELECTED_CORNERS).len(), 0);
+    assert_eq!(corners(&shapes, Palette::DARK.candidate_corners).len(), 0);
+    assert_eq!(corners(&shapes, Palette::DARK.selected_corners).len(), 0);
 }
 
 // The markers are drawn from the top of the canvas down, and a press or
@@ -714,13 +731,13 @@ fn the_lower_marker_paints_last_and_takes_the_press() {
     );
 }
 
-/// The frame's badge rects (`BADGE_FILL`, badge-sized) in paint order.
+/// The frame's badge rects (`Palette::DARK.badge_fill`, badge-sized) in paint order.
 pub(super) fn badge_rects(shapes: &[egui::epaint::ClippedShape]) -> Vec<egui::Rect> {
     shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
             egui::Shape::Rect(shape)
-                if shape.fill == BADGE_FILL
+                if shape.fill == Palette::DARK.badge_fill
                     && (shape.rect.width() - BADGE_W).abs() <= 0.5
                     && (shape.rect.height() - BADGE_H).abs() <= 0.5 =>
             {
@@ -1591,7 +1608,9 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
     let arms: Vec<[egui::Pos2; 2]> = shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::LineSegment { points, stroke } if stroke.color == SELECTED_CORNERS => {
+            egui::Shape::LineSegment { points, stroke }
+                if stroke.color == Palette::DARK.selected_corners =>
+            {
                 Some(*points)
             }
             _ => None,
@@ -1629,7 +1648,7 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
         .expect("the dragged marker's badge");
     assert_eq!(
         fill,
-        BADGE_FILL.gamma_multiply(0.35),
+        Palette::DARK.badge_fill.gamma_multiply(0.35),
         "the dragged badge at 35% opacity"
     );
     // The brackets are drawn over everything: every arm after the
@@ -1655,7 +1674,7 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
         .filter(|(_, clipped)| {
             matches!(
                 &clipped.shape,
-                egui::Shape::LineSegment { stroke, .. } if stroke.color == SELECTED_CORNERS
+                egui::Shape::LineSegment { stroke, .. } if stroke.color == Palette::DARK.selected_corners
             )
         })
         .map(|(index, _)| index)
@@ -1682,7 +1701,7 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
     assert!(
         !shapes.iter().any(|clipped| matches!(
             &clipped.shape,
-            egui::Shape::LineSegment { stroke, .. } if stroke.color == SELECTED_CORNERS
+            egui::Shape::LineSegment { stroke, .. } if stroke.color == Palette::DARK.selected_corners
         )),
         "no brackets over the grass"
     );
@@ -1698,7 +1717,11 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
         })
         .next()
         .expect("the dragged marker's badge");
-    assert_eq!(fill, BADGE_FILL, "full opacity over the grass");
+    assert_eq!(
+        fill,
+        Palette::DARK.badge_fill,
+        "full opacity over the grass"
+    );
 }
 
 // A starter's badge carries his medal tier as a 1.5-point outline
@@ -2053,7 +2076,7 @@ fn a_fielded_mark_paints_an_x_over_the_starters_portrait() {
     let last_badge = shapes
         .iter()
         .rposition(|clipped| {
-            matches!(&clipped.shape, egui::Shape::Rect(shape) if shape.fill == BADGE_FILL)
+            matches!(&clipped.shape, egui::Shape::Rect(shape) if shape.fill == Palette::DARK.badge_fill)
         })
         .expect("a badge shape");
     assert!(
@@ -2472,7 +2495,7 @@ fn the_formation_name_sits_in_the_bottom_left_corner_after_the_markers() {
     let last_badge = shapes
         .iter()
         .rposition(
-            |clipped| matches!(&clipped.shape, egui::Shape::Rect(rect) if rect.fill == BADGE_FILL),
+            |clipped| matches!(&clipped.shape, egui::Shape::Rect(rect) if rect.fill == Palette::DARK.badge_fill),
         )
         .expect("the markers' badges");
     assert!(

@@ -97,7 +97,7 @@ pub struct Notice {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NoticeKind {
     /// Something asked for is done: a file written (`Wrote settings.toml`), a compile
-    /// finished (`Compiled 48 teams`). Drawn in `theme::SUCCESS_FG`, the draft's green.
+    /// finished (`Compiled 48 teams`). Drawn in the palette's `success`, the draft's green.
     Success,
     /// A change of state to know about, neither finished nor broken: `Switched to PES
     /// 2021`, `Updated to v1.4.0`. Drawn in the theme's link blue.
