@@ -4382,16 +4382,17 @@ briefs, review loops, gates and mutation runs as for any step.
       picker's commit. `e6d53ee0`, merge `e9dbb1ab`. Left as is: a pane scrolled while no
       combo or drag value is drawn is not recorded, so a control under the pointer within
       500 ms steps (rare: some control is on nearly every pane)
-      - [ ] ov2e2 a wheel step while a text field or a drag value in typing mode holds the
-        keyboard joins an open undo entry, where `plans/core/gui.md` "The wheel over a
-        value" has one undo step per notch: the editors (`edit_settled`, `seal_gesture`)
-        seal only with nothing focused. Fixed in `wheel_steps`, which takes the keyboard
-        first and steps two frames later (DECISIONS "A wheel notch first takes the keyboard
-        from the focused widget"; the drafts' listener done) → verify: ST-WHEEL-04 in
-        `wheel.rs`; the Save editor: a typed name, the field still focused, two notches over
-        one stat, three Ctrl+Z steps; the Ruleset editor: a typed tier id still focused
-        (it commits on losing the keyboard), a notch over a rate, two Ctrl+Z steps; each red
-        before the change
+      - [x] ov2e2 a wheel step while a text field held the keyboard joined an open undo entry
+        (the editors seal only with nothing focused), where `plans/core/gui.md` "The wheel over
+        a value" has one undo step per notch. Fixed in `wheel_steps` (DECISIONS "A wheel notch
+        first takes the keyboard from the focused widget" and its correction): a due step takes
+        the keyboard and comes two passes later, the field's commit on the loss (the Ruleset
+        editor's tier id) landing in between; the drafts' listener blurs the focused input.
+        Tests: ST-WHEEL-04 in `wheel.rs` (a field; the drag value itself typed in, which
+        commits each keystroke), the Save editor's name then two notches (three Ctrl+Z), the
+        Ruleset editor's tier id then a rate notch (two), each red before the change; one-pass
+        delay perturbed, the tier id test fails. `b49a07f1`, merge `69b1d8e8` (Opus sidekick,
+        brief `.tmp/0_0_1ov/brief_ov2e2.md`)
     - [x] ov2f Live AATF's marks as ruled (the maintainer, 2026-10-28; DECISIONS "The final
       pass's second rulings"; drafts done; `plans/save_editor.md` the Live AATF bullet): the
       list's check mark orange for a Warning, blue for suggestions alone; a field's mark left

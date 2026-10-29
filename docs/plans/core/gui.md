@@ -624,9 +624,10 @@ field being typed in, a drag value in typing mode, the stepped control itself in
 two frames later, as a press on another control ends the focused one's gesture in an editor:
 an editor seals only once no widget holds the keyboard, so a notch stepped while a field kept it
 would join the field's undo entry, and every later notch with it. Two frames, not one: a field
-that commits its value on losing the keyboard (a drag value being typed in, the Ruleset
-editor's tier id) learns of a loss in the middle of a frame only on the next, so its commit lands
-there, sealed at that frame's end, and a step on the same frame would join it. A disabled control ignores the wheel,
+that commits its value on losing the keyboard (the Ruleset editor's tier id, whose typing would
+otherwise carry through another tier's id; egui's drag value commits each keystroke) learns of a
+loss in the middle of a frame only on the next, so its commit lands there, sealed at that
+frame's end, and a step on the same frame would join it. A disabled control ignores the wheel,
 and an open combo's list scrolls as a list. The step goes through the control's own change path
 (a combo's selection, a drag value's commit), so it is the edit a click or a typed value makes:
 the same validation, one undo step per notch in an editor. The step takes the wheel's delta, so

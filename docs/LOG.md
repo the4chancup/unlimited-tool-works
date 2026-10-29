@@ -2797,3 +2797,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The mouse wheel over a closed combo box or a drag value steps it, one undo step per notch, while a wheel scrolling a pane keeps scrolling it until it rests 500 ms (0.0.1ov2e).
 - **2026-10-29** — Every colour the suite draws itself comes from one palette with a dark and a light instance, a gate failing on any colour written elsewhere (0.0.1ov11a); the Tactics popover's X and Y step by an arrow either side of the number (0.0.1ov12).
 - **2026-10-29** — The drafts' FieldedNotA for PES 17's 71822 was the drafts' error, not the check's: a sample older than the save's re-save, and preset 1 checked under every ruleset; the sample re-recorded and `fielded_at_a` read per ruleset (0.0.1ov9).
+- **2026-10-29** — A wheel notch over a value while a text field holds the keyboard takes it and steps two frames later, so the typing and each notch are undo steps of their own (0.0.1ov2e2).
