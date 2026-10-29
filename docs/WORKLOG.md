@@ -5336,6 +5336,9 @@ briefs, review loops, gates and mutation runs as for any step.
     files and the repository's and developers' folders untouched. The bare "Studio" stays the
     working name in prose (the plan amended: rewriting ~250 of them buys a member nothing and
     sets the docs apart from the code); GLOSSARY rows for both names
+  - [x] rn4 the repository renamed `the4chancup/unlimited-tool-works` on GitHub (the
+    maintainer, 2026-10-29); `Cargo.toml`'s `repository` follows, the root README's status
+    brought to the 0.0.1 scope
 - [x] 0.0.1g the bundle for DBC alone (the maintainer, 2026-10-29; `plans/core/development_plan.md`
   "Divegrass Before Christmas", "The /vg/ League 27 (VGL)"; DECISIONS "0.0.1 is the Save
   editor for DBC alone; VGL's tools wait for 0.0.2"): `scripts/release.py` stages neither

@@ -6,7 +6,7 @@ members = ["crates/studio", "crates/studio_core", "crates/libs/*", "crates/tools
 version = "0.0.1"
 edition = "2024"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/the4chancup/4cc-studio"
+repository = "https://github.com/the4chancup/unlimited-tool-works"
 rust-version = "1.98"
 
 # Every shared dependency is declared once here, and crates inherit it with
