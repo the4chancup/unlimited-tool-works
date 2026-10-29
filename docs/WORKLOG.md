@@ -4571,9 +4571,11 @@ briefs, review loops, gates and mutation runs as for any step.
       and the drafts are dark only. Render every Save editor view and dialog in it
       (built-window captures with the maintainer's yes, the theme switched in the
       sandbox's settings, or headless frames), list what reads poorly, fix it in the
-      palette. Known: the members' own name colour codes, chosen for the game's dark
-      screens (theirs, not ours to change: whether a light theme draws names on a dark
-      chip or outlines them is a question for the maintainer once seen)
+      palette. Known: the players' name colour codes, chosen for nothing in particular or
+      for the pitch image's green (the maintainer, 2026-10-29), which both themes share;
+      only where a list or a view draws them on the light panel may they read poorly
+      (theirs, not ours to change: whether a light theme draws them on a dark chip or
+      outlines them is a question for the maintainer once seen)
   - [ ] ov12 the Tactics popover's X and Y as steppers (DECISIONS "The Tactics popover's X
     and Y step by arrows inside the number box's width"; `plans/save_editor.md`, the Tactics
     editor's sentence starting "X (0 to 104) and Y (0 to 48) are steppers"; draft
