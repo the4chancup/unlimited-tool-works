@@ -13210,3 +13210,21 @@ only on the page and in the lead's gitignored scratch scripts, so they needed a 
 repository before the page went; outlines rather than strokes, since that is what a glyph is
 and what the marks' cuts already computed.
 Plan: `plans/core/README.md` "GUI framework choice: egui".
+
+## 2026-10-29 — gui — A wheel notch first takes the keyboard from the focused widget
+Decision: a notch over a combo box or a drag value first takes the keyboard from whatever
+widget holds it (a text field being typed in, a drag value in typing mode, the stepped control
+itself included) and steps the control two frames later; `studio_core`'s `wheel_steps` does it
+for every control, and the drafts' wheel listener blurs the focused input before it steps.
+ST-WHEEL-04 pins it.
+Why: both editors seal their open undo entry only once no widget holds the keyboard, so a
+notch stepped while a field kept it joined the field's entry (the Ruleset editor, whose
+entry is one snapshot per gesture), and every notch over one control merged into one entry
+while the field kept it (the Save editor, whose entries merge by widget). Fixing it in each
+editor's sealing would need each to learn that a wheel step happened before its write; taking
+the keyboard is what a press on another control already does in an editor
+(`SurrenderFocusOn::Presses`), in the one function every control calls. Two frames, not one:
+egui reports a loss of the keyboard in the middle of a frame on the next, so a field that
+commits on losing it (a drag value being typed in, the Ruleset editor's tier id) commits
+there, and a step on that frame would join its entry. The two frames' delay is not visible.
+Plan: `plans/core/gui.md` "The wheel over a value" and "Acceptance" (ST-WHEEL-04).

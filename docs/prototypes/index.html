@@ -846,6 +846,9 @@ document.addEventListener("wheel", e => {
   if (Math.abs(wheelSum) < WHEEL_NOTCH) return;
   const up = wheelSum < 0;
   wheelSum = 0;
+  // The notch first takes the keyboard from whatever holds it, so a field's typing ends with its
+  // own change (and undo step) before the notch makes its own.
+  if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
   if (el.tagName === "SELECT") {
     const i = Math.min(el.options.length - 1, Math.max(0, el.selectedIndex + (up ? -1 : 1)));
     if (i === el.selectedIndex) return;

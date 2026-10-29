@@ -619,7 +619,14 @@ points of a touchpad's, which come as a stream of small deltas added up, so a to
 once per notch's worth: counting a mouse line in points would not step until the second notch,
 egui's line being 40 points on the desktop. One step a frame at most, the rest of a fast turn
 stepping on the next frames, so each notch is its own undo step in an editor, which seals its
-entry between frames. A disabled control ignores the wheel,
+entry between frames. A notch first takes the keyboard from whatever widget holds it (a text
+field being typed in, a drag value in typing mode, the stepped control itself included) and steps
+two frames later, as a press on another control ends the focused one's gesture in an editor:
+an editor seals only once no widget holds the keyboard, so a notch stepped while a field kept it
+would join the field's undo entry, and every later notch with it. Two frames, not one: a field
+that commits its value on losing the keyboard (a drag value being typed in, the Ruleset
+editor's tier id) learns of a loss in the middle of a frame only on the next, so its commit lands
+there, sealed at that frame's end, and a step on the same frame would join it. A disabled control ignores the wheel,
 and an open combo's list scrolls as a list. The step goes through the control's own change path
 (a combo's selection, a drag value's commit), so it is the edit a click or a typed value makes:
 the same validation, one undo step per notch in an editor. The step takes the wheel's delta, so
@@ -631,7 +638,7 @@ widgets applies it to a control's response, and every combo box and drag value o
 calls it, the shared libs' included (`team_widgets` and `color_tools` depend on `studio_core`):
 a wrapper per widget kind would leave out every control built with egui's own constructor. The
 drafts do the same for every `select` and number input (`docs/prototypes/index.html`, the
-wheel listener), so a draft can be tried as the app behaves (ST-WHEEL-01 to ST-WHEEL-03).
+wheel listener), so a draft can be tried as the app behaves (ST-WHEEL-01 to ST-WHEEL-04).
 
 ### Prototypes before implementation
 
@@ -1250,4 +1257,8 @@ ST-WHEEL-02 GIVEN ST-WHEEL-01's scroll area
 ST-WHEEL-03 GIVEN a disabled drag value at 180, and a combo box with its list open
             WHEN the wheel turns one notch over each
             THEN the drag value is 180 and the combo's selection is unchanged
+ST-WHEEL-04 GIVEN ST-WHEEL-01's scroll area and a text field holding the keyboard, the wheel at rest
+            WHEN the pointer is over the drag value and the wheel turns one notch up
+            THEN on that frame the field no longer holds the keyboard and the value is 180; on the
+                 next frame it is still 180, and on the one after it is 181
 ```

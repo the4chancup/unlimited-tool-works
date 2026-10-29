@@ -4383,10 +4383,15 @@ briefs, review loops, gates and mutation runs as for any step.
       combo or drag value is drawn is not recorded, so a control under the pointer within
       500 ms steps (rare: some control is on nearly every pane)
       - [ ] ov2e2 a wheel step while a text field or a drag value in typing mode holds the
-        keyboard joins that field's undo entry, where `plans/core/gui.md` "The wheel over a
+        keyboard joins an open undo entry, where `plans/core/gui.md` "The wheel over a
         value" has one undo step per notch: the editors (`edit_settled`, `seal_gesture`)
-        seal only with nothing focused. Fix in the editors' sealing, with a test: a typed
-        name, the Name field still focused, then a notch over a stat: two Ctrl+Z steps
+        seal only with nothing focused. Fixed in `wheel_steps`, which takes the keyboard
+        first and steps two frames later (DECISIONS "A wheel notch first takes the keyboard
+        from the focused widget"; the drafts' listener done) → verify: ST-WHEEL-04 in
+        `wheel.rs`; the Save editor: a typed name, the field still focused, two notches over
+        one stat, three Ctrl+Z steps; the Ruleset editor: a typed tier id still focused
+        (it commits on losing the keyboard), a notch over a rate, two Ctrl+Z steps; each red
+        before the change
     - [x] ov2f Live AATF's marks as ruled (the maintainer, 2026-10-28; DECISIONS "The final
       pass's second rulings"; drafts done; `plans/save_editor.md` the Live AATF bullet): the
       list's check mark orange for a Warning, blue for suggestions alone; a field's mark left
