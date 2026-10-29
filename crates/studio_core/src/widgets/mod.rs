@@ -3,9 +3,9 @@
 //! the run log drawn in it, `well_frame`, the log's well a dock's rows sit in,
 //! the settings rows (`settings_row`) the menu's
 //! sections share, the checkbox and radio button every view draws
-//! (`choice`), a tool's toolbar row with its group separator
-//! (`toolbar`), the measure that places text by its ink (`ink`), the
-//! wheel stepping a combo box or a drag value (`wheel`), the modal window
+//! (`choice`), the text box every view draws (`text_box`), a tool's
+//! toolbar row with its group separator (`toolbar`), the measure that
+//! places text by its ink (`ink`), the wheel stepping a combo box or a drag value (`wheel`), the modal window
 //! every dialog draws through (`modal`), and the row spacing every form
 //! shares (`FORM_ROW_SPACING`).
 //! Where they sit in a tool's view is that tool's choice; the widgets
@@ -18,6 +18,7 @@ mod log_panel;
 mod menu_button;
 mod modal;
 mod settings_row;
+mod text_box;
 mod toolbar;
 mod wheel;
 
@@ -29,6 +30,7 @@ pub use menu_button::menu_button;
 pub use modal::{modal, modal_buttons, modal_frame, modal_sentence_gap};
 pub(crate) use settings_row::{PathCommit, path_row_commit, row_label};
 pub use settings_row::{PathKind, path_row};
+pub use text_box::text_box;
 pub use toolbar::{toolbar, toolbar_separator};
 pub use wheel::{step_choice, step_number, wheel_steps};
 

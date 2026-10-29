@@ -7,7 +7,7 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::names::display_name;
-use studio_core::widgets::{ink_span, step_choice, wheel_steps};
+use studio_core::widgets::{ink_span, step_choice, text_box, wheel_steps};
 use team_widgets::names::{append_name, plain_format};
 
 use crate::session::Session;
@@ -108,11 +108,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     {
         view.selected = Some(Selection::Team(id));
     }
-    ui.add(
+    ui.add(text_box(
         egui::TextEdit::singleline(&mut view.filter)
             .hint_text("Filter every team (name, shirt name or id)")
             .desired_width(frame_width),
-    );
+    ));
     // The quick actions sit at the panel's bottom, under the list (the
     // draft's `qagrid`): a bottom panel takes its height off the scroll's.
     // The panel's frame keeps its fill, the draft's `.plist` gap of 4 over

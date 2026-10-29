@@ -64,6 +64,9 @@ const PANEL_GAP: f32 = 14.0;
 /// a field's frame, a checkbox's painted square or a label row's text:
 /// the team view's titles' spacing, so the two views read alike.
 const TITLE_GAP: f32 = 6.0;
+/// The gap between the Skills header's title, its Cards left text and its
+/// chip (the draft's `.row` 6px gap).
+const HEADER_GAP: f32 = 6.0;
 /// The padding of the ability stats' cells, either side of a label and
 /// of a box (the draft's `stats-grid` `td`), and how far General info's
 /// and Other stats' labels and fields stand in from their titles (the
@@ -186,7 +189,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
                             spacing,
                             PLAYABLE_POSITIONS_LABEL,
                             marks.map(|marks| (marks, live_marks::MarkedField::PlayablePositions)),
-                            centered_text_inset(ui),
+                            0.0,
                             |ui| {
                                 playable_positions(ui, session, player_id, &positions);
                             },
@@ -361,13 +364,6 @@ fn card_box_inset(ui: &egui::Ui) -> f32 {
     (ui.spacing().interact_size.y - ui.spacing().icon_width) / 2.0
 }
 
-/// How deep into a `ui.horizontal` row a line of text sits (egui centres
-/// the row's content in the `interact_size` height): the positions'
-/// labels' inset — their `first_inset`.
-fn centered_text_inset(ui: &egui::Ui) -> f32 {
-    (ui.spacing().interact_size.y - ui.text_style_height(&egui::TextStyle::Body)) / 2.0
-}
-
 /// `end_row` after `index` pairs (1-based) of `per_row` are done, so a row
 /// takes as many pairs as `per_row` allows.
 pub(crate) fn maybe_end_row(ui: &mut egui::Ui, index: usize, per_row: usize) {
@@ -490,6 +486,14 @@ const RATING_SIDE: f32 = 17.0;
 const RATING_GAP: f32 = 2.0;
 /// A cell's three rating squares' width.
 const RATINGS_WIDTH: f32 = 3.0 * RATING_SIDE + 2.0 * RATING_GAP;
+/// The gap between a row's cells (the draft's `#pos-grid .posrow` 4px).
+const POS_CELL_GAP: f32 = 4.0;
+/// The gap between a cell's label and its rating squares (the draft's
+/// `.plabel` 2px margin under it).
+const POS_LABEL_GAP: f32 = 2.0;
+/// The gap between the grid's rows: the draft's `.poscell` padding, 2
+/// above and 3 below, and the `#pos-grid` 4px gap between them.
+const POS_ROW_GAP: f32 = 9.0;
 
 /// The chosen rating's fill and text colours (the draft's `.sel.on`
 /// variants): A a deep green under a white letter, B the selection colour
@@ -524,8 +528,9 @@ fn playable_positions(
     positions: &PlayerPositions,
 ) {
     let mut playable = positions.playable;
-    let cell_gap = ui.spacing().item_spacing.x;
     let body = egui::TextStyle::Body.resolve(ui.style());
+    let label_height = ui.text_style_height(&egui::TextStyle::Body);
+    ui.spacing_mut().item_spacing.y = POS_ROW_GAP;
     // The rows centre in the column: the nominal 350, or the fields'
     // flush edge and their inset where egui's text runs past it.
     let column_width = (info_strip::GENERAL_WIDTH.max(info_strip::general_content_width(ui))
@@ -533,8 +538,9 @@ fn playable_positions(
     .min(ui.available_width());
     for row in POSITION_ROWS {
         // `add_space` advances the cursor outright, no item spacing.
-        let row_width = row.len() as f32 * POS_CELL_WIDTH + (row.len() - 1) as f32 * cell_gap;
+        let row_width = row.len() as f32 * POS_CELL_WIDTH + (row.len() - 1) as f32 * POS_CELL_GAP;
         ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = POS_CELL_GAP;
             ui.add_space(((column_width - row_width) / 2.0).max(0.0));
             for name in row {
                 let index = POSITIONS
@@ -550,6 +556,11 @@ fn playable_positions(
                     // 2 apart: `Button::selectable` is what
                     // `selectable_value` draws.
                     ui.set_width(POS_CELL_WIDTH);
+                    // The label's row one line of text high and the squares
+                    // `RATING_SIDE` high, as the draft's: egui would make
+                    // either row at least a control's height.
+                    ui.spacing_mut().interact_size.y = label_height;
+                    ui.spacing_mut().item_spacing.y = POS_LABEL_GAP;
                     // The cell's contents centred (the draft's `align-items:
                     // center`): the label padded to the cell's centre, so
                     // over the B; the squares 3.5 in.
@@ -730,7 +741,13 @@ fn skills_panel(
         Some((_, OwnBadge::Failed(error))) => Some(error.clone()),
         _ => None,
     };
+    // The header's row one line of text high, as the draft's: a wrapping
+    // row is otherwise a control's height, which stood the badge's text and
+    // every card under the title lower than the draft's.
+    let control_height = ui.spacing().interact_size.y;
+    ui.spacing_mut().interact_size.y = ui.text_style_height(&egui::TextStyle::Body);
     ui.horizontal_wrapped(|ui| {
+        ui.spacing_mut().item_spacing.x = HEADER_GAP;
         let title = ui.strong("Skills");
         if let Some(marks) = marks {
             marks.paint(ui, title.rect, live_marks::MarkedField::Skills);
@@ -765,6 +782,7 @@ fn skills_panel(
             }
         }
     });
+    ui.spacing_mut().interact_size.y = control_height;
     // The title stands `TITLE_GAP` above the first card row's painted
     // square, as `panel`'s do.
     ui.add_space(TITLE_GAP - ui.spacing().item_spacing.y - card_box_inset(ui));

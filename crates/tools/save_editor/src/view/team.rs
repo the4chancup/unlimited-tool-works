@@ -19,7 +19,9 @@ use pes_savefile::model::{TeamColor, TeamEntry};
 use pes_savefile::schema::fields::{TeamField, TeamText};
 use pes_savefile::schema::{VersionSchema, first_version_with_team, schema_for};
 use pes_version::PesVersion;
-use studio_core::widgets::{FORM_ROW_SPACING, modal, modal_buttons, step_number, wheel_steps};
+use studio_core::widgets::{
+    FORM_ROW_SPACING, modal, modal_buttons, step_number, text_box, wheel_steps,
+};
 
 use crate::session::Session;
 use crate::view::{SaveView, edit_team, info_strip, selected_team, tactics};
@@ -253,7 +255,7 @@ fn name_pair(
     // (the draft's `#team-name`) whatever the wrapped row offers it.
     let response = ui.add_sized(
         [140.0, ui.spacing().interact_size.y],
-        egui::TextEdit::singleline(&mut name).desired_width(140.0),
+        text_box(egui::TextEdit::singleline(&mut name).desired_width(140.0)),
     );
     if response.changed() && team_text_fits(version, TeamText::Name, &name) {
         edit_team(session, team_id, response.id.value(), |team| {
@@ -281,9 +283,11 @@ fn short_pair(
     // `maxlength: 3`: a fourth character never enters the box.
     let response = ui.add_sized(
         [40.0, ui.spacing().interact_size.y],
-        egui::TextEdit::singleline(&mut short)
-            .desired_width(40.0)
-            .char_limit(3),
+        text_box(
+            egui::TextEdit::singleline(&mut short)
+                .desired_width(40.0)
+                .char_limit(3),
+        ),
     );
     if response.changed() {
         let upper = short.to_uppercase();

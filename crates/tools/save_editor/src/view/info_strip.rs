@@ -15,7 +15,9 @@ use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerStats};
 use pes_savefile::schema::fields::{PlayerField, PlayerText, RosterField};
 use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for};
 use pes_version::PesVersion;
-use studio_core::widgets::{FORM_ROW_SPACING, radio, step_choice, step_number, wheel_steps};
+use studio_core::widgets::{
+    FORM_ROW_SPACING, radio, step_choice, step_number, text_box, wheel_steps,
+};
 use team_widgets::cards;
 use team_widgets::names::append_name;
 
@@ -194,7 +196,10 @@ pub(super) fn general(
         if overlong {
             name_edit = name_edit.background_color(warning_tint(ui.visuals()));
         }
-        let response = ui.add_sized([field_width, ui.spacing().interact_size.y], name_edit);
+        let response = ui.add_sized(
+            [field_width, ui.spacing().interact_size.y],
+            text_box(name_edit),
+        );
         // A name past what every version holds is drawn tinted with the
         // cut PES 15 to 19 would make: a warning, never a block on Save.
         let tip = if overlong {
@@ -255,7 +260,10 @@ pub(super) fn general(
         if shirt_overlong {
             shirt_edit = shirt_edit.background_color(warning_tint(ui.visuals()));
         }
-        let response = ui.add_sized([field_width, ui.spacing().interact_size.y], shirt_edit);
+        let response = ui.add_sized(
+            [field_width, ui.spacing().interact_size.y],
+            text_box(shirt_edit),
+        );
         let tip = if shirt_overlong {
             "PES 2019 and older show 18 letters of a shirt name (PES 2016 shows 16)".to_owned()
         } else {

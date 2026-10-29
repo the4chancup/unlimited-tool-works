@@ -8,6 +8,8 @@
 
 use std::path::PathBuf;
 
+use super::text_box::text_box;
+
 /// What `path_row`'s Browse button opens: the native picker
 /// of the setting's kind, a folder or a file filtered to the type the tool reads.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -80,7 +82,9 @@ pub(crate) fn path_row_commit(
     let (response, picked) = ui
         .horizontal(|ui| {
             let response = ui
-                .add(egui::TextEdit::singleline(buffer).desired_width(PATH_EDIT_WIDTH))
+                .add(text_box(
+                    egui::TextEdit::singleline(buffer).desired_width(PATH_EDIT_WIDTH),
+                ))
                 .labelled_by(label.id);
             // `rfd`'s pickers are native-only, so the wasm row is the edit
             // alone (`_kind`: `browse` exists only off wasm).

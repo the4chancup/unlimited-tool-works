@@ -1664,6 +1664,150 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
     }
 }
 
+/// The settled frame of player 701's slot 0 at the default pane: the
+/// columns' widths settle over the first frames.
+fn settled_player_view(
+    test: &str,
+) -> (
+    Headless,
+    Vec<accesskit::Node>,
+    Vec<egui::epaint::ClippedShape>,
+) {
+    let path = fixture(PesVersion::Pes21, test);
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    (window, nodes, shapes)
+}
+
+/// `actual` within a point of the draft's `draft`, `what` naming it.
+#[track_caller]
+fn near_draft(actual: f64, draft: f64, what: &str) {
+    assert!(
+        (actual - draft).abs() <= 1.0,
+        "{what}: {actual} against the draft's {draft}"
+    );
+}
+
+// The positions grid at the draft's pitch (`#pos-grid`): each rating
+// square 17 by 17, the cells of a row 66 apart (the 62-point `.poscell`
+// and the `.posrow`'s 4-point gap), the rows 43 apart (a cell's 2 and 3
+// points of padding and the grid's 4-point gap), the first row's squares
+// 38 under the panel's title, as the draft draws them.
+#[test]
+fn the_positions_grid_stands_at_the_drafts_pitch() {
+    let (_, nodes, _) = settled_player_view("positions_pitch");
+    let title_top = label_bounds(&nodes, "Playable positions").y0;
+    let c_of = |position: &str| {
+        rating_buttons(&nodes, position)[0]
+            .bounds()
+            .expect("bounds")
+    };
+    for row in [
+        &["LWF", "CF", "SS", "RWF"][..],
+        &["LMF", "AMF", "RMF"],
+        &["LB", "CB", "RB"],
+    ] {
+        for pair in row.windows(2) {
+            near_draft(
+                c_of(pair[1]).x0 - c_of(pair[0]).x0,
+                66.0,
+                &format!("{} to {}", pair[0], pair[1]),
+            );
+        }
+    }
+    let rows = ["LWF", "LMF", "CMF", "LB", "GK"].map(|position| c_of(position).y0);
+    near_draft(rows[0] - title_top, 38.0, "the first row under the title");
+    for pair in rows.windows(2) {
+        near_draft(pair[1] - pair[0], 43.0, "the rows' pitch");
+    }
+    for rating in rating_buttons(&nodes, "CB") {
+        let bounds = rating.bounds().expect("bounds");
+        near_draft(bounds.width(), 17.0, "a rating's width");
+        near_draft(bounds.height(), 17.0, "a rating's height");
+    }
+}
+
+// The Skills header's row is one line of text high, as the draft's: the
+// title, "Cards left for" and the chip's text on the column titles' line,
+// 6 apart (the draft's `.row` gap; the chip's text 4 more inside it), and
+// the first checkbox row 19.5 under the title's top.
+#[test]
+fn the_skills_header_is_one_text_line_high() {
+    let (_, nodes, _) = settled_player_view("skills_header");
+    let skills = label_bounds(&nodes, "Skills");
+    let cards_left = label_bounds(&nodes, "Cards left for");
+    let chip = nodes
+        .iter()
+        .find(|node| {
+            node.role() == Role::Label && node.value().is_some_and(|value| value.contains(" of "))
+        })
+        .and_then(accesskit::Node::bounds)
+        .expect("the chip's text");
+    near_draft(skills.height(), 15.0, "the Skills title's height");
+    near_draft(cards_left.y0, skills.y0, "Cards left for's top");
+    near_draft(chip.y0, skills.y0, "the chip's text top");
+    near_draft(cards_left.x0 - skills.x1, 6.0, "Skills to Cards left for");
+    near_draft(
+        chip.x0 - cards_left.x1,
+        10.0,
+        "Cards left for to the chip's text",
+    );
+    for card in ["Heading", "Man Marking"] {
+        let row = node_labeled(&nodes, Role::CheckBox, card)
+            .bounds()
+            .expect("bounds");
+        near_draft(
+            row.y0 - skills.y0,
+            19.5,
+            &format!("{card}'s row under the title"),
+        );
+    }
+}
+
+// The Appearance header as the draft's `details > summary`: its text 14
+// after General info's title (the arrow's 14-point box) and 604.5 under
+// its top, the closed arrow's ink 13.6 to 7.1 before the text and 5.9 to
+// 12.7 under its top (the symbol drawn at 9 points on the text's line).
+#[test]
+fn the_appearance_header_stands_where_the_drafts_does() {
+    let (_, nodes, shapes) = settled_player_view("appearance_header");
+    let general = label_bounds(&nodes, "General info");
+    let text = text_shape(&shapes, "Appearance");
+    let (x, y) = (f64::from(text.pos.x), f64::from(text.pos.y));
+    near_draft(x - general.x0, 14.0, "the text after General info's x");
+    near_draft(y - general.y0, 604.5, "the text under General info's top");
+    let header = node_labeled(&nodes, Role::DisclosureTriangle, "Appearance")
+        .bounds()
+        .expect("bounds");
+    let arrow = shapes
+        .iter()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::Path(path)
+                if path.points.len() == 3
+                    && path.points.iter().all(|point| {
+                        header.contains(accesskit::Point::new(
+                            f64::from(point.x),
+                            f64::from(point.y),
+                        ))
+                    }) =>
+            {
+                Some(egui::Rect::from_points(&path.points))
+            }
+            _ => None,
+        })
+        .expect("the header's arrow");
+    near_draft(f64::from(arrow.min.x) - x, -13.6, "the arrow's left");
+    near_draft(f64::from(arrow.max.x) - x, -7.1, "the arrow's tip");
+    near_draft(f64::from(arrow.min.y) - y, 5.9, "the arrow's top");
+    near_draft(f64::from(arrow.max.y) - y, 12.7, "the arrow's bottom");
+}
+
 // The detail pane is one scroll area whatever row is picked: its offset
 // outlives picking another player — a member editing one part of the
 // Appearance player after player never scrolls back.
