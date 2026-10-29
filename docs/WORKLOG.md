@@ -4913,6 +4913,11 @@ briefs, review loops, gates and mutation runs as for any step.
       (it matches by text) → verify: a headless test of the dialog's width against its
       groups' (red at HEAD); `draft_compare.py --modal` pairs the dialog's frame, run over
       every modal in the built window
+    - [ ] ov2j3 the help window's paragraphs 8 apart (the maintainer, 2026-10-29: "no
+      newlines when needed"; DECISIONS "The help window's paragraphs stand 8 points
+      apart"): one viewer per paragraph left egui's 3 between them; the overlay pass never
+      measured a topic's body → verify: a headless test of two paragraphs' gap (red at
+      HEAD); `draft_compare.py help --modal .help-win` in the built-window check
     - [x] ov2k the form grids' rows 22 apart, the draft's `table.grid` (its `td` padded 2 above
       and below an 18-point control), where egui's `Grid` spaces them by `item_spacing.y`, 3:
       each row lands a point higher than the last, 25 by the Ability stats' last row, 17 by

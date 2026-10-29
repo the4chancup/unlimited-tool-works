@@ -13887,3 +13887,14 @@ final pass. After 0.0.1, every other version's, gathered from its own screens.
 Why: the maintainer: "We only need to make sure PES 17 is accurate for now" (0.0.1 is the
 Save editor for DBC, a PES 2017 cup).
 Plan: `plans/save_editor.md` "Editing UI", the Ability stats item.
+
+## 2026-10-29 — gui — The help window's paragraphs stand 8 points apart
+
+Decision: the help window adds the drafts' paragraph gap, 8 points, between a topic's
+paragraphs, which it renders one `CommonMarkViewer` each.
+Why: the maintainer found the help's text "a mess, with no newlines when needed". The
+Markdown is right (blank lines between paragraphs), but the window splits a topic at its blank
+lines so search can highlight one paragraph, and one viewer per paragraph leaves only egui's 3
+points between them. The overlay pass measured the window's frame, tree and Messages rows but
+never a topic's body (`draft_compare.py help` was never run).
+Plan: `plans/core/gui.md` "Help window", the Window bullet.
