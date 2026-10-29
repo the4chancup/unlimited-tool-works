@@ -1062,15 +1062,25 @@ fn the_pitchs_corner_names_the_shown_formation_as_the_game_does() {
 }
 
 /// The stroked rects the frame drew (the panels' `Frame::group` boxes
-/// and the pitch's border — transparent fill, a visible stroke), in
+/// and the pitch's border — transparent fill, a visible stroke — and the
+/// lineup lists' boxes, filled in `window`'s extreme background), in
 /// (y, x) order, `min_height` tall or more (badges, checkboxes and
 /// buttons never reach it).
-fn stroked_rects(shapes: &[egui::epaint::ClippedShape], min_height: f32) -> Vec<egui::Rect> {
+fn stroked_rects(
+    window: &Headless,
+    shapes: &[egui::epaint::ClippedShape],
+    min_height: f32,
+) -> Vec<egui::Rect> {
+    let extreme = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .extreme_bg_color;
     let mut rects: Vec<egui::Rect> = shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
             egui::Shape::Rect(shape)
-                if shape.fill == egui::Color32::TRANSPARENT
+                if (shape.fill == egui::Color32::TRANSPARENT || shape.fill == extreme)
                     && !shape.stroke.is_empty()
                     && shape.rect.height() >= min_height =>
             {
@@ -1114,7 +1124,7 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
     open_team_view(&mut window, &mut view, 701);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
 
-    let rects = stroked_rects(&shapes, 60.0);
+    let rects = stroked_rects(&window, &shapes, 60.0);
     // The settings column's left and width: the Formation settings box
     // holds the heading's label at its inner edge (the group margin and
     // stroke in).
@@ -1268,7 +1278,7 @@ fn the_two_panels_frames_are_level_with_the_pitchs() {
     open_team_view(&mut window, &mut view, 701);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
 
-    let rects = stroked_rects(&shapes, 60.0);
+    let rects = stroked_rects(&window, &shapes, 60.0);
     let settings_left = label_bounds(&nodes, "Formation settings").x0 - 7.0;
     let pitch_left = settings_left + 422.0 + 10.0;
     // The assignments' column starts 10 past the pitch's 320-point track,
@@ -1305,7 +1315,7 @@ fn the_automatic_settings_frame_reaches_the_lists_bottom() {
     open_team_view(&mut window, &mut view, 701);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
 
-    let rects = stroked_rects(&shapes, 60.0);
+    let rects = stroked_rects(&window, &shapes, 60.0);
     let settings_left = label_bounds(&nodes, "Formation settings").x0 - 7.0;
     // Column 1's three boxes, top to bottom: Formation settings,
     // Advanced instructions, Automatic settings.
@@ -1366,6 +1376,74 @@ fn the_automatic_settings_frame_reaches_the_lists_bottom() {
     );
 }
 
+/// The lineup lists' boxes on a frame, left to right: the stroked rects
+/// right of the settings column filled in the extreme background and
+/// taller than the dock's well.
+fn lineup_boxes(
+    window: &Headless,
+    nodes: &[accesskit::Node],
+    shapes: &[egui::epaint::ClippedShape],
+) -> Vec<egui::Rect> {
+    let extreme = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .extreme_bg_color;
+    let settings_right = label_bounds(nodes, "Formation settings").x0 - 7.0 + 422.0;
+    let mut boxes: Vec<egui::Rect> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if shape.fill == extreme
+                    && !shape.stroke.is_empty()
+                    && shape.rect.height() >= 200.0
+                    && f64::from(shape.rect.min.x) > settings_right =>
+            {
+                Some(shape.rect)
+            }
+            _ => None,
+        })
+        .collect();
+    boxes.sort_by(|a, b| a.min.x.total_cmp(&b.min.x));
+    boxes
+}
+
+// The Live AATF dock takes height from the detail, not from the lineup
+// lists: at the default pane, team 701's starting eleven and bench are
+// drawn at one size and place with the dock open as with it closed (the
+// detail scrolls instead, as for any view taller than its pane).
+#[test]
+fn the_live_aatf_dock_leaves_the_lineup_lists_their_size() {
+    let path = fixture(PesVersion::Pes21, "tactics_lists_dock");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_team_view(&mut window, &mut view, 701);
+    // Three frames: the scroll's claimed content size lands a frame late.
+    for _ in 0..2 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let closed = lineup_boxes(&window, &nodes, &shapes);
+    assert_eq!(closed.len(), 2, "premise: the two lists ({closed:?})");
+
+    view.live_aatf = true;
+    live_checked(&mut window, &mut view, &[701]);
+    for _ in 0..2 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        nodes.iter().any(|node| node.value() == Some("Live AATF")),
+        "premise: the dock is drawn"
+    );
+    let open = lineup_boxes(&window, &nodes, &shapes);
+    assert_eq!(
+        open, closed,
+        "the lists with the dock open as with it closed"
+    );
+}
+
 // The editor's blocks stand where the draft's do (the draft at 1280 x 780,
 // PES 21 save, team 701), each box's top measured from the Tactics' first
 // control (the Fluid formation checkbox) and its height: the bars 23 tall
@@ -1385,7 +1463,7 @@ fn the_tactics_blocks_stand_where_the_drafts_do_from_the_first_control() {
         .bounds()
         .expect("bounds")
         .y0;
-    let rects = stroked_rects(&shapes, 60.0);
+    let rects = stroked_rects(&window, &shapes, 60.0);
     let settings_left = label_bounds(&nodes, "Formation settings").x0 - 7.0;
     let pitch_left = settings_left + 422.0 + 10.0;
     // The assignments' column starts 10 past the pitch's 320-point track,
@@ -2342,17 +2420,67 @@ fn medal_outline(
         .next()
 }
 
-/// Asserts each starter's badge on a frame of `view` carries
-/// `medals[index]`'s outline in its tier's colour, or none for `None`;
-/// `when` names the step in the messages.
+/// The `MedalKey` a frame of `view` asks the medals for: the session's
+/// revision, the selected team and the active ruleset.
+fn current_medal_key(view: &SaveView) -> MedalKey {
+    let team = match view.selected {
+        Some(Selection::Team(id)) | Some(Selection::Player(id, _)) => id,
+        None => panic!("a team is selected"),
+    };
+    MedalKey {
+        revision: view.session.as_ref().expect("an open save").revision(),
+        team,
+        ruleset: view
+            .rules
+            .as_ref()
+            .expect("a frame resolved the ruleset")
+            .key
+            .clone(),
+    }
+}
+
+/// Frames until the medal worker's answer for the current key lands
+/// (bounded, so a worker that never replies fails rather than hangs).
+fn medals_landed(window: &mut Headless, view: &mut SaveView) {
+    frames_until(
+        window,
+        view,
+        |view| {
+            let key = current_medal_key(view);
+            view.medals.pending.is_none()
+                && view
+                    .medals
+                    .result
+                    .as_ref()
+                    .is_some_and(|(held, _)| *held == key)
+        },
+        "the medal worker never answered",
+    );
+}
+
+/// Asserts each starter's badge on a frame of `view`, once the medal
+/// worker answered, carries `medals[index]`'s outline in its tier's
+/// colour, or none for `None`; `when` names the step in the messages.
 fn assert_medal_outlines(
     window: &mut Headless,
     view: &mut SaveView,
     medals: [Option<team_widgets::tactics::Medal>; 11],
     when: &str,
 ) {
+    medals_landed(window, view);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    let canvas = canvas_of(&nodes);
+    assert_frame_medal_outlines(view, &nodes, &shapes, medals, when);
+}
+
+/// `assert_medal_outlines` on one drawn frame's `nodes` and `shapes`.
+fn assert_frame_medal_outlines(
+    view: &SaveView,
+    nodes: &[accesskit::Node],
+    shapes: &[egui::epaint::ClippedShape],
+    medals: [Option<team_widgets::tactics::Medal>; 11],
+    when: &str,
+) {
+    let canvas = canvas_of(nodes);
     let players = team_entry(view, 734).tactics.presets[0].formations[0].players;
     for (index, medal) in medals.iter().enumerate() {
         let badge = egui::Rect::from_center_size(
@@ -2370,7 +2498,7 @@ fn assert_medal_outlines(
                         egui::Color32::from_rgb(0x8c, 0x4a, 0x20)
                     }
                 };
-                let outline = medal_outline(&shapes, badge).unwrap_or_else(|| {
+                let outline = medal_outline(shapes, badge).unwrap_or_else(|| {
                     panic!("{when}: starter {index}: no outline over his badge")
                 });
                 assert_eq!(outline.stroke.width, 1.5, "{when}: the outline's width");
@@ -2385,7 +2513,7 @@ fn assert_medal_outlines(
                 );
             }
             None => assert!(
-                medal_outline(&shapes, badge).is_none(),
+                medal_outline(shapes, badge).is_none(),
                 "{when}: starter {index} carries no outline"
             ),
         }
@@ -2458,6 +2586,79 @@ fn the_badges_name_the_starters_medal_tiers() {
     assert_ne!(under_vtl11, medals, "premise: VTL11 reads them otherwise");
     view.aatf_ruleset = "vtl11".to_owned();
     assert_medal_outlines(&mut window, &mut view, under_vtl11, "under VTL11");
+}
+
+// The medals are read on a worker thread: the team view's first frame,
+// drawn with the pointer held so no run starts and none can reply within
+// it, draws no outline (the rules' script never ran on the UI thread);
+// the release frame starts the run and the outlines show once it
+// answers. An answer held for another team's key draws nothing.
+#[test]
+fn the_medals_are_read_off_the_first_frame_and_never_from_another_key() {
+    use team_widgets::tactics::Medal::{Gold, Silver};
+    let path = fixture(PesVersion::Pes17, "tactics_medals_worker");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(1600.0, 1400.0);
+    view.selected = Some(Selection::Team(734));
+    // The toolbar's empty end: a press there starts no gesture.
+    let at = egui::pos2(1090.0, 12.0);
+    let (_, nodes, shapes) = window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_frame_medal_outlines(&view, &nodes, &shapes, [None; 11], "the first frame");
+    assert!(
+        view.medals.pending.is_none() && view.medals.result.is_none(),
+        "premise: no run started while the pointer is held"
+    );
+
+    window.frame(pointer_at(at, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(
+        view.medals.pending.is_some() || view.medals.result.is_some(),
+        "the run starts on the release frame"
+    );
+    // The fixture team's starters as `the_badges_name_the_starters_medal_tiers`
+    // reads them under the official ruleset.
+    let medals = [
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        Some(Silver),
+        None,
+        Some(Gold),
+        Some(Silver),
+        Some(Gold),
+    ];
+    assert_medal_outlines(&mut window, &mut view, medals, "once the worker answered");
+
+    // Another team's answer held, the pointer down again so no run
+    // replaces it: the badges draw none of its outlines.
+    let other = view
+        .session
+        .as_ref()
+        .expect("the save opened")
+        .file()
+        .teams()
+        .iter()
+        .map(|team| team.id)
+        .find(|&id| id != 734)
+        .expect("premise: the save holds another team");
+    let mut stale = current_medal_key(&view);
+    stale.team = other;
+    view.medals.result = Some((stale, vec![Some(Gold); 23]));
+    let (_, nodes, shapes) = window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_frame_medal_outlines(&view, &nodes, &shapes, [None; 11], "a stale answer");
+    assert!(
+        view.medals.pending.is_none(),
+        "premise: no run started while the pointer is held"
+    );
 }
 
 // The badge's right end shows the starter's overall at the position his

@@ -149,13 +149,14 @@ shared-IDs file's comment: "written by the Ruleset editor", "by the Team compile
 aesthetics patch's `tool_version` key, `studio_version` until the rename): the logic banner is
 hashed into the ruleset's identity, and a product's name in a format ties every file to it.
 
-What users never see keeps the working name: the crates `studio_core` and `studio`, their
-types (`StudioApp`, `StudioTool`), the developers' environment variables (`STUDIO_*`) and the
-local checkout's folder (`4cc-studio`, until 1.0.0). Renaming those needs no migration and
-waits for a quiet tree: the crate names alone sit on 268 lines in 129 files, which would
-collide with every slice in flight. The repository becomes `the4chancup/unlimited-tool-works`
-when the maintainer renames it on GitHub, which redirects the old address; `Cargo.toml`'s
-`repository` follows in the same commit. The docs spell the product's names where they
+What users never see keeps the working name, Studio, as the project's codename for good:
+the crates `studio_core` and `studio`, their types (`StudioApp`, `StudioTool`) and the
+developers' environment variables (`STUDIO_*`); the local checkout's folder (`4cc-studio`)
+keeps it until 1.0.0. A rename would buy a member nothing (the exe, the data folder, the
+logs and the bundle already carry the product's names) and would touch the crate names'
+268 lines in 129 files, colliding with every slice in flight. The repository is
+`the4chancup/unlimited-tool-works` (GitHub redirects the old `4cc-studio` address), and
+`Cargo.toml`'s `repository` names it. The docs spell the product's names where they
 name what a member sees (the titles, the CLI's examples, the folders, the log); in their prose
 and the code's comments "Studio", the working name, stays the suite's shorthand, as the crates
 carry it, and the glossary says so. Rewriting the prose's ~250 "Studio" (the Studio format, a

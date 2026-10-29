@@ -104,9 +104,9 @@ pub fn lineup(
     .inner
 }
 
-/// One of the two lists (the draft's `.llist`): the framed box, its
-/// scroll area `LIST_HEIGHT` of rows with `LIST_PADDING` above and
-/// below; the rows draw through `add`.
+/// One of the two lists (the draft's `.llist`): the framed box filled in
+/// the extreme background, its scroll area `LIST_HEIGHT` of rows with
+/// `LIST_PADDING` above and below; the rows draw through `add`.
 fn list(ui: &mut egui::Ui, id_salt: &'static str, add: impl FnOnce(&mut egui::Ui)) {
     // No margin left of the rows: a row runs from the frame, as the draft's
     // `.lrow` from its list's border, so its handle's inset is its own.
@@ -115,6 +115,7 @@ fn list(ui: &mut egui::Ui, id_salt: &'static str, add: impl FnOnce(&mut egui::Ui
     let frame = egui::Frame::group(ui.style());
     let margin = frame.inner_margin;
     frame
+        .fill(ui.visuals().extreme_bg_color)
         .inner_margin(egui::Margin {
             left: 0,
             top: 0,
@@ -126,9 +127,14 @@ fn list(ui: &mut egui::Ui, id_salt: &'static str, add: impl FnOnce(&mut egui::Ui
             // height is exactly `LIST_HEIGHT` plus the two pads.
             ui.spacing_mut().item_spacing.y = 0.0;
             ui.add_space(LIST_PADDING);
+            // Exactly `LIST_HEIGHT` whatever height the host leaves (the
+            // draft's `min-height`): a scroll area takes the height
+            // available up to its max, so a host shortened by a dock
+            // would otherwise shrink the lists rather than scroll.
             egui::ScrollArea::vertical()
                 .id_salt(id_salt)
                 .auto_shrink([false, false])
+                .min_scrolled_height(LIST_HEIGHT)
                 .max_height(LIST_HEIGHT)
                 .show(ui, |ui| {
                     // 18-point rows back to back (the draft's `.lrow`): no
@@ -361,23 +367,29 @@ mod tests {
     };
 
     /// The lists' framed boxes in `shapes`, left to right (the eleven's
-    /// first): the stroked, unfilled rects taller than a row.
-    fn list_frames(shapes: &[egui::epaint::ClippedShape]) -> Vec<egui::Rect> {
-        let mut boxes: Vec<egui::Rect> = shapes
+    /// first): the stroked rects taller than a row.
+    fn list_frame_shapes(shapes: &[egui::epaint::ClippedShape]) -> Vec<&egui::epaint::RectShape> {
+        let mut boxes: Vec<&egui::epaint::RectShape> = shapes
             .iter()
             .filter_map(|clipped| match &clipped.shape {
                 egui::Shape::Rect(shape)
-                    if shape.fill == egui::Color32::TRANSPARENT
-                        && !shape.stroke.is_empty()
-                        && shape.rect.height() > 100.0 =>
+                    if !shape.stroke.is_empty() && shape.rect.height() > 100.0 =>
                 {
-                    Some(shape.rect)
+                    Some(shape)
                 }
                 _ => None,
             })
             .collect();
-        boxes.sort_by(|a, b| a.min.x.total_cmp(&b.min.x));
+        boxes.sort_by(|a, b| a.rect.min.x.total_cmp(&b.rect.min.x));
         boxes
+    }
+
+    /// `list_frame_shapes`' rects.
+    fn list_frames(shapes: &[egui::epaint::ClippedShape]) -> Vec<egui::Rect> {
+        list_frame_shapes(shapes)
+            .into_iter()
+            .map(|shape| shape.rect)
+            .collect()
     }
 
     // A starter swapped with a bench player: every set-piece role, the
@@ -776,6 +788,31 @@ mod tests {
             (row_ys[1] - row_ys[0] - 18.0).abs() <= 0.5,
             "18-point rows back to back ({row_ys:?})"
         );
+    }
+
+    // The draft's `.llist` is `background: var(--extreme)`: both lists'
+    // frames are filled in the extreme background, not left to the
+    // pane's grey.
+    #[test]
+    fn the_lists_are_filled_in_the_extreme_background() {
+        let mut window = Headless::sized(900.0, 1100.0);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let mut extreme = egui::Color32::TRANSPARENT;
+        window.frame(vec![], |ui| extreme = ui.visuals().extreme_bg_color);
+        assert_ne!(
+            extreme,
+            egui::Color32::TRANSPARENT,
+            "premise: the theme's extreme background is a colour"
+        );
+        let (_, shapes) = window.lineup_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
+        let frames = list_frame_shapes(&shapes);
+        assert_eq!(frames.len(), 2, "the two framed lists ({frames:?})");
+        for (index, frame) in frames.iter().enumerate() {
+            assert_eq!(frame.fill, extreme, "list {index}'s fill");
+        }
     }
 
     // The bench list shows the players only: a `bench_order` entry whose roster

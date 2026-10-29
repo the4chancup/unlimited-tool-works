@@ -22,7 +22,8 @@ use team_widgets::tactics::RosterRow;
 
 use crate::session::Session;
 use crate::session::selection::{self, TeamChoice};
-use crate::view::{Refusal, SaveView, save, terms, write_now};
+use crate::view::terms::{self, Term};
+use crate::view::{Refusal, SaveView, save, write_now};
 
 /// What the prompt does once answered.
 #[derive(Debug)]
@@ -44,9 +45,19 @@ pub(crate) enum Pending {
 pub(crate) struct Prompt {
     /// What the prompt does once answered.
     pending: Pending,
-    /// The table's rows: `(item, label, old, new)` drawn as three
-    /// columns, the Item cell `<item> · <label>` as the draft joins them.
-    rows: Vec<(String, String, String, String)>,
+    /// The table's rows.
+    rows: Vec<ChangeRow>,
+}
+
+/// One row of the changes table: the item it changes (a player's or a
+/// team's display name) and the field's terms, drawn as three columns,
+/// the Item cell `<item> · <label>` as the draft joins them.
+pub(super) struct ChangeRow {
+    /// The player's or the team's display name.
+    pub(super) item: String,
+    /// The field's label, its two values and, for a team colour, their
+    /// swatches.
+    pub(super) term: Term,
 }
 
 /// The prompt's buttons.
@@ -100,7 +111,7 @@ pub(crate) fn open(view: &mut SaveView, pending: Pending) {
 /// A team row's slot-valued texts name the baseline's roster and records
 /// on the old side, the current's on the new: a drag moves records
 /// between the roster's ids while the stored byte still names the slot.
-fn rows(session: &Session) -> anyhow::Result<Vec<(String, String, String, String)>> {
+pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<ChangeRow>> {
     let file = session.file();
     let version = session.version();
     let changes = session.unsaved_changes()?;
@@ -141,15 +152,20 @@ fn rows(session: &Session) -> anyhow::Result<Vec<(String, String, String, String
         if shown.insert(entry.player_id) {
             if let Some(diffs) = player_diffs.get(&entry.player_id) {
                 for diff in diffs {
-                    let term = terms::row_term(version, diff);
-                    rows.push((named(), term.label, term.old, term.new));
+                    rows.push(ChangeRow {
+                        item: named(),
+                        term: terms::row_term(version, diff),
+                    });
                 }
             }
-            if let Some((label, old, new)) = stripped_term(
+            if let Some(term) = stripped_term(
                 session.baseline_player(entry.player_id),
                 players.get(&entry.player_id).copied(),
             ) {
-                rows.push((named(), label, old, new));
+                rows.push(ChangeRow {
+                    item: named(),
+                    term,
+                });
             }
         }
         let Some(team) = teams.get(&entry.team_id).copied() else {
@@ -184,7 +200,10 @@ fn rows(session: &Session) -> anyhow::Result<Vec<(String, String, String, String
                 &new_roster,
                 &numbers,
             ) {
-                rows.push((named(), term.label, term.old, term.new));
+                rows.push(ChangeRow {
+                    item: named(),
+                    term,
+                });
             }
         }
     }
@@ -197,13 +216,13 @@ fn rows(session: &Session) -> anyhow::Result<Vec<(String, String, String, String
     for id in unlisted {
         let item = name_of(id);
         for diff in &player_diffs[&id] {
-            let term = terms::row_term(version, diff);
-            rows.push((item.clone(), term.label, term.old, term.new));
+            rows.push(ChangeRow {
+                item: item.clone(),
+                term: terms::row_term(version, diff),
+            });
         }
-        if let Some((label, old, new)) =
-            stripped_term(session.baseline_player(id), players.get(&id).copied())
-        {
-            rows.push((item, label, old, new));
+        if let Some(term) = stripped_term(session.baseline_player(id), players.get(&id).copied()) {
+            rows.push(ChangeRow { item, term });
         }
     }
     for team in file.teams() {
@@ -238,7 +257,10 @@ fn rows(session: &Session) -> anyhow::Result<Vec<(String, String, String, String
             &new_roster,
             &remaining,
         ) {
-            rows.push((display_name(&team.name), term.label, term.old, term.new));
+            rows.push(ChangeRow {
+                item: display_name(&team.name),
+                term,
+            });
         }
     }
     Ok(rows)
@@ -291,18 +313,16 @@ pub(super) fn roster_for<'a>(
 /// baseline's — `compare_players` emits no row for it, the Strip again
 /// change (SE-GUI-20) being otherwise invisible in the table. "No" while
 /// his id was set, "Yes" once at -1.
-fn stripped_term(
-    baseline: Option<&PlayerEntry>,
-    player: Option<&PlayerEntry>,
-) -> Option<(String, String, String)> {
+fn stripped_term(baseline: Option<&PlayerEntry>, player: Option<&PlayerEntry>) -> Option<Term> {
     let (baseline, player) = (baseline?, player?);
     (player.appearance_id != baseline.appearance_id).then(|| {
         let yes_no = |stripped: bool| if stripped { "Yes" } else { "No" }.to_owned();
-        (
-            "Stripped".to_owned(),
-            yes_no(baseline.appearance_id == Some(STRIPPED_APPEARANCE_ID)),
-            yes_no(player.appearance_id == Some(STRIPPED_APPEARANCE_ID)),
-        )
+        Term {
+            label: "Stripped".to_owned(),
+            old: yes_no(baseline.appearance_id == Some(STRIPPED_APPEARANCE_ID)),
+            new: yes_no(player.appearance_id == Some(STRIPPED_APPEARANCE_ID)),
+            swatches: None,
+        }
     })
 }
 
@@ -360,32 +380,30 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     }
 }
 
-/// The changes table (the draft's `changesTable`), the prompt's and the
-/// patch panel's: a grid with the weak header row `Item`, `Old value`,
-/// `New value`, then one row per `(item, label, old, new)`, the Item cell
-/// `<item> · <label>` and the values in monospace, every cell on one line.
-/// `selectable` makes each Item cell a click target selecting the row's
-/// player; the index of the row whose Item cell was clicked.
+/// The changes table (the draft's `changesTable`), the prompt's, the
+/// toolbar's changes list's and the patch panel's: a grid with the weak
+/// header row `Item`, `Old value`, `New value`, then one row per
+/// `ChangeRow`, the Item cell `<item> · <label>` and the values in
+/// monospace, a team colour's each after its swatch, every cell on one
+/// line. `selectable` makes each Item cell a click target selecting the
+/// row's player; the index of the row whose Item cell was clicked.
 pub(super) fn changes_table<'a>(
     ui: &mut egui::Ui,
     id: &str,
-    rows: impl IntoIterator<Item = &'a (String, String, String, String)>,
+    rows: impl IntoIterator<Item = &'a ChangeRow>,
     selectable: bool,
 ) -> Option<usize> {
     egui::Grid::new(id)
         .num_columns(3)
         .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
         .show(ui, |ui| {
-            fn cell(text: impl Into<egui::WidgetText>) -> egui::Label {
-                egui::Label::new(text).wrap_mode(egui::TextWrapMode::Extend)
-            }
             for head in ["Item", "Old value", "New value"] {
                 ui.add(cell(egui::RichText::new(head).weak()));
             }
             ui.end_row();
             let mut clicked = None;
-            for (index, (item, label, old, new)) in rows.into_iter().enumerate() {
-                let item = cell(format!("{item} · {label}"));
+            for (index, ChangeRow { item, term }) in rows.into_iter().enumerate() {
+                let item = cell(format!("{item} · {}", term.label));
                 if selectable {
                     if ui
                         .add(item.sense(egui::Sense::click()))
@@ -397,13 +415,49 @@ pub(super) fn changes_table<'a>(
                 } else {
                     ui.add(item);
                 }
-                ui.add(cell(egui::RichText::new(old).monospace()));
-                ui.add(cell(egui::RichText::new(new).monospace()));
+                let [old_swatch, new_swatch] = match term.swatches {
+                    Some([old, new]) => [Some(old), Some(new)],
+                    None => [None, None],
+                };
+                value_cell(ui, &term.old, old_swatch);
+                value_cell(ui, &term.new, new_swatch);
                 ui.end_row();
             }
             clicked
         })
         .inner
+}
+
+/// A cell of the changes table: `text` on one line.
+fn cell(text: impl Into<egui::WidgetText>) -> egui::Label {
+    egui::Label::new(text).wrap_mode(egui::TextWrapMode::Extend)
+}
+
+/// A value cell of the changes table: `value` in monospace, after its
+/// colour's swatch when it is a colour (the draft's `.chswatch`): a
+/// 12-point square of the colour, its corners rounded 2, framed by the
+/// 1-point dark edge the appearance palettes' swatches draw, so a colour
+/// near the panel's own still shows its square, and 5 points clear of
+/// the hex.
+fn value_cell(ui: &mut egui::Ui, value: &str, swatch: Option<egui::Color32>) {
+    let text = cell(egui::RichText::new(value).monospace());
+    let Some(colour) = swatch else {
+        ui.add(text);
+        return;
+    };
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 5.0;
+        let (rect, _) = ui.allocate_exact_size(egui::vec2(12.0, 12.0), egui::Sense::hover());
+        let edge = studio_core::theme::palette(ui.visuals()).swatch_edge;
+        ui.painter().rect(
+            rect,
+            2.0,
+            colour,
+            egui::Stroke::new(1.0, edge),
+            egui::StrokeKind::Inside,
+        );
+        ui.add(text);
+    });
 }
 
 /// The pending action once Save or Discard answers it, or at once when

@@ -295,6 +295,49 @@ fn the_painted_lines_are_the_screens_markings() {
     }
 }
 
+// The draft's `.pitch` has `border-radius: 2px`, the browser clipping
+// the canvas to the border's inner edge: the border is stroked at the
+// widgets' 2-point radius around the canvas and its 1-point side, and
+// the turf fills the canvas at the inner radius, 1, so no square turf
+// corner shows past the curve.
+#[test]
+fn the_pitchs_border_and_turf_round_their_corners() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+
+    let (nodes, shapes) = window.pitch_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
+    let canvas = canvas_rect(&nodes);
+    let rects: Vec<&egui::epaint::RectShape> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) => Some(shape),
+            _ => None,
+        })
+        .collect();
+    let border = rects
+        .iter()
+        .find(|shape| shape.rect == canvas.expand(1.0) && !shape.stroke.is_empty())
+        .expect("the border stroked around the canvas and its 1-point side");
+    assert_eq!(
+        border.corner_radius,
+        egui::CornerRadius::same(2),
+        "the border's radius"
+    );
+    let turf = rects
+        .iter()
+        .find(|shape| shape.fill_texture_id() != egui::TextureId::default())
+        .expect("the turf, a textured rect");
+    assert_eq!(turf.rect, canvas, "the turf fills the canvas");
+    assert_eq!(
+        turf.corner_radius,
+        egui::CornerRadius::same(1),
+        "the turf's radius, the border's inner one"
+    );
+}
+
 // The badge's position-text colours are the game's groups: forwards,
 // midfielders, defenders and the keeper in their own colours, a
 // position past the table white.
@@ -463,12 +506,21 @@ fn the_markers_paint_badge_position_captain_and_portrait() {
         "the outline paints before the white box"
     );
     // The portrait: the whole texture over the badge of the row that
-    // hands one, no other image but the turf.
+    // hands one, no other image but the turf (a textured rect, for its
+    // rounded corners).
     let images: Vec<&egui::epaint::ClippedShape> = shapes
         .iter()
         .filter(|clipped| matches!(clipped.shape, egui::Shape::Mesh(_)))
         .collect();
-    assert_eq!(images.len(), 2, "the turf and the one portrait");
+    assert_eq!(images.len(), 1, "the one portrait");
+    let textured_rects = shapes
+        .iter()
+        .filter(|clipped| {
+            matches!(&clipped.shape, egui::Shape::Rect(shape)
+                if shape.fill_texture_id() != egui::TextureId::default())
+        })
+        .count();
+    assert_eq!(textured_rects, 1, "the turf");
     let portrait = images
         .iter()
         .find(|clipped| clipped.shape.texture_id() == texture.id())

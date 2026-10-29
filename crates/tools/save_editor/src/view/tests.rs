@@ -1470,6 +1470,7 @@ fn throw19() -> String {
 
 mod abilities;
 mod appearance;
+mod changes_popup;
 mod comparator;
 mod generate;
 mod interchange;

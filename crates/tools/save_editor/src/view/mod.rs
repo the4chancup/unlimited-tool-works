@@ -13,6 +13,7 @@
 mod aatf_check;
 mod abilities;
 mod appearance;
+mod changes_popup;
 mod comparator;
 mod generate;
 mod info_strip;
@@ -98,6 +99,9 @@ pub(crate) struct SaveView {
     /// The unsaved-changes prompt's state while it is open (SE-GUI-05):
     /// the pending action and the table's rows, computed once at open.
     pub(crate) prompt: Option<prompt::Prompt>,
+    /// The toolbar's list of unsaved changes while it is open (SE-GUI-43):
+    /// its rows, computed once at open.
+    changes_list: Option<changes_popup::ChangesList>,
     /// The running-game question a Save or Save as first asks while the
     /// save's own PES runs (SE-GUI-21's window rule).
     edit_mode_question: Option<EditModeQuestion>,
@@ -204,10 +208,11 @@ pub(crate) struct SaveView {
     /// computed for: `player_tier` then `card_limits` run again only when
     /// the key differs, not on every frame.
     cards: Option<(BadgeKey, OwnBadge)>,
-    /// The pitch badges' medal letters per roster slot as last computed
-    /// and the `MedalKey` they were computed for: `player_tier` runs
-    /// again only when the key differs, not on every frame.
-    medals: Option<(MedalKey, Vec<Option<team_widgets::tactics::Medal>>)>,
+    /// The pitch badges' medal letters per roster slot, computed on a
+    /// worker thread for a `MedalKey`: the last answer with its key and
+    /// the run in flight. `player_tier` runs again only when the key
+    /// differs, not on every frame.
+    medals: tactics::Medals,
     /// The Tactics pitch's portraits, read from the selected game's
     /// `download/` CPKs off the UI thread (`select_portraits` points it at
     /// the PES folder each frame).
@@ -303,7 +308,7 @@ pub(crate) struct BadgeKey {
 /// left badge's `BadgeKey` minus the selection — a change of the open
 /// save (`Session::revision`), of the team or of the ruleset recomputes
 /// them, and any other frame draws the kept ones.
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub(crate) struct MedalKey {
     /// `Session::revision` when computed.
     revision: u64,
@@ -408,6 +413,7 @@ impl SaveView {
             tactics: team_widgets::tactics::TacticsView::default(),
             focused: None,
             prompt: None,
+            changes_list: None,
             edit_mode_question: None,
             request_close: false,
             open_dialog: open_menu::default_open_dialog(),
@@ -441,7 +447,7 @@ impl SaveView {
             multi_aatf: multi_aatf::MultiAatf::new(),
             export_dialog: comparator::default_export_dialog(),
             cards: None,
-            medals: None,
+            medals: tactics::Medals::new(),
             portraits: portraits::Portraits::new(),
             generation: 0,
             aesthetics_from_exports: false,
@@ -697,27 +703,27 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
             live_aatf::show(ui, view);
         }
         // No margin before the list, so its frame stands at the view's
-        // left edge, and 3 points after it: with the panel's 1-point
-        // separator line and the detail's own 8-point margin, the detail
-        // stands 12 after the list's scroll bar, the draft's gap. No bottom
-        // margin: the quick actions' band is the panel's content's last
-        // item and runs to the pane's bottom, so the pane gets no scroll
-        // bar of its own.
+        // left edge, and 4 points after it: with the detail's own 8-point
+        // margin, the detail stands 12 after the list's scroll bar, the
+        // draft's gap. No separator line between the panes, as the draft
+        // draws none. No bottom margin: the quick actions' band is the
+        // panel's content's last item and runs to the pane's bottom, so
+        // the pane gets no scroll bar of its own.
         let margin = egui::Margin {
             left: 0,
-            right: 3,
+            right: 4,
             top: LIST_TOP_MARGIN,
             bottom: 0,
         };
-        let separator = ui.visuals().widgets.noninteractive.bg_stroke.width.round();
         let list_panel = egui::Panel::left("save_editor_players")
             // The draft's `.plist`: a 255-point column (the rows' frame and
             // the scroll bar's strip), not resizable. egui's panel size
-            // counts its margins and its separator line too. Under the
-            // design width the window scales instead of narrowing, and a
-            // list dragged wider would only take the views' room.
+            // counts its margins too. Under the design width the window
+            // scales instead of narrowing, and a list dragged wider would
+            // only take the views' room.
             .resizable(false)
-            .default_size(LIST_WIDTH + margin.sum().x + separator)
+            .show_separator_line(false)
+            .default_size(LIST_WIDTH + margin.sum().x)
             .frame(egui::Frame::side_top_panel(ui.style()).inner_margin(margin))
             .show(ui, |ui| player_list::show(ui, view));
         let frame_right = list_panel.inner;
@@ -938,12 +944,8 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
                 );
         }
         // The save's path is in the window title (`title_detail`): beside the
-        // unsaved mark it could wrap the toolbar onto a second row. The mark
-        // in the link blue: the weak grey hid the one piece saying the save
-        // differs from its file among the toolbar's quieter text.
-        if view.is_dirty() {
-            ui.colored_label(ui.visuals().hyperlink_color, "\u{2022} unsaved changes");
-        }
+        // unsaved mark it could wrap the toolbar onto a second row.
+        changes_popup::show(ui, view);
     });
     if clear_flags_key
         && !view.aesthetics_locked()

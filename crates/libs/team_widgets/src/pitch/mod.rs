@@ -286,15 +286,19 @@ pub fn pitch(
         canvas_response.widget_info(|| {
             egui::WidgetInfo::labeled(egui::Role::Unknown, ui.is_enabled(), "pitch")
         });
+        // Rounded as every framed panel is (the draft's `border-radius:
+        // 2px`); the turf takes the radius inside the 1-point border, so
+        // no square turf corner shows past the curve.
+        let radius = ui.visuals().widgets.noninteractive.corner_radius;
         ui.painter().rect_stroke(
             area,
-            0,
+            radius,
             ui.visuals().widgets.noninteractive.bg_stroke,
             egui::StrokeKind::Inside,
         );
         let painter = ui.painter_at(canvas);
         let palette = theme::palette(ui.visuals());
-        paint_pitch(&painter, canvas, palette);
+        paint_pitch(&painter, canvas, radius - 1, palette);
         let players = tactics.presets[view.preset.min(2)].formations[view.formation.min(2)].players;
         let centres = players.map(|slot| clamp_centre(badge_centre(canvas.min, slot), canvas));
         let order = draw_order(&centres);
@@ -898,13 +902,19 @@ fn turf(ctx: &egui::Context, palette: &Palette) -> egui::TextureHandle {
 /// The turf and the lines (the draft's `drawLines`): the halfway line,
 /// the centre circle, and per end the penalty box, the goal area and the
 /// penalty arc — no touchlines and no goal lines (the texture has none).
-fn paint_pitch(painter: &egui::Painter, canvas: egui::Rect, palette: &Palette) {
+/// The turf's corners are rounded by `turf_radius`.
+fn paint_pitch(
+    painter: &egui::Painter,
+    canvas: egui::Rect,
+    turf_radius: egui::CornerRadius,
+    palette: &Palette,
+) {
     let stroke = egui::Stroke::new(2.0, palette.pitch_lines);
-    painter.image(
-        turf(painter.ctx(), palette).id(),
-        canvas,
-        egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
-        theme::NO_TINT,
+    painter.add(
+        egui::epaint::RectShape::filled(canvas, turf_radius, theme::NO_TINT).with_texture(
+            turf(painter.ctx(), palette).id(),
+            egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+        ),
     );
     let at = |x: f32, y: f32| canvas.min + egui::vec2(x, y);
     painter.line_segment([at(0.0, 192.0), at(320.0, 192.0)], stroke);

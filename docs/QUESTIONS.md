@@ -43,11 +43,6 @@ names where the question came from so the context can be read there.
       drafts with what each shows and its tooltips, in `.tmp/0_0_1ov/live/`, images 01 to 13
       (no 06: a rules file is checked when imported, so the dock has no failed state).
   - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
-- **When do you rename the GitHub repository to `unlimited-tool-works`?** (worklog 0.0.1rn,
-  `plans/core/development_plan.md` "The project's name: Unlimited Tool Works"). It is a step
-  on GitHub only you take (the lead never touches the remote); GitHub redirects the old
-  address. `Cargo.toml`'s `repository` URL is changed in the commit after it; until then it
-  names `the4chancup/4cc-studio`.
 
 ## Cup practice
 

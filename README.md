@@ -19,11 +19,13 @@ that is both a GUI and a CLI.
   save editor's command line (team exports and imports, comparisons).
 - **Phase 6**, the Export upgrader: an export in the old layout migrated once to the new one.
 
-Phase 8, the window, is under way: the shell (sidebar, help, log panel), the color picker, the
-AATF card pickers, and the save editor's first screens (the player list, the info strip, the
-Abilities & Skills tab). The first preview, planned for the Divegrass Before Christmas cup, is
-to ship the save editor and the ruleset editor. The `.4ccm` music format (Rigdio's) is built ahead of its
-phase.
+Phase 8, the window, is under way: the shell (sidebar, help, log panel, settings), the color
+picker, the AATF card pickers, and the save editor's views (the player list, the player and
+team views with the Tactics pitch, the AATF check and Live AATF, team file import and export,
+the aesthetics patch, the list of unsaved changes). The first preview, 0.0.1, is the save
+editor alone, for the Divegrass Before Christmas cup on PES 2017; a 0.0.2 preview adds the
+Team compiler and the Export upgrader, through their command line, for /vg/ League 27. The
+`.4ccm` music format (Rigdio's) is built ahead of its phase.
 
 4,261 tests, all gates green. Every finished tool also runs from the command line
 (`UTW <tool> <command>`), the way to use those the window does not show yet.

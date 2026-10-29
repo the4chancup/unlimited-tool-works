@@ -323,6 +323,18 @@ mod tests {
         );
     }
 
+    // The release bundle's settings file opens the window on PES 2017, DBC's game: a key
+    // under the wrong table would be ignored and the window would start on PES 2019.
+    #[test]
+    fn the_bundled_settings_start_on_pes_2017() {
+        let settings = crate::settings::Settings::parse(include_str!(
+            "../../../../resources/bundle/data/settings.toml"
+        ))
+        .expect("parses")
+        .common;
+        assert_eq!(settings.pes_version, PesVersion::Pes17);
+    }
+
     // A hand-written empty entry (`19 = ''`) is dropped on load, so it is no override
     // for the resolution, the menu's toggle or Fix PES path alike.
     #[test]
