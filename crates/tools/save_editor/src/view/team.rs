@@ -67,6 +67,14 @@ const ID_CELL_PADDING: f32 = 4.0;
 /// own is 40). The number control and its disabled stand-in both take
 /// their width from `interact_size`, so the id units set it.
 const ID_BOX_WIDTH: f32 = 46.0;
+/// From the row's controls down to the line under the row (the draft's
+/// `.sep`): the line's 8-point margin past the row's box, which stands 3
+/// under its controls.
+const LINE_ABOVE: f32 = 11.0;
+/// From the line down to the Tactics' top: the `.sep`'s 8-point margin.
+/// The Tactics bar is taller than its buttons, so its first control
+/// stands 10.5 under the line.
+const LINE_BELOW: f32 = 8.0;
 
 /// The room the id cells' padding adds before `unit`, past the row's gap:
 /// 10 from the colours to Manager ID, 8 between the two cells (their
@@ -173,9 +181,12 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         if open_kit_slots {
             view.kit_slots = Some(team_id);
         }
-        // Half the item spacing: the default separator's whole gap would
-        // push the Tactics' last control under the pane's fold.
-        ui.add(egui::Separator::default().spacing(ui.spacing().item_spacing.y / 2.0));
+        // `item_spacing.y` trails the row and the line alike, so the
+        // line's spacing is `LINE_BELOW` less one of them on each side,
+        // and the space before it makes up `LINE_ABOVE`.
+        let trailing = ui.spacing().item_spacing.y;
+        ui.add_space(LINE_ABOVE - LINE_BELOW);
+        ui.add(egui::Separator::default().spacing(2.0 * (LINE_BELOW - trailing)));
         tactics::show(ui, view);
     });
 }

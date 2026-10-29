@@ -643,6 +643,74 @@ fn the_team_view_fits_the_default_pane() {
     );
 }
 
+// The draft's `.sep` under the fields' row: its painted line 11 points below
+// the row's tallest control, the Tactics' first row 10.5 points below the line.
+#[test]
+fn the_line_under_the_fields_stands_11_from_the_row_and_10_5_from_the_tactics() {
+    let path = fixture(PesVersion::Pes21, "team_separator_gaps");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    let name = bar_name_field(&nodes).bounds().expect("bounds");
+    let on_row = |b: &accesskit::Rect| b.y0 < name.y1 && b.y1 > name.y0;
+    let row_bottom = nodes
+        .iter()
+        .filter(|node| {
+            matches!(
+                node.role(),
+                Role::TextInput | Role::ColorWell | Role::SpinButton | Role::Button
+            )
+        })
+        .filter_map(accesskit::Node::bounds)
+        .filter(|b| on_row(b) && b.x0 >= name.x0)
+        .map(|b| b.y1)
+        .fold(name.y1, f64::max);
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let (line, line_left) = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s }
+                if *s == stroke
+                    && points[0].y == points[1].y
+                    && f64::from(points[0].y) > row_bottom
+                    && points[0].x.min(points[1].x) <= name.x0 as f32 =>
+            {
+                Some((
+                    f64::from(points[0].y),
+                    f64::from(points[0].x.min(points[1].x)),
+                ))
+            }
+            _ => None,
+        })
+        .min_by(|a, b| a.0.partial_cmp(&b.0).expect("ordered ys"))
+        .expect("a stroke line under the fields' row");
+    // The view's nodes only (the line spans the view): the player list's
+    // rows left of it run past the line too.
+    let tactics_top = nodes
+        .iter()
+        .filter_map(accesskit::Node::bounds)
+        .filter(|b| b.y0 > line && b.x0 >= line_left)
+        .map(|b| b.y0)
+        .fold(f64::MAX, f64::min);
+    assert!(
+        (line - row_bottom - 11.0).abs() <= 1.0,
+        "the line stands 11 below the row's tallest control ({line} vs {row_bottom})"
+    );
+    assert!(
+        (tactics_top - line - 10.5).abs() <= 1.0,
+        "the Tactics' first row stands 10.5 below the line ({tactics_top} vs {line})"
+    );
+}
+
 // The short name's box takes three characters, so a fourth never lands:
 // the game shows a three-letter abbreviation.
 #[test]

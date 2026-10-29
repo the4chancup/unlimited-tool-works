@@ -182,12 +182,14 @@ pub(super) fn instruction_table(
         )
     };
     // The header row: an empty number cell, the side names over their
-    // columns.
+    // columns, one line of text tall (the draft's header cells are plain
+    // text, not a combo's height).
+    let header_height = ui.text_style_height(&egui::TextStyle::Body);
     let mut top = ui.cursor().min.y;
     for (x, header) in [(attack_x, "Attack"), (defence_x, "Defence")] {
-        cell(ui, x, top, ui.spacing().interact_size.y).label(header);
+        cell(ui, x, top, header_height).label(header);
     }
-    top += ui.spacing().interact_size.y + INSTR_ROW_GAP;
+    top += header_height + INSTR_ROW_GAP;
     for index in 0..2 {
         let mut number_ui = ui.new_child(
             egui::UiBuilder::new()

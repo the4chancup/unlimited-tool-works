@@ -1178,12 +1178,11 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
         scroll_names.bounds()
     );
 
-    // The bars are one line of `interact_size.y` above row 2, their
-    // widgets centred on it, and row 2's cells start ROW_GAP (6) below
-    // that line (the Formation settings box's top). The "Preset" label
-    // is the one widget shorter than the line: the buttons and checkboxes
-    // fill it, so only the label shows the line's height.
-    let line = f64::from(window.ctx.global_style().spacing.interact_size.y);
+    // The bars are the draft's `.tacbar`, 23 points tall above row 2
+    // (the preset selector's 3-point margins round its 17), their widgets
+    // centred in it, and row 2's cells start ROW_GAP (6) below the bar
+    // (the Formation settings box's top), 8.5 below the buttons' bottom.
+    let bar = 23.0;
     let row2_top = f64::from(box_at(&rects, settings_left, 1.0).min.y);
     let preset = nodes
         .iter()
@@ -1191,15 +1190,15 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
         .expect("the preset bar's label");
     for widget in [preset, two, kick_off, scroll_names] {
         assert!(
-            (centre_y(widget) - (row2_top - 6.0 - line / 2.0)).abs() <= 0.5,
-            "a bar's widget centred on the line above row 2 ({:?}, row 2 at {row2_top})",
+            (centre_y(widget) - (row2_top - 6.0 - bar / 2.0)).abs() <= 0.5,
+            "a bar's widget centred in the bar above row 2 ({:?}, row 2 at {row2_top})",
             widget.bounds()
         );
     }
     let bars_bottom = two.bounds().expect("bounds").y1;
     assert!(
-        (row2_top - (bars_bottom + 6.0)).abs() <= 0.5,
-        "row 2 starts 6 below the bars' line ({row2_top} vs the bars' bottom {bars_bottom})"
+        (row2_top - (bars_bottom + 8.5)).abs() <= 0.5,
+        "row 2 starts 8.5 below the bars' buttons ({row2_top} vs the buttons' bottom {bars_bottom})"
     );
 
     // Row 3's tops 6 under row 2's bottom: row 2's bottom is the deepest
@@ -1360,6 +1359,81 @@ fn the_automatic_settings_frame_reaches_the_lists_bottom() {
         (centre - region_centre).abs() <= 1.0,
         "the rows centred under the heading ({centre} vs {region_centre})"
     );
+}
+
+// The editor's blocks stand where the draft's do (the draft at 1280 x 780,
+// PES 21 save, team 701), each box's top measured from the Tactics' first
+// control (the Fluid formation checkbox) and its height: the bars 23 tall
+// (the preset selector's 3-point margins), Advanced instructions' header
+// row a line of text, the stack's two panels 6 apart and the lists padded
+// 4 inside their borders, so the whole editor is the draft's height.
+#[test]
+fn the_tactics_blocks_stand_where_the_drafts_do_from_the_first_control() {
+    let path = fixture(PesVersion::Pes21, "tactics_blocks");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    let first = node_labeled(&nodes, Role::CheckBox, "Fluid formation")
+        .bounds()
+        .expect("bounds")
+        .y0;
+    let rects = stroked_rects(&shapes, 60.0);
+    let settings_left = label_bounds(&nodes, "Formation settings").x0 - 7.0;
+    let pitch_left = settings_left + 422.0 + 10.0;
+    let assigns_left = pitch_left + f64::from(team_widgets::pitch::PITCH_BOX.x) + 10.0;
+    let column = |left: f64| -> Vec<egui::Rect> {
+        rects
+            .iter()
+            .copied()
+            .filter(|rect| (f64::from(rect.min.x) - left).abs() <= 1.0)
+            .collect()
+    };
+    let settings = column(settings_left);
+    assert_eq!(
+        settings.len(),
+        3,
+        "the settings column's boxes ({settings:?})"
+    );
+    let middle = column(pitch_left);
+    assert_eq!(
+        middle.len(),
+        2,
+        "the pitch's border and the eleven's box ({middle:?})"
+    );
+    let row3_top = middle[1].min.y;
+    let bench = rects
+        .iter()
+        .copied()
+        .find(|rect| rect.min.y == row3_top && f64::from(rect.min.x) > pitch_left + 1.0)
+        .expect("the bench's box");
+    let assigns = box_at(&rects, assigns_left, 1.0);
+    let blocks = [
+        ("Formation settings", settings[0], 26.5, 386.0),
+        ("the pitch", middle[0], 26.5, 386.0),
+        ("Player assignments", assigns, 26.5, 386.0),
+        ("Advanced instructions", settings[1], 418.5, 134.0),
+        ("Automatic settings", settings[2], 558.5, 86.0),
+        ("the starting eleven", middle[1], 418.5, 226.0),
+        ("the bench", bench, 418.5, 226.0),
+    ];
+    // Every block's misfit at once, so a failure shows the whole table.
+    let mut misfits = Vec::new();
+    for (block, rect, draft_top, draft_height) in blocks {
+        let top = f64::from(rect.min.y) - first;
+        let height = f64::from(rect.height());
+        if (top - draft_top).abs() > 1.0 {
+            misfits.push(format!(
+                "the top of {block} stands {draft_top} under the first control, got {top}"
+            ));
+        }
+        if (height - draft_height).abs() > 1.0 {
+            misfits.push(format!("{block} is {draft_height} tall, got {height}"));
+        }
+    }
+    assert!(misfits.is_empty(), "{}", misfits.join("\n"));
 }
 
 // The draft's `.rate` toggles write their field, one undo entry: a
