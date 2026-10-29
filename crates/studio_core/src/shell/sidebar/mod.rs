@@ -27,13 +27,26 @@ use super::about;
 /// The rail's width: the shell's `Panel::left` exact size. The rail is always there,
 /// icons only.
 pub(super) const RAIL_WIDTH: f32 = 56.0;
+/// The rail's inner margin on every side, the draft's `.rail` padding 6. egui's side
+/// panel margin (8 across, 2 down) would start the logo 4 points high and narrow the
+/// selector and the lines by 4.
+const RAIL_PADDING: i8 = 6;
 /// The tool icons', the help's and the gear's point size: about twice the body text, so
 /// the rail alone tells the tools apart.
 const ICON_SIZE: f32 = 24.0;
-/// One entry row: the 24-point icon and its padding. With the default 4-point item
-/// spacing, fourteen rows take 476 points of the 756-point rail at the default window,
+/// One entry row: the 24-point icon and its padding. With the rail's 2-point gap,
+/// fourteen rows take 446 points of the 756-point rail at the default window,
 /// leaving the logo, the version dropdown, the help and the gear their room.
 const ENTRY_HEIGHT: f32 = 30.0;
+/// The space between two of the rail's items, the draft's `.rail` gap 2, where egui
+/// spaces items 3 apart: each entry would sit 1 point lower than the one above it.
+const RAIL_GAP: f32 = 2.0;
+/// The height a rail line takes: its 1-point stroke with the draft's `.sidebar .sep`
+/// margin 4 above and below it.
+const SEPARATOR_SPACING: f32 = 9.0;
+/// The side of the logo's square, the draft's `.logo` 32 square, and so its row's
+/// height: its "4cc" sits centred on it, 1 point lower than on an entry's 30.
+const LOGO_SIZE: f32 = 32.0;
 /// Seconds the pointer rests on the rail before the overlay opens: a short delay.
 const HOVER_DELAY: f64 = 0.15;
 /// The accent bar on the active entry's left edge (draft: 3 px).
@@ -178,7 +191,7 @@ impl Sidebar {
         let inner_width = cell + ui.spacing().item_spacing.x + widest_label(ui, &args);
         // Framed like the panel, with a popup's shadow: the same inner margin puts
         // the content at the same point, and the shadow marks it as the layer it is.
-        let frame = egui::Frame::side_top_panel(ui.style()).shadow(ui.visuals().popup_shadow);
+        let frame = rail_frame(ui.style()).shadow(ui.visuals().popup_shadow);
         let geom = OverlayGeom {
             outer: egui::Rect::from_min_size(
                 rail_outer.min,
@@ -332,6 +345,7 @@ impl Sidebar {
         ui.scope_builder(
             egui::UiBuilder::new().scope_id(egui::Id::unique("sidebar-contents")),
             |ui| {
+                ui.spacing_mut().item_spacing.y = RAIL_GAP;
                 // The row width is measured before any widget's min size can
                 // stretch the layout region (the combo's atom minimum is wider
                 // than the rail's content): every row takes the same width — the
@@ -340,17 +354,7 @@ impl Sidebar {
                 // The logo doubles as the About click target, centered in the icon
                 // cell in both places: it gets no label, so the hover opens nothing
                 // that comes and goes (item 1).
-                let logo = entry_row(
-                    ui,
-                    row_width,
-                    cell,
-                    egui::RichText::new("4cc")
-                        .color(ui.visuals().selection.stroke.color)
-                        .size(15.0),
-                    None,
-                    false,
-                    true,
-                );
+                let logo = logo(ui, row_width, cell);
                 logo.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, "4cc"));
                 if logo.has_focus() {
                     self.focus_label = Some("4cc");
@@ -362,7 +366,7 @@ impl Sidebar {
                     self.about_open = true;
                 }
                 self.version_selector(ui, args, rail);
-                ui.separator();
+                ui.add(egui::Separator::default().spacing(SEPARATOR_SPACING));
 
                 let mut clicked = None;
                 for (index, tool) in tools.iter().enumerate() {
@@ -428,7 +432,8 @@ impl Sidebar {
                 }
 
                 // The bottom rows, pinned to the sidebar's foot: the help `?` above
-                // the settings gear (the first bottom-up child is the lowest).
+                // the settings gear (the first bottom-up child is the lowest), under
+                // a line like the one under the selector.
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
                     let gear = entry_row(
                         ui,
@@ -472,6 +477,7 @@ impl Sidebar {
                             anchor: None,
                         }));
                     }
+                    ui.add(egui::Separator::default().spacing(SEPARATOR_SPACING));
                 });
                 clicked
             },
@@ -647,6 +653,12 @@ impl Sidebar {
     }
 }
 
+/// The frame of the rail's panel and of the overlay: the side panel's fill inside the
+/// draft's `.rail` padding.
+pub(super) fn rail_frame(style: &egui::Style) -> egui::Frame {
+    egui::Frame::side_top_panel(style).inner_margin(RAIL_PADDING)
+}
+
 /// The overlay `egui::Area`'s id.
 fn overlay_id() -> egui::Id {
     egui::Id::unique("sidebar-overlay")
@@ -692,13 +704,43 @@ fn widest_label(ui: &egui::Ui, args: &SidebarFrame) -> f32 {
     widest
 }
 
-/// One sidebar row `width` wide, the same in the rail and in the overlay (item 3:
-/// "nothing moves when it opens"): `icon` centered in an icon cell `cell` wide at
-/// the row's left, then `label` in body text after the cell and one
-/// `item_spacing.x` gap, vertically centered and never wrapped (`None` in the
-/// rail, which shows the icons alone and needs no tooltip: the overlay shows the
-/// label). `active` gets the filled selection background plus the accent left
-/// bar; `clickable` selects `Sense::click` over `Sense::hover`.
+/// The logo, the About click target: the draft's `.logo` square, centred in the icon
+/// cell `cell` wide at the row's left, the same in the rail and in the overlay. The
+/// row is `width` wide like the entries', but only the square senses the pointer and
+/// fills while in use. "4cc" sits centred on it in the accent colour.
+fn logo(ui: &mut egui::Ui, width: f32, cell: f32) -> egui::Response {
+    let (id, row) = ui.allocate_space(egui::vec2(width, LOGO_SIZE));
+    let square = egui::Rect::from_center_size(
+        egui::pos2(row.min.x + cell / 2.0, row.center().y),
+        egui::Vec2::splat(LOGO_SIZE),
+    );
+    let response = ui.interact(square, id, egui::Sense::click());
+    let text_color = paint_in_use_frame(ui, square, &response, false);
+    let galley = egui::WidgetText::from(
+        egui::RichText::new("4cc")
+            .color(ui.visuals().selection.stroke.color)
+            .size(15.0),
+    )
+    .into_galley(
+        ui,
+        Some(egui::TextWrapMode::Extend),
+        f32::INFINITY,
+        egui::TextStyle::Body,
+    );
+    ui.painter()
+        .galley(square.center() - galley.size() / 2.0, galley, text_color);
+    response
+}
+
+/// One sidebar entry row `width` wide, the same in the rail and in the overlay
+/// (item 3: "nothing moves when it opens"): `icon` centred in the icon cell, the
+/// row's first `cell` points less the accent bar's width at its left (the draft's
+/// entries carry that border on every row, transparent but on the active one), then
+/// `label` in body text after the cell and one `item_spacing.x` gap, vertically
+/// centred and never wrapped (`None` in the rail, which shows the icons alone and
+/// needs no tooltip: the overlay shows the label). `active` gets the filled
+/// selection background plus the accent left bar; `clickable` selects
+/// `Sense::click` over `Sense::hover`.
 fn entry_row(
     ui: &mut egui::Ui,
     width: f32,
@@ -714,30 +756,8 @@ fn entry_row(
         egui::Sense::hover()
     };
     let (rect, response) = ui.allocate_exact_size(egui::vec2(width, ENTRY_HEIGHT), sense);
-    let enabled = ui.is_enabled();
-    let visuals = ui.style().interact_selectable(&response, active);
-    let text_color = if enabled {
-        visuals.fg_stroke.color
-    } else {
-        ui.visuals().weak_text_color()
-    };
-    // A row paints its button frame only when it is in use — active, hovered,
-    // pressed or focused — as the `Button::selectable` it replaced did
-    // (`frame_when_inactive`): an inactive, unhovered row is a plain row.
-    let in_use = active
-        || response.hovered()
-        || response.is_pointer_button_down_on()
-        || response.has_focus();
-    if enabled && in_use {
-        ui.painter().rect(
-            rect.expand(visuals.expansion),
-            visuals.corner_radius,
-            visuals.weak_bg_fill,
-            visuals.bg_stroke,
-            egui::StrokeKind::Inside,
-        );
-    }
-    if active && enabled {
+    let text_color = paint_in_use_frame(ui, rect, &response, active);
+    if active && ui.is_enabled() {
         ui.painter().rect_filled(
             egui::Rect::from_min_size(rect.min, egui::vec2(ACTIVE_BAR_WIDTH, rect.height())),
             egui::CornerRadius {
@@ -755,7 +775,10 @@ fn entry_row(
         f32::INFINITY,
         egui::TextStyle::Body,
     );
-    let cell_rect = egui::Rect::from_min_size(rect.min, egui::vec2(cell, rect.height()));
+    let cell_rect = egui::Rect::from_min_max(
+        egui::pos2(rect.min.x + ACTIVE_BAR_WIDTH, rect.min.y),
+        egui::pos2(rect.min.x + cell, rect.max.y),
+    );
     ui.painter()
         .galley(cell_rect.center() - galley.size() / 2.0, galley, text_color);
     if let Some(label) = label {
@@ -774,6 +797,40 @@ fn entry_row(
         );
     }
     response
+}
+
+/// Paints a sidebar widget's button frame over `rect` while it is in use and returns
+/// the colour its text is drawn in: the widget's own, or the weak text colour while
+/// disabled. `active` marks the active entry, whose frame stays filled.
+fn paint_in_use_frame(
+    ui: &egui::Ui,
+    rect: egui::Rect,
+    response: &egui::Response,
+    active: bool,
+) -> egui::Color32 {
+    let enabled = ui.is_enabled();
+    let visuals = ui.style().interact_selectable(response, active);
+    // A row paints its button frame only when it is in use — active, hovered,
+    // pressed or focused — as the `Button::selectable` it replaced did
+    // (`frame_when_inactive`): an inactive, unhovered row is a plain row.
+    let in_use = active
+        || response.hovered()
+        || response.is_pointer_button_down_on()
+        || response.has_focus();
+    if enabled && in_use {
+        ui.painter().rect(
+            rect.expand(visuals.expansion),
+            visuals.corner_radius,
+            visuals.weak_bg_fill,
+            visuals.bg_stroke,
+            egui::StrokeKind::Inside,
+        );
+    }
+    if enabled {
+        visuals.fg_stroke.color
+    } else {
+        ui.visuals().weak_text_color()
+    }
 }
 
 /// The first `version_change_blocker` any registered tool reports, as the blocking tool's

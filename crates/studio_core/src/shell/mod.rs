@@ -515,6 +515,7 @@ impl eframe::App for StudioApp {
         let clicked = egui::Panel::left("sidebar")
             .resizable(false)
             .exact_size(sidebar::RAIL_WIDTH)
+            .frame(sidebar::rail_frame(ui.style()))
             .show(ui, |ui| {
                 self.sidebar.show(
                     ui,

@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use egui::accesskit::{self, Role, Toggled};
 use pes_version::PesVersion;
 
-use super::{ACTIVE_BAR_WIDTH, ExeCheck, RAIL_WIDTH, overlay_id, selector_color};
+use super::{ACTIVE_BAR_WIDTH, ExeCheck, RAIL_WIDTH, overlay_id, rail_frame, selector_color};
 use crate::help::{HelpSection, HelpTarget, HelpTopic};
 use crate::pes_process::RunningPes;
 use crate::settings::Settings;
@@ -666,7 +666,8 @@ fn the_labels_are_painted_in_the_overlay_and_never_on_the_rail() {
     }
 }
 
-// An entry row: the icon centred in the icon cell, the label starting one
+// An entry row: the icon centred in the icon cell (the row's first cell-width
+// points less the accent bar's width at its left), the label starting one
 // item-spacing past the cell's right edge, vertically centred on the row.
 #[test]
 fn a_row_paints_its_icon_centred_in_the_cell_and_its_label_after_it() {
@@ -681,7 +682,10 @@ fn a_row_paints_its_icon_centred_in_the_cell_and_its_label_after_it() {
         egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
         egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
     );
-    let icon_cell = egui::Rect::from_min_size(row.min, egui::vec2(cell, row.height()));
+    let icon_cell = egui::Rect::from_min_max(
+        egui::pos2(row.min.x + ACTIVE_BAR_WIDTH, row.min.y),
+        egui::pos2(row.min.x + cell, row.max.y),
+    );
 
     // The stub tools' icon is "i"; the same glyph sits on B's row, so the
     // cell's bounds pick A's.
@@ -775,7 +779,7 @@ fn the_overlay_holds_while_the_pointer_is_anywhere_on_it() {
         .min
         .x;
     let style = egui_ctx.global_style();
-    let margins = egui::Frame::side_top_panel(&style)
+    let margins = rail_frame(&style)
         .shadow(style.visuals.popup_shadow)
         .total_margin()
         .sum()
@@ -1927,4 +1931,315 @@ fn the_rails_fixed_width_edge_shows_no_resize_cursor() {
             .any(|node| node.role() == Role::Splitter && node.label() == Some("Resize panel")),
         "a fixed-width panel registers no splitter"
     );
+}
+
+/// The suite's registry in sidebar order, as the binary lists it.
+const REGISTRY: &[PlannedTool] = &[
+    PlannedTool {
+        id: "team-compiler",
+        label: "Team compiler",
+        icon: crate::icons::USERS_THREE,
+    },
+    PlannedTool {
+        id: "save-editor",
+        label: "Save editor",
+        icon: crate::icons::NOTE_PENCIL,
+    },
+    PlannedTool {
+        id: "stadium-compiler",
+        label: "Stadium compiler",
+        icon: crate::icons::BUILDINGS,
+    },
+    PlannedTool {
+        id: "export-upgrader",
+        label: "Export upgrader",
+        icon: crate::icons::ARROW_FAT_UP,
+    },
+    PlannedTool {
+        id: "music-player",
+        label: "Music player",
+        icon: crate::icons::MUSIC_NOTE,
+    },
+    PlannedTool {
+        id: "music-export-editor",
+        label: "Music export editor",
+        icon: crate::icons::MUSIC_NOTES,
+    },
+    PlannedTool {
+        id: "match-tracker",
+        label: "Match tracker",
+        icon: crate::icons::CROSSHAIR,
+    },
+    PlannedTool {
+        id: "kit-config-editor",
+        label: "Kit config editor",
+        icon: crate::icons::T_SHIRT,
+    },
+    PlannedTool {
+        id: "refs-arranger",
+        label: "Refs arranger",
+        icon: crate::icons::FLAG,
+    },
+    PlannedTool {
+        id: "balls-compiler",
+        label: "Balls compiler",
+        icon: crate::icons::SOCCER_BALL,
+    },
+    PlannedTool {
+        id: "player-aesthetics-editor",
+        label: "Player aesthetics editor",
+        icon: crate::icons::SMILEY,
+    },
+    PlannedTool {
+        id: "team-creator",
+        label: "Team creator",
+        icon: crate::icons::PLUS_CIRCLE,
+    },
+    PlannedTool {
+        id: "ruleset-editor",
+        label: "Ruleset editor",
+        icon: crate::icons::SCROLL,
+    },
+    PlannedTool {
+        id: "db-generator",
+        label: "DB generator",
+        icon: crate::icons::DATABASE,
+    },
+];
+
+/// A shell with the Save editor registered and the rest of the registry drawn as
+/// planned entries: fourteen entries, as the build shows them.
+fn draft_window_shell() -> Shell {
+    let (save_editor, calls) = stub("save-editor", "Save editor", None);
+    let dir = TestDir::new("studio_core_sidebar_draft_window");
+    let mut shell = shell_with(
+        test_settings(dir.path()),
+        vec![save_editor],
+        REGISTRY,
+        Some(dir.path().to_path_buf()),
+        vec![calls],
+    );
+    shell._dir = Some(dir);
+    shell
+}
+
+/// One frame of `app` at the draft's 1280 by 780 window, with `events` as its input
+/// and `time` as its clock.
+fn draft_window_frame(
+    egui_ctx: &egui::Context,
+    app: &mut StudioApp,
+    events: Vec<egui::Event>,
+    time: Option<f64>,
+) -> FrameOutput {
+    let mut input = raw_input(events, true, time, None);
+    input.screen_rect = Some(egui::Rect::from_min_size(
+        egui::Pos2::ZERO,
+        egui::vec2(1280.0, 780.0),
+    ));
+    run_frame(egui_ctx, app, input)
+}
+
+/// The rail of `draft_window_shell` at the draft's window, after three frames, so
+/// every layout pass has settled.
+fn rail_at_draft_window() -> FrameOutput {
+    let Shell { mut app, _dir, .. } = draft_window_shell();
+    let egui_ctx = test_context();
+    let mut out = None;
+    for _ in 0..3 {
+        out = Some(draft_window_frame(&egui_ctx, &mut app, Vec::new(), None));
+    }
+    out.expect("three frames ran")
+}
+
+/// The rail and the opened sidebar of `draft_window_shell` at the draft's window, the
+/// pointer resting on `node_text`'s widget: the rail's frame before the hover delay
+/// runs out (the widget hovered), then the open one after it.
+fn rail_and_open_at_draft_window(node_text: &str) -> (FrameOutput, FrameOutput) {
+    let Shell { mut app, _dir, .. } = draft_window_shell();
+    let egui_ctx = test_context();
+    let settled = draft_window_frame(&egui_ctx, &mut app, Vec::new(), Some(0.9));
+    let node = settled
+        .nodes
+        .iter()
+        .find(|node| node.label() == Some(node_text))
+        .unwrap_or_else(|| panic!("no widget labeled {node_text:?}"));
+    let rail = draft_window_frame(&egui_ctx, &mut app, hover(node), Some(1.0));
+    let open = draft_window_frame(&egui_ctx, &mut app, Vec::new(), Some(1.2));
+    assert_eq!(
+        (
+            painted_text_count(&rail, "Help"),
+            painted_text_count(&open, "Help")
+        ),
+        (0, 1),
+        "the first frame is the rail, the second the opened sidebar with its labels"
+    );
+    (rail, open)
+}
+
+/// The bounds of the rail entry showing `text`: a button's text is its label, a
+/// planned entry's its value.
+fn rail_bounds(nodes: &[accesskit::Node], text: &str) -> accesskit::Rect {
+    nodes
+        .iter()
+        .find(|node| node.label() == Some(text) || node.value() == Some(text))
+        .and_then(|node| node.bounds())
+        .unwrap_or_else(|| panic!("no rail entry shows {text:?}"))
+}
+
+/// The horizontal lines drawn on the rail, top to bottom: the frame's line segments
+/// that start and end left of the rail's edge stroke.
+fn rail_lines(out: &FrameOutput) -> Vec<([egui::Pos2; 2], egui::Stroke)> {
+    let mut lines: Vec<_> = out
+        .shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke }
+                if points[0].y == points[1].y && points[1].x < RAIL_WIDTH - 1.0 =>
+            {
+                Some((*points, *stroke))
+            }
+            _ => None,
+        })
+        .collect();
+    lines.sort_by(|a, b| a.0[0].y.total_cmp(&b.0[0].y));
+    lines
+}
+
+/// Asserts `actual` is within one point of the draft's `expected`.
+fn assert_at_draft(actual: f64, expected: f64, what: &str) {
+    assert!(
+        (actual - expected).abs() <= 1.0,
+        "{what} at {actual}, the draft's at {expected}"
+    );
+}
+
+// The rail's top block as the draft lays it out (`.rail` padding 6 and gap 2):
+// the 32-point logo at 6, the selector under it at 40 spanning the rail's inner
+// width, and the line under the selector on the draft's row 64.
+#[test]
+fn the_rails_logo_selector_and_line_sit_at_the_drafts_rows() {
+    let out = rail_at_draft_window();
+    let logo = rail_bounds(&out.nodes, "4cc");
+    assert_at_draft(logo.y0, 6.0, "the logo's top");
+    assert_at_draft(logo.y1, 38.0, "the logo's bottom");
+    let selector = combo(&out.nodes).bounds().unwrap();
+    assert_at_draft(selector.y0, 40.0, "the selector's top");
+    assert_at_draft(selector.x0, 5.5, "the selector's left");
+    assert_at_draft(selector.x1, 49.5, "the selector's right");
+    let lines = rail_lines(&out);
+    let ([start, end], _) = lines.first().expect("a line is drawn under the selector");
+    assert_at_draft(f64::from(start.y), 64.5, "the line under the selector");
+    assert_at_draft(f64::from(start.x), 6.0, "the line's left end");
+    assert_at_draft(f64::from(end.x), 49.0, "the line's right end");
+}
+
+// The entries are the draft's 30-point rows 2 apart (`.rail` gap 2): the first at
+// 71, the fourteenth thirteen pitches of 32 below it.
+#[test]
+fn the_rails_entries_are_32_points_apart() {
+    let out = rail_at_draft_window();
+    assert_at_draft(
+        rail_bounds(&out.nodes, "Save editor").y0,
+        71.0,
+        "the first entry's top",
+    );
+    assert_at_draft(
+        rail_bounds(&out.nodes, "DB generator").y0,
+        487.0,
+        "the last entry's top",
+    );
+}
+
+// The draft separates the help and the gear from the entries with the line it
+// draws under the selector: the same stroke over the same span, on row 681.
+#[test]
+fn a_line_above_the_help_matches_the_line_under_the_selector() {
+    let out = rail_at_draft_window();
+    let lines = rail_lines(&out);
+    assert_eq!(lines.len(), 2, "two lines on the rail: {lines:?}");
+    let (under_selector, above_help) = (lines[0], lines[1]);
+    assert_at_draft(
+        f64::from(above_help.0[0].y),
+        681.5,
+        "the line above the help",
+    );
+    assert_eq!(
+        (above_help.0[0].x, above_help.0[1].x, above_help.1),
+        (
+            under_selector.0[0].x,
+            under_selector.0[1].x,
+            under_selector.1
+        ),
+        "the line above the help has the span and stroke of the one under the selector"
+    );
+}
+
+// The help and the gear rows sit at the rail's foot as the draft's tail: the gear
+// 6 above the rail's bottom at 756 (`.rail` padding 6), the help one gap of 2 above it.
+#[test]
+fn the_help_and_the_gear_sit_at_the_drafts_rows() {
+    let out = rail_at_draft_window();
+    assert_at_draft(rail_bounds(&out.nodes, "Help").y0, 688.0, "the help's top");
+    assert_at_draft(
+        rail_bounds(&out.nodes, "Settings").y0,
+        720.0,
+        "the gear's top",
+    );
+}
+
+// The draft's entries carry a 3-point left border, transparent but on the active
+// one, so a glyph centres in the rest of the row: at x 29 on the rail, and at the
+// same x in the opened sidebar, where it starts 3 + 8 past the row's left.
+#[test]
+fn every_rail_icon_centres_right_of_the_accent_bar_on_the_rail_and_open() {
+    let mut glyphs: Vec<&str> = REGISTRY
+        .iter()
+        .filter(|entry| entry.id != "save-editor")
+        .map(|entry| entry.icon)
+        .collect();
+    // The registered stub's icon, the help's and the gear's.
+    glyphs.extend(["i", crate::icons::QUESTION, crate::icons::GEAR]);
+    let (rail, open) = rail_and_open_at_draft_window("Save editor");
+    let left_strip = egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(RAIL_WIDTH, 780.0));
+    for (state, out) in [("rail", &rail), ("open", &open)] {
+        for glyph in &glyphs {
+            let shape = text_shape_in(out, glyph, left_strip)
+                .unwrap_or_else(|| panic!("{glyph:?} is painted ({state})"));
+            let centre = shape.pos.x + shape.galley.size().x / 2.0;
+            assert_at_draft(
+                f64::from(centre),
+                29.0,
+                &format!("the {glyph:?} glyph's centre ({state})"),
+            );
+        }
+    }
+}
+
+// The logo is the draft's `.logo` 32-point square: it alone senses and fills on
+// hover, centred in the icon cell on the rail and at the same place open (the
+// draft's 11.5 and 12), its "4cc" centred on it where it was.
+#[test]
+fn the_logo_is_a_32_point_square_on_the_rail_and_open() {
+    let (rail, open) = rail_and_open_at_draft_window("4cc");
+    for (state, out, draft_left) in [("rail", &rail, 11.5), ("open", &open, 12.0)] {
+        let logo = rail_bounds(&out.nodes, "4cc");
+        assert_at_draft(logo.x0, draft_left, &format!("the logo's left ({state})"));
+        assert_at_draft(
+            logo.x1 - logo.x0,
+            32.0,
+            &format!("the logo's width ({state})"),
+        );
+        assert!(
+            filled_at(out, logo),
+            "the hovered logo fills its square ({state})"
+        );
+        let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 780.0));
+        let text = text_shape_in(out, "4cc", screen).expect("the logo's text is painted");
+        let text_rect = egui::Rect::from_min_size(text.pos, text.galley.size());
+        assert!(
+            (text_rect.center().x - 27.5).abs() <= 0.5
+                && (text_rect.center().y - 22.0).abs() <= 0.5,
+            "the logo's text stays centred at (27.5, 22) ({state}): {text_rect:?}"
+        );
+    }
 }
