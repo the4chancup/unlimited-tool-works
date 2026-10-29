@@ -1477,6 +1477,7 @@ mod live_aatf;
 mod live_marks;
 mod open_menu;
 mod overlap;
+mod patch;
 mod player;
 mod prompt;
 mod quick_actions;

@@ -190,8 +190,9 @@ fn separated(entries: &[(String, f64, f64)], lines: &[f64], above: usize, below:
 }
 
 /// No Panels menu; the Savefile menu holds the whole save's work grouped
-/// by what it acts on: the Comparator, a separator, the roster sheet and
-/// Multi-team AATF, a separator, Fix database.
+/// by what it acts on: the Comparator and Apply aesthetics patch, a
+/// separator, the roster sheet and Multi-team AATF, a separator, Fix
+/// database.
 #[test]
 fn the_savefile_menu_takes_the_comparator_and_there_is_no_panels_menu() {
     let path = fixture(PesVersion::Pes21, "toolbar_savefile");
@@ -211,14 +212,19 @@ fn the_savefile_menu_takes_the_comparator_and_there_is_no_panels_menu() {
         labels,
         [
             "Comparator\u{2026}",
+            "Apply aesthetics patch\u{2026}",
             "Output rosters to TSV\u{2026}",
             "Multi-team AATF\u{2026}",
             "Fix database\u{2026}",
         ]
     );
-    assert!(separated(&entries, &lines, 0, 1), "after the Comparator");
-    assert!(!separated(&entries, &lines, 1, 2), "the reports together");
-    assert!(separated(&entries, &lines, 2, 3), "before Fix database");
+    assert!(
+        !separated(&entries, &lines, 0, 1),
+        "the panels reading another file together"
+    );
+    assert!(separated(&entries, &lines, 1, 2), "after the patch entry");
+    assert!(!separated(&entries, &lines, 2, 3), "the reports together");
+    assert!(separated(&entries, &lines, 3, 4), "before Fix database");
 }
 
 /// A menu item's shortcut is drawn right of its label in the weak colour,

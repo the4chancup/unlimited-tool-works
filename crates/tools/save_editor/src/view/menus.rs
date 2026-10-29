@@ -1,7 +1,7 @@
 //! The toolbar's menu buttons: the Player menu's four stat operations and FPC toggle,
 //! the Team menu's operations over the selected row's team, each a
 //! sealed undo entry (`session/{player,team}_ops.rs`), the Savefile
-//! menu's Comparator, roster sheet and Fix database
+//! menu's Comparator, Apply aesthetics patch, roster sheet and Fix database
 //! (`session/database.rs`), and the dialogs they open (`Boglo`,
 //! `StatNum`, `CopySwap` and the Fix database confirmation; the draft's
 //! `dlgBoglo`, `dlgNum`, `dlgCopySwap` and `dlgFixDb`).
@@ -226,7 +226,9 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
 
 /// The Savefile menu button (the draft's `databaseMenu`), the whole save's
 /// work grouped by what it acts on: the Comparator, which reads a second
-/// save against this one; then the reports, Output rosters to TSV, a pure
+/// save against this one, and Apply aesthetics patch, which reads a Team
+/// compiler's patch against it, the one aesthetics write the aesthetics
+/// lock leaves open; then the reports, Output rosters to TSV, a pure
 /// read of the open save so never locked — `rfd`'s save dialog with
 /// `EDIT.tsv` as the default name, a write error shown as the refusal —
 /// and Multi-team AATF, a read too (`multi_aatf`); then Fix database,
@@ -246,8 +248,16 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         let Some(session) = view.session.as_mut() else {
             return;
         };
+        // One floating panel at a time: each closes the other, which would
+        // otherwise stand under it.
         if ui.button("Comparator\u{2026}").clicked() {
             view.comparator.open = true;
+            view.patch.open = false;
+            ui.close();
+        }
+        if ui.button("Apply aesthetics patch\u{2026}").clicked() {
+            view.patch.open = true;
+            view.comparator.open = false;
             ui.close();
         }
         ui.separator();

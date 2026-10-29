@@ -21,6 +21,7 @@ mod live_marks;
 mod menus;
 mod multi_aatf;
 mod open_menu;
+mod patch;
 mod player_list;
 mod portraits;
 pub(crate) mod prompt;
@@ -138,6 +139,11 @@ pub(crate) struct SaveView {
     /// The comparator's Pick dialog (`rfd`, stubbed in tests — the
     /// toolbar's Open dialog pattern).
     open_save_dialog: comparator::OpenSaveDialog,
+    /// The Apply aesthetics patch panel's state; closed at start.
+    patch: patch::Patch,
+    /// The patch panel's Open patch dialog (`rfd` on `.toml` files,
+    /// stubbed in tests: the `open_save_dialog` pattern).
+    patch_dialog: comparator::OpenSaveDialog,
     /// The Generate dialog's state while it is open (the Player menu's
     /// `settings.toml` and in-game face items); `None` while it is closed.
     generate: Option<generate::Generate>,
@@ -394,6 +400,8 @@ impl SaveView {
             rules: None,
             comparator: comparator::Comparator::new(),
             open_save_dialog: comparator::default_open_dialog(),
+            patch: patch::Patch::new(),
+            patch_dialog: patch::default_patch_dialog(),
             generate: None,
             pick_folder_dialog: generate::default_pick_folder(),
             notice: None,
@@ -742,6 +750,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     multi_aatf::dialog(ui, view);
     generate::dialog(ui, view);
     comparator::show(ui, view);
+    patch::show(ui, view);
     prompt::show(ui, view, running);
     prompt::edit_mode_dialog(ui, view, running);
     ruleset_picker::dialog(ui, view);
