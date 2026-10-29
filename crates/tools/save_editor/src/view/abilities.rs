@@ -637,15 +637,17 @@ fn playable_positions(
 }
 
 /// The 25 stats of `ABILITY_STATS` in one column in the game's order (the
-/// view's third column), each label right-aligned against its `DragValue`
-/// 40-99 (the draft's `td.ilabel`), so a short label stands as close to
-/// its number as a long one; a stat the version lacks shows `-`, disabled.
-/// The label column is measured, the widest label's width, because a
-/// right-aligned label needs the column's width before the first row
-/// draws. `marks` is Live AATF's held check's: a stat a violation is
-/// about carries its mark before the label column's left edge, over the
-/// cell padding before it, keyed to the column rather than the text so
-/// the stats' marks share one x whatever the labels' lengths.
+/// view's third column), each label beside its `DragValue` 40-99 (the
+/// draft's `td.ilabel`): the labels start at one x, the grid's first
+/// column, and the numbers stand in its second, so a short label stands
+/// far from its number; a stat the version lacks shows `-`, disabled.
+/// The grid sizes the label column to the widest label itself: a new
+/// grid's first pass is an invisible sizing pass, so the numbers stand at
+/// their final x from the first frame drawn. `marks` is Live AATF's held
+/// check's: a stat a violation is about carries its mark before its
+/// label's left edge, over the cell padding before it; every label starts
+/// at the column's left edge, so the stats' marks share one x whatever
+/// the labels' lengths.
 fn ability_stats(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -654,27 +656,12 @@ fn ability_stats(
     marks: Option<live_marks::Marks<'_>>,
 ) {
     let abilities = stats.abilities();
-    let label_column = ABILITY_STATS
-        .iter()
-        .map(|label| info_strip::label_width(ui, &title_case(label)))
-        .fold(0.0, f32::max);
-    let label_height = ui.text_style_height(&egui::TextStyle::Body);
     egui::Grid::new("abilities stats")
         .num_columns(2)
         .spacing(egui::vec2(info_strip::FIELD_ROW_GAP, FORM_ROW_SPACING))
         .show(ui, |ui| {
             for (index, &label) in ABILITY_STATS.iter().enumerate() {
-                let label_cell = ui
-                    .allocate_ui_with_layout(
-                        egui::vec2(label_column, label_height),
-                        egui::Layout::right_to_left(egui::Align::Center),
-                        |ui| {
-                            ui.set_min_width(label_column);
-                            ui.label(title_case(label));
-                        },
-                    )
-                    .response
-                    .rect;
+                let label_cell = ui.label(title_case(label)).rect;
                 match abilities[index] {
                     Some(value) => {
                         number_field(

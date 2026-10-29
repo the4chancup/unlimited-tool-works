@@ -279,7 +279,7 @@ fn a_stat_the_version_lacks_shows_a_dash_disabled() {
 
 // The ability stats sit in one column in the game's order, each label
 // beside its number: the 25 stats run top to bottom, their labels'
-// right edges at one x, each label's SpinButton on its row.
+// left edges at one x, each label's SpinButton on its row.
 #[test]
 fn the_stats_fill_one_column_in_the_games_order() {
     let path = fixture(PesVersion::Pes21, "stats_column");
@@ -299,13 +299,13 @@ fn the_stats_fill_one_column_in_the_games_order() {
         .iter()
         .map(|name| pes_savefile::interchange::team_toml::labels::title_case(name))
         .collect();
-    let x1 = at(&labels[0]).x1;
+    let x0 = at(&labels[0]).x0;
     let mut top = f64::MIN;
     for label in &labels {
         let bounds = at(label);
         assert!(
-            (bounds.x1 - x1).abs() < 1.0,
-            "{label} shares the column's x1"
+            (bounds.x0 - x0).abs() < 1.0,
+            "{label} shares the column's x0"
         );
         assert!(bounds.y0 > top, "{label} sits below the stat above");
         top = bounds.y0;
@@ -316,13 +316,14 @@ fn the_stats_fill_one_column_in_the_games_order() {
     }
 }
 
-// The ability stats' labels stand right-aligned against their numbers:
-// every label's right edge at one x, 12 points before its box, centred on
-// its box's row, and the widest one starting the cell padding (6) in from
-// the panel's title, where the labels started when left-aligned.
+// The ability stats' labels stand left-aligned in one column: every
+// label's left edge at the label cell's, the cell padding (6) in from the
+// panel's title, a short label (Jump) at the same x as a long one
+// (Defensive Prowess). Every box starts at one x, 12 points after the
+// widest label's right edge, and each label is centred on its box's row.
 #[test]
-fn the_stats_labels_stand_right_aligned_twelve_before_their_boxes() {
-    let path = fixture(PesVersion::Pes21, "stats_right_aligned");
+fn the_stats_labels_start_at_one_x_and_their_boxes_at_another() {
+    let path = fixture(PesVersion::Pes21, "stats_left_aligned");
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
@@ -331,8 +332,28 @@ fn the_stats_labels_stand_right_aligned_twelve_before_their_boxes() {
         .iter()
         .map(|name| pes_savefile::interchange::team_toml::labels::title_case(name))
         .collect();
-    let right = label_bounds(&nodes, &labels[0]).x1;
-    let mut left = f64::MAX;
+    let title = label_bounds(&nodes, "Ability stats").x0;
+    let cell_left = title + 6.0;
+    let jump = label_bounds(&nodes, "Jump");
+    let defensive = label_bounds(&nodes, "Defensive Prowess");
+    assert!(
+        jump.x1 - jump.x0 < defensive.x1 - defensive.x0,
+        "premise: Jump is the shorter label ({jump:?} vs {defensive:?})"
+    );
+    assert!(
+        (jump.x0 - defensive.x0).abs() <= 0.5,
+        "Jump starts where Defensive Prowess does ({} vs {})",
+        jump.x0,
+        defensive.x0
+    );
+    let widest = labels
+        .iter()
+        .map(|label| {
+            let bounds = label_bounds(&nodes, label);
+            bounds.x1 - bounds.x0
+        })
+        .fold(f64::MIN, f64::max);
+    let box_left = cell_left + widest + 12.0;
     for label in &labels {
         let bounds = label_bounds(&nodes, label);
         let field = right_of_label(&nodes, label, Role::SpinButton)
@@ -341,27 +362,20 @@ fn the_stats_labels_stand_right_aligned_twelve_before_their_boxes() {
             .bounds()
             .expect("bounds");
         assert!(
-            (bounds.x1 - right).abs() <= 0.5,
-            "{label}'s right edge {} at the column's {right}",
-            bounds.x1
+            (bounds.x0 - cell_left).abs() <= 0.5,
+            "{label}'s left edge {} at the label cell's {cell_left}",
+            bounds.x0
         );
         assert!(
-            (field.x0 - bounds.x1 - 12.0).abs() <= 0.5,
-            "{label} ends 12 before its box ({} vs {})",
-            bounds.x1,
+            (field.x0 - box_left).abs() <= 0.5,
+            "{label}'s box at {}, 12 after the widest label at {box_left}",
             field.x0
         );
         assert!(
             ((bounds.y0 + bounds.y1) / 2.0 - (field.y0 + field.y1) / 2.0).abs() <= 0.5,
             "{label} centred on its box's row ({bounds:?} vs {field:?})"
         );
-        left = left.min(bounds.x0);
     }
-    let title = label_bounds(&nodes, "Ability stats").x0;
-    assert!(
-        (left - title - 6.0).abs() <= 0.5,
-        "the leftmost label 6 in from the title ({left} vs {title})"
-    );
 }
 
 // The ability stats' rows stand 22 apart, as the draft's grid rows do: an

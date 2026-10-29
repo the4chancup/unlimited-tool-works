@@ -573,8 +573,8 @@ fn assert_left_of_label(mark: &egui::epaint::TextShape, label: accesskit::Rect, 
 
 /// Asserts an ability stat's `mark` has its 11-point box end 2 points
 /// (± 0.5) before the stats' label column, whose left edge is the leftmost
-/// stat label's (the labels are right-aligned against their boxes, so the
-/// widest one starts the column).
+/// stat label's (the labels are left-aligned, so every one starts the
+/// column).
 fn assert_before_stat_column(
     mark: &egui::epaint::TextShape,
     nodes: &[accesskit::Node],
@@ -612,7 +612,7 @@ fn label_starting(nodes: &[accesskit::Node], prefix: &str) -> accesskit::Rect {
 
 /// Three ability stats one over the regulars' 77 target (still regular:
 /// a medal's recognition threshold is higher) raise a `Stat` error each:
-/// the labels being right-aligned, each stat's cross stands at the label
+/// the labels being left-aligned, each stat's cross stands at the label
 /// column's left edge, its box ending 2 points before it whether the
 /// label is long (Attacking Prowess) or short (Speed), the three crosses
 /// on one centre x, and no label moved from the run with Live AATF off.
