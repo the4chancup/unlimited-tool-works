@@ -1,4 +1,4 @@
-# 4cc Studio — DB generator plan
+# Unlimited Tool Works — DB generator plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -179,7 +179,7 @@ crates/tools/db_generator/
     └── parity/         # the scripts' output for the three-team list, per version
 ```
 
-CLI: `4cc-studio db-generator generate --version 21 --teams-list teams_list.txt --out ./database_21
+CLI: `UTW db-generator generate --version 21 --teams-list teams_list.txt --out ./database_21
 [--pes-install <dir>] [--cpk] [--edit <EDIT00000000>]`.
 
 ## Verification

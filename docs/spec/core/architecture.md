@@ -1,4 +1,4 @@
-# 4cc Studio — Core plan: Architecture
+# Unlimited Tool Works — Core plan: Architecture
 
 Part of the [Core plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -111,11 +111,12 @@ crates.io, so no blanket prefix is needed):
   `match_feed`, `color_tools`.
 - **The `studio` prefix is reserved for the platform itself**: `studio` (the crate that builds
   the executable) and `studio_core`, where it is meaningful rather than a lazy namespace.
-- **The executable is `4cc-studio`** (`4cc-studio.exe` on Windows), set by the `studio` crate's
-  `[[bin]] name`. It ships standalone and lands in download folders, where a bare `studio.exe`
-  says nothing about what it is. The crates keep `studio`/`studio_core`: a crate name cannot
-  start with a digit, and no user sees crate names.
-- **CLI subcommands and tool ids keep hyphens** (`4cc-studio team-compiler ...`, id `"team-compiler"`) —
+- **The executable is `utw`**, set by the `studio` crate's `[[bin]] name`, and the release
+  recipe names it `UTW.exe` in the Windows bundle (`plans/core/development_plan.md` "The
+  project's name: Unlimited Tool Works"). It ships standalone and lands in download folders,
+  where a bare `studio.exe` would say nothing about what it is. The crates keep
+  `studio`/`studio_core`: no user sees crate names, and renaming them needs no migration.
+- **CLI subcommands and tool ids keep hyphens** (`UTW team-compiler ...`, id `"team-compiler"`) —
   that's CLI convention, independent of package names.
 
 **`studio_core`** — the platform, containing only what runs with zero tools:
@@ -252,10 +253,10 @@ The binary has two launch modes, distinguished by its arguments:
 
 | Invocation | Behavior |
 |---|---|
-| `4cc-studio` | GUI, the first registered tool active |
-| `4cc-studio <tool-id> <command> [args]` | Headless CLI: the tool's `cli_run`, console output, exit code |
+| `UTW` | GUI, the first registered tool active |
+| `UTW <tool-id> <command> [args]` | Headless CLI: the tool's `cli_run`, console output, exit code |
 
-`--gui` is a global flag parsed by `4cc-studio` before tool dispatch, so no tool's `clap::Command`
+`--gui` is a global flag parsed by `UTW` before tool dispatch, so no tool's `clap::Command`
 knows about it.
 
 ### Tool plugin interface
@@ -303,7 +304,7 @@ pub trait StudioTool {
     fn cli_command(&self) -> clap::Command;
     fn cli_run(&self, matches: &clap::ArgMatches, ctx: &ToolContext) -> Result<u8, CliError>;
 
-    /// GUI autorun for `4cc-studio --gui <tool-id> <command>` (see "Launch modes"):
+    /// GUI autorun for `UTW --gui <tool-id> <command>` (see "Launch modes"):
     /// perform the already-parsed CLI command inside the GUI, as if the user had
     /// pressed the corresponding button. Called once by the shell after the
     /// tool's view has been created; the tool may queue the action until its
@@ -388,11 +389,11 @@ CLI dispatch uses standard clap subcommands (each tool contributes one), which i
 CLI shape:
 
 ```
-4cc-studio team-compiler compile ./exports_folder
-4cc-studio team-compiler check ./exports_folder
+UTW team-compiler compile ./exports_folder
+UTW team-compiler check ./exports_folder
 ```
 
-(An argument-flag style like `4cc-studio --team-compiler compile ...` would work too, but subcommands
+(An argument-flag style like `UTW --team-compiler compile ...` would work too, but subcommands
 are what clap and CLI conventions are built around — better help output, completion support, and
 per-subcommand argument validation.)
 

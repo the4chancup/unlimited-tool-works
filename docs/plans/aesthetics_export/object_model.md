@@ -1,4 +1,4 @@
-# 4cc Studio — Aesthetics export plan: Object model
+# Unlimited Tool Works — Aesthetics export plan: Object model
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

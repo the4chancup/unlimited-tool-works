@@ -1,4 +1,4 @@
-# 4cc Studio — Savefile plan: Operations
+# Unlimited Tool Works — Savefile plan: Operations
 
 Part of the [Savefile plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -299,7 +299,7 @@ lineup), and every player with **all** known fields — gameplay stats, skills,
 positions, motion, edit flags, and the complete aesthetics including the
 ingame-face parameters (which the legacy formats omit). Goals:
 
-- Readable and editable in a text editor without opening 4cc Studio.
+- Readable and editable in a text editor without opening Unlimited Tool Works.
 - The per-player authorable appearance tables use the exact `PlayerSettings` schema from
   `settings.toml`. Full player records additionally retain boots/gloves IDs over their whole
   stored range for save interchange, at player level; `settings.toml`'s own top-level
@@ -683,7 +683,7 @@ compiler-owned fields besides — the only route for aesthetics — and `parse`,
 ```toml
 # aesthetics_patch.toml, written by the Team compiler to its output folder
 pes_version = 21
-studio_version = "1.4.0"
+tool_version = "1.4.0"
 allocation_scheme_version = 1
 cpks = ["4cc_69.cpk"]          # the CPKs the run published; none for a sideload tree
 compiled = 2026-09-12T14:03:00Z
@@ -737,7 +737,7 @@ pub const ALLOCATION_SCHEME_VERSION: u32 = 1;
 /// `aesthetics_patch.toml`: the compiler's resolved savefile writes for its compiled players.
 pub struct AestheticsPatch {
     pub pes_version: PesVersion,
-    pub studio_version: String,
+    pub tool_version: String,
     pub allocation_scheme_version: u32,
     /// The CPKs the run published; empty for a sideload tree.
     pub cpks: Vec<String>,

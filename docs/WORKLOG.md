@@ -4725,7 +4725,7 @@ briefs, review loops, gates and mutation runs as for any step.
     as wide as tall: the maintainer, 2026-10-28), each sheet carrying the change's reason under
     its caption (the maintainer, 2026-10-28), generalized from its cases list to a
     revision pair and a link, with its test
-- [ ] 0.0.1rn the project renamed Unlimited Tool Works (the maintainer, 2026-10-28: "when most
+- [x] 0.0.1rn the project renamed Unlimited Tool Works (the maintainer, 2026-10-28: "when most
   convenient"): `unlimited-tool-works` as the name in paths and packages, UTW as the shorthand,
   the exe `UTW.exe` (`utw` on Linux; DECISIONS "The final pass's second rulings"). Before the
   cut is the convenient time: the first release fixes the exe's name, the data folder
@@ -4755,10 +4755,16 @@ briefs, review loops, gates and mutation runs as for any step.
     shared group `**General**` (`plans/core/distribution.md`, was `**Studio**`). The drafts'
     code comments keep "Studio" until rn3. Files: `docs/prototypes/{index.html,
     tools/ruleset_editor.js,tools/export_upgrader.js}`
-  - [ ] rn3 the docs (the lead, after rn1 lands): every plan and spec file's title, the CLI
+  - [x] rn3 the docs (the lead, after rn1 lands): every plan and spec file's title, the CLI
     examples (`UTW <tool-id> ...`), the settings folder's and the log's names, "Studio" as the
     project's name in prose; README, AGENTS, CONTRIBUTING, RUNBOOK; the glossary's "Studio"
-    entry kept for the code's names
+    entry kept for the code's names. Done 2026-10-29 by `.tmp/0_0_1rn/rn3_docs2.py` (dry run read line by line):
+    "4cc Studio" → Unlimited Tool Works in every plan/spec title and prose, `UTW` in the CLI's
+    examples, `UTW.exe`, the `unlimited-tool-works` folders, `utw.log`, `tool_version`, the
+    shared-IDs path, `LICENSE-MIT`'s contributors; the rename's own plan section, the history
+    files and the repository's and developers' folders untouched. The bare "Studio" stays the
+    working name in prose (the plan amended: rewriting ~250 of them buys a member nothing and
+    sets the docs apart from the code); GLOSSARY rows for both names
 - [ ] 0.0.1f the cut, once the Save editor's view is done (the Ruleset editor left 0.0.1 on
   2026-10-24, `plans/core/development_plan.md` "Development Plan"): the bundled settings picking
   DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`

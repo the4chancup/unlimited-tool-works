@@ -1,8 +1,8 @@
-# 4cc Studio — Kit config editor plan
+# Unlimited Tool Works — Kit config editor plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
-What exists of this is in `spec/kit_config_editor.md` "4cc Studio — Kit config editor plan".
+What exists of this is in `spec/kit_config_editor.md` "Unlimited Tool Works — Kit config editor plan".
 
 The Kit config editor (`crates/tools/kit_config_editor`, tool id `kit-config-editor`,
 sidebar label "Kit config editor") is the successor to **Kit Manager PES2016** by

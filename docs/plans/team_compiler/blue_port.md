@@ -1,4 +1,4 @@
-# 4cc Studio — Team compiler plan: Blue features to port
+# Unlimited Tool Works — Team compiler plan: Blue features to port
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -36,4 +36,4 @@ What exists of this is in `spec/team_compiler/blue_port.md` "Features that disap
 | Settings transfer between versions | `settings_management.py:130-211` | Settings versioning in the GUI |
 | Interactive settings editing | `settings_management.py:23-66` | GUI form fields |
 | Comment-preserving INI parser | `commentedconfigparser` dependency | Not needed; GUI manages settings |
-| Log username cleaner | `log_username_clean.py` | `studio.log` writes the home directory as `~` (`spec/core/architecture.md` "Diagnostic logging") |
+| Log username cleaner | `log_username_clean.py` | `utw.log` writes the home directory as `~` (`spec/core/architecture.md` "Diagnostic logging") |

@@ -1,4 +1,4 @@
-# 4cc Studio — Core plan: Distribution and updates
+# Unlimited Tool Works — Core plan: Distribution and updates
 
 Part of the [Core plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -81,7 +81,7 @@ Settings and data live in one of two locations:
 - **Next to the executable** — a `data/` subfolder beside the binary. Fully portable: the folder
   carries the program and everything it persists; deleting it removes the program completely, moving
   it moves everything.
-- **In the user config directory** — `%APPDATA%\4cc-studio` on Windows, `~/.config/4cc-studio` on
+- **In the user config directory** — `%APPDATA%\unlimited-tool-works` on Windows, `~/.config/unlimited-tool-works` on
   Linux (via the `directories` crate). Survives deleting or replacing the program folder.
 
 Resolution at startup is **presence-based, no marker files** (EGG's mechanism): if
@@ -146,7 +146,7 @@ all crates at once.
 
 Rationale:
 
-- **The binary is the release unit.** Users download `4cc-studio.exe`; the self-updater compares
+- **The binary is the release unit.** Users download `UTW.exe`; the self-updater compares
   `CARGO_PKG_VERSION` against a GitHub Release tag. The version they see *is* the suite version.
   Independent crate versions would be invisible to every actual consumer.
 - **Nothing is published to crates.io.** Per-crate semver exists to signal breaking changes to
@@ -154,7 +154,7 @@ Rationale:
   another internal crate), all compiled together in one binary.
 - **Tools are compile-time plugins**, statically registered in `studio`. A "team_compiler 2.0 vs.
   studio 1.5" compatibility question is impossible by construction — a version mismatch can't ship.
-- **Changelog and rollback are per-Studio-release.** Release notes are "4cc Studio 1.4 adds the
+- **Changelog and rollback are per-Studio-release.** Release notes are "Unlimited Tool Works 1.4 adds the
   Balls compiler"; the rollback button swaps two binaries in `old/`. Both only make sense on one
   version axis.
 
@@ -167,7 +167,7 @@ surfaces binds from 1.0.0: the `0.x` releases are test releases for a restricted
 testers, told in person of every change, so everything can still change before then.
 
 The version a member sees is `v{CARGO_PKG_VERSION}`: in the status bar, and from `--version`
-beside the executable's name (`UnlimitedToolWorks v0.0.1`), the line a bug report quotes.
+beside the executable's name (`UTW v0.0.1`), the line a bug report quotes.
 
 **One exception: `python_bindings`.** It is built via maturin into a wheel that Blender users
 install independently of the Studio binary, and its consumers are not Studio users. Its version is

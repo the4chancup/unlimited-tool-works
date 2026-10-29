@@ -1,4 +1,4 @@
-# 4cc Studio — Save editor plan
+# Unlimited Tool Works — Save editor plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

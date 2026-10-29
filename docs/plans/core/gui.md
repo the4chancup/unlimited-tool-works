@@ -1,4 +1,4 @@
-# 4cc Studio — Core plan: GUI design
+# Unlimited Tool Works — Core plan: GUI design
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -376,8 +376,8 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   fallback. Rendering is
   `egui_commonmark` (CommonMark subset with tables, code blocks and links); a hand-rolled
   renderer was considered and rejected as a permanent maintenance item for a solved problem.
-- **CLI equivalence.** `4cc-studio help [tool-id] [topic]` prints the Markdown to stdout, and
-  `4cc-studio help --export <dir>` writes every chapter out as `.md` files — the wiki and the release
+- **CLI equivalence.** `UTW help [tool-id] [topic]` prints the Markdown to stdout, and
+  `UTW help --export <dir>` writes every chapter out as `.md` files — the wiki and the release
   page get the same text with no second source, and the `--export` output is what the release
   process publishes. A chapter prints as `# <title>`, then each topic as `## <title>` and its
   body, the Messages topic last as one table, so a topic file carries no title of its own and
@@ -950,7 +950,7 @@ and widgets, and the `studio` binary's launch modes); IDs are never reused; late
 The shell is not a tool, so its scenarios live here, beside the sections they prove.
 
 **Phase 8 scope.** Phase 8 completes the shell the Phase 3 slice started: the sidebar, the
-settings menu, the status bar, the window title, the help window and `4cc-studio help`, the
+settings menu, the status bar, the window title, the help window and `UTW help`, the
 log panel widget, the first-run data-location dialog, the `last_tool` reopening, the
 `--gui` autorun and the window's opening size. What a scenario observes is what a frame draws (through the headless harness
 of `studio_core/src/shell/mod.rs`: the frame's AccessKit nodes, a click as press and release
@@ -1160,8 +1160,8 @@ ST-HELP-03  GIVEN a tool's log panel showing a finding line
                  in-doc link `[text](tool-id#topic-slug)` to another tool's topic WHEN the link
                  is clicked THEN that topic is shown
 ST-HELP-04  GIVEN the built binary
-            WHEN `4cc-studio help team-compiler` runs
-            THEN stdout is the chapter's Markdown; WHEN `4cc-studio help --export <dir>` runs
+            WHEN `UTW help team-compiler` runs
+            THEN stdout is the chapter's Markdown; WHEN `UTW help --export <dir>` runs
                  THEN <dir> holds one .md file per chapter, each tool's ending with its Messages
                  topic
 ST-HELP-05  GIVEN Studio's window at 1037 × 648 points
@@ -1200,16 +1200,16 @@ ST-RUN-01   GIVEN neither settings file exists
                  directory) before any tool view, and the chosen location's settings.toml exists
                  afterwards; GIVEN one exists THEN no dialog and that location is used
 ST-RUN-02   GIVEN the GUI closed with the second tool active
-            WHEN `4cc-studio` starts again
+            WHEN `UTW` starts again
             THEN the second tool is active
 ST-RUN-03   GIVEN a tool whose gui_run does not implement the command
-            WHEN `4cc-studio --gui <tool-id> <command>` runs
+            WHEN `UTW --gui <tool-id> <command>` runs
             THEN it exits with a message naming the tool, and no window opens;
                  GIVEN a tool implementing it THEN the GUI opens with that tool active and the
                  command runs as if its button had been pressed
 ST-RUN-04   manual  GIVEN the Windows bundle
                     WHEN the exe is double-clicked
-                    THEN no console window opens beside the GUI; WHEN `4cc-studio team-compiler
+                    THEN no console window opens beside the GUI; WHEN `UTW team-compiler
                          check` runs from a terminal THEN its output reaches that terminal
 ST-RUN-05   GIVEN two stub tools each reporting unsaved work, a third tool's view active
             WHEN the window's close is requested
@@ -1222,28 +1222,28 @@ ST-RUN-06   GIVEN a stub tool reporting a run in flight, another tool's view act
             THEN the window stays and the stub's view is active with its prompt; WHEN it
                  chooses to close THEN the window closes once the run has ended, not before;
                  WHEN it chooses to keep the window THEN the window stays and the run goes on
-ST-RUN-07   GIVEN a data location holding `studio.log` and `studio.old.log` from earlier runs
+ST-RUN-07   GIVEN a data location holding `utw.log` and `utw.old.log` from earlier runs
             WHEN the GUI starts
-            THEN `studio.old.log` holds what `studio.log` held, the new `studio.log`'s first
+            THEN `utw.old.log` holds what `utw.log` held, the new `utw.log`'s first
                  line names the version, and a line logged with the home folder in it reads
                  `~` there; GIVEN no data location yet (a first run) THEN no log is written
 ST-RUN-08   manual  GIVEN a build whose window panics on a click (a test build, the panic
                     added by hand and reverted after)
                     WHEN the click is made
-                    THEN a dialog names `studio.log`'s path and repeats the panic's message,
+                    THEN a dialog names `utw.log`'s path and repeats the panic's message,
                          the process exits with 101 once it is closed, and the log ends with
                          the panic's message, its location and a backtrace
-ST-RUN-09   GIVEN a data location whose `studio.log` ends without the closing line (a session
+ST-RUN-09   GIVEN a data location whose `utw.log` ends without the closing line (a session
                   that crashed or was ended)
             WHEN the GUI starts
             THEN before the window opens a dialog says the last session did not close
-                 normally and names `studio.old.log`'s path; GIVEN it ends with the closing
+                 normally and names `utw.old.log`'s path; GIVEN it ends with the closing
                  line of a normal close or of a crash already reported THEN no dialog; GIVEN
                  no earlier log THEN no dialog
 ST-RUN-10   GIVEN the built exe started over a test data location with `--crash-test stack`
                  (handled once the monitor runs, before any window: no display needed)
             WHEN the trigger overflows the stack
-            THEN `studio.dmp` is written beside `studio.log`, reads as a minidump holding a
+            THEN `utw.dmp` is written beside `utw.log`, reads as a minidump holding a
                  thread list and the exception stream of a stack overflow (read in the test
                  by the `minidump` crate, a dev dependency), and the log's last line is the
                  monitor's naming the dump; the next start's dialog text (ST-RUN-09's, built from the old log and

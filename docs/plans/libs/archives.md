@@ -1,4 +1,4 @@
-# 4cc Studio — Library crates plan: archives
+# Unlimited Tool Works — Library crates plan: archives
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

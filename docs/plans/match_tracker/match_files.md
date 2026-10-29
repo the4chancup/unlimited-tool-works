@@ -1,4 +1,4 @@
-# 4cc Studio — Match tracker plan: Match files
+# Unlimited Tool Works — Match tracker plan: Match files
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -52,7 +52,7 @@ archives remain readable in old SEN:P-AI. Matches save as **plain JSON**
 - Latest stats and the full per-player stat-change history; the latest stats are final
   only for a finalized match. Stat records use stable catalog IDs plus display names,
   value type, and segment count; names alone are not schema keys. `catalog_id` is unique
-  within a verified 4cc Studio `game_profile_id`. Fork array positions and `visualIndex`
+  within a verified Unlimited Tool Works `game_profile_id`. Fork array positions and `visualIndex`
   values are retained only as optional provenance metadata and are never used directly as
   schema keys. Unidentified scalar fields retain their stable catalog IDs and are stored
   with field class `UnknownScalar` — their history is the raw material for identifying

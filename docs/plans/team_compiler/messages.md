@@ -1,4 +1,4 @@
-# 4cc Studio — Team compiler plan: Message catalog
+# Unlimited Tool Works — Team compiler plan: Message catalog
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

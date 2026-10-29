@@ -1,4 +1,4 @@
-# 4cc Studio — Team compiler plan
+# Unlimited Tool Works — Team compiler plan
 
 The Team compiler (`crates/tools/team_compiler`) is the flagship tool of the suite:
 the successor to the AET Compiler (Red/Blue). It compiles aesthetics exports into CPK
@@ -672,7 +672,7 @@ TC-OUT-06  withdrawn: the subset gate it tested went at step 4.20; a gloves mode
 ```
 TC-GUI-01  manual  GIVEN the studio binary
                    WHEN it is launched with no arguments
-                   THEN a window titled 4cc Studio opens, whose sidebar lists the registered tools
+                   THEN a window titled Unlimited Tool Works opens, whose sidebar lists the registered tools
 TC-GUI-02  GIVEN the tracer bullet's export in the exports folder
            WHEN Compile is clicked
            THEN the run is the CLI's `compile` on the effective settings (what it writes and
@@ -2665,7 +2665,7 @@ TC-BIN-34  GIVEN a Full /co/ export holding Boots/Crocs, Boots/adidas and Boots/
                 and 07 linking Crocs, slots 06 and 08 adidas, and slot 09 alone Birk (a shared
                 folder no player links takes no ID)
            WHEN it is compiled for PES 21
-           THEN the CPK holds 4cc_studio/shared_ids/714.toml whose [boots] names 644 adidas
+           THEN the CPK holds unlimited-tool-works/shared_ids/714.toml whose [boots] names 644 adidas
                 and 645 Crocs and not Birk, and BootsList.bin holds (71405, 645), (71406, 644),
                 (71407, 645), (71408, 644) and (71409, 629), Birk under slot 09's own ID
 TC-BIN-35  GIVEN an installed CPK below the output holding TC-BIN-34's record, and a Midcup
@@ -2687,13 +2687,13 @@ TC-BIN-36  GIVEN no installed CPK holding a /co/ record, and a Midcup /co/ expor
 TC-BIN-39  GIVEN no installed CPK holding a /co/ record, and a Midcup /co/ export whose only
                 player folder, slot 05, holds a settings.toml
            WHEN it is compiled for PES 21
-           THEN the CPK holds no 4cc_studio/shared_ids/714.toml, and no shared_ids_unrecorded
+           THEN the CPK holds no unlimited-tool-works/shared_ids/714.toml, and no shared_ids_unrecorded
                 is reported
 TC-BIN-40  GIVEN an installed CPK below the output holding an empty /co/ record, and TC-BIN-39's
                 Midcup export; and, apart, a Full /co/ export whose only player folder, slot
                 05, holds a settings.toml
            WHEN each is compiled for PES 21
-           THEN each CPK holds 4cc_studio/shared_ids/714.toml with no entry, and no
+           THEN each CPK holds unlimited-tool-works/shared_ids/714.toml with no entry, and no
                 shared_ids_unrecorded is reported
 TC-BIN-41  GIVEN four /co/ exports whose slot 05 settings.toml sets the stock ID 3 (gloves_id
                 in the first two, boots_id in the others): the first's slot 05 holding

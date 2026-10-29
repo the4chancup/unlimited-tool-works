@@ -1,4 +1,4 @@
-# 4cc Studio — Team compiler plan: Pipeline
+# Unlimited Tool Works — Team compiler plan: Pipeline
 
 Part of the [Team compiler plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -225,7 +225,7 @@ format:
    ID, see the export plan's "ID allocation"); rows whose Name is not slash-wrapped (Red's `Backup 1`, `VGL 55`
    placeholders) load but can never match. The complete `export_display_name` is never
    used as the lookup key. Valid normal `TeamId` values are 701–920. In Red, an unresolvable team
-   prompts interactively; in 4cc Studio an unresolvable normal team is a hard error
+   prompts interactively; in Unlimited Tool Works an unresolvable normal team is a hard error
    (`team_name_unknown`). A successful
    lookup produces `ExportIdentity::Team { id, name }`; a referee export produces
    `ExportIdentity::Referees` without entering the normal teams list. The referee pipeline renders
@@ -1221,7 +1221,7 @@ describes behavior, not a serial scheduling requirement:
    manifest (or, for deep-derived names, inside the owning task) — never by rayon completion or
    writer arrival order. The writer treats any path that still arrives twice as an internal
    invariant violation; canonical manifest order and normalized CPK timestamps make otherwise
-   identical builds reproducible. The CPK header's tool-version string is `4cc Studio <version>`
+   identical builds reproducible. The CPK header's tool-version string is `Unlimited Tool Works <version>`
    (the workspace version), so the same release reproduces the same bytes.
 4. **Bins last** — after all exports complete, the accumulated bins (committed mutations only) are
    written.
@@ -1493,7 +1493,7 @@ describes behavior, not a serial scheduling requirement:
     the placeholders.
 
   With any of these findings the
-  CLI prints the subcommand, `4cc-studio team-compiler upgrade-dpfl`, and never
+  CLI prints the subcommand, `UTW team-compiler upgrade-dpfl`, and never
   upgrades on its own.
   - The upgrade is an **override, not a merge**: the bundled official DPFL replaces the installed
     file byte for byte, the old one kept as `DpFileList.bin.bak` (replacing an older backup: the

@@ -2802,3 +2802,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — Form rows stand 22 apart as the drafts' grids do, through one `studio_core` constant (0.0.1ov2k). The project is to be named Unlimited Tool Works from 0.0.1 on, `UTW.exe`, its folders `unlimited-tool-works` (0.0.1rn planned; the drafts renamed, rn2).
 - **2026-10-29** — Every modal draws through one helper in the drafts' window frame (0.0.1ov2j); Live AATF's rows sit in the log's well at 150 high, the help tree is 220 wide, the Comparator opens top right (0.0.1ov2nop).
 - **2026-10-29** — The suite is named Unlimited Tool Works in code and in every file a member receives: `UTW.exe`, `unlimited-tool-works` folders, `utw.log` (0.0.1rn1).
+- **2026-10-29** — The docs take the new name where a member would see it (titles, CLI examples, folders, the log); "Studio" stays the working name in prose (0.0.1rn3). Checkpoint gates green at `c6d17d9b`: 5,189 tests.

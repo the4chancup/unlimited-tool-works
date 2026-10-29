@@ -13372,3 +13372,14 @@ Why: 0.0.1ov2m found the list's text and the name helpers laid out with egui's d
 14, where the drafts draw 12.5: at 14 DMF, CMF, AMF and RWF overflow the 28-point position
 column.
 Plan: `plans/save_editor.md` "Editing UI", the Player list bullet.
+
+## 2026-10-29 — core — "Studio" stays the working name in the docs' prose
+Decision: the docs spell the product's names where they name what a member sees (titles, the
+CLI's examples, the folders, the log, `LICENSE-MIT`'s contributors), and keep "Studio" in their
+prose as the suite's shorthand ("the Studio format", "a Studio export"), as the code's comments
+and crate names do; the glossary defines both. This replaces the plan's "the docs name the
+project UTW".
+Why: about 250 prose uses, many inside terms the code's comments share; no member reads them,
+and rewriting them would set the docs apart from the code they describe. Every member-facing
+text in the code was checked: none says "Studio".
+Plan: `plans/core/development_plan.md` "The project's name: Unlimited Tool Works".

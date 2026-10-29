@@ -1,4 +1,4 @@
-# 4cc Studio - Coding rules
+# Unlimited Tool Works - Coding rules
 
 Read this in full before writing or changing code. `AGENTS.md` covers orientation, the working
 documents, and conduct; this file covers how the code is structured, written, and verified. Every

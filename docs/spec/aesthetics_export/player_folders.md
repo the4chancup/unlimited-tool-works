@@ -1,11 +1,11 @@
-# 4cc Studio — Aesthetics export plan: Player folders
+# Unlimited Tool Works — Aesthetics export plan: Player folders
 
 Part of the [Aesthetics export plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
 ## Player folders (the Studio export format)
 
 **This is a primary motivation for the project.** The export format itself is new: it is called the
-**Studio export format** and was designed for 4cc Studio — the Team compiler is its only consumer,
+**Studio export format** and was designed for Unlimited Tool Works — the Team compiler is its only consumer,
 and nothing writes it yet. A "player folder" holds all of a player's models —
 face, boots, and gloves — in a single folder, without the old split into separate Faces/Boots/Gloves
 item folders. (Red's referee export layout was the prototype of this idea, tested only on referees;
@@ -748,11 +748,11 @@ automatically"). A cup's Midcup export carries only the shared boots and gloves 
 changed, and its CPK loads above the cup's main one, whose rows stay for every player it does
 not compile; numbering its own folders alphabetically would give a new folder B the ID an
 absent folder A holds below, and A's wearers would wear B. So every compiled CPK records, per
-team, which shared folder took which ID, in `4cc_studio/shared_ids/<team_id>.toml` (a path no
+team, which shared folder took which ID, in `unlimited-tool-works/shared_ids/<team_id>.toml` (a path no
 game reads; on both engines):
 
 ```toml
-# Written by 4cc Studio; do not edit.
+# Written by Unlimited Tool Works; do not edit.
 [boots]
 1690 = "Crocs"
 [gloves]

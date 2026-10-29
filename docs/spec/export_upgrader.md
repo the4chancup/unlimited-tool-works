@@ -1,4 +1,4 @@
-# 4cc Studio — Export upgrader plan
+# Unlimited Tool Works — Export upgrader plan
 
 The Export upgrader (`crates/tools/export_upgrader`) migrates exports from the old
 format (the AET layout, `GLOSSARY.md` "AET") to the Studio player-folder format defined in the
@@ -859,8 +859,8 @@ and left unchanged).
 ## CLI
 
 ```text
-4cc-studio export-upgrader upgrade <export> [--savefile <EDIT> | --loose] [--coverage full|midcup] [-o <dir>]
-4cc-studio export-upgrader upgrade-models <folder> [-o <dir>]
+UTW export-upgrader upgrade <export> [--savefile <EDIT> | --loose] [--coverage full|midcup] [-o <dir>]
+UTW export-upgrader upgrade-models <folder> [-o <dir>]
 ```
 
 `upgrade` takes one old export (folder, `.zip` or `.7z`); the output is a folder beside the

@@ -1,4 +1,4 @@
-# 4cc Studio — Model conversion plan: Model format conversion
+# Unlimited Tool Works — Model conversion plan: Model format conversion
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

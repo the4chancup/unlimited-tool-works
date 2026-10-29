@@ -1,4 +1,4 @@
-# 4cc Studio — Team compiler plan: Settings
+# Unlimited Tool Works — Team compiler plan: Settings
 
 Part of the [Team compiler plan](README.md). Section headings are unchanged from the single-file plan, so an existing pointer to a section still names it; only the file part of the pointer changed.
 
@@ -12,7 +12,7 @@ settings** live in the Team compiler's own settings section.
 
 | Setting | Old default | Notes |
 |---|---|---|
-| `pes_version` | 15 | Sidebar selector; 15–21. 4cc Studio defaults to 19 as the version most relevant to the current community; derives `fox_mode` (≥18), per-version file extensions, game paths, bin names |
+| `pes_version` | 15 | Sidebar selector; 15–21. Unlimited Tool Works defaults to 19 as the version most relevant to the current community; derives `fox_mode` (≥18), per-version file extensions, game paths, bin names |
 | `pes_folder_path` | `C:\Program Files (x86)\Pro Evolution Soccer 20**` | `**` replaced with the version; derives `download/` path and `PES20{version}.exe` path. Empty off Windows, where no default install folder exists |
 | `pes_folders` | — | `[common.pes_folders]`, keyed by the version's number (`21 = '…'`); empty by default. A filled entry is that version's folder taken as written (no `**` expansion), overriding `pes_folder_path`; the settings menu's "A folder per version" rows |
 | `exports_folder_path` | `exports/` | Watched by the GUI and scanned once by the CLI; belongs in `studio_core` so the Team, Refs, and Balls tools share one export source. Relative paths resolve **beside the executable** in both data-location modes (see "Path resolution"), so the folder sits next to `quick_compile.bat` like Red's `exports_to_add/` |
@@ -117,9 +117,9 @@ resolved export source.
 ### CLI
 
 ```text
-4cc-studio team-compiler compile [exports-root] [--mode normal|test|sideload] [--export <path>]... [--no-deploy] [--edit-mode-closed]
-4cc-studio team-compiler check [exports-root] [--export <path>]...
-4cc-studio team-compiler upgrade-dpfl [--yes]      # replace the installed DpFileList with the bundled official one
+UTW team-compiler compile [exports-root] [--mode normal|test|sideload] [--export <path>]... [--no-deploy] [--edit-mode-closed]
+UTW team-compiler check [exports-root] [--export <path>]...
+UTW team-compiler upgrade-dpfl [--yes]      # replace the installed DpFileList with the bundled official one
 ```
 
 (Refreshing `teams_list.txt` from a savefile is the Save editor's `export-teams-list`; see the
@@ -167,7 +167,7 @@ it was loaded from (it knows the export from the launch manifest — see the Pla
 plan), then runs
 
 ```text
-4cc-studio team-compiler compile --mode sideload --export "D:\exports\aaa_export"
+UTW team-compiler compile --mode sideload --export "D:\exports\aaa_export"
 ```
 
 and PES, with its sideloading runtime serving `livecpk\` (FoxDen on 18–21, Sider 3 on 17), shows
