@@ -13574,3 +13574,27 @@ every scale the UI takes (a narrow window scales it down, a 200% monitor up) wit
 decoder in `studio_core`, and the drafts draw them from the same file; a picture would be one
 resolution, and egui fills only convex shapes, which the leaves are not.
 Plan: `plans/core/gui.md` "Sidebar" item 1, and the Dark/light theme row's symbols font.
+
+## 2026-10-29 — gui — The opened sidebar casts no shadow
+
+Decision: the sidebar's opened layer is drawn without a shadow, edged on its right by the
+rail's own 1-point line; the drafts and the build gave it a popup's shadow.
+Why: the maintainer's look. The line already marks where the layer ends over the view, which
+was the shadow's only job.
+Plan: `plans/core/gui.md` "Sidebar" item 4.
+
+## 2026-10-29 — studio_core — The title bar draws no icon on Windows; one `unsafe` call
+
+Decision: on Windows the window's title bar draws no icon, the title starting at its left
+edge, while the taskbar, Alt+Tab and the window menu keep it: `studio_core` sets
+`SetWindowThemeAttribute`'s `WTNCA_NODRAWICON` on the window as it opens, one `unsafe` call
+through the `windows` crate (its `Win32_UI_Controls` feature), the window's handle read
+through `raw-window-handle` (0.6, already in the build through eframe and winit, now a direct
+dependency of `studio_core` for Windows).
+Why: the maintainer's look, and their yes to the `unsafe` call over the alternatives: the
+title bar's icon and the taskbar's come from the same window, which eframe sets from one
+image, so no icon setting hides one alone; a title bar of our own (decorations off) needs no
+`unsafe` but is far more code and loses the system's snapping and caption behaviour; a blank
+small icon leaves an empty slot before the title.
+Plan: `plans/core/development_plan.md` "The icon", `small.png`'s bullet; `CONTRIBUTING.md`'s
+`unsafe` sites.

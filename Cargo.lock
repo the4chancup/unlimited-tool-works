@@ -4503,6 +4503,7 @@ dependencies = [
  "fpc",
  "log",
  "pes_version",
+ "raw-window-handle",
  "rfd",
  "serde",
  "thiserror 2.0.20",

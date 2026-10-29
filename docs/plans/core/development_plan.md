@@ -176,7 +176,14 @@ face alone. Three files under `resources/icon/` carry it:
   by the whole picture is checked on the built window. Giving the two icons different
   pictures would mean setting them past eframe, through winit's own calls on the first frame
   (a direct `winit` dependency, since eframe does not re-export it), which waits for that
-  check to show the need.
+  check to show the need. The title bar itself draws no icon, so the title starts at its
+  left edge: `studio_core` turns the icon off as the window opens, with
+  `SetWindowThemeAttribute`'s `WTNCA_NODRAWICON` (one `unsafe` call through the `windows`
+  crate, the window's handle from eframe's creation context), which leaves the icon to the
+  taskbar, Alt+Tab and the window menu (Alt+Space). Not a title bar of our own (eframe's
+  decorations off, egui drawing the title, the drag area and the caption buttons), which
+  needs no `unsafe` but is far more code and loses the system's snapping and caption
+  behaviour; nor a blank small icon, which leaves an empty slot before the title.
 - `window.png`, the whole picture at 256: the window's icon elsewhere, where one image serves
   every size. On Linux that holds under X11; a Wayland compositor ignores a window's own icon
   and shows the one its desktop entry names (matched by the app id), which a Linux package
