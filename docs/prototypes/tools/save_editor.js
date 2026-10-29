@@ -2412,6 +2412,11 @@ const skillMinVersion = i => i >= 39 ? 20 : i >= 28 ? 19 : 15;
 const titleCase = s => s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 const STAT_LABEL = Object.fromEntries(ABILITY_STATS.map(titleCasePair));
 function titleCasePair(s) { return [s, titleCase(s)]; }
+// A stat's name as the open save's PES version shows it: PES 2017 calls
+// heading Header. The other versions' own names are not gathered yet, so
+// they keep the id's title case.
+const STAT_NAMES_17 = { heading: "Header" };
+const statLabel = s => (version() === 17 && STAT_NAMES_17[s]) || STAT_LABEL[s];
 
 // Palette indices are a choice of the palette's entries, never a free colour
 // picker (save_editor.md "Crate layout", the view/ bullet). The labels are the
@@ -4284,7 +4289,7 @@ function abilityPanel(p) {
         if (!Number.isNaN(v)) { set(p, x => x.stats[s], (x, v2) => x.stats[s] = v2, v, s); render(); } } });
     // Live AATF's mark is drawn at the label cell's left edge (the ability-stats
     // rule), so the column's marks line up.
-    stats.append(h("tr", {}, h("td", { class: "ilabel" }, STAT_LABEL[s], fieldMark(p, "stat:" + s)),
+    stats.append(h("tr", {}, h("td", { class: "ilabel" }, statLabel(s), fieldMark(p, "stat:" + s)),
       h("td", {}, gated(h("span", {}, inp), minV))));
   }
   return named(h("div", { class: "col" }, strong("Ability stats"), stats), "ability-stats");
@@ -6159,7 +6164,6 @@ const FIELD_TERMS = {
   Name: T_text("Name"), ShirtName: T_text("Shirt"),
 };
 const pascal = s => s.replace(/(^|_)\w/g, m => m.slice(-1).toUpperCase());
-for (const s of ABILITY_STATS) FIELD_TERMS[pascal(s)] = T_num(STAT_LABEL[s], 0);
 // The physique sliders: stored 0-14, shown -7 to +7, labelled like the field.
 const physLabel = f => f.replace(/(?!^)[A-Z]/g, m => " " + m.toLowerCase());
 for (const f of ["NeckLength", "NeckSize", "ShoulderHeight", "ShoulderWidth",
@@ -6172,6 +6176,9 @@ for (const f of ["NeckLength", "NeckSize", "ShoulderHeight", "ShoulderWidth",
 function fieldTerm(field) {
   const t = FIELD_TERMS[field];
   if (t) return t;
+  // An ability stat, named at the open save's version.
+  const stat = ABILITY_STATS.find(s => pascal(s) === field);
+  if (stat) return T_num(statLabel(stat), 0);
   let m = field.match(/^Skill\((\d+)\)$/);
   if (m) return { label: titleCase(SKILLS[Number(m[1])]), show: s => s === "1" ? "on" : "off" };
   m = field.match(/^ComStyle\((\d+)\)$/);
@@ -6429,8 +6436,8 @@ function violationSentence(rule, kv, sev) {
     case "NoTier": return "fits no tier"
       + (list("heights").length ? " (the tiers take heights " + and(spans("heights"), "or") + ")" : "");
     case "Stat": return sev === "Warning"
-      ? STAT_LABEL[v("stat")] + " " + v("value") + ", just over the " + v("target") + " the rules allow"
-      : bound(STAT_LABEL[v("stat")], v("value"), v("target"));
+      ? statLabel(v("stat")) + " " + v("value") + ", just over the " + v("target") + " the rules allow"
+      : bound(statLabel(v("stat")), v("value"), v("target"));
     case "StatTotal": return "the stats add up to " + v("total") + ", over the limit of " + v("limit");
     case "Form": return "form " + v("value") + ", where the rules want " + v("target");
     case "InjuryResistance": return bound("injury resistance", v("value"), v("max"));

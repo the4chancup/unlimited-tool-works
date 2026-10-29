@@ -13877,3 +13877,13 @@ inferred: the names changed in more than one release (PES 2015's Saving, PES 201
 Balance, the later Awareness names), and `pes_savefile/src/model/player.rs`'s doc comments,
 today's only record, do not say which version introduced each.
 Plan: `plans/save_editor.md` "Editing UI", the Ability stats item.
+
+## 2026-10-29 — save_editor — Before 0.0.1, only PES 2017's stat names are checked
+
+Decision: the per-version stat names land in two parts. Before 0.0.1, PES 2017's: the ids'
+title case except Header for `heading`, the one name 4ccEditor's PES 2017 labels
+(`window.cpp`'s ability statics) write differently; the maintainer confirms them in the
+final pass. After 0.0.1, every other version's, gathered from its own screens.
+Why: the maintainer: "We only need to make sure PES 17 is accurate for now" (0.0.1 is the
+Save editor for DBC, a PES 2017 cup).
+Plan: `plans/save_editor.md` "Editing UI", the Ability stats item.
