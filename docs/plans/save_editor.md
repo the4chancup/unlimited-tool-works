@@ -243,11 +243,11 @@ all side by side.
   (their own height, the draft's: the theme's controls are 18), the Set stats row in line
   with the buttons above it. The
   grid spans the list's frame, from its left edge to its right, as the draft's `1fr 1fr`:
-  two halves 6 points apart (119.5 each in the 245-point frame), each button as wide as its
-  half, rows 3 apart; a label longer than its half is elided, its tooltip naming the tier.
-  Columns as wide as their widest cell instead ended 50 points short of the frame, which the
-  column's controls reach ("Player list" above), and "Make Goalkeeper", the official
-  ruleset's widest, fits its half (105 of 119.5). They act on the selected player, so a team row leaves them disabled, their tooltip
+  two halves 8 points apart, egui's item spacing (118.5 each in the 245-point frame), each
+  button as wide as its half, rows 3 apart; a label longer than its half is elided, its
+  tooltip naming the tier. Columns as wide as their widest cell instead ended 50 points short
+  of the frame, which the column's controls reach ("Player list" above), and "Make
+  Goalkeeper", the official ruleset's widest, fits its half (105 of 118.5). They act on the selected player, so a team row leaves them disabled, their tooltip
   "The make buttons act on a player: pick a player row"; the Player menu's entries are
   disabled too, their tooltip "The Player menu acts on a player: pick a player row".
 - **The toolbar**, in egui's `MenuBar` (0.37), its style left as the toolbar's so the
@@ -469,12 +469,11 @@ all side by side.
   version that stores none says so in it). The ids share the fields' row, not one of their
   own, because the Tactics editor below needs the height: with a heading-size title and the
   ids on a second row its last row ended about 5 points past the 1280 x 800 window's pane.
-  The row's units stand 6 points apart, as in every row of the drafts (the Name and Short
-  labels are units of their own, 6 from their boxes), and a colour's label,
+  The row's units stand 8 points apart, egui's item spacing, as in every row of the drafts
+  (the Name and Short labels are units of their own, 8 from their boxes), and a colour's label,
   picker and hex, or an id's label and its box, a space apart (3 points), the ids' grid cells
-  padded 4 points on each side (so 10 before Manager ID, 8 between the ids), each id's box 46
-  wide (the draft's `.info-grid` number box; egui's is 40): egui's 8-point item
-  spacing put the row's right end 30 points right of the draft's. A stroke line under the row
+  padded 4 points on each side (so 12 before Manager ID, 8 between the ids), each id's box 46
+  wide (the draft's `.info-grid` number box; egui's is 40). A stroke line under the row
   sets the team's fields apart from the Tactics (the draft's `.sep`, 8 points from the boxes
   around it): drawn 11 points under the row's controls and 10.5 over the Tactics' first, since
   the draft's id cells pad their boxes and its Tactics bar is taller than its buttons. Then the Tactics editor (below), whose bench list shows the

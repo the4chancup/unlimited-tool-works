@@ -13529,3 +13529,21 @@ first measured text colours: the titles at the draft's grey, the Appearance head
 titles, the position labels and rating letters as the app draws them. The drafts' other
 selectable labels follow the position grid's, one rule for one widget.
 Plan: `plans/core/gui.md` "Other UI components", the Dark/light theme row.
+
+## 2026-10-29 — gui — The drafts' gaps between controls are egui's item spacing, 8 across and 3 down
+
+Decision: every draft gap between two controls side by side or stacked is egui's item spacing:
+the shared `.row` gap goes from 6 to 8, the log and Live AATF headers' from 6 to 8, the quick
+actions' columns from 6 to 8, the player list's controls from 4 to 3 and the rail's entries
+from 2 to 3; the Formation settings' choices are 18 high (egui's control), not 20. The build
+drops the overrides that copied the old figures (the team view's header row, the Skills
+header, the boot/glove range's dash, the list's controls, the quick actions' columns, the
+rail). The gaps that are layout rather than item spacing keep their figures, named in the
+`.row` rule's comment: a grid's or a view's columns, the gap between blocks of rows, the
+parts of one compound widget.
+Why: the maintainer's ruling that the drafts take egui's spacing (above, "simplest to implement
+and more reliable to maintain") applied to the gaps the first pass left: the Ruleset editor's
+and the dialogs' rows were already built at egui's 8 against drafts saying 6, and the Save
+editor and the shell kept six constants only to copy the old figures.
+Plan: `plans/core/gui.md` "Prototypes before implementation", the Look bullet;
+`plans/save_editor.md` "Editing UI" (the quick actions, the team view's fields row).

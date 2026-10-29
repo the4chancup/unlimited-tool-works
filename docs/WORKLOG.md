@@ -1847,9 +1847,27 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
             same as ov2y's accepted table (the views moved with the draft), the ability labels
             left to ov13; the toolbar's runs the draft's to the pixel but the ruleset combo 2
             wider (as before); the Open menu's entries 1 high
-          - [ ] l3d3 every other draft spacing that differs from the theme's (`.row`'s gap 6,
-            for one) listed, each changed to the theme's or kept with its reason in the
-            stylesheet; a menus pass added to `rect_compare.py`
+          - [ ] l3d3 every other draft spacing that differs from the theme's, each changed to
+            the theme's or kept with its reason in the stylesheet (DECISIONS "The drafts' gaps
+            between controls are egui's item spacing")
+            - [x] l3d3a the drafts and the plan (lead): `.row`, `.log-header`, `.live-header`
+              and `.qagrid` across 6 to 8, `.plist` 4 to 3, `.rail` 2 to 3, the Formation
+              settings' choices 18 high; the layout gaps kept, named in the `.row` rule's
+              comment; `draft_compare.py` measures a text's ink without the spaces around it
+              (the team view's "Manager ID " read 3 wide). Measured on the `8060aeef` build:
+              the team view 0 over 2 px before the `.row` change (only the header row's units
+              move after it, by the app's 6), the player view the same 15 at 1 to 2 px as
+              before (the Skills header's units move). Files: `docs/prototypes/{index.html,
+              tools/save_editor.js}`, `plans/save_editor.md`, `scripts/draft_compare.py`
+            - [ ] l3d3b the build drops the overrides (brief `.tmp/8_9l/brief_l3d3b.md`):
+              `team.rs` `ROW_GAP`, `abilities.rs` `HEADER_GAP`, `menus.rs` `BOGLO_RANGE_GAP`,
+              `player_list.rs` `CONTROL_GAP`, `quick_actions.rs` `COLUMN_GAP` (egui's 8),
+              `studio_core` sidebar `RAIL_GAP`; re-measured with `draft_compare.py player|team`
+            - [ ] l3d3c the rest the measurement found: the Kit slots dialog's sentence and OK
+              4 and 7 points higher than the draft's; the Formation settings' rows drifting
+              to 1.5 lower in the draft (its rows 58.5 apart, the build's 58); the colour
+              codes' grey and the black swatch's outline (QUESTIONS "The team view's colour
+              codes"); a menus pass added to `draft_compare.py`
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
         The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by

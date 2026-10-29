@@ -123,9 +123,13 @@ DRAFT_JS = """(sel) => {
     if (label && label.querySelector('input[type=checkbox], input[type=radio]')) {
       push(n.textContent, label.getBoundingClientRect(), 'check'); continue;
     }
+    // The ink's box only: a node's spaces ("Manager ID " before its box) widen a range over
+    // the whole node, where egui's label holds the words alone.
+    const t = n.textContent, start = t.search(/\\S/), end = t.trimEnd().length;
     const range = document.createRange();
-    range.selectNodeContents(n);
-    push(n.textContent, range.getBoundingClientRect(), 'text');
+    range.setStart(n, start);
+    range.setEnd(n, end);
+    push(t, range.getBoundingClientRect(), 'text');
   }
   return out;
 }"""
