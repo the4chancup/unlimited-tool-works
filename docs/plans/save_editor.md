@@ -1104,8 +1104,10 @@ and no switch drawn; on, the editor **does not edit aesthetics** but through the
   unsaved-changes table: the columns Item, Old value and New value, the item the player's
   display name and the field's label in the views' terms (`TAKUMI · Free kick`), the values
   in monospace, the item's click selecting the player, recomputed
-  when the save changes (an edit, an undo, another save opened), not frozen at Open: Apply
-  writes what the preview shows, never a list an edit since made stale. So after Apply the
+  when the save changes (an edit once it has settled, an undo, another save opened), not
+  frozen at Open: a drag or a text edit in flight keeps the last preview drawn, since
+  recomputing it every frame would slow the edit, and Apply recomputes a preview so held
+  before it writes, never a list an edit since made stale. So after Apply the
   list is empty and `Applied. The changes stay unsaved until Save.` stands in its place until
   the next change; a patch whose values the save already holds lists nothing and says so, and
   Apply is disabled whenever the list is empty. An undo of the Apply brings the list back. Patches apply cleanly in sequence — a midcup patch
