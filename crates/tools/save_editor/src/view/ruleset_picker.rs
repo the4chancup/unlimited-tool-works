@@ -8,7 +8,7 @@
 //! the × do their file work in `session::rules` and show its outcome in
 //! their dialogs (`dialog`).
 
-use studio_core::widgets::{step_choice, wheel_steps};
+use studio_core::widgets::{modal, modal_buttons, step_choice, wheel_steps};
 use studio_core::{Notice, NoticeKind};
 
 use crate::session::rules::{self, ImportCheck, builtins};
@@ -187,17 +187,16 @@ fn reread_imports(view: &mut SaveView) {
 /// in the monospace font, then OK. Returns the dialog while it stays up.
 fn errors_dialog(ui: &egui::Ui, file: String, findings: Vec<String>) -> Option<RulesDialog> {
     let mut close = false;
-    let response =
-        egui::Modal::new(egui::Id::unique("save_editor_rules_errors")).show(ui.ctx(), |ui| {
-            studio_core::theme::window_title(ui, "The rules file has errors");
-            ui.label(format!(
-                "{file} was not imported. Fix these errors, then import it again:"
-            ));
-            for finding in &findings {
-                ui.label(egui::RichText::new(finding).monospace());
-            }
-            close = ui.button("OK").clicked();
-        });
+    let id = egui::Id::unique("save_editor_rules_errors");
+    let response = modal(ui.ctx(), id, "The rules file has errors", |ui| {
+        ui.label(format!(
+            "{file} was not imported. Fix these errors, then import it again:"
+        ));
+        for finding in &findings {
+            ui.label(egui::RichText::new(finding).monospace());
+        }
+        close = modal_buttons(ui, |ui| ui.button("OK").clicked());
+    });
     (!close && !response.should_close()).then_some(RulesDialog::Errors { file, findings })
 }
 
@@ -269,15 +268,14 @@ fn remove_dialog(
 /// answer, `None` while it waits; closing it is Cancel.
 fn confirm(ui: &egui::Ui, id: &str, title: &str, text: &str, accept: &str) -> Option<bool> {
     let mut answer = None;
-    let response = egui::Modal::new(egui::Id::unique(id)).show(ui.ctx(), |ui| {
-        studio_core::theme::window_title(ui, title);
+    let response = modal(ui.ctx(), egui::Id::unique(id), title, |ui| {
         ui.label(text);
-        ui.horizontal(|ui| {
-            if ui.button(accept).clicked() {
-                answer = Some(true);
-            }
+        modal_buttons(ui, |ui| {
             if ui.button("Cancel").clicked() {
                 answer = Some(false);
+            }
+            if ui.button(accept).clicked() {
+                answer = Some(true);
             }
         });
     });

@@ -24,7 +24,7 @@ use pes_savefile::schema::limits::motion_top;
 use pes_savefile::schema::player_max_value;
 use pes_savefile::settings_toml::{Kind, SettingKey};
 use pes_version::{Engine, PesVersion};
-use studio_core::widgets::{step_choice, step_number, wheel_steps};
+use studio_core::widgets::{FORM_ROW_SPACING, step_choice, step_number, wheel_steps};
 
 use crate::session::{Session, is_stripped};
 use crate::view::abilities::{gating_tooltip, maybe_end_row, number, small_stat};
@@ -181,12 +181,14 @@ fn groups(
 fn cutscenes(ui: &mut egui::Ui, session: &mut Session, player_id: u32, stats: &PlayerStats) {
     ui.strong("Cutscenes");
     ui.weak("These only change how the player appears in cutscenes.");
-    egui::Grid::new("appearance cutscenes").show(ui, |ui| {
-        for small in &fields::CUTSCENE_STATS {
-            small_stat(ui, session, player_id, stats, small);
-        }
-        ui.end_row();
-    });
+    egui::Grid::new("appearance cutscenes")
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .show(ui, |ui| {
+            for small in &fields::CUTSCENE_STATS {
+                small_stat(ui, session, player_id, stats, small);
+            }
+            ui.end_row();
+        });
 }
 
 /// The ownership row: the sentence itself (pre-Fox carries the patch step
@@ -396,35 +398,37 @@ fn physique_grid(
     appearance: &PlayerAppearance,
 ) {
     let per_row = 2;
-    egui::Grid::new("appearance physique").show(ui, |ui| {
-        for (index, (label, key, get, set)) in PHYSIQUE.iter().enumerate() {
-            let Kind::Signed { limit } = key.spec().kind else {
-                unreachable!("the physique keys are Signed");
-            };
-            let limit = i32::from(limit);
-            let stored = get(appearance);
-            let mut shown = i32::from(stored) - limit;
-            ui.label(*label);
-            let mut response = ui.add(
-                egui::DragValue::new(&mut shown)
-                    .range(-limit..=limit)
-                    .clamp_existing_to_range(false),
-            );
-            if step_number(&mut shown, wheel_steps(ui, &response), -limit..=limit) {
-                response.mark_changed();
+    egui::Grid::new("appearance physique")
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .show(ui, |ui| {
+            for (index, (label, key, get, set)) in PHYSIQUE.iter().enumerate() {
+                let Kind::Signed { limit } = key.spec().kind else {
+                    unreachable!("the physique keys are Signed");
+                };
+                let limit = i32::from(limit);
+                let stored = get(appearance);
+                let mut shown = i32::from(stored) - limit;
+                ui.label(*label);
+                let mut response = ui.add(
+                    egui::DragValue::new(&mut shown)
+                        .range(-limit..=limit)
+                        .clamp_existing_to_range(false),
+                );
+                if step_number(&mut shown, wheel_steps(ui, &response), -limit..=limit) {
+                    response.mark_changed();
+                }
+                if response.changed() {
+                    edit_player(session, player_id, response.id.value(), |player| {
+                        set(
+                            &mut player.appearance,
+                            u8::try_from(shown + limit)
+                                .expect("the control keeps the value inside the key's range"),
+                        );
+                    });
+                }
+                maybe_end_row(ui, index + 1, per_row);
             }
-            if response.changed() {
-                edit_player(session, player_id, response.id.value(), |player| {
-                    set(
-                        &mut player.appearance,
-                        u8::try_from(shown + limit)
-                            .expect("the control keeps the value inside the key's range"),
-                    );
-                });
-            }
-            maybe_end_row(ui, index + 1, per_row);
-        }
-    });
+        });
 }
 
 /// The draft's Strip style group: the ids, the enums and the two
@@ -443,165 +447,169 @@ fn strip_rows(
     appearance: &PlayerAppearance,
 ) {
     let per_row = 4;
-    egui::Grid::new("appearance strip").show(ui, |ui| {
-        // The id fields take the record's own bound (`player_max_value`,
-        // wider than `settings.toml`'s stock range): a compile-allocated
-        // ID such as 627 is a value the save holds.
-        number(
-            ui,
-            session,
-            player_id,
-            BOOTS_ID_LABEL,
-            appearance.boots_id,
-            0..=u32::try_from(
-                player_max_value(version, PlayerField::BootsId)
-                    .expect("the boots id is stored on every version"),
+    egui::Grid::new("appearance strip")
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .show(ui, |ui| {
+            // The id fields take the record's own bound (`player_max_value`,
+            // wider than `settings.toml`'s stock range): a compile-allocated
+            // ID such as 627 is a value the save holds.
+            number(
+                ui,
+                session,
+                player_id,
+                BOOTS_ID_LABEL,
+                appearance.boots_id,
+                0..=u32::try_from(
+                    player_max_value(version, PlayerField::BootsId)
+                        .expect("the boots id is stored on every version"),
+                )
+                .expect("the boots id's bound fits u32"),
+                |player, shown| {
+                    player.appearance.boots_id = shown;
+                },
+            );
+            maybe_end_row(ui, 1, per_row);
+            number(
+                ui,
+                session,
+                player_id,
+                GLOVES_ID_LABEL,
+                appearance.gloves_id,
+                0..=u32::try_from(
+                    player_max_value(version, PlayerField::GlovesId)
+                        .expect("the gloves id is stored on every version"),
+                )
+                .expect("the gloves id's bound fits u32"),
+                |player, shown| {
+                    player.appearance.gloves_id = shown;
+                },
             )
-            .expect("the boots id's bound fits u32"),
-            |player, shown| {
-                player.appearance.boots_id = shown;
-            },
-        );
-        maybe_end_row(ui, 1, per_row);
-        number(
-            ui,
-            session,
-            player_id,
-            GLOVES_ID_LABEL,
-            appearance.gloves_id,
-            0..=u32::try_from(
-                player_max_value(version, PlayerField::GlovesId)
-                    .expect("the gloves id is stored on every version"),
-            )
-            .expect("the gloves id's bound fits u32"),
-            |player, shown| {
-                player.appearance.gloves_id = shown;
-            },
-        )
-        .on_hover_text("Any player's gloves ID works; 0 means normal hands.");
-        maybe_end_row(ui, 2, per_row);
-        for (index, (label, key, get, set)) in STRIP_ENUMS.iter().enumerate() {
-            combo(
+            .on_hover_text("Any player's gloves ID works; 0 means normal hands.");
+            maybe_end_row(ui, 2, per_row);
+            for (index, (label, key, get, set)) in STRIP_ENUMS.iter().enumerate() {
+                combo(
+                    ui,
+                    session,
+                    player_id,
+                    label,
+                    *key,
+                    get(appearance),
+                    move |player, shown| {
+                        set(&mut player.appearance, shown);
+                    },
+                );
+                maybe_end_row(ui, 3 + index, per_row);
+            }
+            // The checkboxes draw as a label cell and a bare box in the field
+            // cell (the header's Captain shape).
+            bare_checkbox(
                 ui,
                 session,
                 player_id,
-                label,
-                *key,
-                get(appearance),
-                move |player, shown| {
-                    set(&mut player.appearance, shown);
+                SHIRTTAIL_OUT_LABEL,
+                appearance.untucked,
+                |p, v| {
+                    p.appearance.untucked = v;
                 },
             );
-            maybe_end_row(ui, 3 + index, per_row);
-        }
-        // The checkboxes draw as a label cell and a bare box in the field
-        // cell (the header's Captain shape).
-        bare_checkbox(
-            ui,
-            session,
-            player_id,
-            SHIRTTAIL_OUT_LABEL,
-            appearance.untucked,
-            |p, v| {
-                p.appearance.untucked = v;
-            },
-        );
-        maybe_end_row(ui, 3 + STRIP_ENUMS.len(), per_row);
-        bare_checkbox(
-            ui,
-            session,
-            player_id,
-            ANKLE_TAPING_LABEL,
-            appearance.ankle_taping,
-            |p, v| {
-                p.appearance.ankle_taping = v;
-            },
-        );
-    });
-    egui::Grid::new("appearance strip rows").show(ui, |ui| {
-        strip_row(ui, WRIST_TAPING_LABEL, |ui| {
-            combo_box(
+            maybe_end_row(ui, 3 + STRIP_ENUMS.len(), per_row);
+            bare_checkbox(
                 ui,
                 session,
                 player_id,
-                WRIST_TAPING_LABEL,
-                SettingKey::WristTaping,
-                appearance.wrist_taping,
-                |player, shown| {
-                    player.appearance.wrist_taping = shown;
-                },
-            );
-            ui.label("Left");
-            palette_row(
-                ui,
-                session,
-                player_id,
-                &palette(version, SettingKey::WristTapeColorLeft),
-                appearance.wrist_tape_color_left,
-                |player, shown| {
-                    player.appearance.wrist_tape_color_left = shown;
-                },
-            );
-            ui.label("Right");
-            palette_row(
-                ui,
-                session,
-                player_id,
-                &palette(version, SettingKey::WristTapeColorRight),
-                appearance.wrist_tape_color_right,
-                |player, shown| {
-                    player.appearance.wrist_tape_color_right = shown;
+                ANKLE_TAPING_LABEL,
+                appearance.ankle_taping,
+                |p, v| {
+                    p.appearance.ankle_taping = v;
                 },
             );
         });
-        strip_row(ui, SPECTACLES_LABEL, |ui| {
-            combo_box(
-                ui,
-                session,
-                player_id,
-                SPECTACLES_LABEL,
-                SettingKey::Spectacles,
-                appearance.spectacles_style,
-                |player, shown| {
-                    player.appearance.spectacles_style = shown;
-                },
-            );
-            palette_row(
-                ui,
-                session,
-                player_id,
-                &palette(version, SettingKey::SpectaclesColor),
-                appearance.spectacles_color,
-                |player, shown| {
-                    player.appearance.spectacles_color = shown;
-                },
-            );
-        });
-        strip_row(ui, PLAYER_GLOVES_LABEL, |ui| {
-            let gloves = face(appearance, IngameFaceField::PlayerGloves);
-            checkbox(ui, session, player_id, "", gloves != 0, |p, v| {
-                p.appearance
-                    .ingame_face
-                    .set(IngameFaceField::PlayerGloves, u8::from(v))
-                    .expect("a loaded player's face run holds player gloves");
+    egui::Grid::new("appearance strip rows")
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .show(ui, |ui| {
+            strip_row(ui, WRIST_TAPING_LABEL, |ui| {
+                combo_box(
+                    ui,
+                    session,
+                    player_id,
+                    WRIST_TAPING_LABEL,
+                    SettingKey::WristTaping,
+                    appearance.wrist_taping,
+                    |player, shown| {
+                        player.appearance.wrist_taping = shown;
+                    },
+                );
+                ui.label("Left");
+                palette_row(
+                    ui,
+                    session,
+                    player_id,
+                    &palette(version, SettingKey::WristTapeColorLeft),
+                    appearance.wrist_tape_color_left,
+                    |player, shown| {
+                        player.appearance.wrist_tape_color_left = shown;
+                    },
+                );
+                ui.label("Right");
+                palette_row(
+                    ui,
+                    session,
+                    player_id,
+                    &palette(version, SettingKey::WristTapeColorRight),
+                    appearance.wrist_tape_color_right,
+                    |player, shown| {
+                        player.appearance.wrist_tape_color_right = shown;
+                    },
+                );
             });
-            let gloves_color = face(appearance, IngameFaceField::PlayerGlovesColor);
-            palette_row(
-                ui,
-                session,
-                player_id,
-                &palette(version, SettingKey::GlovesColor),
-                gloves_color,
-                |player, shown| {
-                    player
-                        .appearance
+            strip_row(ui, SPECTACLES_LABEL, |ui| {
+                combo_box(
+                    ui,
+                    session,
+                    player_id,
+                    SPECTACLES_LABEL,
+                    SettingKey::Spectacles,
+                    appearance.spectacles_style,
+                    |player, shown| {
+                        player.appearance.spectacles_style = shown;
+                    },
+                );
+                palette_row(
+                    ui,
+                    session,
+                    player_id,
+                    &palette(version, SettingKey::SpectaclesColor),
+                    appearance.spectacles_color,
+                    |player, shown| {
+                        player.appearance.spectacles_color = shown;
+                    },
+                );
+            });
+            strip_row(ui, PLAYER_GLOVES_LABEL, |ui| {
+                let gloves = face(appearance, IngameFaceField::PlayerGloves);
+                checkbox(ui, session, player_id, "", gloves != 0, |p, v| {
+                    p.appearance
                         .ingame_face
-                        .set(IngameFaceField::PlayerGlovesColor, shown)
-                        .expect("a loaded player's face run holds the gloves colour");
-                },
-            );
+                        .set(IngameFaceField::PlayerGloves, u8::from(v))
+                        .expect("a loaded player's face run holds player gloves");
+                });
+                let gloves_color = face(appearance, IngameFaceField::PlayerGlovesColor);
+                palette_row(
+                    ui,
+                    session,
+                    player_id,
+                    &palette(version, SettingKey::GlovesColor),
+                    gloves_color,
+                    |player, shown| {
+                        player
+                            .appearance
+                            .ingame_face
+                            .set(IngameFaceField::PlayerGlovesColor, shown)
+                            .expect("a loaded player's face run holds the gloves colour");
+                    },
+                );
+            });
         });
-    });
 }
 
 /// One strip row of the second grid: `label`'s cell, then `add`'s
@@ -628,53 +636,56 @@ fn motion_grid(
 ) {
     // Two pairs a row (the draft's `COL_PANELS` motion `[2, 194, 14]`).
     let per_row = 2;
-    egui::Grid::new("appearance motion").show(ui, |ui| {
-        let mut pair = 0usize;
-        for field in &MOTIONS[..7] {
-            motion_number(ui, session, player_id, version, field, motion);
-            pair += 1;
-            maybe_end_row(ui, pair, per_row);
-        }
-        // The dribbling motion sits between the kicks and the celebrations
-        // (the draft's second row's last cell); a version without it draws
-        // it disabled at 0 with the `PES NN+` tooltip.
-        ui.label(DRIBBLING_MOTION_LABEL);
-        match motion.dribbling {
-            Some(stored) => {
-                let mut shown = stored;
-                let range = number_range(SettingKey::Dribbling);
-                let mut response = ui.add(
-                    egui::DragValue::new(&mut shown)
-                        .range(range.clone())
-                        .clamp_existing_to_range(false),
-                );
-                if step_number(&mut shown, wheel_steps(ui, &response), range) {
-                    response.mark_changed();
-                }
-                if response.changed() {
-                    edit_player(session, player_id, response.id.value(), |player| {
-                        player.motion.dribbling = Some(shown);
-                    });
-                }
+    egui::Grid::new("appearance motion")
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .show(ui, |ui| {
+            let mut pair = 0usize;
+            for field in &MOTIONS[..7] {
+                motion_number(ui, session, player_id, version, field, motion);
+                pair += 1;
+                maybe_end_row(ui, pair, per_row);
             }
-            None => {
-                ui.add_enabled_ui(false, |ui| {
-                    ui.add(
-                        egui::DragValue::new(&mut 0u8).range(number_range(SettingKey::Dribbling)),
+            // The dribbling motion sits between the kicks and the celebrations
+            // (the draft's second row's last cell); a version without it draws
+            // it disabled at 0 with the `PES NN+` tooltip.
+            ui.label(DRIBBLING_MOTION_LABEL);
+            match motion.dribbling {
+                Some(stored) => {
+                    let mut shown = stored;
+                    let range = number_range(SettingKey::Dribbling);
+                    let mut response = ui.add(
+                        egui::DragValue::new(&mut shown)
+                            .range(range.clone())
+                            .clamp_existing_to_range(false),
                     );
-                })
-                .response
-                .on_disabled_hover_text(gating_tooltip(PlayerField::DribblingMotion));
+                    if step_number(&mut shown, wheel_steps(ui, &response), range) {
+                        response.mark_changed();
+                    }
+                    if response.changed() {
+                        edit_player(session, player_id, response.id.value(), |player| {
+                            player.motion.dribbling = Some(shown);
+                        });
+                    }
+                }
+                None => {
+                    ui.add_enabled_ui(false, |ui| {
+                        ui.add(
+                            egui::DragValue::new(&mut 0u8)
+                                .range(number_range(SettingKey::Dribbling)),
+                        );
+                    })
+                    .response
+                    .on_disabled_hover_text(gating_tooltip(PlayerField::DribblingMotion));
+                }
             }
-        }
-        pair += 1;
-        maybe_end_row(ui, pair, per_row);
-        for field in &MOTIONS[7..] {
-            motion_number(ui, session, player_id, version, field, motion);
             pair += 1;
             maybe_end_row(ui, pair, per_row);
-        }
-    });
+            for field in &MOTIONS[7..] {
+                motion_number(ui, session, player_id, version, field, motion);
+                pair += 1;
+                maybe_end_row(ui, pair, per_row);
+            }
+        });
     // Every motion but the dribbling motion, from 1 to the version's shown
     // top, one undoable edit. The measured tops, not two fixed sets, so a
     // draw never writes a motion the game does not have and reaches every

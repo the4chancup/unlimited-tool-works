@@ -2532,8 +2532,8 @@ briefs, review loops, gates and mutation runs as for any step.
   write" does not exist (the pre-Fox patch half is unbuilt): the save editor's
   `import-toml` on a PES 16 save stood in, the same writer
 - [x] 0.0.1d `just release <version>` (`plans/core/distribution.md` "Distribution: portable .7z
-  bundle"; Windows only), under the codename (`plans/core/development_plan.md` "The preview's
-  codename: Unlimited Tool Works": one display-name constant for the title, About, first run,
+  bundle"; Windows only), under the codename (`plans/core/development_plan.md` "The project's
+  name: Unlimited Tool Works": one display-name constant for the title, About, first run,
   `--help` and its usage examples, and the help pages; the executable `UnlimitedToolWorks.exe`;
   the settings folder unchanged; verify: no member-visible text names 4cc Studio, by a test
   over the help pages and the CLI's help output): the exe, the two launchers, empty `exports/` and `old_exports/`,
@@ -3665,8 +3665,8 @@ briefs, review loops, gates and mutation runs as for any step.
   `live_marks` tests fail without it); tests that measured with a fresh default context read
   the window's style. Open: the built window's look, with w2's fonts (0.0.1w)
 - [ ] 0.0.1v the preview's icon (the maintainer, 2026-10-27: Archer, from
-  `C:\Data\Pictures\FSN\Smug\smugredman.png`; `plans/core/development_plan.md` "The preview's
-  icon", DECISIONS "The preview's icon and its build dependency"). The maintainer's split:
+  `C:\Data\Pictures\FSN\Smug\smugredman.png`; `plans/core/development_plan.md` "The icon",
+  DECISIONS "The preview's icon and its build dependency"). The maintainer's split:
   the whole picture at 32 and up, a tight square on the head at 24 and 16.
   - [x] v1 the assets (lead): `scripts/make_icon.py` and `resources/icon/{icon.ico,small.png,
     window.png}`; the script reads each ICO size back and asserts it is its own crop (a
@@ -4489,15 +4489,36 @@ briefs, review loops, gates and mutation runs as for any step.
       gloves IDs takes 4ccEditor's layout" keeps "the buttons right-aligned as every dialog's
       are"); one `studio_core` helper every modal draws through: Settings, About, the first-run
       prompt, the Save editor's and the Ruleset editor's dialogs and prompts
-    - [ ] ov2k the form grids' rows 22 apart, the draft's `table.grid` (its `td` padded 2 above
+    - [x] ov2k the form grids' rows 22 apart, the draft's `table.grid` (its `td` padded 2 above
       and below an 18-point control), where egui's `Grid` spaces them by `item_spacing.y`, 3:
       each row lands a point higher than the last, 25 by the Ability stats' last row, 17 by
       Settings' Memory cap. Every `Grid` that draws a draft `table.grid` (Settings' common grid,
-      General info, Other stats, Ability stats, the team view's, Kit slots)
+      General info, Other stats, Ability stats, the team view's, Kit slots). Done 2026-10-29
+      (merge `409274ad`; Opus sidekick, landed first time, lead gates green: save_editor 446 +
+      50, studio_core 277, clippy, fmt): `studio_core::widgets::FORM_ROW_SPACING` (4) on
+      Settings' common grid and the Save editor's section, General info's and Other stats'
+      stacked rows, the Ability stats, the five Appearance grids, Kit slots and the
+      unsaved-changes prompt; tests: the ability stats, General info's pairs and Settings'
+      rows 22 apart (red at 21). The team view's `info-grid` is one horizontal row, no row
+      spacing. Its report's leftovers: the help window's Messages table (ov2q) and the Ruleset
+      editor's four grids (its view, not in 0.0.1) also draw a draft `table.grid`; General
+      info still stands 4 to 0.5 points above the draft (ov2s)
+    - [ ] ov2s General info against the draft after ov2k (offsets in the ov2k report,
+      `wt-ov2k/.tmp/sidelead/sk_ov2k.report.md`): the draft's Name and Shirt number boxes 19
+      tall (ov2r set text boxes and combos to 18, not number boxes), its `.gen` blocks 6 apart
+      where the build's are 4, and its Stronger foot and hand toggles plain spans 15 tall where
+      the build's are 18-point buttons; the lead's ruling, then the draft, plan and build to it.
+      Ruled 2026-10-29 (DECISIONS "General info's blocks 6 apart, its toggles 18 tall"): the
+      draft's toggles 18 tall (`save_editor.js`; measured with `.tmp/0_0_1ov/geninfo_offsets.py`:
+      every row 22 apart in its block, Height 68.5, Stronger foot 136.5, Other stats 233 below
+      the title); the Name and Shirt boxes were already 18 since ov2r. Left for the build
+      (ov2q's brief): the blocks 6 apart where it has 4, which brings each label to the draft's
     - [ ] ov2l the team view's header as drafted: the stroke line between the fields' row and
       the Tactics, 8 above and below (`teamView`'s `.sep`; the build has none, so the Preset row
       stands 20 higher), and the colour swatches 22 × 16 (`input[type=color]`; egui's colour
-      button is 40 wide, which moves the row's right half 31 to 57 points right)
+      button is 40 wide, which moves the row's right half 31 to 57 points right). Planned
+      2026-10-29 (DECISIONS "The team view's line under its fields, the colour buttons 22 ×
+      16"); brief `.tmp/0_0_1ov/brief_ov2l.md`, after ov2j lands (same file)
     - [ ] ov2m the player list as drafted (`plans/save_editor.md` "Player list", "The quick
       actions"): a player row 18 high, its place in the weak colour, the position and name in
       their own columns (the build draws one string, 21 high); the quick actions in two columns
@@ -4516,7 +4537,10 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] ov2q the small ones: Set all stats' number on its own line under its sentence (the
       draft's `dlgSetStats`; the build sets it on the sentence's line); the first-run prompt's
       two choice buttons with their labels centred; Settings' Memory cap `%` after its box, not
-      inside it
+      inside it; the help window's Messages table at `FORM_ROW_SPACING` (ov2k's report); two
+      `studio` `team_compiler_cli` tests (`team_compiler_cli.rs:158`, `:198`) that compare a
+      printed path with one built from `CARGO_TARGET_TMPDIR` as text, failing when
+      `CARGO_TARGET_DIR` is written with forward slashes (compare as paths)
     - [x] ov2r the drafts brought to the plan (lead): the settings menu's FPC hide boots and
       gloves IDs (common rows, `plans/core/gui.md` "Settings menu") and the active tool's
       section open on opening (the Save editor's, with Aesthetics from exports), both of which
@@ -4685,7 +4709,26 @@ briefs, review loops, gates and mutation runs as for any step.
   (`%APPDATA%\4cc-studio`) and the bundle's name, which a later rename would have to migrate.
   To plan first: every user-visible name (exe, data folder, bundle, window class, CLI command,
   help text), the crates' and repository's names, the CI jobs, the docs. The local folder
-  keeps the working name `4cc-studio` until 1.0.0 (the maintainer, 2026-10-28)
+  keeps the working name `4cc-studio` until 1.0.0 (the maintainer, 2026-10-28). Planned
+  2026-10-29: `plans/core/development_plan.md` "The project's name: Unlimited Tool Works",
+  DECISIONS "The project's name in every spelling"; inventory `.tmp/0_0_1rn/inventory.md`
+  - [ ] rn1 the code and the files a user receives (a sidekick): the two name constants
+    (`exe_name!` by platform), cargo's bin `utw` (`CARGO_BIN_EXE_utw`, `utw.pdb`), the
+    settings folder, `utw.log`/`utw.old.log`/`utw.dmp`, the app id, `Tvers`, the shared-IDs
+    folder, `tool_version`, the help pages, the launchers, the readme, `build.rs`, the release
+    recipe and its test, the justfile and the scripts naming the exe or the folder; the
+    `help_cli` guard widened to `UnlimitedToolWorks` and the old folder's name
+  - [x] rn2 the drafts (the lead): `index.html`'s title, exe and folder names, help text
+    (`UTW.exe`, `unlimited-tool-works`) and the draft controls' "Studio"; the Ruleset editor
+    draft's file header and logic banner copied from the code's (no product named), its
+    window titled as the app's; the Export upgrader draft's sample folder; the changelog's
+    shared group `**General**` (`plans/core/distribution.md`, was `**Studio**`). The drafts'
+    code comments keep "Studio" until rn3. Files: `docs/prototypes/{index.html,
+    tools/ruleset_editor.js,tools/export_upgrader.js}`
+  - [ ] rn3 the docs (the lead, after rn1 lands): every plan and spec file's title, the CLI
+    examples (`UTW <tool-id> ...`), the settings folder's and the log's names, "Studio" as the
+    project's name in prose; README, AGENTS, CONTRIBUTING, RUNBOOK; the glossary's "Studio"
+    entry kept for the code's names
 - [ ] 0.0.1f the cut, once the Save editor's view is done (the Ruleset editor left 0.0.1 on
   2026-10-24, `plans/core/development_plan.md` "Development Plan"): the bundled settings picking
   DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`

@@ -358,6 +358,47 @@ fn the_bound_team_id_shows_binding_over_64_and_an_edit_keeps_the_low_bits() {
     );
 }
 
+// The drafts' window on a version without kit slots: the short dialog is the
+// window's 360 points wide, OK at its right inside the stroke and the
+// 12-point margin.
+#[test]
+fn the_kit_slots_dialog_is_360_wide_with_ok_at_the_right() {
+    let path = fixture(PesVersion::Pes21, "kit_slots_window");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Kit slots\u{2026}"),
+        &mut view,
+    );
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        label_value(&nodes, "(this version does not store kit slots)"),
+        "premise: PES 21 stores no kit slots"
+    );
+    let outer = window
+        .ctx
+        .memory(|memory| memory.area_rect(egui::Id::unique("save_editor_kit_slots")))
+        .expect("the dialog's modal has an area");
+    let ok = node_labeled(&nodes, Role::Button, "OK")
+        .bounds()
+        .expect("OK has bounds");
+    let width = outer.width();
+    assert!(
+        (width - 360.0).abs() <= 0.5,
+        "the dialog is 360 wide, not {width}"
+    );
+    let right = f64::from(outer.right()) - ok.x1;
+    assert!(
+        (right - 13.0).abs() <= 0.5,
+        "OK's right is 13 inside the dialog's, not {right}"
+    );
+}
+
 // The bar's name field gets its 140 points (the draft's `#team-name`)
 // from `add_sized`: the field keeps its own width rather than the wrapped
 // row's offer, measured on the frame the team view first draws (the

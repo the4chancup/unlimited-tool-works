@@ -48,24 +48,28 @@ pub(crate) fn show(
     open: &mut bool,
 ) -> bool {
     let block = version_block(paths, pes_version);
-    let modal = egui::Modal::new(egui::Id::unique("about-4cc-studio")).show(ctx, |ui| {
-        crate::theme::window_title(ui, format!("About {}", crate::APP_NAME));
-        ui.label(egui::RichText::new(&block).monospace());
-        let mut help = false;
-        ui.horizontal(|ui| {
-            ui.hyperlink_to("Release page", RELEASE_PAGE_URL);
-            ui.hyperlink_to("Repository", REPOSITORY_URL);
-            help = ui.link("Help").clicked();
-        });
-        let mut close = false;
-        ui.horizontal(|ui| {
-            if ui.button("Copy").clicked() {
-                ui.ctx().copy_text(block.clone());
-            }
-            close = ui.button("Close").clicked();
-        });
-        (close, help)
-    });
+    let modal = crate::widgets::modal(
+        ctx,
+        egui::Id::unique("about-4cc-studio"),
+        format!("About {}", crate::APP_NAME),
+        |ui| {
+            ui.label(egui::RichText::new(&block).monospace());
+            let mut help = false;
+            ui.horizontal(|ui| {
+                ui.hyperlink_to("Release page", RELEASE_PAGE_URL);
+                ui.hyperlink_to("Repository", REPOSITORY_URL);
+                help = ui.link("Help").clicked();
+            });
+            let close = crate::widgets::modal_buttons(ui, |ui| {
+                let close = ui.button("Close").clicked();
+                if ui.button("Copy").clicked() {
+                    ui.ctx().copy_text(block.clone());
+                }
+                close
+            });
+            (close, help)
+        },
+    );
     let (close, help) = modal.inner;
     if close || modal.should_close() {
         *open = false;
