@@ -1783,7 +1783,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         review is same-family): SWE-2 rounds on each merged slice until one accepts under
         five, one Astra round over k5a + k5b, another over k5c, SWE-2 rounds after each;
         rulings in `.tmp/8_9k5/rulings_k5.md`. Started 2026-10-29: SWE-2 round 1 on k5a, its
-        code and its tests in two briefs (`review4/.tmp/k5a_review/`)
+        code and its tests in two briefs (`review4/.tmp/k5a_review/`): code 1 accepted (the
+        preview held until an edit settles, Apply recomputing a held one), tests 7; the
+        rework merged `6be3f9e2` (ten tests); round 2 on the tests under way. Round 1 on
+        k5b1: 1 accepted (an import must not retarget the document's `[team] id`, which the
+        base-copy own-id rule reads), carried into k5b2's review
       - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
       opening another save (SE-GUI-05; only the toolbar's marker exists, so closing loses
