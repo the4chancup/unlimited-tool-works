@@ -2834,3 +2834,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The opened sidebar's labels start 6 after the icon, as the draft's do, and the layer narrows to the draft's 190.6 (8.9l3d3h).
 - **2026-10-29** — The rail's version selector shows its year centred with no arrow, and the sidebar opens after 100 ms, not 150 (8.9l3d3i).
 - **2026-10-29** — A press on the rail's version selector opens the sidebar at once, so its list always shows the full names (8.9l3d3j).
+- **2026-10-29** — Grayed sidebar entries say "Coming soon™"; the help and the settings menu read "(WIP)" in the sidebar and their titles (8.9l3d3k).

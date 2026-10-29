@@ -1947,13 +1947,16 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               likely the draft's (inferred, not reproduced). On the release build: a click on `21` shows the opened sidebar with
               `PES 2015`..`PES 2021` (`.tmp/8_9l/built3/l3d3j_pair.png`). Files:
               `studio_core/src/shell/sidebar/{mod,tests}.rs`
-            - [ ] l3d3k every grayed sidebar entry's tooltip "Coming soon™" (CLI-only ones
-              too), the tail's labels and the two windows' titles "Help (WIP)" and
-              "Settings (WIP)" (DECISIONS
-              "Disabled sidebar entries say \"Coming soon™\"; Help and Settings marked WIP";
-              `plans/core/gui.md` "Sidebar" items 3 and 5, ST-SIDE-07, ST-SIDE-08; the draft,
-              lead, done, `.tmp/8_9l/wip_draft_tail.png`, `.tmp/8_9l/wip_windows.png`); brief
-              `.tmp/8_9l/brief_l3d3k.md`, the titles by its rework `brief_l3d3k_r1.md`
+            - [x] l3d3k 2026-10-29 (sidekick Opus, `4db21200`) every grayed sidebar entry's
+              tooltip "Coming soon™" (CLI-only ones too: the maintainer confirmed the
+              command-line hint goes, CLI use is for select advanced users), the tail's labels
+              and the two windows' titles "Help (WIP)" and "Settings (WIP)" (DECISIONS
+              "Disabled sidebar entries say \"Coming soon™\"; Help and Settings marked WIP"
+              and "The Help and Settings windows' titles marked WIP too"): `PLANNED_TOOLTIP`,
+              and `HELP_LABEL`, `SETTINGS_LABEL` each feeding the entry's label, its accessible
+              name and its window's title. On the release build: the tooltip, both labels and
+              both titles (`.tmp/8_9l/built3/l3d3k_*.png`). Files: `studio_core/src/shell/
+              {sidebar/{mod,tests}.rs, help_window.rs, settings_menu/{mod,tests}.rs, mod.rs}`
             - [x] l3d3g 2026-10-29 (lead, `712966d8`) the Windows title bar without the icon
               (DECISIONS "The title bar draws no icon on Windows" and "The title bar's icon
               slot stays blank"): `window_size::hide_title_bar_icon`, one `unsafe` call. On the
