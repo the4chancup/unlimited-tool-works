@@ -13749,3 +13749,17 @@ Why: the maintainer's pass over the 0.0.1 candidate found the app's name brighte
 planned icons darker than the drafts' (body grey #8c8c8c, weak grey #6e6e6e), and preferred
 the app's in both cases.
 Plan: none; the drafts are the colours' reference (`docs/prototypes/`).
+
+## 2026-10-29 — release — 0.0.1 is the Save editor for DBC alone; VGL's tools wait for 0.0.2
+
+Decision: the 0.0.1 preview targets DBC7 alone: its bundle drops `quick_compile.bat`,
+`quick_upgrade.bat`, the empty `exports/` and `old_exports/` folders and the readme's VGL
+section, keeps VGL27's rules file and the Team compiler's settings lines, and its settings
+pick PES 2017 (DBC's game) as `pes_version`. A preview 0.0.2 brings the Team compiler and
+the Export upgrader to VGL 27's organizer through their CLI, with the launchers as they are
+written now.
+Why: the maintainer wants the Save editor out to DBC's managers before the two tools are
+tested for the league; a launcher nobody tested for the release has no place in its bundle,
+and a bundle for DBC alone can open on DBC's game.
+Plan: `plans/core/development_plan.md` "Divegrass Before Christmas", "The /vg/ League 27
+(VGL)"; `plans/core/distribution.md`; `plans/core/architecture.md` "Launch modes".

@@ -133,7 +133,8 @@ documents".
 | 6 | Export upgrader | `export_upgrader` | done |
 | 7 | glTF support (runs after Release 0.1.0) | `model_convert` (glTF half) | todo |
 | 8 | GUI | `studio_core` shell, `studio`, tool views, `color_tools` widget | todo |
-| 0.0.1 | Preview build: the Save editor for DBC, with DBC7's rules file, the Team compiler and Export upgrader through their CLI for VGL 27 (`core/development_plan.md` "Divegrass Before Christmas", "The /vg/ League 27 (VGL)") | `just release`, the launchers, the console's progress line | todo |
+| 0.0.1 | Preview build: the Save editor for DBC alone, with DBC7's rules file and PES 2017 picked (`core/development_plan.md` "Divegrass Before Christmas") | `just release` | todo |
+| 0.0.2 | Preview build: 0.0.1 plus the Team compiler and Export upgrader through their CLI for VGL 27, with the launchers (`core/development_plan.md` "The /vg/ League 27 (VGL)") | `just release`, the launchers, the console's progress line | todo |
 | 0.1.0 | Release 0.1.0, after Phase 8, a test release (`core/development_plan.md` "Release 0.1.0") | `just release`, `CHANGELOG.md` | todo |
 | 0.2.0 | Release 0.2.0 or a later `0.x` (`core/development_plan.md` "Release 0.2.0") | help chapters, update check + notice, teams-list merge | todo |
 | 9 | Stadium compiler | `stadium_compiler` | todo |
@@ -5299,6 +5300,14 @@ briefs, review loops, gates and mutation runs as for any step.
     files and the repository's and developers' folders untouched. The bare "Studio" stays the
     working name in prose (the plan amended: rewriting ~250 of them buys a member nothing and
     sets the docs apart from the code); GLOSSARY rows for both names
+- [ ] 0.0.1g the bundle for DBC alone (the maintainer, 2026-10-29; `plans/core/development_plan.md`
+  "Divegrass Before Christmas", "The /vg/ League 27 (VGL)"; DECISIONS "0.0.1 is the Save
+  editor for DBC alone; VGL's tools wait for 0.0.2"): `scripts/release.py` stages neither
+  launcher nor `exports/` and `old_exports/`, `resources/bundle/data/settings.toml` picks PES
+  2017 (`pes_version`), the readme loses its VGL section and the "pick your PES" step, VGL27's
+  rules file and the compiler's settings lines kept; `release_test.py` follows → verify: the
+  staged bundle's file list; the readme read through once. 0.0.2 restores the launchers,
+  folders and VGL section from git as they are now
 - [ ] 0.0.1f the cut, once the Save editor's view is done (the Ruleset editor left 0.0.1 on
   2026-10-24, `plans/core/development_plan.md` "Development Plan"): the bundled settings picking
   DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`

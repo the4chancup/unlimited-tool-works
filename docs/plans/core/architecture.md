@@ -99,7 +99,7 @@ double-click, done. The launcher is two lines (`start "" "%~dp0UTW.exe" --gui te
 compile`) so its console window closes immediately and only the GUI remains; the Linux bundle ships
 the equivalent `quick_compile.sh`. Red's other staged bats (`1_`–`3_`) have no successor: the
 unified pipeline has no stages to run separately. Users who want the plain GUI double-click the exe.
-Until the Team compiler's view exists, the 0.0.1 bundle's `quick_compile.bat` runs the plain CLI
+Until the Team compiler's view exists, the 0.0.2 bundle's `quick_compile.bat` runs the plain CLI
 compile in its console instead, beside an interim `quick_upgrade.bat` (`development_plan.md`
 "The /vg/ League 27 (VGL)").
 

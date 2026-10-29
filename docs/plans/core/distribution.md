@@ -14,9 +14,9 @@ There is no installer. Each release is a `.7z` archive containing:
   (`development_plan.md` "The project's name: Unlimited Tool Works")
 - `quick_compile.bat` (`quick_compile.sh` on Linux) — the double-click launcher: opens the GUI on
   the Team compiler and starts a compile (see `architecture.md` "Launch modes" under Architecture)
-- in the 0.0.1 preview only, until the two tools' views land: `quick_compile.bat` in its CLI
-  form, `quick_upgrade.bat` and an empty `old_exports/` (`development_plan.md` "The /vg/
-  League 27 (VGL)"); the launchers' sources are `resources/bundle/`, checked out with CRLF
+- in the 0.0.2 preview only (0.0.1 is the Save editor's alone), until the two tools' views
+  land: `quick_compile.bat` in its CLI form, `quick_upgrade.bat` and an empty `old_exports/`
+  (`development_plan.md` "The /vg/ League 27 (VGL)"); the launchers' sources are `resources/bundle/`, checked out with CRLF
   line ends (`.gitattributes`), since cmd misreads a batch file's labels with LF ones
 - a basic readme (pointing into the app: the full help and the changelog live in the help window
   — see `gui.md` "Help window" under GUI Design — and `UTW help --export` produces the same text as
