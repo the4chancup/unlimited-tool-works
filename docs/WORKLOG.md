@@ -1736,7 +1736,28 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       (SE-GUI-18), the Texport export checked in game per version (SE-GUI-29, manual); before
       the 0.0.1 cut, which waits on the whole view (`plans/core/development_plan.md`
       "Divegrass Before Christmas"). Not itemized until 2026-10-25, found while listing what
-      0.0.1 lacks
+      0.0.1 lacks. The libs hold every operation (`pes_savefile::interchange`:
+      `aesthetics_patch` parse/apply, `team_toml` parse/apply, `legacy::read_squad`/
+      `read_tactics`, `texport` read/write/`to_team_toml`); the draft has every panel
+      (`docs/prototypes/tools/save_editor.js` `patchPanel`, the interchange dialog from the
+      comment "One dialog for Team TOML, .4ccs, .4cct and Texport", `ixExportToml`,
+      `ixExportTed`; Team menu "Import / export team file…", Savefile menu "Apply aesthetics
+      patch…"). Slices, each one review (draft check against the app's theme first, brief,
+      sidekick, review, merge, release-build check):
+      - [ ] k5a Apply aesthetics patch, the Savefile menu's floating panel (SE-GUI-18, and
+        SE-GUI-22's "Apply aesthetics patch is enabled"): the preview of every player it
+        changes, old and new, Apply as one undoable edit, another version's patch refused
+        with the save untouched
+      - [ ] k5b the interchange panel's import half (SE-GUI-16's import, SE-GUI-17's import,
+        SE-GUI-22's and SE-GUI-35's import-dialog parts): the file picked decides the format,
+        the sections the file holds offered, the legacy formats read-only, the version
+        mismatch's warning list, the aesthetics section under the ownership setting
+      - [ ] k5c its export half (SE-GUI-16's export, SE-GUI-17's export): Team TOML equal to
+        the CLI's export; Texport for PES 18-21 read back to the same team values; disabled on
+        PES 15-17 with the missing template in its tooltip
+      - [ ] k5d SE-GUI-29 manual: each Texport imported by the game's own team import in PES
+        18, 19, 20 and 21 (21 on E:; 18-20 on F:, connected on request; saves backed up first)
+      - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
       opening another save (SE-GUI-05; only the toolbar's marker exists, so closing loses
       edits silently), the Open menu's discovered saves (SE-GUI-26), the version-mismatch
