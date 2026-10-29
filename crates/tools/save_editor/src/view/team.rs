@@ -341,7 +341,7 @@ fn colour_unit(
                 channel_to_show(channel_to_store(shown[1])),
                 channel_to_show(channel_to_store(shown[2])),
             ];
-            ui.monospace(format_hex(display));
+            ui.label(egui::RichText::new(format_hex(display)).monospace().weak());
         }
         None => {
             ui.add_enabled_ui(false, |ui| {

@@ -12,7 +12,7 @@ use egui::{
     Sense, Shape, Stroke, StrokeKind, TextEdit, TextStyle, Ui, WidgetInfo, pos2, vec2,
 };
 use studio_core::theme;
-use studio_core::widgets::{step_number, text_box, wheel_steps};
+use studio_core::widgets::{step_number, text_box, text_box_border, wheel_steps};
 
 /// The most recent colors the session keeps: newest first, no duplicates.
 const MAX_RECENTS: usize = 8;
@@ -133,8 +133,9 @@ fn commit_pending_text(
 }
 
 /// The field's face: a 22 x 16 button filled with `rgb` (`open` draws egui's
-/// open-widget style while its popup is up). Its label carries the shown hex so a screen
-/// reader and the tests can tell fields apart.
+/// open-widget style while its popup is up), outlined at rest as a resting text box is and
+/// rounded as one in every state. Its label carries the shown hex so a screen reader and
+/// the tests can tell fields apart.
 fn color_button(ui: &mut Ui, rgb: [u8; 3], open: bool) -> Response {
     // The drafts' colour input, not egui's 40-point `interact_size`: a row of fields
     // holding two colours stood 36 points wider with it.
@@ -147,23 +148,21 @@ fn color_button(ui: &mut Ui, rgb: [u8; 3], open: bool) -> Response {
         )
     });
     if ui.is_rect_visible(rect) {
+        // The resting widgets' stroke is none (the buttons share it), which leaves a
+        // colour as dark as the panel with no box at all.
+        let (border, corner_radius) = text_box_border(ui.visuals());
+        let mut widgets = ui.visuals().widgets.clone();
+        widgets.inactive.bg_stroke = border;
         let visuals = if open {
-            &ui.visuals().widgets.open
+            widgets.open
         } else {
-            ui.style().interact(&response)
+            *widgets.style(&response)
         };
         let rect = rect.expand(visuals.expansion);
-        ui.painter().rect_filled(
-            rect.shrink(1.0),
-            visuals.corner_radius.at_most(2),
-            color32(rgb),
-        );
-        ui.painter().rect_stroke(
-            rect,
-            visuals.corner_radius.at_most(2),
-            visuals.bg_stroke,
-            StrokeKind::Inside,
-        );
+        ui.painter()
+            .rect_filled(rect.shrink(1.0), corner_radius, color32(rgb));
+        ui.painter()
+            .rect_stroke(rect, corner_radius, visuals.bg_stroke, StrokeKind::Inside);
     }
     response
 }
