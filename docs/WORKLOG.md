@@ -1852,6 +1852,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         `warn_fg_color` `#C54B00`; its tests pin the values (the contrast-matching test
         rewritten to the new rule) → verify: the built window's light theme, the sidebar's
         version badge and a number box
+        Code done (`8d2ab7c0`, `c60c80a2`, merged `9d9fc444`): the fills and `#C54B00` with
+        their tests; the Live AATF pitch's warning cross in `Palette::pitch_warn`, `#FF8F00`
+        on both themes, since the turf does not follow the theme. SWE-2 round S1m4: 2
+        counted (`.tmp/8_9m/rulings_m.md`). Open: the built window's check
       - [ ] m2 `scripts/draft_compare.py` compares the fill and text colours of the boxes it
         pairs, not only their rects: the fills and greys above passed every geometry check
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
@@ -2298,7 +2302,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     status bar, About and `--version` (a `LazyLock` for clap) on it, `help_cli`'s binary test
     and a `render_version` test. Files: `studio_core/src/shell/{mod.rs,status_bar.rs,about.rs,
     launch.rs,sidebar/tests.rs}`, `studio/tests/help_cli.rs`
-  - [ ] 8.14 the shell's own icon font (the maintainer's request of 2026-10-23;
+  - [ ] 8.14 (code done 2026-10-29; the built window's check open) the shell's own icon font (the maintainer's request of 2026-10-23;
     `plans/core/README.md` "GUI framework choice: egui"): single-colour icons, one SVG each;
     each tool's drawn to say what it does, the general ones (help, settings, dismiss, warning,
     download) copied from Phosphor (MIT, its licence beside them). The tools' icons are
@@ -2312,6 +2316,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     constants → verify: the script rebuilds the committed TTF byte for byte; every `icon()`
     glyph exists in the font (a unit test over the registry); the rail seen in the built
     window, the rail and opened, dark and light
+    Done (`75d76461`, `8d2ab7c0`, docs `ef5245ef`, merged `9d9fc444`; Opus sidekick):
+    `scripts/make_icons.py` builds `resources/fonts/icons.ttf` and the drafts' copy (8,604
+    bytes, the same on every run) from the 13 tool SVGs and six Phosphor glyphs copied point
+    for point as SVGs (the Stadium compiler's buildings among them), on the subset's
+    metrics and codepoints; `make_icons_test.py` checks both copies byte for byte and
+    refuses two icons at one codepoint; `icons.rs`'s constants named after their tools;
+    the subset removed, the drafts drawing the rail in `icons.ttf` (rendered beside the old
+    rail: same places and sizes). SWE-2 round S1i: 1 counted (`.tmp/8_14/rulings_icons.md`).
+    Open: the rail in the built window, dark and light
   - [ ] 8.15 (code done 2026-10-25 with 8.9f4c's rework r2; the built window's check open) the window's default to 1280 × 800 (the maintainer, 2026-10-25; `spec/core/gui.md`
     "The window's size", ST-WIN-01, ST-HELP-05; DECISIONS "Studio opens at 1280 × 800
     points"): `studio_core`'s `DEFAULT_SIZE` and its tests, the help window's; the Save
