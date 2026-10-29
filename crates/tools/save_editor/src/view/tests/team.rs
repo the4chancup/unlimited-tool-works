@@ -599,6 +599,53 @@ fn the_rows_controls_stand_where_the_drafts_do_from_the_name_box() {
     }
 }
 
+// The id cells' padding, 4 on each side, stands them apart exactly: the
+// Stadium ID label starts 8 past the Manager ID box (the two paddings, no
+// row gap between the cells) and the Manager ID label 12 past Col. 2's hex
+// (the row's gap and Manager ID's padding).
+#[test]
+fn the_id_cells_stand_their_paddings_apart() {
+    let path = fixture(PesVersion::Pes21, "team_id_cell_gaps");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    let colour_hex_right = right_of_label(&nodes, "Col. 2", Role::Label)
+        .into_iter()
+        .find(|node| node.value().is_some_and(|v| v.starts_with('#')))
+        .expect("Col. 2's hex")
+        .bounds()
+        .expect("bounds")
+        .x1;
+    let manager_box_right = right_of_label(&nodes, "Manager ID", Role::SpinButton)
+        .first()
+        .copied()
+        .expect("the manager control")
+        .bounds()
+        .expect("bounds")
+        .x1;
+    let gaps = [
+        (
+            "Col. 2's hex to the Manager ID label",
+            label_bounds(&nodes, "Manager ID").x0 - colour_hex_right,
+            12.0,
+        ),
+        (
+            "the Manager ID box to the Stadium ID label",
+            label_bounds(&nodes, "Stadium ID").x0 - manager_box_right,
+            8.0,
+        ),
+    ];
+    for (between, gap, expected) in gaps {
+        assert!(
+            (gap - expected).abs() <= 0.01,
+            "{between} is {expected}, got {gap}"
+        );
+    }
+}
+
 /// The left edges of the team row's Short box, colour swatches, id
 /// controls and `Kit slots…` button, from the Name box's, on `version`'s
 /// fixture: the id controls are the first control right of their labels,
