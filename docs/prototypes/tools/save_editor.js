@@ -7701,5 +7701,21 @@ function linkOpen(scr, keys) {
   }
 }
 registerTool({ id: "save-editor", css: SAVE_EDITOR_CSS, draw: renderView, firstShow, controls: draftControls, onKey, screen, linkKeys, linkOpen,
-  pesVersionChanged: versionNoticeFollow, titleDetail: () => S.path ? "[" + S.path + "]" : null });
+  pesVersionChanged: versionNoticeFollow, titleDetail: () => S.path ? "[" + S.path + "]" : null,
+  // The screens scripts/draft_shots.py captures, as the links this view writes.
+  shots: ["save_editor/player", "save_editor/team?selteam=718",
+    "save_editor/player?save=pes21&player=701.1&pes=2021",
+    "save_editor/team?save=pes21&selteam=701&pes=2021",
+    "save_editor/player?panel=aatf", "save_editor/player?panel=comparator",
+    "save_editor/player?panel=patch", "save_editor/player?panel=interchange",
+    "save_editor/player?dialog=set-stats", "save_editor/player?dialog=bump-stats",
+    "save_editor/player?dialog=multi-aatf", "save_editor/player?dialog=copy-stats",
+    "save_editor/player?dialog=swap-stats", "save_editor/player?dialog=settings",
+    "save_editor/player?dialog=ingame-face", "save_editor/player?dialog=boglo",
+    "save_editor/player?dialog=tsv", "save_editor/player?dialog=fixdb",
+    "save_editor/player?dialog=kit-slots", "save_editor/player?dialog=picture-save",
+    "save_editor/player?dialog=pictures-range", "save_editor/player?dialog=choose-file",
+    "save_editor/player?dialog=save-refused", "save_editor/player?dialog=save-as",
+    "save_editor/player?dialog=export-toml", "save_editor/player?dialog=export-ted",
+    "save_editor/player?dialog=open-save&open=2019"] });
 })();
