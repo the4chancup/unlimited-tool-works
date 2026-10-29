@@ -254,8 +254,8 @@ fn the_bump_dialog_prefills_the_last_n_used() {
 }
 
 // The number dialog draws as the draft's `dlgNum`: the sentence on its own
-// line, the number box under it at the body's left (the title's left edge,
-// where the modal's content starts).
+// line, the number box 8 points under it (the draft's `.window p` margin) at
+// the body's left (the title's left edge, where the modal's content starts).
 #[test]
 fn the_set_dialogs_number_box_stands_under_its_sentence() {
     let path = fixture(PesVersion::Pes21, "player_set_layout");
@@ -290,8 +290,8 @@ fn the_set_dialogs_number_box_stands_under_its_sentence() {
     let line = bounds_of(Role::Label, Some(&set_line(&name)));
     let field = bounds_of(Role::SpinButton, None);
     assert!(
-        field.y0 >= line.y1,
-        "the box's top {} is under the sentence's bottom {}",
+        (field.y0 - (line.y1 + 8.0)).abs() <= 1.0,
+        "the box's top {} is 8 under the sentence's bottom {}",
         field.y0,
         line.y1
     );

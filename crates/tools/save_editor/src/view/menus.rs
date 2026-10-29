@@ -12,7 +12,8 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{
-    menu_button, modal, modal_buttons, radio_value, step_choice, step_number, wheel_steps,
+    menu_button, modal, modal_buttons, modal_sentence_gap, radio_value, step_choice, step_number,
+    wheel_steps,
 };
 
 use crate::session::Session;
@@ -781,6 +782,7 @@ pub(crate) fn stat_num_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         let stat_num = view.stat_num.as_mut().expect("checked above");
         let range = stat_num.range();
         ui.label(&stat_num.line);
+        modal_sentence_gap(ui);
         let field = ui.add(egui::DragValue::new(&mut stat_num.value).range(range.clone()));
         step_number(&mut stat_num.value, wheel_steps(ui, &field), range);
         modal_buttons(ui, |ui| {
@@ -934,6 +936,7 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     ui.label(format!("Swap {name}'s stats with the picked player's."));
                 }
             }
+            modal_sentence_gap(ui);
             ui.horizontal(|ui| {
                 ui.label("Team");
                 let mut picked = dialog.team_id;

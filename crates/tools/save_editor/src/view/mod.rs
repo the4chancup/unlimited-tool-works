@@ -37,7 +37,7 @@ use std::sync::Arc;
 
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::{Engine, PesVersion};
-use studio_core::widgets::{modal, modal_buttons, toolbar_separator};
+use studio_core::widgets::{modal, modal_buttons, modal_sentence_gap, toolbar_separator};
 use studio_core::{Notice, NoticeKind, RunningPes};
 use team_widgets::names::append_name;
 
@@ -928,6 +928,7 @@ fn strip_again_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     "players have"
                 }
             ));
+            modal_sentence_gap(ui);
             egui::ScrollArea::vertical()
                 .max_height(200.0)
                 .show(ui, |ui| {
