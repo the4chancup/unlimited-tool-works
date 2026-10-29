@@ -2832,3 +2832,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The opened sidebar casts no shadow, edged by the rail's line (8.9l3d3f); on Windows the title bar draws no icon, its slot left blank so the window menu stays (8.9l3d3g).
 - **2026-10-29** — The loop's mutation run left two layout values under the draft tests' tolerance; both are pinned exactly now (8.9l3mut).
 - **2026-10-29** — The opened sidebar's labels start 6 after the icon, as the draft's do, and the layer narrows to the draft's 190.6 (8.9l3d3h).
+- **2026-10-29** — The rail's version selector shows its year centred with no arrow, and the sidebar opens after 100 ms, not 150 (8.9l3d3i).

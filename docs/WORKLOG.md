@@ -1923,14 +1923,19 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               layer 190.63, within 1). On the release build: label ink at 47-48 and the
               layer's line at x 189, as the draft's. Files:
               `studio_core/src/shell/sidebar/{mod,tests}.rs`
-            - [ ] l3d3i the rail's version selector: its year centred under the logo with no
+            - [x] l3d3i 2026-10-29 (sidekick Opus, `2bc57823`) the rail's version selector: its year centred under the logo with no
               arrow (the opened sidebar's unchanged), and the hover delay 100 ms (DECISIONS
               "The rail's version selector centred without its arrow; the hover delay 100
               ms"; `plans/core/gui.md` "Sidebar" items 2 and 4; the draft's `#sidebar
               select`, lead, done, `.tmp/8_9l/pairs/rail_selector.png`); brief
-              `.tmp/8_9l/brief_l3d3i.md`, after l3d3h (the same file). The delay became 120
-              ms while it ran (DECISIONS "The sidebar's hover delay 120 ms"): the lead moves
-              `HOVER_DELAY` to 0.12 and the test's two sides to 0.11 and 0.13 at the merge
+              `.tmp/8_9l/brief_l3d3i.md`. egui's combo kept: on the rail a zero-wide arrow slot and
+              an empty growing atom before the year; test
+              `the_rails_selector_centres_its_year_without_an_arrow_and_the_opened_one_keeps_both`,
+              the delay's sides pinned at 1.09 and 1.11. 120 ms tried in the draft and
+              dropped (DECISIONS "The sidebar's hover delay stays 100 ms"). On the release
+              build: `21` centred without an arrow, `PES 2021` and its arrow open
+              (`.tmp/8_9l/built3/l3d3i_pair.png`). Files:
+              `studio_core/src/shell/sidebar/{mod,tests}.rs`
             - [x] l3d3g 2026-10-29 (lead, `712966d8`) the Windows title bar without the icon
               (DECISIONS "The title bar draws no icon on Windows" and "The title bar's icon
               slot stays blank"): `window_size::hide_title_bar_icon`, one `unsafe` call. On the

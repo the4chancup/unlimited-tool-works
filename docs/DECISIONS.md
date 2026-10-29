@@ -13628,3 +13628,12 @@ Decision: the rail opens the sidebar after the pointer rests on it 120 ms. This 
 Why: the maintainer tried 100 in the draft and found it a little too quick; 150 had felt
 slow.
 Plan: `plans/core/gui.md` "Sidebar" item 4.
+
+## 2026-10-29 — gui — The sidebar's hover delay stays 100 ms
+
+Decision: the rail opens the sidebar after the pointer rests on it 100 ms, as the entry "The
+rail's version selector centred without its arrow; the hover delay 100 ms" decided; the entry
+"The sidebar's hover delay 120 ms" is withdrawn.
+Why: the maintainer tried 120 in the draft: it felt slow again, and a pointer that enters the
+rail and turns back out opens the sidebar at 120 as at 100, so the longer delay buys nothing.
+Plan: `plans/core/gui.md` "Sidebar" item 4.
