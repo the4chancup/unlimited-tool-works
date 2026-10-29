@@ -2830,7 +2830,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           `problem`), the logic's `weak_foot` split (logic hash `349f0fa6`); a table test of
           all 36 kinds' names and sentences; `spec/aatf_rules.md` "Hints at a valid value"
           and `spec/save_editor.md` "CLI" follow; `help/01_command_line.md` says "what is
-          wrong" since 8.29e1's merge
+          wrong" since 8.29e1's merge. SWE-2 S1d1a: 3 accepted, the loop ended
+          (`.tmp/8_29d/rulings_d1a.md`); the lead's rework: `Unused::allowance`'s doc names the
+          weak foot's halves, `logic.rhai`'s suggestions comment says `weak_foot` gives one per
+          half (logic hash now `35652515`, the sandbox `cli/dbc7.4ccrules` re-logicked), the
+          interpreter fixture raises both halves and asserts both rows exactly, the catalog's
+          `aatf_violation` text says "what is wrong". Open: the Astra round over d1a + d3a
         - [ ] d1b the rest of the inventory: the Comparator's, changes lists' and patch
           preview's undrawn fields in words, the team file notes in the catalog's member text
           and its section boxes capitalized, the badge's and quick actions' refusals, the

@@ -270,7 +270,9 @@ pub enum ViolationKind {
     /// A suggestion: an allowance listed in `suggestions` the player does
     /// not use up.
     Unused {
-        /// Which allowance (a `suggestions` word or group).
+        /// Which allowance: a `suggestions` word or group, or
+        /// `weak_foot_usage` / `weak_foot_accuracy`, the `weak_foot` word's
+        /// two halves, each reported on its own.
         allowance: String,
         /// How much is used.
         used: u8,

@@ -363,7 +363,7 @@ const CATALOG: &[(Code, &str, &str)] = &[
     ),
     (
         Code::AatfViolation,
-        r#"`check-aatf` found one rule the team breaks under the ruleset (the line names the team, the player for a player's violation, the rule and what is wrong with it)."#,
+        r#"`check-aatf` found one rule the team breaks under the ruleset (the line names the team, the player for a player's violation, the rule and what is wrong)."#,
         r#"An error-severity violation makes the command exit 1, while a warning alone leaves it at 0."#,
     ),
     (

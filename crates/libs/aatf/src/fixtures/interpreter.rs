@@ -85,8 +85,8 @@ fn no_tier_heights_read_every_bound_once() {
 }
 
 /// The weak-foot suggestion reads the special's limits, not the tier's:
-/// a `weak_foot` replacement raising usage to 4 reports the player's 2
-/// as unused.
+/// a `weak_foot` replacement raising both halves to 4 reports the
+/// player's 2 as unused, once for usage and once for accuracy.
 #[test]
 fn a_specials_weak_foot_limits_report_the_suggestion() {
     let rules = rules(
@@ -95,7 +95,7 @@ fn a_specials_weak_foot_limits_report_the_suggestion() {
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77,
                         weak_foot: #{ usage: 2, accuracy: 2 } }],
-            specials: [#{ label: \"four-four\", then: #{ weak_foot: #{ usage: 4, accuracy: 2 } } }],
+            specials: [#{ label: \"four-four\", then: #{ weak_foot: #{ usage: 4, accuracy: 4 } } }],
             suggestions: [\"weak_foot\"],
         };",
     );
@@ -104,10 +104,17 @@ fn a_specials_weak_foot_limits_report_the_suggestion() {
         p.weak_foot_accuracy = 2;
     });
     let found = rules.check_team(&team).expect("the check runs");
-    assert!(
-        found
-            .iter()
-            .any(|v| v.slot == Some(3) && v.kind == unused("weak_foot_usage", 2, 4)),
+    let suggested: Vec<&ViolationKind> = found
+        .iter()
+        .filter(|v| v.slot == Some(3) && v.severity == Severity::Suggestion)
+        .map(|v| &v.kind)
+        .collect();
+    assert_eq!(
+        suggested,
+        [
+            &unused("weak_foot_usage", 2, 4),
+            &unused("weak_foot_accuracy", 2, 4)
+        ],
         "{found:?}"
     );
 }
