@@ -132,12 +132,13 @@ fn commit_pending_text(
     }
 }
 
-/// The field's face: a button filled with `rgb` (`open` draws egui's open-widget style
-/// while its popup is up). Its label carries the shown hex so a screen reader and the
-/// tests can tell fields apart.
+/// The field's face: a 22 x 16 button filled with `rgb` (`open` draws egui's
+/// open-widget style while its popup is up). Its label carries the shown hex so a screen
+/// reader and the tests can tell fields apart.
 fn color_button(ui: &mut Ui, rgb: [u8; 3], open: bool) -> Response {
-    let size = ui.spacing().interact_size;
-    let (rect, response) = ui.allocate_exact_size(size, Sense::click());
+    // The drafts' colour input, not egui's 40-point `interact_size`: a row of fields
+    // holding two colours stood 36 points wider with it.
+    let (rect, response) = ui.allocate_exact_size(vec2(22.0, 16.0), Sense::click());
     response.widget_info(|| {
         WidgetInfo::labeled(
             Role::ColorWell,
