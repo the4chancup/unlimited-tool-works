@@ -1,12 +1,8 @@
 # Fonts
 
-`phosphor-subset.ttf` is the shell's icon font until the suite's own replaces it (worklog 8.14):
-the 19 glyphs the suite draws, cut from the regular weight of Phosphor Icons, as the
-`egui-phosphor` 0.14.0 crate ships it (`res/Phosphor.ttf`, SHA-256 `06b91e02…`). The cut
-keeps each glyph at its Phosphor codepoint and drops the ligatures, so text never turns into
-an icon. `studio_core`'s icon constants name the glyphs.
-
-This file is a copy of `resources/fonts/phosphor-subset.ttf` for the drafts.
+`icons.ttf` is the shell's icon font, a copy of `resources/fonts/icons.ttf`, which
+`scripts/make_icons.py` writes with it (`resources/fonts/README.md` says what it holds). Its
+Phosphor glyphs' licence is below.
 
 The other files are the rest of the app's font chain (`plans/core/gui.md`, the Dark/light theme
 row), so the drafts draw text in exactly the files the app does, never in a system font:
@@ -21,7 +17,7 @@ row), so the drafts draw text in exactly the files the app does, never in a syst
 
 egui-icons' scale is epaint's `FontTweak`, `size-adjust` in the host's `@font-face` rule.
 
-## Licence
+## Licence of the Phosphor glyphs in `icons.ttf`
 
 Phosphor Icons, MIT License:
 
