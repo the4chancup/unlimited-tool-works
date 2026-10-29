@@ -59,3 +59,15 @@ Adds: the picker's hex field accepts `#RRGGBB`, `0xRRGGBB` and `RRGGBB` alike in
 that uses it, so a pasted value from an old habit lands instead of being refused. Costs: one
 parse with three prefixes in `color_tools`; the field still shows `#RRGGBB`.
 
+
+## P44 — The help window's text column capped at a reading width
+
+From the maintainer's look at the help (2026-10-29: paragraphs read as one extremely long
+line). The window opens at 90% of the program's window, so a topic's lines run about 200
+characters across its pane at 1280 points; print and web typography keep a line to roughly
+60-90 characters, past which the eye loses the next line's start.
+
+Adds: a topic's text, lists and code blocks wrap at about 720 points (some 110 characters at
+the body size), left-aligned in the pane, the rest of the pane empty; the Messages table keeps
+the pane's full width. Costs: one `ui.set_max_width` in the topic's column and the drafts'
+`.help-topic` `max-width`; wide windows show unused room right of the text.

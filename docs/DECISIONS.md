@@ -13898,3 +13898,16 @@ lines so search can highlight one paragraph, and one viewer per paragraph leaves
 points between them. The overlay pass measured the window's frame, tree and Messages rows but
 never a topic's body (`draft_compare.py help` was never run).
 Plan: `plans/core/gui.md` "Help window", the Window bullet.
+
+## 2026-10-29 — help — Help topics in short paragraphs under subheadings, lists for parallel items
+
+Decision: the help chapters are restructured, their facts kept: one subject per paragraph,
+a subheading (a bold line of its own) per subject where a topic has several, and lists for a
+menu's entries, a dialog's options and a procedure's steps. The Save editor's chapters and
+the core ones before 0.0.1, the other tools' after it. The drafts' copies follow word for word.
+Why: the maintainer: "each paragraph is a single extremely long line, which explains multiple
+facts one after the other". The 8.29 text pass made each sentence flow but kept the chapters'
+walls of prose; a bold run-in head (`**Editing.** Click a…`) hid the subject inside its
+paragraph. A bold line rather than a Markdown heading, because the window draws a topic's
+title at heading size and a `##` inside the body would compete with it.
+Plan: `CONTRIBUTING.md` "Code style", the bullet on help topics.

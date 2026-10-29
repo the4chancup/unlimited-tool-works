@@ -2830,6 +2830,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [ ] d2 after 0.1.0, with Phase 20 (the maintainer, 2026-10-29): the Ruleset editor
         shows the game's names (Attacking Prowess) and writes the rules-file ids
         (`attacking_prowess`)
+    - [ ] e the help chapters' shape (the maintainer, 2026-10-29: "each paragraph is a single
+      extremely long line, which explains multiple facts one after the other"; DECISIONS "Help
+      topics in short paragraphs under subheadings, lists for parallel items", CONTRIBUTING's
+      bullet): every topic restructured, its facts kept, each change read by the lead line by
+      line (a fact lost or changed is a finding)
+      - [ ] e1 before 0.0.1: the Save editor's eight chapters, the two core ones
+        (`studio_core/src/help/core/`), and the drafts' copies in `docs/prototypes/index.html`
+        → verify: `studio`'s help tests and the help export; every topic read in the built
+        window
+      - [ ] e2 after 0.0.1: the Team compiler's, the Export upgrader's and the other tools'
+        chapters
   - [ ] 8.21 the app's font in the drafts (`core/gui.md` "The host's other review aids"; after
     8.9f4e picks the bundled font): `@font-face` rules at egui's sizes → verify: one width
     constant's row (`TOP_ROW_ONE_LINE`) measured in the draft and in the built window agree
