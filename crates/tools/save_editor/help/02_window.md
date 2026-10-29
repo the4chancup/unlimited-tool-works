@@ -64,7 +64,7 @@ differences over the whole save as a text file.
 edit, in a panel docked at the bottom of the window: the violations left, grouped
 per player and the team's own under `Team-wide issues`, under `N issues · <ruleset>`,
 or `<team> passes <ruleset> with no issues` once the team passes. Clicking a row
-selects that player; a `FieldedNotA` row, about
+selects that player; a Fielded position row, about
 a position he is fielded at, selects his team's row instead, on the named preset's
 first formation that crosses his portrait.
 

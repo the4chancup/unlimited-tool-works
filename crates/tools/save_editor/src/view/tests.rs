@@ -1323,7 +1323,7 @@ fn fielded_row_below<'a>(nodes: &'a [accesskit::Node], header: &str) -> &'a acce
             node.role() == Role::Button
                 && node
                     .label()
-                    .is_some_and(|label| label.starts_with("FieldedNotA:"))
+                    .is_some_and(|label| label.starts_with("Fielded position:"))
         })
         .filter(|node| node.bounds().is_some_and(|b| b.y0 > top))
         .min_by(|a, b| {

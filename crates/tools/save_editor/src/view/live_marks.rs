@@ -145,8 +145,8 @@ fn unused_field(allowance: &str) -> MarkedField {
     match allowance {
         "cards" => MarkedField::Skills,
         "a_positions" => MarkedField::PlayablePositions,
-        // Usage and Accuracy share one label, Usage's row.
-        "weak_foot" => MarkedField::WeakFootUsage,
+        "weak_foot_usage" => MarkedField::WeakFootUsage,
+        "weak_foot_accuracy" => MarkedField::WeakFootAccuracy,
         "injury_resistance" => MarkedField::InjuryResistance,
         "height" => MarkedField::Height,
         "com" => MarkedField::ComStyles,
@@ -177,9 +177,10 @@ fn severity_color(severity: aatf::Severity, visuals: &egui::Visuals) -> egui::Co
     }
 }
 
-/// What a field's mark draws from: the held team's violations and the
-/// selected player's slot and team (`violation_line`'s team id), bundled
-/// so the view's field sites take one parameter. `None` at a site while
+/// What a field's mark draws from: the held team's violations, the
+/// selected player's slot and team (`violation_line`'s team id) and the
+/// active ruleset its lines name tiers and brackets from, bundled so the
+/// view's field sites take one parameter. `None` at a site while
 /// `held_violations` names another team or no result — the view's
 /// players are not checked then.
 #[derive(Clone, Copy)]
@@ -190,6 +191,8 @@ pub(super) struct Marks<'a> {
     pub(super) slot: u8,
     /// His team.
     pub(super) team_id: u32,
+    /// The active ruleset, for `violation_line`.
+    pub(super) ruleset: &'a aatf::Ruleset,
 }
 
 impl Marks<'_> {
@@ -208,7 +211,7 @@ impl Marks<'_> {
         label: egui::Rect,
         field: MarkedField,
     ) -> Option<egui::Response> {
-        let mark = field_mark(self.violations, self.slot, self.team_id, field)?;
+        let mark = field_mark(self, field)?;
         let (glyph, color) = mark.glyph(ui.visuals());
         let galley = ui.painter().layout_no_wrap(
             glyph.to_string(),
@@ -255,25 +258,21 @@ impl FieldMark {
     }
 }
 
-/// The rows on `slot` whose kind maps to `field`, as the mark before it
-/// draws them (`None`: no row, nothing is drawn).
-fn field_mark(
-    violations: &[aatf::Violation],
-    slot: u8,
-    team_id: u32,
-    field: MarkedField,
-) -> Option<FieldMark> {
-    let marked: Vec<&aatf::Violation> = violations
+/// The rows on `marks`' slot whose kind maps to `field`, as the mark
+/// before it draws them (`None`: no row, nothing is drawn).
+fn field_mark(marks: &Marks<'_>, field: MarkedField) -> Option<FieldMark> {
+    let marked: Vec<&aatf::Violation> = marks
+        .violations
         .iter()
         .filter(|violation| {
-            violation.slot == Some(slot) && marked_field(&violation.kind) == Some(field)
+            violation.slot == Some(marks.slot) && marked_field(&violation.kind) == Some(field)
         })
         .collect();
     Some(FieldMark {
         severity: highest(marked.iter().map(|violation| violation.severity))?,
         tooltip: marked
             .iter()
-            .map(|violation| violation_line(violation, team_id))
+            .map(|violation| violation_line(violation, marks.team_id, marks.ruleset))
             .collect::<Vec<_>>()
             .join("\n"),
     })

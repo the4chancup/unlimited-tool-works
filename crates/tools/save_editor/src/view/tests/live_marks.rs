@@ -273,7 +273,8 @@ fn marked_field_maps_every_kind() {
     for (allowance, field) in [
         ("cards", F::Skills),
         ("a_positions", F::PlayablePositions),
-        ("weak_foot", F::WeakFootUsage),
+        ("weak_foot_usage", F::WeakFootUsage),
+        ("weak_foot_accuracy", F::WeakFootAccuracy),
         ("injury_resistance", F::InjuryResistance),
         ("height", F::Height),
         ("free_cards", F::AsideCards),
@@ -768,7 +769,8 @@ fn each_fields_mark_stands_left_of_its_label() {
         ),
         (Suggestion, unused("tricks"), "Tricks"),
         (Suggestion, unused("cards"), "Skills"),
-        (Suggestion, unused("weak_foot"), "Weak foot: Usage"),
+        (Suggestion, unused("weak_foot_usage"), "Weak foot: Usage"),
+        (Suggestion, unused("weak_foot_accuracy"), "Accuracy"),
     ];
     let (mut view, mut window) = open_734("live_marks_each_field");
     view.live_aatf = true;
@@ -1264,10 +1266,12 @@ fn a_fields_mark_draws_its_highest_severitys_glyph_left_of_the_label() {
         label: egui::Rect,
         events: Vec<egui::Event>,
     ) -> (Option<egui::Response>, Vec<egui::epaint::ClippedShape>) {
+        let rules = aatf::Rules::official();
         let marks = live_marks::Marks {
             violations,
             slot: 0,
             team_id: 734,
+            ruleset: rules.ruleset(),
         };
         let mut painted = None;
         let (_, _, shapes) = window.frame(events, |ui| {
@@ -1291,17 +1295,19 @@ fn a_fields_mark_draws_its_highest_severitys_glyph_left_of_the_label() {
             label,
             vec![egui::Event::PointerMoved(at)],
         );
+        let rules = aatf::Rules::official();
         for _ in 0..frames {
             let (_, nodes, _) = window.frame(Vec::new(), |ui| {
                 live_marks::Marks {
                     violations,
                     slot: 0,
                     team_id: 734,
+                    ruleset: rules.ruleset(),
                 }
                 .paint(ui, label, live_marks::MarkedField::RegisteredPosition);
             });
             if let Some(value) = nodes.iter().find_map(|node| node.value())
-                && (value.contains("RegisteredNotA") || value.contains("PositionRange"))
+                && value.contains("Registered position")
             {
                 return Some(value.to_owned());
             }
@@ -1311,8 +1317,10 @@ fn a_fields_mark_draws_its_highest_severitys_glyph_left_of_the_label() {
 
     let mut window = Headless::new();
     let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
-    let line =
-        |violation: &aatf::Violation| team_widgets::violations::violation_line(violation, 734);
+    let rules = aatf::Rules::official();
+    let line = |violation: &aatf::Violation| {
+        team_widgets::violations::violation_line(violation, 734, rules.ruleset())
+    };
     let cases = [
         (
             vec![

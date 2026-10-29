@@ -7,15 +7,15 @@
 
 use std::borrow::Cow;
 
-use aatf::{Violation, ViolationKind};
+use aatf::Violation;
 use pes_savefile::interchange::aesthetics_patch::PatchSkip;
 use pes_savefile::interchange::team_toml::ImportNote;
 use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::names::display_name;
-use pes_savefile::model::roster_order_player_id;
 use pes_savefile::ops::compare::PlayerDiff;
 use pes_version::PesVersion;
 use studio_core::{CatalogRow, Disposition, Message, MessageCode, Scope, Severity};
+use team_widgets::violations::{rule_name, sentence};
 
 /// The tool's id: its CLI subcommand, its settings section and the owner of its message codes.
 pub(crate) const TOOL_ID: &str = "save-editor";
@@ -76,8 +76,8 @@ pub(crate) enum Code {
     /// written (`path`, `error`).
     TeamsListReadOnly,
     /// `check-aatf`: one rule the team breaks under the ruleset (`team`; `player` for a
-    /// player's violation; `rule`, then the rule's own fields). The severity is the
-    /// violation's, so `aatf_violation` sets it on the message it builds.
+    /// player's violation; `rule`, the rule's name in words; `problem`, what is wrong). The
+    /// severity is the violation's, so `aatf_violation` sets it on the message it builds.
     AatfViolation,
     /// `check-aatf`: the ruleset's check itself failed on the team, which the other teams'
     /// results do not cover (`team`, `error`).
@@ -363,7 +363,7 @@ const CATALOG: &[(Code, &str, &str)] = &[
     ),
     (
         Code::AatfViolation,
-        r#"`check-aatf` found one rule the team breaks under the ruleset (the line names the team, the player for a player's violation, the rule and its values)."#,
+        r#"`check-aatf` found one rule the team breaks under the ruleset (the line names the team, the player for a player's violation, the rule and what is wrong with it)."#,
         r#"An error-severity violation makes the command exit 1, while a warning alone leaves it at 0."#,
     ),
     (
@@ -525,30 +525,25 @@ pub(crate) fn patch_skip(skip: PatchSkip) -> Message {
     }
 }
 
-/// The message for one `check-aatf` violation of `team`: `player` is the rostered player's
-/// id when the violation names a slot, `severity` the violation's (a suggestion is filtered
-/// by the caller, which prints nothing for it), and `rule` with its fields is
-/// `aatf::ViolationKind::rule`'s. A `RosterOrder` names the held id in its own `player`
-/// field (the context's would repeat it) and adds `expected`, the id the rule puts in the
-/// slot.
+/// The message for one `check-aatf` violation of `team`, worded as the window's AATF rows
+/// word it: `player` is the rostered player's id when the violation names a slot,
+/// `severity` the violation's (a suggestion is filtered by the caller, which prints nothing
+/// for it), `rule` the rule's name in words and `problem` the sentence saying what is
+/// wrong, which names tiers, brackets and systems by their labels in `ruleset`, the rules
+/// the check ran under.
 pub(crate) fn aatf_violation(
     team: u32,
     player: Option<u32>,
     violation: &Violation,
+    ruleset: &aatf::Ruleset,
     severity: Severity,
 ) -> Message {
-    let (rule, fields) = violation.kind.rule();
     let mut context = vec![("team", team.to_string())];
-    if let Some(player) = player
-        && !matches!(violation.kind, ViolationKind::RosterOrder { .. })
-    {
+    if let Some(player) = player {
         context.push(("player", player.to_string()));
     }
-    context.push(("rule", rule.to_owned()));
-    context.extend(fields);
-    if let (ViolationKind::RosterOrder { .. }, Some(slot)) = (&violation.kind, violation.slot) {
-        context.push(("expected", roster_order_player_id(team, slot).to_string()));
-    }
+    context.push(("rule", rule_name(&violation.kind).to_owned()));
+    context.push(("problem", sentence(violation, team, ruleset)));
     let mut message = message(Code::AatfViolation, context);
     message.severity = severity;
     message
@@ -789,291 +784,78 @@ mod tests {
         );
     }
 
-    /// One variant of `ViolationKind` each, and the `rule=` line's fields as the rules
-    /// file spells them: the map keys `logic.rhai` emits for the kind, in emit order.
+    /// A violation's line names the team, the rostered player for a player's violation, the
+    /// rule in words and the sentence the window's rows print, under the rules the check ran
+    /// under (Autumn 26, whose `tall` bracket and `red` system print as Tall and Red). A
+    /// team's own violation names no player, and the severity is the violation's.
     #[test]
-    fn every_violation_kind_prints_its_rules_file_fields() {
-        let cases: &[(ViolationKind, &str)] = &[
-            (
-                ViolationKind::RegisteredNotA {
-                    rated_a: vec![
-                        "CF".to_owned().try_into().unwrap(),
-                        "SS".to_owned().try_into().unwrap(),
-                    ],
-                },
-                "rule=RegisteredNotA, rated_a=[CF, SS]",
-            ),
-            (
-                ViolationKind::RegisteredNotA { rated_a: vec![] },
-                "rule=RegisteredNotA, rated_a=[]",
-            ),
-            (
-                ViolationKind::FieldedNotA {
-                    preset: 1,
-                    position: "GK".to_owned().try_into().unwrap(),
-                    rated_a: vec!["DMF".to_owned().try_into().unwrap()],
-                },
-                "rule=FieldedNotA, preset=1, position=GK, rated_a=[DMF]",
-            ),
-            (
-                ViolationKind::BRating {
-                    rated_b: vec![
-                        "LB".to_owned().try_into().unwrap(),
-                        "RB".to_owned().try_into().unwrap(),
-                    ],
-                },
-                "rule=BRating, rated_b=[LB, RB]",
-            ),
-            (
-                ViolationKind::GkSecondA { rated_a: vec![] },
-                "rule=GkSecondA, rated_a=[]",
-            ),
-            (
-                ViolationKind::Age {
-                    age: 15,
-                    min: 16,
-                    max: 40,
-                },
-                "rule=Age, age=15, min=16, max=40",
-            ),
-            (
-                ViolationKind::Weight {
-                    weight: 80,
-                    min: 30,
-                    max: 50,
-                },
-                "rule=Weight, weight=80, min=30, max=50",
-            ),
-            (ViolationKind::PositionRange, "rule=PositionRange"),
-            (ViolationKind::PlayingStyleRange, "rule=PlayingStyleRange"),
-            (
-                ViolationKind::NoTier {
-                    heights: vec![(180, 180), (185, 185)],
-                },
-                "rule=NoTier, heights=[180-180, 185-185]",
-            ),
-            (
-                ViolationKind::NoTier { heights: vec![] },
-                "rule=NoTier, heights=[]",
-            ),
-            (
-                ViolationKind::Stat {
-                    stat: "dribbling".to_owned().try_into().unwrap(),
-                    value: 80,
-                    target: 92,
-                    at_most: true,
-                },
-                "rule=Stat, stat=dribbling, value=80, target=92, at_most=true",
-            ),
-            (
-                ViolationKind::StatTotal {
-                    total: 1772,
-                    limit: 1771,
-                },
-                "rule=StatTotal, total=1772, limit=1771",
-            ),
-            (
-                ViolationKind::Form {
-                    value: 2,
-                    target: 4,
-                },
-                "rule=Form, value=2, target=4",
-            ),
-            (
-                ViolationKind::InjuryResistance { value: 0, max: 2 },
-                "rule=InjuryResistance, value=0, max=2",
-            ),
-            (
-                ViolationKind::WeakFootUsage { value: 2, max: 4 },
-                "rule=WeakFootUsage, value=2, max=4",
-            ),
-            (
-                ViolationKind::WeakFootAccuracy { value: 1, max: 3 },
-                "rule=WeakFootAccuracy, value=1, max=3",
-            ),
-            (
-                ViolationKind::NameColor {
-                    color: Some("c0c0c0ff".to_owned()),
-                    expected: Some("cc9900ff".to_owned()),
-                },
-                "rule=NameColor, color=c0c0c0ff, expected=cc9900ff",
-            ),
-            (
-                ViolationKind::Cards { paid: 10, limit: 8 },
-                "rule=Cards, paid=10, limit=8",
-            ),
-            (
-                ViolationKind::MinCards { paid: 3, min: 5 },
-                "rule=MinCards, paid=3, min=5",
-            ),
-            (
-                ViolationKind::SkillCardCap { count: 11, max: 10 },
-                "rule=SkillCardCap, count=11, max=10",
-            ),
-            (
-                ViolationKind::ComStyleCap { count: 8, max: 7 },
-                "rule=ComStyleCap, count=8, max=7",
-            ),
-            (
-                ViolationKind::RequiredCard {
-                    card: "malicia".to_owned().try_into().unwrap(),
-                },
-                "rule=RequiredCard, card=malicia",
-            ),
-            (
-                ViolationKind::APositions {
-                    count: 3,
-                    max: 2,
-                    rated_a: vec![
-                        "AMF".to_owned().try_into().unwrap(),
-                        "SS".to_owned().try_into().unwrap(),
-                        "CF".to_owned().try_into().unwrap(),
-                    ],
-                },
-                "rule=APositions, count=3, max=2, rated_a=[AMF, SS, CF]",
-            ),
-            (
-                ViolationKind::Height {
-                    height: 183,
-                    fits: vec![(180, 180), (185, 185)],
-                    room: true,
-                },
-                "rule=Height, height=183, fits=[180-180, 185-185], room=true",
-            ),
-            (
-                ViolationKind::Height {
-                    height: 191,
-                    fits: vec![],
-                    room: false,
-                },
-                "rule=Height, height=191, fits=[], room=false",
-            ),
-            (
-                ViolationKind::TierCount {
-                    tier: "gold".to_owned(),
-                    count: 0,
-                    expected: 1,
-                },
-                "rule=TierCount, tier=gold, count=0, expected=1",
-            ),
-            (
-                ViolationKind::BracketQuota {
-                    system: "red".to_owned(),
-                    bracket: "tall".to_owned(),
-                    count: 3,
-                    quota: 6,
-                },
-                "rule=BracketQuota, system=red, bracket=tall, count=3, quota=6",
-            ),
-            (
-                ViolationKind::MedalSystem {
-                    systems: vec!["GGG".to_owned(), "GGSS".to_owned()],
-                },
-                "rule=MedalSystem, systems=[GGG, GGSS]",
-            ),
-            (
-                ViolationKind::ExtraHeight {
-                    used: 51,
-                    total: 50,
-                },
-                "rule=ExtraHeight, used=51, total=50",
-            ),
-            (ViolationKind::Captain, "rule=Captain"),
-            (
-                ViolationKind::Goalkeepers { count: 0, min: 1 },
-                "rule=Goalkeepers, count=0, min=1",
-            ),
-            (
-                ViolationKind::TeamSetting {
-                    label: "no offside trap".to_owned(),
-                    setting: "offside_trap".to_owned(),
-                    wanted: false,
-                },
-                "rule=TeamSetting, label=no offside trap, setting=offside_trap, wanted=false",
-            ),
-            (
-                ViolationKind::FormationShape {
-                    preset: 2,
-                    formation: 3,
-                    shape: [3, 4, 3],
-                },
-                "rule=FormationShape, preset=2, formation=3, shape=[3, 4, 3]",
-            ),
-            (
-                ViolationKind::Special {
-                    label: "GKs below giant".to_owned(),
-                    text: "GK heights cannot be 194cm or more".to_owned(),
-                },
-                "rule=Special, label=GKs below giant, text=GK heights cannot be 194cm or more",
-            ),
-            (
-                ViolationKind::Custom {
-                    text: "a custom check's text".to_owned(),
-                },
-                "rule=Custom, text=a custom check's text",
-            ),
-            (
-                ViolationKind::Unused {
-                    allowance: "cards".to_owned(),
-                    used: 3,
-                    allowed: 8,
-                },
-                "rule=Unused, allowance=cards, used=3, allowed=8",
-            ),
-            (
-                ViolationKind::UnusedChoice {
-                    special: "manlet bonus".to_owned(),
-                },
-                "rule=UnusedChoice, special=manlet bonus",
-            ),
-        ];
-        for (kind, expected) in cases {
-            let violation = Violation {
-                slot: Some(0),
-                severity: aatf::Severity::Error,
-                kind: kind.clone(),
-            };
-            assert_eq!(
-                line(&aatf_violation(
-                    718,
-                    Some(71802),
-                    &violation,
-                    Severity::Error
-                )),
-                format!("Error aatf_violation (team=718, player=71802, {expected})"),
-                "{kind:?}"
-            );
-        }
-        // `RosterOrder` prints its held id as `player` (the context's own
-        // would repeat it) and `expected`, the id the rule puts in the slot
-        // (slot 0 of team 718: 71801).
-        let roster_order = Violation {
-            slot: Some(0),
-            severity: aatf::Severity::Error,
-            kind: ViolationKind::RosterOrder { player: 71802 },
+    fn a_violation_line_names_the_rule_in_words_and_the_problem() {
+        let rules = aatf::Rules::official();
+        let ruleset = rules.ruleset();
+        let violation = |slot, severity, kind| Violation {
+            slot,
+            severity,
+            kind,
         };
+        let stat = violation(
+            Some(1),
+            aatf::Severity::Error,
+            ViolationKind::Stat {
+                stat: "attacking_prowess".to_owned().try_into().unwrap(),
+                value: 82,
+                target: 77,
+                at_most: true,
+            },
+        );
+        assert_eq!(
+            line(&aatf_violation(
+                718,
+                Some(71802),
+                &stat,
+                ruleset,
+                Severity::Error
+            )),
+            "Error aatf_violation (team=718, player=71802, rule=Stat, \
+             problem=Attacking Prowess 82, over the 77 the rules allow)"
+        );
+        // The slot's player is the one the slot holds, which the sentence compares with
+        // the id the rule puts in the slot (slot 0 of team 718: 71801).
+        let roster_order = violation(
+            Some(0),
+            aatf::Severity::Error,
+            ViolationKind::RosterOrder { player: 71802 },
+        );
         assert_eq!(
             line(&aatf_violation(
                 718,
                 Some(71802),
                 &roster_order,
+                ruleset,
                 Severity::Error
             )),
-            "Error aatf_violation (team=718, rule=RosterOrder, player=71802, expected=71801)"
+            "Error aatf_violation (team=718, player=71802, rule=Roster order, \
+             problem=the slot holds player 71802, not 71801)"
         );
-        // A team-level violation names no player, an `Option` field none when `None`, and
-        // the severity is the violation's.
-        let name_color = Violation {
-            slot: None,
-            severity: aatf::Severity::Warning,
-            kind: ViolationKind::NameColor {
-                color: None,
-                expected: Some("cc9900ff".to_owned()),
+        let quota = violation(
+            None,
+            aatf::Severity::Warning,
+            ViolationKind::BracketQuota {
+                system: "red".to_owned(),
+                bracket: "tall".to_owned(),
+                count: 8,
+                quota: 10,
             },
-        };
+        );
         assert_eq!(
-            line(&aatf_violation(718, None, &name_color, Severity::Warning)),
-            "Warning aatf_violation (team=718, rule=NameColor, expected=cc9900ff)"
+            line(&aatf_violation(
+                734,
+                None,
+                &quota,
+                ruleset,
+                Severity::Warning
+            )),
+            "Warning aatf_violation (team=734, rule=Height quota, \
+             problem=8 players in the Tall bracket of the Red system, where its quota is 10)"
         );
         assert_eq!(
             line(&aatf_check_failed(

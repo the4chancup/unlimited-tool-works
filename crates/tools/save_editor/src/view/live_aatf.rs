@@ -135,6 +135,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                                     "aatf_live",
                                     result_key,
                                     checks,
+                                    active.rules.ruleset(),
                                     ListUse::Editing {
                                         show_suggestions: result_key.suggestions,
                                     },

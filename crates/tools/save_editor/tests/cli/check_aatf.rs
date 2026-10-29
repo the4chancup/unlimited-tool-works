@@ -31,11 +31,11 @@ fn rules_file(ruleset: &str) -> String {
 /// cannot produce: VGL27's one height system is `purple`, the official's are `red` and
 /// `green`. (The official file now has `fielded_at_a` too, so `FieldedNotA` no longer
 /// tells the files apart.)
-const PICKED_FILE_VIOLATION: &str = "Error aatf_violation (team=701, rule=BracketQuota, system=purple, bracket=tall, count=0, quota=10)";
+const PICKED_FILE_VIOLATION: &str = "Error aatf_violation (team=701, rule=Height quota, problem=0 players in the Tall bracket of the Purple system, where its quota is 10)";
 
 /// The official ruleset's marker violation on team 701 of the same save: a `red`
 /// quota the VGL27 file cannot produce.
-const OFFICIAL_VIOLATION: &str = "Error aatf_violation (team=701, rule=BracketQuota, system=red, bracket=tall, count=0, quota=10)";
+const OFFICIAL_VIOLATION: &str = "Error aatf_violation (team=701, rule=Height quota, problem=0 players in the Tall bracket of the Red system, where its quota is 10)";
 
 /// `check-aatf <save>` with the given extra arguments.
 fn check(sandbox: &Sandbox, save: &str, extra: &[&str]) -> crate::common::Run {
@@ -60,9 +60,9 @@ fn a_teams_violations_print_in_order_and_an_error_exits_1() {
     assert_eq!(
         run.messages(),
         [
-            "Error aatf_violation (team=718, rule=TierCount, tier=gold, count=2, expected=1)",
-            "Error aatf_violation (team=718, rule=TierCount, tier=bronze, count=0, expected=2)",
-            "Error aatf_violation (team=718, rule=TierCount, tier=regular, count=19, expected=18)",
+            "Error aatf_violation (team=718, rule=Tier count, problem=2 Gold players, where the rules want 1)",
+            "Error aatf_violation (team=718, rule=Tier count, problem=0 Bronze players, where the rules want 2)",
+            "Error aatf_violation (team=718, rule=Tier count, problem=19 Regular players, where the rules want 18)",
         ]
     );
 }
@@ -91,7 +91,7 @@ fn a_warning_only_team_exits_0_and_a_clean_team_prints_nothing() {
             "official_warning.toml",
             vec!["--rules", warning_rules.as_str()],
             vec![
-                "Warning aatf_violation (team=714, player=71401, rule=Special, label=Goalkeepers below giant, text=GK heights cannot be 194cm or more)",
+                "Warning aatf_violation (team=714, player=71401, rule=Special rule, problem=Goalkeepers below giant: GK heights cannot be 194cm or more)",
             ],
         ),
         ("official_legal.toml", Vec::new(), Vec::new()),
@@ -111,6 +111,40 @@ fn a_warning_only_team_exits_0_and_a_clean_team_prints_nothing() {
         assert_eq!(run.exit_code(), 0, "{file}");
         assert_eq!(run.messages(), expected, "{file}");
     }
+}
+
+/// A line names the rule in words and says what is wrong as the window's rows do, a stat by
+/// the game's name: the legal 714 /co/ with its goalkeeper's Attacking Prowess raised from
+/// the 77 the official ruleset allows to 82.
+// SE-AATF-01
+#[test]
+fn a_stats_line_names_the_stat_as_the_game_does() {
+    let sandbox = Sandbox::new("aatf_stat_line");
+    sandbox.fixture(PesVersion::Pes15, "EDIT");
+    let legal =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/aatf/official_legal.toml");
+    let legal = fs::read_to_string(legal).unwrap();
+    let raised = "[players.01.stats]\nattacking_prowess = 82\n";
+    let toml = legal.replacen("[players.01.stats]\nattacking_prowess = 77\n", raised, 1);
+    assert!(toml.contains(raised), "premise: slot 01's prowess was 77");
+    fs::write(sandbox.path("raised.toml"), toml).unwrap();
+    let run = sandbox.run(&[
+        "import-toml",
+        &sandbox.arg("raised.toml"),
+        "--base",
+        &sandbox.arg("EDIT"),
+        "--out",
+        &sandbox.arg("OUT"),
+    ]);
+    assert_eq!(run.exit_code(), 0, "{:?}", run.messages());
+
+    let run = check(&sandbox, "OUT", &["--teams", "714"]);
+    assert_eq!(run.exit_code(), 1, "{:?}", run.messages());
+    assert_eq!(
+        run.messages(),
+        ["Error aatf_violation (team=714, player=71401, rule=Stat, \
+          problem=Attacking Prowess 82, over the 77 the rules allow)"]
+    );
 }
 
 // SE-AATF-02
@@ -153,8 +187,8 @@ fn teams_limits_the_check_to_the_named_teams_in_id_order() {
     // fielded in goal in preset 1 without an A there (rated A nowhere).
     assert!(
         messages.iter().any(|line| line
-            == "Error aatf_violation (team=704, player=70401, rule=FieldedNotA, preset=1, \
-                position=GK, rated_a=[])"),
+            == "Error aatf_violation (team=704, player=70401, rule=Fielded position, \
+                problem=fielded at GK in preset 1 without an A rating (no position rated A))"),
         "{messages:?}"
     );
 }
@@ -422,14 +456,16 @@ fn a_roster_order_break_reports_the_held_and_expected_ids() {
     // players by slot, `spec/aatf_rules.md` "The host").
     let breaks: Vec<&str> = messages
         .iter()
-        .filter(|line| line.contains("RosterOrder"))
+        .filter(|line| line.contains("rule=Roster order"))
         .map(String::as_str)
         .collect();
     assert_eq!(
         breaks,
         [
-            "Error aatf_violation (team=701, rule=RosterOrder, player=70102, expected=70101)",
-            "Error aatf_violation (team=701, rule=RosterOrder, player=70101, expected=70102)",
+            "Error aatf_violation (team=701, player=70102, rule=Roster order, \
+             problem=the slot holds player 70102, not 70101)",
+            "Error aatf_violation (team=701, player=70101, rule=Roster order, \
+             problem=the slot holds player 70101, not 70102)",
         ],
         "{messages:?}"
     );
@@ -475,7 +511,7 @@ fn an_imported_aatf_ruleset_is_read_from_the_data_directorys_rules_folder() {
 fn the_aatf_ruleset_setting_naming_vtl11_checks_against_vtl11() {
     /// VTL11's captain rule broken by team 701's captain, a Regular: a special the
     /// official ruleset does not have.
-    const VTL11_VIOLATION: &str = "Error aatf_violation (team=701, player=70101, rule=Special, label=Regulars cannot be captain, text=Regulars can't be captain)";
+    const VTL11_VIOLATION: &str = "Error aatf_violation (team=701, player=70101, rule=Special rule, problem=Regulars cannot be captain: Regulars can't be captain)";
 
     let sandbox = Sandbox::new("aatf_ruleset_vtl11");
     sandbox.fixture(PesVersion::Pes21, "EDIT");
