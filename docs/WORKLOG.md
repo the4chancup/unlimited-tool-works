@@ -24,7 +24,7 @@ export-writing one waits for 0.1.0); 8.9f's slice 4: v2 is
 the base, ported in five subslices, 4a the frame, 4b Abilities and 4c Appearance and Tactics done, 4d (the one cards badge, on 0.0.1i's `Rules::player_tier`) done and reviewed; 8.9h closed by the window's 960 × 600 minimum; 8.29, the text pass, under way: a (the Save editor's
 window, catalog, CLI, help and draft) done, c (the Team compiler and the upgrader) under way
 on side-lead U's branch, c1 to c5 done, the help chapters' fact audit (c4e) included, c6 outside its locks; 8.9l, the open and save scenarios, done 2026-10-29
-(SE-GUI-21 checked in game, the running-game rule an Edit mode question); 8.9m, the logic's speed
+(SE-GUI-21 checked in game on PES 2021 and 2017, its texts corrected in 8.9m m5); 8.9m, the logic's speed
 rewrite before the v1 freeze; 0.0.1j's audit read, j1 and j2 open; the maintainer's
 proposal rulings of 2026-10-26 added 0.0.1o-r, k4 and 8.7c), `libs/aatf`'s hardening (the repetition rework done and
 reviewed; the audit 0.0.1i done and reviewed), `ingame_face.toml` (0.0.1h, done 2026-10-25: the compiler,
@@ -36,8 +36,8 @@ and resumes after 0.1.0: 20.3-20.5, 20.6a1 and 20.6a2a (Tiers) done and reviewed
 `PROPOSALS.md` P15-P22 wait for the maintainer's rulings), 8.5 (the Save
 editor's draft), the shell (8.6a-e), the color picker (8.7a-b), `team_widgets` (8.8), egui 0.37
 and the release stage (8.11, 8.13). The face_diff model comparison (Issues, "a face diff is
-engine-specific") follows the editor. The shell's draft (`docs/prototypes/index.html`, steps
-8.2 and 8.16) and the icon picks (8.14, `docs/QUESTIONS.md`) wait for the maintainer.
+engine-specific") follows the editor. The shell's own icon font (8.14) is built, its look in
+the built window open.
 No side-lead runs: tracks A (the drafts, 8.16-8.19a and 8.25's half) and B (0.0.1i) ran on
 2026-10-25 and are merged; the record is `.tmp/lead/tracks.md`. 2.5b (GPU BC7) is step 16.x, its `dds_convert` half built ahead of its
 phase (16.x a, unwired)

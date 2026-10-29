@@ -10,29 +10,18 @@ names where the question came from so the context can be read there.
 
 ## Before the release
 
-- **The final pass over the built app's UI** (worklog 0.0.1f1c; the maintainer asked for it on
-  2026-10-28; under way since 2026-10-28 ~14:00). Any change it asks for is drafted first,
-  looked at in the drafts, then built.
-  - **Where the candidate is** (restaged 2026-10-29 with the day's changes):
-    - branch `release/0.0.1-candidate`, at `d317b6da`;
-    - the bundle `just release` would pack, unpacked:
-      `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1b\unlimited-tool-works-0.0.1\`
-      (`UTW.exe`, built after a green checkpoint; `COMMIT.txt` beside the folder names its
-      commit; started once from a copy, so the folder itself is as fresh as a download).
-  - **Already measured:** every screen the drafts and the build share, against the drafts at
-    1 point (2 where needed), in both themes (worklog 0.0.1ov1 to ov2z, ov11b to ov11d). What
-    still differs does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit
-    areas.
-  - **New in this candidate:**
-    - the toolbar's Open menu and Save as (8.9l);
-    - the drafts on egui's spacing for menus, the toolbar and a view's margin;
-    - the ability stats' labels left-aligned;
-    - the clover logo;
-    - the sidebar's polish: no shadow, labels where the draft has them, the rail's year
-      centred, a press on it opening the sidebar, "Coming soon™", Help and Settings marked
-      WIP;
-    - the title bar without its icon;
-    - SE-GUI-21 checked in game.
+- **The final pass over the built app's UI** (worklog 0.0.1f1c). Any change it asks for is
+  drafted first, looked at in the drafts, then built.
+  - **The candidate:** branch `release/0.0.1-candidate` at `d317b6da`, unpacked at
+    `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1b\unlimited-tool-works-0.0.1\`
+    (`COMMIT.txt` beside the folder names its commit). A newer one follows once the lead has
+    checked the later changes in the built window: the team file panels, the list under
+    "• unsaved changes", the player list's and the pitch's rounded corners, the light theme's
+    greys and warning orange, the sidebar's own icons, and the running-game dialog's new text
+    (worklog 8.9k5, 8.31, 8.9m, 8.14). This entry then points at it.
+  - **Already measured,** so not worth reporting: every screen the drafts and the build share
+    matches the drafts within 1 point (2 where needed), in both themes. What still differs
+    does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
   - **Still to look at in the built app:**
     - the windows' titles at 14 in the strong grey (220; 0.0.1ov14);
     - the icon where the lead cannot capture it (worklog 0.0.1v and 8.9l3d3g): the taskbar
