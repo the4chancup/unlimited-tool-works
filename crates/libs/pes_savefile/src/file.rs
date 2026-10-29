@@ -383,9 +383,11 @@ impl EditFile {
 
 /// 320 salt bytes that differ per write: ten SHA-256 blocks over the payload,
 /// the clock and a counter; the salt only diversifies the file key (the
-/// master keys are public).
+/// master keys are public). The save's writer seeds it with the save's
+/// payload; a Texport's writer passes it to `Texport::new` and `to_bytes`,
+/// whose file key is its first 32 bytes.
 #[cfg(not(target_arch = "wasm32"))]
-fn fresh_salt(payload: &[u8]) -> [u8; 320] {
+pub fn fresh_salt(payload: &[u8]) -> [u8; 320] {
     use sha2::{Digest, Sha256};
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)

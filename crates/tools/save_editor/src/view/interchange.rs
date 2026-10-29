@@ -1,5 +1,7 @@
 //! The team file panel (the draft's `interchangePanel`): an `egui::Window`
-//! that imports a team file onto the team selected in the editor, the file
+//! whose first row exports the team selected in the editor as a Team TOML
+//! or a Texport, through a Save dialog that refuses the open save itself,
+//! and whose rest imports a team file onto that team, the file
 //! deciding the format: a Team TOML, a squad (`.4ccs`) or tactics (`.4cct`)
 //! file, or a Texport. The member picks which of the sections the file
 //! holds load (gameplay, aesthetics, tactics), reads what the import will
@@ -16,22 +18,26 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 
+use anyhow::{Context, anyhow, bail};
 use pes_savefile::EditFile;
+use pes_savefile::file::fresh_salt;
 use pes_savefile::interchange::legacy::{read_squad, read_tactics};
 use pes_savefile::interchange::team_toml::{TeamToml, TeamTomlError};
 use pes_savefile::interchange::texport::Texport;
 use pes_savefile::model::names::display_name;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
+use pes_savefile::schema::texport::texport_layout;
 use pes_version::PesVersion;
 use studio_core::widgets::{checkbox, collapsing_header};
-use studio_core::{EventLines, Message, PipelineEvent};
+use studio_core::{EventLines, Message, Notice, NoticeKind, PipelineEvent};
 use team_widgets::names::append_name;
 
 use crate::messages::import_note;
+use crate::session::Session;
 use crate::session::import_sections::{Sections, keep_sections};
 use crate::view::appearance::ownership_tip;
 use crate::view::comparator::{self, OpenSaveDialog};
-use crate::view::{Panel, SaveView, selected_team_id, surrender_focus};
+use crate::view::{Panel, Refusal, SaveView, selected_team_id, surrender_focus};
 
 /// The panel's Pick dialog: `rfd` on the team file extensions, and every
 /// file, since a PES 2015 to 2017 Texport (`TEXPORT00000000`) has none.
@@ -50,6 +56,72 @@ pub(super) fn default_interchange_dialog() -> OpenSaveDialog {
 #[cfg(test)]
 pub(super) fn default_interchange_dialog() -> OpenSaveDialog {
     Box::new(|| panic!("a test reached a real file dialog: stub interchange_dialog"))
+}
+
+/// The export row's Save dialog: the format written and the suggested
+/// path (the open save's folder and the file's name) to the picked path.
+pub(super) type ExportDialog = Box<dyn FnMut(Export, &Path) -> Option<PathBuf>>;
+
+/// The `rfd` Save dialog for the export row, filtered on the format's
+/// extension.
+#[cfg(not(test))]
+pub(super) fn default_export_dialog() -> ExportDialog {
+    Box::new(|export, suggested| {
+        let mut dialog = rfd::FileDialog::new().add_filter(export.name(), &[export.extension()]);
+        if let Some(folder) = suggested.parent() {
+            dialog = dialog.set_directory(folder);
+        }
+        if let Some(name) = suggested.file_name() {
+            dialog = dialog.set_file_name(name.to_string_lossy());
+        }
+        dialog.save_file()
+    })
+}
+
+/// `default_export_dialog` under `cargo test`: a test reaching a real file
+/// dialog panics; tests stub `view.team_export_dialog`.
+#[cfg(test)]
+pub(super) fn default_export_dialog() -> ExportDialog {
+    Box::new(|_, _| panic!("a test reached a real file dialog: stub team_export_dialog"))
+}
+
+/// The file the export row writes of the selected team.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(super) enum Export {
+    /// The command line's `export-toml` text.
+    TeamToml,
+    /// A Texport of the save's version, which PES 2018 to 2021 import
+    /// from Edit mode.
+    Texport,
+}
+
+impl Export {
+    /// The format's name: the Save dialog's filter, and the refusal of the
+    /// open save.
+    pub(super) fn name(self) -> &'static str {
+        match self {
+            Export::TeamToml => "Team TOML",
+            Export::Texport => "Texport",
+        }
+    }
+
+    /// The extension the Save dialog filters on.
+    pub(super) fn extension(self) -> &'static str {
+        match self {
+            Export::TeamToml => "toml",
+            Export::Texport => "ted",
+        }
+    }
+
+    /// The suggested file name for `team`: `<id>.toml`, or
+    /// `<short name>.ted` (the id when the short name is empty).
+    fn file_name(self, team: &TeamEntry) -> String {
+        match self {
+            Export::TeamToml => format!("{}.toml", team.id),
+            Export::Texport if team.short_name.is_empty() => format!("{}.ted", team.id),
+            Export::Texport => format!("{}.ted", team.short_name),
+        }
+    }
 }
 
 /// Every section chosen: the choices as the panel starts.
@@ -195,6 +267,8 @@ struct NoteGroup {
 
 /// What a click in the window asks for, done after the window is drawn.
 enum Action {
+    /// `Team TOML…` or `Texport…`.
+    Export(Export),
     /// `Pick…`.
     Pick,
     /// `Apply`.
@@ -427,6 +501,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         session,
         interchange,
         interchange_dialog,
+        team_export_dialog,
+        refusal,
+        notice,
         ..
     } = view;
     let Some(session) = session.as_mut() else {
@@ -462,6 +539,28 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         ui.ctx().request_repaint();
     }
     match action {
+        Some(Action::Export(export)) => {
+            surrender_focus(ui);
+            let team = target.expect("the export row is drawn for a selected team");
+            let suggested = session.path().with_file_name(export.file_name(team));
+            if let Some(path) = team_export_dialog(export, &suggested) {
+                match write_export(session, team.id, export, &path) {
+                    Ok(()) => {
+                        *notice = Some(Notice {
+                            text: format!("Wrote {}", file_name(&path)),
+                            kind: NoticeKind::Success,
+                            action: None,
+                        });
+                    }
+                    Err(error) => {
+                        *refusal = Some(Refusal {
+                            title: "Cannot export the team",
+                            message: format!("{error:#}"),
+                        });
+                    }
+                }
+            }
+        }
         Some(Action::Pick) => {
             surrender_focus(ui);
             if let Some(path) = interchange_dialog() {
@@ -484,10 +583,58 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     }
 }
 
-/// The window's contents: the target and the pick row, then once a file is
-/// staged its intro line, a squad file's pairing, the section choices, the
-/// refusal or the notes, `Apply` and the Applied line. A file that does not
-/// read is its refusal alone.
+/// Writes team `id` of the open save as `export` to `path`. A `path` that is
+/// the open save itself is refused before anything is written, as the
+/// command line refuses its `--out`: compared canonicalized, so one file
+/// under two names still matches, and a path that does not exist yet is no
+/// match.
+fn write_export(session: &Session, id: u32, export: Export, path: &Path) -> anyhow::Result<()> {
+    if let (Ok(destination), Ok(save)) = (
+        std::fs::canonicalize(path),
+        std::fs::canonicalize(session.path()),
+    ) && destination == save
+    {
+        bail!(
+            "{}: that is the save being read, and a {} written over it would lose it",
+            path.display(),
+            export.name()
+        );
+    }
+    let bytes = match export {
+        Export::TeamToml => session.export_team(id)?.into_bytes(),
+        Export::Texport => texport_bytes(session, id)?,
+    };
+    std::fs::write(path, bytes).with_context(|| path.display().to_string())
+}
+
+/// Team `id` of the open save as a Texport of the save's version: the team
+/// and its rostered players in roster order, from the version's template.
+fn texport_bytes(session: &Session, id: u32) -> anyhow::Result<Vec<u8>> {
+    let file = session.file();
+    let team = file
+        .team(id)
+        .ok_or_else(|| anyhow!("the save has no team {id}"))?;
+    let players = team
+        .roster
+        .iter()
+        .filter(|slot| slot.player_id != 0)
+        .map(|slot| {
+            file.player(slot.player_id)
+                .ok_or_else(|| anyhow!("team {id}'s player {} is not in the save", slot.player_id))
+        })
+        .collect::<anyhow::Result<Vec<&PlayerEntry>>>()?;
+    // The salt's first 32 bytes become the file's key. Seeded with the
+    // team's text as well as the clock, two teams exported in one instant
+    // still get different keys, as every file the game writes has its own.
+    let salt = fresh_salt(session.export_team(id)?.as_bytes());
+    let texport = Texport::new(file.version(), team, &players, &salt)?;
+    Ok(texport.to_bytes(&salt)?)
+}
+
+/// The window's contents: the export row and a separator, the target and
+/// the pick row, then once a file is staged its intro line, a squad file's
+/// pairing, the section choices, the refusal or the notes, `Apply` and the
+/// Applied line. A file that does not read is its refusal alone.
 fn contents(
     ui: &mut egui::Ui,
     interchange: &mut Interchange,
@@ -501,6 +648,34 @@ fn contents(
         return None;
     };
     let mut action = None;
+    ui.horizontal_wrapped(|ui| {
+        ui.weak(format!(
+            "Export {} ({}) as ",
+            display_name(&team.name),
+            team.id
+        ));
+        if ui
+            .button("Team TOML\u{2026}")
+            .on_hover_text(
+                "One team's full-fidelity file, the same text the CLI's export-toml writes",
+            )
+            .clicked()
+        {
+            action = Some(Action::Export(Export::TeamToml));
+        }
+        if ui
+            .add_enabled(
+                texport_layout(version).is_some(),
+                egui::Button::new("Texport\u{2026}"),
+            )
+            .on_hover_text("A file PES itself can import")
+            .on_disabled_hover_text("PES 2015 to 2017 have no Texport template")
+            .clicked()
+        {
+            action = Some(Action::Export(Export::Texport));
+        }
+    });
+    ui.separator();
     // One line, as the Comparator's pick row: the label, the file's name
     // truncated to the room the button leaves, the button at the right.
     ui.horizontal_top(|ui| {

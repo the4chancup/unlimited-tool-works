@@ -166,6 +166,9 @@ pub(crate) struct SaveView {
     /// The team file panel's Pick dialog (`rfd` on the team file formats,
     /// stubbed in tests: the `open_save_dialog` pattern).
     interchange_dialog: comparator::OpenSaveDialog,
+    /// The team file panel's Save dialog for its exports (`rfd`, stubbed
+    /// in tests: the `save_as_dialog` pattern).
+    team_export_dialog: interchange::ExportDialog,
     /// The Generate dialog's state while it is open (the Player menu's
     /// `settings.toml` and in-game face items); `None` while it is closed.
     generate: Option<generate::Generate>,
@@ -427,6 +430,7 @@ impl SaveView {
             patch_dialog: patch::default_patch_dialog(),
             interchange: interchange::Interchange::new(),
             interchange_dialog: interchange::default_interchange_dialog(),
+            team_export_dialog: interchange::default_export_dialog(),
             generate: None,
             pick_folder_dialog: generate::default_pick_folder(),
             notice: None,
