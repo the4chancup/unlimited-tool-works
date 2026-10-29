@@ -527,13 +527,17 @@ all side by side.
   status bar naming both (SE-GUI-28); the save keeps its own version. The warning lives from
   the save's opening until the member has seen it: its action, **Switch to PES 20xx** (the
   save's version), which makes the same change the sidebar's selector makes, its blockers
-  included (a switch a blocker refuses, such as a running compile, leaves the warning up, as
-  the selector stays mismatched); its dismiss; or another notice taking the bar from it while
-  it is shown (a notice arriving while the versions match, such as a save's, ends nothing:
+  included (while one holds, such as a running compile, the action is disabled with the
+  selector's reason and the warning stays up, as the selector stays mismatched); its dismiss;
+  or another notice taking the bar from it while it is shown (a notice arriving while the versions match, such as a save's, ends nothing:
   no warning was there to see). While it lives it follows the selector: shown whenever the
   selector names another version than the save's, its text naming the selector's (a save opened under its own version too, once the selector moves
   away), gone while the two match, back when they part again. Once it has ended, nothing
-  shows until another save is opened. A notice, not a banner under the
+  shows until another save is opened. Its text is the draft's: "Although the sidebar is set
+  to PES 2019, this save is from PES 2021, so the editor will keep treating it as a PES 2021
+  save." It is the editor's standing notice rather than a published one
+  (`StudioTool::standing_notice`, `plans/core/gui.md` "Status bar"), so it shows in the Save
+  editor's view only, and the shell tells the editor when it ended. A notice, not a banner under the
   toolbar: the status bar is where the shell's environment warnings already sit, and a banner
   pushed every view down a row. Not a switch on open: the selector also sets what the other
   tools target (the Team compiler's game), and a member opening an old save to look at it must
@@ -1698,9 +1702,10 @@ SE-GUI-28  GIVEN the selector at PES 19
                 clicked THEN the notice is gone and the setting unchanged, and no selector
                 change brings it back until another save is opened; GIVEN the selector at
                 PES 21 WHEN the PES 21 save is opened, saved (its save notice taking the bar)
-                and the selector then set to PES 19 THEN the warning shows; GIVEN a stub tool reporting a version-change blocker WHEN
-                "Switch to PES 2021" is clicked THEN the setting stays PES 19 and the notice
-                stays
+                and the selector then set to PES 19 THEN the warning shows; GIVEN another
+                registered tool reporting a version-change blocker THEN "Switch to PES 2021" is
+                drawn disabled, its hover the blocking tool's "<label>: <reason>", and the
+                setting stays PES 19 and the notice stays
 SE-GUI-29  manual  GIVEN a Texport written by SE-GUI-17's export from a PES 18, 19, 20 and 21
            save
            WHEN it is imported through the game's own team import, in that version

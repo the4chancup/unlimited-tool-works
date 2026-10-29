@@ -1788,10 +1788,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         `team_widgets/src/tactics/{mod,tests/mod}.rs`. Review closed: SWE-2 S1-S4, Astra
         A1-A2, A2 with no concerns (`.tmp/8_9l/rulings.md`)
       - [ ] l3 the Open menu with discovery and the session's recent files, Save as (SE-GUI-26),
-        the version warning (SE-GUI-28), a status-bar notice since 0.0.1s2: `studio_core::status`
-        has no action that switches the version and no way for a tool to withdraw or reword
-        its notice, which following the selector needs; the brief first decides both in
-        `plans/core/gui.md` "Status bar"
+        the version warning (SE-GUI-28), a status-bar notice since 0.0.1s2. The shell part is
+        decided (`plans/core/gui.md` "Status bar", the bullets "A tool can keep a standing notice" and
+        "A notice can switch the PES version"; DECISIONS 2026-10-29); draft checked
+        (`.tmp/8_9l/draft/warning_{free,blocked}_bar.png`: the blocked Switch button greyed,
+        its hover the selector's reason)
+        - [ ] l3a `studio_core`: `StudioTool::standing_notice` and `standing_notice_ended`, the
+          bar drawing the active tool's standing notice, `ActionEffect::SwitchVersion` through
+          `pick_version`, disabled under a blocker (ST-BAR-07, ST-BAR-08)
+        - [ ] l3b the Save editor's version warning as a standing notice (SE-GUI-28), after
+          l3a
+        - [ ] l3c the Open menu with discovery and recent files, Save as (SE-GUI-26)
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
         The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by

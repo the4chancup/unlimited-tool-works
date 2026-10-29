@@ -433,6 +433,7 @@ Each item kind stays in the bar for its lifetime:
 | `ShellCondition` | While the condition holds; disappears by itself |
 | `ToolActivity` | While the tool reports it |
 | `Notice` | A few seconds; with an action, until clicked or dismissed. Older notices are not kept — an event worth keeping is also a finding in a log |
+| Standing notice | While the active tool returns it; it ends when clicked, dismissed, or replaced by another notice while shown, and the tool is told |
 
 `update_available` carries an Install action; each condition shows a tooltip and at most one action.
 
@@ -454,6 +455,47 @@ More rules that keep it worth the row:
   slot gets the rest, its text centred in it and cut with an ellipsis only past that, the whole
   text then its tooltip. Not three equal columns: a third of a 1280-point bar cut the Save
   editor's version notice (about 100 characters) while the bar had room for all of it.
+- **A tool can keep a standing notice for a state rather than publish one for an event.** The Save
+  editor's version warning (`plans/save_editor.md`, SE-GUI-28) lives until the member has seen
+  it, follows the selector (reworded, hidden while the versions match, back when they part)
+  and must learn when it ended. `ctx.notify` cannot do that: the tool cannot reword or
+  withdraw a published notice, nor learn that it was dismissed. So the `StudioTool` trait
+  gets two methods, both defaulting to nothing:
+
+  ```rust
+  /// The notice this tool keeps in the status bar while its view is up, asked for every
+  /// frame: return it reworded as the state changes, `None` to withdraw it. Default: none.
+  fn standing_notice(&self, _ctx: &ToolContext) -> Option<Notice> {
+      None
+  }
+
+  /// The standing notice has been seen: its action or dismiss was clicked, or another
+  /// notice replaced it while it was shown. The tool stops returning it until a new reason
+  /// to keep one arises. Default: nothing.
+  fn standing_notice_ended(&mut self) {}
+  ```
+
+  The bar asks the active tool only, once per frame before the frame's requests are applied:
+  a standing notice is about that tool's view, and another tool's view does not show it.
+  When it appears (none the frame before, the tool newly active, or the tool returning one
+  again) it takes the middle slot as a new notice does, the notice shown before it dropped.
+  While it is shown, a notice published by anyone replaces it and ends it, and the tool is
+  told before it is next asked; a notice published while it is not shown ends nothing. A
+  switch of tool takes it out of the bar without ending it, as a withdrawal does, so a notice
+  published in the same frame as the switch ends nothing (the switching click's own frame
+  may still draw it: the bar is drawn before the sidebar). It never expires by time, since
+  its tool withdraws it, and it never reaches the window title: it is a state of the view,
+  seen when the member looks, where the title keeps an event that happened while the window
+  was unfocused ("Window title"). Polled, not published with a handle the tool asks about:
+  the tool already knows its state every frame, as it does for `activity()`, so rewording
+  and withdrawing need no messages and no id can go stale between a publish and the frame
+  that draws it. It is the GUI's alone: the CLI has no selector to follow.
+- **A notice can switch the PES version.** `ActionEffect::SwitchVersion(PesVersion)` makes
+  the change a manual pick in the sidebar's selector makes (the same function: the setting
+  written, the once-per-life auto-switch spent, the settings saved). While a tool reports a
+  `version_change_blocker`, the action's button is drawn disabled, its disabled hover the
+  selector's (`<label>: <reason>`), and the notice stays: a click that silently did nothing
+  would read as a broken button.
 - **Never modal, never a question.** Anything needing a decision (updater consent, the teams-list
   merge review) is a dialog. The bar announces; it does not ask.
 - **Empty state is static, not blank**: `v1.2.0` in small text — the one always-visible version
@@ -1123,6 +1165,27 @@ ST-BAR-04   GIVEN three notices published in turn, one of each kind (Success, In
             WHEN the status bar is drawn after each
             THEN each notice's text is drawn in its kind's colour: SUCCESS_FG, the link blue,
                  the warning orange
+ST-BAR-07   GIVEN stub tool A active, returning the Warning notice "standing one" without an
+                 action (`standing_notice`), and the notice "older" published before it
+                 appeared
+            WHEN the status bar is drawn
+            THEN its middle slot shows "standing one", not "older", and still does past the
+                 plain notices' few seconds; GIVEN A rewording it to "standing two" with an
+                 action THEN the slot shows "standing two" and its action, and A is not told
+                 of an end; GIVEN A returning none THEN the slot is empty and A is not told;
+                 GIVEN stub tool B made active while A returns it THEN, from the frame after
+                 the switch, B's view shows no standing notice, and a notice published then
+                 leaves A untold; GIVEN A active again and returning it, and a notice
+                 published THEN that notice shows and A is told once
+                 (`standing_notice_ended`); likewise once for its dismiss clicked, and once for
+                 its action clicked
+ST-BAR-08   GIVEN the selector at PES 19 and a notice whose action is
+                 `SwitchVersion(PES 21)`
+            WHEN its action is clicked
+            THEN the setting is PES 21, the settings file says so, and the running-PES
+                 auto-switch is spent; GIVEN a stub tool reporting a version-change blocker
+                 THEN the action's button is disabled, its hover reads "<label>: <reason>",
+                 and a click leaves the setting at PES 19 and the notice in the bar
 ST-TTL-01   GIVEN a tool reporting a ToolActivity (label "Team compiler", 12 of 48 done, 72 s
                  elapsed)
             WHEN a frame is drawn
