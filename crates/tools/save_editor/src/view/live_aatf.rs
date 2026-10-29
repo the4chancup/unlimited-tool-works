@@ -33,8 +33,8 @@ impl LiveAatf {
                 egui::Id::unique("save_editor_live_aatf"),
                 "Live AATF",
                 "Live AATF",
-            )
-            .body_height(150.0),
+                150.0,
+            ),
             check: TeamsCheck::new(),
         }
     }

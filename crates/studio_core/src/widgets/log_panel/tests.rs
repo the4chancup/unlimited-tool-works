@@ -10,6 +10,8 @@ use vtree::ScopePath;
 /// over an 800 by 600 screen (the shell harness's `frame`, for a bare `Ui`).
 struct Headless {
     ctx: egui::Context,
+    /// The last frame's painted shapes.
+    shapes: Vec<egui::epaint::ClippedShape>,
 }
 
 impl Headless {
@@ -19,11 +21,14 @@ impl Headless {
         // The window draws with these fonts and style; the test measures
         // what a member sees, whichever crates the build unifies.
         crate::theme::install(&ctx);
-        Headless { ctx }
+        Headless {
+            ctx,
+            shapes: Vec::new(),
+        }
     }
 
     /// Runs one frame with `events` as its input; returns the frame's AccessKit
-    /// nodes.
+    /// nodes and keeps its shapes in `shapes`.
     fn frame(
         &mut self,
         events: Vec<egui::Event>,
@@ -43,6 +48,7 @@ impl Headless {
             .accesskit_update
             .take()
             .expect("AccessKit is enabled on the context");
+        self.shapes = std::mem::take(&mut output.shapes);
         // Nothing renders here, so the frame's texture deltas are dropped on
         // purpose.
         output.drop_without_applying_deltas();
@@ -683,6 +689,41 @@ fn with_central(
     (nodes, height)
 }
 
+/// The body's wells: the rects painted with `well_frame`'s fill and stroke.
+fn wells(shapes: &[egui::epaint::ClippedShape], visuals: &egui::Visuals) -> Vec<egui::Rect> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if shape.fill == visuals.extreme_bg_color
+                    && shape.stroke == visuals.window_stroke() =>
+            {
+                Some(shape.rect)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// The log's well is 180 points high when the dock first opens, the drafts'
+/// `logHeight` (the `.log-body`'s height with its border).
+#[test]
+fn the_log_opens_with_a_180_point_well() {
+    let lines = plain_lines(5);
+    let mut panel = LogPanel::new("test-log");
+    let mut window = Headless::new();
+    window.idle(&mut panel, &lines);
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let wells = wells(&window.shapes, &visuals);
+    let [well] = wells[..] else {
+        panic!("one well in the log: {wells:?}");
+    };
+    assert!(
+        (well.height() - 180.0).abs() <= 1.0,
+        "the well's height on the first frame: {well:?}"
+    );
+}
+
 // ST-LOG-04
 #[test]
 fn the_chevron_collapses_to_the_header_and_the_open_height_survives() {
@@ -692,9 +733,11 @@ fn the_chevron_collapses_to_the_header_and_the_open_height_survives() {
     let (open, collapsed) = panel.dock.panel_ids();
     let (nodes, central) = with_central(&mut window, &mut panel, &lines);
     let open_height = panel_height(&window.ctx, open);
+    // The 180-point body under the frame's margins, the top line, the header
+    // row and the spacing below it.
     assert!(
-        (open_height - 220.0).abs() < 1.0,
-        "the dock opens at its default height: {open_height}"
+        (open_height - 206.0).abs() < 1.0,
+        "the dock opens at its first height: {open_height}"
     );
 
     // The chevron collapses to the header row alone; the body is gone on the
@@ -926,7 +969,7 @@ fn the_chevrons_tooltip_names_the_docks_noun() {
     assert_eq!(entry(&nodes, "▸").description(), Some("Expand the log"));
 
     // A dock whose title is not its noun.
-    let mut dock = BottomDock::new(egui::Id::unique("live"), "Live AATF", "Live AATF");
+    let mut dock = BottomDock::new(egui::Id::unique("live"), "Live AATF", "Live AATF", 150.0);
     let mut draw = |events: Vec<egui::Event>| {
         window.frame(events, |ui| {
             dock.show(ui, |_| {}, |_| {});
