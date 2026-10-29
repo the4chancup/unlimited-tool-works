@@ -68,7 +68,7 @@ pub(crate) struct UnsavedChanges {
 /// and teams as opened or last saved).
 pub(crate) struct Session {
     file: EditFile,
-    /// The path `open` read, which `save` writes back to.
+    /// The path `open` read, or the last `save_to` wrote: where Save writes.
     path: PathBuf,
     /// Undo and redo, one entry per gesture.
     undo: UndoStack,
@@ -125,7 +125,8 @@ impl Session {
         })
     }
 
-    /// The path the save was opened from, where Save writes it back.
+    /// The save's file: the one it was opened from, or the last Save as
+    /// wrote. Save writes there.
     pub(crate) fn path(&self) -> &Path {
         &self.path
     }
@@ -488,19 +489,22 @@ impl Session {
         Ok(UnsavedChanges { players, teams })
     }
 
-    /// Writes the save back to the path it was opened from, then makes the
-    /// current model the baseline. `edit_mode_closed` is the member's answer
-    /// to the running-game question: refused only when the save's own PES
-    /// runs and the answer is `false` (the game writes its save back when
-    /// Edit mode closes, over ours); a game of another version does not
-    /// block it.
-    pub(crate) fn save(
+    /// Writes the save to `path` (Save as; Save passes the session's own
+    /// path), then makes `path` the session's file, where the next Save
+    /// writes, and the current model the baseline. `edit_mode_closed` is
+    /// the member's answer to the running-game question: refused only when
+    /// the save's own PES runs and the answer is `false` (the game writes
+    /// its save back when Edit mode closes, over ours); a game of another
+    /// version does not block it.
+    pub(crate) fn save_to(
         &mut self,
+        path: &Path,
         running: &[RunningPes],
         edit_mode_closed: bool,
     ) -> anyhow::Result<()> {
         refuse_while_running(running, self.version(), edit_mode_closed)?;
-        self.write(&self.path)?;
+        self.write(path)?;
+        self.path = path.to_path_buf();
         (self.baseline_players, self.baseline_teams) = baselines(&self.file);
         self.dirty = false;
         Ok(())
@@ -726,6 +730,12 @@ mod tests {
         Session::open(&path).unwrap()
     }
 
+    /// Saves `session` over the file it was opened from, no game running.
+    fn save_in_place(session: &mut Session) {
+        let path = session.path().to_path_buf();
+        session.save_to(&path, &[], false).unwrap();
+    }
+
     /// `entry` without what a roster slot owns (`id`, `appearance_id`,
     /// `appearance.base_copy_id`, and the in-game face run apart from the
     /// exported fields, which `a_move_carries_only_the_exported_face_fields`
@@ -752,7 +762,7 @@ mod tests {
         session.file.player_mut(70101).unwrap().name = "FIRST".to_owned();
         session.file.player_mut(70102).unwrap().stats.speed = 71;
         session.file.player_mut(70103).unwrap().appearance.boots_id = 13;
-        session.save(&[], false).unwrap();
+        save_in_place(&mut session);
         let before: Vec<PlayerEntry> = [70101, 70102, 70103]
             .iter()
             .map(|id| session.file().player(*id).unwrap().clone())
@@ -1038,7 +1048,7 @@ mod tests {
 
         // Saved and reopened: the moved fields and the slots' faces are what
         // the file holds (SE-GUI-08's THEN after Save).
-        session.save(&[], false).unwrap();
+        save_in_place(&mut session);
         let reopened = Session::open(session.path()).unwrap();
         assert_face_move(&reopened, &marks);
     }
@@ -1112,7 +1122,7 @@ mod tests {
         assert!(!session.player_dirty(701, 1));
 
         // Save makes the current model the baseline: clean again.
-        session.save(&[], false).unwrap();
+        save_in_place(&mut session);
         assert!(!session.is_dirty());
         assert!(!session.player_dirty(701, 0));
     }
@@ -1140,7 +1150,7 @@ mod tests {
 
         assert!(session.redo());
         assert!(session.is_dirty(), "redo marks it again");
-        session.save(&[], false).unwrap();
+        save_in_place(&mut session);
         assert!(!session.is_dirty(), "a save clears it");
     }
 

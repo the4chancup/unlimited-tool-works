@@ -2519,7 +2519,7 @@ fn the_pitch_badges_show_each_starters_overall_from_his_record() {
 }
 
 // The same setting bullet ("remembered in the tool's settings"): off,
-// then Open… opens the next save — the view's and the settings table's
+// then Choose file… opens the next save — the view's and the settings table's
 // `scroll_names` both stay false (the open happens inside a `Tool::view`
 // frame, so the frame's own write-back is the check).
 #[test]
@@ -2548,13 +2548,17 @@ fn scroll_names_survives_opening_another_save() {
         "premise: the setting is off"
     );
 
-    // Open the other save through the toolbar's Open…, its picker
-    // stubbed — the open lands inside the `tool.view` frame.
+    // Open the other save through the Open menu's Choose file…, its
+    // picker stubbed — the open lands inside the `tool.view` frame.
     let picked = other_path.clone();
-    tool.view.open_dialog = Box::new(move || Some(picked.clone()));
+    tool.view.open_dialog = Box::new(move |_| Some(picked.clone()));
+    tool.view.discover = Box::new(|_| Vec::new());
     let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
-    let open = node_labeled(&nodes, Role::Button, "Open…");
+    let open = menu_button(&nodes, "Open");
     press_release(&mut window, centre(open), |ui| tool.view(ui, &ctx));
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    let choose = menu_item(&nodes, "Choose file");
+    press_release(&mut window, centre(choose), |ui| tool.view(ui, &ctx));
     assert_eq!(
         tool.view.session.as_ref().unwrap().path(),
         other_path.as_path(),

@@ -45,18 +45,17 @@ pub(crate) type OpenSaveDialog = Box<dyn FnMut() -> Option<PathBuf>>;
 /// Export's.
 pub(crate) type SaveFileDialog = Box<dyn FnMut(&str) -> Option<PathBuf>>;
 
-/// The `rfd` Open dialog (the toolbar's `pick_file` shape).
+/// The `rfd` Open dialog.
 #[cfg(not(test))]
 pub(crate) fn default_open_dialog() -> OpenSaveDialog {
     Box::new(|| rfd::FileDialog::new().pick_file())
 }
 
 /// `default_open_dialog` under `cargo test`: a test reaching a real file
-/// dialog panics; tests stub `view.open_dialog` or `view.open_save_dialog`,
-/// whichever the path under test reaches.
+/// dialog panics; tests stub `view.open_save_dialog`.
 #[cfg(test)]
 pub(crate) fn default_open_dialog() -> OpenSaveDialog {
-    Box::new(|| panic!("a test reached a real file dialog: stub open_dialog or open_save_dialog"))
+    Box::new(|| panic!("a test reached a real file dialog: stub open_save_dialog"))
 }
 
 /// The `rfd` Save dialog for the Export: the suggested name comes from

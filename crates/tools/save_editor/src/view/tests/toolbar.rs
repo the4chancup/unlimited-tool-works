@@ -5,11 +5,11 @@
 
 use super::*;
 
-/// The toolbar's band: the Open button's vertical span.
+/// The toolbar's band: the Open menu button's vertical span.
 fn toolbar_band(nodes: &[accesskit::Node]) -> (f64, f64) {
-    let open = node_labeled(nodes, Role::Button, "Open\u{2026}")
+    let open = menu_button(nodes, "Open")
         .bounds()
-        .expect("the Open button's bounds");
+        .expect("the Open menu button's bounds");
     (open.y0, open.y1)
 }
 
@@ -58,7 +58,7 @@ fn ruleset_dropdown(nodes: &[accesskit::Node]) -> &accesskit::Node {
         .expect("the ruleset dropdown in the toolbar")
 }
 
-/// The toolbar's groups read left to right: Open, Save | Undo, Redo |
+/// The toolbar's groups read left to right: Open, Save, Save as | Undo, Redo |
 /// Player, Team, Savefile | the ruleset dropdown, Live AATF; each `|` one
 /// separator's line, standing between the widgets either side of it.
 #[test]
@@ -73,8 +73,9 @@ fn the_toolbar_reads_its_groups_in_order_with_a_separator_between_each() {
         (bounds.x0, bounds.x1)
     };
     let widgets = [
-        x(node_labeled(&nodes, Role::Button, "Open\u{2026}")),
+        x(menu_button(&nodes, "Open")),
         x(node_labeled(&nodes, Role::Button, "Save")),
+        x(node_labeled(&nodes, Role::Button, "Save as")),
         x(node_labeled(&nodes, Role::Button, "Undo")),
         x(node_labeled(&nodes, Role::Button, "Redo")),
         x(menu_button(&nodes, "Player")),
@@ -88,8 +89,8 @@ fn the_toolbar_reads_its_groups_in_order_with_a_separator_between_each() {
     }
     let separators = separator_xs(&window, &nodes, &shapes);
     assert_eq!(separators.len(), 3, "three separators: {separators:?}");
-    // After Save, after Redo, after Savefile.
-    for (separator, after) in separators.iter().zip([1, 3, 6]) {
+    // After Save as, after Redo, after Savefile.
+    for (separator, after) in separators.iter().zip([2, 4, 7]) {
         assert!(
             widgets[after].1 < *separator && *separator < widgets[after + 1].0,
             "a separator between {:?} and {:?}: {separators:?}",

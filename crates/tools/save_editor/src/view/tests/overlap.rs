@@ -458,7 +458,11 @@ fn prompts(version: PesVersion) -> Screens {
         .edit_players(vec![entry]);
     prompt::open(&mut view, Pending::Close);
     let unsaved = settled_over(&mut window, &mut view, "the unsaved prompt");
-    view.edit_mode_question = Some(version);
+    let target = view.save_path().expect("an open save").to_path_buf();
+    view.edit_mode_question = Some(EditModeQuestion {
+        game: version,
+        target,
+    });
     let edit_mode = settled_over(&mut window, &mut view, "the Edit mode question");
 
     let (mut view, mut window) = opened(version, "refusal");

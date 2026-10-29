@@ -20,6 +20,7 @@ mod live_aatf;
 mod live_marks;
 mod menus;
 mod multi_aatf;
+mod open_menu;
 mod player_list;
 mod portraits;
 pub(crate) mod prompt;
@@ -35,6 +36,7 @@ mod worker;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::{Engine, PesVersion};
 use studio_core::widgets::{modal, modal_buttons, modal_sentence_gap, toolbar_separator};
@@ -81,15 +83,29 @@ pub(crate) struct SaveView {
     /// The unsaved-changes prompt's state while it is open (SE-GUI-05):
     /// the pending action and the table's rows, computed once at open.
     pub(crate) prompt: Option<prompt::Prompt>,
-    /// The running-game question a Save first asks while the save's own
-    /// PES runs: the version of the game found (SE-GUI-21's window rule).
-    edit_mode_question: Option<PesVersion>,
+    /// The running-game question a Save or Save as first asks while the
+    /// save's own PES runs (SE-GUI-21's window rule).
+    edit_mode_question: Option<EditModeQuestion>,
     /// The Discard-on-close answer's ask to close again, drained by
     /// `Tool::view` into `ctx.request_close()` (the shell owns the send).
     pub(crate) request_close: bool,
-    /// The toolbar's Open dialog (`rfd`, stubbed in tests — the
-    /// `open_save_dialog` pattern).
-    open_dialog: comparator::OpenSaveDialog,
+    /// The Open menu's `Choose file…` picker (`rfd`, stubbed in tests).
+    open_dialog: open_menu::OpenDialog,
+    /// Save as's picker (`rfd`, stubbed in tests).
+    save_as_dialog: SaveAsDialog,
+    /// The Open menu's discovery (`discover_savefiles`, stubbed in tests).
+    discover: open_menu::Discover,
+    /// What discovery found when the Open menu opened, each save with its
+    /// version, in `PesVersion::ALL`'s order; `None` while the menu is
+    /// closed, so the next opening looks again.
+    discovered: Option<Vec<(PesVersion, SavefileCandidate)>>,
+    /// The files opened or written by Save as in this run of the program,
+    /// the most recent first: the Open menu's middle group. Not a setting.
+    recents: Vec<PathBuf>,
+    /// The sidebar's PES version, refreshed from the common settings each
+    /// `Tool::view` frame: `Choose file…` starts in its save folder. PES 21
+    /// in the tests' view-only frames until a test sets it.
+    pub(crate) pes_version: PesVersion,
     /// A refusal to show until dismissed (an open the save refused).
     refusal: Option<Refusal>,
     /// The `aatf_ruleset` setting: `Tool::view` refreshes it each frame,
@@ -280,6 +296,43 @@ pub(crate) enum OwnBadge {
     Failed(String),
 }
 
+/// The running-game question while it is up: the game found running and
+/// the file its Save writes (the open file for Save, the picked one for
+/// Save as).
+struct EditModeQuestion {
+    /// The save's own version, whose game runs.
+    game: PesVersion,
+    /// Where the answered Save writes.
+    target: PathBuf,
+}
+
+/// Save as's picker: the open file's path, whose folder and name it
+/// starts on, to the picked path (`rfd` in the window, a stub in the
+/// tests: a native dialog cannot be driven headless).
+pub(crate) type SaveAsDialog = Box<dyn FnMut(&Path) -> Option<PathBuf>>;
+
+/// The `rfd` Save dialog for Save as.
+#[cfg(not(test))]
+fn default_save_as_dialog() -> SaveAsDialog {
+    Box::new(|current| {
+        let mut dialog = rfd::FileDialog::new();
+        if let Some(folder) = current.parent() {
+            dialog = dialog.set_directory(folder);
+        }
+        if let Some(name) = current.file_name() {
+            dialog = dialog.set_file_name(name.to_string_lossy());
+        }
+        dialog.save_file()
+    })
+}
+
+/// `default_save_as_dialog` under `cargo test`: a test reaching a real
+/// file dialog panics; tests stub `view.save_as_dialog`.
+#[cfg(test)]
+fn default_save_as_dialog() -> SaveAsDialog {
+    Box::new(|_| panic!("a test reached a real file dialog: stub save_as_dialog"))
+}
+
 /// A refusal shown as a dialog: a title, the message and OK.
 struct Refusal {
     /// The dialog's heading.
@@ -319,7 +372,12 @@ impl SaveView {
             prompt: None,
             edit_mode_question: None,
             request_close: false,
-            open_dialog: comparator::default_open_dialog(),
+            open_dialog: open_menu::default_open_dialog(),
+            save_as_dialog: default_save_as_dialog(),
+            discover: open_menu::default_discover(),
+            discovered: None,
+            recents: Vec::new(),
+            pes_version: PesVersion::Pes21,
             refusal: None,
             aatf_ruleset: rules::FIRST_BUILTIN.to_owned(),
             imported: Vec::new(),
@@ -430,6 +488,7 @@ impl SaveView {
                     Engine::PreFox => None,
                 };
                 self.comparator.reset(session.version());
+                open_menu::push_recent(&mut self.recents, path);
                 self.session = Some(session);
                 self.generation += 1;
                 // A view setting, not the save's: `scroll_names` is the
@@ -705,11 +764,11 @@ fn set_surrender_on_press(ctx: &egui::Context) {
 }
 
 /// The toolbar (the draft's toolbar row), its groups apart by separators:
-/// Open and Save; Undo and Redo; the menus; the ruleset dropdown, the Live
-/// AATF toggle and the unsaved-changes marker. A menu bar, so with one
-/// menu open the pointer entering another's button opens that one. The
-/// open save's path rides the idle window title (`Tool::title_detail`),
-/// not this row, which never takes a second row.
+/// the Open menu, Save and Save as; Undo and Redo; the menus; the ruleset
+/// dropdown, the Live AATF toggle and the unsaved-changes marker. A menu
+/// bar, so with one menu open the pointer entering another's button opens
+/// that one. The open save's path rides the idle window title
+/// (`Tool::title_detail`), not this row, which never takes a second row.
 fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) {
     // The unsaved prompt and the running-game question hold every
     // shortcut dead while up (the prompt's own buttons are the way out).
@@ -741,21 +800,19 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     let bump_key =
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::B));
     studio_core::widgets::toolbar(ui, |ui| {
-        if ui.button("Open…").clicked() {
-            // A dirty session prompts first (SE-GUI-05): the picker waits
-            // for the answer.
-            if view.is_dirty() {
-                prompt::open(view, prompt::Pending::OpenPicker);
-            } else if let Some(path) = (view.open_dialog)() {
-                view.open(&path);
-            }
-        }
+        open_menu::show(ui, view);
         if ui
             .add_enabled(view.session.is_some(), egui::Button::new("Save"))
             .clicked()
             || save_key
         {
             save(view, running);
+        }
+        if ui
+            .add_enabled(view.session.is_some(), egui::Button::new("Save as"))
+            .clicked()
+        {
+            save_as(view, running);
         }
         toolbar_separator(ui);
         let (can_undo, can_redo) = view
@@ -840,36 +897,62 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     }
 }
 
-/// The window's Save (the toolbar's, Ctrl+S's and the prompt's): the
-/// running-game question first while the save's own PES runs, then the
-/// write. Answers whether the file was written — `false` while the
+/// The window's Save (the toolbar's, Ctrl+S's and the prompt's): `save_to`
+/// the open file. Answers whether the file was written — `false` while the
 /// question waits or a write failed, so a prompt stays up.
 pub(super) fn save(view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) -> bool {
+    let Some(path) = view.save_path().map(Path::to_path_buf) else {
+        return false;
+    };
+    save_to(view, running, path)
+}
+
+/// The toolbar's Save as: the picker, on the open file's folder and name,
+/// then `save_to` the picked path. A cancelled picker does nothing.
+fn save_as(view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) {
+    let Some(current) = view.save_path().map(Path::to_path_buf) else {
+        return;
+    };
+    if let Some(target) = (view.save_as_dialog)(&current) {
+        save_to(view, running, target);
+    }
+}
+
+/// Writes the open save to `target`: the running-game question first while
+/// the save's own PES runs (its Save then writes to `target`), else the
+/// write. Answers whether the file was written.
+fn save_to(view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>, target: PathBuf) -> bool {
     let Some(version) = view.session.as_ref().map(|session| session.version()) else {
         return false;
     };
     if running().iter().any(|game| game.version == version) {
-        view.edit_mode_question = Some(version);
+        view.edit_mode_question = Some(EditModeQuestion {
+            game: version,
+            target,
+        });
         return false;
     }
-    write_now(view, running, false)
+    write_now(view, running, &target, false)
 }
 
-/// `session.save` and the refusal its error takes (the draft's
-/// `saveFile`). `edit_mode_closed` is the member's answer the caller
-/// holds: the toolbar's Save has none (the own-game check ran just
-/// above), the question's Save has the confirmed `true`.
+/// `session.save_to(target)` and the refusal its error takes (the draft's
+/// `writeSave`); a written file goes to the top of the Open menu's recent
+/// files. `edit_mode_closed` is the member's answer the caller holds: the
+/// toolbar's Save has none (the own-game check ran first), the question's
+/// Save has the confirmed `true`.
 pub(super) fn write_now(
     view: &mut SaveView,
     running: &dyn Fn() -> Vec<RunningPes>,
+    target: &Path,
     edit_mode_closed: bool,
 ) -> bool {
     let Some(session) = view.session.as_mut() else {
         return false;
     };
-    match session.save(&running(), edit_mode_closed) {
+    match session.save_to(target, &running(), edit_mode_closed) {
         Ok(()) => {
             view.refusal = None;
+            open_menu::push_recent(&mut view.recents, target);
             true
         }
         Err(error) => {

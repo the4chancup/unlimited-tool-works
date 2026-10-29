@@ -1,11 +1,12 @@
 //! The unsaved-changes prompt (SE-GUI-05, the draft's `drawUnsavedPrompt`):
 //! "Unsaved changes" with Save, Discard and Cancel over the table of what a
-//! close or an open would write or lose, met by the window's close, the
-//! toolbar's Open… or an Open menu entry. The save's running-game question
-//! (`edit_mode_dialog`) shares the module: the window's Save asks it first
-//! while the save's own PES runs (SE-GUI-21's window rule).
+//! close or an open would write or lose, met by the window's close or an
+//! Open menu entry. The save's running-game question (`edit_mode_dialog`)
+//! shares the module: the window's Save and Save as ask it first while the
+//! save's own PES runs (SE-GUI-21's window rule).
 
 use std::collections::{HashMap, HashSet};
+use std::path::PathBuf;
 
 use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::TeamEntry;
@@ -30,9 +31,12 @@ pub(crate) enum Pending {
     /// and asks the shell to close again, so the re-asked `hold_close`
     /// returns `false`.
     Close,
-    /// The toolbar's Open…: the file dialog follows the answer (a
-    /// cancelled dialog leaves the open save as it is).
-    OpenPicker,
+    /// An Open menu entry: the save at the path opens.
+    Open(PathBuf),
+    /// The Open menu's `Choose file…`: the file dialog follows the answer,
+    /// in the folder given when there is one (a cancelled dialog leaves
+    /// the open save as it is).
+    OpenPicker(Option<PathBuf>),
 }
 
 /// The prompt's state on `SaveView`: the pending action and the table's
@@ -58,7 +62,7 @@ enum Answer {
 }
 
 /// Opens the prompt for `pending` on a dirty session, or retargets one
-/// already up (a window close asked while the Open… prompt waits takes
+/// already up (a window close asked while an Open prompt waits takes
 /// its answer toward the close; the computed rows are the same either
 /// way). The table's rows are computed now
 /// (`Session::unsaved_changes`), never per frame — a codec error,
@@ -373,8 +377,9 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     }
 }
 
-/// The pending action once Save or Discard answers it.
-fn go_on(view: &mut SaveView, pending: Pending) {
+/// The pending action once Save or Discard answers it, or at once when
+/// nothing is unsaved.
+pub(super) fn go_on(view: &mut SaveView, pending: Pending) {
     match pending {
         // The session goes so the re-asked `hold_close` lets the window
         // close; `request_close` is `Tool::view`'s to send.
@@ -382,8 +387,9 @@ fn go_on(view: &mut SaveView, pending: Pending) {
             view.session = None;
             view.request_close = true;
         }
-        Pending::OpenPicker => {
-            if let Some(path) = (view.open_dialog)() {
+        Pending::Open(path) => view.open(&path),
+        Pending::OpenPicker(start) => {
+            if let Some(path) = (view.open_dialog)(start.as_deref()) {
                 view.open(&path);
             }
         }
@@ -400,7 +406,11 @@ pub(super) fn edit_mode_dialog(
     view: &mut SaveView,
     running: &dyn Fn() -> Vec<RunningPes>,
 ) {
-    let Some(game) = view.edit_mode_question else {
+    let Some(game) = view
+        .edit_mode_question
+        .as_ref()
+        .map(|question| question.game)
+    else {
         return;
     };
     let mut write = false;
@@ -424,7 +434,9 @@ pub(super) fn edit_mode_dialog(
         });
     });
     if write {
-        write_now(view, running, true);
+        if let Some(question) = view.edit_mode_question.take() {
+            write_now(view, running, &question.target, true);
+        }
         // A written file unblocks the pending action (a failed write's
         // refusal keeps the prompt, as a cancelled question does).
         if view.refusal.is_none()
@@ -432,7 +444,6 @@ pub(super) fn edit_mode_dialog(
         {
             go_on(view, prompt.pending);
         }
-        view.edit_mode_question = None;
     } else if cancel || response.should_close() {
         view.edit_mode_question = None;
     }

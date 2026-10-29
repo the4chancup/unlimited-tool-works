@@ -518,15 +518,10 @@ fn opening_another_save_prompts_and_each_answer_does_what_it_says() {
     let other = fixture(PesVersion::Pes21, "prompt_open_second");
     let mut window = Headless::new();
 
-    // A dirty session's Open… shows the prompt, not the picker (the
+    // A dirty session's Choose file… shows the prompt, not the picker (the
     // test-build default dialog panics if it is reached).
     let mut view = dirty_view(&first);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Open…"),
-        &mut view,
-    );
+    choose_file(&mut window, &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(prompt_drawn(&nodes), "the prompt is up");
 
@@ -539,18 +534,8 @@ fn opening_another_save_prompts_and_each_answer_does_what_it_says() {
     // Discard goes on: the picker follows and the picked save opens; the
     // first file is unchanged on disk.
     let picked = other.clone();
-    view.open_dialog = Box::new(move || Some(picked.clone()));
-    // The AccessKit click, not a pointer one: for one frame after the
-    // prompt closes, egui's previous-frame modal layer still gates the
-    // toolbar's interactive rects (egui's own hysteresis, and a real
-    // member's click at 60fps spans past it), so the second pointer
-    // click's press would land dead.
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let (open_id, _) = pairs
-        .iter()
-        .find(|(_, node)| node.role() == Role::Button && node.label() == Some("Open…"))
-        .expect("the Open button");
-    action_click(&mut window, &mut view, *open_id);
+    view.open_dialog = Box::new(move |_| Some(picked.clone()));
+    choose_file(&mut window, &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(prompt_drawn(&nodes), "Discard's prompt is up");
     click_label(&mut window, &mut view, "Discard");
@@ -658,7 +643,7 @@ fn the_prompts_save_runs_the_window_save_first() {
     assert!(view.request_close, "the close is asked");
 }
 
-// SE-GUI-05: a window close asked while the Open… prompt waits retargets
+// SE-GUI-05: a window close asked while the Open prompt waits retargets
 // it — the answer goes toward the close, the picker never runs.
 #[test]
 fn a_close_asked_while_the_open_prompt_waits_takes_the_answer() {
@@ -667,14 +652,9 @@ fn a_close_asked_while_the_open_prompt_waits_takes_the_answer() {
     let mut window = Headless::new();
 
     let mut tool = dirty_tool(&first);
+    choose_file(&mut window, &mut tool.view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Open…"),
-        &mut tool.view,
-    );
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
-    assert!(prompt_drawn(&nodes), "the Open… prompt is up");
+    assert!(prompt_drawn(&nodes), "the Open prompt is up");
 
     // The close retargets it: Discard drops the session and asks the
     // shell to close — the picker (the test-build stub, a panic if
@@ -937,13 +917,8 @@ fn opening_anothers_save_writes_the_first_then_opens_the_picked() {
 
     let mut view = dirty_view(&first);
     let picked = other.clone();
-    view.open_dialog = Box::new(move || Some(picked.clone()));
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Open…"),
-        &mut view,
-    );
+    view.open_dialog = Box::new(move |_| Some(picked.clone()));
+    choose_file(&mut window, &mut view);
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let nodes: Vec<accesskit::Node> = pairs.iter().map(|(_, node)| node.clone()).collect();
     assert!(prompt_drawn(&nodes), "the prompt is up");
@@ -978,14 +953,8 @@ fn opening_anothers_save_writes_the_first_then_opens_the_picked() {
     };
     let mut view = dirty_view(&first);
     let picked = other.clone();
-    view.open_dialog = Box::new(move || Some(picked.clone()));
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &running_own));
-    click_with(
-        &mut window,
-        &mut view,
-        &running_own,
-        node_labeled(&nodes, Role::Button, "Open…"),
-    );
+    view.open_dialog = Box::new(move |_| Some(picked.clone()));
+    choose_file(&mut window, &mut view);
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &running_own));
     click_with(
         &mut window,
@@ -1053,7 +1022,10 @@ fn escape_on_the_question_closes_it_and_keeps_the_prompt() {
     let original = std::fs::read(&path).unwrap();
     let mut view = dirty_view(&path);
     prompt::open(&mut view, Pending::Close);
-    view.edit_mode_question = Some(PesVersion::Pes21);
+    view.edit_mode_question = Some(EditModeQuestion {
+        game: PesVersion::Pes21,
+        target: path.clone(),
+    });
     let mut window = Headless::new();
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
@@ -1109,7 +1081,10 @@ fn the_shortcuts_do_not_act_behind_the_edit_mode_question_alone() {
     let path = fixture(PesVersion::Pes21, "keys_question_alone");
     let original = std::fs::read(&path).unwrap();
     let mut view = dirty_view(&path);
-    view.edit_mode_question = Some(PesVersion::Pes21);
+    view.edit_mode_question = Some(EditModeQuestion {
+        game: PesVersion::Pes21,
+        target: path.clone(),
+    });
     let revision = view.session.as_ref().unwrap().revision();
     let mut window = Headless::new();
     for key_event in [egui::Key::S, egui::Key::Z] {
@@ -1313,7 +1288,10 @@ fn a_backdrop_click_on_the_question_closes_it_and_keeps_the_prompt() {
     let original = std::fs::read(&path).unwrap();
     let mut view = dirty_view(&path);
     prompt::open(&mut view, Pending::Close);
-    view.edit_mode_question = Some(PesVersion::Pes21);
+    view.edit_mode_question = Some(EditModeQuestion {
+        game: PesVersion::Pes21,
+        target: path.clone(),
+    });
     let mut window = Headless::new();
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(

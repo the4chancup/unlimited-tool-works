@@ -306,6 +306,14 @@ fn open_menu(
     nodes
 }
 
+/// The Open menu opened and its `Choose file…` clicked, discovery stubbed
+/// to find no save, so the menu holds the recent files and the picker.
+fn choose_file(window: &mut Headless, view: &mut SaveView) {
+    view.discover = Box::new(|_| Vec::new());
+    let nodes = open_menu(window, view, "Open", "Choose file");
+    click(window, menu_item(&nodes, "Choose file"), view);
+}
+
 /// Replaces the focused text control's contents with `text`: End moves the
 /// caret past the text, the backspaces clear it, then the characters land.
 fn type_text(window: &mut Headless, view: &mut SaveView, text: &str) {
@@ -1467,6 +1475,7 @@ mod generate;
 mod list;
 mod live_aatf;
 mod live_marks;
+mod open_menu;
 mod overlap;
 mod player;
 mod prompt;
