@@ -221,10 +221,11 @@ impl Sidebar {
             || rested
             || (self.open && on_overlay);
 
+        let order = overlay_order(&egui_ctx);
         let clicked = if self.open {
             // The rail panel draws only its own frame: the widgets move into the
             // overlay, so the panel and the view keep their rects.
-            self.show_overlay(&egui_ctx, geom, cell, &args)
+            self.show_overlay(&egui_ctx, order, geom, cell, &args)
         } else {
             self.contents(ui, cell, true, &args)
         };
@@ -256,12 +257,11 @@ impl Sidebar {
     }
 
     /// The overlay: the full sidebar as a floating layer over the view, at the
-    /// rail's top-left and as tall as it. `Order::Foreground`
-    /// puts it above the `Middle` help and settings windows: the open sidebar is
-    /// where the pointer is.
+    /// rail's top-left and as tall as it, in `order` (`overlay_order`).
     fn show_overlay(
         &mut self,
         egui_ctx: &egui::Context,
+        order: egui::Order,
         geom: OverlayGeom,
         cell: f32,
         args: &SidebarFrame,
@@ -271,7 +271,7 @@ impl Sidebar {
             frame,
             inner,
         } = geom;
-        let layer = egui::LayerId::new(egui::Order::Foreground, overlay_id());
+        let layer = egui::LayerId::new(order, overlay_id());
         if egui_ctx.memory(|m| m.area_rect(overlay_id())).is_none() {
             // An `egui::Area`'s first `show` is an invisible sizing pass; seeding
             // its state draws the overlay already on the opening frame — the rail
@@ -290,7 +290,7 @@ impl Sidebar {
             });
         }
         egui::Area::new(overlay_id())
-            .order(egui::Order::Foreground)
+            .order(order)
             .fixed_pos(outer.min)
             // No fade-in: the rail's widgets leave on the opening frame, so a fading
             // overlay would flash a dim, half-empty sidebar on every open.
@@ -650,6 +650,20 @@ impl Sidebar {
 /// The overlay `egui::Area`'s id.
 fn overlay_id() -> egui::Id {
     egui::Id::unique("sidebar-overlay")
+}
+
+/// The overlay's layer order this frame. `Foreground` puts it above the `Middle` help
+/// window: the open sidebar is where the pointer is. While a modal is open (egui's top
+/// modal layer, whatever opened it) it is `Middle`, under every modal's dimmed backdrop,
+/// and egui gives a layer below the top modal no input, as the view gets none. In
+/// `Foreground` it would not stay there: egui sends an area to the front of its order
+/// each time it opens or is clicked, which put it over the modal with its entries live.
+fn overlay_order(egui_ctx: &egui::Context) -> egui::Order {
+    if egui_ctx.memory(|memory| memory.top_modal_layer()).is_some() {
+        egui::Order::Middle
+    } else {
+        egui::Order::Foreground
+    }
 }
 
 /// The planned entries the sidebar draws, in registry order: every entry whose

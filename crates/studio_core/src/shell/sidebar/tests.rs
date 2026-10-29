@@ -1455,6 +1455,167 @@ fn the_about_popups_title_is_14_points_and_strong() {
     fs::remove_dir_all(&dir).unwrap();
 }
 
+/// The place of the drawn layer with `id` in egui's back-to-front layer order.
+fn layer_rank(egui_ctx: &egui::Context, id: egui::Id) -> usize {
+    egui_ctx.memory(|memory| {
+        memory
+            .layer_ids()
+            .position(|layer| layer.id == id && memory.areas().is_visible(&layer))
+            .unwrap_or_else(|| panic!("no drawn layer {id:?}"))
+    })
+}
+
+/// The top modal's place in egui's back-to-front layer order.
+fn top_modal_rank(egui_ctx: &egui::Context) -> usize {
+    let modal = egui_ctx
+        .memory(|memory| memory.top_modal_layer())
+        .expect("a modal is open");
+    layer_rank(egui_ctx, modal.id)
+}
+
+/// The Settings modal opened as a member opens it from the rail: a quick click on the
+/// gear, then the pointer resting there until the overlay opens. Returns the last
+/// frame's nodes.
+fn settings_open_with_the_pointer_on_the_rail(
+    egui_ctx: &egui::Context,
+    app: &mut StudioApp,
+) -> Vec<accesskit::Node> {
+    let nodes = frame_at(egui_ctx, app, Vec::new(), true, Some(0.9)).nodes;
+    let gear = entry(&nodes, "Settings");
+    frame_at(egui_ctx, app, pointer(gear, true), true, Some(1.0));
+    frame_at(egui_ctx, app, pointer(gear, false), true, Some(1.02));
+    let mut nodes = Vec::new();
+    for time in [1.10, 1.20, 1.30, 1.40] {
+        nodes = frame_at(egui_ctx, app, Vec::new(), true, Some(time)).nodes;
+    }
+    assert!(has_text(&nodes, "Threads"), "the settings menu is open");
+    assert!(
+        app.sidebar.open,
+        "the overlay opened under the resting pointer"
+    );
+    nodes
+}
+
+// While a modal is open the opened sidebar is drawn under its dimmed backdrop, as
+// the view is: drawn over it, the overlay's entries would act behind a dialog
+// waiting for an answer.
+#[test]
+fn the_opened_sidebar_is_drawn_below_an_open_modal() {
+    let Shell { mut app, _dir, .. } = shell();
+    let egui_ctx = test_context();
+    settings_open_with_the_pointer_on_the_rail(&egui_ctx, &mut app);
+    let overlay = layer_rank(&egui_ctx, overlay_id());
+    let modal = top_modal_rank(&egui_ctx);
+    assert!(
+        overlay < modal,
+        "the overlay ({overlay}) is ordered below the Settings modal ({modal})"
+    );
+}
+
+#[test]
+fn a_click_on_the_opened_sidebar_under_a_modal_switches_and_opens_nothing() {
+    for label in ["B", "Help"] {
+        let Shell { mut app, _dir, .. } = shell();
+        let egui_ctx = test_context();
+        let nodes = settings_open_with_the_pointer_on_the_rail(&egui_ctx, &mut app);
+        let target = nodes
+            .iter()
+            .find(|node| node.role() == Role::Button && node.label() == Some(label))
+            .unwrap_or_else(|| panic!("the overlay's {label} entry"));
+        frame_at(&egui_ctx, &mut app, pointer(target, true), true, Some(1.50));
+        frame_at(
+            &egui_ctx,
+            &mut app,
+            pointer(target, false),
+            true,
+            Some(1.52),
+        );
+        frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.60));
+        assert_eq!(app.active, 0, "a click on {label} switched no tool");
+        assert_eq!(
+            app.help_window.showing(),
+            None,
+            "a click on {label} opened no help"
+        );
+    }
+}
+
+// The About block is a modal the overlay opens itself: drawn above the overlay, which
+// stays open under it, and its buttons take clicks.
+#[test]
+fn the_about_block_opened_from_the_overlay_is_above_it_and_takes_clicks() {
+    let Shell { mut app, _dir, .. } = shell();
+    let egui_ctx = test_context();
+    let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9)).nodes;
+    let nodes = open_sidebar(&egui_ctx, &mut app, entry(&nodes, "A"), 1.0).nodes;
+    let logo = entry(&nodes, "4cc");
+    frame_at(&egui_ctx, &mut app, pointer(logo, true), true, Some(1.30));
+    frame_at(&egui_ctx, &mut app, pointer(logo, false), true, Some(1.32));
+    let mut nodes = Vec::new();
+    for time in [1.40, 1.50, 1.60] {
+        nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(time)).nodes;
+    }
+    assert!(app.sidebar.about_open, "the logo opened the About block");
+    assert!(app.sidebar.open, "the overlay stays open under it");
+    let overlay = layer_rank(&egui_ctx, overlay_id());
+    let modal = top_modal_rank(&egui_ctx);
+    assert!(
+        overlay < modal,
+        "the About block ({modal}) is ordered above the overlay ({overlay})"
+    );
+    let copy = entry(&nodes, "Copy");
+    frame_at(&egui_ctx, &mut app, pointer(copy, true), true, Some(1.70));
+    let out = frame_at(&egui_ctx, &mut app, pointer(copy, false), true, Some(1.72));
+    assert!(
+        out.platform
+            .commands
+            .iter()
+            .any(|command| matches!(command, egui::OutputCommand::CopyText(_))),
+        "the About block's Copy takes the click"
+    );
+}
+
+#[test]
+fn the_opened_sidebar_stays_above_the_help_window() {
+    let Shell { mut app, _dir, .. } = shell();
+    let egui_ctx = test_context();
+    let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9)).nodes;
+    let nodes = open_sidebar(&egui_ctx, &mut app, entry(&nodes, "A"), 1.0).nodes;
+    let help = nodes
+        .iter()
+        .find(|node| node.role() == Role::Button && node.label() == Some("Help"))
+        .expect("the overlay's Help entry");
+    frame_at(&egui_ctx, &mut app, pointer(help, true), true, Some(1.30));
+    frame_at(&egui_ctx, &mut app, pointer(help, false), true, Some(1.32));
+    for time in [1.40, 1.50, 1.60] {
+        frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(time));
+    }
+    assert!(
+        app.help_window.showing().is_some(),
+        "the help window opened"
+    );
+    assert!(app.sidebar.open, "the pointer still rests on the overlay");
+    let overlay = layer_rank(&egui_ctx, overlay_id());
+    let windows: Vec<usize> = egui_ctx.memory(|memory| {
+        memory
+            .layer_ids()
+            .enumerate()
+            .filter(|(_, layer)| {
+                layer.order == egui::Order::Middle && memory.areas().is_visible(layer)
+            })
+            .map(|(rank, _)| rank)
+            .collect()
+    });
+    assert!(
+        !windows.is_empty(),
+        "the help window is a drawn Middle layer"
+    );
+    assert!(
+        windows.iter().all(|&window| window < overlay),
+        "the overlay ({overlay}) is ordered above the help window ({windows:?})"
+    );
+}
+
 // ST-SIDE-05 is manual: a real PES must run. These cover the poll's mechanics with a
 // stubbed probe, so they cite no scenario.
 
