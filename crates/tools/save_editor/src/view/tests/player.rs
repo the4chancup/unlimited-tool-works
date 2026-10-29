@@ -20,6 +20,25 @@ fn rostered(view: &SaveView, team_id: u32) -> Vec<(usize, u32)> {
         .collect()
 }
 
+/// The number dialog's value field: the nearest number box under the
+/// sentence `line`, sharing its left edge.
+fn field_under<'a>(nodes: &'a [accesskit::Node], line: &str) -> &'a accesskit::Node {
+    let line_bounds = label_bounds(nodes, line);
+    nodes
+        .iter()
+        .filter(|node| {
+            node.role() == Role::SpinButton
+                && node.bounds().is_some_and(|b| {
+                    b.y0 >= line_bounds.y1 - 1.0 && (b.x0 - line_bounds.x0).abs() <= 1.0
+                })
+        })
+        .min_by(|a, b| {
+            let y = |node: &&accesskit::Node| node.bounds().expect("bounds").y0;
+            y(a).partial_cmp(&y(b)).expect("ordered bounds")
+        })
+        .unwrap_or_else(|| panic!("no number box under {line:?}"))
+}
+
 /// Opens the number dialog of `item` and types `value` into it, then OK.
 fn run_stat_dialog(
     window: &mut Headless,
@@ -31,10 +50,7 @@ fn run_stat_dialog(
     let nodes = open_menu(window, view, "Player", "Set all stats");
     click(window, menu_item(&nodes, item), view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    let field = right_of_label(&nodes, line, Role::SpinButton)
-        .first()
-        .copied()
-        .unwrap_or_else(|| panic!("the {item:?} dialog's value field"));
+    let field = field_under(&nodes, line);
     click(window, field, view);
     type_text(window, view, value);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
@@ -118,10 +134,7 @@ fn set_and_bump_stats_write_every_ability_as_one_undoable_edit() {
         show(ui, &mut view, &|| Vec::new())
     });
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let field = right_of_label(&nodes, &bump_line(&name), Role::SpinButton)
-        .first()
-        .copied()
-        .expect("the Bump dialog's value field");
+    let field = field_under(&nodes, &bump_line(&name));
     click(&mut window, field, &mut view);
     type_text(&mut window, &mut view, "10");
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -236,11 +249,58 @@ fn the_bump_dialog_prefills_the_last_n_used() {
     let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
     click(&mut window, menu_item(&nodes, "Bump all stats"), &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let field = right_of_label(&nodes, &bump_line(&name), Role::SpinButton)
-        .first()
-        .copied()
-        .expect("the Bump dialog's value field");
+    let field = field_under(&nodes, &bump_line(&name));
     assert_eq!(field.value(), Some("7"), "the last bump is prefilled");
+}
+
+// The number dialog draws as the draft's `dlgNum`: the sentence on its own
+// line, the number box under it at the body's left (the title's left edge,
+// where the modal's content starts).
+#[test]
+fn the_set_dialogs_number_box_stands_under_its_sentence() {
+    let path = fixture(PesVersion::Pes21, "player_set_layout");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let name = display_name(&player_entry(&view, 70101).name);
+    let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
+    click(&mut window, menu_item(&nodes, "Set all stats"), &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    // The page behind the modal draws number boxes of its own, so every
+    // node is looked up inside the modal's area.
+    let dialog = window
+        .ctx
+        .memory(|memory| memory.area_rect(egui::Id::unique("save_editor_stat_num")))
+        .expect("the dialog's area");
+    let inside = |node: &&accesskit::Node| {
+        node.bounds().is_some_and(|b| {
+            dialog.contains(egui::pos2(b.x0 as f32, b.y0 as f32))
+                && dialog.contains(egui::pos2(b.x1 as f32, b.y1 as f32))
+        })
+    };
+    let bounds_of = |role: Role, value: Option<&str>| {
+        nodes
+            .iter()
+            .filter(inside)
+            .find(|node| node.role() == role && (value.is_none() || node.value() == value))
+            .and_then(accesskit::Node::bounds)
+            .unwrap_or_else(|| panic!("no {role:?} {value:?} in the dialog"))
+    };
+    let title = bounds_of(Role::Label, Some("Set all stats"));
+    let line = bounds_of(Role::Label, Some(&set_line(&name)));
+    let field = bounds_of(Role::SpinButton, None);
+    assert!(
+        field.y0 >= line.y1,
+        "the box's top {} is under the sentence's bottom {}",
+        field.y0,
+        line.y1
+    );
+    assert!(
+        (field.x0 - title.x0).abs() <= 1.0,
+        "the box's left {} is the body's left {}",
+        field.x0,
+        title.x0
+    );
 }
 
 /// `entry` with the copy/swap field set taken from `source`: height,
