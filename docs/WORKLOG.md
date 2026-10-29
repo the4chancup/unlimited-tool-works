@@ -4854,7 +4854,9 @@ briefs, review loops, gates and mutation runs as for any step.
       after a click on the gear, the opened sidebar (`Order::Foreground`, sent to the front)
       draws over the Settings modal's dimmed backdrop, undimmed, and from a reading of egui's
       `Modal` its entries stay clickable behind the modal; the draft's `#sb-open` is "above the
-      view, below menus and modals". Brief after ov2z (same module)
+      view, below menus and modals". Ruled (DECISIONS "The opened sidebar sits below modals";
+      `plans/core/gui.md` "Sidebar" item 4). Brief `.tmp/0_0_1ov/brief_ov11d.md`, run beside
+      ov2z (the same module, other functions: the layers, not the layout)
   - [x] ov12 the Tactics popover's X and Y as steppers (DECISIONS "The Tactics popover's X
     and Y step by arrows inside the number box's width" and "The popover's stepper arrows
     take clicks, not the keyboard's focus"; `plans/save_editor.md`, the Tactics editor's

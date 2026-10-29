@@ -244,7 +244,11 @@ Top to bottom:
    floating layer with a shadow, never pushing or resizing the view under it; it closes when
    the pointer leaves it, except while a popup it opened (the version dropdown, the About
    block) is open. A click on a rail entry switches tools without waiting for the hover, so the
-   rail alone is enough to work with, and keyboard users get the same overlay on focus. There
+   rail alone is enough to work with, and keyboard users get the same overlay on focus. While a
+   modal is open (Settings, About, a tool's dialog) the opened sidebar is drawn under the
+   modal's dimmed backdrop and takes no input, as the view does: above the view, below menus
+   and modals (the draft's `#sb-open`). Drawn over the backdrop, its entries would switch tools
+   or open Help behind a dialog that asks for an answer first. There
    is no collapse button and no expanded state to persist. We overlay rather than reserve the
    expanded width, because the expanded sidebar is needed only to read a label or pick a
    version, and reserving ~104 more points cost every tool that width all the time (at the
