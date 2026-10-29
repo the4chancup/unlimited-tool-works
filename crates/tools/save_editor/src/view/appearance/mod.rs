@@ -32,7 +32,7 @@ use crate::view::appearance::fields::{
     MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, number_range, option_name,
     palette,
 };
-use crate::view::{SaveView, edit_player, selected_player};
+use crate::view::{Panel, SaveView, edit_player, selected_player};
 
 /// `edit_flags`' Face checkbox.
 pub(super) const FACE_LABEL: &str = "Face";
@@ -136,10 +136,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         .response
         .on_disabled_hover_text(ownership_tip(version));
     });
-    // One floating panel at a time, as the Savefile menu's entries.
     if open_patch {
-        view.patch.open = true;
-        view.comparator.open = false;
+        view.panel = Some(Panel::Patch);
     }
 }
 

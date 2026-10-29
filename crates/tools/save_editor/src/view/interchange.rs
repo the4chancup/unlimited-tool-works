@@ -1,0 +1,673 @@
+//! The team file panel (the draft's `interchangePanel`): an `egui::Window`
+//! that imports a team file onto the team selected in the editor, the file
+//! deciding the format: a Team TOML, a squad (`.4ccs`) or tactics (`.4cct`)
+//! file, or a Texport. The member picks which of the sections the file
+//! holds load (gameplay, aesthetics, tactics), reads what the import will
+//! not write as written (the command line's note lines, grouped) and, for a
+//! squad file, who gets which record. The staged import is the file applied
+//! to copies of the target team and its players, recomputed when the save
+//! changes (an edit, an undo, another save opened), the target or the
+//! choices, so Apply writes what the panel shows, as one undoable edit. A
+//! file that cannot be read is refused alone, in the command line's words;
+//! a refusal of the chosen sections' keys is drawn under the choices, which
+//! stay drawn, since unticking that section is how the member imports the
+//! rest. Under the aesthetics lock the aesthetics section is never written.
+
+use std::borrow::Cow;
+use std::path::{Path, PathBuf};
+
+use pes_savefile::EditFile;
+use pes_savefile::interchange::legacy::{read_squad, read_tactics};
+use pes_savefile::interchange::team_toml::{TeamToml, TeamTomlError};
+use pes_savefile::interchange::texport::Texport;
+use pes_savefile::model::names::display_name;
+use pes_savefile::model::{PlayerEntry, TeamEntry};
+use pes_version::PesVersion;
+use studio_core::widgets::{checkbox, collapsing_header};
+use studio_core::{EventLines, Message, PipelineEvent};
+use team_widgets::names::append_name;
+
+use crate::messages::import_note;
+use crate::session::import_sections::{Sections, keep_sections};
+use crate::view::appearance::ownership_tip;
+use crate::view::comparator::{self, OpenSaveDialog};
+use crate::view::{Panel, SaveView, selected_team_id, surrender_focus};
+
+/// The panel's Pick dialog: `rfd` on the team file extensions, and every
+/// file, since a PES 2015 to 2017 Texport (`TEXPORT00000000`) has none.
+#[cfg(not(test))]
+pub(super) fn default_interchange_dialog() -> OpenSaveDialog {
+    Box::new(|| {
+        rfd::FileDialog::new()
+            .add_filter("Team files", &["toml", "4ccs", "4cct", "ted"])
+            .add_filter("All files", &["*"])
+            .pick_file()
+    })
+}
+
+/// `default_interchange_dialog` under `cargo test`: a test reaching a real
+/// file dialog panics; tests stub `view.interchange_dialog`.
+#[cfg(test)]
+pub(super) fn default_interchange_dialog() -> OpenSaveDialog {
+    Box::new(|| panic!("a test reached a real file dialog: stub interchange_dialog"))
+}
+
+/// Every section chosen: the choices as the panel starts.
+const ALL_SECTIONS: Sections = Sections {
+    gameplay: true,
+    aesthetics: true,
+    tactics: true,
+};
+
+/// The panel's state on `SaveView` (`view.interchange`): the picked file,
+/// the section choices, the staged import and the save state Apply left.
+pub(super) struct Interchange {
+    /// The last picked file, `None` before a pick.
+    picked: Option<Picked>,
+    /// The member's section choices, all on at first and kept for the
+    /// panel's life (never a setting). The aesthetics lock masks the
+    /// aesthetics choice without changing it.
+    sections: Sections,
+    /// The picked file staged onto the target and the key it was staged
+    /// for; `Err` is a squad file that does not read against the target.
+    staged: Option<(StageKey, Result<Staged, String>)>,
+    /// `Session::revision` right after Apply's edit: the Applied line
+    /// stands while the save is still in it.
+    applied: Option<u64>,
+}
+
+/// The format the picked file is read as, from its name.
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Format {
+    /// `.toml`: a Team TOML.
+    TeamToml,
+    /// `.4ccs`: a squad file.
+    Squad,
+    /// `.4cct`: a tactics file.
+    Tactics,
+    /// Any other name: a Texport (`.ted`, or PES 2015 to 2017's
+    /// extension-less `TEXPORT00000000`).
+    Texport,
+}
+
+impl Format {
+    /// The format `path`'s extension names.
+    fn of(path: &Path) -> Format {
+        let extension = path
+            .extension()
+            .map(|extension| extension.to_string_lossy().to_ascii_lowercase());
+        match extension.as_deref() {
+            Some("toml") => Format::TeamToml,
+            Some("4ccs") => Format::Squad,
+            Some("4cct") => Format::Tactics,
+            _ => Format::Texport,
+        }
+    }
+
+    /// The intro line's opening words.
+    fn label(self) -> &'static str {
+        match self {
+            Format::TeamToml => "A Team TOML",
+            Format::Squad => "A legacy squad file (.4ccs)",
+            Format::Tactics => "A legacy tactics file (.4cct)",
+            Format::Texport => "A Texport",
+        }
+    }
+}
+
+/// The picked file: its path, its format and what reading it gave.
+struct Picked {
+    /// The file the member picked.
+    path: PathBuf,
+    /// The format its name names.
+    format: Format,
+    /// The file read, or the refusal (`<file name>: <error>`).
+    read: Result<Read, String>,
+}
+
+/// A picked file as read.
+enum Read {
+    /// A Team TOML, a tactics file or a Texport: its document, read once at
+    /// the pick.
+    Document(Box<TeamToml>),
+    /// A squad file's bytes: its records land on the target's rostered
+    /// players, so it is read again whenever the target or the save changes.
+    Squad(Vec<u8>),
+}
+
+/// What a staged import was computed for: any change of it stages again.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct StageKey {
+    /// `Session::revision`, which never repeats, across opens included.
+    revision: u64,
+    /// The target team's id.
+    team: u32,
+    /// The member's choices.
+    sections: Sections,
+    /// Whether the aesthetics lock is on.
+    locked: bool,
+}
+
+/// The picked file against the target.
+struct Staged {
+    /// The document's `pes_version` (`None`: it names none).
+    version: Option<PesVersion>,
+    /// The sections the document holds keys of.
+    held: Sections,
+    /// A squad file's records against the players they land on, in roster
+    /// order; empty for the other formats.
+    pairing: Vec<Pairing>,
+    /// The chosen sections applied, or the lib's refusal of them.
+    import: Result<Import, String>,
+}
+
+/// One squad record and the rostered player it lands on.
+struct Pairing {
+    /// The roster slot, 1-based.
+    slot: u8,
+    /// The record's name, colour codes dropped.
+    record: String,
+    /// The rostered player's shirt number.
+    number: u16,
+    /// The rostered player's name as stored, colour codes included.
+    name: String,
+}
+
+/// The chosen sections applied to copies of the target: what Apply writes
+/// and what it does not.
+struct Import {
+    /// The target team as the import leaves it.
+    team: TeamEntry,
+    /// The target's rostered players as the import leaves them.
+    players: Vec<PlayerEntry>,
+    /// The notes grouped by code and path, in first-seen order.
+    notes: Vec<NoteGroup>,
+}
+
+/// The notes sharing a code and a path, every player's slot counted as one
+/// path.
+struct NoteGroup {
+    /// `<code> <path>`, a player's slot written `*`.
+    key: String,
+    /// Each note's line as the command line prints it.
+    lines: Vec<String>,
+}
+
+/// What a click in the window asks for, done after the window is drawn.
+enum Action {
+    /// `Pick…`.
+    Pick,
+    /// `Apply`.
+    Apply,
+}
+
+impl Interchange {
+    /// No file picked, every section chosen.
+    pub(super) fn new() -> Interchange {
+        Interchange {
+            picked: None,
+            sections: ALL_SECTIONS,
+            staged: None,
+            applied: None,
+        }
+    }
+
+    /// Reads the file at `path` as its name's format, dropping the last
+    /// file's staged import and Applied line.
+    fn pick(&mut self, path: PathBuf) {
+        let format = Format::of(&path);
+        let read = read(&path, format).map_err(|error| format!("{}: {error}", file_name(&path)));
+        self.picked = Some(Picked { path, format, read });
+        self.staged = None;
+        self.applied = None;
+    }
+
+    /// Stages the picked file onto `team` again when `key` differs from
+    /// the one it was staged for: once per change, not every frame.
+    fn refresh(&mut self, file: &EditFile, team: &TeamEntry, key: StageKey) {
+        let Some(Picked {
+            path,
+            read: Ok(read),
+            ..
+        }) = &self.picked
+        else {
+            return;
+        };
+        if self
+            .staged
+            .as_ref()
+            .is_some_and(|(staged_for, _)| *staged_for == key)
+        {
+            return;
+        }
+        let (document, pairing) = match read {
+            Read::Document(document) => (Cow::Borrowed(&**document), Vec::new()),
+            Read::Squad(bytes) => match read_squad(bytes, team, file.players()) {
+                Ok(document) => {
+                    let pairing = pairing(file, team, &document);
+                    (Cow::Owned(document), pairing)
+                }
+                Err(error) => {
+                    self.staged = Some((key, Err(format!("{}: {error}", file_name(path)))));
+                    return;
+                }
+            },
+        };
+        let chosen = Sections {
+            aesthetics: key.sections.aesthetics && !key.locked,
+            ..key.sections
+        };
+        let staged = Staged {
+            version: document.pes_version,
+            held: held(&document),
+            pairing,
+            import: stage(file, team, &document, chosen).map_err(|error| error.to_string()),
+        };
+        self.staged = Some((key, Ok(staged)));
+    }
+}
+
+/// The bytes at `path` read as `format`.
+fn read(path: &Path, format: Format) -> anyhow::Result<Read> {
+    let bytes = std::fs::read(path)?;
+    let document = match format {
+        Format::TeamToml => TeamToml::parse(std::str::from_utf8(&bytes)?)?,
+        Format::Squad => return Ok(Read::Squad(bytes)),
+        Format::Tactics => read_tactics(&bytes)?,
+        Format::Texport => Texport::from_bytes(&bytes, None)?.to_team_toml()?,
+    };
+    Ok(Read::Document(Box::new(document)))
+}
+
+/// `path`'s file name, the whole path when it has none.
+fn file_name(path: &Path) -> String {
+    path.file_name()
+        .unwrap_or(path.as_os_str())
+        .to_string_lossy()
+        .into_owned()
+}
+
+/// The sections `document` holds. A section is held when keeping it alone
+/// leaves another document than keeping none. Read from the document, not
+/// from the format: a squad file carries tactics only when it has the
+/// tactics block, and a Team TOML written by hand may hold any part.
+fn held(document: &TeamToml) -> Sections {
+    let kept = |sections: Sections| {
+        let mut kept = document.clone();
+        keep_sections(&mut kept, sections);
+        kept
+    };
+    let none = kept(Sections {
+        gameplay: false,
+        aesthetics: false,
+        tactics: false,
+    });
+    let holds = |sections: Sections| kept(sections) != none;
+    Sections {
+        gameplay: holds(Sections {
+            gameplay: true,
+            aesthetics: false,
+            tactics: false,
+        }),
+        aesthetics: holds(Sections {
+            gameplay: false,
+            aesthetics: true,
+            tactics: false,
+        }),
+        tactics: holds(Sections {
+            gameplay: false,
+            aesthetics: false,
+            tactics: true,
+        }),
+    }
+}
+
+/// Each player table of a squad file's `document` against the player
+/// `team`'s roster holds at its slot.
+fn pairing(file: &EditFile, team: &TeamEntry, document: &TeamToml) -> Vec<Pairing> {
+    document
+        .players
+        .iter()
+        .map(|(&slot, section)| {
+            let entry = team.roster[usize::from(slot - 1)];
+            let player = file
+                .player(entry.player_id)
+                .expect("a squad record lands on a player of the save");
+            Pairing {
+                slot,
+                record: display_name(
+                    section
+                        .name
+                        .as_deref()
+                        .expect("a squad record always carries its name"),
+                ),
+                number: entry.number,
+                name: player.name.clone(),
+            }
+        })
+        .collect()
+}
+
+/// `document` reduced to `chosen` and applied onto `team` and its rostered
+/// players. The import runs on copies, never on the save: the panel shows
+/// its notes and refusal before anything is written, and Apply then writes
+/// the copies as one undoable edit.
+fn stage(
+    file: &EditFile,
+    team: &TeamEntry,
+    document: &TeamToml,
+    chosen: Sections,
+) -> Result<Import, TeamTomlError> {
+    let mut kept = document.clone();
+    keep_sections(&mut kept, chosen);
+    let mut team = team.clone();
+    let mut players: Vec<PlayerEntry> = file
+        .players()
+        .iter()
+        .filter(|player| {
+            player.id != 0 && team.roster.iter().any(|slot| slot.player_id == player.id)
+        })
+        .cloned()
+        .collect();
+    let notes = kept.apply(file.version(), &mut team, &mut players)?;
+    let mut lines = EventLines::new();
+    let mut groups: Vec<NoteGroup> = Vec::new();
+    for note in &notes {
+        let message = import_note(note);
+        let key = group_key(&message);
+        let line = lines
+            .line(&PipelineEvent::Message(message))
+            .expect("a Message event has a console line");
+        match groups.iter_mut().find(|group| group.key == key) {
+            Some(group) => group.lines.push(line),
+            None => groups.push(NoteGroup {
+                key,
+                lines: vec![line],
+            }),
+        }
+    }
+    Ok(Import {
+        team,
+        players,
+        notes: groups,
+    })
+}
+
+/// A note's group: its code and its `path` (an empty slot's: its `slot`),
+/// `players.NN.` written `players.*.` so one key over every player is one
+/// group.
+fn group_key(message: &Message) -> String {
+    let at = message
+        .context
+        .iter()
+        .find(|(key, _)| key == "path" || key == "slot")
+        .map(|(_, value)| value.as_str())
+        .expect("every import note names a path or a slot");
+    let at = match at
+        .strip_prefix("players.")
+        .and_then(|rest| rest.split_once('.'))
+    {
+        Some((_, tail)) => format!("players.*.{tail}"),
+        None => at.to_owned(),
+    };
+    format!("{} {at}", message.code.code)
+}
+
+/// The window for one frame, while it is the open panel and a save is open.
+/// The import is staged to the save's state before anything is drawn, so a
+/// frame never draws, nor Apply writes, an import an edit made stale.
+pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
+    if view.panel != Some(Panel::Interchange) {
+        return;
+    }
+    let locked = view.aesthetics_locked();
+    let target = selected_team_id(view);
+    let SaveView {
+        panel,
+        session,
+        interchange,
+        interchange_dialog,
+        ..
+    } = view;
+    let Some(session) = session.as_mut() else {
+        return;
+    };
+    let revision = session.revision();
+    let file = session.file();
+    let version = file.version();
+    let target = target.and_then(|id| file.team(id));
+    if let Some(team) = target {
+        let key = StageKey {
+            revision,
+            team: team.id,
+            sections: interchange.sections,
+            locked,
+        };
+        interchange.refresh(file, team, key);
+    }
+    let chosen = interchange.sections;
+    let mut open = true;
+    let action = comparator::panel_window(ui, "Team file interchange", "save_editor_interchange")
+        .open(&mut open)
+        .show(ui.ctx(), |ui| {
+            contents(ui, interchange, target, version, locked, revision)
+        })
+        .and_then(|response| response.inner)
+        .flatten();
+    if !open {
+        *panel = None;
+    }
+    // A choice changed on this frame: the next one stages it.
+    if interchange.sections != chosen {
+        ui.ctx().request_repaint();
+    }
+    match action {
+        Some(Action::Pick) => {
+            surrender_focus(ui);
+            if let Some(path) = interchange_dialog() {
+                interchange.pick(path);
+            }
+        }
+        Some(Action::Apply) => {
+            if let Some((
+                _,
+                Ok(Staged {
+                    import: Ok(import), ..
+                }),
+            )) = &interchange.staged
+            {
+                session.edit_entries(import.players.clone(), vec![import.team.clone()]);
+                interchange.applied = Some(session.revision());
+            }
+        }
+        None => {}
+    }
+}
+
+/// The window's contents: the target and the pick row, then once a file is
+/// staged its intro line, a squad file's pairing, the section choices, the
+/// refusal or the notes, `Apply` and the Applied line. A file that does not
+/// read is its refusal alone.
+fn contents(
+    ui: &mut egui::Ui,
+    interchange: &mut Interchange,
+    target: Option<&TeamEntry>,
+    version: PesVersion,
+    locked: bool,
+    revision: u64,
+) -> Option<Action> {
+    let Some(team) = target else {
+        ui.weak("Pick a team row to import into.");
+        return None;
+    };
+    let mut action = None;
+    // One line, as the Comparator's pick row: the label, the file's name
+    // truncated to the room the button leaves, the button at the right.
+    ui.horizontal_top(|ui| {
+        ui.weak(format!(
+            "Import into {} ({}) ",
+            display_name(&team.name),
+            team.id
+        ));
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
+            if ui
+                .button("Pick\u{2026}")
+                .on_hover_text("The file picked decides the format")
+                .clicked()
+            {
+                action = Some(Action::Pick);
+            }
+            match &interchange.picked {
+                Some(picked) => {
+                    ui.add(
+                        egui::Label::new(egui::RichText::new(file_name(&picked.path)).monospace())
+                            .truncate()
+                            .show_tooltip_when_elided(false),
+                    )
+                    .on_hover_text(picked.path.display().to_string());
+                }
+                None => {
+                    ui.weak("(none)");
+                }
+            }
+        });
+    });
+    let Some(picked) = &interchange.picked else {
+        ui.weak(
+            "Team TOML, .4ccs, .4cct and Texport files open here, and the file decides the format.",
+        );
+        return action;
+    };
+    let error = ui.visuals().error_fg_color;
+    if let Err(refusal) = &picked.read {
+        ui.colored_label(error, refusal);
+        return action;
+    }
+    let staged = match &interchange.staged {
+        Some((_, Ok(staged))) => staged,
+        Some((_, Err(refusal))) => {
+            ui.colored_label(error, refusal);
+            return action;
+        }
+        None => return action,
+    };
+    ui.weak(intro(picked.format, staged.version, version));
+    if !staged.pairing.is_empty() {
+        ui.weak("Who gets which record");
+        pairing_rows(ui, &staged.pairing);
+    }
+    let sections = &mut interchange.sections;
+    ui.horizontal_wrapped(|ui| {
+        ui.weak("Sections ");
+        if staged.held.gameplay {
+            checkbox(ui, &mut sections.gameplay, "gameplay");
+        }
+        if staged.held.aesthetics {
+            if locked {
+                ui.add_enabled_ui(false, |ui| checkbox(ui, &mut false, "aesthetics"))
+                    .inner
+                    .on_disabled_hover_text(ownership_tip(version));
+            } else {
+                checkbox(ui, &mut sections.aesthetics, "aesthetics");
+            }
+        }
+        if staged.held.tactics {
+            checkbox(ui, &mut sections.tactics, "tactics");
+        }
+    });
+    match &staged.import {
+        Err(refusal) => {
+            ui.colored_label(error, refusal);
+        }
+        Ok(import) if !import.notes.is_empty() => {
+            // A document naming no version is read as the save's.
+            ui.weak(format!(
+                "Import notes ({} file onto a {version} save)",
+                staged.version.unwrap_or(version)
+            ));
+            notes(ui, &import.notes);
+        }
+        Ok(_) => {}
+    }
+    let held = staged.held;
+    let any_chosen = (held.gameplay && sections.gameplay)
+        || (held.aesthetics && sections.aesthetics && !locked)
+        || (held.tactics && sections.tactics);
+    ui.horizontal_wrapped(|ui| {
+        if ui
+            .add_enabled(
+                staged.import.is_ok() && any_chosen,
+                egui::Button::new("Apply"),
+            )
+            .on_hover_text("Write the chosen sections as one undoable edit")
+            .clicked()
+        {
+            action = Some(Action::Apply);
+        }
+        ui.weak("one undoable edit; the changes stay unsaved until Save.");
+    });
+    if interchange.applied == Some(revision) {
+        ui.weak(format!(
+            "Applied {}. The changes stay unsaved until Save.",
+            file_name(&picked.path)
+        ));
+    }
+    action
+}
+
+/// The intro line: the format, and the version the file was written from
+/// against the save's.
+fn intro(format: Format, from: Option<PesVersion>, save: PesVersion) -> String {
+    let label = format.label();
+    match from {
+        None => format!("{label} naming no version, read as the save's."),
+        Some(from) if from == save => format!("{label} written from a {from} save."),
+        Some(from) => {
+            format!("{label} written from a {from} save, converted to {save} where it can be.")
+        }
+    }
+}
+
+/// A squad file's records, one row each: the slot (weak), the record's
+/// name, then the rostered player's shirt number (weak, monospace) and his
+/// name in its colour codes, as the player list draws it.
+fn pairing_rows(ui: &mut egui::Ui, rows: &[Pairing]) {
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    egui::ScrollArea::vertical()
+        .id_salt("save_editor_interchange_pairing")
+        .max_height(240.0)
+        .auto_shrink([false, true])
+        .show(ui, |ui| {
+            for row in rows {
+                ui.horizontal(|ui| {
+                    ui.weak(format!("{:02}", row.slot));
+                    ui.label(&row.record);
+                    ui.weak("\u{2192}");
+                    ui.label(
+                        egui::RichText::new(row.number.to_string())
+                            .monospace()
+                            .weak(),
+                    );
+                    let mut name = egui::text::LayoutJob::default();
+                    append_name(&mut name, &row.name, &font);
+                    ui.label(name);
+                });
+            }
+        });
+}
+
+/// The note groups, each a collapsed header `<count> × <key>` over its
+/// lines in the warning colour, monospace.
+fn notes(ui: &mut egui::Ui, groups: &[NoteGroup]) {
+    let warn = ui.visuals().warn_fg_color;
+    for group in groups {
+        collapsing_header(format!("{} \u{d7} {}", group.lines.len(), group.key))
+            .id_salt(("save_editor_interchange_notes", group.key.as_str()))
+            .default_open(false)
+            .show(ui, |ui| {
+                for line in &group.lines {
+                    ui.label(egui::RichText::new(line).monospace().color(warn));
+                }
+            });
+    }
+}

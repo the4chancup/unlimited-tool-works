@@ -5,8 +5,6 @@
 //! the lib the entries it asks for.
 
 pub(crate) mod database;
-// Built with the tests alone until the import dialog calls it.
-#[cfg(test)]
 pub(crate) mod import_sections;
 pub(crate) mod player_ops;
 pub(crate) mod rules;

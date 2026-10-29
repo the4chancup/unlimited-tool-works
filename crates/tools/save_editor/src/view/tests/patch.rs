@@ -462,11 +462,18 @@ fn opening_one_floating_panel_closes_the_other() {
         node_labeled(&nodes, Role::Button, "Comparator\u{2026}"),
         &mut view,
     );
-    assert!(view.comparator.open, "premise: the comparator is open");
+    assert_eq!(
+        view.panel,
+        Some(Panel::Comparator),
+        "premise: the comparator is open"
+    );
 
     open_panel(&mut window, &mut view);
-    assert!(view.patch.open, "the patch panel opens");
-    assert!(!view.comparator.open, "the comparator closes");
+    assert_eq!(
+        view.panel,
+        Some(Panel::Patch),
+        "the patch panel opens, the comparator closes"
+    );
 
     let nodes = open_menu(&mut window, &mut view, "Savefile", "Comparator");
     click(
@@ -474,6 +481,9 @@ fn opening_one_floating_panel_closes_the_other() {
         node_labeled(&nodes, Role::Button, "Comparator\u{2026}"),
         &mut view,
     );
-    assert!(view.comparator.open, "the comparator opens");
-    assert!(!view.patch.open, "the patch panel closes");
+    assert_eq!(
+        view.panel,
+        Some(Panel::Comparator),
+        "the comparator opens, the patch panel closes"
+    );
 }

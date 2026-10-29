@@ -22,7 +22,7 @@ use pes_savefile::settings_toml::SettingsError;
 use team_widgets::violations::SelectedPlayer;
 
 use crate::view::comparator::{self, OpenSaveDialog, Place};
-use crate::view::{SaveView, aatf_check, prompt, surrender_focus, terms};
+use crate::view::{Panel, SaveView, aatf_check, prompt, surrender_focus, terms};
 
 /// The Open patch dialog: `rfd` on `.toml` files.
 #[cfg(not(test))]
@@ -41,11 +41,9 @@ pub(super) fn default_patch_dialog() -> OpenSaveDialog {
     Box::new(|| panic!("a test reached a real file dialog: stub patch_dialog"))
 }
 
-/// The panel's state on `SaveView` (`view.patch`): open or not, the
-/// opened patch, its preview and the save state Apply left.
+/// The panel's state on `SaveView` (`view.patch`): the opened patch, its
+/// preview and the save state Apply left.
 pub(super) struct Patch {
-    /// Whether the window is drawn.
-    pub(super) open: bool,
     /// The last opened file: its path and the patch it holds, or what
     /// refused it (`cannot read the file (…)`, a parse error).
     loaded: Option<(PathBuf, Result<AestheticsPatch, String>)>,
@@ -106,10 +104,9 @@ enum Action {
 }
 
 impl Patch {
-    /// The panel closed, no patch opened.
+    /// No patch opened.
     pub(super) fn new() -> Patch {
         Patch {
-            open: false,
             loaded: None,
             preview: None,
             applied: None,
@@ -227,12 +224,13 @@ fn preview(file: &EditFile, patch: &AestheticsPatch) -> Result<Preview, PatchErr
     })
 }
 
-/// The window for one frame, while `view.patch.open` and a save is open:
+/// The window for one frame, while it is the open panel and a save is open:
 /// the top row, the refusal or the skips, then the list. The preview is
 /// brought to the save's state before anything is drawn, so a frame never
 /// draws, nor Apply writes, a list an edit made stale.
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     let SaveView {
+        panel,
         patch,
         session,
         team,
@@ -243,7 +241,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         generation,
         ..
     } = view;
-    if !patch.open {
+    if *panel != Some(Panel::Patch) {
         return;
     }
     let Some(session) = session.as_mut() else {
@@ -254,13 +252,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         revision: session.revision(),
     };
     patch.refresh(session.file(), state);
-    let mut open = patch.open;
+    let mut open = true;
     let action = comparator::panel_window(ui, "Apply aesthetics patch", "save_editor_patch")
         .open(&mut open)
         .show(ui.ctx(), |ui| contents(ui, patch, state))
         .and_then(|response| response.inner)
         .flatten();
-    patch.open = open;
+    if !open {
+        *panel = None;
+    }
     match action {
         Some(Action::Open) => {
             surrender_focus(ui);

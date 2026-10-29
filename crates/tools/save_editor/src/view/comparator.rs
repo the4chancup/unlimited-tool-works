@@ -28,7 +28,7 @@ use crate::session::Session;
 use crate::session::selection::TeamChoice;
 use crate::view::worker::{Pending, WorkerResult};
 use crate::view::{
-    Refusal, SaveView, aatf_check, edit_settled, player_list, surrender_focus, terms,
+    Panel, Refusal, SaveView, aatf_check, edit_settled, player_list, surrender_focus, terms,
 };
 
 /// The panel's first width in points, its whole frame included (the
@@ -77,12 +77,10 @@ pub(crate) fn default_export_dialog() -> SaveFileDialog {
     Box::new(|_| panic!("a test reached a real file dialog: stub export_dialog"))
 }
 
-/// The panel's state on `SaveView` (`view.comparator`): open or not, the
-/// picked save, the last pick's refusal, the scope, the team filter, the
-/// last export's path and the comparison's worker state.
+/// The panel's state on `SaveView` (`view.comparator`): the picked save,
+/// the last pick's refusal, the scope, the team filter, the last export's
+/// path and the comparison's worker state.
 pub(super) struct Comparator {
-    /// Whether the window is drawn (the Panels menu's `Comparator…` item).
-    pub(super) open: bool,
     /// The picked second save (the report's `first`): its path and its
     /// session, opened through `Session::open` so a refusal is the
     /// toolbar's own (`<path>: cannot open the save`).
@@ -117,10 +115,9 @@ pub(super) struct CompareKey {
 }
 
 impl Comparator {
-    /// The panel closed, nothing picked.
+    /// Nothing picked.
     pub(super) fn new() -> Comparator {
         Comparator {
-            open: false,
             picked: None,
             refused: None,
             scope: None,
@@ -183,13 +180,14 @@ pub(super) enum Line {
     },
 }
 
-/// The window for one frame, while `view.comparator.open` and a save is
+/// The window for one frame, while it is the open panel and a save is
 /// open: the pick row, the last pick's refusal, the Show row, the
 /// `Comparing…` mark and the list. The reply is polled before a new run is
 /// decided on, so the frame that starts one draws `Comparing…` over the
 /// previous result. A closed panel starts no run.
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     let SaveView {
+        panel,
         comparator,
         session,
         team,
@@ -202,7 +200,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         tactics,
         ..
     } = view;
-    if !comparator.open {
+    if *panel != Some(Panel::Comparator) {
         return;
     }
     let Some(session) = session.as_ref() else {
@@ -225,7 +223,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     } else {
         false
     };
-    let mut open = comparator.open;
+    let mut open = true;
     panel_window(ui, "Comparator", "save_editor_comparator")
         .open(&mut open)
         .show(ui.ctx(), |ui| {
@@ -406,15 +404,17 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 }
             }
         });
-    comparator.open = open;
+    if !open {
+        *panel = None;
+    }
 }
 
-/// A floating panel's window (the Comparator's, the patch panel's), titled
-/// `title`, with `id` its own. It first opens where the draft's `.panel`
-/// stands: its right edge 1 inside the window's, its top 90 below, over
-/// the views' right columns rather than the player list a member picks
-/// from while it is open. egui places a window by its default once, then
-/// keeps where the member drags it.
+/// A floating panel's window (the Comparator's, the patch panel's, the team
+/// file panel's), titled `title`, with `id` its own. It first opens where
+/// the draft's `.panel` stands: its right edge 1 inside the window's, its
+/// top 90 below, over the views' right columns rather than the player list
+/// a member picks from while it is open. egui places a window by its
+/// default once, then keeps where the member drags it.
 pub(super) fn panel_window<'open>(ui: &egui::Ui, title: &str, id: &str) -> egui::Window<'open> {
     let screen = ui.ctx().content_rect();
     egui::Window::new(studio_core::theme::window_title_text(title))

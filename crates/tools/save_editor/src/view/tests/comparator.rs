@@ -168,7 +168,7 @@ fn compared_73401(
     let (mut view, mut window) = open_734_with(test, &[73401], 183);
     let dir = scratch_of(&view);
     let picked = picked_save(&dir, "picked", |_| {});
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     pick(&mut window, &mut view, picked);
     let pairs = compared(&mut window, &mut view);
     (view, window, pairs)
@@ -281,7 +281,7 @@ fn a_motion_row_reads_as_the_view_shows_it() {
         .expect("the save opened")
         .edit_players(vec![entry]);
     let picked = picked_save(&dir, "picked", |_| {});
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     pick(&mut window, &mut view, picked);
     compared(&mut window, &mut view);
     let pairs = scroll_to(&mut window, &mut view, "Free kick 1 \u{2192} 15");
@@ -303,7 +303,7 @@ fn the_scope_toggles_narrow_the_rows() {
         .expect("the save opened")
         .edit_players(vec![entry]);
     let picked = picked_save(&dir, "picked", |_| {});
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     pick(&mut window, &mut view, picked);
     compared(&mut window, &mut view);
     let pairs = scroll_to(&mut window, &mut view, "Boots ID 0 \u{2192} 3601");
@@ -421,7 +421,7 @@ fn a_save_of_another_version_is_refused_naming_both() {
     let (mut view, mut window) = open_734_with("comparator_version", &[], 183);
     let dir = scratch_of(&view);
     let picked = picked_pes21(&dir);
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     pick(&mut window, &mut view, picked);
     let lines = window_lines(&mut window, &mut view, "Comparator");
     assert!(
@@ -467,7 +467,7 @@ fn the_players_only_in_one_save_list_under_their_headings() {
         .position(|slot| slot.player_id == 73410)
         .map(|slot| u8::try_from(slot).expect("a roster slot"))
         .expect("premise: 73410 rostered");
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     pick(&mut window, &mut view, picked);
     compared(&mut window, &mut view);
     let pairs = scroll_to(&mut window, &mut view, "Only in the open save");
@@ -525,7 +525,7 @@ fn the_rows_group_per_team_in_the_open_saves_order() {
     let picked = picked_save(&dir, "picked", |_| {});
     let mut view = SaveView::new();
     view.open(&open_path);
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
     pick(&mut window, &mut view, picked);
     compared(&mut window, &mut view);
@@ -640,7 +640,7 @@ fn a_stripped_players_mark_reads_beside_his_head() {
         let picked = picked_save(&dir, "picked", |file| strip(file, picked_stripped));
         let mut view = SaveView::new();
         view.open(&open_path);
-        view.comparator.open = true;
+        view.panel = Some(Panel::Comparator);
         let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
         pick(&mut window, &mut view, picked);
         compared(&mut window, &mut view);
@@ -785,7 +785,7 @@ fn the_team_filter_narrows_the_list_without_recomparing() {
         .expect("the save opened")
         .edit_players(vec![entry]);
     let picked = picked_save(&dir, "picked", |_| {});
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     pick(&mut window, &mut view, picked);
     compared(&mut window, &mut view);
     let lines = window_lines(&mut window, &mut view, "Comparator");
@@ -875,7 +875,7 @@ fn the_team_filter_keeps_an_only_in_section_by_its_roster() {
             .expect("74302 on 743's roster")
             .player_id = 9_999_998;
     });
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     pick(&mut window, &mut view, picked);
     compared(&mut window, &mut view);
     let lines = window_lines(&mut window, &mut view, "Comparator");
@@ -953,7 +953,7 @@ fn export_writes_the_commands_text_whatever_the_team_filter() {
     let picked = picked_save(&dir, "picked", |_| {});
     let mut view = SaveView::new();
     view.open(&open_path);
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
     pick(&mut window, &mut view, picked.clone());
     compared(&mut window, &mut view);
@@ -1062,7 +1062,7 @@ fn export_carries_the_unsaved_edits() {
     let (mut view, mut window) = open_734_with("comparator_export_unsaved", &[73401], 183);
     let dir = scratch_of(&view);
     let picked = picked_save(&dir, "picked", |_| {});
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     pick(&mut window, &mut view, picked);
     compared(&mut window, &mut view);
     let target = dir.join("diff.txt");
@@ -1179,7 +1179,7 @@ fn an_invoked_pick_starts_the_comparison() {
     let (mut view, mut window) = open_734_with("comparator_invoke", &[73401], 183);
     let dir = scratch_of(&view);
     let picked = picked_save(&dir, "picked", |_| {});
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     view.open_save_dialog = Box::new(move || Some(picked.clone()));
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (pick, _) = nodes_in_window(&pairs, "Comparator")
@@ -1199,7 +1199,7 @@ fn the_pick_row_keeps_the_buttons_on_one_line_with_a_long_path() {
     let (mut view, mut window) = open_734_with("comparator_row", &[73401], 183);
     let dir = scratch_of(&view);
     let picked = picked_save(&dir, &"picked".repeat(40), |_| {});
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     pick(&mut window, &mut view, picked);
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, window_node) = pairs
@@ -1251,7 +1251,7 @@ fn the_pick_row_keeps_the_buttons_on_one_line_with_a_long_path() {
 #[test]
 fn the_panels_title_is_14_points_and_strong() {
     let (mut view, mut window) = open_734_with("comparator_title", &[73401], 183);
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let title = shapes
@@ -1325,9 +1325,9 @@ fn the_panel_first_opens_at_the_right_and_stays_where_dragged() {
         "the dragged panel: {dragged:?}"
     );
 
-    view.comparator.open = false;
+    view.panel = None;
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    view.comparator.open = true;
+    view.panel = Some(Panel::Comparator);
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let reopened = panel_rect(&nodes);
