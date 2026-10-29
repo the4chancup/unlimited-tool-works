@@ -13152,3 +13152,50 @@ had `color_tools` depend on `studio_core`, and the architecture lets a shared wi
 use egui; ov2e's wheel made the dependency real. With the palette in reach, an exception
 would only be a second rule to remember.
 Plan: `plans/core/gui.md` (the Dark/light theme row).
+
+## 2026-10-29 — save_editor — The popover's stepper arrows take clicks, not the keyboard's focus
+Decision: the Tactics popover's `⏴` and `⏵` take clicks only: Tab goes from X straight to Y,
+and a focused number steps with the arrow keys (egui's `DragValue` does that already). The
+draft's arrows carry `tabindex -1` to match.
+Why: as tab stops they would put four stops between X and Y in a five-control popover, for
+what the arrow keys already do on the focused number; a system spinner's buttons are not
+tab stops either. The sidekick found it when the Save editor's test of Tab from X to Y
+failed.
+Plan: `plans/save_editor.md` "Tactics editor" (the popover).
+
+## 2026-10-29 — gui — A tool's kind shows as one mark on its icon
+Decision: an editor's icon carries a pencil, a compiler's the open box of the Team
+compiler's (g), a creator's or generator's a plus; the maintainer named each tool's base
+(the floppy disk of their picture for the Save editor, (c)'s chevrons on (a)'s folder turned
+upright for the Export upgrader, the Music export editor's current notes for the Music
+player and, with the pencil, for the Music export editor, the Match tracker's (b), (a)'s
+shirt for the Kit config editor, (b)'s striped shirt striped its full length for the Refs
+arranger, a ball dropping into the box for the Balls compiler, the stickman for the Player
+aesthetics editor, the Team compiler's current figures with a plus for the Team creator,
+(a)'s clipboard for the Ruleset editor, (b)'s database for the DB generator; the Stadium
+compiler keeps its glyph for now). Each mark hides what lies under it. The lead's choices
+within that: one pencil, Phosphor's note-and-pencil pencil redrawn at the 16-unit stroke,
+24 wide and 72 long, in the bottom-right corner (128 to 240) on every editor, the Save
+editor's included; the plus centred at (196, 196) in the same corner; the cut a 12-unit gap
+around the mark; the three figures scaled 0.93 into the 16..240 live area every glyph keeps;
+the folder's x and y swapped, its tab standing out of the left edge at the top; the Player
+aesthetics editor's figure 17..208 tall and moved 20 left, so the cut takes its back foot
+whole.
+Why: the maintainer's rules, and their word that the pencil may be smaller or shorter but
+must stay consistent across icons: Phosphor's pencil at its own size would cover half of a
+shirt or a figure, and a mark at one place lets the kind read the same everywhere. Each icon
+is computed as one filled outline (skia-pathops), the form the font takes, rather than an SVG
+mask, which the draft page's many copies of each icon would repeat.
+Plan: `plans/core/README.md` "GUI framework choice: egui".
+
+## 2026-10-29 — gui — The final icons approved; the upgrader's folder turned, the Refs arranger's refresh sign
+Decision: every final icon is approved but two, redrawn as asked: the Export upgrader's
+folder turned half round, so its tab stands out of the right edge at the bottom, its body
+widened from 120 to 136 with the chevrons still pointing up and centred on it; the Refs
+arranger's striped shirt gains a refresh sign, two arrows each bending along half a circle,
+in the marks' bottom-right place (a ring of radius 26 centred at (196, 196), the plus's
+centre), hiding what lies under it as the other marks do, the disc inside its ring included,
+so no stripe shows through the ring.
+Why: the maintainer's review of the final set. The disc is hidden whole because the stripes
+crossing the ring's middle would read as part of the sign at 24 px.
+Plan: `plans/core/README.md` "GUI framework choice: egui".

@@ -5509,7 +5509,13 @@ function slotPopover(t) {
   // The keeper's slot is fixed: Edit mode does not move him.
   // Each field is a stepper: an arrow either side of the number steps it by one, clamped
   // into the range (a stored spot past it steps back in), each arrow disabled at its end.
-  // The three share the number box's old width, so the popover is no wider.
+  // The three share the number box's old width, so the popover is no wider. The arrows
+  // take no focus (tabindex -1): Tab goes from X to Y, and the arrow keys step a number.
+  const arrow = (glyph, onclick, disabled, title) => {
+    const b = button(glyph, onclick, { disabled, title });
+    b.tabIndex = -1;
+    return b;
+  };
   const num = (label, get, put, max) => {
     const keeper = s.position === "GK", v = get();
     const title = keeper ? "The goalkeeper's spot is fixed" : "";
@@ -5518,12 +5524,11 @@ function slotPopover(t) {
         put(n); s.position = ruledPosition(t, f, i, s.x, s.y, s.position); });
       render(); };
     return h("span", {}, label + " ", h("span", { class: "spin" },
-      button("⏴", () => set(Math.min(max, Math.max(0, v - 1))),
-        { disabled: keeper || v <= 0, title }),
+      arrow("⏴", () => set(Math.min(max, Math.max(0, v - 1))), keeper || v <= 0, title),
       h("input", { type: "number", min: 0, max, value: v, disabled: keeper, title,
         onchange: e => { const n = parseInt(e.target.value, 10);
           if (!Number.isNaN(n) && n >= 0 && n <= max) set(n); } }),
-      button("⏵", () => set(Math.min(max, v + 1)), { disabled: keeper || v >= max, title })));
+      arrow("⏵", () => set(Math.min(max, v + 1)), keeper || v >= max, title)));
   };
   return h("div", { class: "tpopover",
       style: "left:" + pop.x + "px; top:" + pop.y + "px" },

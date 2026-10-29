@@ -2003,7 +2003,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     it does not show at 24 px (the maintainer). The stickman is a filled outline with
     `stroke="none"`: the font build takes it as it is, where the other glyphs' strokes are
     expanded to outlines. The maintainer picked (g) (DECISIONS "The Team compiler's icon is
-    the stickman dropping into an open box"); the other tools' picks still wait
+    the stickman dropping into an open box"); the other tools' picks still wait.
+    2026-10-29: the final set drafted, each tool's (p) on the page and the rail's default
+    (DECISIONS "A tool's kind shows as one mark on its icon"; `plans/core/README.md` "GUI
+    framework choice: egui"), built as filled outlines by `.tmp/0_0_1ov/icons/final_icons.py`
+    (skia-pathops: strokes outlined, the mark's cut subtracted). All approved but two, redrawn
+    the same day (DECISIONS "The final icons approved; the upgrader's folder turned, the Refs
+    arranger's refresh sign"), which wait for a look (QUESTIONS "Are the two redrawn icons
+    right?"). The font script then takes
+    that outline build into `scripts/` with its test, rather than expanding strokes itself
   - [ ] 8.15 (code done 2026-10-25 with 8.9f4c's rework r2; the built window's check open) the window's default to 1280 × 800 (the maintainer, 2026-10-25; `spec/core/gui.md`
     "The window's size", ST-WIN-01, ST-HELP-05; DECISIONS "Studio opens at 1280 × 800
     points"): `studio_core`'s `DEFAULT_SIZE` and its tests, the help window's; the Save
@@ -4571,9 +4579,11 @@ briefs, review loops, gates and mutation runs as for any step.
       and the drafts are dark only. Render every Save editor view and dialog in it
       (built-window captures with the maintainer's yes, the theme switched in the
       sandbox's settings, or headless frames), list what reads poorly, fix it in the
-      palette. Known: the members' own name colour codes, chosen for the game's dark
-      screens (theirs, not ours to change: whether a light theme draws names on a dark
-      chip or outlines them is a question for the maintainer once seen)
+      palette. Known: the players' name colour codes, chosen for nothing in particular or
+      for the pitch image's green (the maintainer, 2026-10-29), which both themes share;
+      only where a list or a view draws them on the light panel may they read poorly
+      (theirs, not ours to change: whether a light theme draws them on a dark chip or
+      outlines them is a question for the maintainer once seen)
   - [ ] ov12 the Tactics popover's X and Y as steppers (DECISIONS "The Tactics popover's X
     and Y step by arrows inside the number box's width"; `plans/save_editor.md`, the Tactics
     editor's sentence starting "X (0 to 104) and Y (0 to 48) are steppers"; draft
