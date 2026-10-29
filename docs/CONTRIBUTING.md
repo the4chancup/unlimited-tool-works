@@ -190,7 +190,9 @@ wasm32-unknown-unknown` for `studio_core` and every lib crate, and `just accepta
 acceptance-ID scanner in its `report` mode, and `just doc-pointers`, which fails on a
 pointer to a document's section, its path and then the quoted title, whose file or section is
 gone, or whose file is in the gitignored `.tmp/`, which no clone has, and `just comment-refs`, which fails on a code comment citing a plan, a decision, a step,
-a review or who decided), and CI runs the same recipe, so
+a review or who decided, and `just colour-literals`, which fails on a colour written from literal
+values outside `studio_core`'s `theme.rs`, whose palette gives each colour its light value), and
+CI runs the same recipe, so
 the list cannot drift between this document, the local run and CI (it had, before the justfile
 existed: two spellings of the fmt gate in two documents). The test gate runs each binary whole,
 its tests on libtest's threads, several binaries at once: `cargo test` alone runs them one after

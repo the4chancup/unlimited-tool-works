@@ -9,7 +9,7 @@ set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
 python := if os_family() == "windows" { "python" } else { "python3" }
 
 # The verification gates, in order. CI runs this same recipe.
-gates: fmt-check clippy test wasm-check acceptance doc-pointers comment-refs
+gates: fmt-check clippy test wasm-check acceptance doc-pointers comment-refs colour-literals
 
 # The same gates on the mutants host (STUDIO_MUTANTS_REMOTE) against the working tree, while this machine should not carry the load
 gates-remote:
@@ -35,7 +35,7 @@ test:
     {{python}} scripts/bundle_drafts_test.py
 
 # The gates with gate 3 over the packages the working tree changes since `base` and the packages depending on them (CONTRIBUTING.md "Testing and verification")
-gates-changed base="HEAD": fmt-check clippy (test-changed base) wasm-check acceptance doc-pointers comment-refs
+gates-changed base="HEAD": fmt-check clippy (test-changed base) wasm-check acceptance doc-pointers comment-refs colour-literals
 
 # Gate 3 over the packages the working tree changes since `base` and the packages depending on them
 test-changed base="HEAD":
@@ -75,6 +75,12 @@ doc-pointers:
 comment-refs:
     {{python}} scripts/comment_refs_test.py
     {{python}} scripts/comment_refs.py
+
+# Gate 8: the colour check's own tests, then the check (no colour is written from literal values
+# outside `studio_core`'s theme.rs, whose palette gives each colour its dark and its light value)
+colour-literals:
+    {{python}} scripts/colour_literals_test.py
+    {{python}} scripts/colour_literals.py
 
 # Mutation run over one crate (converge); survivors are test gaps, equivalents or dead code; split with STUDIO_MUTANTS_REMOTE when set
 mutants crate:

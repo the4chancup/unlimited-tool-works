@@ -4565,16 +4565,13 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] ov11 the light theme (the maintainer, 2026-10-29: is it usable? then "avoid writing any
     colors directly, ideally they should all be part of a switchable palette"; DECISIONS
     "Every colour comes from a switchable palette, none written in a view")
-    - [ ] ov11a the palette (`plans/core/gui.md`, the Dark/light theme row): `Palette` in
-      `studio_core::theme` with `DARK` and `LIGHT`, every colour constant and inline
-      colour of the product code moved into it (`SUCCESS_FG`/`_LIGHT`, the pitch's,
-      the ratings' fills, `COUNT_GREY`, the boots readout, the medals, the colour picker's
-      markers...; the script lists 46 sites at `e9dbb1ab`), each light value by the contrast rule; measuring layouts
-      take `PLACEHOLDER`; `scripts/colour_literals.py` with its test, in `gates` and
-      `gates-changed` (lead: a lint; committed and perturbation-proven, joining the
-      gates with the migration, since it fails until then). Cross-crate: after ov2e lands. ov2h's rework gives the three dark-only
-      greys `_LIGHT` twins and tests on both themes; their constants move here, the tests
-      stay
+    - [x] ov11a the palette (`plans/core/gui.md`, the Dark/light theme row):
+      `studio_core::theme::Palette`, 28 fields, `DARK` and `LIGHT` written out in full, and
+      `theme::palette(&visuals)`; every colour the 46 sites wrote moved into it (only the four
+      drawn on the theme's own panel differ), measuring layouts on `PLACEHOLDER`, image tints
+      on `theme::NO_TINT`; tests: the palette follows the theme, the shared fields equal, the
+      badge's fill pinned as a literal in a pitch test. `just colour-literals` (the lead's
+      check and its test) joins `gates` and `gates-changed`. `807e281f`, merge `685df479`
     - [ ] ov11b the light theme looked at: no test or capture has ever drawn a view in it
       and the drafts are dark only. Render every Save editor view and dialog in it
       (built-window captures with the maintainer's yes, the theme switched in the
@@ -4583,15 +4580,20 @@ briefs, review loops, gates and mutation runs as for any step.
       for the pitch image's green (the maintainer, 2026-10-29), which both themes share;
       only where a list or a view draws them on the light panel may they read poorly
       (theirs, not ours to change: whether a light theme draws them on a dark chip or
-      outlines them is a question for the maintainer once seen)
-  - [ ] ov12 the Tactics popover's X and Y as steppers (DECISIONS "The Tactics popover's X
-    and Y step by arrows inside the number box's width"; `plans/save_editor.md`, the Tactics
-    editor's sentence starting "X (0 to 104) and Y (0 to 48) are steppers"; draft
-    `slotPopover`'s `num` and the `.spin` rules; `⏴` and `⏵` already in the symbols font):
-    `team_widgets` `pitch/popover.rs` and its tests (each arrow steps by one and applies the
-    drop rule, the clamp of a stored spot past the range, the disabled ends, the keeper's
-    four disabled, the joined box 52 wide with arrows 12 and the number 28), `⏴` and `⏵` in
-    `theme.rs`' symbols test. After ov2e lands, which touches the popover's fields
+      outlines them is a question for the maintainer once seen); the lineup lists' position
+      text in the pitch's colours (`position_colour`, the keeper's `#ffde00`), which ov11a
+      gave one value for both themes though the lists draw them on the panel: a light value
+      for each by the contrast rule, or a dark chip, once seen
+  - [x] ov12 the Tactics popover's X and Y as steppers (DECISIONS "The Tactics popover's X
+    and Y step by arrows inside the number box's width" and "The popover's stepper arrows
+    take clicks, not the keyboard's focus"; `plans/save_editor.md`, the Tactics editor's
+    sentence starting "X (0 to 104) and Y (0 to 48) are steppers"): `team_widgets`
+    `pitch/popover.rs`' `stepper`, the arrows click-only, the wheel kept; seven tests (a
+    step, PARTY HARD stepped into the forwards' band an LWF, the clamp from 110, the
+    disabled ends, the keeper's four, the joined box, Tab from X to Y); `⏴` and `⏵` in
+    `theme.rs`' symbols test. Each arrow measures 12.5, its glyph's advance (the box 53),
+    within the one-pixel match. `0df81c08` with rework 1, merge `6e546261`. Not yet seen in
+    a built window (ov1)
   - [ ] ov3 a general overlap test: a headless pass over every modal and view failing when two
     widgets' rectangles intersect (catches collisions, not a draft mismatch: ov1 does that)
   - [ ] ov4 8.20's host control (lead, drafts): the captures in
