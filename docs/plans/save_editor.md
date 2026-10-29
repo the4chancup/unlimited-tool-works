@@ -575,7 +575,9 @@ Win32 original hurt the most):
   Close does. X (0 to 104) and Y (0 to 48) are steppers: the number with an arrow either
   side, `⏴` stepping it down by one and `⏵` up, each click one edit, clamped into the range
   (a stored spot past it steps back in), each arrow disabled at its end of the range and both
-  for the keeper. A nudge by one is a click there, where a drag of egui's `DragValue`, which
+  for the keeper. The arrows take clicks, never the keyboard's focus, as a system spinner's
+  do: Tab goes from X to Y, and a focused number steps with the arrow keys already. A nudge
+  by one is a click there, where a drag of egui's `DragValue`, which
   has no arrows of its own, overshoots it. The three are joined into one box as wide as the
   number box was (52 points: each arrow 12, the number 28, room for `104`), so the popover
   is no wider (`slotPopover`'s `num`, the draft's `.spin`). The position dropdown lists only the positions his spot offers, as the game's

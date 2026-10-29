@@ -13152,3 +13152,13 @@ had `color_tools` depend on `studio_core`, and the architecture lets a shared wi
 use egui; ov2e's wheel made the dependency real. With the palette in reach, an exception
 would only be a second rule to remember.
 Plan: `plans/core/gui.md` (the Dark/light theme row).
+
+## 2026-10-29 — save_editor — The popover's stepper arrows take clicks, not the keyboard's focus
+Decision: the Tactics popover's `⏴` and `⏵` take clicks only: Tab goes from X straight to Y,
+and a focused number steps with the arrow keys (egui's `DragValue` does that already). The
+draft's arrows carry `tabindex -1` to match.
+Why: as tab stops they would put four stops between X and Y in a five-control popover, for
+what the arrow keys already do on the focused number; a system spinner's buttons are not
+tab stops either. The sidekick found it when the Save editor's test of Tab from X to Y
+failed.
+Plan: `plans/save_editor.md` "Tactics editor" (the popover).
