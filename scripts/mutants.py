@@ -139,9 +139,10 @@ REMOTE_TMPDIR = "$HOME/studio-mutants/tmp"
 # disk was at 99%, and a half lost five mutants to it (RUNBOOK "The scratch folder").
 REMOTE_DISK_BUDGET = 30 * 2**30
 # The least free space the host's disk must have when such a run starts, whatever
-# this project holds: the host's production services grow on the same disk, and a
-# half's build copies and tests take about 10 GiB of it, which leaves them 10.
-REMOTE_FREE_FLOOR = 20 * 2**30
+# this project holds: a half's build copies and tests take about 10 GiB of it, and 2
+# more stay for the host's own system (its logs, its other services, idle since
+# 2026-10-29). At 10 a run could end on a full disk, which kills the half.
+REMOTE_FREE_FLOOR = 12 * 2**30
 # Where the local half's cargo-mutants makes its copies of the tree (and its
 # builds and tests their temporary files): one fixed folder, so a single
 # antivirus exclusion covers every run's randomly named copy, whose tests write

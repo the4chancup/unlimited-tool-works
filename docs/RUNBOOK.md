@@ -171,8 +171,8 @@ it empties `~/studio-mutants/tmp` (`REMOTE_TMPDIR`, the remote tests' temp dir),
 that removes its folder at its end leaves it on every caught mutant and a killed half leaves its
 tree copies, then refuses when `~/studio-mutants` still holds over 30 GiB
 (`REMOTE_DISK_BUDGET`, leaving room for a half's two build copies) or the disk has under
-20 GiB free (`REMOTE_FREE_FLOOR`; this project's cleanup may not lift that one, so the
-maintainer is asked). On 2026-10-22, before the guard, the folder held 50 GB (28.6 of them test
+12 GiB free (`REMOTE_FREE_FLOOR`: a half's own copies and tests take about 10, and 2 stay for
+the host's system; when this project's cleanup cannot lift it, the maintainer is asked). On 2026-10-22, before the guard, the folder held 50 GB (28.6 of them test
 leftovers, 27 the Save editor's pid-named copies of a fixture save), the disk was at 99% and a
 half lost five mutants. **At each phase's close**, after its last mutation run, the lead
 removes the clone's build cache, `~/studio-mutants/tree/target` (22 GB after two phases; only

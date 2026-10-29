@@ -13494,3 +13494,13 @@ asked for whichever is simpler and more reliable to maintain: egui's defaults ne
 code and no compensation, so they win. The sidekick slice that was making the app follow the
 drafts (one menu style, the toolbar gap) was stopped and its work dropped.
 Plan: `plans/core/gui.md` "Prototypes before implementation", the Look bullet.
+
+## 2026-10-29 — tooling — The VPS free-space floor for a mutation half is 12 GiB
+
+Decision: a split mutation run starts on the VPS only with at least 12 GiB free on its disk
+(`REMOTE_FREE_FLOOR`), where it took 20.
+Why: the maintainer no longer runs the host's production service actively, so the 10 GiB kept
+for it is not needed; a half's own build copies and tests take about 10, and 2 more stay for
+the host's system, since a run ending on a full disk kills the half (2026-10-22: five mutants
+lost at 99%). The maintainer picked 12 over 10 for that reason.
+Plan: `RUNBOOK.md` "The scratch folder"; `scripts/mutants.py`'s `REMOTE_FREE_FLOOR`.
