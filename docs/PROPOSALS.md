@@ -22,6 +22,8 @@ maximized"). P43 (stats named as each PES version names them) was accepted on 20
 (`DECISIONS.md` "Stats are named as the save's PES version names them").
 P44 (the help's text column capped at a reading width) was accepted on 2026-10-29
 (`DECISIONS.md` "The help's text wraps at 720 points").
+P45 (a ruleset's event logo and page, at the Save editor's top right) was accepted for
+0.0.1 on 2026-10-30 (`DECISIONS.md` "A ruleset carries its event's logo and page").
 
 ## P40 — The Music export editor reorders its players
 
@@ -60,5 +62,6 @@ TOML's `#RRGGBB`.
 Adds: the picker's hex field accepts `#RRGGBB`, `0xRRGGBB` and `RRGGBB` alike in every tool
 that uses it, so a pasted value from an old habit lands instead of being refused. Costs: one
 parse with three prefixes in `color_tools`; the field still shows `#RRGGBB`.
+
 
 

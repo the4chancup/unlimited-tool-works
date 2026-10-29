@@ -2856,3 +2856,6 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The boots and gloves dialog is as wide as its groups again; the help
   window's paragraphs stand 8 points apart, its text wraps at 720, and it first opens at
   1000 × 600 (0.0.1ov2j2-ov2j5).
+- **2026-10-29** — The AATF rows, their marks' tooltips, Multi-team AATF's copy and
+  `check-aatf` name each rule in words and say what is wrong with the game's and the
+  ruleset's names, never the rules file's spellings (8.29d1a).

@@ -475,7 +475,13 @@ fn check_aatf(
                 .slot
                 .and_then(|slot| team.roster.get(usize::from(slot)))
                 .map(|slot| slot.player_id);
-            report.message(aatf_violation(id, player, &violation, severity));
+            report.message(aatf_violation(
+                id,
+                player,
+                &violation,
+                rules.ruleset(),
+                severity,
+            ));
         }
     }
     Ok(())

@@ -107,7 +107,7 @@ fn a_specials_weak_foot_limits_report_the_suggestion() {
     assert!(
         found
             .iter()
-            .any(|v| v.slot == Some(3) && v.kind == unused("weak_foot", 2, 4)),
+            .any(|v| v.slot == Some(3) && v.kind == unused("weak_foot_usage", 2, 4)),
         "{found:?}"
     );
 }

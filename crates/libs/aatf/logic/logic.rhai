@@ -865,10 +865,10 @@ fn suggestions(tier, p, player, cards) {
             let usage = num(weak_foot, "usage");
             let accuracy = num(weak_foot, "accuracy");
             if player.weak_foot_usage < usage {
-                found.push(unused(slot, allowance, player.weak_foot_usage, usage));
+                found.push(unused(slot, "weak_foot_usage", player.weak_foot_usage, usage));
             }
             if player.weak_foot_accuracy < accuracy {
-                found.push(unused(slot, allowance, player.weak_foot_accuracy, accuracy));
+                found.push(unused(slot, "weak_foot_accuracy", player.weak_foot_accuracy, accuracy));
             }
         } else if allowance == "injury_resistance" {
             let target = raised_target(tier, p, "injury_resistance");

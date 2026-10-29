@@ -158,14 +158,15 @@ pub(super) fn team_name(file: &EditFile, id: u32) -> &str {
 
 /// The check's results: one error-coloured line per team whose check
 /// failed (as `check-aatf` reports it), then the `violations_list` itself,
-/// drawn for `list_use`. Returns the player whose row was clicked this
-/// frame.
+/// its rows worded under `ruleset` (the active one) and drawn for
+/// `list_use`. Returns the player whose row was clicked this frame.
 pub(super) fn results(
     ui: &mut egui::Ui,
     file: &EditFile,
     id_salt: impl egui::AsIdSalt,
     key: &CheckKey,
     checks: &[TeamCheck],
+    ruleset: &aatf::Ruleset,
     list_use: ListUse,
 ) -> Option<SelectedPlayer> {
     // Player ids are stable inside an open file: one map serves the
@@ -204,7 +205,7 @@ pub(super) fn results(
             }),
         }
     }
-    violations_list(ui, id_salt, &teams, list_use)
+    violations_list(ui, id_salt, &teams, ruleset, list_use)
 }
 
 /// Team `id`'s rostered players as the list's `ListedPlayer`s, in slot

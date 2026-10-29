@@ -51,8 +51,16 @@ on, off at every start: open beside the form it would leave the sections a third
 window, and the block is a check on the form, not where the work happens. Shown, its lines
 the last edit changed are highlighted.
 
-- **General**: name, squad size, the rating stats and the at-most stats (stat checklists, with
-  one line on what each list does).
+- **General**: name, event page, event logo, squad size, the rating stats and the at-most
+  stats (stat checklists, with one line on what each list does). The event page is a text
+  box (`https://` as its placeholder); the event logo shows the picture at the height the
+  Save editor draws it (28, up to 84 wide), then `Choose PNG…` (a file dialog for PNGs) and
+  `Remove`, or a weak `None` before them; a file that is no PNG or is over 64 KB is refused
+  with a line beside the buttons saying which, the logo kept as it was. One weak line under
+  the fields says where the logo shows and what a click on it does. The data block's text
+  writes `page` after `name` and `logo` last; the preview shortens the logo's one long line
+  to its first characters and its size, the file holding it whole. A page that is not an
+  `http://` or `https://` address is one of General's problems.
 - **Tiers**: a table, one row per tier, highest first, reordered by dragging, since the order is
   the recognition order and the quick-action buttons' order. Columns: label, id, count (a number
   or "the rest"), counts as, rate, form, injury resistance, weak foot, paid cards, minimum
@@ -373,6 +381,12 @@ RE-GUI-18  GIVEN Autumn 26 open
                 inside a choice's option only those an option may hold (the stat bonuses,
                 extra paid cards, free cards of a group, a free card, extra A positions, at
                 most N A positions, weak-foot limits)
+RE-GUI-19  GIVEN a ruleset open with no logo
+           WHEN a PNG of 2 KB is chosen in General's Event logo
+           THEN the field shows it 28 points high with Remove beside Choose PNG…; WHEN a
+                JPEG, or a PNG over 64 KB, is chosen THEN a line beside the buttons says
+                why and the logo is unchanged; WHEN the Event page holds `www.example`
+                THEN General lists the problem
 ```
 
 **Opening and saving**
@@ -418,6 +432,10 @@ RE-FILE-07  GIVEN an existing rules file
 RE-FILE-08  manual  GIVEN a file opened from one folder
                     WHEN Open or Save as is used again, also after a restart
                     THEN the dialog starts in that folder
+RE-FILE-09  GIVEN a ruleset with an event page and a logo
+            WHEN it is saved and opened again
+            THEN both are as they were, `page` written after `name` and `logo` as the data
+                 block's last key, and the logic's identity is the one it had without them
 ```
 
 The older-official path (the banner offering **Update logic**, and `update-logic` migrating a

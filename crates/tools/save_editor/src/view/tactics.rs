@@ -152,14 +152,17 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // Each roster slot's `FieldedNotA` marks: the held check's Error or
     // Warning violations of that kind on the slot, while Live AATF
     // holds this team's result (`held_violations`; another team's
-    // result or none marks nothing).
+    // result or none marks nothing), worded under the active rules.
     let held = live_marks::held_violations(*live_aatf, &live.check)
         .filter(|(held_team, _)| *held_team == team_id)
-        .map(|(_, violations)| violations)
-        .unwrap_or(&[]);
+        .zip(rules.as_ref());
     let fielded: Vec<Vec<FieldedMark>> = (0..team.roster.len())
         .map(|slot| {
-            held.iter()
+            let Some(((_, violations), active)) = held else {
+                return Vec::new();
+            };
+            violations
+                .iter()
                 .filter(|violation| {
                     violation.slot.is_some_and(|s| usize::from(s) == slot)
                         && matches!(
@@ -176,7 +179,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                             preset: usize::from(preset) - 1,
                             position: position.byte(),
                             error: violation.severity == aatf::Severity::Error,
-                            line: violation_line(violation, team_id),
+                            line: violation_line(violation, team_id, active.rules.ruleset()),
                         })
                     } else {
                         None

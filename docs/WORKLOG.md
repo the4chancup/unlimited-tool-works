@@ -2535,6 +2535,19 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     code, with 8.34, its scenarios written with it
   - [ ] 8.34 after 8.33 (the maintainer, 2026-10-27): the same for a range of teams, one
     picture per team, in one go. Drafted and approved with 8.33 (above); left: the code
+  - [ ] 8.35 before 0.0.1 (P45, accepted 2026-10-30; DECISIONS "A ruleset carries its
+    event's logo and page"; drafted, the drafts' `eventLogo` and `eventLogoField`): a
+    ruleset's event logo and page
+    - [ ] a `aatf`: the `page` and `logo` keys, their load checks, the writer's order (logo
+      last) → verify: RE-FILE-09; a load test per refusal (not base64, no PNG signature,
+      over 64 KB, a page without http(s)); the logic's hash unchanged by either key
+    - [ ] b the Save editor's top-right logo and the Ruleset editor's General fields →
+      verify: SE-GUI-44, RE-GUI-19 headless; the built window (ASK FIRST)
+    - [ ] c the embedded rulesets' logos and pages: the pages are the events' wiki pages
+      the maintainer listed (2026-10-30), the logos the ones those pages show, scaled to
+      84 pixels high (`docs/prototypes/assets/logos/`, from `.tmp/8_29d/logos_scale.py`);
+      Autumn 25 and VGL25 have none yet (QUESTIONS) → verify: each embedded ruleset loads
+      with its logo; the built window per ruleset
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
@@ -2807,11 +2820,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         Comparator's and changes lists' undrawn fields (about 95 face fields by their Rust
         names), the team file panel's notes (finding codes), the badge's and quick actions'
         refusals (tier ids, a 0-based slot), the card labels' `Gk`/`No 10` spellings. Slices:
-        - [ ] d1a the AATF rows (drafted 2026-10-29, DECISIONS "Each violation kind's name in
-          words, its sentence in the game's and the ruleset's names"; `plans/aatf_rules.md`
-          "The interpreter"): `team_widgets`' kind names and sentences with the ruleset's
-          labels, every host (the dock, the marks, the pitch cross, Multi-team AATF and its
-          copy, `check-aatf`), the logic's `weak_foot` split, the help's raw kind name
+        - [x] d1a the AATF rows (DECISIONS "Each violation kind's name in words, its sentence
+          in the game's and the ruleset's names"): `team_widgets::violations::rule_name`,
+          `sentence` and `unused_sentence` under the ruleset's labels in every host (the dock,
+          the marks, the pitch cross, Multi-team AATF and its copy, `check-aatf`'s `rule` and
+          `problem`), the logic's `weak_foot` split (logic hash `349f0fa6`); a table test of
+          all 36 kinds' names and sentences; `spec/aatf_rules.md` "Hints at a valid value"
+          and `spec/save_editor.md` "CLI" follow. Open: `help/01_command_line.md` still says a
+          line names "the rule and what it measured" ("what is wrong" now; 8.29e1 holds the
+          file)
         - [ ] d1b the rest of the inventory: the Comparator's, changes lists' and patch
           preview's undrawn fields in words, the team file notes in the catalog's member text
           and its section boxes capitalized, the badge's and quick actions' refusals, the
@@ -2823,7 +2840,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           "PES 2017's stat names, read off its Edit screen"): a stat-name function in
           `pes_savefile` taking the version, PES 2017's `heading` Header, and Form, Injury
           Resistance, Weak Foot Usage, Weak Foot Accuracy in title case, read by the player
-          view, the AATF rows, `check-aatf`, the Comparator and the changes lists → verify:
+          view, the AATF rows (d1a left the four lower case in `rule_name`, `sentence` and
+          `unused_sentence`, the drafts' `RULE_NAME` and sentences title case), `check-aatf`,
+          the Comparator and the changes lists → verify:
           its test per stat for PES 2017 against the maintainer's captures (2026-10-29, the
           27 names of the Edit screen's ability list)
         - [ ] d3b after 0.0.1: every other version's names, gathered from each game (the
