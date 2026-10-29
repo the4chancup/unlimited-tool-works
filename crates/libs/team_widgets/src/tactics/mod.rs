@@ -373,10 +373,25 @@ const ATTACK_DEFENCE_LABEL: &str = "Attack/defence levels";
 /// beside the menus that act on the shown preset): "Preset" then 1, 2
 /// and 3. Writes `view.preset`, never the record.
 pub fn preset_selector(ui: &mut egui::Ui, view: &mut TacticsView) {
-    ui.weak("Preset");
-    for preset in 0..3 {
-        ui.selectable_value(&mut view.preset, preset, (preset + 1).to_string());
-    }
+    ui.horizontal(|ui| {
+        bar_selector_spacing(ui);
+        ui.weak("Preset");
+        for preset in 0..3 {
+            ui.selectable_value(&mut view.preset, preset, (preset + 1).to_string());
+        }
+    });
+}
+
+/// The spacing of a bar's selector, the preset's and the formation's (the
+/// draft's `.sel`s in a `gap: 2px` row): its items 2 points apart and each
+/// choice padded 5 across and 17 tall (its text and a point over and
+/// under it), where the bar spaces its items 8 apart and a button pads its
+/// text 4 and stands 18 tall.
+pub(crate) fn bar_selector_spacing(ui: &mut egui::Ui) {
+    let spacing = ui.spacing_mut();
+    spacing.item_spacing.x = 2.0;
+    spacing.button_padding.x = 5.0;
+    spacing.interact_size.y = 17.0;
 }
 
 /// The Fluid formation switch of the preset bar (the draft's `fluid`,

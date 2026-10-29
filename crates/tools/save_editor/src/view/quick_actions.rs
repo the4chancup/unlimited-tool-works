@@ -26,6 +26,10 @@ const ROW_GAP: f32 = 3.0;
 /// controls are 18 (`interact_size`), the quick actions keep their own.
 const QUICK_ACTION_HEIGHT: f32 = 20.0;
 
+/// The width of Set stats' number box, the draft's number input: the
+/// button beside it takes the rest of its cell.
+const SET_STATS_FIELD_WIDTH: f32 = 52.0;
+
 /// The medal tiers' ids (the draft's `MEDAL_MARK`), which the left column
 /// holds in the ruleset's order.
 fn is_medal(id: &str) -> bool {
@@ -59,7 +63,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // Each column is half the list's frame less the gap (the draft's
     // `1fr 1fr`), read from the panel's own width: inside the columns a
     // cell's `available_width` is the column's, not the panel's.
-    let set_stats = set_stats_widths(ui);
     let cell = egui::vec2(
         (ui.available_width() - COLUMN_GAP) / 2.0,
         QUICK_ACTION_HEIGHT,
@@ -74,7 +77,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 }
                 // Set stats ends the right column, under the other tiers.
                 if index == 1 {
-                    set_stats_cell(ui, session, stat_value, player, set_stats, cell);
+                    set_stats_cell(ui, session, stat_value, player, cell);
                 }
             });
         }
@@ -124,25 +127,22 @@ fn tier_button(
 }
 
 /// The Set stats cell (the draft's `.row`): the button then its number
-/// field sharing the cell, the field taking what the button leaves of it
-/// (the draft's shrinking input).
+/// field sharing the cell, the field at `SET_STATS_FIELD_WIDTH` and the
+/// button taking the rest of the cell (the draft's growing button).
 fn set_stats_cell(
     ui: &mut egui::Ui,
     session: &mut Option<Session>,
     stat_value: &mut u8,
     player: Option<(u32, u8, u32)>,
-    widths: SetStatsWidths,
     size: egui::Vec2,
 ) {
     let enabled = player.is_some();
     ui.allocate_ui(size, |ui| {
         ui.horizontal(|ui| {
-            // The field keeps its two-digit floor; the button takes the
-            // rest of the cell and elides past it (the same rule as the
-            // Make buttons).
-            let button_width = widths
-                .button
-                .min((size.x - ui.spacing().item_spacing.x - widths.field).max(0.0));
+            // The button elides past its room, the same rule as the Make
+            // buttons.
+            let button_width =
+                (size.x - ui.spacing().item_spacing.x - SET_STATS_FIELD_WIDTH).max(0.0);
             let button = ui
                 .add_enabled_ui(enabled, |ui| {
                     ui.add_sized(
@@ -151,7 +151,6 @@ fn set_stats_cell(
                     )
                 })
                 .inner;
-            let left = size.x - button.rect.width() - ui.spacing().item_spacing.x;
             let response = if enabled {
                 button.on_hover_text("Set every ability stat to the value next to this button")
             } else {
@@ -163,15 +162,14 @@ fn set_stats_cell(
             {
                 session.set_all_stats(player_id, *stat_value);
             }
-            // The field's `min_size` is what the button leaves of the
-            // cell: a `DragValue`'s own minimum would be the 40-point
-            // `interact_size`, past the cell's edge.
+            // The field's `min_size` sets its width: a `DragValue`'s own
+            // minimum would be the 40-point `interact_size`.
             let field = ui
                 .add_enabled_ui(enabled, |ui| {
                     ui.add(
                         egui::DragValue::new(stat_value)
                             .range(40..=99)
-                            .min_size(egui::vec2(left, size.y)),
+                            .min_size(egui::vec2(SET_STATS_FIELD_WIDTH, size.y)),
                     )
                 })
                 .inner;
@@ -181,38 +179,4 @@ fn set_stats_cell(
             }
         });
     });
-}
-
-/// The Set stats cell's two sub-widths: the button's natural width and
-/// the field's two-digit floor, needed by `set_stats_cell`'s split.
-#[derive(Clone, Copy)]
-struct SetStatsWidths {
-    button: f32,
-    field: f32,
-}
-
-/// A cell's natural width: its full text's galley plus the button
-/// padding.
-fn cell_width(ui: &egui::Ui, text: &str) -> f32 {
-    let button = egui::TextStyle::Button.resolve(ui.style());
-    ui.fonts_mut(|fonts| fonts.layout_no_wrap(text.to_owned(), button, egui::Color32::PLACEHOLDER))
-        .size()
-        .x
-        + 2.0 * ui.spacing().button_padding.x
-}
-
-/// The Set stats cell's sub-widths (`cell_width` for its button, the
-/// field's two digits the same way — both widgets take a padding each).
-fn set_stats_widths(ui: &egui::Ui) -> SetStatsWidths {
-    let field = ui.style().drag_value_text_style.resolve(ui.style());
-    SetStatsWidths {
-        button: cell_width(ui, "Set stats"),
-        field: ui
-            .fonts_mut(|fonts| {
-                fonts.layout_no_wrap("99".to_owned(), field, egui::Color32::PLACEHOLDER)
-            })
-            .size()
-            .x
-            + 2.0 * ui.spacing().button_padding.x,
-    }
 }

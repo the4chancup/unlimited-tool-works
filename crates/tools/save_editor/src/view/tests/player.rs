@@ -288,7 +288,17 @@ fn the_set_dialogs_number_box_stands_under_its_sentence() {
     };
     let title = bounds_of(Role::Label, Some("Set all stats"));
     let line = bounds_of(Role::Label, Some(&set_line(&name)));
-    let field = bounds_of(Role::SpinButton, None);
+    // The page's own number boxes lie under the modal's area too, and the
+    // nodes come in no set order: the dialog's is the nearest under the
+    // sentence.
+    let field = nodes
+        .iter()
+        .filter(inside)
+        .filter(|node| node.role() == Role::SpinButton)
+        .filter_map(accesskit::Node::bounds)
+        .filter(|b| b.y0 >= line.y1 - 1.0)
+        .min_by(|a, b| a.y0.total_cmp(&b.y0))
+        .expect("a number box under the sentence");
     assert!(
         (field.y0 - (line.y1 + 8.0)).abs() <= 1.0,
         "the box's top {} is 8 under the sentence's bottom {}",
