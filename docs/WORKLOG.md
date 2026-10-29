@@ -23,8 +23,8 @@ pitch as the game's, 8.9g and 8.9i; its slice 4 under way: the AATF panel and Li
 export-writing one waits for 0.1.0); 8.9f's slice 4: v2 is
 the base, ported in five subslices, 4a the frame, 4b Abilities and 4c Appearance and Tactics done, 4d (the one cards badge, on 0.0.1i's `Rules::player_tier`) done and reviewed; 8.9h closed by the window's 960 × 600 minimum; 8.29, the text pass, under way: a (the Save editor's
 window, catalog, CLI, help and draft) done, c (the Team compiler and the upgrader) under way
-on side-lead U's branch, c1 to c5 done, the help chapters' fact audit (c4e) included, c6 outside its locks; 8.9l, the open and save scenarios, briefed in
-slices, the running-game rule changed to an Edit mode question; 8.9m, the logic's speed
+on side-lead U's branch, c1 to c5 done, the help chapters' fact audit (c4e) included, c6 outside its locks; 8.9l, the open and save scenarios, done 2026-10-29
+(SE-GUI-21 checked in game, the running-game rule an Edit mode question); 8.9m, the logic's speed
 rewrite before the v1 freeze; 0.0.1j's audit read, j1 and j2 open; the maintainer's
 proposal rulings of 2026-10-26 added 0.0.1o-r, k4 and 8.7c), `libs/aatf`'s hardening (the repetition rework done and
 reviewed; the audit 0.0.1i done and reviewed), `ingame_face.toml` (0.0.1h, done 2026-10-25: the compiler,
@@ -1737,7 +1737,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       the 0.0.1 cut, which waits on the whole view (`plans/core/development_plan.md`
       "Divegrass Before Christmas"). Not itemized until 2026-10-25, found while listing what
       0.0.1 lacks
-    - [ ] 8.9l the open/save scenarios no slice built: the unsaved-changes prompt on closing or
+    - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
       opening another save (SE-GUI-05; only the toolbar's marker exists, so closing loses
       edits silently), the Open menu's discovered saves (SE-GUI-26), the version-mismatch
       warning (SE-GUI-28; the draft has it), and SE-GUI-21's check in the built window with the
@@ -1787,7 +1787,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         `save_editor/src/view/{prompt,terms,tests/prompt}.rs`,
         `team_widgets/src/tactics/{mod,tests/mod}.rs`. Review closed: SWE-2 S1-S4, Astra
         A1-A2, A2 with no concerns (`.tmp/8_9l/rulings.md`)
-      - [ ] l3 the Open menu with discovery and the session's recent files, Save as (SE-GUI-26),
+      - [x] l3 2026-10-29 the Open menu with discovery and the session's recent files, Save as (SE-GUI-26),
         the version warning (SE-GUI-28), a status-bar notice since 0.0.1s2. The shell part is
         decided (`plans/core/gui.md` "Status bar", the bullets "A tool can keep a standing notice" and
         "A notice can switch the PES version"; DECISIONS 2026-10-29); draft checked
@@ -1827,7 +1827,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           studio_core 18 caught, 3 unviable, 1 timeout (`take_standing_end` -> `true`), which
           a quiet rerun catches in 1.3 s (`a_standing_notice_stays_while_its_tool_returns_it_and
           _its_tool_hears_when_it_ends`): load, not a hang. No survivor, no rework
-        - [ ] l3d the drafts take egui's spacing (DECISIONS 2026-10-29 "The drafts take egui's
+        - [x] l3d 2026-10-29 the drafts take egui's spacing (DECISIONS 2026-10-29 "The drafts take egui's
           spacing"), seen in l3c's render: every menu's entries 21 apart against the draft's
           19, the toolbar's buttons 8 apart for 6, every view 8 from the central panel's edges
           for 12, because the drafts' spacing was picked in a browser and each difference was
@@ -1852,7 +1852,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
             same as ov2y's accepted table (the views moved with the draft), the ability labels
             left to ov13; the toolbar's runs the draft's to the pixel but the ruleset combo 2
             wider (as before); the Open menu's entries 1 high
-          - [ ] l3d3 every other draft spacing that differs from the theme's, each changed to
+          - [x] l3d3 2026-10-29 every other draft spacing that differs from the theme's, each changed to
             the theme's or kept with its reason in the stylesheet (DECISIONS "The drafts' gaps
             between controls are egui's item spacing")
             - [x] l3d3a the drafts and the plan (lead): `.row`, `.log-header`, `.live-header`
