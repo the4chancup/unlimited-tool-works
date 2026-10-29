@@ -7464,9 +7464,9 @@ function interchangePanel() {
   const held = ixSectionsHeld(d), foreign = d.version !== version();
   c.append(h("div", { class: "row weak" },
     (d.format === "toml" ? "A Team TOML" : d.format === "4ccs" ? "A legacy squad file (.4ccs)"
-      : d.format === "4cct" ? "A legacy tactics file (.4cct)" : "A Texport (.ted)")
-    + " written from a PES " + d.version + " save"
-    + (foreign ? ", converted to PES " + version() + " where it can be." : ".")));
+      : d.format === "4cct" ? "A legacy tactics file (.4cct)" : "A Texport")
+    + " written from a PES 20" + d.version + " save"
+    + (foreign ? ", converted to PES 20" + version() + " where it can be." : ".")));
   if (d.format === "4ccs") {
     // The pairing the member gets before Apply: record k lands on the k-th
     // rostered player of the target (spec "Legacy 4ccEditor formats").
@@ -7513,7 +7513,7 @@ function interchangePanel() {
           collapsing("ixw:" + g.key, g.lines.length + " \u00d7 " + g.key,
             () => g.lines.map(l => h("div", { class: "warn mono small" }, l)))));
       c.append(h("div", { class: "grp weak" },
-        "Import notes (PES " + d.version + " file onto a PES " + version() + " save)"), grp);
+        "Import notes (PES 20" + d.version + " file onto a PES 20" + version() + " save)"), grp);
     }
   }
   c.append(h("div", { class: "row" },
