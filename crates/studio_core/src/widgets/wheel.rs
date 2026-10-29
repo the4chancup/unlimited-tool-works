@@ -23,6 +23,12 @@ const REST: f64 = 0.5;
 /// scrolling a pane never edits the boxes it sweeps past. One step at most
 /// a frame, the rest of a fast turn coming on the next frames: an editor
 /// seals its undo entry between frames, so each notch is its own undo step.
+/// A notch first takes the keyboard from whatever widget holds it, the
+/// control itself included, and steps two frames later: an editor seals
+/// only once no widget holds the keyboard, so a step while a field kept it
+/// would join that field's undo entry, and a field that commits on losing
+/// the keyboard learns of the loss only on the next frame, where a step
+/// would join its commit.
 /// The caller applies the steps through the control's own change path
 /// (`step_choice`, `step_number`).
 pub fn wheel_steps(ui: &egui::Ui, response: &egui::Response) -> i32 {
@@ -56,6 +62,9 @@ struct Gesture {
     pane_at: f64,
     /// The taker's turn not stepped yet, in points, up positive.
     pending: f32,
+    /// The first pass a step may come on: two after the last pass on which
+    /// a due step took the keyboard.
+    step_from: u64,
 }
 
 impl Default for Gesture {
@@ -66,6 +75,7 @@ impl Default for Gesture {
             taker: None,
             pane_at: f64::NEG_INFINITY,
             pending: 0.0,
+            step_from: 0,
         }
     }
 }
@@ -106,14 +116,25 @@ impl Gesture {
         // egui spreads a mouse notch's scroll over the next frames: the
         // taker keeps every frame's share, so no scroll area moves.
         ctx.input_mut(|input| input.smooth_scroll_delta = egui::Vec2::ZERO);
-        if self.pending >= NOTCH {
+        if self.pending.abs() < NOTCH {
+            return 0;
+        }
+        if let Some(focused) = ctx.memory(|memory| memory.focused()) {
+            ctx.memory_mut(|memory| memory.surrender_focus(focused));
+            self.step_from = pass + 2;
+        }
+        if pass < self.step_from {
+            // The pending turn steps once the delay has passed, with no
+            // further input to wake the window.
+            ctx.request_repaint();
+            return 0;
+        }
+        if self.pending > 0.0 {
             self.pending -= NOTCH;
             1
-        } else if self.pending <= -NOTCH {
+        } else {
             self.pending += NOTCH;
             -1
-        } else {
-            0
         }
     }
 }
@@ -193,10 +214,13 @@ mod tests {
         ctx: egui::Context,
         time: f64,
         pointer: egui::Pos2,
+        text: String,
         value: u8,
         selected: usize,
         drag_enabled: bool,
         offset: f32,
+        field_id: egui::Id,
+        field_rect: egui::Rect,
         drag_rect: egui::Rect,
         combo_rect: egui::Rect,
         empty_rect: egui::Rect,
@@ -205,16 +229,20 @@ mod tests {
     impl Window {
         /// ST-WHEEL-01's window: a drag value at 180 (0 to 255) and a combo
         /// on the second of five items in a scroll area taller than its view,
-        /// drawn once so the controls have their rects.
+        /// a text field above the area, drawn once so the controls have their
+        /// rects.
         fn new() -> Window {
             let mut window = Window {
                 ctx: egui::Context::default(),
                 time: 0.0,
                 pointer: egui::Pos2::ZERO,
+                text: String::new(),
                 value: 180,
                 selected: 1,
                 drag_enabled: true,
                 offset: 0.0,
+                field_id: egui::Id::NULL,
+                field_rect: egui::Rect::NOTHING,
                 drag_rect: egui::Rect::NOTHING,
                 combo_rect: egui::Rect::NOTHING,
                 empty_rect: egui::Rect::NOTHING,
@@ -235,12 +263,18 @@ mod tests {
                 events,
                 ..Default::default()
             };
+            let mut text = std::mem::take(&mut self.text);
             let mut value = self.value;
             let mut selected = self.selected;
             let drag_enabled = self.drag_enabled;
             let mut rects = (egui::Rect::NOTHING, egui::Rect::NOTHING);
             let mut offset = 0.0;
+            let mut field = (egui::Id::NULL, egui::Rect::NOTHING);
             let output = self.ctx.run_ui(input, |ui| {
+                // Above the scroll area, so the area's own layout is the
+                // same with the field as without it.
+                let response = ui.text_edit_singleline(&mut text);
+                field = (response.id, response.rect);
                 let shown = egui::ScrollArea::vertical()
                     .max_height(VIEW_HEIGHT)
                     .show(ui, |ui| {
@@ -273,6 +307,8 @@ mod tests {
                 offset = shown.state.clamped_offset().y;
             });
             output.drop_without_applying_deltas();
+            self.text = text;
+            (self.field_id, self.field_rect) = field;
             self.value = value;
             self.selected = selected;
             self.offset = offset;
@@ -423,6 +459,65 @@ mod tests {
         );
         window.notch(window.combo_rect.center(), true);
         assert_eq!(window.selected, 1, "the open combo's selection stays");
+    }
+
+    // ST-WHEEL-04
+    #[test]
+    fn a_notch_takes_the_keyboard_from_a_field_and_steps_two_frames_later() {
+        let mut window = Window::new();
+        for events in click(window.field_rect.center()) {
+            window.frame(events);
+        }
+        let field_focused = |window: &Window| window.ctx.memory(|m| m.has_focus(window.field_id));
+        assert!(
+            field_focused(&window),
+            "premise: the field holds the keyboard"
+        );
+        let at = window.drag_rect.center();
+        window.frame(vec![
+            egui::Event::PointerMoved(at),
+            wheel(egui::MouseWheelUnit::Line, 1.0),
+        ]);
+        assert!(!field_focused(&window), "the notch took the keyboard");
+        assert_eq!(window.value, 180, "no step on the notch's frame");
+        window.frame(Vec::new());
+        assert_eq!(window.value, 180, "nor on the next");
+        window.frame(Vec::new());
+        assert_eq!(window.value, 181, "the step comes on the frame after");
+        window.settle();
+        assert_eq!(window.value, 181, "one notch, one step");
+        assert_eq!(window.offset, 0.0);
+    }
+
+    // ST-WHEEL-04: the stepped control itself in typing mode leaves it, and
+    // the step lands on the value typed. egui's drag value commits each
+    // keystroke while typing, so the typed value holds before the notch.
+    #[test]
+    fn a_notch_over_a_drag_value_being_typed_in_ends_typing_then_steps() {
+        let mut window = Window::new();
+        let at = window.drag_rect.center();
+        for events in click(at) {
+            window.frame(events);
+        }
+        // The field was never clicked: whatever holds the keyboard is the
+        // drag value.
+        let typing = |window: &Window| window.ctx.memory(|m| m.focused()).is_some();
+        assert!(typing(&window), "premise: the click started typing");
+        window.frame(vec![egui::Event::Text("200".to_owned())]);
+        assert_eq!(window.value, 200, "premise: the typed value took");
+        window.frame(vec![
+            egui::Event::PointerMoved(at),
+            wheel(egui::MouseWheelUnit::Line, 1.0),
+        ]);
+        assert!(!typing(&window), "the notch ended typing");
+        assert_eq!(window.value, 200, "no step on the notch's frame");
+        window.frame(Vec::new());
+        assert_eq!(window.value, 200, "nor on the next");
+        window.frame(Vec::new());
+        assert_eq!(window.value, 201, "then the step");
+        window.settle();
+        assert_eq!(window.value, 201, "one notch, one step");
+        assert_eq!(window.offset, 0.0);
     }
 
     #[test]

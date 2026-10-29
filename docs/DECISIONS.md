@@ -13239,3 +13239,13 @@ parts (a combo's text) sit in it, so a pairwise test without that exclusion fail
 combo; the one-point margin is the drafts' tolerance; an excuse by position would let whatever
 moved there later pass.
 Plan: `plans/core/gui.md` "No two widgets overlap".
+
+## 2026-10-29 — gui — Correction: a drag value being typed in commits each keystroke
+Decision: the entry "A wheel notch first takes the keyboard from the focused widget" named a
+drag value being typed in among the fields that commit on losing the keyboard; egui 0.37's
+drag value commits each keystroke (`update_while_editing`, on by default, and no crate turns it
+off). The Ruleset editor's tier id is the field that commits on the loss, and the two frames'
+delay stands for it: stepped one frame after the surrender, its commit and the step joined one
+undo entry (the ov2e2 sidekick's perturbation).
+Why: the sidekick's evidence, egui's `value_format.rs` and the typing-mode test.
+Plan: `plans/core/gui.md` "The wheel over a value".

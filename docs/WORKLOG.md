@@ -4382,16 +4382,17 @@ briefs, review loops, gates and mutation runs as for any step.
       picker's commit. `e6d53ee0`, merge `e9dbb1ab`. Left as is: a pane scrolled while no
       combo or drag value is drawn is not recorded, so a control under the pointer within
       500 ms steps (rare: some control is on nearly every pane)
-      - [ ] ov2e2 a wheel step while a text field or a drag value in typing mode holds the
-        keyboard joins an open undo entry, where `plans/core/gui.md` "The wheel over a
-        value" has one undo step per notch: the editors (`edit_settled`, `seal_gesture`)
-        seal only with nothing focused. Fixed in `wheel_steps`, which takes the keyboard
-        first and steps two frames later (DECISIONS "A wheel notch first takes the keyboard
-        from the focused widget"; the drafts' listener done) → verify: ST-WHEEL-04 in
-        `wheel.rs`; the Save editor: a typed name, the field still focused, two notches over
-        one stat, three Ctrl+Z steps; the Ruleset editor: a typed tier id still focused
-        (it commits on losing the keyboard), a notch over a rate, two Ctrl+Z steps; each red
-        before the change
+      - [x] ov2e2 a wheel step while a text field held the keyboard joined an open undo entry
+        (the editors seal only with nothing focused), where `plans/core/gui.md` "The wheel over
+        a value" has one undo step per notch. Fixed in `wheel_steps` (DECISIONS "A wheel notch
+        first takes the keyboard from the focused widget" and its correction): a due step takes
+        the keyboard and comes two passes later, the field's commit on the loss (the Ruleset
+        editor's tier id) landing in between; the drafts' listener blurs the focused input.
+        Tests: ST-WHEEL-04 in `wheel.rs` (a field; the drag value itself typed in, which
+        commits each keystroke), the Save editor's name then two notches (three Ctrl+Z), the
+        Ruleset editor's tier id then a rate notch (two), each red before the change; one-pass
+        delay perturbed, the tier id test fails. `b49a07f1`, merge `69b1d8e8` (Opus sidekick,
+        brief `.tmp/0_0_1ov/brief_ov2e2.md`)
     - [x] ov2f Live AATF's marks as ruled (the maintainer, 2026-10-28; DECISIONS "The final
       pass's second rulings"; drafts done; `plans/save_editor.md` the Live AATF bullet): the
       list's check mark orange for a Warning, blue for suggestions alone; a field's mark left
@@ -4471,7 +4472,9 @@ briefs, review loops, gates and mutation runs as for any step.
     drafted and planned (ov2f; the dock's kind codes kept). The two points left for later (a
     rules file that fails to load surfaced when it is loaded; switching between rules files,
     awkward) are answered by ov7: a file is validated when imported, and the toolbar's
-    dropdown switches
+    dropdown switches. `live_gallery.py`, broken since `cd40003a`, also expects its image 11's
+    "fielded at DMF in preset 1" from the PES 17 sample under DBC7, gone with ov9: the
+    gallery moves a starter under a ruleset that checks fielded positions instead
   - [x] ov7 Live AATF replaces the AATF panel (the maintainer, 2026-10-28; DECISIONS "Live AATF
     replaces the AATF panel; the final pass's fourth rulings"; drafts and plan done,
     `plans/save_editor.md` "Configurable AATF rules", SE-GUI-15 and SE-GUI-32 rewritten, their
@@ -4528,13 +4531,19 @@ briefs, review loops, gates and mutation runs as for any step.
     red on the old logic; on EDIT17 under DBC7 and Autumn 26 only the new fields changed
     (10630 and 7086 lines). A rules file saved with the old logic now fails its check on a
     missing field until its logic is updated (pre-release: no member holds one)
-  - [ ] ov9 the drafts' FieldedNotA against the check (found 2026-10-28 at ov8): the drafts'
-    `fieldedRows` raise one for PES 17's 71822 (DMF in preset 1, rated A at CB alone) under
-    Autumn 26 and DBC7, the current build's `check-aatf` on the same save none; find which
-    reads the preset's formations as the game does (the drafts take all three of a fluid
-    preset's) and correct the other. The drafts' official sample was stale the same way and
-    is re-recorded from the current build (Height and BracketQuota now computed by the drafts'
-    `heightRows`)
+  - [x] ov9 the drafts' FieldedNotA against the check (found 2026-10-28 at ov8): the drafts'
+    `fieldedRows` raised one for PES 17's 71822 (DMF in preset 1, rated A at CB alone) under
+    Autumn 26 and DBC7, the build's `check-aatf` none. Both read the same rule (all three
+    formations of a fluid preset, the kick-off one otherwise); the drafts were wrong twice
+    (Opus sidekick investigation, brief `.tmp/0_0_1ov/brief_ov9.md`, report
+    `.tmp/sidelead/sk_ov9.report.md` in its worktree, scratch `.tmp/0_0_1ov/ov9/`): their PES
+    17 sample predated the save's re-save of 2026-10-25 (preset 1's kick-off had 71822 at DMF,
+    now CB), and they checked preset 1 under every ruleset where only Autumn 26, VGL 26 and
+    VGL 27 set `fielded_at_a`. Fixed in the drafts: the sample's two teams' tactics
+    re-recorded from `EDIT17` (8 lines), `fielded_at_a` on those three rulesets and
+    `fieldedRows` reading it. Checked in Chromium through Live AATF's rows
+    (`.tmp/0_0_1ov/ov9/fielded_check.py`): no FieldedNotA on the sample under either; 71822's
+    CB lowered to B, one under Autumn 26 and none under DBC7 (failing with the old constant)
   - [x] ov10 the pitch drag as the game's (the maintainer, 2026-10-28; DECISIONS "The pitch
     drag follows the game's"; drafted, `plans/save_editor.md` "Tactics editor" "A held
     starter" and the popover, SE-GUI-42): in `team_widgets`' pitch, the held marker snapped
