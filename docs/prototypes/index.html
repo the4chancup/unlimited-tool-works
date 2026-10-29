@@ -478,6 +478,10 @@
   .small { font-size: 11px; }
   table.grid tr.sel:hover { background: var(--hover); }
   .window pre.mono { margin: 4px 0; }
+  /* A dialog's sentence 8 from what is around it, as the app's modals space their rows
+     (8 under the title, 10 before the buttons, the larger margin winning): the browser's
+     own 1em made them 12.5. */
+  .window p { margin: 8px 0; }
   a { color: var(--link); }
   /* A path box holds a usual install path whole: Steam's
      C:\Program Files (x86)\Steam\steamapps\common\Pro Evolution Soccer 2019, 71

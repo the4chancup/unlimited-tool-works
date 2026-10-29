@@ -4539,12 +4539,18 @@ briefs, review loops, gates and mutation runs as for any step.
       draft's 8 over it; measure block by block, `rect_compare.py`), then the line under the
       fields' row as the plan's team view bullet draws it (ov2l's parked
       `wt-ov2l/.tmp/ov2l/separator_test.rs`)
-    - [ ] ov2m the player list as drafted (`plans/save_editor.md` "Player list", "The quick
+    - [x] ov2m the player list as drafted (`plans/save_editor.md` "Player list", "The quick
       actions"): a player row 18 high, its place in the weak colour, the position and name in
       their own columns (the build draws one string, 21 high); the quick actions in two columns
       as wide as the list, 119.5 each, ending at the frame's right edge as the plan says (the
       build's are as wide as their labels, 81 and 105, and end 50 short); Skills' `Goalkeeper:
-      0 of 2` in its chip (the draft's `Cards left for` badge)
+      0 of 2` in its chip (the draft's `Cards left for` badge). Done 2026-10-29 (`24cb6bf8`,
+      merge `f9b7668e`; Opus sidekick, brief `brief_ov2m.md`, rework `rework_ov2m.md`, lead
+      gates in its target after merging main: save_editor 451 + 50, team_widgets 181,
+      clippy, fmt): rows 18 touching, place/position/name columns 5 apart in a 28-point
+      position column, every name through `append_name` in its caller's font (the lists,
+      the popover, the strip-again dialog at the body's 12.5, where egui's default 14 put
+      DMF past its column), the quick actions in halves, the tier in a widget-filled chip
     - [x] ov2n the Live AATF dock as drafted: its rows in the log panel's well (`.live-body`:
       the extreme fill, the stroke, 6 × 2 margins; the build lists them on the panel), its body
       150 high when it opens (`LIVE.height`; the build's dock opens at the log panel's 220)
@@ -4561,18 +4567,34 @@ briefs, review loops, gates and mutation runs as for any step.
       AATF, computed from the style), the help tree 220, the Comparator's `default_pos` from
       the content rect (kept where dragged); tests red at HEAD. Its report found the log's
       own body 194 at the 220 default, where the drafts' is 180 (ov2t)
-    - [ ] ov2t the log panel opens with the drafts' 180-point body (`index.html`
+    - [x] ov2t the log panel opens with the drafts' 180-point body (`index.html`
       `logHeight: 180`, the well's outer height), where the build's 220-point panel gives
       194: the log's dock through `BottomDock::body_height(180)` (ov2nop's report,
       `wt-ov2nop/.tmp/sidelead/sk_ov2nop.report.md`), the plan's `Panel::bottom` comment in
-      `plans/core/gui.md` (its 220 by default) to the body height
-    - [ ] ov2q the small ones: Set all stats' number on its own line under its sentence (the
+      `plans/core/gui.md` (its 220 by default) to the body height. Done 2026-10-29
+      (`0c6e30a1`, merge `1e6f577d`; lead gates in its target after merging main:
+      studio_core 286, save_editor 453 + 50, clippy, fmt): `BottomDock::new` takes the body's
+      first height (the log 180, Live AATF 150), the well 180 on the first frame, ST-LOG-04's
+      opening height 206
+    - [x] ov2q the small ones: Set all stats' number on its own line under its sentence (the
       draft's `dlgSetStats`; the build sets it on the sentence's line); the first-run prompt's
       two choice buttons with their labels centred; Settings' Memory cap `%` after its box, not
       inside it; the help window's Messages table at `FORM_ROW_SPACING` (ov2k's report); two
       `studio` `team_compiler_cli` tests (`team_compiler_cli.rs:158`, `:198`) that compare a
       printed path with one built from `CARGO_TARGET_TMPDIR` as text, failing when
-      `CARGO_TARGET_DIR` is written with forward slashes (compare as paths)
+      `CARGO_TARGET_DIR` is written with forward slashes (compare as paths). Done 2026-10-29
+      (`79205499` + `577b38d8`, merge `fb37e0f3`; lead gates in its target after merging
+      main: studio_core 285, studio all green, save_editor 453 + 50, clippy, fmt): the
+      number under its sentence, the labels centred (`atom_grow`), `%` after the box,
+      General info's blocks 6 apart, the sandbox paths rebuilt from their components; the
+      Messages rows 19 apart, the draft's measure, where the brief's 20 assumed a 16-point
+      row (DECISIONS "A dialog's sentence stands 8 from what is around it; the help's
+      Messages rows 19 apart"). Its report found the dialogs' sentences 12.5 from the
+      title and the control in the draft, 8 and 3 in the build: ov2v
+    - [ ] ov2v a dialog's sentence 8 over the control under it (`plans/core/gui.md` "Other UI
+      components", Modals; the drafts' `.window p` set to 8 by the lead, rendered
+      `.tmp/0_0_1ov/vet/p_setstats.png`): the modals whose body has a sentence over a control
+      (Set and Bump all stats, Copy and Swap stats, the others the drafts' `h("p"` lists)
     - [x] ov2r the drafts brought to the plan (lead): the settings menu's FPC hide boots and
       gloves IDs (common rows, `plans/core/gui.md` "Settings menu") and the active tool's
       section open on opening (the Save editor's, with Aesthetics from exports), both of which

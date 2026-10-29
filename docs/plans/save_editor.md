@@ -211,7 +211,7 @@ all side by side.
   The three are columns, as the draft's `.prow`: the place in the weak colour, the position
   in a 28-point column, the name after it, elided when too long with the dot and the mark
   kept after it, each 5 points from the last. A row (a team row too) is 18 high, its text
-  16 with 1 above and below, the rows touching with no gap between them, as the draft's; a
+  centred in it, the rows touching with no gap between them, as the draft's; a
   selectable's height plus egui's 3-point item spacing made them 21.
   The row's drag handle `≡` stands 4 points from its edge and 4 before the place, as in the
   Tactics view's lineup lists, so the name gets the room the column's narrow width leaves.
@@ -471,7 +471,8 @@ all side by side.
   The row's units stand 6 points apart, as in every row of the drafts (the Name and Short
   labels are units of their own, 6 from their boxes), and a colour's label,
   picker and hex, or an id's label and its box, a space apart (3 points), the ids' grid cells
-  padded 4 points on each side (so 10 before Manager ID, 8 between the ids): egui's 8-point item
+  padded 4 points on each side (so 10 before Manager ID, 8 between the ids), each id's box 46
+  wide (the draft's `.info-grid` number box; egui's is 40): egui's 8-point item
   spacing put the row's right end 30 points right of the draft's. A stroke line under the row
   sets the team's fields apart from the Tactics (the draft's `.sep`, 8 points from the boxes
   around it): drawn 11 points under the row's controls and 10.5 over the Tactics' first, since

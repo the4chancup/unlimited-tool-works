@@ -13399,3 +13399,17 @@ button closed only part of the offset (Col. 2's swatch still 23 points right, th
 box 31), the rest egui's 8-point item spacing where the draft's rows space 6 and a label's
 space 3; and the draft's own button was 26 x 18, the two drafts disagreeing.
 Plan: `plans/save_editor.md` "Editing UI", the team view bullet.
+
+## 2026-10-29 — gui — A dialog's sentence stands 8 from what is around it; the help's Messages rows 19 apart
+Decision: the drafts' `.window p` takes an 8-point margin, so a dialog's sentence stands 8 under
+the title, 8 over a control under it and 10 over the buttons (the larger margin winning), and
+the app's modals draw the same: 8 between a sentence and the control under it, where a label
+leaves egui's 3. The help window's Messages table spaces its one-line rows 19 apart (a line of
+text with the forms' row spacing of 4), not 22, as the draft's grid measures.
+Why: ov2q's sidekick measured the Set all stats dialog against its draft: the draft's
+sentence stood 12.5 under the title and 12.5 over the box, the browser's own 1em paragraph
+margin, which no rule of the drafts chose; the app's modal helper already spaces its title 8
+and its buttons 10, so the drafts follow it and the app adds only the sentence's gap. The
+Messages table's rows are text, not controls, so egui's `Grid` minimum row of a control's 18
+put them 3 lower than the draft's each row.
+Plan: `plans/core/gui.md` "Other UI components" (Modals, Form grids).
