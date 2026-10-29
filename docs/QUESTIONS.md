@@ -56,7 +56,7 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
 
 ## Small confirmations
 
-- **Which icon does each tool get?** (worklog 8.14.) Open `docs/prototypes/icons.html`,
-  click one candidate per tool (the rail at the top shows the picks together), then copy the
-  "Picks" box. The font build and the glyph constants wait on it. The Team compiler's is
-  picked, (g); the other thirteen tools are open.
+- **Are the two redrawn icons right?** (worklog 8.14.) In `docs/prototypes/icons.html`, the
+  Export upgrader's (p), its folder turned so the tab is at the bottom right and widened,
+  and the Refs arranger's (p), its shirt with the refresh sign. Every other icon is
+  approved; the font build and the glyph constants wait on these two.

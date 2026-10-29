@@ -610,7 +610,7 @@ const PARTY_HARD: [u8; 13] = [76, 85, 88, 88, 88, 84, 95, 82, 85, 86, 82, 84, 84
 /// Team 718's preset 1 formation 1 on `tactics`' preset 1 Kick-off, and
 /// PARTY HARD, its LMF in slot 8, on his `roster` row: his overalls and
 /// the two positions he is rated A at, LMF and LWF.
-fn party_hard(tactics: &mut TeamTactics, roster: &mut [RosterRow<'_>]) {
+pub(crate) fn party_hard(tactics: &mut TeamTactics, roster: &mut [RosterRow<'_>]) {
     tactics.presets[0].formations[0] = formation_718_1();
     let row = &mut roster[usize::from(tactics.starting_eleven[8])];
     row.overalls = Some(PARTY_HARD);
