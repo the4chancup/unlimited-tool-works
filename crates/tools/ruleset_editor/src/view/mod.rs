@@ -21,7 +21,7 @@ use std::path::{Path, PathBuf};
 
 use aatf::Ruleset;
 use studio_core::ToolContext;
-use studio_core::widgets::menu_button;
+use studio_core::widgets::{menu_button, modal_buttons, modal_frame};
 
 pub(crate) use prompt::Pending;
 pub(crate) use sections::Section;
@@ -562,12 +562,18 @@ fn menu_item(ui: &mut egui::Ui, enabled: bool, button: egui::Button) -> bool {
 }
 
 /// One modal's scaffolding (the prompt's, the start page's and the
-/// dialogs' share it): shown under `egui::Id::unique(id)`, `body` drawn
-/// inside a scrolling area and returning whether it asks to close; the
-/// return is whether the modal closes — the body's ask or a dismissal.
-pub(crate) fn modal(ui: &mut egui::Ui, id: &str, body: impl FnOnce(&mut egui::Ui) -> bool) -> bool {
+/// dialogs' share it): `studio_core`'s modal under `egui::Id::unique(id)`
+/// with `title`, `body` drawn inside a scrolling area under it and
+/// returning whether it asks to close; the return is whether the modal
+/// closes — the body's ask or a dismissal.
+pub(crate) fn modal(
+    ui: &mut egui::Ui,
+    id: &str,
+    title: impl Into<egui::RichText>,
+    body: impl FnOnce(&mut egui::Ui) -> bool,
+) -> bool {
     let mut close = false;
-    let response = egui::Modal::new(egui::Id::unique(id)).show(ui.ctx(), |ui| {
+    let response = studio_core::widgets::modal(ui.ctx(), egui::Id::unique(id), title, |ui| {
         // The bound keeps the modal on the screen: an `Area` taller
         // than it is centered with both ends off it, so an unbounded
         // body's first and last rows are unreachable (a start page's
@@ -575,15 +581,19 @@ pub(crate) fn modal(ui: &mut egui::Ui, id: &str, body: impl FnOnce(&mut egui::Ui
         // modal's first frame itself — a new `Area` opens at
         // `spacing.default_area_size`, at most the screen — so the cap
         // binds only once the window shrinks under an open modal (the
-        // shell sets no minimum). `Frame::popup` is the modal's default
-        // frame; its margins and stroke are the frame's part of the
-        // modal's height.
+        // shell sets no minimum). The frame's margins and stroke, and
+        // the title above the area, are the rest of the modal's height.
+        let frame = modal_frame(ui.style()).total_margin().sum().y;
+        let title = ui.cursor().top() - ui.min_rect().top();
+        // The body is at least as wide as the modal, so the button row
+        // it ends in reaches the modal's right edge.
+        let width = ui.min_rect().width();
         egui::ScrollArea::vertical()
-            .max_height(
-                ui.ctx().content_rect().height()
-                    - egui::Frame::popup(ui.style()).total_margin().sum().y,
-            )
-            .show(ui, |ui| close = body(ui));
+            .max_height(ui.ctx().content_rect().height() - frame - title)
+            .show(ui, |ui| {
+                ui.set_min_width(width);
+                close = body(ui);
+            });
     });
     close || response.should_close()
 }
@@ -716,21 +726,24 @@ fn dialog(ui: &mut egui::Ui, view: &mut RulesetView) {
     let Some(kind) = &view.dialog else {
         return;
     };
-    let close = modal(ui, "ruleset_dialog", |ui| {
+    let title = match kind {
+        Dialog::OpenRefused { .. } => "Not opened",
+        Dialog::SaveRefused { .. } => "Not saved: the ruleset has problems",
+        Dialog::SaveWrite { .. } => "Not saved",
+    };
+    let close = modal(ui, "ruleset_dialog", title, |ui| {
         match kind {
             Dialog::OpenRefused { name, findings } => refused_block(ui, name, findings),
             Dialog::SaveRefused { findings } => {
-                studio_core::theme::window_title(ui, "Not saved: the ruleset has problems");
                 for line in findings {
                     ui.colored_label(ui.visuals().error_fg_color, line);
                 }
             }
             Dialog::SaveWrite { text } => {
-                studio_core::theme::window_title(ui, "Not saved");
                 ui.colored_label(ui.visuals().error_fg_color, text);
             }
         }
-        ui.button("OK").clicked()
+        modal_buttons(ui, |ui| ui.button("OK").clicked())
     });
     if close {
         view.dialog = None;

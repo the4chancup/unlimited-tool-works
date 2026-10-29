@@ -101,9 +101,9 @@ impl SettingsMenu {
         if !self.open {
             return;
         }
-        let modal = egui::Modal::new(egui::Id::unique("settings-menu")).show(egui_ctx, |ui| {
+        let id = egui::Id::unique("settings-menu");
+        let modal = crate::widgets::modal(egui_ctx, id, "Settings", |ui| {
             ui.set_min_width(WIDTH);
-            crate::theme::window_title(ui, "Settings");
             self.common_grid(ui, tools, ctx, sidebar);
             let pending = self.pending.take();
             for (index, tool) in tools.iter_mut().enumerate() {
@@ -120,7 +120,7 @@ impl SettingsMenu {
                 }
                 header.show(ui, |ui| tool.settings_view(ui, ctx));
             }
-            ui.button("Close").clicked()
+            crate::widgets::modal_buttons(ui, |ui| ui.button("Close").clicked())
         });
         if modal.inner || modal.should_close() {
             self.open = false;
