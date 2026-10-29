@@ -2819,3 +2819,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The opened sidebar draws below an open modal and takes no input there; a click on it no longer switches tools or opens Help behind Settings (0.0.1ov11d).
 - **2026-10-29** — The sidebar's rail stands at the draft's pixels: the logo, the version selector and the tools' icons where the draft puts them, and a line above Help (0.0.1ov2z).
 - **2026-10-29** — The Save editor's writing commands write a save while its PES runs when given `--edit-mode-closed`, and without it name the game and the flag, as the compiler does (8.9l5a).
+- **2026-10-29** — A tool can keep a standing notice in the status bar, which it rewords or withdraws as its state changes and hears of once seen; a notice's action can switch the PES version as the selector does (8.9l3a).

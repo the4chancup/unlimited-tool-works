@@ -482,8 +482,10 @@ More rules that keep it worth the row:
   While it is shown, a notice published by anyone replaces it and ends it, and the tool is
   told before it is next asked; a notice published while it is not shown ends nothing. A
   switch of tool takes it out of the bar without ending it, as a withdrawal does, so a notice
-  published in the same frame as the switch ends nothing (the switching click's own frame
-  may still draw it: the bar is drawn before the sidebar). It never expires by time, since
+  published after the switch ends nothing, even within one frame's requests; one published
+  before it, while it was still shown, ends it, and its own tool is told, never the tool
+  switched to (the switching click's own frame may still draw it: the bar is drawn before
+  the sidebar; a tool switched to by a request is first asked the frame after). It never expires by time, since
   its tool withdraws it, and it never reaches the window title: it is a state of the view,
   seen when the member looks, where the title keeps an event that happened while the window
   was unfocused ("Window title"). Polled, not published with a handle the tool asks about:
