@@ -1538,23 +1538,23 @@ function openAbout() {
 const HELP = [
   { id: "setting-up", title: "Setting up", topics: [
     { slug: "install", title: "Installing", body: [
-      "Unlimited Tool Works ships as a `.7z` archive: unpack it anywhere and run `UTW.exe`.",
-      "There is no installer, and the program writes nothing outside its data folder.",
+      "Unlimited Tool Works ships as a `.7z` archive: unpack it anywhere and run",
+      "`UTW.exe`. There is no installer. The folder you unpack it into is the",
+      "program's home, so move it, copy it or delete it as one piece.",
       "",
-      "The folder you unpack it into is the program's home, so move it, copy it or",
-      "delete it as one piece. You reach each tool of the suite from the sidebar."
+      "You reach each tool of the suite from the sidebar."
     ].join("\n") },
   ] },
   { id: "first-run", title: "First run and data location", topics: [
     { slug: "data-location", title: "Choosing the data location", body: [
-      "The first run asks where your settings and data live. `Next to the program`",
-      "puts them in a `data/` folder beside `UTW.exe`. This is fully portable,",
-      "because the folder carries the program and everything it keeps, and deleting it",
-      "removes both.",
+      "The first run asks where your settings and data live:",
       "",
-      "`In my user folder` puts them in `%APPDATA%\\unlimited-tool-works` on Windows or",
-      "`~/.config/unlimited-tool-works` on Linux, so the data survives deleting or replacing the",
-      "program folder."
+      "- `Next to the program` puts them in a `data/` folder beside `UTW.exe`, which",
+      "  is fully portable, because the folder carries the program and everything it",
+      "  keeps, and deleting it removes both;",
+      "- `In my user folder` puts them in `%APPDATA%\\unlimited-tool-works` on Windows",
+      "  or `~/.config/unlimited-tool-works` on Linux, so the data survives deleting",
+      "  or replacing the program folder."
     ].join("\n") },
   ] },
   { id: "updates", title: "Updates", topics: [
@@ -1598,23 +1598,28 @@ const HELP = [
   ] },
   { id: "save-editor", title: "Save editor", topics: [
     { slug: "command-line", title: "Running from a terminal", body: [
-      "The Save editor's batch commands run from a terminal opened in the folder that holds",
-      "`UTW.exe`. Every command names the save it reads (the `EDIT00000000` file of your PES",
-      "install's save folder, or a copy of it); none picks one for you.",
+      "The Save editor's batch commands run from a terminal opened in the folder that holds `UTW.exe`.",
+      "Every command names the save it reads (the `EDIT00000000` file of your PES install's save",
+      "folder, or a copy of it), and no command picks one for you.",
+      "",
+      "**Writing a save**",
       "",
       "A command that writes a save reads the one `--base` names and writes the one `--out` names,",
-      "which may be the same file; a file already at `--out` (or `--bins-out` for the CPK",
-      "`strip-and-seed` writes) is first copied to `<file>.bak` (one",
-      "level: the next write replaces that copy). No command creates a save from nothing.",
+      "which may be the same file. A file already at `--out` (or `--bins-out` for the CPK",
+      "`strip-and-seed` writes) is first copied to `<file>.bak` (one level deep: the next write",
+      "replaces that copy). No command creates a save from nothing.",
       "",
-      "While the PES of the save's version is running, the game writes the save it holds over the",
-      "file when you leave its Edit mode after changing anything there, so a save written while Edit",
-      "mode is open is lost then unless Edit mode's Load reads it in first. A command that writes a",
-      "save therefore writes it while the game runs only when you add `--edit-mode-closed`, which",
-      "says you have closed Edit mode. Without it, the command writes nothing and names the running",
-      "game: close Edit mode, then run the command again with `--edit-mode-closed`. Opening Edit mode",
-      "then reads the save in without restarting the game. A PES of another version running does not",
-      "count."
+      "**While the game is running**",
+      "",
+      "While the PES of the save's version is running, the game writes the save it holds over the file",
+      "when you leave its Edit mode after changing anything there, so a save written while Edit mode",
+      "is open is lost then unless Edit mode's Load reads it in first. A command that writes a save",
+      "therefore writes it while the game runs only when you add `--edit-mode-closed`, which says you",
+      "have closed Edit mode.",
+      "",
+      "Without it, the command writes nothing and names the running game: close Edit mode, then run",
+      "the command again with `--edit-mode-closed`. Opening Edit mode then reads the save in without",
+      "restarting the game. A PES of another version running does not count."
     ].join("\n") },
   ] },
   { id: "export-upgrader", title: "Export upgrader", topics: [
