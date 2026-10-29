@@ -670,6 +670,52 @@ fn a_path_row_draws_browse_right_of_the_edit() {
     );
 }
 
+// The common grid's rows stand 22 apart, as the draft's grid rows do: an
+// 18-point control with its cell's 2 points above and below. The folder
+// toggle's row, whose label cell is empty, is placed by its checkbox.
+#[test]
+fn the_common_rows_stand_22_apart() {
+    let dir = TestDir::new("studio_core_settings_row_pitch");
+    let (a, calls_a) = stub("a", "A", None);
+    let Shell { mut app, .. } = shell_with(
+        test_settings(dir.path()),
+        vec![a],
+        &[],
+        Some(dir.path().to_path_buf()),
+        vec![calls_a],
+    );
+    let egui_ctx = test_context();
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+    let row_centre = |role: Role, text: &str| {
+        let node = nodes
+            .iter()
+            .find(|node| {
+                node.role() == role && (node.value() == Some(text) || node.label() == Some(text))
+            })
+            .unwrap_or_else(|| panic!("no {role:?} {text:?}"));
+        f64::from(centre(node).y)
+    };
+    let rows = [
+        (Role::Label, "PES version"),
+        (Role::Label, "PES folder"),
+        (Role::CheckBox, "A folder per version"),
+        (Role::Label, "Exports folder"),
+        (Role::Label, "Threads"),
+        (Role::Label, "Memory cap"),
+    ];
+    for pair in rows.windows(2) {
+        let (upper, lower) = (pair[0].1, pair[1].1);
+        let pitch = row_centre(pair[1].0, lower) - row_centre(pair[0].0, upper);
+        assert!(
+            (pitch - 22.0).abs() <= 0.5,
+            "{lower} stands 22 below {upper}, not {pitch}"
+        );
+    }
+}
+
 // The `PES version` row is the sidebar selector's twin: a pick writes the setting
 // through the same function, which spends the once-per-life auto-switch.
 #[test]
@@ -1213,5 +1259,50 @@ fn every_path_edit_shows_steams_pes_2019_folder_whole() {
         section_right - menu_left > f64::from(super::WIDTH),
         "the tool section's row is wider than the menu's width \
          ({section_right} - {menu_left})"
+    );
+}
+
+// The drafts' window: the common grid's first row starts 8 points under the
+// title, and Close stands at the right, inside the stroke and the 12-point
+// margin.
+#[test]
+fn the_menu_starts_its_grid_8_under_the_title_and_ends_in_close_at_the_right() {
+    let dir = TestDir::new("studio_core_settings_window");
+    let (a, calls_a) = stub("a", "A", None);
+    let Shell { mut app, .. } = shell_with(
+        test_settings(dir.path()),
+        vec![a],
+        &[],
+        Some(dir.path().to_path_buf()),
+        vec![calls_a],
+    );
+    let egui_ctx = test_context();
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, "Settings"));
+    let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+    let outer = egui_ctx
+        .memory(|memory| memory.area_rect(egui::Id::unique("settings-menu")))
+        .expect("the menu's modal has an area");
+    let title = text_node(&nodes, "Settings")
+        .bounds()
+        .expect("the title has bounds");
+    let label = text_node(&nodes, "PES version")
+        .bounds()
+        .expect("the label has bounds");
+    let selector = widget_on_row(&nodes, "PES version", Role::ComboBox)
+        .bounds()
+        .expect("the selector has bounds");
+    let close = entry(&nodes, "Close").bounds().expect("Close has bounds");
+
+    let gap = label.y0.min(selector.y0) - title.y1;
+    assert!(
+        (gap - 8.0).abs() <= 0.5,
+        "the first row starts 8 under the title, not {gap}"
+    );
+    let right = f64::from(outer.right()) - close.x1;
+    assert!(
+        (right - 13.0).abs() <= 0.5,
+        "Close's right is 13 inside the menu's, not {right}"
     );
 }

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>4cc Studio (drafts)</title>
+<title>Unlimited Tool Works (drafts)</title>
 <!--
   The drafts' host page (docs/plans/core/gui.md "Prototypes before implementation"),
   drawn only with what egui can draw: the simulated window, the shell's elements
@@ -549,7 +549,7 @@
 </head>
 <body>
 <div class="draft-side" id="draft-side">
-<div class="weak">Draft controls, not part of Studio</div>
+<div class="weak">Draft controls, not part of the app</div>
 <div class="win-size" id="win-size"></div>
 <div class="draft-controls" id="draft-controls"></div>
 <div class="draft-controls" id="tool-controls"></div>
@@ -615,7 +615,7 @@ const FONT_LABEL = getComputedStyle(document.documentElement).getPropertyValue("
 // member's resize can reach (960 × 600, `window_size::MIN_SIZE`, drawn scaled down) and the
 // whole monitor.
 const WIN_SIZES = [
-  ["default", "Studio's default"],
+  ["default", "The app's default"],
   ["smallest", "the smallest default (1264 × 648)"],
   ["minimum", "the minimum (960 × 600)"],
   ["monitor", "the whole monitor"],
@@ -927,7 +927,9 @@ function window_(title, body, buttons, name) {
   const ov = document.getElementById("overlay");
   ov.innerHTML = "";
   ov.append(h("div", { class: "modal-bg" }, h("div", { class: "window", ...(name ? { "data-dlg": name } : {}) },
-    h("div", { class: "title" }, title), body, h("div", { class: "row", style: "justify-content:flex-end; margin-top:10px" }, buttons))));
+    h("div", { class: "title" }, title), body,
+    // No buttons, no row: an empty one would still add its 10-point margin under the body.
+    [buttons].flat().length ? h("div", { class: "row", style: "justify-content:flex-end; margin-top:10px" }, buttons) : null)));
   sidebarCloseCheck();
 }
 // A closing window can end what held the layer (the About's Close): the same
@@ -1204,14 +1206,14 @@ function fixPesPath() {
 }
 
 // The suite's display name where a member sees it (the window title, About, the
-// first-run prompt), as the app's `APP_NAME`: every release before 1.0.0 carries
-// the preview's codename.
+// first-run prompt), as the app's `APP_NAME` (development_plan.md "The project's
+// name: Unlimited Tool Works").
 const APP_NAME = "Unlimited Tool Works";
 // The two data locations of distribution.md "Data location": the sample exe
 // folder the portable choice uses, the config dir the user-folder choice uses.
 // "none" never reaches dataLocation(): the first-run dialog covers the sidebar.
-const EXE_FOLDER = "C:\\4cc\\4cc-studio";
-const CONFIG_DIR = "C:\\Users\\you\\AppData\\Roaming\\4cc-studio";
+const EXE_FOLDER = "C:\\4cc\\unlimited-tool-works-0.0.1";
+const CONFIG_DIR = "C:\\Users\\you\\AppData\\Roaming\\unlimited-tool-works";
 const dataLocation = () =>
   S.settingsFile === "portable" ? EXE_FOLDER + "\\data" : CONFIG_DIR;
 // The logo's popup (ST-SIDE-06): the block a member pastes into a bug report.
@@ -1483,7 +1485,7 @@ function openAbout() {
 const HELP = [
   { id: "setting-up", title: "Setting up", topics: [
     { slug: "install", title: "Installing", body: [
-      "4cc Studio ships as a `.7z` archive: unpack it anywhere and run `4cc-studio.exe`.",
+      "Unlimited Tool Works ships as a `.7z` archive: unpack it anywhere and run `UTW.exe`.",
       "There is no installer, and the program writes nothing outside its data folder.",
       "",
       "The folder you unpack it into is the program's home, so move it, copy it or",
@@ -1493,12 +1495,12 @@ const HELP = [
   { id: "first-run", title: "First run and data location", topics: [
     { slug: "data-location", title: "Choosing the data location", body: [
       "The first run asks where your settings and data live. `Next to the program`",
-      "puts them in a `data/` folder beside `4cc-studio.exe`. This is fully portable,",
+      "puts them in a `data/` folder beside `UTW.exe`. This is fully portable,",
       "because the folder carries the program and everything it keeps, and deleting it",
       "removes both.",
       "",
-      "`In my user folder` puts them in `%APPDATA%\\4cc-studio` on Windows or",
-      "`~/.config/4cc-studio` on Linux, so the data survives deleting or replacing the",
+      "`In my user folder` puts them in `%APPDATA%\\unlimited-tool-works` on Windows or",
+      "`~/.config/unlimited-tool-works` on Linux, so the data survives deleting or replacing the",
       "program folder."
     ].join("\n") },
   ] },
@@ -1515,7 +1517,7 @@ const HELP = [
   { id: "whats-new", title: "What's new", topics: [
     { slug: "changelog", title: "Changelog", body: [
       "## [Unreleased]",
-      "- **Studio**: the help window, searched from one box.",
+      "- **General**: the help window, searched from one box.",
       "",
       "## [0.1.0] - 2026-10-04",
       "- **Team compiler**: first release.",
@@ -1526,17 +1528,17 @@ const HELP = [
   { id: "team-compiler", title: "Team compiler", topics: [
     { slug: "command-line", title: "Running from a terminal", body: [
       "The Team compiler also runs without its window, from a terminal opened in the folder that holds",
-      "`4cc-studio`:",
+      "`UTW.exe`:",
       "",
       "```text",
-      "4cc-studio team-compiler check [exports-root] [--export <path>]...",
-      "4cc-studio team-compiler compile [exports-root] [--mode normal|test|sideload] [--export <path>]... [--no-deploy]",
-      "4cc-studio team-compiler upgrade-dpfl [--yes]",
+      "UTW team-compiler check [exports-root] [--export <path>]...",
+      "UTW team-compiler compile [exports-root] [--mode normal|test|sideload] [--export <path>]... [--no-deploy]",
+      "UTW team-compiler upgrade-dpfl [--yes]",
       "```",
       "",
       "`check` reads your exports and reports what it finds, without writing anything. `compile` reads",
       "them, reports the same findings, and builds the CPK named by the `cpk_name` setting in the output",
-      "folder (`output/` beside `4cc-studio` unless you changed the `output_folder_path` setting), as",
+      "folder (`output/` beside `UTW.exe` unless you changed the `output_folder_path` setting), as",
       "`<cpk_name>.cpk`. The CPK is written in full before it replaces the previous one, so",
       "`<cpk_name>.cpk` is never half-written. The same terminal runs [the Save editor's commands](save-editor#command-line)."
     ].join("\n") },
@@ -1544,7 +1546,7 @@ const HELP = [
   { id: "save-editor", title: "Save editor", topics: [
     { slug: "command-line", title: "Running from a terminal", body: [
       "The Save editor's batch commands run from a terminal opened in the folder that holds",
-      "`4cc-studio`. Every command names the save it reads (the `EDIT00000000` file of your PES",
+      "`UTW.exe`. Every command names the save it reads (the `EDIT00000000` file of your PES",
       "install's save folder, or a copy of it); none picks one for you.",
       "",
       "A command that writes a save reads the one `--base` names and writes the one `--out` names,",
@@ -1558,9 +1560,9 @@ const HELP = [
   ] },
   { id: "export-upgrader", title: "Export upgrader", topics: [
     { slug: "command-line", title: "Running from a terminal", body: [
-      "The Export upgrader migrates an export in the old (AET) layout to the Studio",
-      "format the Team compiler reads. Its commands run from a terminal opened in the",
-      "folder that holds `4cc-studio`.",
+      "The Export upgrader migrates an export in the old (AET) layout to the one",
+      "the Team compiler reads. Its commands run from a terminal opened in the",
+      "folder that holds `UTW.exe`.",
       "",
       "`upgrade` takes one old export: a folder, a `.zip` or a `.7z`. A team export",
       "takes `--savefile`, naming the save (`EDIT00000000`) whose records say which",
@@ -1571,14 +1573,14 @@ const HELP = [
   { id: "ruleset-editor", title: "Ruleset editor", topics: [
     { slug: "command-line", title: "Running from a terminal", body: [
       "The Ruleset editor's commands run from a terminal opened in the folder that holds",
-      "`UnlimitedToolWorks.exe`. A rules file (a `.rhai` file) is what a cup's teams are checked",
+      "`UTW.exe`. A rules file (a `.rhai` file) is what a cup's teams are checked",
       "against: tiers, stat targets, heights, cards and special rules, plus the code that runs",
       "the check.",
       "",
       "```text",
-      "UnlimitedToolWorks ruleset-editor validate <file>",
-      "UnlimitedToolWorks ruleset-editor update-logic <file>",
-      "UnlimitedToolWorks ruleset-editor summary <file> [-o <out>]",
+      "UTW ruleset-editor validate <file>",
+      "UTW ruleset-editor update-logic <file>",
+      "UTW ruleset-editor summary <file> [-o <out>]",
       "```",
       "",
       "`validate` checks that a rules file loads: the text parses, the rules hold together (no",
@@ -2318,7 +2320,7 @@ const WALK = [
   ["ST-HELP-01", "the ? button or F1: the help opens on the active tool's chapter, Messages its last topic"],
   ["ST-HELP-02", "type a message code or a body word in the help's search box: a result click jumps to the highlighted hit"],
   ["ST-HELP-03", "click a log line's message code: the help opens at its catalog row; an in-doc link works alike"],
-  ["ST-HELP-04", "not drawn: CLI, `4cc-studio help` prints and exports the chapters"],
+  ["ST-HELP-04", "not drawn: CLI, `UTW help` prints and exports the chapters"],
   ["ST-LOG-01", "Add 400 log lines: only the last 300 draw, the newest at the bottom"],
   ["ST-LOG-02", "scroll up, then add lines: the view holds, \"↓ N new\" counts them and jumps back"],
   ["ST-LOG-03", "the All, Warnings, Errors chips: a filter hides lines, never drops them"],

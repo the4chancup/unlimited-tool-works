@@ -294,7 +294,9 @@ input[type=range]:focus { outline: none; }
   row-gap: 4px; align-items: center; width: calc(109px + 12px + 54px + 28px + 73px + 9px + 54px); }
 .gen .combos > span:not(.gl), .gen .combos .gate > span { display: block; }
 .gen .combos .rate.lr { display: grid; grid-template-columns: 1fr 1fr; }
-.gen .combos .rate.lr .sel { text-align: center; }
+/* Each side 18 tall, a control's height, so the toggles' rows stand 22 apart as the
+   combos' do. */
+.gen .combos .rate.lr .sel { text-align: center; height: 18px; line-height: 18px; }
 /* The chosen side in the quiet grey of the positions grid's C, not the
    accent: a foot or hand is rarely what a member looks for. */
 .gen .combos .rate.lr .sel.on { background: #5a5a5a; color: var(--text); }

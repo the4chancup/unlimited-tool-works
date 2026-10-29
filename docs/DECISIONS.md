@@ -13311,3 +13311,55 @@ lines in 129 files that every slice in flight edits, and renaming them later nee
 migration.
 Plan: `plans/core/development_plan.md` "The project's name: Unlimited Tool Works";
 `plans/core/distribution.md` "Distribution: portable .7z bundle".
+
+## 2026-10-29 — save_editor — Correction: the quick actions in halves, the player rows 18 high in columns
+Decision: the quick actions' two columns are halves of the list's frame, 6 apart, as the
+draft's `1fr 1fr`, a label longer than its half elided with the tier in its tooltip; the plan
+had them as wide as their widest cells, "not halves always", because egui's text was wider than
+the draft's. A player row's place, position and name are columns (the place weak, the position
+28 wide, the name elided before its dot and mark), every list row 18 high with no gap; the
+Cards left badge's tier and count stand in the draft's chip.
+Why: ov1 measured the build's columns at 81 and 105, ending 50 points short of the frame that
+the column's other controls reach (the maintainer's ruling that they end at the frame), while
+"Make Goalkeeper" now fits a half; the rows were 21 high (a selectable's 18 plus egui's item
+spacing), one string where the draft has columns, and the badge plain text where the draft
+frames it.
+Plan: `plans/save_editor.md` "Editing UI": the Player list and quick actions bullets, the
+skills' Cards left badge.
+
+## 2026-10-29 — save_editor — General info's blocks 6 apart, its toggles 18 tall
+Decision: General info's three blocks (Name and Shirt; the pairs; Stronger foot to Playing
+style) stand 6 apart, as the draft's `.gen` gap, their rows 22 apart; the Stronger foot and
+hand toggles are 18 tall in the draft, as the build's buttons already are.
+Why: after 0.0.1ov2k the build stood 2 points above the draft at Height and 4 at Stronger
+foot (the build spaced the blocks by its row spacing, 4), and the draft's toggles, plain spans
+15 tall, put its foot and hand rows 19 apart; the toggles take a control's height, as every
+other control, and the blocks keep the draft's grouping.
+Plan: `plans/save_editor.md` "Editing UI", the player view's General info.
+
+## 2026-10-29 — save_editor — The team view's line under its fields, the colour buttons 22 × 16
+Decision: the team view draws a stroke line under its fields' row, 8 points above and below,
+before the Tactics, and every `color_tools` colour field is a 22 × 16 button, as the drafts'
+colour input.
+Why: ov1 measured the build's Tactics 20 points higher than the draft's (its separator drawn
+with 1.5 points of spacing, so the fields and the Tactics ran together) and its team row 31 to
+57 points right of the draft's past the colours (egui's colour button is 40 wide). Whether the
+Tactics' last row still fits the 1280 × 800 pane with the line's room is measured when it is
+built; the draft, which fits, draws it.
+Plan: `plans/save_editor.md` "Editing UI", the team view; `plans/libs/color_tools.md`.
+
+## 2026-10-29 — ruleset_editor — The refused-open dialog is titled "Not opened"
+Decision: the Ruleset editor's dialog for a rules file it refuses to open is titled "Not
+opened", beside its siblings "Not saved" and "Not saved: the ruleset has problems"; its body
+is unchanged.
+Why: every modal now draws through `studio_core`'s modal helper, which takes a title (0.0.1ov2j),
+and this dialog had none: the sidekick's pick, accepted, the siblings' wording.
+Plan: `plans/core/gui.md` "Other UI components" (Modals).
+
+## 2026-10-29 — gui — The log panel opens with the drafts' 180-point body
+Decision: the log panel's dock is sized so its well first opens 180 points high, the drafts'
+`logHeight`, as the Live AATF dock is sized for its 150; the panel's 220-point default goes.
+Why: 0.0.1ov2nop measured the log's well at 194 under the 220-point panel (the frame, the top
+line, the header row and its spacing taking 26), 14 points taller than the approved drafts.
+Plan: `plans/core/gui.md` "GUI Design", the code block under "A pipeline tool subdivides",
+its `Panel::bottom` comment.

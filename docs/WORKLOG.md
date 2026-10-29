@@ -4479,7 +4479,7 @@ briefs, review loops, gates and mutation runs as for any step.
       Save as (l3), the Savefile menu's Apply aesthetics patch and the Team menu's Import /
       export team file (8.9k slice 5), Save a picture of the formations and the pictures
       range dialog, its range on one row (8.33, 8.34). Not yet seen in a built window (ov1)
-    - [ ] ov2j every modal in the draft's `.window` frame (`docs/prototypes/index.html`): 12
+    - [x] ov2j every modal in the draft's `.window` frame (`docs/prototypes/index.html`): 12
       points of margin across and 8 down (egui's modal frame keeps about 6), the title 8 above
       the body (`.window .title`'s margin; the build leaves egui's 3: Settings' first row 20
       under its title against the draft's 28.8, About's body 19 against 24.8, Kit slots' 19
@@ -4488,35 +4488,82 @@ briefs, review loops, gates and mutation runs as for any step.
       (the draft's `window_()`; the build puts Close at the left, where DECISIONS "Set boots and
       gloves IDs takes 4ccEditor's layout" keeps "the buttons right-aligned as every dialog's
       are"); one `studio_core` helper every modal draws through: Settings, About, the first-run
-      prompt, the Save editor's and the Ruleset editor's dialogs and prompts
-    - [ ] ov2k the form grids' rows 22 apart, the draft's `table.grid` (its `td` padded 2 above
+      prompt, the Save editor's and the Ruleset editor's dialogs and prompts. Done 2026-10-29
+      (merge `46320cdc`; Opus sidekick, landed first time; lead gates green in its target,
+      merged state too: save_editor 447 + 50, studio_core 280, ruleset_editor 110 + 13,
+      clippy, fmt): `studio_core::widgets::{modal, modal_frame, modal_buttons}`, all 20
+      modals through it, reading orders kept; tests: a short and a wide dialog, Settings,
+      Kit slots, the Ruleset editor's prompt (red at HEAD). Its contradictions, accepted: the
+      first-run row stands 8 under its title (the draft's margins collapse: its test moved
+      from 2); the Ruleset editor's refused-open dialog titled "Not opened" (DECISIONS); the
+      Ruleset editor's scroll bound also takes the title off; the drafts' `window_` drew an
+      empty button row under a dialog with none (fixed in the drafts, the first run's bottom
+      now 9 under its footer as the build's). Rejected: the drafts' settings window capped at
+      640 (ov2r had already fixed it; the worktree predated it)
+    - [x] ov2k the form grids' rows 22 apart, the draft's `table.grid` (its `td` padded 2 above
       and below an 18-point control), where egui's `Grid` spaces them by `item_spacing.y`, 3:
       each row lands a point higher than the last, 25 by the Ability stats' last row, 17 by
       Settings' Memory cap. Every `Grid` that draws a draft `table.grid` (Settings' common grid,
-      General info, Other stats, Ability stats, the team view's, Kit slots)
+      General info, Other stats, Ability stats, the team view's, Kit slots). Done 2026-10-29
+      (merge `409274ad`; Opus sidekick, landed first time, lead gates green: save_editor 446 +
+      50, studio_core 277, clippy, fmt): `studio_core::widgets::FORM_ROW_SPACING` (4) on
+      Settings' common grid and the Save editor's section, General info's and Other stats'
+      stacked rows, the Ability stats, the five Appearance grids, Kit slots and the
+      unsaved-changes prompt; tests: the ability stats, General info's pairs and Settings'
+      rows 22 apart (red at 21). The team view's `info-grid` is one horizontal row, no row
+      spacing. Its report's leftovers: the help window's Messages table (ov2q) and the Ruleset
+      editor's four grids (its view, not in 0.0.1) also draw a draft `table.grid`; General
+      info still stands 4 to 0.5 points above the draft (ov2s)
+    - [ ] ov2s General info against the draft after ov2k (offsets in the ov2k report,
+      `wt-ov2k/.tmp/sidelead/sk_ov2k.report.md`): the draft's Name and Shirt number boxes 19
+      tall (ov2r set text boxes and combos to 18, not number boxes), its `.gen` blocks 6 apart
+      where the build's are 4, and its Stronger foot and hand toggles plain spans 15 tall where
+      the build's are 18-point buttons; the lead's ruling, then the draft, plan and build to it.
+      Ruled 2026-10-29 (DECISIONS "General info's blocks 6 apart, its toggles 18 tall"): the
+      draft's toggles 18 tall (`save_editor.js`; measured with `.tmp/0_0_1ov/geninfo_offsets.py`:
+      every row 22 apart in its block, Height 68.5, Stronger foot 136.5, Other stats 233 below
+      the title); the Name and Shirt boxes were already 18 since ov2r. Left for the build
+      (ov2q's brief): the blocks 6 apart where it has 4, which brings each label to the draft's
     - [ ] ov2l the team view's header as drafted: the stroke line between the fields' row and
       the Tactics, 8 above and below (`teamView`'s `.sep`; the build has none, so the Preset row
       stands 20 higher), and the colour swatches 22 × 16 (`input[type=color]`; egui's colour
-      button is 40 wide, which moves the row's right half 31 to 57 points right)
+      button is 40 wide, which moves the row's right half 31 to 57 points right). Planned
+      2026-10-29 (DECISIONS "The team view's line under its fields, the colour buttons 22 ×
+      16"); brief `.tmp/0_0_1ov/brief_ov2l.md`, after ov2j lands (same file)
     - [ ] ov2m the player list as drafted (`plans/save_editor.md` "Player list", "The quick
       actions"): a player row 18 high, its place in the weak colour, the position and name in
       their own columns (the build draws one string, 21 high); the quick actions in two columns
       as wide as the list, 119.5 each, ending at the frame's right edge as the plan says (the
       build's are as wide as their labels, 81 and 105, and end 50 short); Skills' `Goalkeeper:
       0 of 2` in its chip (the draft's `Cards left for` badge)
-    - [ ] ov2n the Live AATF dock as drafted: its rows in the log panel's well (`.live-body`:
+    - [x] ov2n the Live AATF dock as drafted: its rows in the log panel's well (`.live-body`:
       the extreme fill, the stroke, 6 × 2 margins; the build lists them on the panel), its body
       150 high when it opens (`LIVE.height`; the build's dock opens at the log panel's 220)
-    - [ ] ov2o the help window's chapter tree 220 wide, its 6-point padding included
+    - [x] ov2o the help window's chapter tree 220 wide, its 6-point padding included
       (`.help-win .help-tree`; the build's is 160, so `First run and data location` and
       `Running from a terminal` are cut)
-    - [ ] ov2p a floating panel (the Comparator, the patch, the interchange) opens where the
+    - [x] ov2p a floating panel (the Comparator, the patch, the interchange) opens where the
       draft's `.panel` stands, 16 from the window's right edge and 90 from its top, 620 wide
-      (the build's Comparator opens bottom-left, over the player list)
+      (the build's Comparator opens bottom-left, over the player list). ov2n, ov2o and ov2p
+      done 2026-10-29 in one slice (merge `052f4e6b`; Opus sidekick, its first run ended
+      waiting on a background test run and a resume finished it; lead gates green in its
+      target: save_editor 446 + 50, studio_core 277, clippy, fmt): `widgets::well_frame`
+      shared by the log and the Live AATF dock, `BottomDock::body_height` (150 for Live
+      AATF, computed from the style), the help tree 220, the Comparator's `default_pos` from
+      the content rect (kept where dragged); tests red at HEAD. Its report found the log's
+      own body 194 at the 220 default, where the drafts' is 180 (ov2t)
+    - [ ] ov2t the log panel opens with the drafts' 180-point body (`index.html`
+      `logHeight: 180`, the well's outer height), where the build's 220-point panel gives
+      194: the log's dock through `BottomDock::body_height(180)` (ov2nop's report,
+      `wt-ov2nop/.tmp/sidelead/sk_ov2nop.report.md`), the plan's `Panel::bottom` comment in
+      `plans/core/gui.md` (its 220 by default) to the body height
     - [ ] ov2q the small ones: Set all stats' number on its own line under its sentence (the
       draft's `dlgSetStats`; the build sets it on the sentence's line); the first-run prompt's
       two choice buttons with their labels centred; Settings' Memory cap `%` after its box, not
-      inside it
+      inside it; the help window's Messages table at `FORM_ROW_SPACING` (ov2k's report); two
+      `studio` `team_compiler_cli` tests (`team_compiler_cli.rs:158`, `:198`) that compare a
+      printed path with one built from `CARGO_TARGET_TMPDIR` as text, failing when
+      `CARGO_TARGET_DIR` is written with forward slashes (compare as paths)
     - [x] ov2r the drafts brought to the plan (lead): the settings menu's FPC hide boots and
       gloves IDs (common rows, `plans/core/gui.md` "Settings menu") and the active tool's
       section open on opening (the Save editor's, with Aesthetics from exports), both of which
@@ -4694,9 +4741,13 @@ briefs, review loops, gates and mutation runs as for any step.
     folder, `tool_version`, the help pages, the launchers, the readme, `build.rs`, the release
     recipe and its test, the justfile and the scripts naming the exe or the folder; the
     `help_cli` guard widened to `UnlimitedToolWorks` and the old folder's name
-  - [ ] rn2 the drafts (the lead): `docs/prototypes/index.html`'s title, exe and folder
-    names and help text; the Ruleset editor draft's logic banner naming no product (the plan's
-    rule; it names 4cc Studio today); the other drafts' "Studio"
+  - [x] rn2 the drafts (the lead): `index.html`'s title, exe and folder names, help text
+    (`UTW.exe`, `unlimited-tool-works`) and the draft controls' "Studio"; the Ruleset editor
+    draft's file header and logic banner copied from the code's (no product named), its
+    window titled as the app's; the Export upgrader draft's sample folder; the changelog's
+    shared group `**General**` (`plans/core/distribution.md`, was `**Studio**`). The drafts'
+    code comments keep "Studio" until rn3. Files: `docs/prototypes/{index.html,
+    tools/ruleset_editor.js,tools/export_upgrader.js}`
   - [ ] rn3 the docs (the lead, after rn1 lands): every plan and spec file's title, the CLI
     examples (`UTW <tool-id> ...`), the settings folder's and the log's names, "Studio" as the
     project's name in prose; README, AGENTS, CONTRIBUTING, RUNBOOK; the glossary's "Studio"

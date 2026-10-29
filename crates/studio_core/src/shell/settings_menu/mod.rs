@@ -22,8 +22,8 @@ use pes_version::PesVersion;
 use crate::settings::{CommonSettings, Theme, pes_folder_pattern};
 use crate::tool::{ShellRequest, StudioTool, ToolContext};
 use crate::widgets::{
-    PathCommit, PathKind, checkbox, path_row, path_row_commit, row_label, step_choice, step_number,
-    wheel_steps,
+    FORM_ROW_SPACING, PathCommit, PathKind, checkbox, path_row, path_row_commit, row_label,
+    step_choice, step_number, wheel_steps,
 };
 
 use super::sidebar::{Sidebar, exe_tooltip, version_blocker, version_label};
@@ -101,9 +101,9 @@ impl SettingsMenu {
         if !self.open {
             return;
         }
-        let modal = egui::Modal::new(egui::Id::unique("settings-menu")).show(egui_ctx, |ui| {
+        let id = egui::Id::unique("settings-menu");
+        let modal = crate::widgets::modal(egui_ctx, id, "Settings", |ui| {
             ui.set_min_width(WIDTH);
-            crate::theme::window_title(ui, "Settings");
             self.common_grid(ui, tools, ctx, sidebar);
             let pending = self.pending.take();
             for (index, tool) in tools.iter_mut().enumerate() {
@@ -120,7 +120,7 @@ impl SettingsMenu {
                 }
                 header.show(ui, |ui| tool.settings_view(ui, ctx));
             }
-            ui.button("Close").clicked()
+            crate::widgets::modal_buttons(ui, |ui| ui.button("Close").clicked())
         });
         if modal.inner || modal.should_close() {
             self.open = false;
@@ -141,6 +141,7 @@ impl SettingsMenu {
         let mut changed = false;
         egui::Grid::new("settings-common")
             .num_columns(2)
+            .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
             .show(ui, |ui| {
                 version_row(ui, tools, &common, ctx, sidebar);
                 let commit = path_row_commit(

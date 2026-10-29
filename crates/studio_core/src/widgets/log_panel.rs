@@ -196,10 +196,7 @@ fn body(
         .filter(|line| filter.shows(line.severity))
         .count();
     let skip = shown.saturating_sub(LOG_CAP);
-    let output = egui::Frame::new()
-        .fill(ui.visuals().extreme_bg_color)
-        .stroke(ui.visuals().window_stroke())
-        .inner_margin(egui::Margin::symmetric(6, 2))
+    let output = well_frame(ui.visuals())
         .show(ui, |ui| {
             egui::ScrollArea::both()
                 .id_salt(salt)
@@ -255,6 +252,16 @@ fn body(
             follow.snap = true;
         }
     }
+}
+
+/// The log panel's well, the drafts' `.log-body` and `.live-body`: the extreme fill
+/// and the window stroke, 6 points of margin beside the rows and 2 above and below.
+/// A dock's body draws its rows inside it.
+pub fn well_frame(visuals: &egui::Visuals) -> egui::Frame {
+    egui::Frame::new()
+        .fill(visuals.extreme_bg_color)
+        .stroke(visuals.window_stroke())
+        .inner_margin(egui::Margin::symmetric(6, 2))
 }
 
 /// The header's count line (the draft's `log-count`): `last 300 of N` when the
