@@ -2,9 +2,11 @@
 //! Settings buttons, the status bar's condition and dismiss icons. Each constant is the
 //! glyph's one-character string, at its codepoint in `resources/fonts/icons.ttf`, the
 //! suite's icon font, which `scripts/make_icons.py` builds from one SVG per icon in
-//! `resources/icons/`. A tool's icon says what the tool does, with one mark in its
-//! bottom-right corner for the tool's kind: a pencil for an editor, an open box for a
-//! compiler, a plus for a creator or a generator.
+//! `resources/icons/`. A tool's icon says what the tool does, and most carry one mark
+//! for the tool's kind: in the bottom-right corner a pencil for an editor, a plus for a
+//! creator or a generator, a refresh sign for the Refs arranger; for a compiler, the open
+//! box its subject drops into, across the icon's foot. The Music player, the Match
+//! tracker, the Export upgrader and the Stadium compiler carry none.
 
 /// The Team compiler's sidebar glyph: a running figure dropping into an open box.
 pub const TEAM_COMPILER: &str = "\u{E68E}";

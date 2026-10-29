@@ -182,6 +182,11 @@ def build():
         raise IconError(f"{unlisted[0]}.svg: no codepoint in CODEPOINTS")
     if missing:
         raise IconError(f"{missing[0]}.svg: missing from {ICONS}")
+    first_at = {}
+    for name in sorted(CODEPOINTS):
+        first = first_at.setdefault(CODEPOINTS[name], name)
+        if first != name:
+            raise IconError(f"{first}.svg and {name}.svg: both at U+{CODEPOINTS[name]:04X}")
 
     cmap, glyphs, metrics = {}, {".notdef": TTGlyphPen(None).glyph()}, {".notdef": (ADVANCE, 0)}
     for name in sorted(CODEPOINTS):
