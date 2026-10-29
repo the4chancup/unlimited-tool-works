@@ -8,7 +8,7 @@
 //! the × do their file work in `session::rules` and show its outcome in
 //! their dialogs (`dialog`).
 
-use studio_core::widgets::{modal, modal_buttons, step_choice, wheel_steps};
+use studio_core::widgets::{modal, modal_buttons, modal_sentence_gap, step_choice, wheel_steps};
 use studio_core::{Notice, NoticeKind};
 
 use crate::session::rules::{self, ImportCheck, builtins};
@@ -193,6 +193,7 @@ fn errors_dialog(ui: &egui::Ui, file: String, findings: Vec<String>) -> Option<R
             "{file} was not imported. Fix these errors, then import it again:"
         ));
         for finding in &findings {
+            modal_sentence_gap(ui);
             ui.label(egui::RichText::new(finding).monospace());
         }
         close = modal_buttons(ui, |ui| ui.button("OK").clicked());

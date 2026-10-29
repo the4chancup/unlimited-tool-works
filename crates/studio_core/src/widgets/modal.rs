@@ -40,6 +40,17 @@ pub fn modal_buttons<R>(ui: &mut egui::Ui, buttons: impl FnOnce(&mut egui::Ui) -
     .inner
 }
 
+/// The space between a dialog's sentence and the element under it, the drafts' `.window p`
+/// margin.
+const SENTENCE_SPACING: f32 = 8.0;
+
+/// The gap under a dialog's sentence when another sentence or a control follows it in the
+/// body, 8 points where a label alone leaves egui's 3. A sentence that ends the body takes
+/// none: the buttons' 10 under it stands for both margins.
+pub fn modal_sentence_gap(ui: &mut egui::Ui) {
+    ui.add_space(SENTENCE_SPACING - ui.spacing().item_spacing.y);
+}
+
 #[cfg(test)]
 mod tests {
     use egui::accesskit;
@@ -131,6 +142,21 @@ mod tests {
         assert_near(ok.right(), outer.right() - 13.0, "OK's right");
         assert_near(ok.top(), label.bottom() + 10.0, "OK's top");
         assert_near(outer.bottom(), ok.bottom() + 9.0, "the modal's bottom");
+    }
+
+    #[test]
+    fn a_sentence_stands_8_over_the_control_under_it_and_10_over_the_buttons_when_last() {
+        let ctx = context();
+        let ((sentence, field, last, ok), _, _) = draw(&ctx, "Set all stats", |ui| {
+            let sentence = ui.label("Set all of the player's ability stats to").rect;
+            modal_sentence_gap(ui);
+            let field = ui.button("75").rect;
+            let last = ui.label("Every ability takes the number.").rect;
+            let ok = modal_buttons(ui, |ui| ui.button("OK").rect);
+            (sentence, field, last, ok)
+        });
+        assert_near(field.top(), sentence.bottom() + 8.0, "the control's top");
+        assert_near(ok.top(), last.bottom() + 10.0, "OK's top");
     }
 
     #[test]
