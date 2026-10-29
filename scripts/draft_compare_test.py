@@ -77,5 +77,65 @@ class Pair(unittest.TestCase):
         self.assertEqual(unmatched, [("Few", 2, 1)])
 
 
+def text_image(colour, stem_width, x=10):
+    """A 60 x 20 image on the dark panel's grey (27) holding one 'glyph': a vertical stem of
+    `stem_width` columns in `colour`, with a half-strength edge column on each side."""
+    from PIL import Image
+
+    image = Image.new("RGB", (60, 20), (27, 27, 27))
+    half = tuple((c + 27) // 2 for c in colour)
+    for y in range(4, 16):
+        image.putpixel((x - 1, y), half)
+        for dx in range(stem_width):
+            image.putpixel((x + dx, y), colour)
+        image.putpixel((x + stem_width, y), half)
+    return image
+
+
+class Ink(unittest.TestCase):
+    def test_the_core_colour_is_the_stems_not_the_edges(self):
+        colour, _ = draft_compare.ink(text_image((220, 220, 220), 2), (0, 0, 60, 20))
+        self.assertEqual(colour, (220, 220, 220))
+
+    def test_a_blank_box_has_no_ink(self):
+        self.assertIsNone(draft_compare.ink(text_image((220, 220, 220), 2), (30, 0, 20, 20)))
+
+    def test_a_thicker_stem_carries_more_ink(self):
+        _, thin = draft_compare.ink(text_image((140, 140, 140), 1), (0, 0, 60, 20))
+        _, thick = draft_compare.ink(text_image((140, 140, 140), 3), (0, 0, 60, 20))
+        self.assertGreater(thick, 1.5 * thin)
+
+
+class InkFindings(unittest.TestCase):
+    def pair(self, name, x, app_kind="Text"):
+        row = ["text", name, x, 0.0, 20.0, 20.0]
+        return (name, row, [app_kind, name, x, 0.0, 20.0, 20.0], [0.0] * 4)
+
+    def test_a_colour_step_and_a_weight_against_the_screens_median(self):
+        from PIL import Image
+
+        draft = Image.new("RGB", (120, 20), (27, 27, 27))
+        built = Image.new("RGB", (120, 20), (27, 27, 27))
+        # Three texts: two alike on both sides, one a brighter title in the build.
+        for image, colours in ((draft, (140, 140, 220)), (built, (140, 140, 255))):
+            for slot, colour in enumerate(colours):
+                image.paste(text_image((colour,) * 3, 2, x=5).crop((0, 0, 20, 20)), (slot * 40, 0))
+        pairs = [self.pair("Height", 0.0), self.pair("Weight", 40.0), self.pair("General info", 80.0)]
+        found = draft_compare.ink_findings(pairs, draft, built)
+        self.assertEqual(found[0][2], 0)
+        self.assertEqual(found[2][:3], ((220, 220, 220), (255, 255, 255), 35))
+        self.assertAlmostEqual(found[0][3], 1.0)
+        self.assertGreater(found[2][3], 1.0)
+
+    def test_a_text_held_by_a_widget_is_measured_in_the_drafts_box(self):
+        draft = text_image((220, 220, 220), 2, x=30)
+        built = text_image((160, 160, 160), 2, x=30)
+        # The app's box is the header's whole button, wider, from x 0; the text lines up.
+        name, d, _, delta = self.pair("Appearance", 25.0)
+        found = draft_compare.ink_findings([(name, d, ["Button", name, 0.0, 0.0, 60.0, 20.0], delta)],
+                                           draft, built)
+        self.assertEqual(found[0][:3], ((220, 220, 220), (160, 160, 160), 60))
+
+
 if __name__ == "__main__":
     unittest.main()

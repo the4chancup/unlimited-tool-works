@@ -895,7 +895,11 @@ its plan section.
   mismatch), 1 to 2 px (accepted only where matching closer costs code, so each is looked at)
   and within 1 px; a pair whose boxes differ by design (a text's ink against the widget
   holding it, a collapsing header's button with its arrow) is listed apart, and a checkbox's
-  width is not compared (the draft's label spans its cell); the whole table lands in
+  width is not compared (the draft's label spans its cell). Every text's ink is measured in
+  both windows' captures too, its glyphs' colour and its weight against the screen's others,
+  and a colour or weight apart is listed: a colour reads as weight to the eye, and a box's
+  place says nothing of either (the titles' white against the drafts' grey went unseen until
+  it was measured); the whole table lands in
   `.tmp/draft_compare/`. A closed menu or a popup
   shows no elements, so it is measured open, as its own screen.
 - **Draft shots.** `scripts/draft_shots.py` captures every screen of every tool (the list from

@@ -307,7 +307,7 @@
      over the scroll-bar strip. */
   .bottom { padding-right: calc(8px + var(--sbw, 0px)); }
   .main { flex: 1; display: flex; min-height: 0; position: relative; }
-  .rail { border-right: 1px solid var(--stroke); padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+  .rail { border-right: 1px solid var(--stroke); padding: 6px; display: flex; flex-direction: column; gap: 3px; }
   /* The icon font the rail draws its 24 px glyphs in (the subset in
      assets/fonts/, egui-phosphor's codepoints; licence above). */
   @font-face { font-family: "Phosphor"; src: url("assets/fonts/phosphor-subset.ttf"); }
@@ -318,7 +318,12 @@
   .data pre { flex: 1; margin: 0; overflow: auto; background: var(--extreme); padding: 6px; font: 12px/1.2 var(--font-mono); color: #b4b4b4; }
   .data pre div { white-space: pre; min-height: 14px; }
   .data pre div.changed { background: var(--changed); }
-  .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 3px 0; }
+  /* egui's item spacing: 8 across, 3 down (a horizontal layout's, so a built row needs no override).
+     Every gap between two controls side by side or stacked takes it. The other gaps are layout,
+     not item spacing, and keep their own figure: a grid's or a view's columns (12, 14, 16, 28),
+     a gap between blocks of rows (6, so each block reads as one), and the parts of one compound
+     widget (a list row's columns, a segmented choice's segments). */
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 3px 0; }
   .col { display: flex; flex-direction: column; gap: 3px; }
   h2 { font: 400 15px/1.2 var(--font-body); color: var(--strong); margin: 4px 0 8px; }
   .strong { color: var(--strong); }
@@ -518,7 +523,7 @@
   .log-panel { flex: none; }
   .log-divider { height: 4px; cursor: ns-resize; }
   .log-divider:hover { background: var(--hover); }
-  .log-header { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
+  .log-header { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
   .log-count { margin-left: auto; }
   .log-wrap { position: relative; }
   .log-body { overflow: auto; background: var(--extreme); border: 1px solid var(--stroke);

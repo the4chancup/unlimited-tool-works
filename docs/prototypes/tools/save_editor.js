@@ -158,7 +158,7 @@ input[type=range]:focus { outline: none; }
 /* save editor view */
 .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
 .master { display: flex; gap: 12px; align-items: flex-start; }
-.plist { width: 255px; flex: none; display: flex; flex-direction: column; gap: 4px; }
+.plist { width: 255px; flex: none; display: flex; flex-direction: column; gap: 3px; }
 /* The list's scroll bar stands outside its frame, as egui's solid bar does (4 points from
    the content, 6 wide): a row's fill reaches the frame's edge, and the bar covers no row's
    marks. The strip is kept while a filter leaves nothing to scroll, so the list keeps its
@@ -198,7 +198,7 @@ input[type=range]:focus { outline: none; }
    weight; on a narrow row it gives way first, elided before the name is. */
 .plist .rows .trow .thint { color: #6e6e6e; min-width: 0; overflow: hidden;
   text-overflow: ellipsis; flex: 0 1000 auto; }
-.plist .qagrid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 6px; }
+.plist .qagrid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 8px; }
 /* Every quick action one height, their own: the theme's controls are 18. */
 .plist #quick-actions button, .plist #quick-actions input { height: 20px; box-sizing: border-box; }
 .plist #quick-actions .row { flex-wrap: nowrap; margin: 0; }
@@ -426,7 +426,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
    a label sits as far from a toggle as from a slider, and the labels and the
    controls of a row each share a line. */
 .tacrows .tset > .rate, .tacrows .tset > .row { height: 24px; align-items: center; margin: 0; }
-.tacrows .tset .rate .sel { line-height: 20px; }
+.tacrows .tset .rate .sel { line-height: 18px; }
 .tacrows input[type=range] { margin: 0; }
 .tacgrid select { width: 100%; }
 .pitch { background: #2d571d; border: 1px solid var(--stroke); display: block;
@@ -498,7 +498,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .live-panel { flex: none; margin-top: 6px; }
 .live-divider { height: 4px; cursor: ns-resize; }
 .live-divider:hover { background: var(--hover); }
-.live-header { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
+.live-header { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
 .live-body { overflow: auto; background: var(--extreme); border: 1px solid var(--stroke); padding: 2px 6px; }
 .live-body.checking { opacity: .55; }
 .live-body .drow { display: flex; gap: 8px; padding: 0 4px; white-space: nowrap; border-radius: 2px; }
