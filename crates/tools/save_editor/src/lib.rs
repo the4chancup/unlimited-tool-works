@@ -95,7 +95,7 @@ impl StudioTool for Tool {
     }
 
     fn icon(&self) -> &'static str {
-        studio_core::icons::NOTE_PENCIL
+        studio_core::icons::SAVE_EDITOR
     }
 
     /// The unsaved-changes prompt guards the window's close (SE-GUI-05):

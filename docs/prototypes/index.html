@@ -21,8 +21,8 @@
   .sidebar = Panel::left, .bottom = Panel::bottom, .center = CentralPanel,
   .titlebar = ViewportCommand::Title, .log-body = the log panel's ScrollArea.
 -->
-<!-- The licence of assets/fonts/phosphor-subset.ttf, the icon font
-     @font-face embeds below (assets/fonts/README.md "Licence", verbatim):
+<!-- The licence of the Phosphor glyphs in assets/fonts/icons.ttf, the icon font
+     @font-face embeds below (assets/fonts/README.md, verbatim):
      Phosphor Icons, MIT License:
 
      MIT License
@@ -226,11 +226,11 @@
     /* The app's own font chains (plans/core/gui.md, the Dark/light theme row), the files
        in assets/fonts/; no system font and no generic family, so a glyph none of them has
        shows as the browser's fallback, which scripts/draft_fonts.py reports. */
-    --font-body: "Roboto Flex", "Symbols", "Phosphor", "egui-icons";
-    --font-mono: "Hack", "Roboto Flex", "Symbols", "Phosphor", "egui-icons";
+    --font-body: "Roboto Flex", "Symbols", "Icons", "egui-icons";
+    --font-mono: "Hack", "Roboto Flex", "Symbols", "Icons", "egui-icons";
     /* The pitch's formation name alone: the semibold weight, whose stroke matches the
        game's label (worklog 0.0.1x); everything else stays regular. */
-    --font-label: "Roboto Flex Semibold", "Roboto Flex", "Symbols", "Phosphor", "egui-icons";
+    --font-label: "Roboto Flex Semibold", "Roboto Flex", "Symbols", "Icons", "egui-icons";
   }
   /* The symbols the body font lacks are scripts/make_symbols.py's build, on the body font's
      metrics; egui-icons keeps egui's scale tweak (epaint's FontDefinitions::default). */
@@ -310,10 +310,10 @@
   .bottom { padding-right: calc(8px + var(--sbw, 0px)); }
   .main { flex: 1; display: flex; min-height: 0; position: relative; }
   .rail { border-right: 1px solid var(--stroke); padding: 6px; display: flex; flex-direction: column; gap: 3px; }
-  /* The icon font the rail draws its 24 px glyphs in (the subset in
-     assets/fonts/, egui-phosphor's codepoints; licence above). */
-  @font-face { font-family: "Phosphor"; src: url("assets/fonts/phosphor-subset.ttf"); }
-  .ph { font-family: "Phosphor"; font-size: 24px; line-height: 1; }
+  /* The icon font the rail draws its 24 px glyphs in (assets/fonts/icons.ttf,
+     scripts/make_icons.py's build of resources/icons/; licence above). */
+  @font-face { font-family: "Icons"; src: url("assets/fonts/icons.ttf"); }
+  .ph { font-family: "Icons"; font-size: 24px; line-height: 1; }
   /* Its scroll bar in the window's strip, kept while nothing scrolls (the .win comment). */
   .center { flex: 1; overflow: auto; padding: 8px 8px 40px; min-width: 0; scrollbar-gutter: stable; }
   .data { width: 590px; border-left: 1px solid var(--stroke); display: flex; flex-direction: column; min-height: 0; }
@@ -1070,23 +1070,23 @@ S.settings = {
 // data_dir_read_only on the failed write, not this switch itself.
 S.dataDirUnwritable = false;
 // Registry order of plans/core/architecture.md "Tool plugin interface"; icon is
-// the egui-phosphor glyph the comment names (assets/fonts/phosphor-subset.ttf,
-// drawn through .ph at 24 px).
+// the glyph of resources/icons/<id>.svg (assets/fonts/icons.ttf, drawn through .ph
+// at 24 px).
 const TOOLS = [
-  { id: "team-compiler", label: "Team compiler", icon: "\uE68E", registered: true }, // users-three
-  { id: "save-editor", label: "Save editor", icon: "\uE34C", registered: true }, // note-pencil
-  { id: "stadium-compiler", label: "Stadium compiler", icon: "\uE102", registered: false }, // buildings
-  { id: "export-upgrader", label: "Export upgrader", icon: "\uE52E", registered: true }, // arrow-fat-up
-  { id: "music-player", label: "Music player", icon: "\uE33C", registered: false }, // music-note
-  { id: "music-export-editor", label: "Music export editor", icon: "\uE340", registered: false }, // music-notes
-  { id: "match-tracker", label: "Match tracker", icon: "\uE1D6", registered: false }, // crosshair
-  { id: "kit-config-editor", label: "Kit config editor", icon: "\uE670", registered: false }, // t-shirt
-  { id: "refs-arranger", label: "Refs arranger", icon: "\uE244", registered: false }, // flag
-  { id: "balls-compiler", label: "Balls compiler", icon: "\uE716", registered: false }, // soccer-ball
-  { id: "player-aesthetics-editor", label: "Player aesthetics editor", icon: "\uE436", registered: false }, // smiley
-  { id: "team-creator", label: "Team creator", icon: "\uE3D6", registered: false }, // plus-circle
-  { id: "ruleset-editor", label: "Ruleset editor", icon: "\uEB7A", registered: false }, // scroll
-  { id: "db-generator", label: "DB generator", icon: "\uE1DE", registered: false }, // database
+  { id: "team-compiler", label: "Team compiler", icon: "\uE68E", registered: true },
+  { id: "save-editor", label: "Save editor", icon: "\uE34C", registered: true },
+  { id: "stadium-compiler", label: "Stadium compiler", icon: "\uE102", registered: false },
+  { id: "export-upgrader", label: "Export upgrader", icon: "\uE52E", registered: true },
+  { id: "music-player", label: "Music player", icon: "\uE33C", registered: false },
+  { id: "music-export-editor", label: "Music export editor", icon: "\uE340", registered: false },
+  { id: "match-tracker", label: "Match tracker", icon: "\uE1D6", registered: false },
+  { id: "kit-config-editor", label: "Kit config editor", icon: "\uE670", registered: false },
+  { id: "refs-arranger", label: "Refs arranger", icon: "\uE244", registered: false },
+  { id: "balls-compiler", label: "Balls compiler", icon: "\uE716", registered: false },
+  { id: "player-aesthetics-editor", label: "Player aesthetics editor", icon: "\uE436", registered: false },
+  { id: "team-creator", label: "Team creator", icon: "\uE3D6", registered: false },
+  { id: "ruleset-editor", label: "Ruleset editor", icon: "\uEB7A", registered: false },
+  { id: "db-generator", label: "DB generator", icon: "\uE1DE", registered: false },
 ];
 // The tools whose draft is a script under tools/, by id: each calls registerTool once, at
 // load (plans/core/gui.md "Prototypes before implementation").
@@ -1141,7 +1141,7 @@ const CONDITION_DEFS = [
   { id: "data_dir_read_only", icon: "\uE4E0", // warning
     text: () => "Data folder is read-only",
     tip: () => "Settings and the teams list cannot be saved, so changes last for this session only" },
-  { id: "update_available", icon: "\uE20C", // download-simple
+  { id: "update_available", icon: "\uE20C", // download
     text: () => "Update available: v0.2.0",
     tip: () => "A newer release is out",
     action: { label: "Install", does: "The updater dialog is not part of this draft" } },
@@ -2499,7 +2499,7 @@ function renderToolControls() {
 }
 
 // Sidebar, top to bottom as gui.md "Sidebar" 1-5.
-// A Phosphor glyph in a .ph span (the rail's icons are 24 px).
+// An icon-font glyph in a .ph span (the rail's icons are 24 px).
 const ph = glyph => h("span", { class: "ph" }, glyph);
 // The sidebar's items, drawn the same in the rail and in the opened layer so
 // the glyphs sit at the same x and y in both: `full` only swaps the two-digit

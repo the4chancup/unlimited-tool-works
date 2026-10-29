@@ -563,7 +563,7 @@ pub fn pitch(
             let color = if marks.iter().any(|mark| mark.error) {
                 ui.visuals().error_fg_color
             } else {
-                ui.visuals().warn_fg_color
+                palette.pitch_warn
             };
             paint_portrait_cross(&painter, portrait, color, palette);
             ui.interact(

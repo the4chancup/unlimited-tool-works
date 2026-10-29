@@ -54,7 +54,7 @@ impl StudioTool for Tool {
     }
 
     fn icon(&self) -> &'static str {
-        studio_core::icons::SCROLL
+        studio_core::icons::RULESET_EDITOR
     }
 
     fn view(&mut self, ui: &mut egui::Ui, ctx: &ToolContext) {

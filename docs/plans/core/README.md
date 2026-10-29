@@ -90,8 +90,9 @@ Trade-offs accepted:
   pedestal at 24 px, and an arrow does not show there; the stickman is a filled outline traced from the maintainer's drawing, which the build
   takes as it is). A tool's kind shows as one mark on its icon:
   an editor's carries a pencil (Phosphor's note-and-pencil pencil, redrawn smaller), a
-  compiler's the open box of the Team compiler's, a creator's or generator's a plus; each mark
-  is one shape at one size and place, the bottom-right corner, and hides what lies under it
+  creator's or generator's a plus, each one shape at one size and place, the bottom-right
+  corner, and a compiler's the open box of the Team compiler's, across the icon's foot; a mark
+  hides what lies under it
   with a 12-unit gap cut around it, as Phosphor's note-and-pencil does, so a member reads the
   kind before the subject and no line runs through the mark. Each icon is one filled outline
   (the strokes outlined, the cut subtracted, the mark added), the form the font takes, kept

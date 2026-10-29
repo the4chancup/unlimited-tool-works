@@ -4,9 +4,10 @@
 //! at window creation and every view test's harness calls it too, so a size a
 //! test measures is the size a member sees. The spacing and both themes'
 //! widget states are egui 0.36's, the look the drafts were reviewed in, but
-//! for the light fills, which keep the dark ones' contrast with the panel;
-//! the rest of the presets stays egui's own `Visuals` until the curated one
-//! lands.
+//! for the light fills, each a step lighter than the grey that keeps the dark
+//! fill's contrast with the panel. The rest of the presets stays egui's own
+//! `Visuals` until the curated one lands, but for the light warning colour,
+//! darkened to read at 4.5 on the light panel.
 
 use crate::settings::Theme;
 use crate::status::NoticeKind;
@@ -103,6 +104,12 @@ pub struct Palette {
     /// The outline under Live AATF's pitch cross, so the cross stays seen over
     /// a portrait of its own colour.
     pub cross_outline: egui::Color32,
+    /// Live AATF's pitch cross over a Warning's portrait: the dark theme's
+    /// warning orange in both themes, because it sits on the turf and the
+    /// badges, which do not follow the theme. The light theme's warning colour,
+    /// darkened for the light panel, would read at 1.5 to 1.8 on the turf's
+    /// bands, where this one reads at 3.2 to 3.7.
+    pub pitch_warn: egui::Color32,
     /// The captain mark's box over his portrait.
     pub captain_fill: egui::Color32,
     /// The captain mark's `C`.
@@ -158,6 +165,7 @@ impl Palette {
         candidate_corners: egui::Color32::from_rgb(0xff, 0x4e, 0x7f),
         pitch_text: egui::Color32::WHITE,
         cross_outline: egui::Color32::BLACK,
+        pitch_warn: egui::Color32::from_rgb(0xff, 0x8f, 0x00),
         captain_fill: egui::Color32::WHITE,
         captain_text: egui::Color32::BLACK,
         lit_dim: egui::Color32::from_black_alpha(153),
@@ -199,6 +207,7 @@ impl Palette {
         candidate_corners: egui::Color32::from_rgb(0xff, 0x4e, 0x7f),
         pitch_text: egui::Color32::WHITE,
         cross_outline: egui::Color32::BLACK,
+        pitch_warn: egui::Color32::from_rgb(0xff, 0x8f, 0x00),
         captain_fill: egui::Color32::WHITE,
         captain_text: egui::Color32::BLACK,
         lit_dim: egui::Color32::from_black_alpha(153),
@@ -308,10 +317,16 @@ pub fn install(ctx: &egui::Context) {
             ] {
                 style.text_styles.insert(text_style, font_id);
             }
-            style.visuals.widgets = match theme {
-                egui::Theme::Dark => widgets_dark(),
-                egui::Theme::Light => widgets_light(),
-            };
+            match theme {
+                egui::Theme::Dark => style.visuals.widgets = widgets_dark(),
+                egui::Theme::Light => {
+                    style.visuals.widgets = widgets_light();
+                    // egui's light orange, #FF6400, reads at 2.8 on the light
+                    // panel; darkened in linear light it reads at 4.5, as
+                    // every light text colour must.
+                    style.visuals.warn_fg_color = egui::Color32::from_rgb(0xC5, 0x4B, 0x00);
+                }
+            }
         });
     }
 }
@@ -374,10 +389,13 @@ fn widgets_dark() -> egui::style::Widgets {
 /// egui 0.36.1's `Widgets::light()`, field for field but for the fills, for
 /// the same reason as `widgets_dark`: 0.37's `Widgets::light()` rounded every
 /// state to 6 points, which is not the look the drafts were reviewed in.
-/// Each fill keeps the dark state's contrast with its panel instead of
-/// 0.36's grey, whose resting 230 reads at 1.18 on the 248 panel, where the
+/// The fills are near the dark states' contrast with their panel instead of
+/// 0.36's greys, whose resting 230 reads at 1.18 on the 248 panel, where the
 /// dark 60 reads at 1.56 on 27, and left a resting checkbox, radio button or
-/// number box all but invisible.
+/// number box all but invisible. The resting, hovered and pressed fills are
+/// each a step lighter than the grey of the dark contrast (201, 186 and 208),
+/// all three by the same 6 so the states stay as far apart: at the matched
+/// contrast the grey boxes read too dark beside the white text boxes.
 #[cfg(not(target_arch = "wasm32"))]
 fn widgets_light() -> egui::style::Widgets {
     egui::style::Widgets {
@@ -390,24 +408,24 @@ fn widgets_light() -> egui::style::Widgets {
             expansion: 0.0,
         },
         inactive: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(201),
-            bg_fill: egui::Color32::from_gray(201),
+            weak_bg_fill: egui::Color32::from_gray(207),
+            bg_fill: egui::Color32::from_gray(207),
             bg_stroke: egui::Stroke::default(),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(60)),
             corner_radius: egui::CornerRadius::same(2),
             expansion: 0.0,
         },
         hovered: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(186),
-            bg_fill: egui::Color32::from_gray(186),
+            weak_bg_fill: egui::Color32::from_gray(192),
+            bg_fill: egui::Color32::from_gray(192),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(105)),
             fg_stroke: egui::Stroke::new(1.5, egui::Color32::BLACK),
             corner_radius: egui::CornerRadius::same(3),
             expansion: 0.0,
         },
         active: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(208),
-            bg_fill: egui::Color32::from_gray(208),
+            weak_bg_fill: egui::Color32::from_gray(214),
+            bg_fill: egui::Color32::from_gray(214),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::BLACK),
             fg_stroke: egui::Stroke::new(2.0, egui::Color32::BLACK),
             corner_radius: egui::CornerRadius::same(2),
@@ -436,7 +454,7 @@ fn widgets_light() -> egui::style::Widgets {
 /// icon font, because that file's vertical metrics are the body font's: egui
 /// centres a later font's line height on the body font's, so in the icon
 /// font's metrics a symbol would sit off the text's baseline. The icon font
-/// `"icons"` (the subset `resources/fonts/phosphor-subset.ttf` ships;
+/// `"icons"` (the suite's own, `resources/fonts/icons.ttf`;
 /// `crate::icons` names its glyphs) comes ahead of egui's own icons, so the
 /// icon codepoints come from it, and is its own `icons` family too. The
 /// `label` family is `"Roboto Flex Semibold"`
@@ -461,7 +479,7 @@ fn install_fonts(ctx: &egui::Context) {
     fonts.font_data.insert(
         "icons".to_owned(),
         std::sync::Arc::new(egui::FontData::from_static(include_bytes!(
-            "../../../resources/fonts/phosphor-subset.ttf"
+            "../../../resources/fonts/icons.ttf"
         ))),
     );
     fonts.font_data.insert(
@@ -573,6 +591,7 @@ mod tests {
             candidate_corners,
             pitch_text,
             cross_outline,
+            pitch_warn,
             captain_fill,
             captain_text,
             lit_dim,
@@ -609,6 +628,7 @@ mod tests {
             ("candidate_corners", *candidate_corners),
             ("pitch_text", *pitch_text),
             ("cross_outline", *cross_outline),
+            ("pitch_warn", *pitch_warn),
             ("captain_fill", *captain_fill),
             ("captain_text", *captain_text),
             ("lit_dim", *lit_dim),
@@ -653,7 +673,7 @@ mod tests {
         let ctx = egui::Context::default();
         install(&ctx);
         for (theme, inactive_fill, inactive_text) in
-            [(egui::Theme::Dark, 60, 180), (egui::Theme::Light, 201, 60)]
+            [(egui::Theme::Dark, 60, 180), (egui::Theme::Light, 207, 60)]
         {
             let style = ctx.style_of(theme);
             assert_eq!(style.spacing.button_padding, egui::vec2(4.0, 1.0));
@@ -722,16 +742,40 @@ mod tests {
         ]
     }
 
-    // A light widget state's fill stands out from the light panel as the
-    // dark state's does from the dark panel: a resting checkbox, radio
-    // button or number box is seen on both themes.
+    /// The grey whose contrast with the grey `panel` comes closest to `ratio`.
+    fn grey_at_contrast(ratio: f64, panel: egui::Color32) -> u8 {
+        let off = |grey: u8| (contrast(egui::Color32::from_gray(grey), panel) - ratio).abs();
+        (0..=panel.r())
+            .min_by(|&a, &b| off(a).total_cmp(&off(b)))
+            .expect("the range holds at least 0")
+    }
+
+    // A resting, hovered or pressed light fill is the grey that stands out
+    // from the light panel as the dark state's fill does from the dark panel,
+    // made 6 lighter: at the matched contrast the grey boxes read too dark
+    // beside the white text boxes, and one step for all three keeps the
+    // states as far apart. The panel's own fill and an open menu's button
+    // keep the matched contrast.
     #[test]
-    fn the_light_widget_fills_keep_the_dark_ones_contrast_with_the_panel() {
+    fn the_light_widget_fills_are_a_step_lighter_than_the_dark_ones_contrast() {
+        const STEPPED: [&str; 6] = [
+            "inactive weak",
+            "inactive",
+            "hovered weak",
+            "hovered",
+            "active weak",
+            "active",
+        ];
         let ctx = egui::Context::default();
         install(&ctx);
         let (dark, light) = (
             ctx.style_of(egui::Theme::Dark),
             ctx.style_of(egui::Theme::Light),
+        );
+        assert_eq!(
+            light.visuals.panel_fill,
+            egui::Color32::from_gray(248),
+            "premise: the light panel"
         );
         for ((name, dark_fill), (_, light_fill)) in state_fills(&dark.visuals.widgets)
             .into_iter()
@@ -739,12 +783,58 @@ mod tests {
         {
             let dark_contrast = contrast(dark_fill, dark.visuals.panel_fill);
             let light_contrast = contrast(light_fill, light.visuals.panel_fill);
-            assert!(
-                (light_contrast - dark_contrast).abs() <= 0.05,
-                "{name}: the light fill {light_fill:?} reads at {light_contrast:.2} on the light \
-                 panel, the dark one at {dark_contrast:.2} on the dark panel"
-            );
+            if STEPPED.contains(&name) {
+                let matched = grey_at_contrast(dark_contrast, light.visuals.panel_fill);
+                assert_eq!(
+                    light_fill,
+                    egui::Color32::from_gray(matched + 6),
+                    "{name}: the dark fill reads at {dark_contrast:.2} on the dark panel, as \
+                     grey {matched} does on the light one"
+                );
+            } else {
+                assert!(
+                    (light_contrast - dark_contrast).abs() <= 0.05,
+                    "{name}: the light fill {light_fill:?} reads at {light_contrast:.2} on the \
+                     light panel, the dark one at {dark_contrast:.2} on the dark panel"
+                );
+            }
         }
+        let widgets = &light.visuals.widgets;
+        for (name, state, grey) in [
+            ("inactive", &widgets.inactive, 207),
+            ("hovered", &widgets.hovered, 192),
+            ("active", &widgets.active, 214),
+        ] {
+            assert_eq!(
+                state.weak_bg_fill,
+                egui::Color32::from_gray(grey),
+                "{name} weak"
+            );
+            assert_eq!(state.bg_fill, egui::Color32::from_gray(grey), "{name}");
+        }
+    }
+
+    // The light warning colour reads at 4.5 on the light panel, as the light
+    // text colours do, where egui's own light orange reads at 2.8; the dark
+    // one stays egui's.
+    #[test]
+    fn install_darkens_the_light_warning_colour_to_read_at_4_5() {
+        let ctx = egui::Context::default();
+        install(&ctx);
+        let light = ctx.style_of(egui::Theme::Light);
+        assert_eq!(
+            light.visuals.warn_fg_color,
+            egui::Color32::from_rgb(0xC5, 0x4B, 0x00)
+        );
+        let light_contrast = contrast(light.visuals.warn_fg_color, light.visuals.panel_fill);
+        assert!(
+            light_contrast >= 4.5,
+            "the light warning colour reads at {light_contrast:.3} on the light panel"
+        );
+        assert_eq!(
+            ctx.style_of(egui::Theme::Dark).visuals.warn_fg_color,
+            egui::Color32::from_rgb(0xFF, 0x8F, 0x00)
+        );
     }
 
     // The lineup lists' position colours: the pitch's on the dark theme; on
@@ -886,25 +976,25 @@ mod tests {
     #[test]
     fn every_icon_constant_resolves_a_glyph_after_install() {
         const ALL: &[&str] = &[
-            crate::icons::ARROW_FAT_UP,
-            crate::icons::BUILDINGS,
-            crate::icons::CROSSHAIR,
-            crate::icons::DATABASE,
-            crate::icons::DOWNLOAD_SIMPLE,
-            crate::icons::FLAG,
+            crate::icons::TEAM_COMPILER,
+            crate::icons::SAVE_EDITOR,
+            crate::icons::STADIUM_COMPILER,
+            crate::icons::EXPORT_UPGRADER,
+            crate::icons::MUSIC_PLAYER,
+            crate::icons::MUSIC_EXPORT_EDITOR,
+            crate::icons::MATCH_TRACKER,
+            crate::icons::KIT_CONFIG_EDITOR,
+            crate::icons::REFS_ARRANGER,
+            crate::icons::BALLS_COMPILER,
+            crate::icons::PLAYER_AESTHETICS_EDITOR,
+            crate::icons::TEAM_CREATOR,
+            crate::icons::RULESET_EDITOR,
+            crate::icons::DB_GENERATOR,
             crate::icons::GEAR,
-            crate::icons::MUSIC_NOTE,
-            crate::icons::MUSIC_NOTES,
-            crate::icons::NOTE_PENCIL,
-            crate::icons::PLUS_CIRCLE,
             crate::icons::QUESTION,
-            crate::icons::SCROLL,
-            crate::icons::SMILEY,
-            crate::icons::SOCCER_BALL,
-            crate::icons::T_SHIRT,
-            crate::icons::USERS_THREE,
-            crate::icons::WARNING,
             crate::icons::X,
+            crate::icons::WARNING,
+            crate::icons::DOWNLOAD_SIMPLE,
         ];
         let ctx = egui::Context::default();
         install(&ctx);

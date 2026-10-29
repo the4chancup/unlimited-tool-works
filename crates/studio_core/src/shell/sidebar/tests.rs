@@ -2276,72 +2276,72 @@ const REGISTRY: &[PlannedTool] = &[
     PlannedTool {
         id: "team-compiler",
         label: "Team compiler",
-        icon: crate::icons::USERS_THREE,
+        icon: crate::icons::TEAM_COMPILER,
     },
     PlannedTool {
         id: "save-editor",
         label: "Save editor",
-        icon: crate::icons::NOTE_PENCIL,
+        icon: crate::icons::SAVE_EDITOR,
     },
     PlannedTool {
         id: "stadium-compiler",
         label: "Stadium compiler",
-        icon: crate::icons::BUILDINGS,
+        icon: crate::icons::STADIUM_COMPILER,
     },
     PlannedTool {
         id: "export-upgrader",
         label: "Export upgrader",
-        icon: crate::icons::ARROW_FAT_UP,
+        icon: crate::icons::EXPORT_UPGRADER,
     },
     PlannedTool {
         id: "music-player",
         label: "Music player",
-        icon: crate::icons::MUSIC_NOTE,
+        icon: crate::icons::MUSIC_PLAYER,
     },
     PlannedTool {
         id: "music-export-editor",
         label: "Music export editor",
-        icon: crate::icons::MUSIC_NOTES,
+        icon: crate::icons::MUSIC_EXPORT_EDITOR,
     },
     PlannedTool {
         id: "match-tracker",
         label: "Match tracker",
-        icon: crate::icons::CROSSHAIR,
+        icon: crate::icons::MATCH_TRACKER,
     },
     PlannedTool {
         id: "kit-config-editor",
         label: "Kit config editor",
-        icon: crate::icons::T_SHIRT,
+        icon: crate::icons::KIT_CONFIG_EDITOR,
     },
     PlannedTool {
         id: "refs-arranger",
         label: "Refs arranger",
-        icon: crate::icons::FLAG,
+        icon: crate::icons::REFS_ARRANGER,
     },
     PlannedTool {
         id: "balls-compiler",
         label: "Balls compiler",
-        icon: crate::icons::SOCCER_BALL,
+        icon: crate::icons::BALLS_COMPILER,
     },
     PlannedTool {
         id: "player-aesthetics-editor",
         label: "Player aesthetics editor",
-        icon: crate::icons::SMILEY,
+        icon: crate::icons::PLAYER_AESTHETICS_EDITOR,
     },
     PlannedTool {
         id: "team-creator",
         label: "Team creator",
-        icon: crate::icons::PLUS_CIRCLE,
+        icon: crate::icons::TEAM_CREATOR,
     },
     PlannedTool {
         id: "ruleset-editor",
         label: "Ruleset editor",
-        icon: crate::icons::SCROLL,
+        icon: crate::icons::RULESET_EDITOR,
     },
     PlannedTool {
         id: "db-generator",
         label: "DB generator",
-        icon: crate::icons::DATABASE,
+        icon: crate::icons::DB_GENERATOR,
     },
 ];
 
