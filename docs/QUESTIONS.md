@@ -24,6 +24,11 @@ names where the question came from so the context can be read there.
   left-aligned in both. Compare the Ability stats column in
   `.tmp/0_0_1ov/draft/player.png` (left) and `.tmp/0_0_1ov/built/player.png` (right). Until
   you pick, the build stays right-aligned.
+- **When do you rename the GitHub repository to `unlimited-tool-works`?** (worklog 0.0.1rn,
+  `plans/core/development_plan.md` "The project's name: Unlimited Tool Works"). It is a step
+  on GitHub only you take (the lead never touches the remote); GitHub redirects the old
+  address. `Cargo.toml`'s `repository` URL is changed in the commit after it; until then it
+  names `the4chancup/4cc-studio`.
 
 ## Cup practice
 

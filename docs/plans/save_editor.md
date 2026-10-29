@@ -205,6 +205,11 @@ all side by side.
   A player row shows his place in the roster (`01` to `23`, the slot `NN` of his id, always
   two digits, so no column is kept for right-aligning a one-digit number), position and name,
   with no team name under ALL or a filter: the team row above its players already names it.
+  The three are columns, as the draft's `.prow`: the place in the weak colour, the position
+  in a 28-point column, the name after it, elided when too long with the dot and the mark
+  kept after it, each 5 points from the last. A row (a team row too) is 18 high, its text
+  16 with 1 above and below, the rows touching with no gap between them, as the draft's; a
+  selectable's height plus egui's 3-point item spacing made them 21.
   The row's drag handle `≡` stands 4 points from its edge and 4 before the place, as in the
   Tactics view's lineup lists, so the name gets the room the column's narrow width leaves.
   The place, not the shirt number: it is the `NN` of his export's `NN - Name` folder and of
@@ -234,10 +239,12 @@ all side by side.
   rules" below says what they do). Every button and the number's box are 20 points tall
   (their own height, the draft's: the theme's controls are 18), the Set stats row in line
   with the buttons above it. The
-  grid spans the list's width; each column is as wide as its widest cell when
-  the two fit, else half the list, a longer label then elided (its tooltip names the tier).
-  Not halves always, as the draft's `1fr 1fr`: egui's button text is wider than the draft's,
-  and a half cuts "Make Goalkeeper" at the default list width. They act on the selected player, so a team row leaves them disabled, their tooltip
+  grid spans the list's frame, from its left edge to its right, as the draft's `1fr 1fr`:
+  two halves 6 points apart (119.5 each in the 245-point frame), each button as wide as its
+  half, rows 3 apart; a label longer than its half is elided, its tooltip naming the tier.
+  Columns as wide as their widest cell instead ended 50 points short of the frame, which the
+  column's controls reach ("Player list" above), and "Make Goalkeeper", the official
+  ruleset's widest, fits its half (105 of 119.5). They act on the selected player, so a team row leaves them disabled, their tooltip
   "The make buttons act on a player: pick a player row"; the Player menu's entries are
   disabled too, their tooltip "The Player menu acts on a player: pick a player row".
 - **The toolbar**, in egui's `MenuBar` (0.37), its style left as the toolbar's so the
@@ -258,7 +265,11 @@ all side by side.
   database; the `Team` menu ends with the team's files, Import / export team file (the
   interchange panel) and Save a picture of the formations. There is no Panels menu: that the
   Comparator, the patch and the interchange open as floating panels says nothing a member
-  looks for them by. A menu item's shortcut is drawn right of its label in the weak colour
+  looks for them by. A floating panel first opens where the drafts' `.panel` stands, 620
+  points wide, its top 90 below the window's and its right edge 1 inside the window's, over
+  the views' right columns rather than the player list a member picks from while it is open
+  (egui's own first place put the Comparator at the bottom left, over the list); then where
+  the member leaves it, while the program runs. A menu item's shortcut is drawn right of its label in the weak colour
   (`Button::shortcut_text`): Bump all stats `Ctrl+B`, Toggle FPC settings `Ctrl+I`, Clear
   visual flags `Ctrl+F`.
 - **No view draws the tool's name** (`core/gui.md` "Window title": the title bar carries it),
@@ -314,7 +325,11 @@ all side by side.
      style. Name, Shirt and these
      four rows share one label column, as wide as their longest label ("Registered
      position"), so every one of those fields starts at one x, and each ends flush with the
-     second half's boxes, not on the panel's right edge. Under it **Other stats**: Injury resistance and Form, then "Weak foot:
+     second half's boxes, not on the panel's right edge. Within a block (Name and Shirt;
+     the pairs; Stronger foot to Playing style) rows stand 22 apart, the form grids' pitch
+     (`core/gui.md` "Other UI components", Form grids), the toggles 18 tall like every
+     control; the blocks stand 6 apart, 2 more than their rows, as the draft's `.gen`, so
+     each block reads as one. Under it **Other stats**: Injury resistance and Form, then "Weak foot:
      Usage" and "Accuracy" (the two sharing one label), on General info's halves so every box of
      both panels lines up. Under that **Playable positions**: the 13 positions with C/B/A
      ratings in five rows by line of the pitch, each left wing to right wing (LWF CF SS RWF /
@@ -406,7 +421,9 @@ all side by side.
     sight).
   - **The skills' Cards left badge** is the active ruleset's, the toolbar's ruleset dropdown's
     ("Configurable AATF rules"), and reads the player's own tier
-    alone (`Cards left for Gold: 6 of 8`, no `cards` after the count, which the label
+    alone (`Cards left for Gold: 6 of 8`, the tier and the count in a chip, the draft's
+    `.badge`: the widget fill, corners rounded 2, 4 points of margin across and none down;
+    no `cards` after the count, which the label
     before it already says; `Cards left: No tier matches` when none
     does, the reason after the colon): the tier his stats,
     registered position and height match under that ruleset, as `check-aatf` recognizes it,
@@ -448,7 +465,8 @@ all side by side.
   version that stores none says so in it). The ids share the fields' row, not one of their
   own, because the Tactics editor below needs the height: with a heading-size title and the
   ids on a second row its last row ended about 5 points past the 1280 x 800 window's pane.
-  Then the Tactics editor (below), whose bench list shows the
+  A stroke line under the row, 8 points above and below it, sets the team's fields apart from
+  the Tactics (the draft's `.sep`). Then the Tactics editor (below), whose bench list shows the
   players only (12 for a 4cc team), not the 21 bench-order entries with 9 `(empty)`.
 - Version-gated widgets render disabled with a tooltip ("PES 19+") rather than
   disappearing, so the UI stays spatially stable across versions.
@@ -1265,7 +1283,10 @@ What this editor adds on top of the lib:
   more than a frame, so it runs on a worker, on the ruleset the window loaded, once the edit
   settles (a drag released, a field committed) and the list keeps the previous result, marked
   as checking, until the new one arrives. The panel is the log panel widget's frame (its chevron collapses it to the header,
-  its divider resizes it). At the bottom, not at a side: the player list holds the left and the
+  its divider resizes it), its rows in the log's well (the extreme fill, the stroke, 6 × 2
+  points of margin), the body 150 points high when the panel first opens (the drafts'
+  `LIVE.height`): lower than the log's 180, since the views above it need the height more
+  than a compile's output does. At the bottom, not at a side: the player list holds the left and the
   views need their width (the player view's three columns), and a bottom strip is where the Team compiler's
   log already sits. The toggle is drawn as a button, framed, its label a play sign (`▶`, U+25B6,
   from the bundled emoji fonts the marks' glyphs come from) then `Live AATF` whether on or

@@ -19,7 +19,9 @@ chosen from their palettes, not picked), which is what puts it in
 Phase 8; then the Kit config editor (config colors and kit `colors.txt` colors)
 and the Team creator; any later tool that needs a color field uses it too.
 
-The field is a color button showing the color; a click opens the popup, which holds, top to
+The field is a color button showing the color, 22 × 16 points as the drafts' colour input
+(egui's own color button is 40 wide, which pushed the Save editor's team row 31 to 57 points
+right of the draft's); a click opens the popup, which holds, top to
 bottom: egui's saturation-value square and hue slider, opaque (no export or save stores an
 alpha); the hex field, committed on Enter or when it loses focus, a text that does not read
 as `#RRGGBB` (the `#` optional, either case) put back to the current color when it loses

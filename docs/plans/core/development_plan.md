@@ -69,7 +69,7 @@ out. The bundle's launchers run the CLI in their console window, as Red's own ba
 CLI, and wait for a key at the end so the report can be read:
 
 - `quick_compile.bat` runs `team-compiler compile` over the bundle's `exports/` (through
-  `UnlimitedToolWorks.exe`, the preview's codename below).
+  `UTW.exe`, "The project's name" below).
   It takes its `--gui` form (`architecture.md` "Launch modes") when the Team compiler's view
   lands.
 - `quick_upgrade.bat` upgrades every export in the bundle's `old_exports/` (folders, `.zip`,
@@ -104,32 +104,54 @@ screen for minutes reads as a hung program. Two checks join the release's own:
 Both tools stay what their phases delivered; nothing is shortened for the league's date
 either.
 
-**The preview's codename: Unlimited Tool Works.** Every release before 1.0.0 carries the name
-Unlimited Tool Works wherever a user sees it: the window title, the About box, the first-run
-prompt, the CLI's `--help` header and its usage examples, the help pages (and their
-`help --export` files), the readme, the executable (`UnlimitedToolWorks.exe`, which the
-launchers call) and the bundle's file name. DBC's and VGL's testers meet the suite at its
-least finished, and a codename keeps that first impression off the name it keeps; the
-reference (Fate/stay night's reality marble, where every sword once seen is traced) is the
-community's own and fits a suite that traces every tool its cups have used. The code reads
-the name from two constants in `studio_core`, the display name and the executable's, so the
-window, the CLI and the findings' text switch back in one line at 1.0.0. The help pages and
-the launchers spell the executable's name as text, since a Markdown page and a batch file
-cannot read a Rust constant, and `studio`'s build script spells the display name (the exe's
-version details, "The preview's icon" below); a test over the `help --export` files and the CLI's `--help`
-output finds any "4cc Studio" left, which is the list a 1.0.0 switch rewrites. Text a file
-format keeps names no product at all (a ruleset file's header and its logic banner, the
-shared-IDs file's comment: "written by the Ruleset editor", "by the Team compiler"): the
-logic banner is hashed into the ruleset's identity, and a name there would make each
-switch a new logic version. What users never see keeps "4cc Studio": the crates, the docs,
-a written CPK's `Tvers` field, and the settings folder (`4cc-studio` under the user's config
-directory, which only points at the data location), so a tester's setup carries over to
-1.0.0 with no migration; the data-location help page names that folder's path, the one place
-a member reads the old name, because they may need to find it. Otherwise nothing in the
-preview names 4cc Studio, the readme included: the change of name is announced when 1.0.0
-ships.
+**The project's name: Unlimited Tool Works.** The suite is Unlimited Tool Works, UTW for
+short, wherever a user sees it: the window title, the About box, the first-run prompt, the
+CLI's `--help` header and its usage examples, the help pages (and their `help --export`
+files), the readme, the log, the executable and the bundle. The name began as the 0.0.1
+preview's codename, meant to give way to "4cc Studio" at 1.0.0, and is the project's own from
+0.0.1 on: the first release fixes the executable's name, the settings folder and the bundle's
+name, which a later rename would have to migrate on every member's machine. The reference
+(Fate/stay night's reality marble, where every sword once seen is traced) is the community's
+own and fits a suite that traces every tool its cups have used. Its spellings:
 
-**The preview's icon** goes with the codename: Archer, the reality marble's caster, from the
+- **`Unlimited Tool Works`**, the display name: the window title, the About box, `--version`,
+  the log's first line, the exe's version details, and a written CPK's `Tvers` field
+  (`Unlimited Tool Works <version>`, the tool that wrote it).
+- **`UTW.exe`** on Windows, **`utw`** on Linux, the executable: cargo builds the bin `utw`,
+  and the release recipe names it `UTW.exe` in the bundle. The command line is second-class,
+  so its users can type the capitals (Windows ignores their case anyway), and the CLI's usage
+  lines print the platform's spelling.
+- **`unlimited-tool-works`** in paths and packages: the settings folder under the user's
+  config directory (`%APPDATA%\unlimited-tool-works`, `~/.config/unlimited-tool-works`), the
+  bundle's top folder and its archives (`unlimited-tool-works-<version>-windows.7z`, the
+  symbols' beside it), the folder of a compiled CPK's shared-IDs records
+  (`unlimited-tool-works/shared_ids/`), and the window's app id, which a Linux desktop entry
+  matches.
+- **`utw`** in the short file names a member handles and posts: the log `utw.log`, with
+  `utw.old.log` and `utw.dmp` beside it.
+
+Nothing is read under the old names (`4cc-studio`, `4cc_studio/shared_ids/`,
+`studio_version`): no release wrote them, 0.0.1 being the first, and the maintainer's test
+installs are compiled again. The code reads the display name and the executable's from two
+constants in `studio_core`. The help pages, the launchers, the readme and `studio`'s build
+script spell them as text, since a Markdown page, a batch file and a build script cannot read
+a Rust constant; a test over the `help --export` files and the CLI's `--help` output fails on
+any "4cc Studio", `4cc-studio`, `UnlimitedToolWorks` or bare "Studio" left. Text a file
+format keeps names no product at all (a ruleset file's header and its logic banner, the
+shared-IDs file's comment: "written by the Ruleset editor", "by the Team compiler"; the
+aesthetics patch's `tool_version` key, `studio_version` until the rename): the logic banner is
+hashed into the ruleset's identity, and a product's name in a format ties every file to it.
+
+What users never see keeps the working name: the crates `studio_core` and `studio`, their
+types (`StudioApp`, `StudioTool`), the developers' environment variables (`STUDIO_*`) and the
+local checkout's folder (`4cc-studio`, until 1.0.0). Renaming those needs no migration and
+waits for a quiet tree: the crate names alone sit on 268 lines in 129 files, which would
+collide with every slice in flight. The repository becomes `the4chancup/unlimited-tool-works`
+when the maintainer renames it on GitHub, which redirects the old address; `Cargo.toml`'s
+`repository` follows in the same commit. The docs name the project UTW; the glossary keeps
+"Studio" as the working name, which the code's names still carry.
+
+**The icon** goes with the name: Archer, the reality marble's caster, from the
 maintainer's picture, on a transparent background: the whole picture at 32 pixels and up, and
 at 24 and 16 a tighter square on the head, above the outfit, so the smallest sizes show the
 face alone. Three files under `resources/icon/` carry it:
