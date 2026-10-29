@@ -1903,7 +1903,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               `resources/symbols/` and `symbols.ttf`, and the draft's logo, 28 points (lead,
               done; the maintainer picked 28 from `.tmp/8_9l/pairs/clover_rail.png`, the
               glyphs checked against the SVG in `clover_fidelity.png`); the build's logo and the
-              palette's two clover greens (brief `.tmp/8_9l/brief_l3d3e.md`)
+              palette's two clover greens (brief `.tmp/8_9l/brief_l3d3e.md`); the logo holds
+              its place when the sidebar opens (the draft's layer had it 0.5 to the right,
+              fixed, lead; the build's square in the rail and the open layer compared in the
+              release build)
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
         The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by

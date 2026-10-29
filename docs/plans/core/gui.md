@@ -176,7 +176,9 @@ Top to bottom:
 1. **4cc logo** — the 4cc clover (the maintainer's `4cc-cloverleaf-logo.svg`: a dark green
    ring, `#129648`, around four light green leaves, `#8cc642`, the inside left clear), 28
    points across in the 32-point square the hover fills, the same in both themes since it
-   is the cup's mark. It is two glyphs of the symbols font, the ring at U+F100 and the
+   is the cup's mark. The square keeps its place when the sidebar opens, centred in the
+   icon cell in the rail and in the opened layer alike, so the hover that opens the layer
+   moves nothing under the pointer. It is two glyphs of the symbols font, the ring at U+F100 and the
    leaves at U+F101 (private use; each one em across and centred on the line, so the font
    size is its diameter), drawn on one place in the palette's two clover greens: the font
    draws it sharp at every scale the UI takes and needs no image decoder, where a picture
