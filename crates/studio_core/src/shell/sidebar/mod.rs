@@ -186,9 +186,7 @@ impl Sidebar {
         // an icon sits at the same position in the rail and in the overlay.
         let cell = rail_content.width();
         let inner_width = cell + ui.spacing().item_spacing.x + widest_label(ui, &args);
-        // Framed like the panel, with a popup's shadow: the same inner margin puts
-        // the content at the same point, and the shadow marks it as the layer it is.
-        let frame = rail_frame(ui.style()).shadow(ui.visuals().popup_shadow);
+        let frame = overlay_frame(ui.style());
         let geom = OverlayGeom {
             outer: egui::Rect::from_min_size(
                 rail_outer.min,
@@ -306,12 +304,15 @@ impl Sidebar {
             // overlay would flash a dim, half-empty sidebar on every open.
             .fade_in(false)
             .show(egui_ctx, |ui| {
-                frame
-                    .show(ui, |ui| {
-                        ui.set_min_size(inner);
-                        self.contents(ui, cell, false, args)
-                    })
-                    .inner
+                let shown = frame.show(ui, |ui| {
+                    ui.set_min_size(inner);
+                    self.contents(ui, cell, false, args)
+                });
+                let line = ui.visuals().widgets.noninteractive.bg_stroke;
+                let rect = shown.response.rect;
+                ui.painter()
+                    .vline(rect.right() - line.width / 2.0, rect.y_range(), line);
+                shown.inner
             })
             .inner
     }
@@ -653,6 +654,18 @@ impl Sidebar {
 /// draft's `.rail` padding.
 pub(super) fn rail_frame(style: &egui::Style) -> egui::Frame {
     egui::Frame::side_top_panel(style).inner_margin(RAIL_PADDING)
+}
+
+/// The opened sidebar's frame: the rail's, so its content starts at the same point, plus
+/// an outer margin on the right as wide as the rail's line, which `show_overlay` draws
+/// there as `egui::Panel` draws the rail's. The line, not a shadow, marks where the layer
+/// ends over the view, both being in the panel fill.
+fn overlay_frame(style: &egui::Style) -> egui::Frame {
+    let line_width = style.visuals.widgets.noninteractive.bg_stroke.width.round() as i8;
+    rail_frame(style).outer_margin(egui::Margin {
+        right: line_width,
+        ..Default::default()
+    })
 }
 
 /// The overlay `egui::Area`'s id.

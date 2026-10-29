@@ -117,7 +117,7 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
   `[module]` prefixes; the target carries the module path. Full rules: `spec/core/architecture.md`
   "Diagnostic logging".
 - `unsafe` only where an OS API forces it (`match_feed`'s memory source, `elevation`,
-  `studio_core`'s running-PES poll, `pipeline`'s available-memory read on Windows) and in `python_bindings`, each block preceded by a `// SAFETY:`
+  `studio_core`'s running-PES poll and its title bar without an icon, `pipeline`'s available-memory read on Windows) and in `python_bindings`, each block preceded by a `// SAFETY:`
   comment. Anywhere else it is an ask. Review checks for the comment specifically: agents do not
   write it unprompted.
 - `///` doc comment on every `pub` item, written for the PES-literate non-Rustacean: what it is in

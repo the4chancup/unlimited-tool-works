@@ -1907,6 +1907,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               its place when the sidebar opens (the draft's layer had it 0.5 to the right,
               fixed, lead; the build's square in the rail and the open layer compared in the
               release build)
+            - [ ] l3d3f the opened sidebar without a shadow, edged by the rail's 1-point line
+              (DECISIONS "The opened sidebar casts no shadow"; `plans/core/gui.md` "Sidebar"
+              item 4; the draft's `#sb-open`, lead): `sidebar/mod.rs` `overlay_frame` and the
+              line in `show_overlay`, test `the_overlay_casts_no_shadow_and_ends_on_the_rails_line`
+              (lead); to check in the release build
+            - [ ] l3d3g the Windows title bar without the icon, the taskbar keeping it
+              (DECISIONS "The title bar draws no icon on Windows"; `plans/core/development_plan.md`
+              "The icon"): `window_size::hide_title_bar_icon`, one `unsafe` call (lead); to
+              check in the release build's title bar, taskbar and Alt+Tab
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
         The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by

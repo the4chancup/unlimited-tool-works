@@ -26,7 +26,7 @@ pub(super) const MIN_SIZE: egui::Vec2 = egui::vec2(960.0, 600.0);
 
 /// The icon, Archer on a transparent background in the tight crop on
 /// the head at 64 pixels (`resources/icon/small.png`): the window's icon on
-/// Windows, where the title bar draws it at 16 pixels.
+/// Windows, whose small size reads only as the tight crop.
 #[cfg(not(target_arch = "wasm32"))]
 const SMALL_ICON_PNG: &[u8] = include_bytes!("../../../../../resources/icon/small.png");
 
@@ -216,11 +216,51 @@ pub(super) fn monitors(frame: &eframe::Frame) -> Vec<Monitor> {
         .collect()
 }
 
+/// Turns off the icon Windows draws at the title bar's left, so the title starts at the
+/// bar's edge; the taskbar, Alt+Tab and the window menu (Alt+Space) keep the icon. The two
+/// icons come from the one image eframe sets, so no icon setting hides the title bar's
+/// alone, and drawing a title bar of our own would lose the system's snapping and caption
+/// buttons. A failure leaves the icon showing and is logged: the window works the same.
+#[cfg(windows)]
+pub(super) fn hide_title_bar_icon(window: &impl raw_window_handle::HasWindowHandle) {
+    use raw_window_handle::RawWindowHandle;
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::Controls::{
+        SetWindowThemeAttribute, WTA_NONCLIENT, WTA_OPTIONS, WTNCA_NODRAWICON,
+    };
+
+    let handle = match window.window_handle().map(|handle| handle.as_raw()) {
+        Ok(RawWindowHandle::Win32(handle)) => handle,
+        other => {
+            log::warn!("the title bar keeps its icon: no Win32 window handle ({other:?})");
+            return;
+        }
+    };
+    let options = WTA_OPTIONS {
+        dwFlags: WTNCA_NODRAWICON,
+        dwMask: WTNCA_NODRAWICON,
+    };
+    // SAFETY: `handle.hwnd` is the live window eframe just created, valid while the creation
+    // context that lent it is borrowed here. `options` is a local `WTA_OPTIONS`, the type
+    // `WTA_NONCLIENT` takes, and the size passed is its own; the call only reads it.
+    let result = unsafe {
+        SetWindowThemeAttribute(
+            HWND(handle.hwnd.get() as *mut std::ffi::c_void),
+            WTA_NONCLIENT,
+            std::ptr::from_ref(&options).cast(),
+            size_of::<WTA_OPTIONS>() as u32,
+        )
+    };
+    if let Err(error) = result {
+        log::warn!("the title bar keeps its icon: {error}");
+    }
+}
+
 /// The window's icon. On Windows eframe makes both of the window's icons from
-/// this one image: the small one (`ICON_SMALL`, the title bar's, 16 to 24
-/// pixels at the usual scales), where only the tight crop reads, and the big
-/// one (`ICON_BIG`, the taskbar's). Elsewhere one image serves every size, so
-/// the whole picture.
+/// this one image: the small one (`ICON_SMALL`, which the title bar would draw
+/// at 16 to 24 pixels, `hide_title_bar_icon`), where only the tight crop reads,
+/// and the big one (`ICON_BIG`, the taskbar's). Elsewhere one image serves every
+/// size, so the whole picture.
 #[cfg(not(target_arch = "wasm32"))]
 fn window_icon() -> egui::IconData {
     let png = if cfg!(windows) {

@@ -623,6 +623,8 @@ pub fn run_gui(mut app: StudioApp) -> anyhow::Result<()> {
         APP_NAME,
         options,
         Box::new(|creation| {
+            #[cfg(windows)]
+            window_size::hide_title_bar_icon(creation);
             crate::theme::install(&creation.egui_ctx);
             // The context's clones share the wake slot, so a `with_events` sink made before
             // the window exists still wakes it.

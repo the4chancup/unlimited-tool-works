@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use egui::accesskit::{self, Role, Toggled};
 use pes_version::PesVersion;
 
-use super::{ACTIVE_BAR_WIDTH, ExeCheck, RAIL_WIDTH, overlay_id, rail_frame, selector_color};
+use super::{ACTIVE_BAR_WIDTH, ExeCheck, RAIL_WIDTH, overlay_frame, overlay_id, selector_color};
 use crate::help::{HelpSection, HelpTarget, HelpTopic};
 use crate::pes_process::RunningPes;
 use crate::settings::Settings;
@@ -379,6 +379,52 @@ fn the_overlay_opens_opaque_on_every_open() {
             Some(start + 0.3),
         );
     }
+}
+
+// The opened sidebar casts no shadow (egui paints a frame's shadow as a blurred rect);
+// the rail's right line, drawn down the layer's whole height half a point inside its
+// right edge, as the rail panel's sits, marks where it ends over the view.
+#[test]
+fn the_overlay_casts_no_shadow_and_ends_on_the_rails_line() {
+    let Shell { mut app, _dir, .. } = shell();
+    let egui_ctx = test_context();
+    let closed = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(0.9)).nodes;
+    let out = open_sidebar(&egui_ctx, &mut app, entry(&closed, "A"), 1.0);
+    let outer = egui_ctx
+        .memory(|m| m.area_rect(overlay_id()))
+        .expect("the open overlay has a rect");
+    let line = egui_ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let edge = outer.right() - 0.5;
+
+    let mut blurred = Vec::new();
+    let mut edge_lines = Vec::new();
+    let mut shapes: Vec<&egui::Shape> = out.shapes.iter().map(|c| &c.shape).collect();
+    while let Some(shape) = shapes.pop() {
+        match shape {
+            egui::Shape::Vec(children) => shapes.extend(children),
+            egui::Shape::Rect(rect) if rect.blur_width > 0.0 => blurred.push(rect.rect),
+            egui::Shape::LineSegment { points, stroke }
+                if (points[0].x - edge).abs() < 0.01 && (points[1].x - edge).abs() < 0.01 =>
+            {
+                edge_lines.push((points[0].y, points[1].y, *stroke));
+            }
+            _ => {}
+        }
+    }
+    assert!(
+        blurred.is_empty(),
+        "the open overlay paints no shadow, blurred rects {blurred:?}"
+    );
+    assert_eq!(
+        edge_lines,
+        vec![(outer.top(), outer.bottom(), line)],
+        "one line in the quiet stroke down the overlay's right edge at x {edge}"
+    );
 }
 
 // ST-SIDE-02's popup rule: the overlay stays open while a popup it opened is
@@ -779,11 +825,7 @@ fn the_overlay_holds_while_the_pointer_is_anywhere_on_it() {
         .min
         .x;
     let style = egui_ctx.global_style();
-    let margins = rail_frame(&style)
-        .shadow(style.visuals.popup_shadow)
-        .total_margin()
-        .sum()
-        .x;
+    let margins = overlay_frame(&style).total_margin().sum().x;
     let inner = overlay_inner_width(&egui_ctx, cell, &["A", "B", "Help", "Settings"]);
     let right = f64::from(outer_left) + inner + f64::from(margins);
 

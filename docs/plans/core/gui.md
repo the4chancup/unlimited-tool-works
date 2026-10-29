@@ -252,7 +252,8 @@ Top to bottom:
    sidebar (the labels, the version dropdown; as wide as the longest label needs on one line,
    "Player aesthetics editor", since its width costs the view nothing) **over** the tool's left
    edge, as a
-   floating layer with a shadow, never pushing or resizing the view under it; it closes when
+   floating layer edged by the rail's own 1-point line on its right, without a shadow, never
+   pushing or resizing the view under it; it closes when
    the pointer leaves it, except while a popup it opened (the version dropdown, the About
    block) is open. A click on a rail entry switches tools without waiting for the hover, so the
    rail alone is enough to work with, and keyboard users get the same overlay on focus. While a
