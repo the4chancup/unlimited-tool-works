@@ -4359,7 +4359,7 @@ briefs, review loops, gates and mutation runs as for any step.
       PES 2018 first) → verify: `cargo test -p team_widgets`
     - [ ] y7c later (the maintainer: "we'll check in detail in the future"): a look at PES
       2018, 2019 and 2020's Game Plan, Automatic settings, Substitution; the plan's "taken
-      rather than looked at" goes with it
+      rather than looked at" goes with it (`QUESTIONS.md` "After the release")
 - [ ] 0.0.1z the maintainer's look at the built app (2026-10-27 ~21:10): the app's sliders
   kept, the drafts made to match
   - [x] z1 the drafts: sliders drawn as egui's (8-point rail, 11 × 14 handle, value box), the

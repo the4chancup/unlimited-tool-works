@@ -75,3 +75,12 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   slot 24's real count (marked uncertain)?
 - **Which PES version was the 15/16 pattern table measured on?** And is there a log from the
   other one, to say whether the two share it?
+
+## After the release
+
+- **Substitution's choices in PES 2018, 2019 and 2020** (worklog 0.0.1y7c; you: "we'll check
+  in detail in the future"). The Tactics editor's Automatic settings offers Off, Very late,
+  Flexible and Very early on those three, taken from PES 2017's and 2021's screens (both list
+  the four) rather than looked at (`plans/save_editor.md` "Tactics editor", the sentence on
+  Substitution). A look at each game's Game Plan > Automatic settings > Substitution confirms
+  or corrects it; the three are on F:.
