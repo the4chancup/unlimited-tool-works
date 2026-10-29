@@ -363,7 +363,7 @@ fn range_combos(pairs: &[(accesskit::NodeId, accesskit::Node)]) -> Vec<&accesski
 /// action (a popup item can sit where a pointer click lands on nothing),
 /// then a click on the title, which closes the popup the action leaves
 /// open.
-fn pick_range_end(window: &mut Headless, view: &mut SaveView, nth: usize, label: &str) {
+pub(super) fn pick_range_end(window: &mut Headless, view: &mut SaveView, nth: usize, label: &str) {
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
     let combo = range_combos(&pairs)[nth];
     // The popup's items stand under the combo: the player list's team row
