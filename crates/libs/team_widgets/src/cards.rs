@@ -88,10 +88,10 @@ pub fn card_columns(
 
 /// The Cards left label and `badge`'s text, drawn inline in the caller's
 /// row (the draft's `cardBadges`): `Cards left for` then the tier's
-/// `label: left of limit` (no `cards` after the count, which the label
-/// before it says), its part in the error color when overdrawn;
-/// `Cards left:` then `No tier matches`, weak, when no tier's
-/// condition holds for him.
+/// `label: left of limit` in a chip (the draft's `.badge`; no `cards`
+/// after the count, which the label before it says), its text in the
+/// error color when overdrawn; `Cards left:` then `No tier matches`,
+/// weak and with no chip, when no tier's condition holds for him.
 pub fn cards_left(ui: &mut egui::Ui, badge: &CardsBadge<'_>) {
     match badge {
         CardsBadge::Tier(tier) => {
@@ -102,7 +102,28 @@ pub fn cards_left(ui: &mut egui::Ui, badge: &CardsBadge<'_>) {
             if left < 0 {
                 text = text.color(ui.visuals().error_fg_color);
             }
-            ui.label(text).on_hover_text(format!(
+            let galley = egui::WidgetText::from(text).into_galley(
+                ui,
+                Some(egui::TextWrapMode::Extend),
+                f32::INFINITY,
+                egui::TextStyle::Body,
+            );
+            let chip = egui::Frame::new()
+                .fill(ui.visuals().widgets.inactive.weak_bg_fill)
+                .corner_radius(2)
+                .inner_margin(egui::Margin::symmetric(4, 0));
+            // The chip is allocated at its own size, so it stays one text
+            // line high, centred on the row: a frame put straight in the
+            // row would stretch to the row's height. The callers' rows
+            // wrap, so a wider allocation would wrap it onto a line of its
+            // own.
+            ui.allocate_ui_with_layout(
+                galley.size() + chip.total_margin().sum(),
+                egui::Layout::left_to_right(egui::Align::Center),
+                |ui| chip.show(ui, |ui| ui.label(galley)).inner,
+            )
+            .inner
+            .on_hover_text(format!(
                 "{}: {} paid of {}",
                 tier.label, tier.limits.paid, tier.limits.limit
             ));
@@ -189,7 +210,7 @@ mod tests {
     use pes_version::PesVersion;
 
     use super::*;
-    use crate::test_support::{Headless, centre, painted_text_color, pointer_at};
+    use crate::test_support::{Headless, centre, painted_text_color, pointer_at, text_shape};
 
     /// The picker's text for a stored style is the version's own: PES 17's
     /// stored 15 is Build Up, PES 21's Offensive Fullback; a value the
@@ -879,6 +900,65 @@ mod tests {
         let (nodes, _) = window.badge(CardsBadge::NoTier);
         text_entry(&nodes, "Cards left:");
         text_entry(&nodes, "No tier matches");
+    }
+
+    // The tier's `label: left of limit` sits in a chip, the draft's
+    // `.badge`: a rect in the inactive widget fill with corners rounded 2
+    // painted under the text, the text 4 points in from its left edge and
+    // the chip no taller than the text. `No tier matches` stays plain.
+    #[test]
+    fn the_badge_text_sits_in_a_widget_filled_chip() {
+        let mut window = Headless::new();
+        let under = limits(3, 5);
+        let (_, shapes) = window.badge(CardsBadge::Tier(TierCards {
+            label: "Gold",
+            limits: &under,
+        }));
+        let fill = window
+            .ctx
+            .style_of(window.ctx.theme())
+            .visuals
+            .widgets
+            .inactive
+            .weak_bg_fill;
+        let text = text_shape(&shapes, "Gold: 2 of 5");
+        let text_rect = egui::Rect::from_min_size(text.pos, text.galley.size());
+        let chip = shapes
+            .iter()
+            .find_map(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape)
+                    if shape.fill == fill && shape.rect.contains(text_rect.center()) =>
+                {
+                    Some(shape)
+                }
+                _ => None,
+            })
+            .expect("a chip in the widget fill under the badge's text");
+        assert!(
+            (text_rect.min.x - chip.rect.min.x - 4.0).abs() <= 1.0,
+            "the text 4 in from the chip's left ({text_rect:?} in {:?})",
+            chip.rect
+        );
+        assert!(
+            (chip.rect.max.x - text_rect.max.x - 4.0).abs() <= 1.0,
+            "the chip 4 past the text's right ({text_rect:?} in {:?})",
+            chip.rect
+        );
+        assert!(
+            (chip.rect.height() - text_rect.height()).abs() <= 1.0,
+            "no margin down ({text_rect:?} in {:?})",
+            chip.rect
+        );
+        assert_eq!(chip.corner_radius, egui::CornerRadius::same(2));
+
+        // No tier matching paints no chip.
+        let (_, shapes) = window.badge(CardsBadge::NoTier);
+        assert!(
+            !shapes.iter().any(
+                |clipped| matches!(&clipped.shape, egui::Shape::Rect(shape) if shape.fill == fill)
+            ),
+            "no chip without a tier"
+        );
     }
 
     // The playing-style choice lists the version's styles only.

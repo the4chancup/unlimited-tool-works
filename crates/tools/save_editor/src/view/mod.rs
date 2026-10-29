@@ -946,7 +946,11 @@ fn strip_again_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                                 .truncate(),
                             );
                             let mut name = egui::text::LayoutJob::default();
-                            append_name(&mut name, &row.name);
+                            append_name(
+                                &mut name,
+                                &row.name,
+                                &egui::TextStyle::Body.resolve(ui.style()),
+                            );
                             ui.label(name);
                         });
                     }
