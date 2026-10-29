@@ -2437,7 +2437,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     ids to names (which versions share the ids, and where the names come from, first).
     Drafted (`side/drafts2`); answered 2026-10-27 (DECISIONS 2026-10-27 "Formation pictures, the formation's name and the nation names: the maintainer's answers"): 4cc's nations in PES 16's
     table, PES 20 read as 21; the draft revised (side-lead D's step 5), then the look
-  - [ ] 8.31 after 0.0.1 (the maintainer, 2026-10-27): a click on the toolbar's `• unsaved
+  - [ ] 8.31 in 0.0.1 (the maintainer, 2026-10-29: "it's a small thing"; first placed after
+    it, 2026-10-27): a click on the toolbar's `• unsaved
     changes` opens the list of the changes, the table the close prompt already shows
     (`plans/save_editor.md`, the "Closing, or opening another save" bullet: Item, Old value,
     New value) without its save, discard and cancel. Drafted first, then the plan. A popup,
@@ -2447,7 +2448,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     draw a swatch; the list has no footer line"; draft `side/drafts2` `30842fa2`). Approved
     2026-10-28: the draft on main (`ed81bdb3`, `aaae3d1e`), the plan written
     (`plans/save_editor.md` "Editing UI", the bullet after the close prompt's); left: the
-    code, its SE-GUI scenario written with it
+    code (brief `.tmp/8_31/brief_8_31.md`), its scenario SE-GUI-43 written 2026-10-29
   - [x] 8.32 approved 2026-10-28 as built in 0.0.1x (the maintainer, 2026-10-27): the pitch draws the formation's name
     (`4-3-3`) in its corner, exactly as PES's formation screen draws it. First: the game's
     rule for the name from the slots' positions and the label's look, from in-game captures

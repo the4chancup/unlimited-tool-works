@@ -1493,6 +1493,15 @@ SE-GUI-05  GIVEN the save open with unsaved changes
                 save; discard closes or opens it and the open file is unchanged; GIVEN the
                 Team compiler's view active when the window is closed THEN the close waits,
                 the Save editor becomes the active view and shows the same prompt
+SE-GUI-43  GIVEN the save open with a player's Height and Speed edited and team 701's colour 1
+           edited
+           WHEN the toolbar's `• unsaved changes` is clicked
+           THEN a popup under it lists SE-GUI-05's table (three rows: the two fields named
+                with the player, old and new values as the view shows them, and the colour
+                whose old and new values each draw their swatch before the hex) and none of
+                the prompt's save, discard and cancel; a click outside it, Esc, a second click
+                on the label or another edit closes it; GIVEN the toolbar's Undo clicked
+                THEN it closes and a click on the label reopens it two rows long
 SE-GUI-06  GIVEN a PES 17 save
            WHEN the player view is drawn, its Appearance section open
            THEN the stronger hand control (General info) and the star and playing attitude
