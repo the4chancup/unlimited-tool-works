@@ -13609,3 +13609,13 @@ Why: the maintainer's pick from the three renders (`.tmp/8_9l/built3/titlebar_op
 measured on Windows 10, `WTNCA_NOSYSMENU` takes away the window menu Alt+Space opens
 (Restore, Move, Size, Minimize, Maximize, Close), where the blank slot costs nothing.
 Plan: `plans/core/development_plan.md` "The icon", `small.png`'s bullet.
+
+## 2026-10-29 — gui — The rail's version selector centred without its arrow; the hover delay 100 ms
+
+Decision: in the rail the PES version selector shows its year alone centred under the logo,
+with no dropdown arrow; the opened sidebar's keeps the full name at the left and the arrow.
+The rail opens the sidebar after the pointer rests on it 100 ms, where it was 150.
+Why: the maintainer's asks: the number sat off-centre beside an arrow the 44 points barely
+held, and 150 ms felt slow. 100 keeps a quick crossing of the 56-point rail from opening it
+(the maintainer is to confirm the feel, QUESTIONS).
+Plan: `plans/core/gui.md` "Sidebar" items 2 and 4.

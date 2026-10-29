@@ -193,7 +193,10 @@ Top to bottom:
    the one element that came and went with the hover.
 2. **PES version selector** — a *global* setting, not per-tool: the Team compiler targets it, the
    save editor uses it as a selection/default hint (an open save keeps its detected schema), and
-   integrated conversion uses it as the destination format. Compact dropdown. Changing it is blocked with a tooltip while any tool reports a
+   integrated conversion uses it as the destination format. Compact dropdown: in the rail its
+   year alone (`21`), centred under the logo, with no arrow, the rail's 44 points holding the
+   number alone; in the opened sidebar the full name (`PES 2021`) at the left with the
+   dropdown's arrow. Changing it is blocked with a tooltip while any tool reports a
    `version_change_blocker` (e.g. a running compilation, or the match tracker holding live memory
    addresses).
    - **Live exe check**: the selector is colored against the exe actually present in the resolved
@@ -250,7 +253,7 @@ Top to bottom:
    the preview's list goes when the views land.
 4. **A rail that opens on hover** — the sidebar is always an icon-only rail (~56 px) beside the
    tool's view, which takes the rest of the window. The pointer resting on the rail (a short
-   delay, ~150 ms, so a pointer crossing it on its way elsewhere opens nothing) opens the full
+   delay, 100 ms, so a pointer crossing it on its way elsewhere opens nothing; 150 felt slow) opens the full
    sidebar (the labels, the version dropdown; as wide as the longest label needs on one line,
    "Player aesthetics editor", since its width costs the view nothing) **over** the tool's left
    edge, as a

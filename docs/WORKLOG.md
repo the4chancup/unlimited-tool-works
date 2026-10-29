@@ -1921,6 +1921,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               the layer ends 4 wider (195 against 190.6: the draft also pads the row 6 after
               the label); `plans/core/gui.md` "Sidebar" item 3 now gives the numbers;
               brief `.tmp/8_9l/brief_l3d3h.md`
+            - [ ] l3d3i the rail's version selector: its year centred under the logo with no
+              arrow (the opened sidebar's unchanged), and the hover delay 100 ms (DECISIONS
+              "The rail's version selector centred without its arrow; the hover delay 100
+              ms"; `plans/core/gui.md` "Sidebar" items 2 and 4; the draft's `#sidebar
+              select`, lead, done, `.tmp/8_9l/pairs/rail_selector.png`); brief
+              `.tmp/8_9l/brief_l3d3i.md`, after l3d3h (the same file)
             - [x] l3d3g 2026-10-29 (lead, `712966d8`) the Windows title bar without the icon
               (DECISIONS "The title bar draws no icon on Windows" and "The title bar's icon
               slot stays blank"): `window_size::hide_title_bar_icon`, one `unsafe` call. On the

@@ -29,6 +29,10 @@ names where the question came from so the context can be read there.
   and its tooltips (worklog 0.0.1ov6): `.tmp/0_0_1ov/live/`, images 01 to 13 (no 06: a rules
   file is checked when imported, so the dock has no failed state). Then the confirmation that
   freezes logic version 1's hash (0.0.1f2).
+- **Does the sidebar's 100 ms hover delay feel right?** (worklog 8.9l3d3i, DECISIONS "The
+  rail's version selector centred without its arrow; the hover delay 100 ms"). It was 150,
+  which felt slow; the draft opens at 100 now, the build once l3d3i lands. A shorter one
+  opens the sidebar more often when the pointer only crosses the rail.
 - **When do you rename the GitHub repository to `unlimited-tool-works`?** (worklog 0.0.1rn,
   `plans/core/development_plan.md` "The project's name: Unlimited Tool Works"). It is a step
   on GitHub only you take (the lead never touches the remote); GitHub redirects the old
