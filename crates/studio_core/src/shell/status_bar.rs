@@ -25,6 +25,12 @@ pub(super) struct StatusBar {
     notice: Option<Notice>,
     /// egui time of the frame a no-action notice was first drawn.
     notice_shown_at: Option<f64>,
+    /// The shown notice is the active tool's standing one (`StudioTool::standing_notice`):
+    /// it never expires, and its tool withdraws it.
+    standing: bool,
+    /// A standing notice left the bar by being seen (its action or dismiss clicked, or
+    /// another notice replacing it) since the shell last asked: its tool is to be told.
+    standing_ended: bool,
 }
 
 impl StatusBar {
@@ -42,24 +48,62 @@ impl StatusBar {
         }
     }
 
-    /// The latest notice; it replaces the one before it.
+    /// The latest notice; it replaces the one before it, and ends a standing one it replaces.
     pub(super) fn set_notice(&mut self, notice: Notice) {
+        self.end_standing();
         self.notice = Some(notice);
         self.notice_shown_at = None;
     }
 
-    /// Drops the shown notice, if any.
+    /// The active tool's standing notice, asked for every frame. `Some` takes the slot: a
+    /// reworded one replaces the text, one that just appeared drops the notice shown before
+    /// it. `None` withdraws a standing notice without ending it, since the withdrawal is the
+    /// tool's own doing (or the shell's, on a switch of tool) and nobody saw it end; a
+    /// one-off notice in the slot stays.
+    pub(super) fn stand(&mut self, notice: Option<Notice>) {
+        match notice {
+            Some(notice) => {
+                self.notice = Some(notice);
+                self.notice_shown_at = None;
+                self.standing = true;
+            }
+            None if self.standing => {
+                self.notice = None;
+                self.notice_shown_at = None;
+                self.standing = false;
+            }
+            None => {}
+        }
+    }
+
+    /// Whether a standing notice ended since the last call; the call clears it, so the
+    /// tool is told once.
+    pub(super) fn take_standing_end(&mut self) -> bool {
+        std::mem::take(&mut self.standing_ended)
+    }
+
+    /// Drops the shown notice, if any, ending it if it was standing.
     fn dismiss(&mut self) {
+        self.end_standing();
         self.notice = None;
         self.notice_shown_at = None;
     }
 
+    /// Marks a shown standing notice as ended by being seen.
+    fn end_standing(&mut self) {
+        if self.standing {
+            self.standing = false;
+            self.standing_ended = true;
+        }
+    }
+
     /// Drops a no-action notice once `NOTICE_SECONDS` have passed since the frame it was
-    /// first drawn, and asks for the repaint that removes it while no input arrives.
+    /// first drawn, and asks for the repaint that removes it while no input arrives. A
+    /// standing notice never expires: its tool withdraws it.
     fn expire(&mut self, ui: &egui::Ui) {
         let now = ui.input(|input| input.time);
         let expired = match &self.notice {
-            Some(notice) if notice.action.is_none() => {
+            Some(notice) if notice.action.is_none() && !self.standing => {
                 let shown_at = *self.notice_shown_at.get_or_insert(now);
                 let remaining = NOTICE_SECONDS - (now - shown_at);
                 if remaining > 0.0 {
@@ -78,13 +122,16 @@ impl StatusBar {
     /// Draws the row's slots, the middle taking what the sides leave: the left and right
     /// slots are as wide as what they hold and the notice's slot is the rest.
     /// `activities` are the not-active tools' activity texts in
-    /// sidebar order (the active tool's run strip already shows its own). Returns the notice
-    /// action the user clicked, for the shell to apply; clicking it also dismisses the
-    /// notice.
+    /// sidebar order (the active tool's run strip already shows its own). `blocker` is the
+    /// version-change blocker a tool reports, as its label and reason: while it holds, a
+    /// `SwitchVersion` action is drawn disabled with the selector's hover, and the notice
+    /// stays. Returns the notice action the user clicked, for the shell to apply; clicking
+    /// it also dismisses the notice.
     pub(super) fn show(
         &mut self,
         ui: &mut egui::Ui,
         activities: &[String],
+        blocker: Option<(&str, &str)>,
     ) -> Option<ActionEffect> {
         self.expire(ui);
         let mut effect = None;
@@ -184,11 +231,25 @@ impl StatusBar {
                                     .truncate(),
                             )
                             .on_hover_text(&notice.text);
-                            if let Some(action) = &notice.action
-                                && ui.button(&action.label).clicked()
-                            {
-                                dismissed = true;
-                                effect = Some(action.effect.clone());
+                            if let Some(action) = &notice.action {
+                                let blocked = match action.effect {
+                                    ActionEffect::SwitchVersion(_) => blocker,
+                                    ActionEffect::OpenFolder(_)
+                                    | ActionEffect::OpenSettings
+                                    | ActionEffect::OpenHelp(_)
+                                    | ActionEffect::SwitchTool(_)
+                                    | ActionEffect::FixPesPath { .. } => None,
+                                };
+                                let button = ui.add_enabled(
+                                    blocked.is_none(),
+                                    egui::Button::new(&action.label),
+                                );
+                                if let Some((label, reason)) = blocked {
+                                    button.on_disabled_hover_text(format!("{label}: {reason}"));
+                                } else if button.clicked() {
+                                    dismissed = true;
+                                    effect = Some(action.effect.clone());
+                                }
                             }
                             let x = ui.add(egui::Button::new(crate::icons::X).frame(false));
                             x.widget_info(|| {
@@ -260,11 +321,13 @@ impl StatusBar {
 #[cfg(test)]
 mod tests {
     use std::fs;
+    use std::path::PathBuf;
     use std::time::Duration;
 
     use egui::accesskit::Role;
     use pes_version::PesVersion;
 
+    use crate::settings::Settings;
     use crate::shell::StudioApp;
     use crate::shell::test_harness::*;
     use crate::status::{ActionEffect, Notice, NoticeAction, NoticeKind};
@@ -1042,6 +1105,316 @@ mod tests {
                 "{kind:?} paints its text in {expected:?}"
             );
         }
+    }
+
+    /// A Warning notice `text`, with an `Open` action that only logs when `action`.
+    fn warning(text: &str, action: bool) -> Notice {
+        Notice {
+            text: text.to_owned(),
+            kind: NoticeKind::Warning,
+            action: action.then(|| NoticeAction {
+                label: "Open".to_owned(),
+                effect: ActionEffect::OpenFolder(PathBuf::from("out")),
+            }),
+        }
+    }
+
+    /// An Info notice `text` without an action.
+    fn info(text: &str) -> Notice {
+        Notice {
+            text: text.to_owned(),
+            kind: NoticeKind::Info,
+            action: None,
+        }
+    }
+
+    // ST-BAR-07
+    #[test]
+    fn a_standing_notice_stays_while_its_tool_returns_it_and_its_tool_hears_when_it_ends() {
+        let Shell {
+            mut app,
+            ctx,
+            calls,
+            _dir,
+            ..
+        } = shell();
+        let egui_ctx = test_context();
+        let set_standing = |notice: Option<Notice>| *calls[0].standing.lock().unwrap() = notice;
+
+        // "older" is shown, then A's standing notice appears and drops it.
+        ctx.notify(info("older"));
+        let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.0)).nodes;
+        assert!(
+            has_text(&nodes, "older"),
+            "the one-off notice is drawn first"
+        );
+        set_standing(Some(warning("standing one", false)));
+        let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(2.0)).nodes;
+        assert!(
+            has_text(&nodes, "standing one"),
+            "the standing notice shows"
+        );
+        assert!(
+            !has_text(&nodes, "older"),
+            "it took the slot from the older notice"
+        );
+
+        // Past a plain notice's few seconds it is still there.
+        let late = 2.0 + super::NOTICE_SECONDS + 1.0;
+        frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(late - 0.5));
+        let nodes = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(late)).nodes;
+        assert!(
+            has_text(&nodes, "standing one"),
+            "a standing notice does not expire by time"
+        );
+
+        // Reworded, with an action: the new text and its action, and no end told.
+        set_standing(Some(warning("standing two", true)));
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(has_text(&nodes, "standing two"), "the reworded text shows");
+        assert!(!has_text(&nodes, "standing one"), "the old wording is gone");
+        entry(&nodes, "Open");
+        assert_eq!(calls[0].standing_ends(), 0, "a rewording ends nothing");
+
+        // Withdrawn: the slot empties and A is not told.
+        set_standing(None);
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(
+            !has_text(&nodes, "standing two"),
+            "the withdrawn notice is gone"
+        );
+        assert!(!has_label(&nodes, "Dismiss"), "the middle slot is empty");
+        assert_eq!(calls[0].standing_ends(), 0, "a withdrawal ends nothing");
+
+        // B made active while A returns it: from the frame after the click, B's view
+        // shows no standing notice, and a notice published then leaves A untold.
+        set_standing(Some(warning("standing two", true)));
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(has_text(&nodes, "standing two"));
+        click(&egui_ctx, &mut app, entry(&nodes, "B"));
+        assert_eq!(app.active, 1, "the sidebar click made B active");
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(
+            !has_text(&nodes, "standing two"),
+            "B's view shows no standing notice"
+        );
+        ctx.notify(info("while away"));
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(has_text(&nodes, "while away"));
+        assert_eq!(
+            calls[0].standing_ends(),
+            0,
+            "a notice published while the standing one is not shown ends nothing"
+        );
+
+        // A active again: its standing notice is back, and a notice published then
+        // replaces it and ends it, once.
+        click(&egui_ctx, &mut app, entry(&nodes, "A"));
+        assert_eq!(app.active, 0);
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(
+            has_text(&nodes, "standing two"),
+            "the standing notice is back"
+        );
+        assert!(!has_text(&nodes, "while away"), "it took the slot again");
+        ctx.notify(info("newer"));
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(has_text(&nodes, "newer"), "the published notice shows");
+        assert!(!has_text(&nodes, "standing two"));
+        assert_eq!(calls[0].standing_ends(), 1, "A is told once");
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(has_text(&nodes, "newer"), "A stopped returning it");
+        assert_eq!(calls[0].standing_ends(), 1, "and is not told again");
+
+        // Once for its dismiss clicked.
+        set_standing(Some(warning("standing two", true)));
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        click(&egui_ctx, &mut app, entry(&nodes, "Dismiss"));
+        assert_eq!(calls[0].standing_ends(), 2, "the dismiss ends it");
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(!has_text(&nodes, "standing two"), "dismissed");
+
+        // Once for its action clicked.
+        set_standing(Some(warning("standing two", true)));
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        click(&egui_ctx, &mut app, entry(&nodes, "Open"));
+        assert_eq!(calls[0].standing_ends(), 3, "the action ends it");
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(
+            !has_text(&nodes, "standing two"),
+            "the action emptied the slot"
+        );
+
+        // A switch and a notice drained in one frame: the switch withdrew the standing
+        // notice first, so the notice ends nothing.
+        set_standing(Some(warning("standing two", true)));
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(has_text(&nodes, "standing two"));
+        ctx.switch_to_tool("b");
+        ctx.notify(info("after the switch"));
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert_eq!(app.active, 1);
+        assert!(has_text(&nodes, "after the switch"));
+        assert_eq!(
+            calls[0].standing_ends(),
+            3,
+            "the switch's notice ends nothing"
+        );
+
+        // The other order: the notice drained before the switch ends A's notice, and A is
+        // the one told, not B, which becomes active in the same drain. A tool made active
+        // by a request is first asked on the frame after the drain.
+        ctx.switch_to_tool("a");
+        frame(&egui_ctx, &mut app, Vec::new(), true);
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert!(has_text(&nodes, "standing two"));
+        ctx.notify(info("before the switch"));
+        ctx.switch_to_tool("b");
+        frame(&egui_ctx, &mut app, Vec::new(), true);
+        assert_eq!(app.active, 1);
+        assert_eq!(
+            (calls[0].standing_ends(), calls[1].standing_ends()),
+            (4, 0),
+            "the tool whose notice ended is told, not the one switched to"
+        );
+    }
+
+    // ST-BAR-07
+    #[test]
+    fn a_standing_notice_never_reaches_the_window_title() {
+        let Shell {
+            mut app,
+            ctx,
+            calls,
+            _dir,
+            ..
+        } = shell();
+        let egui_ctx = test_context();
+        let out = frame(&egui_ctx, &mut app, Vec::new(), false);
+        let idle = format!("A - {}", crate::APP_NAME);
+        assert_eq!(titles(&out), [idle], "the idle title first");
+
+        // Unfocused, a standing notice shows in the bar and leaves the idle title alone.
+        *calls[0].standing.lock().unwrap() = Some(warning("standing one", false));
+        let out = frame(&egui_ctx, &mut app, Vec::new(), false);
+        assert!(has_text(&out.nodes, "standing one"), "the bar shows it");
+        assert!(
+            titles(&out).is_empty(),
+            "the title stays idle: {:?}",
+            titles(&out)
+        );
+
+        // An event's notice held in the title stays there when a standing notice takes
+        // the bar from it.
+        *calls[0].standing.lock().unwrap() = None;
+        frame(&egui_ctx, &mut app, Vec::new(), false);
+        ctx.notify(info("Compiled 48 teams"));
+        let out = frame(&egui_ctx, &mut app, Vec::new(), false);
+        let held = format!("Compiled 48 teams - {}", crate::APP_NAME);
+        assert_eq!(titles(&out), [held], "the event's notice holds the title");
+        *calls[0].standing.lock().unwrap() = Some(warning("standing two", false));
+        let out = frame(&egui_ctx, &mut app, Vec::new(), false);
+        assert!(has_text(&out.nodes, "standing two"), "the bar shows it");
+        assert!(
+            titles(&out).is_empty(),
+            "the held title is not replaced: {:?}",
+            titles(&out)
+        );
+    }
+
+    // ST-BAR-08
+    #[test]
+    fn a_switch_version_action_picks_the_version_unless_a_tool_blocks_it() {
+        let egui_ctx = test_context();
+        let switch = || Notice {
+            text: "this save is from PES 2021".to_owned(),
+            kind: NoticeKind::Warning,
+            action: Some(NoticeAction {
+                label: "Switch to PES 2021".to_owned(),
+                effect: ActionEffect::SwitchVersion(PesVersion::Pes21),
+            }),
+        };
+
+        let dir = TestDir::new("studio_core_status_bar_switch_version");
+        let (a, calls_a) = stub("a", "A", None);
+        let (b, calls_b) = stub("b", "B", None);
+        let mut settings = test_settings(dir.path());
+        settings.common.pes_version = PesVersion::Pes19;
+        let Shell {
+            mut app,
+            ctx,
+            settings,
+            ..
+        } = shell_with(
+            settings,
+            vec![a, b],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a, calls_b],
+        );
+        assert_ne!(
+            ctx.common().pes_version,
+            PesVersion::Pes21,
+            "the action really changes the setting"
+        );
+        assert!(!app.sidebar.auto_switch_used, "the auto-switch is unspent");
+        ctx.notify(switch());
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        click(&egui_ctx, &mut app, entry(&nodes, "Switch to PES 2021"));
+        assert_eq!(
+            settings.lock().unwrap().common.pes_version,
+            PesVersion::Pes21
+        );
+        assert!(app.sidebar.auto_switch_used, "the auto-switch is spent");
+        // The save is applied at the next frame's logic.
+        frame(&egui_ctx, &mut app, Vec::new(), true);
+        let written = Settings::load(&dir.path().join(crate::settings::SETTINGS_FILE_NAME))
+            .expect("the switch saved the settings");
+        assert_eq!(written.common.pes_version, PesVersion::Pes21);
+
+        // A tool blocking a version change: the action is disabled, its hover the
+        // blocker's reason, and a click changes nothing. A fresh context: egui holds a
+        // tooltip back while the last click is about as recent as the last pointer move.
+        let egui_ctx = test_context();
+        egui_ctx.all_styles_mut(|style| style.interaction.tooltip_delay = 0.0);
+        let dir = TestDir::new("studio_core_status_bar_switch_blocked");
+        let (a, calls_a) = stub("a", "A", Some("a compile is running"));
+        let (b, calls_b) = stub("b", "B", None);
+        let mut settings = test_settings(dir.path());
+        settings.common.pes_version = PesVersion::Pes19;
+        let Shell {
+            mut app,
+            ctx,
+            settings,
+            ..
+        } = shell_with(
+            settings,
+            vec![a, b],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a, calls_b],
+        );
+        ctx.notify(switch());
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        let button = entry(&nodes, "Switch to PES 2021");
+        assert!(button.is_disabled(), "the action is disabled");
+        frame(&egui_ctx, &mut app, hover(button), true);
+        let nodes = idle(&egui_ctx, &mut app, 8).nodes;
+        assert!(
+            has_text(&nodes, "A: a compile is running"),
+            "the hover is the blocking tool's reason"
+        );
+        click(&egui_ctx, &mut app, entry(&nodes, "Switch to PES 2021"));
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        assert_eq!(
+            settings.lock().unwrap().common.pes_version,
+            PesVersion::Pes19,
+            "the click left the setting"
+        );
+        assert!(
+            has_text(&nodes, "this save is from PES 2021"),
+            "the notice stays in the bar"
+        );
     }
 
     // ST-SET-03

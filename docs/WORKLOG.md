@@ -1793,9 +1793,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         "A notice can switch the PES version"; DECISIONS 2026-10-29); draft checked
         (`.tmp/8_9l/draft/warning_{free,blocked}_bar.png`: the blocked Switch button greyed,
         its hover the selector's reason)
-        - [ ] l3a `studio_core`: `StudioTool::standing_notice` and `standing_notice_ended`, the
-          bar drawing the active tool's standing notice, `ActionEffect::SwitchVersion` through
-          `pick_version`, disabled under a blocker (ST-BAR-07, ST-BAR-08)
+        - [x] l3a 2026-10-29 (Opus sidekick): `StudioTool::standing_notice`, asked of the
+          active tool before the requests drain, and `standing_notice_ended`, told once when
+          seen; `StatusBar::stand`, a switch of tool withdrawing it after telling the outgoing
+          tool of an end seen earlier in the drain (the sidekick's catch: the brief's order told
+          the tool switched to); `ActionEffect::SwitchVersion` through `pick_version`, disabled
+          under a blocker with the selector's hover (ST-BAR-07, ST-BAR-08). Files:
+          `studio_core/src/{tool,status}.rs`, `studio_core/src/shell/{mod,status_bar,
+          test_harness}.rs`. Astra's critique of the plan and this code: under way
         - [ ] l3b the Save editor's version warning as a standing notice (SE-GUI-28), after
           l3a
         - [ ] l3c the Open menu with discovery and recent files, Save as (SE-GUI-26)

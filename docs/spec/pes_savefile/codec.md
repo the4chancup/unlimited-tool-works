@@ -270,7 +270,7 @@ Two layouts exist, verified on a live machine with PES 15, 16, 17, 18, 19 and 21
 | Versions | Path under `{Documents}\KONAMI\` | Notes |
 |---|---|---|
 | 15, 16, 17, 18 | `{game folder}\save\EDIT00000000` | one save per game, no account level. Game folders: `Pro Evolution Soccer 2015` (its save is named `EDIT.bin`, not `EDIT00000000`), `Pro Evolution Soccer 2016`, `Pro Evolution Soccer 2017`, `PRO EVOLUTION SOCCER 2018` (upper case; PES 18 was expected to use the account layout and does not) |
-| 19, 20, 21 | `{game folder}\{account id}\save\EDIT00000000` | game folders: `PRO EVOLUTION SOCCER 2019`, `eFootball PES 2020`, `eFootball PES 2021 SEASON UPDATE`. `{account id}` is an 18-digit numeric folder, one per account that has run the game on this profile |
+| 19, 20, 21 | `{game folder}\{account id}\save\EDIT00000000` | game folders: `PRO EVOLUTION SOCCER 2019`, `eFootball PES 2020`, `eFootball PES 2021 SEASON UPDATE`. `{account id}` is a numeric folder, one per account that has run the game on this profile: an 18-digit Konami ID, or the 17-digit Steam ID64 of a copy bought on Steam (the reference machine's PES 2020, `76561199320748656`); any all-digit name counts |
 
 Rules:
 
@@ -291,7 +291,7 @@ change.
 ```rust
 pub struct SavefileCandidate {
     pub path: PathBuf,
-    /// The 18-digit account folder the save sits under (PES 19-21), else `None`.
+    /// The account folder the save sits under (PES 19-21), else `None`.
     pub account: Option<String>,
     pub modified: SystemTime,
 }

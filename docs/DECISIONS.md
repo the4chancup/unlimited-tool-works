@@ -13465,3 +13465,15 @@ same reason the same way.
 Plan: `plans/core/gui.md` "Status bar", the bullets starting "A tool can keep a standing
 notice" and "A notice can switch the PES version"; `plans/save_editor.md` the paragraph starting "A save of
 another version than the sidebar's selector".
+
+## 2026-10-29 — pes_savefile — An account folder is any all-digit name, a Steam ID64 included
+
+Decision: savefile discovery takes any folder whose name is all digits as an account folder
+(PES 19-21), where it took 18 digits only.
+Why: the reference machine's PES 2020 save sits under `76561199320748656`, the 17-digit Steam
+ID64 of a copy bought on Steam, so discovery never found it: the Save editor's Open menu would
+not list it and the Team compiler's `savefile_path = auto` would not find it for PES 2020. The
+18 digits were the length observed on the Konami IDs of PES 2019 and 2021, not a rule of the
+game; the digits alone keep `WEPES` and other folders out, and the save inside marks an account.
+Found by the 8.9l3c sidekick, whose Open menu test used the real folder name.
+Plan: `spec/pes_savefile/codec.md` "Savefile discovery", the layouts table's 19-21 row.

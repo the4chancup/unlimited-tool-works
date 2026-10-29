@@ -128,6 +128,10 @@ pub enum ActionEffect {
     OpenHelp(HelpTarget),
     /// Make another tool the active view.
     SwitchTool(String),
+    /// Switch the PES version, as a manual pick in the sidebar's selector does: the setting
+    /// written, the running-PES auto-switch spent, the settings saved. Disabled while a tool
+    /// reports a version-change blocker, its hover the selector's reason.
+    SwitchVersion(PesVersion),
     /// Point the PES folder at the folder a running PES exe lives in, the main row or the
     /// version's own entry once any exists (the shell's own action — no tool has a reason
     /// to publish it): the sidebar's auto-switch notice offers it when the running game

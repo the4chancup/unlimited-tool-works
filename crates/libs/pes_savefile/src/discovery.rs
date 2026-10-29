@@ -13,8 +13,8 @@ use pes_version::PesVersion;
 pub struct SaveLayout {
     /// The per-game folder name under `KONAMI`.
     pub game_folder: &'static str,
-    /// Whether an 18-digit account folder sits between the game folder and
-    /// `save`.
+    /// Whether an account folder (a numeric name: the account's Konami or
+    /// Steam ID) sits between the game folder and `save`.
     pub account_folders: bool,
     /// The save's file name inside `save`.
     pub file_name: &'static str,
@@ -25,8 +25,7 @@ pub struct SaveLayout {
 pub struct SavefileCandidate {
     /// The savefile's full path.
     pub path: PathBuf,
-    /// The 18-digit account folder the save sits under (PES 19-21), else
-    /// `None`.
+    /// The account folder the save sits under (PES 19-21), else `None`.
     pub account: Option<String>,
     /// The file's modification time (what "newest" means to the caller).
     pub modified: SystemTime,
@@ -76,7 +75,9 @@ pub fn discover_savefiles_in(documents: &Path, version: PesVersion) -> Vec<Savef
                 let Some(account) = name.to_str() else {
                     continue;
                 };
-                if account.len() != 18 || !account.bytes().all(|b| b.is_ascii_digit()) {
+                // Digits of any length: a Konami ID has 18, a Steam ID64 (PES 20
+                // bought on Steam) 17. The digits keep `WEPES` and the like out.
+                if account.is_empty() || !account.bytes().all(|b| b.is_ascii_digit()) {
                     continue;
                 }
                 let path = entry.path().join("save").join(layout.file_name);
@@ -167,20 +168,21 @@ mod tests {
             .join("PRO EVOLUTION SOCCER 2019")
             .join("333333333333333333")
             .join("save");
-        // Not an account folder: 18 characters, not all digits; and an
-        // all-digit name of the wrong length. A save under either stays
-        // undiscovered.
+        // Not an account folder: 18 characters, not all digits. A save
+        // under it stays undiscovered.
         let p19bad = konami
             .join("PRO EVOLUTION SOCCER 2019")
             .join("abcdefghijklmnopqr")
             .join("save")
             .join("EDIT00000000");
-        let p19short = konami
-            .join("PRO EVOLUTION SOCCER 2019")
-            .join("1234")
+        // PES 20 bought on Steam: the account folder is the 17-digit Steam
+        // ID64 (the maintainer's own), not an 18-digit Konami ID.
+        let p20 = konami
+            .join("eFootball PES 2020")
+            .join("76561199320748656")
             .join("save")
             .join("EDIT00000000");
-        for path in [&p17, &p19a, &p19b, &p19bad, &p19short] {
+        for path in [&p17, &p19a, &p19b, &p19bad, &p20] {
             std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
             std::fs::write(path, b"save").expect("seed");
         }
@@ -209,6 +211,11 @@ mod tests {
         assert_eq!(found[0].account.as_deref(), Some("222222222222222222"));
         assert_eq!(found[1].path, p19a);
         assert_eq!(found[1].account.as_deref(), Some("111111111111111111"));
+
+        let found = discover_savefiles_in(&root, PesVersion::Pes20);
+        assert_eq!(found.len(), 1, "the Steam ID64 account folder is found");
+        assert_eq!(found[0].path, p20);
+        assert_eq!(found[0].account.as_deref(), Some("76561199320748656"));
 
         assert!(discover_savefiles_in(&root, PesVersion::Pes15).is_empty());
         // A missing KONAMI folder finds nothing.

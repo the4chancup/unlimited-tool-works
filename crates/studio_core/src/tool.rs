@@ -87,6 +87,17 @@ pub trait StudioTool {
         None
     }
 
+    /// The notice this tool keeps in the status bar while its view is up, asked for every
+    /// frame: return it reworded as the state changes, `None` to withdraw it. Default: none.
+    fn standing_notice(&self, _ctx: &ToolContext) -> Option<Notice> {
+        None
+    }
+
+    /// The standing notice has been seen: its action or dismiss was clicked, or another
+    /// notice replaced it while it was shown. The tool stops returning it until a new reason
+    /// to keep one arises. Default: nothing.
+    fn standing_notice_ended(&mut self) {}
+
     /// What the tool has open, shown in square brackets after its name in the idle window
     /// title (`Save editor [C:\…\EDIT00000000] - <app>`): the path of the one file it edits.
     /// Not in the busy or notice titles. Default: nothing.
