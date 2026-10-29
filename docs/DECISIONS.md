@@ -13683,3 +13683,13 @@ Why: the plan said a skipped team is "reported" and the draft drew no report; a 
 at Open goes stale with the first edit, and Apply would then write values the member never saw
 listed.
 Plan: `plans/save_editor.md` "Read-only aesthetics".
+
+## 2026-10-29 — save_editor — The patch preview is the unsaved-changes table
+
+Decision: Apply aesthetics patch's preview draws the unsaved-changes dialog's table: the
+columns Item, Old value and New value, the item `<player's display name> · <field label>`,
+the values in monospace, instead of the comparator's player heads over `label old → new`
+rows. The item's click still selects the player.
+Why: the maintainer's ask: both list values about to be written to the save, and the columns
+read better than an arrow per row.
+Plan: `plans/save_editor.md` "Read-only aesthetics".

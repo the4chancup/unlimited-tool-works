@@ -7007,19 +7007,24 @@ function patchPanel() {
   // Applied, the preview has nothing left to show: the save holds the new
   // values, so the list gives way to the Applied line (an undo brings it back
   // in the app, whose preview is the open save's against the patch's).
+  // The unsaved-changes table's columns (changesTable): Item, Old value, New
+  // value, the item the player's name and the field's label; the item cell's
+  // click selects the player.
   if (S.pat.loaded && !S.pat.refused && !S.pat.applied) {
-    let lastPid = null;
-    const list = h("div", { id: "pat-rows" });
+    const players = curSave().teams.flatMap(t => t.players);
+    const table = h("table", { class: "grid", id: "pat-rows" },
+      h("tr", {}, h("th", {}, "Item"), h("th", {}, "Old value"), h("th", {}, "New value")));
     for (const [pid, field, o, n] of PATCH21.rows) {
-      if (pid !== lastPid) { list.append(playerHead(pid)); lastPid = pid; }
+      const p = players.find(q => q.id === pid);
       const d = diffRowDraw(field, o, n);
-      list.append(h("div", { class: "drow sel",
-        onclick: () => { jumpToPlayer(Math.floor(pid / 100), pid % 100); render(); },
-        title: "Select this player" },
-        h("span", { class: "f" }, d.label),
-        h("span", { class: "v" }, d.oldV + " \u2192 " + d.newV)));
+      table.append(h("tr", {},
+        h("td", { class: "sel",
+          onclick: () => { jumpToPlayer(Math.floor(pid / 100), pid % 100); render(); },
+          title: "Select this player" },
+          (p ? displayName(p.name) : String(pid)) + " \u00b7 " + d.label),
+        h("td", { class: "mono" }, d.oldV), h("td", { class: "mono" }, d.newV)));
     }
-    c.append(list);
+    c.append(h("div", { style: "max-height:400px; overflow:auto" }, table));
   }
   if (S.pat.applied) c.append(h("div", { class: "row" }, weak("Applied. The changes stay unsaved until Save.")));
   return c;
