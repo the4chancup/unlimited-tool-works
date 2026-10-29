@@ -216,11 +216,13 @@ pub(super) fn monitors(frame: &eframe::Frame) -> Vec<Monitor> {
         .collect()
 }
 
-/// Turns off the icon Windows draws at the title bar's left, so the title starts at the
-/// bar's edge; the taskbar, Alt+Tab and the window menu (Alt+Space) keep the icon. The two
-/// icons come from the one image eframe sets, so no icon setting hides the title bar's
-/// alone, and drawing a title bar of our own would lose the system's snapping and caption
-/// buttons. A failure leaves the icon showing and is logged: the window works the same.
+/// Turns off the icon Windows draws at the title bar's left; the taskbar and Alt+Tab keep
+/// it, and the title stays where it stood, after the icon's slot, now blank. The two icons
+/// come from the one image eframe sets, so no icon setting hides the title bar's alone, and
+/// drawing a title bar of our own would lose the system's snapping and caption buttons.
+/// Not `WTNCA_NOSYSMENU` beside it: that moves the title to the bar's edge but takes away
+/// the window menu Alt+Space opens. A failure leaves the icon showing and is logged: the
+/// window works the same.
 #[cfg(windows)]
 pub(super) fn hide_title_bar_icon(window: &impl raw_window_handle::HasWindowHandle) {
     use raw_window_handle::RawWindowHandle;

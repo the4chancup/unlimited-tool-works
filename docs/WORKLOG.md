@@ -1893,29 +1893,45 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               Player 7 and Team 6 entries within 1 point; Savefile and Open differ only by
               entries not built yet (8.9k slice 5, 8.33) or the draft's sample recent file,
               which widen the draft's menu and push the rows under them
-            - [ ] l3d3d the team view's colour codes in the weak grey, and the colour field's
-              swatch outlined as a resting text box is (DECISIONS "The colour codes in the
-              weak grey, the colour swatch outlined"; `plans/libs/color_tools.md`, the
-              field's paragraph; the draft's `input[type=color]` swatch, lead, done); brief
-              `.tmp/8_9l/brief_l3d3d.md`
-            - [ ] l3d3e the rail's logo the 4cc clover (DECISIONS "The rail's logo is the 4cc
-              clover"; `plans/core/gui.md` "Sidebar" item 1): the glyphs U+F100 and U+F101 in
-              `resources/symbols/` and `symbols.ttf`, and the draft's logo, 28 points (lead,
-              done; the maintainer picked 28 from `.tmp/8_9l/pairs/clover_rail.png`, the
-              glyphs checked against the SVG in `clover_fidelity.png`); the build's logo and the
-              palette's two clover greens (brief `.tmp/8_9l/brief_l3d3e.md`); the logo holds
-              its place when the sidebar opens (the draft's layer had it 0.5 to the right,
-              fixed, lead; the build's square in the rail and the open layer compared in the
-              release build)
-            - [ ] l3d3f the opened sidebar without a shadow, edged by the rail's 1-point line
-              (DECISIONS "The opened sidebar casts no shadow"; `plans/core/gui.md` "Sidebar"
-              item 4; the draft's `#sb-open`, lead): `sidebar/mod.rs` `overlay_frame` and the
-              line in `show_overlay`, test `the_overlay_casts_no_shadow_and_ends_on_the_rails_line`
-              (lead); to check in the release build
-            - [ ] l3d3g the Windows title bar without the icon, the taskbar keeping it
-              (DECISIONS "The title bar draws no icon on Windows"; `plans/core/development_plan.md`
-              "The icon"): `window_size::hide_title_bar_icon`, one `unsafe` call (lead); to
-              check in the release build's title bar, taskbar and Alt+Tab
+            - [x] l3d3d 2026-10-29 (Opus sidekick, merge `966e15d9`) the team view's colour
+              codes in the weak grey, and the colour field's swatch outlined as a resting text
+              box is (DECISIONS "The colour codes in the weak grey, the colour swatch
+              outlined"; `studio_core::widgets::text_box_border`). On the `f74dbd7e` release
+              build: team 0 over 2 px, the ink check 0 colours apart; the black swatch's
+              outline seen (`.tmp/8_9l/built3/team_row.png`). Files: `studio_core/src/widgets/
+              text_box.rs`, `color_tools/src/picker.rs`, `save_editor/src/view/team.rs`, tests
+            - [x] l3d3e 2026-10-29 (Opus sidekick, merge `f74dbd7e`) the rail's logo the 4cc
+              clover (DECISIONS "The rail's logo is the 4cc clover"): the palette's
+              `clover_ring` and `clover_leaf`, `logo` drawing U+F100 and U+F101 at 28. Its ink
+              test found the glyphs 98 units high (centred on the symbols' 2027/431 line, not
+              the body font's 1900/500), fixed in the generator and the font (`5b505b94`); the
+              draft's logo keeps its place when the sidebar opens (`c4021640`), the build's
+              test pins it. On the release build: the clover's ink 28 x 28 centred on the
+              square within 0.5, the same closed and open. Files: `studio_core/src/theme.rs`,
+              `shell/sidebar/{mod,tests}.rs`, `resources/symbols/f10{0,1}-*.svg`, `symbols.ttf`
+            - [x] l3d3f 2026-10-29 (lead, `712966d8`) the opened sidebar without a shadow,
+              edged by the rail's 1-point line (DECISIONS "The opened sidebar casts no
+              shadow"): `sidebar/mod.rs` `overlay_frame`, the line in `show_overlay`, test
+              `the_overlay_casts_no_shadow_and_ends_on_the_rails_line` (red twice: the shadow,
+              then the missing line). On the release build: one grey-60 column at x 194, no
+              shadow. Files: `studio_core/src/shell/sidebar/{mod,tests}.rs`
+            - [ ] l3d3h the opened sidebar measures 195 wide in the build (194 before l3d3f's
+              line), the draft's `#sb-open` 190.6 with its border: find which of the label
+              width, the icon cell and the gaps differs, then fix the side that is wrong
+            - [x] l3d3g 2026-10-29 (lead, `712966d8`) the Windows title bar without the icon
+              (DECISIONS "The title bar draws no icon on Windows" and "The title bar's icon
+              slot stays blank"): `window_size::hide_title_bar_icon`, one `unsafe` call. On the
+              release build: no icon, the title where it stood (the maintainer's pick over
+              `WTNCA_NOSYSMENU`, which moves it but loses Alt+Space's window menu, measured on
+              the candidate's window, `.tmp/8_9l/built3/titlebar_options.png`). The taskbar
+              and Alt+Tab icons are the maintainer's look (QUESTIONS "The final pass").
+              Files: `studio_core/src/shell/{mod.rs,window_size/mod.rs}`, `Cargo.toml`
+            - [x] l3mut 2026-10-29 (Opus sidekick, merge `4c5754f9`) the loop's
+              `mutants-diff 0365e3a9` (61 mutants: 46 caught, 2 missed, 4 unviable, results
+              `.tmp/8_9l/mutants_r3/`): both misses were l3d3b's layout values under the draft
+              tests' 1-point tolerance (`id_cell_padding_before`'s `-` to `/`, the quick
+              actions' `top: 3`), now pinned exactly, each red with its mutant. Files:
+              `save_editor/src/view/tests/{team,quick_actions}.rs`
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
         The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by

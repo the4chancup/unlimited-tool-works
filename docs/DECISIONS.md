@@ -13598,3 +13598,14 @@ image, so no icon setting hides one alone; a title bar of our own (decorations o
 small icon leaves an empty slot before the title.
 Plan: `plans/core/development_plan.md` "The icon", `small.png`'s bullet; `CONTRIBUTING.md`'s
 `unsafe` sites.
+
+## 2026-10-29 — studio_core — The title bar's icon slot stays blank, the window menu kept
+
+Decision: with the title bar's icon hidden (`WTNCA_NODRAWICON`, the entry above), Windows
+keeps the title where it stood after the icon, its slot left blank; the suite does not add
+`WTNCA_NOSYSMENU`, which moves the title to the bar's edge. This corrects the entry above,
+which said the title starts at the bar's edge.
+Why: the maintainer's pick from the three renders (`.tmp/8_9l/built3/titlebar_options.png`):
+measured on Windows 10, `WTNCA_NOSYSMENU` takes away the window menu Alt+Space opens
+(Restore, Move, Size, Minimize, Maximize, Close), where the blank slot costs nothing.
+Plan: `plans/core/development_plan.md` "The icon", `small.png`'s bullet.

@@ -22,7 +22,8 @@ names where the question came from so the context can be read there.
   ruling (the rail's order, a combo's arrow, the checkboxes' hit areas). Since the candidate,
   the toolbar's Open menu and Save as are built (8.9l), the drafts take egui's spacing for
   menus, the toolbar and a view's margin, and the ability stats' labels go left-aligned. Still to look at in the built app: the windows' titles
-  at 14 in white; the preview's icon where the lead cannot capture it (worklog 0.0.1v: the taskbar
+  at 14 in the strong grey (220, 0.0.1ov14); the preview's icon where the lead cannot capture it (worklog 0.0.1v and 8.9l3d3g, the
+  title bar now drawing none: the taskbar
   button and Alt+Tab show the tight crop of the head; Explorer's file icon on the exe). Live
   AATF's whole look, every element it draws rendered from the drafts with what each shows
   and its tooltips (worklog 0.0.1ov6): `.tmp/0_0_1ov/live/`, images 01 to 13 (no 06: a rules
