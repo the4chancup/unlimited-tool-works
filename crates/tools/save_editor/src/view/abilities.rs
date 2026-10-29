@@ -64,9 +64,6 @@ const PANEL_GAP: f32 = 14.0;
 /// a field's frame, a checkbox's painted square or a label row's text:
 /// the team view's titles' spacing, so the two views read alike.
 const TITLE_GAP: f32 = 6.0;
-/// The gap between the Skills header's title, its Cards left text and its
-/// chip (the draft's `.row` 6px gap).
-const HEADER_GAP: f32 = 6.0;
 /// The padding of the ability stats' cells, either side of a label and
 /// of a box (the draft's `stats-grid` `td`), and how far General info's
 /// and Other stats' labels and fields stand in from their titles (the
@@ -734,7 +731,6 @@ fn skills_panel(
     let control_height = ui.spacing().interact_size.y;
     ui.spacing_mut().interact_size.y = ui.text_style_height(&egui::TextStyle::Body);
     ui.horizontal_wrapped(|ui| {
-        ui.spacing_mut().item_spacing.x = HEADER_GAP;
         let title = ui.strong("Skills");
         if let Some(marks) = marks {
             marks.paint(ui, title.rect, live_marks::MarkedField::Skills);

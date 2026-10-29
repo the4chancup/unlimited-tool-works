@@ -48,17 +48,14 @@ pub(super) enum HeaderUnit {
 /// drawn `min_rect` width; the widths are fixed, a longer team name
 /// changes nothing), each unit one `allocate_ui` at its claim.
 pub(super) const TEAM_ROW: [(HeaderUnit, f32); 7] = [
-    (HeaderUnit::Name, 180.0),
-    (HeaderUnit::Short, 77.0),
+    (HeaderUnit::Name, 182.0),
+    (HeaderUnit::Short, 79.0),
     (HeaderUnit::Colour(0), 111.0),
     (HeaderUnit::Colour(1), 111.0),
     (HeaderUnit::Manager, 114.5),
     (HeaderUnit::Stadium, 111.0),
     (HeaderUnit::KitSlots, 64.0),
 ];
-/// The gap between the header row's units: the drafts' rows space their
-/// items 6 points apart, where egui's item spacing is 8.
-const ROW_GAP: f32 = 6.0;
 /// A space at the body size: the gap the draft's text leaves between a
 /// colour's label, picker and hex, and between an id's label and its box.
 const SPACE_GAP: f32 = 3.0;
@@ -86,23 +83,23 @@ const LINE_ABOVE: f32 = 11.0;
 /// so its first control stands 11.5 under the line's row.
 const LINE_BELOW: f32 = 8.0;
 
-/// The room the id cells' padding adds before `unit`, past the row's gap:
-/// 10 from the colours to Manager ID, 8 between the two cells (their
-/// padding alone, no row gap) and 10 from Stadium ID to the button.
-fn id_cell_padding_before(unit: HeaderUnit) -> f32 {
+/// The room the id cells' padding adds before `unit`, past the row's gap
+/// `row_gap`: 12 from the colours to Manager ID, 8 between the two cells
+/// (their padding alone, no row gap) and 12 from Stadium ID to the button.
+fn id_cell_padding_before(unit: HeaderUnit, row_gap: f32) -> f32 {
     match unit {
         HeaderUnit::Name | HeaderUnit::Short | HeaderUnit::Colour(_) => 0.0,
         HeaderUnit::Manager | HeaderUnit::KitSlots => ID_CELL_PADDING,
-        HeaderUnit::Stadium => 2.0 * ID_CELL_PADDING - ROW_GAP,
+        HeaderUnit::Stadium => 2.0 * ID_CELL_PADDING - row_gap,
     }
 }
 
-/// The gap between the parts of `unit`: the row's gap between the Name and
-/// Short labels and their boxes (the draft lays those out as units of the
-/// row), a space inside a colour or an id.
-fn parts_gap(unit: HeaderUnit) -> f32 {
+/// The gap between the parts of `unit`: the row's gap `row_gap` between
+/// the Name and Short labels and their boxes (the draft lays those out as
+/// units of the row), a space inside a colour or an id.
+fn parts_gap(unit: HeaderUnit, row_gap: f32) -> f32 {
     match unit {
-        HeaderUnit::Name | HeaderUnit::Short | HeaderUnit::KitSlots => ROW_GAP,
+        HeaderUnit::Name | HeaderUnit::Short | HeaderUnit::KitSlots => row_gap,
         HeaderUnit::Colour(_) | HeaderUnit::Manager | HeaderUnit::Stadium => SPACE_GAP,
     }
 }
@@ -151,14 +148,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         // scales the whole UI down instead), so it never wraps.
         let mut open_kit_slots = false;
         ui.horizontal(|ui| {
-            ui.spacing_mut().item_spacing.x = ROW_GAP;
+            let row_gap = ui.spacing().item_spacing.x;
             for (unit, width) in TEAM_ROW {
-                ui.add_space(id_cell_padding_before(unit));
+                ui.add_space(id_cell_padding_before(unit, row_gap));
                 ui.allocate_ui_with_layout(
                     egui::vec2(width, ui.spacing().interact_size.y),
                     egui::Layout::left_to_right(egui::Align::Center),
                     |ui| {
-                        ui.spacing_mut().item_spacing.x = parts_gap(unit);
+                        ui.spacing_mut().item_spacing.x = parts_gap(unit, row_gap);
                         let Some(session) = view.session.as_mut() else {
                             return;
                         };

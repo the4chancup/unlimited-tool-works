@@ -444,8 +444,6 @@ const BOGLO_OPTIONS: [&str; 4] = [
 ];
 /// A field's width in the dialog (the draft's number input).
 const BOGLO_BOX: f32 = 52.0;
-/// The gap either side of the range's dash (the draft's `.row` gap).
-const BOGLO_RANGE_GAP: f32 = 6.0;
 /// The gap from the option column to the fields' (the draft's `.boglo`
 /// column gap).
 const BOGLO_COLUMN_GAP: f32 = 12.0;
@@ -462,6 +460,9 @@ const RANGE_SPAN: u64 = 22;
 struct BogloColumns {
     option: f32,
     field: f32,
+    /// The gap either side of the range's dash: egui's item spacing (the
+    /// draft's `.row` gap), read before the groups zero it.
+    range_gap: f32,
 }
 
 impl BogloColumns {
@@ -480,9 +481,11 @@ impl BogloColumns {
             .iter()
             .map(|text| text_width(text))
             .fold(0.0, f32::max);
+        let range_gap = ui.spacing().item_spacing.x;
         BogloColumns {
             option: widest + ui.spacing().icon_width + ui.spacing().icon_spacing,
-            field: 2.0 * BOGLO_BOX + 2.0 * BOGLO_RANGE_GAP + text_width("\u{2013}"),
+            field: 2.0 * BOGLO_BOX + 2.0 * range_gap + text_width("\u{2013}"),
+            range_gap,
         }
     }
 }
@@ -585,9 +588,9 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                         egui::DragValue::new(&mut boglo.start),
                     );
                     step_number(&mut boglo.start, wheel_steps(ui, &start), 0..=u32::MAX);
-                    ui.add_space(BOGLO_RANGE_GAP);
+                    ui.add_space(columns.range_gap);
                     ui.label("\u{2013}");
-                    ui.add_space(BOGLO_RANGE_GAP);
+                    ui.add_space(columns.range_gap);
                     readout(ui, u64::from(boglo.start) + RANGE_SPAN);
                 });
                 ui.horizontal(|ui| {

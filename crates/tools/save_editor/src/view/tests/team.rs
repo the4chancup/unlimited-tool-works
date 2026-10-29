@@ -508,8 +508,8 @@ fn the_fields_ids_and_kit_slots_button_share_one_row_at_the_default_pane() {
 
 // The row's controls stand where the draft's do, measured from the Name
 // box's left edge (the draft at 1280 x 780, PES 21 save, team 701): the
-// units 6 apart, a colour's or an id's parts a space apart, the ids' cells
-// padded 4 on each side.
+// units 8 apart, egui's item spacing, a colour's or an id's parts a space
+// apart, the ids' cells padded 4 on each side.
 #[test]
 fn the_rows_controls_stand_where_the_drafts_do_from_the_name_box() {
     let path = fixture(PesVersion::Pes21, "team_row_offsets");
@@ -533,21 +533,25 @@ fn the_rows_controls_stand_where_the_drafts_do_from_the_name_box() {
         .bounds()
         .expect("bounds")
         .x0;
+    let label = |text: &str| label_bounds(&nodes, text).x0;
     let edges = [
-        ("the Short box", left_of("Short", Role::TextInput), 182.5),
-        ("Col. 1's swatch", left_of("Col. 1", Role::ColorWell), 264.0),
-        ("Col. 2's swatch", left_of("Col. 2", Role::ColorWell), 381.1),
+        ("the Short label", label("Short"), 148.0),
+        ("the Short box", left_of("Short", Role::TextInput), 186.6),
+        ("Col. 1's swatch", left_of("Col. 1", Role::ColorWell), 270.0),
+        ("Col. 2's swatch", left_of("Col. 2", Role::ColorWell), 389.2),
+        ("the Manager ID label", label("Manager ID"), 476.8),
         (
             "the Manager ID box",
             left_of("Manager ID", Role::SpinButton),
-            534.9,
+            544.9,
         ),
+        ("the Stadium ID label", label("Stadium ID"), 598.9),
         (
             "the Stadium ID box",
             left_of("Stadium ID", Role::SpinButton),
-            653.6,
+            663.7,
         ),
-        ("the Kit slots button", kit_slots, 709.6),
+        ("the Kit slots button", kit_slots, 721.7),
     ];
     for (control, left, draft) in edges {
         assert!(
@@ -1178,6 +1182,28 @@ fn the_boglo_dialogs_fields_share_one_column_across_both_groups() {
             bounds(fields.end)
         );
     }
+}
+
+// The range's dash stands 8 from its start box and from its end box,
+// egui's item spacing, as the draft's `.row`: the end box starts 22.4
+// past the start box's right (the dash 6.4 wide), and the one-ID boxes
+// span the range's 126.4.
+#[test]
+fn the_boglo_ranges_dash_stands_8_from_either_box() {
+    let (_, _, nodes) = open_boglo("boglo_range_gap");
+    let fields = boglo_fields(&nodes);
+    let bounds = |node: &accesskit::Node| node.bounds().expect("a field's bounds");
+    let start = bounds(fields.start);
+    let end = bounds(fields.end);
+    assert!(
+        (end.x0 - start.x1 - 22.4).abs() <= 1.0,
+        "the end box starts 22.4 past the start box ({start:?} vs {end:?})"
+    );
+    let boots = bounds(fields.boots);
+    assert!(
+        (boots.x1 - boots.x0 - 126.4).abs() <= 1.0,
+        "the one-ID box spans the range's 126.4 ({boots:?})"
+    );
 }
 
 // The range's end box reads the start plus 22 (slot 23's ID), follows an

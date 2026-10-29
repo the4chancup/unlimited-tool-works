@@ -15,13 +15,6 @@ use crate::view::{Refusal, SaveView, selected_player};
 /// The disabled controls' tooltip on a team selection.
 const TEAM_TIP: &str = "The make buttons act on a player: pick a player row";
 
-/// The columns' gap (the draft's `.qagrid` gap): the halves' width
-/// subtracts it too, so the spacing and the widths share the constant.
-const COLUMN_GAP: f32 = 6.0;
-
-/// The gap between a column's cells (the draft's `.qacol` gap).
-const ROW_GAP: f32 = 3.0;
-
 /// A quick action cell's height, the draft's 20: the theme's
 /// controls are 18 (`interact_size`), the quick actions keep their own.
 const QUICK_ACTION_HEIGHT: f32 = 20.0;
@@ -60,18 +53,17 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         .tiers
         .iter()
         .partition(|tier| is_medal(&tier.id));
-    // Each column is half the list's frame less the gap (the draft's
-    // `1fr 1fr`), read from the panel's own width: inside the columns a
-    // cell's `available_width` is the column's, not the panel's.
+    // Each column is half the list's frame less the gap, egui's item
+    // spacing (the draft's `1fr 1fr`), read from the panel's own width:
+    // inside the columns a cell's `available_width` is the column's, not
+    // the panel's.
     let cell = egui::vec2(
-        (ui.available_width() - COLUMN_GAP) / 2.0,
+        (ui.available_width() - ui.spacing().item_spacing.x) / 2.0,
         QUICK_ACTION_HEIGHT,
     );
     ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing = egui::vec2(COLUMN_GAP, ROW_GAP);
         for (index, tiers) in [&left, &right].into_iter().enumerate() {
             ui.vertical(|ui| {
-                ui.spacing_mut().item_spacing.y = ROW_GAP;
                 for tier in tiers {
                     tier_button(ui, session, refusal, rules, tier, player, cell);
                 }
