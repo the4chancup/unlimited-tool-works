@@ -436,7 +436,7 @@ fn widgets_light() -> egui::style::Widgets {
 /// icon font, because that file's vertical metrics are the body font's: egui
 /// centres a later font's line height on the body font's, so in the icon
 /// font's metrics a symbol would sit off the text's baseline. The icon font
-/// `"icons"` (the subset `resources/fonts/phosphor-subset.ttf` ships;
+/// `"icons"` (the suite's own, `resources/fonts/icons.ttf`;
 /// `crate::icons` names its glyphs) comes ahead of egui's own icons, so the
 /// icon codepoints come from it, and is its own `icons` family too. The
 /// `label` family is `"Roboto Flex Semibold"`
@@ -461,7 +461,7 @@ fn install_fonts(ctx: &egui::Context) {
     fonts.font_data.insert(
         "icons".to_owned(),
         std::sync::Arc::new(egui::FontData::from_static(include_bytes!(
-            "../../../resources/fonts/phosphor-subset.ttf"
+            "../../../resources/fonts/icons.ttf"
         ))),
     );
     fonts.font_data.insert(
@@ -886,25 +886,25 @@ mod tests {
     #[test]
     fn every_icon_constant_resolves_a_glyph_after_install() {
         const ALL: &[&str] = &[
-            crate::icons::ARROW_FAT_UP,
-            crate::icons::BUILDINGS,
-            crate::icons::CROSSHAIR,
-            crate::icons::DATABASE,
-            crate::icons::DOWNLOAD_SIMPLE,
-            crate::icons::FLAG,
+            crate::icons::TEAM_COMPILER,
+            crate::icons::SAVE_EDITOR,
+            crate::icons::STADIUM_COMPILER,
+            crate::icons::EXPORT_UPGRADER,
+            crate::icons::MUSIC_PLAYER,
+            crate::icons::MUSIC_EXPORT_EDITOR,
+            crate::icons::MATCH_TRACKER,
+            crate::icons::KIT_CONFIG_EDITOR,
+            crate::icons::REFS_ARRANGER,
+            crate::icons::BALLS_COMPILER,
+            crate::icons::PLAYER_AESTHETICS_EDITOR,
+            crate::icons::TEAM_CREATOR,
+            crate::icons::RULESET_EDITOR,
+            crate::icons::DB_GENERATOR,
             crate::icons::GEAR,
-            crate::icons::MUSIC_NOTE,
-            crate::icons::MUSIC_NOTES,
-            crate::icons::NOTE_PENCIL,
-            crate::icons::PLUS_CIRCLE,
             crate::icons::QUESTION,
-            crate::icons::SCROLL,
-            crate::icons::SMILEY,
-            crate::icons::SOCCER_BALL,
-            crate::icons::T_SHIRT,
-            crate::icons::USERS_THREE,
-            crate::icons::WARNING,
             crate::icons::X,
+            crate::icons::WARNING,
+            crate::icons::DOWNLOAD_SIMPLE,
         ];
         let ctx = egui::Context::default();
         install(&ctx);

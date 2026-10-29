@@ -101,7 +101,7 @@ impl StudioTool for Tool {
     }
 
     fn icon(&self) -> &'static str {
-        studio_core::icons::USERS_THREE
+        studio_core::icons::TEAM_COMPILER
     }
 
     fn view(&mut self, ui: &mut egui::Ui, ctx: &ToolContext) {

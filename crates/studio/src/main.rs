@@ -48,72 +48,72 @@ const PLANNED: [PlannedTool; 14] = [
     PlannedTool {
         id: "team-compiler",
         label: "Team compiler",
-        icon: icons::USERS_THREE,
+        icon: icons::TEAM_COMPILER,
     },
     PlannedTool {
         id: "save-editor",
         label: "Save editor",
-        icon: icons::NOTE_PENCIL,
+        icon: icons::SAVE_EDITOR,
     },
     PlannedTool {
         id: "stadium-compiler",
         label: "Stadium compiler",
-        icon: icons::BUILDINGS,
+        icon: icons::STADIUM_COMPILER,
     },
     PlannedTool {
         id: "export-upgrader",
         label: "Export upgrader",
-        icon: icons::ARROW_FAT_UP,
+        icon: icons::EXPORT_UPGRADER,
     },
     PlannedTool {
         id: "music-player",
         label: "Music player",
-        icon: icons::MUSIC_NOTE,
+        icon: icons::MUSIC_PLAYER,
     },
     PlannedTool {
         id: "music-export-editor",
         label: "Music export editor",
-        icon: icons::MUSIC_NOTES,
+        icon: icons::MUSIC_EXPORT_EDITOR,
     },
     PlannedTool {
         id: "match-tracker",
         label: "Match tracker",
-        icon: icons::CROSSHAIR,
+        icon: icons::MATCH_TRACKER,
     },
     PlannedTool {
         id: "kit-config-editor",
         label: "Kit config editor",
-        icon: icons::T_SHIRT,
+        icon: icons::KIT_CONFIG_EDITOR,
     },
     PlannedTool {
         id: "refs-arranger",
         label: "Refs arranger",
-        icon: icons::FLAG,
+        icon: icons::REFS_ARRANGER,
     },
     PlannedTool {
         id: "balls-compiler",
         label: "Balls compiler",
-        icon: icons::SOCCER_BALL,
+        icon: icons::BALLS_COMPILER,
     },
     PlannedTool {
         id: "player-aesthetics-editor",
         label: "Player aesthetics editor",
-        icon: icons::SMILEY,
+        icon: icons::PLAYER_AESTHETICS_EDITOR,
     },
     PlannedTool {
         id: "team-creator",
         label: "Team creator",
-        icon: icons::PLUS_CIRCLE,
+        icon: icons::TEAM_CREATOR,
     },
     PlannedTool {
         id: "ruleset-editor",
         label: "Ruleset editor",
-        icon: icons::SCROLL,
+        icon: icons::RULESET_EDITOR,
     },
     PlannedTool {
         id: "db-generator",
         label: "DB generator",
-        icon: icons::DATABASE,
+        icon: icons::DB_GENERATOR,
     },
 ];
 
