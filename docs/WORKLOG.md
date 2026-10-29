@@ -4516,7 +4516,9 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] ov2l the team view's header as drafted: the stroke line between the fields' row and
       the Tactics, 8 above and below (`teamView`'s `.sep`; the build has none, so the Preset row
       stands 20 higher), and the colour swatches 22 × 16 (`input[type=color]`; egui's colour
-      button is 40 wide, which moves the row's right half 31 to 57 points right)
+      button is 40 wide, which moves the row's right half 31 to 57 points right). Planned
+      2026-10-29 (DECISIONS "The team view's line under its fields, the colour buttons 22 ×
+      16"); brief `.tmp/0_0_1ov/brief_ov2l.md`, after ov2j lands (same file)
     - [ ] ov2m the player list as drafted (`plans/save_editor.md` "Player list", "The quick
       actions"): a player row 18 high, its place in the weak colour, the position and name in
       their own columns (the build draws one string, 21 high); the quick actions in two columns

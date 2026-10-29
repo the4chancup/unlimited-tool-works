@@ -465,7 +465,8 @@ all side by side.
   version that stores none says so in it). The ids share the fields' row, not one of their
   own, because the Tactics editor below needs the height: with a heading-size title and the
   ids on a second row its last row ended about 5 points past the 1280 x 800 window's pane.
-  Then the Tactics editor (below), whose bench list shows the
+  A stroke line under the row, 8 points above and below it, sets the team's fields apart from
+  the Tactics (the draft's `.sep`). Then the Tactics editor (below), whose bench list shows the
   players only (12 for a 4cc team), not the 21 bench-order entries with 9 `(empty)`.
 - Version-gated widgets render disabled with a tooltip ("PES 19+") rather than
   disappearing, so the UI stays spatially stable across versions.

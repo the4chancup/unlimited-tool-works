@@ -13336,3 +13336,14 @@ foot (the build spaced the blocks by its row spacing, 4), and the draft's toggle
 15 tall, put its foot and hand rows 19 apart; the toggles take a control's height, as every
 other control, and the blocks keep the draft's grouping.
 Plan: `plans/save_editor.md` "Editing UI", the player view's General info.
+
+## 2026-10-29 — save_editor — The team view's line under its fields, the colour buttons 22 × 16
+Decision: the team view draws a stroke line under its fields' row, 8 points above and below,
+before the Tactics, and every `color_tools` colour field is a 22 × 16 button, as the drafts'
+colour input.
+Why: ov1 measured the build's Tactics 20 points higher than the draft's (its separator drawn
+with 1.5 points of spacing, so the fields and the Tactics ran together) and its team row 31 to
+57 points right of the draft's past the colours (egui's colour button is 40 wide). Whether the
+Tactics' last row still fits the 1280 × 800 pane with the line's room is measured when it is
+built; the draft, which fits, draws it.
+Plan: `plans/save_editor.md` "Editing UI", the team view; `plans/libs/color_tools.md`.
