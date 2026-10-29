@@ -2431,9 +2431,8 @@ fn the_player_view_lays_out_its_three_columns_at_1280() {
          the cards)"
     );
 
-    // Nothing drawn past the pane's right edge, the pane's right less
-    // the two CentralPanel margins (`PANEL_MARGIN` each side).
-    let pane_right = f64::from(DEFAULT_PANE.x - 2.0 * PANEL_MARGIN);
+    // Nothing drawn past the pane's right edge.
+    let pane_right = f64::from(PANE_RIGHT);
     for role in [
         Role::Button,
         Role::CheckBox,
@@ -2521,6 +2520,40 @@ fn the_player_view_splits_its_room_into_four_equal_gaps() {
             lefts[0]
         );
     }
+}
+
+// The player view's pane ends where the draft's `.detail` content does,
+// 12 points short of the window's edge: with Appearance open the pane
+// scrolls, and its floating bar's right edge is the pane's.
+#[test]
+fn the_player_views_pane_ends_12_from_the_windows_edge() {
+    let path = fixture(PesVersion::Pes21, "player_pane_right");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::new();
+    open_appearance(&mut window, &mut view);
+    // Three frames: the scroll's claimed content size lands a frame late.
+    let mut nodes = Vec::new();
+    for _ in 0..3 {
+        let (_, frame_nodes, _) =
+            window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        nodes = frame_nodes;
+    }
+    let bar = nodes
+        .iter()
+        .filter(|node| node.role() == Role::ScrollBar)
+        .filter_map(accesskit::Node::bounds)
+        .max_by(|a, b| a.x1.total_cmp(&b.x1))
+        .expect("the detail pane's scroll bar");
+    assert!(
+        bar.x0 > 300.0,
+        "premise: the rightmost bar is the detail pane's, not the list's ({bar:?})"
+    );
+    assert!(
+        (bar.x1 - f64::from(PANE_RIGHT)).abs() <= 1.0,
+        "the pane's right edge at {PANE_RIGHT}, the draft's 1268 ({bar:?})"
+    );
 }
 
 // General info's and Other stats' fields and labels stand 6 in from

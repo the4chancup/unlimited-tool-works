@@ -467,6 +467,16 @@ const LIST_WIDTH: f32 = 255.0;
 /// The detail pane's margin over a view's title.
 const TITLE_MARGIN: i8 = 6;
 
+/// The player list's margin over its team combo. The panes start one item
+/// spacing (3 points) under the toolbar, so the combo stands 4 under the
+/// toolbar's buttons, the draft's toolbar margin.
+const LIST_TOP_MARGIN: i8 = 1;
+
+/// The detail pane's margin at its right. With the shell's own 8-point
+/// margin past it, a view ends 12 points short of the window's edge, as
+/// the list starts 12 after the sidebar: the draft's `.detail` padding.
+const PANE_RIGHT_MARGIN: i8 = 4;
+
 /// The room between the panes' bottom and the status bar (the draft's
 /// `.center.filled` bottom padding).
 const PANE_BOTTOM_MARGIN: f32 = 6.0;
@@ -569,7 +579,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         let margin = egui::Margin {
             left: 4,
             right: 3,
-            top: 2,
+            top: LIST_TOP_MARGIN,
             bottom: 0,
         };
         let separator = ui.visuals().widgets.noninteractive.bg_stroke.width.round();
@@ -589,7 +599,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         // the title, in ink (`info_strip::view_title`).
         let detail = egui::Frame::central_panel(ui.style()).inner_margin(egui::Margin {
             left: 8,
-            right: 8,
+            right: PANE_RIGHT_MARGIN,
             top: TITLE_MARGIN,
             bottom: 8,
         });
