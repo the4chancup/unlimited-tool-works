@@ -1802,8 +1802,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           `studio_core/src/{tool,status}.rs`, `studio_core/src/shell/{mod,status_bar,
           test_harness}.rs`. Astra's critique of the plan and this code: one concern, the
           title test, added in `cdfb3fd9`
-        - [ ] l3b the Save editor's version warning as a standing notice (SE-GUI-28), after
-          l3a
+        - [x] l3b 2026-10-29 (Opus sidekick): the Save editor's version warning as a standing
+          notice (SE-GUI-28): `SaveView::version_warning` set by every open, cleared by
+          `standing_notice_ended`; `version_notice` a Warning naming both versions while the
+          selector differs, hidden while they match, its action `SwitchVersion` to the save's.
+          Help `02_window.md`. Files: `save_editor/src/{lib,test_support}.rs`,
+          `save_editor/src/view/{mod,tests/shell}.rs`. Its report's question (a GUI
+          scenario's test in the crate citing its scenario, which "Unit tests cite none" seemed
+          to forbid) answered in `CONTRIBUTING.md` "Testing"
         - [x] l3c 2026-10-29 (Opus sidekick): the toolbar's Open menu (every discovered save
           for every version with its account folder, discovery run once per opening; this
           run's opened and written files; Choose file…, starting in the selected version's
@@ -1822,7 +1828,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           text 2 inside the entry for 8, a separator 3 + 1 + 3 in the draft; the toolbar 4 left
           of the draft's 68 and its buttons 8 apart for 6 (Live AATF 22 right); the Open menu's
           discovered entries with two spaces before the account, the draft's render one. Brief
-          `.tmp/8_9l/brief_l3d.md`
+          `.tmp/8_9l/brief_l3d.md`. Root causes: the menus are egui's own `menu_style`, the
+          drafts' `.menu` never made a style; the toolbar's gap is the theme's item spacing;
+          its 4 is the shell's 8-point central margin against the drafts' 12-point `.center`
+          padding, which the Save editor's panes each make up by hand. Open after l3d: whether
+          the shell's margin should be the drafts' 12 instead (every tool's view measured for
+          the same 4, the panes' hand-made 4s removed), and a menus pass in `rect_compare.py`
+          (closed menus were never measured)
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
         The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by

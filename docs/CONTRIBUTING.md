@@ -339,7 +339,10 @@ Requirements:
   test varies (another engine, file kind or not-found case); a test pinning a past bug cites
   the scenario of the behavior it protects. Unit tests cite none: they check internals, which
   scenarios never describe, and a citation is read as proof of the scenario it names. The
-  scenarios then read as the tool's whole behavior, without the plan files or the code.
+  scenarios then read as the tool's whole behavior, without the plan files or the code. A
+  GUI scenario's test is not a unit test in this sense, though it sits in the crate's own
+  tests: it drives the view or the shell headless as the member does (a frame, a click, the
+  setting the sidebar writes) and observes what the window shows, so it cites its scenario.
 - A scenario no automated test can prove (GUI interaction, a native dialog, a running PES) is
   marked `manual` after its ID in the Acceptance section. Its proof is a line in the worklog's
   converge step (`TC-GUI-04 manual: checked 2026-11-02, <what was done>`), and the converge check

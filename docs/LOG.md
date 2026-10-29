@@ -2822,3 +2822,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — A tool can keep a standing notice in the status bar, which it rewords or withdraws as its state changes and hears of once seen; a notice's action can switch the PES version as the selector does (8.9l3a).
 - **2026-10-29** — Savefile discovery finds a save under a Steam account folder (PES 2020 bought on Steam, a 17-digit ID), which it skipped.
 - **2026-10-29** — The Save editor opens saves from an Open menu listing the saves found under Documents for every version and this run's files, and gains Save as (8.9l3c).
+- **2026-10-29** — A save of another PES version than the sidebar's opens with a status-bar warning naming both, which follows the selector and offers the switch until seen (8.9l3b).
