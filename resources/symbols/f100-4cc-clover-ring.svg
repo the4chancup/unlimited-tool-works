@@ -1,12 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -2027 2048 2458">
   <!-- U+F100 4CC CLOVER RING (private use). The 4cc clover's ring, from the maintainer's
        4cc-cloverleaf-logo.svg (its shapes as drawn there, scaled to one em across and centred
-       on the line's middle); the ring and the leaves are two glyphs drawn on one place in their
-       two greens. Font units (2048 per em), y up from the baseline: the group flips them into
-       SVG's y-down; the view box is the body font's line, from ascent to descent; its width is
-       the glyph's advance. -->
+       on the middle of the body font's line, 700 above the baseline); the ring and the leaves
+       are two glyphs drawn on one place in their two greens. Font units (2048 per em), y up
+       from the baseline: the group flips them into SVG's y-down; the view box is the line the
+       other symbols were laid out on, from ascent to descent; its width is the glyph's
+       advance. -->
   <g transform="scale(1 -1)">
-    <g transform="matrix(11.842712 0 0 -11.842712 0.0000 1820.8127)">
+    <g transform="matrix(11.842712 0 0 -11.842712 0.0000 1722.8127)">
       <g transform="translate(-0.64959798,-142.3377)">
         <path d="m 327.79449,129.90981 c 0,36.96033 -29.96227,66.9226 -66.9226,66.9226 -36.96034,0 -66.92261,-29.96227 -66.92261,-66.9226 0,-36.96034 29.96227,-66.922612 66.92261,-66.922612 36.96033,0 66.9226,29.962272 66.9226,66.922612 z" transform="matrix(1.2021854,0,0,1.2006872,-226.50009,72.72308)" fill="none" stroke="#000" stroke-width="10.01019478"/>
       </g>
