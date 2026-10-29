@@ -4507,7 +4507,12 @@ briefs, review loops, gates and mutation runs as for any step.
       `wt-ov2k/.tmp/sidelead/sk_ov2k.report.md`): the draft's Name and Shirt number boxes 19
       tall (ov2r set text boxes and combos to 18, not number boxes), its `.gen` blocks 6 apart
       where the build's are 4, and its Stronger foot and hand toggles plain spans 15 tall where
-      the build's are 18-point buttons; the lead's ruling, then the draft, plan and build to it
+      the build's are 18-point buttons; the lead's ruling, then the draft, plan and build to it.
+      Ruled 2026-10-29 (DECISIONS "General info's blocks 6 apart, its toggles 18 tall"): the
+      draft's toggles 18 tall (`save_editor.js`; measured with `.tmp/0_0_1ov/geninfo_offsets.py`:
+      every row 22 apart in its block, Height 68.5, Stronger foot 136.5, Other stats 233 below
+      the title); the Name and Shirt boxes were already 18 since ov2r. Left for the build
+      (ov2q's brief): the blocks 6 apart where it has 4, which brings each label to the draft's
     - [ ] ov2l the team view's header as drafted: the stroke line between the fields' row and
       the Tactics, 8 above and below (`teamView`'s `.sep`; the build has none, so the Preset row
       stands 20 higher), and the colour swatches 22 × 16 (`input[type=color]`; egui's colour

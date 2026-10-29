@@ -13326,3 +13326,13 @@ spacing), one string where the draft has columns, and the badge plain text where
 frames it.
 Plan: `plans/save_editor.md` "Editing UI": the Player list and quick actions bullets, the
 skills' Cards left badge.
+
+## 2026-10-29 — save_editor — General info's blocks 6 apart, its toggles 18 tall
+Decision: General info's three blocks (Name and Shirt; the pairs; Stronger foot to Playing
+style) stand 6 apart, as the draft's `.gen` gap, their rows 22 apart; the Stronger foot and
+hand toggles are 18 tall in the draft, as the build's buttons already are.
+Why: after 0.0.1ov2k the build stood 2 points above the draft at Height and 4 at Stronger
+foot (the build spaced the blocks by its row spacing, 4), and the draft's toggles, plain spans
+15 tall, put its foot and hand rows 19 apart; the toggles take a control's height, as every
+other control, and the blocks keep the draft's grouping.
+Plan: `plans/save_editor.md` "Editing UI", the player view's General info.

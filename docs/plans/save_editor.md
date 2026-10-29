@@ -325,7 +325,11 @@ all side by side.
      style. Name, Shirt and these
      four rows share one label column, as wide as their longest label ("Registered
      position"), so every one of those fields starts at one x, and each ends flush with the
-     second half's boxes, not on the panel's right edge. Under it **Other stats**: Injury resistance and Form, then "Weak foot:
+     second half's boxes, not on the panel's right edge. Within a block (Name and Shirt;
+     the pairs; Stronger foot to Playing style) rows stand 22 apart, the form grids' pitch
+     (`core/gui.md` "Other UI components", Form grids), the toggles 18 tall like every
+     control; the blocks stand 6 apart, 2 more than their rows, as the draft's `.gen`, so
+     each block reads as one. Under it **Other stats**: Injury resistance and Form, then "Weak foot:
      Usage" and "Accuracy" (the two sharing one label), on General info's halves so every box of
      both panels lines up. Under that **Playable positions**: the 13 positions with C/B/A
      ratings in five rows by line of the pitch, each left wing to right wing (LWF CF SS RWF /
