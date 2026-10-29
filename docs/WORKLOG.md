@@ -4525,7 +4525,9 @@ briefs, review loops, gates and mutation runs as for any step.
       own side-panel control stays the views' GIVEN); a combo and a text box 18 tall as egui's
       (the browser drew them 19, so the drafts' forms of them stood 23 apart, not 22); the
       settings window as wide as its 660-point body (`.window` stopped at 640 and its Browse
-      buttons ran into the border)
+      buttons ran into the border); the help window first sized and centred on the client
+      area (it measured `#win`, title bar included: 5 taller and 23 higher than the build's
+      1152 × 702 at (64, 39), which follows the plan)
   - [ ] ov6 Live AATF's whole look (the maintainer, 2026-10-28): every element rendered from
     the drafts, `.tmp/0_0_1ov/live_gallery.py` → `.tmp/0_0_1ov/live/`; the first rulings
     drafted and planned (ov2f; the dock's kind codes kept). The two points left for later (a

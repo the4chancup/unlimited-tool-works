@@ -1314,12 +1314,15 @@ function drawHelp() {
   const caret = hadFocus ? oldInput.selectionStart : 0;
   // Opened first at 90% of Studio's window, centered in it; then where the member left
   // it (plans/core/gui.md "Help window").
+  // The client area is #win-body: #win also holds the drawn title bar, which egui's
+  // window never covers, so measured on #win the window came out 5 taller and 23 higher.
   if (!S.helpWindow) {
-    const area = document.getElementById("win");
-    const areaW = area.clientWidth - SBW;
-    const w = Math.round(areaW * 0.9), hgt = Math.round(area.clientHeight * 0.9);
-    S.helpWindow = { x: Math.round((areaW - w) / 2),
-      y: Math.round((area.clientHeight - hgt) / 2), w, h: hgt };
+    const area = document.getElementById("win-body");
+    const areaW = area.getBoundingClientRect().width / winScale() - SBW;
+    const areaH = area.getBoundingClientRect().height / winScale();
+    const w = Math.round(areaW * 0.9), hgt = Math.round(areaH * 0.9);
+    S.helpWindow = { x: area.offsetLeft + Math.round((areaW - w) / 2),
+      y: area.offsetTop + Math.round((areaH - hgt) / 2), w, h: hgt };
   }
   const geo = S.helpWindow;
   const closeBtn = button("×", closeHelp, { frame0: true, title: "Close" });

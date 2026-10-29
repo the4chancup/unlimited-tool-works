@@ -258,7 +258,11 @@ all side by side.
   database; the `Team` menu ends with the team's files, Import / export team file (the
   interchange panel) and Save a picture of the formations. There is no Panels menu: that the
   Comparator, the patch and the interchange open as floating panels says nothing a member
-  looks for them by. A menu item's shortcut is drawn right of its label in the weak colour
+  looks for them by. A floating panel first opens where the drafts' `.panel` stands, 620
+  points wide, its top 90 below the window's and its right edge 1 inside the window's, over
+  the views' right columns rather than the player list a member picks from while it is open
+  (egui's own first place put the Comparator at the bottom left, over the list); then where
+  the member leaves it, while the program runs. A menu item's shortcut is drawn right of its label in the weak colour
   (`Button::shortcut_text`): Bump all stats `Ctrl+B`, Toggle FPC settings `Ctrl+I`, Clear
   visual flags `Ctrl+F`.
 - **No view draws the tool's name** (`core/gui.md` "Window title": the title bar carries it),
@@ -1265,7 +1269,10 @@ What this editor adds on top of the lib:
   more than a frame, so it runs on a worker, on the ruleset the window loaded, once the edit
   settles (a drag released, a field committed) and the list keeps the previous result, marked
   as checking, until the new one arrives. The panel is the log panel widget's frame (its chevron collapses it to the header,
-  its divider resizes it). At the bottom, not at a side: the player list holds the left and the
+  its divider resizes it), its rows in the log's well (the extreme fill, the stroke, 6 × 2
+  points of margin), the body 150 points high when the panel first opens (the drafts'
+  `LIVE.height`): lower than the log's 180, since the views above it need the height more
+  than a compile's output does. At the bottom, not at a side: the player list holds the left and the
   views need their width (the player view's three columns), and a bottom strip is where the Team compiler's
   log already sits. The toggle is drawn as a button, framed, its label a play sign (`▶`, U+25B6,
   from the bundled emoji fonts the marks' glyphs come from) then `Live AATF` whether on or
