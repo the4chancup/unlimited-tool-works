@@ -2836,3 +2836,4 @@ worklog passed 7,000 lines.
 - **2026-10-29** — A press on the rail's version selector opens the sidebar at once, so its list always shows the full names (8.9l3d3j).
 - **2026-10-29** — Grayed sidebar entries say "Coming soon™"; the help and the settings menu read "(WIP)" in the sidebar and their titles (8.9l3d3k).
 - **2026-10-29** — The sidebar loop's mutation run caught 41 of 42 viable mutants; the one miss, the title bar call no headless test can see, is excluded like `run_gui` (8.9l3mut2).
+- **2026-10-29** — SE-GUI-21 checked in game: with PES 2021 running, Save asks to close Edit mode first, Cancel writes nothing, and Edit mode's Load shows the saved edit without a restart (8.9l4).

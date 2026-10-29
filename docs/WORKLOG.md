@@ -1977,11 +1977,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               needs the native window's handle and changes only what Windows draws, so no
               headless test can see it; excluded in `.cargo/mutants.toml` beside `run_gui`
               (checked: listed with `--no-config`, gone with it). Files: `.cargo/mutants.toml`
-      - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
-        The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
-        PES 2021, the file unchanged, the live save equal to its backup after) is replaced by
-        the Edit mode question ("Writing a save while its game runs", DECISIONS 2026-10-25):
-        the check is redone on l2's build, Edit mode's Load included
+      - [x] l4 2026-10-29 SE-GUI-21 in the built window with the game running (lead,
+        manual). SE-GUI-21 manual: checked 2026-10-29 (lead, release build of `4db21200`, PES 2021 from
+        `E:/PES2021` driven by the pad, the maintainer's live save backed up first and restored
+        by hash after, `.tmp/se21b/`): with the game running, Save on a renamed player (/3/'s
+        QUADS ONLY to QUADS ONLYX) opened the dialog naming PES 2021 and asking to close Edit
+        mode; Cancel left the live EDIT00000000's hash unchanged; with Edit mode closed in game,
+        the dialog's Save wrote it (hash changed); back in Edit mode, Load ("Rigging Edit Data
+        will erase current data") then Edit Player showed QUADS ONLYX, no restart
+        (`.tmp/se21b/shots/12_dialog.png`, `11_after_load_squad.png`)
       - [x] l5 the same rule for the command line and the compiler
         - [x] l5a 2026-10-29 (Opus sidekick): the Save editor's `import-toml`, `apply-patch`,
           `strip-and-seed` and `check-stripped --strip-again` take `--edit-mode-closed`; with
