@@ -13851,3 +13851,15 @@ spelling of a stat for every version, because the player view draws one: version
 (PES 2021's Offensive Awareness) are proposal P43.
 Plan: `plans/aatf_rules.md` "The interpreter"; `plans/save_editor.md` "`libs/team_widgets`",
 `violations`.
+
+## 2026-10-29 — gui — The modal helper's 360-point minimum has a contents-wide exception
+
+Decision: `studio_core`'s modal helper keeps every dialog at least 360 points wide, except a
+dialog whose draft sizes it to its contents, today Set boots and gloves IDs for everyone, which
+is as wide as its groups. `scripts/draft_compare.py --modal` also compares the dialog's own
+frame, since it matched elements by their text alone and a frame has none.
+Why: the maintainer saw the dialog's unused right margin again in the built app. It was removed
+from the draft on 2026-10-28 ("Set boots and gloves IDs takes 4ccEditor's layout", polished the
+same evening) and built so; the next day's one modal helper (0.0.1ov2j) gave every modal the
+draft's 360 minimum without the draft's exception, and no check measured a frame.
+Plan: `plans/core/gui.md` "Other UI components", the Modals row.

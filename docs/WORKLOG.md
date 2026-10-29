@@ -4894,6 +4894,14 @@ briefs, review loops, gates and mutation runs as for any step.
       empty button row under a dialog with none (fixed in the drafts, the first run's bottom
       now 9 under its footer as the build's). Rejected: the drafts' settings window capped at
       640 (ov2r had already fixed it; the worktree predated it)
+    - [ ] ov2j2 the boots and gloves dialog as wide as its groups again (the maintainer,
+      2026-10-29, from the built app: the unused right margin the draft removed on
+      2026-10-28 was back; DECISIONS "The modal helper's 360-point minimum has a
+      contents-wide exception"): ov2j's helper gave every modal the 360 minimum without the
+      draft's `.window:has(.boglo)` exception, and `draft_compare.py` never measured a frame
+      (it matches by text) → verify: a headless test of the dialog's width against its
+      groups' (red at HEAD); `draft_compare.py --modal` pairs the dialog's frame, run over
+      every modal in the built window
     - [x] ov2k the form grids' rows 22 apart, the draft's `table.grid` (its `td` padded 2 above
       and below an 18-point control), where egui's `Grid` spaces them by `item_spacing.y`, 3:
       each row lands a point higher than the last, 25 by the Ability stats' last row, 17 by
