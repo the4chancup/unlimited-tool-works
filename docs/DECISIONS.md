@@ -13515,3 +13515,17 @@ Why: the maintainer's pick between the two (QUESTIONS "Ability stats' labels: le
 shows, or right?"), having compared both: one left edge over a short label standing close to
 its number.
 Plan: `plans/save_editor.md` "Editing UI", the player view's Ability stats item.
+
+## 2026-10-29 — gui — Titles and collapsing headers at the drafts' strong grey; selectable labels at egui's
+
+Decision: the dark theme's strong text colour is the drafts' `--strong` (220), not egui 0.36's
+white, set where egui reads it (the pressed widgets' text): every title takes it, and every
+collapsing header's title is drawn in it (the Appearance header, the help's chapters, the
+settings' sections, the Ruleset editor's tier details). A selectable or clickable label keeps
+egui's resting widgets' grey (180): the drafts' `.sel` and the position grid's labels change to
+it from the body text's 140.
+Why: the maintainer's picks from side-by-side renders (2026-10-29), after the draft comparison
+first measured text colours: the titles at the draft's grey, the Appearance header like the
+titles, the position labels and rating letters as the app draws them. The drafts' other
+selectable labels follow the position grid's, one rule for one widget.
+Plan: `plans/core/gui.md` "Other UI components", the Dark/light theme row.

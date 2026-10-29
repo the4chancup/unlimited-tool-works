@@ -4970,6 +4970,11 @@ briefs, review loops, gates and mutation runs as for any step.
     `the_stats_labels_start_at_one_x_and_their_boxes_at_another`. Measured on its release
     build with `scripts/draft_compare.py player`: every ability label within 1 px of the
     draft; over 2 px only the known Appearance header and the rail's logo
+  - [ ] ov14 the text colours the draft comparison measured (DECISIONS "Titles and collapsing
+    headers at the drafts' strong grey"; `plans/core/gui.md` the Dark/light theme row): the
+    drafts' `.sel` and position labels at egui's 180 (done, lead); the dark theme's strong text
+    220 and every collapsing header's title in it (brief `.tmp/8_9l/brief_ov14.md`); renders
+    `.tmp/8_9l/pairs/colour_*.png`
   - [x] ov3 a general overlap test: a headless pass over every modal and view failing when two
     widgets' rectangles intersect (catches collisions, not a draft mismatch: ov1 does that;
     `plans/core/gui.md` "No two widgets overlap"; Opus sidekick, brief

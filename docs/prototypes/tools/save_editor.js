@@ -322,7 +322,9 @@ table.grid.stats-grid td { padding: 2px 6px; }
 #pos-grid .poscell { width: 62px; padding: 2px 3px 3px; box-sizing: border-box;
   display: flex; flex-direction: column; align-items: center; }
 #pos-grid .poscell.reg { outline: 1px solid var(--sel-fg); border-radius: 3px; }
-#pos-grid .plabel { margin-bottom: 2px; text-align: center; cursor: pointer; padding: 0 3px; border-radius: 2px; }
+/* A clickable label: egui draws it in the resting widgets' grey, a button's text. */
+#pos-grid .plabel { margin-bottom: 2px; text-align: center; cursor: pointer; padding: 0 3px; border-radius: 2px;
+  color: #b4b4b4; }
 #pos-grid .plabel:hover { background: var(--hover); color: var(--strong); }
 .rate { display: inline-flex; gap: 1px; }
 .rate .sel { padding: 0 5px; }

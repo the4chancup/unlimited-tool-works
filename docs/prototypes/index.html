@@ -401,7 +401,9 @@
   :is(label.cb:active > input, input:active)[type=radio]:not(:disabled) { border-radius: 50%; }
   :is(label.cb:active > input, input:active)[type=checkbox]:checked:not(:disabled) { background-color: var(--sel-bg); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpolyline points='3,7 7,11 11,3' fill='none' stroke='%23c0deff' stroke-width='2'/%3E%3C/svg%3E"); }
   :is(label.cb:active > input, input:active)[type=radio]:checked:not(:disabled) { background-color: var(--sel-bg); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Ccircle cx='7' cy='7' r='2.667' fill='%23c0deff'/%3E%3C/svg%3E"); }
-  .sel { padding: 1px 5px; border-radius: 2px; cursor: default; user-select: none; }
+  /* A selectable label's text in the resting widgets' grey, as egui draws it (#b4b4b4, a
+     button's text), not the body text's. */
+  .sel { padding: 1px 5px; border-radius: 2px; cursor: default; user-select: none; color: #b4b4b4; }
   .sel:hover { background: var(--hover); color: #f0f0f0; }
   .sel.on { background: var(--sel-bg); color: var(--sel-fg); }
   .rail .sel { padding: 3px 6px; display: flex; justify-content: space-between; }
