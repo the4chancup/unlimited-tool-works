@@ -9,7 +9,8 @@
 //! squad file, who gets which record. The staged import is the file applied
 //! to copies of the target team and its players, recomputed when the save
 //! changes (an edit, an undo, another save opened), the target or the
-//! choices, so Apply writes what the panel shows, as one undoable edit. A
+//! choices, so Apply writes what the panel shows, as one undoable edit; an
+//! import that would change nothing disables Apply and says so. A
 //! file that cannot be read is refused alone, in the command line's words;
 //! a refusal of the chosen sections' keys is drawn under the choices, which
 //! stay drawn, since unticking that section is how the member imports the
@@ -252,6 +253,9 @@ struct Import {
     team: TeamEntry,
     /// The target's rostered players as the import leaves them.
     players: Vec<PlayerEntry>,
+    /// Whether the import leaves the team or one of its players other than
+    /// the save holds them: compared once, when staged, not every frame.
+    changes: bool,
     /// The notes grouped by code and path, in first-seen order.
     notes: Vec<NoteGroup>,
 }
@@ -434,8 +438,7 @@ fn stage(
 ) -> Result<Import, TeamTomlError> {
     let mut kept = document.clone();
     keep_sections(&mut kept, chosen);
-    let mut team = team.clone();
-    let mut players: Vec<PlayerEntry> = file
+    let rostered: Vec<PlayerEntry> = file
         .players()
         .iter()
         .filter(|player| {
@@ -443,7 +446,9 @@ fn stage(
         })
         .cloned()
         .collect();
-    let notes = kept.apply(file.version(), &mut team, &mut players)?;
+    let mut imported = team.clone();
+    let mut players = rostered.clone();
+    let notes = kept.apply(file.version(), &mut imported, &mut players)?;
     let mut lines = EventLines::new();
     let mut groups: Vec<NoteGroup> = Vec::new();
     for note in &notes {
@@ -461,7 +466,8 @@ fn stage(
         }
     }
     Ok(Import {
-        team,
+        changes: imported != *team || players != rostered,
+        team: imported,
         players,
         notes: groups,
     })
@@ -575,8 +581,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 }),
             )) = &interchange.staged
             {
+                let before = session.revision();
                 session.edit_entries(import.players.clone(), vec![import.team.clone()]);
-                interchange.applied = Some(session.revision());
+                // `edit_entries` skips every value the save already holds, so
+                // an Apply that wrote nothing leaves the revision where it was:
+                // the Applied line then never claims an edit with no undo
+                // entry behind it.
+                if session.revision() != before {
+                    interchange.applied = Some(session.revision());
+                }
             }
         }
         None => {}
@@ -633,8 +646,9 @@ fn texport_bytes(session: &Session, id: u32) -> anyhow::Result<Vec<u8>> {
 
 /// The window's contents: the export row and a separator, the target and
 /// the pick row, then once a file is staged its intro line, a squad file's
-/// pairing, the section choices, the refusal or the notes, `Apply` and the
-/// Applied line. A file that does not read is its refusal alone.
+/// pairing, the section choices, the refusal or the notes, `Apply`, then
+/// the Applied line or the line saying the team already holds the file. A
+/// file that does not read is its refusal alone.
 fn contents(
     ui: &mut egui::Ui,
     interchange: &mut Interchange,
@@ -644,7 +658,7 @@ fn contents(
     revision: u64,
 ) -> Option<Action> {
     let Some(team) = target else {
-        ui.weak("Pick a team row to import into.");
+        ui.weak("Pick a team row to export or import.");
         return None;
     };
     let mut action = None;
@@ -768,10 +782,14 @@ fn contents(
     let any_chosen = (held.gameplay && sections.gameplay)
         || (held.aesthetics && sections.aesthetics && !locked)
         || (held.tactics && sections.tactics);
+    // The chosen sections would leave the team as it is (its own file, or
+    // one applied already): Apply is disabled and says so rather than
+    // record an edit that changes nothing.
+    let unchanged = any_chosen && matches!(&staged.import, Ok(import) if !import.changes);
     ui.horizontal_wrapped(|ui| {
         if ui
             .add_enabled(
-                staged.import.is_ok() && any_chosen,
+                staged.import.is_ok() && any_chosen && !unchanged,
                 egui::Button::new("Apply"),
             )
             .on_hover_text("Write the chosen sections as one undoable edit")
@@ -786,6 +804,8 @@ fn contents(
             "Applied {}. The changes stay unsaved until Save.",
             file_name(&picked.path)
         ));
+    } else if unchanged {
+        ui.weak("The team already holds every value of the chosen sections.");
     }
     action
 }
@@ -803,6 +823,11 @@ fn intro(format: Format, from: Option<PesVersion>, save: PesVersion) -> String {
     }
 }
 
+/// The height the pairing list and the note groups each take at most
+/// before they scroll, so the rows around them and Apply under them stay
+/// inside the window however long the file's lists are.
+const LIST_HEIGHT: f32 = 240.0;
+
 /// A squad file's records, one row each: the slot (weak), the record's
 /// name, then the rostered player's shirt number (weak, monospace) and his
 /// name in its colour codes, as the player list draws it.
@@ -810,7 +835,7 @@ fn pairing_rows(ui: &mut egui::Ui, rows: &[Pairing]) {
     let font = egui::TextStyle::Body.resolve(ui.style());
     egui::ScrollArea::vertical()
         .id_salt("save_editor_interchange_pairing")
-        .max_height(240.0)
+        .max_height(LIST_HEIGHT)
         .auto_shrink([false, true])
         .show(ui, |ui| {
             for row in rows {
@@ -831,18 +856,25 @@ fn pairing_rows(ui: &mut egui::Ui, rows: &[Pairing]) {
         });
 }
 
-/// The note groups, each a collapsed header `<count> × <key>` over its
-/// lines in the warning colour, monospace.
+/// The note groups in a scroll area as tall as the pairing list at most,
+/// each a collapsed header `<count> × <key>` over its lines in the warning
+/// colour, monospace.
 fn notes(ui: &mut egui::Ui, groups: &[NoteGroup]) {
     let warn = ui.visuals().warn_fg_color;
-    for group in groups {
-        collapsing_header(format!("{} \u{d7} {}", group.lines.len(), group.key))
-            .id_salt(("save_editor_interchange_notes", group.key.as_str()))
-            .default_open(false)
-            .show(ui, |ui| {
-                for line in &group.lines {
-                    ui.label(egui::RichText::new(line).monospace().color(warn));
-                }
-            });
-    }
+    egui::ScrollArea::vertical()
+        .id_salt("save_editor_interchange_note_groups")
+        .max_height(LIST_HEIGHT)
+        .auto_shrink([false, true])
+        .show(ui, |ui| {
+            for group in groups {
+                collapsing_header(format!("{} \u{d7} {}", group.lines.len(), group.key))
+                    .id_salt(("save_editor_interchange_notes", group.key.as_str()))
+                    .default_open(false)
+                    .show(ui, |ui| {
+                        for line in &group.lines {
+                            ui.label(egui::RichText::new(line).monospace().color(warn));
+                        }
+                    });
+            }
+        });
 }

@@ -1277,6 +1277,16 @@ fn the_panels_title_is_14_points_and_strong() {
     );
 }
 
+#[test]
+fn the_close_button_closes_the_panel() {
+    let (mut view, mut window) = open_734_with("comparator_close", &[73401], 183);
+    let pairs = open_comparator(&mut window, &mut view);
+    assert_eq!(view.panel, Some(Panel::Comparator), "premise: open");
+    let close = comparator_button(&pairs, "Close window").1.clone();
+    click(&mut window, &close, &mut view);
+    assert_eq!(view.panel, None, "the panel closes");
+}
+
 /// The panel's outer rect, from its AccessKit window node.
 fn panel_rect(nodes: &[accesskit::Node]) -> accesskit::Rect {
     nodes

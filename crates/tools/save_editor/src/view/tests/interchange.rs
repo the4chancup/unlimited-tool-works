@@ -9,6 +9,7 @@ use pes_savefile::interchange::legacy::{read_squad, read_tactics};
 use pes_savefile::interchange::team_toml::{TacticsSection, TeamToml};
 use pes_savefile::model::player::PlayerMotion;
 
+use crate::session::import_sections::{Sections, keep_sections};
 use crate::test_support::cli_stdout;
 use crate::view::appearance::ownership_tip;
 
@@ -16,6 +17,9 @@ use super::*;
 
 /// The panel's title, its window's label.
 const TITLE: &str = "Team file interchange";
+
+/// The line under Apply when the chosen sections would change nothing.
+const ALREADY_HOLDS: &str = "The team already holds every value of the chosen sections.";
 
 /// Teams of the PES 19 fixture, a cup save whose teams hold real,
 /// distinct players: `/3/`, `/cm/` and `/co/`.
@@ -228,6 +232,35 @@ fn lib_import(view: &SaveView, document: &TeamToml, team_id: u32) -> (TeamEntry,
     (team, players)
 }
 
+/// The Team TOML `text` reduced to `sections`, as the panel reduces a file
+/// before it applies it.
+fn kept(text: &str, sections: Sections) -> TeamToml {
+    let mut document = TeamToml::parse(text).expect("the text parses");
+    keep_sections(&mut document, sections);
+    document
+}
+
+/// Asserts team `team_id` and its rostered players are `expected`, the
+/// lib's import.
+fn assert_imported(view: &SaveView, team_id: u32, expected: &(TeamEntry, Vec<PlayerEntry>)) {
+    assert_eq!(team_entry(view, team_id), expected.0, "the lib's team");
+    for (slot, (after, expected)) in rostered(view, team_id).iter().zip(&expected.1).enumerate() {
+        assert_eq!(after, expected, "slot {slot}: the lib's player");
+    }
+    assert_eq!(
+        rostered(view, team_id).len(),
+        expected.1.len(),
+        "every rostered player"
+    );
+}
+
+/// The panel's Label value or widget label `text` painted on a fresh
+/// frame: its colour.
+fn painted(window: &mut Headless, view: &mut SaveView, text: &str) -> egui::Color32 {
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    painted_label_color(&nodes, &shapes, text)
+}
+
 /// `/co/`'s and `/3/`'s 23 slots differ in name, abilities and look, and
 /// their tactics differ: an import of one onto the other shows in every
 /// slot.
@@ -265,6 +298,12 @@ fn a_team_toml_with_gameplay_alone_writes_the_abilities_as_one_undoable_edit() {
     let before_team = team_entry(&view, THREE);
     let before_players = rostered(&view, THREE);
     let co = export(&view, CO);
+    let gameplay = Sections {
+        gameplay: true,
+        aesthetics: false,
+        tactics: false,
+    };
+    let expected = lib_import(&view, &kept(&co, gameplay), THREE);
     picked(&mut window, &mut view, "co.toml", co.as_bytes());
     assert_eq!(
         checkboxes(&mut window, &mut view),
@@ -284,6 +323,7 @@ fn a_team_toml_with_gameplay_alone_writes_the_abilities_as_one_undoable_edit() {
 
     apply(&mut window, &mut view);
 
+    assert_imported(&view, THREE, &expected);
     let team = team_entry(&view, THREE);
     assert_eq!(team.tactics, before_team.tactics, "/3/'s tactics unchanged");
     // The file's `[team]` keys load with gameplay.
@@ -323,6 +363,15 @@ fn a_team_toml_with_gameplay_alone_writes_the_abilities_as_one_undoable_edit() {
         before_players,
         "its players as before"
     );
+    let lines = panel_lines(&mut window, &mut view);
+    assert!(
+        !lines.iter().any(|line| line.starts_with("Applied")),
+        "the Applied line goes with the undo: {lines:#?}"
+    );
+    assert!(
+        !apply_button(&mut window, &mut view).is_disabled(),
+        "Apply is enabled again"
+    );
 }
 
 /// A base-copy id of `team × 100 + slot` in the file means "no base copy":
@@ -343,6 +392,26 @@ fn an_aesthetics_import_writes_each_players_own_id_where_the_file_has_no_base_co
         !marked.is_empty(),
         "premise: some /co/ player has no base copy (his own id)"
     );
+    // The marked /3/ players set to a foreign base copy first, so a write
+    // that never lands leaves a value the assertion below refuses.
+    let foreign: Vec<PlayerEntry> = marked
+        .iter()
+        .map(|&slot| {
+            let mut player = rostered(&view, THREE)[slot].clone();
+            player.appearance.base_copy_id = source[slot].id;
+            player
+        })
+        .collect();
+    view.session.as_mut().unwrap().edit_players(foreign);
+    for &slot in &marked {
+        let player = &rostered(&view, THREE)[slot];
+        assert_ne!(
+            player.appearance.base_copy_id,
+            player.id,
+            "premise: slot {} does not hold his own id",
+            slot + 1
+        );
+    }
     let co = export(&view, CO);
     picked(&mut window, &mut view, "co.toml", co.as_bytes());
     toggle(&mut window, &mut view, "gameplay");
@@ -405,6 +474,48 @@ fn a_file_of_another_version_lists_the_command_lines_notes() {
     ] {
         assert!(lines.contains(&line.to_owned()), "{line:?} in {lines:#?}");
     }
+    assert!(
+        !lines.iter().any(|line| line.starts_with("- ")),
+        "no note line before a group opens: {lines:#?}"
+    );
+
+    // One collapsed header per group, `<count> × <code> <path>`, in the
+    // order the command line first prints each.
+    let mut groups: Vec<(String, usize)> = Vec::new();
+    for line in &expected {
+        let key = note_group(line);
+        match groups.iter_mut().find(|(group, _)| *group == key) {
+            Some((_, count)) => *count += 1,
+            None => groups.push((key, 1)),
+        }
+    }
+    assert!(
+        groups.len() < expected.len(),
+        "premise: some group holds several notes"
+    );
+    let headers: Vec<String> = groups
+        .iter()
+        .map(|(key, count)| format!("{count} \u{d7} {key}"))
+        .collect();
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let mut triangles: Vec<(f64, &accesskit::Node)> = nodes_in_window(&pairs, TITLE)
+        .into_iter()
+        .filter(|(_, node)| node.role() == Role::DisclosureTriangle)
+        .map(|(_, node)| (node.bounds().expect("drawn bounds").y0, node))
+        .collect();
+    triangles.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("drawn bounds"));
+    let shown_headers: Vec<&str> = triangles
+        .iter()
+        .map(|(_, node)| node.label().expect("a labeled header"))
+        .collect();
+    assert_eq!(shown_headers, headers, "the groups' headers");
+    assert!(
+        triangles
+            .iter()
+            .all(|(_, node)| node.is_expanded() != Some(true)),
+        "every group starts collapsed"
+    );
+
     open_note_groups(&mut window, &mut view);
     let lines = panel_lines(&mut window, &mut view);
     let mut shown: Vec<&str> = lines
@@ -412,9 +523,39 @@ fn a_file_of_another_version_lists_the_command_lines_notes() {
         .map(String::as_str)
         .filter(|line| line.starts_with("- "))
         .collect();
+    let warn = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .warn_fg_color;
+    assert_eq!(
+        painted(&mut window, &mut view, shown[0]),
+        warn,
+        "a note line in the warning colour"
+    );
     shown.sort_unstable();
     expected.sort_unstable();
     assert_eq!(shown, expected, "every note, as the command line prints it");
+}
+
+/// The group of the command line's note `line` (`- Warning <code>
+/// (<key>=<value>, …)`): its code and its first context value, the path or
+/// the empty slot, a player's `players.NN.` written `players.*.`.
+fn note_group(line: &str) -> String {
+    let (code, context) = line
+        .strip_prefix("- Warning ")
+        .and_then(|rest| rest.split_once(" ("))
+        .unwrap_or_else(|| panic!("a note line: {line:?}"));
+    let (_, at) = context.split_once('=').expect("a context key");
+    let at = at.split([',', ')']).next().expect("a context value");
+    let at = match at
+        .strip_prefix("players.")
+        .and_then(|rest| rest.split_once('.'))
+    {
+        Some((_, tail)) => format!("players.*.{tail}"),
+        None => at.to_owned(),
+    };
+    format!("{code} {at}")
 }
 
 // SE-GUI-16
@@ -442,6 +583,20 @@ fn a_refusal_of_a_chosen_section_stands_under_the_choices_until_it_is_unticked()
     assert!(
         at("tactics").is_some_and(|choice| choice < refused),
         "under the choices"
+    );
+    assert!(
+        at("Apply").is_some_and(|apply| refused < apply),
+        "above Apply"
+    );
+    let error = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .error_fg_color;
+    assert_eq!(
+        painted(&mut window, &mut view, &refusal),
+        error,
+        "the refusal in the error colour"
     );
     assert_eq!(
         checkboxes(&mut window, &mut view),
@@ -486,6 +641,23 @@ fn a_squad_file_pairs_its_records_and_writes_gameplay_and_aesthetics() {
         .iter()
         .map(|slot| slot.number.to_string())
         .collect();
+    // Every record against the player at its slot.
+    let team = team_entry(&view, CO);
+    let rows: Vec<[String; 5]> = document
+        .players
+        .iter()
+        .map(|(&slot, section)| {
+            let entry = team.roster[usize::from(slot - 1)];
+            [
+                format!("{slot:02}"),
+                display_name(section.name.as_deref().expect("a record's name")),
+                "\u{2192}".to_owned(),
+                entry.number.to_string(),
+                display_name(&player_entry(&view, entry.player_id).name),
+            ]
+        })
+        .collect();
+    assert_eq!(rows.len(), 23, "premise: 23 records");
     picked(&mut window, &mut view, "pes19_squad.4ccs", &bytes);
 
     let lines = panel_lines(&mut window, &mut view);
@@ -513,6 +685,19 @@ fn a_squad_file_pairs_its_records_and_writes_gameplay_and_aesthetics() {
     ] {
         assert_eq!(row_of(&mut window, &mut view, row[1]), row);
     }
+    for row in &rows {
+        assert_eq!(
+            row_of(&mut window, &mut view, &row[1]),
+            row,
+            "slot {}",
+            row[0]
+        );
+    }
+    let arrows = panel_lines(&mut window, &mut view)
+        .iter()
+        .filter(|line| *line == "\u{2192}")
+        .count();
+    assert_eq!(arrows, 23, "one row per record");
     assert_eq!(
         checkboxes(&mut window, &mut view),
         ["gameplay", "aesthetics"]
@@ -618,6 +803,12 @@ fn under_the_lock_the_aesthetics_section_is_off_and_never_written() {
     let before_team = team_entry(&view, THREE);
     let before = rostered(&view, THREE);
     let co = export(&view, CO);
+    let unlocked = Sections {
+        gameplay: true,
+        aesthetics: false,
+        tactics: true,
+    };
+    let expected = lib_import(&view, &kept(&co, unlocked), THREE);
     picked(&mut window, &mut view, "co.toml", co.as_bytes());
 
     let aesthetics = checkbox(&mut window, &mut view, "aesthetics");
@@ -637,6 +828,7 @@ fn under_the_lock_the_aesthetics_section_is_off_and_never_written() {
     assert!(ticked(&mut window, &mut view, "tactics"), "tactics chosen");
 
     apply(&mut window, &mut view);
+    assert_imported(&view, THREE, &expected);
     let team = team_entry(&view, THREE);
     for (slot, (after, before)) in rostered(&view, THREE).iter().zip(&before).enumerate() {
         assert_ne!(after.stats, before.stats, "premise: slot {slot} imported");
@@ -687,6 +879,309 @@ fn the_staged_import_follows_an_edit_made_after_the_pick() {
     let after = player_entry(&view, edited.id);
     assert_eq!(after.stats, source[0].stats, "the import applied");
     assert_eq!(after.name, "EDITED", "the edit survives");
+}
+
+/// Every section chosen.
+const ALL: Sections = Sections {
+    gameplay: true,
+    aesthetics: true,
+    tactics: true,
+};
+
+// SE-GUI-16
+#[test]
+fn another_team_selected_after_the_pick_is_the_one_imported_into() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_retarget", THREE);
+    let co = export(&view, CO);
+    let expected = lib_import(&view, &kept(&co, ALL), CM);
+    assert_ne!(
+        expected.1,
+        rostered(&view, CM),
+        "premise: the file changes /cm/'s players"
+    );
+    let (three_team, three) = (team_entry(&view, THREE), rostered(&view, THREE));
+    picked(&mut window, &mut view, "co.toml", co.as_bytes());
+    assert!(
+        panel_lines(&mut window, &mut view).contains(&"Import into /3/ (701) ".to_owned()),
+        "premise: /3/ is the target at the pick"
+    );
+
+    view.team = TeamChoice::Team(CM);
+    view.selected = Some(Selection::Team(CM));
+    let lines = panel_lines(&mut window, &mut view);
+    assert!(
+        lines.contains(&"Import into /cm/ (713) ".to_owned()),
+        "the new target named: {lines:#?}"
+    );
+    apply(&mut window, &mut view);
+
+    assert_imported(&view, CM, &expected);
+    assert_eq!(team_entry(&view, THREE), three_team, "/3/ untouched");
+    assert_eq!(rostered(&view, THREE), three, "its players untouched");
+}
+
+// SE-GUI-16
+#[test]
+fn another_save_opened_after_the_pick_keeps_the_file_and_stages_against_it() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_reopen", THREE);
+    let co = export(&view, CO);
+    // A name the open save holds and the next one does not; the aesthetics
+    // section, which would overwrite it, unticked.
+    let mut edited = rostered(&view, THREE)[0].clone();
+    assert_ne!(edited.name, "EDITED", "premise: a new name");
+    edited.name = "EDITED".to_owned();
+    view.session.as_mut().unwrap().edit_players(vec![edited]);
+    picked(&mut window, &mut view, "co.toml", co.as_bytes());
+    toggle(&mut window, &mut view, "aesthetics");
+    // A frame drawn after the toggle stages the choice against this save.
+    assert!(
+        !ticked(&mut window, &mut view, "aesthetics"),
+        "premise: aesthetics off"
+    );
+
+    view.open(&fixture(PesVersion::Pes19, "interchange_reopen_fresh"));
+    view.team = TeamChoice::Team(THREE);
+    view.selected = Some(Selection::Team(THREE));
+    assert_eq!(view.panel, Some(Panel::Interchange), "the panel stays open");
+    assert_ne!(
+        rostered(&view, THREE)[0].name,
+        "EDITED",
+        "premise: the new save lacks the edit"
+    );
+    let unlocked = Sections {
+        aesthetics: false,
+        ..ALL
+    };
+    let expected = lib_import(&view, &kept(&co, unlocked), THREE);
+    assert!(
+        panel_lines(&mut window, &mut view).contains(&"co.toml".to_owned()),
+        "the file stays picked"
+    );
+    apply(&mut window, &mut view);
+
+    assert_imported(&view, THREE, &expected);
+}
+
+#[test]
+fn a_file_that_does_not_read_is_refused_alone() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_unreadable", THREE);
+    let text = "this is not a team = =";
+    let error = TeamToml::parse(text)
+        .expect_err("premise: the text does not parse")
+        .to_string();
+    picked(&mut window, &mut view, "bad.toml", text.as_bytes());
+
+    let refusal = format!("bad.toml: {error}");
+    let lines = panel_lines(&mut window, &mut view);
+    assert_eq!(lines.last(), Some(&refusal), "{lines:#?}");
+    assert!(
+        !lines.iter().any(|line| line.starts_with("A Team TOML")),
+        "no intro line: {lines:#?}"
+    );
+    assert!(checkboxes(&mut window, &mut view).is_empty(), "no choice");
+    assert!(
+        panel_node(&mut window, &mut view, Role::Button, "Apply").is_none(),
+        "no Apply"
+    );
+    let error = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .error_fg_color;
+    assert_eq!(
+        painted(&mut window, &mut view, &refusal),
+        error,
+        "the refusal in the error colour"
+    );
+}
+
+// SE-GUI-16
+#[test]
+fn a_second_pick_replaces_the_first_ones_import_and_applied_line() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_second_pick", THREE);
+    let (co, cm) = (export(&view, CO), export(&view, CM));
+    picked(&mut window, &mut view, "co.toml", co.as_bytes());
+    apply(&mut window, &mut view);
+    assert_eq!(
+        panel_lines(&mut window, &mut view)
+            .last()
+            .map(String::as_str),
+        Some("Applied co.toml. The changes stay unsaved until Save."),
+        "premise: the first file applied"
+    );
+    let expected = lib_import(&view, &kept(&cm, ALL), THREE);
+    assert_ne!(
+        expected.1,
+        rostered(&view, THREE),
+        "premise: the second file changes /3/'s players"
+    );
+
+    let path = beside_save(&view, "cm.toml", cm.as_bytes());
+    pick(&mut window, &mut view, path);
+    let lines = panel_lines(&mut window, &mut view);
+    assert!(
+        !lines.iter().any(|line| line.starts_with("Applied")),
+        "the first file's Applied line goes: {lines:#?}"
+    );
+    apply(&mut window, &mut view);
+
+    assert_imported(&view, THREE, &expected);
+    assert_eq!(
+        panel_lines(&mut window, &mut view)
+            .last()
+            .map(String::as_str),
+        Some("Applied cm.toml. The changes stay unsaved until Save.")
+    );
+}
+
+#[test]
+fn apply_is_disabled_when_no_section_the_file_holds_is_chosen() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_none_chosen", CO);
+    picked(
+        &mut window,
+        &mut view,
+        "pes19_tactics.4cct",
+        &lib_fixture("pes19_tactics.4cct"),
+    );
+    assert_eq!(checkboxes(&mut window, &mut view), ["tactics"]);
+    assert!(
+        !apply_button(&mut window, &mut view).is_disabled(),
+        "premise: Apply is enabled"
+    );
+
+    toggle(&mut window, &mut view, "tactics");
+    assert!(
+        apply_button(&mut window, &mut view).is_disabled(),
+        "Apply is disabled"
+    );
+    let lines = panel_lines(&mut window, &mut view);
+    assert!(
+        !lines.contains(&ALREADY_HOLDS.to_owned()),
+        "nothing chosen is not a file the team holds: {lines:#?}"
+    );
+}
+
+#[test]
+fn the_teams_own_file_changes_nothing_so_apply_is_disabled_and_says_so() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_own_file", THREE);
+    let own = export(&view, THREE);
+    picked(&mut window, &mut view, "701.toml", own.as_bytes());
+
+    assert!(
+        apply_button(&mut window, &mut view).is_disabled(),
+        "Apply is disabled"
+    );
+    let lines = panel_lines(&mut window, &mut view);
+    assert_eq!(
+        lines.last().map(String::as_str),
+        Some(ALREADY_HOLDS),
+        "{lines:#?}"
+    );
+    assert!(!view.session.as_ref().unwrap().can_undo(), "no undo entry");
+}
+
+#[test]
+fn the_applied_line_stands_after_an_apply_that_wrote_until_the_next_change() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_applied_once", THREE);
+    assert_co_and_three_differ(&view);
+    let co = export(&view, CO);
+    picked(&mut window, &mut view, "co.toml", co.as_bytes());
+    let lines = panel_lines(&mut window, &mut view);
+    assert!(
+        !lines.contains(&ALREADY_HOLDS.to_owned()),
+        "premise: the file changes /3/: {lines:#?}"
+    );
+    apply(&mut window, &mut view);
+
+    let lines = panel_lines(&mut window, &mut view);
+    assert_eq!(
+        lines.last().map(String::as_str),
+        Some("Applied co.toml. The changes stay unsaved until Save."),
+        "{lines:#?}"
+    );
+    assert!(
+        !lines.contains(&ALREADY_HOLDS.to_owned()),
+        "the Applied line takes the other's place"
+    );
+    assert!(
+        apply_button(&mut window, &mut view).is_disabled(),
+        "a second Apply would change nothing"
+    );
+
+    // An edit of a player the file does not write.
+    let mut other = rostered(&view, CM)[0].clone();
+    assert_ne!(other.name, "EDITED", "premise: a new name");
+    other.name = "EDITED".to_owned();
+    view.session.as_mut().unwrap().edit_players(vec![other]);
+    let lines = panel_lines(&mut window, &mut view);
+    assert_eq!(
+        lines.last().map(String::as_str),
+        Some(ALREADY_HOLDS),
+        "{lines:#?}"
+    );
+    assert!(
+        apply_button(&mut window, &mut view).is_disabled(),
+        "Apply stays disabled"
+    );
+}
+
+#[test]
+fn apply_stays_inside_the_window_with_every_note_group_open() {
+    let (mut view, _) = open_on(PesVersion::Pes19, "interchange_notes_scroll", CO);
+    // The default pane, where the real window's height bounds the panel.
+    let mut window = Headless::new();
+    let mut source = SaveView::new();
+    source.open(&fixture(
+        PesVersion::Pes21,
+        "interchange_notes_scroll_source",
+    ));
+    picked(
+        &mut window,
+        &mut view,
+        "co21.toml",
+        export(&source, CO).as_bytes(),
+    );
+    open_note_groups(&mut window, &mut view);
+
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = nodes_in_window(&pairs, TITLE);
+    let notes: usize = nodes
+        .iter()
+        .filter(|(_, node)| node.role() == Role::DisclosureTriangle)
+        .map(|(_, node)| {
+            let label = node.label().expect("a labeled header");
+            let (count, _) = label.split_once(' ').expect("`<count> × <key>`");
+            count.parse::<usize>().expect("a count")
+        })
+        .sum();
+    assert!(notes > 100, "premise: a long list of notes, {notes}");
+    let bounds = |role: Role, label: &str| {
+        nodes
+            .iter()
+            .find(|(_, node)| node.role() == role && node.label() == Some(label))
+            .and_then(|(_, node)| node.bounds())
+            .unwrap_or_else(|| panic!("the {label:?} {role:?}"))
+    };
+    let (panel, apply) = (bounds(Role::Window, TITLE), bounds(Role::Button, "Apply"));
+    assert!(
+        apply.y0 >= panel.y0 && apply.y1 <= panel.y1,
+        "Apply {apply:?} inside the panel {panel:?}"
+    );
+    assert!(
+        apply.y1 <= f64::from(DEFAULT_PANE.y),
+        "Apply {apply:?} on the screen"
+    );
+}
+
+#[test]
+fn the_close_button_closes_the_panel() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_close", CO);
+    open_panel(&mut window, &mut view);
+    assert_eq!(view.panel, Some(Panel::Interchange), "premise: open");
+    let close =
+        panel_node(&mut window, &mut view, Role::Button, "Close window").expect("the close button");
+    click(&mut window, &close, &mut view);
+    assert_eq!(view.panel, None, "the panel closes");
 }
 
 #[test]
@@ -788,7 +1283,7 @@ fn the_panel_without_a_team_row_asks_for_one() {
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_eq!(
         panel_lines(&mut window, &mut view),
-        ["Pick a team row to import into."]
+        ["Pick a team row to export or import."]
     );
 }
 

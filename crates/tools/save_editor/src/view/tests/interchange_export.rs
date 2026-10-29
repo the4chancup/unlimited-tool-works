@@ -120,17 +120,6 @@ fn assert_same_bytes(written: &[u8], expected: &[u8]) {
     }
 }
 
-/// Team `team_id`'s rostered players in roster order, as the session holds
-/// them.
-fn rostered(view: &SaveView, team_id: u32) -> Vec<PlayerEntry> {
-    team_entry(view, team_id)
-        .roster
-        .iter()
-        .filter(|slot| slot.player_id != 0)
-        .map(|slot| player_entry(view, slot.player_id))
-        .collect()
-}
-
 #[test]
 fn the_export_row_names_the_team_and_offers_both_formats_above_a_separator() {
     let (mut view, mut window) = open_on(PesVersion::Pes21, "export_row", CO);
@@ -245,11 +234,9 @@ fn the_team_toml_written_is_the_command_lines_export() {
 }
 
 /// Team `/co/` of `version`'s fixture exported as a Texport, then picked in
-/// the import half with every section chosen and applied.
+/// the import half with every section chosen, which then changes nothing.
 fn texport_round_trip(version: PesVersion, test: &str) {
     let (mut view, mut window) = open_on(version, test, CO);
-    let before_team = team_entry(&view, CO);
-    let before_players = rostered(&view, CO);
     let folder = save_folder(&view);
     let written = folder.join("panel.ted");
 
@@ -297,28 +284,17 @@ fn texport_round_trip(version: PesVersion, test: &str) {
         ["aesthetics", "gameplay", "tactics"],
         "every section"
     );
-    let apply = button(&mut window, &mut view, "Apply");
-    assert!(!apply.is_disabled(), "premise: Apply is enabled");
-    click(&mut window, &apply, &mut view);
+    // Read back onto the team it came from, every section changes nothing.
     let lines = panel_lines(&mut window, &mut view);
     assert_eq!(
         lines.last().map(String::as_str),
-        Some("Applied panel.ted. The changes stay unsaved until Save."),
-        "Apply ran"
+        Some("The team already holds every value of the chosen sections."),
+        "{lines:#?}"
     );
-
-    let team = team_entry(&view, CO);
-    assert_eq!(team.name, before_team.name, "the team's name");
-    assert_eq!(team.short_name, before_team.short_name, "its short name");
-    assert_eq!(team.roster, before_team.roster, "its roster");
-    assert_eq!(team.tactics, before_team.tactics, "its tactics");
-    assert_eq!(team, before_team, "the team");
-    for (slot, (after, before)) in rostered(&view, CO).iter().zip(&before_players).enumerate() {
-        assert_eq!(after.stats, before.stats, "slot {slot}: abilities");
-        assert_eq!(after.appearance, before.appearance, "slot {slot}: the look");
-        assert_eq!(after, before, "slot {slot}");
-    }
-    assert_eq!(undo_entries(&mut window, &mut view), 0, "no undo entry");
+    assert!(
+        button(&mut window, &mut view, "Apply").is_disabled(),
+        "Apply is disabled"
+    );
 }
 
 // SE-GUI-17
