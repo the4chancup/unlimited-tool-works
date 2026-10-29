@@ -319,7 +319,7 @@ mod tests {
     #[test]
     fn each_choice_buttons_label_is_centred_in_it() {
         let dir = TestDir::new("studio_core_first_run_centred");
-        let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\4cc-studio");
+        let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\unlimited-tool-works");
         let Shell { mut app, .. } = first_run_shell(
             test_settings(dir.path()),
             dir.path().join("exe"),
