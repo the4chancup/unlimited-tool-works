@@ -2544,8 +2544,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] b the Save editor's top-right logo and the Ruleset editor's General fields →
       verify: SE-GUI-44, RE-GUI-19 headless; the built window (ASK FIRST)
     - [ ] c the embedded rulesets' logos and pages: the pages are the events' wiki pages
-      the maintainer listed (2026-10-30), the logos the ones those pages show → verify:
-      each embedded ruleset loads with its logo; the built window per ruleset
+      the maintainer listed (2026-10-30), the logos the ones those pages show, scaled to
+      84 pixels high (`docs/prototypes/assets/logos/`, from `.tmp/8_29d/logos_scale.py`);
+      Autumn 25 and VGL25 have none yet (QUESTIONS) → verify: each embedded ruleset loads
+      with its logo; the built window per ruleset
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning

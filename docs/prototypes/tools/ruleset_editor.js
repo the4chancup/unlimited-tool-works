@@ -62,7 +62,8 @@ const SECTIONS = [["general", "General"], ["tiers", "Tiers"], ["heights", "Heigh
 
 // ---- The official file, crates/libs/aatf/rulesets/autumn26.rhai ----
 const AUTUMN26 = {
-  schema: 1, name: "4cc Autumn 26", squad_size: 23,
+  schema: 1, name: "4cc Autumn 26", page: "https://implyingrigged.info/wiki/2026_4chan_Autumn_Babby_Cup",
+  logo: "assets/logos/autumn26.png", squad_size: 23,
   stats: {
     rating: ["dribbling", "goalkeeping", "finishing", "low_pass", "lofted_pass", "heading",
       "swerve", "catching", "clearing", "reflexes", "coverage", "body_control",
@@ -148,7 +149,8 @@ const CUSTOM_SAMPLE = `fn custom_checks(team) {
 // ---- The embedded templates: crates/libs/aatf/rulesets/*.rhai, "Embedded rulesets" order ----
 // crates/libs/aatf/rulesets/spring26.rhai
 const SPRING26 = {
-  schema: 1, name: "4cc Spring 26", squad_size: 23,
+  schema: 1, name: "4cc Spring 26", page: "https://implyingrigged.info/wiki/2026_4chan_Spring_Babby_Cup",
+  logo: "assets/logos/spring26.png", squad_size: 23,
   stats: clone(AUTUMN26.stats),
   tiers: [
     tier("gold", "Gold", 2, 99, 8, 3, { usage: 2, accuracy: 4 }, 5, { tricks: 3, com: 2 }),
@@ -193,7 +195,8 @@ const SPRING26 = {
 
 // crates/libs/aatf/rulesets/vgl27.rhai
 const VGL27 = {
-  schema: 1, name: "/vg/ League 27", squad_size: 23,
+  schema: 1, name: "/vg/ League 27", page: "https://implyingrigged.info/wiki//vg/_League_27",
+  logo: "assets/logos/vgl27.png", squad_size: 23,
   stats: {
     rating: ["dribbling", "goalkeeping", "low_pass", "lofted_pass", "swerve",
       "catching", "clearing", "reflexes", "coverage", "body_control",
@@ -260,7 +263,8 @@ const VGL27 = {
 
 // crates/libs/aatf/rulesets/vgl26.rhai
 const VGL26 = {
-  schema: 1, name: "/vg/ League 26", squad_size: 23,
+  schema: 1, name: "/vg/ League 26", page: "https://implyingrigged.info/wiki//vg/_League_26",
+  logo: "assets/logos/vgl26.png", squad_size: 23,
   stats: {
     rating: ["dribbling", "goalkeeping", "low_pass", "lofted_pass", "swerve",
       "catching", "clearing", "reflexes", "coverage", "body_control",
@@ -331,7 +335,8 @@ const VGL26 = {
 
 // crates/libs/aatf/rulesets/vtl11.rhai
 const VTL11 = {
-  schema: 1, name: "/vt/ League 11", squad_size: 23,
+  schema: 1, name: "/vt/ League 11", page: "https://implyingrigged.info/wiki//vt/_League_11",
+  logo: "assets/logos/vtl11.png", squad_size: 23,
   stats: { rating: ["clearing"], at_most: [] },
   tiers: [
     tier("gold", "Gold", 2, 99, 8, 1, 4, 7, { com: 3 },
@@ -459,7 +464,8 @@ fn custom_checks(team) {
 
 // crates/libs/aatf/rulesets/vtl10.rhai
 const VTL10 = {
-  schema: 1, name: "/vt/ League 10", squad_size: 23,
+  schema: 1, name: "/vt/ League 10", page: "https://implyingrigged.info/wiki//vt/_League_10",
+  logo: "assets/logos/vtl10.png", squad_size: 23,
   stats: { rating: ["clearing"], at_most: [] },
   tiers: [
     tier("gold", "Gold", 2, 99, 8, 1, 4, 6, { com: 2 },
@@ -576,17 +582,12 @@ fn custom_checks(team) {
 };
 
 // crates/libs/aatf/rulesets/dbc7.rhai
-// The event logo (a base64 PNG in the file; here a drawn sample until the
-// organizers' own) and the event's page: the Save editor draws the logo at its
-// top right while the ruleset is picked, a click opening the page.
-const SAMPLE_LOGO = "data:image/svg+xml," + encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="28" viewBox="0 0 64 28">'
-  + '<rect x="0.5" y="0.5" width="63" height="27" rx="5" fill="#b8202a" stroke="#f2c14e"/>'
-  + '<text x="32" y="19.5" text-anchor="middle" font-family="Georgia, serif" font-weight="700"'
-  + ' font-size="15" fill="#f6efe0">DBC 7</text></svg>');
+// Each embedded ruleset's event logo (a base64 PNG in the file, from the event's
+// wiki page) and that page: the Save editor draws the logo at its top right while
+// the ruleset is picked, a click opening the page.
 const DBC7 = {
-  schema: 1, name: "Divegrass Before Christmas 7", page: "https://implyingrigged.info/",
-  logo: SAMPLE_LOGO, squad_size: 23,
+  schema: 1, name: "Divegrass Before Christmas 7", page: "https://implyingrigged.info/wiki/Divegrass_Before_Christmas_7:_Melty_Under_The_Christmas_Tree",
+  logo: "assets/logos/dbc7.png", squad_size: 23,
   stats: {
     rating: ["dribbling", "goalkeeping", "finishing", "low_pass", "lofted_pass", "heading",
       "swerve", "catching", "clearing", "reflexes", "coverage", "body_control",

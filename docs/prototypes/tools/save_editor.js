@@ -2545,14 +2545,10 @@ const snapXY = (px, py) => [
 // dropdown shows. The draft recognizes a tier by its rating and position
 // alone (recognizedTier), so VGL26's and VTL10's height-told tiers read as
 // the first one the rating reaches. logo and page are the file's event logo
-// (a PNG; here a drawn sample until the organizers' own) and the event's page.
-const SAMPLE_LOGO = "data:image/svg+xml," + encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="28" viewBox="0 0 64 28">'
-  + '<rect x="0.5" y="0.5" width="63" height="27" rx="5" fill="#b8202a" stroke="#f2c14e"/>'
-  + '<text x="32" y="19.5" text-anchor="middle" font-family="Georgia, serif" font-weight="700"'
-  + ' font-size="15" fill="#f6efe0">DBC 7</text></svg>');
+// (a PNG, from the event's wiki page) and that page.
 const RULESETS = {
-  official: { label: "4cc Autumn 26", fielded_at_a: [1], tiers: [
+  official: { label: "4cc Autumn 26", logo: "assets/logos/autumn26.png",
+    page: "https://implyingrigged.info/wiki/2026_4chan_Autumn_Babby_Cup", fielded_at_a: [1], tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 3, weak_foot: { usage: 4, accuracy: 4 },
       cards: 6, a_positions: 1, free: { tricks: 3, com: 2 } },
     { id: "silver", label: "Silver", rate: 92, form: 8, injury_resistance: 3, weak_foot: { usage: 4, accuracy: 4 },
@@ -2577,7 +2573,8 @@ const RULESETS = {
         { id: "red", quotas: { giga: 0, giant: 0, tall: 10, mid: 7, manlet: 6 } }],
       allowance: (p, tier, system) => p.height === 189 && (p.positions.registered === "GK"
         || (system === "red" && tier === "regular" && p.positions.registered === "CB")) ? 4 : 0 } },
-  vtl11: { label: "/vt/ League 11", tiers: [
+  vtl11: { label: "/vt/ League 11", logo: "assets/logos/vtl11.png",
+    page: "https://implyingrigged.info/wiki//vt/_League_11", tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 1, weak_foot: { usage: 4, accuracy: 4 },
       stats: { place_kicking: 94, defensive_prowess: 65, ball_winning: 94, speed: 94, physical_contact: 94, stamina: 94 },
       name_color: "cc9900ff",
@@ -2610,7 +2607,8 @@ const RULESETS = {
       { card: "weighted_pass", tiers: ["regular", "buffed"] },
       { card: "pinpoint_crossing", tiers: ["regular", "buffed"] },
       { card: "captaincy", captain: true }, { card: "long_ranger" } ] },
-  dbc7: { label: "Divegrass Before Christmas 7", logo: SAMPLE_LOGO, page: "https://implyingrigged.info/", tiers: [
+  dbc7: { label: "Divegrass Before Christmas 7", logo: "assets/logos/dbc7.png",
+    page: "https://implyingrigged.info/wiki/Divegrass_Before_Christmas_7:_Melty_Under_The_Christmas_Tree", tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 3, weak_foot: { usage: 4, accuracy: 4 },
       cards: 48, a_positions: 13, free: {} },
     { id: "silver", label: "Silver", rate: 88, form: 8, injury_resistance: 3, weak_foot: { usage: 4, accuracy: 4 },
@@ -2619,7 +2617,8 @@ const RULESETS = {
       cards: 48, a_positions: 13, free: {} },
   ],
     card_groups: {}, free_specials: [] },
-  spring26: { label: "4cc Spring 26", tiers: [
+  spring26: { label: "4cc Spring 26", logo: "assets/logos/spring26.png",
+    page: "https://implyingrigged.info/wiki/2026_4chan_Spring_Babby_Cup", tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 3, weak_foot: { usage: 2, accuracy: 4 },
       cards: 5, a_positions: 1, free: { tricks: 3, com: 2 } },
     { id: "silver", label: "Silver", rate: 88, form: 8, injury_resistance: 3, weak_foot: { usage: 2, accuracy: 4 },
@@ -2649,7 +2648,8 @@ const RULESETS = {
       "sombrero", "cut_behind_and_turn", "scotch_move", "rabona", "double_touch",
       "crossover_turn", "step_on_skill", "no_look_pass"] },
     free_specials: [ { card: "malicia" }, { card: "captaincy", captain: true } ] },
-  vgl26: { label: "/vg/ League 26", fielded_at_a: [1], tiers: [
+  vgl26: { label: "/vg/ League 26", logo: "assets/logos/vgl26.png",
+    page: "https://implyingrigged.info/wiki//vg/_League_26", fielded_at_a: [1], tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 2, weak_foot: { usage: 4, accuracy: 4 },
       stats: { place_kicking: 94, ball_winning: 94, defensive_prowess: 60 },
       cards: 9, a_positions: 2, free: { tricks: 12, com: 2 } },
@@ -2677,7 +2677,8 @@ const RULESETS = {
       "sombrero", "crossover_turn", "cut_behind_and_turn", "scotch_move",
       "step_on_skill", "rabona", "no_look_pass", "malicia"] },
     free_specials: [ { card: "heading" }, { card: "captaincy", captain: true } ] },
-  vtl10: { label: "/vt/ League 10", tiers: [
+  vtl10: { label: "/vt/ League 10", logo: "assets/logos/vtl10.png",
+    page: "https://implyingrigged.info/wiki//vt/_League_10", tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 1, weak_foot: { usage: 4, accuracy: 4 },
       stats: { place_kicking: 96, defensive_prowess: 58 },
       cards: 6, a_positions: 2, free: { com: 2 } },
@@ -2708,7 +2709,8 @@ const RULESETS = {
       { card: "weighted_pass", tiers: ["regular", "buffed"] },
       { card: "pinpoint_crossing", tiers: ["regular", "buffed"] },
       { card: "captaincy", captain: true }, { card: "incisive_run" }, { card: "long_ranger" } ] },
-  vgl27: { label: "/vg/ League 27", fielded_at_a: [1], tiers: [
+  vgl27: { label: "/vg/ League 27", logo: "assets/logos/vgl27.png",
+    page: "https://implyingrigged.info/wiki//vg/_League_27", fielded_at_a: [1], tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 2, weak_foot: { usage: 4, accuracy: 4 },
       when: { not_positions: ["GK"] }, cards: 6, a_positions: 2, free: { tricks: 12, com: 1 } },
     { id: "silver", label: "Silver", rate: 94, form: 8, injury_resistance: 2, weak_foot: { usage: 4, accuracy: 4 },
