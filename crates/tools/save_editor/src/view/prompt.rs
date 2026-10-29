@@ -14,6 +14,7 @@ use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_savefile::ops::compare::{PlayerDiff, TeamDiff};
 use pes_savefile::schema::fields::RosterField;
 use studio_core::RunningPes;
+use studio_core::widgets::FORM_ROW_SPACING;
 use team_widgets::tactics::RosterRow;
 
 use crate::session::Session;
@@ -320,6 +321,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
         egui::ScrollArea::both().max_height(240.0).show(ui, |ui| {
             egui::Grid::new("unsaved changes")
                 .num_columns(3)
+                .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
                 .show(ui, |ui| {
                     fn cell(ui: &mut egui::Ui, text: egui::WidgetText) {
                         ui.add(egui::Label::new(text).wrap_mode(egui::TextWrapMode::Extend));
