@@ -9,7 +9,7 @@ use pes_version::PesVersion;
 use studio_core::theme;
 use studio_core::widgets::ink_span;
 
-use super::{LineupDrag, position_colour, position_label};
+use super::{LineupDrag, lineup_colour, position_label};
 use crate::names::append_name;
 use crate::tactics::{RosterRow, TacticsView, raw_name_at};
 
@@ -223,8 +223,8 @@ fn bench_row(
 /// One lineup row, the draft's `.lrow`: the ≡ handle, the position
 /// column and the raw name drawn with its colour codes; a drag source
 /// of `payload`, a drop target always. `position` is the position byte
-/// the row shows, drawn in its group's colour as the pitch badges draw
-/// it; `None` draws `--` in the weak colour.
+/// the row shows, drawn in its group's lineup colour (`lineup_colour`),
+/// which reads on the panel; `None` draws `--` in the weak colour.
 fn lineup_row(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,
@@ -248,7 +248,7 @@ fn lineup_row(
                 position.map_or("--", position_label).to_owned(),
                 font.clone(),
                 position.map_or(weak, |position| {
-                    position_colour(theme::palette(ui.visuals()), position)
+                    lineup_colour(theme::palette(ui.visuals()), position)
                 }),
             );
             // The handle and the position placed by their ink, which
