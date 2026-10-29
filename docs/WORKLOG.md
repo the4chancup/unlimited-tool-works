@@ -4776,8 +4776,15 @@ briefs, review loops, gates and mutation runs as for any step.
       first: "an extension with no MIME type"). Checked on a scratch copy with a stand-in
       (`.tmp/0_0_1ov/overlay_check.py`: over at (0, 0) 1280 × 780, beside level with the
       body, the missing line). `acc23548`, merge `670f46dc`
-    - [ ] ov4b `scripts/draft_shots.py` and each tool script's `shots` list (8.20's
-      deliverables 2-3, sidekick)
+    - [x] ov4b `scripts/draft_shots.py` and each tool script's `shots` list (8.20's
+      deliverables 2-3, sidekick). Done 2026-10-29 (Opus, brief `.tmp/0_0_1ov/brief_ov4b.md`,
+      reviewed; the lead added `shots` to the host's view contract comment): 55 links, 110
+      shots at the default and smallest window on a 1920 × 1080 monitor, the page clock
+      frozen; a link the draft does not write back is an error. A one-line `.window` padding
+      edit changed 50 shots, every dialog's; two identical runs changed none. Not listed: the
+      Ruleset editor's `not-saved` (no template has a problem) and the Save editor's
+      `picture-save-settings` (its window writes back `picture-save`). Its test needs Pillow,
+      so it stays out of the gates. `4e156a27`, merge `83a25a08`
     - [ ] ov4c the first captures (lead): the Save editor's screens from the release build
       after the next checkpoint, each dated in its corner, by a capture script beside
       `rect_compare.py`
