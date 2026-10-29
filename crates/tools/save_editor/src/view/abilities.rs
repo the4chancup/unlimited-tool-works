@@ -100,16 +100,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
     let Some((team_id, slot, player_id)) = selected_player(view) else {
         return;
     };
-    // Live AATF's held check while it is the selected player's team's:
-    // the field crosses below read it (the `live` borrow is disjoint
-    // from the session's `&mut` taken next).
-    let marks = live_marks::held_violations(view.live_aatf, &view.live.check)
-        .filter(|(id, _)| *id == team_id)
-        .map(|(id, violations)| live_marks::Marks {
-            violations,
-            slot,
-            team_id: id,
-        });
     let (version, positions, stats, mut skills) = {
         let Some(session) = view.session.as_ref() else {
             return;
@@ -135,8 +125,21 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
         cards: badge,
         generation,
         refusal,
+        live,
+        live_aatf,
         ..
     } = view;
+    // Live AATF's held check while it is the selected player's team's:
+    // the field crosses below read it, worded under the active rules.
+    let marks = live_marks::held_violations(*live_aatf, &live.check)
+        .filter(|(id, _)| *id == team_id)
+        .zip(rules.as_ref())
+        .map(|((id, violations), active)| live_marks::Marks {
+            violations,
+            slot,
+            team_id: id,
+            ruleset: active.rules.ruleset(),
+        });
     let Some(session) = session.as_mut() else {
         return;
     };

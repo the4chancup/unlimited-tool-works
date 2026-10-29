@@ -404,7 +404,7 @@ fn suggestions_are_asked_for_only_while_show_suggestions_is_on() {
         .filter(|node| {
             node.label()
                 .or(node.value())
-                .is_some_and(|line| line.starts_with("TierCount"))
+                .is_some_and(|line| line.starts_with("Tier count"))
         })
         .filter_map(|node| node.bounds().map(|bounds| bounds.y0))
         .collect();

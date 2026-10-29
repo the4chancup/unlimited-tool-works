@@ -1258,7 +1258,7 @@ fn suggestions_name_each_unused_allowance() {
     );
     assert_eq!(
         suggestions_for(&rules, &team, 2),
-        vec![unused("cards", 4, 5), unused("weak_foot", 2, 4)]
+        vec![unused("cards", 4, 5), unused("weak_foot_usage", 2, 4)]
     );
     let team = edited(2, |p| {
         assert_eq!(p.cards.pop(), Some(card("mazing_run")));
@@ -1269,7 +1269,7 @@ fn suggestions_name_each_unused_allowance() {
         suggestions_for(&rules, &team, 2),
         vec![
             unused("cards", 4, 6),
-            unused("weak_foot", 2, 4),
+            unused("weak_foot_usage", 2, 4),
             unused("injury_resistance", 2, 3),
         ]
     );
@@ -1495,8 +1495,15 @@ fn nothing_is_suggested_for_an_allowance_not_listed() {
                 .all(|kind| matches!(
                     kind,
                     ViolationKind::Unused { allowance, .. }
-                        if ["cards", "tricks", "com", "weak_foot", "injury_resistance"]
-                            .contains(&allowance.as_str())
+                        if [
+                            "cards",
+                            "tricks",
+                            "com",
+                            "weak_foot_usage",
+                            "weak_foot_accuracy",
+                            "injury_resistance"
+                        ]
+                        .contains(&allowance.as_str())
                 )),
             "{slot}"
         );

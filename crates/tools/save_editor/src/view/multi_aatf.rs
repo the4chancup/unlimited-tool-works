@@ -13,7 +13,7 @@ use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{modal, modal_buttons, step_choice, wheel_steps};
 use studio_core::{Notice, NoticeKind};
-use team_widgets::violations::{ListUse, issue_groups, sentence};
+use team_widgets::violations::{ListUse, issue_groups, rule_name, sentence};
 
 use crate::session::rules::TeamCheck;
 use crate::view::SaveView;
@@ -178,8 +178,15 @@ fn group_line(file: &EditFile, team_id: u32, slot: Option<u8>) -> String {
 /// draws as green text so each team stands out; under it `All clean`, or
 /// each player's id and name (the team's own rows under `Team-wide
 /// issues`) indented two spaces, his rows' severity, rule and sentence
-/// indented four. A team whose check failed has the error under its line.
-fn copy_text(file: &EditFile, description: &str, key: &CheckKey, checks: &[TeamCheck]) -> String {
+/// (worded under `ruleset`, the active one) indented four. A team whose
+/// check failed has the error under its line.
+fn copy_text(
+    file: &EditFile,
+    ruleset: &aatf::Ruleset,
+    key: &CheckKey,
+    checks: &[TeamCheck],
+) -> String {
+    let description = &ruleset.name;
     let violations: Vec<&aatf::Violation> = checks
         .iter()
         .filter_map(|check| check.as_ref().ok())
@@ -214,11 +221,11 @@ fn copy_text(file: &EditFile, description: &str, key: &CheckKey, checks: &[TeamC
         for (slot, rows) in groups {
             lines.push(format!("  {}", group_line(file, id, slot)));
             for violation in rows {
-                let (rule, _) = violation.kind.rule();
                 lines.push(format!(
-                    "    {}  {rule}  {}",
+                    "    {}  {}  {}",
                     severity_word(violation.severity),
-                    sentence(violation, id)
+                    rule_name(&violation.kind),
+                    sentence(violation, id, ruleset)
                 ));
             }
         }
@@ -309,6 +316,7 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                                 "aatf_multi",
                                 key,
                                 checks,
+                                active.rules.ruleset(),
                                 ListUse::Report,
                             );
                         }
@@ -324,7 +332,7 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 && let Some((key, checks)) = listed
             {
                 ui.ctx()
-                    .copy_text(copy_text(file, description, key, checks));
+                    .copy_text(copy_text(file, active.rules.ruleset(), key, checks));
                 *notice = Some(Notice {
                     text: format!("Copied the results of {}.", counted(checks.len(), "team")),
                     kind: NoticeKind::Success,
@@ -387,7 +395,7 @@ mod tests {
             suggestions: false,
         };
         let checks = rules::check_teams(&choice.rules, &rules::team_views(file, &key.ids));
-        let text = copy_text(file, &choice.rules.ruleset().name, &key, &checks);
+        let text = copy_text(file, choice.rules.ruleset(), &key, &checks);
         assert_eq!(
             text.lines().collect::<Vec<_>>(),
             [
@@ -397,12 +405,12 @@ mod tests {
                 ">718 /f/",
                 "  71801 ROADTRIP",
                 "    Error  Height  height 183 takes no bracket (185 has room)",
-                "    Error  Special  Tall goalkeepers are 189: GKs in this bracket must be 189cm",
+                "    Error  Special rule  Tall goalkeepers are 189: GKs in this bracket must be 189cm",
                 "  Team-wide issues",
-                "    Error  TierCount  2 gold players, expected 1",
-                "    Error  TierCount  0 bronze players, expected 2",
-                "    Error  TierCount  19 regular players, expected 18",
-                "    Error  BracketQuota  9 players in bracket tall of red, quota 10",
+                "    Error  Tier count  2 Gold players, where the rules want 1",
+                "    Error  Tier count  0 Bronze players, where the rules want 2",
+                "    Error  Tier count  19 Regular players, where the rules want 18",
+                "    Error  Height quota  9 players in the Tall bracket of the Red system, where its quota is 10",
             ]
         );
     }
