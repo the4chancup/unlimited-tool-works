@@ -1,6 +1,6 @@
-# 4cc Studio - Agent briefing
+# Unlimited Tool Works - Agent briefing
 
-4cc Studio is a Rust suite of every tool the 4cc community uses to run its PES (2015–2021) cups:
+Unlimited Tool Works is a Rust suite of every tool the 4cc community uses to run its PES (2015–2021) cups:
 a Team compiler (aesthetics exports → CPK archives), a save editor, and a dozen smaller tools, all
 in one `egui` binary that also works as a CLI. What the suite does is specified in `docs/spec/`
 (index: `docs/spec/README.md`), what comes next is planned in `docs/plans/` (index:
@@ -233,8 +233,8 @@ your question may already be listed, with the phase in which it gets resolved.
 - **Platform + plugins.** `studio_core` holds only what runs with zero tools installed (shell,
   `StudioTool` trait, settings framework, common widgets, `PipelineEvent` types). Every tool is its
   own crate under `crates/tools/`; every piece of shared functionality is its own lib crate under
-  `crates/libs/`; `studio` is the crate of the single binary, `4cc-studio`, that registers tools
-  and launches the GUI or dispatches `4cc-studio <tool-id> <command>`.
+  `crates/libs/`; `studio` is the crate of the single binary, `UTW`, that registers tools
+  and launches the GUI or dispatches `UTW <tool-id> <command>`.
 - **Two engines, one IR.** PES 15–17 use pre-Fox formats (`.model` + `.mtl`); PES 18–21 use Fox
   formats (FMDL, FPK, FTEX). Cross-format model conversion goes through `model_convert`'s IR at
   compile time; same-format work stays in the format crate's `ops/` and skips the IR unless the plan

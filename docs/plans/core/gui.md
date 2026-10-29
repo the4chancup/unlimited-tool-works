@@ -1,4 +1,4 @@
-# 4cc Studio — Core plan: GUI design
+# Unlimited Tool Works — Core plan: GUI design
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -155,7 +155,8 @@ deprecated, and deprecations are errors here, `spec/core/gui.md` "egui version d
 
 ```rust
 // team_compiler::view, inside `view()`; the log's `BottomDock` claims its own
-// `Panel::bottom` (resizable, 220 by default), so the dock's frame is one widget
+// `Panel::bottom` (resizable, sized so its body first opens 180 high, the drafts'
+// `logHeight`), so the dock's frame is one widget
 self.log_panel.show(ui, &self.run.lines);
 egui::Panel::bottom("toolbar").exact_size(32.0)
     .show(ui, |ui| toolbar::show(ui, &self.run));
@@ -375,8 +376,8 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   fallback. Rendering is
   `egui_commonmark` (CommonMark subset with tables, code blocks and links); a hand-rolled
   renderer was considered and rejected as a permanent maintenance item for a solved problem.
-- **CLI equivalence.** `4cc-studio help [tool-id] [topic]` prints the Markdown to stdout, and
-  `4cc-studio help --export <dir>` writes every chapter out as `.md` files — the wiki and the release
+- **CLI equivalence.** `UTW help [tool-id] [topic]` prints the Markdown to stdout, and
+  `UTW help --export <dir>` writes every chapter out as `.md` files — the wiki and the release
   page get the same text with no second source, and the `--export` output is what the release
   process publishes. A chapter prints as `# <title>`, then each topic as `## <title>` and its
   body, the Messages topic last as one table, so a topic file carries no title of its own and
@@ -608,8 +609,8 @@ stadiums and cells = components.
 | Common and per-tool settings forms | egui widgets (`TextEdit`, `CheckBox`, `ComboBox`), saved to TOML |
 | Export tree browser | `egui::CollapsingHeader` tree, shows object model |
 | Menu buttons | egui's `menu_button`, its label ending in ` ⏷` (the symbols font's) as the drafts draw every menu button (`menu()` in `docs/prototypes/index.html`): egui draws no arrow on a menu button outside a menu, and the arrow is what tells a menu from a button |
-| Modals | Every modal (the settings menu, the About, the first-run prompt, each tool's dialogs and prompts) draws through one `studio_core` helper, the drafts' `.window` (`docs/prototypes/index.html`): an `egui::Modal` whose frame has 12 points of margin across and 8 down, at least 360 wide with its margins (`min-width`); its title (`theme::window_title`) then 8 points before the body (`.window .title`'s margin, where a label leaves egui's 3); its buttons in one row 10 under the body, right-aligned, in the order the drafts give them (`window_()`'s row). One helper rather than each modal's own frame, because the build's modals each took egui's default (about 6 points of margin, the buttons wherever the body ended) and drifted 6 to 9 points from every draft at once |
-| Form grids | A form that draws a drafts' `table.grid` (a settings or field form: label, control, label, control) spaces its rows 22 apart, the drafts' 18-point control with its cell's 2 points above and below: `studio_core`'s one row-spacing constant, 4, is an `egui::Grid`'s row spacing (its column gap stays each form's own) and the `item_spacing.y` of a section whose rows are stacked in a vertical layout (General info's pairs); egui spaces both by `item_spacing.y`, 3, so each row of a long form lands a point higher than its draft's (25 points by the Ability stats' last). The theme's `item_spacing` stays 3: it spaces every other layout (the lists' rows, the toolbars) the drafts approved at 3 |
+| Modals | Every modal (the settings menu, the About, the first-run prompt, each tool's dialogs and prompts) draws through one `studio_core` helper, the drafts' `.window` (`docs/prototypes/index.html`): an `egui::Modal` whose frame has 12 points of margin across and 8 down, at least 360 wide with its margins (`min-width`); its title (`theme::window_title`) then 8 points before the body (`.window .title`'s margin, where a label leaves egui's 3); its buttons in one row 10 under the body, right-aligned, in the order the drafts give them (`window_()`'s row). A sentence in the body stands 8 points from a control under it (`.window p`'s margin; a label leaves egui's 3), the title's 8 and the buttons' 10 holding above and below it. One helper rather than each modal's own frame, because the build's modals each took egui's default (about 6 points of margin, the buttons wherever the body ended) and drifted 6 to 9 points from every draft at once |
+| Form grids | A form that draws a drafts' `table.grid` (a settings or field form: label, control, label, control) spaces its rows 22 apart, the drafts' 18-point control with its cell's 2 points above and below: `studio_core`'s one row-spacing constant, 4, is an `egui::Grid`'s row spacing (its column gap stays each form's own) and the `item_spacing.y` of a section whose rows are stacked in a vertical layout (General info's pairs); egui spaces both by `item_spacing.y`, 3, so each row of a long form lands a point higher than its draft's (25 points by the Ability stats' last). A grid of text rows (the help's Messages table) takes the same spacing over rows a line of text high, so its one-line rows stand 19 apart as the draft's: egui's `Grid` otherwise makes every row at least a control's 18. The theme's `item_spacing` stays 3: it spaces every other layout (the lists' rows, the toolbars) the drafts approved at 3 |
 | File/folder pickers | `rfd` for native dialogs and supported web file picking; web directory access needs a separate File System Access API adapter (`rfd` has no WASM folder picker) |
 | Dark/light theme | `studio_core`'s `theme.rs`: the curated dark `Visuals` preset, the default; light, second-class, egui's light `Visuals` with the same accent, rounding and status colors; chosen by the common `theme` setting and applied live (`Context::set_theme`, no restart; the setting, never the system's theme, decides, so a member on a light desktop still gets the dark default); icon glyphs from the suite's own icon font (`README.md` "GUI framework choice: egui"); body text in Roboto Flex, untuned and unscaled, bundled as static instances cut from its variable file (`resources/fonts/RobotoFlex-Regular.ttf`, and `RobotoFlex-Semibold.ttf` for the Tactics pitch's formation name; SIL Open Font License) at weight 400 (600) and optical size 12.5, the body text's size, every other axis at its default: the font as the trial drew it, since a browser sets the optical size to the text's size, where at the file's default of 14 it is 1.5% narrower and tighter than what was approved. One static cut per weight, not the variable file, which egui could draw at each size's own optical size: 96 KB against 1.8 MB, and the few sizes but 12.5 (the 15-point heading, 11-point small text) differ from the trial's optical size by a hair; it is the maintainer's pick, from the drafts drawn in Selawik (Segoe UI's metric twin, whose look did not please), Segoe UI and ten open fonts. It is not scaled or tuned to Segoe UI's width: the width constants the drafts were approved with are re-measured in it instead, each widened just enough that every row keeps the number of lines it had; monospace stays egui's Hack. Every glyph the UI draws comes from a bundled file, in this order: proportional Roboto Flex, the suite's symbols font, its icon font, `egui-icons`; monospace Hack, Roboto Flex, the symbols font, the icon font, `egui-icons`. The symbols the views draw that the body font lacks (→ ↓ ↳ ↻ ≡ ▸ ▾ ⏴ ⏵ ⏷ ● ▶ ⚠ ⓘ ✔ ✕ ✖ ⠇ − ≠ ≤ ∉) are the symbols font's (`resources/fonts/symbols.ttf`): each drawn as an SVG in `resources/symbols/` and built at its own Unicode codepoint by `scripts/make_symbols.py`, so a string keeps its character, the drafts load the same file, and one hand draws every symbol at the text's weight, not three fallback fonts' mismatched shapes (egui's `NotoEmoji-Regular` and `emoji-icon-font`, and Hack's arrows, were the alternative). Each keeps the advance and ink box of the glyph the drafts were reviewed with (Segoe UI's or Segoe UI Symbol's, measured), so no approved width moves; `ⓘ`, first drawn for Live AATF's suggestion mark, has no such glyph and takes the warning sign's stroke and height; `↳`, first drawn for a formation picture's instruction target, is `→` whole with a stem from its tail to the body font's cap height, since Segoe UI Symbol's, half as wide, turns too short to read at 12.5; `⏴` and `⏵`, first drawn for the Tactics popover's steppers, keep Segoe UI Symbol's advance and ink size with the ink centred in the advance, where Segoe's sit a point off-centre in opposite directions, since a stepper centres each in its own arrow button. The symbols are a file of their own, not glyphs of the icon font, because the file takes the body font's units and vertical metrics: egui places a glyph from a later font of the chain by centring that font's line height on the body font's, so a symbol in the icon font's metrics would sit 0.6 point below the text's baseline at 12.5, where the browser aligns every baseline; a body font changed later means a rebuild, not a redrawing. eframe's system font fallback stays for what a member types (a name in another script), never for the suite's own symbols: a symbol drawn from it is a different glyph per machine and a missing one in every test context, which has no system fallback (measured 2026-10-27: → ↓ ≡ ▸ ▾ ● ▶ ⚠ ✔ ✕ ✖ ⠇ all came from it, Ubuntu Regular and the icon font lacking them); every test context that draws a frame installs the same fonts and style as the window (`theme::install`), so a width or height a test measures is the one a member sees, whichever crates a build unifies. Until the preset is curated it is egui's own dark `Visuals` with 0.36's widget states (below), the colors the drafts are drawn in (the host page's stylesheet, `docs/prototypes/index.html`), so a curation pass changes the drafts' stylesheet first. The spacing, corner radii and widget colors are the drafts', which were reviewed at egui 0.36's: `theme.rs` pins 0.36's `button_padding` (4 × 1, where 0.37 has 8 × 2; the drafts' stylesheet pads a button 4 × 1 too, where it had padded 6 a side, so every button was 4 points wider in the drafts than in the app), its `interact_size` (40 × 18, where 0.37 has 40 × 20: the drafts' buttons, combos, number boxes and list rows all measure 18) and both themes' widget states whole (corner radii 2 to 3 points, where 0.37 has 4 to 6; the dark buttons grey 60 with text at 180, the stylesheet's `--widget` and button text, where 0.37 has 50 and 215), so an egui upgrade does not move the approved look. The quick actions keep their own 20-point height (`save_editor.md` "The quick actions"). The text sizes are the drafts' too: `theme.rs` pins `Small` 11, `Body` and `Button` 12.5, `Monospace` 12 and `Heading` 15 (the stylesheet's `.small`, body, `.mono` and `h2`), where egui 0.36 and 0.37 default to 9, 13, 13, 13 and 18, so every approved width and row holds: left at egui's defaults, the app's text was 4% wider than every draft's and its rows 16 points against their 15. A window's title, 14 in the drafts (`.window .title`, and the help window's and a floating panel's `.title`), has a text style of its own, proportional 14 in the strong colour: `theme::window_title` draws it as a modal's first line, and `theme::window_title_text` is an `egui::Window`'s title, which its title bar would otherwise draw in `Heading`, centred in the room the close button leaves (the drafts' help window and floating panels centre theirs the same way, since a left-aligned title would mean drawing egui's title bar, its drag, collapse and close, by hand); every modal's title takes it, the ones the drafts lack included (the Ruleset editor's unsaved prompt), since a title's place, not its draft, makes it a window's; a page's heading (the drafts' `h2`: a help topic's, a ruleset section's) stays `Heading`. A checked checkbox and a selected radio button are filled in the selection blue, the tick (2 points wide) or dot in the selection's text colour, hovered and pressed alike, so a choice made stands out (`studio_core::widgets`' `checkbox` and `radio`, every view's, painting over egui's own widget, whose look hook needs egui's `experimental` feature; `clippy.toml` disallows egui's own checkbox and radio everywhere else); egui's own draw both on the widget grey with the tick in the label's colour, where a checked box hardly stands apart from an unchecked one (the drafts' stylesheet, the CheckBox rules). A slider is egui's own (an 8-point rail, an 11 × 14 rectangle handle, its value in a drag value beside it), which the drafts copy rather than the browser's range input, with its handle and its rail up to the handle's centre in the selection blue: the rail by egui's trailing fill, the handle painted over in that blue, since egui fills it with the rail's own grey. Every colour the suite draws comes from egui's `Visuals` or from the palette, `studio_core::theme::Palette`: one named field per colour beyond the `Visuals` (the success green, the boots range's readout, a count's grey, the ratings' fills, the medals, the pitch's turf, lines and position colours...), with two instances, `Palette::DARK` and `Palette::LIGHT`, and `theme::palette(&visuals)` picking by `visuals.dark_mode`. No crate writes a colour from literals anywhere else: `scripts/colour_literals.py`, in the gates, fails on a `Color32` built from literal values (or a named one such as `Color32::WHITE`) outside `theme.rs`, where a constant written beside its use was how a colour came to have no light value; a colour computed from data (a name's colour codes, the colour picker's value) is not a literal and passes. So do `Color32::PLACEHOLDER`, egui's mark for the text's own colour, and `Color32::TRANSPARENT`, which are no colour (a layout made only to measure text takes `PLACEHOLDER`, not a white nobody sees); and test code, where a literal pins an approved value and so checks the palette rather than drawing from it. The colour picker's markers (a white ring and bar edged in black, on the colour field itself) are palette fields like any other, the same in both instances: `color_tools` depends on `studio_core`, as the wheel needs it to. The two instances are one struct, so a colour added to one and forgotten in the other does not compile. A light value keeps the dark one's contrast ratio against its background (egui's light panel is grey 248, a faint box about 253): light being second-class means fewer looks reviewed, not text left unreadable. A colour drawn on a surface both themes share (the pitch's turf and badges, a fill under its own text colour as the A rating's white on green) has the same value in both. The drafts are dark only, so a new colour's plan text gives its light value beside the dark one |
 
@@ -949,7 +950,7 @@ and widgets, and the `studio` binary's launch modes); IDs are never reused; late
 The shell is not a tool, so its scenarios live here, beside the sections they prove.
 
 **Phase 8 scope.** Phase 8 completes the shell the Phase 3 slice started: the sidebar, the
-settings menu, the status bar, the window title, the help window and `4cc-studio help`, the
+settings menu, the status bar, the window title, the help window and `UTW help`, the
 log panel widget, the first-run data-location dialog, the `last_tool` reopening, the
 `--gui` autorun and the window's opening size. What a scenario observes is what a frame draws (through the headless harness
 of `studio_core/src/shell/mod.rs`: the frame's AccessKit nodes, a click as press and release
@@ -1159,8 +1160,8 @@ ST-HELP-03  GIVEN a tool's log panel showing a finding line
                  in-doc link `[text](tool-id#topic-slug)` to another tool's topic WHEN the link
                  is clicked THEN that topic is shown
 ST-HELP-04  GIVEN the built binary
-            WHEN `4cc-studio help team-compiler` runs
-            THEN stdout is the chapter's Markdown; WHEN `4cc-studio help --export <dir>` runs
+            WHEN `UTW help team-compiler` runs
+            THEN stdout is the chapter's Markdown; WHEN `UTW help --export <dir>` runs
                  THEN <dir> holds one .md file per chapter, each tool's ending with its Messages
                  topic
 ST-HELP-05  GIVEN Studio's window at 1037 × 648 points
@@ -1199,16 +1200,16 @@ ST-RUN-01   GIVEN neither settings file exists
                  directory) before any tool view, and the chosen location's settings.toml exists
                  afterwards; GIVEN one exists THEN no dialog and that location is used
 ST-RUN-02   GIVEN the GUI closed with the second tool active
-            WHEN `4cc-studio` starts again
+            WHEN `UTW` starts again
             THEN the second tool is active
 ST-RUN-03   GIVEN a tool whose gui_run does not implement the command
-            WHEN `4cc-studio --gui <tool-id> <command>` runs
+            WHEN `UTW --gui <tool-id> <command>` runs
             THEN it exits with a message naming the tool, and no window opens;
                  GIVEN a tool implementing it THEN the GUI opens with that tool active and the
                  command runs as if its button had been pressed
 ST-RUN-04   manual  GIVEN the Windows bundle
                     WHEN the exe is double-clicked
-                    THEN no console window opens beside the GUI; WHEN `4cc-studio team-compiler
+                    THEN no console window opens beside the GUI; WHEN `UTW team-compiler
                          check` runs from a terminal THEN its output reaches that terminal
 ST-RUN-05   GIVEN two stub tools each reporting unsaved work, a third tool's view active
             WHEN the window's close is requested
@@ -1221,28 +1222,28 @@ ST-RUN-06   GIVEN a stub tool reporting a run in flight, another tool's view act
             THEN the window stays and the stub's view is active with its prompt; WHEN it
                  chooses to close THEN the window closes once the run has ended, not before;
                  WHEN it chooses to keep the window THEN the window stays and the run goes on
-ST-RUN-07   GIVEN a data location holding `studio.log` and `studio.old.log` from earlier runs
+ST-RUN-07   GIVEN a data location holding `utw.log` and `utw.old.log` from earlier runs
             WHEN the GUI starts
-            THEN `studio.old.log` holds what `studio.log` held, the new `studio.log`'s first
+            THEN `utw.old.log` holds what `utw.log` held, the new `utw.log`'s first
                  line names the version, and a line logged with the home folder in it reads
                  `~` there; GIVEN no data location yet (a first run) THEN no log is written
 ST-RUN-08   manual  GIVEN a build whose window panics on a click (a test build, the panic
                     added by hand and reverted after)
                     WHEN the click is made
-                    THEN a dialog names `studio.log`'s path and repeats the panic's message,
+                    THEN a dialog names `utw.log`'s path and repeats the panic's message,
                          the process exits with 101 once it is closed, and the log ends with
                          the panic's message, its location and a backtrace
-ST-RUN-09   GIVEN a data location whose `studio.log` ends without the closing line (a session
+ST-RUN-09   GIVEN a data location whose `utw.log` ends without the closing line (a session
                   that crashed or was ended)
             WHEN the GUI starts
             THEN before the window opens a dialog says the last session did not close
-                 normally and names `studio.old.log`'s path; GIVEN it ends with the closing
+                 normally and names `utw.old.log`'s path; GIVEN it ends with the closing
                  line of a normal close or of a crash already reported THEN no dialog; GIVEN
                  no earlier log THEN no dialog
 ST-RUN-10   GIVEN the built exe started over a test data location with `--crash-test stack`
                  (handled once the monitor runs, before any window: no display needed)
             WHEN the trigger overflows the stack
-            THEN `studio.dmp` is written beside `studio.log`, reads as a minidump holding a
+            THEN `utw.dmp` is written beside `utw.log`, reads as a minidump holding a
                  thread list and the exception stream of a stack overflow (read in the test
                  by the `minidump` crate, a dev dependency), and the log's last line is the
                  monitor's naming the dump; the next start's dialog text (ST-RUN-09's, built from the old log and

@@ -56,7 +56,7 @@ pub trait StudioTool {
     /// refused or failed before one, printed by the binary as `error: …`.
     fn cli_run(&self, matches: &clap::ArgMatches, ctx: &ToolContext) -> Result<u8, CliError>;
 
-    /// GUI autorun for `4cc-studio --gui <tool-id> <command>`: performs the parsed command inside the
+    /// GUI autorun for `UTW --gui <tool-id> <command>`: performs the parsed command inside the
     /// GUI as if the user had pressed the corresponding button. Called once after the tool's view
     /// exists; the tool may queue the action until its own readiness condition holds. Default: no
     /// command is GUI-runnable, so the launch fails with a message instead of silently opening.

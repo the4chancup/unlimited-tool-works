@@ -1,4 +1,4 @@
-# 4cc Studio — Team compiler plan: Settings
+# Unlimited Tool Works — Team compiler plan: Settings
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -20,7 +20,7 @@ What exists of this is in `spec/team_compiler/settings.md` "Team compiler settin
 | Setting | Old default | New default | Controls |
 |---|---|---|---|
 | `run_pes` | 0 | same | Launch PES after compiling (only after a successful deployment; a degraded run never launches) |
-| `quick_compile_close_on_success` | — | 0 | After a compile started by GUI autorun (`quick_compile.bat` → `4cc-studio --gui team-compiler compile`), close the window when the run completes with no Error-level findings and nothing skipped for errors; stay open on errors, failed deployment, or cancellation so the grid/log can be reviewed. Warnings alone still close (they are in the logs, as Red's `pause_allow = 0` reasoned). Never applies to a manual Compile click |
+| `quick_compile_close_on_success` | — | 0 | After a compile started by GUI autorun (`quick_compile.bat` → `UTW --gui team-compiler compile`), close the window when the run completes with no Error-level findings and nothing skipped for errors; stay open on errors, failed deployment, or cancellation so the grid/log can be reviewed. Warnings alone still close (they are in the logs, as Red's `pause_allow = 0` reasoned). Never applies to a manual Compile click |
 
 ### Path resolution
 
@@ -37,7 +37,7 @@ What exists of this is in `spec/team_compiler/settings.md` "CLI".
 The GUI autorun form extends the spec's command list:
 
 ```text
-4cc-studio --gui team-compiler compile [exports-root] [--mode normal|test|sideload]   # GUI autorun
+UTW --gui team-compiler compile [exports-root] [--mode normal|test|sideload]   # GUI autorun
 ```
 
 The `--gui` form (the core plan's "Launch modes") is what `quick_compile.bat` runs. The tool's

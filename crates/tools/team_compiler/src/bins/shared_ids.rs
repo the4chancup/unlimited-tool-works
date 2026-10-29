@@ -1,6 +1,6 @@
 //! A compiled CPK's record of which shared boots or gloves folder of a team took which of the
-//! team's block's shared IDs: `4cc_studio/shared_ids/<team_id>.toml`, a path no game reads. A
-//! `Midcup` export numbered on its own would give a new folder the ID an
+//! team's block's shared IDs: `unlimited-tool-works/shared_ids/<team_id>.toml`, a path no game
+//! reads. A `Midcup` export numbered on its own would give a new folder the ID an
 //! absent folder holds in the main CPK, so every compiled CPK carries the record its team's
 //! IDs came from and a `Midcup` compiled over it keeps them.
 

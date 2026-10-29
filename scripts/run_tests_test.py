@@ -104,7 +104,7 @@ class Binaries(unittest.TestCase):
         lines = "\n".join([
             artifact("crates/tools/save_editor", "save_editor", True, "a.exe"),
             artifact("crates/tools/save_editor", "cli", True, "b.exe"),
-            artifact("crates/studio", "4cc-studio", False, "studio.exe"),
+            artifact("crates/studio", "utw", False, "studio.exe"),
             artifact("crates/libs/pes_version", "pes_version", True, None),
             '{"reason": "build-finished", "success": true}',
             "Compiling a line that is not JSON",

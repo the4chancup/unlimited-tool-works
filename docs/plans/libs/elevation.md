@@ -1,4 +1,4 @@
-# 4cc Studio — Library crates plan: elevation
+# Unlimited Tool Works — Library crates plan: elevation
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

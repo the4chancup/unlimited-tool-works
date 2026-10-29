@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bundle_drafts import BundleError, bundle
+from bundle_drafts import CAPTURES, BundleError, bundle
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -102,6 +102,15 @@ class Bundle(unittest.TestCase):
             bundle(self.drafts)
         self.assertIn("assets/a.png", str(ctx.exception))
 
+    def test_the_captures_folder_literal_is_kept(self) -> None:
+        # The Overlay control builds a capture's file name at run time from the folder's
+        # literal: the bundle keeps it, and the bundled overlay shows its missing-file line.
+        (self.drafts / "tools" / "x.js").write_text(
+            'const CAPTURES = "assets/captures/";\n', encoding="utf-8")
+        text, _, images = bundle(self.drafts)
+        self.assertIn('const CAPTURES = "assets/captures/";', text)
+        self.assertEqual(images, 1)
+
     def test_the_real_drafts(self) -> None:
         drafts = ROOT / "docs" / "prototypes"
         text, scripts, images = bundle(drafts)
@@ -110,17 +119,19 @@ class Bundle(unittest.TestCase):
         referenced = set()
         for src in [drafts / "index.html", *(drafts / "tools").glob("*.js")]:
             referenced |= set(re.findall(r'"(assets/[^"\n]+)"', src.read_text(encoding="utf-8")))
-        referenced = {p[len("assets/"):] for p in referenced}
+        referenced = {p[len("assets/"):] for p in referenced if p != CAPTURES}
         # The readme files are left out of the files side: the fonts' licence
         # note is documentation beside the assets, not an asset a page draws.
+        # So are the built window's captures, which the overlay names at run time.
         files = {f.relative_to(drafts / "assets").as_posix()
                  for f in (drafts / "assets").rglob("*")
                  if f.is_file() and f.name != "README.md"}
+        files = {f for f in files if not f.startswith(CAPTURES[len("assets/"):])}
         self.assertEqual(referenced, files)
         self.assertGreaterEqual(images, len(files))
         self.assertGreater(len(files), 0)
         self.assertNotIn('src="tools/', text)
-        self.assertNotIn('"assets/', text)
+        self.assertNotIn('"assets/', text.replace(f'"{CAPTURES}"', ""))
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-# 4cc Studio — Unified model format plan
+# Unlimited Tool Works — Unified model format plan
 
 ## A model folder
 

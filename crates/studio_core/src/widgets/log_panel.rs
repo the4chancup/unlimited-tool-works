@@ -114,11 +114,12 @@ pub struct LogPanel {
 
 impl LogPanel {
     /// A panel titled `Log` whose egui state (the dock height, the scroll offset)
-    /// is keyed under `id_salt`: pass the tool's own id, or a salt of its own.
+    /// is keyed under `id_salt`: pass the tool's own id, or a salt of its own. Its
+    /// body opens 180 points high (the drafts' `logHeight`).
     pub fn new(id_salt: impl egui::AsIdSalt) -> LogPanel {
         let id = egui::Id::unique(id_salt);
         LogPanel {
-            dock: BottomDock::new(id, "Log", "the log"),
+            dock: BottomDock::new(id, "Log", "the log", 180.0),
             salt: id.with("body"),
             filter: Filter::All,
             follow: Follow {
@@ -196,10 +197,7 @@ fn body(
         .filter(|line| filter.shows(line.severity))
         .count();
     let skip = shown.saturating_sub(LOG_CAP);
-    let output = egui::Frame::new()
-        .fill(ui.visuals().extreme_bg_color)
-        .stroke(ui.visuals().window_stroke())
-        .inner_margin(egui::Margin::symmetric(6, 2))
+    let output = well_frame(ui.visuals())
         .show(ui, |ui| {
             egui::ScrollArea::both()
                 .id_salt(salt)
@@ -255,6 +253,16 @@ fn body(
             follow.snap = true;
         }
     }
+}
+
+/// The log panel's well, the drafts' `.log-body` and `.live-body`: the extreme fill
+/// and the window stroke, 6 points of margin beside the rows and 2 above and below.
+/// A dock's body draws its rows inside it.
+pub fn well_frame(visuals: &egui::Visuals) -> egui::Frame {
+    egui::Frame::new()
+        .fill(visuals.extreme_bg_color)
+        .stroke(visuals.window_stroke())
+        .inner_margin(egui::Margin::symmetric(6, 2))
 }
 
 /// The header's count line (the draft's `log-count`): `last 300 of N` when the

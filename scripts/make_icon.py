@@ -1,5 +1,5 @@
-"""Makes the preview's icon files under `resources/icon/` from the maintainer's picture of
-Archer (`plans/core/development_plan.md` "The preview's icon"). Run once when the picture
+"""Makes the icon files under `resources/icon/` from the maintainer's picture of Archer, the
+caster of the reality marble Unlimited Tool Works is named after. Run once when the picture
 changes; the outputs are committed, so a build needs no image tool. Needs Pillow.
 
 The maintainer's split (2026-10-27): the whole picture, padded square, at 256, 64, 48 and 32

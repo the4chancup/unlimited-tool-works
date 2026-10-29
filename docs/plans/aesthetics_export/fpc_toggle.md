@@ -1,4 +1,4 @@
-# 4cc Studio — Aesthetics export plan: FPC toggle
+# Unlimited Tool Works — Aesthetics export plan: FPC toggle
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

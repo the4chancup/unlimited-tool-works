@@ -478,6 +478,10 @@
   .small { font-size: 11px; }
   table.grid tr.sel:hover { background: var(--hover); }
   .window pre.mono { margin: 4px 0; }
+  /* A dialog's sentence 8 from what is around it, as the app's modals space their rows
+     (8 under the title, 10 before the buttons, the larger margin winning): the browser's
+     own 1em made them 12.5. */
+  .window p { margin: 8px 0; }
   a { color: var(--link); }
   /* A path box holds a usual install path whole: Steam's
      C:\Program Files (x86)\Steam\steamapps\common\Pro Evolution Soccer 2019, 71
@@ -545,6 +549,15 @@
   .rm-mark { position: fixed; z-index: 135; pointer-events: none; transform: translate(-50%, -50%);
     min-width: 14px; height: 14px; padding: 0 3px; box-sizing: border-box; border-radius: 7px;
     background: var(--sel-fg); color: #1a1a1a; font-size: 10px; line-height: 14px; text-align: center; }
+  /* The Overlay control's capture of the built window: over the window body, above its
+     dialogs, the image at half opacity and every click passing through; or beside the
+     window at full opacity. */
+  .capture { pointer-events: none; }
+  .capture img { display: block; }
+  .capture-over { position: absolute; z-index: 2000; }
+  .capture-over img { opacity: .5; }
+  .capture-beside { flex: none; align-self: flex-start; margin: 8px 16px 12px 0; }
+  .capture-missing { background: var(--panel); padding: 2px 6px; }
 </style>
 </head>
 <body>
@@ -927,7 +940,9 @@ function window_(title, body, buttons, name) {
   const ov = document.getElementById("overlay");
   ov.innerHTML = "";
   ov.append(h("div", { class: "modal-bg" }, h("div", { class: "window", ...(name ? { "data-dlg": name } : {}) },
-    h("div", { class: "title" }, title), body, h("div", { class: "row", style: "justify-content:flex-end; margin-top:10px" }, buttons))));
+    h("div", { class: "title" }, title), body,
+    // No buttons, no row: an empty one would still add its 10-point margin under the body.
+    [buttons].flat().length ? h("div", { class: "row", style: "justify-content:flex-end; margin-top:10px" }, buttons) : null)));
   sidebarCloseCheck();
 }
 // A closing window can end what held the layer (the About's Close): the same
@@ -965,6 +980,9 @@ const S = { activeTool: "team-compiler", sidebarOpen: false, pesVersion: "2019",
   // Remarks (gui.md "The host's other review aids"): the Remark toggle; the
   // notes live in localStorage.
   remarkEdit: false,
+  // Overlay (gui.md "The host's other review aids"): "off", "over" or
+  // "beside", where the built window's capture of the screen draws.
+  overlay: "off",
   // Log panel (gui.md "Log panel"): the Team compiler's lines { severity, code,
   // scope, text }; its height, collapse and filter; the auto-scroll's stick, the
   // count of lines arrived while paused, the body's scrollTop kept across
@@ -1867,7 +1885,7 @@ const CATALOG = {
     { code: "pes_folder_not_found", severity: "Error", condition: "`pes_folder_path` invalid at deployment time (includes the no-PES-install machine; context: `path`, `output` the path the CPK is promoted to)", consequence: "deployment skipped; staged CPKs promoted to `output/`; savefile step skipped" },
     { code: "pes_version_mismatch", severity: "Warning", condition: "`pes_folder_path` exists but holds no `PES20{pes_version}.exe` - a different-version exe suggests a wrong `pes_version` setting (Red's suppressible console notice becomes a plain per-run warning, dropping `state/ver_mismatch_warned.txt`; the GUI also surfaces this live via the version selector's red/yellow state - see the core plan's Sidebar; context: `path` the PES folder, `exe` the file looked for)", consequence: "none; deployment proceeds" },
     { code: "dpfilelist_missing", severity: "E/W", condition: "no `DpFileList.bin` in download folder: an Error in a compile that deploys, a Warning in sideload and test mode and with `--no-deploy` (a clean run, \"Post-processing\"), which deploy nothing, so the user knows no bin from the download folder was used", consequence: "E: deployment skipped; staged CPKs promoted to `output/`; savefile step skipped. W: none; the bins are built on the bundled bases (`bin_source` `bundled`)" },
-    { code: "dpfilelist_not_official", severity: "Warning", condition: "the installed DpFileList's entries differ from the bundled official list's (missing entries, entries the official list lacks, or their order), while every target of this run is listed (context: `path` the installed list; `missing` the official entries it lacks, in the official order; `unofficial` its entries the official list lacks, in its order; `order` = `differs` when the entries both lists hold are in another order; each of these three only when it applies, lists joined by `, `; `command` the subcommand, `4cc-studio team-compiler upgrade-dpfl`)", consequence: "none: the run compiles and deploys; the CLI names `upgrade-dpfl`, which asks before replacing the list" },
+    { code: "dpfilelist_not_official", severity: "Warning", condition: "the installed DpFileList's entries differ from the bundled official list's (missing entries, entries the official list lacks, or their order), while every target of this run is listed (context: `path` the installed list; `missing` the official entries it lacks, in the official order; `unofficial` its entries the official list lacks, in its order; `order` = `differs` when the entries both lists hold are in another order; each of these three only when it applies, lists joined by `, `; `command` the subcommand, `UTW team-compiler upgrade-dpfl`)", consequence: "none: the run compiles and deploys; the CLI names `upgrade-dpfl`, which asks before replacing the list" },
     { code: "dpfilelist_cpk_missing", severity: "Warning", condition: "the installed DpFileList names CPKs with no file in the download folder, other than this run's own target (context: `path` the download folder, `files` the file names in list order, `command` as `dpfilelist_not_official`'s). The game then rejects the whole download folder and runs vanilla", consequence: "none: the run compiles and deploys; the savefile step is skipped; `upgrade-dpfl` writes a placeholder for each" },
     { code: "dpfilelist_outdated", severity: "Error", condition: "installed DpFileList lacks a target of this run that the bundled official DPFL lists (old layout, e.g. no `teams` slots; context: `cpk` every CPK of the run the installed list lacks and the official one names, joined by `, ` in the run's order (the bins CPK, then the parts by slot number), `path` the installed list, `output` the CPK's path in the output folder, or the output folder when the run writes several, `command` as `dpfilelist_not_official`'s)", consequence: "deployment skipped; staged CPKs promoted to `output/`; CLI names `upgrade-dpfl`; savefile step skipped" },
     { code: "dpfilelist_cpk_renamed", severity: "Info", condition: "`upgrade-dpfl`: an old DLC's CPK renamed by stem to an official name (context: `from`, `to`, the file names)", consequence: "none" },
@@ -2253,6 +2271,7 @@ function hostLinkKeys() {
   if (S.conditions.length) k.cond = S.conditions.join(",");
   if (S.settingsFile !== "portable") k.settings = S.settingsFile;
   if (S.dataDirUnwritable) k.rodata = "1";
+  if (S.overlay !== "off") k.overlay = S.overlay;
   if (windowDrawer === drawSettings) k.win = "settings";
   else if (document.querySelector('#overlay .window[data-dlg="about"]')) k.win = "about";
   if (S.help) {
@@ -2288,6 +2307,7 @@ function render() {
   drawHelp();
   layoutApply();
   remarksApply();
+  overlayApply();
   updateLink();
 }
 
@@ -2417,6 +2437,10 @@ function renderDraftControls() {
     button("Reset", () => {
       localStorage.removeItem(LAYOUT_KEY); localStorage.removeItem(REMARKS_KEY); render();
     }, { title: "Clear every layout tweak and remark" }),
+    h("label", { class: "cb", title: "The built window's capture of this screen, " + captureFile() },
+      "Overlay",
+      combo([["off", "off"], ["over", "the build over the draft, half opacity"],
+        ["beside", "the build beside the draft"]], S.overlay, v => { S.overlay = v; })),
     grp("Launch"),
     button("Request the window's close", requestWindowClose,
       { title: "As the window's close button would: a tool holding unsaved work or a run asks first" }),
@@ -3190,6 +3214,34 @@ function remarkCatch(e) {
 }
 for (const type of ["pointerdown", "mousedown", "click", "dblclick"])
   document.getElementById("win").addEventListener(type, remarkCatch, true);
+
+// The Overlay control (gui.md "The host's other review aids"): the built window's capture
+// of the active screen, <tool>_<screen>.png in the captures folder, the client area at the
+// simulated window's size. The folder is named once, by this literal, which the bundler
+// leaves as it is: the captures do not travel with an attachment.
+const CAPTURES = "assets/captures/";
+const captureFile = () => CAPTURES + S.activeTool.replaceAll("-", "_") + "_" + viewScreen() + ".png";
+// After every render(): the capture over the window body at half opacity (clicks pass
+// through it to the draft), or beside the window; a missing file shows, in its place, the
+// name it looked for.
+function overlayApply() {
+  document.querySelectorAll(".capture").forEach(c => c.remove());
+  if (S.overlay === "off") return;
+  const img = h("img", { src: captureFile(), alt: "" });
+  img.addEventListener("error", () =>
+    img.replaceWith(h("div", { class: "capture-missing weak" }, "No capture: " + captureFile())));
+  const box = h("div", { class: "capture capture-" + S.overlay }, img);
+  const win = document.getElementById("win"), body = document.getElementById("win-body");
+  if (S.overlay === "over") {
+    box.style.left = body.offsetLeft + "px";
+    box.style.top = body.offsetTop + "px";
+    win.append(box);
+  } else {
+    // Level with the window body: the capture is the client area, under no title bar.
+    box.style.marginTop = (win.offsetTop + win.clientTop + body.offsetTop) + "px";
+    win.after(box);
+  }
+}
 // After every render(): the screen's notes as markers at their element's
 // top-right corner, numbered by their line in Copy remarks; none, and no
 // popup, while the toggle is off.
@@ -3278,6 +3330,10 @@ if (TOOLS.some(t => t.id === hashTool && t.registered)) {
   take("rodata", v => {
     if (v === "1") S.dataDirUnwritable = true;
     else if (v !== "0") console.warn("link: rodata=" + v);
+  });
+  take("overlay", v => {
+    if (["over", "beside"].includes(v)) S.overlay = v;
+    else console.warn("link: overlay=" + v);
   });
   take("help", v => {
     const [chId, topic] = v.split("/", 2);

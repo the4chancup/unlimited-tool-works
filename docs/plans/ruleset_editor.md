@@ -1,4 +1,4 @@
-# 4cc Studio — Ruleset editor plan
+# Unlimited Tool Works — Ruleset editor plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -196,10 +196,10 @@ this tool does not write other tools' settings.
 ## CLI
 
 ```
-4cc-studio ruleset-editor validate rules.4ccrules      # load-time validation; findings to stdout, exit 1 if any
-4cc-studio ruleset-editor update-logic rules.4ccrules  # migrate RULESET and replace an older official logic
-4cc-studio ruleset-editor summary rules.4ccrules [-o rules.md]
-4cc-studio ruleset-editor random --preset sensible|weird|crazy [--seed N] -o rules.4ccrules
+UTW ruleset-editor validate rules.4ccrules      # load-time validation; findings to stdout, exit 1 if any
+UTW ruleset-editor update-logic rules.4ccrules  # migrate RULESET and replace an older official logic
+UTW ruleset-editor summary rules.4ccrules [-o rules.md]
+UTW ruleset-editor random --preset sensible|weird|crazy [--seed N] -o rules.4ccrules
 ```
 
 `update-logic` refuses a file whose logic is modified (it would discard someone's code) and leaves

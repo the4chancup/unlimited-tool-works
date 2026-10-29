@@ -15,7 +15,7 @@ use crate::view::{Refusal, SaveView, selected_player};
 /// The disabled controls' tooltip on a team selection.
 const TEAM_TIP: &str = "The make buttons act on a player: pick a player row";
 
-/// The columns' gap (the draft's `.qagrid` gap): `column_widths`
+/// The columns' gap (the draft's `.qagrid` gap): the halves' width
 /// subtracts it too, so the spacing and the widths share the constant.
 const COLUMN_GAP: f32 = 6.0;
 
@@ -56,50 +56,25 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         .tiers
         .iter()
         .partition(|tier| is_medal(&tier.id));
-    // Each column takes its widest cell's natural width while the two fit
-    // the list, else half the list each (the draft's `1fr`), the widths
-    // read from the panel's own width — inside the columns a cell's
-    // `available_width` is the column's, not the panel's.
+    // Each column is half the list's frame less the gap (the draft's
+    // `1fr 1fr`), read from the panel's own width: inside the columns a
+    // cell's `available_width` is the column's, not the panel's.
     let set_stats = set_stats_widths(ui);
-    let set_stats_width = set_stats.button + ui.spacing().item_spacing.x + set_stats.field;
-    let widest = |tiers: &[&aatf::Tier]| {
-        tiers
-            .iter()
-            .map(|tier| cell_width(ui, &format!("Make {}", tier.label)))
-            .fold(0.0_f32, f32::max)
-    };
-    let columns = column_widths(
-        widest(&left),
-        widest(&right).max(set_stats_width),
-        ui.available_width(),
+    let cell = egui::vec2(
+        (ui.available_width() - COLUMN_GAP) / 2.0,
+        QUICK_ACTION_HEIGHT,
     );
-    let height = QUICK_ACTION_HEIGHT;
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing = egui::vec2(COLUMN_GAP, ROW_GAP);
         for (index, tiers) in [&left, &right].into_iter().enumerate() {
             ui.vertical(|ui| {
                 ui.spacing_mut().item_spacing.y = ROW_GAP;
                 for tier in tiers {
-                    tier_button(
-                        ui,
-                        session,
-                        refusal,
-                        rules,
-                        tier,
-                        player,
-                        egui::vec2(columns[index], height),
-                    );
+                    tier_button(ui, session, refusal, rules, tier, player, cell);
                 }
                 // Set stats ends the right column, under the other tiers.
                 if index == 1 {
-                    set_stats_cell(
-                        ui,
-                        session,
-                        stat_value,
-                        player,
-                        set_stats,
-                        egui::vec2(columns[index], height),
-                    );
+                    set_stats_cell(ui, session, stat_value, player, set_stats, cell);
                 }
             });
         }
@@ -239,40 +214,5 @@ fn set_stats_widths(ui: &egui::Ui) -> SetStatsWidths {
             .size()
             .x
             + 2.0 * ui.spacing().button_padding.x,
-    }
-}
-
-/// The two columns' widths for their widest cells' naturals: each its
-/// widest cell's while the two fit `list_width`, else half the list each
-/// — a label too long for its column is the button's `.truncate()`'s job
-/// (its tooltip names the tier).
-fn column_widths(left: f32, right: f32, list_width: f32) -> [f32; 2] {
-    if left + COLUMN_GAP + right <= list_width {
-        [left, right]
-    } else {
-        halves(list_width)
-    }
-}
-
-/// Half the list each (the draft's `1fr` fallback): where the columns
-/// land when the cells' natural widths do not fit it.
-fn halves(list_width: f32) -> [f32; 2] {
-    let half = (list_width - COLUMN_GAP) / 2.0;
-    [half, half]
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    // Each column is as wide as its widest cell when the two fit, else
-    // half the list, the gap counted in the fit. Not always halves: a half
-    // cuts "Make Goalkeeper" at the default 240-point list.
-    #[test]
-    fn the_columns_take_their_widest_cells_or_the_halves() {
-        // 95 + 6 + 118.5 = 219.5: the cells fit exactly.
-        assert_eq!(column_widths(95.0, 118.5, 219.5), [95.0, 118.5]);
-        // Half a point narrower: the halves fallback.
-        assert_eq!(column_widths(95.0, 118.5, 219.0), [106.5, 106.5]);
     }
 }

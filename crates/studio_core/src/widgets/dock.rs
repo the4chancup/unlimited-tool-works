@@ -3,10 +3,6 @@
 //! caller draws in it. The frame holds no log-specific state: the Save editor's Live AATF
 //! list docks in it too.
 
-/// The open dock's starting height in points; egui keeps the resized one across
-/// frames for the session, never in settings.
-const DEFAULT_HEIGHT: f32 = 220.0;
-
 /// The open dock's smallest height in points, as the draft's divider drag floors at.
 const MIN_HEIGHT: f32 = 60.0;
 
@@ -24,20 +20,27 @@ pub struct BottomDock {
     noun: &'static str,
     /// Whether the body is shown; the chevron flips it.
     expanded: bool,
+    /// The open body's height in points when the dock first opens; egui keeps the
+    /// resized one across frames for the session, never in settings.
+    body_height: f32,
 }
 
 impl BottomDock {
-    /// A dock titled `title`, open, its chevron tooltips naming `noun`.
+    /// A dock titled `title`, open, its chevron tooltips naming `noun`. It first
+    /// opens with a body `body_height` points high, the panel sized to hold it under
+    /// the header row; the member's resize replaces it afterwards.
     pub fn new(
         id_salt: impl Into<egui::Id>,
         title: &'static str,
         noun: &'static str,
+        body_height: f32,
     ) -> BottomDock {
         BottomDock {
             id: id_salt.into(),
             title,
             noun,
             expanded: true,
+            body_height,
         }
     }
 
@@ -51,6 +54,7 @@ impl BottomDock {
     ) {
         // Read before the closure borrows the field it flips.
         let expanded = self.expanded;
+        let default_size = self.default_size(ui.style());
         let header_row = |ui: &mut egui::Ui| {
             ui.horizontal(|ui| {
                 let (chevron, tooltip) = if self.expanded {
@@ -72,7 +76,7 @@ impl BottomDock {
         if expanded {
             egui::Panel::bottom(self.id)
                 .resizable(true)
-                .default_size(DEFAULT_HEIGHT)
+                .default_size(default_size)
                 .min_size(MIN_HEIGHT)
                 .show(ui, |ui| {
                     header_row(ui);
@@ -83,6 +87,21 @@ impl BottomDock {
             // for the return.
             egui::Panel::bottom(self.id.with("collapsed")).show(ui, header_row);
         }
+    }
+
+    /// The open panel's first height: the asked body height plus what the panel
+    /// draws around it. A bottom `Panel`'s size is its outer one: the
+    /// default panel frame's margins, the separator line egui reserves on its top
+    /// edge, the header row (a horizontal row is at least `interact_size` high) and
+    /// the spacing below it.
+    fn default_size(&self, style: &egui::Style) -> f32 {
+        let frame = egui::Frame::side_top_panel(style).total_margin().sum().y;
+        let separator = style.visuals.widgets.noninteractive.bg_stroke.width.round();
+        frame
+            + separator
+            + style.spacing.interact_size.y
+            + style.spacing.item_spacing.y
+            + self.body_height
     }
 
     /// The open and collapsed panels' egui ids, in that order — since egui 0.37 the

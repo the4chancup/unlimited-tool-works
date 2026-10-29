@@ -139,7 +139,10 @@ fn choice_column(ui: &mut egui::Ui, label: &str, hint: &str) -> bool {
     ui.vertical(|ui| {
         ui.set_width(CHOICE_WIDTH);
         ui.spacing_mut().item_spacing.y = HINT_GAP;
-        let button = egui::Button::new(egui::RichText::new(label).size(CHOICE_TEXT_SIZE))
+        // A button wider than its label draws the label at its left unless the label
+        // grows to fill it, where egui centres it.
+        let text = egui::RichText::new(label).size(CHOICE_TEXT_SIZE);
+        let button = egui::Button::new(egui::AtomExt::atom_grow(text, true))
             .min_size(egui::vec2(CHOICE_WIDTH, CHOICE_BUTTON_HEIGHT));
         let clicked = ui.add(button).clicked();
         ui.weak(hint);
@@ -254,12 +257,13 @@ mod tests {
 
     // The draft's `.firstrun` row: two columns 299 points wide and 16 apart, each a
     // button as wide as its column and 38 tall, then its hint wrapped inside the
-    // column on two lines at most. The user folder is the draft's own sample path: a
-    // user name a few letters longer pushes that hint to a third line.
+    // column on as many lines as its text needs. The user folder is the draft's own
+    // sample path, whose hint takes three lines, as in the draft; a longer user name
+    // takes more.
     #[test]
     fn the_two_choices_are_equal_columns_with_full_width_buttons_and_wrapped_hints() {
         let dir = TestDir::new("studio_core_first_run_layout");
-        let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\4cc-studio");
+        let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\unlimited-tool-works");
         let Shell { mut app, .. } = first_run_shell(
             test_settings(dir.path()),
             dir.path().join("exe"),
@@ -299,8 +303,8 @@ mod tests {
                 "a hint wraps inside its column {button:?}: {hint:?}"
             );
             assert!(
-                hint.height() <= 2.0 * row_height + 0.5,
-                "a hint takes at most two lines of {row_height}: {hint:?}"
+                hint.height() <= 3.0 * row_height + 0.5,
+                "the sample hints take at most three lines of {row_height}: {hint:?}"
             );
         }
         let gap = buttons[1].x0 - buttons[0].x1;
@@ -310,13 +314,50 @@ mod tests {
         );
     }
 
+    // The draft's choice buttons (`.firstrun button`) centre their labels across, as a
+    // browser's button does.
+    #[test]
+    fn each_choice_buttons_label_is_centred_in_it() {
+        let dir = TestDir::new("studio_core_first_run_centred");
+        let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\unlimited-tool-works");
+        let Shell { mut app, .. } = first_run_shell(
+            test_settings(dir.path()),
+            dir.path().join("exe"),
+            Some(config),
+        );
+        let egui_ctx = test_context();
+
+        let output = idle(&egui_ctx, &mut app, 2);
+        for label in ["Next to the program", "In my user folder"] {
+            let button = entry(&output.nodes, label)
+                .bounds()
+                .expect("a drawn button has bounds");
+            let text = output
+                .shapes
+                .iter()
+                .find_map(|clipped| match &clipped.shape {
+                    egui::Shape::Text(shape) if shape.galley.text() == label => {
+                        Some(shape.galley.rect.translate(shape.pos.to_vec2()))
+                    }
+                    _ => None,
+                })
+                .unwrap_or_else(|| panic!("no text {label:?} painted"));
+            let button_centre = (button.x0 + button.x1) / 2.0;
+            let text_centre = f64::from(text.center().x);
+            assert!(
+                (text_centre - button_centre).abs() <= 1.0,
+                "{label:?}'s centre {text_centre} is its button's {button_centre}"
+            );
+        }
+    }
+
     // The draft's `.firstrun { margin: 2px 0 8px }`, box to box: its top margin
     // collapses into the title's 8, so the choices' row starts 8 points under
     // the title's line, and the footer line 8 points under the row's lowest hint.
     #[test]
     fn the_choices_row_sits_8_under_the_title_and_8_above_the_footer() {
         let dir = TestDir::new("studio_core_first_run_margins");
-        let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\4cc-studio");
+        let config = PathBuf::from(r"C:\Users\you\AppData\Roaming\unlimited-tool-works");
         let Shell { mut app, .. } = first_run_shell(
             test_settings(dir.path()),
             dir.path().join("exe"),

@@ -103,6 +103,7 @@ pub(super) fn slot_popover(
             append_name(
                 &mut name,
                 raw_name(roster, starting_eleven[index]).unwrap_or("(empty roster slot)"),
+                &egui::TextStyle::Body.resolve(ui.style()),
             );
             for section in &mut name.sections {
                 if section.format.color == egui::Color32::PLACEHOLDER {

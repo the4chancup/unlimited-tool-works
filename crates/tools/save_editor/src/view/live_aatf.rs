@@ -8,7 +8,7 @@
 //! the check asks for the suggestions too, listed under `Suggestions`
 //! after the violations.
 
-use studio_core::widgets::BottomDock;
+use studio_core::widgets::{BottomDock, well_frame};
 use team_widgets::violations::ListUse;
 
 use crate::view::aatf_check::{self, CheckKey, TeamsCheck};
@@ -24,13 +24,16 @@ pub(super) struct LiveAatf {
 }
 
 impl LiveAatf {
-    /// The dock, open, nothing checked yet.
+    /// The dock, open, nothing checked yet; its body opens 150 points high
+    /// (the draft's `LIVE.height`), lower than the log's, since the views
+    /// above it need the height more.
     pub(super) fn new() -> LiveAatf {
         LiveAatf {
             dock: BottomDock::new(
                 egui::Id::unique("save_editor_live_aatf"),
                 "Live AATF",
                 "Live AATF",
+                150.0,
             ),
             check: TeamsCheck::new(),
         }
@@ -110,31 +113,36 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             }
         },
         |ui| {
-            // The list scrolls inside the dock: a long one does not grow it.
-            // egui's solid scroll bar stands beside the rows, as the
-            // draft's `.live-body` bar does: a floating one lies over each
-            // row's right end, its hover and its sentence's last words.
+            // The list scrolls inside the dock's well (the draft's
+            // `.live-body`): a long one does not grow it. egui's solid
+            // scroll bar stands beside the rows, inside the well, as the
+            // draft's bar does: a floating one lies over each row's right
+            // end, its hover and its sentence's last words.
             ui.spacing_mut().scroll = egui::style::ScrollStyle::solid();
-            let clicked = egui::ScrollArea::vertical()
-                .id_salt("save_editor_live_results")
-                .auto_shrink([false, false])
+            let clicked = well_frame(ui.visuals())
                 .show(ui, |ui| {
-                    let mut clicked = None;
-                    if team_id.is_none() {
-                        ui.weak("No team is open.");
-                    } else if let Some((result_key, checks)) = &live.check.result {
-                        clicked = aatf_check::results(
-                            ui,
-                            file,
-                            "aatf_live",
-                            result_key,
-                            checks,
-                            ListUse::Editing {
-                                show_suggestions: result_key.suggestions,
-                            },
-                        );
-                    }
-                    clicked
+                    egui::ScrollArea::vertical()
+                        .id_salt("save_editor_live_results")
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| {
+                            let mut clicked = None;
+                            if team_id.is_none() {
+                                ui.weak("No team is open.");
+                            } else if let Some((result_key, checks)) = &live.check.result {
+                                clicked = aatf_check::results(
+                                    ui,
+                                    file,
+                                    "aatf_live",
+                                    result_key,
+                                    checks,
+                                    ListUse::Editing {
+                                        show_suggestions: result_key.suggestions,
+                                    },
+                                );
+                            }
+                            clicked
+                        })
+                        .inner
                 })
                 .inner;
             if let Some(player) = clicked {

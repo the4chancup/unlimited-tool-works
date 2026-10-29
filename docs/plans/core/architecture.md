@@ -1,4 +1,4 @@
-# 4cc Studio — Core plan: Architecture
+# Unlimited Tool Works — Core plan: Architecture
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
@@ -59,7 +59,7 @@ These planned modules extend the spec's `studio_core` module tree:
 crates/studio_core/src/
 ├── help/
 │   ├── search.rs     #   substring search over every topic's paragraphs and catalog rows
-│   ├── export.rs     #   `4cc-studio help` printing and `--export` to Markdown files
+│   ├── export.rs     #   `UTW help` printing and `--export` to Markdown files
 │   └── core/         #   the core chapters' Markdown (setting up, data location, updates) + CHANGELOG.md
 ├── shell/
 │   ├── title.rs      #   window title from activities / held notice / idle; ViewportCommand::Title on change
@@ -85,17 +85,17 @@ What exists of this is in `spec/core/architecture.md` "Launch modes".
 
 | Invocation | Behavior |
 |---|---|
-| `4cc-studio --gui <tool-id> <command> [args]` | **GUI autorun**: the GUI opens with `<tool-id>` active and the tool performs `<command>` inside the GUI, exactly as if the user had pressed the corresponding button |
+| `UTW --gui <tool-id> <command> [args]` | **GUI autorun**: the GUI opens with `<tool-id>` active and the tool performs `<command>` inside the GUI, exactly as if the user had pressed the corresponding button |
 
-The bare `4cc-studio` start reopens the tool the GUI last closed on (the `last_tool` common
+The bare `UTW` start reopens the tool the GUI last closed on (the `last_tool` common
 setting), not the first registered one.
 
-Besides the tools' subcommands, the shell owns `4cc-studio help`, `4cc-studio update` and `4cc-studio
+Besides the tools' subcommands, the shell owns `UTW help`, `UTW update` and `UTW
 --version` (see `gui.md` "Help window", `distribution.md` "Distribution and updates", `distribution.md` "Changelog and version display").
 
 The `--gui` form exists for the release bundle's **`quick_compile.bat`** — the successor to Red's
 `0_all_in_one.bat`, the one script almost every user runs: copy an export into `exports/`,
-double-click, done. The launcher is two lines (`start "" "%~dp04cc-studio.exe" --gui team-compiler
+double-click, done. The launcher is two lines (`start "" "%~dp0UTW.exe" --gui team-compiler
 compile`) so its console window closes immediately and only the GUI remains; the Linux bundle ships
 the equivalent `quick_compile.sh`. Red's other staged bats (`1_`–`3_`) have no successor: the
 unified pipeline has no stages to run separately. Users who want the plain GUI double-click the exe.
@@ -189,14 +189,14 @@ owns.
 These commands extend the spec's CLI examples:
 
 ```
-4cc-studio save-editor export-toml ./EDIT00000000 --team 701 -o ./aaa.toml
-4cc-studio stadium-compiler compile ./stadium_exports
-4cc-studio export-upgrader upgrade ./old_export.zip --savefile ./EDIT00000000
-4cc-studio music-export-editor check ./team.4ccm
-4cc-studio match-tracker watch
-4cc-studio kit-config-editor convert ./config.bin ./config.toml
-4cc-studio refs-arranger chances ./exports/refs_export
-4cc-studio balls-compiler compile
+UTW save-editor export-toml ./EDIT00000000 --team 701 -o ./aaa.toml
+UTW stadium-compiler compile ./stadium_exports
+UTW export-upgrader upgrade ./old_export.zip --savefile ./EDIT00000000
+UTW music-export-editor check ./team.4ccm
+UTW match-tracker watch
+UTW kit-config-editor convert ./config.bin ./config.toml
+UTW refs-arranger chances ./exports/refs_export
+UTW balls-compiler compile
 ```
 
 ### Event system
@@ -267,20 +267,20 @@ These notes extend the spec's `PipelineEvent` enum, the first at `Progress`, the
 
 What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
 
-- In GUI mode `studio` installs a small `log::Log` impl writing `studio.log` in the data
+- In GUI mode `studio` installs a small `log::Log` impl writing `utw.log` in the data
   directory — the file a user attaches to a bug report. The GUI `gui.md` "Log panel" shows
   findings, not this file; an in-app diagnostic view is not planned for the first release.
-- `studio.log` is a bug report's attachment, so the GUI sink also: installs a panic hook that
+- `utw.log` is a bug report's attachment, so the GUI sink also: installs a panic hook that
   writes the panic message, its location and a backtrace to the log before the process ends, and
   tells the user (a dialog when the GUI is up) to post the file, since a GUI binary has no
-  console to show the panic in; renames the previous run's log to `studio.old.log` at start,
+  console to show the panic in; renames the previous run's log to `utw.old.log` at start,
   replacing the older one, so a crash followed by a relaunch keeps the crash's log; writes the
   Studio version as the log's first line; and writes the user's home directory as `~` in every
   line, because findings carry absolute paths and the file is posted on the cup's server.
 - The backtrace is written as each frame's module base and offset (`0x7ff6a1230000+0x59c4`,
   through the `backtrace` crate), not as names: a release exe names its frames only with its
   `.pdb` beside it, and the bundle does not ship the `.pdb` (`distribution.md`, the release
-  recipe). `scripts/symbolize_log.py <studio.log> <symbols folder>` turns a posted log's frames
+  recipe). `scripts/symbolize_log.py <utw.log> <symbols folder>` turns a posted log's frames
   of the exe's module into function, file and line through `llvm-symbolizer` (MSVC's toolset
   ships it), against the release's kept exe and `.pdb`; frames of other modules (the system's
   DLLs) stay as offsets. Off Windows the `backtrace` crate reports no module base (its
@@ -294,7 +294,7 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
   the backtrace at it.
 - A session that ends without a word is reported at the next start. The window's normal
   close writes a closing line as the log's last, and so does a crash after its dialog; at
-  start, a previous log (`studio.old.log` once renamed) that does not end with one of the two
+  start, a previous log (`utw.old.log` once renamed) that does not end with one of the two
   shows a dialog before the window opens: "The last session did not close normally. If it
   crashed, please post this file where you report problems: <path>", naming the home folder's
   `~`. This catches what the panic hook cannot see (a stack overflow, a failed allocation, a
@@ -336,7 +336,7 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
   any other. The window's process is watched by
   a monitor, the same exe started again with a hidden argument (no second exe in the bundle),
   because a crashed process cannot reliably write its own dump; on a crash the monitor writes
-  `studio.dmp` beside the log (every thread's stack, a few MB), replacing the previous one,
+  `utw.dmp` beside the log (every thread's stack, a few MB), replacing the previous one,
   appends a line naming it to the log (the crashed thread waits in the hook for the
   monitor's reply, sent after the line, so no closing line follows it), and exits with the
   window's process; a monitor that cannot bind its socket or serve appends its error to the
@@ -347,7 +347,7 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
   maintainer reads a dump with `minidump-stackwalk` against the release's kept `.pdb`, the
   exe's symbols the log's offsets are named from too, converted first: `minidump-stackwalk`
   reads Breakpad symbol files, not a `.pdb`, so `dump_syms <pdb> --store <dir>` writes them
-  and `minidump-stackwalk --symbols-path <dir> studio.dmp` reads them (both `cargo install`). The window's log is opened for
+  and `minidump-stackwalk --symbols-path <dir> utw.dmp` reads them (both `cargo install`). The window's log is opened for
   appending, as the monitor's line is: a window thread still writing at its own offset would
   overwrite the monitor's line. The link is a socket file named after
   the window's process id in the system's temp folder, its path passed in the hidden

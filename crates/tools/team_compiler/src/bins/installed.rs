@@ -61,7 +61,7 @@ pub(crate) enum InstalledPaths {
 pub(crate) struct WalkedCpks {
     /// Every entry path of those CPKs, folded (`vtree::fold_name`).
     pub(crate) paths: HashSet<String>,
-    /// Each team's shared-IDs record (`4cc_studio/shared_ids/<team_id>.toml`), from the
+    /// Each team's shared-IDs record (`unlimited-tool-works/shared_ids/<team_id>.toml`), from the
     /// topmost CPK holding one, the bins CPK itself first in multi-CPK mode. A `Midcup` export
     /// keeps the shared IDs the team already has.
     pub(crate) shared_ids: BTreeMap<u16, SharedIds>,

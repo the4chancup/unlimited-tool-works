@@ -1,8 +1,8 @@
-# 4cc Studio — AATF rules plan
+# Unlimited Tool Works — AATF rules plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
-What exists of this is in `spec/aatf_rules.md` "4cc Studio — AATF rules plan".
+What exists of this is in `spec/aatf_rules.md` "Unlimited Tool Works — AATF rules plan".
 
 ## The rules file
 

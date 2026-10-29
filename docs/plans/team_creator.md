@@ -1,4 +1,4 @@
-# 4cc Studio — Team creator plan
+# Unlimited Tool Works — Team creator plan
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

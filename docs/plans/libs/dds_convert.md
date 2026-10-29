@@ -1,4 +1,4 @@
-# 4cc Studio — Library crates plan: dds_convert
+# Unlimited Tool Works — Library crates plan: dds_convert
 
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 

@@ -130,9 +130,11 @@ fn a_players_name_paints_in_the_colors_his_codes_set() {
     view.open(&path);
     view.team = TeamChoice::Team(718);
     let mut window = Headless::new();
-    let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
 
-    let shape = text_shape(&shapes, "01 GK ROADTRIP");
+    // The name is the row's third column, a galley of its own.
+    let bounds = row(&nodes, "01 GK ROADTRIP").bounds().expect("bounds");
+    let shape = text_in_rect(&shapes, "ROADTRIP", bounds);
     let painted: Vec<(egui::Color32, String)> = shape
         .galley
         .job
@@ -152,7 +154,7 @@ fn a_players_name_paints_in_the_colors_his_codes_set() {
     // `name_spans`' `None` means. The layout merges adjacent equal-color
     // sections, so the expectation merges too.
     let normal = egui::Color32::PLACEHOLDER;
-    let mut expected: Vec<(egui::Color32, String)> = vec![(normal, "01 GK ".to_owned())];
+    let mut expected: Vec<(egui::Color32, String)> = Vec::new();
     for (color, text) in &spans {
         let color = match color {
             Some([red, green, blue]) => egui::Color32::from_rgb(*red, *green, *blue),
@@ -282,8 +284,8 @@ fn a_player_rows_handle_stands_4_from_its_edge_and_4_before_the_place() {
             .unwrap_or_else(|| panic!("the row {place:?} paints its handle"));
         let text = texts
             .iter()
-            .find(|shape| shape.galley.job.text.starts_with(place))
-            .unwrap_or_else(|| panic!("the row {place:?} paints its text"));
+            .find(|shape| shape.galley.job.text == place.trim_end())
+            .unwrap_or_else(|| panic!("the row {place:?} paints its place"));
         let handle_ink = ink(handle);
         let place_ink = ink(text);
         let inset = f64::from(handle_ink.left()) - row.x0;
@@ -1094,7 +1096,7 @@ fn the_player_rows_dot_paints_at_the_rows_right_end() {
     let bounds = row(&nodes, "01 CB PLACEHOLDER ●")
         .bounds()
         .expect("the row's bounds");
-    let text = text_in_rect(&shapes, "01 CB", bounds);
+    let text = text_in_rect(&shapes, "PLACEHOLDER", bounds);
     let dot = dot_in_row(&shapes, bounds);
     assert_eq!(galley_color(dot), warn, "the dot in the warning colour");
     let dot_right = f64::from(dot.pos.x + dot.galley.rect.width());
@@ -1505,4 +1507,171 @@ fn a_player_row_numbers_his_place_in_the_roster() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 1100.0);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_eq!(row_labels(&nodes), expected, "the rows read 01 to 23");
+}
+
+// The rows are the draft's `.prow`s: 18 high and touching, the team's row
+// too, under ALL. A player row's place, position and name are columns:
+// the place in the weak colour, the position 5 points after it in a
+// 28-point column, the name 5 points after that column.
+#[test]
+fn the_rows_are_18_high_touching_with_the_place_and_position_in_columns() {
+    let path = fixture(PesVersion::Pes21, "list_row_columns");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let frame = list_frame(&window, &shapes);
+    // Every row spans the frame: the team rows and the player rows, top
+    // to bottom, the ones the frame shows whole.
+    let mut rows: Vec<&accesskit::Node> = nodes
+        .iter()
+        .filter(|node| node.role() == Role::Button)
+        .filter(|node| {
+            node.bounds().is_some_and(|b| {
+                (b.x0 - f64::from(frame.min.x)).abs() <= 1.0
+                    && (b.x1 - f64::from(frame.max.x)).abs() <= 1.0
+                    && b.y0 >= f64::from(frame.min.y) - 1.0
+                    && b.y1 <= f64::from(frame.max.y)
+            })
+        })
+        .collect();
+    rows.sort_by(|a, b| {
+        let y = |node: &&accesskit::Node| node.bounds().map_or(0.0, |r| r.y0);
+        y(a).total_cmp(&y(b))
+    });
+    assert!(
+        rows.iter().any(|node| !player_row(node))
+            && rows.iter().filter(|n| player_row(n)).count() > 5,
+        "premise: a team row and its players are drawn"
+    );
+    for pair in rows.windows(2) {
+        let [above, below] = [pair[0], pair[1]].map(|node| node.bounds().expect("bounds"));
+        assert!(
+            (below.y0 - above.y0 - 18.0).abs() <= 1.0,
+            "{:?} starts 18 below {:?} ({below:?} vs {above:?})",
+            pair[1].label(),
+            pair[0].label()
+        );
+    }
+    for row in &rows {
+        let bounds = row.bounds().expect("bounds");
+        assert!(
+            (bounds.y1 - bounds.y0 - 18.0).abs() <= 1.0,
+            "{:?} is 18 high ({bounds:?})",
+            row.label()
+        );
+    }
+
+    // The first player row's three columns, read off its painted galleys.
+    let row = rows
+        .iter()
+        .find(|node| player_row(node))
+        .expect("a player row");
+    let label = row.label().expect("a player row's label");
+    let mut words = label.splitn(3, ' ');
+    let (place, position, name) = (
+        words.next().expect("the place"),
+        words.next().expect("the position"),
+        words.next().expect("the name"),
+    );
+    let bounds = row.bounds().expect("bounds");
+    let place_shape = text_in_rect(&shapes, place, bounds);
+    let position_shape = text_in_rect(&shapes, position, bounds);
+    let name_shape = text_in_rect(&shapes, name, bounds);
+    assert_eq!(
+        place_shape.galley.job.text, place,
+        "the place is its own galley"
+    );
+    assert_eq!(
+        position_shape.galley.job.text, position,
+        "the position is its own galley"
+    );
+    let place_right = place_shape.pos.x + place_shape.galley.size().x;
+    assert!(
+        place_right < position_shape.pos.x,
+        "the place ends before the position starts ({place_right} vs {})",
+        position_shape.pos.x
+    );
+    assert!(
+        (position_shape.pos.x - (place_right + 5.0)).abs() <= 1.0,
+        "the position 5 after the place ({} vs {place_right})",
+        position_shape.pos.x
+    );
+    assert!(
+        (name_shape.pos.x - (position_shape.pos.x + 28.0 + 5.0)).abs() <= 1.0,
+        "the name 5 after the position's 28-point column ({} vs {})",
+        name_shape.pos.x,
+        position_shape.pos.x
+    );
+    let weak = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .weak_text_color();
+    assert_eq!(
+        galley_color(place_shape),
+        weak,
+        "the place in the weak colour"
+    );
+}
+
+// The list draws its text at the body size, the drafts' 12.5, so every
+// position the list can show fits the 28-point column: on a DMF's row,
+// the widest, the name stands 5 points after the column and after the
+// position's last letter.
+#[test]
+fn every_position_fits_its_column_at_the_lists_font() {
+    let path = fixture(PesVersion::Pes21, "list_dmf_row");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    let dmf = u8::try_from(POSITIONS.iter().position(|label| *label == "DMF").unwrap()).unwrap();
+    let player = file.player_mut(70101).unwrap();
+    assert_ne!(player.positions.registered, dmf, "premise: 70101 is no DMF");
+    player.positions.registered = dmf;
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds = row(&nodes, "01 DMF PLACEHOLDER").bounds().expect("bounds");
+    let place = text_in_rect(&shapes, "01", bounds);
+    let position = text_in_rect(&shapes, "DMF", bounds);
+    let name = text_in_rect(&shapes, "PLACEHOLDER", bounds);
+
+    // Every position laid out in the font the row draws its place in.
+    let font = place.galley.job.sections[0].format.font_id.clone();
+    let widths: Vec<(&str, f32)> = window.ctx.fonts_mut(|fonts| {
+        POSITIONS
+            .iter()
+            .map(|label| {
+                let galley =
+                    fonts.layout_no_wrap((*label).to_owned(), font.clone(), egui::Color32::WHITE);
+                (*label, galley.size().x)
+            })
+            .collect()
+    });
+    for (label, width) in widths {
+        assert!(
+            width <= 28.0,
+            "{label} is {width} wide, past the 28-point column"
+        );
+    }
+    assert_eq!(
+        font,
+        egui::TextStyle::Body.resolve(&window.ctx.style_of(window.ctx.theme())),
+        "the row's text at the body size"
+    );
+
+    let column_end = position.pos.x + 28.0;
+    assert!(
+        (name.pos.x - (column_end + 5.0)).abs() <= 1.0,
+        "the name 5 after the position's column ({} vs {column_end})",
+        name.pos.x
+    );
+    let letters_end = position.pos.x + position.galley.size().x;
+    assert!(
+        name.pos.x - letters_end >= 5.0 - 0.5,
+        "the name at least 5 after the position's letters ({} vs {letters_end})",
+        name.pos.x
+    );
 }

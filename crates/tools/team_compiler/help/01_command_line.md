@@ -1,16 +1,16 @@
 The Team compiler also runs without its window, from a terminal opened in the folder that holds
-`UnlimitedToolWorks.exe`:
+`UTW.exe`:
 
 ```text
-UnlimitedToolWorks team-compiler check [exports-root] [--export <path>]...
-UnlimitedToolWorks team-compiler compile [exports-root] [--mode normal|test|sideload] [--export <path>]... [--no-deploy] [--edit-mode-closed]
-UnlimitedToolWorks team-compiler upgrade-dpfl [--yes]
+UTW team-compiler check [exports-root] [--export <path>]...
+UTW team-compiler compile [exports-root] [--mode normal|test|sideload] [--export <path>]... [--no-deploy] [--edit-mode-closed]
+UTW team-compiler upgrade-dpfl [--yes]
 ```
 
 `check` reads your exports and reports what it finds, without writing anything. `compile` reads
 them, reports the same findings and the few only a build can find (a model that fails to
 convert, for one), and builds the CPK named by the `cpk_name` setting in the output
-folder (`output/` beside `UnlimitedToolWorks.exe` unless you changed the `output_folder_path`
+folder (`output/` beside `UTW.exe` unless you changed the `output_folder_path`
 setting), as
 `<cpk_name>.cpk`. In a terminal window, a line under the findings counts the exports done
 while `check` or `compile` runs, and, while `compile` builds, the parts built so far. When a
@@ -752,9 +752,9 @@ values set the shirt model to 176, so a config written for model 144 or 160 with
 options is reported with model 176, the model it is built with.
 
 Both commands read every export in the exports folder from the settings (`exports/` beside
-`UnlimitedToolWorks.exe` unless you changed it). To use another folder for one run, give its path
+`UTW.exe` unless you changed it). To use another folder for one run, give its path
 as `exports-root`. The setting is not changed. The `exports/` folder beside
-`UnlimitedToolWorks.exe` is created for you when it is missing, and so is any relative path in
+`UTW.exe` is created for you when it is missing, and so is any relative path in
 the `exports_folder_path` setting. An absolute `exports_folder_path`, or an `exports-root`,
 must already exist, or the command stops before anything runs and tells you so. An exports
 folder with no export in it is reported as `no_exports_found`, naming the folder,
@@ -790,7 +790,7 @@ the output folder where it was left instead (`output=...`), `pes_version_mismatc
 - `pes_version_mismatch`, a warning: the game folder holds no `PES20NN.exe` of the version you
   compile for. Check `pes_version` and `pes_folder_path`. The CPK is still installed.
 - `dpfilelist_outdated`: the game's `DpFileList.bin` is an older list that does not have the
-  CPK, so the game would not load it. `UnlimitedToolWorks team-compiler upgrade-dpfl`
+  CPK, so the game would not load it. `UTW team-compiler upgrade-dpfl`
   installs the cup's official list, which has it.
 - `cpk_name_unlisted`: neither the game's `DpFileList.bin` nor the cup's official list has the
   CPK's name, so the game would not load it. Set `cpk_name` to a name the list has.
@@ -806,7 +806,7 @@ says the list is not the cup's official one, while it has every CPK of this run.
 the entries it is missing, the entries the official list does not have, or says that the order
 differs.
 `dpfilelist_cpk_missing` names CPKs the list has that are not in the `download` folder. The game
-then loads none of the CPKs there. Both lines name `UnlimitedToolWorks team-compiler
+then loads none of the CPKs there. Both lines name `UTW team-compiler
 upgrade-dpfl`, which installs the official list.
 
 A game folder with no `DpFileList.bin` in its `download` folder is the error
@@ -928,7 +928,7 @@ in the output folder. It holds each compiled player's motions, taken from his
 `settings.toml` (a motion the file does not set gets the game's default), and, only for an
 export whose root holds the `write_names` marker file, his name and shirt name. The cup's
 official save is built with that file. The cup maintainer compiles the exports and hands
-over the CPKs and the patch, and the save builder applies the patch with `UnlimitedToolWorks
+over the CPKs and the patch, and the save builder applies the patch with `UTW
 save-editor apply-patch`.
 
 `compile` also applies the patch to your own save, so what you just built shows in your
@@ -959,8 +959,8 @@ and the CPKs the game had go back in. In `--mode sideload` the same findings are
 instead. The exit code is 1 and the new `livecpk` files stay in place. The warning
 `savefile_player_not_stripped` names a compiled player in your save who still has an appearance
 of his own (the save was never stripped, or the game's Edit mode restored it). The game shows
-his save data, not the compiled one. `UnlimitedToolWorks save-editor strip-and-seed` strips a
-save never stripped, and `UnlimitedToolWorks save-editor check-stripped` with `--strip-again`
+his save data, not the compiled one. `UTW save-editor strip-and-seed` strips a
+save never stripped, and `UTW save-editor check-stripped` with `--strip-again`
 and `--out` clears the appearances Edit mode brought back. When no save is found at all, that is
 only the warning `savefile_missing`, which names the patch file and the command that applies it
 by hand (a `savefile_path` naming a folder is `savefile_invalid` instead).

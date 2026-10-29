@@ -9,6 +9,7 @@
 use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 
 use crate::help::{HelpSection, HelpTarget, MESSAGES_SLUG};
+use crate::widgets::FORM_ROW_SPACING;
 
 /// The window's state across frames: the chapters it was built over, whether it is open,
 /// where it is (chapter index; the topic index in the list the tree shows — the written
@@ -170,7 +171,7 @@ impl HelpWindow {
         ui.separator();
         egui::Panel::left("help-tree")
             .resizable(false)
-            .exact_size(160.0)
+            .exact_size(220.0)
             .show(ui, |ui| {
                 // The default auto-shrink would size each pane to its first frame's
                 // content and clip every interact below or right of it.
@@ -504,8 +505,12 @@ fn messages(
     );
     let mut consumed = false;
     let mut clicked_link = None;
+    // The drafts' `table.grid` rows: a line of text with 2 points above and below. A grid's
+    // rows are otherwise at least a control's height, 3 points more than a line of text.
     egui::Grid::new(("help-messages", section.title))
         .num_columns(4)
+        .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
+        .min_row_height(ui.text_style_height(&egui::TextStyle::Body))
         .show(ui, |ui| {
             if scroll && !ui.is_sizing_pass() {
                 consumed = true;
@@ -1318,6 +1323,52 @@ mod tests {
         );
     }
 
+    // The Messages table is a drafts' `table.grid`: its one-line rows stand 19 apart, a
+    // 15-point line of text and the forms' row spacing of 4, as the draft's header row
+    // measures in a browser.
+    #[test]
+    fn one_line_catalog_rows_stand_19_apart() {
+        let dir = TestDir::new("studio_core_help_rowpitch");
+        let mut section = alpha_section();
+        section.messages = ["first_code", "second_code", "third_code"]
+            .into_iter()
+            .map(|code| CatalogRow {
+                code,
+                severity: "Info",
+                when: "short",
+                effect: "short effect",
+            })
+            .collect();
+        let (a, calls_a) = stub_help("a", "Alpha", None, section);
+        let Shell { mut app, .. } = shell_with(
+            test_settings(dir.path()),
+            vec![a],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a],
+        );
+        let egui_ctx = test_context();
+
+        frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
+        let nodes = idle(&egui_ctx, &mut app, 15).nodes;
+        click(&egui_ctx, &mut app, entry(&nodes, "Messages"));
+        let nodes = idle(&egui_ctx, &mut app, 15).nodes;
+
+        let top = |code: &str| {
+            label_bounds(&nodes, code)
+                .and_then(accesskit::Node::bounds)
+                .unwrap_or_else(|| panic!("the {code} row"))
+                .y0
+        };
+        for (upper, lower) in [("first_code", "second_code"), ("second_code", "third_code")] {
+            let pitch = top(lower) - top(upper);
+            assert!(
+                (pitch - 19.0).abs() <= 0.5,
+                "{lower} stands 19 under {upper}, not {pitch}"
+            );
+        }
+    }
+
     #[test]
     fn f1_opens_nothing_while_the_first_run_dialog_is_up() {
         let (a, calls_a) = stub_help("a", "Alpha", None, alpha_section());
@@ -1879,7 +1930,7 @@ mod tests {
     }
 
     // A fixed-width panel shows no resize edge (the draft's plain edge): the tree
-    // column is `exact_size(160)`, so resting the pointer on its right edge leaves
+    // column is `exact_size(220)`, so resting the pointer on its right edge leaves
     // the default cursor and registers no splitter.
     #[test]
     fn the_tree_panels_fixed_width_edge_shows_no_resize_cursor() {
@@ -1892,7 +1943,7 @@ mod tests {
 
         // The panel's right edge: the window's content left (the search box spans
         // the content width, so its own left edge is the panel's) plus the panel's
-        // exact 160 points; the height is inside the window, below the tree's
+        // exact 220 points; the height is inside the window, below the tree's
         // entries and above the window's own bottom edge.
         let content_left = search_box(&out.nodes)
             .bounds()
@@ -1903,7 +1954,7 @@ mod tests {
             .bounds()
             .expect("the window carries bounds")
             .y1;
-        let edge = egui::pos2((content_left + 160.0) as f32, (window_bottom - 40.0) as f32);
+        let edge = egui::pos2((content_left + 220.0) as f32, (window_bottom - 40.0) as f32);
         frame(
             &egui_ctx,
             &mut app,
@@ -1923,6 +1974,94 @@ mod tests {
                 .iter()
                 .any(|node| node.role() == Role::Splitter && node.label() == Some("Resize panel")),
             "a fixed-width panel registers no splitter"
+        );
+    }
+
+    /// A chapter carrying the longest topic name the tools have (each tool's
+    /// `Running from a terminal`), under the Save editor's own title.
+    fn terminal_section() -> HelpSection {
+        HelpSection {
+            title: "Save editor",
+            topics: vec![HelpTopic {
+                slug: "command-line",
+                title: "Running from a terminal",
+                body: "Run it from a terminal.\n",
+            }],
+            messages: Vec::new(),
+        }
+    }
+
+    // The tree is 220 points wide, its padding included (the drafts'
+    // `.help-tree`), so the longest chapter and topic names show whole: the
+    // panel's separator line stands 220 right of the content's left edge,
+    // and both names end left of it.
+    #[test]
+    fn the_tree_is_220_points_wide_and_holds_the_longest_names() {
+        let dir = TestDir::new("studio_core_help_tree_width");
+        let (tool, calls) = stub_help("save-editor", "Save editor", None, terminal_section());
+        let shell = shell_with(
+            test_settings(dir.path()),
+            vec![tool],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls],
+        );
+        shell.ctx.switch_to_tool("save-editor");
+        let Shell { mut app, .. } = shell;
+        let egui_ctx = test_context();
+
+        frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
+        let out = idle(&egui_ctx, &mut app, 15);
+        let search = search_box(&out.nodes)
+            .bounds()
+            .expect("the search box carries bounds");
+        let content_left = search.x0;
+        let separator = egui_ctx
+            .style_of(egui_ctx.theme())
+            .visuals
+            .widgets
+            .noninteractive
+            .bg_stroke;
+        // The vertical lines in the separator's stroke under the search box:
+        // the shell's sidebar edge spans the whole window, above it, and an
+        // open chapter's indent line is shorter than the separator, which
+        // spans the panel's height.
+        let edge = out
+            .shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::LineSegment { points, stroke }
+                    if *stroke == separator
+                        && points[0].x == points[1].x
+                        && f64::from(points[0].y.min(points[1].y)) > search.y1 =>
+                {
+                    Some((points[0].x, (points[1].y - points[0].y).abs()))
+                }
+                _ => None,
+            })
+            .max_by(|a, b| a.1.total_cmp(&b.1))
+            .map(|(x, _)| f64::from(x))
+            .expect("the tree panel's separator line");
+        for (role, label) in [
+            (Role::DisclosureTriangle, "First run and data location"),
+            (Role::Button, "Running from a terminal"),
+        ] {
+            let bounds = out
+                .nodes
+                .iter()
+                .find(|node| node.role() == role && node.label() == Some(label))
+                .and_then(accesskit::Node::bounds)
+                .unwrap_or_else(|| panic!("no tree entry {label:?}"));
+            assert!(
+                bounds.x0 >= content_left && bounds.x1 <= edge,
+                "{label:?} ends at {} past the tree's edge at {edge}",
+                bounds.x1
+            );
+        }
+        assert!(
+            (edge - content_left - 220.0).abs() <= 1.0,
+            "the tree's width: {}",
+            edge - content_left
         );
     }
 }

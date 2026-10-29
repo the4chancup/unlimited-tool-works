@@ -2,16 +2,16 @@
 "Distribution: portable .7z bundle"). Windows only.
 
 The recipe builds `studio` with `--locked`, reads the executable's name from the built exe's
-`--help` usage line (the codename lives in `studio_core`'s `EXE_NAME`, not in this script),
-stages `<name>-<version>/` — the exe, the two launchers, the readme, the two licenses, the
-bundled `data/settings.toml`, and the empty `exports/` and `old_exports/` — under a temporary
-folder in cargo's target directory (asked of `cargo metadata`, since a developer may have
-moved it), packs it as
-`<target>/dist/<name>-<version>-windows.7z` with a `sha256sum`-format `.sha256` beside it,
-then lists the archive and refuses unless the listing equals the staged set exactly, the empty
-folders included. Beside it it packs `<name>-<version>-symbols.7z` (the exe and its `.pdb`,
-the symbols `symbolize_log.py` names a posted `studio.log`'s backtrace with), never in the
-bundle.
+`--help` usage line (the name lives in `studio_core`'s `EXE_NAME`, not in this script),
+stages `unlimited-tool-works-<version>/` — the exe as `<name>.exe`, the two launchers, the
+readme, the two licenses, the bundled `data/settings.toml`, and the empty `exports/` and
+`old_exports/` — under a temporary folder in cargo's target directory (asked of `cargo
+metadata`, since a developer may have moved it), packs it as
+`<target>/dist/unlimited-tool-works-<version>-windows.7z` with a `sha256sum`-format `.sha256`
+beside it, then lists the archive and refuses unless the listing equals the staged set
+exactly, the empty folders included. Beside it it packs `unlimited-tool-works-<version>-symbols.7z` (the exe and
+its `.pdb`, the symbols `symbolize_log.py` names a posted `utw.log`'s backtrace with), never
+in the bundle.
 
 Every refusal prints one `error: <what>` line on stderr and exits 1: a platform that is not
 Windows, a version that is not the workspace's, a readme whose first line names another
@@ -37,7 +37,10 @@ ROOT = Path(__file__).resolve().parent.parent
 SEVEN_Z = Path(r"C:\Program Files\7-Zip\7z.exe")
 # The exe records this name for its symbols and `llvm-symbolizer` finds the .pdb beside
 # the exe by it, so the symbols archive keeps the build's name, not the bundle exe's.
-PDB_NAME = "4cc_studio.pdb"
+PDB_NAME = "utw.pdb"
+# The bundle's top folder and its archives' name. No built file states it, so it is the
+# recipe's own; the exe's name, which does live in the code, comes from its usage line.
+PACKAGE = "unlimited-tool-works"
 
 
 class Refusal(Exception):
@@ -64,8 +67,8 @@ def launcher_calls(bat: str, name: str) -> bool:
 
 
 def existing_glob(version: str) -> str:
-    # The bundle's `<name>-<version>-windows.7z`, its `.sha256` and the symbols'
-    # `<name>-<version>-symbols.7z`: a release is never overwritten, whatever its name.
+    # The bundle's `<package>-<version>-windows.7z`, its `.sha256` and the symbols'
+    # `<package>-<version>-symbols.7z`: a release is never overwritten, whatever its name.
     return f"*-{version}-*.7z*"
 
 
@@ -75,7 +78,7 @@ def symbols_entries(name: str) -> set[str]:
 
 
 def expected_entries(name: str, version: str) -> set[str]:
-    top = f"{name}-{version}"
+    top = f"{PACKAGE}-{version}"
     return {
         top,
         f"{top}/{name}.exe",
@@ -139,7 +142,7 @@ def release(version: str) -> None:
         )
     target = target_dir()
     dist = target / "dist"
-    # Any name: the exe's, which names the archives, is known only once it is built.
+    # Any name: a version is released once, whatever its archives are called.
     existing = sorted(dist.glob(existing_glob(version)))
     if existing:
         raise Refusal(
@@ -155,7 +158,7 @@ def release(version: str) -> None:
     )
     if build.returncode != 0:
         raise Refusal("cargo build --release --locked -p studio failed")
-    exe = target / "release/4cc-studio.exe"
+    exe = target / "release/utw.exe"
     help_text = subprocess.run(
         [str(exe), "--help"], cwd=ROOT, capture_output=True, text=True
     ).stdout
@@ -166,12 +169,12 @@ def release(version: str) -> None:
         path = ROOT / "resources/bundle" / bat
         if not launcher_calls(path.read_text(encoding="utf-8"), name):
             raise Refusal(f'{path.relative_to(ROOT)} does not call "%~dp0{name}.exe"')
-    archive = dist / f"{name}-{version}-windows.7z"
+    archive = dist / f"{PACKAGE}-{version}-windows.7z"
     checksum = archive.with_name(archive.name + ".sha256")
     dist.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(dir=dist.parent))
     try:
-        top = staging / f"{name}-{version}"
+        top = staging / f"{PACKAGE}-{version}"
         top.mkdir()
         shutil.copyfile(exe, top / f"{name}.exe")
         for bundled in ("quick_compile.bat", "quick_upgrade.bat", "README.txt"):
@@ -224,7 +227,7 @@ def release(version: str) -> None:
         symbols_stage.mkdir()
         shutil.copyfile(top / f"{name}.exe", symbols_stage / f"{name}.exe")
         shutil.copyfile(pdb, symbols_stage / PDB_NAME)
-        symbols = dist / f"{name}-{version}-symbols.7z"
+        symbols = dist / f"{PACKAGE}-{version}-symbols.7z"
         pack = subprocess.run(
             [seven_z, "a", "-t7z", "-mx=9", str(symbols), f"{name}.exe", PDB_NAME],
             cwd=symbols_stage,
