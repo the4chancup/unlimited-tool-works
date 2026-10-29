@@ -44,6 +44,9 @@ phase (16.x a, unwired)
 (decision entries 2026-09-21 and 2026-09-28). Release target (2026-09-28): 0.1.0 after Phase
 8; phase order 1–6, 8, 0.1.0, 7, 9–16 (`plans/core/development_plan.md` "Releases");
 first-class target the Fox version the cup moves to around April 2027 ("Target versions").
+**0.0.1 candidate** (2026-10-29): the overlay pass (0.0.1ov) done in both themes; the
+candidate waits for the maintainer's final UI pass (0.0.1f1c, `QUESTIONS.md`, branch
+`release/0.0.1-candidate`); the work goes on past it.
 **Blocked on:** nothing.
 
 **Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
@@ -4310,7 +4313,7 @@ briefs, review loops, gates and mutation runs as for any step.
     widths through `bit_width`/`widest_bit_width`; each shown to fail under a perturbation
     (`texport.rs`, `schema/mod.rs` tests)
   - [ ] after the cut: `aatf`'s nine fixture modules' repeated tests as helpers (b-3)
-- [ ] 0.0.1ov every built window laid over its draft before the final pass (the maintainer,
+- [x] 0.0.1ov every built window laid over its draft before the final pass (the maintainer,
   2026-10-28: the final pass's first look found the first-run prompt unlike its draft, unequal
   columns with no gap, small buttons, a hint wrapped mid-path; the overlay of 8.20, planned in
   `plans/core/gui.md` "The host's other review aids", had never been built)
@@ -4333,7 +4336,7 @@ briefs, review loops, gates and mutation runs as for any step.
     mismatches: the version warning SE-GUI-28 and the Open menu's discovered saves the draft
     draws (8.9l slice l3, not built), the rail's order (the build's window tool first, by
     design), a combo's arrow (the browser's own chevron in the draft, egui's triangle)
-  - [ ] ov2 the fixes (sidekick, one brief): the mismatches the maintainer confirms, each with
+  - [x] ov2 the fixes (sidekick, one brief): the mismatches the maintainer confirms, each with
     a layout test of the draft's measures (the first-run prompt: two columns of equal width 16
     apart, buttons as wide as their column, 15-point text)
     - [x] ov2a the default client area 1280 × 780 in the app (the maintainer, 2026-10-28: the
@@ -4812,7 +4815,7 @@ briefs, review loops, gates and mutation runs as for any step.
     host's `rated` fill tested), merge `8315c07e`; `team_widgets` pitch (`drop_rule.rs`, new
     `lit_area.rs`, `mod.rs`, `popover.rs`, tests), `tactics/mod.rs`; `save_editor`
     `view/tactics.rs` (`roster_slot`), help 08. Not yet seen in a built window (ov1)
-  - [ ] ov11 the light theme (the maintainer, 2026-10-29: is it usable? then "avoid writing any
+  - [x] ov11 the light theme (the maintainer, 2026-10-29: is it usable? then "avoid writing any
     colors directly, ideally they should all be part of a switchable palette"; DECISIONS
     "Every colour comes from a switchable palette, none written in a view")
     - [x] ov11a the palette (`plans/core/gui.md`, the Dark/light theme row):
@@ -4822,7 +4825,7 @@ briefs, review loops, gates and mutation runs as for any step.
       on `theme::NO_TINT`; tests: the palette follows the theme, the shared fields equal, the
       badge's fill pinned as a literal in a pitch test. `just colour-literals` (the lead's
       check and its test) joins `gates` and `gates-changed`. `807e281f`, merge `685df479`
-    - [ ] ov11b the light theme looked at: no test or capture has ever drawn a view in it
+    - [x] ov11b the light theme looked at: no test or capture has ever drawn a view in it
       and the drafts are dark only. Render every Save editor view and dialog in it
       (built-window captures with the maintainer's yes, the theme switched in the
       sandbox's settings, or headless frames), list what reads poorly, fix it in the
@@ -4907,7 +4910,7 @@ briefs, review loops, gates and mutation runs as for any step.
     containment rule dropped (320), a stale meant entry. Not covered: an open combo's popup, a
     prompt long enough to scroll, Live AATF's no-issues state (only the PES 15 fixture has a
     clean team), the boglo dialog's other radio state
-  - [ ] ov4 8.20's host control (lead, drafts): the captures in
+  - [x] ov4 8.20's host control (lead, drafts): the captures in
     `docs/prototypes/assets/captures/`, the Overlay control over the draft (8.20's brief,
     `.tmp/8_20/brief_8_20.md`, written for a worktree since gone: rebase it on main)
     - [x] ov4a the Overlay control (lead): `index.html`'s Layout group, `overlay=over|beside`
