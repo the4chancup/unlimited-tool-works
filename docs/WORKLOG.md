@@ -4517,10 +4517,15 @@ briefs, review loops, gates and mutation runs as for any step.
       draft's `dlgSetStats`; the build sets it on the sentence's line); the first-run prompt's
       two choice buttons with their labels centred; Settings' Memory cap `%` after its box, not
       inside it
-    - [ ] ov2r the drafts brought to the plan (lead): the settings menu's FPC hide boots and
+    - [x] ov2r the drafts brought to the plan (lead): the settings menu's FPC hide boots and
       gloves IDs (common rows, `plans/core/gui.md` "Settings menu") and the active tool's
       section open on opening (the Save editor's, with Aesthetics from exports), both of which
-      the build has and the draft lacks
+      the build has and the draft lacks. Done 2026-10-29 (`docs/prototypes/index.html`): the
+      two FPC rows after Memory cap, the Save editor's section with its one row (the draft's
+      own side-panel control stays the views' GIVEN); a combo and a text box 18 tall as egui's
+      (the browser drew them 19, so the drafts' forms of them stood 23 apart, not 22); the
+      settings window as wide as its 660-point body (`.window` stopped at 640 and its Browse
+      buttons ran into the border)
   - [ ] ov6 Live AATF's whole look (the maintainer, 2026-10-28): every element rendered from
     the drafts, `.tmp/0_0_1ov/live_gallery.py` → `.tmp/0_0_1ov/live/`; the first rulings
     drafted and planned (ov2f; the dock's kind codes kept). The two points left for later (a

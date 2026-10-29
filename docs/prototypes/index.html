@@ -330,6 +330,11 @@
   /* egui's floor under a widget's height, interact_size.y: a button's, a combo's, a drag
      value's and a checkbox row's (its text alone is 15 at the body's 1.2 line). */
   button, select, input[type=number], label.cb { min-height: 18px; }
+  /* A combo and a text box are 18 tall, as egui's are: the browser drew a combo 19 by its own
+     sizing and a text box 19 from its border, padding and line, which put a form's rows of
+     them 23 apart where egui's are 22. */
+  select, input[type=text] { height: 18px; }
+  input[type=text] { padding-top: 0; padding-bottom: 0; }
   /* egui's button_padding as theme.rs pins it, 4 x 1. */
   button { background: var(--widget); border: 0; border-radius: 2px; padding: 1px 4px; cursor: default; }
   button:hover:not(:disabled) { background: var(--hover); color: #f0f0f0; }
@@ -479,6 +484,9 @@
      characters, is 426 points in the box's font (the maintainer, 2026-10-27: 220 cut
      usual paths). The menu widens to the label column, the box and Browse. */
   .settings-body { width: 660px; }
+  /* The menu is as wide as its body (plans/core/gui.md "Settings menu": 660), past the
+     640 every other window stops at; capped, its Browse buttons ran into the border. */
+  .window:has(> .settings-body) { max-width: none; }
   .settings-body td:first-child { white-space: nowrap; }
   .settings-body input[type=text] { width: 440px; }
   .settings-body input[type=number] { width: 90px; }
@@ -988,6 +996,8 @@ S.settings = {
     exports_folder_path: "exports",
     thread_count: 0,
     memory_cap_percent: 80,
+    fpc_hide_boots_id: 55,
+    fpc_hide_gloves_id: 11,
     theme: "Dark",
     check_for_updates: true,
     check_interval_hours: 24,
@@ -1003,7 +1013,7 @@ S.settings = {
       dds_compression: "Auto", strict_file_type_check: true, pass_through: false,
       teams_list_path: "teams_list.txt",
     },
-    "save-editor": { aatf_ruleset: "autumn26" },
+    "save-editor": { aatf_ruleset: "autumn26", aesthetics_from_exports: false },
     "export-upgrader": {},
     "ruleset-editor": {},
   },
@@ -2014,8 +2024,12 @@ const TOOL_SETTINGS_SPEC = {
     ["pass_through", "Keep folders with errors", "bool", "Keep folders with errors instead of discarding them."],
     ["teams_list_path", "Teams list file", "file", "The working teams list; a relative path resolves in the data directory."],
   ],
-  // The ruleset is the toolbar's dropdown (aatf_ruleset), not a row here.
-  "save-editor": [],
+  // The ruleset is the toolbar's dropdown (aatf_ruleset), not a row here. The draft's own
+  // Aesthetics from exports control (its side panel) is the GIVEN the views read; this row
+  // shows where a member finds the setting.
+  "save-editor": [
+    ["aesthetics_from_exports", "Aesthetics from exports", "bool", "On when the cup's looks are compiled from exports: the save's aesthetics are then read-only, behind Edit aesthetics anyway on the Appearance section."],
+  ],
   "export-upgrader": [],
   // Its table holds state the tool writes (the last folder, the recent files), no setting.
   "ruleset-editor": [],
@@ -2094,6 +2108,12 @@ function commonSettingsRows() {
       num("thread_count", { id: "set-thread-count" })),
     sRow("Memory cap", "memory_cap_percent", "The most memory a tool's run may budget for, as a percentage of physical memory.",
       [num("memory_cap_percent", { step: "any" }), " %"]),
+    // Bounded to the stock band: boots 1 to 100, gloves 11 to 100 (save_editor.md "Full
+    // Player Customization (FPC)").
+    sRow("FPC hide boots ID", "fpc_hide_boots_id", "The boots ID that Hide body and an fpc_on marker write. The game has no boots with this ID, and 4cc uses 55.",
+      num("fpc_hide_boots_id", { min: 1, max: 100 })),
+    sRow("FPC hide gloves ID", "fpc_hide_gloves_id", "The gloves ID that Hide body and an fpc_on marker write. The game has no gloves with this ID, and 4cc uses 11.",
+      num("fpc_hide_gloves_id", { min: 11, max: 100 })),
     sRow("Theme", "theme", "The window's color theme.", theme),
     sRow("Check for updates", "check_for_updates", "Whether the shell looks for new releases.",
       h("input", { type: "checkbox", checked: c.check_for_updates,
