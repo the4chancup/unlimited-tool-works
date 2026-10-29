@@ -118,7 +118,11 @@ Trade-offs accepted:
   closed with this theme work, not a framework change.
 - **3D preview requires `wgpu`**: the future model preview viewport (see Future Features in the
   [Team compiler plan](../team_compiler/README.md)) would use `wgpu` rendering alongside egui rather than
-  Three.js in a webview. More work, but it's a post-MVP feature.
+  Three.js in a webview. More work, but it's a post-MVP feature: three.js would bring the glTF
+  loader, the orbit camera and the skeleton overlay for free, where egui needs a small
+  renderer of our own (shaders, a depth target, the camera), a one-off cost on one widget
+  kept small by the preview's glance-only scope; PES's own shaders or posing would be custom
+  work under either.
 - **Log viewer performance**: egui's text rendering can be slow with thousands of lines. Mitigated
   by capping displayed lines to the last few hundred (full logs go to disk regardless).
 

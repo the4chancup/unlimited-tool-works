@@ -1775,6 +1775,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         PES 15-17 with the missing template in its tooltip
       - [ ] k5d SE-GUI-29 manual: each Texport imported by the game's own team import in PES
         18, 19, 20 and 21 (21 on E:; 18-20 on F:, connected on request; saves backed up first)
+      - [ ] k5rev the cross-family review loop (the slices are Opus sidekicks', so the lead's
+        review is same-family): SWE-2 rounds on each merged slice until one accepts under
+        five, one Astra round over k5a + k5b, another over k5c, SWE-2 rounds after each;
+        rulings in `.tmp/8_9k5/rulings_k5.md`. Started 2026-10-29: SWE-2 round 1 on k5a, its
+        code and its tests in two briefs (`review4/.tmp/k5a_review/`)
       - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
       opening another save (SE-GUI-05; only the toolbar's marker exists, so closing loses

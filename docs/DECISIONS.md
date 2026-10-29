@@ -13693,3 +13693,17 @@ rows. The item's click still selects the player.
 Why: the maintainer's ask: both list values about to be written to the save, and the columns
 read better than an arrow per row.
 Plan: `plans/save_editor.md` "Read-only aesthetics".
+
+## 2026-10-29 — core — egui stays; the draft-then-build method stays
+
+Decision: the suite keeps egui and the current way of building its UI (an HTML draft of each
+screen, then the egui build measured against it), rather than moving to a web frontend
+(Tauri) or loosening the method. The 3D model preview stays an egui/wgpu widget.
+Why: the maintainer's choice, asked whether egui still fits a method that builds each screen
+twice. A web frontend would remove the second build and make the 3D preview much simpler
+(three.js loads the glTF `model_convert` already writes), but it means rewriting every
+tool's UI and its in-process tests, a webview's processes beside PES, WebKitGTK on Linux and
+an async runtime in the workspace; the preview's extra egui work is a one-off on one widget
+kept small by its glance-only scope.
+Plan: `spec/core/README.md` "GUI framework choice: egui"; `plans/core/README.md`, the bullet
+"3D preview requires `wgpu`".

@@ -137,7 +137,10 @@ concern.
 
 **When to implement:** After the GUI is functional (post-Phase 8). The core architecture doesn't
 need to change; it's a `wgpu` rendering pass alongside egui. The object model already has all the
-data needed.
+data needed. The first step is a short spike (one model, the orbit camera, one texture) that
+shows whether a maintained Rust crate keeps the renderer small, before `libs/model_viewport` is
+planned in detail: three.js would have given the loader and camera for free, so the renderer
+is the part to keep small.
 
 ---
 

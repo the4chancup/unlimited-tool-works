@@ -39,21 +39,6 @@ names where the question came from so the context can be read there.
   address. `Cargo.toml`'s `repository` URL is changed in the commit after it; until then it
   names `the4chancup/4cc-studio`.
 
-## After 0.0.1
-
-- **egui, or a web frontend (Tauri)?** (asked by the maintainer on 2026-10-29). The choice of egui
-  (`spec/core/README.md` "GUI framework choice: egui") assumed a small utility UI; the method
-  since is an HTML draft of every screen, then the egui build measured against it to 1 point,
-  so each screen is built twice (about 13,800 draft lines; 136 of the 671 commits from
-  2026-10-20 to 2026-10-29 name the drafts, pixels or alignment). Two ways out after 0.0.1:
-  (a) keep egui and loosen the method: drafts settle layout and behavior, the build becomes
-  the visual reference reviewed from screenshots, no 1-point measuring; (b) a Tauri trial on
-  one screen (the player view off its draft, on the real lib), measuring the webview's memory
-  beside a running PES, startup, a 34,000-row comparison through the Rust-to-webview calls,
-  rendering on Linux (WebKitGTK) and the test story, before any migration. Which, or neither?
-  (b) also needs the AGENTS.md rule "no async runtime anywhere" reworded: Tauri carries its
-  own.
-
 ## Cup practice
 
 The Music player's three below come from reading Rigdio v2.2.0's controls (worklog 10.0i,
