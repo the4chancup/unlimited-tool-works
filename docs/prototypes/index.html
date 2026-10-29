@@ -463,8 +463,9 @@
   #sidebar select { appearance: none; text-align: center; text-align-last: center; }
   .sidebar .tool { width: 44px; justify-content: center; align-items: center; gap: 6px; border-left: 3px solid transparent; }
   .sidebar .tool.on { border-left-color: var(--sel-fg); }
-  .sidebar .tool.planned { color: #6e6e6e; }
-  .sidebar .tool.planned:hover { background: none; color: #6e6e6e; }
+  /* A planned tool in the grey the app's disabled entry fades to. */
+  .sidebar .tool.planned { color: #3d3d3d; }
+  .sidebar .tool.planned:hover { background: none; color: #3d3d3d; }
   /* The opened sidebar: a layer over the rail and the view's left edge, the
      view under it unmoved. Above the view, below menus and modals. It carries
      the rail's and the sidebar's classes so every item metric is the rail's;

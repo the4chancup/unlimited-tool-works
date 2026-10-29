@@ -1791,8 +1791,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         (`c8fe3e1a`): the export row (Save dialogs, the open save refused as `export-toml`
         refuses it, a success notice), `pes_savefile::file::fresh_salt` public for the
         Texport's key; 8 tests (`view/tests/interchange_export.rs`: the Team TOML byte-equal
-        to the CLI's; PES 19 and 21 Texports read back with no value changed). Open: the
-        built-window check, its SWE-2 round
+        to the CLI's; PES 19 and 21 Texports read back with no value changed). SWE-2 round
+        1: 3 accepted, the loop ends (rulings S1g; its code and tests ride k5b2r's part 2,
+        `.tmp/8_9k5/brief_k5b2r2.md`). Open: the built-window check; the `help/` paragraphs
+        for the patch panel and the team file panel (S1g-2, the lead, after k5b2r)
       - [ ] k5b2r the rework of SWE-2 round 1 on k5b2 and round 2 on k5a
         (`.tmp/8_9k5/rulings_k5.md` S1d-1, S1e-1, S1f, S2b-1 to 3, L1): an import that
         changes nothing disables Apply and says so (drafted, plan, DECISIONS 2026-10-29), the
@@ -1810,6 +1812,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         k5b1: 1 accepted (an import must not retarget the document's `[team] id`, which the
         base-copy own-id rule reads), carried into k5b2's review
       - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged
+    - [ ] 8.9m the maintainer's pass over the 0.0.1 candidate (`d317b6da`), 2026-10-29:
+      - [x] the drafts take the app's grey for a plain player name and a planned tool
+        (DECISIONS 2026-10-29)
+      - [ ] m1 the code fixes (brief `.tmp/8_9m/brief_m1.md`): the badges' medal outlines
+        computed off the UI thread (`player_tier` ×23 took ~95 ms of the team view's first
+        frame on the real save); the player list's scroll track without its black fill; the
+        list pane's and the quick actions' separator lines gone, widths kept; the lineup
+        lists filled in the extreme colour, as the drafts' `.llist`; the lineup lists'
+        rects unchanged by the Live AATF dock
+      - [ ] m2 `scripts/draft_compare.py` compares the fill and text colours of the boxes it
+        pairs, not only their rects: the fills and greys above passed every geometry check
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
       opening another save (SE-GUI-05; only the toolbar's marker exists, so closing loses
       edits silently), the Open menu's discovered saves (SE-GUI-26), the version-mismatch

@@ -176,8 +176,10 @@ input[type=range]:focus { outline: none; }
 .plist .vbar .thumb:hover, .plist .vbar .thumb.drag { background: var(--hover); }
 /* A name too long for the row truncates, its dot and mark kept after it. */
 .plist .pname { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* A player row's text in the resting widgets' grey, as the app paints a plain name; a team
+   row's own rule below keeps the strong colour. */
 .plist .rows .prow { display: flex; gap: 5px; align-items: center; padding: 1px 4px; white-space: nowrap;
-  min-height: 18px; }
+  min-height: 18px; color: #b4b4b4; }
 .plist .rows .prow:hover { background: var(--hover); }
 .plist .rows .prow.on { background: var(--sel-bg); }
 /* The drag handle in the player list and the lineup lists sits 4 points from the row's edge
