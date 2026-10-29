@@ -432,7 +432,7 @@ and a sandbox PES folder (`.tmp/5_5/studio_sl/`): with PES 21 running, sideload 
 exit 0, the patch's `cpks = []`, `savefile_skipped_pes_running`, the copy byte-identical;
 with only PES 17 running, `savefile_written` and the copy's `.bak` kept
 
-SE-CLI-02 manual: checked 2026-10-15, with PES 21 running: `import-toml`, `apply-patch`,
+SE-CLI-02 (withdrawn at 8.9l5 for SE-CLI-03, which tests prove), checked by hand 2026-10-15, with PES 21 running: `import-toml`, `apply-patch`,
 `transplant`, `strip-and-seed` and `check-stripped --strip-again` each refused with exit 2
 naming PES 2021, no `--out` written; with only PES 17 running each wrote its `--out`
 (`.tmp/5_5/cli02/`)
@@ -1803,7 +1803,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           test_harness}.rs`. Astra's critique of the plan and this code: under way
         - [ ] l3b the Save editor's version warning as a standing notice (SE-GUI-28), after
           l3a
-        - [ ] l3c the Open menu with discovery and recent files, Save as (SE-GUI-26)
+        - [x] l3c 2026-10-29 (Opus sidekick): the toolbar's Open menu (every discovered save
+          for every version with its account folder, discovery run once per opening; this
+          run's opened and written files; Choose file…, starting in the selected version's
+          save folder) and Save as (`Session::save_to`, the replaced file kept as its `.bak`,
+          the running-game question remembering its target); discovery and the pickers
+          injectable (SE-GUI-26). Its test, on the real account folder names, found discovery
+          skipping the 17-digit Steam ID64 folder of PES 2020 (fixed in `196de046`). Help
+          `02_window.md`. Files: `save_editor/src/view/{open_menu,mod,prompt,comparator}.rs`,
+          `save_editor/src/{lib,session/mod}.rs`, `save_editor/src/view/tests/{open_menu,
+          prompt,tactics,toolbar,overlap}.rs`. Not yet: the built window rendered against the
+          draft's Open menu (`.tmp/8_9l/draft/open_menu.png`)
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
         The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by
