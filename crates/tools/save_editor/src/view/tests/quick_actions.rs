@@ -674,19 +674,14 @@ fn the_quick_actions_follow_the_aatf_ruleset_setting() {
     );
 }
 
-// The view fills its pane: the list and the quick actions run to the
-// pane's bottom — the actions' band's painted bottom is the pane's own
-// painted bottom at the 1280 x 780 window, no dead strip under it (the
-// bottom panel takes its height off the list's scroll, whose floating
-// bar reserves no strip of its own).
-#[test]
-fn the_quick_actions_reach_the_panes_bottom() {
-    let (_path, mut view, _window) = open_701("quick_fills_pane");
-    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
-    let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+/// The player list's painted pane and the quick actions' band in it, the
+/// bottom panel's painted frame, in a frame's `shapes`.
+fn pane_and_band(
+    window: &Headless,
+    shapes: &[egui::epaint::ClippedShape],
+) -> (egui::Rect, egui::Rect) {
     let panel_fill = window.ctx.style_of(window.ctx.theme()).visuals.panel_fill;
-    let frame = |shapes: &[egui::epaint::ClippedShape],
-                 pick: &dyn Fn(&egui::epaint::RectShape) -> bool| {
+    let frame = |pick: &dyn Fn(&egui::epaint::RectShape) -> bool| {
         shapes
             .iter()
             .filter_map(|clipped| match &clipped.shape {
@@ -701,17 +696,52 @@ fn the_quick_actions_reach_the_panes_bottom() {
 
     // The pane the quick actions sit in: the player list's own painted
     // frame, full height inside the window's left margin.
-    let pane = frame(&shapes, &|shape| {
+    let pane = frame(&|shape| {
         shape.rect.min.x > 2.0 && shape.rect.max.x < 400.0 && shape.rect.height() > 600.0
     });
     // The quick actions' band: the bottom panel's painted frame under the
     // list — a shallow strip inside the pane's x range near its bottom.
-    let band = frame(&shapes, &|shape| {
+    let band = frame(&|shape| {
         shape.rect.min.x >= pane.min.x
             && shape.rect.max.x < pane.max.x - 1.0
             && shape.rect.height() < 200.0
             && shape.rect.max.y > pane.max.y - 100.0
     });
+    (pane, band)
+}
+
+// The quick actions' band starts 3 over its first row's buttons, the
+// draft's `.plist` gap over the grid: the bottom panel's top margin.
+#[test]
+fn the_quick_actions_band_starts_3_over_its_first_row() {
+    let (_path, mut view, _window) = open_701("quick_band_top");
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, band) = pane_and_band(&window, &shapes);
+    for label in ["Make Gold", "Make Goalkeeper"] {
+        let top = node_labeled(&nodes, Role::Button, label)
+            .bounds()
+            .expect("bounds")
+            .y0;
+        let gap = top - f64::from(band.min.y);
+        assert!(
+            (gap - 3.0).abs() <= 0.01,
+            "{label} stands 3 under the band's top ({band:?}), got {gap}"
+        );
+    }
+}
+
+// The view fills its pane: the list and the quick actions run to the
+// pane's bottom — the actions' band's painted bottom is the pane's own
+// painted bottom at the 1280 x 780 window, no dead strip under it (the
+// bottom panel takes its height off the list's scroll, whose floating
+// bar reserves no strip of its own).
+#[test]
+fn the_quick_actions_reach_the_panes_bottom() {
+    let (_path, mut view, _window) = open_701("quick_fills_pane");
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (pane, band) = pane_and_band(&window, &shapes);
     assert!(
         (band.max.y - pane.max.y).abs() <= 1.0,
         "the quick actions' bottom within a point of the pane's ({:?} vs {:?})",
