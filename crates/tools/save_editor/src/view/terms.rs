@@ -32,6 +32,11 @@ pub(super) struct Term {
     pub(super) old: String,
     /// `new` the same way.
     pub(super) new: String,
+    /// A team colour's row only: the old and new colours as the team view
+    /// shows them, the changes table's swatches before the two hex values.
+    /// Known from the field compared, never read back from the text, which
+    /// a player's name could also spell.
+    pub(super) swatches: Option<[egui::Color32; 2]>,
 }
 
 /// `diff`'s row in the views' terms.
@@ -44,11 +49,13 @@ pub(super) fn row_term(version: PesVersion, diff: &PlayerDiff) -> Term {
                 label: info_strip::NAME_LABEL.to_owned(),
                 old: info_strip::shown_name(old),
                 new: info_strip::shown_name(new),
+                swatches: None,
             },
             PlayerText::ShirtName => Term {
                 label: info_strip::SHIRT_LABEL.to_owned(),
                 old: old.clone(),
                 new: new.clone(),
+                swatches: None,
             },
         },
         // The run's fingerprint row is drawn by no view.
@@ -60,7 +67,12 @@ pub(super) fn row_term(version: PesVersion, diff: &PlayerDiff) -> Term {
 /// stored values — the row for a field no view draws.
 fn report_term(diff: &PlayerDiff) -> Term {
     let (label, old, new) = diff_fields(diff);
-    Term { label, old, new }
+    Term {
+        label,
+        old,
+        new,
+        swatches: None,
+    }
 }
 
 /// `diffs`' rows in the views' terms, for the unsaved-changes prompt: one
@@ -163,7 +175,12 @@ fn team_row_term(
                 &team.tactics,
                 (old_roster, new_roster),
             );
-            Term { label, old, new }
+            Term {
+                label,
+                old,
+                new,
+                swatches: None,
+            }
         }
     }
 }
@@ -184,12 +201,12 @@ fn colour_index(diff: &TeamDiff) -> Option<usize> {
     }
 }
 
-/// The view's one row for a team colour: the swatch's label and the two
-/// sides' hex (`colour_unit`'s `format_hex` over `channel_to_show`), read
-/// from `baseline`'s and `team`'s stored channels — the diffs the row
-/// merges only say the colour changed.
+/// The view's one row for a team colour: the swatch's label, the two
+/// sides' hex (`colour_unit`'s `format_hex` over `channel_to_show`) and
+/// the two shown colours, read from `baseline`'s and `team`'s stored
+/// channels — the diffs the row merges only say the colour changed.
 fn colour_term(baseline: &TeamEntry, team: &TeamEntry, colour: usize) -> Term {
-    let stored = |entry: &TeamEntry| {
+    let shown = |entry: &TeamEntry| {
         let colors = entry
             .colors
             .expect("a colour diff is emitted only where the version stores colours");
@@ -198,11 +215,15 @@ fn colour_term(baseline: &TeamEntry, team: &TeamEntry, colour: usize) -> Term {
             colors[colour].green,
             colors[colour].blue,
         ]
+        .map(team::channel_to_show)
     };
+    let (old, new) = (shown(baseline), shown(team));
+    let swatch = |[red, green, blue]: [u8; 3]| egui::Color32::from_rgb(red, green, blue);
     Term {
         label: team::COLOUR_LABELS[colour].to_owned(),
-        old: team::format_hex(stored(baseline).map(team::channel_to_show)),
-        new: team::format_hex(stored(team).map(team::channel_to_show)),
+        old: team::format_hex(old),
+        new: team::format_hex(new),
+        swatches: Some([swatch(old), swatch(new)]),
     }
 }
 
@@ -217,7 +238,12 @@ fn team_report_term(diff: &TeamDiff) -> Term {
         TeamDiff::Text { text, old, new } => (format!("{text:?}"), old.clone(), new.clone()),
     };
 
-    Term { label, old, new }
+    Term {
+        label,
+        old,
+        new,
+        swatches: None,
+    }
 }
 
 /// A report row's three strings for a named field: the schema name and
@@ -262,6 +288,7 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
             label: (*label).to_owned(),
             old: (i64::from(old) - limit).to_string(),
             new: (i64::from(new) - limit).to_string(),
+            swatches: None,
         };
     }
     if let Some((label, key, ..)) = fields::STRIP_ENUMS
@@ -344,6 +371,7 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
                 label: palette.label.to_owned(),
                 old: palette.shown(stored_u8(old)),
                 new: palette.shown(stored_u8(new)),
+                swatches: None,
             }
         }
         // The rest is drawn by no view (the ids and gameplay edit flags
@@ -363,6 +391,7 @@ fn face_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
             label: appearance::PLAYER_GLOVES_LABEL.to_owned(),
             old: on_off(u32::from(old)).to_owned(),
             new: on_off(u32::from(new)).to_owned(),
+            swatches: None,
         },
         IngameFaceField::SkinColor
         | IngameFaceField::IrisColor
@@ -374,6 +403,7 @@ fn face_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
                 label: palette.label.to_owned(),
                 old: palette.shown(old),
                 new: palette.shown(new),
+                swatches: None,
             }
         }
         _ => report_term(diff),
@@ -398,6 +428,7 @@ fn term(label: impl Into<String>, old: impl Into<String>, new: impl Into<String>
         label: label.into(),
         old: old.into(),
         new: new.into(),
+        swatches: None,
     }
 }
 

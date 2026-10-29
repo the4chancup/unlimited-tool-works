@@ -7,8 +7,10 @@
 use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use studio_core::{ShellRequest, StudioTool, ToolContext};
 
+use super::changes_popup::assert_swatch_before;
 use super::*;
 use crate::view::prompt::{self, Pending};
+use crate::view::team::{channel_to_show, format_hex};
 
 /// A context and its request receiver, `tool`'s `hold_close` legs driven
 /// through `Tool::view` as the shell does.
@@ -104,14 +106,18 @@ pub(super) fn dialog_nodes<'a>(
     nodes
 }
 
-/// The prompt's rows as `(item, old, new)`: each Item cell (a `Label`
-/// holding " · " — the `TextRun` twin of every drawn text is skipped)
-/// with its row's two value cells in x order.
+/// The prompt's rows as `(item, old, new)` (`table_rows`).
 fn prompt_rows(
     pairs: &[(accesskit::NodeId, accesskit::Node)],
     heading: &str,
 ) -> Vec<(String, String, String)> {
-    let nodes = dialog_nodes(pairs, heading);
+    table_rows(&dialog_nodes(pairs, heading))
+}
+
+/// A changes table's rows among `nodes` as `(item, old, new)`: each Item
+/// cell (a `Label` holding " · " — the `TextRun` twin of every drawn text
+/// is skipped) with its row's two value cells in x order.
+pub(super) fn table_rows(nodes: &[&accesskit::Node]) -> Vec<(String, String, String)> {
     let mut items: Vec<(accesskit::Rect, String)> = nodes
         .iter()
         .filter_map(|node| {
@@ -402,6 +408,54 @@ fn a_teams_row_comes_after_the_players() {
             ),
         ],
         "the shirt number under its player, the team's own row last"
+    );
+}
+
+// SE-GUI-05: a team colour's row draws each value's swatch before its hex,
+// the toolbar's changes list's table and the prompt's being one.
+#[test]
+fn the_prompts_colour_row_draws_a_swatch_before_each_hex() {
+    let path = fixture(PesVersion::Pes21, "prompt_colour_row");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut team = team_entry(&view, 701);
+    let colors = team.colors.as_mut().expect("PES 21 stores team colours");
+    let stored = [colors[0].red, colors[0].green, colors[0].blue];
+    assert_ne!(stored, [10, 20, 30], "premise: a real change");
+    colors[0].red = 10;
+    colors[0].green = 20;
+    colors[0].blue = 30;
+    view.session.as_mut().unwrap().edit_team(1, team);
+    prompt::open(&mut view, Pending::Close);
+    let mut window = Headless::new();
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = dialog_nodes(&pairs, "Unsaved changes");
+    let [red, green, blue] = stored.map(channel_to_show);
+    let old_hex = format_hex([red, green, blue]);
+    // The stored 10, 20, 30 shown as 8-bit channels: 40, 81, 121.
+    assert_eq!(
+        table_rows(&nodes),
+        [(
+            "/3/ · Col. 1".to_owned(),
+            old_hex.clone(),
+            "#285179".to_owned()
+        )],
+        "premise: the one colour row"
+    );
+    assert_swatch_before(
+        &window,
+        &nodes,
+        &shapes,
+        &old_hex,
+        egui::Color32::from_rgb(red, green, blue),
+    );
+    assert_swatch_before(
+        &window,
+        &nodes,
+        &shapes,
+        "#285179",
+        egui::Color32::from_rgb(40, 81, 121),
     );
 }
 
