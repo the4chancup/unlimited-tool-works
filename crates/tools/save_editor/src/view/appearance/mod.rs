@@ -924,7 +924,7 @@ fn swatch(ui: &mut egui::Ui, rgb: [u8; 3], held: bool, label: &str) -> egui::Res
         ui.painter().rect_stroke(
             rect,
             egui::CornerRadius::same(2),
-            egui::Stroke::new(1.0, egui::Color32::BLACK),
+            egui::Stroke::new(1.0, studio_core::theme::palette(ui.visuals()).swatch_edge),
             egui::StrokeKind::Inside,
         );
         if held {

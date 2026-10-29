@@ -5,11 +5,10 @@
 //! his position changes: the drop rule decides that, from every
 //! position's area and his overalls.
 
+use studio_core::theme::Palette;
+
 use super::drop_rule::{self, AREAS_A};
 use super::{SPOT_X0, SPOT_XS, SPOT_Y0, SPOT_YS};
-
-/// The darkening's fill: black at 60%, which leaves the turf at 40%.
-const DIM: egui::Color32 = egui::Color32::from_black_alpha(153);
 
 /// The canvas rectangles a starter rated at `rated` (indexed by the
 /// position byte) lights: each rated position's `AREAS_A` row through
@@ -30,7 +29,12 @@ pub(super) fn lit_rects(canvas: egui::Rect, rated: &[bool; 13]) -> Vec<egui::Rec
 /// filled once, or not at all, whatever covers it. A starter rated
 /// nowhere (an empty roster slot, or a host that reads no ratings)
 /// darkens nothing, rather than the whole pitch.
-pub(super) fn paint_dim(painter: &egui::Painter, canvas: egui::Rect, rated: &[bool; 13]) {
+pub(super) fn paint_dim(
+    painter: &egui::Painter,
+    canvas: egui::Rect,
+    rated: &[bool; 13],
+    palette: &Palette,
+) {
     if !rated.contains(&true) {
         return;
     }
@@ -49,7 +53,7 @@ pub(super) fn paint_dim(painter: &egui::Painter, canvas: egui::Rect, rated: &[bo
         for y in ys.windows(2) {
             let cell = egui::Rect::from_min_max(egui::pos2(x[0], y[0]), egui::pos2(x[1], y[1]));
             if !lit.iter().any(|rect| rect.contains(cell.center())) {
-                painter.rect_filled(cell, 0, DIM);
+                painter.rect_filled(cell, 0, palette.lit_dim);
             }
         }
     }

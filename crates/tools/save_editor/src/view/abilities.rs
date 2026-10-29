@@ -489,45 +489,20 @@ const RATING_GAP: f32 = 2.0;
 /// A cell's three rating squares' width.
 const RATINGS_WIDTH: f32 = 3.0 * RATING_SIDE + 2.0 * RATING_GAP;
 
-/// The positions grid's C rating's fill (the draft's `.sel.on.rc`
-/// `#5a5a5a`): the quiet grey a chosen rating or side gets where the
-/// accent would pull the eye — the side toggles' held fill too
-/// (`info_strip`'s `side_row`).
-const RATING_C_FILL: egui::Color32 = egui::Color32::from_rgb(0x5a, 0x5a, 0x5a);
-
-/// `RATING_C_FILL` on the light theme: the same contrast with the panel,
-/// 2.5, as the dark grey has with the dark one, and the light theme's dark
-/// text reads on it at 3.05 (on the dark grey itself, at 1.2).
-const RATING_C_FILL_LIGHT: egui::Color32 = egui::Color32::from_gray(0x9f);
-
-/// A chosen C rating's fill, and a held side toggle's, on the theme
-/// `visuals` draw.
-pub(super) fn rating_c_fill(visuals: &egui::Visuals) -> egui::Color32 {
-    if visuals.dark_mode {
-        RATING_C_FILL
-    } else {
-        RATING_C_FILL_LIGHT
-    }
-}
-
-/// The positions grid's A rating's fill (the draft's `.sel.on.ra`
-/// `#129648`): a green deep enough to carry a white letter, where the
-/// theme's bright success green needed a dark one.
-const RATING_A_FILL: egui::Color32 = egui::Color32::from_rgb(0x12, 0x96, 0x48);
-
 /// The chosen rating's fill and text colours (the draft's `.sel.on`
 /// variants): A a deep green under a white letter, B the selection colour
 /// with its foreground, C a grey square with the normal text — named
 /// outright, since a selected button's own text colour is the
 /// selection's foreground.
 fn rating_colors(ui: &egui::Ui, rating: u8) -> (egui::Color32, egui::Color32) {
+    let palette = studio_core::theme::palette(ui.visuals());
     match rating {
-        2 => (RATING_A_FILL, egui::Color32::WHITE),
+        2 => (palette.rating_a_fill, palette.rating_a_text),
         1 => (
             ui.visuals().selection.bg_fill,
             ui.visuals().selection.stroke.color,
         ),
-        _ => (rating_c_fill(ui.visuals()), ui.visuals().text_color()),
+        _ => (palette.rating_c_fill, ui.visuals().text_color()),
     }
 }
 
@@ -579,7 +554,7 @@ fn playable_positions(
                     let galley = ui.painter().layout_no_wrap(
                         (*name).to_owned(),
                         body.clone(),
-                        egui::Color32::WHITE,
+                        egui::Color32::PLACEHOLDER,
                     );
                     ui.horizontal(|ui| {
                         ui.add_space(((POS_CELL_WIDTH - galley.size().x) / 2.0).max(0.0));

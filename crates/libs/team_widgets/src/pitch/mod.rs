@@ -10,6 +10,7 @@
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::tactics::{Formation, FormationSlot, TeamTactics};
 use pes_version::PesVersion;
+use studio_core::theme::{self, Palette};
 
 use crate::names::append_name;
 use crate::tactics::{Assign, FieldedMark, OpenSlot, RosterRow, TacticsView, name_at, raw_name_at};
@@ -119,27 +120,6 @@ const CROSS_OUTLINE: f32 = 1.0;
 const TURF_SIZE: [usize; 2] = [480, 576];
 /// The turf's band count: dark at both ends.
 const TURF_BANDS: usize = 11;
-/// A band's dark and light base colours (`#2d571d`, `#35602a`).
-const TURF_DARK: [u8; 3] = [0x2d, 0x57, 0x1d];
-const TURF_LIGHT: [u8; 3] = [0x35, 0x60, 0x2a];
-
-/// The lines' stroke: white at 20% opacity, 2 px wide.
-const LINES: egui::Color32 = egui::Color32::from_rgba_unmultiplied_const(255, 255, 255, 51);
-/// The badge's fill (`#242b2d`) and a join member's while join mode is
-/// armed (`#005c80`).
-const BADGE_FILL: egui::Color32 = egui::Color32::from_rgb(0x24, 0x2b, 0x2d);
-const JOIN_FILL: egui::Color32 = egui::Color32::from_rgb(0x00, 0x5c, 0x80);
-/// The position text's group colours: forwards `#ff2c77`, midfielders
-/// `#57e42b`, defenders `#00d2ff`, the keeper `#ffde00`.
-const FORWARD: egui::Color32 = egui::Color32::from_rgb(0xff, 0x2c, 0x77);
-const MIDFIELDER: egui::Color32 = egui::Color32::from_rgb(0x57, 0xe4, 0x2b);
-const DEFENDER: egui::Color32 = egui::Color32::from_rgb(0x00, 0xd2, 0xff);
-const KEEPER: egui::Color32 = egui::Color32::from_rgb(0xff, 0xde, 0x00);
-/// The corner brackets the screen's selection marks lend the editor's
-/// states: the open popover's marker (`#14fbff`), every marker an armed
-/// assignment mode can take (`#ff4e7f`).
-const SELECTED_CORNERS: egui::Color32 = egui::Color32::from_rgb(0x14, 0xfb, 0xff);
-const CANDIDATE_CORNERS: egui::Color32 = egui::Color32::from_rgb(0xff, 0x4e, 0x7f);
 
 /// A wide name's scroll period in seconds (the game's measured 13.5).
 const NAME_PERIOD: f32 = 13.5;
@@ -309,7 +289,8 @@ pub fn pitch(
             egui::StrokeKind::Inside,
         );
         let painter = ui.painter_at(canvas);
-        paint_pitch(&painter, canvas);
+        let palette = theme::palette(ui.visuals());
+        paint_pitch(&painter, canvas, palette);
         let players = tactics.presets[view.preset.min(2)].formations[view.formation.min(2)].players;
         let centres = players.map(|slot| clamp_centre(badge_centre(canvas.min, slot), canvas));
         let order = draw_order(&centres);
@@ -462,7 +443,7 @@ pub fn pitch(
             let rated = roster
                 .get(usize::from(tactics.starting_eleven[index]))
                 .map_or([false; 13], |row| row.rated);
-            lit_area::paint_dim(&painter, canvas, &rated);
+            lit_area::paint_dim(&painter, canvas, &rated, palette);
         }
         // The starter a release now would swap with — the same pick the
         // drop makes, so the mark and the release always agree. The
@@ -484,7 +465,7 @@ pub fn pitch(
             if Some(index) != dragged {
                 record(paint_marker(
                     &painter,
-                    canvas,
+                    palette,
                     tactics,
                     view,
                     roster,
@@ -515,7 +496,7 @@ pub fn pitch(
             };
             record(paint_marker(
                 &painter,
-                canvas,
+                palette,
                 tactics,
                 view,
                 roster,
@@ -531,6 +512,7 @@ pub fn pitch(
             &painter,
             canvas,
             &tactics.presets[view.preset.min(2)].formations[view.formation.min(2)],
+            palette,
         );
         // The swap mark over everything, as the screen's selection marks
         // a target.
@@ -538,7 +520,7 @@ pub fn pitch(
             paint_corners(
                 &painter,
                 portrait_rect(badge_rect(centres[target])),
-                SELECTED_CORNERS,
+                palette.selected_corners,
             );
         }
         // Live AATF's `FieldedNotA` crosses, painted after every marker
@@ -575,7 +557,7 @@ pub fn pitch(
             } else {
                 ui.visuals().warn_fg_color
             };
-            paint_portrait_cross(&painter, portrait, color);
+            paint_portrait_cross(&painter, portrait, color, palette);
             ui.interact(
                 portrait,
                 ui.scope_id().with(("live aatf pitch cross", index)),
@@ -715,7 +697,12 @@ fn portrait_rect(badge: egui::Rect) -> egui::Rect {
 /// `CROSS_WIDTH` wide in `color` over the same strokes in black and
 /// `CROSS_OUTLINE` wider each side, so it stays seen over a red portrait.
 /// A disc at each stroke's end rounds it, as the draft's round caps do.
-fn paint_portrait_cross(painter: &egui::Painter, portrait: egui::Rect, color: egui::Color32) {
+fn paint_portrait_cross(
+    painter: &egui::Painter,
+    portrait: egui::Rect,
+    color: egui::Color32,
+    palette: &Palette,
+) {
     let r = portrait.width() / 2.0 - CROSS_INSET;
     let centre = portrait.center();
     let strokes = [
@@ -723,7 +710,7 @@ fn paint_portrait_cross(painter: &egui::Painter, portrait: egui::Rect, color: eg
         [centre + egui::vec2(r, -r), centre + egui::vec2(-r, r)],
     ];
     for (layer_color, width) in [
-        (egui::Color32::BLACK, CROSS_WIDTH + 2.0 * CROSS_OUTLINE),
+        (palette.cross_outline, CROSS_WIDTH + 2.0 * CROSS_OUTLINE),
         (color, CROSS_WIDTH),
     ] {
         for points in strokes {
@@ -758,11 +745,16 @@ fn paint_corners(painter: &egui::Painter, rect: egui::Rect, color: egui::Color32
 /// at the row's offset plus the glyph's own (the baseline, a font ascent
 /// down), so the galley goes that far above and left of the wanted
 /// origin.
-fn paint_formation_name(painter: &egui::Painter, canvas: egui::Rect, formation: &Formation) {
+fn paint_formation_name(
+    painter: &egui::Painter,
+    canvas: egui::Rect,
+    formation: &Formation,
+    palette: &Palette,
+) {
     let galley = painter.layout_no_wrap(
         formation_name(formation),
         egui::FontId::new(LABEL_SIZE, egui::FontFamily::Name("label".into())),
-        egui::Color32::WHITE,
+        palette.pitch_text,
     );
     let row = galley.rows.first().expect("a laid-out galley has a row");
     // An empty name (no outfield slot in a known position) draws nothing.
@@ -771,7 +763,7 @@ fn paint_formation_name(painter: &egui::Painter, canvas: egui::Rect, formation: 
     };
     let origin = row.pos.to_vec2() + glyph.pos.to_vec2();
     let at = canvas.left_bottom() + egui::vec2(LABEL_LEFT, -LABEL_BOTTOM) - origin;
-    painter.galley(at, galley, egui::Color32::WHITE);
+    painter.galley(at, galley, palette.pitch_text);
 }
 
 /// A name no wider than the badge fits: it is centred and never moves.
@@ -804,13 +796,13 @@ fn name_moving_for(width: f32, seconds: f32) -> f32 {
 /// The position text's colour by the position's group, as the game's
 /// (the draft's `POS_COLOUR` over `POSITIONS`' order): a position past
 /// the table white, as `position_label` reads it "?".
-fn position_colour(position: u8) -> egui::Color32 {
+fn position_colour(palette: &Palette, position: u8) -> egui::Color32 {
     match position {
-        0 => KEEPER,
-        1..=3 => DEFENDER,
-        4..=8 => MIDFIELDER,
-        9..=12 => FORWARD,
-        _ => egui::Color32::WHITE,
+        0 => palette.keeper,
+        1..=3 => palette.defender,
+        4..=8 => palette.midfielder,
+        9..=12 => palette.forward,
+        _ => palette.pitch_text,
     }
 }
 
@@ -818,17 +810,18 @@ fn position_colour(position: u8) -> egui::Color32 {
 /// horizontal bands dark at both ends, and the texture's grain as a
 /// fixed-seed xorshift32 — deterministic, so the loaded texture is made
 /// once per context.
-fn turf_image() -> egui::ColorImage {
+fn turf_image(palette: &Palette) -> egui::ColorImage {
     let (width, height) = (TURF_SIZE[0], TURF_SIZE[1]);
     let mut pixels = Vec::with_capacity(width * height);
     // xorshift32 from a fixed seed: the same grain every run.
     let mut state = 0x9e37_79b9u32;
     for y in 0..height {
-        let base = if (y * TURF_BANDS / height).is_multiple_of(2) {
-            TURF_DARK
+        let band = if (y * TURF_BANDS / height).is_multiple_of(2) {
+            palette.turf_dark_band
         } else {
-            TURF_LIGHT
+            palette.turf_light_band
         };
+        let base = [band.r(), band.g(), band.b()];
         for _x in 0..width {
             state ^= state << 13;
             state ^= state >> 17;
@@ -845,13 +838,18 @@ fn turf_image() -> egui::ColorImage {
     egui::ColorImage::new(TURF_SIZE, pixels)
 }
 
-/// The turf texture, loaded once per context under a fixed id.
-fn turf(ctx: &egui::Context) -> egui::TextureHandle {
+/// The turf texture, loaded once per context under a fixed id. One texture
+/// serves both themes: the turf's bands are a surface both themes share.
+fn turf(ctx: &egui::Context, palette: &Palette) -> egui::TextureHandle {
     let id = egui::Id::unique("pitch turf");
     if let Some(texture) = ctx.data(|data| data.get_temp::<egui::TextureHandle>(id)) {
         return texture;
     }
-    let texture = ctx.load_texture("pitch turf", turf_image(), egui::TextureOptions::LINEAR);
+    let texture = ctx.load_texture(
+        "pitch turf",
+        turf_image(palette),
+        egui::TextureOptions::LINEAR,
+    );
     ctx.data_mut(|data| data.insert_temp(id, texture.clone()));
     texture
 }
@@ -859,13 +857,13 @@ fn turf(ctx: &egui::Context) -> egui::TextureHandle {
 /// The turf and the lines (the draft's `drawLines`): the halfway line,
 /// the centre circle, and per end the penalty box, the goal area and the
 /// penalty arc — no touchlines and no goal lines (the texture has none).
-fn paint_pitch(painter: &egui::Painter, canvas: egui::Rect) {
-    let stroke = egui::Stroke::new(2.0, LINES);
+fn paint_pitch(painter: &egui::Painter, canvas: egui::Rect, palette: &Palette) {
+    let stroke = egui::Stroke::new(2.0, palette.pitch_lines);
     painter.image(
-        turf(painter.ctx()).id(),
+        turf(painter.ctx(), palette).id(),
         canvas,
         egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
-        egui::Color32::WHITE,
+        theme::NO_TINT,
     );
     let at = |x: f32, y: f32| canvas.min + egui::vec2(x, y);
     painter.line_segment([at(0.0, 192.0), at(320.0, 192.0)], stroke);
@@ -969,14 +967,15 @@ fn marker(
 /// and his medal's outline when he has a tier, the name in its colour
 /// codes' colours (white where it has none), the captain's mark when he
 /// is the starter, and the selection corners the screen's marks lend
-/// the editor's states. `spot.centre` is the clamped badge
+/// the editor's states. `painter` is clipped to the canvas, which a wide
+/// name's cut keeps to. `spot.centre` is the clamped badge
 /// centre (a held marker's at his spot at this step, `spot.slot` the
 /// position his badge shows); `seconds` is the name
 /// scroll's clock. Answers how long until the name next moves, `None`
 /// when it fits and never moves.
 fn paint_marker(
     painter: &egui::Painter,
-    canvas: egui::Rect,
+    palette: &Palette,
     tactics: &TeamTactics,
     view: &TacticsView,
     roster: &[RosterRow<'_>],
@@ -994,15 +993,15 @@ fn paint_marker(
             texture,
             portrait,
             egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
-            egui::Color32::WHITE,
+            theme::NO_TINT,
         );
     }
     let fill = if view.assign == Some(Assign::Join)
         && tactics.players_to_join_attack.contains(&roster_slot)
     {
-        JOIN_FILL
+        palette.join_fill
     } else {
-        BADGE_FILL
+        palette.badge_fill
     };
     painter.rect_filled(badge, egui::CornerRadius::same(2), fill);
     // His medal tier outlines the badge in its colour, inside the
@@ -1016,7 +1015,7 @@ fn paint_marker(
         painter.rect_stroke(
             badge,
             egui::CornerRadius::same(2),
-            egui::Stroke::new(1.5, medal.colour()),
+            egui::Stroke::new(1.5, medal.colour(palette)),
             egui::StrokeKind::Inside,
         );
     }
@@ -1025,7 +1024,7 @@ fn paint_marker(
         egui::Align2::LEFT_CENTER,
         position_label(spot.slot.position),
         egui::FontId::proportional(BADGE_FONT),
-        position_colour(spot.slot.position),
+        position_colour(palette, spot.slot.position),
     );
     // His overall at the slot's position at the badge's right end,
     // where the game draws it, white as the game's.
@@ -1039,7 +1038,7 @@ fn paint_marker(
             egui::Align2::RIGHT_CENTER,
             overall.to_string(),
             egui::FontId::proportional(BADGE_FONT),
-            egui::Color32::WHITE,
+            palette.pitch_text,
         );
     }
     // The name in its colour codes' colours (white where it has none),
@@ -1049,7 +1048,7 @@ fn paint_marker(
     for section in &mut job.sections {
         section.format.font_id = egui::FontId::proportional(12.0);
         if section.format.color == egui::Color32::PLACEHOLDER {
-            section.format.color = egui::Color32::WHITE;
+            section.format.color = palette.pitch_text;
         }
     }
     let galley = painter.layout_job(job);
@@ -1067,19 +1066,16 @@ fn paint_marker(
     } else {
         spot.centre.x - size.x / 2.0
     };
-    let clip = egui::Rect::from_min_max(
-        egui::pos2(badge.left(), canvas.top()),
-        egui::pos2(badge.right(), canvas.bottom()),
-    );
+    let clip = egui::Rect::from_x_y_ranges(badge.x_range(), painter.clip_rect().y_range());
     let clipped = painter.with_clip_rect(clip);
     let top = spot.centre.y + NAME_DY - size.y / 2.0;
-    clipped.galley(egui::pos2(left, top), galley.clone(), egui::Color32::WHITE);
+    clipped.galley(egui::pos2(left, top), galley.clone(), palette.pitch_text);
     if wide {
         // Its repeat a loop to the right, so the start follows the end.
         clipped.galley(
             egui::pos2(left + size.x + NAME_GAP, top),
             galley,
-            egui::Color32::WHITE,
+            palette.pitch_text,
         );
     }
     if roster_slot == tactics.set_pieces.captain {
@@ -1091,25 +1087,25 @@ fn paint_marker(
                 egui::pos2(badge.left() + 15.0, badge.top() - 4.0),
             ),
             egui::CornerRadius::same(3),
-            BADGE_FILL,
+            palette.badge_fill,
         );
         let mark = egui::Rect::from_min_max(
             egui::pos2(badge.left() + 2.0, badge.top() - 16.0),
             egui::pos2(badge.left() + 14.0, badge.top() - 5.0),
         );
-        painter.rect_filled(mark, egui::CornerRadius::same(2), egui::Color32::WHITE);
+        painter.rect_filled(mark, egui::CornerRadius::same(2), palette.captain_fill);
         painter.text(
             mark.center(),
             egui::Align2::CENTER_CENTER,
             "C",
             egui::FontId::proportional(9.0),
-            egui::Color32::BLACK,
+            palette.captain_text,
         );
     }
     let corners = if view.popover.is_some_and(|open| open.slot == spot.index) {
-        Some(SELECTED_CORNERS)
+        Some(palette.selected_corners)
     } else if view.assign.is_some() {
-        Some(CANDIDATE_CORNERS)
+        Some(palette.candidate_corners)
     } else {
         None
     };

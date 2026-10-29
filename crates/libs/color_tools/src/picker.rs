@@ -11,6 +11,7 @@ use egui::{
     Align, Color32, DragValue, Key, Layout, Mesh, Popup, PopupCloseBehavior, Rect, Response, Role,
     Sense, Shape, Stroke, StrokeKind, TextEdit, TextStyle, Ui, WidgetInfo, pos2, vec2,
 };
+use studio_core::theme;
 use studio_core::widgets::{step_number, wheel_steps};
 
 /// The most recent colors the session keeps: newest first, no duplicates.
@@ -377,10 +378,11 @@ fn sv_square(ui: &mut Ui, hsva: &mut Hsva) -> Response {
             lerp(rect.left()..=rect.right(), hsva.s),
             lerp(rect.bottom()..=rect.top(), hsva.v),
         );
+        let palette = theme::palette(ui.visuals());
         ui.painter()
-            .circle_stroke(center, 4.0, Stroke::new(3.0, Color32::BLACK));
+            .circle_stroke(center, 4.0, Stroke::new(3.0, palette.picker_marker_edge));
         ui.painter()
-            .circle_stroke(center, 4.0, Stroke::new(1.0, Color32::WHITE));
+            .circle_stroke(center, 4.0, Stroke::new(1.0, palette.picker_marker));
     }
     response
 }
@@ -425,9 +427,14 @@ fn hue_strip(ui: &mut Ui, hsva: &mut Hsva) -> Response {
         let x = lerp(rect.left()..=rect.right(), hsva.h);
         let marker =
             Rect::from_center_size(pos2(x, rect.center().y), vec2(3.0, rect.height() + 2.0));
-        ui.painter().rect_filled(marker, 0.0, Color32::WHITE);
-        ui.painter()
-            .rect_stroke(marker, 0.0, (1.0, Color32::BLACK), StrokeKind::Inside);
+        let palette = theme::palette(ui.visuals());
+        ui.painter().rect_filled(marker, 0.0, palette.picker_marker);
+        ui.painter().rect_stroke(
+            marker,
+            0.0,
+            (1.0, palette.picker_marker_edge),
+            StrokeKind::Inside,
+        );
     }
     response
 }

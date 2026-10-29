@@ -9,15 +9,185 @@
 use crate::settings::Theme;
 use crate::status::NoticeKind;
 
-/// The success notices' bright green (the draft's `--success`). egui's `Visuals`
-/// has a warning colour and an error colour but no success one, so the suite
-/// carries its own.
-pub const SUCCESS_FG: egui::Color32 = egui::Color32::from_rgb(0x4c, 0xd9, 0x64);
+/// Every colour the suite draws beyond egui's `Visuals`, one field each, with a
+/// dark and a light instance picked by the theme ([`palette`]). Both instances
+/// are this one struct, so a colour added to one and forgotten in the other
+/// does not compile. A light value keeps the dark one's contrast against its
+/// background; a colour drawn on a surface both themes share (the pitch, a
+/// fill under its own text colour) is the same in both.
+pub struct Palette {
+    /// The success notices' bright green (the draft's `--success`). egui's
+    /// `Visuals` has a warning colour and an error colour but no success one,
+    /// so the suite carries its own. On the light theme a darker green: the
+    /// dark one reads at a contrast of 1.7 against egui's light panel, where
+    /// the darker one reads at 5.6 (the light theme's own link and warning
+    /// colours are darker for the same reason).
+    pub success: egui::Color32,
+    /// The boots/gloves dialog's range end ID (the draft's
+    /// `.boglo input.readout`): egui's weak grey on the box is as faded as a
+    /// disabled field's text, which is barely readable. Its light value keeps
+    /// the dark one's contrast, 6.3, on the light theme's faint box, where the
+    /// dark grey itself would read at 2.6.
+    pub readout: egui::Color32,
+    /// A counted label's count under its limit (the draft's `.gen .count`, a
+    /// disabled card label's `#5a5a5a`): quiet, so a count draws the eye only
+    /// once the field reaches its limit. Its light value keeps the same quiet
+    /// contrast, 2.5, on the light panel, where the dark grey itself would read
+    /// at 6.5, as loud as the text.
+    pub count_grey: egui::Color32,
+    /// The positions grid's chosen C rating's fill, and a held side toggle's
+    /// (the draft's `.sel.on.rc` `#5a5a5a`): the quiet grey a chosen rating or
+    /// side gets where the accent would pull the eye. Its light value has the
+    /// same contrast with the panel, 2.5, as the dark grey has with the dark
+    /// one, and the light theme's dark text reads on it at 3.05 (on the dark
+    /// grey itself, at 1.2).
+    pub rating_c_fill: egui::Color32,
+    /// The positions grid's chosen A rating's fill (the draft's `.sel.on.ra`
+    /// `#129648`): a green deep enough to carry a white letter, where the
+    /// theme's bright success green needed a dark one.
+    pub rating_a_fill: egui::Color32,
+    /// The letter on a chosen A rating's fill.
+    pub rating_a_text: egui::Color32,
+    /// The dark frame drawn inside a player appearance palette entry's square
+    /// (the draft's `.swatch`), around the entry's own colour.
+    pub swatch_edge: egui::Color32,
+    /// The Tactics pitch's dark turf band (`#2d571d`), at both ends of the
+    /// pitch and every second band between.
+    pub turf_dark_band: egui::Color32,
+    /// The Tactics pitch's light turf band (`#35602a`).
+    pub turf_light_band: egui::Color32,
+    /// The pitch lines' stroke: white at 20% opacity.
+    pub pitch_lines: egui::Color32,
+    /// A pitch marker's badge fill (`#242b2d`), and the captain mark's outline.
+    pub badge_fill: egui::Color32,
+    /// A join member's badge fill while join mode is armed (`#005c80`).
+    pub join_fill: egui::Color32,
+    /// The keeper's position text on the pitch and in the lineup (`#ffde00`).
+    pub keeper: egui::Color32,
+    /// A defender's position text (`#00d2ff`).
+    pub defender: egui::Color32,
+    /// A midfielder's position text (`#57e42b`).
+    pub midfielder: egui::Color32,
+    /// A forward's position text (`#ff2c77`).
+    pub forward: egui::Color32,
+    /// The corner brackets around the open popover's marker and a swap's
+    /// target (`#14fbff`), the screen's selection mark.
+    pub selected_corners: egui::Color32,
+    /// The corner brackets on every marker an armed assignment mode can take
+    /// (`#ff4e7f`).
+    pub candidate_corners: egui::Color32,
+    /// The pitch's own text: the formation's name and a starter's overall,
+    /// white as the game's, a name's colour where its codes give none, and a
+    /// position past the table's.
+    pub pitch_text: egui::Color32,
+    /// The outline under Live AATF's pitch cross, so the cross stays seen over
+    /// a portrait of its own colour.
+    pub cross_outline: egui::Color32,
+    /// The captain mark's box over his portrait.
+    pub captain_fill: egui::Color32,
+    /// The captain mark's `C`.
+    pub captain_text: egui::Color32,
+    /// The pitch's darkening outside the areas a held starter is rated at:
+    /// black at 60%, which leaves the turf at 40%.
+    pub lit_dim: egui::Color32,
+    /// A gold medal's badge outline, the game's gold name colour.
+    pub medal_gold: egui::Color32,
+    /// A silver medal's badge outline, its metal's colour.
+    pub medal_silver: egui::Color32,
+    /// A bronze medal's badge outline, darkened so a thin outline does not
+    /// read as gold.
+    pub medal_bronze: egui::Color32,
+    /// The colour picker's marks on the colour field itself: the ring at the
+    /// working colour's point and the bar at its hue.
+    pub picker_marker: egui::Color32,
+    /// The edge around the colour picker's marks, so they show on a light
+    /// colour as on a dark one.
+    pub picker_marker_edge: egui::Color32,
+}
 
-/// The success green on the light theme's panel: `SUCCESS_FG` there reads at a contrast of
-/// 1.7 against egui's light panel, where this darker green reads at 5.6 (the light theme's
-/// own link and warning colours are darker for the same reason).
-pub const SUCCESS_FG_LIGHT: egui::Color32 = egui::Color32::from_rgb(0x13, 0x73, 0x33);
+impl Palette {
+    /// The dark theme's colours, the default look.
+    pub const DARK: Palette = Palette {
+        success: egui::Color32::from_rgb(0x4c, 0xd9, 0x64),
+        readout: egui::Color32::from_gray(0xa0),
+        count_grey: egui::Color32::from_rgb(0x5a, 0x5a, 0x5a),
+        rating_c_fill: egui::Color32::from_rgb(0x5a, 0x5a, 0x5a),
+        rating_a_fill: egui::Color32::from_rgb(0x12, 0x96, 0x48),
+        rating_a_text: egui::Color32::WHITE,
+        swatch_edge: egui::Color32::BLACK,
+        turf_dark_band: egui::Color32::from_rgb(0x2d, 0x57, 0x1d),
+        turf_light_band: egui::Color32::from_rgb(0x35, 0x60, 0x2a),
+        pitch_lines: egui::Color32::from_rgba_unmultiplied_const(255, 255, 255, 51),
+        badge_fill: egui::Color32::from_rgb(0x24, 0x2b, 0x2d),
+        join_fill: egui::Color32::from_rgb(0x00, 0x5c, 0x80),
+        keeper: egui::Color32::from_rgb(0xff, 0xde, 0x00),
+        defender: egui::Color32::from_rgb(0x00, 0xd2, 0xff),
+        midfielder: egui::Color32::from_rgb(0x57, 0xe4, 0x2b),
+        forward: egui::Color32::from_rgb(0xff, 0x2c, 0x77),
+        selected_corners: egui::Color32::from_rgb(0x14, 0xfb, 0xff),
+        candidate_corners: egui::Color32::from_rgb(0xff, 0x4e, 0x7f),
+        pitch_text: egui::Color32::WHITE,
+        cross_outline: egui::Color32::BLACK,
+        captain_fill: egui::Color32::WHITE,
+        captain_text: egui::Color32::BLACK,
+        lit_dim: egui::Color32::from_black_alpha(153),
+        medal_gold: egui::Color32::from_rgb(0xcc, 0x99, 0x00),
+        medal_silver: egui::Color32::from_rgb(0xc0, 0xc0, 0xc0),
+        medal_bronze: egui::Color32::from_rgb(0x8c, 0x4a, 0x20),
+        picker_marker: egui::Color32::WHITE,
+        picker_marker_edge: egui::Color32::BLACK,
+    };
+
+    /// The light theme's colours. Only the four drawn on the theme's own panel
+    /// differ from the dark ones; the rest sit on a surface both themes share.
+    /// Each is written out rather than copied from `DARK`, so a colour added
+    /// to the struct is a compile error here until it has a light value.
+    pub const LIGHT: Palette = Palette {
+        success: egui::Color32::from_rgb(0x13, 0x73, 0x33),
+        readout: egui::Color32::from_gray(0x5f),
+        count_grey: egui::Color32::from_gray(0x9f),
+        rating_c_fill: egui::Color32::from_gray(0x9f),
+        rating_a_fill: egui::Color32::from_rgb(0x12, 0x96, 0x48),
+        rating_a_text: egui::Color32::WHITE,
+        swatch_edge: egui::Color32::BLACK,
+        turf_dark_band: egui::Color32::from_rgb(0x2d, 0x57, 0x1d),
+        turf_light_band: egui::Color32::from_rgb(0x35, 0x60, 0x2a),
+        pitch_lines: egui::Color32::from_rgba_unmultiplied_const(255, 255, 255, 51),
+        badge_fill: egui::Color32::from_rgb(0x24, 0x2b, 0x2d),
+        join_fill: egui::Color32::from_rgb(0x00, 0x5c, 0x80),
+        keeper: egui::Color32::from_rgb(0xff, 0xde, 0x00),
+        defender: egui::Color32::from_rgb(0x00, 0xd2, 0xff),
+        midfielder: egui::Color32::from_rgb(0x57, 0xe4, 0x2b),
+        forward: egui::Color32::from_rgb(0xff, 0x2c, 0x77),
+        selected_corners: egui::Color32::from_rgb(0x14, 0xfb, 0xff),
+        candidate_corners: egui::Color32::from_rgb(0xff, 0x4e, 0x7f),
+        pitch_text: egui::Color32::WHITE,
+        cross_outline: egui::Color32::BLACK,
+        captain_fill: egui::Color32::WHITE,
+        captain_text: egui::Color32::BLACK,
+        lit_dim: egui::Color32::from_black_alpha(153),
+        medal_gold: egui::Color32::from_rgb(0xcc, 0x99, 0x00),
+        medal_silver: egui::Color32::from_rgb(0xc0, 0xc0, 0xc0),
+        medal_bronze: egui::Color32::from_rgb(0x8c, 0x4a, 0x20),
+        picker_marker: egui::Color32::WHITE,
+        picker_marker_edge: egui::Color32::BLACK,
+    };
+}
+
+/// The palette of the theme `visuals` draw: [`Palette::LIGHT`] on a light
+/// theme, else [`Palette::DARK`].
+pub fn palette(visuals: &egui::Visuals) -> &'static Palette {
+    if visuals.dark_mode {
+        &Palette::DARK
+    } else {
+        &Palette::LIGHT
+    }
+}
+
+/// The tint that draws an image in its own colours (egui multiplies an
+/// image's texels by it). Not a palette field: it is the same whatever the
+/// theme, and nothing is drawn in it.
+pub const NO_TINT: egui::Color32 = egui::Color32::WHITE;
 
 /// The text style a modal or floating window's title draws in (the drafts'
 /// `.window .title`): proportional 14, where `Heading`, a page's heading
@@ -46,8 +216,7 @@ pub fn window_title(ui: &mut egui::Ui, text: impl Into<egui::RichText>) -> egui:
 /// notice is seen, not found.
 pub fn notice_color(kind: NoticeKind, visuals: &egui::Visuals) -> egui::Color32 {
     match kind {
-        NoticeKind::Success if visuals.dark_mode => SUCCESS_FG,
-        NoticeKind::Success => SUCCESS_FG_LIGHT,
+        NoticeKind::Success => palette(visuals).success,
         NoticeKind::Info => visuals.hyperlink_color,
         NoticeKind::Warning => visuals.warn_fg_color,
     }
@@ -296,8 +465,8 @@ mod tests {
     #[test]
     fn each_notice_kind_gets_its_own_bright_colour() {
         for (visuals, success) in [
-            (egui::Visuals::dark(), SUCCESS_FG),
-            (egui::Visuals::light(), SUCCESS_FG_LIGHT),
+            (egui::Visuals::dark(), Palette::DARK.success),
+            (egui::Visuals::light(), Palette::LIGHT.success),
         ] {
             assert_eq!(notice_color(NoticeKind::Success, &visuals), success);
             assert_eq!(
@@ -308,6 +477,104 @@ mod tests {
                 notice_color(NoticeKind::Warning, &visuals),
                 visuals.warn_fg_color
             );
+        }
+    }
+
+    // Compared field by field, not by address: two references to one constant
+    // need not point at the same place.
+    #[test]
+    fn the_palette_follows_the_visuals_theme() {
+        assert_eq!(
+            named_fields(palette(&egui::Visuals::light())),
+            named_fields(&Palette::LIGHT),
+            "the light visuals draw the light palette"
+        );
+        assert_eq!(
+            named_fields(palette(&egui::Visuals::dark())),
+            named_fields(&Palette::DARK),
+            "the dark visuals draw the dark palette"
+        );
+    }
+
+    /// `palette`'s fields by name. The destructuring names every field, so a
+    /// field added to the struct does not compile here until it is listed.
+    fn named_fields(palette: &Palette) -> Vec<(&'static str, egui::Color32)> {
+        let Palette {
+            success,
+            readout,
+            count_grey,
+            rating_c_fill,
+            rating_a_fill,
+            rating_a_text,
+            swatch_edge,
+            turf_dark_band,
+            turf_light_band,
+            pitch_lines,
+            badge_fill,
+            join_fill,
+            keeper,
+            defender,
+            midfielder,
+            forward,
+            selected_corners,
+            candidate_corners,
+            pitch_text,
+            cross_outline,
+            captain_fill,
+            captain_text,
+            lit_dim,
+            medal_gold,
+            medal_silver,
+            medal_bronze,
+            picker_marker,
+            picker_marker_edge,
+        } = palette;
+        vec![
+            ("success", *success),
+            ("readout", *readout),
+            ("count_grey", *count_grey),
+            ("rating_c_fill", *rating_c_fill),
+            ("rating_a_fill", *rating_a_fill),
+            ("rating_a_text", *rating_a_text),
+            ("swatch_edge", *swatch_edge),
+            ("turf_dark_band", *turf_dark_band),
+            ("turf_light_band", *turf_light_band),
+            ("pitch_lines", *pitch_lines),
+            ("badge_fill", *badge_fill),
+            ("join_fill", *join_fill),
+            ("keeper", *keeper),
+            ("defender", *defender),
+            ("midfielder", *midfielder),
+            ("forward", *forward),
+            ("selected_corners", *selected_corners),
+            ("candidate_corners", *candidate_corners),
+            ("pitch_text", *pitch_text),
+            ("cross_outline", *cross_outline),
+            ("captain_fill", *captain_fill),
+            ("captain_text", *captain_text),
+            ("lit_dim", *lit_dim),
+            ("medal_gold", *medal_gold),
+            ("medal_silver", *medal_silver),
+            ("medal_bronze", *medal_bronze),
+            ("picker_marker", *picker_marker),
+            ("picker_marker_edge", *picker_marker_edge),
+        ]
+    }
+
+    // Only the four colours drawn on the theme's own panel have a light value
+    // of their own; every other is on a surface both themes share.
+    #[test]
+    fn only_the_panel_colours_differ_between_the_themes() {
+        const THEMED: [&str; 4] = ["success", "readout", "count_grey", "rating_c_fill"];
+        for ((name, dark), (_, light)) in named_fields(&Palette::DARK)
+            .into_iter()
+            .zip(named_fields(&Palette::LIGHT))
+        {
+            if THEMED.contains(&name) {
+                assert_ne!(dark, light, "{name} has a light value of its own");
+            } else {
+                assert_eq!(dark, light, "{name} is the same in both themes");
+            }
         }
     }
 

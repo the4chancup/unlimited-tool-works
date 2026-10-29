@@ -6,6 +6,7 @@ use pes_savefile::model::tactics::{SetPieceTakers, TeamTactics};
 use pes_savefile::schema::instruction;
 use pes_version::PesVersion;
 
+use studio_core::theme;
 use studio_core::widgets::ink_span;
 
 use super::{LineupDrag, position_colour, position_label};
@@ -239,7 +240,9 @@ fn lineup_row(
             let place = ui.painter().layout_no_wrap(
                 position.map_or("--", position_label).to_owned(),
                 font,
-                position.map_or(weak, position_colour),
+                position.map_or(weak, |position| {
+                    position_colour(theme::palette(ui.visuals()), position)
+                }),
             );
             // The handle and the position placed by their ink, which
             // starts a glyph's side bearing in from its box: boxes alone

@@ -122,10 +122,10 @@ fn each_rows_position_is_in_its_groups_badge_colour() {
         let position = row[1];
         let label = position.value().expect("the position's text");
         let byte = position_byte(label);
-        groups.insert(position_colour(byte));
+        groups.insert(position_colour(&Palette::DARK, byte));
         assert_eq!(
             painted_color(shape_of(&shapes, position)),
-            position_colour(byte),
+            position_colour(&Palette::DARK, byte),
             "{label}'s colour"
         );
     }

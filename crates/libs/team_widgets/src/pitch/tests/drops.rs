@@ -533,7 +533,7 @@ fn a_marker_released_on_the_keeper_moves_to_the_snapped_point() {
     assert!(
         !shapes.iter().any(|clipped| matches!(
             &clipped.shape,
-            egui::Shape::LineSegment { stroke, .. } if stroke.color == SELECTED_CORNERS
+            egui::Shape::LineSegment { stroke, .. } if stroke.color == Palette::DARK.selected_corners
         )),
         "no swap mark over the keeper"
     );

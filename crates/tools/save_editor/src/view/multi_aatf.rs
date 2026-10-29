@@ -108,7 +108,7 @@ fn team_combo(ui: &mut egui::Ui, id_salt: &str, file: &EditFile, picked: &mut u3
         .iter()
         .map(|(_, label)| {
             ui.painter()
-                .layout_no_wrap(label.clone(), font.clone(), egui::Color32::WHITE)
+                .layout_no_wrap(label.clone(), font.clone(), egui::Color32::PLACEHOLDER)
                 .size()
                 .x
         })

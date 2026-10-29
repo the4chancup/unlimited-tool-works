@@ -13,6 +13,7 @@ use pes_savefile::schema::fields::{
 };
 use pes_savefile::schema::{instruction, schema_for};
 use pes_version::PesVersion;
+use studio_core::theme::Palette;
 use studio_core::widgets::{checkbox, step_choice, wheel_steps};
 
 use crate::pitch::{FORMATIONS, position_label};
@@ -153,14 +154,14 @@ impl Medal {
         }
     }
 
-    /// The badge outline's colour: gold in the game's gold name
-    /// colour, silver its metal's, bronze darkened so a thin outline
+    /// The badge outline's colour in `palette`: gold in the game's gold
+    /// name colour, silver its metal's, bronze darkened so a thin outline
     /// does not read as gold.
-    pub(crate) fn colour(self) -> egui::Color32 {
+    pub(crate) fn colour(self, palette: &Palette) -> egui::Color32 {
         match self {
-            Medal::Gold => egui::Color32::from_rgb(0xcc, 0x99, 0x00),
-            Medal::Silver => egui::Color32::from_rgb(0xc0, 0xc0, 0xc0),
-            Medal::Bronze => egui::Color32::from_rgb(0x8c, 0x4a, 0x20),
+            Medal::Gold => palette.medal_gold,
+            Medal::Silver => palette.medal_silver,
+            Medal::Bronze => palette.medal_bronze,
         }
     }
 }
