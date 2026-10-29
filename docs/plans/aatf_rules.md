@@ -20,6 +20,12 @@ player's stats added up.
 ```rust
 pub struct Ruleset {
     // ... every field in the spec, and:
+    /// The event's page, opened by a click on its logo: an `http://` or `https://` address.
+    /// `None`: the logo opens nothing.
+    pub page: Option<String>,
+    /// The event's logo: a PNG of at most 64 KB, base64. Written as the data block's last
+    /// key, so the keys a person reads come first. `None`: the Save editor draws none.
+    pub logo: Option<String>,
     /// Alternative counts for some tiers, of which the team's must equal one (DBC7: GGG,
     /// GGSS, GSSSS, SSSSSS). Empty: each tier's own `count`.
     pub medal_systems: Vec<MedalSystem>,
@@ -126,6 +132,18 @@ height system but the last has a non-empty `any_player` or `by_quotas` with quot
 quota fails); the last has neither
 (else a team could fall through every system). A system with `extra_height` gives quotas only to
 `exactly` brackets of one height, and its quotas add up to `squad_size`.
+
+**The event's logo and page.** A cup other than 4cc runs its event on its own file, and its
+members should see their event's mark: `logo` and `page` sit in the data section, never in
+the logic section, so the logic's hash and version ignore them. Both are optional. Loading
+refuses a `logo` that is not base64, does not start with the PNG signature or decodes to
+more than 64 KB, and a `page` that is not an `http://` or `https://` address, each with its
+key path, as any other key's error: the Ruleset editor writes only valid ones, so only a
+hand-edited file meets the refusal, and a logo dropped in silence would leave its organizer
+wondering why it never shows. `libs/aatf` checks the bytes (the workspace's `base64`) but
+never decodes the picture: the hosts that draw it decode it (`image`, a workspace
+dependency through `dds_convert`). Each embedded ruleset carries its event's logo and page
+(the event's wiki page, and the logo it shows).
 
 ## Embedded rulesets
 

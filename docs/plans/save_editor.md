@@ -250,6 +250,20 @@ all side by side.
   Goalkeeper", the official ruleset's widest, fits its half (105 of 118.5). They act on the selected player, so a team row leaves them disabled, their tooltip
   "The make buttons act on a player: pick a player row"; the Player menu's entries are
   disabled too, their tooltip "The Player menu acts on a player: pick a player row".
+- **The event logo.** While the active ruleset carries a logo (`plans/aatf_rules.md` "The
+  ruleset schema", the event's logo and page), the view draws it at its top right, the
+  sidebar's clover mirrored: 28 points high as the clover is, its right edge 14 points from
+  the window's and its top 8 from the view's, as the clover's ink is from the left and top,
+  as wide as the picture's shape asks up to 84 points (3:1, so a wide logo still reads). It
+  is drawn over the toolbar row's empty end and moves nothing: no row is pushed down, no
+  column narrowed (the drafts' toolbar at its widest ends 136 points short of it at the
+  1280-wide window, and the right column's title starts under it). Where the toolbar
+  reaches within 8 points of it (a narrow window) it is not drawn, rather than covering a
+  control. With a page it is a link: the pointing-hand cursor, a click opening the page in
+  the browser, a tooltip naming the event (the ruleset's name) and the address; without
+  one its tooltip names the event alone. One look on both themes: an event's logo is made
+  for any background. The picture is decoded once per ruleset, not per frame; one that
+  fails to decode is not drawn (its bytes passed the load check, its pixels did not).
 - **The toolbar**, in egui's `MenuBar` (0.37), its style left as the toolbar's so the
   buttons keep their frames, the bar's pieces (the bar, its separator, a menu item with its
   shortcut) `studio_core`'s widgets rather than this tool's, so every tool's toolbar takes
@@ -1841,5 +1855,13 @@ SE-GUI-32  GIVEN the save open and VTL11 picked in the toolbar's ruleset dropdow
                 naming an imported file no longer in the data folder's `rules/` THEN at start
                 the ruleset is the first built-in one and a warning notice says so, and no
                 quick action, badge or list shows a load error
+SE-GUI-44  GIVEN a save open and DBC7, which carries a logo and a page, the active ruleset
+           WHEN the view is drawn at the 1280-wide window
+           THEN the logo stands 28 points high, its right edge 14 points from the window's
+                and its top 8 from the view's, and every other widget stands where it does
+                with Autumn 26 picked; its tooltip names DBC7 and its page, and a click
+                opens the page; GIVEN a ruleset without a logo THEN nothing is drawn there;
+                GIVEN a window narrow enough for the toolbar to reach it THEN it is not
+                drawn
 ```
 

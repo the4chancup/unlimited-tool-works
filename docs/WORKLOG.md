@@ -2535,6 +2535,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     code, with 8.34, its scenarios written with it
   - [ ] 8.34 after 8.33 (the maintainer, 2026-10-27): the same for a range of teams, one
     picture per team, in one go. Drafted and approved with 8.33 (above); left: the code
+  - [ ] 8.35 before 0.0.1 (P45, accepted 2026-10-30; DECISIONS "A ruleset carries its
+    event's logo and page"; drafted, the drafts' `eventLogo` and `eventLogoField`): a
+    ruleset's event logo and page
+    - [ ] a `aatf`: the `page` and `logo` keys, their load checks, the writer's order (logo
+      last) → verify: RE-FILE-09; a load test per refusal (not base64, no PNG signature,
+      over 64 KB, a page without http(s)); the logic's hash unchanged by either key
+    - [ ] b the Save editor's top-right logo and the Ruleset editor's General fields →
+      verify: SE-GUI-44, RE-GUI-19 headless; the built window (ASK FIRST)
+    - [ ] c the embedded rulesets' logos and pages: the pages are the events' wiki pages
+      the maintainer listed (2026-10-30), the logos the ones those pages show → verify:
+      each embedded ruleset loads with its logo; the built window per ruleset
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning

@@ -487,7 +487,14 @@ table.grid.stats-grid td { padding: 2px 6px; }
    list and its quick actions take the whole height, the detail scrolls on
    its own, and Live AATF's panel (the log panel widget's frame, the host's)
    docks under them. */
-.center.filled { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 6px; }
+.center.filled { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 6px; position: relative; }
+/* The active ruleset's event logo: the sidebar's clover mirrored, 14 from the
+   window's right edge and 8 from its top as the clover's ink is from the left
+   and top, as tall (28), as wide as the picture's shape asks up to 84. Drawn
+   over the toolbar row's empty end, it moves nothing; where the toolbar
+   reaches its place it is not drawn (eventLogo). */
+.event-logo { position: absolute; top: 8px; right: 14px; height: 28px; max-width: 84px; object-fit: contain; object-position: right; }
+.event-logo.link { cursor: pointer; }
 .center.filled .view-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .center.filled .master { flex: 1; min-height: 0; align-items: stretch; }
 /* The detail pane scrolls on its own, its bar in the window's scroll-bar
@@ -2537,7 +2544,13 @@ const snapXY = (px, py) => [
 // colour code. label is the file's `name`, the description the ruleset
 // dropdown shows. The draft recognizes a tier by its rating and position
 // alone (recognizedTier), so VGL26's and VTL10's height-told tiers read as
-// the first one the rating reaches.
+// the first one the rating reaches. logo and page are the file's event logo
+// (a PNG; here a drawn sample until the organizers' own) and the event's page.
+const SAMPLE_LOGO = "data:image/svg+xml," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="28" viewBox="0 0 64 28">'
+  + '<rect x="0.5" y="0.5" width="63" height="27" rx="5" fill="#b8202a" stroke="#f2c14e"/>'
+  + '<text x="32" y="19.5" text-anchor="middle" font-family="Georgia, serif" font-weight="700"'
+  + ' font-size="15" fill="#f6efe0">DBC 7</text></svg>');
 const RULESETS = {
   official: { label: "4cc Autumn 26", fielded_at_a: [1], tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 3, weak_foot: { usage: 4, accuracy: 4 },
@@ -2597,7 +2610,7 @@ const RULESETS = {
       { card: "weighted_pass", tiers: ["regular", "buffed"] },
       { card: "pinpoint_crossing", tiers: ["regular", "buffed"] },
       { card: "captaincy", captain: true }, { card: "long_ranger" } ] },
-  dbc7: { label: "Divegrass Before Christmas 7", tiers: [
+  dbc7: { label: "Divegrass Before Christmas 7", logo: SAMPLE_LOGO, page: "https://implyingrigged.info/", tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 3, weak_foot: { usage: 4, accuracy: 4 },
       cards: 48, a_positions: 13, free: {} },
     { id: "silver", label: "Silver", rate: 88, form: 8, injury_resistance: 3, weak_foot: { usage: 4, accuracy: 4 },
@@ -3863,8 +3876,30 @@ function renderView(center) {
   if (live) center.append(live);
   host.append(renderToolbar());
   host.append(h("div", { class: "master" }, renderMaster(), renderDetail()));
+  const logo = eventLogo();
+  if (logo) center.append(logo);
   const panel = renderPanel();
   if (panel) center.append(panel);
+}
+
+// The active ruleset's event logo at the view's top right, or null when its
+// file carries none. With a page it is a link: a click opens the page in the
+// browser, the tooltip naming the event and the address. Measured once
+// drawn: a toolbar reaching within 8 of it (a narrow window) hides it rather
+// than letting it cover a control. sample wording: the tooltip.
+function eventLogo() {
+  const rs = RULESETS[D.ruleset];
+  if (!rs || !rs.logo) return null;
+  const img = h("img", { class: "event-logo" + (rs.page ? " link" : ""), id: "event-logo", src: rs.logo,
+    alt: rs.label, title: rs.page ? rs.label + "\nOpens " + rs.page : rs.label,
+    onclick: rs.page ? () => window.open(rs.page, "_blank", "noopener") : null });
+  requestAnimationFrame(() => {
+    const bar = document.querySelector(".toolbar");
+    if (!img.isConnected || !bar) return;
+    const end = Math.max(...[...bar.children].map(e => e.getBoundingClientRect().right));
+    if (end + 8 * winScale() > img.getBoundingClientRect().left) img.style.visibility = "hidden";
+  });
+  return img;
 }
 
 // ---- Master: team selector, the cross-team filter, the player list ----

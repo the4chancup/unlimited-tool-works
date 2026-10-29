@@ -576,8 +576,17 @@ fn custom_checks(team) {
 };
 
 // crates/libs/aatf/rulesets/dbc7.rhai
+// The event logo (a base64 PNG in the file; here a drawn sample until the
+// organizers' own) and the event's page: the Save editor draws the logo at its
+// top right while the ruleset is picked, a click opening the page.
+const SAMPLE_LOGO = "data:image/svg+xml," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="28" viewBox="0 0 64 28">'
+  + '<rect x="0.5" y="0.5" width="63" height="27" rx="5" fill="#b8202a" stroke="#f2c14e"/>'
+  + '<text x="32" y="19.5" text-anchor="middle" font-family="Georgia, serif" font-weight="700"'
+  + ' font-size="15" fill="#f6efe0">DBC 7</text></svg>');
 const DBC7 = {
-  schema: 1, name: "Divegrass Before Christmas 7", squad_size: 23,
+  schema: 1, name: "Divegrass Before Christmas 7", page: "https://implyingrigged.info/",
+  logo: SAMPLE_LOGO, squad_size: 23,
   stats: {
     rating: ["dribbling", "goalkeeping", "finishing", "low_pass", "lofted_pass", "heading",
       "swerve", "catching", "clearing", "reflexes", "coverage", "body_control",
@@ -825,6 +834,29 @@ function text(value, set, opts = {}) {
     style: `width:${opts.width || 140}px`, placeholder: opts.placeholder, title: opts.title,
     oninput: e => { set(e.target.value); changed(); }, onchange: commit });
 }
+// The General section's Event logo: the picture at the height the Save editor
+// draws it (28, up to 84 wide), Choose PNG… and Remove; none yet, a weak None.
+// A file that is no PNG or is over 64 KB is refused with a line saying why.
+// sample wording: the buttons, the tooltips and the refusals.
+function eventLogoField() {
+  const pick = h("input", { type: "file", accept: ".png,image/png", style: "display:none",
+    onchange: e => {
+      const f = e.target.files[0];
+      if (!f) return;
+      if (f.type !== "image/png") { logoRefusal = f.name + " is not a PNG picture"; render(); return; }
+      if (f.size > 64 * 1024) { logoRefusal = f.name + " is over 64 KB"; render(); return; }
+      const rd = new FileReader();
+      rd.onload = () => { R.logo = rd.result; logoRefusal = null; changed(); commit(); render(); };
+      rd.readAsDataURL(f);
+    } });
+  return h("span", { class: "row", style: "margin:0" },
+    R.logo ? h("img", { src: R.logo, alt: "Event logo", style: "height:28px; max-width:84px; object-fit:contain" })
+      : weak("None"),
+    button("Choose PNG…", () => pick.click(), { title: "A PNG picture of at most 64 KB" }), pick,
+    R.logo ? button("Remove", () => { R.logo = null; changed(); commit(); render(); }) : null,
+    logoRefusal ? h("span", { class: "err" }, logoRefusal) : null);
+}
+let logoRefusal = null;
 function chips(all, list, set, label = human) {
   return h("span", { class: "row", style: "margin:0" }, all.map(v => selectable(label(v), list.includes(v),
     () => set(list.includes(v) ? list.filter(x => x !== v) : list.concat([v])))));
@@ -920,7 +952,7 @@ function effectsData(e) {
 }
 function rulesetData(r) {
   return {
-    schema: r.schema, name: r.name, squad_size: r.squad_size,
+    schema: r.schema, name: r.name, page: r.page || null, squad_size: r.squad_size,
     stats: struct(r.stats, [["rating"], ["at_most"]]),
     tiers: r.tiers.map(t => struct(t, [["id", "req"], ["label", "req"], ["count", "opt"],
       ["counts_as", "opt"], ["when"], ["rate", "req"], ["stats"], ["form"], ["injury_resistance"],
@@ -944,6 +976,7 @@ function rulesetData(r) {
       ["man_marking", "opt"], ["auto_substitution", "opt"], ["auto_offside_trap", "opt"],
       ["auto_preset_change", "opt"], ["auto_attack_defence_levels", "opt"], ["forbidden_shapes"]])),
     suggestions: r.suggestions,
+    logo: r.logo || null,
   };
 }
 // Wraps one item's fields over lines of at most `width` characters.
@@ -977,7 +1010,9 @@ function dataBlock(r) {
     out.push(line.trimEnd());
     return out;
   };
-  L.push(`${I}schema: ${d.schema},`, `${I}name: ${rv(d.name)},`, `${I}squad_size: ${d.squad_size},`, "");
+  L.push(`${I}schema: ${d.schema},`, `${I}name: ${rv(d.name)},`);
+  if (d.page) L.push(`${I}page: ${rv(d.page)},`);
+  L.push(`${I}squad_size: ${d.squad_size},`, "");
   L.push(`${I}stats: #{`);
   for (const k of Object.keys(d.stats)) L.push(...listLines(I + I, k + ": ", d.stats[k]));
   L.push(`${I}},`, "", `${I}tiers: [`);
@@ -1016,6 +1051,9 @@ function dataBlock(r) {
     L.push(`${I}],`, "");
   }
   if (d.suggestions.length) L.push(...listLines(I, "suggestions: ", d.suggestions));
+  // The logo last, so the keys a person reads come first; its one long line
+  // is shortened here, the file holding it whole.
+  if (d.logo) L.push("", `${I}logo: "iVBORw0KGgoAAAANSUhEUgAA…",  // a 2 KB PNG, shortened in this view`);
   L.push("};", "", "// ==== LOGIC (ruleset-logic 1): the Ruleset editor replaces this section ====",
     "// (the interpreter, a few hundred lines, not shown in this draft)");
   if (r.custom_checks) {
@@ -1054,6 +1092,7 @@ function problems(r) {
     bytes8 = s => new TextEncoder().encode(s).length === 8;
   const dup = (ids, sec, kind) => ids.forEach((id, i) => { if (ids.indexOf(id) !== i) add(sec, `two ${kind} share the id "${id}"`); });
   if (r.name === "") add("general", "the ruleset has no name");
+  if (r.page && !/^https?:\/\/\S+$/.test(r.page)) add("general", "the event page is not a web address (http:// or https://)");
   r.stats.at_most.forEach(n => { if (!STATS.concat(AT_MOST_EXTRA).includes(n)) add("general", `"${n}" is no at-most target`); });
   dup(tierIds, "tiers", "tiers"); dup(brackets, "heights", "brackets"); dup(systems, "heights", "height systems");
   const checkCond = (c, sec, where, opts = {}) => walkConds(c, (k, path) => {
@@ -1416,7 +1455,11 @@ const VIEWS = {
     const d = h("div", {}, h("h2", {}, "General"));
     d.append(named(h("table", { class: "grid" },
       h("tr", {}, h("td", {}, "Name"), h("td", {}, text(R.name, v => R.name = v, { width: 220 }))),
+      h("tr", {}, h("td", {}, "Event page"), h("td", {}, text(R.page, v => R.page = v || null,
+        { width: 220, placeholder: "https://", title: "Opened by a click on the event logo" }))),
+      h("tr", {}, h("td", {}, "Event logo"), h("td", {}, eventLogoField())),
       h("tr", {}, h("td", {}, "Squad size"), h("td", {}, drag(R.squad_size, v => R.squad_size = v ?? 0, { min: 1, max: 32 })))), "general-fields"));
+    d.append(h("div", { class: "weak" }, "The Save editor draws the logo at its top right while this ruleset is picked; a click on it opens the event page."));
     d.append(h("div", { class: "sep" }), strong("Rating stats"),
       h("div", { class: "weak" }, "A player's rating is the highest of these; it picks his tier. What a stat may sit at is the target, the warning band and the stat total, not the rating."),
       named(statGrid(STATS, R.stats.rating, v => R.stats.rating = v), "rating-stats"));
