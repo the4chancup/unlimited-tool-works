@@ -7,7 +7,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use aatf::{MedalSystem, Ruleset, Stat, Tier, TierId};
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
-use studio_core::widgets::{checkbox, step_choice, step_number, text_box, wheel_steps};
+use studio_core::widgets::{
+    checkbox, collapsing_header, step_choice, step_number, text_box, wheel_steps,
+};
 
 use super::Section;
 use super::widgets;
@@ -442,7 +444,7 @@ fn expander_row(ui: &mut egui::Ui, ruleset: &mut Ruleset, index: usize) {
         ui.max_rect().right_bottom(),
     );
     let mut child = ui.new_child(egui::UiBuilder::new().max_rect(rect));
-    egui::CollapsingHeader::new("Stat targets, free cards and conditions")
+    collapsing_header("Stat targets, free cards and conditions")
         .id_salt(("tier-expander", index))
         .show(&mut child, |ui| expander(ui, ruleset, index));
     ui.advance_cursor_after_rect(egui::Rect::from_min_size(

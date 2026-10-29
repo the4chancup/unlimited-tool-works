@@ -265,7 +265,8 @@ pub(crate) fn apply(ctx: &egui::Context, theme: Theme) {
 /// at window creation and every view test's harness calls it too, so a
 /// size a test measures is the size a member sees.
 /// The spacing and both themes' widget states are egui 0.36's (the light
-/// fills aside, `widgets_light`), the look the drafts the GUI is built from
+/// fills, `widgets_light`, and the dark strong text, `widgets_dark`, aside),
+/// the look the drafts the GUI is built from
 /// were reviewed in: 0.37 moved them (the button
 /// padding to 8 by 2, the controls to 20 high, the dark buttons to grey 50
 /// with text at 215), so `install` pins them on both themes itself and an egui
@@ -305,7 +306,8 @@ pub fn install(ctx: &egui::Context) {
     }
 }
 
-/// egui 0.36.1's `Widgets::dark()`, field for field: the drafts' stylesheet
+/// egui 0.36.1's `Widgets::dark()`, field for field but for the pressed
+/// state's text colour (the strong text colour, below): the drafts' stylesheet
 /// draws widgets in these colors, and 0.37's `Widgets::dark()` moved them (the
 /// buttons to grey 50 with text at 215, the radii to 4 to 6 points), so it
 /// cannot supply them.
@@ -340,7 +342,11 @@ fn widgets_dark() -> egui::style::Widgets {
             weak_bg_fill: egui::Color32::from_gray(55),
             bg_fill: egui::Color32::from_gray(55),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::WHITE),
-            fg_stroke: egui::Stroke::new(2.0, egui::Color32::WHITE),
+            // egui's strong text colour is this colour, so every title and
+            // collapsing header's title takes the drafts' `--strong` (220)
+            // here, not egui's white. A pressed widget's text, and whatever
+            // else egui draws in a pressed widget's foreground, takes it too.
+            fg_stroke: egui::Stroke::new(2.0, egui::Color32::from_gray(220)),
             corner_radius: egui::CornerRadius::same(2),
             expansion: 0.0,
         },
@@ -649,6 +655,22 @@ mod tests {
             );
             assert_eq!(widgets.hovered.corner_radius, egui::CornerRadius::same(3));
         }
+    }
+
+    // The dark theme's strong text is the drafts' `--strong`, grey 220, not
+    // egui's white; the light theme keeps egui's black.
+    #[test]
+    fn install_sets_the_dark_strong_text_to_the_drafts_grey() {
+        let ctx = egui::Context::default();
+        install(&ctx);
+        assert_eq!(
+            ctx.style_of(egui::Theme::Dark).visuals.strong_text_color(),
+            egui::Color32::from_gray(220)
+        );
+        assert_eq!(
+            ctx.style_of(egui::Theme::Light).visuals.strong_text_color(),
+            egui::Color32::BLACK
+        );
     }
 
     /// The WCAG contrast ratio of two opaque colours: the lighter one's

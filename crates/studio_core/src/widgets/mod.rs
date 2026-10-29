@@ -3,7 +3,8 @@
 //! the run log drawn in it, `well_frame`, the log's well a dock's rows sit in,
 //! the settings rows (`settings_row`) the menu's
 //! sections share, the checkbox and radio button every view draws
-//! (`choice`), the text box every view draws (`text_box`), a tool's
+//! (`choice`), the text box every view draws (`text_box`), the collapsing
+//! header every view draws (`collapsing_header`), a tool's
 //! toolbar row with its group separator (`toolbar`), the measure that
 //! places text by its ink (`ink`), the wheel stepping a combo box or a drag value (`wheel`), the modal window
 //! every dialog draws through (`modal`), and the row spacing every form
@@ -12,6 +13,7 @@
 //! themselves know no tool.
 
 mod choice;
+mod collapsing_header;
 mod dock;
 mod ink;
 mod log_panel;
@@ -23,6 +25,7 @@ mod toolbar;
 mod wheel;
 
 pub use choice::{checkbox, checkbox_without_text, radio, radio_value};
+pub use collapsing_header::collapsing_header;
 pub use dock::BottomDock;
 pub use ink::ink_span;
 pub use log_panel::{LogLine, LogPanel, well_frame};

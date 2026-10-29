@@ -24,7 +24,7 @@ pub(crate) fn show(
     if let Some(code) = panel.show(ui, log.lines()) {
         ctx.open_help(HelpTarget::message(&code));
     }
-    ui.collapsing("Settings", |ui| show_settings(ui, ctx));
+    studio_core::widgets::collapsing_header("Settings").show(ui, |ui| show_settings(ui, ctx));
     let clicked = ui
         .add_enabled(!log.is_running(), egui::Button::new("Compile"))
         .clicked();
