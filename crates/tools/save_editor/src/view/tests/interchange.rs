@@ -305,6 +305,11 @@ fn a_team_toml_with_gameplay_alone_writes_the_abilities_as_one_undoable_edit() {
     };
     let expected = lib_import(&view, &kept(&co, gameplay), THREE);
     picked(&mut window, &mut view, "co.toml", co.as_bytes());
+    assert!(
+        panel_lines(&mut window, &mut view)
+            .contains(&"A Team TOML written from a PES 2019 save.".to_owned()),
+        "the intro names the file's version, the save's"
+    );
     assert_eq!(
         checkboxes(&mut window, &mut view),
         ["gameplay", "aesthetics", "tactics"]
@@ -630,11 +635,19 @@ fn a_squad_file_pairs_its_records_and_writes_gameplay_and_aesthetics() {
         TacticsSection::default(),
         "premise: the fixture has no tactics block"
     );
-    let (_, expected) = lib_import(&view, &document, CO);
+    let (expected_team, expected) = lib_import(&view, &document, CO);
     let before = rostered(&view, CO);
     assert_ne!(
         expected, before,
         "premise: the squad changes /co/'s players"
+    );
+    assert!(
+        expected_team
+            .roster
+            .iter()
+            .zip(&team_entry(&view, CO).roster)
+            .any(|(after, before)| after.number != before.number),
+        "premise: the squad changes a shirt number"
     );
     let numbers: Vec<String> = team_entry(&view, CO)
         .roster
@@ -705,6 +718,11 @@ fn a_squad_file_pairs_its_records_and_writes_gameplay_and_aesthetics() {
 
     apply(&mut window, &mut view);
     assert_eq!(rostered(&view, CO), expected, "the lib's import");
+    assert_eq!(
+        team_entry(&view, CO),
+        expected_team,
+        "the lib's team, its shirt numbers included"
+    );
 }
 
 // SE-GUI-17
@@ -851,6 +869,42 @@ fn under_the_lock_the_aesthetics_section_is_off_and_never_written() {
             "slot {slot}: the shirt number"
         );
     }
+}
+
+// SE-GUI-22
+#[test]
+fn the_staged_import_follows_the_lock_turned_on_and_off_after_the_pick() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_lock_flip", THREE);
+    assert_co_and_three_differ(&view);
+    let co = export(&view, CO);
+    picked(&mut window, &mut view, "co.toml", co.as_bytes());
+    for label in ["gameplay", "aesthetics", "tactics"] {
+        assert!(
+            ticked(&mut window, &mut view, label),
+            "premise: {label} chosen"
+        );
+    }
+
+    view.aesthetics_from_exports = true;
+    assert!(view.aesthetics_locked(), "premise: the lock is on");
+    let unlocked = Sections {
+        aesthetics: false,
+        ..ALL
+    };
+    let expected = lib_import(&view, &kept(&co, unlocked), THREE);
+    apply(&mut window, &mut view);
+    assert_imported(&view, THREE, &expected);
+
+    view.edit_aesthetics = true;
+    assert!(!view.aesthetics_locked(), "premise: the lock is off");
+    let expected = lib_import(&view, &kept(&co, ALL), THREE);
+    assert_ne!(
+        expected.1,
+        rostered(&view, THREE),
+        "premise: the aesthetics section changes /3/'s players"
+    );
+    apply(&mut window, &mut view);
+    assert_imported(&view, THREE, &expected);
 }
 
 // SE-GUI-16
@@ -1284,6 +1338,20 @@ fn the_panel_without_a_team_row_asks_for_one() {
     assert_eq!(
         panel_lines(&mut window, &mut view),
         ["Pick a team row to export or import."]
+    );
+}
+
+#[test]
+fn a_player_row_selected_makes_his_team_the_target() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_player_row", CO);
+    view.selected = Some(Selection::Player(CO, 0));
+    view.panel = Some(Panel::Interchange);
+    // A window's first frame only measures it.
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let lines = panel_lines(&mut window, &mut view);
+    assert!(
+        lines.contains(&"Import into /co/ (714) ".to_owned()),
+        "{lines:#?}"
     );
 }
 
