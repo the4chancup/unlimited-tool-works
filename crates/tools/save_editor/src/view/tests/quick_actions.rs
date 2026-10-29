@@ -23,14 +23,12 @@ fn painted_label<'a>(
         .unwrap_or_else(|| panic!("no painted {label:?} inside {bounds:?}"))
 }
 
-/// The two columns' widths the cells should be drawn at for `left`'s and
-/// `right`'s labels in a list `list_width` wide: each column its widest
-/// cell's natural width while the pair fit, else half each (plans
-/// "Editing UI", the quick actions bullet). Computed here from the labels
-/// alone, never the code's own function, so a wrong rule in the code
-/// fails the tests. `right`'s last is the Set stats cell (its button,
-/// the item spacing and the field's two digits).
-fn expected_columns(window: &Headless, left: &[&str], right: &[&str], list_width: f64) -> [f64; 2] {
+/// The two columns' natural widths for `left`'s and `right`'s labels: each
+/// its widest cell's, a label plus the button padding. Computed here from
+/// the labels alone, never the code's own function. `right`'s last is the
+/// Set stats cell (its button, the item spacing and the field's two
+/// digits).
+fn natural_columns(window: &Headless, left: &[&str], right: &[&str]) -> [f64; 2] {
     let style = window.ctx.global_style();
     let button = egui::TextStyle::Button.resolve(&style);
     // The DragValue's text is `drag_value_text_style` (`TextStyle::Button`).
@@ -62,12 +60,7 @@ fn expected_columns(window: &Headless, left: &[&str], right: &[&str], list_width
             })
             .fold(0.0_f64, f64::max)
     };
-    let columns = [widest(left), widest(right)];
-    if columns[0] + 6.0 + columns[1] <= list_width {
-        columns
-    } else {
-        [(list_width - 6.0) / 2.0; 2]
-    }
+    [widest(left), widest(right)]
 }
 
 /// The quick actions are `left`'s labels down the left column and
@@ -75,9 +68,9 @@ fn expected_columns(window: &Headless, left: &[&str], right: &[&str], list_width
 /// sharing one x inside the list rows' x range, every cell
 /// `QUICK_ACTION_HEIGHT` (20 points) tall and below the list's drawn rows,
 /// the Set stats row the right column's last at the buttons' own pitch.
-/// `shapes` is the frame's painted shapes: every button is as wide as
-/// its label plus the button padding, the label eliding only when the
-/// cell cannot hold it.
+/// `shapes` is the frame's painted shapes: every cell is half the grid's
+/// band less the gap, the label eliding only when the cell cannot hold
+/// it.
 fn assert_quick_actions(
     window: &Headless,
     nodes: &[accesskit::Node],
@@ -92,17 +85,12 @@ fn assert_quick_actions(
         .find(|node| player_row(node))
         .and_then(accesskit::Node::bounds)
         .expect("a player row in the list");
-    // Every button fills its column's width (its widest cell's natural
-    // width while the two columns fit the grid's band, else half each),
-    // its label eliding only when it cannot fit. The band runs past the
-    // rows to the list's scroll bar.
+    // Every button fills its column's width, half the grid's band less
+    // the gap, its label eliding only when it cannot fit. The band ends
+    // at the list's frame.
     let style = window.ctx.global_style();
-    let columns = expected_columns(
-        window,
-        left,
-        right,
-        grid_band_right(window, shapes) - row.x0,
-    );
+    let half = (grid_band_right(window, shapes) - row.x0 - 6.0) / 2.0;
+    let columns = [half, half];
     let ctx = &window.ctx;
     let mut column_xs = Vec::new();
     for (labels, cell) in [(left, columns[0]), (right, columns[1])] {
@@ -237,6 +225,55 @@ fn assert_quick_actions(
         first_y0 >= clip_bottom - 1.0,
         "the grid starts below the list's scroll clip ({first_y0} vs {clip_bottom})"
     );
+}
+
+// The grid spans the list's frame, the draft's `1fr 1fr`: at the default
+// width each column is a half of the 245-point frame less the 6-point gap,
+// 119.5, the left column's buttons starting at the frame's left edge and
+// the right column's cells (Set stats' button and box together) ending at
+// its right edge, not at the scroll bar beside it.
+#[test]
+fn the_quick_actions_columns_are_halves_of_the_lists_frame() {
+    let (_path, mut view, mut window) = open_701("quick_halves");
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let frame = list_frame(&window, &shapes);
+    assert!(
+        (frame.width() - 245.0).abs() <= 1.0,
+        "premise: the default 245-point frame ({frame:?})"
+    );
+    let span = |label: &str| {
+        let bounds = node_labeled(&nodes, Role::Button, label)
+            .bounds()
+            .expect("bounds");
+        let right = if label == "Set stats" {
+            set_stats_field(&nodes).bounds().expect("bounds").x1
+        } else {
+            bounds.x1
+        };
+        (bounds.x0, right)
+    };
+    for label in ["Make Gold", "Make Silver", "Make Bronze"] {
+        let (left, right) = span(label);
+        assert!(
+            (left - f64::from(frame.min.x)).abs() <= 1.0,
+            "{label} starts at the frame's left ({left} vs {frame:?})"
+        );
+        assert!(
+            (right - left - 119.5).abs() <= 1.0,
+            "{label} is 119.5 wide ({left} to {right})"
+        );
+    }
+    for label in ["Make Goalkeeper", "Make Regular", "Set stats"] {
+        let (left, right) = span(label);
+        assert!(
+            (right - f64::from(frame.max.x)).abs() <= 1.0,
+            "{label} ends at the frame's right ({right} vs {frame:?})"
+        );
+        assert!(
+            (right - left - 119.5).abs() <= 1.0,
+            "{label} is 119.5 wide ({left} to {right})"
+        );
+    }
 }
 
 /// Label nodes inside the side panel (left of the detail pane's edge):
@@ -791,16 +828,13 @@ fn the_quick_actions_fit_the_lists_width() {
     );
 }
 
-// The columns' fallback (plans "Editing UI", the quick actions bullet):
-// where the cells' natural widths do not fit the list each column is
-// half of it, a label too long for its half eliding (its tooltip names
-// the tier). The list is a fixed 255, so the fallback is reached by a
-// long tier label, not a narrower list.
+// A label too long for its half elides, its tooltip naming the tier. The
+// list is a fixed 255, so it is reached by a long tier label, not a
+// narrower list.
 #[test]
-fn the_columns_halve_when_the_content_widths_do_not_fit() {
+fn a_label_too_long_for_its_half_elides() {
     const WIDE_TIER: &str = "the longest tier in the ruleset";
-    // A ruleset whose first tier's label is too long for the two
-    // columns' naturals to fit inside the list's 255.
+    // A ruleset whose first tier's label is too long for its half.
     let mut ruleset = aatf::Rules::official().ruleset().clone();
     ruleset.tiers[0].label = WIDE_TIER.to_owned();
     let path = fixture(PesVersion::Pes21, "quick_halved_columns");
@@ -829,15 +863,15 @@ fn the_columns_halve_when_the_content_widths_do_not_fit() {
         .and_then(accesskit::Node::bounds)
         .expect("a player row in the list");
     let band_right = grid_band_right(&window, &shapes);
-    let natural = expected_columns(&window, &left, &right, f64::INFINITY);
+    let half = (band_right - row.x0 - 6.0) / 2.0;
+    let natural = natural_columns(&window, &left, &right);
     assert!(
-        natural[0] + 6.0 + natural[1] > band_right - row.x0,
-        "premise: the naturals {natural:?} do not fit the band from {} to {band_right}",
-        row.x0
+        natural[0] > half,
+        "premise: the left column's natural {} does not fit its half {half}",
+        natural[0]
     );
     assert_quick_actions(&window, &nodes, &shapes, &left, &right);
 
-    let half = (band_right - row.x0 - 6.0) / 2.0;
     for label in [
         &*format!("Make {WIDE_TIER}"),
         "Make Silver",

@@ -105,10 +105,9 @@ pub(super) fn view_title(ui: &mut egui::Ui, id: u32, name: &str, space_below: f3
         0.0,
         egui::TextFormat::simple(body.clone(), ui.visuals().weak_text_color()),
     );
-    append_name(&mut title, name);
+    append_name(&mut title, name, &body);
     let strong = ui.visuals().strong_text_color();
     for section in &mut title.sections {
-        section.format.font_id = body.clone();
         if section.format.color == egui::Color32::PLACEHOLDER {
             section.format.color = strong;
         }

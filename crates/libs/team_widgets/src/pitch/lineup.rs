@@ -239,7 +239,7 @@ fn lineup_row(
                 .layout_no_wrap("≡".to_owned(), font.clone(), weak);
             let place = ui.painter().layout_no_wrap(
                 position.map_or("--", position_label).to_owned(),
-                font,
+                font.clone(),
                 position.map_or(weak, |position| {
                     position_colour(theme::palette(ui.visuals()), position)
                 }),
@@ -262,7 +262,7 @@ fn lineup_row(
             );
             ui.add_space(name_gap);
             let mut job = egui::text::LayoutJob::default();
-            append_name(&mut job, raw_name);
+            append_name(&mut job, raw_name, &font);
             // Cut at the row's end (the full name on hover): the
             // host gives the lists a fixed width, and a long name
             // would otherwise draw over the column at their right.
