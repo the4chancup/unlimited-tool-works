@@ -77,9 +77,9 @@ struct Preview {
 
 /// One row of the preview's table.
 struct PatchRow {
-    /// `(item, label, old, new)` as the changes table draws them: the
-    /// player's name, the field's label, the two values.
-    cells: (String, String, String, String),
+    /// The row as the changes table draws it: the player's name, the
+    /// field's label, the two values.
+    cells: prompt::ChangeRow,
     /// The player the Item cell's click selects (`None`: no roster holds
     /// him).
     select: Option<SelectedPlayer>,
@@ -161,9 +161,11 @@ fn preview(file: &EditFile, patch: &AestheticsPatch) -> Result<Preview, PatchErr
         let item = display_name(&old.name);
         let select = roster.get(&id).copied().map(Place::select);
         for diff in &diffs {
-            let term = terms::row_term(version, diff);
             rows.push(PatchRow {
-                cells: (item.clone(), term.label, term.old, term.new),
+                cells: prompt::ChangeRow {
+                    item: item.clone(),
+                    term: terms::row_term(version, diff),
+                },
                 select,
             });
         }

@@ -13,6 +13,7 @@
 mod aatf_check;
 mod abilities;
 mod appearance;
+mod changes_popup;
 mod comparator;
 mod generate;
 mod info_strip;
@@ -98,6 +99,9 @@ pub(crate) struct SaveView {
     /// The unsaved-changes prompt's state while it is open (SE-GUI-05):
     /// the pending action and the table's rows, computed once at open.
     pub(crate) prompt: Option<prompt::Prompt>,
+    /// The toolbar's list of unsaved changes while it is open (SE-GUI-43):
+    /// its rows, computed once at open.
+    changes_list: Option<changes_popup::ChangesList>,
     /// The running-game question a Save or Save as first asks while the
     /// save's own PES runs (SE-GUI-21's window rule).
     edit_mode_question: Option<EditModeQuestion>,
@@ -409,6 +413,7 @@ impl SaveView {
             tactics: team_widgets::tactics::TacticsView::default(),
             focused: None,
             prompt: None,
+            changes_list: None,
             edit_mode_question: None,
             request_close: false,
             open_dialog: open_menu::default_open_dialog(),
@@ -939,12 +944,8 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
                 );
         }
         // The save's path is in the window title (`title_detail`): beside the
-        // unsaved mark it could wrap the toolbar onto a second row. The mark
-        // in the link blue: the weak grey hid the one piece saying the save
-        // differs from its file among the toolbar's quieter text.
-        if view.is_dirty() {
-            ui.colored_label(ui.visuals().hyperlink_color, "\u{2022} unsaved changes");
-        }
+        // unsaved mark it could wrap the toolbar onto a second row.
+        changes_popup::show(ui, view);
     });
     if clear_flags_key
         && !view.aesthetics_locked()
