@@ -34,13 +34,10 @@ const RAIL_PADDING: i8 = 6;
 /// The tool icons', the help's and the gear's point size: about twice the body text, so
 /// the rail alone tells the tools apart.
 const ICON_SIZE: f32 = 24.0;
-/// One entry row: the 24-point icon and its padding. With the rail's 2-point gap,
-/// fourteen rows take 446 points of the 756-point rail at the default window,
-/// leaving the logo, the version dropdown, the help and the gear their room.
+/// One entry row: the 24-point icon and its padding. With egui's item spacing of 3
+/// between them, fourteen rows take 459 points of the 756-point rail at the default
+/// window, leaving the logo, the version dropdown, the help and the gear their room.
 const ENTRY_HEIGHT: f32 = 30.0;
-/// The space between two of the rail's items, the draft's `.rail` gap 2, where egui
-/// spaces items 3 apart: each entry would sit 1 point lower than the one above it.
-const RAIL_GAP: f32 = 2.0;
 /// The height a rail line takes: its 1-point stroke with the draft's `.sidebar .sep`
 /// margin 4 above and below it.
 const SEPARATOR_SPACING: f32 = 9.0;
@@ -345,7 +342,6 @@ impl Sidebar {
         ui.scope_builder(
             egui::UiBuilder::new().scope_id(egui::Id::unique("sidebar-contents")),
             |ui| {
-                ui.spacing_mut().item_spacing.y = RAIL_GAP;
                 // The row width is measured before any widget's min size can
                 // stretch the layout region (the combo's atom minimum is wider
                 // than the rail's content): every row takes the same width — the

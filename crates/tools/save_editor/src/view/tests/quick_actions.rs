@@ -26,7 +26,7 @@ fn painted_label<'a>(
 /// The two columns' natural widths for `left`'s and `right`'s labels: each
 /// its widest cell's, a label plus the button padding. Computed here from
 /// the labels alone, never the code's own function. `right`'s last is the
-/// Set stats cell (its button, the 6-point gap and the number's 52-point
+/// Set stats cell (its button, the 8-point gap and the number's 52-point
 /// box).
 fn natural_columns(window: &Headless, left: &[&str], right: &[&str]) -> [f64; 2] {
     let style = window.ctx.global_style();
@@ -47,7 +47,7 @@ fn natural_columns(window: &Headless, left: &[&str], right: &[&str]) -> [f64; 2]
             .iter()
             .map(|&label| {
                 if label == "Set stats" {
-                    natural("Set stats", &button) + padding + 6.0 + 52.0
+                    natural("Set stats", &button) + padding + 8.0 + 52.0
                 } else {
                     natural(label, &button) + padding
                 }
@@ -83,7 +83,7 @@ fn assert_quick_actions(
     // the gap, its label eliding only when it cannot fit. The band ends
     // at the list's frame.
     let style = window.ctx.global_style();
-    let half = (grid_band_right(window, shapes) - row.x0 - 6.0) / 2.0;
+    let half = (grid_band_right(window, shapes) - row.x0 - 8.0) / 2.0;
     let columns = [half, half];
     let ctx = &window.ctx;
     let mut column_xs = Vec::new();
@@ -147,11 +147,11 @@ fn assert_quick_actions(
                     .size()
                     .x
             });
-            // Set stats' button is drawn the cell less the 6-point gap and
+            // Set stats' button is drawn the cell less the 8-point gap and
             // the number's 52-point box (the draft's number input), not the
             // whole cell as a Make button is.
             let room = if *label == "Set stats" {
-                cell - 6.0 - 52.0
+                cell - 8.0 - 52.0
             } else {
                 cell
             };
@@ -213,8 +213,8 @@ fn assert_quick_actions(
 }
 
 // The grid spans the list's frame, the draft's `1fr 1fr`: at the default
-// width each column is a half of the 245-point frame less the 6-point gap,
-// 119.5, the left column's buttons starting at the frame's left edge and
+// width each column is a half of the 245-point frame less the 8-point gap,
+// 118.5, the left column's buttons starting at the frame's left edge and
 // the right column's cells (Set stats' button and box together) ending at
 // its right edge, not at the scroll bar beside it.
 #[test]
@@ -244,8 +244,8 @@ fn the_quick_actions_columns_are_halves_of_the_lists_frame() {
             "{label} starts at the frame's left ({left} vs {frame:?})"
         );
         assert!(
-            (right - left - 119.5).abs() <= 1.0,
-            "{label} is 119.5 wide ({left} to {right})"
+            (right - left - 118.5).abs() <= 1.0,
+            "{label} is 118.5 wide ({left} to {right})"
         );
     }
     for label in ["Make Goalkeeper", "Make Regular", "Set stats"] {
@@ -255,8 +255,8 @@ fn the_quick_actions_columns_are_halves_of_the_lists_frame() {
             "{label} ends at the frame's right ({right} vs {frame:?})"
         );
         assert!(
-            (right - left - 119.5).abs() <= 1.0,
-            "{label} is 119.5 wide ({left} to {right})"
+            (right - left - 118.5).abs() <= 1.0,
+            "{label} is 118.5 wide ({left} to {right})"
         );
     }
 }
@@ -757,8 +757,8 @@ fn the_quick_actions_stand_where_the_drafts_do_on_either_view() {
 }
 
 // Set stats' cell is the draft's `.row`: the number's box at the draft's
-// 52-point number width, the button taking the rest of the 119.5-point
-// half less the 6-point gap, 61.5.
+// 52-point number width, the button taking the rest of the 118.5-point
+// half less the 8-point gap, 58.5.
 #[test]
 fn set_stats_takes_what_the_number_box_leaves() {
     let (_path, mut view, mut window) = open_701("quick_set_stats_split");
@@ -768,12 +768,41 @@ fn set_stats_takes_what_the_number_box_leaves() {
         .expect("bounds");
     let field = set_stats_field(&nodes).bounds().expect("bounds");
     assert!(
-        (button.x1 - button.x0 - 61.5).abs() <= 1.0,
-        "Set stats is 61.5 wide ({button:?})"
+        (button.x1 - button.x0 - 58.5).abs() <= 1.0,
+        "Set stats is 58.5 wide ({button:?})"
     );
     assert!(
         (field.x1 - field.x0 - 52.0).abs() <= 1.0,
         "its number's box is 52 wide ({field:?})"
+    );
+}
+
+// The columns stand 8 apart, egui's item spacing, as the draft's `.qagrid`
+// gap: the right column's buttons start 8 past the left's, and Set stats'
+// box 8 past its button.
+#[test]
+fn the_quick_actions_columns_and_set_stats_stand_8_apart() {
+    let (_path, mut view, mut window) = open_701("quick_column_gap");
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let button = |label: &str| {
+        node_labeled(&nodes, Role::Button, label)
+            .bounds()
+            .expect("bounds")
+    };
+    for (left, right) in [
+        ("Make Gold", "Make Goalkeeper"),
+        ("Make Silver", "Make Regular"),
+    ] {
+        let gap = button(right).x0 - button(left).x1;
+        assert!(
+            (gap - 8.0).abs() <= 0.5,
+            "{right} stands 8 past {left}, got {gap}"
+        );
+    }
+    let gap = set_stats_field(&nodes).bounds().expect("bounds").x0 - button("Set stats").x1;
+    assert!(
+        (gap - 8.0).abs() <= 0.5,
+        "Set stats' box stands 8 past its button, got {gap}"
     );
 }
 
@@ -905,7 +934,7 @@ fn a_label_too_long_for_its_half_elides() {
         .and_then(accesskit::Node::bounds)
         .expect("a player row in the list");
     let band_right = grid_band_right(&window, &shapes);
-    let half = (band_right - row.x0 - 6.0) / 2.0;
+    let half = (band_right - row.x0 - 8.0) / 2.0;
     let natural = natural_columns(&window, &left, &right);
     assert!(
         natural[0] > half,

@@ -1749,7 +1749,8 @@ fn the_positions_grid_stands_at_the_drafts_pitch() {
 
 // The Skills header's row is one line of text high, as the draft's: the
 // title, "Cards left for" and the chip's text on the column titles' line,
-// 6 apart (the draft's `.row` gap; the chip's text 4 more inside it), and
+// 8 apart (the draft's `.row` gap, egui's item spacing; the chip's text 4
+// more inside it), and
 // the first checkbox row 19.5 under the title's top.
 #[test]
 fn the_skills_header_is_one_text_line_high() {
@@ -1766,10 +1767,10 @@ fn the_skills_header_is_one_text_line_high() {
     near_draft(skills.height(), 15.0, "the Skills title's height");
     near_draft(cards_left.y0, skills.y0, "Cards left for's top");
     near_draft(chip.y0, skills.y0, "the chip's text top");
-    near_draft(cards_left.x0 - skills.x1, 6.0, "Skills to Cards left for");
+    near_draft(cards_left.x0 - skills.x1, 8.0, "Skills to Cards left for");
     near_draft(
         chip.x0 - cards_left.x1,
-        10.0,
+        12.0,
         "Cards left for to the chip's text",
     );
     for card in ["Heading", "Man Marking"] {

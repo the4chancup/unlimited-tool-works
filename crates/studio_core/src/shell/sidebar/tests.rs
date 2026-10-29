@@ -2274,9 +2274,9 @@ fn assert_at_draft(actual: f64, expected: f64, what: &str) {
     );
 }
 
-// The rail's top block as the draft lays it out (`.rail` padding 6 and gap 2):
-// the 32-point logo at 6, the selector under it at 40 spanning the rail's inner
-// width, and the line under the selector on the draft's row 64.
+// The rail's top block as the draft lays it out (`.rail` padding 6 and gap 3):
+// the 32-point logo at 6, the selector under it at 41 spanning the rail's inner
+// width, and the line under the selector on the draft's row 66.
 #[test]
 fn the_rails_logo_selector_and_line_sit_at_the_drafts_rows() {
     let out = rail_at_draft_window();
@@ -2284,35 +2284,57 @@ fn the_rails_logo_selector_and_line_sit_at_the_drafts_rows() {
     assert_at_draft(logo.y0, 6.0, "the logo's top");
     assert_at_draft(logo.y1, 38.0, "the logo's bottom");
     let selector = combo(&out.nodes).bounds().unwrap();
-    assert_at_draft(selector.y0, 40.0, "the selector's top");
+    assert_at_draft(selector.y0, 41.0, "the selector's top");
     assert_at_draft(selector.x0, 5.5, "the selector's left");
     assert_at_draft(selector.x1, 49.5, "the selector's right");
     let lines = rail_lines(&out);
     let ([start, end], _) = lines.first().expect("a line is drawn under the selector");
-    assert_at_draft(f64::from(start.y), 64.5, "the line under the selector");
+    assert_at_draft(f64::from(start.y), 66.5, "the line under the selector");
     assert_at_draft(f64::from(start.x), 6.0, "the line's left end");
     assert_at_draft(f64::from(end.x), 49.0, "the line's right end");
 }
 
-// The entries are the draft's 30-point rows 2 apart (`.rail` gap 2): the first at
-// 71, the fourteenth thirteen pitches of 32 below it.
+// The entries are the draft's 30-point rows 3 apart (`.rail` gap 3, egui's item
+// spacing): the first at 74, each next one 3 under the one above it, the fourteenth
+// thirteen pitches of 33 below the first.
 #[test]
-fn the_rails_entries_are_32_points_apart() {
+fn the_rails_entries_are_3_points_apart() {
     let out = rail_at_draft_window();
     assert_at_draft(
         rail_bounds(&out.nodes, "Save editor").y0,
-        71.0,
+        74.0,
         "the first entry's top",
     );
+    let entries: Vec<&str> = std::iter::once("Save editor")
+        .chain(
+            REGISTRY
+                .iter()
+                .filter(|entry| entry.id != "save-editor")
+                .map(|entry| entry.label),
+        )
+        .collect();
+    assert_eq!(entries.len(), 14, "premise: the draft's fourteen entries");
+    for pair in entries.windows(2) {
+        let (above, below) = (
+            rail_bounds(&out.nodes, pair[0]),
+            rail_bounds(&out.nodes, pair[1]),
+        );
+        assert!(
+            (below.y0 - above.y1 - 3.0).abs() <= 0.5,
+            "{} stands 3 under {} ({above:?} vs {below:?})",
+            pair[1],
+            pair[0]
+        );
+    }
     assert_at_draft(
         rail_bounds(&out.nodes, "DB generator").y0,
-        487.0,
+        503.0,
         "the last entry's top",
     );
 }
 
 // The draft separates the help and the gear from the entries with the line it
-// draws under the selector: the same stroke over the same span, on row 681.
+// draws under the selector: the same stroke over the same span, on row 680.
 #[test]
 fn a_line_above_the_help_matches_the_line_under_the_selector() {
     let out = rail_at_draft_window();
@@ -2321,7 +2343,7 @@ fn a_line_above_the_help_matches_the_line_under_the_selector() {
     let (under_selector, above_help) = (lines[0], lines[1]);
     assert_at_draft(
         f64::from(above_help.0[0].y),
-        681.5,
+        680.5,
         "the line above the help",
     );
     assert_eq!(
@@ -2336,7 +2358,7 @@ fn a_line_above_the_help_matches_the_line_under_the_selector() {
 }
 
 // The help and the gear rows sit at the rail's foot as the draft's tail: the gear
-// 6 above the rail's bottom at 756 (`.rail` padding 6), the help one gap of 2 above it.
+// 6 above the rail's bottom at 756 (`.rail` padding 6), the help one gap above it.
 #[test]
 fn the_help_and_the_gear_sit_at_the_drafts_rows() {
     let out = rail_at_draft_window();

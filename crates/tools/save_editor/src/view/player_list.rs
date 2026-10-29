@@ -18,10 +18,6 @@ use crate::view::{SaveView, Selection, live_marks, quick_actions};
 /// A swatch square's side (the draft's 10px).
 const SWATCH: f32 = 10.0;
 
-/// The gap between the list's team combo, filter box and rows' frame
-/// (the draft's `.plist` gap), where egui's item spacing leaves 3.
-const CONTROL_GAP: f32 = 4.0;
-
 /// The gap added to the row's item spacing between a dirty row's `●`
 /// and the Live AATF mark after it (the draft's `.plist .dot + .mark`
 /// `margin-left: 4px` on top of its 5 px flex gap: 9 px dot to mark,
@@ -100,7 +96,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
         return frame_right;
     };
     let team_before = view.team;
-    ui.spacing_mut().item_spacing.y = CONTROL_GAP;
     ui.scope(|ui| {
         ui.spacing_mut().combo_width = frame_width;
         team_selector(ui, &mut view.team, session.file(), "save_editor_team");
@@ -120,12 +115,12 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     ));
     // The quick actions sit at the panel's bottom, under the list (the
     // draft's `qagrid`): a bottom panel takes its height off the scroll's.
-    // The panel's frame keeps its fill, the draft's `.plist` gap of 4 over
+    // The panel's frame keeps its fill, the draft's `.plist` gap of 3 over
     // the grid and no margin under it, so the grid's last row ends at the
     // pane's bottom; no horizontal margin either, and the grid's width
     // stops at the frame's, so the grid spans the list rows' width.
     let margin = egui::Margin {
-        top: 4,
+        top: 3,
         ..egui::Margin::ZERO
     };
     egui::Panel::bottom("save_editor_quick_actions")
