@@ -178,7 +178,7 @@ fn reread_imports(view: &mut SaveView) {
     view.imported = rules::imported(view.data_dir.as_deref());
     view.rules = None;
     view.cards = None;
-    view.medals = None;
+    view.medals.reset();
     view.live.check.reset();
     view.multi_aatf.check.reset();
 }

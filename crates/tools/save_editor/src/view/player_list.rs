@@ -118,12 +118,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     // The panel's frame keeps its fill, the draft's `.plist` gap of 3 over
     // the grid and no margin under it, so the grid's last row ends at the
     // pane's bottom; no horizontal margin either, and the grid's width
-    // stops at the frame's, so the grid spans the list rows' width.
+    // stops at the frame's, so the grid spans the list rows' width. No
+    // separator line over the grid: the draft's rows' border is followed
+    // by the gap alone.
     let margin = egui::Margin {
         top: 3,
         ..egui::Margin::ZERO
     };
     egui::Panel::bottom("save_editor_quick_actions")
+        .show_separator_line(false)
         .frame(egui::Frame::side_top_panel(ui.style()).inner_margin(margin))
         .show(ui, |ui| {
             // A child of its own: the panel's `ui` already spans the
@@ -159,39 +162,49 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     // has its rect.
     let background = ui.painter().add(egui::Shape::Noop);
     // Not shrunk: the frame takes the panel's height whatever few rows a
-    // filter leaves.
-    let output = egui::ScrollArea::vertical()
-        .auto_shrink([false, false])
-        .show_rows(ui, layout.row_height, rows.len(), |ui, range| {
-            for row in &rows[range] {
-                match row {
-                    ListRow::Team(team_id) => {
-                        team_row(
-                            ui,
-                            &mut view.selected,
-                            session,
-                            *team_id,
-                            layout,
-                            held.filter(|(id, _)| *id == *team_id)
-                                .map(|(_, violations)| live_marks::row_mark(violations, None)),
-                        );
+    // filter leaves. The scope clears the extreme background, which a
+    // solid bar's track paints in at full opacity: the draft's `.vbar` has
+    // no track, the panel shows through. The rows' frame reads the colour
+    // outside the scope.
+    let output = ui
+        .scope(|ui| {
+            ui.visuals_mut().extreme_bg_color = egui::Color32::TRANSPARENT;
+            egui::ScrollArea::vertical()
+                .auto_shrink([false, false])
+                .show_rows(ui, layout.row_height, rows.len(), |ui, range| {
+                    for row in &rows[range] {
+                        match row {
+                            ListRow::Team(team_id) => {
+                                team_row(
+                                    ui,
+                                    &mut view.selected,
+                                    session,
+                                    *team_id,
+                                    layout,
+                                    held.filter(|(id, _)| *id == *team_id).map(
+                                        |(_, violations)| live_marks::row_mark(violations, None),
+                                    ),
+                                );
+                            }
+                            ListRow::Player(row) => {
+                                player_row(
+                                    ui,
+                                    &mut view.selected,
+                                    session,
+                                    row,
+                                    layout,
+                                    held.filter(|(id, _)| *id == row.team_id).map(
+                                        |(_, violations)| {
+                                            live_marks::row_mark(violations, Some(row.slot))
+                                        },
+                                    ),
+                                );
+                            }
+                        }
                     }
-                    ListRow::Player(row) => {
-                        player_row(
-                            ui,
-                            &mut view.selected,
-                            session,
-                            row,
-                            layout,
-                            held.filter(|(id, _)| *id == row.team_id)
-                                .map(|(_, violations)| {
-                                    live_marks::row_mark(violations, Some(row.slot))
-                                }),
-                        );
-                    }
-                }
-            }
-        });
+                })
+        })
+        .inner;
     // The viewport spans the bar's strip while nothing scrolls: the frame
     // keeps its own width.
     let frame = egui::Rect::from_min_size(

@@ -13,6 +13,8 @@
 //! scales the whole UI (`spec/core/gui.md` "Scaling with the width"), so
 //! there is no narrow fallback.
 
+use std::sync::Arc;
+
 use aatf::TeamView;
 use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::PLAYABLE_POSITIONS;
@@ -24,7 +26,8 @@ use team_widgets::tactics::{self, FieldedMark, Medal, RosterRow};
 use team_widgets::violations::violation_line;
 
 use crate::session::Session;
-use crate::view::{MedalKey, SaveView, edit_team, live_marks, selected_team};
+use crate::view::worker::{Pending, WorkerResult};
+use crate::view::{MedalKey, SaveView, edit_settled, edit_team, live_marks, selected_team};
 
 /// The settings column's width (the draft's `.tacgrid` first track).
 const SETTINGS_WIDTH: f32 = 422.0;
@@ -120,17 +123,32 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // The badges' medal outlines: `player_tier` per roster slot under the
     // active ruleset, once per `MedalKey` (the open save's revision, the
     // team, the ruleset) as the Cards left badge is — not every frame.
-    if let Some(active) = rules.as_ref() {
+    // On a worker thread, started once the edit settles: the 23 script
+    // calls took about 95 ms on a PES 2021 save's team in a release build,
+    // all on the team view's first frame. Until the answer for this key
+    // lands the badges draw no outline, never another key's.
+    let held_medals = rules.as_ref().and_then(|active| {
         let key = MedalKey {
             revision: session.revision(),
             team: team_id,
             ruleset: active.key.clone(),
         };
-        if medals.as_ref().is_none_or(|(held, _)| *held != key) {
-            let marks = slot_medals(&active.rules, session.file(), team_id, team.roster.len());
-            *medals = Some((key, marks));
-        }
-    }
+        let (_, settled) = edit_settled(ui, *focused);
+        medals.update(&key, true, settled, |key| {
+            spawn_medals(
+                ui.ctx(),
+                session.file(),
+                &active.rules,
+                key.clone(),
+                team.roster.len(),
+            )
+        });
+        medals
+            .result
+            .as_ref()
+            .filter(|(held, _)| *held == key)
+            .map(|(_, marks)| marks)
+    });
     // Each roster slot's `FieldedNotA` marks: the held check's Error or
     // Warning violations of that kind on the slot, while Live AATF
     // holds this team's result (`held_violations`; another team's
@@ -177,9 +195,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 raw_name: raw_name.as_str(),
                 registered_position: *position,
                 portrait,
-                medal: medals
-                    .as_ref()
-                    .and_then(|(_, medals)| medals.get(index))
+                medal: held_medals
+                    .and_then(|marks| marks.get(index))
                     .copied()
                     .flatten(),
                 overalls: *overalls,
@@ -386,18 +403,45 @@ fn copy_swap_formation_menu(
     });
 }
 
-/// Each of `team_id`'s `slots` roster slots' badge medal under `rules`
+/// The pitch badges' medals per roster slot (`slot_medals`) for a
+/// `MedalKey`: the last answer with its key and the run in flight
+/// (`worker::WorkerResult`'s poll-and-spawn cycle).
+pub(super) type Medals = WorkerResult<MedalKey, Vec<Option<Medal>>>;
+
+/// One medal run's worker: `key`'s team viewed on the caller's thread
+/// (the `EditFile` lives there), then `slot_medals` on the shared ruleset
+/// off it, the key riding the reply and a repaint asked for with it.
+fn spawn_medals(
+    ctx: &egui::Context,
+    file: &EditFile,
+    rules: &Arc<aatf::Rules>,
+    key: MedalKey,
+    slots: usize,
+) -> Pending<MedalKey, Vec<Option<Medal>>> {
+    let team = TeamView::new(file, key.team).ok();
+    let (sender, replies) = crossbeam_channel::unbounded();
+    let rules = Arc::clone(rules);
+    let ctx = ctx.clone();
+    let reply_key = key.clone();
+    std::thread::spawn(move || {
+        let marks = slot_medals(&rules, team.as_ref(), slots);
+        // A newer run can replace the receiver mid-flight; that send's
+        // failure is the superseded thread ending, not an error.
+        if sender.send((reply_key, marks)).is_err() {
+            log::debug!("the medal run's caller dropped a superseded run");
+        }
+        ctx.request_repaint();
+    });
+    Pending { key, replies }
+}
+
+/// Each of `team`'s `slots` roster slots' badge medal under `rules`
 /// (the pitch markers' badge outlines): the tier `player_tier` reads the
 /// slot's player as, mapped through `Medal::from_tier_id`; `None` for an
 /// empty slot, no tier, a check that failed or a tier that is no medal
-/// — and for every slot when the team cannot be viewed.
-fn slot_medals(
-    rules: &aatf::Rules,
-    file: &EditFile,
-    team_id: u32,
-    slots: usize,
-) -> Vec<Option<Medal>> {
-    let Ok(team) = TeamView::new(file, team_id) else {
+/// — and for every slot when the team cannot be viewed (`None`).
+fn slot_medals(rules: &aatf::Rules, team: Option<&TeamView>, slots: usize) -> Vec<Option<Medal>> {
+    let Some(team) = team else {
         return vec![None; slots];
     };
     (0..slots)
@@ -405,7 +449,7 @@ fn slot_medals(
             u8::try_from(slot)
                 .ok()
                 .and_then(|slot| team.player(slot))
-                .and_then(|player| rules.player_tier(&team, player).ok().flatten())
+                .and_then(|player| rules.player_tier(team, player).ok().flatten())
                 .and_then(|tier| Medal::from_tier_id(&tier.id))
         })
         .collect()
