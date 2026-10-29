@@ -1802,8 +1802,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         (S1g): an import that changes nothing disables Apply and says so (drafted, plan,
         DECISIONS 2026-10-29), the notes in a scroll area, the no-team line `Pick a team row
         to export or import.`, the missing tests. Merged 2026-10-29 (`06c2a6b4`;
-        `view/interchange.rs`, `view/patch.rs`, their tests). SWE-2 round 2 on k5b2's tests
-        under way
+        `view/interchange.rs`, `view/patch.rs`, their tests). SWE-2 round 2 on k5b2's tests: 2
+        accepted, the loop ends (S2c); its four tests merged `0c5571d3` (the squad's shirt
+        numbers, the lock flipped after a pick, the intro line, a player row's team)
       - [ ] k5d SE-GUI-29 manual: each Texport imported by the game's own team import in PES
         18, 19, 20 and 21 (21 on E:; 18-20 on F:, connected on request; saves backed up first)
       - [ ] k5rev the cross-family review loop (the slices are Opus sidekicks', so the lead's
