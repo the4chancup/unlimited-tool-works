@@ -2859,3 +2859,6 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The AATF rows, their marks' tooltips, Multi-team AATF's copy and
   `check-aatf` name each rule in words and say what is wrong with the game's and the
   ruleset's names, never the rules file's spellings (8.29d1a).
+- **2026-10-30** — The Save editor's help chapters and the two core topics give each subject
+  its own subheading and short paragraphs, and put menus, choices and rules in lists; no fact
+  changed (8.29e1).

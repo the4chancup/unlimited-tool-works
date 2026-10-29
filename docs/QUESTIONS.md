@@ -30,11 +30,6 @@ names where the question came from so the context can be read there.
       Windows 11).
   - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
 
-- **Event logos for 4cc Autumn 25 and /vg/ League 25** (worklog 8.35c). The other seven
-  embedded rulesets take the logo their event's wiki page shows, from the pages you listed;
-  these two had no page in the list, so they draw no logo. Their pages, if they should have
-  one, or "none".
-
 ## Cup practice
 
 The Music player's three below come from reading Rigdio v2.2.0's controls (worklog 10.0i,

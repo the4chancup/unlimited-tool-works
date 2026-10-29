@@ -2634,7 +2634,8 @@ const RULESETS = {
     free_specials: [ { card: "malicia" }, { card: "captaincy", captain: true } ] },
   // Not built in: the draft's clean file to import (rulesets/autumn25.rhai, a
   // test ruleset).
-  autumn25: { label: "4cc Autumn 25", tiers: [
+  autumn25: { label: "4cc Autumn 25", logo: "assets/logos/autumn25.png",
+    page: "https://implyingrigged.info/wiki/2025_4chan_Autumn_Babby_Cup", tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 3, weak_foot: { usage: 2, accuracy: 4 },
       cards: 5, a_positions: 1, free: { tricks: 3, com: 2 } },
     { id: "silver", label: "Silver", rate: 88, form: 8, injury_resistance: 3, weak_foot: { usage: 2, accuracy: 4 },
