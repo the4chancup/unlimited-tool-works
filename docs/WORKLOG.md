@@ -1864,10 +1864,21 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               move after it, by the app's 6), the player view the same 15 at 1 to 2 px as
               before (the Skills header's units move). Files: `docs/prototypes/{index.html,
               tools/save_editor.js}`, `plans/save_editor.md`, `scripts/draft_compare.py`
-            - [ ] l3d3b the build drops the overrides (brief `.tmp/8_9l/brief_l3d3b.md`):
-              `team.rs` `ROW_GAP`, `abilities.rs` `HEADER_GAP`, `menus.rs` `BOGLO_RANGE_GAP`,
-              `player_list.rs` `CONTROL_GAP`, `quick_actions.rs` `COLUMN_GAP` (egui's 8),
-              `studio_core` sidebar `RAIL_GAP`; re-measured with `draft_compare.py player|team`
+            - [x] l3d3b 2026-10-29 (Opus sidekick, merge `01ff1da1`) the build drops the
+              overrides (brief `.tmp/8_9l/brief_l3d3b.md`): `team.rs` `ROW_GAP` (the header's
+              claims Name 182, Short 79), `abilities.rs` `HEADER_GAP`, `menus.rs`
+              `BOGLO_RANGE_GAP` (the range's gap read from the theme), `player_list.rs`
+              `CONTROL_GAP`, `quick_actions.rs` `COLUMN_GAP` and `ROW_GAP`, `studio_core`'s
+              rail `RAIL_GAP` (its last entry ends at 533 of the 756-point rail). At review,
+              the sidekick's four contradictions accepted: the list's quick actions panel 3
+              under the rows' frame (it kept the old 4), the draft's rail foot 3 apart, the
+              draft's boots-and-gloves column 127 (the range is 126.4 now), the quick
+              actions' `ROW_GAP` gone (the theme's 3). Checkpoint `gates-changed 0365e3a9`
+              green (5256 cargo tests). On a release build of `01ff1da1`: player and team 0
+              over 2 px; left at 1 to 2 the accepted rows (the Formation drift, the
+              checkboxes' and the team header labels' 1.5 baseline). Files: `save_editor/src/
+              view/{team,abilities,menus,player_list,quick_actions}.rs`, their tests,
+              `studio_core/src/shell/sidebar/{mod,tests}.rs`
             - [x] l3d3c 2026-10-29 (lead) the rest the measurement found: the Kit slots
               dialog's sentence and OK 4 and 7 points higher than the draft's (the draft's
               sentence was a `.row`, whose margins the dialog's own spacing doubled; 3 of 3
