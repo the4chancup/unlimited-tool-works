@@ -57,3 +57,16 @@ TOML's `#RRGGBB`.
 Adds: the picker's hex field accepts `#RRGGBB`, `0xRRGGBB` and `RRGGBB` alike in every tool
 that uses it, so a pasted value from an old habit lands instead of being refused. Costs: one
 parse with three prefixes in `color_tools`; the field still shows `#RRGGBB`.
+
+## P43 — Stats named as each PES version names them
+
+From the AATF texts' sweep (8.29d1, 2026-10-29). The player view, the AATF rows and the
+Comparator name every ability stat one way, PES 2017's (`Attacking Prowess`, `Ball Winning`),
+while PES 2020 and 2021 call several of them otherwise (`Offensive Awareness`, `Tackling`,
+`GK Awareness`, `Curl`, `Acceleration`); today those names live only in
+`pes_savefile/src/model/player.rs`'s doc comments.
+
+Adds: a PES 2021 manager reads the names his game shows, in the player view, the AATF rows and
+the Comparator alike. Costs: a per-version label table in `pes_savefile` (about ten renamed
+stats), every surface that names a stat taking the version, and the drafts following; a
+ruleset still writes the one id (`attacking_prowess`).

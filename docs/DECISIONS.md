@@ -13832,3 +13832,22 @@ internal names out of a member's text; the rule now names these spellings.
 Plan: `plans/save_editor.md` "`libs/team_widgets`", `violations`; `CONTRIBUTING.md` "Text a
 member reads is written for a layman"; the `check-aatf` passage of `spec/save_editor.md`
 "CLI" is replaced when the change is built.
+
+## 2026-10-29 — aatf — Each violation kind's name in words, its sentence in the game's and the ruleset's names
+
+Decision: the AATF rows' left column is a name per kind (`Fielded position`, `Stat`, `Tier
+count`, `Height quota`, `Unused`; the draft's `RULE_NAME`), and the sentences name stats and
+cards as the player view does (`title_case`, one spelling for every version), tiers, brackets
+and systems by their ruleset labels, a forbidden shape as `3-4-3` and a list in words. A bound
+reads "Ball Control 82, over the 77 the rules allow" or "Speed 80, under the 92 the rules
+require"; a stat warning "Attacking Prowess 92, just over the 88 the rules allow" (the orange
+says it is a warning, and the longer wording overran Multi-team AATF's width in the draft).
+The `weak_foot` suggestion reports usage and accuracy as two allowances, since its two rows read
+alike. `check-aatf`'s `aatf_violation` line carries `rule` and `problem` (the name and the
+sentence) instead of the kind and its fields. A check that fails (a bug in a custom check) keeps
+its author-facing error text, as a rules file's load errors do (SE-GUI-15).
+Why: the maintainer's ruling of the same day (the spellings are for the program alone). One
+spelling of a stat for every version, because the player view draws one: version-dependent names
+(PES 2021's Offensive Awareness) are proposal P43.
+Plan: `plans/aatf_rules.md` "The interpreter"; `plans/save_editor.md` "`libs/team_widgets`",
+`violations`.

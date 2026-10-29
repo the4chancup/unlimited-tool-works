@@ -2799,6 +2799,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         plan → verify: no list row, tooltip, notice or CLI line prints a snake_case id or a
         kind name, pinned by a test over every `ViolationKind`; the rows read in the draft and
         the built window
+        Inventory done (`.tmp/8_29d/inventory.md`, a read-only agent): 29 list sentences, the
+        kind names, the marks' and pitch crosses' tooltips, Multi-team AATF's copy, the
+        Comparator's and changes lists' undrawn fields (about 95 face fields by their Rust
+        names), the team file panel's notes (finding codes), the badge's and quick actions'
+        refusals (tier ids, a 0-based slot), the card labels' `Gk`/`No 10` spellings. Slices:
+        - [ ] d1a the AATF rows (drafted 2026-10-29, DECISIONS "Each violation kind's name in
+          words, its sentence in the game's and the ruleset's names"; `plans/aatf_rules.md`
+          "The interpreter"): `team_widgets`' kind names and sentences with the ruleset's
+          labels, every host (the dock, the marks, the pitch cross, Multi-team AATF and its
+          copy, `check-aatf`), the logic's `weak_foot` split, the help's raw kind name
+        - [ ] d1b the rest of the inventory: the Comparator's, changes lists' and patch
+          preview's undrawn fields in words, the team file notes in the catalog's member text
+          and its section boxes capitalized, the badge's and quick actions' refusals, the
+          card and playing-style labels' spellings (`GK Long Throw`, `Classic No. 10`)
       - [ ] d2 after 0.1.0, with Phase 20 (the maintainer, 2026-10-29): the Ruleset editor
         shows the game's names (Attacking Prowess) and writes the rules-file ids
         (`attacking_prowess`)

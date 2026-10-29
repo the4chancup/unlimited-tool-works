@@ -228,6 +228,19 @@ moves a threshold), and from a file whose logic is not the build's. Loading step
 with its two parameters, like the other three. It lands before the 0.0.1 cut freezes logic
 version 1, so no released file lacks it.
 
+**Violations in words.** A violation's kind and fields are the program's spelling
+(`FieldedNotA`, `stat=attacking_prowess`); no surface shows them to a person. `team_widgets`
+gives each kind a name in words (`Fielded position`, `Stat`, `Tier count`) and each violation
+a sentence naming every stat, card and playing style as the game names it (`Attacking Prowess`)
+and every tier, bracket and height system by its ruleset label (`Gold`, `Tall`, `Red`), a
+forbidden shape as a formation (`3-4-3`) and a list as words (`GGG, GGSS or SSSSSS`). Live
+AATF, its marks' tooltips, Multi-team AATF and its copy, and `check-aatf`'s lines all print that
+name and sentence; the sentences replace the ones `spec/aatf_rules.md` "Hints at a valid value"
+quotes. The wording is drafted in `docs/prototypes/tools/save_editor.js` (`RULE_NAME`,
+`violationSentence`, `unusedSentence`). The `weak_foot` suggestion reports usage and accuracy
+as two `Unused` rows whose `allowance` is `weak_foot_usage` and `weak_foot_accuracy`, where both
+said `weak_foot` and read alike: the logic's change lands before logic version 1 is frozen.
+
 ## The host
 
 What exists of this is in `spec/aatf_rules.md` "The host".

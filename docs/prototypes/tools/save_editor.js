@@ -3583,7 +3583,7 @@ function multiAatfText(results) {
         lines.push("  " + (pid ? pid + " " + displayName(p ? p.name : "") : "Team-wide issues"));
         lastPid = pid;
       }
-      lines.push("    " + sev + "  " + rule + "  " + violationSentence(rule, kvOf(fields), sev));
+      lines.push("    " + sev + "  " + ruleName(rule) + "  " + violationSentence(rule, kvOf(fields), sev));
     }
   }
   return lines.join("\n");
@@ -3612,7 +3612,7 @@ function drawMultiAatf() {
         lastPid = pid;
       }
       list.append(h("div", { class: "drow " + (sev === "Error" ? "err" : "warn") },
-        h("span", { class: "f" }, rule), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))));
+        h("span", { class: "f" }, ruleName(rule)), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))));
     }
   }
   const summary = reversed ? h("span", { class: "warn" }, "The first team comes after the last")
@@ -5352,7 +5352,7 @@ function pitchCrossTip(t, px, py) {
     if (!rows) continue;
     const [x, y] = badgeAt(t, i), top = y - MARKER.badgeH / 2 - MARKER.gap - MARKER.portrait;
     if (Math.abs(px - x) <= MARKER.portrait / 2 && py >= top && py <= top + MARKER.portrait)
-      return rows.map(r => r[3] + ": " + violationSentence(r[3], kvOf(r[4]), r[0])).join("\n");
+      return rows.map(r => ruleName(r[3]) + ": " + violationSentence(r[3], kvOf(r[4]), r[0])).join("\n");
   }
   return "";
 }
@@ -6369,17 +6369,36 @@ function comparatorPanel() {
   return c;
 }
 
-// ---- A violation's sentence (Live AATF's rows and the marks' tooltips) ----
-// The CLI reports the code and fields only; the sentences per rule kind are
-// the draft's own, from messages.rs's ViolationKind arms.
-// sample wording: every sentence below, one per kind.
+// ---- A violation's name and sentence (Live AATF's rows, the marks' tooltips,
+// Multi-team AATF and the CLI's check-aatf lines alike) ----
+// The kinds and their fields are the rules file's spelling (FieldedNotA,
+// stat=attacking_prowess): the program's alone. A member, manager or rule
+// maker reads the rule's name in words and every stat, card, tier, bracket
+// and system as the game or the ruleset names it (Attacking Prowess, Gold).
+// sample wording: every name and sentence below, one per kind.
+const RULE_NAME = {
+  RegisteredNotA: "Registered position", FieldedNotA: "Fielded position", BRating: "B rating",
+  GkSecondA: "GK rating", Age: "Age", Weight: "Weight", PositionRange: "Registered position",
+  PlayingStyleRange: "Playing style", NoTier: "Tier", Stat: "Stat", StatTotal: "Stat total",
+  Form: "Form", InjuryResistance: "Injury resistance", WeakFootUsage: "Weak foot usage",
+  WeakFootAccuracy: "Weak foot accuracy", NameColor: "Name colour", Cards: "Cards",
+  MinCards: "Cards", SkillCardCap: "Skill cards", ComStyleCap: "COM styles",
+  RequiredCard: "Required card", APositions: "A positions", Height: "Height",
+  TierCount: "Tier count", BracketQuota: "Height quota", MedalSystem: "Medal system",
+  ExtraHeight: "Extra height", Captain: "Captain", Goalkeepers: "Goalkeepers",
+  TeamSetting: "Team setting", FormationShape: "Formation", Special: "Special rule",
+  Custom: "Custom check", Unused: "Unused", UnusedChoice: "Unused choice",
+  RosterOrder: "Roster order" };
+const ruleName = rule => RULE_NAME[rule] || rule;
 // A hint names a valid value where the sentence would not (spec/aatf_rules.md
 // "The interpreter", Hints at a valid value): a list joined "a, b and c",
-// heights as inclusive ranges ("180", "up to 175", "175 to 210").
+// heights as inclusive ranges ("180", "up to 175", "175 to 210"). A tier's,
+// a bracket's and a system's name is its ruleset label; the sample's labels
+// are their ids title-cased, as every bundled ruleset's are.
 function violationSentence(rule, kv, sev) {
   const v = (k, d) => kv[k] ?? d;
   const bound = (label, value, max) => label + " " + value
-    + (Number(value) > Number(max) ? ", above the " + max + " the rule sets" : ", below the " + max + " the rule sets");
+    + (Number(value) > Number(max) ? ", over the " + max + " the rules allow" : ", under the " + max + " the rules require");
   const and = (xs, last) => xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " " + last + " " + xs[xs.length - 1];
   const list = k => (kv[k] || "").split(",").filter(Boolean);
   const spans = k => list(k).map(s => { const [lo, hi] = s.split("-");
@@ -6392,52 +6411,69 @@ function violationSentence(rule, kv, sev) {
   switch (rule) {
     case "RegisteredNotA": return "the registered position is not rated A" + ratedA();
     case "FieldedNotA": return "fielded at " + v("position") + " in preset " + v("preset") + " without an A rating" + ratedA();
-    case "BRating": return "a B rating where the ruleset refuses one"
+    case "BRating": return "a B rating, which the rules refuse"
       + (list("rated_b").length ? " (B at " + and(list("rated_b"), "and") + ")" : "");
     case "GkSecondA": return "a second A rating at GK" + (list("rated_a").length ? ratedA("also A at ") : "");
     case "Age": return "age " + v("age") + " outside " + v("min") + " to " + v("max");
     case "Weight": return "weight " + v("weight") + " outside " + v("min") + " to " + v("max");
-    case "PositionRange": return "a registered position past the version's positions";
-    case "PlayingStyleRange": return "a playing style the version does not allow";
+    case "PositionRange": return "a registered position this PES version does not have";
+    case "PlayingStyleRange": return "a playing style this PES version does not have";
     case "NoTier": return "fits no tier"
-      + (list("heights").length ? " (the tiers take " + and(spans("heights"), "or") + ")" : "");
+      + (list("heights").length ? " (the tiers take heights " + and(spans("heights"), "or") + ")" : "");
     case "Stat": return sev === "Warning"
-      ? v("stat") + " " + v("value") + " over the target " + v("target") + ", inside the warning band"
-      : v("at_most") === "true" ? v("stat") + " " + v("value") + " over the maximum " + v("target")
-      : bound(v("stat"), v("value"), v("target"));
-    case "StatTotal": return "stats added up " + v("total") + ", over the limit " + v("limit");
-    case "Form": return "form " + v("value") + ", not the target " + v("target");
+      ? STAT_LABEL[v("stat")] + " " + v("value") + ", just over the " + v("target") + " the rules allow"
+      : bound(STAT_LABEL[v("stat")], v("value"), v("target"));
+    case "StatTotal": return "the stats add up to " + v("total") + ", over the limit of " + v("limit");
+    case "Form": return "form " + v("value") + ", where the rules want " + v("target");
     case "InjuryResistance": return bound("injury resistance", v("value"), v("max"));
     case "WeakFootUsage": return bound("weak foot usage", v("value"), v("max"));
     case "WeakFootAccuracy": return bound("weak foot accuracy", v("value"), v("max"));
-    case "NameColor": return "name colour " + v("color", "none")
-      + (v("expected") === undefined ? " is reserved for a tier" : ", the tier wants " + v("expected"));
-    case "Cards": return v("paid") + " paid cards over the limit of " + v("limit");
-    case "MinCards": return v("paid") + " paid skill cards and extra positions under the minimum of " + v("min");
-    case "SkillCardCap": return v("count") + " skill cards over the cap of " + v("max");
-    case "ComStyleCap": return v("count") + " COM styles over the cap of " + v("max");
-    case "RequiredCard": return "the required card " + v("card") + " is not held";
-    case "APositions": return v("count") + " A positions over the allowance of " + v("max") + ratedA("");
+    case "NameColor": return v("expected") === undefined
+      ? "name colour " + v("color", "none") + ", which belongs to another tier"
+      : "name colour " + v("color", "none") + ", where his tier wants " + v("expected");
+    case "Cards": return v("paid") + " paid cards, over the limit of " + v("limit");
+    case "MinCards": return v("paid") + " paid skill cards and extra positions, under the minimum of " + v("min");
+    case "SkillCardCap": return v("count") + " skill cards, over the cap of " + v("max");
+    case "ComStyleCap": return v("count") + " COM styles, over the cap of " + v("max");
+    case "RequiredCard": return "the required card " + titleCase(v("card")) + " is missing";
+    case "APositions": return v("count") + " A positions, over the allowance of " + v("max") + ratedA("");
     case "Height": return "height " + v("height") + " takes no bracket" + (!list("fits").length ? ""
       : " (" + and(spans("fits"), "or") + (v("room") === "true" ? (list("fits").length > 1 ? " have" : " has") + " room" : "") + ")");
-    case "TierCount": return v("count") + " " + v("tier") + " players, expected " + v("expected");
-    case "BracketQuota": return v("count") + " players in bracket " + v("bracket")
-      + " of " + v("system") + ", quota " + v("quota");
-    case "MedalSystem": return "the tier counts match no medal system " + v("systems");
-    case "ExtraHeight": return v("used") + " cm of extra height over the pool of " + v("total");
+    case "TierCount": return v("count") + " " + titleCase(v("tier")) + " players, where the rules want " + v("expected");
+    case "BracketQuota": return v("count") + " players in the " + titleCase(v("bracket")) + " bracket of the "
+      + titleCase(v("system")) + " system, where its quota is " + v("quota");
+    case "MedalSystem": return "the tier counts match none of the medal systems "
+      + and(v("systems").replace(/[\[\]]/g, "").split(", "), "or");
+    case "ExtraHeight": return v("used") + " cm of extra height, over the pool of " + v("total");
     case "Captain": return "no captain";
-    case "Goalkeepers": return v("count") + " goalkeepers, the minimum is " + v("min");
+    case "Goalkeepers": return v("count") + " goalkeepers, under the minimum of " + v("min");
     case "TeamSetting": return "team setting " + v("label") + ": " + (kv.wanted === undefined
       ? v("setting") + " does not hold"
       : (SETTING_WORDS[v("setting")] || v("setting")) + " should be " + (v("wanted") === "true" ? "on" : "off"));
-    case "FormationShape": return "formation " + v("formation") + " of preset " + v("preset")
-      + " matches a forbidden shape " + v("shape");
+    case "FormationShape": return "formation " + v("formation") + " of preset " + v("preset") + " is a "
+      + v("shape").replace(/[\[\] ]/g, "").split(",").join("-") + ", which the rules forbid";
     case "Special": return v("label") + ": " + v("text");
     case "Custom": return v("text");
-    case "Unused": return "only " + v("used") + " of " + v("allowed") + " " + v("allowance") + " used";
+    case "Unused": return unusedSentence(v("allowance"), v("used"), v("allowed"));
     case "UnusedChoice": return "no option of " + v("special") + " taken";
   }
   return rule;
+}
+// An Unused suggestion's sentence: an allowance the rules give that the
+// player leaves unspent, in the words the Ruleset editor's Suggestions form
+// uses for it; a card group's free cards under the group's name.
+function unusedSentence(allowance, used, allowed) {
+  switch (allowance) {
+    case "cards": return used + " of " + allowed + " paid cards used";
+    case "a_positions": return used + " of " + allowed + " A positions used";
+    case "free_cards": return used + " of " + allowed + " free cards held";
+    case "weak_foot_usage": return "weak foot usage " + used + ", where the rules allow " + allowed;
+    case "weak_foot_accuracy": return "weak foot accuracy " + used + ", where the rules allow " + allowed;
+    case "injury_resistance": return "injury resistance " + used + ", where the rules allow " + allowed;
+    case "height": return "height " + used + ", where the bracket allows " + allowed;
+    case "com": return used + " of " + allowed + " free COM styles held";
+    default: return used + " of " + allowed + " free " + titleCase(allowance) + " cards held";
+  }
 }
 const kvOf = s => Object.fromEntries(s.split(";").map(p => p.split("=", 2)));
 // The recognized tier fake of "How a player is read": the first tier whose
@@ -6488,9 +6524,11 @@ function suggestionsFor(p, t) {
       const used = a + (rs.b_uses_a ? b : 0);
       if (used < (tier.a_positions || 0)) out.push({ allowance: "a_positions", used, allowed: tier.a_positions });
     } else if (word === "weak_foot") {
-      const used = Math.min(p.stats.weak_foot_usage + 1, p.stats.weak_foot_accuracy + 1);
-      const allowed = Math.min(tier.weak_foot.usage, tier.weak_foot.accuracy);
-      if (used < allowed) out.push({ allowance: "weak_foot", used, allowed });
+      // Usage and accuracy each their own row, as the logic reports them.
+      for (const k of ["usage", "accuracy"]) {
+        const used = p.stats["weak_foot_" + k] + 1, allowed = tier.weak_foot[k];
+        if (used < allowed) out.push({ allowance: "weak_foot_" + k, used, allowed });
+      }
     } else if (word === "injury_resistance") {
       const used = p.stats.injury_resistance + 1;
       if (used < tier.injury_resistance) out.push({ allowance: "injury_resistance", used, allowed: tier.injury_resistance });
@@ -6701,7 +6739,8 @@ function violationField(rule, kv) {
     case "Unused": switch (kv.allowance) {
       case "cards": return "cards";
       case "a_positions": return "positions";
-      case "weak_foot": return "weak_foot_usage";
+      case "weak_foot_usage": return "weak_foot_usage";
+      case "weak_foot_accuracy": return "weak_foot_accuracy";
       case "injury_resistance": return "injury_resistance";
       case "com": return "com_styles";
       case "free_cards": case "tricks": return "aside";
@@ -6723,7 +6762,7 @@ function fieldMark(p, ...fields) {
   if (!rows.length) return null;
   const sev = rows.some(r => r[0] === "Error") ? "err" : rows.some(r => r[0] === "Warning") ? "warn" : "sugg";
   return h("span", { class: "xmark " + sev, "data-mark": fields.join(" "),
-    title: rows.map(r => r[3] + ": " + violationSentence(r[3], kvOf(r[4]), r[0])).join("\n") },
+    title: rows.map(r => ruleName(r[3]) + ": " + violationSentence(r[3], kvOf(r[4]), r[0])).join("\n") },
     { err: "✖", warn: "⚠", sugg: "ⓘ" }[sev]);
 }
 // A label or a panel's header with its field's cross left of it, 2 points from
@@ -6953,7 +6992,7 @@ function livePanel() {
         render();
       },
       title: pid ? "Select this player" : "Select the team" },
-      h("span", { class: "f" }, rule), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))));
+      h("span", { class: "f" }, ruleName(rule)), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))));
   }
   return h("div", { class: "live-panel", "data-panel": "live-aatf" }, liveDivider(), header, body);
 }

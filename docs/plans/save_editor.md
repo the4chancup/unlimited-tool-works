@@ -1017,7 +1017,10 @@ Contents:
   names and sentences are the widget's, one per `ViolationKind`, and `check-aatf`'s lines print
   the same ones, so the window and the command line word a violation alike: the rules-file
   spellings are for the program alone, since managers and rule makers both read the game's
-  names. The exact names and sentences are drafted first, in the draft's `violationSentence`.
+  names. The exact names and sentences are drafted first, in the draft's `violationSentence`
+  (`plans/aatf_rules.md` "The interpreter", its paragraph on violations in words). A `check-aatf` line is the
+  `aatf_violation` finding with the context `team`, `player` (for a player's row), `rule` (the
+  name in words) and `problem` (the sentence), where it printed the kind and each field.
 
 Stock-formation constants stay in the Team creator (its only consumer) until this editor wants
 an "apply stock formation" action, at which point they move here.
