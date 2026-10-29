@@ -278,7 +278,7 @@ Top to bottom:
 5. **Help `?` and settings gear** pinned at the bottom, at the tool icons' 24 points — open the
    help window and the settings menu. F1 opens the help too. Their labels read "Help (WIP)"
    and "Settings (WIP)" (the visible and the accessible name) until the maintainer calls the
-   help and the settings menu complete; the windows' own titles stay "Help" and "Settings".
+   help and the settings menu complete, and the two windows' titles carry the same suffix.
 
 ### Settings menu
 

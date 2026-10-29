@@ -115,9 +115,10 @@ pub(super) enum SidebarClick {
 
 /// The sidebar's state across frames: whether the overlay is open, when the
 /// pointer started resting on the rail, the sidebar widget last holding focus,
-/// the version combo's popup id, the exe check's last verdict, the window's
-/// last focus (the check re-runs when focus returns), the logo's About popup
-/// and the once-per-life auto-switch to a running PES.
+/// a press held on the rail's version selector, the version combo's popup id,
+/// the exe check's last verdict, the window's last focus (the check re-runs
+/// when focus returns), the logo's About popup and the once-per-life
+/// auto-switch to a running PES.
 pub(super) struct Sidebar {
     /// The overlay is drawn while set.
     open: bool,
@@ -129,6 +130,10 @@ pub(super) struct Sidebar {
     /// overlay open while one holds the focus a Tab gave it — a pointer click
     /// gives a widget no focus, so a click never keeps it open.
     focus_label: Option<&'static str>,
+    /// The rail's version selector was held down by the primary button at the
+    /// end of the last drawn frame: the press opens the overlay at once, so the
+    /// release lands on the overlay's selector and its list drops from there.
+    selector_pressed: bool,
     /// The version combo's popup id (the same in the rail and the overlay): its
     /// open state holds the overlay open, and its layer is pinned above the
     /// overlay's each frame.
@@ -159,6 +164,7 @@ impl Default for Sidebar {
             open: false,
             hover_since: None,
             focus_label: None,
+            selector_pressed: false,
             combo_popup_id: None,
             exe_check: None,
             exe_listings: 0,
@@ -231,6 +237,7 @@ impl Sidebar {
         // and a pointer that leaves restarts the wait. It stays open while the
         // pointer is inside the overlay's rect, while a popup it opened is open, or
         // under the keyboard rule, and closes on the first frame none of those holds.
+        // A press on the rail's version selector opens it without the delay.
         let now = egui_ctx.input(|input| input.time);
         let pointer = egui_ctx.input(|input| input.pointer.latest_pos());
         let on_rail = pointer.is_some_and(|pos| rail_outer.contains(pos));
@@ -248,8 +255,10 @@ impl Sidebar {
         } else {
             self.hover_since = None;
         }
-        // `focus_label` is refreshed during the draw: last frame's value decides here.
+        // `focus_label` and `selector_pressed` are refreshed during the draw: last
+        // frame's values decide here.
         self.open = self.focus_label.is_some()
+            || self.selector_pressed
             || self.about_open
             || self
                 .combo_popup_id
@@ -368,6 +377,7 @@ impl Sidebar {
             ..
         } = args;
         self.focus_label = None;
+        self.selector_pressed = false;
         ui.scope_builder(
             egui::UiBuilder::new().scope_id(egui::Id::unique("sidebar-contents")),
             |ui| {
@@ -545,13 +555,22 @@ impl Sidebar {
                                 ui.selectable_value(
                                     &mut picked,
                                     version,
-                                    version_label(version, rail),
+                                    version_label(version, false),
                                 );
                             }
                         })
                         .response;
                     if response.has_focus() {
                         self.focus_label = Some("pes-version");
+                    }
+                    // A disabled selector senses no press, so a blocked one opens nothing.
+                    if rail
+                        && response.is_pointer_button_down_on()
+                        && ui.input(|input| input.pointer.primary_down())
+                    {
+                        self.selector_pressed = true;
+                        // Open on the next frame without waiting for more input.
+                        ui.ctx().request_repaint();
                     }
                     response
                 })
