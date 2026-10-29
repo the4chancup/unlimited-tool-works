@@ -120,12 +120,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     // pane's bottom; no horizontal margin either, and the grid's width
     // stops at the frame's, so the grid spans the list rows' width. No
     // separator line over the grid: the draft's rows' border is followed
-    // by the gap alone.
+    // by the gap alone. Not resizable either (egui's panels are by
+    // default): the band's height is its grid's.
     let margin = egui::Margin {
         top: 3,
         ..egui::Margin::ZERO
     };
     egui::Panel::bottom("save_editor_quick_actions")
+        .resizable(false)
         .show_separator_line(false)
         .frame(egui::Frame::side_top_panel(ui.style()).inner_margin(margin))
         .show(ui, |ui| {
@@ -211,19 +213,17 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
         output.inner_rect.min,
         egui::vec2(frame_width, output.inner_rect.height()),
     );
+    // Rounded as every framed panel is (the draft's `border-radius: 2px`).
+    let radius = ui.visuals().widgets.noninteractive.corner_radius;
     ui.painter().set(
         background,
-        egui::epaint::RectShape::filled(
-            frame,
-            egui::CornerRadius::ZERO,
-            ui.visuals().extreme_bg_color,
-        ),
+        egui::epaint::RectShape::filled(frame, radius, ui.visuals().extreme_bg_color),
     );
     // The stroke over the rows, so a selected or hovered row's fill
     // reaches the frame's edge under it.
     ui.painter().rect_stroke(
         frame,
-        egui::CornerRadius::ZERO,
+        radius,
         ui.visuals().widgets.noninteractive.bg_stroke,
         egui::StrokeKind::Inside,
     );

@@ -1,5 +1,6 @@
 //! A worker-thread computation's cycle, shared by the AATF checks
-//! (`aatf_check`) and the comparator (`comparator`): a key naming what a run is
+//! (`aatf_check`), the comparator (`comparator`) and the pitch badges'
+//! medals (`tactics`): a key naming what a run is
 //! for, a reply channel polled before a new run is decided on, and the last
 //! result held while a run is in flight or due — so the frame that starts a
 //! run still marks the previous result as waiting, and a worker that ends

@@ -1421,7 +1421,7 @@ fn scrolling_list(
 // The draft's `.vbar` has no track fill: the panel shows through the
 // scroll bar's strip, so nothing in the extreme background is painted
 // there while the list scrolls (the rows' frame, its fill, ends at the
-// strip's left edge).
+// strip's left edge). The handle still paints, in the widgets' fill.
 #[test]
 fn the_lists_scroll_strip_paints_no_track() {
     let (window, nodes, shapes) = scrolling_list("list_no_track");
@@ -1431,11 +1431,25 @@ fn the_lists_scroll_strip_paints_no_track() {
         bar.x0 > f64::from(frame.max.x),
         "premise: the list scrolls, its bar right of the frame"
     );
-    let extreme = window
-        .ctx
-        .style_of(window.ctx.theme())
-        .visuals
-        .extreme_bg_color;
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let extreme = visuals.extreme_bg_color;
+    let bar_rect = egui::Rect::from_min_max(
+        egui::pos2(bar.x0 as f32, bar.y0 as f32),
+        egui::pos2(bar.x1 as f32, bar.y1 as f32),
+    );
+    let handle = shapes.iter().find_map(|clipped| match &clipped.shape {
+        egui::Shape::Rect(shape)
+            if shape.fill == visuals.widgets.inactive.bg_fill
+                && bar_rect.contains_rect(shape.rect) =>
+        {
+            Some(shape.rect)
+        }
+        _ => None,
+    });
+    assert!(
+        handle.is_some_and(|rect| rect.height() > 10.0),
+        "the handle paints in the widgets' fill inside the bar {bar_rect:?} ({handle:?})"
+    );
     let strip = egui::Rect::from_min_max(
         egui::pos2(frame.max.x, frame.min.y),
         egui::pos2(bar.x1 as f32, frame.max.y),
@@ -1449,6 +1463,42 @@ fn the_lists_scroll_strip_paints_no_track() {
         _ => None,
     });
     assert_eq!(track, None, "no extreme fill inside the strip {strip:?}");
+}
+
+// The draft's `.plist .rows` has `border-radius: 2px`, as every framed
+// panel: the rows' frame, its fill and its stroke, is drawn at the
+// widgets' 2-point radius.
+#[test]
+fn the_lists_frame_rounds_its_corners() {
+    let (window, _, shapes) = scrolling_list("list_frame_radius");
+    let frame = list_frame(&window, &shapes);
+    let extreme = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .extreme_bg_color;
+    let frame_shapes: Vec<&egui::epaint::RectShape> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) if shape.rect == frame => Some(shape),
+            _ => None,
+        })
+        .collect();
+    let fill = frame_shapes
+        .iter()
+        .find(|shape| shape.fill == extreme)
+        .expect("the frame's fill");
+    let stroke = frame_shapes
+        .iter()
+        .find(|shape| !shape.stroke.is_empty())
+        .expect("the frame's stroke");
+    for (what, shape) in [("fill", fill), ("stroke", stroke)] {
+        assert_eq!(
+            shape.corner_radius,
+            egui::CornerRadius::same(2),
+            "the frame's {what} radius"
+        );
+    }
 }
 
 // The draft draws no separator lines in the list's column: none at the
