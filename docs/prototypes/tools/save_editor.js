@@ -7247,26 +7247,41 @@ function ixWarnings(d) {
 // One undoable edit over the selected team: the picked file's sections as
 // chosen, converted to the save's version.
 function ixApply(d) {
-  const v = version(), t = selTeam();
-  // The aesthetics choice is drawn off under the read-only lock whatever its
-  // remembered state: the lock guards the write, not the checkbox.
+  const t = selTeam();
+  edit("Import " + d.label, () => ixWrite(d, t));
+}
+// The chosen sections written onto `t`. The aesthetics choice is drawn off
+// under the read-only lock whatever its remembered state: the lock guards
+// the write, not the checkbox.
+function ixWrite(d, t) {
   const s = { ...S.ix.sections, aesthetics: S.ix.sections.aesthetics && aesUnlocked() };
-  edit("Import " + d.label, () => {
-    if (s.tactics) {
-      if (d.format === "toml" || d.format === "ted")
-        ixWriteTactics(d.model.tactics, t);
-      else if (d.format === "4cct")
-        ixWriteTactics(d.cct.tactics, t);
-    }
-    if (s.gameplay && (d.format === "toml" || d.format === "ted"))
-      ixWriteTeam(d.model, t);
-    if (d.format === "4cct") return;
-    for (const { src, dst } of ixSlots(d, t)) {
-      if (!dst) continue;
-      if (s.gameplay) ixWriteGameplay(src, dst, d.version);
-      if (s.aesthetics) ixWriteAesthetics(src, dst, d);
-    }
-  });
+  if (s.tactics) {
+    if (d.format === "toml" || d.format === "ted")
+      ixWriteTactics(d.model.tactics, t);
+    else if (d.format === "4cct")
+      ixWriteTactics(d.cct.tactics, t);
+  }
+  if (s.gameplay && (d.format === "toml" || d.format === "ted"))
+    ixWriteTeam(d.model, t);
+  if (d.format === "4cct") return;
+  for (const { src, dst } of ixSlots(d, t)) {
+    if (!dst) continue;
+    if (s.gameplay) ixWriteGameplay(src, dst, d.version);
+    if (s.aesthetics) ixWriteAesthetics(src, dst, d);
+  }
+}
+// Whether Apply would change the selected team: the import written onto a
+// copy, compared with the team as it stands, key order aside (a writer may
+// set a key the team did not list first).
+function ixChanges(d) {
+  const t = selTeam(), copy = clone(t);
+  ixWrite(d, copy);
+  const sorted = v => Array.isArray(v) ? v.map(sorted)
+    : v && typeof v === "object"
+      ? Object.fromEntries(Object.keys(v).sort().filter(k => v[k] !== undefined)
+        .map(k => [k, sorted(v[k])]))
+      : v;
+  return JSON.stringify(sorted(copy)) !== JSON.stringify(sorted(t));
 }
 // [team]: name, short name, gated ids, colours, kit slots, edit flags -
 // with the section choice it rides with gameplay.
@@ -7364,8 +7379,10 @@ function ixWriteAesthetics(src, dst, d) {
     const top = motionTop(v, k);
     da.motion[k] = top !== undefined && x > top ? top : x;
   }
+  // The face caps are a foreign file's (as its notes say): a file of the
+  // save's own version carries values the save already stores.
   for (const [k, x] of Object.entries(ap.face || {})) {
-    const cap = faceCap(v, k);
+    const cap = d.version !== v ? faceCap(v, k) : undefined;
     da.face[k] = cap !== undefined && x > cap ? 0 : x;
   }
   if (ap.hair) Object.assign(da.hair || (da.hair = {}), ap.hair);
@@ -7444,10 +7461,10 @@ function interchangePanel() {
             title: ixTomlHeld(t)
               ? "One team's full-fidelity file, the same text the CLI's export-toml writes"
               : "The draft holds no export text for this team" })),
-      h("span", { title: version() >= 18 ? "A file PES itself can import" : "PES 15 to 17 have no Texport template" },
+      h("span", { title: version() >= 18 ? "A file PES itself can import" : "PES 2015 to 2017 have no Texport template" },
         button("Texport\u2026", ixExportTed, {
           disabled: version() < 18,
-          title: version() >= 18 ? "A file PES itself can import" : "PES 15 to 17 have no Texport template" }))),
+          title: version() >= 18 ? "A file PES itself can import" : "PES 2015 to 2017 have no Texport template" }))),
     h("div", { class: "sep" }),
     h("div", { class: "row" }, weak("Import into " + t.name + " (" + t.id + ") "),
       weak("file "),
@@ -7516,14 +7533,21 @@ function interchangePanel() {
         "Import notes (PES 20" + d.version + " file onto a PES 20" + version() + " save)"), grp);
     }
   }
+  const chosen = held.some(k => S.ix.sections[k] && (k !== "aesthetics" || aesUnlocked()));
+  // Nothing to write: the team already holds what the chosen sections carry
+  // (a file exported from it, or applied already). Apply is off and says so,
+  // as the patch panel's empty list does, rather than recording an edit
+  // that changes nothing.
+  const unchanged = !refusal && chosen && !ixChanges(d);
   c.append(h("div", { class: "row" },
     button("Apply", () => { ixApply(d); S.ix.applied = d.label; render(); },
-      { disabled: !!refusal
-          || !held.some(k => S.ix.sections[k] && (k !== "aesthetics" || aesUnlocked())),
+      { disabled: !!refusal || !chosen || unchanged,
         title: "Write the chosen sections as one undoable edit" }),
     weak("one undoable edit; the changes stay unsaved until Save.")));
   if (S.ix.applied)
     c.append(h("div", { class: "row" }, weak("Applied " + S.ix.applied + ". The changes stay unsaved until Save.")));
+  else if (unchanged)
+    c.append(h("div", { class: "row" }, weak("The team already holds every value of the chosen sections.")));
   return c;
 }
 
