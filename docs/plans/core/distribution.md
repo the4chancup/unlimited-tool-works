@@ -35,7 +35,7 @@ other than the workspace's, an archive that already exists (a release is never o
 and a readme whose first line names another version, and it ends by listing the archive and
 comparing the listing with the staged files, so a 7-Zip that skipped the empty folders fails
 the recipe. It takes the executable's name from the built exe's own `--help` usage line and
-checks that both launchers call it, so the executable's name lives in the code's constant
+checks that each launcher it ships calls it (none in 0.0.1), so the executable's name lives in the code's constant
 and the recipe cannot drift from it; the package name `unlimited-tool-works` is the
 recipe's own constant, since no built file states it. Beside the archive it keeps the release's symbols, never in the
 bundle: the built exe and its `.pdb`, packed as `unlimited-tool-works-<version>-symbols.7z`,
