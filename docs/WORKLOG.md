@@ -1893,8 +1893,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               Player 7 and Team 6 entries within 1 point; Savefile and Open differ only by
               entries not built yet (8.9k slice 5, 8.33) or the draft's sample recent file,
               which widen the draft's menu and push the rows under them
-            - [ ] l3d3d the team view's colour codes' grey and the black swatch's outline, once
-              QUESTIONS "The team view's colour codes" is answered
+            - [ ] l3d3d the team view's colour codes in the weak grey, and the colour field's
+              swatch outlined as a resting text box is (DECISIONS "The colour codes in the
+              weak grey, the colour swatch outlined"; `plans/libs/color_tools.md`, the
+              field's paragraph; the draft's `input[type=color]` swatch, lead, done); brief
+              `.tmp/8_9l/brief_l3d3d.md`
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.
         The refusal it first checked (2026-10-25, `f3d1f135`, `.tmp/se21/`: refused naming
         PES 2021, the file unchanged, the live save equal to its backup after) is replaced by

@@ -13547,3 +13547,15 @@ and the dialogs' rows were already built at egui's 8 against drafts saying 6, an
 editor and the shell kept six constants only to copy the old figures.
 Plan: `plans/core/gui.md` "Prototypes before implementation", the Look bullet;
 `plans/save_editor.md` "Editing UI" (the quick actions, the team view's fields row).
+
+## 2026-10-29 — save_editor — The colour codes in the weak grey, the colour swatch outlined
+
+Decision: the team view's `#RRGGBB` beside each colour's swatch is drawn in the weak grey, as
+the draft draws it, not the body text's; and the suite's colour field (`color_tools`'
+`color_field`, the team colours and the Ruleset editor's tier name colour) outlines its swatch
+as a resting text box is outlined, in the theme's quiet line with its corners rounded by 3.
+Why: the maintainer's answers (QUESTIONS "The team view's colour codes", from a render of the
+draft against the build), after the draft comparison's ink measurement found the two greys;
+without an outline a colour as dark as the panel (a black team colour) shows no box at all.
+Plan: `plans/save_editor.md` "Editing UI", the team view's fields row;
+`plans/libs/color_tools.md`, the field's paragraph.

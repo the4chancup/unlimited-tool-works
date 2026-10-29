@@ -28,12 +28,6 @@ names where the question came from so the context can be read there.
   and its tooltips (worklog 0.0.1ov6): `.tmp/0_0_1ov/live/`, images 01 to 13 (no 06: a rules
   file is checked when imported, so the dock has no failed state). Then the confirmation that
   freezes logic version 1's hash (0.0.1f2).
-- **The team view's colour codes: the draft's weak grey, or the body text's as built?**
-  (worklog 0.0.1l l3d3d; render `.tmp/8_9l/pairs/colour_hex.png`). The draft comparison's ink
-  measurement found the `#FFA641` beside each colour's swatch drawn in the weak grey
-  (`#6e6e6e`) in the draft and in the body text's (140) in the build, which no plan line
-  picks. In the same render the black swatch has a 1-point outline in the draft and none in
-  the build (a black swatch on the dark panel shows only by that outline).
 - **When do you rename the GitHub repository to `unlimited-tool-works`?** (worklog 0.0.1rn,
   `plans/core/development_plan.md` "The project's name: Unlimited Tool Works"). It is a step
   on GitHub only you take (the lead never touches the remote); GitHub redirects the old

@@ -471,7 +471,8 @@ all side by side.
   ids on a second row its last row ended about 5 points past the 1280 x 800 window's pane.
   The row's units stand 8 points apart, egui's item spacing, as in every row of the drafts
   (the Name and Short labels are units of their own, 8 from their boxes), and a colour's label,
-  picker and hex, or an id's label and its box, a space apart (3 points), the ids' grid cells
+  picker and hex (in the weak grey, the picker's swatch carrying the colour), or an id's label
+  and its box, a space apart (3 points), the ids' grid cells
   padded 4 points on each side (so 12 before Manager ID, 8 between the ids), each id's box 46
   wide (the draft's `.info-grid` number box; egui's is 40). A stroke line under the row
   sets the team's fields apart from the Tactics (the draft's `.sep`, 8 points from the boxes
