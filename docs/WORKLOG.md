@@ -4489,11 +4489,25 @@ briefs, review loops, gates and mutation runs as for any step.
       gloves IDs takes 4ccEditor's layout" keeps "the buttons right-aligned as every dialog's
       are"); one `studio_core` helper every modal draws through: Settings, About, the first-run
       prompt, the Save editor's and the Ruleset editor's dialogs and prompts
-    - [ ] ov2k the form grids' rows 22 apart, the draft's `table.grid` (its `td` padded 2 above
+    - [x] ov2k the form grids' rows 22 apart, the draft's `table.grid` (its `td` padded 2 above
       and below an 18-point control), where egui's `Grid` spaces them by `item_spacing.y`, 3:
       each row lands a point higher than the last, 25 by the Ability stats' last row, 17 by
       Settings' Memory cap. Every `Grid` that draws a draft `table.grid` (Settings' common grid,
-      General info, Other stats, Ability stats, the team view's, Kit slots)
+      General info, Other stats, Ability stats, the team view's, Kit slots). Done 2026-10-29
+      (merge `409274ad`; Opus sidekick, landed first time, lead gates green: save_editor 446 +
+      50, studio_core 277, clippy, fmt): `studio_core::widgets::FORM_ROW_SPACING` (4) on
+      Settings' common grid and the Save editor's section, General info's and Other stats'
+      stacked rows, the Ability stats, the five Appearance grids, Kit slots and the
+      unsaved-changes prompt; tests: the ability stats, General info's pairs and Settings'
+      rows 22 apart (red at 21). The team view's `info-grid` is one horizontal row, no row
+      spacing. Its report's leftovers: the help window's Messages table (ov2q) and the Ruleset
+      editor's four grids (its view, not in 0.0.1) also draw a draft `table.grid`; General
+      info still stands 4 to 0.5 points above the draft (ov2s)
+    - [ ] ov2s General info against the draft after ov2k (offsets in the ov2k report,
+      `wt-ov2k/.tmp/sidelead/sk_ov2k.report.md`): the draft's Name and Shirt number boxes 19
+      tall (ov2r set text boxes and combos to 18, not number boxes), its `.gen` blocks 6 apart
+      where the build's are 4, and its Stronger foot and hand toggles plain spans 15 tall where
+      the build's are 18-point buttons; the lead's ruling, then the draft, plan and build to it
     - [ ] ov2l the team view's header as drafted: the stroke line between the fields' row and
       the Tactics, 8 above and below (`teamView`'s `.sep`; the build has none, so the Preset row
       stands 20 higher), and the colour swatches 22 × 16 (`input[type=color]`; egui's colour
@@ -4516,7 +4530,10 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] ov2q the small ones: Set all stats' number on its own line under its sentence (the
       draft's `dlgSetStats`; the build sets it on the sentence's line); the first-run prompt's
       two choice buttons with their labels centred; Settings' Memory cap `%` after its box, not
-      inside it
+      inside it; the help window's Messages table at `FORM_ROW_SPACING` (ov2k's report); two
+      `studio` `team_compiler_cli` tests (`team_compiler_cli.rs:158`, `:198`) that compare a
+      printed path with one built from `CARGO_TARGET_TMPDIR` as text, failing when
+      `CARGO_TARGET_DIR` is written with forward slashes (compare as paths)
     - [x] ov2r the drafts brought to the plan (lead): the settings menu's FPC hide boots and
       gloves IDs (common rows, `plans/core/gui.md` "Settings menu") and the active tool's
       section open on opening (the Save editor's, with Aesthetics from exports), both of which
