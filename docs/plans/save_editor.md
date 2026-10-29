@@ -1224,6 +1224,9 @@ the editor exposes them as:
 
 - **Team TOML export/import** per team (the `.4ccs`/`.4cct` successor: complete
   team + tactics + players including full aesthetics and ingame-face data).
+  Export writes the command line's `export-toml` text for the selected team, and, as the
+  command line does, refuses a destination that is the open save itself (a Team TOML written
+  over it would lose it); the same refusal guards the Texport export.
   Import goes onto the team selected in the editor and offers the same section choices as
   4ccEditor's squad load (gameplay / aesthetics / tactics), and applies cross-version conversion with a warning list
   when the file's version differs. The sections split the file as the squad load does: names,

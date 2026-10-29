@@ -13718,3 +13718,13 @@ drawn alone.
 Why: the draft hid the choices under any refusal, so a file refused for its aesthetics could
 not be imported for its gameplay, the one way out being to untick the section it hid.
 Plan: `plans/save_editor.md` "Interchange formats in the UI", the first bullet.
+
+## 2026-10-29 — save_editor — The panel's exports refuse the open save as their destination
+
+Decision: the team file panel's Team TOML and Texport exports refuse a destination that is
+the open save itself (compared canonicalized), with the command line's sentence, and write
+nothing.
+Why: `export-toml` already refuses it (a Team TOML written over the save would lose it), and
+one rule guards the same thing in every tool; the Save dialog makes the slip as easy as
+`--out` does.
+Plan: `plans/save_editor.md` "Interchange formats in the UI", the first bullet.
