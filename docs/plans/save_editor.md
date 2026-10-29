@@ -630,7 +630,10 @@ Win32 original hurt the most):
      ("Formation pictures" below), a quicker check across teams than the view. Their Copy/swap menu
      stays, a copy into them being how a member prepares them before switching it on.
   2. **Formation settings**, the pitch and **Player assignments**, the two panels exactly as
-     tall as the pitch (386 points with its border) and level with it. Formation settings
+     tall as the pitch (386 points with its border) and level with it. The pitch's border, the
+     lineup lists' frames and the player list's rows frame round their corners by 2 points,
+     as every framed panel does (egui's group frame, the drafts' `.group`), the turf clipped
+     to the border's inner curve. Formation settings
      runs row by row, each offensive setting beside its defensive pair (Attacking style beside
      Defensive style, Buildup beside Containment area, Attacking zone beside Pressure,
      Positioning beside Defensive line, Support range beside Compactness, Numbers in attack

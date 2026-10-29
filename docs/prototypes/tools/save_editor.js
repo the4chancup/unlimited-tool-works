@@ -168,7 +168,7 @@ input[type=range]:focus { outline: none; }
 /* The controls above and below the list end at its frame, not at its bar, so the column reads
    as one box; Set stats still fits at that width. */
 .plist > :not(.rows-box) { margin-right: 10px; }
-.plist .rows { background: var(--extreme); border: 1px solid var(--stroke);
+.plist .rows { background: var(--extreme); border: 1px solid var(--stroke); border-radius: 2px;
   flex: 1; min-width: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
 .plist .rows::-webkit-scrollbar { display: none; }
 .plist .vbar { flex: none; width: 6px; position: relative; }
@@ -431,10 +431,12 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .tacrows .tset .rate .sel { line-height: 18px; }
 .tacrows input[type=range] { margin: 0; }
 .tacgrid select { width: 100%; }
-.pitch { background: #2d571d; border: 1px solid var(--stroke); display: block;
+/* The pitch, the player list's box and the lineup lists round their corners as every
+   framed panel does (.group). */
+.pitch { background: #2d571d; border: 1px solid var(--stroke); border-radius: 2px; display: block;
   touch-action: none; }
 .lcol { display: flex; flex-direction: column; gap: 6px; min-width: 210px; }
-.llist { background: var(--extreme); border: 1px solid var(--stroke);
+.llist { background: var(--extreme); border: 1px solid var(--stroke); border-radius: 2px;
   max-height: 300px; overflow: auto; }
 .lrow { display: flex; gap: 5px; align-items: center; padding: 1px 4px;
   white-space: nowrap; min-height: 18px; }

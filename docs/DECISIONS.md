@@ -13763,3 +13763,13 @@ tested for the league; a launcher nobody tested for the release has no place in 
 and a bundle for DBC alone can open on DBC's game.
 Plan: `plans/core/development_plan.md` "Divegrass Before Christmas", "The /vg/ League 27
 (VGL)"; `plans/core/distribution.md`; `plans/core/architecture.md` "Launch modes".
+
+## 2026-10-29 — save_editor — The pitch, the lineup lists and the player list round their corners
+
+Decision: the Tactics pitch's border, the two lineup lists' frames and the player list's rows
+frame are drawn with corners rounded by 2 points, the radius of every other framed panel
+(egui's group frame, the drafts' `.group`), in the drafts and in the app.
+Why: the maintainer's pass over the 0.0.1 candidate found these four boxes square where the
+panels around them are rounded; the drafts drew all four square, the app the lineup lists
+rounded (egui's group frame) and the other two square.
+Plan: `plans/save_editor.md` "Tactics editor", the item starting "**Formation settings**, the pitch".

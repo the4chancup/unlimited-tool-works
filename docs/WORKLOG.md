@@ -1825,6 +1825,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         list pane's and the quick actions' separator lines gone, widths kept; the lineup
         lists filled in the extreme colour, as the drafts' `.llist`; the lineup lists'
         rects unchanged by the Live AATF dock
+      - [x] the drafts round the pitch's, the lineup lists' and the player list's corners
+        by 2, as the other framed panels (DECISIONS 2026-10-29)
+      - [ ] m3 the app rounds them too (after m1, which touches the same frames): the
+        player list's rows frame and the pitch's border at the noninteractive corner radius,
+        the turf clipped to the border's inner curve; the lineup lists already round theirs
       - [ ] m2 `scripts/draft_compare.py` compares the fill and text colours of the boxes it
         pairs, not only their rects: the fills and greys above passed every geometry check
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
