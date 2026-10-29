@@ -13292,3 +13292,22 @@ row: the drafts pad a grid cell 2 above and below, egui's `Grid` spaces rows by
 `item_spacing.y`, 3. The theme's `item_spacing` is not changed: it spaces every other layout
 (the lists' rows, the toolbars) the drafts approved at 3.
 Plan: `plans/core/gui.md` "Other UI components" (Form grids).
+
+## 2026-10-29 — core — The project's name in every spelling
+Decision: Unlimited Tool Works, the 0.0.1 preview's codename, is the project's name from 0.0.1
+on (the maintainer's ruling), spelled: `Unlimited Tool Works` for display, including a written
+CPK's `Tvers`; the exe `UTW.exe` on Windows, `utw` on Linux (cargo's bin `utw`, named `UTW.exe`
+by the release recipe); `unlimited-tool-works` for the settings folder, the bundle's folder
+and archives, the CPKs' shared-IDs folder and the window's app id; `utw.log` (`utw.old.log`,
+`utw.dmp`) for the log. The aesthetics patch's `studio_version` key becomes `tool_version`, a
+format's text naming no product. Nothing is read under the old names. The crates, their
+types, the `STUDIO_*` variables and the local folder keep the working name; the docs name the
+project UTW and the glossary keeps "Studio" for the code's names.
+Why: the first release fixes the exe's, the settings folder's and the bundle's names, which a
+later rename would migrate on every member's machine, while no release has written the old
+ones yet (the maintainer's test installs are compiled again). The log is a file a member
+finds and posts, so it carries the shorthand; the crate names reach no user and sit on 268
+lines in 129 files that every slice in flight edits, and renaming them later needs no
+migration.
+Plan: `plans/core/development_plan.md` "The project's name: Unlimited Tool Works";
+`plans/core/distribution.md` "Distribution: portable .7z bundle".

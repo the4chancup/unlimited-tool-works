@@ -2532,8 +2532,8 @@ briefs, review loops, gates and mutation runs as for any step.
   write" does not exist (the pre-Fox patch half is unbuilt): the save editor's
   `import-toml` on a PES 16 save stood in, the same writer
 - [x] 0.0.1d `just release <version>` (`plans/core/distribution.md` "Distribution: portable .7z
-  bundle"; Windows only), under the codename (`plans/core/development_plan.md` "The preview's
-  codename: Unlimited Tool Works": one display-name constant for the title, About, first run,
+  bundle"; Windows only), under the codename (`plans/core/development_plan.md` "The project's
+  name: Unlimited Tool Works": one display-name constant for the title, About, first run,
   `--help` and its usage examples, and the help pages; the executable `UnlimitedToolWorks.exe`;
   the settings folder unchanged; verify: no member-visible text names 4cc Studio, by a test
   over the help pages and the CLI's help output): the exe, the two launchers, empty `exports/` and `old_exports/`,
@@ -3665,8 +3665,8 @@ briefs, review loops, gates and mutation runs as for any step.
   `live_marks` tests fail without it); tests that measured with a fresh default context read
   the window's style. Open: the built window's look, with w2's fonts (0.0.1w)
 - [ ] 0.0.1v the preview's icon (the maintainer, 2026-10-27: Archer, from
-  `C:\Data\Pictures\FSN\Smug\smugredman.png`; `plans/core/development_plan.md` "The preview's
-  icon", DECISIONS "The preview's icon and its build dependency"). The maintainer's split:
+  `C:\Data\Pictures\FSN\Smug\smugredman.png`; `plans/core/development_plan.md` "The icon",
+  DECISIONS "The preview's icon and its build dependency"). The maintainer's split:
   the whole picture at 32 and up, a tight square on the head at 24 and 16.
   - [x] v1 the assets (lead): `scripts/make_icon.py` and `resources/icon/{icon.ico,small.png,
     window.png}`; the script reads each ICO size back and asserts it is its own crop (a
@@ -4685,7 +4685,22 @@ briefs, review loops, gates and mutation runs as for any step.
   (`%APPDATA%\4cc-studio`) and the bundle's name, which a later rename would have to migrate.
   To plan first: every user-visible name (exe, data folder, bundle, window class, CLI command,
   help text), the crates' and repository's names, the CI jobs, the docs. The local folder
-  keeps the working name `4cc-studio` until 1.0.0 (the maintainer, 2026-10-28)
+  keeps the working name `4cc-studio` until 1.0.0 (the maintainer, 2026-10-28). Planned
+  2026-10-29: `plans/core/development_plan.md` "The project's name: Unlimited Tool Works",
+  DECISIONS "The project's name in every spelling"; inventory `.tmp/0_0_1rn/inventory.md`
+  - [ ] rn1 the code and the files a user receives (a sidekick): the two name constants
+    (`exe_name!` by platform), cargo's bin `utw` (`CARGO_BIN_EXE_utw`, `utw.pdb`), the
+    settings folder, `utw.log`/`utw.old.log`/`utw.dmp`, the app id, `Tvers`, the shared-IDs
+    folder, `tool_version`, the help pages, the launchers, the readme, `build.rs`, the release
+    recipe and its test, the justfile and the scripts naming the exe or the folder; the
+    `help_cli` guard widened to `UnlimitedToolWorks` and the old folder's name
+  - [ ] rn2 the drafts (the lead): `docs/prototypes/index.html`'s title, exe and folder
+    names and help text; the Ruleset editor draft's logic banner naming no product (the plan's
+    rule; it names 4cc Studio today); the other drafts' "Studio"
+  - [ ] rn3 the docs (the lead, after rn1 lands): every plan and spec file's title, the CLI
+    examples (`UTW <tool-id> ...`), the settings folder's and the log's names, "Studio" as the
+    project's name in prose; README, AGENTS, CONTRIBUTING, RUNBOOK; the glossary's "Studio"
+    entry kept for the code's names
 - [ ] 0.0.1f the cut, once the Save editor's view is done (the Ruleset editor left 0.0.1 on
   2026-10-24, `plans/core/development_plan.md` "Development Plan"): the bundled settings picking
   DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`

@@ -10,9 +10,8 @@ What exists of this is in `spec/core/distribution.md` "Distribution: portable .7
 
 There is no installer. Each release is a `.7z` archive containing:
 
-- `4cc-studio.exe` (or the `4cc-studio` Linux binary) — the single self-contained binary;
-  `UnlimitedToolWorks.exe` in every release before 1.0.0, as the bundle's own name
-  (`development_plan.md` "The preview's codename: Unlimited Tool Works")
+- `UTW.exe` (or the `utw` Linux binary) — the single self-contained binary
+  (`development_plan.md` "The project's name: Unlimited Tool Works")
 - `quick_compile.bat` (`quick_compile.sh` on Linux) — the double-click launcher: opens the GUI on
   the Team compiler and starts a compile (see `architecture.md` "Launch modes" under Architecture)
 - in the 0.0.1 preview only, until the two tools' views land: `quick_compile.bat` in its CLI
@@ -26,9 +25,9 @@ There is no installer. Each release is a `.7z` archive containing:
   whatever app claimed it, or asks
 
 `just release <version>` (`scripts/release.py`, Windows only) builds the exe with `--locked`,
-stages those files under one top folder, `UnlimitedToolWorks-<version>/`, so "Extract here"
+stages those files under one top folder, `unlimited-tool-works-<version>/`, so "Extract here"
 makes one folder rather than scattering the files, and packs it with 7-Zip as
-`UnlimitedToolWorks-<version>-windows.7z` in the `dist/` folder of cargo's target directory
+`unlimited-tool-works-<version>-windows.7z` in the `dist/` folder of cargo's target directory
 (asked of `cargo metadata`: a developer may have moved it), beside its checksum,
 `<archive>.sha256`, in `sha256sum`'s format (`<hex>  <archive name>`), which
 `sha256sum -c` and PowerShell's `Get-FileHash` both check. It refuses a dirty tree, a version
@@ -36,10 +35,11 @@ other than the workspace's, an archive that already exists (a release is never o
 and a readme whose first line names another version, and it ends by listing the archive and
 comparing the listing with the staged files, so a 7-Zip that skipped the empty folders fails
 the recipe. It takes the executable's name from the built exe's own `--help` usage line and
-checks that both launchers call it, so the codename lives in the code's constant and the
-recipe cannot drift from it. Beside the archive it keeps the release's symbols, never in the
-bundle: the built exe and its `.pdb`, packed as `UnlimitedToolWorks-<version>-symbols.7z`,
-which `scripts/symbolize_log.py` reads to name a posted `studio.log`'s backtrace
+checks that both launchers call it, so the executable's name lives in the code's constant
+and the recipe cannot drift from it; the package name `unlimited-tool-works` is the
+recipe's own constant, since no built file states it. Beside the archive it keeps the release's symbols, never in the
+bundle: the built exe and its `.pdb`, packed as `unlimited-tool-works-<version>-symbols.7z`,
+which `scripts/symbolize_log.py` reads to name a posted `utw.log`'s backtrace
 (`architecture.md` "Diagnostic logging"). The release profile builds with
 `debug = "line-tables-only"`, so the kept `.pdb` names each frame's file and line as well as
 its function; the line tables live in the `.pdb`, leaving the exe's size as it was.

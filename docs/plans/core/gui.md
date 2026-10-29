@@ -484,8 +484,8 @@ still working, and what it just finished. Red did this with the console title (`
 `Done - …`); the Studio does the same with more detail, from the same typed items the status bar
 uses, so it costs no new API:
 
-`<app>` is the suite's display name, Unlimited Tool Works in every release before 1.0.0
-(`development_plan.md` "The preview's codename"), the same here and in ST-TTL:
+`<app>` is the suite's display name, Unlimited Tool Works (`development_plan.md` "The
+project's name"), the same here and in ST-TTL:
 
 | State | Title |
 |---|---|
