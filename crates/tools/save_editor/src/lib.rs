@@ -19,7 +19,7 @@ mod test_support;
 mod view;
 
 use studio_core::widgets::{FORM_ROW_SPACING, checkbox_without_text};
-use studio_core::{CliError, HelpSection, HelpTopic, RunningPes, StudioTool, ToolContext};
+use studio_core::{CliError, HelpSection, HelpTopic, Notice, RunningPes, StudioTool, ToolContext};
 
 use crate::messages::TOOL_ID;
 
@@ -262,6 +262,16 @@ impl StudioTool for Tool {
     /// toolbar keeps its one row.
     fn title_detail(&self) -> Option<String> {
         self.view.save_path().map(|path| path.display().to_string())
+    }
+
+    /// The version warning, while a save of another version than the sidebar's selector is
+    /// open and the member has not seen it yet.
+    fn standing_notice(&self, ctx: &ToolContext) -> Option<Notice> {
+        self.view.version_notice(ctx.common().pes_version)
+    }
+
+    fn standing_notice_ended(&mut self) {
+        self.view.version_warning = false;
     }
 
     fn cli_run(&self, matches: &clap::ArgMatches, ctx: &ToolContext) -> Result<u8, CliError> {

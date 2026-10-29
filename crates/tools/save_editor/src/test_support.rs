@@ -37,17 +37,33 @@ pub(crate) fn scratch(test: &str) -> PathBuf {
 /// `data_dir` sit under `dir` too.
 pub(crate) fn tool_context(
     dir: &Path,
-    mut settings: studio_core::Settings,
+    settings: studio_core::Settings,
 ) -> (
     studio_core::ToolContext,
     crossbeam_channel::Receiver<studio_core::PipelineEventEnvelope>,
     crossbeam_channel::Receiver<studio_core::ShellRequest>,
 ) {
+    let (ctx, _settings, events_rx, requests_rx) = shared_tool_context(dir, settings);
+    (ctx, events_rx, requests_rx)
+}
+
+/// `tool_context` with a handle on the context's settings, which the test writes between
+/// calls as the shell does (the sidebar's selector writes `common.pes_version`).
+pub(crate) fn shared_tool_context(
+    dir: &Path,
+    mut settings: studio_core::Settings,
+) -> (
+    studio_core::ToolContext,
+    std::sync::Arc<std::sync::Mutex<studio_core::Settings>>,
+    crossbeam_channel::Receiver<studio_core::PipelineEventEnvelope>,
+    crossbeam_channel::Receiver<studio_core::ShellRequest>,
+) {
     settings.common.pes_folder_path = dir.join("pes").display().to_string();
+    let settings = std::sync::Arc::new(std::sync::Mutex::new(settings));
     let (events_tx, events_rx) = crossbeam_channel::unbounded();
     let (requests_tx, requests_rx) = crossbeam_channel::unbounded();
     let ctx = studio_core::ToolContext::new(
-        std::sync::Arc::new(std::sync::Mutex::new(settings)),
+        std::sync::Arc::clone(&settings),
         studio_core::AppPaths {
             exe_dir: dir.join("exe"),
             data_dir: Some(dir.to_path_buf()),
@@ -55,7 +71,7 @@ pub(crate) fn tool_context(
         events_tx,
         requests_tx,
     );
-    (ctx, events_rx, requests_rx)
+    (ctx, settings, events_rx, requests_rx)
 }
 
 /// The salt the written saves encrypt with (the CLI tests' own).

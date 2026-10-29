@@ -6,7 +6,10 @@ them come the files you opened since the program started, the most recent first,
 last **Choose file…**, which picks any file and starts in the save folder of the PES
 version selected in the sidebar when there is one. Once a save is open the window's title
 bar shows its path, in square brackets after the editor's name, and the toolbar shows
-`• unsaved changes` while edits wait unsaved.
+`• unsaved changes` while edits wait unsaved. A save from another PES version than the one
+selected in the sidebar opens as its own version, with a warning in the status bar until you
+dismiss it or switch. Its **Switch to PES 20xx** button sets the sidebar to the save's
+version, which also changes the game the other tools work with.
 
 **Teams and players.** The dropdown picks a team, or ALL for every team of the save;
 picking a team selects its row, so the right side shows the team's fields and tactics
