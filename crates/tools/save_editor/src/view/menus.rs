@@ -11,7 +11,7 @@ use std::ops::RangeInclusive;
 use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::names::display_name;
-use studio_core::widgets::{menu_button, radio_value};
+use studio_core::widgets::{menu_button, radio_value, step_choice, step_number, wheel_steps};
 
 use crate::session::Session;
 use crate::session::database;
@@ -592,10 +592,11 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                         "Set incremental value:",
                     );
                 });
-                ui.add_sized(
+                let start = ui.add_sized(
                     field_size(ui, BOGLO_BOX),
                     egui::DragValue::new(&mut boglo.start),
                 );
+                step_number(&mut boglo.start, wheel_steps(ui, &start), 0..=u32::MAX);
                 ui.add_space(BOGLO_RANGE_GAP);
                 ui.label("\u{2013}");
                 ui.add_space(BOGLO_RANGE_GAP);
@@ -610,9 +611,14 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                         "Set all to the same ID:",
                     );
                 });
-                ui.add_sized(
+                let boots_id = ui.add_sized(
                     field_size(ui, columns.field),
                     egui::DragValue::new(&mut boglo.boots_id),
+                );
+                step_number(
+                    &mut boglo.boots_id,
+                    wheel_steps(ui, &boots_id),
+                    0..=u32::MAX,
                 );
             });
         });
@@ -641,9 +647,14 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                         "Set all to the same ID:",
                     );
                 });
-                ui.add_sized(
+                let gloves_id = ui.add_sized(
                     field_size(ui, columns.field),
                     egui::DragValue::new(&mut boglo.gloves_id),
+                );
+                step_number(
+                    &mut boglo.gloves_id,
+                    wheel_steps(ui, &gloves_id),
+                    0..=u32::MAX,
                 );
             });
         });
@@ -783,7 +794,8 @@ pub(crate) fn stat_num_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
             let range = stat_num.range();
             ui.horizontal(|ui| {
                 ui.label(&stat_num.line);
-                ui.add(egui::DragValue::new(&mut stat_num.value).range(range));
+                let field = ui.add(egui::DragValue::new(&mut stat_num.value).range(range.clone()));
+                step_number(&mut stat_num.value, wheel_steps(ui, &field), range);
             });
             ui.horizontal(|ui| {
                 if ui.button("OK").clicked()
@@ -936,7 +948,7 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
             ui.horizontal(|ui| {
                 ui.label("Team");
                 let mut picked = dialog.team_id;
-                egui::ComboBox::from_id_salt("save_editor_copy_swap_team")
+                let combo = egui::ComboBox::from_id_salt("save_editor_copy_swap_team")
                     .selected_text(
                         session
                             .file()
@@ -948,7 +960,12 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                         for team in session.file().teams() {
                             ui.selectable_value(&mut picked, team.id, &team.name);
                         }
-                    });
+                    })
+                    .response;
+                let teams = session.file().teams().iter().map(|team| team.id);
+                if let Some(next) = step_choice(teams, &picked, wheel_steps(ui, &combo)) {
+                    picked = next;
+                }
                 if picked != dialog.team_id {
                     dialog.team_id = picked;
                     // The new team's first filled slot is the new pick.
@@ -960,7 +977,7 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 ui.label("Player");
                 let options = roster_options(session.file(), dialog.team_id);
                 let mut picked = dialog.other_id;
-                egui::ComboBox::from_id_salt("save_editor_copy_swap_player")
+                let combo = egui::ComboBox::from_id_salt("save_editor_copy_swap_player")
                     .selected_text(
                         options
                             .iter()
@@ -972,7 +989,12 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                         for (id, label) in &options {
                             ui.selectable_value(&mut picked, *id, label);
                         }
-                    });
+                    })
+                    .response;
+                let players = options.iter().map(|(id, _)| *id);
+                if let Some(next) = step_choice(players, &picked, wheel_steps(ui, &combo)) {
+                    picked = next;
+                }
                 dialog.other_id = picked;
             });
             ui.horizontal(|ui| {

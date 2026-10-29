@@ -9,9 +9,7 @@ rust-version.workspace = true
 
 [dependencies]
 egui.workspace = true
-
-[dev-dependencies]
-# The tests draw with the window's fonts and style (`theme::install`).
+# The wheel over the R/G/B fields steps them as over every number box.
 studio_core.workspace = true
 
 [lints]

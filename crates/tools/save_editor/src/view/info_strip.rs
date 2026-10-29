@@ -15,7 +15,7 @@ use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerStats};
 use pes_savefile::schema::fields::{PlayerField, PlayerText, RosterField};
 use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for};
 use pes_version::PesVersion;
-use studio_core::widgets::radio;
+use studio_core::widgets::{radio, step_choice, step_number, wheel_steps};
 use team_widgets::cards;
 use team_widgets::names::append_name;
 
@@ -313,10 +313,14 @@ pub(super) fn general(
             },
         );
         pair_half(ui, Half::Second, NUMBER_LABEL, None, |ui| {
-            let response = ui.add_sized(
+            let range = 0..=roster_number_max(schema);
+            let mut response = ui.add_sized(
                 [BOX_WIDTH, ui.spacing().interact_size.y],
-                egui::DragValue::new(&mut shirt_number).range(0..=roster_number_max(schema)),
+                egui::DragValue::new(&mut shirt_number).range(range.clone()),
             );
+            if step_number(&mut shirt_number, wheel_steps(ui, &response), range) {
+                response.mark_changed();
+            }
             if response.changed() {
                 edit_team(session, team_id, response.id.value(), |team| {
                     team.roster[usize::from(slot)].number = shirt_number;
@@ -505,11 +509,14 @@ fn number_box<N: egui::emath::Numeric + TryFrom<u64>>(
     set: impl FnOnce(&mut PlayerEntry, N),
 ) {
     let mut shown = shown;
-    let response = ui.add_sized(
+    let range = N::from_f64(0.0)..=N::try_from(max).unwrap_or(N::MAX);
+    let mut response = ui.add_sized(
         [BOX_WIDTH, ui.spacing().interact_size.y],
-        egui::DragValue::new(&mut shown)
-            .range(N::from_f64(0.0)..=N::try_from(max).unwrap_or(N::MAX)),
+        egui::DragValue::new(&mut shown).range(range.clone()),
     );
+    if step_number(&mut shown, wheel_steps(ui, &response), range) {
+        response.mark_changed();
+    }
     if response.changed() {
         edit_player(session, player_id, response.id.value(), |player| {
             set(player, shown);
@@ -576,12 +583,19 @@ fn small_box(
     match (small.get)(stats) {
         Some(stored) => {
             let mut shown = stored + small.shift;
-            let response = ui.add_sized(
+            let mut response = ui.add_sized(
                 [BOX_WIDTH, ui.spacing().interact_size.y],
                 egui::DragValue::new(&mut shown)
                     .range(small.min..=small.max)
                     .clamp_existing_to_range(false),
             );
+            if step_number(
+                &mut shown,
+                wheel_steps(ui, &response),
+                small.min..=small.max,
+            ) {
+                response.mark_changed();
+            }
             if response.changed() {
                 edit_player(session, player_id, response.id.value(), move |player| {
                     (small.set)(&mut player.stats, shown - small.shift);
@@ -664,6 +678,11 @@ fn combos(
                         );
                     }
                 });
+            let values = (0..=u8::MAX).take(POSITIONS.len());
+            let steps = wheel_steps(ui, &combo.response);
+            if let Some(next) = step_choice(values, &registered, steps) {
+                registered = next;
+            }
             if registered != positions.registered {
                 edit_player(session, player_id, combo.response.id.value(), |player| {
                     player.positions.registered = registered;

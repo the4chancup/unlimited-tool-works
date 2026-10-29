@@ -17,6 +17,7 @@ use crate::pes_process::RunningPes;
 use crate::settings::CommonSettings;
 use crate::status::{ActionEffect, Notice, NoticeAction, NoticeKind};
 use crate::tool::{PlannedTool, ShellRequest, StudioTool, ToolContext};
+use crate::widgets::{step_choice, wheel_steps};
 
 #[cfg(test)]
 mod tests;
@@ -517,6 +518,10 @@ impl Sidebar {
                 .inner
             })
             .inner;
+        let steps = wheel_steps(ui, &combo_response);
+        if let Some(next) = step_choice(PesVersion::ALL, &picked, steps) {
+            picked = next;
+        }
         self.combo_popup_id = Some(combo_response.id.with("popup"));
         // A disabled widget keeps no hover response of its own: the reason goes on the
         // selector's own response, which still reports the pointer over its rect (ST-SIDE-04).

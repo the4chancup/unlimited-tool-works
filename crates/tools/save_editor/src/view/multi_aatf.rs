@@ -11,6 +11,7 @@
 
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
+use studio_core::widgets::{step_choice, wheel_steps};
 use studio_core::{Notice, NoticeKind};
 use team_widgets::violations::{ListUse, issue_groups, sentence};
 
@@ -118,14 +119,19 @@ fn team_combo(ui: &mut egui::Ui, id_salt: &str, file: &EditFile, picked: &mut u3
         let spacing = ui.spacing();
         2.0 * spacing.button_padding.x + spacing.icon_spacing + spacing.icon_width
     };
-    egui::ComboBox::from_id_salt(id_salt)
+    let combo = egui::ComboBox::from_id_salt(id_salt)
         .selected_text(team_label(file, *picked))
         .width(widest + chrome)
         .show_ui(ui, |ui| {
             for (id, label) in &labels {
                 ui.selectable_value(picked, *id, label);
             }
-        });
+        })
+        .response;
+    let teams = labels.iter().map(|(id, _)| *id);
+    if let Some(next) = step_choice(teams, picked, wheel_steps(ui, &combo)) {
+        *picked = next;
+    }
 }
 
 /// The line under the range: how many teams the list holds and how many

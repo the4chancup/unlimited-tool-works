@@ -9,7 +9,7 @@ use pes_savefile::interchange::team_toml::labels::{self, title_case};
 use pes_savefile::model::playstyle::PlayStyle;
 use pes_savefile::schema::fields::PlayerField;
 use pes_savefile::schema::{playstyle, schema_for};
-use studio_core::widgets::checkbox;
+use studio_core::widgets::{checkbox, step_choice, wheel_steps};
 
 /// A skills or COM styles column's width (the draft's `.skcols` 158px):
 /// the host sizes the panels that hold the two columns from it.
@@ -143,13 +143,19 @@ pub fn playing_style_picker(
             .collect();
         let selected = playing_style_text(version, *style);
         let mut changed = false;
-        egui::ComboBox::from_id_salt("playing style")
+        let combo = egui::ComboBox::from_id_salt("playing style")
             .selected_text(selected)
             .show_ui(ui, |ui| {
                 for (index, label) in &styles {
                     changed |= ui.selectable_value(style, *index, label).changed();
                 }
-            });
+            })
+            .response;
+        let indices = styles.iter().map(|(index, _)| *index);
+        if let Some(next) = step_choice(indices, style, wheel_steps(ui, &combo)) {
+            *style = next;
+            changed = true;
+        }
         changed
     })
     .inner

@@ -405,6 +405,53 @@ fn a_playable_positions_rating_writes_its_own_slot_and_undoes() {
     assert_eq!(playable(&view)[2], 0, "the one undo restores it");
 }
 
+// ST-WHEEL-01 in the editor: each wheel notch over the registered
+// position's combo takes the item below, and each is its own undo step.
+#[test]
+fn each_wheel_notch_over_the_registered_position_is_one_undo_step() {
+    let path = fixture(PesVersion::Pes21, "wheel_registered");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let registered = |view: &SaveView| player_entry(view, 70101).positions.registered;
+    assert_eq!(registered(&view), 1, "premise: 70101 is registered CB");
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let combo = right_of_label(&nodes, "Registered position", Role::ComboBox)
+        .first()
+        .copied()
+        .expect("the registered combo");
+    let at = centre(combo);
+    let notch_down = egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Line,
+        delta: egui::vec2(0.0, -1.0),
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Wheel,
+        modifiers: egui::Modifiers::default(),
+    };
+    // CB, then LB, then RB: the items below it in the list's order.
+    for expected in [2, 3] {
+        window.frame(
+            vec![egui::Event::PointerMoved(at), notch_down.clone()],
+            |ui| show(ui, &mut view, &|| Vec::new()),
+        );
+        assert_eq!(
+            registered(&view),
+            expected,
+            "a notch down takes the next item"
+        );
+    }
+    for expected in [2, 1] {
+        window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+        assert_eq!(registered(&view), expected, "one Ctrl+Z undoes one notch");
+    }
+    assert!(
+        !view.session.as_ref().unwrap().can_undo(),
+        "the two notches were the only edits"
+    );
+}
+
 /// The narrowest label-to-field gap over `pairs` (`field.x0 − label.x1`
 /// per row).
 fn min_gap<S: AsRef<str>>(nodes: &[accesskit::Node], pairs: &[(S, Role)]) -> f64 {

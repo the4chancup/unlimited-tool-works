@@ -8,6 +8,7 @@
 //! the × do their file work in `session::rules` and show its outcome in
 //! their dialogs (`dialog`).
 
+use studio_core::widgets::{step_choice, wheel_steps};
 use studio_core::{Notice, NoticeKind};
 
 use crate::session::rules::{self, ImportCheck, builtins};
@@ -324,7 +325,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     };
     let mut picked = None;
     let mut asked = None;
-    egui::ComboBox::from_id_salt("save_editor_ruleset")
+    let combo = egui::ComboBox::from_id_salt("save_editor_ruleset")
         .selected_text(selected)
         .width(widest + chrome)
         .show_ui(ui, |ui| {
@@ -376,6 +377,15 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         })
         .response
         .on_hover_text(TOOLTIP);
+    // The wheel steps among the rulesets alone: Import rules file… is a
+    // command, not a value.
+    let rulesets = builtins()
+        .iter()
+        .map(|(stem, _)| (*stem).to_owned())
+        .chain(view.imported.iter().map(|import| import.file_name.clone()));
+    if let Some(next) = step_choice(rulesets, &key, wheel_steps(ui, &combo)) {
+        picked = Some(next);
+    }
     if let Some(picked) = picked {
         view.aatf_ruleset = picked;
     }

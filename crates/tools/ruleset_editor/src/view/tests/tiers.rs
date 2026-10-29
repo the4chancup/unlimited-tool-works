@@ -233,6 +233,44 @@ fn drawn_tier_ids(nodes: &[accesskit::Node], ids: &[&str]) -> Vec<String> {
         .collect()
 }
 
+// ST-WHEEL-01 in the editor: a wheel notch over a tier's rate steps it
+// by one, as one undoable edit.
+#[test]
+fn a_wheel_notch_over_a_rate_is_one_undoable_edit() {
+    let (ctx, _events, _path, mut view) = official_opened("wheel_rate");
+    let mut window = Headless::sized(1800.0, 900.0);
+    view.section = Section::Tiers;
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert_eq!(
+        ruleset(&view).tiers[1].rate,
+        92,
+        "premise: Silver's rate is 92"
+    );
+    let notch_up = egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Line,
+        delta: egui::vec2(0.0, 1.0),
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Wheel,
+        modifiers: egui::Modifiers::default(),
+    };
+    let at = centre(spin(&frame.nodes, "92"));
+    window.frame(vec![egui::Event::PointerMoved(at), notch_up], |ui| {
+        show(ui, &mut view, &ctx)
+    });
+    assert_eq!(ruleset(&view).tiers[1].rate, 93, "a notch up adds one");
+    window.draw(&mut view, &ctx);
+    ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
+    assert_eq!(
+        ruleset(&view).tiers[1].rate,
+        92,
+        "one Ctrl+Z undoes the notch"
+    );
+    assert!(
+        !view.document.as_ref().unwrap().is_dirty(),
+        "the notch was the only edit"
+    );
+}
+
 // RE-GUI-03
 #[test]
 fn a_rate_edit_shows_in_the_preview_and_marks_the_document_unsaved() {

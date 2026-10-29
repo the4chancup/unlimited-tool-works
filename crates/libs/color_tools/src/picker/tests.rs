@@ -482,6 +482,30 @@ fn a_typed_rgb_value_commits_on_enter() {
     assert!(!out.changed, "changed fires on the commit frame only");
 }
 
+// A wheel notch over an R/G/B field steps it by one, committed as a typed value is.
+#[test]
+fn a_wheel_notch_over_a_channel_commits_one_step() {
+    let mut window = Headless::new();
+    let mut color = [10, 20, 30];
+    let (nodes, _) = window.field(&mut color, &[], Vec::new());
+    window.click_at(centre(field_button(&nodes, 0)), &mut color, &[]);
+    let (nodes, _) = window.field(&mut color, &[], Vec::new());
+    let at = centre(spin_field(&nodes, "G "));
+    let notch = egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Line,
+        delta: egui::vec2(0.0, -1.0),
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Wheel,
+        modifiers: egui::Modifiers::default(),
+    };
+    let (_, out) = window.field(&mut color, &[], vec![egui::Event::PointerMoved(at), notch]);
+    assert!(out.changed, "the notch commits");
+    assert_eq!(color, [10, 19, 30], "a notch down takes one off G");
+    let (_, out) = window.field(&mut color, &[], Vec::new());
+    assert!(!out.changed, "changed fires on the notch's frame only");
+    assert_eq!(color, [10, 19, 30]);
+}
+
 // Tab between the channel fields is one edit: the last focus loss commits all three at once.
 #[test]
 fn tab_between_channels_commits_only_when_the_edit_ends() {

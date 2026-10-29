@@ -11,6 +11,7 @@ use egui::{
     Align, Color32, DragValue, Key, Layout, Mesh, Popup, PopupCloseBehavior, Rect, Response, Role,
     Sense, Shape, Stroke, StrokeKind, TextEdit, TextStyle, Ui, WidgetInfo, pos2, vec2,
 };
+use studio_core::widgets::{step_number, wheel_steps};
 
 /// The most recent colors the session keeps: newest first, no duplicates.
 const MAX_RECENTS: usize = 8;
@@ -568,6 +569,7 @@ fn popup_body(
     // drag only previews until its release lands in the gesture below.
     let mut channels = rgb_of(state.hsva);
     let mut channel_changed = false;
+    let mut channel_wheeled = false;
     let mut channel_focused = false;
     let mut channel_lost_focus = false;
     // Focus reads egui's memory, not `Response::has_focus`, which is also false
@@ -580,8 +582,10 @@ fn popup_body(
         for (index, prefix) in ["R ", "G ", "B "].iter().enumerate() {
             let mut channel = channels[index];
             let response = ui.add(DragValue::new(&mut channel).speed(0.5).prefix(*prefix));
+            let wheeled = step_number(&mut channel, wheel_steps(ui, &response), 0..=u8::MAX);
             channels[index] = channel;
-            channel_changed |= response.changed();
+            channel_changed |= response.changed() || wheeled;
+            channel_wheeled |= wheeled;
             channel_focused |= ui.memory(|memory| memory.has_focus(response.id));
             channel_lost_focus |= response.lost_focus();
             // A field in text-editing mode is not a gesture control: clicks and
@@ -597,6 +601,10 @@ fn popup_body(
     state.text_rect = text_rect;
     if channel_changed {
         state.hsva = hsva_of(channels);
+    }
+    // A wheel step is one finished change, as a typed value is.
+    if channel_wheeled {
+        commit_color(state, color, changed, channels);
     }
     // A text field's `lost_focus` commits only when no gesture is down this frame:
     // egui's second `lost_focus` frame while a press is held must not commit the

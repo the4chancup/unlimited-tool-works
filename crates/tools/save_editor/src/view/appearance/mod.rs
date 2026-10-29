@@ -24,6 +24,7 @@ use pes_savefile::schema::limits::motion_top;
 use pes_savefile::schema::player_max_value;
 use pes_savefile::settings_toml::{Kind, SettingKey};
 use pes_version::{Engine, PesVersion};
+use studio_core::widgets::{step_choice, step_number, wheel_steps};
 
 use crate::session::{Session, is_stripped};
 use crate::view::abilities::{gating_tooltip, maybe_end_row, number, small_stat};
@@ -404,11 +405,14 @@ fn physique_grid(
             let stored = get(appearance);
             let mut shown = i32::from(stored) - limit;
             ui.label(*label);
-            let response = ui.add(
+            let mut response = ui.add(
                 egui::DragValue::new(&mut shown)
                     .range(-limit..=limit)
                     .clamp_existing_to_range(false),
             );
+            if step_number(&mut shown, wheel_steps(ui, &response), -limit..=limit) {
+                response.mark_changed();
+            }
             if response.changed() {
                 edit_player(session, player_id, response.id.value(), |player| {
                     set(
@@ -639,11 +643,14 @@ fn motion_grid(
             Some(stored) => {
                 let mut shown = stored;
                 let range = number_range(SettingKey::Dribbling);
-                let response = ui.add(
+                let mut response = ui.add(
                     egui::DragValue::new(&mut shown)
-                        .range(range)
+                        .range(range.clone())
                         .clamp_existing_to_range(false),
                 );
+                if step_number(&mut shown, wheel_steps(ui, &response), range) {
+                    response.mark_changed();
+                }
                 if response.changed() {
                     edit_player(session, player_id, response.id.value(), |player| {
                         player.motion.dribbling = Some(shown);
@@ -837,17 +844,18 @@ fn combo_box(
     let options = combo_options(key);
     let mut picked = stored;
     let selected = option_name(key, stored);
+    let index = |at: usize| u8::try_from(at).expect("the key's options fit a u8");
     let combo = egui::ComboBox::from_id_salt(("appearance", label))
         .selected_text(selected)
         .show_ui(ui, |ui| {
-            for (index, option) in options.iter().enumerate() {
-                ui.selectable_value(
-                    &mut picked,
-                    u8::try_from(index).expect("the key's options fit a u8"),
-                    option,
-                );
+            for (at, option) in options.iter().enumerate() {
+                ui.selectable_value(&mut picked, index(at), option);
             }
         });
+    let steps = wheel_steps(ui, &combo.response);
+    if let Some(next) = step_choice((0..options.len()).map(index), &picked, steps) {
+        picked = next;
+    }
     if picked != stored {
         edit_player(session, player_id, combo.response.id.value(), |player| {
             set(player, picked)

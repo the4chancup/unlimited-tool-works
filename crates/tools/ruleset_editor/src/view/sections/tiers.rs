@@ -7,7 +7,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use aatf::{MedalSystem, Ruleset, Stat, Tier, TierId};
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
-use studio_core::widgets::checkbox;
+use studio_core::widgets::{checkbox, step_choice, step_number, wheel_steps};
 
 use super::Section;
 use super::widgets;
@@ -292,16 +292,21 @@ fn counts_as_cell(
     let selected = choice
         .as_ref()
         .map_or_else(|| "—".to_string(), |id| label_of(ids, id));
+    let others = || ids.iter().filter(|(id, _)| id != &own_id);
     let response = egui::ComboBox::from_id_salt(("counts_as", index))
         .selected_text(selected)
         .show_ui(ui, |ui| {
             ui.selectable_value(&mut choice, None, "—");
-            for (id, label) in ids.iter().filter(|(id, _)| id != &own_id) {
+            for (id, label) in others() {
                 ui.selectable_value(&mut choice, Some(id.clone()), label);
             }
         })
         .response
         .on_hover_text("The tier whose count this tier's players fill");
+    let items = std::iter::once(None).chain(others().map(|(id, _)| Some(id.clone())));
+    if let Some(next) = step_choice(items, &choice, wheel_steps(ui, &response)) {
+        choice = next;
+    }
     let tier = &mut ruleset.tiers[index];
     if choice != tier.counts_as {
         tier.counts_as = choice;
@@ -619,11 +624,14 @@ fn map_number(
     keep_zero: bool,
 ) -> egui::Response {
     let mut value = map.get(key).copied().unwrap_or(0);
-    let response = ui.add(
+    let mut response = ui.add(
         egui::DragValue::new(&mut value)
             .range(0..=max)
             .clamp_existing_to_range(false),
     );
+    if step_number(&mut value, wheel_steps(ui, &response), 0..=max) {
+        response.mark_changed();
+    }
     if response.changed() {
         if value == 0 && !keep_zero {
             map.remove(key);

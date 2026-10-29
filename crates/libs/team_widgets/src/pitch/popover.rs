@@ -3,6 +3,7 @@
 //! beside Make GK and the X and Y fields.
 
 use pes_savefile::model::tactics::TeamTactics;
+use studio_core::widgets::{step_choice, step_number, wheel_steps};
 
 use super::{GRID_X, GRID_Y, drop_rule, overalls_of, position_label};
 use crate::names::append_name;
@@ -146,17 +147,21 @@ pub(super) fn slot_popover(
                 } else {
                     let offered = drop_rule::spot_choices(formation, index, slot.x, slot.y);
                     let own = (!offered.contains(&slot.position)).then_some(slot.position);
+                    let choices: Vec<u8> = own.into_iter().chain(offered).collect();
                     let mut position = slot.position;
-                    egui::ComboBox::from_id_salt("slot position")
+                    let combo = egui::ComboBox::from_id_salt("slot position")
                         .width(width)
                         .selected_text(position_label(slot.position))
                         .show_ui(ui, |ui| {
-                            for value in own.into_iter().chain(offered) {
+                            for &value in &choices {
                                 ui.selectable_value(&mut position, value, position_label(value));
                             }
                         })
                         .response
                         .on_hover_text("Position");
+                    if let Some(next) = step_choice(choices, &position, wheel_steps(ui, &combo)) {
+                        position = next;
+                    }
                     if position != slot.position {
                         formation.players[index].position = position;
                     }
@@ -178,22 +183,36 @@ pub(super) fn slot_popover(
             },
         );
         ui.horizontal(|ui| {
+            // A step needs no `mark_changed`: the move below compares the
+            // spot with the slot's.
             ui.label("X");
-            ui.add_enabled(
-                !keeper,
-                egui::DragValue::new(&mut formation.players[index].x)
-                    .range(0..=GRID_X)
-                    .clamp_existing_to_range(false),
-            )
-            .on_disabled_hover_text("The goalkeeper's spot is fixed");
+            let x = ui
+                .add_enabled(
+                    !keeper,
+                    egui::DragValue::new(&mut formation.players[index].x)
+                        .range(0..=GRID_X)
+                        .clamp_existing_to_range(false),
+                )
+                .on_disabled_hover_text("The goalkeeper's spot is fixed");
+            step_number(
+                &mut formation.players[index].x,
+                wheel_steps(ui, &x),
+                0..=GRID_X,
+            );
             ui.label("Y");
-            ui.add_enabled(
-                !keeper,
-                egui::DragValue::new(&mut formation.players[index].y)
-                    .range(0..=GRID_Y)
-                    .clamp_existing_to_range(false),
-            )
-            .on_disabled_hover_text("The goalkeeper's spot is fixed");
+            let y = ui
+                .add_enabled(
+                    !keeper,
+                    egui::DragValue::new(&mut formation.players[index].y)
+                        .range(0..=GRID_Y)
+                        .clamp_existing_to_range(false),
+                )
+                .on_disabled_hover_text("The goalkeeper's spot is fixed");
+            step_number(
+                &mut formation.players[index].y,
+                wheel_steps(ui, &y),
+                0..=GRID_Y,
+            );
             if ui.button("Close").clicked() {
                 view.popover = None;
             }

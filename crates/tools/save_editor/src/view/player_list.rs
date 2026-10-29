@@ -7,7 +7,7 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::names::display_name;
-use studio_core::widgets::ink_span;
+use studio_core::widgets::{ink_span, step_choice, wheel_steps};
 use team_widgets::names::{append_name, plain_format};
 
 use crate::session::Session;
@@ -225,7 +225,7 @@ pub(super) fn team_selector(
     id_salt: &str,
 ) {
     let mut chosen = *choice;
-    egui::ComboBox::from_id_salt(id_salt)
+    let combo = egui::ComboBox::from_id_salt(id_salt)
         .selected_text(match chosen {
             TeamChoice::All => "ALL".to_owned(),
             TeamChoice::Team(id) => file
@@ -238,7 +238,13 @@ pub(super) fn team_selector(
             for team in file.teams() {
                 ui.selectable_value(&mut chosen, TeamChoice::Team(team.id), &team.name);
             }
-        });
+        })
+        .response;
+    let teams = file.teams().iter().map(|team| TeamChoice::Team(team.id));
+    let choices = std::iter::once(TeamChoice::All).chain(teams);
+    if let Some(next) = step_choice(choices, &chosen, wheel_steps(ui, &combo)) {
+        chosen = next;
+    }
     *choice = chosen;
 }
 

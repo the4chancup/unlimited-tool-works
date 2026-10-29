@@ -26,6 +26,7 @@ use pes_savefile::interchange::team_toml::labels::{
 use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerSkills, PlayerStats};
 use pes_savefile::schema::fields::{ABILITY_FIELDS, PlayerField};
 use pes_savefile::schema::first_version_with;
+use studio_core::widgets::{step_number, wheel_steps};
 use team_widgets::cards;
 use team_widgets::pitch::POSITION_ROWS;
 
@@ -909,11 +910,14 @@ fn number_field<T: egui::emath::Numeric>(
     store: impl FnOnce(&mut PlayerEntry, T),
 ) -> egui::Response {
     let mut shown = shown;
-    let response = ui.add(
+    let mut response = ui.add(
         egui::DragValue::new(&mut shown)
-            .range(range)
+            .range(range.clone())
             .clamp_existing_to_range(false),
     );
+    if step_number(&mut shown, wheel_steps(ui, &response), range) {
+        response.mark_changed();
+    }
     if response.changed() {
         edit_player(session, player_id, response.id.value(), |player| {
             store(player, shown);

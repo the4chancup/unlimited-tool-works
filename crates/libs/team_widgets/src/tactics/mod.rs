@@ -13,7 +13,7 @@ use pes_savefile::schema::fields::{
 };
 use pes_savefile::schema::{instruction, schema_for};
 use pes_version::PesVersion;
-use studio_core::widgets::checkbox;
+use studio_core::widgets::{checkbox, step_choice, wheel_steps};
 
 use crate::pitch::{FORMATIONS, position_label};
 
@@ -805,7 +805,7 @@ fn substitution_cell(ui: &mut egui::Ui, version: PesVersion, substitution: &mut 
                 .map(|(_, label)| label.clone())
                 .expect("the stored value is always offered");
             let mut pick = *stored;
-            egui::ComboBox::from_id_salt("automatic substitution")
+            let combo = egui::ComboBox::from_id_salt("automatic substitution")
                 .width(ui.available_width())
                 .selected_text(selected)
                 .truncate()
@@ -813,7 +813,12 @@ fn substitution_cell(ui: &mut egui::Ui, version: PesVersion, substitution: &mut 
                     for (value, label) in &choices {
                         ui.selectable_value(&mut pick, *value, label.clone());
                     }
-                });
+                })
+                .response;
+            let values = choices.iter().map(|(value, _)| *value);
+            if let Some(next) = step_choice(values, &pick, wheel_steps(ui, &combo)) {
+                pick = next;
+            }
             if pick != *stored {
                 *stored = pick;
             }

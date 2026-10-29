@@ -9,6 +9,7 @@ use pes_savefile::model::tactics::{AdvancedInstruction, TacticsPreset, TeamTacti
 use pes_savefile::schema::fields::{InstructionPart, InstructionSide, TacticsField};
 use pes_savefile::schema::instruction;
 use pes_version::PesVersion;
+use studio_core::widgets::{step_choice, wheel_steps};
 
 use super::assignments::{Assign, chip};
 use super::{RosterRow, TacticsView, gate_tip, name_at, text_width};
@@ -61,7 +62,7 @@ fn instruction_combo(
         None => format!("Unknown (0x{:02X})", entry.instruction),
     };
     let mut pick = current;
-    egui::ComboBox::from_id_salt(id_salt)
+    let combo = egui::ComboBox::from_id_salt(id_salt)
         .width(ui.available_width())
         .selected_text(selected.clone())
         .truncate()
@@ -69,7 +70,13 @@ fn instruction_combo(
             for inst in &list {
                 ui.selectable_value(&mut pick, Some(*inst), instruction_label(*inst));
             }
-        });
+        })
+        .response;
+    // An unknown stored byte is not among the items, so the wheel leaves it.
+    let items = list.iter().copied().map(Some);
+    if let Some(next) = step_choice(items, &pick, wheel_steps(ui, &combo)) {
+        pick = next;
+    }
     if let Some(inst) = pick
         && pick != current
     {

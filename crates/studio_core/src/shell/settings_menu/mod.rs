@@ -21,7 +21,10 @@ use pes_version::PesVersion;
 
 use crate::settings::{CommonSettings, Theme, pes_folder_pattern};
 use crate::tool::{ShellRequest, StudioTool, ToolContext};
-use crate::widgets::{PathCommit, PathKind, checkbox, path_row, path_row_commit, row_label};
+use crate::widgets::{
+    PathCommit, PathKind, checkbox, path_row, path_row_commit, row_label, step_choice, step_number,
+    wheel_steps,
+};
 
 use super::sidebar::{Sidebar, exe_tooltip, version_blocker, version_label};
 
@@ -242,15 +245,17 @@ impl SettingsMenu {
                 // clamps the stored value on sight and reports it changed, so merely opening
                 // the menu would rewrite a hand-set value (a portable folder's thread count
                 // from a bigger PC).
-                if ui
+                let mut response = ui
                     .add(
                         egui::DragValue::new(&mut thread_count)
                             .range(0..=max)
                             .clamp_existing_to_range(false),
                     )
-                    .labelled_by(threads.id)
-                    .changed()
-                {
+                    .labelled_by(threads.id);
+                if step_number(&mut thread_count, wheel_steps(ui, &response), 0..=max) {
+                    response.mark_changed();
+                }
+                if response.changed() {
                     common.thread_count = thread_count;
                     changed = true;
                 }
@@ -264,16 +269,18 @@ impl SettingsMenu {
                      of physical memory.",
                 );
                 let mut memory_cap = common.memory_cap_percent;
-                if ui
+                let mut response = ui
                     .add(
                         egui::DragValue::new(&mut memory_cap)
                             .range(0.1..=100.0)
                             .clamp_existing_to_range(false)
                             .suffix(" %"),
                     )
-                    .labelled_by(memory.id)
-                    .changed()
-                {
+                    .labelled_by(memory.id);
+                if step_number(&mut memory_cap, wheel_steps(ui, &response), 0.1..=100.0) {
+                    response.mark_changed();
+                }
+                if response.changed() {
                     common.memory_cap_percent = memory_cap;
                     changed = true;
                 }
@@ -287,15 +294,18 @@ impl SettingsMenu {
                      game has no boots with this ID, and 4cc uses 55.",
                 );
                 let mut hide_boots_id = common.fpc_hide_boots_id;
-                if ui
+                let mut response = ui
                     .add(
                         egui::DragValue::new(&mut hide_boots_id)
                             .range(fpc::HideIds::BOOTS)
                             .clamp_existing_to_range(false),
                     )
-                    .labelled_by(hide_boots.id)
-                    .changed()
-                {
+                    .labelled_by(hide_boots.id);
+                let steps = wheel_steps(ui, &response);
+                if step_number(&mut hide_boots_id, steps, fpc::HideIds::BOOTS) {
+                    response.mark_changed();
+                }
+                if response.changed() {
                     common.fpc_hide_boots_id = hide_boots_id;
                     changed = true;
                 }
@@ -309,15 +319,18 @@ impl SettingsMenu {
                      game has no gloves with this ID, and 4cc uses 11.",
                 );
                 let mut hide_gloves_id = common.fpc_hide_gloves_id;
-                if ui
+                let mut response = ui
                     .add(
                         egui::DragValue::new(&mut hide_gloves_id)
                             .range(fpc::HideIds::GLOVES)
                             .clamp_existing_to_range(false),
                     )
-                    .labelled_by(hide_gloves.id)
-                    .changed()
-                {
+                    .labelled_by(hide_gloves.id);
+                let steps = wheel_steps(ui, &response);
+                if step_number(&mut hide_gloves_id, steps, fpc::HideIds::GLOVES) {
+                    response.mark_changed();
+                }
+                if response.changed() {
                     common.fpc_hide_gloves_id = hide_gloves_id;
                     changed = true;
                 }
@@ -325,7 +338,7 @@ impl SettingsMenu {
 
                 let theme = row_label(ui, "Theme", "theme", "The window's color theme.");
                 let mut picked = common.theme;
-                egui::ComboBox::from_id_salt("settings-theme")
+                let combo = egui::ComboBox::from_id_salt("settings-theme")
                     .selected_text(theme_label(picked))
                     .show_ui(ui, |ui| {
                         ui.selectable_value(&mut picked, Theme::Dark, "Dark");
@@ -333,6 +346,10 @@ impl SettingsMenu {
                     })
                     .response
                     .labelled_by(theme.id);
+                let steps = wheel_steps(ui, &combo);
+                if let Some(next) = step_choice([Theme::Dark, Theme::Light], &picked, steps) {
+                    picked = next;
+                }
                 if picked != common.theme {
                     common.theme = picked;
                     changed = true;
@@ -383,6 +400,9 @@ fn version_row(
         })
         .inner
         .labelled_by(label.id);
+    if let Some(next) = step_choice(PesVersion::ALL, &picked, wheel_steps(ui, &combo)) {
+        picked = next;
+    }
     match blocker {
         Some((blocking, reason)) => {
             combo.on_disabled_hover_text(format!("{blocking}: {reason}"));
