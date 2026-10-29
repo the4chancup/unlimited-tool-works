@@ -62,3 +62,36 @@ that uses it, so a pasted value from an old habit lands instead of being refused
 parse with three prefixes in `color_tools`; the field still shows `#RRGGBB`.
 
 
+
+## P45 — A ruleset carries its event's logo and page, drawn at the Save editor's top right
+
+From the maintainer (2026-10-29, the placement and the link 2026-10-30). Other cups (DBC,
+VGL, VTL) run their events on their own rules files, and 0.0.1 is DBC's build.
+
+Adds: an organizer embeds a small logo in the `.4ccrules` file, and optionally the event's
+page address, both in its data section (a base64 PNG and a URL under two keys), never in the
+logic section, so the logic's hash and version are untouched. While the Save editor's active
+ruleset carries a logo, the editor draws it in its own top-right corner, mirroring the
+sidebar's clover: as far from the window's right edge and top as the clover's square is from
+the left edge and top (12 and 6 points in the drafts), 32 points high, its width following
+the picture's (at most 96 points, so a wide logo still reads). It is drawn over the empty
+corner and moves nothing: no row is pushed down, no column narrowed. Measured in the drafts
+at the default 1280-wide window, the toolbar at its widest (Live AATF on, Show suggestions,
+the unsaved label, DBC7's description) ends 170 points short of the logo's square, and the
+right column's title starts about 20 points under it. On a window too narrow for that room
+(the toolbar reaching the logo's place) the logo is not drawn, rather than covering a
+control. A ruleset with a page makes the logo a link: a click opens the page in the browser,
+its tooltip names the event (the ruleset's name) and the address; without a page the
+tooltip names the event alone. The Ruleset editor gets a Logo field (pick a PNG, preview it
+at its drawn size, remove it) and a Page field; `check-aatf` ignores both. A member of that
+cup sees his event's mark and reaches its page in one click; the sidebar's clover, the
+suite's identity and About's target, never changes.
+
+Costs: a texture where the rest of the UI draws font glyphs (the decoder is not new: `image`
+is a workspace dependency, through `dds_convert`). The picture keeps one look on both themes;
+logos are usually made for any background, so the preview shows it on the dark and the light
+panel and nothing more. The field caps the file (64 KB, refused with a finding otherwise). A
+text file holding a base64 blob is harder to read and to diff by hand. Two new keys in the
+rules format, the reader, the writer, the Ruleset editor's form and its tests, the page
+address checked to be `http` or `https` before the program opens it. After 0.0.1: it changes
+the rules format.
