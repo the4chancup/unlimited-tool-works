@@ -1830,6 +1830,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [ ] m3 the app rounds them too (after m1, which touches the same frames): the
         player list's rows frame and the pitch's border at the noninteractive corner radius,
         the turf clipped to the border's inner curve; the lineup lists already round theirs
+      - [ ] m4 the light theme's widget greys and warning colour (the maintainer, 2026-10-29;
+        DECISIONS "The light theme's widget greys a step lighter, its warning colour at
+        4.5"): `theme.rs` `widgets_light` resting 207, hovered 192, pressed 214, the light
+        `warn_fg_color` `#C54B00`; its tests pin the values (the contrast-matching test
+        rewritten to the new rule) → verify: the built window's light theme, the sidebar's
+        version badge and a number box
       - [ ] m2 `scripts/draft_compare.py` compares the fill and text colours of the boxes it
         pairs, not only their rects: the fills and greys above passed every geometry check
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
