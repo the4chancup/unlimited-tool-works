@@ -115,11 +115,16 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     ));
     // The quick actions sit at the panel's bottom, under the list (the
     // draft's `qagrid`): a bottom panel takes its height off the scroll's.
-    // The panel's frame keeps its fill and its vertical margin but no
-    // horizontal one, and the grid's width stops at the frame's, so the
-    // grid spans the list rows' width.
+    // The panel's frame keeps its fill, the draft's `.plist` gap of 4 over
+    // the grid and no margin under it, so the grid's last row ends at the
+    // pane's bottom; no horizontal margin either, and the grid's width
+    // stops at the frame's, so the grid spans the list rows' width.
+    let margin = egui::Margin {
+        top: 4,
+        ..egui::Margin::ZERO
+    };
     egui::Panel::bottom("save_editor_quick_actions")
-        .frame(egui::Frame::side_top_panel(ui.style()).inner_margin(egui::Margin::symmetric(0, 2)))
+        .frame(egui::Frame::side_top_panel(ui.style()).inner_margin(margin))
         .show(ui, |ui| {
             // A child of its own: the panel's `ui` already spans the
             // panel's width, which `set_max_width` cannot shrink.

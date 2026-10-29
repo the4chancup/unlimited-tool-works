@@ -4633,7 +4633,7 @@ briefs, review loops, gates and mutation runs as for any step.
       buttons ran into the border); the help window first sized and centred on the client
       area (it measured `#win`, title bar included: 5 taller and 23 higher than the build's
       1152 × 702 at (64, 39), which follows the plan)
-    - [ ] ov2w the team view against the draft after ov2u, re-measured 2026-10-29 on a
+    - [x] ov2w the team view against the draft after ov2u, re-measured 2026-10-29 on a
       release build of `4c448424` (`rect_compare.py team`, pixel rows of
       `.tmp/0_0_1ov/{draft,built}/team.png`): the fields' row 1 point high (its boxes 56 to 73,
       the draft's 57 to 74), the line and the Tactics' buttons each another point closer
@@ -4642,7 +4642,20 @@ briefs, review loops, gates and mutation runs as for any step.
       the status bar's line at 756 in both); the bars' items (the preset buttons 15 wide for
       the draft's 17.1, 23 apart for its 19.1; the phase tabs about 3 narrower with 8-point
       gaps for its 2; Fluid formation 11 right); Player assignments 2 right. Brief
-      `.tmp/0_0_1ov/brief_ov2w.md`
+      `.tmp/0_0_1ov/brief_ov2w.md`. Done 2026-10-29 (Opus, reviewed; `ab4c1f3f`, merge
+      `b68e352e`): the panes reach the draft's 6 over the status bar (`PANE_BOTTOM_MARGIN`,
+      one cause of the panes' and the quick actions' offsets), the quick actions' band 4 over
+      the grid and 0 under it, Set stats' box 52 (the button the rest), the bars' selectors 2
+      apart, padded 5, 17 tall (`bar_selector_spacing`), the line by its painted row, the
+      assignments after the draft's 320-point pitch track (`PITCH_TRACK`; its canvas
+      overflows the track, so 8 from the pitch's border, as drawn); every item within a point.
+      The fields' row stands 6 under the title, not the draft's 7: at 7 the plan's even ink
+      gaps around the title fail (its toolbar test: 11 above, 12.5 below; the draft's own are
+      11 and 14), so the plan wins and what is under the row stands 1 point high, inside the
+      tolerance (the lowest stroke at 740 for the draft's 741)
+    - [ ] ov2y seen by ov2w, outside its brief: the detail pane's right edge at 1264 against
+      the draft's 1268, the player list's frame top at 73 against 74; measure and fix after
+      ov2x
     - [ ] ov2x the player view and the text boxes against the draft, re-measured 2026-10-29
       (`rect_compare.py player`): every text box without the draft's 1-point border
       (`input[type=text]`: `border: 1px solid var(--stroke)`, radius 3; egui's resting text
@@ -4770,7 +4783,23 @@ briefs, review loops, gates and mutation runs as for any step.
       outlines them is a question for the maintainer once seen); the lineup lists' position
       text in the pitch's colours (`position_colour`, the keeper's `#ffde00`), which ov11a
       gave one value for both themes though the lists draw them on the panel: a light value
-      for each by the contrast rule, or a dark chip, once seen
+      for each by the contrast rule, or a dark chip, once seen. Looked at 2026-10-29 (lead,
+      release build of `4c448424` switched to light in the sandbox's settings; captures
+      `.tmp/0_0_1ov/light/`: the empty view, player, team, team with Live AATF, Settings,
+      Help): what reads poorly is the resting widgets (unchecked checkboxes, radios, number
+      boxes, buttons at grey 230 on 248, contrast 1.18 against the dark theme's 1.56), the
+      text boxes with no edge (white on 248: ov2x's border, the light stroke grey 190), and
+      the lineup lists' position codes (the keeper's yellow at 1.26). Ruled (DECISIONS "The
+      light theme's widget fills keep the dark theme's contrast; its text colours read at
+      4.5", values from `.tmp/0_0_1ov/light_contrast.py`): code in ov11c, after ov2x lands
+      (both edit `theme.rs`). The players' name colour codes: none drawn in teams 701 and
+      702 of the sandbox save, the ones captured, so not yet seen in light (they stay the
+      maintainer's question once seen)
+    - [ ] ov11c the light rulings built (sidekick, after ov2x): `theme.rs`'s light widget
+      states (resting 201, hovered 186, pressed 208, open 223), the palette's four lineup
+      list colours (dark: the pitch's; light: `#847200`, `#007d99`, `#2f8314`, `#d92464`)
+      drawn by `team_widgets` `pitch/lineup.rs`, tests of each value's contrast; then the
+      light captures again
   - [x] ov12 the Tactics popover's X and Y as steppers (DECISIONS "The Tactics popover's X
     and Y step by arrows inside the number box's width" and "The popover's stepper arrows
     take clicks, not the keyboard's focus"; `plans/save_editor.md`, the Tactics editor's

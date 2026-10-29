@@ -2811,3 +2811,5 @@ worklog passed 7,000 lines.
 - **2026-10-29** — `scripts/draft_shots.py` captures the drafts' 55 screens at two window sizes and lists those a host edit changed (0.0.1ov4b).
 - **2026-10-29** — The team view's Tactics stand at the draft's height, block by block, and the line under the team's fields is drawn at the draft's gaps (0.0.1ov2u).
 - **2026-10-29** — The Save editor's player and team captures for the drafts' Overlay, from a release build after a green checkpoint (0.0.1ov4c); the re-measure finds the team view's Tactics 3 points high and text boxes without the drafts' border (ov2w, ov2x).
+- **2026-10-29** — The light theme looked at in the built window: its resting widgets keep the dark theme's contrast and its text colours read at 4.5 (ruled, 0.0.1ov11b; built in ov11c).
+- **2026-10-29** — The team view, the Tactics bars, the panes' bottom and the quick actions stand at the draft's pixels within a point (0.0.1ov2w).

@@ -19,7 +19,9 @@ use pes_savefile::model::{TeamColor, TeamEntry};
 use pes_savefile::schema::fields::{TeamField, TeamText};
 use pes_savefile::schema::{VersionSchema, first_version_with_team, schema_for};
 use pes_version::PesVersion;
-use studio_core::widgets::{FORM_ROW_SPACING, modal, modal_buttons, step_number, wheel_steps};
+use studio_core::widgets::{
+    FORM_ROW_SPACING, modal, modal_buttons, step_number, text_box, wheel_steps,
+};
 
 use crate::session::Session;
 use crate::view::{SaveView, edit_team, info_strip, selected_team, tactics};
@@ -67,13 +69,21 @@ const ID_CELL_PADDING: f32 = 4.0;
 /// own is 40). The number control and its disabled stand-in both take
 /// their width from `interact_size`, so the id units set it.
 const ID_BOX_WIDTH: f32 = 46.0;
-/// From the row's controls down to the line under the row (the draft's
-/// `.sep`): the line's 8-point margin past the row's box, which stands 3
-/// under its controls.
+/// The room under the title, past the item spacing: the fields' row's
+/// boxes stand 6 under the title's line box, so the row's ink stands as
+/// far under the title's ink as the title's under the toolbar's buttons
+/// (within half a point), and the row lands on a whole point, where the
+/// line under it paints one pixel row. The draft's boxes stand 7 under,
+/// which leaves its ink gap below the title wider than the one above.
+const TITLE_GAP: f32 = 3.0;
+/// From the row's controls down to the row the line under them paints
+/// (the draft's `.sep`, a 1-point border covering one pixel row): the
+/// line's 8-point margin past the row's box, which stands 3 under its
+/// controls.
 const LINE_ABOVE: f32 = 11.0;
-/// From the line down to the Tactics' top: the `.sep`'s 8-point margin.
-/// The Tactics bar is taller than its buttons, so its first control
-/// stands 10.5 under the line.
+/// From the line's painted row's bottom down to the Tactics' top: the
+/// `.sep`'s 8-point margin. The Tactics bar is taller than its controls,
+/// so its first control stands 11.5 under the line's row.
 const LINE_BELOW: f32 = 8.0;
 
 /// The room the id cells' padding adds before `unit`, past the row's gap:
@@ -134,7 +144,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // id). The session is re-taken per unit so the Tactics editor can
     // borrow the whole view.
     ui.push_id(("team", generation, team_id), |ui| {
-        info_strip::view_title(ui, team_id, &team.name, 2.5);
+        info_strip::view_title(ui, team_id, &team.name, TITLE_GAP);
         // The fields, the ids and the button on one row, since the Tactics
         // editor below needs the height, each unit one `allocate_ui` at its
         // claim. The pane is never narrower than the row (a narrower window
@@ -183,10 +193,12 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         }
         // `item_spacing.y` trails the row and the line alike, so the
         // line's spacing is `LINE_BELOW` less one of them on each side,
-        // and the space before it makes up `LINE_ABOVE`.
+        // plus the stroke the line paints at its centre, and the space
+        // before it makes up `LINE_ABOVE`.
         let trailing = ui.spacing().item_spacing.y;
+        let stroke = ui.visuals().widgets.noninteractive.bg_stroke.width;
         ui.add_space(LINE_ABOVE - LINE_BELOW);
-        ui.add(egui::Separator::default().spacing(2.0 * (LINE_BELOW - trailing)));
+        ui.add(egui::Separator::default().spacing(2.0 * (LINE_BELOW - trailing) + stroke));
         tactics::show(ui, view);
     });
 }
@@ -243,7 +255,7 @@ fn name_pair(
     // (the draft's `#team-name`) whatever the wrapped row offers it.
     let response = ui.add_sized(
         [140.0, ui.spacing().interact_size.y],
-        egui::TextEdit::singleline(&mut name).desired_width(140.0),
+        text_box(egui::TextEdit::singleline(&mut name).desired_width(140.0)),
     );
     if response.changed() && team_text_fits(version, TeamText::Name, &name) {
         edit_team(session, team_id, response.id.value(), |team| {
@@ -271,9 +283,11 @@ fn short_pair(
     // `maxlength: 3`: a fourth character never enters the box.
     let response = ui.add_sized(
         [40.0, ui.spacing().interact_size.y],
-        egui::TextEdit::singleline(&mut short)
-            .desired_width(40.0)
-            .char_limit(3),
+        text_box(
+            egui::TextEdit::singleline(&mut short)
+                .desired_width(40.0)
+                .char_limit(3),
+        ),
     );
     if response.changed() {
         let upper = short.to_uppercase();

@@ -1142,7 +1142,9 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
         (canvas.x0 - 1.0 - pitch_left).abs() <= 1.0,
         "the pitch's box left 10 past the settings column (canvas {canvas:?})"
     );
-    let assigns_left = pitch_left + f64::from(team_widgets::pitch::PITCH_BOX.x) + 10.0;
+    // The assignments' column starts 10 past the pitch's 320-point track,
+    // which the pitch's border overflows.
+    let assigns_left = pitch_left + 320.0 + 10.0;
     let pane_right = f64::from(DEFAULT_PANE.x - 2.0 * PANEL_MARGIN);
     let assigns = box_at(&rects, assigns_left, 1.0);
     assert!(
@@ -1181,7 +1183,8 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
     // The bars are the draft's `.tacbar`, 23 points tall above row 2
     // (the preset selector's 3-point margins round its 17), their widgets
     // centred in it, and row 2's cells start ROW_GAP (6) below the bar
-    // (the Formation settings box's top), 8.5 below the buttons' bottom.
+    // (the Formation settings box's top), 9 below the 17-point choices'
+    // bottom.
     let bar = 23.0;
     let row2_top = f64::from(box_at(&rects, settings_left, 1.0).min.y);
     let preset = nodes
@@ -1197,8 +1200,8 @@ fn the_tactics_editor_is_one_grid_at_the_default_pane() {
     }
     let bars_bottom = two.bounds().expect("bounds").y1;
     assert!(
-        (row2_top - (bars_bottom + 8.5)).abs() <= 0.5,
-        "row 2 starts 8.5 below the bars' buttons ({row2_top} vs the buttons' bottom {bars_bottom})"
+        (row2_top - (bars_bottom + 9.0)).abs() <= 0.5,
+        "row 2 starts 9 below the bars' choices ({row2_top} vs the choices' bottom {bars_bottom})"
     );
 
     // Row 3's tops 6 under row 2's bottom: row 2's bottom is the deepest
@@ -1268,7 +1271,9 @@ fn the_two_panels_frames_are_level_with_the_pitchs() {
     let rects = stroked_rects(&shapes, 60.0);
     let settings_left = label_bounds(&nodes, "Formation settings").x0 - 7.0;
     let pitch_left = settings_left + 422.0 + 10.0;
-    let assigns_left = pitch_left + f64::from(team_widgets::pitch::PITCH_BOX.x) + 10.0;
+    // The assignments' column starts 10 past the pitch's 320-point track,
+    // which the pitch's border overflows.
+    let assigns_left = pitch_left + 320.0 + 10.0;
     let settings = box_at(&rects, settings_left, 1.0);
     let pitch_box = box_at(&rects, pitch_left, 1.0);
     let assigns = box_at(&rects, assigns_left, 1.0);
@@ -1383,7 +1388,9 @@ fn the_tactics_blocks_stand_where_the_drafts_do_from_the_first_control() {
     let rects = stroked_rects(&shapes, 60.0);
     let settings_left = label_bounds(&nodes, "Formation settings").x0 - 7.0;
     let pitch_left = settings_left + 422.0 + 10.0;
-    let assigns_left = pitch_left + f64::from(team_widgets::pitch::PITCH_BOX.x) + 10.0;
+    // The assignments' column starts 10 past the pitch's 320-point track,
+    // which the pitch's border overflows.
+    let assigns_left = pitch_left + 320.0 + 10.0;
     let column = |left: f64| -> Vec<egui::Rect> {
         rects
             .iter()
@@ -1434,6 +1441,118 @@ fn the_tactics_blocks_stand_where_the_drafts_do_from_the_first_control() {
         }
     }
     assert!(misfits.is_empty(), "{}", misfits.join("\n"));
+}
+
+// The bars' items stand where the draft's do (the draft at 1280 x 780,
+// PES 21 save, team 701), x in the client less the 56-point rail the pane
+// starts after: the preset and formation choices padded 5 across and 2
+// apart (the draft's `.sel`s in a `gap: 2px` row), the bars' other items 8
+// apart, and the assignments' column 10 past the pitch's 320-point track,
+// which the pitch's border overflows.
+#[test]
+fn the_tactics_bars_items_stand_where_the_drafts_do() {
+    let path = fixture(PesVersion::Pes21, "tactics_bar_items");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    open_team_view(&mut window, &mut view, 701);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    let rail = 1280.0 - f64::from(DEFAULT_PANE.x);
+    let items: [(&str, accesskit::Rect, f64, Option<f64>); 10] = [
+        ("1", button_bounds(&nodes, "1"), 372.48, Some(17.13)),
+        ("2", button_bounds(&nodes, "2"), 391.61, Some(17.13)),
+        ("3", button_bounds(&nodes, "3"), 410.73, Some(17.13)),
+        (
+            "Fluid formation",
+            check_bounds(&nodes, "Fluid formation"),
+            435.86,
+            None,
+        ),
+        (
+            "Kick-off",
+            button_bounds(&nodes, "Kick-off"),
+            767.0,
+            Some(52.92),
+        ),
+        (
+            "In-possession",
+            button_bounds(&nodes, "In-possession"),
+            821.92,
+            Some(88.5),
+        ),
+        (
+            "Out-of-possession",
+            button_bounds(&nodes, "Out-of-possession"),
+            912.42,
+            Some(113.77),
+        ),
+        (
+            "the formations' Copy/swap",
+            copy_swap_bounds(&nodes)[1],
+            1034.19,
+            None,
+        ),
+        (
+            "Scroll names",
+            check_bounds(&nodes, "Scroll names"),
+            1127.55,
+            None,
+        ),
+        (
+            "Player assignments",
+            label_bounds(&nodes, "Player assignments"),
+            1104.0,
+            None,
+        ),
+    ];
+    // Every item's misfit at once, so a failure shows the whole table.
+    let mut misfits = Vec::new();
+    for (item, bounds, draft_x, draft_width) in items {
+        let x = bounds.x0 + rail;
+        if (x - draft_x).abs() > 1.0 {
+            misfits.push(format!("{item} stands at {draft_x}, got {x}"));
+        }
+        let width = bounds.x1 - bounds.x0;
+        if let Some(draft_width) = draft_width
+            && (width - draft_width).abs() > 1.0
+        {
+            misfits.push(format!("{item} is {draft_width} wide, got {width}"));
+        }
+    }
+    assert!(misfits.is_empty(), "{}", misfits.join("\n"));
+}
+
+/// The bounds of the Button node labelled `label`.
+fn button_bounds(nodes: &[accesskit::Node], label: &str) -> accesskit::Rect {
+    node_labeled(nodes, Role::Button, label)
+        .bounds()
+        .expect("bounds")
+}
+
+/// The bounds of the CheckBox node labelled `label`.
+fn check_bounds(nodes: &[accesskit::Node], label: &str) -> accesskit::Rect {
+    node_labeled(nodes, Role::CheckBox, label)
+        .bounds()
+        .expect("bounds")
+}
+
+/// The two Copy/swap menu buttons' bounds, the preset bar's then the
+/// formation bar's.
+fn copy_swap_bounds(nodes: &[accesskit::Node]) -> Vec<accesskit::Rect> {
+    let mut menus: Vec<accesskit::Rect> = nodes
+        .iter()
+        .filter(|node| {
+            node.role() == Role::Button
+                && node
+                    .label()
+                    .is_some_and(|label| label.starts_with("Copy/swap"))
+        })
+        .filter_map(accesskit::Node::bounds)
+        .collect();
+    menus.sort_by(|a, b| a.x0.total_cmp(&b.x0));
+    assert_eq!(menus.len(), 2, "the two bars' Copy/swap menus ({menus:?})");
+    menus
 }
 
 // The draft's `.rate` toggles write their field, one undo entry: a

@@ -13,7 +13,10 @@ use pes_version::PesVersion;
 use studio_core::theme::{self, Palette};
 
 use crate::names::append_name;
-use crate::tactics::{Assign, FieldedMark, OpenSlot, RosterRow, TacticsView, name_at, raw_name_at};
+use crate::tactics::{
+    Assign, FieldedMark, OpenSlot, RosterRow, TacticsView, bar_selector_spacing, name_at,
+    raw_name_at,
+};
 
 /// The position a marker released on the grass takes.
 mod drop_rule;
@@ -175,6 +178,7 @@ pub fn formation_selector(ui: &mut egui::Ui, tactics: &TeamTactics, view: &mut T
     let locked = lock_to_fielded(tactics, view);
     ui.add_enabled_ui(!locked, |ui| {
         ui.horizontal(|ui| {
+            bar_selector_spacing(ui);
             for (index, label) in FORMATIONS.iter().enumerate() {
                 ui.selectable_value(&mut view.formation, index, *label);
             }
