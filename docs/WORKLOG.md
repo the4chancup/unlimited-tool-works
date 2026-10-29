@@ -4694,9 +4694,13 @@ briefs, review loops, gates and mutation runs as for any step.
     folder, `tool_version`, the help pages, the launchers, the readme, `build.rs`, the release
     recipe and its test, the justfile and the scripts naming the exe or the folder; the
     `help_cli` guard widened to `UnlimitedToolWorks` and the old folder's name
-  - [ ] rn2 the drafts (the lead): `docs/prototypes/index.html`'s title, exe and folder
-    names and help text; the Ruleset editor draft's logic banner naming no product (the plan's
-    rule; it names 4cc Studio today); the other drafts' "Studio"
+  - [x] rn2 the drafts (the lead): `index.html`'s title, exe and folder names, help text
+    (`UTW.exe`, `unlimited-tool-works`) and the draft controls' "Studio"; the Ruleset editor
+    draft's file header and logic banner copied from the code's (no product named), its
+    window titled as the app's; the Export upgrader draft's sample folder; the changelog's
+    shared group `**General**` (`plans/core/distribution.md`, was `**Studio**`). The drafts'
+    code comments keep "Studio" until rn3. Files: `docs/prototypes/{index.html,
+    tools/ruleset_editor.js,tools/export_upgrader.js}`
   - [ ] rn3 the docs (the lead, after rn1 lands): every plan and spec file's title, the CLI
     examples (`UTW <tool-id> ...`), the settings folder's and the log's names, "Studio" as the
     project's name in prose; README, AGENTS, CONTRIBUTING, RUNBOOK; the glossary's "Studio"
