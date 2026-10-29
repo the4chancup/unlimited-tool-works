@@ -2814,3 +2814,5 @@ worklog passed 7,000 lines.
 - **2026-10-29** — The light theme looked at in the built window: its resting widgets keep the dark theme's contrast and its text colours read at 4.5 (ruled, 0.0.1ov11b; built in ov11c).
 - **2026-10-29** — The team view, the Tactics bars, the panes' bottom and the quick actions stand at the draft's pixels within a point (0.0.1ov2w).
 - **2026-10-29** — Every text box draws the drafts' resting border, both themes; the player view's positions grid, Skills header and Appearance header stand at the draft's pixels (0.0.1ov2x).
+- **2026-10-29** — The Save editor's detail pane ends where the draft's does, 12 points short of the window's edge, and the player list's controls stand 4 apart at the draft's tops (0.0.1ov2y).
+- **2026-10-29** — The light theme's resting widgets stand out from the panel as the dark theme's do, and the lineup lists' position codes read at 4.5 on it (0.0.1ov11c).

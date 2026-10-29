@@ -4653,9 +4653,18 @@ briefs, review loops, gates and mutation runs as for any step.
       gaps around the title fail (its toolbar test: 11 above, 12.5 below; the draft's own are
       11 and 14), so the plan wins and what is under the row stands 1 point high, inside the
       tolerance (the lowest stroke at 740 for the draft's 741)
-    - [ ] ov2y seen by ov2w, outside its brief: the detail pane's right edge at 1264 against
-      the draft's 1268, the player list's frame top at 73 against 74; measure and fix after
-      ov2x
+    - [x] ov2y seen by ov2w, outside its brief: the detail pane's right edge at 1264 against
+      the draft's 1268, the player list's frame top at 73 against 74. Brief
+      `.tmp/0_0_1ov/brief_ov2y.md`. Done 2026-10-29 (Opus, reviewed; `d27a06e9`, merge
+      `b3b89a16`): the detail frame's right margin 4 (`PANE_RIGHT_MARGIN`; with the shell's 8
+      the view ends 12 short of the window's edge, the draft's `.detail`), the list panel's
+      top margin 1 and the list column's controls 4 apart (`CONTROL_GAP`, the draft's
+      `.plist` gap), so the combo, the filter and the frame stand at the draft's 30, 52 and
+      74. The frame top was 1 point off, inside the brief's own tolerance, but fixed with a
+      0.5-point test, as the Goal named it. Left for the re-measure: the list frame's bottom
+      679 for the draft's 680 (within 1), the player view's Ability stats ending at 1244.6
+      for the draft's 1250.6 (its columns are centred between the list and the window's
+      edge, so the pane's margin does not move them)
     - [x] ov2x the player view and the text boxes against the draft, re-measured 2026-10-29
       (`rect_compare.py player`): every text box without the draft's 1-point border
       (`input[type=text]`: `border: 1px solid var(--stroke)`, radius 3; egui's resting text
@@ -4809,11 +4818,22 @@ briefs, review loops, gates and mutation runs as for any step.
       (both edit `theme.rs`). The players' name colour codes: none drawn in teams 701 and
       702 of the sandbox save, the ones captured, so not yet seen in light (they stay the
       maintainer's question once seen)
-    - [ ] ov11c the light rulings built (sidekick, after ov2x): `theme.rs`'s light widget
+    - [x] ov11c the light rulings built (sidekick, after ov2x): `theme.rs`'s light widget
       states (resting 201, hovered 186, pressed 208, open 223), the palette's four lineup
       list colours (dark: the pitch's; light: `#847200`, `#007d99`, `#2f8314`, `#d92464`)
-      drawn by `team_widgets` `pitch/lineup.rs`, tests of each value's contrast; then the
-      light captures again
+      drawn by `team_widgets` `pitch/lineup.rs`, tests of each value's contrast. Brief
+      `.tmp/0_0_1ov/brief_ov11c.md`. Done 2026-10-29 (Opus, reviewed; `b2089e48`, merge
+      `7f331e33`): `Palette`'s `lineup_keeper`, `_defender`, `_midfielder`, `_forward`,
+      picked by `lineup_colour` (the pitch's `position_colour` and it share
+      `group_colour`); tests: each light fill within 0.05 of the dark one's contrast, each
+      light lineup colour at 4.5 to 4.7 on grey 248, every row's code in its lineup colour
+      on both themes; look `.tmp/ov11c/look_light.png` in the worktree (the resting
+      controls stand out, the codes read). Seen and kept: the open state's `bg_fill` stays
+      220 (open combos and menu buttons fill with `weak_bg_fill`); the panel's grey text on
+      a hovered row's 186 reads at 4.15 (the dark theme's 2.8 there); a negative cards
+      count's red on the resting 201 at 2.41 (the dark's 2.76); a position past the table
+      stays white in the lists (corrupt data only). The light captures again come with the
+      release re-measure
   - [x] ov12 the Tactics popover's X and Y as steppers (DECISIONS "The Tactics popover's X
     and Y step by arrows inside the number box's width" and "The popover's stepper arrows
     take clicks, not the keyboard's focus"; `plans/save_editor.md`, the Tactics editor's
