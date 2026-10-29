@@ -400,7 +400,7 @@
   :is(label.cb:hover > input, input:hover)[type=checkbox]:not(:disabled) { border-radius: 3px; }
   :is(label.cb:hover > input, input:hover)[type=checkbox]:checked:not(:disabled) { background-color: var(--sel-bg); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpolyline points='3,7 7,11 11,3' fill='none' stroke='%23c0deff' stroke-width='2'/%3E%3C/svg%3E"); }
   :is(label.cb:hover > input, input:hover)[type=radio]:checked:not(:disabled) { background-color: var(--sel-bg); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Ccircle cx='7' cy='7' r='2.667' fill='%23c0deff'/%3E%3C/svg%3E"); }
-  label.cb:active:not(:has(:disabled)) { color: #fff; }
+  label.cb:active:not(:has(:disabled)) { color: var(--strong); }
   :is(label.cb:active > input, input:active):is([type=checkbox], [type=radio]):not(:disabled) {
     background-color: var(--active); box-shadow: inset 0 0 0 1px #fff; border-radius: 2px; }
   :is(label.cb:active > input, input:active)[type=radio]:not(:disabled) { border-radius: 50%; }

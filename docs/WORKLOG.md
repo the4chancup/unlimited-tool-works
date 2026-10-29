@@ -1864,8 +1864,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               `player_list.rs` `CONTROL_GAP`, `quick_actions.rs` `COLUMN_GAP` (egui's 8),
               `studio_core` sidebar `RAIL_GAP`; re-measured with `draft_compare.py player|team`
             - [ ] l3d3c the rest the measurement found: the Kit slots dialog's sentence and OK
-              4 and 7 points higher than the draft's; the Formation settings' rows drifting
-              to 1.5 lower in the draft (its rows 58.5 apart, the build's 58); the colour
+              4 and 7 points higher than the draft's (done, lead: the draft's sentence was a
+              `.row`, whose margins the dialog's own spacing doubled; 3 of 3 within 1 point
+              after); the Formation settings' rows drifting
+              to 1.5 lower in the draft (its rows 58.5 apart, the build's 58: both share the
+              panel's free height, `1fr`, the frames themselves within a point; accepted at 1
+              to 2, the cause of the build's 3 points less not found); the colour
               codes' grey and the black swatch's outline (QUESTIONS "The team view's colour
               codes"); a menus pass added to `draft_compare.py`
       - [ ] l4 SE-GUI-21 in the built window with the game running (lead, manual), after l2.

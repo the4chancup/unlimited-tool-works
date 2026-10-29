@@ -325,7 +325,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
 /* A clickable label: egui draws it in the resting widgets' grey, a button's text. */
 #pos-grid .plabel { margin-bottom: 2px; text-align: center; cursor: pointer; padding: 0 3px; border-radius: 2px;
   color: #b4b4b4; }
-#pos-grid .plabel:hover { background: var(--hover); color: var(--strong); }
+#pos-grid .plabel:hover { background: var(--hover); color: #f0f0f0; }
 .rate { display: inline-flex; gap: 1px; }
 .rate .sel { padding: 0 5px; }
 /* In the positions grid each grade is a square of its own, so the chosen
@@ -4243,7 +4243,7 @@ function kitSlotsTable(t) {
             onchange: e => { const v = parseInt(e.target.value, 10);
               if (!Number.isNaN(v)) { edit("kit slot binding", () => { ks.binding = v; }); render(); } } }))))), "kit-slots")
     : h("span", { class: "gate", title: "PES 17 only" },
-        h("div", { class: "row weak" }, "(this version does not store kit slots)"));
+        h("div", { class: "weak" }, "(this version does not store kit slots)"));
 }
 function dlgKitSlots() {
   dlg("kit-slots", "Kit slot assignments", kitSlotsTable(selTeam()), [button("OK", closeWindow)]);
