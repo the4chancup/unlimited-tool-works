@@ -4550,10 +4550,11 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] ov11a the palette (`plans/core/gui.md`, the Dark/light theme row): `Palette` in
       `studio_core::theme` with `DARK` and `LIGHT`, every colour constant and inline
       colour of the product code moved into it (`SUCCESS_FG`/`_LIGHT`, the pitch's,
-      the ratings' fills, `COUNT_GREY`, the boots readout, the medals, the WORK RESULT
-      name colour, the colour picker's markers...), each light value by the contrast rule;
-      `scripts/colour_literals.py` with its test, in `gates` and `gates-changed` (lead:
-      a lint). Cross-crate: after ov2e lands. ov2h's rework gives the three dark-only
+      the ratings' fills, `COUNT_GREY`, the boots readout, the medals...; the script lists
+      46 sites at `0c5277a9`), each light value by the contrast rule; measuring layouts
+      take `PLACEHOLDER`; `scripts/colour_literals.py` with its test, in `gates` and
+      `gates-changed` (lead: a lint; committed and perturbation-proven, joining the
+      gates with the migration, since it fails until then). Cross-crate: after ov2e lands. ov2h's rework gives the three dark-only
       greys `_LIGHT` twins and tests on both themes; their constants move here, the tests
       stay
     - [ ] ov11b the light theme looked at: no test or capture has ever drawn a view in it

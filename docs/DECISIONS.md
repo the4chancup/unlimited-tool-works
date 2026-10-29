@@ -13113,3 +13113,18 @@ colours (the medals', the WORK RESULT name colour's) were missed, so a rule that
 review enforces by reading leaves gaps a check does not. One struct also makes a
 colour forgotten in one theme a compile error.
 Plan: `plans/core/gui.md` (the Dark/light theme row).
+
+## 2026-10-29 — gui — What the colour-literal check lets through
+Decision: `scripts/colour_literals.py` passes, besides `theme.rs` and colours computed from
+data: `Color32::PLACEHOLDER` and `TRANSPARENT` (no colour; a layout made only to measure
+text takes `PLACEHOLDER` instead of `WHITE`); test code (a crate's `tests/`, `examples/`,
+`benches/`, a module declared under `#[cfg(test)]` and any item under it); and the colour
+picker's file in `color_tools`, named as the one exception. The previous entry's "the WORK
+RESULT name colour" was a test's expected value, not a drawn colour: the check confirms it.
+Why: a test that pins an approved value in a literal checks the palette; making it read
+the palette would let a wrong palette value pass its own test. The picker's markers are
+drawn on the colour field, which both themes share, so they have no light value, and
+`color_tools` is a leaf crate: giving it a `studio_core` dependency for two constant
+colours would invert the crates' layering, and passing them in from every caller would add
+an argument that never changes.
+Plan: `plans/core/gui.md` (the Dark/light theme row).
