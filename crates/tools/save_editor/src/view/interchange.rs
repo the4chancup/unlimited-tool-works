@@ -19,7 +19,7 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, anyhow, bail};
+use anyhow::{anyhow, bail};
 use pes_savefile::EditFile;
 use pes_savefile::file::fresh_salt;
 use pes_savefile::interchange::legacy::{read_squad, read_tactics};
@@ -581,15 +581,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 }),
             )) = &interchange.staged
             {
-                let before = session.revision();
                 session.edit_entries(import.players.clone(), vec![import.team.clone()]);
-                // `edit_entries` skips every value the save already holds, so
-                // an Apply that wrote nothing leaves the revision where it was:
-                // the Applied line then never claims an edit with no undo
-                // entry behind it.
-                if session.revision() != before {
-                    interchange.applied = Some(session.revision());
-                }
+                interchange.applied = Some(session.revision());
             }
         }
         None => {}
@@ -617,7 +610,8 @@ fn write_export(session: &Session, id: u32, export: Export, path: &Path) -> anyh
         Export::TeamToml => session.export_team(id)?.into_bytes(),
         Export::Texport => texport_bytes(session, id)?,
     };
-    std::fs::write(path, bytes).with_context(|| path.display().to_string())
+    std::fs::write(path, bytes)
+        .map_err(|error| anyhow!("{}: cannot write the file ({error})", path.display()))
 }
 
 /// Team `id` of the open save as a Texport of the save's version: the team
@@ -637,9 +631,14 @@ fn texport_bytes(session: &Session, id: u32) -> anyhow::Result<Vec<u8>> {
         })
         .collect::<anyhow::Result<Vec<&PlayerEntry>>>()?;
     // The salt's first 32 bytes become the file's key. Seeded with the
-    // team's text as well as the clock, two teams exported in one instant
-    // still get different keys, as every file the game writes has its own.
-    let salt = fresh_salt(session.export_team(id)?.as_bytes());
+    // team's and its players' ids as well as the clock, two teams exported
+    // in one instant still get different keys, as every file the game
+    // writes has its own.
+    let ids: Vec<u8> = std::iter::once(id)
+        .chain(players.iter().map(|player| player.id))
+        .flat_map(u32::to_le_bytes)
+        .collect();
+    let salt = fresh_salt(&ids);
     let texport = Texport::new(file.version(), team, &players, &salt)?;
     Ok(texport.to_bytes(&salt)?)
 }

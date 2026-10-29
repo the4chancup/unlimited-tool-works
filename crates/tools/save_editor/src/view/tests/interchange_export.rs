@@ -233,9 +233,10 @@ fn the_team_toml_written_is_the_command_lines_export() {
     assert!(view.refusal.is_none(), "no refusal");
 }
 
-/// Team `/co/` of `version`'s fixture exported as a Texport, then picked in
-/// the import half with every section chosen, which then changes nothing.
-fn texport_round_trip(version: PesVersion, test: &str) {
+/// Team `/co/` of `version`'s fixture exported as a Texport, its suggested
+/// name `suggested_name` (the fixture's short name), then picked in the
+/// import half with every section chosen, which then changes nothing.
+fn texport_round_trip(version: PesVersion, test: &str, suggested_name: &str) {
     let (mut view, mut window) = open_on(version, test, CO);
     let folder = save_folder(&view);
     let written = folder.join("panel.ted");
@@ -250,7 +251,7 @@ fn texport_round_trip(version: PesVersion, test: &str) {
     );
     assert_eq!(
         suggested,
-        folder.join("CO.ted"),
+        folder.join(suggested_name),
         "<short name>.ted beside the save"
     );
     let bytes = std::fs::read(&written).unwrap();
@@ -299,14 +300,27 @@ fn texport_round_trip(version: PesVersion, test: &str) {
 
 // SE-GUI-17
 #[test]
+fn a_pes_18_texport_reads_back_to_the_same_team() {
+    // Team 714 of the PES 18 fixture is `DIY` by its short name.
+    texport_round_trip(PesVersion::Pes18, "export_texport_18", "DIY.ted");
+}
+
+// SE-GUI-17
+#[test]
 fn a_pes_19_texport_reads_back_to_the_same_team() {
-    texport_round_trip(PesVersion::Pes19, "export_texport_19");
+    texport_round_trip(PesVersion::Pes19, "export_texport_19", "CO.ted");
+}
+
+// SE-GUI-17
+#[test]
+fn a_pes_20_texport_reads_back_to_the_same_team() {
+    texport_round_trip(PesVersion::Pes20, "export_texport_20", "CO.ted");
 }
 
 // SE-GUI-17
 #[test]
 fn a_pes_21_texport_reads_back_to_the_same_team() {
-    texport_round_trip(PesVersion::Pes21, "export_texport_21");
+    texport_round_trip(PesVersion::Pes21, "export_texport_21", "CO.ted");
 }
 
 #[test]
@@ -331,8 +345,30 @@ fn a_team_without_a_short_name_suggests_its_id_and_a_cancel_writes_nothing() {
 
     let suggested = asked.try_recv().expect("the Save dialog opened");
     assert_eq!(suggested, save_folder(&view).join("714.ted"));
+    assert!(!suggested.exists(), "no file written");
     assert!(view.notice.is_none(), "no Wrote notice");
     assert!(view.refusal.is_none(), "no refusal");
+}
+
+#[test]
+fn a_write_that_fails_is_refused_in_the_command_lines_words() {
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "export_write_fails", CO);
+    // A folder that does not exist: the write fails.
+    let written = save_folder(&view).join("missing").join("panel.toml");
+    let error = std::fs::write(&written, b"").expect_err("premise: the write fails");
+
+    export(&mut window, &mut view, "Team TOML\u{2026}", &written);
+
+    assert_eq!(
+        view.refusal
+            .as_ref()
+            .map(|refusal| (refusal.title, refusal.message.clone())),
+        Some((
+            "Cannot export the team",
+            format!("{}: cannot write the file ({error})", written.display())
+        ))
+    );
+    assert!(view.notice.is_none(), "no Wrote notice");
 }
 
 // SE-GUI-17
@@ -368,10 +404,9 @@ fn the_open_save_is_refused_as_the_destination() {
             std::fs::read(&save).unwrap() == before,
             "{label}: the save's bytes are unchanged"
         );
-        // The refusal lands inside the panel, after `refusal_dialog` ran
-        // that frame, so the modal's first drawn frame is its sizing pass;
-        // the second holds the nodes.
-        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        // The panel is drawn before the refusal's modal, so the modal's
+        // first frame is the click's own, its sizing pass; the next one
+        // holds the nodes.
         let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         let sentence = format!(
             "{}: that is the save being read, and a {format} written over it would lose it",
