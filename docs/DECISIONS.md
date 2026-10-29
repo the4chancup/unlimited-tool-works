@@ -13863,3 +13863,78 @@ from the draft on 2026-10-28 ("Set boots and gloves IDs takes 4ccEditor's layout
 same evening) and built so; the next day's one modal helper (0.0.1ov2j) gave every modal the
 draft's 360 minimum without the draft's exception, and no check measured a frame.
 Plan: `plans/core/gui.md` "Other UI components", the Modals row.
+
+## 2026-10-29 — save_editor — Stats are named as the save's PES version names them
+
+Decision: every surface that names an ability stat (the player view, the AATF rows and their
+tooltips, `check-aatf`, the Comparator and the changes lists) names it as the save's PES version
+does, from one per-version table in `pes_savefile`; a ruleset still writes the one id
+(`attacking_prowess`). This replaces the one spelling for every version the AATF rows' entry of
+the same day took.
+Why: the maintainer accepted proposal P43: a PES 2021 manager reads Offensive Awareness in his
+game, not Attacking Prowess. The table is gathered from each version's own screens, not
+inferred: the names changed in more than one release (PES 2015's Saving, PES 2016's Body
+Balance, the later Awareness names), and `pes_savefile/src/model/player.rs`'s doc comments,
+today's only record, do not say which version introduced each.
+Plan: `plans/save_editor.md` "Editing UI", the Ability stats item.
+
+## 2026-10-29 — save_editor — Before 0.0.1, only PES 2017's stat names are checked
+
+Decision: the per-version stat names land in two parts. Before 0.0.1, PES 2017's: the ids'
+title case except Header for `heading`, the one name 4ccEditor's PES 2017 labels
+(`window.cpp`'s ability statics) write differently; the maintainer confirms them in the
+final pass. After 0.0.1, every other version's, gathered from its own screens.
+Why: the maintainer: "We only need to make sure PES 17 is accurate for now" (0.0.1 is the
+Save editor for DBC, a PES 2017 cup).
+Plan: `plans/save_editor.md` "Editing UI", the Ability stats item.
+
+## 2026-10-29 — gui — The help window's paragraphs stand 8 points apart
+
+Decision: the help window adds the drafts' paragraph gap, 8 points, between a topic's
+paragraphs, which it renders one `CommonMarkViewer` each.
+Why: the maintainer found the help's text "a mess, with no newlines when needed". The
+Markdown is right (blank lines between paragraphs), but the window splits a topic at its blank
+lines so search can highlight one paragraph, and one viewer per paragraph leaves only egui's 3
+points between them. The overlay pass measured the window's frame, tree and Messages rows but
+never a topic's body (`draft_compare.py help` was never run).
+Plan: `plans/core/gui.md` "Help window", the Window bullet.
+
+## 2026-10-29 — help — Help topics in short paragraphs under subheadings, lists for parallel items
+
+Decision: the help chapters are restructured, their facts kept: one subject per paragraph,
+a subheading (a bold line of its own) per subject where a topic has several, and lists for a
+menu's entries, a dialog's options and a procedure's steps. The Save editor's chapters and
+the core ones before 0.0.1, the other tools' after it. The drafts' copies follow word for word.
+Why: the maintainer: "each paragraph is a single extremely long line, which explains multiple
+facts one after the other". The 8.29 text pass made each sentence flow but kept the chapters'
+walls of prose; a bold run-in head (`**Editing.** Click a…`) hid the subject inside its
+paragraph. A bold line rather than a Markdown heading, because the window draws a topic's
+title at heading size and a `##` inside the body would compete with it.
+Plan: `CONTRIBUTING.md` "Code style", the bullet on help topics.
+
+## 2026-10-29 — gui — The help's text wraps at 720 points
+
+Decision: a help topic's paragraphs, lists and code blocks wrap at 720 points, left in the
+pane; the Messages table keeps the pane's width.
+Why: the maintainer accepted P44 ("let's give it a try"): at the window's 90% of a 1280-point
+window a line ran about 200 characters.
+Plan: `plans/core/gui.md` "Help window", the Window bullet.
+
+## 2026-10-29 — save_editor — PES 2017's stat names, read off its Edit screen
+
+Decision: PES 2017's ability stats are the ids' title case but Header for `heading`, as
+4ccEditor's labels said; Form, Injury Resistance, Weak Foot Usage and Weak Foot Accuracy take
+the game's title case on every version (the player view's `Weak Foot: Usage` pair keeps its
+shared label), in the player view, the Comparator and the AATF rows alike.
+Why: the maintainer's captures of PES 2017's Edit screen list every stat so; the build wrote
+the four in sentence case.
+Plan: `plans/save_editor.md` "Editing UI", the Ability stats item.
+
+## 2026-10-29 — gui — The help window first opens at 1000 × 600
+
+Decision: the help window first opens at 1000 × 600 points, or at 90% of Studio's window
+where that is smaller (each side on its own), centered; before, always at 90%.
+Why: the maintainer asked for about 960 × 600 once the text wraps at 720. At 960 the
+topic's text column came out 714 wide in the drafts, 699 beside a scroll bar; 1000 holds the
+220-point tree and the 720 column with a scroll bar beside it.
+Plan: `plans/core/gui.md` "Help window", the Window bullet; ST-HELP-05.

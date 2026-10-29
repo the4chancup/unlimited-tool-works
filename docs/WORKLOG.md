@@ -2816,9 +2816,33 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           preview's undrawn fields in words, the team file notes in the catalog's member text
           and its section boxes capitalized, the badge's and quick actions' refusals, the
           card and playing-style labels' spellings (`GK Long Throw`, `Classic No. 10`)
+      - [ ] d3 the stats named as each version names them (P43, accepted 2026-10-29; DECISIONS
+        "Stats are named as the save's PES version names them", "Before 0.0.1, only PES
+        2017's stat names are checked"):
+        - [ ] d3a before 0.0.1, after d1a (drafted 2026-10-29, the drafts' `statLabel`; DECISIONS
+          "PES 2017's stat names, read off its Edit screen"): a stat-name function in
+          `pes_savefile` taking the version, PES 2017's `heading` Header, and Form, Injury
+          Resistance, Weak Foot Usage, Weak Foot Accuracy in title case, read by the player
+          view, the AATF rows, `check-aatf`, the Comparator and the changes lists → verify:
+          its test per stat for PES 2017 against the maintainer's captures (2026-10-29, the
+          27 names of the Edit screen's ability list)
+        - [ ] d3b after 0.0.1: every other version's names, gathered from each game (the
+          player.rs doc comments name no versions; Marco's RE reports for PES 2021, the
+          games on F: for the rest) → verify: a test per version against the gathered names
       - [ ] d2 after 0.1.0, with Phase 20 (the maintainer, 2026-10-29): the Ruleset editor
         shows the game's names (Attacking Prowess) and writes the rules-file ids
         (`attacking_prowess`)
+    - [ ] e the help chapters' shape (the maintainer, 2026-10-29: "each paragraph is a single
+      extremely long line, which explains multiple facts one after the other"; DECISIONS "Help
+      topics in short paragraphs under subheadings, lists for parallel items", CONTRIBUTING's
+      bullet): every topic restructured, its facts kept, each change read by the lead line by
+      line (a fact lost or changed is a finding)
+      - [ ] e1 before 0.0.1: the Save editor's eight chapters, the two core ones
+        (`studio_core/src/help/core/`), and the drafts' copies in `docs/prototypes/index.html`
+        → verify: `studio`'s help tests and the help export; every topic read in the built
+        window
+      - [ ] e2 after 0.0.1: the Team compiler's, the Export upgrader's and the other tools'
+        chapters
   - [ ] 8.21 the app's font in the drafts (`core/gui.md` "The host's other review aids"; after
     8.9f4e picks the bundled font): `@font-face` rules at egui's sizes → verify: one width
     constant's row (`TOP_ROW_ONE_LINE`) measured in the draft and in the built window agree
@@ -4902,6 +4926,18 @@ briefs, review loops, gates and mutation runs as for any step.
       (it matches by text) → verify: a headless test of the dialog's width against its
       groups' (red at HEAD); `draft_compare.py --modal` pairs the dialog's frame, run over
       every modal in the built window
+    - [ ] ov2j3 the help window's paragraphs 8 apart (the maintainer, 2026-10-29: "no
+      newlines when needed"; DECISIONS "The help window's paragraphs stand 8 points
+      apart"): one viewer per paragraph left egui's 3 between them; the overlay pass never
+      measured a topic's body → verify: a headless test of two paragraphs' gap (red at
+      HEAD); `draft_compare.py help --modal .help-win` in the built-window check
+    - [ ] ov2j4 the help's text wrapped at 720 points (P44, accepted 2026-10-29; DECISIONS
+      "The help's text wraps at 720 points"; drafted, `.help-topic` `max-width`) → verify: a
+      headless test of a long paragraph's width; the Messages table at the pane's width
+    - [ ] ov2j5 the help window first opened at 1000 × 600, or 90% of Studio's window where
+      smaller (the maintainer, 2026-10-29; DECISIONS "The help window first opens at 1000 ×
+      600"; drafted, `drawHelp`) → verify: ST-HELP-05's test at 1280 × 800 (red at HEAD) and
+      1037 × 648
     - [x] ov2k the form grids' rows 22 apart, the draft's `table.grid` (its `td` padded 2 above
       and below an 18-point control), where egui's `Grid` spaces them by `item_spacing.y`, 3:
       each row lands a point higher than the last, 25 by the Ability stats' last row, 17 by

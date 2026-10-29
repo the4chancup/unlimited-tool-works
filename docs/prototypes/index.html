@@ -535,6 +535,9 @@
   .help-win .help-topic { flex: 1; overflow: auto; padding: 4px 12px 30px; }
   .help-win .help-topic h3 { font: 400 14px/1.2 var(--font-body); color: var(--strong); margin: 10px 0 4px; }
   .help-win .help-topic p { margin: 4px 0 8px; }
+  /* A topic's text wraps at a reading width (P44): past about 110 characters a line's end
+     loses the eye the next line's start. The Messages table keeps the pane's width. */
+  .help-win .help-topic p, .help-win .help-topic pre, .help-win .help-topic .ul { max-width: 720px; }
   .help-win .help-res .sel { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .help-win .hl { background: var(--changed); }
   .pipe { height: 100%; display: flex; flex-direction: column; min-height: 0; }
@@ -1344,9 +1347,10 @@ function md(body, hlPara) {
     if (b.startsWith("## ")) return h("h3", { class: cls }, mdInline(b.slice(3)));
     if (b.startsWith("```"))
       return h("pre", { class: "mono" + (cls ? " " + cls : "") }, b.split("\n").slice(1, -1).join("\n"));
+    // A list: each item from its "- " to the next, its wrapped lines joined.
     if (b.startsWith("- "))
-      return h("div", { class: cls }, b.split("\n").map(l =>
-        l.startsWith("- ") ? h("div", {}, "• ", mdInline(l.slice(2))) : h("div", {}, mdInline(l))));
+      return h("div", { class: "ul" + (cls ? " " + cls : "") }, b.split(/\n(?=- )/).map(item =>
+        h("div", {}, "• ", mdInline(item.slice(2).replaceAll("\n", " ").replace(/ +/g, " ")))));
     return h("p", { class: cls }, mdInline(b.replaceAll("\n", " ")));
   });
 }
@@ -1362,15 +1366,16 @@ function drawHelp() {
   const oldInput = layer.querySelector(".help-search");
   const hadFocus = oldInput && document.activeElement === oldInput;
   const caret = hadFocus ? oldInput.selectionStart : 0;
-  // Opened first at 90% of Studio's window, centered in it; then where the member left
-  // it (plans/core/gui.md "Help window").
+  // Opened first at 1000 x 600, or 90% of Studio's window where that is smaller, centered
+  // in it; then where the member left it (plans/core/gui.md "Help window"). 1000 holds the
+  // tree and the 720 text column with a scroll bar beside it.
   // The client area is #win-body: #win also holds the drawn title bar, which egui's
   // window never covers, so measured on #win the window came out 5 taller and 23 higher.
   if (!S.helpWindow) {
     const area = document.getElementById("win-body");
     const areaW = area.getBoundingClientRect().width / winScale() - SBW;
     const areaH = area.getBoundingClientRect().height / winScale();
-    const w = Math.round(areaW * 0.9), hgt = Math.round(areaH * 0.9);
+    const w = Math.min(1000, Math.round(areaW * 0.9)), hgt = Math.min(600, Math.round(areaH * 0.9));
     S.helpWindow = { x: area.offsetLeft + Math.round((areaW - w) / 2),
       y: area.offsetTop + Math.round((areaH - hgt) / 2), w, h: hgt };
   }

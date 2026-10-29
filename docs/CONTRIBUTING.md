@@ -171,6 +171,13 @@ exist yet (every Phase 2 crate), the plan's data-shape rules stand in for one.
   save is from PES 2017, so the editor will keep treating it as a PES 2017 save." A member reads the
   dry version twice and still wonders what to do; the review of a change that adds such text
   reads each new line aloud.
+- **A help topic is read in pieces, one subject each**: a paragraph holds one subject in a
+  few sentences, a topic with several subjects gives each its own subheading (a line of bold
+  text alone, `**Teams and players**`, which the window and the drafts draw alike), and
+  parallel items (a menu's entries, a dialog's options, the steps of a procedure) are a list,
+  one item per line. A paragraph that runs through five facts one after the other reads as one
+  long line in the help window's wide pane, and a member scanning for one fact finds none
+  (the maintainer, of the Save editor's chapters).
 - **No em dashes in text a user reads**: the README, the help chapters, message catalog text,
   UI strings, the comments injected into `settings.toml`/`config.toml`/`materials.toml`, the Team
   creator's `README.txt`. Use a comma, a colon, parentheses or a new sentence. The character has

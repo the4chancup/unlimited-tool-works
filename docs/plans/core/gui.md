@@ -392,9 +392,13 @@ Like the settings menu it is **assembled from the tools**, not written centrally
 - **Window.** An in-app egui window — non-modal and resizable, chapter tree left, rendered topic
   right, the search box above both. The tree is 220 points wide, its padding included (the
   drafts' `.help-tree`), so the longest chapter and topic names (`First run and data
-  location`, `Running from a terminal`) show whole. It first opens at 90% of Studio's window (its whole frame,
-  title bar included, in whole points), centered in it, so it fits whatever size that window
-  has (`spec/core/gui.md` "Shell layout", "The window's size"), rather than at a fixed size a small window cuts off. Its position and size hold while the program runs (egui
+  location`, `Running from a terminal`) show whole. It first opens at 1000 × 600 points (its
+  whole frame, title bar included), or, each side on its own, at 90% of Studio's window in
+  whole points where that is smaller, centered in it. 1000 holds the tree and the topic's
+  720-point text column (below) with a scroll bar beside it, where 90% of the default 1280 × 800
+  window drew a pane far wider than the text it holds; the 90% cap keeps it inside whatever
+  size Studio's window has (`spec/core/gui.md` "Shell layout", "The window's size"), where a
+  small window would cut off a fixed size. Its position and size hold while the program runs (egui
   keeps a window's rectangle by its id, across a close and a reopen), not across restarts: a
   settings field written at every drag's end is a settings save per move for a reader opened
   now and then. Opening it closes a shell modal (the settings menu, the About popup), which
@@ -406,6 +410,13 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   fallback. Rendering is
   `egui_commonmark` (CommonMark subset with tables, code blocks and links); a hand-rolled
   renderer was considered and rejected as a permanent maintenance item for a solved problem.
+  A topic's paragraphs stand 8 points apart (the drafts' `.help-topic p` margin): the
+  window renders each paragraph on its own, so search can highlight it, and with only egui's
+  3 points of item spacing between them a paragraph break read as a line break.
+  A topic's paragraphs, lists and code blocks wrap at 720 points (about 110 characters at
+  the body size), left in the pane, where the pane's width made a line run about 200
+  characters and the eye lose the next line's start; the Messages table keeps the pane's
+  width (the drafts' `.help-topic` `max-width`).
 - **CLI equivalence.** `UTW help [tool-id] [topic]` prints the Markdown to stdout, and
   `UTW help --export <dir>` writes every chapter out as `.md` files — the wiki and the release
   page get the same text with no second source, and the `--export` output is what the release
@@ -1285,8 +1296,8 @@ ST-HELP-04  GIVEN the built binary
                  topic
 ST-HELP-05  GIVEN Studio's window at 1037 × 648 points
             WHEN the help window opens for the first time
-            THEN its rectangle is 933 × 583 points (90% of the window's),
-                 centered in the window; GIVEN the window at 1280 × 800 THEN 1152 × 720
+            THEN its rectangle is 933 × 583 points (90% of the window's, under 1000 × 600),
+                 centered in the window; GIVEN the window at 1280 × 800 THEN 1000 × 600
 ```
 
 **Log panel widget**
