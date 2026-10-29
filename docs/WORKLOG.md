@@ -5019,7 +5019,13 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] f1c the maintainer's final pass over the built app's UI, before anything is frozen
     (the maintainer, 2026-10-28: "wait for one final pass of the UI from me, before it goes
     golden"), once every UI step of 0.0.1 has landed (w4b, w6b, z2, y4e, y5b, y6b, y7b and the
-    lead's built-window checks, which ask before they take focus). Before it: the sidebar's
+    lead's built-window checks, which ask before they take focus). The candidate for it
+    staged 2026-10-29 (`QUESTIONS.md` "The final pass over the built app's UI"): branch
+    `release/0.0.1-candidate`, the bundle unpacked by `.tmp/0_0_1ov/make_candidate.py` at
+    `4cc-studio-temp/candidate-0.0.1/` (its file set checked against `release.py`'s
+    `expected_entries`; a copy started and closed cleanly). Work goes on past it meanwhile
+    (worklog "Next"); a change the pass asks for lands on main and a new candidate is staged.
+    Before it: the sidebar's
     flicker on open, which the maintainer saw when the collapsed sidebar expands under a
     hovering pointer (2026-10-28): fixed by the lead the same day. The rail's widgets left on
     the opening frame while egui faded the overlay `Area` in over its 0.2 s `animation_time`
