@@ -1780,8 +1780,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           command line's words, Apply through `edit_entries`), `Option<Panel>` for the three
           floating panels, the Team menu's entry; 13 view tests (`view/tests/interchange.rs`,
           the base-copy own-id test the lead's, from S1c-1). Versions read `PES 2021` as the
-          rest of the app (the draft followed). Open: the release-build check on the real
-          save
+          rest of the app (the draft followed). Release build checked on the real PES 21
+          save, read-only: a PES 21 Team TOML, a real `.4ccs` (98HU's) with its pairing, a
+          PES 17 Team TOML with its notes (`.tmp/8_9k5/built/b2_0*.png`). Open: the notes in
+          a scroll area (expanded, they push Apply off the window; rulings L1), with the
+          SWE-2 round's rework
       - [ ] k5c its export half (SE-GUI-16's export, SE-GUI-17's export): Team TOML equal to
         the CLI's export; Texport for PES 18-21 read back to the same team values; disabled on
         PES 15-17 with the missing template in its tooltip
