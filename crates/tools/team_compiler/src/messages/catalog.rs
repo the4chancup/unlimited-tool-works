@@ -817,7 +817,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         "savefile_skipped_pes_running",
         CatalogSeverity::Warning,
         r#"Savefile changes are pending and the PES version the run compiled for is running, but `compile` was not given `--edit-mode-closed` (another version running does not count). The line names the game and the flag."#,
-        r#"The save step is skipped, because the game writes the save it holds over the file when its Edit mode closes. Close the game's Edit mode, then compile again with `--edit-mode-closed`. The save is then written, and Edit mode's Load reads it in without restarting the game."#,
+        r#"The save step is skipped, because the game writes the save it holds over the file when you leave its Edit mode after changing anything there. Close the game's Edit mode, then compile again with `--edit-mode-closed`. The save is then written, and opening Edit mode reads it in without restarting the game."#,
     ),
     (
         "savefile_write_failed",

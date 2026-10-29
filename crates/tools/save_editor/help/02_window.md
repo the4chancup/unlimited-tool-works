@@ -88,10 +88,10 @@ they are as you left them the next time the editor is opened.
 file it replaces is kept once as a `.bak` copy). **Save as** writes them to a file you
 pick instead, and the editor then carries on with that file, so the next Save writes
 there too. A file it replaces is kept as a `.bak` copy as well. While the save's own PES
-version is running, saving first asks you to close the game's Edit mode if it is open. The game
-writes its own copy of the save when you leave Edit mode, so a save written while it is
-open would be lost. After saving, use the Load option in Edit mode to see the changes in
-game. A PES of another version asks nothing.
+version is running, saving first shows how to keep the save: if the game's Edit mode is
+open, use its Data Management > Load after saving, before you leave Edit mode, since leaving
+it after changing anything there writes the game's own copy over your save; if Edit mode is
+closed, the changes show when you open it. A PES of another version asks nothing.
 
 **Unsaved changes.** Closing the window or opening another save with unsaved edits asks
 first, over a table of each changed field with its value in the file and in the editor.

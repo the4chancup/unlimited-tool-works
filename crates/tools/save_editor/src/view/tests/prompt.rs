@@ -697,6 +697,37 @@ fn the_prompts_save_runs_the_window_save_first() {
     assert!(view.request_close, "the close is asked");
 }
 
+// SE-GUI-21's window rule: the running-game question says how to keep
+// the write, Edit mode open or closed.
+#[test]
+fn the_question_says_how_to_keep_the_write() {
+    let path = fixture(PesVersion::Pes21, "question_text");
+    let mut view = dirty_view(&path);
+    view.edit_mode_question = Some(EditModeQuestion {
+        game: PesVersion::Pes21,
+        target: path,
+    });
+    let mut window = Headless::new();
+    let pairs = question_nodes_with(&mut window, &mut view, &|| Vec::new());
+    let nodes: Vec<accesskit::Node> = pairs.into_iter().map(|(_, node)| node).collect();
+    assert!(
+        label_value(
+            &nodes,
+            "If the game's Edit mode is open, use its Data Management > Load after saving, \
+             before you leave Edit mode: leaving it after changing anything there writes the \
+             game's own copy over this save."
+        ),
+        "the open Edit mode's sentence"
+    );
+    assert!(
+        label_value(
+            &nodes,
+            "If Edit mode is closed, the changes show when you open it."
+        ),
+        "the closed Edit mode's sentence"
+    );
+}
+
 // SE-GUI-05: a window close asked while the Open prompt waits retargets
 // it — the answer goes toward the close, the picker never runs.
 #[test]

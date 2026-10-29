@@ -495,8 +495,9 @@ impl Session {
     /// writes, and the current model the baseline. `edit_mode_closed` is
     /// the member's answer to the running-game question: refused only when
     /// the save's own PES runs and the answer is `false` (the game writes
-    /// its save back when Edit mode closes, over ours); a game of another
-    /// version does not block it.
+    /// its save back over ours when the member leaves Edit mode after
+    /// changing anything there); a game of another version does not block
+    /// it.
     pub(crate) fn save_to(
         &mut self,
         path: &Path,
@@ -684,8 +685,9 @@ fn baselines(file: &EditFile) -> (HashMap<u32, PlayerEntry>, HashMap<u32, TeamEn
 
 /// The refusal a writing operation makes while the PES of `version` runs and
 /// `edit_mode_closed`, the member's word that the game's Edit mode is closed,
-/// is not given: the game writes the save it holds over the file when Edit
-/// mode closes, so a write made while it is open is lost. A game of another
+/// is not given: the game writes the save it holds over the file when the
+/// member leaves Edit mode after changing anything there, so a write made
+/// while it is open is lost unless Edit mode's Load reads it in first. A game of another
 /// version never writes this save, so it does not refuse
 /// (`spec/save_editor.md` "CLI").
 pub(crate) fn refuse_while_running(
@@ -698,10 +700,10 @@ pub(crate) fn refuse_while_running(
     }
     match running.iter().find(|game| game.version == version) {
         Some(game) => Err(anyhow!(
-            "{} is running: the game writes the save it holds over the file when its Edit \
-             mode closes, so nothing was written. Close the game's Edit mode, then run the \
-             command again with `--edit-mode-closed`. The save is then written, and Edit \
-             mode's Load reads it in without restarting the game.",
+            "{} is running: the game writes the save it holds over the file when you leave \
+             its Edit mode after changing anything there, so nothing was written. Close the \
+             game's Edit mode, then run the command again with `--edit-mode-closed`. The save \
+             is then written, and opening Edit mode reads it in without restarting the game.",
             game.version
         )),
         None => Ok(()),

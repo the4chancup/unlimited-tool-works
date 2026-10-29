@@ -944,12 +944,13 @@ last when the game has more than one account folder (the note `savefile_autodete
 names it). Give a path yourself to use another save, a cup's template save for one.
 
 While that PES version is running, the game writes the save it holds over the file when you
-leave its Edit mode, so a save written while Edit mode is open is lost then. `compile`
-therefore writes the save while the game runs only when you add `--edit-mode-closed`, which
-says you have closed Edit mode. Without it, the save step is skipped with the warning
-`savefile_skipped_pes_running`, which names the game and the flag: close Edit mode, then
-compile again with `--edit-mode-closed`. The save is then written, and Edit mode's Load reads
-it in without restarting the game. A PES of another version running does not count. When the
+leave its Edit mode after changing anything there, so a save written while Edit mode is open
+is lost then unless Edit mode's Load reads it in first. `compile` therefore writes the save
+while the game runs only when you add `--edit-mode-closed`, which says you have closed Edit
+mode. Without it, the save step is skipped with the warning `savefile_skipped_pes_running`,
+which names the game and the flag: close Edit mode, then compile again with
+`--edit-mode-closed`. The save is then written, and opening Edit mode reads it in without
+restarting the game. A PES of another version running does not count. When the
 save is written, the one you had is kept beside it with `.bak` added to its name
 (`EDIT00000000.bak`). A save that cannot be read, is for a PES version other than the one
 compiled for, or cannot take the patch or be written (`savefile_invalid`,
