@@ -38,6 +38,10 @@ const ENTRY_HEIGHT: f32 = 30.0;
 const HOVER_DELAY: f64 = 0.15;
 /// The accent bar on the active entry's left edge (draft: 3 px).
 const ACTIVE_BAR_WIDTH: f32 = 3.0;
+/// The radius of the accent bar's two left corners: the draft entry's 2 px
+/// corner radius, which its left border follows. The right corners stay square
+/// against the row's fill.
+const ACTIVE_BAR_CORNER: u8 = 2;
 /// Seconds between running-PES polls of the auto-switch.
 const PES_POLL_SECONDS: f64 = 5.0;
 
@@ -736,7 +740,12 @@ fn entry_row(
     if active && enabled {
         ui.painter().rect_filled(
             egui::Rect::from_min_size(rect.min, egui::vec2(ACTIVE_BAR_WIDTH, rect.height())),
-            0.0,
+            egui::CornerRadius {
+                nw: ACTIVE_BAR_CORNER,
+                ne: 0,
+                sw: ACTIVE_BAR_CORNER,
+                se: 0,
+            },
             ui.visuals().selection.stroke.color,
         );
     }

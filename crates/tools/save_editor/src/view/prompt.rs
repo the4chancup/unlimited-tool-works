@@ -14,7 +14,9 @@ use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_savefile::ops::compare::{PlayerDiff, TeamDiff};
 use pes_savefile::schema::fields::RosterField;
 use studio_core::RunningPes;
-use studio_core::widgets::{FORM_ROW_SPACING, modal, modal_buttons, modal_frame};
+use studio_core::widgets::{
+    FORM_ROW_SPACING, modal, modal_buttons, modal_frame, modal_sentence_gap,
+};
 use team_widgets::tactics::RosterRow;
 
 use crate::session::Session;
@@ -410,6 +412,7 @@ pub(super) fn edit_mode_dialog(
              copy of the save when you leave Edit mode, so a save written while it is open \
              would be lost.",
         );
+        modal_sentence_gap(ui);
         ui.label("After saving, use the Load option in Edit mode to see the changes in game.");
         modal_buttons(ui, |ui| {
             if ui.button("Cancel").clicked() {
