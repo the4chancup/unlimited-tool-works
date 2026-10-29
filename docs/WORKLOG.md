@@ -4564,6 +4564,14 @@ briefs, review loops, gates and mutation runs as for any step.
       palette. Known: the members' own name colour codes, chosen for the game's dark
       screens (theirs, not ours to change: whether a light theme draws names on a dark
       chip or outlines them is a question for the maintainer once seen)
+  - [ ] ov12 the Tactics popover's X and Y as steppers (DECISIONS "The Tactics popover's X
+    and Y step by arrows inside the number box's width"; `plans/save_editor.md`, the Tactics
+    editor's sentence starting "X (0 to 104) and Y (0 to 48) are steppers"; draft
+    `slotPopover`'s `num` and the `.spin` rules; `⏴` and `⏵` already in the symbols font):
+    `team_widgets` `pitch/popover.rs` and its tests (each arrow steps by one and applies the
+    drop rule, the clamp of a stored spot past the range, the disabled ends, the keeper's
+    four disabled, the joined box 52 wide with arrows 12 and the number 28), `⏴` and `⏵` in
+    `theme.rs`' symbols test. After ov2e lands, which touches the popover's fields
   - [ ] ov3 a general overlap test: a headless pass over every modal and view failing when two
     widgets' rectangles intersect (catches collisions, not a draft mismatch: ov1 does that)
   - [ ] ov4 8.20's host control (lead, drafts): the captures in

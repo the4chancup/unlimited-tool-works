@@ -445,6 +445,13 @@ table.grid.stats-grid td { padding: 2px 6px; }
    the two fill the popover, whose width its other rows set. */
 .tpopover .pos-row select { width: 0; flex: 1 1 auto; }
 .tpopover .pos-row button { flex: none; }
+/* A stepper: the arrows and the number joined into one 52-wide box, the
+   number box's width, the arrows taking 12 each from it; "104" is 21 wide. */
+.tpopover .spin { display: inline-flex; vertical-align: middle; }
+.tpopover .spin input[type=number] { width: 28px; padding: 1px 0; border-radius: 0; }
+.tpopover .spin button { width: 12px; padding: 1px 0; border-radius: 0; }
+.tpopover .spin button:first-child { border-radius: 2px 0 0 2px; }
+.tpopover .spin button:last-child { border-radius: 0 2px 2px 0; }
 .rolechip { border-radius: 2px; padding: 1px 6px; cursor: default; }
 .rolechip:hover { background: var(--hover); color: #f0f0f0; }
 .rolechip.armed { background: var(--sel-bg); color: var(--sel-fg); }
@@ -5500,14 +5507,24 @@ function slotPopover(t) {
   const i = pop.i, f = tacFormation(t), s = f.players[i];
   const roster = t.tactics.starting_eleven[i], p = rosterPlayer(t, roster);
   // The keeper's slot is fixed: Edit mode does not move him.
-  const num = (label, get, put, max) => h("span", {}, label + " ",
-    h("input", { type: "number", min: 0, max, value: get(), disabled: s.position === "GK",
-      title: s.position === "GK" ? "The goalkeeper's spot is fixed" : "",
-      onchange: e => { const v = parseInt(e.target.value, 10);
-        if (!Number.isNaN(v) && v >= 0 && v <= max) {
-          edit("formation " + label, () => {
-            put(v); s.position = ruledPosition(t, f, i, s.x, s.y, s.position); });
-          render(); } } }));
+  // Each field is a stepper: an arrow either side of the number steps it by one, clamped
+  // into the range (a stored spot past it steps back in), each arrow disabled at its end.
+  // The three share the number box's old width, so the popover is no wider.
+  const num = (label, get, put, max) => {
+    const keeper = s.position === "GK", v = get();
+    const title = keeper ? "The goalkeeper's spot is fixed" : "";
+    const set = n => {
+      edit("formation " + label, () => {
+        put(n); s.position = ruledPosition(t, f, i, s.x, s.y, s.position); });
+      render(); };
+    return h("span", {}, label + " ", h("span", { class: "spin" },
+      button("⏴", () => set(Math.min(max, Math.max(0, v - 1))),
+        { disabled: keeper || v <= 0, title }),
+      h("input", { type: "number", min: 0, max, value: v, disabled: keeper, title,
+        onchange: e => { const n = parseInt(e.target.value, 10);
+          if (!Number.isNaN(n) && n >= 0 && n <= max) set(n); } }),
+      button("⏵", () => set(Math.min(max, v + 1)), { disabled: keeper || v >= max, title })));
+  };
   return h("div", { class: "tpopover",
       style: "left:" + pop.x + "px; top:" + pop.y + "px" },
     h("div", { class: "strong" }, ...(p ? nameSpans(p.name) : ["(empty roster slot)"]),

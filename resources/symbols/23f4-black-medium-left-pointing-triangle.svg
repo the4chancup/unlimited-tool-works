@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -2027 2048 2458">
+  <!-- U+23F4 BLACK MEDIUM LEFT-POINTING TRIANGLE. Font units (2048 per em), y up from the baseline: the group flips
+       them into SVG's y-down; the view box is the line the strokes were laid
+       out on, from ascent to descent; its width is the glyph's advance. -->
+  <g transform="scale(1 -1)">
+    <polygon points="1344,0 1344,1280 704,640"/>
+  </g>
+</svg>

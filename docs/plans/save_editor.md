@@ -572,7 +572,13 @@ Win32 original hurt the most):
   it holds), and Make GK beside it at its own width, the two filling the popover's width, its top-right corner on the marker's bottom-left corner as it
   stood at the click, and there it stays while his X and Y change, so the fields' arrows stay
   under the pointer rather than moving off with the marker; a press outside it closes it, as
-  Close does. The position dropdown lists only the positions his spot offers, as the game's
+  Close does. X (0 to 104) and Y (0 to 48) are steppers: the number with an arrow either
+  side, `⏴` stepping it down by one and `⏵` up, each click one edit, clamped into the range
+  (a stored spot past it steps back in), each arrow disabled at its end of the range and both
+  for the keeper. A nudge by one is a click there, where a drag of egui's `DragValue`, which
+  has no arrows of its own, overshoots it. The three are joined into one box as wide as the
+  number box was (52 points: each arrow 12, the number 28, room for `104`), so the popover
+  is no wider (`slotPopover`'s `num`, the draft's `.spin`). The position dropdown lists only the positions his spot offers, as the game's
   Select Position menu does: the two of the drop rule below ("A pitch player dropped on
   another"), his own first when the spot offers neither (an odd save's); a change of his X or
   Y applies the same rule, as one step of a drag does, so a Y typed into another band changes

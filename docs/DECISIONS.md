@@ -13128,3 +13128,17 @@ drawn on the colour field, which both themes share, so they have no light value,
 colours would invert the crates' layering, and passing them in from every caller would add
 an argument that never changes.
 Plan: `plans/core/gui.md` (the Dark/light theme row).
+
+## 2026-10-29 — save_editor — The Tactics popover's X and Y step by arrows inside the number box's width
+Decision: the slot popover's X and Y fields are steppers: `⏴` and `⏵` either side of the
+number step it by one, clamped into the range (a stored spot past it steps back in), each
+disabled at its end and all four for the keeper; the three are one box as wide as the
+number box was, 52 points (arrows 12, number 28). The arrows are Segoe UI Symbol's medium
+triangles, drawn into the symbols font with their ink centred, not the small `▸` and a
+mirrored twin, whose ink, about 4 by 5 points, read as dots at 1x.
+Why: the maintainer's ask (arrows that step the values by clicking; egui's `DragValue` has
+none, and a drag overshoots a move by one), then "the buttons take away from the number
+inputs' current widths", later eased to "a little more width if needed": the render showed
+none needed, `104` fitting the 28 left.
+Plan: `plans/save_editor.md` "Tactics editor" (the popover); `plans/core/gui.md` (the
+Dark/light theme row's symbols).
