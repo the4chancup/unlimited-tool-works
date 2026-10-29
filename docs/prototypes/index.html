@@ -1379,7 +1379,7 @@ function drawHelp() {
     style: `left:${geo.x}px; top:${geo.y}px; width:${geo.w}px; height:${geo.h}px` },
     h("div", { class: "title-row", onmousedown: e => {
       if (!e.target.closest("button")) startHelpDrag(e, win);
-    } }, h("div", { class: "title" }, "Help"), closeBtn),
+    } }, h("div", { class: "title" }, "Help (WIP)"), closeBtn),
     h("input", { type: "text", class: "help-search", placeholder: "Search the help",
       value: S.help.search,
       oninput: e => { S.help.search = e.target.value; drawHelpPanes(win); } }),
@@ -2213,7 +2213,7 @@ function openSettings() {
   render(); // the link carries the open window (windowDrawer re-registers)
 }
 function drawSettings() {
-  window_("Settings",
+  window_("Settings (WIP)",
     h("div", { class: "settings-body" },
       h("table", { class: "grid" }, commonSettingsRows()),
       // One section per registered tool that has settings (the Export
@@ -2543,7 +2543,8 @@ function sidebarItems(full) {
     onclick: fn },
     ph(glyph), h("span", { class: "tlabel" }, label));
   items.push(h("div", { class: "tail" },
-    // "(WIP)" until the help and the settings menu are complete.
+    // "(WIP)" until the help and the settings menu are complete, as their
+    // windows' titles.
     tailEntry("\uE3E8", "Help (WIP)", () => openHelp({ tool: S.activeTool }), "help-btn"),
     tailEntry("\uE270", "Settings (WIP)", openSettings, "settings-btn")));
   return items;

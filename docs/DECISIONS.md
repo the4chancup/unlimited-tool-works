@@ -13660,3 +13660,12 @@ calls the help and the settings menu complete; the windows keep their titles.
 Why: the maintainer's ask. The command-line hint the CLI-only tooltip carried is the help's to
 give: the entry promises the window, which is what is coming.
 Plan: `plans/core/gui.md` "Sidebar" items 3 and 5, ST-SIDE-07, ST-SIDE-08.
+
+## 2026-10-29 — gui — The Help and Settings windows' titles marked WIP too
+
+Decision: the help window's title reads "Help (WIP)" and the settings menu's "Settings (WIP)",
+like their sidebar entries, until the maintainer calls them complete. This extends the entry
+"Disabled sidebar entries say \"Coming soon™\"; Help and Settings marked WIP", which kept the
+titles plain.
+Why: the maintainer's ask.
+Plan: `plans/core/gui.md` "Sidebar" item 5.
