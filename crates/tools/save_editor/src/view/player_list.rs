@@ -120,14 +120,12 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     // pane's bottom; no horizontal margin either, and the grid's width
     // stops at the frame's, so the grid spans the list rows' width. No
     // separator line over the grid: the draft's rows' border is followed
-    // by the gap alone. Not resizable either (egui's panels are by
-    // default): the band's height is its grid's.
+    // by the gap alone.
     let margin = egui::Margin {
         top: 3,
         ..egui::Margin::ZERO
     };
     egui::Panel::bottom("save_editor_quick_actions")
-        .resizable(false)
         .show_separator_line(false)
         .frame(egui::Frame::side_top_panel(ui.style()).inner_margin(margin))
         .show(ui, |ui| {
