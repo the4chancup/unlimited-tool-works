@@ -184,6 +184,35 @@ fn the_name_and_shirt_fields_share_the_rows_edges() {
     );
 }
 
+// General info's and Other stats' pair rows stand 22 apart, as the draft's
+// `.pairs` rows do: an 18-point box and the grid's 4-point row gap.
+#[test]
+fn the_pair_rows_stand_22_apart() {
+    let path = fixture(PesVersion::Pes21, "pair_row_pitch");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    for pair in [
+        ["Height", "Weight"],
+        ["Weight", "Age"],
+        ["Injury resistance", "Weak foot: Usage"],
+    ] {
+        let upper = label_bounds(&nodes, pair[0]).y0;
+        let lower = label_bounds(&nodes, pair[1]).y0;
+        assert!(
+            (lower - upper - 22.0).abs() <= 0.5,
+            "{} stands 22 below {}, not {}",
+            pair[1],
+            pair[0],
+            lower - upper
+        );
+    }
+}
+
 // A name or shirt name edit sets the player's edited-player flag, in the
 // same undo entry.
 #[test]

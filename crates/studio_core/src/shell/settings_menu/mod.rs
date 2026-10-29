@@ -22,8 +22,8 @@ use pes_version::PesVersion;
 use crate::settings::{CommonSettings, Theme, pes_folder_pattern};
 use crate::tool::{ShellRequest, StudioTool, ToolContext};
 use crate::widgets::{
-    PathCommit, PathKind, checkbox, path_row, path_row_commit, row_label, step_choice, step_number,
-    wheel_steps,
+    FORM_ROW_SPACING, PathCommit, PathKind, checkbox, path_row, path_row_commit, row_label,
+    step_choice, step_number, wheel_steps,
 };
 
 use super::sidebar::{Sidebar, exe_tooltip, version_blocker, version_label};
@@ -141,6 +141,7 @@ impl SettingsMenu {
         let mut changed = false;
         egui::Grid::new("settings-common")
             .num_columns(2)
+            .spacing(egui::vec2(ui.spacing().item_spacing.x, FORM_ROW_SPACING))
             .show(ui, |ui| {
                 version_row(ui, tools, &common, ctx, sidebar);
                 let commit = path_row_commit(

@@ -15,7 +15,7 @@ use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerStats};
 use pes_savefile::schema::fields::{PlayerField, PlayerText, RosterField};
 use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for};
 use pes_version::PesVersion;
-use studio_core::widgets::{radio, step_choice, step_number, wheel_steps};
+use studio_core::widgets::{FORM_ROW_SPACING, radio, step_choice, step_number, wheel_steps};
 use team_widgets::cards;
 use team_widgets::names::append_name;
 
@@ -628,10 +628,9 @@ fn combos(
     field_width: f32,
     marks: Option<Marks<'_>>,
 ) {
-    let spacing_y = ui.spacing().item_spacing.y;
     egui::Grid::new("general combos")
         .num_columns(2)
-        .spacing(egui::vec2(FIELD_ROW_GAP, spacing_y))
+        .spacing(egui::vec2(FIELD_ROW_GAP, FORM_ROW_SPACING))
         .show(ui, |ui| {
             ui.label(STRONGER_FOOT_LABEL);
             if let Some((side, key)) = side_row(ui, field_width, positions.stronger_foot) {
