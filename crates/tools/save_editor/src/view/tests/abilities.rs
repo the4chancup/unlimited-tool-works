@@ -452,6 +452,81 @@ fn each_wheel_notch_over_the_registered_position_is_one_undo_step() {
     );
 }
 
+// ST-WHEEL-04 in the editor: notches over the registered position's combo
+// while the Name field holds the keyboard take it from the field, and the
+// typing and each notch are three undo steps.
+#[test]
+fn wheel_notches_while_the_name_field_holds_the_keyboard_are_their_own_undo_steps() {
+    let path = fixture(PesVersion::Pes21, "wheel_after_typing");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let registered = |view: &SaveView| player_entry(view, 70101).positions.registered;
+    let name = |view: &SaveView| player_entry(view, 70101).name;
+    let focused = |window: &Headless| window.ctx.memory(|m| m.focused());
+    assert_eq!(registered(&view), 1, "premise: 70101 is registered CB");
+    let name_before = name(&view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, name_field(&nodes), &mut view);
+    window.frame(vec![egui::Event::Text("Z".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_ne!(name(&view), name_before, "premise: the typed Z landed");
+    // Nothing else was clicked: whatever holds the keyboard is the field.
+    assert!(
+        focused(&window).is_some(),
+        "premise: the Name field holds the keyboard"
+    );
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let combo = right_of_label(&nodes, "Registered position", Role::ComboBox)
+        .first()
+        .copied()
+        .expect("the registered combo");
+    let at = centre(combo);
+    let notch_down = egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Line,
+        delta: egui::vec2(0.0, -1.0),
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Wheel,
+        modifiers: egui::Modifiers::default(),
+    };
+    window.frame(
+        vec![
+            egui::Event::PointerMoved(at),
+            notch_down.clone(),
+            notch_down,
+        ],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(focused(&window), None, "the notch took the keyboard");
+    // CB, then LB, then RB: the items below it in the list's order. The
+    // frames are bounded: the two steps come within a few.
+    for _ in 0..8 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    assert_eq!(registered(&view), 3, "two notches down take two items");
+    for (expected, what) in [(2, "the second notch"), (1, "the first notch")] {
+        window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+        assert_eq!(registered(&view), expected, "one Ctrl+Z undoes {what}");
+        assert_ne!(name(&view), name_before, "the typing stays");
+    }
+    window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        name(&view),
+        name_before,
+        "the third Ctrl+Z undoes the typing"
+    );
+    assert_eq!(registered(&view), 1);
+    assert!(
+        !view.session.as_ref().unwrap().can_undo(),
+        "the typing and the two notches were the only edits"
+    );
+}
+
 /// The narrowest label-to-field gap over `pairs` (`field.x0 − label.x1`
 /// per row).
 fn min_gap<S: AsRef<str>>(nodes: &[accesskit::Node], pairs: &[(S, Role)]) -> f64 {

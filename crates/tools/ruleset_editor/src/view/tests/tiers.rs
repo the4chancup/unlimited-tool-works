@@ -271,6 +271,71 @@ fn a_wheel_notch_over_a_rate_is_one_undoable_edit() {
     );
 }
 
+// ST-WHEEL-04 in the editor: a notch over a rate while a tier's id field
+// holds the keyboard takes it, the id commits on that loss, and the step
+// comes after as an undo step of its own.
+#[test]
+fn a_wheel_notch_while_an_id_is_typed_commits_the_id_then_steps_apart() {
+    let (ctx, _events, _path, mut view) = official_opened("wheel_after_id");
+    let mut window = Headless::sized(1800.0, 900.0);
+    view.section = Section::Tiers;
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert_eq!(
+        ruleset(&view).tiers[1].rate,
+        92,
+        "premise: Silver's rate is 92"
+    );
+    let at = centre(spin(&frame.nodes, "92"));
+    click_role(&mut window, &mut view, &ctx, Role::TextInput, "gold");
+    type_replacing(&mut window, &mut view, &ctx, "royal");
+    assert!(
+        window.ctx.memory(|m| m.focused()).is_some(),
+        "premise: Gold's id field holds the keyboard"
+    );
+    assert_eq!(
+        ruleset(&view).tiers[0].id,
+        "gold",
+        "premise: nothing committed"
+    );
+    let notch_up = egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Line,
+        delta: egui::vec2(0.0, 1.0),
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Wheel,
+        modifiers: egui::Modifiers::default(),
+    };
+    window.frame(vec![egui::Event::PointerMoved(at), notch_up], |ui| {
+        show(ui, &mut view, &ctx)
+    });
+    // Bounded: the step comes within a few frames.
+    for _ in 0..8 {
+        if ruleset(&view).tiers[1].rate == 93 {
+            break;
+        }
+        window.draw(&mut view, &ctx);
+    }
+    assert_eq!(ruleset(&view).tiers[0].id, "royal", "the id committed");
+    assert_eq!(ruleset(&view).tiers[1].rate, 93, "a notch up adds one");
+    window.draw(&mut view, &ctx);
+    ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
+    assert_eq!(
+        ruleset(&view).tiers[1].rate,
+        92,
+        "the first Ctrl+Z undoes the notch"
+    );
+    assert_eq!(ruleset(&view).tiers[0].id, "royal", "the new id stays");
+    ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
+    assert_eq!(
+        ruleset(&view).tiers[0].id,
+        "gold",
+        "the second Ctrl+Z undoes the id"
+    );
+    assert!(
+        !view.document.as_ref().unwrap().is_dirty(),
+        "the id and the notch were the only edits"
+    );
+}
+
 // RE-GUI-03
 #[test]
 fn a_rate_edit_shows_in_the_preview_and_marks_the_document_unsaved() {
