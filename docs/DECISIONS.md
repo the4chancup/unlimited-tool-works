@@ -13637,3 +13637,15 @@ rail's version selector centred without its arrow; the hover delay 100 ms" decid
 Why: the maintainer tried 120 in the draft: it felt slow again, and a pointer that enters the
 rail and turns back out opens the sidebar at 120 as at 100, so the longer delay buys nothing.
 Plan: `plans/core/gui.md` "Sidebar" item 4.
+
+## 2026-10-29 — gui — A press on the rail's version selector opens the sidebar at once
+
+Decision: pressing the rail's PES version selector opens the sidebar without waiting for the
+hover delay, and the list drops from the opened selector, listing `PES 2015` to `PES 2021`.
+The rail's selector never shows a list of its own.
+Why: the maintainer found that a press before the sidebar opened listed the two-digit years,
+and after it the full names: the same control showed two lists depending on timing. Of the
+two fixes offered they picked this one over a full-name list under the rail's narrow button,
+which the sidebar could still open beneath 100 ms later, mixing the two states. Keyboard focus
+on the rail already opens the sidebar at once.
+Plan: `plans/core/gui.md` "Sidebar" item 2.

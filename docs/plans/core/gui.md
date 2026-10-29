@@ -196,7 +196,10 @@ Top to bottom:
    integrated conversion uses it as the destination format. Compact dropdown: in the rail its
    year alone (`21`), centred under the logo, with no arrow, the rail's 44 points holding the
    number alone; in the opened sidebar the full name (`PES 2021`) at the left with the
-   dropdown's arrow. Changing it is blocked with a tooltip while any tool reports a
+   dropdown's arrow. A press on the rail's opens the sidebar at once (the hover delay
+   skipped) and drops the list from the opened selector, so the list always shows the full
+   names; the rail's own list, with two digits, would differ with how soon the press came
+   after the hover. Changing it is blocked with a tooltip while any tool reports a
    `version_change_blocker` (e.g. a running compilation, or the match tracker holding live memory
    addresses).
    - **Live exe check**: the selector is colored against the exe actually present in the resolved

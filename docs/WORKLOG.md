@@ -1936,6 +1936,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               build: `21` centred without an arrow, `PES 2021` and its arrow open
               (`.tmp/8_9l/built3/l3d3i_pair.png`). Files:
               `studio_core/src/shell/sidebar/{mod,tests}.rs`
+            - [ ] l3d3j a press on the rail's version selector opens the sidebar at once and
+              the list drops from the opened selector, full names whatever the timing
+              (DECISIONS "A press on the rail's version selector opens the sidebar at once";
+              `plans/core/gui.md` "Sidebar" item 2; the draft's `pesSelectorFromRail`, lead,
+              done, `.tmp/8_9l/rail_press_check.py`); brief `.tmp/8_9l/brief_l3d3j.md`
             - [x] l3d3g 2026-10-29 (lead, `712966d8`) the Windows title bar without the icon
               (DECISIONS "The title bar draws no icon on Windows" and "The title bar's icon
               slot stays blank"): `window_size::hide_title_bar_icon`, one `unsafe` call. On the

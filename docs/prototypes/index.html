@@ -2514,6 +2514,7 @@ function sidebarItems(full) {
     { title: pesSelectorTip(), cls: pesSelectorClass(), disabled: !!S.blocker });
   // The rail's keeps the id the checks use; the layer's is a second select.
   pesSel.id = full ? "pes-version-open" : "pes-version";
+  if (!full) pesSel.addEventListener("mousedown", pesSelectorFromRail);
   // A disabled control shows no tooltip in the browser (egui:
   // on_disabled_hover_text), so a blocked selector's reason sits on a
   // wrapper that still senses hover (ST-SIDE-04).
@@ -2595,6 +2596,20 @@ function drawSidebarLayer() {
 function sidebarEnter() {
   clearTimeout(sidebarTimer);
   sidebarTimer = setTimeout(() => { if (!S.sidebarOpen) { S.sidebarOpen = true; drawSidebarLayer(); } }, 100);
+}
+// A press on the rail's selector opens the layer at once and drops the list
+// from the layer's selector, so the list shows the full names however soon
+// after the hover it is pressed (the rail's own would list the two digits).
+function pesSelectorFromRail(e) {
+  if (S.sidebarOpen) return;
+  e.preventDefault();
+  clearTimeout(sidebarTimer); sidebarTimer = null;
+  S.sidebarOpen = true; drawSidebarLayer();
+  const twin = document.getElementById("pes-version-open");
+  twin.focus();
+  // Not every browser opens a select's list from script; there the focused
+  // twin opens on the next press or Alt+Down.
+  if (twin.showPicker) twin.showPicker();
 }
 function sidebarLeave() {
   clearTimeout(sidebarTimer); sidebarTimer = null;
