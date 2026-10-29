@@ -4626,7 +4626,11 @@ briefs, review loops, gates and mutation runs as for any step.
     awkward) are answered by ov7: a file is validated when imported, and the toolbar's
     dropdown switches. `live_gallery.py`, broken since `cd40003a`, also expects its image 11's
     "fielded at DMF in preset 1" from the PES 17 sample under DBC7, gone with ov9: the
-    gallery moves a starter under a ruleset that checks fielded positions instead
+    gallery moves a starter under a ruleset that checks fielded positions instead. Rendered
+    again 2026-10-29 (lead): image 06 dropped (no failed state since ov7), image 11 under the
+    official rules with team 718's sixth starter made a B where preset 1 fields him (the
+    gallery's copy only); looked at by the lead (02, 07, 11). Waits for the maintainer's look
+    (QUESTIONS "The final pass over the built app's UI")
   - [x] ov7 Live AATF replaces the AATF panel (the maintainer, 2026-10-28; DECISIONS "Live AATF
     replaces the AATF panel; the final pass's fourth rulings"; drafts and plan done,
     `plans/save_editor.md` "Configurable AATF rules", SE-GUI-15 and SE-GUI-32 rewritten, their
