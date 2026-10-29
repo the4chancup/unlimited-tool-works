@@ -244,12 +244,12 @@ Top to bottom:
    left corners rounded as the entry's (2 points; the draft's `.tool.on` border), the right
    ones square against the fill. The suite's planned tools not in
    this build (the registry's, `architecture.md` "Tool plugin interface") are listed after the
-   registered ones, grayed and not clickable, each tooltip saying the tool is not in this build:
-   the list communicates the suite roadmap. A registered tool the registry marks **CLI-only**
+   registered ones, grayed and not clickable, each tooltip saying "Coming soon™" and nothing
+   more: the list communicates the suite roadmap. A registered tool the registry marks **CLI-only**
    (in the 0.0.1 preview the Team compiler and the Export upgrader, whose views come later;
    `development_plan.md` "Divegrass Before Christmas") is drawn as its planned entry, grayed
-   and not clickable, its tooltip saying it has no window in this version and runs from the
-   command line, and it is never the active tool (a `last_tool` naming it opens the first
+   and not clickable, its tooltip the same "Coming soon™" (its window is what is coming; the
+   command line is the help's to explain, not a tooltip's), and it is never the active tool (a `last_tool` naming it opens the first
    window tool). It stays registered for everything else: its CLI commands, its help chapter
    and its settings section, which the command line reads. The mark is the registry's, in
    `studio`, not a `StudioTool` method: which tools a build shows is the build's choice, and
@@ -276,7 +276,9 @@ Top to bottom:
    version, and reserving ~104 more points cost every tool that width all the time (at the
    default window a tab's area grows from 904 to about 1008 points).
 5. **Help `?` and settings gear** pinned at the bottom, at the tool icons' 24 points — open the
-   help window and the settings menu. F1 opens the help too.
+   help window and the settings menu. F1 opens the help too. Their labels read "Help (WIP)"
+   and "Settings (WIP)" (the visible and the accessible name) until the maintainer calls the
+   help and the settings menu complete, and the two windows' titles carry the same suffix.
 
 ### Settings menu
 
@@ -1136,12 +1138,12 @@ ST-SIDE-06  GIVEN the GUI open
 ST-SIDE-07  GIVEN a build registering two of the suite's tools
             WHEN the sidebar is drawn
             THEN the suite's other planned tools are listed after them, grayed and not
-                 clickable, each tooltip saying the tool is not in this build
+                 clickable, each tooltip saying "Coming soon™"
 ST-SIDE-08  GIVEN a build registering two window tools and one marked CLI-only, and a settings
                   file whose last_tool names the CLI-only one
             WHEN the GUI opens
             THEN the CLI-only tool is listed as a planned entry, grayed and not clickable, its
-                 tooltip saying it runs from the command line in this version; the first window
+                 tooltip saying "Coming soon™"; the first window
                  tool is active; the CLI-only tool's help chapter is in the help window, the
                  settings menu has no section for it, even with a settings table; and its CLI
                  commands still run

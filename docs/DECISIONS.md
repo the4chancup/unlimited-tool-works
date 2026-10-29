@@ -13649,3 +13649,23 @@ two fixes offered they picked this one over a full-name list under the rail's na
 which the sidebar could still open beneath 100 ms later, mixing the two states. Keyboard focus
 on the rail already opens the sidebar at once.
 Plan: `plans/core/gui.md` "Sidebar" item 2.
+
+## 2026-10-29 — gui — Disabled sidebar entries say "Coming soon™"; Help and Settings marked WIP
+
+Decision: every grayed sidebar entry's tooltip reads "Coming soon™" and nothing more, the
+CLI-only tools' included (it said "<tool> is not in this build", and for a CLI-only tool that it
+has no window and runs from the command line). The sidebar's Help and Settings entries read
+"Help (WIP)" and "Settings (WIP)", visible and accessible names alike, until the maintainer
+calls the help and the settings menu complete; the windows keep their titles.
+Why: the maintainer's ask. The command-line hint the CLI-only tooltip carried is the help's to
+give: the entry promises the window, which is what is coming.
+Plan: `plans/core/gui.md` "Sidebar" items 3 and 5, ST-SIDE-07, ST-SIDE-08.
+
+## 2026-10-29 — gui — The Help and Settings windows' titles marked WIP too
+
+Decision: the help window's title reads "Help (WIP)" and the settings menu's "Settings (WIP)",
+like their sidebar entries, until the maintainer calls them complete. This extends the entry
+"Disabled sidebar entries say \"Coming soon™\"; Help and Settings marked WIP", which kept the
+titles plain.
+Why: the maintainer's ask.
+Plan: `plans/core/gui.md` "Sidebar" item 5.
