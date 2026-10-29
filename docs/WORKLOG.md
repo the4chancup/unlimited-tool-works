@@ -4524,7 +4524,7 @@ briefs, review loops, gates and mutation runs as for any step.
       every row 22 apart in its block, Height 68.5, Stronger foot 136.5, Other stats 233 below
       the title); the Name and Shirt boxes were already 18 since ov2r. Left for the build
       (ov2q's brief): the blocks 6 apart where it has 4, which brings each label to the draft's
-    - [ ] ov2l the team view's header as drafted: the stroke line between the fields' row and
+    - [x] ov2l the team view's header as drafted: the stroke line between the fields' row and
       the Tactics, 8 above and below (`teamView`'s `.sep`; the build has none, so the Preset row
       stands 20 higher), and the colour swatches 22 × 16 (`input[type=color]`; egui's colour
       button is 40 wide, which moves the row's right half 31 to 57 points right). Planned
@@ -4533,7 +4533,13 @@ briefs, review loops, gates and mutation runs as for any step.
       button landed, the line stopped on the fold (743.5 against 740), and the row's offset
       found to be egui's 8-point spacing too (DECISIONS "The team row's gaps as drafted; its
       line waits for the Tactics' height"; the draft's `.cbtn` set to 22 × 16); rework 1
-      `.tmp/0_0_1ov/rework_ov2l.md`: the row's gaps, the line moved to ov2u
+      `.tmp/0_0_1ov/rework_ov2l.md`: the row's gaps, the line moved to ov2u; rework 2
+      `rework2_ov2l.md`: the id boxes 46 (the draft's `.info-grid`). Done 2026-10-29
+      (`85cd3c11`, merge `05911b62`; lead gates in its target after merging
+      main: save_editor 455 + 50, color_tools 70, team_widgets 181, ruleset_editor 110 + 13,
+      clippy, fmt): `ROW_GAP` 6, `SPACE_GAP` 3, `ID_CELL_PADDING` 4, `ID_BOX_WIDTH` 46, the
+      row's six controls within a point of the draft's on PES 21 and still on PES 17
+    - [ ] ov2u briefed 2026-10-29 (`.tmp/0_0_1ov/brief_ov2u.md`, worktree `wt-ov2u`)
     - [ ] ov2u the team view's Tactics at the draft's height (the build's stands about 23
       points taller: with ov2l's line its last control ends 3.5 under the pane's fold, the
       draft's 8 over it; measure block by block, `rect_compare.py`), then the line under the
@@ -4750,6 +4756,18 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] ov4 8.20's host control (lead, drafts): the captures in
     `docs/prototypes/assets/captures/`, the Overlay control over the draft (8.20's brief,
     `.tmp/8_20/brief_8_20.md`, written for a worktree since gone: rebase it on main)
+    - [x] ov4a the Overlay control (lead): `index.html`'s Layout group, `overlay=over|beside`
+      in the link, the capture over the window body at half opacity (clicks through) or
+      beside the window level with its body, a missing one naming its file;
+      `assets/captures/README.md`; `bundle_drafts.py` keeps the folder's literal (test red
+      first: "an extension with no MIME type"). Checked on a scratch copy with a stand-in
+      (`.tmp/0_0_1ov/overlay_check.py`: over at (0, 0) 1280 × 780, beside level with the
+      body, the missing line). `acc23548`, merge `670f46dc`
+    - [ ] ov4b `scripts/draft_shots.py` and each tool script's `shots` list (8.20's
+      deliverables 2-3, sidekick)
+    - [ ] ov4c the first captures (lead): the Save editor's screens from the release build
+      after the next checkpoint, each dated in its corner, by a capture script beside
+      `rect_compare.py`
   - [ ] ov5 the vetting renderer into `scripts/` (the maintainer, 2026-10-28: "useful enough
     to keep"): `.tmp/0_0_1ov/vet.py`, which renders a draft change's before and after from
     `git archive` exports side by side (stacked when side by side would be over four times
