@@ -647,9 +647,13 @@ A headless test draws every screen of the Save editor at the default pane, on a 
 PES 17 save: the player view with Appearance closed and open, the team view, and every dialog,
 prompt and window the views open (each opened as its own tests open it). It fails when two
 widgets' rectangles intersect. It reads the frame's AccessKit nodes of the widget and label
-roles (those the pane-fit test reads), and compares every pair of which neither contains the
-other: a node drawn inside another (a combo's text, a header's label) is part of it, not a
-collision. An intersection counts once it is more than one point deep in both directions, the
+roles (those the pane-fit test reads), each at egui's own rectangle for it clipped to what its
+scroll area shows, not at AccessKit's bounds: those are the whole rectangle, so a list row
+laid out past its list's edge, which nobody sees, would collide with the buttons under the
+list. It compares every pair on one egui layer of which neither contains the other: a dialog,
+a window or a popup covers the view by design, and the view under it is still checked on its
+own layer; a node drawn inside another (a lineup row's labels, a marker on the pitch) is part
+of it, not a collision. An intersection counts once it is more than one point deep in both directions, the
 draft tolerance (two rows touching share an edge). An overlap a screen means (a marker's badge
 over the pitch) is listed in the test by role and label, with why, never by position: a
 position would excuse whatever moved there next. Why a test and not the overlay alone: the

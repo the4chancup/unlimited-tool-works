@@ -13249,3 +13249,26 @@ delay stands for it: stepped one frame after the surrender, its commit and the s
 undo entry (the ov2e2 sidekick's perturbation).
 Why: the sidekick's evidence, egui's `value_format.rs` and the typing-mode test.
 Plan: `plans/core/gui.md` "The wheel over a value".
+
+## 2026-10-29 — gui — Correction: the overlap test reads egui's clipped rects, one layer at a time
+Decision: the entry "The overlap test compares widget pairs, and excuses an overlap by name"
+had the test read AccessKit's bounds and compare every pair of the frame; it reads egui's own
+rect for each node, clipped to what its scroll area shows, and compares the pairs of one egui
+layer. Containment excuses a lineup row's labels and a pitch marker, not a combo's text, which
+egui 0.37 gives no node of its own.
+Why: the ov3 sidekick's first run: AccessKit's bounds ignore the clip, and 210 "collisions"
+were list rows laid out past their list's edge; every dialog covers the view by design, so a
+check across layers fails on each one, while the view under it is still checked on its own.
+Plan: `plans/core/gui.md` "No two widgets overlap".
+
+## 2026-10-29 — save_editor — Correction: the approved draft draws the ability stats' labels left-aligned
+Decision: the entry "The ability stats' labels right-aligned, their marks at the cell's edge"
+said the approved draft right-aligns them; the draft's `td.ilabel { text-align: right }` loses
+to the host's `table.grid td { text-align: left }`, which is more specific, so the draft as
+rendered, the one the maintainer approved, left-aligns them (and the General info labels,
+`td.ilabel` too, which the build left-aligns). The build keeps the right-aligned stats until
+the maintainer picks one (`QUESTIONS.md` "Ability stats' labels: left as the draft shows, or
+right?").
+Why: ov1's measured comparison of the built player view with the draft's render (every stat's
+label at one x in the draft).
+Plan: `plans/save_editor.md` "Editing UI" (the player view's Ability stats).

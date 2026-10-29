@@ -16,6 +16,14 @@ names where the question came from so the context can be read there.
   at 14 in white; the preview's icon where the lead cannot capture it (worklog 0.0.1v: the taskbar
   button and Alt+Tab show the tight crop of the head; Explorer's file icon on the exe). Then
   the confirmation that freezes logic version 1's hash (0.0.1f2).
+- **Ability stats' labels: left as the draft shows, or right?** (worklog 0.0.1ov1, DECISIONS
+  "Correction: the approved draft draws the ability stats' labels left-aligned"). The draft you
+  approved shows them left-aligned, one column starting at one x; its CSS meant them
+  right-aligned against their numbers, and the build follows the CSS (ov2i): a short label
+  such as Jump then sits beside its box instead of far from it. The General info labels are
+  left-aligned in both. Compare the Ability stats column in
+  `.tmp/0_0_1ov/draft/player.png` (left) and `.tmp/0_0_1ov/built/player.png` (right). Until
+  you pick, the build stays right-aligned.
 
 ## Cup practice
 

@@ -4310,13 +4310,25 @@ briefs, review loops, gates and mutation runs as for any step.
   2026-10-28: the final pass's first look found the first-run prompt unlike its draft, unequal
   columns with no gap, small buttons, a hint wrapped mid-path; the overlay of 8.20, planned in
   `plans/core/gui.md` "The host's other review aids", had never been built)
-  - [ ] ov1 the comparison (lead): every screen both have (the first-run prompt, the empty
+  - [x] ov1 the comparison (lead): every screen both have (the first-run prompt, the empty
     Save editor, About, Settings, Help, the player and team views, the comparator, the AATF
     panel, the unsaved prompt) captured from the built window (PrintWindow, 1280 × 800) and
     from the draft at the same size (1280 × 780 since ov2a), laid over each other at half opacity, beside each other,
     and as a difference image; every mismatch over the tolerance (one pixel, two where needed:
     `plans/core/gui.md` the Overlay bullet) listed for the maintainer → verify: the first-run
-    prompt's mismatch shows in its overlay
+    prompt's mismatch shows in its overlay. Done 2026-10-29 in the dark theme (the light one
+    is ov11b), on a release build of `67af3fd4` (`.tmp/0_0_1s4t_v2/app/`), every screen also
+    measured: `.tmp/0_0_1ov/rect_compare.py SCREEN [--modal CSS]` pairs each named element of
+    the app's UI Automation tree with the draft's DOM element of the same text and lists every
+    pair off by more than a point (tables in `.tmp/0_0_1ov/rects/`; captures `draft/`, `built/`,
+    crops `out/`). The unsaved prompt was left to ov3's headless pass. The mismatches, by
+    cause, are ov2j to ov2r (the first-run prompt's in ov2j and ov2q); one is the
+    maintainer's pick (QUESTIONS "Ability stats' labels: left as the draft shows, or right?").
+    Matching within the tolerance: the Help window's size, the Comparator's width, the
+    Settings menu's width and path box (the plan's 660 and 472, not the draft's 440). Not
+    mismatches: the version warning SE-GUI-28 and the Open menu's discovered saves the draft
+    draws (8.9l slice l3, not built), the rail's order (the build's window tool first, by
+    design), a combo's arrow (the browser's own chevron in the draft, egui's triangle)
   - [ ] ov2 the fixes (sidekick, one brief): the mismatches the maintainer confirms, each with
     a layout test of the draft's measures (the first-run prompt: two columns of equal width 16
     apart, buttons as wide as their column, 15-point text)
@@ -4467,6 +4479,48 @@ briefs, review loops, gates and mutation runs as for any step.
       Save as (l3), the Savefile menu's Apply aesthetics patch and the Team menu's Import /
       export team file (8.9k slice 5), Save a picture of the formations and the pictures
       range dialog, its range on one row (8.33, 8.34). Not yet seen in a built window (ov1)
+    - [ ] ov2j every modal in the draft's `.window` frame (`docs/prototypes/index.html`): 12
+      points of margin across and 8 down (egui's modal frame keeps about 6), the title 8 above
+      the body (`.window .title`'s margin; the build leaves egui's 3: Settings' first row 20
+      under its title against the draft's 28.8, About's body 19 against 24.8, Kit slots' 19
+      against 27.8), at least 360 wide, margins included (`min-width`: Kit slots and Set all
+      stats shrink to their text), and the buttons in one row, right-aligned, 10 under the body
+      (the draft's `window_()`; the build puts Close at the left, where DECISIONS "Set boots and
+      gloves IDs takes 4ccEditor's layout" keeps "the buttons right-aligned as every dialog's
+      are"); one `studio_core` helper every modal draws through: Settings, About, the first-run
+      prompt, the Save editor's and the Ruleset editor's dialogs and prompts
+    - [ ] ov2k the form grids' rows 22 apart, the draft's `table.grid` (its `td` padded 2 above
+      and below an 18-point control), where egui's `Grid` spaces them by `item_spacing.y`, 3:
+      each row lands a point higher than the last, 25 by the Ability stats' last row, 17 by
+      Settings' Memory cap. Every `Grid` that draws a draft `table.grid` (Settings' common grid,
+      General info, Other stats, Ability stats, the team view's, Kit slots)
+    - [ ] ov2l the team view's header as drafted: the stroke line between the fields' row and
+      the Tactics, 8 above and below (`teamView`'s `.sep`; the build has none, so the Preset row
+      stands 20 higher), and the colour swatches 22 × 16 (`input[type=color]`; egui's colour
+      button is 40 wide, which moves the row's right half 31 to 57 points right)
+    - [ ] ov2m the player list as drafted (`plans/save_editor.md` "Player list", "The quick
+      actions"): a player row 18 high, its place in the weak colour, the position and name in
+      their own columns (the build draws one string, 21 high); the quick actions in two columns
+      as wide as the list, 119.5 each, ending at the frame's right edge as the plan says (the
+      build's are as wide as their labels, 81 and 105, and end 50 short); Skills' `Goalkeeper:
+      0 of 2` in its chip (the draft's `Cards left for` badge)
+    - [ ] ov2n the Live AATF dock as drafted: its rows in the log panel's well (`.live-body`:
+      the extreme fill, the stroke, 6 × 2 margins; the build lists them on the panel), its body
+      150 high when it opens (`LIVE.height`; the build's dock opens at the log panel's 220)
+    - [ ] ov2o the help window's chapter tree 220 wide, its 6-point padding included
+      (`.help-win .help-tree`; the build's is 160, so `First run and data location` and
+      `Running from a terminal` are cut)
+    - [ ] ov2p a floating panel (the Comparator, the patch, the interchange) opens where the
+      draft's `.panel` stands, 16 from the window's right edge and 90 from its top, 620 wide
+      (the build's Comparator opens bottom-left, over the player list)
+    - [ ] ov2q the small ones: Set all stats' number on its own line under its sentence (the
+      draft's `dlgSetStats`; the build sets it on the sentence's line); the first-run prompt's
+      two choice buttons with their labels centred; Settings' Memory cap `%` after its box, not
+      inside it
+    - [ ] ov2r the drafts brought to the plan (lead): the settings menu's FPC hide boots and
+      gloves IDs (common rows, `plans/core/gui.md` "Settings menu") and the active tool's
+      section open on opening (the Save editor's, with Aesthetics from exports), both of which
+      the build has and the draft lacks
   - [ ] ov6 Live AATF's whole look (the maintainer, 2026-10-28): every element rendered from
     the drafts, `.tmp/0_0_1ov/live_gallery.py` → `.tmp/0_0_1ov/live/`; the first rulings
     drafted and planned (ov2f; the dock's kind codes kept). The two points left for later (a
@@ -4591,12 +4645,23 @@ briefs, review loops, gates and mutation runs as for any step.
     `theme.rs`' symbols test. Each arrow measures 12.5, its glyph's advance (the box 53),
     within the one-pixel match. `0df81c08` with rework 1, merge `6e546261`. Not yet seen in
     a built window (ov1)
-  - [ ] ov3 a general overlap test: a headless pass over every modal and view failing when two
+  - [x] ov3 a general overlap test: a headless pass over every modal and view failing when two
     widgets' rectangles intersect (catches collisions, not a draft mismatch: ov1 does that;
     `plans/core/gui.md` "No two widgets overlap"; Opus sidekick, brief
     `.tmp/0_0_1ov/brief_ov3.md`) → verify: the test passes on main once every collision it
     finds is fixed or listed with its reason; a perturbation (a field widened over its
-    neighbour) fails it
+    neighbour) fails it. Done 2026-10-29 (`8ce77ba6`, merge `911d55ee`; report
+    `.tmp/sidelead/sk_ov3.report.md` in `wt-ov3`): `save_editor` `view/tests/overlap.rs`, eight
+    tests over 23 screens on PES 21 and 17 (Strip again on 21 alone), reading egui's clipped
+    rects one layer at a time (DECISIONS "Correction: the overlap test reads egui's clipped
+    rects, one layer at a time"). It found egui's floating scroll bar over the right end of the
+    Live AATF dock's and the Multi-team AATF list's rows: both take the solid bar now
+    (`view/{live_aatf,multi_aatf}.rs`). Three pitch-marker overlaps are listed as meant.
+    Perturbations: the Name field 200 wider fails it (28 collisions: the column pushed into the
+    scroll bar; 4 with the row's spacing made negative, the field over its label), the
+    containment rule dropped (320), a stale meant entry. Not covered: an open combo's popup, a
+    prompt long enough to scroll, Live AATF's no-issues state (only the PES 15 fixture has a
+    clean team), the boglo dialog's other radio state
   - [ ] ov4 8.20's host control (lead, drafts): the captures in
     `docs/prototypes/assets/captures/`, the Overlay control over the draft (8.20's brief,
     `.tmp/8_20/brief_8_20.md`, written for a worktree since gone: rebase it on main)
