@@ -458,6 +458,9 @@
   .sidebar { width: 56px; align-items: center; }
   .sidebar .tlabel { display: none; }
   .sidebar select { width: 44px; }
+  /* The rail's version selector: the number centred under the logo, no arrow (the 44 points
+     hold the number alone); the opened layer's keeps its arrow and its text at the left. */
+  #sidebar select { appearance: none; text-align: center; text-align-last: center; }
   .sidebar .tool { width: 44px; justify-content: center; align-items: center; gap: 6px; border-left: 3px solid transparent; }
   .sidebar .tool.on { border-left-color: var(--sel-fg); }
   .sidebar .tool.planned { color: #6e6e6e; }
@@ -2562,7 +2565,7 @@ function sidebarCloseCheck() {
   if (!over && !sidebarHeld()) { S.sidebarOpen = false; drawSidebarLayer(); }
 }
 let sidebarTimer = null;
-// A pointer resting on the rail for 150 ms opens the layer (a pointer
+// A pointer resting on the rail for 100 ms opens the layer (a pointer
 // crossing it opens nothing); leaving closes it once nothing holds it. The
 // handlers toggle only the layer, never the rail under the pressed control:
 // a press inside the rail keeps the focus from opening it mid-press.
@@ -2591,7 +2594,7 @@ function drawSidebarLayer() {
 }
 function sidebarEnter() {
   clearTimeout(sidebarTimer);
-  sidebarTimer = setTimeout(() => { if (!S.sidebarOpen) { S.sidebarOpen = true; drawSidebarLayer(); } }, 150);
+  sidebarTimer = setTimeout(() => { if (!S.sidebarOpen) { S.sidebarOpen = true; drawSidebarLayer(); } }, 100);
 }
 function sidebarLeave() {
   clearTimeout(sidebarTimer); sidebarTimer = null;
@@ -2606,7 +2609,7 @@ function renderSidebar() {
   if (S.sidebarOpen) sidebarCloseCheck();
   drawSidebarLayer();
 }
-// Listeners once on the rail itself: hover arms the 150 ms open, leaving or
+// Listeners once on the rail itself: hover arms the 100 ms open, leaving or
 // moving to the layer decides; keyboard focus inside opens at once.
 document.getElementById("sidebar").addEventListener("pointerenter", sidebarEnter);
 document.getElementById("sidebar").addEventListener("pointerleave", e => {
