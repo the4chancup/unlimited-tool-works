@@ -13787,3 +13787,14 @@ The three fills move together so the states stay as far apart as they were; the 
 rule loosens from "the dark ones' contrast" to "a step lighter than it", by the maintainer's
 eye (1.47 for a resting box, against egui's own 1.18 that left one invisible).
 Plan: `plans/core/gui.md`, the "Dark/light theme" row.
+
+## 2026-10-29 — project name — Studio stays the code's codename for good
+
+Decision: the crates `studio` and `studio_core`, their types and the `STUDIO_*` variables
+keep the name Studio permanently, as the project's codename; only member-facing names are
+Unlimited Tool Works or UTW. The local checkout's folder keeps `4cc-studio` until 1.0.0.
+Why: no member sees a crate name (the exe, the data folder, the logs and the bundle already
+carry the product's names), and a rename touches 268 lines in 129 files and every branch in
+flight for nothing a member notices; the docs' prose already uses Studio as the suite's
+shorthand. The plan's earlier "waits for a quiet tree" read as a rename deferred.
+Plan: `plans/core/development_plan.md` "The project's name: Unlimited Tool Works".
