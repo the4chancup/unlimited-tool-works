@@ -123,9 +123,9 @@ input[type=range]:focus { outline: none; }
 /* Set boot/glove IDs: per group its title, then the options stacked, each one's field in a
    column beside it (egui::Grid in a ui.group). Both groups' option columns are at least the
    widest option's (Set incremental value:, 142.2) and their field columns the range's (two
-   boxes and the dash, 122.4), so every field starts at one x and the one-ID boxes end where
+   boxes and the dash, 126.4), so every field starts at one x and the one-ID boxes end where
    the range does, as in the 4ccEditor layout (egui: the grids' min_col_width). */
-.boglo { display: grid; grid-template-columns: minmax(143px, max-content) minmax(123px, max-content);
+.boglo { display: grid; grid-template-columns: minmax(143px, max-content) minmax(127px, max-content);
   justify-content: start; align-items: center; gap: 6px 12px; margin-top: 6px; }
 /* Each group as wide as its options and fields, and the window as wide as the groups, as an
    egui modal sizes to its contents: the drafts' 360 minimum left 42 unused on the groups'
