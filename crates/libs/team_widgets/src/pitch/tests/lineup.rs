@@ -1,5 +1,5 @@
 //! The lineup lists' rows: the drag handle's insets and the positions in
-//! the pitch badges' colours.
+//! the lineup colours.
 
 use pes_version::PesVersion;
 use studio_core::widgets::ink_span;
@@ -105,33 +105,47 @@ fn the_handle_stands_4_from_the_rows_edge_and_4_before_the_position() {
     }
 }
 
-// Each row's position is drawn in its group's colour, the pitch badge's
-// (`position_colour`): the formation's position for a starter, the
+// Each row's position is drawn in its group's lineup colour
+// (`lineup_colour`): the formation's position for a starter, the
 // registered one for a bench player; the names keep their own colours.
+// On the dark theme that is the pitch badge's colour; on the light one
+// the keeper's code and the others read on the light panel instead.
 #[test]
-fn each_rows_position_is_in_its_groups_badge_colour() {
-    let mut tactics = fixture_tactics(PesVersion::Pes21);
-    let mut view = TacticsView::default();
-    let rows = fixture_rows(PesVersion::Pes21);
-    let roster = roster_rows(&rows);
-    let mut window = Headless::sized(800.0, 900.0);
-    let (nodes, shapes) = window.lineup_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
-    let lineup = lineup_rows(&nodes);
-    let mut groups = std::collections::HashSet::new();
-    for row in &lineup {
-        let position = row[1];
-        let label = position.value().expect("the position's text");
-        let byte = position_byte(label);
-        groups.insert(position_colour(&Palette::DARK, byte));
+fn each_rows_position_is_in_its_groups_lineup_colour_on_both_themes() {
+    assert_ne!(
+        Palette::LIGHT.lineup_keeper,
+        Palette::LIGHT.keeper,
+        "premise: the light theme's lists draw the keeper in a colour of their own"
+    );
+    for (theme, palette) in [
+        (egui::Theme::Dark, &Palette::DARK),
+        (egui::Theme::Light, &Palette::LIGHT),
+    ] {
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let mut window = Headless::sized(800.0, 900.0);
+        window.ctx.set_theme(theme);
+        let (nodes, shapes) =
+            window.lineup_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
+        let lineup = lineup_rows(&nodes);
+        let mut groups = std::collections::HashSet::new();
+        for row in &lineup {
+            let position = row[1];
+            let label = position.value().expect("the position's text");
+            let byte = position_byte(label);
+            groups.insert(lineup_colour(palette, byte));
+            assert_eq!(
+                painted_color(shape_of(&shapes, position)),
+                lineup_colour(palette, byte),
+                "{label}'s colour on the {theme:?} theme"
+            );
+        }
         assert_eq!(
-            painted_color(shape_of(&shapes, position)),
-            position_colour(&Palette::DARK, byte),
-            "{label}'s colour"
+            groups.len(),
+            4,
+            "premise: the rows hold all four groups (keeper, defence, midfield, attack)"
         );
     }
-    assert_eq!(
-        groups.len(),
-        4,
-        "premise: the rows hold all four groups (keeper, defence, midfield, attack)"
-    );
 }

@@ -797,16 +797,53 @@ fn name_moving_for(width: f32, seconds: f32) -> f32 {
     seconds % NAME_PERIOD - (NAME_PERIOD - moving)
 }
 
-/// The position text's colour by the position's group, as the game's
-/// (the draft's `POS_COLOUR` over `POSITIONS`' order): a position past
-/// the table white, as `position_label` reads it "?".
+/// The position text's colour on the pitch's badges by the position's
+/// group, as the game's (the draft's `POS_COLOUR` over `POSITIONS`'
+/// order): a position past the table white, as `position_label` reads it
+/// "?".
 fn position_colour(palette: &Palette, position: u8) -> egui::Color32 {
+    group_colour(
+        [
+            palette.keeper,
+            palette.defender,
+            palette.midfielder,
+            palette.forward,
+        ],
+        palette.pitch_text,
+        position,
+    )
+}
+
+/// The position text's colour in the lineup lists, which sit on the
+/// panel: the palette's lineup colour of the position's group, a position
+/// past the table as on the pitch.
+fn lineup_colour(palette: &Palette, position: u8) -> egui::Color32 {
+    group_colour(
+        [
+            palette.lineup_keeper,
+            palette.lineup_defender,
+            palette.lineup_midfielder,
+            palette.lineup_forward,
+        ],
+        palette.pitch_text,
+        position,
+    )
+}
+
+/// The colour of `position`'s group among the four given, in order the
+/// keeper's, a defender's, a midfielder's and a forward's;
+/// `past_the_table` for a position past the table.
+fn group_colour(
+    [keeper, defender, midfielder, forward]: [egui::Color32; 4],
+    past_the_table: egui::Color32,
+    position: u8,
+) -> egui::Color32 {
     match position {
-        0 => palette.keeper,
-        1..=3 => palette.defender,
-        4..=8 => palette.midfielder,
-        9..=12 => palette.forward,
-        _ => palette.pitch_text,
+        0 => keeper,
+        1..=3 => defender,
+        4..=8 => midfielder,
+        9..=12 => forward,
+        _ => past_the_table,
     }
 }
 

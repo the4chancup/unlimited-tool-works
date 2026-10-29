@@ -3,8 +3,10 @@
 //! puts the one font set and the pinned style on a context: `run_gui` calls it
 //! at window creation and every view test's harness calls it too, so a size a
 //! test measures is the size a member sees. The spacing and both themes'
-//! widget states are egui 0.36's, the look the drafts were reviewed in; the
-//! rest of the presets stays egui's own `Visuals` until the curated one lands.
+//! widget states are egui 0.36's, the look the drafts were reviewed in, but
+//! for the light fills, which keep the dark ones' contrast with the panel;
+//! the rest of the presets stays egui's own `Visuals` until the curated one
+//! lands.
 
 use crate::settings::Theme;
 use crate::status::NoticeKind;
@@ -62,7 +64,7 @@ pub struct Palette {
     pub badge_fill: egui::Color32,
     /// A join member's badge fill while join mode is armed (`#005c80`).
     pub join_fill: egui::Color32,
-    /// The keeper's position text on the pitch and in the lineup (`#ffde00`).
+    /// The keeper's position text on the pitch's badges (`#ffde00`).
     pub keeper: egui::Color32,
     /// A defender's position text (`#00d2ff`).
     pub defender: egui::Color32,
@@ -70,6 +72,24 @@ pub struct Palette {
     pub midfielder: egui::Color32,
     /// A forward's position text (`#ff2c77`).
     pub forward: egui::Color32,
+    /// The keeper's position text in the lineup lists, which sit on the
+    /// panel: the pitch's `keeper` on the dark theme, and on the light one
+    /// its hue darkened to read at 4.5 on the light panel, where the pitch's
+    /// yellow reads at 1.26. The pitch keeps its own on its badges.
+    pub lineup_keeper: egui::Color32,
+    /// A defender's position text in the lineup lists, as `lineup_keeper`:
+    /// the pitch's `defender` on the dark theme, darkened to read at 4.5 on
+    /// the light one. The pitch keeps its own on its badges.
+    pub lineup_defender: egui::Color32,
+    /// A midfielder's position text in the lineup lists, as
+    /// `lineup_keeper`: the pitch's `midfielder` on the dark theme, darkened
+    /// to read at 4.5 on the light one. The pitch keeps its own on its
+    /// badges.
+    pub lineup_midfielder: egui::Color32,
+    /// A forward's position text in the lineup lists, as `lineup_keeper`:
+    /// the pitch's `forward` on the dark theme, darkened to read at 4.5 on
+    /// the light one. The pitch keeps its own on its badges.
+    pub lineup_forward: egui::Color32,
     /// The corner brackets around the open popover's marker and a swap's
     /// target (`#14fbff`), the screen's selection mark.
     pub selected_corners: egui::Color32,
@@ -124,6 +144,10 @@ impl Palette {
         defender: egui::Color32::from_rgb(0x00, 0xd2, 0xff),
         midfielder: egui::Color32::from_rgb(0x57, 0xe4, 0x2b),
         forward: egui::Color32::from_rgb(0xff, 0x2c, 0x77),
+        lineup_keeper: egui::Color32::from_rgb(0xff, 0xde, 0x00),
+        lineup_defender: egui::Color32::from_rgb(0x00, 0xd2, 0xff),
+        lineup_midfielder: egui::Color32::from_rgb(0x57, 0xe4, 0x2b),
+        lineup_forward: egui::Color32::from_rgb(0xff, 0x2c, 0x77),
         selected_corners: egui::Color32::from_rgb(0x14, 0xfb, 0xff),
         candidate_corners: egui::Color32::from_rgb(0xff, 0x4e, 0x7f),
         pitch_text: egui::Color32::WHITE,
@@ -138,7 +162,7 @@ impl Palette {
         picker_marker_edge: egui::Color32::BLACK,
     };
 
-    /// The light theme's colours. Only the four drawn on the theme's own panel
+    /// The light theme's colours. Only the ones drawn on the theme's own panel
     /// differ from the dark ones; the rest sit on a surface both themes share.
     /// Each is written out rather than copied from `DARK`, so a colour added
     /// to the struct is a compile error here until it has a light value.
@@ -159,6 +183,10 @@ impl Palette {
         defender: egui::Color32::from_rgb(0x00, 0xd2, 0xff),
         midfielder: egui::Color32::from_rgb(0x57, 0xe4, 0x2b),
         forward: egui::Color32::from_rgb(0xff, 0x2c, 0x77),
+        lineup_keeper: egui::Color32::from_rgb(0x84, 0x72, 0x00),
+        lineup_defender: egui::Color32::from_rgb(0x00, 0x7d, 0x99),
+        lineup_midfielder: egui::Color32::from_rgb(0x2f, 0x83, 0x14),
+        lineup_forward: egui::Color32::from_rgb(0xd9, 0x24, 0x64),
         selected_corners: egui::Color32::from_rgb(0x14, 0xfb, 0xff),
         candidate_corners: egui::Color32::from_rgb(0xff, 0x4e, 0x7f),
         pitch_text: egui::Color32::WHITE,
@@ -236,8 +264,9 @@ pub(crate) fn apply(ctx: &egui::Context, theme: Theme) {
 /// drafts' style and the passes a frame may lay out in. `run_gui` calls it
 /// at window creation and every view test's harness calls it too, so a
 /// size a test measures is the size a member sees.
-/// The spacing and both themes' widget states are egui 0.36's, the look the
-/// drafts the GUI is built from were reviewed in: 0.37 moved them (the button
+/// The spacing and both themes' widget states are egui 0.36's (the light
+/// fills aside, `widgets_light`), the look the drafts the GUI is built from
+/// were reviewed in: 0.37 moved them (the button
 /// padding to 8 by 2, the controls to 20 high, the dark buttons to grey 50
 /// with text at 215), so `install` pins them on both themes itself and an egui
 /// upgrade cannot move the approved look.
@@ -326,9 +355,13 @@ fn widgets_dark() -> egui::style::Widgets {
     }
 }
 
-/// egui 0.36.1's `Widgets::light()`, field for field, for the same reason as
-/// `widgets_dark`: 0.37's `Widgets::light()` rounded every state to 6 points,
-/// which is not the look the drafts were reviewed in.
+/// egui 0.36.1's `Widgets::light()`, field for field but for the fills, for
+/// the same reason as `widgets_dark`: 0.37's `Widgets::light()` rounded every
+/// state to 6 points, which is not the look the drafts were reviewed in.
+/// Each fill keeps the dark state's contrast with its panel instead of
+/// 0.36's grey, whose resting 230 reads at 1.18 on the 248 panel, where the
+/// dark 60 reads at 1.56 on 27, and left a resting checkbox, radio button or
+/// number box all but invisible.
 #[cfg(not(target_arch = "wasm32"))]
 fn widgets_light() -> egui::style::Widgets {
     egui::style::Widgets {
@@ -341,31 +374,31 @@ fn widgets_light() -> egui::style::Widgets {
             expansion: 0.0,
         },
         inactive: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(230),
-            bg_fill: egui::Color32::from_gray(230),
+            weak_bg_fill: egui::Color32::from_gray(201),
+            bg_fill: egui::Color32::from_gray(201),
             bg_stroke: egui::Stroke::default(),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(60)),
             corner_radius: egui::CornerRadius::same(2),
             expansion: 0.0,
         },
         hovered: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(220),
-            bg_fill: egui::Color32::from_gray(220),
+            weak_bg_fill: egui::Color32::from_gray(186),
+            bg_fill: egui::Color32::from_gray(186),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(105)),
             fg_stroke: egui::Stroke::new(1.5, egui::Color32::BLACK),
             corner_radius: egui::CornerRadius::same(3),
             expansion: 0.0,
         },
         active: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(165),
-            bg_fill: egui::Color32::from_gray(165),
+            weak_bg_fill: egui::Color32::from_gray(208),
+            bg_fill: egui::Color32::from_gray(208),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::BLACK),
             fg_stroke: egui::Stroke::new(2.0, egui::Color32::BLACK),
             corner_radius: egui::CornerRadius::same(2),
             expansion: 0.0,
         },
         open: egui::style::WidgetVisuals {
-            weak_bg_fill: egui::Color32::from_gray(220),
+            weak_bg_fill: egui::Color32::from_gray(223),
             bg_fill: egui::Color32::from_gray(220),
             bg_stroke: egui::Stroke::new(1.0, egui::Color32::from_gray(160)),
             fg_stroke: egui::Stroke::new(1.0, egui::Color32::BLACK),
@@ -516,6 +549,10 @@ mod tests {
             defender,
             midfielder,
             forward,
+            lineup_keeper,
+            lineup_defender,
+            lineup_midfielder,
+            lineup_forward,
             selected_corners,
             candidate_corners,
             pitch_text,
@@ -546,6 +583,10 @@ mod tests {
             ("defender", *defender),
             ("midfielder", *midfielder),
             ("forward", *forward),
+            ("lineup_keeper", *lineup_keeper),
+            ("lineup_defender", *lineup_defender),
+            ("lineup_midfielder", *lineup_midfielder),
+            ("lineup_forward", *lineup_forward),
             ("selected_corners", *selected_corners),
             ("candidate_corners", *candidate_corners),
             ("pitch_text", *pitch_text),
@@ -561,11 +602,20 @@ mod tests {
         ]
     }
 
-    // Only the four colours drawn on the theme's own panel have a light value
-    // of their own; every other is on a surface both themes share.
+    // Only the colours drawn on the theme's own panel have a light value of
+    // their own; every other is on a surface both themes share.
     #[test]
     fn only_the_panel_colours_differ_between_the_themes() {
-        const THEMED: [&str; 4] = ["success", "readout", "count_grey", "rating_c_fill"];
+        const THEMED: [&str; 8] = [
+            "success",
+            "readout",
+            "count_grey",
+            "rating_c_fill",
+            "lineup_keeper",
+            "lineup_defender",
+            "lineup_midfielder",
+            "lineup_forward",
+        ];
         for ((name, dark), (_, light)) in named_fields(&Palette::DARK)
             .into_iter()
             .zip(named_fields(&Palette::LIGHT))
@@ -583,7 +633,7 @@ mod tests {
         let ctx = egui::Context::default();
         install(&ctx);
         for (theme, inactive_fill, inactive_text) in
-            [(egui::Theme::Dark, 60, 180), (egui::Theme::Light, 230, 60)]
+            [(egui::Theme::Dark, 60, 180), (egui::Theme::Light, 201, 60)]
         {
             let style = ctx.style_of(theme);
             assert_eq!(style.spacing.button_padding, egui::vec2(4.0, 1.0));
@@ -598,6 +648,113 @@ mod tests {
                 egui::Color32::from_gray(inactive_text)
             );
             assert_eq!(widgets.hovered.corner_radius, egui::CornerRadius::same(3));
+        }
+    }
+
+    /// The WCAG contrast ratio of two opaque colours: the lighter one's
+    /// relative luminance plus 0.05 over the darker one's plus 0.05.
+    fn contrast(a: egui::Color32, b: egui::Color32) -> f64 {
+        let luminance = |colour: egui::Color32| {
+            let linear = |channel: u8| {
+                let srgb = f64::from(channel) / 255.0;
+                if srgb <= 0.04045 {
+                    srgb / 12.92
+                } else {
+                    ((srgb + 0.055) / 1.055).powf(2.4)
+                }
+            };
+            0.2126 * linear(colour.r()) + 0.7152 * linear(colour.g()) + 0.0722 * linear(colour.b())
+        };
+        let (a, b) = (luminance(a), luminance(b));
+        (a.max(b) + 0.05) / (a.min(b) + 0.05)
+    }
+
+    /// Each widget state's fills by name. The open state's `bg_fill` is left
+    /// out: the open combo box and menu button draw as buttons, which fill
+    /// with `weak_bg_fill`, so it keeps egui's light grey.
+    fn state_fills(widgets: &egui::style::Widgets) -> Vec<(&'static str, egui::Color32)> {
+        vec![
+            ("noninteractive weak", widgets.noninteractive.weak_bg_fill),
+            ("noninteractive", widgets.noninteractive.bg_fill),
+            ("inactive weak", widgets.inactive.weak_bg_fill),
+            ("inactive", widgets.inactive.bg_fill),
+            ("hovered weak", widgets.hovered.weak_bg_fill),
+            ("hovered", widgets.hovered.bg_fill),
+            ("active weak", widgets.active.weak_bg_fill),
+            ("active", widgets.active.bg_fill),
+            ("open weak", widgets.open.weak_bg_fill),
+        ]
+    }
+
+    // A light widget state's fill stands out from the light panel as the
+    // dark state's does from the dark panel: a resting checkbox, radio
+    // button or number box is seen on both themes.
+    #[test]
+    fn the_light_widget_fills_keep_the_dark_ones_contrast_with_the_panel() {
+        let ctx = egui::Context::default();
+        install(&ctx);
+        let (dark, light) = (
+            ctx.style_of(egui::Theme::Dark),
+            ctx.style_of(egui::Theme::Light),
+        );
+        for ((name, dark_fill), (_, light_fill)) in state_fills(&dark.visuals.widgets)
+            .into_iter()
+            .zip(state_fills(&light.visuals.widgets))
+        {
+            let dark_contrast = contrast(dark_fill, dark.visuals.panel_fill);
+            let light_contrast = contrast(light_fill, light.visuals.panel_fill);
+            assert!(
+                (light_contrast - dark_contrast).abs() <= 0.05,
+                "{name}: the light fill {light_fill:?} reads at {light_contrast:.2} on the light \
+                 panel, the dark one at {dark_contrast:.2} on the dark panel"
+            );
+        }
+    }
+
+    // The lineup lists' position colours: the pitch's on the dark theme; on
+    // the light one each reads at 4.5 on the light panel (grey 248) and no
+    // darker than it needs to, so it keeps its hue.
+    #[test]
+    fn the_lineup_colours_read_at_4_5_on_the_light_panel() {
+        let panel = egui::Visuals::light().panel_fill;
+        assert_eq!(
+            panel,
+            egui::Color32::from_gray(248),
+            "premise: the light panel"
+        );
+        let (dark, light) = (&Palette::DARK, &Palette::LIGHT);
+        for (name, dark_lineup, pitch, light_lineup) in [
+            (
+                "keeper",
+                dark.lineup_keeper,
+                dark.keeper,
+                light.lineup_keeper,
+            ),
+            (
+                "defender",
+                dark.lineup_defender,
+                dark.defender,
+                light.lineup_defender,
+            ),
+            (
+                "midfielder",
+                dark.lineup_midfielder,
+                dark.midfielder,
+                light.lineup_midfielder,
+            ),
+            (
+                "forward",
+                dark.lineup_forward,
+                dark.forward,
+                light.lineup_forward,
+            ),
+        ] {
+            assert_eq!(dark_lineup, pitch, "the dark {name} is the pitch's");
+            let light_contrast = contrast(light_lineup, panel);
+            assert!(
+                (4.5..4.7).contains(&light_contrast),
+                "the light {name} {light_lineup:?} reads at {light_contrast:.3} on the light panel"
+            );
         }
     }
 
