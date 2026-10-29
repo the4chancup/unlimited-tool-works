@@ -2355,7 +2355,7 @@ const WALK = [
   ["ST-SIDE-04", "Match tracker blocks version changes: the selector greys out, its tooltip gives the reason"],
   ["ST-SIDE-05", "not drawn: manual, it needs a real PES running; the Running game combo and Poll now fake the poll"],
   ["ST-SIDE-06", "click the 4cc logo: the About block, its links and the Copy button"],
-  ["ST-SIDE-07", "the grayed tool names under the registered ones: not clickable, each tooltip says it is not in this build"],
+  ["ST-SIDE-07", "the grayed tool names under the registered ones: not clickable, each tooltip says Coming soon™"],
   ["ST-SET-01", "the gear: the common rows, then one section per tool with settings (none for the Export upgrader), the active tool's open"],
   ["ST-SET-02", "change Threads in the menu: it saves at once, the Team compiler stub's Threads line follows"],
   ["ST-SET-03", "Data folder unwritable plus a change: the value keeps for the session, the read-only warning shows in the bar"],
@@ -2530,7 +2530,7 @@ function sidebarItems(full) {
     items.push(h("span", { class: "sel tool" + (S.activeTool === t.id ? " on" : "")
         + (t.registered ? "" : " planned"), "data-id": t.id,
       tabindex: t.registered ? ti : null,
-      title: t.registered ? null : t.label + " is not in this build",
+      title: t.registered ? null : "Coming soon™",
       onclick: () => pick(t),
       onkeydown: e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(t); } } },
       ph(t.icon), h("span", { class: "tlabel" }, t.label)));
@@ -2543,8 +2543,9 @@ function sidebarItems(full) {
     onclick: fn },
     ph(glyph), h("span", { class: "tlabel" }, label));
   items.push(h("div", { class: "tail" },
-    tailEntry("\uE3E8", "Help", () => openHelp({ tool: S.activeTool }), "help-btn"),
-    tailEntry("\uE270", "Settings", openSettings, "settings-btn")));
+    // "(WIP)" until the help and the settings menu are complete.
+    tailEntry("\uE3E8", "Help (WIP)", () => openHelp({ tool: S.activeTool }), "help-btn"),
+    tailEntry("\uE270", "Settings (WIP)", openSettings, "settings-btn")));
   return items;
 }
 // The opened layer stays while the pointer rests on it or focus is inside

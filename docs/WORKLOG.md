@@ -1941,6 +1941,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               (DECISIONS "A press on the rail's version selector opens the sidebar at once";
               `plans/core/gui.md` "Sidebar" item 2; the draft's `pesSelectorFromRail`, lead,
               done, `.tmp/8_9l/rail_press_check.py`); brief `.tmp/8_9l/brief_l3d3j.md`
+            - [ ] l3d3k every grayed sidebar entry's tooltip "Coming soon™" (CLI-only ones
+              too), and the tail's labels "Help (WIP)" and "Settings (WIP)" (DECISIONS
+              "Disabled sidebar entries say \"Coming soon™\"; Help and Settings marked WIP";
+              `plans/core/gui.md` "Sidebar" items 3 and 5, ST-SIDE-07, ST-SIDE-08; the draft,
+              lead, done, `.tmp/8_9l/wip_draft_tail.png`); brief `.tmp/8_9l/brief_l3d3k.md`,
+              after l3d3j (the same file)
             - [x] l3d3g 2026-10-29 (lead, `712966d8`) the Windows title bar without the icon
               (DECISIONS "The title bar draws no icon on Windows" and "The title bar's icon
               slot stays blank"): `window_size::hide_title_bar_icon`, one `unsafe` call. On the
