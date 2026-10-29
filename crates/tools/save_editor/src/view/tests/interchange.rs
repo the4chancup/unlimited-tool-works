@@ -325,6 +325,43 @@ fn a_team_toml_with_gameplay_alone_writes_the_abilities_as_one_undoable_edit() {
     );
 }
 
+/// A base-copy id of `team × 100 + slot` in the file means "no base copy":
+/// imported onto another team it becomes each target player's own id, never
+/// the source player's. The rule reads the file's own `[team] id`, so the
+/// import must leave that id as the file has it.
+#[test]
+fn an_aesthetics_import_writes_each_players_own_id_where_the_file_has_no_base_copy() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_base_copy", THREE);
+    let source = rostered(&view, CO);
+    let marked: Vec<usize> = (0..source.len())
+        .filter(|&slot| {
+            let own = CO * 100 + u32::try_from(slot + 1).expect("a roster slot");
+            source[slot].appearance.base_copy_id == own
+        })
+        .collect();
+    assert!(
+        !marked.is_empty(),
+        "premise: some /co/ player has no base copy (his own id)"
+    );
+    let co = export(&view, CO);
+    picked(&mut window, &mut view, "co.toml", co.as_bytes());
+    toggle(&mut window, &mut view, "gameplay");
+    toggle(&mut window, &mut view, "tactics");
+
+    apply(&mut window, &mut view);
+
+    let after = rostered(&view, THREE);
+    for slot in marked {
+        assert_eq!(
+            after[slot].appearance.base_copy_id,
+            after[slot].id,
+            "slot {}: his own id, not /co/'s {}",
+            slot + 1,
+            source[slot].id
+        );
+    }
+}
+
 // SE-GUI-16
 #[test]
 fn a_file_of_another_version_lists_the_command_lines_notes() {
