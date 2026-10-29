@@ -13228,3 +13228,14 @@ egui reports a loss of the keyboard in the middle of a frame on the next, so a f
 commits on losing it (a drag value being typed in, the Ruleset editor's tier id) commits
 there, and a step on that frame would join its entry. The two frames' delay is not visible.
 Plan: `plans/core/gui.md` "The wheel over a value" and "Acceptance" (ST-WHEEL-04).
+
+## 2026-10-29 — gui — The overlap test compares widget pairs, and excuses an overlap by name
+Decision: the overlap test (worklog 0.0.1ov3) reads each Save editor screen's AccessKit
+nodes of the widget and label roles, compares every pair of which neither contains the other,
+counts an intersection only past one point in both directions, and excuses a meant overlap by
+the nodes' role and label with a reason, never by a position.
+Why: the worklog step said what the test catches, not how. Containment is how a widget's own
+parts (a combo's text) sit in it, so a pairwise test without that exclusion fails on every
+combo; the one-point margin is the drafts' tolerance; an excuse by position would let whatever
+moved there later pass.
+Plan: `plans/core/gui.md` "No two widgets overlap".

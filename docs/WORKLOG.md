@@ -4583,7 +4583,11 @@ briefs, review loops, gates and mutation runs as for any step.
     within the one-pixel match. `0df81c08` with rework 1, merge `6e546261`. Not yet seen in
     a built window (ov1)
   - [ ] ov3 a general overlap test: a headless pass over every modal and view failing when two
-    widgets' rectangles intersect (catches collisions, not a draft mismatch: ov1 does that)
+    widgets' rectangles intersect (catches collisions, not a draft mismatch: ov1 does that;
+    `plans/core/gui.md` "No two widgets overlap"; Opus sidekick, brief
+    `.tmp/0_0_1ov/brief_ov3.md`) → verify: the test passes on main once every collision it
+    finds is fixed or listed with its reason; a perturbation (a field widened over its
+    neighbour) fails it
   - [ ] ov4 8.20's host control (lead, drafts): the captures in
     `docs/prototypes/assets/captures/`, the Overlay control over the draft (8.20's brief,
     `.tmp/8_20/brief_8_20.md`, written for a worktree since gone: rebase it on main)
