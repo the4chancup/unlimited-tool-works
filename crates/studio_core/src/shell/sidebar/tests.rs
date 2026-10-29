@@ -6,8 +6,8 @@ use egui::accesskit::{self, Role, Toggled};
 use pes_version::PesVersion;
 
 use super::{
-    ACTIVE_BAR_WIDTH, CLOVER_LEAVES, CLOVER_RING, ExeCheck, RAIL_WIDTH, overlay_frame, overlay_id,
-    selector_color,
+    ACTIVE_BAR_WIDTH, CLOVER_LEAVES, CLOVER_RING, ExeCheck, ICON_SIZE, LABEL_END_PADDING,
+    LABEL_GAP, RAIL_WIDTH, overlay_frame, overlay_id, selector_color,
 };
 use crate::help::{HelpSection, HelpTarget, HelpTopic};
 use crate::pes_process::RunningPes;
@@ -16,9 +16,10 @@ use crate::shell::test_harness::*;
 use crate::shell::{StudioApp, about, run_cli};
 use crate::tool::{AppPaths, PlannedTool};
 
-/// The overlay's inner width from the same formula the sidebar uses: the icon cell,
-/// one `item_spacing.x` and the widest body-text galley over `labels`, measured with
-/// the context's fonts.
+/// The overlay's inner width as the draft's row lays it out: the accent bar, the icon's
+/// `ICON_SIZE` box centred in the rest of the icon cell `cell` wide, `LABEL_GAP`, the
+/// widest body-text galley over `labels` (measured with the context's fonts) and
+/// `LABEL_END_PADDING`.
 fn overlay_inner_width(egui_ctx: &egui::Context, cell: f64, labels: &[&str]) -> f64 {
     let font = egui::TextStyle::Body.resolve(&egui_ctx.global_style());
     let widest = labels
@@ -32,7 +33,9 @@ fn overlay_inner_width(egui_ctx: &egui::Context, cell: f64, labels: &[&str]) -> 
                 .x
         })
         .fold(0.0, f32::max);
-    cell + f64::from(egui_ctx.global_style().spacing.item_spacing.x) + f64::from(widest)
+    let bar = f64::from(ACTIVE_BAR_WIDTH);
+    let icon_box_right = bar + (cell - bar) / 2.0 + f64::from(ICON_SIZE) / 2.0;
+    icon_box_right + f64::from(LABEL_GAP) + f64::from(widest) + f64::from(LABEL_END_PADDING)
 }
 
 /// A key pressed event, as `hover`/`pointer` build pointer events.
@@ -716,8 +719,9 @@ fn the_labels_are_painted_in_the_overlay_and_never_on_the_rail() {
 }
 
 // An entry row: the icon centred in the icon cell (the row's first cell-width
-// points less the accent bar's width at its left), the label starting one
-// item-spacing past the cell's right edge, vertically centred on the row.
+// points less the accent bar's width at its left), the label starting the
+// draft's gap past the right edge of the icon's 24-point box centred there,
+// vertically centred on the row.
 #[test]
 fn a_row_paints_its_icon_centred_in_the_cell_and_its_label_after_it() {
     let Shell { mut app, _dir, .. } = shell();
@@ -749,10 +753,10 @@ fn a_row_paints_its_icon_centred_in_the_cell_and_its_label_after_it() {
 
     let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(800.0, 600.0));
     let label = text_shape_in(&out, "A", screen).expect("A's label is painted");
-    let expected_x = icon_cell.max.x + egui_ctx.global_style().spacing.item_spacing.x;
+    let expected_x = centre.x + ICON_SIZE / 2.0 + LABEL_GAP;
     assert!(
         (label.pos.x - expected_x).abs() <= 0.5,
-        "the label starts one item-spacing past the cell's right edge ({} vs {expected_x})",
+        "the label starts the gap past the icon box's right edge ({} vs {expected_x})",
         label.pos.x
     );
     let label_centre_y = label.pos.y + label.galley.size().y / 2.0;
@@ -819,8 +823,8 @@ fn the_overlay_holds_while_the_pointer_is_anywhere_on_it() {
     let out = open_sidebar(&egui_ctx, &mut app, entry(&closed, "A"), 1.0);
     let row_y = centre(entry(&out.nodes, "A")).y;
 
-    // The overlay's right edge, as `show` computes it: its left edge plus the
-    // inner width (cell, one item-spacing, the widest label) plus the frame's
+    // The overlay's right edge: its left edge plus the inner width (the icon box,
+    // the gap, the widest label and the padding after it) plus the frame's
     // margins.
     let outer_left = egui_ctx
         .memory(|m| m.area_rect(overlay_id()))
@@ -2441,6 +2445,46 @@ fn every_rail_icon_centres_right_of_the_accent_bar_on_the_rail_and_open() {
             );
         }
     }
+}
+
+// The opened sidebar's rows as the draft's `#sb-open .tool` lays them out: every
+// label starts at x 47 (the row's left at 6, its 3-point border, its padding 8,
+// the 24-point icon and the gap 6), and the layer is the draft's 190.6 wide: its
+// widest label, "Player aesthetics editor", with 6 of the row after it, the
+// frame's padding 6 on both sides and the 1-point line.
+#[test]
+fn the_opened_sidebars_labels_and_width_match_the_draft() {
+    let Shell { mut app, _dir, .. } = draft_window_shell();
+    let egui_ctx = test_context();
+    let settled = draft_window_frame(&egui_ctx, &mut app, Vec::new(), Some(0.9));
+    let hovered = hover(entry(&settled.nodes, "Save editor"));
+    draft_window_frame(&egui_ctx, &mut app, hovered, Some(1.0));
+    let open = draft_window_frame(&egui_ctx, &mut app, Vec::new(), Some(1.2));
+    assert_eq!(
+        painted_text_count(&open, "Help"),
+        1,
+        "premise: the sidebar is open"
+    );
+
+    let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 780.0));
+    let labels = REGISTRY
+        .iter()
+        .map(|entry| entry.label)
+        .chain(["Help", "Settings"]);
+    for label in labels {
+        let shape = text_shape_in(&open, label, screen)
+            .unwrap_or_else(|| panic!("the opened sidebar paints {label:?}"));
+        assert_at_draft(
+            f64::from(shape.pos.x),
+            47.0,
+            &format!("the {label:?} label's left"),
+        );
+    }
+
+    let layer = egui_ctx
+        .memory(|m| m.area_rect(overlay_id()))
+        .expect("the open overlay has a rect");
+    assert_at_draft(f64::from(layer.width()), 190.63, "the opened layer's width");
 }
 
 // The logo is the draft's `.logo` 32-point square: it alone senses and fills on

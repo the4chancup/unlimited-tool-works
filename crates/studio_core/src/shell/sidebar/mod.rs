@@ -60,6 +60,12 @@ const ACTIVE_BAR_WIDTH: f32 = 3.0;
 /// corner radius, which its left border follows. The right corners stay square
 /// against the row's fill.
 const ACTIVE_BAR_CORNER: u8 = 2;
+/// The space between the right edge of an entry's `ICON_SIZE` icon box and its label in
+/// the opened sidebar, the draft's `.sidebar .tool` gap.
+const LABEL_GAP: f32 = 6.0;
+/// The space an opened sidebar's row keeps after its longest label, the draft's
+/// `.rail .sel` right padding.
+const LABEL_END_PADDING: f32 = 6.0;
 /// Seconds between running-PES polls of the auto-switch.
 const PES_POLL_SECONDS: f64 = 5.0;
 
@@ -193,7 +199,7 @@ impl Sidebar {
         // The icon cell is as wide as the rail's inner width, in both places, so
         // an icon sits at the same position in the rail and in the overlay.
         let cell = rail_content.width();
-        let inner_width = cell + ui.spacing().item_spacing.x + widest_label(ui, &args);
+        let inner_width = label_offset(cell) + widest_label(ui, &args) + LABEL_END_PADDING;
         let frame = overlay_frame(ui.style());
         let geom = OverlayGeom {
             outer: egui::Rect::from_min_size(
@@ -764,13 +770,21 @@ fn logo(ui: &mut egui::Ui, width: f32, cell: f32) -> egui::Response {
     response
 }
 
+/// Where an entry's label starts, from its row's left edge: `LABEL_GAP` past the right
+/// edge of the icon's `ICON_SIZE` box, centred as the icon is in the icon cell `cell`
+/// wide less the accent bar, and not after the whole cell, so the label sits where the
+/// draft's `.sidebar .tool` puts it.
+fn label_offset(cell: f32) -> f32 {
+    (ACTIVE_BAR_WIDTH + cell + ICON_SIZE) / 2.0 + LABEL_GAP
+}
+
 /// One sidebar entry row `width` wide, the same in the rail and in the overlay
 /// (item 3: "nothing moves when it opens"): `icon` centred in the icon cell, the
 /// row's first `cell` points less the accent bar's width at its left (the draft's
 /// entries carry that border on every row, transparent but on the active one), then
-/// `label` in body text after the cell and one `item_spacing.x` gap, vertically
-/// centred and never wrapped (`None` in the rail, which shows the icons alone and
-/// needs no tooltip: the overlay shows the label). `active` gets the filled
+/// `label` in body text at `label_offset`, vertically centred and never wrapped
+/// (`None` in the rail, which shows the icons alone and needs no tooltip: the
+/// overlay shows the label). `active` gets the filled
 /// selection background plus the accent left bar; `clickable` selects
 /// `Sense::click` over `Sense::hover`.
 fn entry_row(
@@ -821,7 +835,7 @@ fn entry_row(
         );
         ui.painter().galley(
             egui::pos2(
-                cell_rect.max.x + ui.spacing().item_spacing.x,
+                rect.min.x + label_offset(cell),
                 rect.center().y - galley.size().y / 2.0,
             ),
             galley,
