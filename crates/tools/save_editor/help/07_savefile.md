@@ -2,6 +2,17 @@ The **Savefile** menu works on the whole save:
 
 - **Comparator…** opens a window comparing the open save against a second
   save (see the window's chapter).
+- **Apply aesthetics patch…** opens a panel for a patch the Team compiler
+  wrote. **Open patch…** reads it; a patch for another PES version, or
+  from a different version of the Team compiler, is refused and the save
+  is left alone. The panel then lists every value the patch would change,
+  player by player, with the old value and the new one; click a row to
+  select that player.
+  A team the save does not hold is named and skipped, and the rest
+  applies. **Apply** writes the patch as one undoable step, unsaved until
+  you save. A patch whose values the save already holds lists nothing,
+  says so, and leaves Apply disabled. It works while the aesthetics lock
+  is on: a patch is how the teams' exports reach the save.
 - **Output rosters to TSV…** writes the roster sheet, the file members
   paste into a spreadsheet to check a cup's teams: every team of the
   save, hidden ones included, its name on a line of its own, then one
