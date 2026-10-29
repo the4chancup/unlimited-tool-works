@@ -535,6 +535,9 @@
   .help-win .help-topic { flex: 1; overflow: auto; padding: 4px 12px 30px; }
   .help-win .help-topic h3 { font: 400 14px/1.2 var(--font-body); color: var(--strong); margin: 10px 0 4px; }
   .help-win .help-topic p { margin: 4px 0 8px; }
+  /* A topic's text wraps at a reading width (P44): past about 110 characters a line's end
+     loses the eye the next line's start. The Messages table keeps the pane's width. */
+  .help-win .help-topic p, .help-win .help-topic pre, .help-win .help-topic .ul { max-width: 720px; }
   .help-win .help-res .sel { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .help-win .hl { background: var(--changed); }
   .pipe { height: 100%; display: flex; flex-direction: column; min-height: 0; }
@@ -1344,9 +1347,10 @@ function md(body, hlPara) {
     if (b.startsWith("## ")) return h("h3", { class: cls }, mdInline(b.slice(3)));
     if (b.startsWith("```"))
       return h("pre", { class: "mono" + (cls ? " " + cls : "") }, b.split("\n").slice(1, -1).join("\n"));
+    // A list: each item from its "- " to the next, its wrapped lines joined.
     if (b.startsWith("- "))
-      return h("div", { class: cls }, b.split("\n").map(l =>
-        l.startsWith("- ") ? h("div", {}, "• ", mdInline(l.slice(2))) : h("div", {}, mdInline(l))));
+      return h("div", { class: "ul" + (cls ? " " + cls : "") }, b.split(/\n(?=- )/).map(item =>
+        h("div", {}, "• ", mdInline(item.slice(2).replaceAll("\n", " ").replace(/ +/g, " ")))));
     return h("p", { class: cls }, mdInline(b.replaceAll("\n", " ")));
   });
 }

@@ -4415,12 +4415,12 @@ function otherStatsPanel(p) {
   // The weak foot's two share one label: "Weak foot: Usage", then "Accuracy".
   return named(h("div", { class: "col" }, strong("Other stats"),
     h("div", { class: "gen" }, h("div", { class: "pairs" },
-      small("Injury resistance", "Injury resistance",
+      small("Injury Resistance", "Injury Resistance",
         x => x.stats.injury_resistance, (x, v) => x.stats.injury_resistance = v, 3, "injury_resistance"),
       small("Form", "Form", x => x.stats.form, (x, v) => x.stats.form = v, 8, "form"),
-      small("Weak foot: Usage", "Weak foot usage",
+      small("Weak Foot: Usage", "Weak Foot Usage",
         x => x.stats.weak_foot_usage, (x, v) => x.stats.weak_foot_usage = v, 4, "weak_foot_usage"),
-      small("Accuracy", "Weak foot accuracy",
+      small("Accuracy", "Weak Foot Accuracy",
         x => x.stats.weak_foot_accuracy, (x, v) => x.stats.weak_foot_accuracy = v, 4, "weak_foot_accuracy")))),
     "other-stats");
 }
@@ -6131,9 +6131,9 @@ const FIELD_TERMS = {
   Height: T_num("Height", 0), Weight: T_num("Weight", 0), Age: T_num("Age", 0),
   Nationality: T_num("Nation", 0), BootsId: T_num("Boots ID", 0),
   GlovesId: T_num("Gloves ID", 0), BaseCopyId: T_num("Copy from ID", 0),
-  Form: T_num("Form", 1), InjuryResistance: T_num("Injury resistance", 1),
-  WeakFootUsage: T_num("Weak foot usage", 1),
-  WeakFootAccuracy: T_num("Weak foot accuracy", 1),
+  Form: T_num("Form", 1), InjuryResistance: T_num("Injury Resistance", 1),
+  WeakFootUsage: T_num("Weak Foot Usage", 1),
+  WeakFootAccuracy: T_num("Weak Foot Accuracy", 1),
   Star: T_num("Star", 0), PlayingAttitude: T_num("Playing attitude", 0),
   HunchingDribbling: T_num("Hunching (dribbling)", 1),
   HunchingRunning: T_num("Hunching (running)", 1),
@@ -6395,8 +6395,8 @@ const RULE_NAME = {
   RegisteredNotA: "Registered position", FieldedNotA: "Fielded position", BRating: "B rating",
   GkSecondA: "GK rating", Age: "Age", Weight: "Weight", PositionRange: "Registered position",
   PlayingStyleRange: "Playing style", NoTier: "Tier", Stat: "Stat", StatTotal: "Stat total",
-  Form: "Form", InjuryResistance: "Injury resistance", WeakFootUsage: "Weak foot usage",
-  WeakFootAccuracy: "Weak foot accuracy", NameColor: "Name colour", Cards: "Cards",
+  Form: "Form", InjuryResistance: "Injury Resistance", WeakFootUsage: "Weak Foot Usage",
+  WeakFootAccuracy: "Weak Foot Accuracy", NameColor: "Name colour", Cards: "Cards",
   MinCards: "Cards", SkillCardCap: "Skill cards", ComStyleCap: "COM styles",
   RequiredCard: "Required card", APositions: "A positions", Height: "Height",
   TierCount: "Tier count", BracketQuota: "Height quota", MedalSystem: "Medal system",
@@ -6439,10 +6439,10 @@ function violationSentence(rule, kv, sev) {
       ? statLabel(v("stat")) + " " + v("value") + ", just over the " + v("target") + " the rules allow"
       : bound(statLabel(v("stat")), v("value"), v("target"));
     case "StatTotal": return "the stats add up to " + v("total") + ", over the limit of " + v("limit");
-    case "Form": return "form " + v("value") + ", where the rules want " + v("target");
-    case "InjuryResistance": return bound("injury resistance", v("value"), v("max"));
-    case "WeakFootUsage": return bound("weak foot usage", v("value"), v("max"));
-    case "WeakFootAccuracy": return bound("weak foot accuracy", v("value"), v("max"));
+    case "Form": return "Form " + v("value") + ", where the rules want " + v("target");
+    case "InjuryResistance": return bound("Injury Resistance", v("value"), v("max"));
+    case "WeakFootUsage": return bound("Weak Foot Usage", v("value"), v("max"));
+    case "WeakFootAccuracy": return bound("Weak Foot Accuracy", v("value"), v("max"));
     case "NameColor": return v("expected") === undefined
       ? "name colour " + v("color", "none") + ", which belongs to another tier"
       : "name colour " + v("color", "none") + ", where his tier wants " + v("expected");
@@ -6482,9 +6482,9 @@ function unusedSentence(allowance, used, allowed) {
     case "cards": return used + " of " + allowed + " paid cards used";
     case "a_positions": return used + " of " + allowed + " A positions used";
     case "free_cards": return used + " of " + allowed + " free cards held";
-    case "weak_foot_usage": return "weak foot usage " + used + ", where the rules allow " + allowed;
-    case "weak_foot_accuracy": return "weak foot accuracy " + used + ", where the rules allow " + allowed;
-    case "injury_resistance": return "injury resistance " + used + ", where the rules allow " + allowed;
+    case "weak_foot_usage": return "Weak Foot Usage " + used + ", where the rules allow " + allowed;
+    case "weak_foot_accuracy": return "Weak Foot Accuracy " + used + ", where the rules allow " + allowed;
+    case "injury_resistance": return "Injury Resistance " + used + ", where the rules allow " + allowed;
     case "height": return "height " + used + ", where the bracket allows " + allowed;
     case "com": return used + " of " + allowed + " free COM styles held";
     default: return used + " of " + allowed + " free " + titleCase(allowance) + " cards held";

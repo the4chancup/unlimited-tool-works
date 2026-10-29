@@ -409,6 +409,10 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   A topic's paragraphs stand 8 points apart (the drafts' `.help-topic p` margin): the
   window renders each paragraph on its own, so search can highlight it, and with only egui's
   3 points of item spacing between them a paragraph break read as a line break.
+  A topic's paragraphs, lists and code blocks wrap at 720 points (about 110 characters at
+  the body size), left in the pane, where the pane's width made a line run about 200
+  characters and the eye lose the next line's start; the Messages table keeps the pane's
+  width (the drafts' `.help-topic` `max-width`).
 - **CLI equivalence.** `UTW help [tool-id] [topic]` prints the Markdown to stdout, and
   `UTW help --export <dir>` writes every chapter out as `.md` files — the wiki and the release
   page get the same text with no second source, and the `--export` output is what the release

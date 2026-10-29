@@ -367,8 +367,9 @@ all side by side.
      each stat named as the save's PES version names it, from one per-version table in
      `pes_savefile` that every surface naming a stat reads (this view, the AATF rows, the
      Comparator and the changes lists), so a member reads the names his game shows. PES
-     2017's are the ids' title case but Header for `heading` (4ccEditor's labels, made
-     against that game; the drafts' `statLabel`); the other versions' names (PES 2021's
+     2017's, read off its Edit screen: the ids' title case but Header for `heading` (the
+     drafts' `statLabel`), and Form, Injury Resistance, Weak Foot Usage and Weak Foot
+     Accuracy in title case too, on every version; the other versions' names (PES 2021's
      Offensive Awareness, PES 2016's Unwavering Balance) are gathered from each game after
      0.0.1, the title case standing for them until then,
      the labels left-aligned in one column starting at one x and the numbers in another, as

@@ -13911,3 +13911,21 @@ walls of prose; a bold run-in head (`**Editing.** Click a…`) hid the subject i
 paragraph. A bold line rather than a Markdown heading, because the window draws a topic's
 title at heading size and a `##` inside the body would compete with it.
 Plan: `CONTRIBUTING.md` "Code style", the bullet on help topics.
+
+## 2026-10-29 — gui — The help's text wraps at 720 points
+
+Decision: a help topic's paragraphs, lists and code blocks wrap at 720 points, left in the
+pane; the Messages table keeps the pane's width.
+Why: the maintainer accepted P44 ("let's give it a try"): at the window's 90% of a 1280-point
+window a line ran about 200 characters.
+Plan: `plans/core/gui.md` "Help window", the Window bullet.
+
+## 2026-10-29 — save_editor — PES 2017's stat names, read off its Edit screen
+
+Decision: PES 2017's ability stats are the ids' title case but Header for `heading`, as
+4ccEditor's labels said; Form, Injury Resistance, Weak Foot Usage and Weak Foot Accuracy take
+the game's title case on every version (the player view's `Weak Foot: Usage` pair keeps its
+shared label), in the player view, the Comparator and the AATF rows alike.
+Why: the maintainer's captures of PES 2017's Edit screen list every stat so; the build wrote
+the four in sentence case.
+Plan: `plans/save_editor.md` "Editing UI", the Ability stats item.

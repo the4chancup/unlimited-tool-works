@@ -27,10 +27,7 @@ names where the question came from so the context can be read there.
     - the icon where the lead cannot capture it (worklog 0.0.1v and 8.9l3d3g): the taskbar
       button and Alt+Tab (both show the tight crop of the head), Explorer's file icon on the
       exe, and the title bar's icon slot, now left blank (checked on Windows 10, not on
-      Windows 11);
-    - the ability stats' names against PES 2017's Edit screen, in the next candidate: they
-      follow 4ccEditor's labels, so the one change is Heading now read Header (worklog
-      8.29d3a).
+      Windows 11).
   - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
 
 ## Cup practice
