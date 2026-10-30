@@ -5959,7 +5959,10 @@ briefs, review loops, gates and mutation runs as for any step.
     Done: `startDemo`, `placeWindow`, the `demo` link key kept in the address, the page as
     the monitor `fitted` reads; checked locally (Playwright at 1600 × 900: 1280 × 780
     centred, dragged and clamped to the page, maximized and restored; at 1000 × 700: fitted
-    to 969 × 630; without `demo` the column stays; no console warnings). Open: the same on
+    to 969 × 630; without `demo` the column stays; no console warnings). Then the maintainer's
+    additions: the Team compiler and the Export upgrader greyed in the demo (TOOLS' `demo:
+    false`), the title ending "(Demo)", the title bar's text unselectable under the arrow;
+    checked locally (`.tmp/0_0_1cv/cv8e/demo_tools_check.py`). Open: the same on
     the published page once pushed
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs

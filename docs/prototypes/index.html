@@ -270,7 +270,8 @@
   .win { resize: both; min-width: 480px; min-height: 320px; }
   .win.max { position: fixed; inset: 0; margin: 0; width: auto !important; height: auto !important;
     resize: none; z-index: 1000; border: none; }
-  .titlebar { align-items: center; }
+  /* An OS title bar: its text is not selectable and takes the arrow, not the text cursor. */
+  .titlebar { align-items: center; cursor: default; user-select: none; }
   .titlebar .win-title { flex: 1; }
   .titlebar .win-max { padding: 0 6px; line-height: 1; }
   /* The system's maximize box, drawn rather than typed: the title bar stands for the OS's,
@@ -1112,11 +1113,13 @@ S.dataDirUnwritable = false;
 // Registry order of plans/core/architecture.md "Tool plugin interface"; icon is
 // the glyph of resources/icons/<id>.svg (assets/fonts/icons.ttf, drawn through .ph
 // at 24 px).
+// demo: false keeps a registered tool out of the demo (a link's demo=1), its draft too early
+// to show a visitor: the demo greys it like a planned tool.
 const TOOLS = [
-  { id: "team-compiler", label: "Team compiler", icon: "\uE68E", registered: true },
+  { id: "team-compiler", label: "Team compiler", icon: "\uE68E", registered: true, demo: false },
   { id: "save-editor", label: "Save editor", icon: "\uE34C", registered: true },
   { id: "stadium-compiler", label: "Stadium compiler", icon: "\uE102", registered: false },
-  { id: "export-upgrader", label: "Export upgrader", icon: "\uE52E", registered: true },
+  { id: "export-upgrader", label: "Export upgrader", icon: "\uE52E", registered: true, demo: false },
   { id: "music-player", label: "Music player", icon: "\uE33C", registered: false },
   { id: "music-export-editor", label: "Music export editor", icon: "\uE340", registered: false },
   { id: "match-tracker", label: "Match tracker", icon: "\uE1D6", registered: false },
@@ -2318,13 +2321,15 @@ function chooseDataLocation(loc) {
 // gui.md "Window title": progress first, name last, a plain hyphen before the
 // name. An activity outranks a held notice: the held-notice row of the table is
 // the idle one; idle, the title is the active tool's name and the app's.
+// The demo marks the app's name, so a visitor in the Save editor knows no save is edited.
 function windowTitle() {
+  const app = demo ? APP_NAME + " (Demo)" : APP_NAME;
   const acts = activityIds(true);
   if (acts.length)
-    return acts.map(id => activityText(id, S.activities[id])).join(" · ") + " - " + APP_NAME;
-  if (S.heldTitleNotice) return S.heldTitleNotice + " - " + APP_NAME;
+    return acts.map(id => activityText(id, S.activities[id])).join(" · ") + " - " + app;
+  if (S.heldTitleNotice) return S.heldTitleNotice + " - " + app;
   const view = VIEWS[S.activeTool], detail = view && view.titleDetail && view.titleDetail();
-  return toolLabel(S.activeTool) + (detail ? " " + detail : "") + " - " + APP_NAME;
+  return toolLabel(S.activeTool) + (detail ? " " + detail : "") + " - " + app;
 }
 // The title is set only when the string changes: the real shell sends
 // ViewportCommand::Title once per change, not once per frame. titleSetCount is
@@ -2579,12 +2584,13 @@ function sidebarItems(full) {
   // covered controls leave the Tab order.
   const ti = (!full && S.sidebarOpen) ? "-1" : "0";
   if (!full && S.sidebarOpen) pesSel.tabIndex = -1;
-  const pick = t => { if (t.registered) { S.activeTool = t.id; render(); } };
-  for (const t of TOOLS.filter(t => t.registered).concat(TOOLS.filter(t => !t.registered))) {
+  const open = t => t.registered && !(demo && t.demo === false);
+  const pick = t => { if (open(t)) { S.activeTool = t.id; render(); } };
+  for (const t of TOOLS.filter(open).concat(TOOLS.filter(t => !open(t)))) {
     items.push(h("span", { class: "sel tool" + (S.activeTool === t.id ? " on" : "")
-        + (t.registered ? "" : " planned"), "data-id": t.id,
-      tabindex: t.registered ? ti : null,
-      title: t.registered ? null : "Coming soon™",
+        + (open(t) ? "" : " planned"), "data-id": t.id,
+      tabindex: open(t) ? ti : null,
+      title: open(t) ? null : t.registered ? "Not in the demo yet" : "Coming soon™",
       onclick: () => pick(t),
       onkeydown: e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(t); } } },
       ph(t.icon), h("span", { class: "tlabel" }, t.label)));
