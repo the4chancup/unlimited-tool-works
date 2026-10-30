@@ -85,7 +85,9 @@ online" opens the section in the drafts (`docs/prototypes/`, published by GitHub
 `https://the4chancup.github.io/unlimited-tool-works/prototypes/#ruleset_editor/<section>?demo=1&start=0`,
 `<section>` the drafts' id: `heights`, `cards`, `universal`, `specials`, `suggestions`), in
 the drafts' demo mode: no draft controls, the window at its default size on a page it can be
-moved and resized over. A demo link, not nothing, because the drafts of these sections are
+moved and resized over (a page smaller than that is the monitor the window is fitted to, as
+the app fits its window to a small one). The drafts are not held to these addresses: a section
+renamed there leaves the link opening the tool's first section. A demo link, not nothing, because the drafts of these sections are
 finished but for polish, and seeing one beats reading the Summary; only a section whose draft
 is that far along gets one (the other tools' drafts are not yet). The github.io address, not
 a custom domain, until one is live: the old address redirects to it, and a 0.0.1 build keeps

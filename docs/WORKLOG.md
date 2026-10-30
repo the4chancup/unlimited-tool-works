@@ -5938,12 +5938,17 @@ briefs, review loops, gates and mutation runs as for any step.
     each unbuilt section's demo link under its line (`core/development_plan.md`, the paragraph
     starting "The Ruleset editor (Phase 20) ships in 0.0.1"), opened as the event logo opens
     its page, with a test that each section's link opens its address
-  - [ ] cv8e the drafts' demo mode, `demo=1` (`core/development_plan.md`, the same
+  - [x] cv8e the drafts' demo mode, `demo=1` (`core/development_plan.md`, the same
     paragraph): the draft controls column hidden, the window at the app's default size on a
     page it is dragged across by its title bar and resized by its corner, as on a desktop
     (`docs/prototypes/index.html`; the lead's, the drafts being lead-edited) → verify: on the
     published page, `#ruleset_editor/heights?demo=1&start=0` opens Heights at 1280 × 780,
-    no controls column, the window moves and resizes; without `demo` nothing changes
+    no controls column, the window moves and resizes; without `demo` nothing changes.
+    Done: `startDemo`, `placeWindow`, the `demo` link key kept in the address, the page as
+    the monitor `fitted` reads; checked locally (Playwright at 1600 × 900: 1280 × 780
+    centred, dragged and clamped to the page, maximized and restored; at 1000 × 700: fitted
+    to 969 × 630; without `demo` the column stays; no console warnings). Open: the same on
+    the published page once pushed
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
   - [ ] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30): off
