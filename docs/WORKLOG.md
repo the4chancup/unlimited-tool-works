@@ -6262,6 +6262,14 @@ points there.
   reporting PES 2019, and CONTRIBUTING's "A test never reaches the developer's own files"
   names the running games. A sandbox default reporting PES 2021 fails 18 tests
 
+- open 2026-10-30 — two member-facing errors still number a roster slot from 0, where the
+  player list numbers it from 01 (found reviewing d1b2, whose rule covered the badge's failed
+  check): `pes_savefile` `texport.rs`'s `roster slot {slot} holds player {roster}, the
+  record is {player}` (a Texport import's refusal) and the Save editor's
+  `session/player_ops.rs` `team {team_id}'s roster slot {slot} is empty`. Each takes the
+  list's `place NN` the way `aatf`'s `MissingPlayer` now does; ride the next Save editor
+  text slice
+
 - open 2026-10-29 — `studio`'s `tests/crash_dump.rs`
   `a_stack_overflow_leaves_a_dump_and_the_monitors_line` failed in k5a's checkpoint
   (`gates-changed 17c23789`, four test binaries at once beside `save_editor`'s): the crashed
