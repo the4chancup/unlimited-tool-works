@@ -14161,3 +14161,17 @@ Why: a member can edit the save with the app and export the Texport from PES 201
 is what the cups take (the maintainer).
 Plan: no plan edit needed; the plan's bullet says what the export does, not when it lands
 (worklog 8.9k5 k5f).
+
+## 2026-10-30 — releases — The version number is semver-shaped with an application's meaning
+Decision: the suite keeps semver-shaped versions (0.x test releases, 1.0.0 after Phase 16),
+read as an application's: the major marks an era (1.0.0 feature-complete; a later major only
+for a change of that weight, such as a PES generation dropped), the minor a feature release,
+the patch fixes. Compatibility is promised per surface (the export layout, the AATF logic
+version, the patch's allocation scheme, Team TOML's added-only keys, the 1.0.0 contract list),
+never by the app's number.
+Why: nothing compiles against the suite, so semver's API contract has nothing to attach to,
+and the one change that would bump a major, a broken export format, is never made (the
+maintainer: the old format has lasted a decade with non-breaking changes only). The shape stays
+because Cargo requires it, the update check compares tags as semver, and the plans' milestones
+are written in it; calendar versions would drop those milestones.
+Plan: `plans/core/development_plan.md` "What the version number means" (after "Releases").
