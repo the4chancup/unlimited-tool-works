@@ -382,7 +382,13 @@ all side by side.
      whose second starts at the skills' second's x. Every cell is one line of one height, a
      version-gated card's disabled one as tall as an enabled one, so each row of the two
      columns shares one y (the draft's disabled cells were 2 points taller, and its second
-     column ended 24 points lower).
+     column ended 24 points lower). A skill's, COM style's or playing style's name, here and
+     wherever one is named (the playing-style combo, the AATF rows, the Comparator and the
+     changes lists), is its id's title case read as an English title, from one function in
+     `pes_savefile`: GK in capitals, `&` for and, in, on, the and to in lower case after the
+     first word, and `No. 10` (`GK Long Throw`, `Cut Behind & Turn`, `Fox in the Box`,
+     `Classic No. 10`; the drafts' `cardName`), where the bare title case drew `Gk Long
+     Throw` and `Classic No 10`.
   3. **Ability stats**, ~25 in one column in the game's order, each label beside its number,
      each stat named as the save's PES version names it, from one per-version table in
      `pes_savefile` that every surface naming a stat reads (this view, the AATF rows, the
@@ -464,7 +470,10 @@ all side by side.
     the player shows `Tier check failed, click for more information.` in the error colour in
     the badge's place, its click opening a dialog titled `The tier check failed` with the
     error (the AATF check never runs the two functions the badge asks, so a member's edit that
-    breaks only them would otherwise show nowhere).
+    breaks only them would otherwise show nowhere). That error names a roster place as the
+    player list numbers it (`place 04`), and the quick actions' refusal `Cannot apply the
+    tier` names a tier by its label (`Gold`), not by the ruleset's id; an id no tier of the
+    ruleset carries is quoted as the id, the only name it has.
   - **Appearance** — first a **Cutscenes** group, star (19+) and playing attitude (20+),
     outside the aesthetics lock: they change only cutscenes, so they are no aesthetic the
     export owns. Then the ownership line, the switch and the locked groups, each group's
@@ -1191,7 +1200,10 @@ The panel over the spec's `diff` report:
   as ID, Com as COM (the views' "COM playing styles") and Color as Colour, a PES 2015-only field marked so (`NoseHeight` is "Nose height",
   `Color1Red` "Colour 1 red", `Pes15JawDepth` "Jaw depth (PES 2015)"), a roster slot as the
   player list numbers it (`Player(3)` is "Player 04", `Number(3)` "Player 04's number"), the face's unnamed bits "Other face
-  data" (the draft's `fieldTerm` and `fieldWords`). The same words label the unsaved-changes
+  data" (the draft's `fieldTerm` and `fieldWords`). A man-marking byte, the marked
+  opponent's formation slot, reads `Opponent's starter 5` (numbered from 1; 255 reads `None`)
+  on the row of the own starter who marks (`Preset 1 · Man marking · <his name>`): the bare
+  byte read as one of the team's own players. The same words label the unsaved-changes
   prompt's, the toolbar's changes list's and the aesthetics patch preview's rows, except a
   slot's number row the prompt lists under its player: that one reads `Shirt number`, as
   the strip labels it, since the item already names him. Export
@@ -1280,7 +1292,18 @@ the editor exposes them as:
   than the target's roster is refused whatever the choices, drawn alone. An import that would
   change nothing (the team's own file, or one applied already) draws Apply disabled and
   `The team already holds every value of the chosen sections.`, as the patch panel's empty
-  list says so, rather than recording an edit that changes nothing.
+  list says so, rather than recording an edit that changes nothing. The section boxes read
+  Gameplay, Aesthetics and Tactics. The warning list draws each note code's text from the
+  catalog once (its when and its effect, the Messages topic's words too, written for any
+  team file rather than for `import-toml`), the code's groups under it: a group is one key in
+  words (its last part as the views name it: a stat at the save's version, a skill by its
+  card name, a motion, an edit flag and a preset's instructions with what they belong to:
+  `Manager ID`, `Tight Possession`, `Dribbling motion`, `Preset 1 attacking instructions`)
+  with its number of players, and lists each player's place, name and what the note carries
+  (an instruction's or a style's name, a lowered value's `19 → 0`); a team key's group is its
+  one note and lists nothing (the drafts' `ixWarningGroups`). The console's line, code and
+  key path (`Warning import_key_not_in_version (path=players.03.stats.star)`), is the CLI's,
+  not the dialog's words.
 - **Legacy import**: `.4ccs` and `.4cct` open through the same import dialog,
   read-only.
 - **Texport import/export** (export is new; PES itself can import the file). Export writes
