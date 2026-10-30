@@ -2546,10 +2546,16 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       `aatf`; RE-FILE-03's fixture drops a comma elsewhere on its line 12 (the page line
       moved the old one). Open: the SWE-2 round (an Opus slice) and the (b) Astra review
       (a new `pub` interface over two crates), with b
-    - [ ] b the Save editor's top-right logo and the Ruleset editor's General fields, the
+    - [x] b the Save editor's top-right logo and the Ruleset editor's General fields, the
       picture decoded and sized once in `team_widgets::event_logo` (DECISIONS "The event
       logo is decoded and sized in `team_widgets`"; brief `.tmp/8_29d/brief_p45b.md`) →
       verify: SE-GUI-44, RE-GUI-19 headless; the built window (autonomous: no ask)
+      Done 2026-10-30 (Opus sidekick, merged `7b875078`): `event_logo` in `team_widgets`
+      and the Save editor (drawn after the panes, over their frames), `LogoField` in
+      General, `Ruleset::{logo_png, set_logo}` with `LogoRefusal`; the "moves nothing"
+      test compares DBC7 with an imported copy without its logo (every built-in ruleset
+      carries one); a narrow pane under about 831 points hides the logo. Open: the SWE-2
+      round and the (b) Astra review over a + b + c, the built window
     - [x] c every ruleset file under `aatf/rulesets/` gets its logo and page, the seven
       built in and the two test rulesets (`autumn25`, `vgl25`; the drafts import Autumn 25
       as their sample file): the pages are the events' wiki pages the maintainer listed

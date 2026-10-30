@@ -2880,3 +2880,5 @@ worklog passed 7,000 lines.
   stats ask for their number on the sentence's row (8.37, 8.37b).
 - **2026-10-30** — Live AATF and Multi-team AATF no longer show the last result in a newly
   picked ruleset's words while the recheck runs (Astra A1d over 8.29d).
+- **2026-10-30** — The Save editor shows the active ruleset's event logo at its top right, a
+  link to the event's page; the Ruleset editor edits the page and the logo (8.35b).
