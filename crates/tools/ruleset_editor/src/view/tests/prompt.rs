@@ -191,6 +191,11 @@ fn a_typed_tier_id_holds_the_close() {
         document.ruleset.tiers[0].id == "gold" && !document.is_dirty(),
         "premise: the id typed, not committed, the document clean"
     );
+    let frame = window.draw(&mut tool.view, &ctx);
+    assert!(
+        drawn(&frame.nodes, "4cc Autumn 26 •"),
+        "the title marks the typed id as unsaved"
+    );
     assert!(StudioTool::hold_close(&mut tool), "the close is held");
     assert!(
         matches!(tool.view.pending_action, Some(Pending::Close)),

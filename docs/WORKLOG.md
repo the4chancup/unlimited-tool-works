@@ -5870,8 +5870,13 @@ briefs, review loops, gates and mutation runs as for any step.
     list kept packed and its full-list candidates, the Generate preview cached, tests for
     the audit's untested behavior. SWE-2 loop ENDED: round 1 6 accepted (cv3b), round 2 1
     (the page keys wait on a button's release frame too, `3ea74954`; `.tmp/0_0_1cv/rulings_cv3.md`).
-    Open: `mutants-diff c2079631^1` (d1b2's run folded in), the ownership link's wrap seen in
-    the built window (cv5)
+    Open: `mutants-diff c2079631^1` (d1b2's run folded in): aatf and pes_savefile done (1
+    survivor), ruleset_editor's remote half alone (its local half refused: the tree moved under
+    it), save_editor's remote half collecting (`.tmp/0_0_1cv/mutants_collect_c2079631.log`), its
+    local half killed by the Bash tool's 2-hour cap (the run was launched there, against the
+    RUNBOOK); the rest (save_editor's other half, studio, studio_core, team_compiler,
+    team_widgets) folds into cv6's whole-crate runs, which test every mutant the diff would.
+    Triage the collected survivors. The ownership link's wrap seen in the built window (cv5)
   - [x] cv3b merged `9eaf553a`: the Texport name suggestion counts in hexadecimal, upper case
     (`view/interchange.rs` `Export::file_name`; a test with `00000000`..`00000009` taken
     suggests `TEXPORT0000000A`; DECISIONS 2026-10-30 "PES 2017's import names the team from
@@ -5913,8 +5918,9 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] cv8's converge: SWE-2 round 1 over cv8 + cv8b in four parts, 1 accepted (the squad's
       three load-rule texts pinned, `58f33945`; `.tmp/0_0_1cv/rulings_cv8.md`), the loop
       ends; Astra A7: 8 of 8 accepted (`rulings_cv8.md`), so cv8c's rework, a SWE-2 loop
-      (round A7r1 running), then Astra again; `just mutants ruleset_editor`, the built window
-      with two tools (cv5)
+      ended at round A7r1 (3 accepted, fixed by the lead: the title's • counts a typed id, a
+      stat total without a band names its stats; `rulings_cv8.md`), then Astra again (A7b);
+      `just mutants ruleset_editor`, the built window with two tools (cv5)
     - [x] cv8c merged `8e533110` (gates-changed 80cb2368 green after the two citations moved
       under their doc comments) A7's rework (brief `.tmp/0_0_1cv/brief_cv8c.md`; draft, plan and DECISIONS
       2026-10-30 "the summary states the logic's rules" by the lead, the summary goldens

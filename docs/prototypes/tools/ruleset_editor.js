@@ -1301,8 +1301,9 @@ function summary(r) {
     const free = Object.entries(t.free).map(([g, n]) => `${n} free ${g === "com" ? "COM style" + (n > 1 ? "s" : "") : human(g).toLowerCase()}`);
     const stats = Object.entries(t.stats).map(([s, v]) => `${human(s).toLowerCase()} ${v}`);
     const band = t.stat_warning ? `; a stat that may sit below its target warns up to ${t.stat_warning} over it, past that it is not allowed` : "";
-    const total = t.total_within_targets ? "; those stats added up may not exceed their targets' sum" : "";
-    L.push(`- **${t.label}**: ${count}${when ? ", " + when : ""}; every stat ${t.rate}${stats.length ? " (" + stats.join(", ") + ")" : ""}${band}${total}; form ${t.form}, injury resistance ${t.injury_resistance}, weak foot ${t.weak_foot.usage}/${t.weak_foot.accuracy}; ${t.cards} paid cards${t.min_cards ? ` (at least ${t.min_cards} paid skills, an extra A position counting as one)` : ""}${free.length ? ", " + free.join(", ") : ""}; ${t.a_positions} A position${t.a_positions === 1 ? "" : "s"}${t.name_color ? `; name in colour ${t.name_color}` : ""}.`);
+    const total = !t.total_within_targets ? ""
+      : `; ${t.stat_warning ? "those stats" : "the stats that may sit below their target"} added up may not exceed their targets' sum`;
+    L.push(`- **${t.label}**: ${count}${when ? ", " + when : ""}; every stat ${t.rate}${stats.length ? " (" + stats.join(", ") + ")" : ""}${band}${total}; form ${t.form}, injury resistance ${t.injury_resistance}, weak foot ${t.weak_foot.usage}/${t.weak_foot.accuracy}; ${t.cards} paid cards${t.min_cards ? ` (at least ${t.min_cards} paid skill${t.min_cards === 1 ? "" : "s"}, an extra A position counting as one)` : ""}${free.length ? ", " + free.join(", ") : ""}; ${t.a_positions} A position${t.a_positions === 1 ? "" : "s"}${t.name_color ? `; name in colour ${t.name_color}` : ""}.`);
   });
   if ((r.medal_systems || []).length) {
     const named = r.tiers.filter(t => medalTiers.has(t.id));
@@ -1437,7 +1438,7 @@ function refresh() {
   bottom.innerHTML = "";
   bottom.append(probs.length
     ? h("span", { class: "err", title: probs.map(p => p.text).join("\n") }, `✖ ${probs.length} problem${probs.length > 1 ? "s" : ""}: ${probs[0].text}${probs.length > 1 ? " (hover for all)" : ""}`)
-    : h("span", { style: "color:#7fbf7f" }, "✔ No problems found"),
+    : h("span", { style: "color:var(--success)" }, "✔ No problems found"),
     h("span", { style: "flex:1" }), button("Save", save));
   document.querySelectorAll("#rail .sel").forEach((el, i) => {
     const id = SECTIONS.filter(([s]) => s !== "custom" || R.custom_checks)[i][0];

@@ -423,8 +423,9 @@ pub(crate) fn save_now(
 }
 
 /// The tier id typed and not committed, committed as its field's Enter
-/// or focus loss would (Ctrl+S and the prompt leave the keyboard where
-/// it is), as one undo step of its own, as Update logic is.
+/// or focus loss would (Ctrl+S leaves the keyboard where it is, so the
+/// field never loses focus), as one undo step of its own, as Update
+/// logic is.
 fn commit_typed_tier_id(view: &mut RulesetView) {
     let Some((index, id)) = view
         .document
@@ -599,7 +600,11 @@ fn toolbar(
             });
             ui.separator();
             if let Some(document) = view.document.as_ref() {
-                let marker = if document.is_dirty() { " •" } else { "" };
+                let marker = if view.has_unsaved_changes() {
+                    " •"
+                } else {
+                    ""
+                };
                 ui.strong(format!("{}{marker}", document.ruleset.name));
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -753,7 +758,10 @@ fn bottom_bar(
             .unwrap_or_default();
         match problems.first() {
             None => {
-                ui.label("✔ No problems found");
+                ui.colored_label(
+                    studio_core::theme::palette(ui.visuals()).success,
+                    "✔ No problems found",
+                );
             }
             Some(first) => {
                 let all = problems

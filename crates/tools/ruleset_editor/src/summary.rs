@@ -438,17 +438,22 @@ fn tier_line(ruleset: &Ruleset, medal_tiers: &BTreeSet<&str>, tier: &Tier) -> St
             tier.stat_warning
         )
     };
-    let total = if tier.total_within_targets {
-        "; those stats added up may not exceed their targets' sum"
-    } else {
-        ""
+    // "Those stats" names the band's; without a band the clause names
+    // them itself, or it would read as every stat.
+    let total = match (tier.total_within_targets, tier.stat_warning) {
+        (false, _) => "",
+        (true, 0) => {
+            "; the stats that may sit below their target added up may not exceed their targets' sum"
+        }
+        (true, _) => "; those stats added up may not exceed their targets' sum",
     };
     let min_cards = if tier.min_cards == 0 {
         String::new()
     } else {
         format!(
-            " (at least {} paid skills, an extra A position counting as one)",
-            tier.min_cards
+            " (at least {} paid skill{}, an extra A position counting as one)",
+            tier.min_cards,
+            if tier.min_cards == 1 { "" } else { "s" }
         )
     };
     let free: Vec<String> = tier
@@ -942,6 +947,31 @@ mod tests {
         );
         assert!(with_text.contains("\n## Suggestions\n"), "{with_text}");
         assert!(!without_text.contains("## Suggestions"), "{without_text}");
+    }
+
+    /// The stat total without a band names the stats it covers itself,
+    /// and a minimum of one reads in the singular.
+    #[test]
+    fn a_total_without_a_band_names_its_stats() {
+        let mut ruleset =
+            Ruleset::from_data_block(include_str!("../../../libs/aatf/rulesets/autumn26.rhai"))
+                .expect("the embedded ruleset loads");
+        let gold = &mut ruleset.tiers[0];
+        assert_eq!(gold.stat_warning, 0, "premise: Gold has no band");
+        gold.total_within_targets = true;
+        gold.min_cards = 1;
+        let line = tier_line(&ruleset, &BTreeSet::new(), &ruleset.tiers[0]);
+        assert!(
+            line.contains(
+                "; the stats that may sit below their target added up may not exceed their \
+                 targets' sum"
+            ),
+            "{line}"
+        );
+        assert!(
+            line.contains("(at least 1 paid skill, an extra A position"),
+            "{line}"
+        );
     }
 
     /// Every embedded ruleset's summary is its golden
