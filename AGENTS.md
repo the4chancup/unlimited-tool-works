@@ -105,7 +105,10 @@ shipped whole meets its plan. A rule tied to a phase's close alone left 0.0.1's 
 with the maintainer, every slice reviewed and the Save editor never converged (2026-10-30).
 
 **Lead and sidekick.** Sessions run as a lead model that plans, briefs, reviews and talks to the
-user, and a sidekick model (a different family) that implements and runs the gates. The lead
+user, and a sidekick model (a different family) that implements and runs the gates. The general
+method of briefing and of reviewing a delegate's work is the user-level `helium` skill: the lead
+invokes it before writing a brief or reviewing a delegate's diff, the sidekick when a brief
+arrives; what follows here is this project's own part, and wins where the two differ. The lead
 hand-writes only what is *correctness-critical*: things whose wrong version passes instead of
 failing: workspace lints, CI, `rust-toolchain.toml`, the acceptance-ID scanner, any fixture or
 golden file, any measurement. Everything with a plan section to implement against is briefed to
