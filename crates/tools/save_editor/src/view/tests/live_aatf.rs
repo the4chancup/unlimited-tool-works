@@ -610,6 +610,51 @@ fn a_keyboard_invoked_make_button_checks_the_team_again() {
     live_checked(&mut window, &mut view, &[734]);
 }
 
+/// Set stats invoked from the keyboard checks the player's team again with
+/// no further input: the button gives up the keyboard it holds.
+// SE-GUI-30
+#[test]
+fn a_keyboard_invoked_set_stats_checks_the_team_again() {
+    let (mut view, mut window) = open_734_with("live_aatf_invoked_set_stats", &[73401, 73404], 183);
+    view.live_aatf = true;
+    live_checked(&mut window, &mut view, &[734]);
+    // A number his abilities do not all hold already, so the click edits him.
+    view.set_stats = 80;
+    let (_, _, player) = selected_player(&view).expect("premise: a player row is selected");
+    assert!(
+        player_entry(&view, player)
+            .stats
+            .abilities()
+            .iter()
+            .flatten()
+            .any(|value| *value != 80),
+        "premise: Set stats' number changes him"
+    );
+    let before = view.session.as_ref().expect("the save opened").revision();
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (set_stats, _) = pairs
+        .iter()
+        .find(|(_, node)| node.role() == Role::Button && node.label() == Some("Set stats"))
+        .expect("the Set stats button");
+    let set_stats = *set_stats;
+    action_focus(&mut window, &mut view, set_stats);
+    action_click(&mut window, &mut view, set_stats);
+    let after = view.session.as_ref().expect("the save opened").revision();
+    assert_ne!(after, before, "premise: Set stats edited the player");
+    draw(&mut window, &mut view);
+    assert!(
+        view.live.check.pending.is_some()
+            || view
+                .live
+                .check
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| key.revision == after),
+        "the team's check started again with no further input"
+    );
+    live_checked(&mut window, &mut view, &[734]);
+}
+
 /// The first roster slot of the held result whose rows are all
 /// suggestions.
 fn held_slot_with_suggestions_alone(view: &SaveView) -> u8 {
