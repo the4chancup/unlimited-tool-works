@@ -77,12 +77,7 @@ fn each_unbuilt_section_links_to_its_demo_online() {
             frame.platform.commands
         );
     }
-    for section in [
-        Section::General,
-        Section::Tiers,
-        Section::CustomChecks,
-        Section::Summary,
-    ] {
+    for section in [Section::General, Section::Tiers, Section::Summary] {
         view.section = section;
         let frame = settled(&mut window, &mut view, &ctx);
         assert!(
@@ -90,6 +85,27 @@ fn each_unbuilt_section_links_to_its_demo_online() {
             "{section:?} draws no demo link"
         );
     }
+    // Custom checks shows only over a document that carries checks; over one
+    // without, the rail switches to General. VTL11 carries some.
+    let vtl11 = &crate::view::start::templates()[4];
+    let mut document = Document::new(vtl11.ruleset.clone());
+    document.custom_checks = vtl11.custom_checks.clone();
+    assert!(
+        document.custom_checks.is_some(),
+        "premise: VTL11 carries checks"
+    );
+    view.set_document(document);
+    view.section = Section::CustomChecks;
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert_eq!(
+        view.section,
+        Section::CustomChecks,
+        "premise: Custom checks is drawn"
+    );
+    assert!(
+        !drawn(&frame.nodes, DEMO_LINK),
+        "Custom checks draws no demo link"
+    );
 }
 
 // RE-SUM-01
