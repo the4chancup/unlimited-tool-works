@@ -196,7 +196,7 @@ const SPRING26 = {
 // crates/libs/aatf/rulesets/vgl27.rhai
 const VGL27 = {
   schema: 1, name: "/vg/ League 27", page: "https://implyingrigged.info/wiki//vg/_League_27",
-  logo: "assets/logos/vgl27.png", squad_size: 23,
+  logo: "assets/logos/vgl.png", squad_size: 23,
   stats: {
     rating: ["dribbling", "goalkeeping", "low_pass", "lofted_pass", "swerve",
       "catching", "clearing", "reflexes", "coverage", "body_control",
@@ -264,7 +264,7 @@ const VGL27 = {
 // crates/libs/aatf/rulesets/vgl26.rhai
 const VGL26 = {
   schema: 1, name: "/vg/ League 26", page: "https://implyingrigged.info/wiki//vg/_League_26",
-  logo: "assets/logos/vgl26.png", squad_size: 23,
+  logo: "assets/logos/vgl.png", squad_size: 23,
   stats: {
     rating: ["dribbling", "goalkeeping", "low_pass", "lofted_pass", "swerve",
       "catching", "clearing", "reflexes", "coverage", "body_control",

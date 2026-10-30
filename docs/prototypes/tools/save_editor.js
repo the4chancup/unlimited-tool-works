@@ -2654,7 +2654,7 @@ const RULESETS = {
       "sombrero", "cut_behind_and_turn", "scotch_move", "rabona", "double_touch",
       "crossover_turn", "step_on_skill", "no_look_pass"] },
     free_specials: [ { card: "malicia" }, { card: "captaincy", captain: true } ] },
-  vgl26: { label: "/vg/ League 26", logo: "assets/logos/vgl26.png",
+  vgl26: { label: "/vg/ League 26", logo: "assets/logos/vgl.png",
     page: "https://implyingrigged.info/wiki//vg/_League_26", fielded_at_a: [1], tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 2, weak_foot: { usage: 4, accuracy: 4 },
       stats: { place_kicking: 94, ball_winning: 94, defensive_prowess: 60 },
@@ -2715,7 +2715,7 @@ const RULESETS = {
       { card: "weighted_pass", tiers: ["regular", "buffed"] },
       { card: "pinpoint_crossing", tiers: ["regular", "buffed"] },
       { card: "captaincy", captain: true }, { card: "incisive_run" }, { card: "long_ranger" } ] },
-  vgl27: { label: "/vg/ League 27", logo: "assets/logos/vgl27.png",
+  vgl27: { label: "/vg/ League 27", logo: "assets/logos/vgl.png",
     page: "https://implyingrigged.info/wiki//vg/_League_27", fielded_at_a: [1], tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 2, weak_foot: { usage: 4, accuracy: 4 },
       when: { not_positions: ["GK"] }, cards: 6, a_positions: 2, free: { tricks: 12, com: 1 } },

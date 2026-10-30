@@ -2554,7 +2554,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       (2026-10-30), Autumn 25's and /vg/ League 25's by the same address pattern (the
       maintainer's answer, 2026-10-30), the logos the ones those pages show, every /vg/
       League's the shared VGL logo, scaled to 84 pixels high
-      (`docs/prototypes/assets/logos/<stem>.png`, from `.tmp/8_29d/logos_scale.py`) →
+      (`docs/prototypes/assets/logos/<stem>.png`, every /vg/ League's `vgl.png`, from
+      `.tmp/8_29d/logos_scale.py`) →
       verify: each ruleset file loads with its logo; the built window per built-in ruleset.
       Done with a: a test loads all nine, each page the table's and each logo the asset's
       bytes; the built window waits for b
@@ -2847,6 +2848,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           preview's undrawn fields in words, the team file notes in the catalog's member text
           and its section boxes capitalized, the badge's and quick actions' refusals, the
           card and playing-style labels' spellings (`GK Long Throw`, `Classic No. 10`)
+          and `save-editor diff`'s and the Comparator's Export lines, which print a field by
+          its Rust name (`field=Heading`; SWE-2 S1d3a-F1), `diff --json`'s key ruled first
+          (a stable key for tooling, or the words)
       - [ ] d3 the stats named as each version names them (P43, accepted 2026-10-29; DECISIONS
         "Stats are named as the save's PES version names them", "Before 0.0.1, only PES
         2017's stat names are checked"):
@@ -2863,8 +2867,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           per version; `team_widgets::violations::Wording { ruleset, version }` in every AATF
           host; `SMALL_STATS` labels title case; files `labels.rs`, `violations.rs`, the save
           editor's `cli.rs`, `messages.rs`, `abilities.rs`, `terms.rs`, `live_marks.rs`,
-          `multi_aatf.rs`, `aatf_check.rs`, `tactics.rs` and their tests. Open: the SWE-2
-          round (an Opus slice), then the Astra round over d1a + d3a
+          `multi_aatf.rs`, `aatf_check.rs`, `tactics.rs` and their tests. SWE-2 S1d3a: 2
+          accepted, the loop ended (`.tmp/8_29d/rulings_d3a.md`). Open: the Astra round over
+          d1a + d3a
         - [ ] d3b after 0.0.1: every other version's names, gathered from each game (the
           player.rs doc comments name no versions; Marco's RE reports for PES 2021, the
           games on F: for the rest) → verify: a test per version against the gathered names
