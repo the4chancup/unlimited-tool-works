@@ -2548,8 +2548,11 @@ const SET_PIECES = [["free_kick_long", "Long free kick"],
 // record's whole units - the snap, since a finer drop cannot be stored); a
 // slot's spot is its badge's centre, through the screen's own mapping (fitted
 // on a capture), the attack end (high y) at the top. The keeper is drawn at the
-// screen's keeper spot, not through the mapping.
-const PITCH = { w: 320, h: 384, xu: 104, yu: 48,
+// screen's keeper spot, not through the mapping. yMin is the outfielders'
+// lowest row: rows 0 to 3 are the keeper's area alone, and the game holds a
+// dragged outfielder at y 4 however low the pointer goes (PES 2017, checked
+// in game), so the snap does too.
+const PITCH = { w: 320, h: 384, xu: 104, yu: 48, yMin: 4,
   x0: 12.8, xs: 2.827, y0: 363.8, ys: 6.793, keeperY: 358.5 };
 // A pointer's position on the pitch, in its drawing's units (through the
 // canvas's shown width, so the window's scale is accounted for).
@@ -2559,7 +2562,7 @@ const pitchX = x => PITCH.x0 + x * PITCH.xs;
 const pitchY = y => PITCH.y0 - y * PITCH.ys;
 const snapXY = (px, py) => [
   Math.min(PITCH.xu, Math.max(0, Math.round((px - PITCH.x0) / PITCH.xs))),
-  Math.min(PITCH.yu, Math.max(0, Math.round((PITCH.y0 - py) / PITCH.ys)))];
+  Math.min(PITCH.yu, Math.max(PITCH.yMin, Math.round((PITCH.y0 - py) / PITCH.ys)))];
 
 // ---- The active AATF ruleset's tiers (crates/libs/aatf/rulesets/*.rhai) ----
 // The quick actions are one "Make X" button per tier in the file's order plus
@@ -5551,6 +5554,7 @@ function slotPopover(t) {
   // The keeper's slot is fixed: Edit mode does not move him.
   // Each field is a stepper: an arrow either side of the number steps it by one, clamped
   // into the range (a stored spot past it steps back in), each arrow disabled at its end.
+  // Y's range starts at 4, the outfielders' lowest row (`PITCH.yMin`), as a drag's does.
   // The three share the number box's old width, so the popover is no wider. The arrows
   // take no focus (tabindex -1): Tab goes from X to Y, and the arrow keys step a number.
   const arrow = (glyph, onclick, disabled, title) => {
@@ -5558,7 +5562,7 @@ function slotPopover(t) {
     b.tabIndex = -1;
     return b;
   };
-  const num = (label, get, put, max) => {
+  const num = (label, get, put, min, max) => {
     const keeper = s.position === "GK", v = get();
     const title = keeper ? "The goalkeeper's spot is fixed" : "";
     const set = n => {
@@ -5566,11 +5570,11 @@ function slotPopover(t) {
         put(n); s.position = ruledPosition(t, f, i, s.x, s.y, s.position); });
       render(); };
     return h("span", {}, label + " ", h("span", { class: "spin" },
-      arrow("⏴", () => set(Math.min(max, Math.max(0, v - 1))), keeper || v <= 0, title),
-      h("input", { type: "number", min: 0, max, value: v, disabled: keeper, title,
+      arrow("⏴", () => set(Math.min(max, Math.max(min, v - 1))), keeper || v <= min, title),
+      h("input", { type: "number", min, max, value: v, disabled: keeper, title,
         onchange: e => { const n = parseInt(e.target.value, 10);
-          if (!Number.isNaN(n) && n >= 0 && n <= max) set(n); } }),
-      arrow("⏵", () => set(Math.min(max, v + 1)), keeper || v >= max, title)));
+          if (!Number.isNaN(n) && n >= min && n <= max) set(n); } }),
+      arrow("⏵", () => set(Math.max(min, Math.min(max, v + 1))), keeper || v >= max, title)));
   };
   return h("div", { class: "tpopover",
       style: "left:" + pop.x + "px; top:" + pop.y + "px" },
@@ -5586,8 +5590,8 @@ function slotPopover(t) {
       button("Make GK", () => { makeGk(t, i); S.slotPop = null; render(); },
         { disabled: s.position === "GK", title: "Swaps him into goal; the keeper takes his slot" })),
     h("div", { class: "row" },
-      num("X", () => s.x, v => { s.x = v; }, PITCH.xu),
-      num("Y", () => s.y, v => { s.y = v; }, PITCH.yu),
+      num("X", () => s.x, v => { s.x = v; }, 0, PITCH.xu),
+      num("Y", () => s.y, v => { s.y = v; }, PITCH.yMin, PITCH.yu),
       " ", button("Close", () => { S.slotPop = null; render(); })));
 }
 

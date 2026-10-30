@@ -5978,6 +5978,17 @@ briefs, review loops, gates and mutation runs as for any step.
     (`docs/prototypes/tools/ruleset_editor.js`, its `general-fields` rows), then the plan,
     then `view/sections/general.rs` and the tests that find a field by its label
     (`view/tests/general.rs`)
+  - [ ] cv9 the Tactics pitch as PES 2017 has it (the maintainer's PES 2017 check, 2026-10-31;
+    0.0.1 is PES 2017's, 0.0.2 PES 2019's for VGL 27, the other versions after)
+    - [ ] cv9a an outfielder stops at y 4 (plan, the drop's bullet and the popover's
+      steppers; DECISIONS 2026-10-31): the draft done (`PITCH.yMin`, checked by
+      `.tmp/0_0_1cv/pitch17/floor_check.py`: a drag in steps and in one jump below the
+      pitch stands and lands on y 4, Y's ⏴ disabled at 4, a typed 2 refused; red with
+      `yMin` 0); then `team_widgets` `pitch/mod.rs` `snap` and `pitch/popover.rs`'s Y
+      stepper, with tests
+    - [ ] cv9b each version draws its own screen's pitch: PES 2017's measured from its
+      texture as PES 2021's was (8.9g), the plan's pitch bullet given per version, then the
+      draft, then `team_widgets`; PES 2019's in 0.0.2; the others after
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450

@@ -14367,3 +14367,15 @@ Decision: in the drafts' demo mode the Team compiler and the Export upgrader are
 planned tools ("Not in the demo yet"), and the window title ends "Unlimited Tool Works (Demo)".
 Why: the maintainer's request: a visitor from the Ruleset editor's links would otherwise switch
 to drafts that are still very rough, or take the Save editor's draft for one that edits saves.
+
+## 2026-10-31 — save_editor, team_widgets — a dragged outfielder stops at y 4
+Decision: the pitch's snap holds an outfielder at stored y 4 or above, on a drag and in the
+popover's Y stepper (its range 4 to 48), as the game holds a dragged outfielder at y 4.
+Why: the maintainer saw it in PES 2017: no outfielder goes lower than y 4, however low the
+pointer. Rows 0 to 3 are the keeper's area alone, and PES 2016's drag code tries the spot's
+neighbour y + 1 and otherwise leaves the player where he was. A floor on the snap, not the
+game's per-frame fallback: with every row from 4 up offering a position, the two differ only
+below y 4, and a mouse can jump there in one frame where the game's cursor cannot, which would
+leave him at his old spot rather than on the floor the screen shows him reaching.
+Plan: `plans/save_editor.md` "Tactics editor", the drop's bullet ("A pitch player dropped on
+another") and the popover's X and Y steppers.

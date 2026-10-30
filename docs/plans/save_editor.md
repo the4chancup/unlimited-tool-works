@@ -652,7 +652,8 @@ Win32 original hurt the most):
   it holds), and Make GK beside it at its own width, the two filling the popover's width, its top-right corner on the marker's bottom-left corner as it
   stood at the click, and there it stays while his X and Y change, so the fields' arrows stay
   under the pointer rather than moving off with the marker; a press outside it closes it, as
-  Close does. X (0 to 104) and Y (0 to 48) are steppers: the number with an arrow either
+  Close does. X (0 to 104) and Y (4 to 48, the outfielders' rows: below the drop's
+  bullet, "A pitch player dropped on another") are steppers: the number with an arrow either
   side, `⏴` stepping it down by one and `⏵` up, each click one edit, clamped into the range
   (a stored spot past it steps back in), each arrow disabled at its end of the range and both
   for the keeper. The arrows take clicks, never the keyboard's focus, as a system spinner's
@@ -947,7 +948,11 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   every preset; the editor's is an XI row dropped on another row or on a pitch marker, or a
   pitch marker dropped on an XI row. One
   released on the grass moves to the snapped drop point, his position set by the rule below,
-  and one released off the pitch stays where he was. The game also changes the position of a dragged
+  and one released off the pitch stays where he was. The snap holds an outfielder at y 4 or
+  above: rows 0 to 3 are the keeper's area alone (no other position's rectangle, below,
+  reaches them), and the game keeps a held outfielder at y 4 however low the pointer goes
+  (PES 2017, checked in game; PES 2016's code tries the spot's neighbour y + 1, then
+  leaves him where he was), so a marker dragged below it stands, and lands, on y 4. The game also changes the position of a dragged
   player (an AMF dragged lower becomes a DMF), but not by fixed areas of the pitch: the same
   spot gives different positions depending on who is dragged and where his teammates stand (a
   dragged LMF reads AMF at a spot where a dragged CMF reads LMF; the LMF turns CMF about 11.5
