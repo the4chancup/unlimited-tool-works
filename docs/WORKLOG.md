@@ -2560,8 +2560,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       and the Save editor (drawn after the panes, over their frames), `LogoField` in
       General, `Ruleset::{logo_png, set_logo}` with `LogoRefusal`; the "moves nothing"
       test compares DBC7 with an imported copy without its logo (every built-in ruleset
-      carries one); a narrow pane under about 831 points hides the logo. Open: the SWE-2
-      round and the (b) Astra review over a + b + c, the built window
+      carries one); a narrow pane under about 831 points hides the logo. SWE-2 round S1p45
+      over a + b + c (three parts): 2 accepted, the loop's end (`.tmp/8_29d/rulings_p45.md`);
+      rework `aad02b64`, merged `3af3f0ee` (Opus sidekick): the Ruleset editor's preview
+      shortens the logo's line (`block_lines`, red: the whole base64 drawn), the help's
+      General sentence names the event's page and logo, Remove and an `http://` page
+      tested. Open: the (b) Astra review over a + b + c, the built window (the logo seen at
+      the top right of the release build `044c90d8`, 2026-10-30)
     - [x] c every ruleset file under `aatf/rulesets/` gets its logo and page, the seven
       built in and the two test rulesets (`autumn25`, `vgl25`; the drafts import Autumn 25
       as their sample file): the pages are the events' wiki pages the maintainer listed
@@ -2949,8 +2954,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
             under its player keeps `Shirt number` (the draft's `unsavedChanges`; the lead's
             edit in `prompt.rs`, red: "Player 01's number"). A team colour channel reaches the
             words only outside `team_row_terms`' merge, so its test calls `team_row_term`.
-            Package tests (605), clippy, fmt, `comment_refs` green in its worktree. Open: a
-            SWE-2 round
+            Package tests (605), clippy, fmt, `comment_refs` green in its worktree. SWE-2
+            round S1d1b1: 3 accepted, the loop's end (`.tmp/8_29d/rulings_d3a.md`;
+            `577acf83`: Com as COM, SE-GUI-13's THEN reworded)
             Files: `save_editor/src/{diff,messages}.rs`, `view/{mod,terms,prompt}.rs`,
             `view/tests/prompt.rs`, `tests/cli/diff.rs`
           - [ ] d1b2 the team file notes in the catalog's member text and its section boxes

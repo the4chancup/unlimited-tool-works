@@ -2887,3 +2887,5 @@ worklog passed 7,000 lines.
 - **2026-10-30** — The Comparator, the changes lists, the patch preview and `diff`'s text name a
   field no view draws in words ("Nose height", "Player 04", PES 2017's Header); `--json` keeps
   the schema names (8.29d1b1).
+- **2026-10-30** — The Ruleset editor's preview shortens the event logo's line; its help names
+  the event fields. A field's words spell COM (SWE-2 S1p45, S1d1b1).
