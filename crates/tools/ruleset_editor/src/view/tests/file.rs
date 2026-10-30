@@ -17,6 +17,23 @@ fn folder_contents(dir: &Path) -> Vec<String> {
     inside
 }
 
+/// DBC7's data block as the `aatf` crate ships it, with the comments
+/// inside its `RULESET`.
+pub(super) fn dbc7_block() -> String {
+    let aatf_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../libs/aatf");
+    std::fs::read_to_string(aatf_dir.join("rulesets/dbc7.rhai")).unwrap()
+}
+
+/// `block` assembled as a rules file: the current logic after it, then
+/// the empty-checks stub.
+pub(super) fn assembled(block: &str) -> String {
+    let logic = aatf::file_sections(&valid_file())
+        .logic
+        .expect("the current section");
+    let stub = crate::test_support::CUSTOM_CHECKS_STUB;
+    format!("{}\n\n{}\n\n{}\n", block.trim_end(), logic.trim_end(), stub)
+}
+
 // RE-FILE-01
 #[test]
 fn a_file_save_wrote_opens_with_no_banner() {
@@ -85,20 +102,14 @@ fn a_modified_logic_file_shows_the_banner_and_save_keeps_its_code() {
 #[test]
 fn a_save_with_no_edit_writes_the_same_values_and_no_comments() {
     // The DBC7 block with the comments inside its RULESET, assembled as
-    // a file (current logic, the empty-checks stub).
-    let aatf_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../libs/aatf");
-    let block = std::fs::read_to_string(aatf_dir.join("rulesets/dbc7.rhai")).unwrap();
+    // a file.
+    let block = dbc7_block();
     assert!(
         block.contains("// No card or position rule"),
         "premise: comments inside RULESET"
     );
-    let logic = aatf::file_sections(&valid_file())
-        .logic
-        .expect("the current section");
-    let stub = crate::test_support::CUSTOM_CHECKS_STUB;
-    let text = format!("{}\n\n{}\n\n{}\n", block.trim_end(), logic.trim_end(), stub);
     let dir = crate::test_support::scratch("file_05");
-    let path = write_file(&dir, "dbc7.4ccrules", &text);
+    let path = write_file(&dir, "dbc7.4ccrules", &assembled(&block));
 
     let (ctx, _events, mut window, mut view) = fresh();
     open_path(&mut view, &ctx, &path);
@@ -123,9 +134,8 @@ fn a_save_with_no_edit_writes_the_same_values_and_no_comments() {
 #[test]
 fn a_save_keeps_the_events_page_and_logo_out_of_the_logic() {
     // DBC7's block, which carries its event's page and logo, assembled
-    // as a file (current logic, the empty-checks stub).
-    let aatf_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../libs/aatf");
-    let block = std::fs::read_to_string(aatf_dir.join("rulesets/dbc7.rhai")).unwrap();
+    // as a file.
+    let block = dbc7_block();
     let before = aatf::Ruleset::from_data_block(&block).expect("the block reads");
     assert!(
         before.page.is_some() && before.logo.is_some(),
@@ -164,13 +174,8 @@ fn a_save_keeps_the_events_page_and_logo_out_of_the_logic() {
         before,
         "the reader takes the keys in any order"
     );
-    let logic = aatf::file_sections(&valid_file())
-        .logic
-        .expect("the current section");
-    let stub = crate::test_support::CUSTOM_CHECKS_STUB;
-    let text = format!("{}\n\n{}\n\n{}\n", moved.trim_end(), logic.trim_end(), stub);
     let dir = crate::test_support::scratch("file_09");
-    let path = write_file(&dir, "dbc7.4ccrules", &text);
+    let path = write_file(&dir, "dbc7.4ccrules", &assembled(&moved));
 
     let (ctx, _events, mut window, mut view) = fresh();
     open_path(&mut view, &ctx, &path);

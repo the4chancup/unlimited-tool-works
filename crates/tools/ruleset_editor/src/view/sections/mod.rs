@@ -1,7 +1,8 @@
 //! The rail's section forms: General and Tiers are forms, Custom checks
 //! and Summary read only,
-//! and Heights, Cards, Universal rules, Specials and Suggestions are
-//! later builds' — for now they draw one weak line.
+//! and Heights, Cards, Universal rules, Specials and Suggestions have no
+//! form yet: each draws one weak line sending the member to Summary and
+//! the preview.
 
 pub(crate) mod custom_checks;
 pub(crate) mod general;
@@ -68,7 +69,7 @@ impl Section {
 
 /// The drawn section over `ruleset` (the forms edit it in place;
 /// `custom_checks` is the section's read-only text, `logo` General's
-/// Event logo field); the later builds' draw one weak line for now.
+/// Event logo field); the sections with no form draw one weak line.
 pub(crate) fn show(
     ui: &mut egui::Ui,
     section: Section,
@@ -87,7 +88,9 @@ pub(crate) fn show(
         | Section::Specials
         | Section::Suggestions => {
             ui.heading(section.label());
-            ui.weak("This section's form comes in a later build.");
+            ui.weak(
+                "This section can't be edited here yet. Summary describes it, Show preview shows it as the file holds it, and saving keeps it as it is.",
+            );
         }
     }
 }
