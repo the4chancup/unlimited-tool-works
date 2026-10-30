@@ -850,7 +850,11 @@ fn own_badge(rules: &aatf::Rules, file: &EditFile, team_id: u32, slot: u8) -> Ow
         Err(error) => return OwnBadge::Failed(error.to_string()),
     };
     let Some(player) = team.player(slot) else {
-        return OwnBadge::Failed(format!("roster slot {slot} holds no player"));
+        // The place as the player list numbers it, from 01.
+        return OwnBadge::Failed(format!(
+            "place {:02} of the roster holds no player",
+            u32::from(slot) + 1
+        ));
     };
     match rules.player_tier(&team, player) {
         Ok(Some(tier)) => match rules.card_limits(&team, player, &tier.id) {
@@ -1136,5 +1140,24 @@ mod tests {
                 .expect("an Other stats field");
             assert_eq!(small.label, stat_name(PesVersion::Pes17, stat), "{field:?}");
         }
+    }
+
+    /// An empty roster slot fails the badge's check, naming the place as
+    /// the player list numbers it: from 01, not the 0-based slot.
+    #[test]
+    fn an_empty_place_is_named_as_the_list_numbers_it() {
+        let file =
+            pes_savefile::EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes21))
+                .expect("fixture save");
+        let team = aatf::TeamView::new(&file, 701).expect("team 701");
+        let slot = (0..=u8::MAX)
+            .find(|&slot| team.player(slot).is_none())
+            .expect("an empty slot");
+        assert_eq!(slot, 23, "premise: the first slot past a full roster");
+        let badge = super::own_badge(&aatf::Rules::official(), &file, 701, slot);
+        let super::OwnBadge::Failed(error) = badge else {
+            panic!("an empty slot fails the check");
+        };
+        assert_eq!(error, "place 24 of the roster holds no player");
     }
 }

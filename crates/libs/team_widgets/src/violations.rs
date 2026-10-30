@@ -3,7 +3,7 @@
 //! per player, a row's click reporting the player to select. The AATF panel,
 //! the Live AATF dock and the Team creator all draw this list.
 
-use pes_savefile::interchange::team_toml::labels::{stat_name, title_case};
+use pes_savefile::interchange::team_toml::labels::{card_name, stat_name, title_case};
 use pes_version::PesVersion;
 
 /// The failing glyph (`✖`, U+2716): egui's bundled emoji fonts hold
@@ -634,7 +634,7 @@ pub fn sentence(violation: &aatf::Violation, team_id: u32, wording: Wording<'_>)
         }
         K::ComStyleCap { count, max } => format!("{count} COM styles, over the cap of {max}"),
         K::RequiredCard { card } => {
-            format!("the required card {} is missing", title_case(card.label()))
+            format!("the required card {} is missing", card_name(card.label()))
         }
         K::APositions {
             count,
@@ -1809,10 +1809,10 @@ mod tests {
                 a26,
                 Error,
                 K::RequiredCard {
-                    card: aatf::Card::try_from("captaincy".to_string()).expect("a card"),
+                    card: aatf::Card::try_from("gk_long_throw".to_string()).expect("a card"),
                 },
                 "Required card",
-                "the required card Captaincy is missing",
+                "the required card GK Long Throw is missing",
             ),
             (
                 a26,

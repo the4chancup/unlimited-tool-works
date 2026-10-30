@@ -5,7 +5,7 @@
 //! tiers each say how many paid ones he may hold, so the pickers show what
 //! the tier he is read as leaves him.
 
-use pes_savefile::interchange::team_toml::labels::{self, title_case};
+use pes_savefile::interchange::team_toml::labels::{self, card_name};
 use pes_savefile::model::playstyle::PlayStyle;
 use pes_savefile::schema::fields::PlayerField;
 use pes_savefile::schema::{playstyle, schema_for};
@@ -70,12 +70,12 @@ pub fn card_columns(
                     let index = usize::from(index);
                     if fields.contains(&field) {
                         changed |=
-                            checkbox(ui, &mut cards[index], title_case(names[index])).changed();
+                            checkbox(ui, &mut cards[index], card_name(names[index])).changed();
                     } else {
                         // A card the version cannot store stays, disabled,
                         // its tooltip naming the first version that has it.
                         ui.add_enabled(false, |ui: &mut egui::Ui| {
-                            checkbox(ui, &mut cards[index], title_case(names[index]))
+                            checkbox(ui, &mut cards[index], card_name(names[index]))
                         })
                         .on_disabled_hover_text(format!("PES {}+", first_with(field).number()));
                     }
@@ -188,13 +188,13 @@ fn first_with(field: PlayerField) -> pes_version::PesVersion {
     pes_savefile::schema::first_version_with(field).expect("every card is stored by some version")
 }
 
-/// `style`'s label: its Team TOML name, title-cased.
+/// `style`'s label: its Team TOML name as a card name.
 fn style_label(style: PlayStyle) -> String {
     let at = PlayStyle::ALL
         .iter()
         .position(|canonical| *canonical == style)
         .expect("`PlayStyle::ALL` lists every style");
-    title_case(labels::PLAY_STYLES[at])
+    card_name(labels::PLAY_STYLES[at])
 }
 
 #[cfg(test)]
@@ -343,19 +343,6 @@ mod tests {
             .unwrap_or_else(|| panic!("no label {text:?}"))
     }
 
-    /// `name`'s label as the pickers show it: underscores as spaces, each word
-    /// capitalized (the draft's `titleCase`, restated so the tests check it
-    /// rather than share it).
-    fn title_case(name: &str) -> String {
-        name.split('_')
-            .map(|word| {
-                let (first, rest) = word.split_at(1);
-                format!("{}{rest}", first.to_uppercase())
-            })
-            .collect::<Vec<_>>()
-            .join(" ")
-    }
-
     /// The `PlayerSkills` of player `id` in `version`'s fixture save.
     fn fixture_skills(version: PesVersion, id: u32) -> PlayerSkills {
         let file = pes_savefile::EditFile::from_bytes(&pes_savefile::fixture_save(version))
@@ -380,10 +367,10 @@ mod tests {
     /// The checkbox labels a frame drew, split by the name table they come
     /// from.
     fn drawn_cards(nodes: &[accesskit::Node]) -> (Vec<String>, Vec<String>) {
-        let skills: BTreeSet<String> = labels::SKILLS.iter().map(|name| title_case(name)).collect();
+        let skills: BTreeSet<String> = labels::SKILLS.iter().map(|name| card_name(name)).collect();
         let coms: BTreeSet<String> = labels::COM_STYLES
             .iter()
-            .map(|name| title_case(name))
+            .map(|name| card_name(name))
             .collect();
         let mut drawn_skills = vec![];
         let mut drawn_coms = vec![];
@@ -478,7 +465,7 @@ mod tests {
         let mut skills = fixture_skills(PesVersion::Pes21, 78102);
         let (nodes, _) = window.columns(PesVersion::Pes21, &mut skills, vec![]);
         let skills_labels: BTreeSet<String> =
-            labels::SKILLS.iter().map(|name| title_case(name)).collect();
+            labels::SKILLS.iter().map(|name| card_name(name)).collect();
         let mut xs: Vec<f64> = nodes
             .iter()
             .filter(|node| {
@@ -536,7 +523,7 @@ mod tests {
         let (drawn_skills, _) = drawn_cards(&nodes);
         let expected: Vec<String> = shown
             .iter()
-            .map(|&i| title_case(labels::SKILLS[usize::from(i)]))
+            .map(|&i| card_name(labels::SKILLS[usize::from(i)]))
             .collect();
         assert_eq!(
             drawn_skills.iter().collect::<BTreeSet<_>>(),
@@ -618,7 +605,7 @@ mod tests {
         let index = (0..labels::SKILLS.len())
             .find(|&i| fields.contains(&PlayerField::Skill(i as u8)) && !skills.skills[i])
             .expect("an unticked PES 17 skill");
-        let label = title_case(labels::SKILLS[index]);
+        let label = card_name(labels::SKILLS[index]);
         let (nodes, _) = window.columns(PesVersion::Pes17, &mut skills, vec![]);
         let checkbox = entry(&nodes, Role::CheckBox, &label);
 
@@ -728,7 +715,7 @@ mod tests {
             ("Skills", &labels::SKILLS[..]),
             ("COM styles", &labels::COM_STYLES[..]),
         ] {
-            let wanted: BTreeSet<String> = names.iter().map(|name| title_case(name)).collect();
+            let wanted: BTreeSet<String> = names.iter().map(|name| card_name(name)).collect();
             let cells: Vec<(f64, f64, f64, bool)> = nodes
                 .iter()
                 .filter(|node| {
@@ -830,7 +817,7 @@ mod tests {
             (skill, &labels::SKILLS[..], "Scissors Feint"),
             (com, &labels::COM_STYLES[..], "Trickster"),
         ] {
-            let label = title_case(names[index]);
+            let label = card_name(names[index]);
             let cell = entry(&nodes, Role::CheckBox, &label)
                 .bounds()
                 .expect("bounds");
@@ -842,7 +829,7 @@ mod tests {
         }
 
         let before = skills.skills;
-        let cell = entry(&nodes, Role::CheckBox, &title_case(labels::SKILLS[skill]));
+        let cell = entry(&nodes, Role::CheckBox, &card_name(labels::SKILLS[skill]));
         let (_, changed) = window.click_columns(centre(cell), PesVersion::Pes21, &mut skills);
         assert!(changed, "the tick is a change");
         let mut expected = before;
@@ -850,7 +837,7 @@ mod tests {
         assert_eq!(skills.skills, expected, "exactly that one flag changed");
 
         let before = skills.com_styles;
-        let cell = entry(&nodes, Role::CheckBox, &title_case(labels::COM_STYLES[com]));
+        let cell = entry(&nodes, Role::CheckBox, &card_name(labels::COM_STYLES[com]));
         let (_, changed) = window.click_columns(centre(cell), PesVersion::Pes21, &mut skills);
         assert!(changed, "the tick is a change");
         let mut expected = before;
@@ -997,7 +984,7 @@ mod tests {
                     .iter()
                     .position(|canonical| *canonical == style)
                     .expect("a canonical style");
-                title_case(labels::PLAY_STYLES[at])
+                card_name(labels::PLAY_STYLES[at])
             })
             .collect();
         assert_eq!(open_labels, expected, "PES 17's eighteen styles");

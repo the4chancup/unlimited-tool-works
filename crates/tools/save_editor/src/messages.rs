@@ -236,27 +236,27 @@ const CATALOG: &[(Code, &str, &str)] = &[
     ),
     (
         Code::ImportKeyNotInVersion,
-        r#"`import-toml` found a key the document's version stores but the save's does not."#,
+        r#"The team file holds a key the file's version stores but the save's does not."#,
         r#"The key is dropped from the import, but the rest is written."#,
     ),
     (
         Code::ImportValueNotEncodable,
-        r#"`import-toml` found a value the save's version cannot store (an instruction it lacks)."#,
-        r#"The value is written as off, and the rest of the import is written."#,
+        r#"The team file holds a value the save's version cannot store: an instruction or a playing style it lacks."#,
+        r#"The value is written as off (a playing style as None), and the rest of the import is written."#,
     ),
     (
         Code::ImportValueCapped,
-        r#"`import-toml` found a face type above the cap the save's version has, or a custom skin the version has no slot for."#,
-        r#"The value is lowered (the face type to 0, the skin to 1), and the rest of the import is written."#,
+        r#"The team file holds a value above what the save's version stores: a face type above its cap, a motion above its last, or a custom skin it has no slot for."#,
+        r#"The value is lowered (the face type to 0, the motion to its last, the skin to 1), and the rest of the import is written."#,
     ),
     (
         Code::ImportSlotEmpty,
-        r#"`import-toml` found a `[players.NN]` whose roster slot is empty."#,
+        r#"The team file holds a player for a roster place the team leaves empty."#,
         r#"The player is skipped, but the rest is written."#,
     ),
     (
         Code::ImportTextCropped,
-        r#"`import-toml` found a name or shirt name longer than the save's version has room for."#,
+        r#"The team file holds a name or shirt name longer than the save's version has room for."#,
         r#"The text is cut to what the line shows, and the rest of the import is written."#,
     ),
     (
@@ -544,10 +544,16 @@ pub(crate) fn fpc_finding(finding: &fpc::Finding) -> Message {
 /// The `when` text `CATALOG` spells for `message`'s code: the sentence a view draws
 /// for the finding (the Appearance section's FPC findings).
 pub(crate) fn when_text(message: &Message) -> &'static str {
+    when_and_effect(message).0
+}
+
+/// The `when` and `effect` texts `CATALOG` spells for `message`'s code: the team file
+/// panel draws both, once per code, over the notes of that code.
+pub(crate) fn when_and_effect(message: &Message) -> (&'static str, &'static str) {
     CATALOG
         .iter()
         .find(|(code, ..)| code.as_str() == message.code.code)
-        .map(|(_, when, _)| *when)
+        .map(|(_, when, effect)| (*when, *effect))
         .expect("every emitted code has a catalog row")
 }
 

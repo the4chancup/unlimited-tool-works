@@ -1366,13 +1366,18 @@ fn tier_values_carry_the_specials() {
         }
     );
     assert_eq!((regular.form, regular.injury_resistance), (4, 1));
+    let unknown = rules
+        .tier_values(&team, team.player(3).expect("filled"), "platinum")
+        .expect_err("no such tier");
     assert_eq!(
-        rules
-            .tier_values(&team, team.player(3).expect("filled"), "platinum")
-            .expect_err("no such tier"),
+        unknown,
         CheckError::UnknownTier {
             tier: "platinum".to_string()
         }
+    );
+    assert_eq!(
+        unknown.to_string(),
+        "no tier of the ruleset has the id \"platinum\""
     );
 }
 

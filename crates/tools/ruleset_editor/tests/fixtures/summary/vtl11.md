@@ -27,7 +27,7 @@ Every player is rated A at his registered position; B ratings count as A positio
 - **B positions only for 188cm players at CB**: Any of (Gold, Silver or Regular, rated B at GK, CB, LB, RB, DMF, CMF, LMF, RMF, AMF, LWF, RWF, SS or CF; Buffed, rated B at GK, LB, RB, DMF, CMF, LMF, RMF, AMF, LWF, RWF, SS or CF): not allowed ("Illegal B positions, only allowed on 188cm players at CB").
 - **188cm players have no A at CB or GK**: Buffed, rated A at CB or GK: not allowed ("188cm players may not have an A-position at CB or GK").
 - **A goalkeeper's form is 8**: Regular, registered GK: +4 form.
-- **A gold Fox in the Box**: Gold, playing as Fox In The Box: -5 to defensive prowess, +5 to ball winning.
+- **A gold Fox in the Box**: Gold, playing as Fox in the Box: -5 to defensive prowess, +5 to ball winning.
 - **A gold Target Man**: Gold, playing as Target Man: -5 to defensive prowess, +5 to physical contact.
 - **A gold Creative Playmaker**: Gold, playing as Creative Playmaker: -5 to defensive prowess, +5 to stamina.
 - **Goal Poacher at CF** (warning): Playing as Goal Poacher, rated A at CF: not allowed ("Goal Poacher does not activate at CF with the league's exe").

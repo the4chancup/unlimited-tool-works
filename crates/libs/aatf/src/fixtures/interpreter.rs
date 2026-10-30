@@ -1193,8 +1193,12 @@ fn apply_tier_refuses_values_that_never_settle() {
     assert_eq!(
         err,
         crate::CheckError::Unsettled {
-            tier: "regular".to_string()
+            label: "Regular".to_string()
         }
+    );
+    assert_eq!(
+        err.to_string(),
+        "the tier Regular writes values that never settle"
     );
     assert_eq!(records.player_mut(3), &before, "the player is untouched");
 }
