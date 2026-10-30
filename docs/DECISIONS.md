@@ -14023,3 +14023,18 @@ described the patch route while the code still wrote tables would mislead whoeve
 before 8.36c lands.
 Plan: `plans/pes_savefile/operations.md` "Aesthetics patch (new)"; `plans/save_editor.md`
 "Stripped save"; `plans/aesthetics_export/settings_toml.md` "Player settings in exports"; worklog 8.36, 8.23.
+
+## 2026-10-30 — gui — A dialog's title is centred, as the windows' titles are
+Decision (maintainer): every modal's title is centred over the modal's width, in the drafts
+(`.window .title`) and the app (`studio_core::widgets::modal`), so dialogs and the floating
+windows (Help, the Comparator's panels) place their titles alike. The maintainer first asked
+for the windows' titles on the left, as the dialogs had them, with centring the dialogs as the
+fallback should that fail.
+Why: one rule for every title. Left-aligned window titles were tried on paper and dropped:
+egui 0.37 builds the title bar from atoms, the title between two growing spacers that share
+the spare room equally, and an atom given an explicit width keeps it whatever the bar's width,
+so no title setting puts the text flush left without pushing the close button off a narrow
+window; drawing the title bar by hand (its drag, collapse and close) was the costlier route the
+maintainer ruled out. Supersedes nothing: the 2026-10-28 entry ("A floating window's title
+centred, as egui's title bar draws it") stands.
+Plan: `plans/core/gui.md` the Dark/light theme row, the window title's sentence; worklog 8.37.

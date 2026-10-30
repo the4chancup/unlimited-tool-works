@@ -2609,6 +2609,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       unstripped save shows the compiled look in Edit mode, boots and gloves included, on a
       player whose base copy named another and on one whose edit flags were clear
       (`scripts/ingame/`, saves backed up); with it, the FoxDen gloves issue rechecked
+  - [ ] 8.37 a dialog's title centred over the dialog, as the windows' titles are (the
+    maintainer, 2026-10-30, after left-aligned window titles proved out of egui's reach;
+    DECISIONS "A dialog's title is centred, as the windows' titles are"). Drafted:
+    `index.html` `.window .title` (`text-align: center`), rendered on Set all stats and the
+    wide Open save notice → `studio_core::widgets::modal` draws the title centred over the
+    modal's final width (the body decides it, so the title's place is known after the body)
+    → verify: a headless test measuring a narrow and a wide modal's title centre against the
+    frame's (red first); the overlap and draft-compare checks; the built window (ASK FIRST)
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
