@@ -140,7 +140,6 @@ COM playing style, and cards, positions and playing styles are the Team TOML lab
 pub struct Ruleset {
     pub schema: u32,
     pub name: String,
-    pub squad_size: u8,
     pub stats: StatRules,
     /// Highest first: recognition takes the first tier that fits, and the quick-action
     /// buttons follow this order.
@@ -404,8 +403,18 @@ pub enum Severity {
 }
 ```
 
+**Every squad is 23.** No ruleset sets its squad's size: the load rules that read it (tier
+counts and a medal system's counts fit the squad, a height pool's quotas add up to it) and
+the logic's "rest of the squad" count read `SQUAD_SIZE`, 23, one constant of `libs/aatf`.
+The Team compiler numbers a team's players 01 to 23 (player folders, `players.txt`,
+portraits) and gives each team 23 exclusive boots and gloves IDs in its 40-ID block, the
+blocks of teams 701 to 920 ending at 8900 below the referees' `99XX` band; so a ruleset of
+another size could not be met by a compiled team, and widening the compiler would move
+every team's IDs. A file that holds a `squad_size` key, as the format's first drafts did,
+is refused as any key the schema lacks, with its key path.
+
 A field left out of the file takes its empty value (0, `false`, an empty list or map, `None`),
-except `schema`, `name`, `squad_size`, `universal` with its `max_skill_cards`, and each tier's,
+except `schema`, `name`, `universal` with its `max_skill_cards`, and each tier's,
 bracket's and system's `id`, `label` and (tiers) `rate`, and each special's and team
 settings entry's `label`, a present `weight`'s `floor`, `below` and `above`, and a present
 `weak_foot`'s `usage` and `accuracy` (a tier's or an effect's), which are
@@ -419,7 +428,7 @@ Rules the types cannot carry, checked on load ("Loading and validation"): no str
 or a tier's `name_color` is eight bytes (a partial paste matches no name); ids unique within their
 kind, and every id a condition, effect, quota, `counts_as` or `suggestions` entry names exists; a
 tier with `counts_as` has no `count`, and the tier it names has no `counts_as` of its own (itself
-included); tier counts fit `squad_size`, and equal it when no tier is the rest of the squad (else
+included); tier counts fit the squad of 23, and equal it when no tier is the rest of the squad (else
 no team can be legal); each bracket's heights lie above every height of the brackets before it
 (a reordered bracket would take no player); every height system but the last has a non-empty
 `any_player` and the last has none or an empty one (an absent or empty condition holds for
@@ -496,7 +505,6 @@ schema.
 const RULESET = #{
     schema: 1,
     name: "Autumn 26",
-    squad_size: 23,
 
     stats: #{
         rating: ["dribbling", "goalkeeping", "finishing", "low_pass", "lofted_pass", "heading",

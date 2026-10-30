@@ -5900,7 +5900,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] cv8a merged `4f8c235e`: off `CLI_ONLY`, the (WIP) label, the line, the help, a save
       keeping the unbuilt sections over DBC7, VGL27 and VTL11; the stat grid measured, nothing
       cut once scrolled; no shell test assumed one window tool
-    - [ ] cv8b after cv8 lands (DECISIONS 2026-10-30 "every squad is 23, and the event logo
+    - [x] cv8b merged (see LOG; reviewed, gates of the six crates green) (DECISIONS 2026-10-30 "every squad is 23, and the event logo
       is any picture"): `squad_size` out of `libs/aatf` (schema, writer, embedded rulesets,
       logic, load rules on 23; logic version 1's pinned hash follows) and General; the logo
       from any picture, scaled to fit 168 × 56 and stored as PNG (RE-GUI-19); the unbuilt

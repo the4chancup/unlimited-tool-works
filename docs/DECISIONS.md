@@ -14286,7 +14286,8 @@ Plan: `plans/aatf_rules.md` "The ruleset schema" ("Every squad is 23"), the load
 
 ## 2026-10-30 — studio_core, ruleset_editor — the settings menu draws a section only for a tool that says it has a form
 Decision: `StudioTool` gains `has_settings_view(&self) -> bool`, false by default and true for
-the Save editor and the Team compiler; the settings menu draws a tool's section only when it is
+the Save editor (the Team compiler's form is not built yet: its `settings_view` draws a
+placeholder line, so it keeps false until it is); the settings menu draws a tool's section only when it is
 true (and the tool is not CLI-only), where it read a non-empty `default_settings()` table.
 Why: with the Ruleset editor a window tool in 0.0.1, its table holds only the state it writes
 itself (last folder, recent files), so the old test drew its header over nothing, the dead end
