@@ -6172,7 +6172,10 @@ Steps are itemized when Phase 15 closes; three are fixed already:
     `LiveKernelEvent` reports), was the probe's single-submission DX12 run of an 8192 chain.
     So the adapter blip is not a timeout: most likely the Vulkan loader with several processes
     opening it at once, unexplained
-  - [ ] 16.x c the BC7 speed probe, after all of DBC's work (the maintainer, 2026-10-21;
+  - [ ] 16.x c the BC7 speed probe, after all of DBC's work, the GPU encoding study with it once
+    0.0.1 is out (the maintainer, 2026-10-30, after a 2048² face's CPU BC7 chain took 31.7 s of
+    CPU against 128 ms for DXT5, `.tmp/jxl_bench/findings.md`; VGL 27's PES 2019 compiles are
+    BC7 throughout) (the maintainer, 2026-10-21;
     `plans/libs/README.md` "The workload the speed is judged on"): on the RX 9060 XT and its
     CPU, real kits (4096² and 8192²) and faces, time and PSNR for `block_compression`'s BC7
     presets (`ultra_fast` to `basic`) on GPU and CPU, `intel_tex_2`'s on CPU, BC3 as the
