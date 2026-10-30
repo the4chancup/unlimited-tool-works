@@ -2690,7 +2690,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       colour is 134 dark and 60 light, an enabled scope's untouched, red first; the built
       window's quick actions and Undo measured with `draft_compare.py` (text colour within
       its step of the drafts'), 134 tuned there if not. Brief `.tmp/8_30c/brief_838b.md`;
-      after the mutation run copies studio_core, save_editor and team_widgets
+      after the mutation run copies studio_core, save_editor and team_widgets.
+      Built 2026-10-30 on branch `838b` (`64ba9cea`, Opus sidekick): `widgets/enabled.rs`
+      (`add_enabled` disables in the parent as egui's does, no child scope, the parent's
+      style restored), 54 calls in 24 files moved, 4 tests (red: the colour line removed,
+      `#B4_B4_B4` for `#86_86_86`). The changed packages' tests, workspace clippy, fmt,
+      `comment_refs`, `colour_literals` green in its target. SWE-2 round under way
+      (`review6/.tmp/838b_review/`)
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
