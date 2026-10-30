@@ -14074,3 +14074,14 @@ where a table of 95 hand-written labels would drift from the schema. The JSON is
 reading, so it keeps the stable name a script matches.
 Plan: `plans/save_editor.md` "Comparator", the bullet "A row is drawn in the views' terms";
 worklog 8.29d1b1.
+
+## 2026-10-30 — save_editor — a held AATF result is dropped when the ruleset changes
+Decision: while a recheck runs, Live AATF's dock, its marks and Multi-team AATF's dialog keep
+the previous result only when it was checked under the active ruleset; one checked under
+another is dropped (the dock and the dialog read as before any result, Copy has nothing to
+copy, no mark is drawn) until the new result arrives.
+Why: kept, the old result's rows, marks and copied text name another ruleset's findings under
+the active one's name (Astra A1d over 8.29d: the copy exported Autumn 26's findings headed
+Spring 26); a hold across an edit or a range change stays, since the same ruleset produced it.
+Plan: `plans/save_editor.md` the Live AATF dock's paragraph and its marks' "While a check is in
+flight" bullet; `spec/save_editor.md` "Multi-team AATF".

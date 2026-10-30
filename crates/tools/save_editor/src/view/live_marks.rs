@@ -33,9 +33,9 @@ const MARK_BOX: f32 = 11.0;
 /// successful check under the ruleset keyed `ruleset` (`ActiveRules::key`)
 /// — the team id and its violations, `None` otherwise. While a check is
 /// in flight the held result stands, as the dock's list keeps it, unless
-/// it was checked under another ruleset (`aatf_check::held_result`): the
-/// marks' tooltips are worded with the active one. A failed check marks
-/// nothing.
+/// it was checked under another ruleset (`aatf_check::held_result`): its
+/// marks would claim violations the active ruleset never found. A failed
+/// check marks nothing.
 pub(super) fn held_violations<'a>(
     live: bool,
     check: &'a TeamsCheck,

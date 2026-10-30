@@ -1351,7 +1351,9 @@ What this editor adds on top of the lib:
   release build, nearly all of it the script's own work (`spec/aatf_rules.md` "The host"),
   more than a frame, so it runs on a worker, on the ruleset the window loaded, once the edit
   settles (a drag released, a field committed) and the list keeps the previous result, marked
-  as checking, until the new one arrives. The panel is the log panel widget's frame (its chevron collapses it to the header,
+  as checking, until the new one arrives; a result checked under another ruleset than the
+  active one is dropped instead (the list reads as before any result), since its rows word
+  findings the active ruleset never produced. The panel is the log panel widget's frame (its chevron collapses it to the header,
   its divider resizes it), its rows in the log's well (the extreme fill, the stroke, 6 × 2
   points of margin), the body 150 points high when the panel first opens (the drafts'
   `LIVE.height`): lower than the log's 180, since the views above it need the height more
@@ -1425,7 +1427,8 @@ What this editor adds on top of the lib:
     `Custom`, `RosterOrder`) mark the player's row alone, and the team-level ones the team's.
     A field the view does not show (the Appearance section closed, another preset's
     pitch) carries its mark when shown.
-  - While a check is in flight the marks keep the previous result, as the list does. A check
+  - While a check is in flight the marks keep the previous result, as the list does, and
+    like it drop a result checked under another ruleset. A check
     that fails (a script error in the rules file) clears every mark: the dock shows the
     failure, and a mark from an older result would claim a check that no longer ran.
 ---

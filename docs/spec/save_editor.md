@@ -203,7 +203,8 @@ What this editor adds on top of the lib:
   dialog's content; then `Copy to clipboard` and `Close`. The teams are checked on a worker, in parallel as `check-aatf` runs them (220 teams
   of a PES 2017 save in 2.0 s on 16 threads, 13.2 s on one), when the dialog opens and
   whenever the range changes, the previous list kept and marked as checking until the new one
-  arrives; a team whose check fails is a line naming it and the error, the others still
+  arrives, unless the ruleset changed (that list, and its Copy, would name findings of
+  another ruleset under the active one's name: it is dropped until the new one arrives); a team whose check fails is a line naming it and the error, the others still
   listed. Suggestions are not asked for (an unused allowance is the manager's business, not
   the organizer's), and a row's click does nothing. A dialog, not a docked panel or a
   floating window: it is a report read once and copied out, while Live AATF is where a team
