@@ -2933,3 +2933,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — 0.0.1cv Astra A7 over the Ruleset editor: 8 of 8 accepted; cv8c merged
   (`8e533110`): a typed tier id saved and guarded, the summary states the logic's rules, the
   bottom bar's "No problems found"; gates-changed 80cb2368 green.
+- **2026-10-30** — 0.0.1cv cv8's review loops ended: SWE-2 A7r1 3 accepted, Astra A7b 2 (a
+  typed id lost to a click on an earlier id field, fixed), SWE-2 A7b1 0; `just mutants
+  ruleset_editor` queued.

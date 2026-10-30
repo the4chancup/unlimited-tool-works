@@ -5919,8 +5919,12 @@ briefs, review loops, gates and mutation runs as for any step.
       three load-rule texts pinned, `58f33945`; `.tmp/0_0_1cv/rulings_cv8.md`), the loop
       ends; Astra A7: 8 of 8 accepted (`rulings_cv8.md`), so cv8c's rework, a SWE-2 loop
       ended at round A7r1 (3 accepted, fixed by the lead: the title's • counts a typed id, a
-      stat total without a band names its stats; `rulings_cv8.md`), then Astra again (A7b);
-      `just mutants ruleset_editor`, the built window with two tools (cv5)
+      stat total without a band names its stats; `cf2ab895`); Astra A7b 2 accepted (a click
+      on an earlier id field lost the typed id, "ability stats"; `0aec8f91`), its loop ends;
+      SWE-2 A7b1 0 accepted (`4863558b`), the review loops end (gates-changed f98c0f96
+      green). Open: `just mutants ruleset_editor` (queued detached behind the c2079631
+      collection, `.tmp/0_0_1cv/mutants_ruleset_editor.log`), the built window with two tools
+      (cv5)
     - [x] cv8c merged `8e533110` (gates-changed 80cb2368 green after the two citations moved
       under their doc comments) A7's rework (brief `.tmp/0_0_1cv/brief_cv8c.md`; draft, plan and DECISIONS
       2026-10-30 "the summary states the logic's rules" by the lead, the summary goldens
