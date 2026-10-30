@@ -20,7 +20,7 @@
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
 
-use anyhow::{anyhow, bail};
+use anyhow::anyhow;
 use pes_savefile::EditFile;
 use pes_savefile::file::fresh_salt;
 use pes_savefile::interchange::legacy::{read_squad, read_tactics};
@@ -40,7 +40,9 @@ use crate::session::Session;
 use crate::session::import_sections::{Sections, keep_sections};
 use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::comparator;
-use crate::view::{Panel, Refusal, SaveView, selected_team_id, surrender_focus};
+use crate::view::{
+    Panel, Refusal, SaveView, refuse_save_being_read, selected_team_id, surrender_focus,
+};
 
 /// The panel's Pick dialog: the open save's version to the picked path
 /// (`rfd` in the window, a stub in the tests).
@@ -753,21 +755,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
 
 /// Writes team `id` of the open save as `export` to `path`. A `path` that is
 /// the open save itself is refused before anything is written, as the
-/// command line refuses its `--out`: compared canonicalized, so one file
-/// under two names still matches, and a path that does not exist yet is no
-/// match.
+/// command line refuses its `--out` (`refuse_save_being_read`).
 fn write_export(session: &Session, id: u32, export: Export, path: &Path) -> anyhow::Result<()> {
-    if let (Ok(destination), Ok(save)) = (
-        std::fs::canonicalize(path),
-        std::fs::canonicalize(session.path()),
-    ) && destination == save
-    {
-        bail!(
-            "{}: that is the save being read, and a {} written over it would lose it",
-            path.display(),
-            export.name()
-        );
-    }
+    refuse_save_being_read(path, session.path(), export.name())?;
     let bytes = match export {
         Export::TeamToml => session.export_team(id)?.into_bytes(),
         Export::Texport => texport_bytes(session, id)?,

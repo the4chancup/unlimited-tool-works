@@ -6,6 +6,8 @@
 //! labels. `held_violations` is the one read of the held check every mark
 //! goes through.
 
+use std::borrow::Cow;
+
 pub(super) use team_widgets::violations::{CROSS, MARK_GAP};
 use team_widgets::violations::{Wording, violation_line};
 
@@ -35,12 +37,15 @@ const MARK_BOX: f32 = 11.0;
 /// in flight the held result stands, as the dock's list keeps it, unless
 /// it was checked under another ruleset (`aatf_check::held_result`): its
 /// marks would claim violations the active ruleset never found. A failed
-/// check marks nothing.
+/// check marks nothing. With `suggestions` (the Show suggestions
+/// checkbox) off, the held result's suggestions are left out, so turning
+/// it off takes their blue marks away before the next check returns.
 pub(super) fn held_violations<'a>(
     live: bool,
+    suggestions: bool,
     check: &'a TeamsCheck,
     ruleset: &str,
-) -> Option<(u32, &'a [aatf::Violation])> {
+) -> Option<(u32, Cow<'a, [aatf::Violation]>)> {
     if !live {
         return None;
     }
@@ -51,7 +56,20 @@ pub(super) fn held_violations<'a>(
     let [Ok(violations)] = checks.as_slice() else {
         return None;
     };
-    Some((*team_id, violations))
+    let is_suggestion =
+        |violation: &aatf::Violation| violation.severity == aatf::Severity::Suggestion;
+    // Borrowed unless there is a suggestion to leave out: the copy is made
+    // only on the frames between the checkbox turning off and the check
+    // that leaves them out returning.
+    if suggestions || !violations.iter().any(is_suggestion) {
+        return Some((*team_id, Cow::Borrowed(violations)));
+    }
+    let shown = violations
+        .iter()
+        .filter(|violation| !is_suggestion(violation))
+        .cloned()
+        .collect();
+    Some((*team_id, Cow::Owned(shown)))
 }
 
 /// The field a violation's mark stands before: `marked_field` maps a kind

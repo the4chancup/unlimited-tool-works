@@ -261,6 +261,49 @@ fn the_quick_actions_columns_are_halves_of_the_lists_frame() {
     }
 }
 
+// A ruleset with no medal tier (DBC7's with Gold, Silver and Bronze taken
+// out, and what names them) leaves the left column empty, and it still
+// takes its half: Make Regular stands where the official ruleset's right
+// column does, the frame's left plus half the frame and the gap.
+#[test]
+fn an_empty_medal_column_keeps_its_half() {
+    let mut ruleset = aatf::builtin("dbc7")
+        .expect("DBC7 is built in")
+        .ruleset()
+        .clone();
+    ruleset
+        .tiers
+        .retain(|tier| !matches!(tier.id.as_str(), "gold" | "silver" | "bronze"));
+    // The medal systems and the specials name the medal tiers.
+    ruleset.medal_systems.clear();
+    ruleset.specials.clear();
+    assert!(
+        ruleset.tiers.iter().any(|tier| tier.id == "regular"),
+        "premise: the regular tier stays"
+    );
+    let file = aatf::assemble_file(&ruleset, None, None);
+    let (_path, mut view, mut window) = open_701("quick_no_medal_column");
+    pick_imported(&mut view, "no_medals.4ccrules", &file);
+    draw(&mut window, &mut view);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| node.label().is_some_and(|label| label == "Make Gold")),
+        "premise: no medal tier's button"
+    );
+    let frame = list_frame(&window, &shapes);
+    let regular = node_labeled(&nodes, Role::Button, "Make Regular")
+        .bounds()
+        .expect("bounds");
+    let expected = f64::from(frame.min.x + (frame.width() + 8.0) / 2.0);
+    assert!(
+        (regular.x0 - expected).abs() <= 1.0,
+        "Make Regular starts at the right half ({} vs {expected}, frame {frame:?})",
+        regular.x0
+    );
+}
+
 /// Label nodes inside the side panel (left of the detail pane's edge):
 /// the quick actions' band's load error standing in for the Make buttons.
 /// The detail view's own labels sit at its x and never pass.

@@ -10,7 +10,7 @@
 use studio_core::widgets::{add_enabled_ui, step_number, wheel_steps};
 
 use crate::session::Session;
-use crate::view::{NUMBER_BOX, Refusal, SaveView, selected_player};
+use crate::view::{NUMBER_BOX, Refusal, SaveView, selected_player, surrender_focus};
 
 /// The disabled controls' tooltip on a team selection.
 const TEAM_TIP: &str = "The make buttons act on a player: pick a player row";
@@ -60,6 +60,10 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     ui.horizontal(|ui| {
         for (index, tiers) in [&left, &right].into_iter().enumerate() {
             ui.vertical(|ui| {
+                // A ruleset with no medal tier leaves the left column
+                // empty: it keeps its half all the same, so the right
+                // column stays where it stands.
+                ui.set_min_width(cell.x);
                 for tier in tiers {
                     tier_button(ui, session, refusal, rules, tier, player, cell);
                 }
@@ -101,8 +105,11 @@ fn tier_button(
     } else {
         button.on_disabled_hover_text(TEAM_TIP)
     };
-    if response.clicked()
-        && let Some((team_id, slot, _)) = player
+    if !response.clicked() {
+        return;
+    }
+    surrender_focus(ui);
+    if let Some((team_id, slot, _)) = player
         && let Some(session) = session.as_mut()
         && let Err(error) = session.apply_tier(rules, team_id, slot, &tier.id)
     {
@@ -141,11 +148,13 @@ fn set_stats_cell(
             } else {
                 button.on_disabled_hover_text(TEAM_TIP)
             };
-            if response.clicked()
-                && let Some((_, _, player_id)) = player
-                && let Some(session) = session.as_mut()
-            {
-                session.set_all_stats(player_id, *stat_value);
+            if response.clicked() {
+                surrender_focus(ui);
+                if let Some((_, _, player_id)) = player
+                    && let Some(session) = session.as_mut()
+                {
+                    session.set_all_stats(player_id, *stat_value);
+                }
             }
             // The field's `min_size` sets its width: a `DragValue`'s own
             // minimum would be the 40-point `interact_size`.

@@ -22,7 +22,10 @@ use crate::session::database;
 use crate::session::team_ops::{BootsMode, GlovesMode};
 use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::generate;
-use crate::view::{NUMBER_BOX, Panel, Refusal, SaveView, selected_player, selected_team_id};
+use crate::view::{
+    NUMBER_BOX, Panel, Refusal, SaveView, comparator, refuse_save_being_read, selected_player,
+    selected_team_id,
+};
 
 /// The Team menu button (the draft's `teamMenu`): Set edited flag, the
 /// boots/gloves dialog, Set player names to positions, Clear visual flags
@@ -222,13 +225,28 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     });
 }
 
+/// The `rfd` Save dialog for Output rosters to TSV: the suggested name
+/// comes from the caller.
+#[cfg(not(test))]
+pub(crate) fn default_rosters_dialog() -> comparator::SaveFileDialog {
+    Box::new(|name| rfd::FileDialog::new().set_file_name(name).save_file())
+}
+
+/// `default_rosters_dialog` under `cargo test`: a test reaching a real
+/// file dialog panics; tests stub `view.rosters_dialog`.
+#[cfg(test)]
+pub(crate) fn default_rosters_dialog() -> comparator::SaveFileDialog {
+    Box::new(|_| panic!("a test reached a real file dialog: stub rosters_dialog"))
+}
+
 /// The Savefile menu button (the draft's `databaseMenu`), the whole save's
 /// work grouped by what it acts on: the Comparator, which reads a second
 /// save against this one, and Apply aesthetics patch, which reads a Team
 /// compiler's patch against it, the one aesthetics write the aesthetics
 /// lock leaves open; then the reports, Output rosters to TSV, a pure
-/// read of the open save so never locked — `rfd`'s save dialog with
-/// `EDIT.tsv` as the default name, a write error shown as the refusal —
+/// read of the open save so never locked — `rosters_dialog` with
+/// `EDIT.tsv` as the default name, the open save refused as the
+/// destination and a write error shown as the refusal —
 /// and Multi-team AATF, a read too (`multi_aatf`); then Fix database,
 /// under the aesthetics lock with the ownership line as its disabled hover
 /// (SE-GUI-22). The menu is disabled with no save open.
@@ -254,10 +272,10 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         }
         ui.separator();
         if ui.button("Output rosters to TSV\u{2026}").clicked() {
-            let written = rfd::FileDialog::new()
-                .set_file_name("EDIT.tsv")
-                .save_file()
-                .map(|path| database::write_rosters_tsv(session.file(), &path));
+            let written = (view.rosters_dialog)("EDIT.tsv").map(|path| {
+                refuse_save_being_read(&path, session.path(), "roster sheet")
+                    .and_then(|()| database::write_rosters_tsv(session.file(), &path))
+            });
             if let Some(Err(error)) = written {
                 view.refusal = Some(Refusal {
                     title: "Cannot write the roster sheet",
@@ -887,11 +905,16 @@ impl CopySwap {
         }
     }
 
-    /// OK's operation on `session`.
-    fn apply(&self, session: &mut Session) {
+    /// OK's operation on `session`, under the aesthetics lock when
+    /// `aesthetics_locked`.
+    fn apply(&self, session: &mut Session, aesthetics_locked: bool) {
         match self.mode {
-            CopySwapMode::Copy => session.copy_stats(self.player_id, self.other_id),
-            CopySwapMode::Swap => session.swap_stats(self.player_id, self.other_id),
+            CopySwapMode::Copy => {
+                session.copy_stats(self.player_id, self.other_id, aesthetics_locked);
+            }
+            CopySwapMode::Swap => {
+                session.swap_stats(self.player_id, self.other_id, aesthetics_locked);
+            }
         }
     }
 }
@@ -947,6 +970,7 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     }
     let mut close = false;
     let title = view.copy_swap.as_ref().expect("checked above").title();
+    let locked = view.aesthetics_locked();
     let response = modal(
         ui.ctx(),
         egui::Id::unique("save_editor_copy_swap"),
@@ -1027,7 +1051,7 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     close = true;
                 }
                 if ui.button("OK").clicked() {
-                    dialog.apply(session);
+                    dialog.apply(session, locked);
                     close = true;
                 }
             });

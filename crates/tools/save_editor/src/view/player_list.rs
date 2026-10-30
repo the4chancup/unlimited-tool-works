@@ -152,7 +152,12 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     // Live AATF's held check: the rows of the team it is for carry its
     // marks, the other teams' none.
     let held = view.rules.as_ref().and_then(|active| {
-        live_marks::held_violations(view.live_aatf, &view.live.check, &active.key)
+        live_marks::held_violations(
+            view.live_aatf,
+            view.live_suggestions,
+            &view.live.check,
+            &active.key,
+        )
     });
     let session = view.session.as_mut().expect("checked above");
     let rows = selection::list(session.file(), &view.team, &view.filter);
@@ -208,7 +213,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                                     session,
                                     *team_id,
                                     layout,
-                                    held.filter(|(id, _)| *id == *team_id).map(
+                                    held.as_ref().filter(|(id, _)| *id == *team_id).map(
                                         |(_, violations)| live_marks::row_mark(violations, None),
                                     ),
                                 );
@@ -220,7 +225,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                                     session,
                                     row,
                                     layout,
-                                    held.filter(|(id, _)| *id == row.team_id).map(
+                                    held.as_ref().filter(|(id, _)| *id == row.team_id).map(
                                         |(_, violations)| {
                                             live_marks::row_mark(violations, Some(row.slot))
                                         },

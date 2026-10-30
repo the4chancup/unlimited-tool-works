@@ -97,6 +97,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         medals,
         live,
         live_aatf,
+        live_suggestions,
         ..
     } = view;
     let Some(session) = session.as_mut() else {
@@ -155,13 +156,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // result or none marks nothing), worded under the active rules and
     // the open save's stat names.
     let held = rules.as_ref().and_then(|active| {
-        live_marks::held_violations(*live_aatf, &live.check, &active.key)
+        live_marks::held_violations(*live_aatf, *live_suggestions, &live.check, &active.key)
             .filter(|(held_team, _)| *held_team == team_id)
             .map(|held| (held, active))
     });
     let fielded: Vec<Vec<FieldedMark>> = (0..team.roster.len())
         .map(|slot| {
-            let Some(((_, violations), active)) = held else {
+            let Some(((_, violations), active)) = &held else {
                 return Vec::new();
             };
             violations

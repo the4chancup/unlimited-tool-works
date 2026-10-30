@@ -441,6 +441,90 @@ fn the_instruction_pick_writes_the_byte_and_clears_the_target() {
     assert_eq!(chip.label(), Some("No target"), "and it shows No target");
 }
 
+/// Preset 1's first `side` instruction.
+fn first_instruction(tactics: &mut TeamTactics, side: InstructionSide) -> &mut AdvancedInstruction {
+    let preset = &mut tactics.presets[0];
+    let column = match side {
+        InstructionSide::Attack => &mut preset.attack_instructions,
+        InstructionSide::Defence => &mut preset.defence_instructions,
+    };
+    &mut column.as_mut().expect("PES 21 has instructions")[0]
+}
+
+// A target stays only between two instructions that take one of ours: a
+// held Tight Marking's byte is the opposing formation's slot, so Counter
+// Target picked over it (in the defence column) clears the byte, as
+// Defensive picked over a byte the table does not list does, while
+// Defensive picked over a held Counter Target (in the attack column,
+// which lists it as the current choice) keeps its player.
+#[test]
+fn a_pick_keeps_the_target_only_between_two_that_take_one_of_ours() {
+    let version = PesVersion::Pes21;
+    let encode = |inst| instruction::encode(version, inst).expect("PES 21 stores it");
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    for (side, held, picked, kept) in [
+        (
+            InstructionSide::Defence,
+            encode(Instruction::TightMarking),
+            Instruction::CounterTarget,
+            NO_TARGET,
+        ),
+        (
+            InstructionSide::Attack,
+            encode(Instruction::CounterTarget),
+            Instruction::Defensive,
+            4,
+        ),
+        (
+            InstructionSide::Attack,
+            0xAB,
+            Instruction::Defensive,
+            NO_TARGET,
+        ),
+    ] {
+        // A window per case: a popup a pick left open would take the next
+        // case's click on the same combo as a close.
+        let mut window = Headless::sized(800.0, 1200.0);
+        let mut tactics = fixture_tactics(version);
+        let entry = first_instruction(&mut tactics, side);
+        entry.instruction = held;
+        entry.player = 4;
+        let mut view = TacticsView::default();
+        let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+        let combo = combo_row(&nodes, 0)[match side {
+            InstructionSide::Attack => 0,
+            InstructionSide::Defence => 1,
+        }];
+        click(
+            &mut window,
+            combo,
+            version,
+            &mut tactics,
+            &mut view,
+            &roster,
+        );
+        let (ids, _) = window.tactics_ids(version, &mut tactics, &mut view, &roster, vec![]);
+        let item = entry_id(&ids, Role::Button, instruction_label(picked));
+        let (_, changed) =
+            window.action_click_tactics(item, version, &mut tactics, &mut view, &roster);
+        assert!(
+            changed,
+            "{held:#04x} to {picked:?}: the pick changed the record"
+        );
+        let entry = *first_instruction(&mut tactics, side);
+        assert_eq!(
+            entry.instruction,
+            encode(picked),
+            "premise: {picked:?} picked"
+        );
+        assert_eq!(
+            entry.player, kept,
+            "{held:#04x} to {picked:?}: the target byte"
+        );
+    }
+}
+
 // The four rows route to their own entries: an instruction and a
 // target picked on one row lands on that row's entry alone — the
 // other three rows, the other presets and every other field stay.

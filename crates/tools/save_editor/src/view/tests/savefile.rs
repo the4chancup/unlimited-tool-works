@@ -294,6 +294,42 @@ fn the_locked_savefile_menu_disables_fix_database_only() {
     );
 }
 
+// The open save is refused as the roster sheet's destination: the
+// refusal names it, and the save's bytes stay.
+#[test]
+fn output_rosters_to_tsv_refuses_the_open_save() {
+    let path = fixture(PesVersion::Pes21, "tsv_refuses_the_save");
+    let before = std::fs::read(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.rosters_dialog = Box::new({
+        let path = path.clone();
+        move |_| Some(path.clone())
+    });
+    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
+    let nodes = open_savefile_menu(&mut window, &mut view);
+    click(
+        &mut window,
+        menu_item(&nodes, "Output rosters to TSV\u{2026}"),
+        &mut view,
+    );
+    assert!(
+        std::fs::read(&path).unwrap() == before,
+        "the save's bytes are unchanged"
+    );
+    // The refusal's modal spends its first frame sizing itself, with no
+    // nodes; the last of the frames drawn here holds them.
+    draw(&mut window, &mut view);
+    let nodes = draw(&mut window, &mut view);
+    let sentence = format!(
+        "{}: that is the save being read, and a roster sheet written over it would lose it",
+        path.display()
+    );
+    for text in ["Cannot write the roster sheet", sentence.as_str()] {
+        assert!(label_value(&nodes, text), "the refusal shows {text:?}");
+    }
+}
+
 /// The Multi-team AATF dialog's title under 4cc Autumn 26, the ruleset a
 /// view starts on.
 const MULTI_TITLE: &str = "Multi-team AATF (4cc Autumn 26)";
@@ -519,6 +555,40 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
     assert!(multi_button(&pairs, "Copy to clipboard").is_disabled());
 }
 
+/// Multi-team AATF's range is kept while the save stays open: narrowed to
+/// 734 alone, the dialog closed and opened again reads 734 at both ends.
+#[test]
+fn a_reopened_multi_team_aatf_keeps_its_range() {
+    let path = fixture(PesVersion::Pes17, "multi_aatf_reopen");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    pick_range_end(&mut window, &mut view, 0, "734 /lit/");
+    pick_range_end(&mut window, &mut view, 1, "734 /lit/");
+    let pairs = multi_checked(&mut window, &mut view, &[734]);
+
+    click(&mut window, multi_button(&pairs, "Close"), &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        !pairs
+            .iter()
+            .any(|(_, node)| node.value() == Some(MULTI_TITLE)),
+        "premise: the dialog closed"
+    );
+    open_multi_aatf(&mut window, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let ends: Vec<Option<&str>> = range_combos(&pairs)
+        .into_iter()
+        .map(accesskit::Node::value)
+        .collect();
+    assert_eq!(
+        ends,
+        [Some("734 /lit/"), Some("734 /lit/")],
+        "the range is kept"
+    );
+}
+
 /// A team the check finds clean reads `All clean` under its line (714
 /// /co/ of the PES 15 sample, made legal by the CLI's `official_legal.toml`;
 /// the PES 17 sample holds no clean team under 4cc Autumn 26), and Copy
@@ -545,14 +615,132 @@ fn a_clean_team_reads_all_clean_and_copy_names_the_teams_copied() {
         "the other teams have rows"
     );
 
-    click(
-        &mut window,
-        multi_button(&pairs, "Copy to clipboard"),
-        &mut view,
-    );
+    let text = copied(&mut window, &mut view, &pairs).expect("the click copies the list");
     assert_eq!(
         view.notice.as_ref().map(|notice| notice.text.as_str()),
         Some("Copied the results of 5 teams.")
+    );
+    let copied_lines: Vec<&str> = text.lines().collect();
+    assert!(
+        copied_lines[0].starts_with("4cc Autumn 26, teams 714 to 718: "),
+        "the first line names the ruleset and the range: {text}"
+    );
+    let teams: Vec<&str> = copied_lines
+        .iter()
+        .filter_map(|line| line.strip_prefix('>'))
+        .collect();
+    let expected: Vec<String> = (714..=718)
+        .map(|id| format!("{id} {}", display_name(&team_entry(&view, id).name)))
+        .collect();
+    assert_eq!(teams, expected, "every team of the range after a `>`");
+    let at = copied_lines
+        .iter()
+        .position(|line| *line == ">714 /co/")
+        .expect("714 in the copied text");
+    assert_eq!(copied_lines[at + 1], "  All clean", "{text}");
+}
+
+/// Copy to clipboard clicked (press on one frame, release on the next):
+/// the text the release frame's `CopyText` command carries, `None` when it
+/// copies nothing.
+fn copied(
+    window: &mut Headless,
+    view: &mut SaveView,
+    pairs: &[(accesskit::NodeId, accesskit::Node)],
+) -> Option<String> {
+    let at = centre(multi_button(pairs, "Copy to clipboard"));
+    window.frame(pointer_at(at, true), |ui| show(ui, view, &|| Vec::new()));
+    let (commands, _, _) = window.frame(pointer_at(at, false), |ui| {
+        show(ui, view, &|| Vec::new());
+        ui.ctx().output(|output| output.commands.clone())
+    });
+    commands.into_iter().find_map(|command| match command {
+        egui::OutputCommand::CopyText(text) => Some(text),
+        _ => None,
+    })
+}
+
+/// A range where one team's check fails (743 under THROW19, whose custom
+/// check throws on 743's captain) names that team with its error and lists
+/// the other team's rows, in the drawn list and in the copied text.
+#[test]
+fn a_failed_teams_check_is_named_with_its_error_and_the_others_listed() {
+    let path = fixture(PesVersion::Pes17, "multi_aatf_failed");
+    let mut view = SaveView::new();
+    view.open(&path);
+    pick_imported(&mut view, "throw19.4ccrules", &throw19());
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    let ids = all_team_ids(&view);
+    multi_checked(&mut window, &mut view, &ids);
+    let label =
+        |view: &SaveView, id: u32| format!("{id} {}", display_name(&team_entry(view, id).name));
+    let (failed, other) = (label(&view, 743), label(&view, 744));
+    let other_rows = {
+        let file = view.session.as_ref().expect("the save opened").file();
+        let rules = aatf::Rules::load(&throw19()).expect("THROW19 loads");
+        let checks = crate::session::rules::check_teams(
+            &rules,
+            &crate::session::rules::team_views(file, &[743, 744]),
+        );
+        assert!(checks[0].is_err(), "premise: 743's check fails");
+        checks[1]
+            .as_ref()
+            .expect("premise: 744's check runs")
+            .iter()
+            .filter(|violation| violation.severity != aatf::Severity::Suggestion)
+            .count()
+    };
+    assert!(other_rows > 0, "premise: 744 has rows");
+    pick_range_end(&mut window, &mut view, 0, &failed);
+    pick_range_end(&mut window, &mut view, 1, &other);
+    let pairs = multi_checked(&mut window, &mut view, &[743, 744]);
+
+    let lines = multi_lines(&pairs);
+    let failed_line = format!("The AATF check failed for team {failed}: ");
+    assert!(
+        lines
+            .iter()
+            .any(|line| line.starts_with(&failed_line) && line.contains("boom")),
+        "743 named with its error: {lines:?}"
+    );
+    assert!(
+        lines.contains(&"2 teams checked, 1 with issues".to_owned()),
+        "{lines:?}"
+    );
+    let at = lines
+        .iter()
+        .position(|line| *line == other)
+        .expect("744 is listed");
+    // The list's group headers: a 744xx player's head or the team's own.
+    let group = &lines[at + 1];
+    assert!(
+        group.starts_with("Player 744") || group == "Team-wide issues",
+        "a group header of 744's rows under its line: {lines:?}"
+    );
+
+    let text = copied(&mut window, &mut view, &pairs).expect("the click copies the list");
+    let copied_lines: Vec<&str> = text.lines().collect();
+    let at = copied_lines
+        .iter()
+        .position(|line| *line == format!(">{failed}"))
+        .expect("743 in the copied text");
+    assert!(
+        copied_lines[at + 1].starts_with("  The AATF check failed: ")
+            && copied_lines[at + 1].contains("boom"),
+        "743's error under its line: {text}"
+    );
+    let at = copied_lines
+        .iter()
+        .position(|line| *line == format!(">{other}"))
+        .expect("744 in the copied text");
+    assert_eq!(
+        copied_lines[at + 1..]
+            .iter()
+            .filter(|line| line.starts_with("    "))
+            .count(),
+        other_rows,
+        "744's rows: {text}"
     );
 }
 

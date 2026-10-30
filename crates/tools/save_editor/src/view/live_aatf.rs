@@ -8,6 +8,7 @@
 //! the check asks for the suggestions too, listed under `Suggestions`
 //! after the violations.
 
+use pes_savefile::model::names::display_name;
 use studio_core::widgets::{BottomDock, well_frame};
 use team_widgets::violations::ListUse;
 
@@ -86,13 +87,13 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                     if checks.iter().all(Result::is_ok) {
                         let issues = aatf_check::issues(checks);
                         if issues == 0 {
-                            let name = aatf_check::team_name(
+                            let name = display_name(aatf_check::team_name(
                                 file,
                                 *result_key
                                     .ids
                                     .first()
                                     .expect("a held result checked a team"),
-                            );
+                            ));
                             ui.strong(format!("{name} passes {ruleset} with no issues."));
                         } else {
                             let plural = if issues == 1 { "issue" } else { "issues" };
@@ -104,7 +105,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                     if let Some(id) = team_id {
                         ui.strong(format!(
                             "Checking {}\u{2026}",
-                            aatf_check::team_name(file, id)
+                            display_name(aatf_check::team_name(file, id))
                         ));
                     }
                 }
@@ -137,8 +138,11 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                                     result_key,
                                     checks,
                                     active.rules.ruleset(),
+                                    // The checkbox turned off hides a held
+                                    // result's suggestions at once.
                                     ListUse::Editing {
-                                        show_suggestions: result_key.suggestions,
+                                        show_suggestions: result_key.suggestions
+                                            && *live_suggestions,
                                     },
                                 );
                             }

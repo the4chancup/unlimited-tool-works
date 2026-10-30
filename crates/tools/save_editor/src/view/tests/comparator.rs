@@ -5,6 +5,8 @@
 
 use std::path::PathBuf;
 
+use pes_savefile::ops::compare::DiffScope;
+
 use super::*;
 
 use crate::test_support::{TEST_SALT, cli_stdout};
@@ -262,6 +264,34 @@ fn the_panel_lists_the_differences_per_team_and_a_rows_click_selects() {
         "73401's team and slot"
     );
     assert_eq!(view.team, TeamChoice::Team(734), "the selector moved");
+}
+
+/// A team whose name holds a colour code heads its group by its display
+/// name: 734's name in the open save coloured red.
+// SE-GUI-13
+#[test]
+fn a_coded_teams_heading_reads_its_display_name() {
+    let (mut view, mut window) = open_734_with("comparator_coded_heading", &[73401], 183);
+    edit_team(view.session.as_mut().unwrap(), 734, 1, |team| {
+        team.name = format!("\x11cff0000ff{}", team.name);
+    });
+    let raw = team_entry(&view, 734).name;
+    let shown = display_name(&raw);
+    assert_ne!(raw, shown, "premise: 734's name holds a colour code");
+    let picked = picked_save(&scratch_of(&view), "picked", |_| {});
+    view.panel = Some(Panel::Comparator);
+    pick(&mut window, &mut view, picked);
+    let pairs = compared(&mut window, &mut view);
+    let headings: Vec<&str> = comparator_nodes(&pairs)
+        .into_iter()
+        .filter_map(|node| node.value())
+        .filter(|value| value.starts_with("Team 734 "))
+        .collect();
+    assert_eq!(
+        headings,
+        [format!("Team 734 {shown}")],
+        "734's heading by its display name"
+    );
 }
 
 // SE-GUI-13
@@ -1051,9 +1081,8 @@ fn export_reports_the_written_path_and_refuses_a_folder_that_is_not() {
         node_labeled(&nodes, Role::Button, "Export\u{2026}"),
         &mut view,
     );
-    // The refusal lands inside `comparator::show`, after `refusal_dialog`
-    // ran that frame, so the modal's first drawn frame is its sizing
-    // pass; the second holds the nodes.
+    // The refusal's modal spends its first frame sizing itself, with no
+    // nodes; the last of the frames drawn here holds them.
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
@@ -1069,6 +1098,59 @@ fn export_reports_the_written_path_and_refuses_a_folder_that_is_not() {
         }),
         "the refusal names the path"
     );
+}
+
+/// Export's dialog stubbed to `destination`, a spelling of one of the two
+/// saves, and Export clicked: the refusal names it in the export panel's
+/// sentence, the save's bytes are unchanged and no Wrote line shows.
+fn assert_export_refused(view: &mut SaveView, window: &mut Headless, destination: PathBuf) {
+    let before = std::fs::read(&destination).unwrap();
+    view.export_dialog = Box::new({
+        let destination = destination.clone();
+        move |_| Some(destination.clone())
+    });
+    let nodes = draw(window, view);
+    click(
+        window,
+        node_labeled(&nodes, Role::Button, "Export\u{2026}"),
+        view,
+    );
+    assert!(
+        std::fs::read(&destination).unwrap() == before,
+        "{}: the save's bytes are unchanged",
+        destination.display()
+    );
+    // The refusal's modal spends its first frame sizing itself, with no
+    // nodes; the last of the frames drawn here holds them.
+    draw(window, view);
+    let nodes = draw(window, view);
+    let sentence = format!(
+        "{}: that is the save being read, and a difference report written over it would lose it",
+        destination.display()
+    );
+    for text in ["Cannot export the differences", sentence.as_str()] {
+        assert!(label_value(&nodes, text), "the refusal shows {text:?}");
+    }
+    assert!(view.comparator.exported.is_none(), "no Wrote line");
+}
+
+#[test]
+fn export_refuses_the_open_save_as_its_destination() {
+    let (mut view, mut window, _) = compared_73401("comparator_export_open_save");
+    let open = view.session.as_ref().unwrap().path().to_path_buf();
+    assert_export_refused(&mut view, &mut window, open);
+}
+
+#[test]
+fn export_refuses_the_picked_save_as_its_destination() {
+    let (mut view, mut window, _) = compared_73401("comparator_export_picked_save");
+    let picked = scratch_of(&view).join("picked");
+    assert_eq!(
+        view.comparator.picked.as_ref().map(|(path, _)| path),
+        Some(&picked),
+        "premise: the picked save"
+    );
+    assert_export_refused(&mut view, &mut window, picked);
 }
 
 // SE-GUI-13
@@ -1120,6 +1202,36 @@ fn an_invoked_pick_starts_the_comparison() {
         .expect("the Pick button");
     action_focus(&mut window, &mut view, pick);
     action_click(&mut window, &mut view, pick);
+    compared(&mut window, &mut view);
+}
+
+/// An invoked scope choice (Tab + Space, or AccessKit's Click) starts the
+/// comparison of its scope with no further input: the choice gives up the
+/// keyboard it holds.
+// SE-GUI-13
+#[test]
+fn an_invoked_scope_choice_starts_the_comparison() {
+    let (mut view, mut window, _) = compared_73401("comparator_invoke_scope");
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (gameplay, _) = comparator_button(&pairs, "Gameplay");
+    action_focus(&mut window, &mut view, gameplay);
+    action_click(&mut window, &mut view, gameplay);
+    assert_eq!(
+        view.comparator.scope,
+        Some(DiffScope::Gameplay),
+        "premise: the click picked Gameplay"
+    );
+    draw(&mut window, &mut view);
+    assert!(
+        view.comparator.comparison.pending.is_some()
+            || view
+                .comparator
+                .comparison
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| key.scope == Some(DiffScope::Gameplay)),
+        "the Gameplay comparison started"
+    );
     compared(&mut window, &mut view);
 }
 

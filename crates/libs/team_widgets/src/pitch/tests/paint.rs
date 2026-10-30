@@ -17,8 +17,9 @@ fn outfield(x: u8, y: u8) -> FormationSlot {
 }
 
 // The formation screen's own slot-to-spot mapping: x 0 to 104 across
-// the canvas' width, y 24 the halfway line, the attack end
-// up; the keeper sits on the goal area's line whatever his stored spot.
+// the canvas' width, y 24 at canvas 200.8, just below the halfway line
+// drawn at 192 (y 25.3), the attack end up; the keeper sits on the goal
+// area's line whatever his stored spot.
 #[test]
 fn the_badge_centre_is_the_screens_spot_mapping() {
     let origin = egui::pos2(40.0, 80.0);

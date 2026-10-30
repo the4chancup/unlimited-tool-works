@@ -207,6 +207,9 @@ pub(crate) struct SaveView {
     /// The comparator's Export dialog (`rfd`, stubbed in tests — the
     /// Ruleset editor's picker pattern).
     export_dialog: comparator::SaveFileDialog,
+    /// Output rosters to TSV's Save dialog (`rfd`, stubbed in tests: the
+    /// `export_dialog` pattern).
+    rosters_dialog: comparator::SaveFileDialog,
     /// The "Cards left" badge as last computed and the `BadgeKey` it was
     /// computed for: `player_tier` then `card_limits` run again only when
     /// the key differs, not on every frame.
@@ -435,6 +438,7 @@ impl SaveView {
             live: live_aatf::LiveAatf::new(),
             multi_aatf: multi_aatf::MultiAatf::new(),
             export_dialog: comparator::default_export_dialog(),
+            rosters_dialog: menus::default_rosters_dialog(),
             cards: None,
             medals: tactics::Medals::new(),
             portraits: portraits::Portraits::new(),
@@ -828,9 +832,13 @@ fn set_surrender_on_press(ctx: &egui::Context) {
 /// (`Tool::title_detail`), not this row, which never takes a second row.
 /// Returns the x where the row's last widget ends.
 fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) -> f32 {
-    // The unsaved prompt and the running-game question hold every
-    // shortcut dead while up (the prompt's own buttons are the way out).
-    let modal_up = view.prompt.is_some() || view.edit_mode_question.is_some();
+    // Every dialog holds every shortcut dead while up (its own buttons
+    // are the way out): egui's top modal layer covers whatever opened one,
+    // and the two fields cover the prompt and the running-game question on
+    // the frame they open, before their layer exists.
+    let modal_up = view.prompt.is_some()
+        || view.edit_mode_question.is_some()
+        || ui.ctx().memory(|memory| memory.top_modal_layer()).is_some();
     // Ctrl+S saves even while a widget holds the keyboard; the other
     // shortcuts do nothing then (a text field's own undo is egui's).
     let save_key =
@@ -922,14 +930,18 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
             )
             .clicked()
         {
+            surrender_focus(ui);
             view.live_aatf = !view.live_aatf;
         }
         // What the check asks for, so only while it runs.
-        if view.live_aatf {
-            studio_core::widgets::checkbox(ui, &mut view.live_suggestions, "Show suggestions")
+        if view.live_aatf
+            && studio_core::widgets::checkbox(ui, &mut view.live_suggestions, "Show suggestions")
                 .on_hover_text(
                     "Also list each player's unused allowances (cards, free tricks, weak foot...)",
-                );
+                )
+                .clicked()
+        {
+            surrender_focus(ui);
         }
         // The save's path is in the window title (`title_detail`): beside the
         // unsaved mark it could wrap the toolbar onto a second row.
@@ -1040,6 +1052,28 @@ pub(super) fn write_now(
             false
         }
     }
+}
+
+/// Refuses an export's `destination` when it is `save`, a save being read,
+/// before the `what` (the export's name) is written over it: compared
+/// canonicalized, so one file under two names still matches, and a path
+/// that does not exist yet is no match.
+pub(super) fn refuse_save_being_read(
+    destination: &Path,
+    save: &Path,
+    what: &str,
+) -> anyhow::Result<()> {
+    if let (Ok(destination_file), Ok(save_file)) = (
+        std::fs::canonicalize(destination),
+        std::fs::canonicalize(save),
+    ) && destination_file == save_file
+    {
+        anyhow::bail!(
+            "{}: that is the save being read, and a {what} written over it would lose it",
+            destination.display()
+        );
+    }
+    Ok(())
 }
 
 /// Clones the player's entry, applies `edit` and pushes it under `key` (the

@@ -190,6 +190,7 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         });
     }
     let mut close = false;
+    let mut picked = false;
     let id = egui::Id::unique("save_editor_generate");
     let response = modal(ui.ctx(), id, generate.file.title(), |ui| {
         let preview = generate.preview.as_ref().expect("built above");
@@ -202,6 +203,7 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 && let Some(path) = pick_folder_dialog()
             {
                 generate.folder = path.display().to_string();
+                picked = true;
             }
         });
         ui.weak(generate.file.file_name());
@@ -252,6 +254,11 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
             ui.colored_label(ui.visuals().error_fg_color, error.as_str());
         }
     });
+    // A pick reads the folder again, even the one already shown: its file
+    // may have been fixed outside since the preview was built.
+    if picked {
+        generate.preview = None;
+    }
     if close || response.should_close() {
         view.generate = None;
     }

@@ -62,6 +62,11 @@ struct Gesture {
     pane_at: f64,
     /// The taker's turn not stepped yet, in points, up positive.
     pending: f32,
+    /// The control `pending` was turned over. `taker` is cleared at each
+    /// new input, so it cannot say whose the rest of a fast turn is: a
+    /// control taking the wheel while `pending` is another's starts from
+    /// zero, and the rest never steps a control it was not turned over.
+    pending_for: Option<egui::Id>,
     /// The first pass a step may come on: two after the last pass on which
     /// a due step took the keyboard.
     step_from: u64,
@@ -75,6 +80,7 @@ impl Default for Gesture {
             taker: None,
             pane_at: f64::NEG_INFINITY,
             pending: 0.0,
+            pending_for: None,
             step_from: 0,
         }
     }
@@ -105,6 +111,10 @@ impl Gesture {
             return 0;
         }
         if turn != 0.0 && self.taker.is_none() && now - self.pane_at >= REST {
+            if self.pending_for != Some(response.id) {
+                self.pending = 0.0;
+                self.pending_for = Some(response.id);
+            }
             self.taker = Some(response.id);
         }
         if self.taker != Some(response.id) {
@@ -413,6 +423,28 @@ mod tests {
         window.settle();
         assert_eq!(window.value, 178);
         assert_eq!(window.offset, 0.0);
+    }
+
+    /// A fast turn's rest belongs to the control it was turned over, never
+    /// to the next one the wheel turns.
+    #[test]
+    fn a_turns_rest_stays_with_the_control_it_was_turned_over() {
+        let mut window = Window::new();
+        window.frame(vec![
+            egui::Event::PointerMoved(window.drag_rect.center()),
+            wheel(egui::MouseWheelUnit::Line, -3.0),
+        ]);
+        assert_eq!(window.value, 179, "premise: the first notch stepped");
+        window.frame(vec![
+            egui::Event::PointerMoved(window.combo_rect.center()),
+            wheel(egui::MouseWheelUnit::Line, -1.0),
+        ]);
+        window.settle();
+        assert_eq!(window.selected, 2, "the combo steps once, one item down");
+        assert_eq!(
+            window.value, 179,
+            "the drag value steps no more once the pointer left"
+        );
     }
 
     // ST-WHEEL-02

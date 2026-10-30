@@ -365,7 +365,7 @@ fn held_violations_is_one_teams_ok_result_while_on() {
         suggestions: false,
     };
     let held = |check: &_| {
-        live_marks::held_violations(true, check, "autumn26").map(|(id, v)| (id, v.len()))
+        live_marks::held_violations(true, true, check, "autumn26").map(|(id, v)| (id, v.len()))
     };
     check.result = Some((
         key(&[734]),
@@ -377,12 +377,12 @@ fn held_violations_is_one_teams_ok_result_while_on() {
     ));
     assert_eq!(held(&check), Some((734, 1)));
     assert_eq!(
-        live_marks::held_violations(false, &check, "autumn26"),
+        live_marks::held_violations(false, true, &check, "autumn26"),
         None,
         "off marks nothing"
     );
     assert_eq!(
-        live_marks::held_violations(true, &check, "spring26"),
+        live_marks::held_violations(true, true, &check, "spring26"),
         None,
         "checked under another ruleset"
     );
@@ -859,6 +859,8 @@ fn each_fields_mark_stands_left_of_its_label() {
     ];
     let (mut view, mut window) = open_734("live_marks_each_field");
     view.live_aatf = true;
+    // Show suggestions on, so the suggestion cases' marks are drawn.
+    view.live_suggestions = true;
     let revision = view.session.as_ref().expect("the save opened").revision();
     for (severity, kind, label) in &cases {
         view.live.check.result = Some((
@@ -866,7 +868,7 @@ fn each_fields_mark_stands_left_of_its_label() {
                 revision,
                 ids: vec![734],
                 ruleset: "autumn26".to_owned(),
-                suggestions: false,
+                suggestions: true,
             },
             vec![Ok(vec![violation(Some(0), *severity, kind.clone())])],
         ));

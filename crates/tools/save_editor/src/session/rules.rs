@@ -146,12 +146,24 @@ pub(crate) fn check_import(path: &Path, imported: &[Imported]) -> ImportCheck {
 }
 
 /// `import` copied into `data_dir`'s `rules/` (created when missing), then
-/// the copies it replaces deleted. The copy is written first, so a write
-/// that fails leaves the list as it was.
+/// the copies it replaces deleted. The copy is written whole to a temporary
+/// file beside it, then renamed over its name, so a write that fails leaves
+/// the list as it was, an earlier copy of the same name included.
 pub(crate) fn import(data_dir: &Path, import: &Import) -> std::io::Result<()> {
     let folder = data_dir.join(RULES_FOLDER);
     std::fs::create_dir_all(&folder)?;
-    std::fs::write(folder.join(&import.file_name), &import.text)?;
+    // Not a `.4ccrules` file, so `imported` never lists a leftover one.
+    let temporary = folder.join(format!("{}.tmp", import.file_name));
+    let written = std::fs::write(&temporary, &import.text)
+        .and_then(|()| std::fs::rename(&temporary, folder.join(&import.file_name)));
+    if let Err(error) = written {
+        // The write's error is the one to report; a temporary file left
+        // behind is a diagnostic.
+        if let Err(removal) = std::fs::remove_file(&temporary) {
+            log::debug!("{}: kept: {removal}", temporary.display());
+        }
+        return Err(error);
+    }
     for (_, file_name) in &import.replaces {
         // The copy of the same file name was just overwritten.
         if *file_name != import.file_name {
