@@ -14046,3 +14046,15 @@ sentence; the sentence takes the room left of it, at least 12 points away.
 Why: the maintainer's layout; one row reads as one question, and the dialog loses a row.
 Plan: `plans/save_editor.md` "Editing UI", the sentence after the menus' shortcuts; worklog
 8.37b.
+
+## 2026-10-30 — save_editor — The event logo is decoded and sized in `team_widgets`
+Decision: `team_widgets::event_logo` decodes a ruleset's logo (through `dds_convert`'s PNG
+decoder; `team_widgets` gains that workspace dependency) and fits it in the box 28 high and up
+to 84 wide; the Save editor's top-right logo and the Ruleset editor's General field both draw
+it. `aatf` gains `Ruleset::logo_png` and `Ruleset::set_logo`, the latter refusing what the load
+check refuses, through the same check.
+Why: the plan gave both hosts the same picture at the same size without saying where the
+decoding lives; one module keeps the two sizes from drifting, and `studio_core` holds only
+what runs with no tool installed. A second PNG decoder (egui's loaders, `image` in a tool
+crate) would be a second place the suite reads rasters.
+Plan: `plans/save_editor.md` "`libs/team_widgets`", the `event_logo` bullet; worklog 8.35b.

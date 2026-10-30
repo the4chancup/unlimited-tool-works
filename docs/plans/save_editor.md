@@ -1048,6 +1048,12 @@ Contents:
   (`plans/aatf_rules.md` "The interpreter", its paragraph on violations in words). A `check-aatf` line is the
   `aatf_violation` finding with the context `team`, `player` (for a player's row), `rule` (the
   name in words) and `problem` (the sentence), where it printed the kind and each field.
+- `event_logo` — a ruleset's event logo decoded into a texture (through `dds_convert`'s PNG
+  decoder, the one the portraits use) and its size, fitted proportions kept in the box 28
+  high and up to 84 wide. The Save editor's top-right logo and the Ruleset editor's General
+  field both draw it, so the two show it alike; each host decodes it once per logo, not per
+  frame. Here, not in `studio_core`, which holds what runs with no tool installed, and not
+  once per host, which would let the two sizes drift.
 
 Stock-formation constants stay in the Team creator (its only consumer) until this editor wants
 an "apply stock formation" action, at which point they move here.
