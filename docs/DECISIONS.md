@@ -14286,7 +14286,8 @@ Plan: `plans/aatf_rules.md` "The ruleset schema" ("Every squad is 23"), the load
 
 ## 2026-10-30 — studio_core, ruleset_editor — the settings menu draws a section only for a tool that says it has a form
 Decision: `StudioTool` gains `has_settings_view(&self) -> bool`, false by default and true for
-the Save editor and the Team compiler; the settings menu draws a tool's section only when it is
+the Save editor (the Team compiler's form is not built yet: its `settings_view` draws a
+placeholder line, so it keeps false until it is); the settings menu draws a tool's section only when it is
 true (and the tool is not CLI-only), where it read a non-empty `default_settings()` table.
 Why: with the Ruleset editor a window tool in 0.0.1, its table holds only the state it writes
 itself (last folder, recent files), so the old test drew its header over nothing, the dead end
@@ -14295,3 +14296,27 @@ asked for, and dropping its keys from the table would break "the table lists eve
 tool reads".
 Plan: `plans/core/gui.md` "Settings menu", the bullet starting "One collapsible section per
 registered tool"; the spec's `core/architecture.md` trait block follows when the code lands.
+
+## 2026-10-30 — dds_convert — JPEG XL textures join the accepted sources in 0.0.2
+Decision: the maintainer's call. `.jxl` is decoded like the other raster sources, in
+`dds_convert` and wherever a picture is picked (the export's extension table, the portrait
+and logo pickers); the decoder is Google's `jxl` (both it and `jxl-oxide` approved), the
+cheaper one on a member's 2048 × 2048 texture: 492 and 155 ms of CPU per lossless and lossy
+decode, against 1116 and 817 ms.
+Why: JPEG XL is coming into use and is likely to replace PNG for player model textures;
+the change is one more source format on the existing path. Either crate's API changes are
+held off by the pinned version, so speed decides, as CPU time: the compiler decodes one
+texture per core. Measured with `.tmp/jxl_bench/` (`timing.log`).
+Plan: `plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)".
+
+## 2026-10-30 — dds_convert — no BC7 encoding until the GPU encoder is in
+Decision: the maintainer's call: auto-compression to BC7 is off until GPU compression is in. A
+texture encoded for PES 19–21 is BC1, BC3 or DXT5nm as for PES 15–18; a BC7 source's blocks
+are still kept. The lead's reading of the same call, reversible: once the GPU encoder is in, a
+machine with no usable GPU encodes BC3/BC1 rather than falling back to the CPU's BC7.
+Why: the CPU BC7 encoder spends 31.7 s of CPU on one 2048 × 2048 mip chain against 128 ms for
+BC3 (`.tmp/jxl_bench/findings.md`), so a team compiled for VGL 27 on PES 2019 would take
+minutes; the GPU encoder measured about 33 times the whole CPU's throughput
+(`.tmp/16x/findings.md`), and BC3 is what the legacy compilers shipped.
+Plan: `plans/libs/dds_convert.md` "No BC7 encoding until the GPU encoder (0.0.2)";
+`plans/libs/README.md` "First-release desktop GPU BC7".

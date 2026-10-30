@@ -2020,6 +2020,32 @@ fn the_page_keys_wait_while_a_pointer_button_is_held() {
     );
 }
 
+// The frame a button is released on still holds the page keys off: a
+// click completes on it, and would act on the player the key stepped to.
+// The press is on the Height label, which takes no click, so only the
+// page keys' own gate can keep the selection.
+#[test]
+fn the_page_keys_wait_on_the_frame_a_pointer_button_is_released() {
+    let (mut view, mut window) = page_keys_from_height("page_keys_pointer_released");
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let label = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("Height"))
+        .expect("the Height label");
+    let at = centre(label);
+    window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let mut release = pointer_at(at, false);
+    release.push(key(egui::Key::PageDown, egui::Modifiers::NONE, true));
+    window.frame(release, |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(734, 0)),
+        "PageDown on the release frame moved nothing"
+    );
+}
+
 // Walked past the rows in view, the list scrolls with the selection: the
 // selected row stays drawn inside the list's frame.
 #[test]

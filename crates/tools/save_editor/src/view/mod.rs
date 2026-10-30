@@ -859,9 +859,11 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::B));
     // PageDown and PageUp walk the list's players from any field, so they
     // are not held off while a widget has the keyboard. A held pointer
-    // button holds them off: the drag or press in flight would finish on
-    // the next player.
-    let page_step = if modal_up || ui.input(|input| input.pointer.any_down()) {
+    // button holds them off, and so does the frame it is released on,
+    // where a click completes: the drag or press in flight would finish
+    // on the next player.
+    let gesture = ui.input(|input| input.pointer.any_down() || input.pointer.any_released());
+    let page_step = if modal_up || gesture {
         None
     } else {
         ui.input_mut(|input| {

@@ -145,18 +145,6 @@ never decodes the picture: the hosts that draw it decode it (`image`, a workspac
 dependency through `dds_convert`). Each embedded ruleset carries its event's logo and page
 (the event's wiki page, and the logo it shows).
 
-**Every squad is 23: `squad_size` leaves the schema.** The struct's field, the data block's
-key, every embedded ruleset's and the logic's reading of it go; the load rules that read it
-(tier counts and a medal system's counts fit the squad, a height pool's quotas add up to it)
-and the logic's "rest of the squad" count read 23, one constant of `libs/aatf`. The Team
-compiler numbers a team's players 01 to 23 (player folders, `players.txt`, portraits) and
-gives each team 23 exclusive boots and gloves IDs in its 40-ID block, the blocks of teams
-701 to 920 ending at 8900 below the referees' `99XX` band; so a ruleset of another size
-could not be met by a compiled team, and widening the compiler would move every team's
-IDs. A file that still holds `squad_size` is refused as any key the schema lacks, with its
-key path: no file with it was released, and logic version 1 is frozen only at the 0.0.1
-cut, so the logic's change stays version 1.
-
 ## Embedded rulesets
 
 What exists of this is in `spec/aatf_rules.md` "Embedded rulesets".

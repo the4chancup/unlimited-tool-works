@@ -5868,13 +5868,17 @@ briefs, review loops, gates and mutation runs as for any step.
     PgUp/PgDn, Copy/Swap labelled by place, display names in the team combos and the
     violations header, a team key's note naming its details, the ownership tip, the join
     list kept packed and its full-list candidates, the Generate preview cached, tests for
-    the audit's untested behavior. Open: its SWE-2 loop (round 1 running in two parts,
-    `review5`), the ownership link's wrap seen in the built window (cv5)
-  - [ ] cv3b after cv3 lands: the Texport name suggestion counts in hexadecimal, upper case
+    the audit's untested behavior. SWE-2 loop ENDED: round 1 6 accepted (cv3b), round 2 1
+    (the page keys wait on a button's release frame too, `3ea74954`; `.tmp/0_0_1cv/rulings_cv3.md`).
+    Open: `mutants-diff c2079631^1` (d1b2's run folded in), the ownership link's wrap seen in
+    the built window (cv5)
+  - [x] cv3b merged `9eaf553a`: the Texport name suggestion counts in hexadecimal, upper case
     (`view/interchange.rs` `Export::file_name`; a test with `00000000`..`00000009` taken
     suggests `TEXPORT0000000A`; DECISIONS 2026-10-30 "PES 2017's import names the team from
     the DLC's bin, and Texport numbers are hexadecimal"), and k5mut's remote half's three
-    survivors (`.tmp/8_30c/k5mut_triage.md`)
+    survivors (`.tmp/8_30c/k5mut_triage.md`); the section repaint deleted; SWE-2 round 1's
+    accepted findings (a page key that moves nothing keeps the field's keyboard, none while a
+    pointer button is held, the list scrolls to the paged row at once)
   - [x] cv4 the shell's findings (`studio_core`, `studio`): an Opus sidekick, merged
     `897a4fc0`: Reset window centres on the monitor the window stands on (the primary when
     none holds its centre), the help tree follows the rail's order, the data-location topic,
@@ -5896,7 +5900,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] cv8a merged `4f8c235e`: off `CLI_ONLY`, the (WIP) label, the line, the help, a save
       keeping the unbuilt sections over DBC7, VGL27 and VTL11; the stat grid measured, nothing
       cut once scrolled; no shell test assumed one window tool
-    - [ ] cv8b after cv8 lands (DECISIONS 2026-10-30 "every squad is 23, and the event logo
+    - [x] cv8b merged (see LOG; reviewed, gates of the six crates green) (DECISIONS 2026-10-30 "every squad is 23, and the event logo
       is any picture"): `squad_size` out of `libs/aatf` (schema, writer, embedded rulesets,
       logic, load rules on 23; logic version 1's pinned hash follows) and General; the logo
       from any picture, scaled to fit 168 × 56 and stored as PNG (RE-GUI-19); the unbuilt
@@ -5962,6 +5966,15 @@ briefs, review loops, gates and mutation runs as for any step.
     Explorer's file icon on the exe) → QUESTIONS "Before the release"
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over
+- [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)")
+  - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
+    DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/jxl_bench/`); next,
+    one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
+    formats) with its verify list
+  - [ ] 0.0.2b no BC7 encoding until the GPU encoder (`plans/libs/dds_convert.md` "No BC7
+    encoding until the GPU encoder (0.0.2)"; DECISIONS 2026-10-30): PES 19–21 encode as
+    PES 15–18, BC7 sources kept; the Team compiler's tests and goldens that expect BC7
+    follow, and the library parity against Red re-run (Red ships BC3)
 
 ### Phase 10 — Music tools
 
@@ -6165,7 +6178,10 @@ Steps are itemized when Phase 15 closes; three are fixed already:
     `LiveKernelEvent` reports), was the probe's single-submission DX12 run of an 8192 chain.
     So the adapter blip is not a timeout: most likely the Vulkan loader with several processes
     opening it at once, unexplained
-  - [ ] 16.x c the BC7 speed probe, after all of DBC's work (the maintainer, 2026-10-21;
+  - [ ] 16.x c the BC7 speed probe, after all of DBC's work, the GPU encoding study with it once
+    0.0.1 is out (the maintainer, 2026-10-30, after a 2048² face's CPU BC7 chain took 31.7 s of
+    CPU against 128 ms for DXT5, `.tmp/jxl_bench/findings.md`; VGL 27's PES 2019 compiles are
+    BC7 throughout) (the maintainer, 2026-10-21;
     `plans/libs/README.md` "The workload the speed is judged on"): on the RX 9060 XT and its
     CPU, real kits (4096² and 8192²) and faces, time and PSNR for `block_compression`'s BC7
     presets (`ultra_fast` to `basic`) on GPU and CPU, `intel_tex_2`'s on CPU, BC3 as the
