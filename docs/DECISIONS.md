@@ -14131,3 +14131,13 @@ one `disabled_alpha` cannot keep the box and dim the text either. The drafts are
 the light theme has no ruled look to move to.
 Plan: `plans/core/gui.md` the Dark/light theme row (the sentence after the checkboxes'); the
 drafts' `index.html` `button:disabled`; worklog 8.38b.
+
+## 2026-10-30 — process — A release cut from open phases is converged first
+Decision: a release whose phases are still open (0.0.1, from Phase 8) runs "Closing a phase"
+step (1), the converge and its design-health pass, over what it ships, before the cut; the
+cut's worklog step names it as a prerequisite. 0.0.1 gets it as step 0.0.1cv.
+Why: the converge was tied to a phase's close alone, so a preview cut mid-phase reached the
+maintainer's final pass with every slice reviewed and the Save editor never reviewed whole;
+the maintainer called it a methodology gap. Per-slice loops read one surface against its own
+sections, not the shipped whole against its plan, so they cannot replace it.
+Plan: `AGENTS.md` "Cutting a release" (after "Closing a phase"); worklog 0.0.1cv and 0.0.1f.

@@ -5725,7 +5725,9 @@ briefs, review loops, gates and mutation runs as for any step.
   (every `plans/save_editor.md` section 0.0.1 ships compared with its code, every SE-GUI
   scenario on PES 2017 with a test or a `manual: checked` line, the design-tell sweep over
   the whole surface), its gaps briefed; then Astra over the surface in parts, a SWE-2 loop
-  after each round. Runs beside the maintainer's final pass (0.0.1f1c), not before it
+  after each round; the whole-crate mutation runs of `save_editor` and `team_widgets`.
+  Runs beside the maintainer's final pass (0.0.1f1c); the cut waits on it (`AGENTS.md`
+  "Cutting a release")
 - [ ] 0.0.1f the cut, once the Save editor's view is done (the Ruleset editor left 0.0.1 on
   2026-10-24, `plans/core/development_plan.md` "Development Plan"): the bundled settings picking
   DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`
@@ -5738,7 +5740,8 @@ briefs, review loops, gates and mutation runs as for any step.
   settings file), logic version 1's hash
   frozen in `LOGIC_VERSIONS` only after the maintainer's final confirmation, given once the UI
   is polished (the maintainer, 2026-10-25: never before it) (`plans/aatf_rules.md` "Loading and validation": a later logic
-  change is version 2), `just release 0.0.1`, handed to DBC's testers and VGL's organizer
+  change is version 2), `just release 0.0.1`, handed to DBC's testers and VGL's organizer.
+  Prerequisite: 0.0.1cv, the converge review (`AGENTS.md` "Cutting a release")
   - [x] f1 the preparation (side-lead U, 2026-10-27; DECISIONS "The bundle's `data/` holds its
     settings and DBC7's rules file"): `just release` stages `data/settings.toml`
     (`resources/bundle/data/`: `aatf_rules = "rules/dbc7.4ccrules"`, `multicpk_mode` and
