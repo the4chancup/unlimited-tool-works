@@ -77,7 +77,12 @@ fn each_unbuilt_section_links_to_its_demo_online() {
             frame.platform.commands
         );
     }
-    for section in [Section::General, Section::Tiers, Section::Summary] {
+    for section in [
+        Section::General,
+        Section::Tiers,
+        Section::CustomChecks,
+        Section::Summary,
+    ] {
         view.section = section;
         let frame = settled(&mut window, &mut view, &ctx);
         assert!(
