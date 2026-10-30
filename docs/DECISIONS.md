@@ -14198,3 +14198,13 @@ matches nothing with `*.` (built window, 2026-10-30: "No items match your search
 "All files" first on every version would drop the filtering PES 2018-2021 members have; a
 save picked by mistake is refused with a sentence, nothing changed.
 Plan: `plans/save_editor.md` "Interchange formats in the UI" (the "Picking the file" bullet).
+
+## 2026-10-30 — save_editor — a Texport import keeps the panel's target and writes the file's name
+Decision: the team file panel goes on importing a Texport onto the team the member selected
+and writing the file's team name into the save, though PES 2017's own import offers only the
+Texport's own team and leaves the save's name as it was (measured 2026-10-30).
+Why: the selected target is the panel's model for every format (Team TOML, squad, tactics),
+and a cup moves a team between slots; restricting Texports alone to their own id would make
+one format behave unlike the rest. Writing the name costs nothing on PES 2017, which shows the
+DLC team bin's names rather than the save's, and keeps the save's record equal to the file's.
+Plan: `plans/save_editor.md` "Interchange formats in the UI" (the Texport bullet).

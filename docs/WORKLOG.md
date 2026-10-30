@@ -1828,6 +1828,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           the team file dialog opens on All files"): the filter order by the save's version,
           since a `*.` pattern matches nothing in Windows' dialog (measured). No draft: the
           dialog is the system's, which the drafts do not draw. Code and (1) in one brief
+        - (1) + (3) landed `206a4bf7` (Opus sidekick, one rework): `pes17_texport()` under
+          `test-support`, `a_pes17_texport_without_an_extension_imports_and_undoes`,
+          `pick_filters` and its test, the help; with k5's S1m-1 (the pairing and the notes
+          share the room, asserted) and S1m-3. Files: `pes_savefile` `fixtures.rs`, `lib.rs`,
+          `texport.rs`, `texport_golden.rs`; `save_editor` `view/interchange.rs`, `view/mod.rs`,
+          `view/tests/interchange{,_export}.rs`, `help/05_team.md`
+        - manual: checked 2026-10-30 (4), the game's side, PES 2017 (save backed up, restored
+          by hash): the game imports a Texport only onto its own team (/gsg/'s onto VGL 17,
+          797), writes colours, kit bindings, the tactics and the 23 players, and keeps the
+          save's team name (the name flag set). `.tmp/8_30c/pes17_session/FINDINGS.md`
+        - Open: (3) seen in the built window (the candidate's build); (4) the panel's side of
+          the same file onto 797 (`import-toml` of its Team TOML), diffed against the game's
       - [ ] k5f before 0.0.1, wanted but not required (the maintainer, 2026-10-30: the cups
         accept Texports for now, tactics TOML files later, so the panel exports both; a
         member can still export one from PES 2017 after editing the save with the app): Texport export on PES 2017, synthesized from the open save rather than from
@@ -1844,6 +1856,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         help); (3) PES 2017 imports the panel's file. PES 15 and 16 stay disabled. The
         proof file is built (`texport17_study/make_proof.py` -> `proof_TEXPORT`, round trip
         equal); its import runs in the same PES 2017 session as k5e's (4)
+        - manual: checked 2026-10-30 (0), PES 2017: `proof_TEXPORT` (as `TEXPORT00000004`) is
+          listed (/fgg/), imported onto its own team (VGL 14, 794: the record and 23 players)
+          and saved: any 64 identifier bytes and either u32 at 0x0c. Not seen: the zero
+          emblem's effect (no VGL card in Select Team shows an emblem). Next: (1)
+      - [ ] k5g after 0.0.1 (the maintainer, 2026-10-30: "the behavior applies to all
+        versions, but we'll have to confirm it"): on PES 2015, 2016 and 2018-2021, import a
+        team file in game and check whether the save's team name is kept and the shown name
+        comes from the DLC's team bin, as on PES 2017 (`plans/save_editor.md` "Interchange
+        formats in the UI", the Texport bullet); the bin's editing is future work, no plan yet
       - [ ] k5rev the cross-family review loop (the slices are Opus sidekicks', so the lead's
         review is same-family): SWE-2 rounds on each merged slice until one accepts under
         five, one Astra round over k5a + k5b, another over k5c, SWE-2 rounds after each;

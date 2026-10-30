@@ -1324,6 +1324,13 @@ the editor exposes them as:
   constant header, the team's emblem, the team's records and the players); on a PES
   2015-2016 save it is disabled, its tooltip saying those versions have no template
   (`spec/pes_savefile/operations.md` "Texport (read + write)").
+  PES 2017's own import (measured 2026-10-30) differs in two ways the panel keeps: the game
+  offers only the Texport's own team as the target, where the panel imports onto the selected
+  team; and the game leaves the save's team name as it was, where the panel writes the file's.
+  On PES 2017 the game shows team names from a team bin in the DLC, not from the save, so
+  organizers retype each name (`/gsg/`) after importing the cup's Texports; the other
+  versions likely do the same, unconfirmed (worklog 8.9k5 k5g). Editing that bin, which
+  would spare them, is future work with no plan yet.
 - **Aesthetics patch apply** — see "Read-only aesthetics"; the patch is written by the Team
   compiler, never by the editor.
 - **`settings.toml` generation** — per player folder, for migrating a team to the

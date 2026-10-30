@@ -2904,3 +2904,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — The disabled widgets' text measured in the built window against the drafts:
   134 stands; the drafts' locked formation picker corrected to dim its other entries as the
   build does (8.38b closed).
+- **2026-10-30** — k5e merged: the PES 2017 Texport import tested, the Pick dialog on All files for
+  PES 2015-2017. PES 2017's own import measured (own team only, the save's name kept); k5f's proof
+  Texport accepted by the game. k5g added: confirm the name behavior on the other versions.
