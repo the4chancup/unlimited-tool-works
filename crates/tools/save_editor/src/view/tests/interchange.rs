@@ -7,11 +7,14 @@
 
 use pes_savefile::interchange::legacy::{read_squad, read_tactics};
 use pes_savefile::interchange::team_toml::{TacticsSection, TeamToml};
+use pes_savefile::interchange::texport::Texport;
 use pes_savefile::model::player::PlayerMotion;
+use pes_savefile::pes17_texport;
 
 use crate::session::import_sections::{Sections, keep_sections};
 use crate::test_support::cli_stdout;
 use crate::view::appearance::OWNERSHIP_TIP;
+use crate::view::interchange::LIST_HEIGHT;
 
 use super::*;
 
@@ -133,7 +136,7 @@ fn row_of(window: &mut Headless, view: &mut SaveView, text: &str) -> Vec<String>
 
 /// `path` stubbed as the Pick dialog's choice; `Pick…` clicked.
 fn pick(window: &mut Headless, view: &mut SaveView, path: PathBuf) {
-    view.interchange_dialog = Box::new(move || Some(path.clone()));
+    view.interchange_dialog = Box::new(move |_| Some(path.clone()));
     let button = panel_node(window, view, Role::Button, "Pick\u{2026}").expect("the Pick button");
     click(window, &button, view);
 }
@@ -736,6 +739,34 @@ fn apply_stays_inside_the_shortest_window_with_a_pairing_and_notes() {
         apply.y1 <= f64::from(pane.y),
         "Apply {apply:?} inside the {pane:?} pane"
     );
+    // Each list's scroll bar spans its viewport's height; the pairing's is
+    // the upper one.
+    let mut bars: Vec<accesskit::Rect> = nodes
+        .iter()
+        .filter(|(_, node)| node.role() == Role::ScrollBar)
+        .filter_map(|(_, node)| node.bounds())
+        .collect();
+    bars.sort_by(|a, b| a.y0.total_cmp(&b.y0));
+    let [pairing, notes] = bars[..] else {
+        panic!("two scroll bars, the pairing's and the notes': {bars:?}")
+    };
+    let (pairing, notes) = (pairing.height(), notes.height());
+    for (list, height) in [("pairing", pairing), ("notes", notes)] {
+        assert!(
+            height < f64::from(LIST_HEIGHT),
+            "the {list} list {height} saturates under {LIST_HEIGHT} on this screen"
+        );
+    }
+    // The pairing takes half the room it measures above itself; the notes
+    // take what is left once the sections row and the notes' heading are
+    // drawn, which the pairing's share reserves from the style's row
+    // heights rather than measuring. So the halves agree to within one
+    // widget row, Apply's height.
+    assert!(
+        (pairing - notes).abs() <= apply.height(),
+        "the pairing ({pairing}) and the notes ({notes}) share the room within a row ({})",
+        apply.height()
+    );
 }
 
 // SE-GUI-16
@@ -1058,6 +1089,82 @@ fn a_texport_offers_every_section_and_names_its_version() {
         checkboxes(&mut window, &mut view),
         ["Gameplay", "Aesthetics", "Tactics"]
     );
+}
+
+/// A PES 2017 Texport has no extension (`TEXPORT00000000`): the panel reads
+/// it by its bytes, the Pick dialog is handed the save's version, and Apply
+/// writes the file's team and players as one undoable edit.
+// SE-GUI-17
+#[test]
+fn a_pes17_texport_without_an_extension_imports_and_undoes() {
+    let (mut view, mut window) = open_on(PesVersion::Pes17, "interchange_texport_17", CO);
+    let bytes = pes17_texport();
+    let texport = Texport::from_bytes(&bytes, None).expect("the fixture Texport reads");
+    let file_first = &texport.players()[0];
+    assert_eq!(
+        file_first.id,
+        texport.team().roster[0].player_id,
+        "premise: the file's first player is its roster's first"
+    );
+    let before_team = team_entry(&view, CO);
+    let before_players = rostered(&view, CO);
+    assert_ne!(
+        before_team.name,
+        texport.team().name,
+        "premise: the team names differ"
+    );
+    assert_ne!(
+        before_players[0].name, file_first.name,
+        "premise: the first players' names differ"
+    );
+
+    let path = beside_save(&view, "TEXPORT00000000", &bytes);
+    open_panel(&mut window, &mut view);
+    let asked = std::rc::Rc::new(std::cell::Cell::new(None));
+    let seen = std::rc::Rc::clone(&asked);
+    view.interchange_dialog = Box::new(move |version| {
+        seen.set(Some(version));
+        Some(path.clone())
+    });
+    let button =
+        panel_node(&mut window, &mut view, Role::Button, "Pick\u{2026}").expect("the Pick button");
+    click(&mut window, &button, &mut view);
+    assert_eq!(
+        asked.get(),
+        Some(PesVersion::Pes17),
+        "the dialog is handed the save's version"
+    );
+
+    assert!(
+        panel_lines(&mut window, &mut view)
+            .contains(&"A Texport written from a PES 2017 save.".to_owned()),
+        "the intro names the file's version"
+    );
+    assert_eq!(
+        checkboxes(&mut window, &mut view),
+        ["Gameplay", "Aesthetics", "Tactics"]
+    );
+    assert!(
+        !panel_nodes(&mut window, &mut view)
+            .iter()
+            .any(|node| node.role() == Role::DisclosureTriangle),
+        "no note group"
+    );
+    apply(&mut window, &mut view);
+    assert_eq!(
+        team_entry(&view, CO).name,
+        texport.team().name,
+        "the team's name is the file's"
+    );
+    assert_eq!(
+        rostered(&view, CO)[0].name,
+        file_first.name,
+        "the first player's name is the file's"
+    );
+
+    assert_eq!(undo_entries(&mut window, &mut view), 1, "one undo entry");
+    assert_eq!(team_entry(&view, CO), before_team, "/co/ as before");
+    assert_eq!(rostered(&view, CO), before_players, "its players as before");
 }
 
 // SE-GUI-22

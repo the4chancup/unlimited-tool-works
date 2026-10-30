@@ -78,7 +78,9 @@ Neither will write over the save that is open.
 
 Below the panel's top row, **Pick…** opens a team file to import into the selected team: a
 Team TOML (`.toml`), a squad file (`.4ccs`), a tactics file (`.4cct`) or a
-Texport. A squad file lists which record goes to which player.
+Texport. PES 2015 to 2017 name their Texports `TEXPORT00000000`, `TEXPORT00000001` and so on,
+with no extension, so on a save from those games the file window opens showing all files. A
+squad file lists which record goes to which player.
 
 Tick the sections to bring in:
 

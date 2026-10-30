@@ -780,7 +780,7 @@ mod tests {
 
         // The 15-17 reader: the same check, the records read out of the
         // container's payload a stride apart.
-        let bytes = crate::interchange::texport_golden::pes17_texport_bytes();
+        let bytes = crate::fixtures::pes17_texport();
         let fixture = Texport::from_bytes(&bytes, None).expect("opens");
         let mut container = SaveContainer::decrypt(&bytes).expect("decrypts");
         let schema = schema_for(PesVersion::Pes17);
@@ -896,7 +896,7 @@ mod tests {
     /// the borrow would make.)
     #[test]
     fn to_bytes_refuses_a_missing_player() {
-        let bytes = crate::interchange::texport_golden::pes17_texport_bytes();
+        let bytes = crate::fixtures::pes17_texport();
         let mut texport = Texport::from_bytes(&bytes, None).expect("opens");
         let slot = texport
             .team()
@@ -927,7 +927,7 @@ mod tests {
     /// roster width.
     #[test]
     fn to_bytes_refuses_a_left_over_player() {
-        let bytes = crate::interchange::texport_golden::pes17_texport_bytes();
+        let bytes = crate::fixtures::pes17_texport();
         let mut texport = Texport::from_bytes(&bytes, None).expect("opens");
         let extra = texport.players()[0].clone();
         let width = texport.team().roster.len();
@@ -1069,7 +1069,7 @@ mod tests {
     /// onto another team of the same version.
     #[test]
     fn a_pes17_texport_applies_through_team_toml() {
-        let bytes = crate::interchange::texport_golden::pes17_texport_bytes();
+        let bytes = crate::fixtures::pes17_texport();
         let texport = Texport::from_bytes(&bytes, None).expect("opens");
         let doc = texport.to_team_toml().expect("to_team_toml");
         assert!(!texport.team().name.is_empty());
@@ -1147,7 +1147,7 @@ mod tests {
     /// refused.
     #[test]
     fn an_old_layout_refuses_player_ids_that_do_not_match_the_slots() {
-        let bytes = crate::interchange::texport_golden::pes17_texport_bytes();
+        let bytes = crate::fixtures::pes17_texport();
         let mut texport = Texport::from_bytes(&bytes, None).expect("opens");
         texport.players_mut().swap(0, 1);
         let err = texport

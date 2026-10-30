@@ -1,7 +1,8 @@
 //! The fixture payloads: each version's committed `payload.bin.zz` inflated
-//! and wrapped in its `SaveContainer`. Shared by `test_support` (the crate's
-//! own tests) and, under `test-support`, by `fixture_save` for other
-//! crates' tests.
+//! and wrapped in its `SaveContainer`, and the PES 17 Texport's the same
+//! way. Shared by `test_support` (the crate's own tests) and, under
+//! `test-support`, by `fixture_save` and `pes17_texport` for other crates'
+//! tests.
 
 use pes_version::PesVersion;
 
@@ -77,4 +78,42 @@ pub fn fixture_save(version: PesVersion) -> Vec<u8> {
     fixture_container(version)
         .to_bytes(&test_salt())
         .expect("the fixture container encodes")
+}
+
+/// The PES 17 Texport fixture's decrypted payload, sliced as a save
+/// fixture's is.
+pub(crate) fn pes17_texport_payload() -> Vec<u8> {
+    let mut out = Vec::new();
+    std::io::Read::read_to_end(
+        &mut flate2::read::ZlibDecoder::new(
+            &include_bytes!("../tests/fixtures/pes17_texport_payload.bin.zz")[..],
+        ),
+        &mut out,
+    )
+    .expect("the Texport payload inflates");
+    out
+}
+
+/// `payload` as the PES 17 Texport's container (logo and serial dropped,
+/// as the save fixtures are).
+pub(crate) fn pes17_texport_container(payload: Vec<u8>) -> Vec<u8> {
+    let mut description = b"Team Export Data 03".to_vec();
+    description.resize(384, 0);
+    SaveContainer {
+        scheme: Scheme::Keyed(MasterKey::Pes17),
+        description,
+        logo: Vec::new(),
+        payload,
+        identifier: vec![0; MasterKey::Pes17.header_size() - 80],
+        serial: Vec::new(),
+    }
+    .to_bytes(&test_salt())
+    .expect("the Texport container encodes")
+}
+
+/// The bytes of the PES 17 Texport fixture, a `TEXPORT00000000` holding
+/// team 736: its sliced payload in its container. Test support, not a
+/// Texport API.
+pub fn pes17_texport() -> Vec<u8> {
+    pes17_texport_container(pes17_texport_payload())
 }

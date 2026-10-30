@@ -167,9 +167,9 @@ pub(crate) struct SaveView {
     /// The team file panel's state (the Team menu's `Import / export team
     /// file…`).
     interchange: interchange::Interchange,
-    /// The team file panel's Pick dialog (`rfd` on the team file formats,
-    /// stubbed in tests: the `open_save_dialog` pattern).
-    interchange_dialog: comparator::OpenSaveDialog,
+    /// The team file panel's Pick dialog (`rfd`, its filters ordered by
+    /// the save's version, stubbed in tests: the `open_save_dialog` pattern).
+    interchange_dialog: interchange::InterchangeDialog,
     /// The team file panel's Save dialog for its exports (`rfd`, stubbed
     /// in tests: the `save_as_dialog` pattern).
     team_export_dialog: interchange::ExportDialog,

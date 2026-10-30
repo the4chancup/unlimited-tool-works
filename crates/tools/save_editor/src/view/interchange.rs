@@ -39,26 +39,47 @@ use crate::messages::{import_note, when_and_effect};
 use crate::session::Session;
 use crate::session::import_sections::{Sections, keep_sections};
 use crate::view::appearance::OWNERSHIP_TIP;
-use crate::view::comparator::{self, OpenSaveDialog};
+use crate::view::comparator;
 use crate::view::{Panel, Refusal, SaveView, selected_team_id, surrender_focus};
 
-/// The panel's Pick dialog: `rfd` on the team file extensions, and every
-/// file, since a PES 2015 to 2017 Texport (`TEXPORT00000000`) has none.
+/// The panel's Pick dialog: the open save's version to the picked path
+/// (`rfd` in the window, a stub in the tests).
+pub(crate) type InterchangeDialog = Box<dyn FnMut(PesVersion) -> Option<PathBuf>>;
+
+/// The Pick dialog's two filters, in the order the dialog lists them. The
+/// dialog opens on the first, so on PES 2015 to 2017, whose Texports
+/// (`TEXPORT00000000`) have no extension, "All files" comes first, or
+/// "Team files" would hide the Texport. No pattern can match a file
+/// without an extension instead: Windows' dialog matches nothing with
+/// `*.`, and `rfd`'s filters take extensions only.
+fn pick_filters(version: PesVersion) -> [(&'static str, &'static [&'static str]); 2] {
+    let team_files: (&str, &[&str]) = ("Team files", &["toml", "4ccs", "4cct", "ted"]);
+    let all_files: (&str, &[&str]) = ("All files", &["*"]);
+    match version {
+        PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => [all_files, team_files],
+        PesVersion::Pes18 | PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => {
+            [team_files, all_files]
+        }
+    }
+}
+
+/// The `rfd` Pick dialog, its filters in `pick_filters`' order.
 #[cfg(not(test))]
-pub(super) fn default_interchange_dialog() -> OpenSaveDialog {
-    Box::new(|| {
-        rfd::FileDialog::new()
-            .add_filter("Team files", &["toml", "4ccs", "4cct", "ted"])
-            .add_filter("All files", &["*"])
-            .pick_file()
+pub(super) fn default_interchange_dialog() -> InterchangeDialog {
+    Box::new(|version| {
+        let mut dialog = rfd::FileDialog::new();
+        for (name, extensions) in pick_filters(version) {
+            dialog = dialog.add_filter(name, extensions);
+        }
+        dialog.pick_file()
     })
 }
 
 /// `default_interchange_dialog` under `cargo test`: a test reaching a real
 /// file dialog panics; tests stub `view.interchange_dialog`.
 #[cfg(test)]
-pub(super) fn default_interchange_dialog() -> OpenSaveDialog {
-    Box::new(|| panic!("a test reached a real file dialog: stub interchange_dialog"))
+pub(super) fn default_interchange_dialog() -> InterchangeDialog {
+    Box::new(|_| panic!("a test reached a real file dialog: stub interchange_dialog"))
 }
 
 /// The export row's Save dialog: the format written and the suggested
@@ -684,7 +705,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         }
         Some(Action::Pick) => {
             surrender_focus(ui);
-            if let Some(path) = interchange_dialog() {
+            if let Some(path) = interchange_dialog(version) {
                 interchange.pick(path);
             }
         }
@@ -947,9 +968,9 @@ fn intro(format: Format, from: Option<PesVersion>, save: PesVersion) -> String {
 
 /// The height the pairing list and the note groups each take at most
 /// before they scroll. A shorter screen gives them less: they share the
-/// room the window has above Apply, so Apply stays on the screen however
+/// room the screen has above Apply, so Apply stays on the screen however
 /// long the file's lists are.
-const LIST_HEIGHT: f32 = 240.0;
+pub(super) const LIST_HEIGHT: f32 = 240.0;
 
 /// The room a list drawn at the cursor may take: down to the screen's
 /// bottom, less the window's bottom margin and `under`, the height of what
@@ -1077,7 +1098,33 @@ mod tests {
     use pes_savefile::{EditFile, fixture_save};
     use pes_version::PesVersion;
 
-    use super::{note_row, note_subject};
+    use super::{note_row, note_subject, pick_filters};
+
+    /// The Pick dialog opens on "All files" where a Texport has no
+    /// extension (PES 2015 to 2017), on "Team files" where it is a `.ted`.
+    #[test]
+    fn the_pick_dialog_opens_on_all_files_for_pes_2015_to_2017() {
+        for version in PesVersion::ALL {
+            let first = match version {
+                PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => "All files",
+                PesVersion::Pes18 | PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => {
+                    "Team files"
+                }
+            };
+            let names = pick_filters(version).map(|(name, _)| name);
+            assert_eq!(names[0], first, "{version:?}'s first filter");
+            assert_eq!(
+                names.iter().filter(|name| **name == "All files").count(),
+                1,
+                "{version:?} offers All files once"
+            );
+            assert_eq!(
+                names.iter().filter(|name| **name == "Team files").count(),
+                1,
+                "{version:?} offers Team files once"
+            );
+        }
+    }
 
     /// One note of each kind onto PES 19's team 701 (`/3/`), whose places
     /// 01 to 23 hold players of distinct names and 24 none: its row's place,
