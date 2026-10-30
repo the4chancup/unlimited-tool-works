@@ -1212,6 +1212,17 @@ function problems(r) {
 }
 
 // ---- Readable rules (the Summary section) ----
+// A skill's, COM style's or playing style's name, as the Save editor's
+// draft writes it (its cardName): the title case read as an English
+// title, GK Long Throw, Cut Behind & Turn, Fox in the Box, Classic No. 10.
+const SMALL_WORDS = ["in", "on", "the", "to"];
+function cardName(key) {
+  return key.split("_").map((w, i, all) =>
+    w === "gk" ? "GK" : w === "and" ? "&"
+      : w === "no" && all[i + 1] === "10" ? "No."
+      : i > 0 && SMALL_WORDS.includes(w) ? w
+      : w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
 const list = (xs, f = human) => xs.length < 2 ? xs.map(f).join("") : xs.slice(0, -1).map(f).join(", ") + " or " + f(xs[xs.length - 1]);
 function tierLabel(id) { const t = R.tiers.find(x => x.id === id); return t ? t.label : id; }
 function condText(c) {
@@ -1226,8 +1237,8 @@ function condText(c) {
   else if (c.height_max != null) p.push(`${c.height_max} cm or less`);
   if (c.captain === true) p.push("the captain");
   if (c.captain === false) p.push("not the captain");
-  if ((c.playing_styles || []).length) p.push("playing as " + list(c.playing_styles));
-  if ((c.holds || []).length) p.push("holding " + list(c.holds));
+  if ((c.playing_styles || []).length) p.push("playing as " + list(c.playing_styles, cardName));
+  if ((c.holds || []).length) p.push("holding " + list(c.holds, cardName));
   if ((c.rated_a_at || []).length) p.push("rated A at " + list(c.rated_a_at, x => x));
   if ((c.rated_b_at || []).length) p.push("rated B at " + list(c.rated_b_at, x => x));
   if ((c.name_colors || []).length) p.push("named in colour " + list(c.name_colors, x => x));
@@ -1251,8 +1262,8 @@ function effectsText(e) {
     : byTier(v).map(([t, n]) => `${n} for ${tierLabel(t)}`).join(", ")}`);
   if (e.cards != null) p.push(`${perTierText(e.cards, "")} paid card${e.cards === 1 ? "" : "s"}`);
   for (const [k, v] of Object.entries(e.free || {})) p.push(`${perTierText(v, "")} free ${k === "com" ? "COM style" : human(k).toLowerCase()}`);
-  if ((e.free_cards || []).length) p.push(list(e.free_cards) + " free");
-  if ((e.require_cards || []).length) p.push("must hold " + list(e.require_cards));
+  if ((e.free_cards || []).length) p.push(list(e.free_cards, cardName) + " free");
+  if ((e.require_cards || []).length) p.push("must hold " + list(e.require_cards, cardName));
   if (e.a_positions != null) p.push(`${perTierText(e.a_positions, "")} A position`);
   if (e.max_a_positions != null) p.push(`at most ${e.max_a_positions} A position${e.max_a_positions === 1 ? "" : "s"}`);
   if (e.form != null) p.push(`${perTierText(e.form, "")} form`);
@@ -1315,7 +1326,7 @@ function summary(r) {
   const groups = Object.entries(r.card_groups);
   if (groups.length) {
     L.push("", "## Card groups");
-    groups.forEach(([g, cards]) => L.push(`- **${human(g)}**: ${cards.map(c => human(c).toLowerCase()).join(", ")}.`));
+    groups.forEach(([g, cards]) => L.push(`- **${human(g)}**: ${cards.map(c => cardName(c)).join(", ")}.`));
   }
   if (r.team_settings.length) {
     L.push("", "## Team settings");

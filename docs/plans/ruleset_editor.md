@@ -126,7 +126,11 @@ the last edit changed are highlighted.
   it runs after the ruleset and is kept as is.
 - **Summary**: the ruleset as readable rules text ("Gold: 1 per team, every stat 99, form 8, …";
   the medal systems, heights and universal rules; each card group with its cards; each team
-  settings entry; each special as a sentence from its When and Then), generated from the data. **Copy** puts it
+  settings entry; each special as a sentence from its When and Then), generated from the data.
+  A skill, COM style or playing style is named as the Save editor names it (`GK Long Throw`,
+  `Cut Behind & Turn`, `Fox in the Box`: `plans/save_editor.md`'s Skills item), its card
+  groups' lists included, so an organizer's summary and a member's pickers spell a card
+  alike. **Copy** puts it
   on the clipboard as Markdown, for posting an invitational's rules; two summaries diffed in any
   text tool are the comparison between two rulesets.
 

@@ -383,8 +383,9 @@ all side by side.
      version-gated card's disabled one as tall as an enabled one, so each row of the two
      columns shares one y (the draft's disabled cells were 2 points taller, and its second
      column ended 24 points lower). A skill's, COM style's or playing style's name, here and
-     wherever one is named (the playing-style combo, the AATF rows, the Comparator and the
-     changes lists), is its id's title case read as an English title, from one function in
+     wherever one is named (the playing-style combo, the AATF rows, the Comparator, the
+     changes lists, the team file dialog's notes and the Ruleset editor's summary), is its
+     id's title case read as an English title, from one function in
      `pes_savefile`: GK in capitals, `&` for and, in, on, the and to in lower case after the
      first word, and `No. 10` (`GK Long Throw`, `Cut Behind & Turn`, `Fox in the Box`,
      `Classic No. 10`; the drafts' `cardName`), where the bare title case drew `Gk Long
