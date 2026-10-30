@@ -3001,7 +3001,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           (dock, Multi-team list and copy, row marks, field crosses, pitch marks) only under
           the ruleset it was checked with (`aatf_check::held_result`). Open: a SWE-2 round
           over that fix
-        - [ ] d1b the rest of the inventory, in two slices:
+        - [x] d1b the rest of the inventory, in two slices:
           - [x] d1b1 the fields no view draws in words (DECISIONS "A field no view draws is
             named in words; `diff --json` keeps the schema's name"; drafted, the draft's
             `fieldWords`): the Comparator's, the changes lists' and the patch preview's rows,
@@ -3023,7 +3023,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
             `577acf83`: Com as COM, SE-GUI-13's THEN reworded)
             Files: `save_editor/src/{diff,messages}.rs`, `view/{mod,terms,prompt}.rs`,
             `view/tests/prompt.rs`, `tests/cli/diff.rs`
-          - [ ] d1b2 the team file notes in the catalog's member text and its section boxes
+          - [x] d1b2 2026-10-30 the team file notes in the catalog's member text and its section boxes
             capitalized, the badge's and quick actions' refusals (tier labels, the list's
             1-based places), the card and playing-style labels' spellings (`GK Long Throw`,
             `Classic No. 10`), the man-marking row's value (what the stored number names,
@@ -3038,8 +3038,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
             notes per code under the catalog's text, keys in words, the empty places one
             group; `Opponent's starter N`; the badge's `place NN`, `aatf`'s tier errors by
             label. Red runs for each; five packages' tests, clippy, fmt, `comment_refs` green
-            in its worktree. Open: the merge waits for the mutation run's save_editor and
-            team_widgets halves; SWE-2 S1d1b2 (three parts, review5) under way
+            in its worktree. SWE-2 S1d1b2 (three parts): 2 counted, the loop ends
+            (`.tmp/8_29d/rulings_d3a.md`); rework r2 `05a0db4d` (a non-ability stat key in
+            the view's words, `aatf`'s missing player at its 1-based place, four tests).
+            Merged `c2079631`. Next: Astra with k5 (`.tmp/8_9k5/astra_k5ab.md`), then its
+            `mutants-diff`
       - [ ] d3 the stats named as each version names them (P43, accepted 2026-10-29; DECISIONS
         "Stats are named as the save's PES version names them", "Before 0.0.1, only PES
         2017's stat names are checked"):

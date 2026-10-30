@@ -2892,3 +2892,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — Set all stats' and Bump all stats' number field is 52 points wide; the Ruleset
   editor's preview highlights a logo replaced by one of its size; RE-FILE-09 starts from a file
   the Save must change (8.38a). d1b2 drafted and planned: card names, team file notes, man marking.
+- **2026-10-30** — The GUI names every card and playing style as the game spells them, the team
+  file dialog's notes in the catalog's words, a man-marking change as the opponent's starter,
+  the tier refusals by label and place (8.29d1b2, merged). PES 2017 Texport import scheduled.
