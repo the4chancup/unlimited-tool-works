@@ -253,6 +253,16 @@ fn version_prints_the_name_and_the_status_bar_s_version() {
 }
 
 #[test]
+fn gui_with_a_command_is_refused_with_exit_2_naming_the_flag() {
+    // A command the Save editor parses, so the refusal is the binary's and not
+    // the parser's own exit 2 for an unknown command; the saves are never read.
+    let output = studio(&["--gui", "save-editor", "diff", "first.bin", "second.bin"]);
+    assert_eq!(output.status.code(), Some(2), "stderr: {}", stderr(&output));
+    assert!(stderr(&output).contains("`--gui`"), "{}", stderr(&output));
+    assert!(output.stdout.is_empty(), "{}", stdout(&output));
+}
+
+#[test]
 fn an_unknown_chapter_is_refused_with_exit_2() {
     let output = studio(&["help", "nope"]);
     assert_eq!(output.status.code(), Some(2), "stderr: {}", stderr(&output));

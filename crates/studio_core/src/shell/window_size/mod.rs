@@ -311,16 +311,45 @@ pub(super) fn native_options(opening: &Opening) -> eframe::NativeOptions {
 /// and the size and position commands take the same units, so the fit runs at zoom 1 on
 /// either side of them.
 pub(super) fn fit(viewport: &egui::ViewportInfo, zoom: f32) -> Option<(egui::Vec2, egui::Pos2)> {
-    let monitor = viewport.monitor_size? * zoom;
+    let monitor = egui::Rect::from_min_size(egui::Pos2::ZERO, viewport.monitor_size?);
+    Some(fit_on(viewport, zoom, monitor))
+}
+
+/// `fit` on `monitor`, a rectangle in the pass's points: the inner size, and the outer
+/// position that centers the outer rectangle on `monitor`.
+fn fit_on(
+    viewport: &egui::ViewportInfo,
+    zoom: f32,
+    monitor: egui::Rect,
+) -> (egui::Vec2, egui::Pos2) {
+    let monitor = monitor * zoom;
     let decorations = match (viewport.outer_rect, viewport.inner_rect) {
         (Some(outer), Some(inner)) => outer.size() - inner.size(),
         _ => egui::Vec2::ZERO,
     } * zoom;
-    let size = fitted_size(monitor, decorations);
-    Some((
-        size / zoom,
-        ((monitor - size - decorations) * 0.5 / zoom).to_pos2(),
-    ))
+    let size = fitted_size(monitor.size(), decorations);
+    let top_left = monitor.min + (monitor.size() - size - decorations) * 0.5;
+    (size / zoom, top_left / zoom)
+}
+
+/// The monitor the window stands on, as its rectangle in the pass's points (its pixels
+/// over the window's native scale times `zoom`, the units `OuterPosition` takes): the one
+/// of `monitors` holding the center of the window's outer rectangle, else the primary.
+/// `None` when the frame reports no outer rectangle or scale, or no monitor qualifies (an
+/// empty list: a frame with no window to ask).
+#[cfg(not(target_arch = "wasm32"))]
+pub(super) fn monitor_under(
+    viewport: &egui::ViewportInfo,
+    zoom: f32,
+    monitors: &[Monitor],
+) -> Option<egui::Rect> {
+    let pixels_per_point = viewport.native_pixels_per_point? * zoom;
+    let center = viewport.outer_rect?.center() * pixels_per_point;
+    let monitor = monitors
+        .iter()
+        .find(|monitor| monitor.rect.contains(center))
+        .or_else(|| monitors.iter().find(|monitor| monitor.primary))?;
+    Some(monitor.rect / pixels_per_point)
 }
 
 /// Whether the window sits off `design` (the active class's design size), the
@@ -361,13 +390,23 @@ pub(super) fn off_design_size(
 }
 
 /// What the status bar's Reset window click sends: a maximized window is
-/// restored first, then the same `InnerSize` and `OuterPosition` the first
-/// frame's fit sends, centring the window on its monitor.
-pub(super) fn reset(ctx: &egui::Context, viewport: &egui::ViewportInfo) {
+/// restored first, then the `InnerSize` and `OuterPosition` of the fit on
+/// `monitor`, the one it stands on (`monitor_under`). With none known (the
+/// browser build, a frame with no window) it is the first frame's fit.
+pub(super) fn reset(
+    ctx: &egui::Context,
+    viewport: &egui::ViewportInfo,
+    monitor: Option<egui::Rect>,
+) {
     if viewport.maximized == Some(true) {
         ctx.send_viewport_cmd(egui::ViewportCommand::Maximized(false));
     }
-    if let Some((size, top_left)) = fit(viewport, ctx.zoom_factor()) {
+    let zoom = ctx.zoom_factor();
+    let fitted = match monitor {
+        Some(monitor) => Some(fit_on(viewport, zoom, monitor)),
+        None => fit(viewport, zoom),
+    };
+    if let Some((size, top_left)) = fitted {
         ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(size));
         ctx.send_viewport_cmd(egui::ViewportCommand::OuterPosition(top_left));
     }

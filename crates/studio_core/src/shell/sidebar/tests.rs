@@ -755,9 +755,9 @@ fn an_inactive_row_paints_no_background_until_it_is_touched() {
     );
 }
 
-// ST-SIDE-01's "the opened sidebar shows their full labels" and item 3's "the
-// rail shows the icons alone": a label's text is painted in the overlay, never
-// on the rail.
+// ST-SIDE-01's "the opened sidebar shows their full labels", and the rail
+// showing the icons alone: a label's text is painted in the overlay, never on
+// the rail.
 #[test]
 fn the_labels_are_painted_in_the_overlay_and_never_on_the_rail() {
     const PLANNED: &[PlannedTool] = &[PlannedTool {
@@ -1203,6 +1203,40 @@ fn a_version_change_blocker_disables_the_selector_and_a_pick_saves_the_version()
     assert_eq!(calls[0].version_seen(), Some(PesVersion::Pes21));
     assert_eq!(calls[1].version_seen(), Some(PesVersion::Pes21));
     fs::remove_dir_all(&dir).unwrap();
+}
+
+#[test]
+fn a_wheel_notch_over_the_selector_steps_the_version_once_and_saves() {
+    let dir = TestDir::new("studio_core_sidebar_wheel");
+    let (a, calls_a) = stub("a", "A", None);
+    let Shell {
+        mut app, settings, ..
+    } = shell_with(
+        test_settings(dir.path()),
+        vec![a],
+        &[],
+        Some(dir.path().to_path_buf()),
+        vec![calls_a],
+    );
+    assert_eq!(
+        settings.lock().unwrap().common.pes_version,
+        PesVersion::Pes19,
+        "the premise: the list's PES 2020 is the item below"
+    );
+    let egui_ctx = test_context();
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    frame(&egui_ctx, &mut app, wheel_notch(combo(&nodes), false), true);
+    // Frames for the save to apply and for any rest of the notch to show.
+    idle(&egui_ctx, &mut app, 15);
+
+    assert_eq!(
+        settings.lock().unwrap().common.pes_version,
+        PesVersion::Pes20,
+        "one notch down is one item down"
+    );
+    let written = Settings::load(&dir.path().join(crate::settings::SETTINGS_FILE_NAME)).unwrap();
+    assert_eq!(written.common.pes_version, PesVersion::Pes20, "and saved");
 }
 
 // ST-SIDE-07

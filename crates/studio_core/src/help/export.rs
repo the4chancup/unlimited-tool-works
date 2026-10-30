@@ -60,7 +60,7 @@ pub fn run_help(
     export: Option<&Path>,
     out: &mut dyn Write,
 ) -> Result<(), CliError> {
-    let chapters = chapters(tools);
+    let chapters = chapters(tools.iter().map(Box::as_ref));
     let out_error = |error: std::io::Error| {
         CliError::new(
             3,
@@ -282,7 +282,7 @@ mod tests {
 
     #[test]
     fn the_core_chapters_come_first_then_the_tools_in_registry_order() {
-        let chapters = chapters(&stub_tools());
+        let chapters = chapters(stub_tools().iter().map(Box::as_ref));
         let ids: Vec<&str> = chapters.iter().map(|(id, _)| *id).collect();
         assert_eq!(ids, ["setting-up", "first-run", "alpha", "beta"]);
         assert_eq!(chapters[0].1.topics[0].slug, "install");
@@ -366,7 +366,7 @@ mod tests {
             files,
             ["alpha.md", "beta.md", "first-run.md", "setting-up.md"]
         );
-        for (id, section) in chapters(&tools) {
+        for (id, section) in chapters(tools.iter().map(Box::as_ref)) {
             assert_eq!(
                 std::fs::read_to_string(dir.join(format!("{id}.md"))).unwrap(),
                 chapter_markdown(&section),
