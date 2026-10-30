@@ -86,7 +86,9 @@ online" opens the section in the drafts (`docs/prototypes/`, published by GitHub
 `<section>` the drafts' id: `heights`, `cards`, `universal`, `specials`, `suggestions`), in
 the drafts' demo mode: no draft controls, the window at its default size on a page it can be
 moved and resized over (a page smaller than that is the monitor the window is fitted to, as
-the app fits its window to a small one). The drafts are not held to these addresses: a section
+the app fits its window to a small one); the tools whose drafts are too early to show (the
+Team compiler, the Export upgrader) are greyed there, "Not in the demo yet", and the title ends
+"(Demo)", so a visitor in the Save editor knows no save is edited. The drafts are not held to these addresses: a section
 renamed there leaves the link opening the tool's first section. A demo link, not nothing, because the drafts of these sections are
 finished but for polish, and seeing one beats reading the Summary; only a section whose draft
 is that far along gets one (the other tools' drafts are not yet). The github.io address, not

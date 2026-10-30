@@ -14361,3 +14361,9 @@ Why: the maintainer's request; those drafts are finished but for polish, and a d
 the Summary can only describe. The default size, not a window filling the page, because the
 layout is calibrated for it first; github.io until a custom domain is live, since the old
 address redirects. Other tools get a link only once their drafts are that far along.
+
+## 2026-10-30 — prototypes — the demo greys the tools whose drafts are early, and says "(Demo)"
+Decision: in the drafts' demo mode the Team compiler and the Export upgrader are greyed like
+planned tools ("Not in the demo yet"), and the window title ends "Unlimited Tool Works (Demo)".
+Why: the maintainer's request: a visitor from the Ruleset editor's links would otherwise switch
+to drafts that are still very rough, or take the Save editor's draft for one that edits saves.

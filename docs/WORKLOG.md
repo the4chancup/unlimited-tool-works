@@ -5959,10 +5959,27 @@ briefs, review loops, gates and mutation runs as for any step.
     Done: `startDemo`, `placeWindow`, the `demo` link key kept in the address, the page as
     the monitor `fitted` reads; checked locally (Playwright at 1600 × 900: 1280 × 780
     centred, dragged and clamped to the page, maximized and restored; at 1000 × 700: fitted
-    to 969 × 630; without `demo` the column stays; no console warnings). Open: the same on
+    to 969 × 630; without `demo` the column stays; no console warnings). Then the maintainer's
+    additions: the Team compiler and the Export upgrader greyed in the demo (TOOLS' `demo:
+    false`), the title ending "(Demo)", the title bar's text unselectable under the arrow;
+    checked locally (`.tmp/0_0_1cv/cv8e/demo_tools_check.py`). Open: the same on
     the published page once pushed
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
+    - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450
+      tests): Astra's six parts ruled (A1 and A5 with a second round), SWE-2 S1-S3, every loop
+      ended; shortcuts held under every dialog, the open save refused as every export, a coded
+      team named by its display name, checks started on keyboard activation, suggestions
+      hidden at once, every spelling of the home folder redacted in the log, the wheel's
+      remainder kept with its control, the rules copy written through a temporary file. The
+      keyboard stall on the controls that start no check is 8.40. Files: `save_editor`
+      `view/`, `session/rules.rs`, `team_widgets` `tactics/`, `studio_core` `widgets/wheel.rs`,
+      `help/core/data_location.md`, `studio` `gui_log.rs`, `scripts/mutants.py`
+    - Open: `mutants-diff 34d29fe2` over cv6a and cv6b (running), its survivors triaged in one
+      brief with `interchange.rs:1009` and pes_savefile `file.rs:235`; a manual check in the
+      built window that the Position dropdown's pointer pick in the popover sets the position
+      (the headless click cannot reach a combo's popup; a `manual: checked` line); the
+      whole-crate runs of the 0.0.1 crates
   - [ ] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30): off
     `CLI_ONLY`, the label in the sidebar and the title; the unbuilt sections' line points at
     Summary and the preview; RE-GUI-17's round trip confirmed over every field the unbuilt

@@ -2942,3 +2942,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — 0.0.1cv cv8e: the drafts' demo mode (`demo=1`): no controls, the window fitted
   to the page and dragged across it; the drafts stay free to rename linked sections, whose links
   then open the tool's first section.
+- **2026-10-30** — 0.0.1cv cv6a and cv6b merged (`267e5c52`, gates green, 5450 tests): the
+  cross-family review's code fixes, every loop ended; `mutants-diff` over them running; the
+  Ruleset editor's whole-crate run done, its 16 survivors in cv8d's brief.

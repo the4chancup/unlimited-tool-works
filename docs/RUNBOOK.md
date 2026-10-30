@@ -247,6 +247,15 @@ build each count as one. Two already fill the CPU almost entirely, so a third ma
 faster and only risks exhausting the memory and crashing the system. Before starting a
 build, count the ones running; a third waits for one to end.
 
+**Every build and test job runs at below-normal priority** (the maintainer, 2026-10-30): at
+normal priority two jobs left the maintainer's machine barely usable, while a below-normal one
+yields every processor to their own programs and slows only while they use it. The priority is
+inherited, so it is set where a job starts: `scripts/mutants.py` starts cargo-mutants that way,
+the lead's sidekick launcher starts its `claude` process that way (everything the sidekick runs
+inherits it), and the lead starts its own gates, package tests and release builds through a
+wrapper that does the same (`.tmp/lead/below_normal.py <command>`). A job found at normal
+priority is lowered with its whole process tree (`.tmp/lead/lower_tree.ps1 -Match <text>`).
+
 **A headless `claude -p` sidekick runs its builds and tests in the foreground.** Its session
 ends with its turn, so a run it started in the background and a notification it waits for die
 with it: on 2026-10-29 an Opus sidekick ended on "Waiting for the test run's notification",

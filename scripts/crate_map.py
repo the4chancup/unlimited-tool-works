@@ -64,9 +64,6 @@ for index, (_, row) in enumerate(ROWS):
     for column, name in enumerate(row):
         pos[name] = (x0 + column * (BOX_W + GAP), TOP + index * ROW_H)
 
-BANDS = {"studio": "#e8e0f5", "tools": "#dcecf9", "widget": "#e2f3e4", "core": "#fbecd6",
-         "libs": "#eeeeee"}
-
 
 def band_of(name):
     if name == "studio":
@@ -96,9 +93,9 @@ for label, band, first, last in bands:
     y = TOP + first * ROW_H - 18
     height = (last - first + 1) * ROW_H - 10
     svg.append(f'<rect x="10" y="{y}" width="{WIDTH - 20}" height="{height}" rx="8" '
-               f'fill="{BANDS[band]}" opacity="0.55"/>')
-    svg.append(f'<text x="22" y="{y + 30}" font-size="15" font-weight="600" '
-               f'fill="#444">{html.escape(label)}</text>')
+               f'class="band {band}"/>')
+    svg.append(f'<text class="band-label" x="22" y="{y + 30}" font-size="15" '
+               f'font-weight="600">{html.escape(label)}</text>')
 svg.append('<g id="edges">')
 for source, targets in deps.items():
     sx, sy = pos[source]
@@ -114,52 +111,100 @@ for source, targets in deps.items():
             mid = (y1 + y2) / 2
             d = f"M{x1},{y1} C{x1},{mid} {x2},{mid} {x2},{y2}"
         svg.append(f'<path class="edge" data-from="{source}" data-to="{target}" d="{d}" '
-                   f'fill="none" stroke="#7a7a7a" stroke-width="1.2" marker-end="url(#arrow)"/>')
+                   f'fill="none" stroke-width="1.2" marker-end="url(#arrow)"/>')
 svg.append('</g><g id="nodes">')
 for name, (x, y) in pos.items():
     outside = name not in reach
-    fill = "#ffffff" if not outside else "#f6f6f6"
-    stroke = "#555" if not outside else "#aaa"
     dash = ' stroke-dasharray="4 3"' if outside else ""
     about = html.escape(description[name], quote=True)
-    svg.append(f'<g class="node" data-name="{name}" data-about="{about}">'
+    svg.append(f'<g class="node{" outside" if outside else ""}" data-name="{name}" '
+               f'data-about="{about}">'
                f'<title>{name}: {about}</title>'
-               f'<rect x="{x}" y="{y}" width="{BOX_W}" height="{BOX_H}" rx="5" fill="{fill}" '
-               f'stroke="{stroke}"{dash}/>'
-               f'<text x="{x + BOX_W / 2}" y="{y + 20}" font-size="12" text-anchor="middle" '
-               f'fill="{"#222" if not outside else "#888"}">{name}</text></g>')
+               f'<rect x="{x}" y="{y}" width="{BOX_W}" height="{BOX_H}" rx="5"{dash}/>'
+               f'<text x="{x + BOX_W / 2}" y="{y + 20}" font-size="12" '
+               f'text-anchor="middle">{name}</text></g>')
 svg.append("</g></svg>")
 
 page = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Unlimited Tool Works: crate layers</title>
 <style>
-body {{ font-family: "Segoe UI", sans-serif; margin: 24px; color: #222; background: #fff; }}
+/* Dark by default; the button switches to light, remembered in this browser. */
+:root {{ --page: #1b1d21; --text: #e2e2e2; --soft: #a8abb0; --hint: #7d8187;
+  --studio: #3b3352; --tools: #24394f; --widget: #26402c; --core: #4a3b22; --libs: #2e3034;
+  --band-label: #c4c7cc; --edge: #9a9da3; --edge-rest: 0.3;
+  --box: #2a2d33; --box-line: #9aa0a8; --box-text: #ececec;
+  --out-box: #222428; --out-line: #5f636a; --out-text: #8a8e94;
+  --uses: #4c9aff; --usedby: #f0a040; --code: #2a2d33; }}
+:root[data-theme="light"] {{ --page: #fff; --text: #222; --soft: #444; --hint: #888;
+  --studio: #e8e0f5; --tools: #dcecf9; --widget: #e2f3e4; --core: #fbecd6; --libs: #eeeeee;
+  --band-label: #444; --edge: #7a7a7a; --edge-rest: 0.22;
+  --box: #fff; --box-line: #555; --box-text: #222;
+  --out-box: #f6f6f6; --out-line: #aaa; --out-text: #888;
+  --uses: #1f6fd1; --usedby: #d9822b; --code: #f0f0f0; }}
+body {{ font-family: "Segoe UI", sans-serif; margin: 24px; color: var(--text);
+  background: var(--page); }}
 h1 {{ font-size: 20px; margin: 0 0 6px; }}
-p {{ margin: 4px 0; font-size: 14px; color: #444; max-width: 1100px; }}
-.edge {{ opacity: 0.22; transition: opacity .1s; }}
+p {{ margin: 4px 0; font-size: 14px; color: var(--soft); max-width: 1100px; }}
+code {{ background: var(--code); padding: 0 3px; border-radius: 3px; }}
+#theme {{ position: absolute; top: 24px; right: 24px; font: inherit; font-size: 13px;
+  color: var(--text); background: var(--code); border: 1px solid var(--out-line);
+  border-radius: 4px; padding: 3px 10px; cursor: pointer; }}
+.band {{ opacity: 0.55; }}
+/* The dark bands at the light ones' distance from their page (CIELAB delta E 3 to 9 in
+   both themes): brighter, they outweighed the arrows. */
+:root:not([data-theme="light"]) .band {{ opacity: 0.35; }}
+.band.studio {{ fill: var(--studio); }} .band.tools {{ fill: var(--tools); }}
+.band.widget {{ fill: var(--widget); }} .band.core {{ fill: var(--core); }}
+.band.libs {{ fill: var(--libs); }}
+.band-label {{ fill: var(--band-label); }}
+.edge {{ stroke: var(--edge); opacity: var(--edge-rest); transition: opacity .1s; }}
+.node rect {{ fill: var(--box); stroke: var(--box-line); }}
+.node text {{ fill: var(--box-text); }}
+.node.outside rect {{ fill: var(--out-box); stroke: var(--out-line); }}
+.node.outside text {{ fill: var(--out-text); }}
 svg.focus .edge, svg.focus .node {{ opacity: 0.12; }}
-svg.focus .edge.uses {{ opacity: 1; stroke: #1f6fd1; stroke-width: 2; }}
-svg.focus .edge.usedby {{ opacity: 1; stroke: #d9822b; stroke-width: 2; }}
+svg.focus .edge.uses {{ opacity: 1; stroke: var(--uses); stroke-width: 2; }}
+svg.focus .edge.usedby {{ opacity: 1; stroke: var(--usedby); stroke-width: 2; }}
 svg.focus .node.on {{ opacity: 1; }}
 .node {{ cursor: pointer; }}
-.node.pinned rect {{ stroke: #1f6fd1; stroke-width: 2.5; }}
-#about {{ min-height: 1.4em; font-size: 15px; color: #222; }}
+.node.pinned rect {{ stroke: var(--uses); stroke-width: 2.5; }}
+#about {{ min-height: 1.4em; font-size: 15px; color: var(--text); }}
 #about b {{ margin-right: 6px; }}
-#about .hint {{ color: #888; }}
+#about .hint {{ color: var(--hint); }}
 .key span {{ display: inline-block; width: 22px; height: 3px; vertical-align: middle;
   margin: 0 4px 0 14px; }}
-</style></head><body>
+.key .uses {{ background: var(--uses); }} .key .usedby {{ background: var(--usedby); }}
+</style>
+<script>
+// Before the body draws, so a light choice never flashes dark first.
+if (localStorage.getItem("crate_map_theme") === "light")
+  document.documentElement.dataset.theme = "light";
+</script></head><body>
+<button id="theme" type="button"></button>
 <h1>Unlimited Tool Works: how the crates depend on each other</h1>
 <p>Every arrow points from a crate to one it uses (normal dependencies from the manifests,
 dev-dependencies left out). Rows run from the binary at the top to the libs that use nothing
 at the bottom; within the libs, a row uses only rows below it.
 Dashed crates are not linked into <code>UTW</code>.</p>
 <p class="key">Click a crate to keep it highlighted and put it in the address
-(<code>#save_editor</code>), again to let go:<span style="background:#1f6fd1"></span>what it uses
-<span style="background:#d9822b"></span>what uses it</p>
+(<code>#save_editor</code>), again to let go:<span class="uses"></span>what it uses
+<span class="usedby"></span>what uses it</p>
 <p id="about"><span class="hint">Hover a crate for what it is.</span></p>
 {"".join(svg)}
 <script>
+const themeButton = document.getElementById("theme");
+function labelTheme() {{
+  const light = document.documentElement.dataset.theme === "light";
+  themeButton.textContent = light ? "Dark theme" : "Light theme";
+}}
+themeButton.addEventListener("click", () => {{
+  const light = document.documentElement.dataset.theme !== "light";
+  if (light) document.documentElement.dataset.theme = "light";
+  else delete document.documentElement.dataset.theme;
+  localStorage.setItem("crate_map_theme", light ? "light" : "dark");
+  labelTheme();
+}});
+labelTheme();
 const svg = document.querySelector("svg");
 const edges = [...svg.querySelectorAll(".edge")];
 const nodes = [...svg.querySelectorAll(".node")];
