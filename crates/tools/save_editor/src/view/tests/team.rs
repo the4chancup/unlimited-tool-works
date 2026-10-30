@@ -1268,6 +1268,46 @@ fn the_boglo_dialogs_fields_share_one_column_across_both_groups() {
     }
 }
 
+// The option column is as wide as the widest option: its text, the radio's
+// icon and the gap after the icon. The fields' column starts the 12-point
+// column gap past it.
+#[test]
+fn the_boglo_option_column_is_as_wide_as_its_widest_option() {
+    let (_, window, nodes) = open_boglo("boglo_option_column");
+    let style = window.ctx.global_style();
+    let button = egui::TextStyle::Button.resolve(&style);
+    let widest = [
+        "Unchanged",
+        "Set incremental value:",
+        "Set all to the same ID:",
+        "Set like boot IDs",
+    ]
+    .iter()
+    .map(|text| {
+        window.ctx.fonts_mut(|fonts| {
+            fonts
+                .layout_no_wrap((*text).to_owned(), button.clone(), egui::Color32::WHITE)
+                .size()
+                .x
+        })
+    })
+    .fold(0.0, f32::max);
+    let option = widest + style.spacing.icon_width + style.spacing.icon_spacing;
+    let incremental = node_labeled(&nodes, Role::RadioButton, "Set incremental value:")
+        .bounds()
+        .expect("the radio's bounds");
+    let start = boglo_fields(&nodes)
+        .start
+        .bounds()
+        .expect("the start box's bounds");
+    let column = start.x0 - incremental.x0;
+    assert!(
+        (column - f64::from(option + 12.0)).abs() <= 0.5,
+        "the start box stands {column} right of the radio's left, the widest option's {option} \
+         and the 12-point gap"
+    );
+}
+
 // The dialog is as wide as its contents (the draft's `.window:has(.boglo)`):
 // no wider than the groups, whose right edge stands the group frame's
 // margin and stroke past the range's end box, or the title if it is wider,

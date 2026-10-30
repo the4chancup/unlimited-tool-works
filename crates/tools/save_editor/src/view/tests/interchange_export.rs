@@ -6,7 +6,10 @@
 
 use std::sync::mpsc;
 
+use pes_savefile::interchange::team_toml::TeamToml;
+use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
 use pes_savefile::interchange::texport::Texport;
+use pes_savefile::model::TeamColor;
 use studio_core::NoticeKind;
 
 use crate::test_support::cli_stdout;
@@ -324,6 +327,81 @@ fn a_pes_21_texport_reads_back_to_the_same_team() {
 }
 
 #[test]
+fn both_exports_carry_the_edits_the_save_holds_unsaved() {
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "export_unsaved", CO);
+    // The save stores each channel in 6 bits, 0 to 63.
+    let colour = TeamColor {
+        red: 10,
+        green: 20,
+        blue: 30,
+    };
+    let mut team = team_entry(&view, CO);
+    let colours = team.colors.as_mut().expect("a PES 21 team has colours");
+    assert_ne!(colours[0], colour, "premise: the first colour differs");
+    colours[0] = colour;
+    let (index, slot) = team
+        .roster
+        .iter()
+        .enumerate()
+        .find(|(_, slot)| slot.player_id != 0)
+        .expect("a rostered player");
+    let key = u8::try_from(index + 1).expect("a roster key");
+    let mut player = player_entry(&view, slot.player_id);
+    let prowess = ABILITY_STATS
+        .iter()
+        .position(|name| *name == "attacking_prowess")
+        .expect("attacking_prowess is an ability stat");
+    assert_ne!(
+        player.stats.abilities()[prowess],
+        Some(78),
+        "premise: Attacking Prowess is not 78"
+    );
+    player.stats.set_ability(prowess, 78);
+    view.session
+        .as_mut()
+        .expect("an open save")
+        .edit_entries(vec![player.clone()], vec![team]);
+    let folder = save_folder(&view);
+    let on_disk = EditFile::load(&folder.join("EDIT00000000")).expect("the save on disk reads");
+    assert_ne!(
+        on_disk.player(player.id).map(|entry| &entry.stats),
+        Some(&player.stats),
+        "premise: the stat is not saved"
+    );
+
+    let toml = folder.join("unsaved.toml");
+    export(&mut window, &mut view, "Team TOML\u{2026}", &toml);
+    let parsed =
+        TeamToml::parse(&std::fs::read_to_string(&toml).unwrap()).expect("the Team TOML reads");
+    assert_eq!(parsed.team.color_1, Some(colour), "the Team TOML's colour");
+    assert_eq!(
+        parsed.players[&key].stats.attacking_prowess,
+        Some(78),
+        "the Team TOML's stat"
+    );
+
+    let ted = folder.join("unsaved.ted");
+    export(&mut window, &mut view, "Texport\u{2026}", &ted);
+    let texport =
+        Texport::from_bytes(&std::fs::read(&ted).unwrap(), None).expect("the Texport reads");
+    assert_eq!(
+        texport.team().colors.map(|colours| colours[0]),
+        Some(colour),
+        "the Texport's colour"
+    );
+    let exported = texport
+        .players()
+        .iter()
+        .find(|entry| entry.id == player.id)
+        .expect("the player is in the Texport");
+    assert_eq!(
+        exported.stats.abilities()[prowess],
+        Some(78),
+        "the Texport's stat"
+    );
+}
+
+#[test]
 fn a_team_without_a_short_name_suggests_its_id_and_a_cancel_writes_nothing() {
     let (mut view, mut window) = open_on(PesVersion::Pes21, "export_no_short_name", CO);
     let mut team = team_entry(&view, CO);
@@ -389,16 +467,34 @@ fn on_pes_17_the_texport_is_disabled_and_says_why() {
 
 #[test]
 fn the_open_save_is_refused_as_the_destination() {
+    assert_save_refused("export_refused", |folder| folder.join("EDIT00000000"));
+}
+
+#[test]
+fn the_open_save_named_through_another_folder_is_refused() {
+    assert_save_refused("export_refused_spelling", |folder| {
+        std::fs::create_dir(folder.join("sub")).expect("the sub folder is created");
+        folder.join("sub").join("..").join("EDIT00000000")
+    });
+}
+
+/// For both formats, a fixture opened under `test` and the destination
+/// `pick` names from the save's folder, a spelling of the save: the
+/// refusal names that path in the command line's sentence, the save's
+/// bytes are unchanged and nothing says Wrote.
+fn assert_save_refused(test: &str, pick: impl Fn(&Path) -> PathBuf) {
     for (label, format) in [
         ("Team TOML\u{2026}", "Team TOML"),
         ("Texport\u{2026}", "Texport"),
     ] {
-        let test = format!("export_refused_{}", format.replace(' ', "_"));
+        let test = format!("{test}_{}", format.replace(' ', "_"));
         let (mut view, mut window) = open_on(PesVersion::Pes21, &test, CO);
-        let save = save_folder(&view).join("EDIT00000000");
+        let folder = save_folder(&view);
+        let save = folder.join("EDIT00000000");
         let before = std::fs::read(&save).unwrap();
+        let destination = pick(&folder);
 
-        export(&mut window, &mut view, label, &save);
+        export(&mut window, &mut view, label, &destination);
 
         assert!(
             std::fs::read(&save).unwrap() == before,
@@ -410,7 +506,7 @@ fn the_open_save_is_refused_as_the_destination() {
         let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         let sentence = format!(
             "{}: that is the save being read, and a {format} written over it would lose it",
-            save.display()
+            destination.display()
         );
         for text in ["Cannot export the team", sentence.as_str()] {
             assert!(

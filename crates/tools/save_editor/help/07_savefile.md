@@ -11,8 +11,9 @@ The **Savefile** menu works on the whole save:
 
 **Applying an aesthetics patch**
 
-**Open patch…** reads the patch; a patch for another PES version, or from a
-different version of the Team compiler, is refused and the save is left alone.
+**Open patch…** reads the patch; a patch made for another PES version, or by a
+Team compiler that numbers custom boots and gloves differently from the one in
+this program, is refused and the save is left alone.
 The panel then lists every value the patch would change, player by player, with
 the old value and the new one; click a row to select that player.
 
