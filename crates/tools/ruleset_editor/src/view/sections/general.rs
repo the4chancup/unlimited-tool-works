@@ -84,7 +84,7 @@ pub(crate) fn show(ui: &mut egui::Ui, ruleset: &mut Ruleset, logo: &mut LogoFiel
             ui.end_row();
         });
     ui.weak(
-        "The Save editor draws the logo at its top right while this ruleset is picked; a click \
+        "The Save editor shows the logo on its top right while this ruleset is picked; a click \
          on it opens the event page.",
     );
     ui.separator();

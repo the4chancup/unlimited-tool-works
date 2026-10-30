@@ -443,13 +443,18 @@ fn commit_typed_tier_id(view: &mut RulesetView) {
 }
 
 /// Save as…: the `.4ccrules` dialog starting in `last_folder`,
-/// suggesting the ruleset's name slugged, then the same path as Save.
+/// suggesting the document's own file name when it has one (opened from
+/// or saved to a file), else the ruleset's name slugged, then the same
+/// path as Save.
 fn save_as(view: &mut RulesetView, ctx: &ToolContext, settings: &RulesetEditorSettings) -> bool {
     let start = PathBuf::from(&settings.last_folder);
     let suggested = view
         .document
         .as_ref()
-        .map(|document| suggested_name(&document.ruleset.name))
+        .map(|document| match &document.path {
+            Some(path) => file_label(path),
+            None => suggested_name(&document.ruleset.name),
+        })
         .unwrap_or_default();
     match (view.save_as_dialog)(&start, &suggested) {
         Some(path) => save_to(view, ctx, &path),

@@ -213,6 +213,16 @@ mod tests {
     use super::*;
     use crate::test_support::{context, scratch, valid_file, write_file};
 
+    /// `ruleset-editor` with no subcommand is a usage error naming the
+    /// missing subcommand, not a run.
+    #[test]
+    fn no_subcommand_is_refused() {
+        let error = command()
+            .try_get_matches_from(["ruleset-editor"])
+            .expect_err("refused");
+        assert_eq!(error.kind(), clap::error::ErrorKind::MissingSubcommand);
+    }
+
     /// `update-logic` on a document whose logic is `Older`: the file gets the
     /// current logic and the replaced file is kept as `.bak`. No real file of
     /// an older official logic exists while version 1 is the only one, so the

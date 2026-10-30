@@ -1,6 +1,7 @@
 //! The Summary section's GUI half (RE-SUM-01): the drawn text is the
 //! summary and Copy puts the same text on the clipboard; and the
-//! sections the window cannot edit yet send a member to it.
+//! sections the window cannot edit yet send a member to it and link to
+//! their demo online.
 
 use super::*;
 
@@ -37,6 +38,51 @@ fn each_unbuilt_section_says_where_it_shows_and_that_a_save_keeps_it() {
                 "You can't edit this section yet. Summary shows what's in it, and saving leaves it unchanged."
             ),
             "{name}'s line"
+        );
+    }
+}
+
+/// The demo link's text.
+const DEMO_LINK: &str = "Check out a demo of the planned section online";
+
+/// Each section the window cannot edit yet links to its draft's demo
+/// online: a click opens that section's address; the sections the
+/// window edits or shows draw no such link.
+#[test]
+fn each_unbuilt_section_links_to_its_demo_online() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    for (section, id) in [
+        (Section::Heights, "heights"),
+        (Section::Cards, "cards"),
+        (Section::Universal, "universal"),
+        (Section::Specials, "specials"),
+        (Section::Suggestions, "suggestions"),
+    ] {
+        view.section = section;
+        let frame = settled(&mut window, &mut view, &ctx);
+        let at = centre(node(&frame.nodes, DEMO_LINK));
+        window.frame(pointer_at(at, true), |ui| show(ui, &mut view, &ctx));
+        let frame = window.frame(pointer_at(at, false), |ui| show(ui, &mut view, &ctx));
+        let address = format!(
+            "https://the4chancup.github.io/unlimited-tool-works/prototypes/#ruleset_editor/{id}?demo=1&start=0"
+        );
+        assert!(
+            frame
+                .platform
+                .commands
+                .contains(&egui::OutputCommand::OpenUrl(egui::OpenUrl::new_tab(
+                    &address
+                ))),
+            "{id}: the click opens {address}: {:?}",
+            frame.platform.commands
+        );
+    }
+    for section in [Section::General, Section::Tiers, Section::Summary] {
+        view.section = section;
+        let frame = settled(&mut window, &mut view, &ctx);
+        assert!(
+            !drawn(&frame.nodes, DEMO_LINK),
+            "{section:?} draws no demo link"
         );
     }
 }

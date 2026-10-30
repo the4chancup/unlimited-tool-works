@@ -1,6 +1,6 @@
 # Divegrass Before Christmas 7
 
-Squad of 23. A player's rating is his best of: dribbling, goalkeeping, finishing, low pass, lofted pass, heading, swerve, catching, clearing, reflexes, coverage, body control, physical contact, kicking power, explosive power, ball control, ball winning, jump, place kicking, stamina, speed, aggression.
+A player's rating is his best of: dribbling, goalkeeping, finishing, low pass, lofted pass, heading, swerve, catching, clearing, reflexes, coverage, body control, physical contact, kicking power, explosive power, ball control, ball winning, jump, place kicking, stamina, speed, aggression.
 May sit below their target: attacking prowess, ball control, dribbling, low pass, lofted pass, finishing, place kicking, swerve, heading, defensive prowess, ball winning, kicking power, speed, explosive power, body control, physical contact, jump, goalkeeping, catching, clearing, reflexes, coverage, stamina, tight possession, aggression, form, injury resistance, weak foot usage, weak foot accuracy.
 
 ## Tiers

@@ -1,6 +1,6 @@
 # /vt/ League 10
 
-Squad of 23. A player's rating is his best of: clearing.
+A player's rating is his best of: clearing.
 
 ## Tiers
 - **Gold**: 2 per team, 194 cm, swerve 99 to 99; every stat 99 (place kicking 96, defensive prowess 58); form 8, injury resistance 1, weak foot 4/4; 6 paid cards (at least 3 paid skills, an extra A position counting as one), 2 free COM styles; 2 A positions.

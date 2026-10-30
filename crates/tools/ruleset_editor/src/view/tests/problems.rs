@@ -1,5 +1,6 @@
 //! The `check()` problems shown: the bottom bar's count (singular,
-//! plural, the hover for all) and the rail's marks.
+//! plural, the hover for all) and the rail's marks; and the rail's
+//! selected entry.
 
 use super::*;
 
@@ -52,6 +53,30 @@ fn the_fixed_width_rail_shows_no_resize_edge() {
             .any(|node| node.role() == Role::Splitter && node.label() == Some("Resize panel")),
         "a fixed-width panel registers no splitter"
     );
+}
+
+/// The rail draws the drawn section's entry selected and no other
+/// (egui gives AccessKit a selectable entry's state as its toggle).
+#[test]
+fn the_rail_selects_the_drawn_section_alone() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    for current in [Section::General, Section::Tiers, Section::Summary] {
+        view.section = current;
+        let frame = window.draw(&mut view, &ctx);
+        let selected: Vec<&str> = frame
+            .nodes
+            .iter()
+            .filter(|node| {
+                node.role() == Role::Button
+                    && node.label().is_some_and(|label| {
+                        Section::RAIL.iter().any(|section| section.label() == label)
+                    })
+                    && node.toggled() == Some(accesskit::Toggled::True)
+            })
+            .filter_map(|node| node.label())
+            .collect();
+        assert_eq!(selected, [current.label()], "{current:?}");
+    }
 }
 
 #[test]

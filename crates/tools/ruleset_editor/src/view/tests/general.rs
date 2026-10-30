@@ -146,6 +146,18 @@ fn general_draws_no_squad_field() {
     assert!(!drawn(&frame.nodes, "Squad size"), "no Squad size field");
 }
 
+/// The note under the Event logo says where the Save editor shows it.
+#[test]
+fn general_notes_where_the_save_editor_shows_the_logo() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert!(drawn(
+        &frame.nodes,
+        "The Save editor shows the logo on its top right while this ruleset is picked; a click \
+         on it opens the event page."
+    ));
+}
+
 #[test]
 fn ctrl_z_during_a_drag_restores_the_value_before_it() {
     let (ctx, _events, mut window, mut view) = fresh_blank();

@@ -45,6 +45,29 @@ fn the_start_page_offers_its_entries_in_order() {
     );
 }
 
+/// The generator is a later build's: the start page's Sensible, Weird
+/// and Crazy and the toolbar's Randomize menu are drawn disabled.
+#[test]
+fn the_generators_entries_are_disabled() {
+    let (ctx, _events, mut window, mut view) = fresh();
+    let frame = window.draw(&mut view, &ctx);
+    for preset in ["Sensible", "Weird", "Crazy"] {
+        assert!(node(&frame.nodes, preset).is_disabled(), "{preset}");
+    }
+    assert!(
+        !node(&frame.nodes, "Open file…").is_disabled(),
+        "premise: the page's other buttons are enabled"
+    );
+
+    open_document(&mut view, crate::document::blank());
+    let frame = window.draw(&mut view, &ctx);
+    assert!(node(&frame.nodes, &menu_label("Randomize")).is_disabled());
+    assert!(
+        !node(&frame.nodes, &menu_label("File")).is_disabled(),
+        "premise: the other menus are enabled"
+    );
+}
+
 // RE-GUI-01
 #[test]
 fn the_recent_files_list_the_later_open_first_and_skip_a_deleted_file() {

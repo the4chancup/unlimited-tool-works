@@ -1262,6 +1262,32 @@ fn the_open_expanders_stat_grid_spans_the_table() {
     );
 }
 
+/// The expander's cell is the grid's last column, the ✕ column: the
+/// row's empty filler cells fill every column left of it and none
+/// lands in it.
+#[test]
+fn the_expander_row_fills_up_to_the_last_column() {
+    let (ctx, _events, mut window, mut view) = tiers_view(template("/vt/ League 11"), false);
+    let frame = settled(&mut window, &mut view, &ctx);
+    let header = node(&frame.nodes, "Stat targets, free cards and conditions")
+        .bounds()
+        .expect("drawn");
+    let last_column = node(&frame.nodes, "✕").bounds().expect("drawn").x0;
+    let fillers: Vec<f64> = frame
+        .nodes
+        .iter()
+        .filter(|node| node.role() == Role::Label && node.label().is_none())
+        .filter_map(|node| node.bounds())
+        .filter(|bounds| (bounds.y0 - header.y0).abs() < 2.0)
+        .map(|bounds| bounds.x0)
+        .collect();
+    assert!(!fillers.is_empty(), "premise: the row's fillers are drawn");
+    assert!(
+        fillers.iter().all(|x| *x < last_column - 1.0),
+        "every filler left of the ✕ column at {last_column}: {fillers:?}"
+    );
+}
+
 /// The open expander starts one cell minimum right of the handle
 /// column (the child's rect starts `interact_size.x` in from the
 /// table's left edge, the draft's colspan indent).
@@ -1324,7 +1350,8 @@ fn the_stat_grid_lays_out_five_columns() {
 }
 
 /// "+ Add tier" pushes the draft's new tier (`new_tier`): `tier<N>`,
-/// "Tier <N>", count 1, rate 80.
+/// "Tier <N>", count 1, rate 80, its stat total not held within its
+/// targets.
 #[test]
 fn add_tier_appends_the_drafts_new_tier() {
     let (ctx, _events, mut window, mut view) =
@@ -1343,6 +1370,7 @@ fn add_tier_appends_the_drafts_new_tier() {
     assert_eq!(tier.label, "Tier 6");
     assert_eq!(tier.count, Some(1));
     assert_eq!(tier.rate, 80);
+    assert!(!tier.total_within_targets);
 }
 
 /// The ✕ sits on every row while a second tier remains (the draft's
@@ -1624,6 +1652,49 @@ fn drawing_every_section_leaves_the_ruleset_untouched() {
             opened.name
         );
     }
+}
+
+/// A value past its control's range, typed into the file by hand, is
+/// drawn as stored: the gold tier's 60 paid cards (the cell's range
+/// ends at 48) and its 25 free tricks (the expander's count ends at 20)
+/// survive the Tiers section's draw, expander open, and the document
+/// stays saved.
+#[test]
+fn a_hand_typed_value_past_its_range_is_kept_when_drawn() {
+    let mut edited = aatf::Rules::official().ruleset().clone();
+    edited.tiers[0].cards = 60;
+    edited.tiers[0].free.insert("tricks".to_string(), 25);
+    let dir = crate::test_support::scratch("past_range_kept");
+    let path = write_file(
+        &dir,
+        "rules.4ccrules",
+        &aatf::assemble_file(&edited, None, None),
+    );
+    let (ctx, _events) = crate::test_support::context();
+    let mut window = Headless::sized(1600.0, 900.0);
+    let mut view = opened_view(&ctx, &path);
+    assert_eq!(ruleset(&view), &edited, "premise: the file opens as typed");
+    view.section = Section::Tiers;
+
+    let frame = settled(&mut window, &mut view, &ctx);
+    click_nth(
+        &mut window,
+        &frame.nodes,
+        "Stat targets, free cards and conditions",
+        0,
+        &mut view,
+        &ctx,
+    );
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert_eq!(ruleset(&view), &edited, "the stored values are kept");
+    assert!(
+        !view.document.as_ref().unwrap().is_dirty(),
+        "the document stays saved"
+    );
+    assert!(
+        drawn(&frame.nodes, "60") && drawn(&frame.nodes, "25"),
+        "both cells draw the stored values"
+    );
 }
 
 /// Each field of a tier row writes to its own binding, RE-GUI-17's

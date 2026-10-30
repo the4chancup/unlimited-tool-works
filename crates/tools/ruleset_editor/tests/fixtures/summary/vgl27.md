@@ -1,6 +1,6 @@
 # /vg/ League 27
 
-Squad of 23. A player's rating is his best of: dribbling, goalkeeping, low pass, lofted pass, swerve, catching, clearing, reflexes, coverage, body control, physical contact, kicking power, explosive power, ball control, ball winning, jump, place kicking, stamina, speed.
+A player's rating is his best of: dribbling, goalkeeping, low pass, lofted pass, swerve, catching, clearing, reflexes, coverage, body control, physical contact, kicking power, explosive power, ball control, ball winning, jump, place kicking, stamina, speed.
 May sit below their target: attacking prowess, defensive prowess, weak foot usage, weak foot accuracy.
 
 ## Tiers
