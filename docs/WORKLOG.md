@@ -2559,6 +2559,26 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       verify: each ruleset file loads with its logo; the built window per built-in ruleset.
       Done with a: a test loads all nine, each page the table's and each logo the asset's
       bytes; the built window waits for b
+  - [ ] 8.36 every engine's looks through the savefile patch, no stripped saves (the
+    maintainer, 2026-10-30; DECISIONS "Every engine carries a player's looks in the savefile
+    patch; no stripped saves")
+    - [ ] a the plans and the spec: every passage on stripped saves, `strip-and-seed`,
+      `check-stripped`, the seed CPK and the compiler's Fox player tables reworded or removed,
+      from the inventory `.tmp/8_36/inventory.md` → verify: `just doc-pointers`, `just
+      acceptance`; a grep for `strip` and the three table names left only where they still hold
+    - [ ] b before 0.0.1, the Save editor: `strip-and-seed`, `check-stripped`, the stripped
+      players' notes and the Strip again window, Generate's stripped skip, the Comparator's
+      and `diff`'s stripped marks, Team TOML's `stripped`, their help and catalog rows, and
+      what `pes_savefile` keeps only for them → verify: the gates; the help and catalog name
+      none of them
+    - [ ] c after 0.0.1, the full-look patch and the Team compiler: the aesthetics patch on
+      every engine (it is Fox-only today) gains the appearance block, the boots and gloves IDs
+      over the whole allocation, filled after their tasks commit, and clears a compiled
+      player's base copy; `apply-patch` writes them; the Fox player-table writer and its
+      messages go → verify: the gates; TC-SAV-12 (a PES 17 compile writes no patch) rewritten;
+      the library parity's difference classes re-diagnosed
+    - [ ] d in game (PES 2021, then one more Fox version): a patch applied to an unstripped
+      save shows the compiled look in Edit mode (`scripts/ingame/`, saves backed up)
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning

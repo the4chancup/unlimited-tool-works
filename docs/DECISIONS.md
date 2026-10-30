@@ -13971,3 +13971,31 @@ the event's page:", and the address on its own line; without one, the name alone
 Why: the maintainer's wording, replacing the draft's "Opens <address>": it tells a member
 the logo is a link and what it leads to before the address.
 Plan: `plans/save_editor.md` "Editing UI", "The event logo"; SE-GUI-44.
+
+## 2026-10-30 — aesthetics — Every engine carries a player's looks in the savefile patch; no stripped saves
+Decision (maintainer): on Fox too, a compiled player's appearance, boots and gloves IDs reach
+the game through the savefile aesthetics patch, with his motions and names, on every engine.
+The Team compiler writes no `PlayerAppearance.bin`, `BootsList.bin` or `GloveList.bin` rows;
+no save is stripped (appearance id -1), so the Save editor's `strip-and-seed` and
+`check-stripped`, the seed CPK, and every stripped-player rule in the editor, the Comparator,
+`diff` and Team TOML go. The Save editor's parts go before 0.0.1 (the lead: a release should
+not ship commands for an abandoned route, and no member holds a stripped save since none was
+released); the Team compiler's table writer after it. Replaces "aesthetics travel in the
+database tables (step 4.0)" of 2026-10-03.
+Why: a compile almost always writes a patch anyway, since the motions live only in the save
+(the patch is written on every compile since 2026-10-05), so the tables never made a team's
+looks independent of the save, their main reason. One route on every engine removes the
+stripping and seeding before every cup, the stripped checks, and the gloves clash between
+`GloveList.bin` and the 4cc gloves patch. The save holds every ID the compiler allocates
+(14-bit boots and gloves IDs; the allocation ends at 8900). A manager's Edit-mode change to a
+look now stays in the save, as before the tables. Not yet checked in game: a Fox save's
+appearance written by the patch shows as compiled (worklog 8.36).
+The patch must grow for it (the inventory, `.tmp/8_36/inventory.md`): today it is Fox-only
+and carries names, shirt names and motions alone (`AestheticsPatch` refuses a pre-Fox save;
+the plan's pre-Fox patch was never built), so it gains the appearance block, the boots and
+gloves IDs over the compiler's whole allocation (not the stock band's `u8`), filled once the
+boots and gloves tasks are known to have committed, and it clears a compiled player's base
+copy, since an unstripped record whose `base_copy_id` copies another face shows that face
+over the compiled one (the census: up to 26 such players per PES 2021 cup save, 117 on PES
+2019, 988 on PES 2018; the lead's recommendation, checked in game at 8.36d).
+Plan: to follow in worklog 8.36a.
