@@ -14248,3 +14248,19 @@ the game's import makes them do. (2) Real cup folders hold `TEXPORT0000000D` and
 `TEXPORT00000013`; a decimal count suggests `TEXPORT00000010` after `00000009`, number 16 to
 the game, skipping ten.
 Plan: `plans/save_editor.md` "Interchange formats in the UI" (the Texport bullet).
+
+## 2026-10-30 — development plan, ruleset_editor — the Ruleset editor joins 0.0.1 as "Ruleset editor (WIP)"
+Decision: the maintainer's call, reversing 2026-10-24's "The Ruleset editor leaves 0.0.1" in
+part: 0.0.1's window carries the Ruleset editor as far as it is built (General, Tiers, Custom
+checks, Summary, the preview, opening and saving), labelled "Ruleset editor (WIP)" in the
+sidebar and the window title; its unbuilt sections draw their heading and a line pointing
+at Summary and the preview, and a save keeps them as the file held them. The remaining
+forms, Randomize and the phase's close stay after Release 0.1.0. Before the cut it gets its
+own converge over what ships (an Astra part, a whole-crate mutation run, the built window).
+Why: what is built is reviewed and useful to an organizer now; the rest (the condition and
+effects editors above all) is several review-sized slices, which would delay the Save
+editor's cut. "(WIP)", not "(Preview)": the tool's own toolbar has "Show preview" and a
+preview pane, which the label would seem to name.
+Plan: `plans/core/development_plan.md` "Divegrass Before Christmas" and "Phase 20";
+`plans/core/gui.md` "Sidebar" (the CLI-only list); `plans/ruleset_editor.md` (the label);
+the shell draft's registry.

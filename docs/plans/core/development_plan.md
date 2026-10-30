@@ -75,9 +75,16 @@ replaces it by hand, and no `CHANGELOG.md`, which starts with 0.1.0 (0.0.1's few
 told in person what it holds). We do not shorten the Save editor's phase to meet the date: a
 tool members learn on is one whose behavior they will keep relying on, and a rushed rule check
 that passes a team the organizers' check refuses costs the invitational more than a later tool.
-The Ruleset editor (Phase 20) was pulled forward for DBC at first and runs after Release 0.1.0
-instead: DBC's organizers already have their ruleset, the template the suite embeds, and a
-second tool in the preview would split the time the check needs.
+The Ruleset editor (Phase 20) ships in 0.0.1 as far as it is built, its sidebar label and
+window title "Ruleset editor (WIP)": opening and saving, the start page and templates, the
+preview, General, Tiers, Custom checks and Summary. Heights, Cards, Universal rules, Specials
+and Suggestions draw their heading and one line saying they are edited in a later build,
+that Summary describes them and the preview shows them as written; a save keeps them as the
+file held them. Its other forms (the condition and effects editors among them), Randomize
+and its close run after Release 0.1.0. Not the whole tool before the cut: those forms are
+the hardest left, and building them would split the time the check needs. Not left out
+either: what is built has been reviewed, and it lets an organizer change a ruleset's tiers
+and General settings in a window rather than in the rules file's text.
 
 **The /vg/ League 27 (VGL): preview 0.0.2.** The league starts in late November 2026 on PES
 2019 with FoxDen, and its organizer tests the Team compiler there: managers send their exports
@@ -563,10 +570,9 @@ database and EDIT (manual, per version).
 ### Phase 20: Ruleset editor (`tools/ruleset_editor`, post-release)
 
 Not a first-release gate: its users are invitational organizers, who use 4ccEditor forks until
-then. Runs after Release 0.1.0 ("Divegrass Before Christmas" above says why it is not in
-0.0.1). What it built while it was pulled forward stays (the writer, the CLI, the window's frame
-and its Tiers section, worklog 20.3 to 20.6a2a); until it resumes, the build registers it
-CLI-only, its window a planned entry. Depends on `libs/aatf` with the schema and the
+then. Its remaining forms run after Release 0.1.0; 0.0.1 ships what it built while it was
+pulled forward (the writer, the CLI, the window's frame and its Tiers section, worklog 20.3
+to 20.6a2a) as "Ruleset editor (WIP)" ("Divegrass Before Christmas" above). Depends on `libs/aatf` with the schema and the
 interpreter (Phase 5) and the shell (Phase 8).
 Plan: [Ruleset editor](../ruleset_editor.md).
 

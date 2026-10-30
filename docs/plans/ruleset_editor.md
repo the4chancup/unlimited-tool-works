@@ -3,7 +3,8 @@
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
 The Ruleset editor (`crates/tools/ruleset_editor`, tool id `ruleset-editor`, sidebar label
-"Ruleset editor") lets anyone who can fill in a form build an AATF ruleset for their own
+"Ruleset editor"; "Ruleset editor (WIP)" while some section forms are unbuilt, in 0.0.1:
+`core/development_plan.md` "Divegrass Before Christmas") lets anyone who can fill in a form build an AATF ruleset for their own
 invitational: tiers, stat targets, heights, cards and conditional special rules, saved as a rules
 file the Save editor and the Team creator use like the official one. The ruleset need not start
 from the official rules or resemble them. The file format, the schema and the interpreter are

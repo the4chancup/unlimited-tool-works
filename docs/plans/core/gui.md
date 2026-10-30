@@ -247,8 +247,7 @@ Top to bottom:
    this build (the registry's, `architecture.md` "Tool plugin interface") are listed after the
    registered ones, grayed and not clickable, each tooltip saying "Coming soon™" and nothing
    more: the list communicates the suite roadmap. A registered tool the registry marks **CLI-only**
-   (in the 0.0.1 preview the Team compiler, the Ruleset editor and the Export upgrader, whose
-   views come later;
+   (in the 0.0.1 preview the Team compiler and the Export upgrader, whose views come later;
    `development_plan.md` "Divegrass Before Christmas") is drawn as its planned entry, grayed
    and not clickable, its tooltip the same "Coming soon™" (its window is what is coming; the
    command line is the help's to explain, not a tooltip's), and it is never the active tool (a `last_tool` naming it opens the first

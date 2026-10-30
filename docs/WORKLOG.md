@@ -5885,6 +5885,14 @@ briefs, review loops, gates and mutation runs as for any step.
     running
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
+  - [ ] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30): off
+    `CLI_ONLY`, the label in the sidebar and the title; the unbuilt sections' line points at
+    Summary and the preview; RE-GUI-17's round trip confirmed over every field the unbuilt
+    sections hold; the stat grid's clip with the preview on at 1280 (8.26's Ruleset half);
+    20.6a1's open `mutants-diff b8ed279f`; the help's window chapter names the read-only
+    sections; the shell tests that assume one window tool. Then its converge: an Astra part
+    (A7) beside cv6's, `just mutants ruleset_editor`, the built window with two tools
+    (switching, the unsaved prompts, closing)
   - [ ] cv7 after 0.0.1: split `view/mod.rs` (the toolbar), `view/menus.rs` (the dialogs),
     `view/interchange.rs` (the export half), `team_widgets` `pitch/mod.rs` (the paint) and
     `tactics/mod.rs` (the changes' terms), each past a thousand lines
