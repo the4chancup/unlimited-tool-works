@@ -140,9 +140,9 @@ the last edit changed are highlighted.
   the medal systems, heights and universal rules; each card group with its cards; each team
   settings entry; each special as a sentence from its When and Then; the suggestions), generated
   from the data. Each sentence states the rule the logic applies, not a looser one: the warning
-  band and the stat total name the ability stats that may sit below their target
-  (`stats.at_most`), the only ones they cover; the minimum names paid skills, an extra A position counting as one, not
-  COM styles; an effect's weak foot is a target like the tier's, not an upper limit; and an
+  band and the stat total name the ability stats that may sit below their target (the
+  ability stats among `stats.at_most`), the only ones they cover; the minimum names paid
+  skills, an extra A position counting as one, not COM styles; an effect's weak foot is a target like the tier's, not an upper limit; and an
   effect's cards are joined with "and" (each one free, each one required), a condition's with
   "or".
   A skill, COM style or playing style is named as the Save editor names it (`GK Long Throw`,

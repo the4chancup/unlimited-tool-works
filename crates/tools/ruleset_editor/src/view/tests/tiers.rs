@@ -945,6 +945,49 @@ fn a_click_on_an_earlier_id_field_commits_the_typed_id() {
         "the typed id committed"
     );
     assert_eq!(ruleset(&view).tiers[0].id, "gold", "Gold kept its id");
+
+    // A later row's field, the other way round.
+    type_replacing(&mut window, &mut view, &ctx, "crown");
+    click_role(&mut window, &mut view, &ctx, Role::TextInput, "royal");
+    assert_eq!(
+        ruleset(&view).tiers[0].id,
+        "crown",
+        "the typed id committed"
+    );
+    assert_eq!(
+        ruleset(&view).tiers[1].id,
+        "royal",
+        "Silver kept its new id"
+    );
+}
+
+/// A typed id commits when the rail leaves Tiers: no row is drawn to see
+/// its focus loss, and the member may stay away for any time.
+#[test]
+fn leaving_tiers_through_the_rail_commits_the_typed_id() {
+    let (ctx, _events, mut window, mut view) =
+        tiers_view(template("Divegrass Before Christmas 7"), false);
+
+    click_role(&mut window, &mut view, &ctx, Role::TextInput, "silver");
+    type_replacing(&mut window, &mut view, &ctx, "royal");
+    click_role(&mut window, &mut view, &ctx, Role::Button, "General");
+    assert_eq!(view.section, Section::General, "premise: General is drawn");
+    for _ in 0..5 {
+        window.draw(&mut view, &ctx);
+    }
+    assert_eq!(
+        ruleset(&view).tiers[1].id,
+        "royal",
+        "the typed id committed"
+    );
+
+    click_role(&mut window, &mut view, &ctx, Role::Button, "Tiers");
+    window.draw(&mut view, &ctx);
+    assert_eq!(
+        ruleset(&view).tiers[1].id,
+        "royal",
+        "and stays after the return"
+    );
 }
 
 /// A half-typed id survives the window losing focus mid-edit (the
