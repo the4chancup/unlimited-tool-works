@@ -1847,9 +1847,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         (2026-10-30): 2 test gaps, none counted, the loop ends (rulings A1c: the open save
         refused under another spelling of its path; unsaved edits exported); the two tests
         ride the rework brief of `mutants-diff 7bb734a1`. Next: Astra over k5a + k5b +
-        8.29d1b2 + SE-GUI-43 once d1b2 is merged (`.tmp/8_9k5/astra_k5ab.md`), then one
-        SWE-2 round over k5 and the reworks
-      - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged
+        8.29d1b2 + SE-GUI-43 (2026-10-30, Codex own): 2 counted, the loop ends (rulings
+        A1ab: the team file panel's two lists push Apply out of a 960 x 600 window, the
+        help's patch refusal names the wrong check; a note's detail never asserted drawn);
+        fixes in `brief_mut838.md`. Next: one SWE-2 round over k5 and the reworks
+      - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged: running
+        2026-10-30 in the mutants worktree at `0c5571d3`, base `d2617b2f^1`
+        (`.tmp/8_30c/k5mut.sh`, log `.tmp/8_30c/k5mut.log`)
     - [ ] 8.9m the maintainer's pass over the 0.0.1 candidate (`d317b6da`), 2026-10-29:
       - [x] the drafts take the app's grey for a plain player name and a planned tool
         (DECISIONS 2026-10-29)
@@ -2704,7 +2708,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       nothing), the Save editor's `help/02_window.md` names the event logo. Package tests,
       clippy, fmt, `comment_refs` green in its worktree. SWE-2 S1838a: 1 accepted, the loop
       ends (`.tmp/8_29d/rulings_p45.md`; `755b8ad5`: the help's logo click only with a
-      page). Open: `mutants-diff 7bb734a1` (8.29d1a to 8.38a) under way
+      page). `mutants-diff 7bb734a1` (8.29d1a to 8.38a, eight crates) done 2026-10-30: 4
+      survivors, all `save_editor`: three test gaps and `terms.rs:481` equivalent on every
+      real field name; the tests ride `.tmp/8_30c/brief_mut838.md` (Opus, wt-mut838)
       Files: `save_editor/src/view/{mod,menus,quick_actions}.rs`, `view/tests/player.rs`,
       `help/02_window.md`; `ruleset_editor/src/view/{mod,preview}.rs`,
       `view/tests/{file,preview}.rs`
