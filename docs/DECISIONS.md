@@ -14334,3 +14334,18 @@ counted toward the minimum, 1/1 weak foot passing an exact 2/2), and the clean l
 file the custom checks could still refuse on Save (RE-FILE-06). The id was the one field whose
 typing lived outside the document, so Ctrl+S wrote the old id and a close dropped the new one.
 Plan: `plans/ruleset_editor.md` "The editor" (the bottom bar), Tiers, Summary, RE-SUM-01.
+
+## 2026-10-30 — save_editor — The shown team re-picked keeps the selection; the picker starts in the discovered save's folder; every export refuses the open save
+
+Decision: (1) picking the team the list already shows keeps the selected row; only a different
+team selects its team row. (2) Open's file picker starts in the folder of the selected
+version's discovered save, and where none is found, wherever the dialog itself starts. (3)
+Output rosters to TSV and the Comparator's report export refuse the open save as their
+destination, as the team file panel's exports do (2026-10-29), writing nothing.
+Why: (1) the team row heads the list, a click away, and telling a re-pick from no pick needs a
+click channel through `team_widgets`' selector for nothing a member misses; (2) a save folder
+with no EDIT file holds nothing to open, and from PES 19 the account folder is known only from
+a found save; (3) every Save dialog makes the slip of picking the save as easy as the panel's
+does, and one rule guards the same thing in every place (cv6 A1-2).
+Plan: `plans/save_editor.md` "Editing UI" (the team selector), the "Feature inventory"'s File
+operations and Database operations rows.

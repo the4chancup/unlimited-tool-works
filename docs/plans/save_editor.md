@@ -42,7 +42,7 @@ implementation is measured against.
 
 | 4ccEditor | Fate |
 |-----------|------|
-| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; warn on a global-selector mismatch, never reinterpret the open file. The Open menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version and, for 19+, account folder) as one-click entries, with the files opened earlier in the session, above the ordinary file picker, and the picker opens in the selected version's save folder when it exists — see "Savefile discovery" in the Savefile plan |
+| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; warn on a global-selector mismatch, never reinterpret the open file. The Open menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version and, for 19+, account folder) as one-click entries, with the files opened earlier in the session, above the ordinary file picker, and the picker opens in the folder of the selected version's discovered save when one is found (a folder with no EDIT file holds nothing to open, and from PES 19 the account folder is known only from a found save) — see "Savefile discovery" in the Savefile plan |
 | Save EDIT file (encrypted; always asks for a path; the first save after a load keeps the file it replaces as `<file>.BACKUP`) | Kept; plus **Save as**, and the file each save replaces kept as `.bak` (one level), at every save rather than the first after a load only |
 | Import Texport file (per-version submenu) | Kept, auto-detected version; plus **Texport export** (new — PES itself can import the result; see [Savefile plan](pes_savefile/README.md)) |
 
@@ -98,7 +98,7 @@ What exists of this is in `spec/save_editor.md` "Database operations".
 
 | 4ccEditor | Fate |
 |-----------|------|
-| Output rosters to TSV (`EDIT.tsv` in the working folder, no dialog, UTF-8; every team, hidden ones included, in roster order; per player: number, name, registered position, Finishing as the "rating", captain mark, height, playing style, skills, COM styles) | Kept, the same columns and label spellings, UTF-8 with a byte-order mark (4ccEditor's `ccs=UTF-8` writes one, and a spreadsheet reads accented names right by it); written where a save dialog says, `EDIT.tsv` its default name |
+| Output rosters to TSV (`EDIT.tsv` in the working folder, no dialog, UTF-8; every team, hidden ones included, in roster order; per player: number, name, registered position, Finishing as the "rating", captain mark, height, playing style, skills, COM styles) | Kept, the same columns and label spellings, UTF-8 with a byte-order mark (4ccEditor's `ccs=UTF-8` writes one, and a spreadsheet reads accented names right by it); written where a save dialog says, `EDIT.tsv` its default name, the open save refused as the destination as the team file panel's exports and the Comparator's report export refuse it |
 | Fix database (clear all visual flags, reset kit slots, PES17 kit-ID repair; a player's base-copy id cleared when it is neither his own nor 0 and his base-copy flag is off, the flag cleared when the id is his own or 0; every team's strip-edited flag cleared) | Kept as a maintenance action behind a confirmation dialog, under the aesthetics lock (it clears what Clear visual flags clears), one undo step, but for two parts. The base-copy repair runs only where the record has the flag (PES 15 to 18): on 19 to 21 4ccEditor tests a flag it never reads (an uninitialized field), and clearing copy ids there would change players' looks. The PES 17 kit-ID repair is not kept: its 2,500 writes step 131 bytes (`write_dataOld` advances its cursor 3 bytes, then the loop adds 0x80) over a strip table whose entries are 132 bytes (`spec/pes_savefile/model.md` "Kit slots and the strip table"), so all but the first land inside entries' bodies, and each writes 0xC0 into the strip-number byte; a repair of that table waits for its layout to be measured. The kit slots reset where the model has them (PES 17, the one version 4ccEditor writes them on) |
 | (none) | New, after 0.0.1: Save formation pictures for a range of teams ("Tactics editor", "Formation pictures") |
 
@@ -176,9 +176,10 @@ all side by side.
   that searches across all teams** (name, shirt name, ID) — finding a player no
   longer requires knowing their team first. Matching uses the colour-code-free
   `display_name()` (see the pes_savefile plan's "Name colour codes"), a team's own name
-  included. Picking a team selects its team row, so the detail shows that team's view, its
-  tactics with it: a manager who picks a team usually wants its tactics next. Picking ALL keeps
-  the selection.
+  included. Picking a different team selects its team row, so the detail shows that team's
+  view, its tactics with it: a manager who picks a team usually wants its tactics next.
+  Picking ALL, or the team already shown, keeps the selection (that team's row heads the
+  list, a click away).
 - **Player list**, 255 points wide (its rows' frame and the scroll bar's strip; egui's panel
   margins and separator come on top) and not resizable: under the design width the window scales
   instead of narrowing (`spec/core/gui.md` "Shell layout", the paragraph "Scaling with the width"), so the view always has the
@@ -253,9 +254,12 @@ all side by side.
 - **The event logo.** While a save is open and the active ruleset carries a logo
   (`plans/aatf_rules.md` "The ruleset schema", the event's logo and page), the view draws it
   at its top right; with no save open it is not drawn, because it heads an open save's view
-  and there is no view to head. It mirrors the sidebar's clover: 28 points high as the
-  clover is, its right edge 14 points from the window's and its top 8 from the view's, as the clover's ink is from the left and top,
-  as wide as the picture's shape asks up to 84 points (3:1, so a wide logo still reads). It
+  and there is no view to head. It mirrors the sidebar's clover: its box is 28 points high
+  as the clover is, its right edge 14 points from the window's and its top 8 from the view's,
+  as the clover's ink is from the left and top, and as wide as the picture's shape asks up
+  to 84 points (3:1, so a wide logo still reads); a picture wider than 3:1 is scaled to the
+  84 points and centred in the box's height (a 4:1 one is 84 × 21, 3.5 below the box's
+  top). It
   is drawn over the toolbar row's empty end and moves nothing: no row is pushed down, no
   column narrowed (the drafts' toolbar at its widest ends 136 points short of it at the
   1280-wide window, and the right column's title starts under it). Where the toolbar
@@ -314,7 +318,7 @@ all side by side.
   measured).
 - **The player view**: three columns side by side, then the Appearance section, the room
   the fixed columns leave split into four equal gaps: after the player list, between the
-  columns, and after Ability stats (29.4 points each at the 1280 × 780 window). The first
+  columns, and after Ability stats (30.4 points each at the 1280 × 780 window). The first
   counts from the list's frame, 22 points before the pane (the list's 10-point bar strip and
   the 12 between), and the last runs to the window's edge, past the pane's own 12-point right
   margin: the eye reads the gap from the list's last ink and to the window's edge, and a
@@ -702,7 +706,8 @@ Win32 original hurt the most):
      which the bench uses for its twelfth player), the two sides' bottoms level. A row's
      position (the formation's for a starter, the registered one on the bench) is drawn in
      its group's colour, the pitch badge's (below, "A marker"), so a list reads as the pitch
-     does at a glance; the names stay the text colour. Advanced
+     does at a glance; a name is never drawn in its position's colour, but in the text colour,
+     or in its own colour codes' colours (`names`, "`libs/team_widgets`" below). Advanced
      instructions is one grid: the headers Attack and Defence over their columns, each
      instruction's number (1, 2) beside its two combos, each target under its combo.
      Automatic settings is one grid of two columns of 24-point rows (Substitution beside
@@ -735,7 +740,8 @@ Win32 original hurt the most):
     each goal area 74 wide, 22 deep; each penalty arc, of the centre circle's radius about the
     penalty spot 44 from the goal line, drawn outside the box.
   - **A slot's spot** is its marker's badge centre, at (12.8 + 2.827 x, 363.8 - 6.793 y) on
-    the canvas: x 0 to 104 across the width, y 24 on the halfway line, the attack end up. This
+    the canvas: x 0 to 104 across the width, the halfway line (canvas y 192) at y 25.3, the
+    attack end up. This
     is the screen's own mapping, fitted on the ten outfield slots of /3/ (the 4chan Cup save)
     within half a pixel. A drop snaps through the same mapping. The keeper's marker is drawn
     where the screen draws him, badge centred on the goal area's line (canvas y 358.5), not
@@ -1158,8 +1164,12 @@ and no switch drawn; on, the editor **does not edit aesthetics** but through the
   `ingame_face.toml`) and recompile, then apply the patch", and a link to the apply action).
 - The same lock covers every other aesthetics write path: the team operations that write
   appearance fields (set boots/gloves IDs for everyone, set/remove FPC for the team, clear visual
-  flags, the FPC toggle), Fix database (it clears the same flags), and the aesthetics section of Team TOML and
-  legacy squad imports (the section checkbox is disabled, gameplay and tactics import as before).
+  flags, the FPC toggle), Fix database (it clears the same flags), the aesthetics section of Team TOML and
+  legacy squad imports (the section checkbox is disabled, gameplay and tactics import as before),
+  and Copy and Swap stats, which under the lock leave the free-kick motion (an
+  `[appearance.motion]` key of the export's `settings.toml`) as the target's. A roster drag is
+  not a look's edit: it moves a whole player to another slot, his looks with him, and the
+  next patch writes each id's looks from its export.
 - **Apply aesthetics patch** is the one aesthetics write open by default: open a patch; the
   version must match the save and the allocation scheme the suite's (refused otherwise, save
   untouched); the comparator's preview lists every player the patch will change with old → new;
