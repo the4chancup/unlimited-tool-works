@@ -512,6 +512,11 @@ fn a_file_of_another_version_lists_its_notes_in_words() {
             "The team file holds a player for a roster place the team leaves empty. The player \
              is skipped, but the rest is written.",
         ),
+        (
+            "import_text_cropped",
+            "The team file holds a name or shirt name longer than the save's version has room \
+             for. The text is cut to what the line shows, and the rest of the import is written.",
+        ),
     ];
     for (code, text) in catalog {
         let printed = expected
@@ -536,6 +541,32 @@ fn a_file_of_another_version_lists_its_notes_in_words() {
         warn,
         "a team key in the warning colour"
     );
+    let mut subject_only: Vec<String> = expected
+        .iter()
+        .filter(|line| line.contains("(path=team.") || line.contains("(path=tactics."))
+        .map(|line| note_group(line))
+        .collect();
+    subject_only.sort_unstable();
+    subject_only.dedup();
+    let labels: Vec<String> = panel_nodes(&mut window, &mut view)
+        .into_iter()
+        .filter(|node| node.role() == Role::Label)
+        .filter_map(|node| node.value().map(str::to_owned))
+        .collect();
+    let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let warned: Vec<&String> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(text) if galley_color(text) == warn => Some(&text.galley.job.text),
+            _ => None,
+        })
+        .filter(|text| labels.contains(text))
+        .collect();
+    assert_eq!(
+        warned.len(),
+        subject_only.len(),
+        "one subject in the warning colour per team or tactics key: {warned:#?} for {subject_only:#?}"
+    );
 
     // One collapsed header per players' group, `<subject> · <n> players`,
     // its count the command line's notes of that key.
@@ -559,6 +590,14 @@ fn a_file_of_another_version_lists_its_notes_in_words() {
         .expect("premise: a stat the save's version does not store");
     assert!(players > 1, "premise: several players' {stat}");
     let headers = note_headers(&mut window, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        nodes_in_window(&pairs, TITLE)
+            .into_iter()
+            .filter(|(_, node)| node.role() == Role::DisclosureTriangle)
+            .all(|(_, node)| node.is_expanded() != Some(true)),
+        "every group starts collapsed"
+    );
     let stat_header = format!(
         "{} \u{b7} {players} players",
         pes_savefile::interchange::team_toml::labels::stat_name(PesVersion::Pes17, &stat)
@@ -584,6 +623,21 @@ fn a_file_of_another_version_lists_its_notes_in_words() {
             .iter()
             .any(|line| line.contains("import_") || line.contains("path=")),
         "no code or key path drawn: {lines:#?}"
+    );
+
+    // The top players' group's first row: the place of the command line's
+    // first player note, the target's player at that place, no detail.
+    let place = expected
+        .iter()
+        .find_map(|line| line.split_once("(path=players.")?.1.split_once('.'))
+        .map(|(place, _)| place.to_owned())
+        .expect("premise: a player's note");
+    let at: usize = place.parse().expect("a place");
+    let player = team_entry(&view, CO).roster[at - 1].player_id;
+    let name = pes_savefile::model::names::display_name(&player_entry(&view, player).name);
+    assert_eq!(
+        row_of(&mut window, &mut view, &place),
+        [place.clone(), name]
     );
 }
 

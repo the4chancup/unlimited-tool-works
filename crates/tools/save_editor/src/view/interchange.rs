@@ -24,7 +24,7 @@ use anyhow::{anyhow, bail};
 use pes_savefile::EditFile;
 use pes_savefile::file::fresh_salt;
 use pes_savefile::interchange::legacy::{read_squad, read_tactics};
-use pes_savefile::interchange::team_toml::labels::{card_name, stat_name};
+use pes_savefile::interchange::team_toml::labels::{ABILITY_STATS, card_name, stat_name};
 use pes_savefile::interchange::team_toml::{ImportNote, TeamToml, TeamTomlError};
 use pes_savefile::interchange::texport::Texport;
 use pes_savefile::model::names::display_name;
@@ -258,14 +258,16 @@ struct Import {
     /// Whether the import leaves the team or one of its players other than
     /// the save holds them: compared once, when staged, not every frame.
     changes: bool,
-    /// The notes grouped by code and path, in first-seen order.
+    /// The notes grouped by code and, for a key's notes, its path, in
+    /// first-seen order; every empty place's note is one group.
     notes: Vec<NoteGroup>,
 }
 
-/// The notes sharing a code and a path, every player's slot counted as one
-/// path.
+/// The notes sharing a code and, for a key's notes, a path, every player's
+/// slot counted as one path; an empty slot's notes share their code alone.
 struct NoteGroup {
-    /// `<code> <path>`, a player's slot written `*`.
+    /// `<code> <path>`, a player's slot written `*`; an empty slot's group
+    /// is `<code>` alone.
     key: String,
     /// The note code, whose catalog text is drawn once over its groups.
     code: String,
@@ -557,11 +559,12 @@ fn path_place(path: &str) -> Option<u8> {
     place.parse().ok()
 }
 
-/// `note`'s key in words, as the views name it at the save's `version`: a
-/// stat by its name in that game, a skill or COM style by its card name, a
-/// motion, an edit flag and a preset's instructions with what they belong
-/// to, any other key by its last part (`Manager ID`); an empty slot's note
-/// is `Empty roster place`.
+/// `note`'s key in words, as the views name it at the save's `version`: an
+/// ability stat by its name in that game, a skill or COM style by its card
+/// name, a motion, an edit flag and a preset's instructions with what they
+/// belong to, any other key (another stat included: `Playing attitude`, as
+/// the Cutscenes row labels it) by its last part (`Manager ID`); an empty
+/// slot's note is `Empty roster place`.
 fn note_subject(version: PesVersion, note: &ImportNote) -> String {
     let Some(path) = note_path(note) else {
         return "Empty roster place".to_owned();
@@ -569,7 +572,7 @@ fn note_subject(version: PesVersion, note: &ImportNote) -> String {
     let parts: Vec<&str> = path.rsplit('.').collect();
     let last = parts[0];
     match parts.get(1).copied().unwrap_or("") {
-        "stats" => stat_name(version, last),
+        "stats" if ABILITY_STATS.contains(&last) => stat_name(version, last),
         "skills" | "com_styles" => card_name(last),
         "motion" => format!("{} motion", key_words(last)),
         "edit_flags" => format!("{} edit flag", key_words(last)),
@@ -1140,6 +1143,24 @@ mod tests {
                 Some("UNCANNY VALLEY"),
                 "",
                 "Mazing Run",
+            ),
+            (
+                ImportNote::NotInThisVersion {
+                    path: path("players.04.stats.playing_attitude"),
+                },
+                Some(4),
+                Some("MUH MAYA"),
+                "",
+                "Playing attitude",
+            ),
+            (
+                ImportNote::NotInThisVersion {
+                    path: path("players.04.stats.tight_possession"),
+                },
+                Some(4),
+                Some("MUH MAYA"),
+                "",
+                "Tight Possession",
             ),
         ];
         for (note, place, name, detail, subject) in cases {

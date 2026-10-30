@@ -829,6 +829,29 @@ mod tests {
         );
     }
 
+    /// A card a condition holds or an effect requires reads by its card
+    /// name, `&` for and.
+    #[test]
+    fn a_held_or_required_card_reads_by_its_card_name() {
+        let ruleset =
+            Ruleset::from_data_block(include_str!("../../../libs/aatf/rulesets/autumn26.rhai"))
+                .expect("the embedded ruleset loads");
+        let card = aatf::Card::try_from("cut_behind_and_turn".to_string()).expect("a card");
+        let condition = Condition {
+            holds: vec![card],
+            ..Condition::default()
+        };
+        assert_eq!(cond_text(&ruleset, &condition), "holding Cut Behind & Turn");
+        let effects = Effects {
+            require_cards: vec![card],
+            ..Effects::default()
+        };
+        assert_eq!(
+            effects_text(&ruleset, &effects),
+            "must hold Cut Behind & Turn"
+        );
+    }
+
     /// A per-tier number reads with its sign: `+` above zero, none at zero
     /// or below (the minus is the number's own).
     #[test]
