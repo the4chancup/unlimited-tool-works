@@ -5986,9 +5986,15 @@ briefs, review loops, gates and mutation runs as for any step.
       pitch stands and lands on y 4, Y's ⏴ disabled at 4, a typed 2 refused; red with
       `yMin` 0); then `team_widgets` `pitch/mod.rs` `snap` and `pitch/popover.rs`'s Y
       stepper, with tests
-    - [ ] cv9b each version draws its own screen's pitch: PES 2017's measured from its
-      texture as PES 2021's was (8.9g), the plan's pitch bullet given per version, then the
-      draft, then `team_widgets`; PES 2019's in 0.0.2; the others after
+    - [ ] cv9b each version draws its own screen's pitch (DECISIONS 2026-10-31): PES 2017's
+      measured from its texture as PES 2021's was (8.9g; `.tmp/0_0_1cv/pitch17/`: the
+      texture from `dt11_win.cpk`'s `gamePlan.bin`, mean luma difference 2.2 to the
+      maintainer's screenshot, the mapping PES 2021's on twenty badges); the plan's pitch
+      bullet per version; the draft done (`PITCH_LOOKS`, by the sidebar's PES;
+      `draft_pitch_render.py`: PES 2017 beside its texture and the screenshot, PES 2021
+      against HEAD changed in its circle and grain alone); then `team_widgets` `pitch/`
+      (`turf_image`, `paint_pitch`) with cv9a's code in one brief; PES 2019's in 0.0.2; the
+      others after
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450

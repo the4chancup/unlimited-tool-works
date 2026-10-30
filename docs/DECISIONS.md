@@ -14379,3 +14379,20 @@ below y 4, and a mouse can jump there in one frame where the game's cursor canno
 leave him at his old spot rather than on the floor the screen shows him reaching.
 Plan: `plans/save_editor.md` "Tactics editor", the drop's bullet ("A pitch player dropped on
 another") and the popover's X and Y steppers.
+
+## 2026-10-31 — save_editor, team_widgets — each version draws its own screen's pitch
+Decision: the Tactics pitch is painted from the selected game's own formation screen (the
+sidebar's PES), each version from its own texture's measurements: PES 2017's now (seven bands,
+darker turf, smaller boxes and circle), PES 2019's with 0.0.2, the others after; a version not
+yet measured draws PES 2021's. Every version's turf is painted at the texture's size with
+the texture's grain (PES 2017 6.8, PES 2021 3.5) and drawn at two thirds with linear sampling,
+as the app already drew PES 2021's and the drafts now do too; PES 2021's centre circle is
+radius 37 (was 36).
+Why: the maintainer's request after a PES 2017 check: the pitches differ, and a member checks
+a formation against his own game, so one look for all versions was unfaithful to six of seven.
+The texture's grain drawn at two thirds, not painted per canvas pixel: the screen's scaling
+softens it, and PES 2017's 6.8 painted per pixel was visibly coarser than the game (4.4 on the
+maintainer's screenshot, 4.25 drawn the screen's way). The circle's 36 was its
+inner edge: the texture's line centre is at 37, and the penalty arcs at 36.
+Plan: `plans/save_editor.md` "Tactics editor", the pitch's look (the turf, lines and keeper
+spot per version).
