@@ -575,7 +575,8 @@ fn assert_left_of_label(mark: &egui::epaint::TextShape, label: accesskit::Rect, 
 /// Asserts an ability stat's `mark` has its 11-point box end 2 points
 /// (± 0.5) before the stats' label column, whose left edge is the leftmost
 /// stat label's (the labels are left-aligned, so every one starts the
-/// column).
+/// column). The view is the PES 17 fixture save's, so the labels are
+/// PES 2017's names.
 fn assert_before_stat_column(
     mark: &egui::epaint::TextShape,
     nodes: &[accesskit::Node],
@@ -586,7 +587,7 @@ fn assert_before_stat_column(
         .map(|name| {
             label_bounds(
                 nodes,
-                &pes_savefile::interchange::team_toml::labels::title_case(name),
+                &pes_savefile::interchange::team_toml::labels::stat_name(PesVersion::Pes17, name),
             )
             .x0
         })
@@ -729,12 +730,12 @@ fn each_fields_mark_stands_left_of_its_label() {
         (
             Error,
             K::InjuryResistance { value: 2, max: 1 },
-            "Injury resistance",
+            "Injury Resistance",
         ),
         (
             Error,
             K::WeakFootUsage { value: 3, max: 2 },
-            "Weak foot: Usage",
+            "Weak Foot: Usage",
         ),
         (
             Error,
@@ -769,7 +770,7 @@ fn each_fields_mark_stands_left_of_its_label() {
         ),
         (Suggestion, unused("tricks"), "Tricks"),
         (Suggestion, unused("cards"), "Skills"),
-        (Suggestion, unused("weak_foot_usage"), "Weak foot: Usage"),
+        (Suggestion, unused("weak_foot_usage"), "Weak Foot: Usage"),
         (Suggestion, unused("weak_foot_accuracy"), "Accuracy"),
     ];
     let (mut view, mut window) = open_734("live_marks_each_field");
@@ -1191,9 +1192,9 @@ fn no_cross_overlaps_text_and_no_field_moves() {
         "Nation",
         "Age",
         "Captain",
-        "Injury resistance",
+        "Injury Resistance",
         "Form",
-        "Weak foot: Usage",
+        "Weak Foot: Usage",
         "Accuracy",
         "Stronger foot",
         "Stronger hand",
@@ -1271,7 +1272,10 @@ fn a_fields_mark_draws_its_highest_severitys_glyph_left_of_the_label() {
             violations,
             slot: 0,
             team_id: 734,
-            ruleset: rules.ruleset(),
+            wording: team_widgets::violations::Wording {
+                ruleset: rules.ruleset(),
+                version: PesVersion::Pes17,
+            },
         };
         let mut painted = None;
         let (_, _, shapes) = window.frame(events, |ui| {
@@ -1302,7 +1306,10 @@ fn a_fields_mark_draws_its_highest_severitys_glyph_left_of_the_label() {
                     violations,
                     slot: 0,
                     team_id: 734,
-                    ruleset: rules.ruleset(),
+                    wording: team_widgets::violations::Wording {
+                        ruleset: rules.ruleset(),
+                        version: PesVersion::Pes17,
+                    },
                 }
                 .paint(ui, label, live_marks::MarkedField::RegisteredPosition);
             });
@@ -1319,7 +1326,14 @@ fn a_fields_mark_draws_its_highest_severitys_glyph_left_of_the_label() {
     let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
     let rules = aatf::Rules::official();
     let line = |violation: &aatf::Violation| {
-        team_widgets::violations::violation_line(violation, 734, rules.ruleset())
+        team_widgets::violations::violation_line(
+            violation,
+            734,
+            team_widgets::violations::Wording {
+                ruleset: rules.ruleset(),
+                version: PesVersion::Pes17,
+            },
+        )
     };
     let cases = [
         (

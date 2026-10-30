@@ -21,7 +21,7 @@ use std::ops::RangeInclusive;
 use aatf::TeamView;
 use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::{
-    self, ABILITY_STATS, FOOT, PLAYABLE_POSITIONS, POSITIONS, title_case,
+    self, ABILITY_STATS, FOOT, PLAYABLE_POSITIONS, POSITIONS, stat_name, title_case,
 };
 use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerSkills, PlayerStats};
 use pes_savefile::schema::fields::{ABILITY_FIELDS, PlayerField};
@@ -29,6 +29,7 @@ use pes_savefile::schema::first_version_with;
 use studio_core::widgets::{FORM_ROW_SPACING, step_number, wheel_steps};
 use team_widgets::cards;
 use team_widgets::pitch::POSITION_ROWS;
+use team_widgets::violations::Wording;
 
 use crate::session::Session;
 use crate::view::{
@@ -130,7 +131,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
         ..
     } = view;
     // Live AATF's held check while it is the selected player's team's:
-    // the field crosses below read it, worded under the active rules.
+    // the field crosses below read it, worded under the active rules and
+    // the open save's stat names.
     let marks = live_marks::held_violations(*live_aatf, &live.check)
         .filter(|(id, _)| *id == team_id)
         .zip(rules.as_ref())
@@ -138,7 +140,10 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
             violations,
             slot,
             team_id: id,
-            ruleset: active.rules.ruleset(),
+            wording: Wording {
+                ruleset: active.rules.ruleset(),
+                version,
+            },
         });
     let Some(session) = session.as_mut() else {
         return;
@@ -383,7 +388,7 @@ pub(super) struct SmallStat {
     /// draws `shown`.
     pub(super) label: &'static str,
     /// The control's drawn label (the weak foot's two share one's:
-    /// "Weak foot: Usage", then "Accuracy").
+    /// "Weak Foot: Usage", then "Accuracy").
     pub(super) shown: &'static str,
     /// The schema field gating it.
     pub(super) field: PlayerField,
@@ -415,8 +420,8 @@ pub(super) const SMALL_STATS: [SmallStat; 4] = [
         set: |stats, value| stats.form = value,
     },
     SmallStat {
-        label: "Injury resistance",
-        shown: "Injury resistance",
+        label: "Injury Resistance",
+        shown: "Injury Resistance",
         field: PlayerField::InjuryResistance,
         min: 1,
         max: 3,
@@ -425,8 +430,8 @@ pub(super) const SMALL_STATS: [SmallStat; 4] = [
         set: |stats, value| stats.injury_resistance = value,
     },
     SmallStat {
-        label: "Weak foot usage",
-        shown: "Weak foot: Usage",
+        label: "Weak Foot Usage",
+        shown: "Weak Foot: Usage",
         field: PlayerField::WeakFootUsage,
         min: 1,
         max: 4,
@@ -435,7 +440,7 @@ pub(super) const SMALL_STATS: [SmallStat; 4] = [
         set: |stats, value| stats.weak_foot_usage = value,
     },
     SmallStat {
-        label: "Weak foot accuracy",
+        label: "Weak Foot Accuracy",
         shown: "Accuracy",
         field: PlayerField::WeakFootAccuracy,
         min: 1,
@@ -656,12 +661,13 @@ fn ability_stats(
     marks: Option<live_marks::Marks<'_>>,
 ) {
     let abilities = stats.abilities();
+    let version = session.version();
     egui::Grid::new("abilities stats")
         .num_columns(2)
         .spacing(egui::vec2(info_strip::FIELD_ROW_GAP, FORM_ROW_SPACING))
         .show(ui, |ui| {
             for (index, &label) in ABILITY_STATS.iter().enumerate() {
-                let label_cell = ui.label(title_case(label)).rect;
+                let label_cell = ui.label(stat_name(version, label)).rect;
                 match abilities[index] {
                     Some(value) => {
                         number_field(
@@ -974,7 +980,7 @@ mod tests {
     use pes_savefile::schema::{RecordSchema, schema_for};
     use pes_version::PesVersion;
 
-    use super::{SMALL_STATS, aside_cards};
+    use super::{SMALL_STATS, aside_cards, stat_name};
 
     /// The `2^bit_width - 1` bound `info_strip.rs`'s `max` reads, over the
     /// appearance record too (a field may live there on PES 15/16); `None`
@@ -1108,6 +1114,26 @@ mod tests {
                     top - shift
                 );
             }
+        }
+    }
+
+    // The Other stats' labels are fixed strings, not looked up per version:
+    // they are PES 2017's names, the one version whose names are read off
+    // its game. A version found to name them otherwise needs them looked up
+    // through `stat_name` like the ability column.
+    #[test]
+    fn the_small_stats_labels_are_the_games_names() {
+        for (field, stat) in [
+            (PlayerField::Form, "form"),
+            (PlayerField::InjuryResistance, "injury_resistance"),
+            (PlayerField::WeakFootUsage, "weak_foot_usage"),
+            (PlayerField::WeakFootAccuracy, "weak_foot_accuracy"),
+        ] {
+            let small = SMALL_STATS
+                .iter()
+                .find(|small| small.field == field)
+                .expect("an Other stats field");
+            assert_eq!(small.label, stat_name(PesVersion::Pes17, stat), "{field:?}");
         }
     }
 }

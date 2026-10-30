@@ -32,7 +32,7 @@ name. Writing it changes nothing in the save.
 
 **Multi-team AATF**
 
-Pick the first and the last team of the range (the save's first and last team to
+Pick the first and the last team of the range of teams (the save's first and last team to
 begin with); every team whose id lies between them is checked and listed under
 its id and name, its problems worded as Live AATF words them, or `All clean`
 when it has none. Suggestions are left out, since an unused allowance is the

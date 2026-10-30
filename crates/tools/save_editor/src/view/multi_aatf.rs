@@ -13,7 +13,7 @@ use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{modal, modal_buttons, step_choice, wheel_steps};
 use studio_core::{Notice, NoticeKind};
-use team_widgets::violations::{ListUse, issue_groups, rule_name, sentence};
+use team_widgets::violations::{ListUse, Wording, issue_groups, rule_name, sentence};
 
 use crate::session::rules::TeamCheck;
 use crate::view::SaveView;
@@ -178,7 +178,8 @@ fn group_line(file: &EditFile, team_id: u32, slot: Option<u8>) -> String {
 /// draws as green text so each team stands out; under it `All clean`, or
 /// each player's id and name (the team's own rows under `Team-wide
 /// issues`) indented two spaces, his rows' severity, rule and sentence
-/// (worded under `ruleset`, the active one) indented four. A team whose
+/// (worded under `ruleset`, the active one, and `file`'s version) indented
+/// four. A team whose
 /// check failed has the error under its line.
 fn copy_text(
     file: &EditFile,
@@ -187,6 +188,10 @@ fn copy_text(
     checks: &[TeamCheck],
 ) -> String {
     let description = &ruleset.name;
+    let wording = Wording {
+        ruleset,
+        version: file.version(),
+    };
     let violations: Vec<&aatf::Violation> = checks
         .iter()
         .filter_map(|check| check.as_ref().ok())
@@ -225,7 +230,7 @@ fn copy_text(
                     "    {}  {}  {}",
                     severity_word(violation.severity),
                     rule_name(&violation.kind),
-                    sentence(violation, id, ruleset)
+                    sentence(violation, id, wording)
                 ));
             }
         }

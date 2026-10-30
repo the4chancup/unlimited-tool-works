@@ -16,6 +16,7 @@ use pes_savefile::ops::compare::{CompareError, DiffScope};
 use pes_savefile::player_tables::{AppearanceTable, ItemList, PlayerTable, PlayerTableFile};
 use pes_version::{Engine, PesVersion};
 use studio_core::{CliError, RunningPes, Severity, TOOL_VERSION, ToolContext};
+use team_widgets::violations::Wording;
 
 use crate::events::Report;
 use crate::messages::{
@@ -479,7 +480,10 @@ fn check_aatf(
                 id,
                 player,
                 &violation,
-                rules.ruleset(),
+                Wording {
+                    ruleset: rules.ruleset(),
+                    version: session.version(),
+                },
                 severity,
             ));
         }

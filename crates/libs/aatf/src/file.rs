@@ -127,7 +127,7 @@ pub enum LogicIdentity {
 /// banner and the table.
 pub(crate) const LOGIC_VERSIONS: &[(u32, &str)] = &[(
     1,
-    "349f0fa699355954c6920520ed9e2f097b059b5ec76716683b0ec53802a89a37",
+    "356525154b51b166ee05e7f7d1d90b87ef34f180a07bd0d2e37b0ba94630f009",
 )];
 
 /// `text`'s logic section: from the line starting `// ==== LOGIC` to

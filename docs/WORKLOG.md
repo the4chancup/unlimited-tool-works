@@ -2830,7 +2830,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           `problem`), the logic's `weak_foot` split (logic hash `349f0fa6`); a table test of
           all 36 kinds' names and sentences; `spec/aatf_rules.md` "Hints at a valid value"
           and `spec/save_editor.md` "CLI" follow; `help/01_command_line.md` says "what is
-          wrong" since 8.29e1's merge
+          wrong" since 8.29e1's merge. SWE-2 S1d1a: 3 accepted, the loop ended
+          (`.tmp/8_29d/rulings_d1a.md`); the lead's rework: `Unused::allowance`'s doc names the
+          weak foot's halves, `logic.rhai`'s suggestions comment says `weak_foot` gives one per
+          half (logic hash now `35652515`, the sandbox `cli/dbc7.4ccrules` re-logicked), the
+          interpreter fixture raises both halves and asserts both rows exactly, the catalog's
+          `aatf_violation` text says "what is wrong". Open: the Astra round over d1a + d3a
         - [ ] d1b the rest of the inventory: the Comparator's, changes lists' and patch
           preview's undrawn fields in words, the team file notes in the catalog's member text
           and its section boxes capitalized, the badge's and quick actions' refusals, the
@@ -2838,7 +2843,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [ ] d3 the stats named as each version names them (P43, accepted 2026-10-29; DECISIONS
         "Stats are named as the save's PES version names them", "Before 0.0.1, only PES
         2017's stat names are checked"):
-        - [ ] d3a before 0.0.1, after d1a (drafted 2026-10-29, the drafts' `statLabel`; DECISIONS
+        - [x] d3a before 0.0.1, after d1a (drafted 2026-10-29, the drafts' `statLabel`; DECISIONS
           "PES 2017's stat names, read off its Edit screen"): a stat-name function in
           `pes_savefile` taking the version, PES 2017's `heading` Header, and Form, Injury
           Resistance, Weak Foot Usage, Weak Foot Accuracy in title case, read by the player
@@ -2846,7 +2851,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           `unused_sentence`, the drafts' `RULE_NAME` and sentences title case), `check-aatf`,
           the Comparator and the changes lists → verify:
           its test per stat for PES 2017 against the maintainer's captures (2026-10-29, the
-          27 names of the Edit screen's ability list)
+          27 names of the Edit screen's ability list). Done 2026-10-30 (Opus sidekick, merged
+          `02796a4a`): `pes_savefile` `labels::stat_name(version, stat)`, one exhaustive match
+          per version; `team_widgets::violations::Wording { ruleset, version }` in every AATF
+          host; `SMALL_STATS` labels title case; files `labels.rs`, `violations.rs`, the save
+          editor's `cli.rs`, `messages.rs`, `abilities.rs`, `terms.rs`, `live_marks.rs`,
+          `multi_aatf.rs`, `aatf_check.rs`, `tactics.rs` and their tests. Open: the SWE-2
+          round (an Opus slice), then the Astra round over d1a + d3a
         - [ ] d3b after 0.0.1: every other version's names, gathered from each game (the
           player.rs doc comments name no versions; Marco's RE reports for PES 2021, the
           games on F: for the rest) → verify: a test per version against the gathered names
@@ -2863,10 +2874,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         → verify: `studio`'s help tests and the help export; every topic read in the built
         window. Done 2026-10-30 (Opus sidekick, merged `be189f7f`): a subheading per subject,
         menus, choices, rules and exit codes as lists; the lead read every new chapter and the
-        sidekick's word audit (each reworded sentence, old and new) and found no fact changed; `help/*.md`, `help/core/{install,data_location}.md`, `index.html`'s
-        `HELP`. The drafts' `md()` draws no numbered list (none used yet: it learns them with
-        the first chapter that needs one). Open: the read in the built window (the built-window
-        check before the next candidate); the SWE-2 round (an Opus slice)
+        sidekick's word audit (each reworded sentence, old and new) and found no fact
+        changed; `help/*.md`, `help/core/{install,data_location}.md`, `index.html`'s `HELP`.
+        The drafts' `md()` draws no numbered list (none used yet: it learns them with the
+        first chapter that needs one). SWE-2 S1e1: 4 accepted, the loop ended; the three
+        wording fixes landed with the rulings (`.tmp/8_29d/rulings_e1.md`). Open: the read in
+        the built window (the built-window check before the next candidate)
+        - [ ] e1r the help search's labels as plain text (S1a-4; DECISIONS "A help search
+          hit's label is plain text", drafted in `index.html`'s `helpSearch`):
+          `help_window.rs` `search` drops `**`, backticks and a list item's leading dash
+          from the label's line → verify: a test searching "writing a save" gets the label
+          `Save editor › Running from a terminal › Writing a save`, and "next to the program"
+          one starting `… › Next to the program puts`
       - [ ] e2 after 0.0.1: the Team compiler's, the Export upgrader's and the other tools'
         chapters
   - [ ] 8.21 the app's font in the drafts (`core/gui.md` "The host's other review aids"; after

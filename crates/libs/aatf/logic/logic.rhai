@@ -846,8 +846,8 @@ fn player_checks(team, system, player, tier, p, room) {
     found
 }
 
-// An allowance named in `suggestions` the player does not use up, one suggestion each;
-// `this` is the ruleset.
+// An allowance named in `suggestions` the player does not use up, one suggestion each
+// (`weak_foot` one per half, usage and accuracy); `this` is the ruleset.
 fn suggestions(tier, p, player, cards) {
     let found = [];
     let slot = player.slot;

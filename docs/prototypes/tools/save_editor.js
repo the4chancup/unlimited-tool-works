@@ -516,6 +516,11 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .live-body .drow:hover { background: var(--sel-bg); }
 .live-body .drow .f { width: 190px; flex: none; overflow: hidden; text-overflow: ellipsis; }
 .live-body .drow .v { color: var(--strong); }
+/* The rule's name takes its severity's colour, as the app's rows do; set on the
+   name itself, since a row is also a selectable label, whose grey (and hover
+   white) would otherwise win over the row's err or warn class. */
+.drow.err .f { color: var(--error); }
+.drow.warn .f { color: var(--warn); }
 .live-body .grp { color: var(--strong); margin: 4px 0 1px; }
 /* The toolbar's toggle: framed whether on or off, so it reads as a control
    beside the menus; on, filled as a selected label is. */
@@ -3894,7 +3899,7 @@ function eventLogo() {
   const rs = RULESETS[D.ruleset];
   if (!rs || !rs.logo) return null;
   const img = h("img", { class: "event-logo" + (rs.page ? " link" : ""), id: "event-logo", src: rs.logo,
-    alt: rs.label, title: rs.page ? rs.label + "\nOpens " + rs.page : rs.label,
+    alt: rs.label, title: rs.page ? rs.label + "\n\nClick here to open the event's page:\n" + rs.page : rs.label,
     onclick: rs.page ? () => window.open(rs.page, "_blank", "noopener") : null });
   requestAnimationFrame(() => {
     const bar = document.querySelector(".toolbar");
