@@ -48,7 +48,8 @@ pub(crate) struct RulesetView {
     /// The widget holding the keyboard at the last frame's end (the
     /// Save editor's `focused`): its loss seals the widget's gesture.
     focused: Option<egui::Id>,
-    /// The data block's whole lines at the last recorded edit.
+    /// The data block's whole lines at the last recorded edit (the opened
+    /// document's before the first).
     previous_lines: Vec<String>,
     /// The preview's highlighted lines, whole: the ones the last recorded
     /// edit changed (the draft's `refresh`).

@@ -2656,11 +2656,25 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     and four of its own misreadings fixed, `3fea5246`). Not checked: the running-game dialog
     (a running PES), the Fox ownership line's Apply link, the AATF screen against its
     PES 2017 sample, 8.31's list. Found:
-    - [ ] a the number dialogs' field the drafts' 52-point box (`plans/save_editor.md`
+    - [x] a the number dialogs' field the drafts' 52-point box (`plans/save_editor.md`
       "Editing UI", the number row's sentence), not egui's 40; with Astra A1p45libs-1
       (RE-FILE-09's save starts from a file that differs from what it must write) → verify:
       the number row's test measures 52, red first; RE-FILE-09 red against a Save that
       writes nothing
+      Done 2026-10-30 (Opus sidekick, `84bdd381`, merged `16928f0c`): `view/mod.rs`
+      `NUMBER_BOX` replaces `SET_STATS_FIELD_WIDTH` and `BOGLO_BOX`, `stat_num_dialog`'s field
+      52 (red: "the box's width 40"); RE-FILE-09 starts from DBC7's block with the logo after
+      the name and the page last (red with the Save removed: "page follows name"; the lead
+      made its premise an `assert_ne!` against the block); with A1p45editors 1 and 2: the
+      Ruleset editor's preview compares whole lines and shortens the logo's only when
+      drawing (`preview.rs` `block_line`; red: DBC7's logo replaced by VGL's marked
+      nothing), the Save editor's `help/02_window.md` names the event logo. Package tests,
+      clippy, fmt, `comment_refs` green in its worktree. SWE-2 S1838a: 1 accepted, the loop
+      ends (`.tmp/8_29d/rulings_p45.md`; `755b8ad5`: the help's logo click only with a
+      page). Open: `mutants-diff 7bb734a1` (8.29d1a to 8.38a) under way
+      Files: `save_editor/src/view/{mod,menus,quick_actions}.rs`, `view/tests/player.rs`,
+      `help/02_window.md`; `ruleset_editor/src/view/{mod,preview}.rs`,
+      `view/tests/{file,preview}.rs`
     - [ ] b a disabled button's look, the drafts' or egui's: QUESTIONS "A disabled button's
       look"
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
@@ -2979,6 +2993,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
             1-based places), the card and playing-style labels' spellings (`GK Long Throw`,
             `Classic No. 10`), the man-marking row's value (what the stored number names,
             from the game first)
+            Drafted and planned 2026-10-30 (`6a5ed6aa`; DECISIONS "card names, the team file
+            notes, man marking and the tier refusals in words"; the drafts' `cardName`,
+            `IX_NOTE_TEXT`, `ixSubject`, `ixWarningGroups`): the man-marking byte needed no new
+            look, DECISIONS 2026-10-13 measured it (the opponent's formation slot). Opus
+            sidekick running in `../4cc-studio-temp/wt-d1b2` (branch `d1b2`, brief
+            `.tmp/8_29d/brief_d1b2.md`)
       - [ ] d3 the stats named as each version names them (P43, accepted 2026-10-29; DECISIONS
         "Stats are named as the save's PES version names them", "Before 0.0.1, only PES
         2017's stat names are checked"):
