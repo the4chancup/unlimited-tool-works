@@ -154,10 +154,14 @@ pub enum TeamViewError {
         /// The id looked up.
         team_id: u32,
     },
-    /// A roster slot names a player the save does not hold.
-    #[error("roster slot {slot} names player {player_id}, whom the save does not hold")]
+    /// A roster slot names a player the save does not hold. The text names
+    /// the place as the player list numbers it, from 01.
+    #[error(
+        "place {:02} of the roster names player {player_id}, whom the save does not hold",
+        u32::from(*.slot) + 1
+    )]
     MissingPlayer {
-        /// The roster slot.
+        /// The roster slot, numbered from 0.
         slot: u8,
         /// The missing player id.
         player_id: u32,
@@ -523,12 +527,17 @@ mod tests {
             EditFile::from_bytes(&fixture_save(PesVersion::Pes19)).expect("fixture save");
         assert_ne!(team_mut(&mut file).roster[5].player_id, 9999);
         team_mut(&mut file).roster[5].player_id = 9999;
+        let error = TeamView::new(&file, 701).expect_err("a missing player");
         assert_eq!(
-            TeamView::new(&file, 701).expect_err("a missing player"),
+            error,
             TeamViewError::MissingPlayer {
                 slot: 5,
                 player_id: 9999
             }
+        );
+        assert_eq!(
+            error.to_string(),
+            "place 06 of the roster names player 9999, whom the save does not hold"
         );
     }
 

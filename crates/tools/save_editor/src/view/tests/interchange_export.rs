@@ -282,7 +282,7 @@ fn texport_round_trip(version: PesVersion, test: &str, suggested_name: &str) {
     ticked.sort_unstable();
     assert_eq!(
         ticked,
-        ["aesthetics", "gameplay", "tactics"],
+        ["Aesthetics", "Gameplay", "Tactics"],
         "every section"
     );
     // Read back onto the team it came from, every section changes nothing.

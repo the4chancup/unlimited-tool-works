@@ -16,7 +16,7 @@ Every player is rated A at his registered position; no B ratings; GK is never a 
 - **PES 16 support settings** (PES 16): automatic substitution off, automatic offside trap off, automatic preset change off.
 
 ## Special rules
-- **The free skills**: Scissors Feint, Flip Flap, Marseille Turn, Sombrero, Cut Behind And Turn, Scotch Move, Acrobatic Finishing, Heel Trick, First Time Shot, Malicia, Double Touch, Crossover Turn or Step On Skill free.
+- **The free skills**: Scissors Feint, Flip Flap, Marseille Turn, Sombrero, Cut Behind & Turn, Scotch Move, Acrobatic Finishing, Heel Trick, First Time Shot, Malicia, Double Touch, Crossover Turn or Step on Skill free.
 - **The pass skills are free to non-medals**: Regular or Buffed: One Touch Pass, Weighted Pass or Pinpoint Crossing free.
 - **The captain's Captaincy card is free**: The captain: Captaincy free.
 - **Incisive Run and Long Ranger are free COM styles**: Incisive Run or Long Ranger free.

@@ -15,7 +15,7 @@ May sit below their target: attacking prowess, defensive prowess, weak foot usag
 Every player is rated A at his registered position; starters play only where rated A in preset 1; no B ratings; GK is never a second A; age 15 to 50; weight between height − 129 (at least 30) and height − 81; a captain; at least 1 goalkeeper; at most 41 skill cards.
 
 ## Card groups
-- **Tricks**: scissors feint, double touch, flip flap, marseille turn, sombrero, crossover turn, cut behind and turn, scotch move, step on skill, rabona, no look pass, malicia.
+- **Tricks**: Scissors Feint, Double Touch, Flip Flap, Marseille Turn, Sombrero, Crossover Turn, Cut Behind & Turn, Scotch Move, Step on Skill, Rabona, No Look Pass, Malicia.
 
 ## Team settings
 - **No man marking**: man marking off.

@@ -8,7 +8,7 @@
 //! report's text.
 
 use pes_savefile::interchange::team_toml::labels::{
-    ABILITY_STATS, COM_STYLES, PLAYABLE_POSITIONS, POSITIONS, SKILLS, stat_name, title_case,
+    ABILITY_STATS, COM_STYLES, PLAYABLE_POSITIONS, POSITIONS, SKILLS, card_name, stat_name,
 };
 use pes_savefile::model::TeamEntry;
 use pes_savefile::ops::compare::{PlayerDiff, TeamDiff};
@@ -338,12 +338,12 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
             rating_label(new),
         ),
         PlayerField::Skill(index) => term(
-            title_case(SKILLS[usize::from(index)]),
+            card_name(SKILLS[usize::from(index)]),
             on_off(old),
             on_off(new),
         ),
         PlayerField::ComStyle(index) => term(
-            title_case(COM_STYLES[usize::from(index)]),
+            card_name(COM_STYLES[usize::from(index)]),
             on_off(old),
             on_off(new),
         ),
@@ -790,6 +790,12 @@ mod tests {
             "Through Passing",
             "on",
             "off",
+        );
+        assert_term(
+            &row_term(version, &field(PlayerField::Skill(20), 0, 1)),
+            "GK Long Throw",
+            "off",
+            "on",
         );
         assert_term(
             &row_term(version, &field(PlayerField::ComStyle(6), 0, 1)),

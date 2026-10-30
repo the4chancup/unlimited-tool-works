@@ -5,7 +5,8 @@
 //! deciding the format: a Team TOML, a squad (`.4ccs`) or tactics (`.4cct`)
 //! file, or a Texport. The member picks which of the sections the file
 //! holds load (gameplay, aesthetics, tactics), reads what the import will
-//! not write as written (the command line's note lines, grouped) and, for a
+//! not write as written (the catalog's text once per note code, the notes
+//! grouped by key in words with their players) and, for a
 //! squad file, who gets which record. The staged import is the file applied
 //! to copies of the target team and its players, recomputed when the save
 //! changes (an edit, an undo, another save opened), the target or the
@@ -23,17 +24,18 @@ use anyhow::{anyhow, bail};
 use pes_savefile::EditFile;
 use pes_savefile::file::fresh_salt;
 use pes_savefile::interchange::legacy::{read_squad, read_tactics};
-use pes_savefile::interchange::team_toml::{TeamToml, TeamTomlError};
+use pes_savefile::interchange::team_toml::labels::{ABILITY_STATS, card_name, stat_name};
+use pes_savefile::interchange::team_toml::{ImportNote, TeamToml, TeamTomlError};
 use pes_savefile::interchange::texport::Texport;
 use pes_savefile::model::names::display_name;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_savefile::schema::texport::texport_layout;
 use pes_version::PesVersion;
 use studio_core::widgets::{add_enabled, add_enabled_ui, checkbox, collapsing_header};
-use studio_core::{EventLines, Message, Notice, NoticeKind, PipelineEvent};
+use studio_core::{Notice, NoticeKind};
 use team_widgets::names::append_name;
 
-use crate::messages::import_note;
+use crate::messages::{import_note, when_and_effect};
 use crate::session::Session;
 use crate::session::import_sections::{Sections, keep_sections};
 use crate::view::appearance::OWNERSHIP_TIP;
@@ -256,17 +258,39 @@ struct Import {
     /// Whether the import leaves the team or one of its players other than
     /// the save holds them: compared once, when staged, not every frame.
     changes: bool,
-    /// The notes grouped by code and path, in first-seen order.
+    /// The notes grouped by code and, for a key's notes, its path, in
+    /// first-seen order; every empty place's note is one group.
     notes: Vec<NoteGroup>,
 }
 
-/// The notes sharing a code and a path, every player's slot counted as one
-/// path.
+/// The notes sharing a code and, for a key's notes, a path, every player's
+/// slot counted as one path; an empty slot's notes share their code alone.
 struct NoteGroup {
-    /// `<code> <path>`, a player's slot written `*`.
+    /// `<code> <path>`, a player's slot written `*`; an empty slot's group
+    /// is `<code>` alone.
     key: String,
-    /// Each note's line as the command line prints it.
-    lines: Vec<String>,
+    /// The note code, whose catalog text is drawn once over its groups.
+    code: String,
+    /// The catalog's `when` and `effect` for the code, as one line.
+    text: String,
+    /// The key in words (`Manager ID`, `Tight Possession`), or `Empty
+    /// roster place`.
+    subject: String,
+    /// One per note, in the order the import gave them.
+    notes: Vec<NoteRow>,
+}
+
+/// One note of a group, as the group's list draws it.
+struct NoteRow {
+    /// The roster place the note is about (1-based, as the file's
+    /// `players.NN` spells it); `None` for a team or tactics key.
+    place: Option<u8>,
+    /// The target team's player at that place as stored, colour codes
+    /// included; `None` when the place holds no player.
+    name: Option<String>,
+    /// What the note carries: a playing style's name, a lowered value's
+    /// `19 → 0`, the cropped text; empty when it carries nothing.
+    detail: String,
 }
 
 /// What a click in the window asks for, done after the window is drawn.
@@ -449,20 +473,23 @@ fn stage(
     let mut imported = team.clone();
     let mut players = rostered.clone();
     let notes = kept.apply(file.version(), &mut imported, &mut players)?;
-    let mut lines = EventLines::new();
     let mut groups: Vec<NoteGroup> = Vec::new();
     for note in &notes {
         let message = import_note(note);
-        let key = group_key(&message);
-        let line = lines
-            .line(&PipelineEvent::Message(message))
-            .expect("a Message event has a console line");
+        let key = group_key(&message.code.code, note);
+        let row = note_row(file, team, note);
         match groups.iter_mut().find(|group| group.key == key) {
-            Some(group) => group.lines.push(line),
-            None => groups.push(NoteGroup {
-                key,
-                lines: vec![line],
-            }),
+            Some(group) => group.notes.push(row),
+            None => {
+                let (when, effect) = when_and_effect(&message);
+                groups.push(NoteGroup {
+                    key,
+                    code: message.code.code.to_string(),
+                    text: format!("{when} {effect}"),
+                    subject: note_subject(file.version(), note),
+                    notes: vec![row],
+                });
+            }
         }
     }
     Ok(Import {
@@ -473,24 +500,112 @@ fn stage(
     })
 }
 
-/// A note's group: its code and its `path` (an empty slot's: its `slot`),
-/// `players.NN.` written `players.*.` so one key over every player is one
-/// group.
-fn group_key(message: &Message) -> String {
-    let at = message
-        .context
-        .iter()
-        .find(|(key, _)| key == "path" || key == "slot")
-        .map(|(_, value)| value.as_str())
-        .expect("every import note names a path or a slot");
-    let at = match at
+/// A note's group: its `code` and its path, `players.NN.` written
+/// `players.*.` so one key over every player is one group. An empty slot's
+/// note has no path and keys by its code alone, so every empty place the
+/// file names is one group too.
+fn group_key(code: &str, note: &ImportNote) -> String {
+    let Some(path) = note_path(note) else {
+        return code.to_owned();
+    };
+    let path = match path
         .strip_prefix("players.")
         .and_then(|rest| rest.split_once('.'))
     {
         Some((_, tail)) => format!("players.*.{tail}"),
-        None => at.to_owned(),
+        None => path.to_owned(),
     };
-    format!("{} {at}", message.code.code)
+    format!("{code} {path}")
+}
+
+/// The key path `note` is about; `None` for an empty slot's note, which
+/// names a roster place and no key.
+fn note_path(note: &ImportNote) -> Option<&str> {
+    match note {
+        ImportNote::NotInThisVersion { path }
+        | ImportNote::NotEncodable { path, .. }
+        | ImportNote::Capped { path, .. }
+        | ImportNote::TextCropped { path, .. } => Some(path),
+        ImportNote::EmptySlot { .. } => None,
+    }
+}
+
+/// `note`'s row: the place its `players.NN.` path or empty slot names,
+/// `team`'s player at that place, and what the note carries.
+fn note_row(file: &EditFile, team: &TeamEntry, note: &ImportNote) -> NoteRow {
+    let (place, detail) = match note {
+        ImportNote::NotInThisVersion { path } => (path_place(path), String::new()),
+        ImportNote::NotEncodable { path, label } => (path_place(path), card_name(label)),
+        ImportNote::Capped { path, from, to } => {
+            (path_place(path), format!("{from} \u{2192} {to}"))
+        }
+        ImportNote::EmptySlot { slot } => (Some(*slot), String::new()),
+        ImportNote::TextCropped { path, cropped } => (path_place(path), display_name(cropped)),
+    };
+    let name = place
+        .and_then(|place| team.roster.get(usize::from(place).checked_sub(1)?))
+        .and_then(|slot| file.player(slot.player_id))
+        .map(|player| player.name.clone());
+    NoteRow {
+        place,
+        name,
+        detail,
+    }
+}
+
+/// The place a `players.NN.` path names; `None` for a team or tactics key.
+fn path_place(path: &str) -> Option<u8> {
+    let (place, _) = path.strip_prefix("players.")?.split_once('.')?;
+    place.parse().ok()
+}
+
+/// `note`'s key in words, as the views name it at the save's `version`: an
+/// ability stat by its name in that game, a skill or COM style by its card
+/// name, a motion, an edit flag and a preset's instructions with what they
+/// belong to, any other key (another stat included: `Playing attitude`, as
+/// the Cutscenes row labels it) by its last part (`Manager ID`); an empty
+/// slot's note is `Empty roster place`.
+fn note_subject(version: PesVersion, note: &ImportNote) -> String {
+    let Some(path) = note_path(note) else {
+        return "Empty roster place".to_owned();
+    };
+    let parts: Vec<&str> = path.rsplit('.').collect();
+    let last = parts[0];
+    match parts.get(1).copied().unwrap_or("") {
+        "stats" if ABILITY_STATS.contains(&last) => stat_name(version, last),
+        "skills" | "com_styles" => card_name(last),
+        "motion" => format!("{} motion", key_words(last)),
+        "edit_flags" => format!("{} edit flag", key_words(last)),
+        "instructions" => {
+            let side = if last == "attack" {
+                "attacking"
+            } else {
+                "defending"
+            };
+            let preset = parts.get(2).copied().unwrap_or("");
+            format!("{} {side} instructions", key_words(preset))
+        }
+        _ => key_words(last),
+    }
+}
+
+/// A key's part in words: underscores as spaces, `id` as ID, `color` as
+/// colour, the first letter a capital (`manager_id` reads `Manager ID`).
+fn key_words(part: &str) -> String {
+    let words = part
+        .split('_')
+        .map(|word| match word {
+            "id" => "ID",
+            "color" => "colour",
+            word => word,
+        })
+        .collect::<Vec<_>>()
+        .join(" ");
+    let mut chars = words.chars();
+    match chars.next() {
+        Some(first) => first.to_uppercase().chain(chars).collect(),
+        None => words,
+    }
 }
 
 /// The window for one frame, while it is the open panel and a save is open.
@@ -748,19 +863,19 @@ fn contents(
     ui.horizontal_wrapped(|ui| {
         ui.weak("Sections ");
         if staged.held.gameplay {
-            checkbox(ui, &mut sections.gameplay, "gameplay");
+            checkbox(ui, &mut sections.gameplay, "Gameplay");
         }
         if staged.held.aesthetics {
             if locked {
-                add_enabled_ui(ui, false, |ui| checkbox(ui, &mut false, "aesthetics"))
+                add_enabled_ui(ui, false, |ui| checkbox(ui, &mut false, "Aesthetics"))
                     .inner
                     .on_disabled_hover_text(OWNERSHIP_TIP);
             } else {
-                checkbox(ui, &mut sections.aesthetics, "aesthetics");
+                checkbox(ui, &mut sections.aesthetics, "Aesthetics");
             }
         }
         if staged.held.tactics {
-            checkbox(ui, &mut sections.tactics, "tactics");
+            checkbox(ui, &mut sections.tactics, "Tactics");
         }
     });
     match &staged.import {
@@ -855,25 +970,209 @@ fn pairing_rows(ui: &mut egui::Ui, rows: &[Pairing]) {
         });
 }
 
-/// The note groups in a scroll area as tall as the pairing list at most,
-/// each a collapsed header `<count> × <key>` over its lines in the warning
-/// colour, monospace.
+/// The notes in a scroll area as tall as the pairing list at most (the
+/// draft's `#ix-warnings`): per code, in first-seen order, the catalog's
+/// text as one weak line, then the code's groups. A team key's group is
+/// its subject alone in the warning colour; a players' group is a
+/// collapsed header `<subject> · <n> players` over one row per player.
 fn notes(ui: &mut egui::Ui, groups: &[NoteGroup]) {
     let warn = ui.visuals().warn_fg_color;
+    let mut codes: Vec<&str> = Vec::new();
+    for group in groups {
+        if !codes.contains(&group.code.as_str()) {
+            codes.push(&group.code);
+        }
+    }
     egui::ScrollArea::vertical()
         .id_salt("save_editor_interchange_note_groups")
         .max_height(LIST_HEIGHT)
         .auto_shrink([false, true])
         .show(ui, |ui| {
-            for group in groups {
-                collapsing_header(format!("{} \u{d7} {}", group.lines.len(), group.key))
-                    .id_salt(("save_editor_interchange_notes", group.key.as_str()))
-                    .default_open(false)
-                    .show(ui, |ui| {
-                        for line in &group.lines {
-                            ui.label(egui::RichText::new(line).monospace().color(warn));
-                        }
-                    });
+            for code in codes {
+                let of_code: Vec<&NoteGroup> =
+                    groups.iter().filter(|group| group.code == code).collect();
+                ui.label(egui::RichText::new(&of_code[0].text).small().weak());
+                for group in of_code {
+                    let players = group
+                        .notes
+                        .iter()
+                        .filter(|note| note.place.is_some())
+                        .count();
+                    if players == 0 {
+                        ui.colored_label(warn, &group.subject);
+                        continue;
+                    }
+                    let noun = if players == 1 { "player" } else { "players" };
+                    collapsing_header(format!("{} \u{b7} {players} {noun}", group.subject))
+                        .id_salt(("save_editor_interchange_notes", group.key.as_str()))
+                        .default_open(false)
+                        .show(ui, |ui| note_rows(ui, &group.notes));
+                }
             }
         });
+}
+
+/// A players' group's rows: the place (weak), the player's name in its
+/// colour codes as the pairing list draws it (`(empty place)` when the
+/// place holds none), and the note's detail (weak).
+fn note_rows(ui: &mut egui::Ui, notes: &[NoteRow]) {
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    for note in notes {
+        let Some(place) = note.place else {
+            continue;
+        };
+        ui.horizontal(|ui| {
+            ui.weak(format!("{place:02}"));
+            match &note.name {
+                Some(name) => {
+                    let mut job = egui::text::LayoutJob::default();
+                    append_name(&mut job, name, &font);
+                    ui.label(job);
+                }
+                None => {
+                    ui.weak("(empty place)");
+                }
+            }
+            if !note.detail.is_empty() {
+                ui.weak(&note.detail);
+            }
+        });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use pes_savefile::interchange::team_toml::ImportNote;
+    use pes_savefile::{EditFile, fixture_save};
+    use pes_version::PesVersion;
+
+    use super::{note_row, note_subject};
+
+    /// One note of each kind onto PES 19's team 701 (`/3/`), whose places
+    /// 01 to 23 hold players of distinct names and 24 none: its row's place,
+    /// the target's stored name at that place and the detail, and its
+    /// subject.
+    #[test]
+    fn each_note_kind_reads_its_place_name_detail_and_subject() {
+        let file = EditFile::from_bytes(&fixture_save(PesVersion::Pes19)).expect("fixture save");
+        let team = file.team(701).expect("team 701");
+        assert_eq!(team.roster[23].player_id, 0, "premise: place 24 empty");
+        let path = |path: &str| path.to_owned();
+        let cases = [
+            (
+                ImportNote::NotEncodable {
+                    path: path("players.03.positions.playing_style"),
+                    label: "classic_no_10".to_owned(),
+                },
+                Some(3),
+                Some("3DSMAX HAS STOPPED WORKING"),
+                "Classic No. 10",
+                "Playing style",
+            ),
+            (
+                ImportNote::Capped {
+                    path: path("players.05.appearance.motion.free_kick"),
+                    from: 19,
+                    to: 15,
+                },
+                Some(5),
+                Some("HOW DO I?"),
+                "19 \u{2192} 15",
+                "Free kick motion",
+            ),
+            (
+                ImportNote::TextCropped {
+                    path: path("players.07.name"),
+                    cropped: "JIGGLE PHY".to_owned(),
+                },
+                Some(7),
+                Some("JIGGLE PHYSICS"),
+                "JIGGLE PHY",
+                "Name",
+            ),
+            (
+                ImportNote::EmptySlot { slot: 24 },
+                Some(24),
+                None,
+                "",
+                "Empty roster place",
+            ),
+            (
+                ImportNote::NotInThisVersion {
+                    path: path("team.edit_flags.stadium"),
+                },
+                None,
+                None,
+                "",
+                "Stadium edit flag",
+            ),
+            (
+                ImportNote::NotEncodable {
+                    path: path("tactics.preset_1.instructions.attack"),
+                    label: "wing_back".to_owned(),
+                },
+                None,
+                None,
+                "Wing Back",
+                "Preset 1 attacking instructions",
+            ),
+            (
+                ImportNote::NotEncodable {
+                    path: path("tactics.preset_2.instructions.defence"),
+                    label: "wing_back".to_owned(),
+                },
+                None,
+                None,
+                "Wing Back",
+                "Preset 2 defending instructions",
+            ),
+            (
+                ImportNote::NotInThisVersion {
+                    path: path("players.02.skills.skills.gk_long_throw"),
+                },
+                Some(2),
+                Some("UNCANNY VALLEY"),
+                "",
+                "GK Long Throw",
+            ),
+            (
+                ImportNote::NotInThisVersion {
+                    path: path("players.02.skills.com_styles.mazing_run"),
+                },
+                Some(2),
+                Some("UNCANNY VALLEY"),
+                "",
+                "Mazing Run",
+            ),
+            (
+                ImportNote::NotInThisVersion {
+                    path: path("players.04.stats.playing_attitude"),
+                },
+                Some(4),
+                Some("MUH MAYA"),
+                "",
+                "Playing attitude",
+            ),
+            (
+                ImportNote::NotInThisVersion {
+                    path: path("players.04.stats.tight_possession"),
+                },
+                Some(4),
+                Some("MUH MAYA"),
+                "",
+                "Tight Possession",
+            ),
+        ];
+        for (note, place, name, detail, subject) in cases {
+            let row = note_row(&file, team, &note);
+            assert_eq!(row.place, place, "{note:?}'s place");
+            assert_eq!(row.name.as_deref(), name, "{note:?}'s name");
+            assert_eq!(row.detail, detail, "{note:?}'s detail");
+            assert_eq!(
+                note_subject(PesVersion::Pes19, &note),
+                subject,
+                "{note:?}'s subject"
+            );
+        }
+    }
 }

@@ -96,6 +96,14 @@ next, the test count from the gates' last run, in words for someone who has neve
 four more phases had closed). Moving per phase, not at the
 end of the project, is what keeps the spec true while the memory of the work is fresh.
 
+**Cutting a release** whose phases are still open (0.0.1, a preview cut from Phase 8) runs
+step (1) of "Closing a phase", the converge and its design-health pass, over what the
+release ships, before the cut; the release's cut step in the worklog names it as a
+prerequisite, so the cut cannot be checked off without it. The per-slice review loops do not
+stand in for it: each reads one surface against its own sections, and none asks whether the
+shipped whole meets its plan. A rule tied to a phase's close alone left 0.0.1's candidate
+with the maintainer, every slice reviewed and the Save editor never converged (2026-10-30).
+
 **Lead and sidekick.** Sessions run as a lead model that plans, briefs, reviews and talks to the
 user, and a sidekick model (a different family) that implements and runs the gates. The lead
 hand-writes only what is *correctness-critical*: things whose wrong version passes instead of

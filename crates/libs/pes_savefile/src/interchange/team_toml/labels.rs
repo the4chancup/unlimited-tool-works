@@ -176,13 +176,35 @@ pub const ABILITY_STATS: [&str; 25] = [
 ];
 
 /// `name`'s label as the draft's `titleCase` writes it: underscores as
-/// spaces, each word capitalized (the card and stat labels the save editor
-/// draws from these tables).
+/// spaces, each word capitalized (the stat labels the save editor draws
+/// from these tables; a card's name is `card_name`'s).
 pub fn title_case(name: &str) -> String {
     name.split('_')
         .map(|word| {
             let (first, rest) = word.split_at(1);
             format!("{}{rest}", first.to_uppercase())
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// A skill's, COM style's or playing style's name as the views draw it: its
+/// `SKILLS`, `COM_STYLES` or `PLAY_STYLES` spelling read as an English title.
+/// `gk` is GK, `and` is &, `in`, `on`, `the` and `to` stay lower case after
+/// the first word, and `no` before `10` is No. (`GK Long Throw`, `Cut Behind
+/// & Turn`, `Fox in the Box`, `Classic No. 10`), where the bare title case
+/// would draw `Gk Long Throw` and `Classic No 10`.
+pub fn card_name(id: &str) -> String {
+    let words: Vec<&str> = id.split('_').collect();
+    words
+        .iter()
+        .enumerate()
+        .map(|(i, &word)| match word {
+            "gk" => "GK".to_owned(),
+            "and" => "&".to_owned(),
+            "no" if words.get(i + 1) == Some(&"10") => "No.".to_owned(),
+            "in" | "on" | "the" | "to" if i > 0 => word.to_owned(),
+            _ => title_case(word),
         })
         .collect::<Vec<_>>()
         .join(" ")
@@ -332,6 +354,98 @@ mod tests {
         assert_eq!(title_case("speeding_bullet"), "Speeding Bullet");
         assert_eq!(title_case("goal_poacher"), "Goal Poacher");
         assert_eq!(title_case("sombrero"), "Sombrero");
+    }
+
+    /// Every skill, COM style and playing style, in table order, under the
+    /// name the views draw for it.
+    #[test]
+    fn card_name_reads_every_card_as_an_english_title() {
+        let skills = [
+            "Scissors Feint",
+            "Flip Flap",
+            "Marseille Turn",
+            "Sombrero",
+            "Cut Behind & Turn",
+            "Scotch Move",
+            "Heading",
+            "Long Range Drive",
+            "Knuckle Shot",
+            "Acrobatic Finishing",
+            "Heel Trick",
+            "First Time Shot",
+            "One Touch Pass",
+            "Weighted Pass",
+            "Pinpoint Crossing",
+            "Outside Curler",
+            "Rabona",
+            "Low Lofted Pass",
+            "Low Punt Trajectory",
+            "Long Throw",
+            "GK Long Throw",
+            "Malicia",
+            "Man Marking",
+            "Track Back",
+            "Acrobatic Clear",
+            "Captaincy",
+            "Super Sub",
+            "Fighting Spirit",
+            "Double Touch",
+            "Crossover Turn",
+            "Step on Skill",
+            "Chip Shot",
+            "Dipping Shots",
+            "Rising Shots",
+            "No Look Pass",
+            "GK High Punt",
+            "Penalty Specialist",
+            "GK Penalty Specialist",
+            "Interception",
+            "Long Range Shooting",
+            "Through Passing",
+        ];
+        let com_styles = [
+            "Trickster",
+            "Mazing Run",
+            "Speeding Bullet",
+            "Incisive Run",
+            "Long Ball Expert",
+            "Early Cross",
+            "Long Ranger",
+        ];
+        let play_styles = [
+            "None",
+            "Goal Poacher",
+            "Dummy Runner",
+            "Fox in the Box",
+            "Target Man",
+            "Creative Playmaker",
+            "Prolific Winger",
+            "Roaming Flank",
+            "Crossing Specialist",
+            "Classic No. 10",
+            "Hole Player",
+            "Box to Box",
+            "The Destroyer",
+            "Orchestrator",
+            "Anchor Man",
+            "Offensive Fullback",
+            "Fullback Finisher",
+            "Defensive Fullback",
+            "Build Up",
+            "Extra Frontman",
+            "Offensive Goalkeeper",
+            "Defensive Goalkeeper",
+        ];
+        for (ids, names) in [
+            (SKILLS.as_slice(), skills.as_slice()),
+            (COM_STYLES.as_slice(), com_styles.as_slice()),
+            (PLAY_STYLES.as_slice(), play_styles.as_slice()),
+        ] {
+            assert_eq!(ids.len(), names.len());
+            for (id, name) in ids.iter().zip(names) {
+                assert_eq!(card_name(id), *name, "{id}");
+            }
+        }
     }
 
     /// PES 2017's Edit screen lists its 23 abilities, then the weak foot's

@@ -19,7 +19,7 @@ Brackets: Manlet up to 175, Mid 180, Tall 185, Giant 194, Giga 199 cm.
 Every player is rated A at his registered position; starters play only where rated A in preset 1; no B ratings; GK is never a second A; age 15 to 50; weight between height − 129 (at least 30) and height − 81; a captain; at least 1 goalkeeper; at most 10 skill cards.
 
 ## Card groups
-- **Tricks**: scissors feint, flip flap, marseille turn, sombrero, cut behind and turn, scotch move, rabona, double touch, crossover turn, step on skill, no look pass.
+- **Tricks**: Scissors Feint, Flip Flap, Marseille Turn, Sombrero, Cut Behind & Turn, Scotch Move, Rabona, Double Touch, Crossover Turn, Step on Skill, No Look Pass.
 
 ## Special rules
 - **Malicia is a free card**: Malicia free.

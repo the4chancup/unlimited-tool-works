@@ -23,6 +23,14 @@ names where the question came from so the context can be read there.
     matches the drafts within 1 point (2 where needed), in both themes. What still differs
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
   - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
+- **Texport export on PES 2017** (worklog 8.9k5 k5e; `plans/save_editor.md` "Texport
+  import/export"). The panel imports a PES 2015-2017 Texport, but its export is disabled on
+  those versions: unlike PES 2018-2021's 15 KB `.ted`, their `TEXPORT00000000` is a whole
+  5.6 MB savefile container, and the library has no template to write a fresh one from; it
+  can only rewrite a real one (`Texport::team_mut`/`players_mut`). Should 0.0.1 export a PES
+  2017 Texport, from a template bundled with the app (a 5.6 MB file from a real export) or
+  from a Texport the member picks as the base, or does it stay disabled until a later
+  release?
 
 ## Cup practice
 

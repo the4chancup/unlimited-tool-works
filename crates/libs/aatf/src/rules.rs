@@ -248,7 +248,7 @@ impl Rules {
             values = settled;
         }
         Err(CheckError::Unsettled {
-            tier: tier.id.clone(),
+            label: tier.label.clone(),
         })
     }
 
