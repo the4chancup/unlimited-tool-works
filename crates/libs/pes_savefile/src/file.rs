@@ -228,6 +228,13 @@ impl EditFile {
         self.container.version()
     }
 
+    /// The container's writer serial: the UTF-16LE text a PES 2016 to 2021
+    /// save carries as its writer's serial, kept as read (empty on PES
+    /// 2015). A PES 2017 Texport the editor writes carries the open save's.
+    pub fn serial(&self) -> &[u8] {
+        &self.container.serial
+    }
+
     /// Every player, in record order.
     pub fn players(&self) -> &[PlayerEntry] {
         &self.players

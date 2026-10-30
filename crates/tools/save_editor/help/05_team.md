@@ -68,9 +68,12 @@ The import / export panel's top row exports the team:
 
 - **Team TOML…** writes the team, its tactics and its players with every value,
   the same file the command line's `export-toml` writes;
-- **Texport…** writes a `.ted` file the game's own team import reads (PES 2018
-  to 2021; PES 2015 to 2017 have no Texport template, so the button stays
-  disabled).
+- **Texport…** writes a file the game's own team import reads (PES 2017 to
+  2021). On PES 2018 to 2021 it is a `.ted` file. On PES 2017 it is named
+  `TEXPORT00000000`, `TEXPORT00000001` and so on, and the window suggests the
+  first free name in the save's folder, where the game's Import Team finds it.
+  PES 2015 and 2016 have no Texport template, so the button stays disabled
+  there.
 
 Neither will write over the save that is open.
 

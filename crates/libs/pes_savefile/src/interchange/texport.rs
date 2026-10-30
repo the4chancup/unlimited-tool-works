@@ -19,12 +19,12 @@ use crate::codec::{
     CodecError, read_player, read_player_into, read_roster_into, read_tactics_into, read_team,
     write_player, write_roster, write_tactics, write_team,
 };
-use crate::container::{ContainerError, SaveContainer};
+use crate::container::{ContainerError, MasterKey, SaveContainer, Scheme};
 use crate::model::player::PlayerEntry;
 #[cfg(test)]
 use crate::model::player::STRIPPED_APPEARANCE_ID;
 use crate::model::team::TeamEntry;
-use crate::schema::texport::{TexportLayout, texport_layout, texport_old};
+use crate::schema::texport::{PES17, TexportLayout, TexportOld, texport_layout, texport_old};
 use crate::schema::{VersionSchema, schema_for};
 
 /// The 18-21 key sits at 0x30; the body it encrypts starts at 0x50.
@@ -95,7 +95,8 @@ pub enum TexportError {
         /// The record's player id.
         player: u32,
     },
-    /// `new` cannot synthesize a 15-17 file: there is no measured template.
+    /// `new` cannot synthesize a PES 2015 or 2016 file: there is no
+    /// measured template.
     #[error("no texport template exists for {0:?}; write by editing a read file")]
     NoTemplate(PesVersion),
     /// A 15-17 file whose team, roster and tactics records disagree on the
@@ -150,6 +151,21 @@ impl Offsets {
             roster,
             tactics,
             players,
+            width,
+        }
+    }
+
+    /// A PES 2017 payload's: `texport_old`'s offsets, the coach block right
+    /// after the team record and one player record per roster slot, the
+    /// roster `width` slots wide. PES 2017's player record has no separate
+    /// appearance record, so the records sit a player record's size apart.
+    fn pes17(old: &TexportOld, schema: &VersionSchema, width: usize) -> Offsets {
+        Offsets {
+            team: old.team_at,
+            coach: old.team_at + schema.team.size,
+            roster: old.roster_at,
+            tactics: old.tactics_at,
+            players: old.players_at,
             width,
         }
     }
@@ -245,12 +261,12 @@ fn slot_records<'a>(
     Ok(pairs)
 }
 
-/// The 18-21 record writer shared by `new` and `to_bytes`: team, the coach
-/// block's id, roster, tactics and each filled roster slot's player record
-/// into `plain`; every other byte is kept as it was. `players` must be the
-/// filled slots' records in roster order (`RosterMismatch` on an id or
-/// count disagreement).
-fn write_ted<'a>(
+/// The record writer of `new` (PES 2017 to 2021) and of an 18-21
+/// `to_bytes`: team, the coach block's id, roster, tactics and each filled
+/// roster slot's player record into `plain`; every other byte is kept as it
+/// was. `players` must be the filled slots' records in roster order
+/// (`RosterMismatch` on an id or count disagreement).
+fn write_records<'a>(
     plain: &mut [u8],
     off: &Offsets,
     schema: &VersionSchema,
@@ -276,7 +292,7 @@ fn write_ted<'a>(
     for (slot, player) in slot_players(team, players, off.width)? {
         let at = off.players + slot * schema.player.size;
         // The game's own exports hold each player's own id at the appearance-id slot
-        // (every PES 18-21 `.ted` it wrote), whatever the save's entry holds: a -1 there
+        // (every PES 17-21 Texport measured), whatever the save's entry holds: a -1 there
         // is the save's state, not the export's. PES 15/16 records have no
         // such slot, and `write_player` leaves a field the schema lacks unwritten.
         let player = PlayerEntry {
@@ -290,6 +306,72 @@ fn write_ted<'a>(
         )?;
     }
     Ok(())
+}
+
+/// A fresh 18-21 plaintext: the layout's header, the key `salt[..32]`, the
+/// coach template, a zero 660-byte block, the tail and the records.
+fn ted_plaintext(
+    version: PesVersion,
+    team: &TeamEntry,
+    players: &[&PlayerEntry],
+    salt: &[u8; 320],
+) -> Result<Vec<u8>, TexportError> {
+    let schema = schema_for(version);
+    let layout = texport_layout(version).ok_or(TexportError::NoTemplate(version))?;
+    let off = Offsets::of(layout, schema);
+    // The record space is zero-initialised so every unmodeled bit stays 0;
+    // `write_records` patches the coach template's id.
+    let mut plain = vec![0u8; layout.size];
+    plain[..KEY].copy_from_slice(&layout.header);
+    plain[KEY..HEADER].copy_from_slice(&salt[..32]);
+    plain[off.coach..off.coach + COACH].copy_from_slice(&layout.coach);
+    plain[layout.size - TAIL..].copy_from_slice(&layout.tail);
+    write_records(&mut plain, &off, schema, team, players.iter().copied())?;
+    Ok(plain)
+}
+
+/// The game's own thumbnail, the same in every PES 2017 Texport it writes.
+const PES17_LOGO: &[u8] = include_bytes!("pes17_texport_logo.png");
+
+/// A fresh PES 2017 container: a payload zero but for `PES17`'s template
+/// and the records at `texport_old`'s offsets, under the PES 2017 key. Its
+/// description is `Team Export Data 01` with the team's name at 0x80, the
+/// name the game lists; its identifier is zero but for `TEXPORT` at 64, the
+/// 64 bytes before it differing per file and unchecked by the game.
+fn pes17_container(
+    team: &TeamEntry,
+    players: &[&PlayerEntry],
+    serial: &[u8],
+) -> Result<SaveContainer, TexportError> {
+    let schema = schema_for(PesVersion::Pes17);
+    let old = texport_old(PesVersion::Pes17).expect("PES 2017 has payload offsets");
+    let off = Offsets::pes17(&old, schema, team.roster.len());
+    let mut payload = vec![0u8; PES17.size];
+    payload[..PES17.header.len()].copy_from_slice(&PES17.header);
+    let marker = PES17.marker_at..PES17.marker_at + PES17.marker.len();
+    payload[marker].copy_from_slice(&PES17.marker);
+    payload[off.coach..off.coach + COACH].copy_from_slice(&PES17.coach);
+    payload[PES17.size - PES17.tail.len()..].copy_from_slice(&PES17.tail);
+    write_records(&mut payload, &off, schema, team, players.iter().copied())?;
+
+    const LABEL: &[u8] = b"Team Export Data 01";
+    const NAME_AT: usize = 0x80;
+    let mut description = vec![0u8; 384];
+    description[..LABEL.len()].copy_from_slice(LABEL);
+    // `write_records` refused a name longer than the team record's 70-byte
+    // field, so it fits the description's 256 bytes after 0x80.
+    let name = team.name.as_bytes();
+    description[NAME_AT..NAME_AT + name.len()].copy_from_slice(name);
+    let mut identifier = vec![0u8; MasterKey::Pes17.header_size() - 80];
+    identifier[64..71].copy_from_slice(b"TEXPORT");
+    Ok(SaveContainer {
+        scheme: Scheme::Keyed(MasterKey::Pes17),
+        description,
+        logo: PES17_LOGO.to_vec(),
+        payload,
+        identifier,
+        serial: serial.to_vec(),
+    })
 }
 
 impl Texport {
@@ -446,35 +528,37 @@ impl Texport {
         })
     }
 
-    /// A fresh 18-21 file from the layout's templates: header, coach (id
-    /// patched), zero block, tail, a key from `salt[..32]`; `players` in
-    /// roster order, ids checked against the roster (`RosterMismatch`).
-    /// 15-17 is `NoTemplate`: write by reading a real file and replacing its
+    /// A fresh file from the version's template: `players` in roster order,
+    /// ids checked against the roster (`RosterMismatch`). On 18-21 the
+    /// layout's header, coach (id patched), zero block and tail, with a key
+    /// from `salt[..32]`. On 17 a PES 2017 container around `PES17`'s
+    /// payload template and the records. `serial` is the writer's serial a
+    /// 15-17 container carries (the open save's, `EditFile::serial`); it is
+    /// unused on 18-21, as `to_bytes` leaves `salt` unused there. 15 and 16
+    /// are `NoTemplate`: write by reading a real file and replacing its
     /// team and players (`team_mut`/`players_mut`).
     pub fn new(
         version: PesVersion,
         team: &TeamEntry,
         players: &[&PlayerEntry],
         salt: &[u8; 320],
+        serial: &[u8],
     ) -> Result<Texport, TexportError> {
-        let schema = schema_for(version);
-        let layout = texport_layout(version).ok_or(TexportError::NoTemplate(version))?;
-        let off = Offsets::of(layout, schema);
-        // The skeleton: header, key, the coach template (its id is patched by
-        // write_ted), a zero 660-byte block and the tail; the record space is
-        // zero-initialised so every unmodeled bit stays 0.
-        let mut plain = vec![0u8; layout.size];
-        plain[..KEY].copy_from_slice(&layout.header);
-        plain[KEY..HEADER].copy_from_slice(&salt[..32]);
-        plain[off.coach..off.coach + COACH].copy_from_slice(&layout.coach);
-        plain[layout.size - TAIL..].copy_from_slice(&layout.tail);
-        write_ted(&mut plain, &off, schema, team, players.iter().copied())?;
+        let file = match version {
+            PesVersion::Pes18 | PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => {
+                File::Ted(ted_plaintext(version, team, players, salt)?)
+            }
+            PesVersion::Pes17 => File::Old(pes17_container(team, players, serial)?),
+            PesVersion::Pes15 | PesVersion::Pes16 => {
+                return Err(TexportError::NoTemplate(version));
+            }
+        };
         Ok(Texport {
             version,
-            file: File::Ted(plain),
+            file,
             team: team.clone(),
             // `players` are what the file holds, so each entry keeps the id
-            // `write_ted` put at the appearance-id slot: his own, not the
+            // `write_records` put at the appearance-id slot: his own, not the
             // save entry's.
             players: players
                 .iter()
@@ -532,7 +616,7 @@ impl Texport {
                 let schema = schema_for(self.version);
                 let off = Offsets::of(layout, schema);
                 let mut plain = plaintext.clone();
-                write_ted(&mut plain, &off, schema, &self.team, self.players.iter())?;
+                write_records(&mut plain, &off, schema, &self.team, self.players.iter())?;
                 Ok(crypt(&plain, layout))
             }
             File::Old(container) => {
@@ -630,8 +714,8 @@ mod tests {
                 player.appearance_id = Some(STRIPPED_APPEARANCE_ID);
             }
             let players: Vec<&PlayerEntry> = stripped.iter().collect();
-            let made =
-                Texport::new(version, fixture.team(), &players, &test_salt()).expect("synthesizes");
+            let made = Texport::new(version, fixture.team(), &players, &test_salt(), &[])
+                .expect("synthesizes");
             // The stored players are what the file holds: each one's own id,
             // as the game's exports carry it.
             for player in made.players() {
@@ -678,7 +762,8 @@ mod tests {
             // The fixture's own key, so the plaintexts compare byte for byte.
             let mut salt = test_salt();
             salt[..32].copy_from_slice(&bytes[KEY..HEADER]);
-            let made = Texport::new(version, fixture.team(), &players, &salt).expect("synthesizes");
+            let made =
+                Texport::new(version, fixture.team(), &players, &salt, &[]).expect("synthesizes");
             let out = made.to_bytes(&test_salt()).expect("encodes");
             let layout = texport_layout(version).expect("a layout");
             assert_eq!(out.len(), layout.size, "{version:?}");
@@ -725,8 +810,14 @@ mod tests {
         let fixture = Texport::from_bytes(bytes, None).expect("opens");
         let mut players: Vec<&PlayerEntry> = fixture.players().iter().collect();
         players.swap(0, 1);
-        let err = Texport::new(PesVersion::Pes19, fixture.team(), &players, &test_salt())
-            .expect_err("order is the roster's");
+        let err = Texport::new(
+            PesVersion::Pes19,
+            fixture.team(),
+            &players,
+            &test_salt(),
+            &[],
+        )
+        .expect_err("order is the roster's");
         assert!(
             matches!(err, TexportError::RosterMismatch { slot: 0, .. }),
             "{err:?}"
@@ -844,6 +935,7 @@ mod tests {
                 fixture.team(),
                 &players[..players.len() - 1],
                 &test_salt(),
+                &[],
             )
             .expect_err("a filled slot keeps its player");
             assert!(
@@ -868,7 +960,7 @@ mod tests {
             let fixture = Texport::from_bytes(bytes, None).expect("opens");
             let mut players: Vec<&PlayerEntry> = fixture.players().iter().collect();
             players.push(players[0]);
-            let err = Texport::new(version, fixture.team(), &players, &test_salt())
+            let err = Texport::new(version, fixture.team(), &players, &test_salt(), &[])
                 .expect_err("a player has no slot");
             // `new` derives the roster width from the layout the same
             // way: the left-over refusal reports it as the slot.
@@ -948,15 +1040,35 @@ mod tests {
         );
     }
 
+    /// PES 2015 and 2016 are `NoTemplate` before any record is looked at,
+    /// and `texport_writes` says so of them alone.
     #[test]
-    fn new_has_no_template_for_15_to_17() {
-        let (_, bytes) = TEDS[1];
-        let fixture = Texport::from_bytes(bytes, None).expect("opens");
+    fn new_has_no_template_for_15_and_16() {
+        let bytes = crate::fixtures::pes17_texport();
+        let fixture = Texport::from_bytes(&bytes, None).expect("opens");
         let players: Vec<&PlayerEntry> = fixture.players().iter().collect();
-        assert!(matches!(
-            Texport::new(PesVersion::Pes17, fixture.team(), &players, &test_salt()),
-            Err(TexportError::NoTemplate(PesVersion::Pes17))
-        ));
+        for version in [PesVersion::Pes15, PesVersion::Pes16] {
+            let made = Texport::new(version, fixture.team(), &players, &test_salt(), &[]);
+            assert!(
+                matches!(made, Err(TexportError::NoTemplate(v)) if v == version),
+                "{version:?}: {made:?}"
+            );
+        }
+        let writes: Vec<PesVersion> = PesVersion::ALL
+            .iter()
+            .copied()
+            .filter(|version| crate::schema::texport::texport_writes(*version))
+            .collect();
+        assert_eq!(
+            writes,
+            [
+                PesVersion::Pes17,
+                PesVersion::Pes18,
+                PesVersion::Pes19,
+                PesVersion::Pes20,
+                PesVersion::Pes21
+            ]
+        );
     }
 
     /// A 15-17 *save* is refused at its description before a record is read;
