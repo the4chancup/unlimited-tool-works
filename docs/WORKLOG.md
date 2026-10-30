@@ -5870,11 +5870,12 @@ briefs, review loops, gates and mutation runs as for any step.
     suggests `TEXPORT0000000A`; DECISIONS 2026-10-30 "PES 2017's import names the team from
     the DLC's bin, and Texport numbers are hexadecimal"), and k5mut's remote half's three
     survivors (`.tmp/8_30c/k5mut_triage.md`)
-  - [ ] cv4 the shell's findings (`studio_core`, `studio`): an Opus sidekick, merged
+  - [x] cv4 the shell's findings (`studio_core`, `studio`): an Opus sidekick, merged
     `897a4fc0`: Reset window centres on the monitor the window stands on (the primary when
     none holds its centre), the help tree follows the rail's order, the data-location topic,
-    `--gui` and wheel tests, `PathKind` dropped (lead's fix: one variant left). Open: its
-    SWE-2 loop (round 1 running, `review6`, `.tmp/cv4_review/`)
+    `--gui` and wheel tests, `PathKind` dropped (lead's fix: one variant left). SWE-2
+    round 1: 0 of 4 accepted, the loop ends (`.tmp/0_0_1cv/rulings_cv4.md`); its Astra
+    round is cv6's A6
   - [ ] cv5 by hand: Output rosters to TSV in the built window; ST-SIDE-05 with PES 2017
     running
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
