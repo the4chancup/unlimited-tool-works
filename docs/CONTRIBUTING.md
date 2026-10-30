@@ -34,6 +34,10 @@ Placement:
   `ops/` (format-native algorithms on the crate's own types) and `check.rs` (findings).
 - The two tempting misplacements into `studio_core`: format knowledge (→ `aesthetics_export`) and a
   widget used by one tool (→ that tool's `view/`). `studio_core`'s module tree is closed.
+- `docs/crate_map.html` draws every crate and the workspace crates each one uses, in layers from
+  the binary down to the libs that use nothing (hover a crate to see its arrows). A commit that
+  adds a crate or changes the workspace dependencies runs `just crate-map` to redraw it; no gate
+  checks it, so a missed run only leaves the map stale until the next.
 - Directory name = package name, with underscores (`pes_savefile`). Hyphens only in CLI subcommands
   and tool ids (`team-compiler`).
 - No `utils.rs`, `helpers.rs`, or `misc.rs`. A helper belongs to the module that uses it; one used

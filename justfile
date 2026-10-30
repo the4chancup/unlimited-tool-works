@@ -120,6 +120,10 @@ bindings interpreter=python:
 parity:
     cargo test -p team_compiler --test parity --test parity_prefox
 
+# docs/crate_map.html, the crates' dependency map, redrawn from the manifests (after a crate is added)
+crate-map:
+    {{python}} scripts/crate_map.py
+
 # Guardrail 4 (fmdl/pes_model dependency denylist) and the license allowlist (deny.toml)
 deps-check:
     {{python}} scripts/deps_check.py
