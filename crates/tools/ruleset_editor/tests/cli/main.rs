@@ -19,18 +19,14 @@ pub(crate) fn valid_file() -> String {
 }
 
 /// The first RE-FILE-03 file: a parse error at line 12 (the comma between
-/// `at_most`'s two first entries dropped).
+/// `rating`'s `ball_winning` and `jump` dropped).
 pub(crate) fn parse_error_file() -> String {
-    let text = valid_file().replacen(
-        "\"attacking_prowess\", \"defensive_prowess\"",
-        "\"attacking_prowess\" \"defensive_prowess\"",
-        1,
-    );
+    let text = valid_file().replacen("\"ball_winning\", \"jump\"", "\"ball_winning\" \"jump\"", 1);
     assert!(
         text.lines()
             .nth(11)
             .unwrap_or_default()
-            .contains("\"attacking_prowess\""),
+            .contains("\"ball_winning\" \"jump\""),
         "premise: the edit sits on line 12"
     );
     text

@@ -1053,3 +1053,84 @@ fn an_extra_height_quotas_off_the_squad_are_refused() {
     }
     Ruleset::from_data_block(POOL).expect("quotas at squad_size load");
 }
+
+/// A small ruleset that loads, `extra` (`key: value, `) among its keys.
+fn small_with(extra: &str) -> String {
+    format!(
+        "const RULESET = #{{ schema: 1, name: \"x\", {extra}squad_size: 23, universal: #{{ max_skill_cards: 10 }}, tiers: [#{{ id: \"regular\", label: \"Regular\", rate: 77 }}] }};"
+    )
+}
+
+/// `bytes` as a `logo` key, base64.
+fn logo_key(bytes: &[u8]) -> String {
+    use base64::Engine as _;
+    format!(
+        "logo: \"{}\", ",
+        base64::engine::general_purpose::STANDARD.encode(bytes)
+    )
+}
+
+/// The PNG signature followed by zeros up to `len` bytes.
+fn png_of_len(len: usize) -> Vec<u8> {
+    let mut bytes = vec![0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
+    bytes.resize(len, 0);
+    bytes
+}
+
+#[test]
+fn a_logo_that_is_not_base64_is_refused() {
+    for logo in ["data:image/png;base64,iVBORw0KGgo=", "iVBORw0K Ggo="] {
+        case(
+            logo,
+            &small_with(&format!("logo: \"{logo}\", ")),
+            LoadRule::LogoNotBase64,
+            "logo",
+        );
+    }
+}
+
+#[test]
+fn a_logo_that_is_not_a_png_is_refused() {
+    case(
+        "not a png",
+        &small_with(&logo_key(b"GIF89a, not a PNG")),
+        LoadRule::LogoNotPng,
+        "logo",
+    );
+}
+
+#[test]
+fn a_logo_over_64_kb_is_refused() {
+    case(
+        "over 64 KB",
+        &small_with(&logo_key(&png_of_len(65537))),
+        LoadRule::LogoTooLarge { bytes: 65537 },
+        "logo",
+    );
+}
+
+#[test]
+fn a_page_that_is_not_a_web_address_is_refused() {
+    for page in ["www.example", "ftp://x", "https://", "https://a b"] {
+        case(
+            page,
+            &small_with(&format!("page: \"{page}\", ")),
+            LoadRule::PageNotWebAddress,
+            "page",
+        );
+    }
+}
+
+/// The limits' edges load: a logo of exactly 64 KB, a site's bare
+/// address.
+#[test]
+fn a_64_kb_logo_and_a_bare_web_address_load() {
+    let page = "https://implyingrigged.info/";
+    let text = small_with(&format!(
+        "page: \"{page}\", {}",
+        logo_key(&png_of_len(65536))
+    ));
+    let ruleset = Ruleset::from_data_block(&text).expect("the edges load");
+    assert_eq!(ruleset.page.as_deref(), Some(page));
+    assert!(ruleset.logo.is_some());
+}

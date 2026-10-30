@@ -40,6 +40,14 @@ pub struct Ruleset {
     pub schema: u32,
     /// The ruleset's name, shown in the tools.
     pub name: String,
+    /// The event's page, opened by a click on its logo: an `http://` or `https://` address.
+    /// `None`: the logo opens nothing.
+    #[serde(default)]
+    pub page: Option<String>,
+    /// The event's logo: a PNG of at most 64 KB, base64. Written as the data block's last
+    /// key, so the keys a person reads come first. `None`: the Save editor draws none.
+    #[serde(default)]
+    pub logo: Option<String>,
     /// The squad's size in players.
     pub squad_size: u8,
     /// Which stats and targets the check reads.

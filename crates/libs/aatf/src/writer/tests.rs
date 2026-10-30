@@ -575,6 +575,9 @@ fn every_field_ruleset() -> Ruleset {
     Ruleset {
         schema: 1,
         name: "Every field".to_string(),
+        page: Some("https://implyingrigged.info/wiki/2026_4chan_Autumn_Babby_Cup".to_string()),
+        // The PNG signature alone, base64: the load checks go no further.
+        logo: Some("iVBORw0KGgo=".to_string()),
         squad_size: 23,
         stats: StatRules {
             rating: vec![stat("speed"), stat("dribbling")],
@@ -737,6 +740,28 @@ fn every_field_round_trips() {
     assert!(!written.contains("error"), "Severity::Error omitted");
 }
 
+/// `page` is written on the line after `name`, `logo` as the data
+/// block's last key, after `suggestions`.
+#[test]
+fn page_follows_name_and_logo_comes_last() {
+    let written = every_field_ruleset().to_data_block();
+    let lines: Vec<&str> = written.lines().collect();
+    let name = lines
+        .iter()
+        .position(|line| *line == "    name: \"Every field\",")
+        .expect("the name line");
+    assert_eq!(
+        lines[name + 1],
+        "    page: \"https://implyingrigged.info/wiki/2026_4chan_Autumn_Babby_Cup\",",
+        "{written}"
+    );
+    let end = lines
+        .iter()
+        .position(|line| *line == "};")
+        .expect("the end");
+    assert_eq!(lines[end - 1], "    logo: \"iVBORw0KGgo=\",", "{written}");
+}
+
 /// The small ruleset `the_layout_is_pinned` pins: two tiers, one
 /// bracket, one height system, one special, `universal` with two
 /// fields.
@@ -744,6 +769,8 @@ fn small_ruleset() -> Ruleset {
     Ruleset {
         schema: 1,
         name: "Small".to_string(),
+        page: None,
+        logo: None,
         squad_size: 11,
         stats: StatRules {
             rating: Vec::new(),

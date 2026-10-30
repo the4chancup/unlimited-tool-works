@@ -32,6 +32,17 @@ impl Ruleset {
         // name: an emptied string names nothing.
         check_empty(&mut out, "name".to_string(), &self.name);
 
+        // page and logo: refused rather than dropped, so an organizer
+        // whose logo never shows learns why.
+        if let Some(page) = &self.page
+            && !is_web_address(page)
+        {
+            push(&mut out, "page".to_string(), LoadRule::PageNotWebAddress);
+        }
+        if let Some(rule) = self.logo.as_deref().and_then(logo_rule) {
+            push(&mut out, "logo".to_string(), rule);
+        }
+
         // stats.at_most: an ability stat, or one of the non-stat targets.
         for (i, name) in self.stats.at_most.iter().enumerate() {
             if !ABILITY_STATS.contains(&name.as_str()) && !NON_STAT_TARGETS.contains(&name.as_str())
@@ -608,6 +619,37 @@ fn check_color_code(out: &mut Vec<RuleError>, path: String, code: &str) {
     if code.len() != 8 {
         push(out, path, LoadRule::ColorCodeLength);
     }
+}
+
+/// The first eight bytes of every PNG file.
+const PNG_SIGNATURE: [u8; 8] = [0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
+
+/// The most bytes a decoded logo may hold: 64 KB.
+const MAX_LOGO_BYTES: usize = 65536;
+
+/// Whether `page` is `http://` or `https://` followed by at least one
+/// character and no whitespace anywhere.
+fn is_web_address(page: &str) -> bool {
+    page.strip_prefix("https://")
+        .or_else(|| page.strip_prefix("http://"))
+        .is_some_and(|rest| !rest.is_empty() && !rest.contains(char::is_whitespace))
+}
+
+/// The rule `logo` breaks, the first of: not base64, not a PNG, over
+/// 64 KB. The picture itself is never decoded here: the hosts that draw
+/// it do.
+fn logo_rule(logo: &str) -> Option<LoadRule> {
+    use base64::Engine as _;
+    let Ok(bytes) = base64::engine::general_purpose::STANDARD.decode(logo) else {
+        return Some(LoadRule::LogoNotBase64);
+    };
+    if !bytes.starts_with(&PNG_SIGNATURE) {
+        return Some(LoadRule::LogoNotPng);
+    }
+    if bytes.len() > MAX_LOGO_BYTES {
+        return Some(LoadRule::LogoTooLarge { bytes: bytes.len() });
+    }
+    None
 }
 
 /// `Empty` at `path` when `value` is empty.

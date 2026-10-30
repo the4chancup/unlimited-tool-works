@@ -8,6 +8,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+base64.workspace = true
 pes_savefile.workspace = true
 pes_version.workspace = true
 rhai.workspace = true
