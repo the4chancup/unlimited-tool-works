@@ -1,4 +1,4 @@
-"""Writes `docs/crate_map.html`: the workspace's crates as an SVG of layers, every
+"""Writes `docs/web/crate_map.html`: the workspace's crates as an SVG of layers, every
 dependency between workspace crates as an arrow (normal dependencies only, not dev or build),
 read from `cargo metadata` so the picture is the manifests' truth. Hovering a crate highlights
 what it uses and what uses it. Run from the repository root (`just crate-map`) when a crate
@@ -212,7 +212,7 @@ window.addEventListener("hashchange", () => pin(fromAddress()));
 pin(fromAddress());
 </script></body></html>
 """
-OUT = "docs/crate_map.html"
+OUT = "docs/web/crate_map.html"
 with open(OUT + ".new", "w", encoding="utf-8", newline="\n") as f:
     f.write(page)
 os.replace(OUT + ".new", OUT)
