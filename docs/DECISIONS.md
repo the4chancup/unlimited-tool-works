@@ -14233,3 +14233,18 @@ instruction PES 2017 lacks imported onto a PES 2017 save showed which preset los
 not which, and the member had to compare presets by hand (0.0.1cv's audit, p4-1).
 Plan: `plans/save_editor.md` "Interchange formats in the UI" (the notes paragraph); the
 drafts' `interchangePanel`.
+
+## 2026-10-30 — save_editor — PES 2017's import names the team from the DLC's bin, and Texport numbers are hexadecimal
+Decision: two facts the Texport bullet stated wrongly are corrected, and the panel follows
+them. (1) PES 2017's own import does not leave the save's team name as it was: it writes the
+name a team bin in the DLC gives the target's id (the maintainer: `/gsg/` imported onto a
+team the save names `/fgog/` and the bin `VGL 17` leaves `VGL 17`). The panel still writes
+the file's name (the entry "a Texport import keeps the panel's target and writes the file's
+name" stands; its reason that the name "costs nothing" was wrong). (2) The number in
+`TEXPORT0000000N` is hexadecimal, upper case: the panel's suggestion counts in hexadecimal.
+Why: (1) the 2026-10-30 measurement could not tell the two readings apart, since team 797's
+save and the bin both named it `VGL 17`; writing the file's name spares organizers the retype
+the game's import makes them do. (2) Real cup folders hold `TEXPORT0000000D` and
+`TEXPORT00000013`; a decimal count suggests `TEXPORT00000010` after `00000009`, number 16 to
+the game, skipping ten.
+Plan: `plans/save_editor.md` "Interchange formats in the UI" (the Texport bullet).

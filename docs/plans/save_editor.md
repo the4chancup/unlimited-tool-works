@@ -1339,13 +1339,18 @@ the editor exposes them as:
   (`plans/pes_savefile/operations.md` "Texport (read + write)"); on a PES 2015-2016 save it is
   disabled, its tooltip saying `PES 2015 and 2016 have no Texport template`. The Save dialog
   suggests `<short name>.ted` on 18-21 and, on 17, the name the game reads from the save's
-  folder: `TEXPORT` and eight digits, no extension, the first number from `00000000` that
-  folder lacks, so the dialog opens on a name that writes over nothing.
-  PES 2017's own import (measured 2026-10-30) differs in two ways the panel keeps: the game
-  offers only the Texport's own team as the target, where the panel imports onto the selected
-  team; and the game leaves the save's team name as it was, where the panel writes the file's.
-  On PES 2017 the game shows team names from a team bin in the DLC, not from the save, so
-  organizers retype each name (`/gsg/`) after importing the cup's Texports; the other
+  folder: `TEXPORT` and an eight-digit hexadecimal number in upper case, no extension
+  (`TEXPORT0000000A` follows `TEXPORT00000009`; real cup folders hold `TEXPORT0000000D` and
+  `TEXPORT00000013`), the first number from `00000000` that folder lacks, so the dialog opens
+  on a name that writes over nothing. A decimal count would suggest `TEXPORT00000010` after
+  `00000009`, a name the game reads as number 16.
+  PES 2017's own import differs in two ways the panel keeps: the game offers only the
+  Texport's own team as the target (measured 2026-10-30), where the panel imports onto the
+  selected team; and the game writes into the save the team name a team bin in the DLC (a
+  binary file the game loads from a CPK in its download folder) gives the target's id,
+  whatever the file and the save named the team, where the panel writes the file's: `/gsg/`
+  imported onto a team the save names `/fgog/` and the bin `VGL 17` leaves `VGL 17`. So
+  organizers retype each name (`/gsg/`) after importing the cup's Texports in game; the other
   versions likely do the same, unconfirmed (worklog 8.9k5 k5g). Editing that bin, which
   would spare them, is future work with no plan yet.
 - **Aesthetics patch apply** — see "Read-only aesthetics"; the patch is written by the Team

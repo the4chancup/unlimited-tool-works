@@ -1900,8 +1900,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           (`.tmp/8_30c/pes17_session/FINDINGS.md`)
       - [ ] k5g after 0.0.1 (the maintainer, 2026-10-30: "the behavior applies to all
         versions, but we'll have to confirm it"): on PES 2015, 2016 and 2018-2021, import a
-        team file in game and check whether the save's team name is kept and the shown name
-        comes from the DLC's team bin, as on PES 2017 (`plans/save_editor.md` "Interchange
+        team file in game and check whether the import writes the team name the DLC's team
+        bin gives the target's id into the save, as on PES 2017 (`plans/save_editor.md` "Interchange
         formats in the UI", the Texport bullet); the bin's editing is future work, no plan yet
       - [ ] k5rev the cross-family review loop (the slices are Opus sidekicks', so the lead's
         review is same-family): SWE-2 rounds on each merged slice until one accepts under
@@ -5865,6 +5865,11 @@ briefs, review loops, gates and mutation runs as for any step.
     `plans/core/gui.md`)
   - [ ] cv3 the view's findings (`save_editor`, `team_widgets`; with k5mut's four local
     survivors): an Opus sidekick
+  - [ ] cv3b after cv3 lands: the Texport name suggestion counts in hexadecimal, upper case
+    (`view/interchange.rs` `Export::file_name`; a test with `00000000`..`00000009` taken
+    suggests `TEXPORT0000000A`; DECISIONS 2026-10-30 "PES 2017's import names the team from
+    the DLC's bin, and Texport numbers are hexadecimal"), and k5mut's remote half's three
+    survivors (`.tmp/8_30c/k5mut_triage.md`)
   - [ ] cv4 the shell's findings (`studio_core`, `studio`): an Opus sidekick, merged
     `897a4fc0`: Reset window centres on the monitor the window stands on (the primary when
     none holds its centre), the help tree follows the rail's order, the data-location topic,
