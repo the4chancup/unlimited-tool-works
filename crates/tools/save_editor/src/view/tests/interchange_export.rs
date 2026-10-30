@@ -268,7 +268,7 @@ fn texport_round_trip(version: PesVersion, test: &str, suggested_name: &str) {
         Some(("Wrote panel.ted", NoticeKind::Success))
     );
 
-    view.interchange_dialog = Box::new(move || Some(written.clone()));
+    view.interchange_dialog = Box::new(move |_| Some(written.clone()));
     let pick = button(&mut window, &mut view, "Pick\u{2026}");
     click(&mut window, &pick, &mut view);
     let lines = panel_lines(&mut window, &mut view);

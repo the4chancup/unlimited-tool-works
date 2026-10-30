@@ -11,6 +11,7 @@ use pes_version::PesVersion;
 
 use crate::codec::{read_player, read_player_into, read_tactics_into};
 use crate::container::{MasterKey, SaveContainer, Scheme};
+use crate::fixtures::{pes17_texport, pes17_texport_container, pes17_texport_payload};
 use crate::interchange::texport::{Texport, TexportError};
 use crate::model::names::display_name;
 use crate::model::player::PlayerEntry;
@@ -299,42 +300,9 @@ fn round_trip_is_byte_identical_on_every_fixture() {
     }
 }
 
-/// The PES 17 texport's decrypted payload, sliced as a save fixture's is.
-fn pes17_payload() -> Vec<u8> {
-    let mut payload = Vec::new();
-    flate2::read::ZlibDecoder::new(
-        &include_bytes!("../../tests/fixtures/pes17_texport_payload.bin.zz")[..],
-    )
-    .read_to_end(&mut payload)
-    .expect("inflates");
-    payload
-}
-
-/// `payload` as the PES 17 texport's container (logo and serial dropped,
-/// as the save fixtures are).
-fn pes17_container(payload: Vec<u8>) -> Vec<u8> {
-    let mut description = b"Team Export Data 03".to_vec();
-    description.resize(384, 0);
-    SaveContainer {
-        scheme: Scheme::Keyed(MasterKey::Pes17),
-        description,
-        logo: Vec::new(),
-        payload,
-        identifier: vec![0; MasterKey::Pes17.header_size() - 80],
-        serial: Vec::new(),
-    }
-    .to_bytes(&test_salt())
-    .expect("container encodes")
-}
-
-/// The PES 17 texport fixture's bytes: its sliced payload in its container.
-pub(crate) fn pes17_texport_bytes() -> Vec<u8> {
-    pes17_container(pes17_payload())
-}
-
 #[test]
 fn pes17_texport_opens_through_the_container_and_round_trips() {
-    let bytes = pes17_texport_bytes();
+    let bytes = pes17_texport();
     let t = Texport::from_bytes(&bytes, None).expect("opens");
     assert_eq!(t.version(), PesVersion::Pes17);
     // The reference reads the tactics record at 0x10330 and the players at 0x510840.
@@ -359,7 +327,7 @@ fn pes17_texport_opens_through_the_container_and_round_trips() {
         .as_ref()
         .map_or(schema.player.size, |(_, a)| schema.player.size + a.size);
     let (team, expected) = codec_reads(
-        &pes17_payload(),
+        &pes17_texport_payload(),
         PesVersion::Pes17,
         0x10330,
         0x510840,
@@ -391,14 +359,15 @@ fn pes17_texport_opens_through_the_container_and_round_trips() {
 fn a_pes17_texport_whose_team_or_roster_id_alone_disagrees_is_refused() {
     let old = texport_old(PesVersion::Pes17).expect("a 15-17 layout");
     for (at, team, roster) in [(old.team_at, 737, 736), (old.roster_at, 736, 737)] {
-        let mut payload = pes17_payload();
+        let mut payload = pes17_texport_payload();
         assert_eq!(
             u32_at(&payload, at),
             736,
             "the record's own id is the team's"
         );
         payload[at..at + 4].copy_from_slice(&737u32.to_le_bytes());
-        let err = Texport::from_bytes(&pes17_container(payload), None).expect_err("refused");
+        let err =
+            Texport::from_bytes(&pes17_texport_container(payload), None).expect_err("refused");
         assert!(
             matches!(
                 err,
