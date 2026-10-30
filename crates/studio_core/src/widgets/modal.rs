@@ -32,6 +32,12 @@ pub fn modal_fit_contents<R>(
 
 /// The modal both helpers draw, at least `min_width` wide with its margins and stroke when
 /// one is given.
+///
+/// The title is centred over the modal's final width, which the body decides: a wide
+/// sentence widens the modal past its minimum. So the title's row is reserved first, its
+/// width counting towards the modal's, and the title is drawn in it once the body is laid
+/// out. A centring layout around the title alone would centre it over all the room the
+/// screen leaves, not over the modal.
 fn modal_with_min_width<R>(
     ctx: &egui::Context,
     id: egui::Id,
@@ -45,9 +51,24 @@ fn modal_with_min_width<R>(
             if let Some(min_width) = min_width {
                 ui.set_min_width(min_width - modal_frame(ui.style()).total_margin().sum().x);
             }
-            crate::theme::window_title(ui, title);
+            let title = egui::WidgetText::from(crate::theme::window_title_text(title)).into_galley(
+                ui,
+                Some(egui::TextWrapMode::Extend),
+                f32::INFINITY,
+                egui::FontSelection::Default,
+            );
+            let (_, title_row) = ui.allocate_space(title.size());
             ui.add_space(8.0 - ui.spacing().item_spacing.y);
-            body(ui)
+            let inner = body(ui);
+            let title_row =
+                egui::Rect::from_x_y_ranges(ui.min_rect().x_range(), title_row.y_range());
+            ui.new_child(
+                egui::UiBuilder::new()
+                    .max_rect(title_row)
+                    .layout(egui::Layout::top_down(egui::Align::Center)),
+            )
+            .label(title);
+            inner
         })
 }
 
@@ -150,11 +171,14 @@ mod tests {
         let outer = ctx
             .memory(|memory| memory.area_rect(egui::Id::unique(ID)))
             .expect("the modal's area has a rect");
-        let title = nodes
+        // A label's text rows have nodes of their own carrying its value, so the
+        // title's label is told apart by its role.
+        let titles = nodes
             .iter()
-            .find(|node| node.value() == Some(title))
-            .and_then(accesskit::Node::bounds)
-            .expect("the title's label has bounds");
+            .filter(|node| node.role() == accesskit::Role::Label && node.value() == Some(title))
+            .collect::<Vec<_>>();
+        assert_eq!(titles.len(), 1, "the title's label nodes");
+        let title = titles[0].bounds().expect("the title's label has bounds");
         let title = egui::Rect::from_min_max(
             egui::pos2(title.x0 as f32, title.y0 as f32),
             egui::pos2(title.x1 as f32, title.y1 as f32),
@@ -179,7 +203,7 @@ mod tests {
             (label, ok)
         });
         assert_near(outer.width(), 360.0, "the modal's width");
-        assert_near(title.left(), outer.left() + 13.0, "the title's left");
+        assert_near(title.center().x, outer.center().x, "the title's centre");
         assert_near(title.top(), outer.top() + 9.0, "the title's top");
         assert_near(label.top(), title.bottom() + 8.0, "the body's top");
         assert_near(ok.right(), outer.right() - 13.0, "OK's right");
@@ -201,6 +225,36 @@ mod tests {
             label.width().max(title.width()) + 26.0,
             "the modal's width",
         );
+    }
+
+    #[test]
+    fn a_body_wider_than_the_minimum_widens_the_modal_and_the_title_stays_centred_over_it() {
+        let ctx = context();
+        let (_, outer, title) = draw(&ctx, "Kit slot assignments", |ui| {
+            // A body exactly 600 points wide, whatever the font.
+            ui.allocate_exact_size(egui::vec2(600.0, 20.0), egui::Sense::hover());
+            modal_buttons(ui, |ui| ui.button("OK"));
+        });
+        assert_near(outer.width(), 600.0 + 26.0, "the modal's width");
+        assert_near(title.center().x, outer.center().x, "the title's centre");
+        assert_near(title.top(), outer.top() + 9.0, "the title's top");
+    }
+
+    #[test]
+    fn a_title_wider_than_its_body_sizes_a_modal_fitting_its_contents() {
+        let ctx = context();
+        let (_, outer, title) = draw_through(
+            &ctx,
+            "Kit slot assignments for every player of the team",
+            true,
+            |ui| {
+                ui.label("Done.");
+                modal_buttons(ui, |ui| ui.button("OK"));
+            },
+        );
+        assert_near(outer.width(), title.width() + 26.0, "the modal's width");
+        assert_near(title.left(), outer.left() + 13.0, "the title's left");
+        assert_near(title.center().x, outer.center().x, "the title's centre");
     }
 
     #[test]

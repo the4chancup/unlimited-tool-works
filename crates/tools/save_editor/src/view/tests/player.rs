@@ -255,7 +255,7 @@ fn the_bump_dialog_prefills_the_last_n_used() {
 
 // The number dialog draws as the draft's `dlgNum`: the sentence on its own
 // line, the number box 8 points under it (the draft's `.window p` margin) at
-// the body's left (the title's left edge, where the modal's content starts).
+// the body's left (the sentence's left edge, where the modal's content starts).
 #[test]
 fn the_set_dialogs_number_box_stands_under_its_sentence() {
     let path = fixture(PesVersion::Pes21, "player_set_layout");
@@ -286,7 +286,6 @@ fn the_set_dialogs_number_box_stands_under_its_sentence() {
             .and_then(accesskit::Node::bounds)
             .unwrap_or_else(|| panic!("no {role:?} {value:?} in the dialog"))
     };
-    let title = bounds_of(Role::Label, Some("Set all stats"));
     let line = bounds_of(Role::Label, Some(&set_line(&name)));
     // The page's own number boxes lie under the modal's area too, and the
     // nodes come in no set order: the dialog's is the nearest under the
@@ -306,10 +305,10 @@ fn the_set_dialogs_number_box_stands_under_its_sentence() {
         line.y1
     );
     assert!(
-        (field.x0 - title.x0).abs() <= 1.0,
+        (field.x0 - line.x0).abs() <= 1.0,
         "the box's left {} is the body's left {}",
         field.x0,
-        title.x0
+        line.x0
     );
 }
 
