@@ -23,14 +23,14 @@ names where the question came from so the context can be read there.
     matches the drafts within 1 point (2 where needed), in both themes. What still differs
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
   - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
-- **A disabled button's look** (the built-window check of 2026-10-30, `.tmp/8_30c/findings.md`
-  F4; worklog 8.38b). The drafts keep a disabled button's grey and dim only its text
-  (`#5a5a5a`); the build, as egui draws any disabled widget, fades the whole button: a darker
-  box (`#2b2b2b` against `#3c3c3c`) with brighter text (`#6c6c6c`). Seen on Undo and Redo
-  with nothing to undo and the quick actions on a team. Which should both follow: the drafts'
-  look, which needs the suite to draw its own disabled buttons (egui fades a disabled widget
-  by one opacity, so no setting keeps the box and dims the text), or egui's, which changes
-  the drafts' one rule?
+- **Texport export on PES 2017** (worklog 8.9k5 k5e; `plans/save_editor.md` "Texport
+  import/export"). The panel imports a PES 2015-2017 Texport, but its export is disabled on
+  those versions: unlike PES 2018-2021's 15 KB `.ted`, their `TEXPORT00000000` is a whole
+  5.6 MB savefile container, and the library has no template to write a fresh one from; it
+  can only rewrite a real one (`Texport::team_mut`/`players_mut`). Should 0.0.1 export a PES
+  2017 Texport, from a template bundled with the app (a 5.6 MB file from a real export) or
+  from a Texport the member picks as the base, or does it stay disabled until a later
+  release?
 
 ## Cup practice
 

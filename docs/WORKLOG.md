@@ -1805,8 +1805,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         `view/interchange.rs`, `view/patch.rs`, their tests). SWE-2 round 2 on k5b2's tests: 2
         accepted, the loop ends (S2c); its four tests merged `0c5571d3` (the squad's shirt
         numbers, the lock flipped after a pick, the intro line, a player row's team)
-      - [ ] k5d SE-GUI-29 manual: each Texport imported by the game's own team import in PES
-        18, 19, 20 and 21 (21 on E:; 18-20 on F:, connected on request; saves backed up first)
+      - [ ] k5d after 0.0.1 (the maintainer, 2026-10-30: 0.0.1 targets PES 2017 only):
+        SE-GUI-29 manual, each Texport the panel exports imported by the game's own team import
+        in PES 18, 19, 20 and 21 (the installs on G:; saves backed up first)
+      - [ ] k5e before 0.0.1 (the maintainer, 2026-10-30: PES 2017 has Texports, check them):
+        the panel's import of a PES 2015-2017 Texport (`TEXPORT00000000`, no extension), which
+        the lib reads (34 real PES 17 files measured) but no panel test or built window has
+        opened: (1) a view test importing the PES 17 fixture (`pes17_texport_head.bin` +
+        payload) onto a PES 17 save, its notes and Apply; (2) the built window on the real
+        `Documents\KONAMI\Pro Evolution Soccer 2017\save\TEXPORT00000000`, read-only; (3) the
+        Pick dialog: its first filter, "Team files" (`toml`, `4ccs`, `4cct`, `ted`), hides
+        the extension-less file, so on PES 2017 a member must switch to "All files" to see it;
+        fix so the file shows at once (planned and drafted first, a UI change); (4) the game's
+        own import of the same file into a save copy, diffed against the panel's import of it
+        (PES 2017 runs beside cargo). Export stays disabled on 15-17 (no template; QUESTIONS)
       - [ ] k5rev the cross-family review loop (the slices are Opus sidekicks', so the lead's
         review is same-family): SWE-2 rounds on each merged slice until one accepts under
         five, one Astra round over k5a + k5b, another over k5c, SWE-2 rounds after each;
@@ -1815,7 +1827,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         preview held until an edit settles, Apply recomputing a held one), tests 7; the
         rework merged `6be3f9e2` (ten tests); round 2 on the tests under way. Round 1 on
         k5b1: 1 accepted (an import must not retarget the document's `[team] id`, which the
-        base-copy own-id rule reads), carried into k5b2's review
+        base-copy own-id rule reads), carried into k5b2's review. Astra round 1 on k5c
+        (2026-10-30): 2 test gaps, none counted, the loop ends (rulings A1c: the open save
+        refused under another spelling of its path; unsaved edits exported); the two tests
+        ride the rework brief of `mutants-diff 7bb734a1`. Next: Astra over k5a + k5b +
+        8.29d1b2 + SE-GUI-43 once d1b2 is merged (`.tmp/8_9k5/astra_k5ab.md`), then one
+        SWE-2 round over k5 and the reworks
       - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged
     - [ ] 8.9m the maintainer's pass over the 0.0.1 candidate (`d317b6da`), 2026-10-29:
       - [x] the drafts take the app's grey for a plain player name and a planned tool
@@ -2565,8 +2582,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       rework `aad02b64`, merged `3af3f0ee` (Opus sidekick): the Ruleset editor's preview
       shortens the logo's line (`block_lines`, red: the whole base64 drawn), the help's
       General sentence names the event's page and logo, Remove and an `http://` page
-      tested. Open: the (b) Astra review over a + b + c, the built window (the logo seen at
-      the top right of the release build `044c90d8`, 2026-10-30)
+      tested. Astra A1p45libs and A1p45editors over a + b + c ended (their fixes are 8.38a);
+      the logo seen at the top right of the release build `044c90d8` (2026-10-30)
     - [x] c every ruleset file under `aatf/rulesets/` gets its logo and page, the seven
       built in and the two test rulesets (`autumn25`, `vgl25`; the drafts import Autumn 25
       as their sample file): the pages are the events' wiki pages the maintainer listed
@@ -2675,8 +2692,26 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       Files: `save_editor/src/view/{mod,menus,quick_actions}.rs`, `view/tests/player.rs`,
       `help/02_window.md`; `ruleset_editor/src/view/{mod,preview}.rs`,
       `view/tests/{file,preview}.rs`
-    - [ ] b a disabled button's look, the drafts' or egui's: QUESTIONS "A disabled button's
-      look"
+    - [ ] b a disabled widget's look (the maintainer, 2026-10-30: egui's faded box, the drafts'
+      text; DECISIONS "A disabled widget keeps egui's faded box..."; `plans/core/gui.md` the
+      Dark/light theme row): drafted (`index.html` `button:disabled` on `#2b2b2b`; side by
+      side `.tmp/8_30c/disabled_buttons_compare.png`). Code: `Palette::disabled_text` (dark
+      134, light 60), `studio_core::widgets::{add_enabled, add_enabled_ui}` setting it in the
+      disabled scope, every view's call moved to them, `clippy.toml` disallowing egui's
+      `add_enabled`, `add_enabled_ui` and `disable` → verify: a disabled scope's resting text
+      colour is 134 dark and 60 light, an enabled scope's untouched, red first; the built
+      window's quick actions and Undo measured with `draft_compare.py` (text colour within
+      its step of the drafts'), 134 tuned there if not. Brief `.tmp/8_30c/brief_838b.md`;
+      after the mutation run copies studio_core, save_editor and team_widgets.
+      Built 2026-10-30 on branch `838b` (`64ba9cea`, Opus sidekick): `widgets/enabled.rs`
+      (`add_enabled` disables in the parent as egui's does, no child scope, the parent's
+      style restored), 54 calls in 24 files moved, 4 tests (red: the colour line removed,
+      `#B4_B4_B4` for `#86_86_86`). The changed packages' tests, workspace clippy, fmt,
+      `comment_refs`, `colour_literals` green in its target. SWE-2 round 1: 1 counted, the
+      loop ends (`.tmp/8_30c/rulings_838b.md`: a selected entry keeps the selection's colours,
+      as the drafts' locked formation picker, now in the plan); fixes `8fe34234` (egui's
+      other disabled-scope routes disallowed; the dark grey pinned in its test, red at 180).
+      Open: the merge, the built-window look (134 tuned)
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
@@ -2996,9 +3031,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
             Drafted and planned 2026-10-30 (`6a5ed6aa`; DECISIONS "card names, the team file
             notes, man marking and the tier refusals in words"; the drafts' `cardName`,
             `IX_NOTE_TEXT`, `ixSubject`, `ixWarningGroups`): the man-marking byte needed no new
-            look, DECISIONS 2026-10-13 measured it (the opponent's formation slot). Opus
-            sidekick running in `../4cc-studio-temp/wt-d1b2` (branch `d1b2`, brief
-            `.tmp/8_29d/brief_d1b2.md`)
+            look, DECISIONS 2026-10-13 measured it (the opponent's formation slot).
+            Built 2026-10-30 (Opus sidekick, one rework, `b64d5f3e` on branch `d1b2`):
+            `labels::card_name` at every card site, the Ruleset editor's summary included
+            (its goldens regenerated by the lead from the draft, `5894cccb`); the dialog's
+            notes per code under the catalog's text, keys in words, the empty places one
+            group; `Opponent's starter N`; the badge's `place NN`, `aatf`'s tier errors by
+            label. Red runs for each; five packages' tests, clippy, fmt, `comment_refs` green
+            in its worktree. Open: the merge waits for the mutation run's save_editor and
+            team_widgets halves; SWE-2 S1d1b2 (three parts, review5) under way
       - [ ] d3 the stats named as each version names them (P43, accepted 2026-10-29; DECISIONS
         "Stats are named as the save's PES version names them", "Before 0.0.1, only PES
         2017's stat names are checked"):
@@ -5675,6 +5716,18 @@ briefs, review loops, gates and mutation runs as for any step.
     `test_the_bundle_ships_no_launcher_and_no_export_folder`, which 0.0.2 rewrites (not
     deletes) when it names the launchers again. The staged list is checked by the tests and
     the listing test; a real `just release` staging is 0.0.1f's. SWE-2 round: 0 counted
+- [ ] 0.0.1cv the Save editor's converge review before the cut (the maintainer asked,
+  2026-10-30, whether a review loop had covered the whole UI: none had; every loop ran per
+  slice or surface, the crate audits covered `aatf` (0.0.1i) and the libs but `team_widgets`
+  (la), and 0.0.1ov and 8.38 compared the look, not the code). `AGENTS.md` "Closing a phase"
+  step (1) over 0.0.1's surface, the Save editor on PES 2017 (`save_editor`, `team_widgets`,
+  `studio_core`'s shell, about 56,000 lines with 38,000 of tests): the lead's audit first
+  (every `plans/save_editor.md` section 0.0.1 ships compared with its code, every SE-GUI
+  scenario on PES 2017 with a test or a `manual: checked` line, the design-tell sweep over
+  the whole surface), its gaps briefed; then Astra over the surface in parts, a SWE-2 loop
+  after each round; the whole-crate mutation runs of `save_editor` and `team_widgets`.
+  Runs beside the maintainer's final pass (0.0.1f1c); the cut waits on it (`AGENTS.md`
+  "Cutting a release")
 - [ ] 0.0.1f the cut, once the Save editor's view is done (the Ruleset editor left 0.0.1 on
   2026-10-24, `plans/core/development_plan.md` "Development Plan"): the bundled settings picking
   DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`
@@ -5687,7 +5740,8 @@ briefs, review loops, gates and mutation runs as for any step.
   settings file), logic version 1's hash
   frozen in `LOGIC_VERSIONS` only after the maintainer's final confirmation, given once the UI
   is polished (the maintainer, 2026-10-25: never before it) (`plans/aatf_rules.md` "Loading and validation": a later logic
-  change is version 2), `just release 0.0.1`, handed to DBC's testers and VGL's organizer
+  change is version 2), `just release 0.0.1`, handed to DBC's testers and VGL's organizer.
+  Prerequisite: 0.0.1cv, the converge review (`AGENTS.md` "Cutting a release")
   - [x] f1 the preparation (side-lead U, 2026-10-27; DECISIONS "The bundle's `data/` holds its
     settings and DBC7's rules file"): `just release` stages `data/settings.toml`
     (`resources/bundle/data/`: `aatf_rules = "rules/dbc7.4ccrules"`, `multicpk_mode` and
@@ -6255,6 +6309,14 @@ points there.
   `import_toml`'s two tests refuse under a stub reporting the save's PES and write under one
   reporting PES 2019, and CONTRIBUTING's "A test never reaches the developer's own files"
   names the running games. A sandbox default reporting PES 2021 fails 18 tests
+
+- open 2026-10-30 — two member-facing errors still number a roster slot from 0, where the
+  player list numbers it from 01 (found reviewing d1b2, whose rule covered the badge's failed
+  check): `pes_savefile` `texport.rs`'s `roster slot {slot} holds player {roster}, the
+  record is {player}` (a Texport import's refusal) and the Save editor's
+  `session/player_ops.rs` `team {team_id}'s roster slot {slot} is empty`. Each takes the
+  list's `place NN` the way `aatf`'s `MissingPlayer` now does; ride the next Save editor
+  text slice
 
 - open 2026-10-29 — `studio`'s `tests/crash_dump.rs`
   `a_stack_overflow_leaves_a_dump_and_the_monitors_line` failed in k5a's checkpoint

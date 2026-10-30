@@ -14114,3 +14114,30 @@ measured (2026-10-13: the opponent's formation slot).
 Plan: `plans/save_editor.md` the Skills item, the badge's failed check, "Comparator" (the
 bullet "A row is drawn in the views' terms"), the team file interchange bullet; worklog
 8.29d1b2.
+
+## 2026-10-30 — gui — A disabled widget keeps egui's faded box; its text dims to the drafts' grey
+Decision: a disabled widget stays faded as egui fades it (a button's box `#2b2b2b` on the dark
+panel), and the drafts' disabled button takes that box; its text, in every widget of a disabled
+scope, is darker than the fade leaves it: the palette's `disabled_text` (dark grey 134, which
+the fade draws at the drafts' `#5a5a5a`), set by `studio_core::widgets`' `add_enabled` and
+`add_enabled_ui`, egui's own disallowed. The light theme keeps egui's fade.
+Why: the built-window check found the drafts' disabled button (its resting grey kept, its text
+dimmed) and egui's (the whole widget at half opacity) apart; the maintainer chose the app's box
+and the drafts' text, because egui's faded text (`#6c6c6c`) left a disabled quick action reading
+almost as plainly as an enabled one. A colour set in the disabled scope, not an overlay of the
+box's colour: an overlay inside the scope is faded too and lightens the box, and outside it
+needs the box's on-screen colour, which a checkbox's label or a frameless button lacks; egui's
+one `disabled_alpha` cannot keep the box and dim the text either. The drafts are dark only, so
+the light theme has no ruled look to move to.
+Plan: `plans/core/gui.md` the Dark/light theme row (the sentence after the checkboxes'); the
+drafts' `index.html` `button:disabled`; worklog 8.38b.
+
+## 2026-10-30 — process — A release cut from open phases is converged first
+Decision: a release whose phases are still open (0.0.1, from Phase 8) runs "Closing a phase"
+step (1), the converge and its design-health pass, over what it ships, before the cut; the
+cut's worklog step names it as a prerequisite. 0.0.1 gets it as step 0.0.1cv.
+Why: the converge was tied to a phase's close alone, so a preview cut mid-phase reached the
+maintainer's final pass with every slice reviewed and the Save editor never reviewed whole;
+the maintainer called it a methodology gap. Per-slice loops read one surface against its own
+sections, not the shipped whole against its plan, so they cannot replace it.
+Plan: `AGENTS.md` "Cutting a release" (after "Closing a phase"); worklog 0.0.1cv and 0.0.1f.
