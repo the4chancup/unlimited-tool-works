@@ -210,7 +210,7 @@ Dashed crates are not linked into <code>UTW</code>.</p>
 <p class="key">Click a crate to keep it highlighted and put it in the address
 (<code>#save_editor</code>), again to let go:<span class="uses"></span>what it uses
 <span class="usedby"></span>what uses it</p>
-<p id="about"><span class="hint">Hover a crate for what it is.</span></p>
+<p id="about"><span class="hint">Hover over a crate to see what it does.</span></p>
 {"".join(svg)}
 <script>
 const themeButton = document.getElementById("theme");
