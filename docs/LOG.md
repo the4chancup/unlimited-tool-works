@@ -2876,3 +2876,5 @@ worklog passed 7,000 lines.
   appearance id as an ordinary row and Team TOML refuses a `stripped` key (8.36b).
 - **2026-10-30** — The help search lists a hit on a bold subheading or a list item without its
   Markdown marks (8.29e1r).
+- **2026-10-30** — A dialog's title is centred over the dialog, and Set all stats and Bump all
+  stats ask for their number on the sentence's row (8.37, 8.37b).
