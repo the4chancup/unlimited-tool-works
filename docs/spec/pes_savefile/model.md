@@ -239,18 +239,7 @@ instead.
 
 The compile writes the rows `appearance_row` produces for a stripped player into its
 `PlayerAppearance.bin`; boots and gloves go to the `BootsList.bin`/`GloveList.bin` pairs,
-not to the row. For the Save editor's strip and seed a save player's row comes from his
-record: `EditFile::appearance_row(player_id) -> Result<[u8; 60], SaveError>`, the player id
-and the 56 bytes his record holds after the base-copy id, his entry as the save would write
-it, so a value past a key's range is carried as stored, where the settings route
-(`PlayerSettings::appearance_row`, still the route for a settings file) refuses it. The 56
-bytes are all modeled fields (packed fields, then the ingame-face run kept verbatim; found
-at 5.4c1a), so the entry is written over a zeroed record: a copy of the save's record
-changed nothing (its mutation run's two survivors said so), and the test comparing rows
-with the payload is what fails if a schema ever leaves a gap there. Tested on
-each Fox fixture save: an unedited player's row is his record's bytes in the loaded
-payload, and an edited field shows in it. A pre-Fox save has no row (an error naming the
-version).
+not to the row. A pre-Fox version has no row (an error naming the version).
 
 **The Fox player tables** live here too, as one type: `PlayerAppearance.bin` (60-byte rows,
 the player id then the 56 appearance bytes), `BootsList.bin` and `GloveList.bin` ((player
@@ -264,12 +253,10 @@ would read as garbage (a stream that does not unwrap is an error naming the tabl
 The tables are written unwrapped, as the cup's copies are. Every table on the maintainer's
 machine is, once unwrapped, sorted with each id once (103 distinct tables from 215 CPKs and
 42 loose files, PES 15 to 21 installs, cup DLC and Studio's own output, censused 2026-10-16,
-worklog 5.6c1). The Team compiler's bins step (its row-selection rules staying in the tool)
-and the Save editor's strip and seed edit the same tables; a tool crate cannot call
-another's code, and a third copy of a table codec is what this avoids.
+worklog 5.6c1). The Team compiler's bins step edits them through this type, its
+row-selection rules staying in the tool.
 
-Only the Save editor's strip operation writes the appearance id's -1 (worklog issue
-"player id versus appearance id").
+No operation writes the appearance id's -1: no save is stripped (step 8.36b).
 
 **The ingame-face run.** From its 22nd byte to its end, the appearance block (72 bytes on PES 16 to
 21, 68 on PES 15; a separate record on 15/16, inside the player record from 17) is a run the crate

@@ -45,8 +45,7 @@ leaves out. It writes `name` per the Export upgrader's rule (`true` when the fol
 equals the save's name, the explicit string otherwise; the save editor, generating without a
 folder, writes the string), `shirt_name` as the save's string, and no `height` or `weight`.
 With no save stripped, a record is always the player's look: the save editor's generation
-skips no player (the spec's skip of a record at -1 goes with the stripped route, worklog
-8.36b), and the Export upgrader generates from the record as it does today.
+and the Export upgrader generate from it for every player.
 
 **Edits made in PES come back to the export.** PES is the previewer for what only the game
 shows well (the motions, played in context; the in-game face, built with its sliders), so

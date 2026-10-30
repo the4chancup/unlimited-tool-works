@@ -2577,14 +2577,26 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       placeholders). Files: AGENTS.md, plans `save_editor.md`, `pes_savefile/{operations,model}.md`,
       `aesthetics_export/{settings_toml,fpc_toggle,player_folders}.md`, `team_compiler/{README,gui,pipeline}.md`,
       `core/{README,development_plan}.md`, `player_aesthetics_editor.md`
-    - [ ] b before 0.0.1, the Save editor: `strip-and-seed`, `check-stripped`, the stripped
+    - [x] b before 0.0.1, the Save editor: `strip-and-seed`, `check-stripped`, the stripped
       players' notes and the Strip again window, Generate's stripped skip, the Comparator's
       and `diff`'s stripped marks, Team TOML's `stripped`, their help and catalog rows, and
-      what `pes_savefile` keeps only for them (`plans/save_editor.md` "Stripped save"); the
-      spec with it (the inventory's S1-S21, S55-S57's strip parts, S59's `appearance_row.rs`,
-      S60, S62, S67, and GLOSSARY's D3 and D4) and the plan's SE-GUI-20, withdrawn with its
-      tests → verify: the gates; the help and catalog name
-      none of them
+      what `pes_savefile` keeps only for them; `diff` gains the appearance id as a row, the
+      ownership line reads the same on every engine (DECISIONS "The full-look patch writes the
+      player's own appearance id…"); the spec with it (the inventory's S1-S21, S56-S57's strip
+      parts, S60, S62, S67, and GLOSSARY's D3 and D4) and the plan's SE-GUI-20, withdrawn with
+      its tests (brief `.tmp/8_36/brief_b.md`) → verify: the gates; the help and catalog name
+      none of them.
+      Done 2026-10-30 (Opus sidekick, branch `s36b`): about 2,100 lines removed (the two
+      commands, the window, the marks, `EditFile::appearance_row`, `strip.rs`, EU-SET-06's
+      finding); `ownership_tip` became the constant `OWNERSHIP_TIP`; `diff` prints the
+      appearance id raw (`new=4294967295`), in the Aesthetics scope; `Side` keeps its first and
+      second for `player_only_in`. New tests: the id's row (lib and CLI, SE-DIF-05), `stripped`
+      refused, the Fox ownership line's link opening the patch panel, a player at -1
+      generated. Lead fixes: SE-DIF-05's citation, the appearance id in `--aesthetics`' lists.
+      The drafts went first (`929f3497`). Open: SWE-2 rounds and Astra (an Opus slice). Files:
+      `save_editor` (src, tests, help), `export_upgrader` (`messages.rs`, `settings.rs`, its CLI
+      test), `pes_savefile` (`file.rs`, `ops/compare.rs`, `interchange/{team_toml,texport}`),
+      and the spec and plans named above
     - [ ] c after 0.0.1, the full-look patch and the Team compiler: the aesthetics patch on
       every engine (it is Fox-only today) gains the appearance block, the boots and gloves IDs
       over the whole allocation, filled after their tasks commit, and clears a compiled
@@ -4206,7 +4218,10 @@ briefs, review loops, gates and mutation runs as for any step.
     name read Unlimited Tool Works (Task Manager's name), version 0.0.1. Open, the
     maintainer's eye (outside the app's own windows, which the lead does not capture): the
     taskbar's button and Alt+Tab (the tight crop: if the whole picture should be there, the
-    plan's bullet on `small.png` says what that costs); Explorer's file icon on the exe
+    plan's bullet on `small.png` says what that costs); Explorer's file icon on the exe.
+    manual: checked 2026-10-30 by the maintainer on the candidate (Windows 10): the taskbar
+    button and Alt+Tab (the tight crop), Explorer's file icon on the exe and the blank title
+    bar slot "look fine"
 - [x] 0.0.1w the drafts and the app draw the same fonts (the maintainer, 2026-10-27: the
   drafts named Ubuntu, installed nowhere, so they were reviewed in Segoe UI; Selawik, its
   metric twin, replaces Ubuntu; `plans/core/gui.md` "Prototypes before implementation", the
@@ -5442,7 +5457,9 @@ briefs, review loops, gates and mutation runs as for any step.
     the same in the renders). Files: `studio_core/src/{theme.rs,widgets/{mod,
     collapsing_header}.rs,shell/{help_window.rs,settings_menu/mod.rs}}`,
     `ruleset_editor/src/view/sections/tiers.rs`, `save_editor/src/view/mod.rs`,
-    `team_compiler/src/view/mod.rs`; renders `.tmp/8_9l/pairs/colour_*.png`
+    `team_compiler/src/view/mod.rs`; renders `.tmp/8_9l/pairs/colour_*.png`.
+    manual: checked 2026-10-30 by the maintainer on the candidate: the windows' titles at 14
+    in the strong grey "look fine"
   - [x] ov3 a general overlap test: a headless pass over every modal and view failing when two
     widgets' rectangles intersect (catches collisions, not a draft mismatch: ov1 does that;
     `plans/core/gui.md` "No two widgets overlap"; Opus sidekick, brief

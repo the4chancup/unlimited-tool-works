@@ -22,12 +22,6 @@ names where the question came from so the context can be read there.
   - **Already measured,** so not worth reporting: every screen the drafts and the build share
     matches the drafts within 1 point (2 where needed), in both themes. What still differs
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
-  - **Still to look at in the built app:**
-    - the windows' titles at 14 in the strong grey (220; 0.0.1ov14);
-    - the icon where the lead cannot capture it (worklog 0.0.1v and 8.9l3d3g): the taskbar
-      button and Alt+Tab (both show the tight crop of the head), Explorer's file icon on the
-      exe, and the title bar's icon slot, now left blank (checked on Windows 10, not on
-      Windows 11).
   - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
 
 ## Cup practice

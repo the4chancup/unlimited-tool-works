@@ -563,8 +563,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    the game reads it now, his record or his installed row), populated from the savefile's aesthetic data
    (physique, strip style, skin/iris color, etc.) — the same TOML-generation logic the save editor
    uses. A marked folder's `ingame_face.toml` is written beside it, filled the same way: the face
-   run, the hair and the iris, every key the save's version holds (`settings_value_refused` and
-   `settings_from_stripped_record` cover both files); a folder without the marker gets a
+   run, the hair and the iris, every key the save's version holds (`settings_value_refused`
+   covers both files); a folder without the marker gets a
    `settings.toml` alone, without those keys, and without a record to generate from (a failed
    `settings_not_generated`) the file is written empty, so the marker's effect survives.
    Custom boots/gloves IDs (above 100) are omitted: old IDs help resolve the wearers during
@@ -601,16 +601,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    key is left out of his file and reported (W, `settings_value_refused`: the slot, the
    player's name, the dotted key and the stored value). A record whose file cannot be generated
    at all (a field read that fails) leaves his folder without one, reported
-   `settings_not_generated` (E, the slot, the name and the error). On a stripped Fox save
-   (`spec/save_editor.md` "Stripped save") the save editor's generation skips a player at -1,
-   his record not being his look; the upgrader generates from the record all the same and names
-   him in the report (I, `settings_from_stripped_record`, the slot and the name): strip-and-seed seeded his rows from those bytes, and the compiler,
-   which does not read the AET layout, has compiled nothing of his team since, so the record
-   still is his look. That holds until the team's first Studio compile, which the upgrader
-   cannot see: from then on his look is the compiled export's `settings.toml` (an edit of
-   his record in the save does not change it, `spec/save_editor.md`), so the
-   report's line says the file is generated from a stripped record and that a team compiled
-   by Studio since keeps its own file instead. No `fpc_on` marker is written from the record
+   `settings_not_generated` (E, the slot, the name and the error). No `fpc_on` marker is written from the record
    (step 3's modelless item folder writes one from the folder): an FPC player's record holds the hide strip
    and either the stock hide IDs, kept as any stock ID is, or, as the cup's FPC teams mostly do,
    a blank boots ID of his own whose folder migrates like any other (the 2023 Winter Cup save's
@@ -1509,10 +1500,7 @@ EU-SET-04  GIVEN one player whose folder's name part equals his save name, a fac
                 save name with its codes byte for byte, in a folder named without them
 EU-SET-05  withdrawn: restated as EU-SET-11 (`spec/export_upgrader.md`), his
            cheek_type in ingame_face.toml since step 0.0.1h
-EU-SET-06  GIVEN the PES 21 fixture save after strip-and-seed
-           WHEN an export of one of its teams is upgraded with it
-           THEN the output equals the one from the unstripped save, and the report also names
-                each stripped player, at Info
+EU-SET-06  withdrawn: no save is stripped (step 8.36b), so settings_from_stripped_record is gone
 EU-SET-07  GIVEN a player whose record holds the hide strip and boots and gloves IDs of his own,
                 with their folders, each holding its model
            WHEN the export is upgraded

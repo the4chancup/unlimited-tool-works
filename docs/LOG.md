@@ -2871,3 +2871,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — The plans now send every engine's looks through the savefile patch: the
   patch gains the whole look, IDs filled after their tasks, the player's own id and a cleared
   base copy; the stripped route's parts are listed to go before 0.0.1 (8.36a).
+- **2026-10-30** — The Save editor drops the stripped-save route before 0.0.1: `strip-and-seed`,
+  `check-stripped`, the Strip again window and every stripped mark are gone; `diff` reports the
+  appearance id as an ordinary row and Team TOML refuses a `stripped` key (8.36b).

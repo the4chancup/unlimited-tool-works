@@ -51,6 +51,13 @@ Still open:
     keys from that file, so the save keeps his record (the Aesthetics export plan's "An
     invalid `settings.toml` keeps the player's installed look").
 
+  The file stays readable as the export's own files are: the same key names, tables and
+  values as `settings.toml` and `ingame_face.toml` (`sleeves = "short"`, a motion as the game
+  shows it), the face, hair and iris under the player's `appearance` as the joined schema
+  holds them, so a reader compares a patch with a player's files key by key. What differs is
+  that every value is resolved (no `""` default, no `name = true`, the FPC preset applied) and
+  that there are no per-key range comments: the templates carry those.
+
   ```toml
   [teams.players.03]           # slot 03 → player 70203
   name = "Snuffy"              # a write_names export's only, as today
@@ -77,7 +84,9 @@ Still open:
   too (two players with one each, flag set and clear, given a base copy). A census of 125 Fox
   saves on the maintainer's machine (2026-10-14, `.tmp/5_4/base_copy_census.txt`) found such
   an id on 0 to 26 players of each real PES 21 cup save, up to 117 on PES 19 and 988 on PES
-  18; counted are ids neither 0 nor the player's own. The edit flags (the record's `Edited*`
+  18; counted are ids neither 0 nor the player's own. A compiled player whose export describes
+  no face of his own (no face model, no `ingame_face.toml`) then shows the Placeholder face,
+  as his export says, where the copy showed someone else's. The edit flags (the record's `Edited*`
   bits) are left as the save holds them: 8.36d checks in game that a compiled look shows on a
   player whose flags are clear, and if one is needed the patch sets it, as a compiler-owned
   value.

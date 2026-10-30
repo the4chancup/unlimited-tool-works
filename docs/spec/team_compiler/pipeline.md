@@ -1152,8 +1152,8 @@ describes behavior, not a serial scheduling requirement:
   compiled player of a `Full` export's team whose folder holds no boots or no gloves gets the
   default-ID rows; every other player
   keeps his installed rows, so the output carries complete tables (the
-  game reads the highest-priority copy of each whole; the seed rows ride in `4cc_08_bins.cpk`
-  ("Stripped save" in the [Save editor plan](../save_editor.md)); the base game's copies are
+  game reads the highest-priority copy of each whole; the seed rows ride in `4cc_08_bins.cpk`;
+  the base game's copies are
   wezlib-compressed and the cup's plain, so they are read either way and written plain, which the
   game accepts, as Test 1's CPKs showed). Final bins are
   built after all task outcomes are known. The working bins are fetched from the user's installed

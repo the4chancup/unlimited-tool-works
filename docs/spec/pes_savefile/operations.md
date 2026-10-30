@@ -407,7 +407,6 @@ weight = 75                     # kg
 boots_id = 3601
 gloves_id = 0
 base_copy_id = 84101            # equal to the player's own id in the file = unset; becomes the target's own id
-stripped = true                 # emitted only for a stripped player (appearance id -1); informational, import ignores it
 
 [players.01.stats]              # stored values; the comments give the game's editor range, the parser accepts the field's stored range
 attacking_prowess = 77
@@ -543,9 +542,6 @@ pub struct PlayerSection { pub name: Option<String>, pub shirt_name: Option<Stri
     pub nationality: Option<u16>, pub age: Option<u8>, pub height: Option<u8>, pub weight: Option<u8>,
     pub boots_id: Option<u32>, pub gloves_id: Option<u32>,
     pub base_copy_id: Option<u32>,
-    /// Written for a player whose appearance id is -1 (`STRIPPED_APPEARANCE_ID`);
-    /// informational, the import ignores it.
-    pub stripped: Option<bool>,
     pub stats: StatsSection,
     pub positions: PositionsSection, pub skills: SkillsSection, pub edit_flags: EditFlagsSection,
     pub appearance: AppearanceSettings }
@@ -606,8 +602,7 @@ Rules of `apply`: `pes_version` absent means "the target's version" (no conversi
 its value: "absent = untouched", where `settings.toml` and the patch write every field),
 go through `settings_toml`'s shared writer, the run's measured-unused bits keeping the
 save's values;
-an import never sets a player's appearance id, so a stripped save stays stripped (see
-"Stripped save" in the [Save editor plan](../save_editor.md)); `base_copy_id` equal
+an import never sets a player's appearance id; `base_copy_id` equal
 to the file's own player
 id (the file's team id × 100 + slot) becomes the target player's id; a `stats` key the target
 version lacks is `NotInThisVersion` when the versions differ and `TeamTomlError::NotInThisVersion`
@@ -702,10 +697,8 @@ free_kick = 5                # the [appearance.motion] keys, as in settings.toml
 
 Rules:
 
-- **A Fox patch keeps a stripped player stripped.** Applying it changes the motion and name
-  fields alone; the appearance block, and its player id at -1, are left as they are, so the
-  player keeps taking his appearance from the database tables (see "Stripped save" in the
-  [Save editor plan](../../plans/save_editor.md)).
+- **A Fox patch leaves the appearance block alone.** Applying it changes the motion and name
+  fields alone; the appearance block, its player id included, is left as it is.
 - **Everything is resolved.** `name = true` is the derived string; `fpc_on`/`fpc_off` are the
   preset's concrete field values; the IDs are the resolved ones, already filtered by the compiler's
   "only for content that was actually packed" rule. The patch answers "what will the save contain",
@@ -944,8 +937,7 @@ values stand in for those instead, per the 2.17f rule). Because the game itself 
 full compatibility matters in both directions: read (the reference already does) **and write**
 (new — the reference is import-only), so the editor can produce a file PES can import.
 Every player record's appearance id holds the player's own id in each export the game wrote
-(the 18-21 fixtures), so the writer writes it so, whatever the save's entry holds: a stripped
-player's -1 is the save's state, not the export's. The
+(the 18-21 fixtures), so the writer writes it so, whatever the save's entry holds. The
 round trip `from_bytes` → `to_bytes` is byte-identical on every fixture (the codec and the
 carried bytes cover the whole file); whether the game accepts a `new` file, and a file whose
 records were edited, is the manual per-version check in [Verification](verification.md).

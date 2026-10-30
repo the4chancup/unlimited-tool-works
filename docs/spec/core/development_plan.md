@@ -382,8 +382,8 @@ aside), which needs Phase 5's savefile and ID integration and Phase 6's Export u
   "Development phase and verification").
 - The Save editor tool crate's non-GUI substance that a command drives: settings, the CLI, and
   the `session/` operations its commands run over `pes_savefile` (Team TOML export and import,
-  the aesthetics patch, AATF checks, comparator, strip and seed with the
-  restored-id check, the teams list export; [Save editor](../save_editor.md), "CLI"). The
+  the aesthetics patch, AATF checks, comparator, the teams list export (strip and seed with
+  its restored-id check went at step 8.36b); [Save editor](../save_editor.md), "CLI"). The
   wiring only the view drives (editing with its undo stack, selection, recent files, tactics,
   the FPC toggle, AATF quick actions) is Phase 8's, each piece in the slice of the view that
   uses it: built earlier, it would be a layer with no consumer, its shape guessed before the

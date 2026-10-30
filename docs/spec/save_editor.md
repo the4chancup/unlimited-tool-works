@@ -40,8 +40,7 @@ is too heavy:
 The second is absorbed into the save editor as the `diff` command and the comparator panel (the
 operation lives in `pes_savefile`, "Save-to-save operations" in the [Savefile
 plan](pes_savefile/operations.md)). The first is not: aesthetics live in the exports now, so a
-look copied into a save is overwritten by the next compile, and on a stripped Fox save never
-read at all. Its successor copies a donor save's looks into the team's export instead (after
+look copied into a save is overwritten by the next compile. Its successor copies a donor save's looks into the team's export instead (after
 Release 0.1.0, "Aesthetics transplant" in the [Save editor plan](../plans/save_editor.md)).
 
 ---
@@ -64,7 +63,6 @@ implementation is measured against.
 | AATF: current team / select teams | Kept (rules become configurable — see below) |
 | Compare EDITs | Kept, merged with Midcupping's aesthetics diff (see "Comparator") |
 | — | **Export teams list** (new): the open save's team names and IDs for 701–920 (in-game names are the `/xx/` names) merged into `data/teams_list.txt` through the same reconciliation the updater uses — added / kept / overridden shown for review, savefile wins conflicts, a change behind an unresolved conflict is dropped and the rest applied, never a blind overwrite (see the [Team compiler plan](team_compiler/pipeline.md), "Resolved decisions", "Teams list"). Lives here because this tool owns the open savefile; the compiler only consumes the list |
-| — | **Strip and seed** (new, Fox saves): every not-yet-stripped player's appearance into `4cc_08_bins.cpk`'s `PlayerAppearance.bin`/`BootsList.bin`/`GloveList.bin` rows, then every appearance id to -1; plus the restored-id check. See "Stripped save" |
 
 ### New (from Midcupping)
 
@@ -115,65 +113,6 @@ Placement rules:
 
 ---
 
-## Stripped save
-
-On Fox the game takes a player's appearance, boots and gloves from the database tables
-(`PlayerAppearance.bin`, `BootsList.bin`, `GloveList.bin`) when his appearance record's player id
-is -1, and from the record when the id is set (in-game Test 1, PES 2021). The cup's official save
-is therefore **stripped**: every appearance id at -1, so the tables the Team compiler writes decide
-every player's look. It is prepared once per game version and distributed as the blank save
-managers receive at every version change; no compile and no manager writes appearance into it
-afterwards.
-
-- **Strip and seed** is one operation (Database operations, Fox saves only): it writes every
-  player's current appearance (the record's appearance bytes and his
-  boots and gloves IDs) into rows of the three tables inside `4cc_08_bins.cpk`, the official
-  DpFileList entry that holds the cup's team-related bins (`TeamColor.bin`, `UniColor.bin`,
-  `UniformParameter.bin`), which the DLC builder installs at lower priority than the
-  compiler's output, then sets every appearance id to -1. A player already at -1 is left out,
-  his record not being his look: his rows stand (a table created whole holds none for him). The seed is what a
-  player no export describes looks like afterwards, so stripping changes nobody's look; compiled
-  players' rows replace their seed rows. Appearance holds no tactics, so the seed can come from
-  any save with the cup's appearances, keeping the DLC builder and the savefile builder apart.
-  Each row is taken from the player's record as the save holds it (`pes_savefile`'s
-  `EditFile::appearance_row`), not rebuilt through his `PlayerSettings`: real cup saves hold
-  values past a key's range inside its field's bits (79 players of the PES 18 fixture save, 26
-  of the PES 19 one), which the settings refuse and the row must carry as they are.
-- **A base-copied face is reported, not carried.** A player whose appearance block copies
-  another player's face (a face copied from a Konami player or from a teammate in Edit mode) is
-  stripped and seeded like the others, but the row has no base-copy id, so once stripped he
-  loses the copied face and hair and shows the face his row describes, Placeholder for a player
-  who never had one of his own (PES 21 Edit mode, 2026-10-15: a cup save's "MESSI" copying
-  player 7511, and a teammate copying 114624). Strip and seed reports each such player
-  (`strip_base_copied_face`, a warning naming him and the player copied); his export describing
-  his face settles it, the compiled rows replacing his seed. Leaving them unstripped would keep
-  their look but break "every appearance id at -1", so every later compile and `check-stripped`
-  would flag them. A player counts when his base-copy id is neither 0 nor his own id, whatever
-  his face edit flag says, and whether or not a face model of his own is installed: the game
-  shows the copied face with the flag clear as with it set (the same save, that one flag
-  cleared, showed the same face), and over his own `face.fpk` too (two players with one each,
-  flag set and clear, given a base copy, both showed the copied face), which stripping
-  reveals, as it does for a player without a base copy. A census of 125 Fox saves on the
-  maintainer's machine (2026-10-14, `.tmp/5_4/base_copy_census.txt`) found such an id on 0 to
-  26 players of each real PES 21 cup save, up to 117 on PES 19 and 988 on PES 18.
-- **Nothing in the editor sets an id back.** Imports (Team TOML) and
-  name writes, the aesthetics patch included, leave the appearance block's id as it is.
-- **A record at -1 is not the player's look.** Everything that reads a record's appearance
-  (the comparator and `diff`, a Team TOML export) marks a
-  player at -1 as stripped beside what it shows or writes.
-- **The game's own Edit mode does.** Test 1 found that any change to a stripped player in Edit
-  mode restores his id: a rename brings back his pre-strip look, a look edit freezes the database
-  look shown into the save (with boots 0). Managers therefore rename players in this editor and
-  change looks only through the export (the Player aesthetics editor, then a recompile).
-- **A check reports restored ids**: `check-stripped` lists the players whose appearance id is
-  set while others are stripped, and `--strip-again` sets their ids to -1 (their record is
-  ignored from then on; the tables decide).
-
-Pre-Fox saves are not stripped: the database route is untested there, and the aesthetics patch
-stays their route.
-
----
-
 ## Comparator (gameplay + aesthetics)
 
 The `diff` command is the merge of 4ccEditor's `comparator.cpp` with Midcupping's
@@ -189,8 +128,7 @@ The `diff` command is the merge of 4ccEditor's `comparator.cpp` with Midcupping'
 - **Aesthetics scope** (from Midcupping): boots/gloves/face IDs, taping, glasses,
   sleeves, inners, socks, undershorts, shirttail, winter gloves, skin color, and
   the normalized ingame-face fingerprint (catches "the face was edited" without
-  decoding every facial parameter). It compares the records, so a player at -1 is
-  marked ("Stripped save").
+  decoding every facial parameter), and the appearance block's player id.
 - `--aesthetics` and `--gameplay` keep one scope; the report prints as one finding line
   per row, or as one JSON document with `--json`.
 
@@ -297,21 +235,18 @@ UTW save-editor import-toml ./aaa.toml --base ./EDIT00000000 --out ./EDIT_new   
 UTW save-editor apply-patch ./aesthetics_patch.toml --base ./EDIT00000000 --out ./EDIT_new   # the compiler's patch
 UTW save-editor diff ./a_save ./b_save [--aesthetics | --gameplay] [--json]
 UTW save-editor check-aatf ./EDIT00000000 [--teams 701,705-710] [--rules ./vgl27.4ccrules]
-UTW save-editor strip-and-seed --base ./EDIT00000000 --bins ./4cc_08_bins.cpk --out ./EDIT_new --bins-out ./4cc_08_bins_new.cpk
-UTW save-editor check-stripped ./EDIT00000000 [--strip-again --out ./EDIT_new]
 UTW save-editor export-teams-list ./EDIT00000000 [--yes]     # merge the save's team names/IDs into data/teams_list.txt
 ```
 
 Rules every command shares:
 
 - **Exit codes**, the Team compiler's meanings: 0 done; 1 done with an error reported (a patch's
-  team the save lacks, an AATF error, a restored id listed); 2 refused before anything was
+  team the save lacks, an AATF error); 2 refused before anything was
   written (a bad argument, a version mismatch, an unreadable file, a team or player the save
   lacks); 3 a write failed (what was already written stands).
-- **Writing a save.** A command that writes a save reads its source save (`--base`, or
-  `check-stripped`'s one save) and writes `--out`, which may be the same path; an existing
-  output save or CPK (`--out`, `--bins-out`) is first copied to `<file>.bak` (one level, as every
-  save does). There is no implicit base save and no command creates a whole EDIT. While the PES
+- **Writing a save.** A command that writes a save reads its source save (`--base`) and
+  writes `--out`, which may be the same path; an existing output save is first copied to
+  `<file>.bak` (one level, as every save does). There is no implicit base save and no command creates a whole EDIT. While the PES
   of that save's version is running (the source save's version, read before anything is
   written), a command that writes a save writes only when given `--edit-mode-closed`, the
   member's word that the game's Edit mode is closed: the game writes the save it holds over the
@@ -326,9 +261,6 @@ Rules every command shares:
   every edit of another version's save, and a copy of one, for no protection. The compiler's
   savefile step follows the same rule (`team_compiler/pipeline.md`,
   `savefile_skipped_pes_running`).
-- **A stripped player is marked.** On a Fox save, `diff` marks a player at -1 as stripped
-  ("Stripped save") beside his rows, `export-toml` with `stripped = true` in his table
-  (informational; import ignores it).
 
 The commands:
 
@@ -349,15 +281,15 @@ The commands:
   builder can apply a night's patches in one script. A team is listed as applied only when at
   least one of its players was written: a team the save holds whose patch players it all lacks
   prints only their skips. A skipped team or player is an error (exit
-  1) and the rest is written. Like every command that writes a save (`import-toml`'s notes,
-  `check-stripped --strip-again`'s fixed players), its lines are printed
+  1) and the rest is written. Like every command that writes a save (`import-toml`'s notes),
+  its lines are printed
   once `--out` is written: a write that fails prints only its failure (exit 3), never a line
   saying what was written. A pre-Fox patch is refused until the compiler writes one (deferred
   with pre-Fox's other gaps). The read-only lock is a GUI guard; a CLI command that writes
   aesthetics (an `import-toml` whose file holds aesthetics) is explicit by nature and is not
   gated.
 - `diff` prints the comparator's report to stdout, players paired by id, each changed field as
-  old → new (the appearance id is no row: a stripped player is marked instead), then the
+  old → new, then the
   players only in one save (human-readable by default, `--json` for
   tooling), replacing the Midcupping compare scripts; `--aesthetics` and `--gameplay` keep one
   scope. Saves of two versions are refused. Differences are its output, not an error: exit 0.
@@ -381,17 +313,6 @@ The commands:
   ruleset, Autumn 26, with the warning line `aatf_ruleset_gone` (a copy deleted or edited
   until it no longer loads; the check still runs). `--rules`, a command-line path, is relative
   to the current directory.
-- `strip-and-seed` is "Stripped save"'s operation on a Fox save: it reads `--bins` (the cup's
-  `4cc_08_bins.cpk`) and writes the seeded tables into `--bins-out`, then the stripped save into
-  `--out`: when `--bins-out` cannot be written, the save is not (exit 3); a `--bins-out` written
-  beside a save left unstripped changes no look, the records still deciding. A table `--bins`
-  lacks is created from the seed rows. A pre-Fox save is refused. Each base-copied face is a
-  `strip_base_copied_face` warning line; warnings leave the exit code 0.
-- `check-stripped` lists the players whose appearance id is set while others are stripped, one
-  `appearance_id_restored` error each (exit 1 when it lists any; a save no player of which is
-  stripped lists nobody); `--strip-again` sets their ids to -1, leaving the tables as they are, and
-  writes `--out`, which it requires (exit 0), reporting the players it set once `--out` is
-  written, so a failed write reports none fixed. A pre-Fox save is refused.
 - `export-teams-list` prints the merge summary (added / kept / overridden / unresolved) and stops
   unless `--yes` is given; a change behind an unresolved conflict is dropped, as for the updater
   merge (`libs/teams_list.md`). An unwritable data directory reports `teams_list_read_only` and
@@ -428,7 +349,6 @@ finding that drops something says so with its own code.
 | `patch_player_not_in_save` | Error | `apply-patch`: the save has no player with this id (`player`) | the rest is written; exit 1 |
 | `player_diff` | Info | `diff`: one field of a player in both saves, old to new (`player`, `field`, `old`, `new`) | the report's rows; differences are the output, exit 0 |
 | `player_only_in` | Info | `diff`: a player in one save alone (`player`, `save`: `first` or `second`) | informational; goes on |
-| `player_stripped` | Info | `diff`: the player's appearance id is -1 in `save` (`first`, `second` or `both`); his record is compared, not the look the game shows (`player`, `save`) | marks the player beside his rows; exit 0 |
 | `teams_list_added` | Info | `export-teams-list`: a team of the save the list lacked, appended or put into a placeholder's slot (`team`, `name`) | merged; written only with `--yes` |
 | `teams_list_overridden` | Info | `export-teams-list`: a name in both whose id becomes the save's (`name`, `old`, `new`) | merged; written only with `--yes` |
 | `teams_list_unresolved` | Error | `export-teams-list`: a change dropped because its id collided with another row of the merged list (`team`, `name`) | the change is dropped, the other changes written with `--yes`; exit 1 |
@@ -440,8 +360,6 @@ finding that drops something says so with its own code.
 | `aatf_violation` | the violation's (Error or Warning) | `check-aatf`: one rule the team breaks under the ruleset (`team`; `player` for a player's violation; `rule`, the rule's name in words; `problem`, what is wrong) | printed; an error-severity violation makes the exit code 1 |
 | `aatf_check_failed` | Error | `check-aatf`: the ruleset's check itself failed on the team, which the other teams' results do not cover (`team`, `error`) | the other teams are still checked; exit 1 |
 | `aatf_ruleset_gone` | Warning | `check-aatf` without `--rules`: the `aatf_ruleset` setting names a ruleset that is gone from the data folder or no longer loads (`ruleset`, `used`) | the first embedded ruleset, which the line names, is checked instead |
-| `appearance_id_restored` | Error, or Info once re-stripped | `check-stripped`: the player's appearance id is set again while another player's is stripped, so the game shows his save record, not the database rows (`player`, `name`) | exit 1 while he stands listed; reported at Info and exit 0 once `--strip-again` has stripped him |
-| `strip_base_copied_face` | Warning | `strip-and-seed`: the player's record copied another player's face, which the seed rows cannot carry, so once stripped he shows the face his row describes; his export describing his face settles it (`player`, `name`, `copied`) | warns and goes on |
 
 ---
 
@@ -458,10 +376,8 @@ quick actions, generation, Texport, the legacy imports) get their scenarios with
 and verification"), and `check-aatf` is its one scenario surface here. Test data: the fixture
 saves are `pes_savefile`'s (`tests/fixtures/`, one real save per version, rebuilt from the
 slices held there), a team or player
-named by its id in that save; a stripped save is a fixture save after `strip-and-seed`. The
-cup saves with known violations and the rules files are `libs/aatf`'s fixtures. The stripped-save
-scenarios run on PES 21; PES 18 and 19 join them within Phase 5, once a step has measured those
-versions' appearance offsets.
+named by its id in that save. The cup saves with known violations and the rules files are
+`libs/aatf`'s fixtures.
 
 **CLI**
 
@@ -473,8 +389,7 @@ SE-CLI-01  GIVEN the PES 21 fixture save, a Team TOML of one of its teams, and a
 SE-CLI-02  withdrawn: restated as SE-CLI-03, the save written while its game runs
            when the command is given --edit-mode-closed (step 8.9l5a)
 SE-CLI-03  GIVEN a running PES of the save's version (the tests' running-PES probe)
-           WHEN import-toml, apply-patch, strip-and-seed or check-stripped --strip-again is
-                run on that save
+           WHEN import-toml or apply-patch is run on that save
            THEN without --edit-mode-closed nothing is written, the exit code is 2 and the
                 message names the game and the flag; with it, --out is written as with no
                 game running; with only a PES of another version running, the command writes
@@ -514,12 +429,7 @@ SE-TOML-06 GIVEN a Team TOML with a player name longer than the target version's
            THEN it exits 0, --out holds the name cut to the field at whole characters and
                 colour codes, and an import_text_cropped warning names the player's key and
                 the cut name as the game shows it (colour codes left out)
-SE-TOML-07 GIVEN a stripped PES 21 save and the unstripped PES 21 fixture save
-           WHEN a team whose slot 3 is rostered is exported from the stripped one with
-                export-toml, given an appearance table for its slot 3, and imported into each
-           THEN every player of the exported file carries stripped = true; after each import
-                slot 3's appearance fields are the file's, his appearance id still -1 in the
-                stripped save and still set in the other
+SE-TOML-07 withdrawn: no save is stripped, and Team TOML has no `stripped` key (step 8.36b)
 SE-TOML-08 GIVEN a Team TOML whose [team] id the PES 21 fixture save lacks
            WHEN it is imported
            THEN it is refused naming the team, with exit code 2, and --out is not written
@@ -545,10 +455,7 @@ SE-PAT-03  GIVEN a patch whose pes_version differs from the save's, and one whos
                 allocation_scheme_version differs from the suite's
            WHEN apply-patch is run with each
            THEN each is refused naming the mismatch, with exit code 2, and --out is not written
-SE-PAT-04  GIVEN a stripped PES 21 save and a PES 21 patch with names and motions for one team
-           WHEN apply-patch is run
-           THEN the team's players carry the patch's names and motions and their appearance ids
-                are still -1
+SE-PAT-04  withdrawn: no save is stripped (step 8.36b)
 SE-PAT-05  GIVEN the PES 21 fixture save and a PES 21 patch for one of its teams whose every
                 player id the save lacks
            WHEN apply-patch is run
@@ -584,9 +491,12 @@ SE-DIF-02  GIVEN the same saves
 SE-DIF-03  GIVEN a PES 21 and a PES 19 save
            WHEN diff is run
            THEN it is refused naming both versions, with exit code 2
-SE-DIF-04  GIVEN a stripped PES 21 save and the fixture it was stripped from
-           WHEN diff is run
-           THEN each player at -1 is marked stripped, with no row for his appearance id
+SE-DIF-04  withdrawn: restated as SE-DIF-05, the appearance id an ordinary row (step 8.36b)
+SE-DIF-05  GIVEN two PES 21 saves in which player 70101's appearance id is 70101 in the first
+                and -1 in the second, every other byte equal
+           WHEN diff is run, and with --json
+           THEN the report holds his AppearanceId row, 70101 → 4294967295 (the game's -1 as
+                the save stores it), and the JSON's player object has no stripped key
 ```
 
 **AATF**
@@ -639,43 +549,14 @@ SE-AATF-07 GIVEN the settings' aatf_ruleset naming the embedded vgl27 and the of
 **Stripped save**
 
 ```
-SE-STR-01  GIVEN the PES 21 fixture save with one player's appearance id at -1, and a
-                4cc_08_bins.cpk whose three player tables hold rows for him
-           WHEN strip-and-seed is run
-           THEN --bins-out's PlayerAppearance.bin holds a row per other player equal to his
-                record's appearance bytes, and BootsList.bin and GloveList.bin his boots and
-                gloves IDs; the stripped player's three rows are unchanged; the CPK's other files are
-                unchanged; in --out every appearance id is -1 and every other byte is unchanged
-SE-STR-02  GIVEN a PES 17 save
-           WHEN strip-and-seed is run, and check-stripped
-           THEN each is refused as a pre-Fox save, with exit code 2, and nothing is written
-SE-STR-03  GIVEN a stripped PES 21 save in which two players' appearance ids are set again
-           WHEN check-stripped is run, then with --strip-again
-           THEN the first lists the two players and exits 1; the second sets both ids to -1 in
-                --out, writes no table, and exits 0
-SE-STR-04  GIVEN the PES 21 fixture save, and a fully stripped one
-           WHEN check-stripped is run on each
-           THEN neither lists a player, and both exit 0
-SE-STR-05  GIVEN a --bins-out that cannot be written
-           WHEN strip-and-seed is run
-           THEN it fails naming --bins-out, with exit code 3, and --out is not written
-SE-STR-06  GIVEN the PES 21 fixture save with one player's appearance id at -1, and a
-                4cc_08_bins.cpk holding none of the three player tables
-           WHEN strip-and-seed is run
-           THEN --bins-out holds PlayerAppearance.bin, BootsList.bin and GloveList.bin with a
-                row per other player built from his record, as in SE-STR-01, and none for the
-                stripped one; the CPK's other files are unchanged
-SE-STR-07  GIVEN the PES 21 fixture save, whose players copy player 7511 with the face edit
-                flag clear but for team 795's, which copy their own ids, with one copying
-                player's id set to 0
-           WHEN strip-and-seed is run
-           THEN every player is stripped and seeded as in SE-STR-01; each player copying 7511
-                gets one strip_base_copied_face warning naming him and player 7511, team 795's
-                and the one at 0 none; the exit code is 0
-SE-STR-08  GIVEN a stripped PES 21 save in which one player's appearance id is set again, and
-                an --out that cannot be written (a folder of that name)
-           WHEN check-stripped --strip-again is run
-           THEN it fails naming --out, with exit code 3, and no player is reported fixed
+SE-STR-01  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
+SE-STR-02  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
+SE-STR-03  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
+SE-STR-04  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
+SE-STR-05  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
+SE-STR-06  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
+SE-STR-07  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
+SE-STR-08  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
 ```
 
 **Teams list**

@@ -1163,31 +1163,6 @@ the compiler's, and the savefile builder edits them as before.
 
 ---
 
-## Stripped save
-
-What exists of this is in `spec/save_editor.md` "Stripped save". It goes whole (worklog
-8.36b), before 0.0.1: no save is stripped, since every engine's looks reach the game through
-the aesthetics patch (`plans/pes_savefile/operations.md` "Aesthetics patch (new)"), and a
-release should not ship commands for an abandoned route; no member holds a stripped save,
-none having been released. Going with it:
-
-- `strip-and-seed` and `check-stripped` (`--strip-again`, `--bins-out`), with their catalog
-  rows (`player_stripped`, `appearance_id_restored`, `strip_base_copied_face`) and help
-  sections, and the Strip again window opened with a Fox save;
-- every stripped-player mark and note: the Appearance section's, the FPC classifier's, the
-  Comparator's and `diff`'s (its `--json` `stripped` field included), and Generate's and
-  Generate in-game face's skip of a player at -1;
-- Team TOML's `stripped` key, from the writer and the parser alike, so a file holding it is
-  refused as any unknown key is: only development builds wrote one;
-- `diff`'s exclusion of the appearance block's player id, which existed for the stripped mark:
-  the id becomes an ordinary row, so two saves whose ids differ show it.
-
-The rule that an import (Team TOML, `.4ccs`/`.4cct`, Texport) leaves the appearance block's id
-as it is stays: only the aesthetics patch sets it, to the player's own id, when it writes his
-look.
-
----
-
 ## Comparator (gameplay + aesthetics)
 
 What exists of this is in `spec/save_editor.md` "Comparator (gameplay + aesthetics)".
@@ -1693,10 +1668,7 @@ SE-GUI-34  manual  GIVEN a PES 21 player whose record has a non-default in-game 
                    WHEN he is opened in PES 21's Edit mode
                    THEN he has the generated look (long red hair, blue iris), neither the
                         changed record's nor the default face
-SE-GUI-20  GIVEN a Fox save where some players' appearance ids are set and the rest are -1
-           WHEN it is opened
-           THEN the players with ids set are listed with a Strip again action, which sets their
-                ids to -1 as one undoable edit
+SE-GUI-20  withdrawn: no save is stripped, so no Strip again window opens (step 8.36b)
 SE-GUI-21  manual  GIVEN the save's game running
                    WHEN Save is clicked
                    THEN a dialog naming the game says to use Edit mode's Data Management >

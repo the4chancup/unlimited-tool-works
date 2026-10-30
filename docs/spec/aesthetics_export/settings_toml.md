@@ -12,7 +12,7 @@ compile carries them to the game:
   `GloveList.bin` whenever his savefile appearance record's player id is -1 (`0xFFFFFFFF`), player
   by player; a record whose id is set wins over the tables (in-game Test 1, PES 2021: decision
   entry "aesthetics travel in the database tables"). The official save is therefore stripped once
-  (every appearance id set to -1, see "Stripped save" in the [Save editor plan](../save_editor.md))
+  (every appearance id set to -1)
   and the compiler writes each compiled player's three rows from his two settings files; nothing
   of a player's appearance is written to the savefile. Gloves need a FoxDen change to keep the table's value (worklog
   "Issues"); until it does, a Fox gloves row has no effect in the 4cc setup.
