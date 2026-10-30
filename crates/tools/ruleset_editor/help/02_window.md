@@ -10,9 +10,11 @@ open lists what is wrong with it under the buttons.
 
 **Editing.** The sections sit in a rail on the left; Custom checks joins only when
 the file carries hand-written checks, and a "⚠" marks a section holding a problem
-(the bar along the bottom names it). *General* holds the ruleset's name, the squad
-size and the stat checklists: the rating stats pick the player's tier, the
-"may sit below the target" stats are the only ones allowed under theirs. The other
+(the bar along the bottom names it). *General* holds the ruleset's name, its event's
+page and logo, the squad size and the stat checklists: the rating stats pick the
+player's tier, the "may sit below the target" stats are the only ones allowed under
+theirs. The logo shows at the Save editor's top right while the ruleset is active, a
+link to the page. The other
 sections' forms arrive in a later build; the Summary already spells the ruleset
 out as readable rules text, with **Copy** putting it on the clipboard to post.
 *Show preview* at the top right opens the rules file's data block, as the editor

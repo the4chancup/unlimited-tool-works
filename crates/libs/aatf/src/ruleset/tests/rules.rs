@@ -1135,6 +1135,14 @@ fn a_64_kb_logo_and_a_bare_web_address_load() {
     assert!(ruleset.logo.is_some());
 }
 
+#[test]
+fn an_http_page_loads() {
+    let page = "http://4cc.example/dbc7";
+    let ruleset = Ruleset::from_data_block(&small_with(&format!("page: \"{page}\", ")))
+        .expect("an http:// page loads");
+    assert_eq!(ruleset.page.as_deref(), Some(page));
+}
+
 /// A real event logo: DBC7's, as the drafts draw it.
 const DBC7_LOGO: &[u8] = include_bytes!("../../../../../../docs/prototypes/assets/logos/dbc7.png");
 

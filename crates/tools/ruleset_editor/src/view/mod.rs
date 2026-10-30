@@ -79,7 +79,7 @@ pub(crate) struct RulesetView {
 }
 
 /// A file-dialog call: the `.4ccrules` dialog's start folder to the
-/// picked path (`rfd`, or a test's stub).
+/// picked path (`rfd`, or a test's stub); the PNG dialog ignores it.
 type FilePicker = Box<dyn FnMut(&Path) -> Option<PathBuf>>;
 
 /// `FilePicker` for Save as: the suggested file name comes second.
@@ -804,7 +804,34 @@ fn remember_changed(view: &mut RulesetView) {
     view.previous_lines = lines;
 }
 
+/// The start of the data block's logo line: the key at the block's
+/// indent.
+const LOGO_KEY: &str = "    logo: ";
+
 /// `ruleset`'s data block as the preview draws it, one string per line.
+/// The logo's line is shortened: its base64 runs to tens of thousands
+/// of characters, which would make the preview's scroll area that wide
+/// and its changed-line highlight span all of it. The file keeps the
+/// line whole.
 fn block_lines(ruleset: &Ruleset) -> Vec<String> {
-    ruleset.to_data_block().lines().map(str::to_owned).collect()
+    let short_logo = short_logo_line(ruleset);
+    ruleset
+        .to_data_block()
+        .lines()
+        .map(|line| match &short_logo {
+            Some(short) if line.starts_with(LOGO_KEY) => short.clone(),
+            _ => line.to_owned(),
+        })
+        .collect()
+}
+
+/// The preview's logo line: the logo's first 24 base64 characters and
+/// the PNG's size in KB, rounded up; `None` with no logo.
+fn short_logo_line(ruleset: &Ruleset) -> Option<String> {
+    let logo = ruleset.logo.as_deref()?;
+    let kb = ruleset.logo_png()?.len().div_ceil(1024);
+    let start: String = logo.chars().take(24).collect();
+    Some(format!(
+        "{LOGO_KEY}\"{start}…\",  // a {kb} KB PNG, shortened in this view"
+    ))
 }

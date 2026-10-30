@@ -2,6 +2,7 @@
 //! and the last recorded edit's changed lines are the view's `changed`
 //! set. The highlight's own scenario waits for a later build.
 
+use super::general::{choose_png, dbc7_logo};
 use super::*;
 
 #[test]
@@ -60,5 +61,38 @@ fn the_preview_draws_the_block_and_the_edit_marks_its_changed_lines() {
         !view.changed.iter().any(|line| line.contains("name:")),
         "an untouched line is not marked: {:?}",
         view.changed
+    );
+}
+
+#[test]
+fn the_preview_shortens_the_logos_line_and_the_save_keeps_it_whole() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    choose_png(&mut window, &mut view, &ctx, &dbc7_logo());
+    view.show_preview = true;
+    let frame = settled(&mut window, &mut view, &ctx);
+
+    let short = "    logo: \"iVBORw0KGgoAAAANSUhEUgAA…\",  // a 16 KB PNG, shortened in this view";
+    let drawn_line = frame
+        .nodes
+        .iter()
+        .filter_map(accesskit::Node::value)
+        .find(|text| text.starts_with("    logo: "))
+        .expect("the logo's line is drawn");
+    assert!(drawn_line == short, "the drawn line: {drawn_line:.120}");
+    assert!(
+        view.changed.contains(short),
+        "the pick marks the short line"
+    );
+    assert!(view.previous_lines.iter().any(|line| line == short));
+
+    let dir = crate::test_support::scratch("preview_logo");
+    let path = dir.join("logo.4ccrules");
+    save_as_via_menu(&mut window, &mut view, &ctx, &path);
+    let written = std::fs::read_to_string(&path).expect("the save wrote the file");
+    let rules = aatf::Rules::load(&written).expect("the saved file loads");
+    assert_eq!(
+        rules.ruleset().logo_png(),
+        Some(std::fs::read(dbc7_logo()).unwrap()),
+        "the file holds the whole logo"
     );
 }
