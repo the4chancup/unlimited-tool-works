@@ -5893,18 +5893,23 @@ briefs, review loops, gates and mutation runs as for any step.
     sections; the shell tests that assume one window tool. Then its converge: an Astra part
     (A7) beside cv6's, `just mutants ruleset_editor`, the built window with two tools
     (switching, the unsaved prompts, closing)
+    - [x] cv8a merged `4f8c235e`: off `CLI_ONLY`, the (WIP) label, the line, the help, a save
+      keeping the unbuilt sections over DBC7, VGL27 and VTL11; the stat grid measured, nothing
+      cut once scrolled; no shell test assumed one window tool
     - [ ] cv8b after cv8 lands (DECISIONS 2026-10-30 "every squad is 23, and the event logo
       is any picture"): `squad_size` out of `libs/aatf` (schema, writer, embedded rulesets,
       logic, load rules on 23; logic version 1's pinned hash follows) and General; the logo
       from any picture, scaled to fit 168 × 56 and stored as PNG (RE-GUI-19); the unbuilt
       sections' line reworded (brief `.tmp/0_0_1cv/brief_cv8b.md`; the bundle names the
-      embedded DBC7, `aatf_ruleset = "dbc7"`, so it has no rules file to regenerate)
+      embedded DBC7, `aatf_ruleset = "dbc7"`, so it has no rules file to regenerate); the
+      settings menu's section only for a tool with a form (`has_settings_view`, DECISIONS
+      2026-10-30), since the Ruleset editor's table holds only its own state
   - [ ] cv7 after 0.0.1: split `view/mod.rs` (the toolbar), `view/menus.rs` (the dialogs),
     `view/interchange.rs` (the export half), `team_widgets` `pitch/mod.rs` (the paint) and
     `tactics/mod.rs` (the changes' terms), each past a thousand lines
-- [ ] 0.0.1f the cut, once the Save editor's view is done (the Ruleset editor left 0.0.1 on
-  2026-10-24, `plans/core/development_plan.md` "Development Plan"): the bundled settings picking
-  DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`
+- [ ] 0.0.1f the cut, once the Save editor's view and cv are done (the Ruleset editor ships as
+  far as it is built, labelled (WIP), `plans/core/development_plan.md` "Development Plan"):
+  the bundled settings picking DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`
   (ov7: no rules file beside the exe); the clean-machine check (`plans/core/development_plan.md`
   "Release 0.1.0"'s verification, both launchers included), the exe's size measured crate by
   crate with `cargo bloat` (35.3 MiB at 0.0.1d2, past the budget's "about 30 MB";

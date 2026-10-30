@@ -2922,3 +2922,5 @@ worklog passed 7,000 lines.
 - **2026-10-30** — 0.0.1cv cv3 merged (`a4a040b1`, gates green: 5405 tests): the Save editor
   view's audit findings, PgUp/PgDn among them; the maintainer corrected two Texport facts (the
   game's import names the team from the DLC's bin; TEXPORT numbers are hexadecimal).
+- **2026-10-30** — 0.0.1cv cv8 merged (`4f8c235e`): the Ruleset editor's window in 0.0.1 as
+  "Ruleset editor (WIP)"; its empty settings header led to `has_settings_view` (cv8b).
