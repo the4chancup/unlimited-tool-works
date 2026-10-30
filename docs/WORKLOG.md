@@ -1850,7 +1850,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         8.29d1b2 + SE-GUI-43 (2026-10-30, Codex own): 2 counted, the loop ends (rulings
         A1ab: the team file panel's two lists push Apply out of a 960 x 600 window, the
         help's patch refusal names the wrong check; a note's detail never asserted drawn);
-        fixes in `brief_mut838.md`. Next: one SWE-2 round over k5 and the reworks
+        fixes merged with mut838 (`f3688107`: the lists share the room above Apply, which
+        stays on a 1224 x 576 pane, the shortest a member sees; the help names the boots and
+        gloves numbering). Next: one SWE-2 round over k5 and the reworks
       - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged: running
         2026-10-30 in the mutants worktree at `0c5571d3`, base `d2617b2f^1`
         (`.tmp/8_30c/k5mut.sh`, log `.tmp/8_30c/k5mut.log`)
@@ -2710,7 +2712,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       ends (`.tmp/8_29d/rulings_p45.md`; `755b8ad5`: the help's logo click only with a
       page). `mutants-diff 7bb734a1` (8.29d1a to 8.38a, eight crates) done 2026-10-30: 4
       survivors, all `save_editor`: three test gaps and `terms.rs:481` equivalent on every
-      real field name; the tests ride `.tmp/8_30c/brief_mut838.md` (Opus, wt-mut838)
+      real field name; the three tests merged with mut838 (`f3688107`)
       Files: `save_editor/src/view/{mod,menus,quick_actions}.rs`, `view/tests/player.rs`,
       `help/02_window.md`; `ruleset_editor/src/view/{mod,preview}.rs`,
       `view/tests/{file,preview}.rs`

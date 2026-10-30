@@ -2898,3 +2898,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — A disabled widget keeps egui's faded box and dims its text to the drafts'
   grey, through the suite's own `add_enabled` (8.38b, merged). The converge review is now a
   release's prerequisite; PES 2017 Texport export found feasible from the open save.
+- **2026-10-30** — The team file panel's two lists share the room above Apply, which stays on
+  the shortest window; the mutation run's three survivors and Astra's test gaps are pinned
+  (mut838, merged).
