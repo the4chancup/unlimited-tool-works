@@ -14,7 +14,7 @@ use aatf::Ruleset;
 /// A rail section.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Section {
-    /// Name, squad size, the stat lists (`general`).
+    /// Name, event page and logo, squad size, the stat lists (`general`).
     General,
     /// The tiers table and the medal systems.
     Tiers,
@@ -67,16 +67,17 @@ impl Section {
 }
 
 /// The drawn section over `ruleset` (the forms edit it in place;
-/// `custom_checks` is the section's read-only text); the later builds'
-/// draw one weak line for now.
+/// `custom_checks` is the section's read-only text, `logo` General's
+/// Event logo field); the later builds' draw one weak line for now.
 pub(crate) fn show(
     ui: &mut egui::Ui,
     section: Section,
     ruleset: &mut Ruleset,
     custom_checks: Option<&str>,
+    logo: &mut general::LogoField,
 ) {
     match section {
-        Section::General => general::show(ui, ruleset),
+        Section::General => general::show(ui, ruleset, logo),
         Section::Tiers => tiers::show(ui, ruleset),
         Section::CustomChecks => custom_checks::show(ui, custom_checks),
         Section::Summary => summary::show(ui, ruleset),

@@ -70,6 +70,9 @@ pub(crate) struct RulesetView {
     pub(crate) open_dialog: FilePicker,
     /// `open_dialog` for Save as.
     pub(crate) save_as_dialog: SaveDialog,
+    /// General's Event logo field: its PNG dialog, refusal line and
+    /// drawn picture.
+    pub(crate) logo: sections::general::LogoField,
     /// Which document this is: the id salt, so egui widget state never
     /// crosses into the next one (the Save editor's `generation`).
     generation: u64,
@@ -131,6 +134,7 @@ impl RulesetView {
             open_refusal: None,
             open_dialog: default_open_dialog(),
             save_as_dialog: default_save_dialog(),
+            logo: sections::general::LogoField::new(default_logo_dialog()),
             generation: 0,
         }
     }
@@ -146,6 +150,7 @@ impl RulesetView {
         self.focused = None;
         self.start_open = false;
         self.open_refusal = None;
+        self.logo.refusal = None;
         self.document = Some(document);
         self.generation += 1;
     }
@@ -167,7 +172,7 @@ fn ruleset_dialog(start: &Path) -> rfd::FileDialog {
 /// window (the pickers are stubbed per test).
 #[cfg(test)]
 const REAL_DIALOG_PANIC: &str =
-    "a test reached a real file dialog: stub open_dialog/save_as_dialog";
+    "a test reached a real file dialog: stub open_dialog/save_as_dialog/logo.dialog";
 
 /// The default Open dialog: `rfd` (reaching a native dialog in a test
 /// panics; tests stub `open_dialog`/`save_as_dialog`).
@@ -192,6 +197,23 @@ fn default_save_dialog() -> SaveDialog {
 #[cfg(test)]
 fn default_save_dialog() -> SaveDialog {
     Box::new(|_, _| panic!("{REAL_DIALOG_PANIC}"))
+}
+
+/// The Event logo's dialog: `rfd` on PNG files. It ignores the start
+/// folder: the rules files' folder is no likelier to hold the picture.
+#[cfg(not(test))]
+fn default_logo_dialog() -> FilePicker {
+    Box::new(|_| {
+        rfd::FileDialog::new()
+            .add_filter("PNG picture", &["png"])
+            .pick_file()
+    })
+}
+
+/// `default_logo_dialog` under `cargo test`.
+#[cfg(test)]
+fn default_logo_dialog() -> FilePicker {
+    Box::new(|_| panic!("{REAL_DIALOG_PANIC}"))
 }
 
 /// `name` as the suggested file name: lowercase, its alphanumeric runs
@@ -246,6 +268,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut RulesetView, ctx: &ToolContext)
                         view.section,
                         &mut document.ruleset,
                         document.custom_checks.as_deref(),
+                        &mut view.logo,
                     );
                     if view.pending.is_none() && document.ruleset != before {
                         view.pending = Some(Snapshot {

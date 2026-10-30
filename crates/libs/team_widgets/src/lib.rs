@@ -9,6 +9,9 @@
 /// The card pickers: the skills grid and COM playing styles with a
 /// remaining-count badge per ruleset tier, and the playing-style combo.
 pub mod cards;
+/// A ruleset's event logo, decoded once and drawn at the size both
+/// editors give it.
+pub mod event_logo;
 /// How the editor and the widgets draw a savefile name, its colour
 /// codes applied as text colours.
 pub mod names;

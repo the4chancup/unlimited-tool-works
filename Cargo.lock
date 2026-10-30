@@ -3972,6 +3972,7 @@ dependencies = [
  "rfd",
  "serde",
  "studio_core",
+ "team_widgets",
  "thiserror 2.0.20",
  "toml",
 ]
@@ -4604,6 +4605,7 @@ name = "team_widgets"
 version = "0.0.1"
 dependencies = [
  "aatf",
+ "dds_convert",
  "egui",
  "pes_savefile",
  "pes_version",
