@@ -113,12 +113,10 @@ changed on its own.
   files on a click meant for one run.
 - **Save findings open the Save editor at their fix.** `savefile_missing` (the patch written,
   no save to write it into) carries **Apply in Save editor**: the shell switches to the Save
-  editor with that patch loaded and its apply action ready, the member picking the save.
-  `savefile_player_not_stripped` carries **Fix in Save editor**: the Save editor opens on that
-  save with the strip operation its case needs (`strip-and-seed` for a save never stripped,
-  `check-stripped --strip-again` otherwise) and the named players listed. Both are the tool
-  switch with an argument the Upgrade button uses; the save is written by the Save editor's own
-  apply and strip, the one save-writing path. `savefile_skipped_pes_running` gets no button:
+  editor with that patch loaded and its apply action ready, the member picking the save. It is
+  the tool switch with an argument the Upgrade button uses; the save is written by the Save
+  editor's own apply, the one save-writing path (`savefile_player_not_stripped` goes with the
+  stripped route, worklog 8.36c). `savefile_skipped_pes_running` gets no button:
   the view asks the Save editor's Edit mode question (`plans/save_editor.md` "Writing a save
   while its game runs") in place of the command line's `--edit-mode-closed`
   (`spec/team_compiler/pipeline.md` "6. Post-processing"), its Save running the savefile step

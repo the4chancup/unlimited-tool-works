@@ -10,7 +10,7 @@ aesthetics), handles team import/export
 FPC invisibility. It can also **generate `settings.toml` files from an existing
 savefile** (via `pes_savefile`'s `PlayerSettings` model), giving teams a migration path
 from the manual-editing workflow to the [Team compiler](team_compiler/README.md)'s
-compile-time aesthetics (on Fox the CPK's database tables, on pre-Fox savefile writing). The
+compile-time aesthetics (written to the savefile through the aesthetics patch). The
 savefile codec, the data model, and all
 interchange formats live in the `pes_savefile` lib crate — see the
 [Savefile plan](pes_savefile/README.md). Platform context is in the [core plan](core/README.md).
@@ -1109,9 +1109,7 @@ files, so the editor's toggle and the compiler's markers cannot drift apart.
 ## Read-only aesthetics
 
 A player's aesthetics are owned by the team's export: `settings.toml` and the models decide them.
-On Fox the Team compiler writes them into the database tables of its CPK and the savefile's
-appearance records are stripped (see "Stripped save" below); on pre-Fox it resolves them into an
-**aesthetics patch** (format in "Aesthetics patch" of the
+On every engine the Team compiler resolves them into an **aesthetics patch** (format in "Aesthetics patch" of the
 [Savefile plan](pes_savefile/operations.md)), and the save editor
 applies the patch. Hand-editing the same fields here
 would create the two-sources problem — the next patch silently overwrites the hand edit, or the
@@ -1124,7 +1122,7 @@ and no switch drawn; on, the editor **does not edit aesthetics** but through the
 
 - The Appearance section renders its values below the Cutscenes group disabled, with one line of explanation ("The team's
   export owns the aesthetics, so edit its `settings.toml` (the face, hair and iris: its
-  `ingame_face.toml`) and recompile", plus on pre-Fox ", then apply the patch" and a link to the apply action).
+  `ingame_face.toml`) and recompile, then apply the patch", and a link to the apply action).
 - The same lock covers every other aesthetics write path: the team operations that write
   appearance fields (set boots/gloves IDs for everyone, set/remove FPC for the team, clear visual
   flags, the FPC toggle), Fix database (it clears the same flags), and the aesthetics section of Team TOML and
@@ -1134,7 +1132,7 @@ and no switch drawn; on, the editor **does not edit aesthetics** but through the
   untouched); the comparator's preview lists every player the patch will change with old → new;
   applied through the undo pipeline; saved only when the user saves. A team the save lacks is
   reported and skipped; the rest applies. The panel (the Savefile menu's entry, and the
-  ownership line's link on pre-Fox) holds `Open patch…`, then the file's name with the teams
+  ownership line's link) holds `Open patch…`, then the file's name with the teams
   it writes and their players, and `Apply`; a refusal is the CLI's sentence (`<path>: the patch
   is for PES 2021, the save is PES 2017`) in the error colour; each skipped team or player is a
   warning line (`Team 714 /co/ is not in this save: its players are skipped.`). The preview is
@@ -1152,14 +1150,11 @@ and no switch drawn; on, the editor **does not edit aesthetics** but through the
   carries only the teams it recompiled and only the fields their compile resolved.
 - **Unlock: "Edit aesthetics anyway"**, a switch in the Appearance section, drawn only while the
   setting is on, off at every start of the tool. Turning it on re-enables all the paths above for the session, with the note that on
-  pre-Fox a later patch overwrites whatever is edited by hand, and on a stripped Fox save the game
-  takes the player's look from the database tables and reads only his motions (they sit before
-  the appearance block). It exists for the cases the rule does not cover — a
+  a later patch overwrites whatever is edited by hand. It exists for the cases the rule does not cover — a
   team with no export, a cup-night fix when recompiling is not an option — and it is a session
   switch rather than a second setting so that a machine set to "Aesthetics from exports" cannot
   quietly stay unlocked. The setting is off by default because the cup the suite serves first
-  (DBC7) keeps its looks in the save; a stripped player's mark shows in both states, so an
-  edit the game will not read is never silent. Its row in the settings menu carries the
+  (DBC7) keeps its looks in the save. Its row in the settings menu carries the
   tooltip "On when the cup's looks are compiled from exports: the save's aesthetics are then
   read-only, behind Edit aesthetics anyway in the Appearance section."
 
@@ -1170,18 +1165,26 @@ the compiler's, and the savefile builder edits them as before.
 
 ## Stripped save
 
-What exists of this is in `spec/save_editor.md` "Stripped save".
+What exists of this is in `spec/save_editor.md` "Stripped save". It goes whole (worklog
+8.36b), before 0.0.1: no save is stripped, since every engine's looks reach the game through
+the aesthetics patch (`plans/pes_savefile/operations.md` "Aesthetics patch (new)"), and a
+release should not ship commands for an abandoned route; no member holds a stripped save,
+none having been released. Going with it:
 
-- The GUI parts of its rules: `.4ccs`/`.4cct` and Texport imports leave the appearance block's
-  id as it is, as every import does; the unlocked Appearance section writes the record's fields but
-  not its id, and on a stripped save it says that the look comes from the tables and the motions
-  are still read; every reader of a
-  record's appearance in the GUI (the Appearance section, the FPC classifier and its interference
-  findings) marks a player at -1 as stripped beside what it shows; `settings.toml` generation
-  and Generate in-game face skip him ("Player settings in exports" in the
-  [Aesthetics export plan](aesthetics_export/settings_toml.md)); opening a Fox save lists the
-  players whose appearance id is set while others are stripped, with a one-click **Strip
-  again** (their record is ignored from then on; the tables decide).
+- `strip-and-seed` and `check-stripped` (`--strip-again`, `--bins-out`), with their catalog
+  rows (`player_stripped`, `appearance_id_restored`, `strip_base_copied_face`) and help
+  sections, and the Strip again window opened with a Fox save;
+- every stripped-player mark and note: the Appearance section's, the FPC classifier's, the
+  Comparator's and `diff`'s (its `--json` `stripped` field included), and Generate's and
+  Generate in-game face's skip of a player at -1;
+- Team TOML's `stripped` key, from the writer and the parser alike, so a file holding it is
+  refused as any unknown key is: only development builds wrote one;
+- `diff`'s exclusion of the appearance block's player id, which existed for the stripped mark:
+  the id becomes an ordinary row, so two saves whose ids differ show it.
+
+The rule that an import (Team TOML, `.4ccs`/`.4cct`, Texport) leaves the appearance block's id
+as it is stays: only the aesthetics patch sets it, to the player's own id, when it writes his
+look.
 
 ---
 
@@ -1213,13 +1216,12 @@ The panel over the spec's `diff` report:
   own tables, not from a second table for the panel, which would drift from the views; the
   unsaved-changes prompt reads the same ones.
 - The rows of the players both saves hold group per team: a player under the first team in
-  the open save's order whose roster holds him (`No team` when none does), as the Strip again list names a player's team,
+  the open save's order whose roster holds him (`No team` when none does),
   not one heading per roster, which would repeat a player on a club and a national team; one
   group per team, in the open save's team order (the team selector's), its players in the
   report's order, `No team` after the teams: not a heading at each change along the report's
   order, which heads a team once per run of its players, and a real save's teams hold ids far
-  apart; his
-  stripped mark beside his head; the players only in one save last, under `Only in the picked
+  apart; the players only in one save last, under `Only in the picked
   save` and `Only in the open save`, as the report lists them. The comparison runs on a worker
   thread, the held list marked `Comparing…` until it lands, and a frame draws only the rows in
   view: two real PES 2021 saves differ in 34,379 rows (about half a second for the command).
@@ -1234,7 +1236,7 @@ Built after Release 0.1.0 (0.2.0 or later); 0.0.1 and 0.1.0 ship without it.
 
 A team's looks copied from a save into the team's export, the files the Team compiler compiles
 from, never into a save: aesthetics live in the exports, and a look written into a save is one the
-next compile overwrites or a stripped Fox save does not read. Midcupping's save-to-save transplant
+next compile overwrites. Midcupping's save-to-save transplant
 is not kept, in the window or on the command line: its one remaining use, a team with no export,
 is served by generating the export from the save ("Interchange formats in the UI",
 `settings.toml` generation) and editing it there.
@@ -1293,8 +1295,8 @@ the editor exposes them as:
 - **Aesthetics patch apply** — see "Read-only aesthetics"; the patch is written by the Team
   compiler, never by the editor.
 - **`settings.toml` generation** — per player folder, for migrating a team to the
-  [Team compiler](team_compiler/README.md)'s compile-time aesthetics (on Fox the CPK's database
-  tables, on pre-Fox savefile writing). Uses the
+  [Team compiler](team_compiler/README.md)'s compile-time aesthetics (written to the savefile
+  through the aesthetics patch). Uses the
   shared authorable `PlayerSettings` subset; boots/gloves IDs are emitted only when they name a
   stock model (1 to 100), since custom IDs are compiler-assigned from models/links, not export
   settings.
@@ -1546,11 +1548,9 @@ SE-GUI-06  GIVEN a PES 17 save
 SE-GUI-07  GIVEN the save open with "Aesthetics from exports" on
            WHEN the Appearance section is drawn open
            THEN its values below the Cutscenes group are disabled with the line saying the
-                team's export owns them, the Cutscenes group's editable (and
-                on pre-Fox, the patch step); WHEN "Edit aesthetics anyway" is switched on THEN
-                they are editable, the switch is off again at the next start of the tool, and on
-                a stripped player the section says his look comes from the database tables and his
-                motions are still read
+                team's export owns them and the patch step, the Cutscenes group's editable;
+                WHEN "Edit aesthetics anyway" is switched on THEN they are editable, and the
+                switch is off again at the next start of the tool
 SE-GUI-08  GIVEN the save open on a team
            WHEN player 02 is dragged above player 01 in the list
            THEN the list shows the new order, and after Save slot 01 still holds player
@@ -1688,8 +1688,8 @@ SE-GUI-33  GIVEN a player whose record has hair length 5 and iris 7
 SE-GUI-34  manual  GIVEN a PES 21 player whose record has a non-default in-game face (long red
                          hair, blue iris, a slider moved), his settings.toml and
                          ingame_face.toml the view generated from it, then his record changed
-                         to another non-default look (short blond hair, green iris) and the
-                         save stripped (strip-and-seed), the folder compiled into the test slot
+                         to another non-default look (short blond hair, green iris), the
+                         folder compiled into the test slot and its patch applied to the save
                    WHEN he is opened in PES 21's Edit mode
                    THEN he has the generated look (long red hair, blue iris), neither the
                         changed record's nor the default face

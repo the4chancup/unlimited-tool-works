@@ -2171,18 +2171,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   - [ ] 8.23 after 0.0.1: edits made in PES come back to the export
     (`plans/aesthetics_export/settings_toml.md` "Edits made in PES come back to the export";
     DECISIONS of 2026-10-25; the maintainer's "even if Studio was not running" first):
-    - [ ] 8.23a the in-game check first (PES 21, a stripped save, a backup before): a motion
-      and a face edit in Edit mode, which keys the frozen record holds, that the player stays
-      frozen until PES restarts and returns compiled after a re-strip → verify: `manual:`
-      lines with captures; the plan's key list corrected to what it found
+    - [ ] 8.23a the in-game check first (PES 21, a save with a compiled team's patch applied,
+      a backup before; after 8.36c): a motion and a face edit in Edit mode, which keys the
+      record then holds → verify: `manual:` lines with captures; the plan's key list corrected
+      to what it found
     - [ ] 8.23b the compile record beside the patch (its format, written by every compile with
       a save step, run or skipped) → verify: a compile test reading it back
     - [ ] 8.23c the comparison and the notice (at start, on the views opening, before a
       compile, on the save's change), Bring into the exports, the conflict choice, the
       compile's Warning over an unbrought edit → verify: tests over a fixture save edited as
-      PES would (a motion on any player, a face on a restored one), with Studio "not running"
+      PES would (a motion on one player, a face on another), with Studio "not running"
       between the compile and the edit (a fresh shell over the record)
-    - [ ] 8.23d Apply to the save once PES is closed (the re-strip, a pending patch) → verify:
+    - [ ] 8.23d Apply to the save once PES is closed (a pending patch) → verify:
       the running-PES probe faked; nothing written while it reports PES running
   - [ ] 8.24 after 8.23, research: previewers outside PES for the in-game face and the motions
     (the maintainer wants it looked into, 2026-10-25), in Blender or in Studio's planned
@@ -2562,23 +2562,41 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   - [ ] 8.36 every engine's looks through the savefile patch, no stripped saves (the
     maintainer, 2026-10-30; DECISIONS "Every engine carries a player's looks in the savefile
     patch; no stripped saves")
-    - [ ] a the plans and the spec: every passage on stripped saves, `strip-and-seed`,
-      `check-stripped`, the seed CPK and the compiler's Fox player tables reworded or removed,
-      from the inventory `.tmp/8_36/inventory.md` → verify: `just doc-pointers`, `just
-      acceptance`; a grep for `strip` and the three table names left only where they still hold
+    - [x] a the plans: every passage on stripped saves, `strip-and-seed`, `check-stripped`,
+      the seed CPK and the compiler's Fox player tables reworded or removed, and the full-look
+      patch designed (`plans/pes_savefile/operations.md` "Aesthetics patch (new)"), from the
+      inventory `.tmp/8_36/inventory.md` (its sections 1, 3, 6 and 7). The spec keeps
+      describing the code as it is: its passages move with b and c → verify: `just
+      doc-pointers`, `just acceptance`; a grep of the plans for `strip` and the three table
+      names left only where they still hold.
+      Done: the patch's plan holds the look, the IDs filled after their tasks, the own id and
+      the cleared base copy (with the census); the Save editor plan's "Stripped save" lists
+      what goes; 8.23 lost its re-strip; four issues reworded or resolved; DECISIONS "The
+      full-look patch writes the player's own appearance id…". The grep leaves new text and
+      other meanings only (kit strips, the DB generator's tables, `aatf_rules.md`'s
+      placeholders). Files: AGENTS.md, plans `save_editor.md`, `pes_savefile/{operations,model}.md`,
+      `aesthetics_export/{settings_toml,fpc_toggle,player_folders}.md`, `team_compiler/{README,gui,pipeline}.md`,
+      `core/{README,development_plan}.md`, `player_aesthetics_editor.md`
     - [ ] b before 0.0.1, the Save editor: `strip-and-seed`, `check-stripped`, the stripped
       players' notes and the Strip again window, Generate's stripped skip, the Comparator's
       and `diff`'s stripped marks, Team TOML's `stripped`, their help and catalog rows, and
-      what `pes_savefile` keeps only for them → verify: the gates; the help and catalog name
+      what `pes_savefile` keeps only for them (`plans/save_editor.md` "Stripped save"); the
+      spec with it (the inventory's S1-S21, S55-S57's strip parts, S59's `appearance_row.rs`,
+      S60, S62, S67, and GLOSSARY's D3 and D4) and the plan's SE-GUI-20, withdrawn with its
+      tests → verify: the gates; the help and catalog name
       none of them
     - [ ] c after 0.0.1, the full-look patch and the Team compiler: the aesthetics patch on
       every engine (it is Fox-only today) gains the appearance block, the boots and gloves IDs
       over the whole allocation, filled after their tasks commit, and clears a compiled
       player's base copy; `apply-patch` writes them; the Fox player-table writer and its
-      messages go → verify: the gates; TC-SAV-12 (a PES 17 compile writes no patch) rewritten;
-      the library parity's difference classes re-diagnosed
-    - [ ] d in game (PES 2021, then one more Fox version): a patch applied to an unstripped
-      save shows the compiled look in Edit mode (`scripts/ingame/`, saves backed up)
+      messages go; the spec with it (the inventory's S22-S54, S56-S57's table parts, S61,
+      S64-S66, S68, and GLOSSARY's D1 and D2), its Acceptance written first → verify: the
+      gates; TC-SAV-12 (a PES 17 compile writes no patch) rewritten; the library parity's
+      difference classes re-diagnosed
+    - [ ] d in game (PES 2021, then one more Fox version and PES 2017): a patch applied to an
+      unstripped save shows the compiled look in Edit mode, boots and gloves included, on a
+      player whose base copy named another and on one whose edit flags were clear
+      (`scripts/ingame/`, saves backed up); with it, the FoxDen gloves issue rechecked
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
@@ -6325,7 +6343,7 @@ points there.
   rules page, which speaks of the deadline export. Resolved the same day (step 5.2f-r2): the
   page's "switch preset tactic" is the tactics menu's option, not the byte, which VGL26 and
   VGL27 now require off.
-- open (2026-10-11, Phase 5 Acceptance; deferred until the cup next plays a pre-Fox version) —
+- resolved 2026-10-30 (folded into step 8.36c: every engine's patch carries the whole look; DECISIONS "Every engine carries a player's looks in the savefile patch; no stripped saves") —
   the pre-Fox aesthetics patch (`pes_savefile/operations.md` "Aesthetics patch", the pre-Fox
   half; `spec/team_compiler/pipeline.md` "Post-processing"): every appearance field, the resolved boots and gloves
   IDs through commit-conditioned mutations, the edit flags and the base-copy ID (issue below).
@@ -6336,7 +6354,8 @@ points there.
   patch: a referee's look is the template's `RefereeAppearance.bin` (`blue_port.md`), whose rows
   nothing writes, and `blue_port.md` has `fpc_off` apply its settings preset to a referee on
   PES 18-21. Settle with a Fox refkit (the issue on a referee's body under `fpc_off`): which
-  table a referee's settings go to, and TC-REF-19's outcome then; with it, lift
+  route a referee's settings take (the aesthetics patch, as team 999, since 8.36 writes no
+  player tables, or the template's table), and TC-REF-19's outcome then; with it, lift
   `settings_id_messages`' team-only gate (`validation.rs`).
 - open (2026-10-11, 5.0c; deferred until the cup next plays a pre-Fox version) — what Red does
   on PES 15-17 that Studio does not (`.tmp/5_0c/xml.md`, `checks.md`), most noticed first:
@@ -6495,8 +6514,8 @@ points there.
   would be the split keeping a used bone's ancestors, a `model_convert` change).
 - open (found at 4.18's review) — hand auto-split: a player folder with a plain `Gloves/`
   link and a hand-split face part keeps the link plain (links combine by file names), so
-  the shared folder still compiles under its shared ID while the player's `GloveList.bin`
-  row goes to the split gloves, its own task. An authored glove beside a link combines
+  the shared folder still compiles under its shared ID while the player's gloves ID goes to
+  the split gloves, its own task. An authored glove beside a link combines
   instead. The plan is silent; no real export is known to do it.
 - open (found at 4.18's review) — hand auto-split: a face model whose hand-weighted
   vertices sit in no face gives `model_hand_split` an empty `gloves` value and an empty
@@ -6710,7 +6729,9 @@ points there.
   versions") — the unknown bits across versions: per-version tables by record bit position
   dropped hair and sliders when a PES 16 export compiled for PES 21; the run's bits are now one
   table by position in the run, written on every version (review S5.A1 item 8).
-- open (deferred with the pre-Fox patch, decision 2026-10-11) — the base-copy ID on pre-Fox:
+- resolved 2026-10-30 (`plans/pes_savefile/operations.md` "Aesthetics patch (new)": a patch
+  writing a player's look sets his base-copy id to his own id and clears the base-copy flag; the
+  edit flags stay as the save holds them unless 8.36d shows one is needed) — the base-copy ID on pre-Fox:
   `model.md` makes it compiler-owned ("derived from what
   was written"), but no plan says what the compiler derives, and the aesthetics patch, the
   only savefile write path, has no key for it (Team TOML has `base_copy_id`). Settle with
@@ -6846,7 +6867,9 @@ points there.
   bare hands). Request for FoxDen's maintainer: keep the original value when the player has no
   save appearance record, for outfield players too (p1 routes them through the goalkeeper path),
   then an in-game retest with a `GloveList.bin` row for an outfield and a goalkeeper player.
-  The Team compiler's gloves output on Fox depends on it.
+  The Team compiler's gloves output on Fox depends on it. Probably moot since 8.36: no
+  `GloveList.bin` row is written, and the patch writes the record's gloves id, which
+  `[rsi+0x2C]` probably holds (not checked); 8.36d's in-game check settles it.
 - open — `pes_savefile::ops::fpc::is_fpc_player` finds no FPC player in a real cup save (step
   4.0 survey of the 2023 Winter Cup save): FPC teams there give each player a blank boots and
   gloves id of his own (`/a/`: 126/126 ... 148/148) rather than 55/11, which its doc comment

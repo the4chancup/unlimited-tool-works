@@ -7,8 +7,8 @@
 What exists of this is in `spec/core/development_plan.md` "Development Plan".
 
 **Releases.** The suite first ships as **0.1.0 at the end of Phase 8** ("Release 0.1.0" below):
-the Team compiler with compile-time aesthetics (on Fox the output CPK's database tables, on
-pre-Fox savefile writing), the Save editor and the Export upgrader, on
+the Team compiler with compile-time aesthetics (written to the savefile through the
+aesthetics patch), the Save editor and the Export upgrader, on
 Windows, with the CPU texture encoder and the native model formats only. Phase 8 is the line
 because it is the first point where the two main tools exist with a GUI, and because its own
 verification (community feedback) needs a distributed build; every later tool replaces a legacy
@@ -277,7 +277,7 @@ numbered phase: its deliverables are the slice of Phase 16 an early release cann
 pulled forward.
 
 **Ships:** the Team compiler (Phases 3–5: native FMDL/`.model` sources, CPU texture encoding,
-compile-time aesthetics, on Fox the output CPK's database tables and on pre-Fox savefile writing),
+compile-time aesthetics, written to the savefile through the aesthetics patch),
 the Save editor (Phase 5 logic and the full Phase 8 view), and the
 Export upgrader (Phase 6, structural migration; its glTF pass waits for Phase 7), as the Windows
 portable bundle. Old-format exports reach the compiler through the upgrader; Red's Pre-Studio

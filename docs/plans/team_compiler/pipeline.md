@@ -105,8 +105,9 @@ What exists of this is in `spec/team_compiler/pipeline.md` "6. Post-processing".
   the deployment back at the end. The end-of-run read stays as it is, since the file can change
   between the two; with `savefile_path = auto` the preflight rarely finds anything, which costs
   one header read.
-- **Aesthetics patch** — on **pre-Fox** it holds everything (names only from a `write_names`
-  export): settings.toml settings with
+- **Aesthetics patch** — on **every engine** it holds everything (names only from a
+  `write_names` export; the CPK carries no player table rows: `plans/pes_savefile/operations.md`
+  "Aesthetics patch (new)", worklog 8.36c): settings.toml settings with
   `name = true` and FPC markers resolved to concrete values, the authored stock boots/gloves IDs
   (else the marker's default) for categories requesting no standalone output, and the
   auto-assigned boots/gloves IDs **only for content that was actually packed**: if a boots/gloves task failed, the affected players

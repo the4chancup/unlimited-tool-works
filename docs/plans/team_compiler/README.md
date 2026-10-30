@@ -290,7 +290,7 @@ TC-GUI-23  GIVEN a run in flight over two exports, another tool's view active
 TC-BIN-43  GIVEN fpc_hide_boots_id = 60 and fpc_hide_gloves_id = 12 in the common settings, and a
                 /co/ export whose slot 05 carries fpc_on and no boots or gloves
            WHEN it is compiled for PES 21
-           THEN BootsList.bin holds (71405, 60) and GloveList.bin (71405, 12); GIVEN
+           THEN the aesthetics patch gives player 71405 boots_id 60 and gloves_id 12; GIVEN
                 fpc_hide_boots_id = 627 instead THEN the run is refused before any output
                 (exit code 2), the message naming the setting and its range
 ```

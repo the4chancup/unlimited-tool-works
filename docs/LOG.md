@@ -2868,3 +2868,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — A rules file may carry its event's page and a PNG logo, checked on load
   and outside the logic, so neither moves its identity; the nine ruleset files carry their
   events' wiki pages and logos (8.35a, 8.35c).
+- **2026-10-30** — The plans now send every engine's looks through the savefile patch: the
+  patch gains the whole look, IDs filled after their tasks, the player's own id and a cleared
+  base copy; the stripped route's parts are listed to go before 0.0.1 (8.36a).

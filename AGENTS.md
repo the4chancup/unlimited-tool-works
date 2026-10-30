@@ -243,8 +243,8 @@ your question may already be listed, with the phase in which it gets resolved.
 - **Exports are the unit of work.** Three kinds: aesthetics (player folders with `settings.toml`,
   kits, portraits: the project's primary motivation; referee exports are aesthetics exports with
   the `/refs/` team name), music (`.4ccm`), balls. Aesthetic settings that used to be edited in the
-  savefile by hand live in TOML inside the export and reach the game at compile time: on Fox as
-  rows of the output CPK's database tables, on pre-Fox written to the savefile. The old export
+  savefile by hand live in TOML inside the export and reach the game at compile time, written
+  to the savefile through the aesthetics patch on every engine. The old export
   layout is not supported by the compiler; the Export upgrader migrates it
   once.
 - **The upgrader absorbs the old format's slack; the compiler stays strict.** An upgrade

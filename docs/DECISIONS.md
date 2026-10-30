@@ -13999,3 +13999,27 @@ copy, since an unstripped record whose `base_copy_id` copies another face shows 
 over the compiled one (the census: up to 26 such players per PES 2021 cup save, 117 on PES
 2019, 988 on PES 2018; the lead's recommendation, checked in game at 8.36d).
 Plan: to follow in worklog 8.36a.
+
+## 2026-10-30 — aesthetics — The full-look patch writes the player's own appearance id and clears his base copy; the stripped route's keys and marks go
+Decision (lead, applying the 2026-10-30 entry above): a patch entry with a look sets the
+appearance block's player id to the player's own id and his base-copy id to his own id (the
+base-copy flag cleared); the edit flags stay as the save holds them unless the in-game check
+(worklog 8.36d) shows a compiled look needs one. The boots and gloves IDs are filled once their
+tasks' outcomes are known and the file written once, never with an ID conditioned on a task.
+A player whose `settings.toml` was invalid gets no look entry. Team TOML's `stripped` key goes
+from the parser too (a file holding it is refused as any unknown key), and `diff` reports the
+appearance id as an ordinary row. The spec keeps describing the code as it is: its stripped
+and table passages move with the Save editor's removal (8.36b) and the compiler's (8.36c),
+not with the plan rewrite (8.36a). Step 8.23 (edits made in PES) loses its frozen record,
+restart and re-strip, and compares the appearance keys on every compiled player.
+Why: the own id, because a save left at -1 by the old route (the maintainer's test saves)
+would ignore a written look; the base copy, because a copied face shows over the compiled one
+whatever the face flag (the 2026-10-14 census: up to 26 such players per PES 2021 cup save);
+the edit flags left alone, because no evidence says the game needs one and the face flag was
+shown not to matter for a copied face. Only development builds ever wrote `stripped`, so
+refusing it costs no member a file, where ignoring it would keep a dead key in the format. The
+appearance id was left out of `diff` only to make room for the stripped mark. A spec that
+described the patch route while the code still wrote tables would mislead whoever reads it
+before 8.36c lands.
+Plan: `plans/pes_savefile/operations.md` "Aesthetics patch (new)"; `plans/save_editor.md`
+"Stripped save"; `plans/aesthetics_export/settings_toml.md` "Player settings in exports"; worklog 8.36, 8.23.
