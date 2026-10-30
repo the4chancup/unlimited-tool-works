@@ -431,7 +431,16 @@ fn spawn_medals(
     key: MedalKey,
     slots: usize,
 ) -> Pending<MedalKey, Vec<Option<Medal>>> {
-    let team = TeamView::new(file, key.team).ok();
+    let team = match TeamView::new(file, key.team) {
+        Ok(team) => Some(team),
+        Err(error) => {
+            log::debug!(
+                "team {}'s badges get no medal: the team cannot be viewed: {error}",
+                key.team
+            );
+            None
+        }
+    };
     let (sender, replies) = crossbeam_channel::unbounded();
     let rules = Arc::clone(rules);
     let ctx = ctx.clone();
@@ -462,7 +471,13 @@ fn slot_medals(rules: &aatf::Rules, team: Option<&TeamView>, slots: usize) -> Ve
             u8::try_from(slot)
                 .ok()
                 .and_then(|slot| team.player(slot))
-                .and_then(|player| rules.player_tier(team, player).ok().flatten())
+                .and_then(|player| match rules.player_tier(team, player) {
+                    Ok(tier) => tier,
+                    Err(error) => {
+                        log::debug!("roster slot {slot}'s badge gets no medal: {error}");
+                        None
+                    }
+                })
                 .and_then(|tier| Medal::from_tier_id(&tier.id))
         })
         .collect()

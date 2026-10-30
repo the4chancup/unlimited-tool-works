@@ -1696,7 +1696,7 @@ fn the_short_name_upper_cases_caps_at_three_and_sets_the_flags() {
     }
 }
 
-// The team view's fields (plans "Editing UI", "The team view" bullet):
+// The team view's fields:
 // the team's name as the title, its name, short name and colours, the
 // manager and stadium IDs, the `Kit slots…` button, then the Tactics.
 // SE-GUI-10
@@ -2021,7 +2021,7 @@ fn the_locked_team_menu_disables_the_aesthetics_items_with_the_ownership_line() 
         assert_eq!(
             tooltip_containing(&mut window, &mut view, centre(item), "The team's export"),
             Some(
-                "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch."
+                "The team's export owns the aesthetics, so edit its settings.toml (the face, hair and iris: its ingame_face.toml) and recompile, then apply the patch."
                     .to_string(),
             ),
             "{label}'s hover is the ownership line"

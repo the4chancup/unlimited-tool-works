@@ -328,3 +328,61 @@ fn an_unreadable_existing_settings_toml_is_the_error() {
         "Write stays disabled"
     );
 }
+
+// The preview is built when the folder text or the save changes, never on
+// a frame where neither did: a settings.toml rewritten on disk behind the
+// open dialog shows only once the save is edited, and Write puts down the
+// text the dialog previewed.
+#[test]
+fn the_preview_is_built_when_the_folder_or_the_save_changes() {
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "generate_preview_kept", 701, 1);
+    let dir = crate::test_support::scratch("generate_preview_kept");
+    let existing = |comment: &str| format!("# {comment}\nname = \"STALE\"\n");
+    std::fs::write(dir.join("settings.toml"), existing("first")).unwrap();
+    view.pick_folder_dialog = {
+        let dir = dir.clone();
+        Box::new(move || Some(dir.clone()))
+    };
+    player_menu_item(&mut window, &mut view, "Generate settings.toml");
+    let nodes = draw(&mut window, &mut view);
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Pick\u{2026}"),
+        &mut view,
+    );
+    let shows = |nodes: &[accesskit::Node], comment: &str| {
+        nodes.iter().any(|node| {
+            node.value()
+                .is_some_and(|value| value.contains(&format!("# {comment}\n")))
+        })
+    };
+    assert!(shows(&draw(&mut window, &mut view), "first"), "premise");
+
+    std::fs::write(dir.join("settings.toml"), existing("second")).unwrap();
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        shows(&nodes, "first") && !shows(&nodes, "second"),
+        "a frame where nothing changed reads no file"
+    );
+
+    // An edit to the save rebuilds it from the folder's file as it is now.
+    let other = selected_id(&view, 701, 2);
+    let mut entry = player_entry(&view, other);
+    entry.basic.height = if entry.basic.height == 170 { 171 } else { 170 };
+    view.session.as_mut().unwrap().edit_player(1, entry);
+    assert!(shows(&draw(&mut window, &mut view), "second"), "rebuilt");
+
+    std::fs::write(dir.join("settings.toml"), existing("third")).unwrap();
+    let nodes = draw(&mut window, &mut view);
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Write"),
+        &mut view,
+    );
+    assert!(view.generate.is_none(), "the write closed the dialog");
+    let written = std::fs::read_to_string(dir.join("settings.toml")).unwrap();
+    assert!(
+        written.starts_with("# second\n"),
+        "Write put down the previewed text: {written:?}"
+    );
+}

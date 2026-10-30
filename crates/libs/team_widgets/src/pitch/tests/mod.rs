@@ -325,10 +325,7 @@ impl Headless {
         self.settings(version, tactics, view, roster, pointer_at(pos, false))
     }
 
-    /// The tooltip drawn while the pointer rests at `pos` containing
-    /// `needle` (bounded; needs `tooltip_delay` at 0). The pointer
-    /// first moves away for a frame: egui refuses a tooltip while the
-    /// last click is more recent than the last movement.
+    /// `tooltip` over the pitch alone.
     pub(crate) fn pitch_tooltip(
         &mut self,
         pos: egui::Pos2,
@@ -338,22 +335,26 @@ impl Headless {
         view: &mut TacticsView,
         roster: &[RosterRow<'_>],
     ) -> Option<String> {
-        self.pitch(
-            version,
-            tactics,
-            view,
-            roster,
-            vec![egui::Event::PointerMoved(egui::Pos2::ZERO)],
-        );
-        self.pitch(
-            version,
-            tactics,
-            view,
-            roster,
-            vec![egui::Event::PointerMoved(pos)],
-        );
+        self.tooltip(pos, needle, |window, events| {
+            window.pitch(version, tactics, view, roster, events).0
+        })
+    }
+
+    /// The tooltip drawn while the pointer rests at `pos` containing
+    /// `needle` (bounded), `frame` drawing the widgets under test with
+    /// the events it is given and answering the frame's nodes. The
+    /// pointer first moves away for a frame: egui refuses a tooltip
+    /// while the last click is more recent than the last movement.
+    pub(crate) fn tooltip(
+        &mut self,
+        pos: egui::Pos2,
+        needle: &str,
+        mut frame: impl FnMut(&mut Headless, Vec<egui::Event>) -> Vec<accesskit::Node>,
+    ) -> Option<String> {
+        frame(self, vec![egui::Event::PointerMoved(egui::Pos2::ZERO)]);
+        frame(self, vec![egui::Event::PointerMoved(pos)]);
         for _ in 0..90 {
-            let (nodes, _) = self.pitch(version, tactics, view, roster, vec![]);
+            let nodes = frame(self, vec![]);
             if let Some(value) = nodes.iter().find_map(|node| {
                 node.value()
                     .filter(|value| value.contains(needle))

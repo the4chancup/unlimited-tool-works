@@ -644,6 +644,49 @@ fn a_file_of_another_version_lists_its_notes_in_words() {
     );
 }
 
+// A tactics key's group names what its notes carry after its subject, on
+// its one line: an instruction PES 17 lacks, written off, is named there
+// or nowhere.
+// SE-GUI-16
+#[test]
+fn a_tactics_keys_note_names_the_instruction_written_off() {
+    use pes_savefile::model::instruction::Instruction;
+    use pes_savefile::model::tactics::AdvancedInstruction;
+    use pes_savefile::schema::instruction::encode;
+
+    let (mut view, mut window) = open_on(PesVersion::Pes17, "interchange_note_instruction", CO);
+    let mut source = SaveView::new();
+    source.open(&fixture(
+        PesVersion::Pes21,
+        "interchange_note_instruction_source",
+    ));
+    assert_eq!(
+        encode(PesVersion::Pes17, Instruction::WingBack),
+        None,
+        "premise: PES 17 has no Wing Back"
+    );
+    let mut team = team_entry(&source, CO);
+    let stored = |instruction| AdvancedInstruction {
+        instruction: encode(PesVersion::Pes21, instruction).expect("a PES 21 instruction"),
+        player: 0,
+    };
+    team.tactics.presets[0].attack_instructions =
+        Some([stored(Instruction::WingBack), stored(Instruction::Off)]);
+    source.session.as_mut().unwrap().edit_team(1, team);
+    picked(
+        &mut window,
+        &mut view,
+        "co21.toml",
+        export(&source, CO).as_bytes(),
+    );
+
+    let lines = panel_lines(&mut window, &mut view);
+    assert!(
+        lines.contains(&"Preset 1 attacking instructions: Wing Back".to_owned()),
+        "the subject and the instruction on one line: {lines:#?}"
+    );
+}
+
 /// A squad file of PES 2019 onto PES 2017's `/co/`: the pairing list and
 /// note groups whose rows carry a detail, both drawn.
 const SQUAD_19: &str = "pes19_squad.4ccs";

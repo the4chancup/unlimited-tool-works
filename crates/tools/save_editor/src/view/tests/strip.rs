@@ -333,7 +333,7 @@ fn a_name_or_shirt_edit_sets_the_edited_player_flag() {
     assert!(flag(&view), "a shirt edit sets the flag too");
 }
 
-// The same sub-bullet: the shirt name is upper-cased as typed.
+// The shirt name is upper-cased as typed.
 #[test]
 fn a_shirt_name_is_upper_cased_as_typed() {
     let path = fixture(PesVersion::Pes21, "uppercase_shirt");
@@ -491,7 +491,7 @@ fn a_stored_shirt_past_18_is_tinted_and_shortens_never_lengthens() {
     );
 }
 
-// The same bullet on PES 16: the field's own 16 letters bind, so a 17th
+// The portable text limits on PES 16: the field's own 16 letters bind, so a 17th
 // is refused.
 #[test]
 fn a_pes16_strip_refuses_a_17th_shirt_letter() {
@@ -566,7 +566,7 @@ fn the_shirt_hover_names_the_limit_the_field_enforces() {
     );
 }
 
-// The same bullet on PES 16: its own 16-letter field binds under the
+// The Shirt field's hover on PES 16: its own 16-letter field binds under the
 // portable 18, and the hover says so.
 #[test]
 fn the_pes16_shirt_hover_names_its_own_field() {
@@ -586,6 +586,31 @@ fn the_pes16_shirt_hover_names_its_own_field() {
         ),
         "PES 16's own 16-letter field binds under the portable 18"
     );
+}
+
+// The Name field's hover on a name the game shows whole: the version's
+// byte limit, what each kind of letter costs and how a colour code is
+// typed, the only place the editor says so.
+#[test]
+fn the_name_hover_names_the_versions_byte_limit_and_the_colour_code() {
+    for (version, limit) in [(PesVersion::Pes21, 61), (PesVersion::Pes17, 46)] {
+        let path = fixture(version, &format!("name_hover_{version:?}"));
+        let mut view = SaveView::new();
+        view.open(&path);
+        let mut window = Headless::new();
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        let name = name_field(&nodes);
+        let tooltip = tooltip_containing(&mut window, &mut view, centre(name), "Up to");
+        assert_eq!(
+            tooltip,
+            Some(format!(
+                "Up to {limit} bytes. A plain letter takes one byte, an accented letter takes two \
+                 or more, and a colour code takes ten. A colour code is typed as \\x11c and eight \
+                 hex digits."
+            )),
+            "{version:?}'s Name hover"
+        );
+    }
 }
 
 // SE-GUI-38
@@ -921,7 +946,7 @@ fn a_shirt_name_takes_latin1_letters_and_refuses_past_them() {
     assert_eq!(shirt_name(&view), format!("{stored}É"), "the é landed");
 }
 
-// The same bullet's boundary: a shirt name of exactly the portable 18
+// The portable limit's boundary: a shirt name of exactly the portable 18
 // letters is no warning — the tint is for what a version would cut, and
 // nothing is.
 #[test]
@@ -1374,8 +1399,8 @@ fn a_count_under_its_limit_takes_each_themes_grey() {
     }
 }
 
-// plans "Editing UI", the player header bullet and the "No view draws the
-// tool's name" bullet: `<id> <name>` as the player view's title over the
+// The player header, and no view drawing the tool's name: `<id> <name>`
+// as the player view's title over the
 // strip's nine labels — on the player view alone, the team view editing no
 // player. The name's colour codes paint as the player list draws them: a
 // coded run in the code's colour, the rest the strong text colour, the id

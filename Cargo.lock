@@ -4607,6 +4607,7 @@ dependencies = [
  "aatf",
  "dds_convert",
  "egui",
+ "log",
  "pes_savefile",
  "pes_version",
  "studio_core",

@@ -98,14 +98,16 @@ fn team_label(file: &EditFile, id: u32) -> String {
     format!("{id} {}", display_name(aatf_check::team_name(file, id)))
 }
 
-/// One end of the range: a combo of the save's teams in the save's order,
-/// as wide as its widest label so a pick never moves the other combo.
+/// One end of the range: a combo of the save's teams in id order, the
+/// order the range is taken in, as wide as its widest label so a pick
+/// never moves the other combo.
 fn team_combo(ui: &mut egui::Ui, id_salt: &str, file: &EditFile, picked: &mut u32) {
-    let labels: Vec<(u32, String)> = file
+    let mut labels: Vec<(u32, String)> = file
         .teams()
         .iter()
         .map(|team| (team.id, team_label(file, team.id)))
         .collect();
+    labels.sort_unstable_by_key(|(id, _)| *id);
     let font = egui::TextStyle::Button.resolve(ui.style());
     let widest = labels
         .iter()

@@ -40,7 +40,7 @@ fn the_section_is_locked_on_a_fox_save_until_the_switch_unlocks_it() {
     assert!(
         label_value(
             &nodes,
-            "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch."
+            "The team's export owns the aesthetics, so edit its settings.toml (the face, hair and iris: its ingame_face.toml) and recompile, then apply the patch."
         ),
         "the ownership line"
     );
@@ -205,7 +205,7 @@ fn the_section_is_locked_on_a_pre_fox_save_with_the_patch_step() {
     assert!(
         label_value(
             &nodes,
-            "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch."
+            "The team's export owns the aesthetics, so edit its settings.toml (the face, hair and iris: its ingame_face.toml) and recompile, then apply the patch."
         ),
         "the pre-Fox ownership line"
     );
@@ -226,7 +226,7 @@ fn the_section_is_locked_on_a_pre_fox_save_with_the_patch_step() {
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(ownership_hover), "The team's export"),
         Some(
-            "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch."
+            "The team's export owns the aesthetics, so edit its settings.toml (the face, hair and iris: its ingame_face.toml) and recompile, then apply the patch."
                 .to_string()
         ),
         "the disabled controls' hover is the ownership line"

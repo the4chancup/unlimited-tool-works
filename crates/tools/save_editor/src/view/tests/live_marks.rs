@@ -354,7 +354,7 @@ fn row_mark_counts_the_slots_rows_and_picks_its_glyph() {
 /// `held_violations` is the held check only while the toggle is on and
 /// the result one team's `Ok` under the active ruleset — a failed check,
 /// another shape of result, another ruleset's or nothing yet marks
-/// nothing (the Live AATF bullet's last sub-bullet).
+/// nothing.
 #[test]
 fn held_violations_is_one_teams_ok_result_while_on() {
     let mut check = aatf_check::TeamsCheck::new();
@@ -947,7 +947,7 @@ fn a_warnings_mark_is_an_orange_warning_sign() {
 
 /// The team's own violations (`slot: None`) mark the team row — 734's
 /// three tier counts are the team's own, broken from the start; a team
-/// with none shows `✔` (the Live AATF bullet's last list sub-bullet).
+/// with none shows `✔`.
 #[test]
 fn the_teams_own_violations_mark_the_team_row() {
     let (mut view, mut window) = open_734("live_marks_team_row");
@@ -1024,7 +1024,7 @@ fn the_row_mark_centres_on_its_row() {
 }
 
 /// A click on a row's mark still selects the row: the mark senses hover
-/// alone, so the click lands on the row (the Live AATF bullet's).
+/// alone, so the click lands on the row.
 #[test]
 fn a_click_on_a_rows_mark_selects_the_row() {
     let (mut view, mut window) = open_734_with("live_marks_mark_click", &[73401], 183);
@@ -1067,8 +1067,8 @@ fn a_click_on_a_rows_mark_selects_the_row() {
     );
 }
 
-/// A name too long for the list truncates before the row's mark (the
-/// Live AATF bullet's: the text never runs under it).
+/// A name too long for the list truncates before the row's mark: the
+/// text never runs under it.
 #[test]
 fn a_long_name_truncates_before_the_rows_mark() {
     let path = fixture(PesVersion::Pes21, "live_marks_long_name");
@@ -1306,7 +1306,7 @@ fn no_cross_overlaps_text_and_no_field_moves() {
 }
 
 /// A check that fails marks nothing: the dock reports the failure and no
-/// `✖` or `✔` is drawn (the Live AATF bullet's last sub-bullet).
+/// `✖` or `✔` is drawn.
 #[test]
 fn a_failed_check_marks_nothing() {
     let path = fixture(PesVersion::Pes17, "live_marks_failed");
@@ -1671,7 +1671,7 @@ fn a_dirty_rows_dot_survives_truncation() {
 
 /// Only the checked team's rows are marked: with ALL picked another
 /// team's rows draw neither `✖` nor `✔`, and the checked team's keep
-/// theirs (the Live AATF bullet: players of other teams carry none).
+/// theirs: players of other teams carry none.
 #[test]
 fn only_the_checked_teams_rows_are_marked() {
     let (mut view, mut window) = open_734_with("live_marks_other_teams", &[73401], 183);

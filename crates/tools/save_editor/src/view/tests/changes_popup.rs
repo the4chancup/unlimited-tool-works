@@ -339,6 +339,55 @@ fn the_labels_hover_shows_the_pointing_hand_and_the_tooltip() {
     );
 }
 
+// A team-wide edit lists more rows than fit: the table stops at 240
+// points, so the popup's box is no taller than that and its frame, and
+// the rows past it scroll.
+// SE-GUI-43
+#[test]
+fn a_team_wide_edits_list_stops_at_240_points_and_scrolls() {
+    let path = fixture(PesVersion::Pes21, "changes_list_cap");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let edits: Vec<PlayerEntry> = team_entry(&view, 701)
+        .roster
+        .iter()
+        .filter(|slot| slot.player_id != 0)
+        .map(|slot| {
+            let mut entry = player_entry(&view, slot.player_id);
+            entry.basic.height = if entry.basic.height == 170 { 171 } else { 170 };
+            entry
+        })
+        .collect();
+    assert_eq!(edits.len(), 23, "premise: 701's 23 players");
+    view.session.as_mut().unwrap().edit_players(edits);
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let (_, popup) = label_and_popup(&mut window, &mut view);
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke
+        .width;
+    let most = 240.0 + 2.0 * (8.0 + stroke);
+    assert!(
+        popup.height() <= most + 0.5,
+        "the box is at most {most} tall: {popup:?}"
+    );
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bottom = list_nodes(&pairs)
+        .iter()
+        .filter_map(|node| node.bounds())
+        .map(|bounds| bounds.y1)
+        .fold(f64::MIN, f64::max);
+    assert!(
+        bottom > f64::from(popup.max.y),
+        "the rows run on past the box, so the table scrolls: {bottom} vs {popup:?}"
+    );
+}
+
 /// The popup's outer box is the draft's `.chpop` width, 460 to 640
 /// points with its margins and stroke counted in: three short rows hold
 /// it at the 460 floor.

@@ -792,7 +792,7 @@ mod tests {
         assert!(!skills.com_styles[0], "the flag is cleared");
     }
 
-    // The same bullet: a card in the second column writes its own flag
+    // A card in the second column writes its own flag
     // (a wrong index in the second column's cells edits a first-column
     // card instead).
     #[test]

@@ -302,8 +302,8 @@ fn short_pair(
 }
 
 /// One team colour's unit (PES 17+): `color_tools`' picker with no
-/// suggestions, the stored 6-bit channels shown as 8 bits and back by the
-/// `view/` bullet's rule (`channel_to_show`/`channel_to_store`), the shown
+/// suggestions, the stored 6-bit channels shown as 8 bits and back
+/// (`channel_to_show`/`channel_to_store`), the shown
 /// colour's upper-case hex beside it. On PES 15/16 the pair draws disabled
 /// with the `PES NN+` tooltip, in the same place.
 fn colour_unit(

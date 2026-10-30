@@ -230,6 +230,35 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     frame_right
 }
 
+/// Selects the player row after the selected row in the list as drawn
+/// (the team selector and the filter applied), or the one before it when
+/// `forward` is false. Team rows are skipped; at either end of the list,
+/// or with the selection not in it, nothing moves.
+pub(super) fn step_player(view: &mut SaveView, forward: bool) {
+    let (Some(session), Some(selected)) = (view.session.as_ref(), view.selected) else {
+        return;
+    };
+    let rows: Vec<Selection> = selection::list(session.file(), &view.team, &view.filter)
+        .into_iter()
+        .map(|row| match row {
+            ListRow::Team(id) => Selection::Team(id),
+            ListRow::Player(row) => Selection::Player(row.team_id, row.slot),
+        })
+        .collect();
+    let Some(at) = rows.iter().position(|row| *row == selected) else {
+        return;
+    };
+    let player = |row: &&Selection| matches!(row, Selection::Player(..));
+    let next = if forward {
+        rows[at + 1..].iter().find(player)
+    } else {
+        rows[..at].iter().rev().find(player)
+    };
+    if let Some(next) = next {
+        view.selected = Some(*next);
+    }
+}
+
 /// How the list draws one row, computed once in `show`: the row's height,
 /// its width and whether player rows drag (no filter typed).
 #[derive(Clone, Copy)]
@@ -259,13 +288,17 @@ pub(super) fn team_selector(
             TeamChoice::All => "ALL".to_owned(),
             TeamChoice::Team(id) => file
                 .team(id)
-                .map(|team| team.name.clone())
+                .map(|team| display_name(&team.name))
                 .unwrap_or_else(|| id.to_string()),
         })
         .show_ui(ui, |ui| {
             ui.selectable_value(&mut chosen, TeamChoice::All, "ALL");
             for team in file.teams() {
-                ui.selectable_value(&mut chosen, TeamChoice::Team(team.id), &team.name);
+                ui.selectable_value(
+                    &mut chosen,
+                    TeamChoice::Team(team.id),
+                    display_name(&team.name),
+                );
             }
         })
         .response;

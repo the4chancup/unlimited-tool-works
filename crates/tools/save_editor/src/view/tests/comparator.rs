@@ -1248,6 +1248,16 @@ fn the_panel_first_opens_at_the_right_and_stays_where_dragged() {
         placed_at(&rect, 659.0, 90.0) && (rect.x1 - rect.x0 - 620.0).abs() <= 1.0,
         "the panel's first rect: {rect:?}"
     );
+    // Its edges exactly: a point off either reads as the window's edge
+    // missed, within `placed_at`'s slack.
+    assert!(
+        (rect.x1 - (1280.0 - 1.0)).abs() < 0.25,
+        "the right edge 1 inside the window's: {rect:?}"
+    );
+    assert!(
+        (rect.x0 - (rect.x1 - 620.0)).abs() < 0.25,
+        "the left edge 620 before the right: {rect:?}"
+    );
 
     // Dragged by its title bar, left of the title.
     let from = egui::pos2(rect.x0 as f32 + 8.0, rect.y0 as f32 + 10.0);

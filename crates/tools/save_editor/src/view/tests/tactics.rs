@@ -2715,7 +2715,7 @@ fn the_pitch_badges_show_each_starters_overall_from_his_record() {
     }
 }
 
-// The same setting bullet ("remembered in the tool's settings"): off,
+// Scroll names is remembered in the tool's settings: off,
 // then Choose file… opens the next save — the view's and the settings table's
 // `scroll_names` both stay false (the open happens inside a `Tool::view`
 // frame, so the frame's own write-back is the check).
