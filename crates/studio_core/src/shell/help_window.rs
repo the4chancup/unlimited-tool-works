@@ -427,8 +427,9 @@ fn paragraphs(body: &str) -> Vec<&str> {
 
 /// The draft's `helpSearch`: case-insensitive substring over every paragraph of every
 /// topic and every catalog row (code, severity, when, effect), in chapter order. A
-/// paragraph hit is labeled `<chapter> › <topic> › <its first matching line>`, a row
-/// hit `<chapter> › Messages › <code>: <when, or the cell that matched>`.
+/// paragraph hit is labeled `<chapter> › <topic> › <its first matching line>`, the line
+/// shown without its Markdown marks, a row hit
+/// `<chapter> › Messages › <code>: <when, or the cell that matched>`.
 fn search(chapters: &[(&'static str, HelpSection)], query: &str) -> Vec<SearchResult> {
     let needle = query.trim().to_lowercase();
     let mut results = Vec::new();
@@ -452,7 +453,12 @@ fn search(chapters: &[(&'static str, HelpSection)], query: &str) -> Vec<SearchRe
                     topic,
                     paragraph: Some(index),
                     code: None,
-                    label: format!("{} › {} › {}", section.title, entry.title, line),
+                    label: format!(
+                        "{} › {} › {}",
+                        section.title,
+                        entry.title,
+                        plain_text(&line)
+                    ),
                 });
             }
         }
@@ -480,6 +486,13 @@ fn search(chapters: &[(&'static str, HelpSection)], query: &str) -> Vec<SearchRe
         }
     }
     results
+}
+
+/// A topic line as a label shows it: no `**`, no backticks, no list item's leading dash.
+fn plain_text(line: &str) -> String {
+    let unmarked = line.replace("**", "").replace('`', "");
+    let trimmed = unmarked.trim();
+    trimmed.strip_prefix("- ").unwrap_or(trimmed).to_owned()
 }
 
 /// The generated Messages topic's table (the draft's `messagesTable`): a header row,
@@ -744,6 +757,40 @@ mod tests {
             search(&sections(), "  ").is_empty(),
             "a blank query finds nothing"
         );
+    }
+
+    #[test]
+    fn a_search_hits_label_drops_the_lines_markdown_marks() {
+        // A list item's line loses its dash and backticks.
+        let hits = search(&crate::help::chapters(&[]), "next to the program");
+        let labels: Vec<&str> = hits.iter().map(|hit| hit.label.as_str()).collect();
+        assert_eq!(
+            labels,
+            [
+                "First run and data location › Choosing the data location › Next to the program \
+                 puts them in a data/ folder beside UTW.exe, which"
+            ],
+        );
+
+        // A bold subheading's line loses its asterisks.
+        let chapters = vec![(
+            "save-editor",
+            HelpSection {
+                title: "Save editor",
+                topics: vec![HelpTopic {
+                    slug: "command-line",
+                    title: "Running from a terminal",
+                    body: "Intro.\n\n**Writing a save**\n\nA command that writes a save reads the one `--base` names.\n",
+                }],
+                messages: Vec::new(),
+            },
+        )];
+        let hits = search(&chapters, "writing a save");
+        assert_eq!(
+            hits[0].label,
+            "Save editor › Running from a terminal › Writing a save"
+        );
+        assert_eq!(hits[0].paragraph, Some(1));
     }
 
     /// The first stub's chapter: two topics, the first holding an in-doc link to the
