@@ -190,10 +190,12 @@ function show(name) {{
 function pin(name) {{
   pinned = nodes.some(n => n.dataset.name === name) ? name : null;
   for (const node of nodes) node.classList.toggle("pinned", node.dataset.name === pinned);
-  // replaceState, not location.hash: a click is no page to go back to.
-  const address = location.pathname + location.search + (pinned ? "#" + pinned : "");
-  history.replaceState(null, "", address);
   show(pinned);
+  // replaceState, not location.hash: a click is no page to go back to. The address is
+  // absolute: a viewer that adds a <base> (htmlpreview.github.io points it at the raw file)
+  // resolves a relative one against another origin, which replaceState refuses.
+  const address = location.href.split("#")[0] + (pinned ? "#" + pinned : "");
+  history.replaceState(null, "", address);
 }}
 for (const node of nodes) {{
   node.addEventListener("mouseenter", () => show(node.dataset.name));
