@@ -2936,3 +2936,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — 0.0.1cv cv8's review loops ended: SWE-2 A7r1 3 accepted, Astra A7b 2 (a
   typed id lost to a click on an earlier id field, fixed), SWE-2 A7b1 0; `just mutants
   ruleset_editor` queued.
+- **2026-10-30** — 0.0.1cv cv5 checked in the release build: TSV export, ST-SIDE-05 with
+  PES 2017, RE-FILE-08, the two tools' switching and close prompts, the ownership line; cv8d
+  (Save as suggests the opened file's name) queued behind the crate's mutation run.

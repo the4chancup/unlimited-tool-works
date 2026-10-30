@@ -5890,9 +5890,32 @@ briefs, review loops, gates and mutation runs as for any step.
     `--gui` and wheel tests, `PathKind` dropped (lead's fix: one variant left). SWE-2
     round 1: 0 of 4 accepted, the loop ends (`.tmp/0_0_1cv/rulings_cv4.md`); its Astra
     round is cv6's A6
-  - [ ] cv5 by hand: Output rosters to TSV in the built window; ST-SIDE-05 with PES 2017
-    running; RE-FILE-08 (Open and Save as start in the remembered folder, also after a
-    restart: Astra A7-8)
+  - [x] cv5 by hand, in the release build of `5337dae9` (portable copy, captures
+    `.tmp/0_0_1cv/cv5/`)
+    manual: checked 2026-10-30 by the lead: Output rosters to TSV asks with a save dialog
+    named `EDIT.tsv` and writes UTF-8 with a byte-order mark, 210 teams of 23 rows from the
+    maintainer's PES 2021 save, accented and symbol names intact (SE-GUI-27)
+    ST-SIDE-05 manual: checked 2026-10-30 by the lead, PES 2017 running from
+    `E:/PES2017`, the selector at 21 and `pes_folder_path = 'E:/PES2021'`: the poll switched
+    to 17 with "Switched to PES 2017" and Fix PES path, which wrote `E:\PES20**`; set back
+    to 21 by hand, two polls later still 21 with the game running; the PES 2017 save folder
+    unchanged by hash
+    RE-FILE-08 manual: checked 2026-10-30 by the lead: Open and Save as start in the folder
+    of the last file, also after a restart, and in the folder `last_folder` names when it
+    was pointed elsewhere while closed (so the setting, not Windows' own dialog memory, picks
+    it)
+    manual: checked 2026-10-30 by the lead: the Save editor and the Ruleset editor together:
+    each keeps its document and unsaved mark across switches; closing with both unsaved
+    shows the Save editor's prompt first, Cancel keeps the window with no further prompt,
+    Discard brings the Ruleset editor into view with its own prompt, whose Discard closes
+    the window; the real save untouched (ST-RUN-05)
+    manual: checked 2026-10-30 by the lead: the ownership line at 1280 wide: the sentence
+    fills a row and Apply aesthetics patch starts the next one whole
+  - [ ] cv8d after `just mutants ruleset_editor` ends (nothing edits the crate before): Save
+    as on a document opened from a file suggests that file's name, not the ruleset's
+    (`second.4ccrules` opened, Save as offered `divegrass_before_christmas_7.4ccrules`; the
+    plan is silent, and every file dialog's convention is the file's own name); a document
+    never saved keeps the suggestion from its name
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
   - [ ] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30): off
@@ -5923,8 +5946,8 @@ briefs, review loops, gates and mutation runs as for any step.
       on an earlier id field lost the typed id, "ability stats"; `0aec8f91`), its loop ends;
       SWE-2 A7b1 0 accepted (`4863558b`), the review loops end (gates-changed f98c0f96
       green). Open: `just mutants ruleset_editor` (queued detached behind the c2079631
-      collection, `.tmp/0_0_1cv/mutants_ruleset_editor.log`), the built window with two tools
-      (cv5)
+      collection, `.tmp/0_0_1cv/mutants_ruleset_editor.log`); the built window with two tools
+      checked (cv5)
     - [x] cv8c merged `8e533110` (gates-changed 80cb2368 green after the two citations moved
       under their doc comments) A7's rework (brief `.tmp/0_0_1cv/brief_cv8c.md`; draft, plan and DECISIONS
       2026-10-30 "the summary states the logic's rules" by the lead, the summary goldens
