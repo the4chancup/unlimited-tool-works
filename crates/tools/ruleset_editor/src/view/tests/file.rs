@@ -1,8 +1,9 @@
 //! Opening and saving: a file Save wrote opens with no banner
 //! (RE-FILE-01), a hand-edited logic shows the banner and is kept
 //! byte for byte (RE-FILE-02), comments inside `RULESET` go at save
-//! (RE-FILE-05), and a failed write is reported with nothing beside
-//! the file (RE-FILE-07).
+//! (RE-FILE-05), a failed write is reported with nothing beside the
+//! file (RE-FILE-07), and the event's page and logo are kept outside
+//! the logic (RE-FILE-09).
 
 use super::*;
 
@@ -115,6 +116,70 @@ fn a_save_with_no_edit_writes_the_same_values_and_no_comments() {
         rules.ruleset(),
         &aatf::Ruleset::from_data_block(&block).expect("the block reads"),
         "the ruleset reads back equal"
+    );
+}
+
+// RE-FILE-09
+#[test]
+fn a_save_keeps_the_events_page_and_logo_out_of_the_logic() {
+    // DBC7's block, which carries its event's page and logo, assembled
+    // as a file (current logic, the empty-checks stub).
+    let aatf_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../libs/aatf");
+    let block = std::fs::read_to_string(aatf_dir.join("rulesets/dbc7.rhai")).unwrap();
+    let before = aatf::Ruleset::from_data_block(&block).expect("the block reads");
+    assert!(
+        before.page.is_some() && before.logo.is_some(),
+        "premise: DBC7 carries a page and a logo"
+    );
+    let logic = aatf::file_sections(&valid_file())
+        .logic
+        .expect("the current section");
+    let stub = crate::test_support::CUSTOM_CHECKS_STUB;
+    let text = format!("{}\n\n{}\n\n{}\n", block.trim_end(), logic.trim_end(), stub);
+    let dir = crate::test_support::scratch("file_09");
+    let path = write_file(&dir, "dbc7.4ccrules", &text);
+
+    let (ctx, _events, mut window, mut view) = fresh();
+    open_path(&mut view, &ctx, &path);
+    let frame = window.draw(&mut view, &ctx);
+    click_labeled(&mut window, &frame.nodes, "Save", &mut view, &ctx);
+    let written = std::fs::read_to_string(&path).unwrap();
+
+    let rules = aatf::Rules::load(&written).expect("the saved file loads");
+    assert_eq!(rules.ruleset().page, before.page, "the page reads back");
+    assert_eq!(rules.ruleset().logo, before.logo, "the logo reads back");
+
+    let data = &written[..written.find("// ==== LOGIC").expect("the logic banner")];
+    let lines: Vec<&str> = data.lines().collect();
+    let name = lines
+        .iter()
+        .position(|line| line.starts_with("    name: "))
+        .expect("the name line");
+    assert!(
+        lines[name + 1].starts_with("    page: "),
+        "page follows name:\n{data}"
+    );
+    let end = lines
+        .iter()
+        .position(|line| *line == "};")
+        .expect("the data block's end");
+    assert!(
+        lines[end - 1].starts_with("    logo: "),
+        "logo is the last key:\n{data}"
+    );
+
+    let without: String = written
+        .lines()
+        .filter(|line| !line.starts_with("    page: ") && !line.starts_with("    logo: "))
+        .map(|line| format!("{line}\n"))
+        .collect();
+    let bare = aatf::Rules::load(&without).expect("the file without them loads");
+    assert_eq!(bare.ruleset().page, None, "premise: the page is removed");
+    assert_eq!(bare.ruleset().logo, None, "premise: the logo is removed");
+    assert_eq!(
+        rules.logic(),
+        bare.logic(),
+        "the logic's identity ignores the two keys"
     );
 }
 

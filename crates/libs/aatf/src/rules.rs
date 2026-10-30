@@ -342,6 +342,81 @@ mod tests {
         assert_eq!(Rules::official().logic(), LogicIdentity::Current);
     }
 
+    /// Every embedded ruleset carries its event's wiki page and the logo
+    /// that page shows, byte for byte, and its logic stays the current one.
+    #[test]
+    fn every_embedded_ruleset_carries_its_events_page_and_logo() {
+        use base64::Engine as _;
+
+        let logos = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../docs/prototypes/assets/logos");
+        for (stem, block, page) in [
+            (
+                "autumn26",
+                AUTUMN26,
+                "https://implyingrigged.info/wiki/2026_4chan_Autumn_Babby_Cup",
+            ),
+            (
+                "autumn25",
+                include_str!("../rulesets/autumn25.rhai"),
+                "https://implyingrigged.info/wiki/2025_4chan_Autumn_Babby_Cup",
+            ),
+            (
+                "spring26",
+                include_str!("../rulesets/spring26.rhai"),
+                "https://implyingrigged.info/wiki/2026_4chan_Spring_Babby_Cup",
+            ),
+            (
+                "vgl27",
+                include_str!("../rulesets/vgl27.rhai"),
+                "https://implyingrigged.info/wiki//vg/_League_27",
+            ),
+            (
+                "vgl26",
+                include_str!("../rulesets/vgl26.rhai"),
+                "https://implyingrigged.info/wiki//vg/_League_26",
+            ),
+            (
+                "vgl25",
+                include_str!("../rulesets/vgl25.rhai"),
+                "https://implyingrigged.info/wiki//vg/_League_25",
+            ),
+            (
+                "vtl11",
+                include_str!("../rulesets/vtl11.rhai"),
+                "https://implyingrigged.info/wiki//vt/_League_11",
+            ),
+            (
+                "vtl10",
+                include_str!("../rulesets/vtl10.rhai"),
+                "https://implyingrigged.info/wiki//vt/_League_10",
+            ),
+            (
+                "dbc7",
+                include_str!("../rulesets/dbc7.rhai"),
+                "https://implyingrigged.info/wiki/Divegrass_Before_Christmas_7:_Melty_Under_The_Christmas_Tree",
+            ),
+        ] {
+            let rules = Rules::from_data_block(block).unwrap_or_else(|e| panic!("{stem}: {e}"));
+            let ruleset = rules.ruleset();
+            assert_eq!(ruleset.page.as_deref(), Some(page), "{stem}");
+            let logo = ruleset
+                .logo
+                .as_deref()
+                .unwrap_or_else(|| panic!("{stem}: no logo"));
+            let decoded = base64::engine::general_purpose::STANDARD
+                .decode(logo)
+                .unwrap_or_else(|e| panic!("{stem}: {e}"));
+            let asset = std::fs::read(logos.join(format!("{stem}.png")))
+                .unwrap_or_else(|e| panic!("{stem}: {e}"));
+            assert!(
+                decoded == asset,
+                "{stem}: the logo is not the asset's bytes"
+            );
+            assert_eq!(rules.logic(), LogicIdentity::Current, "{stem}");
+        }
+    }
+
     /// A statement added inside the logic section makes the file's
     /// logic `Modified`: the section no longer hashes to a known
     /// version.

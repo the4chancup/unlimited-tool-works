@@ -295,6 +295,8 @@ pub(crate) fn blank() -> Ruleset {
     Ruleset {
         schema: 1,
         name: "New ruleset".to_string(),
+        page: None,
+        logo: None,
         squad_size: 23,
         stats: official.ruleset().stats.clone(),
         tiers: vec![tier("regular", "Regular", None, 75)],

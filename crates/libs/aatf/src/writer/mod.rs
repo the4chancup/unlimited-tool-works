@@ -672,13 +672,16 @@ impl Ruleset {
         // Destructuring names every field on purpose: a field added to
         // the schema fails to compile here until the writer handles it.
         // The same holds of the field functions below. The fields come
-        // in declaration order but two, spelled as the hand-written
+        // in declaration order but three, spelled as the hand-written
         // blocks and the editor's preview read them: a special's
         // `severity` follows `label`, a height system's `by_quotas`
-        // precedes `quotas`.
+        // precedes `quotas`, and `logo` comes last, its long base64 line
+        // after every key a person reads.
         let Ruleset {
             schema,
             name,
+            page,
+            logo,
             squad_size,
             stats,
             tiers,
@@ -785,10 +788,18 @@ impl Ruleset {
             ));
         }
 
+        if let Some(logo) = logo {
+            sections.push(vec![format!("{INDENT}logo: {},", string_literal(logo))]);
+        }
+
         let mut block = format!(
-            "{HEADER}\nconst RULESET = #{{\n{INDENT}schema: {schema},\n{INDENT}name: {},\n{INDENT}squad_size: {squad_size},\n",
+            "{HEADER}\nconst RULESET = #{{\n{INDENT}schema: {schema},\n{INDENT}name: {},\n",
             string_literal(name)
         );
+        if let Some(page) = page {
+            block.push_str(&format!("{INDENT}page: {},\n", string_literal(page)));
+        }
+        block.push_str(&format!("{INDENT}squad_size: {squad_size},\n"));
         for section in &sections {
             block.push('\n');
             for line in section {

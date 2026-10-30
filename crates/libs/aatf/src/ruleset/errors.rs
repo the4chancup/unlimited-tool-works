@@ -127,6 +127,19 @@ pub enum LoadRule {
     /// A string is empty: a `name`, an id, a label, a `card_groups` key
     /// or a `forbid` text.
     Empty,
+    /// `page` is not an `http://` or `https://` address: another
+    /// beginning, nothing after it, or a space inside.
+    PageNotWebAddress,
+    /// `logo` is not base64 text (the standard alphabet, padded; no
+    /// spaces, no `data:` prefix).
+    LogoNotBase64,
+    /// `logo` decodes to bytes that do not start with the PNG signature.
+    LogoNotPng,
+    /// `logo` decodes to more than the 64 KB a logo may hold.
+    LogoTooLarge {
+        /// The decoded size.
+        bytes: usize,
+    },
     /// A `name_colors` entry or a tier's `name_color` is not eight bytes
     /// long (any bytes — the game does not check they are hex).
     ColorCodeLength,
@@ -269,6 +282,14 @@ impl fmt::Display for LoadRule {
                 f.write_str("a height system other than the last has no or an empty `any_player` and no `by_quotas` with quotas")
             }
             LoadRule::Empty => f.write_str("empty string"),
+            LoadRule::PageNotWebAddress => {
+                f.write_str("not a web address (http:// or https://)")
+            }
+            LoadRule::LogoNotBase64 => f.write_str("not base64 text"),
+            LoadRule::LogoNotPng => f.write_str("not a PNG picture"),
+            LoadRule::LogoTooLarge { bytes } => {
+                write!(f, "{bytes} bytes, over the 64 KB a logo may hold")
+            }
             LoadRule::ColorCodeLength => f.write_str("a name colour code is not eight bytes"),
             LoadRule::BracketsNotAscending => {
                 f.write_str("bracket heights not above the brackets before it")
