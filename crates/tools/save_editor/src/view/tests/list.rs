@@ -1958,3 +1958,101 @@ fn page_down_and_up_walk_the_lists_player_rows_from_a_number_field() {
         "PageUp on the first player row moved nothing"
     );
 }
+
+/// PES 17's team 734 listed with his first player selected and the
+/// keyboard in his Height field, the window's first frame drawn.
+fn page_keys_from_height(test: &str) -> (SaveView, Headless) {
+    let path = fixture(PesVersion::Pes17, test);
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(734);
+    view.selected = Some(Selection::Player(734, 0));
+    let mut window = Headless::new();
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let height = node_id_right_of(&pairs, "Height", Role::SpinButton);
+    action_focus(&mut window, &mut view, height);
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "premise: the Height field holds the keyboard"
+    );
+    (view, window)
+}
+
+// A page key that moves nothing (PageUp on the first player row) leaves
+// the field its keyboard: the member types on where he was.
+#[test]
+fn a_page_key_that_moves_nothing_keeps_the_fields_keyboard() {
+    let (mut view, mut window) = page_keys_from_height("page_keys_dead_end");
+    window.frame(
+        vec![key(egui::Key::PageUp, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(view.selected, Some(Selection::Player(734, 0)), "no move");
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "the Height field keeps the keyboard"
+    );
+}
+
+// While a pointer button is held (a number being dragged, a button
+// pressed), the page keys do nothing: the gesture in flight would
+// otherwise finish on the next player.
+#[test]
+fn the_page_keys_wait_while_a_pointer_button_is_held() {
+    let (mut view, mut window) = page_keys_from_height("page_keys_pointer_held");
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let first = nodes
+        .iter()
+        .filter(|node| player_row(node))
+        .find(|node| node.toggled() == Some(accesskit::Toggled::True))
+        .expect("the selected row");
+    window.frame(pointer_at(centre(first), true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    window.frame(
+        vec![key(egui::Key::PageDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(734, 0)),
+        "PageDown with the button held moved nothing"
+    );
+}
+
+// Walked past the rows in view, the list scrolls with the selection: the
+// selected row stays drawn inside the list's frame.
+#[test]
+fn the_list_scrolls_to_keep_a_paged_selection_in_view() {
+    let path = fixture(PesVersion::Pes21, "page_keys_scroll");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let in_view = nodes.iter().filter(|node| player_row(node)).count();
+    for _ in 0..in_view + 10 {
+        window.frame(
+            vec![key(egui::Key::PageDown, egui::Modifiers::NONE, true)],
+            |ui| show(ui, &mut view, &|| Vec::new()),
+        );
+    }
+    assert_ne!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "premise: the selection moved"
+    );
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let frame = list_frame(&window, &shapes);
+    let selected = nodes
+        .iter()
+        .filter(|node| player_row(node))
+        .find(|node| node.toggled() == Some(accesskit::Toggled::True))
+        .expect("the selected row is drawn");
+    let bounds = selected.bounds().expect("the row's bounds");
+    assert!(
+        bounds.y0 >= f64::from(frame.min.y) - 0.5 && bounds.y1 <= f64::from(frame.max.y) + 0.5,
+        "the selected row inside the list: {bounds:?} vs {frame:?}"
+    );
+}

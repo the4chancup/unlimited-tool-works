@@ -715,6 +715,13 @@ fn the_corners_and_the_join_fill_mark_the_states() {
     };
     assert_eq!(fill_of(3), Palette::DARK.join_fill, "the member's badge");
     assert_eq!(fill_of(4), Palette::DARK.badge_fill, "a non-member's badge");
+    // The list has room, so every starter is a candidate: the member a
+    // click removes, the others a click adds.
+    assert_eq!(
+        corners(&shapes, Palette::DARK.candidate_corners).len(),
+        88,
+        "the candidates' corners on all eleven"
+    );
 
     // Nothing armed: no corners at all.
     view.assign = None;
@@ -2321,6 +2328,9 @@ fn a_warning_only_mark_paints_the_pitchs_warn_colour_on_both_themes() {
 #[test]
 fn the_crosss_hover_shows_the_marks_lines() {
     let mut window = Headless::sized(600.0, 450.0);
+    window
+        .ctx
+        .global_style_mut(|style| style.interaction.tooltip_delay = 0.0);
     let mut tactics = fixture_tactics(PesVersion::Pes21);
     let mut view = TacticsView::default();
     let rows = fixture_rows(PesVersion::Pes21);
@@ -2649,6 +2659,9 @@ fn button_boxes(nodes: &[accesskit::Node]) -> Vec<egui::Rect> {
 #[test]
 fn the_formation_selector_is_locked_on_kick_off_while_fluid_formation_is_off() {
     let mut window = Headless::sized(900.0, 1100.0);
+    window
+        .ctx
+        .global_style_mut(|style| style.interaction.tooltip_delay = 0.0);
     let mut tactics =
         pes_savefile::EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes21))
             .expect("fixture save")

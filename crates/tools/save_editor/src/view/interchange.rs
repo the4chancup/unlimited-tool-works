@@ -152,16 +152,17 @@ impl Export {
     /// `<id>.toml`; a Texport's `<short name>.ted` (the id when the short
     /// name is empty) on PES 2018 to 2021, and on 2015 to 2017 the name the
     /// game's Import Team reads from the save's folder, `TEXPORT` and the
-    /// first eight-digit number from `00000000` that the folder has no file
-    /// of, so the dialog opens on a name that writes over nothing.
+    /// first eight-digit hexadecimal number from `00000000` that the folder
+    /// has no file of (upper case, `0000000A` after `00000009`, as the game
+    /// counts), so the dialog opens on a name that writes over nothing.
     fn file_name(self, team: &TeamEntry, version: PesVersion, save: &Path) -> String {
         match self {
             Export::TeamToml => format!("{}.toml", team.id),
             Export::Texport => match version {
-                PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => (0..=99_999_999u32)
-                    .map(|number| format!("TEXPORT{number:08}"))
+                PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => (0..=u32::MAX)
+                    .map(|number| format!("TEXPORT{number:08X}"))
                     .find(|name| !save.with_file_name(name).exists())
-                    .expect("a folder holds fewer than 10^8 files"),
+                    .expect("a folder holds fewer files than eight hex digits count"),
                 PesVersion::Pes18 | PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21
                     if team.short_name.is_empty() =>
                 {
@@ -689,9 +690,10 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             sections: interchange.sections,
             locked,
         };
+        // A choice ticked below stages here next frame: egui repaints
+        // after every input frame.
         interchange.refresh(file, team, key);
     }
-    let chosen = interchange.sections;
     let mut open = true;
     let action = comparator::panel_window(ui, "Team file interchange", "save_editor_interchange")
         .open(&mut open)
@@ -702,10 +704,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         .flatten();
     if !open {
         *panel = None;
-    }
-    // A choice changed on this frame: the next one stages it.
-    if interchange.sections != chosen {
-        ui.ctx().request_repaint();
     }
     match action {
         Some(Action::Export(export)) => {
@@ -1139,11 +1137,12 @@ fn note_rows(ui: &mut egui::Ui, notes: &[NoteRow]) {
 
 #[cfg(test)]
 mod tests {
-    use pes_savefile::interchange::team_toml::ImportNote;
+    use pes_savefile::interchange::team_toml::{ImportNote, TeamToml};
+    use pes_savefile::model::PlayerEntry;
     use pes_savefile::{EditFile, fixture_save};
     use pes_version::PesVersion;
 
-    use super::{note_row, note_subject, pick_filters};
+    use super::{ALL_SECTIONS, note_row, note_subject, pick_filters, stage};
 
     /// The Pick dialog opens on "All files" where a Texport has no
     /// extension (PES 2015 to 2017), on "Team files" where it is a `.ted`.
@@ -1297,5 +1296,44 @@ mod tests {
                 "{note:?}'s subject"
             );
         }
+    }
+
+    /// The staged import's players are the target's rostered players and
+    /// no one else: the save holds other teams' players, and a record of
+    /// id 0 must not pass for one of the target's empty places.
+    #[test]
+    fn a_staged_import_holds_the_targets_rostered_players_alone() {
+        let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).expect("fixture");
+        let team = file.team(701).expect("team 701").clone();
+        assert!(
+            team.roster.iter().any(|slot| slot.player_id == 0),
+            "premise: 701 has an empty place"
+        );
+        if !file.players().iter().any(|player| player.id == 0) {
+            let outsider = file
+                .players_mut()
+                .iter_mut()
+                .find(|player| team.roster.iter().all(|slot| slot.player_id != player.id))
+                .expect("a player of another team");
+            outsider.id = 0;
+        }
+        let mut rostered: Vec<u32> = team
+            .roster
+            .iter()
+            .map(|slot| slot.player_id)
+            .filter(|&id| id != 0)
+            .collect();
+        rostered.sort_unstable();
+        assert!(
+            file.players().len() > rostered.len() + 1,
+            "premise: the save holds other players"
+        );
+        let players: Vec<&PlayerEntry> = file.players().iter().collect();
+        let document = TeamToml::from_team(PesVersion::Pes21, &team, &players).expect("export");
+
+        let staged = stage(&file, &team, &document, ALL_SECTIONS).expect("the import stages");
+        let mut ids: Vec<u32> = staged.players.iter().map(|player| player.id).collect();
+        ids.sort_unstable();
+        assert_eq!(ids, rostered, "the target's rostered players alone");
     }
 }

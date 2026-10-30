@@ -743,6 +743,42 @@ fn the_copy_swap_dialog_picks_the_teams_first_filled_slot() {
     );
 }
 
+// The Copy/Swap dialog's team combo names a team by its display name, its
+// shown text and its entries alike, as the list's team selector does: a
+// colour code's control character and hex digits never show.
+#[test]
+fn the_copy_swap_team_combo_names_a_coded_team_by_its_display_name() {
+    let path = fixture(PesVersion::Pes21, "copy_swap_display_name");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    let name = file.team(701).unwrap().name.clone();
+    file.team_mut(701).unwrap().name = format!("\x11cff0000ff{name}");
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+
+    // The selected player is the first listed, of team 701: the combo
+    // opens on his team.
+    let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
+    click(&mut window, menu_item(&nodes, "Copy stats from"), &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let team_combo = dialog_control(&nodes, "Team", Role::ComboBox);
+    assert_eq!(team_combo.value(), Some(name.as_str()), "the shown text");
+
+    click(&mut window, team_combo, &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let entries: Vec<&str> = nodes
+        .iter()
+        .filter(|node| node.role() == Role::Button)
+        .filter_map(|node| node.label())
+        .collect();
+    assert!(entries.contains(&name.as_str()), "the entry: {entries:?}");
+    assert!(
+        entries.iter().all(|entry| !entry.contains('\u{11}')),
+        "no colour code byte in the popup: {entries:?}"
+    );
+}
+
 /// The Copy/Swap dialog's player combo node.
 fn player_combo(nodes: &[accesskit::Node]) -> &accesskit::Node {
     dialog_control(nodes, "Player", Role::ComboBox)
