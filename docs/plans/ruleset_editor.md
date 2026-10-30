@@ -46,7 +46,9 @@ position rated A, no B ratings, a GK A never a second A, a captain, at least one
 most 10 skill cards.
 
 A left rail lists the sections; each is a form, and a section with a validation error shows a
-mark in the rail. The rules file's data block, as the editor would write it, shows in a pane
+mark in the rail. A bottom bar beside Save holds the problem count and the first problem, or
+"No problems found" when the data breaks no rule: it claims no more, since the custom checks
+and the sample team run only at Save, which lists what blocks it. The rules file's data block, as the editor would write it, shows in a pane
 right of the form only while the **Show preview** toggle at the top right of the tool's bar is
 on, off at every start: open beside the form it would leave the sections a third of Studio's
 window, and the block is a check on the form, not where the work happens. Shown, its lines
@@ -71,15 +73,18 @@ the last edit changed are highlighted.
   the recognition order and the quick-action buttons' order. Columns: label, id, count (a number
   or "the rest"), counts as, rate, form, injury resistance, weak foot, paid cards, minimum
   cards, A positions, name colour (none or a swatch), warning band (`stat_warning`: points
-  above a stat's target that warn rather than err, 0 meaning none) and a "stats add up to at
-  most the targets" checkbox (`total_within_targets`). Every number, here and in every
+  over the target that warn rather than err, 0 meaning none) and a "stats add up to at most the
+  targets" checkbox (`total_within_targets`), both covering only the stats that may sit below
+  their target (`stats.at_most`), as their tooltips say. Every number, here and in every
   section, draws its value as stored, never clamped to its control's range on sight (DBC7's 48
   paid cards, past a 0-20 range, were rewritten to 20 by drawing the section), and the paid and
   minimum cards run to 48, every card the game has. The id commits on Enter or focus loss, as a path row does, not per keystroke,
   and carries the tier's key in the medal systems from the id it had to the one committed, only
   while no other tier carries the old id and no system holds the new one: carried per
   keystroke, typing `gold2` over Silver passed through `gold`, the Gold tier's own id, and the
-  next keystroke moved Gold's counts to `gold2`. Per row, an expander holds the per-stat
+  next keystroke moved Gold's counts to `gold2`. An id typed and not yet committed is still
+  an unsaved change: Save (the button, Ctrl+S or the prompt's) commits it first, and closing
+  the window with one pending opens the unsaved-changes prompt. Per row, an expander holds the per-stat
   targets (all ability stats, each an "own target" checkbox and its number: unticked, the stat
   follows the rate and has no entry; a number field cannot be left empty, which is how the
   draft says "the rate"), the free cards per group (one number per group, COM styles first: as
@@ -132,7 +137,13 @@ the last edit changed are highlighted.
   it runs after the ruleset and is kept as is.
 - **Summary**: the ruleset as readable rules text ("Gold: 1 per team, every stat 99, form 8, …";
   the medal systems, heights and universal rules; each card group with its cards; each team
-  settings entry; each special as a sentence from its When and Then), generated from the data.
+  settings entry; each special as a sentence from its When and Then; the suggestions), generated
+  from the data. Each sentence states the rule the logic applies, not a looser one: the warning
+  band and the stat total name the stats that may sit below their target (`stats.at_most`), the
+  only ones they cover; the minimum names paid skills, an extra A position counting as one, not
+  COM styles; an effect's weak foot is a target like the tier's, not an upper limit; and an
+  effect's cards are joined with "and" (each one free, each one required), a condition's with
+  "or".
   A skill, COM style or playing style is named as the Save editor names it (`GK Long Throw`,
   `Cut Behind & Turn`, `Fox in the Box`: `plans/save_editor.md`'s Skills item), its card
   groups' lists included, so an organizer's summary and a member's pickers spell a card
@@ -464,7 +475,8 @@ RE-SUM-01  GIVEN Autumn 26 open
            THEN it has one line per tier, highest first, naming its count, rate and the targets
                 it sets (the draft's "- **Gold**: 1 per team; every stat 99; form 8, …"), the
                 height brackets and systems, the universal rules, and one sentence per special
-                built from its When and Then; Copy puts the same text on the clipboard as
+                built from its When and Then, and its suggestions (paid cards, free tricks, free
+                COM styles, weak foot and injury resistance); Copy puts the same text on the clipboard as
                 Markdown; GIVEN DBC7 THEN it also has the medal systems with each one's counts,
                 Gold and Silver counted "by medal system", the regular's and silver's warning
                 bands and stat totals, each height system's quotas, and GigaHeight's pool;

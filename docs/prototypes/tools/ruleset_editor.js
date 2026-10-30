@@ -1236,7 +1236,7 @@ function cardName(key) {
       : i > 0 && SMALL_WORDS.includes(w) ? w
       : w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
-const list = (xs, f = human) => xs.length < 2 ? xs.map(f).join("") : xs.slice(0, -1).map(f).join(", ") + " or " + f(xs[xs.length - 1]);
+const list = (xs, f = human, word = "or") => xs.length < 2 ? xs.map(f).join("") : xs.slice(0, -1).map(f).join(", ") + ` ${word} ` + f(xs[xs.length - 1]);
 function tierLabel(id) { const t = R.tiers.find(x => x.id === id); return t ? t.label : id; }
 function condText(c) {
   if (!c) return "";
@@ -1275,13 +1275,13 @@ function effectsText(e) {
     : byTier(v).map(([t, n]) => `${n} for ${tierLabel(t)}`).join(", ")}`);
   if (e.cards != null) p.push(`${perTierText(e.cards, "")} paid card${e.cards === 1 ? "" : "s"}`);
   for (const [k, v] of Object.entries(e.free || {})) p.push(`${perTierText(v, "")} free ${k === "com" ? "COM style" : human(k).toLowerCase()}`);
-  if ((e.free_cards || []).length) p.push(list(e.free_cards, cardName) + " free");
-  if ((e.require_cards || []).length) p.push("must hold " + list(e.require_cards, cardName));
+  if ((e.free_cards || []).length) p.push(list(e.free_cards, cardName, "and") + " free");
+  if ((e.require_cards || []).length) p.push("must hold " + list(e.require_cards, cardName, "and"));
   if (e.a_positions != null) p.push(`${perTierText(e.a_positions, "")} A position`);
   if (e.max_a_positions != null) p.push(`at most ${e.max_a_positions} A position${e.max_a_positions === 1 ? "" : "s"}`);
   if (e.form != null) p.push(`${perTierText(e.form, "")} form`);
   if (e.injury_resistance != null) p.push(`${perTierText(e.injury_resistance, "")} injury resistance`);
-  if (e.weak_foot) p.push(`weak foot up to ${e.weak_foot.usage}/${e.weak_foot.accuracy}`);
+  if (e.weak_foot) p.push(`weak foot ${e.weak_foot.usage}/${e.weak_foot.accuracy}`);
   if (e.height_allowance != null) p.push(`count ${e.height_allowance} cm shorter`);
   if (e.stat_warning != null) p.push("warning band " + (typeof e.stat_warning === "number" ? e.stat_warning
     : byTier(e.stat_warning).map(([t, n]) => `${n} for ${tierLabel(t)}`).join(", ")));
@@ -1300,9 +1300,9 @@ function summary(r) {
     const when = condText(t.when);
     const free = Object.entries(t.free).map(([g, n]) => `${n} free ${g === "com" ? "COM style" + (n > 1 ? "s" : "") : human(g).toLowerCase()}`);
     const stats = Object.entries(t.stats).map(([s, v]) => `${human(s).toLowerCase()} ${v}`);
-    const band = t.stat_warning ? `; a stat up to ${t.stat_warning} over its target warns, past that it is not allowed` : "";
-    const total = t.total_within_targets ? "; his stats added up may not exceed the targets' sum" : "";
-    L.push(`- **${t.label}**: ${count}${when ? ", " + when : ""}; every stat ${t.rate}${stats.length ? " (" + stats.join(", ") + ")" : ""}${band}${total}; form ${t.form}, injury resistance ${t.injury_resistance}, weak foot ${t.weak_foot.usage}/${t.weak_foot.accuracy}; ${t.cards} paid cards${t.min_cards ? ` (at least ${t.min_cards})` : ""}${free.length ? ", " + free.join(", ") : ""}; ${t.a_positions} A position${t.a_positions === 1 ? "" : "s"}${t.name_color ? `; name in colour ${t.name_color}` : ""}.`);
+    const band = t.stat_warning ? `; a stat that may sit below its target warns up to ${t.stat_warning} over it, past that it is not allowed` : "";
+    const total = t.total_within_targets ? "; those stats added up may not exceed their targets' sum" : "";
+    L.push(`- **${t.label}**: ${count}${when ? ", " + when : ""}; every stat ${t.rate}${stats.length ? " (" + stats.join(", ") + ")" : ""}${band}${total}; form ${t.form}, injury resistance ${t.injury_resistance}, weak foot ${t.weak_foot.usage}/${t.weak_foot.accuracy}; ${t.cards} paid cards${t.min_cards ? ` (at least ${t.min_cards} paid skills, an extra A position counting as one)` : ""}${free.length ? ", " + free.join(", ") : ""}; ${t.a_positions} A position${t.a_positions === 1 ? "" : "s"}${t.name_color ? `; name in colour ${t.name_color}` : ""}.`);
   });
   if ((r.medal_systems || []).length) {
     const named = r.tiers.filter(t => medalTiers.has(t.id));
@@ -1355,6 +1355,13 @@ function summary(r) {
   if (r.specials.length) {
     L.push("", "## Special rules");
     r.specials.forEach(s => { const w = condText(s.when); L.push(`- **${s.label}**${s.severity !== "error" ? ` (${s.severity})` : ""}: ${w ? w.charAt(0).toUpperCase() + w.slice(1) + ": " : ""}${effectsText(s.then)}.`); });
+  }
+  if (r.suggestions.length) {
+    const WORD = { cards: "paid cards", a_positions: "A positions", weak_foot: "weak foot",
+      injury_resistance: "injury resistance", height: "height", free_cards: "free cards",
+      choices: "choices not taken", com: "free COM styles" };
+    L.push("", "## Suggestions", "Allowances not used up, listed as suggestions: "
+      + list(r.suggestions, s => WORD[s] || "free " + human(s).toLowerCase(), "and") + ".");
   }
   return L.join("\n");
 }
@@ -1430,7 +1437,7 @@ function refresh() {
   bottom.innerHTML = "";
   bottom.append(probs.length
     ? h("span", { class: "err", title: probs.map(p => p.text).join("\n") }, `✖ ${probs.length} problem${probs.length > 1 ? "s" : ""}: ${probs[0].text}${probs.length > 1 ? " (hover for all)" : ""}`)
-    : h("span", { style: "color:#7fbf7f" }, "✔ Valid: the Save editor and the Team creator can use it"),
+    : h("span", { style: "color:#7fbf7f" }, "✔ No problems found"),
     h("span", { style: "flex:1" }), button("Save", save));
   document.querySelectorAll("#rail .sel").forEach((el, i) => {
     const id = SECTIONS.filter(([s]) => s !== "custom" || R.custom_checks)[i][0];
@@ -1522,9 +1529,9 @@ const VIEWS = {
         h("td", {}, h("span", { class: "row", style: "margin:0" }, checkbox("", t.name_color !== null, v => t.name_color = v ? "cc9900ff" : null, "This tier's names carry a colour code"),
           t.name_color !== null ? colour(t.name_color, v => t.name_color = v) : weak("none"))),
         h("td", {}, drag(t.stat_warning, v => t.stat_warning = v ?? 0, { max: 99, width: 40,
-          title: "Points above a stat's target that warn rather than err (0: every point errs)" })),
+          title: "Points over the target that warn rather than err, for the stats that may sit below their target (0: every point errs)" })),
         h("td", {}, checkbox("", t.total_within_targets, v => t.total_within_targets = v,
-          "The stats add up to at most the targets, an error past them")),
+          "The stats that may sit below their target add up to at most their targets, an error past them")),
         h("td", {}, R.tiers.length > 1 ? button("✕", () => { R.medal_systems.forEach(s => { delete s.counts[t.id]; }); R.tiers.splice(i, 1); structural(); }, { frame0: true, title: "Remove" }) : "")), R.tiers, i));
       g.append(h("tr", {}, h("td", {}), h("td", { colspan: 15 }, collapsing(`tier:${i}`, "Stat targets, free cards and conditions", () => h("div", {},
         strong("Per-stat targets"), h("span", { class: "weak" }, " (empty: the rate)"),

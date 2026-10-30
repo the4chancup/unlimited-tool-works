@@ -14320,3 +14320,17 @@ minutes; the GPU encoder measured about 33 times the whole CPU's throughput
 (`.tmp/16x/findings.md`), and BC3 is what the legacy compilers shipped.
 Plan: `plans/libs/dds_convert.md` "No BC7 encoding until the GPU encoder (0.0.2)";
 `plans/libs/README.md` "First-release desktop GPU BC7".
+
+## 2026-10-30 — ruleset_editor — the summary states the logic's rules; the bottom bar claims only its checks
+Decision: the Summary's sentences say what the logic applies: the warning band and the stat
+total cover the stats that may sit below their target; the minimum counts paid skills, an
+extra A position counting as one; an effect's weak foot is a target ("weak foot 2/2", no "up
+to"); an effect's cards are joined with "and"; and the suggestions get a section. The bottom
+bar's clean line reads "No problems found" instead of "Valid: the Save editor and the Team
+creator can use it". A tier id typed and not committed counts as unsaved: Save commits it first
+and the close guard sees it.
+Why: each old sentence promised a looser rule than the one a team is judged by (a COM style
+counted toward the minimum, 1/1 weak foot passing an exact 2/2), and the clean line claimed a
+file the custom checks could still refuse on Save (RE-FILE-06). The id was the one field whose
+typing lived outside the document, so Ctrl+S wrote the old id and a close dropped the new one.
+Plan: `plans/ruleset_editor.md` "The editor" (the bottom bar), Tiers, Summary, RE-SUM-01.

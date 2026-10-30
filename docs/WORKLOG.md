@@ -5886,7 +5886,8 @@ briefs, review loops, gates and mutation runs as for any step.
     round 1: 0 of 4 accepted, the loop ends (`.tmp/0_0_1cv/rulings_cv4.md`); its Astra
     round is cv6's A6
   - [ ] cv5 by hand: Output rosters to TSV in the built window; ST-SIDE-05 with PES 2017
-    running
+    running; RE-FILE-08 (Open and Save as start in the remembered folder, also after a
+    restart: Astra A7-8)
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
   - [ ] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30): off
@@ -5911,8 +5912,14 @@ briefs, review loops, gates and mutation runs as for any step.
       2026-10-30), since the Ruleset editor's table holds only its own state
     - [ ] cv8's converge: SWE-2 round 1 over cv8 + cv8b in four parts, 1 accepted (the squad's
       three load-rule texts pinned, `58f33945`; `.tmp/0_0_1cv/rulings_cv8.md`), the loop
-      ends; Astra A7 running; then a SWE-2 loop after it, `just mutants ruleset_editor`,
-      the built window with two tools (cv5)
+      ends; Astra A7: 8 of 8 accepted (`rulings_cv8.md`), so cv8c's rework, a SWE-2 loop,
+      then Astra again; `just mutants ruleset_editor`, the built window with two tools (cv5)
+    - [ ] cv8c A7's rework (brief `.tmp/0_0_1cv/brief_cv8c.md`; draft, plan and DECISIONS
+      2026-10-30 "the summary states the logic's rules" by the lead, the summary goldens
+      regenerated from the draft): a typed tier id counts as unsaved and every Save commits
+      it; the summary's band, total, minimum, effect weak foot and "and" lists say what the
+      logic applies, plus a Suggestions section; the bottom bar's clean line "No problems
+      found"
   - [ ] cv7 after 0.0.1: split `view/mod.rs` (the toolbar), `view/menus.rs` (the dialogs),
     `view/interchange.rs` (the export half), `team_widgets` `pitch/mod.rs` (the paint) and
     `tactics/mod.rs` (the changes' terms), each past a thousand lines
