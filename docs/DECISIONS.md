@@ -14153,3 +14153,11 @@ Why: the cup events take a team's tactics as a Texport until they accept Team TO
 is not needed: ten real files differ only in the emblem, the team's records and one header
 value (`.tmp/8_30c/texport17_study/FINDINGS.md`).
 Plan: `plans/save_editor.md` the "Texport import/export" bullet; worklog 8.9k5 k5f.
+
+## 2026-10-30 — save_editor — Correction: the PES 2017 Texport export is wanted, not required for 0.0.1
+Decision: the previous entry's "0.0.1 must export both" is wrong: the PES 2017 Texport export
+lands before 0.0.1 if its in-game proof holds and the work fits, and 0.0.1 can ship without it.
+Why: a member can edit the save with the app and export the Texport from PES 2017 itself, which
+is what the cups take (the maintainer).
+Plan: no plan edit needed; the plan's bullet says what the export does, not when it lands
+(worklog 8.9k5 k5f).
