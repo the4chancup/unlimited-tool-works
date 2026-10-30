@@ -14141,3 +14141,15 @@ maintainer's final pass with every slice reviewed and the Save editor never revi
 the maintainer called it a methodology gap. Per-slice loops read one surface against its own
 sections, not the shipped whole against its plan, so they cannot replace it.
 Plan: `AGENTS.md` "Cutting a release" (after "Closing a phase"); worklog 0.0.1cv and 0.0.1f.
+
+## 2026-10-30 — save_editor — The panel exports a PES 2017 Texport, built from the open save
+Decision: the team file panel's Texport export is enabled on PES 2017 (0.0.1's version), its
+file built from the open save: the fixed payload layout (a constant header, the team's emblem,
+the team, coach, roster and tactics records, the players, a constant tail, zeros elsewhere)
+in the version's container with the game's constant thumbnail; no emblem image, which the save
+does not hold. PES 2015 and 2016 stay disabled.
+Why: the cup events take a team's tactics as a Texport until they accept Team TOML files, so
+0.0.1 must export both (the maintainer). A bundled 5.6 MB template or a member-picked base file
+is not needed: ten real files differ only in the emblem, the team's records and one header
+value (`.tmp/8_30c/texport17_study/FINDINGS.md`).
+Plan: `plans/save_editor.md` the "Texport import/export" bullet; worklog 8.9k5 k5f.

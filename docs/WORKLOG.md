@@ -1819,8 +1819,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         fix so the file shows at once (planned and drafted first, a UI change); (4) the game's
         own import of the same file into a save copy, diffed against the panel's import of it
         (PES 2017 runs beside cargo)
-      - [ ] k5f before 0.0.1 if the proof holds (the maintainer, 2026-10-30: "if it's easy
-        enough"): Texport export on PES 2017, synthesized from the open save rather than from
+      - [ ] k5f before 0.0.1, required (the maintainer, 2026-10-30: the cups accept Texports
+        for now, tactics TOML files later, so the panel exports both): Texport export on PES 2017, synthesized from the open save rather than from
         a template file. Study (`.tmp/8_30c/texport17_study/FINDINGS.md`, ten real files):
         the 5,578,704-byte payload is a fixed layout, zero but a constant 0x50 header (a u32
         at 0x0c of two values), the team's 128 x 128 RGBA emblem at 0x50, the team, coach,

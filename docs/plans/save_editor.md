@@ -1307,10 +1307,13 @@ the editor exposes them as:
   not the dialog's words.
 - **Legacy import**: `.4ccs` and `.4cct` open through the same import dialog,
   read-only.
-- **Texport import/export** (export is new; PES itself can import the file). Export writes
-  PES 18-21 files from `Texport::new`'s templates; on a PES 15-17 save it is disabled, its
-  tooltip saying those versions have no template (`spec/pes_savefile/operations.md`
-  "Texport (read + write)").
+- **Texport import/export** (export is new; PES itself can import the file). The cup events
+  take a team's tactics as a Texport until they accept Team TOML files, so both exports
+  stay. Export writes PES 18-21 files from `Texport::new`'s templates, and PES 2017 files
+  built from the open save (worklog 8.9k5 k5f: the payload is a fixed layout, zero but a
+  constant header, the team's emblem, the team's records and the players); on a PES
+  2015-2016 save it is disabled, its tooltip saying those versions have no template
+  (`spec/pes_savefile/operations.md` "Texport (read + write)").
 - **Aesthetics patch apply** — see "Read-only aesthetics"; the patch is written by the Team
   compiler, never by the editor.
 - **`settings.toml` generation** — per player folder, for migrating a team to the
