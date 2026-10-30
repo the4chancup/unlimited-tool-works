@@ -10,7 +10,7 @@
 use studio_core::widgets::{step_number, wheel_steps};
 
 use crate::session::Session;
-use crate::view::{Refusal, SaveView, selected_player};
+use crate::view::{NUMBER_BOX, Refusal, SaveView, selected_player};
 
 /// The disabled controls' tooltip on a team selection.
 const TEAM_TIP: &str = "The make buttons act on a player: pick a player row";
@@ -18,10 +18,6 @@ const TEAM_TIP: &str = "The make buttons act on a player: pick a player row";
 /// A quick action cell's height, the draft's 20: the theme's
 /// controls are 18 (`interact_size`), the quick actions keep their own.
 const QUICK_ACTION_HEIGHT: f32 = 20.0;
-
-/// The width of Set stats' number box, the draft's number input: the
-/// button beside it takes the rest of its cell.
-const SET_STATS_FIELD_WIDTH: f32 = 52.0;
 
 /// The medal tiers' ids (the draft's `MEDAL_MARK`), which the left column
 /// holds in the ruleset's order.
@@ -119,7 +115,7 @@ fn tier_button(
 }
 
 /// The Set stats cell (the draft's `.row`): the button then its number
-/// field sharing the cell, the field at `SET_STATS_FIELD_WIDTH` and the
+/// field sharing the cell, the field at `NUMBER_BOX` and the
 /// button taking the rest of the cell (the draft's growing button).
 fn set_stats_cell(
     ui: &mut egui::Ui,
@@ -133,8 +129,7 @@ fn set_stats_cell(
         ui.horizontal(|ui| {
             // The button elides past its room, the same rule as the Make
             // buttons.
-            let button_width =
-                (size.x - ui.spacing().item_spacing.x - SET_STATS_FIELD_WIDTH).max(0.0);
+            let button_width = (size.x - ui.spacing().item_spacing.x - NUMBER_BOX).max(0.0);
             let button = ui
                 .add_enabled_ui(enabled, |ui| {
                     ui.add_sized(
@@ -161,7 +156,7 @@ fn set_stats_cell(
                     ui.add(
                         egui::DragValue::new(stat_value)
                             .range(40..=99)
-                            .min_size(egui::vec2(SET_STATS_FIELD_WIDTH, size.y)),
+                            .min_size(egui::vec2(NUMBER_BOX, size.y)),
                     )
                 })
                 .inner;

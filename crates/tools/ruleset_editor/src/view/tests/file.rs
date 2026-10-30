@@ -131,11 +131,44 @@ fn a_save_keeps_the_events_page_and_logo_out_of_the_logic() {
         before.page.is_some() && before.logo.is_some(),
         "premise: DBC7 carries a page and a logo"
     );
+    // The block's logo moved right after its name and its page to the
+    // end, so the Save has to put both back in place.
+    fn take<'a>(lines: &mut Vec<&'a str>, key: &str) -> &'a str {
+        let at = lines
+            .iter()
+            .position(|line| line.starts_with(key))
+            .unwrap_or_else(|| panic!("no {key:?} line"));
+        lines.remove(at)
+    }
+    let mut lines: Vec<&str> = block.lines().collect();
+    let page = take(&mut lines, "    page: ");
+    let logo = take(&mut lines, "    logo: ");
+    let name = lines
+        .iter()
+        .position(|line| line.starts_with("    name: "))
+        .expect("the name line");
+    lines.insert(name + 1, logo);
+    let end = lines
+        .iter()
+        .position(|line| *line == "};")
+        .expect("the block's end");
+    lines.insert(end, page);
+    let moved = lines.join("\n");
+    assert_ne!(
+        moved.trim_end(),
+        block.trim_end(),
+        "premise: the moved block differs from the one the Save writes"
+    );
+    assert_eq!(
+        aatf::Ruleset::from_data_block(&moved).expect("the moved block reads"),
+        before,
+        "the reader takes the keys in any order"
+    );
     let logic = aatf::file_sections(&valid_file())
         .logic
         .expect("the current section");
     let stub = crate::test_support::CUSTOM_CHECKS_STUB;
-    let text = format!("{}\n\n{}\n\n{}\n", block.trim_end(), logic.trim_end(), stub);
+    let text = format!("{}\n\n{}\n\n{}\n", moved.trim_end(), logic.trim_end(), stub);
     let dir = crate::test_support::scratch("file_09");
     let path = write_file(&dir, "dbc7.4ccrules", &text);
 
