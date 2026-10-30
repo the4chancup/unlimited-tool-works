@@ -7,7 +7,7 @@ use std::sync::OnceLock;
 
 use aatf::Template;
 use studio_core::ToolContext;
-use studio_core::widgets::modal_buttons;
+use studio_core::widgets::{add_enabled, modal_buttons};
 
 use crate::settings::RulesetEditorSettings;
 use crate::view::{Pending, RulesetView, file_label, guard, refused_block};
@@ -73,7 +73,7 @@ fn body(
     ui.horizontal(|ui| {
         ui.strong("Random");
         for preset in ["Sensible", "Weird", "Crazy"] {
-            ui.add_enabled(false, egui::Button::new(preset))
+            add_enabled(ui, false, egui::Button::new(preset))
                 .on_disabled_hover_text("The generator comes in a later build");
         }
     });

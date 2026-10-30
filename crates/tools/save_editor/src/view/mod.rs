@@ -43,7 +43,9 @@ use std::sync::Arc;
 use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::PesVersion;
-use studio_core::widgets::{collapsing_header, modal, modal_buttons, toolbar_separator};
+use studio_core::widgets::{
+    add_enabled, collapsing_header, modal, modal_buttons, toolbar_separator,
+};
 use studio_core::{ActionEffect, Notice, NoticeAction, NoticeKind, RunningPes};
 
 use crate::session::Session;
@@ -853,17 +855,11 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::B));
     let end = studio_core::widgets::toolbar(ui, |ui| {
         open_menu::show(ui, view);
-        if ui
-            .add_enabled(view.session.is_some(), egui::Button::new("Save"))
-            .clicked()
-            || save_key
+        if add_enabled(ui, view.session.is_some(), egui::Button::new("Save")).clicked() || save_key
         {
             save(view, running);
         }
-        if ui
-            .add_enabled(view.session.is_some(), egui::Button::new("Save as"))
-            .clicked()
-        {
+        if add_enabled(ui, view.session.is_some(), egui::Button::new("Save as")).clicked() {
             save_as(view, running);
         }
         toolbar_separator(ui);
@@ -872,18 +868,12 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
             .as_ref()
             .map(|session| (session.can_undo(), session.can_redo()))
             .unwrap_or((false, false));
-        if (ui
-            .add_enabled(can_undo, egui::Button::new("Undo"))
-            .clicked()
-            || undo_key)
+        if (add_enabled(ui, can_undo, egui::Button::new("Undo")).clicked() || undo_key)
             && let Some(session) = view.session.as_mut()
         {
             session.undo();
         }
-        if (ui
-            .add_enabled(can_redo, egui::Button::new("Redo"))
-            .clicked()
-            || redo_key)
+        if (add_enabled(ui, can_redo, egui::Button::new("Redo")).clicked() || redo_key)
             && let Some(session) = view.session.as_mut()
         {
             session.redo();

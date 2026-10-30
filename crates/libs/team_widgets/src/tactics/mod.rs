@@ -14,7 +14,7 @@ use pes_savefile::schema::fields::{
 use pes_savefile::schema::{instruction, schema_for};
 use pes_version::PesVersion;
 use studio_core::theme::Palette;
-use studio_core::widgets::{checkbox, step_choice, wheel_steps};
+use studio_core::widgets::{add_enabled, checkbox, step_choice, wheel_steps};
 
 use crate::pitch::{FORMATIONS, position_label};
 
@@ -405,7 +405,7 @@ pub fn fluid_formation(ui: &mut egui::Ui, tactics: &mut TeamTactics, view: &Tact
         Some(fluid) => checkbox(ui, fluid, FLUID_LABEL).changed(),
         None => {
             let mut off = false;
-            ui.add_enabled(false, |ui: &mut egui::Ui| {
+            add_enabled(ui, false, |ui: &mut egui::Ui| {
                 checkbox(ui, &mut off, FLUID_LABEL)
             })
             .on_disabled_hover_text(gate_tip(TacticsField::Preset {
@@ -840,7 +840,8 @@ fn substitution_cell(ui: &mut egui::Ui, version: PesVersion, substitution: &mut 
             }
         }
         None => {
-            ui.add_enabled(
+            add_enabled(
+                ui,
                 false,
                 egui::Button::new("-").min_size(ui.spacing().interact_size),
             )
@@ -858,7 +859,7 @@ fn auto_flag(ui: &mut egui::Ui, label: &str, value: &mut Option<bool>, field: Ta
         }
         None => {
             let mut off = false;
-            ui.add_enabled(false, |ui: &mut egui::Ui| checkbox(ui, &mut off, label))
+            add_enabled(ui, false, |ui: &mut egui::Ui| checkbox(ui, &mut off, label))
                 .on_disabled_hover_text(gate_tip(field));
         }
     }

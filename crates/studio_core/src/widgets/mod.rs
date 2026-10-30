@@ -1,6 +1,8 @@
 //! The widgets several tools' views share: `BottomDock`, the collapsible bottom
 //! panel's frame, `LogPanel`,
 //! the run log drawn in it, `well_frame`, the log's well a dock's rows sit in,
+//! the disabled widget and scope every view draws (`add_enabled`,
+//! `add_enabled_ui`),
 //! the settings rows (`settings_row`) the menu's
 //! sections share, the checkbox and radio button every view draws
 //! (`choice`), the text box every view draws (`text_box`) and its resting
@@ -16,6 +18,7 @@
 mod choice;
 mod collapsing_header;
 mod dock;
+mod enabled;
 mod ink;
 mod log_panel;
 mod menu_button;
@@ -28,6 +31,7 @@ mod wheel;
 pub use choice::{checkbox, checkbox_without_text, radio, radio_value};
 pub use collapsing_header::collapsing_header;
 pub use dock::BottomDock;
+pub use enabled::{add_enabled, add_enabled_ui};
 pub use ink::ink_span;
 pub use log_panel::{LogLine, LogPanel, well_frame};
 pub use menu_button::menu_button;

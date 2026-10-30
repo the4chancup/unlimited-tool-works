@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use pes_savefile::settings_toml::PlayerSettings;
-use studio_core::widgets::{modal, modal_buttons, text_box};
+use studio_core::widgets::{add_enabled, modal, modal_buttons, text_box};
 use studio_core::{Notice, NoticeKind};
 
 use crate::view::SaveView;
@@ -194,9 +194,7 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 close = true;
             }
             let writeable = folder.is_dir() && text.is_ok();
-            if ui
-                .add_enabled(writeable, egui::Button::new("Write"))
-                .clicked()
+            if add_enabled(ui, writeable, egui::Button::new("Write")).clicked()
                 && let Ok(text) = &text
             {
                 let path = folder.join(generate.file.file_name());

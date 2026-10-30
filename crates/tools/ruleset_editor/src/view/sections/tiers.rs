@@ -8,7 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use aatf::{MedalSystem, Ruleset, Stat, Tier, TierId};
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
 use studio_core::widgets::{
-    checkbox, collapsing_header, step_choice, step_number, text_box, wheel_steps,
+    add_enabled, checkbox, collapsing_header, step_choice, step_number, text_box, wheel_steps,
 };
 
 use super::Section;
@@ -551,7 +551,7 @@ fn medal_systems(ui: &mut egui::Ui, ruleset: &mut Ruleset, medal_tiers: &BTreeSe
                 "Add a medal system first"
             };
             let cell = ui.horizontal(|ui| {
-                ui.add_enabled(has_systems, |ui: &mut egui::Ui| {
+                add_enabled(ui, has_systems, |ui: &mut egui::Ui| {
                     checkbox(ui, &mut counted, label)
                 })
                 .changed()

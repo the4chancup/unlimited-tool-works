@@ -20,7 +20,8 @@ use pes_savefile::schema::fields::{TeamField, TeamText};
 use pes_savefile::schema::{VersionSchema, first_version_with_team, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FORM_ROW_SPACING, modal, modal_buttons, step_number, text_box, wheel_steps,
+    FORM_ROW_SPACING, add_enabled, add_enabled_ui, modal, modal_buttons, step_number, text_box,
+    wheel_steps,
 };
 
 use crate::session::Session;
@@ -344,7 +345,7 @@ fn colour_unit(
             ui.label(egui::RichText::new(format_hex(display)).monospace().weak());
         }
         None => {
-            ui.add_enabled_ui(false, |ui| {
+            add_enabled_ui(ui, false, |ui| {
                 color_tools::picker::color_field(ui, ("team colour", index), &mut [0, 0, 0], &[]);
             })
             .response
@@ -559,7 +560,8 @@ fn number<T: egui::emath::Numeric>(
 /// size, so an enabled version's control takes the same rect) with the
 /// `PES NN+` tooltip (`abilities`' `gated_number` for team fields).
 fn gated_number(ui: &mut egui::Ui, field: TeamField) {
-    ui.add_enabled(
+    add_enabled(
+        ui,
         false,
         egui::Button::new("-").min_size(ui.spacing().interact_size),
     )

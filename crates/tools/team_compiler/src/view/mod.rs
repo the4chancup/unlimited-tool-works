@@ -5,6 +5,7 @@
 
 use std::time::Duration;
 
+use studio_core::widgets::add_enabled;
 use studio_core::{HelpTarget, LogPanel, ToolContext};
 
 use crate::gui_run::RunLog;
@@ -25,9 +26,7 @@ pub(crate) fn show(
         ctx.open_help(HelpTarget::message(&code));
     }
     studio_core::widgets::collapsing_header("Settings").show(ui, |ui| show_settings(ui, ctx));
-    let clicked = ui
-        .add_enabled(!log.is_running(), egui::Button::new("Compile"))
-        .clicked();
+    let clicked = add_enabled(ui, !log.is_running(), egui::Button::new("Compile")).clicked();
     if log.is_running() {
         // egui repaints only on input, and the run's events arrive on their own: without this
         // the log would advance only when the mouse moves.

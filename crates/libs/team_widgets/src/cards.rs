@@ -9,7 +9,7 @@ use pes_savefile::interchange::team_toml::labels::{self, card_name};
 use pes_savefile::model::playstyle::PlayStyle;
 use pes_savefile::schema::fields::PlayerField;
 use pes_savefile::schema::{playstyle, schema_for};
-use studio_core::widgets::{checkbox, step_choice, wheel_steps};
+use studio_core::widgets::{add_enabled, checkbox, step_choice, wheel_steps};
 
 /// A skills or COM styles column's width (the draft's `.skcols` 158px):
 /// the host sizes the panels that hold the two columns from it.
@@ -74,7 +74,7 @@ pub fn card_columns(
                     } else {
                         // A card the version cannot store stays, disabled,
                         // its tooltip naming the first version that has it.
-                        ui.add_enabled(false, |ui: &mut egui::Ui| {
+                        add_enabled(ui, false, |ui: &mut egui::Ui| {
                             checkbox(ui, &mut cards[index], card_name(names[index]))
                         })
                         .on_disabled_hover_text(format!("PES {}+", first_with(field).number()));

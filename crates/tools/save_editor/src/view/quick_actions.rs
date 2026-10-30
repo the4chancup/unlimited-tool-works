@@ -7,7 +7,7 @@
 //! failed `apply_tier` leaves the player as he was and shows the error in
 //! the refusal dialog.
 
-use studio_core::widgets::{step_number, wheel_steps};
+use studio_core::widgets::{add_enabled_ui, step_number, wheel_steps};
 
 use crate::session::Session;
 use crate::view::{NUMBER_BOX, Refusal, SaveView, selected_player};
@@ -86,14 +86,13 @@ fn tier_button(
     size: egui::Vec2,
 ) {
     let enabled = player.is_some();
-    let button = ui
-        .add_enabled_ui(enabled, |ui| {
-            ui.add_sized(
-                size,
-                egui::Button::new(format!("Make {}", tier.label)).truncate(),
-            )
-        })
-        .inner;
+    let button = add_enabled_ui(ui, enabled, |ui| {
+        ui.add_sized(
+            size,
+            egui::Button::new(format!("Make {}", tier.label)).truncate(),
+        )
+    })
+    .inner;
     let response = if enabled {
         button.on_hover_text(format!(
             "The {} tier's values (the active ruleset)",
@@ -130,14 +129,13 @@ fn set_stats_cell(
             // The button elides past its room, the same rule as the Make
             // buttons.
             let button_width = (size.x - ui.spacing().item_spacing.x - NUMBER_BOX).max(0.0);
-            let button = ui
-                .add_enabled_ui(enabled, |ui| {
-                    ui.add_sized(
-                        [button_width, size.y],
-                        egui::Button::new("Set stats").truncate(),
-                    )
-                })
-                .inner;
+            let button = add_enabled_ui(ui, enabled, |ui| {
+                ui.add_sized(
+                    [button_width, size.y],
+                    egui::Button::new("Set stats").truncate(),
+                )
+            })
+            .inner;
             let response = if enabled {
                 button.on_hover_text("Set every ability stat to the value next to this button")
             } else {
@@ -151,15 +149,14 @@ fn set_stats_cell(
             }
             // The field's `min_size` sets its width: a `DragValue`'s own
             // minimum would be the 40-point `interact_size`.
-            let field = ui
-                .add_enabled_ui(enabled, |ui| {
-                    ui.add(
-                        egui::DragValue::new(stat_value)
-                            .range(40..=99)
-                            .min_size(egui::vec2(NUMBER_BOX, size.y)),
-                    )
-                })
-                .inner;
+            let field = add_enabled_ui(ui, enabled, |ui| {
+                ui.add(
+                    egui::DragValue::new(stat_value)
+                        .range(40..=99)
+                        .min_size(egui::vec2(NUMBER_BOX, size.y)),
+                )
+            })
+            .inner;
             step_number(stat_value, wheel_steps(ui, &field), 40..=99);
             if !enabled {
                 field.on_disabled_hover_text(TEAM_TIP);

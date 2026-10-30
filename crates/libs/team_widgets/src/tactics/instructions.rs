@@ -9,7 +9,7 @@ use pes_savefile::model::tactics::{AdvancedInstruction, TacticsPreset, TeamTacti
 use pes_savefile::schema::fields::{InstructionPart, InstructionSide, TacticsField};
 use pes_savefile::schema::instruction;
 use pes_version::PesVersion;
-use studio_core::widgets::{step_choice, wheel_steps};
+use studio_core::widgets::{add_enabled_ui, step_choice, wheel_steps};
 
 use super::assignments::{Assign, chip};
 use super::{RosterRow, TacticsView, gate_tip, name_at, text_width};
@@ -125,7 +125,7 @@ fn target_chip(
         "The instruction's target: click, then a pitch player"
     };
     if !targetable {
-        ui.add_enabled_ui(false, |ui| chip(ui, &text, false, title))
+        add_enabled_ui(ui, false, |ui| chip(ui, &text, false, title))
             .response
             .on_disabled_hover_text(title);
     } else if chip(ui, &text, armed, title).clicked() {
@@ -152,7 +152,7 @@ pub(super) fn instruction_table(
         preset.attack_instructions.as_mut(),
         preset.defence_instructions.as_mut(),
     ) else {
-        ui.add_enabled_ui(false, |ui| ui.weak("(none on this version)"))
+        add_enabled_ui(ui, false, |ui| ui.weak("(none on this version)"))
             .response
             .on_disabled_hover_text(gate_tip(TacticsField::Instruction {
                 preset: 0,
