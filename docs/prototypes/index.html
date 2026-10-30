@@ -346,7 +346,9 @@
   button { background: var(--widget); border: 0; border-radius: 2px; padding: 1px 4px; cursor: default; }
   button:hover:not(:disabled) { background: var(--hover); color: #f0f0f0; }
   button:active:not(:disabled) { background: var(--active); }
-  button:disabled { color: #5a5a5a; }
+  /* A disabled button keeps the app's box, egui's resting grey at half opacity over the
+     panel (#2b2b2b), and dims its text further than that fade would (egui's lands at #6c6c6c). */
+  button:disabled { color: #5a5a5a; background: #2b2b2b; }
   button.frame0 { background: transparent; }
   button.frame0:hover:not(:disabled) { background: var(--hover); }
   select { background: var(--widget); border: 0; border-radius: 2px; padding: 1px 2px; }

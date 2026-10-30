@@ -2680,8 +2680,17 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       Files: `save_editor/src/view/{mod,menus,quick_actions}.rs`, `view/tests/player.rs`,
       `help/02_window.md`; `ruleset_editor/src/view/{mod,preview}.rs`,
       `view/tests/{file,preview}.rs`
-    - [ ] b a disabled button's look, the drafts' or egui's: QUESTIONS "A disabled button's
-      look"
+    - [ ] b a disabled widget's look (the maintainer, 2026-10-30: egui's faded box, the drafts'
+      text; DECISIONS "A disabled widget keeps egui's faded box..."; `plans/core/gui.md` the
+      Dark/light theme row): drafted (`index.html` `button:disabled` on `#2b2b2b`; side by
+      side `.tmp/8_30c/disabled_buttons_compare.png`). Code: `Palette::disabled_text` (dark
+      134, light 60), `studio_core::widgets::{add_enabled, add_enabled_ui}` setting it in the
+      disabled scope, every view's call moved to them, `clippy.toml` disallowing egui's
+      `add_enabled`, `add_enabled_ui` and `disable` → verify: a disabled scope's resting text
+      colour is 134 dark and 60 light, an enabled scope's untouched, red first; the built
+      window's quick actions and Undo measured with `draft_compare.py` (text colour within
+      its step of the drafts'), 134 tuned there if not. Brief `.tmp/8_30c/brief_838b.md`;
+      after the mutation run copies studio_core, save_editor and team_widgets
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
