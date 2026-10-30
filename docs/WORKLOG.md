@@ -5852,7 +5852,8 @@ briefs, review loops, gates and mutation runs as for any step.
     wrong value to a save; the nearest to a member: PgUp/PgDn missing (the parity row says
     kept), Copy/Swap naming players by shirt number, a written-off instruction never named
     in the team file dialog, Reset window moving a window on a second monitor to the first
-  - [ ] cv2 the plan and scenario edits the audit ruled (the lead)
+  - [x] cv2 the plan and scenario edits the audit ruled (17 rulings; `plans/save_editor.md`,
+    `plans/core/gui.md`)
   - [ ] cv3 the view's findings (`save_editor`, `team_widgets`; with k5mut's four local
     survivors) and cv4 the shell's (`studio_core`, `studio`): one Opus sidekick each
   - [ ] cv5 by hand: Output rosters to TSV in the built window; ST-SIDE-05 with PES 2017
