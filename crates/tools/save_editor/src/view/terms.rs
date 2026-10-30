@@ -463,9 +463,10 @@ fn on_off(stored: u32) -> &'static str {
 
 /// A field no view draws, named in words from its report name: a word
 /// starts at a capital or a digit after a small letter, and at a capital
-/// after a digit; the words in sentence case, Id as ID and Color as the
-/// window spells it, a PES 2015-only field marked so (`NoseHeight` is
-/// "Nose height", `Color1Red` "Colour 1 red", `Pes15JawDepth` "Jaw depth
+/// after a digit; the words in sentence case, Id as ID, Com as COM and
+/// Color as the window spells them, a PES 2015-only field marked so
+/// (`NoseHeight` is "Nose height", `Color1Red` "Colour 1 red",
+/// `EditedComStyles` "Edited COM styles", `Pes15JawDepth` "Jaw depth
 /// (PES 2015)"). The draft's `fieldWords`.
 fn field_words(name: &str) -> String {
     let (name, pes15) = match name.strip_prefix("Pes15") {
@@ -488,6 +489,7 @@ fn field_words(name: &str) -> String {
         .split(' ')
         .map(|word| match word {
             "Id" => "ID".to_owned(),
+            "Com" => "COM".to_owned(),
             "Color" => "colour".to_owned(),
             _ => word.to_lowercase(),
         })
@@ -1107,6 +1109,7 @@ mod tests {
             ("Pes15JawDepth", "Jaw depth (PES 2015)"),
             ("TeamId", "Team ID"),
             ("EditedAbilities", "Edited abilities"),
+            ("EditedComStyles", "Edited COM styles"),
             ("HairColorRed", "Hair colour red"),
         ] {
             assert_eq!(field_words(name), words, "{name}");
@@ -1155,7 +1158,7 @@ mod tests {
     }
 
     /// Every table-driven view row has a term: a field added to a view
-    /// without one falls back to the report's schema name, which is not
+    /// without one falls back to its schema name in words, which is not
     /// its label — a drift this test fails on.
     #[test]
     fn every_table_driven_field_has_a_term() {

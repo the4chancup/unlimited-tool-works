@@ -56,9 +56,37 @@ class ParseDump(unittest.TestCase):
             ["ComboBox", "4cc Autumn 26", 564, 8, 190, 18],
         ])
 
+    def test_a_picture_is_dropped_whatever_its_name(self):
+        dump = "\n".join([
+            "ControlType.Image | 4cc Autumn 26 | 1500,150 28x28",
+            "ControlType.ComboBox | 4cc Autumn 26 | 900,150 190x18",
+        ])
+        self.assertEqual(draft_compare.parse_dump(dump, (336, 142)),
+                         [["ComboBox", "4cc Autumn 26", 564, 8, 190, 18]])
+
     def test_a_window_left_of_the_main_monitor_has_negative_coordinates(self):
         rows = draft_compare.parse_dump("ControlType.Button | Save | -1792,336 34x18", (-1856, 328))
         self.assertEqual(rows, [["Button", "Save", 64, 8, 34, 18]])
+
+
+class ToDialog(unittest.TestCase):
+    def test_a_window_without_a_title_text_is_measured_from_its_first_shared_text(self):
+        # The help window: its title is the Window's name, so its first text the app draws
+        # inside it anchors both sides (not the rail's text of a chapter's name), and the topic
+        # tree left of the heading is kept.
+        draft = [["input", "Search the help", 150.0, 130.0, 980.0, 18.0],
+                 ["text", "Help (WIP)", 600.0, 100.0, 70.0, 15.0],
+                 ["text", "Team compiler", 180.0, 150.0, 80.0, 15.0],
+                 ["text", "Running from a terminal", 380.0, 170.0, 150.0, 15.0],
+                 ["button", "Setting up", 180.0, 170.0, 60.0, 18.0]]
+        app = [["Window", "Help (WIP)", 140.0, 90.0, 1000.0, 600.0],
+               ["Text", "Team compiler", 6.0, 107.0, 43.0, 30.0],
+               ["Text", "Running from a terminal", 375.0, 168.0, 150.0, 18.0],
+               ["Button", "Setting up", 173.0, 162.0, 60.0, 18.0]]
+        _, kept, line, shifts = draft_compare.to_dialog(draft, app)
+        self.assertEqual(shifts, ((380.0, 170.0), (375.0, 168.0)))
+        self.assertIn("'Running from a terminal'", line)
+        self.assertEqual(kept[-1], ["Button", "Setting up", -202.0, -6.0, 60.0, 18.0])
 
 
 class Pair(unittest.TestCase):
@@ -193,6 +221,30 @@ class FillFindings(unittest.TestCase):
         draft = button_image((60, 60, 60), (60, 60, 60))
         found = draft_compare.fill_findings([self.pair()], draft, button_image((60, 60, 60)))
         self.assertEqual(found[0], ((60, 60, 60), (60, 60, 60), 0, None, None, None))
+
+    def test_a_box_a_point_off_its_widget_still_reads_the_label(self):
+        # A dim label (90 on a 60 fill): the built box starts a column left of the button, on
+        # the panel's 27, a stronger contrast than the label's.
+        image = button_image((60, 60, 60), (90, 90, 90))
+        found = draft_compare.fill_findings([("C", ["sel", "C", 10.0, 0.0, 40.0, 20.0],
+                                              ["Button", "C", 9.0, 0.0, 40.0, 20.0], [0.0] * 4)],
+                                            image, image)
+        self.assertEqual(found[0][3:], ((90, 90, 90), (90, 90, 90), 0))
+
+    def test_a_checkboxs_label_is_measured_right_of_its_square(self):
+        # The square (x 10 to 23) in the tick's light blue, the label's stem at x 28: the
+        # draft's box spans its cell, the build's ends past the label.
+        from PIL import Image
+
+        image = Image.new("RGB", (80, 20), (27, 27, 27))
+        image.paste((192, 222, 255), (10, 3, 24, 17))
+        for y in range(4, 16):
+            for x in (28, 29):
+                image.putpixel((x, y), (200, 200, 200))
+        found = draft_compare.fill_findings([("Malicia", ["check", "Malicia", 10.0, 0.0, 70.0, 20.0],
+                                              ["CheckBox", "Malicia", 10.0, 0.0, 30.0, 20.0], [0.0] * 4)],
+                                            image, image)
+        self.assertEqual(found[0][3:], ((200, 200, 200), (200, 200, 200), 0))
 
     def test_the_shifts_move_each_box_into_its_capture(self):
         # Rows relative to a dialog's title: unshifted, both boxes would read the panel's grey.

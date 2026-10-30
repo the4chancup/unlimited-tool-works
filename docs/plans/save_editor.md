@@ -1187,7 +1187,7 @@ The panel over the spec's `diff` report:
 - A row is drawn in the views' terms: the field under the label its view draws, its value as
   that view shows it (a free-kick motion 15, where the save stores 14), a field no view shows
   named in words from the report's name with its stored value: its words in sentence case, Id
-  as ID and Color as Colour, a PES 2015-only field marked so (`NoseHeight` is "Nose height",
+  as ID, Com as COM (the views' "COM playing styles") and Color as Colour, a PES 2015-only field marked so (`NoseHeight` is "Nose height",
   `Color1Red` "Colour 1 red", `Pes15JawDepth` "Jaw depth (PES 2015)"), a roster slot as the
   player list numbers it (`Player(3)` is "Player 04", `Number(3)` "Player 04's number"), the face's unnamed bits "Other face
   data" (the draft's `fieldTerm` and `fieldWords`). The same words label the unsaved-changes
@@ -1611,8 +1611,8 @@ SE-GUI-13  GIVEN the save open and a second save of the same version picked in t
            WHEN the panel is drawn
            THEN it lists, per team and per player, the differences `diff <picked> <open>`
                 reports, each row under the label its field's view draws it with and with
-                its values as that view shows them (a field no view shows keeps the report's
-                name and values); the All / Gameplay / Aesthetics toggles and the team filter
+                its values as that view shows them (a field no view shows is named in words
+                from the report's name, its stored values kept); the All / Gameplay / Aesthetics toggles and the team filter
                 narrow them; Export writes the text `diff <picked> <open>` prints for the
                 toggled scope, whatever the team filter; clicking a row of a player the open
                 save rosters selects that player (one only in the picked save, or on no

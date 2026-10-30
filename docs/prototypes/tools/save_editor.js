@@ -6186,10 +6186,11 @@ function fieldTerm(field) {
   return { label: fieldWords(field), show: s => s };
 }
 // A field no view draws, named in words from the report's name: its words in
-// sentence case, Id as ID and Color as the window spells it, a PES 2015-only
-// field marked so (NoseHeight is "Nose height", Color1Red "Colour 1 red",
-// Pes15JawDepth "Jaw depth (PES 2015)").
-const FIELD_WORDS = { Id: "ID", Color: "colour" };
+// sentence case, Id as ID, Com as COM and Color as the window spells them, a
+// PES 2015-only field marked so (NoseHeight is "Nose height", Color1Red
+// "Colour 1 red", EditedComStyles "Edited COM styles", Pes15JawDepth "Jaw depth
+// (PES 2015)").
+const FIELD_WORDS = { Id: "ID", Com: "COM", Color: "colour" };
 function fieldWords(field) {
   const pes15 = field.startsWith("Pes15");
   const words = (pes15 ? field.slice(5) : field)
