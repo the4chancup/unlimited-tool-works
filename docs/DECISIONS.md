@@ -14186,3 +14186,15 @@ picker, which would need a second disabled path; the drafts already dim the disa
 picker's entries (`.rate.off`), and the `.fsel.off` rule predates the disabled-text ruling of
 the same day.
 Plan: `plans/core/gui.md` "Dark/light theme" (the disabled widget's sentence).
+
+## 2026-10-30 — save_editor — on PES 2015-2017 the team file dialog opens on "All files"
+Decision: the import panel's file dialog puts "All files" before "Team files" when the open
+save is PES 2015-2017, whose Texports (`TEXPORT0000000N`) have no extension; on PES 2018-2021
+"Team files" stays first.
+Why: the dialog opens on its first filter, and "Team files" hid the one Texport a PES 2017
+member imports. A pattern for extension-less files does not work: Windows' common dialog
+matches nothing with `*.` (built window, 2026-10-30: "No items match your search" in the PES
+2017 save folder), and `rfd`'s filters take extensions only, so `TEXPORT*` cannot be said.
+"All files" first on every version would drop the filtering PES 2018-2021 members have; a
+save picked by mistake is refused with a sentence, nothing changed.
+Plan: `plans/save_editor.md` "Interchange formats in the UI" (the "Picking the file" bullet).

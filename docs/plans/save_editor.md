@@ -1307,6 +1307,16 @@ the editor exposes them as:
   not the dialog's words.
 - **Legacy import**: `.4ccs` and `.4cct` open through the same import dialog,
   read-only.
+- **Picking the file**: the import's file dialog has two filters, "Team files" (`.toml`,
+  `.4ccs`, `.4cct`, `.ted`) and "All files", and opens on the first. On a PES 2015-2017 save
+  "All files" comes first, since those games name a Texport `TEXPORT0000000N`, with no
+  extension, and "Team files" hid it until the member switched filters; on PES 2018-2021,
+  whose Texports are `.ted`, "Team files" comes first. Not a pattern for files without an
+  extension: Windows' dialog matches nothing with `*.` and shows a filter's patterns in its
+  name (measured 2026-10-30), and a `TEXPORT*` pattern is not something `rfd`'s filters,
+  extensions alone, can say. The save files beside a Texport then show too; one picked by
+  mistake is refused with the panel's sentence (`<name>: the container's description is not
+  "Team Export Data" (a save's is "Edit Data")`), nothing changed.
 - **Texport import/export** (export is new; PES itself can import the file). The cup events
   take a team's tactics as a Texport until they accept Team TOML files, so both exports
   stay. Export writes PES 18-21 files from `Texport::new`'s templates, and PES 2017 files

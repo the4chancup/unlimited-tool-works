@@ -1819,6 +1819,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         fix so the file shows at once (planned and drafted first, a UI change); (4) the game's
         own import of the same file into a save copy, diffed against the panel's import of it
         (PES 2017 runs beside cargo)
+        - manual: checked 2026-10-30 (2), release build `79334057`, the real PES 2017 save:
+          the real `TEXPORT00000000` reads ("A Texport written from a PES 2017 save", the
+          three sections, no notes), Apply turns team 701 into /gsg/ whole (name, colours,
+          23 players, tactics, instructions), Undo restores it; nothing saved. A save copy
+          picked by mistake is refused with the container's sentence
+        - (3) planned (`plans/save_editor.md` "Picking the file", DECISIONS "on PES 2015-2017
+          the team file dialog opens on All files"): the filter order by the save's version,
+          since a `*.` pattern matches nothing in Windows' dialog (measured). No draft: the
+          dialog is the system's, which the drafts do not draw. Code and (1) in one brief
       - [ ] k5f before 0.0.1, wanted but not required (the maintainer, 2026-10-30: the cups
         accept Texports for now, tactics TOML files later, so the panel exports both; a
         member can still export one from PES 2017 after editing the save with the app): Texport export on PES 2017, synthesized from the open save rather than from
