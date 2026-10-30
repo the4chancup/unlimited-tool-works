@@ -138,8 +138,11 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                                     result_key,
                                     checks,
                                     active.rules.ruleset(),
+                                    // The checkbox turned off hides a held
+                                    // result's suggestions at once.
                                     ListUse::Editing {
-                                        show_suggestions: result_key.suggestions,
+                                        show_suggestions: result_key.suggestions
+                                            && *live_suggestions,
                                     },
                                 );
                             }

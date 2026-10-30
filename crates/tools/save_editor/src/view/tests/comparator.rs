@@ -5,6 +5,8 @@
 
 use std::path::PathBuf;
 
+use pes_savefile::ops::compare::DiffScope;
+
 use super::*;
 
 use crate::test_support::{TEST_SALT, cli_stdout};
@@ -262,6 +264,34 @@ fn the_panel_lists_the_differences_per_team_and_a_rows_click_selects() {
         "73401's team and slot"
     );
     assert_eq!(view.team, TeamChoice::Team(734), "the selector moved");
+}
+
+/// A team whose name holds a colour code heads its group by its display
+/// name: 734's name in the open save coloured red.
+// SE-GUI-13
+#[test]
+fn a_coded_teams_heading_reads_its_display_name() {
+    let (mut view, mut window) = open_734_with("comparator_coded_heading", &[73401], 183);
+    edit_team(view.session.as_mut().unwrap(), 734, 1, |team| {
+        team.name = format!("\x11cff0000ff{}", team.name);
+    });
+    let raw = team_entry(&view, 734).name;
+    let shown = display_name(&raw);
+    assert_ne!(raw, shown, "premise: 734's name holds a colour code");
+    let picked = picked_save(&scratch_of(&view), "picked", |_| {});
+    view.panel = Some(Panel::Comparator);
+    pick(&mut window, &mut view, picked);
+    let pairs = compared(&mut window, &mut view);
+    let headings: Vec<&str> = comparator_nodes(&pairs)
+        .into_iter()
+        .filter_map(|node| node.value())
+        .filter(|value| value.starts_with("Team 734 "))
+        .collect();
+    assert_eq!(
+        headings,
+        [format!("Team 734 {shown}")],
+        "734's heading by its display name"
+    );
 }
 
 // SE-GUI-13
@@ -1172,6 +1202,36 @@ fn an_invoked_pick_starts_the_comparison() {
         .expect("the Pick button");
     action_focus(&mut window, &mut view, pick);
     action_click(&mut window, &mut view, pick);
+    compared(&mut window, &mut view);
+}
+
+/// An invoked scope choice (Tab + Space, or AccessKit's Click) starts the
+/// comparison of its scope with no further input: the choice gives up the
+/// keyboard it holds.
+// SE-GUI-13
+#[test]
+fn an_invoked_scope_choice_starts_the_comparison() {
+    let (mut view, mut window, _) = compared_73401("comparator_invoke_scope");
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (gameplay, _) = comparator_button(&pairs, "Gameplay");
+    action_focus(&mut window, &mut view, gameplay);
+    action_click(&mut window, &mut view, gameplay);
+    assert_eq!(
+        view.comparator.scope,
+        Some(DiffScope::Gameplay),
+        "premise: the click picked Gameplay"
+    );
+    draw(&mut window, &mut view);
+    assert!(
+        view.comparator.comparison.pending.is_some()
+            || view
+                .comparator
+                .comparison
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| key.scope == Some(DiffScope::Gameplay)),
+        "the Gameplay comparison started"
+    );
     compared(&mut window, &mut view);
 }
 

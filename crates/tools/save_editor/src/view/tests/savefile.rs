@@ -533,6 +533,27 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
     let listed: Vec<&String> = names.iter().filter(|name| lines.contains(name)).collect();
     assert_eq!(listed, ["734 /lit/"], "734 alone is listed");
 
+    // Closed and opened again on the same save: the narrowed range stays.
+    click(&mut window, multi_button(&pairs, "Close"), &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        !pairs
+            .iter()
+            .any(|(_, node)| node.value() == Some(MULTI_TITLE)),
+        "premise: the dialog closed"
+    );
+    open_multi_aatf(&mut window, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let ends: Vec<Option<&str>> = range_combos(&pairs)
+        .into_iter()
+        .map(accesskit::Node::value)
+        .collect();
+    assert_eq!(
+        ends,
+        [Some("734 /lit/"), Some("734 /lit/")],
+        "the range is kept"
+    );
+
     // Reversed.
     pick_range_end(&mut window, &mut view, 1, &names[0]);
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -581,14 +602,127 @@ fn a_clean_team_reads_all_clean_and_copy_names_the_teams_copied() {
         "the other teams have rows"
     );
 
-    click(
-        &mut window,
-        multi_button(&pairs, "Copy to clipboard"),
-        &mut view,
-    );
+    let text = copied(&mut window, &mut view, &pairs).expect("the click copies the list");
     assert_eq!(
         view.notice.as_ref().map(|notice| notice.text.as_str()),
         Some("Copied the results of 5 teams.")
+    );
+    let copied_lines: Vec<&str> = text.lines().collect();
+    assert!(
+        copied_lines[0].starts_with("4cc Autumn 26, teams 714 to 718: "),
+        "the first line names the ruleset and the range: {text}"
+    );
+    let teams: Vec<&str> = copied_lines
+        .iter()
+        .filter_map(|line| line.strip_prefix('>'))
+        .collect();
+    let expected: Vec<String> = (714..=718)
+        .map(|id| format!("{id} {}", display_name(&team_entry(&view, id).name)))
+        .collect();
+    assert_eq!(teams, expected, "every team of the range after a `>`");
+    let at = copied_lines
+        .iter()
+        .position(|line| *line == ">714 /co/")
+        .expect("714 in the copied text");
+    assert_eq!(copied_lines[at + 1], "  All clean", "{text}");
+}
+
+/// Copy to clipboard clicked (press on one frame, release on the next):
+/// the text the release frame's `CopyText` command carries, `None` when it
+/// copies nothing.
+fn copied(
+    window: &mut Headless,
+    view: &mut SaveView,
+    pairs: &[(accesskit::NodeId, accesskit::Node)],
+) -> Option<String> {
+    let at = centre(multi_button(pairs, "Copy to clipboard"));
+    window.frame(pointer_at(at, true), |ui| show(ui, view, &|| Vec::new()));
+    let (commands, _, _) = window.frame(pointer_at(at, false), |ui| {
+        show(ui, view, &|| Vec::new());
+        ui.ctx().output(|output| output.commands.clone())
+    });
+    commands.into_iter().find_map(|command| match command {
+        egui::OutputCommand::CopyText(text) => Some(text),
+        _ => None,
+    })
+}
+
+/// A range where one team's check fails (743 under THROW19, whose custom
+/// check throws on 743's captain) names that team with its error and lists
+/// the other team's rows, in the drawn list and in the copied text.
+#[test]
+fn a_failed_teams_check_is_named_with_its_error_and_the_others_listed() {
+    let path = fixture(PesVersion::Pes17, "multi_aatf_failed");
+    let mut view = SaveView::new();
+    view.open(&path);
+    pick_imported(&mut view, "throw19.4ccrules", &throw19());
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    let ids = all_team_ids(&view);
+    multi_checked(&mut window, &mut view, &ids);
+    let label =
+        |view: &SaveView, id: u32| format!("{id} {}", display_name(&team_entry(view, id).name));
+    let (failed, other) = (label(&view, 743), label(&view, 744));
+    let other_rows = {
+        let file = view.session.as_ref().expect("the save opened").file();
+        let rules = aatf::Rules::load(&throw19()).expect("THROW19 loads");
+        let checks = crate::session::rules::check_teams(
+            &rules,
+            &crate::session::rules::team_views(file, &[743, 744]),
+        );
+        assert!(checks[0].is_err(), "premise: 743's check fails");
+        checks[1]
+            .as_ref()
+            .expect("premise: 744's check runs")
+            .iter()
+            .filter(|violation| violation.severity != aatf::Severity::Suggestion)
+            .count()
+    };
+    assert!(other_rows > 0, "premise: 744 has rows");
+    pick_range_end(&mut window, &mut view, 0, &failed);
+    pick_range_end(&mut window, &mut view, 1, &other);
+    let pairs = multi_checked(&mut window, &mut view, &[743, 744]);
+
+    let lines = multi_lines(&pairs);
+    let failed_line = format!("The AATF check failed for team {failed}: ");
+    assert!(
+        lines
+            .iter()
+            .any(|line| line.starts_with(&failed_line) && line.contains("boom")),
+        "743 named with its error: {lines:?}"
+    );
+    assert!(
+        lines.contains(&"2 teams checked, 1 with issues".to_owned()),
+        "{lines:?}"
+    );
+    let at = lines
+        .iter()
+        .position(|line| *line == other)
+        .expect("744 is listed");
+    assert_ne!(lines[at + 1], "All clean", "744's rows: {lines:?}");
+
+    let text = copied(&mut window, &mut view, &pairs).expect("the click copies the list");
+    let copied_lines: Vec<&str> = text.lines().collect();
+    let at = copied_lines
+        .iter()
+        .position(|line| *line == format!(">{failed}"))
+        .expect("743 in the copied text");
+    assert!(
+        copied_lines[at + 1].starts_with("  The AATF check failed: ")
+            && copied_lines[at + 1].contains("boom"),
+        "743's error under its line: {text}"
+    );
+    let at = copied_lines
+        .iter()
+        .position(|line| *line == format!(">{other}"))
+        .expect("744 in the copied text");
+    assert_eq!(
+        copied_lines[at + 1..]
+            .iter()
+            .filter(|line| line.starts_with("    "))
+            .count(),
+        other_rows,
+        "744's rows: {text}"
     );
 }
 

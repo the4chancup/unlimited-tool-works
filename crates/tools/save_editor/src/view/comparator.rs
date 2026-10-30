@@ -304,17 +304,18 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             if comparator.picked.is_some() {
                 ui.horizontal_wrapped(|ui| {
                     ui.weak("Show ");
-                    ui.selectable_value(&mut comparator.scope, None, "All");
-                    ui.selectable_value(
-                        &mut comparator.scope,
-                        Some(DiffScope::Gameplay),
-                        "Gameplay",
-                    );
-                    ui.selectable_value(
-                        &mut comparator.scope,
-                        Some(DiffScope::Aesthetics),
-                        "Aesthetics",
-                    );
+                    for (scope, label) in [
+                        (None, "All"),
+                        (Some(DiffScope::Gameplay), "Gameplay"),
+                        (Some(DiffScope::Aesthetics), "Aesthetics"),
+                    ] {
+                        if ui
+                            .selectable_value(&mut comparator.scope, scope, label)
+                            .clicked()
+                        {
+                            surrender_focus(ui);
+                        }
+                    }
                     ui.weak(" Team ");
                     player_list::team_selector(
                         ui,
@@ -542,7 +543,10 @@ fn lines(report: &DiffReport, picked: &EditFile, open: &EditFile) -> Vec<Line> {
         let team = place.map(|place| place.team_id);
         if group != Some(team) {
             lines.push(Line::Heading(match team {
-                Some(id) => format!("Team {id} {}", aatf_check::team_name(open, id)),
+                Some(id) => format!(
+                    "Team {id} {}",
+                    display_name(aatf_check::team_name(open, id))
+                ),
                 None => "No team".to_string(),
             }));
             group = Some(team);

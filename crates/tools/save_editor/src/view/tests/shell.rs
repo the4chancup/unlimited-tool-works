@@ -504,6 +504,56 @@ fn the_refusal_dialog_dismisses_on_escape() {
     assert!(view.refusal.is_none(), "Escape closes it");
 }
 
+/// A dialog the view does not own, drawn after it as the shell's Settings
+/// and About are, holds the editor's shortcuts as the editor's own
+/// dialogs do: PageDown moves no selection and Ctrl+S writes nothing.
+#[test]
+fn a_dialog_drawn_after_the_view_holds_its_shortcuts() {
+    let path = fixture(PesVersion::Pes21, "shell_dialog_holds_keys");
+    let original = std::fs::read(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    let selected = view.selected;
+    let (_, _, player) = selected_player(&view).expect("premise: a player row is selected");
+    edit_player(view.session.as_mut().unwrap(), player, 1, |entry| {
+        entry.basic.height += 1;
+    });
+    assert!(view.is_dirty(), "premise: an unsaved edit");
+    let mut window = Headless::new();
+    // The view, then a dialog of the shell's over it.
+    let with_dialog = |window: &mut Headless, view: &mut SaveView, events| {
+        window.frame(events, |ui| {
+            show(ui, view, &|| Vec::new());
+            studio_core::widgets::modal(
+                ui.ctx(),
+                egui::Id::unique("shell_settings"),
+                "Settings",
+                |ui| {
+                    ui.label("A setting");
+                },
+            );
+        });
+    };
+    with_dialog(&mut window, &mut view, Vec::new());
+    with_dialog(
+        &mut window,
+        &mut view,
+        vec![key(egui::Key::PageDown, egui::Modifiers::NONE, true)],
+    );
+    assert_eq!(view.selected, selected, "PageDown moved nothing");
+    with_dialog(
+        &mut window,
+        &mut view,
+        vec![key(egui::Key::S, egui::Modifiers::CTRL, true)],
+    );
+    assert_eq!(
+        std::fs::read(&path).unwrap(),
+        original,
+        "Ctrl+S wrote nothing"
+    );
+    assert!(view.is_dirty(), "the edit is still unsaved");
+}
+
 // The open path's refusal: a file that is no save shows the
 // `Session::open` error and the open save is untouched.
 #[test]

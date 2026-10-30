@@ -443,6 +443,130 @@ fn suggestions_are_asked_for_only_while_show_suggestions_is_on() {
     );
 }
 
+/// Show suggestions turned off hides the held result's suggestions at
+/// once, before the check that leaves them out returns: no `Suggestions`
+/// heading, no `Unused` row and no blue mark on the next frame. The
+/// pointer is held, so that check waits for its release.
+#[test]
+fn show_suggestions_off_hides_them_before_the_next_check() {
+    let path = fixture(PesVersion::Pes17, "live_aatf_suggestions_off");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(734);
+    view.selected = Some(Selection::Player(734, 0));
+    view.live_aatf = true;
+    view.live_suggestions = true;
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    let blue = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .hyperlink_color;
+    let blue_marks = |shapes: &[egui::epaint::ClippedShape]| {
+        mark_shapes_colored(shapes, "\u{2714}", blue)
+            + mark_shapes_colored(shapes, "\u{24d8}", blue)
+    };
+    let suggestion_rows = |nodes: &[accesskit::Node]| {
+        nodes.iter().any(|node| {
+            node.value() == Some("Suggestions")
+                || node
+                    .label()
+                    .is_some_and(|label| label.starts_with("Unused"))
+        })
+    };
+    live_checked(&mut window, &mut view, &[734]);
+    view.selected = Some(Selection::Player(
+        734,
+        held_slot_with_suggestions_alone(&view),
+    ));
+    let at = egui::pos2(1090.0, 12.0);
+    let (_, nodes, shapes) = window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(suggestion_rows(&nodes), "premise: the suggestions listed");
+    assert!(blue_marks(&shapes) >= 2, "premise: the blue marks drawn");
+
+    view.live_suggestions = false;
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        view.live.check.pending.is_none()
+            && view
+                .live
+                .check
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| key.suggestions),
+        "premise: the held result is still the one with the suggestions"
+    );
+    assert!(
+        !suggestion_rows(&nodes),
+        "no Suggestions heading and no Unused row"
+    );
+    assert_eq!(blue_marks(&shapes), 0, "no blue mark");
+}
+
+/// The Live AATF toggle invoked from the keyboard (Tab + Space, or
+/// AccessKit's Click, which leave the keyboard focus on it) starts the
+/// check with no further input and its result is drawn: the toggle gives
+/// up the keyboard it holds.
+// SE-GUI-30
+#[test]
+fn a_keyboard_invoked_toggle_starts_the_check() {
+    let (mut view, mut window) = open_734_with("live_aatf_invoked_toggle", &[73401, 73404], 183);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (toggle, _) = pairs
+        .iter()
+        .find(|(_, node)| node.role() == Role::Button && node.label() == Some("\u{25b6} Live AATF"))
+        .expect("the Live AATF toggle");
+    let toggle = *toggle;
+    action_focus(&mut window, &mut view, toggle);
+    action_click(&mut window, &mut view, toggle);
+    assert!(view.live_aatf, "premise: the click turned Live AATF on");
+    draw(&mut window, &mut view);
+    assert!(
+        view.live.check.pending.is_some() || view.live.check.result.is_some(),
+        "the check started with no further input"
+    );
+    let nodes = live_checked(&mut window, &mut view, &[734]);
+    assert!(
+        label_value(&nodes, "6 issues · 4cc Autumn 26"),
+        "its result is drawn"
+    );
+}
+
+/// A Make button invoked from the keyboard checks the player's team again
+/// with no further input: the button gives up the keyboard it holds.
+// SE-GUI-30
+#[test]
+fn a_keyboard_invoked_make_button_checks_the_team_again() {
+    let (mut view, mut window) = open_734_with("live_aatf_invoked_make", &[73401, 73404], 183);
+    view.live_aatf = true;
+    live_checked(&mut window, &mut view, &[734]);
+    let before = view.session.as_ref().expect("the save opened").revision();
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (make, _) = pairs
+        .iter()
+        .find(|(_, node)| node.role() == Role::Button && node.label() == Some("Make Gold"))
+        .expect("the Make Gold button");
+    let make = *make;
+    action_focus(&mut window, &mut view, make);
+    action_click(&mut window, &mut view, make);
+    let after = view.session.as_ref().expect("the save opened").revision();
+    assert_ne!(after, before, "premise: Make Gold edited the player");
+    draw(&mut window, &mut view);
+    assert!(
+        view.live.check.pending.is_some()
+            || view
+                .live
+                .check
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| key.revision == after),
+        "the team's check started again with no further input"
+    );
+    live_checked(&mut window, &mut view, &[734]);
+}
+
 /// The first roster slot of the held result whose rows are all
 /// suggestions.
 fn held_slot_with_suggestions_alone(view: &SaveView) -> u8 {

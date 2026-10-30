@@ -930,6 +930,7 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
             )
             .clicked()
         {
+            surrender_focus(ui);
             view.live_aatf = !view.live_aatf;
         }
         // What the check asks for, so only while it runs.
