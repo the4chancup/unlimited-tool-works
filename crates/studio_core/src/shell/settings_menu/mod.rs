@@ -22,8 +22,8 @@ use pes_version::PesVersion;
 use crate::settings::{CommonSettings, Theme, pes_folder_pattern};
 use crate::tool::{ShellRequest, StudioTool, ToolContext};
 use crate::widgets::{
-    FORM_ROW_SPACING, PathCommit, PathKind, add_enabled, add_enabled_ui, checkbox, path_row,
-    path_row_commit, row_label, step_choice, step_number, wheel_steps,
+    FORM_ROW_SPACING, PathCommit, add_enabled, add_enabled_ui, checkbox, path_row, path_row_commit,
+    row_label, step_choice, step_number, wheel_steps,
 };
 
 use super::sidebar::{SETTINGS_LABEL, Sidebar, exe_tooltip, version_blocker, version_label};
@@ -155,7 +155,6 @@ impl SettingsMenu {
                      too. Any other folder is stored as you picked it.",
                     &mut self.pes_folder,
                     &mut common.pes_folder_path,
-                    PathKind::Folder,
                 );
                 if commit == Some(PathCommit::Picked) {
                     common.pes_folder_path =
@@ -207,7 +206,6 @@ impl SettingsMenu {
                             &tip,
                             self.per_version_folders.entry(version).or_default(),
                             &mut current,
-                            PathKind::Folder,
                         ) {
                             if current.is_empty() {
                                 common.pes_folders.remove(&version);
@@ -226,7 +224,6 @@ impl SettingsMenu {
                     "Where exports are picked up.",
                     &mut self.exports_folder,
                     &mut exports,
-                    PathKind::Folder,
                 ) {
                     common.exports_folder_path = PathBuf::from(exports);
                     changed = true;

@@ -1,9 +1,9 @@
 //! The Unlimited Tool Works binary: registers the tools, then launches the GUI or dispatches the
-//! CLI. With no arguments it opens the shell on the registered tools; `--gui` autorun arrives with
-//! the GUI phase. Two hidden arguments are not commands a member types: `--crash-monitor`
-//! runs the crash-dump monitor a window spawns, and `--crash-test` its crash trigger. On
-//! Windows the exe is a GUI-subsystem application on every build, so a double-click opens no
-//! console window beside it.
+//! CLI. With no arguments it opens the shell on the registered tools; `--gui` is refused until
+//! a tool's view can run a command. Two hidden arguments are not commands a member types:
+//! `--crash-monitor` runs the crash-dump monitor a window spawns, and `--crash-test` its crash
+//! trigger. On Windows the exe is a GUI-subsystem application on every build, so a
+//! double-click opens no console window beside it.
 // Not on the unit tests' harness, built from this file too: a GUI-subsystem test binary's
 // output never reaches the test runner, so a failing assertion would print nothing. The
 // exe the integration tests run keeps the attribute.
@@ -353,13 +353,16 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
 #[cfg(windows)]
 fn attach_parent_console() {
     use windows::Win32::System::Console::{ATTACH_PARENT_PROCESS, AttachConsole};
-    // SAFETY: `AttachConsole` takes a process id and no pointer of ours and binds no
-    // memory; it only attaches this process to its parent's console.
-    let attached = unsafe { AttachConsole(ATTACH_PARENT_PROCESS) };
-    // The `Result` is dropped: the call fails when the parent has no console (a launch
+    // The `Result` is discarded: the call fails when the parent has no console (a launch
     // from Explorer with arguments), and output then goes where the inherited handles
     // point, which is all a GUI-subsystem exe can do.
-    drop(attached);
+    #[expect(
+        clippy::let_underscore_must_use,
+        reason = "the parent may have no console; output then goes where the inherited handles point"
+    )]
+    // SAFETY: `AttachConsole` takes a process id and no pointer of ours and binds no
+    // memory; it only attaches this process to its parent's console.
+    let _ = unsafe { AttachConsole(ATTACH_PARENT_PROCESS) };
 }
 
 /// No subsystem split off Windows: nothing to attach to.

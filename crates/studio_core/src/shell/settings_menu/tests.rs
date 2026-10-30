@@ -287,6 +287,35 @@ fn a_threads_change_writes_the_common_setting_and_keeps_the_tool_tables() {
     fs::remove_dir_all(&dir).unwrap();
 }
 
+#[test]
+fn a_wheel_notch_over_threads_steps_the_thread_count_by_one() {
+    let dir = TestDir::new("studio_core_settings_threads_wheel");
+    let (a, calls_a) = stub("a", "A", None);
+    let Shell { mut app, ctx, .. } = shell_with(
+        test_settings(dir.path()),
+        vec![a],
+        &[],
+        Some(dir.path().to_path_buf()),
+        vec![calls_a],
+    );
+    assert_eq!(ctx.common().thread_count, 0, "the premise: automatic");
+    let egui_ctx = test_context();
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
+    let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+    frame(
+        &egui_ctx,
+        &mut app,
+        wheel_notch(widget_on_row(&nodes, "Threads", Role::SpinButton), true),
+        true,
+    );
+    // Frames for any rest of the notch to show.
+    idle(&egui_ctx, &mut app, 15);
+
+    assert_eq!(ctx.common().thread_count, 1, "one notch up is one more");
+}
+
 // The `Memory cap` row's entry range accepts a fraction of a percent (the common
 // settings allow `0 < percent <= 100`).
 #[test]
