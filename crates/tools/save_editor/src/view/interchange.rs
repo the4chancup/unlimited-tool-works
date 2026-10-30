@@ -36,7 +36,7 @@ use team_widgets::names::append_name;
 use crate::messages::import_note;
 use crate::session::Session;
 use crate::session::import_sections::{Sections, keep_sections};
-use crate::view::appearance::ownership_tip;
+use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::comparator::{self, OpenSaveDialog};
 use crate::view::{Panel, Refusal, SaveView, selected_team_id, surrender_focus};
 
@@ -754,7 +754,7 @@ fn contents(
             if locked {
                 ui.add_enabled_ui(false, |ui| checkbox(ui, &mut false, "aesthetics"))
                     .inner
-                    .on_disabled_hover_text(ownership_tip(version));
+                    .on_disabled_hover_text(OWNERSHIP_TIP);
             } else {
                 checkbox(ui, &mut sections.aesthetics, "aesthetics");
             }

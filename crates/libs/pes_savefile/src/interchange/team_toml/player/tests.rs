@@ -1698,108 +1698,28 @@ fn an_exported_player_carries_his_hair_and_the_document_imports_identical() {
     assert_eq!(players, file.players(), "every player identical");
 }
 
-/// `stripped` marks a stripped player on export and is informational
-/// only: the import never touches the appearance id, stripped save or
-/// unstripped.
+/// `stripped` is no key: an export writes none, not even as a comment, and
+/// a player block holding one is refused as any stranger is.
 #[test]
-fn a_stripped_player_is_marked_and_the_key_is_informational() {
-    let (mut file, _) = open(PesVersion::Pes21);
-    let team_id = file
-        .teams()
-        .iter()
-        .find(|team| team.roster.iter().any(|slot| slot.player_id != 0))
-        .expect("a rostered team")
-        .id;
-    let target_id = file
-        .team(team_id)
-        .expect("the team")
-        .roster
-        .iter()
-        .find(|slot| slot.player_id != 0)
-        .expect("a rostered slot")
-        .player_id;
-    file.player_mut(target_id)
-        .expect("the player")
-        .appearance_id = Some(STRIPPED_APPEARANCE_ID);
-    let team = file.team(team_id).expect("the team");
+fn stripped_is_an_unknown_player_key() {
+    let (file, _) = open(PesVersion::Pes21);
     let refs: Vec<&PlayerEntry> = file.players().iter().collect();
-    let doc = TeamToml::from_team(PesVersion::Pes21, team, &refs).expect("from_team");
-    for (slot, section) in &doc.players {
-        let id = team.roster[usize::from(*slot - 1)].player_id;
-        assert_eq!(
-            section.stripped,
-            (id == target_id).then_some(true),
-            "player {id}"
-        );
-    }
-    let text = doc.to_toml().expect("to_toml");
-    assert_eq!(text.matches("stripped = true").count(), 1);
-    let mut parsed = TeamToml::parse(&text).expect("the emitted text reparses");
-    assert_eq!(parsed, doc);
+    let (team, slot) = first_slot(&file);
+    let text = TeamToml::from_team(PesVersion::Pes21, team, &refs)
+        .expect("from_team")
+        .to_toml()
+        .expect("to_toml");
+    let header = format!("[players.{:02}]", slot + 1);
+    assert!(text.contains(&header), "a player block is written");
+    assert!(!text.contains("stripped"), "{text}");
 
-    // One physique key (`neck_length`) to a value neither save holds
-    // for him — the same record in both — so the import's appearance
-    // write is checked against both, not only the id.
-    let key = u8::try_from(
-        team.roster
-            .iter()
-            .position(|slot| slot.player_id == target_id)
-            .expect("rostered")
-            + 1,
-    )
-    .expect("a slot index");
-    let before_neck = file
-        .player(target_id)
-        .expect("the player")
-        .appearance
-        .neck_length;
-    let changed = if before_neck == 7 { 8 } else { 7 };
-    parsed
-        .players
-        .get_mut(&key)
-        .expect("his section")
-        .appearance
-        .physique
-        .neck_length = Some(changed);
-
-    // Import onto the unstripped fixture: the player's own id stands.
-    let (unstripped, _) = open(PesVersion::Pes21);
-    let mut team_u = unstripped.team(team_id).expect("the team").clone();
-    let mut players_u = unstripped.players().to_vec();
-    parsed
-        .apply(PesVersion::Pes21, &mut team_u, &mut players_u)
-        .expect("applies");
-    let applied = players_u
-        .iter()
-        .find(|p| p.id == target_id)
-        .expect("the player");
-    assert_eq!(
-        applied.appearance_id,
-        unstripped
-            .player(target_id)
-            .expect("the player")
-            .appearance_id,
-        "the import never touches the appearance id"
-    );
-    assert_eq!(
-        applied.appearance.neck_length, changed,
-        "his appearance fields are the file's"
-    );
-
-    // Import onto the stripped save: the -1 stands too.
-    let mut team_s = team.clone();
-    let mut players_s = file.players().to_vec();
-    parsed
-        .apply(PesVersion::Pes21, &mut team_s, &mut players_s)
-        .expect("applies");
-    let applied = players_s
-        .iter()
-        .find(|p| p.id == target_id)
-        .expect("the player");
-    assert_eq!(applied.appearance_id, Some(STRIPPED_APPEARANCE_ID));
-    assert_eq!(
-        applied.appearance.neck_length, changed,
-        "his appearance fields are the file's, stripped or not"
+    let err = TeamToml::parse("[players.01]\nstripped = false\n").expect_err("a retired key");
+    assert!(
+        matches!(
+            err,
+            TeamTomlError::UnknownKey { ref key } if key == "players.01.stripped"
+        ),
+        "{err:?}"
     );
 }
 

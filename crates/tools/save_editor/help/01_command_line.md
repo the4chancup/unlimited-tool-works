@@ -9,17 +9,14 @@ UTW save-editor import-toml <team.toml> --base <save> --out <save> [--edit-mode-
 UTW save-editor apply-patch <aesthetics_patch.toml> --base <save> --out <save> [--edit-mode-closed]
 UTW save-editor diff <first save> <second save> [--aesthetics | --gameplay] [--json]
 UTW save-editor check-aatf <save> [--teams <list>] [--rules <file>]
-UTW save-editor strip-and-seed --base <save> --bins <cpk> --out <save> --bins-out <cpk> [--edit-mode-closed]
-UTW save-editor check-stripped <save> [--strip-again --out <save> [--edit-mode-closed]]
 UTW save-editor export-teams-list <save> [--yes]
 ```
 
 **Writing a save**
 
 A command that writes a save reads the one `--base` names and writes the one `--out` names,
-which may be the same file. A file already at `--out` (or `--bins-out` for the CPK
-`strip-and-seed` writes) is first copied to `<file>.bak` (one level deep: the next write
-replaces that copy). No command creates a save from nothing.
+which may be the same file. A file already at `--out` is first copied to `<file>.bak` (one
+level deep: the next write replaces that copy). No command creates a save from nothing.
 
 **While the game is running**
 
@@ -36,8 +33,7 @@ restarting the game. A PES of another version running does not count.
 **Exporting teams**
 
 `export-toml` writes a team of the save as a Team TOML file: the team's names, colors, manager
-and stadium, its tactics, and every rostered player with every field, the look included (on a
-stripped save, a player whose look the save does not hold carries `stripped = true`).
+and stadium, its tactics, and every rostered player with every field, the look included.
 
 - With `--team` one team goes to the file `--out` names, replacing it when it exists.
 - With `--all-teams` every team of the save goes to its own `<id>.toml` in the `--out-dir`
@@ -51,8 +47,7 @@ is written.
 `import-toml` writes a Team TOML file onto the team its `[team] id` names. The file's keys
 decide what it writes: a key, a player or a whole section missing from the file stays as the
 save has it, so a file holding only `[team] id` and `[players.03] name = "Snuffy"` renames one
-player and nothing else. The file never sets a player's look on or off, so on a stripped save
-his look stays the database's.
+player and nothing else.
 
 A file written from another PES version is converted on the way in, and each value that could
 not be taken as written is one line:
@@ -90,14 +85,13 @@ player id:
 
 - one line per changed field, `player_diff`, with the field, the first save's value and the
   second's;
-- a player who is in one save alone is `player_only_in`;
-- a player whose look is stripped (appearance id -1) in either save is marked
-  `player_stripped`, and the appearance id itself is never a line.
+- a player who is in one save alone is `player_only_in`.
 
-`--aesthetics` keeps the look's fields alone (boots, gloves, base copy, physique, strip, face),
-and `--gameplay` keeps everything else (names, basics, abilities, positions, skills, motion).
+`--aesthetics` keeps the look's fields alone (appearance id, boots, gloves, base copy, physique,
+strip, face), and `--gameplay` keeps everything else (names, basics, abilities, positions,
+skills, motion).
 With `--json` the report is one JSON document on stdout instead, for tooling. It lists the
-players with their changed fields and stripped marks, then the players only one save holds.
+players with their changed fields, then the players only one save holds.
 Nothing else is printed.
 
 Differences are the output, not errors, so the exit code is 0. Two saves of different versions
@@ -123,35 +117,6 @@ An error-severity violation makes the command exit 1, while warnings alone leave
 A rules file that does not load is refused, naming the line and column or the key path it
 failed at, so the command also validates a rules file. A `--teams` id the save does not hold is
 refused as well.
-
-**Stripping the cup's save**
-
-`strip-and-seed` prepares the cup's official save, once per PES version, on PES 2018 to 2021:
-the game dresses a player from the cup CPK's database tables (`PlayerAppearance.bin`,
-`BootsList.bin`, `GloveList.bin`) when his appearance id is -1, so the command first copies
-every player's current look from his save data into the three tables of `--bins` (the cup's
-`4cc_08_bins.cpk`), written to `--bins-out`, then sets every appearance id to -1 and writes
-`--out`. A player already at -1 keeps the rows the tables hold for him, and a table that
-`--bins` does not hold is created. Every other file of the CPK is copied over unchanged.
-
-Run it once when the cup moves to a new PES version, on a save holding the looks the cup ships,
-and stripping then changes nobody's look. Each stripped player whose face was copied from
-another player is a `strip_base_copied_face` warning, because the tables cannot carry the copy.
-
-A PES 15 to 17 save is refused, because the database route is untested there. When `--bins-out`
-cannot be written the command fails with exit code 3 and the save is not written. The exit code
-is 0 otherwise.
-
-**Checking a stripped save**
-
-`check-stripped` lists the players of a Fox save whose appearance id came back while other
-players stay stripped: the game's own Edit mode restores a player's id on any edit of him, and
-from then on the game shows his save data, not the database rows. Each such player is one error
-line, `appearance_id_restored`, and the command exits 1. A save with no stripped player lists
-nobody and exits 0.
-
-With `--strip-again` and `--out` the listed players are stripped again and the save is written.
-The tables are not touched, and the command exits 0. A PES 15 to 17 save is refused.
 
 **Updating the teams list**
 

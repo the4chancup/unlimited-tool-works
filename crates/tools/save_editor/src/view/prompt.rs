@@ -11,7 +11,6 @@ use std::path::PathBuf;
 use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::TeamEntry;
 use pes_savefile::model::names::display_name;
-use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_savefile::ops::compare::{PlayerDiff, TeamDiff};
 use pes_savefile::schema::fields::RosterField;
 use studio_core::RunningPes;
@@ -102,10 +101,8 @@ pub(crate) fn open(view: &mut SaveView, pending: Pending) {
 
 /// The table's rows (the draft's `unsavedChanges`): the changed players
 /// in the ALL list's order (a changed one the list does not show last by
-/// id), a `Stripped` row after his field rows when his appearance id
-/// changed (the field `compare_players` emits no row for), a roster
-/// slot's `Shirt number` row under its player after his own (the dot's rule:
-/// his dot covers his roster slot's number), then each changed team's
+/// id), a roster slot's `Shirt number` row under its player after his own
+/// (the dot's rule: his dot covers his roster slot's number), then each changed team's
 /// other rows in the open save's team order. The item is the player's
 /// display name (`display_name`, colour codes dropped) or the team's.
 /// A team row's slot-valued texts name the baseline's roster and records
@@ -149,22 +146,13 @@ pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<ChangeRow>> {
         // A player rostered on two teams is listed per roster: his own
         // rows go under his first listing only, his `Shirt number` rows
         // stay per slot.
-        if shown.insert(entry.player_id) {
-            if let Some(diffs) = player_diffs.get(&entry.player_id) {
-                for diff in diffs {
-                    rows.push(ChangeRow {
-                        item: named(),
-                        term: terms::row_term(version, diff),
-                    });
-                }
-            }
-            if let Some(term) = stripped_term(
-                session.baseline_player(entry.player_id),
-                players.get(&entry.player_id).copied(),
-            ) {
+        if shown.insert(entry.player_id)
+            && let Some(diffs) = player_diffs.get(&entry.player_id)
+        {
+            for diff in diffs {
                 rows.push(ChangeRow {
                     item: named(),
-                    term,
+                    term: terms::row_term(version, diff),
                 });
             }
         }
@@ -220,9 +208,6 @@ pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<ChangeRow>> {
                 item: item.clone(),
                 term: terms::row_term(version, diff),
             });
-        }
-        if let Some(term) = stripped_term(session.baseline_player(id), players.get(&id).copied()) {
-            rows.push(ChangeRow { item, term });
         }
     }
     for team in file.teams() {
@@ -307,23 +292,6 @@ pub(super) fn roster_for<'a>(
             }
         })
         .collect()
-}
-
-/// The `Stripped` row for a player whose appearance id differs from the
-/// baseline's — `compare_players` emits no row for it, the Strip again
-/// change (SE-GUI-20) being otherwise invisible in the table. "No" while
-/// his id was set, "Yes" once at -1.
-fn stripped_term(baseline: Option<&PlayerEntry>, player: Option<&PlayerEntry>) -> Option<Term> {
-    let (baseline, player) = (baseline?, player?);
-    (player.appearance_id != baseline.appearance_id).then(|| {
-        let yes_no = |stripped: bool| if stripped { "Yes" } else { "No" }.to_owned();
-        Term {
-            label: "Stripped".to_owned(),
-            old: yes_no(baseline.appearance_id == Some(STRIPPED_APPEARANCE_ID)),
-            new: yes_no(player.appearance_id == Some(STRIPPED_APPEARANCE_ID)),
-            swatches: None,
-        }
-    })
 }
 
 /// The prompt while `view.prompt` holds one: the table and the three

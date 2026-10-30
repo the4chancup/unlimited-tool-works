@@ -1,6 +1,6 @@
 //! The comparator's report (`spec/save_editor.md` "Comparator (gameplay + aesthetics)"):
-//! two saves' players paired by id, each changed field a row, a player at -1 marked stripped
-//! beside his rows (the appearance id itself is no row), then the players only in one save.
+//! two saves' players paired by id, each changed field a row, then the players only in one
+//! save.
 
 use pes_savefile::EditFile;
 use pes_savefile::ops::compare::{CompareError, DiffScope, PlayerDiff, compare};
@@ -9,15 +9,14 @@ use studio_core::{EventLines, Message, PipelineEvent};
 
 use crate::events::Report;
 use crate::messages::{Code, Side, diff_fields, message, player_diff};
-use crate::session::is_stripped;
 
 /// The report as data, rendered either as finding lines or as one JSON document (`--json`),
 /// so the two forms cannot drift. `pub(crate)` for the comparator panel, which reads this
 /// walk rather than walking the diff again.
 #[derive(Serialize)]
 pub(crate) struct DiffReport {
-    /// `first`'s players that `second` also holds, with a row in scope or a stripped mark, in
-    /// `first`'s record order (a player only in `first` is in `only_in_first` alone).
+    /// `first`'s players that `second` also holds, with a row in scope, in `first`'s record
+    /// order (a player only in `first` is in `only_in_first` alone).
     pub(crate) players: Vec<PlayerReport>,
     /// Ids `first` alone holds, in its record order.
     pub(crate) only_in_first: Vec<OnlyInPlayer>,
@@ -25,25 +24,20 @@ pub(crate) struct DiffReport {
     pub(crate) only_in_second: Vec<OnlyInPlayer>,
 }
 
-/// One player of the report: his stripped mark (`"first"`, `"second"` or `"both"`; null when
-/// his appearance id is set in both saves) and his changed fields.
+/// One player of the report and his changed fields.
 #[derive(Serialize)]
 pub(crate) struct PlayerReport {
     /// The player id.
     pub(crate) id: u32,
-    /// Which save he is stripped in, if either.
-    pub(crate) stripped: Option<Side>,
     /// His rows of the scope the report was built for.
     pub(crate) rows: Vec<DiffRow>,
 }
 
-/// A player one save alone holds, with his stripped mark.
+/// A player one save alone holds.
 #[derive(Serialize)]
 pub(crate) struct OnlyInPlayer {
     /// The player id.
     pub(crate) id: u32,
-    /// Which save he is stripped in, if either.
-    pub(crate) stripped: Option<Side>,
 }
 
 /// One changed field: `diff_fields`'s schema name and old/new texts, the same strings a
@@ -63,9 +57,8 @@ pub(crate) struct DiffRow {
 }
 
 /// Reports the differences between `first` and `second` as findings: in `first`'s record
-/// order, each player's stripped mark (for a -1 in either save) and his rows of `scope`
-/// (every row when `None`); then the players only in one save, each with its mark. Saves of
-/// two versions are the lib's `VersionMismatch`.
+/// order, each player's rows of `scope` (every row when `None`); then the players only in
+/// one save. Saves of two versions are the lib's `VersionMismatch`.
 pub(crate) fn report(
     first: &EditFile,
     second: &EditFile,
@@ -98,9 +91,8 @@ pub(crate) fn report_lines(
         .collect())
 }
 
-/// The report's findings in `report`'s order: each player's stripped mark and his rows
-/// of `scope`, then the players only in one save with theirs. `report` and
-/// `report_lines` share this walk.
+/// The report's findings in `report`'s order: each player's rows of `scope`, then the
+/// players only in one save. `report` and `report_lines` share this walk.
 fn findings(
     first: &EditFile,
     second: &EditFile,
@@ -109,15 +101,6 @@ fn findings(
     let data = build(first, second, scope)?;
     let mut findings = Vec::new();
     for player in &data.players {
-        if let Some(side) = player.stripped {
-            findings.push(message(
-                Code::PlayerStripped,
-                vec![
-                    ("player", player.id.to_string()),
-                    ("save", side.as_str().to_owned()),
-                ],
-            ));
-        }
         for row in &player.rows {
             findings.push(player_diff(player.id, &row.field, &row.old, &row.new));
         }
@@ -134,15 +117,6 @@ fn findings(
                     ("save", side.as_str().to_owned()),
                 ],
             ));
-            if let Some(stripped) = entry.stripped {
-                findings.push(message(
-                    Code::PlayerStripped,
-                    vec![
-                        ("player", entry.id.to_string()),
-                        ("save", stripped.as_str().to_owned()),
-                    ],
-                ));
-            }
         }
     }
     Ok(findings)
@@ -177,10 +151,9 @@ pub(crate) fn build(
     };
     for player in first.players() {
         if diff.only_in_a.contains(&player.id) {
-            // An unmatched player is reported once, in `only_in_first`, with his mark.
+            // An unmatched player is reported once, in `only_in_first`.
             continue;
         }
-        let stripped = stripped_side(first, second, player.id);
         let rows: Vec<DiffRow> = diff
             .players
             .iter()
@@ -200,10 +173,9 @@ pub(crate) fn build(
                     .collect()
             })
             .unwrap_or_default();
-        if stripped.is_some() || !rows.is_empty() {
+        if !rows.is_empty() {
             data.players.push(PlayerReport {
                 id: player.id,
-                stripped,
                 rows,
             });
         }
@@ -213,23 +185,10 @@ pub(crate) fn build(
         (&diff.only_in_b, &mut data.only_in_second),
     ] {
         for &id in ids {
-            entries.push(OnlyInPlayer {
-                id,
-                stripped: stripped_side(first, second, id),
-            });
+            entries.push(OnlyInPlayer { id });
         }
     }
     Ok(data)
-}
-
-/// Which of the two saves `id` is stripped in (at -1), if either.
-fn stripped_side(first: &EditFile, second: &EditFile, id: u32) -> Option<Side> {
-    match (is_stripped(first, id), is_stripped(second, id)) {
-        (true, true) => Some(Side::Both),
-        (true, false) => Some(Side::First),
-        (false, true) => Some(Side::Second),
-        (false, false) => None,
-    }
 }
 
 #[cfg(test)]

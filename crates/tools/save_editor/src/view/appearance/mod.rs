@@ -6,8 +6,7 @@
 //! with it on, the ownership line and the "Edit aesthetics anyway" switch
 //! (`SaveView`'s `edit_aesthetics`, off at every start of the tool) draw
 //! over the groups, every control disabled under the ownership line as
-//! hover and the switch re-enabling them for the rest of the run. A
-//! stripped player gets the draft's stripped line either way. Edits go
+//! hover and the switch re-enabling them for the rest of the run. Edits go
 //! through `Session::edit_player` under the widget's id,
 //! one undo entry per gesture, as `abilities.rs` does; a stored value past
 //! a control's range draws as stored (`clamp_existing_to_range` off) and
@@ -23,10 +22,10 @@ use pes_savefile::schema::ingame_face::IngameFaceField;
 use pes_savefile::schema::limits::motion_top;
 use pes_savefile::schema::player_max_value;
 use pes_savefile::settings_toml::{Kind, SettingKey};
-use pes_version::{Engine, PesVersion};
+use pes_version::PesVersion;
 use studio_core::widgets::{FORM_ROW_SPACING, step_choice, step_number, wheel_steps};
 
-use crate::session::{Session, is_stripped};
+use crate::session::Session;
 use crate::view::abilities::{gating_tooltip, maybe_end_row, number, small_stat};
 use crate::view::appearance::fields::{
     MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, number_range, option_name,
@@ -87,12 +86,12 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     let Some(session) = session.as_mut() else {
         return;
     };
-    let (version, stripped, player) = {
+    let (version, player) = {
         let file = session.file();
         let Some(player) = file.player(player_id) else {
             return;
         };
-        (file.version(), is_stripped(file, player_id), player.clone())
+        (file.version(), player.clone())
     };
     // Every widget id under the section is the player's within this open,
     // its own salt since it draws beside the Abilities & Skills content
@@ -103,24 +102,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     ui.push_id(("appearance", generation, player_id), |ui| {
         cutscenes(ui, session, player_id, &player.stats);
         if setting {
-            open_patch = ownership_line(ui, version);
+            open_patch = ownership_line(ui);
             studio_core::widgets::checkbox(ui, edit_aesthetics, "Edit aesthetics anyway");
             if *edit_aesthetics {
-                ui.weak(match version.engine() {
-                    Engine::PreFox => "A later patch overwrites whatever is edited by hand.",
-                    Engine::Fox => {
-                        "On a stripped save the game still reads the motions, \
-                         but the look comes from the database tables."
-                    }
-                });
+                ui.weak("A later patch overwrites whatever is edited by hand.");
             }
-        }
-        if stripped {
-            ui.colored_label(
-                ui.visuals().warn_fg_color,
-                "This player is stripped, so the game takes his look from the database \
-                 tables, but it still reads the motions.",
-            );
         }
         ui.add_enabled_ui(!locked, |ui| {
             groups(
@@ -134,7 +120,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             );
         })
         .response
-        .on_disabled_hover_text(ownership_tip(version));
+        .on_disabled_hover_text(OWNERSHIP_TIP);
     });
     if open_patch {
         view.panel = Some(Panel::Patch);
@@ -195,16 +181,12 @@ fn cutscenes(ui: &mut egui::Ui, session: &mut Session, player_id: u32, stats: &P
         });
 }
 
-/// The ownership row: the sentence itself, and on pre-Fox the patch step
-/// and the Apply aesthetics patch link. Whether the link was clicked: the
-/// caller opens the patch panel.
-fn ownership_line(ui: &mut egui::Ui, version: PesVersion) -> bool {
+/// The ownership row: the sentence itself and the Apply aesthetics patch
+/// link. Whether the link was clicked: the caller opens the patch panel.
+fn ownership_line(ui: &mut egui::Ui) -> bool {
     ui.horizontal_wrapped(|ui| {
-        ui.label(ownership_tip(version));
-        match version.engine() {
-            Engine::PreFox => ui.link("Apply aesthetics patch").clicked(),
-            Engine::Fox => false,
-        }
+        ui.label(OWNERSHIP_TIP);
+        ui.link("Apply aesthetics patch").clicked()
     })
     .inner
 }
@@ -212,17 +194,8 @@ fn ownership_line(ui: &mut egui::Ui, version: PesVersion) -> bool {
 /// The ownership sentence (the draft's `ownershipTip`): the line over the
 /// section, the disabled groups' hover and the locked Team-menu items'
 /// (`menus.rs`).
-pub(crate) fn ownership_tip(version: PesVersion) -> &'static str {
-    match version.engine() {
-        Engine::PreFox => {
-            "The team's export owns the aesthetics, so edit its settings.toml and \
-             recompile, then apply the patch."
-        }
-        Engine::Fox => {
-            "The team's export owns the aesthetics, so edit its settings.toml and recompile."
-        }
-    }
-}
+pub(crate) const OWNERSHIP_TIP: &str = "The team's export owns the aesthetics, so edit its \
+                                        settings.toml and recompile, then apply the patch.";
 
 /// The FPC group, last in the section (the draft's `fpcGroup`): the
 /// classifier's reading (`is_fpc_player` under `hide_ids`, the settings'

@@ -19,7 +19,7 @@ use studio_core::widgets::{
 use crate::session::Session;
 use crate::session::database;
 use crate::session::team_ops::{BootsMode, GlovesMode};
-use crate::view::appearance::ownership_tip;
+use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::generate;
 use crate::view::{Panel, Refusal, SaveView, selected_player, selected_team_id};
 
@@ -46,16 +46,14 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             .as_ref()
             .and_then(|session| first_filled(session.file(), team_id))
     });
-    let (unlocked, version, hide_ids) = {
-        let Some(session) = view.session.as_ref() else {
-            return;
-        };
-        (!view.aesthetics_locked(), session.version(), view.hide_ids)
-    };
+    if view.session.is_none() {
+        return;
+    }
+    let (unlocked, hide_ids) = (!view.aesthetics_locked(), view.hide_ids);
     // An out-of-band hide ID disables the FPC items behind the error's
     // text; the lock's ownership line covers the rest (SE-GUI-22).
     let (fpc_ok, fpc_tip) = match hide_ids {
-        Ok(_) => (unlocked, ownership_tip(version).to_owned()),
+        Ok(_) => (unlocked, OWNERSHIP_TIP.to_owned()),
         Err(error) => (false, error.to_string()),
     };
     menu_button(ui, "Team", |ui| {
@@ -71,7 +69,7 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
                 unlocked,
                 egui::Button::new("Set boots and gloves IDs for everyone\u{2026}"),
             )
-            .on_disabled_hover_text(ownership_tip(version))
+            .on_disabled_hover_text(OWNERSHIP_TIP)
             .clicked()
             && let Some(player_id) = prefill
         {
@@ -88,7 +86,7 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
                 unlocked,
                 egui::Button::new("Clear visual flags").shortcut_text("Ctrl+F"),
             )
-            .on_disabled_hover_text(ownership_tip(version))
+            .on_disabled_hover_text(OWNERSHIP_TIP)
             .clicked()
         {
             session.clear_visual_flags(team_id);
@@ -154,16 +152,14 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         });
         return;
     };
-    let (unlocked, version, hide_ids) = {
-        let Some(session) = view.session.as_ref() else {
-            return;
-        };
-        (!view.aesthetics_locked(), session.version(), view.hide_ids)
-    };
+    if view.session.is_none() {
+        return;
+    }
+    let (unlocked, hide_ids) = (!view.aesthetics_locked(), view.hide_ids);
     // As on the Team menu: an out-of-band hide ID disables the toggle
     // behind the error's text.
     let (fpc_ok, fpc_tip) = match hide_ids {
-        Ok(_) => (unlocked, ownership_tip(version).to_owned()),
+        Ok(_) => (unlocked, OWNERSHIP_TIP.to_owned()),
         Err(error) => (false, error.to_string()),
     };
     menu_button(ui, "Player", |ui| {
@@ -241,15 +237,13 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
 /// under the aesthetics lock with the ownership line as its disabled hover
 /// (SE-GUI-22). The menu is disabled with no save open.
 pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
-    let (unlocked, version) = {
-        let Some(session) = view.session.as_ref() else {
-            ui.add_enabled_ui(false, |ui| {
-                menu_button(ui, "Savefile", |_| ());
-            });
-            return;
-        };
-        (!view.aesthetics_locked(), session.version())
-    };
+    if view.session.is_none() {
+        ui.add_enabled_ui(false, |ui| {
+            menu_button(ui, "Savefile", |_| ());
+        });
+        return;
+    }
+    let unlocked = !view.aesthetics_locked();
     menu_button(ui, "Savefile", |ui| {
         let Some(session) = view.session.as_mut() else {
             return;
@@ -283,7 +277,7 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         ui.separator();
         if ui
             .add_enabled(unlocked, egui::Button::new("Fix database\u{2026}"))
-            .on_disabled_hover_text(ownership_tip(version))
+            .on_disabled_hover_text(OWNERSHIP_TIP)
             .clicked()
         {
             view.fix_database = true;

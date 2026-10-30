@@ -10,7 +10,6 @@ use std::borrow::Cow;
 use aatf::Violation;
 use pes_savefile::interchange::aesthetics_patch::PatchSkip;
 use pes_savefile::interchange::team_toml::ImportNote;
-use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::names::display_name;
 use pes_savefile::ops::compare::PlayerDiff;
 use pes_version::PesVersion;
@@ -52,9 +51,6 @@ pub(crate) enum Code {
     PlayerDiff,
     /// `diff`: a player in one save alone (`player`, `save`: `first` or `second`).
     PlayerOnlyIn,
-    /// `diff`: the player's appearance id is -1 in `save` (`first`, `second` or `both`); his
-    /// record is compared, not the look the game shows (`player`, `save`).
-    PlayerStripped,
     /// `export-teams-list`: a team of the save the list lacked, appended or put into a
     /// placeholder's slot (`team`, `name`).
     TeamsListAdded,
@@ -86,15 +82,6 @@ pub(crate) enum Code {
     /// from the data folder (or no longer loads), so the first built-in one is checked instead
     /// (`ruleset`, `used`).
     AatfRulesetGone,
-    /// `check-stripped`: the player's appearance id is set again while another player's is
-    /// stripped, so the game shows his save record, not the database rows; the member runs
-    /// `check-stripped --strip-again` to strip him again (`player`, `name`). Error while the
-    /// id stands, Info once `--strip-again` has stripped him.
-    AppearanceIdRestored,
-    /// `strip-and-seed`: the player's record copied another player's face, which the seed
-    /// rows cannot carry, so once stripped he shows the face his row describes; his export
-    /// describing his face settles it (`player`, `name`, `copied`).
-    StripBaseCopiedFace,
     /// The Appearance section's FPC group: the player wears inners under a hidden body, which
     /// breaks the hiding.
     FpcInnersBreakHiding,
@@ -113,17 +100,12 @@ pub(crate) enum Code {
 }
 
 /// Which of `diff`'s two saves a finding is about, as the console names them.
-/// `Serialize` writes the variant `as_str` writes: the JSON report's `save`
-/// and `stripped` fields carry the same word.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Side {
     /// The first save on the command line.
     First,
     /// The second.
     Second,
-    /// Both saves.
-    Both,
 }
 
 impl Side {
@@ -132,7 +114,6 @@ impl Side {
         match self {
             Side::First => "first",
             Side::Second => "second",
-            Side::Both => "both",
         }
     }
 }
@@ -152,7 +133,6 @@ impl Code {
             Code::PatchPlayerNotInSave => "patch_player_not_in_save",
             Code::PlayerDiff => "player_diff",
             Code::PlayerOnlyIn => "player_only_in",
-            Code::PlayerStripped => "player_stripped",
             Code::TeamsListAdded => "teams_list_added",
             Code::TeamsListOverridden => "teams_list_overridden",
             Code::TeamsListUnresolved => "teams_list_unresolved",
@@ -164,8 +144,6 @@ impl Code {
             Code::AatfViolation => "aatf_violation",
             Code::AatfCheckFailed => "aatf_check_failed",
             Code::AatfRulesetGone => "aatf_ruleset_gone",
-            Code::AppearanceIdRestored => "appearance_id_restored",
-            Code::StripBaseCopiedFace => "strip_base_copied_face",
             Code::FpcInnersBreakHiding => "fpc_inners_break_hiding",
             Code::FpcUndershortsBreakHiding => "fpc_undershorts_break_hiding",
             Code::FpcTapingShowsPieces => "fpc_taping_shows_pieces",
@@ -182,7 +160,6 @@ impl Code {
             | Code::PatchTeamApplied
             | Code::PlayerDiff
             | Code::PlayerOnlyIn
-            | Code::PlayerStripped
             | Code::TeamsListAdded
             | Code::TeamsListOverridden
             | Code::TeamsListKept
@@ -197,7 +174,6 @@ impl Code {
             | Code::ImportValueCapped
             | Code::ImportSlotEmpty
             | Code::ImportTextCropped
-            | Code::StripBaseCopiedFace
             | Code::AatfRulesetGone
             | Code::FpcGlovesCheckboxWinterGloves
             | Code::FpcCustomSkinOnNonFpc => Severity::Warning,
@@ -212,13 +188,8 @@ impl Code {
             | Code::FpcInnersBreakHiding
             | Code::FpcUndershortsBreakHiding => Severity::Error,
             // `check-aatf`: a failed check is an error; a violation's own severity decides,
-            // and `aatf_violation` overwrites this default with it. `check-stripped`: a
-            // listed player is an error (`check-stripped`: exit 1);
-            // `appearance_id_restored` overwrites this to Info once `--strip-again` has
-            // stripped him.
-            Code::AatfViolation | Code::AatfCheckFailed | Code::AppearanceIdRestored => {
-                Severity::Error
-            }
+            // and `aatf_violation` overwrites this default with it.
+            Code::AatfViolation | Code::AatfCheckFailed => Severity::Error,
         }
     }
 
@@ -236,7 +207,6 @@ impl Code {
         Code::PatchPlayerNotInSave,
         Code::PlayerDiff,
         Code::PlayerOnlyIn,
-        Code::PlayerStripped,
         Code::TeamsListAdded,
         Code::TeamsListOverridden,
         Code::TeamsListUnresolved,
@@ -248,8 +218,6 @@ impl Code {
         Code::AatfViolation,
         Code::AatfCheckFailed,
         Code::AatfRulesetGone,
-        Code::AppearanceIdRestored,
-        Code::StripBaseCopiedFace,
         Code::FpcInnersBreakHiding,
         Code::FpcUndershortsBreakHiding,
         Code::FpcTapingShowsPieces,
@@ -317,11 +285,6 @@ const CATALOG: &[(Code, &str, &str)] = &[
         r#"It is a report row, and there is nothing to do."#,
     ),
     (
-        Code::PlayerStripped,
-        r#"`diff` found a player whose appearance id is -1 in the save the line names, so his save data is compared, not the look the game shows."#,
-        r#"He is marked beside his rows, and the command exits 0."#,
-    ),
-    (
         Code::TeamsListAdded,
         r#"`export-teams-list` found a team of the save the list lacked and appended it or put it into a placeholder's slot."#,
         r#"The change is merged into the list, which is written only with `--yes`."#,
@@ -377,16 +340,6 @@ const CATALOG: &[(Code, &str, &str)] = &[
         r#"The first built-in ruleset, which the line names, is checked instead. Pick the cup's rules again in the dropdown on the Save editor's toolbar."#,
     ),
     (
-        Code::AppearanceIdRestored,
-        r#"`check-stripped` found a player whose appearance id is set again while another player's is stripped, so the game shows his save data, not the database rows."#,
-        r#"It is an Error while he stays listed, so the command exits 1. Once `--strip-again` has stripped him, it is reported at Info and the command exits 0."#,
-    ),
-    (
-        Code::StripBaseCopiedFace,
-        r#"`strip-and-seed` found a player whose save data copied another player's face, which the seed rows cannot carry, so once stripped he shows the face his row describes."#,
-        r#"There is nothing to do, because compiling his export's face settles it."#,
-    ),
-    (
         Code::FpcInnersBreakHiding,
         r#"The player wears inners under a hidden body, which breaks the hiding."#,
         r#"Nothing is changed for you. Take the inners off, or the body will not hide."#,
@@ -427,12 +380,11 @@ pub(crate) fn catalog() -> Vec<CatalogRow> {
         .collect()
 }
 
-/// The severity the Messages topic spells out: the code's own, the two codes whose
-/// `Message` overwrites it spelled as their spec rows do.
+/// The severity the Messages topic spells out: the code's own, the one code whose
+/// `Message` overwrites it spelled as its spec row does.
 fn catalog_severity(code: Code) -> &'static str {
     match code {
         Code::AatfViolation => "Error or Warning",
-        Code::AppearanceIdRestored => "Error or Info",
         _ => code.severity().name(),
     }
 }
@@ -564,37 +516,6 @@ pub(crate) fn aatf_ruleset_gone(ruleset: &str, used: &str) -> Message {
     message(
         Code::AatfRulesetGone,
         vec![("ruleset", ruleset.to_owned()), ("used", used.to_owned())],
-    )
-}
-
-/// The message for one player `check-stripped` lists: his appearance id came back while
-/// other players stay stripped, so the game shows his save record, not the database rows.
-/// `severity` is Error while he stands listed (exit 1), Info once `--strip-again` has
-/// stripped him again.
-pub(crate) fn appearance_id_restored(player: &PlayerEntry, severity: Severity) -> Message {
-    let mut message = message(
-        Code::AppearanceIdRestored,
-        vec![
-            ("player", player.id.to_string()),
-            ("name", player.name.clone()),
-        ],
-    );
-    message.severity = severity;
-    message
-}
-
-/// The message for one player `strip-and-seed` stripped whose record copied player
-/// `copied`'s face and hair: the seed rows hold no base-copy id, so he loses the copied
-/// face and shows the one his row describes. His export describing his face settles it:
-/// the compiled rows replace his seed.
-pub(crate) fn strip_base_copied_face(player: &PlayerEntry, copied: u32) -> Message {
-    message(
-        Code::StripBaseCopiedFace,
-        vec![
-            ("player", player.id.to_string()),
-            ("name", player.name.clone()),
-            ("copied", copied.to_string()),
-        ],
     )
 }
 
@@ -905,12 +826,8 @@ mod tests {
             .unwrap();
         assert_eq!(row.1, "`export-toml` wrote one team's file.");
         assert_eq!(row.2, "Nothing to do.");
-        // The two codes whose `Message` overwrites the severity, spelled out as the
-        // Messages topic shows them.
+        // The code whose `Message` overwrites the severity, spelled out as the Messages
+        // topic shows it.
         assert_eq!(catalog_severity(Code::AatfViolation), "Error or Warning");
-        assert_eq!(
-            catalog_severity(Code::AppearanceIdRestored),
-            "Error or Info"
-        );
     }
 }

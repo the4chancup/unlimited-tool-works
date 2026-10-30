@@ -42,8 +42,7 @@ strip and motions. `ingame_face.toml` holds the in-game face itself: iris
 colour, face and hair.
 
 The save cannot say which players wear the in-game face, so you choose per
-player whether to generate it, and neither writes the save. A stripped player is
-skipped, because the game reads the tables rather than his save data.
+player whether to generate it, and neither writes the save.
 
 When the folder already holds a `settings.toml`, its comments stay while the
 values become the player's. `ingame_face.toml` is written whole.

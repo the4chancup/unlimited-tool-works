@@ -11,7 +11,7 @@ use pes_savefile::model::player::PlayerMotion;
 
 use crate::session::import_sections::{Sections, keep_sections};
 use crate::test_support::cli_stdout;
-use crate::view::appearance::ownership_tip;
+use crate::view::appearance::OWNERSHIP_TIP;
 
 use super::*;
 
@@ -837,7 +837,7 @@ fn under_the_lock_the_aesthetics_section_is_off_and_never_written() {
     assert!(!ticked(&mut window, &mut view, "aesthetics"), "and off");
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(&aesthetics), "export owns"),
-        Some(ownership_tip(PesVersion::Pes19).to_owned())
+        Some(OWNERSHIP_TIP.to_owned())
     );
     assert!(
         ticked(&mut window, &mut view, "gameplay"),

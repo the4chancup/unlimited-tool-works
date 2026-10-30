@@ -5,7 +5,6 @@ use std::fs;
 
 use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::TeamToml;
-use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_version::PesVersion;
 
 use crate::{Sandbox, WritingCommand, payload, payload_after};
@@ -210,52 +209,6 @@ fn a_name_longer_than_the_field_crops_to_it_with_a_note() {
         "A".repeat(61),
         "the name is written at the field's whole length"
     );
-}
-
-// SE-TOML-07
-#[test]
-fn a_stripped_save_exports_stripped_true_and_an_import_keeps_each_saves_ids() {
-    let sandbox = Sandbox::new("import_stripped");
-    sandbox.fixture(PesVersion::Pes21, "EDIT");
-    sandbox.stripped_fixture("STRIPPED");
-    let unstripped = EditFile::load(&sandbox.path("EDIT")).unwrap();
-    assert_eq!(
-        unstripped.player(CO_SLOT_3).unwrap().appearance_id,
-        Some(CO_SLOT_3)
-    );
-
-    sandbox.export("STRIPPED", CO, "co.toml");
-    let mut document =
-        TeamToml::parse(&fs::read_to_string(sandbox.path("co.toml")).unwrap()).unwrap();
-    assert_eq!(document.players.len(), 23);
-    assert!(
-        document
-            .players
-            .values()
-            .all(|player| player.stripped == Some(true)),
-        "every player of the exported file carries stripped = true"
-    );
-    // The parsed document holds the stored value (the text's number plus 7).
-    let physique = &mut document.players.get_mut(&3).unwrap().appearance.physique;
-    assert_ne!(physique.neck_length, Some(9));
-    physique.neck_length = Some(9);
-    fs::write(sandbox.path("co.toml"), document.to_toml().unwrap()).unwrap();
-
-    for (base, out, id) in [
-        ("STRIPPED", "OUT_STRIPPED", STRIPPED_APPEARANCE_ID),
-        ("EDIT", "OUT_EDIT", CO_SLOT_3),
-    ] {
-        let run = sandbox.import("co.toml", base, out);
-        assert_eq!(run.exit_code(), 0, "{base}: {:?}", run.messages());
-        let player = EditFile::load(&sandbox.path(out)).unwrap();
-        let player = player.player(CO_SLOT_3).unwrap();
-        assert_eq!(player.appearance.neck_length, 9, "{base}: the file's value");
-        assert_eq!(
-            player.appearance_id,
-            Some(id),
-            "{base}: the id is untouched"
-        );
-    }
 }
 
 // SE-TOML-08

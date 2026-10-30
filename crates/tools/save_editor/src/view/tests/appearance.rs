@@ -1,5 +1,4 @@
 use pes_savefile::model::PlayerMotion;
-use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_savefile::schema::ingame_face::IngameFaceField;
 use studio_core::StudioTool;
 
@@ -34,15 +33,22 @@ fn locked_section(version: PesVersion, test: &str) -> (SaveView, Headless, Vec<a
 fn the_section_is_locked_on_a_fox_save_until_the_switch_unlocks_it() {
     let (mut view, mut window, nodes) = locked_section(PesVersion::Pes21, "appearance_lock_fox");
 
-    // Locked: the Fox ownership line, every control of the groups disabled,
-    // the switch and the Cutscenes group's two controls the ones that are
-    // not (star and playing attitude sit outside the lock).
+    // Locked: the ownership line with the patch step and the Apply
+    // aesthetics patch link, every control of the groups disabled, the
+    // switch and the Cutscenes group's two controls the ones that are not
+    // (star and playing attitude sit outside the lock).
     assert!(
         label_value(
             &nodes,
-            "The team's export owns the aesthetics, so edit its settings.toml and recompile."
+            "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch."
         ),
-        "the Fox ownership line"
+        "the ownership line"
+    );
+    assert!(
+        nodes
+            .iter()
+            .any(|node| node.label() == Some("Apply aesthetics patch")),
+        "the patch link"
     );
     for label in ["Star", "Playing attitude"] {
         let control = right_of_label(&nodes, label, Role::SpinButton)
@@ -92,10 +98,9 @@ fn the_section_is_locked_on_a_fox_save_until_the_switch_unlocks_it() {
         assert!(control.is_disabled(), "{label}");
     }
 
-    // On: the note says a stripped player's look comes from the tables
-    // while his motions are still read, and the controls draw enabled.
-    // The switch sits below the fold: its click goes through the
-    // AccessKit action.
+    // On: the note warns a later patch overwrites hand edits, and the
+    // controls draw enabled. The switch sits below the fold: its click goes
+    // through the AccessKit action.
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (anyway, _) = pairs
         .iter()
@@ -110,9 +115,9 @@ fn the_section_is_locked_on_a_fox_save_until_the_switch_unlocks_it() {
     assert!(
         label_value(
             &nodes,
-            "On a stripped save the game still reads the motions, but the look comes from the database tables."
+            "A later patch overwrites whatever is edited by hand."
         ),
-        "the Fox note under the switch"
+        "the note under the switch"
     );
     let chest = right_of_label(&nodes, "Chest", Role::SpinButton)
         .first()
@@ -176,6 +181,17 @@ fn the_section_is_locked_on_a_fox_save_until_the_switch_unlocks_it() {
         !right_of_label(&nodes, "Chest", Role::SpinButton)[0].is_disabled(),
         "opening another save keeps it unlocked"
     );
+
+    // The link opens the patch panel. It may sit above the fold: its click
+    // goes through the AccessKit action.
+    assert_ne!(view.panel, Some(Panel::Patch), "premise: no panel open");
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (link, _) = pairs
+        .iter()
+        .find(|(_, node)| node.label() == Some("Apply aesthetics patch"))
+        .expect("the patch link");
+    action_click(&mut window, &mut view, *link);
+    assert_eq!(view.panel, Some(Panel::Patch), "the link opens the panel");
 }
 
 // SE-GUI-07
@@ -367,44 +383,6 @@ fn the_cutscenes_group_stays_editable_above_the_ownership_line() {
     assert_eq!(star_of(&view), Some(0), "the undo restores it");
 }
 
-// SE-GUI-07 (its THEN's last clause)
-#[test]
-fn a_stripped_players_section_says_the_look_is_the_tables_and_the_motions_are_read() {
-    let path = fixture(PesVersion::Pes21, "appearance_stripped_line");
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    file.player_mut(70101).unwrap().appearance_id = Some(STRIPPED_APPEARANCE_ID);
-    file.save(&path).unwrap();
-    const LINE: &str = "This player is stripped, so the game takes his look from the database \
-                        tables, but it still reads the motions.";
-
-    let mut view = SaveView::new();
-    view.open(&path);
-    view.aesthetics_from_exports = true;
-    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    open_appearance(&mut window, &mut view);
-    // 70101 is the selected player; every other player's id is set while
-    // his is -1, so the Strip again window opened too: close it first.
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let close = nodes
-        .iter()
-        .find(|node| node.role() == Role::Button && node.label() == Some("Close"))
-        .expect("the Strip again window's Close");
-    click(&mut window, close, &mut view);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert!(
-        label_value(&nodes, LINE),
-        "70101's section marks him stripped"
-    );
-
-    // Another player's section does not draw the line.
-    view.selected = Some(Selection::Player(701, 1));
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert!(
-        !label_value(&nodes, LINE),
-        "70102's section draws no stripped line"
-    );
-}
-
 // Randomize draws every motion but the dribbling one from 1 to the
 // version's shown top, one undoable edit: the measured tops, so a draw
 // never writes a motion the game does not have. The pinned source lands
@@ -570,119 +548,6 @@ fn a_stored_celebration_past_its_top_draws_as_stored_without_marking_the_player(
         200,
         "the value stands as stored"
     );
-}
-
-// SE-GUI-20
-#[test]
-fn a_fox_save_with_some_ids_set_lists_them_with_strip_again() {
-    let path = fixture(PesVersion::Pes21, "strip_again_window");
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    for player in file.players_mut() {
-        player.appearance_id = Some(STRIPPED_APPEARANCE_ID);
-    }
-    // Team 702's first three rostered players are the ones left set: their
-    // rows' team names are 702's own, which is not the first team the save
-    // lists (so a wrong-team lookup shows).
-    let listed_ids: Vec<u32> = file
-        .team(702)
-        .unwrap()
-        .roster
-        .iter()
-        .map(|slot| slot.player_id)
-        .filter(|&id| id != 0)
-        .take(3)
-        .collect();
-    for &id in &listed_ids {
-        file.player_mut(id).unwrap().appearance_id = Some(id);
-    }
-    file.save(&path).unwrap();
-
-    let mut view = SaveView::new();
-    view.open(&path);
-    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-
-    // The window lists exactly the three restored players, by id: the
-    // five-digit id labels under the heading (the info strip draws the
-    // selected player's id too, elsewhere on screen).
-    let heading = nodes
-        .iter()
-        .find(|node| node.value() == Some("Appearance ids set on a stripped save"))
-        .expect("the Strip again window");
-    let heading_y = heading.bounds().expect("bounds").y0;
-    let mut listed: Vec<&str> = nodes
-        .iter()
-        .filter(|node| {
-            node.role() == Role::Label
-                && node.bounds().is_some_and(|bounds| bounds.y0 > heading_y)
-                && node.value().is_some_and(|value| {
-                    value.len() == 5 && value.bytes().all(|byte| byte.is_ascii_digit())
-                })
-        })
-        .filter_map(|node| node.value())
-        .collect();
-    listed.sort();
-    let expected_ids: Vec<String> = listed_ids.iter().map(u32::to_string).collect();
-    assert_eq!(listed, expected_ids, "exactly the three");
-    // Each row names the team whose roster holds its player: team 702's
-    // "/a/", three times.
-    let team_labels = nodes
-        .iter()
-        .filter(|node| {
-            node.role() == Role::Label
-                && node.bounds().is_some_and(|bounds| bounds.y0 > heading_y)
-                && node.value() == Some("/a/")
-        })
-        .count();
-    assert_eq!(team_labels, 3, "each row's team name is its player's team");
-    assert!(
-        label_value(
-            &nodes,
-            "3 players have an appearance id set while the rest are stripped:"
-        ),
-        "the window's count line"
-    );
-
-    // Strip again: all three back to -1, one undo restoring them.
-    let strip = nodes
-        .iter()
-        .find(|node| node.role() == Role::Button && node.label() == Some("Strip again"))
-        .expect("the Strip again button");
-    click(&mut window, strip, &mut view);
-    for &id in &listed_ids {
-        assert_eq!(
-            view.session
-                .as_ref()
-                .unwrap()
-                .file()
-                .player(id)
-                .unwrap()
-                .appearance_id,
-            Some(STRIPPED_APPEARANCE_ID),
-            "{id} is stripped"
-        );
-    }
-    assert!(view.session.as_ref().unwrap().is_dirty());
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert!(
-        !nodes.iter().any(|node| node.label() == Some("Strip again")),
-        "the window closed"
-    );
-
-    assert_eq!(undo_entries(&mut window, &mut view), 1, "one undo step");
-    for &id in &listed_ids {
-        assert_eq!(
-            view.session
-                .as_ref()
-                .unwrap()
-                .file()
-                .player(id)
-                .unwrap()
-                .appearance_id,
-            Some(id),
-            "{id} is restored"
-        );
-    }
 }
 
 // The same rule's low end: a draw of 1 stores 0 in a 1-based motion and 1

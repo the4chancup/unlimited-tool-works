@@ -276,8 +276,8 @@ fn write_ted<'a>(
     for (slot, player) in slot_players(team, players, off.width)? {
         let at = off.players + slot * schema.player.size;
         // The game's own exports hold each player's own id at the appearance-id slot
-        // (every PES 18-21 `.ted` it wrote), whatever the save's entry holds: a stripped
-        // player's -1 is the save's state, not the export's. PES 15/16 records have no
+        // (every PES 18-21 `.ted` it wrote), whatever the save's entry holds: a -1 there
+        // is the save's state, not the export's. PES 15/16 records have no
         // such slot, and `write_player` leaves a field the schema lacks unwritten.
         let player = PlayerEntry {
             appearance_id: Some(player.id),
@@ -475,7 +475,7 @@ impl Texport {
             team: team.clone(),
             // `players` are what the file holds, so each entry keeps the id
             // `write_ted` put at the appearance-id slot: his own, not the
-            // save entry's (a stripped player's is -1 there).
+            // save entry's.
             players: players
                 .iter()
                 .map(|p| PlayerEntry {
@@ -653,8 +653,8 @@ mod tests {
         for (version, bytes) in TEDS {
             let mut texport = Texport::from_bytes(bytes, None).expect("opens");
             for player in texport.players_mut() {
-                // The fixture holds each player's own id, not the stripped
-                // -1: the edit below is a real change.
+                // The fixture holds each player's own id, not -1: the edit
+                // below is a real change.
                 assert_ne!(
                     player.appearance_id,
                     Some(STRIPPED_APPEARANCE_ID),

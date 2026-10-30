@@ -10,8 +10,6 @@ use crate::codec::{self, CodecError};
 use crate::file::EditFile;
 use crate::model::ingame_face::in_layout;
 use crate::model::player::PlayerEntry;
-#[cfg(test)]
-use crate::model::player::STRIPPED_APPEARANCE_ID;
 use crate::model::team::TeamEntry;
 use crate::ops::fingerprint::{FaceHash, face_hash};
 use crate::schema::fields::{
@@ -71,11 +69,12 @@ pub enum DiffScope {
 }
 
 impl PlayerDiff {
-    /// Aesthetics is the appearance block: its fields (the four appearance
-    /// edit flags, boots/gloves/base-copy IDs, physique, strip), every `Face`
-    /// and `FaceRun` row — the slice `test_support::copy_appearance` moves,
-    /// which the tests check this list against. Everything else (motion and
-    /// the other edit flags included) is gameplay.
+    /// Aesthetics is the appearance block: its fields (the appearance id, the
+    /// four appearance edit flags, boots/gloves/base-copy IDs, physique,
+    /// strip), every `Face` and `FaceRun` row — the slice
+    /// `test_support::copy_appearance` moves, the appearance id aside, which
+    /// the tests check this list against. Everything else (motion and the
+    /// other edit flags included) is gameplay.
     pub fn scope(&self) -> DiffScope {
         use PlayerField as F;
         let field = match self {
@@ -86,7 +85,8 @@ impl PlayerDiff {
             }
         };
         match field {
-            F::EditedFace
+            F::AppearanceId
+            | F::EditedFace
             | F::EditedHair
             | F::EditedPhysique
             | F::EditedStrip
@@ -181,10 +181,6 @@ impl PlayerDiff {
             | F::Aggression
             | F::PlayingAttitude
             | F::StrongerHand => DiffScope::Gameplay,
-            // No `Field` row is emitted for the appearance id: the save
-            // editor's `diff` marks a stripped player. The arm only closes
-            // the match.
-            F::AppearanceId => DiffScope::Gameplay,
         }
     }
 }
@@ -201,11 +197,6 @@ fn record_diffs(
 ) -> Result<(), CodecError> {
     for (field, _, _) in codec::runs(schema) {
         if seen.is_some_and(|seen| seen.has(field)) {
-            continue;
-        }
-        // The appearance id is no row: the save editor's `diff` marks a
-        // stripped player.
-        if field == PlayerField::AppearanceId {
             continue;
         }
         let (old, new) = (a.get(field)?, b.get(field)?);
@@ -604,17 +595,12 @@ mod tests {
             let mut b = a.clone();
             b.set(field, new).expect("fits");
             let diffs = compare_players(&a, &b, schema).expect("compares");
-            // The appearance id is no row: the save editor's `diff` marks a
-            // stripped player.
-            let expected = if field == PlayerField::AppearanceId {
-                Vec::new()
-            } else {
-                vec![PlayerDiff::Field { field, old, new }]
-            };
-            assert_eq!(diffs, expected, "{field:?}");
+            assert_eq!(diffs, [PlayerDiff::Field { field, old, new }], "{field:?}");
             let mut c = a.clone();
             crate::test_support::copy_appearance(&mut c, &b);
-            let moved = c.get(field).expect("covered") == new;
+            // The appearance id is the appearance block's, but a copied
+            // look keeps the target's own id, so the copy leaves it.
+            let moved = field == PlayerField::AppearanceId || c.get(field).expect("covered") == new;
             assert_eq!(
                 diffs
                     .first()
@@ -691,19 +677,23 @@ mod tests {
         assert_eq!(ids.len(), 1, "{ids:?}");
     }
 
-    /// The appearance id is no row: a player only differing there compares
-    /// equal (the save editor's `diff` marks a stripped player).
     #[test]
-    fn the_appearance_id_is_no_row() {
+    fn the_appearance_id_is_an_aesthetics_row() {
         let a = player(PesVersion::Pes21, 70101);
         let schema = schema_for(PesVersion::Pes21);
+        assert_eq!(a.appearance_id, Some(70101));
         let mut b = a.clone();
-        b.appearance_id = Some(STRIPPED_APPEARANCE_ID);
-        assert!(
-            compare_players(&a, &b, schema)
-                .expect("compares")
-                .is_empty()
+        b.appearance_id = Some(u32::MAX);
+        let diffs = compare_players(&a, &b, schema).expect("compares");
+        assert_eq!(
+            diffs,
+            [PlayerDiff::Field {
+                field: PlayerField::AppearanceId,
+                old: 70101,
+                new: u32::MAX,
+            }]
         );
+        assert_eq!(diffs[0].scope(), DiffScope::Aesthetics);
     }
 
     #[test]
