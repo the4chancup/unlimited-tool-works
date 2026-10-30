@@ -276,10 +276,10 @@ fn a_wheel_notch_over_a_rate_is_one_undoable_edit() {
     );
 }
 
-// RE-GUI-15
 /// Ctrl+S leaves the keyboard where it is, so the id field never loses
 /// focus: Save commits the typed id first, the file holds it and the
 /// document is clean.
+// RE-GUI-15
 #[test]
 fn ctrl_s_while_an_id_is_typed_saves_the_typed_id() {
     // Autumn 26 without its specials: they name Gold's id, so a renamed

@@ -2930,3 +2930,6 @@ worklog passed 7,000 lines.
   `mutants-diff c2079631^1` started over d1b2 and cv3/cv3b/cv4/cv8.
 - **2026-10-30** — 0.0.1cv cv8b merged (`478f89c6`): every squad is 23 (`squad_size` out of the
   rules format, logic v1's hash `b2c03566…`), the event logo from any picture, `has_settings_view`.
+- **2026-10-30** — 0.0.1cv Astra A7 over the Ruleset editor: 8 of 8 accepted; cv8c merged
+  (`8e533110`): a typed tier id saved and guarded, the summary states the logic's rules, the
+  bottom bar's "No problems found"; gates-changed 80cb2368 green.

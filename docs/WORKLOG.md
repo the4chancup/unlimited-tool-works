@@ -5912,9 +5912,11 @@ briefs, review loops, gates and mutation runs as for any step.
       2026-10-30), since the Ruleset editor's table holds only its own state
     - [ ] cv8's converge: SWE-2 round 1 over cv8 + cv8b in four parts, 1 accepted (the squad's
       three load-rule texts pinned, `58f33945`; `.tmp/0_0_1cv/rulings_cv8.md`), the loop
-      ends; Astra A7: 8 of 8 accepted (`rulings_cv8.md`), so cv8c's rework, a SWE-2 loop,
-      then Astra again; `just mutants ruleset_editor`, the built window with two tools (cv5)
-    - [ ] cv8c A7's rework (brief `.tmp/0_0_1cv/brief_cv8c.md`; draft, plan and DECISIONS
+      ends; Astra A7: 8 of 8 accepted (`rulings_cv8.md`), so cv8c's rework, a SWE-2 loop
+      (round A7r1 running), then Astra again; `just mutants ruleset_editor`, the built window
+      with two tools (cv5)
+    - [x] cv8c merged `8e533110` (gates-changed 80cb2368 green after the two citations moved
+      under their doc comments) A7's rework (brief `.tmp/0_0_1cv/brief_cv8c.md`; draft, plan and DECISIONS
       2026-10-30 "the summary states the logic's rules" by the lead, the summary goldens
       regenerated from the draft): a typed tier id counts as unsaved and every Save commits
       it; the summary's band, total, minimum, effect weak foot and "and" lists say what the
@@ -6507,6 +6509,14 @@ Bugs, unexpected behavior, things to revisit. `open` / `resolved (date)`. Resolv
 pruned when their phase closes; they stay in git history. A question only the maintainer
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
+
+- open 2026-10-30, Phase 20 — a tier id's rename carries its key in the medal systems alone
+  (`plans/ruleset_editor.md` RE-GUI-17), so renaming a tier that a special's `when.tiers`, a
+  per-tier effect map or another tier's `counts_as` names leaves an "unknown tier id"
+  problem the bottom bar lists until the tier is renamed back (found at cv8c: renaming
+  Autumn 26's Gold makes Save refuse four specials). In 0.0.1 the specials cannot be edited,
+  so renaming back is the only way out. Revisit with 20.6a2b/20.6b: carry the rename through
+  every reference, or keep the problem as the member's cue.
 
 - resolved 2026-10-28 — the Save editor's CLI tests read the real process list (found
   2026-10-27, cm4's gate run with PES 2021 open: 18 of `tests/cli`'s 46 failed, each "PES 2021

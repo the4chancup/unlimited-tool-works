@@ -174,9 +174,9 @@ fn a_window_close_prompts_and_each_answer_does_what_it_says() {
     );
 }
 
-// RE-GUI-15
 /// A tier id typed and not committed is an unsaved change: on an
 /// otherwise clean document, the window's close is held and prompts.
+// RE-GUI-15
 #[test]
 fn a_typed_tier_id_holds_the_close() {
     let (ctx, _events, _path, view) = official_opened("prompt_typed_id");
