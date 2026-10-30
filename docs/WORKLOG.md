@@ -2724,7 +2724,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       loop ends (`.tmp/8_30c/rulings_838b.md`: a selected entry keeps the selection's colours,
       as the drafts' locked formation picker, now in the plan); fixes `8fe34234` (egui's
       other disabled-scope routes disallowed; the dark grey pinned in its test, red at 180).
-      Open: the merge, the built-window look (134 tuned)
+      Merged `27101b30` (its conflicts with d1b2 resolved in its worktree, gates green).
+      Open: the built-window look (134 tuned)
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning

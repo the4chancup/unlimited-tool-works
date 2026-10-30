@@ -2895,3 +2895,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — The GUI names every card and playing style as the game spells them, the team
   file dialog's notes in the catalog's words, a man-marking change as the opponent's starter,
   the tier refusals by label and place (8.29d1b2, merged). PES 2017 Texport import scheduled.
+- **2026-10-30** — A disabled widget keeps egui's faded box and dims its text to the drafts'
+  grey, through the suite's own `add_enabled` (8.38b, merged). The converge review is now a
+  release's prerequisite; PES 2017 Texport export found feasible from the open save.
