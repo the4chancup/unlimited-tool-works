@@ -190,12 +190,15 @@ pub fn title_case(name: &str) -> String {
 
 /// The name the game of `version` shows for the stat spelled `stat` (an
 /// `ABILITY_STATS` entry, or `form`, `injury_resistance`, `weak_foot_usage`,
-/// `weak_foot_accuracy`): the one place a stat's shown name comes from, so
-/// the player view, the changes lists and the AATF rows all read the names
-/// the member's game shows. PES 2017's Edit screen calls `heading` Header
-/// and every other stat by its spelling title-cased. The other versions'
-/// names are not read off their games yet, so they fall back to the title
-/// case.
+/// `weak_foot_accuracy`): the place a stat's shown name comes from wherever
+/// it depends on the version, so the player view, the changes lists and the
+/// AATF rows' sentences read the names the member's game shows. PES 2017's
+/// Edit screen calls `heading` Header and every other stat by its spelling
+/// title-cased. The other versions' names are not read off their games yet,
+/// so they fall back to the title case. The AATF rows' rule column and the
+/// Other stats' labels name Form, Injury Resistance and the weak foot's
+/// halves with fixed strings instead, equal to the names here on every
+/// version so far.
 pub fn stat_name(version: PesVersion, stat: &str) -> String {
     // Each version's stats whose name is not their spelling title-cased.
     let renamed: &[(&str, &str)] = match version {
