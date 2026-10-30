@@ -2924,3 +2924,5 @@ worklog passed 7,000 lines.
   game's import names the team from the DLC's bin; TEXPORT numbers are hexadecimal).
 - **2026-10-30** — 0.0.1cv cv8 merged (`4f8c235e`): the Ruleset editor's window in 0.0.1 as
   "Ruleset editor (WIP)"; its empty settings header led to `has_settings_view` (cv8b).
+- **2026-10-30** — 0.0.1cv cv3b merged (`9eaf553a`): Texport names in hexadecimal, paged
+  selections kept in view, cv3's SWE-2 round 1 findings and k5mut's remote survivors.

@@ -5868,13 +5868,15 @@ briefs, review loops, gates and mutation runs as for any step.
     PgUp/PgDn, Copy/Swap labelled by place, display names in the team combos and the
     violations header, a team key's note naming its details, the ownership tip, the join
     list kept packed and its full-list candidates, the Generate preview cached, tests for
-    the audit's untested behavior. Open: its SWE-2 loop (round 1 running in two parts,
-    `review5`), the ownership link's wrap seen in the built window (cv5)
-  - [ ] cv3b after cv3 lands: the Texport name suggestion counts in hexadecimal, upper case
+    the audit's untested behavior. Open: its SWE-2 loop (round 1: 6 accepted, round 2 over
+    cv3b running in `review5`), the ownership link's wrap seen in the built window (cv5)
+  - [x] cv3b merged `9eaf553a`: the Texport name suggestion counts in hexadecimal, upper case
     (`view/interchange.rs` `Export::file_name`; a test with `00000000`..`00000009` taken
     suggests `TEXPORT0000000A`; DECISIONS 2026-10-30 "PES 2017's import names the team from
     the DLC's bin, and Texport numbers are hexadecimal"), and k5mut's remote half's three
-    survivors (`.tmp/8_30c/k5mut_triage.md`)
+    survivors (`.tmp/8_30c/k5mut_triage.md`); the section repaint deleted; SWE-2 round 1's
+    accepted findings (a page key that moves nothing keeps the field's keyboard, none while a
+    pointer button is held, the list scrolls to the paged row at once)
   - [x] cv4 the shell's findings (`studio_core`, `studio`): an Opus sidekick, merged
     `897a4fc0`: Reset window centres on the monitor the window stands on (the primary when
     none holds its centre), the help tree follows the rail's order, the data-location topic,
