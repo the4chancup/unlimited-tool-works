@@ -2928,3 +2928,5 @@ worklog passed 7,000 lines.
   selections kept in view, cv3's SWE-2 round 1 findings and k5mut's remote survivors.
 - **2026-10-30** — 0.0.1cv cv3's SWE-2 loop ended (round 2: 1 accepted, fixed at `3ea74954`);
   `mutants-diff c2079631^1` started over d1b2 and cv3/cv3b/cv4/cv8.
+- **2026-10-30** — 0.0.1cv cv8b merged (`478f89c6`): every squad is 23 (`squad_size` out of the
+  rules format, logic v1's hash `b2c03566…`), the event logo from any picture, `has_settings_view`.
