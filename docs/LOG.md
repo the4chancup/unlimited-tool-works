@@ -2889,3 +2889,6 @@ worklog passed 7,000 lines.
   the schema names (8.29d1b1).
 - **2026-10-30** — The Ruleset editor's preview shortens the event logo's line; its help names
   the event fields. A field's words spell COM (SWE-2 S1p45, S1d1b1).
+- **2026-10-30** — Set all stats' and Bump all stats' number field is 52 points wide; the Ruleset
+  editor's preview highlights a logo replaced by one of its size; RE-FILE-09 starts from a file
+  the Save must change (8.38a). d1b2 drafted and planned: card names, team file notes, man marking.
