@@ -14175,3 +14175,14 @@ maintainer: the old format has lasted a decade with non-breaking changes only). 
 because Cargo requires it, the update check compares tags as semver, and the plans' milestones
 are written in it; calendar versions would drop those milestones.
 Plan: `plans/core/development_plan.md` "What the version number means" (after "Releases").
+
+## 2026-10-30 — studio_core / drafts — a locked formation picker's other entries dim like any disabled widget
+Decision: in a disabled scope, a selectable entry that is not selected takes the disabled text
+grey like a button (134 dark, under egui's fade), the locked formation picker's included; the
+drafts' `.fsel.off`, which drew those entries at the fade alone, is corrected to match the
+build (measured equal with `draft_compare.py team`: `#4e4e4e` both).
+Why: one rule for every disabled widget's text, not an exception in `add_enabled` for one
+picker, which would need a second disabled path; the drafts already dim the disabled ratings
+picker's entries (`.rate.off`), and the `.fsel.off` rule predates the disabled-text ruling of
+the same day.
+Plan: `plans/core/gui.md` "Dark/light theme" (the disabled widget's sentence).

@@ -2901,3 +2901,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — The team file panel's two lists share the room above Apply, which stays on
   the shortest window; the mutation run's three survivors and Astra's test gaps are pinned
   (mut838, merged).
+- **2026-10-30** — The disabled widgets' text measured in the built window against the drafts:
+  134 stands; the drafts' locked formation picker corrected to dim its other entries as the
+  build does (8.38b closed).

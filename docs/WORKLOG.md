@@ -2716,7 +2716,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       Files: `save_editor/src/view/{mod,menus,quick_actions}.rs`, `view/tests/player.rs`,
       `help/02_window.md`; `ruleset_editor/src/view/{mod,preview}.rs`,
       `view/tests/{file,preview}.rs`
-    - [ ] b a disabled widget's look (the maintainer, 2026-10-30: egui's faded box, the drafts'
+    - [x] b a disabled widget's look (the maintainer, 2026-10-30: egui's faded box, the drafts'
       text; DECISIONS "A disabled widget keeps egui's faded box..."; `plans/core/gui.md` the
       Dark/light theme row): drafted (`index.html` `button:disabled` on `#2b2b2b`; side by
       side `.tmp/8_30c/disabled_buttons_compare.png`). Code: `Palette::disabled_text` (dark
@@ -2736,7 +2736,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       as the drafts' locked formation picker, now in the plan); fixes `8fe34234` (egui's
       other disabled-scope routes disallowed; the dark grey pinned in its test, red at 180).
       Merged `27101b30` (its conflicts with d1b2 resolved in its worktree, gates green).
-      Open: the built-window look (134 tuned)
+      manual: checked 2026-10-30, release build `79334057`, the real PES 21 save read-only,
+      `draft_compare.py team` and `player`: Undo, Redo and the six disabled quick actions'
+      text 1 to 3 levels from the drafts' (`#565656`-`#575757` against `#535353`-`#555555`),
+      fills equal, so 134 stands untuned. The locked formation picker's other entries
+      (`#4e4e4e`) differed by 31 from the drafts' `.fsel.off`, which drew them at the fade
+      alone: the drafts corrected to the build's one rule (DECISIONS "a locked formation
+      picker's other entries dim like any disabled widget"), measured equal; side by side
+      `.tmp/8_30c/fsel_compare.png`. Files: `docs/prototypes/tools/save_editor.js`,
+      `plans/core/gui.md`
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning

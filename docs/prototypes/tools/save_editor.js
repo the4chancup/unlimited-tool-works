@@ -343,10 +343,15 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .rate .sel.on.rc { background: #5a5a5a; color: var(--text); }
 .rate.off .sel { color: #5a5a5a; }
 .rate.off .sel:hover { background: none; color: #5a5a5a; }
-/* The formation picker while the preset's Fluid formation is off: disabled as egui fades a
-   disabled widget, its tooltip kept. */
+/* The formation picker while the preset's Fluid formation is off, drawn as egui draws a
+   disabled widget: the selected entry in the selection's colours faded, an entry's text in
+   the palette's disabled grey (134) faded; its tooltip kept. egui fades each shape at half
+   opacity, a text over an already faded fill, where a browser fades the group once, so .6 is
+   what lands the selected entry's colours where egui's do, and #7c7c7c at .6 lands where
+   134 at half does (78 on the panel). */
 .fsel.off { opacity: .6; }
-.fsel.off .sel:hover { background: none; color: inherit; }
+.fsel.off .sel:not(.on) { color: #7c7c7c; }
+.fsel.off .sel:hover { background: none; color: #7c7c7c; }
 .fsel.off .sel.on:hover { background: var(--sel-bg); color: var(--sel-fg); }
 .palette { display: inline-flex; gap: 2px; align-items: center; }
 .palette .swatch.on { outline: 1px solid var(--sel-fg); }
