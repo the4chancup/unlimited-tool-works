@@ -127,11 +127,11 @@ option, so a Manlet regular who takes the bonus is held to an all-82 sum.
 
 New load-time rules: a medal system's label is not empty, it names existing tiers, and those
 tiers have no `count` and no `counts_as` and no tier `counts_as` them; every system's counts plus
-the fixed counts fit `squad_size`, and equal it when no tier is the rest of the squad. Every
+the fixed counts fit the squad of 23, and equal it when no tier is the rest of the squad. Every
 height system but the last has a non-empty `any_player` or `by_quotas` with quotas (with none, no
 quota fails); the last has neither
 (else a team could fall through every system). A system with `extra_height` gives quotas only to
-`exactly` brackets of one height, and its quotas add up to `squad_size`.
+`exactly` brackets of one height, and its quotas add up to 23.
 
 **The event's logo and page.** A cup other than 4cc runs its event on its own file, and its
 members should see their event's mark: `logo` and `page` sit in the data section, never in
@@ -144,6 +144,18 @@ wondering why it never shows. `libs/aatf` checks the bytes (the workspace's `bas
 never decodes the picture: the hosts that draw it decode it (`image`, a workspace
 dependency through `dds_convert`). Each embedded ruleset carries its event's logo and page
 (the event's wiki page, and the logo it shows).
+
+**Every squad is 23: `squad_size` leaves the schema.** The struct's field, the data block's
+key, every embedded ruleset's and the logic's reading of it go; the load rules that read it
+(tier counts and a medal system's counts fit the squad, a height pool's quotas add up to it)
+and the logic's "rest of the squad" count read 23, one constant of `libs/aatf`. The Team
+compiler numbers a team's players 01 to 23 (player folders, `players.txt`, portraits) and
+gives each team 23 exclusive boots and gloves IDs in its 40-ID block, the blocks of teams
+701 to 920 ending at 8900 below the referees' `99XX` band; so a ruleset of another size
+could not be met by a compiled team, and widening the compiler would move every team's
+IDs. A file that still holds `squad_size` is refused as any key the schema lacks, with its
+key path: no file with it was released, and logic version 1 is frozen only at the 0.0.1
+cut, so the logic's change stays version 1.
 
 ## Embedded rulesets
 

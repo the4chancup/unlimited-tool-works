@@ -5893,6 +5893,11 @@ briefs, review loops, gates and mutation runs as for any step.
     sections; the shell tests that assume one window tool. Then its converge: an Astra part
     (A7) beside cv6's, `just mutants ruleset_editor`, the built window with two tools
     (switching, the unsaved prompts, closing)
+    - [ ] cv8b after cv8 lands (DECISIONS 2026-10-30 "every squad is 23, and the event logo
+      is any picture"): `squad_size` out of `libs/aatf` (schema, writer, embedded rulesets,
+      logic, load rules on 23; logic version 1's pinned hash follows) and General; the logo
+      from any picture, scaled to fit 168 × 56 and stored as PNG (RE-GUI-19); the unbuilt
+      sections' line reworded; the bundle's `rules/dbc7.rhai` regenerated
   - [ ] cv7 after 0.0.1: split `view/mod.rs` (the toolbar), `view/menus.rs` (the dialogs),
     `view/interchange.rs` (the export half), `team_widgets` `pitch/mod.rs` (the paint) and
     `tactics/mod.rs` (the changes' terms), each past a thousand lines
