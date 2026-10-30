@@ -1,9 +1,11 @@
 //! The views' terms for a `diff` row: a field a view draws reads under the
 //! view's own label, its old and new values as that view shows them, since
 //! a member reads a row against the view it jumps to. So a label or scale
-//! changed in a view changes the row with it. A field no view draws keeps
-//! the report's name and values (`messages::diff_fields`). The same terms
-//! word the unsaved-changes table's team rows (`team_row_terms`).
+//! changed in a view changes the row with it. A field no view draws is
+//! named in words from the report's name, its stored values kept
+//! (`field_words` over `messages::diff_fields`). The same terms word the
+//! unsaved-changes table's team rows (`team_row_terms`) and the `diff`
+//! report's text.
 
 use pes_savefile::interchange::team_toml::labels::{
     ABILITY_STATS, COM_STYLES, PLAYABLE_POSITIONS, POSITIONS, SKILLS, stat_name, title_case,
@@ -25,9 +27,9 @@ use crate::view::{abilities, info_strip, team};
 
 /// A `diff` row's terms: the field's label and its two values as the view
 /// that owns the field shows them.
-pub(super) struct Term {
+pub(crate) struct Term {
     /// The field's label: the view's own where a view draws the field.
-    pub(super) label: String,
+    pub(crate) label: String,
     /// `old` as the view shows it.
     pub(super) old: String,
     /// `new` the same way.
@@ -39,8 +41,9 @@ pub(super) struct Term {
     pub(super) swatches: Option<[egui::Color32; 2]>,
 }
 
-/// `diff`'s row in the views' terms.
-pub(super) fn row_term(version: PesVersion, diff: &PlayerDiff) -> Term {
+/// `diff`'s row in the views' terms. `pub(crate)` for the `diff` report's
+/// text, which names each field by this label.
+pub(crate) fn row_term(version: PesVersion, diff: &PlayerDiff) -> Term {
     match diff {
         PlayerDiff::Field { .. } => player_field_term(version, diff),
         PlayerDiff::Face { .. } => face_field_term(version, diff),
@@ -58,21 +61,23 @@ pub(super) fn row_term(version: PesVersion, diff: &PlayerDiff) -> Term {
                 swatches: None,
             },
         },
-        // The run's fingerprint row is drawn by no view.
-        PlayerDiff::FaceRun { .. } => report_term(diff),
+        // The run's fingerprint row is drawn by no view, and stands for the
+        // face's bits no field names.
+        PlayerDiff::FaceRun { .. } => {
+            let (_, old, new) = diff_fields(diff);
+            term(FACE_RUN_LABEL, old, new)
+        }
     }
 }
 
-/// The report's own terms for `diff`: the field's schema name and its
-/// stored values — the row for a field no view draws.
+/// The fingerprint row's label: the face's bits no field names.
+const FACE_RUN_LABEL: &str = "Other face data";
+
+/// The row for a field no view draws: the field named in words from the
+/// report's name (`field_words`), its stored values.
 fn report_term(diff: &PlayerDiff) -> Term {
-    let (label, old, new) = diff_fields(diff);
-    Term {
-        label,
-        old,
-        new,
-        swatches: None,
-    }
+    let (name, old, new) = diff_fields(diff);
+    term(field_words(&name), old, new)
 }
 
 /// `diffs`' rows in the views' terms, for the unsaved-changes prompt: one
@@ -147,8 +152,7 @@ fn team_row_term(
             ),
             // The flags the view sets as a side effect, the id, and a
             // colour channel alone (a merge `team_row_terms` already
-            // handled): the report's terms, as players' undrawn fields
-            // get.
+            // handled): named in words, as players' undrawn fields are.
             TeamField::Id
             | TeamField::EditedName
             | TeamField::EditedShortName
@@ -162,8 +166,11 @@ fn team_row_term(
             | TeamField::Color2Blue => team_report_term(diff),
         },
         TeamDiff::Roster { field, old, new } => match field {
-            RosterField::Number(_) => numbers(info_strip::NUMBER_LABEL, *old, *new),
-            RosterField::TeamId | RosterField::Player(_) => team_report_term(diff),
+            RosterField::Number(slot) => {
+                numbers(format!("{}'s number", slot_label(*slot)), *old, *new)
+            }
+            RosterField::Player(slot) => numbers(slot_label(*slot), *old, *new),
+            RosterField::TeamId => team_report_term(diff),
         },
         TeamDiff::Tactics { field, old, new } => {
             let (label, old, new) = team_widgets::tactics::tactics_term(
@@ -227,23 +234,16 @@ fn colour_term(baseline: &TeamEntry, team: &TeamEntry, colour: usize) -> Term {
     }
 }
 
-/// The report's own terms for a team diff, `report_term`'s twin: the
-/// field's schema name and its stored values — the row for a field no
-/// view draws.
+/// The row for a team field no view draws, `report_term`'s twin: the field
+/// named in words from its schema name, its stored values.
 fn team_report_term(diff: &TeamDiff) -> Term {
-    let (label, old, new) = match diff {
+    let (name, old, new) = match diff {
         TeamDiff::Field { field, old, new } => report_fields(field, *old, *new),
         TeamDiff::Roster { field, old, new } => report_fields(field, *old, *new),
         TeamDiff::Tactics { field, old, new } => report_fields(field, *old, *new),
         TeamDiff::Text { text, old, new } => (format!("{text:?}"), old.clone(), new.clone()),
     };
-
-    Term {
-        label,
-        old,
-        new,
-        swatches: None,
-    }
+    term(field_words(&name), old, new)
 }
 
 /// A report row's three strings for a named field: the schema name and
@@ -254,8 +254,8 @@ fn report_fields(field: impl std::fmt::Debug, old: u32, new: u32) -> (String, St
 
 /// A `Field` row's term: the views' own tables first (`SMALL_STATS`,
 /// `CUTSCENE_STATS`, `MOTIONS`, `PHYSIQUE`, `STRIP_ENUMS`, the ability
-/// stats), then the fields the views draw one-off, then the report's terms
-/// for a field no view draws — the `_` arm IS the rule for those, not an
+/// stats), then the fields the views draw one-off, then a field no view
+/// draws named in words — the `_` arm IS the rule for those, not an
 /// oversight.
 fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
     let PlayerDiff::Field { field, old, new } = *diff else {
@@ -375,13 +375,13 @@ fn player_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
             }
         }
         // The rest is drawn by no view (the ids and gameplay edit flags
-        // among them): the report's terms.
+        // among them): named in words.
         _ => report_term(diff),
     }
 }
 
 /// A `Face` row's term: the checkbox and the palettes are drawn, the rest
-/// of the run's fields are not (the report's terms).
+/// of the run's fields are not (named in words).
 fn face_field_term(version: PesVersion, diff: &PlayerDiff) -> Term {
     let PlayerDiff::Face { field, old, new } = *diff else {
         unreachable!("face_field_term gets a Face row")
@@ -459,6 +459,53 @@ fn rating_label(stored: u32) -> &'static str {
 /// `stored`'s checkbox reading: a set bit reads "on".
 fn on_off(stored: u32) -> &'static str {
     if stored == 0 { "off" } else { "on" }
+}
+
+/// A field no view draws, named in words from its report name: a word
+/// starts at a capital or a digit after a small letter, and at a capital
+/// after a digit; the words in sentence case, Id as ID and Color as the
+/// window spells it, a PES 2015-only field marked so (`NoseHeight` is
+/// "Nose height", `Color1Red` "Colour 1 red", `Pes15JawDepth` "Jaw depth
+/// (PES 2015)"). The draft's `fieldWords`.
+fn field_words(name: &str) -> String {
+    let (name, pes15) = match name.strip_prefix("Pes15") {
+        Some(rest) => (rest, true),
+        None => (name, false),
+    };
+    let mut spaced = String::new();
+    let mut previous: Option<char> = None;
+    for c in name.chars() {
+        if let Some(previous) = previous
+            && ((previous.is_ascii_lowercase() && (c.is_ascii_uppercase() || c.is_ascii_digit()))
+                || (previous.is_ascii_digit() && c.is_ascii_uppercase()))
+        {
+            spaced.push(' ');
+        }
+        spaced.push(c);
+        previous = Some(c);
+    }
+    let words: Vec<String> = spaced
+        .split(' ')
+        .map(|word| match word {
+            "Id" => "ID".to_owned(),
+            "Color" => "colour".to_owned(),
+            _ => word.to_lowercase(),
+        })
+        .collect();
+    let mut named = words.join(" ");
+    if let Some(first) = named.get_mut(0..1) {
+        first.make_ascii_uppercase();
+    }
+    if pes15 {
+        named.push_str(" (PES 2015)");
+    }
+    named
+}
+
+/// A roster slot as the player list numbers it, from 01: slot 3 is
+/// "Player 04".
+fn slot_label(slot: u8) -> String {
+    format!("Player {:02}", u32::from(slot) + 1)
 }
 
 /// The `SettingKey` that `writes` (`keys.rs`' `player_field` or
@@ -1050,20 +1097,46 @@ mod tests {
         );
     }
 
-    /// A field no view draws (a face field, the gameplay edit flags, the
-    /// run's fingerprint) keeps the report's name and values.
+    /// The draft's examples, and the words the rule spells its own way:
+    /// Id, Color and a leading Pes15.
     #[test]
-    fn fields_no_view_draws_keep_the_reports_terms() {
+    fn field_words_names_a_field_in_words() {
+        for (name, words) in [
+            ("NoseHeight", "Nose height"),
+            ("Color1Red", "Colour 1 red"),
+            ("Pes15JawDepth", "Jaw depth (PES 2015)"),
+            ("TeamId", "Team ID"),
+            ("EditedAbilities", "Edited abilities"),
+            ("HairColorRed", "Hair colour red"),
+        ] {
+            assert_eq!(field_words(name), words, "{name}");
+        }
+    }
+
+    /// A field no view draws (a face field, a PES 2015-only one, the
+    /// gameplay edit flags, the run's fingerprint) is named in words, its
+    /// stored values kept.
+    #[test]
+    fn fields_no_view_draws_are_named_in_words() {
         let version = PesVersion::Pes17;
         assert_term(
             &row_term(version, &face_row(IngameFaceField::NoseHeight, 3, 5)),
-            "NoseHeight",
+            "Nose height",
             "3",
             "5",
         );
         assert_term(
+            &row_term(
+                PesVersion::Pes15,
+                &face_row(IngameFaceField::Pes15JawDepth, 2, 9),
+            ),
+            "Jaw depth (PES 2015)",
+            "2",
+            "9",
+        );
+        assert_term(
             &row_term(version, &field(PlayerField::EditedPlayer, 0, 1)),
-            "EditedPlayer",
+            "Edited player",
             "0",
             "1",
         );
@@ -1075,7 +1148,7 @@ mod tests {
                     new: FaceHash([0xff; 4]),
                 },
             ),
-            "face_run",
+            "Other face data",
             "00000000",
             "ffffffff",
         );
@@ -1291,13 +1364,37 @@ mod tests {
             ],
         );
         assert_eq!(terms.len(), 2);
-        assert_term(&terms[0], "EditedName", "0", "1");
+        assert_term(&terms[0], "Edited name", "0", "1");
         assert_term(&terms[1], "Name", "/3/", "/3/X");
     }
 
+    /// A colour channel alone, outside `team_row_terms`' merge, is named in
+    /// words with its stored value.
+    #[test]
+    fn a_lone_colour_channel_is_named_in_words() {
+        let version = PesVersion::Pes17;
+        let team = team_701();
+        let rows = named_rows();
+        let roster = roster_rows(&rows);
+        let term = team_row_term(
+            version,
+            &team,
+            &team,
+            &roster,
+            &roster,
+            &TeamDiff::Field {
+                field: TeamField::Color1Red,
+                old: 63,
+                new: 16,
+            },
+        );
+        assert_term(&term, "Colour 1 red", "63", "16");
+    }
+
     /// The team fields', the kit slots' and the roster's rows: the view's
-    /// labels and the bound team shown as `binding / 64`, the shirt
-    /// number under the strip's label, `Player(n)` in report terms.
+    /// labels and the bound team shown as `binding / 64`, a roster slot
+    /// and its shirt number as the player list numbers the slot, the
+    /// roster's team id in words.
     #[test]
     fn the_team_field_and_roster_rows() {
         let version = PesVersion::Pes17;
@@ -1337,19 +1434,25 @@ mod tests {
                     new: 9,
                 },
                 TeamDiff::Roster {
-                    field: RosterField::Player(2),
-                    old: 70103,
+                    field: RosterField::Player(3),
+                    old: 70104,
                     new: 0,
+                },
+                TeamDiff::Roster {
+                    field: RosterField::TeamId,
+                    old: 701,
+                    new: 702,
                 },
             ],
         );
-        assert_eq!(terms.len(), 6);
+        assert_eq!(terms.len(), 7);
         assert_term(&terms[0], "Manager ID", "701", "0");
         assert_term(&terms[1], "Stadium ID", "29", "0");
         assert_term(&terms[2], "Slot 1 · Number", "0", "128");
         assert_term(&terms[3], "Slot 1 · Bound team ID", "701", "702");
-        assert_term(&terms[4], "Shirt number", "3", "9");
-        assert_term(&terms[5], "Player(2)", "70103", "0");
+        assert_term(&terms[4], "Player 03's number", "3", "9");
+        assert_term(&terms[5], "Player 04", "70104", "0");
+        assert_term(&terms[6], "Team ID", "701", "702");
     }
 
     /// A tactics row goes through the Tactics editor's terms.

@@ -434,8 +434,8 @@ pub(crate) fn version_mismatch_sentence(
 
 /// One `diff` row's texts: the field by its schema name (`BootsId`, `FacialHairType`,
 /// `Name`; `face_run` for the run's bits no field names, whose values are the two runs'
-/// fingerprints) and the old and new values. The finding and the JSON report carry the
-/// same three strings.
+/// fingerprints) and the old and new values. The JSON report carries the three strings;
+/// the finding carries the two values beside the field as the views label it.
 pub(crate) fn diff_fields(row: &PlayerDiff) -> (String, String, String) {
     match row {
         PlayerDiff::Field { field, old, new } => {
@@ -451,7 +451,8 @@ pub(crate) fn diff_fields(row: &PlayerDiff) -> (String, String, String) {
     }
 }
 
-/// The message for one `diff` row of `player`: `field`, `old` and `new` are `diff_fields`'s.
+/// The message for one `diff` row of `player`: `field` is the field as the views label it
+/// (`terms::row_term`), `old` and `new` are `diff_fields`' stored values.
 pub(crate) fn player_diff(player: u32, field: &str, old: &str, new: &str) -> Message {
     message(
         Code::PlayerDiff,

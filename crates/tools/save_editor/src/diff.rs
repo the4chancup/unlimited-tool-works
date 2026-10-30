@@ -9,6 +9,7 @@ use studio_core::{EventLines, Message, PipelineEvent};
 
 use crate::events::Report;
 use crate::messages::{Code, Side, diff_fields, message, player_diff};
+use crate::view::terms;
 
 /// The report as data, rendered either as finding lines or as one JSON document (`--json`),
 /// so the two forms cannot drift. `pub(crate)` for the comparator panel, which reads this
@@ -40,12 +41,13 @@ pub(crate) struct OnlyInPlayer {
     pub(crate) id: u32,
 }
 
-/// One changed field: `diff_fields`'s schema name and old/new texts, the same strings a
-/// `player_diff` finding carries, beside the `PlayerDiff` they came from (the comparator
-/// panel's `row_term` reads it; `skip` keeps the JSON report unchanged).
+/// One changed field: `diff_fields`'s schema name and old/new texts, beside the
+/// `PlayerDiff` they came from (`row_term` reads it for the comparator panel and the
+/// findings' field label; `skip` keeps the JSON report unchanged).
 #[derive(Serialize)]
 pub(crate) struct DiffRow {
-    /// The field's schema name.
+    /// The field's schema name, the key `--json` writes; the finding names the field as
+    /// the views label it instead.
     pub(crate) field: String,
     /// `first`'s value.
     pub(crate) old: String,
@@ -72,9 +74,9 @@ pub(crate) fn report(
 }
 
 /// The report as text: the finding lines `save-editor diff <first> <second>` prints for
-/// `scope`, in the command's order, formed as the console forms them. The Comparator
-/// panel's Export writes them; the `findings` walk is `report`'s, so the two cannot
-/// drift.
+/// `scope`, in the command's order, formed as the console forms them: each field as the
+/// views label it (PES 2017's Header), its stored values. The Comparator panel's Export
+/// writes them; the `findings` walk is `report`'s, so the two cannot drift.
 pub(crate) fn report_lines(
     first: &EditFile,
     second: &EditFile,
@@ -91,18 +93,21 @@ pub(crate) fn report_lines(
         .collect())
 }
 
-/// The report's findings in `report`'s order: each player's rows of `scope`, then the
-/// players only in one save. `report` and `report_lines` share this walk.
+/// The report's findings in `report`'s order: each player's rows of `scope`, the field
+/// under the views' label (`terms::row_term`) with its stored values, then the players
+/// only in one save. `report` and `report_lines` share this walk.
 fn findings(
     first: &EditFile,
     second: &EditFile,
     scope: Option<DiffScope>,
 ) -> Result<Vec<Message>, CompareError> {
     let data = build(first, second, scope)?;
+    let version = first.version();
     let mut findings = Vec::new();
     for player in &data.players {
         for row in &player.rows {
-            findings.push(player_diff(player.id, &row.field, &row.old, &row.new));
+            let label = terms::row_term(version, &row.diff).label;
+            findings.push(player_diff(player.id, &label, &row.old, &row.new));
         }
     }
     for (entries, side) in [
@@ -136,7 +141,8 @@ pub(crate) fn report_json(
     Ok(())
 }
 
-/// Both saves' report as data. Saves of two versions are the lib's `VersionMismatch`.
+/// Both saves' report as data, each row's field by its schema name (what `--json`
+/// writes) and its stored values. Saves of two versions are the lib's `VersionMismatch`.
 /// `pub(crate)` for the comparator panel's worker.
 pub(crate) fn build(
     first: &EditFile,

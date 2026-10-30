@@ -31,7 +31,7 @@ mod quick_actions;
 mod ruleset_picker;
 mod tactics;
 mod team;
-mod terms;
+pub(crate) mod terms;
 #[cfg(test)]
 mod tests;
 mod worker;

@@ -22,7 +22,7 @@ use team_widgets::tactics::RosterRow;
 use crate::session::Session;
 use crate::session::selection::{self, TeamChoice};
 use crate::view::terms::{self, Term};
-use crate::view::{Refusal, SaveView, save, write_now};
+use crate::view::{Refusal, SaveView, info_strip, save, write_now};
 
 /// What the prompt does once answered.
 #[derive(Debug)]
@@ -188,9 +188,15 @@ pub(super) fn rows(session: &Session) -> anyhow::Result<Vec<ChangeRow>> {
                 &new_roster,
                 &numbers,
             ) {
+                // Under its player the row is his shirt number, as the
+                // strip labels it: the slot's own words ("Player 04's
+                // number") would name him twice.
                 rows.push(ChangeRow {
                     item: named(),
-                    term,
+                    term: Term {
+                        label: info_strip::NUMBER_LABEL.to_owned(),
+                        ..term
+                    },
                 });
             }
         }
