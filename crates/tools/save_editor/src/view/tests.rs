@@ -625,8 +625,12 @@ fn shirt_field(nodes: &[accesskit::Node]) -> &accesskit::Node {
 }
 
 /// The undo stack's depth, counted by Ctrl+Z until it is empty (bounded, so
-/// a stuck stack fails rather than hangs).
+/// a stuck stack fails rather than hangs). An empty frame first, the one
+/// egui repaints after every input frame: a dialog closed on the frame
+/// before still holds the shortcuts on the next, its modal layer being
+/// the last frame's.
 fn undo_entries(window: &mut Headless, view: &mut SaveView) -> usize {
+    window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
     for count in 0..64 {
         if !view.session.as_ref().is_some_and(|s| s.can_undo()) {
             return count;

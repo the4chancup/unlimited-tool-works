@@ -3,7 +3,8 @@
 //! one sealed `edit_players` undo entry. egui-free, so the operations are
 //! testable without a frame; the lock's part (the
 //! FPC items' disabled state) is the view's to apply, not these
-//! functions'.
+//! functions', except Copy and Swap stats' free-kick motion, which the
+//! view's lock reaches as their `aesthetics_locked`.
 
 use anyhow::anyhow;
 use pes_savefile::model::PlayerEntry;
@@ -75,30 +76,33 @@ impl Session {
     /// stats): the field set the parity row lists, and nothing else —
     /// names, nationality, age, every motion but the free kick's, the
     /// motion and appearance flags and every appearance field stay
-    /// `dest`'s (`copy_stat_fields`). Picking the same player is a no-op
-    /// (`edit_players` skips an unchanged record).
-    pub(crate) fn copy_stats(&mut self, dest_id: u32, source_id: u32) {
+    /// `dest`'s (`copy_stat_fields`); under the aesthetics lock
+    /// (`aesthetics_locked`) the free kick's motion stays his too.
+    /// Picking the same player is a no-op (`edit_players` skips an
+    /// unchanged record).
+    pub(crate) fn copy_stats(&mut self, dest_id: u32, source_id: u32, aesthetics_locked: bool) {
         let (Some(source), Some(dest)) = (self.file.player(source_id), self.file.player(dest_id))
         else {
             return;
         };
         let mut edited = dest.clone();
-        copy_stat_fields(source, &mut edited);
+        copy_stat_fields(source, &mut edited, aesthetics_locked);
         self.edit_players(vec![edited]);
     }
 
     /// Swap stats between `first_id` and `second_id` (the dialog's Swap
-    /// stats): `copy_stat_fields`' set traded both ways, the whole swap
-    /// one sealed undo entry.
-    pub(crate) fn swap_stats(&mut self, first_id: u32, second_id: u32) {
+    /// stats): `copy_stat_fields`' set traded both ways, the free kick's
+    /// motion left each player's under the aesthetics lock
+    /// (`aesthetics_locked`), the whole swap one sealed undo entry.
+    pub(crate) fn swap_stats(&mut self, first_id: u32, second_id: u32, aesthetics_locked: bool) {
         let (Some(first), Some(second)) = (self.file.player(first_id), self.file.player(second_id))
         else {
             return;
         };
         let mut first_after = first.clone();
         let mut second_after = second.clone();
-        copy_stat_fields(second, &mut first_after);
-        copy_stat_fields(first, &mut second_after);
+        copy_stat_fields(second, &mut first_after, aesthetics_locked);
+        copy_stat_fields(first, &mut second_after, aesthetics_locked);
         self.edit_players(vec![first_after, second_after]);
     }
 
@@ -148,13 +152,18 @@ impl Session {
 /// `motion.free_kick` alone, and the eight gameplay edit flags. Everything
 /// else — name, shirt name, nationality, age, the other motions, the
 /// motion and base-copy flags, every appearance field — stays `dest`'s.
-fn copy_stat_fields(source: &PlayerEntry, dest: &mut PlayerEntry) {
+/// The free kick's motion is an `[appearance.motion]` key of the team's
+/// export, so under the aesthetics lock (`aesthetics_locked`) it stays
+/// `dest`'s as well.
+fn copy_stat_fields(source: &PlayerEntry, dest: &mut PlayerEntry, aesthetics_locked: bool) {
     dest.basic.height = source.basic.height;
     dest.basic.weight = source.basic.weight;
     dest.stats = source.stats.clone();
     dest.positions = source.positions.clone();
     dest.skills = source.skills.clone();
-    dest.motion.free_kick = source.motion.free_kick;
+    if !aesthetics_locked {
+        dest.motion.free_kick = source.motion.free_kick;
+    }
     dest.edit_flags.player = source.edit_flags.player;
     dest.edit_flags.basic_settings = source.edit_flags.basic_settings;
     dest.edit_flags.registered_position = source.edit_flags.registered_position;

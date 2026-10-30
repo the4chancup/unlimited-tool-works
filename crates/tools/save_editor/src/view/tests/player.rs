@@ -126,6 +126,9 @@ fn set_and_bump_stats_write_every_ability_as_one_undoable_edit() {
         &set_line(&name),
         "90",
     );
+    // The repaint egui runs after the OK click's frame: the closed
+    // dialog's modal layer holds the shortcuts until it has drawn.
+    draw(&mut window, &mut view);
     window.frame(vec![key(egui::Key::B, egui::Modifiers::CTRL, true)], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
@@ -639,6 +642,59 @@ fn swap_stats_trades_the_field_set_on_pes16() {
         reopened.player(70102).unwrap(),
         &with_stats_of(&second_before, &first_before)
     );
+}
+
+// Under the aesthetics lock ("Aesthetics from exports" on, "Edit
+// aesthetics anyway" off) the free kick's motion, a key of the team
+// export's aesthetics, stays each player's: Copy still copies the rest of
+// the field set, and Swap still trades it.
+#[test]
+fn copy_and_swap_stats_keep_the_free_kick_motion_under_the_lock() {
+    for (item, test) in [
+        ("Copy stats from", "player_copy_locked"),
+        ("Swap stats with", "player_swap_locked"),
+    ] {
+        let path = fixture(PesVersion::Pes21, test);
+        mark_copy_players(&path, PesVersion::Pes21);
+        let mut view = SaveView::new();
+        view.open(&path);
+        view.aesthetics_from_exports = true;
+        assert!(view.aesthetics_locked(), "premise: the lock is on");
+        let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+        let first_before = player_entry(&view, 70101);
+        let second_before = player_entry(&view, 70102);
+        assert_ne!(
+            first_before.motion.free_kick, second_before.motion.free_kick,
+            "premise: the free-kick motions differ"
+        );
+        assert_ne!(
+            first_before.stats, second_before.stats,
+            "premise: the stats differ"
+        );
+
+        run_copy_swap(&mut window, &mut view, item, &slot_label(&second_before, 1));
+
+        let keeping_free_kick = |entry: &PlayerEntry, source: &PlayerEntry| {
+            let mut expected = with_stats_of(entry, source);
+            expected.motion.free_kick = entry.motion.free_kick;
+            expected
+        };
+        assert_eq!(
+            player_entry(&view, 70101),
+            keeping_free_kick(&first_before, &second_before),
+            "{item}: 70101 takes the field set but his own free-kick motion"
+        );
+        let second_after = if item == "Copy stats from" {
+            second_before.clone()
+        } else {
+            keeping_free_kick(&second_before, &first_before)
+        };
+        assert_eq!(
+            player_entry(&view, 70102),
+            second_after,
+            "{item}: 70102 keeps his free-kick motion"
+        );
+    }
 }
 
 // The four menu dialogs' headings are their titles (`StatNum::title`,

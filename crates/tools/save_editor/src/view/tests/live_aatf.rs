@@ -778,6 +778,60 @@ fn the_checks_follow_the_selected_rows_team_under_a_filter() {
     );
 }
 
+/// A team whose name holds a colour code (the legal team 714, its name
+/// coloured red) reads as its display name in both headers, `Checking
+/// <team>…` before the first result and `<team> passes <ruleset> with no
+/// issues.` after it.
+// SE-GUI-30
+#[test]
+fn the_headers_name_a_coded_team_by_its_display_name() {
+    let (mut view, mut window) = open_legal_714(
+        "live_aatf_coded_headers",
+        Headless::sized(DEFAULT_PANE.x, 800.0),
+    );
+    edit_team(view.session.as_mut().unwrap(), 714, 1, |team| {
+        team.name = format!("\x11cff0000ff{}", team.name);
+    });
+    view.live_aatf = true;
+    let raw = team_entry(&view, 714).name;
+    let shown = display_name(&raw);
+    assert_ne!(raw, shown, "premise: 714's name holds a colour code");
+
+    // The pointer is held on the toolbar's empty end, so no check starts
+    // and the frame draws the header before a result.
+    let at = egui::pos2(1090.0, 12.0);
+    let (_, nodes, _) = window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(
+        view.live.check.pending.is_none() && view.live.check.result.is_none(),
+        "premise: no check started while the pointer is held"
+    );
+    let checking = format!("Checking {shown}\u{2026}");
+    assert!(
+        label_value(&nodes, &checking),
+        "the header before a result: {checking}"
+    );
+    assert!(
+        !label_value(&nodes, &format!("Checking {raw}\u{2026}")),
+        "the header does not hold the raw name"
+    );
+    window.frame(pointer_at(at, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+
+    let nodes = live_checked(&mut window, &mut view, &[714]);
+    let passes = format!("{shown} passes 4cc Autumn 26 with no issues.");
+    assert!(label_value(&nodes, &passes), "the passing header: {passes}");
+    assert!(
+        !label_value(
+            &nodes,
+            &format!("{raw} passes 4cc Autumn 26 with no issues.")
+        ),
+        "the header does not hold the raw name"
+    );
+}
+
 /// A violation row's click moves the selector to the player's team, so the
 /// list shows the row it selects; at ALL the selector stays.
 // SE-GUI-30

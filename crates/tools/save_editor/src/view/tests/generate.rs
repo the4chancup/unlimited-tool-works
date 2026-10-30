@@ -209,6 +209,49 @@ fn an_unparsable_existing_settings_toml_is_the_error() {
     );
 }
 
+// The file fixed outside and its folder picked again: the pick reads the
+// folder anew, so the preview shows the fixed file and Write is enabled.
+#[test]
+fn picking_the_same_folder_again_reads_its_fixed_file() {
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "generate_repick", 701, 1);
+    let dir = crate::test_support::scratch("generate_repick");
+    std::fs::write(dir.join("settings.toml"), "name = [\n").unwrap();
+    view.pick_folder_dialog = {
+        let dir = dir.clone();
+        Box::new(move || Some(dir.clone()))
+    };
+    player_menu_item(&mut window, &mut view, "Generate settings.toml");
+    let nodes = draw(&mut window, &mut view);
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Pick\u{2026}"),
+        &mut view,
+    );
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        node_labeled(&nodes, Role::Button, "Write").is_disabled(),
+        "premise: the broken file disables Write"
+    );
+
+    std::fs::write(dir.join("settings.toml"), "# fixed\nname = \"STALE\"\n").unwrap();
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Pick\u{2026}"),
+        &mut view,
+    );
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        nodes.iter().any(|node| node
+            .value()
+            .is_some_and(|value| value.contains("# fixed\n"))),
+        "the preview shows the fixed file"
+    );
+    assert!(
+        !node_labeled(&nodes, Role::Button, "Write").is_disabled(),
+        "Write is enabled"
+    );
+}
+
 // A player whose appearance id is the game's -1 is generated like any
 // other: his record is his look.
 #[test]

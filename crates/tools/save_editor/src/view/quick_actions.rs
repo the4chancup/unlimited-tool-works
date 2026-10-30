@@ -60,6 +60,10 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     ui.horizontal(|ui| {
         for (index, tiers) in [&left, &right].into_iter().enumerate() {
             ui.vertical(|ui| {
+                // A ruleset with no medal tier leaves the left column
+                // empty: it keeps its half all the same, so the right
+                // column stays where it stands.
+                ui.set_min_width(cell.x);
                 for tier in tiers {
                     tier_button(ui, session, refusal, rules, tier, player, cell);
                 }

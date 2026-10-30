@@ -39,8 +39,9 @@ fn offered(version: PesVersion, side: InstructionSide) -> Vec<Instruction> {
 /// the side's list in stored order — a held value the list lacks
 /// (Tight Marking or one of the other side's) appended as the current
 /// choice — a stored byte the table does not list shown as its hex
-/// and kept until a pick. Picking an instruction that takes no target
-/// clears the pick.
+/// and kept until a pick. A pick keeps the target only when the held
+/// and the picked instruction both take one of our players; any other
+/// pick clears it.
 fn instruction_combo(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,
@@ -82,7 +83,10 @@ fn instruction_combo(
     {
         entry.instruction =
             instruction::encode(version, inst).expect("the offered list is the version's own");
-        if !inst.takes_player() {
+        // A held Tight Marking's byte is an opponent's slot, and an
+        // unknown byte's is nobody's: the target stays only when both the
+        // held and the picked instruction take one of ours.
+        if !(inst.takes_player() && current.is_some_and(Instruction::takes_player)) {
             entry.player = NO_TARGET;
         }
     }

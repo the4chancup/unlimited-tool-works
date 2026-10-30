@@ -13,7 +13,7 @@
 //! filter notwithstanding — the text `save-editor diff` prints.
 
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use pes_savefile::EditFile;
@@ -28,7 +28,8 @@ use crate::session::Session;
 use crate::session::selection::TeamChoice;
 use crate::view::worker::{Pending, WorkerResult};
 use crate::view::{
-    Panel, Refusal, SaveView, aatf_check, edit_settled, player_list, surrender_focus, terms,
+    Panel, Refusal, SaveView, aatf_check, edit_settled, player_list, refuse_save_being_read,
+    surrender_focus, terms,
 };
 
 /// The panel's first width in points, its whole frame included (the
@@ -234,7 +235,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             ui.horizontal_top(|ui| {
                 ui.weak("Second save ");
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
-                    if let Some((_, picked)) = &comparator.picked
+                    if let Some((picked_path, picked)) = &comparator.picked
                         && ui
                             .button("Export\u{2026}")
                             .on_hover_text(
@@ -244,23 +245,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                             .clicked()
                         && let Some(path) = export_dialog("diff.txt")
                     {
-                        // As `write_rosters_tsv` writes its file: the error
-                        // names the path. The scope's report over the whole
-                        // save, the team filter narrowing the screen alone.
-                        // Each line ends in its own `\n`, as the console writes
-                        // them: an empty report is an empty file, not "\n".
-                        match diff::report_lines(picked.file(), file, comparator.scope)
-                            .map(|lines| {
-                                lines
-                                    .iter()
-                                    .map(|line| format!("{line}\n"))
-                                    .collect::<String>()
-                            })
-                            .map_err(anyhow::Error::from)
-                            .and_then(|text| {
-                                std::fs::write(&path, text)
-                                    .with_context(|| path.display().to_string())
-                            }) {
+                        let picked = (picked_path.as_path(), picked);
+                        match write_report(&path, session, picked, comparator.scope) {
                             Ok(()) => comparator.exported = Some(path),
                             Err(error) => {
                                 *refusal = Some(Refusal {
@@ -426,6 +412,28 @@ pub(super) fn panel_window<'open>(ui: &egui::Ui, title: &str, id: &str) -> egui:
         .default_width(PANEL_WIDTH)
         .collapsible(false)
         .resizable(true)
+}
+
+/// Export's write: the `scope`'s difference report of `picked` (its path
+/// and session) against `open`, over the whole save, the team filter
+/// narrowing the screen alone, written to `path`. Both saves are being
+/// read, so neither is taken as the destination. As `write_rosters_tsv`
+/// writes its file, the error names the path. Each line ends in its own
+/// `\n`, as the console writes them: an empty report is an empty file,
+/// not "\n".
+fn write_report(
+    path: &Path,
+    open: &Session,
+    (picked_path, picked): (&Path, &Session),
+    scope: Option<DiffScope>,
+) -> anyhow::Result<()> {
+    refuse_save_being_read(path, open.path(), "difference report")?;
+    refuse_save_being_read(path, picked_path, "difference report")?;
+    let text: String = diff::report_lines(picked.file(), open.file(), scope)?
+        .iter()
+        .map(|line| format!("{line}\n"))
+        .collect();
+    std::fs::write(path, text).with_context(|| path.display().to_string())
 }
 
 /// The pick's refusal for a save of another version (the CLI's

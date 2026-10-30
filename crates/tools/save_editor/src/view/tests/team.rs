@@ -306,13 +306,9 @@ fn the_bound_team_id_shows_binding_over_64_and_an_edit_keeps_the_low_bits() {
         Some(true),
         "a kit-slot edit sets the strip flag"
     );
-    // The one undo restores the edit whole, the flag back to clear (a
-    // frame first, so the field has given up the keyboard and Ctrl+Z is
-    // the session's undo, not the text's own).
-    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
-        show(ui, &mut view, &|| Vec::new())
-    });
+    // The one undo restores the edit whole, the flag back to clear. The
+    // open dialog holds Ctrl+Z, so the undo is the session's own.
+    assert!(view.session.as_mut().unwrap().undo(), "an entry to undo");
     assert_eq!(
         team_entry(&view, 701).edit_flags.strip,
         Some(false),
@@ -1364,6 +1360,130 @@ fn the_boglo_ranges_dash_stands_8_from_either_box() {
     );
 }
 
+/// PES 17 under ALL with the first team's last player selected, one
+/// height edit on him made, and the boots and gloves dialog opened on
+/// that team: the view, the window, the team's id, the next team's id
+/// and the edited player's id.
+fn boglo_on_a_teams_last_player(test: &str) -> (SaveView, Headless, u32, u32, u32) {
+    let path = fixture(PesVersion::Pes17, test);
+    let mut view = SaveView::new();
+    view.open(&path);
+    assert_eq!(view.team, TeamChoice::All, "premise: the list shows ALL");
+    let rows = selection::rows(view.session.as_ref().unwrap().file(), &TeamChoice::All, "");
+    let team = rows[0].team_id;
+    let last = rows
+        .iter()
+        .rposition(|row| row.team_id == team)
+        .expect("the team's rows");
+    let (last, next) = (rows[last], rows[last + 1]);
+    assert_ne!(
+        next.team_id, team,
+        "premise: the next player row is another team's"
+    );
+    view.selected = Some(Selection::Player(team, last.slot));
+    let session = view.session.as_mut().unwrap();
+    edit_player(session, last.player_id, 1, |player| {
+        player.basic.height += 1
+    });
+    assert!(session.can_undo(), "premise: the edit is on the undo stack");
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let nodes = open_team_menu(&mut window, &mut view);
+    click(
+        &mut window,
+        node_labeled(
+            &nodes,
+            Role::Button,
+            "Set boots and gloves IDs for everyone\u{2026}",
+        ),
+        &mut view,
+    );
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        label_value(&nodes, "Boot IDs"),
+        "premise: the dialog is open"
+    );
+    (view, window, team, next.team_id, last.player_id)
+}
+
+// The dialog holds the page keys: PageDown under it moves no selection,
+// so its Set still writes the team it was opened on, not the next one.
+#[test]
+fn page_down_under_the_boglo_dialog_keeps_its_team() {
+    let (mut view, mut window, team, next, _) = boglo_on_a_teams_last_player("boglo_page_down");
+    let selected = view.selected;
+    window.frame(
+        vec![key(egui::Key::PageDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected, selected,
+        "PageDown under the dialog moved nothing"
+    );
+
+    let nodes = draw(&mut window, &mut view);
+    let same = nodes
+        .iter()
+        .filter(|node| {
+            node.role() == Role::RadioButton && node.label() == Some("Set all to the same ID:")
+        })
+        .min_by(|a, b| {
+            let y = |node: &&accesskit::Node| node.bounds().expect("bounds").y0;
+            y(a).partial_cmp(&y(b)).expect("ordered bounds")
+        })
+        .expect("the boots' one-ID radio");
+    click(&mut window, same, &mut view);
+    let nodes = draw(&mut window, &mut view);
+    let boots = boglo_fields(&nodes).boots;
+    let nodes = type_into(&mut window, &mut view, boots, "4321");
+    let roster_boots = |view: &SaveView, team_id: u32| -> Vec<u32> {
+        team_entry(view, team_id)
+            .roster
+            .iter()
+            .filter(|slot| slot.player_id != 0)
+            .map(|slot| player_entry(view, slot.player_id).appearance.boots_id)
+            .collect()
+    };
+    for team_id in [team, next] {
+        assert!(
+            !roster_boots(&view, team_id).iter().all(|&id| id == 4321),
+            "premise: team {team_id} does not already hold the ID"
+        );
+    }
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Set"),
+        &mut view,
+    );
+    assert!(
+        roster_boots(&view, team).iter().all(|&id| id == 4321),
+        "Set wrote the dialog's team"
+    );
+    assert!(
+        !roster_boots(&view, next).contains(&4321),
+        "Set left the next team alone"
+    );
+}
+
+// The dialog holds Ctrl+Z: the edit made before it opened stands.
+#[test]
+fn ctrl_z_under_the_boglo_dialog_undoes_nothing() {
+    let (mut view, mut window, _, _, player) = boglo_on_a_teams_last_player("boglo_ctrl_z");
+    let edited = player_entry(&view, player).basic.height;
+    assert!(
+        !window.ctx.egui_wants_keyboard_input(),
+        "premise: no field holds the keyboard"
+    );
+    window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        player_entry(&view, player).basic.height,
+        edited,
+        "the edit stands under the dialog's Ctrl+Z"
+    );
+    assert!(view.boglo.is_some(), "the dialog is still open");
+}
+
 // The range's end box reads the start plus 22 (slot 23's ID), follows an
 // edit of the start, and is no field: a click on it focuses nothing.
 #[test]
@@ -1780,10 +1900,6 @@ fn the_kit_slots_dialog_opens_edits_and_closes() {
         9
     );
     assert_ne!(before, 9, "premise: a real change");
-    // A frame first, so the field has given up the keyboard and Ctrl+Z is
-    // the session's undo, not the text's own.
-    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert_eq!(undo_entries(&mut window, &mut view), 1, "one undoable edit");
 
     // OK closes the dialog (its title gone, the button back in reach).
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -1797,6 +1913,8 @@ fn the_kit_slots_dialog_opens_edits_and_closes() {
         !label_value(&nodes, "Kit slot assignments"),
         "the dialog closed"
     );
+    // The dialog held Ctrl+Z while open; closed, the edit is one undo.
+    assert_eq!(undo_entries(&mut window, &mut view), 1, "one undoable edit");
 }
 
 // SE-GUI-23

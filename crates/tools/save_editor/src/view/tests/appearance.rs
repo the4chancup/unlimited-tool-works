@@ -390,6 +390,10 @@ fn the_cutscenes_group_stays_editable_above_the_ownership_line() {
 #[test]
 fn randomize_draws_within_pes21s_measured_tops_one_undo_entry() {
     let path = fixture(PesVersion::Pes21, "appearance_random_21");
+    // A nonzero dribbling motion, so a Randomize that zeroed it shows.
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.player_mut(70101).unwrap().motion.dribbling = Some(2);
+    file.save(&path).unwrap();
     let mut view = SaveView::new();
     view.open(&path);
     view.aesthetics_from_exports = true;
@@ -408,7 +412,7 @@ fn randomize_draws_within_pes21s_measured_tops_one_undo_entry() {
             .clone()
     };
     let before = motion_of(&view);
-    assert_eq!(before.dribbling, Some(0), "premise: the dribbling motion");
+    assert_eq!(before.dribbling, Some(2), "premise: the dribbling motion");
     assert_ne!(before.goal_celebration_1, 162, "premise: gc1 starts else");
 
     // The button sits below the fold under the player header: the click
@@ -434,7 +438,7 @@ fn randomize_draws_within_pes21s_measured_tops_one_undo_entry() {
     assert_eq!(motion.penalty_kick, 6);
     assert_eq!(motion.goal_celebration_1, 162);
     assert_eq!(motion.goal_celebration_2, 162);
-    assert_eq!(motion.dribbling, Some(0), "the dribbling motion is left");
+    assert_eq!(motion.dribbling, Some(2), "the dribbling motion is left");
 
     assert_eq!(undo_entries(&mut window, &mut view), 1, "one undo step");
     assert_eq!(motion_of(&view), before, "the one undo restores them all");

@@ -1071,6 +1071,58 @@ fn export_reports_the_written_path_and_refuses_a_folder_that_is_not() {
     );
 }
 
+/// Export's dialog stubbed to `destination`, a spelling of one of the two
+/// saves, and Export clicked: the refusal names it in the export panel's
+/// sentence, the save's bytes are unchanged and no Wrote line shows.
+fn assert_export_refused(view: &mut SaveView, window: &mut Headless, destination: PathBuf) {
+    let before = std::fs::read(&destination).unwrap();
+    view.export_dialog = Box::new({
+        let destination = destination.clone();
+        move |_| Some(destination.clone())
+    });
+    let nodes = draw(window, view);
+    click(
+        window,
+        node_labeled(&nodes, Role::Button, "Export\u{2026}"),
+        view,
+    );
+    assert!(
+        std::fs::read(&destination).unwrap() == before,
+        "{}: the save's bytes are unchanged",
+        destination.display()
+    );
+    // As the missing folder's refusal: its second frame holds the nodes.
+    draw(window, view);
+    let nodes = draw(window, view);
+    let sentence = format!(
+        "{}: that is the save being read, and a difference report written over it would lose it",
+        destination.display()
+    );
+    for text in ["Cannot export the differences", sentence.as_str()] {
+        assert!(label_value(&nodes, text), "the refusal shows {text:?}");
+    }
+    assert!(view.comparator.exported.is_none(), "no Wrote line");
+}
+
+#[test]
+fn export_refuses_the_open_save_as_its_destination() {
+    let (mut view, mut window, _) = compared_73401("comparator_export_open_save");
+    let open = view.session.as_ref().unwrap().path().to_path_buf();
+    assert_export_refused(&mut view, &mut window, open);
+}
+
+#[test]
+fn export_refuses_the_picked_save_as_its_destination() {
+    let (mut view, mut window, _) = compared_73401("comparator_export_picked_save");
+    let picked = scratch_of(&view).join("picked");
+    assert_eq!(
+        view.comparator.picked.as_ref().map(|(path, _)| path),
+        Some(&picked),
+        "premise: the picked save"
+    );
+    assert_export_refused(&mut view, &mut window, picked);
+}
+
 // SE-GUI-13
 #[test]
 fn another_save_resets_the_team_filter() {

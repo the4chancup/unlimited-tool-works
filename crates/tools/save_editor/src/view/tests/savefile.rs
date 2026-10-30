@@ -294,6 +294,43 @@ fn the_locked_savefile_menu_disables_fix_database_only() {
     );
 }
 
+// The open save is refused as the roster sheet's destination: the
+// refusal names it, and the save's bytes stay.
+#[test]
+fn output_rosters_to_tsv_refuses_the_open_save() {
+    let path = fixture(PesVersion::Pes21, "tsv_refuses_the_save");
+    let before = std::fs::read(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.rosters_dialog = Box::new({
+        let path = path.clone();
+        move |_| Some(path.clone())
+    });
+    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
+    let nodes = open_savefile_menu(&mut window, &mut view);
+    click(
+        &mut window,
+        menu_item(&nodes, "Output rosters to TSV\u{2026}"),
+        &mut view,
+    );
+    assert!(
+        std::fs::read(&path).unwrap() == before,
+        "the save's bytes are unchanged"
+    );
+    // The refusal lands inside the menu, after `refusal_dialog` ran that
+    // frame, so the modal's first drawn frame is its sizing pass; the
+    // second holds the nodes.
+    draw(&mut window, &mut view);
+    let nodes = draw(&mut window, &mut view);
+    let sentence = format!(
+        "{}: that is the save being read, and a roster sheet written over it would lose it",
+        path.display()
+    );
+    for text in ["Cannot write the roster sheet", sentence.as_str()] {
+        assert!(label_value(&nodes, text), "the refusal shows {text:?}");
+    }
+}
+
 /// The Multi-team AATF dialog's title under 4cc Autumn 26, the ruleset a
 /// view starts on.
 const MULTI_TITLE: &str = "Multi-team AATF (4cc Autumn 26)";
