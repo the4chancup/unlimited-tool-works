@@ -1808,7 +1808,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       - [ ] k5d after 0.0.1 (the maintainer, 2026-10-30: 0.0.1 targets PES 2017 only):
         SE-GUI-29 manual, each Texport the panel exports imported by the game's own team import
         in PES 18, 19, 20 and 21 (the installs on G:; saves backed up first)
-      - [ ] k5e before 0.0.1 (the maintainer, 2026-10-30: PES 2017 has Texports, check them):
+      - [x] k5e before 0.0.1 (the maintainer, 2026-10-30: PES 2017 has Texports, check them):
         the panel's import of a PES 2015-2017 Texport (`TEXPORT00000000`, no extension), which
         the lib reads (34 real PES 17 files measured) but no panel test or built window has
         opened: (1) a view test importing the PES 17 fixture (`pes17_texport_head.bin` +
@@ -1838,8 +1838,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           by hash): the game imports a Texport only onto its own team (/gsg/'s onto VGL 17,
           797), writes colours, kit bindings, the tactics and the 23 players, and keeps the
           save's team name (the name flag set). `.tmp/8_30c/pes17_session/FINDINGS.md`
-        - Open: (3) seen in the built window (the candidate's build); (4) the panel's side of
-          the same file onto 797 (`import-toml` of its Team TOML), diffed against the game's
+        - (4) compared 2026-10-30: the file's Team TOML (`to_team_toml`, which the panel's
+          Apply applies with every section kept) through `import-toml` onto the same backup,
+          against the game's save: equal but the name (DECISIONS), slot 11's two position
+          edit flags (the game sets them, ours copies the file's) and the face run's
+          measured-unused bits (the game copies the file's, ours keeps the target's); none
+          shows in game. FINDINGS above
+        - manual: checked 2026-10-30 (3), candidate 0.0.1c's build `91a61c6e`, the real PES 2017
+          save with the sidebar on PES 2021: Pick… opens on "All files (*.*)" listing
+          `TEXPORT00000000`-`03`; cancelled, nothing changed
       - [ ] k5f before 0.0.1, wanted but not required (the maintainer, 2026-10-30: the cups
         accept Texports for now, tactics TOML files later, so the panel exports both; a
         member can still export one from PES 2017 after editing the save with the app): Texport export on PES 2017, synthesized from the open save rather than from
