@@ -2884,3 +2884,6 @@ worklog passed 7,000 lines.
   link to the event's page; the Ruleset editor edits the page and the logo (8.35b).
 - **2026-10-30** — `draft_compare.py` also compares every widget pair's fill and text colour,
   which no geometry check saw (8.9m m2).
+- **2026-10-30** — The Comparator, the changes lists, the patch preview and `diff`'s text name a
+  field no view draws in words ("Nose height", "Player 04", PES 2017's Header); `--json` keeps
+  the schema names (8.29d1b1).

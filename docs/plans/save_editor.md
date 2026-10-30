@@ -1191,7 +1191,9 @@ The panel over the spec's `diff` report:
   `Color1Red` "Colour 1 red", `Pes15JawDepth` "Jaw depth (PES 2015)"), a roster slot as the
   player list numbers it (`Player(3)` is "Player 04", `Number(3)` "Player 04's number"), the face's unnamed bits "Other face
   data" (the draft's `fieldTerm` and `fieldWords`). The same words label the unsaved-changes
-  prompt's, the toolbar's changes list's and the aesthetics patch preview's rows. Export
+  prompt's, the toolbar's changes list's and the aesthetics patch preview's rows, except a
+  slot's number row the prompt lists under its player: that one reads `Shirt number`, as
+  the strip labels it, since the item already names him. Export
   writes the CLI's report unchanged, stored values included; that report's text names each
   field as the views label it (Header on PES 2017, where the save's schema says `Heading`),
   while `--json` keeps the schema's name, a key a script can match that no rewording moves.

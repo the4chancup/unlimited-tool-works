@@ -2933,7 +2933,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           the ruleset it was checked with (`aatf_check::held_result`). Open: a SWE-2 round
           over that fix
         - [ ] d1b the rest of the inventory, in two slices:
-          - [ ] d1b1 the fields no view draws in words (DECISIONS "A field no view draws is
+          - [x] d1b1 the fields no view draws in words (DECISIONS "A field no view draws is
             named in words; `diff --json` keeps the schema's name"; drafted, the draft's
             `fieldWords`): the Comparator's, the changes lists' and the patch preview's rows,
             and `save-editor diff`'s text report (`field=Heading` on PES 2017; SWE-2
@@ -2941,6 +2941,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
             PES 2015-only one, a team colour channel, a roster slot and `FaceRun`; SE-DIF-01
             and SE-GUI-13 restated in the plan; the inventory's section 6 grep finds no `{:?}`
             label left
+            Done 2026-10-30 (Opus sidekick, `354e58cc`, merged `5391ea00`): `terms::field_words`
+            and `slot_label`, `FACE_RUN_LABEL`; `diff.rs`'s findings take `row_term`'s label,
+            `DiffRow.field` the schema name for `--json`; test
+            `the_text_names_a_field_as_its_view_does_and_json_keeps_the_schema_name` (red:
+            `field=Heading`). The sidekick's contradiction accepted: the prompt's number row
+            under its player keeps `Shirt number` (the draft's `unsavedChanges`; the lead's
+            edit in `prompt.rs`, red: "Player 01's number"). A team colour channel reaches the
+            words only outside `team_row_terms`' merge, so its test calls `team_row_term`.
+            Package tests (605), clippy, fmt, `comment_refs` green in its worktree. Open: a
+            SWE-2 round
+            Files: `save_editor/src/{diff,messages}.rs`, `view/{mod,terms,prompt}.rs`,
+            `view/tests/prompt.rs`, `tests/cli/diff.rs`
           - [ ] d1b2 the team file notes in the catalog's member text and its section boxes
             capitalized, the badge's and quick actions' refusals (tier labels, the list's
             1-based places), the card and playing-style labels' spellings (`GK Long Throw`,
