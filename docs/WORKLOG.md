@@ -44,9 +44,9 @@ phase (16.x a, unwired)
 (decision entries 2026-09-21 and 2026-09-28). Release target (2026-09-28): 0.1.0 after Phase
 8; phase order 1–6, 8, 0.1.0, 7, 9–16 (`plans/core/development_plan.md` "Releases");
 first-class target the Fox version the cup moves to around April 2027 ("Target versions").
-**0.0.1 candidate** (2026-10-29): the overlay pass (0.0.1ov) done in both themes; the
-candidate waits for the maintainer's final UI pass (0.0.1f1c, `QUESTIONS.md`, branch
-`release/0.0.1-candidate`); the work goes on past it.
+**0.0.1 candidate** 0.0.1c (2026-10-30, `bddd0027`): every change since 0.0.1b checked in
+its built window; it waits for the maintainer's final UI pass (0.0.1f1c, `QUESTIONS.md`,
+branch `release/0.0.1-candidate`); the work goes on past it (k5f, then the 0.0.1cv converge).
 **Blocked on:** nothing.
 
 **Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
@@ -1785,7 +1785,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           save, read-only: a PES 21 Team TOML, a real `.4ccs` (98HU's) with its pairing, a
           PES 17 Team TOML with its notes (`.tmp/8_9k5/built/b2_0*.png`). The notes'
           scroll area (rulings L1) landed with k5b2r
-      - [ ] k5c its export half (SE-GUI-16's export, SE-GUI-17's export): Team TOML equal to
+      - [x] k5c its export half (SE-GUI-16's export, SE-GUI-17's export): Team TOML equal to
         the CLI's export; Texport for PES 18-21 read back to the same team values; disabled on
         PES 15-17 with the missing template in its tooltip. Built and merged 2026-10-29
         (`c8fe3e1a`): the export row (Save dialogs, the open save refused as `export-toml`
@@ -1795,8 +1795,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         1: 3 accepted, the loop ends (rulings S1g; its code and tests ride k5b2r's part 2,
         `.tmp/8_9k5/brief_k5b2r2.md`, merged with k5b2r: the key seeded from ids, the
         CLI's write-failure words, PES 18 to 21 round trips); the `help/` paragraphs for the
-        patch panel (`07_savefile.md`) and the team file panel (`05_team.md`). Open: the
-        built-window check
+        patch panel (`07_savefile.md`) and the team file panel (`05_team.md`)
+        - manual: checked 2026-10-30, candidate 0.0.1c's build `bddd0027`, the real PES 21 save read-only, dark: the
+          export row (`Team TOML…`, `Texport…`); `Texport…` opens the system Save dialog in
+          the save's folder on `3.ted`, type `Texport (*.ted)` (cancelled); a PES 17 Team
+          TOML picked onto /3/ draws d1b2's notes: the catalog's sentence once, `Kit slots`
+          and `Strip edit flag` as warnings, `Base copy edit flag · 23 players` collapsing,
+          as the drafts draw them (`.tmp/8_30c/bw_notes_dark.png`, `bw_ted_save.png`)
       - [x] k5b2r the rework of SWE-2 round 1 on k5b2 and round 2 on k5a
         (`.tmp/8_9k5/rulings_k5.md` S1d-1, S1e-1, S1f, S2b-1 to 3, L1) and of k5c's round 1
         (S1g): an import that changes nothing disables Apply and says so (drafted, plan,
@@ -1930,7 +1935,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         the quick actions' `.resizable(false)` dropped (egui's `Panel::bottom` is not
         resizable). Files: `save_editor/src/view/{player_list,worker}.rs`,
         `team_widgets/src/pitch/mod.rs`, their tests
-      - [ ] m4 the light theme's widget greys and warning colour (the maintainer, 2026-10-29;
+      - [x] m4 the light theme's widget greys and warning colour (the maintainer, 2026-10-29;
         DECISIONS "The light theme's widget greys a step lighter, its warning colour at
         4.5"): `theme.rs` `widgets_light` resting 207, hovered 192, pressed 214, the light
         `warn_fg_color` `#C54B00`; its tests pin the values (the contrast-matching test
@@ -1939,7 +1944,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         Code done (`8d2ab7c0`, `c60c80a2`, merged `9d9fc444`): the fills and `#C54B00` with
         their tests; the Live AATF pitch's warning cross in `Palette::pitch_warn`, `#FF8F00`
         on both themes, since the turf does not follow the theme. SWE-2 round S1m4: 2
-        counted (`.tmp/8_9m/rulings_m.md`). Open: the built window's check
+        counted (`.tmp/8_9m/rulings_m.md`)
+        - manual: checked 2026-10-30, candidate 0.0.1c's build `bddd0027`, light: a number box and the sidebar's version
+          badge rest at 207, a hovered number box 192; the status bar's warning text
+          `#C54B00` (read under the modal's dimming). Not seen: the pitch's `#FF8F00`
+          cross, drawn for a Warning-severity position mark, since every violation the
+          real PES 21 save raises under 4cc Autumn 26 is an Error (its colour pinned by
+          the theme's tests)
       - [x] m5 2026-10-29 the running-game texts (the maintainer's PES 2017 check of SE-GUI-21,
         2026-10-29; DECISIONS "The running-game dialog says how to keep the write, Edit mode
         open or closed"): the window's dialog and help say to Load before leaving an open
@@ -1956,8 +1967,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         tests, clippy, fmt, `comment_refs` green (`.tmp/8_9m/m5_gates.log`). SWE-2 round
         S1m5: 4 counted, the loop's end (`.tmp/8_9m/rulings_m.md`): the drafts now draw the
         running-game dialog where they still refused, the host's CLI help copy follows, and
-        four comments no longer call the dialog's Save the member's word. Open: the dialog in
-        the built window
+        four comments no longer call the dialog's Save the member's word
+        - manual: checked 2026-10-30, candidate 0.0.1c's build `bddd0027`, light, PES 2017 running: Save on its save asks
+          "PES 2017 is running" with the two sentences (Load before leaving an open Edit
+          mode; a closed one shows the changes when opened), Save and Cancel; Cancel
+          wrote nothing (the save's hashes unchanged)
         Files: `save_editor/src/{cli,session/mod,view/prompt}.rs`, `view/tests/prompt.rs`,
         `save_editor/help/0{1,2}_*.md`, `team_compiler/src/{messages,messages/catalog,
         output/savefile}.rs`, `team_compiler/help/01_command_line.md`
@@ -1967,7 +1981,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         box's most common colour) and its text's core colour in both captures, listed under
         "widget fill differs" / "widget text colour differs" past `COLOUR_STEP`, and three
         TSV columns; five tests (red: the app shift dropped, the fill read as the least
-        common colour). Open: its first run on a built window, with the built-window check
+        common colour)
+        - manual: first run 2026-10-30, candidate 0.0.1c's build `bddd0027`, dark: team 90 pairs (none over 2 px), 52
+          widgets, 0 fills or texts apart; player 157 pairs (none over 2 px), 106 widgets,
+          0 apart; one weight finding, `Skills` at 0.79, looked at side by side: the same
+          heading, the rasterizers' difference (`.tmp/8_30c/dc_{team,player}_0001c.txt`)
         Files: `scripts/draft_compare{,_test}.py`, `plans/core/gui.md` "Draft measure"
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
       opening another save (SE-GUI-05; only the toolbar's marker exists, so closing loses
@@ -2413,7 +2431,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     status bar, About and `--version` (a `LazyLock` for clap) on it, `help_cli`'s binary test
     and a `render_version` test. Files: `studio_core/src/shell/{mod.rs,status_bar.rs,about.rs,
     launch.rs,sidebar/tests.rs}`, `studio/tests/help_cli.rs`
-  - [ ] 8.14 (code done 2026-10-29; the built window's check open) the shell's own icon font (the maintainer's request of 2026-10-23;
+  - [x] 8.14 (code done 2026-10-29) the shell's own icon font (the maintainer's request of 2026-10-23;
     `plans/core/README.md` "GUI framework choice: egui"): single-colour icons, one SVG each;
     each tool's drawn to say what it does, the general ones (help, settings, dismiss, warning,
     download) copied from Phosphor (MIT, its licence beside them). The tools' icons are
@@ -2435,7 +2453,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     refuses two icons at one codepoint; `icons.rs`'s constants named after their tools;
     the subset removed, the drafts drawing the rail in `icons.ttf` (rendered beside the old
     rail: same places and sizes). SWE-2 round S1i: 1 counted (`.tmp/8_14/rulings_icons.md`).
-    Open: the rail in the built window, dark and light
+    - manual: checked 2026-10-30, candidate 0.0.1c's build `bddd0027`: the rail in dark and
+      light, every icon crisp at 100%, the tools 0.0.1 does not ship in the planned-tool
+      grey (DECISIONS 2026-10-29) (`.tmp/8_30c/rail_corners.png`)
   - [ ] 8.15 (code done 2026-10-25 with 8.9f4c's rework r2; the built window's check open) the window's default to 1280 × 800 (the maintainer, 2026-10-25; `spec/core/gui.md`
     "The window's size", ST-WIN-01, ST-HELP-05; DECISIONS "Studio opens at 1280 × 800
     points"): `studio_core`'s `DEFAULT_SIZE` and its tests, the help window's; the Save
@@ -2601,7 +2621,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     revision move; `terms::Term` carries a team colour's two swatches, drawn before the hex
     in the list and the close prompt. The box is 460 to 640 points with its margins and
     slides to 8 points inside the window's edge, as the draft's. SWE-2 round S1u: 2
-    counted (`.tmp/8_31/rulings_8_31.md`). Not yet seen in a built window. Files:
+    counted (`.tmp/8_31/rulings_8_31.md`). Seen 2026-10-30 on candidate 0.0.1c's build,
+    dark, the real PES 21 save: one skill ticked, `• unsaved changes` opens the popup
+    (Item, Old value, New value: `QUADS ONLY · Heading`, off, on; no footer); Undo removes
+    the label; closing then asks nothing (`.tmp/8_30c/bw_unsaved_pop.png`). Files:
     `save_editor/src/view/{changes_popup,mod,prompt,terms,patch}.rs`, its tests
   - [x] 8.32 approved 2026-10-28 as built in 0.0.1x (the maintainer, 2026-10-27): the pitch draws the formation's name
     (`4-3-3`) in its corner, exactly as PES's formation screen draws it. First: the game's

@@ -12,13 +12,14 @@ names where the question came from so the context can be read there.
 
 - **The final pass over the built app's UI** (worklog 0.0.1f1c). Any change it asks for is
   drafted first, looked at in the drafts, then built.
-  - **The candidate:** branch `release/0.0.1-candidate` at `d317b6da`, unpacked at
-    `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1b\unlimited-tool-works-0.0.1\`
-    (`COMMIT.txt` beside the folder names its commit). A newer one follows once the lead has
-    checked the later changes in the built window: the team file panels, the list under
-    "• unsaved changes", the player list's and the pitch's rounded corners, the light theme's
-    greys and warning orange, the sidebar's own icons, and the running-game dialog's new text
-    (worklog 8.9k5, 8.31, 8.9m, 8.14). This entry then points at it.
+  - **The candidate:** branch `release/0.0.1-candidate` at `bddd0027`, unpacked at
+    `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1c\unlimited-tool-works-0.0.1\`
+    (`COMMIT.txt` beside the folder names its commit). New since 0.0.1b, each checked by the
+    lead in this build: the team file panel (import and export, a PES 2017 Texport without
+    an extension), the list under "• unsaved changes", the player list's and the pitch's
+    rounded corners, the light theme's greys and warning orange, the sidebar's own icons,
+    the running-game dialog's text, the import notes in words (worklog 8.9k5, 8.31, 8.9m,
+    8.14, 8.29d).
   - **Already measured,** so not worth reporting: every screen the drafts and the build share
     matches the drafts within 1 point (2 where needed), in both themes. What still differs
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
