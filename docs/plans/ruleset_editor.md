@@ -476,7 +476,7 @@ RE-SUM-01  GIVEN Autumn 26 open
                 it sets (the draft's "- **Gold**: 1 per team; every stat 99; form 8, …"), the
                 height brackets and systems, the universal rules, and one sentence per special
                 built from its When and Then, and its suggestions (paid cards, free tricks, free
-                COM styles, weak foot and injury resistance); Copy puts the same text on the clipboard as
+                COM styles, weak foot, injury resistance and choices not taken); Copy puts the same text on the clipboard as
                 Markdown; GIVEN DBC7 THEN it also has the medal systems with each one's counts,
                 Gold and Silver counted "by medal system", the regular's and silver's warning
                 bands and stat totals, each height system's quotas, and GigaHeight's pool;
