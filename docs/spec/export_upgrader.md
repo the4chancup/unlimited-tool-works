@@ -47,8 +47,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
 2. **Reads the team's savefile data** (via `pes_savefile`) to map old boots/gloves IDs to players —
    the old format encodes "which player wears boots k0915" only in the savefile, so the savefile is
    the input for a faithful migration; without one, loose mode (step 11) infers the wearers from the
-   IDs instead. A stripped Fox save serves like any other: strip-and-seed sets the appearance
-   ids to -1 and leaves the rest of the records, boots/gloves IDs included, as they were (step 8).
+   IDs instead.
    A face folder whose slot the save's roster leaves empty (a roster of 22 with a `XXX23`
    folder) still becomes its player folder, with no `settings.toml`, and is reported (W,
    `roster_slot_empty`, the slot in its context): the compiler's validation then rules on the

@@ -221,9 +221,10 @@ pub enum PlayerDiff {
 }
 
 impl PlayerDiff {
-    /// Aesthetics is the appearance block (the scripts' slice above): its fields (the four
-    /// appearance edit flags, boots/gloves/base-copy IDs, physique, strip), every `Face` and
-    /// `FaceRun` row. Everything else (motion and the other edit flags included) is gameplay.
+    /// Aesthetics is the appearance block (the scripts' slice above): its fields (the
+    /// appearance id, the four appearance edit flags, boots/gloves/base-copy IDs, physique,
+    /// strip), every `Face` and `FaceRun` row. Everything else (motion and the other edit
+    /// flags included) is gameplay.
     pub fn scope(&self) -> DiffScope;
 }
 pub enum DiffScope { Gameplay, Aesthetics }
@@ -279,7 +280,8 @@ and calls `compare_teams`.
 Parity: the appearance block is checked against the transplant script's slice rule on every
 player of every fixture (target record after `copy_appearance` + `write_player` equals the
 record with bytes 4..68 replaced from the donor record, the id kept), and each field is
-aesthetics exactly when that copy moves it; the fingerprint and each Midcupping field
+aesthetics exactly when that copy moves it, the appearance id aside (aesthetics, though the
+copy keeps the target's own); the fingerprint and each Midcupping field
 against the script's bit reads, transcribed as literal offsets in the golden test, over every
 fixture player; the comparator against itself (a player compared with its own copy has no rows,
 a twin carrying the next player's appearance block differs from him in aesthetics rows only).

@@ -418,9 +418,8 @@ impl Session {
     }
 
     /// The baseline entry of the player `id` (the file as opened or last
-    /// saved), `None` when the baseline holds none: the unsaved-changes
-    /// rows' old side where `compare_players` emits none (the appearance
-    /// id is no row).
+    /// saved), `None` when the baseline holds none: the old side of the
+    /// unsaved-changes table's roster rows, whose names are the baseline's.
     pub(crate) fn baseline_player(&self, id: u32) -> Option<&PlayerEntry> {
         self.baseline_players.get(&id)
     }

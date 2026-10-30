@@ -853,12 +853,8 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         "savefile_player_not_stripped",
         CatalogSeverity::Warning,
         r#"In PES 2018 to 2021, a compiled player in your save has an appearance ID of his own (the save was never stripped, or the game's Edit mode restored the ID), so the game shows his save data, not the compiled one."#,
-        concat!(
-            "Strip your save: `",
-            studio_core::exe_name!(),
-            " save-editor strip-and-seed` for a save never stripped, `check-stripped \
-             --strip-again` otherwise."
-        ),
+        "Nothing to do: until the compiler writes the look into the aesthetics patch, the \
+         game shows his save data.",
     ),
     (
         "deploy_skipped_by_flag",

@@ -959,9 +959,7 @@ run with exit code 3. The new CPKs come out of the game again and are left in th
 and the CPKs the game had go back in. In `--mode sideload` the same findings are errors
 instead. The exit code is 1 and the new `livecpk` files stay in place. The warning
 `savefile_player_not_stripped` names a compiled player in your save who still has an appearance
-of his own (the save was never stripped, or the game's Edit mode restored it). The game shows
-his save data, not the compiled one. `UTW save-editor strip-and-seed` strips a
-save never stripped, and `UTW save-editor check-stripped` with `--strip-again`
-and `--out` clears the appearances Edit mode brought back. When no save is found at all, that is
+of his own. The game shows his save data, not the compiled one, until the compiler writes
+the look into the aesthetics patch. When no save is found at all, that is
 only the warning `savefile_missing`, which names the patch file and the command that applies it
 by hand (a `savefile_path` naming a folder is `savefile_invalid` instead).

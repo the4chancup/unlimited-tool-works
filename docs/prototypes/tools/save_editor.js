@@ -2893,8 +2893,7 @@ function selTeam() {
 // A team row is the selection: S.sel holds the team and no slot.
 const isTeamSel = () => !!(S.sel && S.sel.slot === undefined);
 const version = () => curSave().version;
-// The Fox engine is PES 18 to 21 (pes_version's Engine), the stripping and
-// ownership rules' boundary.
+// The Fox engine is PES 18 to 21 (pes_version's Engine).
 const isFox = () => version() >= 18;
 // The aesthetics lock's enable ("Read-only aesthetics"): with "Aesthetics
 // from exports" off every aesthetics path edits without the lock; with
@@ -3437,8 +3436,7 @@ function fpcFindings(p) {
 
 // ---- The menus: Player, Team, Savefile operations ----
 // The ownership line is the disabled items' tooltip (SE-GUI-22).
-const ownershipTip = () => "The team's export owns the aesthetics, so edit its settings.toml and recompile"
-  + (isFox() ? "." : ", then apply the patch.");
+const ownershipTip = () => "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch.";
 // sample wording: the menu labels.
 function dlgSetStats() {
   const p = curPlayer();

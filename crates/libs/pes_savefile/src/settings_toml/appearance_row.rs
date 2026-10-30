@@ -19,7 +19,7 @@ impl PlayerSettings {
     /// measured-unused bits at the games' values. None of `apply`'s TOML-surface checks is the
     /// row's: the names are never read (an overlong one is no error here),
     /// and a stored value past a key's kind range but inside its field's
-    /// bits — a save's own data, which strip-and-seed must reproduce — is
+    /// bits — a save's own data — is
     /// written as is. A pre-Fox version has no row (`NoAppearanceRow`).
     pub fn appearance_row(
         &self,
