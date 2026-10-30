@@ -74,4 +74,4 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   Flexible and Very early on those three, taken from PES 2017's and 2021's screens (both list
   the four) rather than looked at (`plans/save_editor.md` "Tactics editor", the sentence on
   Substitution). A look at each game's Game Plan > Automatic settings > Substitution confirms
-  or corrects it; the three are on F:.
+  or corrects it; the three are on G:.

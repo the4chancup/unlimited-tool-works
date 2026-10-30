@@ -51,13 +51,13 @@ import time
 # and the process name tasklist shows for the running game.
 GAMES = {
     # No Sider (15, 16, 18): used for save measurements, which load no CPK of ours.
-    "15": {"dir": "F:/Games/PES2015", "exe": "PES2015.exe", "sider": None, "proc": "pes2015.exe"},
-    "16":{"dir": "F:/Games/PES2016", "exe": "PES2016.exe", "sider": None, "proc": "pes2016.exe"},
+    "15": {"dir": "G:/Games/PES2015", "exe": "PES2015.exe", "sider": None, "proc": "pes2015.exe"},
+    "16":{"dir": "G:/Games/PES2016", "exe": "PES2016.exe", "sider": None, "proc": "pes2016.exe"},
     "17": {"dir": "E:/PES2017", "exe": "PES2017.exe", "sider": "Sider/sider.exe", "proc": "pes2017.exe"},
-    "18": {"dir": "F:/Games/PES2018", "exe": "PES2018.exe", "sider": None, "proc": "pes2018.exe"},
-    "19": {"dir": "F:/Games/PES2019", "exe": "PES2019.exe", "sider": "sider-5.4.2/sider.exe", "proc": "pes2019.exe"},
+    "18": {"dir": "G:/Games/PES2018", "exe": "PES2018.exe", "sider": None, "proc": "pes2018.exe"},
+    "19": {"dir": "G:/Games/PES2019", "exe": "PES2019.exe", "sider": "sider-5.4.2/sider.exe", "proc": "pes2019.exe"},
     # No Sider in this install: it is used for team exports, which load no CPK of ours.
-    "20": {"dir": "F:/Games/PES2020", "exe": "PES2020.exe", "sider": None, "proc": "pes2020.exe"},
+    "20": {"dir": "G:/Games/PES2020", "exe": "PES2020.exe", "sider": None, "proc": "pes2020.exe"},
     "21": {"dir": "E:/PES2021", "exe": "PES2021.exe", "sider": "sider/sider.exe", "proc": "pes2021.exe"},
 }
 COMMANDS = ("launch", "shot", "keys", "pad", "chars", "status", "close")

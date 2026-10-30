@@ -19,7 +19,7 @@ BUNDLED = ROOT / "resources/bins"
 RED = Path("C:/Data/4cc/4cc aet compiler/4cc-aet-compiler-red/Engines/bins")
 APPTEST = ROOT / ".tmp/4_0/apptest/target/release/apptest.exe"
 OUT = ROOT / ".tmp/4_7/color_bins"
-INSTALLS = Path("F:/Games")
+INSTALLS = Path("G:/Games")
 VERSIONS = ("2015", "2016", "2017", "2018", "2019", "2020", "2021")
 # name -> (path inside a CPK, record size, the ID field's format)
 BINS = {

@@ -2872,7 +2872,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           d1a + d3a
         - [ ] d3b after 0.0.1: every other version's names, gathered from each game (the
           player.rs doc comments name no versions; Marco's RE reports for PES 2021, the
-          games on F: for the rest) → verify: a test per version against the gathered names
+          games on G: for the rest) → verify: a test per version against the gathered names
       - [ ] d2 after 0.1.0, with Phase 20 (the maintainer, 2026-10-29): the Ruleset editor
         shows the game's names (Attacking Prowess) and writes the rules-file ids
         (`attacking_prowess`)
