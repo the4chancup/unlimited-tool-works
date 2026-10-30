@@ -2878,3 +2878,5 @@ worklog passed 7,000 lines.
   Markdown marks (8.29e1r).
 - **2026-10-30** — A dialog's title is centred over the dialog, and Set all stats and Bump all
   stats ask for their number on the sentence's row (8.37, 8.37b).
+- **2026-10-30** — Live AATF and Multi-team AATF no longer show the last result in a newly
+  picked ruleset's words while the recheck runs (Astra A1d over 8.29d).

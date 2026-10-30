@@ -2621,7 +2621,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     frame's (red first); the overlap and draft-compare checks; the built window (autonomous)
     Built with b (Opus sidekick, merged `40e36efa`): the title row reserved before the body,
     the title drawn in it centred once the body set the width; `theme::window_title` gone.
-    Open: the lead's test run at the next checkpoint, a SWE-2 round, Astra, the built window
+    Gated green (`5ba78b61`); SWE-2 S1s37 0 accepted, Astra A1s37 no concerns
+    (`.tmp/8_36/rulings_837.md`). Open: the built window
     - [ ] 8.37b Set all stats and Bump all stats: the number on the sentence's row, at the
       dialog's right edge (the maintainer, 2026-10-30; DECISIONS "Set all stats' and Bump
       all stats' number on the sentence's row"; `plans/save_editor.md` "Editing UI", the
@@ -2914,7 +2915,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           weak foot's halves, `logic.rhai`'s suggestions comment says `weak_foot` gives one per
           half (logic hash now `35652515`, the sandbox `cli/dbc7.4ccrules` re-logicked), the
           interpreter fixture raises both halves and asserts both rows exactly, the catalog's
-          `aatf_violation` text says "what is wrong". Open: the Astra round over d1a + d3a
+          `aatf_violation` text says "what is wrong". Astra A1d over d1a + d3a: 1 accepted
+          (`.tmp/8_29d/rulings_d3a.md`), merged `3c08d261`: a held AATF result is drawn
+          (dock, Multi-team list and copy, row marks, field crosses, pitch marks) only under
+          the ruleset it was checked with (`aatf_check::held_result`). Open: a SWE-2 round
+          over that fix
         - [ ] d1b the rest of the inventory, in two slices:
           - [ ] d1b1 the fields no view draws in words (DECISIONS "A field no view draws is
             named in words; `diff --json` keeps the schema's name"; drafted, the draft's
