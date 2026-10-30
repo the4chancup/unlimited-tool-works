@@ -407,7 +407,10 @@ mod tests {
             let decoded = base64::engine::general_purpose::STANDARD
                 .decode(logo)
                 .unwrap_or_else(|e| panic!("{stem}: {e}"));
-            let asset = std::fs::read(logos.join(format!("{stem}.png")))
+            // Every /vg/ League shares one logo, and the drafts, whose assets
+            // these are, carry no /vg/ League 25: its logo is League 26's.
+            let asset_stem = if stem == "vgl25" { "vgl26" } else { stem };
+            let asset = std::fs::read(logos.join(format!("{asset_stem}.png")))
                 .unwrap_or_else(|e| panic!("{stem}: {e}"));
             assert!(
                 decoded == asset,

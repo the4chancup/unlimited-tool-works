@@ -2865,3 +2865,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — Stats are named as PES 2017's Edit screen names them (Header for heading;
   Form, Injury Resistance and the weak foot in title case) in the player view, the changes
   lists and every AATF row, through one `stat_name` (8.29d3a).
+- **2026-10-30** — A rules file may carry its event's page and a PNG logo, checked on load
+  and outside the logic, so neither moves its identity; the nine ruleset files carry their
+  events' wiki pages and logos (8.35a, 8.35c).

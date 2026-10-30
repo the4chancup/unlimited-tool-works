@@ -2538,19 +2538,26 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
   - [ ] 8.35 before 0.0.1 (P45, accepted 2026-10-30; DECISIONS "A ruleset carries its
     event's logo and page"; drafted, the drafts' `eventLogo` and `eventLogoField`): a
     ruleset's event logo and page
-    - [ ] a `aatf`: the `page` and `logo` keys, their load checks, the writer's order (logo
+    - [x] a `aatf`: the `page` and `logo` keys, their load checks, the writer's order (logo
       last) → verify: RE-FILE-09; a load test per refusal (not base64, no PNG signature,
-      over 64 KB, a page without http(s)); the logic's hash unchanged by either key
+      over 64 KB, a page without http(s)); the logic's hash unchanged by either key. Done
+      2026-10-30 with c (Opus sidekick, merged `b943c67c`): `Ruleset::{page, logo}`,
+      `LoadRule::{PageNotWebAddress, LogoNotBase64, LogoNotPng, LogoTooLarge}`, `base64` in
+      `aatf`; RE-FILE-03's fixture drops a comma elsewhere on its line 12 (the page line
+      moved the old one). Open: the SWE-2 round (an Opus slice) and the (b) Astra review
+      (a new `pub` interface over two crates), with b
     - [ ] b the Save editor's top-right logo and the Ruleset editor's General fields →
       verify: SE-GUI-44, RE-GUI-19 headless; the built window (ASK FIRST)
-    - [ ] c every ruleset file under `aatf/rulesets/` gets its logo and page, the seven
+    - [x] c every ruleset file under `aatf/rulesets/` gets its logo and page, the seven
       built in and the two test rulesets (`autumn25`, `vgl25`; the drafts import Autumn 25
       as their sample file): the pages are the events' wiki pages the maintainer listed
       (2026-10-30), Autumn 25's and /vg/ League 25's by the same address pattern (the
       maintainer's answer, 2026-10-30), the logos the ones those pages show, every /vg/
       League's the shared VGL logo, scaled to 84 pixels high
       (`docs/prototypes/assets/logos/<stem>.png`, from `.tmp/8_29d/logos_scale.py`) →
-      verify: each ruleset file loads with its logo; the built window per built-in ruleset
+      verify: each ruleset file loads with its logo; the built window per built-in ruleset.
+      Done with a: a test loads all nine, each page the table's and each logo the asset's
+      bytes; the built window waits for b
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
