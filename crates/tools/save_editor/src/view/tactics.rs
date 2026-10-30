@@ -154,9 +154,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // holds this team's result (`held_violations`; another team's
     // result or none marks nothing), worded under the active rules and
     // the open save's stat names.
-    let held = live_marks::held_violations(*live_aatf, &live.check)
-        .filter(|(held_team, _)| *held_team == team_id)
-        .zip(rules.as_ref());
+    let held = rules.as_ref().and_then(|active| {
+        live_marks::held_violations(*live_aatf, &live.check, &active.key)
+            .filter(|(held_team, _)| *held_team == team_id)
+            .map(|held| (held, active))
+    });
     let fielded: Vec<Vec<FieldedMark>> = (0..team.roster.len())
         .map(|slot| {
             let Some(((_, violations), active)) = held else {

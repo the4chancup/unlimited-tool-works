@@ -133,18 +133,19 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
     // Live AATF's held check while it is the selected player's team's:
     // the field crosses below read it, worded under the active rules and
     // the open save's stat names.
-    let marks = live_marks::held_violations(*live_aatf, &live.check)
-        .filter(|(id, _)| *id == team_id)
-        .zip(rules.as_ref())
-        .map(|((id, violations), active)| live_marks::Marks {
-            violations,
-            slot,
-            team_id: id,
-            wording: Wording {
-                ruleset: active.rules.ruleset(),
-                version,
-            },
-        });
+    let marks = rules.as_ref().and_then(|active| {
+        live_marks::held_violations(*live_aatf, &live.check, &active.key)
+            .filter(|(id, _)| *id == team_id)
+            .map(|(id, violations)| live_marks::Marks {
+                violations,
+                slot,
+                team_id: id,
+                wording: Wording {
+                    ruleset: active.rules.ruleset(),
+                    version,
+                },
+            })
+    });
     let Some(session) = session.as_mut() else {
         return;
     };

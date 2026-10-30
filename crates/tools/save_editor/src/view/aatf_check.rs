@@ -7,7 +7,8 @@
 //! key moves on (the session's revision, the team ids or the ruleset) and
 //! the edit has settled (`edit_settled`, the same condition the undo
 //! stack's seal uses); until the reply lands the last result stays, marked
-//! as checking.
+//! as checking, unless it was checked under another ruleset
+//! (`held_result`).
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -48,6 +49,22 @@ pub(super) type PendingCheck = Pending<CheckKey, Vec<TeamCheck>>;
 /// flight, if one is (`worker::WorkerResult`'s poll-and-spawn cycle). The
 /// Live AATF dock and the Multi-team AATF dialog hold one each.
 pub(super) type TeamsCheck = WorkerResult<CheckKey, Vec<TeamCheck>>;
+
+/// The held result the views draw and copy under the ruleset keyed
+/// `ruleset` (`ActiveRules::key`): `None` when it was checked under
+/// another one. A result is worded with the ruleset it is drawn with, so
+/// one from another ruleset would name tiers and medal systems its
+/// findings were never checked against; a result held across an edit or a
+/// range change stays, marked as checking.
+pub(super) fn held_result<'a>(
+    check: &'a TeamsCheck,
+    ruleset: &str,
+) -> Option<&'a (CheckKey, Vec<TeamCheck>)> {
+    check
+        .result
+        .as_ref()
+        .filter(|(key, _)| key.ruleset == ruleset)
+}
 
 /// One frame of the check cycle for `key`: the reply polled first, so
 /// the frame that starts a check still marks the previous result as

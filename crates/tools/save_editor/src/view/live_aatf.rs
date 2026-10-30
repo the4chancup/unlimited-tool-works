@@ -75,12 +75,13 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     let checking =
         aatf_check::update_check(&mut live.check, ui.ctx(), file, &active.rules, key, settled);
     let ruleset = &active.rules.ruleset().name;
+    let held = aatf_check::held_result(&live.check, &active.key);
     live.dock.show(
         ui,
         |ui| {
             // The header after the title (the draft's `livePanel` wording);
             // a failed check draws no count — the body says why.
-            match &live.check.result {
+            match held {
                 Some((result_key, checks)) => {
                     if checks.iter().all(Result::is_ok) {
                         let issues = aatf_check::issues(checks);
@@ -108,7 +109,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                     }
                 }
             }
-            if checking && live.check.result.is_some() {
+            if checking && held.is_some() {
                 ui.weak("checking\u{2026}");
             }
         },
@@ -128,7 +129,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                             let mut clicked = None;
                             if team_id.is_none() {
                                 ui.weak("No team is open.");
-                            } else if let Some((result_key, checks)) = &live.check.result {
+                            } else if let Some((result_key, checks)) = held {
                                 clicked = aatf_check::results(
                                     ui,
                                     file,

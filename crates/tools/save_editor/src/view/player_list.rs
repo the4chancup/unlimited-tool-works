@@ -151,7 +151,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     };
     // Live AATF's held check: the rows of the team it is for carry its
     // marks, the other teams' none.
-    let held = live_marks::held_violations(view.live_aatf, &view.live.check);
+    let held = view.rules.as_ref().and_then(|active| {
+        live_marks::held_violations(view.live_aatf, &view.live.check, &active.key)
+    });
     let session = view.session.as_mut().expect("checked above");
     let rows = selection::list(session.file(), &view.team, &view.filter);
     ui.spacing_mut().scroll = scroll;
