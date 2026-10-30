@@ -6177,7 +6177,23 @@ function fieldTerm(field) {
   m = field.match(/^PlayablePosition\((\d+)\)$/);
   if (m) return { label: "Playable position " + POSITIONS[PLAYABLE_ORDER[Number(m[1])]],
     show: s => RATING_OF[Number(s)] };
-  return { label: field, show: s => s };
+  // A roster slot, numbered as the player list numbers it (from 01).
+  m = field.match(/^Player\((\d+)\)$/);
+  if (m) return { label: "Player " + String(Number(m[1]) + 1).padStart(2, "0"), show: s => s };
+  return { label: fieldWords(field), show: s => s };
+}
+// A field no view draws, named in words from the report's name: its words in
+// sentence case, Id as ID and Color as the window spells it, a PES 2015-only
+// field marked so (NoseHeight is "Nose height", Color1Red "Colour 1 red",
+// Pes15JawDepth "Jaw depth (PES 2015)").
+const FIELD_WORDS = { Id: "ID", Color: "colour" };
+function fieldWords(field) {
+  const pes15 = field.startsWith("Pes15");
+  const words = (pes15 ? field.slice(5) : field)
+    .replace(/([a-z])([A-Z0-9])/g, "$1 $2").replace(/([0-9])([A-Z])/g, "$1 $2")
+    .split(" ").map(w => FIELD_WORDS[w] ?? w.toLowerCase()).join(" ");
+  const named = words[0].toUpperCase() + words.slice(1);
+  return pes15 ? named + " (PES 2015)" : named;
 }
 // The stored-value write of every field a patch carries: FIELD_STORE maps a
 // field's report name to its writer. A field the model does not carry writes

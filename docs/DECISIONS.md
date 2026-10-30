@@ -14058,3 +14058,19 @@ decoding lives; one module keeps the two sizes from drifting, and `studio_core` 
 what runs with no tool installed. A second PNG decoder (egui's loaders, `image` in a tool
 crate) would be a second place the suite reads rasters.
 Plan: `plans/save_editor.md` "`libs/team_widgets`", the `event_logo` bullet; worklog 8.35b.
+
+## 2026-10-30 — save_editor — A field no view draws is named in words; `diff --json` keeps the schema's name
+Decision: the Comparator, the unsaved-changes prompt, the toolbar's changes list and the
+aesthetics patch preview name a field no view draws in words from its report name (sentence
+case, Id as ID, Color as Colour, a PES 2015-only field marked "(PES 2015)", a roster slot
+"Player 04", the face's unnamed bits "Other face data"), its stored value kept. `diff`'s text
+report (the Comparator's Export) names every field as the views label it, stored values kept;
+`diff --json` keeps the schema's names.
+Why: the inventory of 8.29d found about 95 face fields and every undrawn player, team and
+roster field printed as Rust names (`NoseHeight`, `Pes15JawDepth`, `Player(3)`, `face_run`),
+and `diff` printing `Heading` where PES 2017's view says Header; the maintainer's rule is that
+those spellings are for the program. One rule over the field's own name covers every field,
+where a table of 95 hand-written labels would drift from the schema. The JSON is the program's
+reading, so it keeps the stable name a script matches.
+Plan: `plans/save_editor.md` "Comparator", the bullet "A row is drawn in the views' terms";
+worklog 8.29d1b1.

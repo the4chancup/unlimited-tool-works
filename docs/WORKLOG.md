@@ -2910,13 +2910,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           half (logic hash now `35652515`, the sandbox `cli/dbc7.4ccrules` re-logicked), the
           interpreter fixture raises both halves and asserts both rows exactly, the catalog's
           `aatf_violation` text says "what is wrong". Open: the Astra round over d1a + d3a
-        - [ ] d1b the rest of the inventory: the Comparator's, changes lists' and patch
-          preview's undrawn fields in words, the team file notes in the catalog's member text
-          and its section boxes capitalized, the badge's and quick actions' refusals, the
-          card and playing-style labels' spellings (`GK Long Throw`, `Classic No. 10`)
-          and `save-editor diff`'s and the Comparator's Export lines, which print a field by
-          its Rust name (`field=Heading`; SWE-2 S1d3a-F1), `diff --json`'s key ruled first
-          (a stable key for tooling, or the words)
+        - [ ] d1b the rest of the inventory, in two slices:
+          - [ ] d1b1 the fields no view draws in words (DECISIONS "A field no view draws is
+            named in words; `diff --json` keeps the schema's name"; drafted, the draft's
+            `fieldWords`): the Comparator's, the changes lists' and the patch preview's rows,
+            and `save-editor diff`'s text report (`field=Heading` on PES 2017; SWE-2
+            S1d3a-F1); `--json` unchanged → verify: a test per surface over a face field, a
+            PES 2015-only one, a team colour channel, a roster slot and `FaceRun`; SE-DIF-01
+            and SE-GUI-13 restated in the plan; the inventory's section 6 grep finds no `{:?}`
+            label left
+          - [ ] d1b2 the team file notes in the catalog's member text and its section boxes
+            capitalized, the badge's and quick actions' refusals (tier labels, the list's
+            1-based places), the card and playing-style labels' spellings (`GK Long Throw`,
+            `Classic No. 10`), the man-marking row's value (what the stored number names,
+            from the game first)
       - [ ] d3 the stats named as each version names them (P43, accepted 2026-10-29; DECISIONS
         "Stats are named as the save's PES version names them", "Before 0.0.1, only PES
         2017's stat names are checked"):

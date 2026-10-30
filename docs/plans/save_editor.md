@@ -1186,8 +1186,15 @@ The panel over the spec's `diff` report:
 - Clicking a diff row jumps to that player in the editor.
 - A row is drawn in the views' terms: the field under the label its view draws, its value as
   that view shows it (a free-kick motion 15, where the save stores 14), a field no view shows
-  keeping the
-  report's name and value. Export writes the CLI's report unchanged, stored values included.
+  named in words from the report's name with its stored value: its words in sentence case, Id
+  as ID and Color as Colour, a PES 2015-only field marked so (`NoseHeight` is "Nose height",
+  `Color1Red` "Colour 1 red", `Pes15JawDepth` "Jaw depth (PES 2015)"), a roster slot as the
+  player list numbers it (`Player(3)` is "Player 04"), the face's unnamed bits "Other face
+  data" (the draft's `fieldTerm` and `fieldWords`). The same words label the unsaved-changes
+  prompt's, the toolbar's changes list's and the aesthetics patch preview's rows. Export
+  writes the CLI's report unchanged, stored values included; that report's text names each
+  field as the views label it (Header on PES 2017, where the save's schema says `Heading`),
+  while `--json` keeps the schema's name, a key a script can match that no rewording moves.
   Not the report's values on screen, because a member reads a row against the view it jumps to,
   and a motion one lower than the view's reads as a wrong row; not view values in the report,
   because the report is what the compare scripts it replaces print.
