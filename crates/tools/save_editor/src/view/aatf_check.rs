@@ -15,6 +15,7 @@ use std::sync::Arc;
 
 use pes_savefile::EditFile;
 use pes_savefile::model::PlayerEntry;
+use pes_savefile::model::names::display_name;
 use pes_savefile::model::tactics::TeamTactics;
 use team_widgets::tactics::TacticsView;
 use team_widgets::violations::{
@@ -211,7 +212,10 @@ pub(super) fn results(
             Err(error) => {
                 ui.colored_label(
                     ui.visuals().error_fg_color,
-                    format!("The AATF check failed for team {id} {name}: {error}"),
+                    format!(
+                        "The AATF check failed for team {id} {}: {error}",
+                        display_name(name)
+                    ),
                 );
             }
             Ok(violations) => teams.push(TeamViolations {

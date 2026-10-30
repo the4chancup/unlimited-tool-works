@@ -453,12 +453,12 @@ fn first_instruction(tactics: &mut TeamTactics, side: InstructionSide) -> &mut A
 
 // A target stays only between two instructions that take one of ours: a
 // held Tight Marking's byte is the opposing formation's slot, so Counter
-// Target picked over it (in the defence column) clears the byte, while
+// Target picked over it (in the defence column) clears the byte, as
+// Defensive picked over a byte the table does not list does, while
 // Defensive picked over a held Counter Target (in the attack column,
 // which lists it as the current choice) keeps its player.
 #[test]
 fn a_pick_keeps_the_target_only_between_two_that_take_one_of_ours() {
-    let mut window = Headless::sized(800.0, 1200.0);
     let version = PesVersion::Pes21;
     let encode = |inst| instruction::encode(version, inst).expect("PES 21 stores it");
     let rows = fixture_rows(version);
@@ -466,20 +466,29 @@ fn a_pick_keeps_the_target_only_between_two_that_take_one_of_ours() {
     for (side, held, picked, kept) in [
         (
             InstructionSide::Defence,
-            Instruction::TightMarking,
+            encode(Instruction::TightMarking),
             Instruction::CounterTarget,
             NO_TARGET,
         ),
         (
             InstructionSide::Attack,
-            Instruction::CounterTarget,
+            encode(Instruction::CounterTarget),
             Instruction::Defensive,
             4,
         ),
+        (
+            InstructionSide::Attack,
+            0xAB,
+            Instruction::Defensive,
+            NO_TARGET,
+        ),
     ] {
+        // A window per case: a popup a pick left open would take the next
+        // case's click on the same combo as a close.
+        let mut window = Headless::sized(800.0, 1200.0);
         let mut tactics = fixture_tactics(version);
         let entry = first_instruction(&mut tactics, side);
-        entry.instruction = encode(held);
+        entry.instruction = held;
         entry.player = 4;
         let mut view = TacticsView::default();
         let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
@@ -501,7 +510,7 @@ fn a_pick_keeps_the_target_only_between_two_that_take_one_of_ours() {
             window.action_click_tactics(item, version, &mut tactics, &mut view, &roster);
         assert!(
             changed,
-            "{held:?} to {picked:?}: the pick changed the record"
+            "{held:#04x} to {picked:?}: the pick changed the record"
         );
         let entry = *first_instruction(&mut tactics, side);
         assert_eq!(
@@ -511,7 +520,7 @@ fn a_pick_keeps_the_target_only_between_two_that_take_one_of_ours() {
         );
         assert_eq!(
             entry.player, kept,
-            "{held:?} to {picked:?}: the target byte"
+            "{held:#04x} to {picked:?}: the target byte"
         );
     }
 }

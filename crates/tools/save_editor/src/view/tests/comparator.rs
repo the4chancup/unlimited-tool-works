@@ -1051,9 +1051,8 @@ fn export_reports_the_written_path_and_refuses_a_folder_that_is_not() {
         node_labeled(&nodes, Role::Button, "Export\u{2026}"),
         &mut view,
     );
-    // The refusal lands inside `comparator::show`, after `refusal_dialog`
-    // ran that frame, so the modal's first drawn frame is its sizing
-    // pass; the second holds the nodes.
+    // The refusal's modal spends its first frame sizing itself, with no
+    // nodes; the last of the frames drawn here holds them.
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
@@ -1091,7 +1090,8 @@ fn assert_export_refused(view: &mut SaveView, window: &mut Headless, destination
         "{}: the save's bytes are unchanged",
         destination.display()
     );
-    // As the missing folder's refusal: its second frame holds the nodes.
+    // The refusal's modal spends its first frame sizing itself, with no
+    // nodes; the last of the frames drawn here holds them.
     draw(window, view);
     let nodes = draw(window, view);
     let sentence = format!(

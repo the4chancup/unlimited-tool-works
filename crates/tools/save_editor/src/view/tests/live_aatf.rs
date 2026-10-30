@@ -832,6 +832,40 @@ fn the_headers_name_a_coded_team_by_its_display_name() {
     );
 }
 
+/// A check that fails names its team by the display name too: team 743
+/// under THROW19, whose check of it fails, its name given a colour code.
+#[test]
+fn the_failed_checks_line_names_a_coded_team_by_its_display_name() {
+    let path = fixture(PesVersion::Pes17, "live_aatf_coded_failed");
+    let mut view = SaveView::new();
+    view.open(&path);
+    pick_imported(&mut view, "throw19.4ccrules", &throw19());
+    edit_team(view.session.as_mut().unwrap(), 743, 1, |team| {
+        team.name = format!("\x11cff0000ff{}", team.name);
+    });
+    view.team = TeamChoice::Team(743);
+    view.selected = Some(Selection::Player(743, 0));
+    view.live_aatf = true;
+    let raw = team_entry(&view, 743).name;
+    let shown = display_name(&raw);
+    assert_ne!(raw, shown, "premise: 743's name holds a colour code");
+
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    let nodes = live_checked(&mut window, &mut view, &[743]);
+    let line_naming = |name: &str| {
+        nodes.iter().any(|node| {
+            node.value().is_some_and(|value| {
+                value.starts_with(&format!("The AATF check failed for team 743 {name}: "))
+            })
+        })
+    };
+    assert!(line_naming(&shown), "the failed line names {shown}");
+    assert!(
+        !line_naming(&raw),
+        "the failed line does not hold the raw name"
+    );
+}
+
 /// A violation row's click moves the selector to the player's team, so the
 /// list shows the row it selects; at ALL the selector stays.
 // SE-GUI-30

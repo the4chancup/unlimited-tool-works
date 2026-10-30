@@ -317,9 +317,8 @@ fn output_rosters_to_tsv_refuses_the_open_save() {
         std::fs::read(&path).unwrap() == before,
         "the save's bytes are unchanged"
     );
-    // The refusal lands inside the menu, after `refusal_dialog` ran that
-    // frame, so the modal's first drawn frame is its sizing pass; the
-    // second holds the nodes.
+    // The refusal's modal spends its first frame sizing itself, with no
+    // nodes; the last of the frames drawn here holds them.
     draw(&mut window, &mut view);
     let nodes = draw(&mut window, &mut view);
     let sentence = format!(
