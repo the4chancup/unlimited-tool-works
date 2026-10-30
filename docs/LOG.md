@@ -2945,3 +2945,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — 0.0.1cv cv6a and cv6b merged (`267e5c52`, gates green, 5450 tests): the
   cross-family review's code fixes, every loop ended; `mutants-diff` over them running; the
   Ruleset editor's whole-crate run done, its 16 survivors in cv8d's brief.
+- **2026-10-30** — 0.0.1cv cv8d merged (`a9b5c783`, gates green): the Ruleset editor's unbuilt
+  sections link to their demo online, Save as suggests the opened file's name, the Summary drops
+  "Squad of 23."; the whole-crate run's survivors tested. The drafts' demo greys the early tools.
