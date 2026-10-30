@@ -5919,7 +5919,10 @@ briefs, review loops, gates and mutation runs as for any step.
     plan is silent, and every file dialog's convention is the file's own name); a document
     never saved keeps the suggestion from its name; and the General section's event-logo note
     (`view/sections/general.rs`) reads "The Save editor shows the logo on its top right while
-    this ruleset is picked; …" (the maintainer's wording, as the prototype has it)
+    this ruleset is picked; …" (the maintainer's wording, as the prototype has it); and the
+    Summary's header drops "Squad of 23." (every squad is 23, so it says nothing), opening on
+    "A player's rating is his best of: …" as the prototype's `summary` does (`summary.rs`
+    `header_lines` and its doc comment, the ten goldens under `tests/fixtures/summary/`)
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
   - [ ] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30): off

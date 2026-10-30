@@ -1291,7 +1291,7 @@ function effectsText(e) {
   return p.join(", ");
 }
 function summary(r) {
-  const L = [`# ${r.name}`, "", `Squad of ${SQUAD}. A player's rating is his best of: ${r.stats.rating.map(s => human(s).toLowerCase()).join(", ")}.`];
+  const L = [`# ${r.name}`, "", `A player's rating is his best of: ${r.stats.rating.map(s => human(s).toLowerCase()).join(", ")}.`];
   if (r.stats.at_most.length) L.push(`May sit below their target: ${r.stats.at_most.map(s => human(s).toLowerCase()).join(", ")}.`);
   L.push("", "## Tiers");
   const medalTiers = new Set((r.medal_systems || []).flatMap(s => Object.keys(s.counts)));
