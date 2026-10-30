@@ -30,7 +30,8 @@ names where the question came from so the context can be read there.
   with nothing to undo and the quick actions on a team. Which should both follow: the drafts'
   look, which needs the suite to draw its own disabled buttons (egui fades a disabled widget
   by one opacity, so no setting keeps the box and dims the text), or egui's, which changes
-  the drafts' one rule?
+  the drafts' one rule? Side by side, the team screen with nothing to undo, scaled 3x:
+  `.tmp/8_30c/disabled_buttons_compare.png` (`.tmp/8_30c/disabled_compare.py`).
 
 ## Cup practice
 
