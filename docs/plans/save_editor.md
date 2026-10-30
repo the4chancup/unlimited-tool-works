@@ -1712,8 +1712,9 @@ SE-GUI-15  GIVEN the PES 17 save open and no ruleset imported
                 under a separator, and no toolbar menu holds an entry that opens an AATF panel
                 (the Savefile menu's Multi-team AATF…, SE-GUI-41, opens a report dialog over a
                 range of teams); WHEN another
-                ruleset is picked THEN the quick actions, the Cards left badge and Live AATF's
-                list are that ruleset's on the next frame (SE-GUI-32 for the setting it
+                ruleset is picked THEN the quick actions and the Cards left badge are that
+                ruleset's on the next frame, Live AATF's list drops the old ruleset's rows on
+                it and shows the new ruleset's when its check returns (SE-GUI-32 for the setting it
                 writes); WHEN the wheel turns over the closed dropdown THEN it
                 steps between the rulesets and never runs Import rules file…; WHEN Import rules
                 file… picks a file the loader refuses THEN a dialog lists its findings, each

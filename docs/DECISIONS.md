@@ -14349,3 +14349,15 @@ a found save; (3) every Save dialog makes the slip of picking the save as easy a
 does, and one rule guards the same thing in every place (cv6 A1-2).
 Plan: `plans/save_editor.md` "Editing UI" (the team selector), the "Feature inventory"'s File
 operations and Database operations rows.
+
+## 2026-10-30 — ruleset_editor — the unbuilt sections link to their drafts in a demo mode
+Decision: under the line of each section 0.0.1 cannot edit (Heights, Cards, Universal rules,
+Specials, Suggestions), a link reading "Check out a demo of the planned section online" opens
+that section in the drafts published by GitHub Pages, at the github.io address, with `demo=1`:
+the drafts' controls hidden, the window at its default size on a page it can be moved and
+resized over; a page smaller than the default window fits it as a small monitor does. The
+drafts stay free to rename a linked section, whose link then opens the tool's first section.
+Why: the maintainer's request; those drafts are finished but for polish, and a demo shows what
+the Summary can only describe. The default size, not a window filling the page, because the
+layout is calibrated for it first; github.io until a custom domain is live, since the old
+address redirects. Other tools get a link only once their drafts are that far along.

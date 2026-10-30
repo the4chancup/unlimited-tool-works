@@ -2939,3 +2939,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — 0.0.1cv cv5 checked in the release build: TSV export, ST-SIDE-05 with
   PES 2017, RE-FILE-08, the two tools' switching and close prompts, the ownership line; cv8d
   (Save as suggests the opened file's name) queued behind the crate's mutation run.
+- **2026-10-30** — 0.0.1cv cv8e: the drafts' demo mode (`demo=1`): no controls, the window fitted
+  to the page and dragged across it; the drafts stay free to rename linked sections, whose links
+  then open the tool's first section.

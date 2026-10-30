@@ -80,7 +80,18 @@ window title "Ruleset editor (WIP)": opening and saving, the start page and temp
 preview, General, Tiers, Custom checks and Summary. Heights, Cards, Universal rules, Specials
 and Suggestions draw their heading and one line saying they cannot be edited yet, that
 Summary shows what they hold and that saving leaves them unchanged; a save keeps them as the
-file held them. Its other forms (the condition and effects editors among them), Randomize
+file held them. Under that line, a link reading "Check out a demo of the planned section
+online" opens the section in the drafts (`docs/prototypes/`, published by GitHub Pages:
+`https://the4chancup.github.io/unlimited-tool-works/prototypes/#ruleset_editor/<section>?demo=1&start=0`,
+`<section>` the drafts' id: `heights`, `cards`, `universal`, `specials`, `suggestions`), in
+the drafts' demo mode: no draft controls, the window at its default size on a page it can be
+moved and resized over (a page smaller than that is the monitor the window is fitted to, as
+the app fits its window to a small one). The drafts are not held to these addresses: a section
+renamed there leaves the link opening the tool's first section. A demo link, not nothing, because the drafts of these sections are
+finished but for polish, and seeing one beats reading the Summary; only a section whose draft
+is that far along gets one (the other tools' drafts are not yet). The github.io address, not
+a custom domain, until one is live: the old address redirects to it, and a 0.0.1 build keeps
+its links. Its other forms (the condition and effects editors among them), Randomize
 and its close run after Release 0.1.0. Not the whole tool before the cut: those forms are
 the hardest left, and building them would split the time the check needs. Not left out
 either: what is built has been reviewed, and it lets an organizer change a ruleset's tiers

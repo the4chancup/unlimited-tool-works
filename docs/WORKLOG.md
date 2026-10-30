@@ -2756,7 +2756,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] d in game (PES 2021, then one more Fox version and PES 2017): a patch applied to an
       unstripped save shows the compiled look in Edit mode, boots and gloves included, on a
       player whose base copy named another and on one whose edit flags were clear
-      (`scripts/ingame/`, saves backed up); with it, the FoxDen gloves issue rechecked
+      (`scripts/ingame/`, saves backed up); with it, the FoxDen gloves issue rechecked, and
+      SE-GUI-34 proved again in its patch form (a `SE-GUI-34 manual: checked` line)
   - [ ] 8.37 a dialog's title centred over the dialog, as the windows' titles are (the
     maintainer, 2026-10-30, after left-aligned window titles proved out of egui's reach;
     DECISIONS "A dialog's title is centred, as the windows' titles are"). Drafted:
@@ -2835,6 +2836,30 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       picker's other entries dim like any disabled widget"), measured equal; side by side
       `.tmp/8_30c/fsel_compare.png`. Files: `docs/prototypes/tools/save_editor.js`,
       `plans/core/gui.md`
+  - [ ] 8.39 after 0.0.1 (the maintainer, 2026-10-30): rename `dds_convert` to `image_convert`.
+    The crate decodes every picture the suite reads (PNG, DDS, FTEX), resizes, writes PNGs and
+    encodes the games' textures; the Save editor, the Ruleset editor and `team_widgets` use it
+    for logos and portraits that are never a DDS, so the name tells a reader the wrong scope.
+    `image_convert`, not a split into a raster crate and a texture crate: the decode is shared
+    by both halves (CONTRIBUTING guardrail 3, no over-splitting), and the name pairs with
+    `model_convert`. Mechanical: the package and folder, every `dds_convert::` path and manifest
+    (76 files), `plans/libs/dds_convert.md` and `spec/libs/dds_convert.md` renamed with their
+    pointers, GLOSSARY, AGENTS.md's read-order row, `just crate-map`; DECISIONS and LOG keep
+    the old name. Only with no branch open and no mutation run queued (it touches every tool)
+    → verify: `git grep dds_convert` lists only DECISIONS and LOG; `just gates`; `just
+    doc-pointers`
+  - [ ] 8.40 after 0.0.1: a keyboard edit settles without leaving the control. The Save
+    editor's seal and its checks' start wait for `edit_settled` (`view/mod.rs`), which a
+    focus kept on a control holds off; a button, checkbox, radio or list row activated by
+    Tab + Space keeps the focus, so its edit stays unsealed and Live AATF reads "checking…"
+    until the member tabs on (the undo entry merges with the next press on it). 0.0.1 gives
+    up the focus per control on the ones that start a check (the Live AATF toggle, Show
+    suggestions, Make, Set stats, the comparator's scope); the rest (Undo and Redo, the
+    positions' rating cells and labels, the tactics' radios, the list rows that re-key the
+    check) keep the stall. One rule in `edit_settled` instead: a focus held by a widget with
+    no text cursor counts as settled, so only a text field or a value being typed waits →
+    verify: Tab to a rating cell, Space, then the next frame seals (one undo entry per
+    press) and Live AATF checks without another key; typing in a field still waits
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
@@ -3468,7 +3493,8 @@ briefs, review loops, gates and mutation runs as for any step.
     route waits for the aesthetics patch's pre-Fox half (`plans/pes_savefile/operations.md`
     "Aesthetics patch (new)"), so a pre-Fox compile is checked by its resolved settings alone
 
-  SE-GUI-34 manual: checked 2026-10-25, PES 21 Edit mode, release build of `f3d1f135`: VGL 22
+  SE-GUI-34's earlier form (the save stripped; since rewritten to take the look through the
+  patch, re-proved at 8.36d) checked 2026-10-25, PES 21 Edit mode, release build of `f3d1f135`: VGL 22
   (792) slot 06 (79206) set by Team TOML to long red hair, blue iris (7) and face size 5; the
   window's Generate settings.toml and Generate in-game face wrote his folder from that record;
   the record then changed to short blond hair and green iris (9) and the save stripped
@@ -5915,7 +5941,26 @@ briefs, review loops, gates and mutation runs as for any step.
     as on a document opened from a file suggests that file's name, not the ruleset's
     (`second.4ccrules` opened, Save as offered `divegrass_before_christmas_7.4ccrules`; the
     plan is silent, and every file dialog's convention is the file's own name); a document
-    never saved keeps the suggestion from its name
+    never saved keeps the suggestion from its name; and the General section's event-logo note
+    (`view/sections/general.rs`) reads "The Save editor shows the logo on its top right while
+    this ruleset is picked; …" (the maintainer's wording, as the prototype has it); and the
+    Summary's header drops "Squad of 23." (every squad is 23, so it says nothing), opening on
+    "A player's rating is his best of: …" as the prototype's `summary` does (`summary.rs`
+    `header_lines` and its doc comment, the ten goldens under `tests/fixtures/summary/`); and
+    each unbuilt section's demo link under its line (`core/development_plan.md`, the paragraph
+    starting "The Ruleset editor (Phase 20) ships in 0.0.1"), opened as the event logo opens
+    its page, with a test that each section's link opens its address
+  - [x] cv8e the drafts' demo mode, `demo=1` (`core/development_plan.md`, the same
+    paragraph): the draft controls column hidden, the window at the app's default size on a
+    page it is dragged across by its title bar and resized by its corner, as on a desktop
+    (`docs/prototypes/index.html`; the lead's, the drafts being lead-edited) → verify: on the
+    published page, `#ruleset_editor/heights?demo=1&start=0` opens Heights at 1280 × 780,
+    no controls column, the window moves and resizes; without `demo` nothing changes.
+    Done: `startDemo`, `placeWindow`, the `demo` link key kept in the address, the page as
+    the monitor `fitted` reads; checked locally (Playwright at 1600 × 900: 1280 × 780
+    centred, dragged and clamped to the page, maximized and restored; at 1000 × 700: fitted
+    to 969 × 630; without `demo` the column stays; no console warnings). Open: the same on
+    the published page once pushed
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
   - [ ] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30): off

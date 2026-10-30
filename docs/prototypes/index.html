@@ -277,6 +277,10 @@
      which egui does not draw, so it takes no glyph from the app's fonts. */
   .titlebar .win-max::before { content: ""; display: inline-block; width: 8px; height: 8px;
     border: 1px solid currentColor; }
+  /* The demo (a link's demo=1, the one the app's unbuilt sections open): no draft controls,
+     and the page is a desktop the window is dragged across by its title bar. */
+  .demo .draft-side { display: none; }
+  .demo .win:not(.max) { position: absolute; margin: 0; left: var(--win-x, 0); top: var(--win-y, 0); }
   /* The draft controls: one column left of the simulated window, scrolling on its own, in
      sections top to bottom (the window's size, the shell's, the active tool's), each group of
      a section under a rule. Not part of Studio; above a modal, so it stays usable. */
@@ -726,13 +730,17 @@ function showReset() {
   const reset = document.getElementById("reset-window");
   if (reset) reset.style.display = atDefaultSize() ? "none" : "";
 }
+// The demo's page stands for the monitor: the window is fitted to it as the app fits its window
+// to a monitor, so a small browser window still shows the whole app window.
+let demo = false;
 function sizeWindow(which) {
   const win = document.getElementById("win");
   win.classList.remove("max");
   win.style.width = ""; win.style.height = "";
   const [w, hgt] = which === "monitor" ? [screen.width, screen.height]
     : which === "smallest" ? [1264, 648]
-    : which === "minimum" ? [960, 600] : fitted(screen.width, screen.height);
+    : which === "minimum" ? [960, 600]
+    : demo ? fitted(innerWidth - SBW, innerHeight) : fitted(screen.width, screen.height);
   win.style.setProperty("--win-w", w + "px");
   win.style.setProperty("--win-h", hgt + "px");
   if (which === "default") defaultDims = [win.offsetWidth, win.offsetHeight];
@@ -792,6 +800,33 @@ function maxButton() {
 }
 document.getElementById("titlebar").addEventListener("dblclick", toggleMax);
 sizeWindow("default");
+// The demo's window opens centred on the page, and its title bar drags it, kept on the page.
+function placeWindow(x, y) {
+  const win = document.getElementById("win");
+  const clamp = (v, room) => Math.max(0, Math.min(v, room));
+  win.style.setProperty("--win-x", clamp(x, innerWidth - win.offsetWidth) + "px");
+  win.style.setProperty("--win-y", clamp(y, innerHeight - win.offsetHeight) + "px");
+}
+function startDemo() {
+  demo = true;
+  document.body.classList.add("demo");
+  sizeWindow("default");
+  const win = document.getElementById("win");
+  placeWindow(Math.floor((innerWidth - win.offsetWidth) / 2),
+    Math.floor((innerHeight - win.offsetHeight) / 2));
+  document.getElementById("titlebar").addEventListener("mousedown", e => {
+    if (e.button !== 0 || e.target.closest(".win-max") || win.classList.contains("max")) return;
+    const dx = e.clientX - win.offsetLeft, dy = e.clientY - win.offsetTop;
+    const move = ev => placeWindow(ev.clientX - dx, ev.clientY - dy);
+    const up = () => {
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", up);
+    };
+    document.addEventListener("mousemove", move);
+    document.addEventListener("mouseup", up);
+    e.preventDefault();
+  });
+}
 // A menu or popup placed from a pointer or a button's rect: viewport coordinates
 // turned into the simulated window's, where its fixed position is measured.
 function inWin(x, y) {
@@ -2327,6 +2362,7 @@ function hostLinkKeys() {
     k.help = S.help.tool + "/" + S.help.topic;
     if (S.help.anchor) k.anchor = S.help.anchor;
   }
+  if (demo) k.demo = "1";
   return k;
 }
 function updateLink() {
@@ -3426,6 +3462,11 @@ if (TOOLS.some(t => t.id === hashTool && t.registered)) {
     if (v === "settings") afterLink.push(() => openSettings());
     else if (v === "about") afterLink.push(() => openAbout());
     else console.warn("link: win=" + v);
+  });
+  // The app's unbuilt sections link here with demo=1.
+  take("demo", v => {
+    if (v === "1") startDemo();
+    else if (v !== "0") console.warn("link: demo=" + v);
   });
   try {
     if (slashAt >= 0 && VIEWS[hashTool])

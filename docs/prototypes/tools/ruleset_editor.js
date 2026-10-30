@@ -59,6 +59,8 @@ const CHOICE_EFFECTS = ["stat_bonus", "cards", "free", "free_cards", "a_position
 // Every squad is 23 players: the Team compiler numbers a team's players 01 to 23, so
 // no ruleset sets its own size.
 const SQUAD = 23;
+// The ids are link screens (#ruleset_editor/<id>), and the app's unbuilt sections link to
+// theirs from every shipped build: a link to a renamed one opens General instead.
 const SECTIONS = [["general", "General"], ["tiers", "Tiers"], ["heights", "Heights"],
   ["cards", "Cards"], ["universal", "Universal rules"], ["specials", "Specials"],
   ["suggestions", "Suggestions"], ["custom", "Custom checks"], ["summary", "Summary"]];
@@ -1291,7 +1293,7 @@ function effectsText(e) {
   return p.join(", ");
 }
 function summary(r) {
-  const L = [`# ${r.name}`, "", `Squad of ${SQUAD}. A player's rating is his best of: ${r.stats.rating.map(s => human(s).toLowerCase()).join(", ")}.`];
+  const L = [`# ${r.name}`, "", `A player's rating is his best of: ${r.stats.rating.map(s => human(s).toLowerCase()).join(", ")}.`];
   if (r.stats.at_most.length) L.push(`May sit below their target: ${r.stats.at_most.map(s => human(s).toLowerCase()).join(", ")}.`);
   L.push("", "## Tiers");
   const medalTiers = new Set((r.medal_systems || []).flatMap(s => Object.keys(s.counts)));
@@ -1491,7 +1493,7 @@ const VIEWS = {
       h("tr", {}, h("td", {}, "Event page"), h("td", {}, text(R.page, v => R.page = v || null,
         { width: 220, placeholder: "https://", title: "Opened by a click on the event logo" }))),
       h("tr", {}, h("td", {}, "Event logo"), h("td", {}, eventLogoField()))), "general-fields"));
-    d.append(h("div", { class: "weak" }, "The Save editor draws the logo at its top right while this ruleset is picked; a click on it opens the event page."));
+    d.append(h("div", { class: "weak" }, "The Save editor shows the logo on its top right while this ruleset is picked; a click on it opens the event page."));
     d.append(h("div", { class: "sep" }), strong("Rating stats"),
       h("div", { class: "weak" }, "A player's rating is the highest of these; it picks his tier. What a stat may sit at is the target, the warning band and the stat total, not the rating."),
       named(statGrid(STATS, R.stats.rating, v => R.stats.rating = v), "rating-stats"));
