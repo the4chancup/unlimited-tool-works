@@ -1818,7 +1818,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         the extension-less file, so on PES 2017 a member must switch to "All files" to see it;
         fix so the file shows at once (planned and drafted first, a UI change); (4) the game's
         own import of the same file into a save copy, diffed against the panel's import of it
-        (PES 2017 runs beside cargo). Export stays disabled on 15-17 (no template; QUESTIONS)
+        (PES 2017 runs beside cargo)
+      - [ ] k5f before 0.0.1 if the proof holds (the maintainer, 2026-10-30: "if it's easy
+        enough"): Texport export on PES 2017, synthesized from the open save rather than from
+        a template file. Study (`.tmp/8_30c/texport17_study/FINDINGS.md`, ten real files):
+        the 5,578,704-byte payload is a fixed layout, zero but a constant 0x50 header (a u32
+        at 0x0c of two values), the team's 128 x 128 RGBA emblem at 0x50, the team, coach,
+        roster and tactics records at 0x10054, the players at 0x510840 and an 8-byte tail; the
+        container's logo is one constant PNG, its description `Team Export Data NN` plus the
+        name. The save holds no emblem image (the CPK's), so the export writes none, as the
+        game does for a team without one. (0) proof first: a real Texport re-encrypted with
+        its emblem and the header's 64 per-file bytes zeroed, imported by PES 2017; (1)
+        `pes_savefile`: `Texport::new` on 17, its test the real file's own team rewritten
+        equal to it but the emblem; (2) the panel's export enabled on PES 2017 (plan, draft,
+        help); (3) PES 2017 imports the panel's file. PES 15 and 16 stay disabled
       - [ ] k5rev the cross-family review loop (the slices are Opus sidekicks', so the lead's
         review is same-family): SWE-2 rounds on each merged slice until one accepts under
         five, one Astra round over k5a + k5b, another over k5c, SWE-2 rounds after each;
