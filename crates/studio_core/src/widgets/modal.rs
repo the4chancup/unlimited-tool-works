@@ -7,7 +7,8 @@ pub fn modal_frame(style: &egui::Style) -> egui::Frame {
 }
 
 /// `egui::Modal` under `id` in `modal_frame`, at least 360 points wide with its margins and
-/// stroke: `title` (`theme::window_title`), 8 points, then `body`.
+/// stroke: `title` centred over the dialog (`theme::window_title_text`), 8 points, then
+/// `body`.
 pub fn modal<R>(
     ctx: &egui::Context,
     id: egui::Id,
