@@ -37,9 +37,9 @@ first: Autumn 26, Spring 26, VGL27, VGL26, VTL11, VTL10), then DBC7, then **Blan
 in three flavors (see "Randomize"); and *Open file*. Recent files below, newest first.
 DBC7 is a template while Divegrass Before Christmas is the Save editor's first test ground
 (`core/development_plan.md` "Divegrass Before Christmas"): its organizers start from it (its
-managers get the rules file in the 0.0.1 bundle, which ships before this tool). It leaves the
+managers get the rules file in the 0.0.1 bundle). It leaves the
 list when the cup ends, as a minor invitational's ruleset would never have joined it. **Blank** is a ruleset
-named "New ruleset", squad 23, Autumn 26's rating and at-most stats, one tier (`regular`,
+named "New ruleset", Autumn 26's rating and at-most stats, one tier (`regular`,
 "Regular", the rest of the squad, rate 75, form 4, injury resistance 1, weak foot 2 and 2, 3
 paid cards, 1 A position), no brackets, no specials, and the universal rules on: registered
 position rated A, no B ratings, a GK A never a second A, a captain, at least one goalkeeper, at
@@ -52,12 +52,17 @@ on, off at every start: open beside the form it would leave the sections a third
 window, and the block is a check on the form, not where the work happens. Shown, its lines
 the last edit changed are highlighted.
 
-- **General**: name, event page, event logo, squad size, the rating stats and the at-most
+- **General**: name, event page, event logo, the rating stats and the at-most
   stats (stat checklists, with one line on what each list does). The event page is a text
   box (`https://` as its placeholder); the event logo shows the picture at the height the
-  Save editor draws it (28, up to 84 wide), then `Choose PNG…` (a file dialog for PNGs) and
-  `Remove`, or a weak `None` before them; a file that is no PNG or is over 64 KB is refused
-  with a line beside the buttons saying which, the logo kept as it was. One weak line under
+  Save editor draws it (28, up to 84 wide), then `Choose picture…` (a file dialog for the
+  pictures `image` reads: PNG, JPEG, BMP, WebP, TGA, TIFF) and `Remove`, or a weak `None`
+  before them. A picture of any size is taken: scaled down (never up) to fit 168 × 56
+  pixels, the 84 × 28 points the Save editor draws at 200% scaling, and stored as a PNG,
+  which at that size is always under the file format's 64 KB; a file that is no picture it
+  can read is refused with a line beside the buttons, the logo kept as it was. Not a
+  refusal of a big file, as at first: an organizer's logo is whatever their event's page
+  shows, and shrinking it by hand is a step the editor can take for them. One weak line under
   the fields says where the logo shows and what a click on it does. The data block's text
   writes `page` after `name` and `logo` last; the preview shortens the logo's one long line
   to its first characters and its size, the file holding it whole. A page that is not an
@@ -371,8 +376,8 @@ RE-GUI-17  GIVEN a ruleset setting every field of the schema but `schema` itself
            THEN each saved file's ruleset differs from the opened one in that field alone, or by
                 that one item, apart from the references to an id the tool renames with it (a
                 tier's in the medal systems, a card group's in free cards and suggestions); a
-                field the load rules tie to others (the squad size to a pool system's quotas, a
-                quota to its system's sum) is changed with the companion edits that keep the
+                field the load rules tie to others (a quota to its system's sum) is changed
+                with the companion edits that keep the
                 ruleset valid, and the file differs by those alone
 RE-GUI-18  GIVEN Autumn 26 open
            WHEN the condition editor's add menu is opened in a tier's conditions, in a height
@@ -387,11 +392,12 @@ RE-GUI-18  GIVEN Autumn 26 open
                 extra paid cards, free cards of a group, a free card, extra A positions, at
                 most N A positions, weak-foot limits)
 RE-GUI-19  GIVEN a ruleset open with no logo
-           WHEN a PNG of 2 KB is chosen in General's Event logo
-           THEN the field shows it 28 points high with Remove beside Choose PNG…; WHEN a
-                JPEG, or a PNG over 64 KB, is chosen THEN a line beside the buttons says
-                why and the logo is unchanged; WHEN the Event page holds `www.example`
-                THEN General lists the problem
+           WHEN a PNG of 2 KB, 40 × 40 pixels, is chosen in General's Event logo
+           THEN the field shows it 28 points high with Remove beside Choose picture…, the
+                file's logo that PNG unchanged; WHEN a JPEG of 1000 × 500 pixels is chosen
+                THEN the logo is a PNG of 112 × 56 pixels; WHEN a file that is no picture
+                is chosen THEN a line beside the buttons says so and the logo is unchanged;
+                WHEN the Event page holds `www.example` THEN General lists the problem
 ```
 
 **Opening and saving**

@@ -56,6 +56,9 @@ const STYLES = ["goal_poacher", "dummy_runner", "fox_in_the_box", "target_man",
 const VERSIONS = [15, 16, 17, 18, 19, 20, 21];
 const CHOICE_EFFECTS = ["stat_bonus", "cards", "free", "free_cards", "a_positions",
   "max_a_positions", "weak_foot"];
+// Every squad is 23 players: the Team compiler numbers a team's players 01 to 23, so
+// no ruleset sets its own size.
+const SQUAD = 23;
 const SECTIONS = [["general", "General"], ["tiers", "Tiers"], ["heights", "Heights"],
   ["cards", "Cards"], ["universal", "Universal rules"], ["specials", "Specials"],
   ["suggestions", "Suggestions"], ["custom", "Custom checks"], ["summary", "Summary"]];
@@ -63,7 +66,7 @@ const SECTIONS = [["general", "General"], ["tiers", "Tiers"], ["heights", "Heigh
 // ---- The official file, crates/libs/aatf/rulesets/autumn26.rhai ----
 const AUTUMN26 = {
   schema: 1, name: "4cc Autumn 26", page: "https://implyingrigged.info/wiki/2026_4chan_Autumn_Babby_Cup",
-  logo: "assets/logos/autumn26.png", squad_size: 23,
+  logo: "assets/logos/autumn26.png",
   stats: {
     rating: ["dribbling", "goalkeeping", "finishing", "low_pass", "lofted_pass", "heading",
       "swerve", "catching", "clearing", "reflexes", "coverage", "body_control",
@@ -150,7 +153,7 @@ const CUSTOM_SAMPLE = `fn custom_checks(team) {
 // crates/libs/aatf/rulesets/spring26.rhai
 const SPRING26 = {
   schema: 1, name: "4cc Spring 26", page: "https://implyingrigged.info/wiki/2026_4chan_Spring_Babby_Cup",
-  logo: "assets/logos/spring26.png", squad_size: 23,
+  logo: "assets/logos/spring26.png",
   stats: clone(AUTUMN26.stats),
   tiers: [
     tier("gold", "Gold", 2, 99, 8, 3, { usage: 2, accuracy: 4 }, 5, { tricks: 3, com: 2 }),
@@ -196,7 +199,7 @@ const SPRING26 = {
 // crates/libs/aatf/rulesets/vgl27.rhai
 const VGL27 = {
   schema: 1, name: "/vg/ League 27", page: "https://implyingrigged.info/wiki//vg/_League_27",
-  logo: "assets/logos/vgl.png", squad_size: 23,
+  logo: "assets/logos/vgl.png",
   stats: {
     rating: ["dribbling", "goalkeeping", "low_pass", "lofted_pass", "swerve",
       "catching", "clearing", "reflexes", "coverage", "body_control",
@@ -264,7 +267,7 @@ const VGL27 = {
 // crates/libs/aatf/rulesets/vgl26.rhai
 const VGL26 = {
   schema: 1, name: "/vg/ League 26", page: "https://implyingrigged.info/wiki//vg/_League_26",
-  logo: "assets/logos/vgl.png", squad_size: 23,
+  logo: "assets/logos/vgl.png",
   stats: {
     rating: ["dribbling", "goalkeeping", "low_pass", "lofted_pass", "swerve",
       "catching", "clearing", "reflexes", "coverage", "body_control",
@@ -336,7 +339,7 @@ const VGL26 = {
 // crates/libs/aatf/rulesets/vtl11.rhai
 const VTL11 = {
   schema: 1, name: "/vt/ League 11", page: "https://implyingrigged.info/wiki//vt/_League_11",
-  logo: "assets/logos/vtl11.png", squad_size: 23,
+  logo: "assets/logos/vtl11.png",
   stats: { rating: ["clearing"], at_most: [] },
   tiers: [
     tier("gold", "Gold", 2, 99, 8, 1, 4, 7, { com: 3 },
@@ -465,7 +468,7 @@ fn custom_checks(team) {
 // crates/libs/aatf/rulesets/vtl10.rhai
 const VTL10 = {
   schema: 1, name: "/vt/ League 10", page: "https://implyingrigged.info/wiki//vt/_League_10",
-  logo: "assets/logos/vtl10.png", squad_size: 23,
+  logo: "assets/logos/vtl10.png",
   stats: { rating: ["clearing"], at_most: [] },
   tiers: [
     tier("gold", "Gold", 2, 99, 8, 1, 4, 6, { com: 2 },
@@ -587,7 +590,7 @@ fn custom_checks(team) {
 // the ruleset is picked, a click opening the page.
 const DBC7 = {
   schema: 1, name: "Divegrass Before Christmas 7", page: "https://implyingrigged.info/wiki/Divegrass_Before_Christmas_7:_Melty_Under_The_Christmas_Tree",
-  logo: "assets/logos/dbc7.png", squad_size: 23,
+  logo: "assets/logos/dbc7.png",
   stats: {
     rating: ["dribbling", "goalkeeping", "finishing", "low_pass", "lofted_pass", "heading",
       "swerve", "catching", "clearing", "reflexes", "coverage", "body_control",
@@ -658,7 +661,7 @@ const DBC7 = {
 // (aatf_rules.md "Coverage of a plain-language proposal") the schema can
 // carry is used at least once; each added special's label names its item.
 const CLOUDS = {
-  schema: 1, name: "Clouds' proposal, every item", squad_size: 23,
+  schema: 1, name: "Clouds' proposal, every item",
   stats: clone(VGL26.stats),
   tiers: clone(VGL26.tiers),
   card_groups: clone(VGL26.card_groups),
@@ -785,7 +788,7 @@ function tset(label, fields) {
 }
 function blank() {
   return {
-    schema: 1, name: "New ruleset", squad_size: 23,
+    schema: 1, name: "New ruleset",
     stats: clone(AUTUMN26.stats),
     tiers: [tier("regular", "Regular", null, 75, 4, 1, 2, 3, {})],
     card_groups: {},
@@ -836,24 +839,34 @@ function text(value, set, opts = {}) {
     oninput: e => { set(e.target.value); changed(); }, onchange: commit });
 }
 // The General section's Event logo: the picture at the height the Save editor
-// draws it (28, up to 84 wide), Choose PNG… and Remove; none yet, a weak None.
-// A file that is no PNG or is over 64 KB is refused with a line saying why.
+// draws it (28, up to 84 wide), Choose picture… and Remove; none yet, a weak None.
+// Any picture is taken: scaled down (never up) to fit 168 x 56 pixels, the 84 x 28
+// points the Save editor draws at 200% scaling, and stored as a PNG, which at that
+// size is always under the file format's 64 KB. A file that is no picture is refused
+// with a line saying so.
 // sample wording: the buttons, the tooltips and the refusals.
 function eventLogoField() {
-  const pick = h("input", { type: "file", accept: ".png,image/png", style: "display:none",
+  const pick = h("input", { type: "file", accept: "image/*", style: "display:none",
     onchange: e => {
       const f = e.target.files[0];
       if (!f) return;
-      if (f.type !== "image/png") { logoRefusal = f.name + " is not a PNG picture"; render(); return; }
-      if (f.size > 64 * 1024) { logoRefusal = f.name + " is over 64 KB"; render(); return; }
-      const rd = new FileReader();
-      rd.onload = () => { R.logo = rd.result; logoRefusal = null; changed(); commit(); render(); };
-      rd.readAsDataURL(f);
+      const img = new Image();
+      img.onload = () => {
+        const k = Math.min(1, 168 / img.width, 56 / img.height);
+        const c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(img.width * k));
+        c.height = Math.max(1, Math.round(img.height * k));
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(img.src);
+        R.logo = c.toDataURL("image/png"); logoRefusal = null; changed(); commit(); render();
+      };
+      img.onerror = () => { URL.revokeObjectURL(img.src); logoRefusal = f.name + " is not a picture"; render(); };
+      img.src = URL.createObjectURL(f);
     } });
   return h("span", { class: "row", style: "margin:0" },
     R.logo ? h("img", { src: R.logo, alt: "Event logo", style: "height:28px; max-width:84px; object-fit:contain" })
       : weak("None"),
-    button("Choose PNG…", () => pick.click(), { title: "A PNG picture of at most 64 KB" }), pick,
+    button("Choose picture…", () => pick.click(), { title: "Any picture: a big one is made smaller to fit" }), pick,
     R.logo ? button("Remove", () => { R.logo = null; changed(); commit(); render(); }) : null,
     logoRefusal ? h("span", { class: "err" }, logoRefusal) : null);
 }
@@ -953,7 +966,7 @@ function effectsData(e) {
 }
 function rulesetData(r) {
   return {
-    schema: r.schema, name: r.name, page: r.page || null, squad_size: r.squad_size,
+    schema: r.schema, name: r.name, page: r.page || null,
     stats: struct(r.stats, [["rating"], ["at_most"]]),
     tiers: r.tiers.map(t => struct(t, [["id", "req"], ["label", "req"], ["count", "opt"],
       ["counts_as", "opt"], ["when"], ["rate", "req"], ["stats"], ["form"], ["injury_resistance"],
@@ -1013,7 +1026,7 @@ function dataBlock(r) {
   };
   L.push(`${I}schema: ${d.schema},`, `${I}name: ${rv(d.name)},`);
   if (d.page) L.push(`${I}page: ${rv(d.page)},`);
-  L.push(`${I}squad_size: ${d.squad_size},`, "");
+  L.push("");
   L.push(`${I}stats: #{`);
   for (const k of Object.keys(d.stats)) L.push(...listLines(I + I, k + ": ", d.stats[k]));
   L.push(`${I}},`, "", `${I}tiers: [`);
@@ -1121,14 +1134,14 @@ function problems(r) {
   const rest = r.tiers.filter(t => t.count == null && t.counts_as == null && !medalTiers.has(t.id));
   if (rest.length > 1) add("tiers", "only one tier can be the rest of the squad");
   const counted = r.tiers.reduce((n, t) => n + (t.count || 0), 0);
-  if (counted > r.squad_size) add("tiers", `the tier counts add up to ${counted}, over the squad's ${r.squad_size}`);
-  if (!rest.length && !medalTiers.size && counted < r.squad_size) add("tiers", `the tier counts add up to ${counted}, not the squad's ${r.squad_size}, and no tier is the rest`);
+  if (counted > SQUAD) add("tiers", `the tier counts add up to ${counted}, over the squad's ${SQUAD}`);
+  if (!rest.length && !medalTiers.size && counted < SQUAD) add("tiers", `the tier counts add up to ${counted}, not the squad's ${SQUAD}, and no tier is the rest`);
   (r.medal_systems || []).forEach((s, i) => {
     if (s.label === "") add("tiers", `medal system ${i + 1}: an empty label`);
     Object.keys(s.counts).forEach(id => { if (!tierIds.includes(id)) add("tiers", `medal system "${s.label}": counts an unknown tier "${id}"`); });
     const sc = counted + Object.values(s.counts).reduce((n, c) => n + c, 0);
-    if (sc > r.squad_size) add("tiers", `medal system "${s.label}": its counts and the tier counts add up to ${sc}, over the squad's ${r.squad_size}`);
-    else if (!rest.length && sc !== r.squad_size) add("tiers", `medal system "${s.label}": its counts and the tier counts add up to ${sc}, not the squad's ${r.squad_size}, and no tier is the rest`);
+    if (sc > SQUAD) add("tiers", `medal system "${s.label}": its counts and the tier counts add up to ${sc}, over the squad's ${SQUAD}`);
+    else if (!rest.length && sc !== SQUAD) add("tiers", `medal system "${s.label}": its counts and the tier counts add up to ${sc}, not the squad's ${SQUAD}, and no tier is the rest`);
   });
   r.tiers.forEach((t, i) => {
     const where = `"${t.label || "tier " + (i + 1)}"`;
@@ -1162,7 +1175,7 @@ function problems(r) {
     if (s.extra_height && (s.extra_height.total == null || s.extra_height.max == null)) add("heights", `system "${s.label}": the extra height pool needs both its total and the tallest a player may be`);
     if (pool) {
       const quotas = Object.values(s.quotas).reduce((n, q) => n + q, 0);
-      if (quotas !== r.squad_size) add("heights", `system "${s.label}": the pool's quotas add up to ${quotas}, not the squad's ${r.squad_size}`);
+      if (quotas !== SQUAD) add("heights", `system "${s.label}": the pool's quotas add up to ${quotas}, not the squad's ${SQUAD}`);
     }
   });
   Object.entries(r.card_groups).forEach(([gid, cards], gi) => {
@@ -1278,7 +1291,7 @@ function effectsText(e) {
   return p.join(", ");
 }
 function summary(r) {
-  const L = [`# ${r.name}`, "", `Squad of ${r.squad_size}. A player's rating is his best of: ${r.stats.rating.map(s => human(s).toLowerCase()).join(", ")}.`];
+  const L = [`# ${r.name}`, "", `Squad of ${SQUAD}. A player's rating is his best of: ${r.stats.rating.map(s => human(s).toLowerCase()).join(", ")}.`];
   if (r.stats.at_most.length) L.push(`May sit below their target: ${r.stats.at_most.map(s => human(s).toLowerCase()).join(", ")}.`);
   L.push("", "## Tiers");
   const medalTiers = new Set((r.medal_systems || []).flatMap(s => Object.keys(s.counts)));
@@ -1469,8 +1482,7 @@ const VIEWS = {
       h("tr", {}, h("td", {}, "Name"), h("td", {}, text(R.name, v => R.name = v, { width: 220 }))),
       h("tr", {}, h("td", {}, "Event page"), h("td", {}, text(R.page, v => R.page = v || null,
         { width: 220, placeholder: "https://", title: "Opened by a click on the event logo" }))),
-      h("tr", {}, h("td", {}, "Event logo"), h("td", {}, eventLogoField())),
-      h("tr", {}, h("td", {}, "Squad size"), h("td", {}, drag(R.squad_size, v => R.squad_size = v ?? 0, { min: 1, max: 32 })))), "general-fields"));
+      h("tr", {}, h("td", {}, "Event logo"), h("td", {}, eventLogoField()))), "general-fields"));
     d.append(h("div", { class: "weak" }, "The Save editor draws the logo at its top right while this ruleset is picked; a click on it opens the event page."));
     d.append(h("div", { class: "sep" }), strong("Rating stats"),
       h("div", { class: "weak" }, "A player's rating is the highest of these; it picks his tier. What a stat may sit at is the target, the warning band and the stat total, not the rating."),
