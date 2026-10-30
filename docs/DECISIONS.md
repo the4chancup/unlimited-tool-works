@@ -14264,3 +14264,22 @@ preview pane, which the label would seem to name.
 Plan: `plans/core/development_plan.md` "Divegrass Before Christmas" and "Phase 20";
 `plans/core/gui.md` "Sidebar" (the CLI-only list); `plans/ruleset_editor.md` (the label);
 the shell draft's registry.
+
+## 2026-10-30 — aatf, ruleset_editor — every squad is 23, and the event logo is any picture, scaled down
+Decision: the maintainer's calls. (1) `squad_size` leaves the rules format: the schema, the
+data block, the embedded rulesets and the logic read a squad of 23, and General loses its
+Squad size field. (2) General's event logo takes any picture `image` reads, scales it down
+(never up) to fit 168 × 56 pixels and stores it as a PNG, where it refused a non-PNG or one
+over 64 KB. (3) The unbuilt sections' line in 0.0.1 reads "You can't edit this section yet.
+Summary shows what's in it, and saving leaves it unchanged."
+Why: (1) the maintainer kept the field only if the Save editor and the Team compiler could
+take a bigger squad; the compiler cannot without moving every team's boots and gloves IDs
+(23 exclusive IDs in each 40-ID block, the blocks ending just below the referees' band) and
+renumbering its export rules, so a size other than 23 could never be met. (2) an organizer's
+logo is whatever their event's page shows; at the drawn size a PNG is always under the 64 KB
+the file format allows, which stays. (3) the first wording named the tool's own controls in
+one long sentence.
+Plan: `plans/aatf_rules.md` "The ruleset schema" ("Every squad is 23"), the load rules;
+`plans/ruleset_editor.md` "The editor" (General), RE-GUI-17, RE-GUI-19;
+`plans/core/development_plan.md` "Divegrass Before Christmas"; the draft
+`docs/prototypes/tools/ruleset_editor.js`.

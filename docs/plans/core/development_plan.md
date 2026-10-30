@@ -78,8 +78,8 @@ that passes a team the organizers' check refuses costs the invitational more tha
 The Ruleset editor (Phase 20) ships in 0.0.1 as far as it is built, its sidebar label and
 window title "Ruleset editor (WIP)": opening and saving, the start page and templates, the
 preview, General, Tiers, Custom checks and Summary. Heights, Cards, Universal rules, Specials
-and Suggestions draw their heading and one line saying they are edited in a later build,
-that Summary describes them and the preview shows them as written; a save keeps them as the
+and Suggestions draw their heading and one line saying they cannot be edited yet, that
+Summary shows what they hold and that saving leaves them unchanged; a save keeps them as the
 file held them. Its other forms (the condition and effects editors among them), Randomize
 and its close run after Release 0.1.0. Not the whole tool before the cut: those forms are
 the hardest left, and building them would split the time the check needs. Not left out
