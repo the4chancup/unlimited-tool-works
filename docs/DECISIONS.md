@@ -14307,3 +14307,15 @@ the change is one more source format on the existing path. Either crate's API ch
 held off by the pinned version, so speed decides, as CPU time: the compiler decodes one
 texture per core. Measured with `.tmp/jxl_bench/` (`timing.log`).
 Plan: `plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)".
+
+## 2026-10-30 — dds_convert — no BC7 encoding until the GPU encoder is in
+Decision: the maintainer's call: auto-compression to BC7 is off until GPU compression is in. A
+texture encoded for PES 19–21 is BC1, BC3 or DXT5nm as for PES 15–18; a BC7 source's blocks
+are still kept. The lead's reading of the same call, reversible: once the GPU encoder is in, a
+machine with no usable GPU encodes BC3/BC1 rather than falling back to the CPU's BC7.
+Why: the CPU BC7 encoder spends 31.7 s of CPU on one 2048 × 2048 mip chain against 128 ms for
+BC3 (`.tmp/jxl_bench/findings.md`), so a team compiled for VGL 27 on PES 2019 would take
+minutes; the GPU encoder measured about 33 times the whole CPU's throughput
+(`.tmp/16x/findings.md`), and BC3 is what the legacy compilers shipped.
+Plan: `plans/libs/dds_convert.md` "No BC7 encoding until the GPU encoder (0.0.2)";
+`plans/libs/README.md` "First-release desktop GPU BC7".

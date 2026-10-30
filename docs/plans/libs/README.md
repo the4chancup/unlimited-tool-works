@@ -9,7 +9,10 @@ backend inside `dds_convert`, built in Phase 16 on the Team compiler's texture s
 ships the CPU encoder only (`plans/core/development_plan.md` "Releases"). The library supplies the kernels; Studio implements bounded batching,
 upload/readback, pipeline integration, and fallback. It can remain the permanent GPU backend.
 BC1/BC3 stay on the CPU initially; already-compatible compressed inputs and cache hits need no
-encoding at all.
+encoding at all. Until this lands, no compile encodes BC7 (`plans/libs/dds_convert.md` "No BC7
+encoding until the GPU encoder"), and after it a machine with no usable GPU encodes BC3/BC1, not
+the CPU's BC7: CPU mode below means the deterministic reference for tests, not a compile's
+fallback.
 
 - **Auto / CPU:** Auto is the desktop default, using the GPU when ready, supported, and beneficial.
   CPU mode explicitly selects the deterministic reference. Unsupported/unready GPUs and recoverable

@@ -5969,6 +5969,10 @@ briefs, review loops, gates and mutation runs as for any step.
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
     formats) with its verify list
+  - [ ] 0.0.2b no BC7 encoding until the GPU encoder (`plans/libs/dds_convert.md` "No BC7
+    encoding until the GPU encoder (0.0.2)"; DECISIONS 2026-10-30): PES 19–21 encode as
+    PES 15–18, BC7 sources kept; the Team compiler's tests and goldens that expect BC7
+    follow, and the library parity against Red re-run (Red ships BC3)
 
 ### Phase 10 — Music tools
 

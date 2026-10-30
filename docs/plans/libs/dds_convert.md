@@ -44,3 +44,24 @@ Export upgrader reads no JXL: no old export can hold one, since Red never read i
 → verify: a lossless JXL of a PNG fixture decodes to that PNG's pixels exactly; a lossy one
 decodes at its size, each channel within a few levels of its source's; a `.jxl` in an
 export compiles; the exe's size before and after, measured (`cargo bloat`).
+
+### No BC7 encoding until the GPU encoder (0.0.2)
+
+What exists of the codec rules is in `spec/libs/dds_convert.md` "Target codecs and CPU
+encoder", whose table encodes a new texture for PES 19–21 as BC7.
+
+Until the GPU BC7 encoder is wired in (`plans/libs/README.md` "First-release desktop GPU
+BC7"), a texture that has to be encoded for PES 19–21 is encoded as for PES 15–18: BC1 when
+it is an opaque color texture eligible for it, BC3 otherwise, DXT5nm for a normal map. A BC7
+source's blocks are still kept on PES 19–21 (no encoding), and a BC7 source for PES 15–18
+is still transcoded to BC3 or BC1. The CPU BC7 encoder stays in the crate for the GPU path's
+fallback and tests, never chosen by a compile. Not the CPU's BC7: it spends 31.7 s of CPU on
+one 2048 × 2048 face's mip chain where BC3 spends 128 ms (`.tmp/jxl_bench/findings.md`), a
+team's textures minutes of all-core time, while BC3 is what every legacy compiler shipped for
+those versions. Once the GPU encoder is in, a compile encodes BC7 on the GPU; a machine with
+no usable GPU (or one that fails) keeps BC3/BC1 rather than falling back to the CPU's BC7,
+for the same reason.
+
+→ verify: a PNG compiled for PES 21 is BC3 (alpha) or BC1 (opaque) in its FTEX; a BC7 DDS
+compiled for PES 21 keeps its blocks byte for byte; no compile reaches the BC7 encoder
+(a test over the conversion's target table).
