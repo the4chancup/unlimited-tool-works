@@ -2958,12 +2958,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         first chapter that needs one). SWE-2 S1e1: 4 accepted, the loop ended; the three
         wording fixes landed with the rulings (`.tmp/8_29d/rulings_e1.md`). Open: the read in
         the built window (the built-window check before the next candidate)
-        - [ ] e1r the help search's labels as plain text (S1a-4; DECISIONS "A help search
+        - [x] e1r the help search's labels as plain text (S1a-4; DECISIONS "A help search
           hit's label is plain text", drafted in `index.html`'s `helpSearch`):
           `help_window.rs` `search` drops `**`, backticks and a list item's leading dash
           from the label's line → verify: a test searching "writing a save" gets the label
           `Save editor › Running from a terminal › Writing a save`, and "next to the program"
           one starting `… › Next to the program puts`
+          Done 2026-10-30 (Opus sidekick, merged `4b8df44e`): `plain_text` in `search`, the test
+          on the real core chapter and a Save editor-shaped one; studio_core tests green in
+          its target, the lead's run at the next checkpoint
       - [ ] e2 after 0.0.1: the Team compiler's, the Export upgrader's and the other tools'
         chapters
   - [ ] 8.21 the app's font in the drafts (`core/gui.md` "The host's other review aids"; after

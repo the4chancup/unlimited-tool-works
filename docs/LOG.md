@@ -2874,3 +2874,5 @@ worklog passed 7,000 lines.
 - **2026-10-30** — The Save editor drops the stripped-save route before 0.0.1: `strip-and-seed`,
   `check-stripped`, the Strip again window and every stripped mark are gone; `diff` reports the
   appearance id as an ordinary row and Team TOML refuses a `stripped` key (8.36b).
+- **2026-10-30** — The help search lists a hit on a bold subheading or a list item without its
+  Markdown marks (8.29e1r).
