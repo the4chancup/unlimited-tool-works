@@ -776,10 +776,14 @@ impl StatNum {
     }
 }
 
+/// The least room between the number dialog's sentence and its field, the
+/// draft's `.num-row` gap.
+const SENTENCE_FIELD_GAP: f32 = 12.0;
+
 /// The number dialog while `view.stat_num` holds one (the draft's
-/// `dlgNum`): the line, the field under it inside the operation's range, OK
-/// and Cancel; OK applies and closes (a Bump's N stays as `view.bump`),
-/// Cancel or Escape closes.
+/// `dlgNum`): the line and, on its row at the dialog's right edge, the field
+/// inside the operation's range, then OK and Cancel; OK applies and closes
+/// (a Bump's N stays as `view.bump`), Cancel or Escape closes.
 pub(crate) fn stat_num_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.stat_num.is_none() {
         return;
@@ -791,9 +795,35 @@ pub(crate) fn stat_num_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     let response = modal(ui.ctx(), id, title, |ui| {
         let stat_num = view.stat_num.as_mut().expect("checked above");
         let range = stat_num.range();
-        ui.label(&stat_num.line);
-        modal_sentence_gap(ui);
-        let field = ui.add(egui::DragValue::new(&mut stat_num.value).range(range.clone()));
+        // The row is as wide as the modal, or as the sentence, the gap and the field need
+        // when that is wider; a field of two digits and a sign is never wider than egui's
+        // least widget width. A right-to-left layout over the available width would claim
+        // all the room the screen leaves, and the modal would grow to it.
+        let sentence = egui::WidgetText::from(&stat_num.line).into_galley(
+            ui,
+            Some(egui::TextWrapMode::Extend),
+            f32::INFINITY,
+            egui::TextStyle::Body,
+        );
+        let width = ui
+            .min_rect()
+            .width()
+            .max(sentence.size().x + SENTENCE_FIELD_GAP + ui.spacing().interact_size.x);
+        let row = egui::vec2(width, ui.spacing().interact_size.y);
+        let field = ui
+            .allocate_ui_with_layout(
+                row,
+                egui::Layout::right_to_left(egui::Align::Center),
+                |ui| {
+                    let field =
+                        ui.add(egui::DragValue::new(&mut stat_num.value).range(range.clone()));
+                    ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                        ui.label(sentence)
+                    });
+                    field
+                },
+            )
+            .inner;
         step_number(&mut stat_num.value, wheel_steps(ui, &field), range);
         modal_buttons(ui, |ui| {
             if ui.button("Cancel").clicked() {

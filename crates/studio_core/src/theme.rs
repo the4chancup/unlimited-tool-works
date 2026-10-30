@@ -239,7 +239,7 @@ pub const NO_TINT: egui::Color32 = egui::Color32::WHITE;
 /// The text style a modal or floating window's title draws in (the drafts'
 /// `.window .title`): proportional 14, where `Heading`, a page's heading
 /// (the drafts' `h2`), is 15. `install` registers it on both themes; draw a
-/// title with [`window_title`] or [`window_title_text`].
+/// title with [`window_title_text`].
 fn window_title_style() -> egui::TextStyle {
     egui::TextStyle::Name("window_title".into())
 }
@@ -247,16 +247,10 @@ fn window_title_style() -> egui::TextStyle {
 /// `text` as a window's title, the drafts' `.window .title`: in
 /// `window_title_style`'s 14 points, the draft's `var(--strong)` the strong
 /// text colour. An `egui::Window` takes it as its title, which its title
-/// bar would otherwise draw in `Heading`; a modal draws it with
-/// [`window_title`].
+/// bar would otherwise draw in `Heading`; a modal draws it through
+/// `widgets::modal`, centred over the dialog.
 pub fn window_title_text(text: impl Into<egui::RichText>) -> egui::RichText {
     text.into().strong().text_style(window_title_style())
-}
-
-/// Draws `text` as a modal window's title, [`window_title_text`] in a
-/// label. A page's heading is `ui.heading`'s, `Heading`'s 15.
-pub fn window_title(ui: &mut egui::Ui, text: impl Into<egui::RichText>) -> egui::Response {
-    ui.label(window_title_text(text))
 }
 
 /// The colour a notice's text is drawn in: its kind's bright colour, since a
