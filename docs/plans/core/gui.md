@@ -299,9 +299,11 @@ The settings menu is assembled from injected sections:
   auto-switch as the selector's does.
 - **One collapsible section per registered tool that has settings**, provided by that tool's
   `settings_view(ui, ctx)` (each tool defines its own settings struct and UI, and writes it
-  through `ctx.set_tool_settings`). A tool has settings when its `default_settings()` table is
-  not empty: the table lists every key the tool reads, so an empty one is a tool with nothing
-  to show (the Export upgrader), and a header over nothing would be a dead end. A tool the
+  through `ctx.set_tool_settings`). A tool has settings when it says it draws a form
+  (`StudioTool::has_settings_view`, false unless the tool overrides it), not when its
+  `default_settings()` table is not empty: the table also holds state the tool writes itself
+  (the Ruleset editor's last folder and recent files, its only keys), so a non-empty table can
+  still draw nothing, and a header over nothing would be a dead end. A tool the
   registry marks CLI-only has no section either, whatever its table holds: its window is not
   built, so its section would draw a placeholder or nothing (its table holding only state the
   tool writes itself), and its keys are edited in the settings file, as the readme says.

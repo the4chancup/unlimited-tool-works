@@ -14283,3 +14283,15 @@ Plan: `plans/aatf_rules.md` "The ruleset schema" ("Every squad is 23"), the load
 `plans/ruleset_editor.md` "The editor" (General), RE-GUI-17, RE-GUI-19;
 `plans/core/development_plan.md` "Divegrass Before Christmas"; the draft
 `docs/prototypes/tools/ruleset_editor.js`.
+
+## 2026-10-30 — studio_core, ruleset_editor — the settings menu draws a section only for a tool that says it has a form
+Decision: `StudioTool` gains `has_settings_view(&self) -> bool`, false by default and true for
+the Save editor and the Team compiler; the settings menu draws a tool's section only when it is
+true (and the tool is not CLI-only), where it read a non-empty `default_settings()` table.
+Why: with the Ruleset editor a window tool in 0.0.1, its table holds only the state it writes
+itself (last folder, recent files), so the old test drew its header over nothing, the dead end
+the plan rules out. Giving it a form (a "Clear recent files" button) would be new UI nobody
+asked for, and dropping its keys from the table would break "the table lists every key the
+tool reads".
+Plan: `plans/core/gui.md` "Settings menu", the bullet starting "One collapsible section per
+registered tool"; the spec's `core/architecture.md` trait block follows when the code lands.
