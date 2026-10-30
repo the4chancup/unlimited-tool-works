@@ -731,9 +731,10 @@ fn skills_panel(
     // line in the badge's place, opening its error in the refusal dialog
     // (the AATF check never runs the two functions the badge asks, so a
     // member's edit that breaks only them would otherwise show nowhere).
-    let tier_error = match badge.as_ref() {
-        Some((_, OwnBadge::Failed(error))) => Some(error.clone()),
-        _ => None,
+    let tier_error = if let Some((_, OwnBadge::Failed(error))) = badge.as_ref() {
+        Some(error.clone())
+    } else {
+        None
     };
     // The header's row one line of text high, as the draft's: a wrapping
     // row is otherwise a control's height, which stood the badge's text and

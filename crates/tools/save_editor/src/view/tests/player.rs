@@ -454,15 +454,15 @@ fn mark_copy_players(path: &std::path::Path, version: PesVersion) {
     file.save(path).unwrap();
 }
 
-/// `slot`'s label in the Copy/Swap dialog's player combo: the shirt
-/// number, registered position and display name, as the player list shows
-/// them.
-fn slot_label(entry: &PlayerEntry, number: u16) -> String {
+/// The label of the player in roster `slot` (0-based) in the Copy/Swap
+/// dialog's player combo: his place in the roster, registered position
+/// and display name, as the player list shows them.
+fn slot_label(entry: &PlayerEntry, slot: usize) -> String {
     let position = POSITIONS
         .get(usize::from(entry.positions.registered))
         .copied()
         .unwrap_or("?");
-    format!("{number} {position} {}", display_name(&entry.name))
+    format!("{:02} {position} {}", slot + 1, display_name(&entry.name))
 }
 
 /// The `role` control named by `label` inside a dialog: `right_of_label`,
@@ -541,13 +541,12 @@ fn copy_stats_writes_the_field_set_and_nothing_else() {
 
     // The dialog's team combo opens on the selected player's team (701),
     // its player combo on the first filled slot: 70102 is the option named
-    // by his shirt number, position and name.
-    let number = team_entry(&view, 701).roster[1].number;
+    // by his place, position and name.
     run_copy_swap(
         &mut window,
         &mut view,
         "Copy stats from",
-        &slot_label(&source_before, number),
+        &slot_label(&source_before, 1),
     );
 
     assert_eq!(
@@ -593,12 +592,11 @@ fn swap_stats_trades_the_field_set_on_pes16() {
     let second_before = player_entry(&view, 70102);
     assert_ne!(first_before.appearance, second_before.appearance);
 
-    let number = team_entry(&view, 701).roster[1].number;
     run_copy_swap(
         &mut window,
         &mut view,
         "Swap stats with",
-        &slot_label(&second_before, number),
+        &slot_label(&second_before, 1),
     );
 
     assert_eq!(
@@ -676,7 +674,7 @@ fn the_menu_dialogs_draw_their_headings() {
 // The Copy/Swap dialog's pick: it opens on the selected player's team's
 // first filled roster slot, and picking another team re-picks that
 // team's first filled slot — the combo's shown text names the picked
-// player by his number, position and name.
+// player by his place, position and name.
 #[test]
 fn the_copy_swap_dialog_picks_the_teams_first_filled_slot() {
     let path = fixture(PesVersion::Pes21, "player_copy_swap_pick");
@@ -691,7 +689,16 @@ fn the_copy_swap_dialog_picks_the_teams_first_filled_slot() {
         .copied()
         .expect("team 701 has a filled slot");
     let first = player_entry(&view, first_id);
-    let number = team_entry(&view, 701).roster[slot].number;
+    // His shirt number moved off his place, so the label shows which one
+    // it reads: the fixture's numbers equal the places.
+    let session = view.session.as_mut().unwrap();
+    let mut team = session.file().team(701).unwrap().clone();
+    team.roster[slot].number = 19;
+    session.edit_team(1, team);
+    assert_ne!(
+        usize::from(team_entry(&view, 701).roster[slot].number),
+        slot + 1
+    );
     let second_id = view
         .session
         .as_ref()
@@ -708,14 +715,13 @@ fn the_copy_swap_dialog_picks_the_teams_first_filled_slot() {
         .copied()
         .expect("the other team has a filled slot");
     let second = player_entry(&view, second_player_id);
-    let second_number = team_entry(&view, second_id).roster[second_slot].number;
 
     let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
     click(&mut window, menu_item(&nodes, "Copy stats from"), &mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_eq!(
         player_combo(&nodes).value().map(str::to_owned),
-        Some(slot_label(&first, number)),
+        Some(slot_label(&first, slot)),
         "the pick is the team's first filled slot, shown by his label"
     );
 
@@ -732,7 +738,7 @@ fn the_copy_swap_dialog_picks_the_teams_first_filled_slot() {
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_eq!(
         player_combo(&nodes).value().map(str::to_owned),
-        Some(slot_label(&second, second_number)),
+        Some(slot_label(&second, second_slot)),
         "the pick is the picked team's first filled slot"
     );
 }
@@ -1134,7 +1140,7 @@ fn the_lock_disables_the_fpc_items_with_the_ownership_line() {
         assert_eq!(
             tooltip_containing(&mut window, &mut view, centre(button), "The team's export"),
             Some(
-                "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch."
+                "The team's export owns the aesthetics, so edit its settings.toml (the face, hair and iris: its ingame_face.toml) and recompile, then apply the patch."
                     .to_string(),
             ),
             "{label}'s hover is the ownership line"
@@ -1152,7 +1158,7 @@ fn the_lock_disables_the_fpc_items_with_the_ownership_line() {
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(toggle), "The team's export"),
         Some(
-            "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch."
+            "The team's export owns the aesthetics, so edit its settings.toml (the face, hair and iris: its ingame_face.toml) and recompile, then apply the patch."
                 .to_string(),
         ),
         "the toggle's hover is the ownership line"
@@ -1177,7 +1183,7 @@ fn the_lock_disables_the_fpc_items_with_the_ownership_line() {
         assert_eq!(
             tooltip_containing(&mut window, &mut view, centre(item), "The team's export"),
             Some(
-                "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch."
+                "The team's export owns the aesthetics, so edit its settings.toml (the face, hair and iris: its ingame_face.toml) and recompile, then apply the patch."
                     .to_string(),
             ),
             "{label}'s hover is the ownership line"

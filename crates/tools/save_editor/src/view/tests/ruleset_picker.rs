@@ -384,6 +384,46 @@ fn an_imported_copy_is_listed_after_the_builtins_and_picked() {
     assert_eq!(popup_rows(&pairs), expected);
 }
 
+// The wheel over the closed dropdown steps between the rulesets alone:
+// from the second-to-last built-in, a notch down picks the last, the next
+// the imported copy, and a third stays there, never reaching Import rules
+// file… below it.
+// SE-GUI-15
+#[test]
+fn the_wheel_over_the_closed_dropdown_steps_the_rulesets_and_never_imports() {
+    let mut view = SaveView::new();
+    pick_imported(&mut view, "cup.4ccrules", &aatf::official_file());
+    let stems: Vec<&str> = crate::session::rules::builtins()
+        .iter()
+        .map(|(stem, _)| *stem)
+        .collect();
+    let last = stems.len() - 1;
+    view.aatf_ruleset = stems[last - 1].to_owned();
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let at = centre(dropdown(&nodes));
+    window.frame(vec![egui::Event::PointerMoved(at)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let notch_down = egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Line,
+        delta: egui::vec2(0.0, -1.0),
+        phase: egui::TouchPhase::Move,
+        modifiers: egui::Modifiers::default(),
+        source: egui::MouseWheelSource::Wheel,
+    };
+    for expected in [stems[last], "cup.4ccrules", "cup.4ccrules"] {
+        window.frame(vec![notch_down.clone()], |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+        for _ in 0..3 {
+            window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        }
+        assert_eq!(view.aatf_ruleset, expected, "a notch down");
+        assert!(view.rules_dialog.is_none(), "the wheel never imports");
+    }
+}
+
 /// The settings menu's section holds no rules file row: the ruleset is
 /// the dropdown's alone, and the section's one row is the aesthetics lock.
 // SE-GUI-32

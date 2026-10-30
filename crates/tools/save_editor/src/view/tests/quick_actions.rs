@@ -318,18 +318,18 @@ fn open_701(test: &str) -> (PathBuf, SaveView, Headless) {
     (path, view, Headless::sized(DEFAULT_PANE.x, 700.0))
 }
 
-// The quick actions under the list on either selection (plans "Editing
-// UI", the Quick actions bullet): on a player row they act on him; on a
-// team row every control draws disabled with the reason on hover, and the
-// Player menu's entries the same. There is no "Quick actions" heading and
-// no `AATF…` button (Live AATF is the window's check).
+// The quick actions under the list on either selection: on a player row
+// they act on him; on a team row every control draws disabled with the
+// reason on hover, the Player menu's entries the same, and Ctrl+I and
+// Ctrl+B do nothing. There is no "Quick actions" heading and no `AATF…`
+// button (Live AATF is the window's check).
 // SE-GUI-37
 #[test]
 fn the_quick_actions_and_player_menu_disable_on_a_team_row() {
     let (_path, mut view, mut window) = open_701("quick_on_team_row");
 
-    /// No node of the frame carries the tool's name (the "No view draws
-    /// the tool's name" bullet): the window's title bar carries it.
+    /// No node of the frame carries the tool's name: the window's title
+    /// bar carries it.
     fn draws_tool_name(nodes: &[accesskit::Node]) -> bool {
         nodes.iter().any(|node| {
             node.label().is_some_and(|l| l.contains("Save editor"))
@@ -384,6 +384,28 @@ fn the_quick_actions_and_player_menu_disable_on_a_team_row() {
         Some(tip.to_string()),
         "the number's tooltip"
     );
+
+    // Ctrl+I and Ctrl+B act on a player, so on a team row they change no
+    // player and open no dialog.
+    let players = |view: &SaveView| {
+        let file = view.session.as_ref().unwrap().file();
+        file.team(701)
+            .unwrap()
+            .roster
+            .iter()
+            .filter_map(|slot| file.player(slot.player_id).cloned())
+            .collect::<Vec<PlayerEntry>>()
+    };
+    let before = players(&view);
+    assert!(!view.aesthetics_locked(), "premise: Ctrl+I is not locked");
+    for shortcut in [egui::Key::I, egui::Key::B] {
+        window.frame(vec![key(shortcut, egui::Modifiers::CTRL, true)], |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+    }
+    assert_eq!(players(&view), before, "no player changed");
+    assert!(!view.session.as_ref().unwrap().is_dirty(), "nothing edited");
+    assert!(view.stat_num.is_none(), "no Bump dialog");
 
     let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
     for label in [
@@ -884,7 +906,7 @@ fn the_buttons_stay_put_when_the_list_scrolls() {
 }
 
 // The draft's `.qagrid` inside the 255-wide `.plist` holds its labels
-// whole (plans "Editing UI", the Quick actions bullet): at the window's
+// whole: at the window's
 // default size no Make button's galley elides, and every control — the
 // Set stats field included — stays inside the list rows' x range.
 #[test]

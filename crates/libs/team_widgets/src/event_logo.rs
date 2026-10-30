@@ -25,8 +25,12 @@ impl EventLogo {
     /// does not decode, and then nothing is drawn: a logo whose bytes
     /// passed the ruleset's load check can still hold broken pixels.
     pub fn load(ctx: &egui::Context, name: &str, png: &[u8]) -> Option<EventLogo> {
-        let Ok(decoded) = dds_convert::decode(png, dds_convert::SourceFormat::Png) else {
-            return None;
+        let decoded = match dds_convert::decode(png, dds_convert::SourceFormat::Png) {
+            Ok(decoded) => decoded,
+            Err(error) => {
+                log::debug!("the event logo {name} is not drawn: its PNG does not decode: {error}");
+                return None;
+            }
         };
         let pixels = decoded.mips.first()?;
         let size = [decoded.width as usize, decoded.height as usize];

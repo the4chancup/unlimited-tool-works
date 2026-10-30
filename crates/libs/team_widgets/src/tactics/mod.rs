@@ -110,9 +110,8 @@ pub struct RosterRow<'a> {
 }
 
 /// One `FieldedNotA` violation on the roster slot, as the pitch's cross
-/// needs it (the Live AATF bullet's field-a-violation-is-about
-/// sub-bullet): which preset and position it names, its severity's
-/// colour and its line for the tooltip.
+/// needs it: which preset and position it names, its severity's colour
+/// and its line for the tooltip.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FieldedMark {
     /// The violation's preset minus 1, 0 to 2 as `view.preset` counts.

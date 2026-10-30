@@ -12,6 +12,7 @@ aatf.workspace = true
 # The event logo's PNG decode (`event_logo`).
 dds_convert.workspace = true
 egui.workspace = true
+log.workspace = true
 pes_savefile.workspace = true
 pes_version.workspace = true
 # The suite's checkbox (`widgets::checkbox`), drawn the same in every view; the

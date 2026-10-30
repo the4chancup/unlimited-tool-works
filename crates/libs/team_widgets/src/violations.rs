@@ -117,7 +117,11 @@ pub fn violations_list(
                     if groups.is_empty() {
                         continue;
                     }
-                    ui.strong(format!("Team {} {}", team.team_id, team.team_name));
+                    ui.strong(format!(
+                        "Team {} {}",
+                        team.team_id,
+                        pes_savefile::model::names::display_name(team.team_name)
+                    ));
                 }
                 ListUse::Report => {
                     ui.strong(format!(
@@ -2174,6 +2178,39 @@ mod tests {
         assert!(
             lines.iter().all(|line| !line.contains('\u{11}')),
             "no colour code byte is drawn"
+        );
+    }
+
+    #[test]
+    fn a_coded_team_name_heads_its_rows_as_plain_text() {
+        // Team 718 of the PES 17 fixture save, its name given a colour
+        // code ahead of its own letters.
+        let file = fixture();
+        let name = file.team(718).expect("team 718").name.as_str();
+        let coded = format!("\x11cff0000ff{name}");
+        let violations = [violation(
+            Some(0),
+            aatf::Severity::Error,
+            aatf::ViolationKind::Height {
+                height: 185,
+                fits: vec![],
+                room: false,
+            },
+        )];
+        let players = [listed(0, 71801, 50, "ROADTRIP")];
+        let teams = [TeamViolations {
+            team_id: 718,
+            team_name: &coded,
+            players: &players,
+            violations: &violations,
+        }];
+        let mut window = Headless::new();
+        let (nodes, _, _) = window.list(&teams, false, vec![]);
+        let lines = drawn_lines(&nodes);
+        assert_eq!(lines[0], format!("Team 718 {name}"), "{lines:?}");
+        assert!(
+            lines.iter().all(|line| !line.contains('\u{11}')),
+            "no colour code byte is drawn: {lines:?}"
         );
     }
 

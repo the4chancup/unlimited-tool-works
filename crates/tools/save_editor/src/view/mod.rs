@@ -195,7 +195,7 @@ pub(crate) struct SaveView {
     /// written back to the `live_suggestions` setting as `live_aatf` is:
     /// on, Live AATF's check asks for the suggestions too.
     pub(crate) live_suggestions: bool,
-    /// The Live AATF dock's state (the Live AATF bullet's docked panel);
+    /// The Live AATF dock's state (the panel docked under the panes);
     /// drawn while `live_aatf` and a save is open.
     live: live_aatf::LiveAatf,
     /// The Multi-team AATF dialog's state (the Savefile menu's entry): open
@@ -460,9 +460,9 @@ impl SaveView {
         self.portraits.select(ctx, pes_folder, version);
     }
 
-    /// The aesthetics lock (the section's lock bullet): on while the
-    /// "Aesthetics from exports" setting is and the session's "Edit
-    /// aesthetics anyway" switch is not. The one function the locked
+    /// The aesthetics lock: on while the "Aesthetics from exports" setting
+    /// is and the session's "Edit aesthetics anyway" switch is not. The
+    /// one function the locked
     /// paths' guards read, so no site can forget the setting.
     pub(crate) fn aesthetics_locked(&self) -> bool {
         self.aesthetics_from_exports && !self.edit_aesthetics
@@ -853,6 +853,21 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::I));
     let bump_key =
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::B));
+    // PageDown and PageUp walk the list's players from any field, so they
+    // are not held off while a widget has the keyboard.
+    let page_step = if modal_up {
+        None
+    } else {
+        ui.input_mut(|input| {
+            if input.consume_key(egui::Modifiers::NONE, egui::Key::PageDown) {
+                Some(true)
+            } else if input.consume_key(egui::Modifiers::NONE, egui::Key::PageUp) {
+                Some(false)
+            } else {
+                None
+            }
+        })
+    };
     let end = studio_core::widgets::toolbar(ui, |ui| {
         open_menu::show(ui, view);
         if add_enabled(ui, view.session.is_some(), egui::Button::new("Save")).clicked() || save_key
@@ -936,6 +951,13 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         && let Some(session) = view.session.as_mut()
     {
         view.stat_num = Some(menus::StatNum::bump(session, player_id, view.bump));
+    }
+    if let Some(forward) = page_step {
+        // The field gives up the keyboard first: its gesture ends as one
+        // undo entry on the player it edited, and the next player's field
+        // does not inherit the focus and merge his edits into that entry.
+        surrender_focus(ui);
+        player_list::step_player(view, forward);
     }
     end
 }

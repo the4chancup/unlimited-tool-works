@@ -1052,8 +1052,8 @@ fn pairing_rows(ui: &mut egui::Ui, rows: &[Pairing], max_height: f32) {
 
 /// The notes in a scroll area at most `max_height` tall (the draft's
 /// `#ix-warnings`): per code, in first-seen order, the catalog's text as
-/// one weak line, then the code's groups. A team key's group is its
-/// subject alone in the warning colour; a players' group is a collapsed
+/// one weak line, then the code's groups. A team key's group is one line
+/// in the warning colour (`subject_line`); a players' group is a collapsed
 /// header `<subject> · <n> players` over one row per player.
 fn notes(ui: &mut egui::Ui, groups: &[NoteGroup], max_height: f32) {
     let warn = ui.visuals().warn_fg_color;
@@ -1079,7 +1079,7 @@ fn notes(ui: &mut egui::Ui, groups: &[NoteGroup], max_height: f32) {
                         .filter(|note| note.place.is_some())
                         .count();
                     if players == 0 {
-                        ui.colored_label(warn, &group.subject);
+                        ui.colored_label(warn, subject_line(group));
                         continue;
                     }
                     let noun = if players == 1 { "player" } else { "players" };
@@ -1090,6 +1090,23 @@ fn notes(ui: &mut egui::Ui, groups: &[NoteGroup], max_height: f32) {
                 }
             }
         });
+}
+
+/// A team key's group's one line: its subject, then its notes' details
+/// joined by `, ` (`Preset 1 attacking instructions: Wing Back`), the
+/// subject alone when no note carries one. A tactics key's line is the
+/// only place an instruction written off is named.
+fn subject_line(group: &NoteGroup) -> String {
+    let details: Vec<&str> = group
+        .notes
+        .iter()
+        .map(|note| note.detail.as_str())
+        .filter(|detail| !detail.is_empty())
+        .collect();
+    if details.is_empty() {
+        return group.subject.clone();
+    }
+    format!("{}: {}", group.subject, details.join(", "))
 }
 
 /// A players' group's rows: the place (weak), the player's name in its

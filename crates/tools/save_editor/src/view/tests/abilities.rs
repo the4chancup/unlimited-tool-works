@@ -1125,7 +1125,7 @@ fn the_cards_left_badge_reads_the_players_own_tier() {
     );
 }
 
-// The same bullet, painted: overdrawn past the tier's limit the badge is
+// The Cards left badge, painted: overdrawn past the tier's limit it is
 // the error colour (slot 0's player made to hold paid cards past his own
 // tier's limit by ticking skills in the fixture copy, as the Heading tick
 // above does). A colour is no AccessKit property, so it is read back from
@@ -1191,7 +1191,7 @@ fn an_overdrawn_badge_paints_in_the_error_colour() {
     assert_eq!(painted_color(&shapes, &badge), error_color);
 }
 
-// The same bullet: a player no tier's `when` holds for (`check_team`'s
+// The Cards left badge: a player no tier's `when` holds for (`check_team`'s
 // `NoTier`) gets the weak stand-in. VTL11's tiers each gate on an exact
 // height (gold 195, silver 195, regular 180, buffed 188), so most real
 // players match none — PES 21 fixture team 781 slot 0, player 78101.
@@ -1222,7 +1222,7 @@ fn a_player_no_tier_matches_gets_the_stand_in() {
     );
 }
 
-// The same bullet: a ruleset that loads but whose `player_tier` fails on
+// The Cards left badge: a ruleset that loads but whose `player_tier` fails on
 // the selected player (a member's own logic edit) draws the red click line
 // in the badge's place, not `No tier matches` (which would tell him the
 // opposite), whose click opens the error; and the failure is kept under
@@ -2035,7 +2035,7 @@ fn a_positions_label_click_registers_it_as_one_edit() {
     assert_eq!(registered(&view), 1, "and the registered stays CB");
 }
 
-// The same bullet's two-choice toggles (the draft's `.rate.lr`): Stronger
+// The player view's two-choice toggles (the draft's `.rate.lr`): Stronger
 // foot and Stronger hand draw Left | Right as two equal halves of the
 // row's field, the held side filled the positions grid's C grey
 // (#5a5a5a) with the normal text colour, and a click on the other side
@@ -2164,11 +2164,20 @@ fn a_players_first_frame_draws_where_every_later_one_does() {
 // 780 window (`DEFAULT_PANE`), their tops level, Appearance closed below
 // them inside the pane's height, every first-half box on its half's right
 // edge and the second half's on its label column, every combo on the
-// column's, and nothing past the pane's right edge.
+// column's, and nothing past the pane's right edge. PES 17's gated fields
+// keep the layout.
 // SE-GUI-37
 #[test]
 fn the_player_view_lays_out_its_three_columns_at_1280() {
-    let path = fixture(PesVersion::Pes21, "player_columns");
+    for version in [PesVersion::Pes21, PesVersion::Pes17] {
+        assert_three_columns_at_1280(version);
+    }
+}
+
+/// The player-view layout checks on `version`'s fixture save, its first
+/// player shown.
+fn assert_three_columns_at_1280(version: PesVersion) {
+    let path = fixture(version, &format!("player_columns_{version:?}"));
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
@@ -2209,7 +2218,8 @@ fn the_player_view_lays_out_its_three_columns_at_1280() {
 
     // Appearance sits closed below the deepest panel's bottom: the last
     // ability stat's row or the positions grid's last, whichever is lower.
-    let stat_bottom = right_of_label(&nodes, "Aggression", Role::SpinButton)[0]
+    // Aggression's control is its number box, or PES 17's gated stand-in.
+    let stat_bottom = control_right_of(&nodes, "Aggression")
         .bounds()
         .expect("bounds")
         .y1
@@ -2418,10 +2428,18 @@ fn the_player_view_lays_out_its_three_columns_at_1280() {
     let stat_pairs: Vec<(String, Role)> =
         pes_savefile::interchange::team_toml::labels::ABILITY_STATS
             .iter()
-            .map(|name| {
+            .zip(player_entry(&view, 70101).stats.abilities())
+            .map(|(name, stored)| {
+                // A stat the version does not store keeps its cell as
+                // the gated `-` button.
+                let role = if stored.is_some() {
+                    Role::SpinButton
+                } else {
+                    Role::Button
+                };
                 (
-                    pes_savefile::interchange::team_toml::labels::title_case(name),
-                    Role::SpinButton,
+                    pes_savefile::interchange::team_toml::labels::stat_name(version, name),
+                    role,
                 )
             })
             .collect();

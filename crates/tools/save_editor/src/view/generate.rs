@@ -62,9 +62,9 @@ impl GenFile {
 }
 
 /// The Generate dialog's state while it is open (`view.generate`): the
-/// player the file is for, which of the two files, the folder field's text
-/// and the last Write's failure, shown under the buttons while the dialog
-/// stays open.
+/// player the file is for, which of the two files, the folder field's text,
+/// the previewed text and the last Write's failure, shown under the buttons
+/// while the dialog stays open.
 pub(crate) struct Generate {
     /// The player the file is generated from.
     player_id: u32,
@@ -72,8 +72,25 @@ pub(crate) struct Generate {
     file: GenFile,
     /// The player folder the file lands in, as typed or picked.
     folder: String,
+    /// The text shown and written, `None` until the first frame builds it.
+    preview: Option<Preview>,
     /// The failure of the last Write (or `None`).
     error: Option<String>,
+}
+
+/// The file's text as the dialog last built it, with what it was built
+/// from. Building it reads and parses the folder's own file, so it is
+/// built again only when the folder text or the save changes, not on
+/// every frame the dialog is up (egui draws one per pointer move).
+struct Preview {
+    /// The folder text it was built for.
+    folder: String,
+    /// The session's revision it was built at.
+    revision: u64,
+    /// Whether that folder is a directory, Write's gate.
+    is_dir: bool,
+    /// `text`'s answer for that folder.
+    text: Result<String, String>,
 }
 
 impl Generate {
@@ -84,6 +101,7 @@ impl Generate {
             player_id,
             file,
             folder: String::new(),
+            preview: None,
             error: None,
         }
     }
@@ -157,11 +175,24 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         .player(generate.player_id)
         .expect("the dialog's player");
     let name = display_name(&player.name);
+    let revision = session.revision();
+    if generate
+        .preview
+        .as_ref()
+        .is_none_or(|preview| preview.folder != generate.folder || preview.revision != revision)
+    {
+        let folder = Path::new(&generate.folder);
+        generate.preview = Some(Preview {
+            folder: generate.folder.clone(),
+            revision,
+            is_dir: folder.is_dir(),
+            text: text(file, generate.player_id, generate.file, folder),
+        });
+    }
     let mut close = false;
     let id = egui::Id::unique("save_editor_generate");
     let response = modal(ui.ctx(), id, generate.file.title(), |ui| {
-        let folder = PathBuf::from(&generate.folder);
-        let text = text(file, generate.player_id, generate.file, &folder);
+        let preview = generate.preview.as_ref().expect("built above");
         ui.horizontal(|ui| {
             ui.label("Folder");
             ui.add(text_box(
@@ -178,7 +209,7 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
             .id_salt("save_editor_generate_text")
             .max_width(600.0)
             .max_height(300.0)
-            .show(ui, |ui| match &text {
+            .show(ui, |ui| match &preview.text {
                 Ok(text) => {
                     ui.add(
                         egui::Label::new(egui::RichText::new(text.as_str()).monospace())
@@ -193,18 +224,18 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
             if ui.button("Cancel").clicked() {
                 close = true;
             }
-            let writeable = folder.is_dir() && text.is_ok();
+            let writeable = preview.is_dir && preview.text.is_ok();
             if add_enabled(ui, writeable, egui::Button::new("Write")).clicked()
-                && let Ok(text) = &text
+                && let Ok(text) = &preview.text
             {
-                let path = folder.join(generate.file.file_name());
+                let path = Path::new(&preview.folder).join(generate.file.file_name());
                 match std::fs::write(&path, text) {
                     Ok(()) => {
                         *notice = Some(Notice {
                             text: format!(
                                 "Wrote {} for {name} into {}",
                                 generate.file.file_name(),
-                                generate.folder
+                                preview.folder
                             ),
                             kind: NoticeKind::Success,
                             action: None,

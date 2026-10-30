@@ -1,7 +1,8 @@
-//! The toolbar's menu buttons: the Player menu's four stat operations and FPC toggle,
-//! the Team menu's operations over the selected row's team, each a
-//! sealed undo entry (`session/{player,team}_ops.rs`), the Savefile
-//! menu's Comparator, Apply aesthetics patch, roster sheet and Fix database
+//! The toolbar's menu buttons: the Player menu's four stat operations, FPC
+//! toggle and two Generate items, the Team menu's operations over the
+//! selected row's team, each a sealed undo entry
+//! (`session/{player,team}_ops.rs`), the Savefile menu's Comparator, Apply
+//! aesthetics patch, roster sheet, Multi-team AATF and Fix database
 //! (`session/database.rs`), and the dialogs they open (`Boglo`,
 //! `StatNum`, `CopySwap` and the Fix database confirmation; the draft's
 //! `dlgBoglo`, `dlgNum`, `dlgCopySwap` and `dlgFixDb`).
@@ -150,9 +151,6 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         });
         return;
     };
-    if view.session.is_none() {
-        return;
-    }
     let (unlocked, hide_ids) = (!view.aesthetics_locked(), view.hide_ids);
     // As on the Team menu: an out-of-band hide ID disables the toggle
     // behind the error's text.
@@ -910,31 +908,28 @@ fn first_filled(file: &EditFile, team_id: u32) -> Option<u32> {
 }
 
 /// The player combo's `(player_id, label)` options for `team_id`: every
-/// filled roster slot in slot order, each labeled by its shirt number,
-/// registered position and display name, as the player list shows them.
+/// filled roster slot in slot order, each labeled by its place in the
+/// roster (`01` to `23`, not the shirt number), registered position and
+/// display name, as the player list shows them.
 fn roster_options(file: &EditFile, team_id: u32) -> Vec<(u32, String)> {
     let mut options = Vec::new();
     let Some(team) = file.team(team_id) else {
         return options;
     };
-    for slot in &team.roster {
+    for (index, slot) in team.roster.iter().enumerate() {
         if slot.player_id == 0 {
             continue;
         }
+        let place = format!("{:02}", index + 1);
         let label = match file.player(slot.player_id) {
             Some(player) => {
                 let position = POSITIONS
                     .get(usize::from(player.positions.registered))
                     .copied()
                     .unwrap_or("?");
-                format!(
-                    "{} {} {}",
-                    slot.number,
-                    position,
-                    display_name(&player.name)
-                )
+                format!("{place} {position} {}", display_name(&player.name))
             }
-            None => format!("{} ?", slot.number),
+            None => format!("{place} ?"),
         };
         options.push((slot.player_id, label));
     }
@@ -983,12 +978,12 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                         session
                             .file()
                             .team(picked)
-                            .map(|team| team.name.clone())
+                            .map(|team| display_name(&team.name))
                             .unwrap_or_else(|| picked.to_string()),
                     )
                     .show_ui(ui, |ui| {
                         for team in session.file().teams() {
-                            ui.selectable_value(&mut picked, team.id, &team.name);
+                            ui.selectable_value(&mut picked, team.id, display_name(&team.name));
                         }
                     })
                     .response;

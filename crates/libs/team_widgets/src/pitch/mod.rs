@@ -1159,7 +1159,10 @@ fn paint_marker(
     }
     let corners = if view.popover.is_some_and(|open| open.slot == spot.index) {
         Some(palette.selected_corners)
-    } else if view.assign.is_some() {
+    } else if view
+        .assign
+        .is_some_and(|assign| assign.takes(tactics, roster_slot))
+    {
         Some(palette.candidate_corners)
     } else {
         None

@@ -188,6 +188,9 @@ fn cutscenes(ui: &mut egui::Ui, session: &mut Session, player_id: u32, stats: &P
 fn ownership_line(ui: &mut egui::Ui) -> bool {
     ui.horizontal_wrapped(|ui| {
         ui.label(OWNERSHIP_TIP);
+        // The link is never broken across two rows: when it does not fit
+        // after the sentence, it starts the next row whole.
+        ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
         ui.link("Apply aesthetics patch").clicked()
     })
     .inner
@@ -197,7 +200,8 @@ fn ownership_line(ui: &mut egui::Ui) -> bool {
 /// section, the disabled groups' hover and the locked Team-menu items'
 /// (`menus.rs`).
 pub(crate) const OWNERSHIP_TIP: &str = "The team's export owns the aesthetics, so edit its \
-                                        settings.toml and recompile, then apply the patch.";
+                                        settings.toml (the face, hair and iris: its \
+                                        ingame_face.toml) and recompile, then apply the patch.";
 
 /// The FPC group, last in the section (the draft's `fpcGroup`): the
 /// classifier's reading (`is_fpc_player` under `hide_ids`, the settings'

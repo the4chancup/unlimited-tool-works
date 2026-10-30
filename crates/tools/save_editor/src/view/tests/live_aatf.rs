@@ -920,9 +920,10 @@ fn a_rows_click_selects_the_player() {
 
 /// A `FieldedNotA` row's click selects his team's row instead of him,
 /// the named preset shown on the first of its formations that carries
-/// the cross (the Live AATF bullet's click sentence): preset 1's
+/// the cross: preset 1's
 /// kick-off formation for the non-fluid preset, formation 3 for the
 /// fluid one whose third alone puts him at the spot.
+// SE-GUI-30
 #[test]
 fn a_fielded_rows_click_selects_the_team_row_on_the_crosss_formation() {
     let (mut view, mut window) = open_734_with("live_aatf_fielded_jump", &[], 183);

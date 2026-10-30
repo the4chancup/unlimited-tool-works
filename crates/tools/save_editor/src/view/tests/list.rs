@@ -721,6 +721,7 @@ fn text_in_rect<'a>(
 // the name in the strong colour after a further item spacing, each
 // centred on the row — over the faint fill that sets it apart from a
 // player row, the selection's or the hover's fill over that.
+// SE-GUI-37
 #[test]
 fn the_team_row_paints_its_parts_over_its_fills() {
     /// Whether a `Shape::Rect` of `fill` covers `rect`'s centre and spans
@@ -1012,6 +1013,7 @@ fn every_player_row_spans_the_team_rows_width_and_selects_at_its_end() {
 // right end — after a short-name edit the `●` paints there in the
 // warning colour, right of the painted name — and no player row's label
 // carries one (the dot is no part of the row's AccessKit label).
+// SE-GUI-37
 #[test]
 fn the_team_rows_dot_paints_at_the_rows_right_end() {
     let path = fixture(PesVersion::Pes21, "team_row_dot");
@@ -1218,6 +1220,45 @@ fn picking_a_team_in_the_selector_selects_its_team_row() {
         view.selected,
         Some(Selection::Team(702)),
         "picking ALL keeps the selection"
+    );
+}
+
+// The team selector names a team by its display name, its shown text and
+// its entries alike: a colour code's control character and hex digits
+// never show.
+#[test]
+fn the_team_selector_names_a_coded_team_by_its_display_name() {
+    let path = fixture(PesVersion::Pes21, "selector_display_name");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    let name = file.team(701).unwrap().name.clone();
+    file.team_mut(701).unwrap().name = format!("\x11cff0000ff{name}");
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let selector = nodes
+        .iter()
+        .filter(|node| node.role() == Role::ComboBox)
+        .min_by(|a, b| {
+            let x = |node: &&accesskit::Node| node.bounds().map(|r| r.x0).unwrap_or(f64::MAX);
+            x(a).partial_cmp(&x(b)).expect("ordered bounds")
+        })
+        .expect("the team selector");
+    assert_eq!(selector.value(), Some(name.as_str()), "the shown text");
+
+    click(&mut window, selector, &mut view);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let entries: Vec<&str> = nodes
+        .iter()
+        .filter(|node| node.role() == Role::Button)
+        .filter_map(|node| node.label())
+        .collect();
+    assert!(entries.contains(&name.as_str()), "the entry: {entries:?}");
+    assert!(
+        entries.iter().all(|entry| !entry.contains('\u{11}')),
+        "no colour code byte in the popup: {entries:?}"
     );
 }
 
@@ -1859,5 +1900,61 @@ fn every_position_fits_its_column_at_the_lists_font() {
         name.pos.x - letters_end >= 5.0 - 0.5,
         "the name at least 5 after the position's letters ({} vs {letters_end})",
         name.pos.x
+    );
+}
+
+// PageDown selects the list's next player row and PageUp the previous,
+// even while a number field holds the keyboard; the team row is skipped,
+// so PageUp on the first player row moves nothing.
+#[test]
+fn page_down_and_up_walk_the_lists_player_rows_from_a_number_field() {
+    let path = fixture(PesVersion::Pes17, "page_keys_walk");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(734);
+    view.selected = Some(Selection::Player(734, 0));
+    let roster = team_entry(&view, 734).roster;
+    assert!(
+        roster[0].player_id != 0 && roster[1].player_id != 0,
+        "premise: 734's first two slots are rostered"
+    );
+    let first_height = player_entry(&view, roster[0].player_id).basic.height;
+    let mut window = Headless::new();
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let height = node_id_right_of(&pairs, "Height", Role::SpinButton);
+    action_focus(&mut window, &mut view, height);
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "premise: the Height field holds the keyboard"
+    );
+    let page = |window: &mut Headless, view: &mut SaveView, page_key: egui::Key| {
+        window.frame(vec![key(page_key, egui::Modifiers::NONE, true)], |ui| {
+            show(ui, view, &|| Vec::new())
+        });
+    };
+
+    page(&mut window, &mut view, egui::Key::PageDown);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(734, 1)),
+        "PageDown selected the next player"
+    );
+    assert_eq!(
+        player_entry(&view, roster[0].player_id).basic.height,
+        first_height,
+        "the key edited no field"
+    );
+
+    page(&mut window, &mut view, egui::Key::PageUp);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(734, 0)),
+        "PageUp selected the previous player"
+    );
+    page(&mut window, &mut view, egui::Key::PageUp);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(734, 0)),
+        "PageUp on the first player row moved nothing"
     );
 }

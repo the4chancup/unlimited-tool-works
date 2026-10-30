@@ -101,11 +101,10 @@ pub(super) fn current_team(team: TeamChoice, selected: Option<Selection>) -> Opt
 
 /// A violation row's click: the player selected and the selector moved to
 /// his team unless it reads ALL (the list must show the row it selects).
-/// A `FieldedNotA` row selects his team's row instead (the Live AATF
-/// bullet's click sentence: the pitch its cross is on is the team
-/// view's), the named preset shown on the first of its fielded
-/// formations whose slot for his starting-eleven index holds the
-/// violation's position — the kick-off one when none does (the save
+/// A `FieldedNotA` row selects his team's row instead (the pitch his
+/// cross is on is the team view's), the named preset shown on the first
+/// of its fielded formations whose slot for his starting-eleven index
+/// holds the violation's position — the kick-off one when none does (the save
 /// changed since the check). `team_tactics` is his team's record,
 /// `tactics_view` the view's.
 pub(super) fn select_player(

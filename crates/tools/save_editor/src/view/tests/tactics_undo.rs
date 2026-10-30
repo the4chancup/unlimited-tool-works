@@ -208,7 +208,7 @@ fn a_pitch_edit_and_a_settings_click_undo_as_two_entries() {
     );
 }
 
-// The Undo/redo bullet's "one entry per gesture" where the same widget
+// One undo entry per gesture where the same widget
 // key covers two gestures: a typed popover X then a Make GK click (the
 // click's press keeps the span open, and both writes are the pitch's)
 // are two steps — a gesture ends when its widget loses the keyboard.

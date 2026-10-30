@@ -723,6 +723,53 @@ fn the_corners_and_the_join_fill_mark_the_states() {
     assert_eq!(corners(&shapes, Palette::DARK.selected_corners).len(), 0);
 }
 
+// With three players joining the attack, a click on a fourth writes
+// nothing, so under the armed join mode only the three members, whom a
+// click removes, get the candidates' corners.
+#[test]
+fn a_full_join_list_marks_only_its_members_as_candidates() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let players = tactics.presets[0].formations[0].players;
+    let eleven = tactics.starting_eleven;
+    tactics.players_to_join_attack = [eleven[3], eleven[4], eleven[5]];
+    view.assign = Some(Assign::Join);
+    let (nodes, shapes) = window.pitch_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
+    let centres = centres_of(canvas_rect(&nodes), &players);
+    let arms_at = |index: usize| {
+        let badge = egui::Rect::from_center_size(centres[index], egui::vec2(50.0, 14.0));
+        let portrait_box = egui::Rect::from_min_size(
+            egui::pos2(badge.left(), badge.top() - 50.0),
+            egui::vec2(50.0, 50.0),
+        );
+        let box_corners = [
+            portrait_box.left_top(),
+            portrait_box.right_top(),
+            portrait_box.left_bottom(),
+            portrait_box.right_bottom(),
+        ];
+        shapes
+            .iter()
+            .filter(|clipped| match &clipped.shape {
+                egui::Shape::LineSegment { points, stroke } => {
+                    stroke.color == Palette::DARK.candidate_corners
+                        && box_corners.iter().any(|corner| points.contains(corner))
+                }
+                _ => false,
+            })
+            .count()
+    };
+    let arms: Vec<usize> = (0..11).map(arms_at).collect();
+    assert_eq!(
+        arms,
+        [0, 0, 0, 8, 8, 8, 0, 0, 0, 0, 0],
+        "the members' four corner arms each, no one else's"
+    );
+}
+
 // The markers are drawn from the top of the canvas down, and a press or
 // a drop hits the marker drawn on top: of two slots on top of each
 // other, the lower one's badge paints after the upper's and a press
@@ -2623,12 +2670,36 @@ fn the_formation_selector_is_locked_on_kick_off_while_fluid_formation_is_off() {
     let (nodes, _) =
         window.pitch_and_lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
     assert_eq!(tabs(&nodes), [false; 3], "Fluid formation on: three tabs");
+    let in_possession = centre(entry(&nodes, Role::Button, "In-possession"));
+    let enabled_tip = window.tooltip(in_possession, "formations 2 and 3", |window, events| {
+        window
+            .pitch_and_lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, events)
+            .0
+    });
+    assert_eq!(
+        enabled_tip.as_deref(),
+        Some("The game uses formations 2 and 3 only while the preset's fluid formation is on"),
+        "the enabled selector's hover"
+    );
 
     tactics.presets[0].style.fluid = Some(false);
     view.formation = 2;
     let (nodes, _) =
         window.pitch_and_lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
     assert_eq!(tabs(&nodes), [true; 3], "Fluid formation off: locked");
+    let locked_tip = window.tooltip(in_possession, "Formations 2 and 3", |window, events| {
+        window
+            .pitch_and_lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, events)
+            .0
+    });
+    assert_eq!(
+        locked_tip.as_deref(),
+        Some("Formations 2 and 3 are used only while Fluid formation is on"),
+        "the locked selector's hover"
+    );
+    view.formation = 2;
+    let (nodes, _) =
+        window.pitch_and_lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
     assert_eq!(view.formation, 0, "the view is back on Kick-off");
     assert_eq!(
         FORMATIONS.map(|label| entry(&nodes, Role::Button, label).toggled()),

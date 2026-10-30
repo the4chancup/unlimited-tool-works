@@ -34,12 +34,27 @@ pub(crate) enum Assign {
 }
 
 impl Assign {
+    /// Whether the armed mode can take the starter in roster `slot`, so
+    /// his marker gets the candidates' corners: join takes its members (a
+    /// click removes them) and anyone else only while the list has room;
+    /// a role and a target take every starter.
+    pub(crate) fn takes(self, tactics: &TeamTactics, slot: u8) -> bool {
+        match self {
+            Assign::Join => {
+                let list = &tactics.players_to_join_attack;
+                list.contains(&slot) || list.contains(&u8::MAX)
+            }
+            Assign::Role(_) | Assign::Target { .. } => true,
+        }
+    }
+
     /// A click on starter `index` (a `starting_eleven` index) while armed
     /// (the draft's `assignClick`): a role writes the starter's roster
     /// slot — a same-player write is skipped — and disarms; join toggles
-    /// the starter's membership, a member leaving packs the list (the
-    /// later entries move up and 255 fills the end), a non-member fills
-    /// the first 255 and a fourth on a full list is ignored; join stays
+    /// the starter's membership and writes the list packed, the members
+    /// first and 255 filling the end (a member leaving moves the later
+    /// ones up, a non-member joins after the members, a fourth on a full
+    /// list is ignored); join stays
     /// armed; a target writes the starter's roster slot and disarms, but
     /// only while that slot's instruction still takes a player (an
     /// instruction changed while armed writes nothing and disarms).
@@ -61,13 +76,21 @@ impl Assign {
                 view.assign = None;
             }
             Assign::Join => {
+                // Rebuilt from the members on every toggle, so a stored
+                // list that already holds a gap is written packed too.
                 let list = &mut tactics.players_to_join_attack;
-                if let Some(at) = list.iter().position(|&entry| entry == slot) {
-                    list.copy_within(at + 1.., at);
-                    list[2] = u8::MAX;
-                } else if let Some(free) = list.iter().position(|&entry| entry == u8::MAX) {
-                    list[free] = slot;
+                let mut members: Vec<u8> = list
+                    .iter()
+                    .copied()
+                    .filter(|&entry| entry != u8::MAX)
+                    .collect();
+                if members.contains(&slot) {
+                    members.retain(|&member| member != slot);
+                } else if members.len() < list.len() {
+                    members.push(slot);
                 }
+                members.resize(list.len(), u8::MAX);
+                list.copy_from_slice(&members);
             }
             Assign::Target { side, index } => {
                 let preset = &mut tactics.presets[view.preset.min(2)];
@@ -620,5 +643,18 @@ mod tests {
                 );
             }
         }
+    }
+
+    // A stored join list that already holds a gap comes out packed from a
+    // toggle: removing its first member moves the one after the gap up.
+    #[test]
+    fn a_join_toggle_packs_a_stored_list_with_a_gap() {
+        let version = PesVersion::Pes21;
+        let mut tactics = fixture_tactics(version);
+        let (a, b) = (tactics.starting_eleven[0], tactics.starting_eleven[2]);
+        tactics.players_to_join_attack = [a, u8::MAX, b];
+        let mut view = TacticsView::default();
+        Assign::Join.write(version, &mut tactics, &mut view, 0);
+        assert_eq!(tactics.players_to_join_attack, [b, u8::MAX, u8::MAX]);
     }
 }
