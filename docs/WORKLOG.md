@@ -46,7 +46,8 @@ phase (16.x a, unwired)
 first-class target the Fox version the cup moves to around April 2027 ("Target versions").
 **0.0.1 candidate** 0.0.1c (2026-10-30, `bddd0027`): every change since 0.0.1b checked in
 its built window; it waits for the maintainer's final UI pass (0.0.1f1c, `QUESTIONS.md`,
-branch `release/0.0.1-candidate`); the work goes on past it (k5f, then the 0.0.1cv converge).
+branch `release/0.0.1-candidate`); the work goes on past it (k5f's code merged, its game
+check next; the 0.0.1cv converge, its audit under way).
 **Blocked on:** nothing.
 
 **Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
@@ -1879,6 +1880,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           "Texport (read + write)", `plans/save_editor.md` the Texport bullet, DECISIONS "PES
           2017 Texports written from templates and the open save"; the drafts' `ixTedName`
           and the button on 17): one brief, then (3) in game
+        - (1) + (2) landed `4305c09d` (Opus sidekick): `EditFile::serial`, the `PES17`
+          template and `texport_writes`, `Texport::new` on 17 (the records' unmodeled bytes
+          written zero, as on 18-21: the test compares every byte outside the records with
+          the real file and the records through a read-back, the lead's rewrite of the
+          brief's byte-for-byte premise); the panel's button on 17, the first free
+          `TEXPORT0000000N` suggested, no Save-dialog filter on an extension-less name (the
+          dialog would append `.ted`); the help. SE-GUI-17 and SE-GUI-29 name PES 17. Files:
+          `pes_savefile` `file.rs`, `interchange/texport{,_golden}.rs`,
+          `interchange/pes17_texport_logo.png`, `schema/texport.rs`; `save_editor`
+          `view/interchange.rs`, `view/tests/interchange_export.rs`, `help/05_team.md`.
+          Open: (3), and whether the game minds the zeroed id copies (else the writer
+          starts from the save's own record bytes)
       - [ ] k5g after 0.0.1 (the maintainer, 2026-10-30: "the behavior applies to all
         versions, but we'll have to confirm it"): on PES 2015, 2016 and 2018-2021, import a
         team file in game and check whether the save's team name is kept and the shown name

@@ -1710,10 +1710,11 @@ SE-GUI-16  GIVEN the save open on a team
 SE-GUI-17  GIVEN a `.4ccs` or `.4cct` file, or a Texport
            WHEN it is opened through the import dialog
            THEN its sections import as the Team TOML import does, read-only for the legacy
-                formats; WHEN Texport export runs on a team of a PES 18-21 save THEN the file
-                written is a Texport of the save's version that the import dialog reads back to
-                the same team values; GIVEN a PES 15-17 save THEN the export is disabled, its
-                tooltip naming the missing template
+                formats; WHEN Texport export runs on a team of a PES 17-21 save THEN the file
+                written is a Texport of the save's version (on PES 17 under the first
+                `TEXPORT0000000N` the save's folder lacks) that the import dialog reads back
+                to the same team values; GIVEN a PES 15 or 16 save THEN the export is
+                disabled, its tooltip naming the missing template
 SE-GUI-18  GIVEN an aesthetics patch of the save's version
            WHEN Apply aesthetics patch is used
            THEN the preview lists every player it changes with old and new values, Apply is
@@ -1811,10 +1812,11 @@ SE-GUI-28  GIVEN the selector at PES 19
                 registered tool reporting a version-change blocker THEN "Switch to PES 2021" is
                 drawn disabled, its hover the blocking tool's "<label>: <reason>", and the
                 setting stays PES 19 and the notice stays
-SE-GUI-29  manual  GIVEN a Texport written by SE-GUI-17's export from a PES 18, 19, 20 and 21
-           save
+SE-GUI-29  manual  GIVEN a Texport written by SE-GUI-17's export from a PES 17, 18, 19, 20 and
+           21 save
            WHEN it is imported through the game's own team import, in that version
-           THEN the game accepts it and the imported team shows the exported squad and names
+           THEN the game accepts it and the imported team shows the exported squad and its
+                players' names
 SE-GUI-30  GIVEN the PES 17 save open on a team with violations under the active ruleset
            WHEN Live AATF is switched on
            THEN the docked panel reads `Checking <team>…` until the first check returns, then

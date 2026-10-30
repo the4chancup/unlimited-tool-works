@@ -2910,3 +2910,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — Candidate 0.0.1c staged at `bddd0027`; every change since 0.0.1b looked at in its
   built window (team file panel, unsaved-changes list, light greys, icons, running-game dialog);
   `draft_compare`'s colour checks' first run: no fill or text colour apart. QUESTIONS points at it.
+- **2026-10-30** — k5f merged (`4305c09d`): the panel exports a PES 2017 Texport as the first free
+  `TEXPORT0000000N`, written from a measured template and the save's records. The records'
+  unmodeled bytes are zero, as on 18-21; the game's import of it is the next check.
