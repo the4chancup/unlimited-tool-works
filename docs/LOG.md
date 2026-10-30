@@ -2919,3 +2919,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — 0.0.1cv cv4 merged (`897a4fc0`): the shell's audit findings: Reset window
   centres on the window's own monitor, the help's tool chapters follow the rail, the
   data-location topic leads with the bundled `data/` case; `PathKind` dropped in review.
+- **2026-10-30** — 0.0.1cv cv3 merged (`a4a040b1`, gates green: 5405 tests): the Save editor
+  view's audit findings, PgUp/PgDn among them; the maintainer corrected two Texport facts (the
+  game's import names the team from the DLC's bin; TEXPORT numbers are hexadecimal).

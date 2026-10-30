@@ -5863,8 +5863,13 @@ briefs, review loops, gates and mutation runs as for any step.
     in the team file dialog, Reset window moving a window on a second monitor to the first
   - [x] cv2 the plan and scenario edits the audit ruled (17 rulings; `plans/save_editor.md`,
     `plans/core/gui.md`)
-  - [ ] cv3 the view's findings (`save_editor`, `team_widgets`; with k5mut's four local
-    survivors): an Opus sidekick
+  - [x] cv3 the view's findings (`save_editor`, `team_widgets`; with k5mut's four local
+    survivors): an Opus sidekick, merged `a4a040b1` (gated: 47 binaries, 5405 tests):
+    PgUp/PgDn, Copy/Swap labelled by place, display names in the team combos and the
+    violations header, a team key's note naming its details, the ownership tip, the join
+    list kept packed and its full-list candidates, the Generate preview cached, tests for
+    the audit's untested behavior. Open: its SWE-2 loop (round 1 running in two parts,
+    `review5`), the ownership link's wrap seen in the built window (cv5)
   - [ ] cv3b after cv3 lands: the Texport name suggestion counts in hexadecimal, upper case
     (`view/interchange.rs` `Export::file_name`; a test with `00000000`..`00000009` taken
     suggests `TEXPORT0000000A`; DECISIONS 2026-10-30 "PES 2017's import names the team from
