@@ -6180,6 +6180,9 @@ function fieldTerm(field) {
   // A roster slot, numbered as the player list numbers it (from 01).
   m = field.match(/^Player\((\d+)\)$/);
   if (m) return { label: "Player " + String(Number(m[1]) + 1).padStart(2, "0"), show: s => s };
+  m = field.match(/^Number\((\d+)\)$/);
+  if (m) return { label: "Player " + String(Number(m[1]) + 1).padStart(2, "0") + "'s number",
+    show: s => s };
   return { label: fieldWords(field), show: s => s };
 }
 // A field no view draws, named in words from the report's name: its words in

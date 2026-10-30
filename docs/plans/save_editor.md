@@ -1189,7 +1189,7 @@ The panel over the spec's `diff` report:
   named in words from the report's name with its stored value: its words in sentence case, Id
   as ID and Color as Colour, a PES 2015-only field marked so (`NoseHeight` is "Nose height",
   `Color1Red` "Colour 1 red", `Pes15JawDepth` "Jaw depth (PES 2015)"), a roster slot as the
-  player list numbers it (`Player(3)` is "Player 04"), the face's unnamed bits "Other face
+  player list numbers it (`Player(3)` is "Player 04", `Number(3)` "Player 04's number"), the face's unnamed bits "Other face
   data" (the draft's `fieldTerm` and `fieldWords`). The same words label the unsaved-changes
   prompt's, the toolbar's changes list's and the aesthetics patch preview's rows. Export
   writes the CLI's report unchanged, stored values included; that report's text names each
