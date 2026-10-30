@@ -49,7 +49,9 @@ Open the screen in the built window first (the default 1280 x 780 client area, t
     python scripts/draft_compare.py SCREEN [--modal CSS | --menu TEXT] [--app FRAGMENT]
 
 --modal compares only a dialog: CSS selects the draft's dialog element (`#overlay .window`,
-`.help-win`), and both sides are measured from the dialog's title text.
+`.help-win`), and both sides are measured from the dialog's title text (a window's, whose
+title is no text of its own, from its first text inside it), the build's rows kept where the
+draft's dialog stands.
 
 --menu compares only a toolbar menu: TEXT is its button's label (`Player`); the draft's button
 is clicked and its open menu measured, and the build's rows are kept where the draft's menu
@@ -99,6 +101,11 @@ KINDS_DIFFER = "box kinds differ"
 # this share off its screen's median.
 COLOUR_STEP = 20
 WEIGHT_STEP = 0.2
+# How far inside a widget's box its text is measured (`fill_findings`), and how far right of
+# a checkbox's left edge its label starts: past the square (14 points on both sides), whose
+# tick mixed with the label reads as a colour step whenever the two boxes differ in width.
+TEXT_INSET = 2
+CHECK_SQUARE = 16
 
 # A dump row's last column, the rectangle: `x,y wxh`, negative on a monitor left of the main one.
 RECT = re.compile(r"(-?\d+),(-?\d+) (\d+)x(\d+)")
@@ -169,7 +176,9 @@ def band(draft_kind, app_kind, delta):
 
 def parse_dump(text, origin):
     """`uia_dump.ps1`'s lines as `[kind, name, x, y, w, h]` rows in client coordinates, the
-    client area's screen origin `origin`; a name's first line only, nameless rows dropped."""
+    client area's screen origin `origin`; a name's first line only, nameless rows dropped, and
+    pictures too: the draft side measures none, and a picture named as a control is would pair
+    with it (the event logo bears its ruleset's name, the ruleset combo's text)."""
     ox, oy = origin
     rows = []
     lines = text.splitlines()
@@ -190,7 +199,7 @@ def parse_dump(text, origin):
         kind, name = parts[0][len("ControlType."):], " | ".join(parts[1:-1])
         x, y, w, h = (int(v) for v in rect.groups())
         name = name.split("\n")[0].strip()
-        if name:
+        if name and kind != "Image":
             rows.append([kind, name, x - ox, y - oy, w, h])
     return rows
 
@@ -280,6 +289,11 @@ def ink_findings(pairs, draft_image, built_image, draft_shift=(0, 0), app_shift=
     return {i: (dc, ac, step, ratio / median) for i, (dc, ac, step, ratio) in found.items()}
 
 
+def inset(box, by):
+    """`box` (x, y, w, h) shrunk by `by` points on each side."""
+    return (box[0] + by, box[1] + by, box[2] - 2 * by, box[3] - 2 * by)
+
+
 def fill_findings(pairs, draft_image, built_image, draft_shift=(0, 0), app_shift=(0, 0)):
     """Every pair of two widgets (a button, an input, a selectable label, a checkbox), its fill
     and its text's core colour on both sides: `{pair index: (draft fill, built fill, fill
@@ -301,7 +315,14 @@ def fill_findings(pairs, draft_image, built_image, draft_shift=(0, 0), app_shift
         on_draft, on_app = fill(draft_image, draft_box), fill(built_image, app_box)
         if not (on_draft and on_app):
             continue
-        text_draft, text_app = ink(draft_image, draft_box), ink(built_image, app_box)
+        # The text inside the box's edge: a box a point off its widget takes in a line of the
+        # panel, whose contrast against the fill beats a dim label's (a grade's `C`). A
+        # checkbox's label is measured right of its square.
+        text_boxes = [inset(draft_box, TEXT_INSET), inset(app_box, TEXT_INSET)]
+        if d[0] == "check":
+            text_boxes = [(x + CHECK_SQUARE, y, w - CHECK_SQUARE, h) for x, y, w, h in text_boxes]
+        text_draft = ink(draft_image, text_boxes[0])
+        text_app = ink(built_image, text_boxes[1])
         text = ((text_draft[0], text_app[0], step(text_draft[0], text_app[0]))
                 if text_draft and text_app else (None, None, None))
         found[index] = (on_draft, on_app, step(on_draft, on_app)) + text
@@ -309,27 +330,36 @@ def fill_findings(pairs, draft_image, built_image, draft_shift=(0, 0), app_shift
 
 
 def to_dialog(draft, app):
-    """Both sides relative to the dialog's title (the draft's first text), the app's rows kept
-    only when the draft names them and they stand inside the dialog: `(draft, app, line)`,
-    `line` the title's placement difference to print, then `shifts`, each side's title
-    position, which puts a row back into its capture's coordinates."""
-    title = next(r for r in draft if r[0] == "text")
+    """Both sides relative to the dialog's title (the draft's first text the app also draws as
+    a text: an `egui::Window`'s title is the window's own name, no text of its own, so the help
+    window is measured from its first topic's heading), the app's rows kept only when the draft
+    names them and they stand inside the dialog: `(draft, app, line, shifts)`, `line` the
+    title's placement difference to print, `shifts` each side's title position, which puts a
+    row back into its capture's coordinates."""
+    # A window's rows are the ones inside it: the rail and the view under it repeat names.
+    named = next(r[1] for r in draft if r[0] == "text")
+    window = next((r for r in app if r[0] == "Window" and r[1] == named), None)
+    if window:
+        app = [r for r in app if window[2] <= r[2] and r[2] + r[4] <= window[2] + window[4]
+               and window[3] <= r[3] and r[3] + r[5] <= window[3] + window[5]]
+    app_texts = {r[1] for r in app if r[0] == "Text"}
+    title = next((r for r in draft if r[0] == "text" and r[1] in app_texts), None)
+    assert title, "the app draws none of the dialog's texts"
     app_titles = [r for r in app if r[1] == title[1] and r[0] == "Text"]
-    assert app_titles, f"the app has no text {title[1]!r}"
     anchor = max(app_titles, key=lambda r: r[2])
     shifts = ((title[2], title[3]), (anchor[2], anchor[3]))
     line = (f"title {title[1]!r}: draft at {title[2]:.1f},{title[3]:.1f}, app at "
             f"{anchor[2]},{anchor[3]} (d x{anchor[2] - title[2]:+.1f} y{anchor[3] - title[3]:+.1f})")
-    names = {r[1] for r in draft}
-    # The sidebar's rail repeats some names: only rows right of and below the title, less a
-    # margin.
-    app = [r for r in app if r[1] in names and r[2] >= anchor[2] - 30 and r[3] >= anchor[3] - 30]
+    draft = [[r[0], r[1], r[2] - title[2], r[3] - title[3], r[4], r[5]] for r in draft]
+    app = [[r[0], r[1], r[2] - anchor[2], r[3] - anchor[3], r[4], r[5]] for r in app]
+    # Only the rows where the draft's dialog stands: the view under it and the sidebar's rail
+    # repeat some names. Its whole box, not the title's right and below, since a title is
+    # centred over the rows left of it.
+    app = within(draft, app)
     # A labelled control carries its label's name in the app (the draft names it by its
     # value): kept apart, so the label's text matches the draft's.
     texts = {r[1] for r in app if r[0] == "Text"}
     app = [r for r in app if r[0] == "Text" or r[1] not in texts]
-    draft = [[r[0], r[1], r[2] - title[2], r[3] - title[3], r[4], r[5]] for r in draft]
-    app = [[r[0], r[1], r[2] - anchor[2], r[3] - anchor[3], r[4], r[5]] for r in app]
     return draft, app, line, shifts
 
 
@@ -437,9 +467,14 @@ def draft_side(screen, modal, menu=None):
             page.add_init_script(INIT[screen])
         link = SCREENS[screen]
         if "{first_topic}" in link:
-            page.goto(DRAFTS + "#save_editor")
-            page.wait_for_timeout(400)
-            first = page.evaluate("() => HELP.find(c => c.id === 'save-editor').topics[0].slug")
+            # The topic is looked up in a page of its own: a second goto in the measured page
+            # reloads the draft while its first load still rewrites its hash, and the measure
+            # then runs in a destroyed context.
+            lookup = browser.new_page()
+            lookup.goto(DRAFTS + "#save_editor")
+            lookup.wait_for_timeout(400)
+            first = lookup.evaluate("() => HELP.find(c => c.id === 'save-editor').topics[0].slug")
+            lookup.close()
             link = link.replace("{first_topic}", first)
         page.goto(DRAFTS + link)
         page.evaluate("() => document.fonts.ready")
