@@ -5969,8 +5969,10 @@ briefs, review loops, gates and mutation runs as for any step.
     to 969 × 630; without `demo` the column stays; no console warnings). Then the maintainer's
     additions: the Team compiler and the Export upgrader greyed in the demo (TOOLS' `demo:
     false`), the title ending "(Demo)", the title bar's text unselectable under the arrow;
-    checked locally (`.tmp/0_0_1cv/cv8e/demo_tools_check.py`). Open: the same on
-    the published page once pushed
+    checked locally (`.tmp/0_0_1cv/cv8e/demo_tools_check.py`), then on the published page
+    after the push (2026-10-30, `.tmp/0_0_1cv/cv8e/published_check.py`): Heights at
+    1280 × 780, no controls column, the title ending "(Demo)", the two tools greyed, no
+    page errors
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450
