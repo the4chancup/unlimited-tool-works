@@ -1922,9 +1922,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         stays on a 1224 x 576 pane, the shortest a member sees; the help names the boots and
         gloves numbering). SWE-2 round over the rework (2026-10-30): 0 counted, the loop ends
         (`rulings_k5.md` S1m: a test for the lists' half share and a doc word ride k5e)
-      - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged: running
+      - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged: ran
         2026-10-30 in the mutants worktree at `0c5571d3`, base `d2617b2f^1`
-        (`.tmp/8_30c/k5mut.sh`, log `.tmp/8_30c/k5mut.log`)
+        (`.tmp/8_30c/k5mut.sh`, log `.tmp/8_30c/k5mut.log`): 128 mutants, 104 caught, 9
+        missed, 15 unviable; all 9 test gaps (`.tmp/8_30c/k5mut_triage.md`): the four
+        local ones in cv3, the remote half's three new ones (`stage`'s roster filter, the
+        notes heading's guard) in the brief after cv3
     - [ ] 8.9m the maintainer's pass over the 0.0.1 candidate (`d317b6da`), 2026-10-29:
       - [x] the drafts take the app's grey for a plain player name and a planned tool
         (DECISIONS 2026-10-29)
@@ -5861,7 +5864,12 @@ briefs, review loops, gates and mutation runs as for any step.
   - [x] cv2 the plan and scenario edits the audit ruled (17 rulings; `plans/save_editor.md`,
     `plans/core/gui.md`)
   - [ ] cv3 the view's findings (`save_editor`, `team_widgets`; with k5mut's four local
-    survivors) and cv4 the shell's (`studio_core`, `studio`): one Opus sidekick each
+    survivors): an Opus sidekick
+  - [ ] cv4 the shell's findings (`studio_core`, `studio`): an Opus sidekick, merged
+    `897a4fc0`: Reset window centres on the monitor the window stands on (the primary when
+    none holds its centre), the help tree follows the rail's order, the data-location topic,
+    `--gui` and wheel tests, `PathKind` dropped (lead's fix: one variant left). Open: its
+    SWE-2 loop (round 1 running, `review6`, `.tmp/cv4_review/`)
   - [ ] cv5 by hand: Output rosters to TSV in the built window; ST-SIDE-05 with PES 2017
     running
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate

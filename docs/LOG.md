@@ -2916,3 +2916,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — k5f checked in game: PES 2017 lists, offers and imports the panel's Texport of
   /3/; the team's Team TOML after the import equals it but for the edit flags the import
   sets, so the zeroed bytes no field models are not read.
+- **2026-10-30** — 0.0.1cv cv4 merged (`897a4fc0`): the shell's audit findings: Reset window
+  centres on the window's own monitor, the help's tool chapters follow the rail, the
+  data-location topic leads with the bundled `data/` case; `PathKind` dropped in review.
