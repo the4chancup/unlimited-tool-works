@@ -90,7 +90,7 @@ not kept, so no team operation reaches past one team.
 | Copy / swap presets (1↔2↔3) | Kept |
 | Copy / swap formations (kick-off / in-possession / out-of-possession) | Kept |
 | Full tactics editing (see "Tactics editor" below) | Kept at full parity + interaction improvements |
-| (none) | New: Save a picture of the formations, bare or with each preset's settings ("Tactics editor", "Formation pictures") |
+| (none) | New, after 0.0.1: Save a picture of the formations, bare or with each preset's settings ("Tactics editor", "Formation pictures") |
 
 ### Database operations
 
@@ -100,7 +100,7 @@ What exists of this is in `spec/save_editor.md` "Database operations".
 |-----------|------|
 | Output rosters to TSV (`EDIT.tsv` in the working folder, no dialog, UTF-8; every team, hidden ones included, in roster order; per player: number, name, registered position, Finishing as the "rating", captain mark, height, playing style, skills, COM styles) | Kept, the same columns and label spellings, UTF-8 with a byte-order mark (4ccEditor's `ccs=UTF-8` writes one, and a spreadsheet reads accented names right by it); written where a save dialog says, `EDIT.tsv` its default name |
 | Fix database (clear all visual flags, reset kit slots, PES17 kit-ID repair; a player's base-copy id cleared when it is neither his own nor 0 and his base-copy flag is off, the flag cleared when the id is his own or 0; every team's strip-edited flag cleared) | Kept as a maintenance action behind a confirmation dialog, under the aesthetics lock (it clears what Clear visual flags clears), one undo step, but for two parts. The base-copy repair runs only where the record has the flag (PES 15 to 18): on 19 to 21 4ccEditor tests a flag it never reads (an uninitialized field), and clearing copy ids there would change players' looks. The PES 17 kit-ID repair is not kept: its 2,500 writes step 131 bytes (`write_dataOld` advances its cursor 3 bytes, then the loop adds 0x80) over a strip table whose entries are 132 bytes (`spec/pes_savefile/model.md` "Kit slots and the strip table"), so all but the first land inside entries' bodies, and each writes 0xC0 into the strip-number byte; a repair of that table waits for its layout to be measured. The kit slots reset where the model has them (PES 17, the one version 4ccEditor writes them on) |
-| (none) | New: Save formation pictures for a range of teams ("Tactics editor", "Formation pictures") |
+| (none) | New, after 0.0.1: Save formation pictures for a range of teams ("Tactics editor", "Formation pictures") |
 
 ---
 
@@ -250,10 +250,11 @@ all side by side.
   Goalkeeper", the official ruleset's widest, fits its half (105 of 118.5). They act on the selected player, so a team row leaves them disabled, their tooltip
   "The make buttons act on a player: pick a player row"; the Player menu's entries are
   disabled too, their tooltip "The Player menu acts on a player: pick a player row".
-- **The event logo.** While the active ruleset carries a logo (`plans/aatf_rules.md` "The
-  ruleset schema", the event's logo and page), the view draws it at its top right, the
-  sidebar's clover mirrored: 28 points high as the clover is, its right edge 14 points from
-  the window's and its top 8 from the view's, as the clover's ink is from the left and top,
+- **The event logo.** While a save is open and the active ruleset carries a logo
+  (`plans/aatf_rules.md` "The ruleset schema", the event's logo and page), the view draws it
+  at its top right; with no save open it is not drawn, because it heads an open save's view
+  and there is no view to head. It mirrors the sidebar's clover: 28 points high as the
+  clover is, its right edge 14 points from the window's and its top 8 from the view's, as the clover's ink is from the left and top,
   as wide as the picture's shape asks up to 84 points (3:1, so a wide logo still reads). It
   is drawn over the toolbar row's empty end and moves nothing: no row is pushed down, no
   column narrowed (the drafts' toolbar at its widest ends 136 points short of it at the
@@ -266,9 +267,11 @@ all side by side.
   for any background. The picture is decoded once per ruleset, not per frame; one that
   fails to decode is not drawn (its bytes passed the load check, its pixels did not).
 - **The toolbar**, in egui's `MenuBar` (0.37), its style left as the toolbar's so the
-  buttons keep their frames, the bar's pieces (the bar, its separator, a menu item with its
-  shortcut) `studio_core`'s widgets rather than this tool's, so every tool's toolbar takes
-  them when it is built (this is the first tool with a finished UI): `Open`, `Save`, `Save as`; a separator; `Undo`, `Redo`; a
+  buttons keep their frames, the bar's pieces (the bar, its separator, a menu's button)
+  `studio_core`'s widgets rather than this tool's, so every tool's toolbar takes them when it
+  is built (this is the first tool with a finished UI); a menu item with its shortcut is
+  egui's own `Button::shortcut_text`, which every tool already shares through egui, not a
+  `studio_core` wrapper that would only forward to it: `Open`, `Save`, `Save as`; a separator; `Undo`, `Redo`; a
   separator; the `Player`, `Team` and `Savefile` menus; a separator; the ruleset dropdown and
   Live AATF (with `Show suggestions` while it is on), then `• unsaved changes`, in the link
   blue (`Visuals::hyperlink_color`, the blue of Live AATF's suggestion marks), not the weak
@@ -279,9 +282,9 @@ all side by side.
   group by what an entry acts on, not by what it opens: the `Savefile` menu holds the whole
   save's work, the Comparator and Apply aesthetics patch first (each reads another file
   against the save, a second save or a Team compiler's patch), a separator, Output rosters
-  to TSV, Save formation pictures for a range of teams and Multi-team AATF, a separator, Fix
-  database; the `Team` menu ends with the team's files, Import / export team file (the
-  interchange panel) and Save a picture of the formations. There is no Panels menu: that the
+  to TSV, Save formation pictures for a range of teams (after 0.0.1) and Multi-team AATF, a
+  separator, Fix database; the `Team` menu ends with the team's files, Import / export team
+  file (the interchange panel) and Save a picture of the formations (after 0.0.1). There is no Panels menu: that the
   Comparator, the patch and the interchange open as floating panels says nothing a member
   looks for them by. A floating panel first opens where the drafts' `.panel` stands, 620
   points wide, its top 90 below the window's and its right edge 1 inside the window's, over
@@ -338,7 +341,7 @@ all side by side.
      fields start at), Height and Shirt number, Weight and Nation, Age and
      Captain, each box 54 points wide: on the first half at the half's right edge, on the
      second just after a label column as wide as that half's longest label ("Shirt number"),
-     so a short label (Nation, Form) keeps its box close; Captain's checkbox centred in its
+     so a short label (Nation, Form) keeps its box close; Captain's radio centred in its
      box's width, under the Nation box above it. Then Stronger foot and Stronger hand (20+),
      each a two-choice toggle, Left | Right, its chosen side filled in the quiet grey of the
      positions' C (`#5a5a5a`), not the selection's blue: a foot or a hand is rarely what a
@@ -353,7 +356,7 @@ all side by side.
      the pairs; Stronger foot to Playing style) rows stand 22 apart, the form grids' pitch
      (`core/gui.md` "Other UI components", Form grids), the toggles 18 tall like every
      control; the blocks stand 6 apart, 2 more than their rows, as the draft's `.gen`, so
-     each block reads as one. Under it **Other stats**: Injury resistance and Form, then "Weak foot:
+     each block reads as one. Under it **Other stats**: Injury resistance and Form, then "Weak Foot:
      Usage" and "Accuracy" (the two sharing one label), on General info's halves so every box of
      both panels lines up. Under that **Playable positions**: the 13 positions with C/B/A
      ratings in five rows by line of the pitch, each left wing to right wing (LWF CF SS RWF /
@@ -426,8 +429,8 @@ all side by side.
   of the shown maximum and the portable one below: in the grey of a disabled card's label
   (`#5a5a5a`) under it, in the warning orange on it, in the error red past it. The
   field and its count carry one hover: past the portable limit below, its warning; else
-  what counts (on PES 21 "Up to 61 bytes. A plain letter takes one byte, an accented letter two or
-  more, and a colour code ten. A colour code is typed as \x11c and eight hex digits.", "Up to 18 letters. Western European accents (é, ü, ñ)
+  what counts (on PES 21 "Up to 61 bytes. A plain letter takes one byte, an accented letter takes two
+  or more, and a colour code takes ten. A colour code is typed as \x11c and eight hex digits.", "Up to 18 letters. Western European accents (é, ü, ñ)
   are fine, but other letters and symbols are not."). The save is where
   a member writes the names a tactical export carries to a cup of any version, so its Name and
   Shirt fields follow `pes_savefile`'s portable limits (`spec/pes_savefile/operations.md` "Team TOML"):
@@ -667,10 +670,13 @@ Win32 original hurt the most):
      so always), the formation selector is disabled and on Kick-off, its hover
      `Formations 2 and 3 are used only while Fluid formation is on`: the game fields the
      other two only while it is on, so editing them there edits nothing a match uses, and
-     switching Fluid formation off moves the view back to Kick-off. It locks even when the
+     switching Fluid formation off moves the view back to Kick-off. While it is enabled, its
+     hover is `The game uses formations 2 and 3 only while the preset's fluid formation is
+     on`, so a member editing the other two learns the rule before switching it off locks
+     them. It locks even when the
      other two differ from Kick-off: the view is the manager's and copies the game's, and an
      organizer looking for formations hidden there finds them in the formation pictures
-     ("Formation pictures" below), a quicker check across teams than the view. Their Copy/swap menu
+     ("Formation pictures" below, after 0.0.1), a quicker check across teams than the view. Their Copy/swap menu
      stays, a copy into them being how a member prepares them before switching it on.
   2. **Formation settings**, the pitch and **Player assignments**, the two panels exactly as
      tall as the pitch (386 points with its border) and level with it. The pitch's border, the
@@ -806,7 +812,7 @@ Win32 original hurt the most):
     game's 3.01 and Bold's 3.41; Roboto Flex's semibold stem is 3% wider than Selawik's, so
     about 3.05 drawn (inferred from the outlines, not measured on a render). It is the one text
     in the suite not in the regular weight. The
-    formation pictures (worklog 8.33) carry it in every cell when they come.
+    formation pictures (worklog 8.33, after 0.0.1) carry it in every cell.
 - **Lineup by drag-and-drop**: the starting XI and bench are reorderable lists;
   **dragging a bench player onto a pitch player swaps them** (and vice versa).
   The arrow-button ordering UI is gone.
@@ -837,7 +843,8 @@ Win32 original hurt the most):
   not load, or none, gets no outline. An outline, not the badge filled in the metal: on the
   three metals the position colours read at a contrast of 1.0 to 2.4 and white at 1.8 to 3.1.
   Join mode's fill (`#005c80`) replaces the dark one under the outline while armed.
-- **Formation pictures.** The Team menu's "Save a picture of the formations…" writes one PNG
+- **Formation pictures.** Built after 0.0.1, which ships without them. The Team menu's
+  "Save a picture of the formations…" writes one PNG
   of the selected row's team through a dialog of the tool's own, not rfd's save-file dialog,
   since a native dialog cannot hold the checkbox the range dialog has too: the folder last used
   (the tool's `formation_pictures_folder` setting, which the range dialog shares) with Browse
@@ -1026,9 +1033,12 @@ lib — `libs/team_widgets`, an egui widget crate in the class the core plan alr
 `studio_core`'s shared widgets (the checkbox every view draws), so its controls look as the
 host's do.
 
-Contract, the same one the color picker has: a widget takes `&mut` model (`TeamEntry`,
-`TacticsPreset`, `PlayerEntry` — `pes_savefile`'s types), the version's schema for gating, and the
-AATF rules where it shows limits; it draws, and it returns what changed. It never sees a session,
+Contract, the same one the color picker has: a widget takes `&mut` model (`pes_savefile`'s
+`TeamTactics` for the tactics and pitch widgets, a player's card flags or playing style for the
+card pickers), the host's `RosterRow`s where it names a roster slot (each slot's name, position,
+portrait, medal and overalls, read by the host so the widget never reads a player record), the
+version's schema for gating, and the AATF rules where it shows limits; it draws, and it returns
+what changed. It never sees a session,
 an undo stack, a file, or a savefile byte. The host decides what an edit means: this editor pushes
 it onto the undo stack, the creator writes it into its draft.
 
@@ -1059,6 +1069,8 @@ Contents:
   (`plans/aatf_rules.md` "The interpreter", its paragraph on violations in words). A `check-aatf` line is the
   `aatf_violation` finding with the context `team`, `player` (for a player's row), `rule` (the
   name in words) and `problem` (the sentence), where it printed the kind and each field.
+- `names` — a savefile name drawn with its colour codes applied as text colours, the in-game
+  look, for the player list, the view titles and the lineup rows alike.
 - `event_logo` — a ruleset's event logo decoded into a texture (through `dds_convert`'s PNG
   decoder, the one the portraits use) and its size, fitted proportions kept in the box 28
   high and up to 84 wide. The Save editor's top-right logo and the Ruleset editor's General
@@ -1199,15 +1211,17 @@ The panel over the spec's `diff` report:
   that view shows it (a free-kick motion 15, where the save stores 14), a field no view shows
   named in words from the report's name with its stored value: its words in sentence case, Id
   as ID, Com as COM (the views' "COM playing styles") and Color as Colour, a PES 2015-only field marked so (`NoseHeight` is "Nose height",
-  `Color1Red` "Colour 1 red", `Pes15JawDepth` "Jaw depth (PES 2015)"), a roster slot as the
-  player list numbers it (`Player(3)` is "Player 04", `Number(3)` "Player 04's number"), the face's unnamed bits "Other face
-  data" (the draft's `fieldTerm` and `fieldWords`). A man-marking byte, the marked
-  opponent's formation slot, reads `Opponent's starter 5` (numbered from 1; 255 reads `None`)
-  on the row of the own starter who marks (`Preset 1 · Man marking · <his name>`): the bare
-  byte read as one of the team's own players. The same words label the unsaved-changes
-  prompt's, the toolbar's changes list's and the aesthetics patch preview's rows, except a
-  slot's number row the prompt lists under its player: that one reads `Shirt number`, as
-  the strip labels it, since the item already names him. Export
+  `Color1Red` "Colour 1 red", `Pes15JawDepth` "Jaw depth (PES 2015)"), the face's unnamed
+  bits "Other face data" (the draft's `fieldTerm` and `fieldWords`). The same words label the
+  unsaved-changes prompt's, the toolbar's changes list's and the aesthetics patch preview's
+  rows. The changes list and the prompt also list team and tactics rows, which the Comparator
+  never shows (its rows are `diff`'s per-player differences), in the same words: a roster
+  slot as the player list numbers it (`Player(3)` is "Player 04", `Number(3)` "Player 04's
+  number"), and a man-marking byte, the marked opponent's formation slot, as `Opponent's
+  starter 5` (numbered from 1; 255 reads `None`) on the row of the own starter who marks
+  (`Preset 1 · Man marking · <his name>`): the bare byte read as one of the team's own
+  players. A slot's number row the prompt lists under its player reads `Shirt number`
+  instead, as the strip labels it, since the item already names him. Export
   writes the CLI's report unchanged, stored values included; that report's text names each
   field as the views label it (Header on PES 2017, where the save's schema says `Heading`),
   while `--json` keeps the schema's name, a key a script can match that no rewording moves.
@@ -1438,7 +1452,7 @@ What this editor adds on top of the lib:
     centres. The
     mark's box stands left of the field's label, 2 points from its text,
     drawn outside the label's box over the margin before it, so no label moves or wraps
-    (after the label, the Registered position and `Weak foot: Usage` labels wrapped to a
+    (after the label, the Registered position and `Weak Foot: Usage` labels wrapped to a
     second line) and the marks of a column of labels line up whatever the labels' lengths:
     General info's and Other stats' labels; an ability stat's at its label cell's left edge
     instead (over the cell's padding), where the column's left-aligned labels start, so the
@@ -1467,7 +1481,8 @@ What this editor adds on top of the lib:
     `Cards`' budget counts every card kind and the extra A positions, `MinCards`' count the
     paid skills and the extra A positions; and for a suggestion (`Unused`), the field of its
     allowance: the Skills header for the cards, the positions grid for the A positions,
-    the `Weak foot: Usage` label for the weak foot (the pair's shared label), the Injury
+    the `Weak Foot: Usage` box for the weak foot's usage and the `Accuracy` box for its
+    accuracy (the rules file's `weak_foot` word reports the two as rows of their own), the Injury
     resistance field, the Height field for the height (a player below his `up_to`
     bracket's top could be taller), the COM styles for `com`, the Tricks or Free cards panel for the tricks
     and the free cards, and the skills for any other card group. A field several rows are
@@ -1549,7 +1564,7 @@ tactics copies, the Texport and legacy imports, generation), get theirs here.
 SE-GUI-01  GIVEN the save
            WHEN it is opened from the view (Open, or its entry in the discovered-saves list)
            THEN the team selector lists its teams and ALL, the player list shows each player's
-                number, position and name with the name's color codes rendered as colors under
+                place in the roster, position and name with the name's color codes rendered as colors under
                 its team's row, and the player view's first line is the selected player's id
                 and name, its color codes rendered as colors, over his General info fields
 SE-GUI-02  GIVEN the PES 17 save open on team 701
@@ -1639,8 +1654,10 @@ SE-GUI-12  GIVEN the team view's Tactics on preset 1
                 eleven, every formation unchanged; WHEN a set-piece role is assigned from the palette THEN the taker field
                 holds that player; WHEN "players to join attack" is in its assignment mode and
                 two pitch players are clicked THEN those two are the setting's players
-SE-GUI-42  GIVEN the PES 21 save's team 718 (/f/) on preset 1's Kick-off, its LMF PARTY HARD
-                (rated LMF A and LWF A) at (20, 26)
+SE-GUI-42  GIVEN the PES 21 save's team 718 (/f/) on preset 1's Kick-off, that formation and
+                its LMF PARTY HARD's overalls and ratings (LMF A and LWF A) set from the
+                draft's PES 21 sample save (the fixture's teams carry a fresh save's
+                defaults), PARTY HARD at (20, 26)
            WHEN he is pressed on his portrait and held
            THEN the pitch outside x up to 20.5 from y 15.5 up is darkened, and moving the pointer
                 moves his marker a whole unit at a time, the pressed point of his portrait
@@ -1677,7 +1694,9 @@ SE-GUI-15  GIVEN the PES 17 save open and no ruleset imported
            WHEN the toolbar's ruleset dropdown is opened
            THEN it stands left of the Live AATF toggle, whether Live AATF is on or off, and
                 lists the built-in rulesets by their descriptions, then `Import rules file…`
-                under a separator, and no toolbar menu holds an AATF entry; WHEN another
+                under a separator, and no toolbar menu holds an entry that opens an AATF panel
+                (the Savefile menu's Multi-team AATF…, SE-GUI-41, opens a report dialog over a
+                range of teams); WHEN another
                 ruleset is picked THEN the quick actions, the Cards left badge and Live AATF's
                 list are that ruleset's on the next frame (SE-GUI-32 for the setting it
                 writes); WHEN the wheel turns over the closed dropdown THEN it
@@ -1814,8 +1833,8 @@ SE-GUI-28  GIVEN the selector at PES 19
                 registered tool reporting a version-change blocker THEN "Switch to PES 2021" is
                 drawn disabled, its hover the blocking tool's "<label>: <reason>", and the
                 setting stays PES 19 and the notice stays
-SE-GUI-29  manual  GIVEN a Texport written by SE-GUI-17's export from a PES 17, 18, 19, 20 and
-           21 save
+SE-GUI-29  manual  GIVEN a Texport written by SE-GUI-17's export from a PES 17 save, and (after
+           0.0.1) from a PES 18, 19, 20 and 21 save
            WHEN it is imported through the game's own team import, in that version
            THEN the game accepts it and the imported team shows the exported squad and its
                 players' names
@@ -1861,7 +1880,8 @@ SE-GUI-37  GIVEN the PES 17 save open on team 701
 SE-GUI-38  GIVEN the save, player 70101's name set to the colour code `\x11cff0000ff` then `AB`,
                 and his shirt name to 20 letters, before it is opened
            WHEN he is selected
-           THEN the Name label reads "Name (12/61)", its count in the disabled card label's grey (`#5a5a5a`), and the Shirt
+           THEN the Name label reads "Name (12/61)", its count in the theme's quiet count grey (`#5a5a5a`, a
+                disabled card label's, on the dark theme; `#9f9f9f` on the light one), and the Shirt
                 label "Shirt (20/18)", the shirt field tinted with the warning colour, its count
                 in the error colour, and its hover the "PES 2019
                 and older show 18 letters" sentence; WHEN a letter is deleted from the shirt
@@ -1870,8 +1890,10 @@ SE-GUI-38  GIVEN the save, player 70101's name set to the colour code `\x11cff00
                 field untinted, and at "(17/18)" the count is in that grey; WHEN 47 bytes are typed as his name THEN "Name (47/61)", tinted, its hover
                 the cut PES 2019 makes; GIVEN the PES 16 save THEN a player's Shirt label's
                 limit is 16 and its Name label's 46
-SE-GUI-39  GIVEN the PES 21 save open on team 718 (/f/), its Tactics on preset 1, fluid
-                formation on
+SE-GUI-39  GIVEN the PES 21 save with team 718's preset 1, team 722's three presets and team
+                701's Kick-off set to the formations of the draft's PES 21 sample save (the
+                fixture's teams carry a fresh save's default formations), open on team 718
+                (/f/), its Tactics on preset 1, fluid formation on
            WHEN Kick-off, In possession and Out of possession are shown in turn
            THEN the pitch's bottom-left corner reads `3-3-2-2`, `3-3-4` and `3-4-2-1`, as the
                 game's formation screen does; WHEN team 722 (/gd/) is shown THEN its presets 1, 2
@@ -1904,7 +1926,7 @@ SE-GUI-44  GIVEN a save open and DBC7, which carries a logo and a page, the acti
            WHEN the view is drawn at the 1280-wide window
            THEN the logo stands 28 points high, its right edge 14 points from the window's
                 and its top 8 from the view's, and every other widget stands where it does
-                with Autumn 26 picked; its tooltip reads DBC7's name, a blank line, "Click
+                under the same ruleset without a logo; its tooltip reads DBC7's name, a blank line, "Click
                 here to open the event's page:" and its page, each on its line, and a click
                 opens the page; GIVEN a ruleset without a logo THEN nothing is drawn there;
                 GIVEN a window narrow enough for the toolbar to reach it THEN it is not

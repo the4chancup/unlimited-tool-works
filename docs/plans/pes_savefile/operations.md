@@ -41,8 +41,8 @@ layout. The payload, 5,578,704 bytes, is zero but:
   roster at `0x1028C`, the tactics at `0x10330`, and each filled roster slot's player from
   `0x510840` at the player record's stride, each as the codec writes it, its bytes no field
   models zero, as on 18-21 (real files hold copies of the team's and the player's ids and
-  text past a name's terminator there; the first import of a written file shows whether the
-  game reads them);
+  text past a name's terminator there, which the game does not need: a written file imports
+  to the same team and players);
 - the 8-byte tail `04 00 00 00 01 00 00 00`.
 
 The container: the PES 2017 key; the description `Team Export Data 01` with the team's name

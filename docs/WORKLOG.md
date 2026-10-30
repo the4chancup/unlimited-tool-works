@@ -1853,7 +1853,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         - manual: checked 2026-10-30 (3), candidate 0.0.1c's build `91a61c6e`, the real PES 2017
           save with the sidebar on PES 2021: Pick… opens on "All files (*.*)" listing
           `TEXPORT00000000`-`03`; cancelled, nothing changed
-      - [ ] k5f before 0.0.1, wanted but not required (the maintainer, 2026-10-30: the cups
+      - [x] k5f before 0.0.1, wanted but not required (the maintainer, 2026-10-30: the cups
         accept Texports for now, tactics TOML files later, so the panel exports both; a
         member can still export one from PES 2017 after editing the save with the app): Texport export on PES 2017, synthesized from the open save rather than from
         a template file. Study (`.tmp/8_30c/texport17_study/FINDINGS.md`, ten real files):
@@ -1890,8 +1890,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           `pes_savefile` `file.rs`, `interchange/texport{,_golden}.rs`,
           `interchange/pes17_texport_logo.png`, `schema/texport.rs`; `save_editor`
           `view/interchange.rs`, `view/tests/interchange_export.rs`, `help/05_team.md`.
-          Open: (3), and whether the game minds the zeroed id copies (else the writer
-          starts from the save's own record bytes)
+        - manual: checked 2026-10-30 (3), SE-GUI-29's PES 17 case, release build `00172d88`,
+          the real PES 2017 save (backed up, restored by hash): the panel's Texport of 701
+          (/3/) saved as the suggested `TEXPORT00000004` (dialog in the save's folder, "All
+          Files"); PES 2017 lists it as /3/, offers /3/ alone, shows its 23 players by name
+          and position, imports and saves. Team 701's Team TOML before and after: equal but
+          the edit flags the import sets (the team's strip, 16 players' physique, 24 strip
+          flags), so the records' zeroed id copies cost nothing
+          (`.tmp/8_30c/pes17_session/FINDINGS.md`)
       - [ ] k5g after 0.0.1 (the maintainer, 2026-10-30: "the behavior applies to all
         versions, but we'll have to confirm it"): on PES 2015, 2016 and 2018-2021, import a
         team file in game and check whether the save's team name is kept and the shown name
@@ -5852,7 +5858,8 @@ briefs, review loops, gates and mutation runs as for any step.
     wrong value to a save; the nearest to a member: PgUp/PgDn missing (the parity row says
     kept), Copy/Swap naming players by shirt number, a written-off instruction never named
     in the team file dialog, Reset window moving a window on a second monitor to the first
-  - [ ] cv2 the plan and scenario edits the audit ruled (the lead)
+  - [x] cv2 the plan and scenario edits the audit ruled (17 rulings; `plans/save_editor.md`,
+    `plans/core/gui.md`)
   - [ ] cv3 the view's findings (`save_editor`, `team_widgets`; with k5mut's four local
     survivors) and cv4 the shell's (`studio_core`, `studio`): one Opus sidekick each
   - [ ] cv5 by hand: Output rosters to TSV in the built window; ST-SIDE-05 with PES 2017
