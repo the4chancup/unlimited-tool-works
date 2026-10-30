@@ -168,7 +168,10 @@ svg.focus .edge.usedby {{ opacity: 1; stroke: var(--usedby); stroke-width: 2; }}
 svg.focus .node.on {{ opacity: 1; }}
 .node {{ cursor: pointer; }}
 .node.pinned rect {{ stroke: var(--uses); stroke-width: 2.5; }}
-#about {{ min-height: 1.4em; font-size: 15px; color: var(--text); }}
+/* As wide as the chart, not the intro's measure: a description that wrapped pushed the chart
+   down a line while the pointer moved over it. */
+#about {{ min-height: 1.4em; font-size: 15px; color: var(--text); width: {WIDTH}px;
+  max-width: none; }}
 #about b {{ margin-right: 6px; }}
 #about .hint {{ color: var(--hint); }}
 .key span {{ display: inline-block; width: 22px; height: 3px; vertical-align: middle;
