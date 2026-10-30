@@ -87,6 +87,8 @@ EXTRA_KINDS = ("bool", "literal", "normalize", "order")
 # `#[cfg(windows)]` arm (processes, image_path, probe) the Linux half never
 # compiles, so its mutants all came back missed there; `probe` also names
 # the Linux and other-platform arms, which a rerun here leaves missed, as they are.
+# studio's log redaction matches the home folder in any letter case and with
+# either slash on Windows alone, and its test is `#[cfg(windows)]`.
 WINDOWS_ONLY_TESTS = [
     re.compile(
         r"crates/tools/team_compiler/src/output/deploy\.rs:\d+:\d+: .* in "
@@ -97,6 +99,10 @@ WINDOWS_ONLY_TESTS = [
         r"(replace (processes|image_path|probe) -> |.* in (processes|image_path|probe)$)"
     ),
     re.compile(r"crates/tools/export_upgrader/src/upgrade\.rs:\d+:\d+: .* in retry_while_locked$"),
+    re.compile(
+        r"crates/studio/src/gui_log\.rs:\d+:\d+: "
+        r"(replace redact_any_spelling -> |.* in redact_(any_spelling|home)$)"
+    ),
 ]
 # The remote half's systemd unit: a transient service so its cgroup is
 # memory-capped and CPU-idle: an allocating mutant once OOM-killed the host,

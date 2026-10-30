@@ -934,11 +934,14 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
             view.live_aatf = !view.live_aatf;
         }
         // What the check asks for, so only while it runs.
-        if view.live_aatf {
-            studio_core::widgets::checkbox(ui, &mut view.live_suggestions, "Show suggestions")
+        if view.live_aatf
+            && studio_core::widgets::checkbox(ui, &mut view.live_suggestions, "Show suggestions")
                 .on_hover_text(
                     "Also list each player's unused allowances (cards, free tricks, weak foot...)",
-                );
+                )
+                .clicked()
+        {
+            surrender_focus(ui);
         }
         // The save's path is in the window title (`title_detail`): beside the
         // unsaved mark it could wrap the toolbar onto a second row.

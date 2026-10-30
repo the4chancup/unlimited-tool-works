@@ -534,6 +534,49 @@ fn a_keyboard_invoked_toggle_starts_the_check() {
     );
 }
 
+/// Show suggestions ticked from the keyboard (Tab + Space, or AccessKit's
+/// Click, which leave the keyboard focus on it) starts the check that asks
+/// for the suggestions with no further input: the checkbox gives up the
+/// keyboard it holds.
+#[test]
+fn a_keyboard_ticked_show_suggestions_starts_the_check() {
+    let (mut view, mut window) =
+        open_734_with("live_aatf_invoked_suggestions", &[73401, 73404], 183);
+    view.live_aatf = true;
+    live_checked(&mut window, &mut view, &[734]);
+    assert!(
+        view.live
+            .check
+            .result
+            .as_ref()
+            .is_some_and(|(key, _)| !key.suggestions),
+        "premise: the held result asked for no suggestions"
+    );
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (checkbox, _) = pairs
+        .iter()
+        .find(|(_, node)| node.role() == Role::CheckBox && node.label() == Some("Show suggestions"))
+        .expect("the Show suggestions checkbox");
+    let checkbox = *checkbox;
+    action_focus(&mut window, &mut view, checkbox);
+    action_click(&mut window, &mut view, checkbox);
+    assert!(view.live_suggestions, "premise: the click ticked it");
+    draw(&mut window, &mut view);
+    let check = &view.live.check;
+    assert!(
+        check
+            .pending
+            .as_ref()
+            .is_some_and(|pending| pending.key.suggestions)
+            || check
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| key.suggestions),
+        "the check asking for the suggestions started with no further input"
+    );
+    live_checked(&mut window, &mut view, &[734]);
+}
+
 /// A Make button invoked from the keyboard checks the player's team again
 /// with no further input: the button gives up the keyboard it holds.
 // SE-GUI-30

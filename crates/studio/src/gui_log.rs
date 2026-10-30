@@ -506,6 +506,7 @@ mod tests {
     /// folder written another way is redacted too, the rest of the line as
     /// written.
     #[cfg(windows)]
+    // ST-RUN-07
     #[test]
     fn redact_home_matches_any_spelling_of_the_home_folder_on_windows() {
         let home = Some("C:\\Users\\Alice");

@@ -533,27 +533,6 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
     let listed: Vec<&String> = names.iter().filter(|name| lines.contains(name)).collect();
     assert_eq!(listed, ["734 /lit/"], "734 alone is listed");
 
-    // Closed and opened again on the same save: the narrowed range stays.
-    click(&mut window, multi_button(&pairs, "Close"), &mut view);
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert!(
-        !pairs
-            .iter()
-            .any(|(_, node)| node.value() == Some(MULTI_TITLE)),
-        "premise: the dialog closed"
-    );
-    open_multi_aatf(&mut window, &mut view);
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let ends: Vec<Option<&str>> = range_combos(&pairs)
-        .into_iter()
-        .map(accesskit::Node::value)
-        .collect();
-    assert_eq!(
-        ends,
-        [Some("734 /lit/"), Some("734 /lit/")],
-        "the range is kept"
-    );
-
     // Reversed.
     pick_range_end(&mut window, &mut view, 1, &names[0]);
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -574,6 +553,40 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
         "nothing listed: {lines:?}"
     );
     assert!(multi_button(&pairs, "Copy to clipboard").is_disabled());
+}
+
+/// Multi-team AATF's range is kept while the save stays open: narrowed to
+/// 734 alone, the dialog closed and opened again reads 734 at both ends.
+#[test]
+fn a_reopened_multi_team_aatf_keeps_its_range() {
+    let path = fixture(PesVersion::Pes17, "multi_aatf_reopen");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    pick_range_end(&mut window, &mut view, 0, "734 /lit/");
+    pick_range_end(&mut window, &mut view, 1, "734 /lit/");
+    let pairs = multi_checked(&mut window, &mut view, &[734]);
+
+    click(&mut window, multi_button(&pairs, "Close"), &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        !pairs
+            .iter()
+            .any(|(_, node)| node.value() == Some(MULTI_TITLE)),
+        "premise: the dialog closed"
+    );
+    open_multi_aatf(&mut window, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let ends: Vec<Option<&str>> = range_combos(&pairs)
+        .into_iter()
+        .map(accesskit::Node::value)
+        .collect();
+    assert_eq!(
+        ends,
+        [Some("734 /lit/"), Some("734 /lit/")],
+        "the range is kept"
+    );
 }
 
 /// A team the check finds clean reads `All clean` under its line (714
@@ -699,7 +712,12 @@ fn a_failed_teams_check_is_named_with_its_error_and_the_others_listed() {
         .iter()
         .position(|line| *line == other)
         .expect("744 is listed");
-    assert_ne!(lines[at + 1], "All clean", "744's rows: {lines:?}");
+    // The list's group headers: a 744xx player's head or the team's own.
+    let group = &lines[at + 1];
+    assert!(
+        group.starts_with("Player 744") || group == "Team-wide issues",
+        "a group header of 744's rows under its line: {lines:?}"
+    );
 
     let text = copied(&mut window, &mut view, &pairs).expect("the click copies the list");
     let copied_lines: Vec<&str> = text.lines().collect();
