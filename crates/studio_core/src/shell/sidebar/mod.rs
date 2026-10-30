@@ -361,8 +361,8 @@ impl Sidebar {
     /// (`UiBuilder::scope_id` makes the scope's id independent of the parent's),
     /// so a widget keeps its egui id across the move: a keyboard focus or an open
     /// version popup survives the overlay opening and closing. `cell` is the icon
-    /// cell's width — the rail's inner width — in both places (item 3: "nothing
-    /// moves when it opens").
+    /// cell's width — the rail's inner width — in both places, so nothing moves
+    /// when it opens.
     fn contents(
         &mut self,
         ui: &mut egui::Ui,
@@ -388,7 +388,7 @@ impl Sidebar {
                 let row_width = ui.available_width();
                 // The logo doubles as the About click target, centered in the icon
                 // cell in both places: it gets no label, so the hover opens nothing
-                // that comes and goes (item 1).
+                // that comes and goes.
                 let logo = logo(ui, row_width, cell);
                 logo.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, "4cc"));
                 if logo.has_focus() {
@@ -546,7 +546,7 @@ impl Sidebar {
                 let response = combo
                     .width(ui.available_width())
                     // Extend, not wrap: the text stays on one line, so the
-                    // selector row's height is the same open and closed (item 3).
+                    // selector row's height is the same open and closed.
                     .wrap_mode(egui::TextWrapMode::Extend)
                     .show_ui(ui, |ui| {
                         for version in PesVersion::ALL {
@@ -749,6 +749,29 @@ fn drawn_planned<'a>(args: &'a SidebarFrame<'a>) -> impl Iterator<Item = &'a Pla
     })
 }
 
+/// The registered tools in the order the rail draws them: the window tools in registry
+/// order, then the CLI-only ones in the order of their entries in `planned`. A CLI-only
+/// tool with no planned entry, which the rail does not draw, comes last: it still has
+/// its help chapter.
+pub(super) fn drawn_order<'a>(
+    tools: &'a [Box<dyn StudioTool>],
+    planned: &[PlannedTool],
+    cli_only: &[&str],
+) -> Vec<&'a dyn StudioTool> {
+    let (mut cli, window): (Vec<&dyn StudioTool>, Vec<&dyn StudioTool>) = tools
+        .iter()
+        .map(Box::as_ref)
+        .partition(|tool| cli_only.contains(&tool.id()));
+    // A stable sort: the tools with no planned entry keep their registry order.
+    cli.sort_by_key(|tool| {
+        planned
+            .iter()
+            .position(|entry| entry.id == tool.id())
+            .unwrap_or(planned.len())
+    });
+    window.into_iter().chain(cli).collect()
+}
+
 /// The widest body-text galley among the labels the open sidebar shows, since the overlay
 /// is as wide as the longest label needs on one line: the registered tools', the planned
 /// entries' as `contents` draws them, the help's and the gear's. Measured each frame with
@@ -814,8 +837,8 @@ fn label_offset(cell: f32) -> f32 {
     (ACTIVE_BAR_WIDTH + cell + ICON_SIZE) / 2.0 + LABEL_GAP
 }
 
-/// One sidebar entry row `width` wide, the same in the rail and in the overlay
-/// (item 3: "nothing moves when it opens"): `icon` centred in the icon cell, the
+/// One sidebar entry row `width` wide, the same in the rail and in the overlay, so
+/// nothing moves when it opens: `icon` centred in the icon cell, the
 /// row's first `cell` points less the accent bar's width at its left (the draft's
 /// entries carry that border on every row, transparent but on the active one), then
 /// `label` in body text at `label_offset`, vertically centred and never wrapped

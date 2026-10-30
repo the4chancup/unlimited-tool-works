@@ -76,8 +76,11 @@ pub struct CatalogRow {
 }
 
 /// The chapter list the help window and `UTW help` share: the core chapters first,
-/// then each registered tool's `help()` under its id, in registry order.
-pub(crate) fn chapters(tools: &[Box<dyn StudioTool>]) -> Vec<(&'static str, HelpSection)> {
+/// then each of `tools`' `help()` under its id, in the order given (the window's is
+/// the sidebar's, `UTW help`'s the registry's).
+pub(crate) fn chapters<'a>(
+    tools: impl IntoIterator<Item = &'a dyn StudioTool>,
+) -> Vec<(&'static str, HelpSection)> {
     let mut chapters = vec![
         (
             "setting-up",
@@ -104,6 +107,6 @@ pub(crate) fn chapters(tools: &[Box<dyn StudioTool>]) -> Vec<(&'static str, Help
             },
         ),
     ];
-    chapters.extend(tools.iter().map(|tool| (tool.id(), tool.help())));
+    chapters.extend(tools.into_iter().map(|tool| (tool.id(), tool.help())));
     chapters
 }

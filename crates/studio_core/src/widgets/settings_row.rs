@@ -1,29 +1,13 @@
 //! A settings row, the draft `docs/prototypes/index.html`'s `sRow`: the label cell, its
 //! tooltip leading with the settings key, and the widget cell. `path_row` is the one row
-//! every section's path setting draws, the common folders' and a tool's file alike, so
+//! every section's path setting draws, the common folders' and a tool's alike, so
 //! no tool's path commits differently from the common ones. The text edit commits on
-//! Enter or focus loss, never per keystroke, and
-//! the Browse button opens `rfd`'s native picker of the row's kind, a pick committing
-//! at once.
+//! Enter or focus loss, never per keystroke, and the Browse button opens `rfd`'s
+//! native folder picker, a pick committing at once.
 
 use std::path::PathBuf;
 
 use super::text_box::text_box;
-
-/// What `path_row`'s Browse button opens: the native picker
-/// of the setting's kind, a folder or a file filtered to the type the tool reads.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PathKind {
-    /// A folder (`rfd`'s `pick_folder`).
-    Folder,
-    /// A file of `filter`'s `extensions` (`rfd`'s `pick_file` behind an `add_filter`).
-    File {
-        /// The filter's name as the dialog shows it.
-        filter: &'static str,
-        /// The file endings the picker accepts, without the dot (`4ccrules`).
-        extensions: &'static [&'static str],
-    },
-}
 
 /// A row's left cell: the plain label, its tooltip the settings key then `tip`, the row's
 /// own sentence for a member (the draft's `sRow`), so a member who edits `settings.toml`
@@ -35,20 +19,19 @@ pub(crate) fn row_label(ui: &mut egui::Ui, label: &str, key: &str, tip: &str) ->
 
 /// A path row: the edit binds `buffer` and commits it to `current` when it loses focus
 /// or Enter is pressed, returning whether the commit changed the setting; the Browse
-/// button after the edit opens `kind`'s native picker and a pick sets the buffer and
+/// button after the edit opens the native folder picker and a pick sets the buffer and
 /// the setting at once (a commit). While the row has no focus the buffer follows
 /// `current`, so a change made outside the menu (the notice's "Fix PES path") still
 /// shows.
-pub fn path_row(
+pub(crate) fn path_row(
     ui: &mut egui::Ui,
     label: &str,
     key: &str,
     tip: &str,
     buffer: &mut String,
     current: &mut String,
-    kind: PathKind,
 ) -> bool {
-    path_row_commit(ui, label, key, tip, buffer, current, kind).is_some()
+    path_row_commit(ui, label, key, tip, buffer, current).is_some()
 }
 
 /// How a path row's setting changed this frame: typed into the edit, or picked with
@@ -57,13 +40,14 @@ pub fn path_row(
 pub(crate) enum PathCommit {
     /// The edit committed on Enter or focus loss, its text stored as typed.
     Typed,
-    /// Browse's picker returned a folder or file, stored as `Path::display` writes it.
+    /// Browse's picker returned a folder, stored as `Path::display` writes it.
     Picked,
 }
 
 /// The path edit's width: the one that shows Steam's PES 2019 install path
-/// whole (456 points at the 13-point body font, plus the edit's 8-point
-/// margin on each side); the menu's width test measures it.
+/// whole. Its galley is 434 points wide at the 12.5-point body font, inside
+/// the 456 points the edit's 8-point margin on each side leaves; the menu's
+/// width test measures it.
 const PATH_EDIT_WIDTH: f32 = 472.0;
 
 /// `path_row`, saying which way the setting changed: the PES folder row stores a
@@ -76,7 +60,6 @@ pub(crate) fn path_row_commit(
     tip: &str,
     buffer: &mut String,
     current: &mut String,
-    _kind: PathKind,
 ) -> Option<PathCommit> {
     let label = row_label(ui, label, key, tip);
     let (response, picked) = ui
@@ -87,9 +70,9 @@ pub(crate) fn path_row_commit(
                 ))
                 .labelled_by(label.id);
             // `rfd`'s pickers are native-only, so the wasm row is the edit
-            // alone (`_kind`: `browse` exists only off wasm).
+            // alone.
             #[cfg(not(target_arch = "wasm32"))]
-            let picked = browse(ui, _kind);
+            let picked = browse(ui);
             #[cfg(target_arch = "wasm32")]
             let picked: Option<PathBuf> = None;
             (response, picked)
@@ -118,17 +101,12 @@ pub(crate) fn path_row_commit(
     None
 }
 
-/// The Browse button and the native picker it opens, `kind`'s: `rfd`'s blocking
-/// folder dialog or file dialog filtered to `extensions`; `Some` only on a pick.
+/// The Browse button and the native picker it opens, `rfd`'s blocking folder
+/// dialog; `Some` only on a pick.
 #[cfg(not(target_arch = "wasm32"))]
-fn browse(ui: &mut egui::Ui, kind: PathKind) -> Option<PathBuf> {
+fn browse(ui: &mut egui::Ui) -> Option<PathBuf> {
     if !ui.button("Browse").clicked() {
         return None;
     }
-    match kind {
-        PathKind::Folder => rfd::FileDialog::new().pick_folder(),
-        PathKind::File { filter, extensions } => rfd::FileDialog::new()
-            .add_filter(filter, extensions)
-            .pick_file(),
-    }
+    rfd::FileDialog::new().pick_folder()
 }

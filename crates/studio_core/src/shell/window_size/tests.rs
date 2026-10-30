@@ -1181,6 +1181,85 @@ fn only_a_maximized_place_whose_scales_all_match_skips_the_resend() {
     );
 }
 
+// ST-BAR-05
+#[test]
+fn reset_window_centres_the_window_on_the_monitor_it_stands_on() {
+    let Shell { mut app, _dir, .. } = shell();
+    app.monitors = mixed_desk;
+    let egui_ctx = test_context();
+    // A 1400 x 800-point window on the 4K at 200%, its outer rectangle's centre
+    // at pixels (3816, 939): off the fitted design size, so the button is drawn,
+    // and wider than the design width, so the zoom stays 1.
+    let input = |events: Vec<egui::Event>| {
+        let size = egui::vec2(1400.0, 800.0);
+        let outer_min = egui::pos2(1200.0, 50.0);
+        let mut input = raw_input(events, true, None, None);
+        input.screen_rect = Some(egui::Rect::from_min_size(egui::Pos2::ZERO, size));
+        let info = input
+            .viewports
+            .get_mut(&egui::ViewportId::ROOT)
+            .expect("`RawInput::default` carries the root viewport");
+        info.native_pixels_per_point = Some(2.0);
+        info.monitor_size = Some(egui::vec2(1920.0, 1080.0));
+        info.outer_rect = Some(egui::Rect::from_min_size(outer_min, size + DECORATIONS));
+        info.inner_rect = Some(egui::Rect::from_min_size(
+            outer_min + egui::vec2(8.0, 31.0),
+            size,
+        ));
+        info.maximized = Some(false);
+        input
+    };
+
+    let nodes = run_frame(&egui_ctx, &mut app, input(Vec::new())).nodes;
+    let button = entry(&nodes, "Reset window");
+    run_frame(&egui_ctx, &mut app, input(pointer(button, true)));
+    let out = run_frame(&egui_ctx, &mut app, input(pointer(button, false)));
+
+    let commands = fitting(&out);
+    let [
+        ViewportCommand::InnerSize(size),
+        ViewportCommand::OuterPosition(top_left),
+    ] = commands.as_slice()
+    else {
+        panic!("the fit's size, then its position: {commands:?}");
+    };
+    assert_eq!(*size, DEFAULT_SIZE, "the 4K's 1920 x 1080 points hold it");
+    // The outer rectangle the commands ask for, in the screen's pixels at 200%.
+    let outer = egui::Rect::from_min_size(*top_left, *size + DECORATIONS) * 2.0;
+    let second = egui::Rect::from_min_size(egui::pos2(1920.0, -327.0), egui::vec2(3840.0, 2160.0));
+    assert!(
+        second.contains_rect(outer),
+        "{outer:?} lies inside the second monitor {second:?}"
+    );
+    assert!(
+        (outer.center() - second.center()).length() < 0.01,
+        "{outer:?} is centred on the second monitor {second:?}"
+    );
+}
+
+#[test]
+fn a_window_centred_on_no_monitor_stands_on_the_primary() {
+    // Its outer rectangle's centre at pixels (6000, 500), right of the 4K.
+    let viewport = egui::ViewportInfo {
+        native_pixels_per_point: Some(2.0),
+        outer_rect: Some(egui::Rect::from_center_size(
+            egui::pos2(3000.0, 250.0),
+            egui::vec2(1000.0, 600.0),
+        )),
+        ..Default::default()
+    };
+    let desk = mixed_desk(&eframe::Frame::_new_kittest());
+    assert_eq!(
+        monitor_under(&viewport, 1.0, &desk),
+        Some(egui::Rect::from_min_size(
+            egui::Pos2::ZERO,
+            egui::vec2(960.0, 540.0)
+        )),
+        "the primary's pixels in the window's points at 200%"
+    );
+    assert_eq!(monitor_under(&viewport, 1.0, &[]), None, "no window to ask");
+}
+
 // ST-WIN-04
 #[test]
 fn a_five_number_record_opens_not_maximized() {

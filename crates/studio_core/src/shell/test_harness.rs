@@ -19,7 +19,7 @@ use crate::help::{HelpSection, HelpTarget};
 use crate::settings::Settings;
 use crate::status::{Notice, ToolActivity};
 use crate::tool::{AppPaths, CliError, PlannedTool, StudioTool, ToolContext};
-use crate::widgets::{LogLine, LogPanel, PathKind, checkbox_without_text, path_row};
+use crate::widgets::{LogLine, LogPanel, checkbox_without_text, path_row};
 
 /// What `activity()` reports while a stub works: `(tool_label, progress, elapsed)`.
 pub(super) type Activity = (&'static str, Option<(usize, usize)>, Duration);
@@ -56,9 +56,8 @@ pub(super) struct Calls {
     /// The table `default_settings()` reports; `stub()` fills a non-empty one, a test
     /// clears it for a tool without settings.
     pub(super) default_settings: Mutex<toml::Table>,
-    /// While `Some`, the stub's settings section draws a path row of a file
-    /// kind, the string being the setting the row shows (a commit writes it
-    /// back).
+    /// While `Some`, the stub's settings section draws a path row, the
+    /// string being the setting the row shows (a commit writes it back).
     pub(super) file_row: Mutex<Option<String>>,
     /// Whether the stub reports unsaved work: `hold_close` holds the close for it.
     pub(super) unsaved: Mutex<bool>,
@@ -198,7 +197,7 @@ impl StudioTool for StubTool {
     }
     fn settings_view(&mut self, ui: &mut egui::Ui, _ctx: &ToolContext) {
         ui.label(format!("{} settings body", self.label));
-        // The `file_row` knob draws a tool's settings section: a file path
+        // The `file_row` knob draws a tool's settings section: a path
         // row and a long-labelled checkbox row, in their own grid, so the
         // section is wider than the menu's 660 points.
         if let Some(current) = self.calls.file_row.lock().unwrap().as_mut() {
@@ -212,10 +211,6 @@ impl StudioTool for StubTool {
                         "A tool's file path row.",
                         &mut self.file_buffer,
                         current,
-                        PathKind::File {
-                            filter: "Tool files",
-                            extensions: &["txt"],
-                        },
                     );
                     ui.label("Aesthetics from exports");
                     checkbox_without_text(ui, &mut false);
@@ -677,6 +672,21 @@ pub(super) fn pointer(node: &accesskit::Node, pressed: bool) -> Vec<egui::Event>
 /// The pointer moved to the centre of `node` without a button: a hover.
 pub(super) fn hover(node: &accesskit::Node) -> Vec<egui::Event> {
     vec![egui::Event::PointerMoved(centre(node))]
+}
+
+/// The pointer moved to the centre of `node` and one notch of a mouse wheel,
+/// up or down.
+pub(super) fn wheel_notch(node: &accesskit::Node, up: bool) -> Vec<egui::Event> {
+    vec![
+        egui::Event::PointerMoved(centre(node)),
+        egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Line,
+            delta: egui::vec2(0.0, if up { 1.0 } else { -1.0 }),
+            phase: egui::TouchPhase::Move,
+            source: egui::MouseWheelSource::Wheel,
+            modifiers: egui::Modifiers::default(),
+        },
+    ]
 }
 
 /// A click (press frame, release frame) on `node`, returning the release frame: the one

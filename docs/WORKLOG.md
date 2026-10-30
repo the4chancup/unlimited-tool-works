@@ -1853,7 +1853,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         - manual: checked 2026-10-30 (3), candidate 0.0.1c's build `91a61c6e`, the real PES 2017
           save with the sidebar on PES 2021: Pick… opens on "All files (*.*)" listing
           `TEXPORT00000000`-`03`; cancelled, nothing changed
-      - [ ] k5f before 0.0.1, wanted but not required (the maintainer, 2026-10-30: the cups
+      - [x] k5f before 0.0.1, wanted but not required (the maintainer, 2026-10-30: the cups
         accept Texports for now, tactics TOML files later, so the panel exports both; a
         member can still export one from PES 2017 after editing the save with the app): Texport export on PES 2017, synthesized from the open save rather than from
         a template file. Study (`.tmp/8_30c/texport17_study/FINDINGS.md`, ten real files):
@@ -1890,12 +1890,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           `pes_savefile` `file.rs`, `interchange/texport{,_golden}.rs`,
           `interchange/pes17_texport_logo.png`, `schema/texport.rs`; `save_editor`
           `view/interchange.rs`, `view/tests/interchange_export.rs`, `help/05_team.md`.
-          Open: (3), and whether the game minds the zeroed id copies (else the writer
-          starts from the save's own record bytes)
+        - manual: checked 2026-10-30 (3), SE-GUI-29's PES 17 case, release build `00172d88`,
+          the real PES 2017 save (backed up, restored by hash): the panel's Texport of 701
+          (/3/) saved as the suggested `TEXPORT00000004` (dialog in the save's folder, "All
+          Files"); PES 2017 lists it as /3/, offers /3/ alone, shows its 23 players by name
+          and position, imports and saves. Team 701's Team TOML before and after: equal but
+          the edit flags the import sets (the team's strip, 16 players' physique, 24 strip
+          flags), so the records' zeroed id copies cost nothing
+          (`.tmp/8_30c/pes17_session/FINDINGS.md`)
       - [ ] k5g after 0.0.1 (the maintainer, 2026-10-30: "the behavior applies to all
         versions, but we'll have to confirm it"): on PES 2015, 2016 and 2018-2021, import a
-        team file in game and check whether the save's team name is kept and the shown name
-        comes from the DLC's team bin, as on PES 2017 (`plans/save_editor.md` "Interchange
+        team file in game and check whether the import writes the team name the DLC's team
+        bin gives the target's id into the save, as on PES 2017 (`plans/save_editor.md` "Interchange
         formats in the UI", the Texport bullet); the bin's editing is future work, no plan yet
       - [ ] k5rev the cross-family review loop (the slices are Opus sidekicks', so the lead's
         review is same-family): SWE-2 rounds on each merged slice until one accepts under
@@ -1916,9 +1922,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         stays on a 1224 x 576 pane, the shortest a member sees; the help names the boots and
         gloves numbering). SWE-2 round over the rework (2026-10-30): 0 counted, the loop ends
         (`rulings_k5.md` S1m: a test for the lists' half share and a doc word ride k5e)
-      - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged: running
+      - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged: ran
         2026-10-30 in the mutants worktree at `0c5571d3`, base `d2617b2f^1`
-        (`.tmp/8_30c/k5mut.sh`, log `.tmp/8_30c/k5mut.log`)
+        (`.tmp/8_30c/k5mut.sh`, log `.tmp/8_30c/k5mut.log`): 128 mutants, 104 caught, 9
+        missed, 15 unviable; all 9 test gaps (`.tmp/8_30c/k5mut_triage.md`): the four
+        local ones in cv3, the remote half's three new ones (`stage`'s roster filter, the
+        notes heading's guard) in the brief after cv3
     - [ ] 8.9m the maintainer's pass over the 0.0.1 candidate (`d317b6da`), 2026-10-29:
       - [x] the drafts take the app's grey for a plain player name and a planned tool
         (DECISIONS 2026-10-29)
@@ -5852,9 +5861,21 @@ briefs, review loops, gates and mutation runs as for any step.
     wrong value to a save; the nearest to a member: PgUp/PgDn missing (the parity row says
     kept), Copy/Swap naming players by shirt number, a written-off instruction never named
     in the team file dialog, Reset window moving a window on a second monitor to the first
-  - [ ] cv2 the plan and scenario edits the audit ruled (the lead)
+  - [x] cv2 the plan and scenario edits the audit ruled (17 rulings; `plans/save_editor.md`,
+    `plans/core/gui.md`)
   - [ ] cv3 the view's findings (`save_editor`, `team_widgets`; with k5mut's four local
-    survivors) and cv4 the shell's (`studio_core`, `studio`): one Opus sidekick each
+    survivors): an Opus sidekick
+  - [ ] cv3b after cv3 lands: the Texport name suggestion counts in hexadecimal, upper case
+    (`view/interchange.rs` `Export::file_name`; a test with `00000000`..`00000009` taken
+    suggests `TEXPORT0000000A`; DECISIONS 2026-10-30 "PES 2017's import names the team from
+    the DLC's bin, and Texport numbers are hexadecimal"), and k5mut's remote half's three
+    survivors (`.tmp/8_30c/k5mut_triage.md`)
+  - [x] cv4 the shell's findings (`studio_core`, `studio`): an Opus sidekick, merged
+    `897a4fc0`: Reset window centres on the monitor the window stands on (the primary when
+    none holds its centre), the help tree follows the rail's order, the data-location topic,
+    `--gui` and wheel tests, `PathKind` dropped (lead's fix: one variant left). SWE-2
+    round 1: 0 of 4 accepted, the loop ends (`.tmp/0_0_1cv/rulings_cv4.md`); its Astra
+    round is cv6's A6
   - [ ] cv5 by hand: Output rosters to TSV in the built window; ST-SIDE-05 with PES 2017
     running
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate

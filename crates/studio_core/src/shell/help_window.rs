@@ -653,6 +653,7 @@ fn severity_color(severity: &str, visuals: &egui::Visuals) -> egui::Color32 {
 #[cfg(test)]
 mod tests {
     use std::borrow::Cow;
+    use std::path::PathBuf;
 
     use egui::accesskit::{self, Role, Toggled};
 
@@ -662,6 +663,7 @@ mod tests {
     use crate::shell::sidebar::SETTINGS_LABEL;
     use crate::shell::test_harness::*;
     use crate::status::{ActionEffect, Notice, NoticeAction, NoticeKind};
+    use crate::tool::{AppPaths, PlannedTool};
     use crate::widgets::LogLine;
 
     /// Two chapters with a topic and a catalog row each, as a tool's `help()` yields.
@@ -762,7 +764,7 @@ mod tests {
     #[test]
     fn a_search_hits_label_drops_the_lines_markdown_marks() {
         // A list item's line loses its dash and backticks.
-        let hits = search(&crate::help::chapters(&[]), "next to the program");
+        let hits = search(&crate::help::chapters([]), "next to the program");
         let labels: Vec<&str> = hits.iter().map(|hit| hit.label.as_str()).collect();
         assert_eq!(
             labels,
@@ -980,7 +982,7 @@ mod tests {
             "the chapter's first topic is drawn"
         );
 
-        // The tree lists the core chapters, then the tools' in registry order. A
+        // The tree lists the core chapters, then the tools' in sidebar order. A
         // chapter's `CollapsingHeader` is a DisclosureTriangle node in the
         // AccessKit tree (egui 0.37's role names); the topic entries are buttons.
         let top = |title: &str| {
@@ -1041,6 +1043,72 @@ mod tests {
             "the ? reopened the help on the active tool's chapter"
         );
         assert!(has_text(&nodes, "Beta does things."));
+    }
+
+    // ST-HELP-01
+    #[test]
+    fn the_tools_chapters_follow_the_order_the_rail_draws_the_tools_in() {
+        // Gamma is CLI-only and registered first: the rail draws Alpha and Beta,
+        // the window tools, and then Gamma among the planned entries.
+        const PLANNED: &[PlannedTool] = &[PlannedTool {
+            id: "c",
+            label: "Gamma",
+            icon: "c",
+        }];
+        let gamma = HelpSection {
+            title: "Gamma",
+            ..beta_section()
+        };
+        let (c, calls_c) = stub_help("c", "Gamma", None, gamma);
+        let (a, calls_a) = stub_help("a", "Alpha", None, alpha_section());
+        let (b, calls_b) = stub_help("b", "Beta", None, beta_section());
+        let dir = TestDir::new("studio_core_help_rail_order");
+        let Shell { mut app, .. } = shell_in(
+            test_settings(dir.path()),
+            vec![c, a, b],
+            PLANNED,
+            &["c"],
+            AppPaths {
+                exe_dir: PathBuf::from("exe"),
+                data_dir: Some(dir.path().to_path_buf()),
+            },
+            None,
+            vec![calls_c, calls_a, calls_b],
+        );
+        let egui_ctx = test_context();
+
+        // The texts of `nodes`' widgets of `roles`, top to bottom: a button's or a
+        // header's text is its label, a planned entry's its value.
+        fn top_down<'a>(nodes: &'a [accesskit::Node], roles: &[Role]) -> Vec<&'a str> {
+            let mut found: Vec<_> = nodes
+                .iter()
+                .filter(|node| roles.contains(&node.role()))
+                .filter_map(|node| Some((node.bounds()?.y0, node.label().or(node.value())?)))
+                .collect();
+            found.sort_by(|x, y| x.0.total_cmp(&y.0));
+            found.into_iter().map(|(_, text)| text).collect()
+        }
+        // Before the help opens, the frame holds the rail alone.
+        let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+        let rail: Vec<_> = top_down(&nodes, &[Role::Button, Role::Label])
+            .into_iter()
+            .filter(|text| ["Alpha", "Beta", "Gamma"].contains(text))
+            .collect();
+        assert_eq!(rail, ["Alpha", "Beta", "Gamma"], "the rail's order");
+
+        frame(&egui_ctx, &mut app, vec![key(egui::Key::F1, true)], true);
+        let nodes = idle(&egui_ctx, &mut app, 15).nodes;
+        assert_eq!(
+            top_down(&nodes, &[Role::DisclosureTriangle]),
+            [
+                "Setting up",
+                "First run and data location",
+                "Alpha",
+                "Beta",
+                "Gamma"
+            ],
+            "the help tree's chapters: the core ones, then the tools' as the rail draws them"
+        );
     }
 
     // ST-HELP-02

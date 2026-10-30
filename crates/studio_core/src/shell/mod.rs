@@ -181,7 +181,9 @@ impl StudioApp {
             .filter(|&index| !cli_only.contains(&tools[index].id()))
             .or_else(|| tools.iter().position(|tool| !cli_only.contains(&tool.id())))
             .unwrap_or(0);
-        let help_window = HelpWindow::new(help::chapters(&tools));
+        let help_window = HelpWindow::new(help::chapters(sidebar::drawn_order(
+            &tools, planned, cli_only,
+        )));
         StudioApp {
             tools,
             planned,
@@ -528,12 +530,20 @@ impl eframe::App for StudioApp {
         // and the tool view.
         let activities = self.activities(false);
         let blocker = sidebar::version_blocker(&self.tools);
+        #[cfg(not(target_arch = "wasm32"))]
+        let monitor_of = |viewport: &egui::ViewportInfo, zoom: f32| {
+            window_size::monitor_under(viewport, zoom, &(self.monitors)(_frame))
+        };
+        #[cfg(target_arch = "wasm32")]
+        let monitor_of = |_: &egui::ViewportInfo, _: f32| None;
         let effect = egui::Panel::bottom("status_bar")
             .exact_size(24.0)
             .frame(
                 egui::Frame::side_top_panel(ui.style()).inner_margin(egui::Margin::symmetric(8, 0)),
             )
-            .show(ui, |ui| self.status_bar.show(ui, &activities, blocker))
+            .show(ui, |ui| {
+                self.status_bar.show(ui, &activities, blocker, monitor_of)
+            })
             .inner;
         // Before the effect applies: a `SwitchTool` would make another tool the one told.
         self.tell_standing_end();

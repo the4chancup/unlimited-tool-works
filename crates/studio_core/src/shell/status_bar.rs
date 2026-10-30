@@ -126,20 +126,23 @@ impl StatusBar {
     /// sidebar order (the active tool's run strip already shows its own). `blocker` is the
     /// version-change blocker a tool reports, as its label and reason: while it holds, a
     /// `SwitchVersion` action is drawn disabled with the selector's hover, and the notice
-    /// stays. Returns the notice action the user clicked, for the shell to apply; clicking
+    /// stays. `monitor_of` names the monitor the window stands on, from the frame's
+    /// viewport and zoom (`window_size::monitor_under`), asked only when Reset window is
+    /// clicked. Returns the notice action the user clicked, for the shell to apply; clicking
     /// it also dismisses the notice.
     pub(super) fn show(
         &mut self,
         ui: &mut egui::Ui,
         activities: &[String],
         blocker: Option<(&str, &str)>,
+        monitor_of: impl FnOnce(&egui::ViewportInfo, f32) -> Option<egui::Rect>,
     ) -> Option<ActionEffect> {
         self.expire(ui);
         let mut effect = None;
         let mut dismissed = false;
         let bar = ui.max_rect();
         let spacing = ui.spacing().item_spacing.x;
-        let left_right = self.left_slot(ui);
+        let left_right = self.left_slot(ui, monitor_of);
         // Right: the other tools' activities, at their text's width capped at a third
         // of the bar (an activity line is short; the cap keeps a long one from taking
         // the notice's room), packed against the right edge and truncating past the
@@ -275,7 +278,11 @@ impl StatusBar {
     /// the window sits off the main class's fitted design size, then one
     /// icon-and-text entry per held condition, each carrying its tooltip.
     /// Returns the content's right edge, the middle slot's left bound.
-    fn left_slot(&self, ui: &mut egui::Ui) -> f32 {
+    fn left_slot(
+        &self,
+        ui: &mut egui::Ui,
+        monitor_of: impl FnOnce(&egui::ViewportInfo, f32) -> Option<egui::Rect>,
+    ) -> f32 {
         let (viewport, screen_rect) =
             ui.input(|input| (input.viewport().clone(), input.raw.screen_rect));
         let zoom = ui.ctx().zoom_factor();
@@ -294,7 +301,7 @@ impl StatusBar {
                     )
                     .on_hover_text("Back to the default window size, centred on its monitor");
                 if reset.clicked() {
-                    window_size::reset(ui.ctx(), &viewport);
+                    window_size::reset(ui.ctx(), &viewport, monitor_of(&viewport, zoom));
                 }
             }
             for condition in &self.conditions {

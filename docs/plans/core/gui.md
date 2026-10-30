@@ -35,8 +35,8 @@ The tool view belongs to each tool; pipeline tools subdivide it into grid, toolb
 ```
 
 The sidebar lists the registered tools in registry order (today the Team compiler, the Save
-editor, the Export upgrader), then the planned ones in parentheses here, grayed in the window
-("Sidebar").
+editor, the Ruleset editor, the Export upgrader), then the planned ones in parentheses here,
+grayed in the window ("Sidebar").
 
 The window's opening size and fit, and its scaling under the design width, are built:
 `spec/core/gui.md` "Shell layout", the paragraphs "The window's size" and "Scaling with the
@@ -236,9 +236,10 @@ Top to bottom:
    `StudioTool` list. The rail shows the icons alone, so they are drawn at about twice the body
    text (12.5) for the rail by itself to tell the tools apart, and at the same size and place in
    the opened sidebar, so nothing moves when it opens. 24 rather than larger because the rail
-   is 56 points wide and every entry is in it: at 24 the fourteen entries take about 470 points
-   of the 776-point rail at the default window, leaving the logo, the version dropdown, the help
-   and the gear their room; at 32 they would take about 600 with 12-point side margins, and a
+   is 56 points wide and every entry is in it: at 24 the fourteen entries take 459 points
+   of the 756-point rail at the default 1280 × 780 window (30-point rows, 3 apart), leaving the
+   logo, the version dropdown, the help and the gear their room; at 32 they would take 571
+   (38-point rows) with 12-point side margins, and a
    rail that overflows scrolls its entries out of sight. The active tool is highlighted with an
    accent-colored left border bar plus a filled background, the bar 3 points wide with its two
    left corners rounded as the entry's (2 points; the draft's `.tool.on` border), the right
@@ -246,7 +247,8 @@ Top to bottom:
    this build (the registry's, `architecture.md` "Tool plugin interface") are listed after the
    registered ones, grayed and not clickable, each tooltip saying "Coming soon™" and nothing
    more: the list communicates the suite roadmap. A registered tool the registry marks **CLI-only**
-   (in the 0.0.1 preview the Team compiler and the Export upgrader, whose views come later;
+   (in the 0.0.1 preview the Team compiler, the Ruleset editor and the Export upgrader, whose
+   views come later;
    `development_plan.md` "Divegrass Before Christmas") is drawn as its planned entry, grayed
    and not clickable, its tooltip the same "Coming soon™" (its window is what is coming; the
    command line is the help's to explain, not a tooltip's), and it is never the active tool (a `last_tool` naming it opens the first
@@ -560,9 +562,9 @@ More rules that keep it worth the row:
   they occur (stdout is the findings'); the same items, rendered as lines. The CLI writes no
   settings, so its `data_dir_read_only` comes from a probe at startup: the settings file
   opened for writing, nothing written, which fails where the file is read-only, as it is in a
-  portable copy on read-only media or in a folder the user may not write. The GUI raises the
-  condition from a save that fails and drops it at the next save that succeeds; it does not
-  probe, since its first switch of tool saves anyway.
+  portable copy on read-only media or in a folder the user may not write. The GUI does not
+  probe: the first save that fails raises the condition, and the next save that succeeds
+  drops it.
 
 ### Window title
 
