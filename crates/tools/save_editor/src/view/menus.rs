@@ -21,7 +21,7 @@ use crate::session::database;
 use crate::session::team_ops::{BootsMode, GlovesMode};
 use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::generate;
-use crate::view::{Panel, Refusal, SaveView, selected_player, selected_team_id};
+use crate::view::{NUMBER_BOX, Panel, Refusal, SaveView, selected_player, selected_team_id};
 
 /// The Team menu button (the draft's `teamMenu`): Set edited flag, the
 /// boots/gloves dialog, Set player names to positions, Clear visual flags
@@ -448,8 +448,6 @@ const BOGLO_OPTIONS: [&str; 4] = [
     "Set all to the same ID:",
     "Set like boot IDs",
 ];
-/// A field's width in the dialog (the draft's number input).
-const BOGLO_BOX: f32 = 52.0;
 /// The gap from the option column to the fields' (the draft's `.boglo`
 /// column gap).
 const BOGLO_COLUMN_GAP: f32 = 12.0;
@@ -490,7 +488,7 @@ impl BogloColumns {
         let range_gap = ui.spacing().item_spacing.x;
         BogloColumns {
             option: widest + ui.spacing().icon_width + ui.spacing().icon_spacing,
-            field: 2.0 * BOGLO_BOX + 2.0 * range_gap + text_width("\u{2013}"),
+            field: 2.0 * NUMBER_BOX + 2.0 * range_gap + text_width("\u{2013}"),
             range_gap,
         }
     }
@@ -526,7 +524,7 @@ fn option_cell(ui: &mut egui::Ui, width: f32, add: impl FnOnce(&mut egui::Ui)) {
 /// the panel, its number in the palette's `readout`. No field and no disabled
 /// widget: it takes no click or focus, and reads as a label.
 fn readout(ui: &mut egui::Ui, value: u64) {
-    let size = egui::vec2(BOGLO_BOX, ui.spacing().interact_size.y);
+    let size = egui::vec2(NUMBER_BOX, ui.spacing().interact_size.y);
     let (rect, response) = ui.allocate_exact_size(size, egui::Sense::hover());
     let text = value.to_string();
     response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Label, true, &text));
@@ -591,7 +589,7 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                         );
                     });
                     let start = ui.add_sized(
-                        field_size(ui, BOGLO_BOX),
+                        field_size(ui, NUMBER_BOX),
                         egui::DragValue::new(&mut boglo.start),
                     );
                     step_number(&mut boglo.start, wheel_steps(ui, &start), 0..=u32::MAX);
@@ -796,8 +794,8 @@ pub(crate) fn stat_num_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         let stat_num = view.stat_num.as_mut().expect("checked above");
         let range = stat_num.range();
         // The row is as wide as the modal, or as the sentence, the gap and the field need
-        // when that is wider; a field of two digits and a sign is never wider than egui's
-        // least widget width. A right-to-left layout over the available width would claim
+        // when that is wider; a field of two digits and a sign is never wider than a
+        // number box. A right-to-left layout over the available width would claim
         // all the room the screen leaves, and the modal would grow to it.
         let sentence = egui::WidgetText::from(&stat_num.line).into_galley(
             ui,
@@ -808,15 +806,18 @@ pub(crate) fn stat_num_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         let width = ui
             .min_rect()
             .width()
-            .max(sentence.size().x + SENTENCE_FIELD_GAP + ui.spacing().interact_size.x);
+            .max(sentence.size().x + SENTENCE_FIELD_GAP + NUMBER_BOX);
         let row = egui::vec2(width, ui.spacing().interact_size.y);
         let field = ui
             .allocate_ui_with_layout(
                 row,
                 egui::Layout::right_to_left(egui::Align::Center),
                 |ui| {
-                    let field =
-                        ui.add(egui::DragValue::new(&mut stat_num.value).range(range.clone()));
+                    let field = ui.add(
+                        egui::DragValue::new(&mut stat_num.value)
+                            .range(range.clone())
+                            .min_size(egui::vec2(NUMBER_BOX, row.y)),
+                    );
                     ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
                         ui.label(sentence)
                     });

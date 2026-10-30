@@ -302,6 +302,11 @@ fn the_number_dialogs_box_stands_on_its_sentences_row_at_the_right_edge() {
             field.x1,
             cancel.x1
         );
+        assert!(
+            (field.width() - 52.0).abs() <= 0.5,
+            "{item}: the box's width {} is the drafts' 52",
+            field.width()
+        );
         let centre = |b: accesskit::Rect| (b.y0 + b.y1) / 2.0;
         assert!(
             (centre(field) - centre(sentence)).abs() <= 1.0,

@@ -562,6 +562,11 @@ pub(crate) fn version_warning_text(selector: PesVersion, save: PesVersion) -> St
 /// the scroll bar's strip beside it, the panel's margins not included.
 const LIST_WIDTH: f32 = 255.0;
 
+/// A number box's width, the drafts' number input: the quick actions', the
+/// boots and gloves dialog's and the number dialogs' fields. egui's own
+/// least widget width is 40.
+pub(super) const NUMBER_BOX: f32 = 52.0;
+
 /// The detail pane's margin over a view's title.
 const TITLE_MARGIN: i8 = 6;
 

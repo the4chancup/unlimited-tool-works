@@ -68,8 +68,10 @@ They act on the selected player, so a team row leaves them greyed out.
 The dropdown on the toolbar, left of **Live AATF**, picks the AATF rules the quick actions,
 the Cards left badge and Live AATF use. Every cup's current rules are built in, listed by
 name, and the copies in the data folder's `rules` folder follow them. The pick is
-remembered. When the copy picked last is gone from the data folder, 4cc Autumn 26 is used
-instead and a notice says so.
+remembered. The ruleset's event logo shows at the window's top right, and a click on it opens
+the event's page; a window too narrow for the toolbar and the logo hides the logo. When the
+copy picked last is gone from the data folder, 4cc Autumn 26 is used instead and a notice says
+so.
 
 **Import rules file…** at the bottom of the list adds a cup's `.4ccrules` file: it is copied
 into the data folder and picked, while a file with errors is refused with its errors listed,
