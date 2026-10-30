@@ -1352,9 +1352,9 @@ fn skill_index_of(name: &str) -> u8 {
     .expect("a byte index")
 }
 
-/// `name`'s checkbox label as the cards' `title_case` draws it.
+/// `name`'s checkbox label as the cards' `card_name` draws it.
 fn card_label(name: &str) -> String {
-    pes_savefile::interchange::team_toml::labels::title_case(name)
+    pes_savefile::interchange::team_toml::labels::card_name(name)
 }
 
 /// `ids`' card labels in `SKILLS` order (the panels' draw order).

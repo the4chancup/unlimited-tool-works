@@ -1005,13 +1005,15 @@ pub fn tactics_term(
                 ),
             }
         }
+        // The byte is the marked opponent's formation slot (255 none), so
+        // a bare number would read as one of the team's own players.
         TacticsField::ManMarking { preset, slot } => {
             let starter = new_tactics.starting_eleven[usize::from(slot)];
             let value = |stored: u32| {
                 if stored == u32::from(u8::MAX) {
                     "None".to_owned()
                 } else {
-                    stored.to_string()
+                    format!("Opponent's starter {}", stored + 1)
                 }
             };
             (

@@ -1520,7 +1520,7 @@ fn the_formation_slots_terms() {
 }
 
 /// A man-marking row names its own slot's starter and shows the marked
-/// opponent's slot, "None" for 255.
+/// opponent's starter numbered from 1, "None" for 255.
 #[test]
 fn the_man_marking_terms() {
     let version = PesVersion::Pes21;
@@ -1544,7 +1544,15 @@ fn the_man_marking_terms() {
         (
             "Preset 1 · Man marking · Player 03".to_owned(),
             "None".to_owned(),
-            "3".to_owned()
+            "Opponent's starter 4".to_owned()
+        )
+    );
+    assert_eq!(
+        term(TacticsField::ManMarking { preset: 0, slot: 5 }, 0, 255),
+        (
+            "Preset 1 · Man marking · Player 03".to_owned(),
+            "Opponent's starter 1".to_owned(),
+            "None".to_owned()
         )
     );
 }

@@ -571,8 +571,9 @@ pub enum CheckError {
         /// What did not convert.
         message: String,
     },
-    /// No tier of the file has this id.
-    #[error("unknown tier {tier}")]
+    /// No tier of the file has this id. The id is quoted: it is the only
+    /// name such a tier has.
+    #[error("no tier of the ruleset has the id \"{tier}\"")]
     UnknownTier {
         /// The id asked for.
         tier: String,
@@ -580,10 +581,10 @@ pub enum CheckError {
     /// `apply_tier`'s values still change after three writes: a special
     /// conditioned on a value the tier sets keeps switching with what it
     /// writes. The player is left as it was.
-    #[error("tier {tier} writes values that never settle")]
+    #[error("the tier {label} writes values that never settle")]
     Unsettled {
-        /// The tier applied.
-        tier: String,
+        /// The applied tier's label, as the member reads it.
+        label: String,
     },
 }
 

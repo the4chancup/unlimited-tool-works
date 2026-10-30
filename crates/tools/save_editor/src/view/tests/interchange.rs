@@ -1,6 +1,6 @@
 //! The team file panel's tests (SE-GUI-16, SE-GUI-17, SE-GUI-22): a Team
 //! TOML imported with gameplay alone as one undoable edit, another
-//! version's notes in the command line's words, a refusal drawn under the
+//! version's notes in words, a refusal drawn under the
 //! choices, a squad file's pairing and its refusal, a tactics file, a
 //! Texport, the aesthetics lock, the import following the save, and the
 //! Team menu's entry that opens the panel.
@@ -312,19 +312,19 @@ fn a_team_toml_with_gameplay_alone_writes_the_abilities_as_one_undoable_edit() {
     );
     assert_eq!(
         checkboxes(&mut window, &mut view),
-        ["gameplay", "aesthetics", "tactics"]
+        ["Gameplay", "Aesthetics", "Tactics"]
     );
-    toggle(&mut window, &mut view, "aesthetics");
-    toggle(&mut window, &mut view, "tactics");
+    toggle(&mut window, &mut view, "Aesthetics");
+    toggle(&mut window, &mut view, "Tactics");
     assert!(
-        ticked(&mut window, &mut view, "gameplay"),
+        ticked(&mut window, &mut view, "Gameplay"),
         "gameplay chosen"
     );
     assert!(
-        !ticked(&mut window, &mut view, "aesthetics"),
+        !ticked(&mut window, &mut view, "Aesthetics"),
         "aesthetics off"
     );
-    assert!(!ticked(&mut window, &mut view, "tactics"), "tactics off");
+    assert!(!ticked(&mut window, &mut view, "Tactics"), "tactics off");
 
     apply(&mut window, &mut view);
 
@@ -419,8 +419,8 @@ fn an_aesthetics_import_writes_each_players_own_id_where_the_file_has_no_base_co
     }
     let co = export(&view, CO);
     picked(&mut window, &mut view, "co.toml", co.as_bytes());
-    toggle(&mut window, &mut view, "gameplay");
-    toggle(&mut window, &mut view, "tactics");
+    toggle(&mut window, &mut view, "Gameplay");
+    toggle(&mut window, &mut view, "Tactics");
 
     apply(&mut window, &mut view);
 
@@ -438,8 +438,8 @@ fn an_aesthetics_import_writes_each_players_own_id_where_the_file_has_no_base_co
 
 // SE-GUI-16
 #[test]
-fn a_file_of_another_version_lists_the_command_lines_notes() {
-    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_notes", CO);
+fn a_file_of_another_version_lists_its_notes_in_words() {
+    let (mut view, mut window) = open_on(PesVersion::Pes17, "interchange_notes", CO);
     let mut source = SaveView::new();
     source.open(&fixture(PesVersion::Pes21, "interchange_notes_source"));
     let path = picked(
@@ -463,95 +463,193 @@ fn a_file_of_another_version_lists_the_command_lines_notes() {
             out.to_str().unwrap(),
         ],
     );
-    let mut expected: Vec<&str> = stdout
+    let expected: Vec<&str> = stdout
         .lines()
         .filter(|line| line.starts_with("- Warning import_"))
         .collect();
     assert!(
-        !expected.is_empty(),
-        "premise: the command line notes some keys"
+        expected
+            .iter()
+            .any(|line| line.contains("(path=team.manager_id)")),
+        "premise: the command line notes the manager id: {expected:#?}"
     );
 
+    assert_eq!(
+        checkboxes(&mut window, &mut view),
+        ["Gameplay", "Aesthetics", "Tactics"]
+    );
     let lines = panel_lines(&mut window, &mut view);
     for line in [
-        "A Team TOML written from a PES 2021 save, converted to PES 2019 where it can be.",
-        "Import notes (PES 2021 file onto a PES 2019 save)",
+        "A Team TOML written from a PES 2021 save, converted to PES 2017 where it can be.",
+        "Import notes (PES 2021 file onto a PES 2017 save)",
     ] {
         assert!(lines.contains(&line.to_owned()), "{line:?} in {lines:#?}");
     }
-    assert!(
-        !lines.iter().any(|line| line.starts_with("- ")),
-        "no note line before a group opens: {lines:#?}"
-    );
 
-    // One collapsed header per group, `<count> × <code> <path>`, in the
-    // order the command line first prints each.
-    let mut groups: Vec<(String, usize)> = Vec::new();
-    for line in &expected {
-        let key = note_group(line);
-        match groups.iter_mut().find(|(group, _)| *group == key) {
-            Some((_, count)) => *count += 1,
-            None => groups.push((key, 1)),
-        }
-    }
-    assert!(
-        groups.len() < expected.len(),
-        "premise: some group holds several notes"
-    );
-    let headers: Vec<String> = groups
-        .iter()
-        .map(|(key, count)| format!("{count} \u{d7} {key}"))
-        .collect();
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let mut triangles: Vec<(f64, &accesskit::Node)> = nodes_in_window(&pairs, TITLE)
-        .into_iter()
-        .filter(|(_, node)| node.role() == Role::DisclosureTriangle)
-        .map(|(_, node)| (node.bounds().expect("drawn bounds").y0, node))
-        .collect();
-    triangles.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("drawn bounds"));
-    let shown_headers: Vec<&str> = triangles
-        .iter()
-        .map(|(_, node)| node.label().expect("a labeled header"))
-        .collect();
-    assert_eq!(shown_headers, headers, "the groups' headers");
-    assert!(
-        triangles
+    // The catalog's text once per code the command line printed, none for
+    // another code.
+    let catalog = [
+        (
+            "import_key_not_in_version",
+            "The team file holds a key the file's version stores but the save's does not. \
+             The key is dropped from the import, but the rest is written.",
+        ),
+        (
+            "import_value_not_encodable",
+            "The team file holds a value the save's version cannot store: an instruction or a \
+             playing style it lacks. The value is written as off (a playing style as None), and \
+             the rest of the import is written.",
+        ),
+        (
+            "import_value_capped",
+            "The team file holds a value above what the save's version stores: a face type \
+             above its cap, a motion above its last, or a custom skin it has no slot for. The \
+             value is lowered (the face type to 0, the motion to its last, the skin to 1), and \
+             the rest of the import is written.",
+        ),
+        (
+            "import_slot_empty",
+            "The team file holds a player for a roster place the team leaves empty. The player \
+             is skipped, but the rest is written.",
+        ),
+    ];
+    for (code, text) in catalog {
+        let printed = expected
             .iter()
-            .all(|(_, node)| node.is_expanded() != Some(true)),
-        "every group starts collapsed"
-    );
+            .any(|line| line.starts_with(&format!("- Warning {code} ")));
+        let drawn = lines.iter().filter(|line| *line == text).count();
+        assert_eq!(drawn, usize::from(printed), "{code}'s text in {lines:#?}");
+    }
 
-    open_note_groups(&mut window, &mut view);
-    let lines = panel_lines(&mut window, &mut view);
-    let mut shown: Vec<&str> = lines
-        .iter()
-        .map(String::as_str)
-        .filter(|line| line.starts_with("- "))
-        .collect();
+    // A team key's group is its subject alone, in the warning colour.
+    assert!(
+        lines.contains(&"Manager ID".to_owned()),
+        "Manager ID in {lines:#?}"
+    );
     let warn = window
         .ctx
         .style_of(window.ctx.theme())
         .visuals
         .warn_fg_color;
     assert_eq!(
-        painted(&mut window, &mut view, shown[0]),
+        painted(&mut window, &mut view, "Manager ID"),
         warn,
-        "a note line in the warning colour"
+        "a team key in the warning colour"
     );
-    shown.sort_unstable();
-    expected.sort_unstable();
-    assert_eq!(shown, expected, "every note, as the command line prints it");
+
+    // One collapsed header per players' group, `<subject> · <n> players`,
+    // its count the command line's notes of that key.
+    let mut groups: Vec<(String, usize)> = Vec::new();
+    for line in expected.iter().filter(|line| !line.contains("(path=team.")) {
+        let key = note_group(line);
+        if key.contains(" tactics.") {
+            continue;
+        }
+        match groups.iter_mut().find(|(group, _)| *group == key) {
+            Some((_, count)) => *count += 1,
+            None => groups.push((key, 1)),
+        }
+    }
+    let (stat, players) = groups
+        .iter()
+        .find_map(|(key, count)| {
+            let stat = key.strip_prefix("import_key_not_in_version players.*.stats.")?;
+            Some((stat.to_owned(), *count))
+        })
+        .expect("premise: a stat the save's version does not store");
+    assert!(players > 1, "premise: several players' {stat}");
+    let headers = note_headers(&mut window, &mut view);
+    let stat_header = format!(
+        "{} \u{b7} {players} players",
+        pes_savefile::interchange::team_toml::labels::stat_name(PesVersion::Pes17, &stat)
+    );
+    assert!(
+        headers.contains(&stat_header),
+        "{stat_header:?} in {headers:#?}"
+    );
+    let mut shown_counts: Vec<usize> = headers
+        .iter()
+        .map(|header| header_players(header))
+        .collect();
+    let mut counts: Vec<usize> = groups.iter().map(|(_, count)| *count).collect();
+    shown_counts.sort_unstable();
+    counts.sort_unstable();
+    assert_eq!(shown_counts, counts, "one header per players' group");
+
+    // Opened, no line speaks the command line's words.
+    open_note_groups(&mut window, &mut view);
+    let lines = panel_lines(&mut window, &mut view);
+    assert!(
+        !lines
+            .iter()
+            .any(|line| line.contains("import_") || line.contains("path=")),
+        "no code or key path drawn: {lines:#?}"
+    );
+}
+
+// SE-GUI-16
+#[test]
+fn every_empty_place_a_file_names_is_one_group() {
+    // PES 21's team 701 fills places 01 to 23 of its 32.
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "interchange_empty_places", 701);
+    let team = team_entry(&view, 701);
+    assert_eq!(
+        team.roster.iter().position(|slot| slot.player_id == 0),
+        Some(23),
+        "premise: places 01 to 23 filled"
+    );
+    assert_eq!(team.roster[24].player_id, 0, "premise: place 25 empty");
+    let text = "[players.24]\nname = \"GHOST\"\n\n[players.25]\nname = \"GHOST\"\n";
+    picked(&mut window, &mut view, "ghosts.toml", text.as_bytes());
+
+    assert_eq!(
+        note_headers(&mut window, &mut view),
+        ["Empty roster place \u{b7} 2 players"]
+    );
+}
+
+/// The players' groups' headers, top to bottom.
+fn note_headers(window: &mut Headless, view: &mut SaveView) -> Vec<String> {
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let mut headers: Vec<(f64, String)> = nodes_in_window(&pairs, TITLE)
+        .into_iter()
+        .filter(|(_, node)| node.role() == Role::DisclosureTriangle)
+        .map(|(_, node)| {
+            (
+                node.bounds().expect("drawn bounds").y0,
+                node.label().expect("a labeled header").to_owned(),
+            )
+        })
+        .collect();
+    headers.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("drawn bounds"));
+    headers.into_iter().map(|(_, header)| header).collect()
+}
+
+/// The number of players a group's header `<subject> · <n> player(s)`
+/// counts.
+fn header_players(header: &str) -> usize {
+    let (_, count) = header
+        .rsplit_once(" \u{b7} ")
+        .unwrap_or_else(|| panic!("a group header: {header:?}"));
+    let count = count
+        .strip_suffix(" players")
+        .or_else(|| count.strip_suffix(" player"))
+        .unwrap_or_else(|| panic!("a player count: {header:?}"));
+    count.parse().expect("a count")
 }
 
 /// The group of the command line's note `line` (`- Warning <code>
-/// (<key>=<value>, …)`): its code and its first context value, the path or
-/// the empty slot, a player's `players.NN.` written `players.*.`.
+/// (<key>=<value>, …)`): its code and its path, a player's `players.NN.`
+/// written `players.*.`; every empty slot's note is its code alone.
 fn note_group(line: &str) -> String {
     let (code, context) = line
         .strip_prefix("- Warning ")
         .and_then(|rest| rest.split_once(" ("))
         .unwrap_or_else(|| panic!("a note line: {line:?}"));
-    let (_, at) = context.split_once('=').expect("a context key");
+    let (key, at) = context.split_once('=').expect("a context key");
+    if key == "slot" {
+        return code.to_owned();
+    }
     let at = at.split([',', ')']).next().expect("a context value");
     let at = match at
         .strip_prefix("players.")
@@ -586,7 +684,7 @@ fn a_refusal_of_a_chosen_section_stands_under_the_choices_until_it_is_unticked()
     let at = |text: &str| lines.iter().position(|line| line == text);
     let refused = at(&refusal).unwrap_or_else(|| panic!("{refusal:?} in {lines:#?}"));
     assert!(
-        at("tactics").is_some_and(|choice| choice < refused),
+        at("Tactics").is_some_and(|choice| choice < refused),
         "under the choices"
     );
     assert!(
@@ -605,14 +703,14 @@ fn a_refusal_of_a_chosen_section_stands_under_the_choices_until_it_is_unticked()
     );
     assert_eq!(
         checkboxes(&mut window, &mut view),
-        ["gameplay", "aesthetics", "tactics"]
+        ["Gameplay", "Aesthetics", "Tactics"]
     );
     assert!(
         apply_button(&mut window, &mut view).is_disabled(),
         "Apply is disabled"
     );
 
-    toggle(&mut window, &mut view, "gameplay");
+    toggle(&mut window, &mut view, "Gameplay");
     assert!(
         !panel_lines(&mut window, &mut view).contains(&refusal),
         "the refusal goes with gameplay"
@@ -713,7 +811,7 @@ fn a_squad_file_pairs_its_records_and_writes_gameplay_and_aesthetics() {
     assert_eq!(arrows, 23, "one row per record");
     assert_eq!(
         checkboxes(&mut window, &mut view),
-        ["gameplay", "aesthetics"]
+        ["Gameplay", "Aesthetics"]
     );
 
     apply(&mut window, &mut view);
@@ -780,7 +878,7 @@ fn a_tactics_file_offers_tactics_alone_and_writes_them() {
         panel_lines(&mut window, &mut view)
             .contains(&"A legacy tactics file (.4cct) written from a PES 2019 save.".to_owned())
     );
-    assert_eq!(checkboxes(&mut window, &mut view), ["tactics"]);
+    assert_eq!(checkboxes(&mut window, &mut view), ["Tactics"]);
     apply(&mut window, &mut view);
     assert_eq!(
         team_entry(&view, CO).tactics,
@@ -807,7 +905,7 @@ fn a_texport_offers_every_section_and_names_its_version() {
     );
     assert_eq!(
         checkboxes(&mut window, &mut view),
-        ["gameplay", "aesthetics", "tactics"]
+        ["Gameplay", "Aesthetics", "Tactics"]
     );
 }
 
@@ -829,21 +927,21 @@ fn under_the_lock_the_aesthetics_section_is_off_and_never_written() {
     let expected = lib_import(&view, &kept(&co, unlocked), THREE);
     picked(&mut window, &mut view, "co.toml", co.as_bytes());
 
-    let aesthetics = checkbox(&mut window, &mut view, "aesthetics");
+    let aesthetics = checkbox(&mut window, &mut view, "Aesthetics");
     assert!(
         aesthetics.is_disabled(),
         "the aesthetics choice is disabled"
     );
-    assert!(!ticked(&mut window, &mut view, "aesthetics"), "and off");
+    assert!(!ticked(&mut window, &mut view, "Aesthetics"), "and off");
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(&aesthetics), "export owns"),
         Some(OWNERSHIP_TIP.to_owned())
     );
     assert!(
-        ticked(&mut window, &mut view, "gameplay"),
+        ticked(&mut window, &mut view, "Gameplay"),
         "gameplay chosen"
     );
-    assert!(ticked(&mut window, &mut view, "tactics"), "tactics chosen");
+    assert!(ticked(&mut window, &mut view, "Tactics"), "tactics chosen");
 
     apply(&mut window, &mut view);
     assert_imported(&view, THREE, &expected);
@@ -878,7 +976,7 @@ fn the_staged_import_follows_the_lock_turned_on_and_off_after_the_pick() {
     assert_co_and_three_differ(&view);
     let co = export(&view, CO);
     picked(&mut window, &mut view, "co.toml", co.as_bytes());
-    for label in ["gameplay", "aesthetics", "tactics"] {
+    for label in ["Gameplay", "Aesthetics", "Tactics"] {
         assert!(
             ticked(&mut window, &mut view, label),
             "premise: {label} chosen"
@@ -915,9 +1013,9 @@ fn the_staged_import_follows_an_edit_made_after_the_pick() {
     let source = rostered(&view, CO);
     let co = export(&view, CO);
     picked(&mut window, &mut view, "co.toml", co.as_bytes());
-    toggle(&mut window, &mut view, "aesthetics");
+    toggle(&mut window, &mut view, "Aesthetics");
     assert!(
-        !ticked(&mut window, &mut view, "aesthetics"),
+        !ticked(&mut window, &mut view, "Aesthetics"),
         "premise: aesthetics off"
     );
 
@@ -986,10 +1084,10 @@ fn another_save_opened_after_the_pick_keeps_the_file_and_stages_against_it() {
     edited.name = "EDITED".to_owned();
     view.session.as_mut().unwrap().edit_players(vec![edited]);
     picked(&mut window, &mut view, "co.toml", co.as_bytes());
-    toggle(&mut window, &mut view, "aesthetics");
+    toggle(&mut window, &mut view, "Aesthetics");
     // A frame drawn after the toggle stages the choice against this save.
     assert!(
-        !ticked(&mut window, &mut view, "aesthetics"),
+        !ticked(&mut window, &mut view, "Aesthetics"),
         "premise: aesthetics off"
     );
 
@@ -1097,13 +1195,13 @@ fn apply_is_disabled_when_no_section_the_file_holds_is_chosen() {
         "pes19_tactics.4cct",
         &lib_fixture("pes19_tactics.4cct"),
     );
-    assert_eq!(checkboxes(&mut window, &mut view), ["tactics"]);
+    assert_eq!(checkboxes(&mut window, &mut view), ["Tactics"]);
     assert!(
         !apply_button(&mut window, &mut view).is_disabled(),
         "premise: Apply is enabled"
     );
 
-    toggle(&mut window, &mut view, "tactics");
+    toggle(&mut window, &mut view, "Tactics");
     assert!(
         apply_button(&mut window, &mut view).is_disabled(),
         "Apply is disabled"
@@ -1202,11 +1300,7 @@ fn apply_stays_inside_the_window_with_every_note_group_open() {
     let notes: usize = nodes
         .iter()
         .filter(|(_, node)| node.role() == Role::DisclosureTriangle)
-        .map(|(_, node)| {
-            let label = node.label().expect("a labeled header");
-            let (count, _) = label.split_once(' ').expect("`<count> × <key>`");
-            count.parse::<usize>().expect("a count")
-        })
+        .map(|(_, node)| header_players(node.label().expect("a labeled header")))
         .sum();
     assert!(notes > 100, "premise: a long list of notes, {notes}");
     let bounds = |role: Role, label: &str| {

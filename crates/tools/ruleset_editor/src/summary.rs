@@ -10,6 +10,7 @@ use std::fmt::Display;
 use aatf::{
     BracketHeights, Condition, Effects, PerTier, Ruleset, Severity, StatOrAll, Tier, TierId,
 };
+use pes_savefile::interchange::team_toml::labels::card_name;
 
 /// A section's opening lines: a blank line and its `##` head.
 fn section(title: &str) -> Vec<String> {
@@ -274,7 +275,7 @@ fn card_group_lines(ruleset: &Ruleset) -> Vec<String> {
     }
     let mut lines = section("Card groups");
     for (group, cards) in &ruleset.card_groups {
-        let cards: Vec<String> = cards.iter().map(|card| words(card.label())).collect();
+        let cards: Vec<String> = cards.iter().map(|card| card_name(card.label())).collect();
         lines.push(format!("- **{}**: {}.", human(group), cards.join(", ")));
     }
     lines
@@ -497,11 +498,12 @@ fn cond_text(ruleset: &Ruleset, condition: &Condition) -> String {
         None => {}
     }
     parts.extend(
-        listed(&condition.playing_styles, |style| human(style.label()))
+        listed(&condition.playing_styles, |style| card_name(style.label()))
             .map(|text| format!("playing as {text}")),
     );
     parts.extend(
-        listed(&condition.holds, |card| human(card.label())).map(|text| format!("holding {text}")),
+        listed(&condition.holds, |card| card_name(card.label()))
+            .map(|text| format!("holding {text}")),
     );
     parts.extend(
         listed(&condition.rated_a_at, |position| {
@@ -625,10 +627,11 @@ fn effects_text(ruleset: &Ruleset, effects: &Effects) -> String {
         ));
     }
     parts.extend(
-        listed(&effects.free_cards, |card| human(card.label())).map(|text| format!("{text} free")),
+        listed(&effects.free_cards, |card| card_name(card.label()))
+            .map(|text| format!("{text} free")),
     );
     parts.extend(
-        listed(&effects.require_cards, |card| human(card.label()))
+        listed(&effects.require_cards, |card| card_name(card.label()))
             .map(|text| format!("must hold {text}")),
     );
     if let Some(a_positions) = &effects.a_positions {
