@@ -155,5 +155,53 @@ class InkFindings(unittest.TestCase):
         self.assertEqual(found[0][:3], ((220, 220, 220), (160, 160, 160), 60))
 
 
+def button_image(fill, text=(220, 220, 220)):
+    """A 60 x 20 image on the dark panel's grey (27) holding a 40 x 20 button from x 10 in
+    `fill`, one stem of its label in `text`."""
+    from PIL import Image
+
+    image = Image.new("RGB", (60, 20), (27, 27, 27))
+    image.paste(fill, (10, 0, 50, 20))
+    for y in range(4, 16):
+        for x in (28, 29):
+            image.putpixel((x, y), text)
+    return image
+
+
+class FillFindings(unittest.TestCase):
+    def pair(self, draft_kind="button", app_kind="Button"):
+        return ("OK", [draft_kind, "OK", 10.0, 0.0, 40.0, 20.0], [app_kind, "OK", 10.0, 0.0, 40.0, 20.0],
+                [0.0] * 4)
+
+    def test_a_widgets_fill_and_text_on_both_sides(self):
+        found = draft_compare.fill_findings([self.pair()], button_image((60, 60, 60)),
+                                            button_image((90, 90, 90), (255, 255, 255)))
+        self.assertEqual(found[0], ((60, 60, 60), (90, 90, 90), 30,
+                                    (220, 220, 220), (255, 255, 255), 35))
+
+    def test_alike_widgets_step_zero(self):
+        image = button_image((60, 60, 60))
+        found = draft_compare.fill_findings([self.pair("sel", "ListItem")], image, image)
+        self.assertEqual((found[0][2], found[0][5]), (0, 0))
+
+    def test_a_text_pair_is_left_to_the_ink(self):
+        image = button_image((60, 60, 60))
+        self.assertEqual(draft_compare.fill_findings([self.pair("text", "Text")], image, image), {})
+        self.assertEqual(draft_compare.fill_findings([self.pair("text", "Button")], image, image), {})
+
+    def test_a_blank_widget_has_a_fill_and_no_text(self):
+        draft = button_image((60, 60, 60), (60, 60, 60))
+        found = draft_compare.fill_findings([self.pair()], draft, button_image((60, 60, 60)))
+        self.assertEqual(found[0], ((60, 60, 60), (60, 60, 60), 0, None, None, None))
+
+    def test_the_shifts_move_each_box_into_its_capture(self):
+        # Rows relative to a dialog's title: unshifted, both boxes would read the panel's grey.
+        found = draft_compare.fill_findings([("OK", ["button", "OK", 0.0, 0.0, 10.0, 20.0],
+                                              ["Button", "OK", 2.0, 0.0, 10.0, 20.0], [0.0] * 4)],
+                                            button_image((60, 60, 60)), button_image((60, 60, 60)),
+                                            (12, 0), (10, 0))
+        self.assertEqual(found[0][:3], ((60, 60, 60), (60, 60, 60), 0))
+
+
 if __name__ == "__main__":
     unittest.main()

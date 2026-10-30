@@ -1877,8 +1877,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         Files: `save_editor/src/{cli,session/mod,view/prompt}.rs`, `view/tests/prompt.rs`,
         `save_editor/help/0{1,2}_*.md`, `team_compiler/src/{messages,messages/catalog,
         output/savefile}.rs`, `team_compiler/help/01_command_line.md`
-      - [ ] m2 `scripts/draft_compare.py` compares the fill and text colours of the boxes it
+      - [x] m2 `scripts/draft_compare.py` compares the fill and text colours of the boxes it
         pairs, not only their rects: the fills and greys above passed every geometry check
+        Done 2026-10-30 (the lead): `fill_findings` measures every widget pair's fill (the
+        box's most common colour) and its text's core colour in both captures, listed under
+        "widget fill differs" / "widget text colour differs" past `COLOUR_STEP`, and three
+        TSV columns; five tests (red: the app shift dropped, the fill read as the least
+        common colour). Open: its first run on a built window, with the built-window check
+        Files: `scripts/draft_compare{,_test}.py`, `plans/core/gui.md` "Draft measure"
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
       opening another save (SE-GUI-05; only the toolbar's marker exists, so closing loses
       edits silently), the Open menu's discovered saves (SE-GUI-26), the version-mismatch
@@ -2546,10 +2552,16 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       `aatf`; RE-FILE-03's fixture drops a comma elsewhere on its line 12 (the page line
       moved the old one). Open: the SWE-2 round (an Opus slice) and the (b) Astra review
       (a new `pub` interface over two crates), with b
-    - [ ] b the Save editor's top-right logo and the Ruleset editor's General fields, the
+    - [x] b the Save editor's top-right logo and the Ruleset editor's General fields, the
       picture decoded and sized once in `team_widgets::event_logo` (DECISIONS "The event
       logo is decoded and sized in `team_widgets`"; brief `.tmp/8_29d/brief_p45b.md`) →
       verify: SE-GUI-44, RE-GUI-19 headless; the built window (autonomous: no ask)
+      Done 2026-10-30 (Opus sidekick, merged `7b875078`): `event_logo` in `team_widgets`
+      and the Save editor (drawn after the panes, over their frames), `LogoField` in
+      General, `Ruleset::{logo_png, set_logo}` with `LogoRefusal`; the "moves nothing"
+      test compares DBC7 with an imported copy without its logo (every built-in ruleset
+      carries one); a narrow pane under about 831 points hides the logo. Open: the SWE-2
+      round and the (b) Astra review over a + b + c, the built window
     - [x] c every ruleset file under `aatf/rulesets/` gets its logo and page, the seven
       built in and the two test rulesets (`autumn25`, `vgl25`; the drafts import Autumn 25
       as their sample file): the pages are the events' wiki pages the maintainer listed
@@ -2621,7 +2633,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     frame's (red first); the overlap and draft-compare checks; the built window (autonomous)
     Built with b (Opus sidekick, merged `40e36efa`): the title row reserved before the body,
     the title drawn in it centred once the body set the width; `theme::window_title` gone.
-    Open: the lead's test run at the next checkpoint, a SWE-2 round, Astra, the built window
+    Gated green (`5ba78b61`); SWE-2 S1s37 0 accepted, Astra A1s37 no concerns
+    (`.tmp/8_36/rulings_837.md`). Open: the built window
     - [ ] 8.37b Set all stats and Bump all stats: the number on the sentence's row, at the
       dialog's right edge (the maintainer, 2026-10-30; DECISIONS "Set all stats' and Bump
       all stats' number on the sentence's row"; `plans/save_editor.md` "Editing UI", the
@@ -2914,7 +2927,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           weak foot's halves, `logic.rhai`'s suggestions comment says `weak_foot` gives one per
           half (logic hash now `35652515`, the sandbox `cli/dbc7.4ccrules` re-logicked), the
           interpreter fixture raises both halves and asserts both rows exactly, the catalog's
-          `aatf_violation` text says "what is wrong". Open: the Astra round over d1a + d3a
+          `aatf_violation` text says "what is wrong". Astra A1d over d1a + d3a: 1 accepted
+          (`.tmp/8_29d/rulings_d3a.md`), merged `3c08d261`: a held AATF result is drawn
+          (dock, Multi-team list and copy, row marks, field crosses, pitch marks) only under
+          the ruleset it was checked with (`aatf_check::held_result`). Open: a SWE-2 round
+          over that fix
         - [ ] d1b the rest of the inventory, in two slices:
           - [ ] d1b1 the fields no view draws in words (DECISIONS "A field no view draws is
             named in words; `diff --json` keeps the schema's name"; drafted, the draft's

@@ -556,6 +556,116 @@ fn a_clean_team_reads_all_clean_and_copy_names_the_teams_copied() {
     );
 }
 
+/// A list checked under 4cc Autumn 26 is not drawn once 4cc Spring 26 is
+/// picked, and Copy to clipboard is off: its first line would name Spring
+/// 26 over Autumn 26's findings. The dialog reads as before its first
+/// result until the recheck returns, then lists Spring 26's. The recheck
+/// is held unanswered by a pending check whose sender the test keeps: the
+/// dialog starts one on any frame, and its worker can reply between a
+/// frame's two passes.
+// SE-GUI-41
+#[test]
+fn a_list_checked_under_another_ruleset_is_not_drawn_nor_copied() {
+    let path = fixture(PesVersion::Pes17, "multi_aatf_other_ruleset");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    let ids = all_team_ids(&view);
+    let pairs = multi_checked(&mut window, &mut view, &ids);
+    let lines = multi_lines(&pairs);
+    let tier_row = |line: &String| line.starts_with("Tier count");
+    assert!(
+        lines.contains(&"734 /lit/".to_owned()) && lines.iter().any(tier_row),
+        "premise: Autumn 26's list holds 734 and a tier count row: {lines:?}"
+    );
+
+    view.aatf_ruleset = "spring26".to_owned();
+    let (sender, replies) = crossbeam_channel::unbounded();
+    view.multi_aatf.check.pending = Some(aatf_check::PendingCheck {
+        key: aatf_check::CheckKey {
+            revision: view.session.as_ref().expect("the save opened").revision(),
+            ids: ids.clone(),
+            ruleset: "spring26".to_owned(),
+            suggestions: false,
+        },
+        replies,
+    });
+    let title = "Multi-team AATF (4cc Spring 26)";
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        view.multi_aatf
+            .check
+            .result
+            .as_ref()
+            .is_some_and(|(key, _)| key.ruleset == "autumn26"),
+        "premise: Autumn 26's list held"
+    );
+    let nodes = super::prompt::dialog_nodes(&pairs, title);
+    fn text<'a>(node: &&'a accesskit::Node) -> Option<&'a str> {
+        match node.role() {
+            Role::Label => node.value(),
+            _ => node.label(),
+        }
+    }
+    assert!(
+        !nodes
+            .iter()
+            .filter_map(text)
+            .any(|line| line == "734 /lit/" || line.starts_with("Tier count")),
+        "the held list's rows are not drawn"
+    );
+    assert!(
+        !nodes
+            .iter()
+            .filter_map(text)
+            .any(|line| line.contains("checked,")),
+        "no summary before a result"
+    );
+    let copy = nodes
+        .iter()
+        .find(|node| node.role() == Role::Button && node.label() == Some("Copy to clipboard"))
+        .expect("the Copy to clipboard button");
+    assert!(copy.is_disabled(), "Copy to clipboard is off");
+
+    // The held check's worker ends: the next frame starts Spring 26's.
+    drop(sender);
+    let pairs = frames_until(
+        &mut window,
+        &mut view,
+        |view| {
+            let check = &view.multi_aatf.check;
+            check.pending.is_none()
+                && check
+                    .result
+                    .as_ref()
+                    .is_some_and(|(key, _)| key.ruleset == "spring26")
+        },
+        "Spring 26's check never returned",
+    );
+    let nodes = super::prompt::dialog_nodes(&pairs, title);
+    assert!(
+        nodes
+            .iter()
+            .filter_map(text)
+            .any(|line| line == "734 /lit/"),
+        "Spring 26's list is drawn"
+    );
+    let summary = format!("{} teams checked,", ids.len());
+    assert!(
+        nodes
+            .iter()
+            .filter_map(text)
+            .any(|line| line.starts_with(&summary)),
+        "Spring 26's summary"
+    );
+    let copy = nodes
+        .iter()
+        .find(|node| node.role() == Role::Button && node.label() == Some("Copy to clipboard"))
+        .expect("the Copy to clipboard button");
+    assert!(!copy.is_disabled(), "Copy to clipboard is on");
+}
+
 /// The open save's team ids, in id order.
 fn all_team_ids(view: &SaveView) -> Vec<u32> {
     let file = view.session.as_ref().expect("the save opened").file();

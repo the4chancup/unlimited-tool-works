@@ -282,6 +282,17 @@ fn the_number_dialogs_box_stands_on_its_sentences_row_at_the_right_edge() {
         };
         let sentence = bounds_of(Role::Label, &line);
         let cancel = bounds_of(Role::Button, "Cancel");
+        // The modal's 12-point margin and 1-point stroke put its content 13 in.
+        let outer = window
+            .ctx
+            .memory(|memory| memory.area_rect(egui::Id::unique("save_editor_stat_num")))
+            .expect("the dialog's area");
+        assert!(
+            (sentence.x0 - f64::from(outer.left() + 13.0)).abs() <= 1.0,
+            "{item}: the sentence's left {} is the content's left {}",
+            sentence.x0,
+            outer.left() + 13.0
+        );
         let field = dialog_field(&pairs, &line)
             .bounds()
             .expect("the box's bounds");

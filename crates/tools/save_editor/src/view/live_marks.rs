@@ -9,7 +9,7 @@
 pub(super) use team_widgets::violations::{CROSS, MARK_GAP};
 use team_widgets::violations::{Wording, violation_line};
 
-use crate::view::aatf_check::TeamsCheck;
+use crate::view::aatf_check::{self, TeamsCheck};
 
 /// The passing glyph (`✔`, U+2714), the `✖`'s pair (`violations::CROSS`):
 /// egui's bundled emoji fonts hold them, and the theme keeps those fonts
@@ -30,14 +30,21 @@ const MARK_BOX: f32 = 11.0;
 
 /// The violations the marks draw: `check`'s held result while `live`
 /// (the `live_aatf` toggle) is on, when the result is one team's
-/// successful check — the team id and its violations, `None` otherwise.
-/// While a check is in flight the held result stands, as the dock's list
-/// keeps it. A failed check marks nothing.
-pub(super) fn held_violations(live: bool, check: &TeamsCheck) -> Option<(u32, &[aatf::Violation])> {
+/// successful check under the ruleset keyed `ruleset` (`ActiveRules::key`)
+/// — the team id and its violations, `None` otherwise. While a check is
+/// in flight the held result stands, as the dock's list keeps it, unless
+/// it was checked under another ruleset (`aatf_check::held_result`): its
+/// marks would claim violations the active ruleset never found. A failed
+/// check marks nothing.
+pub(super) fn held_violations<'a>(
+    live: bool,
+    check: &'a TeamsCheck,
+    ruleset: &str,
+) -> Option<(u32, &'a [aatf::Violation])> {
     if !live {
         return None;
     }
-    let (key, checks) = check.result.as_ref()?;
+    let (key, checks) = aatf_check::held_result(check, ruleset)?;
     let [team_id] = key.ids.as_slice() else {
         return None;
     };

@@ -18,6 +18,8 @@ pes_savefile.workspace = true
 rfd.workspace = true
 serde.workspace = true
 studio_core.workspace = true
+# The event logo as the Save editor draws it (`event_logo`).
+team_widgets.workspace = true
 thiserror.workspace = true
 toml.workspace = true
 

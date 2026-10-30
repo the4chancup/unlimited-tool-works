@@ -1472,6 +1472,7 @@ mod abilities;
 mod appearance;
 mod changes_popup;
 mod comparator;
+mod event_logo;
 mod generate;
 mod interchange;
 mod interchange_export;

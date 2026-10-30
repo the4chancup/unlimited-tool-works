@@ -1134,3 +1134,54 @@ fn a_64_kb_logo_and_a_bare_web_address_load() {
     assert_eq!(ruleset.page.as_deref(), Some(page));
     assert!(ruleset.logo.is_some());
 }
+
+/// A real event logo: DBC7's, as the drafts draw it.
+const DBC7_LOGO: &[u8] = include_bytes!("../../../../../../docs/prototypes/assets/logos/dbc7.png");
+
+#[test]
+fn set_logo_stores_a_png_that_logo_png_gives_back() {
+    let mut ruleset = Ruleset::from_data_block(&small_with("")).expect("the small ruleset loads");
+    assert_eq!(ruleset.logo, None);
+    assert_eq!(ruleset.logo_png(), None, "no logo, no bytes");
+
+    ruleset.set_logo(DBC7_LOGO).expect("a real PNG is taken");
+    assert_eq!(ruleset.logo_png().as_deref(), Some(DBC7_LOGO));
+    assert_eq!(
+        ruleset.check(),
+        Vec::new(),
+        "the stored logo passes the load rules"
+    );
+}
+
+#[test]
+fn logo_png_is_none_for_text_that_is_not_base64() {
+    let mut ruleset = Ruleset::from_data_block(&small_with("")).expect("the small ruleset loads");
+    ruleset.logo = Some("iVBORw0K Ggo=".to_string());
+    assert_eq!(ruleset.logo_png(), None);
+}
+
+#[test]
+fn set_logo_refuses_a_non_png_and_an_oversize_png_keeping_the_logo() {
+    use base64::Engine as _;
+    let mut ruleset = Ruleset::from_data_block(&small_with("")).expect("the small ruleset loads");
+    let kept = base64::engine::general_purpose::STANDARD.encode(DBC7_LOGO);
+    ruleset.logo = Some(kept.clone());
+
+    assert_eq!(
+        ruleset.set_logo(b"GIF89a, not a PNG"),
+        Err(LogoRefusal::NotPng)
+    );
+    assert_eq!(ruleset.logo.as_deref(), Some(kept.as_str()));
+
+    assert_eq!(
+        ruleset.set_logo(&png_of_len(65537)),
+        Err(LogoRefusal::TooLarge { bytes: 65537 })
+    );
+    assert_eq!(ruleset.logo.as_deref(), Some(kept.as_str()));
+
+    // The limit's edge is taken, as a loaded logo's is.
+    ruleset
+        .set_logo(&png_of_len(65536))
+        .expect("exactly 64 KB is taken");
+    assert_eq!(ruleset.logo_png().map(|png| png.len()), Some(65536));
+}

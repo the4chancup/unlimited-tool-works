@@ -15,6 +15,7 @@ mod abilities;
 mod appearance;
 mod changes_popup;
 mod comparator;
+mod event_logo;
 mod generate;
 mod info_strip;
 mod interchange;
@@ -277,6 +278,9 @@ pub(crate) struct ActiveRules {
     /// The loaded rules. The `Arc` lets Live AATF's worker check teams on
     /// the same loaded file the badge reads.
     rules: Arc<aatf::Rules>,
+    /// The ruleset's event logo, decoded when the ruleset is resolved;
+    /// `None` when it carries none or it does not decode.
+    logo: Option<team_widgets::event_logo::EventLogo>,
 }
 
 /// What the Skills column's Cards left badge was computed for: a change of
@@ -633,13 +637,18 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
                 action: None,
             });
         }
+        let logo =
+            choice.rules.ruleset().logo_png().and_then(|png| {
+                team_widgets::event_logo::EventLogo::load(ui.ctx(), &choice.key, &png)
+            });
         view.rules = Some(ActiveRules {
             setting: view.aatf_ruleset.clone(),
             key: choice.key,
             rules: choice.rules,
+            logo,
         });
     }
-    toolbar(ui, view, running);
+    let toolbar_end = toolbar(ui, view, running);
     if view.session.is_none() {
         ui.weak("No save is open.");
     } else {
@@ -732,6 +741,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
                 });
         });
     }
+    // After the panes, so the logo paints over their frames' fill where
+    // the right column's frame starts under it.
+    if view.session.is_some() {
+        event_logo::show(ui, view, toolbar_end);
+    }
     team::kit_slots_dialog(ui, view);
     menus::boglo_dialog(ui, view);
     menus::stat_num_dialog(ui, view);
@@ -801,7 +815,8 @@ fn set_surrender_on_press(ctx: &egui::Context) {
 /// bar, so with one menu open the pointer entering another's button opens
 /// that one. The open save's path rides the idle window title
 /// (`Tool::title_detail`), not this row, which never takes a second row.
-fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) {
+/// Returns the x where the row's last widget ends.
+fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) -> f32 {
     // The unsaved prompt and the running-game question hold every
     // shortcut dead while up (the prompt's own buttons are the way out).
     let modal_up = view.prompt.is_some() || view.edit_mode_question.is_some();
@@ -831,7 +846,7 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::I));
     let bump_key =
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::B));
-    studio_core::widgets::toolbar(ui, |ui| {
+    let end = studio_core::widgets::toolbar(ui, |ui| {
         open_menu::show(ui, view);
         if ui
             .add_enabled(view.session.is_some(), egui::Button::new("Save"))
@@ -901,7 +916,11 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         // The save's path is in the window title (`title_detail`): beside the
         // unsaved mark it could wrap the toolbar onto a second row.
         changes_popup::show(ui, view);
-    });
+        // The bar spans the view's width; its last widget ends one item
+        // spacing before the cursor.
+        ui.cursor().min.x - ui.spacing().item_spacing.x
+    })
+    .inner;
     if clear_flags_key
         && !view.aesthetics_locked()
         && let Some(team_id) = selected_team_id(view)
@@ -923,6 +942,7 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     {
         view.stat_num = Some(menus::StatNum::bump(session, player_id, view.bump));
     }
+    end
 }
 
 /// The window's Save (the toolbar's, Ctrl+S's and the prompt's): `save_to`

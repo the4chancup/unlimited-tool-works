@@ -34,10 +34,16 @@ width is not compared: the draft's label spans its grid cell, egui's checkbox it
   ratio (the two rasterizers differ by a steady amount, egui's about 15% heavier), is listed
   under "text colour differs" or "text weight differs": a colour reads as weight to the eye,
   and a box's place says nothing of either.
+- Fill: a pair of two widgets (a button, an input, a selectable label, a checkbox) is measured
+  in both captures too, its fill (the box's most common colour) and its text's core colour;
+  either more than `COLOUR_STEP` levels apart is listed under "widget fill differs" or
+  "widget text colour differs": a button's grey or a selected row's highlight passes every
+  geometry and ink check.
 
 Prints the count per band, then every pair over 2 and every pair from 1 to 2, largest first,
-then the ink findings and the unmatched texts; writes every pair with its band, and a text's
-colours, step and weight, to `.tmp/draft_compare/<screen>.tsv`.
+then the ink and fill findings and the unmatched texts; writes every pair with its band, and a
+text's colours, step and weight or a widget's text colours and fills, to
+`.tmp/draft_compare/<screen>.tsv`.
 Open the screen in the built window first (the default 1280 x 780 client area, the draft's).
 
     python scripts/draft_compare.py SCREEN [--modal CSS | --menu TEXT] [--app FRAGMENT]
@@ -216,15 +222,27 @@ def luminance(pixel):
     return 0.2126 * pixel[0] + 0.7152 * pixel[1] + 0.0722 * pixel[2]
 
 
+def box_pixels(image, box):
+    """The pixels of `image` inside `box` (x, y, w, h), clipped to the image."""
+    x0, y0 = round(box[0]), round(box[1])
+    x1, y1 = round(box[0] + box[2]), round(box[1] + box[3])
+    return [image.getpixel((x, y)) for y in range(max(y0, 0), min(y1, image.height))
+            for x in range(max(x0, 0), min(x1, image.width))]
+
+
+def fill(image, box):
+    """A box's fill: its most common colour (a widget's background, under its border and
+    text), `None` for an empty box."""
+    pixels = box_pixels(image, box)
+    return Counter(pixels).most_common(1)[0][0] if pixels else None
+
+
 def ink(image, box):
     """A text's ink inside `box` (x, y, w, h) of `image`: `(core colour, mass)`, the core colour
     the mean of the pixels at 80% or more of the box's strongest contrast against its
     background (the box's most common colour), the glyphs' stems rather than their
     anti-aliased edges; the mass the summed contrast. `None` for an empty or blank box."""
-    x0, y0 = round(box[0]), round(box[1])
-    x1, y1 = round(box[0] + box[2]), round(box[1] + box[3])
-    pixels = [image.getpixel((x, y)) for y in range(max(y0, 0), min(y1, image.height))
-              for x in range(max(x0, 0), min(x1, image.width))]
+    pixels = box_pixels(image, box)
     if not pixels:
         return None
     background = luminance(Counter(pixels).most_common(1)[0][0])
@@ -260,6 +278,34 @@ def ink_findings(pairs, draft_image, built_image, draft_shift=(0, 0), app_shift=
     ratios = sorted(f[3] for f in found.values())
     median = ratios[len(ratios) // 2] if ratios else 1.0
     return {i: (dc, ac, step, ratio / median) for i, (dc, ac, step, ratio) in found.items()}
+
+
+def fill_findings(pairs, draft_image, built_image, draft_shift=(0, 0), app_shift=(0, 0)):
+    """Every pair of two widgets (a button, an input, a selectable label, a checkbox), its fill
+    and its text's core colour on both sides: `{pair index: (draft fill, built fill, fill
+    step, draft text, built text, text step)}`, each step the largest channel difference, the
+    text's three `None` when either box holds no ink. A text's ink alone says nothing of the
+    box around it: a button a grey too dark, or a selected row's highlight in the wrong
+    colour, passes every geometry and ink check. A pair whose draft side is a text is left
+    out, its box the ink's alone. The shifts put a dialog's rows back into each capture's
+    coordinates, as in `ink_findings`."""
+    def step(one, two):
+        return max(abs(x - y) for x, y in zip(one, two))
+
+    found = {}
+    for index, (_, d, a, _) in enumerate(pairs):
+        if d[0] == "text" or a[0] == "Text":
+            continue
+        draft_box = (d[2] + draft_shift[0], d[3] + draft_shift[1], d[4], d[5])
+        app_box = (a[2] + app_shift[0], a[3] + app_shift[1], a[4], a[5])
+        on_draft, on_app = fill(draft_image, draft_box), fill(built_image, app_box)
+        if not (on_draft and on_app):
+            continue
+        text_draft, text_app = ink(draft_image, draft_box), ink(built_image, app_box)
+        text = ((text_draft[0], text_app[0], step(text_draft[0], text_app[0]))
+                if text_draft and text_app else (None, None, None))
+        found[index] = (on_draft, on_app, step(on_draft, on_app)) + text
+    return found
 
 
 def to_dialog(draft, app):
@@ -432,20 +478,29 @@ def main():
         print(line)
     pairs, unmatched = pair(draft, app)
     inks = ink_findings(pairs, draft_image, built_image, *shifts)
+    fills = fill_findings(pairs, draft_image, built_image, *shifts)
     banded = defaultdict(list)
     for p in pairs:
         banded[band(p[1][0], p[2][0], p[3])].append(p)
+
+    def hex_colour(colour):
+        return "" if colour is None else "#%02x%02x%02x" % colour
+
     OUT.mkdir(parents=True, exist_ok=True)
     with open(OUT / f"{screen}.tsv", "w", encoding="utf-8", newline="\n") as handle:
         handle.write("band\tname\tdraft kind\tapp kind\tdraft x\ty\tw\th\tapp x\ty\tw\th\tdx\tdy\tdw\tdh"
-                     "\tdraft colour\tbuilt colour\tcolour step\tweight\n")
+                     "\tdraft colour\tbuilt colour\tcolour step\tweight\tdraft fill\tbuilt fill\tfill step\n")
         order = sorted(range(len(pairs)), key=lambda i: (pairs[i][1][3], pairs[i][1][2]))
         for i in order:
             name, d, a, delta = pairs[i]
             cells = [band(d[0], a[0], delta), name, d[0], a[0]] + [f"{v:.1f}" for v in d[2:] + a[2:] + delta]
             if i in inks:
                 dc, ac, step, weight = inks[i]
-                cells += ["#%02x%02x%02x" % dc, "#%02x%02x%02x" % ac, str(step), f"{weight:.2f}"]
+                cells += [hex_colour(dc), hex_colour(ac), str(step), f"{weight:.2f}"]
+            elif i in fills:
+                df, af, fill_step, dc, ac, step = fills[i]
+                cells += [hex_colour(dc), hex_colour(ac), "" if step is None else str(step), "",
+                          hex_colour(df), hex_colour(af), str(fill_step)]
             handle.write("\t".join(cells) + "\n")
     counts = ", ".join(f"{len(banded[b])} {b}" for b in BANDS + (KINDS_DIFFER,))
     print(f"{screen}: {len(pairs)} matched ({counts}), {len(unmatched)} texts unmatched")
@@ -464,8 +519,18 @@ def main():
         if found:
             print(f"{title}:")
         for i, (dc, ac, step, ratio) in sorted(found, key=lambda f: -max(f[1][2], 100 * abs(f[1][3] - 1))):
-            print(f"  {pairs[i][0][:40]:40} draft #{dc[0]:02x}{dc[1]:02x}{dc[2]:02x} built "
-                  f"#{ac[0]:02x}{ac[1]:02x}{ac[2]:02x} (step {step}), weight {ratio:.2f}")
+            print(f"  {pairs[i][0][:40]:40} draft {hex_colour(dc)} built {hex_colour(ac)} "
+                  f"(step {step}), weight {ratio:.2f}")
+    fill_apart = [(i, f) for i, f in fills.items() if f[2] > COLOUR_STEP]
+    text_apart = [(i, f) for i, f in fills.items() if f[5] is not None and f[5] > COLOUR_STEP]
+    print(f"widgets: {len(fills)} measured, {len(fill_apart)} fills and {len(text_apart)} texts "
+          f"more than {COLOUR_STEP} apart")
+    for title, found, at in (("widget fill differs", fill_apart, 0), ("widget text colour differs", text_apart, 3)):
+        if found:
+            print(f"{title}:")
+        for i, f in sorted(found, key=lambda f: -f[1][at + 2]):
+            print(f"  {pairs[i][0][:40]:40} draft {hex_colour(f[at])} built {hex_colour(f[at + 1])} "
+                  f"(step {f[at + 2]}, {pairs[i][1][0]}/{pairs[i][2][0]})")
     if unmatched:
         print("unmatched (text: draft count, app count):")
         for text, nd, na in sorted(unmatched):

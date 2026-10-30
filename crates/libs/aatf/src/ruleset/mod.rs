@@ -15,6 +15,7 @@ mod errors;
 #[cfg(test)]
 mod tests;
 
+pub use check::LogoRefusal;
 pub use errors::{IdKind, LoadError, LoadRule, RuleError};
 
 // ---------------------------------------------------------------------------

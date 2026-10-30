@@ -358,3 +358,168 @@ fn the_form_scrolls_sideways_to_its_rightmost_checkbox() {
         "the click toggled the stat"
     );
 }
+
+/// A real event logo: DBC7's, as the drafts draw it (16 KB).
+fn dbc7_logo() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/prototypes/assets/logos/dbc7.png")
+}
+
+/// The Event logo's dialog stubbed to return `path`, then Choose PNG…
+/// clicked.
+fn choose_png(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext, path: &Path) {
+    let picked = path.to_path_buf();
+    view.logo.dialog = Box::new(move |_| Some(picked.clone()));
+    let frame = settled(window, view, ctx);
+    click_labeled(window, &frame.nodes, "Choose PNG…", view, ctx);
+}
+
+/// The document's logo text.
+fn logo_text(view: &RulesetView) -> Option<String> {
+    view.document
+        .as_ref()
+        .expect("a document")
+        .ruleset
+        .logo
+        .clone()
+}
+
+/// The bounds of the node labeled (or valued) `label`.
+fn bounds_of(nodes: &[accesskit::Node], label: &str) -> accesskit::Rect {
+    node(nodes, label)
+        .bounds()
+        .unwrap_or_else(|| panic!("{label:?} has bounds"))
+}
+
+/// The Event logo field's picture: the image node (the row's label
+/// carries the same words).
+fn logo_picture(nodes: &[accesskit::Node]) -> Option<accesskit::Rect> {
+    nodes
+        .iter()
+        .find(|node| node.role() == Role::Image && node.label() == Some("Event logo"))
+        .and_then(accesskit::Node::bounds)
+}
+
+/// Whether `right` stands on `left`'s row, after it.
+fn beside(left: accesskit::Rect, right: accesskit::Rect) -> bool {
+    right.x0 >= left.x1 && right.y0 < left.y1 && right.y1 > left.y0
+}
+
+// RE-GUI-19
+#[test]
+fn a_chosen_png_shows_28_high_with_remove_beside_choose() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    assert_eq!(logo_text(&view), None, "premise: Blank has no logo");
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert!(drawn(&frame.nodes, "None"), "no logo: a weak None");
+    assert!(!drawn(&frame.nodes, "Remove"), "no logo, no Remove");
+
+    choose_png(&mut window, &mut view, &ctx, &dbc7_logo());
+    let png = std::fs::read(dbc7_logo()).unwrap();
+    assert_eq!(
+        view.document.as_ref().unwrap().ruleset.logo_png(),
+        Some(png),
+        "the picked file is the logo"
+    );
+    let frame = settled(&mut window, &mut view, &ctx);
+    let picture = logo_picture(&frame.nodes).expect("the picture is drawn");
+    assert_eq!(picture.y1 - picture.y0, 28.0, "28 points high");
+    let choose = bounds_of(&frame.nodes, "Choose PNG…");
+    assert!(beside(picture, choose), "Choose PNG… after the picture");
+    assert!(
+        beside(choose, bounds_of(&frame.nodes, "Remove")),
+        "Remove beside Choose PNG…"
+    );
+    assert!(!drawn(&frame.nodes, "None"));
+
+    // The pick is an edit like any other: Ctrl+Z takes it back, and the
+    // field draws None again.
+    ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
+    assert_eq!(logo_text(&view), None, "the pick undone");
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert!(drawn(&frame.nodes, "None"));
+    assert_eq!(logo_picture(&frame.nodes), None);
+}
+
+// RE-GUI-19
+#[test]
+fn a_jpeg_or_an_oversize_png_is_refused_with_its_line_and_the_logo_kept() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    choose_png(&mut window, &mut view, &ctx, &dbc7_logo());
+    let kept = logo_text(&view).expect("premise: the PNG was taken");
+
+    let jpeg = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../libs/dds_convert/tests/fixtures/source_opaque.jpg");
+    choose_png(&mut window, &mut view, &ctx, &jpeg);
+    assert_eq!(logo_text(&view).as_deref(), Some(kept.as_str()));
+    let frame = settled(&mut window, &mut view, &ctx);
+    let line = "source_opaque.jpg is not a PNG picture";
+    assert!(
+        beside(
+            bounds_of(&frame.nodes, "Remove"),
+            bounds_of(&frame.nodes, line)
+        ),
+        "the refusal beside the buttons"
+    );
+
+    // The PNG signature, then padding to one byte over 64 KB.
+    let dir = crate::test_support::scratch("event_logo_oversize");
+    let mut big = vec![0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
+    big.resize(65537, 0);
+    let big_path = dir.join("big.png");
+    std::fs::write(&big_path, big).unwrap();
+    choose_png(&mut window, &mut view, &ctx, &big_path);
+    assert_eq!(logo_text(&view).as_deref(), Some(kept.as_str()));
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert!(drawn(&frame.nodes, "big.png is over 64 KB"));
+    assert!(!drawn(&frame.nodes, line), "the newest refusal replaces it");
+
+    choose_png(&mut window, &mut view, &ctx, &dir.join("missing.png"));
+    assert_eq!(logo_text(&view).as_deref(), Some(kept.as_str()));
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert!(contains_label(
+        &frame.nodes,
+        "missing.png could not be read: "
+    ));
+
+    // A pick that is taken clears the line.
+    choose_png(&mut window, &mut view, &ctx, &dbc7_logo());
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert!(!contains_label(&frame.nodes, "missing.png"));
+}
+
+/// The Event page box: General's one text box not holding the name.
+fn page_box<'a>(nodes: &'a [accesskit::Node], name: &str) -> &'a accesskit::Node {
+    let boxes: Vec<&accesskit::Node> = nodes
+        .iter()
+        .filter(|node| node.role() == Role::TextInput && node.value() != Some(name))
+        .collect();
+    assert_eq!(boxes.len(), 1, "one text box beside Name");
+    boxes[0]
+}
+
+// RE-GUI-19
+#[test]
+fn an_event_page_that_is_no_web_address_is_a_general_problem() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert_eq!(rail_labels(&frame.nodes)[0], "General", "premise: no mark");
+    click(
+        &mut window,
+        page_box(&frame.nodes, "New ruleset"),
+        &mut view,
+        &ctx,
+    );
+    type_text(&mut window, &mut view, &ctx, "www.example");
+    let ruleset = &view.document.as_ref().unwrap().ruleset;
+    assert_eq!(ruleset.page.as_deref(), Some("www.example"));
+    let frame = window.draw(&mut view, &ctx);
+    assert_eq!(rail_labels(&frame.nodes)[0], "General ⚠");
+    assert!(contains_label(&frame.nodes, "✖ 1 problem:"));
+
+    // An emptied box stores no page, and the problem goes.
+    let backspaces = vec![key(egui::Key::Backspace, egui::Modifiers::NONE); "www.example".len()];
+    window.frame(backspaces, |ui| show(ui, &mut view, &ctx));
+    assert_eq!(view.document.as_ref().unwrap().ruleset.page, None);
+    let frame = window.draw(&mut view, &ctx);
+    assert_eq!(rail_labels(&frame.nodes)[0], "General");
+}

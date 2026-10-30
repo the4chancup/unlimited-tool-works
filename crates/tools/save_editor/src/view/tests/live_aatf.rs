@@ -592,6 +592,76 @@ fn the_dock_follows_the_open_team_and_the_ruleset() {
     assert_eq!(height_rows(&nodes), 0, "183 takes the Tall bracket");
 }
 
+/// A result checked under 4cc Autumn 26 is not drawn once 4cc Spring 26
+/// is picked: its rows would be worded with the other ruleset's tiers.
+/// Until the recheck returns the dock reads `Checking <team>…`, as before
+/// its first result; then Spring 26's rows are drawn. The pick lands while
+/// the pointer is held, so the recheck waits for the release: a started
+/// check can reply between a frame's two passes.
+// SE-GUI-30
+#[test]
+fn a_result_checked_under_another_ruleset_is_not_drawn() {
+    let (mut view, mut window) = open_734_with("live_aatf_other_ruleset", &[73401, 73404], 183);
+    view.live_aatf = true;
+    let held_group = "Player 73404  45 Yuki-kun ^~^";
+    let nodes = live_checked(&mut window, &mut view, &[734]);
+    assert!(
+        nodes.iter().any(|node| node.value() == Some(held_group)),
+        "premise: Autumn 26's result lists 73404"
+    );
+
+    // The press lands on the toolbar's empty end.
+    let at = egui::pos2(1090.0, 12.0);
+    window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    view.aatf_ruleset = "spring26".to_owned();
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        view.live.check.pending.is_none()
+            && view
+                .live
+                .check
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| key.ruleset == "autumn26"),
+        "premise: Autumn 26's result held, no recheck started"
+    );
+    assert!(
+        !nodes.iter().any(|node| node.value() == Some(held_group)),
+        "the held result's rows are not drawn"
+    );
+    assert!(
+        nodes
+            .iter()
+            .any(|node| node.value() == Some("Checking /lit/\u{2026}")),
+        "the header before a result"
+    );
+    assert!(
+        !nodes.iter().any(|node| node
+            .value()
+            .is_some_and(|value| value.ends_with("\u{b7} 4cc Spring 26"))),
+        "no count under Spring 26's name"
+    );
+
+    window.frame(pointer_at(at, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let nodes = live_checked(&mut window, &mut view, &[734]);
+    assert!(
+        nodes.iter().any(|node| node
+            .label()
+            .is_some_and(|label| label.ends_with("77, over the 74 the rules allow"))),
+        "Spring 26's rows are drawn"
+    );
+    assert!(
+        nodes.iter().any(|node| node
+            .value()
+            .is_some_and(|value| value.ends_with("issues \u{b7} 4cc Spring 26"))),
+        "Spring 26's count"
+    );
+}
+
 /// At ALL the dock checks the selected player's team; with no player
 /// selected it reads `No team is open.` and starts no check.
 // SE-GUI-30

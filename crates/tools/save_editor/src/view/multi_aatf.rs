@@ -5,9 +5,12 @@
 //! save's first and last team by default, and kept while the dialog is
 //! closed and opened again on the same save. The teams are checked in
 //! parallel on the AATF check's worker (`aatf_check`) whenever the range or
-//! the ruleset changes, the last list kept and marked as checking until the
-//! new one lands. Copy to clipboard writes the list as plain text
-//! (`copy_text`) for a cup's thread.
+//! the ruleset changes. A range change keeps the last list, marked as
+//! checking until the new one lands; a ruleset change drops it, since its
+//! words (tier labels, medal systems, the copied text's first line) would
+//! be the new ruleset's over findings checked under the old one. Copy to
+//! clipboard writes the list as plain text (`copy_text`) for a cup's
+//! thread.
 
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
@@ -269,7 +272,7 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     // Settled: a modal is up, so no edit can be under way.
     let checking =
         aatf_check::update_check(&mut multi.check, ui.ctx(), file, &active.rules, key, true);
-    let listed = multi.check.result.as_ref().filter(|_| !reversed);
+    let listed = aatf_check::held_result(&multi.check, &active.key).filter(|_| !reversed);
     let mut close = false;
     let id = egui::Id::unique("save_editor_multi_aatf");
     let title = format!("Multi-team AATF ({description})");

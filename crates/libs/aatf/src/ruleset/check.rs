@@ -635,6 +635,30 @@ fn is_web_address(page: &str) -> bool {
         .is_some_and(|rest| !rest.is_empty() && !rest.contains(char::is_whitespace))
 }
 
+impl Ruleset {
+    /// The event logo's PNG bytes; `None` when the ruleset carries no
+    /// logo or its text is not base64. A ruleset loaded through
+    /// `Rules::load` was checked, so its logo decodes.
+    pub fn logo_png(&self) -> Option<Vec<u8>> {
+        use base64::Engine as _;
+        let logo = self.logo.as_deref()?;
+        base64::engine::general_purpose::STANDARD.decode(logo).ok()
+    }
+
+    /// `png` stored as the event logo, base64. Refused, the logo left as
+    /// it was, when the bytes lack the PNG signature (`NotPng`) or hold
+    /// more than 64 KB (`TooLarge`): the rules `check` applies to a loaded
+    /// logo.
+    pub fn set_logo(&mut self, png: &[u8]) -> Result<(), LogoRefusal> {
+        use base64::Engine as _;
+        if let Some(refusal) = png_rule(png) {
+            return Err(refusal);
+        }
+        self.logo = Some(base64::engine::general_purpose::STANDARD.encode(png));
+        Ok(())
+    }
+}
+
 /// The rule `logo` breaks, the first of: not base64, not a PNG, over
 /// 64 KB. The picture itself is never decoded here: the hosts that draw
 /// it do.
@@ -643,11 +667,41 @@ fn logo_rule(logo: &str) -> Option<LoadRule> {
     let Ok(bytes) = base64::engine::general_purpose::STANDARD.decode(logo) else {
         return Some(LoadRule::LogoNotBase64);
     };
+    png_rule(&bytes).map(LoadRule::from)
+}
+
+/// Why `Ruleset::set_logo` refused a picture: the two rules a logo's
+/// bytes must meet, which a loaded logo breaks as `LoadRule::LogoNotPng`
+/// and `LoadRule::LogoTooLarge`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LogoRefusal {
+    /// The bytes do not start with the PNG signature.
+    NotPng,
+    /// The bytes are more than the 64 KB a logo may hold.
+    TooLarge {
+        /// How many bytes the picture holds.
+        bytes: usize,
+    },
+}
+
+impl From<LogoRefusal> for LoadRule {
+    fn from(refusal: LogoRefusal) -> LoadRule {
+        match refusal {
+            LogoRefusal::NotPng => LoadRule::LogoNotPng,
+            LogoRefusal::TooLarge { bytes } => LoadRule::LogoTooLarge { bytes },
+        }
+    }
+}
+
+/// The refusal a logo's decoded bytes earn, the first of: not a PNG,
+/// over 64 KB. A loaded logo and one `set_logo` stores pass the same
+/// check.
+fn png_rule(bytes: &[u8]) -> Option<LogoRefusal> {
     if !bytes.starts_with(&PNG_SIGNATURE) {
-        return Some(LoadRule::LogoNotPng);
+        return Some(LogoRefusal::NotPng);
     }
     if bytes.len() > MAX_LOGO_BYTES {
-        return Some(LoadRule::LogoTooLarge { bytes: bytes.len() });
+        return Some(LogoRefusal::TooLarge { bytes: bytes.len() });
     }
     None
 }

@@ -937,7 +937,9 @@ its plan section.
   both windows' captures too, its glyphs' colour and its weight against the screen's others,
   and a colour or weight apart is listed: a colour reads as weight to the eye, and a box's
   place says nothing of either (the titles' white against the drafts' grey went unseen until
-  it was measured); the whole table lands in
+  it was measured); a pair of two widgets (a button, an input, a selectable label, a
+  checkbox) is measured for its fill and its text's colour as well, since a button's grey or
+  a selected row's highlight passes every geometry and ink check; the whole table lands in
   `.tmp/draft_compare/`. A closed menu or a popup
   shows no elements, so it is measured open, as its own screen.
 - **Draft shots.** `scripts/draft_shots.py` captures every screen of every tool (the list from
