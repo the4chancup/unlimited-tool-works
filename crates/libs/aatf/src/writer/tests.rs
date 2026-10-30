@@ -762,7 +762,7 @@ fn page_follows_name_and_logo_comes_last() {
 }
 
 /// The small ruleset `the_layout_is_pinned` pins: two tiers, one
-/// bracket, one height system, one special, `universal` with two
+/// bracket, two height systems, one special, `universal` with two
 /// fields.
 fn small_ruleset() -> Ruleset {
     Ruleset {

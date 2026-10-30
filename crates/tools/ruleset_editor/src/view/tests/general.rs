@@ -129,10 +129,9 @@ fn type_text(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext, t
     });
 }
 
-/// The document's ruleset's name and at-most list.
-fn basics(view: &RulesetView) -> (String, Vec<String>) {
-    let ruleset = &view.document.as_ref().unwrap().ruleset;
-    (ruleset.name.clone(), ruleset.stats.at_most.clone())
+/// The document's ruleset's name.
+fn ruleset_name(view: &RulesetView) -> String {
+    view.document.as_ref().unwrap().ruleset.name.clone()
 }
 
 /// General has no Squad size field: every squad is 23.
@@ -177,18 +176,18 @@ fn a_text_field_and_a_click_are_two_undo_entries() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
     focus_field(&mut window, &mut view, &ctx, "New ruleset");
     type_text(&mut window, &mut view, &ctx, "x");
-    assert_eq!(basics(&view).0, "New rulesetx");
+    assert_eq!(ruleset_name(&view), "New rulesetx");
     // A checkbox click is its own gesture (focus moved Some→Some).
     click_drawn_nth(&mut window, &mut view, &ctx, "Attacking Prowess", 1);
     assert!(!has_at_most(&view, "attacking_prowess"));
 
     // One undo: the checkbox is back, the name kept.
     ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
-    assert_eq!(basics(&view).0, "New rulesetx", "the name kept");
+    assert_eq!(ruleset_name(&view), "New rulesetx", "the name kept");
     assert!(has_at_most(&view, "attacking_prowess"), "the checkbox back");
     // A second undo takes the name's whole gesture.
     ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
-    assert_eq!(basics(&view).0, "New ruleset");
+    assert_eq!(ruleset_name(&view), "New ruleset");
 }
 
 #[test]
@@ -202,9 +201,13 @@ fn typing_in_name_is_one_entry_and_focus_move_seals_it() {
     let away = egui::pos2(5.0, 5.0);
     window.frame(pointer_at(away, true), |ui| show(ui, &mut view, &ctx));
     window.frame(pointer_at(away, false), |ui| show(ui, &mut view, &ctx));
-    assert_eq!(basics(&view).0, "New rulesetab");
+    assert_eq!(ruleset_name(&view), "New rulesetab");
     ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
-    assert_eq!(basics(&view).0, "New ruleset", "the whole gesture undone");
+    assert_eq!(
+        ruleset_name(&view),
+        "New ruleset",
+        "the whole gesture undone"
+    );
 
     // Focus Name, type, then move focus to Event page and type there:
     // the name's gesture is sealed before the page edit.
@@ -222,7 +225,7 @@ fn typing_in_name_is_one_entry_and_focus_move_seals_it() {
     window.frame(pointer_at(away, false), |ui| show(ui, &mut view, &ctx));
     ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
     assert_eq!(page(&view), None, "the page edit undone");
-    assert_eq!(basics(&view).0, "New rulesetx", "the name kept");
+    assert_eq!(ruleset_name(&view), "New rulesetx", "the name kept");
 }
 
 #[test]

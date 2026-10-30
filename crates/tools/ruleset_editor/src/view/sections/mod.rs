@@ -14,7 +14,7 @@ use aatf::Ruleset;
 /// A rail section.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Section {
-    /// Name, event page and logo, squad size, the stat lists (`general`).
+    /// Name, event page and logo, the stat lists (`general`).
     General,
     /// The tiers table and the medal systems.
     Tiers,

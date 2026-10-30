@@ -71,7 +71,7 @@ pub(crate) struct RulesetView {
     pub(crate) open_dialog: FilePicker,
     /// `open_dialog` for Save as.
     pub(crate) save_as_dialog: SaveDialog,
-    /// General's Event logo field: its PNG dialog, refusal line and
+    /// General's Event logo field: its picture dialog, refusal line and
     /// drawn picture.
     pub(crate) logo: sections::general::LogoField,
     /// Which document this is: the id salt, so egui widget state never
@@ -80,7 +80,7 @@ pub(crate) struct RulesetView {
 }
 
 /// A file-dialog call: the `.4ccrules` dialog's start folder to the
-/// picked path (`rfd`, or a test's stub); the PNG dialog ignores it.
+/// picked path (`rfd`, or a test's stub); the picture dialog ignores it.
 type FilePicker = Box<dyn FnMut(&Path) -> Option<PathBuf>>;
 
 /// `FilePicker` for Save as: the suggested file name comes second.

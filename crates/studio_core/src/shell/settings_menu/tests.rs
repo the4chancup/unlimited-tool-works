@@ -108,7 +108,7 @@ fn the_gear_opens_the_menu_on_the_active_tools_section_and_resets_each_opening()
     assert_eq!(
         labeled(&nodes, "C"),
         1,
-        "C has no settings: the entry alone"
+        "C has no settings form: the entry alone"
     );
     assert!(
         has_text(&nodes, "B settings body"),

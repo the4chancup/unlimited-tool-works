@@ -728,10 +728,24 @@ fn rules_error_texts_name_path_and_message() {
         text.contains("com") && text.contains("suggestions"),
         "{text}"
     );
-    let text = LoadRule::CountsShortOfSquad { total: 8 }.to_string();
-    let total_at = text.find('8').expect("the total in the text");
-    let size_at = text.find("23").expect("the squad size in the text");
-    assert!(total_at < size_at, "{text}");
+    // The squad's three texts name the total and the squad of 23, never a
+    // `squad_size` key no file holds.
+    for (rule, expected) in [
+        (
+            LoadRule::CountsExceedSquad { total: 25 },
+            "counts total 25 over the squad of 23",
+        ),
+        (
+            LoadRule::CountsShortOfSquad { total: 8 },
+            "counts total 8 under the squad of 23",
+        ),
+        (
+            LoadRule::ExtraHeightQuotasNotSquad { total: 22 },
+            "an `extra_height` system's quotas add up to 22, not the squad of 23",
+        ),
+    ] {
+        assert_eq!(rule.to_string(), expected);
+    }
 }
 
 /// A card in two `card_groups` is one `GroupsOverlap` error per pair,

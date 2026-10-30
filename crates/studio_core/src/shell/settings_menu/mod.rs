@@ -3,8 +3,8 @@
 //! `ActionEffect::OpenSettings`. It holds the common grid every tool shares — one row
 //! per `CommonSettings` field a member edits, in the draft's order and wording — then
 //! one `CollapsingHeader` per registered tool that has a settings form, its body the
-//! tool's `settings_view`. A tool has one when its `has_settings_view()` is true and the
-//! build does not mark it CLI-only: such a tool's window is not built, so its keys are
+//! tool's `settings_view`. A section is drawn when the tool's `has_settings_view()` is true
+//! and the build does not mark it CLI-only: such a tool's window is not built, so its keys are
 //! edited in the settings file. `last_tool`, `last_update_check` and
 //! `skipped_version`, the state the shell writes itself, have no row.
 //!
