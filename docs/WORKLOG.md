@@ -5909,6 +5909,10 @@ briefs, review loops, gates and mutation runs as for any step.
       embedded DBC7, `aatf_ruleset = "dbc7"`, so it has no rules file to regenerate); the
       settings menu's section only for a tool with a form (`has_settings_view`, DECISIONS
       2026-10-30), since the Ruleset editor's table holds only its own state
+    - [ ] cv8's converge: SWE-2 round 1 over cv8 + cv8b in four parts, 1 accepted (the squad's
+      three load-rule texts pinned, `58f33945`; `.tmp/0_0_1cv/rulings_cv8.md`), the loop
+      ends; Astra A7 running; then a SWE-2 loop after it, `just mutants ruleset_editor`,
+      the built window with two tools (cv5)
   - [ ] cv7 after 0.0.1: split `view/mod.rs` (the toolbar), `view/menus.rs` (the dialogs),
     `view/interchange.rs` (the export half), `team_widgets` `pitch/mod.rs` (the paint) and
     `tactics/mod.rs` (the changes' terms), each past a thousand lines
