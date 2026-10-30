@@ -352,8 +352,9 @@ fn row_mark_counts_the_slots_rows_and_picks_its_glyph() {
 }
 
 /// `held_violations` is the held check only while the toggle is on and
-/// the result one team's `Ok` — a failed check, another shape of result
-/// or nothing yet marks nothing (the Live AATF bullet's last sub-bullet).
+/// the result one team's `Ok` under the active ruleset — a failed check,
+/// another shape of result, another ruleset's or nothing yet marks
+/// nothing (the Live AATF bullet's last sub-bullet).
 #[test]
 fn held_violations_is_one_teams_ok_result_while_on() {
     let mut check = aatf_check::TeamsCheck::new();
@@ -363,7 +364,9 @@ fn held_violations_is_one_teams_ok_result_while_on() {
         ruleset: "autumn26".to_owned(),
         suggestions: false,
     };
-    let held = |check: &_| live_marks::held_violations(true, check).map(|(id, v)| (id, v.len()));
+    let held = |check: &_| {
+        live_marks::held_violations(true, check, "autumn26").map(|(id, v)| (id, v.len()))
+    };
     check.result = Some((
         key(&[734]),
         vec![Ok(vec![violation(
@@ -374,9 +377,14 @@ fn held_violations_is_one_teams_ok_result_while_on() {
     ));
     assert_eq!(held(&check), Some((734, 1)));
     assert_eq!(
-        live_marks::held_violations(false, &check),
+        live_marks::held_violations(false, &check, "autumn26"),
         None,
         "off marks nothing"
+    );
+    assert_eq!(
+        live_marks::held_violations(true, &check, "spring26"),
+        None,
+        "checked under another ruleset"
     );
     check.result = Some((key(&[734]), vec![Err("boom".to_owned())]));
     assert_eq!(held(&check), None, "a failed check");
@@ -521,6 +529,82 @@ fn the_marks_follow_the_held_check() {
         };
         assert_eq!(mark.galley.job.text, "\u{2714}", "{name}'s mark's glyph");
     }
+}
+
+/// A result checked under 4cc Autumn 26 marks nothing once 4cc Spring 26
+/// is picked: its marks' tooltips would be worded with the other
+/// ruleset's tiers. The broken player's row mark and his Height cross go
+/// until the recheck returns, then Spring 26's result marks his row
+/// again. The pick lands while the pointer is held, so the recheck waits
+/// for the release: a started check can reply between a frame's two
+/// passes.
+// SE-GUI-36
+#[test]
+fn a_result_checked_under_another_ruleset_marks_nothing() {
+    let (mut view, mut window) = open_734_with("live_marks_other_ruleset", &[73401], 183);
+    view.live_aatf = true;
+    let broken_row_marks = |nodes: &[accesskit::Node], shapes| {
+        let row = nodes
+            .iter()
+            .find(|node| {
+                player_row(node)
+                    && node
+                        .label()
+                        .is_some_and(|label| label.contains("Muh Spooks"))
+            })
+            .expect("Muh Spooks's row");
+        marks_in_row(shapes, row.bounds().expect("the row's bounds")).len()
+    };
+    live_checked(&mut window, &mut view, &[734]);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        broken_row_marks(&nodes, &shapes),
+        1,
+        "premise: Autumn 26's result marks his row"
+    );
+    assert_eq!(
+        field_marks(&shapes).len(),
+        1,
+        "premise: Autumn 26's result crosses his Height"
+    );
+
+    // The press lands on the toolbar's empty end.
+    let at = egui::pos2(1090.0, 12.0);
+    window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    view.aatf_ruleset = "spring26".to_owned();
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        view.live.check.pending.is_none()
+            && view
+                .live
+                .check
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| key.ruleset == "autumn26"),
+        "premise: Autumn 26's result held, no recheck started"
+    );
+    assert_eq!(
+        broken_row_marks(&nodes, &shapes),
+        0,
+        "the held result marks no row"
+    );
+    assert!(
+        field_marks(&shapes).is_empty(),
+        "the held result crosses no field"
+    );
+
+    window.frame(pointer_at(at, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    live_checked(&mut window, &mut view, &[734]);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        broken_row_marks(&nodes, &shapes),
+        1,
+        "Spring 26's result marks his row"
+    );
 }
 
 /// The view's field marks (`✖`, `⚠`, `ⓘ`) painted right of x 250 (the
