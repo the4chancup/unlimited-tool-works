@@ -59,6 +59,8 @@ const CHOICE_EFFECTS = ["stat_bonus", "cards", "free", "free_cards", "a_position
 // Every squad is 23 players: the Team compiler numbers a team's players 01 to 23, so
 // no ruleset sets its own size.
 const SQUAD = 23;
+// The ids are link screens (#ruleset_editor/<id>), and the app's unbuilt sections link to
+// theirs from every shipped build: renaming one breaks those links.
 const SECTIONS = [["general", "General"], ["tiers", "Tiers"], ["heights", "Heights"],
   ["cards", "Cards"], ["universal", "Universal rules"], ["specials", "Specials"],
   ["suggestions", "Suggestions"], ["custom", "Custom checks"], ["summary", "Summary"]];

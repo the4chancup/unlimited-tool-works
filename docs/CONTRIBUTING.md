@@ -37,7 +37,11 @@ Placement:
 - `docs/web/` holds the pages meant to be read in a browser. GitHub Pages publishes `docs/` from
   `main` (`docs/.nojekyll` serves every file as it is), so a page there is at
   `https://the4chancup.github.io/unlimited-tool-works/web/<page>.html`, and the drafts under
-  `docs/prototypes/` at `…/prototypes/`. `docs/web/crate_map.html` draws every crate and the
+  `docs/prototypes/` at `…/prototypes/`. A shipped build links to some drafts' addresses (the
+  Ruleset editor's unbuilt sections: `#ruleset_editor/<section>?demo=1&start=0`), so the
+  `prototypes/` folder, a linked tool's id and section ids, and the `demo` and `start` keys keep
+  their names: a renamed one breaks the link in every build already out.
+  `docs/web/crate_map.html` draws every crate and the
   workspace crates each one uses, in layers from the binary down to the libs that use nothing
   (hover a crate to see its arrows). A commit that adds a crate or changes the workspace
   dependencies runs `just crate-map` to redraw it; no gate checks it, so a missed run only
