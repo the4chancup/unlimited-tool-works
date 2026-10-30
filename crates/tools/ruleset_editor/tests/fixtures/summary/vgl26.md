@@ -27,3 +27,6 @@ Every player is rated A at his registered position; starters play only where rat
 - **The captain's Captaincy card and one more are free**: The captain: +1 paid card, Captaincy free.
 - **Medals cannot be goalkeepers**: Gold, Silver or Bronze, registered GK: not allowed ("Medals cannot play as GK").
 - **Goalkeepers are 185**: Registered GK, except 185 cm: not allowed ("GKs must be 185cm").
+
+## Suggestions
+Allowances not used up, listed as suggestions: paid cards, free COM styles, A positions, weak foot and free cards.

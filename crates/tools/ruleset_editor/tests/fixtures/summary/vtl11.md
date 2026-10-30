@@ -3,10 +3,10 @@
 Squad of 23. A player's rating is his best of: clearing.
 
 ## Tiers
-- **Gold**: 2 per team, 195 cm, swerve 99 to 99; every stat 99 (place kicking 94, defensive prowess 65, ball winning 94, speed 94, physical contact 94, stamina 94); form 8, injury resistance 1, weak foot 4/4; 7 paid cards (at least 3), 3 free COM styles; 2 A positions; name in colour cc9900ff.
-- **Silver**: 3 per team, 195 cm, swerve 89 to 89; every stat 89 (attacking prowess 94, heading 94, defensive prowess 57, tight possession 94, aggression 94); form 8, injury resistance 1, weak foot 4/4; 7 paid cards (at least 3), 2 free COM styles; 3 A positions; name in colour 51bbc4ff.
-- **Regular**: 10 per team, 180 cm; every stat 77 (attacking prowess 87, ball control 87, dribbling 87, low pass 87, lofted pass 92, finishing 92, place kicking 70, swerve 87, defensive prowess 73, ball winning 70, kicking power 87, physical contact 70, jump 70, catching 70, reflexes 73, coverage 73, stamina 62, tight possession 87, aggression 92); form 4, injury resistance 1, weak foot 4/4; 7 paid cards (at least 3), 1 free COM style; 2 A positions.
-- **Buffed**: 8 per team, 188 cm; every stat 77 (attacking prowess 92, ball control 87, dribbling 92, low pass 87, lofted pass 87, finishing 92, place kicking 70, swerve 87, defensive prowess 47, ball winning 70, kicking power 92, speed 87, explosive power 87, body control 87, physical contact 82, catching 70, reflexes 73, coverage 73, stamina 62, tight possession 87, aggression 87); form 4, injury resistance 1, weak foot 4/4; 7 paid cards (at least 3), 1 free COM style; 1 A position.
+- **Gold**: 2 per team, 195 cm, swerve 99 to 99; every stat 99 (place kicking 94, defensive prowess 65, ball winning 94, speed 94, physical contact 94, stamina 94); form 8, injury resistance 1, weak foot 4/4; 7 paid cards (at least 3 paid skills, an extra A position counting as one), 3 free COM styles; 2 A positions; name in colour cc9900ff.
+- **Silver**: 3 per team, 195 cm, swerve 89 to 89; every stat 89 (attacking prowess 94, heading 94, defensive prowess 57, tight possession 94, aggression 94); form 8, injury resistance 1, weak foot 4/4; 7 paid cards (at least 3 paid skills, an extra A position counting as one), 2 free COM styles; 3 A positions; name in colour 51bbc4ff.
+- **Regular**: 10 per team, 180 cm; every stat 77 (attacking prowess 87, ball control 87, dribbling 87, low pass 87, lofted pass 92, finishing 92, place kicking 70, swerve 87, defensive prowess 73, ball winning 70, kicking power 87, physical contact 70, jump 70, catching 70, reflexes 73, coverage 73, stamina 62, tight possession 87, aggression 92); form 4, injury resistance 1, weak foot 4/4; 7 paid cards (at least 3 paid skills, an extra A position counting as one), 1 free COM style; 2 A positions.
+- **Buffed**: 8 per team, 188 cm; every stat 77 (attacking prowess 92, ball control 87, dribbling 92, low pass 87, lofted pass 87, finishing 92, place kicking 70, swerve 87, defensive prowess 47, ball winning 70, kicking power 92, speed 87, explosive power 87, body control 87, physical contact 82, catching 70, reflexes 73, coverage 73, stamina 62, tight possession 87, aggression 87); form 4, injury resistance 1, weak foot 4/4; 7 paid cards (at least 3 paid skills, an extra A position counting as one), 1 free COM style; 1 A position.
 
 ## Every team
 Every player is rated A at his registered position; B ratings count as A positions; GK is never a second A; age 15 to 50; weight between height − 129 (at least 30) and height − 81; at least 2 goalkeepers; at most 11 skill cards; at most 5 COM styles.
@@ -16,8 +16,8 @@ Every player is rated A at his registered position; B ratings count as A positio
 - **PES 16 support settings** (PES 16): automatic substitution off, automatic offside trap off, automatic preset change off.
 
 ## Special rules
-- **The free skills**: No Look Pass, Double Touch, Rabona, Acrobatic Finishing, First Time Shot, Dipping Shots, Rising Shots, Heading, Malicia, Flip Flap, Marseille Turn, Scotch Move or Crossover Turn free.
-- **The pass skills are free to non-medals**: Regular or Buffed: One Touch Pass, Weighted Pass or Pinpoint Crossing free.
+- **The free skills**: No Look Pass, Double Touch, Rabona, Acrobatic Finishing, First Time Shot, Dipping Shots, Rising Shots, Heading, Malicia, Flip Flap, Marseille Turn, Scotch Move and Crossover Turn free.
+- **The pass skills are free to non-medals**: Regular or Buffed: One Touch Pass, Weighted Pass and Pinpoint Crossing free.
 - **The captain's Captaincy card is free**: The captain: Captaincy free.
 - **Long Ranger is a free COM style**: Long Ranger free.
 - **Malicia is required**: must hold Malicia.

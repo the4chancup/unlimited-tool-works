@@ -5,8 +5,8 @@ May sit below their target: attacking prowess, ball control, dribbling, low pass
 
 ## Tiers
 - **Gold**: by medal system; every stat 99; form 8, injury resistance 3, weak foot 4/4; 48 paid cards; 13 A positions.
-- **Silver**: by medal system; every stat 88; a stat up to 5 over its target warns, past that it is not allowed; his stats added up may not exceed the targets' sum; form 8, injury resistance 3, weak foot 4/4; 48 paid cards; 13 A positions.
-- **Regular**: the rest of the squad; every stat 77; a stat up to 7 over its target warns, past that it is not allowed; his stats added up may not exceed the targets' sum; form 8, injury resistance 3, weak foot 4/4; 48 paid cards; 13 A positions.
+- **Silver**: by medal system; every stat 88; a stat that may sit below its target warns up to 5 over it, past that it is not allowed; those stats added up may not exceed their targets' sum; form 8, injury resistance 3, weak foot 4/4; 48 paid cards; 13 A positions.
+- **Regular**: the rest of the squad; every stat 77; a stat that may sit below its target warns up to 7 over it, past that it is not allowed; those stats added up may not exceed their targets' sum; form 8, injury resistance 3, weak foot 4/4; 48 paid cards; 13 A positions.
 Medal systems: GGG (3 Gold, 0 Silver), GGSS (2 Gold, 2 Silver), GSSSS (1 Gold, 4 Silver) or SSSSSS (0 Gold, 6 Silver).
 
 ## Heights

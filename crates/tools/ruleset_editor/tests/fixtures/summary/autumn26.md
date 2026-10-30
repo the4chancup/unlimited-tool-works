@@ -30,8 +30,11 @@ Every player is rated A at his registered position; starters play only where rat
 - **Goalkeepers below giant**: Registered GK, 194 cm or more: not allowed ("GK heights cannot be 194cm or more").
 - **Gold below giant**: Gold, 194 cm or more: not allowed ("Gold heights cannot be 194cm or more").
 - **Red CBs at 189 count as tall**: Regular, registered CB, under Red, 189 cm: count 4 cm shorter.
-- **Manlets**: Manlets: +1 paid card, +1 A position, weak foot up to 4/4.
+- **Manlets**: Manlets: +1 paid card, +1 A position, weak foot 4/4.
 - **Red manlet bonus**: Regular, Goalkeeper, Bronze or Silver, under Red, 175 cm or less: may get +2 for Silver, +3 for Bronze, +5 for Goalkeeper, +5 for Regular to every stat.
 - **Green silver giants**: Silver, under Green, 194 cm or more: -3 to every stat.
 - **Medals trade a free COM style for a free A position**: Gold, Silver or Bronze: gets the first needed of: +1 free COM style; or +1 A position.
 - **Gold trades a second free COM style for a free A position**: Gold: gets the first needed of: +1 free COM style; or +1 A position.
+
+## Suggestions
+Allowances not used up, listed as suggestions: paid cards, free tricks, free COM styles, weak foot, injury resistance and choices not taken.
