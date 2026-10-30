@@ -2907,3 +2907,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — k5e merged: the PES 2017 Texport import tested, the Pick dialog on All files for
   PES 2015-2017. PES 2017's own import measured (own team only, the save's name kept); k5f's proof
   Texport accepted by the game. k5g added: confirm the name behavior on the other versions.
+- **2026-10-30** — Candidate 0.0.1c staged at `bddd0027`; every change since 0.0.1b looked at in its
+  built window (team file panel, unsaved-changes list, light greys, icons, running-game dialog);
+  `draft_compare`'s colour checks' first run: no fill or text colour apart. QUESTIONS points at it.
