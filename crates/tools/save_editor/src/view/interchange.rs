@@ -29,7 +29,7 @@ use pes_savefile::interchange::team_toml::{ImportNote, TeamToml, TeamTomlError};
 use pes_savefile::interchange::texport::Texport;
 use pes_savefile::model::names::display_name;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
-use pes_savefile::schema::texport::texport_layout;
+use pes_savefile::schema::texport::texport_writes;
 use pes_version::PesVersion;
 use studio_core::widgets::{add_enabled, add_enabled_ui, checkbox, collapsing_header};
 use studio_core::{Notice, NoticeKind};
@@ -87,11 +87,14 @@ pub(super) fn default_interchange_dialog() -> InterchangeDialog {
 pub(super) type ExportDialog = Box<dyn FnMut(Export, &Path) -> Option<PathBuf>>;
 
 /// The `rfd` Save dialog for the export row, filtered on the format's
-/// extension.
+/// extension where the suggested name has one.
 #[cfg(not(test))]
 pub(super) fn default_export_dialog() -> ExportDialog {
     Box::new(|export, suggested| {
-        let mut dialog = rfd::FileDialog::new().add_filter(export.name(), &[export.extension()]);
+        let mut dialog = rfd::FileDialog::new();
+        if let Some(extension) = export.filter(suggested) {
+            dialog = dialog.add_filter(export.name(), &[extension]);
+        }
         if let Some(folder) = suggested.parent() {
             dialog = dialog.set_directory(folder);
         }
@@ -114,7 +117,7 @@ pub(super) fn default_export_dialog() -> ExportDialog {
 pub(super) enum Export {
     /// The command line's `export-toml` text.
     TeamToml,
-    /// A Texport of the save's version, which PES 2018 to 2021 import
+    /// A Texport of the save's version, which PES 2017 to 2021 import
     /// from Edit mode.
     Texport,
 }
@@ -137,13 +140,37 @@ impl Export {
         }
     }
 
-    /// The suggested file name for `team`: `<id>.toml`, or
-    /// `<short name>.ted` (the id when the short name is empty).
-    fn file_name(self, team: &TeamEntry) -> String {
+    /// The extension the Save dialog filters on for the `suggested` path,
+    /// none where its name has no extension (a PES 2015 to 2017 Texport):
+    /// the dialog adds the filter's extension to a name typed without one,
+    /// and the game's Import Team finds no `TEXPORT00000000.ted`.
+    pub(super) fn filter(self, suggested: &Path) -> Option<&'static str> {
+        suggested.extension().map(|_| self.extension())
+    }
+
+    /// The suggested file name for `team` of a `version` save at `save`:
+    /// `<id>.toml`; a Texport's `<short name>.ted` (the id when the short
+    /// name is empty) on PES 2018 to 2021, and on 2015 to 2017 the name the
+    /// game's Import Team reads from the save's folder, `TEXPORT` and the
+    /// first eight-digit number from `00000000` that the folder has no file
+    /// of, so the dialog opens on a name that writes over nothing.
+    fn file_name(self, team: &TeamEntry, version: PesVersion, save: &Path) -> String {
         match self {
             Export::TeamToml => format!("{}.toml", team.id),
-            Export::Texport if team.short_name.is_empty() => format!("{}.ted", team.id),
-            Export::Texport => format!("{}.ted", team.short_name),
+            Export::Texport => match version {
+                PesVersion::Pes15 | PesVersion::Pes16 | PesVersion::Pes17 => (0..=99_999_999u32)
+                    .map(|number| format!("TEXPORT{number:08}"))
+                    .find(|name| !save.with_file_name(name).exists())
+                    .expect("a folder holds fewer than 10^8 files"),
+                PesVersion::Pes18 | PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21
+                    if team.short_name.is_empty() =>
+                {
+                    format!("{}.ted", team.id)
+                }
+                PesVersion::Pes18 | PesVersion::Pes19 | PesVersion::Pes20 | PesVersion::Pes21 => {
+                    format!("{}.ted", team.short_name)
+                }
+            },
         }
     }
 }
@@ -684,7 +711,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         Some(Action::Export(export)) => {
             surrender_focus(ui);
             let team = target.expect("the export row is drawn for a selected team");
-            let suggested = session.path().with_file_name(export.file_name(team));
+            let name = export.file_name(team, version, session.path());
+            let suggested = session.path().with_file_name(name);
             if let Some(path) = team_export_dialog(export, &suggested) {
                 match write_export(session, team.id, export, &path) {
                     Ok(()) => {
@@ -775,7 +803,7 @@ fn texport_bytes(session: &Session, id: u32) -> anyhow::Result<Vec<u8>> {
         .flat_map(u32::to_le_bytes)
         .collect();
     let salt = fresh_salt(&ids);
-    let texport = Texport::new(file.version(), team, &players, &salt)?;
+    let texport = Texport::new(file.version(), team, &players, &salt, file.serial())?;
     Ok(texport.to_bytes(&salt)?)
 }
 
@@ -814,11 +842,11 @@ fn contents(
         }
         if add_enabled(
             ui,
-            texport_layout(version).is_some(),
+            texport_writes(version),
             egui::Button::new("Texport\u{2026}"),
         )
         .on_hover_text("A file PES itself can import")
-        .on_disabled_hover_text("PES 2015 to 2017 have no Texport template")
+        .on_disabled_hover_text("PES 2015 and 2016 have no Texport template")
         .clicked()
         {
             action = Some(Action::Export(Export::Texport));

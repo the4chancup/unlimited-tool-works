@@ -2,7 +2,7 @@
 //! row's texts and the separator under it, a Team TOML written byte for
 //! byte as the command line writes it, a Texport of the save's version that
 //! the import half reads back to the same team, the Texport disabled on
-//! PES 2017, and the open save refused as the destination.
+//! PES 2015 and 2016, and the open save refused as the destination.
 
 use std::sync::mpsc;
 
@@ -236,36 +236,36 @@ fn the_team_toml_written_is_the_command_lines_export() {
     assert!(view.refusal.is_none(), "no refusal");
 }
 
-/// Team `/co/` of `version`'s fixture exported as a Texport, its suggested
-/// name `suggested_name` (the fixture's short name), then picked in the
-/// import half with every section chosen, which then changes nothing.
-fn texport_round_trip(version: PesVersion, test: &str, suggested_name: &str) {
+/// Team `/co/` of `version`'s fixture exported as a Texport under the name
+/// the Save dialog suggests, `suggested_name` (`<short name>.ted` on 18-21,
+/// the first free `TEXPORT0000000N` on 17), the dialog filtering on
+/// `filter`; then picked in the import half with every section chosen,
+/// which then changes nothing.
+fn texport_round_trip(version: PesVersion, test: &str, suggested_name: &str, filter: Option<&str>) {
     let (mut view, mut window) = open_on(version, test, CO);
     let folder = save_folder(&view);
-    let written = folder.join("panel.ted");
+    let written = folder.join(suggested_name);
+    assert!(!written.exists(), "premise: nothing written yet");
 
     let (format, suggested) = export(&mut window, &mut view, "Texport\u{2026}", &written);
 
     assert_eq!(format, Export::Texport);
     assert_eq!(
-        (format.name(), format.extension()),
-        ("Texport", "ted"),
+        (format.name(), format.filter(&suggested)),
+        ("Texport", filter),
         "the dialog's filter"
     );
-    assert_eq!(
-        suggested,
-        folder.join(suggested_name),
-        "<short name>.ted beside the save"
-    );
+    assert_eq!(suggested, written, "the suggested name beside the save");
     let bytes = std::fs::read(&written).unwrap();
     let texport = Texport::from_bytes(&bytes, None).expect("the file reads as a Texport");
     assert_eq!(texport.version(), version, "the save's version");
     assert_eq!(texport.team().id, CO, "the team's");
+    let wrote = format!("Wrote {suggested_name}");
     assert_eq!(
         view.notice
             .as_ref()
             .map(|notice| (notice.text.as_str(), notice.kind)),
-        Some(("Wrote panel.ted", NoticeKind::Success))
+        Some((wrote.as_str(), NoticeKind::Success))
     );
 
     view.interchange_dialog = Box::new(move |_| Some(written.clone()));
@@ -303,27 +303,87 @@ fn texport_round_trip(version: PesVersion, test: &str, suggested_name: &str) {
 
 // SE-GUI-17
 #[test]
+fn a_pes_17_texport_reads_back_to_the_same_team() {
+    // No extension, so the dialog has no filter to add `.ted` with.
+    texport_round_trip(
+        PesVersion::Pes17,
+        "export_texport_17",
+        "TEXPORT00000000",
+        None,
+    );
+}
+
+// SE-GUI-17
+#[test]
 fn a_pes_18_texport_reads_back_to_the_same_team() {
     // Team 714 of the PES 18 fixture is `DIY` by its short name.
-    texport_round_trip(PesVersion::Pes18, "export_texport_18", "DIY.ted");
+    texport_round_trip(
+        PesVersion::Pes18,
+        "export_texport_18",
+        "DIY.ted",
+        Some("ted"),
+    );
 }
 
 // SE-GUI-17
 #[test]
 fn a_pes_19_texport_reads_back_to_the_same_team() {
-    texport_round_trip(PesVersion::Pes19, "export_texport_19", "CO.ted");
+    texport_round_trip(
+        PesVersion::Pes19,
+        "export_texport_19",
+        "CO.ted",
+        Some("ted"),
+    );
 }
 
 // SE-GUI-17
 #[test]
 fn a_pes_20_texport_reads_back_to_the_same_team() {
-    texport_round_trip(PesVersion::Pes20, "export_texport_20", "CO.ted");
+    texport_round_trip(
+        PesVersion::Pes20,
+        "export_texport_20",
+        "CO.ted",
+        Some("ted"),
+    );
 }
 
 // SE-GUI-17
 #[test]
 fn a_pes_21_texport_reads_back_to_the_same_team() {
-    texport_round_trip(PesVersion::Pes21, "export_texport_21", "CO.ted");
+    texport_round_trip(
+        PesVersion::Pes21,
+        "export_texport_21",
+        "CO.ted",
+        Some("ted"),
+    );
+}
+
+/// A `TEXPORT00000000` already in the PES 2017 save's folder: the Save
+/// dialog suggests the next number, so the export writes over nothing.
+#[test]
+fn a_pes_17_texport_suggests_the_first_number_the_folder_lacks() {
+    let (mut view, mut window) = open_on(PesVersion::Pes17, "export_texport_17_taken", CO);
+    let folder = save_folder(&view);
+    let taken = folder.join("TEXPORT00000000");
+    std::fs::write(&taken, b"an earlier export").expect("the taken name is written");
+    let (sender, asked) = mpsc::channel();
+    view.team_export_dialog = Box::new(move |_, suggested| {
+        sender
+            .send(suggested.to_owned())
+            .expect("the test holds the receiver");
+        None
+    });
+    let texport = button(&mut window, &mut view, "Texport\u{2026}");
+    assert!(!texport.is_disabled(), "premise: the Texport is enabled");
+    click(&mut window, &texport, &mut view);
+
+    let suggested = asked.try_recv().expect("the Save dialog opened");
+    assert_eq!(suggested, folder.join("TEXPORT00000001"));
+    assert_eq!(
+        std::fs::read(&taken).unwrap(),
+        b"an earlier export",
+        "the earlier export is untouched"
+    );
 }
 
 #[test]
@@ -451,18 +511,23 @@ fn a_write_that_fails_is_refused_in_the_command_lines_words() {
 
 // SE-GUI-17
 #[test]
-fn on_pes_17_the_texport_is_disabled_and_says_why() {
-    let (mut view, mut window) = open_on(PesVersion::Pes17, "export_texport_17", CO);
-    let texport = button(&mut window, &mut view, "Texport\u{2026}");
-    assert!(texport.is_disabled(), "no Texport on PES 2017");
-    assert_eq!(
-        tooltip_containing(&mut window, &mut view, centre(&texport), "Texport template").as_deref(),
-        Some("PES 2015 to 2017 have no Texport template")
-    );
-    assert!(
-        !button(&mut window, &mut view, "Team TOML\u{2026}").is_disabled(),
-        "the Team TOML stays"
-    );
+fn on_pes_15_and_16_the_texport_is_disabled_and_says_why() {
+    for version in [PesVersion::Pes15, PesVersion::Pes16] {
+        let test = format!("export_texport_disabled_{}", version.year());
+        let (mut view, mut window) = open_on(version, &test, CO);
+        let texport = button(&mut window, &mut view, "Texport\u{2026}");
+        assert!(texport.is_disabled(), "no Texport on {version}");
+        assert_eq!(
+            tooltip_containing(&mut window, &mut view, centre(&texport), "Texport template")
+                .as_deref(),
+            Some("PES 2015 and 2016 have no Texport template"),
+            "{version}"
+        );
+        assert!(
+            !button(&mut window, &mut view, "Team TOML\u{2026}").is_disabled(),
+            "{version}: the Team TOML stays"
+        );
+    }
 }
 
 #[test]

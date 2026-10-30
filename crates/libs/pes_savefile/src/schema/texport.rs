@@ -5,7 +5,8 @@
 //!
 //! Provenance: the 18-21 constants are measured on real files: four 18,
 //! eleven 19, one 20 and five 21 texports. The 15-17 layout is measured on all 46 texports of the
-//! reference machine (12 PES 16, 34 17; PES 15's is PES 16's, unverified).
+//! reference machine (12 PES 16, 34 17; PES 15's is PES 16's, unverified), and PES
+//! 2017's writer template on ten of its files.
 
 use pes_version::PesVersion;
 
@@ -120,6 +121,66 @@ static PES21: TexportLayout = TexportLayout {
     coach: coach(0x00),
     tail: hex("000000000000000001000000"),
 };
+
+/// The PES 2017 `TEXPORT00000000` writer's template: what its payload holds
+/// beside the team's records. Every other byte is written zero: the 32
+/// bytes after the header differ in every real file and the game imports a
+/// file with them zeroed, and the emblem block `0x50..0x10050` stays empty
+/// because a save holds no emblem image.
+pub(crate) struct TexportPes17 {
+    /// The whole payload.
+    pub size: usize,
+    /// The payload's first 0x30 bytes.
+    pub header: [u8; 0x30],
+    /// Byte offset of the marker, right after the emblem block.
+    pub marker_at: usize,
+    /// The marker.
+    pub marker: [u8; 4],
+    /// The coach block, the team id at 0..4 left zero (patched at write).
+    pub coach: [u8; 88],
+    /// The payload's last 8 bytes.
+    pub tail: [u8; 8],
+}
+
+/// Measured on ten real PES 2017 files. The coach block is the
+/// variant real files pair with the header's `0x27d8` at 0x0C.
+pub(crate) static PES17: TexportPes17 = TexportPes17 {
+    size: 0x551FD0,
+    header: hex(
+        "1700000050000000801f5500d8270000040000000400000000000000000000000c000000000000000000000000000000",
+    ),
+    marker_at: 0x10050,
+    marker: hex("01000000"),
+    coach: pes17_coach(),
+    tail: hex("0400000001000000"),
+};
+
+/// PES 2017's coach block: `00000000d700ffff614d616e61676572` (the id,
+/// 4 constant bytes, the flag `0x61`, `Manager`), then 72 zero bytes.
+const fn pes17_coach() -> [u8; 88] {
+    let head: [u8; 16] = hex("00000000d700ffff614d616e61676572");
+    let mut out = [0u8; 88];
+    let mut i = 0;
+    while i < head.len() {
+        out[i] = head[i];
+        i += 1;
+    }
+    out
+}
+
+/// Whether `Texport::new` writes a `version` file: PES 2017 from its
+/// template, 2018 to 2021 from their layouts. PES 2015 and 2016 have no
+/// template.
+pub fn texport_writes(version: PesVersion) -> bool {
+    match version {
+        PesVersion::Pes17
+        | PesVersion::Pes18
+        | PesVersion::Pes19
+        | PesVersion::Pes20
+        | PesVersion::Pes21 => true,
+        PesVersion::Pes15 | PesVersion::Pes16 => false,
+    }
+}
 
 /// The 18-21 `.ted` layout; `None` on 15-17.
 pub fn texport_layout(version: PesVersion) -> Option<&'static TexportLayout> {

@@ -351,6 +351,93 @@ fn pes17_texport_opens_through_the_container_and_round_trips() {
     assert_eq!(t.to_bytes(&test_salt()).expect("encodes"), bytes);
 }
 
+/// A PES 2017 Texport written from the fixture's own team and players: its
+/// payload outside the records is the fixture's at every byte but
+/// `0x30..0x50`, the per-file bytes, and `0x50..0x10050`, the emblem, which
+/// the writer leaves zero; its records read back to the fixture's; its
+/// container carries the game's labels and thumbnail and the caller's
+/// serial, and reads back to the same team and players.
+#[test]
+fn a_pes17_texport_is_written_from_its_own_records() {
+    let fixture = Texport::from_bytes(&pes17_texport(), None).expect("opens");
+    let players: Vec<&PlayerEntry> = fixture.players().iter().collect();
+    let serial: Vec<u8> = "S-1-5-21-0-0-0-1000"
+        .encode_utf16()
+        .flat_map(u16::to_le_bytes)
+        .collect();
+    let made = Texport::new(
+        PesVersion::Pes17,
+        fixture.team(),
+        &players,
+        &test_salt(),
+        &serial,
+    )
+    .expect("writes");
+    let bytes = made.to_bytes(&test_salt()).expect("encodes");
+    let container = SaveContainer::decrypt(&bytes).expect("decrypts");
+    assert_eq!(container.scheme, Scheme::Keyed(MasterKey::Pes17));
+
+    let real = pes17_texport_payload();
+    assert!(
+        real[0x30..0x50].iter().any(|&b| b != 0),
+        "premise: the fixture's per-file bytes are not zero"
+    );
+    assert!(
+        real[0x50..0x10050].iter().any(|&b| b != 0),
+        "premise: the fixture's emblem is not zero"
+    );
+    assert_eq!(container.payload.len(), real.len(), "the payload's size");
+    // The records hold bytes the codec does not model (id copies, text past a
+    // name's terminator), which the writer leaves zero, as on 18-21: they are
+    // compared through the read-back below. Every byte outside them is the
+    // template's, so it equals the fixture's.
+    let schema = schema_for(PesVersion::Pes17);
+    let old = texport_old(PesVersion::Pes17).expect("PES 2017 offsets");
+    let width = fixture.team().roster.len();
+    let records = [
+        old.team_at..old.team_at + schema.team.size,
+        old.roster_at..old.roster_at + schema.roster.size,
+        old.tactics_at..old.tactics_at + schema.tactic.size,
+        old.players_at..old.players_at + width * schema.player.size,
+    ];
+    let blanked = 0x30..0x10050;
+    let first = container
+        .payload
+        .iter()
+        .zip(&real)
+        .enumerate()
+        .filter(|(offset, _)| !records.iter().any(|r| r.contains(offset)))
+        .find(|&(offset, (&written, &real))| {
+            written != if blanked.contains(&offset) { 0 } else { real }
+        });
+    if let Some((offset, (written, real))) = first {
+        panic!(
+            "first difference at {offset:#x}: written {written:#04x}, the fixture's {real:#04x} \
+             (expected zero in 0x30..0x50, the per-file bytes, and 0x50..0x10050, the emblem; \
+             the fixture's byte elsewhere outside the records)"
+        );
+    }
+
+    let name = fixture.team().name.as_bytes();
+    assert!(!name.is_empty(), "premise: the team has a name");
+    let mut description = b"Team Export Data 01".to_vec();
+    description.resize(0x80, 0);
+    description.extend_from_slice(name);
+    description.resize(384, 0);
+    assert_eq!(container.description, description, "the description");
+    assert_eq!(container.logo.len(), 31_590, "the game's thumbnail");
+    assert_eq!(container.logo, include_bytes!("pes17_texport_logo.png"));
+    let mut identifier = vec![0; MasterKey::Pes17.header_size() - 80];
+    identifier[64..71].copy_from_slice(b"TEXPORT");
+    assert_eq!(container.identifier, identifier, "the identifier");
+    assert_eq!(container.serial, serial, "the caller's serial");
+
+    let back = Texport::from_bytes(&bytes, None).expect("reopens");
+    assert_eq!(back.version(), PesVersion::Pes17);
+    assert_eq!(back.team(), fixture.team());
+    assert_eq!(back.players(), fixture.players());
+}
+
 /// The 15-17 open's premise: the team, roster and tactics records carry
 /// one team id in every measured file, so a file whose team record — or
 /// roster record — alone names another is not laid out as a texport and
