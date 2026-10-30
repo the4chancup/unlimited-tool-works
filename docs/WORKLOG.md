@@ -2648,6 +2648,21 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       edge at Cancel's and its vertical centre on the sentence's (red first); overlap tests
       Built (merged `40e36efa`): one fixed-width right-to-left row, the field at the right,
       at least 12 from the sentence; the test covers both dialogs
+  - [ ] 8.38 before 0.0.1, the built-window check of 2026-10-30 (release build `044c90d8`, the
+    maintainer's PES 2021 save read-only, both themes; `.tmp/8_30c/findings.md`, captures
+    beside it): the player and team screens, the Player menu, Set all stats, Kit slots, the
+    help window, Live AATF, the light theme, the boots and gloves dialog and the team file
+    panel as drafted and planned, measured with `draft_compare.py` (its widget fills, m2,
+    and four of its own misreadings fixed, `3fea5246`). Not checked: the running-game dialog
+    (a running PES), the Fox ownership line's Apply link, the AATF screen against its
+    PES 2017 sample, 8.31's list. Found:
+    - [ ] a the number dialogs' field the drafts' 52-point box (`plans/save_editor.md`
+      "Editing UI", the number row's sentence), not egui's 40; with Astra A1p45libs-1
+      (RE-FILE-09's save starts from a file that differs from what it must write) → verify:
+      the number row's test measures 52, red first; RE-FILE-09 red against a Save that
+      writes nothing
+    - [ ] b a disabled button's look, the drafts' or egui's: QUESTIONS "A disabled button's
+      look"
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning

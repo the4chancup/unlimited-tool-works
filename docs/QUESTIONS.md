@@ -23,6 +23,14 @@ names where the question came from so the context can be read there.
     matches the drafts within 1 point (2 where needed), in both themes. What still differs
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
   - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
+- **A disabled button's look** (the built-window check of 2026-10-30, `.tmp/8_30c/findings.md`
+  F4; worklog 8.38b). The drafts keep a disabled button's grey and dim only its text
+  (`#5a5a5a`); the build, as egui draws any disabled widget, fades the whole button: a darker
+  box (`#2b2b2b` against `#3c3c3c`) with brighter text (`#6c6c6c`). Seen on Undo and Redo
+  with nothing to undo and the quick actions on a team. Which should both follow: the drafts'
+  look, which needs the suite to draw its own disabled buttons (egui fades a disabled widget
+  by one opacity, so no setting keeps the box and dims the text), or egui's, which changes
+  the drafts' one rule?
 
 ## Cup practice
 

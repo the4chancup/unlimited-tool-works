@@ -294,7 +294,8 @@ all side by side.
   Set all stats and Bump all stats ask for their number on the sentence's own row, the
   field at the dialog's right edge, in line with Cancel under it, at least 12 points from
   the sentence (the draft's `.num-row`): a number field alone on the row under a sentence
-  read as a second step.
+  read as a second step. The field is the drafts' 52-point number box, as wide as the
+  quick actions' and the boots and gloves dialog's, not egui's 40-point least widget width.
 - **No view draws the tool's name** (`core/gui.md` "Window title": the title bar carries it),
   **nor the open save's path**: the tool's `title_detail` gives it to the idle window title,
   in square brackets, and the toolbar keeps `• unsaved changes` alone, which never takes a
