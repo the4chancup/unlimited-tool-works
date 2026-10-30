@@ -2427,6 +2427,18 @@ const skillMinVersion = i => i >= 39 ? 20 : i >= 28 ? 19 : 15;
 const titleCase = s => s.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 const STAT_LABEL = Object.fromEntries(ABILITY_STATS.map(titleCasePair));
 function titleCasePair(s) { return [s, titleCase(s)]; }
+// A skill card's, COM style's or playing style's name: the title case read
+// as an English title, as the roster sheet spells them (GK Long Throw, Cut
+// Behind & Turn, Fox in the Box, Classic No. 10); a bare title case would
+// draw Gk Long Throw and Classic No 10.
+const SMALL_WORDS = ["in", "on", "the", "to"];
+function cardName(key) {
+  return key.split("_").map((w, i, all) =>
+    w === "gk" ? "GK" : w === "and" ? "&"
+      : w === "no" && all[i + 1] === "10" ? "No."
+      : i > 0 && SMALL_WORDS.includes(w) ? w
+      : w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
 // A stat's name as the open save's PES version shows it: PES 2017 calls
 // heading Header. The other versions' own names are not gathered yet, so
 // they keep the id's title case.
@@ -3137,7 +3149,20 @@ function unsavedChanges() {
         rows.push([t.name + " · " + label, shownHex(bt[key]).toUpperCase(), shownHex(t[key]).toUpperCase()]);
     const out = [];
     flatDiff({ ...bt, ...skip }, { ...t, ...skip }, [], out);
-    for (const [path, o, n] of out) rows.push([t.name + " · " + changeLabel(path), o, n]);
+    for (const [path, o, n] of out) {
+      // A man-marking byte is the marked opponent's formation slot (255 none),
+      // named on the row of the own starter who marks; the bare byte would
+      // read as one of the team's own players.
+      const at = path.indexOf("man_marking");
+      if (at > 0) {
+        const marker = rosterPlayer(t, t.tactics.starting_eleven[Number(path[at + 1])]);
+        const marked = v => v === 255 ? "None" : "Opponent's starter " + (v + 1);
+        rows.push([t.name + " · Preset " + (Number(path[at - 1]) + 1) + " · Man marking · "
+          + playerName(marker), marked(o), marked(n)]);
+        continue;
+      }
+      rows.push([t.name + " · " + changeLabel(path), o, n]);
+    }
   }
   return rows;
 }
@@ -4099,7 +4124,7 @@ function generalPanel(p, team) {
   const reg = combo(POSITIONS.map(x => [x, x + " - " + POS_FULL[x]]), p.positions.registered,
     v => { set(p, x => x.positions.registered, (x, v2) => x.positions.registered = v2, v, "registered position"); });
   reg.id = "f-regpos";
-  const style = combo(PLAY_STYLES.map(x => [x, titleCase(x)]), p.positions.playing_style,
+  const style = combo(PLAY_STYLES.map(x => [x, cardName(x)]), p.positions.playing_style,
     v => { set(p, x => x.positions.playing_style, (x, v2) => x.positions.playing_style = v2, v, "playing style"); });
   // Stronger foot and hand: two-choice toggles, Left | Right, the choices
   // halving the field's width (the maintainer, 2026-10-26).
@@ -4345,7 +4370,7 @@ function skillCheckbox(p, k) {
           if (e.target.checked) arr.push(k);
           x.skills = arr;
         }, e.target.checked, "skill");
-        render(); } }), " ", titleCase(k)), skillMinVersion(SKILLS.indexOf(k)));
+        render(); } }), " ", cardName(k)), skillMinVersion(SKILLS.indexOf(k)));
 }
 // Skill checkboxes in the panel's columns, filled column by column (one where
 // the panel cannot hold two).
@@ -4387,7 +4412,7 @@ function comStylesPanel(p) {
           if (e.target.checked) arr.push(k);
           x.com_styles = arr;
         }, e.target.checked, "COM style");
-        render(); } }), " ", titleCase(k));
+        render(); } }), " ", cardName(k));
   const cols = colCount("com-styles"), per = Math.ceil(COM_STYLES.length / cols);
   return namedCols(h("div", { class: "col" },
     h("div", { class: "row phead" }, markedLabel(strong("COM playing styles"), fieldMark(p, "com_styles"))),
@@ -6136,7 +6161,7 @@ const FIELD_TERMS = {
   GoalCelebration1: T_num("Goal celebration 1", 0),
   GoalCelebration2: T_num("Goal celebration 2", 0),
   RegisteredPosition: { label: "Registered position", show: s => POSITIONS[Number(s)] },
-  PlayingStyle: { label: "Playing style", show: s => titleCase(playstyleStored(version())[Number(s)]) },
+  PlayingStyle: { label: "Playing style", show: s => cardName(playstyleStored(version())[Number(s)]) },
   StrongerFoot: T_enum("Stronger foot", FOOT), StrongerHand: T_enum("Stronger hand", FOOT),
   Sleeves: T_enum("Sleeves", SLEEVES), Inners: T_enum("Inners", INNERS),
   Socks: T_enum("Socks", SOCKS), Undershorts: T_enum("Undershorts", UNDERSHORTS),
@@ -6171,9 +6196,9 @@ function fieldTerm(field) {
   const stat = ABILITY_STATS.find(s => pascal(s) === field);
   if (stat) return T_num(statLabel(stat), 0);
   let m = field.match(/^Skill\((\d+)\)$/);
-  if (m) return { label: titleCase(SKILLS[Number(m[1])]), show: s => s === "1" ? "on" : "off" };
+  if (m) return { label: cardName(SKILLS[Number(m[1])]), show: s => s === "1" ? "on" : "off" };
   m = field.match(/^ComStyle\((\d+)\)$/);
-  if (m) return { label: titleCase(COM_STYLES[Number(m[1])]), show: s => s === "1" ? "on" : "off" };
+  if (m) return { label: cardName(COM_STYLES[Number(m[1])]), show: s => s === "1" ? "on" : "off" };
   m = field.match(/^PlayablePosition\((\d+)\)$/);
   if (m) return { label: "Playable position " + POSITIONS[PLAYABLE_ORDER[Number(m[1])]],
     show: s => RATING_OF[Number(s)] };
@@ -6461,7 +6486,7 @@ function violationSentence(rule, kv, sev) {
     case "MinCards": return v("paid") + " paid skill cards and extra positions, under the minimum of " + v("min");
     case "SkillCardCap": return v("count") + " skill cards, over the cap of " + v("max");
     case "ComStyleCap": return v("count") + " COM styles, over the cap of " + v("max");
-    case "RequiredCard": return "the required card " + titleCase(v("card")) + " is missing";
+    case "RequiredCard": return "the required card " + cardName(v("card")) + " is missing";
     case "APositions": return v("count") + " A positions, over the allowance of " + v("max") + ratedA("");
     case "Height": return "height " + v("height") + " takes no bracket" + (!list("fits").length ? ""
       : " (" + and(spans("fits"), "or") + (v("room") === "true" ? (list("fits").length > 1 ? " have" : " has") + " room" : "") + ")");
@@ -7503,17 +7528,48 @@ function ixExportTed() {
       closeWindow(); render();
     }), button("Cancel", closeWindow)]);
 }
-// The warning list grouped by key: every line reachable inside its group.
+// The member text of the import notes' codes, the catalog's when and effect
+// (the help's Messages topic reads the same rows): the dialog draws it under
+// each group's subject in place of the code.
+const IX_NOTE_TEXT = {
+  import_key_not_in_version: "The team file holds a key the file's version stores but the save's does not. The key is dropped from the import, but the rest is written.",
+  import_value_not_encodable: "The team file holds a value the save's version cannot store: an instruction or a playing style it lacks. The value is written as off (a playing style as None), and the rest of the import is written.",
+  import_value_capped: "The team file holds a value above what the save's version stores: a face type above its cap, a motion above its last, or a custom skin it has no slot for. The value is lowered (the face type to 0, the motion to its last, the skin to 1), and the rest of the import is written.",
+  import_slot_empty: "The team file holds a player for a roster place the team leaves empty. The player is skipped, but the rest is written.",
+};
+// A note's key in words: its last part as the views name it (a stat at the
+// save's version, a skill as its card), a motion, an edit flag and a
+// preset's instructions named with what they belong to.
+function ixSubject(path) {
+  const seg = path.replace(/^players\.\d+\./, "").split(".");
+  const last = seg[seg.length - 1], parent = seg[seg.length - 2];
+  const words = s => { const w = s.split("_").map(x => x === "id" ? "ID" : x === "color" ? "colour" : x).join(" ");
+    return w.charAt(0).toUpperCase() + w.slice(1); };
+  if (parent === "stats") return ABILITY_STATS.includes(last) ? statLabel(last) : words(last);
+  if (parent === "skills") return cardName(last);
+  if (parent === "motion") return words(last) + " motion";
+  if (parent === "edit_flags") return words(last) + " edit flag";
+  if (parent === "instructions")
+    return words(seg[seg.length - 3]) + " " + (last === "attack" ? "attacking" : "defending") + " instructions";
+  return words(last);
+}
+// The warning list grouped by key: one group per code and key (every player's
+// copy of a key one group, the empty places one), headed by the key in words
+// and the number of players, the catalog's text under it, and each player's
+// line inside: the team's place, its player, and what the note carries.
 function ixWarningGroups(lines) {
   const groups = [];
   for (const line of lines) {
-    const path = (line.match(/path=([^,)]+)/) || [])[1]
-      || (line.match(/slot=([^,)]+)/) || [])[1] || line;
+    const ctx = k => (line.match(new RegExp(k + "=([^,)]+)")) || [])[1];
     const code = (line.match(/import_\w+/) || [line])[0];
+    const path = ctx("path") || "";
+    const place = (path.match(/^players\.(\d+)\./) || [])[1] || ctx("slot");
     const key = code + " " + path.replace(/^players\.\d+\./, "players.*.");
     let g = groups.find(g => g.key === key);
-    if (!g) groups.push(g = { key, lines: [] });
-    g.lines.push(line);
+    if (!g) groups.push(g = { key, code, subject: path ? ixSubject(path) : "Empty roster place", lines: [] });
+    const label = ctx("label"), from = ctx("from");
+    g.lines.push({ place, detail: label ? (INSTRUCTION_LABEL[label] || cardName(label))
+      : from !== undefined ? from + " → " + ctx("to") : "" });
   }
   return groups;
 }
@@ -7588,16 +7644,32 @@ function interchangePanel() {
           onchange: e => { S.ix.sections[key] = e.target.checked; render(); } }),
         " " + label));
   };
-  c.append(h("div", { class: "row" }, weak("Sections "), held.map(k => sec(k, k))));
+  c.append(h("div", { class: "row" }, weak("Sections "),
+    held.map(k => sec(k, k.charAt(0).toUpperCase() + k.slice(1)))));
   if (refusal)
     c.append(h("div", { class: "row err", id: "ix-refused" }, refusal));
   else {
     const warnings = ixWarnings(d);
     if (warnings.length) {
-      const grp = h("div", { id: "ix-warnings" },
-        ixWarningGroups(warnings).map(g =>
-          collapsing("ixw:" + g.key, g.lines.length + " \u00d7 " + g.key,
-            () => g.lines.map(l => h("div", { class: "warn mono small" }, l)))));
+      // The catalog's text once per code, its groups under it; a team key's
+      // group is its one note, so it draws no list.
+      const groups = ixWarningGroups(warnings);
+      const codes = [...new Set(groups.map(g => g.code))];
+      const grp = h("div", { id: "ix-warnings" }, codes.map(code => h("div", {},
+        h("div", { class: "weak small" }, IX_NOTE_TEXT[code]),
+        groups.filter(g => g.code === code).map(g => {
+          const players = g.lines.filter(l => l.place);
+          if (!players.length) return h("div", { class: "warn" }, g.subject);
+          const head = g.subject + " \u00b7 " + players.length
+            + (players.length === 1 ? " player" : " players");
+          return collapsing("ixw:" + g.key, head, () => players.map(l => {
+            const p = t.players.find(x => x.slot === Number(l.place));
+            return h("div", { class: "prow" },
+              h("span", { class: "num weak" }, l.place), " ",
+              p ? h("span", {}, ...nameSpans(p.name)) : h("span", { class: "weak" }, "(empty place)"),
+              l.detail ? h("span", { class: "weak" }, "  " + l.detail) : null);
+          }));
+        }))));
       c.append(h("div", { class: "grp weak" },
         "Import notes (PES 20" + d.version + " file onto a PES 20" + version() + " save)"), grp);
     }

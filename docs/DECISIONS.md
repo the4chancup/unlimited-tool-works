@@ -14093,3 +14093,24 @@ Why: the views write "COM playing styles"; lower case, the flag every COM style 
 read "Edited com styles" in the changes list (SWE-2 S1d1b1). No other schema name holds an
 acronym the rule lower-cases (every undrawn name walked).
 Plan: `plans/save_editor.md` "Comparator", the bullet "A row is drawn in the views' terms".
+
+## 2026-10-30 — save_editor — card names, the team file notes, man marking and the tier refusals in words
+Decision: a skill's, COM style's or playing style's name is its id's title case read as an
+English title (GK in capitals, `&` for and, in/on/the/to lower case after the first word,
+`No. 10`), from one function every surface naming one reads. The team file dialog's warning
+list draws the catalog's text once per note code and each key in words with its players,
+the section boxes capitalized; the catalog's import rows are worded for any team file and
+complete (a playing style written as None, a motion lowered to its last). A man-marking
+change reads the marked opponent's starter (`Opponent's starter 5`, 255 `None`). The badge's
+failed check names a roster place as the list numbers it, the quick actions' refusal a tier
+by its label.
+Why: the 8.29d inventory found `Gk Long Throw` and `Classic No 10` in the pickers, the CLI's
+console lines (`Warning import_key_not_in_version (path=players.03.stats.star)`) as the
+dialog's notes, the man-marking byte drawn bare (`None │ 3`, which reads as one of the team's
+own players), a 0-based roster slot and a tier id in two refusals. One spelling rule over the
+ids, rather than a table of 70 names, keeps the canonical lists the source; the game's own
+names per version are gathered after 0.0.1 with the stats'. The man-marking byte's meaning is
+measured (2026-10-13: the opponent's formation slot).
+Plan: `plans/save_editor.md` the Skills item, the badge's failed check, "Comparator" (the
+bullet "A row is drawn in the views' terms"), the team file interchange bullet; worklog
+8.29d1b2.
