@@ -122,6 +122,31 @@ fn the_logo_stands_at_the_top_right_and_moves_nothing() {
     );
 }
 
+// A picture wider than 3:1 is drawn less than 28 high, in the middle of
+// the 28-point box: a 4:1 one is 84 by 21, its top 3.5 below the box's.
+#[test]
+fn a_logo_wider_than_3_to_1_sits_in_the_middle_of_the_box() {
+    let name = dbc7().name;
+    let pixels = vec![200; 160 * 40 * 4];
+    let png = dds_convert::encode_png(&pixels, 160, 40).expect("a plain picture encodes");
+    let wide_file = dbc7_file(|ruleset| {
+        ruleset.set_logo(&png).expect("a small PNG is a valid logo");
+    });
+    let (mut view, mut window) = opened_at("event_logo_wide", DEFAULT_PANE.x, |view| {
+        pick_imported(view, "dbc7.4ccrules", &wide_file);
+    });
+    let bounds = logo(&draw(&mut window, &mut view), &name)
+        .and_then(accesskit::Node::bounds)
+        .expect("the wide logo is drawn");
+    assert_eq!(bounds.x1 - bounds.x0, 84.0, "84 points wide");
+    assert_eq!(bounds.y1 - bounds.y0, 21.0, "21 points high");
+    assert_eq!(
+        bounds.y0,
+        8.0 + 3.5,
+        "3.5 below the box's top, 8 below the view's"
+    );
+}
+
 // SE-GUI-44
 #[test]
 fn the_logo_links_to_the_event_page() {

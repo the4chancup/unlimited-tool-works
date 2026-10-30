@@ -855,9 +855,15 @@ fn contents(
         None => return action,
     };
     ui.weak(intro(picked.format, staged.version, version));
+    let notes_follow = matches!(&staged.import, Ok(import) if !import.notes.is_empty());
     if !staged.pairing.is_empty() {
         ui.weak("Who gets which record");
-        pairing_rows(ui, &staged.pairing);
+        // Under the pairing: the section choices, the notes' heading or a
+        // refusal, Apply and the line under it. Notes to come keep half the
+        // room.
+        let room = room_at_cursor(ui, rows_under(ui, 2, 2));
+        let share = if notes_follow { room / 2.0 } else { room };
+        pairing_rows(ui, &staged.pairing, share.min(LIST_HEIGHT));
     }
     let sections = &mut interchange.sections;
     ui.horizontal_wrapped(|ui| {
@@ -888,7 +894,9 @@ fn contents(
                 "Import notes ({} file onto a {version} save)",
                 staged.version.unwrap_or(version)
             ));
-            notes(ui, &import.notes);
+            // Under the notes: Apply and the line under it.
+            let room = room_at_cursor(ui, rows_under(ui, 1, 1));
+            notes(ui, &import.notes, room.min(LIST_HEIGHT));
         }
         Ok(_) => {}
     }
@@ -938,18 +946,41 @@ fn intro(format: Format, from: Option<PesVersion>, save: PesVersion) -> String {
 }
 
 /// The height the pairing list and the note groups each take at most
-/// before they scroll, so the rows around them and Apply under them stay
-/// inside the window however long the file's lists are.
+/// before they scroll. A shorter screen gives them less: they share the
+/// room the window has above Apply, so Apply stays on the screen however
+/// long the file's lists are.
 const LIST_HEIGHT: f32 = 240.0;
 
-/// A squad file's records, one row each: the slot (weak), the record's
-/// name, then the rostered player's shirt number (weak, monospace) and his
-/// name in its colour codes, as the player list draws it.
-fn pairing_rows(ui: &mut egui::Ui, rows: &[Pairing]) {
+/// The room a list drawn at the cursor may take: down to the screen's
+/// bottom, less the window's bottom margin and `under`, the height of what
+/// the panel draws under the list. Measured on the screen rather than the
+/// window, which only grows to its contents: a window starting short would
+/// keep its lists short on a tall screen. A window taller than the room
+/// under its top is moved up by egui to fit.
+fn room_at_cursor(ui: &egui::Ui, under: f32) -> f32 {
+    let bottom =
+        ui.ctx().content_rect().bottom() - egui::Frame::window(ui.style()).total_margin().bottom;
+    (bottom - ui.cursor().top() - under).max(0.0)
+}
+
+/// The height of `widget_rows` rows of widgets and `text_lines` lines of
+/// text, each with the spacing above it: the rows the panel draws under a
+/// list.
+fn rows_under(ui: &egui::Ui, widget_rows: u8, text_lines: u8) -> f32 {
+    let spacing = ui.spacing().item_spacing.y;
+    f32::from(widget_rows) * (ui.spacing().interact_size.y + spacing)
+        + f32::from(text_lines) * (ui.text_style_height(&egui::TextStyle::Body) + spacing)
+}
+
+/// A squad file's records, one row each, in a scroll area at most
+/// `max_height` tall: the slot (weak), the record's name, then the rostered
+/// player's shirt number (weak, monospace) and his name in its colour
+/// codes, as the player list draws it.
+fn pairing_rows(ui: &mut egui::Ui, rows: &[Pairing], max_height: f32) {
     let font = egui::TextStyle::Body.resolve(ui.style());
     egui::ScrollArea::vertical()
         .id_salt("save_editor_interchange_pairing")
-        .max_height(LIST_HEIGHT)
+        .max_height(max_height)
         .auto_shrink([false, true])
         .show(ui, |ui| {
             for row in rows {
@@ -970,12 +1001,12 @@ fn pairing_rows(ui: &mut egui::Ui, rows: &[Pairing]) {
         });
 }
 
-/// The notes in a scroll area as tall as the pairing list at most (the
-/// draft's `#ix-warnings`): per code, in first-seen order, the catalog's
-/// text as one weak line, then the code's groups. A team key's group is
-/// its subject alone in the warning colour; a players' group is a
-/// collapsed header `<subject> · <n> players` over one row per player.
-fn notes(ui: &mut egui::Ui, groups: &[NoteGroup]) {
+/// The notes in a scroll area at most `max_height` tall (the draft's
+/// `#ix-warnings`): per code, in first-seen order, the catalog's text as
+/// one weak line, then the code's groups. A team key's group is its
+/// subject alone in the warning colour; a players' group is a collapsed
+/// header `<subject> · <n> players` over one row per player.
+fn notes(ui: &mut egui::Ui, groups: &[NoteGroup], max_height: f32) {
     let warn = ui.visuals().warn_fg_color;
     let mut codes: Vec<&str> = Vec::new();
     for group in groups {
@@ -985,7 +1016,7 @@ fn notes(ui: &mut egui::Ui, groups: &[NoteGroup]) {
     }
     egui::ScrollArea::vertical()
         .id_salt("save_editor_interchange_note_groups")
-        .max_height(LIST_HEIGHT)
+        .max_height(max_height)
         .auto_shrink([false, true])
         .show(ui, |ui| {
             for code in codes {

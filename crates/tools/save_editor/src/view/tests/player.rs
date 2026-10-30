@@ -329,6 +329,41 @@ fn the_number_dialogs_box_stands_on_its_sentences_row_at_the_right_edge() {
     }
 }
 
+// A sentence wider than the modal's room widens the row to the sentence, the
+// 12-point gap and the 52-point box, and no more: the box stands exactly 12
+// right of the sentence's end.
+#[test]
+fn a_long_sentence_widens_the_number_row_to_the_sentence_the_gap_and_the_box() {
+    let path = fixture(PesVersion::Pes21, "player_set_row_width");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let line = bump_line(&display_name(&player_entry(&view, 70101).name));
+    let mut window = Headless::new();
+    let nodes = open_menu(&mut window, &mut view, "Player", "Set all stats");
+    click(&mut window, menu_item(&nodes, "Bump all stats"), &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let sentence = super::prompt::dialog_nodes(&pairs, &line)
+        .into_iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some(line.as_str()))
+        .and_then(accesskit::Node::bounds)
+        .expect("the sentence's bounds");
+    let field = dialog_field(&pairs, &line)
+        .bounds()
+        .expect("the box's bounds");
+    assert!(
+        (field.x0 - sentence.x1 - 12.0).abs() <= 0.5,
+        "the box's left {} stands 12 right of the sentence's end {}",
+        field.x0,
+        sentence.x1
+    );
+    let row = field.x1 - sentence.x0;
+    let expected = sentence.width() + 12.0 + 52.0;
+    assert!(
+        (row - expected).abs() <= 0.5,
+        "the row is {row} wide, the sentence, the gap and the box {expected}"
+    );
+}
+
 /// `entry` with the copy/swap field set taken from `source`: height,
 /// weight, the whole stats, positions and skills, the free-kick motion
 /// alone, and the eight gameplay edit flags: Copy player stats' field

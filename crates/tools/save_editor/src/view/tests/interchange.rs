@@ -641,6 +641,103 @@ fn a_file_of_another_version_lists_its_notes_in_words() {
     );
 }
 
+/// A squad file of PES 2019 onto PES 2017's `/co/`: the pairing list and
+/// note groups whose rows carry a detail, both drawn.
+const SQUAD_19: &str = "pes19_squad.4ccs";
+
+// A note that carries a detail draws it on its player's row: the opened
+// group's first row is the place, the target's player at that place and
+// the lowered value.
+// SE-GUI-17
+#[test]
+fn an_opened_groups_row_draws_the_place_the_player_and_the_detail() {
+    let (mut view, mut window) = open_on(PesVersion::Pes17, "interchange_note_detail", CO);
+    picked(&mut window, &mut view, SQUAD_19, &lib_fixture(SQUAD_19));
+    let header = "Goal celebration 1 motion \u{b7} 23 players";
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let id = nodes_in_window(&pairs, TITLE)
+        .into_iter()
+        .find(|(_, node)| node.role() == Role::DisclosureTriangle && node.label() == Some(header))
+        .map(|(id, _)| id)
+        .unwrap_or_else(|| panic!("the {header:?} group"));
+    action_click(&mut window, &mut view, id);
+
+    // The group's container holds its header and, opened, its rows: each
+    // row a container of labels. Read from the tree, since a row scrolled
+    // out of the pairing list keeps its node where it would stand.
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let by_id: HashMap<accesskit::NodeId, &accesskit::Node> =
+        pairs.iter().map(|(id, node)| (*id, node)).collect();
+    let (_, group) = nodes_in_window(&pairs, TITLE)
+        .into_iter()
+        .find(|(_, node)| node.children().contains(&id))
+        .expect("the group's container");
+    let mut stack: Vec<accesskit::NodeId> = group.children().iter().rev().copied().collect();
+    let mut row = Vec::new();
+    while let Some(next) = stack.pop() {
+        let children = by_id[&next].children();
+        if !children.is_empty()
+            && children
+                .iter()
+                .all(|child| by_id[child].role() == Role::Label)
+        {
+            row = children
+                .iter()
+                .filter_map(|child| by_id[child].value())
+                .collect();
+            break;
+        }
+        stack.extend(children.iter().rev());
+    }
+    let player = team_entry(&view, CO).roster[0].player_id;
+    let name = pes_savefile::model::names::display_name(&player_entry(&view, player).name);
+    assert_eq!(row, ["01", name.as_str(), "127 \u{2192} 122"]);
+}
+
+// The pairing list and the note groups share the room above Apply, so
+// Apply stays inside the shortest pane a member sees: a window at its
+// 600-point minimum height and the design width (zoom 1), the status
+// bar's 24 points off.
+#[test]
+fn apply_stays_inside_the_shortest_window_with_a_pairing_and_notes() {
+    let (mut view, _) = open_on(PesVersion::Pes17, "interchange_short_window", CO);
+    let pane = egui::vec2(DEFAULT_PANE.x, 600.0 - 24.0);
+    let mut window = Headless::sized(pane.x, pane.y);
+    picked(&mut window, &mut view, SQUAD_19, &lib_fixture(SQUAD_19));
+    open_note_groups(&mut window, &mut view);
+
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = nodes_in_window(&pairs, TITLE);
+    assert!(
+        nodes
+            .iter()
+            .any(|(_, node)| node.value() == Some("Who gets which record")),
+        "premise: the pairing list is drawn"
+    );
+    assert!(
+        nodes
+            .iter()
+            .any(|(_, node)| node.role() == Role::DisclosureTriangle),
+        "premise: the note groups are drawn"
+    );
+    let bounds = |role: Role, label: &str| {
+        nodes
+            .iter()
+            .find(|(_, node)| node.role() == role && node.label() == Some(label))
+            .and_then(|(_, node)| node.bounds())
+            .unwrap_or_else(|| panic!("the {label:?} {role:?}"))
+    };
+    let (panel, apply) = (bounds(Role::Window, TITLE), bounds(Role::Button, "Apply"));
+    assert!(
+        apply.y0 >= panel.y0 && apply.y1 <= panel.y1,
+        "Apply {apply:?} inside the panel {panel:?}"
+    );
+    assert!(
+        apply.y1 <= f64::from(pane.y),
+        "Apply {apply:?} inside the {pane:?} pane"
+    );
+}
+
 // SE-GUI-16
 #[test]
 fn every_empty_place_a_file_names_is_one_group() {
