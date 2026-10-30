@@ -14295,3 +14295,15 @@ asked for, and dropping its keys from the table would break "the table lists eve
 tool reads".
 Plan: `plans/core/gui.md` "Settings menu", the bullet starting "One collapsible section per
 registered tool"; the spec's `core/architecture.md` trait block follows when the code lands.
+
+## 2026-10-30 — dds_convert — JPEG XL textures join the accepted sources in 0.0.2
+Decision: the maintainer's call. `.jxl` is decoded like the other raster sources, in
+`dds_convert` and wherever a picture is picked (the export's extension table, the portrait
+and logo pickers); the decoder is Google's `jxl` (both it and `jxl-oxide` approved), the
+cheaper one on a member's 2048 × 2048 texture: 492 and 155 ms of CPU per lossless and lossy
+decode, against 1116 and 817 ms.
+Why: JPEG XL is coming into use and is likely to replace PNG for player model textures;
+the change is one more source format on the existing path. Either crate's API changes are
+held off by the pinned version, so speed decides, as CPU time: the compiler decodes one
+texture per core. Measured with `.tmp/jxl_bench/` (`timing.log`).
+Plan: `plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)".

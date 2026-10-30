@@ -64,13 +64,6 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
 
 ## After the release
 
-- **JPEG XL textures in 0.0.2?** (asked 2026-10-30, in chat). JPEG XL would join the texture
-  formats `dds_convert` decodes (one `SourceFormat`, the export's extension table, the
-  pickers), at the cost of a decoder dependency (`jxl-oxide`, MIT/Apache, or Google's `jxl`,
-  BSD-3, still breaking its API monthly) and some exe size (the bundle is already past its
-  30 MB budget). A yes queues a 0.0.2 step: a decode timing of both on a 2048² texture, the
-  dependency choice, then one slice with a lossless fixture checked pixel for pixel against
-  its PNG.
 - **Substitution's choices in PES 2018, 2019 and 2020** (worklog 0.0.1y7c; you: "we'll check
   in detail in the future"). The Tactics editor's Automatic settings offers Off, Very late,
   Flexible and Very early on those three, taken from PES 2017's and 2021's screens (both list

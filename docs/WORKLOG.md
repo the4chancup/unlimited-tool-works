@@ -5964,6 +5964,11 @@ briefs, review loops, gates and mutation runs as for any step.
     Explorer's file icon on the exe) → QUESTIONS "Before the release"
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over
+- [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)")
+  - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
+    DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/jxl_bench/`); next,
+    one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
+    formats) with its verify list
 
 ### Phase 10 — Music tools
 
