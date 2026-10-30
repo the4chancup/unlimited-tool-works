@@ -1805,8 +1805,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         `view/interchange.rs`, `view/patch.rs`, their tests). SWE-2 round 2 on k5b2's tests: 2
         accepted, the loop ends (S2c); its four tests merged `0c5571d3` (the squad's shirt
         numbers, the lock flipped after a pick, the intro line, a player row's team)
-      - [ ] k5d SE-GUI-29 manual: each Texport imported by the game's own team import in PES
-        18, 19, 20 and 21 (21 on E:; 18-20 on F:, connected on request; saves backed up first)
+      - [ ] k5d after 0.0.1 (the maintainer, 2026-10-30: 0.0.1 targets PES 2017 only, whose
+        saves disable Texport): SE-GUI-29 manual, each Texport imported by the game's own team
+        import in PES 18, 19, 20 and 21 (the installs on G:; saves backed up first)
       - [ ] k5rev the cross-family review loop (the slices are Opus sidekicks', so the lead's
         review is same-family): SWE-2 rounds on each merged slice until one accepts under
         five, one Astra round over k5a + k5b, another over k5c, SWE-2 rounds after each;
@@ -2570,8 +2571,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       rework `aad02b64`, merged `3af3f0ee` (Opus sidekick): the Ruleset editor's preview
       shortens the logo's line (`block_lines`, red: the whole base64 drawn), the help's
       General sentence names the event's page and logo, Remove and an `http://` page
-      tested. Open: the (b) Astra review over a + b + c, the built window (the logo seen at
-      the top right of the release build `044c90d8`, 2026-10-30)
+      tested. Astra A1p45libs and A1p45editors over a + b + c ended (their fixes are 8.38a);
+      the logo seen at the top right of the release build `044c90d8` (2026-10-30)
     - [x] c every ruleset file under `aatf/rulesets/` gets its logo and page, the seven
       built in and the two test rulesets (`autumn25`, `vgl25`; the drafts import Autumn 25
       as their sample file): the pages are the events' wiki pages the maintainer listed
@@ -2695,8 +2696,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       (`add_enabled` disables in the parent as egui's does, no child scope, the parent's
       style restored), 54 calls in 24 files moved, 4 tests (red: the colour line removed,
       `#B4_B4_B4` for `#86_86_86`). The changed packages' tests, workspace clippy, fmt,
-      `comment_refs`, `colour_literals` green in its target. SWE-2 round under way
-      (`review6/.tmp/838b_review/`)
+      `comment_refs`, `colour_literals` green in its target. SWE-2 round 1: 1 counted, the
+      loop ends (`.tmp/8_30c/rulings_838b.md`: a selected entry keeps the selection's colours,
+      as the drafts' locked formation picker, now in the plan); fixes `8fe34234` (egui's
+      other disabled-scope routes disallowed; the dark grey pinned in its test, red at 180).
+      Open: the merge, the built-window look (134 tuned)
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
