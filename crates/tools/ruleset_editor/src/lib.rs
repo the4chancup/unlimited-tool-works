@@ -63,14 +63,9 @@ impl StudioTool for Tool {
     }
 
     /// The unsaved-changes prompt guards the window's close too (RE-GUI-15):
-    /// a dirty document holds the close and opens the prompt.
+    /// a document with unsaved changes holds the close and opens the prompt.
     fn hold_close(&mut self) -> bool {
-        if self
-            .view
-            .document
-            .as_ref()
-            .is_some_and(|document| document.is_dirty())
-        {
+        if self.view.has_unsaved_changes() {
             if self.view.pending_action.is_none() {
                 self.view.pending_action = Some(view::Pending::Close);
             }

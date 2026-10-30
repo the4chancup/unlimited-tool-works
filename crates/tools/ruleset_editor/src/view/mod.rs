@@ -74,6 +74,11 @@ pub(crate) struct RulesetView {
     /// General's Event logo field: its picture dialog, refusal line and
     /// drawn picture.
     pub(crate) logo: sections::general::LogoField,
+    /// The Tiers section's id field while typed in: its row and its
+    /// text. The id commits on Enter or focus loss, so the text waits
+    /// here, where Save commits it and the unsaved test sees it; one
+    /// field holds the keyboard at a time.
+    tier_id_edit: Option<(usize, String)>,
     /// Which document this is: the id salt, so egui widget state never
     /// crosses into the next one (the Save editor's `generation`).
     generation: u64,
@@ -136,8 +141,25 @@ impl RulesetView {
             open_dialog: default_open_dialog(),
             save_as_dialog: default_save_dialog(),
             logo: sections::general::LogoField::new(default_logo_dialog()),
+            tier_id_edit: None,
             generation: 0,
         }
+    }
+
+    /// Whether closing or replacing the document would lose work: it
+    /// differs from the file, or a tier id is typed and not committed.
+    pub(crate) fn has_unsaved_changes(&self) -> bool {
+        self.document
+            .as_ref()
+            .is_some_and(|document| document.is_dirty() || self.typed_tier_id(document).is_some())
+    }
+
+    /// The tier id typed in the Tiers section and not committed, with
+    /// its row, when it differs from that tier's id.
+    fn typed_tier_id(&self, document: &Document) -> Option<(usize, String)> {
+        let (index, text) = self.tier_id_edit.as_ref()?;
+        let tier = document.ruleset.tiers.get(*index)?;
+        (tier.id != *text).then(|| (*index, text.clone()))
     }
 
     /// `document` open: the view lands on General, the preview's diff
@@ -152,6 +174,7 @@ impl RulesetView {
         self.start_open = false;
         self.open_refusal = None;
         self.logo.refusal = None;
+        self.tier_id_edit = None;
         self.document = Some(document);
         self.generation += 1;
     }
@@ -274,6 +297,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut RulesetView, ctx: &ToolContext)
                         &mut document.ruleset,
                         document.custom_checks.as_deref(),
                         &mut view.logo,
+                        &mut view.tier_id_edit,
                     );
                     if view.pending.is_none() && document.ruleset != before {
                         view.pending = Some(Snapshot {
@@ -306,10 +330,10 @@ fn set_surrender_on_press(ctx: &egui::Context) {
     });
 }
 
-/// `action` on a dirty document goes through the unsaved-changes prompt
-/// first; clean, it runs at once.
+/// `action` on a document with unsaved changes goes through the
+/// unsaved-changes prompt first; without, it runs at once.
 pub(crate) fn guard(view: &mut RulesetView, ctx: &ToolContext, action: Pending) {
-    if view.document.as_ref().is_some_and(Document::is_dirty) {
+    if view.has_unsaved_changes() {
         view.pending_action = Some(action);
     } else {
         run(view, ctx, action);
@@ -379,13 +403,15 @@ fn refuse_open(view: &mut RulesetView, path: &Path, lines: Vec<String>) {
     }
 }
 
-/// The toolbar's and bottom bar's Save and Ctrl+S: no path is Save as.
-/// Returns whether the file was written.
+/// The toolbar's and bottom bar's Save, Ctrl+S and the prompt's Save: a
+/// tier id typed and not committed commits first, then no path is Save
+/// as. Returns whether the file was written.
 pub(crate) fn save_now(
     view: &mut RulesetView,
     ctx: &ToolContext,
     settings: &RulesetEditorSettings,
 ) -> bool {
+    commit_typed_tier_id(view);
     match view
         .document
         .as_ref()
@@ -394,6 +420,25 @@ pub(crate) fn save_now(
         Some(path) => save_to(view, ctx, &path),
         None => save_as(view, ctx, settings),
     }
+}
+
+/// The tier id typed and not committed, committed as its field's Enter
+/// or focus loss would (Ctrl+S and the prompt leave the keyboard where
+/// it is), as one undo step of its own, as Update logic is.
+fn commit_typed_tier_id(view: &mut RulesetView) {
+    let Some((index, id)) = view
+        .document
+        .as_ref()
+        .and_then(|document| view.typed_tier_id(document))
+    else {
+        return;
+    };
+    view.tier_id_edit = None;
+    seal_pending(view);
+    let document = view.document.as_mut().expect("a typed id has a document");
+    document.record(document.snapshot());
+    sections::tiers::rename_tier_id(&mut document.ruleset, index, id);
+    remember_changed(view);
 }
 
 /// Save as…: the `.4ccrules` dialog starting in `last_folder`,
@@ -690,8 +735,10 @@ fn banners(ui: &mut egui::Ui, view: &mut RulesetView) {
     }
 }
 
-/// The bottom bar (the draft's): the problem count or the valid line,
-/// and a Save button.
+/// The bottom bar (the draft's): the problem count or the clean line,
+/// and a Save button. The clean line claims only the load rules: the
+/// custom checks and the sample team run at Save, which can still
+/// refuse the document.
 fn bottom_bar(
     ui: &mut egui::Ui,
     view: &mut RulesetView,
@@ -706,7 +753,7 @@ fn bottom_bar(
             .unwrap_or_default();
         match problems.first() {
             None => {
-                ui.label("✔ Valid: the Save editor and the Team creator can use it");
+                ui.label("✔ No problems found");
             }
             Some(first) => {
                 let all = problems

@@ -98,7 +98,12 @@ fn spins_on_row<'a>(nodes: &'a [accesskit::Node], label: &str) -> Vec<&'a access
 
 /// `text` typed into the focused field, replacing what it held:
 /// Ctrl+A selects the old text, then the new text takes its place.
-fn type_replacing(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext, text: &str) {
+pub(super) fn type_replacing(
+    window: &mut Headless,
+    view: &mut RulesetView,
+    ctx: &ToolContext,
+    text: &str,
+) {
     window.frame(vec![key(egui::Key::A, egui::Modifiers::COMMAND)], |ui| {
         show(ui, view, ctx)
     });
@@ -208,7 +213,7 @@ fn assert_shown(frame: &Frame, fragments: &[&str]) {
 }
 
 /// A click on the `role` node labeled `text`, on a settled frame.
-fn click_role(
+pub(super) fn click_role(
     window: &mut Headless,
     view: &mut RulesetView,
     ctx: &ToolContext,
@@ -268,6 +273,54 @@ fn a_wheel_notch_over_a_rate_is_one_undoable_edit() {
     assert!(
         !view.document.as_ref().unwrap().is_dirty(),
         "the notch was the only edit"
+    );
+}
+
+// RE-GUI-15
+/// Ctrl+S leaves the keyboard where it is, so the id field never loses
+/// focus: Save commits the typed id first, the file holds it and the
+/// document is clean.
+#[test]
+fn ctrl_s_while_an_id_is_typed_saves_the_typed_id() {
+    // Autumn 26 without its specials: they name Gold's id, so a renamed
+    // Gold would be refused at Save for its unknown tier id.
+    let mut autumn26 = template("4cc Autumn 26");
+    autumn26.specials.clear();
+    let dir = crate::test_support::scratch("save_typed_id");
+    let path = write_file(
+        &dir,
+        "rules.4ccrules",
+        &aatf::assemble_file(&autumn26, None, None),
+    );
+    let (ctx, _events, _window, mut view) = fresh();
+    let mut window = Headless::sized(1800.0, 900.0);
+    open_path(&mut view, &ctx, &path);
+    view.section = Section::Tiers;
+    click_role(&mut window, &mut view, &ctx, Role::TextInput, "gold");
+    type_replacing(&mut window, &mut view, &ctx, "royal");
+    assert!(
+        window.ctx.memory(|m| m.focused()).is_some(),
+        "premise: Gold's id field holds the keyboard"
+    );
+    assert_eq!(
+        ruleset(&view).tiers[0].id,
+        "gold",
+        "premise: nothing committed"
+    );
+    ctrl_key(&mut window, &mut view, &ctx, egui::Key::S);
+    assert!(
+        view.dialog.is_none(),
+        "the save is taken: {:?}",
+        view.dialog
+    );
+    let saved = crate::document::Document::open(&path).expect("the saved file opens");
+    assert_eq!(
+        saved.ruleset.tiers[0].id, "royal",
+        "the file holds the typed id"
+    );
+    assert!(
+        !view.document.as_ref().expect("open").is_dirty(),
+        "the save leaves the document clean"
     );
 }
 
@@ -729,6 +782,12 @@ fn deleting_a_tier_the_custom_checks_read_blocks_save() {
     assert_shown(
         &frame,
         &["Not saved", "check_team fails on the sample team"],
+    );
+    // The data breaks no load rule, so the bottom bar's line is the
+    // clean one: it claims no more than that, beside a refused Save.
+    assert!(
+        !contains_label(&frame.nodes, "Valid"),
+        "no line calls the refused document valid"
     );
 }
 
@@ -1538,7 +1597,8 @@ fn each_tier_field_writes_to_its_own_binding() {
             role_labeled(
                 &frame.nodes,
                 Role::CheckBox,
-                "The stats add up to at most the targets, an error past them",
+                "The stats that may sit below their target add up to at most their targets, an \
+                 error past them",
             ),
             &mut view,
             &ctx,

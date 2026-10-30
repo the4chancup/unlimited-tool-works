@@ -21,15 +21,20 @@ use crate::summary::human;
 /// within targets and the ✕.
 const COLUMNS: usize = 16;
 
-/// The Tiers form.
-pub(crate) fn show(ui: &mut egui::Ui, ruleset: &mut Ruleset) {
+/// The Tiers form; `id_edit` is the id field's typed text and its row
+/// (`RulesetView::tier_id_edit`).
+pub(crate) fn show(
+    ui: &mut egui::Ui,
+    ruleset: &mut Ruleset,
+    id_edit: &mut Option<(usize, String)>,
+) {
     ui.heading(Section::Tiers.label());
     ui.weak(
         "Highest first: a player gets the first tier whose conditions he meets and whose \
          rating he reaches. The Save editor's tier buttons follow this order.",
     );
     let medal_tiers = medal_tier_ids(ruleset);
-    tiers_table(ui, ruleset, &medal_tiers);
+    tiers_table(ui, ruleset, &medal_tiers, id_edit);
     ui.separator();
     medal_systems(ui, ruleset, &medal_tiers);
 }
@@ -57,10 +62,14 @@ fn tier_ids(ruleset: &Ruleset) -> Vec<(TierId, String)> {
 /// The tiers table (an `egui::Grid`): the header row, one row per
 /// tier plus its expander row, and "+ Add tier". A drop or a removal
 /// lands after the loop so the rows keep their indices while drawn.
-fn tiers_table(ui: &mut egui::Ui, ruleset: &mut Ruleset, medal_tiers: &BTreeSet<TierId>) {
+fn tiers_table(
+    ui: &mut egui::Ui,
+    ruleset: &mut Ruleset,
+    medal_tiers: &BTreeSet<TierId>,
+    id_edit: &mut Option<(usize, String)>,
+) {
     let mut drop = None;
     let mut remove = None;
-    let ids = tier_ids(ruleset);
     egui::Grid::new("tiers-table")
         .num_columns(COLUMNS)
         .show(ui, |ui| {
@@ -91,9 +100,9 @@ fn tiers_table(ui: &mut egui::Ui, ruleset: &mut Ruleset, medal_tiers: &BTreeSet<
                     ruleset,
                     index,
                     medal_tiers,
-                    &ids,
                     &mut drop,
                     &mut remove,
+                    id_edit,
                 );
                 expander_row(ui, ruleset, index);
             }
@@ -122,9 +131,9 @@ fn tier_row(
     ruleset: &mut Ruleset,
     index: usize,
     medal_tiers: &BTreeSet<TierId>,
-    ids: &[(TierId, String)],
     drop: &mut Option<(usize, usize)>,
     remove: &mut Option<usize>,
+    id_edit: &mut Option<(usize, String)>,
 ) {
     // The handle is the drag source (the draft's `handle`).
     cell(ui, index, drop, |ui| {
@@ -142,11 +151,13 @@ fn tier_row(
     // (a path row's edit without Browse): the commit carries the
     // tier's key in the medal systems (`rename_tier_id`), a keystroke
     // at a time it would carry through another tier's id. Unfocused,
-    // the buffer follows the tier's id.
-    let buffer_id = ui.make_persistent_id(("tier-id", index));
-    let mut id = ui
-        .data_mut(|data| data.get_temp::<String>(buffer_id))
-        .unwrap_or_else(|| ruleset.tiers[index].id.clone());
+    // the buffer follows the tier's id. The buffer is `id_edit`, the
+    // view's, not egui's memory: Save commits it and the unsaved test
+    // sees it.
+    let mut id = id_edit
+        .as_ref()
+        .filter(|(row, _)| *row == index)
+        .map_or_else(|| ruleset.tiers[index].id.clone(), |(_, text)| text.clone());
     let response = cell(ui, index, drop, |ui| {
         ui.add(text_box(
             egui::TextEdit::singleline(&mut id)
@@ -162,10 +173,11 @@ fn tier_row(
     // focus in egui's memory: `Response::has_focus` is also false
     // while the window is unfocused, so resetting on it would drop a
     // half-typed id on an Alt+Tab.
-    if !ui.ctx().memory(|memory| memory.has_focus(response.id)) {
-        id = ruleset.tiers[index].id.clone();
+    if ui.ctx().memory(|memory| memory.has_focus(response.id)) {
+        *id_edit = Some((index, id));
+    } else if id_edit.as_ref().is_some_and(|(row, _)| *row == index) {
+        *id_edit = None;
     }
-    ui.data_mut(|data| data.insert_temp(buffer_id, id));
 
     let medal_counted = medal_tiers.contains(&ruleset.tiers[index].id);
     cell(ui, index, drop, |ui| {
@@ -173,9 +185,7 @@ fn tier_row(
             .response
     });
 
-    cell(ui, index, drop, |ui| {
-        counts_as_cell(ui, ruleset, index, ids)
-    });
+    cell(ui, index, drop, |ui| counts_as_cell(ui, ruleset, index));
 
     cell(ui, index, drop, |ui| {
         widgets::number(ui, &mut ruleset.tiers[index].rate, 0..=99)
@@ -212,13 +222,16 @@ fn tier_row(
 
     cell(ui, index, drop, |ui| {
         widgets::number(ui, &mut ruleset.tiers[index].stat_warning, 0..=99).on_hover_text(
-            "Points above a stat's target that warn rather than err (0: every point errs)",
+            "Points over the target that warn rather than err, for the stats that may sit below \
+             their target (0: every point errs)",
         )
     });
 
     cell(ui, index, drop, |ui| {
-        checkbox(ui, &mut ruleset.tiers[index].total_within_targets, "")
-            .on_hover_text("The stats add up to at most the targets, an error past them")
+        checkbox(ui, &mut ruleset.tiers[index].total_within_targets, "").on_hover_text(
+            "The stats that may sit below their target add up to at most their targets, an \
+             error past them",
+        )
     });
 
     if ruleset.tiers.len() > 1 {
@@ -283,17 +296,13 @@ fn count_cell(ui: &mut egui::Ui, ruleset: &mut Ruleset, index: usize, medal_coun
 /// The row's `counts_as` combo (the draft's): "—" for none, else one
 /// of the other tiers by its label; setting one clears the tier's
 /// `count`.
-fn counts_as_cell(
-    ui: &mut egui::Ui,
-    ruleset: &mut Ruleset,
-    index: usize,
-    ids: &[(TierId, String)],
-) -> egui::Response {
+fn counts_as_cell(ui: &mut egui::Ui, ruleset: &mut Ruleset, index: usize) -> egui::Response {
+    let ids = tier_ids(ruleset);
     let own_id = ruleset.tiers[index].id.clone();
     let mut choice = ruleset.tiers[index].counts_as.clone();
     let selected = choice
         .as_ref()
-        .map_or_else(|| "—".to_string(), |id| label_of(ids, id));
+        .map_or_else(|| "—".to_string(), |id| label_of(&ids, id));
     let others = || ids.iter().filter(|(id, _)| id != &own_id);
     let response = egui::ComboBox::from_id_salt(("counts_as", index))
         .selected_text(selected)
@@ -387,7 +396,7 @@ fn code_with_alpha(rgb: [u8; 3], current: Option<&str>) -> String {
 /// tier still carrying `old` (a shared id moves the wrong tier's
 /// counts) or a system already holding `id` (a key never overwrites
 /// one) renames the tier alone.
-fn rename_tier_id(ruleset: &mut Ruleset, index: usize, id: TierId) {
+pub(crate) fn rename_tier_id(ruleset: &mut Ruleset, index: usize, id: TierId) {
     let old = std::mem::replace(&mut ruleset.tiers[index].id, id.clone());
     let shared = ruleset.tiers.iter().any(|tier| tier.id == old);
     let held = ruleset

@@ -28,4 +28,7 @@ Every player is rated A at his registered position; starters play only where rat
 - **The captain's Captaincy card is free, plus one card, COM style or A position**: The captain: Captaincy free, gets the first needed of: +1 paid card; or +1 free COM style; or +1 A position.
 - **Goalkeepers at 189 count as tall**: Registered GK, 189 cm: count 4 cm shorter.
 - **Tall goalkeepers are 189**: Registered GK, 185 cm: not allowed ("GKs in this bracket must be 189cm").
-- **Manlets**: Manlets: +1 paid card, +1 A position, weak foot up to 4/4.
+- **Manlets**: Manlets: +1 paid card, +1 A position, weak foot 4/4.
+
+## Suggestions
+Allowances not used up, listed as suggestions: paid cards, free COM styles, A positions, weak foot and free cards.

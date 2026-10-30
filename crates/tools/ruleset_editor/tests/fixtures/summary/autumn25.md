@@ -28,5 +28,8 @@ Every player is rated A at his registered position; no B ratings; GK is never a 
 - **Tall goalkeepers are 189**: Registered GK, 181 to 188 cm: not allowed ("GKs in this bracket must be 189cm").
 - **Goalkeepers below giant** (warning): Registered GK, 194 cm or more: not allowed ("GK heights cannot be 194cm or more").
 - **Gold below giant** (warning): Gold, 194 cm or more: not allowed ("Gold heights cannot be 194cm or more").
-- **Manlets**: Manlets: +1 paid card, +1 A position, weak foot up to 4/4.
+- **Manlets**: Manlets: +1 paid card, +1 A position, weak foot 4/4.
 - **Red manlet bonus**: Under Red, 175 cm or less: +5 for Goalkeeper, +5 for Regular to every stat.
+
+## Suggestions
+Allowances not used up, listed as suggestions: paid cards, free tricks, free COM styles, weak foot and injury resistance.
