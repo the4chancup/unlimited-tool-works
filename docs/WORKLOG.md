@@ -2756,7 +2756,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] d in game (PES 2021, then one more Fox version and PES 2017): a patch applied to an
       unstripped save shows the compiled look in Edit mode, boots and gloves included, on a
       player whose base copy named another and on one whose edit flags were clear
-      (`scripts/ingame/`, saves backed up); with it, the FoxDen gloves issue rechecked
+      (`scripts/ingame/`, saves backed up); with it, the FoxDen gloves issue rechecked, and
+      SE-GUI-34 proved again in its patch form (a `SE-GUI-34 manual: checked` line)
   - [ ] 8.37 a dialog's title centred over the dialog, as the windows' titles are (the
     maintainer, 2026-10-30, after left-aligned window titles proved out of egui's reach;
     DECISIONS "A dialog's title is centred, as the windows' titles are"). Drafted:
@@ -3468,7 +3469,8 @@ briefs, review loops, gates and mutation runs as for any step.
     route waits for the aesthetics patch's pre-Fox half (`plans/pes_savefile/operations.md`
     "Aesthetics patch (new)"), so a pre-Fox compile is checked by its resolved settings alone
 
-  SE-GUI-34 manual: checked 2026-10-25, PES 21 Edit mode, release build of `f3d1f135`: VGL 22
+  SE-GUI-34's earlier form (the save stripped; since rewritten to take the look through the
+  patch, re-proved at 8.36d) checked 2026-10-25, PES 21 Edit mode, release build of `f3d1f135`: VGL 22
   (792) slot 06 (79206) set by Team TOML to long red hair, blue iris (7) and face size 5; the
   window's Generate settings.toml and Generate in-game face wrote his folder from that record;
   the record then changed to short blond hair and green iris (9) and the save stripped
