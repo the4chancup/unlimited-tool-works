@@ -2836,6 +2836,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       picker's other entries dim like any disabled widget"), measured equal; side by side
       `.tmp/8_30c/fsel_compare.png`. Files: `docs/prototypes/tools/save_editor.js`,
       `plans/core/gui.md`
+  - [ ] 8.39 after 0.0.1 (the maintainer, 2026-10-30): rename `dds_convert` to `image_convert`.
+    The crate decodes every picture the suite reads (PNG, DDS, FTEX), resizes, writes PNGs and
+    encodes the games' textures; the Save editor, the Ruleset editor and `team_widgets` use it
+    for logos and portraits that are never a DDS, so the name tells a reader the wrong scope.
+    `image_convert`, not a split into a raster crate and a texture crate: the decode is shared
+    by both halves (CONTRIBUTING guardrail 3, no over-splitting), and the name pairs with
+    `model_convert`. Mechanical: the package and folder, every `dds_convert::` path and manifest
+    (76 files), `plans/libs/dds_convert.md` and `spec/libs/dds_convert.md` renamed with their
+    pointers, GLOSSARY, AGENTS.md's read-order row, `just crate-map`; DECISIONS and LOG keep
+    the old name. Only with no branch open and no mutation run queued (it touches every tool)
+    → verify: `git grep dds_convert` lists only DECISIONS and LOG; `just gates`; `just
+    doc-pointers`
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
