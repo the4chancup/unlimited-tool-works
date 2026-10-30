@@ -2882,3 +2882,5 @@ worklog passed 7,000 lines.
   picked ruleset's words while the recheck runs (Astra A1d over 8.29d).
 - **2026-10-30** — The Save editor shows the active ruleset's event logo at its top right, a
   link to the event's page; the Ruleset editor edits the page and the logo (8.35b).
+- **2026-10-30** — `draft_compare.py` also compares every widget pair's fill and text colour,
+  which no geometry check saw (8.9m m2).

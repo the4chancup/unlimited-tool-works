@@ -1877,8 +1877,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         Files: `save_editor/src/{cli,session/mod,view/prompt}.rs`, `view/tests/prompt.rs`,
         `save_editor/help/0{1,2}_*.md`, `team_compiler/src/{messages,messages/catalog,
         output/savefile}.rs`, `team_compiler/help/01_command_line.md`
-      - [ ] m2 `scripts/draft_compare.py` compares the fill and text colours of the boxes it
+      - [x] m2 `scripts/draft_compare.py` compares the fill and text colours of the boxes it
         pairs, not only their rects: the fills and greys above passed every geometry check
+        Done 2026-10-30 (the lead): `fill_findings` measures every widget pair's fill (the
+        box's most common colour) and its text's core colour in both captures, listed under
+        "widget fill differs" / "widget text colour differs" past `COLOUR_STEP`, and three
+        TSV columns; five tests (red: the app shift dropped, the fill read as the least
+        common colour). Open: its first run on a built window, with the built-window check
+        Files: `scripts/draft_compare{,_test}.py`, `plans/core/gui.md` "Draft measure"
     - [x] 8.9l 2026-10-29 the open/save scenarios no slice built: the unsaved-changes prompt on closing or
       opening another save (SE-GUI-05; only the toolbar's marker exists, so closing loses
       edits silently), the Open menu's discovered saves (SE-GUI-26), the version-mismatch
