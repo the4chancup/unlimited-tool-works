@@ -342,9 +342,11 @@ impl Headless {
 
     /// The tooltip drawn while the pointer rests at `pos` containing
     /// `needle` (bounded), `frame` drawing the widgets under test with
-    /// the events it is given and answering the frame's nodes. The
-    /// pointer first moves away for a frame: egui refuses a tooltip
-    /// while the last click is more recent than the last movement.
+    /// the events it is given and answering the frame's nodes. The test
+    /// sets `tooltip_delay` to 0 first: egui counts the delay in wall time,
+    /// which a fast run of the bounded frames may not reach. The pointer
+    /// first moves away for a frame: egui refuses a tooltip while the
+    /// last click is more recent than the last movement.
     pub(crate) fn tooltip(
         &mut self,
         pos: egui::Pos2,

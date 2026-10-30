@@ -156,6 +156,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     });
     let session = view.session.as_mut().expect("checked above");
     let rows = selection::list(session.file(), &view.team, &view.filter);
+    // A page key moved the selection: its row's index, scrolled to below.
+    let reveal = std::mem::take(&mut view.reveal_selected)
+        .then(|| {
+            rows.iter()
+                .position(|row| Some(row_selection(*row)) == view.selected)
+        })
+        .flatten();
     ui.spacing_mut().scroll = scroll;
     // The rows touch, as the draft's do: `show_rows` adds the item
     // spacing's 3 points under each row, which made them 21 apart.
@@ -174,6 +181,24 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
             egui::ScrollArea::vertical()
                 .auto_shrink([false, false])
                 .show_rows(ui, layout.row_height, rows.len(), |ui, range| {
+                    if let Some(index) = reveal {
+                        // `show_rows` draws only the rows in view, so the
+                        // row's rect comes from its index, the first drawn
+                        // row standing at the cursor; egui scrolls the
+                        // least that shows it, at once, so a held key's
+                        // repeats never outrun an animation.
+                        let top = ui.cursor().top()
+                            + (index as f32 - range.start as f32) * layout.row_height;
+                        let rect = egui::Rect::from_min_size(
+                            egui::pos2(ui.cursor().left(), top),
+                            egui::vec2(layout.width, layout.row_height),
+                        );
+                        ui.scroll_to_rect_animation(
+                            rect,
+                            None,
+                            egui::style::ScrollAnimation::none(),
+                        );
+                    }
                     for row in &rows[range] {
                         match row {
                             ListRow::Team(team_id) => {
@@ -233,20 +258,18 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
 /// Selects the player row after the selected row in the list as drawn
 /// (the team selector and the filter applied), or the one before it when
 /// `forward` is false. Team rows are skipped; at either end of the list,
-/// or with the selection not in it, nothing moves.
-pub(super) fn step_player(view: &mut SaveView, forward: bool) {
+/// or with the selection not in it, nothing moves. Answers whether the
+/// selection moved.
+pub(super) fn step_player(view: &mut SaveView, forward: bool) -> bool {
     let (Some(session), Some(selected)) = (view.session.as_ref(), view.selected) else {
-        return;
+        return false;
     };
     let rows: Vec<Selection> = selection::list(session.file(), &view.team, &view.filter)
         .into_iter()
-        .map(|row| match row {
-            ListRow::Team(id) => Selection::Team(id),
-            ListRow::Player(row) => Selection::Player(row.team_id, row.slot),
-        })
+        .map(row_selection)
         .collect();
     let Some(at) = rows.iter().position(|row| *row == selected) else {
-        return;
+        return false;
     };
     let player = |row: &&Selection| matches!(row, Selection::Player(..));
     let next = if forward {
@@ -254,8 +277,18 @@ pub(super) fn step_player(view: &mut SaveView, forward: bool) {
     } else {
         rows[..at].iter().rev().find(player)
     };
-    if let Some(next) = next {
-        view.selected = Some(*next);
+    let Some(next) = next else {
+        return false;
+    };
+    view.selected = Some(*next);
+    true
+}
+
+/// The selection a click on `row` makes.
+fn row_selection(row: ListRow) -> Selection {
+    match row {
+        ListRow::Team(id) => Selection::Team(id),
+        ListRow::Player(row) => Selection::Player(row.team_id, row.slot),
     }
 }
 

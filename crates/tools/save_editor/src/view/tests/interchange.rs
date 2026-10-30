@@ -1533,6 +1533,24 @@ fn the_teams_own_file_changes_nothing_so_apply_is_disabled_and_says_so() {
     assert!(!view.session.as_ref().unwrap().can_undo(), "no undo entry");
 }
 
+// A file the save's version stores whole carries no notes, so the panel
+// draws no notes heading over an empty list.
+#[test]
+fn an_import_with_no_notes_draws_no_notes_heading() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_no_notes", THREE);
+    let own = export(&view, THREE);
+    picked(&mut window, &mut view, "701.toml", own.as_bytes());
+    let lines = panel_lines(&mut window, &mut view);
+    assert!(
+        lines.iter().any(|line| line.starts_with("Sections")),
+        "premise: the file is staged: {lines:#?}"
+    );
+    assert!(
+        !lines.iter().any(|line| line.starts_with("Import notes")),
+        "no notes heading: {lines:#?}"
+    );
+}
+
 #[test]
 fn the_applied_line_stands_after_an_apply_that_wrote_until_the_next_change() {
     let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_applied_once", THREE);

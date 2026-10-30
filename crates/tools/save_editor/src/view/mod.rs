@@ -83,6 +83,9 @@ pub(crate) struct SaveView {
     filter: String,
     /// The selected row.
     selected: Option<Selection>,
+    /// A page key moved the selection: the list scrolls to its row on the
+    /// next draw, then clears this.
+    reveal_selected: bool,
     /// The team view's Tactics state (`team_widgets`' `TacticsView`:
     /// the preset its panels edit, the formation its lists show, the
     /// armed assignment mode, the open slot popover and Scroll names);
@@ -395,6 +398,7 @@ impl SaveView {
             team: TeamChoice::All,
             filter: String::new(),
             selected: None,
+            reveal_selected: false,
             tactics: team_widgets::tactics::TacticsView::default(),
             focused: None,
             prompt: None,
@@ -854,8 +858,10 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     let bump_key =
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::B));
     // PageDown and PageUp walk the list's players from any field, so they
-    // are not held off while a widget has the keyboard.
-    let page_step = if modal_up {
+    // are not held off while a widget has the keyboard. A held pointer
+    // button holds them off: the drag or press in flight would finish on
+    // the next player.
+    let page_step = if modal_up || ui.input(|input| input.pointer.any_down()) {
         None
     } else {
         ui.input_mut(|input| {
@@ -952,12 +958,15 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     {
         view.stat_num = Some(menus::StatNum::bump(session, player_id, view.bump));
     }
-    if let Some(forward) = page_step {
-        // The field gives up the keyboard first: its gesture ends as one
-        // undo entry on the player it edited, and the next player's field
-        // does not inherit the focus and merge his edits into that entry.
+    if let Some(forward) = page_step
+        && player_list::step_player(view, forward)
+    {
+        // The field gives up the keyboard once the selection moved: its
+        // gesture ends as one undo entry on the player it edited, and the
+        // next player's field does not inherit the focus and merge his
+        // edits into that entry. A key that moved nothing leaves it be.
         surrender_focus(ui);
-        player_list::step_player(view, forward);
+        view.reveal_selected = true;
     }
     end
 }

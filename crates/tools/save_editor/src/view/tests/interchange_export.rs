@@ -386,6 +386,31 @@ fn a_pes_17_texport_suggests_the_first_number_the_folder_lacks() {
     );
 }
 
+/// The game numbers its Texports in hexadecimal: with `TEXPORT00000000`
+/// to `TEXPORT00000009` in the PES 2017 save's folder, the next is
+/// `TEXPORT0000000A`, not `TEXPORT00000010` (number 16 to the game).
+#[test]
+fn a_pes_17_texport_counts_its_numbers_in_hexadecimal() {
+    let (mut view, mut window) = open_on(PesVersion::Pes17, "export_texport_17_hex", CO);
+    let folder = save_folder(&view);
+    for number in 0..=9 {
+        std::fs::write(folder.join(format!("TEXPORT0000000{number}")), b"taken")
+            .expect("a taken name is written");
+    }
+    let (sender, asked) = mpsc::channel();
+    view.team_export_dialog = Box::new(move |_, suggested| {
+        sender
+            .send(suggested.to_owned())
+            .expect("the test holds the receiver");
+        None
+    });
+    let texport = button(&mut window, &mut view, "Texport\u{2026}");
+    click(&mut window, &texport, &mut view);
+
+    let suggested = asked.try_recv().expect("the Save dialog opened");
+    assert_eq!(suggested, folder.join("TEXPORT0000000A"));
+}
+
 #[test]
 fn both_exports_carry_the_edits_the_save_holds_unsaved() {
     let (mut view, mut window) = open_on(PesVersion::Pes21, "export_unsaved", CO);
