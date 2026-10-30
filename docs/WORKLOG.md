@@ -1815,7 +1815,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         preview held until an edit settles, Apply recomputing a held one), tests 7; the
         rework merged `6be3f9e2` (ten tests); round 2 on the tests under way. Round 1 on
         k5b1: 1 accepted (an import must not retarget the document's `[team] id`, which the
-        base-copy own-id rule reads), carried into k5b2's review
+        base-copy own-id rule reads), carried into k5b2's review. Astra round 1 on k5c
+        (2026-10-30): 2 test gaps, none counted, the loop ends (rulings A1c: the open save
+        refused under another spelling of its path; unsaved edits exported); the two tests
+        ride the rework brief of `mutants-diff 7bb734a1`. Next: Astra over k5a + k5b +
+        8.29d1b2 + SE-GUI-43 once d1b2 is merged (`.tmp/8_9k5/astra_k5ab.md`), then one
+        SWE-2 round over k5 and the reworks
       - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged
     - [ ] 8.9m the maintainer's pass over the 0.0.1 candidate (`d317b6da`), 2026-10-29:
       - [x] the drafts take the app's grey for a plain player name and a planned tool
