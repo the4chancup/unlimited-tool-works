@@ -2848,6 +2848,18 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     the old name. Only with no branch open and no mutation run queued (it touches every tool)
     → verify: `git grep dds_convert` lists only DECISIONS and LOG; `just gates`; `just
     doc-pointers`
+  - [ ] 8.40 after 0.0.1: a keyboard edit settles without leaving the control. The Save
+    editor's seal and its checks' start wait for `edit_settled` (`view/mod.rs`), which a
+    focus kept on a control holds off; a button, checkbox, radio or list row activated by
+    Tab + Space keeps the focus, so its edit stays unsealed and Live AATF reads "checking…"
+    until the member tabs on (the undo entry merges with the next press on it). 0.0.1 gives
+    up the focus per control on the ones that start a check (the Live AATF toggle, Show
+    suggestions, Make, Set stats, the comparator's scope); the rest (Undo and Redo, the
+    positions' rating cells and labels, the tactics' radios, the list rows that re-key the
+    check) keep the stall. One rule in `edit_settled` instead: a focus held by a widget with
+    no text cursor counts as settled, so only a text field or a value being typed waits →
+    verify: Tab to a rating cell, Space, then the next frame seals (one undo entry per
+    press) and Live AATF checks without another key; typing in a field still waits
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
