@@ -14222,3 +14222,14 @@ the save's serial rather than none because the game has only been seen importing
 carry one. PES 2015 and 2016 stay without a writer: no file of theirs was studied for one.
 Plan: `plans/pes_savefile/operations.md` "Texport (read + write)"; `plans/save_editor.md`
 "Interchange formats in the UI" (the Texport bullet).
+
+## 2026-10-30 — save_editor — a team or tactics note names what it carries on its one line
+Decision: in the team file dialog, a note group with no player place (a team or tactics
+key) draws its notes' details after its subject, `Preset 1 attacking instructions: <the
+instruction>`, instead of the subject alone.
+Why: the plan promised an instruction's name and also said a team key's group lists
+nothing, which made the name unreachable: a PES 2018-2021 file whose preset holds an
+instruction PES 2017 lacks imported onto a PES 2017 save showed which preset lost one but
+not which, and the member had to compare presets by hand (0.0.1cv's audit, p4-1).
+Plan: `plans/save_editor.md` "Interchange formats in the UI" (the notes paragraph); the
+drafts' `interchangePanel`.

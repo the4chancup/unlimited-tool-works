@@ -5845,6 +5845,23 @@ briefs, review loops, gates and mutation runs as for any step.
   after each round; the whole-crate mutation runs of `save_editor` and `team_widgets`.
   Runs beside the maintainer's final pass (0.0.1f1c); the cut waits on it (`AGENTS.md`
   "Cutting a release")
+  - [x] cv1 the lead's audit (2026-10-30, at `a03f30d6`): six read-only parts (layout,
+    player and team, tactics, AATF and interchange, the SE-GUI scenarios, the shell),
+    63 findings, ruled in `.tmp/0_0_1cv/rulings_audit.md`: 33 to code, 17 plan or draft
+    edits, 2 manual checks, 3 module splits after 0.0.1, 4 rejected. No finding writes a
+    wrong value to a save; the nearest to a member: PgUp/PgDn missing (the parity row says
+    kept), Copy/Swap naming players by shirt number, a written-off instruction never named
+    in the team file dialog, Reset window moving a window on a second monitor to the first
+  - [ ] cv2 the plan and scenario edits the audit ruled (the lead)
+  - [ ] cv3 the view's findings (`save_editor`, `team_widgets`; with k5mut's four local
+    survivors) and cv4 the shell's (`studio_core`, `studio`): one Opus sidekick each
+  - [ ] cv5 by hand: Output rosters to TSV in the built window; ST-SIDE-05 with PES 2017
+    running
+  - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
+    mutation runs
+  - [ ] cv7 after 0.0.1: split `view/mod.rs` (the toolbar), `view/menus.rs` (the dialogs),
+    `view/interchange.rs` (the export half), `team_widgets` `pitch/mod.rs` (the paint) and
+    `tactics/mod.rs` (the changes' terms), each past a thousand lines
 - [ ] 0.0.1f the cut, once the Save editor's view is done (the Ruleset editor left 0.0.1 on
   2026-10-24, `plans/core/development_plan.md` "Development Plan"): the bundled settings picking
   DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`

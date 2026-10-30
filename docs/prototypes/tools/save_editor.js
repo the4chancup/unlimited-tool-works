@@ -3466,7 +3466,7 @@ function fpcFindings(p) {
 
 // ---- The menus: Player, Team, Savefile operations ----
 // The ownership line is the disabled items' tooltip (SE-GUI-22).
-const ownershipTip = () => "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch.";
+const ownershipTip = () => "The team's export owns the aesthetics, so edit its settings.toml (the face, hair and iris: its ingame_face.toml) and recompile, then apply the patch.";
 // sample wording: the menu labels.
 function dlgSetStats() {
   const p = curPlayer();
@@ -7663,14 +7663,19 @@ function interchangePanel() {
     const warnings = ixWarnings(d);
     if (warnings.length) {
       // The catalog's text once per code, its groups under it; a team key's
-      // group is its one note, so it draws no list.
+      // group draws no list, its notes' details after its subject on its one
+      // line (the instruction written off is named there or nowhere).
       const groups = ixWarningGroups(warnings);
       const codes = [...new Set(groups.map(g => g.code))];
       const grp = h("div", { id: "ix-warnings" }, codes.map(code => h("div", {},
         h("div", { class: "weak small" }, IX_NOTE_TEXT[code]),
         groups.filter(g => g.code === code).map(g => {
           const players = g.lines.filter(l => l.place);
-          if (!players.length) return h("div", { class: "warn" }, g.subject);
+          if (!players.length) {
+            const details = g.lines.map(l => l.detail).filter(Boolean);
+            return h("div", { class: "warn" },
+              g.subject + (details.length ? ": " + details.join(", ") : ""));
+          }
           const head = g.subject + " \u00b7 " + players.length
             + (players.length === 1 ? " player" : " players");
           return collapsing("ixw:" + g.key, head, () => players.map(l => {

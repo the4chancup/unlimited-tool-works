@@ -1301,8 +1301,10 @@ the editor exposes them as:
   card name, a motion, an edit flag and a preset's instructions with what they belong to:
   `Manager ID`, `Tight Possession`, `Dribbling motion`, `Preset 1 attacking instructions`)
   with its number of players, and lists each player's place, name and what the note carries
-  (an instruction's or a style's name, a lowered value's `19 → 0`); a team key's group is its
-  one note and lists nothing (the drafts' `ixWarningGroups`). The console's line, code and
+  (an instruction's or a style's name, a lowered value's `19 → 0`); a team key's group lists
+  nothing, its notes' details following its subject on its one line (`Preset 1 attacking
+  instructions: Wing Back`), since a tactics key's note is the only place the instruction it
+  writes off is named (the drafts' `ixWarningGroups`). The console's line, code and
   key path (`Warning import_key_not_in_version (path=players.03.stats.star)`), is the CLI's,
   not the dialog's words.
 - **Legacy import**: `.4ccs` and `.4cct` open through the same import dialog,
