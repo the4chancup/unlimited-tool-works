@@ -1861,7 +1861,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         help's patch refusal names the wrong check; a note's detail never asserted drawn);
         fixes merged with mut838 (`f3688107`: the lists share the room above Apply, which
         stays on a 1224 x 576 pane, the shortest a member sees; the help names the boots and
-        gloves numbering). Next: one SWE-2 round over k5 and the reworks
+        gloves numbering). SWE-2 round over the rework (2026-10-30): 0 counted, the loop ends
+        (`rulings_k5.md` S1m: a test for the lists' half share and a doc word ride k5e)
       - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged: running
         2026-10-30 in the mutants worktree at `0c5571d3`, base `d2617b2f^1`
         (`.tmp/8_30c/k5mut.sh`, log `.tmp/8_30c/k5mut.log`)
