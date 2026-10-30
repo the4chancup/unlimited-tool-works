@@ -476,6 +476,9 @@ table.grid.stats-grid td { padding: 2px 6px; }
 /* Centred in the room the close button leaves, as egui's title bar draws it. */
 .panel .title .title-text { flex: 1; text-align: center; }
 .panel .pbody { overflow: auto; min-height: 0; }
+/* Set all stats and Bump all stats: the sentence, then the number at the row's right edge. */
+.window .num-row { display: flex; align-items: center; gap: 12px; margin: 8px 0; }
+.window .num-row span { flex: 1; }
 .panel .drow { display: flex; gap: 8px; padding: 0 4px; white-space: nowrap;
   border-radius: 2px; }
 .panel .drow:hover { background: var(--hover); }
@@ -3649,9 +3652,10 @@ function dlg(name, title, body, buttons) {
   window_(title, body, buttons, name);
   render(); // the link carries the open dialog's name
 }
+// The sentence and the number share one row, the number at the right edge.
 function dlgNum(name, title, line, start, apply) {
   const input = h("input", { type: "number", value: start });
-  dlg(name, title, h("div", {}, h("p", {}, line), input),
+  dlg(name, title, h("div", { class: "num-row" }, h("span", {}, line), input),
     [button("OK", () => { const n = parseInt(input.value, 10);
       if (!Number.isNaN(n)) { apply(n); closeWindow(); render(); } }),
      button("Cancel", closeWindow)]);

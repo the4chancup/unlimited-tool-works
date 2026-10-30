@@ -14038,3 +14038,11 @@ window; drawing the title bar by hand (its drag, collapse and close) was the cos
 maintainer ruled out. Supersedes nothing: the 2026-10-28 entry ("A floating window's title
 centred, as egui's title bar draws it") stands.
 Plan: `plans/core/gui.md` the Dark/light theme row, the window title's sentence; worklog 8.37.
+
+## 2026-10-30 — save_editor — Set all stats' and Bump all stats' number on the sentence's row
+Decision (maintainer): the two number dialogs draw their field on the sentence's row, at the
+dialog's right edge (in line with Cancel under it), rather than alone on a row under the
+sentence; the sentence takes the room left of it, at least 12 points away.
+Why: the maintainer's layout; one row reads as one question, and the dialog loses a row.
+Plan: `plans/save_editor.md` "Editing UI", the sentence after the menus' shortcuts; worklog
+8.37b.

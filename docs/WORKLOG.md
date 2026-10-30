@@ -2617,6 +2617,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     modal's final width (the body decides it, so the title's place is known after the body)
     → verify: a headless test measuring a narrow and a wide modal's title centre against the
     frame's (red first); the overlap and draft-compare checks; the built window (ASK FIRST)
+    - [ ] 8.37b Set all stats and Bump all stats: the number on the sentence's row, at the
+      dialog's right edge (the maintainer, 2026-10-30; DECISIONS "Set all stats' and Bump
+      all stats' number on the sentence's row"; `plans/save_editor.md` "Editing UI", the
+      sentence after the menus' shortcuts). Drafted: `dlgNum`'s `.num-row`, rendered on both
+      → `menus.rs` `stat_num_dialog` → verify: a headless test measuring the field's right
+      edge at Cancel's and its vertical centre on the sentence's (red first); overlap tests
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning

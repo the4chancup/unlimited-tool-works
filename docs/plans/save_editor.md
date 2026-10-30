@@ -291,6 +291,10 @@ all side by side.
   the drafts: opening one closes the other, which would otherwise open on top of it. A menu item's shortcut is drawn right of its label in the weak colour
   (`Button::shortcut_text`): Bump all stats `Ctrl+B`, Toggle FPC settings `Ctrl+I`, Clear
   visual flags `Ctrl+F`.
+  Set all stats and Bump all stats ask for their number on the sentence's own row, the
+  field at the dialog's right edge, in line with Cancel under it, at least 12 points from
+  the sentence (the draft's `.num-row`): a number field alone on the row under a sentence
+  read as a second step.
 - **No view draws the tool's name** (`core/gui.md` "Window title": the title bar carries it),
   **nor the open save's path**: the tool's `title_detail` gives it to the idle window title,
   in square brackets, and the toolbar keeps `• unsaved changes` alone, which never takes a
