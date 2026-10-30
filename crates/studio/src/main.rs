@@ -107,7 +107,7 @@ const PLANNED: [PlannedTool; 14] = [
     },
     PlannedTool {
         id: "ruleset-editor",
-        label: "Ruleset editor",
+        label: "Ruleset editor (WIP)",
         icon: icons::RULESET_EDITOR,
     },
     PlannedTool {
@@ -118,10 +118,10 @@ const PLANNED: [PlannedTool; 14] = [
 ];
 
 /// The registered tools this build shows on the sidebar only as planned entries, grayed
-/// and not clickable: the 0.0.1 preview's three tools whose views come later
-/// (`team-compiler`, `export-upgrader`, `ruleset-editor`). Their CLI and help chapter
-/// stay; the settings menu draws no section for them. The list goes when their views land.
-const CLI_ONLY: [&str; 3] = ["team-compiler", "export-upgrader", "ruleset-editor"];
+/// and not clickable: the 0.0.1 preview's two tools whose views come later
+/// (`team-compiler`, `export-upgrader`). Their CLI and help chapter stay; the settings
+/// menu draws no section for them. The list goes when their views land.
+const CLI_ONLY: [&str; 2] = ["team-compiler", "export-upgrader"];
 
 /// The registered tools, in sidebar order.
 fn tools() -> Vec<Box<dyn StudioTool>> {
@@ -447,6 +447,18 @@ mod tests {
                 "{id} is missing from the registry"
             );
         }
+    }
+
+    // The window tools are the registered ones not marked CLI-only: the rail draws each from
+    // the registry as a clickable entry, the Ruleset editor right after the Save editor.
+    #[test]
+    fn the_ruleset_editor_is_a_window_tool() {
+        let window_tools: Vec<&str> = tools()
+            .iter()
+            .map(|tool| tool.id())
+            .filter(|id| !CLI_ONLY.contains(id))
+            .collect();
+        assert_eq!(window_tools, ["save-editor", "ruleset-editor"]);
     }
 
     #[test]

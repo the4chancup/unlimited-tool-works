@@ -598,6 +598,92 @@ fn a_label_edit_saves_vtl11s_file_byte_for_byte() {
     assert_eq!(std::fs::read_to_string(&path).unwrap(), expected);
 }
 
+/// `text` saved as `test`'s rules file and opened, the first tier's
+/// label edited in the table, then saved: what the window cannot edit
+/// yet (the heights, card groups, universal rules and team settings,
+/// specials, suggestions and custom checks) reads back from the saved
+/// file as it was opened.
+fn assert_a_tier_edit_keeps_the_rest(test: &str, text: &str) {
+    let dir = crate::test_support::scratch(test);
+    let path = write_file(&dir, "rules.4ccrules", text);
+    let (ctx, _events, mut window, mut view) = fresh();
+    open_path(&mut view, &ctx, &path);
+    view.section = Section::Tiers;
+    let opened = ruleset(&view).clone();
+    assert_ne!(opened.tiers[0].label, "Edited", "{test}: premise");
+
+    click_role(
+        &mut window,
+        &mut view,
+        &ctx,
+        Role::TextInput,
+        &opened.tiers[0].label,
+    );
+    type_replacing(&mut window, &mut view, &ctx, "Edited");
+    assert_eq!(ruleset(&view).tiers[0].label, "Edited", "{test}: the edit");
+    let frame = window.draw(&mut view, &ctx);
+    click_labeled(&mut window, &frame.nodes, "Save", &mut view, &ctx);
+
+    let written = std::fs::read_to_string(&path).unwrap();
+    let rules = aatf::Rules::load(&written).expect("the saved file loads");
+    let saved = rules.ruleset();
+    assert_eq!(saved.tiers[0].label, "Edited", "{test}: the edit is saved");
+    assert_eq!(saved.heights, opened.heights, "{test}: heights");
+    assert_eq!(saved.card_groups, opened.card_groups, "{test}: cards");
+    assert_eq!(saved.universal, opened.universal, "{test}: universal rules");
+    assert_eq!(
+        saved.team_settings, opened.team_settings,
+        "{test}: team settings"
+    );
+    assert_eq!(saved.specials, opened.specials, "{test}: specials");
+    assert_eq!(saved.suggestions, opened.suggestions, "{test}: suggestions");
+    assert_eq!(
+        aatf::file_sections(&written).custom_checks,
+        aatf::file_sections(text).custom_checks,
+        "{test}: custom checks"
+    );
+}
+
+/// A save keeps the sections the window cannot edit yet, over DBC7
+/// assembled as a file and VGL27's and VTL11's template files: none of
+/// the three sets all of those sections, the three together do.
+#[test]
+fn a_save_keeps_the_sections_the_window_cannot_edit() {
+    let block = super::file::dbc7_block();
+    let dbc7 = aatf::Ruleset::from_data_block(&block).expect("DBC7 reads");
+    assert!(
+        !dbc7.heights.brackets.is_empty() && !dbc7.specials.is_empty(),
+        "premise: DBC7 sets heights and specials"
+    );
+    assert_a_tier_edit_keeps_the_rest("file_keeps_dbc7", &super::file::assembled(&block));
+
+    let template_file = |stem: &str| {
+        let template = aatf::templates()
+            .into_iter()
+            .find(|template| template.stem == stem)
+            .unwrap_or_else(|| panic!("a template {stem}"));
+        (
+            aatf::assemble_file(&template.ruleset, None, template.custom_checks.as_deref()),
+            template,
+        )
+    };
+    let (vgl27, template) = template_file("vgl27");
+    assert!(
+        !template.ruleset.card_groups.is_empty()
+            && !template.ruleset.team_settings.is_empty()
+            && !template.ruleset.suggestions.is_empty(),
+        "premise: VGL27 sets cards, team settings and suggestions"
+    );
+    assert_a_tier_edit_keeps_the_rest("file_keeps_vgl27", &vgl27);
+
+    let (vtl11, template) = template_file("vtl11");
+    assert!(
+        template.custom_checks.is_some(),
+        "premise: VTL11 has custom checks"
+    );
+    assert_a_tier_edit_keeps_the_rest("file_keeps_vtl11", &vtl11);
+}
+
 // RE-FILE-06
 #[test]
 fn deleting_a_tier_the_custom_checks_read_blocks_save() {

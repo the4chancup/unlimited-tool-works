@@ -49,8 +49,9 @@ impl StudioTool for Tool {
         TOOL_ID
     }
 
+    /// "(WIP)" because some of the ruleset's sections have no form yet.
     fn label(&self) -> &'static str {
-        "Ruleset editor"
+        "Ruleset editor (WIP)"
     }
 
     fn icon(&self) -> &'static str {
@@ -119,7 +120,8 @@ mod tests {
     fn the_tool_is_registered_as_the_ruleset_editor() {
         let tool = Tool::new();
         assert_eq!(tool.id(), "ruleset-editor");
-        assert_eq!(tool.label(), "Ruleset editor");
+        assert_eq!(tool.label(), "Ruleset editor (WIP)");
+        assert_eq!(tool.help().title, "Ruleset editor");
         assert_eq!(tool.default_settings()["last_folder"].as_str(), Some(""));
         assert_eq!(
             tool.default_settings()["recent_files"].as_array(),
