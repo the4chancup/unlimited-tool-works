@@ -61,7 +61,6 @@ fn dim_text(ui: &mut egui::Ui) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::theme::Palette;
 
     /// A context with the suite's look installed, as the window has it, in
     /// `theme`.
@@ -119,7 +118,7 @@ mod tests {
     #[test]
     fn a_disabled_scope_draws_the_dark_resting_text_in_the_disabled_grey() {
         let resting = egui::Color32::from_gray(180);
-        let disabled = (Palette::DARK.disabled_text, false);
+        let disabled = (egui::Color32::from_gray(134), false);
         assert_eq!(
             seen_inside(egui::Theme::Dark),
             vec![disabled, (resting, true), disabled, (resting, true)],

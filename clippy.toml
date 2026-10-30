@@ -14,4 +14,8 @@ disallowed-methods = [
     { path = "egui::Ui::add_enabled", reason = "draw studio_core::widgets::add_enabled, whose disabled text is dimmed" },
     { path = "egui::Ui::add_enabled_ui", reason = "draw studio_core::widgets::add_enabled_ui, whose disabled text is dimmed" },
     { path = "egui::Ui::disable", reason = "draw studio_core::widgets::add_enabled_ui, whose disabled text is dimmed" },
+    { path = "egui::UiBuilder::disabled", reason = "draw studio_core::widgets::add_enabled_ui, whose disabled text is dimmed" },
+    { path = "egui::Window::enabled", reason = "draw the window's contents in studio_core::widgets::add_enabled_ui, whose disabled text is dimmed" },
+    { path = "egui::Area::enabled", reason = "draw the area's contents in studio_core::widgets::add_enabled_ui, whose disabled text is dimmed" },
+    { path = "egui::CollapsingHeader::enabled", reason = "draw the body in studio_core::widgets::add_enabled_ui, whose disabled text is dimmed" },
 ]
