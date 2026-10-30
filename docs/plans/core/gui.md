@@ -325,7 +325,8 @@ The settings menu is assembled from injected sections:
   column, so a section whose labels are long widens the menu while it is open, rather than
   narrowing its path box below the path.
 - **The PES folder** is one main row for every version, `pes_folder_path`, whose `**` stands
-  for the selected version's two digits (the default `…\Pro Evolution Soccer 20**`). Its
+  for the selected version's two digits (the default on Windows `C:\Program Files (x86)\Pro
+  Evolution Soccer 20**`, empty elsewhere). Its
   Browse stores a picked folder whose own name holds the selected version's year with that
   year written `20**` (`D:\Games\Pro Evolution Soccer 2019` becomes `D:\Games\Pro Evolution
   Soccer 20**`), so the selector keeps switching folders as it does for the default; any other

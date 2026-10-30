@@ -16,7 +16,7 @@ the resize cursor while a drag did nothing.
 **The window's size.** Studio opens at 1280 × 780 points, centered, not maximized: the size of
 its client area, the title bar and borders outside it, as every window size here is.
 Points are egui's logical units, so the system's display scaling applies: at 150% the window
-covers 1920 × 1200 pixels and looks the same size it does at 100%. A fixed size, not a share of
+covers 1920 × 1170 pixels and looks the same size it does at 100%. A fixed size, not a share of
 the monitor, because a share makes the window as wide as an ultrawide monitor is. On a monitor
 whose logical height cannot hold it with room for the taskbar and the title bar (780 points is
 over 90% of its logical height: a 1366 × 768 laptop), only the height is fitted, to 90% of the
