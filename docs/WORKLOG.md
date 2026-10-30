@@ -5868,8 +5868,10 @@ briefs, review loops, gates and mutation runs as for any step.
     PgUp/PgDn, Copy/Swap labelled by place, display names in the team combos and the
     violations header, a team key's note naming its details, the ownership tip, the join
     list kept packed and its full-list candidates, the Generate preview cached, tests for
-    the audit's untested behavior. Open: its SWE-2 loop (round 1: 6 accepted, round 2 over
-    cv3b running in `review5`), the ownership link's wrap seen in the built window (cv5)
+    the audit's untested behavior. SWE-2 loop ENDED: round 1 6 accepted (cv3b), round 2 1
+    (the page keys wait on a button's release frame too, `3ea74954`; `.tmp/0_0_1cv/rulings_cv3.md`).
+    Open: `mutants-diff c2079631^1` (d1b2's run folded in), the ownership link's wrap seen in
+    the built window (cv5)
   - [x] cv3b merged `9eaf553a`: the Texport name suggestion counts in hexadecimal, upper case
     (`view/interchange.rs` `Export::file_name`; a test with `00000000`..`00000009` taken
     suggests `TEXPORT0000000A`; DECISIONS 2026-10-30 "PES 2017's import names the team from
