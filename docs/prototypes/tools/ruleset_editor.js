@@ -133,7 +133,7 @@ const AUTUMN26 = {
       { choice: [{ free: { com: 1 } }, { a_positions: 1 }] }),
   ],
   team_settings: [],
-  suggestions: ["cards", "tricks", "com", "weak_foot", "injury_resistance"],
+  suggestions: ["cards", "tricks", "com", "weak_foot", "injury_resistance", "choices"],
   custom_checks: null,
 };
 
