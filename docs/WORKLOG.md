@@ -2669,8 +2669,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       Ruleset editor's preview compares whole lines and shortens the logo's only when
       drawing (`preview.rs` `block_line`; red: DBC7's logo replaced by VGL's marked
       nothing), the Save editor's `help/02_window.md` names the event logo. Package tests,
-      clippy, fmt, `comment_refs` green in its worktree. Open: SWE-2 S1838a, then
-      `mutants-diff` over 8.35's and this slice's commits
+      clippy, fmt, `comment_refs` green in its worktree. SWE-2 S1838a: 1 accepted, the loop
+      ends (`.tmp/8_29d/rulings_p45.md`; `755b8ad5`: the help's logo click only with a
+      page). Open: `mutants-diff 7bb734a1` (8.29d1a to 8.38a) under way
       Files: `save_editor/src/view/{mod,menus,quick_actions}.rs`, `view/tests/player.rs`,
       `help/02_window.md`; `ruleset_editor/src/view/{mod,preview}.rs`,
       `view/tests/{file,preview}.rs`
