@@ -56,15 +56,16 @@ fn each_changed_field_is_a_row_and_the_scopes_keep_their_own() {
         (speed_old, speed_new),
         (boots2_old, boots2_new),
     ] = sandbox.diff_pair();
-    let boots =
-        format!("Info player_diff (player=70105, field=BootsId, old={boots_old}, new={boots_new})");
+    let boots = format!(
+        "Info player_diff (player=70105, field=Boots ID, old={boots_old}, new={boots_new})"
+    );
     // Both rows are 70105's; the comparator lists a player's fields in schema order, the
     // stat before the appearance field, and the players in the first save's record order,
     // so 70105's rows come before 70106's.
     let speed =
         format!("Info player_diff (player=70105, field=Speed, old={speed_old}, new={speed_new})");
     let boots2 = format!(
-        "Info player_diff (player=70106, field=BootsId, old={boots2_old}, new={boots2_new})"
+        "Info player_diff (player=70106, field=Boots ID, old={boots2_old}, new={boots2_new})"
     );
     let only_in = [
         format!("Info player_only_in (player={NOWHERE}, save=first)"),
@@ -98,6 +99,39 @@ fn each_changed_field_is_a_row_and_the_scopes_keep_their_own() {
     sandbox
         .diff("A", "B", &["--aesthetics", "--gameplay"])
         .assert_refused(2, &["--gameplay"]);
+}
+
+// SE-DIF-01
+#[test]
+fn the_text_names_a_field_as_its_view_does_and_json_keeps_the_schema_name() {
+    let sandbox = Sandbox::new("diff_view_label");
+    sandbox.fixture(PesVersion::Pes17, "A");
+    let mut file = EditFile::load(&sandbox.path("A")).unwrap();
+    let player = file.player_mut(73401).unwrap();
+    assert_eq!(player.stats.heading, 77, "premise: 73401's heading");
+    player.stats.heading = 80;
+    fs::write(sandbox.path("B"), file.to_bytes(&TEST_SALT).unwrap()).unwrap();
+
+    // PES 2017's view names the schema's `Heading` Header.
+    let run = sandbox.diff("A", "B", &[]);
+    assert_eq!(run.exit_code(), 0);
+    assert_eq!(
+        run.messages(),
+        vec!["Info player_diff (player=73401, field=Header, old=77, new=80)"]
+    );
+
+    let run = sandbox.diff("A", "B", &["--json"]);
+    assert_eq!(run.exit_code(), 0);
+    let stdout = run.stdout();
+    let report: serde_json::Value = serde_json::from_str(&stdout)
+        .unwrap_or_else(|error| panic!("stdout does not parse as JSON: {error}\n{stdout}"));
+    assert_eq!(
+        report["players"],
+        serde_json::json!([{
+            "id": 73401,
+            "rows": [{ "field": "Heading", "old": "77", "new": "80" }]
+        }])
+    );
 }
 
 // SE-DIF-02
@@ -229,7 +263,7 @@ fn the_appearance_id_is_an_ordinary_row() {
     assert_eq!(run.exit_code(), 0);
     assert_eq!(
         run.messages(),
-        vec!["Info player_diff (player=70101, field=AppearanceId, old=70101, new=4294967295)"]
+        vec!["Info player_diff (player=70101, field=Appearance ID, old=70101, new=4294967295)"]
     );
 
     let run = sandbox.diff("OWN", "MINUS_ONE", &["--json"]);
