@@ -5,8 +5,7 @@
 //! wear the in-game face (the cup keeps every "modified face" flag off), so
 //! the member picks the action per player: `settings.toml` carries no face,
 //! hair or iris key; `ingame_face.toml` is the whole in-game face.
-//! A stripped player's record is not his look: the dialog says so and skips
-//! him. The dialogs write no save, so the aesthetics lock does not gate them.
+//! The dialogs write no save, so the aesthetics lock does not gate them.
 
 use std::path::{Path, PathBuf};
 
@@ -16,7 +15,6 @@ use pes_savefile::settings_toml::PlayerSettings;
 use studio_core::widgets::{modal, modal_buttons, text_box};
 use studio_core::{Notice, NoticeKind};
 
-use crate::session::is_stripped;
 use crate::view::SaveView;
 
 /// The folder field's Pick dialog (`rfd` in the window, a stub in the
@@ -134,10 +132,9 @@ fn text(file: &EditFile, player_id: u32, which: GenFile, folder: &Path) -> Resul
 }
 
 /// The Generate dialog while `view.generate` holds one (the draft's
-/// `dlgSettings`/`dlgIngameFace` over one body): a stripped player gets the
-/// skip text and OK alone; otherwise the folder field with its Pick button,
-/// the file's text in a monospace scroll area (the read, parse or
-/// `from_player` error in its place), Write — enabled only for an existing
+/// `dlgSettings`/`dlgIngameFace` over one body): the folder field with its
+/// Pick button, the file's text in a monospace scroll area (the read, parse
+/// or `from_player` error in its place), Write — enabled only for an existing
 /// directory and a text that built — and Cancel. Write puts down exactly
 /// the previewed text and raises the shell notice; a failed write keeps
 /// the dialog open with the error under the buttons.
@@ -163,18 +160,6 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     let mut close = false;
     let id = egui::Id::unique("save_editor_generate");
     let response = modal(ui.ctx(), id, generate.file.title(), |ui| {
-        if is_stripped(file, generate.player_id) {
-            ui.label(format!(
-                "{name} is stripped, so the game reads the database tables rather \
-                 than his save data, and nothing is generated for him."
-            ));
-            modal_buttons(ui, |ui| {
-                if ui.button("OK").clicked() {
-                    close = true;
-                }
-            });
-            return;
-        }
         let folder = PathBuf::from(&generate.folder);
         let text = text(file, generate.player_id, generate.file, &folder);
         ui.horizontal(|ui| {

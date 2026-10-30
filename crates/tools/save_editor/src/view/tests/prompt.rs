@@ -4,7 +4,6 @@
 //! the window's Save asks first while the save's own PES runs (SE-GUI-21's
 //! window rule) is covered here too.
 
-use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use studio_core::{ShellRequest, StudioTool, ToolContext};
 
 use super::changes_popup::assert_swatch_before;
@@ -842,66 +841,6 @@ fn a_refused_write_under_the_question_keeps_the_prompt_and_shows_the_refusal() {
         .into_iter()
         .find(|node| node.role() == Role::Button && node.label() == Some("OK"))
         .expect("the refusal's OK in the top dialog's subtree");
-}
-
-// SE-GUI-05, SE-GUI-20: Strip again's change is a `Stripped` row under
-// the player's own (the appearance id is no `compare_players` row).
-#[test]
-fn a_strip_again_is_a_stripped_row_under_the_player() {
-    let path = fixture(PesVersion::Pes21, "prompt_strip_row");
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    for player in file.players_mut() {
-        player.appearance_id = Some(STRIPPED_APPEARANCE_ID);
-    }
-    // One restored player on team 702 (the Strip again window's list).
-    let id = file
-        .team(702)
-        .unwrap()
-        .roster
-        .iter()
-        .map(|slot| slot.player_id)
-        .find(|&id| id != 0)
-        .expect("team 702 rosters someone");
-    file.player_mut(id).unwrap().appearance_id = Some(id);
-    let name = pes_savefile::model::names::display_name(&file.player(id).unwrap().name);
-    file.save(&path).unwrap();
-
-    let mut view = SaveView::new();
-    view.open(&path);
-    assert!(view.strip_again.is_some(), "the window lists him");
-    let mut window = Headless::new();
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Strip again"),
-        &mut view,
-    );
-    assert_eq!(
-        view.session
-            .as_ref()
-            .unwrap()
-            .file()
-            .player(id)
-            .unwrap()
-            .appearance_id,
-        Some(STRIPPED_APPEARANCE_ID),
-        "premise: stripped again"
-    );
-
-    prompt::open(&mut view, Pending::Close);
-    // One frame so the modal's area has registered (its first frame is
-    // egui's invisible sizing pass).
-    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert_eq!(
-        prompt_rows(&pairs, "Unsaved changes"),
-        [(
-            format!("{name} · Stripped"),
-            "No".to_owned(),
-            "Yes".to_owned()
-        )],
-        "the strip is his one row"
-    );
 }
 
 // SE-GUI-05: a player rostered on two teams gets his own rows under his

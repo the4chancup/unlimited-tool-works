@@ -1,12 +1,11 @@
 //! The `settings.toml` generation (the `spec/export_upgrader.md` "Player settings"
 //! scenarios): the save record's values as keys, the folder-claimed and
-//! coverage ID rules, the name rule, the stripped save, the missing custom
-//! model and the value no key can hold.
+//! coverage ID rules, the name rule, the missing custom model and the value
+//! no key can hold.
 
 use std::fs;
 
 use pes_savefile::EditFile;
-use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_savefile::settings_toml::{IngameFaceSettings, NameSetting, PlayerSettings};
 use pes_version::PesVersion;
 
@@ -19,14 +18,6 @@ fn upgrade(sandbox: &Sandbox, input: &str, save: &str) -> crate::common::Run {
     let input = sandbox.arg(input);
     let save = sandbox.arg(save);
     sandbox.run(&["upgrade", &input, "--savefile", &save])
-}
-
-/// `upgrade <input> --savefile <save> -o <dir>`.
-fn upgrade_into(sandbox: &Sandbox, input: &str, save: &str, dir: &str) -> crate::common::Run {
-    let input = sandbox.arg(input);
-    let save = sandbox.arg(save);
-    let dir = sandbox.arg(dir);
-    sandbox.run(&["upgrade", &input, "--savefile", &save, "-o", &dir])
 }
 
 /// The `settings.toml` at `path` (an output-relative path ending in
@@ -212,60 +203,6 @@ fn a_value_past_the_assumed_cap_is_written_as_stored() {
     compiled.set_ingame_face(face);
     assert_eq!(compiled.narrow_to(PesVersion::Pes18), []);
     assert_eq!(compiled.appearance.face.cheek_type, Some(5));
-}
-
-// EU-SET-06
-#[test]
-fn a_stripped_save_writes_the_same_files_and_names_him() {
-    let sandbox = Sandbox::new("set_stripped");
-    for slot in ["XXX03 - A", "XXX05 - B"] {
-        face(&sandbox, &format!("co Spring/Faces/{slot}"));
-    }
-    // Every appearance_id at -1, as `strip-and-seed` leaves them.
-    sandbox.save_edited("STRIPPED", PesVersion::Pes21, |file| {
-        for player in file.players_mut() {
-            player.appearance_id = Some(STRIPPED_APPEARANCE_ID);
-        }
-    });
-    sandbox.save("EDIT");
-
-    let stripped = upgrade(&sandbox, "co Spring", "STRIPPED");
-    assert_eq!(stripped.exit_code(), 0, "{}", stripped.stdout());
-    let normal = upgrade_into(&sandbox, "co Spring", "EDIT", "out");
-    assert_eq!(normal.exit_code(), 0, "{}", normal.stdout());
-
-    // The two outputs hold the same paths and bytes.
-    assert_eq!(
-        sandbox.listing("co Full Spring"),
-        sandbox.listing("out/co Full Spring"),
-        "the same paths"
-    );
-    for relative in sandbox.listing("co Full Spring") {
-        let file = sandbox.path(&format!("co Full Spring/{relative}"));
-        if file.is_file() {
-            assert_eq!(
-                fs::read(&file).unwrap(),
-                fs::read(sandbox.path(&format!("out/co Full Spring/{relative}"))).unwrap(),
-                "{relative}"
-            );
-        }
-    }
-    // One Info finding per generated file, each naming its own slot.
-    let stdout = stripped.stdout();
-    let findings: Vec<&str> = stdout
-        .lines()
-        .filter(|line| line.contains("settings_from_stripped_record"))
-        .collect();
-    assert_eq!(findings.len(), 2, "{stdout}");
-    for (slot, name) in [("03", "PLACEHOLDER"), ("05", "PLACEHOLDER")] {
-        assert!(
-            stdout.contains(&format!(
-                "Info settings_from_stripped_record (slot={slot}, name={name})"
-            )),
-            "{slot}: {stdout}"
-        );
-    }
-    assert!(!normal.stdout().contains("settings_from_stripped_record"));
 }
 
 // EU-SET-07

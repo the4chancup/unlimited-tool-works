@@ -1,8 +1,8 @@
 //! `team.toml`'s player half: `[players.NN]` and its `stats`, `positions`,
 //! `skills`, `edit_flags` and `appearance` subtables. The scalar keys run
 //! through `player_keys`' table; the non-scalar keys (names, number,
-//! `stripped`, `playable`, `playing_style`, the skill arrays and
-//! `appearance`) are handled here.
+//! `playable`, `playing_style`, the skill arrays and `appearance`) are
+//! handled here.
 
 use std::collections::{BTreeMap, HashSet};
 
@@ -17,7 +17,7 @@ use crate::interchange::team_toml::{
     ImportNote, PlayerSection, PositionsSection, SkillsSection, TeamTomlError,
 };
 use crate::model::names::{crop_player_text, single_byte};
-use crate::model::player::{PlayerEntry, STRIPPED_APPEARANCE_ID};
+use crate::model::player::PlayerEntry;
 use crate::model::playstyle::PlayStyle;
 use crate::model::team::{TeamEntry, roster_order_player_id};
 use crate::schema::fields::{PlayerField, PlayerText, RosterField};
@@ -32,9 +32,7 @@ use crate::settings_toml::{
     AppearanceSettings, appearance_from, apply_appearance, get_appearance, held_on, set_appearance,
 };
 
-use super::items::{
-    as_table, boolean, check_text, check_width, emit, gated, opt, reject, text, u16_val,
-};
+use super::items::{as_table, check_text, check_width, emit, gated, opt, reject, text, u16_val};
 
 // ---------------------------------------------------------------------------
 // From the model
@@ -82,7 +80,6 @@ fn player_from(
         name: Some(player.name.clone()),
         shirt_name: Some(player.shirt_name.clone()),
         number: Some(number),
-        stripped: (player.appearance_id == Some(STRIPPED_APPEARANCE_ID)).then_some(true),
         positions: PositionsSection {
             playable: Some(player.positions.playable),
             playing_style: Some(playstyle::decode(version, player.positions.playing_style)?),
@@ -189,13 +186,6 @@ fn emit_player(
             emit_key(out, section, key)?;
         }
     }
-    emit(
-        out,
-        "stripped",
-        section.stripped.map(|flag| flag.to_string()),
-        "false",
-        "informational: the import ignores it",
-    );
 
     out.push_str(&format!("\n[{path}.stats]\n"));
     for key in PlayerKey::ALL {
@@ -386,7 +376,6 @@ fn parse_player(item: &Item, path: &str) -> Result<PlayerSection, TeamTomlError>
         name: opt(table, path, "name", text)?,
         shirt_name: opt(table, path, "shirt_name", text)?,
         number: opt(table, path, "number", u16_val)?,
-        stripped: opt(table, path, "stripped", boolean)?,
         ..PlayerSection::default()
     };
     for key in PlayerKey::ALL {
@@ -455,7 +444,6 @@ fn parse_player(item: &Item, path: &str) -> Result<PlayerSection, TeamTomlError>
             "boots_id",
             "gloves_id",
             "base_copy_id",
-            "stripped",
             "stats",
             "positions",
             "skills",
@@ -966,7 +954,6 @@ pub(super) fn some_keys(section: &PlayerSection) -> usize {
         section.name.is_some(),
         section.shirt_name.is_some(),
         section.number.is_some(),
-        section.stripped.is_some(),
         section.positions.playable.is_some(),
         section.positions.playing_style.is_some(),
         section.skills.skills.is_some(),

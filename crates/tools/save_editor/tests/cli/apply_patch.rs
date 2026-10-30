@@ -4,7 +4,6 @@ use std::fs;
 
 use pes_savefile::EditFile;
 use pes_savefile::interchange::aesthetics_patch::{ALLOCATION_SCHEME_VERSION, AestheticsPatch};
-use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_version::PesVersion;
 
 use crate::{Sandbox, WritingCommand, payload, payload_after};
@@ -134,33 +133,6 @@ fn a_version_or_scheme_mismatch_is_refused_with_nothing_written() {
         ],
     );
     assert!(!sandbox.path("OUT").exists());
-}
-
-// SE-PAT-04
-#[test]
-fn a_stripped_save_takes_the_patch_with_its_ids_still_stripped() {
-    let sandbox = Sandbox::new("patch_stripped");
-    sandbox.stripped_fixture("STRIPPED");
-    let text = patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block());
-    fs::write(sandbox.path("patch.toml"), &text).unwrap();
-
-    let run = sandbox.apply("patch.toml", "STRIPPED", "OUT");
-    assert_eq!(run.exit_code(), 0, "{:?}", run.messages());
-    let written = EditFile::load(&sandbox.path("OUT")).unwrap();
-    let player = written.player(CO_SLOT_3).unwrap();
-    assert_eq!(player.name, "PATCHED");
-    assert_eq!(player.appearance_id, Some(STRIPPED_APPEARANCE_ID));
-    assert!(
-        written
-            .players()
-            .iter()
-            .all(|player| player.appearance_id == Some(STRIPPED_APPEARANCE_ID)),
-        "every id is still -1"
-    );
-    assert_eq!(
-        payload(&sandbox.path("OUT")),
-        payload_with_patch(&sandbox, "STRIPPED", &text)
-    );
 }
 
 // SE-PAT-05

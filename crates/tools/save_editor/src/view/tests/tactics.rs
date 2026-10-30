@@ -2293,10 +2293,6 @@ fn every_view_fits_the_pane_the_minimum_window_leaves() {
         for name in ["player", "appearance"] {
             let mut view = SaveView::new();
             view.open(&path);
-            // A Fox save with some players stripped and some restored opens
-            // the Strip again window (SE-GUI-20); closed, the view's own
-            // nodes are the only ones measured.
-            view.strip_again = None;
             let mut window = Headless::sized(pane.x, pane.y);
             if name == "appearance" {
                 open_appearance(&mut window, &mut view);

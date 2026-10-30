@@ -17,7 +17,6 @@
 use std::collections::BTreeMap;
 
 use pes_savefile::EditFile;
-use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_savefile::settings_toml::{NameSetting, PlayerSettings};
 use studio_core::{Disposition, Message, Scope};
 
@@ -150,17 +149,6 @@ pub(crate) fn settings_files(
         };
         match settings.to_toml() {
             Ok(text) => {
-                // A stripped record still is his look until the team's first
-                // Studio compile, so the file is generated all the same and
-                // he is named.
-                if record.appearance_id == Some(STRIPPED_APPEARANCE_ID) {
-                    files.findings.push(tool_message(
-                        Code::SettingsFromStrippedRecord,
-                        Scope::Export { export_id: INPUT },
-                        Disposition::Keep,
-                        vec![("slot", slot), ("name", player.name.clone())],
-                    ));
-                }
                 files
                     .written
                     .push((format!("{}/settings.toml", folder.path), text.into_bytes()));
@@ -384,35 +372,6 @@ mod tests {
         assert_eq!(
             settings_of(&files, "Players/07").name,
             Some(NameSetting::Explicit(raw))
-        );
-    }
-
-    #[test]
-    fn a_stripped_record_is_named_and_generated_all_the_same() {
-        let save = save_edited(|file| {
-            file.player_mut(71405).unwrap().appearance_id = Some(STRIPPED_APPEARANCE_ID);
-        });
-        let roster = roster_of(&save);
-        let mut folders = BTreeMap::new();
-        folders.insert(5, plain("Players/05 - A"));
-        let files = settings_files(&save, &roster, &folders, true);
-        let stripped = findings_named(&files, "settings_from_stripped_record");
-        assert_eq!(stripped.len(), 1, "{:?}", files.findings);
-        assert_eq!(
-            stripped[0]
-                .context
-                .iter()
-                .find(|(key, _)| key == "slot")
-                .unwrap()
-                .1,
-            "05"
-        );
-        let settings = settings_of(&files, "Players/05 - A");
-        let mut expected = PlayerSettings::from_player(save.player(71405).unwrap()).unwrap();
-        expected.set_ingame_face(IngameFaceSettings::default());
-        assert_eq!(
-            settings.appearance, expected.appearance,
-            "the stripped record's look is written all the same, the face keys"
         );
     }
 

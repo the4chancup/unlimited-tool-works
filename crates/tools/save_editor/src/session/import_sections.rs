@@ -91,7 +91,6 @@ fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
         boots_id,
         gloves_id,
         base_copy_id,
-        stripped,
         stats,
         positions,
         skills,
@@ -146,7 +145,6 @@ fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
         boots_id: kept(aesthetics, boots_id),
         gloves_id: kept(aesthetics, gloves_id),
         base_copy_id: kept(aesthetics, base_copy_id),
-        stripped: kept(aesthetics, stripped),
         stats: kept(gameplay, stats),
         positions: kept(gameplay, positions),
         skills: kept(gameplay, skills),
@@ -315,7 +313,6 @@ mod tests {
             key("boots_id", &player.boots_id),
             key("gloves_id", &player.gloves_id),
             key("base_copy_id", &player.base_copy_id),
-            key("stripped", &player.stripped),
             key("edit_flags.motion", &flags.motion),
             key("edit_flags.base_copy", &flags.base_copy),
             key("edit_flags.face", &flags.face),
@@ -358,14 +355,12 @@ mod tests {
         ]
     }
 
-    /// The keys absent from /co/'s PES 19 document: the first three PES 19 does not store,
-    /// and `stripped` no /co/ player is. The premise checks skip them, since an absent key
-    /// proves nothing about the filter.
-    const NOT_IN_PES_19: [&str; 4] = [
+    /// The keys absent from /co/'s PES 19 document, which PES 19 does not store. The premise
+    /// checks skip them, since an absent key proves nothing about the filter.
+    const NOT_IN_PES_19: [&str; 3] = [
         "team.kit_slots",
         "edit_flags.base_copy",
         "appearance.motion.dribbling",
-        "stripped",
     ];
 
     /// Premise: every key the rows list holds a value in at least one row, so that finding

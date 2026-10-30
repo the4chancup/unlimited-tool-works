@@ -84,8 +84,7 @@ version, naming both. The **Show** row narrows the list to All, Gameplay or Aest
 the team dropdown to one team.
 
 Rows group by team and by player: each row shows a field's name and its value in the picked
-save and in the open save, and a mark sits beside a player stripped in one save or both.
-Clicking a row selects that player in the editor.
+save and in the open save. Clicking a row selects that player in the editor.
 
 A comparison takes a moment on a big save, and the window says so until the rows land.
 **Export…** writes the picked scope's differences over the whole save as a text file.

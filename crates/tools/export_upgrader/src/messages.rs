@@ -109,10 +109,6 @@ pub(crate) enum Code {
     /// player's file (`slot`, `name`, `key` the dotted key, `value` the
     /// stored value).
     SettingsValueRefused,
-    /// A `settings.toml` generated from a stripped record: the record still
-    /// is his look until the team's first Studio compile, which keeps its
-    /// own file instead (`slot`, `name`).
-    SettingsFromStrippedRecord,
     /// A player's `settings.toml` could not be generated at all (`slot`,
     /// `name`, `error` the failure's text).
     SettingsNotGenerated,
@@ -155,7 +151,6 @@ impl Code {
             Code::CommonReferenceKept => "common_reference_kept",
             Code::CustomModelMissing => "custom_model_missing",
             Code::SettingsValueRefused => "settings_value_refused",
-            Code::SettingsFromStrippedRecord => "settings_from_stripped_record",
             Code::SettingsNotGenerated => "settings_not_generated",
             Code::ModelFolderDestination => "model_folder_destination",
             Code::CoverageTagChosen => "coverage_tag_chosen",
@@ -188,7 +183,6 @@ impl Code {
         Code::CommonReferenceKept,
         Code::CustomModelMissing,
         Code::SettingsValueRefused,
-        Code::SettingsFromStrippedRecord,
         Code::SettingsNotGenerated,
         Code::ModelFolderDestination,
         Code::CoverageTagChosen,
@@ -503,12 +497,6 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         Severity::Warning,
         r#"A stored value that no key of the player's `settings.toml` or `ingame_face.toml` can hold (the line names the slot, the player, the key and the value)."#,
         r#"It is left out of the file the key belongs to."#,
-    ),
-    (
-        "settings_from_stripped_record",
-        Severity::Info,
-        r#"A `settings.toml`, or the `ingame_face.toml` beside it, was generated from a player's data in a stripped save."#,
-        r#"His data in the save is his look until the team's first compile with the Team compiler. A team already compiled with it keeps its own file instead."#,
     ),
     (
         "settings_not_generated",

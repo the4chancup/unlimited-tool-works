@@ -5,7 +5,7 @@ use std::fs;
 use pes_savefile::EditFile;
 use pes_version::PesVersion;
 
-use crate::{STRIPPED_APPEARANCE_ID, Sandbox, TEST_SALT};
+use crate::{Sandbox, TEST_SALT};
 
 /// A player id no save holds, so renumbering a player to it leaves him in one save alone.
 const NOWHERE: u32 = 9_999_999;
@@ -120,7 +120,6 @@ fn json_flag_writes_the_same_report_as_one_document() {
         serde_json::json!([
             {
                 "id": 70105,
-                "stripped": null,
                 "rows": [
                     { "field": "Speed", "old": speed_old.to_string(), "new": speed_new.to_string() },
                     { "field": "BootsId", "old": boots_old.to_string(), "new": boots_new.to_string() }
@@ -128,7 +127,6 @@ fn json_flag_writes_the_same_report_as_one_document() {
             },
             {
                 "id": 70106,
-                "stripped": null,
                 "rows": [
                     { "field": "BootsId", "old": boots2_old.to_string(), "new": boots2_new.to_string() }
                 ]
@@ -137,11 +135,11 @@ fn json_flag_writes_the_same_report_as_one_document() {
     );
     assert_eq!(
         report["only_in_first"],
-        serde_json::json!([{ "id": NOWHERE, "stripped": null }])
+        serde_json::json!([{ "id": NOWHERE }])
     );
     assert_eq!(
         report["only_in_second"],
-        serde_json::json!([{ "id": 70110, "stripped": null }])
+        serde_json::json!([{ "id": 70110 }])
     );
     for line in stdout.lines() {
         assert!(
@@ -167,12 +165,10 @@ fn json_report_keeps_the_scope() {
             serde_json::json!([
                 {
                     "id": 70105,
-                    "stripped": null,
                     "rows": [{ "field": "BootsId", "old": boots_old.to_string(), "new": boots_new.to_string() }]
                 },
                 {
                     "id": 70106,
-                    "stripped": null,
                     "rows": [{ "field": "BootsId", "old": boots2_old.to_string(), "new": boots2_new.to_string() }]
                 }
             ]),
@@ -181,7 +177,6 @@ fn json_report_keeps_the_scope() {
             "--gameplay",
             serde_json::json!([{
                 "id": 70105,
-                "stripped": null,
                 "rows": [{ "field": "Speed", "old": speed_old.to_string(), "new": speed_new.to_string() }]
             }]),
         ),
@@ -194,11 +189,11 @@ fn json_report_keeps_the_scope() {
         assert_eq!(report["players"], players);
         assert_eq!(
             report["only_in_first"],
-            serde_json::json!([{ "id": NOWHERE, "stripped": null }])
+            serde_json::json!([{ "id": NOWHERE }])
         );
         assert_eq!(
             report["only_in_second"],
-            serde_json::json!([{ "id": 70110, "stripped": null }])
+            serde_json::json!([{ "id": 70110 }])
         );
     }
 }
@@ -214,86 +209,39 @@ fn two_versions_are_refused_naming_both() {
         .assert_refused(2, &["PES 2021", "PES 2019"]);
 }
 
-// SE-DIF-04
+// SE-DIF-05
 #[test]
-fn every_player_at_minus_one_is_marked_and_the_appearance_id_is_no_row() {
-    let sandbox = Sandbox::new("diff_stripped");
-    sandbox.fixture(PesVersion::Pes21, "EDIT");
-    sandbox.stripped_fixture("STRIPPED");
-    let players = EditFile::load(&sandbox.path("EDIT"))
-        .unwrap()
-        .players()
-        .len();
+fn the_appearance_id_is_an_ordinary_row() {
+    let sandbox = Sandbox::new("diff_appearance_id");
+    sandbox.fixture(PesVersion::Pes21, "OWN");
+    let mut file = EditFile::load(&sandbox.path("OWN")).unwrap();
+    let player = file.player_mut(70101).unwrap();
+    assert_eq!(player.appearance_id, Some(70101));
+    // The game's -1.
+    player.appearance_id = Some(u32::MAX);
+    fs::write(
+        sandbox.path("MINUS_ONE"),
+        file.to_bytes(&TEST_SALT).unwrap(),
+    )
+    .unwrap();
 
-    let run = sandbox.diff("STRIPPED", "EDIT", &[]);
-    assert_eq!(run.exit_code(), 0);
-    let messages = run.messages();
-    assert_eq!(messages.len(), players, "one mark per player, nothing else");
-    assert!(
-        messages
-            .iter()
-            .all(|line| line.starts_with("Info player_stripped (player=")
-                && line.ends_with(", save=first)")),
-        "{:?}",
-        &messages[..3]
-    );
-    assert_eq!(
-        messages[0],
-        "Info player_stripped (player=70101, save=first)"
-    );
-
-    let run = sandbox.diff("STRIPPED", "STRIPPED", &[]);
-    assert_eq!(
-        run.messages()[0],
-        "Info player_stripped (player=70101, save=both)"
-    );
-}
-
-// SE-DIF-04
-#[test]
-fn a_stripped_player_only_in_one_save_is_reported_once() {
-    let sandbox = Sandbox::new("diff_stripped_only_in");
-    let mut a = EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
-    let stripped = a.player_mut(70110).unwrap();
-    stripped.id = NOWHERE;
-    stripped.appearance_id = Some(STRIPPED_APPEARANCE_ID);
-    fs::write(sandbox.path("A"), a.to_bytes(&TEST_SALT).unwrap()).unwrap();
-    sandbox.fixture(PesVersion::Pes21, "B");
-
-    let run = sandbox.diff("A", "B", &[]);
+    let run = sandbox.diff("OWN", "MINUS_ONE", &[]);
     assert_eq!(run.exit_code(), 0);
     assert_eq!(
         run.messages(),
-        vec![
-            format!("Info player_only_in (player={NOWHERE}, save=first)"),
-            format!("Info player_stripped (player={NOWHERE}, save=first)"),
-            "Info player_only_in (player=70110, save=second)".to_owned(),
-        ]
+        vec!["Info player_diff (player=70101, field=AppearanceId, old=70101, new=4294967295)"]
     );
 
-    let run = sandbox.diff("A", "B", &["--json"]);
+    let run = sandbox.diff("OWN", "MINUS_ONE", &["--json"]);
     assert_eq!(run.exit_code(), 0);
     let stdout = run.stdout();
     let report: serde_json::Value = serde_json::from_str(&stdout)
         .unwrap_or_else(|error| panic!("stdout does not parse as JSON: {error}\n{stdout}"));
-    assert_eq!(report["players"], serde_json::json!([]));
     assert_eq!(
-        report["only_in_first"],
-        serde_json::json!([{ "id": NOWHERE, "stripped": "first" }])
-    );
-    assert_eq!(
-        report["only_in_second"],
-        serde_json::json!([{ "id": 70110, "stripped": null }])
-    );
-
-    let run = sandbox.diff("B", "A", &[]);
-    assert_eq!(run.exit_code(), 0);
-    assert_eq!(
-        run.messages(),
-        vec![
-            "Info player_only_in (player=70110, save=first)".to_owned(),
-            format!("Info player_only_in (player={NOWHERE}, save=second)"),
-            format!("Info player_stripped (player={NOWHERE}, save=second)"),
-        ]
+        report["players"],
+        serde_json::json!([{
+            "id": 70101,
+            "rows": [{ "field": "AppearanceId", "old": "70101", "new": "4294967295" }]
+        }])
     );
 }

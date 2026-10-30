@@ -5,8 +5,6 @@
 
 use std::path::PathBuf;
 
-use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
-
 use super::*;
 
 use crate::test_support::{TEST_SALT, cli_stdout};
@@ -607,72 +605,6 @@ fn the_rows_group_per_team_in_the_open_saves_order() {
         "74301 on 734's slot"
     );
     assert_eq!(view.team, TeamChoice::Team(734), "the selector moved");
-}
-
-/// A stripped player's mark beside his head: the picked save stripped,
-/// the open save stripped, then both (the SE-DIF-04 fixture's build:
-/// every player's appearance id at -1). The fixture's first record,
-/// 70101 of team 701, is at the top of the list — in view without
-/// scrolling. In the open-stripped case the head is his only line and
-/// its click selects him (SE-GUI-13).
-#[test]
-fn a_stripped_players_mark_reads_beside_his_head() {
-    let strip = |file: &mut EditFile, on: bool| {
-        if on {
-            for player in file.players_mut() {
-                player.appearance_id = Some(STRIPPED_APPEARANCE_ID);
-            }
-        }
-    };
-    for (open_stripped, picked_stripped, mark) in [
-        (false, true, "stripped in the picked save"),
-        (true, false, "stripped in the open save"),
-        (true, true, "stripped in both"),
-    ] {
-        let dir = crate::test_support::scratch(if open_stripped && picked_stripped {
-            "comparator_mark_both"
-        } else if open_stripped {
-            "comparator_mark_open"
-        } else {
-            "comparator_mark_picked"
-        });
-        let open_path = picked_save(&dir, "open", |file| strip(file, open_stripped));
-        let picked = picked_save(&dir, "picked", |file| strip(file, picked_stripped));
-        let mut view = SaveView::new();
-        view.open(&open_path);
-        view.panel = Some(Panel::Comparator);
-        let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
-        pick(&mut window, &mut view, picked);
-        compared(&mut window, &mut view);
-        let expected = format!("Player 70101  1 PLACEHOLDER, {mark}");
-        let pairs = scroll_to(&mut window, &mut view, &expected);
-        assert!(
-            comparator_nodes(&pairs).iter().any(|node| {
-                node.role() == Role::Button && node.label() == Some(expected.as_str())
-            }),
-            "the stripped mark beside the head: {expected}"
-        );
-
-        if open_stripped && !picked_stripped {
-            // The head is a stripped-only player's only line: its click
-            // selects him (the row's rule is the open save's rosters).
-            // An AccessKit Click: the scroll's animation can keep a row's
-            // bounds moving past the frame it was found on.
-            view.team = TeamChoice::Team(718);
-            view.selected = Some(Selection::Player(718, 0));
-            action_click(
-                &mut window,
-                &mut view,
-                comparator_button(&pairs, &expected).0,
-            );
-            assert_eq!(
-                view.selected,
-                Some(Selection::Player(701, 0)),
-                "70101's team and slot"
-            );
-            assert_eq!(view.team, TeamChoice::Team(701), "the selector moved");
-        }
-    }
 }
 
 // SE-GUI-13

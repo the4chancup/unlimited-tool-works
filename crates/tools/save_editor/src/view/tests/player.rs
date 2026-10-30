@@ -1083,7 +1083,7 @@ fn the_lock_disables_the_fpc_items_with_the_ownership_line() {
         assert_eq!(
             tooltip_containing(&mut window, &mut view, centre(button), "The team's export"),
             Some(
-                "The team's export owns the aesthetics, so edit its settings.toml and recompile."
+                "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch."
                     .to_string(),
             ),
             "{label}'s hover is the ownership line"
@@ -1101,7 +1101,7 @@ fn the_lock_disables_the_fpc_items_with_the_ownership_line() {
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(toggle), "The team's export"),
         Some(
-            "The team's export owns the aesthetics, so edit its settings.toml and recompile."
+            "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch."
                 .to_string(),
         ),
         "the toggle's hover is the ownership line"
@@ -1126,7 +1126,7 @@ fn the_lock_disables_the_fpc_items_with_the_ownership_line() {
         assert_eq!(
             tooltip_containing(&mut window, &mut view, centre(item), "The team's export"),
             Some(
-                "The team's export owns the aesthetics, so edit its settings.toml and recompile."
+                "The team's export owns the aesthetics, so edit its settings.toml and recompile, then apply the patch."
                     .to_string(),
             ),
             "{label}'s hover is the ownership line"

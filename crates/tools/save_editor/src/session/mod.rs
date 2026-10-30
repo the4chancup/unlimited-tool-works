@@ -18,14 +18,13 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use anyhow::{Context, anyhow};
+use pes_savefile::EditFile;
 use pes_savefile::interchange::aesthetics_patch::{AestheticsPatch, PatchError, PatchSummary};
 use pes_savefile::interchange::team_toml::{ImportNote, TeamToml};
-use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_savefile::ops::compare::{PlayerDiff, TeamDiff, compare_players, compare_teams};
 use pes_savefile::schema::ingame_face::IngameFaceField;
 use pes_savefile::schema::schema_for;
-use pes_savefile::{EditFile, SaveError};
 use pes_version::PesVersion;
 use studio_core::RunningPes;
 
@@ -37,8 +36,8 @@ use crate::session::undo::{Change, UndoStack};
 static NEXT_REVISION: AtomicU64 = AtomicU64::new(1);
 
 /// The undo merge key every sealed operation's changes go under
-/// (`edit_entries`, which `edit_players`, `fix_database`, `move_player`,
-/// `strip` and the team operations call): each is one sealed entry, never
+/// (`edit_entries`, which `edit_players`, `fix_database`, `move_player`
+/// and the team operations call): each is one sealed entry, never
 /// part of a widget's open gesture; a widget's key is its `egui::Id` value,
 /// never `u64::MAX`.
 const SEALED_KEY: u64 = u64::MAX;
@@ -85,30 +84,6 @@ pub(crate) struct Session {
     revision: u64,
 }
 
-/// One player's contribution to `strip-and-seed`'s seed (`spec/save_editor.md` "Stripped
-/// save"): his `PlayerAppearance.bin` row and his boots and gloves list values, as the
-/// record holds them (a value past a key's range is carried as stored).
-#[derive(Debug)]
-pub(crate) struct SeedRow {
-    /// The player's id.
-    pub player: u32,
-    /// His `PlayerAppearance.bin` row: the id little-endian, then the 56 bytes his record
-    /// keeps after the base-copy id (`EditFile::appearance_row`).
-    pub row: [u8; 60],
-    /// His boots ID, the `BootsList.bin` pair's value little-endian.
-    pub boots: u32,
-    /// His gloves ID, the `GloveList.bin` pair's value little-endian.
-    pub gloves: u32,
-    /// The player his appearance block copies the face and hair from (`None` for a
-    /// base-copy id of 0 or his own id, which both mean no base copy). The row carries
-    /// no base-copy id, so once stripped he loses the copied face: `strip-and-seed`
-    /// warns for each (`spec/save_editor.md` "Stripped save"). The record's face edit
-    /// flag plays no part: in PES 21 Edit mode (2026-10-15) the game drew the copied
-    /// face with the flag clear as with it set, and over a face model of the player's
-    /// own.
-    pub base_copy: Option<u32>,
-}
-
 impl Session {
     /// Opens the save at `path`. The error names the path and what `pes_savefile` refused.
     pub(crate) fn open(path: &Path) -> anyhow::Result<Session> {
@@ -144,7 +119,7 @@ impl Session {
 
     /// The tick of the last change to the open file, which keys the Cards
     /// left badge's cache: a fresh number every change — an edit pushed, an
-    /// undo, a redo, an import, a patch, a strip, a successful open — and
+    /// undo, a redo, an import, a patch, a successful open — and
     /// never twice the same.
     pub(crate) fn revision(&self) -> u64 {
         self.revision
@@ -568,69 +543,6 @@ impl Session {
         Ok(summary)
     }
 
-    /// The seed `strip-and-seed` writes into the Fox player tables: one `SeedRow` per
-    /// player of the save whose appearance id is set, in record order. A player at -1 is
-    /// left out: his record is not his look, so his rows stand (`spec/save_editor.md`
-    /// "Stripped save"). The error is `appearance_row`'s, which a pre-Fox save refuses.
-    pub(crate) fn seed(&self) -> Result<Vec<SeedRow>, SaveError> {
-        let mut rows = Vec::new();
-        for player in self.file.players() {
-            if is_stripped(&self.file, player.id) {
-                continue;
-            }
-            let copied = player.appearance.base_copy_id;
-            rows.push(SeedRow {
-                player: player.id,
-                row: self.file.appearance_row(player.id)?,
-                boots: player.appearance.boots_id,
-                gloves: player.appearance.gloves_id,
-                base_copy: (copied != 0 && copied != player.id).then_some(copied),
-            });
-        }
-        Ok(rows)
-    }
-
-    /// The players `check-stripped` lists: an appearance id set while at least one other
-    /// player of the save is at -1, in record order. A save with no stripped player lists
-    /// nobody (nothing marked him a table-dressed save).
-    pub(crate) fn restored_players(&self) -> Vec<&PlayerEntry> {
-        if !self
-            .file
-            .players()
-            .iter()
-            .any(|player| player.appearance_id == Some(STRIPPED_APPEARANCE_ID))
-        {
-            return Vec::new();
-        }
-        self.file
-            .players()
-            .iter()
-            .filter(|player| !is_stripped(&self.file, player.id))
-            .collect()
-    }
-
-    /// Sets the appearance id of every player `ids` names to -1
-    /// (`STRIPPED_APPEARANCE_ID`): the tables decide his look from then on. The
-    /// whole strip is one sealed undo entry (SE-GUI-20's Strip again), so one
-    /// Undo restores every id; an id the save lacks, or a player already at -1,
-    /// is left out.
-    pub(crate) fn strip(&mut self, ids: &[u32]) {
-        let edited: Vec<PlayerEntry> = self
-            .file
-            .players()
-            .iter()
-            .filter(|player| {
-                ids.contains(&player.id) && player.appearance_id != Some(STRIPPED_APPEARANCE_ID)
-            })
-            .map(|player| {
-                let mut after = player.clone();
-                after.appearance_id = Some(STRIPPED_APPEARANCE_ID);
-                after
-            })
-            .collect();
-        self.edit_players(edited);
-    }
-
     /// Writes the save to `out`, an existing file there first copied to `<out>.bak` (one
     /// level, as every save does); `out` may be the path the save was opened from.
     pub(crate) fn write(&self, out: &Path) -> anyhow::Result<()> {
@@ -709,13 +621,6 @@ pub(crate) fn refuse_while_running(
         )),
         None => Ok(()),
     }
-}
-
-/// Whether the player with `id` is at appearance id -1 (`STRIPPED_APPEARANCE_ID`): the
-/// tables decide his look, not his record. A player the save lacks is not stripped.
-pub(crate) fn is_stripped(file: &EditFile, id: u32) -> bool {
-    file.player(id)
-        .is_some_and(|player| player.appearance_id == Some(STRIPPED_APPEARANCE_ID))
 }
 
 #[cfg(test)]
@@ -1276,59 +1181,5 @@ mod tests {
         session.undo();
         assert_eq!(session.file().player(70101).unwrap().basic.height, before);
         assert!(!session.can_undo(), "each push was its own entry");
-    }
-
-    // `strip` writes every id as one sealed undo entry, so the Strip again
-    // button's whole change is one Undo. An already-stripped player pushes
-    // nothing.
-    #[test]
-    fn a_strip_is_one_sealed_undo_entry() {
-        let mut session = open(PesVersion::Pes21, "strip_undo");
-        assert_eq!(
-            session.file().player(70101).unwrap().appearance_id,
-            Some(70101),
-            "premise: the fixture's ids are set"
-        );
-
-        session.strip(&[70101, 70103]);
-
-        for id in [70101u32, 70103] {
-            assert_eq!(
-                session.file().player(id).unwrap().appearance_id,
-                Some(STRIPPED_APPEARANCE_ID),
-                "{id} is stripped"
-            );
-        }
-        assert!(session.is_dirty());
-
-        // One undo restores both ids; the stack is then empty (the strip
-        // sealed its entry, so no gesture could merge into it).
-        assert!(session.undo());
-        for id in [70101u32, 70103] {
-            assert_eq!(
-                session.file().player(id).unwrap().appearance_id,
-                Some(id),
-                "{id} is restored"
-            );
-        }
-        assert!(!session.can_undo(), "the whole strip was one entry");
-        assert!(session.redo());
-        assert_eq!(
-            session.file().player(70101).unwrap().appearance_id,
-            Some(STRIPPED_APPEARANCE_ID)
-        );
-
-        // A second strip changes nobody: no entry, no dirt left once undone.
-        session.undo();
-        assert!(!session.is_dirty());
-        session.strip(&[70101]);
-        assert_eq!(
-            session.file().player(70101).unwrap().appearance_id,
-            Some(STRIPPED_APPEARANCE_ID)
-        );
-        session.undo();
-        assert!(!session.is_dirty());
-        session.strip(&[]);
-        assert!(!session.can_undo(), "an empty strip pushes nothing");
     }
 }

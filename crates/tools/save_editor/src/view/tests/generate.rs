@@ -1,11 +1,10 @@
 //! The Generate dialogs' tests (SE-GUI-19, SE-GUI-33): the two Player-menu
 //! items end to end — the explicit name with its colour
 //! codes, the two files split as the format has them, an existing
-//! settings.toml's comments kept, a stripped player's skip, Write's folder
+//! settings.toml's comments kept, a player at -1 generated, Write's folder
 //! gate and an existing file that does not parse.
 
 use pes_savefile::model::names::display_name;
-use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_savefile::schema::ingame_face::IngameFaceField;
 use pes_savefile::settings_toml::{IngameFaceSettings, NameSetting, PlayerSettings};
 
@@ -210,40 +209,28 @@ fn an_unparsable_existing_settings_toml_is_the_error() {
     );
 }
 
-// A stripped player's record is not his look: the dialog says so and
-// offers OK alone, no Write.
+// A player whose appearance id is the game's -1 is generated like any
+// other: his record is his look.
 #[test]
-fn a_stripped_players_dialog_skips_him() {
-    let (mut view, mut window) = open_on(PesVersion::Pes21, "generate_stripped", 701, 1);
+fn a_player_at_minus_one_is_generated() {
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "generate_minus_one", 701, 1);
     let player_id = selected_id(&view, 701, 1);
     let mut entry = player_entry(&view, player_id);
-    entry.appearance_id = Some(STRIPPED_APPEARANCE_ID);
-    let name = display_name(&entry.name);
+    entry.appearance_id = Some(u32::MAX);
     view.session.as_mut().unwrap().edit_players(vec![entry]);
+    let dir = crate::test_support::scratch("generate_minus_one");
     player_menu_item(&mut window, &mut view, "Generate settings.toml");
-    let nodes = draw(&mut window, &mut view);
-    assert!(
-        label_value(
-            &nodes,
-            &format!(
-                "{name} is stripped, so the game reads the database tables rather \
-                 than his save data, and nothing is generated for him."
-            )
-        ),
-        "the skip text"
-    );
-    assert!(
-        !nodes
-            .iter()
-            .any(|node| { node.role() == Role::Button && node.label() == Some("Write") }),
-        "no Write for a stripped player"
-    );
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "OK"),
-        &mut view,
-    );
-    assert!(view.generate.is_none(), "OK closes the dialog");
+    pick_and_write(&mut window, &mut view, dir.clone());
+    let text = std::fs::read_to_string(dir.join("settings.toml")).unwrap();
+    let parsed = PlayerSettings::parse(&text).expect("the file parses");
+    let expected = {
+        let record = player_entry(&view, player_id);
+        assert_eq!(record.appearance_id, Some(u32::MAX), "premise: at -1");
+        let mut settings = PlayerSettings::from_player(&record).unwrap();
+        settings.set_ingame_face(IngameFaceSettings::default());
+        settings
+    };
+    assert_eq!(parsed, expected, "the values are the record's");
 }
 
 // Write waits for a real folder: empty or a path that is not a directory

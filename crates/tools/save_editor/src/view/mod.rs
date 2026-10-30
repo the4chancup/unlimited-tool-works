@@ -41,12 +41,9 @@ use std::sync::Arc;
 
 use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
-use pes_version::{Engine, PesVersion};
-use studio_core::widgets::{
-    collapsing_header, modal, modal_buttons, modal_sentence_gap, toolbar_separator,
-};
+use pes_version::PesVersion;
+use studio_core::widgets::{collapsing_header, modal, modal_buttons, toolbar_separator};
 use studio_core::{ActionEffect, Notice, NoticeAction, NoticeKind, RunningPes};
-use team_widgets::names::append_name;
 
 use crate::session::Session;
 use crate::session::rules::{self, Imported};
@@ -231,12 +228,6 @@ pub(crate) struct SaveView {
     /// unlocked, and deliberately not reset when another save opens — a
     /// session switch, not a per-save one.
     edit_aesthetics: bool,
-    /// The players the Strip again window lists (SE-GUI-20): the rows
-    /// `Session::restored_players` named when the open save was a Fox one
-    /// with some stripped and some restored, resolved once at open (a save
-    /// with one player stripped by accident would otherwise look up every
-    /// other player's team every frame); `None` while it is closed.
-    strip_again: Option<Vec<StripRow>>,
     /// The Set boots and gloves dialog's state while it is open (the Team
     /// menu's `…` item); `None` while it is closed.
     boglo: Option<menus::Boglo>,
@@ -384,18 +375,6 @@ struct Refusal {
     message: String,
 }
 
-/// One row of the Strip again window, resolved at open (the draft's row:
-/// the player's team, his id and his savefile name, colour codes included).
-#[derive(Clone)]
-pub(crate) struct StripRow {
-    /// The player's team's name (`None` when he sits on no roster).
-    team: Option<String>,
-    /// The player id.
-    id: u32,
-    /// His savefile name, colour codes included.
-    name: String,
-}
-
 impl Default for SaveView {
     fn default() -> SaveView {
         SaveView::new()
@@ -452,7 +431,6 @@ impl SaveView {
             generation: 0,
             aesthetics_from_exports: false,
             edit_aesthetics: false,
-            strip_again: None,
             boglo: None,
             stat_num: None,
             bump: 0,
@@ -502,9 +480,7 @@ impl SaveView {
     /// filter is empty and the first player row is selected (a team's own
     /// row is not a player); a file the
     /// save refuses is shown as a refusal and the open session is untouched.
-    /// A Fox save with some appearance ids stripped and some set opens the
-    /// Strip again window over the ones still set (SE-GUI-20); the
-    /// aesthetics lock is deliberately not reset (`edit_aesthetics`).
+    /// The aesthetics lock is deliberately not reset (`edit_aesthetics`).
     pub(crate) fn open(&mut self, path: &Path) {
         match Session::open(path) {
             Ok(session) => {
@@ -518,26 +494,6 @@ impl SaveView {
                         }
                         selection::ListRow::Team(_) => None,
                     });
-                self.strip_again = match session.version().engine() {
-                    Engine::Fox => {
-                        let rows: Vec<StripRow> = session
-                            .restored_players()
-                            .iter()
-                            .map(|player| {
-                                let team = session.file().teams().iter().find(|team| {
-                                    team.roster.iter().any(|slot| slot.player_id == player.id)
-                                });
-                                StripRow {
-                                    team: team.map(|team| team.name.clone()),
-                                    id: player.id,
-                                    name: player.name.clone(),
-                                }
-                            })
-                            .collect();
-                        (!rows.is_empty()).then_some(rows)
-                    }
-                    Engine::PreFox => None,
-                };
                 self.comparator.reset(session.version());
                 open_menu::push_recent(&mut self.recents, path);
                 self.session = Some(session);
@@ -776,7 +732,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
                 });
         });
     }
-    strip_again_dialog(ui, view);
     team::kit_slots_dialog(ui, view);
     menus::boglo_dialog(ui, view);
     menus::stat_num_dialog(ui, view);
@@ -1118,75 +1073,5 @@ fn refusal_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     }
     if close {
         view.refusal = None;
-    }
-}
-
-/// The Strip again window (SE-GUI-20, the draft's `drawStripAgain`): while
-/// `view.strip_again` holds rows, a modal lists them — team name, player id
-/// and the name as the player list colours it — with Strip again (one
-/// sealed undo entry, `Session::strip`) and Close.
-fn strip_again_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
-    let Some(rows) = view.strip_again.clone() else {
-        return;
-    };
-    let mut close = false;
-    let id = egui::Id::unique("save_editor_strip_again");
-    let response = modal(
-        ui.ctx(),
-        id,
-        "Appearance ids set on a stripped save",
-        |ui| {
-            ui.label(format!(
-                "{} {} an appearance id set while the rest are stripped:",
-                rows.len(),
-                if rows.len() == 1 {
-                    "player has"
-                } else {
-                    "players have"
-                }
-            ));
-            modal_sentence_gap(ui);
-            egui::ScrollArea::vertical()
-                .max_height(200.0)
-                .show(ui, |ui| {
-                    for row in &rows {
-                        ui.horizontal(|ui| {
-                            if let Some(team) = &row.team {
-                                ui.add(
-                                    egui::Label::new(egui::RichText::new(team).monospace().weak())
-                                        .truncate(),
-                                );
-                            }
-                            ui.add(
-                                egui::Label::new(
-                                    egui::RichText::new(row.id.to_string()).monospace(),
-                                )
-                                .truncate(),
-                            );
-                            let mut name = egui::text::LayoutJob::default();
-                            append_name(
-                                &mut name,
-                                &row.name,
-                                &egui::TextStyle::Body.resolve(ui.style()),
-                            );
-                            ui.label(name);
-                        });
-                    }
-                });
-            modal_buttons(ui, |ui| {
-                if ui.button("Close").clicked() {
-                    close = true;
-                }
-                if ui.button("Strip again").clicked()
-                    && let Some(session) = view.session.as_mut()
-                {
-                    session.strip(&rows.iter().map(|row| row.id).collect::<Vec<_>>());
-                    close = true;
-                }
-            });
-        },
-    );
-    if close || response.should_close() {
-        view.strip_again = None;
     }
 }

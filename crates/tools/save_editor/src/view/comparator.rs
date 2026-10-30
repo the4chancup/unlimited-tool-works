@@ -23,7 +23,7 @@ use pes_version::PesVersion;
 use team_widgets::violations::{SelectedPlayer, player_head, row_paint};
 
 use crate::diff::{self, DiffReport, PlayerReport};
-use crate::messages::{Side, version_mismatch_sentence};
+use crate::messages::version_mismatch_sentence;
 use crate::session::Session;
 use crate::session::selection::TeamChoice;
 use crate::view::worker::{Pending, WorkerResult};
@@ -155,7 +155,7 @@ pub(super) enum Line {
     /// section's.
     Heading(String),
     /// A player's head (`violations`' `Player <id>  <number> <name>`
-    /// format), weak, his stripped mark appended; `select` on every head
+    /// format), weak; `select` on every head
     /// whose player sits on an open-save roster (the picked-only ones have
     /// none).
     Head {
@@ -491,9 +491,9 @@ impl Place {
     }
 }
 
-/// The first team in `file`'s order whose roster holds each player (the
-/// `strip_again` precedent: one group per player, not one per roster — a
-/// player on a club and a national team reads once).
+/// The first team in `file`'s order whose roster holds each player: one
+/// group per player, not one per roster — a player on a club and a
+/// national team reads once.
 pub(super) fn roster_of(file: &EditFile) -> HashMap<u32, Place> {
     let mut roster = HashMap::new();
     for (index, team) in file.teams().iter().enumerate() {
@@ -539,10 +539,9 @@ fn lines(report: &DiffReport, picked: &EditFile, open: &EditFile) -> Vec<Line> {
             }));
             group = Some(team);
         }
-        // A player's head is his only line when he has no row in scope (a
-        // stripped mark alone), so it clicks like a row does (SE-GUI-13).
+        // A player's head clicks like his rows do (SE-GUI-13).
         lines.push(Line::Head {
-            text: head(open, place, player.id, player.stripped),
+            text: head(open, place, player.id),
             select: place.map(Place::select),
             team,
         });
@@ -578,7 +577,7 @@ fn lines(report: &DiffReport, picked: &EditFile, open: &EditFile) -> Vec<Line> {
         for entry in entries {
             let place = rosters.get(&entry.id).copied();
             lines.push(Line::Head {
-                text: head(file, place, entry.id, entry.stripped),
+                text: head(file, place, entry.id),
                 select: place.filter(|_| clickable).map(Place::select),
                 team: place.map(|place| place.team_id),
             });
@@ -588,22 +587,16 @@ fn lines(report: &DiffReport, picked: &EditFile, open: &EditFile) -> Vec<Line> {
 }
 
 /// `id`'s head as `file` holds him: `player_head` over his roster place,
-/// `Player <id> <name>` when no roster holds him, the stripped mark
-/// appended when the report says he is stripped.
-fn head(file: &EditFile, place: Option<Place>, id: u32, stripped: Option<Side>) -> String {
+/// `Player <id> <name>` when no roster holds him.
+fn head(file: &EditFile, place: Option<Place>, id: u32) -> String {
     let name = file
         .player(id)
         .map(|player| player.name.as_str())
         .unwrap_or("?");
-    let mut head = match place {
+    match place {
         Some(place) => player_head(id, place.number, name),
         None => format!("Player {id} {}", display_name(name)),
-    };
-    if let Some(mark) = stripped.map(mark) {
-        head.push_str(", ");
-        head.push_str(mark);
     }
-    head
 }
 
 /// `lines` narrowed to `team` (All: every line): the heads and rows whose
@@ -632,16 +625,6 @@ fn shown(lines: &[Line], team: TeamChoice) -> Vec<&Line> {
         }
     }
     shown
-}
-
-/// The stripped mark for `side` (the report's `first` is the picked save,
-/// `second` the open one).
-fn mark(side: Side) -> &'static str {
-    match side {
-        Side::First => "stripped in the picked save",
-        Side::Second => "stripped in the open save",
-        Side::Both => "stripped in both",
-    }
 }
 
 /// One line of the list, one text row high (the `violations` list's row

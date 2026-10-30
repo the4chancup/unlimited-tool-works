@@ -6,7 +6,6 @@
 //! someone looks.
 
 use pes_savefile::model::names::display_name;
-use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 
 use super::*;
 use crate::session::rules::{self, ImportCheck};
@@ -217,13 +216,11 @@ fn settled_over(window: &mut Headless, view: &mut SaveView, screen: &str) -> Vec
 }
 
 /// `version`'s fixture open at the default pane under `test`'s scratch
-/// folder, the first player selected. The Strip again window is closed if
-/// the open raised it: it is a screen of its own.
+/// folder, the first player selected.
 fn opened(version: PesVersion, test: &str) -> (SaveView, Headless) {
     let path = fixture(version, &format!("overlap_{test}_{version:?}"));
     let mut view = SaveView::new();
     view.open(&path);
-    view.strip_again = None;
     (view, Headless::new())
 }
 
@@ -544,37 +541,6 @@ fn ruleset_dialogs(version: PesVersion) -> Screens {
     screens
 }
 
-/// The Strip again window, which only a Fox save opens: the PES 21 fixture
-/// with every player stripped but team 702's first three.
-fn strip_again() -> (&'static str, Vec<Drawn>) {
-    let path = fixture(PesVersion::Pes21, "overlap_strip_again");
-    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
-    for player in file.players_mut() {
-        player.appearance_id = Some(STRIPPED_APPEARANCE_ID);
-    }
-    let kept: Vec<u32> = file
-        .team(702)
-        .unwrap()
-        .roster
-        .iter()
-        .map(|slot| slot.player_id)
-        .filter(|&id| id != 0)
-        .take(3)
-        .collect();
-    for id in kept {
-        file.player_mut(id).unwrap().appearance_id = Some(id);
-    }
-    file.save(&path).unwrap();
-    let mut view = SaveView::new();
-    view.open(&path);
-    assert!(view.strip_again.is_some(), "premise: the window opened");
-    let mut window = Headless::new();
-    (
-        "Strip again",
-        settled_over(&mut window, &mut view, "Strip again"),
-    )
-}
-
 /// Asserts that no two widgets of one layer overlap on `screens` but for
 /// the overlaps `MEANT` lists, and that every entry naming a screen drawn
 /// here still excuses one: an entry excusing nothing names a pair that
@@ -665,11 +631,4 @@ fn no_two_widgets_overlap_on_the_prompts_and_the_refusal() {
 #[test]
 fn no_two_widgets_overlap_on_the_ruleset_dialogs() {
     assert_no_overlap(&on_both(ruleset_dialogs));
-}
-
-// PES 21 alone: only a Fox save opens the Strip again window.
-#[test]
-fn no_two_widgets_overlap_on_the_strip_again_window() {
-    let (screen, drawn) = strip_again();
-    assert_no_overlap(&[(PesVersion::Pes21, screen, drawn)]);
 }

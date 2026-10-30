@@ -14,7 +14,7 @@ use crate::codec::{
 use crate::container::{ContainerError, SaveContainer};
 use crate::model::player::PlayerEntry;
 use crate::model::team::TeamEntry;
-use crate::schema::{SectionLayout, VersionSchema, row_offset, schema_for};
+use crate::schema::{SectionLayout, VersionSchema, schema_for};
 
 /// An open save: the retained container plus the decoded players and teams.
 #[derive(Clone)]
@@ -54,15 +54,6 @@ pub enum SaveError {
         section: &'static str,
         /// The unmatched id.
         id: u32,
-    },
-    /// A `PlayerAppearance.bin` row was asked of a save whose version has
-    /// none: a pre-Fox game's appearance travels in the savefile, not in
-    /// the database tables (PES 17 reads a row, but strip and seed writes
-    /// the savefile).
-    #[error("{version:?}: a pre-Fox save has no PlayerAppearance.bin row")]
-    NoAppearanceRow {
-        /// The save's version.
-        version: PesVersion,
     },
 }
 
@@ -257,32 +248,6 @@ impl EditFile {
         self.players.iter_mut().find(|p| p.id == id)
     }
 
-    /// The player's `PlayerAppearance.bin` row as the save holds it: his id
-    /// little-endian, then the 56 bytes his record keeps after the
-    /// appearance block's base-copy id, his entry as `to_bytes` would write
-    /// it. The row comes from the entry rather than through his
-    /// `PlayerSettings` because the settings route refuses a stored value
-    /// past a key's range, and real cup saves hold those values. The 56
-    /// bytes are all modeled fields, so writing the entry over a zeroed
-    /// record loses nothing of the save's (`appearance_row_is_the_records_bytes`
-    /// fails the day a schema leaves a gap there). A pre-Fox save has no row
-    /// (`NoAppearanceRow`); an id the save does not hold is `RecordId`.
-    pub fn appearance_row(&self, player_id: u32) -> Result<[u8; 60], SaveError> {
-        let offset = row_offset(self.version()).ok_or(SaveError::NoAppearanceRow {
-            version: self.version(),
-        })?;
-        let player = self.player(player_id).ok_or(SaveError::RecordId {
-            section: "players",
-            id: player_id,
-        })?;
-        let mut record = vec![0u8; self.schema.player.size];
-        write_player(player, &mut record, self.schema.player)?;
-        let mut row = [0u8; 60];
-        row[..4].copy_from_slice(&player_id.to_le_bytes());
-        row[4..].copy_from_slice(&record[offset..offset + 56]);
-        Ok(row)
-    }
-
     /// Every team (team, roster and tactics joined), in record order.
     pub fn teams(&self) -> &[TeamEntry] {
         &self.teams
@@ -418,7 +383,7 @@ mod tests {
     use pes_version::PesVersion;
 
     use super::*;
-    use crate::test_support::{FIXTURES, open, payload, test_salt};
+    use crate::test_support::{FIXTURES, open, test_salt};
 
     #[test]
     fn every_fixture_opens_and_rewrites_byte_for_byte() {
@@ -685,80 +650,5 @@ mod tests {
         );
 
         std::fs::remove_dir_all(&dir).expect("cleanup");
-    }
-
-    /// `appearance_row` is the record's bytes as the save holds them: the
-    /// player id little-endian, then the 56 bytes the record keeps after
-    /// the appearance block's base-copy id, located by the test's own
-    /// section arithmetic. The row's 56 bytes are all modeled fields, so
-    /// the test pins the offset, the index and the id, not unmodeled bits.
-    #[test]
-    fn appearance_row_is_the_records_bytes() {
-        for (version, offset) in [
-            (PesVersion::Pes18, 128usize),
-            (PesVersion::Pes19, 128),
-            (PesVersion::Pes20, 252),
-            (PesVersion::Pes21, 252),
-        ] {
-            let (file, _) = open(version);
-            let schema = schema_for(version);
-            let decrypted = payload(version);
-            let count = file.players().len();
-            for index in [0, count / 2, count - 1] {
-                let player_id = file.players()[index].id;
-                let row = file
-                    .appearance_row(player_id)
-                    .expect("a Fox player has a row");
-                let at = schema.players.offset + index * schema.player.size + offset;
-                let mut expected = [0u8; 60];
-                expected[..4].copy_from_slice(&player_id.to_le_bytes());
-                expected[4..].copy_from_slice(&decrypted[at..at + 56]);
-                assert_eq!(row, expected, "{version:?} player {player_id}");
-            }
-        }
-    }
-
-    /// An edited field shows in the row at its byte, every other byte
-    /// unchanged: `neck_length` is the first appearance byte's low nibble
-    /// (record byte 252 on PES 21, row byte 4).
-    #[test]
-    fn appearance_row_shows_an_edited_field() {
-        let (mut file, _) = open(PesVersion::Pes21);
-        let player_id = file.players()[0].id;
-        let before = file.appearance_row(player_id).expect("the row reads");
-        let player = file.player_mut(player_id).expect("the player");
-        let changed = (player.appearance.neck_length + 1) % 16;
-        assert_ne!(
-            player.appearance.neck_length, changed,
-            "the write changes the field"
-        );
-        player.appearance.neck_length = changed;
-
-        let after = file.appearance_row(player_id).expect("the row reads");
-        assert_eq!(after[4] & 0x0f, changed, "neck_length's nibble");
-        assert_eq!(after[4] & 0xf0, before[4] & 0xf0, "neck_size's nibble");
-        for (i, (a, b)) in before.iter().zip(after.iter()).enumerate() {
-            if i != 4 {
-                assert_eq!(a, b, "row byte {i}");
-            }
-        }
-    }
-
-    /// A pre-Fox save has no row (`NoAppearanceRow`); an id the save does
-    /// not hold is `RecordId`.
-    #[test]
-    fn appearance_row_refuses_pre_fox_and_unknown_ids() {
-        let (file, _) = open(PesVersion::Pes17);
-        let err = file.appearance_row(70101).expect_err("PES 17 has no row");
-        assert!(
-            matches!(err, SaveError::NoAppearanceRow { version } if version == PesVersion::Pes17),
-            "{err:?}"
-        );
-        let (file, _) = open(PesVersion::Pes21);
-        let err = file.appearance_row(u32::MAX).expect_err("no such player");
-        assert!(
-            matches!(err, SaveError::RecordId { section: "players", id } if id == u32::MAX),
-            "{err:?}"
-        );
     }
 }
