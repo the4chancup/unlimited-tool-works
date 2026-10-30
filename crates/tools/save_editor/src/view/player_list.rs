@@ -284,7 +284,7 @@ pub(super) fn step_player(view: &mut SaveView, forward: bool) -> bool {
     true
 }
 
-/// The selection a click on `row` makes.
+/// The `Selection` that names `row`.
 fn row_selection(row: ListRow) -> Selection {
     match row {
         ListRow::Team(id) => Selection::Team(id),
