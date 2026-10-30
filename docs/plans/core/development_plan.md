@@ -27,6 +27,25 @@ to one is written for 1.0.0 (Phase 16). What a tester would notice still gets it
 beyond the per-view topics, the update check and the teams-list merge, which a wide audience
 needs and a tester told in person does not, ship in Release 0.2.0 or later.
 
+**What the version number means.** The suite's version is semver-shaped, because Cargo
+requires that shape, the update check compares the release tag with `CARGO_PKG_VERSION` as
+semver (`distribution.md`), and the milestones above are written in it. The meaning is an
+application's, not semver's API contract: nothing compiles against the suite, so there is no
+API for a major number to protect. The major marks an era: 1.0.0 is the feature-complete
+release whose surfaces are contracts, and a later major is for a change of that weight (support
+for a PES generation dropped), so it stays 1 for a long time. The minor is a feature release,
+the patch fixes only. Compatibility is promised per surface instead, each with its own rule:
+the export layout stays readable by every later release (the format the cups rely on is never
+broken; a new layout would arrive through the Export upgrader), the AATF logic carries its own
+version (a change of verdicts is a new logic version, never the same one rewritten), the
+aesthetics patch its allocation scheme version, the Team TOML only ever gains keys (an absent
+key leaves the team's value untouched, so an older file still applies), and the
+settings keys, CLI flags and exit codes, finding codes and `.4ccm` follow the maintenance
+mode's rule from 1.0.0 (a migration or a clear refusal, never a silent reinterpretation). A
+release's number never stands in for one of these: a member reads a surface's own version,
+not the app's, to know whether a file still works. Calendar versions (2026.11) would match the
+cup seasons but drop the milestones the plans are written in.
+
 **Divegrass Before Christmas (DBC).** The invitational (exports due 2026-11-18) is the first
 test ground for the Save editor, which members should have as early as the usual rigor allows,
 to get used to it before the deadline. What matters most there is a working editor whose AATF
