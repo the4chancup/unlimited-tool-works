@@ -1319,11 +1319,12 @@ the editor exposes them as:
   "Team Export Data" (a save's is "Edit Data")`), nothing changed.
 - **Texport import/export** (export is new; PES itself can import the file). The cup events
   take a team's tactics as a Texport until they accept Team TOML files, so both exports
-  stay. Export writes PES 18-21 files from `Texport::new`'s templates, and PES 2017 files
-  built from the open save (worklog 8.9k5 k5f: the payload is a fixed layout, zero but a
-  constant header, the team's emblem, the team's records and the players); on a PES
-  2015-2016 save it is disabled, its tooltip saying those versions have no template
-  (`spec/pes_savefile/operations.md` "Texport (read + write)").
+  stay. Export writes PES 17-21 files from `Texport::new`'s templates and the open save
+  (`plans/pes_savefile/operations.md` "Texport (read + write)"); on a PES 2015-2016 save it is
+  disabled, its tooltip saying `PES 2015 and 2016 have no Texport template`. The Save dialog
+  suggests `<short name>.ted` on 18-21 and, on 17, the name the game reads from the save's
+  folder: `TEXPORT` and eight digits, no extension, the first number from `00000000` that
+  folder lacks, so the dialog opens on a name that writes over nothing.
   PES 2017's own import (measured 2026-10-30) differs in two ways the panel keeps: the game
   offers only the Texport's own team as the target, where the panel imports onto the selected
   team; and the game leaves the save's team name as it was, where the panel writes the file's.

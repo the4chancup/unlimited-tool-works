@@ -18,6 +18,38 @@ note is how a member learns that before applying the file. `apply` adds no note:
 no ids. Measured 2026-10-22 (worklog 8.9): no current cup save breaks the rule; five older PES
 16 saves break it in 13 to 25 teams each.
 
+### Texport (read + write)
+
+What exists of this is in `spec/pes_savefile/operations.md` "Texport (read + write)". Planned
+on top of it:
+
+**Writing PES 2017.** `Texport::new` writes a PES 2017 file from templates and the open save,
+as it writes 18-21, rather than by editing a real 5.6 MB file the app would have to ship. Ten
+real files measured (2026-10-30) put everything but the team's records and emblem in a fixed
+layout. The payload, 5,578,704 bytes, is zero but:
+
+- `0x00..0x30`, the header template (`17`, `0x50`, `0x551f80`, `0x27d8`, `4`, `4`, then `0x0c`
+  at `0x24`), then 32 bytes written zero: they differ in every real file, no digest of the
+  payload tried matches them, and the game imports a file with them zeroed and its records
+  changed;
+- the emblem block, `0x50..0x10050`, written zero: the save holds no emblem image (a cup
+  team's comes from the CPK), and a real export of a team without one is zero there;
+- `01 00 00 00` at `0x10050`;
+- the records where the reader finds them: the team record at `0x10054`, the coach block at
+  `0x10234` (the template `d7 00 ff ff 61 "Manager"`, the team id patched in front: the variant
+  real files pair with `0x27d8`; the other pairs `e7`, `0x60`, `"MANAGER"` with `0x2774`), the
+  roster at `0x1028C`, the tactics at `0x10330`, and each filled roster slot's player from
+  `0x510840` at the player record's stride;
+- the 8-byte tail `04 00 00 00 01 00 00 00`.
+
+The container: the PES 2017 key; the description `Team Export Data 01` with the team's name
+at `0x80` (the number differs between real files, and the game lists the name); the game's
+own thumbnail, `logo.png` (31,590 bytes, equal in all ten files), bundled with the crate; the
+identifier's 64 per-file bytes zero, then `TEXPORT` (the game imports a file with them
+zeroed); and the writer's serial, which `new` takes from the caller (the open save's,
+`EditFile::serial`) and ignores on 18-21. PES 2015 and 2016 stay `NoTemplate`: no file of
+theirs was studied for a writer, and no cup asks for one.
+
 ### Aesthetics patch (new)
 
 What exists of this is in `spec/pes_savefile/operations.md` "Aesthetics patch (new)" (the

@@ -14208,3 +14208,17 @@ and a cup moves a team between slots; restricting Texports alone to their own id
 one format behave unlike the rest. Writing the name costs nothing on PES 2017, which shows the
 DLC team bin's names rather than the save's, and keeps the save's record equal to the file's.
 Plan: `plans/save_editor.md` "Interchange formats in the UI" (the Texport bullet).
+
+## 2026-10-30 — pes_savefile, save_editor — PES 2017 Texports written from templates and the open save
+Decision: `Texport::new` writes PES 2017 from a measured template (the payload's header and
+tail, the coach block, the `0x10050` marker), the open save's records, a zero emblem, the
+game's own thumbnail bundled with the crate, zero per-file bytes, and the open save's serial,
+which `new` now takes (unused on 18-21). The panel enables its Texport export on PES 2017 and
+suggests the first free `TEXPORT0000000N` in the save's folder.
+Why: a template from measurements, not a real 5.6 MB file shipped and edited, because ten
+real files differ only in the records, the emblem and per-file bytes the game does not check
+(two proof imports, 2026-10-30). The emblem stays zero because the save has no emblem image;
+the save's serial rather than none because the game has only been seen importing files that
+carry one. PES 2015 and 2016 stay without a writer: no file of theirs was studied for one.
+Plan: `plans/pes_savefile/operations.md` "Texport (read + write)"; `plans/save_editor.md`
+"Interchange formats in the UI" (the Texport bullet).

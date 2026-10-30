@@ -1866,7 +1866,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         - manual: checked 2026-10-30 (0), PES 2017: `proof_TEXPORT` (as `TEXPORT00000004`) is
           listed (/fgg/), imported onto its own team (VGL 14, 794: the record and 23 players)
           and saved: any 64 identifier bytes and either u32 at 0x0c. Not seen: the zero
-          emblem's effect (no VGL card in Select Team shows an emblem). Next: (1)
+          emblem's effect (no VGL card in Select Team shows an emblem). A second proof
+          zeroed the payload header's 32 per-file bytes (0x30..0x50, matched by no digest
+          tried) and changed the team and player names: imported and saved likewise, so
+          the writer writes them zero
+        - (1) + (2) planned and drafted 2026-10-30 (`plans/pes_savefile/operations.md`
+          "Texport (read + write)", `plans/save_editor.md` the Texport bullet, DECISIONS "PES
+          2017 Texports written from templates and the open save"; the drafts' `ixTedName`
+          and the button on 17): one brief, then (3) in game
       - [ ] k5g after 0.0.1 (the maintainer, 2026-10-30: "the behavior applies to all
         versions, but we'll have to confirm it"): on PES 2015, 2016 and 2018-2021, import a
         team file in game and check whether the save's team name is kept and the shown name

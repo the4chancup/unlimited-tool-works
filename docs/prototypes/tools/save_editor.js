@@ -7516,16 +7516,22 @@ function ixExportToml() {
 }
 // SE-GUI-17's Texport export: the file is the team's records; the draft
 // keeps the team snapshot the import dialog then reads back.
+// PES 2017 reads its Texports from the save's folder by name, TEXPORT and eight
+// digits with no extension: the app suggests the first number that folder lacks
+// (the draft knows no folder, so it shows the one after the maintainer's four).
+function ixTedName(t) {
+  return version() === 17 ? "TEXPORT00000004" : (t.short_name || t.id) + ".ted";
+}
 function ixExportTed() {
   const t = selTeam();
   const input = h("input", { type: "text", style: "width:420px",
-    value: folderOf(S.path) + "\\" + (t.short_name || t.id) + ".ted" });
+    value: folderOf(S.path) + "\\" + ixTedName(t) });
   dlg("export-ted", "Export team as Texport", h("div", {},
     h("p", {}, weak("The native save dialog (rfd) opens here; the draft edits the path inline.")),
     input),
     [button("Save", () => {
       S.tedFile = { version: version(), path: input.value,
-        label: (t.short_name || t.id) + ".ted  (Texport, PES " + version()
+        label: ixTedName(t) + "  (Texport, PES " + version()
           + ", written this session)",
         model: clone(t) };
       publishNotice("Wrote " + input.value.split("\\").pop()
@@ -7591,10 +7597,10 @@ function interchangePanel() {
             title: ixTomlHeld(t)
               ? "One team's full-fidelity file, the same text the CLI's export-toml writes"
               : "The draft holds no export text for this team" })),
-      h("span", { title: version() >= 18 ? "A file PES itself can import" : "PES 2015 to 2017 have no Texport template" },
+      h("span", { title: version() >= 17 ? "A file PES itself can import" : "PES 2015 and 2016 have no Texport template" },
         button("Texport\u2026", ixExportTed, {
-          disabled: version() < 18,
-          title: version() >= 18 ? "A file PES itself can import" : "PES 2015 to 2017 have no Texport template" }))),
+          disabled: version() < 17,
+          title: version() >= 17 ? "A file PES itself can import" : "PES 2015 and 2016 have no Texport template" }))),
     h("div", { class: "sep" }),
     h("div", { class: "row" }, weak("Import into " + t.name + " (" + t.id + ") "),
       weak("file "),
