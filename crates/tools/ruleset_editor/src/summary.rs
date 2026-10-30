@@ -434,7 +434,7 @@ fn tier_line(ruleset: &Ruleset, medal_tiers: &BTreeSet<&str>, tier: &Tier) -> St
         String::new()
     } else {
         format!(
-            "; a stat that may sit below its target warns up to {} over it, past that it is not allowed",
+            "; an ability stat that may sit below its target warns up to {} over it, past that it is not allowed",
             tier.stat_warning
         )
     };
@@ -443,7 +443,7 @@ fn tier_line(ruleset: &Ruleset, medal_tiers: &BTreeSet<&str>, tier: &Tier) -> St
     let total = match (tier.total_within_targets, tier.stat_warning) {
         (false, _) => "",
         (true, 0) => {
-            "; the stats that may sit below their target added up may not exceed their targets' sum"
+            "; the ability stats that may sit below their target added up may not exceed their targets' sum"
         }
         (true, _) => "; those stats added up may not exceed their targets' sum",
     };
@@ -963,7 +963,7 @@ mod tests {
         let line = tier_line(&ruleset, &BTreeSet::new(), &ruleset.tiers[0]);
         assert!(
             line.contains(
-                "; the stats that may sit below their target added up may not exceed their \
+                "; the ability stats that may sit below their target added up may not exceed their \
                  targets' sum"
             ),
             "{line}"

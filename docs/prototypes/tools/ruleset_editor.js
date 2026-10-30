@@ -1300,9 +1300,9 @@ function summary(r) {
     const when = condText(t.when);
     const free = Object.entries(t.free).map(([g, n]) => `${n} free ${g === "com" ? "COM style" + (n > 1 ? "s" : "") : human(g).toLowerCase()}`);
     const stats = Object.entries(t.stats).map(([s, v]) => `${human(s).toLowerCase()} ${v}`);
-    const band = t.stat_warning ? `; a stat that may sit below its target warns up to ${t.stat_warning} over it, past that it is not allowed` : "";
+    const band = t.stat_warning ? `; an ability stat that may sit below its target warns up to ${t.stat_warning} over it, past that it is not allowed` : "";
     const total = !t.total_within_targets ? ""
-      : `; ${t.stat_warning ? "those stats" : "the stats that may sit below their target"} added up may not exceed their targets' sum`;
+      : `; ${t.stat_warning ? "those stats" : "the ability stats that may sit below their target"} added up may not exceed their targets' sum`;
     L.push(`- **${t.label}**: ${count}${when ? ", " + when : ""}; every stat ${t.rate}${stats.length ? " (" + stats.join(", ") + ")" : ""}${band}${total}; form ${t.form}, injury resistance ${t.injury_resistance}, weak foot ${t.weak_foot.usage}/${t.weak_foot.accuracy}; ${t.cards} paid cards${t.min_cards ? ` (at least ${t.min_cards} paid skill${t.min_cards === 1 ? "" : "s"}, an extra A position counting as one)` : ""}${free.length ? ", " + free.join(", ") : ""}; ${t.a_positions} A position${t.a_positions === 1 ? "" : "s"}${t.name_color ? `; name in colour ${t.name_color}` : ""}.`);
   });
   if ((r.medal_systems || []).length) {
@@ -1530,9 +1530,9 @@ const VIEWS = {
         h("td", {}, h("span", { class: "row", style: "margin:0" }, checkbox("", t.name_color !== null, v => t.name_color = v ? "cc9900ff" : null, "This tier's names carry a colour code"),
           t.name_color !== null ? colour(t.name_color, v => t.name_color = v) : weak("none"))),
         h("td", {}, drag(t.stat_warning, v => t.stat_warning = v ?? 0, { max: 99, width: 40,
-          title: "Points over the target that warn rather than err, for the stats that may sit below their target (0: every point errs)" })),
+          title: "Points over the target that warn rather than err, for the ability stats that may sit below their target (0: every point errs)" })),
         h("td", {}, checkbox("", t.total_within_targets, v => t.total_within_targets = v,
-          "The stats that may sit below their target add up to at most their targets, an error past them")),
+          "The ability stats that may sit below their target add up to at most their targets, an error past them")),
         h("td", {}, R.tiers.length > 1 ? button("✕", () => { R.medal_systems.forEach(s => { delete s.counts[t.id]; }); R.tiers.splice(i, 1); structural(); }, { frame0: true, title: "Remove" }) : "")), R.tiers, i));
       g.append(h("tr", {}, h("td", {}), h("td", { colspan: 15 }, collapsing(`tier:${i}`, "Stat targets, free cards and conditions", () => h("div", {},
         strong("Per-stat targets"), h("span", { class: "weak" }, " (empty: the rate)"),

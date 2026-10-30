@@ -74,8 +74,9 @@ the last edit changed are highlighted.
   or "the rest"), counts as, rate, form, injury resistance, weak foot, paid cards, minimum
   cards, A positions, name colour (none or a swatch), warning band (`stat_warning`: points
   over the target that warn rather than err, 0 meaning none) and a "stats add up to at most the
-  targets" checkbox (`total_within_targets`), both covering only the stats that may sit below
-  their target (`stats.at_most`), as their tooltips say. Every number, here and in every
+  targets" checkbox (`total_within_targets`), both covering only the ability stats that may
+  sit below their target (`stats.at_most`; form, injury resistance and weak foot are never in
+  either), as their tooltips say. Every number, here and in every
   section, draws its value as stored, never clamped to its control's range on sight (DBC7's 48
   paid cards, past a 0-20 range, were rewritten to 20 by drawing the section), and the paid and
   minimum cards run to 48, every card the game has. The id commits on Enter or focus loss, as a path row does, not per keystroke,
@@ -139,8 +140,8 @@ the last edit changed are highlighted.
   the medal systems, heights and universal rules; each card group with its cards; each team
   settings entry; each special as a sentence from its When and Then; the suggestions), generated
   from the data. Each sentence states the rule the logic applies, not a looser one: the warning
-  band and the stat total name the stats that may sit below their target (`stats.at_most`), the
-  only ones they cover; the minimum names paid skills, an extra A position counting as one, not
+  band and the stat total name the ability stats that may sit below their target
+  (`stats.at_most`), the only ones they cover; the minimum names paid skills, an extra A position counting as one, not
   COM styles; an effect's weak foot is a target like the tier's, not an upper limit; and an
   effect's cards are joined with "and" (each one free, each one required), a condition's with
   "or".

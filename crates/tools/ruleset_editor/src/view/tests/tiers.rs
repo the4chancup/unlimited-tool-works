@@ -922,6 +922,31 @@ fn an_ambiguous_id_commit_renames_the_tier_alone() {
     );
 }
 
+/// A typed id commits when the next click lands on an earlier row's id
+/// field: that field is drawn first and takes the keyboard on the
+/// press, before the typed row sees its own focus loss.
+#[test]
+fn a_click_on_an_earlier_id_field_commits_the_typed_id() {
+    let (ctx, _events, mut window, mut view) =
+        tiers_view(template("Divegrass Before Christmas 7"), false);
+
+    click_role(&mut window, &mut view, &ctx, Role::TextInput, "silver");
+    type_replacing(&mut window, &mut view, &ctx, "royal");
+    assert_eq!(
+        ruleset(&view).tiers[1].id,
+        "silver",
+        "premise: nothing committed"
+    );
+
+    click_role(&mut window, &mut view, &ctx, Role::TextInput, "gold");
+    assert_eq!(
+        ruleset(&view).tiers[1].id,
+        "royal",
+        "the typed id committed"
+    );
+    assert_eq!(ruleset(&view).tiers[0].id, "gold", "Gold kept its id");
+}
+
 /// A half-typed id survives the window losing focus mid-edit (the
 /// buffer resets only on the edit's own focus loss, not on an
 /// Alt+Tab).
@@ -1597,7 +1622,7 @@ fn each_tier_field_writes_to_its_own_binding() {
             role_labeled(
                 &frame.nodes,
                 Role::CheckBox,
-                "The stats that may sit below their target add up to at most their targets, an \
+                "The ability stats that may sit below their target add up to at most their targets, an \
                  error past them",
             ),
             &mut view,

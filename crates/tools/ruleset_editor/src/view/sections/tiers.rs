@@ -174,6 +174,14 @@ fn tier_row(
     // while the window is unfocused, so resetting on it would drop a
     // half-typed id on an Alt+Tab.
     if ui.ctx().memory(|memory| memory.has_focus(response.id)) {
+        // A click on an earlier row's field takes the keyboard on the
+        // press, before the typed row is drawn to see its focus loss:
+        // its text commits here, or the slot's overwrite would drop it.
+        if let Some((row, text)) = id_edit.take_if(|(row, _)| *row != index)
+            && ruleset.tiers.get(row).is_some_and(|tier| tier.id != text)
+        {
+            rename_tier_id(ruleset, row, text);
+        }
         *id_edit = Some((index, id));
     } else if id_edit.as_ref().is_some_and(|(row, _)| *row == index) {
         *id_edit = None;
@@ -222,14 +230,14 @@ fn tier_row(
 
     cell(ui, index, drop, |ui| {
         widgets::number(ui, &mut ruleset.tiers[index].stat_warning, 0..=99).on_hover_text(
-            "Points over the target that warn rather than err, for the stats that may sit below \
+            "Points over the target that warn rather than err, for the ability stats that may sit below \
              their target (0: every point errs)",
         )
     });
 
     cell(ui, index, drop, |ui| {
         checkbox(ui, &mut ruleset.tiers[index].total_within_targets, "").on_hover_text(
-            "The stats that may sit below their target add up to at most their targets, an \
+            "The ability stats that may sit below their target add up to at most their targets, an \
              error past them",
         )
     });
