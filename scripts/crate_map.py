@@ -14,11 +14,13 @@ meta = json.loads(subprocess.run(["cargo", "metadata", "--no-deps", "--format-ve
 names = {p["name"] for p in meta["packages"]}
 deps = {}
 folder = {}
+description = {}
 for p in meta["packages"]:
     path = p["manifest_path"].replace("\\", "/").split("/crates/")[-1]
     if path.startswith("dev/"):
         continue
     folder[p["name"]] = path.split("/")[0]
+    description[p["name"]] = p.get("description") or ""
     deps[p["name"]] = sorted({d["name"] for d in p["dependencies"]
                               if d["name"] in names and d["kind"] is None})
 
@@ -119,8 +121,9 @@ for name, (x, y) in pos.items():
     fill = "#ffffff" if not outside else "#f6f6f6"
     stroke = "#555" if not outside else "#aaa"
     dash = ' stroke-dasharray="4 3"' if outside else ""
-    svg.append(f'<g class="node" data-name="{name}"><title>{name}: uses '
-               f'{", ".join(deps[name]) or "no workspace crate"}</title>'
+    about = html.escape(description[name], quote=True)
+    svg.append(f'<g class="node" data-name="{name}" data-about="{about}">'
+               f'<title>{name}: {about}</title>'
                f'<rect x="{x}" y="{y}" width="{BOX_W}" height="{BOX_H}" rx="5" fill="{fill}" '
                f'stroke="{stroke}"{dash}/>'
                f'<text x="{x + BOX_W / 2}" y="{y + 20}" font-size="12" text-anchor="middle" '
@@ -138,7 +141,11 @@ svg.focus .edge, svg.focus .node {{ opacity: 0.12; }}
 svg.focus .edge.uses {{ opacity: 1; stroke: #1f6fd1; stroke-width: 2; }}
 svg.focus .edge.usedby {{ opacity: 1; stroke: #d9822b; stroke-width: 2; }}
 svg.focus .node.on {{ opacity: 1; }}
-.node {{ cursor: default; }}
+.node {{ cursor: pointer; }}
+.node.pinned rect {{ stroke: #1f6fd1; stroke-width: 2.5; }}
+#about {{ min-height: 1.4em; font-size: 15px; color: #222; }}
+#about b {{ margin-right: 6px; }}
+#about .hint {{ color: #888; }}
 .key span {{ display: inline-block; width: 22px; height: 3px; vertical-align: middle;
   margin: 0 4px 0 14px; }}
 </style></head><body>
@@ -147,33 +154,60 @@ svg.focus .node.on {{ opacity: 1; }}
 dev-dependencies left out). Rows run from the binary at the top to the libs that use nothing
 at the bottom; within the libs, a row uses only rows below it.
 Dashed crates are not linked into <code>UTW</code>.</p>
-<p class="key">Hover a crate (or open the page with <code>#save_editor</code> after its
-name):<span style="background:#1f6fd1"></span>what it uses
+<p class="key">Click a crate to keep it highlighted and put it in the address
+(<code>#save_editor</code>), again to let go:<span style="background:#1f6fd1"></span>what it uses
 <span style="background:#d9822b"></span>what uses it</p>
+<p id="about"><span class="hint">Hover a crate for what it is.</span></p>
 {"".join(svg)}
 <script>
 const svg = document.querySelector("svg");
 const edges = [...svg.querySelectorAll(".edge")];
-function focusOn(name) {{
-    svg.classList.add("focus");
-    const on = new Set([name]);
-    for (const edge of edges) {{
-      if (edge.dataset.from === name) {{ edge.classList.add("uses"); on.add(edge.dataset.to); }}
-      if (edge.dataset.to === name) {{ edge.classList.add("usedby"); on.add(edge.dataset.from); }}
-    }}
-    for (const other of svg.querySelectorAll(".node"))
-      other.classList.toggle("on", on.has(other.dataset.name));
-}}
-function clearFocus() {{
+const nodes = [...svg.querySelectorAll(".node")];
+const about = document.getElementById("about");
+const hint = about.firstElementChild;
+// The crate a click or the address chose; a hover shows another only while it lasts.
+let pinned = null;
+function show(name) {{
+  for (const edge of edges) edge.classList.remove("uses", "usedby");
+  const node = nodes.find(n => n.dataset.name === name);
+  if (!node) {{
     svg.classList.remove("focus");
-    for (const edge of edges) edge.classList.remove("uses", "usedby");
+    about.replaceChildren(hint);
+    return;
+  }}
+  svg.classList.add("focus");
+  const on = new Set([name]);
+  for (const edge of edges) {{
+    if (edge.dataset.from === name) {{ edge.classList.add("uses"); on.add(edge.dataset.to); }}
+    if (edge.dataset.to === name) {{ edge.classList.add("usedby"); on.add(edge.dataset.from); }}
+  }}
+  for (const other of nodes) other.classList.toggle("on", on.has(other.dataset.name));
+  about.innerHTML = "";
+  const title = document.createElement("b");
+  title.textContent = name;
+  about.append(title, node.dataset.about);
 }}
-for (const node of svg.querySelectorAll(".node")) {{
-  node.addEventListener("mouseenter", () => {{ clearFocus(); focusOn(node.dataset.name); }});
-  node.addEventListener("mouseleave", clearFocus);
+function pin(name) {{
+  pinned = nodes.some(n => n.dataset.name === name) ? name : null;
+  for (const node of nodes) node.classList.toggle("pinned", node.dataset.name === pinned);
+  // replaceState, not location.hash: a click is no page to go back to.
+  const address = location.pathname + location.search + (pinned ? "#" + pinned : "");
+  history.replaceState(null, "", address);
+  show(pinned);
 }}
-// A link ending in #<crate> opens with that crate highlighted.
-if (location.hash) focusOn(decodeURIComponent(location.hash.slice(1)));
+for (const node of nodes) {{
+  node.addEventListener("mouseenter", () => show(node.dataset.name));
+  node.addEventListener("mouseleave", () => show(pinned));
+  node.addEventListener("click", event => {{
+    event.stopPropagation();
+    pin(node.dataset.name === pinned ? null : node.dataset.name);
+  }});
+}}
+svg.addEventListener("click", () => pin(null));
+const fromAddress = () => decodeURIComponent(location.hash.slice(1));
+// A crate typed after # in an open tab changes only the hash: no reload, so listen for it.
+window.addEventListener("hashchange", () => pin(fromAddress()));
+pin(fromAddress());
 </script></body></html>
 """
 OUT = "docs/crate_map.html"
