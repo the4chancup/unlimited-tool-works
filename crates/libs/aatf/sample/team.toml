@@ -236,7 +236,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.01.stats]
 attacking_prowess = 74
@@ -449,7 +448,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.02.stats]
 attacking_prowess = 77
@@ -662,7 +660,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.03.stats]
 attacking_prowess = 99
@@ -875,7 +872,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.04.stats]
 attacking_prowess = 77
@@ -1088,7 +1084,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.05.stats]
 attacking_prowess = 77
@@ -1301,7 +1296,6 @@ weight = 85                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.06.stats]
 attacking_prowess = 88
@@ -1514,7 +1508,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.07.stats]
 attacking_prowess = 77
@@ -1727,7 +1720,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.08.stats]
 attacking_prowess = 77
@@ -1940,7 +1932,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.09.stats]
 attacking_prowess = 77
@@ -2153,7 +2144,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.10.stats]
 attacking_prowess = 88
@@ -2366,7 +2356,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.11.stats]
 attacking_prowess = 99
@@ -2579,7 +2568,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.12.stats]
 attacking_prowess = 74
@@ -2792,7 +2780,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.13.stats]
 attacking_prowess = 77
@@ -3005,7 +2992,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.14.stats]
 attacking_prowess = 77
@@ -3218,7 +3204,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.15.stats]
 attacking_prowess = 77
@@ -3431,7 +3416,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.16.stats]
 attacking_prowess = 77
@@ -3644,7 +3628,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.17.stats]
 attacking_prowess = 77
@@ -3857,7 +3840,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.18.stats]
 attacking_prowess = 77
@@ -4070,7 +4052,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.19.stats]
 attacking_prowess = 77
@@ -4283,7 +4264,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.20.stats]
 attacking_prowess = 77
@@ -4496,7 +4476,6 @@ weight = 85                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.21.stats]
 attacking_prowess = 88
@@ -4709,7 +4688,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.22.stats]
 attacking_prowess = 77
@@ -4922,7 +4900,6 @@ weight = 80                     # kg
 # boots_id = 0
 # gloves_id = 0
 # base_copy_id = 0                # equal to the player's own id in the file = unset; becomes the target's own id
-# stripped = false                # informational: the import ignores it
 
 [players.23.stats]
 attacking_prowess = 77
