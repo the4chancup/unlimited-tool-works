@@ -1491,7 +1491,7 @@ const VIEWS = {
       h("tr", {}, h("td", {}, "Event page"), h("td", {}, text(R.page, v => R.page = v || null,
         { width: 220, placeholder: "https://", title: "Opened by a click on the event logo" }))),
       h("tr", {}, h("td", {}, "Event logo"), h("td", {}, eventLogoField()))), "general-fields"));
-    d.append(h("div", { class: "weak" }, "The Save editor draws the logo at its top right while this ruleset is picked; a click on it opens the event page."));
+    d.append(h("div", { class: "weak" }, "The Save editor shows the logo on its top right while this ruleset is picked; a click on it opens the event page."));
     d.append(h("div", { class: "sep" }), strong("Rating stats"),
       h("div", { class: "weak" }, "A player's rating is the highest of these; it picks his tier. What a stat may sit at is the target, the warning band and the stat total, not the rating."),
       named(statGrid(STATS, R.stats.rating, v => R.stats.rating = v), "rating-stats"));

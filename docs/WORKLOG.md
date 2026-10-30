@@ -5917,7 +5917,9 @@ briefs, review loops, gates and mutation runs as for any step.
     as on a document opened from a file suggests that file's name, not the ruleset's
     (`second.4ccrules` opened, Save as offered `divegrass_before_christmas_7.4ccrules`; the
     plan is silent, and every file dialog's convention is the file's own name); a document
-    never saved keeps the suggestion from its name
+    never saved keeps the suggestion from its name; and the General section's event-logo note
+    (`view/sections/general.rs`) reads "The Save editor shows the logo on its top right while
+    this ruleset is picked; …" (the maintainer's wording, as the prototype has it)
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
   - [ ] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30): off
