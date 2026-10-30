@@ -16,7 +16,8 @@ use pes_savefile::schema::fields::{PlayerField, PlayerText, RosterField};
 use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FORM_ROW_SPACING, radio, step_choice, step_number, text_box, wheel_steps,
+    FORM_ROW_SPACING, add_enabled, add_enabled_ui, radio, step_choice, step_number, text_box,
+    wheel_steps,
 };
 use team_widgets::cards;
 use team_widgets::names::append_name;
@@ -616,7 +617,8 @@ fn small_box(
             }
         }
         None => {
-            ui.add_enabled(
+            add_enabled(
+                ui,
                 false,
                 egui::Button::new("-")
                     .min_size(egui::vec2(BOX_WIDTH, ui.spacing().interact_size.y)),
@@ -665,7 +667,7 @@ fn combos(
                     // The version has no stronger hand: the toggle stays,
                     // at Right, disabled with the `PES NN+` tooltip
                     // (SE-GUI-06).
-                    ui.add_enabled_ui(false, |ui| {
+                    add_enabled_ui(ui, false, |ui| {
                         side_row(ui, field_width, 0);
                     })
                     .response

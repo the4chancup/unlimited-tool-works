@@ -21,7 +21,7 @@ use std::path::{Path, PathBuf};
 
 use aatf::Ruleset;
 use studio_core::ToolContext;
-use studio_core::widgets::{menu_button, modal_buttons, modal_frame};
+use studio_core::widgets::{add_enabled, add_enabled_ui, menu_button, modal_buttons, modal_frame};
 
 pub(crate) use prompt::Pending;
 pub(crate) use sections::Section;
@@ -545,7 +545,7 @@ fn toolbar(
                 }
             });
             // The generator is a later build's (20.7).
-            ui.add_enabled_ui(false, |ui| {
+            add_enabled_ui(ui, false, |ui| {
                 menu_button(ui, "Randomize", |_| ());
             });
             ui.separator();
@@ -578,7 +578,7 @@ fn toolbar(
 /// One menu item: added enabled or not, the menu closed on a click, the
 /// click returned.
 fn menu_item(ui: &mut egui::Ui, enabled: bool, button: egui::Button) -> bool {
-    let clicked = ui.add_enabled(enabled, button).clicked();
+    let clicked = add_enabled(ui, enabled, button).clicked();
     if clicked {
         ui.close();
     }

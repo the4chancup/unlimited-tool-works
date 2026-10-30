@@ -23,7 +23,9 @@ use pes_savefile::schema::limits::motion_top;
 use pes_savefile::schema::player_max_value;
 use pes_savefile::settings_toml::{Kind, SettingKey};
 use pes_version::PesVersion;
-use studio_core::widgets::{FORM_ROW_SPACING, step_choice, step_number, wheel_steps};
+use studio_core::widgets::{
+    FORM_ROW_SPACING, add_enabled, add_enabled_ui, step_choice, step_number, wheel_steps,
+};
 
 use crate::session::Session;
 use crate::view::abilities::{gating_tooltip, maybe_end_row, number, small_stat};
@@ -108,7 +110,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 ui.weak("A later patch overwrites whatever is edited by hand.");
             }
         }
-        ui.add_enabled_ui(!locked, |ui| {
+        add_enabled_ui(ui, !locked, |ui| {
             groups(
                 ui,
                 session,
@@ -221,7 +223,7 @@ fn fpc_group(
             ui.horizontal_wrapped(|ui| {
                 ui.label(error.to_string());
                 for label in ["Hide default body", "Show default body"] {
-                    ui.add_enabled(false, egui::Button::new(label))
+                    add_enabled(ui, false, egui::Button::new(label))
                         .on_disabled_hover_text(error.to_string());
                 }
             });
@@ -344,7 +346,7 @@ fn edit_flags(
             }
         }),
         None => {
-            ui.add_enabled(false, |ui: &mut egui::Ui| {
+            add_enabled(ui, false, |ui: &mut egui::Ui| {
                 studio_core::widgets::checkbox(ui, &mut false, BASE_COPY_LABEL)
             })
             .on_disabled_hover_text("PES 15 to 18 only");
@@ -643,7 +645,7 @@ fn motion_grid(
                     }
                 }
                 None => {
-                    ui.add_enabled_ui(false, |ui| {
+                    add_enabled_ui(ui, false, |ui| {
                         ui.add(
                             egui::DragValue::new(&mut 0u8)
                                 .range(number_range(SettingKey::Dribbling)),

@@ -22,8 +22,8 @@ use pes_version::PesVersion;
 use crate::settings::{CommonSettings, Theme, pes_folder_pattern};
 use crate::tool::{ShellRequest, StudioTool, ToolContext};
 use crate::widgets::{
-    FORM_ROW_SPACING, PathCommit, PathKind, checkbox, path_row, path_row_commit, row_label,
-    step_choice, step_number, wheel_steps,
+    FORM_ROW_SPACING, PathCommit, PathKind, add_enabled, add_enabled_ui, checkbox, path_row,
+    path_row_commit, row_label, step_choice, step_number, wheel_steps,
 };
 
 use super::sidebar::{SETTINGS_LABEL, Sidebar, exe_tooltip, version_blocker, version_label};
@@ -173,7 +173,7 @@ impl SettingsMenu {
                 let overrides = !common.pes_folders.is_empty();
                 self.per_version |= overrides;
                 ui.label("");
-                ui.add_enabled(!overrides, |ui: &mut egui::Ui| {
+                add_enabled(ui, !overrides, |ui: &mut egui::Ui| {
                     checkbox(ui, &mut self.per_version, "A folder per version")
                 })
                 .on_hover_text(
@@ -394,19 +394,18 @@ fn version_row(
     );
     let blocker = version_blocker(tools);
     let mut picked = common.pes_version;
-    let combo = ui
-        .add_enabled_ui(blocker.is_none(), |ui| {
-            egui::ComboBox::from_id_salt("settings-pes-version")
-                .selected_text(version_label(picked, false))
-                .show_ui(ui, |ui| {
-                    for version in PesVersion::ALL {
-                        ui.selectable_value(&mut picked, version, version_label(version, false));
-                    }
-                })
-                .response
-        })
-        .inner
-        .labelled_by(label.id);
+    let combo = add_enabled_ui(ui, blocker.is_none(), |ui| {
+        egui::ComboBox::from_id_salt("settings-pes-version")
+            .selected_text(version_label(picked, false))
+            .show_ui(ui, |ui| {
+                for version in PesVersion::ALL {
+                    ui.selectable_value(&mut picked, version, version_label(version, false));
+                }
+            })
+            .response
+    })
+    .inner
+    .labelled_by(label.id);
     if let Some(next) = step_choice(PesVersion::ALL, &picked, wheel_steps(ui, &combo)) {
         picked = next;
     }

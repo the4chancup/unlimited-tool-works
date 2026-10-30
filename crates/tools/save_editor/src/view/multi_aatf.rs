@@ -14,7 +14,7 @@
 
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
-use studio_core::widgets::{modal, modal_buttons, step_choice, wheel_steps};
+use studio_core::widgets::{add_enabled, modal, modal_buttons, step_choice, wheel_steps};
 use studio_core::{Notice, NoticeKind};
 use team_widgets::violations::{ListUse, Wording, issue_groups, rule_name, sentence};
 
@@ -334,9 +334,7 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
             if ui.button("Close").clicked() {
                 close = true;
             }
-            if ui
-                .add_enabled(listed.is_some(), egui::Button::new("Copy to clipboard"))
-                .clicked()
+            if add_enabled(ui, listed.is_some(), egui::Button::new("Copy to clipboard")).clicked()
                 && let Some((key, checks)) = listed
             {
                 ui.ctx()

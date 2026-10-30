@@ -26,7 +26,7 @@ use pes_savefile::interchange::team_toml::labels::{
 use pes_savefile::model::{PlayerEntry, PlayerPositions, PlayerSkills, PlayerStats};
 use pes_savefile::schema::fields::{ABILITY_FIELDS, PlayerField};
 use pes_savefile::schema::first_version_with;
-use studio_core::widgets::{FORM_ROW_SPACING, step_number, wheel_steps};
+use studio_core::widgets::{FORM_ROW_SPACING, add_enabled, step_number, wheel_steps};
 use team_widgets::cards;
 use team_widgets::pitch::POSITION_ROWS;
 use team_widgets::violations::Wording;
@@ -918,7 +918,8 @@ fn number_field<T: egui::emath::Numeric>(
 /// minimum size, so an enabled version's control takes the same rect,
 /// SE-GUI-06) with the `PES NN+` tooltip.
 pub(crate) fn gated_number(ui: &mut egui::Ui, field: PlayerField) {
-    ui.add_enabled(
+    add_enabled(
+        ui,
         false,
         egui::Button::new("-").min_size(ui.spacing().interact_size),
     )

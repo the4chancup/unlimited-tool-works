@@ -19,6 +19,7 @@ use pes_savefile::model::names::display_name;
 use pes_savefile::ops::compare::compare_players;
 use pes_savefile::schema::schema_for;
 use pes_savefile::settings_toml::SettingsError;
+use studio_core::widgets::add_enabled;
 use team_widgets::violations::SelectedPlayer;
 
 use crate::view::comparator::{self, OpenSaveDialog, Place};
@@ -315,8 +316,7 @@ fn contents(ui: &mut egui::Ui, patch: &Patch, revision: u64) -> Option<Action> {
         }
         if let Some((path, Ok(preview))) = &shown {
             ui.weak(summary_line(path, preview));
-            if ui
-                .add_enabled(!preview.rows.is_empty(), egui::Button::new("Apply"))
+            if add_enabled(ui, !preview.rows.is_empty(), egui::Button::new("Apply"))
                 .on_hover_text("Write the patch into the save as one undoable edit")
                 .clicked()
             {

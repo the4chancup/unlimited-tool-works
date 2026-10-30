@@ -11,6 +11,7 @@ use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::tactics::{Formation, FormationSlot, TeamTactics};
 use pes_version::PesVersion;
 use studio_core::theme::{self, Palette};
+use studio_core::widgets::add_enabled_ui;
 
 use crate::names::append_name;
 use crate::tactics::{
@@ -176,7 +177,7 @@ struct Held {
 /// `view.formation`, never the record.
 pub fn formation_selector(ui: &mut egui::Ui, tactics: &TeamTactics, view: &mut TacticsView) {
     let locked = lock_to_fielded(tactics, view);
-    ui.add_enabled_ui(!locked, |ui| {
+    add_enabled_ui(ui, !locked, |ui| {
         ui.horizontal(|ui| {
             bar_selector_spacing(ui);
             for (index, label) in FORMATIONS.iter().enumerate() {

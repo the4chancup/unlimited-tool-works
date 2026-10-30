@@ -29,7 +29,7 @@ use pes_savefile::model::names::display_name;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_savefile::schema::texport::texport_layout;
 use pes_version::PesVersion;
-use studio_core::widgets::{checkbox, collapsing_header};
+use studio_core::widgets::{add_enabled, add_enabled_ui, checkbox, collapsing_header};
 use studio_core::{EventLines, Message, Notice, NoticeKind, PipelineEvent};
 use team_widgets::names::append_name;
 
@@ -676,14 +676,14 @@ fn contents(
         {
             action = Some(Action::Export(Export::TeamToml));
         }
-        if ui
-            .add_enabled(
-                texport_layout(version).is_some(),
-                egui::Button::new("Texport\u{2026}"),
-            )
-            .on_hover_text("A file PES itself can import")
-            .on_disabled_hover_text("PES 2015 to 2017 have no Texport template")
-            .clicked()
+        if add_enabled(
+            ui,
+            texport_layout(version).is_some(),
+            egui::Button::new("Texport\u{2026}"),
+        )
+        .on_hover_text("A file PES itself can import")
+        .on_disabled_hover_text("PES 2015 to 2017 have no Texport template")
+        .clicked()
         {
             action = Some(Action::Export(Export::Texport));
         }
@@ -752,7 +752,7 @@ fn contents(
         }
         if staged.held.aesthetics {
             if locked {
-                ui.add_enabled_ui(false, |ui| checkbox(ui, &mut false, "aesthetics"))
+                add_enabled_ui(ui, false, |ui| checkbox(ui, &mut false, "aesthetics"))
                     .inner
                     .on_disabled_hover_text(OWNERSHIP_TIP);
             } else {
@@ -786,13 +786,13 @@ fn contents(
     // record an edit that changes nothing.
     let unchanged = any_chosen && matches!(&staged.import, Ok(import) if !import.changes);
     ui.horizontal_wrapped(|ui| {
-        if ui
-            .add_enabled(
-                staged.import.is_ok() && any_chosen && !unchanged,
-                egui::Button::new("Apply"),
-            )
-            .on_hover_text("Write the chosen sections as one undoable edit")
-            .clicked()
+        if add_enabled(
+            ui,
+            staged.import.is_ok() && any_chosen && !unchanged,
+            egui::Button::new("Apply"),
+        )
+        .on_hover_text("Write the chosen sections as one undoable edit")
+        .clicked()
         {
             action = Some(Action::Apply);
         }

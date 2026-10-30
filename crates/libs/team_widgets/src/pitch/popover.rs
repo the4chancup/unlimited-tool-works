@@ -3,7 +3,7 @@
 //! beside Make GK and the X and Y fields.
 
 use pes_savefile::model::tactics::TeamTactics;
-use studio_core::widgets::{step_choice, step_number, wheel_steps};
+use studio_core::widgets::{add_enabled, add_enabled_ui, step_choice, step_number, wheel_steps};
 
 use super::{GRID_X, GRID_Y, drop_rule, overalls_of, position_label};
 use crate::names::append_name;
@@ -136,7 +136,7 @@ pub(super) fn slot_popover(
                     ui.available_width()
                 };
                 if keeper {
-                    ui.add_enabled_ui(false, |ui| {
+                    add_enabled_ui(ui, false, |ui| {
                         egui::ComboBox::from_id_salt("slot position")
                             .width(width)
                             .selected_text("GK")
@@ -169,8 +169,7 @@ pub(super) fn slot_popover(
                 }
             },
             |ui| {
-                if ui
-                    .add_enabled(!keeper, egui::Button::new("Make GK"))
+                if add_enabled(ui, !keeper, egui::Button::new("Make GK"))
                     .on_hover_text("Swaps him into goal; the keeper takes his slot")
                     .clicked()
                 {
@@ -229,7 +228,8 @@ fn stepper(ui: &mut egui::Ui, value: &mut u8, max: u8, enabled: bool) {
         ui.spacing_mut().button_padding.x = 0.0;
         let arrow = |ui: &mut egui::Ui, glyph: &str, corner_radius, can_step: bool| {
             let response = cell(ui, ARROW_WIDTH, |ui| {
-                ui.add_enabled(
+                add_enabled(
+                    ui,
                     enabled && can_step,
                     // Clicks only, as a system spinner's arrows: Tab goes
                     // from X to Y, and the focused number steps with the
@@ -267,7 +267,8 @@ fn stepper(ui: &mut egui::Ui, value: &mut u8, max: u8, enabled: bool) {
                 visuals.corner_radius = egui::CornerRadius::ZERO;
             }
             let size = ui.available_size();
-            ui.add_enabled(
+            add_enabled(
+                ui,
                 enabled,
                 egui::DragValue::new(&mut *value)
                     .range(0..=max)

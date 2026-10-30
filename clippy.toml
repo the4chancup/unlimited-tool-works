@@ -1,6 +1,9 @@
 # egui's own checkbox and radio button draw a checked box on the same grey as an unchecked
 # one; every view draws the suite's (`studio_core::widgets`), which fills it in the selection
 # blue. Only `widgets/choice.rs`, which builds on egui's, calls these.
+# egui's disabled widget and scope leave a disabled widget's text almost as plain as an
+# enabled one's; every view draws the suite's, which dims it. Only `widgets/enabled.rs`,
+# which builds on egui's, calls these.
 disallowed-methods = [
     { path = "egui::Ui::checkbox", reason = "draw studio_core::widgets::checkbox, the suite's blue one" },
     { path = "egui::Ui::radio", reason = "draw studio_core::widgets::radio, the suite's blue one" },
@@ -8,4 +11,7 @@ disallowed-methods = [
     { path = "egui::Checkbox::new", reason = "draw studio_core::widgets::checkbox, the suite's blue one" },
     { path = "egui::Checkbox::without_text", reason = "draw studio_core::widgets::checkbox_without_text, the suite's blue one" },
     { path = "egui::RadioButton::new", reason = "draw studio_core::widgets::radio, the suite's blue one" },
+    { path = "egui::Ui::add_enabled", reason = "draw studio_core::widgets::add_enabled, whose disabled text is dimmed" },
+    { path = "egui::Ui::add_enabled_ui", reason = "draw studio_core::widgets::add_enabled_ui, whose disabled text is dimmed" },
+    { path = "egui::Ui::disable", reason = "draw studio_core::widgets::add_enabled_ui, whose disabled text is dimmed" },
 ]

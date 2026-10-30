@@ -9,6 +9,7 @@ use std::time::Duration;
 
 use crate::shell::window_size;
 use crate::status::{ActionEffect, Notice, ShellCondition};
+use crate::widgets::add_enabled;
 
 /// How long a notice without an action stays in the middle slot (the draft's
 /// `noticeTimeoutS`), measured on egui's clock from the frame it is first drawn. A notice
@@ -240,7 +241,8 @@ impl StatusBar {
                                     | ActionEffect::SwitchTool(_)
                                     | ActionEffect::FixPesPath { .. } => None,
                                 };
-                                let button = ui.add_enabled(
+                                let button = add_enabled(
+                                    ui,
                                     blocked.is_none(),
                                     egui::Button::new(&action.label),
                                 );

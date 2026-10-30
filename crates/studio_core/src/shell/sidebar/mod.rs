@@ -17,7 +17,7 @@ use crate::pes_process::RunningPes;
 use crate::settings::CommonSettings;
 use crate::status::{ActionEffect, Notice, NoticeAction, NoticeKind};
 use crate::tool::{PlannedTool, ShellRequest, StudioTool, ToolContext};
-use crate::widgets::{step_choice, wheel_steps};
+use crate::widgets::{add_enabled_ui, step_choice, wheel_steps};
 
 #[cfg(test)]
 mod tests;
@@ -438,19 +438,18 @@ impl Sidebar {
                 for entry in drawn_planned(args) {
                     // In the registry's order: a CLI-only tool's entry is here
                     // (ST-SIDE-08).
-                    let response = ui
-                        .add_enabled_ui(false, |ui| {
-                            entry_row(
-                                ui,
-                                row_width,
-                                cell,
-                                egui::RichText::new(entry.icon).size(ICON_SIZE),
-                                (!rail).then_some(entry.label),
-                                false,
-                                false,
-                            )
-                        })
-                        .inner;
+                    let response = add_enabled_ui(ui, false, |ui| {
+                        entry_row(
+                            ui,
+                            row_width,
+                            cell,
+                            egui::RichText::new(entry.icon).size(ICON_SIZE),
+                            (!rail).then_some(entry.label),
+                            false,
+                            false,
+                        )
+                    })
+                    .inner;
                     response.widget_info(|| {
                         egui::WidgetInfo::labeled(egui::Role::Label, false, entry.label)
                     });
@@ -524,59 +523,58 @@ impl Sidebar {
         let tooltip = exe_tooltip(check, &folder);
 
         let mut picked = common.pes_version;
-        let combo_response = ui
-            .add_enabled_ui(blocker.is_none(), |ui| {
-                ui.scope(|ui| {
-                    ui.visuals_mut().override_text_color = selector_color(check, ui.visuals());
-                    let combo = egui::ComboBox::from_id_salt("pes-version");
-                    let selected = version_label(picked, rail);
-                    // The combo always lays out an arrow slot `icon_width` wide after
-                    // its text, growing into the spare width. On the rail that slot is
-                    // zero wide and paints nothing, and an empty growing atom before
-                    // the year takes the same share of the spare width, so the year
-                    // sits on the button's centre.
-                    let combo = if rail {
-                        ui.spacing_mut().icon_width = 0.0;
-                        combo
-                            .icon(|_, _, _, _| {})
-                            .selected_text((egui::Atom::grow(), selected))
-                    } else {
-                        combo.selected_text(selected)
-                    };
-                    // The combo spans the sidebar's width: the default `combo_width` (~100)
-                    // overflows the rail and widens the layout region past its edge.
-                    let response = combo
-                        .width(ui.available_width())
-                        // Extend, not wrap: the text stays on one line, so the
-                        // selector row's height is the same open and closed (item 3).
-                        .wrap_mode(egui::TextWrapMode::Extend)
-                        .show_ui(ui, |ui| {
-                            for version in PesVersion::ALL {
-                                ui.selectable_value(
-                                    &mut picked,
-                                    version,
-                                    version_label(version, false),
-                                );
-                            }
-                        })
-                        .response;
-                    if response.has_focus() {
-                        self.focus_label = Some("pes-version");
-                    }
-                    // A disabled selector senses no press, so a blocked one opens nothing.
-                    if rail
-                        && response.is_pointer_button_down_on()
-                        && ui.input(|input| input.pointer.primary_down())
-                    {
-                        self.selector_pressed = true;
-                        // Open on the next frame without waiting for more input.
-                        ui.ctx().request_repaint();
-                    }
-                    response
-                })
-                .inner
+        let combo_response = add_enabled_ui(ui, blocker.is_none(), |ui| {
+            ui.scope(|ui| {
+                ui.visuals_mut().override_text_color = selector_color(check, ui.visuals());
+                let combo = egui::ComboBox::from_id_salt("pes-version");
+                let selected = version_label(picked, rail);
+                // The combo always lays out an arrow slot `icon_width` wide after
+                // its text, growing into the spare width. On the rail that slot is
+                // zero wide and paints nothing, and an empty growing atom before
+                // the year takes the same share of the spare width, so the year
+                // sits on the button's centre.
+                let combo = if rail {
+                    ui.spacing_mut().icon_width = 0.0;
+                    combo
+                        .icon(|_, _, _, _| {})
+                        .selected_text((egui::Atom::grow(), selected))
+                } else {
+                    combo.selected_text(selected)
+                };
+                // The combo spans the sidebar's width: the default `combo_width` (~100)
+                // overflows the rail and widens the layout region past its edge.
+                let response = combo
+                    .width(ui.available_width())
+                    // Extend, not wrap: the text stays on one line, so the
+                    // selector row's height is the same open and closed (item 3).
+                    .wrap_mode(egui::TextWrapMode::Extend)
+                    .show_ui(ui, |ui| {
+                        for version in PesVersion::ALL {
+                            ui.selectable_value(
+                                &mut picked,
+                                version,
+                                version_label(version, false),
+                            );
+                        }
+                    })
+                    .response;
+                if response.has_focus() {
+                    self.focus_label = Some("pes-version");
+                }
+                // A disabled selector senses no press, so a blocked one opens nothing.
+                if rail
+                    && response.is_pointer_button_down_on()
+                    && ui.input(|input| input.pointer.primary_down())
+                {
+                    self.selector_pressed = true;
+                    // Open on the next frame without waiting for more input.
+                    ui.ctx().request_repaint();
+                }
+                response
             })
-            .inner;
+            .inner
+        })
+        .inner;
         let steps = wheel_steps(ui, &combo_response);
         if let Some(next) = step_choice(PesVersion::ALL, &picked, steps) {
             picked = next;

@@ -38,6 +38,12 @@ pub struct Palette {
     /// contrast, 2.5, on the light panel, where the dark grey itself would read
     /// at 6.5, as loud as the text.
     pub count_grey: egui::Color32,
+    /// The resting text colour of the widgets in a disabled scope, before
+    /// egui fades the whole scope to half opacity: a disabled button's,
+    /// checkbox label's, combo's or number box's text. Darker than the
+    /// resting text, so a disabled widget's text reads dimmer than the fade
+    /// alone leaves it.
+    pub disabled_text: egui::Color32,
     /// The positions grid's chosen C rating's fill, and a held side toggle's
     /// (the draft's `.sel.on.rc` `#5a5a5a`): the quiet grey a chosen rating or
     /// side gets where the accent would pull the eye. Its light value has the
@@ -144,6 +150,10 @@ impl Palette {
         success: egui::Color32::from_rgb(0x4c, 0xd9, 0x64),
         readout: egui::Color32::from_gray(0xa0),
         count_grey: egui::Color32::from_rgb(0x5a, 0x5a, 0x5a),
+        // egui's fade draws the resting text, 180, at a measured `#6c6c6c`
+        // over the dark panel's 27; 134 lands at the drafts' measured
+        // `#555555` to `#5a5a5a`.
+        disabled_text: egui::Color32::from_gray(134),
         rating_c_fill: egui::Color32::from_rgb(0x5a, 0x5a, 0x5a),
         rating_a_fill: egui::Color32::from_rgb(0x12, 0x96, 0x48),
         rating_a_text: egui::Color32::WHITE,
@@ -186,6 +196,9 @@ impl Palette {
         success: egui::Color32::from_rgb(0x13, 0x73, 0x33),
         readout: egui::Color32::from_gray(0x5f),
         count_grey: egui::Color32::from_gray(0x9f),
+        // The light resting text unchanged: the drafts are dark only, so the
+        // light theme keeps egui's fade.
+        disabled_text: egui::Color32::from_gray(60),
         rating_c_fill: egui::Color32::from_gray(0x9f),
         rating_a_fill: egui::Color32::from_rgb(0x12, 0x96, 0x48),
         rating_a_text: egui::Color32::WHITE,
@@ -564,6 +577,7 @@ mod tests {
             success,
             readout,
             count_grey,
+            disabled_text,
             rating_c_fill,
             rating_a_fill,
             rating_a_text,
@@ -601,6 +615,7 @@ mod tests {
             ("success", *success),
             ("readout", *readout),
             ("count_grey", *count_grey),
+            ("disabled_text", *disabled_text),
             ("rating_c_fill", *rating_c_fill),
             ("rating_a_fill", *rating_a_fill),
             ("rating_a_text", *rating_a_text),
@@ -640,10 +655,11 @@ mod tests {
     // their own; every other is on a surface both themes share.
     #[test]
     fn only_the_panel_colours_differ_between_the_themes() {
-        const THEMED: [&str; 8] = [
+        const THEMED: [&str; 9] = [
             "success",
             "readout",
             "count_grey",
+            "disabled_text",
             "rating_c_fill",
             "lineup_keeper",
             "lineup_defender",

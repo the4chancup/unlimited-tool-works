@@ -12,8 +12,8 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{
-    menu_button, modal, modal_buttons, modal_fit_contents, modal_sentence_gap, radio_value,
-    step_choice, step_number, wheel_steps,
+    add_enabled, add_enabled_ui, menu_button, modal, modal_buttons, modal_fit_contents,
+    modal_sentence_gap, radio_value, step_choice, step_number, wheel_steps,
 };
 
 use crate::session::Session;
@@ -34,7 +34,7 @@ use crate::view::{NUMBER_BOX, Panel, Refusal, SaveView, selected_player, selecte
 /// disabled hover (SE-GUI-22).
 pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     let Some(team_id) = selected_team_id(view) else {
-        ui.add_enabled_ui(false, |ui| {
+        add_enabled_ui(ui, false, |ui| {
             menu_button(ui, "Team", |_| ());
         });
         return;
@@ -64,13 +64,13 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             session.set_edited_flag(team_id);
             ui.close();
         }
-        if ui
-            .add_enabled(
-                unlocked,
-                egui::Button::new("Set boots and gloves IDs for everyone\u{2026}"),
-            )
-            .on_disabled_hover_text(OWNERSHIP_TIP)
-            .clicked()
+        if add_enabled(
+            ui,
+            unlocked,
+            egui::Button::new("Set boots and gloves IDs for everyone\u{2026}"),
+        )
+        .on_disabled_hover_text(OWNERSHIP_TIP)
+        .clicked()
             && let Some(player_id) = prefill
         {
             view.boglo = Some(Boglo::new(session, player_id));
@@ -81,19 +81,18 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             ui.close();
         }
         ui.separator();
-        if ui
-            .add_enabled(
-                unlocked,
-                egui::Button::new("Clear visual flags").shortcut_text("Ctrl+F"),
-            )
-            .on_disabled_hover_text(OWNERSHIP_TIP)
-            .clicked()
+        if add_enabled(
+            ui,
+            unlocked,
+            egui::Button::new("Clear visual flags").shortcut_text("Ctrl+F"),
+        )
+        .on_disabled_hover_text(OWNERSHIP_TIP)
+        .clicked()
         {
             session.clear_visual_flags(team_id);
             ui.close();
         }
-        if ui
-            .add_enabled(fpc_ok, egui::Button::new("Set FPC invisibility"))
+        if add_enabled(ui, fpc_ok, egui::Button::new("Set FPC invisibility"))
             .on_disabled_hover_text(&fpc_tip)
             .clicked()
             && let Ok(ids) = hide_ids
@@ -101,8 +100,7 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             session.team_fpc(team_id, fpc::Preset::Hide, ids);
             ui.close();
         }
-        if ui
-            .add_enabled(fpc_ok, egui::Button::new("Remove FPC invisibility"))
+        if add_enabled(ui, fpc_ok, egui::Button::new("Remove FPC invisibility"))
             .on_disabled_hover_text(&fpc_tip)
             .clicked()
             && let Ok(ids) = hide_ids
@@ -128,7 +126,7 @@ pub(crate) fn team_menu(ui: &mut egui::Ui, view: &mut SaveView) {
 /// ownership line as its disabled hover (SE-GUI-22).
 pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.session.is_none() {
-        ui.add_enabled_ui(false, |ui| {
+        add_enabled_ui(ui, false, |ui| {
             menu_button(ui, "Player", |_| ());
         });
         return;
@@ -146,7 +144,7 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
                 "Generate settings.toml\u{2026}",
                 "Generate in-game face\u{2026}",
             ] {
-                ui.add_enabled(false, egui::Button::new(label))
+                add_enabled(ui, false, egui::Button::new(label))
                     .on_disabled_hover_text("The Player menu acts on a player: pick a player row");
             }
         });
@@ -177,13 +175,13 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             view.stat_num = Some(StatNum::bump(session, player_id, view.bump));
             ui.close();
         }
-        if ui
-            .add_enabled(
-                fpc_ok,
-                egui::Button::new("Toggle FPC settings").shortcut_text("Ctrl+I"),
-            )
-            .on_disabled_hover_text(&fpc_tip)
-            .clicked()
+        if add_enabled(
+            ui,
+            fpc_ok,
+            egui::Button::new("Toggle FPC settings").shortcut_text("Ctrl+I"),
+        )
+        .on_disabled_hover_text(&fpc_tip)
+        .clicked()
             && let Ok(ids) = hide_ids
         {
             session.toggle_fpc(player_id, ids);
@@ -238,7 +236,7 @@ pub(crate) fn player_menu(ui: &mut egui::Ui, view: &mut SaveView) {
 /// (SE-GUI-22). The menu is disabled with no save open.
 pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
     if view.session.is_none() {
-        ui.add_enabled_ui(false, |ui| {
+        add_enabled_ui(ui, false, |ui| {
             menu_button(ui, "Savefile", |_| ());
         });
         return;
@@ -275,8 +273,7 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
             ui.close();
         }
         ui.separator();
-        if ui
-            .add_enabled(unlocked, egui::Button::new("Fix database\u{2026}"))
+        if add_enabled(ui, unlocked, egui::Button::new("Fix database\u{2026}"))
             .on_disabled_hover_text(OWNERSHIP_TIP)
             .clicked()
         {

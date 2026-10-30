@@ -201,6 +201,7 @@ pub fn step_number<N: Numeric>(value: &mut N, steps: i32, range: RangeInclusive<
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::widgets::add_enabled;
 
     /// The controls' scroll area: this tall, inside a taller content.
     const VIEW_HEIGHT: f32 = 200.0;
@@ -281,7 +282,8 @@ mod tests {
                         // Room above the controls, so a pane turn of two
                         // notches leaves them in view.
                         ui.add_space(100.0);
-                        let mut drag = ui.add_enabled(
+                        let mut drag = add_enabled(
+                            ui,
                             drag_enabled,
                             egui::DragValue::new(&mut value).range(0..=255),
                         );
