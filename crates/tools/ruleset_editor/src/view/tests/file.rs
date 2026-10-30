@@ -384,6 +384,52 @@ fn save_as_suggests_no_punctuation_from_the_name() {
     );
 }
 
+/// File's "Save as…" clicked with the dialog stubbed to cancel; the
+/// file name the dialog was offered.
+fn save_as_suggestion(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext) -> String {
+    let offered = std::rc::Rc::new(std::cell::RefCell::new(None));
+    let seen = offered.clone();
+    view.save_as_dialog = Box::new(move |_, suggested| {
+        *seen.borrow_mut() = Some(suggested.to_string());
+        None
+    });
+    menu_click(window, view, ctx, "File", "Save as…");
+    offered.take().expect("the Save as dialog opened")
+}
+
+// Save as on a document opened from a file suggests that file's own
+// name, not one made from the ruleset's name.
+#[test]
+fn save_as_suggests_the_opened_files_name() {
+    let (_dir, path) = scratch_file("save_as_opened", "second.4ccrules");
+    let (ctx, _events) = crate::test_support::context();
+    let mut view = opened_view(&ctx, &path);
+    assert_ne!(
+        suggested_name(&view.document.as_ref().expect("opened").ruleset.name),
+        "second.4ccrules",
+        "premise: the ruleset's name suggests another file name"
+    );
+    let mut window = Headless::new();
+    assert_eq!(
+        save_as_suggestion(&mut window, &mut view, &ctx),
+        "second.4ccrules"
+    );
+}
+
+// Save as on a document never saved suggests the ruleset's name slugged.
+#[test]
+fn save_as_on_a_never_saved_document_suggests_its_name() {
+    let (ctx, _events, mut window, mut view) = fresh();
+    open_document(&mut view, crate::document::blank());
+    edit_ruleset(&mut view, |ruleset| {
+        ruleset.name = "/vg/ League 27".to_string()
+    });
+    assert_eq!(
+        save_as_suggestion(&mut window, &mut view, &ctx),
+        "vg_league_27.4ccrules"
+    );
+}
+
 // A second document gets a fresh widget-state salt (egui state never
 // crosses into it).
 #[test]

@@ -1,7 +1,8 @@
 //! The rail's section forms: General and Tiers are forms, Custom checks
 //! and Summary read only,
 //! and Heights, Cards, Universal rules, Specials and Suggestions have no
-//! form yet: each draws one weak line sending the member to Summary.
+//! form yet: each draws one weak line sending the member to Summary, and
+//! a link to the planned section's demo online.
 
 pub(crate) mod custom_checks;
 pub(crate) mod general;
@@ -10,6 +11,11 @@ pub(crate) mod tiers;
 pub(crate) mod widgets;
 
 use aatf::Ruleset;
+
+/// The drafts' page online, published from `docs/prototypes/`: shipped
+/// builds link here, so a build keeps its links for as long as the page
+/// stays at this address.
+const DRAFTS_ADDRESS: &str = "https://the4chancup.github.io/unlimited-tool-works/prototypes/";
 
 /// A rail section.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -50,6 +56,21 @@ impl Section {
         Section::Summary,
     ];
 
+    /// The section's id in the drafts' addresses (their `SECTIONS`).
+    fn draft_id(self) -> &'static str {
+        match self {
+            Section::General => "general",
+            Section::Tiers => "tiers",
+            Section::Heights => "heights",
+            Section::Cards => "cards",
+            Section::Universal => "universal",
+            Section::Specials => "specials",
+            Section::Suggestions => "suggestions",
+            Section::CustomChecks => "custom",
+            Section::Summary => "summary",
+        }
+    }
+
     /// The rail's label.
     pub(crate) fn label(self) -> &'static str {
         match self {
@@ -69,7 +90,7 @@ impl Section {
 /// The drawn section over `ruleset` (the forms edit it in place;
 /// `custom_checks` is the section's read-only text, `logo` General's
 /// Event logo field, `tier_id_edit` the Tiers id field's typed text);
-/// the sections with no form draw one weak line.
+/// the sections with no form draw one weak line and the demo link.
 pub(crate) fn show(
     ui: &mut egui::Ui,
     section: Section,
@@ -92,6 +113,15 @@ pub(crate) fn show(
             ui.weak(
                 "You can't edit this section yet. Summary shows what's in it, and saving leaves it unchanged.",
             );
+            if ui
+                .link("Check out a demo of the planned section online")
+                .clicked()
+            {
+                ui.ctx().open_url(egui::OpenUrl::new_tab(format!(
+                    "{DRAFTS_ADDRESS}#ruleset_editor/{}?demo=1&start=0",
+                    section.draft_id()
+                )));
+            }
         }
     }
 }

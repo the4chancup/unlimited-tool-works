@@ -173,3 +173,9 @@ path = "crates/tools/team_compiler/src/plan/mod.rs"
 kind = "order"
 description = "in plan_run: the sort_by_key() statement is deleted | removed: packing.sort_by_key(|(_, id)| *id);"
 why = "orders only the shared folders' build tasks: the CPK writer sorts its entries by path and the player tables keep their rows by player id, so no output byte follows the task order"
+
+[[exclude]]
+path = "crates/tools/ruleset_editor/src/view/mod.rs"
+kind = "bool"
+description = "in new: start_open: false becomes true | removed: false"
+why = "the modal start page (New from template) draws only over a document, and set_document, the one way to get one, sets start_open false"

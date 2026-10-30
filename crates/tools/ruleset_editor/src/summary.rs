@@ -31,15 +31,14 @@ pub(crate) fn summary(ruleset: &Ruleset) -> String {
     format!("{}\n", lines.join("\n"))
 }
 
-/// The header: the ruleset's name as the title, the squad of 23 and the
-/// rating and at-most stats.
+/// The header: the ruleset's name as the title, the rating and at-most
+/// stats.
 fn header_lines(ruleset: &Ruleset) -> Vec<String> {
     let mut lines = vec![
         format!("# {}", ruleset.name),
         String::new(),
         format!(
-            "Squad of {}. A player's rating is his best of: {}.",
-            aatf::SQUAD_SIZE,
+            "A player's rating is his best of: {}.",
             ruleset
                 .stats
                 .rating
@@ -916,6 +915,28 @@ mod tests {
             effects_text(&ruleset, &effects),
             "must hold Cut Behind & Turn"
         );
+    }
+
+    /// A bracket a condition names reads by its label in lowercase, as a
+    /// plural.
+    #[test]
+    fn a_condition_names_its_bracket_in_lowercase() {
+        let ruleset =
+            Ruleset::from_data_block(include_str!("../../../libs/aatf/rulesets/autumn26.rhai"))
+                .expect("the embedded ruleset loads");
+        assert!(
+            ruleset
+                .heights
+                .brackets
+                .iter()
+                .any(|bracket| bracket.id == "giant" && bracket.label == "Giant"),
+            "premise: Autumn 26's giant bracket is labeled Giant"
+        );
+        let condition = Condition {
+            brackets: vec!["giant".to_string()],
+            ..Condition::default()
+        };
+        assert_eq!(cond_text(&ruleset, &condition), "giants");
     }
 
     /// A per-tier number reads with its sign: `+` above zero, none at zero

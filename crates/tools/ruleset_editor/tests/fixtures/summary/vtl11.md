@@ -1,6 +1,6 @@
 # /vt/ League 11
 
-Squad of 23. A player's rating is his best of: clearing.
+A player's rating is his best of: clearing.
 
 ## Tiers
 - **Gold**: 2 per team, 195 cm, swerve 99 to 99; every stat 99 (place kicking 94, defensive prowess 65, ball winning 94, speed 94, physical contact 94, stamina 94); form 8, injury resistance 1, weak foot 4/4; 7 paid cards (at least 3 paid skills, an extra A position counting as one), 3 free COM styles; 2 A positions; name in colour cc9900ff.
