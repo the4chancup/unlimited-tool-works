@@ -360,13 +360,18 @@ fn the_form_scrolls_sideways_to_its_rightmost_checkbox() {
 }
 
 /// A real event logo: DBC7's, as the drafts draw it (16 KB).
-fn dbc7_logo() -> PathBuf {
+pub(super) fn dbc7_logo() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/prototypes/assets/logos/dbc7.png")
 }
 
 /// The Event logo's dialog stubbed to return `path`, then Choose PNG…
 /// clicked.
-fn choose_png(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext, path: &Path) {
+pub(super) fn choose_png(
+    window: &mut Headless,
+    view: &mut RulesetView,
+    ctx: &ToolContext,
+    path: &Path,
+) {
     let picked = path.to_path_buf();
     view.logo.dialog = Box::new(move |_| Some(picked.clone()));
     let frame = settled(window, view, ctx);
@@ -431,8 +436,21 @@ fn a_chosen_png_shows_28_high_with_remove_beside_choose() {
     );
     assert!(!drawn(&frame.nodes, "None"));
 
-    // The pick is an edit like any other: Ctrl+Z takes it back, and the
-    // field draws None again.
+    // Remove clears the logo, and the field draws None again.
+    click_labeled(&mut window, &frame.nodes, "Remove", &mut view, &ctx);
+    assert_eq!(logo_text(&view), None, "Remove clears the logo");
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert!(drawn(&frame.nodes, "None"));
+    assert_eq!(logo_picture(&frame.nodes), None);
+
+    // The pick and Remove are edits like any other: the first Ctrl+Z
+    // brings the logo back, the second takes the pick back.
+    ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
+    assert_eq!(
+        view.document.as_ref().unwrap().ruleset.logo_png(),
+        Some(std::fs::read(dbc7_logo()).unwrap()),
+        "Remove undone"
+    );
     ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
     assert_eq!(logo_text(&view), None, "the pick undone");
     let frame = settled(&mut window, &mut view, &ctx);
