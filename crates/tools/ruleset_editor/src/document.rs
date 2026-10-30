@@ -297,7 +297,6 @@ pub(crate) fn blank() -> Ruleset {
         name: "New ruleset".to_string(),
         page: None,
         logo: None,
-        squad_size: 23,
         stats: official.ruleset().stats.clone(),
         tiers: vec![tier("regular", "Regular", None, 75)],
         card_groups: BTreeMap::new(),
@@ -722,7 +721,6 @@ mod tests {
         let blank = blank();
         assert_eq!(blank.schema, 1);
         assert_eq!(blank.name, "New ruleset");
-        assert_eq!(blank.squad_size, 23);
         assert_eq!(blank.stats, Rules::official().ruleset().stats.clone());
         assert_eq!(blank.tiers.len(), 1);
         let tier = &blank.tiers[0];

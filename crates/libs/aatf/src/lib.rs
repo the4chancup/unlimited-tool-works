@@ -74,6 +74,7 @@ pub use violation::{CheckError, Violation, ViolationKind};
 pub use ruleset::{
     Bracket, BracketHeights, BracketId, Card, Condition, Effects, ExtraHeight, Foot, GroupId,
     HeightSystem, Heights, IdKind, LoadError, LoadRule, LogoRefusal, MedalSystem, NON_STAT_TARGETS,
-    PerTier, PlayStyle, PlayerValue, Position, RuleError, Ruleset, Severity, Special, Stat,
-    StatOrAll, StatRules, SystemId, TeamSettings, Tier, TierId, Universal, WeakFoot, WeightRule,
+    PerTier, PlayStyle, PlayerValue, Position, RuleError, Ruleset, SQUAD_SIZE, Severity, Special,
+    Stat, StatOrAll, StatRules, SystemId, TeamSettings, Tier, TierId, Universal, WeakFoot,
+    WeightRule,
 };

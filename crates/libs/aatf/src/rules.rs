@@ -302,7 +302,7 @@ mod tests {
     /// The smallest file that loads: the four functions and a
     /// one-tier `RULESET`.
     fn minimal_file() -> String {
-        "const RULESET = #{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };\nfn check_team(team) { [] }\nfn tier_values(player, tier, team) { #{} }\nfn card_limits(player, tier, team) { #{} }\nfn player_tier(player, team) { () }".to_string()
+        "const RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };\nfn check_team(team) { [] }\nfn tier_values(player, tier, team) { #{} }\nfn card_limits(player, tier, team) { #{} }\nfn player_tier(player, team) { () }".to_string()
     }
 
     /// Two threads check on one loaded file and agree: the whole-save

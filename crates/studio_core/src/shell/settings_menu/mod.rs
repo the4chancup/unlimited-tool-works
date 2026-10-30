@@ -2,10 +2,10 @@
 //! the sidebar's gear opens, as does a notice's
 //! `ActionEffect::OpenSettings`. It holds the common grid every tool shares — one row
 //! per `CommonSettings` field a member edits, in the draft's order and wording — then
-//! one `CollapsingHeader` per registered tool that has settings, its body the tool's
-//! `settings_view`. A tool has settings when its `default_settings()` is not empty and
-//! the build does not mark it CLI-only: such a tool's window is not built, so its keys
-//! are edited in the settings file. `last_tool`, `last_update_check` and
+//! one `CollapsingHeader` per registered tool that has a settings form, its body the
+//! tool's `settings_view`. A tool has one when its `has_settings_view()` is true and the
+//! build does not mark it CLI-only: such a tool's window is not built, so its keys are
+//! edited in the settings file. `last_tool`, `last_update_check` and
 //! `skipped_version`, the state the shell writes itself, have no row.
 //!
 //! There is no Save or Apply: a widget's change writes the setting under the settings
@@ -87,7 +87,7 @@ impl SettingsMenu {
     }
 
     /// Draws the modal while open: the common grid, then one `CollapsingHeader` per tool
-    /// with settings in sidebar order, none for the tools `cli_only` names. `sidebar` is
+    /// with a settings form in sidebar order, none for the tools `cli_only` names. `sidebar` is
     /// the PES version row's: a pick goes through the selector's one function, and the
     /// row's tooltips are the selector's blocker reason and exe check.
     pub(super) fn show(
@@ -107,7 +107,7 @@ impl SettingsMenu {
             self.common_grid(ui, tools, ctx, sidebar);
             let pending = self.pending.take();
             for (index, tool) in tools.iter_mut().enumerate() {
-                if tool.default_settings().is_empty() || cli_only.contains(&tool.id()) {
+                if !tool.has_settings_view() || cli_only.contains(&tool.id()) {
                     continue;
                 }
                 let mut header = crate::widgets::collapsing_header(tool.label())

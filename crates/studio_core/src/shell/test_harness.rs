@@ -53,14 +53,16 @@ pub(super) struct Calls {
     /// A run's event receiver: `tick` drains it and any envelope ends the activity, as a
     /// run's last event does.
     pub(super) events: Mutex<Option<Receiver<PipelineEventEnvelope>>>,
-    /// The table `default_settings()` reports; `stub()` fills a non-empty one, a test
-    /// clears it for a tool without settings.
+    /// The table `default_settings()` reports; `stub()` fills a non-empty one.
     pub(super) default_settings: Mutex<toml::Table>,
     /// While `Some`, the stub's settings section draws a path row, the
     /// string being the setting the row shows (a commit writes it back).
     pub(super) file_row: Mutex<Option<String>>,
     /// Whether the stub reports unsaved work: `hold_close` holds the close for it.
     pub(super) unsaved: Mutex<bool>,
+    /// What `has_settings_view` reports: `stub()` sets it, the stub drawing a
+    /// settings body; a test clears it for a tool with no form.
+    pub(super) has_settings_view: Mutex<bool>,
     /// The prompt `view` draws: written by every `hold_close` ask (`None` when nothing holds
     /// any more) and cleared by an answer.
     pub(super) close_prompt: Mutex<Option<ClosePrompt>>,
@@ -218,6 +220,9 @@ impl StudioTool for StubTool {
                 });
         }
     }
+    fn has_settings_view(&self) -> bool {
+        *self.calls.has_settings_view.lock().unwrap()
+    }
     fn default_settings(&self) -> toml::Table {
         self.calls.default_settings.lock().unwrap().clone()
     }
@@ -318,6 +323,7 @@ fn stub_parts(
     *calls.blocker.lock().unwrap() = blocker;
     *calls.default_settings.lock().unwrap() =
         toml::Table::from_iter([("enabled".to_owned(), toml::Value::Boolean(true))]);
+    *calls.has_settings_view.lock().unwrap() = true;
     (
         Box::new(StubTool {
             id,

@@ -3,7 +3,6 @@ const RULESET = #{
     schema: 1,
     name: "/vt/ League 10",
     page: "https://implyingrigged.info/wiki//vt/_League_10",
-    squad_size: 23,
 
     stats: #{
         rating: ["clearing"],

@@ -30,7 +30,7 @@ fn view_edited(slot: u8, edit: impl FnOnce(&mut PlayerView)) -> TeamView {
 /// through: every player is `regular`, so `when` alone decides whether
 /// `label` is reported.
 const PROBE: &str = "const RULESET = #{
-    schema: 1, name: \"probe\", squad_size: 23,
+    schema: 1, name: \"probe\",
     universal: #{ max_skill_cards: 10 },
     tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }],
     specials: [SPECIALS],
@@ -58,7 +58,7 @@ fn fires(rules: &Rules, team: &TeamView, slot: u8, label: &str) -> bool {
 fn no_tier_heights_read_every_bound_once() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [
                 #{ id: \"giant\", label: \"Giant\", count: 1, rate: 77,
@@ -91,7 +91,7 @@ fn no_tier_heights_read_every_bound_once() {
 fn a_specials_weak_foot_limits_report_the_suggestion() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77,
                         weak_foot: #{ usage: 2, accuracy: 2 } }],
@@ -222,7 +222,7 @@ fn a_special_fires_through_any_and_applies_once() {
     // `cards: 1` effect applies once — the limit rises by 1, not 2.
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77,
                         cards: 3, a_positions: 1 }],
@@ -248,7 +248,7 @@ fn a_special_fires_through_any_and_applies_once() {
 fn form_and_injury_resistance_effects_move_the_targets() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77,
                         form: 4, injury_resistance: 1 }],
@@ -302,7 +302,7 @@ fn form_and_injury_resistance_effects_move_the_targets() {
 fn a_tiers_name_color_is_checked_and_written() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [
                 #{ id: \"gold\", label: \"Gold\", counts_as: \"regular\",
@@ -416,7 +416,7 @@ fn a_tiers_name_color_is_checked_and_written() {
 fn a_card_free_by_name_does_not_spend_the_group_allowance() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77,
                         free: #{ com: 1 } }],
@@ -437,7 +437,7 @@ fn a_card_free_by_name_does_not_spend_the_group_allowance() {
 fn a_free_option_is_not_used_by_a_card_free_by_name() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77, form: 4,
                         injury_resistance: 1, weak_foot: #{ usage: 1, accuracy: 1 },
@@ -477,7 +477,7 @@ fn a_free_option_is_not_used_by_a_card_free_by_name() {
 fn a_stat_target_replaces_the_tier_target() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77, form: 4,
                         injury_resistance: 1, weak_foot: #{ usage: 2, accuracy: 2 },
@@ -524,7 +524,7 @@ fn a_stat_target_replaces_the_tier_target() {
 fn max_a_positions_caps_the_a_positions() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77, form: 4,
                         injury_resistance: 1, weak_foot: #{ usage: 2, accuracy: 2 },
@@ -578,7 +578,7 @@ fn a_free_cards_option_is_used_when_it_lowers_an_over_limit_paid_count() {
     let with_free = |free: &str| {
         rules(&format!(
             "const RULESET = #{{
-                schema: 1, name: \"x\", squad_size: 23,
+                schema: 1, name: \"x\",
                 universal: #{{ max_skill_cards: 10 }},
                 tiers: [#{{ id: \"regular\", label: \"Regular\", rate: 77, form: 4,
                             injury_resistance: 1, weak_foot: #{{ usage: 2, accuracy: 2 }},
@@ -638,7 +638,7 @@ fn a_free_cards_option_is_used_when_it_lowers_an_over_limit_paid_count() {
 fn a_free_cards_option_is_not_used_at_the_limit() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77, form: 4,
                         injury_resistance: 1, weak_foot: #{ usage: 2, accuracy: 2 },
@@ -668,7 +668,7 @@ fn a_free_cards_option_is_not_used_at_the_limit() {
 fn a_covered_card_freed_by_name_frees_the_groups_allowance() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77, form: 4,
                         injury_resistance: 1, weak_foot: #{ usage: 2, accuracy: 2 },
@@ -702,7 +702,7 @@ fn a_covered_card_freed_by_name_frees_the_groups_allowance() {
 fn an_option_for_another_tier_is_not_used() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             stats: #{ rating: [\"speed\"] },
             universal: #{ max_skill_cards: 10 },
             tiers: [
@@ -747,7 +747,7 @@ fn a_stat_bonus_option_is_used_for_a_stat_over_its_own_target() {
     // (rulesets/vgl26.rhai); the regulars are the rest of the squad.
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             stats: #{
                 rating: [\"dribbling\", \"goalkeeping\", \"low_pass\", \"lofted_pass\", \"swerve\",
                          \"catching\", \"clearing\", \"reflexes\", \"coverage\", \"body_control\",
@@ -822,7 +822,7 @@ fn a_stat_bonus_option_is_used_for_a_stat_over_its_own_target() {
 fn a_free_option_for_another_tier_is_not_used() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [
                 #{ id: \"gold\", label: \"Gold\", counts_as: \"regular\",
@@ -867,7 +867,7 @@ fn a_free_option_for_another_tier_is_not_used() {
 fn an_a_positions_option_for_another_tier_is_not_used() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [
                 #{ id: \"gold\", label: \"Gold\", counts_as: \"regular\",
@@ -910,7 +910,7 @@ fn an_a_positions_option_for_another_tier_is_not_used() {
 fn a_stat_bonus_option_for_another_tier_is_not_used() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [
                 #{ id: \"gold\", label: \"Gold\", counts_as: \"regular\",
@@ -954,7 +954,7 @@ fn a_later_specials_weak_foot_wins_over_an_earlier_choice() {
     let with_specials = |specials: &str| {
         rules(&format!(
             "const RULESET = #{{
-                schema: 1, name: \"x\", squad_size: 23,
+                schema: 1, name: \"x\",
                 universal: #{{ max_skill_cards: 10 }},
                 tiers: [#{{ id: \"regular\", label: \"Regular\", rate: 77, form: 4,
                             injury_resistance: 1, weak_foot: #{{ usage: 2, accuracy: 2 }},
@@ -995,7 +995,7 @@ fn a_later_specials_weak_foot_wins_over_an_earlier_choice() {
 fn an_overridden_replacement_is_not_used() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77, form: 4,
                         injury_resistance: 1, weak_foot: #{ usage: 2, accuracy: 2 },
@@ -1040,7 +1040,7 @@ fn a_later_specials_max_a_positions_wins_over_an_earlier_choice() {
     let with_specials = |specials: &str| {
         rules(&format!(
             "const RULESET = #{{
-                schema: 1, name: \"x\", squad_size: 23,
+                schema: 1, name: \"x\",
                 universal: #{{ max_skill_cards: 10 }},
                 tiers: [#{{ id: \"regular\", label: \"Regular\", rate: 77, form: 4,
                             injury_resistance: 1, weak_foot: #{{ usage: 2, accuracy: 2 }},
@@ -1089,7 +1089,7 @@ fn a_later_specials_max_a_positions_wins_over_an_earlier_choice() {
 fn an_overridden_max_a_positions_is_not_used() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77, form: 4,
                         injury_resistance: 1, weak_foot: #{ usage: 2, accuracy: 2 },
@@ -1140,7 +1140,7 @@ fn an_overridden_max_a_positions_is_not_used() {
 fn apply_tier_resolves_specials_against_the_values_it_writes() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77, form: 4,
                         injury_resistance: 1, weak_foot: #{ usage: 2, accuracy: 2 },
@@ -1173,7 +1173,7 @@ fn apply_tier_resolves_specials_against_the_values_it_writes() {
 fn apply_tier_refuses_values_that_never_settle() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77, form: 4,
                         injury_resistance: 1, weak_foot: #{ usage: 2, accuracy: 2 },
@@ -1212,7 +1212,7 @@ fn apply_tier_refuses_values_that_never_settle() {
 fn apply_tier_resolves_specials_against_the_written_name_color() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             stats: #{ rating: [\"speed\"] },
             universal: #{ max_skill_cards: 10 },
             tiers: [
@@ -1262,7 +1262,7 @@ fn apply_tier_resolves_specials_against_the_written_name_color() {
 fn auto_attack_defence_levels_is_compared() {
     let rules = rules(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }],
             team_settings: [#{ label: \"a/d levels off\",

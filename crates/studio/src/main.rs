@@ -461,6 +461,20 @@ mod tests {
         assert_eq!(window_tools, ["save-editor", "ruleset-editor"]);
     }
 
+    // The settings menu draws a section for the tools with a settings form alone: the
+    // Ruleset editor's table holds only what it writes for itself, the Export upgrader's
+    // nothing, and the Team compiler's form is not built yet.
+    #[test]
+    fn the_save_editor_alone_has_a_settings_form() {
+        let mut with_form: Vec<&str> = tools()
+            .iter()
+            .filter(|tool| tool.has_settings_view())
+            .map(|tool| tool.id())
+            .collect();
+        with_form.sort_unstable();
+        assert_eq!(with_form, ["save-editor"]);
+    }
+
     #[test]
     fn each_verbosity_maps_to_its_level() {
         assert_eq!(log_level(0), LevelFilter::Warn);

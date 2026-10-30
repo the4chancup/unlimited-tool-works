@@ -490,7 +490,11 @@ fn ruleset_dialogs(version: PesVersion) -> Screens {
     std::fs::write(
         &broken,
         renamed
-            .replacen("squad_size: 23", "squad_size: 4", 1)
+            .replacen(
+                "label: \"Gold\", count: 1,",
+                "label: \"Gold\", count: 21,",
+                1,
+            )
             .replacen("suggestions: [\"cards\"", "suggestions: [\"bogus\"", 1),
     )
     .unwrap();

@@ -3,7 +3,6 @@ const RULESET = #{
     schema: 1,
     name: "4cc Spring 26",
     page: "https://implyingrigged.info/wiki/2026_4chan_Spring_Babby_Cup",
-    squad_size: 23,
 
     stats: #{
         rating: ["dribbling", "goalkeeping", "finishing", "low_pass", "lofted_pass", "heading",

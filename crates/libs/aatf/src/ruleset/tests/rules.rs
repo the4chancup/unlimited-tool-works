@@ -222,7 +222,7 @@ fn a_counts_as_chain_is_refused() {
 #[test]
 fn counts_short_of_the_squad_are_refused() {
     // `regular` gets a `count`: no rest tier, and the sum is under
-    // `squad_size`.
+    // the squad of 23.
     case(
         "counts short of squad",
         &edit(
@@ -230,24 +230,21 @@ fn counts_short_of_the_squad_are_refused() {
             "#{ id: \"regular\", label: \"Regular\", rate: 77",
             "#{ id: \"regular\", label: \"Regular\", count: 3, rate: 77",
         ),
-        LoadRule::CountsShortOfSquad {
-            total: 8,
-            squad_size: 23,
-        },
+        LoadRule::CountsShortOfSquad { total: 8 },
         "tiers",
     );
 }
 
 #[test]
 fn counts_equal_to_the_squad_with_no_rest_tier_loads() {
-    // `regular` given `count: 18` brings the counts to `squad_size` with
+    // `regular` given `count: 18` brings the counts to the squad of 23 with
     // no rest tier: 1 + 2 + 2 + 18 = 23.
     Ruleset::from_data_block(&edit(
         AUTUMN26,
         "#{ id: \"regular\", label: \"Regular\", rate: 77",
         "#{ id: \"regular\", label: \"Regular\", count: 18, rate: 77",
     ))
-    .expect("counts equal to squad_size load");
+    .expect("counts equal to the squad load");
 }
 
 #[test]
@@ -622,11 +619,12 @@ fn giga_first_fails_every_later_bracket() {
 fn counts_over_the_squad_are_refused() {
     case(
         "counts exceed squad",
-        &edit(AUTUMN26, "squad_size: 23", "squad_size: 4"),
-        LoadRule::CountsExceedSquad {
-            total: 5,
-            squad_size: 4,
-        },
+        &edit(
+            AUTUMN26,
+            "label: \"Gold\", count: 1,",
+            "label: \"Gold\", count: 21,",
+        ),
+        LoadRule::CountsExceedSquad { total: 25 },
         "tiers",
     );
 }
@@ -655,12 +653,16 @@ fn a_shape_not_ten_is_refused() {
     );
 }
 
-/// Counts summing to exactly `squad_size` load — `>` at the boundary.
+/// Counts summing to exactly the squad of 23 load — `>` at the boundary.
 #[test]
-fn counts_at_the_squad_size_load() {
-    let ruleset = Ruleset::from_data_block(&edit(AUTUMN26, "squad_size: 23", "squad_size: 5"))
-        .expect("counts at the boundary load");
-    assert_eq!(ruleset.squad_size, 5);
+fn counts_at_the_squad_load() {
+    let ruleset = Ruleset::from_data_block(&edit(
+        AUTUMN26,
+        "label: \"Gold\", count: 1,",
+        "label: \"Gold\", count: 19,",
+    ))
+    .expect("counts at the boundary load");
+    assert_eq!(ruleset.tiers[0].count, Some(19));
 }
 
 /// A `forbidden_shapes` entry summing to 10 loads — the `+` mutants would
@@ -726,11 +728,7 @@ fn rules_error_texts_name_path_and_message() {
         text.contains("com") && text.contains("suggestions"),
         "{text}"
     );
-    let text = LoadRule::CountsShortOfSquad {
-        total: 8,
-        squad_size: 23,
-    }
-    .to_string();
+    let text = LoadRule::CountsShortOfSquad { total: 8 }.to_string();
     let total_at = text.find('8').expect("the total in the text");
     let size_at = text.find("23").expect("the squad size in the text");
     assert!(total_at < size_at, "{text}");
@@ -745,7 +743,7 @@ fn a_card_in_two_groups_is_refused() {
     case(
         "overlapping groups",
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }],
             card_groups: #{
@@ -768,7 +766,7 @@ fn a_com_style_in_a_group_is_refused() {
     case(
         "com style in a group",
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }],
             card_groups: #{ shots: [\"long_ranger\"] },
@@ -784,7 +782,7 @@ fn a_com_style_in_a_group_is_refused() {
 /// The smallest ruleset with a medal system: `gold` counted by the
 /// systems, `regular` the rest of the squad.
 const MEDAL: &str = "const RULESET = #{
-    schema: 1, name: \"x\", squad_size: 23,
+    schema: 1, name: \"x\",
     universal: #{ max_skill_cards: 10 },
     tiers: [
         #{ id: \"gold\", label: \"Gold\", rate: 99 },
@@ -893,10 +891,7 @@ fn a_medal_systems_counts_over_the_squad_are_refused() {
     case(
         "medal counts exceed squad",
         &edit(MEDAL, "counts: #{ gold: 3 }", "counts: #{ gold: 30 }"),
-        LoadRule::CountsExceedSquad {
-            total: 30,
-            squad_size: 23,
-        },
+        LoadRule::CountsExceedSquad { total: 30 },
         "medal_systems[0]",
     );
 }
@@ -904,7 +899,7 @@ fn a_medal_systems_counts_over_the_squad_are_refused() {
 #[test]
 fn a_medal_systems_counts_short_of_the_squad_are_refused() {
     // `regular` counted at 20: no tier is the rest, so every system's
-    // counts must add to `squad_size`.
+    // counts must add to the squad of 23.
     let counted = edit(
         MEDAL,
         "id: \"regular\", label: \"Regular\", rate",
@@ -913,14 +908,11 @@ fn a_medal_systems_counts_short_of_the_squad_are_refused() {
     case(
         "medal counts short of squad",
         &edit(&counted, "counts: #{ gold: 3 }", "counts: #{ gold: 2 }"),
-        LoadRule::CountsShortOfSquad {
-            total: 22,
-            squad_size: 23,
-        },
+        LoadRule::CountsShortOfSquad { total: 22 },
         "medal_systems[0]",
     );
     // 20 + 3 = 23 loads.
-    Ruleset::from_data_block(&counted).expect("counts equal to squad_size load");
+    Ruleset::from_data_block(&counted).expect("counts equal to the squad load");
 }
 
 #[test]
@@ -997,9 +989,9 @@ fn a_stat_warning_naming_an_unknown_tier_is_refused() {
 }
 
 /// The smallest ruleset with an `extra_height` system: two `exactly`
-/// brackets, quotas adding to `squad_size`.
+/// brackets, quotas adding to the squad of 23.
 const POOL: &str = "const RULESET = #{
-    schema: 1, name: \"x\", squad_size: 23,
+    schema: 1, name: \"x\",
     universal: #{ max_skill_cards: 10 },
     tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }],
     heights: #{
@@ -1044,20 +1036,17 @@ fn an_extra_height_quotas_off_the_squad_are_refused() {
                 "quotas: #{ high: 7, low: 16 }",
                 &format!("quotas: #{{ {quotas} }}"),
             ),
-            LoadRule::ExtraHeightQuotasNotSquad {
-                total,
-                squad_size: 23,
-            },
+            LoadRule::ExtraHeightQuotasNotSquad { total },
             "heights.systems[0].quotas",
         );
     }
-    Ruleset::from_data_block(POOL).expect("quotas at squad_size load");
+    Ruleset::from_data_block(POOL).expect("quotas at the squad load");
 }
 
 /// A small ruleset that loads, `extra` (`key: value, `) among its keys.
 fn small_with(extra: &str) -> String {
     format!(
-        "const RULESET = #{{ schema: 1, name: \"x\", {extra}squad_size: 23, universal: #{{ max_skill_cards: 10 }}, tiers: [#{{ id: \"regular\", label: \"Regular\", rate: 77 }}] }};"
+        "const RULESET = #{{ schema: 1, name: \"x\", {extra}universal: #{{ max_skill_cards: 10 }}, tiers: [#{{ id: \"regular\", label: \"Regular\", rate: 77 }}] }};"
     )
 }
 

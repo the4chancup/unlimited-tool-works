@@ -1499,31 +1499,6 @@ fn drawing_every_section_leaves_the_ruleset_untouched() {
     }
 }
 
-/// General's squad size draws as stored too: a hand-edited file's 40,
-/// past the field's 1-32, stays 40 when General is drawn (the section a
-/// file opens on).
-#[test]
-fn a_squad_size_past_its_range_is_drawn_as_stored() {
-    let mut stored = aatf::Rules::official().ruleset().clone();
-    stored.squad_size = 40;
-    let dir = crate::test_support::scratch("squad_size_read_only");
-    let path = write_file(
-        &dir,
-        "rules.4ccrules",
-        &aatf::assemble_file(&stored, None, None),
-    );
-    let (ctx, _events, mut window, mut view) = fresh();
-    open_path(&mut view, &ctx, &path);
-    assert_eq!(ruleset(&view).squad_size, 40, "premise: the file's 40 read");
-    view.section = Section::General;
-    settled(&mut window, &mut view, &ctx);
-    assert_eq!(ruleset(&view).squad_size, 40, "drawn as stored");
-    assert!(
-        !view.document.as_ref().unwrap().is_dirty(),
-        "the document not marked unsaved"
-    );
-}
-
 /// Each field of a tier row writes to its own binding, RE-GUI-17's
 /// field isolation for the Tiers section alone (the scenario's whole
 /// schema waits for the other sections): one change through each

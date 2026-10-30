@@ -1,23 +1,23 @@
 //! The General section (the draft's `VIEWS.general`): the ruleset's
-//! name, its event page and logo, its squad size and the two stat
-//! checklists, bound to the ruleset in place.
+//! name, its event page and logo and the two stat checklists, bound to
+//! the ruleset in place.
 
 use std::path::Path;
 
-use aatf::{LogoRefusal, NON_STAT_TARGETS, Ruleset, Stat};
+use aatf::{NON_STAT_TARGETS, Ruleset, Stat};
+use dds_convert::SourceFormat;
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
 use studio_core::widgets::{checkbox, text_box};
 use team_widgets::event_logo::EventLogo;
 
 use super::Section;
-use super::widgets;
 use crate::summary::human;
 use crate::view::{FilePicker, file_label};
 
-/// The Event logo field's state beyond the ruleset: the PNG dialog, the
+/// The Event logo field's state beyond the ruleset: the picture dialog, the
 /// last refused pick's line and the picture drawn.
 pub(crate) struct LogoField {
-    /// The PNG file dialog (`rfd`); stubbed in tests, as the view's
+    /// The picture file dialog (`rfd`); stubbed in tests, as the view's
     /// other dialogs are.
     pub(crate) dialog: FilePicker,
     /// The line saying why the last pick was refused; a pick that is
@@ -82,9 +82,6 @@ pub(crate) fn show(ui: &mut egui::Ui, ruleset: &mut Ruleset, logo: &mut LogoFiel
             ui.label("Event logo");
             event_logo(ui, ruleset, logo);
             ui.end_row();
-            ui.label("Squad size");
-            widgets::number(ui, &mut ruleset.squad_size, 1..=32);
-            ui.end_row();
         });
     ui.weak(
         "The Save editor draws the logo at its top right while this ruleset is picked; a click \
@@ -124,8 +121,8 @@ fn event_page(ui: &mut egui::Ui, ruleset: &mut Ruleset) {
 }
 
 /// The Event logo field (the draft's `eventLogoField`): the picture at
-/// the Save editor's size or a weak None, Choose PNG…, Remove while a
-/// logo is set, then the last refused pick's line.
+/// the Save editor's size or a weak None, Choose picture…, Remove while
+/// a logo is set, then the last refused pick's line.
 fn event_logo(ui: &mut egui::Ui, ruleset: &mut Ruleset, field: &mut LogoField) {
     ui.horizontal(|ui| {
         match field.picture(ui.ctx(), ruleset) {
@@ -137,8 +134,8 @@ fn event_logo(ui: &mut egui::Ui, ruleset: &mut Ruleset, field: &mut LogoField) {
             }
         }
         if ui
-            .button("Choose PNG\u{2026}")
-            .on_hover_text("A PNG picture of at most 64 KB")
+            .button("Choose picture\u{2026}")
+            .on_hover_text("Any picture: a big one is made smaller to fit")
             .clicked()
             && let Some(path) = (field.dialog)(Path::new(""))
         {
@@ -153,15 +150,78 @@ fn event_logo(ui: &mut egui::Ui, ruleset: &mut Ruleset, field: &mut LogoField) {
     });
 }
 
-/// The PNG at `path` set as `ruleset`'s logo; the line saying why when it
-/// cannot be read, is no PNG or is over 64 KB, the logo then unchanged.
+/// The widest a stored logo is, in pixels; `LOGO_HEIGHT` is the
+/// highest. Together they are the 84 × 28 points
+/// `team_widgets::event_logo` draws a logo in, at 200% scaling: a bigger
+/// picture would only be drawn smaller.
+const LOGO_WIDTH: u32 = 168;
+/// The highest a stored logo is, in pixels (see `LOGO_WIDTH`).
+const LOGO_HEIGHT: u32 = 56;
+
+/// The picture at `path` set as `ruleset`'s logo; the line saying why
+/// when it cannot be read or is no picture, the logo then unchanged. A
+/// PNG that already fits `LOGO_WIDTH` × `LOGO_HEIGHT` is stored as it
+/// is, byte for byte; any other picture is scaled down to fit (never
+/// up) and stored as a PNG. `set_logo`'s 64 KB rule cannot refuse a PNG
+/// of that size, so it has no line here.
 fn pick(ruleset: &mut Ruleset, path: &Path) -> Result<(), String> {
     let name = file_label(path);
-    let png = std::fs::read(path).map_err(|error| format!("{name} could not be read: {error}"))?;
-    ruleset.set_logo(&png).map_err(|refusal| match refusal {
-        LogoRefusal::NotPng => format!("{name} is not a PNG picture"),
-        LogoRefusal::TooLarge { .. } => format!("{name} is over 64 KB"),
-    })
+    let bytes =
+        std::fs::read(path).map_err(|error| format!("{name} could not be read: {error}"))?;
+    let not_a_picture = || format!("{name} is not a picture");
+    let format = path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .and_then(SourceFormat::from_extension)
+        .ok_or_else(not_a_picture)?;
+    let decoded = dds_convert::decode(&bytes, format).map_err(|error| {
+        log::debug!("the event logo {name} does not decode: {error}");
+        not_a_picture()
+    })?;
+    let (width, height) = fitted(decoded.width, decoded.height);
+    // A PNG `set_logo` refuses (one with large metadata chunks) is
+    // encoded again below, which drops them.
+    if format == SourceFormat::Png
+        && (width, height) == (decoded.width, decoded.height)
+        && ruleset.set_logo(&bytes).is_ok()
+    {
+        return Ok(());
+    }
+    let pixels = decoded.mips.first().ok_or_else(not_a_picture)?;
+    let png = dds_convert::resize(pixels, decoded.width, decoded.height, width, height)
+        .and_then(|scaled| dds_convert::encode_png(&scaled, width, height))
+        .map_err(|error| {
+            log::debug!("the event logo {name} could not be scaled: {error}");
+            not_a_picture()
+        })?;
+    ruleset
+        .set_logo(&png)
+        .expect("a PNG of at most 168 × 56 pixels is under 64 KB");
+    Ok(())
+}
+
+/// `width` × `height` scaled down to fit `LOGO_WIDTH` × `LOGO_HEIGHT`,
+/// its proportions kept; a picture that fits keeps its size. The side
+/// that does not fill the box is rounded, and is at least 1.
+fn fitted(width: u32, height: u32) -> (u32, u32) {
+    if width <= LOGO_WIDTH && height <= LOGO_HEIGHT {
+        return (width, height);
+    }
+    // The side further over its limit decides the scale: compared as
+    // width / LOGO_WIDTH against height / LOGO_HEIGHT, multiplied out.
+    if u64::from(width) * u64::from(LOGO_HEIGHT) >= u64::from(height) * u64::from(LOGO_WIDTH) {
+        (LOGO_WIDTH, scaled_side(height, LOGO_WIDTH, width))
+    } else {
+        (scaled_side(width, LOGO_HEIGHT, height), LOGO_HEIGHT)
+    }
+}
+
+/// `side` × `numerator` / `denominator` rounded to the nearest pixel,
+/// at least 1.
+fn scaled_side(side: u32, numerator: u32, denominator: u32) -> u32 {
+    let doubled = 2 * u64::from(side) * u64::from(numerator) + u64::from(denominator);
+    let rounded = doubled / (2 * u64::from(denominator));
+    u32::try_from(rounded.max(1)).expect("a fitted side is at most the box's side")
 }
 
 /// A checklist grid over `names`, five columns as the draft's
@@ -211,6 +271,30 @@ fn toggle(ruleset: &mut Ruleset, list: Checklist, name: &str, on: bool) {
             if on {
                 ruleset.stats.at_most.push(name.to_string());
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A picture that fits keeps its size; a bigger one is scaled to
+    /// the box by its side furthest over, the other side rounded and at
+    /// least 1.
+    #[test]
+    fn fitted_scales_down_to_168_by_56_keeping_proportions() {
+        for (size, expected) in [
+            ((40, 40), (40, 40)),
+            ((168, 56), (168, 56)),
+            ((1000, 500), (112, 56)),
+            ((336, 56), (168, 28)),
+            ((169, 10), (168, 10)),
+            ((1000, 3), (168, 1)),
+            ((5000, 1), (168, 1)),
+            ((10, 5000), (1, 56)),
+        ] {
+            assert_eq!(fitted(size.0, size.1), expected, "{size:?}");
         }
     }
 }

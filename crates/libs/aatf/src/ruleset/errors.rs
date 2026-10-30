@@ -3,6 +3,8 @@
 
 use std::fmt;
 
+use super::SQUAD_SIZE;
+
 /// Why a ruleset did not load.
 #[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub enum LoadError {
@@ -182,20 +184,16 @@ pub enum LoadRule {
     CountsAsMedalTier,
     /// More than one tier has neither `count` nor `counts_as`.
     MoreThanOneRestTier,
-    /// The counts' sum is over `squad_size`.
+    /// The counts' sum is over the squad of 23.
     CountsExceedSquad {
         /// The counts' sum.
         total: u32,
-        /// The squad's size.
-        squad_size: u8,
     },
     /// No tier is the rest of the squad, and the counts' sum is under
-    /// `squad_size`.
+    /// the squad of 23.
     CountsShortOfSquad {
         /// The counts' sum.
         total: u32,
-        /// The squad's size.
-        squad_size: u8,
     },
     /// A height system other than the last has no `any_player`, or an
     /// empty one, and no `by_quotas` with quotas.
@@ -214,13 +212,11 @@ pub enum LoadRule {
     /// `exactly` bracket of one height: the draw needs the bracket's own
     /// height.
     ExtraHeightQuotaNotExact,
-    /// A system with `extra_height`'s quotas do not add up to
-    /// `squad_size`.
+    /// A system with `extra_height`'s quotas do not add up to the squad
+    /// of 23.
     ExtraHeightQuotasNotSquad {
         /// The quotas' sum.
         total: u32,
-        /// The squad's size.
-        squad_size: u8,
     },
     /// A special with `height_allowance` (in `then` or any `choice` option)
     /// names a bracket in its `when`, nested `not` and `any` included.
@@ -272,11 +268,11 @@ impl fmt::Display for LoadRule {
             LoadRule::MoreThanOneRestTier => {
                 f.write_str("more than one tier has neither `count` nor `counts_as`")
             }
-            LoadRule::CountsExceedSquad { total, squad_size } => {
-                write!(f, "counts total {total} over squad_size {squad_size}")
+            LoadRule::CountsExceedSquad { total } => {
+                write!(f, "counts total {total} over the squad of {SQUAD_SIZE}")
             }
-            LoadRule::CountsShortOfSquad { total, squad_size } => {
-                write!(f, "counts total {total} under squad_size {squad_size}")
+            LoadRule::CountsShortOfSquad { total } => {
+                write!(f, "counts total {total} under the squad of {SQUAD_SIZE}")
             }
             LoadRule::SystemWithoutCondition => {
                 f.write_str("a height system other than the last has no or an empty `any_player` and no `by_quotas` with quotas")
@@ -304,8 +300,8 @@ impl fmt::Display for LoadRule {
             LoadRule::ExtraHeightQuotaNotExact => {
                 f.write_str("an `extra_height` system quotas a bracket that is not `exactly` one height")
             }
-            LoadRule::ExtraHeightQuotasNotSquad { total, squad_size } => {
-                write!(f, "an `extra_height` system's quotas add up to {total}, not squad_size {squad_size}")
+            LoadRule::ExtraHeightQuotasNotSquad { total } => {
+                write!(f, "an `extra_height` system's quotas add up to {total}, not the squad of {SQUAD_SIZE}")
             }
             LoadRule::AllowanceWithBracket => {
                 f.write_str("a special with `height_allowance` names a bracket")

@@ -578,7 +578,6 @@ fn every_field_ruleset() -> Ruleset {
         page: Some("https://implyingrigged.info/wiki/2026_4chan_Autumn_Babby_Cup".to_string()),
         // The PNG signature alone, base64: the load checks go no further.
         logo: Some("iVBORw0KGgo=".to_string()),
-        squad_size: 23,
         stats: StatRules {
             rating: vec![stat("speed"), stat("dribbling")],
             at_most: vec!["attacking_prowess".to_string(), "form".to_string()],
@@ -771,7 +770,6 @@ fn small_ruleset() -> Ruleset {
         name: "Small".to_string(),
         page: None,
         logo: None,
-        squad_size: 11,
         stats: StatRules {
             rating: Vec::new(),
             at_most: Vec::new(),
@@ -905,7 +903,6 @@ fn the_layout_is_pinned() {
 const RULESET = #{
     schema: 1,
     name: "Small",
-    squad_size: 11,
 
     tiers: [
         #{ id: "gold", label: "Gold", count: 3, rate: 99, injury_resistance: 3,

@@ -3,7 +3,6 @@ const RULESET = #{
     schema: 1,
     name: "/vg/ League 25",
     page: "https://implyingrigged.info/wiki//vg/_League_25",
-    squad_size: 23,
 
     stats: #{
         rating: ["dribbling", "goalkeeping", "finishing", "low_pass", "lofted_pass", "heading",

@@ -49,8 +49,6 @@ pub struct Ruleset {
     /// key, so the keys a person reads come first. `None`: the Save editor draws none.
     #[serde(default)]
     pub logo: Option<String>,
-    /// The squad's size in players.
-    pub squad_size: u8,
     /// Which stats and targets the check reads.
     #[serde(default)]
     pub stats: StatRules,
@@ -83,6 +81,11 @@ pub struct Ruleset {
     #[serde(default)]
     pub suggestions: Vec<String>,
 }
+
+/// Every squad's size in players, the same for every ruleset: the Team compiler numbers a
+/// team's players 01 to 23 and gives each team 23 boots and gloves IDs, so a squad of
+/// another size could never be compiled.
+pub const SQUAD_SIZE: u8 = 23;
 
 /// The `stats.at_most` targets that are no ability stat (the ability
 /// stats are the rest of its allowed names).

@@ -108,14 +108,11 @@ impl Ruleset {
             .iter()
             .filter_map(|tier| tier.count.map(u32::from))
             .sum();
-        if total > u32::from(self.squad_size) {
+        if total > u32::from(SQUAD_SIZE) {
             push(
                 &mut out,
                 "tiers".to_string(),
-                LoadRule::CountsExceedSquad {
-                    total,
-                    squad_size: self.squad_size,
-                },
+                LoadRule::CountsExceedSquad { total },
             );
         }
         // The tiers the medal systems count, taken as a set: a tier one
@@ -135,17 +132,14 @@ impl Ruleset {
                     && !medal_tiers.contains(tier.id.as_str())
             })
             .count();
-        // The counts equal `squad_size` when no tier is the rest of the
+        // The counts equal the squad when no tier is the rest of the
         // squad — under it, no team can be legal. With medal systems each
         // system's counts close the gap instead (checked with them below).
-        if rest_tiers == 0 && medal_tiers.is_empty() && total < u32::from(self.squad_size) {
+        if rest_tiers == 0 && medal_tiers.is_empty() && total < u32::from(SQUAD_SIZE) {
             push(
                 &mut out,
                 "tiers".to_string(),
-                LoadRule::CountsShortOfSquad {
-                    total,
-                    squad_size: self.squad_size,
-                },
+                LoadRule::CountsShortOfSquad { total },
             );
         }
         if rest_tiers > 1 {
@@ -195,7 +189,7 @@ impl Ruleset {
 
         // medal_systems: labels non-empty, `counts` naming existing
         // tiers. Each system's counts plus the fixed counts fit
-        // `squad_size`, and equal it when no tier is the rest of the
+        // the squad, and equal it when no tier is the rest of the
         // squad — under it, no team can be legal.
         for (i, system) in self.medal_systems.iter().enumerate() {
             let path = format!("medal_systems[{i}]");
@@ -204,23 +198,17 @@ impl Ruleset {
                 self.check_id(&mut out, format!("{path}.counts.{id}"), IdKind::Tier, id);
             }
             let counts = total + system.counts.values().map(|n| u32::from(*n)).sum::<u32>();
-            if counts > u32::from(self.squad_size) {
+            if counts > u32::from(SQUAD_SIZE) {
                 push(
                     &mut out,
                     path,
-                    LoadRule::CountsExceedSquad {
-                        total: counts,
-                        squad_size: self.squad_size,
-                    },
+                    LoadRule::CountsExceedSquad { total: counts },
                 );
-            } else if rest_tiers == 0 && counts < u32::from(self.squad_size) {
+            } else if rest_tiers == 0 && counts < u32::from(SQUAD_SIZE) {
                 push(
                     &mut out,
                     path,
-                    LoadRule::CountsShortOfSquad {
-                        total: counts,
-                        squad_size: self.squad_size,
-                    },
+                    LoadRule::CountsShortOfSquad { total: counts },
                 );
             }
         }
@@ -354,14 +342,11 @@ impl Ruleset {
             // A pool system's quotas fill the squad exactly.
             if system.extra_height.is_some() {
                 let quotas: u32 = system.quotas.values().map(|n| u32::from(*n)).sum();
-                if quotas != u32::from(self.squad_size) {
+                if quotas != u32::from(SQUAD_SIZE) {
                     push(
                         &mut out,
                         format!("{path}.quotas"),
-                        LoadRule::ExtraHeightQuotasNotSquad {
-                            total: quotas,
-                            squad_size: self.squad_size,
-                        },
+                        LoadRule::ExtraHeightQuotasNotSquad { total: quotas },
                     );
                 }
             }

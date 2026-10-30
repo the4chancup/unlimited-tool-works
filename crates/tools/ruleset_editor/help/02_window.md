@@ -17,10 +17,11 @@ highlighted.
 **What each section lets you do.** The window doesn't edit every section yet, which
 is what "(WIP)", work in progress, in the tool's name means:
 
-- *General* is a form: the ruleset's name, its event's page and logo, the squad size
-  and the stat checklists. The rating stats pick the player's tier, and the "may sit
-  below the target" stats are the only ones allowed under theirs. The logo shows at
-  the Save editor's top right while the ruleset is active, a link to the page.
+- *General* is a form: the ruleset's name, its event's page and logo, and the stat
+  checklists. The logo can be any picture: a big one is made smaller to fit. It shows
+  at the Save editor's top right while the ruleset is active, a link to the page. The
+  rating stats pick the player's tier, and the "may sit below the target" stats are
+  the only ones allowed under theirs.
 - *Tiers* is a form: the tiers table, highest first, each tier's per-stat targets
   and free cards under its row, and the medal systems. A tier's conditions can't be
   edited here yet.
@@ -29,8 +30,7 @@ is what "(WIP)", work in progress, in the tool's name means:
 - *Summary* spells the ruleset out as readable rules text, with **Copy** putting it
   on the clipboard to post.
 - *Heights*, *Cards*, *Universal rules*, *Specials* and *Suggestions* can't be
-  edited here yet. Summary describes them, Show preview shows them as the file holds
-  them, and saving keeps them as they are.
+  edited here yet: Summary shows what's in them, and saving leaves them unchanged.
 
 The File menu's *New from template…* brings the start page back over the open
 ruleset. Undo and redo (Edit menu, Ctrl+Z and Ctrl+Y or Ctrl+Shift+Z) step through

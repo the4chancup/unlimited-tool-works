@@ -1,8 +1,7 @@
 //! The rail's section forms: General and Tiers are forms, Custom checks
 //! and Summary read only,
 //! and Heights, Cards, Universal rules, Specials and Suggestions have no
-//! form yet: each draws one weak line sending the member to Summary and
-//! the preview.
+//! form yet: each draws one weak line sending the member to Summary.
 
 pub(crate) mod custom_checks;
 pub(crate) mod general;
@@ -89,7 +88,7 @@ pub(crate) fn show(
         | Section::Suggestions => {
             ui.heading(section.label());
             ui.weak(
-                "This section can't be edited here yet. Summary describes it, Show preview shows it as the file holds it, and saving keeps it as it is.",
+                "You can't edit this section yet. Summary shows what's in it, and saving leaves it unchanged.",
             );
         }
     }

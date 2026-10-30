@@ -84,8 +84,8 @@ fn the_gear_opens_the_menu_on_the_active_tools_section_and_resets_each_opening()
     let (a, calls_a) = stub("a", "A", None);
     let (b, calls_b) = stub("b", "B", None);
     let (c, calls_c) = stub("c", "C", None);
-    // A tool whose `default_settings()` is empty gets no section.
-    calls_c.default_settings.lock().unwrap().clear();
+    // A tool with no settings form gets no section.
+    *calls_c.has_settings_view.lock().unwrap() = false;
     let dir = TestDir::new("studio_core_settings_sections");
     let Shell { mut app, ctx, .. } = shell_with(
         test_settings(dir.path()),
@@ -183,6 +183,36 @@ fn the_gear_opens_the_menu_on_the_active_tools_section_and_resets_each_opening()
         !has_text(&nodes, "B settings body"),
         "the open set was reset at the reopening"
     );
+}
+
+// A tool whose table holds only state it writes for itself says it has no settings
+// form, and gets no section however full its table is.
+#[test]
+fn a_tool_with_settings_but_no_form_has_no_section() {
+    let (a, calls_a) = stub("a", "A", None);
+    let (c, calls_c) = stub("c", "C", None);
+    *calls_c.default_settings.lock().unwrap() = toml::Table::from_iter([
+        ("last_folder".to_owned(), toml::Value::String(String::new())),
+        ("recent_files".to_owned(), toml::Value::Array(Vec::new())),
+    ]);
+    *calls_c.has_settings_view.lock().unwrap() = false;
+    let dir = TestDir::new("studio_core_settings_no_form");
+    let Shell { mut app, ctx, .. } = shell_with(
+        test_settings(dir.path()),
+        vec![a, c],
+        &[],
+        Some(dir.path().to_path_buf()),
+        vec![calls_a, calls_c],
+    );
+    ctx.switch_to_tool("c");
+    let egui_ctx = test_context();
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
+    let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+    assert!(has_text(&nodes, "Threads"), "the menu is open");
+    assert_eq!(labeled(&nodes, "A"), 2, "A's sidebar entry and its header");
+    assert_eq!(labeled(&nodes, "C"), 1, "C's sidebar entry alone");
 }
 
 // A CLI-only tool has no section, whatever its table holds: its window is not built

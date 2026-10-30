@@ -200,13 +200,17 @@ fn default_save_dialog() -> SaveDialog {
     Box::new(|_, _| panic!("{REAL_DIALOG_PANIC}"))
 }
 
-/// The Event logo's dialog: `rfd` on PNG files. It ignores the start
-/// folder: the rules files' folder is no likelier to hold the picture.
+/// The Event logo's dialog: `rfd` on the picture files the logo field
+/// decodes. It ignores the start folder: the rules files' folder is no
+/// likelier to hold the picture.
 #[cfg(not(test))]
 fn default_logo_dialog() -> FilePicker {
     Box::new(|_| {
         rfd::FileDialog::new()
-            .add_filter("PNG picture", &["png"])
+            .add_filter(
+                "Picture",
+                &["png", "jpg", "jpeg", "bmp", "webp", "tga", "tif", "tiff"],
+            )
             .pick_file()
     })
 }

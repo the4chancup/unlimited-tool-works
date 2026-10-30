@@ -962,7 +962,8 @@ fn team_checks(team, system, read) {
         let expected = if "count" in tier && tier.count != () {
             tier.count
         } else {
-            this.squad_size - fixed - medals
+            // Every squad is 23 players.
+            23 - fixed - medals
         };
         let count = 0;
         for r in read {
