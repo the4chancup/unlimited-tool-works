@@ -59,11 +59,11 @@ pub(super) enum MarkedField {
     Weight,
     /// The Form box (`Form`).
     Form,
-    /// The Injury resistance box (`InjuryResistance`).
+    /// The Injury Resistance box (`InjuryResistance`).
     InjuryResistance,
-    /// The Weak foot Usage box (`WeakFootUsage`).
+    /// The Weak Foot Usage box (`WeakFootUsage`).
     WeakFootUsage,
-    /// The Weak foot Accuracy box (`WeakFootAccuracy`).
+    /// The Weak Foot Accuracy box (`WeakFootAccuracy`).
     WeakFootAccuracy,
     /// The ability stat's box (`Stat`).
     Stat(aatf::Stat),

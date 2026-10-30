@@ -152,7 +152,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // Each roster slot's `FieldedNotA` marks: the held check's Error or
     // Warning violations of that kind on the slot, while Live AATF
     // holds this team's result (`held_violations`; another team's
-    // result or none marks nothing), worded under the active rules.
+    // result or none marks nothing), worded under the active rules and
+    // the open save's stat names.
     let held = live_marks::held_violations(*live_aatf, &live.check)
         .filter(|(held_team, _)| *held_team == team_id)
         .zip(rules.as_ref());
@@ -184,7 +185,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                                 team_id,
                                 Wording {
                                     ruleset: active.rules.ruleset(),
-                                    version: session.version(),
+                                    version,
                                 },
                             ),
                         })

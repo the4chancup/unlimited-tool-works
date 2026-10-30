@@ -45,7 +45,7 @@ pub(super) const NATION_LABEL: &str = "Nation";
 pub(super) const NUMBER_LABEL: &str = "Shirt number";
 
 /// General info's fields' width (the draft's 344px: room for the longest
-/// pair label, "Injury resistance", beside its box on each half and for
+/// pair label, "Injury Resistance", beside its box on each half and for
 /// the label-left rows; no wider, so the player view's three columns stay
 /// on one row beside the 255-point list).
 pub(super) const GENERAL_WIDTH: f32 = 344.0;
@@ -539,7 +539,7 @@ fn number_box<N: egui::emath::Numeric + TryFrom<u64>>(
 
 /// The Other stats panel's content (`otherStatsPanel`): the four shifted
 /// stored fields on General info's halves, so every box of both panels
-/// lines up — Injury resistance with Form, then "Weak foot: Usage" and
+/// lines up — Injury Resistance with Form, then "Weak Foot: Usage" and
 /// "Accuracy" (the two sharing one label). `marks` is Live AATF's held
 /// check's, while it is the selected player's team's.
 pub(super) fn other_stats(
