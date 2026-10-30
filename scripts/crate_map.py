@@ -8,6 +8,7 @@ import html
 import json
 import os
 import subprocess
+import sys
 
 meta = json.loads(subprocess.run(["cargo", "metadata", "--no-deps", "--format-version", "1"],
                                  capture_output=True, text=True, check=True).stdout)
@@ -15,12 +16,14 @@ names = {p["name"] for p in meta["packages"]}
 deps = {}
 folder = {}
 description = {}
+manifest = {}
 for p in meta["packages"]:
     path = p["manifest_path"].replace("\\", "/").split("/crates/")[-1]
     if path.startswith("dev/"):
         continue
     folder[p["name"]] = path.split("/")[0]
     description[p["name"]] = p.get("description") or ""
+    manifest[p["name"]] = "crates/" + path
     deps[p["name"]] = sorted({d["name"] for d in p["dependencies"]
                               if d["name"] in names and d["kind"] is None})
 
@@ -57,6 +60,21 @@ for level in range(levels, -1, -1):
 BOX_W, BOX_H, GAP, ROW_H, LEFT, TOP = 104, 30, 10, 84, 130, 40
 WIDTH = LEFT + max(len(r) for _, r in ROWS) * (BOX_W + GAP) + 30
 HEIGHT = TOP + len(ROWS) * ROW_H + 20
+
+# A crate's description is drawn on one line above the chart, as wide as it: a longer one
+# wraps and pushes the chart down while the pointer moves. Measured in Chromium with Segoe UI
+# at 15 px, the name and description drew at 6.6 to 7.3 px a character; 9 leaves room for a
+# wider fallback font. The fix goes to the crate's `description` in its Cargo.toml.
+PX_PER_CHAR = 9
+limit = WIDTH // PX_PER_CHAR
+lengths = {name: len(name) + 1 + len(text) for name, text in description.items()}
+too_long = [name for name, length in lengths.items() if length > limit]
+for name in too_long:
+    print(f"crate_map: {name}'s description is {lengths[name]} characters with its name, over "
+          f"the {limit} that fit on one line: shorten `description` in {manifest[name]}",
+          file=sys.stderr)
+if too_long:
+    sys.exit(1)
 pos = {}
 for index, (_, row) in enumerate(ROWS):
     span = len(row) * BOX_W + (len(row) - 1) * GAP

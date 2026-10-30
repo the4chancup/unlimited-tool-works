@@ -46,7 +46,8 @@ Placement:
   workspace crates each one uses, in layers from the binary down to the libs that use nothing
   (hover a crate to see its arrows). A commit that adds a crate or changes the workspace
   dependencies runs `just crate-map` to redraw it; no gate checks it, so a missed run only
-  leaves the map stale until the next.
+  leaves the map stale until the next. The map shows each crate's Cargo.toml `description` on
+  one line above the chart, and the recipe refuses one too long for it, naming the manifest.
 - Directory name = package name, with underscores (`pes_savefile`). Hyphens only in CLI subcommands
   and tool ids (`team-compiler`).
 - No `utils.rs`, `helpers.rs`, or `misc.rs`. A helper belongs to the module that uses it; one used
