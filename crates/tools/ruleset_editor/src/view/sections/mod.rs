@@ -68,17 +68,19 @@ impl Section {
 
 /// The drawn section over `ruleset` (the forms edit it in place;
 /// `custom_checks` is the section's read-only text, `logo` General's
-/// Event logo field); the sections with no form draw one weak line.
+/// Event logo field, `tier_id_edit` the Tiers id field's typed text);
+/// the sections with no form draw one weak line.
 pub(crate) fn show(
     ui: &mut egui::Ui,
     section: Section,
     ruleset: &mut Ruleset,
     custom_checks: Option<&str>,
     logo: &mut general::LogoField,
+    tier_id_edit: &mut Option<(usize, String)>,
 ) {
     match section {
         Section::General => general::show(ui, ruleset, logo),
-        Section::Tiers => tiers::show(ui, ruleset),
+        Section::Tiers => tiers::show(ui, ruleset, tier_id_edit),
         Section::CustomChecks => custom_checks::show(ui, custom_checks),
         Section::Summary => summary::show(ui, ruleset),
         Section::Heights

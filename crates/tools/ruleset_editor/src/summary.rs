@@ -27,6 +27,7 @@ pub(crate) fn summary(ruleset: &Ruleset) -> String {
     lines.extend(card_group_lines(ruleset));
     lines.extend(team_setting_lines(ruleset));
     lines.extend(special_lines(ruleset));
+    lines.extend(suggestion_lines(ruleset));
     format!("{}\n", lines.join("\n"))
 }
 
@@ -100,7 +101,7 @@ fn tier_lines(ruleset: &Ruleset) -> Vec<String> {
             .collect();
         lines.push(format!(
             "Medal systems: {}.",
-            list(&systems, |text| text.clone())
+            list(&systems, |text| text.clone(), "or")
         ));
     }
     lines
@@ -371,6 +372,36 @@ fn special_lines(ruleset: &Ruleset) -> Vec<String> {
     lines
 }
 
+/// The `## Suggestions` section: the allowances a team has not used up,
+/// which the check lists as suggestions; empty without any.
+fn suggestion_lines(ruleset: &Ruleset) -> Vec<String> {
+    if ruleset.suggestions.is_empty() {
+        return Vec::new();
+    }
+    let mut lines = section("Suggestions");
+    lines.push(format!(
+        "Allowances not used up, listed as suggestions: {}.",
+        list(&ruleset.suggestions, |entry| suggestion_text(entry), "and")
+    ));
+    lines
+}
+
+/// A suggestions entry as words: the built-in allowances by name, any
+/// other entry (a card group's id) as its group's free cards.
+fn suggestion_text(entry: &str) -> String {
+    match entry {
+        "cards" => "paid cards".to_string(),
+        "a_positions" => "A positions".to_string(),
+        "weak_foot" => "weak foot".to_string(),
+        "injury_resistance" => "injury resistance".to_string(),
+        "height" => "height".to_string(),
+        "free_cards" => "free cards".to_string(),
+        "choices" => "choices not taken".to_string(),
+        "com" => "free COM styles".to_string(),
+        group => format!("free {}", words(group)),
+    }
+}
+
 /// One tier's line (`- **Gold**: 1 per team; every stat 99; …`).
 fn tier_line(ruleset: &Ruleset, medal_tiers: &BTreeSet<&str>, tier: &Tier) -> String {
     let count = if medal_tiers.contains(tier.id.as_str()) {
@@ -403,19 +434,22 @@ fn tier_line(ruleset: &Ruleset, medal_tiers: &BTreeSet<&str>, tier: &Tier) -> St
         String::new()
     } else {
         format!(
-            "; a stat up to {} over its target warns, past that it is not allowed",
+            "; a stat that may sit below its target warns up to {} over it, past that it is not allowed",
             tier.stat_warning
         )
     };
     let total = if tier.total_within_targets {
-        "; his stats added up may not exceed the targets' sum"
+        "; those stats added up may not exceed their targets' sum"
     } else {
         ""
     };
     let min_cards = if tier.min_cards == 0 {
         String::new()
     } else {
-        format!(" (at least {})", tier.min_cards)
+        format!(
+            " (at least {} paid skills, an extra A position counting as one)",
+            tier.min_cards
+        )
     };
     let free: Vec<String> = tier
         .free
@@ -461,28 +495,38 @@ fn tier_line(ruleset: &Ruleset, medal_tiers: &BTreeSet<&str>, tier: &Tier) -> St
 /// holds for every player.
 fn cond_text(ruleset: &Ruleset, condition: &Condition) -> String {
     let mut parts: Vec<String> = Vec::new();
-    parts.extend(listed(&condition.tiers, |id| tier_label(ruleset, id)));
+    parts.extend(listed(&condition.tiers, |id| tier_label(ruleset, id), "or"));
     parts.extend(
-        listed(&condition.positions, |position| {
-            position.label().to_string()
-        })
+        listed(
+            &condition.positions,
+            |position| position.label().to_string(),
+            "or",
+        )
         .map(|text| format!("registered {text}")),
     );
     parts.extend(
-        listed(&condition.systems, |id| {
-            label_or_id(&ruleset.heights.systems, id, |system| {
-                (system.id.as_str(), system.label.as_str())
-            })
-        })
+        listed(
+            &condition.systems,
+            |id| {
+                label_or_id(&ruleset.heights.systems, id, |system| {
+                    (system.id.as_str(), system.label.as_str())
+                })
+            },
+            "or",
+        )
         .map(|text| format!("under {text}")),
     );
     parts.extend(
-        listed(&condition.brackets, |id| {
-            label_or_id(&ruleset.heights.brackets, id, |bracket| {
-                (bracket.id.as_str(), bracket.label.as_str())
-            })
-            .to_lowercase()
-        })
+        listed(
+            &condition.brackets,
+            |id| {
+                label_or_id(&ruleset.heights.brackets, id, |bracket| {
+                    (bracket.id.as_str(), bracket.label.as_str())
+                })
+                .to_lowercase()
+            },
+            "or",
+        )
         .map(|text| format!("{text}s")),
     );
     match (condition.height_min, condition.height_max) {
@@ -498,27 +542,35 @@ fn cond_text(ruleset: &Ruleset, condition: &Condition) -> String {
         None => {}
     }
     parts.extend(
-        listed(&condition.playing_styles, |style| card_name(style.label()))
-            .map(|text| format!("playing as {text}")),
+        listed(
+            &condition.playing_styles,
+            |style| card_name(style.label()),
+            "or",
+        )
+        .map(|text| format!("playing as {text}")),
     );
     parts.extend(
-        listed(&condition.holds, |card| card_name(card.label()))
+        listed(&condition.holds, |card| card_name(card.label()), "or")
             .map(|text| format!("holding {text}")),
     );
     parts.extend(
-        listed(&condition.rated_a_at, |position| {
-            position.label().to_string()
-        })
+        listed(
+            &condition.rated_a_at,
+            |position| position.label().to_string(),
+            "or",
+        )
         .map(|text| format!("rated A at {text}")),
     );
     parts.extend(
-        listed(&condition.rated_b_at, |position| {
-            position.label().to_string()
-        })
+        listed(
+            &condition.rated_b_at,
+            |position| position.label().to_string(),
+            "or",
+        )
         .map(|text| format!("rated B at {text}")),
     );
     parts.extend(
-        listed(&condition.name_colors, |color| color.clone())
+        listed(&condition.name_colors, |color| color.clone(), "or")
             .map(|text| format!("named in colour {text}")),
     );
     if let Some(position) = condition.fielded_only_at {
@@ -627,12 +679,16 @@ fn effects_text(ruleset: &Ruleset, effects: &Effects) -> String {
         ));
     }
     parts.extend(
-        listed(&effects.free_cards, |card| card_name(card.label()))
+        listed(&effects.free_cards, |card| card_name(card.label()), "and")
             .map(|text| format!("{text} free")),
     );
     parts.extend(
-        listed(&effects.require_cards, |card| card_name(card.label()))
-            .map(|text| format!("must hold {text}")),
+        listed(
+            &effects.require_cards,
+            |card| card_name(card.label()),
+            "and",
+        )
+        .map(|text| format!("must hold {text}")),
     );
     if let Some(a_positions) = &effects.a_positions {
         parts.push(format!(
@@ -657,7 +713,7 @@ fn effects_text(ruleset: &Ruleset, effects: &Effects) -> String {
     }
     if let Some(weak_foot) = &effects.weak_foot {
         parts.push(format!(
-            "weak foot up to {}/{}",
+            "weak foot {}/{}",
             weak_foot.usage, weak_foot.accuracy
         ));
     }
@@ -745,24 +801,26 @@ fn upper_first(text: &str) -> String {
     }
 }
 
-/// `items` joined by `list`, `None` when it holds none (a caller
-/// phrases the text around it only when it exists).
-fn listed<T>(items: &[T], label: impl Fn(&T) -> String) -> Option<String> {
+/// `items` joined by `list` with `word`, `None` when it holds none (a
+/// caller phrases the text around it only when it exists).
+fn listed<T>(items: &[T], label: impl Fn(&T) -> String, word: &str) -> Option<String> {
     if items.is_empty() {
         None
     } else {
-        Some(list(items, label))
+        Some(list(items, label, word))
     }
 }
 
-/// `items` joined as a list (`a`, `a or b`, `a, b or c`), `label`
-/// applied to each.
-fn list<T>(items: &[T], label: impl Fn(&T) -> String) -> String {
+/// `items` joined as a list (`a`, `a or b`, `a, b or c` for `word`
+/// "or"), `label` applied to each. Alternatives (a condition's
+/// tiers, the medal systems) join with "or", things a player gets
+/// all of (an effect's cards, the suggestions) with "and".
+fn list<T>(items: &[T], label: impl Fn(&T) -> String, word: &str) -> String {
     match items.split_last() {
         None => String::new(),
         Some((last, [])) => label(last),
         Some((last, rest)) => format!(
-            "{} or {}",
+            "{} {word} {}",
             rest.iter().map(&label).collect::<Vec<_>>().join(", "),
             label(last)
         ),
@@ -781,14 +839,17 @@ mod tests {
         assert_eq!(human("com"), "COM");
     }
 
-    /// `list` joins none, one, two and three items.
+    /// `list` joins none, one, two and three items with its word.
     #[test]
-    fn list_joins_with_or() {
+    fn list_joins_with_its_word() {
         let label = |s: &&str| s.to_string();
-        assert_eq!(list::<&str>(&[], label), "");
-        assert_eq!(list(&["a"], label), "a");
-        assert_eq!(list(&["a", "b"], label), "a or b");
-        assert_eq!(list(&["a", "b", "c"], label), "a, b or c");
+        assert_eq!(list::<&str>(&[], label, "or"), "");
+        assert_eq!(list(&["a"], label, "or"), "a");
+        assert_eq!(list(&["a", "b"], label, "or"), "a or b");
+        assert_eq!(list(&["a", "b", "c"], label, "or"), "a, b or c");
+        assert_eq!(list(&["a"], label, "and"), "a");
+        assert_eq!(list(&["a", "b"], label, "and"), "a and b");
+        assert_eq!(list(&["a", "b", "c"], label, "and"), "a, b and c");
     }
 
     /// An `exactly` bracket emptied mid-edit reads as its label alone.
@@ -862,6 +923,25 @@ mod tests {
         assert_eq!(per_tier_text(&ruleset, &PerTier::All(1i8), ""), "+1");
         assert_eq!(per_tier_text(&ruleset, &PerTier::All(0i8), ""), "0");
         assert_eq!(per_tier_text(&ruleset, &PerTier::All(-3i8), ""), "-3");
+    }
+
+    /// The suggestions are part of the summary: emptying them changes it,
+    /// and an empty list draws no `## Suggestions` section.
+    #[test]
+    fn the_suggestions_have_a_section_only_when_set() {
+        let ruleset =
+            Ruleset::from_data_block(include_str!("../../../libs/aatf/rulesets/autumn26.rhai"))
+                .expect("the embedded ruleset loads");
+        let mut without = ruleset.clone();
+        without.suggestions.clear();
+        let with_text = summary(&ruleset);
+        let without_text = summary(&without);
+        assert_ne!(
+            with_text, without_text,
+            "the suggestions change the summary"
+        );
+        assert!(with_text.contains("\n## Suggestions\n"), "{with_text}");
+        assert!(!without_text.contains("## Suggestions"), "{without_text}");
     }
 
     /// Every embedded ruleset's summary is its golden

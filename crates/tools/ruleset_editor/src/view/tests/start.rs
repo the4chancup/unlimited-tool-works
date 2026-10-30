@@ -105,7 +105,7 @@ fn rail_expected(custom_checks: bool) -> Vec<String> {
 }
 
 /// The rail clean: every section in order, no problem mark, and the
-/// bottom bar's valid line.
+/// bottom bar's clean line.
 fn assert_clean_rail(nodes: &[accesskit::Node], custom_checks: bool) {
     assert_eq!(rail_labels(nodes), rail_expected(custom_checks));
     assert!(
@@ -113,11 +113,8 @@ fn assert_clean_rail(nodes: &[accesskit::Node], custom_checks: bool) {
         "no rail entry carries a problem mark"
     );
     assert!(
-        drawn(
-            nodes,
-            "✔ Valid: the Save editor and the Team creator can use it"
-        ),
-        "the bottom bar's valid line"
+        drawn(nodes, "✔ No problems found"),
+        "the bottom bar's clean line"
     );
 }
 

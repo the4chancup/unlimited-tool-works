@@ -175,6 +175,30 @@ fn a_window_close_prompts_and_each_answer_does_what_it_says() {
 }
 
 // RE-GUI-15
+/// A tier id typed and not committed is an unsaved change: on an
+/// otherwise clean document, the window's close is held and prompts.
+#[test]
+fn a_typed_tier_id_holds_the_close() {
+    let (ctx, _events, _path, view) = official_opened("prompt_typed_id");
+    let mut window = Headless::sized(1800.0, 900.0);
+    let mut tool = crate::Tool::new();
+    tool.view = view;
+    tool.view.section = Section::Tiers;
+    super::tiers::click_role(&mut window, &mut tool.view, &ctx, Role::TextInput, "gold");
+    super::tiers::type_replacing(&mut window, &mut tool.view, &ctx, "royal");
+    let document = tool.view.document.as_ref().expect("open");
+    assert!(
+        document.ruleset.tiers[0].id == "gold" && !document.is_dirty(),
+        "premise: the id typed, not committed, the document clean"
+    );
+    assert!(StudioTool::hold_close(&mut tool), "the close is held");
+    assert!(
+        matches!(tool.view.pending_action, Some(Pending::Close)),
+        "the prompt is pending for the close"
+    );
+}
+
+// RE-GUI-15
 #[test]
 fn a_save_the_member_cancels_keeps_the_prompt_and_the_document() {
     let dir = crate::test_support::scratch("prompt_save_cancelled");
