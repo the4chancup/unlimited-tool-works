@@ -14085,3 +14085,11 @@ the active one's name (Astra A1d over 8.29d: the copy exported Autumn 26's findi
 Spring 26); a hold across an edit or a range change stays, since the same ruleset produced it.
 Plan: `plans/save_editor.md` the Live AATF dock's paragraph and its marks' "While a check is in
 flight" bullet; `spec/save_editor.md` "Multi-team AATF".
+
+## 2026-10-30 — save_editor — a field's words spell COM as the views do
+Decision: the words a field no view draws is named in spell `Com` as COM, as they spell `Id`
+as ID: `EditedComStyles` reads "Edited COM styles".
+Why: the views write "COM playing styles"; lower case, the flag every COM style edit sets
+read "Edited com styles" in the changes list (SWE-2 S1d1b1). No other schema name holds an
+acronym the rule lower-cases (every undrawn name walked).
+Plan: `plans/save_editor.md` "Comparator", the bullet "A row is drawn in the views' terms".
