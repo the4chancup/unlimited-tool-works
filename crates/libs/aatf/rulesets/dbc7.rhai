@@ -3,7 +3,6 @@ const RULESET = #{
     schema: 1,
     name: "Divegrass Before Christmas 7",
     page: "https://implyingrigged.info/wiki/Divegrass_Before_Christmas_7:_Melty_Under_The_Christmas_Tree",
-    squad_size: 23,
 
     stats: #{
         rating: ["dribbling", "goalkeeping", "finishing", "low_pass", "lofted_pass", "heading",

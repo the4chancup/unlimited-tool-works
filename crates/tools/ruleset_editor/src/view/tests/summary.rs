@@ -34,7 +34,7 @@ fn each_unbuilt_section_says_where_it_shows_and_that_a_save_keeps_it() {
         assert!(
             drawn(
                 &frame.nodes,
-                "This section can't be edited here yet. Summary describes it, Show preview shows it as the file holds it, and saving keeps it as it is."
+                "You can't edit this section yet. Summary shows what's in it, and saving leaves it unchanged."
             ),
             "{name}'s line"
         );

@@ -30,7 +30,7 @@ pub(crate) fn summary(ruleset: &Ruleset) -> String {
     format!("{}\n", lines.join("\n"))
 }
 
-/// The header: the ruleset's name as the title, the squad size and the
+/// The header: the ruleset's name as the title, the squad of 23 and the
 /// rating and at-most stats.
 fn header_lines(ruleset: &Ruleset) -> Vec<String> {
     let mut lines = vec![
@@ -38,7 +38,7 @@ fn header_lines(ruleset: &Ruleset) -> Vec<String> {
         String::new(),
         format!(
             "Squad of {}. A player's rating is his best of: {}.",
-            ruleset.squad_size,
+            aatf::SQUAD_SIZE,
             ruleset
                 .stats
                 .rating

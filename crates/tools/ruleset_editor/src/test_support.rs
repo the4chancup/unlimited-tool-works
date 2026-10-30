@@ -88,14 +88,19 @@ pub(crate) fn modified_logic_file() -> String {
 pub(crate) const CUSTOM_CHECKS_STUB: &str = "// ==== CUSTOM CHECKS: optional, hand-written; the Ruleset editor keeps this section as it is ====\nfn custom_checks(team) { [] }";
 
 /// The first RE-FILE-03 file: a parse error at line 12 (the comma
-/// between `rating`'s `ball_winning` and `jump` dropped).
+/// between `at_most`'s `attacking_prowess` and `defensive_prowess`
+/// dropped).
 pub(crate) fn parse_error_file() -> String {
-    let text = valid_file().replacen("\"ball_winning\", \"jump\"", "\"ball_winning\" \"jump\"", 1);
+    let text = valid_file().replacen(
+        "\"attacking_prowess\", \"defensive_prowess\"",
+        "\"attacking_prowess\" \"defensive_prowess\"",
+        1,
+    );
     assert!(
         text.lines()
             .nth(11)
             .unwrap_or_default()
-            .contains("\"ball_winning\" \"jump\""),
+            .contains("\"attacking_prowess\" \"defensive_prowess\""),
         "premise: the edit sits on line 12"
     );
     text

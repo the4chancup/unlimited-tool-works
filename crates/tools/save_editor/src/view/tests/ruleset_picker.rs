@@ -616,14 +616,18 @@ fn import_rules_file_opens_the_picker_and_never_becomes_the_selection() {
 fn a_file_with_errors_is_refused_listing_its_findings() {
     let (mut tool, ctx, _requests, dir) = tool_with("ruleset_import_errors", "autumn26");
     let text = renamed("4cc Autumn 25")
-        .replacen("squad_size: 23", "squad_size: 4", 1)
+        .replacen(
+            "label: \"Gold\", count: 1,",
+            "label: \"Gold\", count: 21,",
+            1,
+        )
         .replacen("suggestions: [\"cards\"", "suggestions: [\"bogus\"", 1);
     stub_picker(&mut tool, Some(picked(&dir, "autumn25.4ccrules", &text)));
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     tool_frame(&mut window, &mut tool, &ctx, Vec::new());
     click_in_dropdown(&mut window, &mut tool, &ctx, IMPORT_ROW);
     let findings = [
-        "tiers: counts total 5 over squad_size 4",
+        "tiers: counts total 25 over the squad of 23",
         "suggestions[0]: unknown suggestion \"bogus\"",
     ];
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| tool.view(ui, &ctx));

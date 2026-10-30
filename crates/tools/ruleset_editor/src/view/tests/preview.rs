@@ -2,8 +2,23 @@
 //! and the last recorded edit's changed lines are the view's `changed`
 //! set. The highlight's own scenario waits for a later build.
 
-use super::general::{choose_png, dbc7_logo};
+use super::general::choose_picture;
 use super::*;
+
+/// A real event logo the drafts draw, `stem` naming it (`dbc7`); each
+/// is 84 pixels high, so a pick stores it made smaller.
+fn draft_logo(stem: &str) -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join(format!("../../../docs/prototypes/assets/logos/{stem}.png"))
+}
+
+/// The document's logo, as the PNG's bytes.
+fn logo_png(view: &RulesetView) -> Vec<u8> {
+    view.document
+        .as_ref()
+        .and_then(|document| document.ruleset.logo_png())
+        .expect("a logo")
+}
 
 #[test]
 fn the_preview_draws_the_block_and_the_edit_marks_its_changed_lines() {
@@ -67,11 +82,12 @@ fn the_preview_draws_the_block_and_the_edit_marks_its_changed_lines() {
 #[test]
 fn the_preview_shortens_the_logos_line_and_the_save_keeps_it_whole() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
-    choose_png(&mut window, &mut view, &ctx, &dbc7_logo());
+    choose_picture(&mut window, &mut view, &ctx, &draft_logo("dbc7"));
+    let stored = logo_png(&view);
     view.show_preview = true;
     let frame = settled(&mut window, &mut view, &ctx);
 
-    let short = "    logo: \"iVBORw0KGgoAAAANSUhEUgAA…\",  // a 16 KB PNG, shortened in this view";
+    let short = "    logo: \"iVBORw0KGgoAAAANSUhEUgAA…\",  // a 10 KB PNG, shortened in this view";
     let drawn_line = frame
         .nodes
         .iter()
@@ -94,15 +110,9 @@ fn the_preview_shortens_the_logos_line_and_the_save_keeps_it_whole() {
     let rules = aatf::Rules::load(&written).expect("the saved file loads");
     assert_eq!(
         rules.ruleset().logo_png(),
-        Some(std::fs::read(dbc7_logo()).unwrap()),
+        Some(stored),
         "the file holds the whole logo"
     );
-}
-
-/// VGL's logo, a PNG of the same size in KB as DBC7's.
-fn vgl_logo() -> std::path::PathBuf {
-    std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../../docs/prototypes/assets/logos/vgl.png")
 }
 
 /// The data block's whole logo line in `view`'s document.
@@ -121,18 +131,25 @@ fn whole_logo_line(view: &RulesetView) -> String {
 #[test]
 fn a_replaced_logo_of_the_same_size_marks_its_line() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
-    choose_png(&mut window, &mut view, &ctx, &dbc7_logo());
-    let dbc7_line = whole_logo_line(&view);
-    choose_png(&mut window, &mut view, &ctx, &vgl_logo());
+    // Autumn 26's and VGL's logos, made smaller, are both 9 KB.
+    choose_picture(&mut window, &mut view, &ctx, &draft_logo("autumn26"));
+    let first_kb = logo_png(&view).len().div_ceil(1024);
+    let first_line = whole_logo_line(&view);
+    choose_picture(&mut window, &mut view, &ctx, &draft_logo("vgl"));
+    assert_eq!(
+        (first_kb, logo_png(&view).len().div_ceil(1024)),
+        (9, 9),
+        "premise: two logos of one size in KB"
+    );
     view.show_preview = true;
     let frame = settled(&mut window, &mut view, &ctx);
 
     let vgl_line = whole_logo_line(&view);
     assert_ne!(
-        vgl_line, dbc7_line,
+        vgl_line, first_line,
         "premise: the second pick replaced the logo"
     );
-    let short = "    logo: \"iVBORw0KGgoAAAANSUhEUgAA…\",  // a 16 KB PNG, shortened in this view";
+    let short = "    logo: \"iVBORw0KGgoAAAANSUhEUgAA…\",  // a 9 KB PNG, shortened in this view";
     let drawn_line = frame
         .nodes
         .iter()
@@ -141,7 +158,7 @@ fn a_replaced_logo_of_the_same_size_marks_its_line() {
         .expect("the logo's line is drawn");
     assert!(
         drawn_line == short,
-        "the drawn line is DBC7's shortened one too: {drawn_line:.120}"
+        "the drawn line is Autumn 26's shortened one too: {drawn_line:.120}"
     );
     assert!(
         view.changed.contains(&vgl_line),

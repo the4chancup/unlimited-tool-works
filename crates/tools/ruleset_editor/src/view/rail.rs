@@ -49,7 +49,7 @@ pub(crate) fn section_of(error: &RuleError) -> Section {
         "universal" | "team_settings" => Section::Universal,
         "specials" => Section::Specials,
         "suggestions" => Section::Suggestions,
-        // `name`, `squad_size`, `stats` and anything unmapped: the first
+        // `name`, `stats` and anything unmapped: the first
         // section is where an unmappable problem lands.
         _ => Section::General,
     }
@@ -93,7 +93,6 @@ mod tests {
     fn a_problems_first_path_segment_names_its_section() {
         for (path, section) in [
             ("name", Section::General),
-            ("squad_size", Section::General),
             ("stats.at_most[0]", Section::General),
             ("tiers", Section::Tiers),
             ("tiers[2].free.tricks", Section::Tiers),

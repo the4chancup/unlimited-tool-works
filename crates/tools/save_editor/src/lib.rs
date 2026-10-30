@@ -168,6 +168,10 @@ impl StudioTool for Tool {
         }
     }
 
+    fn has_settings_view(&self) -> bool {
+        true
+    }
+
     fn settings_view(&mut self, ui: &mut egui::Ui, ctx: &ToolContext) {
         let mut table = ctx.tool_settings(TOOL_ID);
         let mut aesthetics = table

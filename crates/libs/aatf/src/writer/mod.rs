@@ -682,7 +682,6 @@ impl Ruleset {
             name,
             page,
             logo,
-            squad_size,
             stats,
             tiers,
             card_groups,
@@ -799,7 +798,6 @@ impl Ruleset {
         if let Some(page) = page {
             block.push_str(&format!("{INDENT}page: {},\n", string_literal(page)));
         }
-        block.push_str(&format!("{INDENT}squad_size: {squad_size},\n"));
         for section in &sections {
             block.push('\n');
             for line in section {

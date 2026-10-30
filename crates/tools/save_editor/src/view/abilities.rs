@@ -1039,7 +1039,7 @@ mod tests {
     fn ruleset(body: &str) -> aatf::Ruleset {
         let block = format!(
             "const RULESET = #{{
-                schema: 1, name: \"x\", squad_size: 23,
+                schema: 1, name: \"x\",
                 universal: #{{ max_skill_cards: 10 }},
                 tiers: [#{{ id: \"regular\", label: \"Regular\", rate: 77, form: 4,
                             injury_resistance: 1, weak_foot: #{{ usage: 2, accuracy: 2 }},

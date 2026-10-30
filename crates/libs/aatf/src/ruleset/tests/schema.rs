@@ -3,16 +3,14 @@ use std::collections::BTreeMap;
 
 #[test]
 fn an_unknown_top_level_key_is_schema() {
-    let err = schema(
-        "#{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, frob: 1 }",
-    );
+    let err = schema("#{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, frob: 1 }");
     assert!(matches!(err, LoadError::Schema { .. }), "{err:?}");
 }
 
 #[test]
 fn an_unknown_tier_key_is_schema() {
     let err = schema(
-        "#{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\", rate: 99, frob: 1 }] }",
+        "#{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\", rate: 99, frob: 1 }] }",
     );
     assert!(matches!(err, LoadError::Schema { .. }), "{err:?}");
 }
@@ -20,7 +18,7 @@ fn an_unknown_tier_key_is_schema() {
 #[test]
 fn a_missing_rate_is_schema() {
     let err = schema(
-        "#{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\" }] }",
+        "#{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\" }] }",
     );
     assert!(matches!(err, LoadError::Schema { .. }), "{err:?}");
 }
@@ -28,7 +26,7 @@ fn a_missing_rate_is_schema() {
 #[test]
 fn an_unknown_position_label_is_schema() {
     let err = schema(
-        "#{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\", rate: 99, when: #{ positions: [\"GKK\"] } }] }",
+        "#{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\", rate: 99, when: #{ positions: [\"GKK\"] } }] }",
     );
     assert!(
         matches!(err, LoadError::Schema { ref message, .. } if message.contains("GKK")),
@@ -72,7 +70,7 @@ fn unknown_keys_and_labels_inside_specials_are_schema() {
 fn a_bracket_with_both_or_neither_height_form_is_schema() {
     for heights in ["up_to: 175, exactly: [185]", ""] {
         let err = schema(&format!(
-            "#{{ schema: 1, name: \"x\", squad_size: 23, universal: #{{ max_skill_cards: 10 }}, heights: #{{ brackets: [#{{ id: \"x\", label: \"x\", {heights} }}], systems: [] }} }}"
+            "#{{ schema: 1, name: \"x\", universal: #{{ max_skill_cards: 10 }}, heights: #{{ brackets: [#{{ id: \"x\", label: \"x\", {heights} }}], systems: [] }} }}"
         ));
         // `RawBracket`'s error names both keys, whichever half is wrong.
         assert!(
@@ -89,7 +87,7 @@ fn a_bracket_with_both_or_neither_height_form_is_schema() {
 #[test]
 fn an_empty_exactly_is_schema() {
     let err = schema(
-        "#{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, heights: #{ brackets: [#{ id: \"x\", label: \"x\", exactly: [] }], systems: [] } }",
+        "#{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, heights: #{ brackets: [#{ id: \"x\", label: \"x\", exactly: [] }], systems: [] } }",
     );
     assert!(
         matches!(
@@ -103,7 +101,7 @@ fn an_empty_exactly_is_schema() {
 #[test]
 fn per_tier_deserializes_in_both_forms() {
     let ruleset = Ruleset::from_data_block(
-        "const RULESET = #{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }], specials: [#{ label: \"x\", then: #{ stat_bonus: #{ all: -3, dribbling: #{ regular: 5 } } } }] };",
+        "const RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }], specials: [#{ label: \"x\", then: #{ stat_bonus: #{ all: -3, dribbling: #{ regular: 5 } } } }] };",
     )
     .expect("both forms parse");
     let Some(&PerTier::All(-3)) = ruleset.specials[0].then.stat_bonus.get(&StatOrAll::All) else {
@@ -123,7 +121,7 @@ fn per_tier_deserializes_in_both_forms() {
 #[test]
 fn a_form_in_a_stats_map_is_schema() {
     let err = schema(
-        "#{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\", rate: 99, stats: #{ form: 8 } }] }",
+        "#{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\", rate: 99, stats: #{ form: 8 } }] }",
     );
     assert!(
         matches!(err, LoadError::Schema { ref message, .. } if message.contains("\"form\"")),
@@ -139,21 +137,15 @@ fn a_required_key_absent_is_schema() {
     for (name, text, key) in [
         (
             "schema",
-            "const RULESET = #{ name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 } };"
+            "const RULESET = #{ name: \"x\", universal: #{ max_skill_cards: 10 } };"
                 .to_string(),
             "schema",
         ),
         (
             "name",
-            "const RULESET = #{ schema: 1, squad_size: 23, universal: #{ max_skill_cards: 10 } };"
+            "const RULESET = #{ schema: 1, universal: #{ max_skill_cards: 10 } };"
                 .to_string(),
             "name",
-        ),
-        (
-            "squad_size",
-            "const RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 } };"
-                .to_string(),
-            "squad_size",
         ),
         ("a tier's id", edit(AUTUMN26, "id: \"gold\", ", ""), "id"),
         ("a tier's label", edit(AUTUMN26, "label: \"Gold\", ", ""), "label"),
@@ -163,12 +155,12 @@ fn a_required_key_absent_is_schema() {
         ("a system's label", edit(AUTUMN26, "label: \"Green\", ", ""), "label"),
         (
             "universal",
-            "const RULESET = #{ schema: 1, name: \"x\", squad_size: 23 };".to_string(),
+            "const RULESET = #{ schema: 1, name: \"x\" };".to_string(),
             "universal",
         ),
         (
             "universal.max_skill_cards",
-            "const RULESET = #{ schema: 1, name: \"x\", squad_size: 23, universal: #{ } };"
+            "const RULESET = #{ schema: 1, name: \"x\", universal: #{ } };"
                 .to_string(),
             "max_skill_cards",
         ),
@@ -179,7 +171,7 @@ fn a_required_key_absent_is_schema() {
         ),
         (
             "a team settings entry's label",
-            "const RULESET = #{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, team_settings: [#{ }] };"
+            "const RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, team_settings: [#{ }] };"
                 .to_string(),
             "label",
         ),
@@ -242,27 +234,27 @@ fn a_schema_error_carries_its_key_path() {
     for (name, text, path) in [
         (
             "a wrong-typed value",
-            "#{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\", rate: 99 }, #{ id: \"silver\", label: \"Silver\", rate: 88 }, #{ id: \"bronze\", label: \"Bronze\", rate: 77, free: #{ tricks: \"two\" } }] }",
+            "#{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\", rate: 99 }, #{ id: \"silver\", label: \"Silver\", rate: 88 }, #{ id: \"bronze\", label: \"Bronze\", rate: 77, free: #{ tricks: \"two\" } }] }",
             "tiers[2].free.tricks",
         ),
         (
             "an unknown top-level key",
-            "#{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, frob: 1 }",
+            "#{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, frob: 1 }",
             "frob",
         ),
         (
             "an unknown tier key",
-            "#{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\", rate: 99, frob: 1 }] }",
+            "#{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\", rate: 99, frob: 1 }] }",
             "tiers[0].frob",
         ),
         (
             "a missing tier key",
-            "#{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\" }] }",
+            "#{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"gold\", label: \"Gold\" }] }",
             "tiers[0]",
         ),
         (
             "a missing top-level key",
-            "#{ name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 } }",
+            "#{ name: \"x\", universal: #{ max_skill_cards: 10 } }",
             ".",
         ),
     ] {
@@ -270,6 +262,18 @@ fn a_schema_error_carries_its_key_path() {
             LoadError::Schema { path: got, .. } => assert_eq!(got, path, "{name}"),
             other => panic!("{name}: {other:?}"),
         }
+    }
+}
+
+/// Every squad is 23, so the squad's size is no key of the schema: a
+/// file that still sets it is refused like any key the schema lacks,
+/// with the key as its path.
+#[test]
+fn a_squad_key_is_refused_as_unknown() {
+    match schema("#{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 } }")
+    {
+        LoadError::Schema { path, .. } => assert_eq!(path, "squad_size"),
+        other => panic!("{other:?}"),
     }
 }
 
@@ -281,7 +285,7 @@ fn a_schema_error_carries_its_key_path() {
 fn the_proposal_fields_deserialize() {
     let ruleset = Ruleset::from_data_block(
         "const RULESET = #{
-            schema: 1, name: \"x\", squad_size: 23,
+            schema: 1, name: \"x\",
             universal: #{ max_skill_cards: 10 },
             tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77, name_color: \"cc9900ff\" }],
             specials: [#{ label: \"x\",
@@ -325,7 +329,7 @@ fn bad_proposal_field_values_are_schema() {
         ("name_color", "name_color: 5"),
     ] {
         let err = Ruleset::from_data_block(&format!(
-            "const RULESET = #{{ schema: 1, name: \"x\", squad_size: 23, universal: #{{ max_skill_cards: 10 }}, tiers: [#{{ id: \"regular\", label: \"Regular\", rate: 77, {snippet} }}] }};"
+            "const RULESET = #{{ schema: 1, name: \"x\", universal: #{{ max_skill_cards: 10 }}, tiers: [#{{ id: \"regular\", label: \"Regular\", rate: 77, {snippet} }}] }};"
         ))
         .expect_err(name);
         assert!(matches!(err, LoadError::Schema { .. }), "{name}: {err:?}");
@@ -371,30 +375,29 @@ fn a_partial_weak_foot_is_schema() {
     for (name, text) in [
         (
             "a tier",
-            "const RULESET = #{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77, weak_foot: #{ usage: 4 } }] };",
+            "const RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77, weak_foot: #{ usage: 4 } }] };",
         ),
         (
             "a special's then",
-            "const RULESET = #{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }], specials: [#{ label: \"x\", then: #{ weak_foot: #{ usage: 4 } } }] };",
+            "const RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }], specials: [#{ label: \"x\", then: #{ weak_foot: #{ usage: 4 } } }] };",
         ),
         (
             "a choice option",
-            "const RULESET = #{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }], specials: [#{ label: \"x\", then: #{ choice: [#{ weak_foot: #{ usage: 4 } }] } }] };",
+            "const RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }], specials: [#{ label: \"x\", then: #{ choice: [#{ weak_foot: #{ usage: 4 } }] } }] };",
         ),
     ] {
         let err = Ruleset::from_data_block(text).expect_err(name);
         assert!(matches!(err, LoadError::Schema { .. }), "{name}: {err:?}");
     }
     Ruleset::from_data_block(
-        "const RULESET = #{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };",
+        "const RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };",
     )
     .expect("a tier without a weak_foot key loads");
 }
 
 #[test]
 fn schema_two_is_unknown_schema() {
-    let err =
-        schema("#{ schema: 2, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 } }");
+    let err = schema("#{ schema: 2, name: \"x\", universal: #{ max_skill_cards: 10 } }");
     assert_eq!(err, LoadError::UnknownSchema { schema: 2 }, "{err:?}");
 }
 
@@ -404,7 +407,7 @@ fn schema_two_is_unknown_schema() {
 fn a_let_ruleset_is_no_ruleset() {
     assert_eq!(
         Ruleset::from_data_block(
-            "let RULESET = #{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };"
+            "let RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };"
         )
         .expect_err("a let"),
         LoadError::NoRuleset
@@ -453,7 +456,7 @@ fn import_is_refused_but_print_runs() {
         .expect_err("import has no resolver");
     assert!(matches!(err, LoadError::Parse { .. }), "{err:?}");
     Ruleset::from_data_block(
-        "print(\"x\");\nconst RULESET = #{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };",
+        "print(\"x\");\nconst RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };",
     )
     .expect("the standard package's print runs before the data block");
 }

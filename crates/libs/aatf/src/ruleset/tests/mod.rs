@@ -75,7 +75,7 @@ fn the_official_ruleset_loads() {
 #[test]
 fn a_loop_before_the_data_block_stops_at_the_operation_limit() {
     let err = Ruleset::from_data_block(
-        "loop {}\nconst RULESET = #{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };",
+        "loop {}\nconst RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };",
     )
     .expect_err("the limit stops it");
     match err {

@@ -92,29 +92,36 @@ fn two_edits_undo_and_redo_by_key_and_button() {
     );
 }
 
-/// The Name field's node (a single-line TextEdit).
-fn name_field<'a>(nodes: &'a [accesskit::Node], value: &str) -> &'a accesskit::Node {
+/// The single-line text field holding `value` (Name holds the ruleset's
+/// name, an unset Event page nothing).
+fn text_field<'a>(nodes: &'a [accesskit::Node], value: &str) -> &'a accesskit::Node {
     nodes
         .iter()
         .find(|node| node.role() == Role::TextInput && node.value() == Some(value))
-        .expect("the Name field")
+        .unwrap_or_else(|| panic!("a text field holding {value:?}"))
 }
 
-/// The Squad size control's node (Blank's squad is 23).
-fn squad_spin(nodes: &[accesskit::Node]) -> &accesskit::Node {
+/// Blank's one tier's Rate control on the Tiers section (its rate is
+/// 75, a value no other cell of the row holds).
+fn rate_spin(nodes: &[accesskit::Node]) -> &accesskit::Node {
     nodes
         .iter()
-        .find(|node| node.role() == Role::SpinButton && node.value() == Some("23"))
-        .expect("the Squad size control")
+        .find(|node| node.role() == Role::SpinButton && node.value() == Some("75"))
+        .expect("the Rate control")
 }
 
-/// The Name field focused (a click on it).
-fn focus_name(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext, from: &str) {
+/// The rate of Blank's one tier.
+fn rate(view: &RulesetView) -> u8 {
+    view.document.as_ref().unwrap().ruleset.tiers[0].rate
+}
+
+/// The text field holding `from` focused (a click on it).
+fn focus_field(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext, from: &str) {
     let frame = window.draw(view, ctx);
-    click(window, name_field(&frame.nodes, from), view, ctx);
+    click(window, text_field(&frame.nodes, from), view, ctx);
 }
 
-/// `text` typed into the focused Name field (the field keeps focus
+/// `text` typed into the focused text field (the field keeps focus
 /// between frames, so several calls are one typing gesture).
 fn type_text(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext, text: &str) {
     window.frame(vec![egui::Event::Text(text.to_string())], |ui| {
@@ -122,50 +129,32 @@ fn type_text(window: &mut Headless, view: &mut RulesetView, ctx: &ToolContext, t
     });
 }
 
-/// A drag on a DragValue's node over `steps` frames, `dx` pixels a frame;
-/// the pointer released at the end position.
-fn drag_value(
-    window: &mut Headless,
-    node: &accesskit::Node,
-    steps: u8,
-    dx: f32,
-    view: &mut RulesetView,
-    ctx: &ToolContext,
-) {
-    let at = centre(node);
-    window.frame(pointer_at(at, true), |ui| show(ui, view, ctx));
-    for step in 1..=steps {
-        window.frame(
-            vec![egui::Event::PointerMoved(egui::pos2(
-                at.x + dx * f32::from(step),
-                at.y,
-            ))],
-            |ui| show(ui, view, ctx),
-        );
-    }
-    window.frame(
-        pointer_at(egui::pos2(at.x + dx * f32::from(steps), at.y), false),
-        |ui| show(ui, view, ctx),
-    );
+/// The document's ruleset's name and at-most list.
+fn basics(view: &RulesetView) -> (String, Vec<String>) {
+    let ruleset = &view.document.as_ref().unwrap().ruleset;
+    (ruleset.name.clone(), ruleset.stats.at_most.clone())
 }
 
-/// The document's ruleset's name, at-most list and squad size.
-fn basics(view: &RulesetView) -> (String, Vec<String>, u8) {
-    let ruleset = &view.document.as_ref().unwrap().ruleset;
-    (
-        ruleset.name.clone(),
-        ruleset.stats.at_most.clone(),
-        ruleset.squad_size,
-    )
+/// General has no Squad size field: every squad is 23.
+#[test]
+fn general_draws_no_squad_field() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert!(
+        drawn(&frame.nodes, "Event logo"),
+        "premise: General is drawn"
+    );
+    assert!(!drawn(&frame.nodes, "Squad size"), "no Squad size field");
 }
 
 #[test]
 fn ctrl_z_during_a_drag_restores_the_value_before_it() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
-    let frame = window.draw(&mut view, &ctx);
-    let squad = squad_spin(&frame.nodes);
+    view.section = Section::Tiers;
+    let frame = settled(&mut window, &mut view, &ctx);
+    let rate_control = rate_spin(&frame.nodes);
     // A drag over two frames, the pointer still down.
-    let at = centre(squad);
+    let at = centre(rate_control);
     window.frame(pointer_at(at, true), |ui| show(ui, &mut view, &ctx));
     for step in 1..=2 {
         window.frame(
@@ -176,22 +165,17 @@ fn ctrl_z_during_a_drag_restores_the_value_before_it() {
             |ui| show(ui, &mut view, &ctx),
         );
     }
-    let dragged = view.document.as_ref().unwrap().ruleset.squad_size;
-    assert_ne!(dragged, 23, "premise: the drag changed the squad size");
+    assert_ne!(rate(&view), 75, "premise: the drag changed the rate");
     // Ctrl+Z while the pointer is still down: the drag seals first, so
     // the undo lands before it.
     ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
-    assert_eq!(
-        view.document.as_ref().unwrap().ruleset.squad_size,
-        23,
-        "back to before the drag"
-    );
+    assert_eq!(rate(&view), 75, "back to before the drag");
 }
 
 #[test]
 fn a_text_field_and_a_click_are_two_undo_entries() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
-    focus_name(&mut window, &mut view, &ctx, "New ruleset");
+    focus_field(&mut window, &mut view, &ctx, "New ruleset");
     type_text(&mut window, &mut view, &ctx, "x");
     assert_eq!(basics(&view).0, "New rulesetx");
     // A checkbox click is its own gesture (focus moved Some→Some).
@@ -211,7 +195,7 @@ fn a_text_field_and_a_click_are_two_undo_entries() {
 fn typing_in_name_is_one_entry_and_focus_move_seals_it() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
     // Two characters over two frames: one gesture.
-    focus_name(&mut window, &mut view, &ctx, "New ruleset");
+    focus_field(&mut window, &mut view, &ctx, "New ruleset");
     type_text(&mut window, &mut view, &ctx, "a");
     type_text(&mut window, &mut view, &ctx, "b");
     // A click on dead space ends the gesture.
@@ -222,17 +206,22 @@ fn typing_in_name_is_one_entry_and_focus_move_seals_it() {
     ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
     assert_eq!(basics(&view).0, "New ruleset", "the whole gesture undone");
 
-    // Focus Name, type, then move focus to Squad size: the name's
-    // gesture is sealed before the squad edit.
-    focus_name(&mut window, &mut view, &ctx, "New ruleset");
+    // Focus Name, type, then move focus to Event page and type there:
+    // the name's gesture is sealed before the page edit.
+    focus_field(&mut window, &mut view, &ctx, "New ruleset");
     type_text(&mut window, &mut view, &ctx, "x");
-    let frame = window.draw(&mut view, &ctx);
-    let squad = squad_spin(&frame.nodes);
-    drag_value(&mut window, squad, 2, 30.0, &mut view, &ctx);
-    let squad_size = basics(&view).2;
-    assert_ne!(squad_size, 23, "premise: the squad edit happened");
+    focus_field(&mut window, &mut view, &ctx, "");
+    type_text(&mut window, &mut view, &ctx, "https://a.b");
+    let page = |view: &RulesetView| view.document.as_ref().unwrap().ruleset.page.clone();
+    assert_eq!(
+        page(&view).as_deref(),
+        Some("https://a.b"),
+        "premise: the page edit happened"
+    );
+    window.frame(pointer_at(away, true), |ui| show(ui, &mut view, &ctx));
+    window.frame(pointer_at(away, false), |ui| show(ui, &mut view, &ctx));
     ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
-    assert_eq!(basics(&view).2, 23, "the squad edit undone");
+    assert_eq!(page(&view), None, "the page edit undone");
     assert_eq!(basics(&view).0, "New rulesetx", "the name kept");
 }
 
@@ -359,14 +348,9 @@ fn the_form_scrolls_sideways_to_its_rightmost_checkbox() {
     );
 }
 
-/// A real event logo: DBC7's, as the drafts draw it (16 KB).
-pub(super) fn dbc7_logo() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/prototypes/assets/logos/dbc7.png")
-}
-
-/// The Event logo's dialog stubbed to return `path`, then Choose PNG…
-/// clicked.
-pub(super) fn choose_png(
+/// The Event logo's dialog stubbed to return `path`, then Choose
+/// picture… clicked.
+pub(super) fn choose_picture(
     window: &mut Headless,
     view: &mut RulesetView,
     ctx: &ToolContext,
@@ -375,7 +359,59 @@ pub(super) fn choose_png(
     let picked = path.to_path_buf();
     view.logo.dialog = Box::new(move |_| Some(picked.clone()));
     let frame = settled(window, view, ctx);
-    click_labeled(window, &frame.nodes, "Choose PNG…", view, ctx);
+    click_labeled(window, &frame.nodes, "Choose picture…", view, ctx);
+}
+
+/// A 40 × 40 PNG of under 3 KB written to `dir`: a gradient, which
+/// compresses partly, as a small logo does. Its bytes are not the ones
+/// the logo field's own encoder makes of the same pixels, so a stored
+/// copy equal to the file was not encoded again.
+fn small_png(dir: &Path) -> PathBuf {
+    use image::ImageEncoder as _;
+    use image::codecs::png::{CompressionType, FilterType, PngEncoder};
+    // The blue channel is noise from a fixed sequence (a linear
+    // congruential one), which keeps the file from compressing below
+    // 2 KB.
+    let mut noise: u32 = 1;
+    let mut pixels = Vec::new();
+    for y in 0..40u8 {
+        for x in 0..40u8 {
+            noise = noise.wrapping_mul(1_103_515_245).wrapping_add(12_345);
+            let [_, _, blue, _] = noise.to_be_bytes();
+            pixels.extend_from_slice(&[x * 6, y * 6, blue, 255]);
+        }
+    }
+    let mut png = Vec::new();
+    PngEncoder::new_with_quality(&mut png, CompressionType::Best, FilterType::Adaptive)
+        .write_image(&pixels, 40, 40, image::ExtendedColorType::Rgba8)
+        .expect("the picture encodes");
+    assert_ne!(
+        png,
+        dds_convert::encode_png(&pixels, 40, 40).expect("the picture encodes"),
+        "premise: the file's bytes are not a re-encoding's"
+    );
+    write_bytes(dir, "small.png", &png)
+}
+
+/// `bytes` written to `dir/name`; the path.
+fn write_bytes(dir: &Path, name: &str, bytes: &[u8]) -> PathBuf {
+    let path = dir.join(name);
+    std::fs::write(&path, bytes).unwrap();
+    path
+}
+
+/// The document's logo decoded: its width and height in pixels.
+fn logo_size(view: &RulesetView) -> (u32, u32) {
+    let png = view
+        .document
+        .as_ref()
+        .expect("a document")
+        .ruleset
+        .logo_png()
+        .expect("a logo");
+    let decoded =
+        dds_convert::decode(&png, dds_convert::SourceFormat::Png).expect("the logo is a PNG");
+    (decoded.width, decoded.height)
 }
 
 /// The document's logo text.
@@ -411,28 +447,29 @@ fn beside(left: accesskit::Rect, right: accesskit::Rect) -> bool {
 
 // RE-GUI-19
 #[test]
-fn a_chosen_png_shows_28_high_with_remove_beside_choose() {
+fn a_png_that_fits_shows_28_high_and_is_stored_as_it_is() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
     assert_eq!(logo_text(&view), None, "premise: Blank has no logo");
     let frame = settled(&mut window, &mut view, &ctx);
     assert!(drawn(&frame.nodes, "None"), "no logo: a weak None");
     assert!(!drawn(&frame.nodes, "Remove"), "no logo, no Remove");
 
-    choose_png(&mut window, &mut view, &ctx, &dbc7_logo());
-    let png = std::fs::read(dbc7_logo()).unwrap();
+    let path = small_png(&crate::test_support::scratch("event_logo_small"));
+    let png = std::fs::read(&path).unwrap();
+    choose_picture(&mut window, &mut view, &ctx, &path);
     assert_eq!(
         view.document.as_ref().unwrap().ruleset.logo_png(),
-        Some(png),
-        "the picked file is the logo"
+        Some(png.clone()),
+        "the picked file is the logo, byte for byte"
     );
     let frame = settled(&mut window, &mut view, &ctx);
     let picture = logo_picture(&frame.nodes).expect("the picture is drawn");
     assert_eq!(picture.y1 - picture.y0, 28.0, "28 points high");
-    let choose = bounds_of(&frame.nodes, "Choose PNG…");
-    assert!(beside(picture, choose), "Choose PNG… after the picture");
+    let choose = bounds_of(&frame.nodes, "Choose picture…");
+    assert!(beside(picture, choose), "Choose picture… after the picture");
     assert!(
         beside(choose, bounds_of(&frame.nodes, "Remove")),
-        "Remove beside Choose PNG…"
+        "Remove beside Choose picture…"
     );
     assert!(!drawn(&frame.nodes, "None"));
 
@@ -448,7 +485,7 @@ fn a_chosen_png_shows_28_high_with_remove_beside_choose() {
     ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
     assert_eq!(
         view.document.as_ref().unwrap().ruleset.logo_png(),
-        Some(std::fs::read(dbc7_logo()).unwrap()),
+        Some(png),
         "Remove undone"
     );
     ctrl_key(&mut window, &mut view, &ctx, egui::Key::Z);
@@ -460,17 +497,35 @@ fn a_chosen_png_shows_28_high_with_remove_beside_choose() {
 
 // RE-GUI-19
 #[test]
-fn a_jpeg_or_an_oversize_png_is_refused_with_its_line_and_the_logo_kept() {
+fn a_big_jpeg_is_made_smaller_to_fit_and_stored_as_a_png() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
-    choose_png(&mut window, &mut view, &ctx, &dbc7_logo());
+    let dir = crate::test_support::scratch("event_logo_jpeg");
+    let path = dir.join("wide.jpg");
+    image::RgbImage::from_pixel(1000, 500, image::Rgb([200, 30, 30]))
+        .save(&path)
+        .expect("the JPEG is written");
+    choose_picture(&mut window, &mut view, &ctx, &path);
+    assert_eq!(logo_size(&view), (112, 56), "fitted into 168 × 56");
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert!(
+        !contains_label(&frame.nodes, "is not a picture"),
+        "no refusal"
+    );
+}
+
+// RE-GUI-19
+#[test]
+fn a_file_that_is_no_picture_is_refused_with_its_line_and_the_logo_kept() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let dir = crate::test_support::scratch("event_logo_refused");
+    choose_picture(&mut window, &mut view, &ctx, &small_png(&dir));
     let kept = logo_text(&view).expect("premise: the PNG was taken");
 
-    let jpeg = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../libs/dds_convert/tests/fixtures/source_opaque.jpg");
-    choose_png(&mut window, &mut view, &ctx, &jpeg);
+    let text = write_bytes(&dir, "logo.png", b"not a picture");
+    choose_picture(&mut window, &mut view, &ctx, &text);
     assert_eq!(logo_text(&view).as_deref(), Some(kept.as_str()));
     let frame = settled(&mut window, &mut view, &ctx);
-    let line = "source_opaque.jpg is not a PNG picture";
+    let line = "logo.png is not a picture";
     assert!(
         beside(
             bounds_of(&frame.nodes, "Remove"),
@@ -479,28 +534,19 @@ fn a_jpeg_or_an_oversize_png_is_refused_with_its_line_and_the_logo_kept() {
         "the refusal beside the buttons"
     );
 
-    // The PNG signature, then padding to one byte over 64 KB.
-    let dir = crate::test_support::scratch("event_logo_oversize");
-    let mut big = vec![0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
-    big.resize(65537, 0);
-    let big_path = dir.join("big.png");
-    std::fs::write(&big_path, big).unwrap();
-    choose_png(&mut window, &mut view, &ctx, &big_path);
-    assert_eq!(logo_text(&view).as_deref(), Some(kept.as_str()));
-    let frame = settled(&mut window, &mut view, &ctx);
-    assert!(drawn(&frame.nodes, "big.png is over 64 KB"));
-    assert!(!drawn(&frame.nodes, line), "the newest refusal replaces it");
-
-    choose_png(&mut window, &mut view, &ctx, &dir.join("missing.png"));
+    // A file that does not read keeps its own line, which replaces the
+    // last one.
+    choose_picture(&mut window, &mut view, &ctx, &dir.join("missing.png"));
     assert_eq!(logo_text(&view).as_deref(), Some(kept.as_str()));
     let frame = settled(&mut window, &mut view, &ctx);
     assert!(contains_label(
         &frame.nodes,
         "missing.png could not be read: "
     ));
+    assert!(!drawn(&frame.nodes, line), "the newest refusal replaces it");
 
     // A pick that is taken clears the line.
-    choose_png(&mut window, &mut view, &ctx, &dbc7_logo());
+    choose_picture(&mut window, &mut view, &ctx, &small_png(&dir));
     let frame = settled(&mut window, &mut view, &ctx);
     assert!(!contains_label(&frame.nodes, "missing.png"));
 }

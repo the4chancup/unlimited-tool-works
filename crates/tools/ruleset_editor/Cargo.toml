@@ -12,6 +12,8 @@ aatf.workspace = true
 anyhow.workspace = true
 clap.workspace = true
 color_tools.workspace = true
+# The event logo's decoding, scaling and PNG encoding (`sections::general`).
+dds_convert.workspace = true
 egui.workspace = true
 log.workspace = true
 pes_savefile.workspace = true
@@ -25,6 +27,8 @@ toml.workspace = true
 
 [dev-dependencies]
 crossbeam-channel.workspace = true
+# Writes the JPEG the event logo tests pick.
+image.workspace = true
 
 [lints]
 workspace = true

@@ -127,7 +127,7 @@ pub enum LogicIdentity {
 /// banner and the table.
 pub(crate) const LOGIC_VERSIONS: &[(u32, &str)] = &[(
     1,
-    "356525154b51b166ee05e7f7d1d90b87ef34f180a07bd0d2e37b0ba94630f009",
+    "b2c03566f3425ab013cb8f0148dc379239b23f950b0d5a2698a8fd6eb59de706",
 )];
 
 /// `text`'s logic section: from the line starting `// ==== LOGIC` to
@@ -188,7 +188,7 @@ mod tests {
     /// A made-up older logic section.
     const OLD_SECTION: &str = "// ==== LOGIC (ruleset-logic 0): written by the Ruleset editor ====\nfn check_team(team) { [] }\n";
 
-    const OFFICIAL: &str = "const RULESET = #{ schema: 1, name: \"x\", squad_size: 23, universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };\n";
+    const OFFICIAL: &str = "const RULESET = #{ schema: 1, name: \"x\", universal: #{ max_skill_cards: 10 }, tiers: [#{ id: \"regular\", label: \"Regular\", rate: 77 }] };\n";
 
     /// A file built from `section` as its logic section.
     fn file_with(section: &str) -> String {

@@ -35,8 +35,16 @@ pub trait StudioTool {
     /// not: drain event channels, check timer deadlines. Default no-op.
     fn tick(&mut self, _ctx: &ToolContext) {}
 
+    /// Whether `settings_view` draws a form: the settings menu draws the tool's section only
+    /// when this is true. A non-empty `default_settings()` is not the test, because the table
+    /// also holds state the tool writes for itself (a last folder, recent files), and a header
+    /// over nothing is a dead end. Default: false.
+    fn has_settings_view(&self) -> bool {
+        false
+    }
+
     /// The tool's settings section, injected into the settings menu. The menu draws the
-    /// section only for a tool whose `default_settings()` is not empty; the tool writes its
+    /// section only for a tool whose `has_settings_view()` is true; the tool writes its
     /// table through `ctx.set_tool_settings`. Default: nothing drawn.
     fn settings_view(&mut self, _ui: &mut egui::Ui, _ctx: &ToolContext) {}
 

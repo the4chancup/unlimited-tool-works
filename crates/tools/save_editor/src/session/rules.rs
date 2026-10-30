@@ -420,16 +420,20 @@ mod tests {
     #[test]
     fn a_file_that_does_not_load_is_refused_with_its_findings_and_nothing_written() {
         let dir = crate::test_support::scratch("import_errors");
-        // Two values broken: the tier counts over the squad size, and an
+        // Two values broken: the tier counts over the squad, and an
         // unknown suggestion word.
         let two = renamed("4cc Autumn 25")
-            .replacen("squad_size: 23", "squad_size: 4", 1)
+            .replacen(
+                "label: \"Gold\", count: 1,",
+                "label: \"Gold\", count: 21,",
+                1,
+            )
             .replacen("suggestions: [\"cards\"", "suggestions: [\"bogus\"", 1);
         let cases = [
             (
                 picked(&dir, "two.4ccrules", &two),
                 vec![
-                    "tiers: counts total 5 over squad_size 4".to_owned(),
+                    "tiers: counts total 25 over the squad of 23".to_owned(),
                     "suggestions[0]: unknown suggestion \"bogus\"".to_owned(),
                 ],
             ),
