@@ -5973,6 +5973,11 @@ briefs, review loops, gates and mutation runs as for any step.
     after the push (2026-10-30, `.tmp/0_0_1cv/cv8e/published_check.py`): Heights at
     1280 × 780, no controls column, the title ending "(Demo)", the two tools greyed, no
     page errors
+  - [ ] cv8f the General section's "Event page" and "Event logo" labels read "Event page
+    (optional)" and "Event logo (optional)" (the maintainer, 2026-10-31): the draft first
+    (`docs/prototypes/tools/ruleset_editor.js`, its `general-fields` rows), then the plan,
+    then `view/sections/general.rs` and the tests that find a field by its label
+    (`view/tests/general.rs`)
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450
@@ -5984,11 +5989,24 @@ briefs, review loops, gates and mutation runs as for any step.
       keyboard stall on the controls that start no check is 8.40. Files: `save_editor`
       `view/`, `session/rules.rs`, `team_widgets` `tactics/`, `studio_core` `widgets/wheel.rs`,
       `help/core/data_location.md`, `studio` `gui_log.rs`, `scripts/mutants.py`
-    - Open: `mutants-diff 34d29fe2` over cv6a and cv6b (running), its survivors triaged in one
-      brief with `interchange.rs:1009` and pes_savefile `file.rs:235`; a manual check in the
-      built window that the Position dropdown's pointer pick in the popover sets the position
-      (the headless click cannot reach a combo's popup; a `manual: checked` line); the
-      whole-crate runs of the 0.0.1 crates
+    - [x] `mutants-diff 34d29fe2` over cv6a and cv6b (73 mutants): save_editor 45 caught, 1
+      timeout, 9 unviable; studio_core 4 caught; team_widgets 3 caught; studio 7 caught and
+      four TIMEOUTs in `gui_log.rs`, each a `spelled_len` of `Some(0)` (`+=` to `*=` on its
+      length; the guard's `!home.is_empty()` deleted, `&&` to `||`, or true, letting an empty
+      home through) on which `redact_any_spelling`'s loop never advances: an infinite loop,
+      so caught (RUNBOOK "Mutation runs"); save_editor's one TIMEOUT is `quick_actions.rs:108`
+      `delete !` in `tier_button` (the tier applied on every frame not clicked), 1952 s of
+      tests against a 1183 s timeout, no infinite loop explaining it
+    - manual: checked 2026-10-31 by the lead, in the built window (`b766cf5c`, the
+      maintainer's PES 2021 save, never saved): /3/'s AMF >BLENDER's popover, its Position
+      combo opened by a pointer click, CMF picked by a pointer click: the combo and the badge
+      read CMF 99, the formation's name 3-4-3, "unsaved changes" shown; Undo brought back AMF
+      109 and 3-3-1-3 (cv6's A3-3)
+    - Open: one triage brief: save_editor `interchange.rs:1009` `room_at_cursor` and
+      pes_savefile `file.rs:235` `EditFile::serial` (missed), and the TIMEOUTs no infinite
+      loop explains (`tier_button` above, `EditFile::serial` and `texport.rs`
+      `pes17_container`'s from `mutants-diff c2079631`, cv8d's three); then the whole-crate
+      runs of the 0.0.1 crates
   - [ ] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30): off
     `CLI_ONLY`, the label in the sidebar and the title; the unbuilt sections' line points at
     Summary and the preview; RE-GUI-17's round trip confirmed over every field the unbuilt
