@@ -10,17 +10,13 @@
 //! as checking, unless it was checked under another ruleset
 //! (`held_result`).
 
-use std::collections::HashMap;
 use std::sync::Arc;
 
 use pes_savefile::EditFile;
-use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::names::display_name;
 use pes_savefile::model::tactics::TeamTactics;
 use team_widgets::tactics::TacticsView;
-use team_widgets::violations::{
-    ListUse, ListedPlayer, SelectedPlayer, TeamViolations, Wording, violations_list,
-};
+use team_widgets::violations::{ListUse, SelectedPlayer, TeamViolations, Wording, violations_list};
 
 use crate::session::rules::{self, TeamCheck};
 use crate::session::selection::TeamChoice;
@@ -187,24 +183,10 @@ pub(super) fn results(
     ruleset: &aatf::Ruleset,
     list_use: ListUse,
 ) -> Option<SelectedPlayer> {
-    // Player ids are stable inside an open file: one map serves the
-    // whole roster scan, as `selection::rows` builds its own (its
-    // construction lives there inline).
-    let players: HashMap<u32, &PlayerEntry> = file
-        .players()
-        .iter()
-        .map(|player| (player.id, player))
-        .collect();
-    // One `ListedPlayer` list per checked team, for the group headers;
-    // `teams` borrows it below, so it is filled first.
-    let mut listed: Vec<Vec<ListedPlayer>> = Vec::with_capacity(key.ids.len());
-    for (id, check) in key.ids.iter().zip(checks) {
-        listed.push(if check.is_ok() {
-            listed_players(file, &players, *id)
-        } else {
-            Vec::new()
-        });
-    }
+    // One `ListedPlayer` list per checked team, for the group headers and
+    // the height rows' lines; `teams` borrows it below, so it is filled
+    // first.
+    let listed = rules::listed_players(file, &key.ids);
     let mut teams = Vec::new();
     for (i, (id, check)) in key.ids.iter().zip(checks).enumerate() {
         let name = team_name(file, *id);
@@ -231,32 +213,6 @@ pub(super) fn results(
         version: file.version(),
     };
     violations_list(ui, id_salt, &teams, wording, list_use)
-}
-
-/// Team `id`'s rostered players as the list's `ListedPlayer`s, in slot
-/// order, their names read through `players`.
-fn listed_players<'a>(
-    file: &'a EditFile,
-    players: &HashMap<u32, &'a PlayerEntry>,
-    id: u32,
-) -> Vec<ListedPlayer<'a>> {
-    let Some(team) = file.team(id) else {
-        return Vec::new();
-    };
-    team.roster
-        .iter()
-        .enumerate()
-        .filter(|(_, slot)| slot.player_id != 0)
-        .map(|(slot, roster)| ListedPlayer {
-            slot: u8::try_from(slot).expect("a roster slot"),
-            id: roster.player_id,
-            number: roster.number,
-            name: players
-                .get(&roster.player_id)
-                .map(|player| player.name.as_str())
-                .unwrap_or("?"),
-        })
-        .collect()
 }
 
 /// One check's worker: `key`'s teams viewed on the caller's thread (the

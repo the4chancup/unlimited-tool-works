@@ -16,15 +16,19 @@ use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{add_enabled, modal, modal_buttons, step_choice, wheel_steps};
 use studio_core::{Notice, NoticeKind};
-use team_widgets::violations::{ListUse, Wording, issue_groups, rule_name, sentence};
+use team_widgets::violations::{
+    ListUse, Wording, issue_groups, rule_name, sentence, violation_detail,
+};
 
-use crate::session::rules::TeamCheck;
+use crate::session::rules::{self, TeamCheck};
 use crate::view::SaveView;
 use crate::view::aatf_check::{self, CheckKey, TeamsCheck};
 
-/// The list's outer width, the draft's: as wide as a dialog's content gets
-/// (its 640-point window less the padding and the border).
-const LIST_WIDTH: f32 = 614.0;
+/// The list's outer width, which sets the dialog's: the draft's 900-point
+/// window less the modal's padding and border, as wide as the window's
+/// 960-point minimum leaves room for. At the 640 points other dialogs keep, a
+/// height row's sentence and its players' lines ran past the list.
+const LIST_WIDTH: f32 = 874.0;
 
 /// The list's outer height, the draft's; a longer list scrolls.
 const LIST_HEIGHT: f32 = 360.0;
@@ -184,7 +188,8 @@ fn group_line(file: &EditFile, team_id: u32, slot: Option<u8>) -> String {
 /// each player's id and name (the team's own rows under `Team-wide
 /// issues`) indented two spaces, his rows' severity, rule and sentence
 /// (worded under `ruleset`, the active one, and `file`'s version) indented
-/// four. A team whose
+/// four, and a height row's lines naming its players (`violation_detail`)
+/// indented six under it. A team whose
 /// check failed has the error under its line.
 fn copy_text(
     file: &EditFile,
@@ -215,7 +220,8 @@ fn copy_text(
         counted(count(aatf::Severity::Error), "error"),
         counted(count(aatf::Severity::Warning), "warning")
     )];
-    for (&id, check) in key.ids.iter().zip(checks) {
+    let listed = rules::listed_players(file, &key.ids);
+    for ((&id, check), players) in key.ids.iter().zip(checks).zip(&listed) {
         lines.push(format!(">{}", team_label(file, id)));
         let violations = match check {
             Ok(violations) => violations,
@@ -237,6 +243,9 @@ fn copy_text(
                     rule_name(&violation.kind),
                     sentence(violation, id, wording)
                 ));
+                for line in violation_detail(violation, players, wording) {
+                    lines.push(format!("      {line}"));
+                }
             }
         }
     }
@@ -390,7 +399,9 @@ mod tests {
     /// The copied text of 714 /co/ (clean) and 718 /f/ (a player's rows and
     /// the team's own) under 4cc Autumn 26: the header with the counts, each
     /// team's line after a `>`, `All clean` and the player's and the team's
-    /// lines indented two spaces, each row four.
+    /// lines indented two spaces, each row four, and the Tall quota's
+    /// players (718's 185 cm players and its 189 cm goalkeeper, read at 185,
+    /// in roster order) six.
     #[test]
     fn the_copied_text_lists_each_team_after_a_marker_and_its_rows_indented() {
         let session = legal_714_and_short_71801("multi_aatf_copy_text");
@@ -419,6 +430,7 @@ mod tests {
                 "    Error  Tier count  0 Bronze players, where the rules want 2",
                 "    Error  Tier count  19 Regular players, where the rules want 18",
                 "    Error  Height quota  9 players in the Tall bracket of the Red system, where its quota is 10",
+                "      At 185: GARDEVOIR PAIZURI, PEPSI MAN, DA HOOD, LOLICATGIRLS, RESIZETHEFLASH! (189), HAAAAAAAAAAAAAAN~, BOURBONHOUSE, DONTSHITYOURPANTS, SHII",
             ]
         );
     }
