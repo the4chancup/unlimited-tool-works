@@ -652,7 +652,8 @@ Win32 original hurt the most):
   it holds), and Make GK beside it at its own width, the two filling the popover's width, its top-right corner on the marker's bottom-left corner as it
   stood at the click, and there it stays while his X and Y change, so the fields' arrows stay
   under the pointer rather than moving off with the marker; a press outside it closes it, as
-  Close does. X (0 to 104) and Y (0 to 48) are steppers: the number with an arrow either
+  Close does. X (0 to 104) and Y (4 to 48, the outfielders' rows: below the drop's
+  bullet, "A pitch player dropped on another") are steppers: the number with an arrow either
   side, `⏴` stepping it down by one and `⏵` up, each click one edit, clamped into the range
   (a stored spot past it steps back in), each arrow disabled at its end of the range and both
   for the keeper. The arrows take clicks, never the keyboard's focus, as a system spinner's
@@ -723,28 +724,57 @@ Win32 original hurt the most):
   width (`spec/core/gui.md` "Scaling with the width") rather than rearranging it, so the grid has
   no narrow fallback. A shorter window scrolls the team view to reach its last row rather
   than squeezing it in.
-- **The pitch looks like PES 2021's own formation screen** (Edit, Teams, a team, Game Plan,
-  Team Sheet/Edit Position), each starter shown as the game shows him, by his portrait, read
-  from the selected game's `download/` CPKs when that folder is found and holds one. Every
-  version's save draws the same pitch: it is the editor's look, not a version gate. The
-  reference is the screen's own pitch texture (the 480 x 576 pitch with faint lines in the
-  atlas of `common/menu/general/gamePlan.bin`, `Data/dt11_x64.cpk`; the 4cc patch does not
-  replace it) and a 1280 x 720 capture of the screen, which draws that texture at two thirds
-  of its size (mean luma difference 1.7 of 255). The canvas is drawn at the capture's scale,
-  320 x 384, and painted from these measurements rather than from the texture, which is
-  Konami's and which a member without PES 2021 does not have:
-  - **Turf**: eleven equal horizontal bands, dark at both ends, dark `#2d571d` and light
-    `#35602a`, with the texture's grain (a fixed noise of luma deviation about 3.5).
-  - **Lines**: white at 20% opacity, 2 px wide; no touchlines (the texture has none). The
-    halfway line; the centre circle, radius 36; each penalty box 160 wide, centred, 66 deep;
-    each goal area 74 wide, 22 deep; each penalty arc, of the centre circle's radius about the
-    penalty spot 44 from the goal line, drawn outside the box.
+- **The pitch looks like the selected game's own formation screen** (Edit, Teams, a team,
+  Game Plan, Team Sheet/Edit Position), each starter shown as the game shows him, by his
+  portrait, read from the selected game's `download/` CPKs when that folder is found and holds
+  one. Each version draws its own screen's pitch (the sidebar's PES), since the versions'
+  pitches differ (PES 2017's has seven bands to PES 2021's eleven, darker turf, a coarser
+  grain and smaller boxes and circle) and a member checks a formation against his own game.
+  Measured so far: PES 2017 (0.0.1's version) and PES 2021; PES 2019 comes with 0.0.2 (VGL
+  27's version), the others after it, and a version not yet measured draws PES 2021's. The
+  reference is each screen's own pitch texture (the 480 x 576 pitch with faint lines in the
+  atlas of `common/menu/general/gamePlan.bin`: PES 2021's in `Data/dt11_x64.cpk`, which the
+  4cc patch does not replace; PES 2017's in `Data/dt11_win.cpk`, whose copy in the 4cc
+  patch's `download/4cc_01_db.cpk` has the same pitch pixels) and the screen, which draws
+  that texture at two thirds of its size (mean luma difference 1.7 of 255 to a 1280 x 720
+  capture of PES 2021's, 2.2 to the maintainer's screenshot of PES 2017's). The canvas is
+  drawn at that scale, 320 x 384 on every version (PES 2017's screen shows 382 rows of it,
+  its last two being the texture's padding), and painted from these measurements rather than
+  from the texture, which is Konami's and which a member without that game does not have:
+  - **Turf**: horizontal bands, dark at both ends, with the texture's grain (a fixed noise
+    of the given luma deviation), painted at the texture's size, 480 x 576, and drawn at two
+    thirds with linear sampling as the screen draws the texture: the scaling softens the
+    grain as the game's is (PES 2017's on screen: 4.4 on the maintainer's screenshot, 4.3
+    predicted from its texture), where the same noise painted per canvas pixel looks
+    coarser:
+
+    | | PES 2017 | PES 2021 |
+    |---|---|---|
+    | Bands | 7: the inner five 53.3 tall, the top one 58, the bottom one 59.3; the middle one light, centred on the halfway line | 11 equal |
+    | Dark, light | `#1f4b17`, `#2c5d24` | `#2d571d`, `#35602a` |
+    | Grain | 6.8 | 3.5 |
+
+  - **Lines**: white at 20% opacity, 2 px wide (canvas y and lengths to the line's centre);
+    no touchlines and no spots (the textures have none). The halfway line; the centre
+    circle; each penalty box, centred; each goal area, centred; each penalty arc, about the
+    penalty spot, drawn outside the box:
+
+    | | PES 2017 | PES 2021 |
+    |---|---|---|
+    | Goal lines, halfway line | canvas y 0 and 382, 191 | 0 and 384, 192 |
+    | Centre circle radius | 29 | 37 |
+    | Penalty box, wide by deep | 130 by 52.3 | 160 by 66 |
+    | Goal area, wide by deep | 62 by 15.7 | 74 by 22 |
+    | Penalty arc: radius, spot from the goal line | 28.5, 38 | 36, 44 |
+
   - **A slot's spot** is its marker's badge centre, at (12.8 + 2.827 x, 363.8 - 6.793 y) on
     the canvas: x 0 to 104 across the width, the halfway line (canvas y 192) at y 25.3, the
     attack end up. This
     is the screen's own mapping, fitted on the ten outfield slots of /3/ (the 4chan Cup save)
-    within half a pixel. A drop snaps through the same mapping. The keeper's marker is drawn
-    where the screen draws him, badge centred on the goal area's line (canvas y 358.5), not
+    within half a pixel, and PES 2017's (twenty badges of two screenshots, each within 0.06
+    of a whole stored y). A drop snaps through the same mapping. The keeper's marker is drawn
+    where the screen draws him, badge centre at canvas (159.5, 358.5) on both (PES 2021's
+    goal-area line, 7.5 above PES 2017's), not
     through the mapping, which would put his stored spot 15 px higher; that spot is (52, 3)
     in every one of the PES 2021 save's 1,890 formations, and the editor never moves it.
   - **A marker**, top to bottom: the portrait, the whole 128 x 128 texture drawn 50 x 50
@@ -947,7 +977,11 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   every preset; the editor's is an XI row dropped on another row or on a pitch marker, or a
   pitch marker dropped on an XI row. One
   released on the grass moves to the snapped drop point, his position set by the rule below,
-  and one released off the pitch stays where he was. The game also changes the position of a dragged
+  and one released off the pitch stays where he was. The snap holds an outfielder at y 4 or
+  above: rows 0 to 3 are the keeper's area alone (no other position's rectangle, below,
+  reaches them), and the game keeps a held outfielder at y 4 however low the pointer goes
+  (PES 2017, checked in game; PES 2016's code tries the spot's neighbour y + 1, then
+  leaves him where he was), so a marker dragged below it stands, and lands, on y 4. The game also changes the position of a dragged
   player (an AMF dragged lower becomes a DMF), but not by fixed areas of the pitch: the same
   spot gives different positions depending on who is dragged and where his teammates stand (a
   dragged LMF reads AMF at a spot where a dragged CMF reads LMF; the LMF turns CMF about 11.5

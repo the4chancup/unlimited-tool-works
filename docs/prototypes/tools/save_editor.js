@@ -2548,8 +2548,11 @@ const SET_PIECES = [["free_kick_long", "Long free kick"],
 // record's whole units - the snap, since a finer drop cannot be stored); a
 // slot's spot is its badge's centre, through the screen's own mapping (fitted
 // on a capture), the attack end (high y) at the top. The keeper is drawn at the
-// screen's keeper spot, not through the mapping.
-const PITCH = { w: 320, h: 384, xu: 104, yu: 48,
+// screen's keeper spot, not through the mapping. yMin is the outfielders'
+// lowest row: rows 0 to 3 are the keeper's area alone, and the game holds a
+// dragged outfielder at y 4 however low the pointer goes (PES 2017, checked
+// in game), so the snap does too.
+const PITCH = { w: 320, h: 384, xu: 104, yu: 48, yMin: 4,
   x0: 12.8, xs: 2.827, y0: 363.8, ys: 6.793, keeperY: 358.5 };
 // A pointer's position on the pitch, in its drawing's units (through the
 // canvas's shown width, so the window's scale is accounted for).
@@ -2559,7 +2562,7 @@ const pitchX = x => PITCH.x0 + x * PITCH.xs;
 const pitchY = y => PITCH.y0 - y * PITCH.ys;
 const snapXY = (px, py) => [
   Math.min(PITCH.xu, Math.max(0, Math.round((px - PITCH.x0) / PITCH.xs))),
-  Math.min(PITCH.yu, Math.max(0, Math.round((PITCH.y0 - py) / PITCH.ys)))];
+  Math.min(PITCH.yu, Math.max(PITCH.yMin, Math.round((PITCH.y0 - py) / PITCH.ys)))];
 
 // ---- The active AATF ruleset's tiers (crates/libs/aatf/rulesets/*.rhai) ----
 // The quick actions are one "Make X" button per tier in the file's order plus
@@ -5151,41 +5154,70 @@ function dimOutsideLit(g, p) {
   g.fill("evenodd");
   g.restore();
 }
-// The turf, painted once: eleven equal bands, dark at both ends, and a fixed
-// grain (seeded noise, luma deviation about 3.5, as the texture's).
-let turfCache = null;
+// Each version's own screen's pitch, measured from its texture (plans/save_editor.md,
+// the pitch's look), in canvas px: the bands' inner boundaries (dark at both ends),
+// the turf's dark and light, the texture's grain (luma deviation at its own
+// scale), the goal lines and the
+// halfway line, the centre circle's radius, the penalty box and goal area (wide,
+// deep), and the penalty arc (radius, spot from the goal line). A version not yet
+// measured draws PES 2021's.
+const PITCH_LOOKS = {
+  "2017": { bands: [58, 111.3, 164.7, 218, 271.3, 324.7],
+    dark: [31, 75, 23], light: [44, 93, 36], grain: 6.8, goals: [0, 382], halfway: 191,
+    circle: 29, box: [130, 52.3], area: [62, 15.7], arc: [28.5, 38] },
+  "2021": { bands: Array.from({ length: 10 }, (_, k) => (k + 1) * 384 / 11),
+    dark: [45, 87, 29], light: [53, 96, 42], grain: 3.5, goals: [0, 384], halfway: 192,
+    circle: 37, box: [160, 66], area: [74, 22], arc: [36, 44] } };
+const pitchLook = () => PITCH_LOOKS[shellPesVersion()] || PITCH_LOOKS["2021"];
+// The turf, painted once per look at the texture's size (480 x 576, half as
+// large again as the canvas): its bands and a fixed grain (seeded uniform noise
+// of the look's luma deviation). The canvas draws it at two thirds with smoothing,
+// as the screen draws the texture, which softens the grain as the game's is. The
+// browser's scaled draw rounds each sample down, about half a level, so the turf
+// is painted half a level up to keep the drawn mean on the look's colours.
+const TURF = { w: 480, h: 576 };
+const turfCache = new Map();
 function turf() {
-  if (turfCache) return turfCache;
+  const look = pitchLook();
+  if (turfCache.has(look)) return turfCache.get(look);
   const c = document.createElement("canvas");
-  c.width = PITCH.w; c.height = PITCH.h;
-  const g = c.getContext("2d"), img = g.createImageData(PITCH.w, PITCH.h);
+  c.width = TURF.w; c.height = TURF.h;
+  const g = c.getContext("2d"), img = g.createImageData(TURF.w, TURF.h);
   let seed = 1;
   const rand = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
-  for (let y = 0; y < PITCH.h; y++) {
-    const dark = Math.floor(y * 11 / PITCH.h) % 2 === 0;
-    const [r, gr, b] = dark ? [45, 87, 29] : [53, 96, 42];
-    for (let x = 0; x < PITCH.w; x++) {
-      const n = (rand() - 0.5) * 12.1, o = (y * PITCH.w + x) * 4;
+  const spread = look.grain * Math.sqrt(12), scale = TURF.h / PITCH.h;
+  for (let y = 0; y < TURF.h; y++) {
+    const band = look.bands.filter(edge => edge * scale <= y).length;
+    const [r, gr, b] = band % 2 === 0 ? look.dark : look.light;
+    for (let x = 0; x < TURF.w; x++) {
+      const n = (rand() - 0.5) * spread + 0.5, o = (y * TURF.w + x) * 4;
       img.data[o] = r + n; img.data[o + 1] = gr + n; img.data[o + 2] = b + n; img.data[o + 3] = 255;
     }
   }
   g.putImageData(img, 0, 0);
-  return (turfCache = c);
+  turfCache.set(look, c);
+  return c;
 }
-// The lines: white at 20%, 2px, no touchlines (the texture draws none).
+// The lines: white at 20%, 2px, no touchlines or spots (the textures draw none).
 function drawLines(g) {
-  const W = PITCH.w, H = PITCH.h, cx = W / 2, cy = H / 2, r = 36;
+  const look = pitchLook(), W = PITCH.w, cx = W / 2, r = look.circle;
   g.strokeStyle = "rgba(255,255,255,0.2)"; g.lineWidth = 2;
-  g.beginPath(); g.moveTo(0, cy); g.lineTo(W, cy); g.stroke();
-  g.beginPath(); g.arc(cx, cy, r, 0, 2 * Math.PI); g.stroke();
-  for (const top of [true, false]) {
-    const edge = top ? 0 : H, dir = top ? 1 : -1;
-    g.strokeRect(cx - 80, top ? -2 : H - 66, 160, 68);   // the penalty box, 66 deep
-    g.strokeRect(cx - 37, top ? -2 : H - 22, 74, 24);    // the goal area, 22 deep
-    // The arc: the centre circle's radius about the spot 44 from the goal
-    // line, the part outside the box.
-    const spot = edge + dir * 44, half = Math.acos(22 / r), mid = top ? Math.PI / 2 : -Math.PI / 2;
-    g.beginPath(); g.arc(cx, spot, r, mid - half, mid + half); g.stroke();
+  g.beginPath(); g.moveTo(0, look.halfway); g.lineTo(W, look.halfway); g.stroke();
+  g.beginPath(); g.arc(cx, look.halfway, r, 0, 2 * Math.PI); g.stroke();
+  for (const [edge, dir] of [[look.goals[0], 1], [look.goals[1], -1]]) {
+    // A box's two sides and its far edge, centred; the goal line is not drawn.
+    const box = ([wide, deep]) => {
+      g.beginPath();
+      g.moveTo(cx - wide / 2, edge); g.lineTo(cx - wide / 2, edge + dir * deep);
+      g.lineTo(cx + wide / 2, edge + dir * deep); g.lineTo(cx + wide / 2, edge);
+      g.stroke();
+    };
+    box(look.box);
+    box(look.area);
+    // The arc about the penalty spot, the part outside the box.
+    const [radius, spotAt] = look.arc, spot = edge + dir * spotAt;
+    const half = Math.acos((look.box[1] - spotAt) / radius), mid = dir * Math.PI / 2;
+    g.beginPath(); g.arc(cx, spot, radius, mid - half, mid + half); g.stroke();
   }
 }
 // The selection corners the game draws around a portrait: a 50 x 50 box,
@@ -5242,7 +5274,7 @@ function drawPitch(t) {
 // still at the badge's left, as "Scroll names" off draws them.
 function paintPitch(g, t, f0, live) {
   const d = live ? S.pitchDrag : null;
-  g.drawImage(turf(), 0, 0);
+  g.drawImage(turf(), 0, 0, PITCH.w, PITCH.h);
   drawLines(g);
   const f = f0.players, tac = t.tactics;
   if (d && d.moved && !d.gk) dimOutsideLit(g, rosterPlayer(t, tac.starting_eleven[d.i]));
@@ -5551,6 +5583,7 @@ function slotPopover(t) {
   // The keeper's slot is fixed: Edit mode does not move him.
   // Each field is a stepper: an arrow either side of the number steps it by one, clamped
   // into the range (a stored spot past it steps back in), each arrow disabled at its end.
+  // Y's range starts at 4, the outfielders' lowest row (`PITCH.yMin`), as a drag's does.
   // The three share the number box's old width, so the popover is no wider. The arrows
   // take no focus (tabindex -1): Tab goes from X to Y, and the arrow keys step a number.
   const arrow = (glyph, onclick, disabled, title) => {
@@ -5558,7 +5591,7 @@ function slotPopover(t) {
     b.tabIndex = -1;
     return b;
   };
-  const num = (label, get, put, max) => {
+  const num = (label, get, put, min, max) => {
     const keeper = s.position === "GK", v = get();
     const title = keeper ? "The goalkeeper's spot is fixed" : "";
     const set = n => {
@@ -5566,11 +5599,11 @@ function slotPopover(t) {
         put(n); s.position = ruledPosition(t, f, i, s.x, s.y, s.position); });
       render(); };
     return h("span", {}, label + " ", h("span", { class: "spin" },
-      arrow("⏴", () => set(Math.min(max, Math.max(0, v - 1))), keeper || v <= 0, title),
-      h("input", { type: "number", min: 0, max, value: v, disabled: keeper, title,
+      arrow("⏴", () => set(Math.min(max, Math.max(min, v - 1))), keeper || v <= min, title),
+      h("input", { type: "number", min, max, value: v, disabled: keeper, title,
         onchange: e => { const n = parseInt(e.target.value, 10);
-          if (!Number.isNaN(n) && n >= 0 && n <= max) set(n); } }),
-      arrow("⏵", () => set(Math.min(max, v + 1)), keeper || v >= max, title)));
+          if (!Number.isNaN(n) && n >= min && n <= max) set(n); } }),
+      arrow("⏵", () => set(Math.max(min, Math.min(max, v + 1))), keeper || v >= max, title)));
   };
   return h("div", { class: "tpopover",
       style: "left:" + pop.x + "px; top:" + pop.y + "px" },
@@ -5586,8 +5619,8 @@ function slotPopover(t) {
       button("Make GK", () => { makeGk(t, i); S.slotPop = null; render(); },
         { disabled: s.position === "GK", title: "Swaps him into goal; the keeper takes his slot" })),
     h("div", { class: "row" },
-      num("X", () => s.x, v => { s.x = v; }, PITCH.xu),
-      num("Y", () => s.y, v => { s.y = v; }, PITCH.yu),
+      num("X", () => s.x, v => { s.x = v; }, 0, PITCH.xu),
+      num("Y", () => s.y, v => { s.y = v; }, PITCH.yMin, PITCH.yu),
       " ", button("Close", () => { S.slotPop = null; render(); })));
 }
 
