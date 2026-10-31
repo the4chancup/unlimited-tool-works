@@ -162,6 +162,7 @@ fn universal_wraps_onto_same_indent_lines() {
         min_goalkeepers: 0,
         max_skill_cards: 10,
         max_com_styles: Some(2),
+        illegal_formations: false,
     };
     assert_eq!(
             universal_section(&universal),
@@ -191,6 +192,7 @@ fn universal_keeps_an_overlong_first_field_on_its_line() {
         min_goalkeepers: 0,
         max_skill_cards: 10,
         max_com_styles: None,
+        illegal_formations: false,
     };
     let lines = universal_section(&universal);
     assert!(
@@ -203,6 +205,43 @@ fn universal_keeps_an_overlong_first_field_on_its_line() {
             "    universal: #{".to_string(),
             format!("        fielded_at_a: [{}],", vec!["1"; 40].join(", ")),
             "        max_skill_cards: 10,".to_string(),
+            "    },".to_string(),
+        ]
+    );
+}
+
+/// `illegal_formations` is written last, after `max_com_styles`, and
+/// only when set.
+#[test]
+fn universal_writes_illegal_formations_last_only_when_set() {
+    let mut universal = Universal {
+        registered_position_a: false,
+        fielded_at_a: Vec::new(),
+        no_b_ratings: false,
+        b_uses_a_allowance: false,
+        gk_not_second_a: false,
+        age: None,
+        weight: None,
+        captain_required: false,
+        min_goalkeepers: 0,
+        max_skill_cards: 10,
+        max_com_styles: Some(2),
+        illegal_formations: true,
+    };
+    assert_eq!(
+        universal_section(&universal),
+        vec![
+            "    universal: #{".to_string(),
+            "        max_skill_cards: 10, max_com_styles: 2, illegal_formations: true,".to_string(),
+            "    },".to_string(),
+        ]
+    );
+    universal.illegal_formations = false;
+    assert_eq!(
+        universal_section(&universal),
+        vec![
+            "    universal: #{".to_string(),
+            "        max_skill_cards: 10, max_com_styles: 2,".to_string(),
             "    },".to_string(),
         ]
     );
@@ -665,6 +704,7 @@ fn every_field_ruleset() -> Ruleset {
             min_goalkeepers: 1,
             max_skill_cards: 10,
             max_com_styles: Some(2),
+            illegal_formations: true,
         },
         specials: vec![
             Special {
@@ -861,6 +901,7 @@ fn small_ruleset() -> Ruleset {
             min_goalkeepers: 0,
             max_skill_cards: 10,
             max_com_styles: None,
+            illegal_formations: false,
         },
         specials: vec![Special {
             label: "A special".to_string(),

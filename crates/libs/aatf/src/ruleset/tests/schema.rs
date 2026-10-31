@@ -277,6 +277,29 @@ fn a_squad_key_is_refused_as_unknown() {
     }
 }
 
+/// `universal` without `illegal_formations` loads with it off, as every
+/// file written before the key existed; `illegal_formations: true`
+/// loads it on.
+#[test]
+fn illegal_formations_defaults_off_and_loads_on() {
+    let ruleset = |universal: &str| {
+        Ruleset::from_data_block(&format!(
+            "const RULESET = #{{ schema: 1, name: \"x\", universal: {universal}, tiers: [#{{ id: \"regular\", label: \"Regular\", rate: 77 }}] }};"
+        ))
+        .unwrap_or_else(|error| panic!("{universal}: {error}"))
+    };
+    assert!(
+        !ruleset("#{ max_skill_cards: 10 }")
+            .universal
+            .illegal_formations
+    );
+    assert!(
+        ruleset("#{ max_skill_cards: 10, illegal_formations: true }")
+            .universal
+            .illegal_formations
+    );
+}
+
 /// The proposal's fields deserialize: a `ranges` key is a stat label or
 /// one of the six `PlayerValue` names, `strong_foot` the Team TOML foot
 /// labels, `any` a list of conditions, `form`/`injury_resistance` the
