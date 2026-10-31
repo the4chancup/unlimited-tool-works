@@ -70,3 +70,9 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   the four) rather than looked at (`plans/save_editor.md` "Tactics editor", the sentence on
   Substitution). A look at each game's Game Plan > Automatic settings > Substitution confirms
   or corrects it; the three are on G:.
+
+- **A stock PES 2017 exe** (worklog 0.0.2c). The illegal formation check reads the stock
+  game's refusal of a formation; confirming it in game needs a PES 2017 that is not the
+  Whack Patch, and both installs here (`E:\PES2017`, `G:\Games\PES2017`) carry the same
+  patched exe. Is there a stock `PES2017.exe` somewhere (a backup, the Steam depot), or a
+  version you would rather the check be confirmed on?

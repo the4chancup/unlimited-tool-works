@@ -1067,10 +1067,12 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   make, a CB outside his position's area or an LMF up among the forwards. Its ruleset says so
   (`universal.illegal_formations`, `plans/aatf_rules.md`), and under the active ruleset's flag
   the pitch sets a starter's spot and his position apart, as 4ccEditor-1's Tactics tab does (a
-  drag sets X and Y, a dropdown the position): a held starter's badge shows his own position
-  and his overall at it at every step, and a release on the grass writes his spot alone; the
-  snap holds an outfielder anywhere in the stored rows, 0 to 48, the keeper's rows included
-  as the fork allows; the popover's dropdown lists every outfield position, whatever his spot,
+  drag sets X and Y alone, `scale_static_proc`'s `WM_MOUSEMOVE` and `WM_LBUTTONUP`; its
+  dropdown, `tab_four_dlg_proc`'s `IDC_TACT_PLPOS`, the position alone): a held starter's
+  badge shows his own position and his overall at it at every step on the grass (over a
+  teammate, the teammate's, as with the flag off), and a release on the grass writes his spot
+  alone; the snap holds an outfielder anywhere in the stored rows, 0 to 48, the keeper's rows
+  included, as 4ccEditor-1's fields allow; the popover's dropdown lists every outfield position, whatever his spot,
   and its X and Y keep his position. The keeper's slot stays fixed and Make GK unchanged. The
   darkening while he is held stays, since where he is rated is still worth seeing when his
   position no longer follows it. With the flag off (every other ruleset) the pitch keeps the
@@ -1737,7 +1739,9 @@ SE-GUI-12  GIVEN the team view's Tactics on preset 1
 SE-GUI-42  GIVEN the PES 21 save's team 718 (/f/) on preset 1's Kick-off, that formation and
                 its LMF PARTY HARD's overalls and ratings (LMF A and LWF A) set from the
                 draft's PES 21 sample save (the fixture's teams carry a fresh save's
-                defaults), PARTY HARD at (20, 26)
+                defaults), PARTY HARD at (20, 26), and /vg/ League 27, which does not allow
+                illegal formations, the active ruleset (for the PES 17 save's team below
+                too)
            WHEN he is pressed on his portrait and held
            THEN the pitch outside x up to 20.5 from y 15.5 up is darkened, and moving the pointer
                 moves his marker a whole unit at a time, the pressed point of his portrait
@@ -1764,9 +1768,12 @@ SE-GUI-45  GIVEN the PES 17 save's team 702 (/a/) on preset 1's Kick-off, its CF
                 THEN his badge stands on y 0, and WHEN he is released on the grass there THEN
                 his slot holds y 0; WHEN his popover is then opened THEN its Position combo
                 lists the twelve outfield positions, CB to CF, and its Y's ⏴ is disabled, and
-                WHEN LB is picked and then its Y set to 36 THEN his slot holds LB at (42, 36);
-                GIVEN /vg/ League 27, which does not, the active ruleset instead WHEN he is
-                held at (42, 30) THEN his badge reads AMF, as in SE-GUI-42
+                WHEN its Y's ⏵ is clicked THEN his slot holds y 1; WHEN LB is picked, then its
+                Y set to 36 and its X to 60 THEN his slot holds LB at (60, 36); WHEN he is
+                dropped on a teammate's marker THEN the two slots' positions and spots are
+                exchanged, as with the flag off; GIVEN /vg/ League 27, which does not, the
+                active ruleset instead WHEN he is held at (42, 30) THEN his badge reads AMF,
+                as in SE-GUI-42
 SE-GUI-13  GIVEN the save open and a second save of the same version picked in the comparator
            WHEN the panel is drawn
            THEN it lists, per team and per player, the differences `diff <picked> <open>`
