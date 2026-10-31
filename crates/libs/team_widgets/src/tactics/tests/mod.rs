@@ -41,12 +41,21 @@ impl Headless {
         events: Vec<egui::Event>,
     ) -> (Vec<accesskit::Node>, bool) {
         let mut changed = None;
+        let opened = self.opened_tactics.clone();
         let (nodes, _) = self.frame_at(time, events, |ui| {
             // The preset bar as the host draws it, then the panels.
             preset_selector(ui, view);
             changed = Some(
                 fluid_formation(ui, tactics, view)
-                    | tactics_settings(ui, "tactics", version, tactics, view, roster),
+                    | tactics_settings(
+                        ui,
+                        "tactics",
+                        version,
+                        tactics,
+                        opened.as_ref(),
+                        view,
+                        roster,
+                    ),
             );
         });
         (nodes, changed.expect("the widget ran"))
@@ -77,11 +86,20 @@ impl Headless {
         events: Vec<egui::Event>,
     ) -> (Vec<(accesskit::NodeId, accesskit::Node)>, bool) {
         let mut changed = None;
+        let opened = self.opened_tactics.clone();
         let (nodes, _) = self.frame_at_ids(None, events, |ui| {
             preset_selector(ui, view);
             changed = Some(
                 fluid_formation(ui, tactics, view)
-                    | tactics_settings(ui, "tactics", version, tactics, view, roster),
+                    | tactics_settings(
+                        ui,
+                        "tactics",
+                        version,
+                        tactics,
+                        opened.as_ref(),
+                        view,
+                        roster,
+                    ),
             );
         });
         (nodes, changed.expect("the widget ran"))
@@ -858,7 +876,15 @@ fn the_settings_are_six_even_rows_of_pairs() {
     let rows = fixture_rows(version);
     let roster = roster_rows(&rows);
     let (nodes, shapes) = window.frame(vec![], |ui| {
-        tactics_settings(ui, "tactics", version, &mut tactics, &mut view, &roster);
+        tactics_settings(
+            ui,
+            "tactics",
+            version,
+            &mut tactics,
+            None,
+            &mut view,
+            &roster,
+        );
     });
 
     // The panel's box: the smallest stroked rect holding the heading's

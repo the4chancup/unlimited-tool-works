@@ -412,6 +412,7 @@ fn a_target_chip_then_a_marker_click_writes_the_target_and_disarms() {
             "tactics",
             version,
             &mut tactics,
+            None,
             &mut view,
             &roster,
         );

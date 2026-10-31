@@ -359,7 +359,7 @@ impl Headless {
         let mut changed = None;
         let (nodes, _) = self.frame(events, |ui| {
             changed = Some(crate::test_support::tactics_settings(
-                ui, "tactics", version, tactics, view, roster,
+                ui, "tactics", version, tactics, None, view, roster,
             ));
         });
         (nodes, changed.expect("the widget ran"))

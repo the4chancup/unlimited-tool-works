@@ -3298,3 +3298,82 @@ fn the_tactics_rows_mark_the_positions_a_player_is_rated_a_or_b_at() {
         "an empty slot: nothing rated"
     );
 }
+
+// The maintainer's round trip on the PES 17 fixture's real team 701,
+// whose attack 1 the save holds as Unassigned over the game's own target
+// byte: Hug the Touchline picked marks an unsaved change, and Unassigned
+// picked again puts back the target byte as opened, so nothing is left
+// unsaved and no team row reads "No target -> No target".
+#[test]
+fn an_instruction_picked_back_to_its_opened_one_leaves_nothing_unsaved() {
+    let path = fixture(PesVersion::Pes17, "instruction_round_trip_701");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(1600.0, 1400.0);
+    view.selected = Some(Selection::Team(701));
+    let attack_1 = |view: &SaveView| {
+        team_entry(view, 701).tactics.presets[0]
+            .attack_instructions
+            .as_ref()
+            .expect("PES 17 stores instructions")[0]
+    };
+    let encode = |inst| {
+        pes_savefile::schema::instruction::encode(PesVersion::Pes17, inst)
+            .expect("PES 17 stores it")
+    };
+    let opened = attack_1(&view);
+    assert_eq!(
+        opened.instruction,
+        encode(Instruction::Off),
+        "premise: attack 1 is Unassigned"
+    );
+    assert_ne!(
+        opened.player,
+        u8::MAX,
+        "premise: its target byte is not 255"
+    );
+    assert!(!view.is_dirty(), "premise: nothing unsaved");
+
+    // Open attack 1's combo; its popup stays open past an AccessKit pick,
+    // so both picks are its items (below the combo, in its column: a
+    // join chip elsewhere may read "Unassigned" too).
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let combo = instruction_combos(&nodes)[0][0]
+        .bounds()
+        .expect("the combo's bounds");
+    click(&mut window, instruction_combos(&nodes)[0][0], &mut view);
+    let mut pick = |view: &mut SaveView, label: &str| {
+        let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        let item = ids
+            .iter()
+            .find(|(_, node)| {
+                node.role() == Role::Button
+                    && node.label() == Some(label)
+                    && node.bounds().is_some_and(|b| {
+                        b.y0 > combo.y0 && b.x0 >= combo.x0 - 1.0 && b.x0 <= combo.x1
+                    })
+            })
+            .map(|(id, _)| *id)
+            .unwrap_or_else(|| panic!("the popup's {label:?} item"));
+        action_click(&mut window, view, item);
+    };
+
+    pick(&mut view, "Hug the Touchline");
+    assert_eq!(
+        attack_1(&view).instruction,
+        encode(Instruction::HugTheTouchline),
+        "premise: Hug the Touchline picked"
+    );
+    assert!(view.is_dirty(), "the first pick is an unsaved change");
+
+    pick(&mut view, "Unassigned");
+    assert_eq!(attack_1(&view), opened, "attack 1 is back as opened");
+    assert!(!view.is_dirty(), "the round trip leaves nothing unsaved");
+    let changes = view
+        .session
+        .as_ref()
+        .unwrap()
+        .unsaved_changes()
+        .expect("the changes read");
+    assert!(changes.teams.is_empty(), "no team row: {:?}", changes.teams);
+}
