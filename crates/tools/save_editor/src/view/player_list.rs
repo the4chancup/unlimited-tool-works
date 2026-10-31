@@ -175,6 +175,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     // The frame's fill goes under the rows, painted once the scroll area
     // has its rect.
     let background = ui.painter().add(egui::Shape::Noop);
+    // The team whose row was double-clicked, applied once the rows are
+    // drawn: the rows borrow the selection and the session.
+    let mut shown_team = None;
     // Not shrunk: the frame takes the panel's height whatever few rows a
     // filter leaves. The scope clears the extreme background, which a
     // solid bar's track paints in at full opacity: the draft's `.vbar` has
@@ -207,7 +210,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                     for row in &rows[range] {
                         match row {
                             ListRow::Team(team_id) => {
-                                team_row(
+                                let double_clicked = team_row(
                                     ui,
                                     &mut view.selected,
                                     session,
@@ -217,6 +220,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                                         |(_, violations)| live_marks::row_mark(violations, None),
                                     ),
                                 );
+                                if double_clicked {
+                                    shown_team = Some(*team_id);
+                                }
                             }
                             ListRow::Player(row) => {
                                 player_row(
@@ -237,6 +243,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                 })
         })
         .inner;
+    // A double click on a team row shows that team alone: the selector
+    // picks it, the filter empties and the list scrolls to its row.
+    if let Some(id) = shown_team {
+        view.team = TeamChoice::Team(id);
+        view.filter.clear();
+        view.selected = Some(Selection::Team(id));
+        view.reveal_selected = true;
+    }
     // The viewport spans the bar's strip while nothing scrolls: the frame
     // keeps its own width.
     let frame = egui::Rect::from_min_size(
@@ -381,7 +395,8 @@ fn paint_row_frame(
 /// violations' glyph at the row's right end, after the dot. A click
 /// selects the team
 /// (the detail shows the team view); it is never a drag source nor a drop
-/// target.
+/// target. Returns whether the row was double-clicked, which `show` turns
+/// into the team picked in the selector with the filter cleared.
 fn team_row(
     ui: &mut egui::Ui,
     selected: &mut Option<Selection>,
@@ -389,9 +404,9 @@ fn team_row(
     team_id: u32,
     layout: RowLayout,
     mark: Option<live_marks::RowMark>,
-) {
+) -> bool {
     let Some(team) = session.file().team(team_id) else {
-        return;
+        return false;
     };
     let is_selected = *selected == Some(Selection::Team(team_id));
     let dirty = session.team_dirty(team_id);
@@ -514,17 +529,20 @@ fn team_row(
         None
     };
     let mark_hovered = mark_response.is_some_and(|mark| mark.hovered());
-    let hover = display_name(&team.name);
+    let mut hover = display_name(&team.name);
+    if dirty {
+        hover.push_str("\nUnsaved changes");
+    }
+    hover.push_str("\nDouble-click to filter to this team");
     let response = if mark_hovered {
         response
-    } else if dirty {
-        response.on_hover_text(format!("{hover}\nUnsaved changes"))
     } else {
         response.on_hover_text(hover)
     };
     if response.clicked() {
         *selected = Some(Selection::Team(team_id));
     }
+    response.double_clicked()
 }
 
 /// One list row: place, position, and the name with its colour codes drawn.
