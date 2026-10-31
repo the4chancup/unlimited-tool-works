@@ -5168,7 +5168,8 @@ const PITCH_LOOKS = {
   "2021": { bands: Array.from({ length: 10 }, (_, k) => (k + 1) * 384 / 11),
     dark: [45, 87, 29], light: [53, 96, 42], grain: 3.5, goals: [0, 384], halfway: 192,
     circle: 37, box: [160, 66], area: [74, 22], arc: [36, 44] } };
-const pitchLook = () => PITCH_LOOKS[shellPesVersion()] || PITCH_LOOKS["2021"];
+// The open save's version picks it: the game the member checks the formation in.
+const pitchLook = () => PITCH_LOOKS["20" + version()] || PITCH_LOOKS["2021"];
 // The turf, painted once per look at the texture's size (480 x 576, half as
 // large again as the canvas): its bands and a fixed grain (seeded uniform noise
 // of the look's luma deviation). The canvas draws it at two thirds with smoothing,

@@ -727,7 +727,8 @@ Win32 original hurt the most):
 - **The pitch looks like the selected game's own formation screen** (Edit, Teams, a team,
   Game Plan, Team Sheet/Edit Position), each starter shown as the game shows him, by his
   portrait, read from the selected game's `download/` CPKs when that folder is found and holds
-  one. Each version draws its own screen's pitch (the sidebar's PES), since the versions'
+  one. Each version draws its own screen's pitch (the open save's version, the game the
+  member checks the formation in, even where the sidebar names another), since the versions'
   pitches differ (PES 2017's has seven bands to PES 2021's eleven, darker turf, a coarser
   grain and smaller boxes and circle) and a member checks a formation against his own game.
   Measured so far: PES 2017 (0.0.1's version) and PES 2021; PES 2019 comes with 0.0.2 (VGL
@@ -1720,7 +1721,10 @@ SE-GUI-42  GIVEN the PES 21 save's team 718 (/f/) on preset 1's Kick-off, that f
                 (40, 45) without a release THEN it reads CF; WHEN he is released at (42, 30)
                 THEN he is an AMF, and WHEN he is then dragged to (40, 45) THEN he is a CF;
                 WHEN he is instead released at (42, 30), then at (42, 37) (an SS), then
-                dragged to (40, 45) THEN he stays an SS
+                dragged to (40, 45) THEN he stays an SS; WHEN an outfielder is held with the
+                pointer below the pitch THEN his badge stands on y 4, and WHEN he is released
+                on the grass there THEN his slot holds y 4; WHEN his popover is opened at y 4
+                THEN its Y's ⏴ is disabled
 SE-GUI-13  GIVEN the save open and a second save of the same version picked in the comparator
            WHEN the panel is drawn
            THEN it lists, per team and per player, the differences `diff <picked> <open>`
