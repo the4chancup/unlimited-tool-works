@@ -6149,11 +6149,11 @@ briefs, review loops, gates and mutation runs as for any step.
       over it 0 of 2, the loop ends; `mutants-diff b83ab5bd^1` (local): aatf 3 caught,
       ruleset_editor 10 caught and 1 unviable, no survivor (`.tmp/0_0_1cv/rulings_cv14.md`,
       `mutants_diff_cv14.log`)
-  - [ ] cv15 `check-aatf --rules` takes an embedded ruleset's stem (`--rules dbc7`; the
-    maintainer, 2026-10-31; `plans/save_editor.md` "Configurable AATF rules"): `save_editor`'s
-    CLI, the spec's `check-aatf` paragraph and a scenario with it → verify: a check by stem
-    prints the embedded ruleset's violations, an unknown stem is refused with the stems
-    listed (exit 2), a file of that name in the current folder still wins
+  - [x] cv15 `check-aatf --rules` takes an embedded ruleset's stem (`--rules dbc7`; the
+    maintainer, 2026-10-31; `plans/save_editor.md` "Configurable AATF rules"): with cv16a
+    (`cli.rs` `rules`, the spec's `check-aatf` text, SE-AATF-08's test
+    `rules_names_a_built_in_ruleset_by_its_stem`); a file wins over the stem by `is_file`
+    first, its scenario case naming the file by path (in-process tests have one current folder)
   - [ ] cv16 the height findings name their players (P47, accepted 2026-10-31;
     `plans/aatf_rules.md` "The height findings name their players" and "Violations in words",
     `plans/save_editor.md` `violations`; drafted in `save_editor.js` `violationDetail`):
@@ -6165,8 +6165,13 @@ briefs, review loops, gates and mutation runs as for any step.
     (`4cc-studio-temp/dbc6_check_report.txt`, 177 teams, before the change), gaining only the
     new fields, `NearestSystem` warnings and a `BracketQuota` past its quota where a player
     was left without a slot
-    - [ ] cv16a the logic, `Violation`, `NearestSystem`'s sentence, with cv15 (Opus sidekick,
-      `.tmp/0_0_2/brief_cv16a.md`, worktree `wt-cv16`)
+    - [x] cv16a the logic, `Violation`, `NearestSystem`'s sentence, with cv15 (Opus sidekick,
+      `.tmp/0_0_2/brief_cv16a.md`): `7851368e`, merged `948add9e`, `gates-changed e78d1f33`
+      green (12 binaries, 1506 tests). `logic.rhai` (`height_reading` hands back the failed
+      systems' findings: a second read put DBC7 past the operation limit's margin),
+      `violation.rs`, `team_widgets` sentence, `cli.rs`; the DBC6 save under DBC7 keeps every
+      old line and adds 155 (88 Nearest system, 67 Height quota, all on GigaHeight teams),
+      checked by `.tmp/0_0_2/cv16_compare.py`; rulings `.tmp/0_0_2/rulings_cv16.md`
     - [ ] cv16b the detail lines under a row (Live AATF, Multi-team AATF and its copy,
       `check-aatf`'s `problem`), with cv17
   - [ ] cv17 Multi-team AATF's dialog 900 points wide, its rows wrapping (the maintainer,

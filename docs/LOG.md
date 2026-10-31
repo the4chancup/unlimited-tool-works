@@ -2966,3 +2966,6 @@ worklog passed 7,000 lines.
   Ctrl+1 (cv10), and the pitch badges keep their medal outlines through an edit (cv11), merged
   `93ec67b0`; the pitch under a ruleset allowing illegal formations, merged `d431e50f` (cv14b).
   Their mutation run: 38 caught, 5 unviable, no survivor.
+- **2026-10-31** — cv16a: a height row names its players and draws, a GigaHeight team its nearest
+  quota system (P47's logic), and `check-aatf --rules dbc7` takes a built-in ruleset (cv15);
+  merged `948add9e`, gated; the DBC6 save keeps every old line and gains 155.
