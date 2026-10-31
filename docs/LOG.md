@@ -2981,3 +2981,6 @@ worklog passed 7,000 lines.
 - 2026-10-31 — 0.0.1cv cv18+cv19 merged `8ec3a26d` (a matching team's whole squad; a team row's double click);
   cv16b and cv17 checked in the built window (DBC6 under DBC7); cv26 found there (Multi-team AATF's range
   wheel froze the window ~2 min). Scripts likely to run again go in `scripts/` (`7111fb08`).
+- 2026-10-31 — 0.0.1cv cv20 merged `31f03c12` (the wheel steps the Tactics sliders and toggles); cv24 reworked
+  twice (the logo resampled premultiplied; the maintainer kept egui's swatches, the hex field spans the popup).
+  Reusable scratch scripts moved to `scripts/` (`8cca28ed`), the agents' own to `~/.claude/tools/` (`ebe92a99`).
