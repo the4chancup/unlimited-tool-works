@@ -5973,10 +5973,11 @@ briefs, review loops, gates and mutation runs as for any step.
     1280 × 780, no controls column, the title ending "(Demo)", the two tools greyed, no
     page errors
   - [ ] cv8f the General section's "Event page" and "Event logo" labels read "Event page
-    (optional)" and "Event logo (optional)" (the maintainer, 2026-10-31): the draft first
-    (`docs/prototypes/tools/ruleset_editor.js`, its `general-fields` rows), then the plan,
-    then `view/sections/general.rs` and the tests that find a field by its label
-    (`view/tests/general.rs`)
+    (optional)" and "Event logo (optional)" (the maintainer, 2026-10-31): the draft and the
+    plan's General bullet done (the label column widens to fit, fields aligned:
+    `.tmp/0_0_1cv/cv8f_general.png`); then `view/sections/general.rs` and the tests that find
+    a field by its label (`view/tests/general.rs`; the logo picture's alt text stays "Event
+    logo"), briefed with the cv9 mutation run's tests
   - [ ] cv9 the Tactics pitch as PES 2017 has it (the maintainer's PES 2017 check, 2026-10-31;
     0.0.1 is PES 2017's, 0.0.2 PES 2019's for VGL 27, the other versions after). Open: the
     `mutants-diff 3b0b07fc` run's triage; a look at a PES 2017 save in the built window
