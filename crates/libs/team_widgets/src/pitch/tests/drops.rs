@@ -422,6 +422,62 @@ fn a_marker_dropped_on_another_marker_swaps_the_two_slots_in_the_shown_formation
     );
 }
 
+// Under a ruleset that allows illegal formations a marker dropped on
+// another swaps nothing: the patched game keeps two starters on one
+// spot, so he lands at the snapped spot with his own position, as on the
+// grass, and the other's slot stays.
+#[test]
+fn under_illegal_formations_a_marker_dropped_on_another_lands_at_the_snapped_spot() {
+    let mut window = Headless::sized(600.0, 450.0);
+    window.illegal_formations = true;
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let before = tactics.clone();
+    let players = before.presets[0].formations[0].players;
+    let (from, onto) = (3, 6);
+    let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    let at = marker_point(&nodes, &players, from);
+    let over = marker_point(&nodes, &players, onto);
+    assert_eq!(
+        swap_target(&players, &centres_of(canvas, &players), canvas, over, from),
+        Some(onto),
+        "premise: with the flag off the release would swap the two"
+    );
+    let (x, y) = snap(
+        over - press_offset(canvas, players[from], at),
+        canvas.min,
+        0,
+    );
+    assert_ne!(
+        (x, y),
+        (players[from].x, players[from].y),
+        "premise: a real move"
+    );
+
+    let changed = window.drag_pitch(
+        at,
+        over,
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(changed, "the drop changed the record");
+    let mut expect = before;
+    expect.presets[0].formations[0].players[from] = FormationSlot {
+        position: players[from].position,
+        x,
+        y,
+    };
+    assert_eq!(
+        tactics, expect,
+        "he lands at the snapped spot with his position; the other's slot stays"
+    );
+}
+
 // The swap writes the shown formation of the shown preset, not a fixed
 // one: on preset 2's In-possession the two slots exchange there alone,
 // preset 1's Kick-off (where a swap would show too) and every other
@@ -503,6 +559,7 @@ fn a_marker_released_on_the_keeper_moves_to_the_snapped_point() {
                 && snap(
                     over - press_offset(canvas, players[index], from),
                     canvas.min,
+                    OUTFIELD_Y_MIN,
                 ) != (players[index].x, players[index].y)
         })
         .expect("an outfield starter off the keeper's marker");
@@ -529,6 +586,7 @@ fn a_marker_released_on_the_keeper_moves_to_the_snapped_point() {
             &mut tactics,
             &mut view,
             &roster,
+            false,
         );
     });
     assert!(
@@ -550,6 +608,7 @@ fn a_marker_released_on_the_keeper_moves_to_the_snapped_point() {
     let (x, y) = snap(
         over - press_offset(canvas, players[index], from),
         canvas.min,
+        OUTFIELD_Y_MIN,
     );
     expect.presets[0].formations[0].players[index].x = x;
     expect.presets[0].formations[0].players[index].y = y;
@@ -622,7 +681,7 @@ fn an_outfielder_dragged_below_the_pitch_lands_on_y_4() {
     let badge = *badge_rects(&shapes)
         .last()
         .expect("the held marker's badge, painted last");
-    let (x, _) = snap(below - offset, canvas.min);
+    let (x, _) = snap(below - offset, canvas.min, OUTFIELD_Y_MIN);
     near(
         badge.center(),
         clamp_centre(spot_centre(canvas, x, 4), canvas),
@@ -640,12 +699,98 @@ fn an_outfielder_dragged_below_the_pitch_lands_on_y_4() {
     let landed = tactics.presets[0].formations[0].players[index];
     assert_eq!(
         (landed.x, landed.y),
-        (snap(release - offset, canvas.min).0, 4),
+        (snap(release - offset, canvas.min, OUTFIELD_Y_MIN).0, 4),
         "he lands on y 4"
     );
     let mut expect = before;
     expect.presets[0].formations[0].players[index] = landed;
     assert_eq!(tactics, expect, "his slot alone changes");
+}
+
+// Under a ruleset that allows illegal formations the patched game keeps
+// an outfielder on any row, the keeper's included: held below the pitch
+// he stands on y 0, and released on the grass at a point the mapping
+// reads at or below 0 (clear of every marker, the keeper's included), he
+// lands on y 0 with his position, his x the snapped one.
+#[test]
+fn under_illegal_formations_an_outfielder_dragged_below_the_pitch_lands_on_y_0() {
+    let mut window = Headless::sized(600.0, 450.0);
+    window.illegal_formations = true;
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let before = tactics.clone();
+    let players = before.presets[0].formations[0].players;
+    let index = 4;
+    assert!(players[index].position != 0, "premise: an outfielder");
+    let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    let centres = centres_of(canvas, &players);
+    let from = marker_point(&nodes, &players, index);
+    let offset = press_offset(canvas, players[index], from);
+    // The stored y the mapping alone reads at the held point.
+    let mapped_y =
+        |pointer: egui::Pos2| ((SPOT_Y0 - (pointer - offset - canvas.min).y) / SPOT_YS).round();
+    let release = (1..40)
+        .flat_map(|dy| (1..64).map(move |dx| (dx, dy)))
+        .map(|(dx, dy)| egui::pos2(canvas.left() + 5.0 * dx as f32, canvas.bottom() - dy as f32))
+        .find(|&point| {
+            mapped_y(point) <= 0.0
+                && centres
+                    .iter()
+                    .all(|centre| !marker_rect(*centre, canvas).contains(point))
+        })
+        .expect("a grass point clear of every marker, at or below y 0");
+    assert!(
+        canvas.contains(release),
+        "premise: the release is on the pitch"
+    );
+    let below = egui::pos2(release.x, canvas.bottom() + 40.0);
+
+    window.pitch(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(from, true),
+    );
+    let (shapes, changed) = window.pitch_shapes(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        vec![egui::Event::PointerMoved(below)],
+    );
+    assert!(!changed, "a held frame writes nothing");
+    let badge = *badge_rects(&shapes)
+        .last()
+        .expect("the held marker's badge, painted last");
+    let (x, _) = snap(below - offset, canvas.min, 0);
+    near(
+        badge.center(),
+        clamp_centre(spot_centre(canvas, x, 0), canvas),
+        0.5,
+    );
+
+    let (_, changed) = window.pitch(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(release, false),
+    );
+    assert!(changed, "the release writes");
+    let mut expect = before;
+    expect.presets[0].formations[0].players[index] = FormationSlot {
+        position: players[index].position,
+        x: snap(release - offset, canvas.min, 0).0,
+        y: 0,
+    };
+    assert_eq!(
+        tactics, expect,
+        "he lands on y 0 with his position, his slot alone changing"
+    );
 }
 
 /// A marker `index` of preset 1's Kick-off whose box's left edge has
@@ -698,7 +843,7 @@ fn a_release_within_the_click_distance_is_a_click_not_a_drop() {
     let (index, press, release) =
         edge_press(canvas, &players, 0.25, 5.75).expect("a marker with grass at its left edge");
     assert_ne!(
-        snap(release, canvas.min),
+        snap(release, canvas.min, OUTFIELD_Y_MIN),
         (players[index].x, players[index].y),
         "premise: a drop there would move him"
     );
@@ -802,6 +947,7 @@ fn a_release_past_the_click_distance_is_a_drop_not_a_click() {
     let (x, y) = snap(
         release - press_offset(canvas, players[index], press),
         canvas.min,
+        OUTFIELD_Y_MIN,
     );
     assert_ne!(
         (x, y),
@@ -1232,6 +1378,45 @@ fn a_bench_row_dropped_on_a_marker_swaps_him_in() {
     );
 }
 
+// Under a ruleset that allows illegal formations only the marker-on-marker
+// swap goes: a bench row released on a marker still swaps him in.
+#[test]
+fn under_illegal_formations_a_bench_row_dropped_on_a_marker_still_swaps_him_in() {
+    let mut window = Headless::sized(600.0, 1100.0);
+    window.illegal_formations = true;
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let index = 5;
+    let out = tactics.starting_eleven[index];
+    let inn = tactics.bench_order[0];
+    assert_ne!(out, inn, "premise: two different slots");
+    let (nodes, _) =
+        window.pitch_and_lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let formation = tactics.presets[0].formations[0].clone();
+    let onto = marker_point(&nodes, &formation.players, index);
+
+    let changed = window.drag_pitch_and_lineup(
+        row_centre(&nodes, 11),
+        onto,
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(changed, "the drop changed the record");
+    assert_eq!(
+        tactics.starting_eleven[index], inn,
+        "the bench player starts"
+    );
+    assert_eq!(tactics.bench_order[0], out, "the starter sits");
+    assert_eq!(
+        tactics.presets[0].formations[0], formation,
+        "the formation's slots stay"
+    );
+}
+
 // An XI row released on a marker exchanges the two starters' slots —
 // both stay on the pitch, so no role moves.
 #[test]
@@ -1415,7 +1600,7 @@ fn under_no_other_marker(
 
 /// The texts painted on `badge`: the text shapes whose galley's centre
 /// lies inside it, in paint order (his position, then his overall).
-fn badge_texts(shapes: &[egui::epaint::ClippedShape], badge: egui::Rect) -> Vec<String> {
+pub(super) fn badge_texts(shapes: &[egui::epaint::ClippedShape], badge: egui::Rect) -> Vec<String> {
     shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
@@ -1736,6 +1921,63 @@ fn a_held_starter_is_ruled_from_the_position_he_had_when_picked_up() {
         assert_eq!(shown, [position], "held at ({x}, {y})");
         assert_eq!(slot(&tactics), at(position, x, y), "released at ({x}, {y})");
     }
+}
+
+// Under a ruleset that allows illegal formations a held starter keeps his
+// own position at every step, and the release writes his spot alone:
+// COWBOY BEBOP, team 702's CF at (40, 45), held at (42, 30), where the
+// rule would make him an AMF, shows CF, and released there he is a CF
+// at (42, 30), one change.
+#[test]
+fn under_illegal_formations_a_held_starter_keeps_his_position() {
+    let mut window = Headless::sized(600.0, 450.0);
+    window.illegal_formations = true;
+    let (mut tactics, overalls) = team_702();
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes17);
+    let mut roster = roster_rows(&rows);
+    let cf = 10;
+    roster[usize::from(tactics.starting_eleven[cf])].overalls = Some(overalls);
+    let before = tactics.clone();
+    let formation = &before.presets[0].formations[0];
+    assert_eq!(
+        formation.players[cf],
+        FormationSlot {
+            position: position_byte("CF"),
+            x: 40,
+            y: 45,
+        },
+        "premise: COWBOY BEBOP, the CF, at (40, 45)"
+    );
+    assert_eq!(
+        crate::pitch::drop_rule::dropped_position(formation, cf, 42, 30, Some(&overalls)),
+        position_byte("AMF"),
+        "premise: the rule would make him an AMF at (42, 30)"
+    );
+    let (nodes, _) = window.pitch(PesVersion::Pes17, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    assert!(
+        under_no_other_marker(canvas, &formation.players, cf, spot_centre(canvas, 42, 30)),
+        "premise: (42, 30) is clear of his teammates' markers"
+    );
+
+    let (shown, changed) = hold_along(
+        &mut window,
+        &mut tactics,
+        &mut view,
+        &roster,
+        cf,
+        &[(42, 30)],
+    );
+    assert_eq!(shown, ["CF"], "his badge reads his own CF");
+    assert!(changed, "the release writes");
+    let mut expect = before;
+    expect.presets[0].formations[0].players[cf] = FormationSlot {
+        position: position_byte("CF"),
+        x: 42,
+        y: 30,
+    };
+    assert_eq!(tactics, expect, "his slot holds (42, 30) and CF, alone");
 }
 
 // PARTY HARD, rated A at LMF and LWF alone, held: the pitch outside

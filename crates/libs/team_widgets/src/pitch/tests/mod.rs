@@ -67,8 +67,17 @@ impl Headless {
         events: Vec<egui::Event>,
     ) -> (Vec<accesskit::Node>, bool) {
         let mut changed = None;
+        let illegal_formations = self.illegal_formations;
         let (nodes, _) = self.frame(events, |ui| {
-            changed = Some(super::pitch(ui, "pitch", version, tactics, view, roster));
+            changed = Some(super::pitch(
+                ui,
+                "pitch",
+                version,
+                tactics,
+                view,
+                roster,
+                illegal_formations,
+            ));
         });
         (nodes, changed.expect("the widget ran"))
     }
@@ -82,8 +91,17 @@ impl Headless {
         view: &mut TacticsView,
         roster: &[RosterRow<'_>],
     ) -> Vec<(accesskit::NodeId, accesskit::Node)> {
+        let illegal_formations = self.illegal_formations;
         let (nodes, _) = self.frame_at_ids(None, vec![], |ui| {
-            super::pitch(ui, "pitch", version, tactics, view, roster);
+            super::pitch(
+                ui,
+                "pitch",
+                version,
+                tactics,
+                view,
+                roster,
+                illegal_formations,
+            );
         });
         nodes
     }
@@ -138,8 +156,17 @@ impl Headless {
         view: &mut TacticsView,
         roster: &[RosterRow<'_>],
     ) -> (Vec<accesskit::Node>, Vec<egui::epaint::ClippedShape>) {
+        let illegal_formations = self.illegal_formations;
         self.frame(vec![], |ui| {
-            super::pitch(ui, "pitch", version, tactics, view, roster);
+            super::pitch(
+                ui,
+                "pitch",
+                version,
+                tactics,
+                view,
+                roster,
+                illegal_formations,
+            );
         })
     }
 
@@ -154,8 +181,17 @@ impl Headless {
         events: Vec<egui::Event>,
     ) -> (Vec<egui::epaint::ClippedShape>, bool) {
         let mut changed = None;
+        let illegal_formations = self.illegal_formations;
         let (_, shapes) = self.frame(events, |ui| {
-            changed = Some(super::pitch(ui, "pitch", version, tactics, view, roster));
+            changed = Some(super::pitch(
+                ui,
+                "pitch",
+                version,
+                tactics,
+                view,
+                roster,
+                illegal_formations,
+            ));
         });
         (shapes, changed.expect("the widget ran"))
     }
@@ -170,8 +206,17 @@ impl Headless {
         view: &mut TacticsView,
         roster: &[RosterRow<'_>],
     ) -> (Vec<accesskit::Node>, Vec<egui::epaint::ClippedShape>) {
+        let illegal_formations = self.illegal_formations;
         self.frame_at(Some(time), vec![], |ui| {
-            super::pitch(ui, "pitch", version, tactics, view, roster);
+            super::pitch(
+                ui,
+                "pitch",
+                version,
+                tactics,
+                view,
+                roster,
+                illegal_formations,
+            );
         })
     }
 
@@ -260,9 +305,18 @@ impl Headless {
         events: Vec<egui::Event>,
     ) -> (Vec<accesskit::Node>, bool) {
         let mut changed = false;
+        let illegal_formations = self.illegal_formations;
         let (nodes, _) = self.frame(events, |ui| {
             super::formation_selector(ui, tactics, view);
-            changed = super::pitch(ui, "pitch", version, tactics, view, roster);
+            changed = super::pitch(
+                ui,
+                "pitch",
+                version,
+                tactics,
+                view,
+                roster,
+                illegal_formations,
+            );
             changed |= super::lineup(ui, "lineup", version, tactics, view, roster);
         });
         (nodes, changed)
@@ -393,7 +447,11 @@ fn held_centre(
     press: egui::Pos2,
     pointer: egui::Pos2,
 ) -> egui::Pos2 {
-    let (x, y) = snap(pointer - press_offset(canvas, slot, press), canvas.min);
+    let (x, y) = snap(
+        pointer - press_offset(canvas, slot, press),
+        canvas.min,
+        OUTFIELD_Y_MIN,
+    );
     clamp_centre(
         badge_centre(canvas.min, FormationSlot { x, y, ..slot }),
         canvas,
