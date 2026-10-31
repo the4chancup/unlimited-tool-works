@@ -2595,11 +2595,12 @@ fn the_popover_scrolls_with_the_pitch() {
     let popover_before = popover_rect(&window, &view).expect("the popover is open");
 
     // Wheel the detail view down: the canvas moves up and the popover
-    // follows it by the same delta.
+    // follows it by the same delta. The pointer is over the pitch, clear
+    // of the popover: a slider or a toggle under it would take the wheel.
     for _ in 0..3 {
         window.frame(
             vec![
-                egui::Event::PointerMoved(egui::pos2(600.0, 400.0)),
+                egui::Event::PointerMoved(egui::pos2(960.0, 200.0)),
                 egui::Event::MouseWheel {
                     unit: egui::MouseWheelUnit::Point,
                     delta: egui::vec2(0.0, -120.0),
@@ -2635,7 +2636,9 @@ fn the_view_scrolls_to_the_grids_last_control() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 624.0);
     open_team_view(&mut window, &mut view, 701);
 
-    let at = egui::pos2(300.0, 350.0);
+    // Over the pitch: a slider or a toggle under the pointer would take
+    // the wheel.
+    let at = egui::pos2(960.0, 200.0);
     for _ in 0..40 {
         window.frame(
             vec![

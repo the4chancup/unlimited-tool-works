@@ -75,6 +75,33 @@ impl Headless {
         self.tactics(version, tactics, view, roster, pointer_at(pos, false))
     }
 
+    /// One wheel notch, `up` or down, with the pointer moved to `pos`,
+    /// then a few frames with no input, in case a notch stepped more than
+    /// once: whether any of the frames changed `tactics`.
+    fn notch_tactics(
+        &mut self,
+        pos: egui::Pos2,
+        up: bool,
+        version: PesVersion,
+        tactics: &mut TeamTactics,
+        view: &mut TacticsView,
+        roster: &[RosterRow<'_>],
+    ) -> bool {
+        let notch = egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Line,
+            delta: egui::vec2(0.0, if up { 1.0 } else { -1.0 }),
+            phase: egui::TouchPhase::Move,
+            source: egui::MouseWheelSource::Wheel,
+            modifiers: egui::Modifiers::default(),
+        };
+        let events = vec![egui::Event::PointerMoved(pos), notch];
+        let (_, mut changed) = self.tactics(version, tactics, view, roster, events);
+        for _ in 0..3 {
+            changed |= self.tactics(version, tactics, view, roster, vec![]).1;
+        }
+        changed
+    }
+
     /// `tactics` keeping the nodes' AccessKit ids (for
     /// `AccessKitActionRequest` events).
     pub(crate) fn tactics_ids(
@@ -2450,5 +2477,156 @@ fn a_slider_fills_the_rail_to_the_handle_and_paints_the_handle_blue() {
             (handle_centre(&shapes) - expect_x).abs() <= 0.5,
             "at {value} the handle's centre is the rail's {edge} plus the inset"
         );
+    }
+}
+
+// The wheel over a slider's rail or over its value box steps the value
+// by one a notch, up adding one, and stops at the range's ends.
+#[test]
+fn the_wheel_steps_a_slider_over_its_rail_and_its_value_box() {
+    let mut window = Headless::sized(422.0, 900.0);
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    tactics.presets[0].sliders.support_range = 5;
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+    let half = settings_half(&nodes);
+    let rail = centre(control_below(&nodes, "Support range", Role::Slider, half));
+    let value_box = centre(control_below(
+        &nodes,
+        "Support range",
+        Role::SpinButton,
+        half,
+    ));
+    for (at, up, stored, what) in [
+        (rail, true, 6, "a notch up over the rail"),
+        (rail, false, 5, "a notch down over the rail"),
+        (value_box, true, 6, "a notch up over the value box"),
+        (value_box, false, 5, "a notch down over the value box"),
+    ] {
+        let mut expect = tactics.clone();
+        expect.presets[0].sliders.support_range = stored;
+        let changed = window.notch_tactics(at, up, version, &mut tactics, &mut view, &roster);
+        assert!(changed, "{what} changed the record");
+        assert_eq!(tactics, expect, "{what} stores {stored}, nothing else");
+    }
+
+    // At the top a notch up, at the bottom a notch down, changes nothing.
+    for (stored, up, end) in [(10, true, "top"), (1, false, "bottom")] {
+        tactics.presets[0].sliders.support_range = stored;
+        let expect = tactics.clone();
+        for (at, place) in [(rail, "rail"), (value_box, "value box")] {
+            let changed = window.notch_tactics(at, up, version, &mut tactics, &mut view, &roster);
+            assert!(
+                !changed,
+                "a notch past the {end} over the {place} changes nothing"
+            );
+            assert_eq!(tactics, expect, "the {end}'s {stored} stays");
+        }
+    }
+}
+
+// The wheel over either choice of a style pair moves the choice: up to the
+// right one, down to the left one, nothing past an end.
+#[test]
+fn the_wheel_moves_a_style_pair_up_to_the_right_and_down_to_the_left() {
+    let mut window = Headless::sized(422.0, 900.0);
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    tactics.presets[0].style.attacking_style = false;
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+    let half = settings_half(&nodes);
+    let choices = controls_below(&nodes, "Attacking style", Role::Button, half);
+    let labels: Vec<Option<&str>> = choices.iter().map(|node| node.label()).collect();
+    assert_eq!(
+        labels,
+        [Some("Counter Attack"), Some("Possession")],
+        "premise: the left choice, then the right"
+    );
+    let (left, right) = (centre(choices[0]), centre(choices[1]));
+    // From Counter Attack (stored false).
+    for (at, up, stored, changes, what) in [
+        (right, true, true, true, "up over the right choice takes it"),
+        (left, true, true, false, "up with the right one held"),
+        (
+            left,
+            false,
+            false,
+            true,
+            "down over the left choice takes it",
+        ),
+        (right, false, false, false, "down with the left one held"),
+        (
+            left,
+            true,
+            true,
+            true,
+            "up over the left choice takes the right",
+        ),
+        (
+            right,
+            false,
+            false,
+            true,
+            "down over the right choice takes the left",
+        ),
+    ] {
+        let mut expect = tactics.clone();
+        expect.presets[0].style.attacking_style = stored;
+        let changed = window.notch_tactics(at, up, version, &mut tactics, &mut view, &roster);
+        assert_eq!(changed, changes, "{what}: whether the record changed");
+        assert_eq!(tactics, expect, "{what}: {stored} stored, nothing else");
+    }
+}
+
+// The wheel over a numbers toggle moves the choice: up to the right (Few,
+// Medium, Many), down to the left, nothing past an end. A stored value
+// outside 1-3 stays unwritten, as it does under no click.
+#[test]
+fn the_wheel_moves_a_numbers_toggle_up_to_many_and_down_to_few() {
+    let mut window = Headless::sized(422.0, 900.0);
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    tactics.presets[0].sliders.numbers_in_attack = 1;
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+    let half = settings_half(&nodes);
+    let choices = controls_below(&nodes, "Numbers in attack", Role::Button, half);
+    let labels: Vec<Option<&str>> = choices.iter().map(|node| node.label()).collect();
+    assert_eq!(
+        labels,
+        [Some("Few"), Some("Medium"), Some("Many")],
+        "premise: the choices left to right"
+    );
+    let (few, medium, many) = (centre(choices[0]), centre(choices[1]), centre(choices[2]));
+    // From Few (stored 1).
+    for (at, up, stored, changes, what) in [
+        (medium, true, 2, true, "up from Few takes Medium"),
+        (medium, true, 3, true, "up from Medium takes Many"),
+        (many, true, 3, false, "up with Many held"),
+        (few, false, 2, true, "down from Many takes Medium"),
+        (few, false, 1, true, "down from Medium takes Few"),
+        (few, false, 1, false, "down with Few held"),
+    ] {
+        let mut expect = tactics.clone();
+        expect.presets[0].sliders.numbers_in_attack = stored;
+        let changed = window.notch_tactics(at, up, version, &mut tactics, &mut view, &roster);
+        assert_eq!(changed, changes, "{what}: whether the record changed");
+        assert_eq!(tactics, expect, "{what}: {stored} stored, nothing else");
+    }
+
+    tactics.presets[0].sliders.numbers_in_attack = 7;
+    let expect = tactics.clone();
+    for (up, way) in [(true, "up"), (false, "down")] {
+        let changed = window.notch_tactics(medium, up, version, &mut tactics, &mut view, &roster);
+        assert!(!changed, "a notch {way} over a stored 7 changes nothing");
+        assert_eq!(tactics, expect, "the stored 7 is kept");
     }
 }
