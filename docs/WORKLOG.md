@@ -6077,15 +6077,19 @@ briefs, review loops, gates and mutation runs as for any step.
     (save_editor.js, ruleset_editor.js), then slices: the `aatf` field and built-ins (no
     mutation run holds it), the Ruleset editor, then `save_editor`/`team_widgets` after the
     whole-crate chain
-    - [ ] reviews of the plan: SWE-2 S1 7 of 8 and S2 5 of 6 accepted (`c6889435`,
-      `08569b10`; `.tmp/0_0_1cv/rulings_cv14.md`), S3 running; Astra after a sub-five round
+    - [ ] reviews of the plan: SWE-2 S1 7 of 8, S2 5 of 6, S3 2 of 3 accepted (the loop
+      ends; `c6889435`, `08569b10`, then S3's; `.tmp/0_0_1cv/rulings_cv14.md`). Astra next,
+      after 09:00 on Codex `own` (Devin `work` spends its last weekly usage on cvA)
     - [x] cv14a the field, the built-ins, the writer, the summary line (Opus sidekick; lead
       checks green: aatf 405, ruleset_editor 151 tests): `f8e6b70b`, merged `b83ab5bd`.
       Files: `aatf/{rulesets/{autumn26,dbc7}.rhai,src/{ruleset/{mod.rs,tests/schema.rs},
       templates.rs,writer/{mod.rs,tests.rs}}}`, `ruleset_editor/src/{document.rs,summary.rs}`,
       goldens `tests/fixtures/summary/{autumn26,dbc7}.md`
-    - [ ] cv14c the Universal rules page (20.6a2c, RE-GUI-20): the same sidekick, resumed
-      with `.tmp/0_0_1cv/brief_cv14c.md`
+    - [x] cv14c the Universal rules page (20.6a2c, RE-GUI-20): the same sidekick, resumed;
+      lead checks green (ruleset_editor 155 tests); its contradiction accepted: "GK is never a
+      second A" (the rule fires for a keeper with a second A too). `dd192543`, merged
+      `fb937653`. Files: `ruleset_editor/src/view/{sections/{mod.rs,universal.rs},tests.rs,
+      tests/{summary.rs,universal.rs}}`. Not yet seen drawn: render it before a look
     - [ ] cv14b the Save editor's pitch under the flag (SE-GUI-45, SE-GUI-42's ruleset):
       `save_editor`'s host hands `team_widgets` the flag; after the whole-crate chain
     - [ ] review of cv14a and cv14c: SWE-2 rounds and Astra (checkpoint (b): two crates)
@@ -6745,7 +6749,7 @@ request (2026-10-14), to show the members who offered to help shape the ruleset 
           Save editor's picker too), the Tiers tests' repeated preamble one helper
           (`74dcf473`; `mutants-diff d3bf671f` 3 of 3 caught). Review done
       - [ ] 20.6a2b Cards, the team settings, Suggestions (RE-GUI-08)
-      - [ ] 20.6a2c Universal rules without the team settings (RE-GUI-20), for the illegal
+      - [x] 20.6a2c Universal rules without the team settings (RE-GUI-20), for the illegal
         formations checkbox (cv14; the maintainer, 2026-10-31: "a very simple page", the
         team settings may wait): `sections/universal.rs`, after cv14a lands
   - 20.6b the condition editor, the effects editor, Heights and Specials (RE-GUI-07, 09 to 12,
