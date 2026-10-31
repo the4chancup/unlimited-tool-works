@@ -142,8 +142,13 @@ before 0.0.2, though 8.36 itself is scheduled after 0.0.1: VGL plays on a Fox ve
 no save is stripped any more, so a compiled player's face, boots and gloves reach the game
 only through the patch (DECISIONS "Every engine carries a player's looks in the savefile
 patch; no stripped saves"); with today's Fox-only patch of motions and names, the game shows
-the official save's record over the compiled look (`savefile_player_not_stripped`). The
-organizer's order is: the managers' tactical exports (`.ted`) imported into the base save,
+the official save's record over the compiled look (`savefile_player_not_stripped`). So
+8.36c and 8.36d are the first work after 0.0.1's cut, and once they hold in game on PES 2019
+the organizer gets a proof-of-concept exe ahead of 0.0.2: no release and no bundle, only
+meant to upgrade and compile a couple of example teams and show their players in game, so
+the league's pipeline is tried on its own install while 0.0.2's other steps are built. 0.0.1
+alone could not stand in for it: its compile on PES 2019 shows the save's looks rather than
+the compiled ones, failing on exactly what the league needs. The organizer's order is: the managers' tactical exports (`.ted`) imported into the base save,
 by the Save editor or by PES (whose import leaves the team names to rewrite), making the
 official save; the old exports upgraded against it; the exports compiled; the patch applied to
 the official save, by the compile itself when the save is the configured one or by the Save
