@@ -110,7 +110,7 @@ the last edit changed are highlighted.
   draft's `universal()` draws them: checkboxes "Every player is rated A at his registered
   position", "Starters play only where rated A, in preset:" with one checkbox per preset (1,
   2, 3; the list written in ascending order), "No B ratings", "B ratings count toward the
-  A-position allowance" and "GK is never an outfield player's second A"; "Age" and "Weight",
+  A-position allowance" and "GK is never a second A"; "Age" and "Weight",
   each a checkbox with its fields beside it while ticked ("any" while not; ticked, they
   start at Autumn 26's values, 15 to 50 and height − 129, at least 30 kg, to height − 81);
   "A captain is required"; "At least N goalkeepers" (0 to 5); "At most N skill cards per
