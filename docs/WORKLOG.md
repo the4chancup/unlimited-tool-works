@@ -5972,12 +5972,11 @@ briefs, review loops, gates and mutation runs as for any step.
     after the push (2026-10-30, `.tmp/0_0_1cv/cv8e/published_check.py`): Heights at
     1280 × 780, no controls column, the title ending "(Demo)", the two tools greyed, no
     page errors
-  - [ ] cv8f the General section's "Event page" and "Event logo" labels read "Event page
-    (optional)" and "Event logo (optional)" (the maintainer, 2026-10-31): the draft and the
-    plan's General bullet done (the label column widens to fit, fields aligned:
-    `.tmp/0_0_1cv/cv8f_general.png`); then `view/sections/general.rs` and the tests that find
-    a field by its label (`view/tests/general.rs`; the logo picture's alt text stays "Event
-    logo"), briefed with the cv9 mutation run's tests
+  - [x] cv8f the General section's "Event page" and "Event logo" labels read "Event page
+    (optional)" and "Event logo (optional)" (the maintainer, 2026-10-31): draft and plan
+    `f54cba22`; `view/sections/general.rs` and a test reading both labels (the logo
+    picture's alt text stays), merged `73f5bac1`; its cross-family review rides along with
+    the next Astra round (a two-label fix)
   - [ ] cv9 the Tactics pitch as PES 2017 has it (the maintainer's PES 2017 check, 2026-10-31;
     0.0.1 is PES 2017's, 0.0.2 PES 2019's for VGL 27, the other versions after).
     `mutants-diff 3b0b07fc` (112 team_widgets mutants, split with bonfire): 106 caught, 5

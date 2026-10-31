@@ -2954,3 +2954,6 @@ worklog passed 7,000 lines.
 - **2026-10-31** — 0.0.1cv cv9 merged (`8bbf6053`, gates green): the Tactics pitch draws the open
   save's version's own formation screen, PES 2017's measured from its texture, and a dragged
   outfielder stops at y 4 as in game. The crate map's button lifts each lib as high as it goes.
+- **2026-10-31** — cv9's diff run: one survivor, equivalent and excluded. The Ruleset editor's
+  General labels say the event page and logo are optional (cv8f, `73f5bac1`). The mutation
+  runs read cargo-mutants' listing as UTF-8 (`ae61e0fe`); the 0.0.1 whole-crate runs started.
