@@ -2962,3 +2962,7 @@ worklog passed 7,000 lines.
   and DBC7): `universal.illegal_formations`, written and summarized (cv14a, `b83ab5bd`); the
   Ruleset editor's Universal rules page edits every universal rule (cv14c, `fb937653`). The
   Save editor's pitch under the flag waits for the whole-crate runs; P46's check is 0.0.2's.
+- **2026-10-31** — The Open menu names a save by its version, with 4ccEditor's Ctrl+5 to
+  Ctrl+1 (cv10), and the pitch badges keep their medal outlines through an edit (cv11), merged
+  `93ec67b0`; the pitch under a ruleset allowing illegal formations, merged `d431e50f` (cv14b).
+  Their mutation run: 38 caught, 5 unviable, no survivor.
