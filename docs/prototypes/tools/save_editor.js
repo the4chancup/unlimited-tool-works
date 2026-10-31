@@ -5092,8 +5092,11 @@ function hitMarker(t, px, py, skip = -1) {
   return -1;
 }
 // The starter a dragged marker would swap with: the keeper is never one, his
-// slot's position and spot being fixed.
+// slot's position and spot being fixed. Under a ruleset that allows illegal
+// formations there is none: the patched game keeps two starters on one spot,
+// so a release over a teammate lands there like any release on the grass.
 function dropTarget(t, px, py, skip) {
+  if (illegalFormations()) return -1;
   const i = hitMarker(t, px, py, skip);
   return i >= 0 && tacFormation(t).players[i].position === "GK" ? -1 : i;
 }

@@ -1069,9 +1069,12 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   the pitch sets a starter's spot and his position apart, as 4ccEditor-1's Tactics tab does (a
   drag sets X and Y alone, `scale_static_proc`'s `WM_MOUSEMOVE` and `WM_LBUTTONUP`; its
   dropdown, `tab_four_dlg_proc`'s `IDC_TACT_PLPOS`, the position alone): a held starter's
-  badge shows his own position and his overall at it at every step on the grass (over a
-  teammate, the teammate's, as with the flag off), and a release on the grass writes his spot
-  alone; the snap holds an outfielder anywhere in the stored rows, 0 to 48, the keeper's rows
+  badge shows his own position and his overall at it at every step on the grass, over a
+  teammate too, and a release on the grass writes his spot alone, over a teammate as anywhere
+  else: the patched game keeps two starters on one spot or a unit apart (worklog cv14g), so a
+  drop on a teammate lands beside or on him, with no corner brackets or fading while held
+  there, and two starters are exchanged by dropping one XI row on the other, or a marker on an
+  XI row, as with the flag off; the snap holds an outfielder anywhere in the stored rows, 0 to 48, the keeper's rows
   included, as 4ccEditor-1's fields allow; the popover's dropdown lists every outfield position, whatever his spot,
   and its X and Y keep his position. The keeper's slot stays fixed and Make GK unchanged. The
   darkening while he is held stays, since where he is rated is still worth seeing when his
@@ -1080,12 +1083,9 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   accident, which is why the flag is the cup's, in its ruleset, and not a setting each member
   would have to find. Switching the ruleset changes nothing stored, only how the next edit
   behaves; the host hands `team_widgets` the flag with the tactics' other inputs, the widgets
-  reading no ruleset. Two of the patched game's behaviors are read in game (worklog cv14):
-  whether it keeps an outfielder below y 4 (if it moves him back to 4, the y 4 floor holds
-  under the flag too), and whether it keeps two starters on one spot or on spots a unit apart
-  (if it does, a starter dropped on another under the flag lands on that spot rather than
-  swapping the two slots, and two starters are exchanged by dropping one XI row on the other;
-  until then the drop swaps, as with the flag off).
+  reading no ruleset. The patched game keeps an outfielder below y 4: a save holding CBs at
+  y 0 and y 2, two CMFs on one spot and two SSs a unit apart showed them so in Edit mode's
+  Team Sheet, and the save the game wrote afterwards held the same values.
 - **A starter swapped with a bench player** hands the bench player every set-piece role, the
   joining of the attack and every preset's instruction targets the starter held; the captain
   stays who he was, as in 4ccEditor.
@@ -1770,9 +1770,9 @@ SE-GUI-45  GIVEN the PES 17 save's team 702 (/a/) on preset 1's Kick-off, its CF
                 lists the twelve outfield positions, CB to CF, and its Y's ⏴ is disabled, and
                 WHEN its Y's ⏵ is clicked THEN his slot holds y 1; WHEN LB is picked, then its
                 Y set to 36 and its X to 60 THEN his slot holds LB at (60, 36); WHEN he is
-                held over the SS's marker at (64, 42) THEN his badge reads SS, and WHEN he
-                is dropped there THEN the two slots' positions and spots are
-                exchanged, as with the flag off; WHEN the active ruleset is then switched to
+                held over the SS's marker at (64, 42) THEN his badge reads LB and the SS
+                carries no corner brackets, and WHEN he is released there THEN his slot
+                holds LB at (64, 42) and the SS's slot is unchanged; WHEN the active ruleset is then switched to
                 /vg/ League 27, which does not allow them, and he is held at (42, 30) THEN
                 his badge reads AMF, as in SE-GUI-42, and his slot is as he left it
 SE-GUI-13  GIVEN the save open and a second save of the same version picked in the comparator
