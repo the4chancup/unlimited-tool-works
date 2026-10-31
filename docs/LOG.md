@@ -2978,3 +2978,6 @@ worklog passed 7,000 lines.
 - 2026-10-31 — 0.0.1cv cv22 merged `ba756b5a`: an instruction that takes no target puts back its target byte as
   opened; cv16's reviews ended (SWE-2 4/17, Astra 3); DBC heights confirmed exact; cv18-cv21 drafted and
   planned, cv23-cv24 added. `gates-changed 308c991b` green, 12 binaries, 1515 tests.
+- 2026-10-31 — 0.0.1cv cv18+cv19 merged `8ec3a26d` (a matching team's whole squad; a team row's double click);
+  cv16b and cv17 checked in the built window (DBC6 under DBC7); cv26 found there (Multi-team AATF's range
+  wheel froze the window ~2 min). Scripts likely to run again go in `scripts/` (`7111fb08`).
