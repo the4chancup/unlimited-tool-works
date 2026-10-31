@@ -517,6 +517,9 @@ fn the_pitch_moves_assigns_and_swaps_on_the_tactics_editor() {
     file.save(&path).unwrap();
     let mut view = SaveView::new();
     view.open(&path);
+    // /vg/ League 27, which does not allow illegal formations: under the
+    // default Autumn 26 a marker dropped on another lands beside or on him.
+    view.aatf_ruleset = "vgl27".to_owned();
     let mut window = Headless::sized(1600.0, 1400.0);
     open_team_view(&mut window, &mut view, 701);
     let index = 4;
@@ -764,6 +767,405 @@ fn the_pitch_moves_assigns_and_swaps_on_the_tactics_editor() {
         team_entry(&view, 701).tactics,
         expect,
         "only the starting eleven's two entries exchanged"
+    );
+}
+
+/// The position the held marker's badge at `badge` reads: of the badge
+/// texts painted there (each marker's position, then his overall), the
+/// second last, since the held marker paints after every other marker.
+/// The formation name, painted after them in the `label` family, is
+/// left out.
+fn held_badge_position(shapes: &[egui::epaint::ClippedShape], badge: egui::Rect) -> String {
+    let label = egui::FontFamily::Name("label".into());
+    let texts: Vec<&str> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(shape)
+                if badge.contains(shape.pos + shape.galley.size() / 2.0)
+                    && shape
+                        .galley
+                        .job
+                        .sections
+                        .iter()
+                        .all(|section| section.format.font_id.family != label) =>
+            {
+                Some(shape.galley.job.text.as_str())
+            }
+            _ => None,
+        })
+        .collect();
+    match texts.as_slice() {
+        [.., position, _overall] => (*position).to_owned(),
+        _ => panic!("no position and overall painted on {badge:?}: {texts:?}"),
+    }
+}
+
+/// The badge of an outfield marker standing at `(x, y)` on `canvas`.
+fn badge_at(canvas: accesskit::Rect, x: u8, y: u8) -> egui::Rect {
+    egui::Rect::from_center_size(
+        clamped_centre(canvas, FormationSlot { position: 1, x, y }),
+        egui::vec2(50.0, 14.0),
+    )
+}
+
+/// The AccessKit id of the open popover's `glyph` arrow (`⏴` or `⏵`)
+/// right of `label` (`"X"` or `"Y"`): the nearest on the label's row.
+fn popover_arrow(
+    ids: &[(accesskit::NodeId, accesskit::Node)],
+    label: &str,
+    glyph: &str,
+) -> (accesskit::NodeId, accesskit::Node) {
+    let bounds = ids
+        .iter()
+        .find(|(_, node)| node.role() == Role::Label && node.value() == Some(label))
+        .and_then(|(_, node)| node.bounds())
+        .unwrap_or_else(|| panic!("no label {label:?}"));
+    ids.iter()
+        .filter(|(_, node)| {
+            node.role() == Role::Button
+                && node.label() == Some(glyph)
+                && on_row_right_of(bounds, node)
+        })
+        .min_by(|a, b| {
+            let x = |(_, node): &&(accesskit::NodeId, accesskit::Node)| {
+                node.bounds().expect("bounds").x0
+            };
+            x(a).partial_cmp(&x(b)).expect("ordered bounds")
+        })
+        .cloned()
+        .unwrap_or_else(|| panic!("no {glyph} right of {label:?}"))
+}
+
+// SE-GUI-45
+#[test]
+fn under_illegal_formations_the_pitch_sets_a_starters_spot_and_position_apart() {
+    let path = fixture(PesVersion::Pes17, "tactics_illegal_formations");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.aatf_ruleset = "dbc7".to_owned();
+    let mut window = Headless::sized(1600.0, 1400.0);
+    view.selected = Some(Selection::Team(702));
+    let position = |label: &str| {
+        POSITIONS
+            .iter()
+            .position(|name| *name == label)
+            .and_then(|index| u8::try_from(index).ok())
+            .unwrap_or_else(|| panic!("{label} is a position"))
+    };
+    let at = |label: &str, x: u8, y: u8| FormationSlot {
+        position: position(label),
+        x,
+        y,
+    };
+    let slot_of = |view: &SaveView, index: usize| {
+        team_entry(view, 702).tactics.presets[0].formations[0].players[index]
+    };
+    let team = team_entry(&view, 702);
+    let start = team.tactics.clone();
+    let players = start.presets[0].formations[0].players;
+    let cf = 10;
+    assert_eq!(
+        team.roster[usize::from(start.starting_eleven[cf])].player_id,
+        70223,
+        "premise: COWBOY BEBOP starts in slot {cf}"
+    );
+    assert_eq!(players[cf], at("CF", 40, 45), "premise: the CF at (40, 45)");
+    let ss = players
+        .iter()
+        .position(|slot| *slot == at("SS", 64, 42))
+        .expect("premise: the SS at (64, 42)");
+    let palette = studio_core::theme::palette(&window.ctx.global_style().visuals);
+    let corner_arms = |shapes: &[egui::epaint::ClippedShape]| {
+        shapes
+            .iter()
+            .filter(|clipped| {
+                matches!(
+                    &clipped.shape,
+                    egui::Shape::LineSegment { stroke, .. } if stroke.color == palette.selected_corners
+                )
+            })
+            .count()
+    };
+
+    // Held at (42, 30), clear of his teammates' markers, his badge reads
+    // CF; released there, his slot holds (42, 30) and CF, one undoable
+    // edit.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let canvas = canvas_of(&nodes);
+    let from = marker_point(canvas, &players, cf).expect("a point on the CF's marker");
+    let offset = from - badge_centre(canvas, players[cf]);
+    let held = badge_centre(canvas, at("CF", 42, 30)) + offset;
+    assert!(
+        players.iter().enumerate().all(|(other, slot)| other == cf
+            || (!marker_rect(canvas, *slot).contains(held)
+                && !marker_rect(canvas, *slot).contains(badge_at(canvas, 42, 30).center()))),
+        "premise: (42, 30) is clear of his teammates' markers"
+    );
+    window.frame(pointer_at(from, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(held)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        held_badge_position(&shapes, badge_at(canvas, 42, 30)),
+        "CF",
+        "held at (42, 30) his badge reads CF"
+    );
+    window.frame(pointer_at(held, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(slot_of(&view, cf), at("CF", 42, 30), "released a CF");
+    window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        team_entry(&view, 702).tactics,
+        start,
+        "one undo restores him"
+    );
+    window.frame(
+        vec![key(
+            egui::Key::Z,
+            egui::Modifiers::CTRL | egui::Modifiers::SHIFT,
+            true,
+        )],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(slot_of(&view, cf), at("CF", 42, 30), "redo moves him back");
+
+    // Held with the pointer below the pitch, his badge stands on y 0;
+    // released on the grass at a point the mapping reads as y 0, his slot
+    // holds y 0. The column is one whose y 0 badge and release point
+    // are clear of every other marker, the keeper's included.
+    let players = team_entry(&view, 702).tactics.presets[0].formations[0].players;
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let canvas = canvas_of(&nodes);
+    let from = marker_point(canvas, &players, cf).expect("a point on the CF's marker");
+    let offset = from - badge_centre(canvas, players[cf]);
+    let (x, release) = (0..=104_u8)
+        .map(|x| (x, badge_centre(canvas, at("CF", x, 0)) + offset))
+        .find(|(x, release)| {
+            release.y <= canvas.y1 as f32
+                && players.iter().enumerate().all(|(other, slot)| {
+                    other == cf
+                        || (!marker_rect(canvas, *slot).contains(*release)
+                            && !marker_rect(canvas, *slot).intersects(badge_at(canvas, *x, 0)))
+                })
+        })
+        .expect("a column whose y 0 is clear of every other marker");
+    let below = egui::pos2(release.x, canvas.y1 as f32 + 40.0);
+    window.frame(pointer_at(from, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(below)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        held_badge_position(&shapes, badge_at(canvas, x, 0)),
+        "CF",
+        "held below the pitch his badge stands on y 0"
+    );
+    window.frame(pointer_at(release, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(slot_of(&view, cf), at("CF", x, 0), "released on y 0");
+
+    // His popover: the Position combo lists the twelve outfield
+    // positions, CB to CF, and Y's ⏴ is disabled; Y's ⏵ gives y 1.
+    let players = team_entry(&view, 702).tactics.presets[0].formations[0].players;
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let point = marker_point(canvas_of(&nodes), &players, cf).expect("a point on the CF's marker");
+    click_at(&mut window, point, &mut view);
+    let (_, closed, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (down, _) = popover_arrow(&closed, "Y", "⏴");
+    assert!(
+        closed
+            .iter()
+            .any(|(id, node)| *id == down && node.is_disabled()),
+        "Y's ⏴ is disabled at y 0"
+    );
+    let (up, _) = popover_arrow(&closed, "Y", "⏵");
+    action_click(&mut window, &mut view, up);
+    assert_eq!(slot_of(&view, cf), at("CF", x, 1), "Y's ⏵ gives y 1");
+    let (_, closed, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let combo = closed
+        .iter()
+        .find(|(_, node)| node.role() == Role::ComboBox && node.label() == Some("Position"))
+        .map(|(id, _)| *id)
+        .expect("the Position combo");
+    action_click(&mut window, &mut view, combo);
+    let (_, open, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let shown: std::collections::HashSet<accesskit::NodeId> =
+        closed.iter().map(|(id, _)| *id).collect();
+    let mut items: Vec<&accesskit::Node> = open
+        .iter()
+        .filter(|(id, node)| !shown.contains(id) && node.role() == Role::Button)
+        .map(|(_, node)| node)
+        .collect();
+    items.sort_by(|a, b| {
+        let y = |node: &&accesskit::Node| node.bounds().expect("item bounds").y0;
+        y(a).partial_cmp(&y(b)).expect("ordered bounds")
+    });
+    assert_eq!(
+        items
+            .iter()
+            .filter_map(|node| node.label())
+            .collect::<Vec<_>>(),
+        [
+            "CB", "LB", "RB", "DMF", "CMF", "LMF", "RMF", "AMF", "LWF", "RWF", "SS", "CF"
+        ],
+        "the twelve outfield positions"
+    );
+
+    // LB picked: his slot holds LB, its X and y 1 unchanged; then Y set to
+    // 36 and X to 60: LB at (60, 36).
+    let lb = open
+        .iter()
+        .find(|(id, node)| !shown.contains(id) && node.label() == Some("LB"))
+        .map(|(id, _)| *id)
+        .expect("the Position list's LB");
+    action_click(&mut window, &mut view, lb);
+    assert_eq!(
+        slot_of(&view, cf),
+        at("LB", x, 1),
+        "LB picked, X and Y kept"
+    );
+    for (label, value) in [("Y", "36"), ("X", "60")] {
+        let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        action_focus(
+            &mut window,
+            &mut view,
+            node_id_right_of(&ids, label, Role::SpinButton),
+        );
+        type_text(&mut window, &mut view, value);
+    }
+    assert_eq!(slot_of(&view, cf), at("LB", 60, 36), "LB at (60, 36)");
+    let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let close = ids
+        .iter()
+        .find(|(_, node)| node.role() == Role::Button && node.label() == Some("Close"))
+        .map(|(id, _)| *id)
+        .expect("the popover's Close");
+    action_click(&mut window, &mut view, close);
+
+    // Held over the SS's marker at (64, 42): his badge reads LB at full
+    // opacity and the SS carries no corner brackets; released there, his
+    // slot holds LB at (64, 42) and the SS's slot is unchanged.
+    let before = team_entry(&view, 702).tactics;
+    let players = before.presets[0].formations[0].players;
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let canvas = canvas_of(&nodes);
+    // The press 3 points inside his box, on no marker drawn after his: the
+    // hold, at the same offset from the SS's badge, is then as far inside
+    // the SS's box, not on its edge, where the widget's arithmetic and
+    // this test's can disagree.
+    let order = draw_order(canvas, &players);
+    let later = &order[order
+        .iter()
+        .position(|&index| index == cf)
+        .expect("every marker is in the order")
+        + 1..];
+    let inner = marker_rect(canvas, players[cf]).shrink(3.0);
+    let from = (0..=10)
+        .flat_map(|ix| {
+            (0..=15).map(move |iy| {
+                inner.min
+                    + egui::vec2(
+                        ix as f32 * inner.width() / 10.0,
+                        iy as f32 * inner.height() / 15.0,
+                    )
+            })
+        })
+        .find(|point| {
+            later
+                .iter()
+                .all(|&other| !marker_rect(canvas, players[other]).contains(*point))
+        })
+        .expect("a point well inside the LB's marker");
+    let offset = from - badge_centre(canvas, players[cf]);
+    let over = badge_centre(canvas, players[ss]) + offset;
+    assert!(
+        marker_rect(canvas, players[ss]).shrink(2.0).contains(over),
+        "premise: the hold is well inside the SS's marker"
+    );
+    assert_eq!(
+        order
+            .iter()
+            .rev()
+            .find(|&&other| other != cf && marker_rect(canvas, players[other]).contains(over)),
+        Some(&ss),
+        "premise: the hold is on the SS's marker, under no later one"
+    );
+    window.frame(pointer_at(from, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(over)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let badge = badge_at(canvas, 64, 42);
+    assert_eq!(
+        held_badge_position(&shapes, badge),
+        "LB",
+        "held over the SS his badge reads LB"
+    );
+    // His badge is the last filled rect of the badge's size there.
+    let fill = shapes
+        .iter()
+        .rev()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if shape.rect.center().distance(badge.center()) <= 0.5
+                    && (shape.rect.size() - badge.size()).length() <= 0.5 =>
+            {
+                Some(shape.fill)
+            }
+            _ => None,
+        })
+        .expect("his badge");
+    assert_eq!(fill, palette.badge_fill, "his badge at full opacity");
+    assert_eq!(corner_arms(&shapes), 0, "the SS carries no corner brackets");
+    window.frame(pointer_at(over, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let mut expect = before;
+    expect.presets[0].formations[0].players[cf] = at("LB", 64, 42);
+    assert_eq!(
+        team_entry(&view, 702).tactics,
+        expect,
+        "LB at (64, 42), the SS's slot unchanged"
+    );
+
+    // /vg/ League 27, which does not allow illegal formations: his slot is
+    // as he left it, and held at (42, 30) his badge reads AMF.
+    view.aatf_ruleset = "vgl27".to_owned();
+    let left = team_entry(&view, 702).tactics;
+    let players = left.presets[0].formations[0].players;
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        team_entry(&view, 702).tactics,
+        left,
+        "the switch changes nothing stored"
+    );
+    let canvas = canvas_of(&nodes);
+    let from = marker_point(canvas, &players, cf).expect("a point on the LB's marker");
+    let offset = from - badge_centre(canvas, players[cf]);
+    let held = badge_centre(canvas, at("LB", 42, 30)) + offset;
+    window.frame(pointer_at(from, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(held)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        held_badge_position(&shapes, badge_at(canvas, 42, 30)),
+        "AMF",
+        "held at (42, 30) under /vg/ League 27 his badge reads AMF"
+    );
+    assert_eq!(
+        team_entry(&view, 702).tactics,
+        left,
+        "his slot is as he left it"
     );
 }
 

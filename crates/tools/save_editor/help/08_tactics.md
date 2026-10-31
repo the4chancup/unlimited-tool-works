@@ -38,30 +38,54 @@ he only moves.
 **Dragging a player**
 
 Dragging a pitch player to a new place moves him there, snapped to the positions
-the save can hold, and gives him the position the game's own editor would there
-(which can depend on his ratings: the spot offers up to two positions and he
-takes the one he rates higher at). While you hold him, he moves one step at a
-time and the point you grabbed stays under the pointer.
+the save can hold, and, unless the cup allows illegal formations (below), gives
+him the position the game's own editor would there (which can depend on his
+ratings: the spot offers up to two positions and he takes the one he rates
+higher at). While you hold him, he moves one step at a time and the point you
+grabbed stays under the pointer.
 
 The pitch stays lit only where he is rated A or B, and his badge shows the
 position he would take if you let go there, so it changes as he crosses from one
-area into another. Nothing changes until you let go: bring him back to where he
-started and he keeps his position.
+area into another (unless the cup allows illegal formations, below). Nothing
+changes until you let go: bring him back to where he started and he keeps his
+position.
 
-Dropping him on another starter (the goalkeeper excepted) trades their places
-and positions in the formation on screen alone, as the game's own drag does: the
-preset's other two formations and the other presets keep theirs. While you hold
-him over the other, that one's marker is marked with corner brackets and the
-dragged one turns half transparent, so a drag meant only to move him can still
-be steered aside onto the grass.
+Unless the cup allows illegal formations (below), dropping him on another
+starter (the goalkeeper excepted) trades their places and positions in the
+formation on screen alone, as the game's own drag does: the preset's other two
+formations and the other presets keep theirs. While you hold him over the other,
+that one's marker is marked with corner brackets and the dragged one turns half
+transparent, so a drag meant only to move him can still be steered aside onto
+the grass.
 
 A bench player dropped on a pitch player swaps them, and a pitch player dropped
 on a bench row does the same. The goalkeeper cannot be dragged and his position
 and spot stay fixed.
 
+**When the cup allows illegal formations**
+
+Some cups play a patched game that keeps any formation, and their ruleset says
+so (the Ruleset editor's **Illegal formations allowed (Whack Patch)** box; 4cc
+Autumn 26 and Divegrass Before Christmas 7 among the built-in rulesets). While
+such a ruleset is active, the pitch sets a player's spot and his position apart,
+and the rules above change:
+
+- a dragged player keeps his own position wherever you let go, and his badge
+  shows it all the while you hold him;
+- he can stand on any row, the goalkeeper's area included;
+- dropped on another starter he lands there, beside or on him, and nothing is
+  traded, since the game keeps two players on one spot; nothing is marked or
+  faded while you hold him there;
+- his details' position pick offers every outfield position, and moving him with
+  X and Y keeps his position.
+
+The goalkeeper's spot, the lit areas and the swaps through the lists below
+work as under any other ruleset.
+
 **A player's details**
 
-Clicking a pitch player opens his details beside his marker:
+Clicking a pitch player opens his details beside his marker (when the cup
+allows illegal formations, the first two work as described above):
 
 - a position pick (it offers only the positions his spot allows, as the game's
   Select Position menu does);

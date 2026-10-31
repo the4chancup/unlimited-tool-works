@@ -4,6 +4,7 @@
 
 use pes_version::PesVersion;
 
+use super::drops::badge_texts;
 use super::*;
 use crate::tactics::{FieldedMark, Medal};
 use crate::test_support::{
@@ -57,24 +58,24 @@ fn snap_inverts_the_mapping_and_clamps_to_the_grid() {
         for y in 0..=GRID_Y {
             let slot = outfield(x, y);
             assert_eq!(
-                snap(badge_centre(origin, slot), origin),
+                snap(badge_centre(origin, slot), origin, OUTFIELD_Y_MIN),
                 (x, y.max(4)),
                 "({x}, {y})"
             );
         }
     }
     assert_eq!(
-        snap(origin + egui::vec2(500.0, 200.0), origin),
+        snap(origin + egui::vec2(500.0, 200.0), origin, OUTFIELD_Y_MIN),
         (104, 24),
         "past the right edge"
     );
     assert_eq!(
-        snap(origin + egui::vec2(160.0, 500.0), origin),
+        snap(origin + egui::vec2(160.0, 500.0), origin, OUTFIELD_Y_MIN),
         (52, 4),
         "past the near edge"
     );
     assert_eq!(
-        snap(origin + egui::vec2(-50.0, -50.0), origin),
+        snap(origin + egui::vec2(-50.0, -50.0), origin, OUTFIELD_Y_MIN),
         (0, 48),
         "past the far corner"
     );
@@ -1043,7 +1044,7 @@ fn a_dragged_marker_paints_last_at_the_pointer() {
     let from = marker_point(&nodes, &players, index);
     assert!(
         off(
-            held_centre(canvas, players[index], from, onto),
+            held_centre(canvas, players[index], from, onto, false),
             centres[index]
         ),
         "premise: the drop point is off his own centre"
@@ -1064,13 +1065,14 @@ fn a_dragged_marker_paints_last_at_the_pointer() {
             &mut tactics,
             &mut view,
             &roster,
+            false,
         );
     });
     let badges = badge_rects(&shapes);
     assert_eq!(badges.len(), 11, "eleven badges, the dragged one's moved");
     near(
         badges.last().expect("eleven badges").center(),
-        held_centre(canvas, players[index], from, onto),
+        held_centre(canvas, players[index], from, onto, false),
         0.5,
     );
     assert!(
@@ -1099,7 +1101,7 @@ fn the_released_marker_paints_at_the_drop_point() {
     let centres = centres_of(canvas, &players);
     let from = marker_point(&nodes, &players, index);
     let onto = grass_point(canvas, &players, egui::Rect::NOTHING);
-    let (x, y) = snap(onto, canvas.min);
+    let (x, y) = snap(onto, canvas.min, OUTFIELD_Y_MIN);
     assert_ne!(
         (players[index].x, players[index].y),
         (x, y),
@@ -1128,6 +1130,7 @@ fn the_released_marker_paints_at_the_drop_point() {
             &mut tactics,
             &mut view,
             &roster,
+            false,
         );
     });
     let dropped = clamp_centre(
@@ -1205,6 +1208,7 @@ fn a_pressed_keeper_paints_at_his_spot() {
             &mut tactics,
             &mut view,
             &roster,
+            false,
         );
     });
     let badges = badge_rects(&shapes);
@@ -1386,6 +1390,7 @@ fn the_scrolls_clock_survives_a_discarded_pass() {
             &mut tactics,
             &mut view,
             &roster,
+            false,
         );
     });
     assert_eq!(
@@ -1851,6 +1856,7 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
             &mut tactics,
             &mut view,
             &roster,
+            false,
         );
     });
     // The target's marker carries the selected corners: eight 9 px
@@ -1890,7 +1896,7 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
     }
     // And the dragged marker's badge paints at 35% over him.
     let dragged_badge = egui::Rect::from_center_size(
-        held_centre(canvas, players[dragged], from, over),
+        held_centre(canvas, players[dragged], from, over, false),
         egui::vec2(50.0, 14.0),
     );
     let fill = shapes
@@ -1951,6 +1957,7 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
             &mut tactics,
             &mut view,
             &roster,
+            false,
         );
     });
     assert!(
@@ -1961,7 +1968,7 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
         "no brackets over the grass"
     );
     let dragged_badge = egui::Rect::from_center_size(
-        held_centre(canvas, players[dragged], from, grass),
+        held_centre(canvas, players[dragged], from, grass, false),
         egui::vec2(50.0, 14.0),
     );
     let fill = shapes
@@ -1976,6 +1983,89 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
         fill,
         Palette::DARK.badge_fill,
         "full opacity over the grass"
+    );
+}
+
+// Under a ruleset that allows illegal formations a marker dropped on
+// another swaps nothing, so a dragged starter held over another shows
+// no swap: no corner brackets on him, the dragged badge at full opacity
+// and reading the dragged starter's own position, not the other's.
+#[test]
+fn under_illegal_formations_a_drag_over_another_marker_marks_no_swap() {
+    let mut window = Headless::sized(600.0, 450.0);
+    window.illegal_formations = true;
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let players = tactics.presets[0].formations[0].players;
+    let (dragged, target) = (3, 6);
+    assert_ne!(
+        players[dragged].position, players[target].position,
+        "premise: the two hold different positions, so the badge tells them apart"
+    );
+
+    let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    let centres = centres_of(canvas, &players);
+    let from = marker_point(&nodes, &players, dragged);
+    // Two units right of the target's free point, as
+    // `a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged`
+    // holds it, so the two badges' rects differ.
+    let over = marker_point(&nodes, &players, target) + egui::vec2(2.0 * SPOT_XS, 0.0);
+    assert_eq!(
+        swap_target(&players, &centres, canvas, over, dragged),
+        Some(target),
+        "premise: with the flag off the hold would mark the target"
+    );
+
+    window.pitch(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(from, true),
+    );
+    let (shapes, changed) = window.pitch_shapes(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        vec![egui::Event::PointerMoved(over)],
+    );
+    assert!(!changed, "a held frame writes nothing");
+    assert!(
+        !shapes.iter().any(|clipped| matches!(
+            &clipped.shape,
+            egui::Shape::LineSegment { stroke, .. } if stroke.color == Palette::DARK.selected_corners
+        )),
+        "no brackets on the teammate"
+    );
+    let dragged_badge = egui::Rect::from_center_size(
+        held_centre(canvas, players[dragged], from, over, true),
+        egui::vec2(50.0, 14.0),
+    );
+    let fill = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape) if shape.rect == dragged_badge => Some(shape.fill),
+            _ => None,
+        })
+        .next()
+        .expect("the dragged marker's badge");
+    assert_eq!(
+        fill,
+        Palette::DARK.badge_fill,
+        "the dragged badge at full opacity"
+    );
+    // The teammate's badge text overlaps his; his is painted last (the
+    // fixture's rows carry no overalls, so a badge paints its position
+    // alone).
+    let texts = badge_texts(&shapes, dragged_badge);
+    assert_eq!(
+        texts.last().map(String::as_str),
+        Some(position_label(players[dragged].position)),
+        "the dragged badge reads his own position: {texts:?}"
     );
 }
 
