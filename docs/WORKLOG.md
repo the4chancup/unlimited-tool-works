@@ -6238,18 +6238,24 @@ briefs, review loops, gates and mutation runs as for any step.
     that reads it, a fast turn steps one notch a frame, and a box holding the keyboard waits two
     frames more (`studio_core` `widgets/wheel.rs`), so the lag is a few frames times the frame's
     cost → measure first: a Save editor frame's time on the maintainer's PES 2017 save at Ability
-    stats, idle and on a step's frame, headless, release build; then cut where the time goes
-  - [ ] cv26 the wheel over Multi-team AATF's range combos froze the window for about two
+    stats, idle and on a step's frame, headless, release build; then cut where the time goes;
+    with it, what one Multi-team AATF check over 220 teams costs the UI thread (cv26's
+    rest cuts how many checks start, not what one costs)
+  - [x] cv26 the wheel over Multi-team AATF's range combos froze the window for about two
     minutes (found 2026-10-31 in cv16b's built-window look: 42 notches over the first combo,
     23 over the second, 220 teams in range; each step re-checked the range). The maintainer's
     fix (plan "Multi-team AATF's range starts on one team", SE-GUI-41, DECISIONS 2026-10-31):
     both ends open on the save's first team, the right end lists only the teams from the left
     one on and follows it, the check starts once the ends have rested 500 ms; the pictures'
     range pairs its ends the same way. Drafted (`dlgMultiAatf`, `MULTI_REST`, `rangeChoices`,
-    `setRangeEnd`; render `.tmp/cv26/sheet.png`), planned; code next (`save_editor`
-    `view/multi_aatf.rs`, the pictures range dialog if built) → verify: SE-GUI-41's new THENs; a
-    headless test that 30 wheel steps over an end in 30 frames start one check, not 30. Then
-    measure what one check over 220 teams costs the UI thread (with cv23)
+    `setRangeEnd`; render `.tmp/cv26/sheet.png`), planned; → verify: SE-GUI-41's new THENs; a
+    headless test that 30 wheel steps over an end in 30 frames start one check, not 30: Opus
+    sidekick (`.tmp/cv26/brief_cv26.md`), `eb4cab32`, merged `572f4f0f`; `view/multi_aatf.rs`
+    (`Range` picked/checked/changed_at, `REST`, `CHECKING_OPACITY`, `team_combo`'s `from`),
+    `view/tests/savefile.rs` (the clamp and rest tests), `view/tests/overlap.rs` (the
+    reversed screen became the checking one). The pictures' range dialog is not built yet
+    (after 0.0.1); the plan holds its clamp. Live AATF's dock does not dim while checking
+    (only `checking…`), left as is. The UI-thread measurement moved to cv23
   - [ ] cv27 a hovered AATF row's grey fill leaves its red rule name hard to read (seen
     2026-10-31 in cv16b's look, `.tmp/0_0_2/look_cv16b/09_crop.png`: "Extra height" on
     `widgets.hovered.bg_fill`; `team_widgets` `row_paint`) → compare the draft's `.drow:hover`
