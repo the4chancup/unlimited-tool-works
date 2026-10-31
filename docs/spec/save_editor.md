@@ -194,16 +194,19 @@ What this editor adds on top of the lib:
 - **Multi-team AATF.** The Savefile menu's `Multi-team AATF…`, after Output rosters to TSV,
   opens a dialog, `Multi-team AATF (<ruleset>)`, for an organizer checking a cup's
   teams, who does not use a command line. On one row `Teams`, the range's first team, `to`, its
-  last: two combo boxes of the save's teams by id and name, the save's first and last by
-  default, the pick kept while the save stays open. Under it a line, `N teams checked, M
-  with issues` (`The first team comes after the last` in the warning colour when reversed, and
-  Copy to clipboard off); then every team of the range under its id and name, its rows
+  last: two combo boxes of the save's teams by id and name, both on the save's first team when
+  the dialog first opens (a whole save's check is the long one, and an organizer checks a few
+  teams at a time), the pick kept while the save stays open. The last end lists only the teams
+  from the first end on and follows the first end when it passes it, so the range is never
+  reversed and needs no warning. Under it a line, `N teams checked, M with issues`; then every team of the range under its id and name, its rows
   grouped and worded as Live AATF's dock words them, errors first, or `All clean` under a team
   with none, so a clean team reads as checked rather than missed, the list as wide as the
   dialog's content; then `Copy to clipboard` and `Close`. The teams are checked on a worker, in parallel as `check-aatf` runs them (220 teams
-  of a PES 2017 save in 2.0 s on 16 threads, 13.2 s on one), when the dialog opens and
-  whenever the range changes, the previous list kept and marked as checking until the new one
-  arrives, unless the ruleset changed (that list, and its Copy, would name findings of
+  of a PES 2017 save in 2.0 s on 16 threads, 13.2 s on one), when the dialog opens and once
+  the ends have rested 500 ms after a change: the wheel over an end steps one team a frame
+  (`plans/core/gui.md` "The wheel over a value"), and a check started per step left the window
+  unresponsive for about two minutes over 220 teams. Until the new list arrives the previous
+  one is kept, dimmed and marked as checking, unless the ruleset changed (that list, and its Copy, would name findings of
   another ruleset under the active one's name: it is dropped until the new one arrives); a team whose check fails is a line naming it and the error, the others still
   listed. Suggestions are not asked for (an unused allowance is the manager's business, not
   the organizer's), and a row's click does nothing. A dialog, not a docked panel or a
