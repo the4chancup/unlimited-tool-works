@@ -5877,8 +5877,9 @@ briefs, review loops, gates and mutation runs as for any step.
   (every `plans/save_editor.md` section 0.0.1 ships compared with its code, every SE-GUI
   scenario on PES 2017 with a test or a `manual: checked` line, the design-tell sweep over
   the whole surface), its gaps briefed; then Astra over the surface in parts, a SWE-2 loop
-  after each round; the whole-crate mutation runs of `save_editor` and `team_widgets`.
-  Runs beside the maintainer's final pass (0.0.1f1c); the cut waits on it (`AGENTS.md`
+  after each round; the whole-crate mutation runs of `save_editor` and `team_widgets`,
+  after the cut (DECISIONS 2026-10-31, "0.0.1's whole-crate mutation runs come after its
+  cut"). Runs beside the maintainer's final pass (0.0.1f1c); the cut waits on it (`AGENTS.md`
   "Cutting a release")
   - [x] cv1 the lead's audit (2026-10-30, at `a03f30d6`): six read-only parts (layout,
     player and team, tactics, AATF and interchange, the SE-GUI scenarios, the shell),
@@ -6008,8 +6009,8 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] cv10 the Open menu labels a save by version alone, and 4ccEditor's Ctrl+5 to Ctrl+1 open
     each version's discovered save, Ctrl+O the picker (the maintainer, 2026-10-31; DECISIONS
     2026-10-31, SE-GUI-26): plan and draft done; `save_editor` `view/open_menu.rs` and the
-    toolbar's keys briefed (`.tmp/0_0_1cv/brief_cv10.md`), merged only after the whole-crate
-    chain ends
+    toolbar's keys briefed (`.tmp/0_0_1cv/brief_cv10.md`); committed on branch `cv10`, to
+    merge
   - [ ] cv11 the pitch badges' medal outlines no longer blink on every edit (the maintainer,
     2026-10-31: a dragged player made every outline vanish until the medal run answered):
     while the run for a new revision is in flight, the badges keep the last answer held for
@@ -6044,8 +6045,8 @@ briefs, review loops, gates and mutation runs as for any step.
     on a single backend if the cons are not noticeable. To weigh: on Windows DX12 runs on
     every Windows 10 machine and falls back to its software adapter (WARP), where Vulkan needs
     a driver that ships it; Linux has no DX12 (Vulkan, GL for old GPUs and VMs); the GPU
-    encoding study (16.x c) creates its own instance. Needs the window on screen: after the
-    whole-crate chain and the sidekicks end
+    encoding study (16.x c) creates its own instance. Needs the window on screen: once no
+    sidekick builds
   - [ ] cv14 a ruleset may allow illegal formations (the maintainer, 2026-10-31): the Whack
     Patch, a modded PES 2017 exe, no longer rejects formations the game's own drag cannot make;
     4cc Autumn 26 (PES 2017) uses it and allows them (its saves hold some: /jp/ and /s4s/ on
@@ -6099,7 +6100,7 @@ briefs, review loops, gates and mutation runs as for any step.
       save_editor run alone has ~30 h left), on branch `cv14b` in `wt-cv14b`: `ccfa90ce`, the
       help `cbbe9afd` and `14028084`, rework r1 `46b9492b`; reviewed (SWE-2 round 1, Astra,
       SWE-2 round 2: 1, 1 and 2 accepted, `.tmp/0_0_1cv/rulings_cv14.md`). Open: the merge
-      into main once the chain ends, its `gates-changed` and `mutants-diff`
+      into main, its `gates-changed` and `mutants-diff`
     - [x] review of cv14a and cv14c (checkpoint (b): two crates): SWE-2 round 1 found nothing
       in the field's code and 2 of 4 accepted on the page (no test unticks a preset box or
       types into Age and Weight), the loop ends; Astra 2 of 2 (unticking Weight and the COM
@@ -6123,7 +6124,7 @@ briefs, review loops, gates and mutation runs as for any step.
       26 accepted, 8 of them in part; 10 marked "run"). The accepted fixes first, in two
       slices on branch `cvA1` in `wt-cvA1` (`.tmp/0_0_1cv/brief_cvA1a.md`, `brief_cvA1b.md`),
       started beside the whole-crate chain; then `just mutants pes_savefile` (its last
-      whole-crate run is 2026-10-16) over the fixed code, after the chain: each "run" concern
+      whole-crate run is 2026-10-16) over the fixed code, after the 0.0.1 cut: each "run" concern
       it confirms as a survivor gets its test, the rest drop. The fixes: the same-version
       skill refusal (plan "Team TOML", DECISIONS 2026-10-31), the motion error's value as
       written, `{version}` in two codec errors, the
@@ -6164,7 +6165,9 @@ briefs, review loops, gates and mutation runs as for any step.
       `8a73e438` (SWE-2 S1 and Astra A1 accepted nothing; rulings
       `.tmp/0_0_1cv/rulings_cv6t.md`). Files: `pes_savefile` `file.rs`, `save_editor`
       `view/tests.rs`, `view/tests/interchange.rs`, `view/tests/interchange_export.rs`
-    - Open: the whole-crate runs of the 0.0.1 crates
+    - The whole-crate runs of the 0.0.1 crates: after the cut. `save_editor`'s was stopped
+      2026-10-31 (extra kinds done, 40 survivors triaged in `.tmp/0_0_1cv/triage_se_extra.md`
+      with the lead's rulings; main run 119 of 1052 local mutants); rerun from scratch then
   - [ ] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30): off
     `CLI_ONLY`, the label in the sidebar and the title; the unbuilt sections' line points at
     Summary and the preview; RE-GUI-17's round trip confirmed over every field the unbuilt

@@ -14501,3 +14501,14 @@ file (consistent rules, one guard). Found by the Argon review (A2-1): `from_fiel
 `double_touch` on PES 17 never landed, with nothing said.
 Plan: `plans/pes_savefile/operations.md` "Team TOML", "A skill the version lacks, in a
 same-version file".
+
+## 2026-10-31 — release — 0.0.1's whole-crate mutation runs come after its cut
+Decision: the whole-crate mutation runs of `save_editor` and `team_widgets` (and the
+`pes_savefile` run cvA1 planned) are postponed to after the 0.0.1 cut; the cut no longer
+waits on them. The run under way was stopped (this machine's half at 119 of 1052 mutants; the
+extra kinds, done, left 40 survivors, triaged in `.tmp/0_0_1cv/triage_se_extra.md`).
+Why: `save_editor`'s run measured 5.7 h for its 126 extra mutants and about 2 min per mutant
+for its 1798 main ones, over 30 h before `team_widgets` started, holding every merge into the
+two crates. Every slice 0.0.1 ships already had its `mutants-diff` over the lines it changed,
+so a whole-crate run adds what no slice touched, which can wait a release.
+Plan: `AGENTS.md` "Cutting a release" (the exception); worklog cv and cv6.
