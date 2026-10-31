@@ -124,6 +124,7 @@ impl StudioTool for Tool {
         self.view.aatf_ruleset = tool_settings.aatf_ruleset.clone();
         self.view.live_aatf = tool_settings.live_aatf;
         self.view.live_suggestions = tool_settings.live_suggestions;
+        self.view.live_window = tool_settings.live_window;
         self.view.aesthetics_from_exports = tool_settings.aesthetics_from_exports;
         self.view.tactics.scroll_names = tool_settings.scroll_names;
         let common = ctx.common();
@@ -138,13 +139,15 @@ impl StudioTool for Tool {
         if let Some(notice) = self.view.notice.take() {
             ctx.notify(notice);
         }
-        // The toolbar's ruleset dropdown, its toggle and Show suggestions
-        // and the formation bar's Scroll names are settings: the table as
-        // read with only those keys replaced, so any other key survives (as
-        // `settings_view` writes `aesthetics_from_exports`).
+        // The toolbar's ruleset dropdown, its toggle and Show suggestions,
+        // where Live AATF's list stands and the formation bar's Scroll names
+        // are settings: the table as read with only those keys replaced, so
+        // any other key survives (as `settings_view` writes
+        // `aesthetics_from_exports`).
         if self.view.aatf_ruleset != tool_settings.aatf_ruleset
             || self.view.live_aatf != tool_settings.live_aatf
             || self.view.live_suggestions != tool_settings.live_suggestions
+            || self.view.live_window != tool_settings.live_window
             || self.view.tactics.scroll_names != tool_settings.scroll_names
         {
             let mut table = table;
@@ -159,6 +162,10 @@ impl StudioTool for Tool {
             table.insert(
                 "live_suggestions".to_owned(),
                 toml::Value::Boolean(self.view.live_suggestions),
+            );
+            table.insert(
+                "live_window".to_owned(),
+                toml::Value::Boolean(self.view.live_window),
             );
             table.insert(
                 "scroll_names".to_owned(),

@@ -44,9 +44,9 @@ pub struct TeamViolations<'a> {
     /// The violations `check_team` returned, in its order.
     pub violations: &'a [aatf::Violation],
     /// The roster slots of the team's starting eleven. Under
-    /// `ListUse::Editing` the players' groups stand in two columns by it,
-    /// the starters' left and every other slot's right; `ListUse::Report`
-    /// lists them in one column.
+    /// `ListUse::Editing` in two columns the players' groups stand by it,
+    /// the starters' left and every other slot's right; one column and
+    /// `ListUse::Report` list them in roster order.
     pub starting_eleven: &'a [u8],
 }
 
@@ -84,12 +84,32 @@ pub enum ListUse {
     Editing {
         /// List the suggestions too.
         show_suggestions: bool,
+        /// List the players' groups in one column, in roster order, with the
+        /// rule's column `NARROW_RULE_COL` wide (Live AATF in its own window,
+        /// narrower than the dock); otherwise in two columns, starters and
+        /// bench, the rule's column `RULE_COL` wide.
+        one_column: bool,
     },
     /// A report over several teams, read and copied out (Multi-team
     /// AATF): every team under its id and name, `All clean` under one with
     /// no rows so it reads as checked rather than missed; the rows only
     /// report, and no suggestion is listed.
     Report,
+}
+
+impl ListUse {
+    /// The width of the rule name's column in this list's rows.
+    fn rule_column(self) -> f32 {
+        match self {
+            ListUse::Editing {
+                one_column: true, ..
+            } => NARROW_RULE_COL,
+            ListUse::Editing {
+                one_column: false, ..
+            }
+            | ListUse::Report => RULE_COL,
+        }
+    }
 }
 
 /// What the rows name things from: the rules a check ran under, whose
@@ -108,7 +128,8 @@ pub struct Wording<'a> {
 /// player, as `list_use` says. Under `ListUse::Editing` each part (the
 /// violations, then the suggestions) stands the players' groups in two
 /// columns, the starting eleven's left and the bench's right, with the
-/// team's own rows under both; a report lists every group in one column.
+/// team's own rows under both, unless `one_column` asks for one; a report
+/// lists every group in one column.
 /// Returns the player whose row was clicked this frame.
 pub fn violations_list(
     ui: &mut egui::Ui,
@@ -155,7 +176,8 @@ pub fn violations_list(
         let suggestions_asked = matches!(
             list_use,
             ListUse::Editing {
-                show_suggestions: true
+                show_suggestions: true,
+                ..
             }
         );
         if suggestions_asked && any_suggestions {
@@ -181,8 +203,10 @@ const COLUMN_GAP: f32 = 16.0;
 /// columns of equal width, the starting eleven's left and every other
 /// slot's right, each in `groups`' order, then the team's own group under
 /// both at the full width; a player's rows are short and the dock is wide.
-/// A report reads team by team, so it keeps every group in one column, its
-/// rows only reporting. Returns the player whose row was clicked.
+/// Editing in one column, the players' groups in `groups`' order, then the
+/// team's own. A report reads team by team, so it keeps every group in one
+/// column, its rows only reporting. Returns the player whose row was
+/// clicked.
 fn part(
     ui: &mut egui::Ui,
     team: &TeamViolations<'_>,
@@ -190,17 +214,21 @@ fn part(
     wording: Wording<'_>,
     list_use: ListUse,
 ) -> Option<SelectedPlayer> {
-    match list_use {
-        ListUse::Report => return draw_groups(ui, team, groups.iter(), wording, false),
-        ListUse::Editing { .. } => {}
-    }
+    let rule_col = list_use.rule_column();
+    let one_column = match list_use {
+        ListUse::Report => return draw_groups(ui, team, groups.iter(), wording, false, rule_col),
+        ListUse::Editing { one_column, .. } => one_column,
+    };
     let column_groups = |starting: bool| {
         groups.iter().filter(move |(slot, _)| {
             slot.is_some_and(|slot| team.starting_eleven.contains(&slot) == starting)
         })
     };
     let mut selected = None;
-    if groups.iter().any(|(slot, _)| slot.is_some()) {
+    if one_column {
+        let players = groups.iter().filter(|(slot, _)| slot.is_some());
+        selected = draw_groups(ui, team, players, wording, true, rule_col);
+    } else if groups.iter().any(|(slot, _)| slot.is_some()) {
         let spacing = ui.spacing().item_spacing.x;
         ui.scope(|ui| {
             // `columns_const` spaces its columns by the item spacing; each
@@ -209,9 +237,14 @@ fn part(
             ui.columns_const(|[left, right]| {
                 for (column, starting) in [(left, true), (right, false)] {
                     column.spacing_mut().item_spacing.x = spacing;
-                    if let Some(player) =
-                        draw_groups(column, team, column_groups(starting), wording, true)
-                    {
+                    if let Some(player) = draw_groups(
+                        column,
+                        team,
+                        column_groups(starting),
+                        wording,
+                        true,
+                        rule_col,
+                    ) {
                         selected = Some(player);
                     }
                 }
@@ -219,7 +252,7 @@ fn part(
         });
     }
     let own = groups.iter().filter(|(slot, _)| slot.is_none());
-    draw_groups(ui, team, own, wording, true).or(selected)
+    draw_groups(ui, team, own, wording, true, rule_col).or(selected)
 }
 
 /// `groups` drawn one after the other, each its header then its rows.
@@ -230,12 +263,22 @@ fn draw_groups<'v>(
     groups: impl Iterator<Item = &'v (Option<u8>, Vec<&'v aatf::Violation>)>,
     wording: Wording<'_>,
     selects: bool,
+    rule_col: f32,
 ) -> Option<SelectedPlayer> {
     let mut selected = None;
     for (slot, violations) in groups {
         group_header(ui, team, *slot);
         for violation in violations {
-            if let Some(player) = row(ui, team.team_id, team.players, violation, wording, selects) {
+            let listed = row(
+                ui,
+                team.team_id,
+                team.players,
+                violation,
+                wording,
+                selects,
+                rule_col,
+            );
+            if let Some(player) = listed {
                 selected = Some(player);
             }
         }
@@ -495,6 +538,12 @@ fn group_header(ui: &mut egui::Ui, team: &TeamViolations<'_>, slot: Option<u8>) 
 /// cut with an ellipsis when longer, never wrapping.
 const RULE_COL: f32 = 190.0;
 
+/// The rule name's column in a one-column list (Live AATF's own window): 140
+/// points, since the window is narrow and the sentence beside it needs the
+/// room. The longest rule name, `Weak Foot Accuracy`, draws about 114 points
+/// wide, so none is cut.
+const NARROW_RULE_COL: f32 = 140.0;
+
 /// `text` laid out in `font`/`color`, wrapped as `wrap` says.
 fn layout(
     ui: &egui::Ui,
@@ -509,7 +558,7 @@ fn layout(
     ui.fonts_mut(|f| f.layout_job(job))
 }
 
-/// One row, the draft's `.drow`: the rule's name in `RULE_COL` points of
+/// One row, the draft's `.drow`: the rule's name in `rule_col` points of
 /// severity-colored proportional text, one line cut with an ellipsis (the
 /// draft's `text-overflow: ellipsis`), then `sentence` in the strong text
 /// color, wrapped so a long custom check's text stays readable, and under it
@@ -525,6 +574,7 @@ fn row(
     violation: &aatf::Violation,
     wording: Wording<'_>,
     selects: bool,
+    rule_col: f32,
 ) -> Option<SelectedPlayer> {
     let (rule_color, strong_color, text_color) = {
         let visuals = ui.visuals();
@@ -544,9 +594,9 @@ fn row(
         rule_name(&violation.kind).to_string(),
         font.clone(),
         rule_color,
-        egui::text::TextWrapping::truncate_at_width(RULE_COL),
+        egui::text::TextWrapping::truncate_at_width(rule_col),
     );
-    let column = (ui.available_width() - RULE_COL).max(0.0);
+    let column = (ui.available_width() - rule_col).max(0.0);
     let sentence_galley = layout(
         ui,
         sentence(violation, team_id, wording),
@@ -605,14 +655,14 @@ fn row(
     let mut shapes = vec![
         egui::Shape::galley(rect.min, rule_galley, rule_color),
         egui::Shape::galley(
-            rect.min + egui::vec2(RULE_COL, 0.0),
+            rect.min + egui::vec2(rule_col, 0.0),
             sentence_galley,
             strong_color,
         ),
     ];
     if let Some(galley) = detail_galley {
         shapes.push(egui::Shape::galley(
-            rect.min + egui::vec2(RULE_COL, sentence_height),
+            rect.min + egui::vec2(rule_col, sentence_height),
             galley,
             text_color,
         ));
@@ -1030,15 +1080,27 @@ mod tests {
             Vec<egui::epaint::ClippedShape>,
             Option<SelectedPlayer>,
         ) {
+            let list_use = ListUse::Editing {
+                show_suggestions,
+                one_column: false,
+            };
+            self.list_as(teams, list_use, events)
+        }
+
+        /// `list` drawn as `list_use` says.
+        fn list_as(
+            &mut self,
+            teams: &[TeamViolations],
+            list_use: ListUse,
+            events: Vec<egui::Event>,
+        ) -> (
+            Vec<accesskit::Node>,
+            Vec<egui::epaint::ClippedShape>,
+            Option<SelectedPlayer>,
+        ) {
             let mut selected = None;
             let (nodes, shapes) = self.frame(events, |ui| {
-                selected = Some(violations_list(
-                    ui,
-                    "list",
-                    teams,
-                    official_17(),
-                    ListUse::Editing { show_suggestions },
-                ));
+                selected = Some(violations_list(ui, "list", teams, official_17(), list_use));
             });
             (nodes, shapes, selected.expect("the list ran"))
         }
@@ -2987,6 +3049,108 @@ mod tests {
         assert!(
             headers.iter().all(|&left| left == headers[0]),
             "a report's headers share one left edge: {headers:?}"
+        );
+    }
+
+    /// How far each painted sentence starting with `sentence` stands right
+    /// of its row's left edge: the rule's column.
+    fn rule_columns(
+        nodes: &[accesskit::Node],
+        shapes: &[egui::epaint::ClippedShape],
+        sentence: &str,
+    ) -> Vec<f64> {
+        let rows: Vec<accesskit::Rect> = nodes
+            .iter()
+            .filter(|node| node.role() == Role::Button)
+            .filter_map(accesskit::Node::bounds)
+            .collect();
+        shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(shape) if shape.galley.job.text.starts_with(sentence) => {
+                    Some(shape.pos)
+                }
+                _ => None,
+            })
+            .map(|pos| {
+                let (x, y) = (f64::from(pos.x), f64::from(pos.y) + 1.0);
+                let row = rows
+                    .iter()
+                    .find(|row| row.x0 <= x && x <= row.x1 && row.y0 <= y && y <= row.y1)
+                    .unwrap_or_else(|| panic!("no row holds the sentence at {pos:?}"));
+                x - row.x0
+            })
+            .collect()
+    }
+
+    /// The two-column test's team 734, listed in one column: every group
+    /// shares one left edge, in roster order, so the starter 73402 (slot 1)
+    /// stands between the bench's 73401 (slot 0) above him and 73404 (slot
+    /// 3) under him. The rule's column is 140 points there, 190 in two.
+    #[test]
+    fn one_column_lists_the_groups_in_roster_order_with_a_narrower_rule_column() {
+        let mut file = fixture();
+        for id in [73401, 73404, 73402] {
+            let player = file.player_mut(id).expect("rostered");
+            assert_eq!(player.basic.height, 185, "premise: {id} is tall");
+            player.basic.height = 183;
+        }
+        let players = listed_players(&file, 734);
+        let violations = check(&file, 734);
+        let team = file.team(734).expect("team 734");
+        let teams = [TeamViolations {
+            team_id: 734,
+            team_name: &team.name,
+            players: &players,
+            violations: &violations,
+            starting_eleven: &team.tactics.starting_eleven,
+        }];
+        let height_sentence = "height 183 takes no bracket";
+        let mut window = Headless::new();
+
+        let (nodes, shapes, _) = window.list(&teams, false, vec![]);
+        let two = rule_columns(&nodes, &shapes, height_sentence);
+        assert_eq!(two.len(), 3, "premise: three Height rows");
+        assert!(
+            two.iter().all(|column| (column - 190.0).abs() <= 0.5),
+            "two columns keep the 190-point rule column: {two:?}"
+        );
+
+        let one_column = ListUse::Editing {
+            show_suggestions: false,
+            one_column: true,
+        };
+        let (nodes, shapes, _) = window.list_as(&teams, one_column, vec![]);
+        let first_bench = line_bounds(&nodes, "Player 73401 ");
+        let starter = line_bounds(&nodes, "Player 73402 ");
+        let second_bench = line_bounds(&nodes, "Player 73404 ");
+        assert!(
+            first_bench.x0 == starter.x0 && starter.x0 == second_bench.x0,
+            "one left edge: {first_bench:?}, {starter:?}, {second_bench:?}"
+        );
+        let group_bottom = |header: accesskit::Rect, next: accesskit::Rect| {
+            nodes
+                .iter()
+                .filter(|node| node.role() == Role::Button)
+                .filter_map(accesskit::Node::bounds)
+                .filter(|row| row.y0 >= header.y1 && row.y1 <= next.y0 + 0.5)
+                .map(|row| row.y1)
+                .reduce(f64::max)
+                .expect("the group's rows")
+        };
+        assert!(
+            starter.y0 >= group_bottom(first_bench, starter),
+            "the starter's group under 73401's: {starter:?}, {first_bench:?}"
+        );
+        assert!(
+            second_bench.y0 >= group_bottom(starter, second_bench),
+            "73404's group under the starter's: {second_bench:?}, {starter:?}"
+        );
+        let one = rule_columns(&nodes, &shapes, height_sentence);
+        assert_eq!(one.len(), 3, "premise: three Height rows");
+        assert!(
+            one.iter().all(|column| (column - 140.0).abs() <= 0.5),
+            "one column narrows the rule column to 140: {one:?}"
         );
     }
 

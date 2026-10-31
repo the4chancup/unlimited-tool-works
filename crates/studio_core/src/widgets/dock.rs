@@ -6,6 +6,20 @@
 /// The open dock's smallest height in points, as the draft's divider drag floors at.
 const MIN_HEIGHT: f32 = 60.0;
 
+/// The divider's grip, the draft's `.log-divider::after`: a line this wide and high.
+const GRIP_SIZE: egui::Vec2 = egui::vec2(24.0, 2.0);
+
+/// Paints the grip centred on `panel`'s top edge, where egui's resize edge is: egui
+/// shows that edge only under the pointer, so an open dock gave no sign it could be
+/// resized. Painted by the parent `Ui` after the panel, since the panel's own clips
+/// to its rect and would cut the half above the edge.
+fn paint_grip(ui: &egui::Ui, panel: egui::Rect) {
+    let grip = egui::Rect::from_center_size(egui::pos2(panel.center().x, panel.top()), GRIP_SIZE);
+    // The drafts' `--text`, the plain text grey.
+    let color = ui.visuals().widgets.noninteractive.fg_stroke.color;
+    ui.painter().rect_filled(grip, 1.0, color);
+}
+
 /// A bottom dock's frame: a bottom `Panel` whose header row holds the collapse
 /// chevron and the title, resizable by its divider while open. Collapsed, it is a
 /// non-resizable panel holding the header alone, under a second panel id so the open
@@ -74,14 +88,17 @@ impl BottomDock {
             });
         };
         if expanded {
-            egui::Panel::bottom(self.id)
+            let panel = egui::Panel::bottom(self.id)
                 .resizable(true)
                 .default_size(default_size)
                 .min_size(MIN_HEIGHT)
                 .show(ui, |ui| {
                     header_row(ui);
                     body(ui);
-                });
+                })
+                .response
+                .rect;
+            paint_grip(ui, panel);
         } else {
             // The second id is what keeps the open panel's `PanelState` (its height)
             // for the return.

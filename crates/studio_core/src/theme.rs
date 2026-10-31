@@ -992,6 +992,8 @@ mod tests {
             crate::icons::X,
             crate::icons::WARNING,
             crate::icons::DOWNLOAD_SIMPLE,
+            crate::icons::POP_OUT,
+            crate::icons::DOCK,
         ];
         let ctx = egui::Context::default();
         install(&ctx);

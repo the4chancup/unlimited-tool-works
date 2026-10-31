@@ -1,22 +1,44 @@
-//! The Live AATF dock, the draft's `livePanel`: a `BottomDock` at the
-//! bottom of the view listing the open team's violations under
-//! `N issues · <ruleset>`, re-checked on the shared worker (`aatf_check`)
-//! after every settled edit so the list shrinks as the member fixes them;
-//! a row's click selects the player. The toolbar's toggle is the
-//! `live_aatf` setting (`view.live_aatf`); off, nothing is drawn and no
-//! check starts. Its Show suggestions checkbox is `live_suggestions`: on,
-//! the check asks for the suggestions too, listed under `Suggestions`
-//! after the violations.
+//! The Live AATF list, the draft's `livePanel` and `liveWindow`: a
+//! `BottomDock` at the bottom of the view, or a window of its own over it,
+//! listing the open team's violations under `N issues · <ruleset>`,
+//! re-checked on the shared worker (`aatf_check`) after every settled edit
+//! so the list shrinks as the member fixes them; a row's click selects the
+//! player. The toolbar's toggle is the `live_aatf` setting
+//! (`view.live_aatf`); off, nothing is drawn and no check starts. Where the
+//! list stands is `live_window`: the dock's pop-out icon moves it into the
+//! window, the window's dock icon back. Its Show suggestions checkbox is
+//! `live_suggestions`: on, the check asks for the suggestions too, listed
+//! under `Suggestions` after the violations.
 
+use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{BottomDock, well_frame};
-use team_widgets::violations::ListUse;
+use team_widgets::violations::{ListUse, SelectedPlayer};
 
+use crate::session::rules::TeamCheck;
 use crate::view::aatf_check::{self, CheckKey, TeamsCheck};
 use crate::view::{SaveView, edit_settled};
 
-/// The dock's state on `SaveView` (`view.live`): the dock's frame and the
-/// open team's check.
+/// The pop-out and dock icons' size, the draft's `.live-icon`.
+const ICON_SIZE: f32 = 14.0;
+
+/// The window's first size, the draft's `liveWindow` (460 × 360): narrower
+/// than the dock, so its players' groups stand in one column.
+const WINDOW_SIZE: egui::Vec2 = egui::vec2(460.0, 360.0);
+
+/// How far inside the screen's bottom-right corner the window first stands,
+/// the draft's `right: 16px; bottom: 40px`: where the dock stood, out of the
+/// floating panels' top-right spot.
+const WINDOW_INSET: egui::Vec2 = egui::vec2(16.0, 40.0);
+
+/// The pop-out icon's tooltip and accessible name.
+const POP_OUT_TOOLTIP: &str = "Open Live AATF in a window of its own";
+
+/// The window's dock icon's tooltip and accessible name.
+const DOCK_TOOLTIP: &str = "Put Live AATF back in its dock";
+
+/// The dock's and the window's state on `SaveView` (`view.live`): the
+/// dock's frame and the open team's check, which the window shares.
 pub(super) struct LiveAatf {
     /// The bottom dock's frame: the chevron, the title and the height.
     dock: BottomDock,
@@ -41,14 +63,31 @@ impl LiveAatf {
     }
 }
 
-/// One frame of the dock, while `view.live_aatf` and a save is open: the
+/// What the dock and the window both draw from on a frame: the open file,
+/// the team, the ruleset and the held result.
+struct Listing<'a> {
+    file: &'a EditFile,
+    /// The open team, if any.
+    team_id: Option<u32>,
+    /// The active ruleset's rules, which word the rows.
+    ruleset: &'a aatf::Ruleset,
+    /// The held result, when one was checked under the active ruleset.
+    held: Option<&'a (CheckKey, Vec<TeamCheck>)>,
+    /// A check is running for a newer edit than the held result's.
+    checking: bool,
+    /// The Show suggestions checkbox.
+    suggestions: bool,
+}
+
+/// One frame of Live AATF, while `view.live_aatf` and a save is open: the
 /// open team's check polled and re-spawned for the session's current
-/// revision and ruleset once the edit settles, the header counting the
-/// held result's Error and Warning violations (the draft's `livePanel`
-/// wording) and the body listing them through the shared `results`.
+/// revision and ruleset once the edit settles, then the list in the dock or,
+/// while `view.live_window`, in its own window.
 pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     let SaveView {
         live,
+        live_aatf,
+        live_window,
         live_suggestions,
         session,
         team,
@@ -75,90 +114,220 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     };
     let checking =
         aatf_check::update_check(&mut live.check, ui.ctx(), file, &active.rules, key, settled);
-    let ruleset = &active.rules.ruleset().name;
-    let held = aatf_check::held_result(&live.check, &active.key);
-    live.dock.show(
-        ui,
-        |ui| {
-            // The header after the title (the draft's `livePanel` wording);
-            // a failed check draws no count — the body says why.
-            match held {
-                Some((result_key, checks)) => {
-                    if checks.iter().all(Result::is_ok) {
-                        let issues = aatf_check::issues(checks);
-                        if issues == 0 {
-                            let name = display_name(aatf_check::team_name(
-                                file,
-                                *result_key
-                                    .ids
-                                    .first()
-                                    .expect("a held result checked a team"),
-                            ));
-                            ui.strong(format!("{name} passes {ruleset} with no issues."));
-                        } else {
-                            let plural = if issues == 1 { "issue" } else { "issues" };
-                            ui.strong(format!("{issues} {plural} · {ruleset}"));
-                        }
+    let listing = Listing {
+        file,
+        team_id,
+        ruleset: active.rules.ruleset(),
+        held: aatf_check::held_result(&live.check, &active.key),
+        checking,
+        suggestions: *live_suggestions,
+    };
+    let clicked = if *live_window {
+        let shown = window(ui, &listing);
+        if shown.docked {
+            *live_window = false;
+        }
+        if shown.closed {
+            *live_aatf = false;
+        }
+        shown.clicked
+    } else {
+        let mut clicked = None;
+        live.dock.show(
+            ui,
+            |ui| {
+                headline(ui, &listing);
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if icon_button(ui, studio_core::icons::POP_OUT, POP_OUT_TOOLTIP).clicked() {
+                        *live_window = true;
                     }
-                }
-                None => {
-                    if let Some(id) = team_id {
-                        ui.strong(format!(
-                            "Checking {}\u{2026}",
-                            display_name(aatf_check::team_name(file, id))
-                        ));
-                    }
+                });
+            },
+            |ui| clicked = rows(ui, &listing, false),
+        );
+        clicked
+    };
+    if let Some(player) = clicked {
+        // A listed row's team is one of the open file's.
+        let team_tactics = file
+            .team(player.team_id)
+            .map(|entry| &entry.tactics)
+            .expect("a listed row's team is in the open file");
+        aatf_check::select_player(player, selected, team, filter, team_tactics, tactics);
+    }
+}
+
+/// The header's count line and checking mark, the dock's after its title
+/// and the window's under its title bar (the draft's `liveHeadline`): a
+/// failed check draws no count, since the body says why.
+fn headline(ui: &mut egui::Ui, listing: &Listing<'_>) {
+    let ruleset = &listing.ruleset.name;
+    match listing.held {
+        Some((result_key, checks)) => {
+            if checks.iter().all(Result::is_ok) {
+                let issues = aatf_check::issues(checks);
+                if issues == 0 {
+                    let name = display_name(aatf_check::team_name(
+                        listing.file,
+                        *result_key
+                            .ids
+                            .first()
+                            .expect("a held result checked a team"),
+                    ));
+                    ui.strong(format!("{name} passes {ruleset} with no issues."));
+                } else {
+                    let plural = if issues == 1 { "issue" } else { "issues" };
+                    ui.strong(format!("{issues} {plural} · {ruleset}"));
                 }
             }
-            if checking && held.is_some() {
-                ui.weak("checking\u{2026}");
+        }
+        None => {
+            if let Some(id) = listing.team_id {
+                ui.strong(format!(
+                    "Checking {}\u{2026}",
+                    display_name(aatf_check::team_name(listing.file, id))
+                ));
             }
-        },
-        |ui| {
-            // The list scrolls inside the dock's well (the draft's
-            // `.live-body`): a long one does not grow it. egui's solid
-            // scroll bar stands beside the rows, inside the well, as the
-            // draft's bar does: a floating one lies over each row's right
-            // end, its hover and its sentence's last words.
-            ui.spacing_mut().scroll = egui::style::ScrollStyle::solid();
-            let clicked = well_frame(ui.visuals())
+        }
+    }
+    if listing.checking && listing.held.is_some() {
+        ui.weak("checking\u{2026}");
+    }
+}
+
+/// The rows in their well (the draft's `.live-body`), scrolling inside it so
+/// a long list does not grow it; the players' groups in one column when
+/// `one_column`, the starters' and the bench's side by side otherwise.
+/// Returns the player whose row was clicked.
+fn rows(ui: &mut egui::Ui, listing: &Listing<'_>, one_column: bool) -> Option<SelectedPlayer> {
+    // egui's solid scroll bar stands beside the rows, inside the well, as
+    // the draft's bar does: a floating one lies over each row's right end,
+    // its hover and its sentence's last words.
+    ui.spacing_mut().scroll = egui::style::ScrollStyle::solid();
+    well_frame(ui.visuals())
+        .show(ui, |ui| {
+            egui::ScrollArea::vertical()
+                .id_salt("save_editor_live_results")
+                .auto_shrink([false, false])
                 .show(ui, |ui| {
-                    egui::ScrollArea::vertical()
-                        .id_salt("save_editor_live_results")
-                        .auto_shrink([false, false])
-                        .show(ui, |ui| {
-                            let mut clicked = None;
-                            if team_id.is_none() {
-                                ui.weak("No team is open.");
-                            } else if let Some((result_key, checks)) = held {
-                                clicked = aatf_check::results(
-                                    ui,
-                                    file,
-                                    "aatf_live",
-                                    result_key,
-                                    checks,
-                                    active.rules.ruleset(),
-                                    // The checkbox turned off hides a held
-                                    // result's suggestions at once.
-                                    ListUse::Editing {
-                                        show_suggestions: result_key.suggestions
-                                            && *live_suggestions,
-                                    },
-                                );
-                            }
-                            clicked
-                        })
-                        .inner
+                    if listing.team_id.is_none() {
+                        ui.weak("No team is open.");
+                        return None;
+                    }
+                    let (result_key, checks) = listing.held?;
+                    aatf_check::results(
+                        ui,
+                        listing.file,
+                        "aatf_live",
+                        result_key,
+                        checks,
+                        listing.ruleset,
+                        ListUse::Editing {
+                            // The checkbox turned off hides a held result's
+                            // suggestions at once.
+                            show_suggestions: result_key.suggestions && listing.suggestions,
+                            one_column,
+                        },
+                    )
                 })
-                .inner;
-            if let Some(player) = clicked {
-                // A listed row's team is one of the open file's.
-                let team_tactics = file
-                    .team(player.team_id)
-                    .map(|entry| &entry.tactics)
-                    .expect("a listed row's team is in the open file");
-                aatf_check::select_player(player, selected, team, filter, team_tactics, tactics);
-            }
-        },
+                .inner
+        })
+        .inner
+}
+
+/// A frameless icon-font button (the draft's `liveIconButton`), named for
+/// screen readers by its tooltip, since its glyph names nothing.
+fn icon_button(ui: &mut egui::Ui, glyph: &str, tooltip: &str) -> egui::Response {
+    let response =
+        ui.add(egui::Button::new(egui::RichText::new(glyph).size(ICON_SIZE)).frame(false));
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, tooltip));
+    response.on_hover_text(tooltip)
+}
+
+/// What the window's frame did: its dock icon or its close button clicked,
+/// or a row.
+struct WindowFrame {
+    docked: bool,
+    closed: bool,
+    clicked: Option<SelectedPlayer>,
+}
+
+/// The window, the draft's `liveWindow`: an `egui::Window` titled `Live
+/// AATF`, first `WINDOW_SIZE` at the screen's bottom right, moved by its
+/// title and resized from its edges, as the floating panels are (egui keeps
+/// where the member leaves it). Its title bar holds the dock icon left of
+/// the close button, which turns Live AATF off as the toolbar toggle does;
+/// under it, the dock's count line and the rows in one column.
+fn window(ui: &egui::Ui, listing: &Listing<'_>) -> WindowFrame {
+    let id = egui::Id::unique("save_editor_live_aatf_window");
+    // The square egui gives the title bar's close button, which the dock
+    // icon takes too.
+    let slot =
+        ui.fonts_mut(|fonts| fonts.row_height(&egui::TextStyle::Heading.resolve(ui.style())));
+    let corner = ui.ctx().content_rect().max - WINDOW_INSET;
+    let mut open = true;
+    let mut docked = false;
+    let clicked = egui::Window::new((
+        studio_core::theme::window_title_text("Live AATF"),
+        // Room for the dock icon in the title's own row, so egui centres
+        // the title in the room the two buttons leave rather than the close
+        // button alone.
+        egui::Atom::custom(
+            egui::IdSalt::new("live_aatf_dock_slot"),
+            egui::vec2(slot, 0.0),
+        ),
+    ))
+    .id(id)
+    .default_rect(egui::Rect::from_min_max(corner - WINDOW_SIZE, corner))
+    .collapsible(false)
+    .resizable(true)
+    .open(&mut open)
+    .show(ui.ctx(), |ui| {
+        docked = title_bar_buttons(ui, id, slot);
+        ui.horizontal(|ui| headline(ui, listing));
+        rows(ui, listing, true)
+    })
+    .and_then(|shown| shown.inner)
+    .flatten();
+    WindowFrame {
+        docked,
+        closed: !open,
+        clicked,
+    }
+}
+
+/// The dock icon on the title bar, left of the close button and on its
+/// centre line, and the close button's tooltip. egui's title bar has no
+/// room for a widget of ours, so both go over it from the body: the bar is
+/// found through egui's own drag area (`__title_click`), which spans it up
+/// to the close button's left edge, the close button being an
+/// `icon_width` square centred in a `slot` one. The dock icon, added after
+/// the drag area, takes the clicks over it; the rest of the bar still
+/// drags the window. Returns whether the dock icon was clicked.
+fn title_bar_buttons(ui: &mut egui::Ui, window_id: egui::Id, slot: f32) -> bool {
+    let Some(bar) = ui.ctx().read_response(window_id.with("__title_click")) else {
+        return false;
+    };
+    let bar = bar.rect;
+    let icon = ui.spacing().icon_width;
+    let close = egui::Rect::from_center_size(
+        egui::pos2(bar.max.x + icon / 2.0, bar.center().y),
+        egui::Vec2::splat(icon),
     );
+    let close_slot_left = close.center().x - slot / 2.0;
+    let dock_slot = egui::Rect::from_center_size(
+        egui::pos2(
+            close_slot_left - ui.spacing().item_spacing.x - slot / 2.0,
+            bar.center().y,
+        ),
+        egui::Vec2::splat(slot),
+    );
+    ui.interact(close, window_id.with("close_tooltip"), egui::Sense::hover())
+        .on_hover_text("Turn Live AATF off");
+    // A child the body never allocates: the slot lies above the body, and
+    // allocating it would move the body's cursor and size up to the bar.
+    let mut slot_ui = ui.new_child(egui::UiBuilder::new().max_rect(dock_slot).layout(
+        egui::Layout::centered_and_justified(egui::Direction::TopDown),
+    ));
+    icon_button(&mut slot_ui, studio_core::icons::DOCK, DOCK_TOOLTIP).clicked()
 }
