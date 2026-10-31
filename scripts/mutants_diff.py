@@ -1,4 +1,5 @@
-"""`just mutants-diff [base]`: mutation-test only the lines changed since `base`.
+"""`just mutants-diff [base] [path...]`: mutation-test only the lines changed since `base`,
+under `crates` or the paths given (a crate's folder).
 
 Runs `cargo mutants --in-diff` over the diff from `base` (default HEAD) to the working tree,
 untracked files included, so a review measures the tests of the code under review rather than the whole
@@ -40,6 +41,9 @@ RESULTS = ROOT / "mutants.diff"
 
 def main(argv: list[str]) -> int:
     base = argv[1] if len(argv) > 1 else "HEAD"
+    # A crate's folder narrows the diff to it: since an old base, `crates` as a whole holds
+    # every other crate's changes too (6690 mutants over 20 crates for one crate's 568).
+    paths = argv[2:] or ["crates"]
     # Against the whole working tree as a tree object, not `git diff <base>`,
     # which leaves out untracked files: a new module's mutants would silently
     # go unmeasured unless the tree was staged first (found at 3.8).
@@ -47,7 +51,7 @@ def main(argv: list[str]) -> int:
     # CRLF on Windows).
     tree = mutants.working_tree()
     diffed = subprocess.run(
-        ["git", "diff", base, tree, "--", "crates"],
+        ["git", "diff", base, tree, "--", *paths],
         cwd=ROOT,
         capture_output=True,
     )
@@ -56,7 +60,7 @@ def main(argv: list[str]) -> int:
         return 1
     diff = diffed.stdout
     if not diff.strip():
-        print(f"mutants_diff: no changes under crates/ since {base}")
+        print(f"mutants_diff: no changes under {' '.join(paths)} since {base}")
         return 0
     with tempfile.NamedTemporaryFile("wb", suffix=".diff", delete=False) as f:
         f.write(diff)
