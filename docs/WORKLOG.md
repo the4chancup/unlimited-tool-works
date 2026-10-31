@@ -6165,6 +6165,10 @@ briefs, review loops, gates and mutation runs as for any step.
     (`4cc-studio-temp/dbc6_check_report.txt`, 177 teams, before the change), gaining only the
     new fields, `NearestSystem` warnings and a `BracketQuota` past its quota where a player
     was left without a slot
+    - [ ] cv16a the logic, `Violation`, `NearestSystem`'s sentence, with cv15 (Opus sidekick,
+      `.tmp/0_0_2/brief_cv16a.md`, worktree `wt-cv16`)
+    - [ ] cv16b the detail lines under a row (Live AATF, Multi-team AATF and its copy,
+      `check-aatf`'s `problem`), with cv17
   - [ ] cv17 Multi-team AATF's dialog 900 points wide, its rows wrapping (the maintainer,
     2026-10-31, on the P47 render; `plans/save_editor.md` "Configurable AATF rules", drafted in
     `save_editor.js`): `save_editor` `view/multi_aatf.rs` (`LIST_WIDTH`, the dialog's width,
