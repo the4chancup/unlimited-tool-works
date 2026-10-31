@@ -1073,8 +1073,9 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   teammate too, and a release on the grass writes his spot alone, over a teammate as anywhere
   else: the patched game keeps two starters on one spot or a unit apart (worklog cv14g), so a
   drop on a teammate lands beside or on him, with no corner brackets or fading while held
-  there, and two starters are exchanged by dropping one XI row on the other, or a marker on an
-  XI row, as with the flag off; the snap holds an outfielder anywhere in the stored rows, 0 to 48, the keeper's rows
+  there; only that marker-on-marker swap goes: two starters are still exchanged by dropping
+  one XI row on the other, or a marker on an XI row, and a bench row dropped on a marker still
+  swaps him in, as with the flag off; the snap holds an outfielder anywhere in the stored rows, 0 to 48, the keeper's rows
   included, as 4ccEditor-1's fields allow; the popover's dropdown lists every outfield position, whatever his spot,
   and its X and Y keep his position. The keeper's slot stays fixed and Make GK unchanged. The
   darkening while he is held stays, since where he is rated is still worth seeing when his
@@ -1725,7 +1726,8 @@ SE-GUI-11  GIVEN a player without FPC, his Appearance section open, and the aest
                 whose boots ID is 627 THEN hiding keeps 627; Set FPC invisibility applies the
                 hide preset to every player of the team; a strip setting that breaks hiding is
                 listed in the Appearance section as an interference finding
-SE-GUI-12  GIVEN the team view's Tactics on preset 1
+SE-GUI-12  GIVEN the team view's Tactics on preset 1, and /vg/ League 27, which does not allow
+                illegal formations, the active ruleset
            WHEN a pitch player is dragged to another spot
            THEN the slot's position is the drop point after snapping, undoable, and the saved
                 file holds it; WHEN a bench player is dragged onto a pitch player THEN the two
@@ -1768,10 +1770,11 @@ SE-GUI-45  GIVEN the PES 17 save's team 702 (/a/) on preset 1's Kick-off, its CF
                 THEN his badge stands on y 0, and WHEN he is released on the grass there THEN
                 his slot holds y 0; WHEN his popover is then opened THEN its Position combo
                 lists the twelve outfield positions, CB to CF, and its Y's ⏴ is disabled, and
-                WHEN its Y's ⏵ is clicked THEN his slot holds y 1; WHEN LB is picked, then its
-                Y set to 36 and its X to 60 THEN his slot holds LB at (60, 36); WHEN he is
-                held over the SS's marker at (64, 42) THEN his badge reads LB and the SS
-                carries no corner brackets, and WHEN he is released there THEN his slot
+                WHEN its Y's ⏵ is clicked THEN his slot holds y 1; WHEN LB is picked THEN his
+                slot holds LB, its X and y 1 unchanged, and WHEN its Y is then set to 36 and
+                its X to 60 THEN his slot holds LB at (60, 36); WHEN he is
+                held over the SS's marker at (64, 42) THEN his badge reads LB at full opacity
+                and the SS carries no corner brackets, and WHEN he is released there THEN his slot
                 holds LB at (64, 42) and the SS's slot is unchanged; WHEN the active ruleset is then switched to
                 /vg/ League 27, which does not allow them, and he is held at (42, 30) THEN
                 his badge reads AMF, as in SE-GUI-42, and his slot is as he left it
