@@ -340,4 +340,11 @@ exclude_re = [
     # Pinned by column, the closure's other operators staying measured.
     "pes_savefile/src/interchange/team_toml/team\\.rs:\\d+:32: replace && with \\|\\| in TeamToml::apply",
     "pes_savefile/src/interchange/team_toml/team\\.rs:\\d+:80: replace == with != in TeamToml::apply",
+    # team_widgets: `turf_image` colours a row by the parity of the count of band edges at or
+    # above it (`edge * TURF_SCALE <= y`). `<=` -> `>` counts the other edges, the total less
+    # that count, and every look has an even number of edges (PES 2017 6, PES 2021 10), so the
+    # parity and every pixel stay the same, a row exactly on an edge included. A look with an
+    # odd number of edges makes it killable: re-check this entry when one is added. The
+    # function's only `<=`.
+    "team_widgets/src/pitch/mod\\.rs:\\d+:\\d+: replace <= with > in turf_image",
 ]
