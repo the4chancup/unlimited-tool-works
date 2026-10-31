@@ -5988,6 +5988,8 @@ briefs, review loops, gates and mutation runs as for any step.
       its smaller boxes and circle); the LB dragged to the grass below row 4 lands at X 8,
       Y 4, his popover's Y ⏴ disabled; undone, closed unsaved
       (`.tmp/0_0_1cv/look17_3.png`, `look17_5.png`)
+    - manual: checked 2026-10-31 by the maintainer, the drafts' PES 2017 pitch
+      (`#save_editor/team?save=pes17&pes=2017&selteam=702`): "This all looks good"
     - [x] cv9a an outfielder stops at y 4 (plan, the drop's bullet and the popover's
       steppers; DECISIONS 2026-10-31): the draft (`PITCH.yMin`, checked by
       `.tmp/0_0_1cv/pitch17/floor_check.py`); `team_widgets` `snap` clamps y to 4..=48 and
@@ -6008,6 +6010,12 @@ briefs, review loops, gates and mutation runs as for any step.
     2026-10-31, SE-GUI-26): plan and draft done; `save_editor` `view/open_menu.rs` and the
     toolbar's keys briefed (`.tmp/0_0_1cv/brief_cv10.md`), merged only after the whole-crate
     chain ends
+  - [ ] cv11 the pitch badges' medal outlines no longer blink on every edit (the maintainer,
+    2026-10-31: a dragged player made every outline vanish until the medal run answered):
+    while the run for a new revision is in flight, the badges keep the last answer held for
+    the same team and ruleset; a team or ruleset change still waits for its own answer.
+    `save_editor` `view/tactics.rs`; briefed to sk_cv10 once cv10 is reviewed, same worktree
+    (`.tmp/0_0_1cv/brief_cv11.md`)
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450
