@@ -1473,6 +1473,12 @@ What this editor adds on top of the lib:
   value is refused (exit 2) with the embedded stems listed. Without it a check against a
   built-in ruleset had to go through the settings file or a copy of the ruleset written out
   (DBC7's organizer, checking the DBC6 save, 2026-10-31).
+- **Multi-team AATF's dialog is 900 points wide and its rows wrap.** At 640, the width every
+  other dialog keeps, a row's sentence ran past the list and was cut off (a `BracketQuota` row
+  of the GigaHeight system, and a height row's players). 900 is as wide as the window's
+  960-point minimum leaves room for; the list is the dialog's content width (874), and every
+  row, a sentence as a height row's players, wraps under its own column, the rule's name
+  keeping its own.
 - **The ruleset dropdown** (`spec/save_editor.md` "Configurable AATF rules" for what is
   built): the wheel over the closed combo (`core/gui.md` "The wheel over a value") steps the
   rulesets alone, never running `Import rules file…`, which is a command rather than a value.

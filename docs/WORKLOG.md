@@ -6149,6 +6149,11 @@ briefs, review loops, gates and mutation runs as for any step.
     (`4cc-studio-temp/dbc6_check_report.txt`, 177 teams, before the change), gaining only the
     new fields, `NearestSystem` warnings and a `BracketQuota` past its quota where a player
     was left without a slot
+  - [ ] cv17 Multi-team AATF's dialog 900 points wide, its rows wrapping (the maintainer,
+    2026-10-31, on the P47 render; `plans/save_editor.md` "Configurable AATF rules", drafted in
+    `save_editor.js`): `save_editor` `view/multi_aatf.rs` (`LIST_WIDTH`, the dialog's width,
+    the rows' wrap) → verify: a GigaHeight `BracketQuota` row reads whole in the built dialog at
+    the window's minimum size; brief with cv16 (same views)
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
     every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree

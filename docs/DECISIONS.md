@@ -14571,3 +14571,12 @@ named. A warning rather than a suggestion: suggestions are drawn on request only
 neutral row would have needed a fourth severity.
 Plan: `plans/aatf_rules.md` "The height findings name their players", "Violations in words";
 `plans/save_editor.md` `violations`; worklog cv16.
+
+## 2026-10-31 — save_editor — Multi-team AATF's dialog is 900 wide and its rows wrap
+Decision (maintainer): the Multi-team AATF dialog widens and its rows wrap ("the main report
+lines are being cropped. That's not fine at all"). The lead, applying: 900 points, the
+widest the window's 960-point minimum leaves room for; every row wraps under its column.
+Why: at 640 a long sentence (a height quota row naming the GigaHeight system) was cut off, and
+an organizer copies or reads these rows to fix teams. Wrapping alone would have doubled the
+list's height for most rows; width alone still cuts the longest.
+Plan: `plans/save_editor.md` "Configurable AATF rules"; worklog cv17.

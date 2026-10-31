@@ -172,8 +172,8 @@ system reached after a quota system failed (DBC7's GigaHeight), one `NearestSyst
 SystemId, off: Vec<(BracketId, u8, u8)> }` warning on the team names the failed quota system
 the team misses by the fewest players short (each bracket's quota less its count, where
 positive; ties in the file's order; a system whose `any_player` fails is no candidate) and that
-system's brackets off their quotas, with count and quota: DBC6's /tsab/ gets "Height: Mid 6 of
-5, Tall 5 of 6", one 180 raised to 185, where its GigaHeight row asks for 30 cm cut. A warning,
+system's brackets off their quotas, with count and quota: DBC6's /tsab/ gets "fits no quota
+system; the nearest is Height, with Mid 6 of 5 and Tall 5 of 6", one 180 raised to 185, where its GigaHeight row asks for 30 cm cut. A warning,
 not a suggestion: suggestions are drawn only on request and `check-aatf` prints none, while this
 one is needed exactly when the team fails; not an error, since the height errors above it already
 fail the team. All three are the logic's (`height_findings`, `team_checks`), so they land before
@@ -324,8 +324,8 @@ said `weak_foot` and read alike: the logic's change lands before logic version 1
 height row's players are lines under its sentence (`violationDetail`): a bracket's by the
 height read, tallest first, a player whose own height differs with it after his name (`At 185:
 HELLOHELL, Stack Bros. (189)`); the pool's draws by bracket and centimetres, most first (`6 in
-Tall slots, 10 cm each (60): …`); `NearestSystem` is the system's label and its brackets off
-(`Height: Mid 6 of 5, Tall 5 of 6`). Live AATF and Multi-team AATF draw the lines under the
+Tall slots, 10 cm each (60): …`); `NearestSystem` names the system and its brackets off
+(`fits no quota system; the nearest is Height, with Mid 6 of 5 and Tall 5 of 6`). Live AATF and Multi-team AATF draw the lines under the
 row, in the plain text colour and wrapping; Multi-team AATF's copy indents them under the row's
 line; `check-aatf` appends them to the line's `problem`, each after `; `.
 

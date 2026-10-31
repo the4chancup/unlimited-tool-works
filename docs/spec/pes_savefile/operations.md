@@ -848,7 +848,7 @@ Both are raw dumps of the reference editor's in-memory structs; both parse into 
 ### Texport (read + write)
 
 Texport files are **PES's own in-game team export/import format**. Measured on real files
-(12 PES 16, 34 PES 17, four 18, eleven 19, one 20, five 21; none for 15): the file is a
+(one PES 15, 12 PES 16, 34 PES 17, four 18, eleven 19, one 20, five 21): the file is a
 concatenation of the **save's own records, in the save's own layouts**, so the schema codec
 reads and writes every record and `interchange/texport.rs` adds only the crypto and the layout
 table (`schema/texport.rs`). Two eras:
@@ -871,8 +871,9 @@ table (`schema/texport.rs`). Two eras:
   which a consecutive-id scan reads as two players and loses the other 21. No real roster
   has an empty slot before a filled one (55 texports, 2026-10-15), so slot and packed
   positions agree on every file measured; a gapped roster laid out packed would be refused
-  by the id check, never misread. PES 15 is taken to lay out as 16 does (the same tactics
-  offset and record sizes), unverified. The records are read rather than keeping the target
+  by the id check, never misread. PES 15 lays out as 16 does (the same tactics offset and
+  record sizes): its one real file (team 748 `/sci/`, read 2026-10-31) opens, and written back
+  unedited reproduces its payload and description byte for byte. The records are read rather than keeping the target
   save's team and roster because the file carries them, and the consecutive-id rule they
   replaced was ours, never measured: it is what lost the 21 players.
 - **18-21** (`.ted`, 8128 / 9648 / 14760 / 14820 bytes for 18 / 19 / 20 / 21): plaintext header
@@ -929,7 +930,8 @@ impl Texport {
     pub fn team_mut(&mut self) -> &mut TeamEntry;
     pub fn players_mut(&mut self) -> &mut [PlayerEntry];
     /// The records re-encoded into the plaintext (unmodeled bytes as read), then encrypted:
-    /// XOR with the file's own key on 18-21, the container with `salt` on 15-17.
+    /// XOR with the file's own key on 18-21, the container with `salt` on 15-17, whose
+    /// description takes the team's name at 0x80 (the name the game lists), cleared past it.
     pub fn to_bytes(&self, salt: &[u8; 320]) -> Result<Vec<u8>, TexportError>;
     /// The import document: `TeamToml::from_team` over the texport; on every version the
     /// `[team]` section and the roster's shirt numbers are the file's.
