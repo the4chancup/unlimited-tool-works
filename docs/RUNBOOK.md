@@ -155,7 +155,16 @@ root or an environment variable rather than a scratch path, and a line here or i
 `README.md`. A release candidate takes two: `scripts/build_remapped.py` builds the release exe
 with `just release`'s flags and checks it leaks no local path, and `scripts/make_candidate.py
 <commit>` stages the unpacked bundle from it in `../4cc-studio-temp/candidate-<version>`;
-`scripts/sgrep.py <file> <regex>` greps a draft past its embedded data rows. `.tmp/` is ignored by git: nothing there is reviewed, versioned or found by the
+`scripts/sgrep.py <file> <regex>` greps a draft past its embedded data rows. A review has
+`review_sweep.py <diff>` (the honesty and design sweeps' patterns over the added lines),
+`pure_move_check.py <base> <dir>` (a move changed no code line), `clones.py` (repeated code
+shapes, for the design-health pass) and `acceptance_ids.py <ID or prefix>...` (a scenario's
+definition, citations and manual checks); a release, `win7_imports.py <exe>` (imports Windows 7
+lacks) and `bloat_compare.py <old> <new>` (two `cargo bloat --crates` tables); the bundled fonts,
+`cut_flex.py` and `symbols_used.py` (`resources/fonts/README.md`); a save or a binary,
+`unwesys.py` (inflate WESYS-wrapped files) and `strings.py`; a capture, `crop.py`; a console
+check, `conpty_run.py` (runs a command under a real terminal). Each says its usage in its
+docstring. `.tmp/` is ignored by git: nothing there is reviewed, versioned or found by the
 next session except through a note that names it. **An archived run keeps its summary, not its logs.** A run kept aside (in
 `.tmp/<subphase>/mutants_<step>_<what>/`, before
 the next run overwrites `mutants.out/`) copies only `*.txt` and `outcomes.json`, never the
@@ -165,7 +174,8 @@ grown `.tmp/` to 17 GB by 3.8. Each local run builds in a
 `%TEMP%\studio-mutants\cargo-mutants-4cc-studio-*.tmp` copy of the tree (one fixed parent,
 `LOCAL_TMPDIR`, so one antivirus exclusion covers every run; until 2026-10-10 directly in
 `%TEMP%`), deleted when the run ends normally; a killed run leaves its copy behind
-(some with a multi-GB `target/`), so after stopping one, delete its copy. `.cargo/mutants.toml`
+(some with a multi-GB `target/`), so after stopping one, delete its copy
+(`scripts/rm_mutant_copies.py`, which refuses anything else). `.cargo/mutants.toml`
 sets `gitignore = true` so the copies leave out `.tmp/` and `target/`: before 3.8 each copy
 carried all of `.tmp/`, and two 3.7 runs died of a full disk. The logs alone are large: a
 `pes_savefile` whole-crate run leaves about 20 GiB in `mutants.out/` (5.6b: 8.9 GiB local,

@@ -7,7 +7,8 @@ instances of Roboto Flex's variable file as Google Fonts ships it
 (`github.com/google/fonts`, `ofl/robotoflex/RobotoFlex[GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght].ttf`,
 1,787,292 bytes, SHA-256 `9b523f7d…`), cut by fontTools' instancer at optical size 12.5 (the
 body text's size, the optical size a browser draws it at) and weight 400 and 600, every other
-axis at its default; 96,352 and 97,076 bytes, SHA-256 `219b3036…` and `2cbd1950…`. The drafts
+axis at its default (`scripts/cut_flex.py`, which writes both copies; it reproduces these
+bytes); 96,352 and 97,076 bytes, SHA-256 `219b3036…` and `2cbd1950…`. The drafts
 draw the same two files. Licence: the SIL Open Font License 1.1, `RobotoFlex-OFL.txt` beside
 them.
 

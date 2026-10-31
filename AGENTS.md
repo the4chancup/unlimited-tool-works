@@ -62,8 +62,8 @@ every `pub` item listed with the consumer that justifies it (a crate, the CLI, t
 or a plan section naming one). A crate that reads a file format also gets a **census**: every file of that format on the maintainer's
 machine (found through the Everything index, archives opened) run through read, the semantic
 round trip and `check`, tallied by outcome, each failing class diagnosed before it is fixed or
-recorded as a refusal, and re-run after every fix with a regression check (`.tmp/2_20/model_census/`
-is the template). A phase that changes the Team compiler or the Export upgrader also reruns the
+recorded as a refusal, and re-run after every fix with a regression check (`scripts/census/`: the file list, the tally
+and the regression check; its README says how a run fits them). A phase that changes the Team compiler or the Export upgrader also reruns the
 library parity against Red (`scripts/library_parity/`, `plans/team_compiler/testing.md`), each
 new difference class diagnosed. Fixtures and mutation runs only test the files someone thought to add; the
 first census, at 2.20g, found about 1900 community `.model` files the reader refused. A census of
