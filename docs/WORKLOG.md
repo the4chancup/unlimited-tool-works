@@ -6259,9 +6259,11 @@ briefs, review loops, gates and mutation runs as for any step.
     186 (the maintainer, 2026-10-31): `color_tools` `picker.rs` asks the hex field for the
     popup's whole width (`desired_width(f32::INFINITY)`) in a justified layout, which widens
     the popup and stretches the square and the slider with it; the square and slider at 168,
-    the hex field 74, as drafted (`plans/libs/color_tools.md`, the paragraph on the field) →
-    verify: a test that the open popup's square, slider and frame keep the drafted widths;
-    briefed with cv24 (`.tmp/cv24/brief_cv24.md`, part 2)
+    the popup as wide as its widest row, the hex field spanning it without setting it
+    (`plans/libs/color_tools.md`, the paragraph on the field) → verify: a test that the open
+    popup's square and slider are 168, the popup its widest row plus its frame, the hex field
+    the popup's inner width; briefed with cv24 (`.tmp/cv24/brief_cv24.md`, part 2), reworked
+    in r2 (r1 had taken the draft's swatch size, withdrawn: the app's swatches stay)
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
     every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree

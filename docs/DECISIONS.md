@@ -14672,3 +14672,20 @@ teams the window stopped answering for about two minutes. A whole-save check on 
 long one an organizer rarely wants; a reversed range is a state the clamp makes impossible.
 Plan: `plans/save_editor.md` the bullet "Multi-team AATF's range starts on one team", the
 pictures' range, SE-GUI-41; worklog cv26.
+
+## 2026-10-31 — team_widgets — the event logo is resampled premultiplied
+Decision (lead): the logo's Lanczos3 resample runs on premultiplied pixels, its result handed
+to egui as premultiplied, not on the straight-alpha pixels `dds_convert::resize` takes as they are.
+Why: a transparent pixel's color is whatever the file stored; 1,223 of DBC7's 1,294 transparent
+pixels are black, and a straight resample at a third of the size blends them into the edge as a
+dark fringe.
+Plan: `plans/save_editor.md` "The event logo"; worklog cv24.
+
+## 2026-10-31 — color_tools — the picker keeps egui's swatches, and its hex field spans the popup
+Decision (maintainer): the suggestion and recent swatches keep egui's size (18 points, 8 apart),
+and the hex field spans the popup's width instead of the drafts' 74 pixels; the popup is as wide
+as its widest row (the 168-point square, or a full row of eight recents at 200), the hex field
+taking that width and never setting it.
+Why: the swatches already read well; the maintainer's complaint was the popup over 580 points
+wide, which came from the hex field asking for the room left and setting the popup's width.
+Plan: `plans/libs/color_tools.md`, the paragraph on the field; worklog cv25.
