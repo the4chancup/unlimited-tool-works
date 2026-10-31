@@ -87,7 +87,7 @@ fn the_preview_shortens_the_logos_line_and_the_save_keeps_it_whole() {
     view.show_preview = true;
     let frame = settled(&mut window, &mut view, &ctx);
 
-    let short = "    logo: \"iVBORw0KGgoAAAANSUhEUgAA…\",  // a 10 KB PNG, shortened in this view";
+    let short = "    logo: \"iVBORw0KGgoAAAANSUhEUgAA…\",  // a 9 KB PNG, shortened in this view";
     let drawn_line = frame
         .nodes
         .iter()
