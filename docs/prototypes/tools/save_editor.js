@@ -527,6 +527,11 @@ table.grid.stats-grid td { padding: 2px 6px; }
 /* A height row's players, under it in the plain text colour, wrapping: the
    lists run to ten names. */
 .live-body .drow.detail { white-space: normal; }
+/* Live AATF's two columns of player rows, starters and bench; a row in a
+   column wraps, as the column is half the dock. */
+.live-body .lcols { display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; }
+.live-body .lcol { min-width: 0; }
+.live-body .lcol .drow { white-space: normal; }
 /* Multi-team AATF: a wider window, every row wrapping. */
 .window[data-dlg="multi-aatf"] { max-width: 900px; }
 #multi-rows .drow { white-space: normal; }
@@ -4058,14 +4063,16 @@ function renderMaster() {
 let listScroll = 0;
 // One pass over the row container, so typing keeps the input's focus. A team
 // row heads each team's players; under the filter it stays while its own
-// name matches or any of its players does.
+// name matches or any of its players does, and a team whose name matches
+// lists all its players (a search for a team shows its squad).
 function renderList(rows) {
   rows.innerHTML = "";
   const q = S.filter.trim().toLowerCase();
   if (q) {
     for (const t of curSave().teams) {
-      const hit = t.players.filter(p => matches(p, S.filter));
-      if (hit.length || t.name.toLowerCase().includes(q)) {
+      const named = displayName(t.name).toLowerCase().includes(q);
+      const hit = named ? t.players : t.players.filter(p => matches(p, S.filter));
+      if (hit.length || named) {
         rows.append(teamRow(t));
         for (const p of hit) rows.append(playerRow(t, p));
       }
@@ -4079,11 +4086,17 @@ function renderList(rows) {
 }
 // The team row: the strong colour, the team's id and its two colours as swatches, its
 // dirty dot covering the team's own fields. It never drags and is no drop
-// target; a click selects the team (the view shows it).
+// target; a click selects the team (the view shows it), a double click also
+// sets the team selector to it and clears the filter (the list then shows
+// that team alone).
 function teamRow(team) {
   return h("div", { class: "prow trow" + (isTeamSel() && S.sel.team === team.id ? " on" : ""),
-      "data-team": team.id,
-      onclick: () => { S.sel = { team: team.id }; render(); } },
+      "data-team": team.id, title: "Double-click to filter to this team",
+      onclick: () => { S.sel = { team: team.id }; render(); },
+      ondblclick: () => {
+        S.teamSel = String(team.id); S.filter = ""; S.sel = { team: team.id };
+        listScroll = 0; render(); updateLink();
+      } },
     h("span", { class: "mono weak" }, String(team.id)),
     h("span", { class: "swatch", style: "background:" + shownHex(team.color_1) }),
     h("span", { class: "swatch", style: "background:" + shownHex(team.color_2) }),
@@ -5788,12 +5801,12 @@ function tacticsTab(t) {
     h("div", { class: "row" },
       rangeField(1, max, pre.sliders[key], v => { edit(label, () => { pre.sliders[key] = v; }); render(); })));
   const toggle = (key, label, off, on) => h("div", { class: "tset" }, h("div", {}, label),
-    h("span", { class: "rate" }, [off, on].map(v =>
+    h("span", { class: "rate wheel" }, [off, on].map(v =>
       h("span", { class: "sel" + (pre.style[key] === v ? " on" : ""),
         onclick: () => { if (pre.style[key] !== v) { edit(label, () => { pre.style[key] = v; }); render(); } },
         title: titleCase(v) }, STYLE_SHORT[v] || titleCase(v)))));
   const tri = (key, label) => h("div", { class: "tset" }, h("div", {}, label),
-    h("span", { class: "rate tri" }, TRI_CHOICES.map((name, i) =>
+    h("span", { class: "rate tri wheel" }, TRI_CHOICES.map((name, i) =>
       h("span", { class: "sel" + (pre.sliders[key] === i + 1 ? " on" : ""),
         onclick: () => { if (pre.sliders[key] !== i + 1) {
           edit(label, () => { pre.sliders[key] = i + 1; }); render(); } } }, name))));
@@ -7197,19 +7210,16 @@ function livePanel() {
   const body = h("div", { class: "live-body" + (LIVE.checking ? " checking" : ""), id: "live-rows",
     style: `height:${LIVE.height}px` });
   // The suggestions in their own group after the violations, plain (no
-  // severity colour: a suggestion is no failure).
-  let lastPid = null, inSuggestions = false;
-  for (const [sev, team, pid, rule, fields] of (res && res.rows) || []) {
-    if (sev === "Suggestion" && !inSuggestions) {
-      body.append(h("div", { class: "grp" }, "Suggestions"));
-      inSuggestions = true;
-      lastPid = null;
-    }
-    if (pid !== lastPid) {
-      body.append(pid ? playerHead(pid) : h("div", { class: "grp weak" }, "Team-wide issues"));
-      lastPid = pid;
-    }
-    body.append(h("div", { class: "drow sel " + (sev === "Error" ? "err" : sev === "Warning" ? "warn" : ""),
+  // severity colour: a suggestion is no failure). In each, the players' rows
+  // stand in two columns, the starting eleven's left and the bench's right
+  // (a player's rows are short, the dock wide), and the team's own rows
+  // across both under them.
+  const rows = (res && res.rows) || [];
+  const t = res && res.team;
+  const starters = t ? new Set(t.tactics.starting_eleven.map(i => i + 1)) : new Set();
+  const slotOf = pid => { const p = t && t.players.find(q => q.id === pid); return p ? p.slot : 0; };
+  const rowEls = ([sev, team, pid, rule, fields]) => [
+    h("div", { class: "drow sel " + (sev === "Error" ? "err" : sev === "Warning" ? "warn" : ""),
       onclick: () => {
         if (rule === "FieldedNotA") jumpToCross(team, pid, kvOf(fields));
         else if (pid) jumpToPlayer(team, pid % 100);
@@ -7217,8 +7227,29 @@ function livePanel() {
         render();
       },
       title: pid ? "Select this player" : "Select the team" },
-      h("span", { class: "f" }, ruleName(rule)), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))));
-    body.append(...detailRows(rule, fields, res.team));
+      h("span", { class: "f" }, ruleName(rule)), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))),
+    ...detailRows(rule, fields, t)];
+  // A column's rows under their players' heads, a head again wherever the
+  // player changes (errors come before warnings, so a player can head twice).
+  const column = list => {
+    const col = h("div", { class: "lcol" });
+    let lastPid = null;
+    for (const r of list) {
+      if (r[2] !== lastPid) { col.append(playerHead(r[2])); lastPid = r[2]; }
+      col.append(...rowEls(r));
+    }
+    return col;
+  };
+  for (const [title, section] of [[null, rows.filter(r => r[0] !== "Suggestion")],
+                                  ["Suggestions", rows.filter(r => r[0] === "Suggestion")]]) {
+    if (!section.length) continue;
+    if (title) body.append(h("div", { class: "grp" }, title));
+    const players = section.filter(r => r[2]);
+    if (players.length) body.append(h("div", { class: "lcols" },
+      column(players.filter(r => starters.has(slotOf(r[2])))),
+      column(players.filter(r => !starters.has(slotOf(r[2]))))));
+    const own = section.filter(r => !r[2]);
+    if (own.length) body.append(h("div", { class: "grp weak" }, "Team-wide issues"), ...own.flatMap(rowEls));
   }
   return h("div", { class: "live-panel", "data-panel": "live-aatf" }, liveDivider(), header, body);
 }
