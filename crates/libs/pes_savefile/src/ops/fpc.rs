@@ -169,7 +169,7 @@ mod tests {
             .appearance
             .ingame_face
             .set(IngameFaceField::SkinColor, 3)
-            .expect("read run");
+            .expect("the skin field is in the run");
     }
 
     /// The skin a preset left: 3, as `dressed` set it.

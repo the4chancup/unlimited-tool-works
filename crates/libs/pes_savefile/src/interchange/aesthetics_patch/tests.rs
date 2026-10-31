@@ -256,6 +256,13 @@ fn refusals() {
             },
         ),
         (
+            doc("[[teams]]\nid = 714\nname = \"/co/\"\ncolor = 1\n"),
+            SettingsError::UnknownKey {
+                key: "teams[0].color".to_string(),
+            }
+            .into(),
+        ),
+        (
             doc("[[teams]]\nid = 702\nname = \"/a/\"\n\n[teams.players.5]\n"),
             SettingsError::UnknownKey {
                 key: "teams[0].players.5".to_string(),

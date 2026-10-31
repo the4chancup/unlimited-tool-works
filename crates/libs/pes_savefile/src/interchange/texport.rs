@@ -370,10 +370,10 @@ fn pes17_container(
     })
 }
 
-/// Writes `name` into a PES 2017 container's description at 0x80, the name
+/// Writes `name` into a 15-17 container's description at 0x80, the name
 /// the game lists, clearing whatever an older name left after it. Called
-/// after `write_records`, which refuses a name longer than the team
-/// record's 70-byte field, so it fits the description's 256 bytes there.
+/// after the team record is written, which refuses a name longer than its
+/// 70-byte field, so it fits the description's 256 bytes there.
 fn describe(description: &mut [u8], name: &str) {
     let field = &mut description[0x80..];
     field.fill(0);
@@ -614,7 +614,8 @@ impl Texport {
 
     /// The records re-encoded into the plaintext (unmodeled bytes as read),
     /// then encrypted: XOR with the file's own key on 18-21 — `salt` is
-    /// unused on that path — the container with `salt` on 15-17.
+    /// unused on that path — the container with `salt` on 15-17, whose
+    /// description takes the team's name at 0x80, the name the game lists.
     pub fn to_bytes(&self, salt: &[u8; 320]) -> Result<Vec<u8>, TexportError> {
         match &self.file {
             File::Ted(plaintext) => {
@@ -639,6 +640,7 @@ impl Texport {
                         unreachable!("an 18-21 texport is a `.ted`")
                     }
                 }
+                describe(&mut container.description, &self.team.name);
                 Ok(container.to_bytes(salt)?)
             }
         }
@@ -646,7 +648,7 @@ impl Texport {
 
     /// A PES 2017 container's records, written as `new` writes them
     /// (`write_records`: the coach block's id, each player's own id at the
-    /// appearance-id slot), and the description's name.
+    /// appearance-id slot).
     fn write_pes17(&self, container: &mut SaveContainer) -> Result<(), TexportError> {
         let schema = schema_for(PesVersion::Pes17);
         let old = texport_old(PesVersion::Pes17).expect("PES 2017 has payload offsets");
@@ -668,7 +670,6 @@ impl Texport {
             &self.team,
             self.players.iter(),
         )?;
-        describe(&mut container.description, &self.team.name);
         Ok(())
     }
 
@@ -1151,6 +1152,46 @@ mod tests {
         );
     }
 
+    /// The PES 17 writer needs the payload to reach the last roster slot's
+    /// player record: a payload ending exactly there writes, one byte
+    /// shorter is `RecordSize` naming that end, not a slice panic.
+    #[test]
+    fn a_pes17_payload_must_reach_the_last_slots_player_record() {
+        // Players at 0x510840, 32 roster slots of 188-byte player records:
+        // 0x510840 + 32 * 188 = 0x510840 + 0x1780.
+        const END: usize = 0x511FC0;
+        let texport = Texport::from_bytes(&crate::fixtures::pes17_texport(), None).expect("opens");
+        let File::Old(container) = &texport.file else {
+            panic!("a PES 17 texport is a container");
+        };
+        assert!(
+            container.payload.len() > END,
+            "premise: the fixture is longer"
+        );
+
+        let mut exact = container.clone();
+        exact.payload.truncate(END);
+        texport
+            .write_pes17(&mut exact)
+            .expect("a payload that reaches the last record writes");
+
+        let mut short = container.clone();
+        short.payload.truncate(END - 1);
+        let err = texport
+            .write_pes17(&mut short)
+            .expect_err("one byte short of the last record");
+        assert!(
+            matches!(
+                err,
+                TexportError::Codec(CodecError::RecordSize {
+                    expected: END,
+                    got,
+                }) if got == END - 1
+            ),
+            "{err:?}"
+        );
+    }
+
     /// A save's description reads `Edit Data`, not `Team Export Data`: the
     /// PES 17 fixture save refuses on both entry paths (detected, and asked
     /// for by name).
@@ -1196,12 +1237,11 @@ mod tests {
     /// `team_mut` is written as `new` writes one: the coach block carries
     /// the new id and the description, the name the game lists, the new
     /// name, an old name's longer tail cleared. The fixture is team 736
-    /// `/o/`; /co/ is team 714.
+    /// `/o/`; /bant/ is team 708.
     #[test]
     fn a_pes17_team_edit_reaches_the_coach_block_and_the_description() {
-        let schema = schema_for(PesVersion::Pes17);
-        let old = texport_old(PesVersion::Pes17).expect("PES 2017 offsets");
-        let coach_at = old.team_at + schema.team.size;
+        // The coach block, right after the 480-byte team record at 0x10054.
+        let coach_at = 0x10234;
         // The container's label, then `name` at 0x80, zeros to 384 bytes.
         let described = |name: &[u8]| {
             let mut description = b"Team Export Data 03".to_vec();
@@ -1218,9 +1258,9 @@ mod tests {
             "the fixture's coach"
         );
         assert_eq!(container.description, described(b"/o/"), "the fixture's");
-        // To /co/ (714), then back to /o/ (736), whose shorter name leaves
-        // the "/" of /co/ behind unless the old name is cleared.
-        for (id, name) in [(714, "/co/"), (736, "/o/")] {
+        // To /bant/ (708), then back to /o/ (736), three bytes shorter: a
+        // NUL after the new name alone would leave "t/" of /bant/ behind.
+        for (id, name) in [(708, "/bant/"), (736, "/o/")] {
             let mut texport = Texport::from_bytes(&bytes, None).expect("opens");
             assert_ne!(texport.team().id, id);
             texport.team_mut().id = id;
