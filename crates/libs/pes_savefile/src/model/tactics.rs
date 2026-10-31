@@ -138,8 +138,9 @@ impl TeamTactics {
     /// field the version lacks. Decoded from a zeroed record of the
     /// version's tactics layout, so the schema alone decides what is
     /// present. The fields that name a roster slot (set-piece takers, man
-    /// marking, starting eleven, bench order) are 0xFF instead, the record's
-    /// none: at 0 they would all name roster slot 0.
+    /// marking, starting eleven, bench order, players to join the attack)
+    /// are 0xFF instead, the record's none: at 0 they would all name roster
+    /// slot 0.
     pub fn bare(version: PesVersion) -> TeamTactics {
         let schema = schema_for(version).tactic;
         let record = vec![0; schema.size];
@@ -161,6 +162,7 @@ impl TeamTactics {
         }
         tactics.starting_eleven = [0xFF; 11];
         tactics.bench_order = [0xFF; 21];
+        tactics.players_to_join_attack = [0xFF; 3];
         tactics
     }
 }

@@ -1,6 +1,6 @@
 //! The aesthetics fingerprint: a hash of the ingame-face run normalized by
-//! masking the player-gloves and skin-color bits (`IngameFace::normalized`,
-//! the two bits that overlap fields the comparison lists separately). It is
+//! masking the player-gloves and skin-colour bits (`IngameFace::normalized`,
+//! seven bits of fields the comparison reports on their own). It is
 //! how `ops::compare` says "the face changed" without decoding every facial
 //! parameter, and how a fingerprint printed elsewhere can be checked against
 //! ours.

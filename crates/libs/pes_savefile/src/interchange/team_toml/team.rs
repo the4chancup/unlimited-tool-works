@@ -525,10 +525,8 @@ fn apply_team(
         // `binding` is a u32 in the document but the field is narrower (24
         // bits on PES 17); refuse before `write_team` would have to.
         let width = schema
-            .arrays
-            .iter()
-            .find(|a| matches!((a.make)(0), TeamField::KitSlotTeam(0)))
-            .map_or(32, |a| a.bit_width);
+            .bit_width(TeamField::KitSlotTeam(0))
+            .expect("a record with kit slot numbers stores their team bindings");
         for (i, slot) in kit_slots.iter().enumerate() {
             check_width(&format!("team.kit_slots.{i}.binding"), slot.binding, width)?;
         }
@@ -1022,7 +1020,8 @@ mod tests {
     }
 
     /// `shirt_name_from`: upper-case, colour codes stripped, cut to the
-    /// field's `len - 1` (18 on every version → 17 chars) by characters.
+    /// field's `len - 1` by characters: 18 bytes on PES 15 and 17 to 19
+    /// (17 chars), 16 on PES 16 (15), 61 on PES 20 and 21 (60).
     #[test]
     fn shirt_name_from_uppercases_strips_and_cuts_by_chars() {
         assert_eq!(shirt_name_from("Snuffy", PesVersion::Pes19), "SNUFFY");
@@ -1034,10 +1033,12 @@ mod tests {
             ),
             "SNUFFY"
         );
-        // `ShirtName` is `len: 18` on PES 15 and 19: 17 chars + terminator.
-        let long = "a".repeat(30);
+        // The field's length less its terminator, per version.
+        let long = "a".repeat(80);
         assert_eq!(shirt_name_from(&long, PesVersion::Pes19), "A".repeat(17));
         assert_eq!(shirt_name_from(&long, PesVersion::Pes15), "A".repeat(17));
+        assert_eq!(shirt_name_from(&long, PesVersion::Pes16), "A".repeat(15));
+        assert_eq!(shirt_name_from(&long, PesVersion::Pes21), "A".repeat(60));
         // Accented chars upper-case and count once, not per UTF-8 byte.
         assert_eq!(shirt_name_from("aéü", PesVersion::Pes19), "AÉÜ");
         let accented = "é".repeat(30);
@@ -1222,9 +1223,8 @@ mod tests {
         assert_eq!(&target, team, "nothing was written");
     }
 
-    /// SE-TOML-01's lib half: a team exported and its text imported into a
-    /// fresh copy of the save writes the original payload back byte for
-    /// byte.
+    /// A team exported and its text imported into a fresh copy of the save
+    /// writes the original payload back byte for byte.
     #[test]
     fn an_exported_team_imported_back_writes_byte_identical() {
         let (file, _) = open(PesVersion::Pes21);
@@ -1249,8 +1249,7 @@ mod tests {
         );
     }
 
-    /// SE-TOML-02's lib half: every team of the save exports naming its team,
-    /// and the text of the first, /co/ (714) and the last parses as a Team
+    /// Every team of the save exports naming its team, and the text of the first, /co/ (714) and the last parses as a Team
     /// TOML naming it. The text pass on all 220 took 49 s in a test build;
     /// `every_fixture_team_round_trips_through_the_document` samples it too.
     #[test]
@@ -1271,9 +1270,9 @@ mod tests {
         }
     }
 
-    /// SE-TOML-03's and SE-TOML-08's lib half: an export or an import
-    /// naming a team the save lacks rests on `EditFile::team` answering
-    /// `None` — the lookup the CLI's refusal is built on.
+    /// An export or an import naming a team the save lacks rests on
+    /// `EditFile::team` answering `None`: the lookup the CLI's refusal is
+    /// built on.
     #[test]
     fn a_team_the_save_lacks_is_none() {
         let (file, _) = open(PesVersion::Pes21);

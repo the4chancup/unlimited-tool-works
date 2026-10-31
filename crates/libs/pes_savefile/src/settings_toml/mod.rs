@@ -480,9 +480,7 @@ pub enum SettingsError {
     /// A `PlayerAppearance.bin` row was asked of a version whose game has
     /// none: a pre-Fox game's appearance travels in the savefile (PES 17
     /// reads a row, but its compile writes the savefile instead).
-    #[error(
-        "{version:?}: a pre-Fox appearance travels in the savefile, not in PlayerAppearance.bin"
-    )]
+    #[error("{version}: a pre-Fox appearance travels in the savefile, not in PlayerAppearance.bin")]
     NoAppearanceRow {
         /// The version the row was asked for.
         version: PesVersion,

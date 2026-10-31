@@ -759,8 +759,13 @@ fn a_skill_the_source_version_lacks_is_left_untouched() {
     let (file, _) = open(PesVersion::Pes19);
     let (team, slot) = first_slot(&file);
     let id = team.roster[slot].player_id;
-    // Double Touch: stored on PES 19+, absent on 15/16 (28 skills there).
+    // Double Touch: stored on PES 19+, absent on 15 to 18 (at most 28
+    // skills there).
     const DOUBLE_TOUCH: usize = 28;
+    assert_eq!(
+        crate::schema::first_version_with(PlayerField::Skill(28)),
+        Some(PesVersion::Pes19)
+    );
     assert!(!schema_for(PesVersion::Pes16).player_has(PlayerField::Skill(28)));
     assert!(schema_for(PesVersion::Pes19).player_has(PlayerField::Skill(28)));
 
