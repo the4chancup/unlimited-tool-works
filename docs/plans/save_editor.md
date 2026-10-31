@@ -751,7 +751,7 @@ Win32 original hurt the most):
     | | PES 2017 | PES 2021 |
     |---|---|---|
     | Bands | 7: the inner five 53.3 tall, the top one 58, the bottom one 59.3; the middle one light, centred on the halfway line | 11 equal |
-    | Dark, light | `#1f4b17`, `#2b5c23` | `#2d571d`, `#35602a` |
+    | Dark, light | `#1f4b17`, `#2c5d24` | `#2d571d`, `#35602a` |
     | Grain | 6.8 | 3.5 |
 
   - **Lines**: white at 20% opacity, 2 px wide (canvas y and lengths to the line's centre);

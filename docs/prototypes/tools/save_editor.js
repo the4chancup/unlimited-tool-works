@@ -5163,7 +5163,7 @@ function dimOutsideLit(g, p) {
 // measured draws PES 2021's.
 const PITCH_LOOKS = {
   "2017": { bands: [58, 111.3, 164.7, 218, 271.3, 324.7],
-    dark: [31, 75, 23], light: [43, 92, 35], grain: 6.8, goals: [0, 382], halfway: 191,
+    dark: [31, 75, 23], light: [44, 93, 36], grain: 6.8, goals: [0, 382], halfway: 191,
     circle: 29, box: [130, 52.3], area: [62, 15.7], arc: [28.5, 38] },
   "2021": { bands: Array.from({ length: 10 }, (_, k) => (k + 1) * 384 / 11),
     dark: [45, 87, 29], light: [53, 96, 42], grain: 3.5, goals: [0, 384], halfway: 192,
@@ -5172,7 +5172,9 @@ const pitchLook = () => PITCH_LOOKS[shellPesVersion()] || PITCH_LOOKS["2021"];
 // The turf, painted once per look at the texture's size (480 x 576, half as
 // large again as the canvas): its bands and a fixed grain (seeded uniform noise
 // of the look's luma deviation). The canvas draws it at two thirds with smoothing,
-// as the screen draws the texture, which softens the grain as the game's is.
+// as the screen draws the texture, which softens the grain as the game's is. The
+// browser's scaled draw rounds each sample down, about half a level, so the turf
+// is painted half a level up to keep the drawn mean on the look's colours.
 const TURF = { w: 480, h: 576 };
 const turfCache = new Map();
 function turf() {
@@ -5188,7 +5190,7 @@ function turf() {
     const band = look.bands.filter(edge => edge * scale <= y).length;
     const [r, gr, b] = band % 2 === 0 ? look.dark : look.light;
     for (let x = 0; x < TURF.w; x++) {
-      const n = (rand() - 0.5) * spread, o = (y * TURF.w + x) * 4;
+      const n = (rand() - 0.5) * spread + 0.5, o = (y * TURF.w + x) * 4;
       img.data[o] = r + n; img.data[o + 1] = gr + n; img.data[o + 2] = b + n; img.data[o + 3] = 255;
     }
   }
