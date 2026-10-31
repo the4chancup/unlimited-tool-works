@@ -6343,7 +6343,10 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and
     8.36d, then a proof-of-concept exe for VGL's organizer (no release, no bundle) that
     upgrades and compiles a couple of example teams on PES 2019 → verify: the example teams'
-    players show their compiled faces, boots and gloves in Edit mode on PES 2019
+    players show their compiled faces, boots and gloves in Edit mode on PES 2019. The example
+    teams (the maintainer): /dbg/ and /4ccg/, the old exports `DBG Aesthetics Export VGL26`
+    and `4CCG Aesthetics Export VGL26` in `C:/Data/4cc/Lab/VGL26/`, upgraded
+    against the save `C:/Data/4cc/Saves/EDIT00000000_VGL26`
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
