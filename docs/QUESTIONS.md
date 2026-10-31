@@ -37,7 +37,12 @@ names where the question came from so the context can be read there.
   fewest centimetres under (Height, Manlet, Universal; ties in that order), GigaHeight only
   when none fits: "the first that fits" would read every Manlet team as Height, whose slots
   are all taller, and take away its bonus. Under that reading all four pass and the others
-  keep their system. Allowed, as that rule? Or were the four missed?
+  keep their system. Checked with the real check, each team under its system with that
+  system's quotas set to its counts (`.tmp/0_0_2/cookie_probe_rules.py`): /cookie☆/, /tsab/
+  and /暁Records/ show no error and no warning, /isekai/ only its Medal system error (its
+  gimmick). The organizer's own fork (`DBC7-Editor` `aatf.cpp`, `ee73917`) counts exactly too,
+  in the same order, so it flags all four; its history starts 2026-10-04, for DBC7, so DBC6
+  was checked another way. Allowed, as that rule? Or were the four missed?
 
 ## Cup practice
 

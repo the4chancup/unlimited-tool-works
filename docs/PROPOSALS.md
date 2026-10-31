@@ -87,3 +87,11 @@ Costs: the findings carry their players (`logic.rhai`'s `BracketQuota` and `Extr
 hashed logic, so before logic version 1's freeze or with version 2), the sentences in
 `team_widgets`' violations and the drafts first; a longer row, so the list wraps or folds
 open under the row.
+
+Rendered 2026-10-31 on DBC6's /tsab/ and /暁Records/ in the draft (temporary, reverted; the
+diff `.tmp/0_0_2/p47_render.diff`, the pictures `4cc-studio-temp/dbc6_check/p47_*.png`):
+dimmed lines under each height row, wrapping; an over-full bracket lists all its players
+("7 at 175 for the Manlet bracket's 6 slots: …"), any of them being the one left over; the
+nearest system as a neutral row ("Height: Mid 4 of 5, Manlet 7 of 6"), not counted as an
+issue. A registered keeper at 189 is listed among the 185s, as the check reads him: the
+wording would say so.
