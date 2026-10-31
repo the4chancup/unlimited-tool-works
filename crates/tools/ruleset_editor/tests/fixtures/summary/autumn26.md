@@ -16,7 +16,7 @@ Brackets: Manlet up to 175, Mid 180, Tall 185, Giant 194, Giga 199 cm.
 - **Red** (otherwise): 6 manlet, 7 mid, 10 tall, 0 giant, 0 giga.
 
 ## Every team
-Every player is rated A at his registered position; starters play only where rated A in preset 1; no B ratings; GK is never a second A; age 15 to 50; weight between height − 129 (at least 30) and height − 81; a captain; at least 1 goalkeeper; at most 10 skill cards.
+Every player is rated A at his registered position; starters play only where rated A in preset 1; no B ratings; GK is never a second A; age 15 to 50; weight between height − 129 (at least 30) and height − 81; a captain; at least 1 goalkeeper; at most 10 skill cards; illegal formations allowed.
 
 ## Card groups
 - **Tricks**: Scissors Feint, Flip Flap, Marseille Turn, Sombrero, Cut Behind & Turn, Scotch Move, Rabona, Double Touch, Crossover Turn, Step on Skill, No Look Pass.
