@@ -20,12 +20,13 @@ use crate::tactics::{RosterRow, TacticsView, raw_name};
 /// (`drop_rule::spot_choices`, as the game's Select Position menu lists
 /// them; his own first when the spot offers neither) with Make GK beside
 /// it at its own width, the two filling the popover's width, and the X
-/// (0 to 104) and Y (4 to 48, from `outfield_y_min`) steppers (`stepper`)
-/// and Close. A change of X or Y, typed or stepped, sets his position by
-/// the drop rule at the new spot, as a release there does. Under a
-/// ruleset that allows illegal formations (`illegal_formations`) the
-/// combo lists the twelve outfield positions whatever his spot, Y starts
-/// at 0, and an X or Y change keeps his position. The keeper's slot shows a
+/// (0 to 104) and Y (`outfield_y_min` to 48: 4, or 0 under the flag
+/// below) steppers (`stepper`) and Close. A change of X or Y, typed or
+/// stepped, sets his position by the drop rule at the new spot, as a
+/// release there does. Under a ruleset that allows illegal formations
+/// (`illegal_formations`) the combo lists the twelve outfield positions
+/// whatever his spot, Y starts at 0, and an X or Y change keeps his
+/// position. The keeper's slot shows a
 /// disabled "GK", the two steppers disabled under "The goalkeeper's spot
 /// is fixed" and Make GK disabled. Make GK exchanges the slot's
 /// `starting_eleven` entry with the keeper slot's — the formation slots

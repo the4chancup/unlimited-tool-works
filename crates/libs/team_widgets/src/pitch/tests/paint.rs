@@ -1044,7 +1044,7 @@ fn a_dragged_marker_paints_last_at_the_pointer() {
     let from = marker_point(&nodes, &players, index);
     assert!(
         off(
-            held_centre(canvas, players[index], from, onto),
+            held_centre(canvas, players[index], from, onto, false),
             centres[index]
         ),
         "premise: the drop point is off his own centre"
@@ -1072,7 +1072,7 @@ fn a_dragged_marker_paints_last_at_the_pointer() {
     assert_eq!(badges.len(), 11, "eleven badges, the dragged one's moved");
     near(
         badges.last().expect("eleven badges").center(),
-        held_centre(canvas, players[index], from, onto),
+        held_centre(canvas, players[index], from, onto, false),
         0.5,
     );
     assert!(
@@ -1896,7 +1896,7 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
     }
     // And the dragged marker's badge paints at 35% over him.
     let dragged_badge = egui::Rect::from_center_size(
-        held_centre(canvas, players[dragged], from, over),
+        held_centre(canvas, players[dragged], from, over, false),
         egui::vec2(50.0, 14.0),
     );
     let fill = shapes
@@ -1968,7 +1968,7 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
         "no brackets over the grass"
     );
     let dragged_badge = egui::Rect::from_center_size(
-        held_centre(canvas, players[dragged], from, grass),
+        held_centre(canvas, players[dragged], from, grass, false),
         egui::vec2(50.0, 14.0),
     );
     let fill = shapes
@@ -2009,7 +2009,8 @@ fn under_illegal_formations_a_drag_over_another_marker_marks_no_swap() {
     let canvas = canvas_rect(&nodes);
     let centres = centres_of(canvas, &players);
     let from = marker_point(&nodes, &players, dragged);
-    // Two units right of the target's free point, as the flag-off test
+    // Two units right of the target's free point, as
+    // `a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged`
     // holds it, so the two badges' rects differ.
     let over = marker_point(&nodes, &players, target) + egui::vec2(2.0 * SPOT_XS, 0.0);
     assert_eq!(
@@ -2041,7 +2042,7 @@ fn under_illegal_formations_a_drag_over_another_marker_marks_no_swap() {
         "no brackets on the teammate"
     );
     let dragged_badge = egui::Rect::from_center_size(
-        held_centre(canvas, players[dragged], from, over),
+        held_centre(canvas, players[dragged], from, over, true),
         egui::vec2(50.0, 14.0),
     );
     let fill = shapes

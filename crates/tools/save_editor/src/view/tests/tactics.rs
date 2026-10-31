@@ -518,7 +518,7 @@ fn the_pitch_moves_assigns_and_swaps_on_the_tactics_editor() {
     let mut view = SaveView::new();
     view.open(&path);
     // /vg/ League 27, which does not allow illegal formations: under the
-    // default Autumn 26 a marker dropped on another lands beside him.
+    // default Autumn 26 a marker dropped on another lands beside or on him.
     view.aatf_ruleset = "vgl27".to_owned();
     let mut window = Headless::sized(1600.0, 1400.0);
     open_team_view(&mut window, &mut view, 701);
