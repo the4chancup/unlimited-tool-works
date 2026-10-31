@@ -4,8 +4,10 @@ Unlimited Tool Works 0.0.1
 A test version, for DBC's testers. If anything goes wrong or reads strangely, tell us: that
 is what this version is for.
 
-This version is the Save editor, on the left bar. The other tools there are greyed out,
-because their windows come in a later version.
+This version is the Save editor, on the left bar, with the Ruleset editor below it as a
+work in progress: it builds and edits a cup's rules file, though some of its sections are
+not editable yet. The other tools there are greyed out, because their windows come in a
+later version.
 
 
 The first time
