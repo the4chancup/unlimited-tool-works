@@ -103,6 +103,10 @@ prerequisite, so the cut cannot be checked off without it. The per-slice review 
 stand in for it: each reads one surface against its own sections, and none asks whether the
 shipped whole meets its plan. A rule tied to a phase's close alone left 0.0.1's candidate
 with the maintainer, every slice reviewed and the Save editor never converged (2026-10-30).
+One part of the pass waits for 0.0.1's cut instead of holding it: the whole-crate mutation
+runs of its crates. Every slice 0.0.1 ships had its `mutants-diff`, which tests the mutants
+of the lines it changed, while `save_editor`'s whole-crate run alone measured over 30 hours;
+the runs come first after the cut, and their survivors' tests go into the next release.
 
 **Lead and sidekick.** Sessions run as a lead model that plans, briefs, reviews and talks to the
 user, and a sidekick model (a different family) that implements and runs the gates. The general
