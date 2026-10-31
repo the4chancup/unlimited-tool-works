@@ -2057,9 +2057,9 @@ SE-GUI-44  GIVEN a save open and DBC7, which carries a logo and a page, the acti
                 drawn
 SE-AATF-08 GIVEN SE-AATF-03's save and the command started from a folder holding no file
                 named `vgl27`
-           WHEN check-aatf is run with --rules vgl27, then with --rules nosuch, then from a
-                folder holding a file named `vgl27` that is SE-AATF-07's official ruleset,
-                with --rules vgl27
+           WHEN check-aatf is run with --rules vgl27, then with --rules nosuch, then with
+                --rules naming by its path a file called `vgl27` that is SE-AATF-07's
+                official ruleset
            THEN the first prints SE-AATF-03's VGL27 violation; the second checks nothing,
                 exits 2 and its error names `nosuch` and every embedded ruleset's stem; the
                 third checks against the file: the VGL27 violation is not printed
