@@ -22,11 +22,11 @@ const CLEARANCE: f32 = 8.0;
 /// its right edge `RIGHT` from the window's, its top `TOP` below the
 /// view's. `toolbar_end` is the x where the toolbar's last widget ends;
 /// one reaching within `CLEARANCE` of the logo hides it.
-pub(super) fn show(ui: &mut egui::Ui, view: &SaveView, toolbar_end: f32) {
-    let Some(active) = view.rules.as_ref() else {
+pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView, toolbar_end: f32) {
+    let Some(active) = view.rules.as_mut() else {
         return;
     };
-    let Some(logo) = active.logo.as_ref() else {
+    let Some(logo) = active.logo.as_mut() else {
         return;
     };
     let size = logo.size();
@@ -52,7 +52,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &SaveView, toolbar_end: f32) {
             .max_rect(rect)
             .layout(egui::Layout::right_to_left(egui::Align::Center)),
     );
-    let image = logo.image().alt_text(&ruleset.name);
+    let image = logo.image(ui.ctx()).alt_text(&ruleset.name);
     match &ruleset.page {
         Some(page) => {
             let response = child

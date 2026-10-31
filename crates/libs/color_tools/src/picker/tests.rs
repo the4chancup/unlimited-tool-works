@@ -1933,6 +1933,79 @@ fn the_suggestion_row_shows_only_when_the_host_passes_some() {
     );
 }
 
+/// The suggestions the popup width tests open the popup with.
+const WIDTH_SUGGESTIONS: [[u8; 3]; 3] = [[200, 16, 46], [255, 255, 255], [29, 66, 138]];
+
+/// Opens the popup of a field with `WIDTH_SUGGESTIONS` and `recents` recent colors
+/// (`#000000`, `#1E0000`, … in steps of 30 red); returns the open frame's nodes and the
+/// popup's area width.
+fn open_popup_with_recents(recents: u8) -> (Vec<accesskit::Node>, f32) {
+    let mut window = Headless::new();
+    for index in 0..recents {
+        push_recent(&window.ctx, [index * 30, 0, 0]);
+    }
+    let mut color = [255, 130, 0];
+    let (nodes, _) = window.field(&mut color, &WIDTH_SUGGESTIONS, Vec::new());
+    window.click_at(
+        centre(field_button(&nodes, 0)),
+        &mut color,
+        &WIDTH_SUGGESTIONS,
+    );
+    let (nodes, _) = window.field(&mut color, &WIDTH_SUGGESTIONS, Vec::new());
+    let popup = window
+        .ctx
+        .memory(|memory| {
+            let layer = memory.areas().top_layer_id(egui::Order::Foreground)?;
+            memory.area_rect(layer.id)
+        })
+        .expect("the popup is open");
+    (nodes, popup.width())
+}
+
+/// `node`'s drawn width.
+fn width(node: &accesskit::Node) -> f32 {
+    egui_rect(node).width()
+}
+
+// The popup is as wide as its widest row and no wider: with eight recents that row is
+// theirs, the square and the strip stay 168, and the hex field spans the popup's inner
+// width.
+#[test]
+fn a_full_recents_row_sets_the_popup_width_and_the_hex_field_spans_it() {
+    let (nodes, popup) = open_popup_with_recents(MAX_RECENTS as u8);
+    assert_eq!(
+        width(entry(&nodes, "saturation and value")),
+        168.0,
+        "the square"
+    );
+    assert_eq!(width(entry(&nodes, "hue")), 168.0, "the hue strip");
+    let row = (0..MAX_RECENTS as u8)
+        .map(|index| egui_rect(entry(&nodes, &format_hex([index * 30, 0, 0]))))
+        .reduce(|a, b| a.union(b))
+        .expect("eight recents");
+    // egui's 18-point swatches, 8 apart: 8 × 18 + 7 × 8.
+    assert_eq!(row.width(), 200.0, "the recents row");
+    // The row, egui's menu margin of 6 on each side (the theme keeps it) and the
+    // window stroke of 1.
+    assert_eq!(popup, 214.0, "the popup");
+    assert_eq!(width(hex_field(&nodes)), 200.0, "the hex field");
+}
+
+// With no recents the square is the widest row: the hex field spans it and does not
+// widen the popup past it.
+#[test]
+fn without_recents_the_square_sets_the_popup_width_and_the_hex_field_spans_it() {
+    let (nodes, popup) = open_popup_with_recents(0);
+    assert_eq!(
+        width(entry(&nodes, "saturation and value")),
+        168.0,
+        "the square"
+    );
+    // The square, the menu margin of 6 on each side and the window stroke of 1.
+    assert_eq!(popup, 182.0, "the popup");
+    assert_eq!(width(hex_field(&nodes)), 168.0, "the hex field");
+}
+
 // A click on a suggestion swatch commits its color and closes the popup, like a recent.
 #[test]
 fn a_suggestion_swatch_click_commits_and_closes_the_popup() {
