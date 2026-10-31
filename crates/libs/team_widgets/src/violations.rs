@@ -43,6 +43,11 @@ pub struct TeamViolations<'a> {
     pub players: &'a [ListedPlayer<'a>],
     /// The violations `check_team` returned, in its order.
     pub violations: &'a [aatf::Violation],
+    /// The roster slots of the team's starting eleven. Under
+    /// `ListUse::Editing` the players' groups stand in two columns by it,
+    /// the starters' left and every other slot's right; `ListUse::Report`
+    /// lists them in one column.
+    pub starting_eleven: &'a [u8],
 }
 
 /// The player a row's click selects.
@@ -100,8 +105,11 @@ pub struct Wording<'a> {
 
 /// The AATF results of `teams`, worded as `wording` says (the rules they
 /// were checked against and the checked save's version), grouped per
-/// player, as `list_use` says. Returns the player whose row was clicked
-/// this frame.
+/// player, as `list_use` says. Under `ListUse::Editing` each part (the
+/// violations, then the suggestions) stands the players' groups in two
+/// columns, the starting eleven's left and the bench's right, with the
+/// team's own rows under both; a report lists every group in one column.
+/// Returns the player whose row was clicked this frame.
 pub fn violations_list(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,
@@ -111,7 +119,6 @@ pub fn violations_list(
 ) -> Option<SelectedPlayer> {
     ui.push_id(id_salt, |ui| {
         let mut selected = None;
-        let selects = matches!(list_use, ListUse::Editing { .. });
         for team in teams {
             let groups = issue_groups(team.violations);
             match list_use {
@@ -137,15 +144,8 @@ pub fn violations_list(
                     }
                 }
             }
-            for (slot, violations) in groups {
-                group_header(ui, team, slot);
-                for violation in violations {
-                    if let Some(player) =
-                        row(ui, team.team_id, team.players, violation, wording, selects)
-                    {
-                        selected = Some(player);
-                    }
-                }
+            if let Some(player) = part(ui, team, &groups, wording, list_use) {
+                selected = Some(player);
             }
         }
         let any_suggestions = teams
@@ -161,29 +161,100 @@ pub fn violations_list(
         if suggestions_asked && any_suggestions {
             ui.strong("Suggestions");
             for team in teams {
-                for slot in slot_order(
-                    team.violations
-                        .iter()
-                        .filter(|v| v.severity == aatf::Severity::Suggestion),
-                ) {
-                    group_header(ui, team, slot);
-                    for violation in team
-                        .violations
-                        .iter()
-                        .filter(|v| v.slot == slot && v.severity == aatf::Severity::Suggestion)
-                    {
-                        if let Some(player) =
-                            row(ui, team.team_id, team.players, violation, wording, selects)
-                        {
-                            selected = Some(player);
-                        }
-                    }
+                let groups = suggestion_groups(team.violations);
+                if let Some(player) = part(ui, team, &groups, wording, list_use) {
+                    selected = Some(player);
                 }
             }
         }
         selected
     })
     .inner
+}
+
+/// The gap between the two columns of player groups, the draft's
+/// `column-gap`.
+const COLUMN_GAP: f32 = 16.0;
+
+/// One part of `team`'s list (its violations, or its suggestions), drawn as
+/// `list_use` says: while editing, the players' groups in two top-aligned
+/// columns of equal width, the starting eleven's left and every other
+/// slot's right, each in `groups`' order, then the team's own group under
+/// both at the full width; a player's rows are short and the dock is wide.
+/// A report reads team by team, so it keeps every group in one column, its
+/// rows only reporting. Returns the player whose row was clicked.
+fn part(
+    ui: &mut egui::Ui,
+    team: &TeamViolations<'_>,
+    groups: &[(Option<u8>, Vec<&aatf::Violation>)],
+    wording: Wording<'_>,
+    list_use: ListUse,
+) -> Option<SelectedPlayer> {
+    match list_use {
+        ListUse::Report => return draw_groups(ui, team, groups.iter(), wording, false),
+        ListUse::Editing { .. } => {}
+    }
+    let players = |starting: bool| {
+        groups.iter().filter(move |(slot, _)| {
+            slot.is_some_and(|slot| team.starting_eleven.contains(&slot) == starting)
+        })
+    };
+    let mut selected = None;
+    if groups.iter().any(|(slot, _)| slot.is_some()) {
+        let spacing = ui.spacing().item_spacing.x;
+        ui.scope(|ui| {
+            // `columns_const` spaces its columns by the item spacing; each
+            // column's own content keeps the list's.
+            ui.spacing_mut().item_spacing.x = COLUMN_GAP;
+            ui.columns_const(|[left, right]| {
+                for (column, starting) in [(left, true), (right, false)] {
+                    column.spacing_mut().item_spacing.x = spacing;
+                    if let Some(player) =
+                        draw_groups(column, team, players(starting), wording, true)
+                    {
+                        selected = Some(player);
+                    }
+                }
+            });
+        });
+    }
+    let own = groups.iter().filter(|(slot, _)| slot.is_none());
+    draw_groups(ui, team, own, wording, true).or(selected)
+}
+
+/// `groups` drawn one after the other, each its header then its rows.
+/// Returns the player whose row was clicked.
+fn draw_groups<'v>(
+    ui: &mut egui::Ui,
+    team: &TeamViolations<'_>,
+    groups: impl Iterator<Item = &'v (Option<u8>, Vec<&'v aatf::Violation>)>,
+    wording: Wording<'_>,
+    selects: bool,
+) -> Option<SelectedPlayer> {
+    let mut selected = None;
+    for (slot, violations) in groups {
+        group_header(ui, team, *slot);
+        for violation in violations {
+            if let Some(player) = row(ui, team.team_id, team.players, violation, wording, selects) {
+                selected = Some(player);
+            }
+        }
+    }
+    selected
+}
+
+/// A team's Suggestion violations in the list's order: one group per
+/// slot, in the check's order, as `issue_groups` groups the others.
+fn suggestion_groups(violations: &[aatf::Violation]) -> Vec<(Option<u8>, Vec<&aatf::Violation>)> {
+    let suggestions = || {
+        violations
+            .iter()
+            .filter(|v| v.severity == aatf::Severity::Suggestion)
+    };
+    slot_order(suggestions())
+        .into_iter()
+        .map(|slot| (slot, suggestions().filter(|v| v.slot == slot).collect()))
+        .collect()
 }
 
 /// A team's Error and Warning violations in the list's order: one group
@@ -1124,6 +1195,7 @@ mod tests {
             team_name: &team.name,
             players: &players,
             violations: &violations,
+            starting_eleven: &team.tactics.starting_eleven,
         }];
         let mut window = Headless::new();
         let (nodes, _, selected) = window.list(&teams, false, vec![]);
@@ -1189,12 +1261,14 @@ mod tests {
                 team_name: &team_734.name,
                 players: &players_734,
                 violations: &violations_734,
+                starting_eleven: &team_734.tactics.starting_eleven,
             },
             TeamViolations {
                 team_id: 714,
                 team_name: &team_714.name,
                 players: &players_714,
                 violations: &suggestions_714,
+                starting_eleven: &team_714.tactics.starting_eleven,
             },
         ];
         let mut window = Headless::new();
@@ -1284,6 +1358,7 @@ mod tests {
             team_name: "T",
             players: &players,
             violations: &violations,
+            starting_eleven: &[],
         }];
         let mut window = Headless::new();
         let (nodes, shapes, _) = window.list(&teams, false, vec![]);
@@ -1353,6 +1428,7 @@ mod tests {
             team_name: "/3/",
             players: &players,
             violations: &violations,
+            starting_eleven: &[],
         }];
         let mut window = Headless::new();
         let (nodes, _, _) = window.list(&teams, false, vec![]);
@@ -1397,6 +1473,7 @@ mod tests {
             team_name: &team.name,
             players: &players,
             violations: &violations,
+            starting_eleven: &team.tactics.starting_eleven,
         }];
         let mut window = Headless::new();
         let (nodes, _, _) = window.list(&teams, false, vec![]);
@@ -2410,6 +2487,7 @@ mod tests {
             team_name: "/暁Records/",
             players: &players,
             violations: &violations,
+            starting_eleven: &[],
         }];
         let mut window = Headless::sized(500.0, 400.0);
         let (nodes, shapes) = window.frame(vec![], |ui| {
@@ -2499,6 +2577,7 @@ mod tests {
             team_name: "EMPTY",
             players: &[],
             violations: &[],
+            starting_eleven: &[],
         };
         let violations = [violation(
             Some(2),
@@ -2515,6 +2594,7 @@ mod tests {
             team_name: "/a/",
             players: &players,
             violations: &violations,
+            starting_eleven: &[],
         };
         let teams = [empty, guilty];
         let mut window = Headless::new();
@@ -2557,6 +2637,7 @@ mod tests {
             team_name: "/f/",
             players: &players,
             violations: &violations,
+            starting_eleven: &[],
         }];
         let mut window = Headless::new();
         let (nodes, _, _) = window.list(&teams, false, vec![]);
@@ -2597,6 +2678,7 @@ mod tests {
             team_name: &coded,
             players: &players,
             violations: &violations,
+            starting_eleven: &[],
         }];
         let mut window = Headless::new();
         let (nodes, _, _) = window.list(&teams, false, vec![]);
@@ -2653,6 +2735,7 @@ mod tests {
             team_name: "/3/",
             players: &players,
             violations: &violations,
+            starting_eleven: &[],
         }];
         let mut window = Headless::new();
         let (nodes, shapes, _) = window.list(&teams, false, vec![]);
@@ -2716,6 +2799,7 @@ mod tests {
             team_name: "/a/",
             players: &players,
             violations: &violations,
+            starting_eleven: &[],
         }];
         let mut window = Headless::new();
         let (nodes, _, _) = window.list(&teams, true, vec![]);
@@ -2757,6 +2841,7 @@ mod tests {
             team_name: "/3/",
             players: &players,
             violations: &violations,
+            starting_eleven: &[],
         }];
         let mut window = Headless::new();
         let (nodes, _, _) = window.list(&teams, false, vec![]);
@@ -2799,6 +2884,159 @@ mod tests {
                 slot: 3,
                 fielded: None,
             })
+        );
+    }
+
+    /// The bounds of the one drawn line whose text (a Label's value or a
+    /// Button's label) starts with `start`.
+    fn line_bounds(nodes: &[accesskit::Node], start: &str) -> accesskit::Rect {
+        let found: Vec<accesskit::Rect> = nodes
+            .iter()
+            .filter(|node| {
+                let text = match node.role() {
+                    Role::Label => node.value(),
+                    Role::Button => node.label(),
+                    _ => None,
+                };
+                text.is_some_and(|text| text.starts_with(start))
+            })
+            .filter_map(accesskit::Node::bounds)
+            .collect();
+        assert_eq!(found.len(), 1, "one drawn line starts with {start:?}");
+        found[0]
+    }
+
+    /// The bottom of the lowest player row (a Button: a team row only
+    /// reports) whose left edge is `left`, a column's.
+    fn column_bottom(nodes: &[accesskit::Node], left: f64) -> f64 {
+        nodes
+            .iter()
+            .filter(|node| node.role() == Role::Button)
+            .filter_map(accesskit::Node::bounds)
+            .filter(|bounds| bounds.x0 == left)
+            .map(|bounds| bounds.y1)
+            .reduce(f64::max)
+            .expect("a row in the column")
+    }
+
+    /// The grouping test's team 734 with one starter made short the same
+    /// way: 73401 and 73404 (slots 0 and 3) sit on the bench, and 73402
+    /// (slot 1) starts. While editing, the starter's group stands in the left
+    /// column and the bench's two in the right, both from the same top,
+    /// and the team's own rows under both; a report keeps one column.
+    #[test]
+    fn the_starters_groups_stand_left_of_the_benchs() {
+        let mut file = fixture();
+        for id in [73401, 73404, 73402] {
+            let player = file.player_mut(id).expect("rostered");
+            assert_eq!(player.basic.height, 185, "premise: {id} is tall");
+            player.basic.height = 183;
+        }
+        let players = listed_players(&file, 734);
+        let violations = check(&file, 734);
+        let team = file.team(734).expect("team 734");
+        let eleven = team.tactics.starting_eleven;
+        assert!(eleven.contains(&1), "premise: slot 1 starts");
+        assert!(
+            !eleven.contains(&0) && !eleven.contains(&3),
+            "premise: slots 0 and 3 are on the bench"
+        );
+        let teams = [TeamViolations {
+            team_id: 734,
+            team_name: &team.name,
+            players: &players,
+            violations: &violations,
+            starting_eleven: &team.tactics.starting_eleven,
+        }];
+        let mut window = Headless::new();
+        let (nodes, _, _) = window.list(&teams, false, vec![]);
+        let starter = line_bounds(&nodes, "Player 73402 ");
+        let bench = line_bounds(&nodes, "Player 73401 ");
+        let team_wide = line_bounds(&nodes, "Team-wide issues");
+        assert!(
+            starter.x0 < bench.x0,
+            "the starter's group left of the bench's: {starter:?}, {bench:?}"
+        );
+        let starter_bottom = column_bottom(&nodes, starter.x0);
+        let bench_bottom = column_bottom(&nodes, bench.x0);
+        assert!(
+            bench.y0 < starter_bottom,
+            "the bench's column starts beside the starter's rows: {bench:?}, {starter_bottom}"
+        );
+        assert!(
+            team_wide.y0 >= starter_bottom && team_wide.y0 >= bench_bottom,
+            "the team's own rows under both columns: {team_wide:?}, {starter_bottom}, \
+             {bench_bottom}"
+        );
+
+        let (nodes, _) = window.frame(vec![], |ui| {
+            violations_list(ui, "list", &teams, official_17(), ListUse::Report);
+        });
+        let headers: Vec<f64> = nodes
+            .iter()
+            .filter(|node| {
+                node.role() == Role::Label
+                    && node.value().is_some_and(|text| {
+                        text.starts_with("Player ") || text == "Team-wide issues"
+                    })
+            })
+            .filter_map(accesskit::Node::bounds)
+            .map(|bounds| bounds.x0)
+            .collect();
+        assert_eq!(headers.len(), 4, "three players' headers and the team's");
+        assert!(
+            headers.iter().all(|&left| left == headers[0]),
+            "a report's headers share one left edge: {headers:?}"
+        );
+    }
+
+    /// The suggestions part stands in the same two columns: 734's starters'
+    /// `Unused` rows (slots 9, 10, 14 and 22 all start) left, and those of
+    /// 73401 (slot 0, on the bench), his Weak Foot Usage lowered to 1,
+    /// right.
+    #[test]
+    fn the_suggestions_stand_in_the_same_two_columns() {
+        let mut file = fixture();
+        let player = file.player_mut(73401).expect("rostered");
+        assert_eq!(
+            player.stats.weak_foot_usage, 1,
+            "premise: 73401's Weak Foot Usage is 2"
+        );
+        player.stats.weak_foot_usage = 0;
+        let players = listed_players(&file, 734);
+        let violations = check(&file, 734);
+        let team = file.team(734).expect("team 734");
+        let eleven = team.tactics.starting_eleven;
+        assert!(eleven.contains(&9), "premise: slot 9 starts");
+        assert!(!eleven.contains(&0), "premise: slot 0 is on the bench");
+        let teams = [TeamViolations {
+            team_id: 734,
+            team_name: &team.name,
+            players: &players,
+            violations: &violations,
+            starting_eleven: &team.tactics.starting_eleven,
+        }];
+        let mut window = Headless::new();
+        let (nodes, _, _) = window.list(&teams, true, vec![]);
+        assert!(
+            drawn_lines(&nodes)
+                .contains(&"Unused: Weak Foot Usage 1, where the rules allow 2".to_string()),
+            "premise: 73401's suggestion is listed"
+        );
+        let heading = line_bounds(&nodes, "Suggestions");
+        let starter = line_bounds(&nodes, "Player 73410 ");
+        let bench = line_bounds(&nodes, "Player 73401 ");
+        assert!(
+            starter.y0 > heading.y0 && bench.y0 > heading.y0,
+            "premise: both groups are under the Suggestions heading"
+        );
+        assert!(
+            starter.x0 < bench.x0,
+            "the starter's suggestions left of the bench player's: {starter:?}, {bench:?}"
+        );
+        assert!(
+            bench.y0 < starter.y1 && starter.y0 < bench.y1,
+            "both columns start from the same top: {starter:?}, {bench:?}"
         );
     }
 }
