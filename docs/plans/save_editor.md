@@ -1688,8 +1688,8 @@ SE-GUI-02  GIVEN the PES 17 save open on team 701
            THEN the list shows the matching players across all teams, matched on the
                 color-code-free display name, and selecting one shows him
 SE-GUI-46  GIVEN the PES 17 save open on team 701, ALL picked in the team selector
-           WHEN part of team 718's name that no player's name, shirt name or id holds is typed
-                in the filter box
+           WHEN part of team 718's name that none of its players' names, shirt names or ids
+                holds is typed in the filter box
            THEN team 718's row heads every one of its players; WHEN that row is double-clicked
                 THEN the selector shows team 718, the filter box is empty, the list holds team
                 718 alone and its row is selected; a team row's tooltip reads `Double-click to

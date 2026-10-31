@@ -6177,23 +6177,34 @@ briefs, review loops, gates and mutation runs as for any step.
       `3727eb27`, merged `308c991b`, `gates-changed 1f1e6cf1` green (11 binaries, 1101
       tests); `team_widgets` `violation_detail` and `row`, `save_editor` `session/rules.rs`
       `listed_players` (shared by the list, the copy and the CLI), `messages.rs`, `multi_aatf.rs`;
-      /tsab/ and /暁Records/ print `.tmp/0_0_2/cv16b_expected.txt`. Open: the built-window look
-      (asks for the screen), checkpoint (b)'s review, `mutants-diff f0d4553f`
+      /tsab/ and /暁Records/ print `.tmp/0_0_2/cv16b_expected.txt`. Reviews: SWE-2 r1 4, Astra
+      r1 3 (`a4bfe41b`, `02f5d027`), SWE-2 r2 0 (`.tmp/0_0_2/rulings_cv16.md`). Open:
+      `mutants-diff f0d4553f`
+      - manual: checked 2026-10-31 (release build of `7111fb08`, DBC6 save under DBC7, its hash
+        unchanged): Live AATF on 893 and 897 draws every line of `cv16b_expected.txt` under its
+        row, the long Tall line wrapping back to the sentence's column; captures
+        `.tmp/0_0_2/look_cv16b/07_893.png`, `09_crop.png`
   - [x] cv17 Multi-team AATF's dialog 900 points wide, its rows wrapping (the maintainer,
     2026-10-31, on the P47 render; `plans/save_editor.md` "Configurable AATF rules", drafted in
     `save_editor.js`): `save_editor` `view/multi_aatf.rs` (`LIST_WIDTH`, the dialog's width,
     the rows' wrap) → verify: a GigaHeight `BracketQuota` row reads whole in the built dialog at
     the window's minimum size; brief with cv16 (same views). Done with cv16b: `LIST_WIDTH` 874,
-    the dialog 900 (`multi_team_aatf_is_900_points_wide`); the built-window look with cv16b's
-    lines
-  - [ ] cv18 the filter box also lists the players of a team whose name matches (a
+    the dialog 900 (`multi_team_aatf_is_900_points_wide`)
+    - manual: checked 2026-10-31 with cv16b's look: at the window's minimum (960 x 600 inside),
+      teams 893 to 897, both GigaHeight Height quota rows and the Extra height row read whole,
+      wrapped in the dialog (`.tmp/0_0_2/look_cv16b/14_range.png`)
+  - [x] cv18 the filter box also lists the players of a team whose name matches (a
     collaborator's suggestion, the maintainer's "let's do", 2026-10-31; plan "Team selector",
-    SE-GUI-46): drafted (`renderList`), plan and DECISIONS written; code next
-  - [ ] cv19 a double click on a team row in the player list sets the team combo from ALL to
+    SE-GUI-46): with cv19 (Opus sidekick, `.tmp/cv18/brief_cv18.md`), `be2a73b9`, merged
+    `8ec3a26d`; `session/selection.rs` `list`, its test pinning the squad (the old one pinned a
+    matching team's row alone). SE-GUI-46's GIVEN reworded: 77206 "PRESS /f/" (team 772) holds
+    718's name. Open: SWE-2 and Astra rounds with cv20, cv21, cv24
+  - [x] cv19 a double click on a team row in the player list sets the team combo from ALL to
     that team and clears the filter text (same origin; the maintainer, 2026-10-31); a team
     row's tooltip reads "Double-click to filter to this team", and the help page names the
-    action (plan "Team selector", SE-GUI-46): drafted (`teamRow`), plan and DECISIONS written;
-    code next, with the help topic's line
+    action (plan "Team selector", SE-GUI-46): with cv18, `be2a73b9`; `view/player_list.rs`
+    `team_row` (returns the double click, `show` applies it after the rows), the tooltip's last
+    line, `help/02_window.md`, test `a_teams_name_in_the_filter_lists_its_squad_and_a_double_click_shows_it_alone`
   - [ ] cv20 the wheel steps the sliders, the value boxes beside them, and the two- and
     three-state toggles (same origin; `core/gui.md` "The wheel over a value"); checkboxes stay
     out (the maintainer, 2026-10-31); plan "The wheel over a value", ST-WHEEL-05: drafted (the
@@ -6220,6 +6231,13 @@ briefs, review loops, gates and mutation runs as for any step.
     frames more (`studio_core` `widgets/wheel.rs`), so the lag is a few frames times the frame's
     cost → measure first: a Save editor frame's time on the maintainer's PES 2017 save at Ability
     stats, idle and on a step's frame, headless, release build; then cut where the time goes
+  - [ ] cv26 the wheel over Multi-team AATF's range combos froze the window for about two
+    minutes (found 2026-10-31 in cv16b's built-window look: 42 notches over the first combo,
+    23 over the second, 220 teams in range; PrintWindow waited on it). The likely cause, from reading the code, not measured: each step
+    changes the range, and a new check views the range's teams on the UI thread before its worker runs
+    (`view/aatf_check.rs` `spawn_check`) → measure first, with cv23: one step's frame time
+    over 220 teams, release build; then step without re-checking each intermediate range, or
+    view off the UI thread
   - [ ] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
     logo drawn 28 high skips pixels; resample with `dds_convert`'s Lanczos3 to the box's
