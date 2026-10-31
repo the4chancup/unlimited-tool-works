@@ -1005,6 +1005,46 @@ fn a_tie_on_players_short_names_the_earlier_system() {
     );
 }
 
+/// Under GigaHeight a player no bracket has room for counts toward the
+/// tallest bracket he reaches and draws nothing. Twenty-three 182s reach
+/// Mid (drawing 2) and Manlet (drawing 7), not Tall: the ten last by slot
+/// take Mid, the next six Manlet, and the first seven count in Mid, 17 of
+/// 10, never in Manlet; the pool holds the sixteen placed draws alone, 62.
+#[test]
+fn an_unplaced_player_counts_in_the_tallest_bracket_he_reaches_and_draws_nothing() {
+    let rules = rules();
+    let team = legal_team(&[182; 23], GGSS);
+    let rows: Vec<Violation> = height_rows(&rules, &team)
+        .into_iter()
+        .filter(|row| {
+            matches!(
+                row.kind,
+                ViolationKind::BracketQuota { .. } | ViolationKind::ExtraHeight { .. }
+            )
+        })
+        .collect();
+    let mid: Vec<(u8, u8)> = (0..7).chain(13..23).map(|slot| (slot, 182)).collect();
+    let draws = (7..13)
+        .map(|slot| (slot, "manlet".to_string(), 7))
+        .chain((13..23).map(|slot| (slot, "mid".to_string(), 2)))
+        .collect();
+    assert_eq!(
+        rows,
+        vec![
+            quota("giga", "mid", 17, 10, &mid),
+            quota("giga", "tall", 0, 7, &[]),
+            error(
+                None,
+                ViolationKind::ExtraHeight {
+                    used: 62,
+                    total: 50,
+                    draws,
+                }
+            ),
+        ]
+    );
+}
+
 /// A quota system whose `any_player` holds for no player is no candidate:
 /// with Height asking for a player of 200 or more, /tsab/'s nearest is
 /// Manlet, 6 short (five Tall, one Mid).
