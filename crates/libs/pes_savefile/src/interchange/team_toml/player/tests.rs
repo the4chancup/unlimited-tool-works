@@ -1434,7 +1434,9 @@ fn a_key_the_version_lacks_emits_its_commented_neutral_line() {
 }
 
 /// Stored-ranges mode is bounded by the field's widest bit width: neck
-/// length's 4 bits refuse 20 (stored 27) with the width's range.
+/// length's 4 bits refuse 20 (stored 27), and the refusal names the
+/// written number and the width in the file's units — the signed key's
+/// stored 0 to 15 less its 7.
 #[test]
 fn a_stored_value_past_the_fields_widest_width_is_out_of_range() {
     use crate::settings_toml::SettingsError;
@@ -1444,19 +1446,23 @@ fn a_stored_value_past_the_fields_widest_width_is_out_of_range() {
     assert!(
         matches!(
             err,
-            TeamTomlError::Settings(SettingsError::OutOfRange { ref range, .. })
-                if range == "0 to 15"
+            TeamTomlError::Settings(SettingsError::OutOfRange {
+                value: 20,
+                ref range,
+                ..
+            }) if range == "-7 to 8"
         ),
         "{err:?}"
     );
 }
 
 /// Stored-ranges mode bounds a 1-based and a plus-one key by the stored
-/// width too, where `ingame_face.toml` keeps the editor ranges. PES 15's
-/// hair variation is 1 to 82 in the editor and 8 bits stored: 83 (stored
-/// 82) is accepted. Wave level is -1 to 6 in the editor, stored plus one in
-/// 3 bits, so the editor's top, 6, is the width's top: one more is refused
-/// with the width's range, in stored units.
+/// width too, where `ingame_face.toml` keeps the editor ranges. A refusal
+/// names the number the file wrote and the width in the file's units.
+/// PES 15's hair variation is 1 to 82 in the editor and 8 bits stored:
+/// 256 (stored 255) is accepted, 257 refused "1 to 256". Wave level is
+/// -1 to 6 in the editor, stored plus one in 3 bits: 7 is refused
+/// "-1 to 6", which the width and the editor range spell alike here.
 #[test]
 fn a_one_based_or_plus_one_key_is_bounded_by_its_stored_width() {
     use crate::settings_toml::{IngameFaceSettings, SettingKey, SettingsError, get_appearance};
@@ -1470,17 +1476,39 @@ fn a_one_based_or_plus_one_key_is_bounded_by_its_stored_width() {
         stored("pes15_variation = 83", SettingKey::Pes15HairVariation),
         Some(82)
     );
-    assert_eq!(stored("wave_level = 6", SettingKey::HairWaveLevel), Some(7));
-    let err = TeamToml::parse("[players.01.appearance.hair]\nwave_level = 7\n")
-        .expect_err("past the 3 bits");
-    assert!(
-        matches!(
-            err,
-            TeamTomlError::Settings(SettingsError::OutOfRange { ref key, value: 8, ref range })
-                if key == "players.01.appearance.hair.wave_level" && range == "0 to 7"
-        ),
-        "{err:?}"
+    assert_eq!(
+        stored("pes15_variation = 256", SettingKey::Pes15HairVariation),
+        Some(255)
     );
+    assert_eq!(stored("wave_level = 6", SettingKey::HairWaveLevel), Some(7));
+    for (text, key, value, range) in [
+        (
+            "wave_level = 7",
+            "players.01.appearance.hair.wave_level",
+            7,
+            "-1 to 6",
+        ),
+        (
+            "pes15_variation = 257",
+            "players.01.appearance.hair.pes15_variation",
+            257,
+            "1 to 256",
+        ),
+    ] {
+        let err =
+            TeamToml::parse(&format!("[players.01.appearance.hair]\n{text}\n")).expect_err(text);
+        assert!(
+            matches!(
+                err,
+                TeamTomlError::Settings(SettingsError::OutOfRange {
+                    key: ref got_key,
+                    value: got_value,
+                    range: ref got_range,
+                }) if got_key == key && got_value == value && got_range == range
+            ),
+            "{text}: {err:?}"
+        );
+    }
 
     for (text, range) in [
         ("pes15_variation = 83", "1 to 82"),
@@ -1577,22 +1605,26 @@ fn a_number_past_the_target_fields_width_is_refused() {
 }
 
 /// Hostile integers reach the stored-width check through checked math:
-/// the `value + 7` / `value - 1` shifts of Signed7 and OneBased keys do
-/// not overflow-panic.
+/// the shifts of Signed and OneBased keys do not overflow-panic, and the
+/// refusal names the written integer and the range in the file's units.
 #[test]
 fn extreme_integers_are_out_of_range_not_a_panic() {
     use crate::settings_toml::SettingsError;
 
-    for (table, key, value) in [
-        ("physique", "neck_length", "9223372036854775807"),
-        ("motion", "hunching_dribbling", "-9223372036854775808"),
+    for (table, key, value, range) in [
+        ("physique", "neck_length", i64::MAX, "-7 to 8"),
+        ("motion", "hunching_dribbling", i64::MIN, "1 to 8"),
     ] {
         let doc = format!("[players.01.appearance.{table}]\n{key} = {value}\n");
         let err = TeamToml::parse(&doc).expect_err("out of range");
         assert!(
             matches!(
                 err,
-                TeamTomlError::Settings(SettingsError::OutOfRange { .. })
+                TeamTomlError::Settings(SettingsError::OutOfRange {
+                    value: got_value,
+                    range: ref got_range,
+                    ..
+                }) if got_value == value && got_range == range
             ),
             "{key} = {value}: {err:?}"
         );
