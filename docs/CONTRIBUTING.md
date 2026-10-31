@@ -43,8 +43,8 @@ Placement:
   and `start` keys, but drafting freely comes first: a link to a section the drafts no longer
   have opens the tool at its first section.
   `docs/web/crate_map.html` draws every crate and the
-  workspace crates each one uses, in layers from the binary down to the libs that use nothing
-  (hover a crate to see its arrows). A commit that adds a crate or changes the workspace
+  workspace crates each one uses, in layers from the binary down to the libs, each lib as low
+  as it can go or, with the page's button, as high (hover a crate to see its arrows). A commit that adds a crate or changes the workspace
   dependencies runs `just crate-map` to redraw it; no gate checks it, so a missed run only
   leaves the map stale until the next. The map shows each crate's Cargo.toml `description` on
   one line above the chart, and the recipe refuses one too long for it, naming the manifest.
