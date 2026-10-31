@@ -6075,9 +6075,9 @@ briefs, review loops, gates and mutation runs as for any step.
     (save_editor.js, ruleset_editor.js), then slices: the `aatf` field and built-ins (no
     mutation run holds it), the Ruleset editor, then `save_editor`/`team_widgets` after the
     whole-crate chain
-    - [ ] reviews of the plan: SWE-2 S1 7 of 8, S2 5 of 6, S3 2 of 3 accepted (the loop
-      ends; `c6889435`, `08569b10`, then S3's; `.tmp/0_0_1cv/rulings_cv14.md`). Astra next,
-      after 09:00 on Codex `own` (Devin `work` spends its last weekly usage on cvA)
+    - [x] reviews of the plan: SWE-2 S1 7 of 8, S2 5 of 6, S3 2 of 3 accepted (the loop
+      ends; `c6889435`, `08569b10`, then S3's; `.tmp/0_0_1cv/rulings_cv14.md`). Astra A1 4 of
+      5 (`27f0a0d8`), its loop ends; SWE-2 S4 0 of 4: the plan's review is done
     - [x] cv14a the field, the built-ins, the writer, the summary line (Opus sidekick; lead
       checks green: aatf 405, ruleset_editor 151 tests): `f8e6b70b`, merged `b83ab5bd`.
       Files: `aatf/{rulesets/{autumn26,dbc7}.rhai,src/{ruleset/{mod.rs,tests/schema.rs},
