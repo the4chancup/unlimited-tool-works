@@ -249,9 +249,10 @@ exclude_re = [
     "team_widgets/src/violations\\.rs:\\d+:\\d+: replace > with >= in bound",
     # pes_savefile: `text_spans`' character walk
     # `end < bytes.len()` -> `<=` is equivalent: `is_char_boundary(len)` is true, so at
-    # `end == len` the loop's other test ends it at the same place. Pinned by line and column:
-    # the function's two other `<` (the `\x11c`/`\x11d` look-aheads) stay measured.
-    "pes_savefile/src/model/names\\.rs:112:23: replace < with <= in text_spans",
+    # `end == len` the loop's other test ends it at the same place. Pinned by column, not line
+    # (the line drifted once, 112 to 127): the function's two other `<` (the `\x11c`/`\x11d`
+    # look-aheads) sit further right and stay measured.
+    "pes_savefile/src/model/names\\.rs:\\d+:23: replace < with <= in text_spans",
     # save_editor: `odd_seed`'s seed is
     # `nanos ^ secs | 1`: `^` -> `&` or `|` still yields an odd seed, the
     # seed's only requirement (a zero state would draw 1 forever); which odd
