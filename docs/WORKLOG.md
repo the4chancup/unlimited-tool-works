@@ -6261,6 +6261,18 @@ briefs, review loops, gates and mutation runs as for any step.
     2026-10-31 in cv16b's look, `.tmp/0_0_2/look_cv16b/09_crop.png`: "Extra height" on
     `widgets.hovered.bg_fill`; `team_widgets` `row_paint`) → compare the draft's `.drow:hover`
     first; a change is drafted, rendered and planned before code
+  - [ ] cv28 Live AATF in a window of its own, embedded (a collaborator's suggestion; the
+    maintainer, 2026-11-01, for 0.0.1): the pop-out and dock icons (Phosphor's arrow out of
+    and into a square, `resources/icons/pop-out.svg`, `dock.svg`, U+E5DE and U+E5DF, the
+    font built), the one-column window, `live_window`; with it the bottom dock's grip (the
+    log's and Live AATF's divider, ST-LOG-04). Drafted (`save_editor.js` `livePanel`,
+    `liveWindow`, `liveList`; `index.html` `.log-divider::after`; renders
+    `.tmp/cv28/look/`); plan `plans/save_editor.md` "Live AATF" (its own window), SE-GUI-48;
+    `plans/core/gui.md` "Log panel" → verify: SE-GUI-48 and ST-LOG-04's grip in headless
+    tests; the window's look against the draft in a built window. Also drafted with it: the
+    drafts draw egui's scroll-area fade (`index.html` `scrollFadesApply`), and a team row's
+    double click counted by time in the draft (the browser lost it to the first click's
+    redraw; the app counts its own)
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
     logo drawn 28 high skips pixels; resample with `dds_convert`'s Lanczos3 to the box's
@@ -6477,6 +6489,13 @@ briefs, review loops, gates and mutation runs as for any step.
     file offset 0x1b3c89c, measured 2026-10-31); PES 2015's pair on G: as a second reading;
     `PES2017.exe.old` (2016-10-20) is the release exe. Then in PES 2016's unpacked exe;
     confirmed in game on `.old5`; then the plan's rule, its Acceptance, and the slice
+- [ ] after 0.0.2: Live AATF in a native window of its own (the maintainer, 2026-11-01; the
+  embedded one is cv28): an egui viewport (`show_viewport_immediate`, the embedded window as
+  its fallback where the platform has no second window), not always-on-top (desktop-wide, so
+  it would cover other programs; a member moves it off Studio's window instead) → first
+  measure what a second viewport costs per frame on the maintainer's machine, and what focus
+  and the keyboard shortcuts do across the two windows; then the plan's paragraph, its
+  scenario and a slice
 
 ### Phase 10 — Music tools
 

@@ -29,8 +29,10 @@ at the codepoint `studio_core`'s icon constants (`icons.rs`) name, and the font 
 tables, so text never turns into an icon. Its metrics (1024 units per em, ascent 960,
 descent -64, every advance 1024) are Phosphor's, the font the rail was first measured in.
 Six glyphs are Phosphor Icons' regular weight copied point for point (help, settings,
-dismiss, warning, download and the Stadium compiler's buildings), and the Music player, the
-Music export editor and the Team creator draw Phosphor's notes and figures; licence below.
+dismiss, warning, download and the Stadium compiler's buildings), two are Phosphor's
+arrow-square-out and arrow-square-in (a dock's pop-out and dock icons, at U+E5DE and U+E5DF,
+codepoints of our own), and the Music player, the Music export editor and the Team creator
+draw Phosphor's notes and figures; licence below.
 
 ## Licence of the Phosphor glyphs in `icons.ttf`
 

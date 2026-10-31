@@ -14700,3 +14700,33 @@ backup) go to `scripts/`.
 Why: `scripts/` is what a maintainer or contributor without an agent runs; tools that exist
 only to drive Claude sessions would read as the project's machinery and drift with it.
 Plan: `RUNBOOK.md` "The scratch folder"; the earlier entry of the same day on `scripts/`.
+
+## 2026-11-01 — save_editor — Live AATF opens in an embedded window of its own, one column
+Decision (maintainer, on a collaborator's suggestion): for 0.0.1, Live AATF's list can leave
+its dock for an `egui::Window` over the view: a pop-out icon at the dock header's right end,
+in the window a dock icon left of the close button (Phosphor's arrow-square-out and
+arrow-square-in, at U+E5DE and U+E5DF of the icon font), the players' groups in one column.
+The lead, applying: the window's close button turns Live AATF off, as the toolbar toggle
+does; where the list stands (window or dock) is remembered (`live_window`); the window opens
+460 × 360 at the view's bottom right, its rule column 140 points. A native window (egui's
+viewports) comes after 0.0.2, without always-on-top.
+Why: an embedded window, not a native one, because it needs no second viewport (a second
+native window repaints apart, has its own focus and shortcuts, and is the costly part to
+build); not always-on-top, because egui's level is desktop-wide and covers other programs,
+and a member moves the window off Studio's instead (the maintainer). One column, not the
+dock's two, because the window opens narrower than the dock and two columns would wrap
+every sentence. The close button turns the check off rather than docking it back, because
+the dock icon already docks it, and a close that left the list on in the dock would make
+two buttons do one thing; the next turn-on reopens the window, so nothing is lost.
+Plan: `plans/save_editor.md` "Configurable AATF rules", the Live AATF bullet ("Its own
+window"), SE-GUI-48; worklog cv28 and the after-0.0.2 item.
+
+## 2026-11-01 — studio_core — a bottom dock's divider carries a grip; the main UI stays flat
+Decision (maintainer): the bottom dock's divider (the log's and Live AATF's) draws a grip at
+its middle, a 24 × 2 line in the resting text grey; the main UI draws no shadow (dialogs,
+floating windows and popups keep egui's); egui 0.37's scroll-area fade stays (first asked to
+go, then kept), and the drafts draw it too.
+Why: egui shows a panel's resize edge only under the pointer, so an open dock gave no sign it
+could be resized. The fade is a gradient, not a shadow, and it says a list goes on; the
+drafts lacked it, so the drafts gain it rather than the app losing it, keeping the two alike.
+Plan: `plans/core/gui.md` "Log panel" and ST-LOG-04 (the grip), the theme row (the fade).
