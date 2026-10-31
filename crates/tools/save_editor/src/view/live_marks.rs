@@ -156,6 +156,7 @@ pub(super) fn marked_field(kind: &aatf::ViolationKind) -> Option<MarkedField> {
         | K::BracketQuota { .. }
         | K::MedalSystem { .. }
         | K::ExtraHeight { .. }
+        | K::NearestSystem { .. }
         | K::Captain
         | K::Goalkeepers { .. }
         | K::TeamSetting { .. }

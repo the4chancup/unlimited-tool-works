@@ -235,7 +235,7 @@ UTW save-editor export-toml ./EDIT00000000 --all-teams --out-dir ./teams
 UTW save-editor import-toml ./aaa.toml --base ./EDIT00000000 --out ./EDIT_new   # patch the base save
 UTW save-editor apply-patch ./aesthetics_patch.toml --base ./EDIT00000000 --out ./EDIT_new   # the compiler's patch
 UTW save-editor diff ./a_save ./b_save [--aesthetics | --gameplay] [--json]
-UTW save-editor check-aatf ./EDIT00000000 [--teams 701,705-710] [--rules ./vgl27.4ccrules]
+UTW save-editor check-aatf ./EDIT00000000 [--teams 701,705-710] [--rules ./vgl27.4ccrules | --rules dbc7]
 UTW save-editor export-teams-list ./EDIT00000000 [--yes]     # merge the save's team names/IDs into data/teams_list.txt
 ```
 
@@ -313,7 +313,9 @@ The commands:
   copy of that file name in the data directory's `rules/` that loads, else the first embedded
   ruleset, Autumn 26, with the warning line `aatf_ruleset_gone` (a copy deleted or edited
   until it no longer loads; the check still runs). `--rules`, a command-line path, is relative
-  to the current directory.
+  to the current directory; when no file has that name, it is an embedded ruleset's stem, the
+  name the `aatf_ruleset` setting stores (`--rules dbc7`), and a value that is neither is
+  refused (exit 2) with every embedded stem listed. A file of that name wins over the stem.
 - `export-teams-list` prints the merge summary (added / kept / overridden / unresolved) and stops
   unless `--yes` is given; a change behind an unresolved conflict is dropped, as for the updater
   merge (`libs/teams_list.md`). An unwritable data directory reports `teams_list_read_only` and

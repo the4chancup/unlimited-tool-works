@@ -82,9 +82,9 @@ fn normalized(rules) {
 fn check_team(team) {
     let rules = normalized(global::RULESET);
     let found = [];
-    let system = rules.height_system(team);
-    let read = [];
-    for player in team.players { read.push(rules.read_player(team, system, player)); }
+    let reading = rules.height_reading(team);
+    let system = reading.system;
+    let read = rules.read_team(team, system);
     // Every player is read before any is checked: a height hint names the brackets with
     // room, which the whole team's reading decides.
     let room = rules.height_room(system, read);
@@ -97,7 +97,7 @@ fn check_team(team) {
         }
         found += rules.player_checks(team, system, r.player, r.tier, r.profile, room);
     }
-    found += rules.team_checks(team, system, read);
+    found += rules.team_checks(team, system, read, reading.failed);
     if is_def_fn("custom_checks", 1) {
         found += custom_checks(team);
     }
@@ -260,21 +260,40 @@ fn rated_at(positions, rating) {
 // or a tier a special gives under one system count toward that system's quotas. `()` when
 // no system holds; `this` is the ruleset.
 fn height_system(team) {
+    this.height_reading(team).system
+}
+
+// `height_system`'s answer as `system`, and as `failed` each `by_quotas` system tried
+// before it (its `any_player` held, its checks found something) as `#{ id, findings }`,
+// `findings` being `height_findings` with the team read under that system, in the file's
+// order. `this` is the ruleset.
+fn height_reading(team) {
+    let failed = [];
     for system in this.heights.systems {
-        let cond = table(system, "any_player");
-        if cond.keys().len() > 0 {
-            let any = false;
-            for player in team.players {
-                if team.condition_holds((), player, (), (), cond) { any = true; break; }
-            }
-            if !any { continue; }
-        }
-        if !flag(system, "by_quotas") { return system; }
-        let read = [];
-        for player in team.players { read.push(this.read_player(team, system, player)); }
-        if this.height_findings(system, read).len() == 0 { return system; }
+        if !any_player_holds(team, system) { continue; }
+        if !flag(system, "by_quotas") { return #{ system: system, failed: failed }; }
+        let findings = this.height_findings(system, this.read_team(team, system));
+        if findings.len() == 0 { return #{ system: system, failed: failed }; }
+        failed.push(#{ id: system.id, findings: findings });
     }
-    ()
+    #{ system: (), failed: failed }
+}
+
+// Whether `system`'s `any_player` holds for some player of `team` (empty: always).
+fn any_player_holds(team, system) {
+    let cond = table(system, "any_player");
+    if cond.keys().len() == 0 { return true; }
+    for player in team.players {
+        if team.condition_holds((), player, (), (), cond) { return true; }
+    }
+    false
+}
+
+// Every player of `team` read under `system` (`read_player`); `this` is the ruleset.
+fn read_team(team, system) {
+    let read = [];
+    for player in team.players { read.push(this.read_player(team, system, player)); }
+    read
 }
 
 // ---- Reading a player as a tier: the specials' effects, the bracket, the choices
@@ -917,9 +936,10 @@ fn unused(slot, allowance, used, allowed) {
 
 // The tier counts (`counts_as` folded in, the tier without a count being the rest of the
 // squad, the medal tiers' counts matched against the `medal_systems`), the system's bracket
-// quotas, the captain, the goalkeepers and the team settings for the save's version;
-// `this` is the ruleset, `read` is `read_player`'s result per player.
-fn team_checks(team, system, read) {
+// quotas and the nearest quota system when they find something, the captain, the
+// goalkeepers and the team settings for the save's version; `this` is the ruleset, `read`
+// is `read_player`'s result per player, `failed` is `height_reading`'s.
+fn team_checks(team, system, read, failed) {
     let found = [];
     let fixed = 0;
     for tier in this.tiers { fixed += num(tier, "count"); }
@@ -976,7 +996,12 @@ fn team_checks(team, system, read) {
         }
     }
     if system != () {
-        found += this.height_findings(system, read);
+        let height = this.height_findings(system, read);
+        found += height;
+        if height.len() > 0 {
+            let nearest = nearest_system(failed);
+            if nearest != () { found.push(nearest); }
+        }
     }
     let universal = this.universal;
     if flag(universal, "captain_required") && team.captain == () {
@@ -1101,11 +1126,16 @@ fn quota_floor(system) {
 }
 
 // The system's bracket quotas against the players read under it: `BracketQuota` per
-// bracket whose count differs from its quota. Under `extra_height` the brackets are
-// filled tallest first: every player read with a tier, at most `max` tall and reaching
-// the lowest quota bracket (his height less allowance), takes the tallest bracket with
-// room his height less allowance reaches and draws the centimetres above it from the
-// pool — `ExtraHeight` when the draw exceeds `total`. `this` is the ruleset, `read` is
+// bracket whose count differs from its quota, with each counted player as
+// `[slot, height read]` (his height less allowance) in roster-slot order. Under
+// `extra_height` the brackets are filled tallest first: every player read with a tier, at
+// most `max` tall and reaching the lowest quota bracket (his height read), takes the
+// tallest bracket with room his height read reaches and draws the centimetres above it
+// from the pool, `ExtraHeight` when the draw exceeds `total`, with each draw above 0 as
+// `[slot, bracket, cm]` in roster-slot order. Players read at one height are placed from
+// the last roster slot up. A player whom every quota bracket he reaches has no room for
+// counts toward the tallest of them, past its quota, and draws nothing: any of the
+// players at his height could be the one left. `this` is the ruleset, `read` is
 // `read_player`'s result per player.
 fn height_findings(system, read) {
     let found = [];
@@ -1119,62 +1149,103 @@ fn height_findings(system, read) {
             if !(bracket.id in quotas) { continue; }
             slots.push(#{
                 bracket: bracket.id, height: bracket.exactly[0], quota: quotas[bracket.id],
-                count: 0,
+                count: 0, players: [],
             });
         }
         let floor = this.quota_floor(system);
-        let heights = [];
+        let placing = [];
         for r in read {
             if r.tier == () { continue; }
             if r.player.height > pool.max { continue; }
             let height = r.player.height - r.profile.allowance;
             if height < floor { continue; }
-            heights.push(height);
+            placing.push([height, r.player.slot]);
         }
-        heights.sort();
+        // Ascending by height, then by slot: read from its end, the tallest come first
+        // and players at one height from the last slot up.
+        placing.sort(|a, b| if a[0] == b[0] { a[1] - b[1] } else { a[0] - b[0] });
         let drawn = 0;
-        for i in 0..heights.len() {
-            let height = heights[heights.len() - 1 - i];
+        let draws = [];
+        for i in 0..placing.len() {
+            let height = placing[placing.len() - 1 - i][0];
+            let player = placing[placing.len() - 1 - i][1];
             let slot = -1;
+            let tallest = -1;
             for j in 0..slots.len() {
                 let at = slots.len() - 1 - j;
-                if slots[at].height <= height && slots[at].count < slots[at].quota {
+                if slots[at].height > height || slots[at].quota == 0 { continue; }
+                if tallest < 0 { tallest = at; }
+                if slots[at].count < slots[at].quota {
                     slot = at;
                     break;
                 }
             }
             if slot >= 0 {
-                slots[slot].count += 1;
-                drawn += height - slots[slot].height;
+                let draw = height - slots[slot].height;
+                drawn += draw;
+                if draw > 0 { draws.push([player, slots[slot].bracket, draw]); }
+            } else {
+                slot = tallest;
             }
+            if slot < 0 { continue; }
+            slots[slot].count += 1;
+            slots[slot].players.push([player, height]);
         }
         for slot in slots {
             if slot.count != slot.quota {
+                slot.players.sort(|a, b| a[0] - b[0]);
                 found.push(#{
                     kind: "BracketQuota", system: system.id, bracket: slot.bracket,
-                    count: slot.count, quota: slot.quota,
+                    count: slot.count, quota: slot.quota, players: slot.players,
                 });
             }
         }
         if drawn > pool.total {
-            found.push(#{ kind: "ExtraHeight", used: drawn, total: pool.total });
+            draws.sort(|a, b| a[0] - b[0]);
+            found.push(#{ kind: "ExtraHeight", used: drawn, total: pool.total, draws: draws });
         }
     } else {
         for bracket in this.heights.brackets {
             if !(bracket.id in quotas) { continue; }
-            let count = 0;
+            let players = [];
             for r in read {
-                if r.tier != () && r.profile.bracket == bracket.id { count += 1; }
+                if r.tier != () && r.profile.bracket == bracket.id {
+                    players.push([r.player.slot, r.player.height - r.profile.allowance]);
+                }
             }
-            if count != quotas[bracket.id] {
+            if players.len() != quotas[bracket.id] {
                 found.push(#{
-                    kind: "BracketQuota", system: system.id, bracket: bracket.id, count: count,
-                    quota: quotas[bracket.id],
+                    kind: "BracketQuota", system: system.id, bracket: bracket.id,
+                    count: players.len(), quota: quotas[bracket.id], players: players,
                 });
             }
         }
     }
     found
+}
+
+// The `NearestSystem` warning for a team whose height checks found something under its
+// system, or `()` when no quota system was tried before it: among `failed`
+// (`height_reading`'s), the system with the fewest players short (per bracket, its quota
+// less its count where positive); ties go to the earlier in the file. `off` is that
+// system's brackets off their quotas as `[bracket, count, quota]`, in the brackets' order.
+fn nearest_system(failed) {
+    let nearest = ();
+    let fewest = 0;
+    for tried in failed {
+        let off = [];
+        let short = 0;
+        for finding in tried.findings {
+            if finding.kind != "BracketQuota" { continue; }
+            off.push([finding.bracket, finding.count, finding.quota]);
+            short += max(finding.quota - finding.count, 0);
+        }
+        if nearest == () || short < fewest {
+            nearest = #{ kind: "NearestSystem", system: tried.id, off: off, severity: "warning" };
+            fewest = short;
+        }
+    }
+    nearest
 }
 
 // A `TeamSetting` violation: `wanted` is the value the entry sets.

@@ -215,6 +215,11 @@ pub enum ViolationKind {
         count: u8,
         /// The quota.
         quota: u8,
+        /// Each player counted in the bracket, in roster-slot order: his roster slot and the
+        /// height read (his own less his allowance). Under an `extra_height` system, the
+        /// players its slots took, then the ones every bracket they reach had no room for,
+        /// counted in the tallest of those.
+        players: Vec<(u8, u8)>,
     },
     /// The team's counts of the medal tiers equal no `medal_systems` entry's.
     MedalSystem {
@@ -227,6 +232,19 @@ pub enum ViolationKind {
         used: u16,
         /// The pool's size.
         total: u16,
+        /// Each placed player standing above his slot, in roster-slot order: his roster
+        /// slot, the slot's bracket and the centimetres he draws.
+        draws: Vec<(u8, BracketId, u8)>,
+    },
+    /// A warning beside the height errors of a team read under a system reached after a
+    /// `by_quotas` system failed: the failed system the team misses by the fewest players
+    /// short (ties: the earlier in the file), so the organizer sees how near it came.
+    NearestSystem {
+        /// The system.
+        system: SystemId,
+        /// Its brackets whose count differs from the quota, in the brackets' order: the
+        /// bracket, the players in it and the quota.
+        off: Vec<(BracketId, u8, u8)>,
     },
     /// No captain where `captain_required`.
     Captain,
@@ -447,6 +465,7 @@ impl ViolationKind {
                 bracket,
                 count,
                 quota,
+                players,
             } => (
                 "BracketQuota",
                 vec![
@@ -454,16 +473,45 @@ impl ViolationKind {
                     ("bracket", bracket.clone()),
                     ("count", count.to_string()),
                     ("quota", quota.to_string()),
+                    (
+                        "players",
+                        list_field(players.iter().map(|(slot, read)| format!("{slot}:{read}"))),
+                    ),
                 ],
             ),
             ViolationKind::MedalSystem { systems } => (
                 "MedalSystem",
                 vec![("systems", format!("[{}]", systems.join(", ")))],
             ),
-            ViolationKind::ExtraHeight { used, total } => (
+            ViolationKind::ExtraHeight { used, total, draws } => (
                 "ExtraHeight",
-                vec![("used", used.to_string()), ("total", total.to_string())],
+                vec![
+                    ("used", used.to_string()),
+                    ("total", total.to_string()),
+                    (
+                        "draws",
+                        list_field(
+                            draws
+                                .iter()
+                                .map(|(slot, bracket, cm)| format!("{slot}:{bracket}:{cm}")),
+                        ),
+                    ),
+                ],
             ),
+            ViolationKind::NearestSystem { system, off } => {
+                (
+                    "NearestSystem",
+                    vec![
+                        ("system", system.clone()),
+                        (
+                            "off",
+                            list_field(off.iter().map(|(bracket, count, quota)| {
+                                format!("{bracket}:{count}:{quota}")
+                            })),
+                        ),
+                    ],
+                )
+            }
             ViolationKind::Captain => ("Captain", vec![]),
             ViolationKind::Goalkeepers { count, min } => (
                 "Goalkeepers",
@@ -528,11 +576,12 @@ fn positions_field(positions: &[Position]) -> String {
 
 /// A list of inclusive height ranges as `rule` prints it: `[0-175, 180-180]`, `[]` when empty.
 fn ranges_field(ranges: &[(u8, u8)]) -> String {
-    let spans: Vec<String> = ranges
-        .iter()
-        .map(|(low, high)| format!("{low}-{high}"))
-        .collect();
-    format!("[{}]", spans.join(", "))
+    list_field(ranges.iter().map(|(low, high)| format!("{low}-{high}")))
+}
+
+/// A list's items as `rule` prints them: `[a, b]`, `[]` when empty.
+fn list_field(items: impl Iterator<Item = String>) -> String {
+    format!("[{}]", items.collect::<Vec<_>>().join(", "))
 }
 
 /// Why a check could not produce its violations.
@@ -672,6 +721,7 @@ pub(crate) fn violations(list: Dynamic) -> Result<Vec<Violation>, CheckError> {
             | ViolationKind::BracketQuota { .. }
             | ViolationKind::MedalSystem { .. }
             | ViolationKind::ExtraHeight { .. }
+            | ViolationKind::NearestSystem { .. }
             | ViolationKind::Goalkeepers { .. }
             | ViolationKind::TeamSetting { .. }
             | ViolationKind::FormationShape { .. }
@@ -908,7 +958,7 @@ mod tests {
                 },
             ),
             (
-                "#{ kind: \"BracketQuota\", system: \"red\", bracket: \"tall\", count: 3, quota: 6 }",
+                "#{ kind: \"BracketQuota\", system: \"red\", bracket: \"tall\", count: 3, quota: 6, players: [[4, 185], [9, 186], [21, 185]] }",
                 None,
                 Severity::Error,
                 ViolationKind::BracketQuota {
@@ -916,6 +966,7 @@ mod tests {
                     bracket: "tall".to_string(),
                     count: 3,
                     quota: 6,
+                    players: vec![(4, 185), (9, 186), (21, 185)],
                 },
             ),
             (
@@ -932,12 +983,22 @@ mod tests {
                 },
             ),
             (
-                "#{ kind: \"ExtraHeight\", used: 51, total: 50 }",
+                "#{ kind: \"ExtraHeight\", used: 51, total: 50, draws: [[2, \"tall\", 25], [8, \"mid\", 1]] }",
                 None,
                 Severity::Error,
                 ViolationKind::ExtraHeight {
                     used: 51,
                     total: 50,
+                    draws: vec![(2, "tall".to_string(), 25), (8, "mid".to_string(), 1)],
+                },
+            ),
+            (
+                "#{ kind: \"NearestSystem\", system: \"height\", off: [[\"mid\", 6, 5], [\"tall\", 5, 6]], severity: \"warning\" }",
+                None,
+                Severity::Warning,
+                ViolationKind::NearestSystem {
+                    system: "height".to_string(),
+                    off: vec![("mid".to_string(), 6, 5), ("tall".to_string(), 5, 6)],
                 },
             ),
             (
@@ -1014,7 +1075,7 @@ mod tests {
                 ViolationKind::RosterOrder { player: 70102 },
             ),
         ];
-        assert_eq!(cases.len(), 36);
+        assert_eq!(cases.len(), 37);
         for (text, slot, severity, kind) in cases {
             let got = violations(one(text)).expect(text).remove(0);
             assert_eq!(
@@ -1064,7 +1125,14 @@ mod tests {
     fn bad_entries_fail_at_their_index() {
         bad_entry("#{ kind: \"Nope\" }", "Nope");
         bad_entry("#{ kind: \"Age\", age: 15, min: 16 }", "max");
-        bad_entry("#{ kind: \"ExtraHeight\", total: 50 }", "used");
+        bad_entry("#{ kind: \"ExtraHeight\", total: 50, draws: [] }", "used");
+        // The height rows' lists are required.
+        bad_entry("#{ kind: \"ExtraHeight\", used: 51, total: 50 }", "draws");
+        bad_entry(
+            "#{ kind: \"BracketQuota\", system: \"red\", bracket: \"tall\", count: 3, quota: 6 }",
+            "players",
+        );
+        bad_entry("#{ kind: \"NearestSystem\", system: \"height\" }", "off");
         bad_entry("#{ kind: \"StatTotal\", total: 1772 }", "limit");
         bad_entry(
             "#{ kind: \"Age\", age: 15, min: 16, max: 40, extra: 1 }",
@@ -1152,6 +1220,57 @@ mod tests {
             }
             .rule(),
             ("MedalSystem", vec![("systems", "[GGG, GGSS]".to_string())])
+        );
+        // The height rows' lists: `slot:read`, `slot:bracket:cm`, `bracket:count:quota`.
+        assert_eq!(
+            ViolationKind::BracketQuota {
+                system: "giga".to_string(),
+                bracket: "mid".to_string(),
+                count: 2,
+                quota: 10,
+                players: vec![(4, 185), (9, 180)],
+            }
+            .rule(),
+            (
+                "BracketQuota",
+                vec![
+                    ("system", "giga".to_string()),
+                    ("bracket", "mid".to_string()),
+                    ("count", "2".to_string()),
+                    ("quota", "10".to_string()),
+                    ("players", "[4:185, 9:180]".to_string()),
+                ]
+            )
+        );
+        assert_eq!(
+            ViolationKind::ExtraHeight {
+                used: 60,
+                total: 50,
+                draws: vec![(4, "tall".to_string(), 10)],
+            }
+            .rule(),
+            (
+                "ExtraHeight",
+                vec![
+                    ("used", "60".to_string()),
+                    ("total", "50".to_string()),
+                    ("draws", "[4:tall:10]".to_string()),
+                ]
+            )
+        );
+        assert_eq!(
+            ViolationKind::NearestSystem {
+                system: "height".to_string(),
+                off: vec![("mid".to_string(), 6, 5), ("tall".to_string(), 5, 6)],
+            }
+            .rule(),
+            (
+                "NearestSystem",
+                vec![
+                    ("system", "height".to_string()),
+                    ("off", "[mid:6:5, tall:5:6]".to_string()),
+                ]
+            )
         );
     }
 }
