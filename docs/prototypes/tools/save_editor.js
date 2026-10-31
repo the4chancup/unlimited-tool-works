@@ -520,9 +520,19 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .live-header { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
 .live-body { overflow: auto; background: var(--extreme); border: 1px solid var(--stroke); padding: 2px 6px; }
 .live-body.checking { opacity: .55; }
-/* The pop-out and dock icons, the icon font's glyphs at the header's size. */
-.live-icon { font-size: 14px; line-height: 1; }
+/* The pop-out and dock icons, the icon font's glyphs at the header's size. A point lower:
+   the browser sets the icon font on the text's baseline, where these glyphs' ink stands
+   1.1 to 1.6 points above the button's centre, beside a ✕ centred on it (measured at 4x).
+   egui places the icon font by centring its line on the body font's, so the app's own
+   alignment is the built window's to check. */
+.live-icon { font-size: 14px; line-height: 1; position: relative; top: 1px; }
 .live-header .grow { flex: 1; }
+/* The dock header's pop-out icon and ✕, spaced as the window's title bar spaces its dock
+   icon and ✕. */
+.live-caps { display: flex; align-items: center; gap: 4px; }
+/* The dock's ✕ at the window title's 14 points, so it is the window's ✕ (egui draws both
+   as a window's close button), not the header text's smaller one. */
+#live-close { font-size: 14px; line-height: 1; }
 /* Live AATF's own window: a floating panel (egui::Window) first at the view's
    bottom right, resizable; its rows fill what the header leaves and wrap. */
 .panel.live-win { top: auto; max-height: none; resize: both; overflow: hidden;
@@ -3419,6 +3429,7 @@ const WALK = [
   ["SE-GUI-12", "a team row's view, the tactics: drag a pitch marker (it snaps to the stored grid, undoable), drop a bench row on a marker to swap, arm a set-piece chip and click a marker, arm Join attack and click two markers"],
   ["SE-GUI-45", "illegal formations: under 4cc Autumn 26 or Divegrass Before Christmas 7 a dragged starter keeps his position wherever he lands, down to y 0, and his popover lists every outfield position with Y from 0; under /vg/ League 27 the game's drop rule and the y 4 floor are back"],
   ["SE-GUI-48", "Live AATF on: the icon at the dock header's right end opens the list in a window of its own (one column, its dock icon left of the close button); the dock icon puts it back; the close button turns Live AATF off, and turning it on again opens the window again"],
+  ["SE-GUI-49", "Live AATF on, the list in the dock: the ✕ right of the pop-out icon turns Live AATF off; turned on again, the list is back in the dock"],
   ["SE-GUI-25", "the tactics' menus: Copy preset 1 to 2, then Swap Kick-off and In-possession; each is one undoable edit"],
   ["card badges", "the Skills column's header shows the player's own tier's cards left next to the pickers; under DBC7 the count stays positive (no card is capped), under the official ruleset ticking cards takes it to 0 then red"],
   ["SE-GUI-21", "the save's game running + Save: refused naming the exe (drawn; the scenario itself is manual)"],
@@ -7282,9 +7293,10 @@ function liveIconButton(glyph, title, onclick) {
   return b;
 }
 // The dock (egui's Panel::bottom, the log panel widget's frame). Popped out,
-// the dock is gone and `liveWindow` draws the list. The pop-out icon stands
-// at the header's right end. sample wording: the chevron's and the icon's
-// tooltips.
+// the dock is gone and `liveWindow` draws the list. The header's right end
+// holds the pop-out icon and the ✕, as the window's title bar holds the dock
+// icon and its ✕: the ✕ turns Live AATF off, as the toolbar toggle and the
+// window's ✕ do. sample wording: the chevron's and the icons' tooltips.
 function livePanel() {
   if (!LIVE.on || !S.save || LIVE.popped) return null;
   const chevron = button(LIVE.collapsed ? "▸" : "▾", () => { LIVE.collapsed = !LIVE.collapsed; render(); },
@@ -7293,8 +7305,10 @@ function livePanel() {
   const popOut = liveIconButton("\uE5DE", "Open Live AATF in a window of its own",
     () => { setLivePopped(true); render(); });
   popOut.id = "live-pop-out";
+  const close = button("✕", () => { setLive(false); render(); }, { frame0: true, title: "Turn Live AATF off" });
+  close.id = "live-close";
   const header = h("div", { class: "live-header", id: "live-header" }, chevron, strong("Live AATF"),
-    ...liveHeadline(), h("span", { class: "grow" }), popOut);
+    ...liveHeadline(), h("span", { class: "grow" }), h("span", { class: "live-caps" }, popOut, close));
   if (LIVE.collapsed) return h("div", { class: "live-panel", "data-panel": "live-aatf" }, header);
   const body = liveList(false);
   body.style.height = LIVE.height + "px";

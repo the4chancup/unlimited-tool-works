@@ -14766,3 +14766,14 @@ and suggests that files are uploaded where none are; its short form, UTWeb, did 
 from it either.
 Plan: `plans/core/development_plan.md` "The browser edition's name"; `plans/core/gui.md`
 "Browser deployment: Studio Web".
+
+## 2026-11-01 — save_editor — the Live AATF dock has a close button, the window's
+Decision (maintainer): the dock's header gets a close button at its right end, right of the
+pop-out icon, as the window's title bar has one right of its dock icon; it turns Live AATF off
+as the window's close and the toolbar toggle do. The lead's part: it is drawn as egui draws a
+window's close button (the same cross, size and stroke) and spaced as the window's pair is.
+Why: docked, the list could be put away only from the toolbar's toggle, far from it, while the
+window has its own close; the same corner holding the same button in both places reads as
+one control. The chevron stays: it collapses the dock, which a close does not replace.
+Plan: `plans/save_editor.md` "Configurable AATF rules", the Live AATF bullet ("Its own
+window"), SE-GUI-49.

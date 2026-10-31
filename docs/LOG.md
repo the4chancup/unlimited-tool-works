@@ -2988,3 +2988,5 @@ worklog passed 7,000 lines.
   clamped to the first, checked once the ends rest 500 ms (the wheel's ~2-minute freeze). cv18-cv26 all merged.
 - 2026-11-01 — Candidate 0.0.1d staged at `1fe6c9bf` for the maintainer and the DBC7 organizer (full gates green, 5534
   tests): the height findings name their players, plus cv14-cv26; its `check-aatf --rules dbc7` prints cv16b's lines.
+- 2026-11-01 — 0.0.1cv cv28 merged `de8cf1a2`: Live AATF pops out into an embedded window (one column, its close
+  turning Live AATF off, `live_window`), the bottom dock shows a grip. cv29 drafted: the dock gets the window's close.

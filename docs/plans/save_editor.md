@@ -1531,14 +1531,20 @@ What this editor adds on top of the lib:
   report reads team by team, and its rows were just widened to read whole. **Its own
   window**: the pop-out icon at the header's right end (the icon font's arrow out of a square,
   U+E5DE, Phosphor's arrow-square-out; tooltip `Open Live AATF in a window of its own`) moves
-  the list into an `egui::Window` over the view, and the dock is gone until it comes back; the
+  the list into an `egui::Window` over the view, and the dock is gone until it comes back.
+  Right of the icon, in the corner the window's close button holds in the window, the dock
+  has a close button of its own, drawn as egui draws a window's (the same cross, size and
+  stroke) and spaced from the icon as the window's is from its dock icon, with the same
+  tooltip and effect: `Turn Live AATF off`, as the toolbar toggle does. One way to put the
+  list away wherever it stands, where the dock alone had none but the toolbar's toggle, a
+  long way from it; the dock's chevron only collapses it. The
   window's title `Live AATF`, its title bar holding left of the close button the dock icon
   (the arrow into a square, U+E5DF, Phosphor's arrow-square-in; `Put Live AATF back in its
   dock`), which puts the list back, while the close button (`Turn Live AATF off`) turns Live
   AATF off as the toolbar toggle does. Under the title the dock's count line and checking
   mark, then the same rows in the same well, the players' groups in one column in roster order
   as Multi-team AATF lists them, the rule's column 140 points (the longest rule name,
-  `automatic substitutions`) where the dock's is 190: the window first opens 460 × 360 at
+  `Weak Foot Accuracy`, draws about 114) where the dock's is 190: the window first opens 460 × 360 at
   the view's bottom right, where the dock stood and away from the floating panels' top-right
   spot, narrower than the dock, so two columns would wrap every sentence. It is moved by its
   title and resized from its edges, as the floating panels are, and remembered between
@@ -2043,13 +2049,20 @@ SE-GUI-47  GIVEN the PES 17 save open on team 718 under DBC7, Live AATF on, one 
 SE-GUI-48  GIVEN SE-GUI-47's save, team, edit and check, the list in the dock
            WHEN the pop-out icon at the dock header's right end is clicked
            THEN the dock is gone and a window titled `Live AATF` holds the dock's count line
-                and the same rows, the bench player's group under the starters' in one column,
+                and the same rows, the players' groups in one column in roster order (the
+                bench player 71801's, slot 0, above the starter 71808's, slot 7),
                 its dock icon left of its close button; WHEN the dock icon is clicked THEN the
                 window is gone and the dock is back with its two columns; WHEN the list is
                 popped out again and the window's close button clicked THEN Live AATF is off
                 (the toolbar's button unfilled, no list, no marks), and WHEN it is turned on
                 again THEN the list opens in the window, `live_window` read back from the
                 settings
+SE-GUI-49  GIVEN SE-GUI-48's save, team, edit and check, the list in the dock
+           WHEN the close button right of the dock header's pop-out icon is clicked
+           THEN Live AATF is off (the toolbar's button unfilled, no list, no marks), and WHEN
+                it is turned on again THEN the list opens in the dock, `live_window` still off;
+                the dock's close button is the window's in size and stroke, and stands right of
+                the pop-out icon by the window's spacing between its dock icon and close button
 SE-GUI-36  GIVEN SE-GUI-30's save and team, Live AATF on and its first check returned, one
                  player of the team breaking the Height rule alone and another breaking none
            WHEN the view is drawn
