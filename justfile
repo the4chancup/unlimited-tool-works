@@ -92,9 +92,10 @@ mutants crate:
 mutants-collect:
     {{python}} scripts/mutants.py --collect
 
-# Mutation run over the lines changed since `base` (review of a landed diff)
-mutants-diff base="HEAD":
-    {{python}} scripts/mutants_diff.py {{base}}
+# Mutation run over the lines changed since `base` (review of a landed diff), under
+# `crates` or the paths given (a crate's folder)
+mutants-diff base="HEAD" *paths:
+    {{python}} scripts/mutants_diff.py {{base}} {{paths}}
 
 # The mutants cargo-mutants lacks (dropped `if` guards, literal-list elements) over one crate;
 # `just mutants` runs the bool, literal, normalize and order kinds inside the whole-crate run, so this stays
