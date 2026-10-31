@@ -17,7 +17,7 @@ Brackets: Manlet 175, Mid 180, Tall 185, Giant 195 cm.
 - **GigaHeight** (otherwise): 6 manlet, 10 mid, 7 tall, 0 giant; 50 cm to share, no player above 210.
 
 ## Every team
-At most 41 skill cards.
+At most 41 skill cards; illegal formations allowed.
 
 ## Special rules
 - **Goalkeepers at 189 count as 185**: Registered GK, 189 cm: count 4 cm shorter.
