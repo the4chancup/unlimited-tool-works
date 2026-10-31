@@ -39,15 +39,18 @@ fn offered(version: PesVersion, side: InstructionSide) -> Vec<Instruction> {
 /// the side's list in stored order — a held value the list lacks
 /// (Tight Marking or one of the other side's) appended as the current
 /// choice — a stored byte the table does not list shown as its hex
-/// and kept until a pick. A pick keeps the target only when the held
-/// and the picked instruction both take one of our players; any other
-/// pick clears it.
+/// and kept until a pick. A pick of an instruction that takes one of our
+/// players keeps the target when the held one takes one too, and clears
+/// it to 255 otherwise. A pick of an instruction that takes none puts
+/// back `opened_target`, the byte this entry held when the file was
+/// opened or last saved, or 255 without one.
 fn instruction_combo(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,
     version: PesVersion,
     side: InstructionSide,
     entry: &mut AdvancedInstruction,
+    opened_target: Option<u8>,
 ) {
     let current = instruction::decode(version, entry.instruction)
         .ok()
@@ -83,10 +86,17 @@ fn instruction_combo(
     {
         entry.instruction =
             instruction::encode(version, inst).expect("the offered list is the version's own");
-        // A held Tight Marking's byte is an opponent's slot, and an
-        // unknown byte's is nobody's: the target stays only when both the
-        // held and the picked instruction take one of ours.
-        if !(inst.takes_player() && current.is_some_and(Instruction::takes_player)) {
+        // The game reads no target under an instruction that takes none
+        // of ours and leaves its own byte there (mostly 0, sometimes 255).
+        // Writing a fixed 255 would leave a change no row can show after
+        // a round trip back to the instruction as opened, so the opened
+        // byte goes back instead. A held Tight Marking's byte is an
+        // opponent's slot, and an unknown byte's is nobody's: the target
+        // stays only when both the held and the picked instruction take
+        // one of ours.
+        if !inst.takes_player() {
+            entry.player = opened_target.unwrap_or(NO_TARGET);
+        } else if !current.is_some_and(Instruction::takes_player) {
             entry.player = NO_TARGET;
         }
     }
@@ -144,11 +154,13 @@ fn target_chip(
 /// its target chip under its combo. A version with no instruction
 /// table holds the weak line `(none on this version)` with the `PES
 /// NN+` tooltip instead of disabled rows. The panel's heading is the
-/// caller's `panel`.
+/// caller's `panel`. `opened` is the same preset as the file was
+/// opened or last saved, whose entries' target bytes each combo puts back.
 pub(super) fn instruction_table(
     ui: &mut egui::Ui,
     version: PesVersion,
     preset: &mut TacticsPreset,
+    opened: Option<&TacticsPreset>,
     view: &mut TacticsView,
     roster: &[RosterRow<'_>],
 ) {
@@ -204,16 +216,30 @@ pub(super) fn instruction_table(
                 .layout(egui::Layout::left_to_right(egui::Align::Center)),
         );
         number_ui.weak((index + 1).to_string());
-        for (x, side, entry) in [
-            (attack_x, InstructionSide::Attack, &mut attack[index]),
-            (defence_x, InstructionSide::Defence, &mut defence[index]),
+        for (x, side, entry, opened_entries) in [
+            (
+                attack_x,
+                InstructionSide::Attack,
+                &mut attack[index],
+                opened.and_then(|preset| preset.attack_instructions.as_ref()),
+            ),
+            (
+                defence_x,
+                InstructionSide::Defence,
+                &mut defence[index],
+                opened.and_then(|preset| preset.defence_instructions.as_ref()),
+            ),
         ] {
+            let opened_target = opened_entries
+                .and_then(|entries| entries.get(index))
+                .map(|entry| entry.player);
             instruction_combo(
                 &mut cell(ui, x, top, combo_height),
                 (side, index),
                 version,
                 side,
                 entry,
+                opened_target,
             );
         }
         top += combo_height + INSTR_ROW_GAP;

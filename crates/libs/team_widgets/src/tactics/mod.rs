@@ -631,21 +631,28 @@ fn slider(ui: &mut egui::Ui, sliders: &mut TacticSliders, spec: &SliderSpec) {
 /// `instrGrid`): the two sides' combos and their target chips of the
 /// preset on screen (`instructions::instruction_table`). The chips
 /// arm `view`'s target mode, never write the record — the answer is
-/// `true` only when `tactics` changed this frame.
+/// `true` only when `tactics` changed this frame. `opened` is the
+/// tactics as the file was opened or last saved (`None` where the host
+/// has none): a
+/// pick of an instruction that takes no player of ours puts back the
+/// target byte the same entry held there, 255 without it.
 pub fn advanced_instructions(
     ui: &mut egui::Ui,
     version: PesVersion,
     tactics: &mut TeamTactics,
+    opened: Option<&TeamTactics>,
     view: &mut TacticsView,
     roster: &[RosterRow<'_>],
 ) -> bool {
-    let preset = &mut tactics.presets[view.preset.min(2)];
+    let shown = view.preset.min(2);
+    let preset = &mut tactics.presets[shown];
+    let opened = opened.and_then(|tactics| tactics.presets.get(shown));
     let before = preset.clone();
     panel(ui, "Advanced instructions", |ui| {
         // `add_space` adds to the item gap: the rows start `TITLE_GAP`
         // under the heading, as Formation settings' do.
         ui.add_space(TITLE_GAP - ui.spacing().item_spacing.y);
-        instructions::instruction_table(ui, version, preset, view, roster);
+        instructions::instruction_table(ui, version, preset, opened, view, roster);
     });
     *preset != before
 }

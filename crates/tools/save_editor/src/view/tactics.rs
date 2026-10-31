@@ -330,8 +330,14 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         );
         let lists_bottom = lists_ui.min_rect().max.y;
         let mut stack_ui = cell(ui, top_left.x, row3_top, SETTINGS_WIDTH, lists_bottom);
-        changed[3] =
-            tactics::advanced_instructions(&mut stack_ui, version, &mut edited, tactics, &roster);
+        changed[3] = tactics::advanced_instructions(
+            &mut stack_ui,
+            version,
+            &mut edited,
+            session.baseline_team(team_id).map(|team| &team.tactics),
+            tactics,
+            &roster,
+        );
         // `add_space` adds to the item gap the panel above already left.
         stack_ui.add_space(ROW_GAP - stack_ui.spacing().item_spacing.y);
         changed[4] = tactics::automatic_settings(&mut stack_ui, version, &mut edited);
