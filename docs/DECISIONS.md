@@ -14431,3 +14431,17 @@ edit is not the fix: a tier may test where a player is fielded (`fielded_only_at
 lookup stays per roster slot: a pitch move or swap changes the formation and the starting
 eleven, never which player holds a roster slot, so the held answer stays his.
 Plan: `plans/save_editor.md` "Tactics editor", the medal outline paragraph.
+
+## 2026-10-31 — distribution — The release exe is built with the build machine's paths remapped
+Decision: `just release` builds with rustc's `--remap-path-prefix` (home folder `~`, cargo and
+rustup homes when set, repository `.`, an outside target directory `target`), passed through
+`cargo --config` on `target.x86_64-pc-windows-msvc.rustflags`, and refuses an exe that still
+holds one of those paths or names `VCRUNTIME140.dll`.
+Why: a panic location names its source file, so the 0.0.1 build held the maintainer's home
+folder in about 2,300 strings; the maintainer is not anonymous, but would rather the exe not
+carry it. `RUSTFLAGS` (the usual way, as EGG-Translator's `build.ps1` does) replaces the
+config's array, `+crt-static` with it, and the exe would need the VC++ redistributable without
+any error; `--config` joins the arrays. Cargo's `trim-paths` needs no paths named but is
+unstable in cargo 1.98. The `.pdb` keeps its linker paths: it is never published.
+Plan: `plans/core/distribution.md` "Distribution: portable .7z bundle", the paragraph after
+the release profile's.
