@@ -24,25 +24,6 @@ names where the question came from so the context can be read there.
     matches the drafts within 1 point (2 where needed), in both themes. What still differs
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
   - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
-- **DBC: may a player be shorter than his height bracket?** (DBC7's organizer, checking the
-  DBC6 save with the demo, 2026-10-31; `.tmp/0_0_2/dbc_height_readings.py`.) The built-in
-  DBC7 ruleset counts heights exactly, as the rules page ("6x 195, 6x 185, 5x 180, 6x 175")
-  and the 4ccEditor fork read: a 180 is a Mid, never a Tall, and a team fitting no quota
-  system falls to GigaHeight. Four DBC6 entries break that and nothing else, each by players a
-  bracket shorter than their slot: /tsab/ (one 180 where Height wants a 185; GigaHeight 80 cm
-  over), /暁Records/ (one 175 where Height wants a 180; 85 cm), /isekai/ (two 175s where
-  GigaHeight wants 180s) and /cookie☆/ (one 180 where Manlet wants a 185: read under
-  GigaHeight, its six bonused Manlets become Stat total errors). The other 43 entries fit
-  exactly. If shorter players are allowed, the team is read under the quota system it stands
-  fewest centimetres under (Height, Manlet, Universal; ties in that order), GigaHeight only
-  when none fits: "the first that fits" would read every Manlet team as Height, whose slots
-  are all taller, and take away its bonus. Under that reading all four pass and the others
-  keep their system. Checked with the real check, each team under its system with that
-  system's quotas set to its counts (`.tmp/0_0_2/cookie_probe_rules.py`): /cookie☆/, /tsab/
-  and /暁Records/ show no error and no warning, /isekai/ only its Medal system error (its
-  gimmick). The organizer's own fork (`DBC7-Editor` `aatf.cpp`, `ee73917`) counts exactly too,
-  in the same order, so it flags all four; its history starts 2026-10-04, for DBC7, so DBC6
-  was checked another way. Allowed, as that rule? Or were the four missed?
 
 ## Cup practice
 
