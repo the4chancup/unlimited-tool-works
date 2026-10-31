@@ -58,7 +58,7 @@ fn snap_inverts_the_mapping_and_clamps_to_the_grid() {
             let slot = outfield(x, y);
             assert_eq!(
                 snap(badge_centre(origin, slot), origin),
-                (x, y.max(OUTFIELD_Y_MIN)),
+                (x, y.max(4)),
                 "({x}, {y})"
             );
         }
@@ -70,7 +70,7 @@ fn snap_inverts_the_mapping_and_clamps_to_the_grid() {
     );
     assert_eq!(
         snap(origin + egui::vec2(160.0, 500.0), origin),
-        (52, OUTFIELD_Y_MIN),
+        (52, 4),
         "past the near edge"
     );
     assert_eq!(
@@ -444,6 +444,46 @@ fn the_pitchs_border_and_turf_round_their_corners() {
         turf.corner_radius,
         egui::CornerRadius::same(1),
         "the turf's radius, the border's inner one"
+    );
+}
+
+// The turf is cached per look: one context drawing the pitch for PES
+// 2017, then PES 2021, then PES 2017 again paints two textures, the
+// second PES 2017 frame reusing the first one's.
+#[test]
+fn each_version_paints_its_own_cached_turf() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    // The texture of the turf, the frame's one textured rect.
+    let mut turf_texture = |version: PesVersion| {
+        let (_, shapes) = window.pitch_paint(version, &mut tactics, &mut view, &roster);
+        let textures: Vec<egui::TextureId> = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape)
+                    if shape.fill_texture_id() != egui::TextureId::default() =>
+                {
+                    Some(shape.fill_texture_id())
+                }
+                _ => None,
+            })
+            .collect();
+        match textures.as_slice() {
+            [texture] => *texture,
+            textures => panic!("{version:?}: one textured rect, the turf: {textures:?}"),
+        }
+    };
+
+    let pes_2017 = turf_texture(PesVersion::Pes17);
+    let pes_2021 = turf_texture(PesVersion::Pes21);
+    assert_ne!(pes_2017, pes_2021, "each version paints its own turf");
+    assert_eq!(
+        turf_texture(PesVersion::Pes17),
+        pes_2017,
+        "PES 2017's turf is the one loaded for its first frame"
     );
 }
 

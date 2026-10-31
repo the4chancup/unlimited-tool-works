@@ -625,7 +625,7 @@ fn an_outfielder_dragged_below_the_pitch_lands_on_y_4() {
     let (x, _) = snap(below - offset, canvas.min);
     near(
         badge.center(),
-        clamp_centre(spot_centre(canvas, x, OUTFIELD_Y_MIN), canvas),
+        clamp_centre(spot_centre(canvas, x, 4), canvas),
         0.5,
     );
 
@@ -640,7 +640,7 @@ fn an_outfielder_dragged_below_the_pitch_lands_on_y_4() {
     let landed = tactics.presets[0].formations[0].players[index];
     assert_eq!(
         (landed.x, landed.y),
-        (snap(release - offset, canvas.min).0, OUTFIELD_Y_MIN),
+        (snap(release - offset, canvas.min).0, 4),
         "he lands on y 4"
     );
     let mut expect = before;

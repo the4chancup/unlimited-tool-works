@@ -929,7 +929,7 @@ mod tests {
         let index = 4;
         open(&mut window, &mut tactics, &mut view, &roster, index);
 
-        tactics.presets[0].formations[0].players[index].y = OUTFIELD_Y_MIN;
+        tactics.presets[0].formations[0].players[index].y = 4;
         let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
         let [down, up] = arrows(&nodes, "Y");
         assert!(down.is_disabled(), "⏴ is disabled at y 4");
@@ -939,7 +939,7 @@ mod tests {
             "the disabled ⏴'s click writes nothing"
         );
         assert_eq!(
-            tactics.presets[0].formations[0].players[index].y, OUTFIELD_Y_MIN,
+            tactics.presets[0].formations[0].players[index].y, 4,
             "y stays 4"
         );
 
@@ -953,7 +953,7 @@ mod tests {
             "the click is an edit"
         );
         assert_eq!(
-            tactics.presets[0].formations[0].players[index].y, OUTFIELD_Y_MIN,
+            tactics.presets[0].formations[0].players[index].y, 4,
             "one ⏵ from 2 gives 4"
         );
     }
