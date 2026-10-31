@@ -431,7 +431,7 @@ RE-GUI-20  GIVEN Blank open on Universal rules
                 true, no captain_required, and Blank's other values; WHEN Age is then
                 unticked THEN the saved file holds no age, and Undo brings back [15, 50];
                 GIVEN DBC7 open THEN its "At most N skill cards" field holds 41, "Illegal formations
-                allowed" ticked, every other checkbox clear
+                allowed (Whack Patch)" ticked, every other checkbox clear
 ```
 
 **Opening and saving**
