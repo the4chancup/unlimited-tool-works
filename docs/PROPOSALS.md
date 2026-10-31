@@ -27,6 +27,9 @@ P45 (a ruleset's event logo and page, at the Save editor's top right) was accept
 P46 (a check flagging an illegal formation under a cup that forbids them) was accepted for
 0.0.2 on 2026-10-31 (`DECISIONS.md` "The illegal formation check is the stock game's
 refusal, in the host").
+P47 (a height finding names its players, and the nearest quota system) was accepted on
+2026-10-31 (`DECISIONS.md` "A height finding names its players, and the nearest quota system
+(P47)").
 
 ## P40 — The Music export editor reorders its players
 
@@ -65,33 +68,3 @@ TOML's `#RRGGBB`.
 Adds: the picker's hex field accepts `#RRGGBB`, `0xRRGGBB` and `RRGGBB` alike in every tool
 that uses it, so a pasted value from an old habit lands instead of being refused. Costs: one
 parse with three prefixes in `color_tools`; the field still shows `#RRGGBB`.
-
-## P47 — A height finding names its players, and the nearest quota system
-
-From DBC7's organizer, checking the DBC6 save with the 0.0.1 demo (2026-10-31): "it tells me
-how many players are missing from a height bracket but it does not tell me which players
-already have the proper height in that bracket", and of GigaHeight's "80 cm of extra height,
-over the pool of 50": "a break down on where that extra height is going", the row being
-"a bit obtuse with regards to figuring out how to rectify it for the end user".
-
-Adds, in the Live AATF and Multi-team AATF rows (and `check-aatf`'s line):
-- **Extra height** lists who draws from the pool: "80 cm over the pool of 50: six 195s in
-  Tall slots, 10 cm each (names…); four 185s in Mid slots, 5 cm each (names…)".
-- **Height quota** names the bracket's players: "9 players in the Mid bracket (names…), where
-  its quota is 10", and the players left without a slot ("a seventh 175, past the Manlet
-  bracket's 6").
-- **When a team falls back to GigaHeight,** one line for the quota system it misses by the
-  least: "Height: one Tall short, one Mid over", which on /tsab/ is the whole fix (a 180
-  raised to 185), where the GigaHeight rows suggest cutting 30 cm.
-Costs: the findings carry their players (`logic.rhai`'s `BracketQuota` and `ExtraHeight`,
-hashed logic, so before logic version 1's freeze or with version 2), the sentences in
-`team_widgets`' violations and the drafts first; a longer row, so the list wraps or folds
-open under the row.
-
-Rendered 2026-10-31 on DBC6's /tsab/ and /暁Records/ in the draft (temporary, reverted; the
-diff `.tmp/0_0_2/p47_render.diff`, the pictures `4cc-studio-temp/dbc6_check/p47_*.png`):
-dimmed lines under each height row, wrapping; an over-full bracket lists all its players
-("7 at 175 for the Manlet bracket's 6 slots: …"), any of them being the one left over; the
-nearest system as a neutral row ("Height: Mid 4 of 5, Manlet 7 of 6"), not counted as an
-issue. A registered keeper at 189 is listed among the 185s, as the check reads him: the
-wording would say so.
