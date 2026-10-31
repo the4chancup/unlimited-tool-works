@@ -14,7 +14,7 @@ use pes_savefile::schema::fields::{
 use pes_savefile::schema::{instruction, schema_for};
 use pes_version::PesVersion;
 use studio_core::theme::Palette;
-use studio_core::widgets::{add_enabled, checkbox, step_choice, wheel_steps};
+use studio_core::widgets::{add_enabled, checkbox, step_choice, step_number, wheel_steps};
 
 use crate::pitch::{FORMATIONS, position_label};
 
@@ -535,21 +535,34 @@ pub(crate) fn text_width(ui: &egui::Ui, text: &str) -> f32 {
 /// defensive style's shortened, `style_short`, its hover the full
 /// name). Both choices are drawn every frame — an early return over
 /// the two would skip the second on the frame the first is clicked.
+/// The wheel over either choice moves the choice, up to the right one
+/// and down to the left one, nothing past an end.
 fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggle) {
     ui.spacing_mut().item_spacing.x = CHOICE_GAP;
     ui.spacing_mut().button_padding = CHOICE_PADDING;
     let width = (ui.available_width() - CHOICE_GAP) / 2.0;
     let mut value = (toggle.get)(style);
-    for (picked, full) in [(false, toggle.off), (true, toggle.on)] {
-        let response = ui
-            .add_sized(
-                egui::vec2(width, ui.spacing().interact_size.y),
-                egui::Button::selectable(value == picked, style_short(full)).truncate(),
-            )
-            .on_hover_text(full);
-        if response.clicked() {
-            value = picked;
-        }
+    // Both choices as one control, so the wheel over either moves it.
+    let control = [(false, toggle.off), (true, toggle.on)]
+        .into_iter()
+        .map(|(picked, full)| {
+            let response = ui
+                .add_sized(
+                    egui::vec2(width, ui.spacing().interact_size.y),
+                    egui::Button::selectable(value == picked, style_short(full)).truncate(),
+                )
+                .on_hover_text(full);
+            if response.clicked() {
+                value = picked;
+            }
+            response
+        })
+        .reduce(|left, right| left | right)
+        .expect("a pair has two choices");
+    // Wheel up moves right, and `step_choice` steps up to an earlier item,
+    // so it takes the steps negated over the choices in drawn order.
+    if let Some(next) = step_choice([false, true], &value, -wheel_steps(ui, &control)) {
+        value = next;
     }
     if value != (toggle.get)(style) {
         (toggle.set)(style, value);
@@ -557,24 +570,36 @@ fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggl
 }
 
 /// One numbers row's control (the draft's `.rate.tri`: `TRI_CHOICES`
-/// thirds of the half less the gaps, the picked one filled). A stored
-/// value outside 1-3 (a hand-edited save) selects none and writes
-/// nothing until a choice is clicked.
+/// thirds of the half less the gaps, the picked one filled). The wheel
+/// over any choice moves the choice, up to the right (Few, Medium, Many)
+/// and down to the left, nothing past an end. A stored value outside 1-3
+/// (a hand-edited save) selects none and writes nothing until a choice
+/// is clicked; the wheel leaves it too.
 fn number_choices(ui: &mut egui::Ui, sliders: &mut TacticSliders, spec: &SliderSpec) {
     ui.spacing_mut().item_spacing.x = CHOICE_GAP;
     ui.spacing_mut().button_padding = CHOICE_PADDING;
     let width = (ui.available_width() - 2.0 * CHOICE_GAP) / 3.0;
     let mut value = (spec.get)(sliders);
-    for (name, choice) in TRI_CHOICES.iter().zip(1u8..=3) {
-        if ui
-            .add_sized(
+    // The three choices as one control, so the wheel over any moves it.
+    let control = TRI_CHOICES
+        .iter()
+        .zip(1u8..=3)
+        .map(|(name, choice)| {
+            let response = ui.add_sized(
                 egui::vec2(width, ui.spacing().interact_size.y),
                 egui::Button::selectable(value == choice, *name).truncate(),
-            )
-            .clicked()
-        {
-            value = choice;
-        }
+            );
+            if response.clicked() {
+                value = choice;
+            }
+            response
+        })
+        .reduce(|left, right| left | right)
+        .expect("a numbers toggle has three choices");
+    // Wheel up moves right, and `step_choice` steps up to an earlier item,
+    // so it takes the steps negated over the choices in drawn order.
+    if let Some(next) = step_choice(1u8..=3, &value, -wheel_steps(ui, &control)) {
+        value = next;
     }
     if value != (spec.get)(sliders) {
         (spec.set)(sliders, value);
@@ -585,13 +610,17 @@ fn number_choices(ui: &mut egui::Ui, sliders: &mut TacticSliders, spec: &SliderS
 /// less the value's field and their gap, the value at the right). The
 /// rail's fill and the handle take the selection blue — egui fills the
 /// handle with the widget state's `bg_fill`, the rail's grey, and has
-/// no field for the handle's fill alone, so it is painted over.
+/// no field for the handle's fill alone, so it is painted over. The
+/// wheel over the rail or the value box steps the value by one a notch,
+/// up adding one, within 1 to the range's top.
 fn slider(ui: &mut egui::Ui, sliders: &mut TacticSliders, spec: &SliderSpec) {
     let width = (ui.available_width() - ui.spacing().item_spacing.x - ui.spacing().interact_size.x)
         .max(0.0);
     ui.spacing_mut().slider_width = width;
     let mut value = (spec.get)(sliders);
-    let response = ui.add(
+    // egui's slider answers for the rail and the value box together: the
+    // wheel over either is hovering it.
+    let mut response = ui.add(
         egui::Slider::new(&mut value, 1..=spec.max)
             .clamping(egui::SliderClamping::Edits)
             .trailing_fill(true),
@@ -621,6 +650,9 @@ fn slider(ui: &mut egui::Ui, sliders: &mut TacticSliders, spec: &SliderSpec) {
             visuals.fg_stroke,
             egui::StrokeKind::Inside,
         );
+    }
+    if step_number(&mut value, wheel_steps(ui, &response), 1..=spec.max) {
+        response.mark_changed();
     }
     if response.changed() {
         (spec.set)(sliders, value);
