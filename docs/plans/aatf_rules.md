@@ -325,7 +325,7 @@ as two `Unused` rows whose `allowance` is `weak_foot_usage` and `weak_foot_accur
 said `weak_foot` and read alike: the logic's change lands before logic version 1 is frozen. A
 height row's players are lines under its sentence (`violationDetail`): a bracket's by the
 height read, tallest first, a player whose own height differs with it after his name (`At 185:
-HELLOHELL, Stack Bros. (189)`); the pool's draws by bracket and centimetres, most first (`6 in
+Stack Bros. (189), HELLOHELL`); the pool's draws by bracket and centimetres, most first (`6 in
 Tall slots, 10 cm each (60): …`); `NearestSystem` names the system and its brackets off
 (`fits no quota system; the nearest is Height, with Mid 6 of 5 and Tall 5 of 6`). Live AATF and Multi-team AATF draw the lines under the
 row, in the plain text colour and wrapping; Multi-team AATF's copy indents them under the row's

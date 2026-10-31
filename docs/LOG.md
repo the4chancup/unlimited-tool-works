@@ -2972,3 +2972,6 @@ worklog passed 7,000 lines.
 - **2026-10-31** — cvA1's rework closed: a renamed PES 15 or 16 Texport lists its new name, and
   a Team TOML refusal names the value as written (`1f1e6cf1`); SWE-2 0 of 2, Astra no concerns,
   the mutation run 7 caught. Left: pes_savefile's whole-crate run after the cut.
+- **2026-10-31** — cv16b: a height row's players and draws stand in lines under its sentence
+  in Live AATF, Multi-team AATF, its copy and `check-aatf`; Multi-team AATF is 900 wide (cv17);
+  merged `308c991b`, gated. Five collaborator requests and a Tactics bug became cv18-cv22.
