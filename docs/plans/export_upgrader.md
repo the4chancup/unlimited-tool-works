@@ -9,8 +9,15 @@ left is step 13, the optional glTF pass (Phase 7), and the tool's view (Phase 8)
 
 ## What it does
 
-What exists of this is in `spec/export_upgrader.md` "What it does", steps 1 to 12. The last
-step:
+What exists of this is in `spec/export_upgrader.md` "What it does", steps 1 to 12. Step 8
+gains the base copy (with worklog 8.36c): a player whose record in the savefile copies another
+player (a base-copy id neither 0 nor his own) gets that id's `<id>.copy` link in his folder
+(`plans/aesthetics_export/player_folders.md` "Player folders (the Studio export format)"), since the copy lives only in the
+save and the `.ted` and would otherwise be cleared by the first patch; when his folder also
+holds a face of his own, the face stays, the copy is not written and a Warning names both (the
+game showed the copy over that face, so the manager's face was not what the cup saw, which the
+member is told rather than having it chosen for them silently). Loose mode, which has no save,
+writes none. The last step:
 
 13. **Optional glTF conversion** (`--convert-to-gltf`, off by default) — after the structural
     migration is complete and verified (step 10's report is clean), a second pass converts all

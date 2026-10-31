@@ -19,6 +19,23 @@ At compile time, after the spec's steps 0 to 3, the pipeline:
    makes the player wear successfully emitted boots/gloves without pointing at failed content — the
    coordination currently done manually with 4ccEditor.
 
+**A base copy: the `<id>.copy` link file.** A player folder holding an empty file named after a
+player id with the `.copy` extension (`5223.copy`; a stray `.txt` suffix is accepted, as for every
+link file) wears that player's face and hair the game's own way: the aesthetics patch writes the
+id as his base copy (Team TOML's `base_copy_id`) instead of clearing it. Members use copies on
+purpose, for a player with no face of his own: a stock player's face, another board's player, a
+teammate cloned (a census of PES 2019 cup saves, 2026-10-31: /sp/'s NGUBU copying 101334,
+/4ccseeks/'s nineteen MR. MEESEEKS copying their #02, VGL 15's Backup 1 copying all of /akg/).
+A copy is the face category's link: at most one in a folder, and refused beside any face of
+the player's own (a face model, a `.face` link, an `ingame_face.toml`), since the game shows the
+copy over his own face and the two contradict each other. The id is a number other than 0 and
+the player's own id (both are the record's "no copy"); whether a stock id exists in the game's
+database is not checked, the compiler having no database to look in. A file rather than a
+`settings.toml` key: the folder listing shows that a player wears a copy, where a key would
+leave a folder that looks empty until its settings are opened, and the export already names
+what a player wears by file (models, `.face`, `.boots` and `.gloves` links) while Team TOML
+holds the ids they become (`boots_id`, `gloves_id`, `base_copy_id`).
+
 ## Complete export (an aesthetics export with its tactical file and its music)
 
 A team's aesthetics export may carry its tactical half as a file at its root, `tactics.toml`:

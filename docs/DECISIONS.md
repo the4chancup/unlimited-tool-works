@@ -14525,3 +14525,22 @@ gloves would not reach the game (`savefile_player_not_stripped`). A `.ted` impor
 patch writes its team's players over their looks, and a later matchday's compile changes the
 save, not only the CPKs.
 Plan: `plans/core/development_plan.md` "The /vg/ League 27 (VGL)"; worklog 0.0.2, 8.36c, 8.36d.
+
+## 2026-10-31 — aesthetics — A player keeps a base copy through an `<id>.copy` link file
+Decision (maintainer): an empty `<id>.copy` file in a player folder (`5223.copy`, the link
+files' grammar, a `.txt` suffix accepted) has the aesthetics patch write `<id>` as the player's
+base copy instead of clearing it. It is the face category's link: at most one, and refused
+beside any face of the player's own (a face model, a `.face` link, an `ingame_face.toml`). The
+Export upgrader writes it from the save it upgrades against (the lead, applying: a folder with
+a face of its own keeps the face, the copy unwritten and a Warning naming both; loose mode
+writes none).
+Why: members use base copies on purpose for players with no face of their own (a census of six
+PES 2019 cup saves: 0 to 28 per save, stock faces, other boards' players, a team of clones),
+and the full-look patch would have cleared them all. A file rather than a `settings.toml` key,
+because the folder listing then shows that a player wears a copy (a key would leave his folder
+looking empty to an aesthetics helper until its settings were opened), and the export names
+what a player wears by file while Team TOML holds the ids they become. A face of his own beside
+a copy contradicts it: the game shows the copy over that face.
+Plan: `plans/aesthetics_export/player_folders.md` "Player folders (the Studio export format)",
+`plans/pes_savefile/operations.md` "Aesthetics patch (new)", `plans/export_upgrader.md` "What
+it does"; worklog 8.36c; GLOSSARY "Copy link".
