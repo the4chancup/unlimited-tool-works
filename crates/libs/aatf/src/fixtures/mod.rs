@@ -180,8 +180,9 @@ fn warning(slot: u8, kind: ViolationKind) -> Violation {
     }
 }
 
-/// A `BracketQuota` of height system `system`.
-fn quota(system: &str, bracket: &str, count: u8, quota: u8) -> Violation {
+/// A `BracketQuota` of height system `system`, `players` its players as
+/// (roster slot, height read).
+fn quota(system: &str, bracket: &str, count: u8, quota: u8, players: &[(u8, u8)]) -> Violation {
     error(
         None,
         ViolationKind::BracketQuota {
@@ -189,6 +190,7 @@ fn quota(system: &str, bracket: &str, count: u8, quota: u8) -> Violation {
             bracket: bracket.to_string(),
             count,
             quota,
+            players: players.to_vec(),
         },
     )
 }

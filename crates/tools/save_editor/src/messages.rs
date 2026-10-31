@@ -775,6 +775,7 @@ mod tests {
                 bracket: "tall".to_owned(),
                 count: 8,
                 quota: 10,
+                players: vec![(4, 185)],
             },
         );
         assert_eq!(
@@ -787,6 +788,31 @@ mod tests {
             )),
             "Warning aatf_violation (team=734, rule=Height quota, \
              problem=8 players in the Tall bracket of the Red system, where its quota is 10)"
+        );
+        // The nearest quota system, a team's warning, under DBC7, whose `height` system and
+        // `mid` and `tall` brackets print as Height, Mid and Tall.
+        let dbc7 = aatf::builtin("dbc7").expect("dbc7 is built in");
+        let nearest = violation(
+            None,
+            aatf::Severity::Warning,
+            ViolationKind::NearestSystem {
+                system: "height".to_owned(),
+                off: vec![("mid".to_owned(), 6, 5), ("tall".to_owned(), 5, 6)],
+            },
+        );
+        assert_eq!(
+            line(&aatf_violation(
+                893,
+                None,
+                &nearest,
+                Wording {
+                    ruleset: dbc7.ruleset(),
+                    version: PesVersion::Pes17,
+                },
+                Severity::Warning
+            )),
+            "Warning aatf_violation (team=893, rule=Nearest system, \
+             problem=fits no quota system; the nearest is Height, with Mid 6 of 5 and Tall 5 of 6)"
         );
         assert_eq!(
             line(&aatf_check_failed(

@@ -435,7 +435,8 @@ fn a_height_in_no_bracket() {
                     system: "green".to_string(),
                     bracket: "mid".to_string(),
                     count: 4,
-                    quota: 5
+                    quota: 5,
+                    players: vec![(7, 180), (13, 180), (18, 180), (21, 180)],
                 }
             ),
         ]
@@ -453,7 +454,13 @@ fn a_height_between_manlet_and_mid_is_in_no_bracket() {
         problems(&rules, &edited(12, |p| p.height = 178)),
         vec![
             error(Some(12), no_bracket(178, &[(180, 180)], true)),
-            quota("green", "mid", 4, 5),
+            quota(
+                "green",
+                "mid",
+                4,
+                5,
+                &[(7, 180), (13, 180), (18, 180), (21, 180)]
+            ),
         ]
     );
     assert_eq!(player(&red_legal_team(), 12).height, 180);
@@ -461,7 +468,20 @@ fn a_height_between_manlet_and_mid_is_in_no_bracket() {
         problems(&rules, &red_edited(12, |p| p.height = 178)),
         vec![
             error(Some(12), no_bracket(178, &[(180, 180)], true)),
-            quota("red", "mid", 6, 7),
+            quota(
+                "red",
+                "mid",
+                6,
+                7,
+                &[
+                    (1, 180),
+                    (7, 180),
+                    (8, 180),
+                    (13, 180),
+                    (18, 180),
+                    (21, 180)
+                ]
+            ),
         ]
     );
 }
@@ -492,8 +512,20 @@ fn the_height_hint_names_every_bracket_with_room() {
         vec![
             error(Some(2), no_bracket(183, &fits, true)),
             error(Some(12), no_bracket(183, &fits, true)),
-            quota("green", "mid", 4, 5),
-            quota("green", "tall", 5, 6),
+            quota(
+                "green",
+                "mid",
+                4,
+                5,
+                &[(7, 180), (13, 180), (18, 180), (21, 180)]
+            ),
+            quota(
+                "green",
+                "tall",
+                5,
+                6,
+                &[(0, 185), (9, 185), (10, 185), (11, 185), (16, 185)]
+            ),
         ]
     );
 }
@@ -618,7 +650,16 @@ fn bracket_quotas_off() {
                     system: "green".to_string(),
                     bracket: "manlet".to_string(),
                     count: 7,
-                    quota: 6
+                    quota: 6,
+                    players: vec![
+                        (3, 175),
+                        (4, 175),
+                        (6, 175),
+                        (12, 175),
+                        (15, 175),
+                        (19, 175),
+                        (22, 175)
+                    ],
                 }
             ),
             error(
@@ -627,7 +668,8 @@ fn bracket_quotas_off() {
                     system: "green".to_string(),
                     bracket: "mid".to_string(),
                     count: 4,
-                    quota: 5
+                    quota: 5,
+                    players: vec![(7, 180), (13, 180), (18, 180), (21, 180)],
                 }
             ),
         ]
@@ -676,7 +718,8 @@ fn no_goalkeeper() {
                     system: "green".to_string(),
                     bracket: "tall".to_string(),
                     count: 4,
-                    quota: 6
+                    quota: 6,
+                    players: vec![(2, 185), (9, 185), (10, 185), (16, 185)],
                 }
             ),
             error(None, ViolationKind::Goalkeepers { count: 0, min: 1 }),
@@ -812,7 +855,13 @@ fn goalkeepers_at_189_count_as_tall_and_181_to_188_is_forbidden() {
                     "GKs in this bracket must be 189cm"
                 )
             ),
-            quota("green", "tall", 5, 6),
+            quota(
+                "green",
+                "tall",
+                5,
+                6,
+                &[(2, 185), (9, 185), (10, 185), (11, 185), (16, 185)]
+            ),
         ]
     );
 }
@@ -832,8 +881,28 @@ fn goalkeepers_below_giant_is_an_error() {
                     "GK heights cannot be 194cm or more"
                 )
             ),
-            quota("green", "tall", 5, 6),
-            quota("green", "giant", 7, 6),
+            quota(
+                "green",
+                "tall",
+                5,
+                6,
+                &[(2, 185), (9, 185), (10, 185), (11, 185), (16, 185)]
+            ),
+            quota(
+                "green",
+                "giant",
+                7,
+                6,
+                &[
+                    (0, 194),
+                    (1, 194),
+                    (5, 194),
+                    (8, 194),
+                    (14, 194),
+                    (17, 194),
+                    (20, 194)
+                ]
+            ),
         ]
     );
 }
@@ -848,8 +917,28 @@ fn gold_below_giant_is_an_error() {
                 Some(2),
                 special("Gold below giant", "Gold heights cannot be 194cm or more")
             ),
-            quota("green", "tall", 5, 6),
-            quota("green", "giant", 7, 6),
+            quota(
+                "green",
+                "tall",
+                5,
+                6,
+                &[(0, 185), (9, 185), (10, 185), (11, 185), (16, 185)]
+            ),
+            quota(
+                "green",
+                "giant",
+                7,
+                6,
+                &[
+                    (1, 194),
+                    (2, 194),
+                    (5, 194),
+                    (8, 194),
+                    (14, 194),
+                    (17, 194),
+                    (20, 194)
+                ]
+            ),
         ]
     );
 }
@@ -1014,7 +1103,23 @@ fn red_cbs_at_189_count_as_tall() {
         problems(&rules, &red_edited(14, |p| p.height = 187)),
         vec![
             error(Some(14), no_bracket(187, &[(185, 185)], true)),
-            quota("red", "tall", 9, 10),
+            quota(
+                "red",
+                "tall",
+                9,
+                10,
+                &[
+                    (0, 185),
+                    (2, 185),
+                    (5, 185),
+                    (9, 185),
+                    (10, 185),
+                    (11, 185),
+                    (16, 185),
+                    (17, 185),
+                    (20, 185)
+                ]
+            ),
         ]
     );
     // A regular registered at CMF at 189 under Red: no allowance, no
@@ -1024,7 +1129,20 @@ fn red_cbs_at_189_count_as_tall() {
         problems(&rules, &red_edited(12, |p| p.height = 189)),
         vec![
             error(Some(12), no_bracket(189, &[(180, 180)], true)),
-            quota("red", "mid", 6, 7),
+            quota(
+                "red",
+                "mid",
+                6,
+                7,
+                &[
+                    (1, 180),
+                    (7, 180),
+                    (8, 180),
+                    (13, 180),
+                    (18, 180),
+                    (21, 180)
+                ]
+            ),
         ]
     );
     // A medal registered at CB at 189 under Red: the allowance is the
@@ -1035,7 +1153,23 @@ fn red_cbs_at_189_count_as_tall() {
         problems(&rules, &red_edited(20, |p| p.height = 189)),
         vec![
             error(Some(20), no_bracket(189, &[(185, 185)], true)),
-            quota("red", "tall", 9, 10),
+            quota(
+                "red",
+                "tall",
+                9,
+                10,
+                &[
+                    (0, 185),
+                    (2, 185),
+                    (5, 185),
+                    (9, 185),
+                    (10, 185),
+                    (11, 185),
+                    (14, 185),
+                    (16, 185),
+                    (17, 185)
+                ]
+            ),
         ]
     );
     // A CB under Green: 189 is in no bracket.
@@ -1047,7 +1181,13 @@ fn red_cbs_at_189_count_as_tall() {
         problems(&rules, &green),
         vec![
             error(Some(8), no_bracket(189, &[(194, 194)], true)),
-            quota("green", "giant", 5, 6),
+            quota(
+                "green",
+                "giant",
+                5,
+                6,
+                &[(1, 194), (5, 194), (14, 194), (17, 194), (20, 194)]
+            ),
         ]
     );
     // The starter: registered CB is what counts, so fielded at RB in
