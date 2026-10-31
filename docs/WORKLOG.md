@@ -6097,12 +6097,16 @@ briefs, review loops, gates and mutation runs as for any step.
       dropped on a marker work as before; SE-GUI-12's tests then pick /vg/ League 27 (the
       default Autumn 26 allows illegal formations); after the whole-crate chain. Brief
       written: `.tmp/0_0_1cv/brief_cv14b.md` (an Opus sidekick in `wt-cv14b`)
-    - [ ] review of cv14a and cv14c (checkpoint (b): two crates): SWE-2 round 1 found nothing
+    - [x] review of cv14a and cv14c (checkpoint (b): two crates): SWE-2 round 1 found nothing
       in the field's code and 2 of 4 accepted on the page (no test unticks a preset box or
       types into Age and Weight), the loop ends; Astra 2 of 2 (unticking Weight and the COM
       cap untested; the help still called the page not editable, fixed `c0b4833b`), its loop
-      ends. The three test gaps: cv14r (SWE-2 sidekick, branch `cv14r` in `wt-cv14`), then a
-      SWE-2 round over it (`.tmp/0_0_1cv/rulings_cv14.md`)
+      ends. The three test gaps: cv14r (SWE-2 sidekick; lead checks green, ruleset_editor
+      144 + 13 tests): `b3c74c24`, merged `ddcb0988`; its numbers are found by drawn position,
+      since a lookup by value moves with a swapped binding (the sidekick's catch). SWE-2 round 2
+      over it 0 of 2, the loop ends; `mutants-diff b83ab5bd^1` (local): aatf 3 caught,
+      ruleset_editor 10 caught and 1 unviable, no survivor (`.tmp/0_0_1cv/rulings_cv14.md`,
+      `mutants_diff_cv14.log`)
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
     every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree
