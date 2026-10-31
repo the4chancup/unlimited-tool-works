@@ -834,6 +834,7 @@ fn the_popover_scrolls_with_the_pitch() {
             &mut tactics,
             &mut view,
             &roster,
+            false,
         );
     });
     let canvas_after = canvas_rect(&nodes);
@@ -1203,6 +1204,48 @@ fn the_position_combo_lists_the_positions_the_spot_offers() {
             "slot {index} as {position}"
         );
     }
+}
+
+// Under a ruleset that allows illegal formations the Position combo
+// lists every outfield position, CB to CF, whatever the spot: team
+// 718's middle CB at (52, 7), whose spot offers CB alone, is offered all
+// twelve, and LB picked there makes him an LB, his X and Y kept.
+#[test]
+fn under_illegal_formations_the_position_combo_lists_every_outfield_position() {
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    tactics.presets[0].formations[0] = formation_718_1();
+    let index = 6;
+    let before = tactics.clone();
+    let slot = before.presets[0].formations[0].players[index];
+    assert_eq!(
+        (slot.position, slot.x, slot.y),
+        (position_byte("CB"), 52, 7),
+        "premise: slot 6, the CB at (52, 7)"
+    );
+    let mut window = Headless::sized(600.0, 450.0);
+    window.illegal_formations = true;
+    let mut view = TacticsView::default();
+    assert_eq!(
+        position_list(&mut window, &mut tactics, &mut view, &roster, index),
+        [
+            "CB", "LB", "RB", "DMF", "CMF", "LMF", "RMF", "AMF", "LWF", "RWF", "SS", "CF"
+        ],
+        "the twelve outfield positions"
+    );
+
+    let ids = window.pitch_ids(PesVersion::Pes21, &mut tactics, &mut view, &roster);
+    let item = entry_id(&ids, Role::Button, "LB");
+    let (_, changed) =
+        window.action_click_pitch(item, PesVersion::Pes21, &mut tactics, &mut view, &roster);
+    assert!(changed, "the pick changed the record");
+    let mut expect = before;
+    expect.presets[0].formations[0].players[index].position = position_byte("LB");
+    assert_eq!(
+        tactics, expect,
+        "his position alone changed, his X and Y kept"
+    );
 }
 
 // PARTY HARD's popover at (20, 26) lists CMF and LMF alone; his Y set to

@@ -61,6 +61,9 @@ pub(crate) struct Headless {
     screen: egui::Vec2,
     /// The root viewport's `repaint_delay` of the last run frame.
     repaint_delay: std::time::Duration,
+    /// The flag the pitch's frames hand `pitch`: whether the active
+    /// ruleset allows illegal formations. Off unless a test sets it.
+    pub(crate) illegal_formations: bool,
 }
 
 impl Headless {
@@ -80,6 +83,7 @@ impl Headless {
             ctx,
             screen: egui::vec2(width, height),
             repaint_delay: std::time::Duration::MAX,
+            illegal_formations: false,
         }
     }
 

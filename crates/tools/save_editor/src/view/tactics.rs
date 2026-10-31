@@ -202,6 +202,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 .collect()
         })
         .collect();
+    // Whether the pitch sets a starter's spot and his position apart: the
+    // active ruleset's cup plays a game that keeps any formation.
+    let illegal_formations = rules
+        .as_ref()
+        .is_some_and(|active| active.rules.ruleset().universal.illegal_formations);
     let roster: Vec<RosterRow> = rows
         .iter()
         .zip(textures)
@@ -291,6 +296,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             &mut edited,
             tactics,
             &roster,
+            illegal_formations,
         );
         let mut assigns_ui = cell(
             ui,
