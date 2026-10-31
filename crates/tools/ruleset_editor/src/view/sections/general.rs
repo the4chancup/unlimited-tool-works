@@ -76,10 +76,10 @@ pub(crate) fn show(ui: &mut egui::Ui, ruleset: &mut Ruleset, logo: &mut LogoFiel
                 egui::TextEdit::singleline(&mut ruleset.name).desired_width(220.0),
             ));
             ui.end_row();
-            ui.label("Event page");
+            ui.label("Event page (optional)");
             event_page(ui, ruleset);
             ui.end_row();
-            ui.label("Event logo");
+            ui.label("Event logo (optional)");
             event_logo(ui, ruleset, logo);
             ui.end_row();
         });
