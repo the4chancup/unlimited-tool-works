@@ -55,8 +55,9 @@ window, and the block is a check on the form, not where the work happens. Shown,
 the last edit changed are highlighted.
 
 - **General**: name, event page, event logo, the rating stats and the at-most
-  stats (stat checklists, with one line on what each list does). The event page is a text
-  box (`https://` as its placeholder); the event logo shows the picture at the height the
+  stats (stat checklists, with one line on what each list does). A ruleset needs neither
+  the event page nor the logo, and their labels say so: `Event page (optional)` and
+  `Event logo (optional)`. The event page is a text box (`https://` as its placeholder); the event logo shows the picture at the height the
   Save editor draws it (28, up to 84 wide), then `Choose picture…` (a file dialog for the
   pictures `image` reads: PNG, JPEG, BMP, WebP, TGA, TIFF) and `Remove`, or a weak `None`
   before them. A picture of any size is taken: scaled down (never up) to fit 168 × 56
