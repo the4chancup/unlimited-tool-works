@@ -430,6 +430,59 @@ fn rules_wins_over_the_aatf_ruleset_setting() {
     );
 }
 
+/// `--rules` names a built-in ruleset by its stem when no file has that name; a name that
+/// is neither is refused with every stem listed; a file of that name wins over the stem.
+/// The sandbox runs the command in-process, from the test process's directory (the
+/// crate's), so the file case names the sandbox's `vgl27` by its path.
+// SE-AATF-08
+#[test]
+fn rules_names_a_built_in_ruleset_by_its_stem() {
+    let sandbox = Sandbox::new("aatf_rules_stem");
+    sandbox.fixture(PesVersion::Pes21, "EDIT");
+    assert!(
+        !Path::new("vgl27").exists() && !Path::new("nosuch").exists(),
+        "premise: the current directory holds no file named vgl27 or nosuch"
+    );
+
+    let run = check(&sandbox, "EDIT", &["--teams", "701", "--rules", "vgl27"]);
+    assert_eq!(run.exit_code(), 1, "{:?}", run.messages());
+    assert!(
+        run.messages()
+            .iter()
+            .any(|line| line == PICKED_FILE_VIOLATION),
+        "{:?}",
+        run.messages()
+    );
+
+    check(&sandbox, "EDIT", &["--teams", "701", "--rules", "nosuch"]).assert_refused(
+        2,
+        &[
+            "nosuch", "autumn26", "spring26", "vgl27", "vgl26", "vtl11", "vtl10", "dbc7",
+        ],
+    );
+
+    // A file named `vgl27` holding the official ruleset is the one checked.
+    fs::write(sandbox.path("vgl27"), rules_file("autumn26")).unwrap();
+    let run = check(
+        &sandbox,
+        "EDIT",
+        &["--teams", "701", "--rules", &sandbox.arg("vgl27")],
+    );
+    assert!(run.exit_code() < 2, "{:?}", run.messages());
+    assert!(
+        !run.messages()
+            .iter()
+            .any(|line| line == PICKED_FILE_VIOLATION),
+        "{:?}",
+        run.messages()
+    );
+    assert!(
+        run.messages().iter().any(|line| line == OFFICIAL_VIOLATION),
+        "the official file's own quota: {:?}",
+        run.messages()
+    );
+}
+
 // SE-AATF-01
 #[test]
 fn a_roster_order_break_reports_the_held_and_expected_ids() {

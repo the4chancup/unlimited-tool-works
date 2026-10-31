@@ -52,7 +52,7 @@ enum SaveEditorCommand {
     ExportTeamsList(ExportTeamsListArgs),
 }
 
-/// `check-aatf <save> [--teams <list>] [--rules <file>]`.
+/// `check-aatf <save> [--teams <list>] [--rules <file|name>]`.
 #[derive(Debug, Args)]
 struct CheckAatfArgs {
     /// The save to read (EDIT00000000).
@@ -61,9 +61,10 @@ struct CheckAatfArgs {
     /// every team of the save in the cup range (701 to 920) is checked.
     #[arg(long, value_name = "LIST")]
     teams: Option<String>,
-    /// The AATF rules file to check against. Without it, the ruleset picked in the Save
-    /// editor's toolbar dropdown is used (the aatf_ruleset setting).
-    #[arg(long, value_name = "FILE")]
+    /// The AATF ruleset to check against: a rules file, or when no file has that name, a
+    /// built-in ruleset by its short name (dbc7, vgl27). Without it, the ruleset picked in the
+    /// Save editor's toolbar dropdown is used (the aatf_ruleset setting).
+    #[arg(long, value_name = "FILE|NAME")]
     rules: Option<PathBuf>,
 }
 
@@ -445,8 +446,9 @@ fn check_aatf(
     Ok(())
 }
 
-/// The ruleset `check-aatf` checks against: `--rules`, a command-line path used as given,
-/// else the `aatf_ruleset` setting resolved as the window resolves it
+/// The ruleset `check-aatf` checks against: `--rules`, a command-line path used as given
+/// when a file has that name, else a built-in ruleset's stem, else refused with the stems
+/// listed; without it, the `aatf_ruleset` setting resolved as the window resolves it
 /// (`session::rules::resolve`), a choice that is gone reported as a warning line.
 fn rules(
     args: &CheckAatfArgs,
@@ -454,9 +456,23 @@ fn rules(
     report: &mut Report,
 ) -> Result<Arc<aatf::Rules>, CliError> {
     if let Some(path) = &args.rules {
-        return session::rules::load_file(path)
-            .map(Arc::new)
-            .map_err(invalid);
+        if path.is_file() {
+            return session::rules::load_file(path)
+                .map(Arc::new)
+                .map_err(invalid);
+        }
+        let name = path.to_string_lossy();
+        return aatf::builtin(&name).map(Arc::new).ok_or_else(|| {
+            let stems: Vec<&str> = session::rules::builtins()
+                .iter()
+                .map(|(stem, _)| *stem)
+                .collect();
+            invalid(anyhow!(
+                "--rules {name}: no rules file has that name, and no built-in ruleset either \
+                 (the built-in ones are {})",
+                stems.join(", ")
+            ))
+        });
     }
     // A toml error's text ends with a newline, which would leave a blank line under `error: `.
     let settings = settings::from_table(&ctx.tool_settings(TOOL_ID)).map_err(|error| {
