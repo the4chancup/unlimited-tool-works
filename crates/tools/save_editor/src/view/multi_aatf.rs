@@ -1,16 +1,19 @@
 //! The Savefile menu's Multi-team AATF dialog, the draft's `dlgMultiAatf`:
 //! an organizer's check of a range of the save's teams under the toolbar's
 //! ruleset, a report read once and copied out, while Live AATF is where a
-//! team gets fixed. The range's two ends are picked by team on one row, the
-//! save's first and last team by default, and kept while the dialog is
-//! closed and opened again on the same save. The teams are checked in
-//! parallel on the AATF check's worker (`aatf_check`) whenever the range or
-//! the ruleset changes. A range change keeps the last list, marked as
-//! checking until the new one lands; a ruleset change drops it, since its
-//! words (tier labels, medal systems, the copied text's first line) would
-//! be the new ruleset's over findings checked under the old one. Copy to
-//! clipboard writes the list as plain text (`copy_text`) for a cup's
-//! thread.
+//! team gets fixed. The range's two ends are picked by team on one row,
+//! both on the save's first team by default, the last never before the
+//! first, and kept while the dialog is closed and opened again on the same
+//! save. The teams are checked in parallel on the AATF check's worker
+//! (`aatf_check`) whenever the ruleset changes, and whenever the range
+//! changes once its ends have rested `REST`. A range change keeps the last
+//! list, dimmed and marked as checking until the new one lands; a ruleset
+//! change drops it, since its words (tier labels, medal systems, the copied
+//! text's first line) would be the new ruleset's over findings checked
+//! under the old one. Copy to clipboard writes the list as plain text
+//! (`copy_text`) for a cup's thread.
+
+use std::time::Duration;
 
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
@@ -37,13 +40,34 @@ const LIST_HEIGHT: f32 = 360.0;
 /// padding.
 const LIST_MARGIN: egui::Margin = egui::Margin::symmetric(6, 2);
 
+/// How long, in seconds, the range's ends hold still before the range is
+/// checked: the wheel over an end steps one team a frame, and a check
+/// started per step left the window unresponsive for about two minutes
+/// over 220 teams.
+const REST: f64 = 0.5;
+
+/// The list's opacity while it is checking, the draft's
+/// `.live-body.checking`.
+const CHECKING_OPACITY: f32 = 0.55;
+
+/// The range's ends as picked and as checked.
+struct Range {
+    /// The first and last team ids as picked, the last never before the
+    /// first.
+    picked: (u32, u32),
+    /// The ends the check is for: `picked` once it has held still for
+    /// `REST`.
+    checked: (u32, u32),
+    /// The input time `picked` last changed at.
+    changed_at: f64,
+}
+
 /// The dialog's state on `SaveView` (`view.multi_aatf`).
 pub(super) struct MultiAatf {
     /// The dialog is up.
     open: bool,
-    /// The range's first and last team ids as picked; `None` until the
-    /// dialog first opens on the open save.
-    range: Option<(u32, u32)>,
+    /// The range; `None` until the dialog first opens on the open save.
+    range: Option<Range>,
     /// The range's check.
     pub(super) check: TeamsCheck,
 }
@@ -63,12 +87,17 @@ impl MultiAatf {
         *self = MultiAatf::new();
     }
 
-    /// The Savefile menu's entry: the dialog up, its range the save's first
-    /// and last team the first time it opens on `file`.
+    /// The Savefile menu's entry: the dialog up, both ends of its range on
+    /// the save's first team the first time it opens on `file`, checked at
+    /// once.
     pub(super) fn open(&mut self, file: &EditFile) {
         if self.range.is_none() {
-            let ids = file.teams().iter().map(|team| team.id);
-            self.range = ids.clone().min().zip(ids.max());
+            let first = file.teams().iter().map(|team| team.id).min();
+            self.range = first.map(|first| Range {
+                picked: (first, first),
+                checked: (first, first),
+                changed_at: f64::NEG_INFINITY,
+            });
         }
         self.open = true;
     }
@@ -84,7 +113,7 @@ fn counted(n: usize, word: &str) -> String {
 }
 
 /// The teams of `file` whose id lies between `first` and `last`, in id
-/// order; none when `first` comes after `last`.
+/// order.
 fn range_ids(file: &EditFile, first: u32, last: u32) -> Vec<u32> {
     let mut ids: Vec<u32> = file
         .teams()
@@ -102,13 +131,14 @@ fn team_label(file: &EditFile, id: u32) -> String {
     format!("{id} {}", display_name(aatf_check::team_name(file, id)))
 }
 
-/// One end of the range: a combo of the save's teams in id order, the
-/// order the range is taken in, as wide as its widest label so a pick
-/// never moves the other combo.
-fn team_combo(ui: &mut egui::Ui, id_salt: &str, file: &EditFile, picked: &mut u32) {
+/// One end of the range: a combo of the save's teams from id `from` on, in
+/// id order, the order the range is taken in, as wide as its widest label
+/// so a pick never moves the other combo.
+fn team_combo(ui: &mut egui::Ui, id_salt: &str, file: &EditFile, from: u32, picked: &mut u32) {
     let mut labels: Vec<(u32, String)> = file
         .teams()
         .iter()
+        .filter(|team| team.id >= from)
         .map(|team| (team.id, team_label(file, team.id)))
         .collect();
     labels.sort_unstable_by_key(|(id, _)| *id);
@@ -253,8 +283,9 @@ fn copy_text(
 }
 
 /// The dialog for one frame while it is up: the title naming the ruleset,
-/// the range's row, the summary line (or the reversed range's warning),
-/// the list, then Copy to clipboard and Close.
+/// the range's row, the summary line, the list, then Copy to clipboard and
+/// Close. The list is of the range last checked; ends picked since are
+/// checked once they have rested `REST`, measured on egui's input time.
 pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     let SaveView {
         multi_aatf: multi,
@@ -266,42 +297,39 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     if !multi.open {
         return;
     }
-    let (Some(session), Some(active), Some((mut first, mut last))) =
-        (session.as_ref(), rules.as_ref(), multi.range)
+    let (Some(session), Some(active), Some(range)) =
+        (session.as_ref(), rules.as_ref(), multi.range.as_mut())
     else {
         return;
     };
     let file = session.file();
     let description = &active.rules.ruleset().name;
-    let reversed = first > last;
     let key = CheckKey {
         revision: session.revision(),
-        ids: range_ids(file, first, last),
+        ids: range_ids(file, range.checked.0, range.checked.1),
         ruleset: active.key.clone(),
         suggestions: false,
     };
     // Settled: a modal is up, so no edit can be under way.
     let checking =
-        aatf_check::update_check(&mut multi.check, ui.ctx(), file, &active.rules, key, true);
-    let listed = aatf_check::held_result(&multi.check, &active.key).filter(|_| !reversed);
+        aatf_check::update_check(&mut multi.check, ui.ctx(), file, &active.rules, key, true)
+            || range.picked != range.checked;
+    let listed = aatf_check::held_result(&multi.check, &active.key);
+    let (mut first, mut last) = range.picked;
     let mut close = false;
     let id = egui::Id::unique("save_editor_multi_aatf");
     let title = format!("Multi-team AATF ({description})");
     let response = modal(ui.ctx(), id, title, |ui| {
         ui.horizontal(|ui| {
             ui.weak("Teams");
-            team_combo(ui, "save_editor_multi_first", file, &mut first);
+            team_combo(ui, "save_editor_multi_first", file, u32::MIN, &mut first);
+            // The last end follows a first end picked past it, before it is
+            // drawn, so the range is never reversed.
+            last = last.max(first);
             ui.weak("to");
-            team_combo(ui, "save_editor_multi_last", file, &mut last);
+            team_combo(ui, "save_editor_multi_last", file, first, &mut last);
         });
         ui.horizontal(|ui| {
-            if reversed {
-                ui.colored_label(
-                    ui.visuals().warn_fg_color,
-                    "The first team comes after the last",
-                );
-                return;
-            }
             if let Some((_, checks)) = listed {
                 ui.weak(summary(checks));
             }
@@ -311,36 +339,42 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         });
         let stroke = ui.visuals().widgets.noninteractive.bg_stroke;
         let chrome = LIST_MARGIN.sum() + egui::Vec2::splat(2.0 * stroke.width);
-        egui::Frame::new()
-            .fill(ui.visuals().extreme_bg_color)
-            .stroke(stroke)
-            .inner_margin(LIST_MARGIN)
-            .show(ui, |ui| {
-                ui.set_width(LIST_WIDTH - chrome.x);
-                // egui's solid scroll bar stands beside the rows, as
-                // the draft's `.live-body` bar does: a floating one lies
-                // over each row's right end and its last words.
-                ui.spacing_mut().scroll = egui::style::ScrollStyle::solid();
-                egui::ScrollArea::vertical()
-                    .id_salt("save_editor_multi_rows")
-                    .auto_shrink([false, false])
-                    .max_height(LIST_HEIGHT - chrome.y)
-                    .show(ui, |ui| {
-                        if let Some((key, checks)) = listed {
-                            // A report: its rows select nothing, so the
-                            // click it returns is always `None`.
-                            aatf_check::results(
-                                ui,
-                                file,
-                                "aatf_multi",
-                                key,
-                                checks,
-                                active.rules.ruleset(),
-                                ListUse::Report,
-                            );
-                        }
-                    });
-            });
+        // A scope, so the dimming ends with the list's frame.
+        ui.scope(|ui| {
+            if checking {
+                ui.multiply_opacity(CHECKING_OPACITY);
+            }
+            egui::Frame::new()
+                .fill(ui.visuals().extreme_bg_color)
+                .stroke(stroke)
+                .inner_margin(LIST_MARGIN)
+                .show(ui, |ui| {
+                    ui.set_width(LIST_WIDTH - chrome.x);
+                    // egui's solid scroll bar stands beside the rows, as
+                    // the draft's `.live-body` bar does: a floating one lies
+                    // over each row's right end and its last words.
+                    ui.spacing_mut().scroll = egui::style::ScrollStyle::solid();
+                    egui::ScrollArea::vertical()
+                        .id_salt("save_editor_multi_rows")
+                        .auto_shrink([false, false])
+                        .max_height(LIST_HEIGHT - chrome.y)
+                        .show(ui, |ui| {
+                            if let Some((key, checks)) = listed {
+                                // A report: its rows select nothing, so the
+                                // click it returns is always `None`.
+                                aatf_check::results(
+                                    ui,
+                                    file,
+                                    "aatf_multi",
+                                    key,
+                                    checks,
+                                    active.rules.ruleset(),
+                                    ListUse::Report,
+                                );
+                            }
+                        });
+                });
+        });
         modal_buttons(ui, |ui| {
             if ui.button("Close").clicked() {
                 close = true;
@@ -358,7 +392,22 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
             }
         });
     });
-    multi.range = Some((first, last));
+    let now = ui.input(|input| input.time);
+    if (first, last) != range.picked {
+        range.picked = (first, last);
+        range.changed_at = now;
+    }
+    if range.picked != range.checked {
+        let rested = now - range.changed_at;
+        if rested >= REST {
+            range.checked = range.picked;
+            // The check starts on the next frame, which no input may wake.
+            ui.ctx().request_repaint();
+        } else {
+            ui.ctx()
+                .request_repaint_after(Duration::from_secs_f64(REST - rested));
+        }
+    }
     if close || response.should_close() {
         multi.open = false;
     }

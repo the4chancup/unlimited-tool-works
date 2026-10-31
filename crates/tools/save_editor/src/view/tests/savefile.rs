@@ -442,11 +442,11 @@ fn multi_button<'a>(
 
 /// The Savefile menu's Multi-team AATF… on the PES 17 sample under 4cc
 /// Autumn 26: the title names the ruleset; the range's two combos sit on
-/// one row, on the save's first and last team; the summary counts what
+/// one row, both on the save's first team, 701, which the list holds
+/// alone. Widened to the save's last team, the summary counts what
 /// `check_teams` finds for the same teams; every team is listed under its
 /// id and name with no suggestion. Narrowed to one team, it lists that
-/// team alone; reversed, the line warns in the warning colour, nothing is
-/// listed and Copy to clipboard is off.
+/// team alone.
 // SE-GUI-41
 #[test]
 fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
@@ -456,6 +456,40 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
     let mut window = Headless::new();
     open_multi_aatf(&mut window, &mut view);
     let ids = all_team_ids(&view);
+    assert_eq!(ids[0], 701, "premise: 701 is the save's lowest team id");
+    let first = format!("701 {}", display_name(&team_entry(&view, 701).name));
+    let pairs = multi_checked(&mut window, &mut view, &[701]);
+    let lines = multi_lines(&pairs);
+    assert_eq!(lines[0], MULTI_TITLE);
+    let combos = range_combos(&pairs);
+    assert_eq!(combos.len(), 2, "two team combos");
+    let middle = |node: &accesskit::Node| {
+        let bounds = node.bounds().expect("drawn bounds");
+        (bounds.y0 + bounds.y1) / 2.0
+    };
+    assert_eq!(
+        middle(combos[0]),
+        middle(combos[1]),
+        "the combos share a row"
+    );
+    let ends: Vec<Option<&str>> = combos.iter().map(|combo| combo.value()).collect();
+    assert_eq!(
+        ends,
+        [Some(first.as_str()), Some(first.as_str())],
+        "both ends on the save's first team"
+    );
+    let summary = lines
+        .iter()
+        .find(|line| line.contains("checked,"))
+        .unwrap_or_else(|| panic!("a summary in {lines:?}"));
+    assert!(summary.starts_with("1 team checked, "), "{lines:?}");
+    assert!(lines.contains(&first), "701 is listed: {lines:?}");
+    assert!(
+        !lines.iter().any(|line| line.starts_with("702 ")),
+        "702 is not listed: {lines:?}"
+    );
+
+    // Widened to every team.
     let (names, expected_issues) = {
         let file = view.session.as_ref().expect("the save opened").file();
         let names: Vec<String> = ids
@@ -484,32 +518,9 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
             .count();
         (names, with_issues)
     };
+    pick_range_end(&mut window, &mut view, 1, &names[names.len() - 1]);
     let pairs = multi_checked(&mut window, &mut view, &ids);
     let lines = multi_lines(&pairs);
-    assert_eq!(lines[0], MULTI_TITLE);
-
-    let combos = range_combos(&pairs);
-    assert_eq!(combos.len(), 2, "two team combos");
-    let middle = |node: &accesskit::Node| {
-        let bounds = node.bounds().expect("drawn bounds");
-        (bounds.y0 + bounds.y1) / 2.0
-    };
-    assert_eq!(
-        middle(combos[0]),
-        middle(combos[1]),
-        "the combos share a row"
-    );
-    assert_eq!(
-        combos[0].value(),
-        Some(names[0].as_str()),
-        "the save's first team"
-    );
-    assert_eq!(
-        combos[1].value(),
-        Some(names[names.len() - 1].as_str()),
-        "the save's last team"
-    );
-
     let summary = format!("{} teams checked, {expected_issues} with issues", ids.len());
     assert!(lines.contains(&summary), "{summary:?} in {lines:?}");
     for name in &names {
@@ -532,27 +543,270 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
     );
     let listed: Vec<&String> = names.iter().filter(|name| lines.contains(name)).collect();
     assert_eq!(listed, ["734 /lit/"], "734 alone is listed");
+}
 
-    // Reversed.
-    pick_range_end(&mut window, &mut view, 1, &names[0]);
-    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let lines = multi_lines(&pairs);
-    let warning = "The first team comes after the last";
-    assert!(lines.contains(&warning.to_owned()), "{lines:?}");
+/// The popup items of the dialog's team combo `nth` from the left, top to
+/// bottom: the combo clicked open, its items read, then a click on the
+/// title closes the popup.
+fn range_items(window: &mut Headless, view: &mut SaveView, nth: usize) -> Vec<String> {
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let combo = range_combos(&pairs)[nth];
+    let (left, right, below) = {
+        let bounds = combo.bounds().expect("drawn bounds");
+        (bounds.x0, bounds.x1, bounds.y1)
+    };
+    click(window, combo, view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    // The popup's items stand under the combo, as `pick_range_end` finds
+    // them; its scroll area draws the items it shows.
+    let mut items: Vec<(f64, String)> = pairs
+        .iter()
+        .filter(|(_, node)| node.role() == Role::Button)
+        .filter_map(|(_, node)| {
+            let (bounds, label) = (node.bounds()?, node.label()?);
+            ((left..right).contains(&bounds.x0) && bounds.y0 >= below)
+                .then(|| (bounds.y0, label.to_owned()))
+        })
+        .collect();
+    items.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("drawn bounds"));
+    let title = super::prompt::dialog_nodes(&pairs, MULTI_TITLE)
+        .into_iter()
+        .find(|node| node.value() == Some(MULTI_TITLE))
+        .expect("the title");
+    click(window, title, view);
+    items.into_iter().map(|(_, label)| label).collect()
+}
+
+/// The last end follows a first end picked past it, on the frame of the
+/// pick, and lists the teams from the first end's on: 718 picked on the
+/// first end of the PES 17 sample's dialog, opened on 701 to 701.
+// SE-GUI-41
+#[test]
+fn the_last_end_follows_the_first_and_lists_the_teams_from_it() {
+    let path = fixture(PesVersion::Pes17, "multi_aatf_clamp");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    let label =
+        |view: &SaveView, id: u32| format!("{id} {}", display_name(&team_entry(view, id).name));
+    let (team_717, team_718) = (label(&view, 717), label(&view, 718));
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_eq!(
-        galley_color(text_shape(&shapes, warning)),
-        window
-            .ctx
-            .style_of(window.ctx.theme())
-            .visuals
-            .warn_fg_color,
-        "the warning colour"
+        range_combos(&pairs)[1].value(),
+        Some(label(&view, 701).as_str()),
+        "premise: the last end opens on 701"
     );
     assert!(
-        !names.iter().skip(1).any(|name| lines.contains(name)),
-        "nothing listed: {lines:?}"
+        range_items(&mut window, &mut view, 1).contains(&team_717),
+        "premise: the last end lists 717 while the first is on 701"
     );
-    assert!(multi_button(&pairs, "Copy to clipboard").is_disabled());
+
+    // `pick_range_end` by hand, so the pick's own frame is read.
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let combo = range_combos(&pairs)[0];
+    let (left, right) = {
+        let bounds = combo.bounds().expect("drawn bounds");
+        (bounds.x0, bounds.x1)
+    };
+    click(&mut window, combo, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let (item, _) = pairs
+        .iter()
+        .find(|(_, node)| {
+            node.role() == Role::Button
+                && node.label() == Some(team_718.as_str())
+                && node
+                    .bounds()
+                    .is_some_and(|bounds| (left..right).contains(&bounds.x0))
+        })
+        .expect("718 in the first end's popup");
+    let (_, pairs, _) = window.frame_ids(
+        vec![egui::Event::AccessKitActionRequest(
+            accesskit::ActionRequest {
+                action: accesskit::Action::Click,
+                target_tree: accesskit::TreeId::ROOT,
+                target_node: *item,
+                data: None,
+            },
+        )],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    // The first combo drew its text before its popup took the pick; the
+    // last, drawn after, already reads the pick.
+    assert_eq!(
+        range_combos(&pairs)[1].value(),
+        Some(team_718.as_str()),
+        "the last end follows the first on the pick's frame"
+    );
+    let title = super::prompt::dialog_nodes(&pairs, MULTI_TITLE)
+        .into_iter()
+        .find(|node| node.value() == Some(MULTI_TITLE))
+        .expect("the title");
+    click(&mut window, title, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let ends: Vec<Option<&str>> = range_combos(&pairs)
+        .into_iter()
+        .map(accesskit::Node::value)
+        .collect();
+    assert_eq!(
+        ends,
+        [Some(team_718.as_str()), Some(team_718.as_str())],
+        "both ends on 718"
+    );
+
+    let items = range_items(&mut window, &mut view, 1);
+    assert_eq!(
+        items.first(),
+        Some(&team_718),
+        "the last end's items start at 718: {items:?}"
+    );
+    assert!(!items.contains(&team_717), "717 is not offered: {items:?}");
+}
+
+/// Thirty wheel notches over the first end, one a frame at 60 frames a
+/// second, step it from 701 to 731, the last end following, and start no
+/// check while they turn: the list keeps 701's result, dimmed to 0.55 and
+/// marked checking. Once the input time passes 500 ms after the last
+/// notch, one check starts, for 731 alone, and the list is drawn at full
+/// opacity once it lands.
+// SE-GUI-41
+#[test]
+fn a_range_turned_by_the_wheel_is_checked_once_it_has_rested() {
+    let path = fixture(PesVersion::Pes17, "multi_aatf_rest");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    let ids = all_team_ids(&view);
+    assert_eq!(
+        ids[..=30],
+        (701..=731).collect::<Vec<u32>>()[..],
+        "premise: the save's first 31 teams are 701 to 731"
+    );
+    let label =
+        |view: &SaveView, id: u32| format!("{id} {}", display_name(&team_entry(view, id).name));
+    let first = label(&view, 701);
+    multi_checked(&mut window, &mut view, &[701]);
+    // The colour the text `text` is painted in last, as the tessellator
+    // picks it: the override, else the glyphs' own, else the fallback for
+    // glyphs left to it. egui dims a painter's shapes by scaling these
+    // colours. Painted last: the view behind the modal and the first
+    // combo paint the same text before the list does.
+    let ink = |shapes: &[egui::epaint::ClippedShape], text: &str| {
+        shapes
+            .iter()
+            .rev()
+            .find_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(shape) if shape.galley.job.text == text => Some(shape),
+                _ => None,
+            })
+            .map(|shape| {
+                let glyph = shape
+                    .galley
+                    .rows
+                    .iter()
+                    .flat_map(|row| &row.row.visuals.mesh.vertices)
+                    .map(|vertex| vertex.color)
+                    .find(|&color| color != egui::Color32::PLACEHOLDER);
+                shape
+                    .override_text_color
+                    .or(glyph)
+                    .unwrap_or(shape.fallback_color)
+            })
+    };
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let at = centre(range_combos(&pairs)[0]);
+    let full = ink(&shapes, &first).expect("701's line is painted");
+    let time = |window: &Headless| window.ctx.input(|input| input.time);
+    let notch_down = egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Line,
+        delta: egui::vec2(0.0, -1.0),
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Wheel,
+        modifiers: egui::Modifiers::default(),
+    };
+    let mut before = time(&window);
+    for step in 1..=30u32 {
+        let (_, pairs, shapes) = window.frame_ids(
+            vec![egui::Event::PointerMoved(at), notch_down.clone()],
+            |ui| show(ui, &mut view, &|| Vec::new()),
+        );
+        let now = time(&window);
+        assert!(
+            (now - before - 1.0 / 60.0).abs() < 1e-9,
+            "premise: a frame is 1/60 s after the last, {before} then {now}"
+        );
+        before = now;
+        // The first combo draws its text before the notch steps it; the
+        // last, drawn after, reads the step.
+        assert_eq!(
+            range_combos(&pairs)[1].value(),
+            Some(label(&view, 701 + step).as_str()),
+            "notch {step} steps the first end, the last following"
+        );
+        let check = &view.multi_aatf.check;
+        assert!(check.pending.is_none(), "notch {step} started a check");
+        assert!(
+            check
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| key.ids == [701]),
+            "701's result is kept at notch {step}"
+        );
+        if step > 1 {
+            let lines = multi_lines(&pairs);
+            assert!(lines.contains(&first), "701's list is kept: {lines:?}");
+            assert!(
+                lines.contains(&"checking\u{2026}".to_owned()),
+                "marked checking at notch {step}: {lines:?}"
+            );
+            assert_eq!(
+                ink(&shapes, &first),
+                Some(full.gamma_multiply(0.55)),
+                "701's line dimmed to 0.55 at notch {step}"
+            );
+        }
+    }
+    let last_notch = before;
+
+    // No more input: frames until the check lands, each counting the checks
+    // started on it.
+    let deadline = Instant::now() + Duration::from_secs(120);
+    let mut started = Vec::new();
+    let mut shapes;
+    loop {
+        let had_pending = view.multi_aatf.check.pending.is_some();
+        (_, _, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        let check = &view.multi_aatf.check;
+        if let Some(pending) = &check.pending
+            && !had_pending
+        {
+            started.push((time(&window) - last_notch, pending.key.ids.clone()));
+        }
+        if check.pending.is_none()
+            && check
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| key.ids == [731])
+        {
+            break;
+        }
+        assert!(Instant::now() < deadline, "731's check never returned");
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    assert_eq!(started.len(), 1, "one check started: {started:?}");
+    let (after, checked) = &started[0];
+    assert_eq!(checked, &[731], "the check is for the final range");
+    assert!(
+        *after >= 0.5 && *after < 0.5 + 3.0 / 60.0,
+        "the check starts once 500 ms have passed since the last notch, not {after} s"
+    );
+    assert_eq!(
+        ink(&shapes, &label(&view, 731)),
+        Some(full),
+        "731's line at full opacity, as 701's was"
+    );
 }
 
 /// Multi-team AATF's dialog is 900 points wide, its list 874 of them (the
@@ -565,8 +819,9 @@ fn multi_team_aatf_is_900_points_wide() {
     view.open(&path);
     let mut window = Headless::new();
     open_multi_aatf(&mut window, &mut view);
+    // The range opens on the save's first team alone.
     let ids = all_team_ids(&view);
-    multi_checked(&mut window, &mut view, &ids);
+    multi_checked(&mut window, &mut view, &ids[..1]);
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     // The modal's frame and the list's, as painted: the smallest rectangle of
     // the window's fill holding the title and the range's first combo (a
@@ -659,8 +914,9 @@ fn a_reopened_multi_team_aatf_keeps_its_range() {
 fn a_clean_team_reads_all_clean_and_copy_names_the_teams_copied() {
     let (mut view, mut window) = open_legal_714("multi_aatf_clean", Headless::new());
     open_multi_aatf(&mut window, &mut view);
+    // The range opens on the save's first team alone.
     let ids = all_team_ids(&view);
-    multi_checked(&mut window, &mut view, &ids);
+    multi_checked(&mut window, &mut view, &ids[..1]);
     pick_range_end(&mut window, &mut view, 0, "714 /co/");
     pick_range_end(&mut window, &mut view, 1, "718 /f/");
     let pairs = multi_checked(&mut window, &mut view, &[714, 715, 716, 717, 718]);
@@ -732,8 +988,9 @@ fn a_failed_teams_check_is_named_with_its_error_and_the_others_listed() {
     pick_imported(&mut view, "throw19.4ccrules", &throw19());
     let mut window = Headless::new();
     open_multi_aatf(&mut window, &mut view);
+    // The range opens on the save's first team alone.
     let ids = all_team_ids(&view);
-    multi_checked(&mut window, &mut view, &ids);
+    multi_checked(&mut window, &mut view, &ids[..1]);
     let label =
         |view: &SaveView, id: u32| format!("{id} {}", display_name(&team_entry(view, id).name));
     let (failed, other) = (label(&view, 743), label(&view, 744));
@@ -820,13 +1077,19 @@ fn a_list_checked_under_another_ruleset_is_not_drawn_nor_copied() {
     view.open(&path);
     let mut window = Headless::new();
     open_multi_aatf(&mut window, &mut view);
-    let ids = all_team_ids(&view);
+    // The range opens on the save's first team alone.
+    let ids = all_team_ids(&view)[..1].to_vec();
+    let team = format!(
+        "{} {}",
+        ids[0],
+        display_name(&team_entry(&view, ids[0]).name)
+    );
     let pairs = multi_checked(&mut window, &mut view, &ids);
     let lines = multi_lines(&pairs);
     let tier_row = |line: &String| line.starts_with("Tier count");
     assert!(
-        lines.contains(&"734 /lit/".to_owned()) && lines.iter().any(tier_row),
-        "premise: Autumn 26's list holds 734 and a tier count row: {lines:?}"
+        lines.contains(&team) && lines.iter().any(tier_row),
+        "premise: Autumn 26's list holds {team} and a tier count row: {lines:?}"
     );
 
     view.aatf_ruleset = "spring26".to_owned();
@@ -861,7 +1124,7 @@ fn a_list_checked_under_another_ruleset_is_not_drawn_nor_copied() {
         !nodes
             .iter()
             .filter_map(text)
-            .any(|line| line == "734 /lit/" || line.starts_with("Tier count")),
+            .any(|line| line == team || line.starts_with("Tier count")),
         "the held list's rows are not drawn"
     );
     assert!(
@@ -894,18 +1157,15 @@ fn a_list_checked_under_another_ruleset_is_not_drawn_nor_copied() {
     );
     let nodes = super::prompt::dialog_nodes(&pairs, title);
     assert!(
-        nodes
-            .iter()
-            .filter_map(text)
-            .any(|line| line == "734 /lit/"),
+        nodes.iter().filter_map(text).any(|line| line == team),
         "Spring 26's list is drawn"
     );
-    let summary = format!("{} teams checked,", ids.len());
+    let summary = "1 team checked,";
     assert!(
         nodes
             .iter()
             .filter_map(text)
-            .any(|line| line.starts_with(&summary)),
+            .any(|line| line.starts_with(summary)),
         "Spring 26's summary"
     );
     let copy = nodes
