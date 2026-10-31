@@ -5,7 +5,7 @@
 use pes_savefile::model::tactics::TeamTactics;
 use studio_core::widgets::{add_enabled, add_enabled_ui, step_choice, step_number, wheel_steps};
 
-use super::{GRID_X, GRID_Y, drop_rule, overalls_of, position_label};
+use super::{GRID_X, GRID_Y, OUTFIELD_Y_MIN, drop_rule, overalls_of, position_label};
 use crate::names::append_name;
 use crate::tactics::{RosterRow, TacticsView, raw_name};
 
@@ -20,9 +20,9 @@ use crate::tactics::{RosterRow, TacticsView, raw_name};
 /// (`drop_rule::spot_choices`, as the game's Select Position menu lists
 /// them; his own first when the spot offers neither) with Make GK beside
 /// it at its own width, the two filling the popover's width, and the X
-/// (0 to 104) and Y (0 to 48) steppers (`stepper`) and Close. A change of
-/// X or Y, typed or stepped, sets his position by the drop rule at the
-/// new spot, as a release there does. The keeper's slot shows a
+/// (0 to 104) and Y (4 to 48, `OUTFIELD_Y_MIN` up) steppers (`stepper`)
+/// and Close. A change of X or Y, typed or stepped, sets his position by
+/// the drop rule at the new spot, as a release there does. The keeper's slot shows a
 /// disabled "GK", the two steppers disabled under "The goalkeeper's spot
 /// is fixed" and Make GK disabled. Make GK exchanges the slot's
 /// `starting_eleven` entry with the keeper slot's — the formation slots
@@ -186,9 +186,15 @@ pub(super) fn slot_popover(
             // A step needs no `mark_changed`: the move below compares the
             // spot with the slot's.
             ui.label("X");
-            stepper(ui, &mut formation.players[index].x, GRID_X, !keeper);
+            stepper(ui, &mut formation.players[index].x, 0, GRID_X, !keeper);
             ui.label("Y");
-            stepper(ui, &mut formation.players[index].y, GRID_Y, !keeper);
+            stepper(
+                ui,
+                &mut formation.players[index].y,
+                OUTFIELD_Y_MIN,
+                GRID_Y,
+                !keeper,
+            );
             if ui.button("Close").clicked() {
                 view.popover = None;
             }
@@ -205,15 +211,15 @@ pub(super) fn slot_popover(
 /// The hover of the keeper's X and Y fields and their arrows.
 const SPOT_FIXED: &str = "The goalkeeper's spot is fixed";
 
-/// A stepper over `value` in `0..=max` (the draft's `.spin`): `⏴`, the
+/// A stepper over `value` in `min..=max` (the draft's `.spin`): `⏴`, the
 /// number and `⏵` joined into one box as wide as the number box alone
 /// was, so the popover is no wider. An arrow's click steps the value by
-/// one, clamped into the range, so a stored value past it steps back to
-/// the range's end; each arrow is disabled at its end of the range. The
+/// one, clamped into the range, so a stored value past either end steps
+/// back to it; each arrow is disabled at its end of the range. The
 /// number keeps the wheel's step and does not clamp a stored value on
 /// draw. `enabled` false (the keeper's spot) disables all three under
 /// `SPOT_FIXED`.
-fn stepper(ui: &mut egui::Ui, value: &mut u8, max: u8, enabled: bool) {
+fn stepper(ui: &mut egui::Ui, value: &mut u8, min: u8, max: u8, enabled: bool) {
     // The draft's widths, 52 points in all: `104` fits the number's 28.
     // An arrow's cell is 12, but the glyph's advance at the button font is
     // 12.5, which widens the button by half a point, its glyph centred:
@@ -251,8 +257,8 @@ fn stepper(ui: &mut egui::Ui, value: &mut u8, max: u8, enabled: bool) {
             se: 0,
             ..round
         };
-        if arrow(ui, "⏴", left, *value > 0).clicked() {
-            step_number(value, -1, 0..=max);
+        if arrow(ui, "⏴", left, *value > min).clicked() {
+            step_number(value, -1, min..=max);
         }
         let number = cell(ui, NUMBER_WIDTH, |ui| {
             // Square, so the arrows join it into one box.
@@ -271,20 +277,20 @@ fn stepper(ui: &mut egui::Ui, value: &mut u8, max: u8, enabled: bool) {
                 ui,
                 enabled,
                 egui::DragValue::new(&mut *value)
-                    .range(0..=max)
+                    .range(min..=max)
                     .clamp_existing_to_range(false)
                     .min_size(size),
             )
             .on_disabled_hover_text(SPOT_FIXED)
         });
-        step_number(value, wheel_steps(ui, &number), 0..=max);
+        step_number(value, wheel_steps(ui, &number), min..=max);
         let right = egui::CornerRadius {
             nw: 0,
             sw: 0,
             ..round
         };
         if arrow(ui, "⏵", right, *value < max).clicked() {
-            step_number(value, 1, 0..=max);
+            step_number(value, 1, min..=max);
         }
     });
 }
@@ -909,6 +915,49 @@ mod tests {
         }
     }
 
+    // Y's range starts at 4, the outfielders' lowest row, as a drag's
+    // does: at y 4 `⏴` is disabled and its click writes nothing, and a
+    // slot stored at y 2, below the range, steps back in to 4 on `⏵`.
+    // SE-GUI-42
+    #[test]
+    fn y_stops_at_4_and_a_stored_y_below_steps_back_to_4() {
+        let mut window = Headless::sized(600.0, 450.0);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let index = 4;
+        open(&mut window, &mut tactics, &mut view, &roster, index);
+
+        tactics.presets[0].formations[0].players[index].y = 4;
+        let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+        let [down, up] = arrows(&nodes, "Y");
+        assert!(down.is_disabled(), "⏴ is disabled at y 4");
+        assert!(!up.is_disabled(), "⏵ is enabled at y 4");
+        assert!(
+            !click_arrow(&mut window, "Y", 0, &mut tactics, &mut view, &roster),
+            "the disabled ⏴'s click writes nothing"
+        );
+        assert_eq!(
+            tactics.presets[0].formations[0].players[index].y, 4,
+            "y stays 4"
+        );
+
+        tactics.presets[0].formations[0].players[index].y = 2;
+        let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+        let [down, up] = arrows(&nodes, "Y");
+        assert!(down.is_disabled(), "⏴ is disabled below the range");
+        assert!(!up.is_disabled(), "⏵ is enabled below the range");
+        assert!(
+            click_arrow(&mut window, "Y", 1, &mut tactics, &mut view, &roster),
+            "the click is an edit"
+        );
+        assert_eq!(
+            tactics.presets[0].formations[0].players[index].y, 4,
+            "one ⏵ from 2 gives 4"
+        );
+    }
+
     // The keeper's popover: all four arrows disabled, under the fields'
     // hover "The goalkeeper's spot is fixed".
     #[test]
@@ -927,9 +976,11 @@ mod tests {
             .position(|slot| slot.position == 0)
             .expect("the fixture has a keeper slot");
         let slot = tactics.presets[0].formations[0].players[keeper];
+        // His y 3 is below Y's range, so Y's `⏴` would be disabled for an
+        // outfielder too; the hover below is the keeper's alone.
         assert!(
-            slot.x > 0 && slot.x < GRID_X && slot.y > 0 && slot.y < GRID_Y,
-            "premise: no arrow is at its end of the range"
+            slot.x > 0 && slot.x < GRID_X && slot.y < GRID_Y,
+            "premise: no arrow but Y's ⏴ is at its end of the range"
         );
 
         open(&mut window, &mut tactics, &mut view, &roster, keeper);
