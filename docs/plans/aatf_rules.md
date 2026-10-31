@@ -98,9 +98,11 @@ before the stock game does. The rule is the stock game's own refusal, read from 
 executable, never the drop rule: a later drag never moves an earlier starter back into his
 area, so formations every step of which the game made can hold a starter outside his
 position's area, and a check built on the drop rule would flag them. The refusal is found
-where the Whack Patch disables it: `G:\Games\PES2015` holds both PES 2015's stock exe and its
-Whack Patch, so their difference points at the check, which is then read there and in PES
-2016's unpacked executable, and confirmed in game (a formation each side of the rule, under a
+where the Whack Patch disables it: `G:\Games\PES2015` holds PES 2015's stock exe beside its
+Whack Patch, and `E:\PES2017\PES2017.exe.old` is PES 2017's stock exe (dated 2016-10-20,
+3,072 bytes smaller than the patched one, so the patch adds code rather than flipping bytes in
+place), so their differences point at the check, which is then read there and in PES 2016's
+unpacked executable, and confirmed in game (a formation each side of the rule, under the
 stock exe). The check is the host's, beside the drop rule, not the logic's: the rule is the
 game's, the same for every cup, and in the logic it would copy the game's tables into every
 file and take a logic version; the ruleset's flag only turns it off. Until the refusal is
