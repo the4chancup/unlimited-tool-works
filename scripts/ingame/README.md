@@ -14,6 +14,7 @@ shows kit 1 alone.
 | `game.py` | `launch`, `pad-serve`/`pad`/`pad-stop`, `obs-shot`, `chars`, `keys`, `shot`, `status`, `close` for one game (install paths in its `GAMES`) |
 | `burst.py` | a series of screenshots plus contact sheets, for a cutscene such as the walkout |
 | `install.py` | `install` a compiled CPK into the game's test slot, `revert` it (slot and hash in its `TEST_SLOTS`) |
+| `saves.py` | `backup` the live save files before a check that changes the save, `put` a test save in, `keep` the game's result, `restore` the user's own, `status`; every step checked by SHA-256 |
 
 Each script's docstring has its exact usage; running one without arguments prints it.
 
