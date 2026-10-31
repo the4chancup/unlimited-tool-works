@@ -167,7 +167,9 @@ past its quota, and still draws nothing: seven 175s for the Manlet bracket's six
 `BracketQuota` of 7 for 6 listing all seven, since any of them is the one left, where before
 only the bracket left short (a Mid at 9 of 10) said anything. `ExtraHeight` gains `draws:
 Vec<(u8, BracketId, u8)>`, each player standing above his slot: his roster slot, the slot's
-bracket and the centimetres drawn. And when the team's height checks find something under a
+bracket and the centimetres drawn; players read at one height are placed from the last
+roster slot up, which decides only who is named in which bracket, never a count or the
+draw. And when the team's height checks find something under a
 system reached after a quota system failed (DBC7's GigaHeight), one `NearestSystem { system:
 SystemId, off: Vec<(BracketId, u8, u8)> }` warning on the team names the failed quota system
 the team misses by the fewest players short (each bracket's quota less its count, where

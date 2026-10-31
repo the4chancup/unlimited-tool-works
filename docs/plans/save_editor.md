@@ -2055,5 +2055,13 @@ SE-GUI-44  GIVEN a save open and DBC7, which carries a logo and a page, the acti
                 opens the page; GIVEN a ruleset without a logo THEN nothing is drawn there;
                 GIVEN a window narrow enough for the toolbar to reach it THEN it is not
                 drawn
+SE-AATF-08 GIVEN SE-AATF-03's save and the command started from a folder holding no file
+                named `vgl27`
+           WHEN check-aatf is run with --rules vgl27, then with --rules nosuch, then from a
+                folder holding a file named `vgl27` that is SE-AATF-07's official ruleset,
+                with --rules vgl27
+           THEN the first prints SE-AATF-03's VGL27 violation; the second checks nothing,
+                exits 2 and its error names `nosuch` and every embedded ruleset's stem; the
+                third checks against the file: the VGL27 violation is not printed
 ```
 
