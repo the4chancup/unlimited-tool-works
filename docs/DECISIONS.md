@@ -14616,3 +14616,38 @@ a player could stand in a taller slot than his height; the organizer's answer is
 missed, as their own fork (`DBC7-Editor` `aatf.cpp`) also flags them, not that the rule allows
 it.
 Plan: `plans/aatf_rules.md` "DBC7" (the Heights row).
+
+## 2026-10-31 — save_editor — the filter lists a matching team's squad; a team row's double click shows that team alone
+Decision (maintainer, a collaborator's suggestion): a team whose name matches the filter lists
+all its players; a double click on a team row sets the team selector to it and clears the
+filter, with the tooltip `Double-click to filter to this team` and a line in the help topic.
+Why: a member typing a team's name wants its squad, and one whose own players' names did not
+match saw a lone team row; the double click is "show me this team", which a filter left in the
+box would contradict by listing other teams' matches.
+Plan: `plans/save_editor.md` "Team selector", SE-GUI-46; worklog cv18, cv19.
+
+## 2026-10-31 — studio_core — the wheel steps sliders and sliding toggles, not checkboxes or buttons
+Decision (maintainer, a collaborator's suggestion): the wheel steps a slider (its rail and the
+value box beside it) and a sliding toggle of two or three choices (the Tactics styles,
+Few/Medium/Many), wheel up to the right; checkboxes and rows of plain buttons (C/B/A, Left and
+Right) are left out.
+Why: a slider and a toggle are values under the pointer, as a combo is; a checkbox has no order
+and a button reads as a press. One direction for every toggle, the right being a slider's
+"more", since a direction per meaning is one no member can see.
+Plan: `plans/core/gui.md` "The wheel over a value", ST-WHEEL-05; worklog cv20.
+
+## 2026-10-31 — save_editor — Live AATF's player rows in two columns, starters and bench
+Decision (maintainer, a collaborator's suggestion): Live AATF lists the starting eleven's
+groups on the left and the bench's on the right, the team's own rows across both under them;
+Multi-team AATF keeps one column.
+Why: a player's rows are short and the dock spans the view, so one column left most of it
+empty; Multi-team AATF's report reads team by team and was just widened for its long rows.
+Plan: `plans/save_editor.md` "Live AATF", SE-GUI-47; worklog cv21.
+
+## 2026-10-31 — team_widgets — an event logo is resampled with Lanczos3 to its drawn pixels
+Decision (maintainer): the logo is resampled once to the pixels its box takes at the window's
+scale (again when the scale changes), not shrunk by the GPU at draw time.
+Why: egui's linear sampling, with no mipmaps, skips source pixels past a halving; DBC7's 78 × 84
+logo drawn 28 high read pixelated at 100% scaling. `dds_convert` already resamples with
+Lanczos3, so no new dependency.
+Plan: `plans/save_editor.md` "The event logo"; worklog cv24.

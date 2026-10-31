@@ -6187,18 +6187,21 @@ briefs, review loops, gates and mutation runs as for any step.
     the dialog 900 (`multi_team_aatf_is_900_points_wide`); the built-window look with cv16b's
     lines
   - [ ] cv18 the filter box also lists the players of a team whose name matches (a
-    collaborator's suggestion, the maintainer's "let's do", 2026-10-31; plan "Team selector";
-    SE-GUI-02's neighbourhood): drafted first, then plan, DECISIONS, code
+    collaborator's suggestion, the maintainer's "let's do", 2026-10-31; plan "Team selector",
+    SE-GUI-46): drafted (`renderList`), plan and DECISIONS written; code next
   - [ ] cv19 a double click on a team row in the player list sets the team combo from ALL to
     that team and clears the filter text (same origin; the maintainer, 2026-10-31); a team
     row's tooltip reads "Double-click to filter to this team", and the help page names the
-    action: drafted first
+    action (plan "Team selector", SE-GUI-46): drafted (`teamRow`), plan and DECISIONS written;
+    code next, with the help topic's line
   - [ ] cv20 the wheel steps the sliders, the value boxes beside them, and the two- and
     three-state toggles (same origin; `core/gui.md` "The wheel over a value"); checkboxes stay
-    out (the maintainer, 2026-10-31)
+    out (the maintainer, 2026-10-31); plan "The wheel over a value", ST-WHEEL-05: drafted (the
+    host page's wheel listener, `.rate.wheel`), plan and DECISIONS written; code next
   - [ ] cv21 Live AATF lists the players' rows in two columns, the starting eleven left and the
     bench right, team-wide rows across both (same origin, "if possible"); Multi-team AATF
-    stays one column (the maintainer, 2026-10-31): drafted first
+    stays one column (the maintainer, 2026-10-31); plan "Live AATF", SE-GUI-47: drafted
+    (`livePanel`, `.lcols`), plan and DECISIONS written; code next
   - [ ] cv22 bug (the maintainer, 2026-10-31, PES 17 save, teams /3/ and /a/): in Tactics, an
     advanced instruction set from Unassigned to another (Hug the Touchline) and back keeps the
     unsaved-changes mark, reading "no target -> no target"; /3/'s Defence 1 does not, /a/'s
@@ -6213,6 +6216,11 @@ briefs, review loops, gates and mutation runs as for any step.
     frames more (`studio_core` `widgets/wheel.rs`), so the lag is a few frames times the frame's
     cost → measure first: a Save editor frame's time on the maintainer's PES 2017 save at Ability
     stats, idle and on a step's frame, headless, release build; then cut where the time goes
+  - [ ] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
+    `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
+    logo drawn 28 high skips pixels; resample with `dds_convert`'s Lanczos3 to the box's
+    pixels at the window's scale, again on a scale change (plan "The event logo") → verify: a
+    test that the uploaded texture is the box's pixel size at 1x and 2x scaling
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
     every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree

@@ -177,7 +177,11 @@ all side by side.
   that searches across all teams** (name, shirt name, ID) — finding a player no
   longer requires knowing their team first. Matching uses the colour-code-free
   `display_name()` (see the pes_savefile plan's "Name colour codes"), a team's own name
-  included. Picking a different team selects its team row, so the detail shows that team's
+  included, and a team whose name matches lists all its players under its row: a search for a
+  team shows its squad, not only the players whose own names happen to match. A double click on
+  a team row sets the selector to that team and clears the filter, so the list holds that team
+  alone ("show me this team"); the row's tooltip says so (`Double-click to filter to this
+  team`), and the help topic on the list names it. Picking a different team selects its team row, so the detail shows that team's
   view, its tactics with it: a manager who picks a team usually wants its tactics next.
   Picking ALL, or the team already shown, keeps the selection (that team's row heads the
   list, a click away).
@@ -260,7 +264,11 @@ all side by side.
   as the clover's ink is from the left and top, and as wide as the picture's shape asks up
   to 84 points (3:1, so a wide logo still reads); a picture wider than 3:1 is scaled to the
   84 points and centred in the box's height (a 4:1 one is 84 × 21, 3.5 below the box's
-  top). It
+  top). The picture is resampled once with Lanczos3 to the pixels its box takes at the
+  window's scale, and again when the scale changes (the window moved to a screen of another
+  scaling), not shrunk by the GPU as it is drawn: egui's linear sampling, with no mipmaps,
+  skips source pixels past a halving, and DBC7's 78 × 84 logo drawn 28 high read pixelated at
+  100% scaling. The Ruleset editor's logo field draws it the same way. It
   is drawn over the toolbar row's empty end and moves nothing: no row is pushed down, no
   column narrowed (the drafts' toolbar at its widest ends 136 points short of it at the
   1280-wide window, and the right column's title starts under it). Where the toolbar
@@ -1507,7 +1515,12 @@ What this editor adds on top of the lib:
   suggestions, so a player whose list mark is blue has his reason in the dock, and off, no
   blue mark is drawn anywhere: a suggestion is no failure, and most players of a cup team
   have an allowance unused (in the PES 17 sample under the official rules, most of the two checked teams' players, for
-  their free tricks), so unasked they would tint the whole list. The header reads `N issues · <ruleset>`, counting
+  their free tricks), so unasked they would tint the whole list. In each of the two parts (the
+  violations, then the suggestions) the players' groups stand in two columns, the starting
+  eleven's on the left and the bench's on the right, each in roster-slot order, and the team's
+  own rows span both columns under them: a player's rows are short and the dock spans the
+  view's width, so one column left most of it empty. Multi-team AATF keeps one column: its
+  report reads team by team, and its rows were just widened to read whole. The header reads `N issues · <ruleset>`, counting
   errors and warnings, or `<team> passes <ruleset> with no issues.` once neither is left;
   clicking a row selects that player (a
   `FieldedNotA` row selects his team's row instead, the named preset shown on the first of
@@ -1674,6 +1687,13 @@ SE-GUI-02  GIVEN the PES 17 save open on team 701
            WHEN a name, shirt name or id of a player of another team is typed in the filter box
            THEN the list shows the matching players across all teams, matched on the
                 color-code-free display name, and selecting one shows him
+SE-GUI-46  GIVEN the PES 17 save open on team 701, ALL picked in the team selector
+           WHEN part of team 718's name that no player's name, shirt name or id holds is typed
+                in the filter box
+           THEN team 718's row heads every one of its players; WHEN that row is double-clicked
+                THEN the selector shows team 718, the filter box is empty, the list holds team
+                718 alone and its row is selected; a team row's tooltip reads `Double-click to
+                filter to this team`
 SE-GUI-03  GIVEN the save open
            WHEN a player's ability value is edited in the player view
            THEN his list entry carries the unsaved-changes dot, the file is unchanged until Save
@@ -1985,6 +2005,11 @@ SE-GUI-30  GIVEN the PES 17 save open on a team with violations under the active
                 passes <ruleset> with no issues.`, and WHEN an edit breaks a rule and the last one is
                 fixed THEN it reads so again; WHEN the tool is reopened THEN Live AATF is
                 still on
+SE-GUI-47  GIVEN the PES 17 save open on team 718 under DBC7, Live AATF on, one bench player's
+                Speed raised past his tier's target, the check returned
+           THEN the starting eleven's players with rows stand in the dock's left column and the
+                bench player's in its right, each under the line naming him, and the team's own
+                rows under `Team-wide issues` span both columns below them
 SE-GUI-36  GIVEN SE-GUI-30's save and team, Live AATF on and its first check returned, one
                  player of the team breaking the Height rule alone and another breaking none
            WHEN the view is drawn
