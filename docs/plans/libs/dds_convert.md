@@ -56,7 +56,7 @@ it is an opaque color texture eligible for it, BC3 otherwise, DXT5nm for a norma
 source's blocks are still kept on PES 19–21 (no encoding), and a BC7 source for PES 15–18
 is still transcoded to BC3 or BC1. The CPU BC7 encoder stays in the crate for the GPU path's
 fallback and tests, never chosen by a compile. Not the CPU's BC7: it spends 31.7 s of CPU on
-one 2048 × 2048 face's mip chain where BC3 spends 128 ms (`.tmp/jxl_bench/findings.md`), a
+one 2048 × 2048 face's mip chain where BC3 spends 128 ms (`.tmp/release_0_0_2/jxl_bench/findings.md`), a
 team's textures minutes of all-core time, while BC3 is what every legacy compiler shipped for
 those versions. Once the GPU encoder is in, a compile encodes BC7 on the GPU; a machine with
 no usable GPU (or one that fails) keeps BC3/BC1 rather than falling back to the CPU's BC7,

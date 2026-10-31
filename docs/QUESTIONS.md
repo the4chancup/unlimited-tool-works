@@ -50,7 +50,7 @@ The Music player's three below come from reading Rigdio v2.2.0's controls (workl
   horns and anthems as it always has?
 
 The Refs arranger's three below come from its readiness audit (worklog 13.0a,
-`.tmp/13_0a/refs_audit.md`); none blocks the tool's first slice:
+`.tmp/phase_13/13_0a/refs_audit.md`); none blocks the tool's first slice:
 
 - **FoxDen without a lists file.** FoxDen's referee module, as shipped, forces five distinct
   referees drawn uniformly from all 35 slots at boot and after every match

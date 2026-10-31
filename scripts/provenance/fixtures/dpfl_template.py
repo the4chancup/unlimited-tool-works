@@ -3,7 +3,7 @@
 DpFileList.bin is the official list the `upgrade-dpfl` command installs and every compile
 compares the installed list with: the entries of resources/templates/DpFileList.txt, in order,
 in the layout the maintainer's 53-entry in-game test loaded on PES 2015 and PES 2021
-(.tmp/4_7/dpfl_pes21_53.py; docs/plans/team_compiler/pipeline.md "DpFileList upgrade"): a 16-byte
+(.tmp/phase_04/4_7/dpfl_pes21_53.py; docs/plans/team_compiler/pipeline.md "DpFileList upgrade"): a 16-byte
 header (u32 0, u32 entry count, 8 zero bytes), one 48-byte NUL-padded record per CPK file name,
 then the PES 2021 list's 1204-byte zero tail.
 

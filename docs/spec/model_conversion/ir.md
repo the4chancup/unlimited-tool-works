@@ -109,7 +109,7 @@ transforms and a dependency on `nalgebra` would add a generic API for four funct
 
 **What real files carry (the conversion census).** Every `.model` and FMDL on the maintainer's
 machine that its format crate reads was converted to the other engine and back (2026-09-28,
-`.tmp/2_20/convert_census/`: 3695 `.model` bundles with their `.mtl`, 4088 FMDLs). About one in six
+`.tmp/phase_02/2_20/convert_census/`: 3695 `.model` bundles with their `.mtl`, 4088 FMDLs). About one in six
 failed on rules the IR had assumed. They now read as follows:
 
 - **Weights need not sum to 1.** Community exports routinely store unnormalized weights: `u8`

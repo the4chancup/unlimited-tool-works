@@ -340,7 +340,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    image is a distinct variant, and is carried, when **more than 40 % of pixels differ**
    (`LOGO_SMALL_DISTINCT_SHARE`); at or below that it is a downscale and is dropped. The number comes
    from measuring the 94 distinct `Logo/` pairs on the maintainer's machine with that resampler
-   (`.tmp/6_4/logo_share/`): the 77 downscales score 0–30 % — far above codec noise, because authors downscaled with
+   (`.tmp/phase_06/6_4/logo_share/`): the 77 downscales score 0–30 % — far above codec noise, because authors downscaled with
    nearest-neighbor or sharpening kernels, shifted or cut alpha edges differently, which the channel
    tolerance does not absorb — and the 17 deliberate variants score 53–97 %: a different
    drawing, a recolored crest (`/pmmm/` VGL26), a crop (`/tf2g/` VGL26). 40 % sits in the empty
@@ -437,7 +437,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    `spec/team_compiler/pipeline.md`), and keeping the old directory would only hide the same
    missing file (19 of the 5,921 FMDLs on the maintainer's machine name such a texture). The
    FMDL rules in full, per texture entry, a census of the 6,053 real FMDLs in export folders
-   behind them (`.tmp/6_4/fmdl_dir_census.txt`): a `dummy_` stem is left as written, as the
+   behind them (`.tmp/phase_06/6_4/fmdl_dir_census.txt`): a `dummy_` stem is left as written, as the
    compiler never looks one up; a directory starting `./` is the Studio spelling already, its
    kit magic alone respelled, as a `.mtl`'s; the game's kit texture folder
    `/Assets/pes16/model/character/uniform/texture/` is kept as written (25 real FMDLs), as the

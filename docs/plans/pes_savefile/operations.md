@@ -121,7 +121,7 @@ Still open:
   114624 showed the copied faces; the game shows a copied face with the face edit flag clear as
   with it set (the same save, that flag alone cleared), and over the player's own `face.fpk`
   too (two players with one each, flag set and clear, given a base copy). A census of 125 Fox
-  saves on the maintainer's machine (2026-10-14, `.tmp/5_4/base_copy_census.txt`) found such
+  saves on the maintainer's machine (2026-10-14, `.tmp/phase_05/5_4/base_copy_census.txt`) found such
   an id on 0 to 26 players of each real PES 21 cup save, up to 117 on PES 19 and 988 on PES
   18; counted are ids neither 0 nor the player's own. A compiled player whose export describes
   no face of his own (no face model, no `ingame_face.toml`) then shows the Placeholder face,

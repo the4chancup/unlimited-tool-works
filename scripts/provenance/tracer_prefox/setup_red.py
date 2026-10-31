@@ -1,4 +1,4 @@
-"""Copy Red to .tmp/4_16/tracer_prefox/red_run, configure it for the pre-Fox tracer (PES 17, no deploy, default bins), and stage the export."""
+"""Copy Red to .tmp/phase_04/4_16/tracer_prefox/red_run, configure it for the pre-Fox tracer (PES 17, no deploy, default bins), and stage the export."""
 
 import shutil
 from pathlib import Path

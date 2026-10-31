@@ -126,8 +126,8 @@ class Problems(unittest.TestCase):
         scratch = "docs/WORKLOG.md:1: `.tmp/rulings.md` points into the scratch folder, which no clone has"
         self.assertEqual(self.check("docs/WORKLOG.md", '`.tmp/rulings.md` "Round A3"'), [scratch])
         self.assertEqual(
-            self.check("crates/x/src/lib.rs", '// `.tmp/8_29/rulings.md` "Round S6c4b"'),
-            ["crates/x/src/lib.rs:1: `.tmp/8_29/rulings.md` points into the scratch folder, which no clone has"],
+            self.check("crates/x/src/lib.rs", '// `.tmp/phase_08/8_29/rulings.md` "Round S6c4b"'),
+            ["crates/x/src/lib.rs:1: `.tmp/phase_08/8_29/rulings.md` points into the scratch folder, which no clone has"],
         )
         self.assertEqual(self.check("docs/WORKLOG.md", "the rulings in `.tmp/rulings.md`, round A3"), [])
 

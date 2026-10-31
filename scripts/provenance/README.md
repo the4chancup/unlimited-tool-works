@@ -11,7 +11,7 @@ traced back to how it was measured, not as maintained tooling.
 - `fixtures/` — generated the committed test fixtures for `pes_savefile`,
   `archives`, `fox2` and `dds_convert`, cited by their fixture READMEs.
 - `music_export/` — `list_4ccm.py` lists every `.4ccm` on the machine through the
-  Everything HTTP API into `.tmp/music_export/all_4ccm.txt`, the input of
+  Everything HTTP API into `.tmp/phase_10/music_export/all_4ccm.txt`, the input of
   `music_export`'s census test (`tests/census.rs`, skipped when the list is absent).
 - `pes_model/` — the `.model` layout census behind the section table in
   `docs/plans/libs/format_crates.md` and the count note in `docs/DECISIONS.md`.

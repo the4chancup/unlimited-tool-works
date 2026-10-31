@@ -4,7 +4,7 @@
 in each PES install's `4cc_08_bins.cpk`.
 
 Read-only on Red's checkout and on the installs; the installs' files are extracted into
-`.tmp/4_7/color_bins/` with the scratch CPK tool `.tmp/4_0/apptest` (`apptest extract <cpk> <inner
+`.tmp/phase_04/4_7/color_bins/` with the scratch CPK tool `.tmp/phase_04/4_0/apptest` (`apptest extract <cpk> <inner
 path> <out file>`). Run from the repository root with the installs' drive connected.
 """
 
@@ -17,8 +17,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 BUNDLED = ROOT / "resources/bins"
 RED = Path("C:/Data/4cc/4cc aet compiler/4cc-aet-compiler-red/Engines/bins")
-APPTEST = ROOT / ".tmp/4_0/apptest/target/release/apptest.exe"
-OUT = ROOT / ".tmp/4_7/color_bins"
+APPTEST = ROOT / ".tmp/phase_04/4_0/apptest/target/release/apptest.exe"
+OUT = ROOT / ".tmp/phase_04/4_7/color_bins"
 INSTALLS = Path("G:/Games")
 VERSIONS = ("2015", "2016", "2017", "2018", "2019", "2020", "2021")
 # name -> (path inside a CPK, record size, the ID field's format)

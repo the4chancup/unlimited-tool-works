@@ -1,7 +1,7 @@
 """Cut the /jp/ Summer 18 export down to the pre-Fox tracer's old-layout source: one player with
 face, boots and gloves (72820 Fumos, as XXX20) and kit g1, the large textures reduced.
 
-Writes .tmp/4_16/tracer_prefox/old/jp Tracer/ (refuses to run when it exists).
+Writes .tmp/phase_04/4_16/tracer_prefox/old/jp Tracer/ (refuses to run when it exists).
 """
 
 import shutil
