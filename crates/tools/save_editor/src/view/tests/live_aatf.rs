@@ -1,6 +1,7 @@
 //! The Live AATF dock's tests (SE-GUI-30): the docked list shrinking and
 //! growing back with the open team's edits, the `No issues` header, the
-//! remembered toggle, the checking mark, ALL's team and a row's click.
+//! remembered toggle, the checking mark, ALL's team and a row's click; and
+//! the list in a window of its own (SE-GUI-48).
 
 use pes_savefile::model::names::display_name;
 
@@ -1460,5 +1461,251 @@ fn the_dock_lists_the_starters_left_and_the_bench_right() {
             .iter()
             .any(|node| node.value() == Some("Team-wide issues")),
         "premise: under DBC7 the team has no rows of its own"
+    );
+}
+
+/// The window titled `Live AATF`, if one is drawn.
+fn live_window(nodes: &[accesskit::Node]) -> Option<accesskit::Rect> {
+    nodes
+        .iter()
+        .find(|node| node.role() == Role::Window && node.label() == Some("Live AATF"))
+        .map(|node| node.bounds().expect("the window's bounds"))
+}
+
+/// Whether the dock is drawn: its header's chevron.
+fn dock_drawn(nodes: &[accesskit::Node]) -> bool {
+    nodes
+        .iter()
+        .any(|node| node.description() == Some("Collapse Live AATF"))
+}
+
+/// Whether `inner` lies inside `outer`.
+fn inside(inner: accesskit::Rect, outer: accesskit::Rect) -> bool {
+    outer.x0 <= inner.x0 && inner.x1 <= outer.x1 && outer.y0 <= inner.y0 && inner.y1 <= outer.y1
+}
+
+/// SE-GUI-47's team, edit and check, the list in the dock: its pop-out
+/// icon moves the list into a window titled `Live AATF` holding the
+/// dock's count line and its rows in one column, in roster order (71801,
+/// slot 0, on the bench, above the starter 71808, slot 7), its dock icon
+/// left of its close button on the title bar's centre line. The dock icon
+/// brings the dock back with its two columns; the close button turns Live
+/// AATF off, `live_window` kept, so turning it on opens the window again.
+// SE-GUI-48
+#[test]
+fn the_list_pops_out_into_a_window_and_its_close_turns_live_aatf_off() {
+    use studio_core::StudioTool;
+
+    let save_path = fixture(PesVersion::Pes17, "live_aatf_window");
+    let dir = save_path.parent().expect("the scratch dir").to_path_buf();
+    let mut tool = crate::Tool::new();
+    tool.view.open(&save_path);
+    let mut settings = studio_core::Settings::default();
+    let mut table = tool.default_settings();
+    table.insert(
+        "aatf_ruleset".to_owned(),
+        toml::Value::String("dbc7".to_owned()),
+    );
+    table.insert("live_aatf".to_owned(), toml::Value::Boolean(true));
+    settings.set_tool("save-editor", table);
+    let (ctx, _events_rx, _requests_rx) = tool_context(&dir, settings);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    tool.view.team = TeamChoice::Team(718);
+    tool.view.selected = Some(Selection::Player(718, 0));
+    let target = aatf::builtin("dbc7")
+        .expect("DBC7 is built in")
+        .ruleset()
+        .tiers
+        .iter()
+        .find(|tier| tier.label == "Regular")
+        .expect("DBC7's Regular tier")
+        .rate;
+    let mut entry = player_entry(&tool.view, 71801);
+    assert_eq!(entry.stats.speed, target, "premise: his Speed is on target");
+    entry.stats.speed = target + 1;
+    tool.view
+        .session
+        .as_mut()
+        .expect("the save opened")
+        .edit_players(vec![entry]);
+    let bench_header = player_header(&tool.view, 718, 0);
+    let starter_header = player_header(&tool.view, 718, 7);
+    // A tool frame reads the settings (Live AATF on, DBC7, docked); the
+    // view's own frames then run until the check lands.
+    window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    let nodes = live_checked(&mut window, &mut tool.view, &[718]);
+    assert!(dock_drawn(&nodes), "premise: the list starts in the dock");
+    assert!(live_window(&nodes).is_none(), "premise: no window yet");
+    let count_line = nodes
+        .iter()
+        .filter_map(|node| node.value())
+        .find(|value| value.contains(" issues \u{b7} "))
+        .expect("the dock's count line")
+        .to_owned();
+
+    // The pop-out icon: the dock is gone, the window holds the count line
+    // and the rows in one column.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    tool_click(
+        &mut window,
+        &mut tool,
+        &ctx,
+        node_labeled(
+            &nodes,
+            Role::Button,
+            "Open Live AATF in a window of its own",
+        ),
+    );
+    assert_eq!(
+        ctx.tool_settings("save-editor")["live_window"].as_bool(),
+        Some(true),
+        "the pop-out icon wrote live_window"
+    );
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    assert!(!dock_drawn(&nodes), "the dock is gone");
+    // A new window's first frame is egui's sizing pass, drawn invisible.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    let frame = live_window(&nodes).expect("the Live AATF window");
+    assert!(
+        inside(value_bounds(&nodes, &count_line), frame),
+        "the window holds the count line {count_line:?}"
+    );
+    let bench = value_bounds(&nodes, &bench_header);
+    let starter = value_bounds(&nodes, &starter_header);
+    assert!(
+        inside(bench, frame) && inside(starter, frame),
+        "the window holds both groups: {bench:?}, {starter:?}, {frame:?}"
+    );
+    assert_eq!(bench.x0, starter.x0, "one column: one left edge");
+    assert!(
+        bench.y1 <= starter.y0,
+        "roster order: 71801's group above 71808's: {bench:?}, {starter:?}"
+    );
+    let dock_icon = node_labeled(&nodes, Role::Button, "Put Live AATF back in its dock");
+    let close = node_labeled(&nodes, Role::Button, "Close window");
+    let (dock_bounds, close_bounds) = (
+        dock_icon.bounds().expect("bounds"),
+        close.bounds().expect("bounds"),
+    );
+    assert!(
+        dock_bounds.x1 <= close_bounds.x0,
+        "the dock icon left of the close button: {dock_bounds:?}, {close_bounds:?}"
+    );
+    // The body keeps egui's place under the bar: at least the window's
+    // content margin below the bar's buttons, which the dock icon's slot,
+    // drawn over the bar, must not pull up.
+    let count_bounds = value_bounds(&nodes, &count_line);
+    let margin = f64::from(
+        egui::Frame::window(&window.ctx.global_style())
+            .inner_margin
+            .top,
+    );
+    assert!(
+        count_bounds.y0 - dock_bounds.y1 >= margin && count_bounds.y0 - close_bounds.y1 >= margin,
+        "the count line under the title bar: {count_bounds:?}, {dock_bounds:?}, margin {margin}"
+    );
+    let middle = |rect: accesskit::Rect| (rect.y0 + rect.y1) / 2.0;
+    assert!(
+        (middle(dock_bounds) - middle(close_bounds)).abs() <= 0.5,
+        "both on one centre line: {dock_bounds:?}, {close_bounds:?}"
+    );
+    let tooltip = |nodes: &[accesskit::Node]| {
+        nodes
+            .iter()
+            .any(|node| node.value() == Some("Turn Live AATF off"))
+    };
+    assert!(!tooltip(&nodes), "premise: no tooltip before the hover");
+    let (_, _, shapes) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    let title = ink(text_shape(&shapes, "Live AATF")).center().x;
+    let room = (frame.x0 + dock_bounds.x0) / 2.0;
+    assert!(
+        (f64::from(title) - room).abs() <= 1.0,
+        "the title centred in the room the two buttons leave: {title} vs {room}"
+    );
+    let hover = vec![egui::Event::PointerMoved(centre(close))];
+    let hovered = (0..30).any(|_| {
+        let (_, nodes, _) = window.frame(hover.clone(), |ui| tool.view(ui, &ctx));
+        tooltip(&nodes)
+    });
+    assert!(hovered, "the close button's tooltip");
+
+    // The dock icon: the window is gone, the dock back with two columns.
+    tool_click(&mut window, &mut tool, &ctx, dock_icon);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    assert!(live_window(&nodes).is_none(), "the window is gone");
+    assert!(dock_drawn(&nodes), "the dock is back");
+    let bench = value_bounds(&nodes, &bench_header);
+    let starter = value_bounds(&nodes, &starter_header);
+    assert!(
+        starter.x0 < bench.x0 && bench.y0 < starter.y1,
+        "the dock's two columns: {starter:?}, {bench:?}"
+    );
+
+    // Popped out again, the close button: Live AATF is off, the window
+    // remembered.
+    tool_click(
+        &mut window,
+        &mut tool,
+        &ctx,
+        node_labeled(
+            &nodes,
+            Role::Button,
+            "Open Live AATF in a window of its own",
+        ),
+    );
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    let toggle = |nodes: &[accesskit::Node]| {
+        node_labeled(nodes, Role::Button, "\u{25b6} Live AATF").toggled()
+    };
+    assert_eq!(
+        toggle(&nodes),
+        Some(accesskit::Toggled::True),
+        "premise: the toolbar's toggle reads on"
+    );
+    tool_click(
+        &mut window,
+        &mut tool,
+        &ctx,
+        node_labeled(&nodes, Role::Button, "Close window"),
+    );
+    let table = ctx.tool_settings("save-editor");
+    assert_eq!(
+        table["live_aatf"].as_bool(),
+        Some(false),
+        "the close button turned Live AATF off"
+    );
+    assert_eq!(
+        table["live_window"].as_bool(),
+        Some(true),
+        "the list stays remembered in its window"
+    );
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    assert!(
+        live_window(&nodes).is_none() && !dock_drawn(&nodes),
+        "no window and no dock"
+    );
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| node.value() == Some(bench_header.as_str())),
+        "no list"
+    );
+    assert_ne!(
+        toggle(&nodes),
+        Some(accesskit::Toggled::True),
+        "the toolbar's toggle reads off"
+    );
+
+    // Turned on again: the list opens in the window.
+    tool_click(
+        &mut window,
+        &mut tool,
+        &ctx,
+        node_labeled(&nodes, Role::Button, "\u{25b6} Live AATF"),
+    );
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    assert!(
+        live_window(&nodes).is_some() && !dock_drawn(&nodes),
+        "turned on again, the list opens in its window"
     );
 }

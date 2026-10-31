@@ -199,8 +199,13 @@ pub(crate) struct SaveView {
     /// written back to the `live_suggestions` setting as `live_aatf` is:
     /// on, Live AATF's check asks for the suggestions too.
     pub(crate) live_suggestions: bool,
-    /// The Live AATF dock's state (the panel docked under the panes);
-    /// drawn while `live_aatf` and a save is open.
+    /// Live AATF's list in a window of its own rather than its dock,
+    /// refreshed from and written back to the `live_window` setting as
+    /// `live_aatf` is; off (docked) in the tests' view-only frames.
+    pub(crate) live_window: bool,
+    /// The Live AATF dock's and window's state (the list docked under
+    /// the panes, or in its own window); drawn while `live_aatf` and a
+    /// save is open.
     live: live_aatf::LiveAatf,
     /// The Multi-team AATF dialog's state (the Savefile menu's entry): open
     /// or closed, its range and its check.
@@ -437,6 +442,7 @@ impl SaveView {
             version_warning: false,
             live_aatf: false,
             live_suggestions: false,
+            live_window: false,
             live: live_aatf::LiveAatf::new(),
             multi_aatf: multi_aatf::MultiAatf::new(),
             export_dialog: comparator::default_export_dialog(),
