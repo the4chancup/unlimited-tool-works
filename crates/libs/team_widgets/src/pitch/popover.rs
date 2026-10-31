@@ -5,7 +5,7 @@
 use pes_savefile::model::tactics::TeamTactics;
 use studio_core::widgets::{add_enabled, add_enabled_ui, step_choice, step_number, wheel_steps};
 
-use super::{GRID_X, GRID_Y, OUTFIELD_Y_MIN, drop_rule, overalls_of, position_label};
+use super::{GRID_X, GRID_Y, drop_rule, outfield_y_min, overalls_of, position_label};
 use crate::names::append_name;
 use crate::tactics::{RosterRow, TacticsView, raw_name};
 
@@ -20,9 +20,12 @@ use crate::tactics::{RosterRow, TacticsView, raw_name};
 /// (`drop_rule::spot_choices`, as the game's Select Position menu lists
 /// them; his own first when the spot offers neither) with Make GK beside
 /// it at its own width, the two filling the popover's width, and the X
-/// (0 to 104) and Y (4 to 48, `OUTFIELD_Y_MIN` up) steppers (`stepper`)
+/// (0 to 104) and Y (4 to 48, from `outfield_y_min`) steppers (`stepper`)
 /// and Close. A change of X or Y, typed or stepped, sets his position by
-/// the drop rule at the new spot, as a release there does. The keeper's slot shows a
+/// the drop rule at the new spot, as a release there does. Under a
+/// ruleset that allows illegal formations (`illegal_formations`) the
+/// combo lists the twelve outfield positions whatever his spot, Y starts
+/// at 0, and an X or Y change keeps his position. The keeper's slot shows a
 /// disabled "GK", the two steppers disabled under "The goalkeeper's spot
 /// is fixed" and Make GK disabled. Make GK exchanges the slot's
 /// `starting_eleven` entry with the keeper slot's — the formation slots
@@ -34,6 +37,7 @@ pub(super) fn slot_popover(
     tactics: &mut TeamTactics,
     view: &mut TacticsView,
     roster: &[RosterRow<'_>],
+    illegal_formations: bool,
 ) {
     let Some(open) = view.popover else {
         return;
@@ -146,9 +150,14 @@ pub(super) fn slot_popover(
                             .on_disabled_hover_text("Position");
                     });
                 } else {
-                    let offered = drop_rule::spot_choices(formation, index, slot.x, slot.y);
-                    let own = (!offered.contains(&slot.position)).then_some(slot.position);
-                    let choices: Vec<u8> = own.into_iter().chain(offered).collect();
+                    let choices: Vec<u8> = if illegal_formations {
+                        // Every outfield position, CB (1) to CF (12).
+                        (1..=12).collect()
+                    } else {
+                        let offered = drop_rule::spot_choices(formation, index, slot.x, slot.y);
+                        let own = (!offered.contains(&slot.position)).then_some(slot.position);
+                        own.into_iter().chain(offered).collect()
+                    };
                     let mut position = slot.position;
                     let combo = egui::ComboBox::from_id_salt("slot position")
                         .width(width)
@@ -191,7 +200,7 @@ pub(super) fn slot_popover(
             stepper(
                 ui,
                 &mut formation.players[index].y,
-                OUTFIELD_Y_MIN,
+                outfield_y_min(illegal_formations),
                 GRID_Y,
                 !keeper,
             );
@@ -201,7 +210,7 @@ pub(super) fn slot_popover(
         });
         // A Y typed into another band changes his position with it.
         let moved = formation.players[index];
-        if (moved.x, moved.y) != (slot.x, slot.y) {
+        if !illegal_formations && (moved.x, moved.y) != (slot.x, slot.y) {
             formation.players[index].position =
                 drop_rule::dropped_position(formation, index, moved.x, moved.y, overalls);
         }
@@ -746,6 +755,7 @@ mod tests {
                 &mut tactics,
                 &mut view,
                 &roster,
+                false,
             );
         });
         let nodes: Vec<accesskit::Node> = with_ids.iter().map(|(_, node)| node.clone()).collect();
@@ -832,6 +842,62 @@ mod tests {
             (position_label(stepped.position), stepped.x, stepped.y),
             ("LWF", 20, 35),
             "an LWF at 35"
+        );
+        let mut expect = before;
+        expect.presets[0].formations[0].players[index] = stepped;
+        assert_eq!(tactics, expect, "his slot alone changes");
+    }
+
+    // Under a ruleset that allows illegal formations an X or Y change
+    // keeps his position: PARTY HARD, the LMF at (20, 26), stepped up to
+    // y 35, where the rule would make him an LWF, then right to x 21,
+    // where it would make him an SS, stays an LMF.
+    #[test]
+    fn under_illegal_formations_x_and_y_steps_keep_party_hards_position() {
+        let rows = fixture_rows(PesVersion::Pes21);
+        let mut roster = roster_rows(&rows);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        party_hard(&mut tactics, &mut roster);
+        let mut window = Headless::sized(600.0, 450.0);
+        window.illegal_formations = true;
+        let mut view = TacticsView::default();
+        let index = 8;
+        let before = tactics.clone();
+        let slot = before.presets[0].formations[0].players[index];
+        assert_eq!(
+            (position_label(slot.position), slot.x, slot.y),
+            ("LMF", 20, 26),
+            "premise: PARTY HARD's spot"
+        );
+        // The position the rule would give him at (x, y).
+        let ruled = |tactics: &TeamTactics, x: u8, y: u8| {
+            position_label(drop_rule::dropped_position(
+                &tactics.presets[0].formations[0],
+                index,
+                x,
+                y,
+                overalls_of(&roster, tactics, index),
+            ))
+        };
+        assert_eq!(ruled(&tactics, 20, 35), "LWF", "premise: an LWF at y 35");
+        assert_eq!(ruled(&tactics, 21, 35), "SS", "premise: an SS at x 21");
+
+        open(&mut window, &mut tactics, &mut view, &roster, index);
+        for _ in 26..35 {
+            click_arrow(&mut window, "Y", 1, &mut tactics, &mut view, &roster);
+        }
+        let stepped = tactics.presets[0].formations[0].players[index];
+        assert_eq!(
+            (position_label(stepped.position), stepped.x, stepped.y),
+            ("LMF", 20, 35),
+            "still an LMF at y 35"
+        );
+        click_arrow(&mut window, "X", 1, &mut tactics, &mut view, &roster);
+        let stepped = tactics.presets[0].formations[0].players[index];
+        assert_eq!(
+            (position_label(stepped.position), stepped.x, stepped.y),
+            ("LMF", 21, 35),
+            "still an LMF at x 21"
         );
         let mut expect = before;
         expect.presets[0].formations[0].players[index] = stepped;
@@ -958,6 +1024,45 @@ mod tests {
         );
     }
 
+    // Under a ruleset that allows illegal formations Y's range starts at
+    // 0, the keeper's rows included: at y 0 `⏴` is disabled and `⏵`
+    // gives 1, and at y 4 `⏴` gives 3.
+    #[test]
+    fn under_illegal_formations_y_steps_down_to_0() {
+        let mut window = Headless::sized(600.0, 450.0);
+        window.illegal_formations = true;
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+        let index = 4;
+        open(&mut window, &mut tactics, &mut view, &roster, index);
+
+        tactics.presets[0].formations[0].players[index].y = 0;
+        let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+        let [down, up] = arrows(&nodes, "Y");
+        assert!(down.is_disabled(), "⏴ is disabled at y 0");
+        assert!(!up.is_disabled(), "⏵ is enabled at y 0");
+        assert!(
+            click_arrow(&mut window, "Y", 1, &mut tactics, &mut view, &roster),
+            "the click is an edit"
+        );
+        assert_eq!(
+            tactics.presets[0].formations[0].players[index].y, 1,
+            "one ⏵ from 0 gives 1"
+        );
+
+        tactics.presets[0].formations[0].players[index].y = 4;
+        assert!(
+            click_arrow(&mut window, "Y", 0, &mut tactics, &mut view, &roster),
+            "⏴ at y 4 is an edit"
+        );
+        assert_eq!(
+            tactics.presets[0].formations[0].players[index].y, 3,
+            "one ⏴ from 4 gives 3"
+        );
+    }
+
     // The keeper's popover: all four arrows disabled, under the fields'
     // hover "The goalkeeper's spot is fixed".
     #[test]
@@ -1027,6 +1132,7 @@ mod tests {
                 &mut tactics,
                 &mut view,
                 &roster,
+                false,
             );
         });
         let round = window

@@ -62,6 +62,8 @@ pub(crate) enum LineupDrag {
     /// A pitch marker: a lineup row treats it as its `Starter` index;
     /// another marker swaps their two slots in the shown formation, and
     /// the grass move (a row's release there never fires) is its alone.
+    /// Under a ruleset that allows illegal formations another marker is
+    /// no target: a release on him is a grass move.
     Marker(usize),
 }
 
@@ -78,8 +80,21 @@ const GRID_X: u8 = 104;
 const GRID_Y: u8 = 48;
 /// The outfielders' lowest stored y. Rows 0 to 3 are the keeper's area
 /// alone, and the game holds a dragged outfielder at y 4 however low the
-/// pointer goes, so a drop and the popover's Y stop there too.
+/// pointer goes, so a drop and the popover's Y stop there too, unless the
+/// ruleset allows illegal formations (`outfield_y_min`).
 const OUTFIELD_Y_MIN: u8 = 4;
+
+/// The lowest stored y a drag or the popover's Y gives an outfielder:
+/// `OUTFIELD_Y_MIN`, or 0 under a ruleset that allows illegal formations,
+/// whose patched game keeps an outfielder on any row, the keeper's
+/// included.
+fn outfield_y_min(illegal_formations: bool) -> u8 {
+    if illegal_formations {
+        0
+    } else {
+        OUTFIELD_Y_MIN
+    }
+}
 
 /// The badge centre's x for stored x 0 (fitted on the screen's capture).
 const SPOT_X0: f32 = 12.8;
@@ -322,8 +337,19 @@ fn lock_to_fielded(tactics: &TeamTactics, view: &mut TacticsView) -> bool {
 /// until the release. The keeper's marker
 /// (position 0) is neither a drag source nor a marker's swap target; his
 /// spot is fixed. `version` is the open save's (`swap_in`'s instruction
-/// decode, and the pitch its formation screen draws). Answers `true`
-/// only when `tactics` changed this frame.
+/// decode, and the pitch its formation screen draws).
+///
+/// `illegal_formations` is the active ruleset's flag: its cup plays a
+/// game that keeps any formation, so the pitch sets a starter's spot and
+/// his position apart. A held marker's badge shows his own position at
+/// every step, a release writes his snapped spot alone, a marker dropped
+/// on another lands there as on the grass (no swap, no swap mark), an
+/// outfielder may stand on any row from 0 up, and the popover lists
+/// every outfield position and keeps his position when X or Y changes.
+/// Rows dropped on markers, the keeper's slot and the darkening are as
+/// with it off.
+///
+/// Answers `true` only when `tactics` changed this frame.
 pub fn pitch(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,
@@ -331,6 +357,7 @@ pub fn pitch(
     tactics: &mut TeamTactics,
     view: &mut TacticsView,
     roster: &[RosterRow<'_>],
+    illegal_formations: bool,
 ) -> bool {
     ui.push_id(id_salt, |ui| {
         lock_to_fielded(tactics, view);
@@ -396,6 +423,7 @@ pub fn pitch(
         let players = tactics.presets[view.preset.min(2)].formations[view.formation.min(2)].players;
         let centres = players.map(|slot| clamp_centre(badge_centre(canvas.min, slot), canvas));
         let order = draw_order(&centres);
+        let y_min = outfield_y_min(illegal_formations);
         // Interact in draw order first: egui gives an overlap to the
         // widget registered last, so the lowest marker (painted on top)
         // wins a press.
@@ -421,8 +449,8 @@ pub fn pitch(
         // The drag as the last frame left it, and as this frame holds it:
         // his index and his slot at this step (the spot under the
         // pointer less the press's offset, and the position the rule
-        // gives there from his stored one). Nothing is written until the
-        // release.
+        // gives there from his stored one, or his stored one under
+        // illegal formations). Nothing is written until the release.
         let held_id = ui.scope_id().with("held marker");
         let previous = ui.ctx().data(|data| data.get_temp::<Held>(held_id));
         let held = dragged.map(|index| {
@@ -444,16 +472,20 @@ pub fn pitch(
                 .ctx()
                 .pointer_interact_pos()
                 .map_or((players[index].x, players[index].y), |pos| {
-                    snap(pos - held.offset, canvas.min)
+                    snap(pos - held.offset, canvas.min, y_min)
                 });
             let formation = &tactics.presets[view.preset.min(2)].formations[view.formation.min(2)];
-            let position = drop_rule::dropped_position(
-                formation,
-                index,
-                x,
-                y,
-                overalls_of(roster, tactics, index),
-            );
+            let position = if illegal_formations {
+                players[index].position
+            } else {
+                drop_rule::dropped_position(
+                    formation,
+                    index,
+                    x,
+                    y,
+                    overalls_of(roster, tactics, index),
+                )
+            };
             ui.ctx().data_mut(|data| data.insert_temp(held_id, held));
             (index, FormationSlot { position, x, y })
         });
@@ -495,9 +527,13 @@ pub fn pitch(
             // grass, his own spot or the keeper he moves to the spot the
             // held marker stood at, the release point less the press's
             // offset, taking the position the rule gives there, as his
-            // badge showed it. A release egui also reports as his click (the
-            // pointer moved within the click distance, though past his
-            // edge) is that click, which `marker` served: no drop.
+            // badge showed it. Under illegal formations there is no swap
+            // and no rule: the patched game keeps two starters on one
+            // spot, so he lands at the snapped spot over a teammate as on
+            // the grass, his position kept. A release egui also reports
+            // as his click (the pointer moved within the click distance,
+            // though past his edge) is that click, which `marker` served:
+            // no drop.
             Some((_, LineupDrag::Marker(from)))
                 if !responses[from]
                     .as_ref()
@@ -507,15 +543,22 @@ pub fn pitch(
                     let overalls = overalls_of(roster, tactics, from);
                     let formation =
                         &mut tactics.presets[view.preset.min(2)].formations[view.formation.min(2)];
-                    match swap_target(&players, &centres, canvas, pos, from) {
+                    let onto = if illegal_formations {
+                        None
+                    } else {
+                        swap_target(&players, &centres, canvas, pos, from)
+                    };
+                    match onto {
                         Some(onto) => formation.players.swap(from, onto),
                         None => {
                             let offset = previous
                                 .filter(|held| held.slot == from)
                                 .map_or(egui::Vec2::ZERO, |held| held.offset);
-                            let (x, y) = snap(pos - offset, canvas.min);
-                            formation.players[from].position =
-                                drop_rule::dropped_position(formation, from, x, y, overalls);
+                            let (x, y) = snap(pos - offset, canvas.min, y_min);
+                            if !illegal_formations {
+                                formation.players[from].position =
+                                    drop_rule::dropped_position(formation, from, x, y, overalls);
+                            }
                             formation.players[from].x = x;
                             formation.players[from].y = y;
                         }
@@ -551,8 +594,9 @@ pub fn pitch(
         // drop makes, so the mark and the release always agree. The
         // dragged marker sits on him, so it goes half transparent over
         // him and his corners are painted over both (the draft's
-        // `drawPitch` target mark).
-        let swap = dragged.and_then(|index| {
+        // `drawPitch` target mark). Under illegal formations a release
+        // swaps nothing, so there is none.
+        let swap = dragged.filter(|_| !illegal_formations).and_then(|index| {
             ui.ctx()
                 .pointer_interact_pos()
                 .and_then(|pos| swap_target(&players, &centres, canvas, pos, index))
@@ -589,9 +633,9 @@ pub fn pitch(
             if swap.is_some() {
                 painter.multiply_opacity(0.35);
             }
-            // His badge shows the position he holds, or, over a
-            // teammate, the teammate's, which a release there gives him,
-            // with his own overall at it.
+            // His badge shows the position he holds, or, over the
+            // teammate a release would swap him with, the teammate's,
+            // which that release gives him, with his own overall at it.
             let shown = FormationSlot {
                 position: swap.map_or(slot.position, |target| players[target].position),
                 ..slot
@@ -678,7 +722,7 @@ pub fn pitch(
             ui.ctx()
                 .request_repaint_after(std::time::Duration::from_secs_f32(still_for));
         }
-        slot_popover(ui, canvas, tactics, view, roster);
+        slot_popover(ui, canvas, tactics, view, roster, illegal_formations);
         *tactics != before
     })
     .inner
@@ -715,15 +759,15 @@ fn badge_centre(origin: egui::Pos2, slot: FormationSlot) -> egui::Pos2 {
 
 /// `pos` inside the canvas (from `origin`) snapped back through the
 /// mapping to the stored grid (the draft's `snapXY`): the nearest unit,
-/// clamped to the grid, y no lower than `OUTFIELD_Y_MIN`.
-fn snap(pos: egui::Pos2, origin: egui::Pos2) -> (u8, u8) {
+/// clamped to the grid, y no lower than `y_min` (`outfield_y_min`).
+fn snap(pos: egui::Pos2, origin: egui::Pos2, y_min: u8) -> (u8, u8) {
     let local = pos - origin;
     let x = ((local.x - SPOT_X0) / SPOT_XS)
         .round()
         .clamp(0.0, f32::from(GRID_X)) as u8;
     let y = ((SPOT_Y0 - local.y) / SPOT_YS)
         .round()
-        .clamp(f32::from(OUTFIELD_Y_MIN), f32::from(GRID_Y)) as u8;
+        .clamp(f32::from(y_min), f32::from(GRID_Y)) as u8;
     (x, y)
 }
 
