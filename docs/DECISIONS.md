@@ -14544,3 +14544,12 @@ a copy contradicts it: the game shows the copy over that face.
 Plan: `plans/aesthetics_export/player_folders.md` "Player folders (the Studio export format)",
 `plans/pes_savefile/operations.md` "Aesthetics patch (new)", `plans/export_upgrader.md` "What
 it does"; worklog 8.36c; GLOSSARY "Copy link".
+
+## 2026-10-31 — save_editor — `check-aatf --rules` takes an embedded ruleset's stem
+Decision (maintainer): `--rules` names a rules file or, when no file has that name, an
+embedded ruleset by the stem the `aatf_ruleset` setting stores (`--rules dbc7`); any other
+value is refused with the embedded stems listed (exit 2).
+Why: checking a save against a built-in ruleset had to go through the settings file or a copy
+of the ruleset written out (DBC7's organizer checking the DBC6 save). A file wins over a stem
+so an existing command line keeps its meaning.
+Plan: `plans/save_editor.md` "Configurable AATF rules"; worklog cv15.
