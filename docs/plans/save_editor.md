@@ -963,7 +963,8 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   `Instruction::takes_player`, the one place the rule lives). Picking one of those three from
   an instruction that takes none sets the target to none (255), so a byte the game never read
   as a target does not show up as one; picking between two of them keeps the target. Picking
-  an instruction that takes none puts back the target byte the file was opened with, not 255:
+  an instruction that takes none puts back the target byte the file held when opened or last
+  saved (the unsaved-changes baseline), not 255:
   the game reads no target there and writes its own byte (0 under 2,303 of the 2,445 unassigned
   entries of the maintainer's PES 2017 save, 255 under 123), so a fixed 255 left a change no row
   could show after a round trip back to the instruction as opened ("No target -> No target").

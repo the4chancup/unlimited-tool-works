@@ -503,7 +503,15 @@ mod tests {
         let rows = named_roster();
         let roster = roster_rows(&rows);
         let (nodes, shapes) = window.frame(vec![], |ui| {
-            tactics_settings(ui, "tactics", version, &mut tactics, &mut view, &roster);
+            tactics_settings(
+                ui,
+                "tactics",
+                version,
+                &mut tactics,
+                None,
+                &mut view,
+                &roster,
+            );
         });
 
         // The rect shape `fill` paints at `bounds`, or `None`.
@@ -591,7 +599,15 @@ mod tests {
         let rows = named_roster();
         let roster = roster_rows(&rows);
         let (nodes, shapes) = window.frame(vec![], |ui| {
-            tactics_settings(ui, "tactics", version, &mut tactics, &mut view, &roster);
+            tactics_settings(
+                ui,
+                "tactics",
+                version,
+                &mut tactics,
+                None,
+                &mut view,
+                &roster,
+            );
         });
 
         let chips: Vec<&accesskit::Node> = nodes
