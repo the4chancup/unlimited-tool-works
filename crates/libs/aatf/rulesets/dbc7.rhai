@@ -61,7 +61,7 @@ const RULESET = #{
     },
 
     // 41 is the most skills any version has: no cap, like the paid cards.
-    universal: #{ max_skill_cards: 41 },
+    universal: #{ max_skill_cards: 41, illegal_formations: true },
 
     specials: [
         #{ label: "Goalkeepers at 189 count as 185",

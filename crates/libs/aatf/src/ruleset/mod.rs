@@ -342,6 +342,11 @@ pub struct Universal {
     /// COM playing styles at most, unset for no limit.
     #[serde(default)]
     pub max_com_styles: Option<u8>,
+    /// The cup plays a game that keeps any formation (PES 2017's Whack Patch), so a starter
+    /// may stand anywhere at any outfield position: the Save editor's pitch then sets his
+    /// spot and his position apart. The file's logic never reads it.
+    #[serde(default)]
+    pub illegal_formations: bool,
 }
 
 /// Weight within `max(floor, height - below)..=height - above` (Autumn 26: 30, 129, 81).

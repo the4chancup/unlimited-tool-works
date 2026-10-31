@@ -314,6 +314,7 @@ pub(crate) fn blank() -> Ruleset {
             min_goalkeepers: 1,
             max_skill_cards: 10,
             max_com_styles: None,
+            illegal_formations: false,
         },
         specials: Vec::new(),
         team_settings: Vec::new(),
@@ -759,6 +760,7 @@ mod tests {
                 min_goalkeepers: 1,
                 max_skill_cards: 10,
                 max_com_styles: None,
+                illegal_formations: false,
             }
         );
         assert!(blank.check().is_empty(), "Blank breaks no load rule");

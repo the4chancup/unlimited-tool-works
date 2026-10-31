@@ -117,4 +117,19 @@ mod tests {
         );
         assert!(builtin("cup.4ccrules").is_none());
     }
+
+    /// Autumn 26 and DBC7, whose cups play a game that keeps any
+    /// formation, allow illegal formations; every other built-in keeps
+    /// the game's rule.
+    #[test]
+    fn only_autumn26_and_dbc7_allow_illegal_formations() {
+        for &(stem, _) in BLOCKS {
+            let rules = builtin(stem).unwrap_or_else(|| panic!("{stem} is built in"));
+            assert_eq!(
+                rules.ruleset().universal.illegal_formations,
+                matches!(stem, "autumn26" | "dbc7"),
+                "{stem}"
+            );
+        }
+    }
 }

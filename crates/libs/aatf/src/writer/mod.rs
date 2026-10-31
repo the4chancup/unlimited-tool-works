@@ -515,6 +515,7 @@ fn universal_fields(universal: &Universal) -> Vec<String> {
         min_goalkeepers,
         max_skill_cards,
         max_com_styles,
+        illegal_formations,
     } = universal;
     let mut fields: Vec<String> = Vec::new();
     push_set(
@@ -565,6 +566,12 @@ fn universal_fields(universal: &Universal) -> Vec<String> {
         &mut fields,
         "max_com_styles",
         max_com_styles,
+        ToString::to_string,
+    );
+    push_set(
+        &mut fields,
+        "illegal_formations",
+        illegal_formations,
         ToString::to_string,
     );
     fields
