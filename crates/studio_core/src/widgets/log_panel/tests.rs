@@ -816,6 +816,59 @@ fn the_chevron_collapses_to_the_header_and_the_open_height_survives() {
     );
 }
 
+/// The painted rects 24 points wide and 2 high: the divider's grip.
+fn grips(shapes: &[egui::epaint::ClippedShape]) -> Vec<(egui::Rect, egui::Color32)> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if (shape.rect.width() - 24.0).abs() < 0.01
+                    && (shape.rect.height() - 2.0).abs() < 0.01 =>
+            {
+                Some((shape.rect, shape.fill))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// An open dock paints the grip, a 24 × 2 line in the plain text grey,
+/// centred on its top edge (egui's resize edge) at the panel's middle;
+/// collapsed, none.
+// ST-LOG-04
+#[test]
+fn an_open_docks_divider_carries_the_grip() {
+    let lines = plain_lines(5);
+    let mut panel = LogPanel::new("test-log");
+    let mut window = Headless::new();
+    let nodes = window.idle(&mut panel, &lines);
+    let (open, _) = panel.dock.panel_ids();
+    let outer = egui::PanelState::load(&window.ctx, panel_id(open))
+        .expect("the open panel's state")
+        .outer_rect;
+    let found = grips(&window.shapes);
+    let [(grip, fill)] = found[..] else {
+        panic!("one grip on the open dock: {found:?}");
+    };
+    assert!(
+        (grip.center().x - outer.center().x).abs() < 0.5
+            && (grip.center().y - outer.min.y).abs() < 0.5,
+        "the grip centred on the divider's middle: {grip:?}, panel {outer:?}"
+    );
+    assert_eq!(
+        fill,
+        egui::Color32::from_gray(140),
+        "the drafts' --text grey"
+    );
+
+    click(&mut window, &mut panel, &lines, entry(&nodes, "▾"));
+    window.idle(&mut panel, &lines);
+    assert!(
+        grips(&window.shapes).is_empty(),
+        "a collapsed dock draws no grip"
+    );
+}
+
 #[test]
 fn from_event_maps_a_message_to_its_severity_and_code() {
     let mut formatter = EventLines::new();

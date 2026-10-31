@@ -104,6 +104,12 @@ issues` once the team passes. Clicking a row selects that player; a Fielded posi
 about a position he is fielded at, selects his team's row instead, on the named preset's
 first formation that crosses his portrait.
 
+The icon at the right end of the panel's header opens the list in a window of its own, which
+you can move and resize to keep it beside what you are fixing. The window lists the players
+one under the other, its icon beside the close button puts the list back in the panel, and
+closing the window turns Live AATF off. The editor remembers where you left the list, so
+turning Live AATF on again opens it there.
+
 While it is on, the editor itself is marked too:
 
 - each player of the team gets a mark at the end of his row in the list: a red `✖` when he

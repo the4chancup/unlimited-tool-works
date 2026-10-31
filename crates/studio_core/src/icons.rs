@@ -46,3 +46,9 @@ pub const X: &str = "\u{E4F6}";
 pub const WARNING: &str = "\u{E4E0}";
 /// The status bar's update-available condition: an arrow down onto a tray.
 pub const DOWNLOAD_SIMPLE: &str = "\u{E20C}";
+/// A dock's pop-out button: an arrow out of a square, the docked list opening in a
+/// window of its own.
+pub const POP_OUT: &str = "\u{E5DE}";
+/// A window's dock button: an arrow into a square, the window's list going back to its
+/// dock.
+pub const DOCK: &str = "\u{E5DF}";
