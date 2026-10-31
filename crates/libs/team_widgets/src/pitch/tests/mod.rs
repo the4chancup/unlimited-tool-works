@@ -441,16 +441,18 @@ fn press_offset(canvas: egui::Rect, slot: FormationSlot, press: egui::Pos2) -> e
 /// Where an outfield `slot`'s marker pressed at `press` is painted while
 /// held with the pointer at `pointer`: his badge centre at the spot under
 /// the pointer less the press's offset, clamped like every marker's.
+/// `illegal_formations` is the flag the pitch was handed.
 fn held_centre(
     canvas: egui::Rect,
     slot: FormationSlot,
     press: egui::Pos2,
     pointer: egui::Pos2,
+    illegal_formations: bool,
 ) -> egui::Pos2 {
     let (x, y) = snap(
         pointer - press_offset(canvas, slot, press),
         canvas.min,
-        OUTFIELD_Y_MIN,
+        outfield_y_min(illegal_formations),
     );
     clamp_centre(
         badge_centre(canvas.min, FormationSlot { x, y, ..slot }),

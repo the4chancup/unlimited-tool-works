@@ -1417,6 +1417,42 @@ fn under_illegal_formations_a_bench_row_dropped_on_a_marker_still_swaps_him_in()
     );
 }
 
+// Under a ruleset that allows illegal formations two starters are still
+// exchanged by dropping a starter's row on a marker.
+#[test]
+fn under_illegal_formations_a_starter_row_dropped_on_a_marker_still_exchanges_the_two() {
+    let mut window = Headless::sized(600.0, 1100.0);
+    window.illegal_formations = true;
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let index = 5;
+    // A non-identity eleven: an arm writing indices would look the
+    // same as an exchange on the fixture's [0, 1, 2, ...].
+    tactics.starting_eleven.swap(2, 9);
+    tactics.starting_eleven.swap(5, 8);
+    let out = tactics.starting_eleven[2];
+    let inn = tactics.starting_eleven[5];
+    assert_ne!(out, inn, "premise: two different slots");
+    let (nodes, _) =
+        window.pitch_and_lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let formation = tactics.presets[0].formations[0].clone();
+    let onto = marker_point(&nodes, &formation.players, index);
+
+    let changed = window.drag_pitch_and_lineup(
+        row_centre(&nodes, 2),
+        onto,
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(changed, "the drop changed the record");
+    assert_eq!(tactics.starting_eleven[2], inn);
+    assert_eq!(tactics.starting_eleven[5], out);
+}
+
 // An XI row released on a marker exchanges the two starters' slots —
 // both stay on the pitch, so no role moves.
 #[test]
