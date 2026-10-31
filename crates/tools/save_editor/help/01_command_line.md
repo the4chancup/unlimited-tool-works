@@ -8,7 +8,7 @@ UTW save-editor export-toml <save> --all-teams --out-dir <folder>
 UTW save-editor import-toml <team.toml> --base <save> --out <save> [--edit-mode-closed]
 UTW save-editor apply-patch <aesthetics_patch.toml> --base <save> --out <save> [--edit-mode-closed]
 UTW save-editor diff <first save> <second save> [--aesthetics | --gameplay] [--json]
-UTW save-editor check-aatf <save> [--teams <list>] [--rules <file>]
+UTW save-editor check-aatf <save> [--teams <list>] [--rules <file|name>]
 UTW save-editor export-teams-list <save> [--yes]
 ```
 
@@ -103,8 +103,10 @@ are refused.
 cup range, 701 to 920, or the ones `--teams` names as a comma-separated list of ids and
 inclusive ranges (`701,705-710`).
 
-The ruleset is the file `--rules` names, read from where the command runs, else the one picked
-in the dropdown on the window's toolbar (the `aatf_ruleset` setting): a built-in ruleset or a
+The ruleset is the file `--rules` names, read from where the command runs; when no file has
+that name, the built-in ruleset of that short name (`--rules dbc7`, `--rules vgl27`), and a
+value that is neither is refused, listing the built-in names. Without `--rules`, it is the one
+picked in the dropdown on the window's toolbar (the `aatf_ruleset` setting): a built-in ruleset or a
 copy in the data folder's `rules` folder. When that copy is gone, the warning line
 `aatf_ruleset_gone` says so and the official ruleset built into Unlimited Tool Works, 4cc
 Autumn 26, is used instead.

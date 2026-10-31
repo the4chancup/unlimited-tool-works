@@ -722,8 +722,8 @@ mod tests {
 
     /// A violation's line names the team, the rostered player for a player's violation, the
     /// rule in words and the sentence the window's rows print, under the rules the check ran
-    /// under (DBC7's brackets and systems by their labels), a height row's lines after the
-    /// sentence. A team's own violation names no player, and the severity
+    /// under (the official ruleset's, and DBC7's for the height quota, its brackets and
+    /// systems by their labels), a height row's lines after the sentence. A team's own violation names no player, and the severity
     /// is the violation's.
     #[test]
     fn a_violation_line_names_the_rule_in_words_and_the_problem() {

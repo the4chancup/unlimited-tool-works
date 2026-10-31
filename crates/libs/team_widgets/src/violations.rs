@@ -1,5 +1,5 @@
 //! The AATF results list, drafted in `docs/prototypes/tools/save_editor.js`
-//! (`aatfPanel`, `violationSentence`, `playerHead`): one team's check grouped
+//! (`aatfPanel`, `violationSentence`, `violationDetail`, `playerHead`): one team's check grouped
 //! per player, a row's click reporting the player to select. The AATF panel,
 //! the Live AATF dock and the Team creator all draw this list.
 
@@ -25,7 +25,7 @@ pub struct ListedPlayer<'a> {
     /// numbers past 99).
     pub number: u16,
     /// The name as the save stores it: the host passes the raw name (colour
-    /// codes included), the header draws it code-free.
+    /// codes included), the header and a height row's lines draw it code-free.
     pub name: &'a str,
     /// His own height in cm: a height row's line names it after him when the check read
     /// another (his height less an allowance).
@@ -39,7 +39,7 @@ pub struct TeamViolations<'a> {
     pub team_id: u32,
     /// The team name.
     pub team_name: &'a str,
-    /// The rostered players, for the group headers.
+    /// The rostered players, for the group headers and the height rows' lines.
     pub players: &'a [ListedPlayer<'a>],
     /// The violations `check_team` returned, in its order.
     pub violations: &'a [aatf::Violation],

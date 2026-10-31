@@ -6207,6 +6207,12 @@ briefs, review loops, gates and mutation runs as for any step.
     unassigned entries; /3/'s preset 1 Defence 1 holds 255, /a/'s 0). Fix per plan "Tactics
     editor" (such a pick puts back the target byte as opened) → verify: reproduced in a test
     first; the round trip leaves no change
+  - [ ] cv23 the wheel on Ability stats' boxes lags behind the notches, badly under CPU load
+    (the maintainer, 2026-10-31, Live AATF off). By design a notch shows a frame after the one
+    that reads it, a fast turn steps one notch a frame, and a box holding the keyboard waits two
+    frames more (`studio_core` `widgets/wheel.rs`), so the lag is a few frames times the frame's
+    cost → measure first: a Save editor frame's time on the maintainer's PES 2017 save at Ability
+    stats, idle and on a step's frame, headless, release build; then cut where the time goes
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
     every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree
