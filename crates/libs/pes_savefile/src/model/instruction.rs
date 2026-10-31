@@ -1,5 +1,6 @@
-//! The canonical advanced-instruction enum: the sixteen values PES 18-21
-//! share. The stored value is a per-version index (PES 15/16 have no
+//! The canonical advanced-instruction enum: the sixteen values PES 18 and 19
+//! store, and Anchoring, which PES 20 and 21 add. The stored value is a
+//! per-version index (PES 15/16 have no
 //! instruction table at all); `schema::instruction` maps it, this enum
 //! carries no version knowledge.
 

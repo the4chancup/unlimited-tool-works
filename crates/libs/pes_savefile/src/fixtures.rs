@@ -95,9 +95,12 @@ pub(crate) fn pes17_texport_payload() -> Vec<u8> {
 }
 
 /// `payload` as the PES 17 Texport's container (logo and serial dropped,
-/// as the save fixtures are).
+/// as the save fixtures are). The description is the real file's: its
+/// label, then the team's name `/o/` at 0x80.
 pub(crate) fn pes17_texport_container(payload: Vec<u8>) -> Vec<u8> {
     let mut description = b"Team Export Data 03".to_vec();
+    description.resize(0x80, 0);
+    description.extend_from_slice(b"/o/");
     description.resize(384, 0);
     SaveContainer {
         scheme: Scheme::Keyed(MasterKey::Pes17),

@@ -783,6 +783,7 @@ mod tests {
             }
             assert_eq!(tactics.starting_eleven, [0xFF; 11], "{version:?}");
             assert_eq!(tactics.bench_order, [0xFF; 21], "{version:?}");
+            assert_eq!(tactics.players_to_join_attack, [0xFF; 3], "{version:?}");
         }
     }
 }
