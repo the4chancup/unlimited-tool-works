@@ -1252,7 +1252,10 @@ def list_mutants(crate: str, config: Path) -> list[dict]:
     listed = subprocess.run(
         ["cargo", "mutants", "-p", crate, "--list", "--json",
          "--config", str(config)],
-        cwd=ROOT, capture_output=True, text=True,
+        # UTF-8, not the Windows locale's code page: each mutant's `diff` quotes the source,
+        # and characters such as `●` and `⏵` hold bytes cp1252 has no character for, which
+        # killed the reader thread and left the listing empty.
+        cwd=ROOT, capture_output=True, text=True, encoding="utf-8",
     )
     if listed.returncode != 0:
         raise RuntimeError(f"listing {crate}'s mutants failed:\n{listed.stderr}")
