@@ -6254,12 +6254,15 @@ briefs, review loops, gates and mutation runs as for any step.
     2026-10-31 in cv16b's look, `.tmp/0_0_2/look_cv16b/09_crop.png`: "Extra height" on
     `widgets.hovered.bg_fill`; `team_widgets` `row_paint`) → compare the draft's `.drow:hover`
     first; a change is drafted, rendered and planned before code
-  - [ ] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
+  - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
     logo drawn 28 high skips pixels; resample with `dds_convert`'s Lanczos3 to the box's
     pixels at the window's scale, again on a scale change (plan "The event logo") → verify: a
-    test that the uploaded texture is the box's pixel size at 1x and 2x scaling
-  - [ ] cv25 the colour picker's popup stands over 580 points wide where the draft's is about
+    test that the uploaded texture is the box's pixel size at 1x and 2x scaling: Opus sidekick
+    (`.tmp/cv24/brief_cv24.md`, rework r1 premultiplied), `b4568426`, merged `89c5cb4e`;
+    `team_widgets` `event_logo.rs` (`EventLogo::image(&mut self, ctx)` resamples on a scale
+    change into the same texture; `premultiplied`, `resampled`), both hosts
+  - [x] cv25 the colour picker's popup stands over 580 points wide where the draft's is about
     186 (the maintainer, 2026-10-31): `color_tools` `picker.rs` asks the hex field for the
     popup's whole width (`desired_width(f32::INFINITY)`) in a justified layout, which widens
     the popup and stretches the square and the slider with it; the square and slider at 168,
@@ -6267,7 +6270,9 @@ briefs, review loops, gates and mutation runs as for any step.
     (`plans/libs/color_tools.md`, the paragraph on the field) → verify: a test that the open
     popup's square and slider are 168, the popup its widest row plus its frame, the hex field
     the popup's inner width; briefed with cv24 (`.tmp/cv24/brief_cv24.md`, part 2), reworked
-    in r2 (r1 had taken the draft's swatch size, withdrawn: the app's swatches stay)
+    in r2 (r1 had taken the draft's swatch size, withdrawn: the app's swatches stay);
+    `b4568426`, merged `89c5cb4e`: `picker.rs` `popup_body` (the square and strip in a
+    `ui.vertical`, the hex field `desired_width(POPUP_W)` in the justified popup)
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
     every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree
