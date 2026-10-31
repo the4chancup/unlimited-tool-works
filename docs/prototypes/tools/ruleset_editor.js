@@ -108,6 +108,7 @@ const AUTUMN26 = {
     registered_position_a: true, fielded_at_a: [], no_b_ratings: true, b_uses_a_allowance: false,
     gk_not_second_a: true, age: [15, 50], weight: { floor: 30, below: 129, above: 81 },
     captain_required: true, min_goalkeepers: 1, max_skill_cards: 10, max_com_styles: null,
+    illegal_formations: true,
   },
   specials: [
     special("Malicia is a free card", {}, { free_cards: ["malicia"] }),
@@ -174,7 +175,7 @@ const SPRING26 = {
         quotas: { giga: 0, giant: 0, tall: 10, mid: 7, manlet: 6 } },
     ],
   },
-  universal: clone(AUTUMN26.universal),
+  universal: Object.assign(clone(AUTUMN26.universal), { illegal_formations: false }),
   specials: [
     special("Malicia is a free card", {}, { free_cards: ["malicia"] }),
     special("The captain's Captaincy card is free", { captain: true }, { free_cards: ["captaincy"] }),
@@ -640,7 +641,8 @@ const DBC7 = {
   },
   universal: { registered_position_a: false, fielded_at_a: [], no_b_ratings: false,
     b_uses_a_allowance: false, gk_not_second_a: false, age: null, weight: null,
-    captain_required: false, min_goalkeepers: 0, max_skill_cards: 41, max_com_styles: null },
+    captain_required: false, min_goalkeepers: 0, max_skill_cards: 41, max_com_styles: null,
+    illegal_formations: true },
   specials: [
     special("Goalkeepers at 189 count as 185", { positions: ["GK"], height_min: 189, height_max: 189 },
       { height_allowance: 4 }),
@@ -985,7 +987,8 @@ function rulesetData(r) {
           extra_height: e => e.total == null || e.max == null ? null : e })) },
     universal: struct(r.universal, [["registered_position_a"], ["fielded_at_a"], ["no_b_ratings"],
       ["b_uses_a_allowance"], ["gk_not_second_a"], ["age", "opt"], ["weight", "opt"],
-      ["captain_required"], ["min_goalkeepers"], ["max_skill_cards", "req"], ["max_com_styles", "opt"]]),
+      ["captain_required"], ["min_goalkeepers"], ["max_skill_cards", "req"], ["max_com_styles", "opt"],
+      ["illegal_formations"]]),
     specials: r.specials.map(s => struct(Object.assign({}, s, { severity: s.severity === "error" ? null : s.severity }),
       [["label", "req"], ["severity", "opt"], ["when"], ["then"]], { when: condData, then: effectsData })),
     team_settings: r.team_settings.map(t => struct(t, [["label", "req"], ["versions"],
@@ -1337,6 +1340,7 @@ function summary(r) {
   if (u.min_goalkeepers) U.push(`at least ${u.min_goalkeepers} goalkeeper${u.min_goalkeepers > 1 ? "s" : ""}`);
   U.push(`at most ${u.max_skill_cards} skill cards`);
   if (u.max_com_styles != null) U.push(`at most ${u.max_com_styles} COM styles`);
+  if (u.illegal_formations) U.push("illegal formations allowed");
   const every = U.join("; ");
   L.push("", "## Every team", every[0].toUpperCase() + every.slice(1) + ".");
   const groups = Object.entries(r.card_groups);
@@ -1649,7 +1653,8 @@ const VIEWS = {
       checkbox("A captain is required", u.captain_required, v => u.captain_required = v),
       row("At least", drag(u.min_goalkeepers, v => u.min_goalkeepers = v ?? 0, { max: 5 }), "goalkeepers"),
       row("At most", drag(u.max_skill_cards, v => u.max_skill_cards = v ?? 0, { max: 41 }), "skill cards per player", weak("(a ruleset's choice; the official rules use 10)")),
-      row(checkbox("At most", u.max_com_styles !== null, v => u.max_com_styles = v ? 5 : null), u.max_com_styles !== null ? drag(u.max_com_styles, v => u.max_com_styles = v ?? 0, { max: 7 }) : "", "COM styles per player")));
+      row(checkbox("At most", u.max_com_styles !== null, v => u.max_com_styles = v ? 5 : null), u.max_com_styles !== null ? drag(u.max_com_styles, v => u.max_com_styles = v ?? 0, { max: 7 }) : "", "COM styles per player"),
+      checkbox("Illegal formations allowed (Whack Patch)", !!u.illegal_formations, v => u.illegal_formations = v)));
     d.append(h("div", { class: "sep" }), strong("Team settings"), h("div", { class: "weak" }, "Tactics settings a team must have, on the versions listed (every version when none is ticked)."));
     const tri = (t, k, label) => row(h("span", { style: "width:220px" }, label), combo([[null, "any"], ["true", "must be on"], ["false", "must be off"]],
       t[k] === null || t[k] === undefined ? null : String(t[k]), v => t[k] = v === null ? null : v === "true"));
