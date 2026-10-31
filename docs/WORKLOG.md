@@ -6077,6 +6077,24 @@ briefs, review loops, gates and mutation runs as for any step.
     (save_editor.js, ruleset_editor.js), then slices: the `aatf` field and built-ins (no
     mutation run holds it), the Ruleset editor, then `save_editor`/`team_widgets` after the
     whole-crate chain
+    - [ ] reviews of the plan: SWE-2 S1 7 of 8 and S2 5 of 6 accepted (`c6889435`,
+      `08569b10`; `.tmp/0_0_1cv/rulings_cv14.md`), S3 running; Astra after a sub-five round
+    - [x] cv14a the field, the built-ins, the writer, the summary line (Opus sidekick; lead
+      checks green: aatf 405, ruleset_editor 151 tests): `f8e6b70b`, merged `b83ab5bd`.
+      Files: `aatf/{rulesets/{autumn26,dbc7}.rhai,src/{ruleset/{mod.rs,tests/schema.rs},
+      templates.rs,writer/{mod.rs,tests.rs}}}`, `ruleset_editor/src/{document.rs,summary.rs}`,
+      goldens `tests/fixtures/summary/{autumn26,dbc7}.md`
+    - [ ] cv14c the Universal rules page (20.6a2c, RE-GUI-20): the same sidekick, resumed
+      with `.tmp/0_0_1cv/brief_cv14c.md`
+    - [ ] cv14b the Save editor's pitch under the flag (SE-GUI-45, SE-GUI-42's ruleset):
+      `save_editor`'s host hands `team_widgets` the flag; after the whole-crate chain
+    - [ ] review of cv14a and cv14c: SWE-2 rounds and Astra (checkpoint (b): two crates)
+  - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
+    2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
+    every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree
+    `../4cc-studio-temp/wt-argon` at `b5c8329e`, outputs `.tmp/argon/parts/`, rulings
+    `.tmp/argon/rulings.md`); it stops at the quota or at 09:15. Then the accepted concerns
+    become one step per crate, briefed after each crate's mutation run ends
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450
