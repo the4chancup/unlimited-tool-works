@@ -6062,17 +6062,15 @@ briefs, review loops, gates and mutation runs as for any step.
     Patch puts such a player back at y 4). Off: as now, the game's rule
     (`plans/save_editor.md` "Illegal formations", the popover paragraph). Plan, SE-GUI-45,
     RE-SUM-01, DECISIONS and P46 (the check, not built) written.
-    - [ ] cv14g the in-game look, on `E:\PES2017` (its exe is the Whack Patch, the
-      maintainer, 2026-10-31; PES 2017, so cargo may run beside it; takes the screen, so
-      asked first): a PES 2017 save copy with one team's preset 1 holding an outfielder at
-      y 0 and at y 2, and two starters on one spot and two a unit apart, opened in Edit mode
-      (Team Sheet). Does the game keep y 0-3 (else the y 4 floor returns under the flag) and
-      the two shared or adjacent spots (then the pitch's drop on another starter, under the
-      flag, lands on that spot instead of swapping the slots: the maintainer's ask, plan
-      "Illegal formations")? Installed 2026-10-31 05:10 for the maintainer to look at: /a/
-      (702) preset 1 Kick-off, CBs at (64, 0) and (40, 2), both CMFs at (52, 30), SSs at
-      (40, 41) and (41, 41), no other team changed (`.tmp/0_0_1cv/cv14g/`: the maintainer's
-      save is `EDIT00000000.orig`, put back by hash after the look)
+    - [x] cv14g the in-game look, on `E:\PES2017` (the Whack Patch exe): /a/ (702) preset 1
+      Kick-off with CBs at (64, 0) and (40, 2), both CMFs at (52, 30), SSs at (40, 41) and
+      (41, 41). The game keeps all of them (y 0-3, one spot, a unit apart): the maintainer's
+      look in Team Sheet, and the save the game wrote afterwards holds team 702 unchanged
+      (`export-toml` identical, `diff` empty). So no y 4 floor under the flag, and a drop on
+      a teammate lands (plan "Illegal formations", SE-GUI-45, DECISIONS; the draft's
+      `dropTarget`, checked by `.tmp/0_0_1cv/cv14g_drop_probe.py`: DBC7 lands at (51, 41) as
+      SS, VGL27 swaps). The maintainer's save put back by hash (`a686234b`)
+      manual: checked 2026-10-31 (the maintainer in game; the written save read back)
     Order: plan and Acceptance (Astra checkpoint (a)), DECISIONS, drafts
     (save_editor.js, ruleset_editor.js), then slices: the `aatf` field and built-ins (no
     mutation run holds it), the Ruleset editor, then `save_editor`/`team_widgets` after the
@@ -6091,14 +6089,17 @@ briefs, review loops, gates and mutation runs as for any step.
       `fb937653`. Files: `ruleset_editor/src/view/{sections/{mod.rs,universal.rs},tests.rs,
       tests/{summary.rs,universal.rs}}`. Not yet seen drawn: render it before a look
     - [ ] cv14b the Save editor's pitch under the flag (SE-GUI-45, SE-GUI-42's ruleset):
-      `save_editor`'s host hands `team_widgets` the flag; after the whole-crate chain
+      `save_editor`'s host hands `team_widgets` the flag; under it no drop target on the pitch
+      (no swap, brackets or fading over a teammate); after the whole-crate chain
     - [ ] review of cv14a and cv14c: SWE-2 rounds and Astra (checkpoint (b): two crates)
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
     every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree
     `../4cc-studio-temp/wt-argon` at `b5c8329e`, outputs `.tmp/argon/parts/`, rulings
-    `.tmp/argon/rulings.md`); it stops at the quota or at 09:15. Then the accepted concerns
-    become one step per crate, briefed after each crate's mutation run ends
+    `.tmp/argon/rulings.md`). Stopped 06:04 by the maintainer (Devin `work` at 93%, the rest
+    kept for Astra): 7 of 87 parts run (pes_version, pes_savefile 1-6), the other 80 not
+    started; no new Argon review without the maintainer's word. The accepted concerns become
+    one step per crate, briefed after each crate's mutation run ends
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450

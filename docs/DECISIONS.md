@@ -14477,3 +14477,15 @@ refusal avoids flagging formations members made in game. In the host, not the lo
 rule is the game's, the same for every cup; in the logic it would copy the game's tables into
 every file and take a logic version.
 Plan: `plans/aatf_rules.md` "The ruleset schema", "The illegal formation check (0.0.2)".
+
+## 2026-10-31 — save_editor, team_widgets — Under illegal formations a drop on a teammate lands
+Decision: under a ruleset that allows illegal formations, a pitch marker released over another
+starter lands at the snapped spot like any release on the grass: no swap, no corner brackets
+or fading while held there, his badge his own position. XI-row drops still exchange starters.
+With the flag off nothing changes. The y 0-48 range under the flag stays (no y 4 floor).
+Why: the maintainer asked for drag-swapping off if the patched game keeps starters that
+close. It does: a PES 2017 save on the Whack Patch exe with CBs at y 0 and y 2, two CMFs on
+one spot and two SSs a unit apart showed them so in Edit mode, and the save the game wrote
+afterwards held the same values. A swap on the pitch would make one of those formations
+impossible to build by dragging.
+Plan: `plans/save_editor.md` "Illegal formations", SE-GUI-45.
