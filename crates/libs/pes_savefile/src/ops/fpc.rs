@@ -155,9 +155,41 @@ mod tests {
         find_player(&payload(version), schema_for(version), 70101)
     }
 
+    /// `player` dressed in the other preset's strip with skin 3, so every
+    /// field a preset writes starts at another value, and the skin is one
+    /// a preset leaves alone.
+    fn dressed(player: &mut PlayerEntry, preset: fpc::Preset) {
+        let other = fpc::preset(preset, fpc::HideIds::CONVENTION);
+        player.appearance.sleeves = sleeves_value(other.sleeves);
+        player.appearance.untucked = untucked_value(other.tuck);
+        player.appearance.socks = socks_value(other.socks);
+        player.appearance.boots_id = u32::from(other.boots_id);
+        player.appearance.gloves_id = u32::from(other.gloves_id);
+        player
+            .appearance
+            .ingame_face
+            .set(IngameFaceField::SkinColor, 3)
+            .expect("read run");
+    }
+
+    /// The skin a preset left: 3, as `dressed` set it.
+    fn skin(player: &PlayerEntry) -> u8 {
+        player
+            .appearance
+            .ingame_face
+            .get(IngameFaceField::SkinColor)
+            .expect("read run")
+    }
+
     #[test]
     fn the_hide_preset_writes_long_sleeves_and_the_hide_ids() {
         let mut player = player_70101(PesVersion::Pes19);
+        dressed(&mut player, fpc::Preset::Unhide);
+        assert_ne!(player.appearance.sleeves, 2);
+        assert!(player.appearance.untucked);
+        assert_ne!(player.appearance.socks, 2);
+        assert_ne!(player.appearance.boots_id, 55);
+        assert_ne!(player.appearance.gloves_id, 11);
         apply(
             &mut player,
             &fpc::preset(fpc::Preset::Hide, fpc::HideIds::CONVENTION),
@@ -169,6 +201,7 @@ mod tests {
         assert_eq!(player.appearance.socks, 2);
         assert_eq!(player.appearance.boots_id, 55);
         assert_eq!(player.appearance.gloves_id, 11);
+        assert_eq!(skin(&player), 3, "a preset skin keeps a non-custom skin");
         assert!(is_fpc_player(&player, fpc::HideIds::CONVENTION).expect("is_fpc_player"));
     }
 
@@ -187,12 +220,12 @@ mod tests {
     #[test]
     fn the_unhide_preset_restores_the_stock_strip() {
         let mut player = player_70101(PesVersion::Pes19);
-        let skin = player
-            .appearance
-            .ingame_face
-            .get(IngameFaceField::SkinColor)
-            .expect("read run");
-        assert_ne!(skin, 7, "the fixture's skin is not custom");
+        dressed(&mut player, fpc::Preset::Hide);
+        assert_ne!(player.appearance.sleeves, 1);
+        assert!(!player.appearance.untucked);
+        assert_ne!(player.appearance.socks, 0);
+        assert_ne!(player.appearance.boots_id, 0);
+        assert_ne!(player.appearance.gloves_id, 0);
         apply(
             &mut player,
             &fpc::preset(fpc::Preset::Unhide, fpc::HideIds::CONVENTION),
@@ -204,6 +237,7 @@ mod tests {
         assert_eq!(player.appearance.socks, 0);
         assert_eq!(player.appearance.boots_id, 0);
         assert_eq!(player.appearance.gloves_id, 0);
+        assert_eq!(skin(&player), 3, "a preset skin keeps a non-custom skin");
         assert!(!is_fpc_player(&player, fpc::HideIds::CONVENTION).expect("is_fpc_player"));
     }
 

@@ -108,10 +108,12 @@ fn to_toml_refuses_a_value_parse_would_refuse_back() {
         .motion
         .free_kick = Some(20);
     let err = patch.to_toml().expect_err("free_kick = 21 is out of range");
-    assert!(
-        matches!(err, PatchError::Settings(SettingsError::OutOfRange { .. })),
-        "{err:?}"
-    );
+    match &err {
+        PatchError::Settings(SettingsError::OutOfRange { key, .. }) => {
+            assert_eq!(key, "teams[0].players.05.appearance.motion.free_kick")
+        }
+        other => panic!("{other:?}"),
+    }
 }
 
 /// A hand-built patch can hold a pre-Fox `pes_version`; `to_toml`
@@ -481,8 +483,8 @@ fn patched(before: &PlayerEntry, patch: &PatchPlayer) -> PlayerEntry {
     out
 }
 
-/// SE-PAT-01's lib half: the patch's motions and names apply, nothing else
-/// writes, and the bytes persist through a save write.
+/// The patch's motions and names apply, nothing else writes, and the bytes
+/// persist through a save write.
 #[test]
 fn apply_writes_the_motions_and_names_and_nothing_else() {
     let (mut save, _) = open(PesVersion::Pes21);
@@ -553,8 +555,8 @@ fn apply_writes_the_motions_and_names_and_nothing_else() {
     assert_eq!(back.teams(), &teams[..]);
 }
 
-/// SE-PAT-02's lib half: a team or player the save lacks is skipped and
-/// reported, the rest applied.
+/// A team or player the save lacks is skipped and reported, the rest
+/// applied.
 #[test]
 fn an_absent_team_or_player_is_skipped_and_the_rest_applied() {
     let (mut save, _) = open(PesVersion::Pes21);
@@ -639,8 +641,8 @@ fn a_team_id_too_large_for_its_player_ids_skips_the_players() {
     );
 }
 
-/// SE-PAT-03's lib half: a version or allocation-scheme mismatch is
-/// refused naming both values, before any write.
+/// A version or allocation-scheme mismatch is refused naming both values,
+/// before any write.
 #[test]
 fn a_version_or_scheme_mismatch_refuses_before_any_write() {
     for (pes_version, scheme, expected) in [
@@ -689,8 +691,8 @@ fn a_version_or_scheme_mismatch_refuses_before_any_write() {
     }
 }
 
-/// SE-PAT-04's lib half: a stripped player's names and motions apply, his
-/// appearance id and block untouched, persisted through a save write.
+/// A stripped player's names and motions apply, his appearance id and
+/// block untouched, persisted through a save write.
 #[test]
 fn a_stripped_player_stays_stripped() {
     let (mut save, _) = open(PesVersion::Pes21);
@@ -807,9 +809,10 @@ fn a_broken_patch_is_refused_whole() {
     assert_eq!(save.players(), &before[..]);
     assert_eq!(save.teams(), &teams[..]);
 
-    // `corner_kick` stored 8: inside the key's widest 1-to-10 range, past
-    // PES 18's own top (shown 1 to 6), refused at the key's per-version
-    // range before the field's width is reached.
+    // `corner_kick` stored 8 (shown 9): inside the key's widest 1-to-10
+    // range, past PES 18's own top (shown 1 to 6), refused at the key's
+    // per-version range before the field's width is reached, reporting the
+    // value as the file writes it.
     let (mut save, _) = open(PesVersion::Pes18);
     let before = save.players().to_vec();
     let teams = save.teams().to_vec();
@@ -832,7 +835,7 @@ fn a_broken_patch_is_refused_whole() {
             key, value, range, ..
         }) => {
             assert_eq!(key, "teams[0].players.05.appearance.motion.corner_kick");
-            assert_eq!(*value, 8);
+            assert_eq!(*value, 9);
             assert_eq!(range, "1 to 6");
         }
         other => panic!("{other:?}"),
@@ -843,7 +846,8 @@ fn a_broken_patch_is_refused_whole() {
 
 /// A motion past the patch's own version's top is refused at the key's
 /// per-version range, not written: PES 18's celebration top is 127
-/// stored, its hunching shown 1 to 3 (stored 0 to 2).
+/// stored, its hunching shown 1 to 3 (stored 0 to 2), so a patch's
+/// `hunching_dribbling = 4` (stored 3) reports the 4 it wrote.
 #[test]
 fn a_motion_past_the_patch_versions_top_is_refused() {
     let (mut save, _) = open(PesVersion::Pes18);
@@ -865,7 +869,7 @@ fn a_motion_past_the_patch_versions_top_is_refused() {
                 ..MotionSettings::default()
             },
             "teams[0].players.05.appearance.motion.hunching_dribbling",
-            3,
+            4,
             "1 to 3",
         ),
     ] {

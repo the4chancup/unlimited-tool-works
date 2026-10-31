@@ -323,7 +323,7 @@ impl IngameFaceField {
 
     /// The layout the field exists in; `None` on every version. An
     /// exhaustive match, so a new variant does not compile until placed.
-    pub fn layout(self) -> Option<FaceLayout> {
+    pub(crate) fn layout(self) -> Option<FaceLayout> {
         match self {
             IngameFaceField::PlayerGloves
             | IngameFaceField::PlayerGlovesColor

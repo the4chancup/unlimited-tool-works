@@ -111,7 +111,7 @@ impl<F: PartialEq + Copy, T> RecordSchema<F, T> {
     }
 
     /// Whether the schema stores `field`.
-    pub fn has(&self, field: F) -> bool {
+    pub(crate) fn has(&self, field: F) -> bool {
         self.bit_width(field).is_some()
     }
 
@@ -185,7 +185,7 @@ pub struct TacticsSchema {
 
 impl TacticsSchema {
     /// Whether the tactics record stores `field` (scalar fields and arrays, as
-    /// `RecordSchema::has`; preset settings via [`Self::has_preset`],
+    /// `RecordSchema::has`; preset settings via `has_preset`,
     /// formations always, instructions when `instructions` is `Some`, man
     /// marking for a preset of 0 to 2 and a slot of 0 to 10).
     pub fn has(&self, field: TacticsField) -> bool {
@@ -209,7 +209,7 @@ impl TacticsSchema {
     }
 
     /// Whether each preset block stores `field`.
-    pub fn has_preset(&self, field: PresetField) -> bool {
+    pub(crate) fn has_preset(&self, field: PresetField) -> bool {
         self.presets.iter().any(|spec| spec.field == field)
     }
 }
@@ -253,7 +253,7 @@ pub struct VersionSchema {
 impl VersionSchema {
     /// Whether `field` is stored for a player of this version: in the player
     /// record, or in the separate appearance record on PES 15/16.
-    pub fn player_has(&self, field: PlayerField) -> bool {
+    pub(crate) fn player_has(&self, field: PlayerField) -> bool {
         self.player.has(field)
             || self
                 .appearance
@@ -398,19 +398,12 @@ pub fn portable_text_max(which: PlayerText) -> usize {
 mod tests {
     use super::*;
 
-    /// Every bit run and text field of a record schema as half-open bit ranges.
+    /// Every bit run the codec writes and every text field of a record
+    /// schema as half-open bit ranges.
     fn record_runs<F: Copy, T>(schema: &RecordSchema<F, T>) -> Vec<(u32, u32)> {
-        let mut runs: Vec<(u32, u32)> = schema
-            .fields
-            .iter()
-            .map(|f| (f.bit_offset, f.bit_offset + f.bit_width))
+        let mut runs: Vec<(u32, u32)> = crate::codec::runs(schema)
+            .map(|(_, offset, width)| (offset, offset + width))
             .collect();
-        for a in schema.arrays {
-            for i in 0..u32::from(a.count) {
-                let start = a.base_bit + i * a.stride_bits;
-                runs.push((start, start + a.bit_width));
-            }
-        }
         for t in schema.texts {
             runs.push((t.byte_offset * 8, t.byte_offset * 8 + t.len * 8));
         }
@@ -420,63 +413,13 @@ mod tests {
         runs
     }
 
-    /// The tactics record's runs, presets, formations and instructions expanded.
+    /// Every bit run the codec writes in a tactics record, as half-open bit
+    /// ranges.
     fn tactics_runs(schema: &TacticsSchema) -> Vec<(u32, u32)> {
-        let mut runs: Vec<(u32, u32)> = schema
-            .fields
-            .iter()
-            .map(|f| (f.bit_offset, f.bit_offset + f.bit_width))
-            .collect();
-        for a in schema.arrays {
-            for i in 0..u32::from(a.count) {
-                let start = a.base_bit + i * a.stride_bits;
-                runs.push((start, start + a.bit_width));
-            }
-        }
-        for preset in 0..3u32 {
-            let preset_base = preset * schema.preset_stride_bits;
-            for p in schema.presets {
-                let start = preset_base + p.bit_offset;
-                runs.push((start, start + 8));
-            }
-            for slot in 0..11u32 {
-                let start = preset_base + schema.man_marking_bit + slot * 8;
-                runs.push((start, start + 8));
-            }
-            let f = &schema.formations;
-            for formation in 0..3u32 {
-                let base = preset_base + f.base_bit + formation * f.formation_stride_bits;
-                for slot in 0..11u32 {
-                    runs.push((
-                        base + slot * f.slot_stride_bits,
-                        base + slot * f.slot_stride_bits + 8,
-                    ));
-                    runs.push((
-                        base + f.y_offset_bits + slot * f.pair_stride_bits,
-                        base + f.y_offset_bits + slot * f.pair_stride_bits + 8,
-                    ));
-                    runs.push((
-                        base + f.x_offset_bits + slot * f.pair_stride_bits,
-                        base + f.x_offset_bits + slot * f.pair_stride_bits + 8,
-                    ));
-                }
-            }
-            if let Some(ins) = &schema.instructions {
-                for side in 0..2u32 {
-                    for index in 0..2u32 {
-                        for part in 0..2u32 {
-                            let start = preset_base
-                                + ins.base_bit
-                                + side * ins.side_stride_bits
-                                + index * ins.index_stride_bits
-                                + part * ins.part_stride_bits;
-                            runs.push((start, start + ins.part_stride_bits));
-                        }
-                    }
-                }
-            }
-        }
-        runs
+        crate::codec::tactics_runs(schema)
+            .into_iter()
+            .map(|(_, offset, width)| (offset, offset + width))
+            .collect()
     }
 
     /// Asserts the half-open bit ranges do not overlap and lie inside `size` bytes.
@@ -613,39 +556,21 @@ mod tests {
     }
 
     /// `max_value` reads `2^width - 1` from the field's own table row — a
-    /// `fields` run (the id fields) and an `arrays` run (the kit-slot team
-    /// bindings) — and `None` where the record lacks the field.
+    /// `fields` run (the 14-bit id fields) and an `arrays` run (the 24-bit
+    /// kit-slot team bindings) — and `None` where the record lacks the field.
     #[test]
     fn max_value_reads_the_fields_own_width() {
         let pes21 = schema_for(PesVersion::Pes21);
         for field in [PlayerField::BootsId, PlayerField::GlovesId] {
-            let width = pes21
-                .player
-                .fields
-                .iter()
-                .find(|spec| spec.field == field)
-                .unwrap_or_else(|| panic!("{field:?} is stored on PES 21"))
-                .bit_width;
-            assert_eq!(
-                pes21.player.max_value(field),
-                Some((1u64 << width) - 1),
-                "{field:?} is a {width}-bit field"
-            );
+            assert_eq!(pes21.player.max_value(field), Some(16_383), "{field:?}");
         }
         // The kit-slot team binding comes through `arrays`, not `fields`.
-        let width = schema_for(PesVersion::Pes17)
-            .team
-            .arrays
-            .iter()
-            .find(|array| (array.make)(0) == TeamField::KitSlotTeam(0))
-            .expect("PES 17 stores kit slots")
-            .bit_width;
         assert_eq!(
             schema_for(PesVersion::Pes17)
                 .team
                 .max_value(TeamField::KitSlotTeam(0)),
-            Some((1u64 << width) - 1),
-            "KitSlotTeam is a {width}-bit field"
+            Some(16_777_215),
+            "KitSlotTeam is a 24-bit field"
         );
         assert_eq!(
             schema_for(PesVersion::Pes15)
@@ -661,34 +586,22 @@ mod tests {
     /// `None` for a field the version lacks.
     #[test]
     fn player_max_value_reads_whichever_record_holds_the_field() {
-        let pes21 = schema_for(PesVersion::Pes21);
-        let width = pes21
-            .player
-            .fields
-            .iter()
-            .find(|spec| spec.field == PlayerField::BootsId)
-            .expect("PES 21's player record stores the boots id")
-            .bit_width;
         assert_eq!(
             player_max_value(PesVersion::Pes21, PlayerField::BootsId),
-            Some((1u64 << width) - 1),
-            "PES 21's boots id is a {width}-bit field"
+            Some(16_383),
+            "PES 21's boots id is a 14-bit field"
         );
-        let pes15 = schema_for(PesVersion::Pes15);
-        let (_, appearance) = pes15
-            .appearance
-            .as_ref()
-            .expect("PES 15 has an appearance record");
-        let width = appearance
-            .fields
-            .iter()
-            .find(|spec| spec.field == PlayerField::BootsId)
-            .expect("PES 15's appearance record stores the boots id")
-            .bit_width;
+        assert!(
+            schema_for(PesVersion::Pes15)
+                .player
+                .max_value(PlayerField::BootsId)
+                .is_none(),
+            "PES 15's player record does not hold the boots id"
+        );
         assert_eq!(
             player_max_value(PesVersion::Pes15, PlayerField::BootsId),
-            Some((1u64 << width) - 1),
-            "PES 15's boots id is a {width}-bit field"
+            Some(16_383),
+            "PES 15's boots id is a 14-bit field of its appearance record"
         );
         assert_eq!(
             player_max_value(PesVersion::Pes15, PlayerField::DribblingMotion),

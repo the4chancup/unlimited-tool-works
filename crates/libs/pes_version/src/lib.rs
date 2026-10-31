@@ -91,7 +91,7 @@ impl PesVersion {
     }
 }
 
-/// The number the caller gave to [`PesVersion::from_number`] or `FromStr` was not a supported version.
+/// The number or text the caller gave to `TryFrom<u16>` or `FromStr` was not a supported version.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnknownVersion(pub String);
 
@@ -176,9 +176,27 @@ mod tests {
     }
 
     #[test]
+    fn an_unknown_version_names_what_was_given() {
+        let err = "pes 2014"
+            .parse::<PesVersion>()
+            .expect_err("14 is not supported");
+        assert_eq!(
+            err.to_string(),
+            "unsupported PES version `pes 2014` (expected 15 to 21)"
+        );
+        let err = PesVersion::try_from(22).expect_err("22 is not supported");
+        assert_eq!(
+            err.to_string(),
+            "unsupported PES version `22` (expected 15 to 21)"
+        );
+    }
+
+    #[test]
     fn year_and_display_name_the_release_year() {
-        assert_eq!(PesVersion::Pes15.year(), 2015);
-        assert_eq!(PesVersion::Pes21.year(), 2021);
+        for ((version, number), year) in PesVersion::ALL.into_iter().zip(15..=21).zip(2015..=2021) {
+            assert_eq!(version.number(), number, "{version:?}");
+            assert_eq!(version.year(), year, "{version:?}");
+        }
         assert_eq!(PesVersion::Pes21.to_string(), "PES 2021");
         for version in PesVersion::ALL {
             assert_eq!(version.to_string().parse::<PesVersion>(), Ok(version));

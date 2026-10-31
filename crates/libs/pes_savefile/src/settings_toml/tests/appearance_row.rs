@@ -9,11 +9,11 @@ use super::*;
 /// cannot express) the same settings come through `appearance_from`, the
 /// stored-ranges reader that carries such values verbatim. No fixture
 /// player needs it since PES 15's caps joined the ranges, so one built
-/// player does: the first one with `goal_celebration_2` stored 200, which
-/// its field's 8 bits hold and no key's range does (a face type's range is
-/// its field's bits now, so a motion carries the bump). The row's run
-/// differs from the record's only in its unused bits, which take the games'
-/// values.
+/// player does: the first one with `neck_length` stored 15, which its
+/// field's 4 bits hold and its key's -7 to 7 (stored 0 to 14) does not. The
+/// field is the row's first byte, so a row that dropped or reset the value
+/// would differ from the record. The row's run differs from the record's
+/// only in its unused bits, which take the games' values.
 #[test]
 fn a_save_players_settings_reproduce_his_appearance_row() {
     for (version, offset) in [
@@ -33,10 +33,17 @@ fn a_save_players_settings_reproduce_his_appearance_row() {
             .map(|i| record(&payload, &schema.players, schema.player.size, i).to_vec())
             .filter(|rec| read_player(rec, schema.player).expect("decode").id != 0)
             .collect();
+        assert!(!SettingKey::NeckLength.spec().kind.accepts_stored(15));
         let mut built = records[0].clone();
         let mut player = read_player(&built, schema.player).expect("decode");
-        player.motion.goal_celebration_2 = 200;
+        assert_ne!(player.appearance.neck_length, 15, "{version:?}");
+        player.appearance.neck_length = 15;
         write_player(&player, &mut built, schema.player).expect("encode");
+        assert_eq!(
+            built[offset] & 0x0F,
+            15,
+            "{version:?}: the row's first byte"
+        );
         records.push(built);
         let mut hair_seen = false;
         let mut out_of_range_players = 0usize;
@@ -82,7 +89,7 @@ fn a_save_players_settings_reproduce_his_appearance_row() {
             hair_seen,
             "{version:?}: every player's hair is the default, the rows prove little"
         );
-        // The built player's 200 is the reason `appearance_row` skips
+        // The built player's 15 is the reason `appearance_row` skips
         // `apply`'s checks: without it this test would stop proving it.
         assert!(
             out_of_range_players > 0,
@@ -92,9 +99,12 @@ fn a_save_players_settings_reproduce_his_appearance_row() {
 }
 
 /// TC-BIN-28's "the template's defaults": a default settings' row, written
-/// into a zeroed PES 21 record at the row offset and decoded, reads back
-/// every appearance key the version has at its `KeySpec` default and the
-/// run's unused bits at the games' values. 71405 is /co/'s slot 05.
+/// into a PES 21 record of 0xFF bytes at the row offset and decoded, reads
+/// back every appearance key the version has at its `KeySpec` default and
+/// the run's unused bits at the games' values. The 0xFF record holds no
+/// default of its own, so a key the row left out reads as its field's
+/// all-ones. The motion keys sit outside the row and are not its to set.
+/// 71405 is /co/'s slot 05.
 #[test]
 fn a_default_row_carries_the_template_defaults() {
     let version = PesVersion::Pes21;
@@ -103,25 +113,39 @@ fn a_default_row_carries_the_template_defaults() {
         .appearance_row(71405, version)
         .expect("a row");
     assert_eq!(row[..4], 71405u32.to_le_bytes(), "the row names the player");
-    let mut record = vec![0u8; schema.player.size];
+    let mut record = vec![0xFFu8; schema.player.size];
+    // The names are no key, and 0xFF bytes are no text: they read empty.
+    for text in schema.player.texts {
+        let at = usize::try_from(text.byte_offset).expect("an offset");
+        let len = usize::try_from(text.len).expect("a length");
+        record[at..at + len].fill(0);
+    }
     record[252..252 + 56].copy_from_slice(&row[4..]);
     let player = read_player(&record, schema.player).expect("decode");
-    let read = PlayerSettings::from_player(&player).expect("from_player");
+    let read = PlayerSettings {
+        appearance: appearance_from(&player).expect("stored-ranges read"),
+        ..PlayerSettings::default()
+    };
     for key in SettingKey::ALL {
+        if key.spec().table == KeyTable::Motion
+            || matches!(key, SettingKey::BootsId | SettingKey::GlovesId)
+        {
+            continue;
+        }
         let expected = if held_on(key, version) {
             key.spec().default
         } else {
             None
         };
-        match key {
-            SettingKey::BootsId | SettingKey::GlovesId => {}
-            _ => assert_eq!(read.get(key), expected, "{key:?}"),
-        }
+        assert_eq!(read.get(key), expected, "{key:?}");
     }
+    // The row holds the run's first 46 bytes, the run starting at the
+    // row's byte 10; the rest of the run is the record's.
     let mut written = player.appearance.ingame_face.clone();
     written.write_unused();
     assert_eq!(
-        player.appearance.ingame_face, written,
+        player.appearance.ingame_face.bytes()[..46],
+        written.bytes()[..46],
         "the run's unused bits are the games' values"
     );
 }
@@ -205,4 +229,11 @@ fn a_pre_fox_version_has_no_row() {
             "{version:?}: {err}"
         );
     }
+    let err = PlayerSettings::default()
+        .appearance_row(70101, PesVersion::Pes17)
+        .expect_err("no row before Fox");
+    assert_eq!(
+        err.to_string(),
+        "PES 2017: a pre-Fox appearance travels in the savefile, not in PlayerAppearance.bin"
+    );
 }

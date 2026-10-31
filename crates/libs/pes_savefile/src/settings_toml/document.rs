@@ -80,9 +80,10 @@ fn stored_bound(key: SettingKey) -> i64 {
 /// number, 1-based motion number, bool); `OutOfRange` for a value written
 /// directly into a public field that the kind cannot represent. In
 /// `stored_ranges` mode the bound is the field's stored width, and a
-/// width-valid value with no label emits as the integer. `pub(super)` for
-/// `narrow_to`'s report of the value as the file wrote it.
-pub(super) fn toml_form(
+/// width-valid value with no label emits as the integer. `pub(crate)` for
+/// `narrow_to`'s report and the aesthetics patch's refusal, each of the
+/// value as the file wrote it.
+pub(crate) fn toml_form(
     key: SettingKey,
     stored: u8,
     stored_ranges: bool,

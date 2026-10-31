@@ -109,7 +109,7 @@ const PES21: [u8; 64] = [
 
 impl MasterKey {
     /// Every key, in version order; the trial order `decrypt` uses.
-    pub const ALL: [MasterKey; 7] = [
+    pub(crate) const ALL: [MasterKey; 7] = [
         MasterKey::Pes16,
         MasterKey::Pes16MyClub,
         MasterKey::Pes17,
@@ -120,7 +120,7 @@ impl MasterKey {
     ];
 
     /// The raw 64-byte master key.
-    pub fn bytes(self) -> &'static [u8; 64] {
+    fn bytes(self) -> &'static [u8; 64] {
         match self {
             MasterKey::Pes16 => &PES16,
             MasterKey::Pes16MyClub => &PES16_MYCLUB,
@@ -134,7 +134,7 @@ impl MasterKey {
 
     /// The key the algorithm uses: `effective[i] = key[(i & !7) + 7 - (i & 7)]` —
     /// each 8-byte block reversed.
-    pub fn effective(self) -> [u8; 64] {
+    pub(crate) fn effective(self) -> [u8; 64] {
         let key = self.bytes();
         let mut effective = [0u8; 64];
         for (index, byte) in effective.iter_mut().enumerate() {

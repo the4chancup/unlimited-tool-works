@@ -60,7 +60,19 @@ fn every_fixture_player_round_trips_through_the_document() {
                 assert_eq!(parsed, *doc, "{version:?} team {}", team.id);
             }
 
+            // Every rostered slot's number moved off the source's, so the
+            // roster comparison below sees each number written.
             let mut target_team = (*team).clone();
+            for slot in &mut target_team.roster {
+                if slot.player_id != 0 {
+                    slot.number = if slot.number == 1 { 2 } else { 1 };
+                }
+            }
+            assert_ne!(
+                target_team.roster, team.roster,
+                "{version:?} team {}",
+                team.id
+            );
             let mut targets = foreign_players(&file, team);
             let stand_in_ids: Vec<(u32, Option<u32>)> = targets
                 .iter()
@@ -747,8 +759,13 @@ fn a_skill_the_source_version_lacks_is_left_untouched() {
     let (file, _) = open(PesVersion::Pes19);
     let (team, slot) = first_slot(&file);
     let id = team.roster[slot].player_id;
-    // Double Touch: stored on PES 19+, absent on 15/16 (28 skills there).
+    // Double Touch: stored on PES 19+, absent on 15 to 18 (at most 28
+    // skills there).
     const DOUBLE_TOUCH: usize = 28;
+    assert_eq!(
+        crate::schema::first_version_with(PlayerField::Skill(28)),
+        Some(PesVersion::Pes19)
+    );
     assert!(!schema_for(PesVersion::Pes16).player_has(PlayerField::Skill(28)));
     assert!(schema_for(PesVersion::Pes19).player_has(PlayerField::Skill(28)));
 
@@ -789,6 +806,72 @@ fn a_skill_the_source_version_lacks_is_left_untouched() {
             .skills[DOUBLE_TOUCH],
         "the same false under the target's own version clears"
     );
+}
+
+/// A skill the target's own version cannot store, set in a document of
+/// that version or of none, is `NotInThisVersion` and nothing is written:
+/// Double Touch on PES 17, which stores 28 skills.
+#[test]
+fn a_same_version_skill_the_version_lacks_is_an_error() {
+    assert!(!schema_for(PesVersion::Pes17).player_has(PlayerField::Skill(28)));
+    assert_eq!(labels::SKILLS[28], "double_touch");
+    let (file, _) = open(PesVersion::Pes17);
+    let (team, slot) = first_slot(&file);
+    for header in ["pes_version = 17\n\n", ""] {
+        let doc = TeamToml::parse(&format!(
+            "{header}[players.{:02}.skills]\nskills = [\"double_touch\"]\n",
+            slot + 1
+        ))
+        .expect("parses");
+        let mut target_team = team.clone();
+        let mut players = file.players().to_vec();
+        let err = doc
+            .apply(PesVersion::Pes17, &mut target_team, &mut players)
+            .expect_err("a skill PES 17 lacks");
+        assert!(
+            matches!(
+                err,
+                TeamTomlError::NotInThisVersion { ref path }
+                    if *path == format!("players.{:02}.skills.skills.double_touch", slot + 1)
+            ),
+            "{header:?}: {err:?}"
+        );
+        assert_eq!(target_team, *team, "{header:?}");
+        assert_eq!(players, file.players(), "{header:?}");
+    }
+}
+
+/// A converted document's skill that its source version cannot store is
+/// still not written and gets no note, whether the target stores it or
+/// not: Double Touch in a PES 16 document, onto PES 17 and PES 19.
+#[test]
+fn a_converted_skill_the_source_version_lacks_is_still_dropped_silently() {
+    assert!(!schema_for(PesVersion::Pes16).player_has(PlayerField::Skill(28)));
+    for to in [PesVersion::Pes17, PesVersion::Pes19] {
+        let (file, _) = open(to);
+        let (team, slot) = first_slot(&file);
+        let id = team.roster[slot].player_id;
+        let before = file.player(id).expect("the player").clone();
+        assert!(
+            !before.skills.skills[28],
+            "{to:?}: he lacks it, or a write is invisible"
+        );
+        let doc = TeamToml::parse(&format!(
+            "pes_version = 16\n\n[players.{:02}.skills]\nskills = [\"double_touch\"]\n",
+            slot + 1
+        ))
+        .expect("parses");
+        let mut players = file.players().to_vec();
+        let notes = doc
+            .apply(to, &mut team.clone(), &mut players)
+            .expect("a converted document applies");
+        assert_eq!(notes, [], "{to:?}");
+        let after = players
+            .iter()
+            .find(|player| player.id == id)
+            .expect("the player");
+        assert!(!after.skills.skills[28], "{to:?}: not written");
+    }
 }
 
 /// A face type over the target's cap resets to 0 with a `Capped` note,

@@ -128,16 +128,25 @@ pub(super) fn label(item: &Item, key: &str, labels: &[&str]) -> Result<bool, Tea
                 key: key.to_string(),
                 expected: "a string",
             })?;
+    Ok(label_position(text, key, labels)? == 1)
+}
+
+/// `text`'s index in `labels`; a string none of them spells is
+/// `UnknownLabel` at `key`, listing them all.
+pub(super) fn label_position(
+    text: &str,
+    key: &str,
+    labels: &[&str],
+) -> Result<usize, TeamTomlError> {
     labels
         .iter()
-        .position(|l| *l == text)
-        .map(|i| i == 1)
+        .position(|label| *label == text)
         .ok_or_else(|| TeamTomlError::UnknownLabel {
             key: key.to_string(),
             label: text.to_string(),
             allowed: labels
                 .iter()
-                .map(|l| format!("\"{l}\""))
+                .map(|label| format!("\"{label}\""))
                 .collect::<Vec<_>>()
                 .join(", "),
         })
