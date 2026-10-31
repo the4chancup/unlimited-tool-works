@@ -18,12 +18,15 @@ use crate::tactics::{
 /// Advanced instructions, Player assignments and Automatic settings.
 /// `roster` gives each roster slot's row, indexed by slot. The two
 /// row-2 panels are drawn in a cell the pitch's height, as the host
-/// cells them. Answers `true` only when `tactics` changed this frame.
+/// cells them. `opened` is the tactics as the file was opened, handed to
+/// Advanced instructions. Answers `true` only when `tactics` changed this
+/// frame.
 pub(crate) fn tactics_settings(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,
     version: PesVersion,
     tactics: &mut TeamTactics,
+    opened: Option<&TeamTactics>,
     view: &mut TacticsView,
     roster: &[RosterRow<'_>],
 ) -> bool {
@@ -41,7 +44,7 @@ pub(crate) fn tactics_settings(
         // `|` evaluates every panel: a `||` chain would skip the rest on
         // the frame the first reports a change.
         cell(ui, |ui| formation_settings(ui, tactics, view))
-            | advanced_instructions(ui, version, tactics, view, roster)
+            | advanced_instructions(ui, version, tactics, opened, view, roster)
             | cell(ui, |ui| {
                 player_assignments(ui, tactics, view, roster);
                 false
@@ -64,6 +67,9 @@ pub(crate) struct Headless {
     /// The flag the pitch's frames hand `pitch`: whether the active
     /// ruleset allows illegal formations. Off unless a test sets it.
     pub(crate) illegal_formations: bool,
+    /// The tactics as the file was opened, which the tactics frames hand
+    /// Advanced instructions. `None` unless a test sets it.
+    pub(crate) opened_tactics: Option<TeamTactics>,
 }
 
 impl Headless {
@@ -84,6 +90,7 @@ impl Headless {
             screen: egui::vec2(width, height),
             repaint_delay: std::time::Duration::MAX,
             illegal_formations: false,
+            opened_tactics: None,
         }
     }
 

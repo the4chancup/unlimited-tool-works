@@ -525,6 +525,88 @@ fn a_pick_keeps_the_target_only_between_two_that_take_one_of_ours() {
     }
 }
 
+/// From PES 21 team 701's tactics as opened, whose attack 1 is
+/// Unassigned over a target byte other than 255: preset 1's attack 1
+/// combo opened once in a window given that opened state, each of
+/// `picks` clicked in its popup in turn (it stays open past an AccessKit
+/// pick), the instruction and the target byte asserted after each. The
+/// last pick returns to Unassigned, so the record ends as opened. A
+/// target chip labeled like an item ("Unassigned" under Defensive with no
+/// player) is told apart by its bounds, read before the popup opened.
+fn pick_attack_1_in_turn(picks: &[(Instruction, u8)]) {
+    let version = PesVersion::Pes21;
+    let encode = |inst| instruction::encode(version, inst).expect("PES 21 stores it");
+    let mut opened = fixture_tactics(version);
+    // Every chip shows a name: the "Unassigned" found is the popup's.
+    named_assignments(&mut opened);
+    let held = *first_instruction(&mut opened, InstructionSide::Attack);
+    assert_eq!(
+        held.instruction,
+        encode(Instruction::Off),
+        "premise: attack 1 opened Unassigned"
+    );
+    assert_ne!(
+        held.player, NO_TARGET,
+        "premise: its target byte is not 255"
+    );
+    let mut tactics = opened.clone();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let mut window = Headless::sized(800.0, 1200.0);
+    window.opened_tactics = Some(opened.clone());
+    let mut view = TacticsView::default();
+    let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+    let combo = combo_row(&nodes, 0)[0];
+    let chip = chip_under(&nodes, combo).bounds();
+    click(
+        &mut window,
+        combo,
+        version,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    for &(picked, target) in picks {
+        let (ids, _) = window.tactics_ids(version, &mut tactics, &mut view, &roster, vec![]);
+        let label = instruction_label(picked);
+        let item = ids
+            .iter()
+            .find(|(_, node)| {
+                node.role() == Role::Button && node.label() == Some(label) && node.bounds() != chip
+            })
+            .map(|(id, _)| *id)
+            .unwrap_or_else(|| panic!("no popup item {label:?}"));
+        let (_, changed) =
+            window.action_click_tactics(item, version, &mut tactics, &mut view, &roster);
+        assert!(changed, "{picked:?}: the pick changed the record");
+        let entry = *first_instruction(&mut tactics, InstructionSide::Attack);
+        assert_eq!(
+            entry.instruction,
+            encode(picked),
+            "premise: {picked:?} picked"
+        );
+        assert_eq!(entry.player, target, "{picked:?}: the target byte");
+    }
+    assert_eq!(tactics, opened, "the picks end on the tactics as opened");
+}
+
+// A pick of an instruction that takes no player of ours puts back the
+// target byte the entry held when the file was opened: from an opened
+// Unassigned over the game's 0, Hug the Touchline and then Unassigned
+// again each leave 0.
+#[test]
+fn a_target_less_pick_puts_back_the_opened_target_byte() {
+    pick_attack_1_in_turn(&[(Instruction::HugTheTouchline, 0), (Instruction::Off, 0)]);
+}
+
+// Defensive, which takes a player of ours, picked over an opened
+// Unassigned still clears the target to 255 (the opened byte was never a
+// player of ours); Unassigned picked after it puts back the opened 0.
+#[test]
+fn a_player_taking_pick_clears_the_target_and_unassigned_puts_back_the_opened_byte() {
+    pick_attack_1_in_turn(&[(Instruction::Defensive, NO_TARGET), (Instruction::Off, 0)]);
+}
+
 // The four rows route to their own entries: an instruction and a
 // target picked on one row lands on that row's entry alone — the
 // other three rows, the other presets and every other field stay.
