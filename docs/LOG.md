@@ -2958,3 +2958,7 @@ worklog passed 7,000 lines.
   General labels say the event page and logo are optional (cv8f, `73f5bac1`). The mutation
   runs read cargo-mutants' listing as UTF-8 (`ae61e0fe`); the 0.0.1 whole-crate runs started.
 - **2026-10-31** — The release exe carries no path of the machine that built it: `just release` remaps the home folder and the repository through `cargo --config` (keeping the static C runtime) and refuses an exe that still holds one (cv12).
+- **2026-10-31** — A ruleset may allow illegal formations (the Whack Patch's cups, Autumn 26
+  and DBC7): `universal.illegal_formations`, written and summarized (cv14a, `b83ab5bd`); the
+  Ruleset editor's Universal rules page edits every universal rule (cv14c, `fb937653`). The
+  Save editor's pitch under the flag waits for the whole-crate runs; P46's check is 0.0.2's.
