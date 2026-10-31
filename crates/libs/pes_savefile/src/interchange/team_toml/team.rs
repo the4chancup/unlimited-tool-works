@@ -1160,6 +1160,40 @@ mod tests {
         }
     }
 
+    /// An array one element short of its fixed length is `WrongType` at its
+    /// key, never read with the missing element defaulted: the starting
+    /// eleven, a team colour, the kit slots and an instruction pair.
+    #[test]
+    fn an_array_one_element_short_is_the_wrong_type() {
+        let kit_slot = "{ number = 0, binding = 0 }";
+        let instruction = "{ instruction = \"off\", player = 0 }";
+        for (key, doc) in [
+            (
+                "tactics.starting_eleven",
+                "[tactics]\nstarting_eleven = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]\n".to_string(),
+            ),
+            ("team.color_1", "[team]\ncolor_1 = [1, 2]\n".to_string()),
+            (
+                "team.kit_slots",
+                format!(
+                    "[team]\nkit_slots = [{}]\n",
+                    (0..9).map(|_| kit_slot).collect::<Vec<_>>().join(", ")
+                ),
+            ),
+            (
+                "tactics.preset_1.instructions.attack",
+                format!(
+                    "[tactics.preset_1.instructions]\nattack = [{instruction}]\ndefence = [{instruction}, {instruction}]\n"
+                ),
+            ),
+        ] {
+            match TeamToml::parse(&doc) {
+                Err(TeamTomlError::WrongType { key: found, .. }) => assert_eq!(found, key),
+                other => panic!("{key}: expected WrongType, got {other:?}"),
+            }
+        }
+    }
+
     /// The kit slot's bound team id is a 24-bit field: `binding` past
     /// 2^24 - 1 is refused at apply, not left for `write_team` to reject.
     #[test]
@@ -1249,8 +1283,9 @@ mod tests {
         );
     }
 
-    /// Every team of the save exports naming its team, and the text of the first, /co/ (714) and the last parses as a Team
-    /// TOML naming it. The text pass on all 220 took 49 s in a test build;
+    /// Every team of the save exports naming its team, and the text of the
+    /// first, /co/ (714) and the last parses as a Team TOML naming it. The
+    /// text pass on all 220 took 49 s in a test build;
     /// `every_fixture_team_round_trips_through_the_document` samples it too.
     #[test]
     fn every_team_exports_and_parses_naming_it() {

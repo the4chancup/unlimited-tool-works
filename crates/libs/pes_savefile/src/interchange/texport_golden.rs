@@ -481,10 +481,13 @@ fn pes16_payload() -> Vec<u8> {
 }
 
 /// The PES 16 texport as a container around the sliced payload (logo and
-/// serial dropped, as the save fixtures are).
+/// serial dropped, as the save fixtures are). The description is the real
+/// file's: its label, then the team's name `VGL 4` at 0x80.
 fn pes16_texport_bytes() -> Vec<u8> {
     let payload = pes16_payload();
     let mut description = b"Team Export Data 02".to_vec();
+    description.resize(0x80, 0);
+    description.extend_from_slice(b"VGL 4");
     description.resize(384, 0);
     SaveContainer {
         scheme: Scheme::Keyed(MasterKey::Pes16),
@@ -540,4 +543,37 @@ fn pes16_texport_reads_players_in_the_rosters_order() {
         );
     }
     assert_eq!(t.to_bytes(&test_salt()).expect("encodes"), bytes);
+}
+
+/// An opened PES 16 texport renamed through `team_mut` is written with the
+/// new name in the team record and in the description, the name the game
+/// lists, the old name's longer tail cleared: `VGL 4` to `VGL`, two bytes
+/// shorter, so a NUL after the new name alone would leave the `4` behind.
+#[test]
+fn a_pes16_rename_reaches_the_team_record_and_the_description() {
+    // The team record at 0x1002C, its 70-byte name at byte 148 of it.
+    const NAME_AT: usize = 0x1002C + 148;
+    let bytes = pes16_texport_bytes();
+    let before = SaveContainer::decrypt(&bytes).expect("decrypts");
+    assert_eq!(
+        &before.payload[NAME_AT..NAME_AT + 6],
+        b"VGL 4\0",
+        "the fixture's"
+    );
+    let mut t = Texport::from_bytes(&bytes, None).expect("opens");
+    t.team_mut().name = "VGL".to_string();
+    let out = t.to_bytes(&test_salt()).expect("encodes");
+    let after = SaveContainer::decrypt(&out).expect("decrypts");
+    assert_eq!(
+        &after.payload[NAME_AT..NAME_AT + 4],
+        b"VGL\0",
+        "the team record"
+    );
+    let mut description = b"Team Export Data 02".to_vec();
+    description.resize(0x80, 0);
+    description.extend_from_slice(b"VGL");
+    description.resize(384, 0);
+    assert_eq!(after.description, description, "the description");
+    let back = Texport::from_bytes(&out, None).expect("reopens");
+    assert_eq!(back.team().name, "VGL");
 }

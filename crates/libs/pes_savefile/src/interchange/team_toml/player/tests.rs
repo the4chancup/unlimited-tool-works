@@ -874,6 +874,36 @@ fn a_converted_skill_the_source_version_lacks_is_still_dropped_silently() {
     }
 }
 
+/// A converted document's COM style is written: every version stores all
+/// seven, so the source-version rule that drops a skill never drops one.
+/// Trickster in a PES 16 document, onto PES 17.
+#[test]
+fn a_converted_com_style_is_written() {
+    let (file, _) = open(PesVersion::Pes17);
+    let (team, slot) = first_slot(&file);
+    let id = team.roster[slot].player_id;
+    assert!(
+        !file.player(id).expect("the player").skills.com_styles[0],
+        "he lacks it, or a write is invisible"
+    );
+    assert_eq!(labels::COM_STYLES[0], "trickster");
+    let doc = TeamToml::parse(&format!(
+        "pes_version = 16\n\n[players.{:02}.skills]\ncom_styles = [\"trickster\"]\n",
+        slot + 1
+    ))
+    .expect("parses");
+    let mut players = file.players().to_vec();
+    let notes = doc
+        .apply(PesVersion::Pes17, &mut team.clone(), &mut players)
+        .expect("a converted document applies");
+    assert_eq!(notes, []);
+    let after = players
+        .iter()
+        .find(|player| player.id == id)
+        .expect("the player");
+    assert!(after.skills.com_styles[0], "written");
+}
+
 /// A face type over the target's cap resets to 0 with a `Capped` note,
 /// never a clamp; a value at the cap is not capped.
 #[test]
@@ -1421,6 +1451,49 @@ fn a_stored_value_past_the_fields_widest_width_is_out_of_range() {
     );
 }
 
+/// Stored-ranges mode bounds a 1-based and a plus-one key by the stored
+/// width too, where `ingame_face.toml` keeps the editor ranges. PES 15's
+/// hair variation is 1 to 82 in the editor and 8 bits stored: 83 (stored
+/// 82) is accepted. Wave level is -1 to 6 in the editor, stored plus one in
+/// 3 bits, so the editor's top, 6, is the width's top: one more is refused
+/// with the width's range, in stored units.
+#[test]
+fn a_one_based_or_plus_one_key_is_bounded_by_its_stored_width() {
+    use crate::settings_toml::{IngameFaceSettings, SettingKey, SettingsError, get_appearance};
+
+    let stored = |text: &str, key: SettingKey| {
+        let doc = TeamToml::parse(&format!("[players.01.appearance.hair]\n{text}\n"))
+            .unwrap_or_else(|e| panic!("{text}: {e}"));
+        get_appearance(&doc.players[&1].appearance, key)
+    };
+    assert_eq!(
+        stored("pes15_variation = 83", SettingKey::Pes15HairVariation),
+        Some(82)
+    );
+    assert_eq!(stored("wave_level = 6", SettingKey::HairWaveLevel), Some(7));
+    let err = TeamToml::parse("[players.01.appearance.hair]\nwave_level = 7\n")
+        .expect_err("past the 3 bits");
+    assert!(
+        matches!(
+            err,
+            TeamTomlError::Settings(SettingsError::OutOfRange { ref key, value: 8, ref range })
+                if key == "players.01.appearance.hair.wave_level" && range == "0 to 7"
+        ),
+        "{err:?}"
+    );
+
+    for (text, range) in [
+        ("pes15_variation = 83", "1 to 82"),
+        ("wave_level = 7", "-1 to 6"),
+    ] {
+        let err = IngameFaceSettings::parse(&format!("[hair]\n{text}\n")).expect_err(text);
+        assert!(
+            matches!(err, SettingsError::OutOfRange { range: ref r, .. } if r == range),
+            "{text}: {err:?}"
+        );
+    }
+}
+
 /// A stored value a `Kind::Labels` list does not name emits as the
 /// integer and reparses to the same document.
 #[test]
@@ -1806,10 +1879,10 @@ fn stripped_is_an_unknown_player_key() {
     );
 }
 
-/// SE-TOML-04's lib half: a document of `[team] id`, one name and one
-/// physique key writes exactly those onto slot 3's player — every
-/// other field of his, appearance fields included, and every other
-/// player and team, is unchanged.
+/// A document of `[team] id`, one name and one physique key writes
+/// exactly those onto slot 3's player — every other field of his,
+/// appearance fields included, and every other player and team, is
+/// unchanged.
 #[test]
 fn a_minimal_document_writes_only_its_keys() {
     let (file, _) = open(PesVersion::Pes21);
@@ -1844,12 +1917,11 @@ fn a_minimal_document_writes_only_its_keys() {
     assert_eq!(&target, team, "no team field was written");
 }
 
-/// SE-TOML-05's lib half: a PES 21 document on a PES 18 target converts
-/// — a face type over the older cap is written 0 with a `Capped` note,
-/// a key the older version lacks is a `NotInThisVersion` note, and a
-/// shared field applies as stored. PES 18's facial-hair cap is the
-/// field's bits (31, an unmeasured column), so a document value past it
-/// is made by hand.
+/// A PES 21 document on a PES 18 target converts — a face type over the
+/// older cap is written 0 with a `Capped` note, a key the older version
+/// lacks is a `NotInThisVersion` note, and a shared field applies as
+/// stored. PES 18's facial-hair cap is the field's bits (31, an unmeasured
+/// column), so a document value past it is made by hand.
 #[test]
 fn a_pes21_document_on_a_pes18_target_converts() {
     let (file21, _) = open(PesVersion::Pes21);

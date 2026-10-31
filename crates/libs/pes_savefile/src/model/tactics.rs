@@ -483,3 +483,23 @@ impl TeamEntry {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// All three formations while fluid is on; the kick-off one alone when
+    /// it is off, and on PES 15, which stores no fluid switch.
+    #[test]
+    fn the_fielded_formations_follow_the_fluid_switch() {
+        for (fluid, expected) in [
+            (Some(true), [0, 1, 2].as_slice()),
+            (Some(false), [0].as_slice()),
+            (None, [0].as_slice()),
+        ] {
+            let mut preset = TacticsPreset::default();
+            preset.style.fluid = fluid;
+            assert_eq!(preset.fielded_formations(), expected, "{fluid:?}");
+        }
+    }
+}
