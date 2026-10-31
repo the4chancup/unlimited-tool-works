@@ -6225,6 +6225,13 @@ briefs, review loops, gates and mutation runs as for any step.
     logo drawn 28 high skips pixels; resample with `dds_convert`'s Lanczos3 to the box's
     pixels at the window's scale, again on a scale change (plan "The event logo") → verify: a
     test that the uploaded texture is the box's pixel size at 1x and 2x scaling
+  - [ ] cv25 the colour picker's popup stands over 580 points wide where the draft's is about
+    186 (the maintainer, 2026-10-31): `color_tools` `picker.rs` asks the hex field for the
+    popup's whole width (`desired_width(f32::INFINITY)`) in a justified layout, which widens
+    the popup and stretches the square and the slider with it; the square and slider at 168,
+    the hex field 74, as drafted (`plans/libs/color_tools.md`, the paragraph on the field) →
+    verify: a test that the open popup's square, slider and frame keep the drafted widths;
+    briefed with cv24 (`.tmp/cv24/brief_cv24.md`, part 2)
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
     every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree
