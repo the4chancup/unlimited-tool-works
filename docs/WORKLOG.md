@@ -6202,7 +6202,7 @@ briefs, review loops, gates and mutation runs as for any step.
     bench right, team-wide rows across both (same origin, "if possible"); Multi-team AATF
     stays one column (the maintainer, 2026-10-31); plan "Live AATF", SE-GUI-47: drafted
     (`livePanel`, `.lcols`), plan and DECISIONS written; code next
-  - [ ] cv22 bug (the maintainer, 2026-10-31, PES 17 save, teams /3/ and /a/): in Tactics, an
+  - [x] cv22 bug (the maintainer, 2026-10-31, PES 17 save, teams /3/ and /a/): in Tactics, an
     advanced instruction set from Unassigned to another (Hug the Touchline) and back keeps the
     unsaved-changes mark, reading "no target -> no target"; /3/'s Defence 1 does not, /a/'s
     does. Cause (`.tmp/cv22/tally.py` over the save's 220 teams): every pick of an instruction
@@ -6210,6 +6210,10 @@ briefs, review loops, gates and mutation runs as for any step.
     unassigned entries; /3/'s preset 1 Defence 1 holds 255, /a/'s 0). Fix per plan "Tactics
     editor" (such a pick puts back the target byte as opened) → verify: reproduced in a test
     first; the round trip leaves no change
+    Done (Opus sidekick, merged `ba756b5a`, gated): `instruction_combo` puts back the baseline's
+    byte (`advanced_instructions` takes the opened tactics, the Save editor passes
+    `Session::baseline_team`); tests `a_target_less_pick_puts_back_the_opened_target_byte`,
+    `an_instruction_picked_back_to_its_opened_one_leaves_nothing_unsaved` (team 701), red first
   - [ ] cv23 the wheel on Ability stats' boxes lags behind the notches, badly under CPU load
     (the maintainer, 2026-10-31, Live AATF off). By design a notch shows a frame after the one
     that reads it, a fast turn steps one notch a frame, and a box holding the keyboard waits two
