@@ -33,10 +33,13 @@ name. Writing it changes nothing in the save.
 
 **Multi-team AATF**
 
-Pick the first and the last team of the range of teams (the save's first and last team to
-begin with); every team whose id lies between them is checked and listed under
-its id and name, its problems worded as Live AATF words them, or `All clean`
-when it has none. Suggestions are left out, since an unused allowance is the
+Pick the first and the last team of the range of teams (both on the save's first team to
+begin with). The last team's list starts at the first team, and moving the first past the
+last brings the last along, so the range is never backwards. Every team whose id lies
+between them is checked and listed under its id and name, its problems worded as Live AATF
+words them, or `All clean` when it has none. The check starts once both ends have stayed
+put for half a second, so the wheel can run through the teams without checking each one on
+the way; until then the previous list stays, dimmed and marked `checking…`. Suggestions are left out, since an unused allowance is the
 manager's business.
 
 **Copy to clipboard** copies the list as plain text for a cup's thread, each
