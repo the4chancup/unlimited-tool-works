@@ -26,7 +26,11 @@ rounded by 3), so a color as dark as the panel still shows its box; a click open
 bottom: egui's saturation-value square and hue slider, opaque (no export or save stores an
 alpha); the hex field, committed on Enter or when it loses focus, a text that does not read
 as `#RRGGBB` (the `#` optional, either case) put back to the current color when it loses
-focus; the R, G and B fields, 0-255; the host's suggestion swatches; the recent colors.
+focus; the R, G and B fields, 0-255; the host's suggestion swatches; the recent colors. The popup
+is as wide as the drafts' (`save_editor.js` `PK_W`): the square and the slider 168 points
+wide, the hex field 74, nothing in it stretched to the room left, so it stands by its field
+as a small box; a hex field asked to fill the popup's width widened the whole popup, the
+square and the slider with it, to over 580 points.
 Suggestions come from the host and may be none: the Save editor passes none, its team colors
 having no kit texture to extract from. Recent colors are the session's, shared by every
 picker in the program, newest first, at most eight: a color joins when the popup closes on a
