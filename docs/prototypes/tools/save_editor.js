@@ -3662,9 +3662,14 @@ function databaseMenu() {
 // An organizer's check of a range of teams under the toolbar's ruleset, in a
 // dialog, not a docked panel: Live AATF is the one team a manager is fixing,
 // this a report read once and pasted elsewhere. The range is picked as the
-// formation pictures' is, its two ends side by side on one row (the save's
-// first and last team by default); the teams are checked on a worker
-// whenever it changes, the previous list kept while it runs. Every team of
+// formation pictures' is, its two ends side by side on one row, both on the
+// save's first team when the dialog opens (a whole save's check is a long
+// one, and an organizer checks a few teams at a time); the right end lists
+// only the teams from the left end on, and follows it when the left end
+// passes it, so the range is never reversed. The teams are checked on a
+// worker once the ends have rested 500 ms (`MULTI_REST`), the previous list
+// kept, marked checking, until it returns: a wheel turned over an end steps
+// one team a frame, and a check per step froze the window. Every team of
 // the range is listed under its id and name: its players' rows as the dock
 // words them, errors first, or "All clean", so a clean team reads as checked,
 // not as missed; suggestions are not asked for (an unused allowance is no
@@ -3672,16 +3677,22 @@ function databaseMenu() {
 // line per row, so it pastes into a cup's thread, each team's line after a
 // ">" so the thread draws it as green text.
 // sample wording: every text.
-const multiAatf = { from: null, to: null };
+// `checked` is the range the list shows, `from`/`to` the ends as picked;
+// they differ while the ends have not rested `MULTI_REST` ms.
+const multiAatf = { from: null, to: null, checked: null, timer: null };
+const MULTI_REST = 500;
 function dlgMultiAatf() {
-  const ids = curSave().teams.map(t => t.id);
-  if (multiAatf.from == null) { multiAatf.from = Math.min(...ids); multiAatf.to = Math.max(...ids); }
+  if (multiAatf.from == null) {
+    const first = curSave().teams[0].id;
+    multiAatf.from = multiAatf.to = first;
+    multiAatf.checked = { from: first, to: first };
+  }
   drawMultiAatf();
 }
-// Each team of the range with its rows (errors and warnings), or null where
-// the draft holds no sample run for it.
+// Each team of the checked range with its rows (errors and warnings), or
+// null where the draft holds no sample run for it.
 function multiAatfResults() {
-  return picTeamsIn(multiAatf.from, multiAatf.to).map(t => {
+  return picTeamsIn(multiAatf.checked.from, multiAatf.checked.to).map(t => {
     const rows = liveRows(t);
     return { team: t, rows: rows && rows.filter(r => r[0] !== "Suggestion") };
   });
@@ -3690,7 +3701,7 @@ function multiAatfText(results) {
   const sevs = results.flatMap(r => r.rows || []);
   const n = (sev, word) => { const k = sevs.filter(r => r[0] === sev).length;
     return k + " " + word + (k === 1 ? "" : "s"); };
-  const lines = [RULESETS[D.ruleset].label + ", teams " + multiAatf.from + " to " + multiAatf.to + ": "
+  const lines = [RULESETS[D.ruleset].label + ", teams " + multiAatf.checked.from + " to " + multiAatf.checked.to + ": "
     + n("Error", "error") + ", " + n("Warning", "warning")];
   for (const { team, rows } of results) {
     if (!rows) continue;
@@ -3711,19 +3722,30 @@ function multiAatfText(results) {
 }
 function drawMultiAatf() {
   const pick = key => {
-    const s = combo(curSave().teams.map(t => [String(t.id), t.id + " " + displayName(t.name)]),
-      String(multiAatf[key]), v => { multiAatf[key] = Number(v); drawMultiAatf(); });
+    const s = combo(rangeChoices(multiAatf, key).map(t => [String(t.id), t.id + " " + displayName(t.name)]),
+      String(multiAatf[key]), v => {
+        setRangeEnd(multiAatf, key, Number(v));
+        clearTimeout(multiAatf.timer);
+        multiAatf.timer = setTimeout(() => {
+          multiAatf.timer = null;
+          multiAatf.checked = { from: multiAatf.from, to: multiAatf.to };
+          drawMultiAatf();
+        }, MULTI_REST);
+        drawMultiAatf();
+      });
     s.id = "multi-" + key;
     return s;
   };
-  const reversed = multiAatf.from > multiAatf.to;
-  const results = reversed ? [] : multiAatfResults();
+  const results = multiAatfResults();
   const failing = results.filter(r => r.rows && r.rows.length);
   const sampled = results.filter(r => r.rows);
   // Wider than other dialogs (CSS: its window to 900, the most the
   // window's 960 minimum leaves room for), less its padding and border; its
   // rows wrap, so a long sentence is never cut.
-  const list = h("div", { class: "live-body", id: "multi-rows", style: "height:360px; width:874px" });
+  // Dimmed while the ends have not rested, as the Live AATF dock's list is
+  // while its check runs: the rows are the previous range's.
+  const list = h("div", { class: "live-body" + (multiAatf.timer != null ? " checking" : ""),
+    id: "multi-rows", style: "height:360px; width:874px" });
   for (const { team, rows } of sampled) {
     list.append(h("div", { class: "grp" }, team.id + " ", ...nameSpans(team.name)));
     if (!rows.length) list.append(h("div", { class: "drow weak" }, "All clean"));
@@ -3738,8 +3760,9 @@ function drawMultiAatf() {
         ...detailRows(rule, fields, team));
     }
   }
-  const summary = reversed ? h("span", { class: "warn" }, "The first team comes after the last")
-    : weak(results.length + " teams checked, " + failing.length + " with issues"
+  const summary = weak(results.length + (results.length === 1 ? " team" : " teams") + " checked, "
+      + failing.length + " with issues"
+      + (multiAatf.timer != null ? " · checking…" : "")
       + (!sampled.length ? " (the draft holds no sample run for this save and ruleset)"
         : sampled.length < results.length ? " (the draft holds sample runs for "
           + sampled.map(r => r.team.id).join(", ") + " alone)" : ""));
@@ -6161,9 +6184,10 @@ function dlgPictureSave() {
 // then its result, so the member sees one window from the question to the
 // folder.
 // The range is every team whose id lies between the two picks' (the save's
-// first and last by default); the count line says how many before Save is
-// pressed, and Save is off while the first comes after the last. Stop keeps
-// the pictures written so far. The
+// first and last by default); the right pick lists only the teams from the
+// left one on and follows it when the left one passes it, as Multi-team
+// AATF's does, so the range is never reversed; the count line says how many
+// before Save is pressed. Stop keeps the pictures written so far. The
 // pictures with their settings are a checkbox here, not a second menu entry:
 // the dialog already asks how to write the run, and the file-name line shows
 // the choice. The dialog is a drawer (windowDrawer), rebuilt on every render
@@ -6171,6 +6195,18 @@ function dlgPictureSave() {
 // sample wording: the dialog's lines and buttons.
 const picRange = { from: null, to: null, run: null, settings: false };
 const picTeamsIn = (from, to) => curSave().teams.filter(t => t.id >= from && t.id <= to);
+// A range's two picks (Multi-team AATF's, the pictures'): the left one
+// offers every team, the right one the teams from the left one on.
+const rangeChoices = (range, key) => {
+  const teams = curSave().teams;
+  return key === "from" ? teams : teams.slice(teams.findIndex(t => t.id === range.from));
+};
+// A pick of one end; the right end follows a left end that passes it.
+function setRangeEnd(range, key, id) {
+  range[key] = id;
+  const at = id2 => curSave().teams.findIndex(t => t.id === id2);
+  if (at(range.to) < at(range.from)) range.to = range.from;
+}
 function dlgPicturesRange() {
   const ids = curSave().teams.map(t => t.id);
   if (picRange.from == null) { picRange.from = Math.min(...ids); picRange.to = Math.max(...ids); }
@@ -6185,17 +6221,15 @@ function drawPicturesRange() {
   let body, buttons;
   if (!run) {
     const teams = picTeamsIn(picRange.from, picRange.to);
-    const reversed = picRange.from > picRange.to;
     // The two ends picked as the player list's team selector picks a team
     // (its combo of the save's teams by name), not typed as ids.
     const pick = key => {
-      const s = combo(curSave().teams.map(t => [String(t.id), t.name]), String(picRange[key]),
-        v => { picRange[key] = Number(v); });
+      const s = combo(rangeChoices(picRange, key).map(t => [String(t.id), t.name]),
+        String(picRange[key]), v => { setRangeEnd(picRange, key, Number(v)); render(); });
       s.id = "pic-" + key;
       return s;
     };
-    const count = reversed ? "The first team comes after the last"
-      : teams.length === 1 ? "1 team" : teams.length + " teams";
+    const count = teams.length === 1 ? "1 team" : teams.length + " teams";
     const folderIn = h("input", { type: "text", id: "pic-folder", style: "width:380px", value: folder,
       onchange: e => { S.picturesFolder = e.target.value; } });
     // The file-name line in both of the checkbox's states, the other one
@@ -6209,12 +6243,12 @@ function drawPicturesRange() {
     // The range's two ends on one row, as Multi-team AATF's.
     body = h("div", {},
       formGrid(["Teams", h("span", { class: "row" }, pick("from"), weak("to"), pick("to"))],
-        [null, h("span", { class: reversed ? "warn" : "weak", id: "pic-count" }, count)],
+        [null, h("span", { class: "weak", id: "pic-count" }, count)],
         ["Folder", h("span", { class: "row" }, folderIn,
           button("Browse…", () => {}, { title: "The native folder picker (rfd) opens here" }))]),
       cb("With each preset's settings beside its row", picRange.settings, v => { picRange.settings = v; }),
       h("div", { style: "display:grid" }, nameLine(false), nameLine(true)));
-    buttons = [button("Save pictures", () => startPicturesRun(teams), { disabled: reversed || !teams.length }),
+    buttons = [button("Save pictures", () => startPicturesRun(teams), { disabled: !teams.length }),
       button("Cancel", closeWindow)];
   } else if (run.timer != null) {
     body = h("div", {},

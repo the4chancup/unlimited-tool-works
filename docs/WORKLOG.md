@@ -6209,10 +6209,14 @@ briefs, review loops, gates and mutation runs as for any step.
     three-state toggles (same origin; `core/gui.md` "The wheel over a value"); checkboxes stay
     out (the maintainer, 2026-10-31); plan "The wheel over a value", ST-WHEEL-05: drafted (the
     host page's wheel listener, `.rate.wheel`), plan and DECISIONS written; code next
-  - [ ] cv21 Live AATF lists the players' rows in two columns, the starting eleven left and the
+  - [x] cv21 Live AATF lists the players' rows in two columns, the starting eleven left and the
     bench right, team-wide rows across both (same origin, "if possible"); Multi-team AATF
-    stays one column (the maintainer, 2026-10-31); plan "Live AATF", SE-GUI-47: drafted
-    (`livePanel`, `.lcols`), plan and DECISIONS written; code next
+    stays one column (the maintainer, 2026-10-31); plan "Live AATF", SE-GUI-47: Opus sidekick
+    (`.tmp/cv21/brief_cv21.md`), `ee99e55f`, merged `04dd3271`; `team_widgets` `violations.rs`
+    (`TeamViolations::starting_eleven`, `part`, `draw_groups`, `suggestion_groups`),
+    `save_editor` `aatf_check.rs`. SE-GUI-47 reworded: 718 has no team rows under DBC7, the
+    team-wide placement pinned by `the_starters_groups_stand_left_of_the_benchs`. Open: SWE-2
+    and Astra rounds with cv18-cv25
   - [x] cv22 bug (the maintainer, 2026-10-31, PES 17 save, teams /3/ and /a/): in Tactics, an
     advanced instruction set from Unassigned to another (Hug the Touchline) and back keeps the
     unsaved-changes mark, reading "no target -> no target"; /3/'s Defence 1 does not, /a/'s
@@ -6233,11 +6237,19 @@ briefs, review loops, gates and mutation runs as for any step.
     stats, idle and on a step's frame, headless, release build; then cut where the time goes
   - [ ] cv26 the wheel over Multi-team AATF's range combos froze the window for about two
     minutes (found 2026-10-31 in cv16b's built-window look: 42 notches over the first combo,
-    23 over the second, 220 teams in range; PrintWindow waited on it). The likely cause, from reading the code, not measured: each step
-    changes the range, and a new check views the range's teams on the UI thread before its worker runs
-    (`view/aatf_check.rs` `spawn_check`) → measure first, with cv23: one step's frame time
-    over 220 teams, release build; then step without re-checking each intermediate range, or
-    view off the UI thread
+    23 over the second, 220 teams in range; each step re-checked the range). The maintainer's
+    fix (plan "Multi-team AATF's range starts on one team", SE-GUI-41, DECISIONS 2026-10-31):
+    both ends open on the save's first team, the right end lists only the teams from the left
+    one on and follows it, the check starts once the ends have rested 500 ms; the pictures'
+    range pairs its ends the same way. Drafted (`dlgMultiAatf`, `MULTI_REST`, `rangeChoices`,
+    `setRangeEnd`; render `.tmp/cv26/sheet.png`), planned; code next (`save_editor`
+    `view/multi_aatf.rs`, the pictures range dialog if built) → verify: SE-GUI-41's new THENs; a
+    headless test that 30 wheel steps over an end in 30 frames start one check, not 30. Then
+    measure what one check over 220 teams costs the UI thread (with cv23)
+  - [ ] cv27 a hovered AATF row's grey fill leaves its red rule name hard to read (seen
+    2026-10-31 in cv16b's look, `.tmp/0_0_2/look_cv16b/09_crop.png`: "Extra height" on
+    `widgets.hovered.bg_fill`; `team_widgets` `row_paint`) → compare the draft's `.drow:hover`
+    first; a change is drafted, rendered and planned before code
   - [ ] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
     logo drawn 28 high skips pixels; resample with `dds_convert`'s Lanczos3 to the box's

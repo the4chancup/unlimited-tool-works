@@ -938,8 +938,9 @@ Win32 original hurt the most):
   lies between two teams picked in combo boxes on one row, `Teams`, the first, `to`, the last,
   as Multi-team AATF picks its range (the save's teams by name as the player list's selector
   lists them, the save's first and last by default; not typed ids, which a member would have to
-  look up): a count line under them ("4 teams"; "The first team comes
-  after the last" in the warning colour, Save pictures off), the folder row with Browse, the
+  look up; the right end lists only the teams from the left one on and follows the left one
+  when it passes it, so the range is never reversed): a count line under them ("4 teams"), the
+  folder row with Browse, the
   same checkbox, and the file-name line, which follows it. The dialog is as wide as its longer
   state, the file-name line sized for both of the checkbox's, so it keeps its width when the
   checkbox flips, and its labels and fields sit on one grid. An existing file is replaced, the
@@ -1493,6 +1494,17 @@ What this editor adds on top of the lib:
   960-point minimum leaves room for; the list is the dialog's content width (874), and every
   row, a sentence as a height row's players, wraps under its own column, the rule's name
   keeping its own.
+- **Multi-team AATF's range starts on one team, never reverses, and is checked once it
+  rests.** The dialog opens with both ends on the save's first team, not the whole save: a
+  whole save's check is the long one, and an organizer checks a few teams at a time. The left
+  end offers every team; the right end lists only the teams from the left end on, and follows
+  the left end when it passes it, so the range is never reversed and needs no warning. A
+  change of either end starts the check only once the ends have rested 500 ms, the previous
+  list kept, dimmed and marked checking until it does: the wheel over an end steps one team a
+  frame (`core/gui.md` "The wheel over a value"), and a check started per step left the window
+  unresponsive for about two minutes over 220 teams (65 notches). The pictures' range below
+  pairs its ends the same way, keeping the whole save as its default, since its run starts only
+  on Save pictures.
 - **The ruleset dropdown** (`spec/save_editor.md` "Configurable AATF rules" for what is
   built): the wheel over the closed combo (`core/gui.md` "The wheel over a value") steps the
   rulesets alone, never running `Import rules file…`, which is a command rather than a value.
@@ -1860,7 +1872,7 @@ SE-GUI-15  GIVEN the PES 17 save open and no ruleset imported
 SE-GUI-41  GIVEN the PES 17 save open under the official ruleset
            WHEN the Savefile menu's Multi-team AATF… is used
            THEN a dialog titled `Multi-team AATF (<ruleset>)` holds on one row the range's two
-                combo boxes, the save's first and last team picked, and lists, under `N teams
+                combo boxes, the save's first team picked in both, and lists, under `N teams
                 checked, M with issues`, every team under its id and name, its players' rows
                 as Live AATF's dock words them and no suggestion, `All clean` under a team
                 with none; WHEN the range is narrowed to one team THEN that team alone is
@@ -1868,8 +1880,10 @@ SE-GUI-41  GIVEN the PES 17 save open under the official ruleset
                 plain text, its first line the ruleset, the range and the counts, then the
                 team's id and name after a `>`, each player's line (or `All clean`) indented
                 two spaces and each row's severity, rule and sentence four; WHEN the first
-                team picked comes after the last THEN the line says so in the warning colour
-                and Copy to clipboard is off
+                end is moved past the last THEN the last end follows it, and the last end's
+                list starts at the first end's team; WHEN an end changes THEN the list is
+                checked again only once the ends have rested 500 ms, dimmed and marked
+                checking until then
 SE-GUI-16  GIVEN the save open on a team
            WHEN Team TOML export, then import on another team with only the gameplay section
                 chosen, runs from the interchange dialog
@@ -2006,10 +2020,11 @@ SE-GUI-30  GIVEN the PES 17 save open on a team with violations under the active
                 fixed THEN it reads so again; WHEN the tool is reopened THEN Live AATF is
                 still on
 SE-GUI-47  GIVEN the PES 17 save open on team 718 under DBC7, Live AATF on, one bench player's
-                Speed raised past his tier's target, the check returned
+                Speed raised one past his Regular tier's target, the check returned
            THEN the starting eleven's players with rows stand in the dock's left column and the
-                bench player's in its right, each under the line naming him, and the team's own
-                rows under `Team-wide issues` span both columns below them
+                bench player's in its right, each under the line naming him, both columns from
+                the same top (718 has no rows of its own under DBC7: where a team has some, they
+                stand under both columns at the full width, which `team_widgets`' tests pin)
 SE-GUI-36  GIVEN SE-GUI-30's save and team, Live AATF on and its first check returned, one
                  player of the team breaking the Height rule alone and another breaking none
            WHEN the view is drawn
