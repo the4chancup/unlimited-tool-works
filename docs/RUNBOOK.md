@@ -146,7 +146,14 @@ after a flat top level had reached about two thousand files: a new scratch file 
 step's folder. **A temporary folder outside the repository** (a git worktree for a review, a
 side-lead, a release or in-game build) goes under `../4cc-studio-temp/<name>`, never loose beside
 the repository: the maintainer browses that folder, and seventeen `4cc-studio-*` siblings had
-buried the repository by 2026-10-26, when they moved there. **An archived run keeps its summary, not its logs.** A run kept aside (in
+buried the repository by 2026-10-26, when they moved there. **A script likely to be run again
+goes in `scripts/`, not `.tmp/`**: a one-off probe stays in
+its step's folder, but a tool the next check will reach for (the built-window harness,
+`scripts/built_window/`, had served every check for weeks from three scratch folders) gets a
+folder or file under `scripts/` with its usage in the docstring, its paths from the repository
+root or an environment variable rather than a scratch path, and a line here or in the folder's
+`README.md`. `.tmp/` is ignored by git: nothing there is reviewed, versioned or found by the
+next session except through a note that names it. **An archived run keeps its summary, not its logs.** A run kept aside (in
 `.tmp/<subphase>/mutants_<step>_<what>/`, before
 the next run overwrites `mutants.out/`) copies only `*.txt` and `outcomes.json`, never the
 per-mutant `log/` or `remote/` trees: those are what reproduce a survivor, and a survivor is
