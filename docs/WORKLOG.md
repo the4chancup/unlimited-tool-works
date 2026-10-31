@@ -6012,17 +6012,18 @@ briefs, review loops, gates and mutation runs as for any step.
       SWE-2 S1 (2 accepted, the tests: the floor as a literal 4, a per-look cache test),
       Astra R1 on Devin no concerns; merged `8bbf6053`, `gates-changed 8a73e438` green (21
       binaries, 3416 tests). PES 2019's look in 0.0.2; the others after
-  - [ ] cv10 the Open menu labels a save by version alone, and 4ccEditor's Ctrl+5 to Ctrl+1 open
+  - [x] cv10 the Open menu labels a save by version alone, and 4ccEditor's Ctrl+5 to Ctrl+1 open
     each version's discovered save, Ctrl+O the picker (the maintainer, 2026-10-31; DECISIONS
-    2026-10-31, SE-GUI-26): plan and draft done; `save_editor` `view/open_menu.rs` and the
-    toolbar's keys briefed (`.tmp/0_0_1cv/brief_cv10.md`); committed on branch `cv10`, to
-    merge
-  - [ ] cv11 the pitch badges' medal outlines no longer blink on every edit (the maintainer,
+    2026-10-31, SE-GUI-26): `ad7b7017`, merged with cv11 `93ec67b0`; `gates-changed d431e50f`
+    green; `mutants-diff 2d36d232` over cv10, cv11 and cv14b 38 caught, 5 unviable, no
+    survivor (`.tmp/0_0_1cv/mutants_diff_cv10_cv14b.log`). Files: `save_editor`
+    `view/open_menu.rs`, the toolbar's keys. Its review rides with cv8f's after the cut
+  - [x] cv11 the pitch badges' medal outlines no longer blink on every edit (the maintainer,
     2026-10-31: a dragged player made every outline vanish until the medal run answered):
     while the run for a new revision is in flight, the badges keep the last answer held for
     the same team and ruleset; a team or ruleset change still waits for its own answer.
-    `save_editor` `view/tactics.rs`; briefed to sk_cv10 once cv10 is reviewed, same worktree
-    (`.tmp/0_0_1cv/brief_cv11.md`)
+    `cbe107f8` (`save_editor` `view/tactics.rs`), merged `93ec67b0`; gates and mutation run
+    as cv10's
   - [x] cv12 the release exe holds no path of the machine that built it (the maintainer,
     2026-10-31; DECISIONS 2026-10-31, `plans/core/distribution.md`): measured before, the
     03:08 release exe held the home folder in 2,336 strings (1,589 cargo registry, 747
@@ -6067,7 +6068,7 @@ briefs, review loops, gates and mutation runs as for any step.
     the startup (eframe's creator, the first `update`'s start and end) to find that time; then
     DX12 alone on Windows (WARP stays its fallback; Linux keeps Vulkan and GL), a ~110 ms gain
     at rest. Both need a release build: after pes_savefile's mutation run frees the slots
-  - [ ] cv14 a ruleset may allow illegal formations (the maintainer, 2026-10-31): the Whack
+  - [x] cv14 a ruleset may allow illegal formations (the maintainer, 2026-10-31): the Whack
     Patch, a modded PES 2017 exe, no longer rejects formations the game's own drag cannot make;
     4cc Autumn 26 (PES 2017) uses it and allows them (its saves hold some: /jp/ and /s4s/ on
     preset 3, a CB outside his area, an LMF far up), and DBC7 will, so it is 0.0.1's.
@@ -6112,15 +6113,16 @@ briefs, review loops, gates and mutation runs as for any step.
       Autumn 26): as the draft; the draft's Autumn 26 lacked its preset-1 A rule (since
       `8bcb05ca`), corrected
       manual: checked 2026-10-31 (the lead, built window)
-    - [ ] cv14b the Save editor's pitch under the flag (SE-GUI-45, SE-GUI-42's ruleset):
+    - [x] cv14b the Save editor's pitch under the flag (SE-GUI-45, SE-GUI-42's ruleset):
       `save_editor`'s host hands `team_widgets` the flag; under it a dragged marker has no
       marker to swap with (no brackets or fading over a teammate), while XI and bench rows
       dropped on a marker work as before; SE-GUI-12's tests then pick /vg/ League 27 (the
       default Autumn 26 allows illegal formations). Built beside the whole-crate chain (its
       save_editor run alone has ~30 h left), on branch `cv14b` in `wt-cv14b`: `ccfa90ce`, the
       help `cbbe9afd` and `14028084`, rework r1 `46b9492b`; reviewed (SWE-2 round 1, Astra,
-      SWE-2 round 2: 1, 1 and 2 accepted, `.tmp/0_0_1cv/rulings_cv14.md`). Open: the merge
-      into main, its `gates-changed` and `mutants-diff`
+      SWE-2 round 2: 1, 1 and 2 accepted, `.tmp/0_0_1cv/rulings_cv14.md`). Merged
+      `d431e50f`; `gates-changed d431e50f` green; `mutants-diff 2d36d232` as cv10's, no
+      survivor
     - [x] review of cv14a and cv14c (checkpoint (b): two crates): SWE-2 round 1 found nothing
       in the field's code and 2 of 4 accepted on the page (no test unticks a preset box or
       types into Age and Weight), the loop ends; Astra 2 of 2 (unticking Weight and the COM
