@@ -6033,6 +6033,17 @@ briefs, review loops, gates and mutation runs as for any step.
     funnel shifts), the never type's fallback already edition 2024's. A bump waits for a
     dependency's minimum Rust version to ask for one, its own commit (`CONTRIBUTING.md`
     "Toolchain notes")
+  - [ ] cv13 the window opens slowly (the maintainer, 2026-10-31, on the 03:08 release exe):
+    the exe itself starts in about 170 ms (`--help`, three runs), but the CPU was at 100%
+    (a mutation run and a sidekick), and the log shows wgpu probing four adapters on three
+    backends (Vulkan, DX12, GL). Measure, on an idle machine, the time to the first frame as
+    is and with eframe's wgpu instance limited to one backend
+    (`studio_core` `shell/window_size/mod.rs` `native_options`); the maintainer wants the UI
+    on a single backend if the cons are not noticeable. To weigh: on Windows DX12 runs on
+    every Windows 10 machine and falls back to its software adapter (WARP), where Vulkan needs
+    a driver that ships it; Linux has no DX12 (Vulkan, GL for old GPUs and VMs); the GPU
+    encoding study (16.x c) creates its own instance. Needs the window on screen: after the
+    whole-crate chain and the sidekicks end
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450
