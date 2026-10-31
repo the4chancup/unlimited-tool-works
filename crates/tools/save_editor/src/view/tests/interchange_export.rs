@@ -6,6 +6,7 @@
 
 use std::sync::mpsc;
 
+use pes_savefile::container::SaveContainer;
 use pes_savefile::interchange::team_toml::TeamToml;
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
 use pes_savefile::interchange::texport::Texport;
@@ -26,8 +27,14 @@ const CO: u32 = 714;
 /// `version`'s fixture open under `test` with team `target`'s row selected
 /// and the team file panel open, its measuring first frame drawn.
 fn open_on(version: PesVersion, test: &str, target: u32) -> (SaveView, Headless) {
+    open_at(&fixture(version, test), target)
+}
+
+/// The save at `save` open with team `target`'s row selected and the team
+/// file panel open, its measuring first frame drawn.
+fn open_at(save: &Path, target: u32) -> (SaveView, Headless) {
     let mut view = SaveView::new();
-    view.open(&fixture(version, test));
+    view.open(save);
     view.team = TeamChoice::Team(target);
     view.selected = Some(Selection::Team(target));
     view.panel = Some(Panel::Interchange);
@@ -409,6 +416,38 @@ fn a_pes_17_texport_counts_its_numbers_in_hexadecimal() {
 
     let suggested = asked.try_recv().expect("the Save dialog opened");
     assert_eq!(suggested, folder.join("TEXPORT0000000A"));
+}
+
+/// A PES 2017 Texport carries the serial of the save it was written from,
+/// as the game's own Texports carry their writer's.
+#[test]
+fn a_pes_17_texport_carries_the_open_saves_serial() {
+    let save = fixture(PesVersion::Pes17, "export_texport_17_serial");
+    let serial: Vec<u8> = "S-1-5-21-0-0-0-1000"
+        .encode_utf16()
+        .flat_map(u16::to_le_bytes)
+        .collect();
+    let mut container =
+        SaveContainer::decrypt(&std::fs::read(&save).unwrap()).expect("the fixture decrypts");
+    container.serial = serial.clone();
+    std::fs::write(&save, container.to_bytes(&[1; 320]).expect("encodes")).unwrap();
+    let reread = SaveContainer::decrypt(&std::fs::read(&save).unwrap()).expect("decrypts");
+    assert_eq!(
+        reread.serial, serial,
+        "premise: the save carries the serial"
+    );
+    assert!(
+        serial.len() > 1,
+        "premise: the serial is neither empty nor a single byte"
+    );
+    let (mut view, mut window) = open_at(&save, CO);
+    let written = save_folder(&view).join("TEXPORT00000000");
+
+    export(&mut window, &mut view, "Texport\u{2026}", &written);
+
+    let texport = SaveContainer::decrypt(&std::fs::read(&written).expect("the Texport is written"))
+        .expect("the Texport decrypts");
+    assert_eq!(texport.serial, serial, "the open save's serial");
 }
 
 #[test]

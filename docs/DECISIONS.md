@@ -14396,3 +14396,11 @@ maintainer's screenshot, 4.25 drawn the screen's way). The circle's 36 was its
 inner edge: the texture's line centre is at 37, and the penalty arcs at 36.
 Plan: `plans/save_editor.md` "Tactics editor", the pitch's look (the turf, lines and keeper
 spot per version).
+
+## 2026-10-31 — save_editor, team_widgets — the pitch's look follows the open save's version
+Decision: the Tactics pitch draws the open save's version's screen, not the sidebar's PES.
+Why: the save is the game the member checks the formation in, and a save of another version
+than the sidebar's stays that version to the editor; `pitch()` already received the save's
+version (the cv9 sidekick's finding). The entry above ("each version draws its own screen's
+pitch") named the sidebar.
+Plan: `plans/save_editor.md` "Tactics editor", the pitch's look.

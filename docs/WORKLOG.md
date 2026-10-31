@@ -5953,10 +5953,9 @@ briefs, review loops, gates and mutation runs as for any step.
     (`gates-changed 267e5c52` green, 212 tests), with tests for `just mutants ruleset_editor`'s
     survivors (16: 10 tested, 5 cosmetic left, `start_open` excluded as equivalent in
     `.cargo/extra_mutants.toml`); goldens regenerated from the drafts' `summary()`. Files:
-    `crates/tools/ruleset_editor/`, `.cargo/extra_mutants.toml`. Open: three TIMEOUT mutants
+    `crates/tools/ruleset_editor/`, `.cargo/extra_mutants.toml`. Its three TIMEOUT mutants
     (`view/sections/general.rs` `holds` returning true or false, `view/sections/tiers.rs:655`
-    `&&` to `||`): find which test runs past the 66 s timeout under them, since a test fails
-    and never hangs
+    `&&` to `||`) were a starved machine: each fails its tests in 11-12 s (cv6t, below)
   - [x] cv8e the drafts' demo mode, `demo=1` (`core/development_plan.md`, the same
     paragraph): the draft controls column hidden, the window at the app's default size on a
     page it is dragged across by its title bar and resized by its corner, as on a desktop
@@ -6013,17 +6012,23 @@ briefs, review loops, gates and mutation runs as for any step.
       home through) on which `redact_any_spelling`'s loop never advances: an infinite loop,
       so caught (RUNBOOK "Mutation runs"); save_editor's one TIMEOUT is `quick_actions.rs:108`
       `delete !` in `tier_button` (the tier applied on every frame not clicked), 1952 s of
-      tests against a 1183 s timeout, no infinite loop explaining it
+      tests on the remote half, no infinite loop explaining it
     - manual: checked 2026-10-31 by the lead, in the built window (`b766cf5c`, the
       maintainer's PES 2021 save, never saved): /3/'s AMF >BLENDER's popover, its Position
       combo opened by a pointer click, CMF picked by a pointer click: the combo and the badge
       read CMF 99, the formation's name 3-4-3, "unsaved changes" shown; Undo brought back AMF
       109 and 3-3-1-3 (cv6's A3-3)
-    - Open: one triage brief: save_editor `interchange.rs:1009` `room_at_cursor` and
-      pes_savefile `file.rs:235` `EditFile::serial` (missed), and the TIMEOUTs no infinite
-      loop explains (`tier_button` above, `EditFile::serial` and `texport.rs`
-      `pes17_container`'s from `mutants-diff c2079631`, cv8d's three); then the whole-crate
-      runs of the 0.0.1 crates
+    - [x] cv6t the triage: `room_at_cursor` and `EditFile::serial` (missed) tested, the
+      serial at both its crate and its call site, the PES 2017 Texport; the TIMEOUTs
+      classified: `pes17_container`'s two and cv8d's three (`holds` true and false,
+      `map_number`) a starved machine, each failing in a normal run; `Export::file_name`
+      `delete !` an infinite loop (2^32 names); `EditFile::serial` to `[1]` a survivor its
+      TIMEOUT hid, now caught; `tier_button` a wait that never ended, `frames_until` now
+      failing as soon as the save changes on a frame with no input (2.55 s). Merged
+      `8a73e438` (SWE-2 S1 and Astra A1 accepted nothing; rulings
+      `.tmp/0_0_1cv/rulings_cv6t.md`). Files: `pes_savefile` `file.rs`, `save_editor`
+      `view/tests.rs`, `view/tests/interchange.rs`, `view/tests/interchange_export.rs`
+    - Open: the whole-crate runs of the 0.0.1 crates
   - [ ] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30): off
     `CLI_ONLY`, the label in the sidebar and the title; the unbuilt sections' line points at
     Summary and the preview; RE-GUI-17's round trip confirmed over every field the unbuilt

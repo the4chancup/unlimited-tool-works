@@ -812,6 +812,46 @@ fn apply_stays_inside_the_shortest_window_with_a_pairing_and_notes() {
     );
 }
 
+// The lists' room keeps the window's bottom margin and the line under
+// Apply off the screen's bottom, so the line that shows once Apply is
+// clicked fits the shortest window as it stands. A room that added the
+// margin instead of taking it away would leave the window taller than
+// the screen once the line shows, and egui would push it up the screen
+// frame after frame.
+#[test]
+fn the_panel_holds_still_once_the_line_under_apply_shows_in_the_shortest_window() {
+    let (mut view, _) = open_on(PesVersion::Pes17, "interchange_short_window_applied", CO);
+    let pane = egui::vec2(DEFAULT_PANE.x, 600.0 - 24.0);
+    let mut window = Headless::sized(pane.x, pane.y);
+    picked(&mut window, &mut view, SQUAD_19, &lib_fixture(SQUAD_19));
+    open_note_groups(&mut window, &mut view);
+    let top = |window: &mut Headless, view: &mut SaveView| {
+        panel_node(window, view, Role::Window, TITLE)
+            .and_then(|node| node.bounds())
+            .expect("the panel is drawn")
+            .y0
+    };
+    let opened = top(&mut window, &mut view);
+    let apply = panel_node(&mut window, &mut view, Role::Button, "Apply").expect("Apply");
+    assert!(!apply.is_disabled(), "premise: Apply is enabled");
+
+    click(&mut window, &apply, &mut view);
+
+    let applied = format!("Applied {SQUAD_19}. The changes stay unsaved until Save.");
+    let lines = panel_lines(&mut window, &mut view);
+    assert!(
+        lines.contains(&applied),
+        "premise: {applied:?} under Apply in {lines:#?}"
+    );
+    for frame in 0..3 {
+        assert_eq!(
+            top(&mut window, &mut view),
+            opened,
+            "the panel's top on frame {frame} after Apply"
+        );
+    }
+}
+
 // SE-GUI-16
 #[test]
 fn every_empty_place_a_file_names_is_one_group() {

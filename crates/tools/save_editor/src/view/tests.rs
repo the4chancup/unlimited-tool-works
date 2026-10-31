@@ -1250,7 +1250,9 @@ fn pick_imported(view: &mut SaveView, file_name: &str, text: &str) {
 
 /// Frames until `landed` holds for the view's worker result (bounded, so
 /// a worker that never replies fails rather than hangs); `message` is the
-/// deadline's panic. Returns the landing frame's node pairs.
+/// deadline's panic. Returns the landing frame's node pairs. The frames
+/// carry no input, so a save changed between two of them fails at once:
+/// each change restarts the worker, whose reply then never lands.
 fn frames_until(
     window: &mut Headless,
     view: &mut SaveView,
@@ -1262,11 +1264,19 @@ fn frames_until(
     // that never replies (four AATF-panel tests starved past 30 s under
     // a mutation run's below-normal priority, 2026-10-26).
     let deadline = Instant::now() + Duration::from_secs(120);
+    let revision = |view: &SaveView| view.session.as_ref().map(Session::revision);
+    let mut previous = None;
     loop {
         let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
         if landed(view) {
             return pairs;
         }
+        let current = revision(view);
+        assert!(
+            previous.is_none_or(|previous| previous == current),
+            "{message}: the save changed on a frame with no input"
+        );
+        previous = Some(current);
         assert!(Instant::now() < deadline, "{message}");
         std::thread::sleep(Duration::from_millis(20));
     }

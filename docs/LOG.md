@@ -2948,3 +2948,6 @@ worklog passed 7,000 lines.
 - **2026-10-30** — 0.0.1cv cv8d merged (`a9b5c783`, gates green): the Ruleset editor's unbuilt
   sections link to their demo online, Save as suggests the opened file's name, the Summary drops
   "Squad of 23."; the whole-crate run's survivors tested. The drafts' demo greys the early tools.
+- **2026-10-31** — 0.0.1cv: A3-3 checked in the built window (the popover's Position pick by
+  pointer); cv6's diff run missed nothing, and cv6t (merged `8a73e438`) tested its last
+  survivors and made a test wait fail fast. cv9 drafted: PES 2017's own pitch, the y-4 floor.
