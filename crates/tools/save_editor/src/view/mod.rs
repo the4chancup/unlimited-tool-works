@@ -310,7 +310,8 @@ pub(crate) struct BadgeKey {
 /// What the pitch badges' medal letters were computed for: the Cards
 /// left badge's `BadgeKey` minus the selection — a change of the open
 /// save (`Session::revision`), of the team or of the ruleset recomputes
-/// them, and any other frame draws the kept ones.
+/// them. Until the new ones land, the badges draw the kept ones if only
+/// the revision moved, and none for another team or ruleset.
 #[derive(Clone, PartialEq)]
 pub(crate) struct MedalKey {
     /// `Session::revision` when computed.

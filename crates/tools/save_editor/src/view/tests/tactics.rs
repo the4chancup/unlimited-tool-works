@@ -2588,9 +2588,10 @@ fn the_badges_name_the_starters_medal_tiers() {
 // drawn with the pointer held so no run starts and none can reply within
 // it, draws no outline (the rules' script never ran on the UI thread);
 // the release frame starts the run and the outlines show once it
-// answers. An answer held for another team's key draws nothing.
+// answers. An answer held for another team or another ruleset draws
+// nothing.
 #[test]
-fn the_medals_are_read_off_the_first_frame_and_never_from_another_key() {
+fn the_medals_are_read_off_the_first_frame_and_never_from_another_team_or_ruleset() {
     use team_widgets::tactics::Medal::{Gold, Silver};
     let path = fixture(PesVersion::Pes17, "tactics_medals_worker");
     let mut view = SaveView::new();
@@ -2650,11 +2651,96 @@ fn the_medals_are_read_off_the_first_frame_and_never_from_another_key() {
     let (_, nodes, shapes) = window.frame(pointer_at(at, true), |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
-    assert_frame_medal_outlines(&view, &nodes, &shapes, [None; 11], "a stale answer");
+    assert_frame_medal_outlines(&view, &nodes, &shapes, [None; 11], "another team's answer");
     assert!(
         view.medals.pending.is_none(),
         "premise: no run started while the pointer is held"
     );
+
+    // This team's answer under another ruleset, the pointer still down.
+    let mut stale = current_medal_key(&view);
+    assert_ne!(stale.ruleset, "vtl11", "premise: another ruleset");
+    stale.ruleset = "vtl11".to_owned();
+    view.medals.result = Some((stale, vec![Some(Gold); 23]));
+    let (_, nodes, shapes) = window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_frame_medal_outlines(
+        &view,
+        &nodes,
+        &shapes,
+        [None; 11],
+        "another ruleset's answer",
+    );
+    assert!(
+        view.medals.pending.is_none(),
+        "premise: no run started while the pointer is held"
+    );
+}
+
+// An edit re-reads the medals once it settles, and until that answer
+// lands the badges keep the team's last outlines: an edit of the
+// formation drawn with the pointer held, so no run starts, keeps every
+// starter's outline, and the re-read shows the same ones.
+#[test]
+fn an_edit_keeps_the_medal_outlines_until_the_re_read_lands() {
+    use team_widgets::tactics::Medal::{Gold, Silver};
+    let path = fixture(PesVersion::Pes17, "tactics_medals_edit");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(1600.0, 1400.0);
+    view.selected = Some(Selection::Team(734));
+    // The fixture team's starters as `the_badges_name_the_starters_medal_tiers`
+    // reads them under the official ruleset.
+    let medals = [
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        Some(Silver),
+        None,
+        Some(Gold),
+        Some(Silver),
+        Some(Gold),
+    ];
+    assert_medal_outlines(&mut window, &mut view, medals, "before the edit");
+
+    // The toolbar's empty end: a press there starts no gesture, so the
+    // edit does not settle while it is held.
+    let at = egui::pos2(1090.0, 12.0);
+    let before = view.session.as_ref().unwrap().revision();
+    let mut team = team_entry(&view, 734);
+    // Starter 6, a silver, moved sideways on preset 1's first formation.
+    let x = &mut team.tactics.presets[0].formations[0].players[6].x;
+    *x = if *x > 20 { *x - 10 } else { *x + 10 };
+    view.session.as_mut().unwrap().edit_team(1, team);
+    let (_, nodes, shapes) = window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_ne!(
+        view.session.as_ref().unwrap().revision(),
+        before,
+        "premise: the edit moved the revision"
+    );
+    assert!(
+        view.medals.pending.is_none(),
+        "premise: no run started while the pointer is held"
+    );
+    assert!(
+        view.medals
+            .result
+            .as_ref()
+            .is_some_and(|(held, _)| held.revision == before),
+        "premise: the held answer is the revision before the edit's"
+    );
+    assert_frame_medal_outlines(&view, &nodes, &shapes, medals, "while the re-read waits");
+
+    window.frame(pointer_at(at, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_medal_outlines(&mut window, &mut view, medals, "once the re-read landed");
 }
 
 // The badge's right end shows the starter's overall at the position his

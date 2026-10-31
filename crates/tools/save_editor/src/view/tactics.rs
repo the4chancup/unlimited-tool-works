@@ -126,8 +126,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // team, the ruleset) as the Cards left badge is — not every frame.
     // On a worker thread, started once the edit settles: the 23 script
     // calls took about 95 ms on a PES 2021 save's team in a release build,
-    // all on the team view's first frame. Until the answer for this key
-    // lands the badges draw no outline, never another key's.
+    // all on the team view's first frame. An edit still reads them again,
+    // since a tier may test where a player is fielded (`fielded_only_at`),
+    // but until that answer lands the badges keep the last one held for
+    // this team and ruleset: dropping it made every outline blink at each
+    // drag on the pitch. Another team's or ruleset's answer draws nothing.
     let held_medals = rules.as_ref().and_then(|active| {
         let key = MedalKey {
             revision: session.revision(),
@@ -147,7 +150,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         medals
             .result
             .as_ref()
-            .filter(|(held, _)| *held == key)
+            .filter(|(held, _)| held.team == key.team && held.ruleset == key.ruleset)
             .map(|(_, marks)| marks)
     });
     // Each roster slot's `FieldedNotA` marks: the held check's Error or
