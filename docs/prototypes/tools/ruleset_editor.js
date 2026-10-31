@@ -105,7 +105,7 @@ const AUTUMN26 = {
     ],
   },
   universal: {
-    registered_position_a: true, fielded_at_a: [], no_b_ratings: true, b_uses_a_allowance: false,
+    registered_position_a: true, fielded_at_a: [1], no_b_ratings: true, b_uses_a_allowance: false,
     gk_not_second_a: true, age: [15, 50], weight: { floor: 30, below: 129, above: 81 },
     captain_required: true, min_goalkeepers: 1, max_skill_cards: 10, max_com_styles: null,
     illegal_formations: true,
@@ -175,7 +175,7 @@ const SPRING26 = {
         quotas: { giga: 0, giant: 0, tall: 10, mid: 7, manlet: 6 } },
     ],
   },
-  universal: Object.assign(clone(AUTUMN26.universal), { illegal_formations: false }),
+  universal: Object.assign(clone(AUTUMN26.universal), { fielded_at_a: [], illegal_formations: false }),
   specials: [
     special("Malicia is a free card", {}, { free_cards: ["malicia"] }),
     special("The captain's Captaincy card is free", { captain: true }, { free_cards: ["captaincy"] }),

@@ -6087,7 +6087,10 @@ briefs, review loops, gates and mutation runs as for any step.
       lead checks green (ruleset_editor 155 tests); its contradiction accepted: "GK is never a
       second A" (the rule fires for a keeper with a second A too). `dd192543`, merged
       `fb937653`. Files: `ruleset_editor/src/view/{sections/{mod.rs,universal.rs},tests.rs,
-      tests/{summary.rs,universal.rs}}`. Not yet seen drawn: render it before a look
+      tests/{summary.rs,universal.rs}}`. Seen in the built window (`f876a6cb`, DBC7 and
+      Autumn 26): as the draft; the draft's Autumn 26 lacked its preset-1 A rule (since
+      `8bcb05ca`), corrected
+      manual: checked 2026-10-31 (the lead, built window)
     - [ ] cv14b the Save editor's pitch under the flag (SE-GUI-45, SE-GUI-42's ruleset):
       `save_editor`'s host hands `team_widgets` the flag; under it no drop target on the pitch
       (no swap, brackets or fading over a teammate); after the whole-crate chain
