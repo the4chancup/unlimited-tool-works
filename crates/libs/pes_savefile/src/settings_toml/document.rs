@@ -211,7 +211,8 @@ fn lookup<'a>(
 /// `stored_ranges` is `team_toml`'s mode: the editor range is documentation,
 /// and any value the field's widest stored bit width can hold is accepted
 /// (a real save's face types and celebration numbers go past the selectable
-/// range, but not past the storage).
+/// range, but not past the storage). A stored-mode refusal names the value
+/// as written and the stored width in the file's units.
 fn value(
     dotted: &str,
     key: SettingKey,
@@ -219,16 +220,20 @@ fn value(
     stored_ranges: bool,
 ) -> Result<u8, SettingsError> {
     let kind = key.spec().kind;
-    let wide = |value: i64| -> Result<u8, SettingsError> {
-        let max = stored_bound(key);
-        if !(0..=max).contains(&value) {
-            return Err(SettingsError::OutOfRange {
+    // `value` is the file's number; the field stores `value + shift`, which
+    // must fit the stored width. A refusal shifts the width the other way,
+    // into the file's units.
+    let wide = |value: i64, shift: i64| -> Result<u8, SettingsError> {
+        let bound = stored_bound(key);
+        let stored = value
+            .checked_add(shift)
+            .filter(|stored| (0..=bound).contains(stored))
+            .ok_or_else(|| SettingsError::OutOfRange {
                 key: dotted.to_string(),
                 value,
-                range: format!("0 to {max}"),
-            });
-        }
-        Ok(u8::try_from(value).expect("bounded by max"))
+                range: format!("{} to {}", -shift, bound - shift),
+            })?;
+        Ok(u8::try_from(stored).expect("bounded by the width check"))
     };
     let integer = |expected: &'static str| -> Result<i64, SettingsError> {
         item.as_value()
@@ -242,7 +247,7 @@ fn value(
         Kind::Number { min, max } => {
             let value = integer("an integer")?;
             if stored_ranges {
-                return wide(value);
+                return wide(value, 0);
             }
             if !(i64::from(min)..=i64::from(max)).contains(&value) {
                 return Err(SettingsError::OutOfRange {
@@ -257,14 +262,7 @@ fn value(
             let limit = i64::from(limit);
             let value = integer("an integer")?;
             if stored_ranges {
-                let Some(shifted) = value.checked_add(limit) else {
-                    return Err(SettingsError::OutOfRange {
-                        key: dotted.to_string(),
-                        value,
-                        range: format!("0 to {}", stored_bound(key)),
-                    });
-                };
-                return wide(shifted);
+                return wide(value, limit);
             }
             if !(-limit..=limit).contains(&value) {
                 return Err(SettingsError::OutOfRange {
@@ -278,14 +276,7 @@ fn value(
         Kind::PlusOne { max } => {
             let value = integer("an integer")?;
             if stored_ranges {
-                let Some(shifted) = value.checked_add(1) else {
-                    return Err(SettingsError::OutOfRange {
-                        key: dotted.to_string(),
-                        value,
-                        range: format!("0 to {}", stored_bound(key)),
-                    });
-                };
-                return wide(shifted);
+                return wide(value, 1);
             }
             if !(-1..=i64::from(max)).contains(&value) {
                 return Err(SettingsError::OutOfRange {
@@ -312,14 +303,7 @@ fn value(
         Kind::OneBased { max } => {
             let value = integer("an integer")?;
             if stored_ranges {
-                let Some(shifted) = value.checked_sub(1) else {
-                    return Err(SettingsError::OutOfRange {
-                        key: dotted.to_string(),
-                        value,
-                        range: format!("0 to {}", stored_bound(key)),
-                    });
-                };
-                return wide(shifted);
+                return wide(value, -1);
             }
             if !(1..=i64::from(max)).contains(&value) {
                 return Err(SettingsError::OutOfRange {
@@ -353,7 +337,7 @@ fn value(
                 // A width-valid value with no label round-trips as the
                 // integer the emitter wrote.
                 let value = integer("a label string or an integer")?;
-                wide(value)
+                wide(value, 0)
             } else {
                 Err(SettingsError::WrongType {
                     key: dotted.to_string(),
