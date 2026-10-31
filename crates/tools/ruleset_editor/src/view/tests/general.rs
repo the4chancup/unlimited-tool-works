@@ -140,10 +140,21 @@ fn general_draws_no_squad_field() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
     let frame = settled(&mut window, &mut view, &ctx);
     assert!(
-        drawn(&frame.nodes, "Event logo"),
+        drawn(&frame.nodes, "Event logo (optional)"),
         "premise: General is drawn"
     );
     assert!(!drawn(&frame.nodes, "Squad size"), "no Squad size field");
+}
+
+/// The Event page and Event logo labels say a ruleset can leave them out; the Name's does not.
+#[test]
+fn the_event_page_and_logo_labels_say_they_are_optional() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let frame = settled(&mut window, &mut view, &ctx);
+    assert!(drawn(&frame.nodes, "Event page (optional)"));
+    assert!(drawn(&frame.nodes, "Event logo (optional)"));
+    assert!(drawn(&frame.nodes, "Name"));
+    assert!(!drawn(&frame.nodes, "Name (optional)"));
 }
 
 /// The note under the Event logo says where the Save editor shows it.
