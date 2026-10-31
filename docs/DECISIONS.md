@@ -14689,3 +14689,14 @@ taking that width and never setting it.
 Why: the swatches already read well; the maintainer's complaint was the popup over 580 points
 wide, which came from the hex field asking for the room left and setting the popup's width.
 Plan: `plans/libs/color_tools.md`, the paragraph on the field; worklog cv25.
+
+## 2026-10-31 — tooling — the agents' own tools live outside the repository, in `~/.claude/tools/`
+Decision (maintainer): the scripts that run the agents (the below-normal build wrapper, the
+safe amend, the sidekick launcher and waiter, the detached runner, the context and disk
+watchers, the handover's stamp, the review-cost readers) are not the project's, so they move to
+a permanent folder outside the repository, `~/.claude/tools/`, not to `scripts/`; the project's
+own reusable scripts (review sweeps, census kit, release and font tools, the in-game save
+backup) go to `scripts/`.
+Why: `scripts/` is what a maintainer or contributor without an agent runs; tools that exist
+only to drive Claude sessions would read as the project's machinery and drift with it.
+Plan: `RUNBOOK.md` "The scratch folder"; the earlier entry of the same day on `scripts/`.

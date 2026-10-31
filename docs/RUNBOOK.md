@@ -152,7 +152,11 @@ its step's folder, but a tool the next check will reach for (the built-window ha
 `scripts/built_window/`, had served every check for weeks from three scratch folders) gets a
 folder or file under `scripts/` with its usage in the docstring, its paths from the repository
 root or an environment variable rather than a scratch path, and a line here or in the folder's
-`README.md`. A release candidate takes two: `scripts/build_remapped.py` builds the release exe
+`README.md`. The agents' own tooling is not the project's and stays out of the repository, in
+`~/.claude/tools/` on the maintainer's machine: the below-normal build wrapper, the safe amend,
+the sidekick launcher and its waiter, the detached runner, the context and disk watchers, the
+handover's stamp and the review-cost readers; each takes the repository from the directory it
+runs in. A release candidate takes two: `scripts/build_remapped.py` builds the release exe
 with `just release`'s flags and checks it leaks no local path, and `scripts/make_candidate.py
 <commit>` stages the unpacked bundle from it in `../4cc-studio-temp/candidate-<version>`;
 `scripts/sgrep.py <file> <regex>` greps a draft past its embedded data rows. A review has
@@ -273,8 +277,8 @@ yields every processor to their own programs and slows only while they use it. T
 inherited, so it is set where a job starts: `scripts/mutants.py` starts cargo-mutants that way,
 the lead's sidekick launcher starts its `claude` process that way (everything the sidekick runs
 inherits it), and the lead starts its own gates, package tests and release builds through a
-wrapper that does the same (`.tmp/lead/below_normal.py <command>`). A job found at normal
-priority is lowered with its whole process tree (`.tmp/lead/lower_tree.ps1 -Match <text>`).
+wrapper that does the same (`~/.claude/tools/below_normal.py <command>`). A job found at normal
+priority is lowered with its whole process tree (`~/.claude/tools/lower_tree.ps1 -Match <text>`).
 
 **A headless `claude -p` sidekick runs its builds and tests in the foreground.** Its session
 ends with its turn, so a run it started in the background and a notification it waits for die
@@ -369,7 +373,7 @@ a fixed amount of API-priced dollars shown as a percentage, so a review costs wh
 cost. Each request resends the whole context, so a review costs about its requests times its
 average context, and GPT-6 Astra charges the whole of any request whose prompt passes 272K
 tokens at twice its input rates (output 1.5x). Measured over the 34 Devin-route Astra exports
-to 2026-10-16 (`.tmp/astra_cost/long_context.py`): a typical review peaks at 150-220K over about
+to 2026-10-16 (`~/.claude/tools/long_context.py`): a typical review peaks at 150-220K over about
 55 requests and costs $7-11 at API prices; only four crossed 272K, adding 5% to the total; one
 of them (`CP_a1`) reached 426K in 19 requests by reading large files whole. So the surcharge
 is not what to design around; the context's size is. The lead estimates a surface as the bytes
