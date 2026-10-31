@@ -6172,13 +6172,35 @@ briefs, review loops, gates and mutation runs as for any step.
       `violation.rs`, `team_widgets` sentence, `cli.rs`; the DBC6 save under DBC7 keeps every
       old line and adds 155 (88 Nearest system, 67 Height quota, all on GigaHeight teams),
       checked by `.tmp/0_0_2/cv16_compare.py`; rulings `.tmp/0_0_2/rulings_cv16.md`
-    - [ ] cv16b the detail lines under a row (Live AATF, Multi-team AATF and its copy,
-      `check-aatf`'s `problem`), with cv17
-  - [ ] cv17 Multi-team AATF's dialog 900 points wide, its rows wrapping (the maintainer,
+    - [x] cv16b the detail lines under a row (Live AATF, Multi-team AATF and its copy,
+      `check-aatf`'s `problem`), with cv17 (Opus sidekick, `.tmp/0_0_2/brief_cv16b.md`):
+      `3727eb27`, merged `308c991b`, `gates-changed 1f1e6cf1` green (11 binaries, 1101
+      tests); `team_widgets` `violation_detail` and `row`, `save_editor` `session/rules.rs`
+      `listed_players` (shared by the list, the copy and the CLI), `messages.rs`, `multi_aatf.rs`;
+      /tsab/ and /暁Records/ print `.tmp/0_0_2/cv16b_expected.txt`. Open: the built-window look
+      (asks for the screen), checkpoint (b)'s review, `mutants-diff f0d4553f`
+  - [x] cv17 Multi-team AATF's dialog 900 points wide, its rows wrapping (the maintainer,
     2026-10-31, on the P47 render; `plans/save_editor.md` "Configurable AATF rules", drafted in
     `save_editor.js`): `save_editor` `view/multi_aatf.rs` (`LIST_WIDTH`, the dialog's width,
     the rows' wrap) → verify: a GigaHeight `BracketQuota` row reads whole in the built dialog at
-    the window's minimum size; brief with cv16 (same views)
+    the window's minimum size; brief with cv16 (same views). Done with cv16b: `LIST_WIDTH` 874,
+    the dialog 900 (`multi_team_aatf_is_900_points_wide`); the built-window look with cv16b's
+    lines
+  - [ ] cv18 the filter box also lists the players of a team whose name matches (a
+    collaborator's suggestion, the maintainer's "let's do", 2026-10-31; plan "Team selector";
+    SE-GUI-02's neighbourhood): drafted first, then plan, DECISIONS, code
+  - [ ] cv19 a double click on a team row in the player list sets the team combo from ALL to
+    that team (same origin): drafted first; open with the maintainer: whether it clears the
+    filter text
+  - [ ] cv20 the wheel steps the sliders, the value boxes beside them, and the two- and
+    three-state toggles (same origin; `core/gui.md` "The wheel over a value"): open with the
+    maintainer: checkboxes in or out
+  - [ ] cv21 Live AATF lists the players' rows in two columns, the starting eleven left and the
+    bench right, team-wide rows across both (same origin, "if possible"): drafted first
+  - [ ] cv22 bug (the maintainer, 2026-10-31, PES 17 save, teams /3/ and /a/): in Tactics, an
+    advanced instruction set from Unassigned to another (Hug the Touchline) and back keeps the
+    unsaved-changes mark, reading "no target -> no target"; /3/'s Defence 1 does not, /a/'s
+    does → verify: reproduced in a test first; the round trip leaves no change
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
     every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree
