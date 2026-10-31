@@ -260,10 +260,11 @@ cards nor paid cards below every card the game has.
 
 Where the data still reads differently from the fork: the fork assigns GigaHeight's brackets
 in roster order and puts a player with no room left in the lowest bracket his height reaches,
-past its quota, drawing for him too; the pool places no one past a quota. On a team that fills
+past its quota, drawing for him too; the pool places no one past a quota, and counts such a
+player toward the tallest bracket he reaches without drawing for him. On a team that fills
 the quotas the two place the same counts and draw the same total; on one that cannot (a
-stripped save's 23 placeholders at 180) the fork also reports the draw of the players it
-overfilled, the pool only the short bracket.
+stripped save's 23 placeholders at 180) both report the overfilled bracket and the short one,
+but only the fork also reports the draw of the players it overfilled.
 
 ## Coverage of the DBC7 rules
 
