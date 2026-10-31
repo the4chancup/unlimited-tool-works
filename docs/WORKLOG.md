@@ -6092,8 +6092,10 @@ briefs, review loops, gates and mutation runs as for any step.
       `8bcb05ca`), corrected
       manual: checked 2026-10-31 (the lead, built window)
     - [ ] cv14b the Save editor's pitch under the flag (SE-GUI-45, SE-GUI-42's ruleset):
-      `save_editor`'s host hands `team_widgets` the flag; under it no drop target on the pitch
-      (no swap, brackets or fading over a teammate); after the whole-crate chain
+      `save_editor`'s host hands `team_widgets` the flag; under it a dragged marker has no
+      marker to swap with (no brackets or fading over a teammate), while XI and bench rows
+      dropped on a marker work as before; SE-GUI-12's tests then pick /vg/ League 27 (the
+      default Autumn 26 allows illegal formations); after the whole-crate chain
     - [ ] review of cv14a and cv14c: SWE-2 rounds and Astra (checkpoint (b): two crates)
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
