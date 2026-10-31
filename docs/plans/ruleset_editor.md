@@ -430,7 +430,7 @@ RE-GUI-20  GIVEN Blank open on Universal rules
                 floor 30, below 129 and above 81, max_com_styles 3 and illegal_formations
                 true, no captain_required, and Blank's other values; WHEN Age is then
                 unticked THEN the saved file holds no age, and Undo brings back [15, 50];
-                GIVEN DBC7 open THEN the section shows 41 skill cards and "Illegal formations
+                GIVEN DBC7 open THEN its "At most N skill cards" field holds 41, "Illegal formations
                 allowed" ticked, every other checkbox clear
 ```
 
