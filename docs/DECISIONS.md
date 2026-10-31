@@ -14605,3 +14605,14 @@ the noise instead of removing it; ignoring the byte in the diff would leave Save
 change nobody was shown. The byte means nothing to the game under those instructions, so the
 opened one is as good as 255 there.
 Plan: `plans/save_editor.md` "Tactics editor" (the advanced instructions' target); worklog cv22.
+
+## 2026-10-31 — aatf — DBC7 counts heights exactly: a player shorter than his slot is not read into it
+Decision (DBC7's organizer, through the maintainer): the built-in DBC7 ruleset's height logic
+stands as built. A player counts in the bracket of his own height alone, the team's system is
+the first that holds, and a team fitting no quota system falls to GigaHeight; no team is read
+under the quota system it stands fewest centimetres under.
+Why: four DBC6 entries (/tsab/, /暁Records/, /isekai/, /cookie☆/) fitted a quota system only if
+a player could stand in a taller slot than his height; the organizer's answer is that they were
+missed, as their own fork (`DBC7-Editor` `aatf.cpp`) also flags them, not that the rule allows
+it.
+Plan: `plans/aatf_rules.md` "DBC7" (the Heights row).
