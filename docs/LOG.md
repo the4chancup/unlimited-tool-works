@@ -2957,3 +2957,4 @@ worklog passed 7,000 lines.
 - **2026-10-31** — cv9's diff run: one survivor, equivalent and excluded. The Ruleset editor's
   General labels say the event page and logo are optional (cv8f, `73f5bac1`). The mutation
   runs read cargo-mutants' listing as UTF-8 (`ae61e0fe`); the 0.0.1 whole-crate runs started.
+- **2026-10-31** — The release exe carries no path of the machine that built it: `just release` remaps the home folder and the repository through `cargo --config` (keeping the static C runtime) and refuses an exe that still holds one (cv12).

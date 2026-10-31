@@ -6016,15 +6016,17 @@ briefs, review loops, gates and mutation runs as for any step.
     the same team and ruleset; a team or ruleset change still waits for its own answer.
     `save_editor` `view/tactics.rs`; briefed to sk_cv10 once cv10 is reviewed, same worktree
     (`.tmp/0_0_1cv/brief_cv11.md`)
-  - [ ] cv12 the release exe holds no path of the machine that built it (the maintainer,
+  - [x] cv12 the release exe holds no path of the machine that built it (the maintainer,
     2026-10-31; DECISIONS 2026-10-31, `plans/core/distribution.md`): measured before, the
     03:08 release exe held the home folder in 2,336 strings (1,589 cargo registry, 747
     rustup) and the repository's path in one; rustc's last-matching-prefix rule measured on
     1.98.1. `scripts/release.py` `remap_flags`, `rustflags_config`, `leaked_prefixes`,
     `links_crt_dynamically` and their refusals, `release_test.py` 17 OK (two perturbations
-    shown failing). Open: one release build through `.tmp/0_0_1cv/build_remapped.py` once a
-    build slot frees (no prefix left, no VCRUNTIME140), which also builds the 0.0.1d
-    candidate's exe. The toolchain stays 1.98.1: 1.99 (release notes and Cargo changelog read
+    shown failing). The first release build with the flags (`.tmp/0_0_1cv/build_remapped.py`,
+    which builds as the recipe does, at `7bff5baf`, 8 min 24 s, every crate rebuilt): no
+    remapped prefix left, the user name nowhere in the exe, the paths now `~\.cargo\…` and
+    `~\.rustup\…`, no VCRUNTIME140, 40,354,304 bytes (33 KiB less), `--help` runs; the
+    0.0.1d candidate's exe comes from it. The toolchain stays 1.98.1: 1.99 (release notes and Cargo changelog read
     2026-10-31) brings nothing the suite uses, its 1.99.1 fixes three 1.99.0 regressions
     (UEFI's `wcslen`, an x86_64 FFI `bool` return no code here defines, macOS's `rust-lld`),
     and cargo's `trim-paths` stays unstable in 1.99 and 1.100. 1.100 (beta, stable 2026-11-12)
