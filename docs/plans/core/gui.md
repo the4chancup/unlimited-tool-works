@@ -835,7 +835,8 @@ to the table first (a new dependency, asked for first):
   any other; it runs after every draft edit. Two things are no glyph of the app's: a member's
   own text (the sample saves' names, ♂ and fullwidth letters), which eframe's system fallback
   draws in the app too and which the script knows by its characters, and the simulated
-  window's title bar, the OS's in the app, whose maximize box is drawn rather than typed.
+  window's title bar, the OS's in the app, which draws its title in the system's caption font
+  (`--font-os`, Segoe UI) and its caption buttons' glyphs rather than typing them.
 - **Size:** the UI is drawn inside a simulated window of the window's default size ("Shell
   layout": 1280 × 780, fitted to 90% of the browser's `screen` size as Studio fits the
   monitor; CSS pixels are logical pixels, as egui's points are; every size is the client
@@ -847,9 +848,15 @@ to the table first (a new dependency, asked for first):
   tool with many controls does not push it down the page. Narrower
   than the tool's design width the simulated window scales its content down with the width,
   as Studio does (`spec/core/gui.md` "Shell layout", "Scaling with the width"), so a narrow size shows what a
-  member sees rather than a layout Studio never draws. Like Studio Web's window ("Browser deployment: Studio Web") it resizes
+  member sees rather than a layout Studio never draws. Its title bar is the app's on Windows 10
+  as captured (30 points tall, the title in white after a 30-point gap, three 46-point caption
+  buttons with Windows' hover fills), so the window's top reads as the app's does. Like Studio Web's window ("Browser deployment: Studio Web") it resizes
   from its bottom-right corner and maximizes to the page from its title bar (a button, or a
-  double-click on the bar), and the column's window section reads its size live, in pixels and as a
+  double-click on the bar); it also minimizes to its title bar alone at the desktop's bottom
+  left (Windows' place for a window with no taskbar to go to), Restore bringing it back as it
+  was, and its close asks the tools as the window's close does (the Save editor's unsaved
+  prompt, an upgrade running), then takes the window off the page until a reload: an easter
+  egg, which a draft's walkthrough never needs. The column's window section reads its size live, in pixels and as a
   share of the monitor, which is how the default size is tuned. A full-page draft in a maximized browser shows room the real window
   does not have. The frame is the harness, not the UI, like the draft controls; its CSS
   transform makes the fixed-position menus and dialogs place themselves inside it, as egui's
@@ -999,8 +1006,9 @@ The same `studio` binary crate compiles to WebAssembly (the eframe `wasm32` targ
 **Studio Web**: a browser-served, deliberately *lite* edition of the suite. Its purpose is
 convenience, not parity — a regular user on a PC other than their usual one opens a bookmark and
 compiles their own team or edits its settings, without hunting for the tool's download link. It is
-never meant to compile a full cup's worth of DLC; that stays the desktop binary's job. The name
-"Studio Web" is user-facing, precisely so nobody expects the desktop feature set from it.
+never meant to compile a full cup's worth of DLC; that stays the desktop binary's job. Studio
+Web is its codename; members know it as **Limited Tool Works** (LTW), a name chosen so nobody
+expects the desktop feature set from it (`development_plan.md` "The browser edition's name").
 
 The user opens the URL, the WASM application loads, and from that point it works with local files
 via the browser's File System Access API (`showDirectoryPicker`).
@@ -1017,9 +1025,24 @@ Differences from the desktop build:
 - **A window on the page, not the page.** The browser is usually maximized, and the views are
   laid out for the desktop window's size ("Shell layout"), so stretched over the whole page
   they turn sparse. Studio Web draws the same shell (sidebar, tool view, status bar) inside one
-  `egui::Window` titled with the display name (`<app>`, "Window title") over a plain backdrop, at the desktop window's default
-  size, centered, movable and resizable, with a maximize button in its title bar that pins it
-  to the whole page (`fixed_rect`) and restores the earlier rectangle. One shell function draws
+  `egui::Window` titled with the edition's display name (`<app>` is Limited Tool Works here,
+  "Window title") over a plain backdrop, open as the page loads, at the desktop window's default
+  size, centered, movable and resizable, with the desktop window's three caption buttons in
+  its title bar, as the drafts' simulated window has them: minimize parks it at the page's
+  bottom left as its title bar alone (Restore brings it back as it was, maximized or not),
+  maximize pins it to the whole page (`fixed_rect`) and restores the earlier rectangle, and
+  close asks the tools as the desktop window's close does (`StudioTool::hold_close`: the
+  unsaved prompts, a run in flight), then ends the session as closing the desktop app does
+  and leaves the backdrop with one small `Reopen LTW` button at the page's centre (the
+  only way the page ever shows it: a page always loads with the window open), which starts a
+  fresh session, the settings kept (they live in the browser's storage, as the desktop's in
+  `settings.toml`). Ending rather than hiding: the prompts that guard the close have already
+  saved or discarded the work, so a window that came back holding it would make the prompt's
+  Discard a lie; and a member who wants it back as it was minimizes instead. The browser tab's
+  own close or reload asks too while a tool would hold the close (the page's `beforeunload`,
+  whose prompt is the browser's generic one, since a page may not draw its own): without it,
+  closing the tab would drop unsaved work with no question, where the window's close asks.
+  One shell function draws
   into either host: the desktop's root `Ui`, or this window's (`Panel::show` takes any `Ui`
   since egui 0.34). Not a window manager of one window per tool: on the desktop the system's
   window manager already does that job and Studio shows one tool at a time, and the page

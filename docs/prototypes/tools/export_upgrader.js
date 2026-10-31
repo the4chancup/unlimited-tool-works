@@ -479,7 +479,8 @@ function finishRun() {
     publishNotice("Upgraded " + outputName(),
       { label: "Open output folder", run: openOutputStub }, "success");
   else render();
-  if (S.closeAtEnd) { S.closeAtEnd = false; closeStub(); }
+  // Close when it ends (EU-GUI-07): the host's close, as with no run in flight.
+  if (S.closeAtEnd) { S.closeAtEnd = false; closeAppWindow(); }
 }
 
 // The clean run's Move button: the output goes into the shell's default
@@ -513,13 +514,9 @@ const outputPicker = () => picker("pick-output", "Output into",
     ["C:\\4cc\\unlimited-tool-works-0.0.1\\exports", "C:\\4cc\\unlimited-tool-works-0.0.1\\exports"]],
   v => { S.outputInto = v; S.outputEdited = true; });
 
-// The close stub shown at a run's end after Close when it ends (EU-GUI-07);
-// with no run in flight the host shows the same stub itself.
-const closeStub = () => window_("Close", weak("The window closes here."),
-  [button("OK", closeWindow)]);
 // The view's closeRequest hook (the shell's draft control asks each view): a
 // run in flight switches to this view, draws the prompt and holds the close;
-// without one the host's stub covers it.
+// without one the window goes at once.
 function closeRequest() {
   if (!S.run) return false;
   switchToTool("export-upgrader");
@@ -695,7 +692,7 @@ const WALK = [
   ["EU-GUI-05", "the output-exists control on, then an Upgrade of egg, co Spring.zip or refs Tracer (a save @ lacks is refused first): the run aborts at once with the one error line naming the folder, the done line reads Aborted, no notice"],
   ["refused / not clean", "drop @ Aesthetics Export VGL26: Upgrade with the discovered save is refused (the save does not hold /@/), the log naming the save and the team; loose on, the upgrade ends not clean with two boots folders left behind"],
   ["EU-GUI-06", "a Browse button opens the stand-in picker and picking a path fills the field as a drop would (the native dialog itself is manual)"],
-  ["EU-GUI-07", "the run at about 20 s, a different tool's view active, the shell draft controls' Request the window's close: this view comes forward with the prompt; Close when it ends shows the close stub at the run's end, Keep the window open lets it end plain"],
+  ["EU-GUI-07", "the run at about 20 s, a different tool's view active, the shell draft controls' Request the window's close: this view comes forward with the prompt; Close when it ends takes the window off the page at the run's end (a reload brings it back), Keep the window open lets it end plain"],
 ];
 
 // The view's one screen (the host's layout edit keys its tweaks by it).

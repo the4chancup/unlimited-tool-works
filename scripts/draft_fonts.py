@@ -17,7 +17,8 @@ Segoe UI for days). Two checks:
 A member's own text is the exception: a character the sample saves' names carry that no bundled
 file has (`MEMBER_TEXT`) falls back to a system font in the app as well (eframe's system
 fallback, kept for what a member types), so a node whose only such characters are those is no
-finding.
+finding. The simulated window's title bar is the other: the system draws it in the app, in the
+system's caption font, so the bar's text is not checked.
 
 Needs Python's `playwright` with its Chromium (`playwright install chromium`) and fontTools; a
 development tool, not a gate. Exit 1 on any finding, 0 when the drafts draw only bundled fonts.
@@ -41,7 +42,13 @@ MEMBER_TEXT = set("♂ＡＢＣＩＬＮＯＲＳＴＶ")
 DECLARATION = re.compile(r"font(?:-family)?\s*:\s*([^;}\n]+)|\.font\s*=\s*([^;\n]+)")
 # `--font-label`/`FONT_LABEL`: a bundled bold weight for a label that imitates the game's own
 # (the pitch's formation name), the one exception to the drafts' no-bold rule.
-ALLOWED = re.compile(r'var\(--font-(?:body|mono|label)\)|FONT_(?:BODY|LABEL)|"Icons"|inherit')
+# `--font-os`: the simulated window's title bar, the system's in the app, so it draws in the
+# system's caption font; its text nodes are skipped below.
+# `"Symbols"`: the rail's clover, two glyphs of the bundled symbols font drawn on one place.
+ALLOWED = re.compile(
+    r'var\(--font-(?:body|mono|label|os)\)|FONT_(?:BODY|LABEL)|"(?:Icons|Symbols)"|inherit')
+# The element whose text the system draws, not the app.
+SYSTEM_DRAWN = "titlebar"
 
 
 def source_findings():
@@ -61,6 +68,10 @@ def source_findings():
 
 
 def text_nodes(node, out):
+    attributes = node.get("attributes", [])
+    if any(name == "id" and value == SYSTEM_DRAWN
+           for name, value in zip(attributes[::2], attributes[1::2])):
+        return out
     if node.get("nodeType") == 3 and node.get("nodeValue", "").strip():
         out.append((node["nodeId"], node["nodeValue"]))
     for child in node.get("children", []) + node.get("shadowRoots", []):

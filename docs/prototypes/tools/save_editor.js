@@ -3293,6 +3293,15 @@ function drawUnsavedPrompt(then) {
      button("Discard", () => { closeWindow(); then(); render(); }),
      button("Cancel", closeWindow)], "unsaved-changes");
 }
+// The view's closeRequest hook (the title bar's Close, the shell's draft control): unsaved
+// changes hold the window's close with the same prompt (SE-GUI-05), its Save or Discard
+// letting the window go, as the app's hold_close does.
+function closeRequest() {
+  if (!S.save || !dirty()) return false;
+  switchToTool("save-editor");
+  drawUnsavedPrompt(closeAppWindow);
+  return true;
+}
 
 // ---- Quick actions (SE-GUI-09) ----
 // The fake of aatf::apply_tier: the rating stats go to the tier's rate, its
@@ -8246,7 +8255,7 @@ function linkOpen(scr, keys) {
     else linkWarn("dialog=" + keys.dialog);
   }
 }
-registerTool({ id: "save-editor", css: SAVE_EDITOR_CSS, draw: renderView, firstShow, controls: draftControls, onKey, screen, linkKeys, linkOpen,
+registerTool({ id: "save-editor", css: SAVE_EDITOR_CSS, draw: renderView, firstShow, controls: draftControls, onKey, closeRequest, screen, linkKeys, linkOpen,
   pesVersionChanged: versionNoticeFollow, titleDetail: () => S.path ? "[" + S.path + "]" : null,
   // The screens scripts/draft_shots.py captures, as the links this view writes.
   shots: ["save_editor/player", "save_editor/team?selteam=718",

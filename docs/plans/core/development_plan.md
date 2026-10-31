@@ -210,6 +210,18 @@ shared-IDs file's comment: "written by the Ruleset editor", "by the Team compile
 aesthetics patch's `tool_version` key, `studio_version` until the rename): the logic banner is
 hashed into the ruleset's identity, and a product's name in a format ties every file to it.
 
+**The browser edition's name: Limited Tool Works.** The browser build (`gui.md` "Browser
+deployment: Studio Web", Studio Web its codename) is Limited Tool Works, LTW for short,
+wherever a user sees it: its window title, its About box, its page's title. The About box
+alone adds that it is the lite browser edition of Unlimited Tool Works: wherever the page is
+linked for members says so already, so the app does not repeat it elsewhere. "Limited" is a
+joke on the suite's name the community has made before, and it says what a name must say
+here: the edition does less than the desktop one (the Match tracker cannot read a game's
+memory from a browser, and multi-team compiles stay the desktop's), so nobody comes to it
+expecting the desktop's features. Not "Unlimited Tool Works Online": "Online" says where it
+runs, not that it does less, and suggests that files are uploaded, where the edition works on
+the member's own files and sends none anywhere.
+
 What users never see keeps the working name, Studio, as the project's codename for good:
 the crates `studio_core` and `studio`, their types (`StudioApp`, `StudioTool`) and the
 developers' environment variables (`STUDIO_*`); the local checkout's folder (`4cc-studio`)

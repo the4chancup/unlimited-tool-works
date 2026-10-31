@@ -231,6 +231,9 @@
     /* The pitch's formation name alone: the semibold weight, whose stroke matches the
        game's label (worklog 0.0.1x); everything else stays regular. */
     --font-label: "Roboto Flex Semibold", "Roboto Flex", "Symbols", "Icons", "egui-icons";
+    /* The simulated window's title bar alone: the system's, not the app's, so it takes the
+       system's caption font, which scripts/draft_fonts.py lets the bar draw in. */
+    --font-os: "Segoe UI", system-ui, sans-serif;
   }
   /* The symbols the body font lacks are scripts/make_symbols.py's build, on the body font's
      metrics; egui-icons keeps egui's scale tweak (epaint's FontDefinitions::default). */
@@ -260,7 +263,7 @@
      differ, 15 points in Chromium and wider in Firefox, where the player view's third column
      wrapped under the first). */
   .win { flex: none; margin: 8px 16px 12px; width: calc(var(--win-w, 50vw) + var(--sbw, 0px) + 2px);
-    height: calc(var(--win-h, 50vh) + var(--tb-h, 23px) + 2px);
+    height: calc(var(--win-h, 50vh) + var(--tb-h, 30px) + 2px);
     display: flex; flex-direction: column; overflow: hidden; position: relative;
     transform: translateZ(0); background: var(--panel);
     border: 1px solid #000; box-shadow: 0 8px 32px #000c; }
@@ -270,18 +273,52 @@
   .win { resize: both; min-width: 480px; min-height: 320px; }
   .win.max { position: fixed; inset: 0; margin: 0; width: auto !important; height: auto !important;
     resize: none; z-index: 1000; border: none; }
-  /* An OS title bar: its text is not selectable and takes the arrow, not the text cursor. */
-  .titlebar { align-items: center; cursor: default; user-select: none; }
-  .titlebar .win-title { flex: 1; }
-  .titlebar .win-max { padding: 0 6px; line-height: 1; }
-  /* The system's maximize box, drawn rather than typed: the title bar stands for the OS's,
-     which egui does not draw, so it takes no glyph from the app's fonts. */
-  .titlebar .win-max::before { content: ""; display: inline-block; width: 8px; height: 8px;
+  /* An OS title bar, Windows 10's dark one as the app's window has it: 30 points tall, the
+     title in the system's caption font (Segoe UI 12, white) after the 30 points where the
+     system would draw an icon, and the three caption buttons at its right, 46 × 30 each.
+     egui draws none of it, so it takes no glyph from the app's fonts: the buttons' glyphs
+     are drawn in 1-point lines, sized to the app's bar as captured (minimize 10 wide, the
+     maximize square 8, the close cross 9). Its text is not selectable and takes the arrow,
+     not the text cursor. */
+  .titlebar { display: flex; flex: none; height: 30px; align-items: center; padding-left: 30px;
+    background: #000; color: #fff; font: 12px/1 var(--font-os); cursor: default;
+    user-select: none; }
+  .titlebar .win-title { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap;
+    text-overflow: ellipsis; }
+  .titlebar .cap { flex: none; position: relative; width: 46px; height: 30px; min-height: 0;
+    padding: 0; border-radius: 0; background: none; color: inherit; }
+  .titlebar .cap:hover { background: #ffffff1a; color: #fff; }
+  .titlebar .cap:active { background: #ffffff33; }
+  .titlebar .cap.close:hover { background: #e81123; }
+  .titlebar .cap.close:active { background: #f1707a; }
+  .titlebar .cap::before, .titlebar .cap::after { content: ""; position: absolute;
+    left: 18px; top: 10px; }
+  .titlebar .cap.min::before { top: 15px; width: 10px; height: 1px; background: currentColor; }
+  .titlebar .cap.max::before { left: 19px; top: 11px; width: 8px; height: 8px;
     border: 1px solid currentColor; }
+  /* Restore: the front square's lower left, the back one's corner showing above and right. */
+  .titlebar .cap.restore::before { left: 21px; top: 11px; width: 7px; height: 7px;
+    border-top: 1px solid currentColor; border-right: 1px solid currentColor; }
+  .titlebar .cap.restore::after { left: 19px; top: 13px; width: 7px; height: 7px;
+    border: 1px solid currentColor; }
+  .titlebar .cap.close::before, .titlebar .cap.close::after { left: 17px; top: 15px;
+    width: 13px; height: 1px; background: currentColor; transform: rotate(45deg); }
+  .titlebar .cap.close::after { transform: rotate(-45deg); }
   /* The demo (a link's demo=1, the one the app's unbuilt sections open): no draft controls,
      and the page is a desktop the window is dragged across by its title bar. */
   .demo .draft-side { display: none; }
   .demo .win:not(.max) { position: absolute; margin: 0; left: var(--win-x, 0); top: var(--win-y, 0); }
+  /* Minimized, as Windows draws a window that has no taskbar to go to: its title bar alone,
+     260 wide, at the desktop's bottom left (right of the draft controls), the Restore,
+     Maximize and Close buttons on it. After the demo's rule, which it overrides. */
+  .win.min, .demo .win.min { position: fixed; inset: auto auto 0 300px; margin: 0;
+    width: 260px !important; height: auto !important; min-width: 0; min-height: 0;
+    resize: none; z-index: 1000; }
+  .demo .win.min { left: 0; }
+  .win.min > :not(.titlebar) { display: none; }
+  .win.min .titlebar { padding-left: 8px; }
+  /* Closed: off the page until it is reloaded. */
+  .win.gone { display: none; }
   /* The draft controls: one column left of the simulated window, scrolling on its own, in
      sections top to bottom (the window's size, the shell's, the active tool's), each group of
      a section under a rule. Not part of Studio; above a modal, so it stays usable. */
@@ -458,7 +495,6 @@
   .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 2px; border: 1px solid #000; vertical-align: middle; }
   .chip { background: var(--widget); border-radius: 2px; padding: 0 4px; }
   /* shell */
-  .titlebar { background: var(--extreme); border-bottom: 1px solid var(--stroke); padding: 2px 8px; display: flex; gap: 6px; }
   /* The sidebar is always the rail: 56 px wide, icon-only (plans/core/gui.md
      "Sidebar" 4). The labels show in the opened layer only; the planned entries
      alone carry a tooltip. */
@@ -741,7 +777,7 @@ function showReset() {
 let demo = false;
 function sizeWindow(which) {
   const win = document.getElementById("win");
-  win.classList.remove("max");
+  setWinState(false, false);
   win.style.width = ""; win.style.height = "";
   const [w, hgt] = which === "monitor" ? [screen.width, screen.height]
     : which === "smallest" ? [1264, 648]
@@ -772,6 +808,11 @@ function sizeWindow(which) {
 function sizeLabel() {
   const win = document.getElementById("win"), label = document.getElementById("win-size-label");
   if (!label) return;
+  if (win.classList.contains("gone") || win.classList.contains("min")) {
+    label.textContent = win.classList.contains("gone")
+      ? "Window closed: reload the page to bring it back" : "Window minimized";
+    return;
+  }
   const w = winWidth(), hgt = winHeight(), s = winScale();
   label.textContent = "Window " + w + " × " + hgt + ", " + Math.round(100 * w / screen.width) + "% × "
     + Math.round(100 * hgt / screen.height) + "% of the monitor (" + screen.width + " × " + screen.height + ")"
@@ -787,24 +828,45 @@ const winSizer = new ResizeObserver(() => {
 winSizer.observe(document.getElementById("win"));
 winSizer.observe(document.getElementById("titlebar"));
 applyScale();
-// The title bar's maximize button, the window's own chrome rather than a Studio widget: it
-// fills the page, and pressed again restores the size the window had.
-function toggleMax() {
+// The title bar's caption buttons, the window's own chrome rather than Studio widgets, as
+// Windows draws them. Minimize parks the window at the desktop's bottom left as its title bar
+// alone, Windows' place for a window with no taskbar to go to, and Restore brings it back as
+// it was, maximized or not; Maximize fills the page, and pressed again restores the size the
+// window had; Close asks the tools as the window's close does, then takes the window off the
+// page, which a reload brings back.
+function setWinState(min, max) {
   const win = document.getElementById("win");
-  win.classList.toggle("max");
-  const title = win.classList.contains("max") ? "Restore" : "Maximize";
-  document.querySelectorAll(".win-max").forEach(b => { b.title = title; });
+  win.classList.toggle("min", min);
+  win.classList.toggle("max", max);
+  const tb = document.getElementById("titlebar");
+  tb.querySelectorAll(".cap").forEach(b => b.remove());
+  tb.append(...captionButtons());
   sizeLabel();
   showReset();
 }
-function maxButton() {
+const winState = c => document.getElementById("win").classList.contains(c);
+// From a minimized window Maximize maximizes, as Windows' does.
+function toggleMax() { setWinState(false, winState("min") || !winState("max")); }
+function toggleMin() { setWinState(!winState("min"), winState("max")); }
+function closeAppWindow() { document.getElementById("win").classList.add("gone"); sizeLabel(); }
+function captionButton(kind, title, act) {
   const b = document.createElement("button");
-  b.className = "win-max";
-  b.title = document.getElementById("win").classList.contains("max") ? "Restore" : "Maximize";
-  b.onclick = e => { e.stopPropagation(); toggleMax(); };
+  b.className = "cap " + kind;
+  b.title = title;
+  b.onclick = e => { e.stopPropagation(); act(); };
   return b;
 }
-document.getElementById("titlebar").addEventListener("dblclick", toggleMax);
+function captionButtons() {
+  const min = winState("min"), max = winState("max") && !min;
+  return [min ? captionButton("restore", "Restore", toggleMin) : captionButton("min", "Minimize", toggleMin),
+    max ? captionButton("restore", "Restore", toggleMax) : captionButton("max", "Maximize", toggleMax),
+    captionButton("close", "Close", requestWindowClose)];
+}
+// A double-click on the bar restores a minimized window, else maximizes or restores it.
+document.getElementById("titlebar").addEventListener("dblclick", e => {
+  if (e.target.closest(".cap")) return;
+  if (winState("min")) toggleMin(); else toggleMax();
+});
 sizeWindow("default");
 // The demo's window opens centred on the page, and its title bar drags it, kept on the page.
 function placeWindow(x, y) {
@@ -821,7 +883,7 @@ function startDemo() {
   placeWindow(Math.floor((innerWidth - win.offsetWidth) / 2),
     Math.floor((innerHeight - win.offsetHeight) / 2));
   document.getElementById("titlebar").addEventListener("mousedown", e => {
-    if (e.button !== 0 || e.target.closest(".win-max") || win.classList.contains("max")) return;
+    if (e.button !== 0 || e.target.closest(".cap") || winState("max") || winState("min")) return;
     const dx = e.clientX - win.offsetLeft, dy = e.clientY - win.offsetTop;
     const move = ev => placeWindow(ev.clientX - dx, ev.clientY - dy);
     const up = () => {
@@ -2358,7 +2420,7 @@ function setTitle() {
   document.title = t;
   const tb = document.getElementById("titlebar");
   tb.innerHTML = "";
-  tb.append(h("span", { class: "win-title" }, t), maxButton());
+  tb.append(h("span", { class: "win-title", title: t }, t), ...captionButtons());
 }
 function structural() { const view = VIEWS[S.activeTool]; if (view && view.commit) view.commit(); render(); }
 // The drawn state in the address: #<tool>/<screen>?<key>=<value>&..., the
@@ -2488,16 +2550,16 @@ const WALK = [
   ["ST-CLI-01", "not drawn: CLI, conditions and notices print as stderr lines"],
   ["ST-CLI-02", "not drawn: manual CLI, the progress line redraws on a terminal's stderr"],
 ];
-// The draft controls' close request (EU-GUI-07's GIVEN): each registered
-// view's closeRequest hook in TOOLS order; the first returning true holds the
-// close (it made itself the active tool and drew its prompt). None holding
-// it, the window goes at once.
+// The window's close, from the title bar's Close or the draft controls' close
+// request (EU-GUI-07's GIVEN): each registered view's closeRequest hook in
+// TOOLS order; the first returning true holds the close (it made itself the
+// active tool and drew its prompt). None holding it, the window goes at once.
 function requestWindowClose() {
   for (const t of TOOLS) {
     const v = VIEWS[t.id];
     if (v && v.closeRequest && v.closeRequest()) return;
   }
-  window_("Close", weak("The window closes here."), [button("OK", closeWindow)]);
+  closeAppWindow();
 }
 
 // The shell's section of the draft controls' column, visibly outside Studio:
