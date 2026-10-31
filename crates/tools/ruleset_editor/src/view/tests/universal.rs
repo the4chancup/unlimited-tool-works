@@ -80,6 +80,24 @@ fn spin_button<'a>(nodes: &'a [accesskit::Node], value: &str) -> &'a accesskit::
         .unwrap_or_else(|| panic!("a number control showing {value:?}"))
 }
 
+/// The page's number controls in drawn order, top to bottom then
+/// left to right (a field bound to the wrong control shows its value
+/// in the wrong place, which locating by value alone never sees).
+fn spin_buttons(nodes: &[accesskit::Node]) -> Vec<&accesskit::Node> {
+    let mut found: Vec<&accesskit::Node> = nodes
+        .iter()
+        .filter(|node| node.role() == Role::SpinButton)
+        .collect();
+    found.sort_by(|a, b| {
+        let at = |node: &&accesskit::Node| {
+            let bounds = node.bounds().expect("a drawn control");
+            (bounds.y0, bounds.x0)
+        };
+        at(a).partial_cmp(&at(b)).expect("ordered bounds")
+    });
+    found
+}
+
 /// Each page checkbox's label and whether it is drawn ticked, in
 /// `CHECKBOXES`' order.
 fn ticked(nodes: &[accesskit::Node]) -> Vec<(&'static str, bool)> {
@@ -224,6 +242,95 @@ fn each_control_changes_its_field_alone() {
         let (ctx, _events, mut window, mut view) = universal_view(crate::document::blank());
         set_number(&mut window, &mut view, &ctx, shown, typed);
         let mut expected = blank.clone();
+        edit(&mut expected);
+        assert_eq!(universal(&view), &expected, "the number showing {shown}");
+    }
+}
+
+/// A set rule unticked (a preset box, Age, Weight on Autumn 26; the
+/// COM cap ticked then unticked on Blank) clears its field and nothing
+/// else; Age's clear is checked in the saved file too.
+#[test]
+fn unticking_a_set_rule_clears_its_field_alone() {
+    let autumn26 = aatf::builtin("autumn26").expect("Autumn 26 is built in");
+    let original = autumn26.ruleset().universal.clone();
+    let cases: [(&str, FieldEdit); 3] = [
+        ("1", |universal| universal.fielded_at_a = Vec::new()),
+        ("Age", |universal| universal.age = None),
+        ("Weight", |universal| universal.weight = None),
+    ];
+    for (label, edit) in cases {
+        let (ctx, _events, mut window, mut view) = universal_view(autumn26.ruleset().clone());
+        tick(&mut window, &mut view, &ctx, label);
+        let mut expected = original.clone();
+        edit(&mut expected);
+        assert_eq!(universal(&view), &expected, "{label}");
+    }
+
+    let dir = crate::test_support::scratch("universal_clear_age");
+    let path = dir.join("universal.4ccrules");
+    let (ctx, _events, mut window, mut view) = universal_view(autumn26.ruleset().clone());
+    tick(&mut window, &mut view, &ctx, "Age");
+    assert!(save_to(&mut view, &ctx, &path));
+    let mut expected = original;
+    expected.age = None;
+    assert_eq!(saved_universal(&path), expected, "the saved file");
+
+    let blank = crate::document::blank().universal;
+    let (ctx, _events, mut window, mut view) = universal_view(crate::document::blank());
+    tick(&mut window, &mut view, &ctx, "At most");
+    assert_eq!(
+        universal(&view).max_com_styles,
+        Some(5),
+        "the tick sets the cap"
+    );
+    tick(&mut window, &mut view, &ctx, "At most");
+    assert_eq!(universal(&view), &blank, "ticked then unticked");
+}
+
+/// Autumn 26's five same-typed numbers (age's pair, then weight's
+/// three, drawn before the goalkeepers and skill cards fields), each
+/// typed a value none of the others holds: its field alone changes.
+#[test]
+fn each_number_changes_its_field_alone() {
+    let autumn26 = aatf::builtin("autumn26").expect("Autumn 26 is built in");
+    let original = autumn26.ruleset().universal.clone();
+    let numbers: [(usize, &str, &str, FieldEdit); 5] = [
+        (0, "15", "20", |universal| universal.age = Some((20, 50))),
+        (1, "50", "45", |universal| universal.age = Some((15, 45))),
+        (2, "129", "125", |universal| {
+            universal.weight = Some(WeightRule {
+                floor: 30,
+                below: 125,
+                above: 81,
+            })
+        }),
+        (3, "30", "35", |universal| {
+            universal.weight = Some(WeightRule {
+                floor: 35,
+                below: 129,
+                above: 81,
+            })
+        }),
+        (4, "81", "85", |universal| {
+            universal.weight = Some(WeightRule {
+                floor: 30,
+                below: 129,
+                above: 85,
+            })
+        }),
+    ];
+    for (index, shown, typed, edit) in numbers {
+        let (ctx, _events, mut window, mut view) = universal_view(autumn26.ruleset().clone());
+        let frame = settled(&mut window, &mut view, &ctx);
+        let target = spin_buttons(&frame.nodes)[index];
+        assert_eq!(target.value(), Some(shown), "the {index}th number");
+        click(&mut window, target, &mut view, &ctx);
+        type_replacing(&mut window, &mut view, &ctx, typed);
+        window.frame(vec![key(egui::Key::Enter, egui::Modifiers::NONE)], |ui| {
+            show(ui, &mut view, &ctx)
+        });
+        let mut expected = original.clone();
         edit(&mut expected);
         assert_eq!(universal(&view), &expected, "the number showing {shown}");
     }
