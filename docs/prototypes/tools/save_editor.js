@@ -527,6 +527,9 @@ table.grid.stats-grid td { padding: 2px 6px; }
 /* A height row's players, under it in the plain text colour, wrapping: the
    lists run to ten names. */
 .live-body .drow.detail { white-space: normal; }
+/* Multi-team AATF: a wider window, every row wrapping. */
+.window[data-dlg="multi-aatf"] { max-width: 900px; }
+#multi-rows .drow { white-space: normal; }
 .live-body .drow.detail .v { color: var(--text); }
 /* The rule's name takes its severity's colour, as the app's rows do; set on the
    name itself, since a row is also a selectable label, whose grey (and hover
@@ -3712,9 +3715,10 @@ function drawMultiAatf() {
   const results = reversed ? [] : multiAatfResults();
   const failing = results.filter(r => r.rows && r.rows.length);
   const sampled = results.filter(r => r.rows);
-  // As wide as a dialog's content gets: the window's 640 less its padding
-  // and border.
-  const list = h("div", { class: "live-body", id: "multi-rows", style: "height:360px; width:614px" });
+  // Wider than other dialogs (CSS: its window to 900, the most the
+  // window's 960 minimum leaves room for), less its padding and border; its
+  // rows wrap, so a long sentence is never cut.
+  const list = h("div", { class: "live-body", id: "multi-rows", style: "height:360px; width:874px" });
   for (const { team, rows } of sampled) {
     list.append(h("div", { class: "grp" }, team.id + " ", ...nameSpans(team.name)));
     if (!rows.length) list.append(h("div", { class: "drow weak" }, "All clean"));
@@ -6637,8 +6641,8 @@ function violationSentence(rule, kv, sev) {
     case "MedalSystem": return "the tier counts match none of the medal systems "
       + and(v("systems").replace(/[\[\]]/g, "").split(", "), "or");
     case "ExtraHeight": return v("used") + " cm of extra height, over the pool of " + v("total");
-    case "NearestSystem": return rulesLabel(v("system")) + ": "
-      + list("off").map(o => { const [b, c, q] = o.split(":"); return rulesLabel(b) + " " + c + " of " + q; }).join(", ");
+    case "NearestSystem": return "fits no quota system; the nearest is " + rulesLabel(v("system")) + ", with "
+      + and(list("off").map(o => { const [b, c, q] = o.split(":"); return rulesLabel(b) + " " + c + " of " + q; }), "and");
     case "Captain": return "no captain";
     case "Goalkeepers": return v("count") + " goalkeepers, under the minimum of " + v("min");
     case "TeamSetting": return "team setting " + v("label") + ": " + (kv.wanted === undefined
