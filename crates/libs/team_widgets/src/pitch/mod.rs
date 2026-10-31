@@ -2,9 +2,9 @@
 //! `slotPopover` — the formation canvas, a marker per starter dragged to
 //! his spot, dropped on to swap a bench player in, clicked for the slot's
 //! details — plus `lineupList` and `benchList`, the starting eleven and
-//! the bench, reordered and swapped by drag. The canvas is painted as PES
-//! 2021's own formation screen: the game texture's turf bands, the
-//! screen's slot-to-spot mapping and markers of portrait, badge and
+//! the bench, reordered and swapped by drag. The canvas is painted as the
+//! version's own formation screen: its texture's turf bands and lines,
+//! the screen's slot-to-spot mapping and markers of portrait, badge and
 //! coloured name.
 
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
@@ -76,6 +76,10 @@ pub const PITCH_BOX: egui::Vec2 = egui::vec2(322.0, 386.0);
 /// The grid's extent in stored units.
 const GRID_X: u8 = 104;
 const GRID_Y: u8 = 48;
+/// The outfielders' lowest stored y. Rows 0 to 3 are the keeper's area
+/// alone, and the game holds a dragged outfielder at y 4 however low the
+/// pointer goes, so a drop and the popover's Y stop there too.
+const OUTFIELD_Y_MIN: u8 = 4;
 
 /// The badge centre's x for stored x 0 (fitted on the screen's capture).
 const SPOT_X0: f32 = 12.8;
@@ -122,8 +126,96 @@ const CROSS_OUTLINE: f32 = 1.0;
 /// The turf texture's size: the game texture's own, drawn into the
 /// smaller canvas.
 const TURF_SIZE: [usize; 2] = [480, 576];
-/// The turf's band count: dark at both ends.
-const TURF_BANDS: usize = 11;
+/// The turf texture's px per canvas px: the screen draws the texture at
+/// two thirds of its size.
+const TURF_SCALE: f32 = 1.5;
+
+/// One version's formation screen pitch (the draft's `PITCH_LOOKS`),
+/// measured from that screen's own texture, in canvas px.
+struct PitchLook {
+    /// The texture's name, which keys its cached turf.
+    name: &'static str,
+    /// The turf bands' inner boundaries, top to bottom: dark above the
+    /// first, then light and dark in turn, dark again below the last.
+    bands: &'static [f32],
+    /// The dark bands' colour.
+    dark: [u8; 3],
+    /// The light bands' colour.
+    light: [u8; 3],
+    /// The turf's grain: the luma deviation of its noise at the
+    /// texture's size.
+    grain: f32,
+    /// The top and the bottom goal line's y.
+    goal_lines: [f32; 2],
+    /// The halfway line's y.
+    halfway: f32,
+    /// The centre circle's radius.
+    circle: f32,
+    /// The penalty box, wide and deep.
+    penalty_box: [f32; 2],
+    /// The goal area, wide and deep.
+    goal_area: [f32; 2],
+    /// The penalty arc's radius and its spot's distance from the goal
+    /// line.
+    arc: [f32; 2],
+}
+
+/// PES 2017's screen: seven bands, the middle one light and centred on
+/// the halfway line, and a goal line at 382, the canvas' last two rows
+/// being the texture's padding.
+static PES_2017_PITCH: PitchLook = PitchLook {
+    name: "PES 2017 pitch turf",
+    bands: &[58.0, 111.3, 164.7, 218.0, 271.3, 324.7],
+    dark: [0x1f, 0x4b, 0x17],
+    light: [0x2c, 0x5d, 0x24],
+    grain: 6.8,
+    goal_lines: [0.0, 382.0],
+    halfway: 191.0,
+    circle: 29.0,
+    penalty_box: [130.0, 52.3],
+    goal_area: [62.0, 15.7],
+    arc: [28.5, 38.0],
+};
+
+/// PES 2021's screen: eleven equal bands.
+static PES_2021_PITCH: PitchLook = PitchLook {
+    name: "PES 2021 pitch turf",
+    bands: &[
+        384.0 / 11.0,
+        384.0 * 2.0 / 11.0,
+        384.0 * 3.0 / 11.0,
+        384.0 * 4.0 / 11.0,
+        384.0 * 5.0 / 11.0,
+        384.0 * 6.0 / 11.0,
+        384.0 * 7.0 / 11.0,
+        384.0 * 8.0 / 11.0,
+        384.0 * 9.0 / 11.0,
+        384.0 * 10.0 / 11.0,
+    ],
+    dark: [0x2d, 0x57, 0x1d],
+    light: [0x35, 0x60, 0x2a],
+    grain: 3.5,
+    goal_lines: [0.0, 384.0],
+    halfway: 192.0,
+    circle: 37.0,
+    penalty_box: [160.0, 66.0],
+    goal_area: [74.0, 22.0],
+    arc: [36.0, 44.0],
+};
+
+/// The pitch `version`'s own formation screen draws. A version whose
+/// screen is not measured yet draws PES 2021's.
+fn pitch_look(version: PesVersion) -> &'static PitchLook {
+    match version {
+        PesVersion::Pes17 => &PES_2017_PITCH,
+        PesVersion::Pes15
+        | PesVersion::Pes16
+        | PesVersion::Pes18
+        | PesVersion::Pes19
+        | PesVersion::Pes20
+        | PesVersion::Pes21 => &PES_2021_PITCH,
+    }
+}
 
 /// A wide name's scroll period in seconds (the game's measured 13.5).
 const NAME_PERIOD: f32 = 13.5;
@@ -230,7 +322,8 @@ fn lock_to_fielded(tactics: &TeamTactics, view: &mut TacticsView) -> bool {
 /// until the release. The keeper's marker
 /// (position 0) is neither a drag source nor a marker's swap target; his
 /// spot is fixed. `version` is the open save's (`swap_in`'s instruction
-/// decode). Answers `true` only when `tactics` changed this frame.
+/// decode, and the pitch its formation screen draws). Answers `true`
+/// only when `tactics` changed this frame.
 pub fn pitch(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,
@@ -299,7 +392,7 @@ pub fn pitch(
         );
         let painter = ui.painter_at(canvas);
         let palette = theme::palette(ui.visuals());
-        paint_pitch(&painter, canvas, radius - 1, palette);
+        paint_pitch(&painter, canvas, radius - 1, palette, pitch_look(version));
         let players = tactics.presets[view.preset.min(2)].formations[view.formation.min(2)].players;
         let centres = players.map(|slot| clamp_centre(badge_centre(canvas.min, slot), canvas));
         let order = draw_order(&centres);
@@ -622,7 +715,7 @@ fn badge_centre(origin: egui::Pos2, slot: FormationSlot) -> egui::Pos2 {
 
 /// `pos` inside the canvas (from `origin`) snapped back through the
 /// mapping to the stored grid (the draft's `snapXY`): the nearest unit,
-/// clamped to the grid.
+/// clamped to the grid, y no lower than `OUTFIELD_Y_MIN`.
 fn snap(pos: egui::Pos2, origin: egui::Pos2) -> (u8, u8) {
     let local = pos - origin;
     let x = ((local.x - SPOT_X0) / SPOT_XS)
@@ -630,7 +723,7 @@ fn snap(pos: egui::Pos2, origin: egui::Pos2) -> (u8, u8) {
         .clamp(0.0, f32::from(GRID_X)) as u8;
     let y = ((SPOT_Y0 - local.y) / SPOT_YS)
         .round()
-        .clamp(0.0, f32::from(GRID_Y)) as u8;
+        .clamp(f32::from(OUTFIELD_Y_MIN), f32::from(GRID_Y)) as u8;
     (x, y)
 }
 
@@ -852,27 +945,33 @@ fn group_colour(
     }
 }
 
-/// The turf image (the draft's `turf`): the game texture's size, eleven
-/// horizontal bands dark at both ends, and the texture's grain as a
-/// fixed-seed xorshift32 — deterministic, so the loaded texture is made
-/// once per context.
-fn turf_image(palette: &Palette) -> egui::ColorImage {
+/// The turf image (the draft's `turf`): the game texture's size, `look`'s
+/// horizontal bands at its boundaries scaled to the texture, and its
+/// grain as a fixed-seed xorshift32 — deterministic, so the loaded
+/// texture is made once per context and look.
+fn turf_image(look: &PitchLook) -> egui::ColorImage {
     let (width, height) = (TURF_SIZE[0], TURF_SIZE[1]);
     let mut pixels = Vec::with_capacity(width * height);
+    // Uniform noise of this spread has the grain as its deviation.
+    let spread = look.grain * 12f32.sqrt();
     // xorshift32 from a fixed seed: the same grain every run.
     let mut state = 0x9e37_79b9u32;
     for y in 0..height {
-        let band = if (y * TURF_BANDS / height).is_multiple_of(2) {
-            palette.turf_dark_band
+        let band = look
+            .bands
+            .iter()
+            .filter(|&&edge| edge * TURF_SCALE <= y as f32)
+            .count();
+        let base = if band.is_multiple_of(2) {
+            look.dark
         } else {
-            palette.turf_light_band
+            look.light
         };
-        let base = [band.r(), band.g(), band.b()];
         for _x in 0..width {
             state ^= state << 13;
             state ^= state >> 17;
             state ^= state << 5;
-            let noise = ((state as f32 / u32::MAX as f32 - 0.5) * 12.1).round() as i32;
+            let noise = ((state as f32 / u32::MAX as f32 - 0.5) * spread).round() as i32;
             let channel = |base: u8| (i32::from(base) + noise).clamp(0, 255) as u8;
             pixels.push(egui::Color32::from_rgb(
                 channel(base[0]),
@@ -884,71 +983,62 @@ fn turf_image(palette: &Palette) -> egui::ColorImage {
     egui::ColorImage::new(TURF_SIZE, pixels)
 }
 
-/// The turf texture, loaded once per context under a fixed id. One texture
-/// serves both themes: the turf's bands are a surface both themes share.
-fn turf(ctx: &egui::Context, palette: &Palette) -> egui::TextureHandle {
-    let id = egui::Id::unique("pitch turf");
+/// `look`'s turf texture, loaded once per context under an id of its
+/// name. One texture serves both themes: the turf's bands are a surface
+/// both themes share.
+fn turf(ctx: &egui::Context, look: &PitchLook) -> egui::TextureHandle {
+    let id = egui::Id::unique(look.name);
     if let Some(texture) = ctx.data(|data| data.get_temp::<egui::TextureHandle>(id)) {
         return texture;
     }
-    let texture = ctx.load_texture(
-        "pitch turf",
-        turf_image(palette),
-        egui::TextureOptions::LINEAR,
-    );
+    let texture = ctx.load_texture(look.name, turf_image(look), egui::TextureOptions::LINEAR);
     ctx.data_mut(|data| data.insert_temp(id, texture.clone()));
     texture
 }
 
-/// The turf and the lines (the draft's `drawLines`): the halfway line,
-/// the centre circle, and per end the penalty box, the goal area and the
-/// penalty arc — no touchlines and no goal lines (the texture has none).
-/// The turf's corners are rounded by `turf_radius`.
+/// The turf and the lines (the draft's `drawLines`) of `look`: the
+/// halfway line, the centre circle, and per end the penalty box, the goal
+/// area and the penalty arc — no touchlines and no goal lines (the
+/// texture has none). The turf's corners are rounded by `turf_radius`.
 fn paint_pitch(
     painter: &egui::Painter,
     canvas: egui::Rect,
     turf_radius: egui::CornerRadius,
     palette: &Palette,
+    look: &PitchLook,
 ) {
     let stroke = egui::Stroke::new(2.0, palette.pitch_lines);
     painter.add(
         egui::epaint::RectShape::filled(canvas, turf_radius, theme::NO_TINT).with_texture(
-            turf(painter.ctx(), palette).id(),
+            turf(painter.ctx(), look).id(),
             egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
         ),
     );
     let at = |x: f32, y: f32| canvas.min + egui::vec2(x, y);
-    painter.line_segment([at(0.0, 192.0), at(320.0, 192.0)], stroke);
-    painter.circle_stroke(at(160.0, 192.0), 36.0, stroke);
-    for top in [true, false] {
-        // The end's goal line and the direction into the field.
-        let (edge, dir) = if top { (0.0, 1.0) } else { (384.0, -1.0) };
+    painter.line_segment([at(0.0, look.halfway), at(320.0, look.halfway)], stroke);
+    painter.circle_stroke(at(160.0, look.halfway), look.circle, stroke);
+    // Each end's goal line and the direction into the field.
+    for (edge, dir) in [(look.goal_lines[0], 1.0), (look.goal_lines[1], -1.0)] {
         let line = |x: f32, depth: f32| at(x, edge + dir * depth);
-        // The penalty box, 160 wide centred and 66 deep: its two sides
-        // and its far edge (no goal line).
-        for x in [80.0, 240.0] {
-            painter.line_segment([line(x, 0.0), line(x, 66.0)], stroke);
+        // The penalty box and the goal area, centred: each one's two
+        // sides and its far edge (no goal line).
+        for [wide, deep] in [look.penalty_box, look.goal_area] {
+            let (left, right) = (160.0 - wide / 2.0, 160.0 + wide / 2.0);
+            for x in [left, right] {
+                painter.line_segment([line(x, 0.0), line(x, deep)], stroke);
+            }
+            painter.line_segment([line(left, deep), line(right, deep)], stroke);
         }
-        painter.line_segment([line(80.0, 66.0), line(240.0, 66.0)], stroke);
-        // The goal area, x 123 to 197 and 22 deep.
-        for x in [123.0, 197.0] {
-            painter.line_segment([line(x, 0.0), line(x, 22.0)], stroke);
-        }
-        painter.line_segment([line(123.0, 22.0), line(197.0, 22.0)], stroke);
-        // The penalty arc: the centre circle's radius about the spot 44
-        // from the goal line, only its part beyond the box's far edge
-        // (where a point is more than 22 deep).
-        let spot = line(160.0, 44.0);
-        let half = (22.0f32 / 36.0).acos();
-        let mid = if top {
-            std::f32::consts::FRAC_PI_2
-        } else {
-            -std::f32::consts::FRAC_PI_2
-        };
+        // The penalty arc about the spot, only its part beyond the box's
+        // far edge.
+        let [radius, spot_depth] = look.arc;
+        let spot = line(160.0, spot_depth);
+        let half = ((look.penalty_box[1] - spot_depth) / radius).acos();
+        let mid = dir * std::f32::consts::FRAC_PI_2;
         let points: Vec<egui::Pos2> = (0..17)
             .map(|i| {
                 let angle = mid - half + 2.0 * half * i as f32 / 16.0;
-                spot + egui::vec2(36.0 * angle.cos(), 36.0 * angle.sin())
+                spot + egui::vec2(radius * angle.cos(), radius * angle.sin())
             })
             .collect();
         painter.line(points, stroke);

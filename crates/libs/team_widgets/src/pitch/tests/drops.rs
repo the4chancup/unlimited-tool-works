@@ -39,11 +39,12 @@ fn a_marker_dragged_to_grass_writes_the_snapped_point() {
     // `.floor()` snap would read (x, y) — plus the press's offset from
     // his badge centre, since he stands at the pointer less it. The
     // release point itself stays on the canvas and inside no other
-    // marker (another's would claim the drop for a swap).
+    // marker (another's would claim the drop for a swap), and the grid
+    // point in the outfielders' rows, where the snap reads the mapping.
     let slot = formation.players[index];
     let offset = press_offset(canvas, slot, from);
     let (x, y, onto) = (0..=GRID_X)
-        .flat_map(|x| (0..=GRID_Y).map(move |y| (x, y)))
+        .flat_map(|x| (OUTFIELD_Y_MIN..=GRID_Y).map(move |y| (x, y)))
         .map(|(x, y)| {
             (
                 x,
@@ -90,7 +91,7 @@ fn a_marker_dragged_to_grass_writes_the_snapped_point() {
     let slot = formation.players[index];
     let offset = press_offset(canvas, slot, from);
     let (x, y, onto) = (0..GRID_X)
-        .flat_map(|x| (0..GRID_Y).map(move |y| (x, y)))
+        .flat_map(|x| (OUTFIELD_Y_MIN..GRID_Y).map(move |y| (x, y)))
         .map(|(x, y)| {
             (
                 x,
@@ -153,7 +154,7 @@ fn a_marker_dragged_to_grass_writes_the_snapped_point() {
     let from = marker_point(&nodes, &formation.players, index);
     let offset = press_offset(canvas, slot, from);
     let (x, y, onto) = (0..GRID_X)
-        .flat_map(|x| (0..GRID_Y).map(move |y| (x, y)))
+        .flat_map(|x| (OUTFIELD_Y_MIN..GRID_Y).map(move |y| (x, y)))
         .map(|(x, y)| {
             (
                 x,
@@ -556,6 +557,95 @@ fn a_marker_released_on_the_keeper_moves_to_the_snapped_point() {
         tactics, expect,
         "he moved to the snapped point; the eleven and the keeper's slot stay"
     );
+}
+
+// The game holds a dragged outfielder at y 4 however low the pointer
+// goes: held below the pitch he stands on y 4, and released on the grass
+// at a point the mapping alone reads below 4 (clear of every marker, the
+// keeper's included), he lands on y 4, his x the snapped one.
+// SE-GUI-42
+#[test]
+fn an_outfielder_dragged_below_the_pitch_lands_on_y_4() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let before = tactics.clone();
+    let players = before.presets[0].formations[0].players;
+    let index = 4;
+    assert!(players[index].position != 0, "premise: an outfielder");
+    let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    let centres = centres_of(canvas, &players);
+    let from = marker_point(&nodes, &players, index);
+    let offset = press_offset(canvas, players[index], from);
+    // The stored y the mapping alone reads at the held point.
+    let mapped_y =
+        |pointer: egui::Pos2| ((SPOT_Y0 - (pointer - offset - canvas.min).y) / SPOT_YS).round();
+    let release = (1..40)
+        .flat_map(|dy| (1..64).map(move |dx| (dx, dy)))
+        .map(|(dx, dy)| egui::pos2(canvas.left() + 5.0 * dx as f32, canvas.bottom() - dy as f32))
+        .find(|&point| {
+            mapped_y(point) < f32::from(OUTFIELD_Y_MIN)
+                && centres
+                    .iter()
+                    .all(|centre| !marker_rect(*centre, canvas).contains(point))
+        })
+        .expect("a grass point clear of every marker, below y 4");
+    assert!(
+        canvas.contains(release),
+        "premise: the release is on the pitch"
+    );
+    assert!(
+        mapped_y(release) < f32::from(OUTFIELD_Y_MIN),
+        "premise: the mapping alone reads y {} there",
+        mapped_y(release)
+    );
+    let below = egui::pos2(release.x, canvas.bottom() + 40.0);
+
+    window.pitch(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(from, true),
+    );
+    let (shapes, changed) = window.pitch_shapes(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        vec![egui::Event::PointerMoved(below)],
+    );
+    assert!(!changed, "a held frame writes nothing");
+    let badge = *badge_rects(&shapes)
+        .last()
+        .expect("the held marker's badge, painted last");
+    let (x, _) = snap(below - offset, canvas.min);
+    near(
+        badge.center(),
+        clamp_centre(spot_centre(canvas, x, OUTFIELD_Y_MIN), canvas),
+        0.5,
+    );
+
+    let (_, changed) = window.pitch(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(release, false),
+    );
+    assert!(changed, "the release writes");
+    let landed = tactics.presets[0].formations[0].players[index];
+    assert_eq!(
+        (landed.x, landed.y),
+        (snap(release - offset, canvas.min).0, OUTFIELD_Y_MIN),
+        "he lands on y 4"
+    );
+    let mut expect = before;
+    expect.presets[0].formations[0].players[index] = landed;
+    assert_eq!(tactics, expect, "his slot alone changes");
 }
 
 /// A marker `index` of preset 1's Kick-off whose box's left edge has

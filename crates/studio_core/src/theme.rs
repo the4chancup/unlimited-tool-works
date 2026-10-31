@@ -60,11 +60,6 @@ pub struct Palette {
     /// The dark frame drawn inside a player appearance palette entry's square
     /// (the draft's `.swatch`), around the entry's own colour.
     pub swatch_edge: egui::Color32,
-    /// The Tactics pitch's dark turf band (`#2d571d`), at both ends of the
-    /// pitch and every second band between.
-    pub turf_dark_band: egui::Color32,
-    /// The Tactics pitch's light turf band (`#35602a`).
-    pub turf_light_band: egui::Color32,
     /// The pitch lines' stroke: white at 20% opacity.
     pub pitch_lines: egui::Color32,
     /// A pitch marker's badge fill (`#242b2d`), and the captain mark's outline.
@@ -158,8 +153,6 @@ impl Palette {
         rating_a_fill: egui::Color32::from_rgb(0x12, 0x96, 0x48),
         rating_a_text: egui::Color32::WHITE,
         swatch_edge: egui::Color32::BLACK,
-        turf_dark_band: egui::Color32::from_rgb(0x2d, 0x57, 0x1d),
-        turf_light_band: egui::Color32::from_rgb(0x35, 0x60, 0x2a),
         pitch_lines: egui::Color32::from_rgba_unmultiplied_const(255, 255, 255, 51),
         badge_fill: egui::Color32::from_rgb(0x24, 0x2b, 0x2d),
         join_fill: egui::Color32::from_rgb(0x00, 0x5c, 0x80),
@@ -203,8 +196,6 @@ impl Palette {
         rating_a_fill: egui::Color32::from_rgb(0x12, 0x96, 0x48),
         rating_a_text: egui::Color32::WHITE,
         swatch_edge: egui::Color32::BLACK,
-        turf_dark_band: egui::Color32::from_rgb(0x2d, 0x57, 0x1d),
-        turf_light_band: egui::Color32::from_rgb(0x35, 0x60, 0x2a),
         pitch_lines: egui::Color32::from_rgba_unmultiplied_const(255, 255, 255, 51),
         badge_fill: egui::Color32::from_rgb(0x24, 0x2b, 0x2d),
         join_fill: egui::Color32::from_rgb(0x00, 0x5c, 0x80),
@@ -582,8 +573,6 @@ mod tests {
             rating_a_fill,
             rating_a_text,
             swatch_edge,
-            turf_dark_band,
-            turf_light_band,
             pitch_lines,
             badge_fill,
             join_fill,
@@ -620,8 +609,6 @@ mod tests {
             ("rating_a_fill", *rating_a_fill),
             ("rating_a_text", *rating_a_text),
             ("swatch_edge", *swatch_edge),
-            ("turf_dark_band", *turf_dark_band),
-            ("turf_light_band", *turf_light_band),
             ("pitch_lines", *pitch_lines),
             ("badge_fill", *badge_fill),
             ("join_fill", *join_fill),

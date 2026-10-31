@@ -47,8 +47,9 @@ fn the_badge_centre_is_the_screens_spot_mapping() {
     }
 }
 
-// `snap` is the mapping's inverse: every stored (x, y) round-trips, and
-// a point past each edge clamps to it.
+// `snap` is the mapping's inverse: every stored (x, y) an outfielder can
+// hold round-trips, a spot of the keeper's rows 0 to 3 snaps up to y 4,
+// and a point past each edge clamps to it.
 #[test]
 fn snap_inverts_the_mapping_and_clamps_to_the_grid() {
     let origin = egui::pos2(40.0, 80.0);
@@ -57,7 +58,7 @@ fn snap_inverts_the_mapping_and_clamps_to_the_grid() {
             let slot = outfield(x, y);
             assert_eq!(
                 snap(badge_centre(origin, slot), origin),
-                (x, y),
+                (x, y.max(OUTFIELD_Y_MIN)),
                 "({x}, {y})"
             );
         }
@@ -69,7 +70,7 @@ fn snap_inverts_the_mapping_and_clamps_to_the_grid() {
     );
     assert_eq!(
         snap(origin + egui::vec2(160.0, 500.0), origin),
-        (52, 0),
+        (52, OUTFIELD_Y_MIN),
         "past the near edge"
     );
     assert_eq!(
@@ -110,74 +111,111 @@ fn the_marker_box_centres_on_the_badge_and_stays_inside() {
     );
 }
 
-// The turf: the game texture's own size, eleven horizontal bands dark at
-// both ends over their two greens, the grain a fixed noise of luma
-// deviation about 3.5, deterministic.
+// The turf: the game texture's own size, each screen's horizontal bands
+// dark at both ends over its two greens, the grain a fixed noise of its
+// luma deviation, deterministic. PES 2017's seven bands, `#1f4b17` and
+// `#2c5d24`, grain 6.8: the inner five 80 texture rows tall, the middle
+// one light and centred on the halfway line; PES 2021's eleven equal
+// bands, `#2d571d` and `#35602a`, grain 3.5. A version not measured yet
+// (PES 2019) paints PES 2021's.
 #[test]
-fn the_turf_is_the_game_textures_bands_with_its_grain() {
-    let image = turf_image(&Palette::DARK);
-    assert_eq!(image.size, TURF_SIZE);
-    // A row's or band's mean channel.
-    let mean = |rows: &[usize], channel: usize| {
-        let (mut sum, mut n) = (0.0f64, 0usize);
-        for &y in rows {
-            for x in 0..image.width() {
-                sum += f64::from(image.pixels[y * image.width() + x][channel]);
-                n += 1;
+fn the_turf_is_each_screens_bands_with_its_grain() {
+    let pes_2021_starts: &[usize] = &[53, 105, 158, 210, 262, 315, 367, 419, 472, 524];
+    for (version, starts, dark, light, grain) in [
+        (
+            PesVersion::Pes17,
+            &[87, 167, 248, 327, 407, 488][..],
+            [0x1f, 0x4b, 0x17],
+            [0x2c, 0x5d, 0x24],
+            6.8,
+        ),
+        (
+            PesVersion::Pes21,
+            pes_2021_starts,
+            [0x2d, 0x57, 0x1d],
+            [0x35, 0x60, 0x2a],
+            3.5,
+        ),
+        (
+            PesVersion::Pes19,
+            pes_2021_starts,
+            [0x2d, 0x57, 0x1d],
+            [0x35, 0x60, 0x2a],
+            3.5,
+        ),
+    ] {
+        let image = turf_image(pitch_look(version));
+        assert_eq!(image.size, TURF_SIZE);
+        // A row's or band's mean channel.
+        let mean = |rows: &[usize], channel: usize| {
+            let (mut sum, mut n) = (0.0f64, 0usize);
+            for &y in rows {
+                for x in 0..image.width() {
+                    sum += f64::from(image.pixels[y * image.width() + x][channel]);
+                    n += 1;
+                }
+            }
+            sum / n as f64
+        };
+        // Band `band`'s rows: from its start (0 for the first) to the
+        // next one's (the texture's height for the last).
+        let rows_of = |band: usize| {
+            let top = if band == 0 { 0 } else { starts[band - 1] };
+            let bottom = starts.get(band).copied().unwrap_or(image.height());
+            (top..bottom).collect::<Vec<usize>>()
+        };
+        for band in 0..=starts.len() {
+            let base = if band % 2 == 0 { dark } else { light };
+            let rows = rows_of(band);
+            for (channel, &base) in base.iter().enumerate() {
+                assert!(
+                    (mean(&rows, channel) - f64::from(base)).abs() <= 1.0,
+                    "{version:?} band {band} channel {channel}"
+                );
+                // Its first and last row alone too: a boundary one row
+                // off puts one of them in the neighbouring band.
+                for row in [rows[0], rows[rows.len() - 1]] {
+                    assert!(
+                        (mean(&[row], channel) - f64::from(base)).abs() <= 2.0,
+                        "{version:?} band {band} row {row} channel {channel}"
+                    );
+                }
             }
         }
-        sum / n as f64
-    };
-    let rows_of = |band: usize| {
-        (0..image.height())
-            .filter(|&y| y * TURF_BANDS / image.height() == band)
-            .collect::<Vec<usize>>()
-    };
-    let channels = |colour: egui::Color32| [colour.r(), colour.g(), colour.b()];
-    let dark = channels(Palette::DARK.turf_dark_band);
-    let light = channels(Palette::DARK.turf_light_band);
-    for band in 0..TURF_BANDS {
-        let base = if band % 2 == 0 { dark } else { light };
-        for (channel, &base) in base.iter().enumerate() {
-            assert!(
-                (mean(&rows_of(band), channel) - f64::from(base)).abs() <= 1.0,
-                "band {band} channel {channel}"
-            );
+        // Dark at both ends, light in the middle.
+        for (row, base) in [(0usize, dark), (575, dark), (288, light)] {
+            for (channel, &base) in base.iter().enumerate() {
+                assert!(
+                    (mean(&[row], channel) - f64::from(base)).abs() <= 1.0,
+                    "{version:?} row {row} channel {channel}"
+                );
+            }
         }
+        // The grain, away from band 1's edges.
+        let lumas: Vec<f64> = (starts[0] + 1..starts[1] - 1)
+            .flat_map(|y| (0..image.width()).map(move |x| (y, x)))
+            .map(|(y, x)| f64::from(image.pixels[y * image.width() + x].intensity()) * 255.0)
+            .collect();
+        let mean_luma = lumas.iter().sum::<f64>() / lumas.len() as f64;
+        let std = (lumas.iter().map(|l| (l - mean_luma).powi(2)).sum::<f64>() / lumas.len() as f64)
+            .sqrt();
+        assert!(
+            (grain - 0.5..=grain + 0.5).contains(&std),
+            "{version:?}: the grain's luma deviation {std}"
+        );
+        assert_eq!(
+            turf_image(pitch_look(version)).pixels,
+            image.pixels,
+            "{version:?}: deterministic"
+        );
     }
-    // Bands 0 and 10 are dark (both ends), band 5 light.
-    for (row, base) in [(0usize, dark), (575, dark), (288, light)] {
-        for (channel, &base) in base.iter().enumerate() {
-            assert!(
-                (mean(&[row], channel) - f64::from(base)).abs() <= 1.0,
-                "row {row} channel {channel}"
-            );
-        }
-    }
-    // The grain, away from band 1's edges.
-    let lumas: Vec<f64> = (53..=103)
-        .flat_map(|y| (0..image.width()).map(move |x| (y, x)))
-        .map(|(y, x)| f64::from(image.pixels[y * image.width() + x].intensity()) * 255.0)
-        .collect();
-    let mean_luma = lumas.iter().sum::<f64>() / lumas.len() as f64;
-    let std =
-        (lumas.iter().map(|l| (l - mean_luma).powi(2)).sum::<f64>() / lumas.len() as f64).sqrt();
-    assert!(
-        (3.0..=4.0).contains(&std),
-        "the grain's luma deviation {std}"
-    );
-    assert_eq!(
-        turf_image(&Palette::DARK).pixels,
-        image.pixels,
-        "deterministic"
-    );
 }
 
-// The grain itself, pixel-exact on row 0's dark band: the fixed-seed
-// xorshift32's known answer.
+// The grain itself, pixel-exact on row 0's dark band of PES 2021's
+// look: the fixed-seed xorshift32's known answer.
 #[test]
 fn the_turf_grain_is_the_fixed_seed_xorshift() {
-    let image = turf_image(&Palette::DARK);
+    let image = turf_image(pitch_look(PesVersion::Pes21));
     for (x, expected) in [
         egui::Color32::from_rgb(43, 85, 27),
         egui::Color32::from_rgb(50, 92, 34),
@@ -191,107 +229,177 @@ fn the_turf_grain_is_the_fixed_seed_xorshift() {
     }
 }
 
-// The lines, read off the painted shapes in canvas-relative
-// coordinates: the halfway line, the centre circle,
+// The lines `pitch` paints for each version, read off the painted shapes
+// in canvas-relative coordinates: the halfway line, the centre circle,
 // the two penalty boxes and goal areas as segments, the two arcs as
-// paths; every stroke white at 20%, 2 px wide.
+// paths; every stroke white at 20%, 2 px wide. PES 2017's screen: goal
+// lines at 0 and 382, the halfway line at 191, circle 29, box 130 by
+// 52.3, goal area 62 by 15.7, arc 28.5 about the spot 38 from the goal
+// line. PES 2021's: 0 and 384, 192, 37, 160 by 66, 74 by 22, 36 about
+// 44. A version not measured yet (PES 2019) paints PES 2021's.
 #[test]
-fn the_painted_lines_are_the_screens_markings() {
-    let mut window = Headless::sized(600.0, 450.0);
-    let mut tactics = fixture_tactics(PesVersion::Pes21);
-    let mut view = TacticsView::default();
-    let rows = fixture_rows(PesVersion::Pes21);
-    let roster = roster_rows(&rows);
-
-    let (nodes, shapes) = window.pitch_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
-    let canvas = canvas_rect(&nodes);
-    let at = |x: f32, y: f32| canvas.min + egui::vec2(x, y);
-    let mut segments: Vec<egui::Rect> = shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::LineSegment { points, stroke }
-                if stroke.color == Palette::DARK.pitch_lines =>
-            {
-                assert_eq!(stroke.width, 2.0, "every line 2 px");
-                Some(egui::Rect::from_two_pos(points[0], points[1]))
-            }
-            _ => None,
-        })
-        .collect();
-    segments.sort_by(|a, b| {
-        (a.min.y, a.min.x, a.max.y, a.max.x)
-            .partial_cmp(&(b.min.y, b.min.x, b.max.y, b.max.x))
-            .expect("ordered bounds")
-    });
-    let rect = |a: (f32, f32), b: (f32, f32)| egui::Rect::from_two_pos(at(a.0, a.1), at(b.0, b.1));
-    assert_eq!(
-        segments,
-        [
-            rect((80.0, 0.0), (80.0, 66.0)),
-            rect((123.0, 0.0), (123.0, 22.0)),
-            rect((197.0, 0.0), (197.0, 22.0)),
-            rect((240.0, 0.0), (240.0, 66.0)),
-            rect((123.0, 22.0), (197.0, 22.0)),
-            rect((80.0, 66.0), (240.0, 66.0)),
-            rect((0.0, 192.0), (320.0, 192.0)),
-            rect((80.0, 318.0), (240.0, 318.0)),
-            rect((80.0, 318.0), (80.0, 384.0)),
-            rect((240.0, 318.0), (240.0, 384.0)),
-            rect((123.0, 362.0), (197.0, 362.0)),
-            rect((123.0, 362.0), (123.0, 384.0)),
-            rect((197.0, 362.0), (197.0, 384.0)),
-        ],
-        "the halfway line and the twelve box segments"
-    );
-    let circles: Vec<(egui::Pos2, f32)> = shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::Circle(shape) if shape.stroke.color == Palette::DARK.pitch_lines => {
-                assert_eq!(shape.stroke.width, 2.0);
-                Some((shape.center, shape.radius))
-            }
-            _ => None,
-        })
-        .collect();
-    assert_eq!(circles, [(at(160.0, 192.0), 36.0)], "the centre circle");
-    let mut arcs: Vec<Vec<egui::Pos2>> = shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::Path(shape)
-                if matches!(
-                    shape.stroke.color,
-                    egui::epaint::ColorMode::Solid(color) if color == Palette::DARK.pitch_lines
-                ) =>
-            {
-                assert_eq!(shape.stroke.width, 2.0);
-                assert!(!shape.closed, "the arc is an open path");
-                Some(shape.points.clone())
-            }
-            _ => None,
-        })
-        .collect();
-    arcs.sort_by(|a, b| a[0].y.partial_cmp(&b[0].y).expect("ordered arcs"));
-    assert_eq!(arcs.len(), 2, "one arc per end");
-    // Each arc: 17 points on the centre circle's radius about the spot
-    // 44 from its goal line, only the part beyond the box's far edge.
-    for (points, spot, top) in [
-        (arcs[0].as_slice(), at(160.0, 44.0), true),
-        (arcs[1].as_slice(), at(160.0, 340.0), false),
+fn the_painted_lines_are_each_screens_markings() {
+    type Segment = ((f32, f32), (f32, f32));
+    let pes_2021: [Segment; 13] = [
+        ((80.0, 0.0), (80.0, 66.0)),
+        ((123.0, 0.0), (123.0, 22.0)),
+        ((197.0, 0.0), (197.0, 22.0)),
+        ((240.0, 0.0), (240.0, 66.0)),
+        ((123.0, 22.0), (197.0, 22.0)),
+        ((80.0, 66.0), (240.0, 66.0)),
+        ((0.0, 192.0), (320.0, 192.0)),
+        ((80.0, 318.0), (240.0, 318.0)),
+        ((80.0, 318.0), (80.0, 384.0)),
+        ((240.0, 318.0), (240.0, 384.0)),
+        ((123.0, 362.0), (197.0, 362.0)),
+        ((123.0, 362.0), (123.0, 384.0)),
+        ((197.0, 362.0), (197.0, 384.0)),
+    ];
+    let pes_2017: [Segment; 13] = [
+        ((95.0, 0.0), (95.0, 52.3)),
+        ((129.0, 0.0), (129.0, 15.7)),
+        ((191.0, 0.0), (191.0, 15.7)),
+        ((225.0, 0.0), (225.0, 52.3)),
+        ((129.0, 15.7), (191.0, 15.7)),
+        ((95.0, 52.3), (225.0, 52.3)),
+        ((0.0, 191.0), (320.0, 191.0)),
+        ((95.0, 329.7), (225.0, 329.7)),
+        ((95.0, 329.7), (95.0, 382.0)),
+        ((225.0, 329.7), (225.0, 382.0)),
+        ((129.0, 366.3), (191.0, 366.3)),
+        ((129.0, 366.3), (129.0, 382.0)),
+        ((191.0, 366.3), (191.0, 382.0)),
+    ];
+    // Per version: the box segments with the halfway line, the halfway
+    // line's y and the circle's radius, the arc's radius, its two spots'
+    // y and the box's depth.
+    for (version, expected, halfway, circle, radius, spots, box_depth) in [
+        (
+            PesVersion::Pes17,
+            pes_2017,
+            191.0,
+            29.0,
+            28.5,
+            [38.0, 344.0],
+            52.3,
+        ),
+        (
+            PesVersion::Pes21,
+            pes_2021,
+            192.0,
+            37.0,
+            36.0,
+            [44.0, 340.0],
+            66.0,
+        ),
+        (
+            PesVersion::Pes19,
+            pes_2021,
+            192.0,
+            37.0,
+            36.0,
+            [44.0, 340.0],
+            66.0,
+        ),
     ] {
-        assert_eq!(points.len(), 17, "the arc's points");
-        for point in points {
+        let mut window = Headless::sized(600.0, 450.0);
+        let mut tactics = fixture_tactics(PesVersion::Pes21);
+        let mut view = TacticsView::default();
+        let rows = fixture_rows(PesVersion::Pes21);
+        let roster = roster_rows(&rows);
+
+        let (nodes, shapes) = window.pitch_paint(version, &mut tactics, &mut view, &roster);
+        let canvas = canvas_rect(&nodes);
+        let at = |x: f32, y: f32| canvas.min + egui::vec2(x, y);
+        let mut segments: Vec<egui::Rect> = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::LineSegment { points, stroke }
+                    if stroke.color == Palette::DARK.pitch_lines =>
+                {
+                    assert_eq!(stroke.width, 2.0, "every line 2 px");
+                    Some(egui::Rect::from_two_pos(points[0], points[1]))
+                }
+                _ => None,
+            })
+            .collect();
+        segments.sort_by(|a, b| {
+            (a.min.y, a.min.x, a.max.y, a.max.x)
+                .partial_cmp(&(b.min.y, b.min.x, b.max.y, b.max.x))
+                .expect("ordered bounds")
+        });
+        assert_eq!(
+            segments.len(),
+            13,
+            "{version:?}: the halfway line and the twelve box segments"
+        );
+        for (segment, (a, b)) in segments.iter().zip(expected) {
+            let rect = egui::Rect::from_two_pos(at(a.0, a.1), at(b.0, b.1));
             assert!(
-                (point.distance(spot) - 36.0).abs() <= 0.01,
-                "{point:?} on the circle"
+                segment.min.distance(rect.min) <= 0.01 && segment.max.distance(rect.max) <= 0.01,
+                "{version:?}: {segment:?} is {rect:?}"
             );
-            assert!(
-                if top {
-                    point.y >= spot.y + 22.0 - 0.01
-                } else {
-                    point.y <= spot.y - 22.0 + 0.01
-                },
-                "{point:?} beyond the box's far edge"
-            );
+        }
+        let circles: Vec<(egui::Pos2, f32)> = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Circle(shape) if shape.stroke.color == Palette::DARK.pitch_lines => {
+                    assert_eq!(shape.stroke.width, 2.0);
+                    Some((shape.center, shape.radius))
+                }
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            circles,
+            [(at(160.0, halfway), circle)],
+            "{version:?}: the centre circle"
+        );
+        let mut arcs: Vec<Vec<egui::Pos2>> = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Path(shape)
+                    if matches!(
+                        shape.stroke.color,
+                        egui::epaint::ColorMode::Solid(color) if color == Palette::DARK.pitch_lines
+                    ) =>
+                {
+                    assert_eq!(shape.stroke.width, 2.0);
+                    assert!(!shape.closed, "the arc is an open path");
+                    Some(shape.points.clone())
+                }
+                _ => None,
+            })
+            .collect();
+        arcs.sort_by(|a, b| a[0].y.partial_cmp(&b[0].y).expect("ordered arcs"));
+        assert_eq!(arcs.len(), 2, "{version:?}: one arc per end");
+        // Each arc: 17 points on its radius about the spot, only the part
+        // beyond the box's far edge (the box's depth less the spot's, the
+        // top spot being as far from its goal line at 0), its two ends on
+        // that edge.
+        let beyond = box_depth - spots[0];
+        for (points, spot, into_field) in [
+            (arcs[0].as_slice(), at(160.0, spots[0]), 1.0),
+            (arcs[1].as_slice(), at(160.0, spots[1]), -1.0),
+        ] {
+            assert_eq!(points.len(), 17, "the arc's points");
+            let edge = spot.y + into_field * beyond;
+            for point in points {
+                assert!(
+                    (point.distance(spot) - radius).abs() <= 0.01,
+                    "{version:?}: {point:?} on the circle"
+                );
+                assert!(
+                    into_field * (point.y - edge) >= -0.01,
+                    "{version:?}: {point:?} beyond the box's far edge"
+                );
+            }
+            for end in [points[0], points[16]] {
+                assert!(
+                    (end.y - edge).abs() <= 0.01,
+                    "{version:?}: the arc's end {end:?} on the box's far edge"
+                );
+            }
         }
     }
 }
