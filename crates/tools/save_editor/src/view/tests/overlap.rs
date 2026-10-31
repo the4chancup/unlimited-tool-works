@@ -375,35 +375,56 @@ fn menu_dialogs(version: PesVersion) -> Screens {
     screens
 }
 
-/// The Multi-team AATF dialog listing every team, then its range reversed,
-/// which lists none.
+/// The Multi-team AATF dialog with its last end just widened to the save's
+/// last team, the first team's list dimmed and marked checking, then
+/// listing every team once checked.
 fn multi_aatf(version: PesVersion) -> Screens {
     let (mut view, mut window) =
         from_menu(version, "multi_aatf", "Savefile", "Multi-team AATF\u{2026}");
+    let landed = |view: &SaveView, all: bool| {
+        let check = &view.multi_aatf.check;
+        let teams = view
+            .session
+            .as_ref()
+            .expect("an open save")
+            .file()
+            .teams()
+            .len();
+        check.pending.is_none()
+            && check
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| (key.ids.len() == teams) == all)
+    };
     frames_until(
         &mut window,
         &mut view,
-        |view| view.multi_aatf.check.pending.is_none() && view.multi_aatf.check.result.is_some(),
+        |view| landed(view, false),
         "the Multi-team AATF check never returned",
     );
-    let listed = settled_over(&mut window, &mut view, "Multi-team AATF");
-    let names: Vec<String> = {
+    let last = {
         let file = view.session.as_ref().expect("an open save").file();
-        let mut ids: Vec<u32> = file.teams().iter().map(|team| team.id).collect();
-        ids.sort_unstable();
-        ids.iter()
-            .take(2)
-            .map(|&id| format!("{id} {}", display_name(&file.team(id).unwrap().name)))
-            .collect()
+        let id = file
+            .teams()
+            .iter()
+            .map(|team| team.id)
+            .max()
+            .expect("a team");
+        format!("{id} {}", display_name(&file.team(id).unwrap().name))
     };
-    // The last end first: the range in between is the first team alone,
-    // so no check of the whole save runs again before the reversal.
-    super::savefile::pick_range_end(&mut window, &mut view, 1, &names[0]);
-    super::savefile::pick_range_end(&mut window, &mut view, 0, &names[1]);
-    let reversed = settled_over(&mut window, &mut view, "Multi-team AATF");
+    super::savefile::pick_range_end(&mut window, &mut view, 1, &last);
+    // `settled`'s three frames are well inside the range's 500 ms rest.
+    let checking = settled_over(&mut window, &mut view, "Multi-team AATF");
+    frames_until(
+        &mut window,
+        &mut view,
+        |view| landed(view, true),
+        "the Multi-team AATF check of every team never returned",
+    );
+    let listed = settled_over(&mut window, &mut view, "Multi-team AATF");
     vec![
+        ("Multi-team AATF, checking", checking),
         ("Multi-team AATF, listed", listed),
-        ("Multi-team AATF, reversed", reversed),
     ]
 }
 
