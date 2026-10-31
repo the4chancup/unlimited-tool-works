@@ -2986,3 +2986,5 @@ worklog passed 7,000 lines.
   Reusable scratch scripts moved to `scripts/` (`8cca28ed`), the agents' own to `~/.claude/tools/` (`ebe92a99`).
 - 2026-11-01 — 0.0.1cv cv26 merged `572f4f0f`: Multi-team AATF's range opens on one team, its last end
   clamped to the first, checked once the ends rest 500 ms (the wheel's ~2-minute freeze). cv18-cv26 all merged.
+- 2026-11-01 — Candidate 0.0.1d staged at `1fe6c9bf` for the maintainer and the DBC7 organizer (full gates green, 5534
+  tests): the height findings name their players, plus cv14-cv26; its `check-aatf --rules dbc7` prints cv16b's lines.
