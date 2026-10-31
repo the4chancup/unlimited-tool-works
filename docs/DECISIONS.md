@@ -14419,3 +14419,15 @@ save itself (the maintainer's choice of the two). The plan had dropped them as "
 given version", which no longer described what they would do.
 Plan: `plans/save_editor.md` "Feature inventory" (File operations, the hidden shortcuts rows),
 SE-GUI-26.
+
+## 2026-10-31 — save_editor — An edit keeps each pitch badge's last medal outline until the re-read lands
+Decision: while the medal run for a newer revision of the open save is in flight, the badges
+draw the last answer held for the same team and ruleset (per roster slot, as before); a team
+or ruleset change still draws no outline until its own answer lands, and every edit still
+starts a re-read once it settles.
+Why: the outlines were dropped whenever the save's revision moved, so every drag on the pitch
+blinked them all off and on (the maintainer, 2026-10-31). Skipping the re-read on a formation
+edit is not the fix: a tier may test where a player is fielded (`fielded_only_at`). The
+lookup stays per roster slot: a pitch move or swap changes the formation and the starting
+eleven, never which player holds a roster slot, so the held answer stays his.
+Plan: `plans/save_editor.md` "Tactics editor", the medal outline paragraph.

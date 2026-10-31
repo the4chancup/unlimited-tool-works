@@ -881,6 +881,11 @@ Win32 original hurt the most):
   not load, or none, gets no outline. An outline, not the badge filled in the metal: on the
   three metals the position colours read at a contrast of 1.0 to 2.4 and white at 1.8 to 3.1.
   Join mode's fill (`#005c80`) replaces the dark one under the outline while armed.
+  The medals are read off the drawing thread (23 script calls, about 95 ms on a PES 2021
+  team), so the outlines appear a moment after a team or ruleset is picked. An edit re-reads
+  them too, since a tier may test where a player is fielded (`fielded_only_at`), but the
+  badges keep the team's last outlines until the new reading lands: dropping them all
+  meanwhile made every outline blink at each drag on the pitch.
 - **Formation pictures.** Built after 0.0.1, which ships without them. The Team menu's
   "Save a picture of the formations…" writes one PNG
   of the selected row's team through a dialog of the tool's own, not rfd's save-file dialog,
