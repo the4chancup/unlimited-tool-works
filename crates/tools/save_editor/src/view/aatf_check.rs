@@ -205,6 +205,11 @@ pub(super) fn results(
                 team_name: name,
                 players: &listed[i],
                 violations,
+                starting_eleven: &file
+                    .team(*id)
+                    .expect("every checked id is a team of the open file")
+                    .tactics
+                    .starting_eleven,
             }),
         }
     }
