@@ -2353,17 +2353,19 @@ mod tests {
 
     /// An `ExtraHeight`'s draws by bracket and centimetres, most first,
     /// each line counting them, naming the bracket by its label and adding
-    /// up its centimetres; roster order inside a line.
+    /// up its centimetres; roster order inside a line. Tall draws at two
+    /// centimetres and Tall and Mid at one keep three lines apart, which a
+    /// grouping by the bracket or the centimetres alone would merge.
     #[test]
     fn an_extra_heights_lines_group_its_draws_by_bracket_and_centimetres() {
         let kind = aatf::ViolationKind::ExtraHeight {
-            used: 40,
-            total: 50,
+            used: 30,
+            total: 25,
             draws: vec![
                 (0, "mid".to_string(), 5),
                 (1, "mid".to_string(), 5),
                 (5, "tall".to_string(), 10),
-                (8, "tall".to_string(), 10),
+                (8, "tall".to_string(), 5),
                 (12, "mid".to_string(), 5),
             ],
         };
@@ -2374,8 +2376,9 @@ mod tests {
                 dbc7_17()
             ),
             [
-                "2 in Tall slots, 10 cm each (20): BANG BANG BANKI BANKI SEKIIIIBANKI, dokidoki wakuwaku",
+                "1 in Tall slots, 10 cm each (10): BANG BANG BANKI BANKI SEKIIIIBANKI",
                 "3 in Mid slots, 5 cm each (15): Stack Bros., HELLOHELL, Kenkon Itteki!",
+                "1 in Tall slots, 5 cm each (5): dokidoki wakuwaku",
             ]
         );
     }
