@@ -6064,10 +6064,26 @@ briefs, review loops, gates and mutation runs as for any step.
     DX12 alone, with outliers near 6 s in both, so under load the time goes between the
     window and the first frame and not mainly to the backends' probing. The maintainer's
     target: the first frame under one second, two at most; met at rest, missed under load (a
-    per-run series: 3 of 10 at 2.3-3.0 s, earlier series up to ~6 s). Open: timestamps in
-    the startup (eframe's creator, the first `update`'s start and end) to find that time; then
-    DX12 alone on Windows (WARP stays its fallback; Linux keeps Vulkan and GL), a ~110 ms gain
-    at rest. Both need a release build: after pes_savefile's mutation run frees the slots
+    per-run series: 3 of 10 at 2.3-3.0 s, earlier series up to ~6 s).
+    Startup marks, 2026-10-31 (a temporary instrumented release build, never committed:
+    `main`, `run_gui`, `run_native`, eframe's creator, the first frames; `.tmp/0_0_1cv/`
+    `cv13_marks.py`, `cv13_interleave.py`, which runs the four setups in turn per round and
+    logs the global CPU use over each run; results in `cv13_times.txt`). Everything before
+    `run_native` takes ~35 ms and the creator and first frame ~30-60 ms: the time is eframe's
+    window and graphics setup between them. Idle, interleaved (8 rounds): first frame median
+    601 ms as is, 467 DX12 alone, 487 Vulkan alone, 644 GL alone; the setup 528 ms as is,
+    ~390-410 with one backend, so probing the extra backends costs ~120-140 ms. At 100% CPU
+    (the workspace gates at 8 below-normal jobs, rounds 1-4): as is 4.9-6.6 s in four runs of
+    five, DX12 alone 5.9-7.1 s in three of five, Vulkan 3.6-6.6 s in two of four, GL steady at
+    1.1-1.2 s; the app itself runs at Normal priority (a launched child's class is 0x20), so
+    CPU scheduling alone does not explain the stall. DX12 alone is no fix under load. Next:
+    the same series under a CPU-only load (below-normal spinners) and a disk-only load
+    (a large file copy), to tell CPU from disk contention (below-normal priority lowers a
+    build's CPU share, not its disk I/O), then a WPR trace of one stalled start if neither
+    alone reproduces it. One backend at rest (~130 ms) is decided after that: if the stall is the drivers'
+    loading, the backend set may matter more under load than at rest. A stall that is disk
+    contention alone is accepted (the maintainer, 2026-10-31: members rarely run heavy
+    builds while working on cup files); one that is CPU contention is not
   - [x] cv14 a ruleset may allow illegal formations (the maintainer, 2026-10-31): the Whack
     Patch, a modded PES 2017 exe, no longer rejects formations the game's own drag cannot make;
     4cc Autumn 26 (PES 2017) uses it and allows them (its saves hold some: /jp/ and /s4s/ on
@@ -6179,7 +6195,11 @@ briefs, review loops, gates and mutation runs as for any step.
         A4-2, A4-4, A5-3, A6-5, A6-6 dropped, A4-5 confirmed, A4-6, A6-3, A6-4 unreached and
         left to the whole-crate run) with SWE-2 round 1's accepted items
         (`.tmp/argon/rulings_cvA1.md`), one Opus brief (`brief_cvA1r.md`, branch `cvA1r` in
-        `wt-cvA1r`); then SWE-2 round 2 and Astra
+        `wt-cvA1r`): `6c97b9a7` (a renamed PES 15 or 16 Texport lists its new name, PES 15's
+        layout read on its real file; the survivors' tests), merged `6af1e0a7`; `gates-changed
+        7997ef4d` green on `e78d1f33`. S1b2-3 rejected on the sidekick's evidence; new: a
+        stored-range refusal names the stored value (`wave_level = 7` reads "8 is outside 0 to
+        7"), fixed with round 2's rework. Open: SWE-2 round 2, Astra, `mutants-diff`
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450
