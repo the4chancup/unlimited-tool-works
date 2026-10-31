@@ -14730,3 +14730,39 @@ Why: egui shows a panel's resize edge only under the pointer, so an open dock ga
 could be resized. The fade is a gradient, not a shadow, and it says a list goes on; the
 drafts lacked it, so the drafts gain it rather than the app losing it, keeping the two alike.
 Plan: `plans/core/gui.md` "Log panel" and ST-LOG-04 (the grip), the theme row (the fade).
+
+## 2026-11-01 — drafts — the simulated window's title bar is the app's on Windows 10
+Decision (maintainer): the drafts' title bar copies the app's as captured: 30 points tall, the
+title in white Segoe UI 12 after a 30-point gap, and minimize, maximize and close buttons.
+Minimize parks the window at the desktop's bottom left as its title bar alone; close asks the
+tools as the window's close does, then takes the window off the page until a reload.
+Why: the bar drawn in the app's font, 23 points tall, with one button, made the drafts' top
+read unlike the app's. Close is an easter egg (a reload brings the window back), and asking
+the tools first keeps the close prompt reachable from where a member would look for it.
+Plan: `plans/core/gui.md` "Prototypes before implementation", the Fonts and Size bullets.
+
+## 2026-11-01 — gui — Studio Web's window has minimize, maximize and close; close ends the session
+Decision (maintainer): Studio Web's window gets the desktop window's three caption buttons,
+as the drafts' window has them; the page loads with the window open, and a window closed
+completely leaves a small `Reopen LTW` button at the page's centre. The lead's part: the close ends the session (the reopened window starts
+fresh, settings kept) rather than hiding it, and the tab's own close or reload asks too while
+a tool would hold the close (`beforeunload`).
+Why: the window's close runs the tools' close prompts, which save or discard the work, so a
+window reopened with that work would contradict the prompt's Discard; minimize is the way to
+put it aside and get it back. Without `beforeunload`, closing the tab would drop unsaved work
+with no question while the window's own close asks.
+Plan: `plans/core/gui.md` "Browser deployment: Studio Web", the first difference bullet.
+
+## 2026-11-01 — project — the browser edition is Limited Tool Works (LTW)
+Decision (maintainer): members know the browser edition as Limited Tool Works, LTW for short;
+Studio Web stays its codename, as Studio stays the suite's. Its About box says it is the lite
+browser edition of Unlimited Tool Works; nothing else in the app does, since wherever the page
+is linked for members says so.
+Why: the edition's name has to say it does less than the desktop's (no Match tracker, which
+cannot read a game's memory from a browser; single-team compiles), and "Limited", a joke on
+the suite's name the community has made before, says it. "Unlimited Tool Works Online" was
+the first choice, dropped because "Online" says where it runs rather than that it is lite,
+and suggests that files are uploaded where none are; its short form, UTWeb, did not follow
+from it either.
+Plan: `plans/core/development_plan.md` "The browser edition's name"; `plans/core/gui.md`
+"Browser deployment: Studio Web".
