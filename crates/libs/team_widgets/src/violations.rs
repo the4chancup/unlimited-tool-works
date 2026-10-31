@@ -27,6 +27,9 @@ pub struct ListedPlayer<'a> {
     /// The name as the save stores it: the host passes the raw name (colour
     /// codes included), the header draws it code-free.
     pub name: &'a str,
+    /// His own height in cm: a height row's line names it after him when the check read
+    /// another (his height less an allowance).
+    pub height: u8,
 }
 
 /// One team's check: its players by slot and `aatf::Rules::check_team`'s violations, in the
@@ -137,7 +140,9 @@ pub fn violations_list(
             for (slot, violations) in groups {
                 group_header(ui, team, slot);
                 for violation in violations {
-                    if let Some(player) = row(ui, team.team_id, violation, wording, selects) {
+                    if let Some(player) =
+                        row(ui, team.team_id, team.players, violation, wording, selects)
+                    {
                         selected = Some(player);
                     }
                 }
@@ -167,7 +172,9 @@ pub fn violations_list(
                         .iter()
                         .filter(|v| v.slot == slot && v.severity == aatf::Severity::Suggestion)
                     {
-                        if let Some(player) = row(ui, team.team_id, violation, wording, selects) {
+                        if let Some(player) =
+                            row(ui, team.team_id, team.players, violation, wording, selects)
+                        {
                             selected = Some(player);
                         }
                     }
@@ -238,6 +245,120 @@ pub fn violation_line(violation: &aatf::Violation, team_id: u32, wording: Wordin
         rule_name(&violation.kind),
         sentence(violation, team_id, wording)
     )
+}
+
+/// The lines under a height row naming its players, the draft's
+/// `violationDetail`. A `BracketQuota`'s players are grouped by the height
+/// the check read, tallest first (`At 185: Stack Bros. (189), HELLOHELL`), a
+/// player whose own height differs from it with his own after his name. An
+/// `ExtraHeight`'s draws are grouped by bracket and centimetres, most first
+/// (`6 in Tall slots, 10 cm each (60): …`), the bracket by its label in
+/// `wording.ruleset`. Inside a line the players stand in roster order, named
+/// code-free from `players` (the team's); a slot none of them holds reads
+/// `Slot {slot}`, as the group headers name it. Every other kind has none.
+pub fn violation_detail(
+    violation: &aatf::Violation,
+    players: &[ListedPlayer<'_>],
+    wording: Wording<'_>,
+) -> Vec<String> {
+    let player = |slot: u8| players.iter().find(|player| player.slot == slot);
+    let name = |slot: u8| {
+        player(slot).map_or_else(
+            || format!("Slot {slot}"),
+            |player| pes_savefile::model::names::display_name(player.name),
+        )
+    };
+    use aatf::ViolationKind as K;
+    match &violation.kind {
+        K::BracketQuota { players: read, .. } => {
+            let mut read = read.clone();
+            read.sort_by_key(|&(slot, cm)| (std::cmp::Reverse(cm), slot));
+            grouped(read.iter().map(|&(slot, cm)| (cm, slot)))
+                .into_iter()
+                .map(|(cm, slots)| {
+                    let names: Vec<String> = slots
+                        .into_iter()
+                        .map(|slot| match player(slot) {
+                            Some(own) if own.height != cm => {
+                                format!("{} ({})", name(slot), own.height)
+                            }
+                            _ => name(slot),
+                        })
+                        .collect();
+                    format!("At {cm}: {}", names.join(", "))
+                })
+                .collect()
+        }
+        K::ExtraHeight { draws, .. } => {
+            let mut draws = draws.clone();
+            draws.sort_by_key(|&(slot, _, cm)| (std::cmp::Reverse(cm), slot));
+            grouped(
+                draws
+                    .iter()
+                    .map(|(slot, bracket, cm)| ((bracket.as_str(), *cm), *slot)),
+            )
+            .into_iter()
+            .map(|((bracket, cm), slots)| {
+                let names: Vec<String> = slots.iter().map(|&slot| name(slot)).collect();
+                format!(
+                    "{} in {} slots, {cm} cm each ({}): {}",
+                    slots.len(),
+                    bracket_label(wording.ruleset, bracket),
+                    slots.len() * usize::from(cm),
+                    names.join(", ")
+                )
+            })
+            .collect()
+        }
+        K::RegisteredNotA { .. }
+        | K::PositionRange
+        | K::FieldedNotA { .. }
+        | K::BRating { .. }
+        | K::GkSecondA { .. }
+        | K::Age { .. }
+        | K::Weight { .. }
+        | K::PlayingStyleRange
+        | K::NoTier { .. }
+        | K::Stat { .. }
+        | K::StatTotal { .. }
+        | K::Form { .. }
+        | K::InjuryResistance { .. }
+        | K::WeakFootUsage { .. }
+        | K::WeakFootAccuracy { .. }
+        | K::NameColor { .. }
+        | K::Cards { .. }
+        | K::MinCards { .. }
+        | K::SkillCardCap { .. }
+        | K::ComStyleCap { .. }
+        | K::RequiredCard { .. }
+        | K::APositions { .. }
+        | K::Height { .. }
+        | K::TierCount { .. }
+        | K::MedalSystem { .. }
+        | K::NearestSystem { .. }
+        | K::Captain
+        | K::Goalkeepers { .. }
+        | K::TeamSetting { .. }
+        | K::FormationShape { .. }
+        | K::Special { .. }
+        | K::Custom { .. }
+        | K::Unused { .. }
+        | K::UnusedChoice { .. }
+        | K::RosterOrder { .. } => Vec::new(),
+    }
+}
+
+/// `items`' slots grouped by their key: the groups in the order their keys
+/// first appear, each group's slots in `items`' order.
+fn grouped<K: PartialEq>(items: impl Iterator<Item = (K, u8)>) -> Vec<(K, Vec<u8>)> {
+    let mut groups: Vec<(K, Vec<u8>)> = Vec::new();
+    for (key, slot) in items {
+        match groups.iter_mut().find(|(group, _)| *group == key) {
+            Some((_, slots)) => slots.push(slot),
+            None => groups.push((key, vec![slot])),
+        }
+    }
+    groups
 }
 
 /// The rule a violation breaks, named in words (`Fielded position`, `Tier
@@ -320,18 +441,21 @@ fn layout(
 /// One row, the draft's `.drow`: the rule's name in `RULE_COL` points of
 /// severity-colored proportional text, one line cut with an ellipsis (the
 /// draft's `text-overflow: ellipsis`), then `sentence` in the strong text
-/// color, wrapped so a long custom check's text stays readable; the whole row
+/// color, wrapped so a long custom check's text stays readable, and under it
+/// `violation_detail`'s lines (the draft's `.drow.detail`) over `players`, the
+/// team's, in the plain text color, wrapped in the same column; the whole row
 /// one click target. While `selects`, a player's row returns
 /// `SelectedPlayer` on click; a team row, or any row of a list that does
 /// not select, only hovers.
 fn row(
     ui: &mut egui::Ui,
     team_id: u32,
+    players: &[ListedPlayer<'_>],
     violation: &aatf::Violation,
     wording: Wording<'_>,
     selects: bool,
 ) -> Option<SelectedPlayer> {
-    let (rule_color, strong_color) = {
+    let (rule_color, strong_color, text_color) = {
         let visuals = ui.visuals();
         (
             match violation.severity {
@@ -340,6 +464,7 @@ fn row(
                 aatf::Severity::Suggestion => visuals.text_color(),
             },
             visuals.strong_text_color(),
+            visuals.text_color(),
         )
     };
     let font = egui::TextStyle::Body.resolve(ui.style());
@@ -350,15 +475,27 @@ fn row(
         rule_color,
         egui::text::TextWrapping::truncate_at_width(RULE_COL),
     );
-    let text = sentence(violation, team_id, wording);
+    let column = (ui.available_width() - RULE_COL).max(0.0);
     let sentence_galley = layout(
         ui,
-        text.clone(),
-        font,
+        sentence(violation, team_id, wording),
+        font.clone(),
         strong_color,
-        egui::text::TextWrapping::wrap_at_width((ui.available_width() - RULE_COL).max(0.0)),
+        egui::text::TextWrapping::wrap_at_width(column),
     );
-    let height = rule_galley.size().y.max(sentence_galley.size().y);
+    let detail = violation_detail(violation, players, wording);
+    let detail_galley = (!detail.is_empty()).then(|| {
+        layout(
+            ui,
+            detail.join("\n"),
+            font,
+            text_color,
+            egui::text::TextWrapping::wrap_at_width(column),
+        )
+    });
+    let sentence_height = sentence_galley.size().y;
+    let detail_height = detail_galley.as_ref().map_or(0.0, |galley| galley.size().y);
+    let height = rule_galley.size().y.max(sentence_height + detail_height);
     let fielded = if let aatf::ViolationKind::FieldedNotA {
         preset, position, ..
     } = violation.kind
@@ -383,28 +520,33 @@ fn row(
             egui::Sense::hover()
         },
     );
-    let label = violation_line(violation, team_id, wording);
+    let mut label = violation_line(violation, team_id, wording);
+    for line in &detail {
+        label.push_str("; ");
+        label.push_str(line);
+    }
     // A report's rows select nothing, so no tooltip talks of selecting.
     let hover = match (select, selects) {
         (Some(_), _) => Some("Select this player"),
         (None, true) => Some("A team-level violation"),
         (None, false) => None,
     };
-    row_paint(
-        ui,
-        response,
-        &[
-            egui::Shape::galley(rect.min, rule_galley, rule_color),
-            egui::Shape::galley(
-                rect.min + egui::vec2(RULE_COL, 0.0),
-                sentence_galley,
-                strong_color,
-            ),
-        ],
-        &label,
-        select,
-        hover,
-    )
+    let mut shapes = vec![
+        egui::Shape::galley(rect.min, rule_galley, rule_color),
+        egui::Shape::galley(
+            rect.min + egui::vec2(RULE_COL, 0.0),
+            sentence_galley,
+            strong_color,
+        ),
+    ];
+    if let Some(galley) = detail_galley {
+        shapes.push(egui::Shape::galley(
+            rect.min + egui::vec2(RULE_COL, sentence_height),
+            galley,
+            text_color,
+        ));
+    }
+    row_paint(ui, response, &shapes, &label, select, hover)
 }
 
 /// The paint and click tail the violations list's rows and the Save
@@ -800,7 +942,9 @@ mod tests {
     use pes_version::PesVersion;
 
     use super::*;
-    use crate::test_support::{Headless, centre, painted_text_color, pointer_at, text_shape};
+    use crate::test_support::{
+        Headless, centre, painted_color, painted_text_color, pointer_at, text_shape,
+    };
 
     impl Headless {
         /// One frame of `violations_list` over `teams`, returning the nodes,
@@ -908,13 +1052,15 @@ mod tests {
         aatf::Position::try_from(name.to_string()).expect("a position name")
     }
 
-    /// A `ListedPlayer` (the roster slot, id, number and name).
+    /// A `ListedPlayer` (the roster slot, id, number and name), 180 cm tall:
+    /// a test of a height row's lines sets his height itself.
     fn listed(slot: u8, id: u32, number: u16, name: &str) -> ListedPlayer<'_> {
         ListedPlayer {
             slot,
             id,
             number,
             name,
+            height: 180,
         }
     }
 
@@ -932,15 +1078,15 @@ mod tests {
             .iter()
             .enumerate()
             .filter(|(_, slot)| slot.player_id != 0)
-            .map(|(i, slot)| ListedPlayer {
-                slot: u8::try_from(i).expect("a slot fits u8"),
-                id: slot.player_id,
-                number: slot.number,
-                name: file
-                    .player(slot.player_id)
-                    .expect("a rostered player")
-                    .name
-                    .as_str(),
+            .map(|(i, slot)| {
+                let player = file.player(slot.player_id).expect("a rostered player");
+                ListedPlayer {
+                    slot: u8::try_from(i).expect("a slot fits u8"),
+                    id: slot.player_id,
+                    number: slot.number,
+                    name: player.name.as_str(),
+                    height: player.basic.height,
+                }
             })
             .collect()
     }
@@ -994,10 +1140,18 @@ mod tests {
                 "Tier count: 2 Gold players, where the rules want 1",
                 "Tier count: 0 Bronze players, where the rules want 2",
                 "Tier count: 19 Regular players, where the rules want 18",
-                "Height quota: 8 players in the Tall bracket of the Red system, where its quota is 10",
+                TALL_734,
             ]
         );
     }
+
+    /// The Red tall quota's row of 734 /lit/ with the grouping test's two
+    /// short regulars: its sentence, then its players, the 185 cm ones and
+    /// the two 189 cm goalkeepers read at 185, in roster order.
+    const TALL_734: &str = "Height quota: 8 players in the Tall bracket of the Red system, \
+        where its quota is 10; At 185: knee-chee, The Judge, Huge Orson Welles, Start With the \
+        Greeks, The Entire Western Canon (189), or, The Whale (189), Tolstoyevsky's War and \
+        Punishment, my diary desu";
 
     /// The report over two teams: 734 /lit/ of the PES 17 fixture save with
     /// the grouping test's two short regulars (its errors, and its eight
@@ -1071,7 +1225,7 @@ mod tests {
                 "Tier count: 2 Gold players, where the rules want 1",
                 "Tier count: 0 Bronze players, where the rules want 2",
                 "Tier count: 19 Regular players, where the rules want 18",
-                "Height quota: 8 players in the Tall bracket of the Red system, where its quota is 10",
+                TALL_734,
                 "714 /co/",
                 "All clean",
             ]
@@ -2134,6 +2288,204 @@ mod tests {
             ),
             "0 players in the Tall bracket of the purple system, where its quota is 10"
         );
+    }
+
+    /// DBC7's wording on a PES 2017 save: its brackets' labels (Manlet, Mid,
+    /// Tall, Giant) name a height row's lines.
+    fn dbc7_17() -> Wording<'static> {
+        static DBC7: std::sync::LazyLock<aatf::Rules> =
+            std::sync::LazyLock::new(|| aatf::builtin("dbc7").expect("dbc7 is built in"));
+        Wording {
+            ruleset: DBC7.ruleset(),
+            version: PesVersion::Pes17,
+        }
+    }
+
+    /// Players of team 897 /暁Records/ in DBC6's save, from its Team TOML:
+    /// roster slot (0-based), name and own height.
+    fn records_897() -> Vec<ListedPlayer<'static>> {
+        [
+            (0, "Stack Bros.", 189),
+            (1, "HELLOHELL", 185),
+            (2, "Let's Ghost", 180),
+            (3, "Love East", 180),
+            (5, "BANG BANG BANKI BANKI SEKIIIIBANKI", 195),
+            (8, "dokidoki wakuwaku", 195),
+            (12, "Kenkon Itteki!", 189),
+        ]
+        .into_iter()
+        .map(|(slot, name, height)| ListedPlayer {
+            height,
+            ..listed(slot, 89701 + u32::from(slot), u16::from(slot) + 1, name)
+        })
+        .collect()
+    }
+
+    /// A `BracketQuota`'s players by the height read, tallest first: a tie
+    /// in roster order whatever the field's order, a player read at
+    /// another height than his own (an allowance) with his own after his
+    /// name, a coded name drawn plain and a slot no listed player holds
+    /// named by its slot.
+    #[test]
+    fn a_bracket_quotas_lines_group_its_players_by_the_height_read() {
+        let mut players = records_897();
+        let coded = "\u{11}cff0000ffLove East";
+        players[3].name = coded;
+        let kind = aatf::ViolationKind::BracketQuota {
+            system: "giga".to_string(),
+            bracket: "mid".to_string(),
+            count: 6,
+            quota: 10,
+            players: vec![(2, 180), (12, 185), (0, 185), (3, 180), (1, 185), (20, 180)],
+        };
+        assert_eq!(
+            violation_detail(
+                &violation(None, aatf::Severity::Error, kind),
+                &players,
+                dbc7_17()
+            ),
+            [
+                "At 185: Stack Bros. (189), HELLOHELL, Kenkon Itteki! (189)",
+                "At 180: Let's Ghost, Love East, Slot 20",
+            ]
+        );
+    }
+
+    /// An `ExtraHeight`'s draws by bracket and centimetres, most first,
+    /// each line counting them, naming the bracket by its label and adding
+    /// up its centimetres; roster order inside a line.
+    #[test]
+    fn an_extra_heights_lines_group_its_draws_by_bracket_and_centimetres() {
+        let kind = aatf::ViolationKind::ExtraHeight {
+            used: 40,
+            total: 50,
+            draws: vec![
+                (0, "mid".to_string(), 5),
+                (1, "mid".to_string(), 5),
+                (5, "tall".to_string(), 10),
+                (8, "tall".to_string(), 10),
+                (12, "mid".to_string(), 5),
+            ],
+        };
+        assert_eq!(
+            violation_detail(
+                &violation(None, aatf::Severity::Error, kind),
+                &records_897(),
+                dbc7_17()
+            ),
+            [
+                "2 in Tall slots, 10 cm each (20): BANG BANG BANKI BANKI SEKIIIIBANKI, dokidoki wakuwaku",
+                "3 in Mid slots, 5 cm each (15): Stack Bros., HELLOHELL, Kenkon Itteki!",
+            ]
+        );
+    }
+
+    /// A height row's lines stand under its sentence, in the sentence's
+    /// column and the plain text colour, wrapping at the column's right edge;
+    /// the row's height covers them and its label carries them, each after
+    /// `; `.
+    #[test]
+    fn a_height_rows_lines_stand_under_its_sentence() {
+        let violations = [violation(
+            None,
+            aatf::Severity::Error,
+            aatf::ViolationKind::ExtraHeight {
+                used: 65,
+                total: 50,
+                draws: vec![
+                    (0, "mid".to_string(), 5),
+                    (1, "mid".to_string(), 5),
+                    (5, "tall".to_string(), 10),
+                    (8, "tall".to_string(), 10),
+                    (12, "mid".to_string(), 5),
+                ],
+            },
+        )];
+        let players = records_897();
+        let teams = [TeamViolations {
+            team_id: 897,
+            team_name: "/暁Records/",
+            players: &players,
+            violations: &violations,
+        }];
+        let mut window = Headless::sized(500.0, 400.0);
+        let (nodes, shapes) = window.frame(vec![], |ui| {
+            violations_list(ui, "list", &teams, dbc7_17(), ListUse::Report);
+        });
+        let label = "Extra height: 65 cm of extra height, over the pool of 50; \
+                     2 in Tall slots, 10 cm each (20): BANG BANG BANKI BANKI SEKIIIIBANKI, \
+                     dokidoki wakuwaku; 3 in Mid slots, 5 cm each (15): Stack Bros., \
+                     HELLOHELL, Kenkon Itteki!";
+        assert_eq!(
+            drawn_lines(&nodes),
+            ["897 /暁Records/", "Team-wide issues", label]
+        );
+        let row = nodes
+            .iter()
+            .find(|node| node.value() == Some(label))
+            .expect("the Extra height row")
+            .bounds()
+            .expect("bounds");
+        let sentence = text_shape(&shapes, "65 cm of extra height");
+        let lines = text_shape(&shapes, "2 in Tall slots");
+        assert_eq!(
+            lines.galley.job.text,
+            "2 in Tall slots, 10 cm each (20): BANG BANG BANKI BANKI SEKIIIIBANKI, \
+             dokidoki wakuwaku\n3 in Mid slots, 5 cm each (15): Stack Bros., HELLOHELL, \
+             Kenkon Itteki!"
+        );
+        assert_eq!(
+            painted_color(lines),
+            window.ctx.style_of(window.ctx.theme()).visuals.text_color(),
+            "the plain text colour"
+        );
+        assert!(
+            (lines.pos.x - sentence.pos.x).abs() <= 0.5,
+            "the lines start at the sentence's column"
+        );
+        assert!(
+            lines.pos.y >= sentence.pos.y + sentence.galley.rect.height() - 0.5,
+            "the lines stand under the sentence"
+        );
+        assert!(
+            lines.galley.rows.len() > 2,
+            "a line longer than the column wraps: {} rows",
+            lines.galley.rows.len()
+        );
+        assert!(
+            f64::from(lines.pos.x + lines.galley.rect.width()) <= row.x1 + 0.5,
+            "the lines do not run past the row's right edge"
+        );
+        assert!(
+            f64::from(lines.pos.y + lines.galley.rect.height()) <= row.y1 + 0.5,
+            "the row's height covers the lines"
+        );
+    }
+
+    /// Only the height rows that name players have lines: a `NearestSystem`
+    /// or a `Height` row has none.
+    #[test]
+    fn other_kinds_have_no_lines() {
+        for kind in [
+            aatf::ViolationKind::NearestSystem {
+                system: "height".to_string(),
+                off: vec![("mid".to_string(), 6, 5)],
+            },
+            aatf::ViolationKind::Height {
+                height: 183,
+                fits: vec![],
+                room: false,
+            },
+        ] {
+            assert_eq!(
+                violation_detail(
+                    &violation(Some(0), aatf::Severity::Error, kind),
+                    &records_897(),
+                    dbc7_17()
+                ),
+                Vec::<String>::new()
+            );
+        }
     }
 
     // A team the check found nothing wrong with gets no header of its own.
