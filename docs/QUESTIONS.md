@@ -24,6 +24,11 @@ names where the question came from so the context can be read there.
     matches the drafts within 1 point (2 where needed), in both themes. What still differs
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
   - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
+- **PES 2017's pitch in the drafts** (worklog cv9): the Save editor's team view with the
+  sidebar on PES 2017 (`#save_editor/team?save=pes17&pes=2017&selteam=702`) now paints PES
+  2017's own formation screen (seven bands, its colours and grain, its smaller boxes, arcs
+  and circle), and a dragged outfielder stops at y 4. A look before the app follows it;
+  side by side with the texture and the screenshot: `.tmp/0_0_1cv/pitch17/draft_pitch.png`.
 
 ## Cup practice
 
