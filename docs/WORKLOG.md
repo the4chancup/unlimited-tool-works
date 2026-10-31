@@ -5977,12 +5977,17 @@ briefs, review loops, gates and mutation runs as for any step.
     `f54cba22`; `view/sections/general.rs` and a test reading both labels (the logo
     picture's alt text stays), merged `73f5bac1`; its cross-family review rides along with
     the next Astra round (a two-label fix)
-  - [ ] cv9 the Tactics pitch as PES 2017 has it (the maintainer's PES 2017 check, 2026-10-31;
+  - [x] cv9 the Tactics pitch as PES 2017 has it (the maintainer's PES 2017 check, 2026-10-31;
     0.0.1 is PES 2017's, 0.0.2 PES 2019's for VGL 27, the other versions after).
     `mutants-diff 3b0b07fc` (112 team_widgets mutants, split with bonfire): 106 caught, 5
     unviable, no timeout, 1 missed, `turf_image`'s `<=` -> `>`, equivalent (both looks have an
     even edge count) and excluded in `.cargo/mutants.toml`, to re-check when a look with an
-    odd count lands. Open: a look at a PES 2017 save in the built window
+    odd count lands.
+    - manual: checked 2026-10-31 in the built window (release `feca47e5`, the maintainer's
+      PES 2017 save opened read-only, team 701): the pitch draws PES 2017's look (seven bands,
+      its smaller boxes and circle); the LB dragged to the grass below row 4 lands at X 8,
+      Y 4, his popover's Y ⏴ disabled; undone, closed unsaved
+      (`.tmp/0_0_1cv/look17_3.png`, `look17_5.png`)
     - [x] cv9a an outfielder stops at y 4 (plan, the drop's bullet and the popover's
       steppers; DECISIONS 2026-10-31): the draft (`PITCH.yMin`, checked by
       `.tmp/0_0_1cv/pitch17/floor_check.py`); `team_widgets` `snap` clamps y to 4..=48 and
