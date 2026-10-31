@@ -6095,8 +6095,11 @@ briefs, review loops, gates and mutation runs as for any step.
       `save_editor`'s host hands `team_widgets` the flag; under it a dragged marker has no
       marker to swap with (no brackets or fading over a teammate), while XI and bench rows
       dropped on a marker work as before; SE-GUI-12's tests then pick /vg/ League 27 (the
-      default Autumn 26 allows illegal formations); after the whole-crate chain. Brief
-      written: `.tmp/0_0_1cv/brief_cv14b.md` (an Opus sidekick in `wt-cv14b`)
+      default Autumn 26 allows illegal formations). Built beside the whole-crate chain (its
+      save_editor run alone has ~30 h left), on branch `cv14b` in `wt-cv14b`: `ccfa90ce`, the
+      help `cbbe9afd` and `14028084`, rework r1 `46b9492b`; reviewed (SWE-2 round 1, Astra,
+      SWE-2 round 2: 1, 1 and 2 accepted, `.tmp/0_0_1cv/rulings_cv14.md`). Open: the merge
+      into main once the chain ends, its `gates-changed` and `mutants-diff`
     - [x] review of cv14a and cv14c (checkpoint (b): two crates): SWE-2 round 1 found nothing
       in the field's code and 2 of 4 accepted on the page (no test unticks a preset box or
       types into Age and Weight), the loop ends; Astra 2 of 2 (unticking Weight and the COM
@@ -6114,13 +6117,16 @@ briefs, review loops, gates and mutation runs as for any step.
     `.tmp/argon/rulings.md`). Stopped 06:04 by the maintainer (Devin `work` at 93%, the rest
     kept for Astra): 7 of 87 parts run (pes_version, pes_savefile 1-6), the other 80 not
     started; no new Argon review without the maintainer's word. The accepted concerns become
-    one step per crate, briefed after each crate's mutation run ends
+    one step per crate (cvA1: the fixes first, the mutation run after, an order the
+    30-hour chain set)
     - [ ] cvA1 `pes_savefile`: Argon's accepted concerns (`.tmp/argon/rulings.md` A1-A6, A19:
-      26 accepted, 8 of them in part; 10 marked "run"). First `just mutants pes_savefile`
-      (its last whole-crate run is 2026-10-16), after the whole-crate chain: each "run"
-      concern it confirms as a survivor gets its test, the rest drop; then one brief, in
-      slices if past ~500 lines: the same-version skill refusal (plan "Team TOML", DECISIONS
-      2026-10-31), the motion error's value as written, `{version}` in two codec errors, the
+      26 accepted, 8 of them in part; 10 marked "run"). The accepted fixes first, in two
+      slices on branch `cvA1` in `wt-cvA1` (`.tmp/0_0_1cv/brief_cvA1a.md`, `brief_cvA1b.md`),
+      started beside the whole-crate chain; then `just mutants pes_savefile` (its last
+      whole-crate run is 2026-10-16) over the fixed code, after the chain: each "run" concern
+      it confirms as a survivor gets its test, the rest drop. The fixes: the same-version
+      skill refusal (plan "Team TOML", DECISIONS 2026-10-31), the motion error's value as
+      written, `{version}` in two codec errors, the
       patch path in `to_toml`'s motion refusal, the PES 17 Texport rewrite (own id, coach
       id, description name), `TeamTactics::bare`'s join-attack slots, the doc facts, the test
       premises, the `pub(crate)` narrowing, the label-lookup helper
