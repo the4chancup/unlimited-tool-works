@@ -2975,3 +2975,6 @@ worklog passed 7,000 lines.
 - **2026-10-31** — cv16b: a height row's players and draws stand in lines under its sentence
   in Live AATF, Multi-team AATF, its copy and `check-aatf`; Multi-team AATF is 900 wide (cv17);
   merged `308c991b`, gated. Five collaborator requests and a Tactics bug became cv18-cv22.
+- 2026-10-31 — 0.0.1cv cv22 merged `ba756b5a`: an instruction that takes no target puts back its target byte as
+  opened; cv16's reviews ended (SWE-2 4/17, Astra 3); DBC heights confirmed exact; cv18-cv21 drafted and
+  planned, cv23-cv24 added. `gates-changed 308c991b` green, 12 binaries, 1515 tests.
