@@ -3315,7 +3315,7 @@ const WALK = [
   ["SE-GUI-25", "the tactics' menus: Copy preset 1 to 2, then Swap Kick-off and In-possession; each is one undoable edit"],
   ["card badges", "the Skills column's header shows the player's own tier's cards left next to the pickers; under DBC7 the count stays positive (no card is capped), under the official ruleset ticking cards takes it to 0 then red"],
   ["SE-GUI-21", "the save's game running + Save: refused naming the exe (drawn; the scenario itself is manual)"],
-  ["SE-GUI-26", "the Open menu: the discovered saves with version (and account folder from 19), the session's recents, then the picker; Save as keeps the replaced file as .bak"],
+  ["SE-GUI-26", "the Open menu: the discovered saves labelled by version alone, each with its 4ccEditor shortcut (Ctrl+5 to Ctrl+1: press Ctrl+7 with the menu closed), the session's recents, then the picker (Ctrl+O); Save as keeps the replaced file as .bak"],
   ["SE-GUI-28", "PES selector at 2019 with the PES 21 sample open: the warning names both; the save keeps its version"],
   ["SE-GUI-13", "Savefile, Comparator: pick the PES 21 sample (refused), then Autumn24Q; the toggles and the team filter narrow the rows, Export writes their report lines, a row click selects the player"],
   ["SE-GUI-15", "the toolbar's ruleset dropdown, left of Live AATF: pick Divegrass Before Christmas 7 (the quick actions and the card counts follow); Import rules file...: the broken samples are refused with their errors, autumn26.4ccrules is refused for a built-in's name, autumn25.4ccrules joins the list under a line and becomes the ruleset; import it again: a confirmation replaces it; its × asks, then removes it and falls back to 4cc Autumn 26; reload the page: the choice and the imports stay"],
@@ -3329,15 +3329,25 @@ const WALK = [
 
 
 // ---- The Save editor's view (the central panel) ----
-// The Open menu (SE-GUI-26): the discovered saves labelled by version (and
-// account folder for 19+), the session's recent files, then the picker.
+// 4ccEditor's shortcuts, kept: Ctrl+5 to Ctrl+9 for PES 2015 to 2019, Ctrl+0
+// for 2020, Ctrl+1 for 2021, each opening its version's first discovered save.
+const OPEN_KEYS = { "5": "2015", "6": "2016", "7": "2017", "8": "2018", "9": "2019", "0": "2020", "1": "2021" };
+const openKeyOf = version => Object.keys(OPEN_KEYS).find(k => OPEN_KEYS[k] === version);
+// A discovered save opened: the two sample saves load, any other is the
+// stand-in dialog.
+function openDiscovered(d) {
+  const key = d.version === "2017" ? "pes17" : d.version === "2021" ? "pes21" : null;
+  if (key) requestOpen(key, d.path); else dlgOpenSave(d);
+}
+// The Open menu (SE-GUI-26): the discovered saves labelled by version alone
+// (the tooltip holds the path), the first of each version with its shortcut,
+// the session's recent files, then the picker (Ctrl+O).
 // sample wording: the menu's labels and the picker's entry.
 function openMenu() {
-  const items = DISCOVERED.map(d => {
-    const label = "PES " + d.version + (d.account ? " (" + d.account + ")" : "");
-    const key = d.version === "2017" ? "pes17" : d.version === "2021" ? "pes21" : null;
-    return [label, () => key ? requestOpen(key, d.path)
-      : dlgOpenSave(d), false, d.path];
+  const items = DISCOVERED.map((d, i) => {
+    const first = DISCOVERED.findIndex(o => o.version === d.version) === i;
+    const label = "PES " + d.version + (first ? "\tCtrl+" + openKeyOf(d.version) : "");
+    return [label, () => openDiscovered(d), false, d.path];
   });
   items.push("-");
   for (const path of S.recents) {
@@ -3346,7 +3356,7 @@ function openMenu() {
       key ? requestOpen(key, path) : closeWindow(), false, path]);
   }
   items.push("-");
-  items.push(["Choose file\u2026", dlgChooseFile, false,
+  items.push(["Choose file\u2026\tCtrl+O", dlgChooseFile, false,
     "Opens in the selected version's save folder when it exists"]);
   return menu("Open", items);
 }
@@ -3413,10 +3423,18 @@ document.addEventListener("pointerdown", e => {
     if (pop) pop.remove();
   }
 });
-// The kept shortcuts (Ctrl+S, Ctrl+F, Ctrl+I, Ctrl+B); the draft binds them on
-// the document. Ctrl+F/Ctrl+I are aesthetics writes: no-ops under the lock;
-// Ctrl+B opens Bump all stats on a player row.
+// The kept shortcuts (Ctrl+S, Ctrl+F, Ctrl+I, Ctrl+B, and Open's Ctrl+O and
+// Ctrl+5 to Ctrl+1); the draft binds them on the document. Ctrl+F/Ctrl+I are
+// aesthetics writes: no-ops under the lock; Ctrl+B opens Bump all stats on a
+// player row. Open's work with no save open, and with no PES save of that
+// version found Ctrl+5 to Ctrl+1 open the picker.
 function onKey(e) {
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === "o" || e.key in OPEN_KEYS)) {
+    e.preventDefault();
+    const d = e.key === "o" ? null : DISCOVERED.find(o => o.version === OPEN_KEYS[e.key]);
+    if (d) openDiscovered(d); else dlgChooseFile();
+    return;
+  }
   if ((e.ctrlKey || e.metaKey) && S.save) {
     if (e.key === "s") { e.preventDefault(); saveFile(); render(); }
     else if (e.key === "b" && !isTeamSel()) { e.preventDefault(); dlgBumpStats(); }

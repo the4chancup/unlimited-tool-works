@@ -14404,3 +14404,18 @@ than the sidebar's stays that version to the editor; `pitch()` already received 
 version (the cv9 sidekick's finding). The entry above ("each version draws its own screen's
 pitch") named the sidebar.
 Plan: `plans/save_editor.md` "Tactics editor", the pitch's look.
+
+## 2026-10-31 — save_editor — The Open menu labels a save by version alone and keeps 4ccEditor's Ctrl+5 to Ctrl+1
+Decision: the Open menu's discovered saves read `PES 2019`, without the account folder's
+number; the first entry of each version carries 4ccEditor's shortcut (Ctrl+5 to Ctrl+9 for
+PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that version's newest discovered save
+from anywhere in the editor, or the file picker when discovery finds none; Ctrl+O opens the
+file picker. Discovery's `SavefileCandidate::account` stays, as `codec.md` specifies it.
+Why: the account folder's number tells a member nothing, and the tooltip shows the whole path
+for the rare machine with two accounts of one version. The shortcuts are the members' muscle
+memory from 4ccEditor, where each opened a file dialog and read the file as that version;
+Studio detects the version, so the dialog would only add a step and the shortcut opens the
+save itself (the maintainer's choice of the two). The plan had dropped them as "open as a
+given version", which no longer described what they would do.
+Plan: `plans/save_editor.md` "Feature inventory" (File operations, the hidden shortcuts rows),
+SE-GUI-26.
