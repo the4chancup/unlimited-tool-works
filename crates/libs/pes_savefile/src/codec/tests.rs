@@ -809,7 +809,7 @@ fn a_team_colour_too_wide_for_its_run_is_refused() {
 #[test]
 fn a_style_or_instruction_refusal_names_the_version() {
     let err = crate::schema::playstyle::decode(PesVersion::Pes16, 16)
-        .expect_err("16 is past PES 16's list");
+        .expect_err("16 is a hole in PES 16's list");
     assert_eq!(
         err.to_string(),
         "PES 2016: playing-style index 16 is not a value of its list"
