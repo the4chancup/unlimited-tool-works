@@ -14489,3 +14489,15 @@ one spot and two SSs a unit apart showed them so in Edit mode, and the save the 
 afterwards held the same values. A swap on the pitch would make one of those formations
 impossible to build by dragging.
 Plan: `plans/save_editor.md` "Illegal formations", SE-GUI-45.
+
+## 2026-10-31 — pes_savefile — A same-version Team TOML naming a skill the version lacks is refused
+Decision: applying a Team TOML whose `pes_version` equals the target's (or names none) that
+sets a skill or COM style the version cannot store is `TeamTomlError::NotInThisVersion`,
+naming the key, instead of dropping the skill silently. A converted file keeps the pair-wide
+rule: a skill its source version lacks is not written, no note.
+Why: the same rule as a `stats` key the version lacks, which already refuses a same-version
+file (consistent rules, one guard). Found by the Argon review (A2-1): `from_fields` equals
+`fields` when the versions match, so the refusal branch was unreachable and a hand-typed
+`double_touch` on PES 17 never landed, with nothing said.
+Plan: `plans/pes_savefile/operations.md` "Team TOML", "A skill the version lacks, in a
+same-version file".

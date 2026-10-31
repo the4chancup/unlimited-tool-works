@@ -6095,7 +6095,8 @@ briefs, review loops, gates and mutation runs as for any step.
       `save_editor`'s host hands `team_widgets` the flag; under it a dragged marker has no
       marker to swap with (no brackets or fading over a teammate), while XI and bench rows
       dropped on a marker work as before; SE-GUI-12's tests then pick /vg/ League 27 (the
-      default Autumn 26 allows illegal formations); after the whole-crate chain
+      default Autumn 26 allows illegal formations); after the whole-crate chain. Brief
+      written: `.tmp/0_0_1cv/brief_cv14b.md` (an Opus sidekick in `wt-cv14b`)
     - [ ] review of cv14a and cv14c: SWE-2 rounds and Astra (checkpoint (b): two crates)
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
@@ -6105,6 +6106,15 @@ briefs, review loops, gates and mutation runs as for any step.
     kept for Astra): 7 of 87 parts run (pes_version, pes_savefile 1-6), the other 80 not
     started; no new Argon review without the maintainer's word. The accepted concerns become
     one step per crate, briefed after each crate's mutation run ends
+    - [ ] cvA1 `pes_savefile`: Argon's accepted concerns (`.tmp/argon/rulings.md` A1-A6, A19:
+      26 accepted, 8 of them in part; 10 marked "run"). First `just mutants pes_savefile`
+      (its last whole-crate run is 2026-10-16), after the whole-crate chain: each "run"
+      concern it confirms as a survivor gets its test, the rest drop; then one brief, in
+      slices if past ~500 lines: the same-version skill refusal (plan "Team TOML", DECISIONS
+      2026-10-31), the motion error's value as written, `{version}` in two codec errors, the
+      patch path in `to_toml`'s motion refusal, the PES 17 Texport rewrite (own id, coach
+      id, description name), `TeamTactics::bare`'s join-attack slots, the doc facts, the test
+      premises, the `pub(crate)` narrowing, the label-lookup helper
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450
