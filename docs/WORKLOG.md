@@ -6046,7 +6046,21 @@ briefs, review loops, gates and mutation runs as for any step.
     every Windows 10 machine and falls back to its software adapter (WARP), where Vulkan needs
     a driver that ships it; Linux has no DX12 (Vulkan, GL for old GPUs and VMs); the GPU
     encoding study (16.x c) creates its own instance. Needs the window on screen: once no
-    sidekick builds
+    sidekick builds.
+    Measured 2026-10-31 on the `d431e50f` release exe (`.tmp/0_0_1cv/cv13_first_frame.py`:
+    eframe shows the window once its first frame is painted, so "first frame" is the time to
+    the window turning visible; median of runs 2-10, results in `cv13_times.txt`; one backend
+    through egui-wgpu's own `WGPU_BACKEND`, no rebuild). Idle: the window exists at ~245 ms
+    every way; first frame as is (Vulkan, DX12 and GL probed, Vulkan picked) 528 ms, DX12 alone
+    419, Vulkan alone 449, GL alone 592. Under load (two below-normal mutation builds): the
+    window still exists at ~375 ms, the first frame 0.8-1.3 s median as is and 0.76 s with
+    DX12 alone, with outliers near 6 s in both, so under load the time goes between the
+    window and the first frame and not mainly to the backends' probing. The maintainer's
+    target: the first frame under one second, two at most; met at rest, missed under load (a
+    per-run series: 3 of 10 at 2.3-3.0 s, earlier series up to ~6 s). Open: timestamps in
+    the startup (eframe's creator, the first `update`'s start and end) to find that time; then
+    DX12 alone on Windows (WARP stays its fallback; Linux keeps Vulkan and GL), a ~110 ms gain
+    at rest. Both need a release build: after pes_savefile's mutation run frees the slots
   - [ ] cv14 a ruleset may allow illegal formations (the maintainer, 2026-10-31): the Whack
     Patch, a modded PES 2017 exe, no longer rejects formations the game's own drag cannot make;
     4cc Autumn 26 (PES 2017) uses it and allows them (its saves hold some: /jp/ and /s4s/ on
