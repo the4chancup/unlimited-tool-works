@@ -139,11 +139,23 @@ every mutant). A brief that starts a whole-crate run says so.
 
 ## The scratch folder
 
-**The session scratch `.tmp/` holds one folder per subphase** (`4_17/` for every 4.17 slice's
-briefs, reports, diffs, logs and probes; `lead/` for the lead's live notes; `reference/` for
-cup material; `review_queue_S/` for the S1-S6 review rounds), sorted that way on 2026-10-08
-after a flat top level had reached about two thousand files: a new scratch file goes in its
-step's folder. **A temporary folder outside the repository** (a git worktree for a review, a
+**The session scratch `.tmp/` holds one folder per subphase, inside its phase's folder**
+(`phase_04/4_17/` for every 4.17 slice's briefs, reports, diffs, logs and probes; a release's
+steps under `release_0_0_1/`, `release_0_0_2/`; a named folder of no one step in its phase's
+folder when it has one, else in `topics/`), sorted by step on 2026-10-08 after a flat top
+level had reached about two thousand files, and by phase on 2026-11-01 after some 250 step
+folders made the IDE's folder listing hang: a new scratch file goes in its step's folder,
+and a new step's folder in its phase's. The top level keeps only what a path names from
+outside: `lead/` (the lead's live notes and handover), `sidelead/` (the sidekick launcher's),
+`reference/` (cup material), `argon/` (the Argon trial), the folders scripts default to
+(`ingame/`, `library_parity/`, `draft_shots/`, `draft_compare/`, `0_0_1s4t_v2/app`, the
+built-window copy), the two files the lead's tools append to (`report.md`, `duck_rulings.md`),
+and a folder a running job is writing until the job ends. **`.old/` holds what is done
+with**: a closed phase's folder whole, a topic untouched for weeks; it is the first thing
+deleted when the disk needs room. A pointer into `.tmp/` in a document is a historical
+note, never kept current: what matters past its step is in the documents, and scratch is
+scratch. A folder's name being unique, a stale path still finds it (`.tmp/4_17/` is
+`.tmp/.old/phase_04/4_17/` now) through the Everything index. **A temporary folder outside the repository** (a git worktree for a review, a
 side-lead, a release or in-game build) goes under `../4cc-studio-temp/<name>`, never loose beside
 the repository: the maintainer browses that folder, and seventeen `4cc-studio-*` siblings had
 buried the repository by 2026-10-26, when they moved there. **A script likely to be run again

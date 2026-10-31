@@ -724,7 +724,7 @@ and lane contract live in the Match tracker plan).
   any slot spelling it; from 4 characters on a contained name ("Mark" in "Markus") still
   scores 100, and the logged names are how a manager finds it. The Studio beta's logs are
   where 90 and 4 are checked. Measured 2026-10-14
-  (`.tmp/music/scorer_census/`: 65 slots of the 7 teams on the teams list among the
+  (`.tmp/phase_10/music/scorer_census/`: 65 slots of the 7 teams on the teams list among the
   machine's `.4ccm` files, against every name and shirt name those teams carry in 144 saves):
   34 slots equal a name exactly, 13 more score 100 by containment (right, "Billy" in "Billy
   Herrington"; wrong, the in-game "sex" in the slot "Sexy Hagcat", or shirt names "NO" and

@@ -16,7 +16,7 @@ joint hierarchy and bind data, applying the inverse coordinate/local-to-model-sp
 ### A face made for the other engine
 
 The two engines animate eyes differently, so a face model and its diff are made for one engine
-(`.tmp/face_diff/findings.md`, the 2026-10-19 Sopdog section): pre-Fox blinks with the lower
+(`.tmp/topics/face_diff/findings.md`, the 2026-10-19 Sopdog section): pre-Fox blinks with the lower
 eyelid too and assumes the eyes half closed, so its diff says how far to open and close them;
 Fox assumes them fully open and rotates the whole eye, eyelids included, which authors
 compensate for in the model (eyes pulled deeper into the head, eyelids weighted to the head).

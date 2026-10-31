@@ -1,7 +1,7 @@
 """Migrate the pre-Fox tracer's old-layout source to the Studio layout by hand, for what
 `compile` handles: Players/20 - Fumos/, the team colors, and Kits/g1/ from 4.16.
 
-Writes .tmp/4_16/tracer_prefox/studio/jp Midcup Tracer/ (refuses to run when it exists).
+Writes .tmp/phase_04/4_16/tracer_prefox/studio/jp Midcup Tracer/ (refuses to run when it exists).
 """
 
 import base64

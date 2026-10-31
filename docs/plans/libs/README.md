@@ -40,7 +40,7 @@ fallback.
   Check supported target versions, startup, full-path timing, resource pressure, cancellation, and
   fallback on representative hardware. No measured speedup is assumed in this plan.
 
-**Measured (2026-10-19, AMD Radeon RX 9060 XT, 16 logical CPUs; `.tmp/16x/findings.md`).** On
+**Measured (2026-10-19, AMD Radeon RX 9060 XT, 16 logical CPUs; `.tmp/phase_16/16x/findings.md`).** On
 real 4096² kit textures with alpha (13 mips, BC7 `alpha_basic`), Vulkan encodes a chain in
 0.48 s once warm, against 16.1 s per chain with all 16 CPU threads busy (134.5 s on one), at
 the same quality (level 0 against the source: 67.35 dB PSNR, largest channel difference 3, the

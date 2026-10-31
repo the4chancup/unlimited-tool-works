@@ -29,7 +29,7 @@ the pointer is in `docs/` or `AGENTS.md`, or names `docs/`, `plans/` or `spec/`:
 A pointer never names a file in the scratch folder `.tmp/`, wherever it is, even one that
 exists: `.tmp/` is gitignored, so its files exist on the machine that wrote them and in no
 clone, and a pointer into one would pass there and fail in CI. A scratch file is named by its
-path alone, its place in words without the quotes (`` `.tmp/0_0_1s/tac_rulings.md`, round A3 ``).
+path alone, its place in words without the quotes (`` `.tmp/release_0_0_1/0_0_1s/tac_rulings.md`, round A3 ``).
 
 Code points at the spec alone: a pointer in `crates/` that resolves into `docs/plans/` is a
 problem, since a plan describes only what code does not do yet. The one exception is the open

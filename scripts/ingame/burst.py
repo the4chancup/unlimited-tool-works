@@ -5,7 +5,7 @@
 Takes COUNT screenshots of GAME's window (GAME as in game.py) INTERVAL seconds apart (default 2)
 as NAME_NN.png, then tiles them 16 to a sheet, two columns of 512x288 each, as NAME_sheetN.png.
 A bare NAME (`ref04`) writes into `.tmp/ingame/` of the repository, the gitignored scratch
-folder, created if missing; a NAME with a folder in it (`.tmp/4_19/ingame/ref04`) is used as given.
+folder, created if missing; a NAME with a folder in it (`.tmp/phase_04/4_19/ingame/ref04`) is used as given.
 Needs what game.py's `shot` needs (`mss`, `Pillow`).
 """
 

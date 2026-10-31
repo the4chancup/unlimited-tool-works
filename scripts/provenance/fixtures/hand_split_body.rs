@@ -20,7 +20,7 @@
 //! the 21 vertices of columns -3..3 (columns 3 and -3 are copied into both, the boundary).
 //!
 //! Not part of the workspace. Run it as a bin of a scratch crate that depends on `fmdl`,
-//! `model_convert` and `pes_version` by path (`.tmp/4_18/hand_4_18/roundtrip/` was the one used):
+//! `model_convert` and `pes_version` by path (`.tmp/phase_04/4_18/hand_4_18/roundtrip/` was the one used):
 //! `hand_split_body <out fmdl>`. It writes the output once it has read it back, checked it with
 //! `fmdl::check`, imported it again and split it to the counts above.
 //! `hand_split_body_model.rs` writes the `.model` twin from the same strip.

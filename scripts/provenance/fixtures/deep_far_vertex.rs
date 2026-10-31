@@ -3,7 +3,7 @@
 //! (6000, 0, 0), which is 1000 units past the limit of `fmdl_vertex_far_from_origin`.
 //!
 //! Not part of the workspace. Run it as a bin of a scratch crate that depends on `fmdl` by
-//! path (`.tmp/4_7/fmdl_census/` was the one used), from the repository root:
+//! path (`.tmp/phase_04/4_7/fmdl_census/` was the one used), from the repository root:
 //! `far_fixture <tracer boots.fmdl> <out>`. It writes the output once it has read it back
 //! and checked that exactly one vertex is far and that nothing else about the model changed.
 

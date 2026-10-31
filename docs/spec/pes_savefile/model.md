@@ -232,7 +232,7 @@ appearance bytes his player record holds just after the appearance block's base-
 every Fox version: the games' own tables hold the same bytes for most players from PES 17 to
 21, and PES 17's, whose record offset in-game Test 4 confirmed, sits at the same place in the
 same 72-byte block, whose fields lie at the same bits on PES 17 to 21 (measured 2026-10-12,
-`.tmp/5_1/measure/`). The run's last 4 bytes (the block's last 4) are in no row, so their
+`.tmp/phase_05/5_1/measure/`). The run's last 4 bytes (the block's last 4) are in no row, so their
 measured-unused bits do not reach a stripped player. A pre-Fox version has no row
 (`SettingsError::NoAppearanceRow`): PES 17 reads one, but its compile writes the savefile
 instead.
