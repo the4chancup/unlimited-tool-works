@@ -42,7 +42,7 @@ implementation is measured against.
 
 | 4ccEditor | Fate |
 |-----------|------|
-| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; warn on a global-selector mismatch, never reinterpret the open file. The Open menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version and, for 19+, account folder) as one-click entries, with the files opened earlier in the session, above the ordinary file picker, and the picker opens in the folder of the selected version's discovered save when one is found (a folder with no EDIT file holds nothing to open, and from PES 19 the account folder is known only from a found save) — see "Savefile discovery" in the Savefile plan |
+| Load 15/16/17/18/19/20/21 EDIT file (7 menu items) | One **Open savefile** action; auto-detect the version by master keys / container shape. The loaded file's version governs its codec and editing widgets; warn on a global-selector mismatch, never reinterpret the open file. The Open menu lists the saves `pes_savefile`'s discovery finds under `Documents\KONAMI` for every version (labelled by version alone: the account folder's number tells a member nothing, and the entry's tooltip holds the path) as one-click entries, the first entry of each version with its 4ccEditor shortcut (Ctrl+5 to Ctrl+9 for PES 15 to 19, Ctrl+0 for 20, Ctrl+1 for 21), which opens that save from anywhere in the editor, or the file picker when discovery finds none for the version; Ctrl+O is the file picker's, with the files opened earlier in the session, above the ordinary file picker, and the picker opens in the folder of the selected version's discovered save when one is found (a folder with no EDIT file holds nothing to open, and from PES 19 the account folder is known only from a found save) — see "Savefile discovery" in the Savefile plan |
 | Save EDIT file (encrypted; always asks for a path; the first save after a load keeps the file it replaces as `<file>.BACKUP`) | Kept; plus **Save as**, and the file each save replaces kept as `.bak` (one level), at every save rather than the first after a load only |
 | Import Texport file (per-version submenu) | Kept, auto-detected version; plus **Texport export** (new — PES itself can import the result; see [Savefile plan](pes_savefile/README.md)) |
 
@@ -58,7 +58,8 @@ implementation is measured against.
 | Toggle FPC settings (Ctrl+I) | Kept (see "Full Player Customization" below) |
 | Quick actions: Make Gold / Make Silver / Make Bronze (from the Autumn 26 edition) / Make Regular / Set stats | Kept, **driven by the AATF rules file** instead of hardcoded rates — the buttons and the checker can never disagree |
 | Hidden shortcuts: PgUp/PgDn (previous/next player from any field) | Kept, the list's selection moving |
-| Hidden shortcuts: Ctrl+Shift+P (a joke preset), Ctrl+Shift+B (a sound), Ctrl+Shift+H (show the dribbling-motion and hand controls), Ctrl+O and Ctrl+5 to Ctrl+1 (open as a given version) | Not kept: Open detects the version and every control is always drawn |
+| Hidden shortcuts: Ctrl+Shift+P (a joke preset), Ctrl+Shift+B (a sound), Ctrl+Shift+H (show the dribbling-motion and hand controls) | Not kept: every control is always drawn |
+| Hidden shortcuts: Ctrl+O (the Open dialog), Ctrl+5 to Ctrl+1 (the Open dialog for PES 15 to 21, reading the file as that version) | Kept as the Open menu's: Ctrl+5 to Ctrl+1 open that version's discovered save at once, since Open detects the version and the dialog would only add a step; Ctrl+O opens the file picker (File operations row above) |
 | Hidden shortcut: Ctrl+Shift+T on the team selector (empties the team's slots past 23; its team index looks one off) | Dropped: cups no longer trim a roster to 23 this way |
 | Is a copy? (Appearance; ticking it also sets the ability, COM, motion, playable-position, registered-position, skill and playing-style edit flags) | Kept, the same flags set |
 
@@ -1859,8 +1860,11 @@ SE-GUI-25  GIVEN the team view's Tactics on preset 1
 SE-GUI-26  GIVEN two PES 21 saves and one PES 19 save under the test's Documents folder, the
                  selector at PES 21, and one of the three opened earlier in the session
            WHEN the Open menu is drawn
-           THEN it lists the three discovered saves, each with its version (and account folder
-                for PES 19 and later), and the recent file above the file picker; WHEN Save as writes a new
+           THEN it lists the three discovered saves, each labelled by its version alone, the
+                first PES 21 one with Ctrl+1 beside it and the PES 19 one with Ctrl+9, and the
+                recent file above the file picker; WHEN the menu is closed and Ctrl+9 is pressed
+                THEN the PES 19 save opens, and WHEN Ctrl+7 is pressed (no PES 17 save found)
+                THEN the file picker opens; WHEN Save as writes a new
                 path THEN the file replaced, if any, is kept once as its .bak
 SE-GUI-27  GIVEN the save open
            WHEN Output rosters to TSV runs

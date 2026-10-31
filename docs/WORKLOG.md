@@ -6003,6 +6003,11 @@ briefs, review loops, gates and mutation runs as for any step.
       SWE-2 S1 (2 accepted, the tests: the floor as a literal 4, a per-look cache test),
       Astra R1 on Devin no concerns; merged `8bbf6053`, `gates-changed 8a73e438` green (21
       binaries, 3416 tests). PES 2019's look in 0.0.2; the others after
+  - [ ] cv10 the Open menu labels a save by version alone, and 4ccEditor's Ctrl+5 to Ctrl+1 open
+    each version's discovered save, Ctrl+O the picker (the maintainer, 2026-10-31; DECISIONS
+    2026-10-31, SE-GUI-26): plan and draft done; `save_editor` `view/open_menu.rs` and the
+    toolbar's keys briefed (`.tmp/0_0_1cv/brief_cv10.md`), merged only after the whole-crate
+    chain ends
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450
