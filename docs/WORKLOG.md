@@ -6205,10 +6205,14 @@ briefs, review loops, gates and mutation runs as for any step.
     action (plan "Team selector", SE-GUI-46): with cv18, `be2a73b9`; `view/player_list.rs`
     `team_row` (returns the double click, `show` applies it after the rows), the tooltip's last
     line, `help/02_window.md`, test `a_teams_name_in_the_filter_lists_its_squad_and_a_double_click_shows_it_alone`
-  - [ ] cv20 the wheel steps the sliders, the value boxes beside them, and the two- and
+  - [x] cv20 the wheel steps the sliders, the value boxes beside them, and the two- and
     three-state toggles (same origin; `core/gui.md` "The wheel over a value"); checkboxes stay
-    out (the maintainer, 2026-10-31); plan "The wheel over a value", ST-WHEEL-05: drafted (the
-    host page's wheel listener, `.rate.wheel`), plan and DECISIONS written; code next
+    out (the maintainer, 2026-10-31); plan "The wheel over a value", ST-WHEEL-05: Opus sidekick
+    (`.tmp/cv20/brief_cv20.md`), `30c43b2c`, merged `31f03c12`; `team_widgets` `tactics/mod.rs`
+    (`slider`, `style_choices`, `number_choices` through `wheel_steps`/`step_choice`/
+    `step_number`, a toggle's choices one control), its tests, `save_editor`
+    `view/tests/tactics_undo.rs` (ST-WHEEL-05) and `view/tests/tactics.rs` (two scroll tests'
+    pointer moved onto the pitch, now that the wheel steps the controls they sat on)
   - [x] cv21 Live AATF lists the players' rows in two columns, the starting eleven left and the
     bench right, team-wide rows across both (same origin, "if possible"); Multi-team AATF
     stays one column (the maintainer, 2026-10-31); plan "Live AATF", SE-GUI-47: Opus sidekick
