@@ -2750,7 +2750,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       patch and the Team compiler: the aesthetics patch on
       every engine (it is Fox-only today) gains the appearance block, the boots and gloves IDs
       over the whole allocation, filled after their tasks commit, and clears a compiled
-      player's base copy; `apply-patch` writes them; the Fox player-table writer and its
+      player's base copy, or writes the one his `<id>.copy` link names (the link's validation
+      in the compiler, its generation in the Export upgrader's step 8:
+      `plans/aesthetics_export/player_folders.md`, `plans/export_upgrader.md` "What it does");
+      `apply-patch` writes them; the Fox player-table writer and its
       messages go; the spec with it (the inventory's S22-S54, S56-S57's table parts, S61,
       S64-S66, S68, and GLOSSARY's D1 and D2), its Acceptance written first → verify: the
       gates; TC-SAV-12 (a PES 17 compile writes no patch) rewritten; the library parity's

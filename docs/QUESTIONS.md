@@ -25,24 +25,6 @@ names where the question came from so the context can be read there.
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
   - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
 
-## Before 0.0.2 (VGL 27)
-
-- **A player whose face is another player's, through his base copy** (worklog 8.36c; DECISIONS
-  "The full-look patch writes the player's own appearance id and clears his base copy"). The
-  full-look patch clears a compiled player's base copy, since a copy shows over his own
-  compiled face. But members use base copies on purpose, for a player with no face of his own:
-  a census of PES 2019 cup saves (`.tmp/0_0_2/base_copy_census.py`, 2026-10-31) found /sp/'s
-  NGUBU copying 101334 and >DE GAY 40571, /b/'s #REKT 9341 and /fit/'s JEFF CAVALIERE 37106
-  (stock players), /f/'s BILLY HERRINGTON copying /jp/'s (73106), /4ccseeks/'s nineteen MR.
-  MEESEEKS copying their #02, and VGL 15's "Backup 1" copying all of /akg/; 5 to 28 such
-  players per save (and none in VGL 16's or VGL X2's), apart from many more whose base copy
-  is 0. Should an export keep a base copy, and how does it say so: a marker file in the
-  player folder (`copy_5223`), a `settings.toml` key, or the copy kept from the save whenever
-  the export carries no face of its own? And should the Export upgrader write it from the
-  save it upgrades against? Answered so far (the maintainer, 2026-10-31): an export with both
-  its own face and a base copy is refused, the two contradicting each other; the rest goes to
-  the plan and DECISIONS with the remaining answers.
-
 ## Cup practice
 
 The Music player's three below come from reading Rigdio v2.2.0's controls (worklog 10.0i,

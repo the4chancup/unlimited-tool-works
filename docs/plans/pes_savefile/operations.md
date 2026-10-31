@@ -110,7 +110,11 @@ Still open:
   bits at the games' values), sets the appearance block's player id to his own id, as real
   saves and `populate_players` hold it, and clears his base copy: the base-copy id set to his
   own id (the record's "no copy") and the base-copy flag, on the versions that hold one,
-  cleared. The id, because a save still at -1 from the old stripped route (the maintainer's
+  cleared; unless his export carries a `<id>.copy` link
+  (`plans/aesthetics_export/player_folders.md` "Player folders (the Studio export format)",
+  its base copy paragraph), whose id the entry holds (`base_copy_id = 101334`) and
+  `apply` writes as his base copy, the flag left as the save holds it (8.36d checks a copy shows
+  with the flag clear). The id, because a save still at -1 from the old stripped route (the maintainer's
   test saves) would otherwise ignore the written look. The base copy, because a record whose
   base-copy id names another player shows that player's face and hair over his own: in PES
   21's Edit mode (2026-10-15) a cup save's "MESSI" copying player 7511 and a teammate copying
