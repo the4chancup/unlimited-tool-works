@@ -1498,16 +1498,9 @@ What this editor adds on top of the lib:
   row, a sentence as a height row's players, wraps under its own column, the rule's name
   keeping its own.
 - **Multi-team AATF's range starts on one team, never reverses, and is checked once it
-  rests.** The dialog opens with both ends on the save's first team, not the whole save: a
-  whole save's check is the long one, and an organizer checks a few teams at a time. The left
-  end offers every team; the right end lists only the teams from the left end on, and follows
-  the left end when it passes it, so the range is never reversed and needs no warning. A
-  change of either end starts the check only once the ends have rested 500 ms, the previous
-  list kept, dimmed and marked checking until it does: the wheel over an end steps one team a
-  frame (`core/gui.md` "The wheel over a value"), and a check started per step left the window
-  unresponsive for about two minutes over 220 teams (65 notches). The pictures' range below
-  pairs its ends the same way, keeping the whole save as its default, since its run starts only
-  on Save pictures.
+  rests**: built (`spec/save_editor.md` "Multi-team AATF"). The pictures' range below pairs
+  its ends the same way, keeping the whole save as its default, since its run starts only on
+  Save pictures.
 - **The ruleset dropdown** (`spec/save_editor.md` "Configurable AATF rules" for what is
   built): the wheel over the closed combo (`core/gui.md` "The wheel over a value") steps the
   rulesets alone, never running `Import rules file…`, which is a command rather than a value.
