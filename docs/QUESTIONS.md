@@ -12,14 +12,19 @@ names where the question came from so the context can be read there.
 
 - **The final pass over the built app's UI** (worklog 0.0.1f1c). Any change it asks for is
   drafted first, looked at in the drafts, then built.
-  - **The candidate:** branch `release/0.0.1-candidate` at `bddd0027`, unpacked at
-    `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1c\unlimited-tool-works-0.0.1\`
-    (`COMMIT.txt` beside the folder names its commit). New since 0.0.1b, each checked by the
-    lead in this build: the team file panel (import and export, a PES 2017 Texport without
-    an extension), the list under "• unsaved changes", the player list's and the pitch's
-    rounded corners, the light theme's greys and warning orange, the sidebar's own icons,
-    the running-game dialog's text, the import notes in words (worklog 8.9k5, 8.31, 8.9m,
-    8.14, 8.29d).
+  - **The candidate:** branch `release/0.0.1-candidate` at `1fe6c9bf`, unpacked at
+    `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1d\unlimited-tool-works-0.0.1\`
+    (`COMMIT.txt` beside the folder names its commit), staged for the DBC7 organizer's look
+    too. New since 0.0.1c (worklog cv14 to cv26): a height finding names its players and a
+    GigaHeight team the nearest quota system, the lines under the row (the staged exe's
+    `check-aatf --rules dbc7` on the DBC6 save prints cv16b's expected lines); Multi-team
+    AATF 900 wide, its rows wrapping, its range opening on one team and checked once it
+    rests; rulesets that allow illegal formations (Autumn 26, DBC7); the filter listing a
+    matching team's squad, a team row's double click; the wheel over the Tactics sliders and
+    toggles; Live AATF's rows in two columns; the event logo resampled; the colour picker's
+    popup at its widest row; an advanced instruction's target byte kept. Of these, the lead
+    looked at the height lines and the 900 dialog in a built window (cv16b's look), the rest
+    through their headless tests.
   - **Already measured,** so not worth reporting: every screen the drafts and the build share
     matches the drafts within 1 point (2 where needed), in both themes. What still differs
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.

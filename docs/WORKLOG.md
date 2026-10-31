@@ -44,10 +44,11 @@ phase (16.x a, unwired)
 (decision entries 2026-09-21 and 2026-09-28). Release target (2026-09-28): 0.1.0 after Phase
 8; phase order 1–6, 8, 0.1.0, 7, 9–16 (`plans/core/development_plan.md` "Releases");
 first-class target the Fox version the cup moves to around April 2027 ("Target versions").
-**0.0.1 candidate** 0.0.1c (2026-10-30, `bddd0027`): every change since 0.0.1b checked in
-its built window; it waits for the maintainer's final UI pass (0.0.1f1c, `QUESTIONS.md`,
-branch `release/0.0.1-candidate`); the work goes on past it (k5f's code merged, its game
-check next; the 0.0.1cv converge, its audit under way).
+**0.0.1 candidate** 0.0.1d (2026-11-01, `1fe6c9bf`, full gates green, 5534 tests): the
+height findings that name their players (cv16) and cv14-cv26, staged for the DBC7
+organizer's look as well; it waits for the maintainer's final UI pass (0.0.1f1c,
+`QUESTIONS.md`, branch `release/0.0.1-candidate`); the work goes on past it (cv18-cv26's
+review rounds, the Live AATF window cv28).
 **Blocked on:** nothing.
 
 **Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
