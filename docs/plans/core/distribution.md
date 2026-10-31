@@ -44,6 +44,22 @@ which `scripts/symbolize_log.py` reads to name a posted `utw.log`'s backtrace
 `debug = "line-tables-only"`, so the kept `.pdb` names each frame's file and line as well as
 its function; the line tables live in the `.pdb`, leaving the exe's size as it was.
 
+The exe carries no path of the machine that built it. A panic's location names its source
+file, so a plain release build held the builder's home folder in about 2,300 strings (every
+dependency under the cargo registry, the standard library under rustup) and the repository's
+absolute path in one more (a build script's generated file). The recipe builds with rustc's
+`--remap-path-prefix`: the home folder becomes `~`, `CARGO_HOME` and `RUSTUP_HOME`, when set,
+`~cargo` and `~rustup`, the repository `.`, and cargo's target directory, when outside it,
+`target`, in that order, since the last prefix that matches wins (measured on rustc 1.98.1).
+The flags go to cargo through `--config` on `target.x86_64-pc-windows-msvc.rustflags`, which
+joins the array `.cargo/config.toml` sets there; `RUSTFLAGS` or `CARGO_ENCODED_RUSTFLAGS`
+would replace it, and with it `+crt-static`, leaving an exe that needs the VC++
+redistributable (`spec/core/distribution.md` "Platform floor"). After the build the recipe refuses an exe holding any of
+those prefixes, or naming `VCRUNTIME140.dll`. Cargo's own `trim-paths` profile setting does
+the same with no paths to name, but it is unstable in cargo 1.98. The `.pdb` keeps its paths
+(the linker's command line, the object files'): it stays with the maintainer. Its source paths
+are remapped like the exe's, which `symbolize_log.py` prints as they are.
+
 The user extracts the archive anywhere and runs the binary — or, for the common case, drops an
 export into `exports/` (shipped empty beside the binary) and double-clicks
 `quick_compile.bat`, which is the whole Red workflow carried over. Where the suite's persisted data goes

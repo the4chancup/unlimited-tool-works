@@ -16,8 +16,12 @@ from release import (
     exe_name,
     find_7z,
     launcher_calls,
+    leaked_prefixes,
+    links_crt_dynamically,
     listing_paths,
     readme_names_version,
+    remap_flags,
+    rustflags_config,
     sha256_line,
     symbols_entries,
     workspace_version,
@@ -138,6 +142,56 @@ class Pure(unittest.TestCase):
                 list(dist.glob(existing_glob("0.0.2"))),
                 [dist / "Tiny-0.0.2-windows.7z"],
             )
+
+    def test_remap_flags_put_the_home_folder_first(self) -> None:
+        # rustc applies the last matching prefix: the home folder, which holds the default
+        # cargo and rustup homes, must lose to every more specific one.
+        self.assertEqual(
+            remap_flags(
+                r"C:\Users\Member",
+                r"C:\Users\Member\cargo",
+                r"D:\rustup",
+                r"C:\Users\Member\src\utw",
+                r"E:\build\utw",
+            ),
+            [
+                r"--remap-path-prefix=C:\Users\Member=~",
+                r"--remap-path-prefix=C:\Users\Member\cargo=~cargo",
+                r"--remap-path-prefix=D:\rustup=~rustup",
+                r"--remap-path-prefix=C:\Users\Member\src\utw=.",
+                r"--remap-path-prefix=E:\build\utw=target",
+            ],
+        )
+        # Unset homes and a target directory inside the repository add nothing.
+        self.assertEqual(
+            remap_flags(r"C:\Users\Member", None, None, r"C:\src\utw", r"C:\src\utw\target"),
+            [r"--remap-path-prefix=C:\Users\Member=~", r"--remap-path-prefix=C:\src\utw=."],
+        )
+
+    def test_rustflags_config_is_the_toml_array_of_the_flags(self) -> None:
+        flags = [r"--remap-path-prefix=C:\Users\O'Brien \"x\"=~", "--remap-path-prefix=C:\\src=."]
+        parsed = tomllib.loads(rustflags_config(flags))
+        self.assertEqual(parsed["target"]["x86_64-pc-windows-msvc"]["rustflags"], flags)
+
+    def test_the_config_sets_crt_static_on_the_key_the_release_joins(self) -> None:
+        # `--config` joins arrays on one key; on another key (`build.rustflags`) the target's
+        # own array would win and the remap would be dropped, or the other way round.
+        config = tomllib.loads((ROOT / ".cargo/config.toml").read_text(encoding="utf-8"))
+        target_flags = config["target"]["x86_64-pc-windows-msvc"]["rustflags"]
+        self.assertIn("target-feature=+crt-static", target_flags)
+        self.assertNotIn("rustflags", config.get("build", {}))
+        self.assertTrue(rustflags_config([]).startswith("target.x86_64-pc-windows-msvc.rustflags="))
+
+    def test_leaked_prefixes_match_any_case_and_separator(self) -> None:
+        exe = b"\x00panicked at c:/users/member\\.cargo\\registry\\src\\x.rs\x00./target/out.rs"
+        self.assertEqual(
+            leaked_prefixes(exe, [r"C:\Users\Member", r"C:\src\utw"]), [r"C:\Users\Member"]
+        )
+        self.assertEqual(leaked_prefixes(b"~\\.cargo\\registry\\src\\x.rs", [r"C:\Users\Member"]), [])
+
+    def test_links_crt_dynamically(self) -> None:
+        self.assertTrue(links_crt_dynamically(b"\x00VCRUNTIME140.dll\x00"))
+        self.assertFalse(links_crt_dynamically(b"\x00KERNEL32.dll\x00"))
 
 
 class Listing(unittest.TestCase):

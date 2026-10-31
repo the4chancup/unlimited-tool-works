@@ -1,7 +1,8 @@
 """`just release <version>`: pack the portable .7z bundle (`plans/core/distribution.md`
 "Distribution: portable .7z bundle"). Windows only.
 
-The recipe builds `studio` with `--locked`, reads the executable's name from the built exe's
+The recipe builds `studio` with `--locked`, the build machine's home folder, cargo and rustup
+homes, repository and target directory remapped out of the exe's paths (`remap_flags`), reads the executable's name from the built exe's
 `--help` usage line (the name lives in `studio_core`'s `EXE_NAME`, not in this script),
 stages `unlimited-tool-works-<version>/` — the exe as `<name>.exe`, the launchers it ships
 (`LAUNCHERS`, none in 0.0.1), the readme, the two licenses, the bundled `data/settings.toml`,
@@ -16,7 +17,8 @@ in the bundle.
 Every refusal prints one `error: <what>` line on stderr and exits 1: a platform that is not
 Windows, a version that is not the workspace's, a readme whose first line names another
 version, an archive that already exists (a release is never overwritten), a dirty tree, a
-`--help` with no usage line, a launcher it ships (none in 0.0.1) that does not call the exe's
+`--help` with no usage line, an exe that still holds one of the remapped paths or names
+`VCRUNTIME140.dll` (the `--config` flags replaced `+crt-static` instead of joining it), a launcher it ships (none in 0.0.1) that does not call the exe's
 name, a 7-Zip that cannot be found, and a listing that differs from the staged set (that
 archive is left for inspection). The pure helpers take their input as text so
 `release_test.py` can call them without git, cargo or 7-Zip.
@@ -25,6 +27,7 @@ archive is left for inspection). The pure helpers take their input as text so
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -113,6 +116,42 @@ def sha256_line(digest: str, archive_name: str) -> str:
     return f"{digest}  {archive_name}\n"
 
 
+def remap_flags(
+    home: str, cargo_home: str | None, rustup_home: str | None, root: str, target: str
+) -> list[str]:
+    # rustc applies the last prefix that matches, so the home folder, which may hold all the
+    # others, comes first.
+    pairs = [(home, "~")]
+    if cargo_home:
+        pairs.append((cargo_home, "~cargo"))
+    if rustup_home:
+        pairs.append((rustup_home, "~rustup"))
+    pairs.append((root, "."))
+    if not Path(target).is_relative_to(root):
+        pairs.append((target, "target"))
+    return [f"--remap-path-prefix={source}={to}" for source, to in pairs]
+
+
+def rustflags_config(flags: list[str]) -> str:
+    # `--config` joins this array with the one `.cargo/config.toml` sets on the same key
+    # (`+crt-static`); `RUSTFLAGS` would replace it. JSON's string escapes are TOML's.
+    return f"target.x86_64-pc-windows-msvc.rustflags=[{', '.join(map(json.dumps, flags))}]"
+
+
+def leaked_prefixes(exe: bytes, prefixes: list[str]) -> list[str]:
+    # Windows paths match whatever their case and either separator.
+    folded = exe.lower().replace(b"/", b"\\")
+    return [
+        prefix
+        for prefix in prefixes
+        if prefix.lower().replace("/", "\\").encode("utf-8") in folded
+    ]
+
+
+def links_crt_dynamically(exe: bytes) -> bool:
+    return b"vcruntime140" in exe.lower()
+
+
 def target_dir() -> Path:
     metadata = subprocess.run(
         ["cargo", "metadata", "--format-version", "1", "--no-deps"],
@@ -155,12 +194,34 @@ def release(version: str) -> None:
     )
     if status.stdout.strip():
         raise Refusal("the working tree is dirty; a release builds from a clean checkout")
+    home = str(Path.home())
+    cargo_home = os.environ.get("CARGO_HOME")
+    rustup_home = os.environ.get("RUSTUP_HOME")
+    flags = remap_flags(home, cargo_home, rustup_home, str(ROOT), str(target))
     build = subprocess.run(
-        ["cargo", "build", "--release", "--locked", "-p", "studio"], cwd=ROOT
+        [
+            "cargo",
+            "build",
+            "--release",
+            "--locked",
+            "-p",
+            "studio",
+            "--config",
+            rustflags_config(flags),
+        ],
+        cwd=ROOT,
     )
     if build.returncode != 0:
         raise Refusal("cargo build --release --locked -p studio failed")
     exe = target / "release/utw.exe"
+    built = exe.read_bytes()
+    leaked = leaked_prefixes(
+        built, [p for p in (home, cargo_home, rustup_home, str(ROOT), str(target)) if p]
+    )
+    if leaked:
+        raise Refusal(f"{exe} still holds the build machine's paths: {', '.join(leaked)}")
+    if links_crt_dynamically(built):
+        raise Refusal(f"{exe} names VCRUNTIME140.dll: the C runtime is not linked statically")
     help_text = subprocess.run(
         [str(exe), "--help"], cwd=ROOT, capture_output=True, text=True
     ).stdout
