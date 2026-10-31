@@ -6199,7 +6199,7 @@ briefs, review loops, gates and mutation runs as for any step.
       patch path in `to_toml`'s motion refusal, the PES 17 Texport rewrite (own id, coach
       id, description name), `TeamTactics::bare`'s join-attack slots, the doc facts, the test
       premises, the `pub(crate)` narrowing, the label-lookup helper
-      - [ ] cvA1r the rework: `mutants-diff 2337e4f6` and the extra kinds triaged
+      - [x] cvA1r the rework: `mutants-diff 2337e4f6` and the extra kinds triaged
         (`.tmp/0_0_1cv/triage_ps.md`: seven test groups, the rest equivalent or out of reach;
         A4-2, A4-4, A5-3, A6-5, A6-6 dropped, A4-5 confirmed, A4-6, A6-3, A6-4 unreached and
         left to the whole-crate run) with SWE-2 round 1's accepted items
@@ -6208,7 +6208,16 @@ briefs, review loops, gates and mutation runs as for any step.
         layout read on its real file; the survivors' tests), merged `6af1e0a7`; `gates-changed
         7997ef4d` green on `e78d1f33`. S1b2-3 rejected on the sidekick's evidence; new: a
         stored-range refusal names the stored value (`wave_level = 7` reads "8 is outside 0 to
-        7"), fixed with round 2's rework. Open: SWE-2 round 2, Astra, `mutants-diff`
+        7"), fixed in cvA1r2. SWE-2 round 2 0 of 2 (the reviewer decrypted all 37 real 15-17
+        Texports: each description holds the record's own name at 0x80), the loop ends
+      - [x] cvA1r2 a Team TOML refusal names the value as written, in the file's units
+        (`wave_level = 7` reads "7 is outside -1 to 6"; SWE-2 sidekick,
+        `wt-cvA1r2/.tmp/brief_cvA1r2.md`): `035bd4ff`, merged `1f1e6cf1`, `gates-changed
+        948add9e` green (21 binaries, 3843 tests); `settings_toml/document.rs` `value`, one
+        shifted width check for the four kinds. Astra round 1 over cvA1r + cvA1r2 (Codex own):
+        no concerns, the loop ends; `mutants-diff 8eff77a7 crates/libs/pes_savefile`: 7 caught,
+        no survivor (`.tmp/0_0_2/mutants_diff_cvA1.log`). Left in cvA1: the whole-crate run
+        after the cut
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450
