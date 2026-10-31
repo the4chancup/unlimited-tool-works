@@ -227,6 +227,141 @@ fn the_filter_finds_a_player_of_another_team_and_selecting_shows_him() {
     }
 }
 
+// SE-GUI-46
+#[test]
+fn a_teams_name_in_the_filter_lists_its_squad_and_a_double_click_shows_it_alone() {
+    let path = fixture(PesVersion::Pes17, "team_name_filter");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    let mut window = Headless::sized(DEFAULT_PANE.x, 1000.0);
+    // The teams whose rows the frame lists, top to bottom.
+    let listed_teams = |nodes: &[accesskit::Node], view: &SaveView| -> Vec<u32> {
+        let file = view.session.as_ref().expect("a save is open").file();
+        let mut rows: Vec<(f64, u32)> = file
+            .teams()
+            .iter()
+            .filter_map(|team| {
+                let label = format!("{} {}", team.id, display_name(&team.name));
+                nodes
+                    .iter()
+                    .find(|node| node.role() == Role::Button && node.label() == Some(&label))
+                    .map(|node| (node.bounds().expect("a row has bounds").y0, team.id))
+            })
+            .collect();
+        rows.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("ordered bounds"));
+        rows.into_iter().map(|(_, id)| id).collect()
+    };
+    let squad = team_entry(&view, 718)
+        .roster
+        .iter()
+        .filter(|slot| slot.player_id != 0)
+        .count();
+    assert!(squad > 1, "premise: 718 has a squad to list");
+
+    // Type 718's name in the filter box. No player of 718 holds it in his
+    // name, shirt name or id; of the whole pool only 77206 does, team
+    // 772's "PRESS /f/".
+    let file = view.session.as_ref().expect("a save is open").file();
+    let holding: Vec<u32> = file
+        .players()
+        .iter()
+        .filter(|player| {
+            display_name(&player.name).to_lowercase().contains("/f/")
+                || player.shirt_name.to_lowercase().contains("/f/")
+                || player.id.to_string().contains("/f/")
+        })
+        .map(|player| player.id)
+        .collect();
+    assert_eq!(holding, [77206], "premise: the players holding /f/");
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let filter_box = nodes
+        .iter()
+        .find(|node| {
+            node.role() == Role::TextInput
+                && node.placeholder() == Some("Filter every team (name, shirt name or id)")
+        })
+        .expect("the filter box");
+    click(&mut window, filter_box, &mut view);
+    window.frame(vec![egui::Event::Text("/f/".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+
+    // 718's row heads every one of its players; 772's row and its
+    // "PRESS /f/" follow.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(listed_teams(&nodes, &view), [718, 772], "the listed teams");
+    let top_718 = team_row(&nodes, &view, 718).bounds().unwrap().y0;
+    let top_772 = team_row(&nodes, &view, 772).bounds().unwrap().y0;
+    let player_tops: Vec<f64> = nodes
+        .iter()
+        .filter(|node| player_row(node))
+        .map(|node| node.bounds().unwrap().y0)
+        .collect();
+    assert_eq!(
+        player_tops
+            .iter()
+            .filter(|top| (top_718..top_772).contains(*top))
+            .count(),
+        squad,
+        "one row per rostered player of 718, under its row"
+    );
+    assert!(
+        player_tops.iter().all(|top| *top > top_718),
+        "no player row above 718's"
+    );
+    assert_eq!(player_tops.len(), squad + 1, "718's squad and 77206");
+    assert_eq!(
+        row_labels(&nodes).last().map(String::as_str),
+        Some("06 CMF PRESS /f/"),
+        "772's matching player under its row"
+    );
+
+    // A single click selects the row and leaves the selector and the
+    // filter as they were.
+    click(&mut window, team_row(&nodes, &view, 718), &mut view);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(718)),
+        "the click selects"
+    );
+    assert_eq!(view.team, TeamChoice::All, "a click keeps ALL");
+    assert_eq!(view.filter, "/f/", "a click keeps the filter");
+
+    // Past egui's 0.3 s double-click window (a frame is 1/60 s), so the
+    // next two clicks alone make the double click.
+    for _ in 0..30 {
+        draw(&mut window, &mut view);
+    }
+    let nodes = draw(&mut window, &mut view);
+    let row_718 = team_row(&nodes, &view, 718);
+    click(&mut window, row_718, &mut view);
+    click(&mut window, row_718, &mut view);
+    assert_eq!(view.team, TeamChoice::Team(718), "the selector shows 718");
+    assert_eq!(view.filter, "", "the filter box is empty");
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(718)),
+        "718's row selected"
+    );
+    let nodes = draw(&mut window, &mut view);
+    assert_eq!(listed_teams(&nodes, &view), [718], "718 alone");
+    assert_eq!(
+        nodes.iter().filter(|node| player_row(node)).count(),
+        squad,
+        "718's players"
+    );
+
+    // The team row's tooltip says what a double click does.
+    let at = centre(team_row(&nodes, &view, 718));
+    let tooltip = tooltip_containing(&mut window, &mut view, at, "Double-click")
+        .expect("the team row's tooltip");
+    assert!(
+        tooltip.contains("Double-click to filter to this team"),
+        "{tooltip:?}"
+    );
+}
+
 // The selected row's AccessKit node reports toggled, the others not (egui
 // maps a selectable's `selected` to `toggled`).
 #[test]
