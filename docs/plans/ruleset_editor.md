@@ -106,10 +106,18 @@ the last edit changed are highlighted.
   heights are left to tier conditions and specials, as in VGL26.
 - **Cards**: the card groups, each a name and a checkbox grid of the 41 skills and 7 COM styles
   (labels as the Save editor shows them); all COM styles are also the built-in `com` group.
-- **Universal rules**: checkboxes and number fields for `universal` (the last checkbox,
-  "Illegal formations allowed (Whack Patch)", is
-  `illegal_formations`, which the summary's "Every team" line states as "illegal formations
-  allowed"), and below them the team
+- **Universal rules**: one control per `universal` field, in the field's order, as the
+  draft's `universal()` draws them: checkboxes "Every player is rated A at his registered
+  position", "Starters play only where rated A, in preset:" with one checkbox per preset (1,
+  2, 3; the list written in ascending order), "No B ratings", "B ratings count toward the
+  A-position allowance" and "GK is never an outfield player's second A"; "Age" and "Weight",
+  each a checkbox with its fields beside it while ticked ("any" while not; ticked, they
+  start at Autumn 26's values, 15 to 50 and height − 129, at least 30 kg, to height − 81);
+  "A captain is required"; "At least N goalkeepers" (0 to 5); "At most N skill cards per
+  player" (0 to 41, with the hint that the official rules use 10); "At most N COM styles per
+  player" behind a checkbox (ticked, it starts at 5; 0 to 7); and last "Illegal formations
+  allowed (Whack Patch)", `illegal_formations`, which the summary's "Every team" line states
+  as "illegal formations allowed". Each change is one undoable edit. Below them the team
   settings: one row per entry, its PES versions, the value each tactics setting must have and
   the formation shapes it bans (defenders-midfielders-forwards, `3-4-3`).
 - **Specials**: a list of cards, reordered by dragging (order matters for replacing effects), each
@@ -414,6 +422,16 @@ RE-GUI-19  GIVEN a ruleset open with no logo
                 THEN the logo is a PNG of 112 × 56 pixels; WHEN a file that is no picture
                 is chosen THEN a line beside the buttons says so and the logo is unchanged;
                 WHEN the Event page holds `www.example` THEN General lists the problem
+RE-GUI-20  GIVEN Blank open on Universal rules
+           WHEN preset 3's and then preset 1's checkbox are ticked, Age and Weight ticked, the
+                COM styles cap ticked and set to 3, "Illegal formations allowed (Whack
+                Patch)" ticked and "A captain is required" cleared
+           THEN the saved file's universal holds fielded_at_a [1, 3], age [15, 50], weight
+                floor 30, below 129 and above 81, max_com_styles 3 and illegal_formations
+                true, no captain_required, and Blank's other values; WHEN Age is then
+                unticked THEN the saved file holds no age, and Undo brings back [15, 50];
+                GIVEN DBC7 open THEN the section shows 41 skill cards and "Illegal formations
+                allowed" ticked, every other checkbox clear
 ```
 
 **Opening and saving**
@@ -484,11 +502,11 @@ RE-SUM-01  GIVEN Autumn 26 open
                 COM styles, weak foot, injury resistance and choices not taken); Copy puts the same text on the clipboard as
                 Markdown; GIVEN DBC7 THEN it also has the medal systems with each one's counts,
                 Gold and Silver counted "by medal system", the regular's and silver's warning
-                bands and stat totals, each height system's quotas, and GigaHeight's pool;
+                bands and stat totals, each height system's quotas, GigaHeight's pool, and
+                "illegal formations allowed" in its "Every team" line, as Autumn 26's has;
                 GIVEN VGL26 THEN it also has its card group tricks with its twelve cards, and
                 its team settings: no man marking, the support settings off, no 3-4-3, and its
-                "Every team" line does not say "illegal formations allowed", which Autumn
-                26's and DBC7's do
+                "Every team" line does not say "illegal formations allowed"
 RE-SUM-02  GIVEN two rulesets differing in one tier's rate (Autumn 26, and Autumn 26 with
            Silver at 90)
            WHEN their summaries are compared line by line

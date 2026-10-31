@@ -80,17 +80,31 @@ pub struct Universal {
 ```
 
 **Illegal formations.** The stock game sets a dragged starter's position from where he is
-dropped, so a formation it can make never has a CB outside his position's area; a cup that
-plays the Whack Patch, a PES 2017 exe that keeps any formation, lets its members field such
-formations (4cc Autumn 26 and DBC7). The flag tells the Save editor which pitch to give a
+dropped and refuses a formation that rule cannot make; a cup that plays the Whack Patch, a
+PES 2017 exe that keeps any formation, lets its members field one (4cc Autumn 26 and
+DBC7). The flag tells the Save editor which pitch to give a
 member (`plans/save_editor.md` "Illegal formations"); it sits in `universal` because it is
 the cup's rule for every team, and in the data section, never the logic's, since no check
 reads it: the logic's hash and version ignore it, as they ignore the logo. Left out, it is
 `false` (the empty value, `spec/aatf_rules.md` "The ruleset schema"), so every file written before it loads
 unchanged and keeps the game's rule. The built-in Autumn 26 and DBC7 set it; the others
-leave it out. No check flags an illegal formation under a ruleset without it: the game's
-drag is no legality test, a later drag never moving an earlier starter back into his area
-(`PROPOSALS.md`).
+leave it out.
+
+**The illegal formation check (0.0.2).** Under a ruleset without the flag, a team whose
+formations hold one the stock game refuses gets an `IllegalFormation` warning naming the
+preset, the formation and each starter at fault, in Live AATF and `check-aatf` alike, so a
+member who edited a team in 4ccEditor-1, or brought one from a cup that allowed them, sees it
+before the stock game does. The rule is the stock game's own refusal, read from its
+executable, never the drop rule: a later drag never moves an earlier starter back into his
+area, so formations every step of which the game made can hold a starter outside his
+position's area, and a check built on the drop rule would flag them. The refusal is found
+where the Whack Patch disables it: `G:\Games\PES2015` holds both PES 2015's stock exe and its
+Whack Patch, so their difference points at the check, which is then read there and in PES
+2016's unpacked executable, and confirmed in game (a formation each side of the rule, under a
+stock exe). The check is the host's, beside the drop rule, not the logic's: the rule is the
+game's, the same for every cup, and in the logic it would copy the game's tables into every
+file and take a logic version; the ruleset's flag only turns it off. Until the refusal is
+read, nothing here is built.
 
 **Medal systems.** A tier a medal system names has no `count` and no `counts_as`, and no tier
 `counts_as` it; the tier that is the rest of the squad takes what the team's system leaves.

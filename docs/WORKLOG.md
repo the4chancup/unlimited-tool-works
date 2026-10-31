@@ -6216,6 +6216,11 @@ briefs, review loops, gates and mutation runs as for any step.
     encoding until the GPU encoder (0.0.2)"; DECISIONS 2026-10-30): PES 19–21 encode as
     PES 15–18, BC7 sources kept; the Team compiler's tests and goldens that expect BC7
     follow, and the library parity against Red re-run (Red ships BC3)
+  - [ ] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation
+    check (0.0.2)"; DECISIONS 2026-10-31, P46 accepted): first the stock game's refusal, read
+    where PES 2015's Whack Patch differs from its stock exe (both on G:), then in PES 2016's
+    unpacked exe; confirmed in game on a stock exe (QUESTIONS "A stock PES 2017 exe"); then
+    the plan's rule, its Acceptance, and the slice
 
 ### Phase 10 — Music tools
 
@@ -6719,7 +6724,10 @@ request (2026-10-14), to show the members who offered to help shape the ruleset 
           keeps a typed hex or channel through a window focus loss (A2-1's class, in the
           Save editor's picker too), the Tiers tests' repeated preamble one helper
           (`74dcf473`; `mutants-diff d3bf671f` 3 of 3 caught). Review done
-      - [ ] 20.6a2b Cards, Universal rules with the team settings, Suggestions (RE-GUI-08)
+      - [ ] 20.6a2b Cards, the team settings, Suggestions (RE-GUI-08)
+      - [ ] 20.6a2c Universal rules without the team settings (RE-GUI-20), for the illegal
+        formations checkbox (cv14; the maintainer, 2026-10-31: "a very simple page", the
+        team settings may wait): `sections/universal.rs`, after cv14a lands
   - 20.6b the condition editor, the effects editor, Heights and Specials (RE-GUI-07, 09 to 12,
     and RE-GUI-04's height-systems half, whose test joins the tiers half's)
 - [ ] 20.7 Randomize (`plans/ruleset_editor.md` "Randomize"): `random/`, the start page's and

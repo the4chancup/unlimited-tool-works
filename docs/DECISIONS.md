@@ -14463,3 +14463,17 @@ No check flags an illegal formation elsewhere: the drag rule is no legality test
 Plan: `plans/save_editor.md` "Illegal formations" and the popover paragraph, SE-GUI-45;
 `plans/aatf_rules.md` "The ruleset schema"; `plans/ruleset_editor.md` "Universal rules",
 RE-SUM-01.
+
+## 2026-10-31 — aatf — The illegal formation check is the stock game's refusal, in the host
+Decision: P46 is accepted for 0.0.2. Under a ruleset without `illegal_formations`, a team
+holding a formation the stock game refuses gets an `IllegalFormation` warning (preset,
+formation, starters) in Live AATF and `check-aatf`. The rule is read from the stock
+executable, located through the difference between PES 2015's stock exe and its Whack Patch
+(both on G:), and confirmed in game; the check runs in the host, beside the drop rule, the
+ruleset's flag turning it off.
+Why: the maintainer accepted P46 ("let's try it to have it in for 0.0.2"). The drop rule is
+no legality test (a later drag never moves an earlier starter back), so only the game's own
+refusal avoids flagging formations members made in game. In the host, not the logic: the
+rule is the game's, the same for every cup; in the logic it would copy the game's tables into
+every file and take a logic version.
+Plan: `plans/aatf_rules.md` "The ruleset schema", "The illegal formation check (0.0.2)".
