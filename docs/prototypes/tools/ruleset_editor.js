@@ -1646,7 +1646,7 @@ const VIEWS = {
         v => u.fielded_at_a = v ? u.fielded_at_a.concat([p]).sort() : u.fielded_at_a.filter(x => x !== p)))),
       checkbox("No B ratings", u.no_b_ratings, v => u.no_b_ratings = v),
       checkbox("B ratings count toward the A-position allowance", u.b_uses_a_allowance, v => u.b_uses_a_allowance = v),
-      checkbox("GK is never an outfield player's second A", u.gk_not_second_a, v => u.gk_not_second_a = v),
+      checkbox("GK is never a second A", u.gk_not_second_a, v => u.gk_not_second_a = v),
       row(checkbox("Age", u.age !== null, v => u.age = v ? [15, 50] : null), u.age ? [drag(u.age[0], v => u.age[0] = v ?? 0, { max: 50 }), "to", drag(u.age[1], v => u.age[1] = v ?? 0, { max: 50 })] : weak("any")),
       row(checkbox("Weight", u.weight !== null, v => u.weight = v ? { floor: 30, below: 129, above: 81 } : null),
         u.weight ? ["between height −", drag(u.weight.below, v => u.weight.below = v ?? 0), "(at least", drag(u.weight.floor, v => u.weight.floor = v ?? 0), "kg) and height −", drag(u.weight.above, v => u.weight.above = v ?? 0)] : weak("any")),
