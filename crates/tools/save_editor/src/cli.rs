@@ -385,7 +385,7 @@ fn diff_saves(args: &DiffArgs, report: &mut Report) -> Result<(), CliError> {
 /// naming it, so the command doubles as a rules file's check. The teams are checked in
 /// parallel on the one loaded file (each check is ~50 ms of script) and reported in id order; a
 /// team's failed check is an error line and the other teams are still reported; a violation is
-/// one line at its severity, suggestions aside.
+/// one line at its severity, suggestions aside, a height row's players named in its problem.
 fn check_aatf(
     args: &CheckAatfArgs,
     ctx: &ToolContext,
@@ -411,7 +411,8 @@ fn check_aatf(
     }
     let views = session::rules::team_views(session.file(), &ids);
     let results = session::rules::check_teams(&rules, &views);
-    for (id, result) in ids.into_iter().zip(results) {
+    let listed = session::rules::listed_players(session.file(), &ids);
+    for ((id, result), players) in ids.into_iter().zip(results).zip(&listed) {
         let team = session.file().team(id).expect("checked above");
         let violations = match result {
             Ok(violations) => violations,
@@ -434,6 +435,7 @@ fn check_aatf(
             report.message(aatf_violation(
                 id,
                 player,
+                players,
                 &violation,
                 Wording {
                     ruleset: rules.ruleset(),

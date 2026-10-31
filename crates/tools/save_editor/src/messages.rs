@@ -14,7 +14,7 @@ use pes_savefile::model::names::display_name;
 use pes_savefile::ops::compare::PlayerDiff;
 use pes_version::PesVersion;
 use studio_core::{CatalogRow, Disposition, Message, MessageCode, Scope, Severity};
-use team_widgets::violations::{Wording, rule_name, sentence};
+use team_widgets::violations::{ListedPlayer, Wording, rule_name, sentence, violation_detail};
 
 /// The tool's id: its CLI subcommand, its settings section and the owner of its message codes.
 pub(crate) const TOOL_ID: &str = "save-editor";
@@ -483,10 +483,13 @@ pub(crate) fn patch_skip(skip: PatchSkip) -> Message {
 /// `severity` the violation's (a suggestion is filtered by the caller, which prints nothing
 /// for it), `rule` the rule's name in words and `problem` the sentence saying what is
 /// wrong, worded as `wording` says: tiers, brackets and systems by their labels in the rules
-/// the check ran under, stats as the checked save's game names them.
+/// the check ran under, stats as the checked save's game names them. A height row's lines
+/// naming its players (`violation_detail` over `players`, the team's) follow the sentence
+/// in `problem`, each after `; `.
 pub(crate) fn aatf_violation(
     team: u32,
     player: Option<u32>,
+    players: &[ListedPlayer<'_>],
     violation: &Violation,
     wording: Wording<'_>,
     severity: Severity,
@@ -496,7 +499,12 @@ pub(crate) fn aatf_violation(
         context.push(("player", player.to_string()));
     }
     context.push(("rule", rule_name(&violation.kind).to_owned()));
-    context.push(("problem", sentence(violation, team, wording)));
+    let mut problem = sentence(violation, team, wording);
+    for line in violation_detail(violation, players, wording) {
+        problem.push_str("; ");
+        problem.push_str(&line);
+    }
+    context.push(("problem", problem));
     let mut message = message(Code::AatfViolation, context);
     message.severity = severity;
     message
@@ -714,8 +722,9 @@ mod tests {
 
     /// A violation's line names the team, the rostered player for a player's violation, the
     /// rule in words and the sentence the window's rows print, under the rules the check ran
-    /// under (Autumn 26, whose `tall` bracket and `red` system print as Tall and Red). A
-    /// team's own violation names no player, and the severity is the violation's.
+    /// under (DBC7's brackets and systems by their labels), a height row's lines after the
+    /// sentence. A team's own violation names no player, and the severity
+    /// is the violation's.
     #[test]
     fn a_violation_line_names_the_rule_in_words_and_the_problem() {
         let rules = aatf::Rules::official();
@@ -742,6 +751,7 @@ mod tests {
             line(&aatf_violation(
                 718,
                 Some(71802),
+                &[],
                 &stat,
                 wording,
                 Severity::Error
@@ -760,6 +770,7 @@ mod tests {
             line(&aatf_violation(
                 718,
                 Some(71802),
+                &[],
                 &roster_order,
                 wording,
                 Severity::Error
@@ -767,31 +778,72 @@ mod tests {
             "Error aatf_violation (team=718, player=71802, rule=Roster order, \
              problem=the slot holds player 71802, not 71801)"
         );
+        // A height quota under DBC7, whose `giga` system and `mid` bracket print as
+        // GigaHeight and Mid: team 897 /暁Records/ of DBC6's save, its players (roster slot,
+        // name, own height) from its Team TOML. The problem names them after the sentence,
+        // by the height read, each line after `; `.
+        let dbc7 = aatf::builtin("dbc7").expect("dbc7 is built in");
+        let dbc7_wording = Wording {
+            ruleset: dbc7.ruleset(),
+            version: PesVersion::Pes17,
+        };
+        let records: Vec<ListedPlayer> = [
+            (0, "Stack Bros.", 189),
+            (1, "HELLOHELL", 185),
+            (2, "Let's Ghost", 180),
+            (3, "Love East", 180),
+            (11, "Karmanations", 180),
+            (12, "Kenkon Itteki!", 189),
+            (17, "Shout it out loud!", 180),
+            (18, "Midnight Parade", 185),
+            (19, "Dance Anarchy", 185),
+        ]
+        .into_iter()
+        .map(|(slot, name, height)| ListedPlayer {
+            slot,
+            id: 89701 + u32::from(slot),
+            number: u16::from(slot) + 1,
+            name,
+            height,
+        })
+        .collect();
         let quota = violation(
             None,
-            aatf::Severity::Warning,
+            aatf::Severity::Error,
             ViolationKind::BracketQuota {
-                system: "red".to_owned(),
-                bracket: "tall".to_owned(),
-                count: 8,
+                system: "giga".to_owned(),
+                bracket: "mid".to_owned(),
+                count: 9,
                 quota: 10,
-                players: vec![(4, 185)],
+                players: vec![
+                    (0, 185),
+                    (1, 185),
+                    (2, 180),
+                    (3, 180),
+                    (11, 180),
+                    (12, 185),
+                    (17, 180),
+                    (18, 185),
+                    (19, 185),
+                ],
             },
         );
         assert_eq!(
             line(&aatf_violation(
-                734,
+                897,
                 None,
+                &records,
                 &quota,
-                wording,
-                Severity::Warning
+                dbc7_wording,
+                Severity::Error
             )),
-            "Warning aatf_violation (team=734, rule=Height quota, \
-             problem=8 players in the Tall bracket of the Red system, where its quota is 10)"
+            "Error aatf_violation (team=897, rule=Height quota, \
+             problem=9 players in the Mid bracket of the GigaHeight system, where its quota is \
+             10; At 185: Stack Bros. (189), HELLOHELL, Kenkon Itteki! (189), Midnight Parade, \
+             Dance Anarchy; At 180: Let's Ghost, Love East, Karmanations, Shout it out loud!)"
         );
         // The nearest quota system, a team's warning, under DBC7, whose `height` system and
         // `mid` and `tall` brackets print as Height, Mid and Tall.
-        let dbc7 = aatf::builtin("dbc7").expect("dbc7 is built in");
         let nearest = violation(
             None,
             aatf::Severity::Warning,
@@ -804,11 +856,9 @@ mod tests {
             line(&aatf_violation(
                 893,
                 None,
+                &[],
                 &nearest,
-                Wording {
-                    ruleset: dbc7.ruleset(),
-                    version: PesVersion::Pes17,
-                },
+                dbc7_wording,
                 Severity::Warning
             )),
             "Warning aatf_violation (team=893, rule=Nearest system, \
