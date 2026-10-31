@@ -14,5 +14,7 @@ Phosphor's music notes and three figures (MIT), the latter scaled into 16..240.
 `help.svg`, `settings.svg`, `dismiss.svg` (the notice's), `warning.svg`, `download.svg` and
 `stadium-compiler.svg` are Phosphor regular's glyphs copied point for point, a run of
 off-curve points written as `Q` then `T` (SVG cannot mark the implied on-curve points
-between them), so the Stadium compiler's buildings span x 8..248 as Phosphor's do. Licence:
-`PHOSPHOR-LICENSE.txt`.
+between them), so the Stadium compiler's buildings span x 8..248 as Phosphor's do.
+`pop-out.svg` and `dock.svg` are Phosphor regular's arrow-square-out and arrow-square-in, from
+its SVG path data (`@phosphor-icons/react` 2.1.1), whose arcs fontTools' SVG path parser turns
+into cubic curves; every other point is Phosphor's. Licence: `PHOSPHOR-LICENSE.txt`.

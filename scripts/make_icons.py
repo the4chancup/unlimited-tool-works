@@ -68,6 +68,9 @@ CODEPOINTS = {
     "dismiss": 0xE4F6,
     "warning": 0xE4E0,
     "download": 0xE20C,
+    # Ours, not Phosphor's codepoints (no stand-in held them): free in every bundled font.
+    "pop-out": 0xE5DE,
+    "dock": 0xE5DF,
 }
 SVG_PATH = "{http://www.w3.org/2000/svg}path"
 PATH_DATA = re.compile(r"[MLHVCQTZ0-9.,\s-]*")

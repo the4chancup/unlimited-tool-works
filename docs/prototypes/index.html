@@ -553,6 +553,11 @@
   .log-panel { flex: none; }
   .log-divider { height: 4px; cursor: ns-resize; }
   .log-divider:hover { background: var(--hover); }
+  /* The bottom dock's grip (the log's and Live AATF's: one widget, BottomDock): a short
+     line at the divider's middle, so the dock reads as resizable before a hover finds it. */
+  .log-divider, .live-divider { display: flex; align-items: center; justify-content: center; }
+  .log-divider::after, .live-divider::after { content: ""; width: 24px; height: 2px;
+    border-radius: 1px; background: var(--text); }
   .log-header { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
   .log-count { margin-left: auto; }
   .log-wrap { position: relative; }
@@ -2410,7 +2415,39 @@ function render() {
   remarksApply();
   overlayApply();
   updateLink();
+  scrollFadesApply();
 }
+
+// egui 0.37's scroll-area fade (`ScrollFadeStyle`'s defaults): while a list has
+// more above or below its view, its edge's 20 points fade to half the colour
+// behind it, fully once it is 20 points or more from that end. A mask on the
+// scroll container draws the same pixels over a flat background; vertical
+// scrolling alone, as the app's lists scroll. Applied after every render and
+// on every scroll inside the window.
+const FADE_SIZE = 20, FADE_STRENGTH = 0.5;
+function scrollFade(el) {
+  const st = getComputedStyle(el);
+  const over = el.scrollHeight - el.clientHeight;
+  if (!/(auto|scroll)/.test(st.overflowY) || over <= 1) {
+    if (el.style.maskImage) { el.style.maskImage = ""; el.style.webkitMaskImage = ""; }
+    return;
+  }
+  // In the element's own pixels: the window's scale transform leaves them alone.
+  const top = Math.min(1, el.scrollTop / FADE_SIZE) * FADE_STRENGTH;
+  const bottom = Math.min(1, (over - el.scrollTop) / FADE_SIZE) * FADE_STRENGTH;
+  const mask = `linear-gradient(to bottom, rgba(0,0,0,${1 - top}) 0, #000 ${FADE_SIZE}px, `
+    + `#000 calc(100% - ${FADE_SIZE}px), rgba(0,0,0,${1 - bottom}) 100%)`;
+  el.style.maskImage = mask;
+  el.style.webkitMaskImage = mask;
+}
+function scrollFadesApply() {
+  for (const el of document.querySelectorAll("#win *")) {
+    if (el.scrollHeight > el.clientHeight + 1 || el.style.maskImage) scrollFade(el);
+  }
+}
+document.addEventListener("scroll", e => {
+  if (e.target instanceof Element && e.target.closest("#win")) scrollFade(e.target);
+}, true);
 
 function cb(label, checked, set) {
   return h("label", { class: "cb" }, h("input", { type: "checkbox", checked,

@@ -520,6 +520,20 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .live-header { display: flex; align-items: center; gap: 8px; padding: 1px 0; }
 .live-body { overflow: auto; background: var(--extreme); border: 1px solid var(--stroke); padding: 2px 6px; }
 .live-body.checking { opacity: .55; }
+/* The pop-out and dock icons, the icon font's glyphs at the header's size. */
+.live-icon { font-size: 14px; line-height: 1; }
+.live-header .grow { flex: 1; }
+/* Live AATF's own window: a floating panel (egui::Window) first at the view's
+   bottom right, resizable; its rows fill what the header leaves and wrap. */
+.panel.live-win { top: auto; max-height: none; resize: both; overflow: hidden;
+  min-width: 260px; min-height: 140px; }
+.panel.live-win .title { cursor: grab; user-select: none; gap: 4px; }
+.panel.live-win .live-header { margin-bottom: 2px; }
+.panel.live-win .live-body { flex: 1; min-height: 0; }
+.panel.live-win .live-body .drow { white-space: normal; }
+/* The rule's column as wide as the longest rule name ("automatic substitutions"),
+   not the dock's 190: the window is narrow, and the sentence needs the room. */
+.panel.live-win .live-body .drow .f { width: 140px; }
 .live-body .drow { display: flex; gap: 8px; padding: 0 4px; white-space: nowrap; border-radius: 2px; }
 .live-body .drow:hover { background: var(--sel-bg); }
 .live-body .drow .f { width: 190px; flex: none; overflow: hidden; text-overflow: ellipsis; }
@@ -3395,6 +3409,7 @@ const WALK = [
   ["SE-GUI-35", "the 'Aesthetics from exports' draft control off (the default): the Appearance section draws no ownership line and no switch and every path edits; on, the lock draws"],
   ["SE-GUI-12", "a team row's view, the tactics: drag a pitch marker (it snaps to the stored grid, undoable), drop a bench row on a marker to swap, arm a set-piece chip and click a marker, arm Join attack and click two markers"],
   ["SE-GUI-45", "illegal formations: under 4cc Autumn 26 or Divegrass Before Christmas 7 a dragged starter keeps his position wherever he lands, down to y 0, and his popover lists every outfield position with Y from 0; under /vg/ League 27 the game's drop rule and the y 4 floor are back"],
+  ["SE-GUI-48", "Live AATF on: the icon at the dock header's right end opens the list in a window of its own (one column, its dock icon left of the close button); the dock icon puts it back; the close button turns Live AATF off, and turning it on again opens the window again"],
   ["SE-GUI-25", "the tactics' menus: Copy preset 1 to 2, then Swap Kick-off and In-possession; each is one undoable edit"],
   ["card badges", "the Skills column's header shows the player's own tier's cards left next to the pickers; under DBC7 the count stays positive (no card is capped), under the official ruleset ticking cards takes it to 0 then red"],
   ["SE-GUI-21", "the save's game running + Save: refused naming the exe (drawn; the scenario itself is manual)"],
@@ -4001,6 +4016,8 @@ function renderView(center) {
   if (logo) center.append(logo);
   const panel = renderPanel();
   if (panel) center.append(panel);
+  const liveWin = liveWindow();
+  if (liveWin) center.append(liveWin);
 }
 
 // The active ruleset's event logo at the view's top right, or null when its
@@ -4111,14 +4128,20 @@ function renderList(rows) {
 // dirty dot covering the team's own fields. It never drags and is no drop
 // target; a click selects the team (the view shows it), a double click also
 // sets the team selector to it and clears the filter (the list then shows
-// that team alone).
+// that team alone). The double click is counted here, as egui counts one (a
+// second click within 0.3 s), not left to the browser: the first click's
+// render rebuilds the row, and a browser restarts its click count on a new
+// element, so neither `dblclick` nor the click's `detail` ever reaches 2.
+let lastTeamClick = { team: null, at: 0 };
 function teamRow(team) {
   return h("div", { class: "prow trow" + (isTeamSel() && S.sel.team === team.id ? " on" : ""),
       "data-team": team.id, title: "Double-click to filter to this team",
-      onclick: () => { S.sel = { team: team.id }; render(); },
-      ondblclick: () => {
-        S.teamSel = String(team.id); S.filter = ""; S.sel = { team: team.id };
-        listScroll = 0; render(); updateLink();
+      onclick: e => {
+        const double = lastTeamClick.team === team.id && e.timeStamp - lastTeamClick.at < 300;
+        lastTeamClick = double ? { team: null, at: 0 } : { team: team.id, at: e.timeStamp };
+        S.sel = { team: team.id };
+        if (double) { S.teamSel = String(team.id); S.filter = ""; listScroll = 0; }
+        render(); updateLink();
       } },
     h("span", { class: "mono weak" }, String(team.id)),
     h("span", { class: "swatch", style: "background:" + shownHex(team.color_1) }),
@@ -6834,7 +6857,13 @@ function suggestionsFor(p, t) {
 // header, the divider above it drags its height.
 const LIVE = { on: localStorage.getItem("save_editor.live_aatf") === "true",
   sugg: localStorage.getItem("save_editor.live_suggestions") === "true",
-  collapsed: false, height: 150, sig: null, result: null, checking: false, timer: null };
+  // In a window of its own rather than the dock (`live_window`, remembered).
+  popped: localStorage.getItem("save_editor.live_window") === "true",
+  win: null, collapsed: false, height: 150, sig: null, result: null, checking: false, timer: null };
+function setLivePopped(popped) {
+  LIVE.popped = popped;
+  localStorage.setItem("save_editor.live_window", String(popped));
+}
 function setLive(on) {
   LIVE.on = on; LIVE.sig = null; LIVE.result = null;
   localStorage.setItem("save_editor.live_aatf", String(on));
@@ -7223,14 +7252,11 @@ function liveDivider() {
     e.preventDefault();
   } });
 }
-// sample wording: the header's lines, the checking mark, the chevron's
-// tooltips and the draft's no-sample line.
-function livePanel() {
-  if (!LIVE.on || !S.save) return null;
+// The header's count line and checking mark, the dock's and the window's.
+// sample wording: the header's lines, the checking mark and the draft's
+// no-sample line.
+function liveHeadline() {
   const rs = RULESETS[D.ruleset];
-  const chevron = button(LIVE.collapsed ? "▸" : "▾", () => { LIVE.collapsed = !LIVE.collapsed; render(); },
-    { frame0: true, title: LIVE.collapsed ? "Expand Live AATF" : "Collapse Live AATF" });
-  chevron.id = "live-chevron";
   const res = LIVE.result;
   // Suggestions are no issues: the header counts errors and warnings.
   const n = res && res.rows ? res.rows.filter(r => r[0] !== "Suggestion").length : 0;
@@ -7238,16 +7264,91 @@ function livePanel() {
     : res.rows === null ? weak("No sample run for " + res.team.name + " under " + rs.label + " in the draft.")
     : n ? strong(n + (n === 1 ? " issue" : " issues") + " · " + rs.label)
     : strong(res.team.name + " passes " + rs.label + " with no issues.");
-  const header = h("div", { class: "live-header", id: "live-header" }, chevron, strong("Live AATF"), head,
-    res && LIVE.checking ? h("span", { class: "weak", id: "live-checking" }, "↻ checking…") : null);
+  return [head, res && LIVE.checking ? h("span", { class: "weak", id: "live-checking" }, "↻ checking…") : null];
+}
+// A frameless icon button of the icon font (U+E5DE pop-out, U+E5DF dock).
+function liveIconButton(glyph, title, onclick) {
+  const b = button(glyph, onclick, { frame0: true, title });
+  b.classList.add("live-icon");
+  return b;
+}
+// The dock (egui's Panel::bottom, the log panel widget's frame). Popped out,
+// the dock is gone and `liveWindow` draws the list. The pop-out icon stands
+// at the header's right end. sample wording: the chevron's and the icon's
+// tooltips.
+function livePanel() {
+  if (!LIVE.on || !S.save || LIVE.popped) return null;
+  const chevron = button(LIVE.collapsed ? "▸" : "▾", () => { LIVE.collapsed = !LIVE.collapsed; render(); },
+    { frame0: true, title: LIVE.collapsed ? "Expand Live AATF" : "Collapse Live AATF" });
+  chevron.id = "live-chevron";
+  const popOut = liveIconButton("\uE5DE", "Open Live AATF in a window of its own",
+    () => { setLivePopped(true); render(); });
+  popOut.id = "live-pop-out";
+  const header = h("div", { class: "live-header", id: "live-header" }, chevron, strong("Live AATF"),
+    ...liveHeadline(), h("span", { class: "grow" }), popOut);
   if (LIVE.collapsed) return h("div", { class: "live-panel", "data-panel": "live-aatf" }, header);
-  const body = h("div", { class: "live-body" + (LIVE.checking ? " checking" : ""), id: "live-rows",
-    style: `height:${LIVE.height}px` });
-  // The suggestions in their own group after the violations, plain (no
-  // severity colour: a suggestion is no failure). In each, the players' rows
-  // stand in two columns, the starting eleven's left and the bench's right
-  // (a player's rows are short, the dock wide), and the team's own rows
-  // across both under them.
+  const body = liveList(false);
+  body.style.height = LIVE.height + "px";
+  return h("div", { class: "live-panel", "data-panel": "live-aatf" }, liveDivider(), header, body);
+}
+// Live AATF in a window of its own (the dock's pop-out icon): the same count
+// line and rows, the players' groups in one column in roster order, as
+// Multi-team AATF lists them, since the window opens narrower than the dock.
+// An egui::Window over the view, as the floating panels are: moved by its
+// title, resized from its edges, first at the view's bottom right, where the
+// dock stood and out of the panels' top-right spot. The dock icon left of
+// the title bar's ✕ puts the list back in the dock; ✕ turns Live AATF off, as
+// the toolbar toggle does, and turning it on again opens the window again.
+// Not a window of the desktop's own: an embedded one moves with Studio's and
+// needs no second viewport. sample wording: the tooltips.
+function liveWindow() {
+  if (!LIVE.on || !S.save || !LIVE.popped) return null;
+  const dock = liveIconButton("\uE5DF", "Put Live AATF back in its dock",
+    () => { setLivePopped(false); render(); });
+  dock.id = "live-dock";
+  const close = button("✕", () => { setLive(false); render(); }, { frame0: true, title: "Turn Live AATF off" });
+  const geo = LIVE.win;
+  const place = geo ? `left:${geo.x}px; top:${geo.y}px; width:${geo.w}px; height:${geo.h}px`
+    : "right:16px; bottom:40px; width:460px; height:360px";
+  const win = h("div", { class: "panel live-win", id: "live-window", "data-panel": "live-aatf-window", style: place },
+    h("div", { class: "title", onmousedown: e => { if (!e.target.closest("button")) startLiveDrag(e, win); } },
+      h("span", { class: "title-text" }, "Live AATF"), dock, close),
+    h("div", { class: "live-header" }, ...liveHeadline()),
+    liveList(true));
+  new ResizeObserver(() => {
+    if (!win.isConnected) return;
+    LIVE.win = { x: win.offsetLeft, y: win.offsetTop, w: win.offsetWidth, h: win.offsetHeight };
+  }).observe(win);
+  return win;
+}
+// The title row's drag, as the help window's: the window follows the pointer.
+function startLiveDrag(e, win) {
+  if (e.button !== 0) return;
+  const x0 = win.offsetLeft, y0 = win.offsetTop, scl = winScale();
+  const sx = e.clientX, sy = e.clientY;
+  const move = ev => {
+    win.style.right = ""; win.style.bottom = "";
+    win.style.left = Math.max(0, x0 + (ev.clientX - sx) / scl) + "px";
+    win.style.top = Math.max(0, y0 + (ev.clientY - sy) / scl) + "px";
+  };
+  const up = () => {
+    document.removeEventListener("mousemove", move);
+    document.removeEventListener("mouseup", up);
+    LIVE.win = { x: win.offsetLeft, y: win.offsetTop, w: win.offsetWidth, h: win.offsetHeight };
+  };
+  document.addEventListener("mousemove", move);
+  document.addEventListener("mouseup", up);
+  e.preventDefault();
+}
+// The list's well: the violations, then the suggestions in their own group,
+// plain (no severity colour: a suggestion is no failure). In the dock each
+// part's players stand in two columns, the starting eleven's left and the
+// bench's right (a player's rows are short, the dock wide); in the window
+// (`oneColumn`) in one, in roster order. The team's own rows follow under
+// them.
+function liveList(oneColumn) {
+  const res = LIVE.result;
+  const body = h("div", { class: "live-body" + (LIVE.checking ? " checking" : ""), id: "live-rows" });
   const rows = (res && res.rows) || [];
   const t = res && res.team;
   const starters = t ? new Set(t.tactics.starting_eleven.map(i => i + 1)) : new Set();
@@ -7279,13 +7380,14 @@ function livePanel() {
     if (!section.length) continue;
     if (title) body.append(h("div", { class: "grp" }, title));
     const players = section.filter(r => r[2]);
-    if (players.length) body.append(h("div", { class: "lcols" },
+    if (players.length && oneColumn) body.append(column(players));
+    else if (players.length) body.append(h("div", { class: "lcols" },
       column(players.filter(r => starters.has(slotOf(r[2])))),
       column(players.filter(r => !starters.has(slotOf(r[2]))))));
     const own = section.filter(r => !r[2]);
     if (own.length) body.append(h("div", { class: "grp weak" }, "Team-wide issues"), ...own.flatMap(rowEls));
   }
-  return h("div", { class: "live-panel", "data-panel": "live-aatf" }, liveDivider(), header, body);
+  return body;
 }
 
 // ---- Apply aesthetics patch (SE-GUI-18) ----

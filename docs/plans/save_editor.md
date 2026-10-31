@@ -1528,7 +1528,26 @@ What this editor adds on top of the lib:
   eleven's on the left and the bench's on the right, each in roster-slot order, and the team's
   own rows span both columns under them: a player's rows are short and the dock spans the
   view's width, so one column left most of it empty. Multi-team AATF keeps one column: its
-  report reads team by team, and its rows were just widened to read whole. The header reads `N issues · <ruleset>`, counting
+  report reads team by team, and its rows were just widened to read whole. **Its own
+  window**: the pop-out icon at the header's right end (the icon font's arrow out of a square,
+  U+E5DE, Phosphor's arrow-square-out; tooltip `Open Live AATF in a window of its own`) moves
+  the list into an `egui::Window` over the view, and the dock is gone until it comes back; the
+  window's title `Live AATF`, its title bar holding left of the close button the dock icon
+  (the arrow into a square, U+E5DF, Phosphor's arrow-square-in; `Put Live AATF back in its
+  dock`), which puts the list back, while the close button (`Turn Live AATF off`) turns Live
+  AATF off as the toolbar toggle does. Under the title the dock's count line and checking
+  mark, then the same rows in the same well, the players' groups in one column in roster order
+  as Multi-team AATF lists them, the rule's column 140 points (the longest rule name,
+  `automatic substitutions`) where the dock's is 190: the window first opens 460 × 360 at
+  the view's bottom right, where the dock stood and away from the floating panels' top-right
+  spot, narrower than the dock, so two columns would wrap every sentence. It is moved by its
+  title and resized from its edges, as the floating panels are, and remembered between
+  sessions as in the window or in the dock (`live_window`, a tool setting beside
+  `live_aatf`), so turning Live AATF on again opens it where it was. A member keeps it open
+  beside the player and the tactics they are fixing. An embedded window, not one of the
+  desktop's own (egui's viewports): it needs no second native window, moves with Studio's, and
+  works wherever Studio does; a native window comes after 0.0.2 (worklog), without
+  always-on-top, which is desktop-wide, so a member just moves it off the main window. The header reads `N issues · <ruleset>`, counting
   errors and warnings, or `<team> passes <ruleset> with no issues.` once neither is left;
   clicking a row selects that player (a
   `FieldedNotA` row selects his team's row instead, the named preset shown on the first of
@@ -2021,6 +2040,16 @@ SE-GUI-47  GIVEN the PES 17 save open on team 718 under DBC7, Live AATF on, one 
                 bench player's in its right, each under the line naming him, both columns from
                 the same top (718 has no rows of its own under DBC7: where a team has some, they
                 stand under both columns at the full width, which `team_widgets`' tests pin)
+SE-GUI-48  GIVEN SE-GUI-47's save, team, edit and check, the list in the dock
+           WHEN the pop-out icon at the dock header's right end is clicked
+           THEN the dock is gone and a window titled `Live AATF` holds the dock's count line
+                and the same rows, the bench player's group under the starters' in one column,
+                its dock icon left of its close button; WHEN the dock icon is clicked THEN the
+                window is gone and the dock is back with its two columns; WHEN the list is
+                popped out again and the window's close button clicked THEN Live AATF is off
+                (the toolbar's button unfilled, no list, no marks), and WHEN it is turned on
+                again THEN the list opens in the window, `live_window` read back from the
+                settings
 SE-GUI-36  GIVEN SE-GUI-30's save and team, Live AATF on and its first check returned, one
                  player of the team breaking the Height rule alone and another breaking none
            WHEN the view is drawn
