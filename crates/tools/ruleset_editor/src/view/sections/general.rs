@@ -45,14 +45,14 @@ impl LogoField {
 
     /// `ruleset`'s logo decoded, from the last frame's when its text is
     /// unchanged.
-    fn picture(&mut self, ctx: &egui::Context, ruleset: &Ruleset) -> Option<&EventLogo> {
+    fn picture(&mut self, ctx: &egui::Context, ruleset: &Ruleset) -> Option<&mut EventLogo> {
         if self.drawn != ruleset.logo {
             self.picture = ruleset
                 .logo_png()
                 .and_then(|png| EventLogo::load(ctx, "ruleset_event_logo", &png));
             self.drawn = ruleset.logo.clone();
         }
-        self.picture.as_ref()
+        self.picture.as_mut()
     }
 }
 
@@ -127,7 +127,7 @@ fn event_logo(ui: &mut egui::Ui, ruleset: &mut Ruleset, field: &mut LogoField) {
     ui.horizontal(|ui| {
         match field.picture(ui.ctx(), ruleset) {
             Some(picture) => {
-                ui.add(picture.image().alt_text("Event logo"));
+                ui.add(picture.image(ui.ctx()).alt_text("Event logo"));
             }
             None => {
                 ui.weak("None");
