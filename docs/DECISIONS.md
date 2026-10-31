@@ -14580,3 +14580,13 @@ Why: at 640 a long sentence (a height quota row naming the GigaHeight system) wa
 an organizer copies or reads these rows to fix teams. Wrapping alone would have doubled the
 list's height for most rows; width alone still cuts the longest.
 Plan: `plans/save_editor.md` "Configurable AATF rules"; worklog cv17.
+
+## 2026-10-31 — development plan — the full-look patch comes first after 0.0.1, then a proof-of-concept exe for VGL
+Decision (maintainer): after 0.0.1's cut, 8.36c and 8.36d (the full-look aesthetics patch,
+checked in game on PES 2019) come first, then a proof-of-concept exe for VGL's organizer that
+upgrades and compiles a couple of example teams, ahead of the full 0.0.2.
+Why: 0.0.1 handed over as VGL's proof of concept would have failed on its one point: on PES
+2019 a compiled player's face, boots and gloves reach the game only through that patch, so
+its compile shows the save's looks. The proof of concept, not the whole 0.0.2, is what the
+organizer needs to try the pipeline on their install early.
+Plan: `plans/core/development_plan.md` "The /vg/ League 27 (VGL): preview 0.0.2"; worklog 0.0.2.
