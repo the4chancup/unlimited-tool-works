@@ -310,7 +310,8 @@ pub(crate) struct BadgeKey {
 /// What the pitch badges' medal letters were computed for: the Cards
 /// left badge's `BadgeKey` minus the selection — a change of the open
 /// save (`Session::revision`), of the team or of the ruleset recomputes
-/// them, and any other frame draws the kept ones.
+/// them. Until the new ones land, the badges draw the kept ones if only
+/// the revision moved, and none for another team or ruleset.
 #[derive(Clone, PartialEq)]
 pub(crate) struct MedalKey {
     /// `Session::revision` when computed.
@@ -865,6 +866,14 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::I));
     let bump_key =
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::B));
+    // Ctrl+O and a version's Ctrl+digit open as the Open menu does. Not
+    // while a widget holds the keyboard: the menu's click ends the field's
+    // edit first, and a key would not.
+    let open_key = if typing {
+        None
+    } else {
+        ui.input_mut(open_menu::consume_shortcut)
+    };
     // PageDown and PageUp walk the list's players from any field, so they
     // are not held off while a widget has the keyboard. A held pointer
     // button holds them off, and so does the frame it is released on,
@@ -971,6 +980,9 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         && let Some(session) = view.session.as_mut()
     {
         view.stat_num = Some(menus::StatNum::bump(session, player_id, view.bump));
+    }
+    if let Some(shortcut) = open_key {
+        open_menu::open_shortcut(view, shortcut);
     }
     if let Some(forward) = page_step
         && player_list::step_player(view, forward)
