@@ -212,10 +212,10 @@ What this editor adds on top of the lib:
   ruleset and range with the error and warning counts, then per team its id and name after a
   `>`, which a cup's thread draws as green text so each team stands out, per player his id and
   name indented two spaces (the team's own rows under `Team-wide issues`; `All clean` there
-  under a clean team), per row its severity, rule and sentence indented four, so it pastes
-  readably into the thread (a failed team's error under its line); a notice says `Copied the
-  results of N teams.`, a count of 1 reading in the singular. The list is 614 by 360 points
-  and scrolls. `violations_list` draws both Live AATF's dock and this list (`ListUse`), and
+  under a clean team), per row its severity, rule and sentence indented four, and under a
+  height row its players' lines indented six, so it pastes readably into the thread (a failed team's error under its line); a notice says `Copied the
+  results of N teams.`, a count of 1 reading in the singular. The dialog is 900 points wide,
+  its list 874 by 360, and scrolls. `violations_list` draws both Live AATF's dock and this list (`ListUse`), and
   the copied text walks the same grouping (`issue_groups`), so the two read alike.
 - **Validate rules.** `check-aatf` refuses a rules file that fails the lib's load-time
   validation with its findings (line or key path), so the command doubles as a rules file's
@@ -303,7 +303,10 @@ The commands:
   the team, the player's id for a player's violation, the rule named in words (`rule=Fielded
   position`) and what is wrong, the sentence the window's AATF rows print (`problem=Attacking
   Prowess 82, over the 77 the rules allow`; `aatf_rules.md` "Hints at a valid value"): the
-  rules file's spellings (`FieldedNotA`, `attacking_prowess`) are for the program alone. Teams
+  rules file's spellings (`FieldedNotA`, `attacking_prowess`) are for the program alone. A
+  height row's sentence is followed by each of its players' lines after `; `, as the window
+  draws them under it (`problem=... where its quota is 10; At 185: Stack Bros. (189),
+  HELLOHELL; At 180: Let's Ghost`). Teams
   in id order, each team's lines in the order its check
   returns them. Suggestions are not printed: the CLI has no "Show suggestions" toggle, and an
   unused allowance is not something to fix. A team whose check fails (a bug in the logic or in a
