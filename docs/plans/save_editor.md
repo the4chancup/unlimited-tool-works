@@ -1465,6 +1465,12 @@ What exists of this is in `spec/save_editor.md` "Configurable AATF rules".
 
 What this editor adds on top of the lib:
 
+- **`check-aatf --rules` takes an embedded ruleset too.** `--rules dbc7` checks against the
+  embedded DBC7 ruleset, by the stem the `aatf_ruleset` setting already stores: a value naming
+  an existing file is that file, else an embedded ruleset's stem is that ruleset, else the
+  value is refused (exit 2) with the embedded stems listed. Without it a check against a
+  built-in ruleset had to go through the settings file or a copy of the ruleset written out
+  (DBC7's organizer, checking the DBC6 save, 2026-10-31).
 - **The ruleset dropdown** (`spec/save_editor.md` "Configurable AATF rules" for what is
   built): the wheel over the closed combo (`core/gui.md` "The wheel over a value") steps the
   rulesets alone, never running `Import rules file…`, which is a command rather than a value.

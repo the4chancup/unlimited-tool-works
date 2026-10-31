@@ -6131,6 +6131,11 @@ briefs, review loops, gates and mutation runs as for any step.
       over it 0 of 2, the loop ends; `mutants-diff b83ab5bd^1` (local): aatf 3 caught,
       ruleset_editor 10 caught and 1 unviable, no survivor (`.tmp/0_0_1cv/rulings_cv14.md`,
       `mutants_diff_cv14.log`)
+  - [ ] cv15 `check-aatf --rules` takes an embedded ruleset's stem (`--rules dbc7`; the
+    maintainer, 2026-10-31; `plans/save_editor.md` "Configurable AATF rules"): `save_editor`'s
+    CLI, the spec's `check-aatf` paragraph and a scenario with it → verify: a check by stem
+    prints the embedded ruleset's violations, an unknown stem is refused with the stems
+    listed (exit 2), a file of that name in the current folder still wins
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
     every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree
