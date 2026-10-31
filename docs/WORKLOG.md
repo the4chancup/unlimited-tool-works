@@ -5978,22 +5978,23 @@ briefs, review loops, gates and mutation runs as for any step.
     then `view/sections/general.rs` and the tests that find a field by its label
     (`view/tests/general.rs`)
   - [ ] cv9 the Tactics pitch as PES 2017 has it (the maintainer's PES 2017 check, 2026-10-31;
-    0.0.1 is PES 2017's, 0.0.2 PES 2019's for VGL 27, the other versions after)
-    - [ ] cv9a an outfielder stops at y 4 (plan, the drop's bullet and the popover's
-      steppers; DECISIONS 2026-10-31): the draft done (`PITCH.yMin`, checked by
-      `.tmp/0_0_1cv/pitch17/floor_check.py`: a drag in steps and in one jump below the
-      pitch stands and lands on y 4, Y's ⏴ disabled at 4, a typed 2 refused; red with
-      `yMin` 0); then `team_widgets` `pitch/mod.rs` `snap` and `pitch/popover.rs`'s Y
-      stepper, with tests
-    - [ ] cv9b each version draws its own screen's pitch (DECISIONS 2026-10-31): PES 2017's
+    0.0.1 is PES 2017's, 0.0.2 PES 2019's for VGL 27, the other versions after). Open: the
+    `mutants-diff 3b0b07fc` run's triage; a look at a PES 2017 save in the built window
+    - [x] cv9a an outfielder stops at y 4 (plan, the drop's bullet and the popover's
+      steppers; DECISIONS 2026-10-31): the draft (`PITCH.yMin`, checked by
+      `.tmp/0_0_1cv/pitch17/floor_check.py`); `team_widgets` `snap` clamps y to 4..=48 and
+      the popover's Y steps in 4..=48, a stored y below stepping back to 4; SE-GUI-42 states
+      the floor. Merged with cv9b `8bbf6053`
+    - [x] cv9b each version draws its own screen's pitch (DECISIONS 2026-10-31): PES 2017's
       measured from its texture as PES 2021's was (8.9g; `.tmp/0_0_1cv/pitch17/`: the
       texture from `dt11_win.cpk`'s `gamePlan.bin`, mean luma difference 2.2 to the
-      maintainer's screenshot, the mapping PES 2021's on twenty badges); the plan's pitch
-      bullet per version; the draft done (`PITCH_LOOKS`, by the sidebar's PES;
-      `draft_pitch_render.py`: PES 2017 beside its texture and the screenshot, PES 2021
-      against HEAD changed in its circle and grain alone); then `team_widgets` `pitch/`
-      (`turf_image`, `paint_pitch`) with cv9a's code in one brief; PES 2019's in 0.0.2; the
-      others after
+      maintainer's screenshot, the mapping PES 2021's on twenty badges); the look picked by
+      the open save's version. `team_widgets` `pitch/mod.rs`: `PitchLook` data per version
+      (PES 2017's and PES 2021's, the others PES 2021's until measured), the turf texture
+      cached per look, the lines from the look; studio_core's two turf colours removed.
+      SWE-2 S1 (2 accepted, the tests: the floor as a literal 4, a per-look cache test),
+      Astra R1 on Devin no concerns; merged `8bbf6053`, `gates-changed 8a73e438` green (21
+      binaries, 3416 tests). PES 2019's look in 0.0.2; the others after
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450

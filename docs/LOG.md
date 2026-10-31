@@ -2951,3 +2951,6 @@ worklog passed 7,000 lines.
 - **2026-10-31** — 0.0.1cv: A3-3 checked in the built window (the popover's Position pick by
   pointer); cv6's diff run missed nothing, and cv6t (merged `8a73e438`) tested its last
   survivors and made a test wait fail fast. cv9 drafted: PES 2017's own pitch, the y-4 floor.
+- **2026-10-31** — 0.0.1cv cv9 merged (`8bbf6053`, gates green): the Tactics pitch draws the open
+  save's version's own formation screen, PES 2017's measured from its texture, and a dragged
+  outfielder stops at y 4 as in game. The crate map's button lifts each lib as high as it goes.
