@@ -14660,3 +14660,15 @@ Why: `.tmp/` is ignored by git, so a tool kept there is never reviewed or versio
 session finds it only through a note that names it; the harness had served every built-window
 check for weeks from three scratch folders, its app path written into each script.
 Plan: `RUNBOOK.md` "The scratch folder"; `scripts/built_window/README.md`.
+
+## 2026-10-31 — save_editor — Multi-team AATF's range opens on one team, its right end clamps to the left, and the check waits 500 ms
+Decision (maintainer): the dialog opens with both ends on the save's first team; the left end
+offers every team, the right end only the teams from the left end on, following the left end
+when it passes it; a change starts the check once the ends have rested 500 ms (the lead offered
+200, then 300; the maintainer chose 500 "to be safe"). The pictures' range pairs its ends the
+same way (one rule for one control), keeping the whole save as its default.
+Why: the wheel over an end steps one team a frame and each step re-checked the range: over 220
+teams the window stopped answering for about two minutes. A whole-save check on opening is the
+long one an organizer rarely wants; a reversed range is a state the clamp makes impossible.
+Plan: `plans/save_editor.md` the bullet "Multi-team AATF's range starts on one team", the
+pictures' range, SE-GUI-41; worklog cv26.
