@@ -6,7 +6,9 @@ is added or its workspace dependencies change. No gate checks that the page is c
 a map to keep a picture of the project by, not a contract."""
 import html
 import json
+import math
 import os
+import random
 import subprocess
 import sys
 
@@ -40,37 +42,27 @@ TOOLS = sorted(n for n, f in folder.items() if f == "tools")
 LIBS = sorted(n for n, f in folder.items() if f == "libs" and n not in WIDGET_LIBS)
 
 
-def lib_level(name):
-    # Longest path down to a lib that uses no other lib: each lib as low as it can go.
-    below = [d for d in deps[name] if d in LIBS]
-    return 1 + max(map(lib_level, below)) if below else 0
-
-
 def lib_depth(name):
     # Longest path up to a lib no other lib uses: each lib as high as it can go, one row under
-    # the lowest lib that uses it.
+    # the lowest lib that uses it. As low as they go instead, the libs that use nothing all
+    # sat on the bottom row, however far from the tools that use them.
     above = [n for n in LIBS if name in deps[n]]
     return 1 + max(map(lib_depth, above)) if above else 0
 
 
-def with_libs(lib_rows):
-    head = [("The binary", ["studio"]), ("Tools", TOOLS), ("Widget libs", WIDGET_LIBS),
-            ("Platform", ["studio_core"])]
-    return head + [("Libs" if index == 0 else "", row) for index, row in enumerate(lib_rows)]
-
-
-# The page's button switches between the two; "low" is the one it opens on.
-lowest, deepest = max(map(lib_level, LIBS)), max(map(lib_depth, LIBS))
-LAYOUTS = {
-    "low": with_libs([sorted(n for n in LIBS if lib_level(n) == level)
-                      for level in range(lowest, -1, -1)]),
-    "high": with_libs([sorted(n for n in LIBS if lib_depth(n) == depth)
-                       for depth in range(deepest + 1)]),
-}
+ROWS = [
+    ("The binary", ["studio"]),
+    ("Tools", TOOLS),
+    ("Widget libs", WIDGET_LIBS),
+    ("Platform", ["studio_core"]),
+]
+for depth in range(max(map(lib_depth, LIBS)) + 1):
+    label = "Libs" if depth == 0 else ""
+    ROWS.append((label, sorted(n for n in LIBS if lib_depth(n) == depth)))
 
 BOX_W, BOX_H, GAP, ROW_H, LEFT, TOP = 104, 30, 10, 84, 130, 40
-WIDTH = LEFT + max(len(r) for rows in LAYOUTS.values() for _, r in rows) * (BOX_W + GAP) + 30
-HEIGHT = TOP + max(map(len, LAYOUTS.values())) * ROW_H + 20
+WIDTH = LEFT + max(len(r) for _, r in ROWS) * (BOX_W + GAP) + 30
+HEIGHT = TOP + len(ROWS) * ROW_H + 20
 
 # A crate's description is drawn on one line above the chart, as wide as it: a longer one
 # wraps and pushes the chart down while the pointer moves. Measured in Chromium with Segoe UI
@@ -100,68 +92,183 @@ def band_of(name):
     return "libs"
 
 
-def chart(layout, rows):
+def place(rows):
+    # Each crate's box corner: rows top to bottom, each row centred.
     pos = {}
     for index, (_, row) in enumerate(rows):
         span = len(row) * BOX_W + (len(row) - 1) * GAP
         x0 = LEFT + ((WIDTH - LEFT - 30) - span) / 2
         for column, name in enumerate(row):
             pos[name] = (x0 + column * (BOX_W + GAP), TOP + index * ROW_H)
-    # Each chart its own marker id: a url(#id) shared by two charts resolves into the first
-    # one, which is hidden while the other shows.
-    marker = f"arrow-{layout}"
-    svg = [f'<svg data-libs="{layout}" xmlns="http://www.w3.org/2000/svg" '
-           f'viewBox="0 0 {WIDTH} {HEIGHT}" width="{WIDTH}" height="{HEIGHT}" '
-           'font-family="Segoe UI, sans-serif">',
-           f'<defs><marker id="{marker}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" '
-           'markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" '
-           'fill="context-stroke"/></marker></defs>']
-    # One band per label, the lib rows under "Libs" sharing theirs.
-    bands = []
-    for index, (label, row) in enumerate(rows):
-        if label:
-            bands.append([label, band_of(row[0]), index, index])
+    return pos
+
+
+def implied(source, target):
+    # Whether `source` also reaches `target` through another crate: its arrow repeats what a
+    # longer path already shows, so the page draws it only while either end is highlighted.
+    todo, seen = [d for d in deps[source] if d != target], set()
+    while todo:
+        name = todo.pop()
+        if name == target:
+            return True
+        if name not in seen:
+            seen.add(name)
+            todo.extend(deps[name])
+    return False
+
+
+IMPLIED = {(source, target) for source, targets in deps.items() for target in targets
+           if implied(source, target)}
+SHOWN = [(source, target) for source, targets in deps.items() for target in targets
+         if (source, target) not in IMPLIED]
+
+
+def ends(pos, arrow):
+    # An arrow drawn at rest as a straight line from its crate's bottom edge to its target's
+    # top edge.
+    (sx, sy), (tx, ty) = pos[arrow[0]], pos[arrow[1]]
+    return sx + BOX_W / 2, sy + BOX_H, tx + BOX_W / 2, ty
+
+
+def arrow_length(pos):
+    return sum(math.hypot(x2 - x1, y2 - y1)
+               for x1, y1, x2, y2 in (ends(pos, arrow) for arrow in SHOWN))
+
+
+# The arrow pairs that can cross: no crate in common, and rows in common. A crate's row never
+# changes while the rows are ordered, so the pairs are found once.
+ROW_OF = {name: index for index, (_, row) in enumerate(ROWS) for name in row}
+CROSSABLE = [(a, b) for i, a in enumerate(SHOWN) for b in SHOWN[i + 1:]
+             if not set(a) & set(b)
+             and max(ROW_OF[a[0]], ROW_OF[b[0]]) < min(ROW_OF[a[1]], ROW_OF[b[1]])]
+
+
+def crossings(pos):
+    # Two arrows cross when their left-to-right order flips between the top and the bottom of
+    # the height they share.
+    count = 0
+    for a, b in CROSSABLE:
+        ax1, ay1, ax2, ay2 = ends(pos, a)
+        bx1, by1, bx2, by2 = ends(pos, b)
+        top, bottom = max(ay1, by1), min(ay2, by2)
+
+        def gap(y):
+            ax = ax1 + (ax2 - ax1) * (y - ay1) / (ay2 - ay1)
+            bx = bx1 + (bx2 - bx1) * (y - by1) / (by2 - by1)
+            return ax - bx
+
+        if gap(top) * gap(bottom) < 0:
+            count += 1
+    return count
+
+
+# A crossing costs as much as this much more arrow length. With ten starts, 25, 50 and 100 px
+# settled on the same order, shorter and with fewer crossings than length alone found.
+CROSSING_WEIGHT = 50
+
+
+def cost(pos):
+    return arrow_length(pos) + CROSSING_WEIGHT * crossings(pos)
+
+
+def arrange(rows):
+    # Orders each row so the arrows come out short and cross little: the best order is
+    # NP-hard to find, but rows this small take a local search. Barycentre sweeps (each crate
+    # under the mean of the crates it is linked to) give the start, then single moves of a
+    # crate to another place in its row are kept while one lowers the cost.
+    linked = {name: set() for name in deps}
+    for source, target in SHOWN:
+        linked[source].add(target)
+        linked[target].add(source)
+    labels = [label for label, _ in rows]
+    order = [list(row) for _, row in rows]
+
+    def current():
+        return list(zip(labels, order))
+
+    for _ in range(4):
+        pos = place(current())
+        for row in order:
+            row.sort(key=lambda name: sum(pos[other][0] for other in linked[name])
+                     / max(len(linked[name]), 1))
+    best = cost(place(current()))
+    improved = True
+    while improved:
+        improved = False
+        for row in order:
+            for start in range(len(row)):
+                for end in range(len(row)):
+                    if start == end:
+                        continue
+                    row.insert(end, row.pop(start))
+                    now = cost(place(current()))
+                    if now < best - 1e-6:
+                        best, improved = now, True
+                    else:
+                        row.insert(start, row.pop(end))
+    return current()
+
+
+def best_order(rows):
+    # The search stops at the first order no single move improves, and with crossings in the
+    # cost those orders differ widely between starts: ten starts, the rows by name and nine
+    # shuffles from a fixed seed (the same map every run), keep the cheapest.
+    shuffle = random.Random(0)
+    starts = [rows] + [[(label, shuffle.sample(row, len(row))) for label, row in rows]
+                       for _ in range(9)]
+    return min((arrange(start) for start in starts), key=lambda order: cost(place(order)))
+
+
+ROWS = best_order(ROWS)
+pos = place(ROWS)
+svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {HEIGHT}" '
+       f'width="{WIDTH}" height="{HEIGHT}" font-family="Segoe UI, sans-serif">',
+       '<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" '
+       'markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" '
+       'fill="context-stroke"/></marker></defs>']
+# One band per label, the lib rows under "Libs" sharing theirs.
+bands = []
+for index, (label, row) in enumerate(ROWS):
+    if label:
+        bands.append([label, band_of(row[0]), index, index])
+    else:
+        bands[-1][3] = index
+for label, band, first, last in bands:
+    y = TOP + first * ROW_H - 18
+    height = (last - first + 1) * ROW_H - 10
+    svg.append(f'<rect x="10" y="{y}" width="{WIDTH - 20}" height="{height}" rx="8" '
+               f'class="band {band}"/>')
+    svg.append(f'<text class="band-label" x="22" y="{y + 30}" font-size="15" '
+               f'font-weight="600">{html.escape(label)}</text>')
+svg.append('<g id="edges">')
+for source, targets in deps.items():
+    sx, sy = pos[source]
+    for target in targets:
+        tx, ty = pos[target]
+        x1, y1 = sx + BOX_W / 2, sy + BOX_H
+        x2, y2 = tx + BOX_W / 2, ty
+        if ty == sy:
+            # Same row (a lib using a lib beside it): arc under the row.
+            y1 = y2 = sy + BOX_H
+            d = f"M{x1},{y1} C{x1},{y1 + 40} {x2},{y2 + 40} {x2},{y2}"
         else:
-            bands[-1][3] = index
-    for label, band, first, last in bands:
-        y = TOP + first * ROW_H - 18
-        height = (last - first + 1) * ROW_H - 10
-        svg.append(f'<rect x="10" y="{y}" width="{WIDTH - 20}" height="{height}" rx="8" '
-                   f'class="band {band}"/>')
-        svg.append(f'<text class="band-label" x="22" y="{y + 30}" font-size="15" '
-                   f'font-weight="600">{html.escape(label)}</text>')
-    svg.append('<g class="edges">')
-    for source, targets in deps.items():
-        sx, sy = pos[source]
-        for target in targets:
-            tx, ty = pos[target]
-            x1, y1 = sx + BOX_W / 2, sy + BOX_H
-            x2, y2 = tx + BOX_W / 2, ty
-            if ty == sy:
-                # Same row (a lib using a lib beside it): arc under the row.
-                y1 = y2 = sy + BOX_H
-                d = f"M{x1},{y1} C{x1},{y1 + 40} {x2},{y2 + 40} {x2},{y2}"
-            else:
-                mid = (y1 + y2) / 2
-                d = f"M{x1},{y1} C{x1},{mid} {x2},{mid} {x2},{y2}"
-            svg.append(f'<path class="edge" data-from="{source}" data-to="{target}" d="{d}" '
-                       f'fill="none" stroke-width="1.2" marker-end="url(#{marker})"/>')
-    svg.append('</g><g class="nodes">')
-    for name, (x, y) in pos.items():
-        outside = name not in reach
-        dash = ' stroke-dasharray="4 3"' if outside else ""
-        about = html.escape(description[name], quote=True)
-        svg.append(f'<g class="node{" outside" if outside else ""}" data-name="{name}" '
-                   f'data-about="{about}">'
-                   f'<title>{name}: {about}</title>'
-                   f'<rect x="{x}" y="{y}" width="{BOX_W}" height="{BOX_H}" rx="5"{dash}/>'
-                   f'<text x="{x + BOX_W / 2}" y="{y + 20}" font-size="12" '
-                   f'text-anchor="middle">{name}</text></g>')
-    svg.append("</g></svg>")
-    return "".join(svg)
-
-
-charts = "".join(chart(layout, rows) for layout, rows in LAYOUTS.items())
+            mid = (y1 + y2) / 2
+            d = f"M{x1},{y1} C{x1},{mid} {x2},{mid} {x2},{y2}"
+        kind = "edge implied" if (source, target) in IMPLIED else "edge"
+        svg.append(f'<path class="{kind}" data-from="{source}" data-to="{target}" d="{d}" '
+                   f'fill="none" stroke-width="1.2" marker-end="url(#arrow)"/>')
+svg.append('</g><g id="nodes">')
+for name, (x, y) in pos.items():
+    outside = name not in reach
+    dash = ' stroke-dasharray="4 3"' if outside else ""
+    about = html.escape(description[name], quote=True)
+    svg.append(f'<g class="node{" outside" if outside else ""}" data-name="{name}" '
+               f'data-about="{about}">'
+               f'<title>{name}: {about}</title>'
+               f'<rect x="{x}" y="{y}" width="{BOX_W}" height="{BOX_H}" rx="5"{dash}/>'
+               f'<text x="{x + BOX_W / 2}" y="{y + 20}" font-size="12" '
+               f'text-anchor="middle">{name}</text></g>')
+svg.append("</g></svg>")
 
 page = f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title>Unlimited Tool Works: crate layers</title>
@@ -184,13 +291,9 @@ body {{ font-family: "Segoe UI", sans-serif; margin: 24px; color: var(--text);
 h1 {{ font-size: 20px; margin: 0 0 6px; }}
 p {{ margin: 4px 0; font-size: 14px; color: var(--soft); max-width: 1100px; }}
 code {{ background: var(--code); padding: 0 3px; border-radius: 3px; }}
-#controls {{ position: absolute; top: 24px; right: 24px; display: flex; gap: 8px; }}
-#controls button {{ font: inherit; font-size: 13px;
+#theme {{ position: absolute; top: 24px; right: 24px; font: inherit; font-size: 13px;
   color: var(--text); background: var(--code); border: 1px solid var(--out-line);
   border-radius: 4px; padding: 3px 10px; cursor: pointer; }}
-/* One chart per lib layout, the button showing the other. */
-:root:not([data-libs="high"]) svg[data-libs="high"],
-:root[data-libs="high"] svg[data-libs="low"] {{ display: none; }}
 .band {{ opacity: 0.55; }}
 /* The dark bands at the light ones' distance from their page (CIELAB delta E 3 to 9 in
    both themes): brighter, they outweighed the arrows. */
@@ -207,6 +310,9 @@ code {{ background: var(--code); padding: 0 3px; border-radius: 3px; }}
 svg.focus .edge, svg.focus .node {{ opacity: 0.12; }}
 svg.focus .edge.uses {{ opacity: 1; stroke: var(--uses); stroke-width: 2; }}
 svg.focus .edge.usedby {{ opacity: 1; stroke: var(--usedby); stroke-width: 2; }}
+/* An arrow a longer path already implies: drawn only while an end is highlighted. */
+.edge.implied {{ display: none; }}
+svg.focus .edge.implied.uses, svg.focus .edge.implied.usedby {{ display: inline; }}
 svg.focus .node.on {{ opacity: 1; }}
 .node {{ cursor: pointer; }}
 .node.pinned rect {{ stroke: var(--uses); stroke-width: 2.5; }}
@@ -224,36 +330,21 @@ svg.focus .node.on {{ opacity: 1; }}
 // Before the body draws, so a light choice never flashes dark first.
 if (localStorage.getItem("crate_map_theme") === "light")
   document.documentElement.dataset.theme = "light";
-if (localStorage.getItem("crate_map_libs") === "high")
-  document.documentElement.dataset.libs = "high";
 </script></head><body>
-<div id="controls"><button id="libs" type="button"></button>
-<button id="theme" type="button"></button></div>
+<button id="theme" type="button"></button>
 <h1>Unlimited Tool Works: how the crates depend on each other</h1>
 <p>Every arrow points from a crate to one it uses (normal dependencies from the manifests,
 dev-dependencies left out). Rows run from the binary at the top to the libs at the bottom;
-within the libs, a row uses only rows below it. Each lib sits as low as it can go, the libs
-that use nothing on the bottom row, or, with the button, as high as it can go, one row under
-the lowest lib that uses it. Dashed crates are not linked into <code>UTW</code>.</p>
+within the libs, a row uses only rows below it. An arrow a longer path already implies
+(<code>save_editor</code> to <code>studio_core</code>, through <code>team_widgets</code>)
+shows only while a crate at either end is highlighted.
+Dashed crates are not linked into <code>UTW</code>.</p>
 <p class="key">Click a crate to keep it highlighted and put it in the address
 (<code>#save_editor</code>), again to let go:<span class="uses"></span>what it uses
 <span class="usedby"></span>what uses it</p>
 <p id="about"><span class="hint">Hover over a crate to see what it does.</span></p>
-{charts}
+{"".join(svg)}
 <script>
-const libsButton = document.getElementById("libs");
-function labelLibs() {{
-  const high = document.documentElement.dataset.libs === "high";
-  libsButton.textContent = high ? "Libs as low as they go" : "Libs as high as they go";
-}}
-libsButton.addEventListener("click", () => {{
-  const high = document.documentElement.dataset.libs !== "high";
-  if (high) document.documentElement.dataset.libs = "high";
-  else delete document.documentElement.dataset.libs;
-  localStorage.setItem("crate_map_libs", high ? "high" : "low");
-  labelLibs();
-}});
-labelLibs();
 const themeButton = document.getElementById("theme");
 function labelTheme() {{
   const light = document.documentElement.dataset.theme === "light";
@@ -267,10 +358,9 @@ themeButton.addEventListener("click", () => {{
   labelTheme();
 }});
 labelTheme();
-// Both charts follow the hover and the pin, so the switch keeps what is highlighted.
-const charts = [...document.querySelectorAll("svg")];
-const edges = [...document.querySelectorAll("svg .edge")];
-const nodes = [...document.querySelectorAll("svg .node")];
+const svg = document.querySelector("svg");
+const edges = [...svg.querySelectorAll(".edge")];
+const nodes = [...svg.querySelectorAll(".node")];
 const about = document.getElementById("about");
 const hint = about.firstElementChild;
 // The crate a click or the address chose; a hover shows another only while it lasts.
@@ -278,11 +368,12 @@ let pinned = null;
 function show(name) {{
   for (const edge of edges) edge.classList.remove("uses", "usedby");
   const node = nodes.find(n => n.dataset.name === name);
-  for (const chart of charts) chart.classList.toggle("focus", !!node);
   if (!node) {{
+    svg.classList.remove("focus");
     about.replaceChildren(hint);
     return;
   }}
+  svg.classList.add("focus");
   const on = new Set([name]);
   for (const edge of edges) {{
     if (edge.dataset.from === name) {{ edge.classList.add("uses"); on.add(edge.dataset.to); }}
@@ -327,4 +418,4 @@ OUT = "docs/web/crate_map.html"
 with open(OUT + ".new", "w", encoding="utf-8", newline="\n") as f:
     f.write(page)
 os.replace(OUT + ".new", OUT)
-print("wrote", OUT, f"{len(deps)} crates,", sum(map(len, deps.values())), "arrows")
+print("wrote", OUT, f"{len(pos)} crates,", sum(map(len, deps.values())), "arrows")
