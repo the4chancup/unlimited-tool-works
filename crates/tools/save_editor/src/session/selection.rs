@@ -41,10 +41,11 @@ pub(crate) enum ListRow {
 /// The rows the list draws: each listed team's row, then its players' rows
 /// in roster order. A non-empty `filter` matches across all teams (whatever
 /// the choice) on the display name, the shirt name or the id,
-/// case-insensitive; a team is then listed when its own name (its display
-/// name, matched as the players' names are) or any of its players matches,
-/// followed by its matching players only. Empty slots (player id 0) are
-/// never listed.
+/// case-insensitive. A team whose own name (its display name, matched as
+/// the players' names are) matches is then listed with all its players, so
+/// a search for a team shows its squad; any other team is listed with its
+/// matching players only, and skipped when none match. Empty slots (player
+/// id 0) are never listed.
 pub(crate) fn list(file: &EditFile, team: &TeamChoice, filter: &str) -> Vec<ListRow> {
     let query = filter.trim().to_lowercase();
     let filtering = !query.is_empty();
@@ -63,13 +64,13 @@ pub(crate) fn list(file: &EditFile, team: &TeamChoice, filter: &str) -> Vec<List
         {
             continue;
         }
-        let player_rows = team_rows(team_entry, &players, &query);
-        if filtering
-            && player_rows.is_empty()
-            && !display_name(&team_entry.name)
+        let named = filtering
+            && display_name(&team_entry.name)
                 .to_lowercase()
-                .contains(&query)
-        {
+                .contains(&query);
+        let player_query = if named { "" } else { query.as_str() };
+        let player_rows = team_rows(team_entry, &players, player_query);
+        if filtering && !named && player_rows.is_empty() {
             continue;
         }
         rows.push(ListRow::Team(team_entry.id));
@@ -245,33 +246,51 @@ mod tests {
         assert_eq!(list(&file, &TeamChoice::Team(718), ""), expected);
     }
 
-    // Under a filter a team's row stays while its own name matches, and its
-    // players are only the matching ones.
+    // Under a filter a team whose own name matches lists its whole squad,
+    // not only the players whose own names match: a search for a team
+    // shows its squad.
     #[test]
-    fn list_filter_matching_a_teams_name_lists_its_row_alone() {
+    fn list_filter_matching_a_teams_name_lists_its_whole_squad() {
         let file = open(PesVersion::Pes17);
-        // Team 701's name is "/3/": "3/" matches its display name and no
-        // player of any team (premise checked on the whole pool's display
-        // names, shirt names and ids).
-        assert_eq!(file.team(701).unwrap().name, "/3/");
+        // Team 718's name is "/f/", held by no other team's display name.
+        // Of the whole pool only 77206 ("PRESS /f/", team 772's sixth
+        // slot) holds it in his display name, shirt name or id, so none of
+        // 718's players is listed for his own name.
+        assert_eq!(file.team(718).unwrap().name, "/f/");
         for team in file.teams() {
-            for slot in &team.roster {
-                if slot.player_id == 0 {
-                    continue;
-                }
-                let player = file.player(slot.player_id).unwrap();
-                assert!(
-                    !display_name(&player.name).to_lowercase().contains("3/")
-                        && !player.shirt_name.to_lowercase().contains("3/")
-                        && !player.id.to_string().contains("3/"),
-                    "premise: no player matches 3/"
-                );
-            }
+            assert!(
+                team.id == 718 || !display_name(&team.name).to_lowercase().contains("/f/"),
+                "premise: team {} does not match /f/",
+                team.id
+            );
         }
-        assert_eq!(
-            list(&file, &TeamChoice::Team(701), "3/"),
-            [ListRow::Team(701)]
-        );
+        let holding: Vec<u32> = file
+            .players()
+            .iter()
+            .filter(|player| {
+                display_name(&player.name).to_lowercase().contains("/f/")
+                    || player.shirt_name.to_lowercase().contains("/f/")
+                    || player.id.to_string().contains("/f/")
+            })
+            .map(|player| player.id)
+            .collect();
+        assert_eq!(holding, [77206], "premise: the players holding /f/");
+        assert_eq!(file.team(772).unwrap().roster[5].player_id, 77206);
+        let squad = rostered(&file, 718);
+        assert!(squad.len() > 1, "premise: 718 has a squad to list");
+        let expected: Vec<ListRow> = [ListRow::Team(718)]
+            .into_iter()
+            .chain(squad.into_iter().map(ListRow::Player))
+            .chain([
+                ListRow::Team(772),
+                ListRow::Player(Row {
+                    team_id: 772,
+                    slot: 5,
+                    player_id: 77206,
+                }),
+            ])
+            .collect();
+        assert_eq!(list(&file, &TeamChoice::All, "/f/"), expected);
     }
 
     // A filter matching one player: his team's row heads him, no other
