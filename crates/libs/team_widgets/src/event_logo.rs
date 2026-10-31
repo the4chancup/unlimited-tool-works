@@ -26,8 +26,8 @@ const MAX_WIDTH: f32 = 84.0;
 pub struct EventLogo {
     /// The uploaded picture, resampled for `pixels_per_point`.
     texture: egui::TextureHandle,
-    /// The decoded picture with its alpha premultiplied, RGBA8, row-major:
-    /// what every resampling starts from.
+    /// The decoded picture, straight-alpha RGBA8, row-major: what every
+    /// resampling starts from.
     source: Vec<u8>,
     /// `source`'s width in pixels.
     source_width: u32,
@@ -51,7 +51,7 @@ impl EventLogo {
                 return None;
             }
         };
-        let source = premultiplied(decoded.mips.into_iter().next()?);
+        let source = decoded.mips.into_iter().next()?;
         let pixels_per_point = ctx.pixels_per_point();
         let image = resampled(&source, decoded.width, decoded.height, pixels_per_point);
         Some(EventLogo {
@@ -102,40 +102,21 @@ fn drawn_size(width: u32, height: u32) -> egui::Vec2 {
     pixels * scale
 }
 
-/// `pixels` (straight-alpha RGBA8) with each texel's R, G and B multiplied
-/// by its alpha over 255, rounded, in the byte values as stored: egui's
-/// own premultiplication (`Color32::from_rgba_unmultiplied`).
-fn premultiplied(mut pixels: Vec<u8>) -> Vec<u8> {
-    for texel in pixels.as_chunks_mut::<4>().0 {
-        let [r, g, b, a] = *texel;
-        *texel = egui::Color32::from_rgba_unmultiplied(r, g, b, a).to_array();
-    }
-    pixels
-}
-
-/// `source` (`width` × `height`, premultiplied RGBA8) resampled with
-/// Lanczos3 to the pixels its drawn size takes at `pixels_per_point`, each
-/// side rounded to the nearest pixel and at least 1. Premultiplied, a
-/// transparent texel adds nothing to its neighbours' colour; straight, the
-/// colour it happens to store (black, in most logos) bleeds into the edge
-/// as a dark fringe.
+/// `source` (`width` × `height`, straight-alpha RGBA8) resampled with
+/// Lanczos3 on premultiplied colour to the pixels its drawn size takes at
+/// `pixels_per_point`, each side rounded to the nearest pixel and at least
+/// 1: resampled straight, the colour a transparent texel stores (black, in
+/// most logos) would bleed into the edge as a dark fringe.
 fn resampled(source: &[u8], width: u32, height: u32, pixels_per_point: f32) -> egui::ColorImage {
     let drawn = drawn_size(width, height) * pixels_per_point;
     let side = |points: f32| (points.round() as u32).max(1);
     let (new_width, new_height) = (side(drawn.x), side(drawn.y));
-    let mut pixels = dds_convert::resize(source, width, height, new_width, new_height).expect(
-        "a decoded PNG is a whole picture of at least 1 × 1 and both new sides are at least \
-         1: the resampler refuses only a zero side or a buffer of the wrong length",
-    );
-    // Lanczos3 overshoots near a sharp edge, and a premultiplied colour
-    // above its alpha is no colour at all.
-    for texel in pixels.as_chunks_mut::<4>().0 {
-        let alpha = texel[3];
-        for channel in &mut texel[..3] {
-            *channel = (*channel).min(alpha);
-        }
-    }
-    egui::ColorImage::from_rgba_premultiplied([new_width as usize, new_height as usize], &pixels)
+    let pixels = dds_convert::resize_straight_alpha(source, width, height, new_width, new_height)
+        .expect(
+            "a decoded PNG is a whole picture of at least 1 × 1 and both new sides are at least \
+             1: the resampler refuses only a zero side or a buffer of the wrong length",
+        );
+    egui::ColorImage::from_rgba_unmultiplied([new_width as usize, new_height as usize], &pixels)
 }
 
 #[cfg(test)]
@@ -237,19 +218,6 @@ mod tests {
     }
 
     #[test]
-    fn premultiplying_scales_each_colour_by_its_alpha() {
-        let straight = vec![
-            255, 128, 0, 128, // half opaque: 255 × 128 / 255, 128 × 128 / 255 = 64.25
-            200, 100, 50, 0, // transparent: its stored colour goes
-            10, 20, 30, 255, // opaque: unchanged
-        ];
-        assert_eq!(
-            premultiplied(straight),
-            vec![128, 64, 0, 128, 0, 0, 0, 0, 10, 20, 30, 255]
-        );
-    }
-
-    #[test]
     fn an_edge_against_transparent_black_is_not_darkened() {
         let (width, height) = (56, 84);
         let mut straight = Vec::new();
@@ -259,7 +227,7 @@ mod tests {
                 straight.extend_from_slice(&texel);
             }
         }
-        let image = resampled(&premultiplied(straight), width, height, 1.0);
+        let image = resampled(&straight, width, height, 1.0);
         assert_eq!(image.size, [19, 28], "premise: drawn 18.67 × 28, rounded");
         for (index, texel) in image.pixels.iter().enumerate() {
             let [r, g, b, a] = texel.to_srgba_unmultiplied();

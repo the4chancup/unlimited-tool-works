@@ -83,8 +83,9 @@ pub(crate) struct SaveView {
     filter: String,
     /// The selected row.
     selected: Option<Selection>,
-    /// A page key moved the selection: the list scrolls to its row on the
-    /// next draw, then clears this.
+    /// A page key moved the selection, or a team row's double click showed
+    /// that team alone: the list scrolls to the selected row on the next
+    /// draw, then clears this.
     reveal_selected: bool,
     /// The team view's Tactics state (`team_widgets`' `TacticsView`:
     /// the preset its panels edit, the formation its lists show, the

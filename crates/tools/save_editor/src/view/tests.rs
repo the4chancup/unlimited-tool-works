@@ -25,6 +25,9 @@ struct Headless {
     ctx: egui::Context,
     /// The screen size each frame reports.
     screen: egui::Vec2,
+    /// How soon the last frame asked egui for the next one: its root
+    /// viewport's `repaint_delay`, `Duration::MAX` when it asked for none.
+    repaint_delay: Duration,
 }
 
 impl Headless {
@@ -44,6 +47,7 @@ impl Headless {
         Headless {
             ctx,
             screen: egui::vec2(width, height),
+            repaint_delay: Duration::MAX,
         }
     }
 
@@ -92,6 +96,11 @@ impl Headless {
             .take()
             .expect("AccessKit is enabled on the context");
         let shapes = std::mem::take(&mut output.shapes);
+        self.repaint_delay = output
+            .viewport_output
+            .get(&egui::ViewportId::ROOT)
+            .expect("every frame has the root viewport's output")
+            .repaint_delay;
         // Nothing renders here, so the frame's texture deltas are dropped on
         // purpose.
         output.drop_without_applying_deltas();

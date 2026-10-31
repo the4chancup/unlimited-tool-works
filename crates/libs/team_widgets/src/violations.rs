@@ -194,7 +194,7 @@ fn part(
         ListUse::Report => return draw_groups(ui, team, groups.iter(), wording, false),
         ListUse::Editing { .. } => {}
     }
-    let players = |starting: bool| {
+    let column_groups = |starting: bool| {
         groups.iter().filter(move |(slot, _)| {
             slot.is_some_and(|slot| team.starting_eleven.contains(&slot) == starting)
         })
@@ -210,7 +210,7 @@ fn part(
                 for (column, starting) in [(left, true), (right, false)] {
                     column.spacing_mut().item_spacing.x = spacing;
                     if let Some(player) =
-                        draw_groups(column, team, players(starting), wording, true)
+                        draw_groups(column, team, column_groups(starting), wording, true)
                     {
                         selected = Some(player);
                     }
@@ -3000,7 +3000,7 @@ mod tests {
         let player = file.player_mut(73401).expect("rostered");
         assert_eq!(
             player.stats.weak_foot_usage, 1,
-            "premise: 73401's Weak Foot Usage is 2"
+            "premise: 73401's Weak Foot Usage is 1 on the save's 0-3 scale, 2 as the check reads it"
         );
         player.stats.weak_foot_usage = 0;
         let players = listed_players(&file, 734);
