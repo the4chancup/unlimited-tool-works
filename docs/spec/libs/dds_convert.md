@@ -189,6 +189,12 @@ pub fn encode_dds(decoded: &Decoded, codec: BlockCodec) -> Result<Vec<u8>, Conve
 /// past it are left out and the rest rescaled, so a flat image stays flat. A zero size or a
 /// `pixels` of the wrong length is `InvalidDecoded`.
 pub fn resize(pixels: &[u8], width: u32, height: u32, new_width: u32, new_height: u32) -> Result<Vec<u8>, ConvertError>;
+/// `resize` for a straight-alpha picture, computed on premultiplied colour and handed back
+/// straight: a transparent texel's stored colour (black in most logos) would otherwise bleed
+/// into its opaque neighbours as a dark fringe. Each colour is held at most its alpha after
+/// the filter; a texel left with alpha 0 gets colour 0. The event logo's draw and the Ruleset
+/// editor's picked logo use it.
+pub fn resize_straight_alpha(pixels: &[u8], width: u32, height: u32, new_width: u32, new_height: u32) -> Result<Vec<u8>, ConvertError>;
 /// `pixels` (straight-alpha RGBA8, `width` x `height`, row-major) as a PNG file, 8-bit RGBA.
 /// A zero size or a `pixels` of the wrong length is `InvalidDecoded`.
 pub fn encode_png(pixels: &[u8], width: u32, height: u32) -> Result<Vec<u8>, ConvertError>;

@@ -7020,6 +7020,12 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-01, 0.0.2 — two more resamples run on straight alpha (found by the cv18-cv26
+  rework, `9f27f121`): `export_upgrader` `carried.rs` `at_128` and `team_compiler`
+  `kit_layout.rs` call `dds_convert::resize`, which fringes an edge against transparency the
+  way the event logo did. Check first whether either input carries partial transparency on
+  real exports, and what Red's output is there (library parity), before moving either to
+  `resize_straight_alpha`
 - open 2026-10-30, Phase 20 — a tier id's rename carries its key in the medal systems alone
   (`plans/ruleset_editor.md` RE-GUI-17), so renaming a tier that a special's `when.tiers`, a
   per-tier effect map or another tier's `counts_as` names leaves an "unknown tier id"
