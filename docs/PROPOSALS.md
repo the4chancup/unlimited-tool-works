@@ -63,5 +63,19 @@ Adds: the picker's hex field accepts `#RRGGBB`, `0xRRGGBB` and `RRGGBB` alike in
 that uses it, so a pasted value from an old habit lands instead of being refused. Costs: one
 parse with three prefixes in `color_tools`; the field still shows `#RRGGBB`.
 
+## P46 — A check flags an illegal formation under a cup that forbids them
 
+From the illegal formations design (worklog cv14, 2026-10-31). A cup on the stock exe
+cannot field one the game's drag would not make, but a member can still bring one in: a
+team edited in 4ccEditor-1's Tactics tab, or one built for a cup that allowed them and
+entered in the next. The rules file says whether the cup allows them
+(`universal.illegal_formations`); nothing checks a team against it.
 
+Adds: under a ruleset without the flag, a Live AATF and check-aatf warning naming each
+starter whose position his spot would not give him, per preset and formation, so an
+organizer sees it before the cup's first match. Costs: a legality rule the game never
+states. The game's drag is no test: a later drag never moves an earlier starter back into his
+area, so a formation every step of which the game made can hold a starter outside his
+position's area, and a check built on the drop rule would flag formations members made in
+game. A sound rule would have to be read from the stock exe's load-time check, if it has
+one, and would add a team-level check to the interpreter (a logic version).

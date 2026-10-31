@@ -69,7 +69,28 @@ pub struct ExtraHeight {
     /// No player is taller, before any allowance.
     pub max: u8,
 }
+
+pub struct Universal {
+    // ... every field in the spec, and:
+    /// The cup plays a game that keeps any formation (PES 2017's Whack Patch), so a starter
+    /// may stand anywhere at any outfield position: the Save editor's pitch then sets his
+    /// spot and his position apart. No check reads it.
+    pub illegal_formations: bool,
+}
 ```
+
+**Illegal formations.** The stock game sets a dragged starter's position from where he is
+dropped, so a formation it can make never has a CB outside his position's area; a cup that
+plays the Whack Patch, a PES 2017 exe that keeps any formation, lets its members field such
+formations (4cc Autumn 26 and DBC7). The flag tells the Save editor which pitch to give a
+member (`plans/save_editor.md` "Illegal formations"); it sits in `universal` because it is
+the cup's rule for every team, and in the data section, never the logic's, since no check
+reads it: the logic's hash and version ignore it, as they ignore the logo. Left out, it is
+`false` (the empty value, `spec/aatf_rules.md` "The ruleset schema"), so every file written before it loads
+unchanged and keeps the game's rule. The built-in Autumn 26 and DBC7 set it; the others
+leave it out. No check flags an illegal formation under a ruleset without it: the game's
+drag is no legality test, a later drag never moving an earlier starter back into his area
+(`PROPOSALS.md`).
 
 **Medal systems.** A tier a medal system names has no `count` and no `counts_as`, and no tier
 `counts_as` it; the tier that is the rest of the squad takes what the team's system leaves.
