@@ -268,7 +268,10 @@ all side by side.
   window's scale, and again when the scale changes (the window moved to a screen of another
   scaling), not shrunk by the GPU as it is drawn: egui's linear sampling, with no mipmaps,
   skips source pixels past a halving, and DBC7's 78 × 84 logo drawn 28 high read pixelated at
-  100% scaling. The Ruleset editor's logo field draws it the same way. It
+  100% scaling. It is resampled with its alpha premultiplied, not straight: a transparent
+  pixel's color is whatever the file stored (black in nearly all of DBC7's 1,294), and a
+  straight resample blends it into the edge as a dark fringe. The Ruleset editor's logo field
+  draws it the same way. It
   is drawn over the toolbar row's empty end and moves nothing: no row is pushed down, no
   column narrowed (the drafts' toolbar at its widest ends 136 points short of it at the
   1280-wide window, and the right column's title starts under it). Where the toolbar
