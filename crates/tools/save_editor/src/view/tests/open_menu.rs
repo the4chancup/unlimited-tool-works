@@ -1,7 +1,8 @@
 //! The Open menu's and Save as's tests (SE-GUI-26): the discovered saves,
 //! the recent files and the picker in the menu, discovery run once per
 //! opening, the picker's starting folder, an entry under unsaved changes,
-//! and Save as's write, `.bak` and running-game question.
+//! the version shortcuts and Ctrl+O, and Save as's write, `.bak` and
+//! running-game question.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -93,26 +94,42 @@ fn picker_starts(view: &mut SaveView) -> Rc<RefCell<Vec<Option<PathBuf>>>> {
     starts
 }
 
-/// The labels of the open menu's entries top to bottom: the buttons in the
-/// column of `first`, from it down.
-fn entries(nodes: &[accesskit::Node], first: &str) -> Vec<String> {
+/// The open menu's entries top to bottom: the buttons in the column of
+/// `first`, from it down.
+fn entries<'a>(nodes: &'a [accesskit::Node], first: &str) -> Vec<&'a accesskit::Node> {
     let first = menu_item(nodes, first).bounds().expect("bounds");
-    let mut entries: Vec<(f64, String)> = nodes
+    let mut entries: Vec<(f64, &accesskit::Node)> = nodes
         .iter()
-        .filter(|node| node.role() == Role::Button)
+        .filter(|node| node.role() == Role::Button && node.label().is_some())
         .filter_map(|node| {
             let bounds = node.bounds()?;
-            let label = node.label()?;
             ((bounds.x0 - first.x0).abs() < 0.5 && bounds.y0 >= first.y0)
-                .then(|| (bounds.y0, label.to_owned()))
+                .then_some((bounds.y0, node))
         })
         .collect();
     entries.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("ordered entries"));
-    entries.into_iter().map(|(_, label)| label).collect()
+    entries.into_iter().map(|(_, node)| node).collect()
 }
 
-/// The PES 19 entry's label, the first of the menu.
-const PES19_ENTRY: &str = "PES 2019 (292733975847239680)";
+/// The PES 19 entry's label, the first of the menu (its shortcut follows).
+const PES19_ENTRY: &str = "PES 2019";
+
+/// `pressed` with Ctrl held, on one frame of the view.
+fn press_ctrl(window: &mut Headless, view: &mut SaveView, pressed: egui::Key) {
+    window.frame(vec![key(pressed, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, view, &|| Vec::new())
+    });
+}
+
+/// Whether the frame's nodes hold the Open menu's popup.
+fn menu_shown(nodes: &[accesskit::Node]) -> bool {
+    nodes.iter().any(|node| {
+        node.role() == Role::Button
+            && node
+                .label()
+                .is_some_and(|label| label.starts_with("Choose file"))
+    })
+}
 
 // SE-GUI-26
 #[test]
@@ -127,53 +144,49 @@ fn the_open_menu_lists_the_discovered_saves_the_recent_file_and_the_picker() {
     let nodes = open_menu(&mut window, &mut view, "Open", PES19_ENTRY);
     // The scratch folder's name, then the save's folder and file name.
     let recent = "open_menu_entries\\elsewhere\\EDIT00000000";
+    let labels: Vec<&str> = entries(&nodes, PES19_ENTRY)
+        .iter()
+        .filter_map(|node| node.label())
+        .collect();
+    // A button's AccessKit label is its text, then its shortcut text.
     assert_eq!(
-        entries(&nodes, PES19_ENTRY),
+        labels,
         [
-            PES19_ENTRY.to_owned(),
-            "PES 2021 (76561199320748656)".to_owned(),
-            "PES 2021 (292733975847239680)".to_owned(),
-            recent.to_owned(),
-            "Choose file\u{2026}".to_owned(),
+            "PES 2019 Ctrl+9",
+            "PES 2021 Ctrl+1",
+            "PES 2021",
+            recent,
+            "Choose file\u{2026} Ctrl+O",
         ],
-        "the discovered saves in version order, the newest PES 21 first, \
-         then the recent file, then the picker"
+        "the discovered saves in version order, each named by its version, the newest PES 21 \
+         first and the first of each version with its shortcut, then the recent file, then the \
+         picker"
     );
 
-    // Each entry's tooltip is its full path; `Choose file…`'s says where
-    // the picker opens.
-    for (label, tip) in [
-        (PES19_ENTRY, tree.pes19.display().to_string()),
-        (
-            "PES 2021 (76561199320748656)",
-            tree.pes21_new.display().to_string(),
-        ),
-        (
-            "PES 2021 (292733975847239680)",
-            tree.pes21_old.display().to_string(),
-        ),
-        (recent, tree.elsewhere.display().to_string()),
-        (
-            "Choose file\u{2026}",
-            "Opens in the selected version's save folder when it exists".to_owned(),
-        ),
-    ] {
+    // Each entry's tooltip is its own full path, found by its place in
+    // the menu (the two PES 21 entries read alike); `Choose file…`'s says
+    // where the picker opens.
+    let tips = [
+        tree.pes19.display().to_string(),
+        tree.pes21_new.display().to_string(),
+        tree.pes21_old.display().to_string(),
+        tree.elsewhere.display().to_string(),
+        "Opens in the selected version's save folder when it exists".to_owned(),
+    ];
+    for (place, tip) in tips.iter().enumerate() {
         let nodes = draw(&mut window, &mut view);
-        let at = centre(menu_item(&nodes, label));
+        let at = centre(entries(&nodes, PES19_ENTRY)[place]);
         assert_eq!(
-            tooltip_containing(&mut window, &mut view, at, &tip),
+            tooltip_containing(&mut window, &mut view, at, tip),
             Some(tip.clone()),
-            "{label:?}'s tooltip"
+            "entry {place}'s tooltip"
         );
     }
 
     // The menu stayed open through every frame above: discovery ran once
     // per version, when it opened.
     let nodes = draw(&mut window, &mut view);
-    assert!(
-        nodes.iter().any(|node| node.label() == Some(PES19_ENTRY)),
-        "premise: the menu is still open"
-    );
+    assert!(menu_shown(&nodes), "premise: the menu is still open");
     assert_eq!(calls.get(), PesVersion::ALL.len(), "one call per version");
 
     // A discovered entry opens its save.
@@ -247,6 +260,155 @@ fn an_entry_clicked_with_unsaved_changes_prompts_and_discard_opens_it() {
         std::fs::read(&first).unwrap(),
         original,
         "the first file is unchanged"
+    );
+}
+
+// SE-GUI-26
+#[test]
+fn a_versions_shortcut_opens_its_newest_save_with_the_menu_closed() {
+    let tree = tree("open_shortcut");
+    let mut view = SaveView::new();
+    discover_counted(&mut view, &tree.documents);
+    let mut window = Headless::new();
+    let nodes = draw(&mut window, &mut view);
+    assert!(view.session.is_none(), "premise: no save open");
+    assert!(!menu_shown(&nodes), "premise: the menu is closed");
+
+    press_ctrl(&mut window, &mut view, egui::Key::Num1);
+    let session = view.session.as_ref().expect("Ctrl+1 opened a save");
+    assert_eq!(
+        session.path(),
+        tree.pes21_new.as_path(),
+        "the newer PES 21 save"
+    );
+    assert_eq!(session.version(), PesVersion::Pes21);
+
+    press_ctrl(&mut window, &mut view, egui::Key::Num9);
+    let session = view.session.as_ref().expect("a save is open");
+    assert_eq!(session.path(), tree.pes19.as_path(), "Ctrl+9's save");
+    assert_eq!(session.version(), PesVersion::Pes19);
+}
+
+// SE-GUI-26
+#[test]
+fn a_shortcut_with_no_save_found_opens_the_picker() {
+    let tree = tree("open_shortcut_picker");
+    let mut view = SaveView::new();
+    discover_counted(&mut view, &tree.documents);
+    let starts = picker_starts(&mut view);
+    let mut window = Headless::new();
+    draw(&mut window, &mut view);
+
+    // No PES 17 save under the test's Documents.
+    view.pes_version = PesVersion::Pes21;
+    press_ctrl(&mut window, &mut view, egui::Key::Num7);
+    assert_eq!(
+        *starts.borrow(),
+        [tree.pes21_new.parent().map(Path::to_path_buf)],
+        "Ctrl+7 opened the picker once, in the newest PES 21 save's folder"
+    );
+    // No PES 18 save either: Ctrl+O's picker starts in no folder.
+    view.pes_version = PesVersion::Pes18;
+    press_ctrl(&mut window, &mut view, egui::Key::O);
+    assert_eq!(
+        *starts.borrow(),
+        [tree.pes21_new.parent().map(Path::to_path_buf), None],
+        "Ctrl+O opened the picker in no folder for PES 18"
+    );
+    assert!(view.session.is_none(), "a cancelled picker opens nothing");
+}
+
+// SE-GUI-05, SE-GUI-26: a shortcut under unsaved changes asks first, as an
+// Open menu entry does; Discard opens the version's save.
+#[test]
+fn a_shortcut_with_unsaved_changes_prompts_first() {
+    let tree = tree("open_shortcut_dirty");
+    let first = fixture(PesVersion::Pes21, "open_shortcut_dirty_first");
+    let original = std::fs::read(&first).unwrap();
+    let mut view = SaveView::new();
+    view.open(&first);
+    let mut edited = player_entry(&view, 70101);
+    edited.basic.height = 170;
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    assert!(view.is_dirty(), "premise: unsaved changes");
+    discover_counted(&mut view, &tree.documents);
+    let mut window = Headless::new();
+    draw(&mut window, &mut view);
+
+    press_ctrl(&mut window, &mut view, egui::Key::Num9);
+    let nodes = draw(&mut window, &mut view);
+    assert!(
+        label_value(&nodes, "Unsaved changes"),
+        "the unsaved-changes prompt is up"
+    );
+    assert_eq!(
+        view.session.as_ref().unwrap().path(),
+        first.as_path(),
+        "nothing opened yet"
+    );
+
+    let discard = node_labeled(&nodes, Role::Button, "Discard");
+    click(&mut window, discard, &mut view);
+    assert_eq!(
+        view.session.as_ref().unwrap().path(),
+        tree.pes19.as_path(),
+        "Discard opened PES 19's save"
+    );
+    assert_eq!(
+        std::fs::read(&first).unwrap(),
+        original,
+        "the first file is unchanged"
+    );
+}
+
+// SE-GUI-26
+#[test]
+fn the_open_shortcuts_wait_while_a_field_holds_the_keyboard() {
+    let tree = tree("open_shortcut_typing");
+    let first = fixture(PesVersion::Pes21, "open_shortcut_typing_first");
+    let mut view = SaveView::new();
+    view.open(&first);
+    discover_counted(&mut view, &tree.documents);
+    let mut window = Headless::new();
+    let nodes = draw(&mut window, &mut view);
+    click(&mut window, name_field(&nodes), &mut view);
+    draw(&mut window, &mut view);
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "premise: the Name field holds the keyboard"
+    );
+    // Nothing unsaved: a Ctrl+9 that went through would open at once.
+    assert!(!view.is_dirty(), "premise: nothing unsaved");
+
+    press_ctrl(&mut window, &mut view, egui::Key::Num9);
+    draw(&mut window, &mut view);
+    assert_eq!(
+        view.session.as_ref().unwrap().path(),
+        first.as_path(),
+        "Ctrl+9 opened nothing"
+    );
+    assert!(view.prompt.is_none(), "and raised no prompt");
+}
+
+// SE-GUI-26
+#[test]
+fn ctrl_shift_and_a_digit_opens_nothing() {
+    let tree = tree("open_shortcut_shift");
+    let mut view = SaveView::new();
+    discover_counted(&mut view, &tree.documents);
+    let mut window = Headless::new();
+    draw(&mut window, &mut view);
+
+    let shift = egui::Modifiers::CTRL | egui::Modifiers::SHIFT;
+    window.frame(vec![key(egui::Key::Num9, shift, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(view.session.is_none(), "Ctrl+Shift+9 opened nothing");
+    press_ctrl(&mut window, &mut view, egui::Key::Num9);
+    assert_eq!(
+        view.session.as_ref().map(|session| session.path()),
+        Some(tree.pes19.as_path()),
+        "premise: Ctrl+9 alone opens PES 19's save"
     );
 }
 

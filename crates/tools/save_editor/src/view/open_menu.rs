@@ -1,7 +1,9 @@
 //! The toolbar's Open menu (the draft's `openMenu`): the saves discovery
 //! finds under Documents for every version, one click each, then the files
 //! opened earlier in this run of the program, then the file picker, which
-//! starts in the selected version's save folder.
+//! starts in the selected version's save folder. Its shortcuts (the
+//! draft's `OPEN_KEYS`) open a version's newest save, or the picker, with
+//! the menu closed.
 
 use std::path::{Component, Path, PathBuf};
 
@@ -80,9 +82,17 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 .collect()
         });
         let mut chosen = None;
+        let mut previous = None;
         for (version, candidate) in discovered.iter() {
+            let mut button = egui::Button::new(version.to_string());
+            // Discovery lists a version's saves newest first, and the
+            // newest is the one its shortcut opens.
+            if previous != Some(*version) {
+                button = button.shortcut_text(shortcut_text(*version));
+            }
+            previous = Some(*version);
             if ui
-                .button(discovered_label(*version, candidate))
+                .add(button)
                 .on_hover_text(candidate.path.display().to_string())
                 .clicked()
             {
@@ -105,16 +115,15 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             ui.separator();
         }
         if ui
-            .button("Choose file\u{2026}")
+            .add(egui::Button::new("Choose file\u{2026}").shortcut_text("Ctrl+O"))
             .on_hover_text(CHOOSE_FILE_TIP)
             .clicked()
         {
-            let start = discovered
+            let selected = discovered
                 .iter()
                 .find(|(version, _)| *version == view.pes_version)
-                .and_then(|(_, candidate)| candidate.path.parent())
-                .map(Path::to_path_buf);
-            chosen = Some(Pending::OpenPicker(start));
+                .map(|(_, candidate)| candidate);
+            chosen = Some(choose_file(selected));
         }
         if chosen.is_some() {
             ui.close();
@@ -124,17 +133,97 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     match menu.inner {
         None => view.discovered = None,
         Some(None) => {}
-        Some(Some(pending)) if view.is_dirty() => prompt::open(view, pending),
-        Some(Some(pending)) => prompt::go_on(view, pending),
+        Some(Some(pending)) => request(view, pending),
     }
 }
 
-/// A discovered save's entry: `PES 2019`, then its account folder in
-/// brackets when it has one.
-fn discovered_label(version: PesVersion, candidate: &SavefileCandidate) -> String {
-    match &candidate.account {
-        Some(account) => format!("{version} ({account})"),
-        None => version.to_string(),
+/// What an Open shortcut asks for.
+pub(super) enum Shortcut {
+    /// Ctrl+O: the file picker, as `Choose file…`.
+    Picker,
+    /// Ctrl and the version's digit: its newest discovered save.
+    Save(PesVersion),
+}
+
+/// Takes the Open shortcut pressed this frame out of `input`, if any.
+/// Ctrl alone: egui's `consume_key(Ctrl, …)` would also take the key with
+/// Shift or Alt held as well.
+pub(super) fn consume_shortcut(input: &mut egui::InputState) -> Option<Shortcut> {
+    if consume_ctrl(input, egui::Key::O) {
+        return Some(Shortcut::Picker);
+    }
+    PesVersion::ALL
+        .into_iter()
+        .find(|version| consume_ctrl(input, shortcut_key(*version)))
+        .map(Shortcut::Save)
+}
+
+/// Opens what `shortcut` asks for, as the menu would with its entry
+/// clicked: the version's newest discovered save, or the picker when
+/// there is none. Discovery runs now, since the menu's list exists only
+/// while the menu is open.
+pub(super) fn open_shortcut(view: &mut SaveView, shortcut: Shortcut) {
+    let newest = match shortcut {
+        Shortcut::Save(version) => (view.discover)(version).into_iter().next(),
+        Shortcut::Picker => None,
+    };
+    let pending = match newest {
+        Some(candidate) => Pending::Open(candidate.path),
+        None => choose_file((view.discover)(view.pes_version).first()),
+    };
+    request(view, pending);
+}
+
+/// Whether `key` was pressed with Ctrl and no other modifier, taking it
+/// out of `input` if so.
+fn consume_ctrl(input: &mut egui::InputState, key: egui::Key) -> bool {
+    let before = input.events.len();
+    input.events.retain(|event| {
+        !matches!(
+            event,
+            egui::Event::Key { key: pressed, pressed: true, modifiers, .. }
+                if *pressed == key && modifiers.matches_exact(egui::Modifiers::CTRL)
+        )
+    });
+    input.events.len() < before
+}
+
+/// The digit that, with Ctrl, opens `version`'s newest discovered save:
+/// 5 to 9 for PES 2015 to PES 2019, then 0 for PES 2020 and 1 for PES 2021.
+fn shortcut_key(version: PesVersion) -> egui::Key {
+    match version {
+        PesVersion::Pes15 => egui::Key::Num5,
+        PesVersion::Pes16 => egui::Key::Num6,
+        PesVersion::Pes17 => egui::Key::Num7,
+        PesVersion::Pes18 => egui::Key::Num8,
+        PesVersion::Pes19 => egui::Key::Num9,
+        PesVersion::Pes20 => egui::Key::Num0,
+        PesVersion::Pes21 => egui::Key::Num1,
+    }
+}
+
+/// `version`'s shortcut as its menu entry shows it (`Ctrl+9`).
+fn shortcut_text(version: PesVersion) -> String {
+    format!("Ctrl+{}", shortcut_key(version).name())
+}
+
+/// `Choose file…`'s request: the picker, starting in the folder of
+/// `selected`, the selected version's newest discovered save, if any.
+fn choose_file(selected: Option<&SavefileCandidate>) -> Pending {
+    Pending::OpenPicker(
+        selected
+            .and_then(|candidate| candidate.path.parent())
+            .map(Path::to_path_buf),
+    )
+}
+
+/// Goes on with `pending`, the unsaved-changes prompt first when there
+/// are any.
+fn request(view: &mut SaveView, pending: Pending) {
+    if view.is_dirty() {
+        prompt::open(view, pending);
+    } else {
+        prompt::go_on(view, pending);
     }
 }
 
