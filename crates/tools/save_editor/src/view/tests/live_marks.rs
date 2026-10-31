@@ -210,6 +210,7 @@ fn marked_field_maps_every_kind() {
                 bracket: "tall".to_owned(),
                 count: 8,
                 quota: 10,
+                players: vec![(4, 185)],
             },
             None,
         ),
@@ -219,7 +220,21 @@ fn marked_field_maps_every_kind() {
             },
             None,
         ),
-        (K::ExtraHeight { used: 5, total: 4 }, None),
+        (
+            K::ExtraHeight {
+                used: 5,
+                total: 4,
+                draws: vec![(4, "tall".to_owned(), 5)],
+            },
+            None,
+        ),
+        (
+            K::NearestSystem {
+                system: "height".to_owned(),
+                off: vec![("mid".to_owned(), 6, 5)],
+            },
+            None,
+        ),
         (K::Captain, None),
         (K::Goalkeepers { count: 0, min: 1 }, None),
         (

@@ -340,8 +340,27 @@ fn goalkeepers_and_golds_below_giant_are_warnings() {
                     "GK heights cannot be 194cm or more"
                 )
             ),
-            quota("green", "tall", 5, 6),
-            quota("green", "giant", 6, 5),
+            quota(
+                "green",
+                "tall",
+                5,
+                6,
+                &[(2, 185), (9, 185), (10, 185), (11, 185), (16, 185)]
+            ),
+            quota(
+                "green",
+                "giant",
+                6,
+                5,
+                &[
+                    (0, 194),
+                    (5, 194),
+                    (8, 194),
+                    (14, 194),
+                    (17, 194),
+                    (20, 194)
+                ]
+            ),
         ]
     );
     assert_eq!(
@@ -351,8 +370,27 @@ fn goalkeepers_and_golds_below_giant_are_warnings() {
                 2,
                 special("Gold below giant", "Gold heights cannot be 194cm or more")
             ),
-            quota("green", "tall", 5, 6),
-            quota("green", "giant", 6, 5),
+            quota(
+                "green",
+                "tall",
+                5,
+                6,
+                &[(0, 185), (9, 185), (10, 185), (11, 185), (16, 185)]
+            ),
+            quota(
+                "green",
+                "giant",
+                6,
+                5,
+                &[
+                    (2, 194),
+                    (5, 194),
+                    (8, 194),
+                    (14, 194),
+                    (17, 194),
+                    (20, 194)
+                ]
+            ),
         ]
     );
 }
@@ -428,7 +466,8 @@ fn the_captain_and_the_goalkeepers_are_required() {
                     system: "green".to_string(),
                     bracket: "tall".to_string(),
                     count: 4,
-                    quota: 6
+                    quota: 6,
+                    players: vec![(2, 185), (9, 185), (10, 185), (16, 185)],
                 }
             ),
             error(None, ViolationKind::Goalkeepers { count: 0, min: 1 }),

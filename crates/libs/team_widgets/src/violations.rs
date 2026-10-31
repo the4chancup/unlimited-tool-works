@@ -272,6 +272,7 @@ pub fn rule_name(kind: &aatf::ViolationKind) -> &'static str {
         K::BracketQuota { .. } => "Height quota",
         K::MedalSystem { .. } => "Medal system",
         K::ExtraHeight { .. } => "Extra height",
+        K::NearestSystem { .. } => "Nearest system",
         K::Captain => "Captain",
         K::Goalkeepers { .. } => "Goalkeepers",
         K::TeamSetting { .. } => "Team setting",
@@ -470,6 +471,30 @@ fn label_of<'a>(mut entries: impl Iterator<Item = (&'a str, &'a str)>, id: &'a s
     entries
         .find(|(entry_id, _)| *entry_id == id)
         .map_or(id, |(_, label)| label)
+}
+
+/// The label of the height bracket `id` in `ruleset` (`label_of`).
+fn bracket_label<'a>(ruleset: &'a aatf::Ruleset, id: &'a str) -> &'a str {
+    label_of(
+        ruleset
+            .heights
+            .brackets
+            .iter()
+            .map(|bracket| (bracket.id.as_str(), bracket.label.as_str())),
+        id,
+    )
+}
+
+/// The label of the height system `id` in `ruleset` (`label_of`).
+fn system_label<'a>(ruleset: &'a aatf::Ruleset, id: &'a str) -> &'a str {
+    label_of(
+        ruleset
+            .heights
+            .systems
+            .iter()
+            .map(|system| (system.id.as_str(), system.label.as_str())),
+        id,
+    )
 }
 
 /// `items` as a sentence lists them: `a`, `a and b`, `a, b and c`, with
@@ -681,31 +706,31 @@ pub fn sentence(violation: &aatf::Violation, team_id: u32, wording: Wording<'_>)
             bracket,
             count,
             quota,
+            ..
         } => format!(
             "{count} players in the {} bracket of the {} system, where its quota is {quota}",
-            label_of(
-                ruleset
-                    .heights
-                    .brackets
-                    .iter()
-                    .map(|bracket| (bracket.id.as_str(), bracket.label.as_str())),
-                bracket
-            ),
-            label_of(
-                ruleset
-                    .heights
-                    .systems
-                    .iter()
-                    .map(|system| (system.id.as_str(), system.label.as_str())),
-                system
-            )
+            bracket_label(ruleset, bracket),
+            system_label(ruleset, system)
         ),
         K::MedalSystem { systems } => format!(
             "the tier counts match none of the medal systems {}",
             joined(systems, "or")
         ),
-        K::ExtraHeight { used, total } => {
+        K::ExtraHeight { used, total, .. } => {
             format!("{used} cm of extra height, over the pool of {total}")
+        }
+        K::NearestSystem { system, off } => {
+            let off: Vec<String> = off
+                .iter()
+                .map(|(bracket, count, quota)| {
+                    format!("{} {count} of {quota}", bracket_label(ruleset, bracket))
+                })
+                .collect();
+            format!(
+                "fits no quota system; the nearest is {}, with {}",
+                system_label(ruleset, system),
+                joined(&off, "and")
+            )
         }
         K::Captain => "no captain".to_string(),
         K::Goalkeepers { count, min } => {
@@ -1859,6 +1884,7 @@ mod tests {
                     bracket: "tall".to_string(),
                     count: 8,
                     quota: 10,
+                    players: vec![(4, 185)],
                 },
                 "Height quota",
                 "8 players in the Tall bracket of the Red system, where its quota is 10",
@@ -1871,9 +1897,20 @@ mod tests {
                     bracket: "mid".to_string(),
                     count: 9,
                     quota: 10,
+                    players: vec![(0, 185), (1, 185)],
                 },
                 "Height quota",
                 "9 players in the Mid bracket of the GigaHeight system, where its quota is 10",
+            ),
+            (
+                dbc7,
+                Warning,
+                K::NearestSystem {
+                    system: "height".to_string(),
+                    off: vec![("mid".to_string(), 6, 5), ("tall".to_string(), 5, 6)],
+                },
+                "Nearest system",
+                "fits no quota system; the nearest is Height, with Mid 6 of 5 and Tall 5 of 6",
             ),
             (
                 dbc7,
@@ -1893,6 +1930,7 @@ mod tests {
                 K::ExtraHeight {
                     used: 51,
                     total: 50,
+                    draws: vec![(4, "tall".to_string(), 10)],
                 },
                 "Extra height",
                 "51 cm of extra height, over the pool of 50",
@@ -2028,7 +2066,7 @@ mod tests {
         ];
         let kinds: std::collections::BTreeSet<&str> =
             rows.iter().map(|(_, _, kind, ..)| kind.rule().0).collect();
-        assert_eq!(kinds.len(), 36, "one row or more for each of the 36 kinds");
+        assert_eq!(kinds.len(), 37, "one row or more for each of the 37 kinds");
         for (wording, severity, kind, name, expected) in rows {
             // Slot 4 of team 734: the roster order's player 73405.
             let violation = violation(Some(4), severity, kind);
@@ -2082,6 +2120,7 @@ mod tests {
             bracket: "tall".to_string(),
             count: 0,
             quota: 10,
+            players: vec![],
         };
         assert!(
             official().heights.systems.iter().all(|s| s.id != "purple"),
