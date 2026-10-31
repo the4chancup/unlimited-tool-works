@@ -6046,6 +6046,27 @@ briefs, review loops, gates and mutation runs as for any step.
     a driver that ships it; Linux has no DX12 (Vulkan, GL for old GPUs and VMs); the GPU
     encoding study (16.x c) creates its own instance. Needs the window on screen: after the
     whole-crate chain and the sidekicks end
+  - [ ] cv14 a ruleset may allow illegal formations (the maintainer, 2026-10-31): the Whack
+    Patch, a modded PES 2017 exe, no longer rejects formations the game's own drag cannot make;
+    4cc Autumn 26 (PES 2017) uses it and allows them (its saves hold some: /jp/ and /s4s/ on
+    preset 3, a CB outside his area, an LMF far up), and DBC7 will, so it is 0.0.1's.
+    4ccEditor-1 (`Tools_4cc/4ccEditor-1`, commit `4a95b7c`, `main.cpp` 3761-3860, 4654-4668)
+    makes them: a drag sets X and Y over the whole stored grid (0-104, 0-48) and never the
+    position; a dropdown sets any outfield position (GK not in it). Design, settled with the
+    maintainer: a ruleset flag "Illegal formations allowed" (`aatf` ruleset schema,
+    `spec/aatf_rules.md` `Universal`, default off; the built-in DBC7 and Autumn 26 on, the
+    others off; the Ruleset editor gets its checkbox and summary line). On, the Save editor's
+    pitch: a dragged starter keeps his position, an X or Y change keeps it, the popover's
+    dropdown lists every outfield position (Make GK unchanged), and an outfielder's Y runs 0
+    to 48 like the fork (to be reverted to the y 4 floor if an in-game test under the Whack
+    Patch puts such a player back at y 4: QUESTIONS). Off: as now, the game's rule
+    (`plans/save_editor.md` "A pitch player dropped on another", the popover paragraph).
+    Not built: a check flagging an illegal formation in a cup that forbids them
+    (PROPOSALS: the drag rule is no legality test, since a later drag never re-checks an
+    earlier player). Order: plan and Acceptance (Astra checkpoint (a)), DECISIONS, drafts
+    (save_editor.js, ruleset_editor.js), then slices: the `aatf` field and built-ins (no
+    mutation run holds it), the Ruleset editor, then `save_editor`/`team_widgets` after the
+    whole-crate chain
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450
