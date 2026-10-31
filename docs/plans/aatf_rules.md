@@ -157,6 +157,28 @@ New violation kinds: `MedalSystem { systems: Vec<String> }` (the team; every sys
 the message lists the counts the team may have),
 `ExtraHeight { used: u16, total: u16 }` and `StatTotal { slot, total: u16, limit: u16 }`.
 
+**The height findings name their players.** A height row that says only what is off leaves the
+organizer to work out who: DBC7's organizer, checking DBC6's height teams, could not tell which
+players stood in a bracket or where GigaHeight's extra height went. `BracketQuota` gains
+`players: Vec<(u8, u8)>`, each player counted in the bracket as his roster slot and the height
+read (his own less his allowance); under a pool, the players its slots took. Under a pool, a
+player whom every quota bracket he reaches has no room for counts toward the tallest of them,
+past its quota, and still draws nothing: seven 175s for the Manlet bracket's six slots are a
+`BracketQuota` of 7 for 6 listing all seven, since any of them is the one left, where before
+only the bracket left short (a Mid at 9 of 10) said anything. `ExtraHeight` gains `draws:
+Vec<(u8, BracketId, u8)>`, each player standing above his slot: his roster slot, the slot's
+bracket and the centimetres drawn. And when the team's height checks find something under a
+system reached after a quota system failed (DBC7's GigaHeight), one `NearestSystem { system:
+SystemId, off: Vec<(BracketId, u8, u8)> }` warning on the team names the failed quota system
+the team misses by the fewest players short (each bracket's quota less its count, where
+positive; ties in the file's order; a system whose `any_player` fails is no candidate) and that
+system's brackets off their quotas, with count and quota: DBC6's /tsab/ gets "Height: Mid 6 of
+5, Tall 5 of 6", one 180 raised to 185, where its GigaHeight row asks for 30 cm cut. A warning,
+not a suggestion: suggestions are drawn only on request and `check-aatf` prints none, while this
+one is needed exactly when the team fails; not an error, since the height errors above it already
+fail the team. All three are the logic's (`height_findings`, `team_checks`), so they land before
+logic version 1 is frozen.
+
 **The stat band.** A `Stat` violation carries a severity: a warning while the stat is at most
 `stat_warning` above its target, an error past it, so a regular's 84 against 77 is one warning
 and his 85 one error. The band is the tier's, or the last `stat_warning` effect's; it applies to
@@ -298,7 +320,14 @@ name and sentence; the sentences replace the ones `spec/aatf_rules.md` "Hints at
 quotes. The wording is drafted in `docs/prototypes/tools/save_editor.js` (`RULE_NAME`,
 `violationSentence`, `unusedSentence`). The `weak_foot` suggestion reports usage and accuracy
 as two `Unused` rows whose `allowance` is `weak_foot_usage` and `weak_foot_accuracy`, where both
-said `weak_foot` and read alike: the logic's change lands before logic version 1 is frozen.
+said `weak_foot` and read alike: the logic's change lands before logic version 1 is frozen. A
+height row's players are lines under its sentence (`violationDetail`): a bracket's by the
+height read, tallest first, a player whose own height differs with it after his name (`At 185:
+HELLOHELL, Stack Bros. (189)`); the pool's draws by bracket and centimetres, most first (`6 in
+Tall slots, 10 cm each (60): …`); `NearestSystem` is the system's label and its brackets off
+(`Height: Mid 6 of 5, Tall 5 of 6`). Live AATF and Multi-team AATF draw the lines under the
+row, in the plain text colour and wrapping; Multi-team AATF's copy indents them under the row's
+line; `check-aatf` appends them to the line's `problem`, each after `; `.
 
 ## The host
 

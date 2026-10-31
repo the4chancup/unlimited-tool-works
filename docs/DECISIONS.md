@@ -14553,3 +14553,21 @@ Why: checking a save against a built-in ruleset had to go through the settings f
 of the ruleset written out (DBC7's organizer checking the DBC6 save). A file wins over a stem
 so an existing command line keeps its meaning.
 Plan: `plans/save_editor.md` "Configurable AATF rules"; worklog cv15.
+
+## 2026-10-31 — aatf — A height finding names its players, and the nearest quota system (P47)
+Decision (maintainer): P47 accepted on its render ("the system is helpful"). `BracketQuota`
+lists the players counted in the bracket, `ExtraHeight` each player drawing from the pool, and
+the rows show them as lines under the sentence. The lead, applying: under a pool, a player
+left without a slot counts toward the tallest quota bracket he reaches, past its quota (a
+`BracketQuota` of 7 for 6, all seven listed), where only the short bracket spoke before; the
+nearest quota system is a `NearestSystem` warning, emitted only when the team's height checks
+fail under a system reached after a quota system failed, chosen by fewest players short, ties
+in the file's order.
+Why: a row naming a count and not the players left the organizer to find them by hand (DBC7's
+organizer on the DBC6 save). The left-over player is the fix's subject, so a row has to name
+him; which of seven equal heights is left is the placement's arbitrary order, so all seven are
+named. A warning rather than a suggestion: suggestions are drawn on request only and
+`check-aatf` prints none, while this line matters exactly when the team fails; the render's
+neutral row would have needed a fourth severity.
+Plan: `plans/aatf_rules.md` "The height findings name their players", "Violations in words";
+`plans/save_editor.md` `violations`; worklog cv16.

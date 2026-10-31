@@ -6136,6 +6136,17 @@ briefs, review loops, gates and mutation runs as for any step.
     CLI, the spec's `check-aatf` paragraph and a scenario with it → verify: a check by stem
     prints the embedded ruleset's violations, an unknown stem is refused with the stems
     listed (exit 2), a file of that name in the current folder still wins
+  - [ ] cv16 the height findings name their players (P47, accepted 2026-10-31;
+    `plans/aatf_rules.md` "The height findings name their players" and "Violations in words",
+    `plans/save_editor.md` `violations`; drafted in `save_editor.js` `violationDetail`):
+    `aatf`'s `logic.rhai` (`height_findings`, `team_checks`: hashed, so before logic version
+    1's freeze), the `Violation` fields and `NearestSystem`, `team_widgets`' sentences and
+    lines, Live AATF and Multi-team AATF, `check-aatf`'s `problem` → verify: the DBC6 save
+    (`C:/Data/4cc/Saves/EDIT00000000_DBC6`) under the built-in DBC7 gives teams 893 and 897
+    the draft's rows (`AATF_ROWS.dbc7`), and every other team keeps its rows
+    (`4cc-studio-temp/dbc6_check_report.txt`, 177 teams, before the change), gaining only the
+    new fields, `NearestSystem` warnings and a `BracketQuota` past its quota where a player
+    was left without a slot
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
     every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree
@@ -6156,6 +6167,12 @@ briefs, review loops, gates and mutation runs as for any step.
       patch path in `to_toml`'s motion refusal, the PES 17 Texport rewrite (own id, coach
       id, description name), `TeamTactics::bare`'s join-attack slots, the doc facts, the test
       premises, the `pub(crate)` narrowing, the label-lookup helper
+      - [ ] cvA1r the rework: `mutants-diff 2337e4f6` and the extra kinds triaged
+        (`.tmp/0_0_1cv/triage_ps.md`: seven test groups, the rest equivalent or out of reach;
+        A4-2, A4-4, A5-3, A6-5, A6-6 dropped, A4-5 confirmed, A4-6, A6-3, A6-4 unreached and
+        left to the whole-crate run) with SWE-2 round 1's accepted items
+        (`.tmp/argon/rulings_cvA1.md`), one Opus brief (`brief_cvA1r.md`, branch `cvA1r` in
+        `wt-cvA1r`); then SWE-2 round 2 and Astra
   - [ ] cv6 Astra over the surface in parts, a SWE-2 loop after each; the whole-crate
     mutation runs
     - [x] cv6a and cv6b merged `267e5c52` (`gates-changed 4863558b` green, 47 binaries, 5450

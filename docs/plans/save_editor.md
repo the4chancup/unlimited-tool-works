@@ -1142,7 +1142,9 @@ Contents:
   names. The exact names and sentences are drafted first, in the draft's `violationSentence`
   (`plans/aatf_rules.md` "The interpreter", its paragraph on violations in words). A `check-aatf` line is the
   `aatf_violation` finding with the context `team`, `player` (for a player's row), `rule` (the
-  name in words) and `problem` (the sentence), where it printed the kind and each field.
+  name in words) and `problem` (the sentence), where it printed the kind and each field. A
+  height row's players (a bracket's, the pool's draws) are lines under it, wrapping in the plain
+  text colour (`plans/aatf_rules.md` "The height findings name their players").
 - `names` — a savefile name drawn with its colour codes applied as text colours, the in-game
   look, for the player list, the view titles and the lineup rows alike.
 - `event_logo` — a ruleset's event logo decoded into a texture (through `dds_convert`'s PNG
