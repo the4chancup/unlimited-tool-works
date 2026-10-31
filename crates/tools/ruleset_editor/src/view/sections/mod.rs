@@ -1,6 +1,6 @@
-//! The rail's section forms: General and Tiers are forms, Custom checks
-//! and Summary read only,
-//! and Heights, Cards, Universal rules, Specials and Suggestions have no
+//! The rail's section forms: General, Tiers and Universal rules (its team
+//! settings aside) are forms, Custom checks and Summary read only,
+//! and Heights, Cards, Specials and Suggestions have no
 //! form yet: each draws one weak line sending the member to Summary, and
 //! a link to the planned section's demo online.
 
@@ -8,6 +8,7 @@ pub(crate) mod custom_checks;
 pub(crate) mod general;
 pub(crate) mod summary;
 pub(crate) mod tiers;
+pub(crate) mod universal;
 pub(crate) mod widgets;
 
 use aatf::Ruleset;
@@ -104,11 +105,8 @@ pub(crate) fn show(
         Section::Tiers => tiers::show(ui, ruleset, tier_id_edit),
         Section::CustomChecks => custom_checks::show(ui, custom_checks),
         Section::Summary => summary::show(ui, ruleset),
-        Section::Heights
-        | Section::Cards
-        | Section::Universal
-        | Section::Specials
-        | Section::Suggestions => {
+        Section::Universal => universal::show(ui, ruleset),
+        Section::Heights | Section::Cards | Section::Specials | Section::Suggestions => {
             ui.heading(section.label());
             ui.weak(
                 "You can't edit this section yet. Summary shows what's in it, and saving leaves it unchanged.",
