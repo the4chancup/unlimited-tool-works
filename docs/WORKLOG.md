@@ -6190,17 +6190,23 @@ briefs, review loops, gates and mutation runs as for any step.
     collaborator's suggestion, the maintainer's "let's do", 2026-10-31; plan "Team selector";
     SE-GUI-02's neighbourhood): drafted first, then plan, DECISIONS, code
   - [ ] cv19 a double click on a team row in the player list sets the team combo from ALL to
-    that team (same origin): drafted first; open with the maintainer: whether it clears the
-    filter text
+    that team and clears the filter text (same origin; the maintainer, 2026-10-31); a team
+    row's tooltip reads "Double-click to filter to this team", and the help page names the
+    action: drafted first
   - [ ] cv20 the wheel steps the sliders, the value boxes beside them, and the two- and
-    three-state toggles (same origin; `core/gui.md` "The wheel over a value"): open with the
-    maintainer: checkboxes in or out
+    three-state toggles (same origin; `core/gui.md` "The wheel over a value"); checkboxes stay
+    out (the maintainer, 2026-10-31)
   - [ ] cv21 Live AATF lists the players' rows in two columns, the starting eleven left and the
-    bench right, team-wide rows across both (same origin, "if possible"): drafted first
+    bench right, team-wide rows across both (same origin, "if possible"); Multi-team AATF
+    stays one column (the maintainer, 2026-10-31): drafted first
   - [ ] cv22 bug (the maintainer, 2026-10-31, PES 17 save, teams /3/ and /a/): in Tactics, an
     advanced instruction set from Unassigned to another (Hug the Touchline) and back keeps the
     unsaved-changes mark, reading "no target -> no target"; /3/'s Defence 1 does not, /a/'s
-    does → verify: reproduced in a test first; the round trip leaves no change
+    does. Cause (`.tmp/cv22/tally.py` over the save's 220 teams): every pick of an instruction
+    that takes no target wrote 255, where the game leaves its own byte (0 under 2,303 of 2,445
+    unassigned entries; /3/'s preset 1 Defence 1 holds 255, /a/'s 0). Fix per plan "Tactics
+    editor" (such a pick puts back the target byte as opened) → verify: reproduced in a test
+    first; the round trip leaves no change
   - [ ] cvA the Argon trial (Gemini 4 Argon High as a third reviewer family; the maintainer,
     2026-10-31, on Devin `work`'s last weekly usage before its reset): a read-only sweep of
     every crate in 87 parts, libraries first (`.tmp/argon/sweep.py`, worktree

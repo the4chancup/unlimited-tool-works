@@ -14590,3 +14590,18 @@ Why: 0.0.1 handed over as VGL's proof of concept would have failed on its one po
 its compile shows the save's looks. The proof of concept, not the whole 0.0.2, is what the
 organizer needs to try the pipeline on their install early.
 Plan: `plans/core/development_plan.md` "The /vg/ League 27 (VGL): preview 0.0.2"; worklog 0.0.2.
+
+## 2026-10-31 — save_editor — an advanced instruction that takes no target gets back the target byte as opened
+Decision: picking an advanced instruction that takes none of the team's players puts back the
+target byte the file was opened with (255 for a team with no opened state); picking Counter
+Target, Defensive or Anchoring from one that takes none still sets 255, and picking between
+those three keeps the target.
+Why: the maintainer's bug (PES 2017 save, /a/): Unassigned, then Hug the Touchline, then
+Unassigned again kept the unsaved-changes mark, reading "No target -> No target". The game
+writes its own byte under an instruction that takes no target (0 under 2,303 of the save's
+2,445 unassigned entries, 255 under 123), and the editor wrote 255 on every such pick, so the
+round trip changed a byte that both sides word the same. Wording the rows by byte would show
+the noise instead of removing it; ignoring the byte in the diff would leave Save writing a
+change nobody was shown. The byte means nothing to the game under those instructions, so the
+opened one is as good as 255 there.
+Plan: `plans/save_editor.md` "Tactics editor" (the advanced instructions' target); worklog cv22.

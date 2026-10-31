@@ -960,8 +960,13 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   and Edit mode does not offer it (4ccEditor's lists leave it out for that reason). A record
   that holds it, or an instruction of the other side, shows it as the current choice. The target-player pick is enabled only for the
   instructions that take one of ours, Counter Target, Defensive and Anchoring (`pes_savefile`'s
-  `Instruction::takes_player`, the one place the rule lives); picking an instruction that takes
-  none sets the target to none (255), so no stale target is kept where 4ccEditor left one.
+  `Instruction::takes_player`, the one place the rule lives). Picking one of those three from
+  an instruction that takes none sets the target to none (255), so a byte the game never read
+  as a target does not show up as one; picking between two of them keeps the target. Picking
+  an instruction that takes none puts back the target byte the file was opened with, not 255:
+  the game reads no target there and writes its own byte (0 under 2,303 of the 2,445 unassigned
+  entries of the maintainer's PES 2017 save, 255 under 123), so a fixed 255 left a change no row
+  could show after a round trip back to the instruction as opened ("No target -> No target").
   Under an instruction that takes none of ours the disabled target shows no player of ours:
   "An opponent" under a held Tight Marking (its byte is the opposing formation's slot),
   "No target" under the rest (the game reads no target there).
