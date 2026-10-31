@@ -1770,10 +1770,11 @@ SE-GUI-45  GIVEN the PES 17 save's team 702 (/a/) on preset 1's Kick-off, its CF
                 lists the twelve outfield positions, CB to CF, and its Y's ⏴ is disabled, and
                 WHEN its Y's ⏵ is clicked THEN his slot holds y 1; WHEN LB is picked, then its
                 Y set to 36 and its X to 60 THEN his slot holds LB at (60, 36); WHEN he is
-                dropped on a teammate's marker THEN the two slots' positions and spots are
-                exchanged, as with the flag off; GIVEN /vg/ League 27, which does not, the
-                active ruleset instead WHEN he is held at (42, 30) THEN his badge reads AMF,
-                as in SE-GUI-42
+                held over a teammate's marker THEN his badge reads the teammate's position,
+                and WHEN he is dropped there THEN the two slots' positions and spots are
+                exchanged, as with the flag off; WHEN the active ruleset is then switched to
+                /vg/ League 27, which does not allow them, and he is held at (42, 30) THEN
+                his badge reads AMF, as in SE-GUI-42, and his slot is as he left it
 SE-GUI-13  GIVEN the save open and a second save of the same version picked in the comparator
            WHEN the panel is drawn
            THEN it lists, per team and per player, the differences `diff <picked> <open>`

@@ -74,7 +74,7 @@ pub struct Universal {
     // ... every field in the spec, and:
     /// The cup plays a game that keeps any formation (PES 2017's Whack Patch), so a starter
     /// may stand anywhere at any outfield position: the Save editor's pitch then sets his
-    /// spot and his position apart. No check reads it.
+    /// spot and his position apart. The file's logic never reads it.
     pub illegal_formations: bool,
 }
 ```
@@ -84,8 +84,8 @@ dropped and refuses a formation that rule cannot make; a cup that plays the Whac
 PES 2017 exe that keeps any formation, lets its members field one (4cc Autumn 26 and
 DBC7). The flag tells the Save editor which pitch to give a
 member (`plans/save_editor.md` "Illegal formations"); it sits in `universal` because it is
-the cup's rule for every team, and in the data section, never the logic's, since no check
-reads it: the logic's hash and version ignore it, as they ignore the logo. Left out, it is
+the cup's rule for every team, and in the data section, never the logic's, since the
+logic never reads it: the logic's hash and version ignore it, as they ignore the logo. Left out, it is
 `false` (the empty value, `spec/aatf_rules.md` "The ruleset schema"), so every file written before it loads
 unchanged and keeps the game's rule. The built-in Autumn 26 and DBC7 set it; the others
 leave it out.
@@ -103,9 +103,12 @@ Whack Patch, and `E:\PES2017\PES2017.exe.old5` is the PES 2017 exe the Whack Pat
 from (the last before it, dated 2025-05-17): the two differ in 70 bytes over 25 runs, so the
 patch's edits point at the check, which is then read there and in PES 2016's
 unpacked executable, and confirmed in game (a formation each side of the rule, under the
-stock exe). The check is the host's, beside the drop rule, not the logic's: the rule is the
-game's, the same for every cup, and in the logic it would copy the game's tables into every
-file and take a logic version; the ruleset's flag only turns it off. Until the refusal is
+stock exe). The check is the `libs/aatf` host's, in Rust beside the checks the host runs
+around the file's logic, never in the logic: the rule is the game's, the same for every cup,
+and in the logic it would copy the game's tables into every file and take a logic version;
+the ruleset's flag only turns it off. The position areas it may read live in `team_widgets`
+today (the drop rule's tables), which `libs/aatf` cannot depend on: they move to
+`pes_savefile` for both. Until the refusal is
 read, nothing here is built.
 
 **Medal systems.** A tier a medal system names has no `count` and no `counts_as`, and no tier
