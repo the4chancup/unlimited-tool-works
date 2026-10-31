@@ -6069,7 +6069,10 @@ briefs, review loops, gates and mutation runs as for any step.
       (Team Sheet). Does the game keep y 0-3 (else the y 4 floor returns under the flag) and
       the two shared or adjacent spots (then the pitch's drop on another starter, under the
       flag, lands on that spot instead of swapping the slots: the maintainer's ask, plan
-      "Illegal formations")? The maintainer's save backed up first and put back after
+      "Illegal formations")? Installed 2026-10-31 05:10 for the maintainer to look at: /a/
+      (702) preset 1 Kick-off, CBs at (64, 0) and (40, 2), both CMFs at (52, 30), SSs at
+      (40, 41) and (41, 41), no other team changed (`.tmp/0_0_1cv/cv14g/`: the maintainer's
+      save is `EDIT00000000.orig`, put back by hash after the look)
     Order: plan and Acceptance (Astra checkpoint (a)), DECISIONS, drafts
     (save_editor.js, ruleset_editor.js), then slices: the `aatf` field and built-ins (no
     mutation run holds it), the Ruleset editor, then `save_editor`/`team_widgets` after the

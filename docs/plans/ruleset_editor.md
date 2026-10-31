@@ -107,7 +107,7 @@ the last edit changed are highlighted.
 - **Cards**: the card groups, each a name and a checkbox grid of the 41 skills and 7 COM styles
   (labels as the Save editor shows them); all COM styles are also the built-in `com` group.
 - **Universal rules**: checkboxes and number fields for `universal` (the last checkbox,
-  "Illegal formations allowed (the cup's game keeps any formation)", is
+  "Illegal formations allowed (Whack Patch)", is
   `illegal_formations`, which the summary's "Every team" line states as "illegal formations
   allowed"), and below them the team
   settings: one row per entry, its PES versions, the value each tactics setting must have and

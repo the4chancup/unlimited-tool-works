@@ -2560,9 +2560,15 @@ const pitchPoint = (cv, e) => { const r = cv.getBoundingClientRect(), k = cv.wid
   return [(e.clientX - r.left) * k, (e.clientY - r.top) * k]; };
 const pitchX = x => PITCH.x0 + x * PITCH.xs;
 const pitchY = y => PITCH.y0 - y * PITCH.ys;
+// A ruleset whose cup plays an exe that keeps any formation (PES 2017's Whack
+// Patch) sets illegal_formations: the pitch then sets a starter's spot and
+// position apart, as 4ccEditor-1's Tactics tab does, and an outfielder may
+// stand on any stored row (plans/save_editor.md "Illegal formations").
+const illegalFormations = () => !!RULESETS[D.ruleset].illegal_formations;
+const outfieldYMin = () => illegalFormations() ? 0 : PITCH.yMin;
 const snapXY = (px, py) => [
   Math.min(PITCH.xu, Math.max(0, Math.round((px - PITCH.x0) / PITCH.xs))),
-  Math.min(PITCH.yu, Math.max(PITCH.yMin, Math.round((PITCH.y0 - py) / PITCH.ys)))];
+  Math.min(PITCH.yu, Math.max(outfieldYMin(), Math.round((PITCH.y0 - py) / PITCH.ys)))];
 
 // ---- The active AATF ruleset's tiers (crates/libs/aatf/rulesets/*.rhai) ----
 // The quick actions are one "Make X" button per tier in the file's order plus
@@ -2576,7 +2582,8 @@ const snapXY = (px, py) => [
 // (a PNG, from the event's wiki page) and that page.
 const RULESETS = {
   official: { label: "4cc Autumn 26", logo: "assets/logos/autumn26.png",
-    page: "https://implyingrigged.info/wiki/2026_4chan_Autumn_Babby_Cup", fielded_at_a: [1], tiers: [
+    page: "https://implyingrigged.info/wiki/2026_4chan_Autumn_Babby_Cup", fielded_at_a: [1],
+    illegal_formations: true, tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 3, weak_foot: { usage: 4, accuracy: 4 },
       cards: 6, a_positions: 1, free: { tricks: 3, com: 2 } },
     { id: "silver", label: "Silver", rate: 92, form: 8, injury_resistance: 3, weak_foot: { usage: 4, accuracy: 4 },
@@ -2636,7 +2643,8 @@ const RULESETS = {
       { card: "pinpoint_crossing", tiers: ["regular", "buffed"] },
       { card: "captaincy", captain: true }, { card: "long_ranger" } ] },
   dbc7: { label: "Divegrass Before Christmas 7", logo: "assets/logos/dbc7.png",
-    page: "https://implyingrigged.info/wiki/Divegrass_Before_Christmas_7:_Melty_Under_The_Christmas_Tree", tiers: [
+    page: "https://implyingrigged.info/wiki/Divegrass_Before_Christmas_7:_Melty_Under_The_Christmas_Tree",
+    illegal_formations: true, tiers: [
     { id: "gold", label: "Gold", rate: 99, form: 8, injury_resistance: 3, weak_foot: { usage: 4, accuracy: 4 },
       cards: 48, a_positions: 13, free: {} },
     { id: "silver", label: "Silver", rate: 88, form: 8, injury_resistance: 3, weak_foot: { usage: 4, accuracy: 4 },
@@ -3312,6 +3320,7 @@ const WALK = [
   ["SE-GUI-11", "switch Edit aesthetics anyway on; the Appearance section's FPC group: Hide default body (or Ctrl+I) gives the hide preset and reads 'The default body is currently hidden', Show default body (or Ctrl+I again) the show preset; a player with his own boots ID keeps it"],
   ["SE-GUI-35", "the 'Aesthetics from exports' draft control off (the default): the Appearance section draws no ownership line and no switch and every path edits; on, the lock draws"],
   ["SE-GUI-12", "a team row's view, the tactics: drag a pitch marker (it snaps to the stored grid, undoable), drop a bench row on a marker to swap, arm a set-piece chip and click a marker, arm Join attack and click two markers"],
+  ["SE-GUI-45", "illegal formations: under 4cc Autumn 26 or Divegrass Before Christmas 7 a dragged starter keeps his position wherever he lands, down to y 0, and his popover lists every outfield position with Y from 0; under /vg/ League 27 the game's drop rule and the y 4 floor are back"],
   ["SE-GUI-25", "the tactics' menus: Copy preset 1 to 2, then Swap Kick-off and In-possession; each is one undoable edit"],
   ["card badges", "the Skills column's header shows the player's own tier's cards left next to the pickers; under DBC7 the count stays positive (no card is capped), under the official ruleset ticking cards takes it to 0 then red"],
   ["SE-GUI-21", "the save's game running + Save: refused naming the exe (drawn; the scenario itself is manual)"],
@@ -5137,6 +5146,7 @@ function spotChoices(f, i, x, y) {
 // down to AMF and back up is a CF again, as in the game. An empty roster
 // slot keeps `cur`: no overall, no pick.
 function ruledPosition(t, f, i, x, y, cur) {
+  if (illegalFormations()) return cur;
   const choices = spotChoices(f, i, x, y), p = rosterPlayer(t, t.tactics.starting_eleven[i]);
   if (!choices.length || choices.includes(cur) || !p) return cur;
   if (choices.length === 1) return choices[0];
@@ -5590,8 +5600,10 @@ function benchList(t) {
 // a press outside it closes it.
 // The Position combo's list: the positions the slot's spot offers (the
 // game's Select Position menu lists the same), his own first when the spot
-// offers neither of them.
+// offers neither of them. Under a ruleset allowing illegal formations, every
+// outfield position.
 function popoverChoices(f, i) {
+  if (illegalFormations()) return POSITIONS.filter(x => x !== "GK");
   const s = f.players[i], choices = spotChoices(f, i, s.x, s.y);
   return choices.includes(s.position) ? choices : [s.position, ...choices];
 }
@@ -5602,7 +5614,7 @@ function slotPopover(t) {
   // The keeper's slot is fixed: Edit mode does not move him.
   // Each field is a stepper: an arrow either side of the number steps it by one, clamped
   // into the range (a stored spot past it steps back in), each arrow disabled at its end.
-  // Y's range starts at 4, the outfielders' lowest row (`PITCH.yMin`), as a drag's does.
+  // Y's range starts at the outfielders' lowest row (`outfieldYMin`), as a drag's does.
   // The three share the number box's old width, so the popover is no wider. The arrows
   // take no focus (tabindex -1): Tab goes from X to Y, and the arrow keys step a number.
   const arrow = (glyph, onclick, disabled, title) => {
@@ -5639,7 +5651,7 @@ function slotPopover(t) {
         { disabled: s.position === "GK", title: "Swaps him into goal; the keeper takes his slot" })),
     h("div", { class: "row" },
       num("X", () => s.x, v => { s.x = v; }, 0, PITCH.xu),
-      num("Y", () => s.y, v => { s.y = v; }, PITCH.yMin, PITCH.yu),
+      num("Y", () => s.y, v => { s.y = v; }, outfieldYMin(), PITCH.yu),
       " ", button("Close", () => { S.slotPop = null; render(); })));
 }
 
