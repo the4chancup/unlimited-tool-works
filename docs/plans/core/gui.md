@@ -439,8 +439,8 @@ Like the settings menu it is **assembled from the tools**, not written centrally
 - Fixed-height region below the toolbar, monospace, colored lines (info/warning/error mapped from
   `PipelineEvent`); its chevron collapses it to its header row and back, and dragging its
   divider resizes it, the height kept across frames. The divider carries a grip at its middle,
-  a line 24 points long and 2 high, rounded, in the resting text grey (the drafts'
-  `.log-divider::after`): egui's resize edge shows only under the pointer, so an open dock gave
+  a line 24 points long and 2 high, rounded, in the plain text grey (the noninteractive
+  widgets' text colour, the drafts' `--text`, in `.log-divider::after`): egui's resize edge shows only under the pointer, so an open dock gave
   no sign it could be resized. That frame (header row, chevron, divider and its grip)
   is the widget's own part, apart from the lines it holds: the Save editor's Live AATF list
   (`plans/save_editor.md` "Configurable AATF rules") docks in it too.

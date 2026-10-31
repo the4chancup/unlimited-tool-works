@@ -6272,7 +6272,21 @@ briefs, review loops, gates and mutation runs as for any step.
     tests; the window's look against the draft in a built window. Also drafted with it: the
     drafts draw egui's scroll-area fade (`index.html` `scrollFadesApply`), and a team row's
     double click counted by time in the draft (the browser lost it to the first click's
-    redraw; the app counts its own)
+    redraw; the app counts its own). Code merged 2026-11-01 (`de8cf1a2`, Opus sidekick, the
+    lead's gate re-run green: 2931 tests of five crates): the dock icon sits on egui's title
+    bar through its drag area's id (`__title_click`), which an egui upgrade could move (the
+    SE-GUI-48 test clicks it by name); the grip is the plain text grey (noninteractive, 140).
+    Open: the built-window look (the window, its title bar's two buttons, the close button's
+    hover under its tooltip area, the grip), and the SWE-2 round over it with `906384d0`'s help
+  - [ ] cv29 the Live AATF dock's close button (the maintainer, 2026-11-01): right of the
+    pop-out icon, the window's close button in the dock's header, turning Live AATF off.
+    Drafted (`save_editor.js` `livePanel`, `.live-caps`, `#live-close`; the pop-out and dock
+    icons a point lower, their ink having stood 1.1 to 1.6 points above the ✕'s centre line);
+    plan `plans/save_editor.md` the Live AATF bullet ("Its own window"), SE-GUI-49 → verify:
+    SE-GUI-49 in a headless test (the close turns Live AATF off, docked on again; its cross's
+    size and stroke the window's, its gap to the pop-out icon the window's pair's); in the
+    built window with cv28's look, both pairs' glyphs on one centre line
+
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
     logo drawn 28 high skips pixels; resample with `dds_convert`'s Lanczos3 to the box's
