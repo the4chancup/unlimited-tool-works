@@ -11,13 +11,7 @@ use super::*;
 #[test]
 fn each_unbuilt_section_says_where_it_shows_and_that_a_save_keeps_it() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
-    for name in [
-        "Heights",
-        "Cards",
-        "Universal rules",
-        "Specials",
-        "Suggestions",
-    ] {
+    for name in ["Heights", "Cards", "Specials", "Suggestions"] {
         let frame = window.draw(&mut view, &ctx);
         let entry = frame
             .nodes
@@ -54,7 +48,6 @@ fn each_unbuilt_section_links_to_its_demo_online() {
     for (section, id) in [
         (Section::Heights, "heights"),
         (Section::Cards, "cards"),
-        (Section::Universal, "universal"),
         (Section::Specials, "specials"),
         (Section::Suggestions, "suggestions"),
     ] {
@@ -77,7 +70,12 @@ fn each_unbuilt_section_links_to_its_demo_online() {
             frame.platform.commands
         );
     }
-    for section in [Section::General, Section::Tiers, Section::Summary] {
+    for section in [
+        Section::General,
+        Section::Tiers,
+        Section::Universal,
+        Section::Summary,
+    ] {
         view.section = section;
         let frame = settled(&mut window, &mut view, &ctx);
         assert!(
