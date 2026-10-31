@@ -2984,3 +2984,5 @@ worklog passed 7,000 lines.
 - 2026-10-31 — 0.0.1cv cv20 merged `31f03c12` (the wheel steps the Tactics sliders and toggles); cv24 reworked
   twice (the logo resampled premultiplied; the maintainer kept egui's swatches, the hex field spans the popup).
   Reusable scratch scripts moved to `scripts/` (`8cca28ed`), the agents' own to `~/.claude/tools/` (`ebe92a99`).
+- 2026-11-01 — 0.0.1cv cv26 merged `572f4f0f`: Multi-team AATF's range opens on one team, its last end
+  clamped to the first, checked once the ends rest 500 ms (the wheel's ~2-minute freeze). cv18-cv26 all merged.
