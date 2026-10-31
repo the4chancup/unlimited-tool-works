@@ -102,7 +102,7 @@ pub enum CodecError {
         got: u32,
     },
     /// A stored playing-style index names no style of the version's list.
-    #[error("{version:?}: playing-style index {value} is not a value of its list")]
+    #[error("{version}: playing-style index {value} is not a value of its list")]
     UnknownPlayingStyle {
         /// The version whose list was consulted.
         version: PesVersion,
@@ -111,7 +111,7 @@ pub enum CodecError {
     },
     /// A stored advanced-instruction value names no instruction of the
     /// version's table.
-    #[error("{version:?}: advanced-instruction value {value} is not a value of its table")]
+    #[error("{version}: advanced-instruction value {value} is not a value of its table")]
     UnknownInstruction {
         /// The version whose table was consulted.
         version: PesVersion,

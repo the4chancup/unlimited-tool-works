@@ -172,9 +172,10 @@ impl IngameFace {
             .collect()
     }
 
-    /// The run with the player-gloves and skin bits zeroed: what the
-    /// fingerprint hashes (masked out because they overlap fields the schema
-    /// lists separately).
+    /// The run with the player-gloves bits (the checkbox and its colour) and
+    /// the skin-colour bits zeroed, seven bits in all: what the fingerprint
+    /// hashes. A gloves or skin change, each a field the comparison reports
+    /// on its own, leaves the fingerprint as it was.
     pub fn normalized(&self) -> Vec<u8> {
         self.masked(
             [
@@ -272,26 +273,29 @@ mod tests {
         }
     }
 
-    /// `spec`'s widest value round-trips, touches only its bits, and one
-    /// past it is `ValueTooWide`.
+    /// `spec`'s widest value and 0 round-trip, touch only its bits, and one
+    /// past the widest is `ValueTooWide`. Writing both means one of them
+    /// differs from what the run held, whatever that was.
     fn round_trips(face: &mut IngameFace, spec: &FieldSpec<IngameFaceField>) {
         let before = face.bytes().to_vec();
         let max = u8::MAX >> (8 - spec.bit_width);
-        face.set(spec.field, max).expect("the max fits");
-        assert_eq!(
-            face.get(spec.field).expect("covered"),
-            max,
-            "{:?}",
-            spec.field
-        );
-        for (byte, (&after, &was)) in face.bytes().iter().zip(&before).enumerate() {
-            let keep = !covered(spec, byte);
+        for value in [max, 0] {
+            face.set(spec.field, value).expect("the value fits");
             assert_eq!(
-                after & keep,
-                was & keep,
-                "{:?} changed bits outside its run in byte {byte}",
+                face.get(spec.field).expect("covered"),
+                value,
+                "{:?}",
                 spec.field
             );
+            for (byte, (&after, &was)) in face.bytes().iter().zip(&before).enumerate() {
+                let keep = !covered(spec, byte);
+                assert_eq!(
+                    after & keep,
+                    was & keep,
+                    "{:?} changed bits outside its run in byte {byte}",
+                    spec.field
+                );
+            }
         }
         // An 8-bit field holds every `u8`: nothing is one past it.
         if spec.bit_width < 8 {

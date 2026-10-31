@@ -17,7 +17,8 @@ use crate::schema::fields::{PresetField, TacticsField};
 use crate::schema::instruction;
 
 use super::items::{
-    as_table, boolean, emit, gated, int_array, label, opt, ranged, reject, required, u8_val,
+    as_table, boolean, emit, gated, int_array, label, label_position, opt, ranged, reject,
+    required, u8_val,
 };
 use super::labels;
 
@@ -491,18 +492,7 @@ pub(super) fn formation_players(
                 key: key.to_string(),
                 expected,
             })?;
-        let position = labels::POSITIONS
-            .iter()
-            .position(|p| *p == position)
-            .ok_or_else(|| TeamTomlError::UnknownLabel {
-                key: key.to_string(),
-                label: position.to_string(),
-                allowed: labels::POSITIONS
-                    .iter()
-                    .map(|p| format!("\"{p}\""))
-                    .collect::<Vec<_>>()
-                    .join(", "),
-            })?;
+        let position = label_position(position, key, &labels::POSITIONS)?;
         let x = entry.get("x").ok_or_else(|| TeamTomlError::WrongType {
             key: key.to_string(),
             expected,
@@ -554,18 +544,7 @@ pub(super) fn instruction_entries(
                 key: key.to_string(),
                 expected,
             })?;
-        let index = labels::INSTRUCTIONS
-            .iter()
-            .position(|l| *l == name)
-            .ok_or_else(|| TeamTomlError::UnknownLabel {
-                key: key.to_string(),
-                label: name.to_string(),
-                allowed: labels::INSTRUCTIONS
-                    .iter()
-                    .map(|l| format!("\"{l}\""))
-                    .collect::<Vec<_>>()
-                    .join(", "),
-            })?;
+        let index = label_position(name, key, &labels::INSTRUCTIONS)?;
         let player = table
             .get("player")
             .ok_or_else(|| TeamTomlError::WrongType {

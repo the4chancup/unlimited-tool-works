@@ -32,7 +32,9 @@ use crate::settings_toml::{
     AppearanceSettings, appearance_from, apply_appearance, get_appearance, held_on, set_appearance,
 };
 
-use super::items::{as_table, check_text, check_width, emit, gated, opt, reject, text, u16_val};
+use super::items::{
+    as_table, check_text, check_width, emit, gated, label_position, opt, reject, text, u16_val,
+};
 
 // ---------------------------------------------------------------------------
 // From the model
@@ -527,19 +529,8 @@ fn label_index(item: &Item, key: &str, labels: &[&str]) -> Result<u8, TeamTomlEr
                 key: key.to_string(),
                 expected: "a string",
             })?;
-    labels
-        .iter()
-        .position(|label| *label == text)
+    label_position(text, key, labels)
         .map(|index| u8::try_from(index).expect("a label index fits u8"))
-        .ok_or_else(|| TeamTomlError::UnknownLabel {
-            key: key.to_string(),
-            label: text.to_string(),
-            allowed: labels
-                .iter()
-                .map(|label| format!("\"{label}\""))
-                .collect::<Vec<_>>()
-                .join(", "),
-        })
 }
 
 /// `playing_style = "goal_poacher"`: a canonical `PlayStyle` label.
@@ -760,9 +751,11 @@ fn apply_player(
     if let Some(skills) = section.skills.skills {
         for (i, set) in skills.iter().enumerate() {
             let field = PlayerField::Skill(u8::try_from(i).expect("41 skills fit u8"));
-            // A skill the source version cannot store says nothing — the
-            // target's value stands, note-free (a pair-wide rule).
-            if !target.context.from_fields.contains(&field) {
+            // A skill a converted document's source version cannot store
+            // says nothing: the target's value stands, note-free (a
+            // pair-wide rule). In a same-version document it is a mistake,
+            // refused below as any key the version lacks.
+            if target.context.foreign && !target.context.from_fields.contains(&field) {
                 continue;
             }
             if *set {
@@ -782,7 +775,7 @@ fn apply_player(
     if let Some(com_styles) = section.skills.com_styles {
         for (i, set) in com_styles.iter().enumerate() {
             let field = PlayerField::ComStyle(u8::try_from(i).expect("7 com styles fit u8"));
-            if !target.context.from_fields.contains(&field) {
+            if target.context.foreign && !target.context.from_fields.contains(&field) {
                 continue;
             }
             if *set {

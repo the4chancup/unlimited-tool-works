@@ -804,15 +804,34 @@ fn a_team_colour_too_wide_for_its_run_is_refused() {
     ));
 }
 
+/// A playing style or instruction the version cannot hold is refused
+/// naming the version as the game does.
+#[test]
+fn a_style_or_instruction_refusal_names_the_version() {
+    let err = crate::schema::playstyle::decode(PesVersion::Pes16, 16)
+        .expect_err("16 is past PES 16's list");
+    assert_eq!(
+        err.to_string(),
+        "PES 2016: playing-style index 16 is not a value of its list"
+    );
+    let err = crate::schema::instruction::decode(PesVersion::Pes17, 0x0D)
+        .expect_err("13 is past PES 17's table");
+    assert_eq!(
+        err.to_string(),
+        "PES 2017: advanced-instruction value 13 is not a value of its table"
+    );
+}
+
 /// Read and write share `tactics_runs`, so a round trip cannot see a wrong
 /// offset in it. The fixture bytes at the layout's own offsets decode to
 /// what `read_tactics_into` produced.
 #[test]
 fn tactics_bytes_sit_at_the_layouts_own_offsets() {
-    // A team whose two same-preset formations differ at some slot — the
-    // `formation` stride multiplies into the offset, so a wrong stride
-    // shows only where two formations hold different bytes. PES 17 then
-    // PES 19, the first difference found.
+    // A team whose two same-preset formations differ at some slot of
+    // preset 1 or 2: the preset and `formation` strides multiply into the
+    // offset, so a wrong stride shows only where the bytes it would read
+    // differ, and preset 0's offset has no preset stride in it. PES 17
+    // then PES 19, the first difference found.
     let mut found = None;
     'versions: for version in [PesVersion::Pes17, PesVersion::Pes19] {
         let payload = payload(version);
@@ -824,7 +843,7 @@ fn tactics_bytes_sit_at_the_layouts_own_offsets() {
                 ..TeamEntry::default()
             };
             read_tactics_into(&mut team, rec, schema.tactic).expect("tactics record decodes");
-            for preset in 0..3 {
+            for preset in 1..3 {
                 for slot in 0..11 {
                     let a = team.tactics.presets[preset].formations[1].players[slot];
                     let b = team.tactics.presets[preset].formations[2].players[slot];
@@ -882,6 +901,19 @@ fn tactics_bytes_sit_at_the_layouts_own_offsets() {
         .instructions
         .as_ref()
         .expect("PES 17 stores instructions");
+    // A wrong preset or side stride reads another preset's or side's
+    // bytes, which only shows where those bytes differ.
+    let presets = &team.tactics.presets;
+    assert_ne!(
+        presets[0].attack_instructions, presets[1].attack_instructions,
+        "{version:?} team {}: presets 0 and 1 attack alike",
+        team.id
+    );
+    assert_ne!(
+        presets[0].attack_instructions, presets[0].defence_instructions,
+        "{version:?} team {}: attack and defence alike",
+        team.id
+    );
     for preset in 0..3u8 {
         let preset_base = u32::from(preset) * tactic.preset_stride_bits;
         for (side, s, entries) in [
