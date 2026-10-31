@@ -16,7 +16,7 @@ use crate::interchange::players_key;
 use crate::model::player::PlayerEntry;
 use crate::schema::fields::PlayerText;
 use crate::schema::{VersionSchema, schema_for};
-use crate::settings_toml::document::{emit_motion, padded, parse_motion, range_text};
+use crate::settings_toml::document::{emit_motion, padded, parse_motion, range_text, toml_form};
 use crate::settings_toml::{
     AppearanceSettings, MotionSettings, SettingKey, SettingsError, apply_appearance, check_text,
     get_appearance,
@@ -288,7 +288,8 @@ impl AestheticsPatch {
                 }
                 if player.motion != MotionSettings::default() {
                     out.push_str(&format!("\n[teams.players.{slot:02}.appearance.motion]\n"));
-                    emit_motion(&mut out, &player.motion)?;
+                    emit_motion(&mut out, &player.motion)
+                        .map_err(|err| at_player(&format!("teams[{i}].players.{key}"), err))?;
                 }
             }
         }
@@ -425,9 +426,14 @@ fn build(
             continue;
         };
         if !kind.accepts_stored(stored) {
+            // A value past the key's widest range too (a hand-built patch)
+            // has no form the file could write: `toml_form` refuses it.
+            let written = toml_form(key, stored, false).map_err(|err| at_player(path, err))?;
             return Err(SettingsError::OutOfRange {
                 key: format!("{motion_path}.{}", spec.name),
-                value: i64::from(stored),
+                value: written
+                    .as_integer()
+                    .expect("a motion's TOML value is an integer"),
                 range: range_text(kind),
             }
             .into());
@@ -444,6 +450,20 @@ fn build(
     let mut record = vec![0u8; schema.player.size];
     write_player(&next, &mut record, schema.player).map_err(SettingsError::Codec)?;
     Ok(next)
+}
+
+/// A motion's `OutOfRange` from the settings code, which names the key as
+/// `settings.toml` does (`appearance.motion.free_kick`), moved under the
+/// player's patch path (`teams[0].players.05`).
+fn at_player(path: &str, err: SettingsError) -> SettingsError {
+    match err {
+        SettingsError::OutOfRange { key, value, range } => SettingsError::OutOfRange {
+            key: format!("{path}.{key}"),
+            value,
+            range,
+        },
+        other => other,
+    }
 }
 
 // ---------------------------------------------------------------------------

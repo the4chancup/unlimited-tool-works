@@ -6,7 +6,7 @@
 use pes_version::PesVersion;
 
 /// `[tactics.preset_N.style]`: `(key, [false label, true label])` in emit order.
-pub const STYLE_SWITCHES: [(&str, [&str; 2]); 7] = [
+pub(crate) const STYLE_SWITCHES: [(&str, [&str; 2]); 7] = [
     ("attacking_style", ["counter_attack", "possession"]),
     ("attacking_zone", ["centre", "wide"]),
     ("buildup", ["long_pass", "short_pass"]),
@@ -23,7 +23,7 @@ pub const POSITIONS: [&str; 13] = [
 
 /// Advanced-instruction names in canonical order (`model::instruction::ALL`'s
 /// index): `wing_back`, not a stored value.
-pub const INSTRUCTIONS: [&str; 17] = [
+pub(crate) const INSTRUCTIONS: [&str; 17] = [
     "off",
     "hug_the_touchline",
     "false_no_9",

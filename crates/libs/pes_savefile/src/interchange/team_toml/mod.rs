@@ -214,8 +214,7 @@ pub struct InstructionEntry {
 pub struct PlayerSection {
     /// Display name, colour codes included.
     pub name: Option<String>,
-    /// Shirt name; absent = derived from `name` by [`TeamToml::apply`]'s
-    /// caller.
+    /// Shirt name; absent leaves the target's own untouched, as any key.
     pub shirt_name: Option<String>,
     /// Squad number (from the roster record).
     pub number: Option<u16>,
@@ -377,8 +376,9 @@ pub enum ImportNote {
         /// The dotted key path ("team.manager_id").
         path: String,
     },
-    /// `path`'s value has no stored form in the target version (an instruction
-    /// the target lacks): `Off` was written in its place.
+    /// `path`'s value has no stored form in the target version: an
+    /// instruction the target lacks, `Off` written in its place, or a
+    /// playing style its list lacks, written as none.
     NotEncodable {
         /// The dotted key path.
         path: String,
