@@ -137,6 +137,23 @@ matchday compiles single-CPK into its `midcup` slot (`spec/team_compiler/pipelin
 "Multi-CPK mode: teams parts"). The defaults stay as they are: the official list is what every
 install is meant to carry, and `dpfilelist_outdated` already names the upgrade.
 
+The full-look aesthetics patch (worklog 8.36c) and its in-game check on PES 2019 (8.36d) come
+before 0.0.2, though 8.36 itself is scheduled after 0.0.1: VGL plays on a Fox version, and
+no save is stripped any more, so a compiled player's face, boots and gloves reach the game
+only through the patch (DECISIONS "Every engine carries a player's looks in the savefile
+patch; no stripped saves"); with today's Fox-only patch of motions and names, the game shows
+the official save's record over the compiled look (`savefile_player_not_stripped`). The
+organizer's order is: the managers' tactical exports (`.ted`) imported into the base save,
+by the Save editor or by PES (whose import leaves the team names to rewrite), making the
+official save; the old exports upgraded against it; the exports compiled; the patch applied to
+the official save, by the compile itself when the save is the configured one or by the Save
+editor's `apply-patch`. The readme's VGL section says two things more: the patch is the last
+write to the official save, since a `.ted` imported after it writes that team's players over
+their looks and needs the patch again, and a later matchday's compile means a new patch and so
+a new official save sent out, not only new CPKs, the looks living in the save; and the
+official save is checked against the built-in VGL 27 ruleset (Live AATF, or the Savefile
+menu's Multi-team AATF) before it goes out.
+
 The console's progress line and run summary (`architecture.md`, ST-CLI-02) come with them,
 pulled forward from Phase 8's progress-grid step: a whole league compiled with nothing on the
 screen for minutes reads as a hung program. Two checks join the release's own:

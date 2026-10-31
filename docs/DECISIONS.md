@@ -14512,3 +14512,16 @@ for its 1798 main ones, over 30 h before `team_widgets` started, holding every m
 two crates. Every slice 0.0.1 ships already had its `mutants-diff` over the lines it changed,
 so a whole-crate run adds what no slice touched, which can wait a release.
 Plan: `AGENTS.md` "Cutting a release" (the exception); worklog cv and cv6.
+
+## 2026-10-31 — release — The full-look aesthetics patch comes before 0.0.2
+Decision (maintainer): worklog 8.36c (the aesthetics patch carrying every compiled player's
+look, boots and gloves on every engine) and 8.36d (its in-game check, PES 2019 as its second
+Fox version) are prerequisites of 0.0.2, ahead of the PES 2019 rehearsal; 8.36 otherwise stays
+after 0.0.1. The 0.0.2 readme's VGL section places the patch last in the organizer's order and
+has the official save checked against the built-in VGL 27 ruleset before it goes out.
+Why: VGL 27 plays on PES 2019, a Fox version, and since 8.36b no save is stripped, so the CPK's
+player tables no longer show over the save's records: without 8.36c a compiled face, boots and
+gloves would not reach the game (`savefile_player_not_stripped`). A `.ted` imported after the
+patch writes its team's players over their looks, and a later matchday's compile changes the
+save, not only the CPKs.
+Plan: `plans/core/development_plan.md` "The /vg/ League 27 (VGL)"; worklog 0.0.2, 8.36c, 8.36d.

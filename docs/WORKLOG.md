@@ -2745,7 +2745,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       `save_editor` (src, tests, help), `export_upgrader` (`messages.rs`, `settings.rs`, its CLI
       test), `pes_savefile` (`file.rs`, `ops/compare.rs`, `interchange/{team_toml,texport}`),
       and the spec and plans named above
-    - [ ] c after 0.0.1, the full-look patch and the Team compiler: the aesthetics patch on
+    - [ ] c after 0.0.1 and before 0.0.2 (VGL 27 plays on PES 2019, a Fox version, with no
+      stripped save; `plans/core/development_plan.md` "The /vg/ League 27"), the full-look
+      patch and the Team compiler: the aesthetics patch on
       every engine (it is Fox-only today) gains the appearance block, the boots and gloves IDs
       over the whole allocation, filled after their tasks commit, and clears a compiled
       player's base copy; `apply-patch` writes them; the Fox player-table writer and its
@@ -2753,7 +2755,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       S64-S66, S68, and GLOSSARY's D1 and D2), its Acceptance written first → verify: the
       gates; TC-SAV-12 (a PES 17 compile writes no patch) rewritten; the library parity's
       difference classes re-diagnosed
-    - [ ] d in game (PES 2021, then one more Fox version and PES 2017): a patch applied to an
+    - [ ] d in game, before 0.0.2 (PES 2021, then PES 2019, VGL 27's game, and PES 2017): a
+      patch applied to an
       unstripped save shows the compiled look in Edit mode, boots and gloves included, on a
       player whose base copy named another and on one whose edit flags were clear
       (`scripts/ingame/`, saves backed up); with it, the FoxDen gloves issue rechecked, and
@@ -6277,7 +6280,10 @@ briefs, review loops, gates and mutation runs as for any step.
     Explorer's file icon on the exe) → QUESTIONS "Before the release"
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over
-- [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)")
+- [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
+  Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
+  2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
+  the organizer's order and the AATF check of the official save (the plan's paragraph)
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
