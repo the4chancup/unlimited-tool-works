@@ -25,12 +25,16 @@ is what "(WIP)", work in progress, in the tool's name means:
 - *Tiers* is a form: the tiers table, highest first, each tier's per-stat targets
   and free cards under its row, and the medal systems. A tier's conditions can't be
   edited here yet.
+- *Universal rules* is a form: the rules every team plays under (ratings at the
+  registered position, B ratings, age, weight, the captain, goalkeepers, the skill-card
+  and COM-style caps) and whether the cup allows illegal formations. Its team settings
+  can't be edited here yet: Summary shows them, and saving leaves them unchanged.
 - *Custom checks* shows the file's hand-written checks as text, and saving keeps
   them as they are.
 - *Summary* spells the ruleset out as readable rules text, with **Copy** putting it
   on the clipboard to post.
-- *Heights*, *Cards*, *Universal rules*, *Specials* and *Suggestions* can't be
-  edited here yet: Summary shows what's in them, and saving leaves them unchanged.
+- *Heights*, *Cards*, *Specials* and *Suggestions* can't be edited here yet: Summary
+  shows what's in them, and saving leaves them unchanged.
 
 The File menu's *New from template…* brings the start page back over the open
 ruleset. Undo and redo (Edit menu, Ctrl+Z and Ctrl+Y or Ctrl+Shift+Z) step through
