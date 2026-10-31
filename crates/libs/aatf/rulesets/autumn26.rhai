@@ -54,6 +54,7 @@ const RULESET = #{
         gk_not_second_a: true,
         age: [15, 50], weight: #{ floor: 30, below: 129, above: 81 },
         captain_required: true, min_goalkeepers: 1, max_skill_cards: 10,
+        illegal_formations: true,
     },
 
     specials: [

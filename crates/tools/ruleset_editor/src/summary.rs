@@ -261,6 +261,9 @@ fn every_team_lines(ruleset: &Ruleset) -> Vec<String> {
     if let Some(max) = universal.max_com_styles {
         every.push(format!("at most {max} COM styles"));
     }
+    if universal.illegal_formations {
+        every.push("illegal formations allowed".to_string());
+    }
     let every = every.join("; ");
     let mut lines = section("Every team");
     lines.push(format!("{}.", upper_first(&every)));
