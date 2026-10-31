@@ -152,7 +152,10 @@ its step's folder, but a tool the next check will reach for (the built-window ha
 `scripts/built_window/`, had served every check for weeks from three scratch folders) gets a
 folder or file under `scripts/` with its usage in the docstring, its paths from the repository
 root or an environment variable rather than a scratch path, and a line here or in the folder's
-`README.md`. `.tmp/` is ignored by git: nothing there is reviewed, versioned or found by the
+`README.md`. A release candidate takes two: `scripts/build_remapped.py` builds the release exe
+with `just release`'s flags and checks it leaks no local path, and `scripts/make_candidate.py
+<commit>` stages the unpacked bundle from it in `../4cc-studio-temp/candidate-<version>`;
+`scripts/sgrep.py <file> <regex>` greps a draft past its embedded data rows. `.tmp/` is ignored by git: nothing there is reviewed, versioned or found by the
 next session except through a note that names it. **An archived run keeps its summary, not its logs.** A run kept aside (in
 `.tmp/<subphase>/mutants_<step>_<what>/`, before
 the next run overwrites `mutants.out/`) copies only `*.txt` and `outcomes.json`, never the
