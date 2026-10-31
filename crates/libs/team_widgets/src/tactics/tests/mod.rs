@@ -2528,6 +2528,49 @@ fn the_wheel_steps_a_slider_over_its_rail_and_its_value_box() {
     }
 }
 
+// A notch over a slider's value box while the box holds the keyboard
+// (clicked into for typing) takes the keyboard and steps the value once,
+// two frames later: egui answers for the slider with the box's id while
+// the box has or just lost the keyboard, and the step must not be lost
+// when the id changes back.
+#[test]
+fn the_wheel_steps_a_slider_whose_value_box_holds_the_keyboard() {
+    let mut window = Headless::sized(422.0, 900.0);
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    tactics.presets[0].sliders.support_range = 5;
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+    let half = settings_half(&nodes);
+    let value_box = centre(control_below(
+        &nodes,
+        "Support range",
+        Role::SpinButton,
+        half,
+    ));
+    window.click_tactics(value_box, version, &mut tactics, &mut view, &roster);
+    window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+    assert!(
+        window.ctx.memory(|memory| memory.focused()).is_some(),
+        "premise: the clicked value box holds the keyboard"
+    );
+    assert_eq!(
+        tactics.presets[0].sliders.support_range, 5,
+        "premise: the click changed nothing"
+    );
+
+    let mut expect = tactics.clone();
+    expect.presets[0].sliders.support_range = 6;
+    let changed = window.notch_tactics(value_box, true, version, &mut tactics, &mut view, &roster);
+    assert!(changed, "the notch changed the record");
+    for _ in 0..5 {
+        window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+    }
+    assert_eq!(tactics, expect, "the notch stored 6 once, nothing else");
+}
+
 // The wheel over either choice of a style pair moves the choice: up to the
 // right one, down to the left one, nothing past an end.
 #[test]

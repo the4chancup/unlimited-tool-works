@@ -651,7 +651,12 @@ fn slider(ui: &mut egui::Ui, sliders: &mut TacticSliders, spec: &SliderSpec) {
             egui::StrokeKind::Inside,
         );
     }
-    if step_number(&mut value, wheel_steps(ui, &response), 1..=spec.max) {
+    // egui answers with the value box's id while the box has or just lost
+    // the keyboard, and the wheel keys a notch's delayed step on the id, so
+    // it gets one that stays put.
+    let mut wheel_response = response.clone();
+    wheel_response.id = ui.scope_id().with(spec.field);
+    if step_number(&mut value, wheel_steps(ui, &wheel_response), 1..=spec.max) {
         response.mark_changed();
     }
     if response.changed() {

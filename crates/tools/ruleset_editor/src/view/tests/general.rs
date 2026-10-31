@@ -541,6 +541,54 @@ fn a_big_jpeg_is_made_smaller_to_fit_and_stored_as_a_png() {
 
 // RE-GUI-19
 #[test]
+fn a_big_picture_made_smaller_keeps_its_edge_against_transparency_white() {
+    let (ctx, _events, mut window, mut view) = fresh_blank();
+    let dir = crate::test_support::scratch("event_logo_edge");
+    // Opaque white on the left half, transparent black on the right.
+    let (width, height) = (336, 112);
+    let mut pixels = Vec::new();
+    for _ in 0..height {
+        for x in 0..width {
+            let texel = if x < width / 2 { [255; 4] } else { [0; 4] };
+            pixels.extend_from_slice(&texel);
+        }
+    }
+    let png = dds_convert::encode_png(&pixels, width, height).expect("the picture encodes");
+    choose_picture(
+        &mut window,
+        &mut view,
+        &ctx,
+        &write_bytes(&dir, "edge.png", &png),
+    );
+    assert_eq!(logo_size(&view), (168, 56), "premise: fitted into 168 × 56");
+
+    let stored = view
+        .document
+        .as_ref()
+        .expect("a document")
+        .ruleset
+        .logo_png()
+        .expect("a logo");
+    let decoded =
+        dds_convert::decode(&stored, dds_convert::SourceFormat::Png).expect("the logo is a PNG");
+    let texels = decoded.mips[0].as_chunks::<4>().0;
+    assert!(
+        texels.iter().any(|texel| texel[3] > 0 && texel[3] < 255),
+        "premise: a texel straddles the edge"
+    );
+    for (index, texel) in texels.iter().enumerate() {
+        if texel[3] > 0 {
+            assert!(
+                texel[..3].iter().all(|&channel| channel >= 250),
+                "texel {index} (x {}) reads {texel:?}",
+                index % 168
+            );
+        }
+    }
+}
+
+// RE-GUI-19
+#[test]
 fn a_file_that_is_no_picture_is_refused_with_its_line_and_the_logo_kept() {
     let (ctx, _events, mut window, mut view) = fresh_blank();
     let dir = crate::test_support::scratch("event_logo_refused");

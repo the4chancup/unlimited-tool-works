@@ -61,7 +61,7 @@ use sha2::{Digest, Sha256};
 
 pub use cache::Converter;
 pub use raster::encode_png;
-pub use resample::resize;
+pub use resample::{resize, resize_straight_alpha};
 
 /// The accepted source formats, named by the file extension the compiler
 /// resolved the texture stem to. TGA has no magic, so the format is never

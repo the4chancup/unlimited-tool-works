@@ -188,12 +188,13 @@ fn pick(ruleset: &mut Ruleset, path: &Path) -> Result<(), String> {
         return Ok(());
     }
     let pixels = decoded.mips.first().ok_or_else(not_a_picture)?;
-    let png = dds_convert::resize(pixels, decoded.width, decoded.height, width, height)
-        .and_then(|scaled| dds_convert::encode_png(&scaled, width, height))
-        .map_err(|error| {
-            log::debug!("the event logo {name} could not be scaled: {error}");
-            not_a_picture()
-        })?;
+    let png =
+        dds_convert::resize_straight_alpha(pixels, decoded.width, decoded.height, width, height)
+            .and_then(|scaled| dds_convert::encode_png(&scaled, width, height))
+            .map_err(|error| {
+                log::debug!("the event logo {name} could not be scaled: {error}");
+                not_a_picture()
+            })?;
     ruleset
         .set_logo(&png)
         .expect("a PNG of at most 168 × 56 pixels is under 64 KB");

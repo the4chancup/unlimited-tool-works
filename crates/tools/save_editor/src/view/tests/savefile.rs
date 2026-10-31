@@ -809,6 +809,78 @@ fn a_range_turned_by_the_wheel_is_checked_once_it_has_rested() {
     );
 }
 
+/// Multi-team AATF's range rests and is checked with no input to wake the
+/// window: each frame of the rest asks egui for another within 500 ms, and
+/// the frame the rest ends on asks for the next at once, which starts the
+/// check. Asked for none, the list stays dimmed until the pointer moves.
+// SE-GUI-41
+#[test]
+fn a_resting_range_asks_for_the_frames_its_check_needs() {
+    let path = fixture(PesVersion::Pes17, "multi_aatf_repaint");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    assert_eq!(
+        all_team_ids(&view)[..2],
+        [701, 702],
+        "premise: the save's first two teams are 701 and 702"
+    );
+    multi_checked(&mut window, &mut view, &[701]);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let notch_down = egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Line,
+        delta: egui::vec2(0.0, -1.0),
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Wheel,
+        modifiers: egui::Modifiers::default(),
+    };
+    let events = vec![
+        egui::Event::PointerMoved(centre(range_combos(&pairs)[0])),
+        notch_down,
+    ];
+    let (_, pairs, _) = window.frame_ids(events, |ui| show(ui, &mut view, &|| Vec::new()));
+    let label = format!("702 {}", display_name(&team_entry(&view, 702).name));
+    assert_eq!(
+        range_combos(&pairs)[1].value(),
+        Some(label.as_str()),
+        "premise: the notch picked 702"
+    );
+
+    // No more input: each frame's request, until the frame that starts
+    // 702's check (30 frames of 1/60 s make the rest).
+    let started = |view: &SaveView| {
+        let check = &view.multi_aatf.check;
+        check.pending.is_some()
+            || check
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| key.ids == [702])
+    };
+    assert!(!started(&view), "premise: the notch started no check");
+    let mut delays = Vec::new();
+    while !started(&view) {
+        assert!(delays.len() < 90, "702's check never started");
+        window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        delays.push(window.repaint_delay);
+    }
+    let [resting @ .., promoted, _started] = delays.as_slice() else {
+        panic!("the check started on the first frame after the notch: {delays:?}");
+    };
+    assert!(!resting.is_empty(), "premise: the range rested a frame");
+    for (frame, delay) in resting.iter().enumerate() {
+        assert!(
+            *delay <= Duration::from_millis(500),
+            "resting frame {frame} asks for the next within the rest, not {delay:?}"
+        );
+    }
+    assert_eq!(
+        *promoted,
+        Duration::ZERO,
+        "the frame the rest ends on asks for the next at once"
+    );
+}
+
 /// Multi-team AATF's dialog is 900 points wide, its list 874 of them (the
 /// modal's padding and border around it), so a height row's sentence and
 /// its players' lines have room.

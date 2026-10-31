@@ -401,7 +401,8 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         let rested = now - range.changed_at;
         if rested >= REST {
             range.checked = range.picked;
-            // The check starts on the next frame, which no input may wake.
+            // The check starts on the next frame, which is asked for here
+            // because no input may come to bring it.
             ui.ctx().request_repaint();
         } else {
             ui.ctx()
