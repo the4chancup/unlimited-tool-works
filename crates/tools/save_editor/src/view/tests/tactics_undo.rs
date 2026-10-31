@@ -730,3 +730,103 @@ fn a_substitution_pick_then_a_slider_drag_undo_as_two_entries() {
         "exactly two entries"
     );
 }
+
+// ST-WHEEL-05
+#[test]
+fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
+    let path = fixture(PesVersion::Pes17, "tactics_wheel");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
+    open_team_view(&mut window, &mut view, 701);
+    let preset = |view: &SaveView| team_entry(view, 701).tactics.presets[0].clone();
+    let before = preset(&view);
+    assert_eq!(
+        before.sliders.support_range, 5,
+        "premise: Support range has room for two notches up"
+    );
+    assert!(
+        !before.style.attacking_style,
+        "premise: Counter Attack, the left choice, is held"
+    );
+    assert_eq!(
+        before.sliders.numbers_in_attack, 3,
+        "premise: Many, not the leftmost choice, is held"
+    );
+
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let below = |label: &str, role: Role| {
+        let node = *widgets_below(&nodes, label, role)
+            .first()
+            .unwrap_or_else(|| panic!("no {role:?} below {label:?}"));
+        centre(node)
+    };
+    let rail = below("Support range", Role::Slider);
+    let value_box = below("Support range", Role::SpinButton);
+    let attacking_style = below("Attacking style", Role::Button);
+    let numbers_in_attack = below("Numbers in attack", Role::Button);
+    let notch = |window: &mut Headless, view: &mut SaveView, at: egui::Pos2, up: bool| {
+        let wheel = egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Line,
+            delta: egui::vec2(0.0, if up { 1.0 } else { -1.0 }),
+            phase: egui::TouchPhase::Move,
+            source: egui::MouseWheelSource::Wheel,
+            modifiers: egui::Modifiers::default(),
+        };
+        window.frame(vec![egui::Event::PointerMoved(at), wheel], |ui| {
+            show(ui, view, &|| Vec::new())
+        });
+    };
+
+    notch(&mut window, &mut view, rail, true);
+    assert_eq!(
+        preset(&view).sliders.support_range,
+        6,
+        "a notch up over the rail adds one"
+    );
+    notch(&mut window, &mut view, value_box, true);
+    assert_eq!(
+        preset(&view).sliders.support_range,
+        7,
+        "a notch up over the value box adds one more"
+    );
+    notch(&mut window, &mut view, attacking_style, true);
+    assert!(
+        preset(&view).style.attacking_style,
+        "a notch up takes Possession, the right choice"
+    );
+    notch(&mut window, &mut view, numbers_in_attack, false);
+    assert_eq!(
+        preset(&view).sliders.numbers_in_attack,
+        2,
+        "a notch down takes Medium, the choice left of Many"
+    );
+
+    // One Ctrl+Z per notch, the last first.
+    let mut undone = Vec::new();
+    for _ in 0..4 {
+        window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+        undone.push(preset(&view));
+    }
+    let mut expect = before.clone();
+    expect.sliders.support_range = 7;
+    expect.style.attacking_style = true;
+    assert_eq!(
+        undone[0], expect,
+        "the first Ctrl+Z restores Numbers in attack"
+    );
+    expect.style.attacking_style = false;
+    assert_eq!(undone[1], expect, "the second restores Attacking style");
+    expect.sliders.support_range = 6;
+    assert_eq!(
+        undone[2], expect,
+        "the third takes back the value box's notch"
+    );
+    assert_eq!(undone[3], before, "the fourth takes back the rail's notch");
+    assert!(
+        !view.session.as_ref().unwrap().can_undo(),
+        "the four notches were the only edits"
+    );
+}
