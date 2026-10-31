@@ -6218,10 +6218,11 @@ briefs, review loops, gates and mutation runs as for any step.
     follow, and the library parity against Red re-run (Red ships BC3)
   - [ ] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation
     check (0.0.2)"; DECISIONS 2026-10-31, P46 accepted): first the stock game's refusal, read
-    where the Whack Patch differs from the stock exe (PES 2015's pair on G:; PES 2017's stock
-    exe is `E:\PES2017\PES2017.exe.old`, the maintainer's word, unconfirmed but dated
-    2016-10-20), then in PES 2016's unpacked exe; confirmed in game on the stock exe; then the
-    plan's rule, its Acceptance, and the slice
+    where the Whack Patch differs from the exe it was made from: `E:\PES2017\PES2017.exe.old5`
+    (the maintainer: the last exe before the patch; 70 bytes over 25 runs differ, the first at
+    file offset 0x1b3c89c, measured 2026-10-31); PES 2015's pair on G: as a second reading;
+    `PES2017.exe.old` (2016-10-20) is the release exe. Then in PES 2016's unpacked exe;
+    confirmed in game on `.old5`; then the plan's rule, its Acceptance, and the slice
 
 ### Phase 10 — Music tools
 
