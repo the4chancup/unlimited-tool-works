@@ -2969,3 +2969,6 @@ worklog passed 7,000 lines.
 - **2026-10-31** — cv16a: a height row names its players and draws, a GigaHeight team its nearest
   quota system (P47's logic), and `check-aatf --rules dbc7` takes a built-in ruleset (cv15);
   merged `948add9e`, gated; the DBC6 save keeps every old line and gains 155.
+- **2026-10-31** — cvA1's rework closed: a renamed PES 15 or 16 Texport lists its new name, and
+  a Team TOML refusal names the value as written (`1f1e6cf1`); SWE-2 0 of 2, Astra no concerns,
+  the mutation run 7 caught. Left: pes_savefile's whole-crate run after the cut.
