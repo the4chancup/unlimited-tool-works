@@ -1372,3 +1372,93 @@ fn the_rows_sit_in_a_150_point_well_when_the_dock_opens() {
         "the well around the rows: {around:?}, first {first:?}"
     );
 }
+
+/// The bounds of the drawn line whose value is `text`.
+fn value_bounds(nodes: &[accesskit::Node], text: &str) -> accesskit::Rect {
+    nodes
+        .iter()
+        .find(|node| node.value() == Some(text))
+        .and_then(accesskit::Node::bounds)
+        .unwrap_or_else(|| panic!("no drawn line {text:?}"))
+}
+
+/// Team 718 under DBC7 with 71801 (slot 0, on the bench) given a Speed
+/// one past his tier's target: once the check returns, his group stands
+/// in the dock's right column
+/// beside the starters' (71808, slot 7, whose stats break DBC7 as the
+/// fixture holds them) in the left, from the same top. Under DBC7 the
+/// team has no rows of its own, so no `Team-wide issues` line is drawn.
+// SE-GUI-47
+#[test]
+fn the_dock_lists_the_starters_left_and_the_bench_right() {
+    let path = fixture(PesVersion::Pes17, "live_aatf_columns");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(718);
+    view.selected = Some(Selection::Player(718, 0));
+    view.aatf_ruleset = "dbc7".to_owned();
+    view.live_aatf = true;
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    let eleven = view
+        .session
+        .as_ref()
+        .expect("the save opened")
+        .file()
+        .team(718)
+        .expect("team 718")
+        .tactics
+        .starting_eleven;
+    assert!(eleven.contains(&7), "premise: slot 7 starts");
+    assert!(!eleven.contains(&0), "premise: slot 0 is on the bench");
+    let bench_header = player_header(&view, 718, 0);
+    let nodes = live_checked(&mut window, &mut view, &[718]);
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| node.value() == Some(bench_header.as_str())),
+        "premise: 71801 has no row before his Speed is raised"
+    );
+
+    // One point past the Regular tier's target, inside its warning band:
+    // Speed 99 would read him as a Gold player instead.
+    let target = aatf::builtin("dbc7")
+        .expect("DBC7 is built in")
+        .ruleset()
+        .tiers
+        .iter()
+        .find(|tier| tier.label == "Regular")
+        .expect("DBC7's Regular tier")
+        .rate;
+    let raised = target + 1;
+    let mut entry = player_entry(&view, 71801);
+    assert_eq!(entry.stats.speed, target, "premise: his Speed is on target");
+    entry.stats.speed = raised;
+    view.session
+        .as_mut()
+        .expect("the save opened")
+        .edit_players(vec![entry]);
+    let nodes = live_checked(&mut window, &mut view, &[718]);
+    let bench = value_bounds(&nodes, &bench_header);
+    let starter = value_bounds(&nodes, &player_header(&view, 718, 7));
+    let speed_line = format!("Stat: Speed {raised}, just over the {target} the rules allow");
+    let speed_row = nodes
+        .iter()
+        .find(|node| node.role() == Role::Button && node.label() == Some(speed_line.as_str()))
+        .and_then(accesskit::Node::bounds)
+        .unwrap_or_else(|| panic!("71801's Speed row {speed_line:?}"));
+    assert_eq!(speed_row.x0, bench.x0, "his Speed row under his header");
+    assert!(
+        starter.x0 < bench.x0,
+        "the bench player's group right of the starter's: {starter:?}, {bench:?}"
+    );
+    assert!(
+        bench.y0 < starter.y1 && starter.y0 < bench.y1,
+        "both columns start from the same top: {starter:?}, {bench:?}"
+    );
+    assert!(
+        !nodes
+            .iter()
+            .any(|node| node.value() == Some("Team-wide issues")),
+        "premise: under DBC7 the team has no rows of its own"
+    );
+}
