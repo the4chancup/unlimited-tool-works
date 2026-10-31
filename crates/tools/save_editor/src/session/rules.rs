@@ -6,13 +6,16 @@
 //! (`check_import`, `import`) and × (`remove`) change. `team_views`/
 //! `check_teams` are the check both the command line and Live AATF run.
 
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
 
 use aatf::{LoadError, Rules, TeamView, Violation};
 use anyhow::anyhow;
 use pes_savefile::EditFile;
+use pes_savefile::model::PlayerEntry;
 use rayon::prelude::*;
+use team_widgets::violations::ListedPlayer;
 
 /// One team's AATF check: its violations, or the error text (a team view
 /// or the script).
@@ -266,6 +269,40 @@ pub(crate) fn resolve(setting: &str, imported: &[Imported]) -> Choice {
 pub(crate) fn team_views(file: &EditFile, ids: &[u32]) -> Vec<Result<TeamView, String>> {
     ids.iter()
         .map(|&id| TeamView::new(file, id).map_err(|error| error.to_string()))
+        .collect()
+}
+
+/// Each of `ids`' teams' rostered players as the AATF rows name them, in slot order: one
+/// list per id, in `ids`' order. A roster entry whose player the file does not hold is
+/// named `?`.
+pub(crate) fn listed_players<'a>(file: &'a EditFile, ids: &[u32]) -> Vec<Vec<ListedPlayer<'a>>> {
+    // `EditFile::player` scans every player: one map serves every team's roster.
+    let players: HashMap<u32, &PlayerEntry> = file
+        .players()
+        .iter()
+        .map(|player| (player.id, player))
+        .collect();
+    ids.iter()
+        .map(|&id| {
+            let Some(team) = file.team(id) else {
+                return Vec::new();
+            };
+            team.roster
+                .iter()
+                .enumerate()
+                .filter(|(_, slot)| slot.player_id != 0)
+                .map(|(slot, roster)| {
+                    let player = players.get(&roster.player_id);
+                    ListedPlayer {
+                        slot: u8::try_from(slot).expect("a roster slot"),
+                        id: roster.player_id,
+                        number: roster.number,
+                        name: player.map_or("?", |player| player.name.as_str()),
+                        height: player.map_or(0, |player| player.basic.height),
+                    }
+                })
+                .collect()
+        })
         .collect()
 }
 

@@ -555,6 +555,67 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
     assert!(multi_button(&pairs, "Copy to clipboard").is_disabled());
 }
 
+/// Multi-team AATF's dialog is 900 points wide, its list 874 of them (the
+/// modal's padding and border around it), so a height row's sentence and
+/// its players' lines have room.
+#[test]
+fn multi_team_aatf_is_900_points_wide() {
+    let path = fixture(PesVersion::Pes17, "multi_aatf_width");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    let ids = all_team_ids(&view);
+    multi_checked(&mut window, &mut view, &ids);
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    // The modal's frame and the list's, as painted: the smallest rectangle of
+    // the window's fill holding the title and the range's first combo (a
+    // panel of the view behind the modal shares the fill), then the smallest
+    // of the extreme background under them.
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let title = centre(
+        super::prompt::dialog_nodes(&pairs, MULTI_TITLE)
+            .into_iter()
+            .find(|node| node.value() == Some(MULTI_TITLE))
+            .expect("the title"),
+    );
+    let first_combo = centre(range_combos(&pairs)[0]);
+    // A frame with a shadow paints as a `Shape::Vec` of the shadow and the
+    // rectangle.
+    let mut rects = Vec::new();
+    let mut stack: Vec<&egui::Shape> = shapes.iter().map(|clipped| &clipped.shape).collect();
+    while let Some(shape) = stack.pop() {
+        match shape {
+            egui::Shape::Rect(rect) => rects.push(rect),
+            egui::Shape::Vec(inner) => stack.extend(inner),
+            _ => {}
+        }
+    }
+    let painted = |fill: egui::Color32, points: &[egui::Pos2]| {
+        rects
+            .iter()
+            .filter(|rect| rect.fill == fill && points.iter().all(|&p| rect.rect.contains(p)))
+            .map(|rect| rect.rect)
+            .min_by(|a, b| a.area().total_cmp(&b.area()))
+            .unwrap_or_else(|| panic!("no frame of {fill:?} around {points:?}"))
+    };
+    let dialog = painted(visuals.window_fill(), &[title, first_combo]);
+    assert!(
+        (dialog.width() - 900.0).abs() <= 0.5,
+        "the dialog's width: {}",
+        dialog.width()
+    );
+    let list = painted(
+        visuals.extreme_bg_color,
+        &[egui::pos2(dialog.center().x, first_combo.y + 80.0)],
+    );
+    assert!(
+        (list.width() - 874.0).abs() <= 0.5,
+        "the list's outer width: {}",
+        list.width()
+    );
+}
+
 /// Multi-team AATF's range is kept while the save stays open: narrowed to
 /// 734 alone, the dialog closed and opened again reads 734 at both ends.
 #[test]
