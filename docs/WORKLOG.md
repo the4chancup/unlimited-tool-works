@@ -6059,11 +6059,18 @@ briefs, review loops, gates and mutation runs as for any step.
     pitch: a dragged starter keeps his position, an X or Y change keeps it, the popover's
     dropdown lists every outfield position (Make GK unchanged), and an outfielder's Y runs 0
     to 48 like the fork (to be reverted to the y 4 floor if an in-game test under the Whack
-    Patch puts such a player back at y 4: QUESTIONS). Off: as now, the game's rule
-    (`plans/save_editor.md` "A pitch player dropped on another", the popover paragraph).
-    Not built: a check flagging an illegal formation in a cup that forbids them
-    (PROPOSALS: the drag rule is no legality test, since a later drag never re-checks an
-    earlier player). Order: plan and Acceptance (Astra checkpoint (a)), DECISIONS, drafts
+    Patch puts such a player back at y 4). Off: as now, the game's rule
+    (`plans/save_editor.md` "Illegal formations", the popover paragraph). Plan, SE-GUI-45,
+    RE-SUM-01, DECISIONS and P46 (the check, not built) written.
+    - [ ] cv14g the in-game look, on `E:\PES2017` (its exe is the Whack Patch, the
+      maintainer, 2026-10-31; PES 2017, so cargo may run beside it; takes the screen, so
+      asked first): a PES 2017 save copy with one team's preset 1 holding an outfielder at
+      y 0 and at y 2, and two starters on one spot and two a unit apart, opened in Edit mode
+      (Team Sheet). Does the game keep y 0-3 (else the y 4 floor returns under the flag) and
+      the two shared or adjacent spots (then the pitch's drop on another starter, under the
+      flag, lands on that spot instead of swapping the slots: the maintainer's ask, plan
+      "Illegal formations")? The maintainer's save backed up first and put back after
+    Order: plan and Acceptance (Astra checkpoint (a)), DECISIONS, drafts
     (save_editor.js, ruleset_editor.js), then slices: the `aatf` field and built-ins (no
     mutation run holds it), the Ruleset editor, then `save_editor`/`team_widgets` after the
     whole-crate chain

@@ -14445,3 +14445,21 @@ any error; `--config` joins the arrays. Cargo's `trim-paths` needs no paths name
 unstable in cargo 1.98. The `.pdb` keeps its linker paths: it is never published.
 Plan: `plans/core/distribution.md` "Distribution: portable .7z bundle", the paragraph after
 the release profile's.
+
+## 2026-10-31 — save_editor, aatf — A ruleset may allow illegal formations
+Decision: `Universal` gains `illegal_formations` (default off; the built-in Autumn 26 and
+DBC7 on). Under an active ruleset that sets it, the Save editor's pitch sets a starter's
+spot and position apart: a drag or an X/Y change keeps his position, the popover's dropdown
+lists every outfield position, and an outfielder's Y runs 0 to 48. Off, the game's drop rule
+stays. The pitch's drop on another starter still swaps the two slots until the patched game
+is seen keeping two starters on one spot.
+Why: 4cc Autumn 26 plays PES 2017's Whack Patch, an exe that keeps any formation, and allows
+formations the game's drag cannot make (its saves hold a CB outside his area and an LMF among
+the forwards, made in 4ccEditor-1's Tactics tab); DBC7 will too. A flag in the cup's ruleset
+rather than a member's setting: members of a cup on the stock exe cannot make one by
+accident, and nobody has to find a setting. Y from 0 like 4ccEditor-1, the maintainer's
+pick, to go back to the y 4 floor if the patched game moves such a player back to y 4.
+No check flags an illegal formation elsewhere: the drag rule is no legality test (P46).
+Plan: `plans/save_editor.md` "Illegal formations" and the popover paragraph, SE-GUI-45;
+`plans/aatf_rules.md` "The ruleset schema"; `plans/ruleset_editor.md` "Universal rules",
+RE-SUM-01.

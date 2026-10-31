@@ -654,7 +654,8 @@ Win32 original hurt the most):
   stood at the click, and there it stays while his X and Y change, so the fields' arrows stay
   under the pointer rather than moving off with the marker; a press outside it closes it, as
   Close does. X (0 to 104) and Y (4 to 48, the outfielders' rows: below the drop's
-  bullet, "A pitch player dropped on another") are steppers: the number with an arrow either
+  bullet, "A pitch player dropped on another"; 0 to 48 under a ruleset that allows illegal
+  formations, "Illegal formations" below) are steppers: the number with an arrow either
   side, `⏴` stepping it down by one and `⏵` up, each click one edit, clamped into the range
   (a stored spot past it steps back in), each arrow disabled at its end of the range and both
   for the keeper. The arrows take clicks, never the keyboard's focus, as a system spinner's
@@ -666,7 +667,8 @@ Win32 original hurt the most):
   Select Position menu does: the two of the drop rule below ("A pitch player dropped on
   another"), his own first when the spot offers neither (an odd save's); a change of his X or
   Y applies the same rule, as one step of a drag does, so a Y typed into another band changes
-  his position with it. The editor is **one grid** of three columns (the
+  his position with it. Under a ruleset that allows illegal formations the dropdown lists every
+  outfield position and an X or Y change keeps his position ("Illegal formations" below). The editor is **one grid** of three columns (the
   settings, 422 points; the pitch, 320; the assignments, the rest) and three rows, so every
   panel lines up with its neighbours rather than wrapping on its own:
   1. The **preset bar** (Preset 1/2/3, Fluid formation, then its Copy/swap menu) level with
@@ -1060,6 +1062,28 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   y 39.5, where a CF stops being offered, since the screen's own geometry for that edge is not
   read. The lit area says where he is rated, not where his position changes: the rule decides
   that, from every position's area and his overalls.
+- **Illegal formations**: a cup that plays a PES 2017 exe patched to keep any formation (the
+  Whack Patch; 4cc Autumn 26 and DBC7) lets its members field what the game's own drag cannot
+  make, a CB outside his position's area or an LMF up among the forwards. Its ruleset says so
+  (`universal.illegal_formations`, `plans/aatf_rules.md`), and under the active ruleset's flag
+  the pitch sets a starter's spot and his position apart, as 4ccEditor-1's Tactics tab does (a
+  drag sets X and Y, a dropdown the position): a held starter's badge shows his own position
+  and his overall at it at every step, and a release on the grass writes his spot alone; the
+  snap holds an outfielder anywhere in the stored rows, 0 to 48, the keeper's rows included
+  as the fork allows; the popover's dropdown lists every outfield position, whatever his spot,
+  and its X and Y keep his position. The keeper's slot stays fixed and Make GK unchanged. The
+  darkening while he is held stays, since where he is rated is still worth seeing when his
+  position no longer follows it. With the flag off (every other ruleset) the pitch keeps the
+  game's rule above: a member of a cup on the stock exe cannot make an illegal formation by
+  accident, which is why the flag is the cup's, in its ruleset, and not a setting each member
+  would have to find. Switching the ruleset changes nothing stored, only how the next edit
+  behaves; the host hands `team_widgets` the flag with the tactics' other inputs, the widgets
+  reading no ruleset. Two of the patched game's behaviors are read in game (worklog cv14):
+  whether it keeps an outfielder below y 4 (if it moves him back to 4, the y 4 floor holds
+  under the flag too), and whether it keeps two starters on one spot or on spots a unit apart
+  (if it does, a starter dropped on another under the flag lands on that spot rather than
+  swapping the two slots, and two starters are exchanged by dropping one XI row on the other;
+  until then the drop swaps, as with the flag off).
 - **A starter swapped with a bench player** hands the bench player every set-piece role, the
   joining of the attack and every preset's instruction targets the starter held; the captain
   stays who he was, as in 4ccEditor.
@@ -1731,6 +1755,18 @@ SE-GUI-42  GIVEN the PES 21 save's team 718 (/f/) on preset 1's Kick-off, that f
                 pointer below the pitch THEN his badge stands on y 4, and WHEN he is released
                 on the grass there THEN his slot holds y 4; WHEN his popover is opened at y 4
                 THEN its Y's ⏴ is disabled
+SE-GUI-45  GIVEN the PES 17 save's team 702 (/a/) on preset 1's Kick-off, its CF COWBOY BEBOP
+                (70223) at (40, 45), and DBC7, which allows illegal formations, the active
+                ruleset
+           WHEN he is held at (42, 30), clear of his teammates' markers
+           THEN his badge reads CF, and WHEN he is released there THEN his slot holds (42, 30)
+                and CF, one undoable edit; WHEN he is held with the pointer below the pitch
+                THEN his badge stands on y 0, and WHEN he is released on the grass there THEN
+                his slot holds y 0; WHEN his popover is then opened THEN its Position combo
+                lists the twelve outfield positions, CB to CF, and its Y's ⏴ is disabled, and
+                WHEN LB is picked and then its Y set to 36 THEN his slot holds LB at (42, 36);
+                GIVEN /vg/ League 27, which does not, the active ruleset instead WHEN he is
+                held at (42, 30) THEN his badge reads AMF, as in SE-GUI-42
 SE-GUI-13  GIVEN the save open and a second save of the same version picked in the comparator
            WHEN the panel is drawn
            THEN it lists, per team and per player, the differences `diff <picked> <open>`

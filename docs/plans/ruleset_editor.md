@@ -106,7 +106,10 @@ the last edit changed are highlighted.
   heights are left to tier conditions and specials, as in VGL26.
 - **Cards**: the card groups, each a name and a checkbox grid of the 41 skills and 7 COM styles
   (labels as the Save editor shows them); all COM styles are also the built-in `com` group.
-- **Universal rules**: checkboxes and number fields for `universal`, and below them the team
+- **Universal rules**: checkboxes and number fields for `universal` (the last checkbox,
+  "Illegal formations allowed (the cup's game keeps any formation)", is
+  `illegal_formations`, which the summary's "Every team" line states as "illegal formations
+  allowed"), and below them the team
   settings: one row per entry, its PES versions, the value each tactics setting must have and
   the formation shapes it bans (defenders-midfielders-forwards, `3-4-3`).
 - **Specials**: a list of cards, reordered by dragging (order matters for replacing effects), each
@@ -483,7 +486,9 @@ RE-SUM-01  GIVEN Autumn 26 open
                 Gold and Silver counted "by medal system", the regular's and silver's warning
                 bands and stat totals, each height system's quotas, and GigaHeight's pool;
                 GIVEN VGL26 THEN it also has its card group tricks with its twelve cards, and
-                its team settings: no man marking, the support settings off, no 3-4-3
+                its team settings: no man marking, the support settings off, no 3-4-3, and its
+                "Every team" line does not say "illegal formations allowed", which Autumn
+                26's and DBC7's do
 RE-SUM-02  GIVEN two rulesets differing in one tier's rate (Autumn 26, and Autumn 26 with
            Silver at 90)
            WHEN their summaries are compared line by line
