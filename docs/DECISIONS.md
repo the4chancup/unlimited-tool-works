@@ -14651,3 +14651,12 @@ Why: egui's linear sampling, with no mipmaps, skips source pixels past a halving
 logo drawn 28 high read pixelated at 100% scaling. `dds_convert` already resamples with
 Lanczos3, so no new dependency.
 Plan: `plans/save_editor.md` "The event logo"; worklog cv24.
+
+## 2026-10-31 — tooling — a script likely to be run again lives in `scripts/`, not `.tmp/`
+Decision (maintainer): a script that will likely be useful again is moved to `scripts/` (usage
+in its docstring, paths from the repository root or an environment variable) instead of staying
+in the scratch folder; the built-window harness moves first, to `scripts/built_window/`.
+Why: `.tmp/` is ignored by git, so a tool kept there is never reviewed or versioned and the next
+session finds it only through a note that names it; the harness had served every built-window
+check for weeks from three scratch folders, its app path written into each script.
+Plan: `RUNBOOK.md` "The scratch folder"; `scripts/built_window/README.md`.
