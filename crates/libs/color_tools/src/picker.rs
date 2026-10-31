@@ -549,8 +549,16 @@ fn popup_body(
         }
     }
 
-    let sv = sv_square(ui, &mut state.hsva);
-    let hue = hue_strip(ui, &mut state.hsva);
+    // A column of their own, not justified: the popup's justified layout would stretch
+    // them, drawing and pointer area alike, to a wider row (eight recents).
+    let (sv, hue) = ui
+        .vertical(|ui| {
+            (
+                sv_square(ui, &mut state.hsva),
+                hue_strip(ui, &mut state.hsva),
+            )
+        })
+        .inner;
     let mut down = sv.is_pointer_button_down_on() || hue.is_pointer_button_down_on();
 
     // The hex field shows the working color while it is not being typed in (a drag
@@ -565,7 +573,10 @@ fn popup_body(
         TextEdit::singleline(&mut state.hex)
             .id(hex_id)
             .font(TextStyle::Monospace)
-            .desired_width(f32::INFINITY),
+            // The justified popup stretches the field to its widest row. Asking for
+            // more than the square (the room left, or egui's default 280) would make
+            // the field that row and widen the popup.
+            .desired_width(POPUP_W),
     ));
     let hex_lost_focus = hex_response.lost_focus();
     state.hex_focused = ui.memory(|memory| memory.has_focus(hex_id));
