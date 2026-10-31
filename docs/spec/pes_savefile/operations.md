@@ -609,8 +609,12 @@ to the file's own player
 id (the file's team id × 100 + slot) becomes the target player's id; a `stats` key the target
 version lacks is `NotInThisVersion` when the versions differ and `TeamTomlError::NotInThisVersion`
 when they are equal (a same-version file with a foreign key is a mistake, a converted one is
-expected to shed keys); a skill the *source* version lacks is not written (the target's stands,
-pair-wide, no note) and a skill the target lacks is dropped with a note; the team's texts must
+expected to shed keys); a skill or COM style the version cannot store, in a file whose
+`pes_version` equals the target's or names none (`double_touch` on PES 17), is
+`TeamTomlError::NotInThisVersion` the same way, since writing it would mean the member's skill
+silently never lands, while a converted file keeps the pair-wide rule: a skill the *source*
+version lacks is not written (the target's stands, no note) and a skill the target lacks is
+dropped with a note; the team's texts must
 fit the target version's text fields or `apply` is `TextTooLong` before any write, while a
 player's `name`/`shirt_name` longer than the target's field is cropped to it with a
 `TextCropped` note ("Portable text limits", below); the playing style goes
@@ -911,11 +915,13 @@ impl Texport {
     /// none or several do), then the container's version for 15-17. `Some(version)` on 15-17
     /// defers to the container's own version (no variant expresses the mismatch).
     pub fn from_bytes(bytes: &[u8], version: Option<PesVersion>) -> Result<Texport, TexportError>;
-    /// A fresh 18-21 file from the layout's templates: header, coach (id patched), zero block,
-    /// tail, a key from `salt[..32]`; `players` in roster order, ids checked against the roster
-    /// (`RosterMismatch`). 15-17 is `NoTemplate`: write by reading a real file and replacing its
-    /// team and players (`team_mut`/`players_mut`).
-    pub fn new(version: PesVersion, team: &TeamEntry, players: &[&PlayerEntry], salt: &[u8; 320]) -> Result<Texport, TexportError>;
+    /// A fresh file; `players` in roster order, ids checked against the roster
+    /// (`RosterMismatch`). 18-21 from the layout's templates: header, coach (id patched), zero
+    /// block, tail, a key from `salt[..32]`. 17 a PES 2017 container around `PES17`'s payload
+    /// template and the records, carrying `serial`, the writer's serial (the open save's,
+    /// `EditFile::serial`; unused on 18-21). 15 and 16 are `NoTemplate`: write by reading a real
+    /// file and replacing its team and players (`team_mut`/`players_mut`).
+    pub fn new(version: PesVersion, team: &TeamEntry, players: &[&PlayerEntry], salt: &[u8; 320], serial: &[u8]) -> Result<Texport, TexportError>;
     pub fn version(&self) -> PesVersion;
     pub fn team(&self) -> &TeamEntry;            // team + roster + tactics, the file's records on
                                                  //   every version

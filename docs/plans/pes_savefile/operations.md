@@ -18,13 +18,6 @@ note is how a member learns that before applying the file. `apply` adds no note:
 no ids. Measured 2026-10-22 (worklog 8.9): no current cup save breaks the rule; five older PES
 16 saves break it in 13 to 25 teams each.
 
-**A skill the version lacks, in a same-version file.** A file whose `pes_version` equals the
-target's, or that names none, and sets a skill or a COM style the version cannot store
-(`double_touch` on PES 17) is `TeamTomlError::NotInThisVersion`, as a `stats` key the version
-lacks already is: a same-version file with a foreign key is a mistake, and writing it would
-mean the member's skill silently never lands. A file converted from another version keeps the
-spec's pair-wide rule (a skill its source version lacks is not written, no note).
-
 ### Texport (read + write)
 
 What exists of this is in `spec/pes_savefile/operations.md` "Texport (read + write)". Planned
