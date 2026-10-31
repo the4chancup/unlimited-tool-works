@@ -438,6 +438,25 @@ mod tests {
         );
     }
 
+    /// A save reports its container's serial, the one a PES 2017 Texport
+    /// written from it carries.
+    #[test]
+    fn a_save_reports_its_containers_serial() {
+        let serial: Vec<u8> = "S-1-5-21-0-0-0-1000"
+            .encode_utf16()
+            .flat_map(u16::to_le_bytes)
+            .collect();
+        assert!(
+            serial.len() > 1,
+            "premise: the serial is neither empty nor a single byte"
+        );
+        let mut container = crate::fixtures::fixture_container(PesVersion::Pes17);
+        container.serial = serial.clone();
+        let bytes = container.to_bytes(&test_salt()).expect("container encodes");
+        let file = EditFile::from_bytes(&bytes).expect("the save opens");
+        assert_eq!(file.serial(), serial);
+    }
+
     #[test]
     fn an_edit_round_trip_touches_only_the_edited_records() {
         let (mut file, bytes) = open(PesVersion::Pes17);
