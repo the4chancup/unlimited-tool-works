@@ -16,6 +16,8 @@ use crate::schema::fields::PlayerField;
 #[cfg(test)]
 use crate::schema::schema_for;
 
+use super::items::label_position;
+
 /// How a key's TOML value maps to the stored `u32`, and the range it accepts.
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum Kind {
@@ -656,15 +658,8 @@ impl PlayerKey {
                         expected: "a string",
                     }
                 })?;
-                labels
-                    .iter()
-                    .position(|label| *label == text)
+                label_position(text, path, labels)
                     .map(|index| u32::try_from(index).expect("a label index fits u32"))
-                    .ok_or_else(|| TeamTomlError::UnknownLabel {
-                        key: path.to_string(),
-                        label: text.to_string(),
-                        allowed: self.range_text(),
-                    })
             }
         }
     }
