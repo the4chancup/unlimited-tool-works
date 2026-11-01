@@ -14846,3 +14846,26 @@ Why: the gates and the mutation runs measure everything else, and nothing measur
 `mutants_diff.py` deleted the previous run's results whenever two runs followed each other,
 found only by a question about a chain (2026-11-01).
 Plan: `AGENTS.md` "Second opinion" and `docs/RUNBOOK.md` "Review rounds".
+
+## 2026-11-01 — aatf — a team no quota system takes is read under the nearest system, fewest errors deciding
+Decision (maintainer, with DBC7's organizer): a team that meets none of the systems before the
+last is read under the candidate within 15 cm of its total height (each system's baseline its
+quotas times their heights; a pool's system spans baseline to baseline plus pool) whose check
+reports the fewest errors, warnings not counted; ties to the nearer, then the file's order;
+with no candidate, the last system. 15 cm is a constant, not a ruleset field. NearestSystem
+measures in centimetres too. Into 0.0.1's next candidate, for the organizer to validate.
+Why: DBC6's /cookie☆/, one 180 short of Manlet's quotas, met GigaHeight's, so its Manlets'
+bonus showed as six Stat total errors instead of one team-wide height issue. Measured on DBC6
+(teams 851-897): /cookie☆/ reads as Manlet, 893 and 897 as Height, every other team as before,
+the 13 green GigaHeight teams included. A constant because it only chooses which errors a
+failing team shows, and only DBC7 has several quota systems.
+Plan: `docs/plans/aatf_rules.md` "A team no quota system takes", the NearestSystem paragraph,
+the DBC7 table's Heights row and the fixtures list.
+
+## 2026-11-01 — save_editor — Multi-team AATF counts the teams under each system (P48)
+Decision (maintainer): P48 accepted for 0.0.1's next candidate if not too demanding: one line
+above Multi-team AATF's list and first in its copied text counts the checked teams under each
+medal and height system; the check reports the systems a team was read under.
+Why: DBC7's organizer keeps the cup's mix by hand; the check already reads every team under a
+system and showed neither count.
+Plan: `docs/plans/save_editor.md` "Multi-team AATF counts the teams under each system".

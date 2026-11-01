@@ -130,6 +130,27 @@ system count toward that system's quotas. DBC7's organizer and its editor tell t
 apart by how many players stand at each height; no condition on one player says that (a giga
 team can hold a 195 cm player, so "any player at 195" would misread it as the Height bracket).
 
+**A team no quota system takes.** The last system takes every other team (DBC7's
+GigaHeight), so step 1 never picks it: a team that meets none of the systems before it is read
+under the system nearest its total height. A system's baseline is its quotas times their
+brackets' heights, summed (DBC7: Height 4230, Manlet 4160, Universal 4255); a system with a
+pool spans its baseline to the baseline plus the pool (GigaHeight 4145 to 4195), and a total
+inside the span is 0 cm from it. Every system within 15 cm of the team's total (each height
+read less its allowance) is a candidate, and the team is read under the candidate whose check
+reports the fewest errors, every error of the team counted, its players' included, warnings
+not; ties go to the nearer, then to the file's order; with no candidate, the last system. A
+green team is unaffected: under the last system it has no error, and every other candidate,
+being a quota system it does not meet, has at least one. 15 cm is a constant, not a ruleset
+field: it decides only which errors a team that already fails is shown, never whether a team
+passes, only a ruleset with several quota systems reaches it, and DBC7's organizer set it as
+about three players a bracket off. We do not read such a team under the last system alone:
+DBC6's /cookie☆/, one 180 where Manlet wants a 185 (total 4155), met GigaHeight's quotas and
+pool, so its Manlets' +5 bonus showed as six Stat total errors where the organizer looks for
+the one team-wide height issue; read under Manlet, it gets "Tall 9 of 10" and "Mid 8 of 7".
+Nor under the fewest errors alone: a team far from every quota system would be read under
+whichever its errors happen to favour; the 15 cm keep the choice among the systems the team's
+heights could have meant.
+
 **The pool.** Under a system with `extra_height`, the quota brackets are filled tallest first:
 players taken by height less allowance, highest first, each into the tallest quota bracket with
 room whose height is at most his, the centimetres he stands above that height drawn from the
@@ -169,13 +190,14 @@ only the bracket left short (a Mid at 9 of 10) said anything. `ExtraHeight` gain
 Vec<(u8, BracketId, u8)>`, each player standing above his slot: his roster slot, the slot's
 bracket and the centimetres drawn; players read at one height are placed from the last
 roster slot up, which decides only who is named in which bracket, never a count or the
-draw. And when the team's height checks find something under a
-system reached after a quota system failed (DBC7's GigaHeight), one `NearestSystem { system:
-SystemId, off: Vec<(BracketId, u8, u8)> }` warning on the team names the failed quota system
-the team misses by the fewest players short (each bracket's quota less its count, where
-positive; ties in the file's order; a system whose `any_player` fails is no candidate) and that
-system's brackets off their quotas, with count and quota: DBC6's /tsab/ gets "fits no quota
-system; the nearest is Height, with Mid 6 of 5 and Tall 5 of 6", one 180 raised to 185, where its GigaHeight row asks for 30 cm cut. A warning,
+draw. And when a team is read under the last system ("A team no quota system takes") and
+its height checks find something there, one `NearestSystem { system: SystemId, off:
+Vec<(BracketId, u8, u8)> }` warning on the team names the quota system nearest its total
+height, in centimetres as that choice measures (ties in the file's order; a system whose
+`any_player` fails is no candidate), and that system's brackets off their quotas, with count
+and quota: DBC6's team 868, read as GigaHeight with two of its brackets off at 4185 cm, is
+pointed at Manlet (25 cm away), not Height (45). Counting players short instead named Manlet
+for teams whose six Giants stood at 194, plainly Height teams. A warning,
 not a suggestion: suggestions are drawn only on request and `check-aatf` prints none, while this
 one is needed exactly when the team fails; not an error, since the height errors above it already
 fail the team. All three are the logic's (`height_findings`, `team_checks`), so they land before
@@ -228,7 +250,7 @@ the two differ.
 |---|---|
 | Tiers | gold 99 and silver 88 by the medal systems GGG, GGSS, GSSSS, SSSSSS (`medal_systems`); regular 77, the rest; no per-stat targets; every ability stat at most its target, a regular's up to 7 above it and a silver's up to 5 with a warning (`stat_warning`), and a regular's or silver's ability stats adding up to at most their targets' sum (`total_within_targets`) |
 | Tier recognition | rating alone (the official rating stats) |
-| Heights | four brackets of one height each (175, 180, 185, 195); three systems `by_quotas` in the organizer's order, Height (6, 6, 5, 6 from 195 down), Manlet (0, 10, 7, 6) and Universal (0, 23, 0, 0), then GigaHeight (0, 7, 10, 6 with `extra_height` 50, at most 210) for every other team; a player counts in the bracket of his own height alone (a 180 is a Mid, never a Tall), so a team with a player shorter than its slot fits no quota system and falls to GigaHeight, not to the quota system it stands fewest centimetres under; a registered goalkeeper at 189 counts as 185 (`height_allowance: 4`) in every system, after the pool under GigaHeight, as the page says |
+| Heights | four brackets of one height each (175, 180, 185, 195); three systems `by_quotas` in the organizer's order, Height (6, 6, 5, 6 from 195 down), Manlet (0, 10, 7, 6) and Universal (0, 23, 0, 0), then GigaHeight (0, 7, 10, 6 with `extra_height` 50, at most 210) for every other team; a player counts in the bracket of his own height alone (a 180 is a Mid, never a Tall), so a team with a player shorter than its slot fits no quota system and is read as "A team no quota system takes" says (DBC6's /cookie☆/ as Manlet, 893 and 897 as Height); a registered goalkeeper at 189 counts as 185 (`height_allowance: 4`) in every system, after the pool under GigaHeight, as the page says |
 | Specials | the GK allowance; a goalkeeper at 189 holds at most one A position (`max_a_positions: 1`, an error; that it is the registered one is the registered-position warning's); under Manlet, players at 175 may take +5 on every stat, regulars and silvers (the page's "silvers can also be buffed"; a gold is at 99 already), a one-option `choice` since the page allows the bonus rather than requiring it, and a Manlet regular's band narrowed to 5 (`stat_warning`), so his warning stops short of a silver's 88; the registered position not rated A, a warning (a `forbid` special over the 13 positions) |
 | Cards, positions, form, weak foot, injury resistance | none: "No tactical export rules for anything else … go crazy". Paid cards 48 (the 41 skills of the version with the most, and 7 COM styles), 13 A positions, B ratings allowed, form, injury resistance and weak foot at most the game's maxima |
 | Universal | none of the official file's checks; `max_skill_cards` 41, so no cap |
@@ -397,5 +419,10 @@ DBC7's fields and data block (worklog 20.0d) are verified as the others are:
   Manlet silver at their raised targets, and the silver at 92 (still a silver); a goalkeeper at 189 under Universal and under GigaHeight;
   GigaHeight teams at exactly 50 cm, at 51, with a player at 211, with one at 174, with a 185
   cm player taking a 180 slot, and the page's two-210 variant; a medal count no system has; a
-  stat one above its target.
+  stat one above its target. For "A team no quota system takes": DBC6's /cookie☆/ (team
+  857 of `C:/Data/4cc/Saves/EDIT00000000_DBC6`, total 4155, its Manlets at +5) read as Manlet
+  with its two bracket rows and no Stat total error; 893 (total 4225, one 180 where Height
+  wants a 185) read as Height; a green GigaHeight team at 4146, 14 cm from Manlet, still
+  GigaHeight; a team 16 cm from every quota system and outside GigaHeight's span read as
+  GigaHeight; a tie on errors going to the nearer system.
 - Validation: one failing file per new load-time rule.
