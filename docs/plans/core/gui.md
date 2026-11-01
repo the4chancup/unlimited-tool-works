@@ -332,7 +332,9 @@ The settings menu is assembled from injected sections:
   Soccer 20**`), so the selector keeps switching folders as it does for the default; any other
   folder is stored as picked, and the row's tooltip says which. It is the rule the
   running-PES notice's Fix PES path already applies (the year anywhere in the folder's own
-  name), one function both call, so the two ways to set the folder store the same text. The
+  name), and the Save editor's Set PES folder button over its pitch (`plans/save_editor.md`
+  "Tactics editor"), one function all three call, so every way to set the folder stores the
+  same text. The
   rule is a pure function, tested alone: the native picker cannot be driven headlessly.
   Under it, an **A folder per version** toggle shows one path row per version (PES 2015 to
   2021), for a member whose installs do not share a pattern: a filled row is that version's

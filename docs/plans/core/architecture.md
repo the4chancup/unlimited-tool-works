@@ -170,6 +170,17 @@ fn tools(ctx: &egui::Context) -> Vec<Box<dyn StudioTool>> {
 That is the full registry; the three tools registered today are the first, second and fourth
 (`spec/core/architecture.md` "Tool plugin interface").
 
+**The PES folder's check and setting.** `ctx.pes_exe_check()` returns the verdict that colours
+the sidebar's selector (`ExeCheck`: `Found`, `OtherVersion(version)`, `NoExe`, `NoFolder`;
+`gui.md` "Live exe check"), which the sidebar stores in the context each frame it draws it,
+before the active view, so a tool reads that frame's verdict. A tool never lists the folder
+itself: a check of its own could disagree with the selector, and a per-frame one would list
+the folder at every repaint. `ctx.set_pes_folder(folder)` stores a picked folder for the
+selected version as the running-PES notice's Fix PES path does
+(`CommonSettings::fix_pes_folder`) and queues `ShellRequest::SettingsChanged`; the sidebar's
+check then runs again, since the resolved folder changed. The Save editor's Set PES folder
+button is their first caller (`save_editor.md` "Tactics editor").
+
 The sidebar lists the planned tools a build does not register (`gui.md` "Sidebar", item 3), so
 `studio` also keeps the full registry as data: one `PlannedTool { id, label, icon }` per tool
 above, in that order, handed to the shell with the registered tools; the shell lists, after the

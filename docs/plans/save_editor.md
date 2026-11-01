@@ -865,6 +865,23 @@ Win32 original hurt the most):
     about 3.05 drawn (inferred from the outlines, not measured on a render). It is the one text
     in the suite not in the regular weight. The
     formation pictures (worklog 8.33, after 0.0.1) carry it in every cell.
+  - **Set PES folder**: while the sidebar's PES selector is orange or red (`plans/core/gui.md`
+    "Live exe check": no folder, no PES exe in it, or another version's exe), a `Set PES
+    folder` button stands over the pitch's bottom-right corner, mirroring the formation's
+    name: its right edge 7 points in from the pitch's right edge, its bottom 6 points up from
+    the bottom edge, on the name's baseline; its tooltip reads `The players' portraits are
+    read from the PES folder` (the selector's own names what the check found). The portraits come from the PES folder,
+    and a member who never notices the selector's colour, or reads the readme, would see only
+    placeholders and take them for the editor's best. It shows on red too: a folder holding
+    another version's exe gives the wrong game's portraits or none. The button reads the
+    selector's own check, never one of its own, so the two cannot disagree, and it is gone
+    as soon as the check passes. It opens `rfd`'s native folder picker and stores the pick as
+    the running-PES notice's Fix PES path stores its folder (`plans/core/gui.md` "Settings
+    menu", one function): `pes_folder_path` with the version's year written `20**` when the
+    folder's own name holds it, or the selected version's own row once any version has one;
+    the exe check runs again and the portraits are read from the new folder. It is a widget
+    placed over the pitch after the markers, as the formation's name is drawn after them,
+    not painted on the pitch, so the formation pictures never carry it.
 - **Lineup by drag-and-drop**: the starting XI and bench are reorderable lists;
   **dragging a bench player onto a pitch player swaps them** (and vice versa).
   The arrow-button ordering UI is gone.
@@ -2083,6 +2100,18 @@ SE-GUI-49  GIVEN SE-GUI-48's save, team, edit and check, the list in the dock
                 it is turned on again THEN the list opens in the dock, `live_window` still off;
                 the dock's close button is the window's in size and stroke, and stands right of
                 the pop-out icon by the window's spacing between its dock icon and close button
+SE-GUI-50  GIVEN the PES 17 save open on team 718 in the team view, the sidebar on PES 2017,
+                and the sidebar's exe check reporting that the PES folder does not exist
+           WHEN the view is drawn
+           THEN a `Set PES folder` button stands over the pitch's bottom-right corner, its
+                right edge 7 points in from the pitch's right edge and its bottom 6 up from
+                the bottom edge, and every starter's portrait is the placeholder; WHEN the check reports the folder holding `PES2017.exe`
+                THEN the button is gone; WHEN it reports `PES2019.exe` instead THEN it is
+                back; WHEN it is clicked and the folder picker returns
+                `<test folder>/Pro Evolution Soccer 2017` THEN the common settings'
+                `pes_folder_path` reads `<test folder>/Pro Evolution Soccer 20**`. Manual: the
+                click opens the native folder picker. (The check itself, a folder's listing
+                on a change and on the window's focus, is the sidebar's, ST-SIDE-03.)
 SE-GUI-36  GIVEN SE-GUI-30's save and team, Live AATF on and its first check returned, one
                  player of the team breaking the Height rule alone and another breaking none
            WHEN the view is drawn

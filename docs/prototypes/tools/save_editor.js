@@ -70,7 +70,8 @@
 // left unindented, as in tools/ruleset_editor.js.
 // Names this script uses without declaring them (render, h, row, weak, strong, button,
 // combo, selectable, collapsing, menu, window_, windowDrawer, closeWindow, cb, publishNotice,
-// openOutputStub, shellPesVersion, setPesVersion, PES_VERSIONS, folderOf, named, updateLink,
+// openOutputStub, shellPesVersion, setPesVersion, pesSelectorClass, pickPesFolder,
+// PES_VERSIONS, folderOf, named, updateLink,
 // layoutPanelW, winScale, registerTool) are the host's,
 // index.html.
 (() => {
@@ -440,6 +441,10 @@ table.grid.stats-grid td { padding: 2px 6px; }
    framed panel does (.group). */
 .pitch { background: #2d571d; border: 1px solid var(--stroke); border-radius: 2px; display: block;
   touch-action: none; }
+/* Set PES folder, over the pitch's bottom right, mirroring the formation's name: its
+   right edge 7 px in from the canvas' right, its bottom on the name's baseline, 6 px up
+   (the wrapper's edge is the canvas' 1 px border further out). */
+#set-pes-folder { position: absolute; right: 8px; bottom: 7px; }
 .lcol { display: flex; flex-direction: column; gap: 6px; min-width: 210px; }
 .llist { background: var(--extreme); border: 1px solid var(--stroke); border-radius: 2px;
   max-height: 300px; overflow: auto; }
@@ -5417,7 +5422,9 @@ function corners(g, x, y, colour) {
 }
 const portraitImages = {};
 function portraitOf(p) {
-  const uri = D.portraits && p && (PORTRAITS[S.saveKey] || {})[p.id];
+  // The draft's portraits stand for the CPKs' and need the selected
+  // version's exe in the PES folder (the sidebar's selector uncoloured).
+  const uri = D.portraits && !pesSelectorClass() && p && (PORTRAITS[S.saveKey] || {})[p.id];
   if (!uri) return null;
   if (!portraitImages[uri]) {
     const img = new Image();
@@ -5941,7 +5948,16 @@ function tacticsTab(t) {
     h("input", { type: "checkbox", checked: !!pre.style.fluid, id: "fluid",
       onchange: e => { edit("Fluid formation", () => { pre.style.fluid = e.target.checked; }); render(); } }),
     " Fluid formation"), 16);
-  const pitchWrap = h("div", { style: "position:relative" }, pitchCanvas(t), slotPopover(t));
+  // While the sidebar's selector is orange or red, a Set PES folder button over
+  // the pitch's bottom right, opposite the formation's name: the portraits come
+  // from the PES folder, and a member who never notices the selector's colour
+  // would see only placeholders. It hides once the folder holds the selected
+  // version's exe, the selector's own check.
+  // sample wording: the button's label and tooltip.
+  const setFolder = pesSelectorClass() ? h("button", { id: "set-pes-folder", onclick: pickPesFolder,
+    title: "The players' portraits are read from the PES folder" }, "Set PES folder") : null;
+  const pitchWrap = h("div", { style: "position:relative; width:fit-content" },
+    pitchCanvas(t), setFolder, slotPopover(t));
   // The pitch's name scrolling, on by default: a view setting, not an edit.
   const scrollNames = h("label", { class: "cb" },
     h("input", { type: "checkbox", checked: S.scrollNames !== false, id: "scroll-names",
