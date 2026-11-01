@@ -9,8 +9,12 @@ from pathlib import Path
 from release import (
     EMPTY_FOLDERS,
     LAUNCHERS,
+    LICENSES,
     PACKAGE,
+    Refusal,
     about_config,
+    build_args,
+    check_exe,
     existing_glob,
     expected_entries,
     exe_name,
@@ -96,6 +100,88 @@ class Pure(unittest.TestCase):
         self.assertIn("Copyright [yyyy] [name of copyright owner]", text)
         self.assertLess(text.index("MIT License"), text.index("Apache License 2.0"))
 
+    def test_the_notices_refuse_a_graph_with_no_third_party_crate(self) -> None:
+        # An empty licenses list or one whose every crate is the workspace's would
+        # ship the header alone as the notices file.
+        with self.assertRaisesRegex(Refusal, "cargo-about listed no third-party crate"):
+            third_party_notices({"licenses": []}, Path("C:/repo"))
+        about = {"licenses": [
+            {"id": "MIT", "name": "MIT License", "text": "MIT License\n",
+             "used_by": [{"crate": {"name": "studio_core", "version": "0.0.1",
+                                    "manifest_path": "C:/repo/crates/studio_core/Cargo.toml"}}]},
+        ]}
+        with self.assertRaisesRegex(Refusal, "cargo-about listed no third-party crate"):
+            third_party_notices(about, Path("C:/repo"))
+
+    def test_a_license_clause_is_not_a_copyright_line(self) -> None:
+        # One Apache-2.0 copy without clause 4's lettered conditions leaves them
+        # unshared; they are license text, not a crate's notice.
+        clause = "(c) You must retain, in the Source form of any Derivative Works"
+        full = (
+            "Apache License\n"
+            "   (b) You must cause any modified files to carry prominent notices; and\n"
+            f"   {clause}\n"
+            "       that You distribute, all copyright, patent, trademark, and\n"
+            "   (d) If the Work includes a NOTICE text file\n"
+        )
+        grant = "Apache License\n\nCopyright 2022 Kirill Chibisov\n\nLicensed under ...\n"
+
+        def used_by(name: str, manifest: str) -> dict:
+            return {"crate": {"name": name, "version": "1.0.0", "manifest_path": manifest}}
+
+        about = {"licenses": [
+            {"id": "Apache-2.0", "name": "Apache License 2.0", "text": full,
+             "used_by": [used_by("accesskit_winit", "C:/reg/accesskit_winit-1.0.0/Cargo.toml")]},
+            {"id": "Apache-2.0", "name": "Apache License 2.0", "text": grant,
+             "used_by": [used_by("glutin_wgl_sys", "C:/reg/glutin_wgl_sys-1.0.0/Cargo.toml")]},
+        ]}
+        text = third_party_notices(about, Path("C:/repo"))
+        crate_lines = [
+            line for line in text.splitlines()
+            if line.startswith("  ") and not line.startswith("   ")
+        ]
+        self.assertFalse(any("You must retain" in line for line in crate_lines), crate_lines)
+        self.assertIn(f"   {clause}\n", text)
+        self.assertIn("  glutin_wgl_sys 1.0.0: Copyright 2022 Kirill Chibisov\n", text)
+
+    def test_an_unfilled_copyright_template_is_not_a_notice(self) -> None:
+        # A `Copyright {yyyy} {name of copyright owner}` line is license text like the
+        # appendix's `[yyyy]` and an MIT copy's `<year>`, not the crate's notice.
+        mit = "MIT License\n\n{}\n\nPermission is hereby granted ...\n"
+
+        def used_by(name: str, version: str) -> dict:
+            return {"crate": {"name": name, "version": version,
+                              "manifest_path": f"C:/reg/{name}-{version}/Cargo.toml"}}
+
+        about = {"licenses": [
+            {"id": "MIT", "name": "MIT License",
+             "text": mit.format("Copyright {yyyy} {name of copyright owner}\n"
+                                "Copyright 2024 dpi contributors"),
+             "used_by": [used_by("dpi", "0.1.2")]},
+            {"id": "MIT", "name": "MIT License",
+             "text": mit.format("Copyright 2020 Someone Else"),
+             "used_by": [used_by("memchr", "2.7.4")]},
+        ]}
+        text = third_party_notices(about, Path("C:/repo"))
+        self.assertIn("  dpi 0.1.2: Copyright 2024 dpi contributors\n", text)
+
+    def test_a_crate_in_two_copies_of_a_license_prints_once(self) -> None:
+        # cargo-about lists a license once per distinct text; a crate in two copies'
+        # used_by is still one crate line.
+        def used_by() -> dict:
+            return {"crate": {"name": "sevenz-rust2", "version": "0.22.2",
+                              "manifest_path": "C:/reg/sevenz-rust2-0.22.2/Cargo.toml"}}
+
+        about = {"licenses": [
+            {"id": "Apache-2.0", "name": "Apache License 2.0", "text": "Apache License\n",
+             "used_by": [used_by()]},
+            {"id": "Apache-2.0", "name": "Apache License 2.0",
+             "text": "Apache License\nApache License\n",
+             "used_by": [used_by()]},
+        ]}
+        text = third_party_notices(about, Path("C:/repo"))
+        self.assertEqual(text.count("  sevenz-rust2 0.22.2\n"), 1)
+
     def test_workspace_version(self) -> None:
         text = (ROOT / "Cargo.toml").read_text(encoding="utf-8")
         declared = re.search(r'\[workspace\.package\][^[]*?\nversion = "([^"]+)"', text)
@@ -151,11 +237,22 @@ class Pure(unittest.TestCase):
                 "unlimited-tool-works-0.0.1/licenses",
                 "unlimited-tool-works-0.0.1/licenses/LICENSE-MIT",
                 "unlimited-tool-works-0.0.1/licenses/LICENSE-APACHE",
+                "unlimited-tool-works-0.0.1/licenses/RobotoFlex-OFL.txt",
+                "unlimited-tool-works-0.0.1/licenses/PHOSPHOR-LICENSE.txt",
                 "unlimited-tool-works-0.0.1/licenses/THIRD-PARTY-NOTICES.txt",
                 "unlimited-tool-works-0.0.1/data",
                 "unlimited-tool-works-0.0.1/data/settings.toml",
             },
         )
+
+    def test_the_bundle_ships_the_bundled_works_licenses(self) -> None:
+        # Roboto Flex's OFL and Phosphor's MIT, the third-party works the suite bundles
+        # outside a crate, stage under `licenses/` beside the project's own two.
+        entries = expected_entries("UTW", "0.0.1")
+        self.assertIn("unlimited-tool-works-0.0.1/licenses/RobotoFlex-OFL.txt", entries)
+        self.assertIn("unlimited-tool-works-0.0.1/licenses/PHOSPHOR-LICENSE.txt", entries)
+        for license_file in LICENSES:
+            self.assertTrue((ROOT / license_file).is_file(), license_file)
 
     def test_the_bundle_ships_no_launcher_and_no_export_folder(self) -> None:
         # 0.0.1 is the Save editor's alone: a launcher put back by habit fails here, not
@@ -241,6 +338,22 @@ class Pure(unittest.TestCase):
         self.assertNotIn("rustflags", config.get("build", {}))
         self.assertTrue(rustflags_config([]).startswith("target.x86_64-pc-windows-msvc.rustflags="))
 
+    def test_build_args(self) -> None:
+        # The one cargo build command the release and the candidate build share.
+        self.assertEqual(
+            build_args([r"--remap-path-prefix=C:\u=~"]),
+            [
+                "cargo",
+                "build",
+                "--release",
+                "--locked",
+                "-p",
+                "studio",
+                "--config",
+                'target.x86_64-pc-windows-msvc.rustflags=["--remap-path-prefix=C:\\\\u=~"]',
+            ],
+        )
+
     def test_leaked_prefixes_match_any_case_and_separator(self) -> None:
         exe = b"\x00panicked at c:/users/member\\.cargo\\registry\\src\\x.rs\x00./target/out.rs"
         self.assertEqual(
@@ -251,6 +364,20 @@ class Pure(unittest.TestCase):
     def test_links_crt_dynamically(self) -> None:
         self.assertTrue(links_crt_dynamically(b"\x00VCRUNTIME140.dll\x00"))
         self.assertFalse(links_crt_dynamically(b"\x00KERNEL32.dll\x00"))
+
+    def test_check_exe(self) -> None:
+        # The check `release()` runs on its build and the candidate runs on the exe it
+        # finds: a leaked build-machine path or a dynamic C runtime refuses.
+        with tempfile.TemporaryDirectory() as tmp:
+            exe = Path(tmp) / "utw.exe"
+            exe.write_bytes(b"\x00panicked at c:/users/member/.cargo/registry/src/x.rs\x00")
+            with self.assertRaisesRegex(Refusal, r"C:\\Users\\Member"):
+                check_exe(exe, [r"C:\Users\Member", r"C:\src\utw"])
+            exe.write_bytes(b"\x00VCRUNTIME140.dll\x00")
+            with self.assertRaisesRegex(Refusal, r"VCRUNTIME140\.dll"):
+                check_exe(exe, [])
+            exe.write_bytes(b"\x00a clean exe\x00")
+            check_exe(exe, [r"C:\Users\Member", r"C:\src\utw"])
 
 
 class Listing(unittest.TestCase):
@@ -269,6 +396,8 @@ class Listing(unittest.TestCase):
                 "README.txt",
                 "licenses/LICENSE-MIT",
                 "licenses/LICENSE-APACHE",
+                "licenses/RobotoFlex-OFL.txt",
+                "licenses/PHOSPHOR-LICENSE.txt",
                 "licenses/THIRD-PARTY-NOTICES.txt",
             ):
                 (top / bundled).write_bytes(b"x")
