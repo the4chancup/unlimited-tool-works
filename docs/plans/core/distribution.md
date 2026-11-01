@@ -23,7 +23,11 @@ There is no installer. Each release is a `.7z` archive containing:
   files for the release page); `README.txt`, not
   `.md`, because a double-click opens a `.txt` in Notepad on any Windows, where a `.md` opens
   whatever app claimed it, or asks
-- a `licenses/` folder: the project's `LICENSE-MIT` and `LICENSE-APACHE`, and
+- a `licenses/` folder: the project's `LICENSE-MIT` and `LICENSE-APACHE`; the licenses of the
+  two third-party works the suite bundles itself rather than through a crate, Roboto Flex's
+  `RobotoFlex-OFL.txt` (`resources/fonts/`) and `PHOSPHOR-LICENSE.txt` (`resources/icons/`,
+  for the icon font's outlines copied from Phosphor), copied as they are, since `cargo-about`
+  sees crates alone and its notices would leave both out; and
   `THIRD-PARTY-NOTICES.txt`, the license notices of every crate the exe links and of egui's
   bundled fonts, whose licenses ask that their notices travel with every copy. In a folder,
   not beside the exe, because members open the exe and the readme and nothing else, so the

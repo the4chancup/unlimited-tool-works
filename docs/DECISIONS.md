@@ -14911,3 +14911,11 @@ Why: Multi-team AATF's counts (P48) need every team's systems, and the violation
 system only when something is off; a second call to find them would run the candidate checks
 twice. The helpers must agree with the check, or a quick action sets targets the check flags.
 Plan: `docs/plans/aatf_rules.md` "A team's check says which systems it was read under".
+
+## 2026-11-01 — distribution — the bundle ships Roboto Flex's and Phosphor's licenses too
+Decision: `licenses/` also holds `RobotoFlex-OFL.txt` and `PHOSPHOR-LICENSE.txt`, copied from
+`resources/fonts/` and `resources/icons/` as they are; the generated notices stay crates-only.
+Why: the exe holds Roboto Flex (OFL-1.1, whose notice and license must go with every copy)
+and icon outlines copied from Phosphor (MIT), neither a crate, so `cargo-about`'s notices left
+both out (a release-scripts review, 2026-11-01). Two files copied need no generator code.
+Plan: `docs/plans/core/distribution.md` "Distribution: portable .7z bundle".
