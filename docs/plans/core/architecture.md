@@ -178,7 +178,7 @@ itself: a check of its own could disagree with the selector, and a per-frame one
 the folder at every repaint. `ctx.set_pes_folder(folder)` stores a picked folder for the
 selected version as the running-PES notice's Fix PES path does
 (`CommonSettings::fix_pes_folder`) and queues `ShellRequest::SettingsChanged`; the sidebar's
-check then runs again, since the resolved folder changed. The Save editor's Set PES folder
+check then runs again, since the resolved folder changed. The Save editor's Set PES path
 button is their first caller (`save_editor.md` "Tactics editor").
 
 The sidebar lists the planned tools a build does not register (`gui.md` "Sidebar", item 3), so

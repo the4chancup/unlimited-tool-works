@@ -6347,13 +6347,20 @@ briefs, review loops, gates and mutation runs as for any step.
     "Multi-team AATF counts the teams under each system"; DECISIONS 2026-11-01): the draft
     first (the lead's), then the scenario under SE-GUI-41, then the slice on cv33's team
     result → verify: DBC6 under DBC7 reads "Height 8, Manlet 14, Universal 11, GigaHeight 14"
-  - [ ] cv35 Set PES folder over the team view's pitch while the sidebar's selector is orange or
+  - [ ] cv35 Set PES path over the team view's pitch while the sidebar's selector is orange or
     red (the maintainer's request, 2026-11-01; `plans/save_editor.md` "Tactics editor", the
-    Set PES folder bullet; `plans/core/gui.md` "Settings menu"'s one storing function, shared
+    Set PES path bullet; `plans/core/gui.md` "Settings menu"'s one storing function, shared
     with Fix PES path; DECISIONS 2026-11-01; draft done, `save_editor.js` `setFolder` and
     `index.html` `storePesFolder`) → verify: SE-GUI-50 headless, its manual pick on the built
     window, the pick stored through `CommonSettings::fix_pes_folder` (`studio_core`, today
     `pub(crate)` with the shell its only caller), its tests unchanged. For the next candidate
+  - [ ] cv36 the cv28-32 mutation runs' survivors (`just mutants-diff a47ecbbd^1` and the
+    team_widgets rerun from `f0d4553f`, 88 mutants, 1 missed), triaged: two missing tests,
+    `team_widgets` `instruction_table`'s row numbers (`instructions.rs:218:31`, `+` to `*`)
+    and Live AATF's window first opening at the screen's bottom right (`live_aatf.rs:309:46`);
+    `live_aatf.rs:154:67` (`/ 2.0` to `% 2.0` on the pop-out icon's centring space) moves the
+    icon about a quarter point, under a pixel, no test, the brief measuring the two sizes
+    behind that reading → brief `.tmp/0_0_2/brief_cv36.md`, tests only
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
@@ -6597,7 +6604,7 @@ briefs, review loops, gates and mutation runs as for any step.
   suite's icon set, a tooltip naming it), stands at the pitch's top right and reads the
   export's portraits again, so a member iterating on a portrait sees each change without
   reopening the save (the maintainer, 2026-11-01). Then the draft (the button's place
-  against the Set PES folder button's bottom right), the plan's paragraph (what a malformed
+  against the Set PES path button's bottom right), the plan's paragraph (what a malformed
   or ambiguous export does, off the UI thread as the CPK read is), its scenarios, and a slice
 
 ### Phase 10 — Music tools

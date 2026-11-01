@@ -3009,3 +3009,5 @@ worklog passed 7,000 lines.
   uncollected half) and a failed link listed untested: a Windows SDK update mid-run had filed 10 local mutants unviable.
 - 2026-11-01 — Save editor: drafted Set PES folder over the pitch while the selector is orange or red (cv35, SE-GUI-50);
   queued, after 0.0.2, portraits read from the team's aesthetics export before `download/`.
+- 2026-11-01 — Scripts merged (sorted by job, `.7z` candidates, `licenses/`), gates green (5551 tests); the pitch button
+  became Set PES path in the corner beside the penalty box (the maintainer's look); cv28-32 survivors triaged (cv36).
