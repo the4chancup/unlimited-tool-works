@@ -20,6 +20,7 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::PLAYABLE_POSITIONS;
 use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::names::display_name;
+use pes_version::PesVersion;
 use studio_core::ExeCheck;
 use studio_core::widgets::{checkbox, menu_button};
 use team_widgets::pitch::{self, FORMATIONS};
@@ -44,12 +45,13 @@ const ROW_GAP: f32 = 6.0;
 /// tallest item is the preset selector's `.row`, 17 points with a 3-point
 /// margin above and below, so the bar is 5 taller than its buttons.
 const BAR_HEIGHT: f32 = 23.0;
-/// The Set PES folder button's insets from the pitch canvas' right and
-/// bottom edges (the draft's `#set-pes-folder`): its bottom on the
-/// formation name's baseline, across the pitch from it.
-const SET_FOLDER_RIGHT: f32 = 7.0;
-const SET_FOLDER_BOTTOM: f32 = 6.0;
-/// The Set PES folder button's hover text.
+/// The Set PES path button's label.
+const SET_FOLDER_LABEL: &str = "Set PES path";
+/// The Set PES path button's side padding (the draft's
+/// `#set-pes-folder`): a button's usual 4 would not fit beside PES
+/// 2018-2021's wider penalty box.
+const SET_FOLDER_SIDE_PADDING: f32 = 2.0;
+/// The Set PES path button's hover text.
 const SET_FOLDER_TIP: &str = "The players' portraits are read from the PES folder";
 
 /// One roster slot's row data before the `RosterRow`s borrow it: the
@@ -317,7 +319,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             let canvas =
                 egui::Rect::from_min_size(egui::pos2(pitch_left, row2_top), pitch::PITCH_BOX)
                     .shrink(1.0);
-            if set_pes_folder_button(ui, canvas)
+            if set_pes_folder_button(ui, canvas, version)
                 && let Some(folder) = pick_folder_dialog()
             {
                 *picked_pes_folder = Some(folder);
@@ -410,23 +412,47 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     });
 }
 
-/// The Set PES folder button in the pitch `canvas`' bottom-right corner,
-/// its right edge `SET_FOLDER_RIGHT` in from the canvas' and its bottom
-/// `SET_FOLDER_BOTTOM` up from the canvas' bottom. Answers whether it was
-/// clicked.
-fn set_pes_folder_button(ui: &mut egui::Ui, canvas: egui::Rect) -> bool {
-    let corner = egui::Rect::from_min_max(
-        canvas.min,
-        canvas.max - egui::vec2(SET_FOLDER_RIGHT, SET_FOLDER_BOTTOM),
-    );
-    ui.new_child(
+/// The Set PES path button in the corner `version`'s bottom penalty box
+/// leaves on the pitch `canvas` (the draft's `placeSetFolder`): centred
+/// between the box's right line and the canvas' right edge, its bottom as
+/// far above the canvas' bottom as its sides are from those two. Outlined
+/// 1 point inside its edge in the text's grey, since a plain button's fill
+/// alone reads as a patch of the grass. Answers whether it was clicked.
+fn set_pes_folder_button(ui: &mut egui::Ui, canvas: egui::Rect, version: PesVersion) -> bool {
+    // The margin needs the button's width before it is laid out: its
+    // label in the button text style, between its two side paddings.
+    let label_width = ui
+        .painter()
+        .layout_no_wrap(
+            SET_FOLDER_LABEL.to_owned(),
+            egui::TextStyle::Button.resolve(ui.style()),
+            ui.visuals().text_color(),
+        )
+        .size()
+        .x;
+    let width = label_width + 2.0 * SET_FOLDER_SIDE_PADDING;
+    let line = canvas.left() + pitch::penalty_box_right(version);
+    let margin = (canvas.right() - line - width) / 2.0;
+    let mut corner = ui.new_child(
         egui::UiBuilder::new()
-            .max_rect(corner)
+            .max_rect(egui::Rect::from_min_max(
+                canvas.min,
+                canvas.max - egui::vec2(margin, margin),
+            ))
             .layout(egui::Layout::bottom_up(egui::Align::Max)),
-    )
-    .button("Set PES folder")
-    .on_hover_text(SET_FOLDER_TIP)
-    .clicked()
+    );
+    corner.spacing_mut().button_padding.x = SET_FOLDER_SIDE_PADDING;
+    let response = corner
+        .button(SET_FOLDER_LABEL)
+        .on_hover_text(SET_FOLDER_TIP);
+    let visuals = &corner.visuals().widgets;
+    corner.painter().rect_stroke(
+        response.rect,
+        visuals.inactive.corner_radius,
+        egui::Stroke::new(1.0, visuals.noninteractive.fg_stroke.color),
+        egui::StrokeKind::Inside,
+    );
+    response.clicked()
 }
 
 /// The preset bar's Copy/swap menu (the draft's `presetMenu`): acting on
