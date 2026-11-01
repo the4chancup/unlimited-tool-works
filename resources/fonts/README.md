@@ -7,24 +7,24 @@ instances of Roboto Flex's variable file as Google Fonts ships it
 (`github.com/google/fonts`, `ofl/robotoflex/RobotoFlex[GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght].ttf`,
 1,787,292 bytes, SHA-256 `9b523f7d…`), cut by fontTools' instancer at optical size 12.5 (the
 body text's size, the optical size a browser draws it at) and weight 400 and 600, every other
-axis at its default (`scripts/cut_flex.py`, which writes both copies; it reproduces these
+axis at its default (`scripts/fonts/cut_flex.py`, which writes both copies; it reproduces these
 bytes); 96,352 and 97,076 bytes, SHA-256 `219b3036…` and `2cbd1950…`. The drafts
 draw the same two files. Licence: the SIL Open Font License 1.1, `RobotoFlex-OFL.txt` beside
 them.
 
 `symbols.ttf` holds the symbols the views draw that the body font lacks (→, ≡, ✔, ✖ and the
-like), each at its own codepoint: `scripts/make_symbols.py` builds it from one SVG per symbol in
+like), each at its own codepoint: `scripts/fonts/make_symbols.py` builds it from one SVG per symbol in
 `resources/symbols/`, on the body font's units per em and vertical metrics, and writes the
-drafts' copy too; `scripts/make_symbols_test.py` checks the committed files are its output.
+drafts' copy too; `scripts/fonts/make_symbols_test.py` checks the committed files are its output.
 Each symbol's advance and ink box are those of the glyph the reviewed drafts drew it in (Segoe
 UI's, or Segoe UI Symbol's, measured; no outline copied), but ↳, which is → with a stem from
 its tail to the body font's cap height: Segoe UI Symbol's, half as wide, turns too short to
 read at the body size; and ⏴ and ⏵, whose ink is Segoe UI Symbol's size centred in the advance,
 since a stepper centres each in its own button. Licence: the repository's own.
 
-`icons.ttf` is the shell's icon font: `scripts/make_icons.py` builds it from one SVG per
+`icons.ttf` is the shell's icon font: `scripts/fonts/make_icons.py` builds it from one SVG per
 icon in `resources/icons/` (its README says how they were drawn) and writes the drafts' copy
-too; `scripts/make_icons_test.py` checks the committed files are its output. Each glyph sits
+too; `scripts/fonts/make_icons_test.py` checks the committed files are its output. Each glyph sits
 at the codepoint `studio_core`'s icon constants (`icons.rs`) name, and the font has no layout
 tables, so text never turns into an icon. Its metrics (1024 units per em, ascent 960,
 descent -64, every advance 1024) are Phosphor's, the font the rail was first measured in.

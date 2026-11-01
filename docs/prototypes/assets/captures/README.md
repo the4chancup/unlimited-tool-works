@@ -14,5 +14,5 @@ draws elsewhere than its draft shows at once.
 - **Date:** each carries its capture date in its bottom-right corner, so a stale one shows.
 - **When:** refreshed when a view's slice lands, by the lead's capture script on a release
   build.
-- **Bundles:** a bundled draft (`scripts/bundle_drafts.py`) does not carry them; its overlay
+- **Bundles:** a bundled draft (`scripts/drafts/bundle_drafts.py`) does not carry them; its overlay
   shows the missing-file line.

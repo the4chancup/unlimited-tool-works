@@ -48,12 +48,12 @@ one that makes them enforceable:
   `rust-toolchain.toml` pins `1.98.1` with `clippy`, `rustfmt` and the `wasm32-unknown-unknown`
   target, so rustup installs all of them on the first `cargo` call.
 - The root `justfile` is the single definition of the gates — `just gates` runs the fmt check,
-  clippy with `-D warnings`, `cargo test --workspace`, and `scripts/wasm_check.py`, which derives
+  clippy with `-D warnings`, `cargo test --workspace`, and `scripts/gates/wasm_check.py`, which derives
   the crate list for the `wasm32-unknown-unknown` check from `cargo metadata`: `studio_core` plus
   every crate under `crates/libs/` minus a named exclusion list, so a new lib is checked without
   anyone remembering to list it (the acceptance-ID scanner and the section-pointer check joined
   later) — and of `just deps-check` (guardrail 4 through
-  `scripts/deps_check.py`, which walks each guarded crate's normal dependencies over every target
+  `scripts/gates/deps_check.py`, which walks each guarded crate's normal dependencies over every target
   and every feature; plus the `cargo deny` license allowlist in `deny.toml`). On Windows the
   recipes run under PowerShell (`set windows-shell`): Git for Windows' `sh` is not on PATH from a
   plain PowerShell, the fallback `../../CONTRIBUTING.md` named; a planted clippy warning was verified to
@@ -192,10 +192,10 @@ false`/`doctest = false` and `pyo3/extension-module` on by default, so `cargo te
 never tries to link it against a `libpython` (a Python extension links against the interpreter
 that loads it, not at build time); its one test is the wheel. `abi3-py311`: one wheel per platform
 loads in every Python from 3.11 up, which covers Blender 5.0 (Python 3.11) and 5.2 (3.13) and a
-developer's own interpreter; `scripts/bindings_check.py` refuses a wheel not tagged `cp311-abi3`,
+developer's own interpreter; `scripts/gates/bindings_check.py` refuses a wheel not tagged `cp311-abi3`,
 because CI builds under one Python (3.13) and a wheel that lost the feature would pass there and
 fail to load in Blender 5.0. `just bindings` builds the wheel with `maturin` and runs the smoke
-test (`crates/libs/python_bindings/tests/smoke.py`) through `scripts/bindings_check.py`: the wheel
+test (`crates/libs/python_bindings/tests/smoke.py`) through `scripts/gates/bindings_check.py`: the wheel
 is unzipped onto `sys.path` of a subprocess rather than `pip install`ed, because Blender's bundled
 Python has no pip and the test must run under it (`--python <interpreter>`). The wheel version is
 the crate's own (`distribution.md` "One exception"). CI runs `just bindings` on both platforms.
@@ -277,7 +277,7 @@ export](../aesthetics_export/object_model.md) plan's "Validation semantics".
 `aesthetics_export` structure pass and `team_compiler`'s `check` and `compile` against the TC
 scenarios, run in-process over Studio-format fixtures (folders, a `.zip` and a solid `.7z`),
 with the binary's own seams (settings location, exit codes, the console printer) run through
-the built `UTW`; `scripts/acceptance.py` proving every automated scenario cited by a
+the built `UTW`; `scripts/gates/acceptance.py` proving every automated scenario cited by a
 test; the shell slice's two manual scenarios (TC-GUI-01/02; the second automated at 8.0) checked by the maintainer on Windows
 (Linux not yet, no machine with a display). Converge ran a whole-crate mutation run over each of
 the phase's crates, every survivor triaged. At the close (2026-10-02): `just gates` green, 1402

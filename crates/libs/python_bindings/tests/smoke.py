@@ -1,5 +1,5 @@
 """The wheel's smoke test (core plan, "Phase 2", `python_bindings`): run by `just bindings`
-through `scripts/bindings_check.py` with the built wheel on `sys.path`, under any Python 3.11+
+through `scripts/gates/bindings_check.py` with the built wheel on `sys.path`, under any Python 3.11+
 (the developer's or Blender's). Not a pytest suite: Blender's Python has no pytest.
 
 The oracle is each format crate's own invariant (`fmdl/src/format/file.rs`, `skl.rs`,

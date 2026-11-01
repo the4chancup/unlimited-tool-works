@@ -225,17 +225,17 @@
     --clover-ring: #129648; --clover-leaf: #8cc642;
     /* The app's own font chains (plans/core/gui.md, the Dark/light theme row), the files
        in assets/fonts/; no system font and no generic family, so a glyph none of them has
-       shows as the browser's fallback, which scripts/draft_fonts.py reports. */
+       shows as the browser's fallback, which scripts/drafts/draft_fonts.py reports. */
     --font-body: "Roboto Flex", "Symbols", "Icons", "egui-icons", "Noto Emoji", "emoji-icon-font";
     --font-mono: "Hack", "Roboto Flex", "Symbols", "Icons", "egui-icons", "Noto Emoji", "emoji-icon-font";
     /* The pitch's formation name alone: the semibold weight, whose stroke matches the
        game's label (worklog 0.0.1x); everything else stays regular. */
     --font-label: "Roboto Flex Semibold", "Roboto Flex", "Symbols", "Icons", "egui-icons", "Noto Emoji", "emoji-icon-font";
     /* The simulated window's title bar alone: the system's, not the app's, so it takes the
-       system's caption font, which scripts/draft_fonts.py lets the bar draw in. */
+       system's caption font, which scripts/drafts/draft_fonts.py lets the bar draw in. */
     --font-os: "Segoe UI", system-ui, sans-serif;
   }
-  /* The symbols the body font lacks are scripts/make_symbols.py's build, on the body font's
+  /* The symbols the body font lacks are scripts/fonts/make_symbols.py's build, on the body font's
      metrics; egui-icons keeps egui's scale tweak (epaint's FontDefinitions::default). */
   @font-face { font-family: "Roboto Flex"; src: url("assets/fonts/RobotoFlex-Regular.ttf"); }
   @font-face { font-family: "Roboto Flex Semibold"; src: url("assets/fonts/RobotoFlex-Semibold.ttf"); }
@@ -357,7 +357,7 @@
   .main { flex: 1; display: flex; min-height: 0; position: relative; }
   .rail { border-right: 1px solid var(--stroke); padding: 6px; display: flex; flex-direction: column; gap: 3px; }
   /* The icon font the rail draws its 24 px glyphs in (assets/fonts/icons.ttf,
-     scripts/make_icons.py's build of resources/icons/; licence above). */
+     scripts/fonts/make_icons.py's build of resources/icons/; licence above). */
   @font-face { font-family: "Icons"; src: url("assets/fonts/icons.ttf"); }
   .ph { font-family: "Icons"; font-size: 24px; line-height: 1; }
   /* Its scroll bar in the window's strip, kept while nothing scrolls (the .win comment). */
@@ -1247,7 +1247,7 @@ const VIEWS = {};
 //               keys, run once when the page opens on a link naming the tool,
 //               after firstShow and before the first draw; a key or value it
 //               does not know is ignored with a console.warn, never an error
-//   shots       the links (without the #) of the screens scripts/draft_shots.py
+//   shots       the links (without the #) of the screens scripts/drafts/draft_shots.py
 //               captures, each one the view writes back once open
 // A document-level listener a tool script adds itself checks the view's own
 // state before acting: it fires while another tool is active.

@@ -20,11 +20,24 @@ There is no installer. Each release is a `.7z` archive containing:
   line ends (`.gitattributes`), since cmd misreads a batch file's labels with LF ones
 - a basic readme (pointing into the app: the full help and the changelog live in the help window
   — see `gui.md` "Help window" under GUI Design — and `UTW help --export` produces the same text as
-  files for the release page), with the two license files beside it; `README.txt`, not
+  files for the release page); `README.txt`, not
   `.md`, because a double-click opens a `.txt` in Notepad on any Windows, where a `.md` opens
   whatever app claimed it, or asks
+- a `licenses/` folder: the project's `LICENSE-MIT` and `LICENSE-APACHE`, and
+  `THIRD-PARTY-NOTICES.txt`, the license notices of every crate the exe links and of egui's
+  bundled fonts, whose licenses ask that their notices travel with every copy. In a folder,
+  not beside the exe, because members open the exe and the readme and nothing else, so the
+  top folder keeps to those; the repository keeps its two license files at its root, where the
+  convention and GitHub's license detection look. The notices are generated at each release
+  from `cargo-about`'s JSON (installed on the release machine, not a crate the exe links),
+  with the licenses it accepts read from `deny.toml`'s allowlist, so the two cannot drift; a
+  hand-kept list would miss a dependency `Cargo.lock` gained. Each license appears once: its
+  text, then every crate under it with the copyright lines its own copy states, which are
+  what the licenses ask to keep (cargo-about's own listing repeats MIT once per copyright
+  line, 117 times for 0.0.1). The workspace's crates are left out, the two license files
+  covering them. About 70 KB, 18 KB of the archive
 
-`just release <version>` (`scripts/release.py`, Windows only) builds the exe with `--locked`,
+`just release <version>` (`scripts/release/release.py`, Windows only) builds the exe with `--locked`,
 stages those files under one top folder, `unlimited-tool-works-<version>/`, so "Extract here"
 makes one folder rather than scattering the files, and packs it with 7-Zip as
 `unlimited-tool-works-<version>-windows.7z` in the `dist/` folder of cargo's target directory
@@ -39,7 +52,7 @@ checks that each launcher it ships calls it (none in 0.0.1), so the executable's
 and the recipe cannot drift from it; the package name `unlimited-tool-works` is the
 recipe's own constant, since no built file states it. Beside the archive it keeps the release's symbols, never in the
 bundle: the built exe and its `.pdb`, packed as `unlimited-tool-works-<version>-symbols.7z`,
-which `scripts/symbolize_log.py` reads to name a posted `utw.log`'s backtrace
+which `scripts/release/symbolize_log.py` reads to name a posted `utw.log`'s backtrace
 (`architecture.md` "Diagnostic logging"). The release profile builds with
 `debug = "line-tables-only"`, so the kept `.pdb` names each frame's file and line as well as
 its function; the line tables live in the `.pdb`, leaving the exe's size as it was.
