@@ -6529,7 +6529,15 @@ briefs, review loops, gates and mutation runs as for any step.
     rows to the wrap, which the brief had missed), `496fc329`, merged `d27eefa4`:
     `studio_core` `wheel.rs` `cycle_choice` (a combo still clamps); tests
     `a_toggle_choice_cycles_round_the_ends`, `wheel_notches_wrap_round_at_the_toggles_ends`
-    (red: `a second notch up wraps round to Counter Attack`)
+    (red: `a second notch up wraps round to Counter Attack`); full `just gates` at `c8bcb76a`
+    green (5584 passed); `just mutants-diff 97f76e18`: 20 caught, 1 unviable, 2 missed, both
+    equivalent (`.tmp/0_0_2/cv38/triage_mutants.md`: `>=` at `steps == 0`; a two-choice
+    toggle flips the same either way)
+    - manual: checked 2026-11-01 by the lead, in the built window (release build of
+      `c8bcb76a`, DBC6's save read-only, its hash unchanged): team 702's Attacking style on
+      Counter Attack, one notch down took Possession; Numbers in attack on Medium, two notches
+      up took Many then Few; three Ctrl+Z restored all three
+      (`.tmp/0_0_2/look_cv38/`)
   - [x] cv23d the idle Ability stats view's repaint (cv23a's mutants-diff survivor,
     `abilities.rs:741` `&&` → `||`): a test that a frame with no input after the badge has
     landed asks for no repaint, red on the mutant (`left: 0ns`); SWE-2 sidekick
