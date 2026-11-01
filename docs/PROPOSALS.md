@@ -68,3 +68,15 @@ TOML's `#RRGGBB`.
 Adds: the picker's hex field accepts `#RRGGBB`, `0xRRGGBB` and `RRGGBB` alike in every tool
 that uses it, so a pasted value from an old habit lands instead of being refused. Costs: one
 parse with three prefixes in `color_tools`; the field still shows `#RRGGBB`.
+
+## P48 — Multi-team AATF counts the teams under each medal and height system
+
+From DBC7's organizer (2026-11-01), for the organizer's own bookkeeping; outside what the
+general 0.0.1 editor promises every member. Multi-team AATF reads every team under a medal
+system and a height system already, and shows neither count.
+
+Adds: a line above Multi-team AATF's list (and in its copied text) with how many of the
+checked teams were read under each medal system and each height system (DBC7: GGG, GGSS,
+GSSSS, SSSSSS; Height, Manlet, Universal, GigaHeight), so the organizer sees the cup's mix
+without counting. Costs: the check returning the system each team was read under (today
+only its findings say so), one summary line, and its scenario; nothing a member must learn.
