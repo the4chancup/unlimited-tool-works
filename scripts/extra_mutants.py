@@ -349,7 +349,9 @@ def main(argv: list[str]) -> int:
         for line in stale:
             print(line)
         return 0
-    run_crate(crate, kinds)
+    tree = mutants.working_tree()
+    with mutants.run_lock():
+        run_crate(crate, kinds, tree)
     return 0
 
 

@@ -25,7 +25,6 @@ whatever the estimate.
 
 import json
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -66,7 +65,8 @@ def main(argv: list[str]) -> int:
         f.write(diff)
         diff_path = f.name
     try:
-        return run(diff_path, tree)
+        with mutants.run_lock():
+            return run(diff_path, tree)
     finally:
         os.unlink(diff_path)
 
@@ -95,8 +95,7 @@ def run(diff_path: str, tree: str) -> int:
     if not found:
         return 0
     results = RESULTS
-    if results.exists():
-        shutil.rmtree(results)
+    mutants.set_aside(results)
     results.mkdir()
     codes = {}
     for crate, count in sorted(counts.items()):

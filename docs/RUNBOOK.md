@@ -71,12 +71,17 @@ local half on a copy of it extracted under the temp folder, never on the working
 edits and merges are safe once the run has started, every crate of one `mutants-diff`
 included. Before 2026-11-01 the local half read the live tree, and a merge during a
 `mutants-diff` left team_widgets' local half refusing its diff ("Diff content doesn't match
-source file"). A chain of separate commands still snapshots each run when it starts, so a run
-queued behind a sidekick's edits snapshots a half-edited crate: at 4.y-conv the
-`team_compiler` run started while 4.y-fix1 was being written and had to be stopped; nothing
-edits a crate while a run that will measure it waits in a chain. The lead launches a long chain detached, with
+source file"). **One run at a time, each queued with its snapshot**: `just mutants`,
+`mutants-diff` and `extra-mutants` snapshot first, then take `.tmp/mutants.lock` for the
+run's whole length (`mutants.run_lock`), so a run launched while another is under way waits
+its turn with the tree it was launched on, and edits and merges are safe while it waits. Runs
+are launched as separate commands, never chained: a chain's later run snapshots only when
+the one before ends, and at 4.y-conv a `team_compiler` run queued that way snapshotted a
+crate 4.y-fix1 was half-way through and had to be stopped. A run sets the last one's
+results aside (`mutants.out.old`, `mutants.diff.old`) rather than deleting them. The lead
+launches a long run detached, with
 PowerShell `Start-Process bash.exe <script> -WindowStyle Hidden` from a script under `.tmp/`,
-never with the Bash tool's background mode: its two-hour cap kills the chain, and stopping it
+never with the Bash tool's background mode: its two-hour cap kills the run, and stopping it
 kills the console the run's children need, after which every build fails with `0xC0000142`
 and cargo-mutants files the mutant as unviable (273 of 274 in 23 s at 4.y-conv's first attempt).
 

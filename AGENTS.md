@@ -320,9 +320,10 @@ review-round rules. Three model families play three roles: the lead (Claude) pla
 reviews and talks to the maintainer; the sidekick (SWE-2) implements; the reviewer (GPT Astra,
 through the `duck` skill) critiques what the lead writes. Two operations rules every agent needs:
 a mutation run measures the tree as it stood when its command started (both halves run on that
-snapshot), so edits and merges are safe once it has started, but not while a run waits behind
-another command in a chain, which snapshots only when it starts; and a failed remote half is
-reported, never restarted (`cargo mutants` does not resume).
+snapshot, and a run launched while another is under way snapshots at once, then waits its
+turn), so edits and merges are always safe; launch each run as its own command, never in a
+chain, whose later runs would snapshot only when the one before ends; and a failed remote half
+is reported, never restarted (`cargo mutants` does not resume).
 
 ## When the plan has gaps
 

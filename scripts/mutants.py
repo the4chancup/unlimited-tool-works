@@ -36,6 +36,7 @@ on first use inside the tree), `sudo -n systemd-run` for the ssh user, `ionice`,
 scripts).
 """
 
+import contextlib
 import io
 import json
 import os
@@ -57,6 +58,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REMOTE_BASE = "~/studio-mutants"
 REMOTE_REF = "refs/mutants/remote"
+# One mutation run at a time (`run_lock`); a run launched meanwhile polls for it.
+RUN_LOCK = ROOT / ".tmp" / "mutants.lock"
+LOCK_POLL_SECONDS = 30
 # Whether `just mutants` and `just mutants-diff` run every mutant on the remote
 # (when STUDIO_MUTANTS_REMOTE names one), whatever the size or LOCAL_ONLY_CRATES,
 # and nothing on this machine; `just gates-remote` is the gates' counterpart. A
@@ -278,6 +282,58 @@ def remove_tree(path: Path) -> None:
         function(failed)
 
     shutil.rmtree(path, onexc=make_writable)
+
+
+def try_lock(handle) -> bool:
+    """Take the OS lock on `handle`'s first byte without waiting; False when another
+    process holds it."""
+    handle.seek(0)
+    try:
+        if os.name == "nt":
+            import msvcrt
+
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        return False
+    return True
+
+
+def unlock(handle) -> None:
+    handle.seek(0)
+    if os.name == "nt":
+        import msvcrt
+
+        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+    else:
+        import fcntl
+
+        fcntl.flock(handle, fcntl.LOCK_UN)
+
+
+@contextlib.contextmanager
+def run_lock(path: Path = RUN_LOCK):
+    """Hold the mutation runs' lock for a run's whole length: a run launched while another
+    is under way waits for it rather than racing it for `mutants.out`, `mutants.diff/`, the
+    remote and the build slots. Every entry point snapshots the tree first, so a waiting run
+    measures the tree as it stood when its command started, whatever is edited or merged
+    while it waits; a chain of commands would snapshot each run only when the one before
+    ends. The lock is the OS's, released with the process, so a killed run leaves none
+    behind."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "a+b") as handle:
+        if not try_lock(handle):
+            print(f"another mutation run holds {path.name}: this one waits, its snapshot taken",
+                  flush=True)
+            while not try_lock(handle):
+                time.sleep(LOCK_POLL_SECONDS)
+        try:
+            yield
+        finally:
+            unlock(handle)
 
 
 def snapshot(tree: str | None = None) -> str:
@@ -1256,12 +1312,17 @@ def set_aside_last_run() -> None:
     cargo-mutants itself does, so nothing of it is read as this run's: a cargo-mutants that
     fails before its own rotation (a config or diff error) would leave it in place, and the
     killed-build report and the cost cache would read it."""
-    out = ROOT / "mutants.out"
-    old = ROOT / "mutants.out.old"
-    if out.exists():
+    set_aside(ROOT / "mutants.out")
+
+
+def set_aside(results: Path) -> None:
+    """Move a results folder to `<name>.old`, replacing the older one, so a run's results
+    outlive the next run's start."""
+    old = results.with_name(results.name + ".old")
+    if results.exists():
         if old.exists():
             shutil.rmtree(old)
-        out.rename(old)
+        results.rename(old)
 
 
 def extra_run_record() -> Path:
@@ -1543,8 +1604,15 @@ def main(argv: list[str]) -> int:
             return 1
         return collect(host)
     crate = argv[1]
+    tree = working_tree()
+    with run_lock():
+        return whole_run(crate, host, tree)
+
+
+def whole_run(crate: str, host: str | None, tree: str) -> int:
+    """`just mutants <crate>` on the snapshot `tree`: split with the remote, or here."""
     if host is not None and REMOTE_ONLY:
-        return split(["-p", crate], host, local=False)
+        return split(["-p", crate], host, local=False, tree=tree)
     if host is None or crate in LOCAL_ONLY_CRATES:
         reason = (
             "STUDIO_MUTANTS_REMOTE is not set" if host is None
@@ -1561,7 +1629,6 @@ def main(argv: list[str]) -> int:
         import extra_mutants  # deferred: extra_mutants imports this module
 
         # One snapshot for both passes, so they measure the same code.
-        tree = working_tree()
         _, extra_counts, extra_seconds = extra_mutants.run_crate(
             crate, list(EXTRA_KINDS), tree
         )
@@ -1576,7 +1643,7 @@ def main(argv: list[str]) -> int:
             (time.monotonic() - started, None),
         )
 
-    return split(["-p", crate], host)
+    return split(["-p", crate], host, tree=tree)
 
 
 if __name__ == "__main__":
