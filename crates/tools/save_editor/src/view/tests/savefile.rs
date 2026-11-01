@@ -627,6 +627,10 @@ fn the_last_end_follows_the_first_and_lists_the_teams_from_it() {
     view.open(&path);
     let mut window = Headless::new();
     open_multi_aatf(&mut window, &mut view);
+    // The opening check lands before any bounds are read: its counts
+    // line moves the widgets under the summary a row, so a click aimed
+    // before it could land on another.
+    multi_checked(&mut window, &mut view, &[701]);
     let label =
         |view: &SaveView, id: u32| format!("{id} {}", display_name(&team_entry(view, id).name));
     let (team_717, team_718) = (label(&view, 717), label(&view, 718));
@@ -701,6 +705,79 @@ fn the_last_end_follows_the_first_and_lists_the_teams_from_it() {
         "the last end's items start at 718: {items:?}"
     );
     assert!(!items.contains(&team_717), "717 is not offered: {items:?}");
+}
+
+/// A press on the dialog's title held while the opening check lands: the
+/// result draws the counts line, and unless its auto id is kept when it
+/// is absent, every widget after it takes the next id on the landing
+/// frame, so the release clicks whichever widget took the pressed id
+/// (Close). Released after the landing, the press leaves the dialog open.
+#[test]
+fn a_press_held_while_the_check_lands_leaves_the_dialog_open() {
+    let path = fixture(PesVersion::Pes17, "multi_aatf_held_click");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    // The opening check's reply is kept off the frames: the real run's
+    // channel is taken and replaced with the test's, its reply kept
+    // until the press is down.
+    let (_, _, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let real = view
+        .multi_aatf
+        .check
+        .pending
+        .take()
+        .expect("the opening check is in flight");
+    let (sender, replies) = crossbeam_channel::unbounded();
+    view.multi_aatf.check.pending = Some(worker::Pending {
+        key: real.key.clone(),
+        replies,
+    });
+    let reply = real
+        .replies
+        .recv_timeout(Duration::from_secs(120))
+        .expect("the opening check never replied");
+
+    // A frame while the press is still up: no result is listed.
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        view.multi_aatf.check.result.is_none(),
+        "premise: no result is listed yet"
+    );
+    let title = super::prompt::dialog_nodes(&pairs, MULTI_TITLE)
+        .into_iter()
+        .find(|node| node.value() == Some(MULTI_TITLE))
+        .expect("the title");
+    let at = centre(title);
+
+    window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    sender
+        .send(reply)
+        .expect("the held channel takes the reply");
+    let (_, _, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        view.multi_aatf
+            .check
+            .result
+            .as_ref()
+            .is_some_and(|(key, _)| key.ids == [701]),
+        "premise: the reply landed while the press was held"
+    );
+    // The frame after the release's: a Close clicked on the release
+    // frame closes the dialog on this one.
+    let (_, _, _) = window.frame(pointer_at(at, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        pairs
+            .iter()
+            .any(|(_, node)| node.value() == Some(MULTI_TITLE)),
+        "the dialog is still open"
+    );
 }
 
 /// Thirty wheel notches over the first end, one a frame at 60 frames a
