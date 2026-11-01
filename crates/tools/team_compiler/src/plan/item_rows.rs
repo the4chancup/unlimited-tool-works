@@ -76,6 +76,10 @@ pub(super) struct RowPlayer {
     /// The folder's settings, its `settings.toml` joined with its `ingame_face.toml`'s keys;
     /// `None` when it holds neither file (the row is the template's).
     pub(super) settings: Option<PlayerSettings>,
+    /// One of the folder's settings files was refused
+    /// (`settings_toml_invalid`/`ingame_face_toml_invalid`): an invalid file holds back the
+    /// player's whole look, so the patch's entry for him holds no `[appearance]`.
+    pub(super) settings_refused: bool,
 }
 
 /// The rows of `players`, the compiled player folders of one export whose `coverage` is

@@ -3,12 +3,13 @@
 //! rewrite, `IngameFaceSettings::parse` and `to_toml`, and the appearance
 //! table readers/emitters both share with `team_toml`.
 
+use pes_version::PesVersion;
 use toml_edit::{DocumentMut, Item, Value};
 
 use super::keys::{self};
 use super::{
-    AppearanceSettings, IngameFaceSettings, KeyTable, Kind, MotionSettings, NameSetting,
-    PlayerSettings, SettingKey, SettingsError, get_appearance, set_appearance,
+    AppearanceSettings, IngameFaceSettings, KeyTable, Kind, NameSetting, PlayerSettings,
+    SettingKey, SettingsError, get_appearance, held_on, set_appearance,
 };
 
 // The TOML half: `parse` reads a `settings.toml` text, `to_toml` emits the
@@ -412,7 +413,7 @@ fn reject_unknown_table(
                 && absolute(root, key.spec().table) == path
                 && key.spec().name == leaf
         }) {
-            return Err(SettingsError::UnknownKey { key: child });
+            return Err(document.unheld_leaf(root, path, leaf));
         }
     }
     Ok(())
@@ -442,7 +443,8 @@ fn model_id(document: &DocumentMut, key: SettingKey) -> Result<Option<u8>, Setti
 
 /// Which document an appearance table is parsed from or emitted into:
 /// `settings.toml`'s `[appearance]`, Team TOML's `[players.NN.appearance]`,
-/// or `ingame_face.toml` (the in-game face's keys alone, at the top level).
+/// the aesthetics patch's `[teams.players.NN.appearance]`, or
+/// `ingame_face.toml` (the in-game face's keys alone, at the top level).
 /// The document settles the value bounds, which keys the walks visit and
 /// the `[appearance.motion]` note.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -456,6 +458,13 @@ pub(crate) enum AppearanceDocument {
     /// widest stored bit width (a real save's values go past the editor
     /// ranges), and no motion note.
     Team,
+    /// A patch's `[teams.players.NN.appearance]`: the joined schema (every
+    /// non-top key, as Team TOML) narrowed to the keys `version` holds —
+    /// the patch's compiler-resolved look, so the editor ranges apply and
+    /// a schema key the version lacks is `NotInThisVersion`, not a stray
+    /// one. Emitted with no key comments and no commented defaults: a
+    /// patch's look is whole or absent.
+    Patch(PesVersion),
     /// `ingame_face.toml`: `iris_color` at the top level, `[face]` and
     /// `[hair]` — the `[appearance]` face run with the root dropped. The
     /// editor ranges apply, as `settings.toml`'s; there is no motion note
@@ -470,15 +479,43 @@ impl AppearanceDocument {
         matches!(self, Self::Team)
     }
 
+    /// Whether the document emits the keys' range comments and a commented
+    /// line for an absent key (`None`): the author-facing documents do, a
+    /// generated patch does not.
+    fn comments(self) -> bool {
+        !matches!(self, Self::Patch(_))
+    }
+
     /// Whether the document holds `key`: `settings.toml` every non-top key
     /// but the in-game face's (which `ingame_face.toml` holds), Team TOML
-    /// every non-top key, `ingame_face.toml` the in-game face's alone.
+    /// every non-top key, a patch every non-top key its version stores,
+    /// `ingame_face.toml` the in-game face's alone.
     fn holds(self, key: SettingKey) -> bool {
         match self {
             Self::Settings => key.spec().table != KeyTable::Top && !key.is_ingame_face(),
             Self::Team => key.spec().table != KeyTable::Top,
+            Self::Patch(version) => key.spec().table != KeyTable::Top && held_on(key, version),
             Self::IngameFace => key.is_ingame_face(),
         }
+    }
+
+    /// The error for a leaf the document does not hold: a schema key a
+    /// patch's version does not store is `NotInThisVersion` (the compiler
+    /// wrote it for another version), everything else `UnknownKey` at the
+    /// leaf's dotted path.
+    fn unheld_leaf(&self, root: &str, path: &str, leaf: &str) -> SettingsError {
+        let key = dotted_join(path, leaf);
+        if let Self::Patch(version) = self
+            && SettingKey::ALL.iter().any(|other| {
+                other.spec().table != KeyTable::Top
+                    && absolute(root, other.spec().table) == path
+                    && other.spec().name == leaf
+                    && !held_on(*other, *version)
+            })
+        {
+            return SettingsError::NotInThisVersion { key };
+        }
+        SettingsError::UnknownKey { key }
     }
 }
 
@@ -517,7 +554,10 @@ pub(crate) fn parse_appearance(
 /// The `[prefix]` table plus its subtables appended to `out`, in key
 /// order: a `Some` emits its line with the key's comment, a `None` the
 /// commented line at the key's default. Shared with `team_toml`'s
-/// `[players.NN.appearance]` (`AppearanceDocument::Team`).
+/// `[players.NN.appearance]` (`AppearanceDocument::Team`) and the
+/// aesthetics patch's `[teams.players.NN.appearance]`
+/// (`AppearanceDocument::Patch`), where only the held keys emit, with no
+/// comments: a `None` has no line at all.
 pub(crate) fn emit_appearance(
     out: &mut String,
     prefix: &str,
@@ -550,6 +590,10 @@ pub(crate) fn emit_appearance(
             table = spec.table;
         }
         let stored = get_appearance(appearance, key);
+        // A patch's look is whole or absent: a `None` has no line to write.
+        if stored.is_none() && !document.comments() {
+            continue;
+        }
         let body = match stored {
             Some(stored) => format!(
                 "{} = {}",
@@ -565,76 +609,16 @@ pub(crate) fn emit_appearance(
                 )
             }
         };
-        let line = padded(&body, spec.comment);
+        let comment = if document.comments() {
+            spec.comment
+        } else {
+            ""
+        };
+        let line = padded(&body, comment);
         match stored {
             Some(_) => out.push_str(&line),
             None => out.push_str(&format!("# {line}")),
         }
-        out.push('\n');
-    }
-    Ok(())
-}
-
-/// A `[…motion]` table parsed into stored values: the motion keys' labels,
-/// ranges and stored conversions, nothing else. `path` is the table's own
-/// dotted path for error keys (`appearance.motion` in a settings.toml,
-/// `teams[0].players.05.appearance.motion` in the aesthetics patch, which
-/// shares this so there is no second key table). `settings.toml`'s ranges
-/// apply.
-pub(crate) fn parse_motion(item: &Item, path: &str) -> Result<MotionSettings, SettingsError> {
-    let Some(table) = item.as_table_like() else {
-        return Err(SettingsError::WrongType {
-            key: path.to_string(),
-            expected: "a table",
-        });
-    };
-    let mut out = AppearanceSettings::default();
-    for key in SettingKey::ALL {
-        let spec = key.spec();
-        if spec.table != KeyTable::Motion {
-            continue;
-        }
-        let Some(item) = table.get(spec.name) else {
-            continue;
-        };
-        let leaf = format!("{path}.{}", spec.name);
-        let stored = value(&leaf, key, item, false)?;
-        set_appearance(&mut out, key, Some(stored));
-    }
-    for (name, _) in table.iter() {
-        if !SettingKey::ALL
-            .iter()
-            .any(|key| key.spec().table == KeyTable::Motion && key.spec().name == name)
-        {
-            return Err(SettingsError::UnknownKey {
-                key: format!("{path}.{name}"),
-            });
-        }
-    }
-    Ok(out.motion)
-}
-
-/// Each `Some` motion key's `settings.toml` line, in key-table order —
-/// `name = value` plus the key's comment — appended to `out`. The caller
-/// writes the `[…motion]` header; the aesthetics patch emits the `Some`
-/// keys only, which this already is. The editor ranges `parse_motion`
-/// reads apply, so `Err` is a stored value `parse` would refuse back — only
-/// reachable on a hand-built `MotionSettings`.
-pub(crate) fn emit_motion(out: &mut String, motion: &MotionSettings) -> Result<(), SettingsError> {
-    let appearance = AppearanceSettings {
-        motion: motion.clone(),
-        ..AppearanceSettings::default()
-    };
-    for key in SettingKey::ALL {
-        let spec = key.spec();
-        if spec.table != KeyTable::Motion {
-            continue;
-        }
-        let Some(stored) = get_appearance(&appearance, key) else {
-            continue;
-        };
-        let value = toml_form(key, stored, false)?;
-        out.push_str(&padded(&format!("{} = {}", spec.name, value), spec.comment));
         out.push('\n');
     }
     Ok(())
