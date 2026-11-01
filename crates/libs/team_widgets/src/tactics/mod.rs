@@ -14,7 +14,9 @@ use pes_savefile::schema::fields::{
 use pes_savefile::schema::{instruction, schema_for};
 use pes_version::PesVersion;
 use studio_core::theme::Palette;
-use studio_core::widgets::{add_enabled, checkbox, step_choice, step_number, wheel_steps};
+use studio_core::widgets::{
+    add_enabled, checkbox, cycle_choice, step_choice, step_number, wheel_steps,
+};
 
 use crate::pitch::{FORMATIONS, position_label};
 
@@ -536,7 +538,8 @@ pub(crate) fn text_width(ui: &egui::Ui, text: &str) -> f32 {
 /// name). Both choices are drawn every frame — an early return over
 /// the two would skip the second on the frame the first is clicked.
 /// The wheel over either choice moves the choice, up to the right one
-/// and down to the left one, nothing past an end.
+/// and down to the left one, wrapping round to the other end past the
+/// last.
 fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggle) {
     ui.spacing_mut().item_spacing.x = CHOICE_GAP;
     ui.spacing_mut().button_padding = CHOICE_PADDING;
@@ -559,9 +562,9 @@ fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggl
         })
         .reduce(|left, right| left | right)
         .expect("a pair has two choices");
-    // Wheel up moves right, and `step_choice` steps up to an earlier item,
+    // Wheel up moves right, and `cycle_choice` steps up to an earlier item,
     // so it takes the steps negated over the choices in drawn order.
-    if let Some(next) = step_choice([false, true], &value, -wheel_steps(ui, &control)) {
+    if let Some(next) = cycle_choice([false, true], &value, -wheel_steps(ui, &control)) {
         value = next;
     }
     if value != (toggle.get)(style) {
@@ -572,9 +575,9 @@ fn style_choices(ui: &mut egui::Ui, style: &mut TacticStyle, toggle: &StyleToggl
 /// One numbers row's control (the draft's `.rate.tri`: `TRI_CHOICES`
 /// thirds of the half less the gaps, the picked one filled). The wheel
 /// over any choice moves the choice, up to the right (Few, Medium, Many)
-/// and down to the left, nothing past an end. A stored value outside 1-3
-/// (a hand-edited save) selects none and writes nothing until a choice
-/// is clicked; the wheel leaves it too.
+/// and down to the left, wrapping round to the other end past the last.
+/// A stored value outside 1-3 (a hand-edited save) selects none and
+/// writes nothing until a choice is clicked; the wheel leaves it too.
 fn number_choices(ui: &mut egui::Ui, sliders: &mut TacticSliders, spec: &SliderSpec) {
     ui.spacing_mut().item_spacing.x = CHOICE_GAP;
     ui.spacing_mut().button_padding = CHOICE_PADDING;
@@ -596,9 +599,9 @@ fn number_choices(ui: &mut egui::Ui, sliders: &mut TacticSliders, spec: &SliderS
         })
         .reduce(|left, right| left | right)
         .expect("a numbers toggle has three choices");
-    // Wheel up moves right, and `step_choice` steps up to an earlier item,
+    // Wheel up moves right, and `cycle_choice` steps up to an earlier item,
     // so it takes the steps negated over the choices in drawn order.
-    if let Some(next) = step_choice(1u8..=3, &value, -wheel_steps(ui, &control)) {
+    if let Some(next) = cycle_choice(1u8..=3, &value, -wheel_steps(ui, &control)) {
         value = next;
     }
     if value != (spec.get)(sliders) {

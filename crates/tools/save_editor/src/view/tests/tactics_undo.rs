@@ -731,6 +731,30 @@ fn a_substitution_pick_then_a_slider_drag_undo_as_two_entries() {
     );
 }
 
+/// The centre of the first `role` widget under `label`, where a wheel
+/// notch over the control lands.
+fn centre_below(nodes: &[accesskit::Node], label: &str, role: Role) -> egui::Pos2 {
+    let node = *widgets_below(nodes, label, role)
+        .first()
+        .unwrap_or_else(|| panic!("no {role:?} below {label:?}"));
+    centre(node)
+}
+
+/// One wheel notch (`up` or down) with the pointer at `at`: a pointer
+/// move and the wheel event in one frame.
+fn notch(window: &mut Headless, view: &mut SaveView, at: egui::Pos2, up: bool) {
+    let wheel = egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Line,
+        delta: egui::vec2(0.0, if up { 1.0 } else { -1.0 }),
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Wheel,
+        modifiers: egui::Modifiers::default(),
+    };
+    window.frame(vec![egui::Event::PointerMoved(at), wheel], |ui| {
+        show(ui, view, &|| Vec::new())
+    });
+}
+
 // ST-WHEEL-05
 #[test]
 fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
@@ -755,28 +779,10 @@ fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
     );
 
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    let below = |label: &str, role: Role| {
-        let node = *widgets_below(&nodes, label, role)
-            .first()
-            .unwrap_or_else(|| panic!("no {role:?} below {label:?}"));
-        centre(node)
-    };
-    let rail = below("Support range", Role::Slider);
-    let value_box = below("Support range", Role::SpinButton);
-    let attacking_style = below("Attacking style", Role::Button);
-    let numbers_in_attack = below("Numbers in attack", Role::Button);
-    let notch = |window: &mut Headless, view: &mut SaveView, at: egui::Pos2, up: bool| {
-        let wheel = egui::Event::MouseWheel {
-            unit: egui::MouseWheelUnit::Line,
-            delta: egui::vec2(0.0, if up { 1.0 } else { -1.0 }),
-            phase: egui::TouchPhase::Move,
-            source: egui::MouseWheelSource::Wheel,
-            modifiers: egui::Modifiers::default(),
-        };
-        window.frame(vec![egui::Event::PointerMoved(at), wheel], |ui| {
-            show(ui, view, &|| Vec::new())
-        });
-    };
+    let rail = centre_below(&nodes, "Support range", Role::Slider);
+    let value_box = centre_below(&nodes, "Support range", Role::SpinButton);
+    let attacking_style = centre_below(&nodes, "Attacking style", Role::Button);
+    let numbers_in_attack = centre_below(&nodes, "Numbers in attack", Role::Button);
 
     notch(&mut window, &mut view, rail, true);
     assert_eq!(
@@ -828,5 +834,58 @@ fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
     assert!(
         !view.session.as_ref().unwrap().can_undo(),
         "the four notches were the only edits"
+    );
+}
+
+// ST-WHEEL-05
+#[test]
+fn wheel_notches_wrap_round_at_the_toggles_ends() {
+    let path = fixture(PesVersion::Pes17, "tactics_wheel_wrap");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
+    open_team_view(&mut window, &mut view, 701);
+    let preset = |view: &SaveView| team_entry(view, 701).tactics.presets[0].clone();
+    assert!(
+        !preset(&view).style.attacking_style,
+        "premise: Counter Attack, the left choice, is held"
+    );
+    assert_eq!(
+        preset(&view).sliders.numbers_in_attack,
+        3,
+        "premise: Many, the rightmost choice, is held"
+    );
+
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let attacking_style = centre_below(&nodes, "Attacking style", Role::Button);
+    let numbers_in_attack = centre_below(&nodes, "Numbers in attack", Role::Button);
+
+    notch(&mut window, &mut view, attacking_style, true);
+    assert!(
+        preset(&view).style.attacking_style,
+        "a notch up takes Possession, the right choice"
+    );
+    notch(&mut window, &mut view, attacking_style, true);
+    assert!(
+        !preset(&view).style.attacking_style,
+        "a second notch up wraps round to Counter Attack"
+    );
+    notch(&mut window, &mut view, numbers_in_attack, false);
+    assert_eq!(
+        preset(&view).sliders.numbers_in_attack,
+        2,
+        "a notch down takes Medium, the choice left of Many"
+    );
+    notch(&mut window, &mut view, numbers_in_attack, false);
+    assert_eq!(
+        preset(&view).sliders.numbers_in_attack,
+        1,
+        "a second notch down takes Few, the leftmost"
+    );
+    notch(&mut window, &mut view, numbers_in_attack, false);
+    assert_eq!(
+        preset(&view).sliders.numbers_in_attack,
+        3,
+        "a third notch down wraps round to Many"
     );
 }
