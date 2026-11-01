@@ -6333,9 +6333,10 @@ briefs, review loops, gates and mutation runs as for any step.
     `painted_frame` shared with the width test, the lead's); `violations.rs`' module doc names
     its real consumers (Sc1-7); the nits Sb1-3, Sc1-5, Sc1-6. The plan's three corrections
     (Sc1-1 to Sc1-3) are the lead's. `live_aatf.rs`, `view/mod.rs`, its tests `live_aatf.rs`
-    and `savefile.rs`, `violations.rs`, `theme.rs`. Open: SWE-2 round 2, then `just
-    mutants-diff a47ecbbd^1` and `just mutants-diff f0d4553f crates/libs/team_widgets`, then
-    Astra
+    and `savefile.rs`, `violations.rs`, `theme.rs`. SWE-2 round 2 accepted 4 (S-cv28-30 r2:
+    two plan sentences and two glyph comments behind the code, a comment naming the old AATF
+    panel; the lead's fixes), which ends SWE-2's loop. Open: `just mutants-diff a47ecbbd^1`
+    and `just mutants-diff f0d4553f crates/libs/team_widgets`, then Astra over cv28-cv32
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84

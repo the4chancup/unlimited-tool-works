@@ -974,7 +974,7 @@ fn multi_team_aatfs_overflowing_list_is_360_points_tall() {
     let first_team = centre(
         dialog
             .iter()
-            .find(|node| node.value() == Some(first.as_str()))
+            .find(|node| node.role() == Role::Label && node.value() == Some(first.as_str()))
             .expect("the first team's line"),
     );
     let scroll_bar = centre(

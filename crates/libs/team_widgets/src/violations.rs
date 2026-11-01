@@ -7,9 +7,8 @@
 use pes_savefile::interchange::team_toml::labels::{card_name, stat_name, title_case};
 use pes_version::PesVersion;
 
-/// The failing glyph (`✖`, U+2716): egui's bundled emoji fonts hold
-/// it, and the theme keeps those fonts in the fallback chain. The icon
-/// font's subset does not hold it.
+/// The failing glyph (`✖`, U+2716): the suite's symbols font holds it.
+/// The icon font's subset does not.
 pub const CROSS: char = '\u{2716}';
 
 /// The gap between a Live AATF field mark's box and the label's text it

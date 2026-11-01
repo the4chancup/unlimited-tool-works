@@ -16,8 +16,8 @@ pub(crate) struct SaveEditorSettings {
     /// (`autumn26`, the default), or an imported copy's file name (`cup.4ccrules`) in the
     /// data folder's `rules/`. One that is gone falls back to the first built-in ruleset.
     pub(crate) aatf_ruleset: String,
-    /// The toolbar's Live AATF toggle; on, a docked panel lists the open team's violations
-    /// after every edit.
+    /// The toolbar's Live AATF toggle; on, the open team's violations list after every
+    /// edit, in the dock or its window.
     pub(crate) live_aatf: bool,
     /// Show suggestions, the checkbox beside the Live AATF toggle; on, Live AATF also lists
     /// each player's unused allowances.

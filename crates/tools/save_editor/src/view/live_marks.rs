@@ -14,8 +14,8 @@ use team_widgets::violations::{Wording, violation_line};
 use crate::view::aatf_check::{self, TeamsCheck};
 
 /// The passing glyph (`✔`, U+2714), the `✖`'s pair (`violations::CROSS`):
-/// egui's bundled emoji fonts hold them, and the theme keeps those fonts
-/// in the fallback chain. The icon font's subset holds neither.
+/// the suite's symbols font holds both. The icon font's subset holds
+/// neither.
 const TICK: char = '\u{2714}';
 
 /// A field's mark for a Warning, the warning sign (`⚠`, U+26A0).
