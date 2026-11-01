@@ -56,6 +56,23 @@ What exists of this is in `spec/team_compiler/messages.md` "Message structure".
 
 What exists of this is in `spec/team_compiler/messages.md` "Catalog".
 
+**With the full-look patch** (worklog 8.36c; `plans/pes_savefile/operations.md` "Aesthetics
+patch (new)"): `player_table_missing` and `savefile_player_not_stripped` go with the player
+tables and the stripped route; `settings_toml_invalid` and `ingame_face_toml_invalid` each
+leave out of the patch the player's `[appearance]` and every ID his settings would resolve
+(an authored stock ID, a marker's or a `Full` export's default), so the save keeps his look and
+his IDs, while his models still compile and an ID they or his links get still lands;
+`settings_model_id_conflict` and the name findings are reported on every engine, the patch
+carrying IDs and names on pre-Fox too (a referee export still reaches no patch). Three link
+rows join "Player folders and shared model folders", beside `shared_link_duplicate`
+(`plans/aesthetics_export/player_folders.md`, its base copy paragraph):
+
+| ID | Sev | Condition | Consequence |
+|---|---|---|---|
+| `copy_link_duplicate` | E | player folder holds more than one `<id>.copy` link (context: the links) | folder discarded (`DropFolder`) |
+| `copy_link_with_face` | E | a `<id>.copy` link beside a face of the player's own: a face model, a `.face` link or an `ingame_face.toml` (context: the link, the face) | folder discarded (`DropFolder`) |
+| `copy_link_id_invalid` | E | a `.copy` link whose name is not a number, is 0, or is the id of a player the folder maps to (context: the link) | folder discarded (`DropFolder`) |
+
 **Export level**
 
 | ID | Sev | Condition | Consequence |

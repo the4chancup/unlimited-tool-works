@@ -2759,6 +2759,35 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       S64-S66, S68, and GLOSSARY's D1 and D2), its Acceptance written first → verify: the
       gates; TC-SAV-12 (a PES 17 compile writes no patch) rewritten; the library parity's
       difference classes re-diagnosed
+      - [x] c0 the Acceptance (2026-11-01): `plans/team_compiler/README.md` "8.36c scope"
+        (TC-SAV-18 to 21, TC-STR-21, TC-BIN-50 to 62, TC-MOD-95 to 99, TC-REF-20, each
+        restating the spec scenario it names; TC-BIN-37 and TC-SAV-07 withdrawn when c2b
+        lands), `plans/save_editor.md` (SE-PAT-07 to 11), `plans/export_upgrader.md`
+        (EU-SET-12, 13); the `.copy` findings in `plans/team_compiler/messages.md`; three
+        DECISIONS entries (either invalid settings file holds back the whole look; a bad
+        `.copy` link drops its folder; a copy replaces the upgrader's generated in-game
+        face). Open: its review, SWE-2 rounds then Astra (checkpoint (a)); rulings
+        `.tmp/0_0_2/s36c/rulings_c0.md` (S1: 8 accepted)
+      - [ ] c1 the patch's look: `pes_savefile` and `apply-patch` (the patch's `[appearance]`,
+        `boots_id`/`gloves_id` over the field's 14 bits, `base_copy_id`; `PreFox` refused no
+        more; `apply` through `PlayerSettings::apply`, the own appearance id, the base copy
+        cleared or written, every value checked before the first write; the `from_player` →
+        `apply` → bytes guard), and the compiler's patch planning giving each compiled
+        player's whole `[appearance]` in place of its motions, none for an invalid file's
+        player, so the compile tests hold with the new format; the tables still written →
+        verify: SE-PAT-07 to 11, TC-SAV-18 (its appearance), 21, TC-BIN-60 to 62;
+        `pes_savefile`, `save_editor`, `team_compiler` tests
+      - [ ] c2a the compiler's IDs and pre-Fox: `boots_id`/`gloves_id` filled once the tasks'
+        outcomes are known, none an invalid file's settings would resolve; the patch on
+        pre-Fox → verify: TC-SAV-19, TC-BIN-50 to 59, TC-MOD-95 to 99 against the patch
+      - [ ] c2b the player tables go: the compiler's table writer, `player_table_missing`,
+        `savefile_player_not_stripped`, `pes_savefile`'s `player_tables` (`portrait_path`
+        moved), `appearance_row`; the spec scenarios c0 restates withdrawn, their tests
+        rewritten or removed (inventory C30-C43) → verify: the gates; no test installs a table
+      - [ ] c3 the `<id>.copy` link: the compiler's three checks and the patch's
+        `base_copy_id`; the upgrader's step 8 → verify: TC-STR-21, TC-SAV-20, EU-SET-12, 13
+      - [ ] c4 the spec moved (the inventory's S22-S54 …), help and catalog texts, the drafts'
+        message rows, the library parity re-run and its classes re-diagnosed
     - [ ] d in game, before 0.0.2 (PES 2021, then PES 2019, VGL 27's game, and PES 2017): a
       patch applied to an
       unstripped save shows the compiled look in Edit mode, boots and gloves included, on a

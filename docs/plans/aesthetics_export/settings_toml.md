@@ -26,8 +26,11 @@ ignores the file and the player compiles with the defaults in its keys' place, s
 appearance row is written from the defaults and his look resets in game while his models
 compile: one mistyped value loses every setting he had. Instead, the keys the invalid file
 would have set are left out of the compile, as a failed boots output leaves the installed ID:
-the patch holds no appearance entry for him, so the save keeps his record.
-`ingame_face.toml` and his models still apply as today. This is a
+the patch holds no appearance entry for him, so the save keeps his record. An invalid
+`ingame_face.toml` (`ingame_face_toml_invalid`) does the same, and either file invalid holds
+back both: their keys travel in the one `[appearance]` entry, which is written whole or not
+at all (`plans/pes_savefile/operations.md` "Aesthetics patch (new)"). His models still
+compile, and an ID they get still lands. This is a
 third exception to the spec's "his export and nothing else", beside a failed boots or gloves
 output and a `Midcup` export's defaulted categories, of the same kind: content the export
 failed to state keeps what is installed rather than a default nobody chose. The finding's

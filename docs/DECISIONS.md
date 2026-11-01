@@ -14971,3 +14971,49 @@ the rightmost. Combos, drag values and sliders stay clamped.
 Why: clamped, a toggle at an end answers one direction only, so a two-choice toggle ignored
 every notch but one way; a combo's long list still needs its ends to stop a fast turn.
 Plan: `plans/core/gui.md` "The wheel over a value", ST-WHEEL-05; worklog cv38.
+
+## 2026-11-01 — pes_savefile, team_compiler — either invalid settings file holds back the player's whole look
+Decision: a player whose `settings.toml` or `ingame_face.toml` is invalid gets no `[appearance]`
+in the aesthetics patch and no ID his settings would resolve (an authored stock ID or a
+default), so the save keeps his whole look; his models still compile and an ID they get still
+lands. The plan's earlier "`ingame_face.toml` still applies" beside an invalid `settings.toml`
+goes.
+Why (the maintainer): both findings are Errors, and what is left of a player after an Error
+matters little: the member has to fix the file and recompile. So the simplest fallback wins.
+Both files' keys travel in the one `[appearance]` entry, which `apply` writes whole; a
+partial entry would need a second write path that sets some keys and leaves others, for a case
+that is an Error the member reads and the next compile corrects. Writing the other file's keys
+over defaults would reset the keys the invalid file held, the loss the rule exists to avoid.
+Plan: `plans/pes_savefile/operations.md` "Aesthetics patch (new)",
+`plans/aesthetics_export/settings_toml.md`, `plans/team_compiler/messages.md`; TC-SAV-21.
+
+## 2026-11-01 — team_compiler — a bad `<id>.copy` link drops its player folder
+Decision: `copy_link_duplicate`, `copy_link_with_face` and `copy_link_id_invalid` are Errors
+dropping the player folder (`DropFolder`); an id equal to any player the folder maps to is
+invalid.
+Why: the other link rules (`shared_link_duplicate`, `ingame_face_explicit_face_model`) drop
+the folder, and a compile that guessed which face the member meant would show the wrong one
+without a word. A folder `players.txt` maps to several players writes one id to each, so an id
+that is one of theirs would copy a player onto himself.
+Plan: `plans/aesthetics_export/player_folders.md` (base copy paragraph),
+`plans/team_compiler/messages.md`; TC-STR-21.
+
+## 2026-11-01 — export_upgrader — a base copy replaces the in-game face the upgrader would generate
+Decision: a player whose record copies another gets the `<id>.copy` link in place of the
+`ingame_face.toml` the upgrader would generate from his record (no face folder, or the old
+`ingame_face` marker), with no Warning; only a face folder's model is "a face of his own"
+that keeps the copy out with `base_copy_beside_face`.
+Why: the game draws a copied face over the record's own, so the generated `ingame_face.toml`
+holds a face the cup never saw, and the two together would be refused by the compiler
+(`copy_link_with_face`). A face model is the member's own work, which the Warning leaves in
+place for them to choose.
+Plan: `plans/export_upgrader.md` "What it does"; EU-SET-12.
+
+## 2026-11-01 — pes_savefile — a patch's `[appearance]` is read whole or refused
+Decision: reading an aesthetics patch refuses an `[appearance]` missing a key the patch's
+version holds (`MissingKey`), and one holding a key the version lacks; absent keys are not
+filled with defaults as in `settings.toml`.
+Why: the patch is the compiler's output, written with every key; a missing key is a broken
+patch, or one from before the whole look (motions alone), and applying it with defaults would
+reset the player's other keys without a word.
+Plan: `plans/pes_savefile/operations.md` "Aesthetics patch (new)".
