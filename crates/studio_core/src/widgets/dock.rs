@@ -9,12 +9,18 @@ const MIN_HEIGHT: f32 = 60.0;
 /// The divider's grip, the draft's `.log-divider::after`: a line this wide and high.
 const GRIP_SIZE: egui::Vec2 = egui::vec2(24.0, 2.0);
 
-/// Paints the grip centred on `panel`'s top edge, where egui's resize edge is: egui
-/// shows that edge only under the pointer, so an open dock gave no sign it could be
-/// resized. Painted by the parent `Ui` after the panel, since the panel's own clips
-/// to its rect and would cut the half above the edge.
+/// Paints the grip centred across `panel`'s top edge, where egui's resize edge is:
+/// egui shows that edge only under the pointer, so an open dock gave no sign it
+/// could be resized. It lies just inside the panel, its top on the top edge,
+/// because it is painted by the parent `Ui` once the panel's rect is known, and a
+/// panel shown after the dock (the view above it) fills its own rect over
+/// anything drawn above that edge; egui's own separator line stays inside its
+/// panel for the same reason.
 fn paint_grip(ui: &egui::Ui, panel: egui::Rect) {
-    let grip = egui::Rect::from_center_size(egui::pos2(panel.center().x, panel.top()), GRIP_SIZE);
+    let grip = egui::Rect::from_min_size(
+        egui::pos2(panel.center().x - GRIP_SIZE.x / 2.0, panel.top()),
+        GRIP_SIZE,
+    );
     // The drafts' `--text`, the plain text grey.
     let color = ui.visuals().widgets.noninteractive.fg_stroke.color;
     ui.painter().rect_filled(grip, 1.0, color);

@@ -310,7 +310,7 @@ mod tests {
         assert_eq!(tool.help().topics.len(), 8);
     }
 
-    // The Set PES folder button's ask reaches the common settings on the
+    // The Set PES path button's ask reaches the common settings on the
     // frame it was made: the PES folder setting with its year as 20**.
     // SE-GUI-50
     #[test]
@@ -337,5 +337,31 @@ mod tests {
             expected
         );
         assert_eq!(tool.view.picked_pes_folder, None, "the ask was taken");
+    }
+
+    // The view's exe check is the context's, refreshed every `Tool::view`
+    // frame: the Set PES path button comes and goes with the sidebar's
+    // check, never with a verdict the view once held.
+    // SE-GUI-50
+    #[test]
+    fn the_view_takes_the_contexts_exe_check_each_frame() {
+        let dir = crate::test_support::scratch("lib_exe_check");
+        let (ctx, _events_rx, _requests_rx) =
+            crate::test_support::tool_context(&dir, studio_core::Settings::default());
+        assert_eq!(
+            ctx.pes_exe_check(),
+            None,
+            "premise: the sidebar has not run a check"
+        );
+        let mut tool = Tool::new();
+        tool.view.pes_exe_check = Some(studio_core::ExeCheck::Found);
+
+        let egui_ctx = egui::Context::default();
+        let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, &ctx));
+        output.drop_without_applying_deltas();
+        assert_eq!(
+            tool.view.pes_exe_check, None,
+            "the view's check is the context's"
+        );
     }
 }
