@@ -186,6 +186,67 @@ fn summary(checks: &[TeamCheck]) -> String {
     )
 }
 
+/// `<kind>: <label> <n>, ...` over `systems`, each a `(label shown, the
+/// system's word a check names)`, in `systems`' order, a system no team
+/// was read under left out; `None` when the ruleset has fewer than two of
+/// the kind (one system leaves no mix to break down) or none counts a
+/// team. `pick` reads the kind's field off a check (the medal or the
+/// height system); a team whose check failed counts toward none.
+fn kind_counts(
+    kind: &str,
+    systems: &[(&str, &str)],
+    checks: &[TeamCheck],
+    pick: impl Fn(&aatf::TeamCheck) -> Option<&str>,
+) -> Option<String> {
+    if systems.len() < 2 {
+        return None;
+    }
+    let named: Vec<String> = systems
+        .iter()
+        .filter_map(|(label, key)| {
+            let n = checks
+                .iter()
+                .filter(|check| check.as_ref().is_ok_and(|check| pick(check) == Some(*key)))
+                .count();
+            (n > 0).then(|| format!("{label} {n}"))
+        })
+        .collect();
+    (!named.is_empty()).then(|| format!("{kind}: {}", named.join(", ")))
+}
+
+/// The cup's mix (the draft's `multiAatfCounts`): how many of the
+/// checked teams were read under each medal system and each height
+/// system of `ruleset`, the kinds joined by ` · `, for the line above
+/// the list and the copied text's first. `None` when neither kind is
+/// left to show.
+fn system_counts(ruleset: &aatf::Ruleset, checks: &[TeamCheck]) -> Option<String> {
+    // A check names a medal system by its label and a height system by
+    // its id; both show the system's label.
+    let medals: Vec<(&str, &str)> = ruleset
+        .medal_systems
+        .iter()
+        .map(|system| (system.label.as_str(), system.label.as_str()))
+        .collect();
+    let heights: Vec<(&str, &str)> = ruleset
+        .heights
+        .systems
+        .iter()
+        .map(|system| (system.label.as_str(), system.id.as_str()))
+        .collect();
+    let parts: Vec<String> = [
+        kind_counts("Medal systems", &medals, checks, |check| {
+            check.medal_system.as_deref()
+        }),
+        kind_counts("Height systems", &heights, checks, |check| {
+            check.height_system.as_deref()
+        }),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+    (!parts.is_empty()).then(|| parts.join(" \u{b7} "))
+}
+
 /// The word a row's severity is written with in the copied text.
 fn severity_word(severity: aatf::Severity) -> &'static str {
     match severity {
@@ -212,7 +273,8 @@ fn group_line(file: &EditFile, team_id: u32, slot: Option<u8>) -> String {
 }
 
 /// The list as plain text, a line per row, the draft's `multiAatfText`:
-/// first the ruleset's `description`, the range and the error and warning
+/// first the systems' counts when the ruleset leaves any, then the
+/// ruleset's `description`, the range and the error and warning
 /// counts; then each team's id and name after a `>`, which a cup's thread
 /// draws as green text so each team stands out; under it `All clean`, or
 /// each player's id and name (the team's own rows under `Team-wide
@@ -235,7 +297,7 @@ fn copy_text(
     let violations: Vec<&aatf::Violation> = checks
         .iter()
         .filter_map(|check| check.as_ref().ok())
-        .flatten()
+        .flat_map(|check| &check.violations)
         .collect();
     let count = |severity: aatf::Severity| {
         violations
@@ -245,16 +307,17 @@ fn copy_text(
     };
     let first = key.ids.first().expect("a held result checked a team");
     let last = key.ids.last().expect("a held result checked a team");
-    let mut lines = vec![format!(
+    let mut lines: Vec<String> = system_counts(ruleset, checks).into_iter().collect();
+    lines.push(format!(
         "{description}, teams {first} to {last}: {}, {}",
         counted(count(aatf::Severity::Error), "error"),
         counted(count(aatf::Severity::Warning), "warning")
-    )];
+    ));
     let listed = rules::listed_players(file, &key.ids);
     for ((&id, check), players) in key.ids.iter().zip(checks).zip(&listed) {
         lines.push(format!(">{}", team_label(file, id)));
         let violations = match check {
-            Ok(violations) => violations,
+            Ok(check) => &check.violations,
             Err(error) => {
                 lines.push(format!("  The AATF check failed: {error}"));
                 continue;
@@ -337,6 +400,11 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 ui.weak("checking\u{2026}");
             }
         });
+        if let Some((_, checks)) = listed
+            && let Some(counts) = system_counts(active.rules.ruleset(), checks)
+        {
+            ui.label(counts);
+        }
         let stroke = ui.visuals().widgets.noninteractive.bg_stroke;
         let chrome = LIST_MARGIN.sum() + egui::Vec2::splat(2.0 * stroke.width);
         // A scope, so the dimming ends with the list's frame.
@@ -447,12 +515,15 @@ mod tests {
     }
 
     /// The copied text of 714 /co/ (clean) and 718 /f/ (a player's rows and
-    /// the team's own) under 4cc Autumn 26: the header with the counts, each
-    /// team's line after a `>`, `All clean` and the team's and the player's
-    /// lines indented two spaces, the team's first, each row four, and the
-    /// Tall quota's players (718's 185 cm players and its 189 cm goalkeeper,
-    /// read at 185, in roster order) six.
+    /// the team's own) under 4cc Autumn 26: the height systems' counts
+    /// first (714 reads under Green, 718 under Red), then the header with
+    /// the error and warning counts, each team's line after a `>`, `All
+    /// clean` and the team's and the player's lines indented two spaces,
+    /// the team's first, each row four, and the Tall quota's players
+    /// (718's 185 cm players and its 189 cm goalkeeper, read at 185, in
+    /// roster order) six.
     // SE-GUI-41
+    // SE-GUI-51
     #[test]
     fn the_copied_text_lists_each_team_after_a_marker_and_its_rows_indented() {
         let session = legal_714_and_short_71801("multi_aatf_copy_text");
@@ -469,6 +540,7 @@ mod tests {
         assert_eq!(
             text.lines().collect::<Vec<_>>(),
             [
+                "Height systems: Green 1, Red 1",
                 "4cc Autumn 26, teams 714 to 718: 6 errors, 0 warnings",
                 ">714 /co/",
                 "  All clean",
@@ -483,6 +555,125 @@ mod tests {
                 "    Error  Height  height 183 takes no bracket (185 has room)",
                 "    Error  Special rule  Tall goalkeepers are 189: GKs in this bracket must be 189cm",
             ]
+        );
+    }
+
+    /// An `Ok` check naming `medal` and `height`, no violations.
+    fn checked(medal: Option<&str>, height: Option<&str>) -> TeamCheck {
+        Ok(aatf::TeamCheck {
+            violations: Vec::new(),
+            medal_system: medal.map(str::to_owned),
+            height_system: height.map(str::to_owned),
+        })
+    }
+
+    /// DBC6's 47 cup teams under DBC7: the counts line names each medal
+    /// system and each height system at least one team was read under, in
+    /// the ruleset's order, the kinds joined by ` · ` — 868 matching no
+    /// medal system counts toward none — and narrowed to 857, its own
+    /// pair.
+    // SE-GUI-51
+    #[test]
+    fn the_counts_line_names_the_systems_the_teams_were_read_under() {
+        /// `(id, medal, height)`, `-` for none: the check's answers over
+        /// DBC6's save, teams 851 to 897.
+        const DBC6: [(u32, &str, &str); 47] = [
+            (851, "GGSS", "manlet"),
+            (852, "GGSS", "manlet"),
+            (853, "GSSSS", "giga"),
+            (854, "GSSSS", "manlet"),
+            (855, "GSSSS", "universal"),
+            (856, "GSSSS", "universal"),
+            (857, "GGSS", "manlet"),
+            (858, "GSSSS", "giga"),
+            (859, "GGSS", "universal"),
+            (860, "GSSSS", "height"),
+            (861, "GGSS", "manlet"),
+            (862, "GSSSS", "manlet"),
+            (863, "GGSS", "manlet"),
+            (864, "GGSS", "height"),
+            (865, "GSSSS", "manlet"),
+            (866, "GSSSS", "giga"),
+            (867, "GSSSS", "universal"),
+            (868, "-", "giga"),
+            (869, "GSSSS", "universal"),
+            (870, "GGSS", "manlet"),
+            (871, "GGSS", "height"),
+            (872, "GGSS", "universal"),
+            (873, "GSSSS", "manlet"),
+            (874, "GSSSS", "manlet"),
+            (875, "GGSS", "universal"),
+            (876, "GGG", "giga"),
+            (877, "GSSSS", "universal"),
+            (878, "GSSSS", "height"),
+            (879, "GSSSS", "manlet"),
+            (880, "GGG", "giga"),
+            (881, "GSSSS", "giga"),
+            (882, "GGSS", "giga"),
+            (883, "SSSSSS", "height"),
+            (884, "GGSS", "giga"),
+            (885, "GGSS", "universal"),
+            (886, "GGG", "giga"),
+            (887, "GGSS", "manlet"),
+            (888, "GGSS", "giga"),
+            (889, "GGSS", "manlet"),
+            (890, "GGG", "giga"),
+            (891, "GGSS", "universal"),
+            (892, "GSSSS", "height"),
+            (893, "GSSSS", "height"),
+            (894, "GGSS", "universal"),
+            (895, "GGSS", "giga"),
+            (896, "GGSS", "giga"),
+            (897, "GSSSS", "height"),
+        ];
+        assert!(
+            DBC6.iter()
+                .enumerate()
+                .all(|(i, (id, ..))| *id == 851 + i as u32),
+            "premise: the table runs 851 to 897"
+        );
+        let choice = rules::resolve("dbc7", &[]);
+        let checks: Vec<TeamCheck> = DBC6
+            .iter()
+            .map(|(_, medal, height)| {
+                checked(
+                    (*medal != "-").then_some(*medal),
+                    (*height != "-").then_some(*height),
+                )
+            })
+            .collect();
+        assert_eq!(
+            system_counts(choice.rules.ruleset(), &checks).as_deref(),
+            Some(
+                "Medal systems: GGG 4, GGSS 21, GSSSS 20, SSSSSS 1 \u{b7} \
+                 Height systems: Height 8, Manlet 14, Universal 11, GigaHeight 14"
+            )
+        );
+        let at = DBC6
+            .iter()
+            .position(|(id, ..)| *id == 857)
+            .expect("857 is in the table");
+        assert_eq!(
+            system_counts(choice.rules.ruleset(), &checks[at..=at]).as_deref(),
+            Some("Medal systems: GGSS 1 \u{b7} Height systems: Manlet 1")
+        );
+    }
+
+    /// The official ruleset holds no medal systems, so the line is the
+    /// height systems' alone — 893's Green and 702's Red — and a team
+    /// whose check failed counts toward none.
+    // SE-GUI-51
+    #[test]
+    fn a_ruleset_with_no_medal_systems_lists_the_height_systems_alone() {
+        let choice = rules::resolve("autumn26", &[]);
+        let checks = vec![
+            checked(None, Some("green")),
+            checked(None, Some("red")),
+            Err("the script threw".to_owned()),
+        ];
+        assert_eq!(
+            system_counts(choice.rules.ruleset(), &checks).as_deref(),
+            Some("Height systems: Green 1, Red 1")
         );
     }
 
