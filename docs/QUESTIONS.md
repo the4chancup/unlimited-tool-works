@@ -12,10 +12,13 @@ names where the question came from so the context can be read there.
 
 - **The final pass over the built app's UI** (worklog 0.0.1f1c). Any change it asks for is
   drafted first, looked at in the drafts, then built.
-  - **The candidate:** 0.0.1f, branch `release/0.0.1-candidate` at `e39e0a9d`, unpacked at
-    `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1f\unlimited-tool-works-0.0.1\`
+  - **The candidate:** 0.0.1g, branch `release/0.0.1-candidate` at `4dcef0a8`, unpacked at
+    `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1g\unlimited-tool-works-0.0.1\`
     (`COMMIT.txt` beside the folder names its commit; the .7z beside it), full gates green
-    (5584 tests). New since 0.0.1e: the wheel over a Tactics toggle (the style pairs, Few/
+    (5590 tests). New since 0.0.1f (worklog f1d): a Team TOML's `bench_order` lists the bench's
+    12, its import fills the other nine as the game does, and its comments read as plain
+    sentences; under DBC7 (illegal formations) every advanced-instruction combo lists both
+    sides, Tight Marking still left out. New in 0.0.1f, since 0.0.1e: the wheel over a Tactics toggle (the style pairs, Few/
     Medium/Many) wraps round at its ends instead of stopping, as you asked (cv38); the lead
     checked it in the staged exe (DBC6's save read-only: Counter Attack, a notch down,
     Possession; Medium, two notches up, Many then Few). New in 0.0.1e, since 0.0.1d (worklog cv23a, cv27-cv37): the Cards left badge computed
