@@ -940,10 +940,7 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         // beside the menus.
         if ui
             .add(egui::Button::new("\u{25b6} Live AATF").selected(view.live_aatf))
-            .on_hover_text(
-                "Check the open team after every edit, in a panel at the bottom (the setting is \
-                 remembered)",
-            )
+            .on_hover_text("Check the open team after every edit (the setting is remembered)")
             .clicked()
         {
             surrender_focus(ui);

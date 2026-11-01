@@ -881,6 +881,31 @@ fn a_resting_range_asks_for_the_frames_its_check_needs() {
     );
 }
 
+/// The smallest painted rectangle of `fill` holding every one of `points`: a
+/// frame as drawn, border included. A frame with a shadow paints as a
+/// `Shape::Vec` of the shadow and the rectangle, so nested shapes count too.
+fn painted_frame(
+    shapes: &[egui::epaint::ClippedShape],
+    fill: egui::Color32,
+    points: &[egui::Pos2],
+) -> egui::Rect {
+    let mut rects = Vec::new();
+    let mut stack: Vec<&egui::Shape> = shapes.iter().map(|clipped| &clipped.shape).collect();
+    while let Some(shape) = stack.pop() {
+        match shape {
+            egui::Shape::Rect(rect) => rects.push(rect),
+            egui::Shape::Vec(inner) => stack.extend(inner),
+            _ => {}
+        }
+    }
+    rects
+        .iter()
+        .filter(|rect| rect.fill == fill && points.iter().all(|&p| rect.rect.contains(p)))
+        .map(|rect| rect.rect)
+        .min_by(|a, b| a.area().total_cmp(&b.area()))
+        .unwrap_or_else(|| panic!("no frame of {fill:?} around {points:?}"))
+}
+
 /// Multi-team AATF's dialog is 900 points wide, its list 874 of them (the
 /// modal's padding and border around it), so a height row's sentence and
 /// its players' lines have room.
@@ -907,25 +932,7 @@ fn multi_team_aatf_is_900_points_wide() {
             .expect("the title"),
     );
     let first_combo = centre(range_combos(&pairs)[0]);
-    // A frame with a shadow paints as a `Shape::Vec` of the shadow and the
-    // rectangle.
-    let mut rects = Vec::new();
-    let mut stack: Vec<&egui::Shape> = shapes.iter().map(|clipped| &clipped.shape).collect();
-    while let Some(shape) = stack.pop() {
-        match shape {
-            egui::Shape::Rect(rect) => rects.push(rect),
-            egui::Shape::Vec(inner) => stack.extend(inner),
-            _ => {}
-        }
-    }
-    let painted = |fill: egui::Color32, points: &[egui::Pos2]| {
-        rects
-            .iter()
-            .filter(|rect| rect.fill == fill && points.iter().all(|&p| rect.rect.contains(p)))
-            .map(|rect| rect.rect)
-            .min_by(|a, b| a.area().total_cmp(&b.area()))
-            .unwrap_or_else(|| panic!("no frame of {fill:?} around {points:?}"))
-    };
+    let painted = |fill, points: &[egui::Pos2]| painted_frame(&shapes, fill, points);
     let dialog = painted(visuals.window_fill(), &[title, first_combo]);
     assert!(
         (dialog.width() - 900.0).abs() <= 0.5,
@@ -940,6 +947,51 @@ fn multi_team_aatf_is_900_points_wide() {
         (list.width() - 874.0).abs() <= 0.5,
         "the list's outer width: {}",
         list.width()
+    );
+}
+
+/// Multi-team AATF's list is 360 points tall, border included, when its
+/// rows overflow it (the PES 17 sample's every team): it scrolls rather
+/// than growing or shrinking.
+#[test]
+fn multi_team_aatfs_overflowing_list_is_360_points_tall() {
+    let path = fixture(PesVersion::Pes17, "multi_aatf_height");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    let ids = all_team_ids(&view);
+    let (first, last) = {
+        let file = view.session.as_ref().expect("the save opened").file();
+        let name = |id: u32| format!("{id} {}", display_name(&file.team(id).unwrap().name));
+        (name(ids[0]), name(ids[ids.len() - 1]))
+    };
+    multi_checked(&mut window, &mut view, &ids[..1]);
+    pick_range_end(&mut window, &mut view, 1, &last);
+    multi_checked(&mut window, &mut view, &ids);
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let dialog = super::prompt::dialog_nodes(&pairs, MULTI_TITLE);
+    let first_team = centre(
+        dialog
+            .iter()
+            .find(|node| node.value() == Some(first.as_str()))
+            .expect("the first team's line"),
+    );
+    let scroll_bar = centre(
+        dialog
+            .iter()
+            .find(|node| node.role() == Role::ScrollBar)
+            .expect("premise: the rows overflow the list, so it draws a scroll bar"),
+    );
+    // The list's frame as painted: the extreme background holding both the
+    // first team's line and the scroll bar (the player list's well behind
+    // the modal holds the line alone).
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let list = painted_frame(&shapes, visuals.extreme_bg_color, &[first_team, scroll_bar]);
+    assert!(
+        (list.height() - 360.0).abs() <= 1.0,
+        "the list's outer height: {}",
+        list.height()
     );
 }
 

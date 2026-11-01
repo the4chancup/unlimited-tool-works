@@ -1,7 +1,8 @@
 //! The AATF results list, drafted in `docs/prototypes/tools/save_editor.js`
-//! (`aatfPanel`, `violationSentence`, `violationDetail`, `playerHead`): one team's check grouped
-//! per player, a row's click reporting the player to select. The AATF panel,
-//! the Live AATF dock and the Team creator all draw this list.
+//! (`liveList`, `violationSentence`, `violationDetail`, `playerHead`): one team's check grouped
+//! per player, a row's click reporting the player to select. Live AATF's
+//! dock and its window, Multi-team AATF's report and the Team creator
+//! (planned) draw this list.
 
 use pes_savefile::interchange::team_toml::labels::{card_name, stat_name, title_case};
 use pes_version::PesVersion;
@@ -3269,7 +3270,7 @@ mod tests {
     }
 
     /// Team 734 with its two short bench players: hovering a player's row
-    /// (73401's `Height`) shows `Click to switch to this player`, what its
+    /// (a `Height` one) shows `Click to switch to this player`, what its
     /// click does, and hovering a team-wide row (its Gold tier count)
     /// shows no tooltip.
     // SE-GUI-30
