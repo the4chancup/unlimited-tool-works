@@ -6181,8 +6181,11 @@ briefs, review loops, gates and mutation runs as for any step.
       tests); `team_widgets` `violation_detail` and `row`, `save_editor` `session/rules.rs`
       `listed_players` (shared by the list, the copy and the CLI), `messages.rs`, `multi_aatf.rs`;
       /tsab/ and /暁Records/ print `.tmp/0_0_2/cv16b_expected.txt`. Reviews: SWE-2 r1 4, Astra
-      r1 3 (`a4bfe41b`, `02f5d027`), SWE-2 r2 0 (`.tmp/0_0_2/rulings_cv16.md`). Open:
-      `mutants-diff f0d4553f`
+      r1 3 (`a4bfe41b`, `02f5d027`), SWE-2 r2 0 (`.tmp/0_0_2/rulings_cv16.md`). `mutants-diff
+      f0d4553f` (cv16-cv26) ran: two survivors in `multi_aatf.rs` `dialog`, one equivalent, one
+      a missing list-height test for the rework (`.tmp/0_0_2/triage_cv18_26.md`); team_widgets'
+      local half never started (cv28's merge edited the crate under it): rerun from f0d4553f
+      at the cv28-cv30 loop's end
       - manual: checked 2026-10-31 (release build of `7111fb08`, DBC6 save under DBC7, its hash
         unchanged): Live AATF on 893 and 897 draws every line of `cv16b_expected.txt` under its
         row, the long Tall line wrapping back to the sentence's column; captures
