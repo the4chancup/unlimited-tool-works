@@ -507,6 +507,7 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
                 check
                     .as_ref()
                     .expect("every sample team checks")
+                    .violations
                     .iter()
                     .any(|violation| {
                         matches!(
@@ -543,6 +544,44 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
     );
     let listed: Vec<&String> = names.iter().filter(|name| lines.contains(name)).collect();
     assert_eq!(listed, ["734 /lit/"], "734 alone is listed");
+}
+
+/// The line above the list counts the systems the checked teams were read
+/// under: Autumn 26 holds two height systems and no medal ones, and 706
+/// reads under Red, 707 under Green, so the range 706 to 707 draws
+/// `Height systems: Green 1, Red 1` between the summary and the teams.
+// SE-GUI-51
+#[test]
+fn the_counts_line_lists_the_systems_the_range_was_read_under() {
+    let path = fixture(PesVersion::Pes17, "multi_aatf_counts");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    let label =
+        |view: &SaveView, id: u32| format!("{id} {}", display_name(&team_entry(view, id).name));
+    let (first, last) = (label(&view, 706), label(&view, 707));
+    pick_range_end(&mut window, &mut view, 0, &first);
+    pick_range_end(&mut window, &mut view, 1, &last);
+    let pairs = multi_checked(&mut window, &mut view, &[706, 707]);
+    let lines = multi_lines(&pairs);
+    let counts = "Height systems: Green 1, Red 1".to_owned();
+    assert!(
+        lines.contains(&counts),
+        "the counts line is drawn: {lines:?}"
+    );
+    let at = lines.iter().position(|line| *line == counts).unwrap();
+    let summary = lines
+        .iter()
+        .position(|line| line.contains("checked,"))
+        .expect("the summary line");
+    assert!(summary < at, "the counts sit below the summary: {lines:?}");
+    // `rposition`: the first end's combo carries the same label, higher.
+    let first = lines
+        .iter()
+        .rposition(|line| line.starts_with("706 "))
+        .expect("the list's first team");
+    assert!(at < first, "the counts sit above the list: {lines:?}");
 }
 
 /// The popup items of the dialog's team combo `nth` from the left, top to
@@ -1034,6 +1073,7 @@ fn a_reopened_multi_team_aatf_keeps_its_range() {
 /// the PES 17 sample holds no clean team under 4cc Autumn 26), and Copy
 /// to clipboard says how many teams it copied.
 // SE-GUI-41
+// SE-GUI-51
 #[test]
 fn a_clean_team_reads_all_clean_and_copy_names_the_teams_copied() {
     let (mut view, mut window) = open_legal_714("multi_aatf_clean", Headless::new());
@@ -1062,9 +1102,13 @@ fn a_clean_team_reads_all_clean_and_copy_names_the_teams_copied() {
         Some("Copied the results of 5 teams.")
     );
     let copied_lines: Vec<&str> = text.lines().collect();
+    assert_eq!(
+        copied_lines[0], "Height systems: Green 2, Red 3",
+        "the first line counts the systems the range read under"
+    );
     assert!(
-        copied_lines[0].starts_with("4cc Autumn 26, teams 714 to 718: "),
-        "the first line names the ruleset and the range: {text}"
+        copied_lines[1].starts_with("4cc Autumn 26, teams 714 to 718: "),
+        "the second line names the ruleset and the range: {text}"
     );
     let teams: Vec<&str> = copied_lines
         .iter()
@@ -1129,6 +1173,7 @@ fn a_failed_teams_check_is_named_with_its_error_and_the_others_listed() {
         checks[1]
             .as_ref()
             .expect("premise: 744's check runs")
+            .violations
             .iter()
             .filter(|violation| violation.severity != aatf::Severity::Suggestion)
             .count()

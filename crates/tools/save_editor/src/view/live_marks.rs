@@ -53,7 +53,7 @@ pub(super) fn held_violations<'a>(
     let [team_id] = key.ids.as_slice() else {
         return None;
     };
-    let [Ok(violations)] = checks.as_slice() else {
+    let [Ok(check)] = checks.as_slice() else {
         return None;
     };
     let is_suggestion =
@@ -61,10 +61,11 @@ pub(super) fn held_violations<'a>(
     // Borrowed unless there is a suggestion to leave out: the copy is made
     // only on the frames between the checkbox turning off and the check
     // that leaves them out returning.
-    if suggestions || !violations.iter().any(is_suggestion) {
-        return Some((*team_id, Cow::Borrowed(violations)));
+    if suggestions || !check.violations.iter().any(is_suggestion) {
+        return Some((*team_id, Cow::Borrowed(&check.violations)));
     }
-    let shown = violations
+    let shown = check
+        .violations
         .iter()
         .filter(|violation| !is_suggestion(violation))
         .cloned()
