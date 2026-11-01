@@ -17,10 +17,13 @@ in the bundle.
 Every refusal prints one `error: <what>` line on stderr and exits 1: a platform that is not
 Windows, a version that is not the workspace's, a readme whose first line names another
 version, an archive that already exists (a release is never overwritten), a dirty tree, a
-`--help` with no usage line, an exe that still holds one of the remapped paths or names
-`VCRUNTIME140.dll` (the `--config` flags replaced `+crt-static` instead of joining it), a launcher it ships (none in 0.0.1) that does not call the exe's
-name, a 7-Zip that cannot be found, and a listing that differs from the staged set (that
-archive is left for inspection). The pure helpers take their input as text so
+`cargo build` that fails, a `--help` with no usage line, an exe that still holds one of the
+remapped paths or names `VCRUNTIME140.dll` (the `--config` flags replaced `+crt-static`
+instead of joining it), a launcher it ships (none in 0.0.1) that does not call the exe's
+name, a 7-Zip that cannot be found or whose `a` fails, a `cargo-about` that cannot be found,
+whose `generate` fails or that lists no third-party crate, a `.pdb` missing beside the built
+exe, and a listing that differs from the staged set (that archive is left for inspection).
+The pure helpers take their input as text so
 `release_test.py` can call them without git, cargo or 7-Zip.
 """
 
@@ -48,9 +51,16 @@ PACKAGE = "unlimited-tool-works"
 # `quick_upgrade.bat` again, with the empty `exports/` and `old_exports/` they work in.
 LAUNCHERS: tuple[str, ...] = ()
 EMPTY_FOLDERS: tuple[str, ...] = ()
-# The repository's license files, shipped in the bundle's `licenses/` folder: members open the
-# exe and the readme, so the top folder keeps to those.
-LICENSES = ("LICENSE-MIT", "LICENSE-APACHE")
+# The license files the bundle's `licenses/` folder ships, each staged under its file name:
+# members open the exe and the readme, so the top folder keeps to those. The last two cover
+# works the suite bundles outside a crate (the Roboto Flex font, the icon outlines taken
+# from Phosphor), which cargo-about's notices cannot list.
+LICENSES = (
+    "LICENSE-MIT",
+    "LICENSE-APACHE",
+    "resources/fonts/RobotoFlex-OFL.txt",
+    "resources/icons/PHOSPHOR-LICENSE.txt",
+)
 # Beside them, the notices of the crates and fonts the exe contains (`write_notices`).
 NOTICES = "THIRD-PARTY-NOTICES.txt"
 
@@ -96,7 +106,7 @@ def expected_entries(name: str, version: str) -> set[str]:
         f"{top}/{name}.exe",
         f"{top}/README.txt",
         f"{top}/licenses",
-        *(f"{top}/licenses/{license_file}" for license_file in (*LICENSES, NOTICES)),
+        *(f"{top}/licenses/{Path(license_file).name}" for license_file in (*LICENSES, NOTICES)),
         f"{top}/data",
         f"{top}/data/settings.toml",
         *(f"{top}/{launcher}" for launcher in LAUNCHERS),
@@ -140,15 +150,17 @@ def about_config(deny_toml: str) -> str:
 
 
 def copyright_lines(text: str, shared: set[str]) -> list[str]:
-    """A license copy's own notices: lines opening with "Copyright", "(c)" or "©" that are
-    not in every copy of the license (`shared`). A license's body has such lines too, the
-    font license's "Copyright Holder(s)" definition among them, and they are in every copy;
-    placeholders are license text as well (the Apache appendix's, an MIT template left
-    unfilled)."""
+    """A license copy's own notices: lines opening with "Copyright", "(c) <year>" or "©"
+    that are not in every copy of the license (`shared`). "(c)" counts only with a year
+    after it: Apache-2.0's and MPL-2.0's bodies open lettered clauses with "(c)", which a
+    copy missing the clause would leave unshared and printed as a crate's notice. A
+    license's body has such lines too, the font license's "Copyright Holder(s)" definition
+    among them, and they are in every copy; placeholders are license text as well (the
+    Apache appendix's, an MIT template left unfilled)."""
     return [
         line.strip() for line in text.splitlines()
-        if re.match(r"\s*(Copyright\b|\([cC]\)|©)", line) and line.strip() not in shared
-        and "[yyyy]" not in line and "<year>" not in line
+        if re.match(r"\s*(Copyright\b|\([cC]\)\s*\d|©)", line) and line.strip() not in shared
+        and not any(marker in line for marker in ("[yyyy]", "{yyyy}", "<year>"))
     ]
 
 
@@ -158,7 +170,8 @@ def third_party_notices(about: dict, workspace: Path) -> str:
     it with the copyright lines its own copy states, which are what the licenses ask to keep.
     cargo-about lists a license once per distinct text, and copies of MIT differ in their
     copyright line alone (117 entries for MIT in 0.0.1's graph). The workspace's own crates
-    are left out: the bundle's two license files cover them."""
+    are left out: the bundle's two license files cover them. A graph with no third-party
+    crate at all is refused: the header alone would ship as the notices file."""
     by_id: dict[str, list[dict]] = {}
     for variant in about["licenses"]:
         by_id.setdefault(variant["id"], []).append(variant)
@@ -184,8 +197,10 @@ def third_party_notices(about: dict, workspace: Path) -> str:
             line for line in common["text"].splitlines() if line.strip() not in notices
         )
         text = re.sub(r"\n\s*\n(\s*\n)+", "\n\n", text).strip()
-        sections.append((len(crates), common["name"], sorted(crates), text))
+        sections.append((len(crates), common["name"], sorted(set(crates)), text))
     sections.sort(key=lambda section: -section[0])
+    if not sections:
+        raise Refusal("cargo-about listed no third-party crate")
     out = [
         "Third-party notices\n\nThis program contains the open-source software below, grouped "
         "by license: each license's\npackages with their copyright notices, then the license's "
@@ -244,6 +259,15 @@ def rustflags_config(flags: list[str]) -> str:
     return f"target.x86_64-pc-windows-msvc.rustflags=[{', '.join(map(json.dumps, flags))}]"
 
 
+def build_args(flags: list[str]) -> list[str]:
+    """The `cargo build` argv `release()` and `build_remapped.py` share, so a flag cannot
+    change in one and leave a candidate built unlike the release."""
+    return [
+        "cargo", "build", "--release", "--locked", "-p", "studio",
+        "--config", rustflags_config(flags),
+    ]
+
+
 def leaked_prefixes(exe: bytes, prefixes: list[str]) -> list[str]:
     # Windows paths match whatever their case and either separator.
     folded = exe.lower().replace(b"/", b"\\")
@@ -256,6 +280,33 @@ def leaked_prefixes(exe: bytes, prefixes: list[str]) -> list[str]:
 
 def links_crt_dynamically(exe: bytes) -> bool:
     return b"vcruntime140" in exe.lower()
+
+
+def machine_prefixes(target: Path) -> list[str]:
+    """The build machine's paths the shipped exe must not hold: the home folder,
+    `CARGO_HOME` and `RUSTUP_HOME` when set, the repository and cargo's target directory,
+    in `remap_flags`' order."""
+    prefixes = [
+        str(Path.home()),
+        os.environ.get("CARGO_HOME"),
+        os.environ.get("RUSTUP_HOME"),
+        str(ROOT),
+        str(target),
+    ]
+    return [prefix for prefix in prefixes if prefix]
+
+
+def check_exe(exe: Path, prefixes: list[str]) -> None:
+    """Refuses the built `exe` when a path the remap should have taken out is still in it,
+    or when it links the C runtime dynamically (the `--config` flags replaced `+crt-static`
+    instead of joining it). `release()`, `build_remapped.py` and `make_candidate.py` all run
+    it: a candidate ships only what a release would."""
+    built = exe.read_bytes()
+    leaked = leaked_prefixes(built, prefixes)
+    if leaked:
+        raise Refusal(f"{exe} still holds the build machine's paths: {', '.join(leaked)}")
+    if links_crt_dynamically(built):
+        raise Refusal(f"{exe} names VCRUNTIME140.dll: the C runtime is not linked statically")
 
 
 def target_dir() -> Path:
@@ -304,30 +355,11 @@ def release(version: str) -> None:
     cargo_home = os.environ.get("CARGO_HOME")
     rustup_home = os.environ.get("RUSTUP_HOME")
     flags = remap_flags(home, cargo_home, rustup_home, str(ROOT), str(target))
-    build = subprocess.run(
-        [
-            "cargo",
-            "build",
-            "--release",
-            "--locked",
-            "-p",
-            "studio",
-            "--config",
-            rustflags_config(flags),
-        ],
-        cwd=ROOT,
-    )
+    build = subprocess.run(build_args(flags), cwd=ROOT)
     if build.returncode != 0:
         raise Refusal("cargo build --release --locked -p studio failed")
     exe = target / "release/utw.exe"
-    built = exe.read_bytes()
-    leaked = leaked_prefixes(
-        built, [p for p in (home, cargo_home, rustup_home, str(ROOT), str(target)) if p]
-    )
-    if leaked:
-        raise Refusal(f"{exe} still holds the build machine's paths: {', '.join(leaked)}")
-    if links_crt_dynamically(built):
-        raise Refusal(f"{exe} names VCRUNTIME140.dll: the C runtime is not linked statically")
+    check_exe(exe, machine_prefixes(target))
     help_text = subprocess.run(
         [str(exe), "--help"], cwd=ROOT, capture_output=True, text=True
     ).stdout
@@ -354,7 +386,7 @@ def release(version: str) -> None:
         )
         (top / "licenses").mkdir()
         for license_file in LICENSES:
-            shutil.copyfile(ROOT / license_file, top / "licenses" / license_file)
+            shutil.copyfile(ROOT / license_file, top / "licenses" / Path(license_file).name)
         write_notices(top / "licenses" / NOTICES)
         for folder in EMPTY_FOLDERS:
             (top / folder).mkdir()
