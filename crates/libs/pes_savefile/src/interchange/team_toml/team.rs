@@ -1410,7 +1410,10 @@ mod tests {
             let doc = TeamToml::parse(document).expect("parses");
             doc.apply(PesVersion::Pes17, &mut target, &mut [])
                 .expect("applies");
-            assert_eq!(target.tactics.bench_order, expected, "{document}");
+            assert_eq!(
+                target.tactics.bench_order, expected,
+                "{document} target eleven {target_eleven:?}"
+            );
         }
     }
 

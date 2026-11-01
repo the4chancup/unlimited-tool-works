@@ -604,7 +604,8 @@ pub fn shirt_name_from(name: &str, version: PesVersion) -> String;
 
 Rules of `apply`: `pes_version` absent means "the target's version" (no conversion); a
 `bench_order` writes its twelve and refills the record's other nine as the game writes them
-(the roster slots from 0 that neither the eleven nor the twelve name, ascending); the
+(the roster slots from 0 that neither the eleven nor the twelve name, ascending, the eleven
+being the file's `starting_eleven` when it has one, the record's else); the
 `appearance` table's keys alone, each as its stored value (a key the table lacks keeps
 its value: "absent = untouched", where `settings.toml` and the patch write every field),
 go through `settings_toml`'s shared writer, the run's measured-unused bits keeping the
