@@ -16,7 +16,7 @@ use crate::help::HelpTarget;
 use crate::pes_process::RunningPes;
 use crate::settings::CommonSettings;
 use crate::status::{ActionEffect, Notice, NoticeAction, NoticeKind};
-use crate::tool::{PlannedTool, ShellRequest, StudioTool, ToolContext};
+use crate::tool::{ExeCheck, PlannedTool, ShellRequest, StudioTool, ToolContext};
 use crate::widgets::{add_enabled_ui, step_choice, wheel_steps};
 
 #[cfg(test)]
@@ -175,20 +175,6 @@ impl Default for Sidebar {
             next_poll: None,
         }
     }
-}
-
-/// What the exe check's last directory listing found (ST-SIDE-03): the selector is red on
-/// `OtherVersion`, orange on `NoExe` and `NoFolder`, uncolored on `Found`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum ExeCheck {
-    /// The resolved PES folder holds the selected version's exe.
-    Found,
-    /// It exists but holds a different version's exe (wrong selection or wrong path).
-    OtherVersion(PesVersion),
-    /// It exists but holds no `PES20NN.exe` at all.
-    NoExe,
-    /// It does not exist (or cannot be listed).
-    NoFolder,
 }
 
 impl Sidebar {
@@ -520,6 +506,7 @@ impl Sidebar {
         let blocker = version_blocker(args.tools);
         let folder = common.pes_folder();
         let check = self.exe_check(&common, ui.input(|input| input.focused));
+        args.ctx.set_pes_exe_check(check);
         let tooltip = exe_tooltip(check, &folder);
 
         let mut picked = common.pes_version;

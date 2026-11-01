@@ -20,6 +20,7 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::PLAYABLE_POSITIONS;
 use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::names::display_name;
+use studio_core::ExeCheck;
 use studio_core::widgets::{checkbox, menu_button};
 use team_widgets::pitch::{self, FORMATIONS};
 use team_widgets::tactics::{self, FieldedMark, Medal, RosterRow};
@@ -43,6 +44,13 @@ const ROW_GAP: f32 = 6.0;
 /// tallest item is the preset selector's `.row`, 17 points with a 3-point
 /// margin above and below, so the bar is 5 taller than its buttons.
 const BAR_HEIGHT: f32 = 23.0;
+/// The Set PES folder button's insets from the pitch canvas' right and
+/// bottom edges (the draft's `#set-pes-folder`): its bottom on the
+/// formation name's baseline, across the pitch from it.
+const SET_FOLDER_RIGHT: f32 = 7.0;
+const SET_FOLDER_BOTTOM: f32 = 6.0;
+/// The Set PES folder button's hover text.
+const SET_FOLDER_TIP: &str = "The players' portraits are read from the PES folder";
 
 /// One roster slot's row data before the `RosterRow`s borrow it: the
 /// display name, the raw name, the registered position, the thirteen
@@ -98,6 +106,9 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         live,
         live_aatf,
         live_suggestions,
+        pes_exe_check,
+        picked_pes_folder,
+        pick_folder_dialog,
         ..
     } = view;
     let Some(session) = session.as_mut() else {
@@ -298,6 +309,20 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             &roster,
             illegal_formations,
         );
+        // While the PES selector is orange or red the portraits come from no
+        // folder or from another game's, so the pitch offers to set it. Drawn
+        // after the pitch, so it takes a press over the markers and no
+        // formation picture carries it.
+        if pes_exe_check.is_some_and(|check| check != ExeCheck::Found) {
+            let canvas =
+                egui::Rect::from_min_size(egui::pos2(pitch_left, row2_top), pitch::PITCH_BOX)
+                    .shrink(1.0);
+            if set_pes_folder_button(ui, canvas)
+                && let Some(folder) = pick_folder_dialog()
+            {
+                *picked_pes_folder = Some(folder);
+            }
+        }
         let mut assigns_ui = cell(
             ui,
             assigns_left,
@@ -383,6 +408,25 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             );
         }
     });
+}
+
+/// The Set PES folder button in the pitch `canvas`' bottom-right corner,
+/// its right edge `SET_FOLDER_RIGHT` in from the canvas' and its bottom
+/// `SET_FOLDER_BOTTOM` up from the canvas' bottom. Answers whether it was
+/// clicked.
+fn set_pes_folder_button(ui: &mut egui::Ui, canvas: egui::Rect) -> bool {
+    let corner = egui::Rect::from_min_max(
+        canvas.min,
+        canvas.max - egui::vec2(SET_FOLDER_RIGHT, SET_FOLDER_BOTTOM),
+    );
+    ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(corner)
+            .layout(egui::Layout::bottom_up(egui::Align::Max)),
+    )
+    .button("Set PES folder")
+    .on_hover_text(SET_FOLDER_TIP)
+    .clicked()
 }
 
 /// The preset bar's Copy/swap menu (the draft's `presetMenu`): acting on
