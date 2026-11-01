@@ -1314,3 +1314,42 @@ fn a_legal_teams_check_names_its_medal_and_height_systems() {
     assert_eq!(check.medal_system, None);
     assert_eq!(check.height_system.as_deref(), Some("giga"));
 }
+
+/// A team that passes under the last system keeps it while a quota system
+/// is a candidate. The GigaHeight table (4145 cm: 7x 185 with the keepers'
+/// 189 counted as 185, 10x 180, 6x 175) with the 175 of slot 3 at 176
+/// totals 4146 cm: 14 from Manlet's 4160, within the 15, and inside
+/// GigaHeight's span (4145 to 4195). The 176 takes a Manlet slot under
+/// GigaHeight and draws 1 cm of the pool, so the team has no error there,
+/// where under Manlet he takes no bracket and its quotas are off.
+#[test]
+fn a_green_giga_team_14_cm_from_manlet_stays_giga() {
+    let rules = rules();
+    let team = edited(&GIGA, GGSS, 3, |p| {
+        assert_eq!(p.height, 175);
+        p.height = 176;
+    });
+    // The keepers at 189 count as 185, the special's allowance of 4.
+    let total: u32 = team
+        .players
+        .iter()
+        .map(|p| {
+            let allowance = if p.height == 189 && p.position == Some(position("GK")) {
+                4
+            } else {
+                0
+            };
+            u32::from(p.height) - allowance
+        })
+        .sum();
+    assert_eq!(total, 4146);
+    assert_eq!(4160 - total, 14, "Manlet is within the 15 cm reach");
+    assert_eq!(
+        rules.check_team(&team).expect("the check runs"),
+        TeamCheck {
+            violations: vec![],
+            medal_system: Some("GGSS".to_string()),
+            height_system: Some("giga".to_string()),
+        }
+    );
+}
