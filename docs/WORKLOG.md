@@ -7106,8 +7106,13 @@ points there.
     `mutants_test.py`): round 1 accepted 18 (`.tmp/duck_rulings.md` S-scripts r1; among
     them a refused diff run filing the last run's results as its own, a queued run still
     listing the live tree, `extra_mutants` filing an unrun mutant as caught, timeouts left
-    off `missed_all.txt`). Rework in three commits, the lead's: (1) snapshot and lock,
-    (2) results handling, (3) `extra_mutants`; then round 2
+    off `missed_all.txt`). Reworked in `f3018e72`, `6fe3a037`, `8057d0bf`. Round 2 (the
+    changed functions, four parts) accepted 5 of parts a, c, d (S-scripts r2; a test that
+    set the live `mutants.diff/` aside, fixed `e522ab26`; `rm_mutant_copies.py` finding no
+    copy since the snapshot; fixed `22e28921`); part b's report pending. Five or more: round
+    3 over the round 2 fixes. Then sort `scripts/`' root by job (the maintainer's layout,
+    2026-11-01: mutation, gates, review, release, drafts, fonts; five tools stay at the
+    root), with `.tmp/rv_scripts/sort_scripts.py`
   - [ ] `run_tests.py`, `test_runner.py`, `remote_gates.py`
   - [ ] `release.py`, `build_remapped.py`, `make_candidate.py`
   - [ ] `scripts/census/`, `scripts/library_parity/`
