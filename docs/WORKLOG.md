@@ -6364,8 +6364,9 @@ briefs, review loops, gates and mutation runs as for any step.
     storing function Fix PES path shares; `tactics.rs` `set_pes_folder_button` centred in the
     corner `team_widgets::pitch::penalty_box_right` leaves, outlined in the text grey, 2-point
     side padding. SE-GUI-50 measures the margins on PES 2017 (9) and PES 2021 (1.5). Open: its
-    manual pick and its look in the built window (with item 3 of the handover's looks), the
-    SWE-2 round (a new pub interface over two crates)
+    manual pick and its look in the built window. SWE-2 round 1 accepted 2 (S-cv35 r1: the
+    check's copy into the view untested, a stale `fix_pes_folder` doc), ending its loop; the
+    fixes ride with brief `.tmp/rv2830/brief_astra_r1.md`
   - [x] cv36 the cv28-32 mutation runs' survivors (`just mutants-diff a47ecbbd^1` and the
     team_widgets rerun from `f0d4553f`, 88 mutants, 1 missed), triaged: two missing tests,
     `team_widgets` `instruction_table`'s row numbers (`instructions.rs:218:31`, `+` to `*`)
@@ -7165,8 +7166,8 @@ points there.
     S-release r1): the candidate checks its exe and readme as the release does, one build
     argv, an empty notices file refuses, the notices' copyright lines (a license clause, a
     placeholder, a crate twice), Roboto Flex's and Phosphor's licenses in `licenses/` →
-    rework brief `.tmp/rv_scripts/release/brief_rel_r1.md` (SWE-2 sidekick, `wt-rel`); then
-    round 2
+    rework brief `.tmp/rv_scripts/release/brief_rel_r1.md` (SWE-2 sidekick), merged
+    `bc26bc4a` (the lead's re-run: 26 tests); round 2 running
   - [ ] `scripts/census/`, `scripts/library_parity/`
 - open 2026-11-01, 0.0.2 — two more resamples run on straight alpha (found by the cv18-cv26
   rework, `9f27f121`): `export_upgrader` `carried.rs` `at_128` and `team_compiler`
