@@ -15024,3 +15024,21 @@ editor is used for it.
 Why: 0.0.1 is the Save editor's preview; the Team compiler's pre-Fox patch (8.36c) is not
 part of it, so DBC7's save receives no UTW aesthetics patch.
 Plan: `plans/core/development_plan.md` "Divegrass Before Christmas (DBC)".
+
+## 2026-11-01 — pes_savefile — A Team TOML's `bench_order` lists the 12 of the bench
+Decision: export writes the first 12 of the record's 21 bench entries; an import of 12 fills the
+other nine as the game writes them, the roster slots from 0 that neither `starting_eleven` nor
+the 12 name, ascending; an array of another length is refused.
+Why: the maintainer's ruling (players past 23 are not supported); the nine name no player of a
+4cc team and read as players a member could field. The fill reproduces the game's own bytes
+(team 893 of a PES 2017 cup save: 23 to 31), where keeping the target's nine could name a slot
+the import moved into the eleven or the bench.
+Plan: `plans/pes_savefile/operations.md` "Team TOML"; WORKLOG 0.0.1f1d1.
+
+## 2026-11-01 — save_editor — Illegal formations lift the advanced instructions' side split
+Decision: under a ruleset that allows illegal formations, every advanced-instruction combo lists
+every instruction (less Tight Marking); without the flag the Attack and Defence lists stay split.
+Why: the maintainer found the Whack Patch's Edit mode puts any instruction on any slot, one
+instruction in all four included; a split list would refuse a member what their cup's game
+allows. Tight Marking stays out, as Edit mode never offers it.
+Plan: `plans/save_editor.md` "An advanced instruction's list"; WORKLOG 0.0.1f1d2.

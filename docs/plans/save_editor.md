@@ -1001,7 +1001,12 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   offer a slot what the game cannot put there. The side is `pes_savefile`'s (`Instruction`,
   beside `takes_player`), the one place the rule lives. Each list is less Tight Marking: it marks an opponent, which a member sets in a match,
   and Edit mode does not offer it (4ccEditor's lists leave it out for that reason). A record
-  that holds it, or an instruction of the other side, shows it as the current choice. The target-player pick is enabled only for the
+  that holds it, or an instruction of the other side, shows it as the current choice. Under a
+  ruleset that allows illegal formations ("Illegal formations" below) the side split goes:
+  every combo, Attack and Defence alike, lists every instruction of the version's table in
+  stored order, less Tight Marking, since the Whack Patch's Edit mode puts any instruction on
+  any slot (an attacking one in a Defence slot, one instruction in all four). The same
+  instruction twice is never refused, under any ruleset. The target-player pick is enabled only for the
   instructions that take one of ours, Counter Target, Defensive and Anchoring (`pes_savefile`'s
   `Instruction::takes_player`, the one place the rule lives). Picking one of those three from
   an instruction that takes none sets the target to none (255), so a byte the game never read
