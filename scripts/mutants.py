@@ -41,6 +41,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import statistics
 import subprocess
 import sys
@@ -248,6 +249,37 @@ def working_tree() -> str:
         index_path.unlink(missing_ok=True)
 
 
+def extract_tree(tree: str, dest: Path) -> None:
+    """Extract git tree `tree` into `dest` (created empty)."""
+    dest.mkdir(parents=True)
+    # The whole archive is read before extracting, as `fetch_remote` reads the remote
+    # half's results: streamed through a pipe, `git archive` twice sat unexited after
+    # writing every member (once for 35 minutes, not reproduced since).
+    archived = subprocess.run(
+        ["git", "archive", "--format=tar", tree],
+        cwd=ROOT,
+        capture_output=True,
+    )
+    if archived.returncode != 0:
+        raise RuntimeError(
+            f"git archive {tree} failed: {archived.stderr.decode(errors='replace')}"
+        )
+    with tarfile.open(fileobj=io.BytesIO(archived.stdout), mode="r|") as archive:
+        archive.extractall(dest, filter="data")
+
+
+def remove_tree(path: Path) -> None:
+    """`shutil.rmtree`, clearing the read-only bit of a file it cannot delete: a test's
+    scratch output can hold one (`team_compiler`'s unwritable-deploy test), which left a
+    whole copy, `target/` included, behind on Windows."""
+
+    def make_writable(function, failed, _error):
+        os.chmod(failed, stat.S_IWRITE)
+        function(failed)
+
+    shutil.rmtree(path, onexc=make_writable)
+
+
 def snapshot(tree: str | None = None) -> str:
     """Commit `tree`, else the whole working tree (`working_tree`), to
     `refs/mutants/remote`. Returns the tree. A caller that already wrote the
@@ -371,22 +403,45 @@ def below_normal() -> dict:
     return {"preexec_fn": lambda: os.nice(10)}
 
 
-def local_mutants(args: list[str], config: Path | None = None) -> subprocess.CompletedProcess:
-    """Runs `cargo mutants <args> --jobs 2` here, sized by `local_config` and at
-    `below_normal` priority, its copies of the tree in `LOCAL_TMPDIR`: Rust's
-    `temp_dir`, which cargo-mutants copies into, reads `TMP` then `TEMP` on
-    Windows and `TMPDIR` elsewhere. `config` is a config a file split already
-    wrote (its `examine_globs` must not be regenerated away)."""
+def local_mutants(
+    args: list[str], tree: str, config: Path | None = None
+) -> subprocess.CompletedProcess:
+    """Runs `cargo mutants <args> --jobs 2` here on git `tree`, the snapshot
+    the run measures, sized by `local_config` and at `below_normal` priority,
+    its copies of the tree in `LOCAL_TMPDIR`: Rust's `temp_dir`, which
+    cargo-mutants copies into, reads `TMP` then `TEMP` on Windows and `TMPDIR`
+    elsewhere. Its results land in the root's `mutants.out` unless `args`
+    names an `--output`. `config` is a config a file split already wrote (its
+    `examine_globs` must not be regenerated away).
+
+    The tree is extracted to a folder of its own, not read from the working
+    tree: cargo-mutants reads its source when the half starts, a crate's turn
+    in a diff run can come hours after the run took its diff, and an edit or
+    a merge in between leaves the diff naming lines the source no longer
+    holds, so the half refuses to start (or a whole-crate half measures code
+    the remote half never saw)."""
     LOCAL_TMPDIR.mkdir(parents=True, exist_ok=True)
     folder = str(LOCAL_TMPDIR)
     if config is None:
         config = local_config()
-    return subprocess.run(
-        ["cargo", "mutants", *args, "--jobs", "2", "--config", str(config)],
-        cwd=ROOT,
-        env={**os.environ, "TMP": folder, "TEMP": folder, "TMPDIR": folder},
-        **below_normal(),
-    )
+    source = LOCAL_TMPDIR / f"source-{os.getpid()}"
+    if source.exists():
+        # A leftover of an interrupted run under a reused pid.
+        remove_tree(source)
+    extract_tree(tree, source)
+    output = [] if "--output" in args else ["--output", str(ROOT)]
+    try:
+        return subprocess.run(
+            [
+                "cargo", "mutants", *args, "--dir", str(source), *output,
+                "--jobs", "2", "--config", str(config),
+            ],
+            cwd=source,
+            env={**os.environ, "TMP": folder, "TEMP": folder, "TMPDIR": folder},
+            **below_normal(),
+        )
+    finally:
+        remove_tree(source)
 
 
 # What a build killed or starved for reasons outside the mutant leaves in its log, lowercase:
@@ -725,10 +780,13 @@ def run_split(
     thread = threading.Thread(target=remote_half)
     thread.start()
     if local_files is None:
-        local_run = local_mutants([*selection, "--shard", "0/2", "--sharding", "round-robin"])
+        local_run = local_mutants(
+            [*selection, "--shard", "0/2", "--sharding", "round-robin"], tree
+        )
     else:
         local_run = local_mutants(
             list(selection),
+            tree,
             config=local_config(extra={"examine_globs": sorted(local_files)}),
         )
     local_seconds = time.monotonic() - start
@@ -818,16 +876,20 @@ def recheck_windows(missed: list[str]) -> set[str]:
     `#[cfg(windows)]` (WINDOWS_ONLY_TESTS) so the Linux remote cannot, and
     return the lines it caught. `--re` names each mutant escaped and anchored,
     `-p` the crates they live in, `--output` a folder of its own under
-    `mutants.out/` so the local half's results stay. A run that cannot start or
-    whose baseline fails (exit 4) is reported and returns empty, leaving every
-    survivor in the list."""
+    `mutants.out/` so the local half's results stay. It runs on the tree the
+    remote half ran (`REMOTE_REF`), whose lines the survivors name. A run that
+    cannot start or whose baseline fails (exit 4) is reported and returns empty,
+    leaving every survivor in the list."""
+    tree = git(
+        "rev-parse", f"{REMOTE_REF}^{{tree}}", check=True, capture_output=True, text=True
+    ).stdout.strip()
     crates = sorted({mutant_crate(line.split(":", 1)[0]) for line in missed})
     out = ROOT / "mutants.out" / "recheck"
     pattern = "^(" + "|".join(re.escape(line) for line in missed) + ")$"
     args = [arg for crate in crates for arg in ("-p", crate)]
     args += ["--re", pattern, "--output", str(out)]
     print(f"rechecking {len(missed)} Windows-only mutants on this machine", flush=True)
-    run = local_mutants(args)
+    run = local_mutants(args, tree)
     results = out / "mutants.out"
     if run.returncode == 4 or not (results / "outcomes.json").exists():
         print(
@@ -1498,12 +1560,14 @@ def main(argv: list[str]) -> int:
         split_run_record().unlink(missing_ok=True)
         import extra_mutants  # deferred: extra_mutants imports this module
 
+        # One snapshot for both passes, so they measure the same code.
+        tree = working_tree()
         _, extra_counts, extra_seconds = extra_mutants.run_crate(
-            crate, list(EXTRA_KINDS)
+            crate, list(EXTRA_KINDS), tree
         )
         record_extra_run(crate, extra_counts, extra_seconds)
         started = time.monotonic()
-        code = local_mutants(["-p", crate]).returncode
+        code = local_mutants(["-p", crate], tree).returncode
         update_cost_cache()
         return summarize(
             code,

@@ -1,16 +1,19 @@
 """Tests of `mutants.py`'s and `mutants_diff.py`'s readings of a finished run's files: which
 mutants never ran, which builds were killed, when a split run's summary fails, and which list
 holds a crate's survivors. Each builds a `mutants.out` in a
-temporary directory the way cargo-mutants writes one; nothing reaches the host. Run by `just
+temporary directory the way cargo-mutants writes one; nothing reaches the host. Also which
+source the local half hands cargo-mutants (cargo itself stubbed). Run by `just
 test` (`python scripts/mutants_test.py`)."""
 import contextlib
 import io
 import json
+import subprocess
 import sys
 import tempfile
 import tomllib
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import mutants  # noqa: E402
@@ -317,6 +320,50 @@ class RemoteSelection(unittest.TestCase):
             '--in-diff "$HOME/studio-mutants/run/in.diff" -p music_export',
         )
         self.assertEqual(mutants.remote_selection(["-p", "cpk"]), "-p cpk")
+
+
+class LocalSource(unittest.TestCase):
+    def test_the_local_half_runs_on_its_snapshot_not_the_working_tree(self):
+        def git_out(args: list[str], text: str) -> str:
+            # Bytes: text mode on Windows writes `\n` as CRLF, and `mktree` would read
+            # the carriage return into the file's name.
+            return mutants.git(
+                *args, input=text.encode(), check=True, capture_output=True
+            ).stdout.decode().strip()
+
+        # A tree no working tree holds: only an extracted copy of it has this file.
+        blob = git_out(["hash-object", "-w", "--stdin"], "the snapshot's line\n")
+        tree = git_out(["mktree"], f"100644 blob {blob}\tsnapshot_only.rs\n")
+        calls = []
+        real_run = subprocess.run
+
+        def run(args, **kwargs):
+            if args[0] != "cargo":
+                return real_run(args, **kwargs)
+            source = Path(args[args.index("--dir") + 1])
+            calls.append({
+                "source": source,
+                "cwd": kwargs["cwd"],
+                "file": (source / "snapshot_only.rs").read_text(encoding="utf-8"),
+                "outputs": [args[i + 1] for i, arg in enumerate(args) if arg == "--output"],
+            })
+            return subprocess.CompletedProcess(args, 0)
+
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            mock.patch.object(mutants, "LOCAL_TMPDIR", Path(tmp)),
+            mock.patch.object(mutants.subprocess, "run", run),
+        ):
+            config = Path(tmp) / "mutants.toml"
+            mutants.local_mutants(["-p", "cpk"], tree, config=config)
+            mutants.local_mutants(["-p", "cpk", "--output", "elsewhere"], tree, config=config)
+        first, second = calls
+        self.assertEqual(first["file"], "the snapshot's line\n")
+        self.assertEqual(first["cwd"], first["source"], "cargo starts in the copy")
+        self.assertNotEqual(first["source"], mutants.ROOT)
+        self.assertEqual(first["outputs"], [str(mutants.ROOT)], "results in the root's mutants.out")
+        self.assertEqual(second["outputs"], ["elsewhere"], "a caller's --output kept, alone")
+        self.assertFalse(first["source"].exists(), "the copy removed once cargo returns")
 
 
 class DiskRefusal(unittest.TestCase):

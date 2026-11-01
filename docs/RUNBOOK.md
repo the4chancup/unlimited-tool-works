@@ -65,10 +65,16 @@ that the split's fixed overhead, about a minute plus up to 15 s of polling, eats
 417 s and the remote half 502 s from its launch (the VPS ran about a fifth slower; the total
 wall time was not recorded). Manual ssh from
 Git Bash uses `/c/Windows/System32/OpenSSH/ssh.exe bonfire`: Git's own `ssh` cannot reach the
-Windows agent that holds the key. **A whole-crate run copies the working tree when it starts**,
-so a chain of runs queued behind a sidekick's edits snapshots a half-edited crate: at 4.y-conv
-the `team_compiler` run started while 4.y-fix1 was being written and had to be stopped; nothing
-edits a crate while its run is queued or going. The lead launches a long chain detached, with
+Windows agent that holds the key. **A run snapshots the working tree when its command starts**
+(a git tree object, `mutants.working_tree`): the remote half runs on a transfer of it and the
+local half on a copy of it extracted under the temp folder, never on the working tree, so
+edits and merges are safe once the run has started, every crate of one `mutants-diff`
+included. Before 2026-11-01 the local half read the live tree, and a merge during a
+`mutants-diff` left team_widgets' local half refusing its diff ("Diff content doesn't match
+source file"). A chain of separate commands still snapshots each run when it starts, so a run
+queued behind a sidekick's edits snapshots a half-edited crate: at 4.y-conv the
+`team_compiler` run started while 4.y-fix1 was being written and had to be stopped; nothing
+edits a crate while a run that will measure it waits in a chain. The lead launches a long chain detached, with
 PowerShell `Start-Process bash.exe <script> -WindowStyle Hidden` from a script under `.tmp/`,
 never with the Bash tool's background mode: its two-hour cap kills the chain, and stopping it
 kills the console the run's children need, after which every build fails with `0xC0000142`

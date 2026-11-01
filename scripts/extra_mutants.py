@@ -20,15 +20,11 @@ only prints the mutants and their counts, without running anything. `--kind <nam
 (repeatable) restricts the run or the listing to those kinds.
 """
 
-import io
 import json
 import os
-import shutil
-import stat
 import signal
 import subprocess
 import sys
-import tarfile
 import time
 import tomllib
 from collections import Counter
@@ -138,25 +134,6 @@ def apply_exclusions(
     return excluded, stale
 
 
-def extract_tree(tree: str, dest: Path) -> None:
-    """Extract git tree `tree` into `dest` (created empty)."""
-    dest.mkdir(parents=True)
-    # The whole archive is read before extracting, as `mutants.py` fetches the remote
-    # half's results: streamed through a pipe, `git archive` twice sat unexited after
-    # writing every member (once for 35 minutes, not reproduced since).
-    archived = subprocess.run(
-        ["git", "archive", "--format=tar", tree],
-        cwd=ROOT,
-        capture_output=True,
-    )
-    if archived.returncode != 0:
-        raise RuntimeError(
-            f"git archive {tree} failed: {archived.stderr.decode(errors='replace')}"
-        )
-    with tarfile.open(fileobj=io.BytesIO(archived.stdout), mode="r|") as archive:
-        archive.extractall(dest, filter="data")
-
-
 def kill_tree(proc: subprocess.Popen) -> None:
     """Kill `proc` and every process it started (cargo's rustc and test children)."""
     if os.name == "nt":
@@ -253,18 +230,6 @@ def parse_args(argv: list[str]) -> tuple[str, list[str], bool]:
     return positional[0], sorted(set(kinds)) or list(ALL_KINDS), list_only
 
 
-def remove_tree(path: Path) -> None:
-    """`shutil.rmtree`, clearing the read-only bit of a file it cannot delete: a test's
-    scratch output can hold one (`team_compiler`'s unwritable-deploy test), which left a
-    whole copy, `target/` included, behind on Windows."""
-
-    def make_writable(function, failed, _error):
-        os.chmod(failed, stat.S_IWRITE)
-        function(failed)
-
-    shutil.rmtree(path, onexc=make_writable)
-
-
 def run_crate(
     crate: str, kinds: list[str], tree: str | None = None
 ) -> tuple[list[str], Counter, float]:
@@ -282,10 +247,10 @@ def run_crate(
     if copy_dir.exists():
         # A leftover of an interrupted run under a reused pid: remove it rather than
         # test against its stale files.
-        remove_tree(copy_dir)
+        mutants.remove_tree(copy_dir)
     wall_start = time.monotonic()
     try:
-        extract_tree(tree, copy_dir)
+        mutants.extract_tree(tree, copy_dir)
         rows = [row for row in list_mutants(copy_dir / crate_rel) if row[3] in kinds]
         excluded, stale = apply_exclusions(
             rows, crate_rel, exclusions(copy_dir), kinds
@@ -364,7 +329,7 @@ def run_crate(
     finally:
         if copy_dir.exists():
             try:
-                remove_tree(copy_dir)
+                mutants.remove_tree(copy_dir)
             except OSError as error:
                 print(f"extra_mutants: could not remove {copy_dir}: {error}")
 
