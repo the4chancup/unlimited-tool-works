@@ -995,7 +995,8 @@ document.addEventListener("keydown", e => {
 // more, clamped at the ends, as Windows' own controls do, which members know from 4ccEditor. A
 // slider (its rail or the value beside it) steps as a number box does, and a sliding toggle
 // (`.rate.wheel`: the Tactics style pairs and Few/Medium/Many) takes the choice to the right on
-// wheel up, the left on wheel down, clamped too; the C/B/A buttons and checkboxes are left out.
+// wheel up, the left on wheel down, wrapping round at its ends (a two-choice toggle clamped would
+// answer one direction only); the C/B/A buttons and checkboxes are left out.
 // A notch is one step; a touchpad's small deltas add up to one (WHEEL_NOTCH). A wheel that
 // began by scrolling a pane keeps scrolling it while it sweeps over such controls, until it has
 // rested WHEEL_REST ms: scrolling the player view must not edit the boxes it passes.
@@ -1018,8 +1019,8 @@ document.addEventListener("wheel", e => {
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
   if (el.classList.contains("rate")) {
     const items = [...el.children], at = items.findIndex(x => x.classList.contains("on"));
-    const i = Math.min(items.length - 1, Math.max(0, at + (up ? 1 : -1)));
-    if (at < 0 || i === at) return;
+    const i = (at + (up ? 1 : -1) + items.length) % items.length;
+    if (at < 0) return;
     items[i].click();
     return;
   }

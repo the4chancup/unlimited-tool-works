@@ -14963,3 +14963,11 @@ candidate height system. A worker spawned per notch would start a 100 ms run per
 fast turn, so a run waits for the one in flight. The draft computes at once and has no
 waiting state to show; the landed badge looks as it did.
 Plan: `docs/plans/save_editor.md` "The skills' Cards left badge".
+
+## 2026-11-01 — team_widgets — the wheel over a Tactics toggle wraps round at its ends
+Decision (maintainer): the wheel over a sliding toggle (the Tactics style pairs, Few/Medium/Many)
+cycles through its choices: up from the rightmost takes the leftmost, down from the leftmost
+the rightmost. Combos, drag values and sliders stay clamped.
+Why: clamped, a toggle at an end answers one direction only, so a two-choice toggle ignored
+every notch but one way; a combo's long list still needs its ends to stop a fast turn.
+Plan: `plans/core/gui.md` "The wheel over a value", ST-WHEEL-05; worklog cv38.

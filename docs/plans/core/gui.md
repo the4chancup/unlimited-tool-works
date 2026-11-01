@@ -720,9 +720,13 @@ controls do, which members know from 4ccEditor: wheel up takes the item above or
 wheel down the item below or one less, clamped at the ends (no wrap), one step per notch, by 1
 in the units the box shows. The same goes for a slider, over its rail or the value box
 beside it, and for a sliding toggle of two or three choices (the Tactics styles, Few/Medium/
-Many), where wheel up takes the choice to the right and wheel down the one to the left, clamped
-too: right is a slider's and a number's "more" (Many), and one direction for every toggle beats
-a direction per meaning that no member can see. A checkbox and a row of plain buttons (the
+Many), where wheel up takes the choice to the right and wheel down the one to the left: right is
+a slider's and a number's "more" (Many), and one direction for every toggle beats a direction per
+meaning that no member can see. A toggle wraps round instead of clamping (up from the rightmost
+takes the leftmost, down from the leftmost the rightmost): clamped, a toggle at an end answers
+only one direction, so a two-choice toggle ignores every notch but one way and a member who
+wheels the other sees nothing happen, where a combo's long list does need its ends to stop a
+fast turn. A checkbox and a row of plain buttons (the
 C/B/A ratings, Left and Right) are not stepped: a checkbox has no order to step along, and a
 button reads as a press, not a value under the pointer. A notch is one line (or page) of a mouse wheel's events, and 50
 points of a touchpad's, which come as a stream of small deltas added up, so a touchpad steps
@@ -1468,7 +1472,7 @@ ST-WHEEL-05 GIVEN the Save editor's Tactics tab on the PES 17 save's team 701, p
             WHEN one notch up turns over Support range's rail
             THEN it is one more than it was; WHEN one notch up over its value box THEN one more
                  again; WHEN one notch up over Attacking style THEN the choice right of the held
-                 one is held, or the held one stays when it is the rightmost; WHEN one notch down
-                 over Numbers in attack THEN the choice left of the held one is held, or it stays
-                 when it is the leftmost; each step is one undo entry
+                 one is held, or the leftmost when the held one is the rightmost; WHEN one notch
+                 down over Numbers in attack THEN the choice left of the held one is held, or the
+                 rightmost when the held one is the leftmost; each step is one undo entry
 ```

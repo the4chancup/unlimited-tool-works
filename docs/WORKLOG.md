@@ -6519,6 +6519,15 @@ briefs, review loops, gates and mutation runs as for any step.
       in its window 5 / 147 / 5, Multi-team AATF 5 / 197 / 5 (draft 4 / 197 / 4), the
       comparator 3 / 198 / 4 (its label's `A` inks at its box's edge); the list's border to
       the outline 7 in both
+  - [ ] cv38 the wheel over a Tactics toggle wraps round (the maintainer, 2026-11-01: "loop
+    through the choices instead of sticking to the left or right"; plan "The wheel over a
+    value", ST-WHEEL-05; DECISIONS 2026-11-01): `team_widgets` `tactics/mod.rs`
+    `style_choices` and `number_choices` step through `step_choice`, which clamps; the draft's
+    wheel listener (`docs/prototypes/index.html`) wraps already → verify: ST-WHEEL-05's test
+    with a notch past each end, red on the clamped code
+  - [ ] cv23d the idle Ability stats view's repaint (cv23a's mutants-diff survivor,
+    `abilities.rs:741` `&&` → `||`): a test that a frame with no input after the badge has
+    landed asks for no repaint, red on the mutant; SWE-2 sidekick (`.tmp/0_0_2/brief_cv23d.md`)
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
@@ -7294,9 +7303,15 @@ points there.
   "Multi-team AATF (4cc Autumn 26)"`, from `prompt.rs` `dialog_nodes`), with the whole suite
   running beside a sidekick's build; it passed alone five times in a row and in every gates
   run. The frames' time is egui's own step (no `RawInput::time`), so the suspect is the
-  Multi-team check's worker reply landing in a different frame under load. Find the race
-  (rerun the suite under a CPU load until it fails), then make the test wait for what it
-  reads; a test fails, it never flakes
+  Multi-team check's worker reply landing in a different frame under load. Reproduced
+  (2026-11-01, `.tmp/0_0_2/flaky_range/sweep.py`, with a temporary sleep before
+  `spawn_check`'s send, since undone): the reply held 100 or 150 ms fails it with the same
+  message, at `savefile.rs:646`, the first frame after `range_items`, so its title click (meant
+  to close the combo's popup) closed the dialog itself; 0-80 and 200-800 ms pass, and 100 ms
+  passed once under different load. The dialog opens on 701's check, and 718's never starts
+  (its 500 ms rest needs about 30 frames). Next: what that click lands on when the reply comes
+  in between (the counts line appearing moves the centred dialog), then make the test wait for
+  701's check (`multi_checked`) before it reads any bounds; a test fails, it never flakes
 - open 2026-11-01 — the vital scripts' first reviews (`RUNBOOK.md` "Review rounds", checkpoint
   (e); DECISIONS 2026-11-01): each reviewed whole by SWE-2 rounds once, in this order:
   - [x] the mutation runs' `mutants.py`, `mutants_diff.py`, `extra_mutants.py` (and
