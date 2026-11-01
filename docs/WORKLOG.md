@@ -6251,7 +6251,26 @@ briefs, review loops, gates and mutation runs as for any step.
     with it, what one Multi-team AATF check over 220 teams costs the UI thread (cv26's
     rest cuts how many checks start, not what one costs), and what the card badge's
     `player_tier` and `card_limits` cost on an edit of a team read under the nearest system
-    (since cv33 each runs the candidates' checks; cached per key, once per edit)
+    (since cv33 each runs the candidates' checks; cached per key, once per edit).
+    Measured 2026-11-01 (a scratch headless test, AccessKit off, release build, the
+    maintainer's PES 2017 save copied, team 702's first player under DBC7; logs
+    `.tmp/0_0_2/cv23/run1.log`, `run2.log`, the second under the mutation run's local half):
+    idle frame 1.4 ms median, tessellation 0.4; the frame reading a notch 1.4; the frame after
+    it, where the edit lands, 114 ms (81-193), 286 ms under load (p90 719). The difference is
+    the Cards left badge: `player_tier` 72 ms and `card_limits` 69 ms median under load, each
+    reading the team under every candidate system; the team's view 0.01 ms. One Multi-team
+    check over 220 teams (701-920): `team_views` on the UI thread 15 ms, `check_teams` 3.7 s
+    wall on all cores and 35.6 s on one thread (about 160 ms a team); a dialog frame listing
+    them 52 ms median (p90 117), each frame while it is open.
+    - [ ] cv23a the badge on a worker (plan "The skills' Cards left badge", its last
+      sentences; DECISIONS 2026-11-01) → verify: a headless test that a notch frame and the
+      frame after it run no tier script on the UI thread (the badge's key moves, the held
+      badge stays drawn for the same player), and the frame time re-measured
+    - [ ] cv23b the Multi-team dialog's 52 ms frames: find where a listing frame's time goes
+      (220 teams' rows laid out each frame), then cut it
+    - [ ] cv23c the logic's cost: a team check about 160 ms of CPU, the team reading redone
+      by each host call (`height_system` in `player_tier`, `card_limits`, `tier_values` and
+      `check_team`); after the cut unless cv23b shows it is what the dialog waits on
   - [x] cv26 the wheel over Multi-team AATF's range combos froze the window for about two
     minutes (found 2026-10-31 in cv16b's built-window look: 42 notches over the first combo,
     23 over the second, 220 teams in range; each step re-checked the range). The maintainer's

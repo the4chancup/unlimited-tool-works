@@ -493,7 +493,14 @@ all side by side.
     breaks only them would otherwise show nowhere). That error names a roster place as the
     player list numbers it (`place 04`), and the quick actions' refusal `Cannot apply the
     tier` names a tier by its label (`Gold`), not by the ruleset's id; an id no tier of the
-    ruleset carries is quoted as the id, the only name it has.
+    ruleset carries is quoted as the id, the only name it has. The badge is computed on a
+    worker thread, as the pitch's medal letters are, once per edit, player or ruleset, a new
+    run starting only when none is in flight: its two script calls each read the whole team
+    under every candidate height system (a team no quota system takes runs every candidate's
+    checks), 50 to 70 ms apiece on the maintainer's PES 2017 save in a release build, and on
+    the UI thread they made each wheel notch over a stat box cost over 100 ms, three times
+    that under CPU load. Until the new badge lands the same player's kept one stays drawn,
+    and another player's or ruleset's draws nothing.
   - **Appearance** — first a **Cutscenes** group, star (19+) and playing attitude (20+),
     outside the aesthetics lock: they change only cutscenes, so they are no aesthetic the
     export owns. Then the ownership line, the switch and the locked groups, each group's
