@@ -6,7 +6,9 @@ to the maintainer. Writes nothing under `target/dist`: a version's release archi
 once, by `just release`, after logic version 1's hash is frozen.
 
 Refuses unless the tree is clean, HEAD is the commit named, the exe is newer than the last
-commit that changed code or bundle resources, and the destination does not exist yet.
+commit that changed code, the build's config or bundle resources, the destination does not
+exist yet, the readme names the version, and the exe passes the release's own check (no
+remapped path left, the C runtime linked statically).
 
 Run: python scripts/release/make_candidate.py <commit> [<destination folder name>]
 (the folder goes in `../4cc-studio-temp/`; default `candidate-<workspace version>`; a
@@ -19,7 +21,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts" / "release"))
-import release  # noqa: E402  (its pure helpers: exe_name, launcher_calls, expected_entries)
+import release  # noqa: E402  (the release's own helpers, so a candidate checks what it does)
 
 VERSION = release.workspace_version((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
 TARGET = release.target_dir()
@@ -39,10 +41,10 @@ assert not git("status", "--porcelain"), "the tree is dirty"
 head = git("rev-parse", "HEAD")
 assert head.startswith(commit), (head, commit)
 # The exe must postdate the last commit that changed what it is built from (a docs commit
-# after the build changes nothing in it); `.cargo` and `rust-toolchain.toml` set the build
-# as much as the sources do.
+# after the build changes nothing in it); `.cargo/config.toml` and `rust-toolchain.toml` set
+# the build as much as the sources do. The rest of `.cargo/` configures mutation runs only.
 code_time = int(git("log", "-1", "--format=%ct", "--", "crates", "Cargo.toml", "Cargo.lock",
-                    ".cargo", "rust-toolchain.toml", "resources"))
+                    ".cargo/config.toml", "rust-toolchain.toml", "resources"))
 assert EXE.stat().st_mtime > code_time, "the release exe predates the last code commit"
 assert not DEST.exists(), f"{DEST} exists: look at it first"
 

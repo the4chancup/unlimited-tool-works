@@ -7161,13 +7161,15 @@ points there.
     the loop. Then `scripts/`' root sorted by job (`68bc589d`, the maintainer's layout:
     mutation, gates, review, release, drafts, fonts; five tools stay at the root)
   - [ ] `run_tests.py`, `test_runner.py`, `remote_gates.py`
-  - [ ] `release.py`, `build_remapped.py`, `make_candidate.py`: SWE-2 round 1 at `935718bb`
+  - [x] `release.py`, `build_remapped.py`, `make_candidate.py`: SWE-2 round 1 at `935718bb`
     (two parts, the scripts and `release_test.py`) accepted 9 (`.tmp/duck_rulings.md`
     S-release r1): the candidate checks its exe and readme as the release does, one build
     argv, an empty notices file refuses, the notices' copyright lines (a license clause, a
     placeholder, a crate twice), Roboto Flex's and Phosphor's licenses in `licenses/` →
     rework brief `.tmp/rv_scripts/release/brief_rel_r1.md` (SWE-2 sidekick), merged
-    `bc26bc4a` (the lead's re-run: 26 tests); round 2 running
+    `bc26bc4a` (the lead's re-run: 26 tests). Round 2 accepted 2 (S-release r2: a stale
+    docstring, `.cargo/`'s mutation configs counted as build inputs), the lead's fixes; the
+    loop ends
   - [ ] `scripts/census/`, `scripts/library_parity/`
 - open 2026-11-01, 0.0.2 — two more resamples run on straight alpha (found by the cv18-cv26
   rework, `9f27f121`): `export_upgrader` `carried.rs` `at_128` and `team_compiler`

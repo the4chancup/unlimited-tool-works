@@ -5,7 +5,8 @@ The recipe builds `studio` with `--locked`, the build machine's home folder, car
 homes, repository and target directory remapped out of the exe's paths (`remap_flags`), reads the executable's name from the built exe's
 `--help` usage line (the name lives in `studio_core`'s `EXE_NAME`, not in this script),
 stages `unlimited-tool-works-<version>/` — the exe as `<name>.exe`, the launchers it ships
-(`LAUNCHERS`, none in 0.0.1), the readme, the two licenses in `licenses/`, the bundled `data/settings.toml`,
+(`LAUNCHERS`, none in 0.0.1), the readme, the license files (`LICENSES`) and the generated
+third-party notices in `licenses/`, the bundled `data/settings.toml`,
 and the empty folders it ships (`EMPTY_FOLDERS`, none in 0.0.1) — under a temporary folder in
 cargo's target directory (asked of `cargo metadata`, since a developer may have moved it),
 packs it as `<target>/dist/unlimited-tool-works-<version>-windows.7z` with a
@@ -61,7 +62,8 @@ LICENSES = (
     "resources/fonts/RobotoFlex-OFL.txt",
     "resources/icons/PHOSPHOR-LICENSE.txt",
 )
-# Beside them, the notices of the crates and fonts the exe contains (`write_notices`).
+# Beside them, the notices of the crates the exe links, egui's bundled fonts among them
+# (`write_notices`).
 NOTICES = "THIRD-PARTY-NOTICES.txt"
 
 
