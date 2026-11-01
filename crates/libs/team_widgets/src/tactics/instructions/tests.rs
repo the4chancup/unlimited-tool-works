@@ -211,6 +211,45 @@ fn the_instructions_grid_is_two_equal_columns() {
     }
 }
 
+// The draft's `.tacinstr` numbers its two rows: a weak `1` left of the
+// first row's combos, a `2` left of the second's.
+#[test]
+fn the_instruction_rows_are_numbered_1_and_2() {
+    let mut window = Headless::sized(422.0, 1200.0);
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+    let bounds = |node: &egui::accesskit::Node| node.bounds().expect("bounds");
+    let combos = [
+        bounds(combo_row(&nodes, 0)[0]),
+        bounds(combo_row(&nodes, 1)[0]),
+    ];
+    // Every label left of the attack column, between the first row's
+    // top and the second row's bottom, top to bottom.
+    let mut numbers: Vec<(f64, &str)> = nodes
+        .iter()
+        .filter(|node| node.role() == Role::Label)
+        .filter_map(|node| {
+            let b = node.bounds()?;
+            let left = b.x1 <= combos[0].x0;
+            let within = b.y0 >= combos[0].y0 && b.y1 <= combos[1].y1;
+            (left && within).then(|| (b.y0, node.value().expect("a label carries its text")))
+        })
+        .collect();
+    numbers.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("ordered bounds"));
+    let texts: Vec<&str> = numbers.iter().map(|(_, text)| *text).collect();
+    assert_eq!(texts, ["1", "2"], "the rows' numbers, top to bottom");
+    for ((top, text), combo) in numbers.iter().zip(combos) {
+        assert!(
+            *top >= combo.y0 && *top < combo.y1,
+            "{text} sits on its row's combo ({top} vs {combo:?})"
+        );
+    }
+}
+
 // The disabled target, as the draft's `pick` draws it: under an
 // instruction that takes none of ours the chip is
 // disabled and names no player of ours — "An opponent" under a
