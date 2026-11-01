@@ -43,6 +43,7 @@ fn motion_export(sandbox: &Sandbox, export: &str) {
 }
 
 // TC-SAV-01
+// TC-SAV-18
 #[test]
 fn a_deployed_run_applies_its_patch_to_the_savefile_and_keeps_a_bak() {
     let sandbox = Sandbox::new("savefile_applied");
@@ -85,8 +86,8 @@ fn a_deployed_run_applies_its_patch_to_the_savefile_and_keeps_a_bak() {
     );
     assert!(lines.contains(&written), "{lines:#?}");
     // The save is the pre-run one with the run's own patch applied through the lib: 71405's
-    // motion fields are the patch's, his name and appearance id unchanged, 71406 and every
-    // other byte unchanged.
+    // look and motions are his patch entry's, the record made his, 71406 and every other
+    // byte unchanged.
     let mut expected = EditFile::from_bytes(&before_bytes).unwrap();
     read_patch(&sandbox).apply(&mut expected).unwrap();
     let after = EditFile::load(&save).unwrap();
@@ -100,7 +101,9 @@ fn a_deployed_run_applies_its_patch_to_the_savefile_and_keeps_a_bak() {
         player.motion.hunching_dribbling, 1,
         "the settings.toml's 2, stored"
     );
-    assert_eq!(player.appearance_id, Some(STRIPPED_APPEARANCE_ID));
+    // The stripped save's record is made his: appearance id and base copy his own id.
+    assert_eq!(player.appearance_id, Some(71405));
+    assert_eq!(player.appearance.base_copy_id, 71405);
     assert_eq!(player.name, file.player(71405).unwrap().name);
     assert_eq!(after.player(71406), file.player(71406), "71406 unchanged");
     assert_eq!(

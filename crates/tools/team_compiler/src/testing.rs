@@ -182,6 +182,7 @@ pub(crate) fn to_plan(
         hand_weighted: BTreeSet::new(),
         metal_models: BTreeSet::new(),
         settings: BTreeMap::new(),
+        settings_refused: BTreeSet::new(),
     }
 }
 

@@ -955,6 +955,10 @@ mod tests {
                 _ => settings.appearance.skin_color,
             };
             assert_eq!(got, value, "{name}: the applied file's key");
+            assert!(
+                pass.settings_refused.contains(&path("Players/03 - A")),
+                "{name}: a refused file holds his whole look back"
+            );
         }
     }
 }

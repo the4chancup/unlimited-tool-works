@@ -7,6 +7,7 @@
 //! save it holds over the file when the member leaves Edit mode after changing anything
 //! there, so a write made with it closed stands. Every outcome is a finding.
 
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 use pes_savefile::EditFile;
@@ -162,6 +163,15 @@ pub(crate) fn update(
             ],
         });
     }
+    // The players whose appearance id the save sets, read before `apply`: an applied
+    // `[appearance]` writes the id to the player's own, so after it every patched player
+    // reads as set and the warning would fire for all of them.
+    let had_id: BTreeSet<u32> = file
+        .players()
+        .iter()
+        .filter(|player| player.appearance_id != Some(STRIPPED_APPEARANCE_ID))
+        .map(|player| player.id)
+        .collect();
     let summary = match patch.apply(&mut file) {
         Ok(summary) => summary,
         Err(error) => {
@@ -192,10 +202,7 @@ pub(crate) fn update(
         .applied_players
         .iter()
         .copied()
-        .filter(|id| {
-            file.player(*id)
-                .is_some_and(|player| player.appearance_id != Some(STRIPPED_APPEARANCE_ID))
-        })
+        .filter(|id| had_id.contains(id))
         .collect();
     not_stripped.sort_unstable();
     if !not_stripped.is_empty() {
@@ -263,7 +270,7 @@ mod tests {
     use pes_savefile::interchange::aesthetics_patch::{
         ALLOCATION_SCHEME_VERSION, PatchPlayer, PatchTeam, utc_datetime,
     };
-    use pes_savefile::settings_toml::MotionSettings;
+    use pes_savefile::settings_toml::AppearanceSettings;
     use studio_core::{AppPaths, PipelineEvent, PipelineEventEnvelope, Settings, ToolContext};
 
     use super::*;
@@ -434,7 +441,10 @@ mod tests {
                 PatchPlayer {
                     name: None,
                     shirt_name: None,
-                    motion: MotionSettings::default().resolved(PesVersion::Pes21),
+                    boots_id: None,
+                    gloves_id: None,
+                    base_copy_id: None,
+                    appearance: Some(AppearanceSettings::default().resolved(PesVersion::Pes21)),
                 },
             )]),
         });
@@ -510,7 +520,10 @@ mod tests {
                 PatchPlayer {
                     name: None,
                     shirt_name: None,
-                    motion: MotionSettings::default().resolved(PesVersion::Pes21),
+                    boots_id: None,
+                    gloves_id: None,
+                    base_copy_id: None,
+                    appearance: Some(AppearanceSettings::default().resolved(PesVersion::Pes21)),
                 },
             )])
         };
@@ -568,7 +581,10 @@ mod tests {
                 PatchPlayer {
                     name: None,
                     shirt_name: None,
-                    motion: MotionSettings::default().resolved(PesVersion::Pes21),
+                    boots_id: None,
+                    gloves_id: None,
+                    base_copy_id: None,
+                    appearance: Some(AppearanceSettings::default().resolved(PesVersion::Pes21)),
                 },
             )])
         };
@@ -630,7 +646,10 @@ mod tests {
                 PatchPlayer {
                     name: None,
                     shirt_name: None,
-                    motion: MotionSettings::default().resolved(PesVersion::Pes21),
+                    boots_id: None,
+                    gloves_id: None,
+                    base_copy_id: None,
+                    appearance: Some(AppearanceSettings::default().resolved(PesVersion::Pes21)),
                 },
             )]),
         });

@@ -1,13 +1,13 @@
 //! `aesthetics_patch.toml`: the file the Team compiler writes to its output
-//! folder with its CPKs, holding what the CPK's tables cannot — on Fox,
-//! every compiled player's motions and a `write_names` export's names — for the
-//! savefile builder to apply (`spec/pes_savefile/operations.md` "Aesthetics patch
-//! (new)"). This module is the Fox half's types, text form and `apply`; the
-//! pre-Fox keys are not built yet.
+//! folder with its CPKs, holding every compiled player's resolved look —
+//! his `settings.toml` and `ingame_face.toml` joined into the one
+//! `[appearance]` table, beside the resolved model IDs and a `write_names`
+//! export's names — for the savefile builder to apply, on every version
+//! (`spec/pes_savefile/operations.md` "Aesthetics patch (new)").
 
 use std::collections::BTreeMap;
 
-use pes_version::{Engine, PesVersion};
+use pes_version::PesVersion;
 use toml_edit::{DocumentMut, Item, TableLike, Value};
 
 use crate::codec::{text_max, write_player};
@@ -16,10 +16,12 @@ use crate::interchange::players_key;
 use crate::model::player::PlayerEntry;
 use crate::schema::fields::PlayerText;
 use crate::schema::{VersionSchema, schema_for};
-use crate::settings_toml::document::{emit_motion, padded, parse_motion, range_text, toml_form};
+use crate::settings_toml::document::{
+    AppearanceDocument, emit_appearance, leaf_path, padded, parse_appearance, range_text, toml_form,
+};
 use crate::settings_toml::{
-    AppearanceSettings, MotionSettings, SettingKey, SettingsError, apply_appearance, check_text,
-    get_appearance,
+    AppearanceSettings, KeyTable, PlayerSettings, SettingKey, SettingsError, check_text,
+    get_appearance, held_on,
 };
 #[cfg(test)]
 mod tests;
@@ -27,6 +29,10 @@ mod tests;
 /// The version of the Team compiler's boots and gloves ID allocation scheme. A patch from
 /// another scheme is refused.
 pub const ALLOCATION_SCHEME_VERSION: u32 = 1;
+
+/// The biggest boots or gloves ID the field stores (14 bits on every version):
+/// the range a patch's `boots_id`/`gloves_id` takes, not `settings.toml`'s stock band.
+const MODEL_ID_MAX: u16 = 16383;
 
 /// The first line of a generated `aesthetics_patch.toml`.
 const HEADER: &str = "# aesthetics_patch.toml, written by the Team compiler to its output folder\n";
@@ -66,10 +72,17 @@ pub struct PatchTeam {
 pub struct PatchPlayer {
     /// A `write_names` export's only; `None` = not written.
     pub name: Option<String>,
-    /// A `write_names` export's only, like `name`; `None` = not written.
+    /// Like `name`.
     pub shirt_name: Option<String>,
-    /// `[appearance.motion]`, as in `settings.toml`; `None` keys are not written.
-    pub motion: MotionSettings,
+    /// The resolved boots ID over the field's whole stored range (0 to 16383); `None` =
+    /// the save keeps his.
+    pub boots_id: Option<u16>,
+    /// Like `boots_id`.
+    pub gloves_id: Option<u16>,
+    /// A `<id>.copy` link's id, written as his base copy; `None` = no link.
+    pub base_copy_id: Option<u32>,
+    /// His whole look, every key the version holds; `None` = the save keeps his look.
+    pub appearance: Option<AppearanceSettings>,
 }
 
 /// What parsing, writing or applying an `aesthetics_patch.toml` fails with.
@@ -86,13 +99,6 @@ pub enum PatchError {
     MissingKey {
         /// The dotted key path (`tool_version`, `teams[0].id`).
         key: String,
-    },
-    /// `pes_version` names a pre-Fox version; the pre-Fox patch is not
-    /// built yet.
-    #[error("{version}: the pre-Fox aesthetics patch is not supported yet")]
-    PreFox {
-        /// The version the file names.
-        version: PesVersion,
     },
     /// `pes_version` is not the save's: a patch applies to the version it
     /// was compiled for, there is no cross-version application.
@@ -145,15 +151,6 @@ pub enum PatchSkip {
     },
 }
 
-/// `PreFox` for a pre-Fox version: this module is the Fox half alone. The
-/// one guard `parse`, `to_toml` and `apply` share.
-fn fox_only(version: PesVersion) -> Result<(), PatchError> {
-    match version.engine() {
-        Engine::PreFox => Err(PatchError::PreFox { version }),
-        Engine::Fox => Ok(()),
-    }
-}
-
 /// `unix_seconds` as the `compiled` stamp's form: a UTC datetime at whole
 /// seconds with offset `Z`.
 pub fn utc_datetime(unix_seconds: u64) -> toml_edit::Datetime {
@@ -186,16 +183,18 @@ pub fn utc_datetime(unix_seconds: u64) -> toml_edit::Datetime {
 impl AestheticsPatch {
     /// Reads an `aesthetics_patch.toml` text. Every rule is an error, never
     /// a skip: the five header keys are `MissingKey`, any other top-level
-    /// key `UnknownKey`, a pre-Fox `pes_version` `PreFox`, and each team's
-    /// `[teams.players.NN]` takes the `name`, `shirt_name` and
-    /// `[appearance.motion]` of the Fox patch alone.
+    /// key `UnknownKey`, and each team's `[teams.players.NN]` takes `name`,
+    /// `shirt_name`, `boots_id`, `gloves_id`, `base_copy_id` and a whole
+    /// `[appearance]` — every key the version holds required (`MissingKey`
+    /// at its dotted path), a key the version does not hold refused
+    /// (`NotInThisVersion`), a `boots_id`/`gloves_id` outside 0 to 16383 or
+    /// a `base_copy_id` outside u32 `OutOfRange`.
     pub fn parse(text: &str) -> Result<Self, PatchError> {
         let document: DocumentMut = text
             .parse()
             .map_err(|e: toml_edit::TomlError| PatchError::Toml(e.to_string()))?;
         let root = document.as_table();
         let pes_version = version(required(root, "", "pes_version")?)?;
-        fox_only(pes_version)?;
         let tool_version = string(required(root, "", "tool_version")?, "tool_version")?;
         let allocation_scheme_version = u32_value(
             required(root, "", "allocation_scheme_version")?,
@@ -221,7 +220,7 @@ impl AestheticsPatch {
         }
         let mut teams = Vec::new();
         if let Some(item) = root.get("teams") {
-            teams = parse_teams(item)?;
+            teams = parse_teams(item, pes_version)?;
         }
         Ok(AestheticsPatch {
             pes_version,
@@ -235,14 +234,17 @@ impl AestheticsPatch {
 
     /// The patch's text form: the header comment and its
     /// five keys, then each team a `[[teams]]` block with a
-    /// `[teams.players.NN]` per player — the header always written, `name`
-    /// and `shirt_name` only when set — and its `[…appearance.motion]`
-    /// table when a motion key is set. One blank line before each header.
-    /// `Err` is a value `parse` would refuse back: a pre-Fox `pes_version`
-    /// (`PreFox`), a `players.NN` key outside `01` to `99` (`UnknownKey` at
-    /// `teams[i].players.NN`), or a stored value a key's range cannot hold.
+    /// `[teams.players.NN]` per player — every `Some` of `name`,
+    /// `shirt_name`, `boots_id`, `gloves_id` and `base_copy_id` in that
+    /// order, then its `[…appearance]` tables holding every key the
+    /// version holds, no comments. One blank line before each header.
+    /// `Err` is a value `parse` would refuse back: a `players.NN` key
+    /// outside `01` to `99` (`UnknownKey` at `teams[i].players.NN`), a
+    /// `boots_id`/`gloves_id` past 16383 (`OutOfRange`), an `[appearance]`
+    /// a version-held key is `None` in (`MissingKey`) or one the version
+    /// does not hold `Some` in (`NotInThisVersion`), or a stored value a
+    /// key's range cannot hold.
     pub fn to_toml(&self) -> Result<String, PatchError> {
-        fox_only(self.pes_version)?;
         let mut out = HEADER.to_string();
         out.push_str(&format!("pes_version = {}\n", self.pes_version.number()));
         out.push_str(&format!(
@@ -276,6 +278,7 @@ impl AestheticsPatch {
                     }
                     .into());
                 }
+                let path = format!("teams[{i}].players.{key}");
                 out.push_str(&format!("\n[teams.players.{key}]\n"));
                 if let Some(name) = &player.name {
                     out.push_str(&format!("name = {}\n", Value::from(name.as_str())));
@@ -286,28 +289,51 @@ impl AestheticsPatch {
                         Value::from(shirt_name.as_str())
                     ));
                 }
-                if player.motion != MotionSettings::default() {
-                    out.push_str(&format!("\n[teams.players.{slot:02}.appearance.motion]\n"));
-                    emit_motion(&mut out, &player.motion)
-                        .map_err(|err| at_player(&format!("teams[{i}].players.{key}"), err))?;
+                for (name, id) in [
+                    ("boots_id", player.boots_id),
+                    ("gloves_id", player.gloves_id),
+                ] {
+                    if let Some(id) = id {
+                        if id > MODEL_ID_MAX {
+                            return Err(SettingsError::OutOfRange {
+                                key: leaf(&path, name),
+                                value: i64::from(id),
+                                range: format!("0 to {MODEL_ID_MAX}"),
+                            }
+                            .into());
+                        }
+                        out.push_str(&format!("{name} = {id}\n"));
+                    }
+                }
+                if let Some(id) = player.base_copy_id {
+                    out.push_str(&format!("base_copy_id = {id}\n"));
+                }
+                if let Some(appearance) = &player.appearance {
+                    check_appearance(appearance, self.pes_version, &leaf(&path, "appearance"))?;
+                    emit_appearance(
+                        &mut out,
+                        &format!("teams.players.{key}.appearance"),
+                        appearance,
+                        AppearanceDocument::Patch(self.pes_version),
+                    )
+                    .map_err(|err| at_player(&path, err))?;
                 }
             }
         }
         Ok(out)
     }
 
-    /// Applies the patch to `save`: each listed player's motions and, for
-    /// a `write_names` export, his names — nothing of his appearance block, so
-    /// a stripped player (appearance id -1) stays stripped. Every refusal
-    /// runs before any write: a pre-Fox `pes_version` (a hand-built patch
-    /// can hold one), a version or allocation-scheme mismatch, and in pass
-    /// 1 each player's names against the version's text fields, each `Some`
-    /// motion key against its range and the field's width; an `Err` leaves
-    /// the save untouched.
+    /// Applies the patch to `save`: each listed player's names, whole look,
+    /// model IDs and base copy as his entry holds them — an entry's
+    /// `[appearance]` makes the record his too (appearance id and base copy
+    /// set to his own id, the base-copy flag cleared). Every refusal runs
+    /// before any write: a version or allocation-scheme mismatch, and in
+    /// pass 1 each player's names against the version's text fields, each
+    /// `Some` appearance key against its range in the version and the
+    /// field's width; an `Err` leaves the save untouched.
     /// Only a team or player the save lacks is skipped, per item, and
     /// reported in the summary.
     pub fn apply(&self, save: &mut EditFile) -> Result<PatchSummary, PatchError> {
-        fox_only(self.pes_version)?;
         if self.pes_version != save.version() {
             return Err(PatchError::VersionMismatch {
                 patch: self.pes_version,
@@ -378,12 +404,21 @@ impl AestheticsPatch {
 
 /// The patch's writes onto a copy of `player` — the `Some` names checked
 /// against the version's text fields as `PlayerSettings::apply` checks them,
-/// each `Some` motion key against its kind's range — then written through
-/// `apply_appearance` so a `Some` the version has no field for is
-/// `NotInThisVersion`. The copy is encoded into a scratch record of the
-/// version's player size so a stored value past the field's width is
-/// refused here (`Codec`), not when the save is written. `path` is the
-/// player's patch path (`teams[0].players.05`).
+/// then the `[appearance]`: every `Some` key checked against the version's
+/// own range (`version_kind`, a key the version lacks `NotInThisVersion`),
+/// then written through `PlayerSettings::apply` (every key, the run's
+/// unused bits at the games' values), which also makes the record his:
+/// the appearance id set to his own id where the version has one, and the
+/// base copy cleared to "no copy" — his own id and, where the version has
+/// the flag, `base_copy` unset — unless the entry's `base_copy_id` links
+/// him to another player, which is written as his base copy with the flag
+/// left as the save holds it. The `Some` model IDs land in the appearance
+/// block's boots and gloves fields; the edit flags other than `base_copy`
+/// are not touched. The copy is encoded into a scratch record of the
+/// version's player size — and, on PES 15/16, its separate appearance
+/// record — so a stored value past the field's width is refused here
+/// (`Codec`), not when the save is written. `path` is the player's patch
+/// path (`teams[0].players.05`).
 fn build(
     player: &PlayerEntry,
     patch: &PatchPlayer,
@@ -409,58 +444,102 @@ fn build(
         )?;
         next.shirt_name = shirt_name.clone();
     }
-    let motion_path = format!("{path}.appearance.motion");
-    let appearance = AppearanceSettings {
-        motion: patch.motion.clone(),
-        ..AppearanceSettings::default()
-    };
-    for key in SettingKey::ALL {
-        let spec = key.spec();
-        let Some(stored) = get_appearance(&appearance, key) else {
-            continue;
-        };
-        // The patch's own version's range, not the widest the key table
-        // holds; a key the version lacks is `version_kind`'s `None` and
-        // `apply_appearance`'s `NotInThisVersion`, as before.
-        let Some(kind) = key.version_kind(schema.version) else {
-            continue;
-        };
-        if !kind.accepts_stored(stored) {
-            // A value past the key's widest range too (a hand-built patch)
-            // has no form the file could write: `toml_form` refuses it.
-            let written = toml_form(key, stored, false).map_err(|err| at_player(path, err))?;
-            return Err(SettingsError::OutOfRange {
-                key: format!("{motion_path}.{}", spec.name),
-                value: written
-                    .as_integer()
-                    .expect("a motion's TOML value is an integer"),
-                range: range_text(kind),
+    if let Some(appearance) = &patch.appearance {
+        let appearance_path = leaf(path, "appearance");
+        for key in SettingKey::ALL {
+            let spec = key.spec();
+            if spec.table == KeyTable::Top {
+                continue;
             }
-            .into());
+            let Some(stored) = get_appearance(appearance, key) else {
+                continue;
+            };
+            // The patch's own version's range, not the widest the key
+            // table holds; a key the version lacks is refused, not dropped.
+            let Some(kind) = key.version_kind(schema.version) else {
+                return Err(SettingsError::NotInThisVersion {
+                    key: leaf_path(&appearance_path, &spec),
+                }
+                .into());
+            };
+            if !kind.accepts_stored(stored) {
+                // A value past the key's widest range too (a hand-built
+                // patch) has no form the file could write: `toml_form`
+                // refuses it.
+                let written = toml_form(key, stored, false).map_err(|err| at_player(path, err))?;
+                return Err(SettingsError::OutOfRange {
+                    key: leaf_path(&appearance_path, &spec),
+                    value: written
+                        .as_integer()
+                        .expect("a value the version narrowed is a TOML integer"),
+                    range: range_text(kind),
+                }
+                .into());
+            }
+        }
+        PlayerSettings {
+            appearance: appearance.clone(),
+            ..PlayerSettings::default()
+        }
+        .apply(&mut next, schema.version)
+        .map_err(|err| at_player(path, err))?;
+        if next.appearance_id.is_some() {
+            next.appearance_id = Some(next.id);
+        }
+        if patch.base_copy_id.is_none() {
+            next.appearance.base_copy_id = next.id;
+            if next.edit_flags.base_copy.is_some() {
+                next.edit_flags.base_copy = Some(false);
+            }
         }
     }
-    // The only refusal the motion-only write can hit (`dribbling` on a
-    // version without the field); its key names the patch path.
-    apply_appearance(&appearance, &mut next).map_err(|err| match err {
-        SettingsError::NotInThisVersion { key } => SettingsError::NotInThisVersion {
-            key: format!("{motion_path}.{key}"),
-        },
-        other => other,
-    })?;
+    if let Some(id) = patch.base_copy_id {
+        next.appearance.base_copy_id = id;
+    }
+    if let Some(id) = patch.boots_id {
+        next.appearance.boots_id = u32::from(id);
+    }
+    if let Some(id) = patch.gloves_id {
+        next.appearance.gloves_id = u32::from(id);
+    }
     let mut record = vec![0u8; schema.player.size];
     write_player(&next, &mut record, schema.player).map_err(SettingsError::Codec)?;
+    if let Some((_, appearance_schema)) = schema.appearance {
+        let mut record = vec![0u8; appearance_schema.size];
+        write_player(&next, &mut record, appearance_schema).map_err(SettingsError::Codec)?;
+    }
     Ok(next)
 }
 
-/// A motion's `OutOfRange` from the settings code, which names the key as
-/// `settings.toml` does (`appearance.motion.free_kick`), moved under the
-/// player's patch path (`teams[0].players.05`).
+/// A settings `SettingsError`, which names a key as `settings.toml` does
+/// (`appearance.motion.free_kick`, `face.cheek_type`), moved under the
+/// player's patch path (`teams[0].players.05`): a key of the in-game
+/// face's document (`face.…`, `hair.…`, `iris_color`) gains the
+/// `appearance` root the patch keeps it under.
 fn at_player(path: &str, err: SettingsError) -> SettingsError {
+    let reroot = |key: String| {
+        if key.starts_with("appearance.") {
+            format!("{path}.{key}")
+        } else {
+            format!("{path}.appearance.{key}")
+        }
+    };
     match err {
         SettingsError::OutOfRange { key, value, range } => SettingsError::OutOfRange {
-            key: format!("{path}.{key}"),
+            key: reroot(key),
             value,
             range,
+        },
+        SettingsError::NotInThisVersion { key } => {
+            SettingsError::NotInThisVersion { key: reroot(key) }
+        }
+        SettingsError::WrongType { key, expected } => SettingsError::WrongType {
+            key: reroot(key),
+            expected,
+        },
+        SettingsError::TextTooLong { key, max } => SettingsError::TextTooLong {
+            key: reroot(key),
+            max,
         },
         other => other,
     }
@@ -583,9 +662,47 @@ fn version(item: &Item) -> Result<PesVersion, PatchError> {
         })
 }
 
+/// `appearance` as a patch's `[appearance]` table must be for `version`:
+/// every non-top key the version holds `Some` — `MissingKey` at its dotted
+/// path, a patch being the compiler's whole look or nothing — and none it
+/// does not (`NotInThisVersion`). `path` is the appearance table's own
+/// (`teams[0].players.05.appearance`). `parse` reaches only the first
+/// half, the document's parser already refusing a foreign or unknown key;
+/// `to_toml` runs both over a hand-built `PatchPlayer`.
+fn check_appearance(
+    appearance: &AppearanceSettings,
+    version: PesVersion,
+    path: &str,
+) -> Result<(), PatchError> {
+    for key in SettingKey::ALL {
+        let spec = key.spec();
+        if spec.table == KeyTable::Top {
+            continue;
+        }
+        match (
+            held_on(key, version),
+            get_appearance(appearance, key).is_some(),
+        ) {
+            (true, false) => {
+                return Err(PatchError::MissingKey {
+                    key: leaf_path(path, &spec),
+                });
+            }
+            (false, true) => {
+                return Err(SettingsError::NotInThisVersion {
+                    key: leaf_path(path, &spec),
+                }
+                .into());
+            }
+            _ => {}
+        }
+    }
+    Ok(())
+}
+
 /// The `teams` array of tables; each element's path is `teams[i]`,
 /// zero-based.
-fn parse_teams(item: &Item) -> Result<Vec<PatchTeam>, PatchError> {
+fn parse_teams(item: &Item, pes_version: PesVersion) -> Result<Vec<PatchTeam>, PatchError> {
     let teams = item
         .as_array_of_tables()
         .ok_or_else(|| SettingsError::WrongType {
@@ -595,13 +712,17 @@ fn parse_teams(item: &Item) -> Result<Vec<PatchTeam>, PatchError> {
     teams
         .iter()
         .enumerate()
-        .map(|(i, table)| parse_team(table, &format!("teams[{i}]")))
+        .map(|(i, table)| parse_team(table, &format!("teams[{i}]"), pes_version))
         .collect()
 }
 
 /// One `[[teams]]`: `id` and `name` required, `players` absent = empty,
 /// anything else `UnknownKey`.
-fn parse_team(table: &dyn TableLike, path: &str) -> Result<PatchTeam, PatchError> {
+fn parse_team(
+    table: &dyn TableLike,
+    path: &str,
+    pes_version: PesVersion,
+) -> Result<PatchTeam, PatchError> {
     let id = u32_value(required(table, path, "id")?, &leaf(path, "id"))?;
     let name = string(required(table, path, "name")?, &leaf(path, "name"))?;
     for (name, _) in table.iter() {
@@ -614,14 +735,18 @@ fn parse_team(table: &dyn TableLike, path: &str) -> Result<PatchTeam, PatchError
     }
     let mut players = BTreeMap::new();
     if let Some(item) = table.get("players") {
-        players = parse_players(item, &leaf(path, "players"))?;
+        players = parse_players(item, &leaf(path, "players"), pes_version)?;
     }
     Ok(PatchTeam { id, name, players })
 }
 
 /// A team's `players` table: keys are two digits `01` to `99` (`NN` of
 /// `team id × 100 + NN`), anything else `UnknownKey`.
-fn parse_players(item: &Item, path: &str) -> Result<BTreeMap<u8, PatchPlayer>, PatchError> {
+fn parse_players(
+    item: &Item,
+    path: &str,
+    pes_version: PesVersion,
+) -> Result<BTreeMap<u8, PatchPlayer>, PatchError> {
     let table = table_like(item, path)?;
     let mut out = BTreeMap::new();
     for (name, item) in table.iter() {
@@ -632,22 +757,31 @@ fn parse_players(item: &Item, path: &str) -> Result<BTreeMap<u8, PatchPlayer>, P
             .into());
         }
         let slot = name.parse::<u8>().expect("checked above");
-        out.insert(slot, parse_player(item, &leaf(path, name))?);
+        out.insert(slot, parse_player(item, &leaf(path, name), pes_version)?);
     }
     Ok(out)
 }
 
 /// One `[teams.players.NN]`: `name` and `shirt_name` optional strings,
-/// `appearance` a table holding `motion` alone; every other key or
-/// subtable (the pre-Fox patch's `boots_id`, `appearance.face`, …) is
-/// `UnknownKey`. No length checks: those are `apply`'s, against the
-/// version's fields.
-fn parse_player(item: &Item, path: &str) -> Result<PatchPlayer, PatchError> {
+/// `boots_id`/`gloves_id` integers over the field's whole stored range (0
+/// to 16383), `base_copy_id` a u32, `appearance` the whole look — every
+/// key `pes_version` holds required (`MissingKey` at its dotted path), a
+/// key it does not `NotInThisVersion`, anything else `UnknownKey`. No
+/// length checks on the names: those are `apply`'s, against the version's
+/// fields.
+fn parse_player(
+    item: &Item,
+    path: &str,
+    pes_version: PesVersion,
+) -> Result<PatchPlayer, PatchError> {
     let table = table_like(item, path)?;
     let mut player = PatchPlayer {
         name: None,
         shirt_name: None,
-        motion: MotionSettings::default(),
+        boots_id: None,
+        gloves_id: None,
+        base_copy_id: None,
+        appearance: None,
     };
     if let Some(item) = table.get("name") {
         player.name = Some(string(item, &leaf(path, "name"))?);
@@ -655,11 +789,36 @@ fn parse_player(item: &Item, path: &str) -> Result<PatchPlayer, PatchError> {
     if let Some(item) = table.get("shirt_name") {
         player.shirt_name = Some(string(item, &leaf(path, "shirt_name"))?);
     }
+    if let Some(item) = table.get("boots_id") {
+        player.boots_id = Some(model_id(item, &leaf(path, "boots_id"))?);
+    }
+    if let Some(item) = table.get("gloves_id") {
+        player.gloves_id = Some(model_id(item, &leaf(path, "gloves_id"))?);
+    }
+    if let Some(item) = table.get("base_copy_id") {
+        player.base_copy_id = Some(u32_value(item, &leaf(path, "base_copy_id"))?);
+    }
     if let Some(item) = table.get("appearance") {
-        player.motion = parse_appearance(item, &leaf(path, "appearance"))?;
+        let appearance_path = leaf(path, "appearance");
+        let appearance = parse_appearance(
+            item,
+            &appearance_path,
+            AppearanceDocument::Patch(pes_version),
+        )?;
+        check_appearance(&appearance, pes_version, &appearance_path)?;
+        player.appearance = Some(appearance);
     }
     for (name, _) in table.iter() {
-        if !["name", "shirt_name", "appearance"].contains(&name) {
+        if ![
+            "name",
+            "shirt_name",
+            "boots_id",
+            "gloves_id",
+            "base_copy_id",
+            "appearance",
+        ]
+        .contains(&name)
+        {
             return Err(SettingsError::UnknownKey {
                 key: leaf(path, name),
             }
@@ -669,21 +828,25 @@ fn parse_player(item: &Item, path: &str) -> Result<PatchPlayer, PatchError> {
     Ok(player)
 }
 
-/// A Fox patch's `appearance` table holds `motion` alone; any other key or
-/// subtable (a pre-Fox patch's `[appearance.face]`, …) is `UnknownKey`.
-fn parse_appearance(item: &Item, path: &str) -> Result<MotionSettings, PatchError> {
-    let table = table_like(item, path)?;
-    let mut motion = MotionSettings::default();
-    if let Some(item) = table.get("motion") {
-        motion = parse_motion(item, &leaf(path, "motion"))?;
-    }
-    for (name, _) in table.iter() {
-        if name != "motion" {
-            return Err(SettingsError::UnknownKey {
-                key: leaf(path, name),
+/// `item` as a boots or gloves ID: an integer inside the field's whole
+/// stored range (`MODEL_ID_MAX`), not `settings.toml`'s stock band.
+fn model_id(item: &Item, key: &str) -> Result<u16, PatchError> {
+    let value = item
+        .as_value()
+        .and_then(|v| v.as_integer())
+        .ok_or_else(|| SettingsError::WrongType {
+            key: key.to_string(),
+            expected: "an integer",
+        })?;
+    u16::try_from(value)
+        .ok()
+        .filter(|id| *id <= MODEL_ID_MAX)
+        .ok_or_else(|| {
+            SettingsError::OutOfRange {
+                key: key.to_string(),
+                value,
+                range: format!("0 to {MODEL_ID_MAX}"),
             }
-            .into());
-        }
-    }
-    Ok(motion)
+            .into()
+        })
 }
