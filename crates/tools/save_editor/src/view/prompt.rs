@@ -18,6 +18,7 @@ use studio_core::widgets::{
     FORM_ROW_SPACING, modal, modal_buttons, modal_frame, modal_sentence_gap,
 };
 use team_widgets::tactics::RosterRow;
+use team_widgets::violations::SWITCH_TOOLTIP;
 
 use crate::session::Session;
 use crate::session::selection::{self, TeamChoice};
@@ -381,7 +382,7 @@ pub(super) fn changes_table<'a>(
                 if selectable {
                     if ui
                         .add(item.sense(egui::Sense::click()))
-                        .on_hover_text("Select this player")
+                        .on_hover_text(SWITCH_TOOLTIP)
                         .clicked()
                     {
                         clicked = Some(index);
