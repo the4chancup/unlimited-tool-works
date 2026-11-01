@@ -3011,3 +3011,5 @@ worklog passed 7,000 lines.
   queued, after 0.0.2, portraits read from the team's aesthetics export before `download/`.
 - 2026-11-01 — Scripts merged (sorted by job, `.7z` candidates, `licenses/`), gates green (5551 tests); the pitch button
   became Set PES path in the corner beside the penalty box (the maintainer's look); cv28-32 survivors triaged (cv36).
+- 2026-11-01 — cv35 (Set PES path) and cv36 merged; Astra over cv28-cv32 accepted 2 (the dock's grip, a readback test),
+  one became P49; the release scripts' SWE-2 round 1 accepted 9, reworked (`rel-r1`), round 2 running.

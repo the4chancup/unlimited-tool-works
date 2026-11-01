@@ -71,3 +71,15 @@ TOML's `#RRGGBB`.
 Adds: the picker's hex field accepts `#RRGGBB`, `0xRRGGBB` and `RRGGBB` alike in every tool
 that uses it, so a pasted value from an old habit lands instead of being refused. Costs: one
 parse with three prefixes in `color_tools`; the field still shows `#RRGGBB`.
+
+## P49 — A Fielded position row's tooltip says where its click goes
+
+From Astra's review of Live AATF (cv28-cv32, 2026-11-01). Every player's row in Live AATF
+says `Click to switch to this player` on hover (SE-GUI-30), and a click opens that player,
+except a `Fielded position` row's: its click opens his team's row, the preset it names shown
+on a formation carrying the cross on his pitch marker, since the issue is where he stands in
+the tactics, not in his own record.
+
+Adds: that row says `Click to show him on the team's pitch` (or the like) instead, so the
+jump to the team view is expected. Costs: a second tooltip constant in `team_widgets`
+`violations.rs`, chosen by the row's rule, and its line in the draft and SE-GUI-30.
