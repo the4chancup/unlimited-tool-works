@@ -813,7 +813,8 @@ Win32 original hurt the most):
     badge's left when off (a view setting, not an edit: no undo entry, no unsaved dot). Each
     name's period starts when the pitch first shows it, still first. The game
     staggers names by a rule not established (two names 2.1 s apart); the editor's start
-    together when the team view opens. The captain's mark, a white rounded box with a black "C", 12 x 11,
+    together when the team view opens, until the game's delays are measured (a worklog step
+    after 0.0.2). The captain's mark, a white rounded box with a black "C", 12 x 11,
     outlined 1 px in the badge's colour (`#242b2d`, as the game's: on a light portrait the
     white box would otherwise have no edge), sits 5 px above the badge over the portrait, its
     outline 1 px inside the badge's left edge (measured on a 720p capture). A starter whose

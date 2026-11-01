@@ -6555,6 +6555,13 @@ briefs, review loops, gates and mutation runs as for any step.
   measure what a second viewport costs per frame on the maintainer's machine, and what focus
   and the keyboard shortcuts do across the two windows; then the plan's paragraph, its
   scenario and a slice
+- [ ] after 0.0.2: the pitch's name scroll delays as the game's (the maintainer, 2026-11-01;
+  `plans/save_editor.md` "A wider name scrolls as the game's does": the editor starts every
+  name together, the game staggers them by a rule not established) → first measure in PES
+  2017 on captures of a whole lineup whose names overflow, over several 13.5 s periods: each
+  name's delay from the team screen opening to its first scroll, against its slot, its
+  position and its width; PES 2019 the same if 2017's rule is unclear; then the plan's
+  sentence, a scenario and a slice
 
 ### Phase 10 — Music tools
 
