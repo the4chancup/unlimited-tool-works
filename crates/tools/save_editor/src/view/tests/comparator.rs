@@ -285,6 +285,74 @@ fn a_rows_hover_says_its_click_switches_to_the_player() {
     );
 }
 
+// A field's row is the draft's `.drow`: the label in the name's column
+// the draft's `padding` (4 points) in, the `old → new` the draft's `gap`
+// (8) past the column (4 + 190 + 8) in the strong colour; a player head
+// keeps the row's left edge.
+// SE-GUI-13
+#[test]
+fn a_row_stands_in_the_drows_two_columns() {
+    let (mut view, mut window, _) = compared_73401("comparator_drow");
+    scroll_to(&mut window, &mut view, "Player 73401  49 Muh Spooks");
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    /// The painted text inside `bounds` whose galley starts with
+    /// `starts_with`.
+    fn text_in_row<'a>(
+        shapes: &'a [egui::epaint::ClippedShape],
+        bounds: accesskit::Rect,
+        starts_with: &str,
+    ) -> &'a egui::epaint::TextShape {
+        shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(shape)
+                    if shape.galley.job.text.starts_with(starts_with)
+                        && f64::from(shape.pos.x) >= bounds.x0 - 0.5
+                        && f64::from(shape.pos.x) <= bounds.x1 + 0.5
+                        && f64::from(shape.pos.y) >= bounds.y0 - 0.5
+                        && f64::from(shape.pos.y) <= bounds.y1 + 0.5 =>
+                {
+                    Some(shape)
+                }
+                _ => None,
+            })
+            .next()
+            .unwrap_or_else(|| panic!("no painted {starts_with:?} inside {bounds:?}"))
+    }
+    let row = comparator_button(&pairs, "Height 185 \u{2192} 183")
+        .1
+        .bounds()
+        .expect("the row's bounds");
+    let label = text_in_row(&shapes, row, "Height");
+    assert!(
+        (f64::from(label.pos.x) - (row.x0 + 4.0)).abs() <= 0.5,
+        "the label the row's 4-point inset in: {:?} vs {row:?}",
+        label.pos
+    );
+    let values = text_in_row(&shapes, row, "185 \u{2192} 183");
+    assert!(
+        (f64::from(values.pos.x) - (row.x0 + 202.0)).abs() <= 0.5,
+        "the values 4 + 190 + 8 in: {:?} vs {row:?}",
+        values.pos
+    );
+    let strong = window
+        .ctx
+        .style_of(window.ctx.theme())
+        .visuals
+        .strong_text_color();
+    assert_eq!(galley_color(values), strong, "the values' strong colour");
+    let head_bounds = comparator_button(&pairs, "Player 73401  49 Muh Spooks")
+        .1
+        .bounds()
+        .expect("the head's bounds");
+    let head = text_in_row(&shapes, head_bounds, "Player 73401 ");
+    assert!(
+        (f64::from(head.pos.x) - row.x0).abs() <= 0.5,
+        "a head stays at the row's left edge: {:?} vs {row:?}",
+        head.pos
+    );
+}
+
 /// A team whose name holds a colour code heads its group by its display
 /// name: 734's name in the open save coloured red.
 // SE-GUI-13
