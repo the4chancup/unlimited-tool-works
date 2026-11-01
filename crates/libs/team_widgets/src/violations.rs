@@ -161,7 +161,11 @@ pub fn violations_list(
                         pes_savefile::model::names::display_name(team.team_name)
                     ));
                     if groups.is_empty() {
-                        ui.weak("All clean");
+                        // The draft's `.drow weak`: the rows' own inset.
+                        ui.horizontal(|ui| {
+                            ui.add_space(ROW_INSET);
+                            ui.weak("All clean");
+                        });
                     }
                 }
             }
@@ -546,7 +550,15 @@ pub const SWITCH_TOOLTIP: &str = "Click to switch to this player";
 
 /// The rule name's column, the draft's `.f`: 190 points of proportional text,
 /// cut with an ellipsis when longer, never wrapping.
-const RULE_COL: f32 = 190.0;
+pub const RULE_COL: f32 = 190.0;
+
+/// The inset a `.drow` row's text starts in from the row's left edge and
+/// ends inside its right, the draft's `padding: 0 4px`.
+const ROW_INSET: f32 = 4.0;
+
+/// The gap between a `.drow` row's name column and its value, the
+/// draft's `gap: 8px`.
+const RULE_GAP: f32 = 8.0;
 
 /// The rule name's column in a one-column list (Live AATF's own window): 140
 /// points, since the window is narrow and the sentence beside it needs the
@@ -569,9 +581,10 @@ fn layout(
 }
 
 /// One row, the draft's `.drow`: the rule's name in `rule_col` points of
-/// severity-colored proportional text, one line cut with an ellipsis (the
-/// draft's `text-overflow: ellipsis`), then `sentence` in the strong text
-/// color, wrapped so a long custom check's text stays readable, and under it
+/// severity-colored proportional text `ROW_INSET` in, one line cut with an
+/// ellipsis (the draft's `text-overflow: ellipsis`), then `sentence`
+/// `RULE_GAP` past it in the strong text color, wrapped inside the right
+/// inset so a long custom check's text stays readable, and under it
 /// `violation_detail`'s lines (the draft's `.drow.detail`) over `players`, the
 /// team's, in the plain text color, wrapped in the same column; the whole row
 /// one click target. While `selects`, a player's row returns
@@ -607,13 +620,13 @@ fn row(
         rule_color,
         egui::text::TextWrapping::truncate_at_width(rule_col),
     );
-    let column = (ui.available_width() - rule_col).max(0.0);
+    let (name_x, value_x, value_width) = drow_columns(ui.available_width(), rule_col);
     let sentence_galley = layout(
         ui,
         sentence(violation, team_id, wording),
         font.clone(),
         strong_color,
-        egui::text::TextWrapping::wrap_at_width(column),
+        egui::text::TextWrapping::wrap_at_width(value_width),
     );
     let detail = violation_detail(violation, players, wording);
     let detail_galley = (!detail.is_empty()).then(|| {
@@ -622,7 +635,7 @@ fn row(
             detail.join("\n"),
             font,
             text_color,
-            egui::text::TextWrapping::wrap_at_width(column),
+            egui::text::TextWrapping::wrap_at_width(value_width),
         )
     });
     let sentence_height = sentence_galley.size().y;
@@ -662,16 +675,16 @@ fn row(
     // report's rows select nothing either.
     let hover = select.map(|_| SWITCH_TOOLTIP);
     let mut shapes = vec![
-        egui::Shape::galley(rect.min, rule_galley, rule_color),
+        egui::Shape::galley(rect.min + egui::vec2(name_x, 0.0), rule_galley, rule_color),
         egui::Shape::galley(
-            rect.min + egui::vec2(rule_col, 0.0),
+            rect.min + egui::vec2(value_x, 0.0),
             sentence_galley,
             strong_color,
         ),
     ];
     if let Some(galley) = detail_galley {
         shapes.push(egui::Shape::galley(
-            rect.min + egui::vec2(rule_col, sentence_height),
+            rect.min + egui::vec2(value_x, sentence_height),
             galley,
             text_color,
         ));
@@ -727,6 +740,21 @@ pub fn row_paint(
             None
         }
     }
+}
+
+/// A `.drow` row's two columns, the draft's `.f` and `.v`, which the
+/// violations list's rows and the Save editor's comparator's share: the
+/// name's `name_col` points wide `ROW_INSET` in from the row's left edge,
+/// the value `RULE_GAP` past it. Returns the two columns' x offsets from
+/// the row's left edge and the value's wrap width, `width` (the row's)
+/// less both insets, `name_col` and the gap (the draft's padding is on
+/// both sides).
+pub fn drow_columns(width: f32, name_col: f32) -> (f32, f32, f32) {
+    (
+        ROW_INSET,
+        ROW_INSET + name_col + RULE_GAP,
+        (width - 2.0 * ROW_INSET - name_col - RULE_GAP).max(0.0),
+    )
 }
 
 /// A bound check's sentence: "{label} {value}, over the {bound} the rules
@@ -1395,6 +1423,28 @@ mod tests {
         report(&mut window, pointer_at(at, true));
         let (_, selected) = report(&mut window, pointer_at(at, false));
         assert_eq!(selected, None, "a click selects nobody");
+    }
+
+    /// A clean team's `All clean` (the draft's `.drow weak`) stands the
+    /// row's 4-point inset right of its team's heading, which keeps the
+    /// list's left edge as every `.grp` does.
+    #[test]
+    fn a_reports_all_clean_stands_the_rows_inset_in() {
+        let teams = [TeamViolations {
+            team_id: 1,
+            team_name: "EMPTY",
+            players: &[],
+            violations: &[],
+            starting_eleven: &[],
+        }];
+        let mut window = Headless::new();
+        let (nodes, _, _) = window.list_as(&teams, ListUse::Report, vec![]);
+        let heading = line_bounds(&nodes, "1 EMPTY");
+        let clean = line_bounds(&nodes, "All clean");
+        assert!(
+            (clean.x0 - heading.x0 - 4.0).abs() <= 0.5,
+            "All clean the row's inset in: {clean:?} vs heading {heading:?}"
+        );
     }
 
     // A group's errors come before its warnings, the check's order kept
@@ -2837,19 +2887,20 @@ mod tests {
             "the long sentence wraps onto more rows: {longest} vs {one_line}"
         );
 
-        // The sentence sits in its own column, inside the row: its origin is
-        // the row's left edge plus `RULE_COL`, its right edge inside the row.
+        // The sentence sits in its own column, inside the row: the name
+        // the draft's `padding` (4 points) in, the sentence past the
+        // name's column and the draft's `gap` (4 + 190 + 8), its right
+        // edge inside the row.
         let medal_bounds = bounds_of(longest_label);
         let rule_shape = text_shape(&shapes, "Medal system");
         let sentence_shape = text_shape(&shapes, "the tier counts match");
         assert!(
-            (f64::from(rule_shape.pos.x) - medal_bounds.x0).abs() <= 0.5,
-            "the rule name starts at the row's left edge"
+            (f64::from(rule_shape.pos.x) - (medal_bounds.x0 + 4.0)).abs() <= 0.5,
+            "the rule name stands the row's 4-point inset in"
         );
         assert!(
-            (f64::from(sentence_shape.pos.x) - (medal_bounds.x0 + f64::from(RULE_COL))).abs()
-                <= 0.5,
-            "the sentence starts at its column"
+            (f64::from(sentence_shape.pos.x) - (medal_bounds.x0 + 202.0)).abs() <= 0.5,
+            "the sentence starts at its column, 4 + 190 + 8 in"
         );
         assert!(
             f64::from(sentence_shape.pos.x + sentence_shape.galley.rect.width())
@@ -3067,7 +3118,7 @@ mod tests {
     }
 
     /// How far each painted sentence starting with `sentence` stands right
-    /// of its row's left edge: the rule's column.
+    /// of its row's left edge: the inset, the rule's column and the gap.
     fn rule_columns(
         nodes: &[accesskit::Node],
         shapes: &[egui::epaint::ClippedShape],
@@ -3126,8 +3177,8 @@ mod tests {
         let two = rule_columns(&nodes, &shapes, height_sentence);
         assert_eq!(two.len(), 3, "premise: three Height rows");
         assert!(
-            two.iter().all(|column| (column - 190.0).abs() <= 0.5),
-            "two columns keep the 190-point rule column: {two:?}"
+            two.iter().all(|column| (column - 202.0).abs() <= 0.5),
+            "two columns put the sentence 4 + 190 + 8 in: {two:?}"
         );
 
         let one_column = ListUse::Editing {
@@ -3163,8 +3214,8 @@ mod tests {
         let one = rule_columns(&nodes, &shapes, height_sentence);
         assert_eq!(one.len(), 3, "premise: three Height rows");
         assert!(
-            one.iter().all(|column| (column - 140.0).abs() <= 0.5),
-            "one column narrows the rule column to 140: {one:?}"
+            one.iter().all(|column| (column - 152.0).abs() <= 0.5),
+            "one column puts the sentence 4 + 140 + 8 in: {one:?}"
         );
     }
 
