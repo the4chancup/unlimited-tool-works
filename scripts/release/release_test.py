@@ -1,7 +1,6 @@
 """Tests of scripts/release/release.py; `just release` runs them before the recipe."""
 
 import re
-import subprocess
 import tempfile
 import tomllib
 import unittest
@@ -18,7 +17,7 @@ from release import (
     launcher_calls,
     leaked_prefixes,
     links_crt_dynamically,
-    listing_paths,
+    pack,
     readme_names_version,
     remap_flags,
     rustflags_config,
@@ -211,28 +210,14 @@ class Listing(unittest.TestCase):
                 "LICENSE-APACHE",
             ):
                 (top / bundled).write_bytes(b"x")
-            archive = stage / "tiny.7z"
-            subprocess.run(
-                [seven_z, "a", "-t7z", "-mx=9", str(archive), top.name],
-                cwd=stage,
-                check=True,
-                capture_output=True,
-            )
-            listing = subprocess.run(
-                [seven_z, "l", "-slt", str(archive)],
-                cwd=stage,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            found = listing_paths(listing.stdout)
+            found = pack(seven_z, stage / "tiny.7z", stage, [top.name])
             expected = expected_entries("Tiny", "9.9.9")
             self.assertEqual(found, expected)
             self.assertNotEqual(found, expected - {f"{PACKAGE}-9.9.9/README.txt"})
 
     def test_a_packed_symbols_archive_lists_its_two_entries(self) -> None:
-        # The same argv `release.py` packs the symbols with: two bare names under the
-        # staging folder, so the archive's entries are flat.
+        # Two bare names under the staging folder, as `release.py` packs the symbols: the
+        # archive's entries are flat.
         seven_z = find_7z()
         if seven_z is None:
             self.fail("7-Zip not found: neither `7z` on PATH nor C:\\Program Files\\7-Zip\\7z.exe")
@@ -240,21 +225,8 @@ class Listing(unittest.TestCase):
             stage = Path(tmp)
             (stage / "Tiny.exe").write_bytes(b"x")
             (stage / "utw.pdb").write_bytes(b"y")
-            archive = stage / "tiny-symbols.7z"
-            subprocess.run(
-                [seven_z, "a", "-t7z", "-mx=9", str(archive), "Tiny.exe", "utw.pdb"],
-                cwd=stage,
-                check=True,
-                capture_output=True,
-            )
-            listing = subprocess.run(
-                [seven_z, "l", "-slt", str(archive)],
-                cwd=stage,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(listing_paths(listing.stdout), symbols_entries("Tiny"))
+            found = pack(seven_z, stage / "tiny-symbols.7z", stage, ["Tiny.exe", "utw.pdb"])
+            self.assertEqual(found, symbols_entries("Tiny"))
 
 
 if __name__ == "__main__":

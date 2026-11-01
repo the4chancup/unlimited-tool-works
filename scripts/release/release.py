@@ -112,6 +112,16 @@ def listing_paths(slt: str) -> set[str]:
     return entries
 
 
+def pack(seven_z: str, archive: Path, cwd: Path, names: list[str]) -> set[str]:
+    """Pack `names` (relative to `cwd`) into the .7z `archive`; returns its listing's entries."""
+    if subprocess.run([seven_z, "a", "-t7z", "-mx=9", str(archive), *names], cwd=cwd).returncode:
+        raise Refusal(f"7z a failed ({archive.name})")
+    listing = subprocess.run(
+        [seven_z, "l", "-slt", str(archive)], cwd=cwd, capture_output=True, text=True, check=True
+    )
+    return listing_paths(listing.stdout)
+
+
 def sha256_line(digest: str, archive_name: str) -> str:
     return f"{digest}  {archive_name}\n"
 
@@ -255,19 +265,7 @@ def release(version: str) -> None:
             raise Refusal(
                 f"7-Zip not found: `7z` is not on PATH and {SEVEN_Z} does not exist"
             )
-        pack = subprocess.run(
-            [seven_z, "a", "-t7z", "-mx=9", str(archive), top.name], cwd=staging
-        )
-        if pack.returncode != 0:
-            raise Refusal("7z a failed")
-        listing = subprocess.run(
-            [seven_z, "l", "-slt", str(archive)],
-            cwd=staging,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        found = listing_paths(listing.stdout)
+        found = pack(seven_z, archive, staging, [top.name])
         expected = expected_entries(name, version)
         if found != expected:
             raise Refusal(
@@ -291,20 +289,7 @@ def release(version: str) -> None:
         shutil.copyfile(top / f"{name}.exe", symbols_stage / f"{name}.exe")
         shutil.copyfile(pdb, symbols_stage / PDB_NAME)
         symbols = dist / f"{PACKAGE}-{version}-symbols.7z"
-        pack = subprocess.run(
-            [seven_z, "a", "-t7z", "-mx=9", str(symbols), f"{name}.exe", PDB_NAME],
-            cwd=symbols_stage,
-        )
-        if pack.returncode != 0:
-            raise Refusal("7z a failed (symbols)")
-        listing = subprocess.run(
-            [seven_z, "l", "-slt", str(symbols)],
-            cwd=symbols_stage,
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        found = listing_paths(listing.stdout)
+        found = pack(seven_z, symbols, symbols_stage, [f"{name}.exe", PDB_NAME])
         expected = symbols_entries(name)
         if found != expected:
             raise Refusal(

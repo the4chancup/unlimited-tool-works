@@ -1,9 +1,9 @@
 """Stage a release candidate for the maintainer's check: the bundle `just release` packs, laid
 out unpacked in a folder of its own outside the repository (`scripts/release/release.py` `release`,
 lines "top = staging / ..." to the empty folders), from the release exe built at the
-candidate's commit (`scripts/release/build_remapped.py`). Packs nothing and writes nothing under
-`target/dist`: a version's archive is written once, by `just release`, after logic version 1's
-hash is frozen.
+candidate's commit (`scripts/release/build_remapped.py`), and packed beside it as the .7z handed
+to the maintainer. Writes nothing under `target/dist`: a version's release archive is written
+once, by `just release`, after logic version 1's hash is frozen.
 
 Refuses unless the tree is clean, HEAD is the commit named, the exe is newer than the last
 commit that changed code or bundle resources, and the destination does not exist yet.
@@ -68,4 +68,13 @@ expected = sorted(release.expected_entries(name, VERSION))
 print("staged:", staged)
 print("release's set:", expected)
 assert set(staged) == set(expected), "the staged set differs from the release's"
+
+# The archive handed to the maintainer, packed as `just release` packs it; named after the
+# destination, so a restaged candidate's archive is told apart from the last one's.
+seven_z = release.find_7z()
+assert seven_z, f"7-Zip not found: `7z` is not on PATH and {release.SEVEN_Z} does not exist"
+ARCHIVE = DEST / f"{release.PACKAGE}-{DEST.name.removeprefix('candidate-')}-windows.7z"
+packed = release.pack(seven_z, ARCHIVE, DEST, [TOP.name])
+assert packed == set(expected), ("the archive's listing differs", packed ^ set(expected))
 print("ok:", TOP)
+print("ok:", ARCHIVE)
