@@ -6607,6 +6607,15 @@ briefs, review loops, gates and mutation runs as for any step.
     `gates-changed c8bcb76a` green (5585 passed); `just mutants-diff cc464278`: 1 caught.
     Two other dialog tests click before the opening check lands, on the combos and the
     title, above the counts line, so their bounds do not move (left as they are)
+  - [x] cv40 three view tests raced a worker's reply under load (worklog Issues,
+    2026-11-01, resolved): `a_press_held_while_the_check_lands_leaves_the_dialog_open` takes
+    the check straight after the click that started it (red: a 50 ms pause after the click,
+    "the opening check is in flight"; green with 300 ms); a test helper
+    `workers_replied` (`view/tests.rs`: frames until no view worker has a run in flight)
+    before `event_logo`'s `opened_at` compares windows (red with the wait skipped and a
+    500 ms pause in one window's frames; green with it) and before the wheel test turns
+    (no red: never reproduced with diagnostics in). Lead-written, test code only.
+    `gates-changed 99c9a36a` green (3920 passed, `.tmp/0_0_2/cv40/gates_changed.log`).
   - [x] cv23d the idle Ability stats view's repaint (cv23a's mutants-diff survivor,
     `abilities.rs:741` `&&` → `||`): a test that a frame with no input after the badge has
     landed asks for no repaint, red on the mutant (`left: 0ns`); SWE-2 sidekick
@@ -7399,28 +7408,19 @@ points there.
   passed once under different load. The dialog opens on 701's check, and 718's never starts
   (its 500 ms rest needs about 30 frames). The click is released onto Close: a real bug,
   cv39, which also makes the test wait for 701's check before it reads any bounds
-- open 2026-11-01 — `save_editor` `view::tests::savefile::
-  a_range_turned_by_the_wheel_is_checked_once_it_has_rested` (SE-GUI-41) failed once, in
-  `just gates-changed 99c9a36a` at the 8.36c1 merge `ed958e8f` (`.tmp/0_0_2/s36c/
-  gates_changed_c1.log`: `notch 2 steps the first end, the last following`, left `702 /a/`,
-  right `703 /aco/`, `savefile.rs:859`: the second notch did not step), four test binaries
-  at once; c1 touched neither the dialog nor its tests, and the test passed in the c1
-  worktree's run, then 40 of 40 times (`.tmp/0_0_2/s36c/flake_wheel.py`: 20 alone, 20 beside
-  the view tests). The test waits for 701's check before turning, and its frames' input
-  time steps exactly 1/60 s (asserted). In `studio_core::widgets::wheel` `Gesture::steps` a
-  notch over the hovered combo goes unstepped only when a widget holds the keyboard focus
-  (the step waits two passes) or the turn is filed as a pane's (`pane_at`): the suspects
-  are a focus taken, or a worker reply landing between notches, as cv39's was. The gates'
-  rerun failed again, with a second test: `a_press_held_while_the_check_lands_leaves_the_
-  dialog_open` (`savefile.rs:731`, "the opening check is in flight": the check's reply had
-  already landed, or none started, one frame after the dialog opened;
-  `.tmp/0_0_2/s36c/gates_changed_c1b.log`). Tally: 2 of 2 gates runs failed (four test
-  binaries at once), 1 of 7 whole `save_editor --lib` runs alone (its names not kept), 0 of
-  40 single-test runs: load-dependent. Both tests time their frames against the Multi-team
-  check's worker thread. Next: reproduce each with an injected delay as cv39 did, fix the
-  tests' (or the dialog's) dependence on the reply's timing in a slice of its own (cv40), and
-  learn whether `99c9a36a` fails the same way under load (c1 made `view/tests/patch.rs`
-  heavier). LAST GATED stays `99c9a36a` until `gates-changed` is green (`RUNBOOK.md` "Review rounds", checkpoint
+- resolved (2026-11-01, cv40) — three `save_editor` view tests failed under load, each
+  racing a view worker's reply (`.tmp/0_0_2/cv40/`, `load_loop.py`: the suite beside
+  below-normal busy loops). `a_press_held_while_the_check_lands_leaves_the_dialog_open` took
+  the Multi-team check a frame after the click that started it, so a fast reply had landed:
+  a 50 ms pause after the click failed it every time. `event_logo::the_logo_stands_at_the_
+  top_right_and_moves_nothing` (1 of 4 rounds) compared two windows, one of which had
+  received the Cards left badge. `a_range_turned_by_the_wheel_is_checked_once_it_has_rested`
+  left its second notch unstepped (2 of 2 gates runs, 1 of 2 rounds of the gates' binary,
+  never alone; 0 of 6 rounds once per-notch diagnostics were in), cause unconfirmed: a normal
+  run showed one pass a frame, no focus, no popup, the dialog's layer under the pointer;
+  a late repaint request at any notch and up to 120 extra frames before 701's check both
+  passed. The view's other runs (the Cards left badge) are the one timing it does not set
+- open 2026-11-01 — the vital scripts' first reviews (`RUNBOOK.md` "Review rounds", checkpoint
   (e); DECISIONS 2026-11-01): each reviewed whole by SWE-2 rounds once, in this order:
   - [x] the mutation runs' `mutants.py`, `mutants_diff.py`, `extra_mutants.py` (and
     `mutants_test.py`): round 1 accepted 18 (`.tmp/duck_rulings.md` S-scripts r1; among

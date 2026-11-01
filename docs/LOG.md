@@ -3023,3 +3023,5 @@ worklog passed 7,000 lines.
   table ones on the patch; SE-PAT-07 to 11; EU-SET-12, 13), the `.copy` findings, four decisions; c1-c4 sliced.
 - 2026-11-01 — 8.36c1 merged (`ed958e8f`): the aesthetics patch carries each player's whole look on every version,
   apply-patch makes the record his; SE-PAT-07 to 11. SWE-2 sidekick, one rework.
+- 2026-11-01 — cv40: three save_editor view tests raced a worker's reply under load (the held-press, event logo and wheel tests);
+  each now waits for the reply it depends on. `gates-changed 99c9a36a` green: the 8.36c1 merge is gated.
