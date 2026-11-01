@@ -7410,8 +7410,17 @@ points there.
   time steps exactly 1/60 s (asserted). In `studio_core::widgets::wheel` `Gesture::steps` a
   notch over the hovered combo goes unstepped only when a widget holds the keyboard focus
   (the step waits two passes) or the turn is filed as a pane's (`pane_at`): the suspects
-  are a focus taken, or a worker reply landing between notches, as cv39's was. Next time it
-  shows: reproduce with an injected delay as cv39 did, then fix in a slice of its own (`RUNBOOK.md` "Review rounds", checkpoint
+  are a focus taken, or a worker reply landing between notches, as cv39's was. The gates'
+  rerun failed again, with a second test: `a_press_held_while_the_check_lands_leaves_the_
+  dialog_open` (`savefile.rs:731`, "the opening check is in flight": the check's reply had
+  already landed, or none started, one frame after the dialog opened;
+  `.tmp/0_0_2/s36c/gates_changed_c1b.log`). Tally: 2 of 2 gates runs failed (four test
+  binaries at once), 1 of 7 whole `save_editor --lib` runs alone (its names not kept), 0 of
+  40 single-test runs: load-dependent. Both tests time their frames against the Multi-team
+  check's worker thread. Next: reproduce each with an injected delay as cv39 did, fix the
+  tests' (or the dialog's) dependence on the reply's timing in a slice of its own (cv40), and
+  learn whether `99c9a36a` fails the same way under load (c1 made `view/tests/patch.rs`
+  heavier). LAST GATED stays `99c9a36a` until `gates-changed` is green (`RUNBOOK.md` "Review rounds", checkpoint
   (e); DECISIONS 2026-11-01): each reviewed whole by SWE-2 rounds once, in this order:
   - [x] the mutation runs' `mutants.py`, `mutants_diff.py`, `extra_mutants.py` (and
     `mutants_test.py`): round 1 accepted 18 (`.tmp/duck_rulings.md` S-scripts r1; among
