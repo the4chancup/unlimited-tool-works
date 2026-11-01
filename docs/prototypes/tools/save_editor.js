@@ -450,7 +450,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .llist { background: var(--extreme); border: 1px solid var(--stroke); border-radius: 2px;
   max-height: 300px; overflow: auto; }
 .lrow { display: flex; gap: 5px; align-items: center; padding: 1px 4px;
-  white-space: nowrap; min-height: 18px; }
+  white-space: nowrap; min-height: 18px; cursor: grab; user-select: none; }
 .lrow:hover { background: var(--hover); }
 .lrow .fpos { width: 30px; flex: none; color: #b4b4b4; }
 #tac-lists .lrow { overflow: hidden; }
