@@ -26,7 +26,7 @@ directories = "6.0.0"
 # "egui version discipline"). The crates built on egui (`egui-wgpu`, `egui_extras`) each require
 # the `egui` of their release, so the exact `egui` pin holds them without a pin of their own.
 eframe = "=0.37.0"
-egui = "=0.37.0"
+egui = { version = "=0.37.0", features = ["monochrome_emoji_fonts"] }
 # The help window's Markdown. It is pinned exact like `egui`, because each release follows one
 # egui minor and 0.26.0 is the one on egui 0.37. It has no image loaders: the help shows no images.
 egui_commonmark = { version = "=0.26.0", default-features = false, features = ["pulldown_cmark"] }
