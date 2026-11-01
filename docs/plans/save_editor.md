@@ -1149,8 +1149,8 @@ Contents:
   Team TOML names them in: a member compares the combo against the game's list.
 - `violations` — the AATF results list grouped per player, emitting a "selected" event for the
   host's jump-to that names the row's player and its violation (the host lands a
-  `FieldedNotA` one on the team row, its preset shown). The groups keep `check_team`'s order (the players by slot, then the team's
-  own rows), each group's errors before its warnings; a team header heads each team's rows;
+  `FieldedNotA` one on the team row, its preset shown). The groups lead with the team's own rows, then the players' by slot
+  (`check_team` returns the team's rows last), each group's errors before its warnings; a team header heads each team's rows;
   suggestions are drawn only when the host asks, in their own group after the violations. A row
   is the rule's name in words and a sentence saying what is wrong, each stat, card, playing
   style and allowance in it named as the game names it (Attacking Prowess, never the rules
@@ -1580,7 +1580,7 @@ What this editor adds on top of the lib:
   than a compile's output does. At the bottom, not at a side: the player list holds the left and the
   views need their width (the player view's three columns), and a bottom strip is where the Team compiler's
   log already sits. The toggle is drawn as a button, framed, its label a play sign (`▶`, U+25B6,
-  from the bundled emoji fonts the marks' glyphs come from) then `Live AATF` whether on or
+  from the suite's symbols font the marks' glyphs come from) then `Live AATF` whether on or
   off, filled in the accent colour when on: the fill says on, and a check mark beside the
   label read as on even while it was off. egui's toggle value is a selectable label, which
   off reads as a label beside the menus, and the toggle is how a manager finds the check at

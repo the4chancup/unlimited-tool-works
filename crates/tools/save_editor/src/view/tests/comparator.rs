@@ -254,7 +254,7 @@ fn the_panel_lists_the_differences_per_team_and_a_rows_click_selects() {
     let (_, row) = comparator_button(&pairs, "Height 185 \u{2192} 183");
 
     // The selector on another team: the click selects the player and
-    // moves the selector to his, as the AATF panel's click does.
+    // moves the selector to his, as Live AATF's row click does.
     view.team = TeamChoice::Team(718);
     view.selected = Some(Selection::Player(718, 0));
     click(&mut window, row, &mut view);
