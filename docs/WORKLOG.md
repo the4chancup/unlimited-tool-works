@@ -1904,7 +1904,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         team file in game and check whether the import writes the team name the DLC's team
         bin gives the target's id into the save, as on PES 2017 (`plans/save_editor.md` "Interchange
         formats in the UI", the Texport bullet); the bin's editing is future work, no plan yet
-      - [ ] k5rev the cross-family review loop (the slices are Opus sidekicks', so the lead's
+      - [x] k5rev the cross-family review loop (the slices are Opus sidekicks', so the lead's
         review is same-family): SWE-2 rounds on each merged slice until one accepts under
         five, one Astra round over k5a + k5b, another over k5c, SWE-2 rounds after each;
         rulings in `.tmp/phase_08/8_9k5/rulings_k5.md`. Started 2026-10-29: SWE-2 round 1 on k5a, its
@@ -1923,13 +1923,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         stays on a 1224 x 576 pane, the shortest a member sees; the help names the boots and
         gloves numbering). SWE-2 round over the rework (2026-10-30): 0 counted, the loop ends
         (`rulings_k5.md` S1m: a test for the lists' half share and a doc word ride k5e)
-      - [ ] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged: ran
+      - [x] k5mut the loop's `mutants-diff` over k5a-k5c, survivors triaged: ran
         2026-10-30 in the mutants worktree at `0c5571d3`, base `d2617b2f^1`
         (`.tmp/phase_08/8_30c/k5mut.sh`, log `.tmp/phase_08/8_30c/k5mut.log`): 128 mutants, 104 caught, 9
         missed, 15 unviable; all 9 test gaps (`.tmp/phase_08/8_30c/k5mut_triage.md`): the four
         local ones in cv3, the remote half's three new ones (`stage`'s roster filter, the
         notes heading's guard) in the brief after cv3
-    - [ ] 8.9m the maintainer's pass over the 0.0.1 candidate (`d317b6da`), 2026-10-29:
+    - [x] 8.9m the maintainer's pass over the 0.0.1 candidate (`d317b6da`), 2026-10-29:
       - [x] the drafts take the app's grey for a plain player name and a planned tool
         (DECISIONS 2026-10-29)
       - [x] m1 the code fixes (brief `.tmp/phase_08/8_9m/brief_m1.md`): the badges' medal outlines
@@ -3125,7 +3125,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         (`toml_form.rs`, `config.toml`), outside side-lead U's locks: for whoever holds those
         crates (no code writes comments into `materials.toml` today)
     - [ ] d `libs/aatf`'s violation texts and the other tools' catalogs and help
-      - [ ] d1 before 0.0.1 (the maintainer, 2026-10-29, from the built app's Live AATF:
+      - [x] d1 before 0.0.1 (the maintainer, 2026-10-29, from the built app's Live AATF:
         "a sweep for user-unfriendly prints"): the AATF lists show rules-file spellings and
         kind names (`Unused` / "only 1 of 3 a_positions used", `Stat` / "attacking_prowess 82
         over the maximum 77", "ball_control 82, above the 77 the rule sets"). Every GUI text
@@ -4491,7 +4491,7 @@ briefs, review loops, gates and mutation runs as for any step.
   band": at the 4-point padding the bar's hit zone covered the rows' marks; red: three
   `live_marks` tests fail without it); tests that measured with a fresh default context read
   the window's style. Open: the built window's look, with w2's fonts (0.0.1w)
-- [ ] 0.0.1v the preview's icon (the maintainer, 2026-10-27: Archer, from
+- [x] 0.0.1v the preview's icon (the maintainer, 2026-10-27: Archer, from
   `C:\Data\Pictures\FSN\Smug\smugredman.png`; `plans/core/development_plan.md` "The icon",
   DECISIONS "The preview's icon and its build dependency"). The maintainer's split:
   the whole picture at 32 and up, a tight square on the head at 24 and 16.
@@ -4927,7 +4927,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] y7c later (the maintainer: "we'll check in detail in the future"): a look at PES
       2018, 2019 and 2020's Game Plan, Automatic settings, Substitution; the plan's "taken
       rather than looked at" goes with it (`QUESTIONS.md` "After the release")
-- [ ] 0.0.1z the maintainer's look at the built app (2026-10-27 ~21:10): the app's sliders
+- [x] 0.0.1z the maintainer's look at the built app (2026-10-27 ~21:10): the app's sliders
   kept, the drafts made to match
   - [x] z1 the drafts: sliders drawn as egui's (8-point rail, 11 × 14 handle, value box), the
     handle and the rail up to it in the selection blue; no team name on player rows; a
@@ -6049,7 +6049,8 @@ briefs, review loops, gates and mutation runs as for any step.
     funnel shifts), the never type's fallback already edition 2024's. A bump waits for a
     dependency's minimum Rust version to ask for one, its own commit (`CONTRIBUTING.md`
     "Toolchain notes")
-  - [ ] cv13 the window opens slowly (the maintainer, 2026-10-31, on the 03:08 release exe):
+  - [ ] cv13 after the cut (the maintainer, 2026-11-01: "It can wait"): the window opens
+    slowly (the maintainer, 2026-10-31, on the 03:08 release exe):
     the exe itself starts in about 170 ms (`--help`, three runs), but the CPU was at 100%
     (a mutation run and a sidekick), and the log shows wgpu probing four adapters on three
     backends (Vulkan, DX12, GL). Measure, on an idle machine, the time to the first frame as
@@ -6177,7 +6178,7 @@ briefs, review loops, gates and mutation runs as for any step.
     (`cli.rs` `rules`, the spec's `check-aatf` text, SE-AATF-08's test
     `rules_names_a_built_in_ruleset_by_its_stem`); a file wins over the stem by `is_file`
     first, its scenario case naming the file by path (in-process tests have one current folder)
-  - [ ] cv16 the height findings name their players (P47, accepted 2026-10-31;
+  - [x] cv16 the height findings name their players (P47, accepted 2026-10-31;
     `plans/aatf_rules.md` "The height findings name their players" and "Violations in words",
     `plans/save_editor.md` `violations`; drafted in `save_editor.js` `violationDetail`):
     `aatf`'s `logic.rhai` (`height_findings`, `team_checks`: hashed, so before logic version
@@ -6538,7 +6539,7 @@ briefs, review loops, gates and mutation runs as for any step.
       Counter Attack, one notch down took Possession; Numbers in attack on Medium, two notches
       up took Many then Few; three Ctrl+Z restored all three
       (`.tmp/0_0_2/look_cv38/`)
-  - [ ] cv39 a press held in the Multi-team AATF dialog while its check lands clicks Close
+  - [x] cv39 a press held in the Multi-team AATF dialog while its check lands clicks Close
     (found 2026-11-01 chasing the flaky range test, worklog Issues): the counts line
     (`multi_aatf.rs` `dialog`, `ui.label(counts)`) appears only once a result is listed, so
     every widget after it takes the next egui auto id on the landing frame, and a press held
@@ -6549,7 +6550,13 @@ briefs, review loops, gates and mutation runs as for any step.
     reply on a test channel, pressing the title, landing the reply, releasing: the dialog
     stays open; red on the current code. The flaky test waits for 701's check before it reads
     any bounds. Ships after 0.0.1's cut (the maintainer, 2026-11-01: "It can wait"): it lands
-    on main, the candidate branch stays at 0.0.1f's `e39e0a9d`
+    on main, the candidate branch stays at 0.0.1f's `e39e0a9d`. SWE-2 sidekick
+    (`.tmp/0_0_2/flaky_range/brief_cv39.md`), `68223e42`, merged `99c9a36a`: the `else` in
+    `dialog`; test `a_press_held_while_the_check_lands_leaves_the_dialog_open` (red: "the
+    dialog is still open"); the flaky test waits on `multi_checked(&[701])`.
+    `gates-changed c8bcb76a` green (5585 passed); `just mutants-diff cc464278`: 1 caught.
+    Two other dialog tests click before the opening check lands, on the combos and the
+    title, above the counts line, so their bounds do not move (left as they are)
   - [x] cv23d the idle Ability stats view's repaint (cv23a's mutants-diff survivor,
     `abilities.rs:741` `&&` → `||`): a test that a frame with no input after the badge has
     landed asks for no repaint, red on the mutant (`left: 0ns`); SWE-2 sidekick
@@ -7328,7 +7335,7 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
-- open 2026-11-01 — `save_editor` `view::tests::savefile::
+- resolved (2026-11-01, cv39 `99c9a36a`) — `save_editor` `view::tests::savefile::
   the_last_end_follows_the_first_and_lists_the_teams_from_it` failed once, in the unmutated
   baseline of `just mutants-diff 04ea9425` (`.tmp/0_0_2/mutants_diff_cv23a.log`: `no heading
   "Multi-team AATF (4cc Autumn 26)"`, from `prompt.rs` `dialog_nodes`), with the whole suite
