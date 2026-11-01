@@ -6361,14 +6361,17 @@ briefs, review loops, gates and mutation runs as for any step.
     loop. Open: rework r2 (`.tmp/0_0_2/brief_cv33_r2.md`, running), then its mutants-diff
     (logic.rhai is not mutated: the Rust side only). The whole save also moves 20 teams of 701-799: one like 857, and
     19 with six giants at 194 now read under Height, with more rows than before
-  - [ ] cv34 P48: Multi-team AATF counts the teams under each system (`plans/save_editor.md`
+  - [x] cv34 P48: Multi-team AATF counts the teams under each system (`plans/save_editor.md`
     "Multi-team AATF counts the teams under each system"; DECISIONS 2026-11-01): the draft
     first (the lead's), then the scenario under SE-GUI-41, then the slice on cv33's team
     result → verify: DBC6 under DBC7 reads "Height 8, Manlet 14, Universal 11, GigaHeight 14"
     (SE-GUI-51). Draft done (`save_editor.js` `multiAatfCounts`, the counts read from the
     merged check: `.tmp/0_0_2/p48_*.txt`; 893's and 897's sample rows now read under Height),
-    plan + DECISIONS (both kinds on one line). Open: the slice (`.tmp/0_0_2/brief_cv34.md`,
-    SWE-2 sidekick, branch cv34 in wt-cv34, running)
+    plan + DECISIONS (both kinds on one line). Slice `4b913ec8` (SWE-2 sidekick; the lead's
+    re-run: save_editor 648 + 46), merged `0338e749`: the Save editor's team check keeps
+    aatf's whole result; `multi_aatf.rs` `system_counts`, the DBC6 line pinned from the
+    merged check's 47 real answers. Its built-window look rides with the next built window;
+    its mutants-diff runs with cv33 r2's
   - [x] cv35 Set PES path over the team view's pitch while the sidebar's selector is orange or
     red (the maintainer's request, 2026-11-01; `plans/save_editor.md` "Tactics editor", the
     Set PES path bullet; `plans/core/gui.md` "Settings menu"'s one storing function, shared
