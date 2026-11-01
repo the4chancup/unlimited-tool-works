@@ -7093,7 +7093,11 @@ points there.
 - open 2026-11-01 — the vital scripts' first reviews (`RUNBOOK.md` "Review rounds", checkpoint
   (e); DECISIONS 2026-11-01): each reviewed whole by SWE-2 rounds once, in this order:
   - [ ] the mutation runs' `mutants.py`, `mutants_diff.py`, `extra_mutants.py` (and
-    `mutants_test.py`): round 1 running, `.tmp/rv_scripts/`
+    `mutants_test.py`): round 1 accepted 18 (`.tmp/duck_rulings.md` "S-scripts r1"; among
+    them a refused diff run filing the last run's results as its own, a queued run still
+    listing the live tree, `extra_mutants` filing an unrun mutant as caught, timeouts left
+    off `missed_all.txt`). Rework in three commits, the lead's: (1) snapshot and lock,
+    (2) results handling, (3) `extra_mutants`; then round 2
   - [ ] `run_tests.py`, `test_runner.py`, `remote_gates.py`
   - [ ] `release.py`, `build_remapped.py`, `make_candidate.py`
   - [ ] `scripts/census/`, `scripts/library_parity/`
