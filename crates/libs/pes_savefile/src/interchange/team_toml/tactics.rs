@@ -32,14 +32,14 @@ pub(super) fn emit_tactics(
         "starting_eleven",
         tactics.starting_eleven.map(array_text),
         "[]",
-        "",
+        "roster slots, counting from 0",
     );
     emit(
         out,
         "bench_order",
         tactics.bench_order.map(array_text),
         "[]",
-        "",
+        "the bench: 12 roster slots, counting from 0",
     );
     emit(
         out,

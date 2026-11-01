@@ -27,8 +27,8 @@ const INSTR_ROW_GAP: f32 = 3.0;
 /// version's stored table in its stored order, its own side's
 /// instructions plus `Off`, less Tight Marking — it marks an opponent,
 /// which Edit mode does not offer. Under a ruleset that allows
-/// illegal formations the side split goes (its Edit mode puts any
-/// instruction on any slot): the whole table, less Tight Marking.
+/// illegal formations the side split goes (the cup's Edit mode puts
+/// any instruction on any slot): the whole table, less Tight Marking.
 fn offered(
     version: PesVersion,
     side: InstructionSide,

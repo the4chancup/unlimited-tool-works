@@ -2324,6 +2324,10 @@ fn the_instruction_target_is_picked_on_the_pitch() {
     file.save(&path).unwrap();
     let mut view = SaveView::new();
     view.open(&path);
+    // /vg/ League 27, which does not allow illegal formations: under it
+    // defence 2's held attacking instruction is a wrong-side value the
+    // combo keeps, not a listed choice.
+    view.aatf_ruleset = "vgl27".to_owned();
     let mut window = Headless::sized(1600.0, 1400.0);
     view.selected = Some(Selection::Team(734));
 
@@ -2385,6 +2389,64 @@ fn the_instruction_target_is_picked_on_the_pitch() {
         1,
         "the pick was one undo entry"
     );
+}
+
+// A Defence combo's list follows the active ruleset: under DBC7,
+// which allows illegal formations, it offers the whole table and an
+// attacking instruction is a pick; under /vg/ League 27, which does
+// not, the game's Attack/Defence split stays.
+#[test]
+fn under_illegal_formations_a_defence_combo_offers_the_whole_table() {
+    let path = fixture(PesVersion::Pes17, "instruction_lists_by_ruleset");
+    // Every entry Unassigned, so no popup item is a wrong-side hold.
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes17)).unwrap();
+    {
+        let off = pes_savefile::schema::instruction::encode(PesVersion::Pes17, Instruction::Off)
+            .expect("PES 17 stores Off");
+        let preset = &mut file.team_mut(701).unwrap().tactics.presets[0];
+        for entry in preset
+            .attack_instructions
+            .as_mut()
+            .expect("PES 17 stores instructions")
+            .iter_mut()
+            .chain(
+                preset
+                    .defence_instructions
+                    .as_mut()
+                    .expect("instructions")
+                    .iter_mut(),
+            )
+        {
+            entry.instruction = off;
+        }
+    }
+    file.save(&path).unwrap();
+    for (ruleset, attacking_offered) in [("dbc7", true), ("vgl27", false)] {
+        let mut view = SaveView::new();
+        view.open(&path);
+        view.aatf_ruleset = ruleset.to_owned();
+        let mut window = Headless::sized(1600.0, 1400.0);
+        view.selected = Some(Selection::Team(701));
+
+        // Defence 1's combo opened; the popup's items join the
+        // AccessKit tree the frame after.
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        click(&mut window, instruction_combos(&nodes)[0][1], &mut view);
+        let (_, ids, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        let offered = |label: &str| {
+            ids.iter()
+                .any(|(_, node)| node.role() == Role::Button && node.label() == Some(label))
+        };
+        assert!(
+            offered("Deep Defensive Line"),
+            "{ruleset}: the popup lists a defending instruction"
+        );
+        assert_eq!(
+            offered("Hug the Touchline"),
+            attacking_offered,
+            "{ruleset}: an attacking instruction on a Defence combo"
+        );
+    }
 }
 
 // The draft's `.rolechip` ellipsis: the target chip is its column's

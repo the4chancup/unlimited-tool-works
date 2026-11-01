@@ -311,7 +311,9 @@ ingame-face parameters (which the legacy formats omit). Goals:
   warnings.
 - **Absent = untouched on import**, at every level (key, player, team section) — the rule the
   aesthetics patch follows for players and teams.
-  An export writes every field, so a round trip is full-fidelity;
+  An export writes every field, so a round trip is full-fidelity, the bench's last nine
+  excepted: the document carries the twelve and an import refills the rest as the game writes
+  them;
   a file written by hand or by the Team creator carries only what its author decided, and the
   save's values stand in for the rest. A partial file is therefore a patch, not a template with
   holes.
@@ -356,8 +358,8 @@ stadium = false                 # PES 20 and later
 strip = false                   # PES 17 only
 
 [tactics]
-starting_eleven = [0, 10, 3, 1, 5, 4, 9, 2, 6, 7, 8]  # roster slots, 0-based as stored
-bench_order = [11, 12, ...]     # the bench's 12 roster slots
+starting_eleven = [0, 10, 3, 1, 5, 4, 9, 2, 6, 7, 8]  # roster slots, counting from 0
+bench_order = [11, 12, ...]     # the bench: 12 roster slots, counting from 0
 players_to_join_attack = [255, 255, 255]             # roster slots, counting from 0; 255 = nobody
 
 [tactics.set_pieces]            # roster slots, counting from 0; 255 = nobody
@@ -600,7 +602,9 @@ impl TeamToml {
 pub fn shirt_name_from(name: &str, version: PesVersion) -> String;
 ```
 
-Rules of `apply`: `pes_version` absent means "the target's version" (no conversion); the
+Rules of `apply`: `pes_version` absent means "the target's version" (no conversion); a
+`bench_order` writes its twelve and refills the record's other nine as the game writes them
+(the roster slots from 0 that neither the eleven nor the twelve name, ascending); the
 `appearance` table's keys alone, each as its stored value (a key the table lacks keeps
 its value: "absent = untouched", where `settings.toml` and the patch write every field),
 go through `settings_toml`'s shared writer, the run's measured-unused bits keeping the
@@ -840,8 +844,9 @@ Both are raw dumps of the reference editor's in-memory structs; both parse into 
   XI (11), bench (21), 6 set-piece takers (FK long, FK short, FK 2, CK left, CK right, PK), 3
   join-attack, 4 auto flags (substitution, offside trap, preset change, attack/defence levels) —
   **no captain**. The reference imports only into 16-18 and only from the same version (its
-  x/y "conversion factor" is 1 for every pair); here the block parses into `TeamToml.tactics`
-  and `apply`'s version rule decides, the header's version being `pes_version`. No real `.4cct`
+  x/y "conversion factor" is 1 for every pair); here the block parses into `TeamToml.tactics`,
+  `bench_order` taking the first 12 of its 21 and `apply` refilling the nine as a Team TOML
+  import does, and `apply`'s version rule decides, the header's version being `pes_version`. No real `.4cct`
   exists on this machine: the fixture is transcribed from the reference's write walk over the
   PES 19 fixture save's team 713 (provenance in the fixtures README), and the test's evidence is
   that the Rust reader's `TeamTactics` equals the schema codec's for that team.
