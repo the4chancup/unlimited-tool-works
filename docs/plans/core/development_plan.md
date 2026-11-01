@@ -59,6 +59,8 @@ embeds every cup's current rulesets (`spec/aatf_rules.md` "Embedded rulesets"), 
 among them, and the bundle's settings pick DBC7 as the Save editor's `aatf_ruleset` and PES
 2017, DBC's game, as the sidebar's `pes_version`: 0.0.1 is DBC's alone, its testers DBC's
 managers, whose first open shows no version warning (the app's own default stays PES 2019).
+Only the Save editor serves DBC7: the event's aesthetics are compiled with Red, as before, so
+nothing of the Team compiler's output (its CPKs, its aesthetics patch) reaches DBC7's save.
 No rules file rides beside the exe: one in the data folder's `rules/` would list as an
 import, the same ruleset twice in the dropdown, its copy one × from deleted. The settings file
 lives in the bundle's `data/` folder, `data/settings.toml`, which makes the bundle portable

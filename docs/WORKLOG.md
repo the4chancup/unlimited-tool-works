@@ -7399,7 +7399,19 @@ points there.
   passed once under different load. The dialog opens on 701's check, and 718's never starts
   (its 500 ms rest needs about 30 frames). The click is released onto Close: a real bug,
   cv39, which also makes the test wait for 701's check before it reads any bounds
-- open 2026-11-01 — the vital scripts' first reviews (`RUNBOOK.md` "Review rounds", checkpoint
+- open 2026-11-01 — `save_editor` `view::tests::savefile::
+  a_range_turned_by_the_wheel_is_checked_once_it_has_rested` (SE-GUI-41) failed once, in
+  `just gates-changed 99c9a36a` at the 8.36c1 merge `ed958e8f` (`.tmp/0_0_2/s36c/
+  gates_changed_c1.log`: `notch 2 steps the first end, the last following`, left `702 /a/`,
+  right `703 /aco/`, `savefile.rs:859`: the second notch did not step), four test binaries
+  at once; c1 touched neither the dialog nor its tests, and the test passed in the c1
+  worktree's run, then 40 of 40 times (`.tmp/0_0_2/s36c/flake_wheel.py`: 20 alone, 20 beside
+  the view tests). The test waits for 701's check before turning, and its frames' input
+  time steps exactly 1/60 s (asserted). In `studio_core::widgets::wheel` `Gesture::steps` a
+  notch over the hovered combo goes unstepped only when a widget holds the keyboard focus
+  (the step waits two passes) or the turn is filed as a pane's (`pane_at`): the suspects
+  are a focus taken, or a worker reply landing between notches, as cv39's was. Next time it
+  shows: reproduce with an injected delay as cv39 did, then fix in a slice of its own (`RUNBOOK.md` "Review rounds", checkpoint
   (e); DECISIONS 2026-11-01): each reviewed whole by SWE-2 rounds once, in this order:
   - [x] the mutation runs' `mutants.py`, `mutants_diff.py`, `extra_mutants.py` (and
     `mutants_test.py`): round 1 accepted 18 (`.tmp/duck_rulings.md` S-scripts r1; among
