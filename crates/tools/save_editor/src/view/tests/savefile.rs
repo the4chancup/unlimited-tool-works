@@ -727,6 +727,11 @@ fn a_range_turned_by_the_wheel_is_checked_once_it_has_rested() {
         |view: &SaveView, id: u32| format!("{id} {}", display_name(&team_entry(view, id).name));
     let first = label(&view, 701);
     multi_checked(&mut window, &mut view, &[701]);
+    // Every other run of the view lands before the turn, so no reply lands
+    // between two notches: under load the second notch once went
+    // unstepped, and a reply landing mid-turn is the one input whose
+    // timing the test does not set.
+    workers_replied(&mut window, &mut view);
     // The colour the text `text` is painted in last, as the tessellator
     // picks it: the override, else the glyphs' own, else the fallback for
     // glyphs left to it. egui dims a painter's shapes by scaling these
