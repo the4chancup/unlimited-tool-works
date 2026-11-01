@@ -6504,7 +6504,14 @@ briefs, review loops, gates and mutation runs as for any step.
     sentence's x against the row's rect, and the built window within 1 px of the draft. The
     comparator's rows are one text (`<label> <old> → <new>`, `comparator.rs` `line`) where
     the draft's (`save_editor.js`, `#cmp-rows`) are a `.drow` too: the label in the 190 px
-    column, `old → new` after it in the strong colour; brought to the draft in the same slice
+    column, `old → new` after it in the strong colour; brought to the draft in the same slice.
+    SWE-2 sidekick (`.tmp/0_0_2/brief_cv37.md`), `405cfd2d`, merged `568cca89` (the lead's
+    re-run: team_widgets 228, save_editor 652 + 46, ruleset_editor 145 + 13):
+    `violations.rs` `drow_columns` (`ROW_INSET`, `RULE_GAP`, private; `RULE_COL` now `pub`
+    for the comparator), `comparator.rs` `field_row`; tests
+    `a_reports_all_clean_stands_the_rows_inset_in`, `a_row_stands_in_the_drows_two_columns`,
+    the column tests at 4 / 202 / 152; `gates-changed e60f4365` green (5580 passed). Open:
+    the built-window look against the draft, the mutants-diff
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
@@ -7274,6 +7281,15 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-01 — `save_editor` `view::tests::savefile::
+  the_last_end_follows_the_first_and_lists_the_teams_from_it` failed once, in the unmutated
+  baseline of `just mutants-diff 04ea9425` (`.tmp/0_0_2/mutants_diff_cv23a.log`: `no heading
+  "Multi-team AATF (4cc Autumn 26)"`, from `prompt.rs` `dialog_nodes`), with the whole suite
+  running beside a sidekick's build; it passed alone five times in a row and in every gates
+  run. The frames' time is egui's own step (no `RawInput::time`), so the suspect is the
+  Multi-team check's worker reply landing in a different frame under load. Find the race
+  (rerun the suite under a CPU load until it fails), then make the test wait for what it
+  reads; a test fails, it never flakes
 - open 2026-11-01 — the vital scripts' first reviews (`RUNBOOK.md` "Review rounds", checkpoint
   (e); DECISIONS 2026-11-01): each reviewed whole by SWE-2 rounds once, in this order:
   - [x] the mutation runs' `mutants.py`, `mutants_diff.py`, `extra_mutants.py` (and
