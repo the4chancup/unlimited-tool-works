@@ -413,7 +413,8 @@ fn suggestions_are_asked_for_only_while_show_suggestions_is_on() {
         .as_ref()
         .unwrap();
     assert!(
-        held.iter()
+        held.violations
+            .iter()
             .all(|violation| violation.severity != aatf::Severity::Suggestion),
         "no suggestion asked for"
     );
@@ -711,10 +712,12 @@ fn held_slot_with_suggestions_alone(view: &SaveView) -> u8 {
     let held = view.live.check.result.as_ref().unwrap().1[0]
         .as_ref()
         .unwrap();
-    held.iter()
+    held.violations
+        .iter()
         .filter_map(|violation| violation.slot)
         .find(|slot| {
-            held.iter()
+            held.violations
+                .iter()
                 .filter(|violation| violation.slot == Some(*slot))
                 .all(|violation| violation.severity == aatf::Severity::Suggestion)
         })

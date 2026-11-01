@@ -10,16 +10,16 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
 
-use aatf::{LoadError, Rules, TeamView, Violation};
+use aatf::{LoadError, Rules, TeamView};
 use anyhow::anyhow;
 use pes_savefile::EditFile;
 use pes_savefile::model::PlayerEntry;
 use rayon::prelude::*;
 use team_widgets::violations::ListedPlayer;
 
-/// One team's AATF check: its violations, or the error text (a team view
-/// or the script).
-pub(crate) type TeamCheck = Result<Vec<Violation>, String>;
+/// One team's AATF check: its violations and the systems it was read
+/// under, or the error text (a team view or the script).
+pub(crate) type TeamCheck = Result<aatf::TeamCheck, String>;
 
 /// The first built-in ruleset's stem: the setting's default, and the
 /// ruleset a choice that is gone falls back to.
@@ -311,12 +311,9 @@ pub(crate) fn check_teams(rules: &Rules, views: &[Result<TeamView, String>]) -> 
     views
         .par_iter()
         .map(|view| {
-            view.as_ref().map_err(Clone::clone).and_then(|view| {
-                rules
-                    .check_team(view)
-                    .map(|check| check.violations)
-                    .map_err(|error| error.to_string())
-            })
+            view.as_ref()
+                .map_err(Clone::clone)
+                .and_then(|view| rules.check_team(view).map_err(|error| error.to_string()))
         })
         .collect()
 }

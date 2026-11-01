@@ -80,6 +80,16 @@ fn violation(
     }
 }
 
+/// A team's successful check holding `violations`, read under no named
+/// system (the marks read the violations alone).
+fn checked(violations: Vec<aatf::Violation>) -> crate::session::rules::TeamCheck {
+    Ok(aatf::TeamCheck {
+        violations,
+        medal_system: None,
+        height_system: None,
+    })
+}
+
 /// `marked_field` maps each kind to the field it is about, `None` for the
 /// row- and team-only kinds, one arm per kind.
 #[test]
@@ -384,7 +394,7 @@ fn held_violations_is_one_teams_ok_result_while_on() {
     };
     check.result = Some((
         key(&[734]),
-        vec![Ok(vec![violation(
+        vec![checked(vec![violation(
             None,
             aatf::Severity::Error,
             aatf::ViolationKind::Captain,
@@ -403,7 +413,7 @@ fn held_violations_is_one_teams_ok_result_while_on() {
     );
     check.result = Some((key(&[734]), vec![Err("boom".to_owned())]));
     assert_eq!(held(&check), None, "a failed check");
-    check.result = Some((key(&[734, 735]), vec![Ok(vec![]), Ok(vec![])]));
+    check.result = Some((key(&[734, 735]), vec![checked(vec![]), checked(vec![])]));
     assert_eq!(held(&check), None, "not one team's");
     check.result = None;
     assert_eq!(held(&check), None, "nothing held yet");
@@ -758,7 +768,7 @@ fn the_stats_marks_line_up_at_the_label_columns_left_edge() {
     let mut centres = Vec::new();
     for (name, label) in stats {
         assert!(
-            violations.iter().any(|violation| matches!(
+            violations.violations.iter().any(|violation| matches!(
                 &violation.kind,
                 aatf::ViolationKind::Stat { stat, .. } if *stat == aatf::Stat::try_from(name.to_owned()).unwrap()
             ) && violation.severity == aatf::Severity::Error),
@@ -885,7 +895,7 @@ fn each_fields_mark_stands_left_of_its_label() {
                 ruleset: "autumn26".to_owned(),
                 suggestions: true,
             },
-            vec![Ok(vec![violation(Some(0), *severity, kind.clone())])],
+            vec![checked(vec![violation(Some(0), *severity, kind.clone())])],
         ));
         // The dock's bottom panel can clip a low control (the COM header
         // at ~582 sits below it at 800 tall): scroll the label into
@@ -938,8 +948,8 @@ fn a_warnings_mark_is_an_orange_warning_sign() {
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
         view.live.check.result.as_ref().is_some_and(|(_, checks)| {
-            checks[0].as_ref().is_ok_and(|violations| {
-                violations.iter().any(|violation| {
+            checks[0].as_ref().is_ok_and(|check| {
+                check.violations.iter().any(|violation| {
                     matches!(violation.kind, aatf::ViolationKind::Stat { .. })
                         && violation.severity == aatf::Severity::Warning
                 })
@@ -1118,7 +1128,7 @@ fn a_long_name_truncates_before_the_rows_mark() {
             ruleset: "autumn26".to_owned(),
             suggestions: false,
         },
-        vec![Ok(Vec::new())],
+        vec![checked(Vec::new())],
     ));
     let item_spacing = f64::from(
         window
@@ -1213,7 +1223,7 @@ fn no_cross_overlaps_text_and_no_field_moves() {
             ruleset: "autumn26".to_owned(),
             suggestions: false,
         },
-        vec![Ok(violations)],
+        vec![checked(violations)],
     ));
     let (_, nodes_mark, shapes_mark) =
         window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -1551,7 +1561,7 @@ fn a_dirty_rows_dot_survives_truncation() {
             ruleset: "autumn26".to_owned(),
             suggestions: false,
         },
-        vec![Ok(Vec::new())],
+        vec![checked(Vec::new())],
     ));
     let (item_spacing, warn) = {
         let style = window.ctx.style_of(window.ctx.theme());
@@ -1640,7 +1650,7 @@ fn a_dirty_rows_dot_survives_truncation() {
             ruleset: "autumn26".to_owned(),
             suggestions: false,
         },
-        vec![Ok(Vec::new())],
+        vec![checked(Vec::new())],
     ));
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let row = team_row(&nodes, &view, 701);
@@ -1824,6 +1834,7 @@ fn a_fielded_violation_crosses_the_starters_portrait_on_the_pitch() {
         .as_ref()
         .unwrap();
     let (fielded_slot, position) = violations
+        .violations
         .iter()
         .find_map(|violation| {
             if let aatf::ViolationKind::FieldedNotA {
