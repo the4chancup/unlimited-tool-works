@@ -30,7 +30,13 @@ A copy is the face category's link: at most one in a folder, and refused beside 
 the player's own (a face model, a `.face` link, an `ingame_face.toml`), since the game shows the
 copy over his own face and the two contradict each other. The id is a number other than 0 and
 the player's own id (both are the record's "no copy"); whether a stock id exists in the game's
-database is not checked, the compiler having no database to look in. A file rather than a
+database is not checked, the compiler having no database to look in. Each refusal is an Error
+that drops the player folder, as the other link rules do (`shared_link_duplicate`,
+`ingame_face_explicit_face_model`): `copy_link_duplicate` for a second copy,
+`copy_link_with_face` for a copy beside a face of his own, and `copy_link_id_invalid` for a
+name that is not a number, is 0, or is the id of a player the folder maps to (a folder that
+`players.txt` maps to several players is checked against each; a teammate's id is a valid
+copy). A file rather than a
 `settings.toml` key: the folder listing shows that a player wears a copy, where a key would
 leave a folder that looks empty until its settings are opened, and the export already names
 what a player wears by file (models, `.face`, `.boots` and `.gloves` links) while Team TOML

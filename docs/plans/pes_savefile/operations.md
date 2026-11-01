@@ -82,16 +82,26 @@ Still open:
     The compiler plans the patch before its tasks run and fills these two keys once each
     task's outcome is known, then writes the file once: the file never holds an ID
     conditioned on a task.
-  - **No look for a player whose `settings.toml` was invalid**: no `[appearance]` and no ID
-    keys from that file, so the save keeps his record (the Aesthetics export plan's "An
-    invalid `settings.toml` keeps the player's installed look").
+  - **No look for a player whose `settings.toml` or `ingame_face.toml` was invalid**: no
+    `[appearance]` and no ID key his settings would resolve, neither an authored stock ID nor
+    the default a marker or a `Full` export gives, so the save keeps his record and his IDs
+    (the Aesthetics export plan's "An invalid `settings.toml` keeps the player's installed
+    look"); an ID his folder's models or links get still lands. Both files' keys go in the one
+    `[appearance]`, so one invalid file holds back the other's, not a half look built from
+    defaults: an invalid file is an Error a member reads and fixes, and a partial table would
+    need an `apply` that writes some keys and leaves others, a second write path for a case
+    the next compile corrects.
 
   The file stays readable as the export's own files are: the same key names, tables and
   values as `settings.toml` and `ingame_face.toml` (`sleeves = "short"`, a motion as the game
   shows it), the face, hair and iris under the player's `appearance` as the joined schema
   holds them, so a reader compares a patch with a player's files key by key. What differs is
   that every value is resolved (no `""` default, no `name = true`, the FPC preset applied) and
-  that there are no per-key range comments: the templates carry those.
+  that there are no per-key range comments: the templates carry those. An `[appearance]` is a
+  whole look or absent: reading a patch refuses one missing a key the version holds, not
+  filling it with the key's default as `settings.toml` does, since the patch is the compiler's
+  output and a missing key means a broken patch (or one written before the whole look, holding
+  motions alone), whose apply would reset the player's other keys.
 
   ```toml
   [teams.players.03]           # slot 03 → player 70203
