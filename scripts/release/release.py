@@ -5,7 +5,7 @@ The recipe builds `studio` with `--locked`, the build machine's home folder, car
 homes, repository and target directory remapped out of the exe's paths (`remap_flags`), reads the executable's name from the built exe's
 `--help` usage line (the name lives in `studio_core`'s `EXE_NAME`, not in this script),
 stages `unlimited-tool-works-<version>/` — the exe as `<name>.exe`, the launchers it ships
-(`LAUNCHERS`, none in 0.0.1), the readme, the two licenses, the bundled `data/settings.toml`,
+(`LAUNCHERS`, none in 0.0.1), the readme, the two licenses in `licenses/`, the bundled `data/settings.toml`,
 and the empty folders it ships (`EMPTY_FOLDERS`, none in 0.0.1) — under a temporary folder in
 cargo's target directory (asked of `cargo metadata`, since a developer may have moved it),
 packs it as `<target>/dist/unlimited-tool-works-<version>-windows.7z` with a
@@ -48,6 +48,11 @@ PACKAGE = "unlimited-tool-works"
 # `quick_upgrade.bat` again, with the empty `exports/` and `old_exports/` they work in.
 LAUNCHERS: tuple[str, ...] = ()
 EMPTY_FOLDERS: tuple[str, ...] = ()
+# The repository's license files, shipped in the bundle's `licenses/` folder: members open the
+# exe and the readme, so the top folder keeps to those.
+LICENSES = ("LICENSE-MIT", "LICENSE-APACHE")
+# Beside them, the notices of the crates and fonts the exe contains (`write_notices`).
+NOTICES = "THIRD-PARTY-NOTICES.txt"
 
 
 class Refusal(Exception):
@@ -90,8 +95,8 @@ def expected_entries(name: str, version: str) -> set[str]:
         top,
         f"{top}/{name}.exe",
         f"{top}/README.txt",
-        f"{top}/LICENSE-MIT",
-        f"{top}/LICENSE-APACHE",
+        f"{top}/licenses",
+        *(f"{top}/licenses/{license_file}" for license_file in (*LICENSES, NOTICES)),
         f"{top}/data",
         f"{top}/data/settings.toml",
         *(f"{top}/{launcher}" for launcher in LAUNCHERS),
@@ -120,6 +125,97 @@ def pack(seven_z: str, archive: Path, cwd: Path, names: list[str]) -> set[str]:
         [seven_z, "l", "-slt", str(archive)], cwd=cwd, capture_output=True, text=True, check=True
     )
     return listing_paths(listing.stdout)
+
+
+def about_config(deny_toml: str) -> str:
+    """`cargo-about`'s config: it accepts what `cargo deny` allows, so one list rules both, and
+    reads the Windows exe's dependency graph, the only one a bundle ships."""
+    allowed = tomllib.loads(deny_toml)["licenses"]["allow"]
+    return (
+        f"accepted = [{', '.join(json.dumps(license_id) for license_id in allowed)}]\n"
+        'targets = ["x86_64-pc-windows-msvc"]\n'
+        "ignore-build-dependencies = true\n"
+        "ignore-dev-dependencies = true\n"
+    )
+
+
+def copyright_lines(text: str, shared: set[str]) -> list[str]:
+    """A license copy's own notices: lines opening with "Copyright", "(c)" or "©" that are
+    not in every copy of the license (`shared`). A license's body has such lines too, the
+    font license's "Copyright Holder(s)" definition among them, and they are in every copy;
+    placeholders are license text as well (the Apache appendix's, an MIT template left
+    unfilled)."""
+    return [
+        line.strip() for line in text.splitlines()
+        if re.match(r"\s*(Copyright\b|\([cC]\)|©)", line) and line.strip() not in shared
+        and "[yyyy]" not in line and "<year>" not in line
+    ]
+
+
+def third_party_notices(about: dict, workspace: Path) -> str:
+    """`licenses/THIRD-PARTY-NOTICES.txt` from `cargo about generate --format json`'s output:
+    each license once, its text without any one author's copyright line, then every crate under
+    it with the copyright lines its own copy states, which are what the licenses ask to keep.
+    cargo-about lists a license once per distinct text, and copies of MIT differ in their
+    copyright line alone (117 entries for MIT in 0.0.1's graph). The workspace's own crates
+    are left out: the bundle's two license files cover them."""
+    by_id: dict[str, list[dict]] = {}
+    for variant in about["licenses"]:
+        by_id.setdefault(variant["id"], []).append(variant)
+    sections = []
+    for variants in by_id.values():
+        shared = set.intersection(
+            *({line.strip() for line in variant["text"].splitlines()} for variant in variants)
+        )
+        crates = []
+        for variant in variants:
+            notices = copyright_lines(variant["text"], shared)
+            for use in variant["used_by"]:
+                crate = use["crate"]
+                if Path(crate["manifest_path"]).is_relative_to(workspace):
+                    continue
+                line = f"  {crate['name']} {crate['version']}"
+                crates.append(line + (f": {'; '.join(notices)}" if notices else ""))
+        if not crates:
+            continue
+        common = max(variants, key=lambda variant: len(variant["used_by"]))
+        notices = set(copyright_lines(common["text"], shared))
+        text = "\n".join(
+            line for line in common["text"].splitlines() if line.strip() not in notices
+        )
+        text = re.sub(r"\n\s*\n(\s*\n)+", "\n\n", text).strip()
+        sections.append((len(crates), common["name"], sorted(crates), text))
+    sections.sort(key=lambda section: -section[0])
+    out = [
+        "Third-party notices\n\nThis program contains the open-source software below, grouped "
+        "by license: each license's\npackages with their copyright notices, then the license's "
+        "text.\n"
+    ]
+    for _, name, crates, text in sections:
+        out.append(f"\n{'=' * 80}\n{name}\n\n" + "\n".join(crates) + f"\n\n{text}\n")
+    return "".join(out)
+
+
+def write_notices(path: Path) -> None:
+    """Writes `third_party_notices` for the exe's dependency graph at `Cargo.lock`'s versions."""
+    if shutil.which("cargo-about") is None:
+        raise Refusal(
+            "cargo-about not found: `cargo install cargo-about --version 0.9.2 --locked "
+            "--features cli`"
+        )
+    with tempfile.TemporaryDirectory() as work:
+        config = Path(work) / "about.toml"
+        config.write_text(about_config((ROOT / "deny.toml").read_text(encoding="utf-8")),
+                          encoding="utf-8")
+        about = Path(work) / "about.json"
+        run = subprocess.run([
+            "cargo", "about", "generate", "--locked", "--fail", "--format", "json",
+            "-m", str(ROOT / "crates/studio/Cargo.toml"), "-c", str(config), "-o", str(about),
+        ], cwd=ROOT)
+        if run.returncode:
+            raise Refusal("cargo about generate failed")
+        notices = third_party_notices(json.loads(about.read_text(encoding="utf-8")), ROOT)
+    path.write_text(notices, encoding="utf-8", newline="\n")
 
 
 def sha256_line(digest: str, archive_name: str) -> str:
@@ -256,8 +352,10 @@ def release(version: str) -> None:
         shutil.copyfile(
             ROOT / "resources/bundle/data/settings.toml", top / "data/settings.toml"
         )
-        for license_file in ("LICENSE-MIT", "LICENSE-APACHE"):
-            shutil.copyfile(ROOT / license_file, top / license_file)
+        (top / "licenses").mkdir()
+        for license_file in LICENSES:
+            shutil.copyfile(ROOT / license_file, top / "licenses" / license_file)
+        write_notices(top / "licenses" / NOTICES)
         for folder in EMPTY_FOLDERS:
             (top / folder).mkdir()
         seven_z = find_7z()

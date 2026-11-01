@@ -154,6 +154,14 @@ gates-remote` runs there: both rewrite the remote clone. **A failed half is repo
 sidekick restarted the VPS half and waited on it although the local half had already tested
 every mutant). A brief that starts a whole-crate run says so.
 
+**An agent starts the local half detached too:** `python ~/.claude/tools/run_detached.py <log>
+just mutants-diff ...`, one command per run, never as the harness's background command. The
+harness ends a background command at two hours, and the processes it started with it: on
+2026-11-01 a `mutants-diff` chained behind a long one started at 04:33 under a background
+command launched at 02:58, and died at 04:58 with its local half 25 minutes in; `just
+mutants-collect` fetched the remote half, and the run started again from zero. A detached run
+outlives the harness and ends its log with `exit N`; the lead waits on that line.
+
 ## The scratch folder
 
 **The session scratch `.tmp/` holds one folder per subphase, inside its phase's folder**

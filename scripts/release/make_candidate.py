@@ -57,8 +57,10 @@ for bundled in release.LAUNCHERS + ("README.txt",):
     shutil.copyfile(ROOT / "resources/bundle" / bundled, TOP / bundled)
 (TOP / "data").mkdir()
 shutil.copyfile(ROOT / "resources/bundle/data/settings.toml", TOP / "data/settings.toml")
-for license_file in ("LICENSE-MIT", "LICENSE-APACHE"):
-    shutil.copyfile(ROOT / license_file, TOP / license_file)
+(TOP / "licenses").mkdir()
+for license_file in release.LICENSES:
+    shutil.copyfile(ROOT / license_file, TOP / "licenses" / license_file)
+release.write_notices(TOP / "licenses" / release.NOTICES)
 for folder in release.EMPTY_FOLDERS:
     (TOP / folder).mkdir()
 (DEST / "COMMIT.txt").write_text(f"{head}\n", encoding="utf-8", newline="\n")
