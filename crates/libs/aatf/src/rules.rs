@@ -10,7 +10,7 @@ use crate::file::{LogicIdentity, assemble, identity};
 use crate::ruleset::{LoadError, Ruleset, Severity, Tier, ruleset_from_scope, run_top_level};
 use crate::team::{PlayerView, TeamView};
 use crate::values::{CardLimits, TierValues};
-use crate::violation::{CheckError, Violation, ViolationKind, violations};
+use crate::violation::{CheckError, TeamCheck, Violation, ViolationKind, team_check};
 
 /// The official data block, embedded; also `templates.rs`' first entry.
 /// The other rulesets' blocks are embedded by `templates.rs` (the
@@ -120,13 +120,16 @@ impl Rules {
         self.logic
     }
 
-    /// `team`'s violations: the roster-order breaks of the host's own check,
-    /// raised in Rust before the script runs (`spec/aatf_rules.md` "The
-    /// host"), then the file's `check_team(team)` converted. The list is
-    /// ordered by roster slot, each slot's own rows kept (a slot's roster
-    /// break first), the team's rows (no slot) last. The violations panels
-    /// display their groups in this order.
-    pub fn check_team(&self, team: &TeamView) -> Result<Vec<Violation>, CheckError> {
+    /// `team`'s check: its violations, the roster-order breaks of the
+    /// host's own check, raised in Rust before the script runs
+    /// (`spec/aatf_rules.md` "The host"), then the file's
+    /// `check_team(team)` converted, with the medal and height systems the
+    /// script read the team under. The violations are ordered by roster
+    /// slot, each slot's own rows kept (a slot's roster break first), the
+    /// team's rows (no slot) last. The violations panels display their
+    /// groups in this order.
+    pub fn check_team(&self, team: &TeamView) -> Result<TeamCheck, CheckError> {
+        let mut check = team_check(self.call("check_team", (team.clone(),))?)?;
         let mut out: Vec<Violation> = team
             .roster_breaks
             .iter()
@@ -136,11 +139,11 @@ impl Rules {
                 kind: ViolationKind::RosterOrder { player },
             })
             .collect();
-        let list = self.call("check_team", (team.clone(),))?;
-        out.extend(violations(list)?);
+        out.append(&mut check.violations);
         // A stable sort keeps each slot's own order: the break first.
         out.sort_by_key(|violation| (violation.slot.is_none(), violation.slot));
-        Ok(out)
+        check.violations = out;
+        Ok(check)
     }
 
     /// The targets `player` (of `team`) must carry as tier `tier`, the
@@ -464,7 +467,7 @@ mod tests {
         );
         let rules = Rules::load(&text).expect("the file loads");
         let team = fixture_team(PesVersion::Pes15);
-        let found = rules.check_team(&team).expect("the check runs");
+        let found = rules.check_team(&team).expect("the check runs").violations;
         let custom = Violation {
             slot: Some(0),
             severity: crate::ruleset::Severity::Error,
@@ -495,7 +498,7 @@ mod tests {
         );
         let rules = Rules::load(&text).expect("the file loads");
         let team = fixture_team(PesVersion::Pes15);
-        let found = rules.check_team(&team).expect("the check runs");
+        let found = rules.check_team(&team).expect("the check runs").violations;
         let expected = [
             Violation {
                 slot: Some(team.players[0].slot),
@@ -531,7 +534,7 @@ mod tests {
         );
         let rules = Rules::load(&text).expect("the file loads");
         let team = fixture_team(PesVersion::Pes15);
-        let found = rules.check_team(&team).expect("the check runs");
+        let found = rules.check_team(&team).expect("the check runs").violations;
         assert_eq!(
             found.last().map(|v| &v.kind),
             Some(&crate::violation::ViolationKind::Custom {
@@ -547,7 +550,8 @@ mod tests {
         let rules = Rules::load(&text).expect("the file loads");
         let found = rules
             .check_team(&fixture_team(PesVersion::Pes15))
-            .expect("the check runs");
+            .expect("the check runs")
+            .violations;
         assert!(!found.is_empty(), "team 701 is not legal under Autumn 26");
         assert!(
             !found
@@ -570,7 +574,10 @@ mod tests {
         let team = TeamView::new(&file, 701).expect("team 701 views");
         assert_eq!(team.roster_breaks, [(5, 70101)], "premise: slot 5 breaks");
 
-        let found = Rules::official().check_team(&team).expect("the check runs");
+        let found = Rules::official()
+            .check_team(&team)
+            .expect("the check runs")
+            .violations;
         // Slot 0's Stat error precedes the break's RosterOrder, which leads
         // slot 5's own group; every slot's rows are contiguous and in order.
         assert_eq!(found[0].slot, Some(0));
@@ -609,7 +616,8 @@ mod tests {
         let rules = Rules::from_data_block(&data).expect("the file loads");
         let found = rules
             .check_team(&fixture_team(PesVersion::Pes15))
-            .expect("the check runs");
+            .expect("the check runs")
+            .violations;
         let custom = Violation {
             slot: Some(0),
             severity: crate::ruleset::Severity::Error,
@@ -692,6 +700,55 @@ mod tests {
                 .map(|name| name.into_string().expect("a name"))
                 .collect();
             assert_eq!(listed, table, "{function}");
+        }
+    }
+
+    /// A `check_team` returning its list alone, as a logic written before
+    /// the systems were reported does, names no system; a map names the
+    /// ones it gives, `()` none, and a system that is no name is `Values`
+    /// naming `check_team`.
+    #[test]
+    fn a_checks_systems_are_read_from_its_map() {
+        let rules = Rules::load(&minimal_file()).expect("the file loads");
+        assert_eq!(
+            rules
+                .check_team(&fixture_team(PesVersion::Pes15))
+                .expect("the check runs"),
+            TeamCheck {
+                violations: vec![],
+                medal_system: None,
+                height_system: None,
+            }
+        );
+        let rules = Rules::load(&minimal_file().replacen(
+            "fn check_team(team) { [] }",
+            "fn check_team(team) { if team.version == 21 { #{ violations: [], height_system: 4 } } else { #{ violations: [#{ kind: \"Captain\" }], medal_system: \"GGG\", height_system: () } } }",
+            1,
+        ))
+        .expect("the file loads");
+        assert_eq!(
+            rules
+                .check_team(&fixture_team(PesVersion::Pes15))
+                .expect("the check runs"),
+            TeamCheck {
+                violations: vec![Violation {
+                    slot: None,
+                    severity: Severity::Error,
+                    kind: ViolationKind::Captain,
+                }],
+                medal_system: Some("GGG".to_string()),
+                height_system: None,
+            }
+        );
+        match rules
+            .check_team(&fixture_team(PesVersion::Pes21))
+            .expect_err("a number is no system")
+        {
+            CheckError::Values { function, message } => {
+                assert_eq!(function, "check_team");
+                assert!(message.contains("height_system"), "{message}");
+            }
+            other => panic!("expected Values, got {other:?}"),
         }
     }
 
@@ -807,6 +864,7 @@ mod tests {
         let own = Rules::official()
             .check_team(&fixture_team(PesVersion::Pes21))
             .expect("the check runs")
+            .violations
             .len();
         assert!(own > 0, "team 701 is not legal under Autumn 26");
         let text = assemble(AUTUMN26).replacen(
