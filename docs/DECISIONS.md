@@ -14930,3 +14930,13 @@ would strand an organizer's file for two fields only Multi-team AATF's counts re
 was silent on the shape and on brackets no built-in ruleset has (cv33's sidekick reported both).
 Plan: `docs/plans/aatf_rules.md` "A team no quota system takes", "A team's check says which
 systems it was read under".
+
+## 2026-11-01 — save_editor — Multi-team AATF's counts: both kinds on one line
+Decision: the medal systems' and the height systems' counts share one line, `Medal systems:
+… · Height systems: …`, a kind with one system or none left out; a team matching no medal
+system counts toward none.
+Why: the plan said "one line" and gave the height half alone; two lines would push the list
+down for counts an organizer reads once, and DBC6 under DBC7, the longest real case, fits the
+dialog's width.
+Plan: `docs/plans/save_editor.md` "Multi-team AATF counts the teams under each system"
+(SE-GUI-51).

@@ -1526,13 +1526,15 @@ What this editor adds on top of the lib:
 - **Multi-team AATF counts the teams under each system.** One line above the list, and the
   same line first in its copied text, gives how many of the checked teams were read under
   each medal system and each height system of the ruleset, in the ruleset's order, a system
-  no team was read under left out (DBC6's 47 teams under DBC7, `aatf_rules.md` "A team no
-  quota system takes" applied: "Height systems: Height 8, Manlet 14, Universal 11,
-  GigaHeight 14"), so an organizer sees a cup's mix without counting. The check
-  reports the systems each team was read under (`aatf`'s team result), not the list's rows,
-  which name a system only when something is off. A ruleset with one medal system or one
-  height system leaves its line out. Draft first (the lead's), with its scenario under
-  SE-GUI-41.
+  no team was read under left out, the two kinds after each other with a ` · ` between them
+  (DBC6's 47 teams under DBC7: "Medal systems: GGG 4, GGSS 21, GSSSS 20, SSSSSS 1 · Height
+  systems: Height 8, Manlet 14, Universal 11, GigaHeight 14"; team 868 matches no medal
+  system and counts toward none), so an organizer sees a cup's mix without counting. One
+  line rather than one per kind: the list below is what the dialog is for, and the counts
+  fit the dialog's width. The check reports the systems each team was read under (`aatf`'s
+  team result), not the list's rows, which name a system only when something is off. A kind
+  with one system or none is left out (the official ruleset, with no medal systems, shows
+  its Green and Red counts alone), and with neither kind the line is gone. Draft: `save_editor.js` `multiAatfCounts`; scenario SE-GUI-51.
 - **Multi-team AATF's range starts on one team, never reverses, and is checked once it
   rests**: built (`spec/save_editor.md` "Multi-team AATF"). The pictures' range below pairs
   its ends the same way, keeping the whole save as its default, since its run starts only on
@@ -1946,6 +1948,13 @@ SE-GUI-41  GIVEN the PES 17 save open under the official ruleset
                 list starts at the first end's team; WHEN an end changes THEN the list is
                 checked again only once the ends have rested 500 ms, dimmed and marked
                 checking until then
+SE-GUI-51  GIVEN DBC6's save (`EDIT00000000_DBC6`) open under DBC7, Multi-team AATF open
+           WHEN the range is set to 851 to 897
+           THEN the line above the list reads `Medal systems: GGG 4, GGSS 21, GSSSS 20,
+                SSSSSS 1 · Height systems: Height 8, Manlet 14, Universal 11, GigaHeight 14`,
+                and the copied text's first line is the same; WHEN the range is narrowed to
+                857 THEN it reads `Medal systems: GGSS 1 · Height systems: Manlet 1`; WHEN the
+                ruleset is the official one THEN the line holds the height systems alone
 SE-GUI-16  GIVEN the save open on a team
            WHEN Team TOML export, then import on another team with only the gameplay section
                 chosen, runs from the interchange dialog
