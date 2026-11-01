@@ -226,10 +226,12 @@ pub(crate) struct SaveView {
     /// Output rosters to TSV's Save dialog (`rfd`, stubbed in tests: the
     /// `export_dialog` pattern).
     rosters_dialog: comparator::SaveFileDialog,
-    /// The "Cards left" badge as last computed and the `BadgeKey` it was
-    /// computed for: `player_tier` then `card_limits` run again only when
-    /// the key differs, not on every frame.
-    cards: Option<(BadgeKey, OwnBadge)>,
+    /// The "Cards left" badge's last answer with the `BadgeKey` it ran
+    /// for, and the run in flight: `player_tier` then `card_limits` on a
+    /// worker thread, each reading the whole team under every candidate
+    /// height system (50 to 70 ms apiece on a PES 2017 save). On the UI
+    /// thread they made one wheel notch over a stat box cost over 100 ms.
+    cards: abilities::Cards,
     /// The pitch badges' medal letters per roster slot, computed on a
     /// worker thread for a `MedalKey`: the last answer with its key and
     /// the run in flight. `player_tier` runs again only when the key
@@ -311,7 +313,7 @@ pub(crate) struct ActiveRules {
 /// the open save (`Session::revision`), of the selection or of the
 /// ruleset recomputes it; anything else keeps a frame's `player_tier` and
 /// `card_limits` cost off.
-#[derive(PartialEq)]
+#[derive(Clone, PartialEq)]
 pub(crate) struct BadgeKey {
     /// `Session::revision` when computed.
     revision: u64,
@@ -459,7 +461,7 @@ impl SaveView {
             multi_aatf: multi_aatf::MultiAatf::new(),
             export_dialog: comparator::default_export_dialog(),
             rosters_dialog: menus::default_rosters_dialog(),
-            cards: None,
+            cards: abilities::Cards::new(),
             medals: tactics::Medals::new(),
             portraits: portraits::Portraits::new(),
             generation: 0,
