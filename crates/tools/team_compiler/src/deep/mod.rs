@@ -144,6 +144,10 @@ pub(crate) struct ContentPass {
     /// (`settings_toml_invalid`, the file dropped; `ingame_face_toml_invalid`, kept but
     /// ignored) contributes nothing of its own.
     pub(crate) settings: BTreeMap<ScopePath, PlayerSettings>,
+    /// The player folders whose `settings.toml` or `ingame_face.toml` was refused, by
+    /// folder path: an invalid settings file holds back the player's whole look, so the
+    /// patch's entries for his players hold no `[appearance]`.
+    pub(crate) settings_refused: BTreeSet<ScopePath>,
 }
 
 impl ContentPass {
@@ -164,6 +168,7 @@ impl ContentPass {
         self.materials.extend(other.materials);
         self.hidden_models.extend(other.hidden_models);
         self.settings.extend(other.settings);
+        self.settings_refused.extend(other.settings_refused);
     }
 }
 
@@ -456,17 +461,23 @@ pub(crate) fn content_findings(
                 ));
             }
             // The player's settings are his `settings.toml`'s joined with his
-            // `ingame_face.toml`'s keys: one file refused leaves the other applied.
+            // `ingame_face.toml`'s keys: one file refused leaves the other applied,
+            // and holds his whole look back from the patch.
+            let mut settings_refused = false;
             let mut settings = match player_settings(content, player) {
                 Ok(settings) => settings.unwrap_or_default(),
                 Err(finding) => {
+                    settings_refused = true;
                     findings.push(finding);
                     PlayerSettings::default()
                 }
             };
             match player_ingame_face(content, player) {
                 Ok(face) => settings.set_ingame_face(face.unwrap_or_default()),
-                Err(finding) => findings.push(finding),
+                Err(finding) => {
+                    settings_refused = true;
+                    findings.push(finding);
+                }
             }
             if player.settings.is_some() || player.ingame_face.is_some() {
                 // The parser bounds a value to the key's widest range; the compile
@@ -487,6 +498,9 @@ pub(crate) fn content_findings(
                     });
                 }
                 pass.settings.insert(player.path.clone(), settings);
+            }
+            if settings_refused {
+                pass.settings_refused.insert(player.path.clone());
             }
             pass
         })
@@ -1589,6 +1603,7 @@ fn file_outcome(
         materials,
         hidden_models,
         settings: BTreeMap::new(),
+        settings_refused: BTreeSet::new(),
     }
 }
 

@@ -1,12 +1,12 @@
 //! The `aesthetics_patch.toml` planning decides (`spec/team_compiler/pipeline.md` "6. Post-processing",
-//! the Fox half): each compiled team export's players' motions at their resolved values, and a
+//! the Fox half): each compiled team export's players' looks at their resolved values, and a
 //! `write_names` export's names. `patch_names` is the names rule `check` reports and `compile`
 //! builds with, restated from the export alone the way `item_rows::conflicting_id_keys` is.
 
 use std::collections::BTreeMap;
 
 use pes_savefile::interchange::aesthetics_patch::{PatchPlayer, PatchTeam};
-use pes_savefile::settings_toml::{MotionSettings, NameField, NameSetting, PlayerSettings};
+use pes_savefile::settings_toml::{AppearanceSettings, NameField, NameSetting, PlayerSettings};
 use pes_version::PesVersion;
 
 use super::item_rows::RowPlayer;
@@ -82,10 +82,13 @@ fn checked(
 
 /// The `[[teams]]` block the compiled player folders `players` of one team export give the
 /// patch: `id` the team's, `name` its teams-list name (`/co/`), one `[teams.players.NN]` per
-/// player a folder maps — `NN` his player id's slot — `motion` his settings' resolved to
-/// `version` (the template's defaults when the folder has none), `name`/`shirt_name` the
-/// names rule's (`write_names` the export's marker). `None` when `players` holds no player: a
-/// patch with no player is no patch, and the export gets no `[[teams]]` entry.
+/// player a folder maps — `NN` his player id's slot — `appearance` his joined settings
+/// resolved to `version` (the template's defaults when the folder has none), `name`/`shirt_name`
+/// the names rule's (`write_names` the export's marker). A folder with a refused settings file
+/// (`settings_refused`) gives no look: his entry holds no `[appearance]`, the save keeping
+/// his whole look; left with nothing at all — no look, no names, no IDs — he gets no entry.
+/// `None` when `players` holds no player with an entry: a patch with no player is no patch,
+/// and the export gets no `[[teams]]` entry.
 pub(super) fn patch_team(
     players: &[RowPlayer],
     team_id: u16,
@@ -95,11 +98,17 @@ pub(super) fn patch_team(
 ) -> Option<PatchTeam> {
     let mut patch_players = BTreeMap::new();
     for player in players {
-        let motion = player
-            .settings
-            .as_ref()
-            .map_or_else(MotionSettings::default, |s| s.appearance.motion.clone())
-            .resolved(version);
+        let appearance = if player.settings_refused {
+            None
+        } else {
+            Some(
+                player
+                    .settings
+                    .as_ref()
+                    .map_or_else(AppearanceSettings::default, |s| s.appearance.clone())
+                    .resolved(version),
+            )
+        };
         let names = patch_names(
             player.settings.as_ref(),
             &player.player_name,
@@ -107,14 +116,21 @@ pub(super) fn patch_team(
             write_names,
             version,
         );
+        let entry = PatchPlayer {
+            name: names.name.clone(),
+            shirt_name: names.shirt_name.clone(),
+            boots_id: None,
+            gloves_id: None,
+            base_copy_id: None,
+            appearance: appearance.clone(),
+        };
+        if holds_nothing(&entry) {
+            continue;
+        }
         for player_id in &player.player_ids {
             patch_players.insert(
                 u8::try_from(player_id % 100).expect("a roster slot is under 100"),
-                PatchPlayer {
-                    name: names.name.clone(),
-                    shirt_name: names.shirt_name.clone(),
-                    motion: motion.clone(),
-                },
+                entry.clone(),
             );
         }
     }
@@ -128,9 +144,73 @@ pub(super) fn patch_team(
     })
 }
 
+/// Whether `entry` holds a key to write: a player the patch gives nothing
+/// gets no `[teams.players.NN]` entry.
+fn holds_nothing(entry: &PatchPlayer) -> bool {
+    entry.name.is_none()
+        && entry.shirt_name.is_none()
+        && entry.boots_id.is_none()
+        && entry.gloves_id.is_none()
+        && entry.base_copy_id.is_none()
+        && entry.appearance.is_none()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A `RowPlayer` of one folder mapped to `id` alone: `settings` its joined
+    /// files (default when not parsed), `settings_refused` whether one was
+    /// refused.
+    fn row_player(id: u32, settings_refused: bool) -> RowPlayer {
+        RowPlayer {
+            path: vtree::ScopePath::new(format!("Players/{id}").as_str()).unwrap(),
+            player_ids: vec![id],
+            linked: Vec::new(),
+            fpc: None,
+            player_name: "A".to_owned(),
+            settings: Some(PlayerSettings::default()),
+            settings_refused,
+        }
+    }
+
+    /// A player the patch gives nothing — a refused settings file and no
+    /// names or IDs for him — gets no `[teams.players.NN]` entry; one the
+    /// patch has something for keeps his.
+    #[test]
+    fn a_player_left_with_nothing_to_write_gets_no_entry() {
+        // His settings file was refused and nothing else of his is to be
+        // written: no entry, and no `[[teams]]` block when he is the team.
+        assert_eq!(
+            patch_team(
+                &[row_player(71403, true)],
+                714,
+                "/co/",
+                false,
+                PesVersion::Pes21
+            ),
+            None,
+            "no player with an entry, no team block"
+        );
+        // Beside a kept player, the refused folder is the one missing.
+        let kept = row_player(71405, false);
+        let team = patch_team(
+            &[row_player(71403, true), kept],
+            714,
+            "/co/",
+            false,
+            PesVersion::Pes21,
+        )
+        .expect("a team block");
+        assert!(
+            !team.players.contains_key(&3),
+            "no entry for a refused file"
+        );
+        assert!(
+            team.players[&5].appearance.is_some(),
+            "the kept player's resolved look"
+        );
+    }
 
     /// `patch_names` over one folder's settings, `mapped` players, `write_names` as given.
     fn names(settings: &PlayerSettings, mapped: usize, write_names: bool) -> PatchNames {
