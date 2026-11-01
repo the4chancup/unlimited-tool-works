@@ -6347,6 +6347,13 @@ briefs, review loops, gates and mutation runs as for any step.
     "Multi-team AATF counts the teams under each system"; DECISIONS 2026-11-01): the draft
     first (the lead's), then the scenario under SE-GUI-41, then the slice on cv33's team
     result → verify: DBC6 under DBC7 reads "Height 8, Manlet 14, Universal 11, GigaHeight 14"
+  - [ ] cv35 Set PES folder over the team view's pitch while the sidebar's selector is orange or
+    red (the maintainer's request, 2026-11-01; `plans/save_editor.md` "Tactics editor", the
+    Set PES folder bullet; `plans/core/gui.md` "Settings menu"'s one storing function, shared
+    with Fix PES path; DECISIONS 2026-11-01; draft done, `save_editor.js` `setFolder` and
+    `index.html` `storePesFolder`) → verify: SE-GUI-50 headless, its manual pick on the built
+    window, the pick stored through `CommonSettings::fix_pes_folder` (`studio_core`, today
+    `pub(crate)` with the shell its only caller), its tests unchanged. For the next candidate
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
@@ -6576,6 +6583,22 @@ briefs, review loops, gates and mutation runs as for any step.
   name's delay from the team screen opening to its first scroll, against its slot, its
   position and its width; PES 2019 the same if 2017's rule is unclear; then the plan's
   sentence, a scenario and a slice
+- [ ] after 0.0.2: the pitch's portraits from the team's aesthetics export first (the
+  maintainer, 2026-11-01): before the PES folder's `download/` CPKs (`plans/save_editor.md`
+  "Tactics editor", the Portraits bullet), the Save editor looks in the exports folder
+  (`exports_folder_path`) for the shown team's aesthetics export and takes every portrait it
+  holds from there; `download/` stays the fallback for each player the export has none for,
+  and the placeholder after both → first read how the Team compiler finds an export's team
+  (`aesthetics_export` `resolve_identity` over the teams list) and which player a portrait
+  belongs to (`spec/aesthetics_export/player_folders.md` "Savefile identity" and
+  "Portraits": a player folder's `portrait.*` or the standalone `Portraits/NN.*`, any
+  accepted format, a conflict between the two), and reuse both rather than a second reading.
+  While any shown portrait came from the export, a Refresh button, a symbol button (the
+  suite's icon set, a tooltip naming it), stands at the pitch's top right and reads the
+  export's portraits again, so a member iterating on a portrait sees each change without
+  reopening the save (the maintainer, 2026-11-01). Then the draft (the button's place
+  against the Set PES folder button's bottom right), the plan's paragraph (what a malformed
+  or ambiguous export does, off the UI thread as the CPK read is), its scenarios, and a slice
 
 ### Phase 10 — Music tools
 

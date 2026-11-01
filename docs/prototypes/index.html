@@ -1357,25 +1357,43 @@ function pollRunningPes() {
   // informs.
   publishNotice("Switched to PES " + rp.version, action, action ? "warning" : "info");
 }
-// "Fix PES path" rewrites pes_folder_path from the running exe's folder,
-// putting ** back for the two digits of the version in the exe's own folder
-// segment only (D:\Games\PES2021 -> D:\Games\PES20**; a segment without the
-// version's year keeps it and the path writes unchanged); opt-in, never
-// automatic. Once any version has a folder of its own, it writes the running
-// version's row instead, the folder as it is: a rewritten main row would move
-// every version that falls back to it.
-function fixPesPath() {
-  const rp = S.runningPes;
-  if (!rp) return;
+// One version's PES folder, as "Fix PES path" and the Save editor's "Set PES
+// folder" store it: pes_folder_path, with ** put back for the two digits of
+// the version in the folder's own segment only (D:\Games\PES2021 ->
+// D:\Games\PES20**; a segment without the version's year keeps it and the
+// path writes unchanged). Once any version has a folder of its own, it writes
+// that version's row instead, the folder as it is: a rewritten main row would
+// move every version that falls back to it.
+function storePesFolder(version, folder) {
   if (Object.keys(pesFolders()).length) {
-    pesFolders()[rp.version.slice(2)] = folderOf(rp.path);
+    pesFolders()[version.slice(2)] = folder;
   } else {
-    const segs = folderOf(rp.path).split("\\");
-    segs[segs.length - 1] = segs[segs.length - 1].replaceAll(rp.version, "20**");
+    const segs = folder.split("\\");
+    segs[segs.length - 1] = segs[segs.length - 1].replaceAll(version, "20**");
     S.pesFolder = segs.join("\\");
   }
   saveSettings(); // both are common settings
+}
+// "Fix PES path" stores the running exe's folder; opt-in, never automatic.
+function fixPesPath() {
+  const rp = S.runningPes;
+  if (!rp) return;
+  storePesFolder(rp.version, folderOf(rp.path));
   render();
+}
+// The Save editor's "Set PES folder" button: rfd's native folder picker, the
+// pick stored for the selected version. The draft's stand-in picks a folder
+// that holds the selected version's exe.
+// sample wording: the picked folder.
+function pickPesFolder() {
+  const folder = "D:\\Games\\Pro Evolution Soccer " + S.pesVersion;
+  window_("Native folder dialog", weak("The native folder picker (rfd) opens here; OK picks " + folder),
+    [button("OK", () => {
+      closeWindow();
+      storePesFolder(S.pesVersion, folder);
+      S.exeFound = "selected";
+      render();
+    })]);
 }
 
 // The suite's display name where a member sees it (the window title, About, the

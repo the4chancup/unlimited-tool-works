@@ -14869,3 +14869,16 @@ medal and height system; the check reports the systems a team was read under.
 Why: DBC7's organizer keeps the cup's mix by hand; the check already reads every team under a
 system and showed neither count.
 Plan: `docs/plans/save_editor.md` "Multi-team AATF counts the teams under each system".
+
+## 2026-11-01 — save_editor — Set PES folder over the pitch while the selector is orange or red
+Decision (maintainer's request; two details the lead's): the team view's pitch shows a `Set PES
+folder` button at its bottom right while the sidebar's PES selector is orange or red. It shows
+on red as well as orange, and it stores the pick as Fix PES path does (`fix_pes_folder`: the
+`20**` rule on the main row, or the selected version's own row once any version has one).
+Why: members do not notice the selector's colour, set no PES folder and never read the readme,
+so they see placeholder portraits. Red too, because a folder holding another version's exe
+gives the wrong game's portraits or none. Fix PES path's rule rather than the main row's Browse,
+because both set one version's folder, and a rewritten main row would move every version that
+falls back to it.
+Plan: `docs/plans/save_editor.md` "Tactics editor" (the Set PES folder bullet, SE-GUI-50);
+`docs/plans/core/gui.md` "Settings menu" (one storing function, three callers).
