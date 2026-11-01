@@ -2572,7 +2572,8 @@ fn the_wheel_steps_a_slider_whose_value_box_holds_the_keyboard() {
 }
 
 // The wheel over either choice of a style pair moves the choice: up to the
-// right one, down to the left one, nothing past an end.
+// right one, down to the left one, wrapping round to the other end past
+// the last.
 #[test]
 fn the_wheel_moves_a_style_pair_up_to_the_right_and_down_to_the_left() {
     let mut window = Headless::sized(422.0, 900.0);
@@ -2595,15 +2596,27 @@ fn the_wheel_moves_a_style_pair_up_to_the_right_and_down_to_the_left() {
     // From Counter Attack (stored false).
     for (at, up, stored, changes, what) in [
         (right, true, true, true, "up over the right choice takes it"),
-        (left, true, true, false, "up with the right one held"),
+        (
+            left,
+            true,
+            false,
+            true,
+            "up with the right one held wraps to the left",
+        ),
         (
             left,
             false,
+            true,
+            true,
+            "down with the left one held wraps to the right",
+        ),
+        (
+            right,
+            false,
             false,
             true,
-            "down over the left choice takes it",
+            "down over the right choice takes the left",
         ),
-        (right, false, false, false, "down with the left one held"),
         (
             left,
             true,
@@ -2628,8 +2641,9 @@ fn the_wheel_moves_a_style_pair_up_to_the_right_and_down_to_the_left() {
 }
 
 // The wheel over a numbers toggle moves the choice: up to the right (Few,
-// Medium, Many), down to the left, nothing past an end. A stored value
-// outside 1-3 stays unwritten, as it does under no click.
+// Medium, Many), down to the left, wrapping round to the other end past
+// the last. A stored value outside 1-3 stays unwritten, as it does under
+// no click.
 #[test]
 fn the_wheel_moves_a_numbers_toggle_up_to_many_and_down_to_few() {
     let mut window = Headless::sized(422.0, 900.0);
@@ -2653,10 +2667,10 @@ fn the_wheel_moves_a_numbers_toggle_up_to_many_and_down_to_few() {
     for (at, up, stored, changes, what) in [
         (medium, true, 2, true, "up from Few takes Medium"),
         (medium, true, 3, true, "up from Medium takes Many"),
-        (many, true, 3, false, "up with Many held"),
+        (many, true, 1, true, "up with Many held wraps to Few"),
+        (few, false, 3, true, "down with Few held wraps to Many"),
         (few, false, 2, true, "down from Many takes Medium"),
         (few, false, 1, true, "down from Medium takes Few"),
-        (few, false, 1, false, "down with Few held"),
     ] {
         let mut expect = tactics.clone();
         expect.presets[0].sliders.numbers_in_attack = stored;
