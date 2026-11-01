@@ -301,7 +301,14 @@ build in one worktree takes another's output as up to date: on 2026-10-28 one `s
 build linked another worktree's `aatf` (a constant reported missing in a tree that has it), and
 a doc-test linked a `studio_core` without the function its own tree had just added. Cargo's
 lock on a shared folder serializes builds but does not stop this, so a shared folder makes
-every sidekick's test results suspect. Each folder costs a full build and its disk.
+every sidekick's test results suspect. Each folder costs a full build and its disk. The one
+exception is the staging worktree (`wt-cand-e`), which builds a candidate into the main tree's
+`target/` to spare a full build; afterwards the main tree's next build takes the candidate's
+crates as up to date (on 2026-11-01 main's `gates-changed` failed to compile against the
+candidate's `pes_savefile`). So after staging, touch every file `git diff --name-only
+<candidate> HEAD -- crates Cargo.toml Cargo.lock` lists in the main tree before its next build
+(`.tmp/lead/touch_diverged.py <candidate>`); the staging worktree also needs an empty
+`target/` of its own (`WORKLOG.md` Issues).
 
 **At most two cargo builds at once, on the whole machine** (the maintainer, 2026-10-29): a
 sidekick's, a mutation run's local half, the lead's gates or package tests and a release
