@@ -86,7 +86,8 @@ Still open:
     `[appearance]` and no ID key his settings would resolve, neither an authored stock ID nor
     the default a marker or a `Full` export gives, so the save keeps his record and his IDs
     (the Aesthetics export plan's "An invalid `settings.toml` keeps the player's installed
-    look"); an ID his folder's models or links get still lands. Both files' keys go in the one
+    look"); an ID his folder's models or links get still lands. A player left with nothing
+    to write gets no entry at all, so `apply`'s summary lists only players it wrote. Both files' keys go in the one
     `[appearance]`, so one invalid file holds back the other's, not a half look built from
     defaults: an invalid file is an Error a member reads and fixes, and a partial table would
     need an `apply` that writes some keys and leaves others, a second write path for a case

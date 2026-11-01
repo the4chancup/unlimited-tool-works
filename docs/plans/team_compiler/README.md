@@ -301,12 +301,10 @@ and the CPK carries no player table. The spec's scenarios that observe `PlayerAp
 `BootsList.bin` or `GloveList.bin` are restated below on the patch, each restatement naming
 the scenarios it restates, which are withdrawn when this lands; TC-BIN-37 (the bins CPK keeping
 installed rows in multi-CPK mode) and TC-SAV-07 (`savefile_player_not_stripped`) are
-withdrawn with nothing to restate, the tables and the stripped route being gone. A pair `(P, N)`
-of a restated THEN reads as the patch's `boots_id` (or `gloves_id`) for player P being N, and
-"keeps the installed pair" as the entry holding no such key, the save keeping its ID; "the
-patch" is
-`<output_folder_path>/aesthetics_patch.toml`. Five hold unchanged, their tests no longer
-installing the tables: TC-BIN-04, TC-MOD-31, TC-MOD-83, TC-BIN-39 and TC-BIN-40.
+withdrawn with nothing to restate, the tables and the stripped route being gone. "The patch"
+is `<output_folder_path>/aesthetics_patch.toml`. Five scenarios hold unchanged: TC-BIN-04,
+and the four whose tests stop installing the tables, TC-MOD-31, TC-MOD-83, TC-BIN-39 and
+the last, TC-BIN-40.
 
 ```
 TC-SAV-18  GIVEN a /co/ export with no write_names marker whose slot 05 holds a face model and
@@ -358,8 +356,8 @@ TC-SAV-21  GIVEN a savefile whose 71405 to 71408 records each hold an appearance
            THEN both runs report settings_toml_invalid for 05 and 07 and
                 ingame_face_toml_invalid for 06 and 08, each naming the file and the error
                 (07's naming appearance.hair as an unknown key); the CPK holds no
-                face/real/71406/ or 71408/ path; the patch's entries for 05 to 08 hold
-                no [appearance], 05's holds boots_id 625 alone and the others no key; in the
+                face/real/71406/ or 71408/ path; the patch's entry for 05 holds boots_id
+                625 alone, no [appearance], and it has no entry for 06 to 08; in the
                 savefile the four records' looks and motions are as they were but for 71405's
                 boots, now 625, the others' boots still 7 (restates TC-BIN-33, TC-STR-18,
                 TC-STR-19)

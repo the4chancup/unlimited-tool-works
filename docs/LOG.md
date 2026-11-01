@@ -3020,4 +3020,4 @@ worklog passed 7,000 lines.
 - 2026-11-01 — Candidate 0.0.1f staged at `e39e0a9d` (full gates green, 5584 tests): cv38, the wheel over a
   Tactics toggle wraps round (the maintainer's ask), checked in the staged exe; cv23d's test and its flake fixed.
 - 2026-11-01 — 8.36c0: the full-look patch's Acceptance written (24 Team compiler scenarios, 22 restating the
-  table ones on the patch; SE-PAT-07 to 11; EU-SET-12, 13), the `.copy` findings, three decisions; c1-c4 sliced.
+  table ones on the patch; SE-PAT-07 to 11; EU-SET-12, 13), the `.copy` findings, four decisions; c1-c4 sliced.
