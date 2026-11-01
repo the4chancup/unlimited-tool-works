@@ -12,7 +12,7 @@ the baseline, and one run's baseline tests every crate it mutates, so a hung mut
 whose tests take two seconds waited out the slowest crate's suite (751 s here at `mutants-diff
 95f20eac`). A run costs one more baseline per crate, about a minute. Each crate's results move
 to `mutants.diff/<crate>/` when its run ends, and `mutants.diff/missed_all.txt` lists every
-crate's survivors.
+crate's survivors and, tagged `[timeout]`, its timeouts.
 
 A crate run whose mutants would cost more than a few minutes locally splits with
 `STUDIO_MUTANTS_REMOTE` like `just mutants` does (see `mutants.py`): the
@@ -60,6 +60,10 @@ def main(argv: list[str]) -> int:
     diff = diffed.stdout
     if not diff.strip():
         print(f"mutants_diff: no changes under {' '.join(paths)} since {base}")
+        # Nothing to measure, and an older run's results never stand as this one's; moved in
+        # this run's turn, since a run in progress writes them.
+        with mutants.run_lock():
+            mutants.set_aside(RESULTS)
         return 0
     with tempfile.NamedTemporaryFile("wb", suffix=".diff", delete=False) as f:
         f.write(diff)
@@ -93,18 +97,30 @@ def run(diff_path: str, tree: str, source: Path) -> int:
     counts = Counter(mutants.mutant_crate(m["file"]) for m in found)
     names = ", ".join(f"{crate}: {count}" for crate, count in sorted(counts.items()))
     print(f"mutants_diff: {len(found)} mutants ({names}), one run per crate")
+    results = RESULTS
+    # Even with no mutant to run: an older run's results never stand as this one's.
+    mutants.set_aside(results)
     if not found:
         return 0
-    results = RESULTS
-    mutants.set_aside(results)
-    results.mkdir()
     codes = {}
     for crate, count in sorted(counts.items()):
         print(f"mutants_diff: {crate}, {count} mutants", flush=True)
-        codes[crate] = run_crate(diff_path, tree, source, crate, count)
+        try:
+            codes[crate] = run_crate(diff_path, tree, source, crate, count)
+        except mutants.Refused as refusal:
+            # Refused before touching `mutants.out`: what is there is no result of this crate.
+            print(f"mutants_diff: {refusal}")
+            codes[crate] = 1
+            continue
         out = ROOT / "mutants.out"
         if out.exists():
+            # Made with the first results that land, so a run that lands none leaves no empty
+            # folder to be set aside over the last results.
+            results.mkdir(exist_ok=True)
             out.rename(results / crate)
+    if not results.exists():
+        print(f"mutants_diff: no crate's results landed (the last run's, if any: {results.name}.old)")
+        return max(codes.values())
     survivors = [line for crate in sorted(codes) for line in missed_lines(results / crate)]
     (results / "missed_all.txt").write_text(
         "".join(line + "\n" for line in survivors), encoding="utf-8"
@@ -113,7 +129,7 @@ def run(diff_path: str, tree: str, source: Path) -> int:
     for crate, code in sorted(codes.items()):
         print(f"  {crate}: exit {code}")
     if survivors:
-        print(f"missed ({len(survivors)}), in {results.name}/missed_all.txt:")
+        print(f"missed or timed out ({len(survivors)}), in {results.name}/missed_all.txt:")
         for line in survivors:
             print(f"  {line}")
     return max(codes.values())
@@ -135,8 +151,7 @@ def run_crate(diff_path: str, tree: str, source: Path, crate: str, count: int) -
     if host is not None and local_only:
         print(f"mutants_diff: {crate} is local-only (LOCAL_ONLY_CRATES)")
     if refusal := mutants.local_refusal(host):
-        print(f"mutants_diff: {refusal}")
-        return 1
+        raise mutants.Refused(refusal)
     print("mutants_diff: running here", flush=True)
     print(f"mutants_diff: cargo mutants {' '.join(selection)}", flush=True)
     mutants.set_aside_last_run()
@@ -147,13 +162,13 @@ def run_crate(diff_path: str, tree: str, source: Path, crate: str, count: int) -
 
 def missed_lines(out: Path) -> list[str]:
     """The survivors of one crate's finished run in `out` (its `mutants.out`): a split run's
-    summary list, which merges both halves and drops what the Windows recheck caught, else a
-    local run's own list."""
-    for name in ("missed_all.txt", "missed.txt"):
-        path = out / name
-        if path.exists():
-            return path.read_text(encoding="utf-8").splitlines()
-    return []
+    summary list, which merges both halves, their timeouts included, and drops what the
+    Windows recheck caught; else a local run's own list and its timeouts
+    (`mutants.timeout_lines`)."""
+    summary = out / "missed_all.txt"
+    if summary.exists():
+        return mutants.read_lines(summary)
+    return mutants.read_lines(out / "missed.txt") + mutants.timeout_lines(out)
 
 
 if __name__ == "__main__":
