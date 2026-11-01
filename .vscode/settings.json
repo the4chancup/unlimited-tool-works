@@ -1,4 +1,8 @@
 {
     "cmake.ignoreCMakeListsMissing": true,
-    "files.eol": "\n"
+    "files.eol": "\n",
+    "windsurfPyright.analysis.exclude": [
+        "**/node_modules", "**/__pycache__", "**/.git",
+        "target", ".tmp", "mutants.out*", "mutants.diff*", "extra_mutants.out", "snap.out"
+    ]
 }
