@@ -3021,3 +3021,5 @@ worklog passed 7,000 lines.
   Tactics toggle wraps round (the maintainer's ask), checked in the staged exe; cv23d's test and its flake fixed.
 - 2026-11-01 — 8.36c0: the full-look patch's Acceptance written (24 Team compiler scenarios, 22 restating the
   table ones on the patch; SE-PAT-07 to 11; EU-SET-12, 13), the `.copy` findings, four decisions; c1-c4 sliced.
+- 2026-11-01 — 8.36c1 merged (`ed958e8f`): the aesthetics patch carries each player's whole look on every version,
+  apply-patch makes the record his; SE-PAT-07 to 11. SWE-2 sidekick, one rework.
