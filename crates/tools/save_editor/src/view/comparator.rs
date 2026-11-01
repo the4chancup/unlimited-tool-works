@@ -20,7 +20,9 @@ use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use pes_savefile::ops::compare::{CompareError, DiffScope};
 use pes_version::PesVersion;
-use team_widgets::violations::{SWITCH_TOOLTIP, SelectedPlayer, player_head, row_paint};
+use team_widgets::violations::{
+    RULE_COL, SWITCH_TOOLTIP, SelectedPlayer, drow_columns, player_head, row_paint,
+};
 
 use crate::diff::{self, DiffReport, PlayerReport};
 use crate::messages::version_mismatch_sentence;
@@ -168,12 +170,15 @@ pub(super) enum Line {
         /// filter keeps the line for it; `None`: no roster holds him).
         team: Option<u32>,
     },
-    /// A field's row in the views' terms: `<label> <old> → <new>`; `None`
-    /// select on a player no open roster holds (SE-GUI-13: listed and not
+    /// A field's row in the views' terms (the draft's `.drow`): the label
+    /// in the first column, `<old> → <new>` in the second; `None` select
+    /// on a player no open roster holds (SE-GUI-13: listed and not
     /// clickable).
     Row {
-        /// The row's text.
-        text: String,
+        /// The field's label, the row's first column.
+        label: String,
+        /// `<old> → <new>`, the row's second column.
+        values: String,
         /// The player a click selects.
         select: Option<SelectedPlayer>,
         /// His open-save roster team, as the head's.
@@ -560,7 +565,8 @@ fn lines(report: &DiffReport, picked: &EditFile, open: &EditFile) -> Vec<Line> {
         for row in &player.rows {
             let term = terms::row_term(version, &row.diff);
             lines.push(Line::Row {
-                text: format!("{} {} \u{2192} {}", term.label, term.old, term.new),
+                label: term.label,
+                values: format!("{} \u{2192} {}", term.old, term.new),
                 select: place.map(Place::select),
                 team,
             });
@@ -641,17 +647,31 @@ fn shown(lines: &[Line], team: TeamChoice) -> Vec<&Line> {
 
 /// One line of the list, one text row high (the `violations` list's row
 /// pattern, its `row_paint` tail shared): a heading in the strong color,
-/// a head in the weak, a row in the plain; a row or a head with `select`
-/// is a click target reporting the player.
+/// a head in the weak, a row the draft's `.drow` two columns; a row or a
+/// head with `select` is a click target reporting the player.
 fn line(ui: &mut egui::Ui, line: &Line) -> Option<SelectedPlayer> {
     let visuals = ui.visuals();
-    let (text, color, select) = match line {
-        Line::Heading(text) => (text, visuals.strong_text_color(), None),
-        Line::Head { text, select, .. } => (text, visuals.weak_text_color(), *select),
-        Line::Row { text, select, .. } => (text, visuals.text_color(), *select),
-    };
+    match line {
+        Line::Heading(text) => text_line(ui, text, visuals.strong_text_color(), None),
+        Line::Head { text, select, .. } => text_line(ui, text, visuals.weak_text_color(), *select),
+        Line::Row {
+            label,
+            values,
+            select,
+            ..
+        } => field_row(ui, label, values, *select),
+    }
+}
+
+/// A heading's or a head's line: `text` in `color` at the row's left edge.
+fn text_line(
+    ui: &mut egui::Ui,
+    text: &str,
+    color: egui::Color32,
+    select: Option<SelectedPlayer>,
+) -> Option<SelectedPlayer> {
     let font = egui::TextStyle::Body.resolve(ui.style());
-    let galley = ui.painter().layout_no_wrap(text.clone(), font, color);
+    let galley = ui.painter().layout_no_wrap(text.to_owned(), font, color);
     let (rect, response) = ui.allocate_exact_size(
         egui::vec2(ui.available_width(), galley.size().y),
         if select.is_some() {
@@ -665,6 +685,58 @@ fn line(ui: &mut egui::Ui, line: &Line) -> Option<SelectedPlayer> {
         response,
         &[egui::Shape::galley(rect.min, galley, color)],
         text,
+        select,
+        select.is_some().then_some(SWITCH_TOOLTIP),
+    )
+}
+
+/// A field's row (the draft's `.drow`): `label` in `RULE_COL` points of
+/// the plain text color, one line cut with an ellipsis as the AATF rows'
+/// names are, `values` in the strong color, `drow_columns`' inset and gap
+/// placing the pair. The whole `<label> <values>` is the AccessKit label,
+/// as it read before the two columns.
+fn field_row(
+    ui: &mut egui::Ui,
+    label: &str,
+    values: &str,
+    select: Option<SelectedPlayer>,
+) -> Option<SelectedPlayer> {
+    let (text_color, strong_color) = {
+        let visuals = ui.visuals();
+        (visuals.text_color(), visuals.strong_text_color())
+    };
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    let (name_x, value_x, _) = drow_columns(ui.available_width(), RULE_COL);
+    let mut job = egui::text::LayoutJob::single_section(
+        label.to_owned(),
+        egui::TextFormat::simple(font.clone(), text_color),
+    );
+    job.wrap = egui::text::TextWrapping::truncate_at_width(RULE_COL);
+    let label_galley = ui.fonts_mut(|f| f.layout_job(job));
+    let values_galley = ui
+        .painter()
+        .layout_no_wrap(values.to_owned(), font, strong_color);
+    let height = label_galley.size().y.max(values_galley.size().y);
+    let (rect, response) = ui.allocate_exact_size(
+        egui::vec2(ui.available_width(), height),
+        if select.is_some() {
+            egui::Sense::click()
+        } else {
+            egui::Sense::hover()
+        },
+    );
+    row_paint(
+        ui,
+        response,
+        &[
+            egui::Shape::galley(rect.min + egui::vec2(name_x, 0.0), label_galley, text_color),
+            egui::Shape::galley(
+                rect.min + egui::vec2(value_x, 0.0),
+                values_galley,
+                strong_color,
+            ),
+        ],
+        &format!("{label} {values}"),
         select,
         select.is_some().then_some(SWITCH_TOOLTIP),
     )
