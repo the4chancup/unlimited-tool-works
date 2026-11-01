@@ -311,7 +311,9 @@ ingame-face parameters (which the legacy formats omit). Goals:
   warnings.
 - **Absent = untouched on import**, at every level (key, player, team section) — the rule the
   aesthetics patch follows for players and teams.
-  An export writes every field, so a round trip is full-fidelity;
+  An export writes every field, so a round trip is full-fidelity, the bench's last nine
+  excepted: the document carries the twelve and an import refills the rest as the game writes
+  them;
   a file written by hand or by the Team creator carries only what its author decided, and the
   save's values stand in for the rest. A partial file is therefore a patch, not a template with
   holes.
@@ -337,30 +339,30 @@ entry, 2.17h-3).
 
 ```toml
 # team.toml — one team of one save. Absent = untouched on import, at every level.
-pes_version = 19                # the save this was written from; import into another version converts
+pes_version = 19                # the PES version of the save this was exported from; importing into another version converts the values
 
 [team]
-id = 841                        # informational: the caller chooses the target team; never applied
+id = 841                        # the team this was exported from; the command line imports onto it, the Save editor onto the open team
 name = "/98hu/"                 # colour codes as in the save
 short_name = "I1"
-manager_id = 1000               # PES 19+
-stadium_id = 12                 # PES 19+
-color_1 = [31, 58, 15]          # PES 17+; stored channels, 0-63 each
+manager_id = 1000               # PES 19 and later
+stadium_id = 12                 # PES 19 and later
+color_1 = [31, 58, 15]          # PES 17 and later; red, green, blue: 0 to 63 each
 color_2 = [63, 63, 63]
 kit_slots = [{ number = 0, binding = 0 }, ...]   # PES 17 only; ten entries, values as stored
 
 [team.edit_flags]
 name = true
 short_name = false              # PES 15 only
-stadium = false                 # PES 20/21 only
+stadium = false                 # PES 20 and later
 strip = false                   # PES 17 only
 
 [tactics]
-starting_eleven = [0, 10, 3, 1, 5, 4, 9, 2, 6, 7, 8]  # roster slots, 0-based as stored
-bench_order = [11, 12, ...]     # 21 roster slots
-players_to_join_attack = [255, 255, 255]             # roster slots; 255 = none
+starting_eleven = [0, 10, 3, 1, 5, 4, 9, 2, 6, 7, 8]  # roster slots, counting from 0
+bench_order = [11, 12, ...]     # the bench: 12 roster slots, counting from 0
+players_to_join_attack = [255, 255, 255]             # roster slots, counting from 0; 255 = nobody
 
-[tactics.set_pieces]            # roster slots; 255 = none
+[tactics.set_pieces]            # roster slots, counting from 0; 255 = nobody
 free_kick_long = 3
 free_kick_short = 3
 free_kick_second = 4
@@ -370,13 +372,13 @@ penalty = 9
 captain = 0
 
 [tactics.auto]
-substitution = 0                # PES 15+; the stored setting byte
-offside_trap = false            # PES 15+
-preset_change = false           # PES 15+
-attack_defence_levels = false   # PES 17+
+substitution = 0                # as the game stores it
+offside_trap = false
+preset_change = false
+attack_defence_levels = false   # PES 17 and later
 
 [tactics.preset_1]              # preset_1 .. preset_3
-man_marking = [255, 255, 255, 255, 10, 255, 255, 2, 4, 255, 5]   # per own formation slot, the marked opponent's formation slot; 255 = none
+man_marking = [255, 255, 255, 255, 10, 255, 255, 2, 4, 255, 5]   # for each formation slot, the opponent's formation slot he marks; 255 = nobody
 [tactics.preset_1.style]
 attacking_style = "possession"  # "counter_attack" | "possession"
 attacking_zone = "wide"         # "centre" | "wide"
@@ -385,36 +387,37 @@ positioning = "flexible"        # "maintain" | "flexible"
 defensive_style = "frontline_pressure"   # "frontline_pressure" | "all_out_defence"
 containment_area = "middle"     # "middle" | "wide"
 pressure = "aggressive"         # "aggressive" | "conservative"
-fluid = false                   # PES 16+
+fluid = false                   # PES 16 and later
 [tactics.preset_1.sliders]
-support_range = 4               # 1-10
-defensive_line = 3              # 1-10
-compactness = 7                 # 1-10
-numbers_in_attack = 3           # 1-3
-numbers_in_defence = 3          # 1-3
+support_range = 4               # 1 to 10
+defensive_line = 3              # 1 to 10
+compactness = 7                 # 1 to 10
+numbers_in_attack = 3           # 1 few, 2 medium, 3 many
+numbers_in_defence = 3          # 1 few, 2 medium, 3 many
+# players: in the order of starting_eleven (its first entry is the first player here); roster slots count from 0, so slot 0 is [players.01]
 [tactics.preset_1.formation_1]  # formation_1 kick-off, formation_2 in possession, formation_3 out of possession
 players = [{ position = "GK", x = 52, y = 2 }, ...]  # eleven; position "GK" .. "CF"; x, y as stored
-[tactics.preset_1.instructions] # PES 17+; canonical names, re-encoded per version on import
+[tactics.preset_1.instructions] # PES 17 and later; instruction names, converted to the target version's on import
 attack = [{ instruction = "hug_the_touchline", player = 3 }, { instruction = "off", player = 0 }]
 defence = [{ instruction = "off", player = 0 }, { instruction = "off", player = 0 }]
 
-[players.01]                    # roster slot 01 .. 40 (32 on PES 15-18)
+[players.01]                    # roster slot 01 to 40 (01 to 32 on PES 15 to 18)
 name = "YOUR SKILL: A FAILURE"
 shirt_name = "SCORE"
-number = 1                      # shirt number, the roster's
+number = 1                      # shirt number
 nationality = 231
 age = 25
 height = 180                    # cm
 weight = 75                     # kg
 boots_id = 3601
 gloves_id = 0
-base_copy_id = 84101            # equal to the player's own id in the file = unset; becomes the target's own id
+base_copy_id = 84101            # the player whose look this one copies; his own id (the team id times 100 plus the slot) means none, and an import turns it into the target player's own id
 
 [players.01.stats]              # stored values; the comments give the game's editor range, the parser accepts the field's stored range
 attacking_prowess = 77
 ball_control = 77
 dribbling = 77
-tight_possession = 77           # PES 20+
+tight_possession = 77           # PES 20 and later
 low_pass = 77
 lofted_pass = 77
 finishing = 77
@@ -423,38 +426,38 @@ place_kicking = 77
 swerve = 77
 defensive_prowess = 77
 ball_winning = 77
-aggression = 77                 # PES 20+
+aggression = 77                 # PES 20 and later
 kicking_power = 77
 speed = 77
 explosive_power = 77
 body_control = 77
-physical_contact = 77           # PES 17+
+physical_contact = 77           # PES 17 and later
 jump = 77
 stamina = 77
 goalkeeping = 40
 catching = 40
-clearing = 40                   # PES 16+
-reflexes = 40                   # PES 16+
-coverage = 40                   # PES 16+
-weak_foot_usage = 1             # 0-3 stored
-weak_foot_accuracy = 1          # 0-3 stored
-form = 3                        # 0-7 stored
-injury_resistance = 1           # 0-2 stored
-star = 2                        # PES 19+, 0-7 stored
-playing_attitude = 0            # PES 20+, stored
+clearing = 40                   # PES 16 and later
+reflexes = 40                   # PES 16 and later
+coverage = 40                   # PES 16 and later
+weak_foot_usage = 1             # 0 to 3
+weak_foot_accuracy = 1          # 0 to 3
+form = 3                        # 0 to 7
+injury_resistance = 1           # 0 to 2
+star = 2                        # PES 19 and later, 0 to 7
+playing_attitude = 0            # PES 20 and later
 
 [players.01.positions]
 registered = "CF"               # "GK" "CB" "LB" "RB" "DMF" "CMF" "LMF" "RMF" "AMF" "LWF" "RWF" "SS" "CF"
 playable = { CF = "A", SS = "B", GK = "C", ... }   # thirteen keys; "C" | "B" | "A" (stored 0-2; a stored 3, which no save holds, reads "3")
-playing_style = "goal_poacher"  # canonical `PlayStyle` name in snake_case; "none" for none
+playing_style = "goal_poacher"  # the playing style's name, or "none"
 stronger_foot = "right"         # "right" | "left"
-stronger_hand = "right"         # PES 20+
+stronger_hand = "right"         # PES 20 and later
 
 [players.01.skills]
-skills = ["scissors_feint", "heading"]      # the set skills, canonical names (table below)
+skills = ["scissors_feint", "heading"]      # the player's skills (the names are listed below)
 com_styles = ["trickster"]                  # "trickster" "mazing_run" "speeding_bullet" "incisive_run" "long_ball_expert" "early_cross" "long_ranger"
 
-[players.01.edit_flags]         # the game's own flags, all bool
+[players.01.edit_flags]         # the parts the game marked as edited, true or false
 player = true
 basic_settings = true
 registered_position = false
@@ -528,7 +531,7 @@ pub struct TeamSection { pub id: Option<u32>, pub name: Option<String>, pub shor
     pub manager_id: Option<u32>, pub stadium_id: Option<u16>, pub color_1: Option<TeamColor>,
     pub color_2: Option<TeamColor>, pub kit_slots: Option<[KitSlot; 10]>, pub edit_flags: TeamEditFlagsSection }
 pub struct TeamEditFlagsSection { pub name: Option<bool>, pub short_name: Option<bool>, pub stadium: Option<bool>, pub strip: Option<bool> }
-pub struct TacticsSection { pub starting_eleven: Option<[u8; 11]>, pub bench_order: Option<[u8; 21]>,
+pub struct TacticsSection { pub starting_eleven: Option<[u8; 11]>, pub bench_order: Option<[u8; 12]>,
     pub players_to_join_attack: Option<[u8; 3]>, pub set_pieces: SetPiecesSection, pub auto: AutoSection,
     pub presets: [PresetSection; 3] }
 pub struct SetPiecesSection { /* the seven takers, `Option<u8>` each, names as in `SetPieceTakers` */ }
@@ -599,7 +602,10 @@ impl TeamToml {
 pub fn shirt_name_from(name: &str, version: PesVersion) -> String;
 ```
 
-Rules of `apply`: `pes_version` absent means "the target's version" (no conversion); the
+Rules of `apply`: `pes_version` absent means "the target's version" (no conversion); a
+`bench_order` writes its twelve and refills the record's other nine as the game writes them
+(the roster slots from 0 that neither the eleven nor the twelve name, ascending, the eleven
+being the file's `starting_eleven` when it has one, the record's else); the
 `appearance` table's keys alone, each as its stored value (a key the table lacks keeps
 its value: "absent = untouched", where `settings.toml` and the patch write every field),
 go through `settings_toml`'s shared writer, the run's measured-unused bits keeping the
@@ -839,8 +845,9 @@ Both are raw dumps of the reference editor's in-memory structs; both parse into 
   XI (11), bench (21), 6 set-piece takers (FK long, FK short, FK 2, CK left, CK right, PK), 3
   join-attack, 4 auto flags (substitution, offside trap, preset change, attack/defence levels) —
   **no captain**. The reference imports only into 16-18 and only from the same version (its
-  x/y "conversion factor" is 1 for every pair); here the block parses into `TeamToml.tactics`
-  and `apply`'s version rule decides, the header's version being `pes_version`. No real `.4cct`
+  x/y "conversion factor" is 1 for every pair); here the block parses into `TeamToml.tactics`,
+  `bench_order` taking the first 12 of its 21 and `apply` refilling the nine as a Team TOML
+  import does, and `apply`'s version rule decides, the header's version being `pes_version`. No real `.4cct`
   exists on this machine: the fixture is transcribed from the reference's write walk over the
   PES 19 fixture save's team 713 (provenance in the fixtures README), and the test's evidence is
   that the Rust reader's `TeamTactics` equals the schema codec's for that team.

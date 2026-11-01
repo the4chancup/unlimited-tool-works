@@ -167,7 +167,9 @@ read its full name.
 
 **Advanced instructions** (PES 2017 and later) sets the team's two attack and
 two defence instructions: the attack column lists the attacking choices and the
-defence column the defending ones. Tight Marking is never offered, because it
+defence column the defending ones. When the cup allows illegal formations (see
+above), its patched game also puts any instruction in any slot, so both columns
+list every instruction. Tight Marking is never offered, because it
 marks an opponent and is set during a match, not here. A save already holding it
 keeps it, and the row still names it.
 

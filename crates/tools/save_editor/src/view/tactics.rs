@@ -364,6 +364,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             session.baseline_team(team_id).map(|team| &team.tactics),
             tactics,
             &roster,
+            illegal_formations,
         );
         // `add_space` adds to the item gap the panel above already left.
         stack_ui.add_space(ROW_GAP - stack_ui.spacing().item_spacing.y);

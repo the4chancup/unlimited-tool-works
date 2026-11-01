@@ -10,8 +10,8 @@ use pes_version::PesVersion;
 
 use super::*;
 use crate::test_support::{
-    Headless, button_labels, centre, chip_under, chips_below, combo_row, entry, entry_id,
-    fixture_rows, fixture_tactics, pointer_at, roster_rows,
+    Headless, SettingsContext, button_labels, centre, chip_under, chips_below, combo_row, entry,
+    entry_id, fixture_rows, fixture_tactics, pointer_at, roster_rows,
 };
 
 // The draft's role palette: arm a chip and the note asks for its pitch
@@ -406,13 +406,17 @@ fn a_target_chip_then_a_marker_click_writes_the_target_and_disarms() {
     // The popup's first frame is a sizing pass; its items join the
     // tree on the next.
     let (_, _) = window.settings(version, &mut tactics, &mut view, &roster, vec![]);
+    let illegal_formations = window.illegal_formations;
     let (ids, _) = window.frame_at_ids(None, vec![], |ui| {
         crate::test_support::tactics_settings(
             ui,
             "tactics",
             version,
             &mut tactics,
-            None,
+            SettingsContext {
+                opened: None,
+                illegal_formations,
+            },
             &mut view,
             &roster,
         );

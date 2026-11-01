@@ -258,12 +258,7 @@ impl PlayerKey {
         match self {
             PlayerKey::Nationality => spec("nationality", Kind::U16, F::Nationality, ""),
             PlayerKey::Age => spec("age", Kind::Stored, F::Age, ""),
-            PlayerKey::Height => spec(
-                "height",
-                Kind::Stored,
-                F::Height,
-                "cm, the record's own field",
-            ),
+            PlayerKey::Height => spec("height", Kind::Stored, F::Height, "cm"),
             PlayerKey::Weight => spec("weight", Kind::Stored, F::Weight, "kg"),
             PlayerKey::BootsId => spec("boots_id", Kind::U32, F::BootsId, ""),
             PlayerKey::GlovesId => spec("gloves_id", Kind::U32, F::GlovesId, ""),
@@ -271,16 +266,18 @@ impl PlayerKey {
                 "base_copy_id",
                 Kind::U32,
                 F::BaseCopyId,
-                "equal to the player's own id in the file = unset; becomes the target's own id",
+                "the player whose look this one copies; his own id (the team id times 100 plus the slot) means none, and an import turns it into the target player's own id",
             ),
             PlayerKey::AttackingProwess => {
                 ability("stats.attacking_prowess", F::AttackingProwess, "")
             }
             PlayerKey::BallControl => ability("stats.ball_control", F::BallControl, ""),
             PlayerKey::Dribbling => ability("stats.dribbling", F::Dribbling, ""),
-            PlayerKey::TightPossession => {
-                ability("stats.tight_possession", F::TightPossession, "PES 20+")
-            }
+            PlayerKey::TightPossession => ability(
+                "stats.tight_possession",
+                F::TightPossession,
+                "PES 20 and later",
+            ),
             PlayerKey::LowPass => ability("stats.low_pass", F::LowPass, ""),
             PlayerKey::LoftedPass => ability("stats.lofted_pass", F::LoftedPass, ""),
             PlayerKey::Finishing => ability("stats.finishing", F::Finishing, ""),
@@ -291,46 +288,53 @@ impl PlayerKey {
                 ability("stats.defensive_prowess", F::DefensiveProwess, "")
             }
             PlayerKey::BallWinning => ability("stats.ball_winning", F::BallWinning, ""),
-            PlayerKey::Aggression => ability("stats.aggression", F::Aggression, "PES 20+"),
+            PlayerKey::Aggression => ability("stats.aggression", F::Aggression, "PES 20 and later"),
             PlayerKey::KickingPower => ability("stats.kicking_power", F::KickingPower, ""),
             PlayerKey::Speed => ability("stats.speed", F::Speed, ""),
             PlayerKey::ExplosivePower => ability("stats.explosive_power", F::ExplosivePower, ""),
             PlayerKey::BodyControl => ability("stats.body_control", F::BodyControl, ""),
-            PlayerKey::PhysicalContact => {
-                ability("stats.physical_contact", F::PhysicalContact, "PES 17+")
-            }
+            PlayerKey::PhysicalContact => ability(
+                "stats.physical_contact",
+                F::PhysicalContact,
+                "PES 17 and later",
+            ),
             PlayerKey::Jump => ability("stats.jump", F::Jump, ""),
             PlayerKey::Stamina => ability("stats.stamina", F::Stamina, ""),
             PlayerKey::Goalkeeping => ability("stats.goalkeeping", F::Goalkeeping, ""),
             PlayerKey::Catching => ability("stats.catching", F::Catching, ""),
-            PlayerKey::Clearing => ability("stats.clearing", F::Clearing, "PES 16+"),
-            PlayerKey::Reflexes => ability("stats.reflexes", F::Reflexes, "PES 16+"),
-            PlayerKey::Coverage => ability("stats.coverage", F::Coverage, "PES 16+"),
+            PlayerKey::Clearing => ability("stats.clearing", F::Clearing, "PES 16 and later"),
+            PlayerKey::Reflexes => ability("stats.reflexes", F::Reflexes, "PES 16 and later"),
+            PlayerKey::Coverage => ability("stats.coverage", F::Coverage, "PES 16 and later"),
             PlayerKey::WeakFootUsage => spec(
                 "stats.weak_foot_usage",
                 Kind::Stored,
                 F::WeakFootUsage,
-                "0-3 stored",
+                "0 to 3",
             ),
             PlayerKey::WeakFootAccuracy => spec(
                 "stats.weak_foot_accuracy",
                 Kind::Stored,
                 F::WeakFootAccuracy,
-                "0-3 stored",
+                "0 to 3",
             ),
-            PlayerKey::Form => spec("stats.form", Kind::Stored, F::Form, "0-7 stored"),
+            PlayerKey::Form => spec("stats.form", Kind::Stored, F::Form, "0 to 7"),
             PlayerKey::InjuryResistance => spec(
                 "stats.injury_resistance",
                 Kind::Stored,
                 F::InjuryResistance,
-                "0-2 stored",
+                "0 to 2",
             ),
-            PlayerKey::Star => spec("stats.star", Kind::Stored, F::Star, "PES 19+, 0-7 stored"),
+            PlayerKey::Star => spec(
+                "stats.star",
+                Kind::Stored,
+                F::Star,
+                "PES 19 and later, 0 to 7",
+            ),
             PlayerKey::PlayingAttitude => spec(
                 "stats.playing_attitude",
                 Kind::Stored,
                 F::PlayingAttitude,
-                "PES 20+, stored",
+                "PES 20 and later",
             ),
             PlayerKey::Registered => spec(
                 "positions.registered",
@@ -348,7 +352,7 @@ impl PlayerKey {
                 "positions.stronger_hand",
                 Kind::Label(&labels::FOOT),
                 F::StrongerHand,
-                "PES 20+; \"right\" | \"left\"",
+                "PES 20 and later; \"right\" | \"left\"",
             ),
             PlayerKey::EditedPlayer => flag("edit_flags.player", F::EditedPlayer),
             PlayerKey::EditedBasicSettings => {

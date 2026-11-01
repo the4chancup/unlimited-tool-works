@@ -492,6 +492,7 @@ mod tests {
     use super::*;
     use pes_savefile::fixture_save;
     use pes_savefile::model::TeamEntry;
+    use pes_savefile::model::tactics::bench_fill;
 
     use crate::Rules;
     use crate::ruleset::Severity;
@@ -723,11 +724,16 @@ mod tests {
                 TeamToml::from_team(version, team, &players).expect("from_team emits a document");
             let built = TeamView::from_team_toml(&document)
                 .unwrap_or_else(|e| panic!("{version:?}: the document builds: {e}"));
-            assert_eq!(
-                built,
-                TeamView::new(&file, 701).expect("the team views"),
-                "{version:?}"
-            );
+            let mut expected = TeamView::new(&file, 701).expect("the team views");
+            // The document's bench is the twelve alone; `apply` writes
+            // the nine as the game does, so the built team's nine are
+            // the fill, not the record's.
+            let bench: [u8; 12] = expected.tactics.bench_order[..12]
+                .try_into()
+                .expect("the first twelve of twenty-one");
+            expected.tactics.bench_order[12..]
+                .copy_from_slice(&bench_fill(&expected.tactics.starting_eleven, &bench));
+            assert_eq!(built, expected, "{version:?}");
         }
     }
 
@@ -773,7 +779,15 @@ mod tests {
             );
             let built = TeamView::from_team_toml(&document)
                 .unwrap_or_else(|e| panic!("{version:?}: the document builds: {e}"));
-            let expected = TeamView::new(&file, 701).expect("the team views");
+            let mut expected = TeamView::new(&file, 701).expect("the team views");
+            // The document's bench is the twelve alone; `apply` writes
+            // the nine as the game does, so the built team's nine are
+            // the fill, not the record's.
+            let bench: [u8; 12] = expected.tactics.bench_order[..12]
+                .try_into()
+                .expect("the first twelve of twenty-one");
+            expected.tactics.bench_order[12..]
+                .copy_from_slice(&bench_fill(&expected.tactics.starting_eleven, &bench));
             assert_eq!(built, expected, "{version:?}");
             if version == PesVersion::Pes19 {
                 let hole = u8::try_from(hole).expect("a roster slot index");

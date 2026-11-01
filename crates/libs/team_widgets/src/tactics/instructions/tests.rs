@@ -57,7 +57,7 @@ fn each_combo_lists_its_side_less_tight_marking() {
         ] {
             // Every version's list holds its own side's instructions
             // and `Off` alone.
-            for inst in offered(version, side) {
+            for inst in offered(version, side, false) {
                 assert!(
                     inst == Instruction::Off || inst.side() == Some(side),
                     "{version:?} {side:?} offers {inst:?}, of the other side"
@@ -116,7 +116,7 @@ fn each_combo_lists_its_side_less_tight_marking() {
                     "Counter Target",
                     "Wing-Back",
                 ],
-                _ => offered(version, side)
+                _ => offered(version, side, false)
                     .iter()
                     .map(|inst| instruction_label(*inst))
                     .collect(),
@@ -145,6 +145,67 @@ fn each_combo_lists_its_side_less_tight_marking() {
                 &roster,
             );
         }
+    }
+}
+
+// Under a ruleset that allows illegal formations the side split
+// goes: its Edit mode puts any instruction on any slot, so every
+// combo lists the version's whole table less Tight Marking, in
+// stored order.
+#[test]
+fn under_illegal_formations_every_combo_lists_the_whole_table() {
+    let mut window = Headless::sized(800.0, 1200.0);
+    window.illegal_formations = true;
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    // Every chip shows a name, so none counts as a combo item below.
+    named_assignments(&mut tactics);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let expected: Vec<&str> = instruction::instructions(version)
+        .iter()
+        .copied()
+        .filter(|inst| *inst != Instruction::TightMarking)
+        .map(instruction_label)
+        .collect();
+    for (index, column) in [(0usize, 0usize), (0, 1), (1, 0), (1, 1)] {
+        let (closed, _) = window.tactics_ids(version, &mut tactics, &mut view, &roster, vec![]);
+        let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+        let combo = combo_row(&nodes, index)[column];
+        click(
+            &mut window,
+            combo,
+            version,
+            &mut tactics,
+            &mut view,
+            &roster,
+        );
+        // The popup's first frame is a sizing pass; its items join the
+        // AccessKit tree on the next.
+        let (open, _) = window.tactics_ids(version, &mut tactics, &mut view, &roster, vec![]);
+        let before: std::collections::HashSet<accesskit::NodeId> =
+            closed.iter().map(|(id, _)| *id).collect();
+        let popup: Vec<accesskit::Node> = open
+            .into_iter()
+            .filter(|(id, _)| !before.contains(id))
+            .map(|(_, node)| node)
+            .collect();
+        let drawn = button_labels(&popup, |_| true);
+        assert_eq!(
+            drawn, expected,
+            "{version:?} row {index} column {column}: the whole table less Tight Marking"
+        );
+        // Close the combo again for the next case's frame.
+        let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+        let _ = click(
+            &mut window,
+            combo_row(&nodes, index)[column],
+            version,
+            &mut tactics,
+            &mut view,
+            &roster,
+        );
     }
 }
 
