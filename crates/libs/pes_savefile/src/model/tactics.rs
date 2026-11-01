@@ -29,6 +29,25 @@ pub struct TeamTactics {
     pub auto: TeamAutoFlags,
 }
 
+/// The nine bench entries past the twelve, as the game writes them: the
+/// roster slots from 0 that neither `starting_eleven` nor the twelve
+/// name, ascending. A Team TOML import reproduces this fill, so an
+/// imported bench's other nine are these, whatever the target held.
+pub fn bench_fill(starting_eleven: &[u8; 11], bench: &[u8; 12]) -> [u8; 9] {
+    let mut named = [false; 256];
+    for slot in starting_eleven.iter().chain(bench) {
+        named[usize::from(*slot)] = true;
+    }
+    let mut unnamed = (0..=255u8).filter(|slot| !named[usize::from(*slot)]);
+    let mut fill = [0; 9];
+    for entry in &mut fill {
+        *entry = unnamed
+            .next()
+            .expect("at most 23 named slots leave more than nine");
+    }
+    fill
+}
+
 /// One preset: a style block, the sliders, three formations, the advanced
 /// instructions and the man-marking assignments.
 #[derive(Debug, Clone, PartialEq, Default)]

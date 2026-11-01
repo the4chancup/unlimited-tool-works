@@ -328,7 +328,8 @@ mod tests {
     use super::*;
     use crate::tactics::tests::{click, named_roster};
     use crate::test_support::{
-        Headless, chips_below, fixture_tactics, named_assignments, roster_rows, tactics_settings,
+        Headless, SettingsContext, chips_below, fixture_tactics, named_assignments, roster_rows,
+        tactics_settings,
     };
 
     // The draft's "Player assignments" column (`.tachalf`): each of the
@@ -502,13 +503,17 @@ mod tests {
         };
         let rows = named_roster();
         let roster = roster_rows(&rows);
+        let illegal_formations = window.illegal_formations;
         let (nodes, shapes) = window.frame(vec![], |ui| {
             tactics_settings(
                 ui,
                 "tactics",
                 version,
                 &mut tactics,
-                None,
+                SettingsContext {
+                    opened: None,
+                    illegal_formations,
+                },
                 &mut view,
                 &roster,
             );
@@ -598,13 +603,17 @@ mod tests {
         let mut view = TacticsView::default();
         let rows = named_roster();
         let roster = roster_rows(&rows);
+        let illegal_formations = window.illegal_formations;
         let (nodes, shapes) = window.frame(vec![], |ui| {
             tactics_settings(
                 ui,
                 "tactics",
                 version,
                 &mut tactics,
-                None,
+                SettingsContext {
+                    opened: None,
+                    illegal_formations,
+                },
                 &mut view,
                 &roster,
             );

@@ -92,8 +92,10 @@ pub struct TeamEditFlagsSection {
 pub struct TacticsSection {
     /// The eleven starters as roster slots.
     pub starting_eleven: Option<[u8; 11]>,
-    /// The bench order as roster slots.
-    pub bench_order: Option<[u8; 21]>,
+    /// The bench as roster slots: the first twelve of the record's
+    /// twenty-one bench entries, the other nine being the game's own
+    /// fill, which `apply` reproduces.
+    pub bench_order: Option<[u8; 12]>,
     /// `[tactics.set_pieces]`.
     pub set_pieces: SetPiecesSection,
     /// Roster slots that join the attack.

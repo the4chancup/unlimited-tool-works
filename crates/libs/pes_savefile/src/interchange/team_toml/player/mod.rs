@@ -151,7 +151,7 @@ fn emit_player(
     out.push_str(&padded(
         &format!("[{path}]"),
         &format!(
-            "roster slot 01 .. 40 (32 on PES 15-18){}",
+            "roster slot 01 to 40 (01 to 32 on PES 15 to 18){}",
             roster_note(slot, team_id, roster_breaks)
         ),
     ));
@@ -181,7 +181,7 @@ fn emit_player(
         "number",
         section.number.map(|v| v.to_string()),
         "1",
-        "shirt number, the roster's",
+        "shirt number",
     );
     for key in PlayerKey::ALL {
         if key.table().is_empty() {
@@ -214,7 +214,7 @@ fn emit_player(
             .map(play_style_text)
             .transpose()?,
         "\"none\"",
-        "canonical PlayStyle name; \"none\" for none",
+        "the playing style's name, or \"none\"",
     );
     emit_key(out, section, PlayerKey::StrongerFoot)?;
     emit_key(out, section, PlayerKey::StrongerHand)?;
@@ -228,7 +228,7 @@ fn emit_player(
             .skills
             .map(|flags| flag_list(flags, &labels::SKILLS)),
         "[]",
-        "the set skills, canonical names",
+        "the player's skills",
     );
     emit(
         out,
@@ -242,7 +242,7 @@ fn emit_player(
     );
 
     out.push_str(&format!(
-        "\n[{path}.edit_flags]         # the game's own flags, all bool\n"
+        "\n[{path}.edit_flags]         # the parts the game marked as edited, true or false\n"
     ));
     for key in PlayerKey::ALL {
         if key.table() == "edit_flags" {

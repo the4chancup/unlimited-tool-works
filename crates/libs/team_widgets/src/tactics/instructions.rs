@@ -1,7 +1,8 @@
 //! The "Advanced instructions" grid: the headers Attack and Defence over
 //! their two equal columns, each instruction's number
 //! beside its two combos — the attack ones listing the attacking
-//! instructions, the defence ones the defending, less Tight Marking —
+//! instructions, the defence ones the defending, less Tight Marking, or
+//! the whole table under a ruleset that allows illegal formations —
 //! and each target a chip under its combo, armed to a pitch click.
 
 use pes_savefile::model::instruction::Instruction;
@@ -25,13 +26,19 @@ const INSTR_ROW_GAP: f32 = 3.0;
 /// What a side's combo offers (the draft's `instructionsFor`): the
 /// version's stored table in its stored order, its own side's
 /// instructions plus `Off`, less Tight Marking — it marks an opponent,
-/// which Edit mode does not offer.
-fn offered(version: PesVersion, side: InstructionSide) -> Vec<Instruction> {
+/// which Edit mode does not offer. Under a ruleset that allows
+/// illegal formations the side split goes (its Edit mode puts any
+/// instruction on any slot): the whole table, less Tight Marking.
+fn offered(
+    version: PesVersion,
+    side: InstructionSide,
+    illegal_formations: bool,
+) -> Vec<Instruction> {
     instruction::instructions(version)
         .iter()
         .copied()
         .filter(|inst| *inst != Instruction::TightMarking)
-        .filter(|inst| *inst == Instruction::Off || inst.side() == Some(side))
+        .filter(|inst| illegal_formations || *inst == Instruction::Off || inst.side() == Some(side))
         .collect()
 }
 
@@ -51,11 +58,12 @@ fn instruction_combo(
     side: InstructionSide,
     entry: &mut AdvancedInstruction,
     opened_target: Option<u8>,
+    illegal_formations: bool,
 ) {
     let current = instruction::decode(version, entry.instruction)
         .ok()
         .flatten();
-    let mut list = offered(version, side);
+    let mut list = offered(version, side, illegal_formations);
     if let Some(inst) = current
         && !list.contains(&inst)
     {
@@ -155,7 +163,9 @@ fn target_chip(
 /// table holds the weak line `(none on this version)` with the `PES
 /// NN+` tooltip instead of disabled rows. The panel's heading is the
 /// caller's `panel`. `opened` is the same preset as the file was
-/// opened or last saved, whose entries' target bytes each combo puts back.
+/// opened or last saved, whose entries' target bytes each combo puts
+/// back. `illegal_formations` is the active ruleset's flag, handed on
+/// to the combos' lists.
 pub(super) fn instruction_table(
     ui: &mut egui::Ui,
     version: PesVersion,
@@ -163,6 +173,7 @@ pub(super) fn instruction_table(
     opened: Option<&TacticsPreset>,
     view: &mut TacticsView,
     roster: &[RosterRow<'_>],
+    illegal_formations: bool,
 ) {
     let (Some(attack), Some(defence)) = (
         preset.attack_instructions.as_mut(),
@@ -240,6 +251,7 @@ pub(super) fn instruction_table(
                 side,
                 entry,
                 opened_target,
+                illegal_formations,
             );
         }
         top += combo_height + INSTR_ROW_GAP;

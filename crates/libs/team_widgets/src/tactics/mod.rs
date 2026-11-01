@@ -676,6 +676,9 @@ fn slider(ui: &mut egui::Ui, sliders: &mut TacticSliders, spec: &SliderSpec) {
 /// has none): a
 /// pick of an instruction that takes no player of ours puts back the
 /// target byte the same entry held there, 255 without it.
+/// `illegal_formations` is the active ruleset's flag: its cup's Edit
+/// mode puts any instruction on any slot, so both sides' combos then
+/// list the whole table less Tight Marking.
 pub fn advanced_instructions(
     ui: &mut egui::Ui,
     version: PesVersion,
@@ -683,6 +686,7 @@ pub fn advanced_instructions(
     opened: Option<&TeamTactics>,
     view: &mut TacticsView,
     roster: &[RosterRow<'_>],
+    illegal_formations: bool,
 ) -> bool {
     let shown = view.preset.min(2);
     let preset = &mut tactics.presets[shown];
@@ -692,7 +696,15 @@ pub fn advanced_instructions(
         // `add_space` adds to the item gap: the rows start `TITLE_GAP`
         // under the heading, as Formation settings' do.
         ui.add_space(TITLE_GAP - ui.spacing().item_spacing.y);
-        instructions::instruction_table(ui, version, preset, opened, view, roster);
+        instructions::instruction_table(
+            ui,
+            version,
+            preset,
+            opened,
+            view,
+            roster,
+            illegal_formations,
+        );
     });
     *preset != before
 }

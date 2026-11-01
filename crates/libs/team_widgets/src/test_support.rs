@@ -13,20 +13,28 @@ use crate::tactics::{
     player_assignments,
 };
 
+/// `tactics_settings`' two context knobs: the tactics as the file was
+/// opened (Advanced instructions' baseline for the target bytes) and
+/// the active ruleset's illegal-formations flag (the combos' lists).
+pub(crate) struct SettingsContext<'a> {
+    /// `advanced_instructions`' `opened`.
+    pub(crate) opened: Option<&'a TeamTactics>,
+    /// `advanced_instructions`' `illegal_formations`.
+    pub(crate) illegal_formations: bool,
+}
+
 /// The four panels in the draft's order, for tests that drive them
 /// together (the tests are its only callers): Formation settings,
 /// Advanced instructions, Player assignments and Automatic settings.
 /// `roster` gives each roster slot's row, indexed by slot. The two
 /// row-2 panels are drawn in a cell the pitch's height, as the host
-/// cells them. `opened` is the tactics as the file was opened, handed to
-/// Advanced instructions. Answers `true` only when `tactics` changed this
-/// frame.
+/// cells them. Answers `true` only when `tactics` changed this frame.
 pub(crate) fn tactics_settings(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,
     version: PesVersion,
     tactics: &mut TeamTactics,
-    opened: Option<&TeamTactics>,
+    context: SettingsContext<'_>,
     view: &mut TacticsView,
     roster: &[RosterRow<'_>],
 ) -> bool {
@@ -44,7 +52,15 @@ pub(crate) fn tactics_settings(
         // `|` evaluates every panel: a `||` chain would skip the rest on
         // the frame the first reports a change.
         cell(ui, |ui| formation_settings(ui, tactics, view))
-            | advanced_instructions(ui, version, tactics, opened, view, roster)
+            | advanced_instructions(
+                ui,
+                version,
+                tactics,
+                context.opened,
+                view,
+                roster,
+                context.illegal_formations,
+            )
             | cell(ui, |ui| {
                 player_assignments(ui, tactics, view, roster);
                 false
