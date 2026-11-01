@@ -7,6 +7,9 @@ from ctypes import wintypes
 user32 = ctypes.windll.user32
 shcore = ctypes.windll.shcore
 user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))  # PER_MONITOR_AWARE_V2
+# A monitor handle can exceed 32 bits; without argtypes ctypes passes it as a C int.
+user32.GetMonitorInfoW.argtypes = [wintypes.HMONITOR, ctypes.c_void_p]
+shcore.GetDpiForMonitor.argtypes = [wintypes.HMONITOR, ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p]
 
 
 class MONITORINFOEX(ctypes.Structure):

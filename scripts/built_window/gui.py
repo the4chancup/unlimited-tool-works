@@ -1,8 +1,8 @@
 """Input and captures for the built app's own window only: the portable copy `setup.py` fills
 (`UTW.exe` in the folder `UTW_APP` names, `.tmp/0_0_1s4t_v2/app` by default). Every point is in
-client coordinates (on a 96 dpi monitor points = pixels) and asserted inside the client rect, so
-a wrong point never lands in another program; input is sent only once the app's window is the
-foreground window. Captures use PrintWindow, never a screen grab, so a window over the app does
+client coordinates (on a 96 dpi monitor points = pixels) and asserted inside the client rect and
+not covered by another window, so a wrong point never lands in another program; input is sent
+only once the app's window is the foreground window. Captures use PrintWindow, never a screen grab, so a window over the app does
 not end up in the picture.
 
 Usage:
@@ -31,6 +31,10 @@ from PIL import Image
 
 user32 = ctypes.windll.user32
 gdi32 = ctypes.windll.gdi32
+user32.WindowFromPoint.argtypes = [wt.POINT]
+user32.WindowFromPoint.restype = wt.HWND
+user32.GetAncestor.argtypes = [wt.HWND, wt.UINT]
+user32.GetAncestor.restype = wt.HWND
 # The portable copy's folder, matched in its exe's path; another copy through UTW_APP.
 DEFAULT_APP = os.path.join(os.path.dirname(__file__), "..", "..", ".tmp", "0_0_1s4t_v2", "app")
 APP = os.path.normcase(os.path.abspath(os.environ.get("UTW_APP", DEFAULT_APP))) + "\\"
@@ -90,6 +94,10 @@ def to_screen(arg):
     assert 0 < x < rect.right and 0 < y < rect.bottom, f"{arg} is outside the client rect"
     pt = wt.POINT(int(x), int(y))
     user32.ClientToScreen(HWND, ctypes.byref(pt))
+    # Inside the client rect is not enough: a topmost window over the app (a notification)
+    # takes whatever lands on it.
+    under = user32.GetAncestor(user32.WindowFromPoint(pt), 2)  # GA_ROOT
+    assert under == HWND, f"{arg} is covered by another window: no input"
     return pt
 
 
