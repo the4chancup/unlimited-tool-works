@@ -170,9 +170,9 @@ REMOTE_RUN = f"{REMOTE_BASE}/run"
 COST_CACHE = (
     Path(os.environ.get("LOCALAPPDATA") or Path.home() / ".cache") / "4cc-studio" / "mutants-cost.json"
 )
-# One mutation run at a time on this machine (`run_lock`), whichever worktree launches it:
-# every run shares the machine's build slots and the remote. A run launched meanwhile polls
-# for it.
+# One mutation run at a time for this user on this machine (`run_lock`), whichever worktree
+# launches it: every run shares the machine's build slots and the remote. A run launched
+# meanwhile polls for it.
 RUN_LOCK = COST_CACHE.with_name("mutants.lock")
 LOCK_POLL_SECONDS = 30
 # The baseline (a cold build and test of the mutated packages in a fresh copy
@@ -641,7 +641,7 @@ def local_refusal(host: str | None) -> str | None:
         return (
             f"the remote half launched on {launched_on} is not collected: `just "
             f"mutants-collect` (with STUDIO_MUTANTS_REMOTE={launched_on}) fetches it, "
-            "then start the new run"
+            f"then start the new run (the record: {pending})"
         )
     return remote_refusal(host, remote=False) if host is not None else None
 
