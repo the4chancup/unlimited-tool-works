@@ -31,6 +31,9 @@ names where the question came from so the context can be read there.
     its two Height quota rows; 851-897 counting `GGG 4, GGSS 21, GSSSS 20, SSSSSS 1 · Height
     8, Manlet 14, Universal 11, GigaHeight 14`; Set PES path storing `E:\PES20**` and
     leaving the pitch; the rows within 1 px of the draft; the star in 857's name.
+  - **Yours in the same pass** (worklog 8.38, never checked in the built window): the dialog
+    the Save editor shows when you save while PES 2017 runs; the AATF screen against its PES
+    2017 sample; the list a click on the toolbar's `• unsaved changes` opens (8.31).
   - **Already measured,** so not worth reporting: every screen the drafts and the build share
     matches the drafts within 1 point (2 where needed), in both themes. What still differs
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
