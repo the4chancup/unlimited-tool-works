@@ -833,8 +833,8 @@ fn grips(shapes: &[egui::epaint::ClippedShape]) -> Vec<(egui::Rect, egui::Color3
 }
 
 /// An open dock paints the grip, a 24 × 2 line in the plain text grey,
-/// centred on its top edge (egui's resize edge) at the panel's middle;
-/// collapsed, none.
+/// at its divider's middle with its top on the panel's top edge (egui's
+/// resize edge); collapsed, none.
 // ST-LOG-04
 #[test]
 fn an_open_docks_divider_carries_the_grip() {
@@ -852,8 +852,10 @@ fn an_open_docks_divider_carries_the_grip() {
     };
     assert!(
         (grip.center().x - outer.center().x).abs() < 0.5
-            && (grip.center().y - outer.min.y).abs() < 0.5,
-        "the grip centred on the divider's middle: {grip:?}, panel {outer:?}"
+            && (grip.min.y - outer.min.y).abs() < 0.5
+            && (grip.max.y - outer.min.y - 2.0).abs() < 0.5,
+        "the grip centred across the divider, its top on the panel's top edge: \
+         {grip:?}, panel {outer:?}"
     );
     assert_eq!(
         fill,
@@ -867,6 +869,53 @@ fn an_open_docks_divider_carries_the_grip() {
         grips(&window.shapes).is_empty(),
         "a collapsed dock draws no grip"
     );
+}
+
+/// The grip is painted by the parent `Ui`, whose painter sits below the
+/// panels shown after the dock: the view above it fills its own rect and
+/// would cover a grip reaching above the dock's top edge. One frame of the
+/// dock under a central panel asserts no later fill overlaps it.
+// ST-LOG-04
+#[test]
+fn a_panel_shown_after_the_dock_never_covers_the_grip() {
+    let lines = plain_lines(5);
+    let mut panel = LogPanel::new("test-log");
+    let mut window = Headless::new();
+    with_central(&mut window, &mut panel, &lines);
+    // The grip's shape with its index in the frame's paint list: a cover-up
+    // is a filled rect painted after it (this frame draws the one layer —
+    // no window or overlay — so later in `shapes` is later on the grip's
+    // layer too).
+    let found: Vec<(usize, egui::Rect)> = window
+        .shapes
+        .iter()
+        .enumerate()
+        .filter_map(|(index, clipped)| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if (shape.rect.width() - 24.0).abs() < 0.01
+                    && (shape.rect.height() - 2.0).abs() < 0.01 =>
+            {
+                Some((index, shape.rect))
+            }
+            _ => None,
+        })
+        .collect();
+    let [(index, grip)] = found[..] else {
+        panic!("one grip on the open dock: {found:?}");
+    };
+    for clipped in &window.shapes[index + 1..] {
+        let egui::Shape::Rect(shape) = &clipped.shape else {
+            continue;
+        };
+        if shape.fill == egui::Color32::TRANSPARENT {
+            continue;
+        }
+        let covered = shape.rect.intersect(grip);
+        assert!(
+            !covered.is_positive(),
+            "a fill painted after the grip covers it: {shape:?} over {grip:?}"
+        );
+    }
 }
 
 #[test]

@@ -97,10 +97,12 @@ impl CommonSettings {
         PathBuf::from(self.pes_folder_path.replace("**", &version))
     }
 
-    /// Points the settings at the folder a running PES of `version` runs from (the
-    /// running-PES notice's Fix PES path): `version`'s own entry, the folder as it is,
-    /// whenever any version has one, since a rewritten main row would move every version
-    /// that falls back to it; otherwise the main row, through `pes_folder_pattern`.
+    /// Points the settings at a PES folder for `version`, from the running-PES
+    /// notice's Fix PES path (a folder the running game uses) or the Save
+    /// editor's Set PES path (a folder the member picked): `version`'s own
+    /// entry, the folder as it is, whenever any version has one, since a
+    /// rewritten main row would move every version that falls back to it;
+    /// otherwise the main row, through `pes_folder_pattern`.
     pub(crate) fn fix_pes_folder(&mut self, folder: &Path, version: PesVersion) {
         if self.pes_folders.is_empty() {
             self.pes_folder_path = pes_folder_pattern(folder, version);
