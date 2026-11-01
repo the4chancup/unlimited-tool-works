@@ -1905,8 +1905,9 @@ SE-GUI-41  GIVEN the PES 17 save open under the official ruleset
                 with none; WHEN the range is narrowed to one team THEN that team alone is
                 listed; WHEN Copy to clipboard is clicked THEN the clipboard holds the list as
                 plain text, its first line the ruleset, the range and the counts, then the
-                team's id and name after a `>`, each player's line (or `All clean`) indented
-                two spaces and each row's severity, rule and sentence four; WHEN the first
+                team's id and name after a `>`, its `Team-wide issues` line first, then each
+                player's line (or `All clean`), indented two spaces, and each row's severity,
+                rule and sentence four; WHEN the first
                 end is moved past the last THEN the last end follows it, and the last end's
                 list starts at the first end's team; WHEN an end changes THEN the list is
                 checked again only once the ends have rested 500 ms, dimmed and marked
@@ -2032,7 +2033,9 @@ SE-GUI-29  manual  GIVEN a Texport written by SE-GUI-17's export from a PES 17 s
 SE-GUI-30  GIVEN the PES 17 save open on a team with violations under the active ruleset
            WHEN Live AATF is switched on
            THEN the docked panel reads `Checking <team>…` until the first check returns, then
-                lists the team's violations under `N issues · <ruleset>`, and clicking a row
+                lists the team's violations under `N issues · <ruleset>`, its `Team-wide
+                issues` group above every player's, a player's row's tooltip `Click to switch
+                to this player` and a team-wide row's none, and clicking a row
                 selects that player (a `FieldedNotA` row his team's row, the named preset
                 shown on a formation carrying the cross); WHEN an edit fixes one of them THEN the list stays,
                 marked `checking…`, until the check returns, its row then gone and N one less,
