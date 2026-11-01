@@ -37,6 +37,10 @@ const POP_OUT_TOOLTIP: &str = "Open Live AATF in a window of its own";
 /// The window's dock icon's tooltip and accessible name.
 const DOCK_TOOLTIP: &str = "Put Live AATF back in its dock";
 
+/// The close buttons' tooltip, and the dock's close button's accessible
+/// name.
+const CLOSE_TOOLTIP: &str = "Turn Live AATF off";
+
 /// The dock's and the window's state on `SaveView` (`view.live`): the
 /// dock's frame and the open team's check, which the window shares.
 pub(super) struct LiveAatf {
@@ -138,7 +142,22 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             |ui| {
                 headline(ui, &listing);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if icon_button(ui, studio_core::icons::POP_OUT, POP_OUT_TOOLTIP).clicked() {
+                    if close_button(ui).clicked() {
+                        *live_aatf = false;
+                    }
+                    // The window's close button stands centred in its slot,
+                    // one item spacing from the dock icon's: the slot's half
+                    // left of the cross and the pop-out icon in a slot of
+                    // its own keep the dock's pair spaced as the window's,
+                    // the cross itself at the header's right end.
+                    let slot = title_slot(ui);
+                    ui.add_space((slot - ui.spacing().icon_width) / 2.0);
+                    let pop_out = ui.allocate_ui_with_layout(
+                        egui::vec2(slot, ui.spacing().interact_size.y),
+                        egui::Layout::centered_and_justified(egui::Direction::TopDown),
+                        |ui| icon_button(ui, studio_core::icons::POP_OUT, POP_OUT_TOOLTIP),
+                    );
+                    if pop_out.inner.clicked() {
                         *live_window = true;
                     }
                 });
@@ -244,6 +263,32 @@ fn icon_button(ui: &mut egui::Ui, glyph: &str, tooltip: &str) -> egui::Response 
     response.on_hover_text(tooltip)
 }
 
+/// The dock header's close button, drawn as egui draws a window's: an
+/// `icon_width` square sensing clicks, its two diagonals shrunk 2 points
+/// and grown by the state's expansion, in the state's foreground stroke.
+/// egui keeps its own private, so the dock copies its drawing: the same
+/// cross in the dock's corner and the window's reads as one control.
+fn close_button(ui: &mut egui::Ui) -> egui::Response {
+    let size = egui::Vec2::splat(ui.spacing().icon_width);
+    let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click());
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, CLOSE_TOOLTIP));
+    let visuals = ui.style().interact(&response);
+    let cross = rect.shrink(2.0).expand(visuals.expansion);
+    let stroke = visuals.fg_stroke;
+    ui.painter()
+        .line_segment([cross.left_top(), cross.right_bottom()], stroke);
+    ui.painter()
+        .line_segment([cross.right_top(), cross.left_bottom()], stroke);
+    response.on_hover_text(CLOSE_TOOLTIP)
+}
+
+/// The side of the square egui gives a window's title bar close button,
+/// the `Heading` row's height, which the window's dock icon and the dock's
+/// pop-out icon each take as their width too.
+fn title_slot(ui: &egui::Ui) -> f32 {
+    ui.fonts_mut(|fonts| fonts.row_height(&egui::TextStyle::Heading.resolve(ui.style())))
+}
+
 /// What the window's frame did: its dock icon or its close button clicked,
 /// or a row.
 struct WindowFrame {
@@ -260,10 +305,7 @@ struct WindowFrame {
 /// under it, the dock's count line and the rows in one column.
 fn window(ui: &egui::Ui, listing: &Listing<'_>) -> WindowFrame {
     let id = egui::Id::unique("save_editor_live_aatf_window");
-    // The square egui gives the title bar's close button, which the dock
-    // icon takes too.
-    let slot =
-        ui.fonts_mut(|fonts| fonts.row_height(&egui::TextStyle::Heading.resolve(ui.style())));
+    let slot = title_slot(ui);
     let corner = ui.ctx().content_rect().max - WINDOW_INSET;
     let mut open = true;
     let mut docked = false;
@@ -323,7 +365,7 @@ fn title_bar_buttons(ui: &mut egui::Ui, window_id: egui::Id, slot: f32) -> bool 
         egui::Vec2::splat(slot),
     );
     ui.interact(close, window_id.with("close_tooltip"), egui::Sense::hover())
-        .on_hover_text("Turn Live AATF off");
+        .on_hover_text(CLOSE_TOOLTIP);
     // A child the body never allocates: the slot lies above the body, and
     // allocating it would move the body's cursor and size up to the bar.
     let mut slot_ui = ui.new_child(egui::UiBuilder::new().max_rect(dock_slot).layout(
