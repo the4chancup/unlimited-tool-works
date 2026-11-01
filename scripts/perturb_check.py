@@ -5,8 +5,10 @@ code it guards is perturbed, for code whose tests are Python's own (the scripts)
 list, run from `ROOT`, the perturbation's test name appended) and `PERTURBATIONS`, tuples of
 (label, file relative to `ROOT`, old text, new text, test name). Each perturbation replaces
 `old`, which must occur exactly once, runs the command, then puts the file's original bytes
-back (asserted) whatever happened. Labels on the command line run those alone, printing the
-test's output. Prints RED or GREEN per perturbation; exits 1 when any stayed green.
+back (asserted) whatever happened. Each test must first pass on the unperturbed tree: a
+misspelt or missing test exits nonzero without running, which would read as caught. Labels on
+the command line run those alone, printing the test's output. Prints RED or GREEN per
+perturbation; exits 1 when any stayed green.
 
 The tests run with bytecode off: Python reuses a `.pyc` whose source has the same size and
 the same whole-second mtime, so a perturbation the size of the one before, written within the
@@ -25,13 +27,28 @@ def write(path: Path, data: bytes) -> None:
     os.replace(temp, path)
 
 
+def run_test(command: list[str], root: Path, test: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [*command, test], cwd=root, capture_output=True, text=True, encoding="utf-8",
+        errors="replace", timeout=600, env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+    )
+
+
 def main(argv: list[str]) -> int:
+    if len(argv) < 2:
+        raise SystemExit("usage: perturb_check.py <list.py> [label...]")
     spec = runpy.run_path(argv[1])
     root = Path(spec["ROOT"])
     only = argv[2:]
     perturbations = [p for p in spec["PERTURBATIONS"] if not only or p[0] in only]
     if only and len(perturbations) != len(only):
         raise SystemExit(f"perturb_check: unknown labels among {only}")
+    passing = set()
+    for label, _, _, _, test in perturbations:
+        if test not in passing:
+            if run_test(spec["COMMAND"], root, test).returncode != 0:
+                raise SystemExit(f"perturb_check: {label}: {test} fails before the perturbation")
+            passing.add(test)
     green = 0
     for label, rel, old, new, test in perturbations:
         path = root / rel
@@ -41,10 +58,7 @@ def main(argv: list[str]) -> int:
             raise SystemExit(f"perturb_check: {label}: the old text occurs {text.count(old)} times")
         write(path, text.replace(old, new).encode("utf-8"))
         try:
-            run = subprocess.run(
-                [*spec["COMMAND"], test], cwd=root, capture_output=True, text=True,
-                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
-            )
+            run = run_test(spec["COMMAND"], root, test)
         finally:
             write(path, original)
         assert path.read_bytes() == original, f"{rel} was not restored"

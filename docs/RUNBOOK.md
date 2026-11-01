@@ -59,7 +59,9 @@ then time out, so a timeout that no infinite loop explains is rerun before it co
 A build killed for memory (the remote half's cap) is filed by
 cargo-mutants as unviable, which hides an untested mutant: at 3.z eframe's dependency tree
 outgrew the 6 GiB cap and 12 remote mutants went untested that way, so the scripts now list
-every killed build and fail the run. Below
+every killed build and fail the run. A failed link counts the same way: a Windows SDK update
+removed the system libraries mid-run, and every local mutant of a 2026-11-01 diff run was
+filed unviable. Below
 that the split's fixed overhead, about a minute plus up to 15 s of polling, eats the gain. At
 2.20k a 32-mutant `pes_savefile` diff took 11 min 57 s locally; split, the local half took
 417 s and the remote half 502 s from its launch (the VPS ran about a fifth slower; the total
