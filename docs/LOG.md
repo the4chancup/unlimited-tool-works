@@ -3005,3 +3005,5 @@ worklog passed 7,000 lines.
 - 2026-11-01 — Tooling: the mutation scripts' round 1 rework (snapshot reads, the pending-half record, refusals that file
   nothing, timeouts listed, extra mutants caught only on a failing test) and round 2's fixes; a test had set the live
   `mutants.diff/` aside twice (one older result lost). 61 script tests, each shown failing by `scripts/perturb_check.py`.
+- 2026-11-01 — Tooling: round 2 part b's fixes (`perturb_check` needs a passing test; `extra-mutants` refuses an
+  uncollected half) and a failed link listed untested: a Windows SDK update mid-run had filed 10 local mutants unviable.
