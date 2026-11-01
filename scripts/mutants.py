@@ -713,6 +713,12 @@ class RemoteDied(RuntimeError):
     """The remote half stopped without an exit code."""
 
 
+class Refused(RuntimeError):
+    """A run that cannot start (`remote_refusal`, `local_refusal`, a cargo-mutants version
+    mismatch), raised before it touches any result: a caller that counted the refusal as a
+    finished run filed the last run's `mutants.out` as this one's."""
+
+
 def remote_selection(selection: list[str]) -> str:
     """The remote half's selection arguments: a `--in-diff` selection reads the
     uploaded copy of the diff (`run/in.diff`) and keeps what follows it, such as
@@ -896,9 +902,11 @@ def run_split(
     local_seconds = time.monotonic() - start
     thread.join()
     if "error" in remote:
+        share = "shard 0/2" if local_files is None else "its share of the files"
         raise RuntimeError(
-            "the remote half failed before running; the local half covered shard 0/2 "
-            "only (rerun, or set STUDIO_MUTANTS_REMOTE empty for a local run)"
+            f"the remote half failed to launch; the local half covered {share} only. The "
+            "launch can fail after starting the half: if one runs, `just mutants-collect` "
+            "fetches it; otherwise rerun"
         ) from remote["error"]
     remote_code, remote_seconds = wait_remote(host)
     return local_run.returncode, remote_code, local_seconds, remote_seconds
@@ -910,33 +918,40 @@ def fetch_remote(host: str, partial: bool = False) -> None:
     counted as this run's, then marks the run collected. A finished half with
     no `mutants.out` fails the fetch; a died one (`partial`) may have none."""
     out = ROOT / "mutants.out" / "remote"
-    # Exit 3 is the half's own answer, no `mutants.out`; any other failure (ssh's 255, a
-    # broken archive) is the transfer's, and the half stays uncollected for a retry.
-    fetched = ssh(
-        host,
-        f"cd {REMOTE_BASE}/tree && {{ [ -d mutants.out ] || exit 3; }} && tar -cf - mutants.out",
-        capture_output=True,
-    )
-    absent = fetched.returncode == 3
-    if not absent and (fetched.returncode != 0 or not fetched.stdout):
-        raise RuntimeError(
-            f"fetching the remote half failed (exit {fetched.returncode}); it stays "
-            "uncollected: retry with `just mutants-collect`"
+    LOCAL_TMPDIR.mkdir(parents=True, exist_ok=True)
+    # The archive goes to a file, not memory: a fetch measured 11 GiB, and capturing it held
+    # it twice (the captured bytes, then the reader over them).
+    with tempfile.TemporaryFile(dir=LOCAL_TMPDIR) as archive:
+        # Exit 3 is the half's own answer, no `mutants.out`; any other failure (ssh's 255, a
+        # broken archive) is the transfer's, and the half stays uncollected for a retry.
+        fetched = ssh(
+            host,
+            f"cd {REMOTE_BASE}/tree && {{ [ -d mutants.out ] || exit 3; }} && "
+            "tar -cf - mutants.out",
+            stdout=archive, stderr=subprocess.PIPE,
         )
-    if out.exists():
-        shutil.rmtree(out)
-    out.mkdir(parents=True)
-    if not absent:
-        with tarfile.open(fileobj=io.BytesIO(fetched.stdout), mode="r|") as tar:
-            tar.extractall(out, filter="data")
-    elif partial:
-        print("warning: the remote half left no mutants.out", file=sys.stderr)
-    else:
-        raise RuntimeError(
-            "the remote half finished but left no mutants.out: its log is "
-            f"{REMOTE_RUN}/log on {host}; once read, `rm -r {REMOTE_RUN}` there frees "
-            "the host for the next run"
-        )
+        absent = fetched.returncode == 3
+        size = archive.seek(0, os.SEEK_END)
+        if not absent and (fetched.returncode != 0 or not size):
+            raise RuntimeError(
+                f"fetching the remote half failed (exit {fetched.returncode}); it stays "
+                "uncollected: retry with `just mutants-collect`"
+            )
+        if out.exists():
+            remove_tree(out)
+        out.mkdir(parents=True)
+        if not absent:
+            archive.seek(0)
+            with tarfile.open(fileobj=archive, mode="r|") as tar:
+                tar.extractall(out, filter="data")
+        elif partial:
+            print("warning: the remote half left no mutants.out", file=sys.stderr)
+        else:
+            raise RuntimeError(
+                "the remote half finished but left no mutants.out: its log is "
+                f"{REMOTE_RUN}/log on {host}; once read, `rm -r {REMOTE_RUN}` there frees "
+                "the host for the next run"
+            )
     log = ssh(host, f"cat {REMOTE_RUN}/log 2>/dev/null || true", capture_output=True, check=True)
     (out / "remote_console.txt").write_bytes(log.stdout)
     peak, cap = ssh(
@@ -954,7 +969,22 @@ def fetch_remote(host: str, partial: bool = False) -> None:
 
 
 def count_lines(path: Path) -> int:
-    return len(path.read_text(encoding="utf-8").splitlines()) if path.exists() else 0
+    return len(read_lines(path))
+
+
+def read_lines(path: Path) -> list[str]:
+    return path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+
+
+def timeout_lines(out_dir: Path) -> list[str]:
+    """The mutants under `out_dir` (a `mutants.out`) whose tests timed out, as `timeout.txt`'s
+    lines tagged `[timeout]` after the location: listed with the survivors in `missed_all.txt`,
+    the file triage reads, since an unexplained timeout is rerun before it counts as caught."""
+    tagged = []
+    for line in read_lines(out_dir / "timeout.txt"):
+        location, _, what = line.partition(": ")
+        tagged.append(f"{location}: [timeout] {what}")
+    return tagged
 
 
 def never_ran(out_dir: Path) -> tuple[int, int] | None:
@@ -1023,12 +1053,7 @@ def summarize(
     # never be caught on the Linux host; rerun it here and let a catch replace
     # the remote outcome. Under REMOTE_ONLY, or off Windows, it stays missed
     # with a word saying why.
-    remote_missed_path = remote / "missed.txt"
-    remote_missed = (
-        remote_missed_path.read_text(encoding="utf-8").splitlines()
-        if remote_missed_path.exists()
-        else []
-    )
+    remote_missed = read_lines(remote / "missed.txt")
     windows_missed = [
         line
         for line in remote_missed
@@ -1090,11 +1115,18 @@ def summarize(
         f"{'total':8}{totals['caught']:>7}{totals['missed']:>7}"
         f"{totals['timeout']:>8}{totals['unviable']:>9}"
     )
-    missed = (local / "missed.txt").read_text(encoding="utf-8") if (local / "missed.txt").exists() else ""
-    missed += "".join(
-        line + "\n" for line in remote_missed if line not in caught_here
+    # Line by line, never text joined to text: a list without its final newline merged its last
+    # line with the next list's first.
+    missed = "".join(
+        line + "\n"
+        for line in [
+            *read_lines(local / "missed.txt"),
+            *timeout_lines(local),
+            *(line for line in remote_missed if line not in caught_here),
+            *timeout_lines(remote),
+            *extra_missed.splitlines(),
+        ]
     )
-    missed += extra_missed
     # A half that died before cargo-mutants started may leave no mutants.out at
     # all; the summary must still write its (empty or partial) list.
     local.mkdir(exist_ok=True)
@@ -1370,12 +1402,17 @@ def set_aside_last_run() -> None:
 
 def set_aside(results: Path) -> None:
     """Move a results folder to `<name>.old`, replacing the older one, so a run's results
-    outlive the next run's start."""
+    outlive the next run's start. An empty folder, a run that landed nothing, is removed
+    instead: kept, it would replace the results before it at the next run's start."""
+    if not results.exists():
+        return
+    if not any(results.iterdir()):
+        results.rmdir()
+        return
     old = results.with_name(results.name + ".old")
-    if results.exists():
-        if old.exists():
-            shutil.rmtree(old)
-        results.rename(old)
+    if old.exists():
+        remove_tree(old)
+    results.rename(old)
 
 
 def extra_run_record() -> Path:
@@ -1557,7 +1594,7 @@ def plan_file_split(crate: str, nproc: int, source: Path) -> dict:
 def split(
     selection: list[str], host: str, tree: str, source: Path, local: bool = True
 ) -> int:
-    """The whole split run for one selection: the busy-remote refusal, the
+    """The whole split run for one selection: the busy-remote refusal (`Refused`), the
     snapshot, the version check, both halves, the fetch and the summary.
     Without `local` (`REMOTE_ONLY`) the remote runs every mutant. Either way the
     last run's local `mutants.out` is set aside first, as cargo-mutants itself
@@ -1571,8 +1608,7 @@ def split(
     # The remote must be free before the transfer rewrites its tree.
     refusal = remote_refusal(host, remote=True)
     if refusal is not None:
-        print(refusal)
-        return 1
+        raise Refused(refusal)
 
     # The snapshot and the one-call probe come first (a few seconds), so a
     # version mismatch stops before the local half starts.
@@ -1580,12 +1616,11 @@ def split(
     remote_head, remote_tree, nproc, remote_version = remote_state(host)
     local_version = local_mutants_version()
     if local_version != remote_version:
-        print(
+        raise Refused(
             f"cargo-mutants versions differ: local {local_version}, "
             f"remote {remote_version}; fix: cargo install --locked "
             f"cargo-mutants@{local_version.split()[-1]} on the remote"
         )
-        return 1
 
     set_aside_last_run()
     local_files: set[str] | None = None
@@ -1664,7 +1699,11 @@ def main(argv: list[str]) -> int:
     crate = argv[1]
     tree = working_tree()
     with run_lock(), snapshot_source(tree) as source:
-        return whole_run(crate, host, tree, source)
+        try:
+            return whole_run(crate, host, tree, source)
+        except Refused as refusal:
+            print(refusal)
+            return 1
 
 
 def whole_run(crate: str, host: str | None, tree: str, source: Path) -> int:
@@ -1678,8 +1717,7 @@ def whole_run(crate: str, host: str | None, tree: str, source: Path) -> int:
             else f"{crate} is local-only (LOCAL_ONLY_CRATES)"
         )
         if refusal := local_refusal(host):
-            print(refusal)
-            return 1
+            raise Refused(refusal)
         print(f"{reason}: running every mutant on this machine", flush=True)
         set_aside_last_run()
         # Not a split run: drop a previous split's record so its summary

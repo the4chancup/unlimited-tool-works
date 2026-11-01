@@ -337,7 +337,9 @@ catches because the gates run through it. The list: the mutation runs' `mutants.
 least (the same loop, until a round accepts fewer than five), Astra when a change reshapes how
 a run measures; the first review of each covers the whole script, later ones the changed
 functions and their callers. Until 2026-11-01 no script had one, and `mutants_diff.py` had
-been deleting the previous run's results whenever two runs followed each other.
+been deleting the previous run's results whenever two runs followed each other. A test a
+change adds to one is shown to fail by `scripts/perturb_check.py` (a list of perturbations,
+each with its test, applied and undone one at a time).
 **Batch, don't stream:**
 renames, doc edits, one-file fixes with no new behavior are never reviewed on their own; their
 diffs ride along with the next (b) review, or with converge. Never more than one *scheduled*
