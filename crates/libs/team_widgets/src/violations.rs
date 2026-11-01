@@ -680,10 +680,12 @@ fn row(
 }
 
 /// The paint and click tail the violations list's rows and the Save
-/// editor's comparator lines share: `shapes` painted in order under a
-/// hovered row's fill, `label` the AccessKit label under the `Button`
-/// role on a clickable row, `Label` on one that only reports, and `hover`
-/// the tooltip; a `select` row's click reports its player.
+/// editor's comparator lines share: `shapes` painted in order, a hovered
+/// row outlined in the hovered widget's stroke inside its rect and never
+/// filled — a fill under the row's coloured words, an error's red rule
+/// name, leaves them hard to read — `label` the AccessKit label under the
+/// `Button` role on a clickable row, `Label` on one that only reports,
+/// and `hover` the tooltip; a `select` row's click reports its player.
 pub fn row_paint(
     ui: &egui::Ui,
     response: egui::Response,
@@ -695,8 +697,12 @@ pub fn row_paint(
     let rect = response.rect;
     if ui.is_rect_visible(rect) {
         if response.hovered() {
-            ui.painter()
-                .rect_filled(rect, 2.0, ui.visuals().widgets.hovered.bg_fill);
+            ui.painter().rect_stroke(
+                rect,
+                2.0,
+                ui.visuals().widgets.hovered.bg_stroke,
+                egui::StrokeKind::Inside,
+            );
         }
         ui.painter().extend(shapes.iter().cloned());
     }
@@ -3314,6 +3320,88 @@ mod tests {
             hover_texts(&mut window, &teams, centre(&team_row)),
             Vec::<String>::new(),
             "a team-wide row"
+        );
+    }
+
+    /// Whether a `Rect` shape's rect is `bounds`' row (within a point).
+    fn paints_row(rect: egui::Rect, bounds: accesskit::Rect) -> bool {
+        (f64::from(rect.min.x) - bounds.x0).abs() <= 1.0
+            && (f64::from(rect.min.y) - bounds.y0).abs() <= 1.0
+            && (f64::from(rect.max.x) - bounds.x1).abs() <= 1.0
+            && (f64::from(rect.max.y) - bounds.y1).abs() <= 1.0
+    }
+
+    // A row under the pointer is outlined in the hovered widget's stroke,
+    // never filled: a fill under the row's coloured words left an error's
+    // red rule name hard to read. Team 734 with two of its regulars made
+    // short: one's `Height` row hovered strokes its rect and fills none;
+    // the other's, not hovered, paints neither.
+    #[test]
+    fn a_hovered_row_is_outlined_not_filled() {
+        let file = short_734(&[73401, 73404]);
+        let players = listed_players(&file, 734);
+        let violations = check(&file, 734);
+        let team = file.team(734).expect("team 734");
+        let teams = [TeamViolations {
+            team_id: 734,
+            team_name: &team.name,
+            players: &players,
+            violations: &violations,
+            starting_eleven: &team.tactics.starting_eleven,
+        }];
+        let mut window = Headless::new();
+        let (nodes, _, _) = window.list(&teams, false, vec![]);
+        let mut rows: Vec<accesskit::Rect> = nodes
+            .iter()
+            .filter(|node| {
+                node.role() == Role::Button
+                    && node.label() == Some("Height: height 183 takes no bracket (185 has room)")
+            })
+            .filter_map(accesskit::Node::bounds)
+            .collect();
+        rows.sort_by(|a, b| a.y0.partial_cmp(&b.y0).expect("ordered bounds"));
+        let [hovered, other] = rows.as_slice() else {
+            panic!("premise: both Height rows drawn");
+        };
+        let at = egui::pos2(
+            ((hovered.x0 + hovered.x1) / 2.0) as f32,
+            ((hovered.y0 + hovered.y1) / 2.0) as f32,
+        );
+        let (_, shapes, _) = window.list(&teams, false, vec![egui::Event::PointerMoved(at)]);
+        let widgets = &window.ctx.style_of(window.ctx.theme()).visuals.widgets;
+        let rect_of = |bounds: accesskit::Rect| {
+            shapes
+                .iter()
+                .filter_map(move |clipped| match &clipped.shape {
+                    egui::Shape::Rect(shape) if paints_row(shape.rect, bounds) => Some(shape),
+                    _ => None,
+                })
+        };
+        assert!(
+            rect_of(*hovered).all(|shape| shape.fill != widgets.hovered.bg_fill),
+            "the hovered row paints no hovered-widget fill"
+        );
+        let outline = rect_of(*hovered)
+            .find(|shape| {
+                shape.stroke.width > 0.0 && shape.stroke.color != egui::Color32::TRANSPARENT
+            })
+            .expect("the hovered row's outline");
+        assert_eq!(
+            outline.stroke.color, widgets.hovered.bg_stroke.color,
+            "the outline in the hovered widget's stroke colour"
+        );
+        assert_eq!(
+            outline.stroke.width, widgets.hovered.bg_stroke.width,
+            "the outline in the hovered widget's stroke width"
+        );
+        assert!(
+            rect_of(*other).all(|shape| {
+                shape.fill != widgets.hovered.bg_fill
+                    && (shape.stroke.width == 0.0
+                        || shape.stroke.color == egui::Color32::TRANSPARENT
+                        || shape.stroke != widgets.hovered.bg_stroke)
+            }),
+            "the unhovered row paints neither fill nor outline"
         );
     }
 
