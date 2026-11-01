@@ -2228,7 +2228,8 @@ SE-AATF-08 GIVEN SE-AATF-03's save and the command started from a folder holding
 **8.36c scope.** `apply-patch` with the full-look patch (`plans/pes_savefile/operations.md`
 "Aesthetics patch (new)"): an entry's `[appearance]`, `boots_id`, `gloves_id` and
 `base_copy_id`, on every engine. "A player" is one of the fixture save's cup players; 7511
-and 101334 are copied ids real cup saves hold.
+and 101334 are copied ids real cup saves hold; an entry's `[appearance]` holds every key its
+version holds, as the compiler writes it, unless the scenario says otherwise.
 
 ```
 SE-PAT-07  GIVEN the PES 21 fixture save, a player whose record holds appearance id -1 and
@@ -2236,9 +2237,10 @@ SE-PAT-07  GIVEN the PES 21 fixture save, a player whose record holds appearance
                  setting skin_color = 4 and every other key at its default, boots_id = 643 and
                  gloves_id = 0
            WHEN apply-patch is run
-           THEN his appearance block holds the entry's values (the bits no key covers at the
-                games' values), his boots 643 and gloves 0, his appearance id and base-copy id
-                his own id; every other byte of the payload is unchanged, and the exit code is 0
+           THEN his appearance block and motions hold the entry's values (the bits no key
+                covers at the games' values), his boots 643 and gloves 0, his appearance id and
+                base-copy id his own id; every other byte of the payload is unchanged, and the
+                exit code is 0
 SE-PAT-08  GIVEN the PES 18 fixture save, a player whose record holds base copy 7511 with the
                  base-copy flag set, and a patch whose entry for him holds an [appearance] and
                  base_copy_id = 101334; and, apart, the same with no base_copy_id
@@ -2260,7 +2262,9 @@ SE-PAT-10  GIVEN the PES 17 and PES 16 fixture saves, a player of each whose rec
                 own id with the flag clear, and PES 17's appearance id his own id; each exit
                 code is 0
 SE-PAT-11  GIVEN SE-PAT-07's save and patch with boots_id = 16384 (past the field's 14 bits),
-                 and apart with the [appearance]'s skin_color outside its range
+                 and apart with the [appearance]'s skin_color outside its range, its
+                 skin_color removed, and a dribbling key added (a PES 20 and 21 key) in a PES
+                 19 patch for the PES 19 fixture save
            WHEN apply-patch is run with each
            THEN each is refused naming the player and the key, with exit code 2, and --out is
                 not written

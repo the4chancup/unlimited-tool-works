@@ -2763,11 +2763,13 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         (TC-SAV-18 to 21, TC-STR-21, TC-BIN-50 to 62, TC-MOD-95 to 99, TC-REF-20, each
         restating the spec scenario it names; TC-BIN-37 and TC-SAV-07 withdrawn when c2b
         lands), `plans/save_editor.md` (SE-PAT-07 to 11), `plans/export_upgrader.md`
-        (EU-SET-12, 13); the `.copy` findings in `plans/team_compiler/messages.md`; three
+        (EU-SET-12, 13); the `.copy` findings in `plans/team_compiler/messages.md`; four
         DECISIONS entries (either invalid settings file holds back the whole look; a bad
         `.copy` link drops its folder; a copy replaces the upgrader's generated in-game
-        face). Open: its review, SWE-2 rounds then Astra (checkpoint (a)); rulings
-        `.tmp/0_0_2/s36c/rulings_c0.md` (S1: 8 accepted)
+        face; a patch's `[appearance]` is read whole or refused). Reviewed (checkpoint (a)):
+        SWE-2 S1 8 accepted, S2 4, Astra A1 4, SWE-2 S3 3, the loops ended; rulings
+        `.tmp/0_0_2/s36c/rulings_c0.md`. S3's SE-PAT-11 and TC-SAV-21 changes reach c1 as
+        rework (it branched before them)
       - [ ] c1 the patch's look: `pes_savefile` and `apply-patch` (the patch's `[appearance]`,
         `boots_id`/`gloves_id` over the field's 14 bits, `base_copy_id`; `PreFox` refused no
         more; `apply` through `PlayerSettings::apply`, the own appearance id, the base copy
