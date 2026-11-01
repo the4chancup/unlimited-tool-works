@@ -14802,3 +14802,11 @@ past ASCII lie outside the suite's fonts). The emoji fonts have all three, draw 
 on every machine, and give Studio Web, which has no system fonts, the same coverage. Bundling a
 system font (Segoe UI Symbol) was the alternative: not ours to ship.
 Plan: `plans/core/gui.md`, the Dark/light theme row ("What a member types").
+
+## 2026-11-01 — ruleset_editor — the Blank template's button reads "universal rules set"
+Decision (maintainer): the start page's Blank button reads `Blank: one tier, no brackets,
+universal rules set`, and the help's start-page sentence describes Blank the same way.
+Why: "the universal rules on" read oddly as a button's label; the template still holds every
+universal rule switched on (`document.rs`'s blank document is unchanged).
+Plan: `plans/ruleset_editor.md` describes the Blank template's content, not its label; no
+plan text changes.

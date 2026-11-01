@@ -1478,7 +1478,7 @@ function startPage() {
     button("/vt/ League 10", () => loadTemplate("vtl10")),
     button("Divegrass Before Christmas 7", () => loadTemplate("dbc7")),
     button("Clouds' proposal, every item (from VGL26)", () => loadTemplate("clouds")),
-    button("Blank: one tier, no brackets, the universal rules on", () => loadTemplate("blank")),
+    button("Blank: one tier, no brackets, universal rules set", () => loadTemplate("blank")),
     h("div", { class: "sep" }),
     strong("Random"),
     row(["Sensible", "Weird", "Crazy"].map(p => button(p, () => {}, { disabled: true, title: "The generator is not faked in this draft" }))),

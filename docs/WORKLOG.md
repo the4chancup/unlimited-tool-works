@@ -6320,6 +6320,10 @@ briefs, review loops, gates and mutation runs as for any step.
     the tooltip, cited by the new tests (the lead's). `check-aatf` keeps the check's order
     (team rows last). Open: `/cookie☆/` in the built window (with cv28's look); the SWE-2
     round with cv28 and cv29
+  - [x] cv31 the Ruleset editor's Blank template reads `Blank: one tier, no brackets, universal
+    rules set` (the maintainer, 2026-11-01: "the universal rules on" sounded off; DECISIONS
+    2026-11-01): `view/start.rs`, its two test strings, `help/02_window.md`, the draft
+    (`ruleset_editor.js`, `index.html`'s help copy); the lead's edit
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
