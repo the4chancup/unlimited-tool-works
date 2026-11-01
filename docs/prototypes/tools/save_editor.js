@@ -441,10 +441,11 @@ table.grid.stats-grid td { padding: 2px 6px; }
    framed panel does (.group). */
 .pitch { background: #2d571d; border: 1px solid var(--stroke); border-radius: 2px; display: block;
   touch-action: none; }
-/* Set PES folder, over the pitch's bottom right, mirroring the formation's name: its
-   right edge 7 px in from the canvas' right, its bottom on the name's baseline, 6 px up
-   (the wrapper's edge is the canvas' 1 px border further out). */
-#set-pes-folder { position: absolute; right: 8px; bottom: 7px; }
+/* Set PES path, over the pitch's bottom right (placed by placeSetFolder), outlined in the
+   text's grey inside its own edge, so the outline adds no size: a plain button's fill alone
+   reads as a patch of the grass. Its side padding is 2 px, not a button's 4, so it fits the
+   79 px PES 2018-2021's wider box leaves beside it. */
+#set-pes-folder { position: absolute; box-shadow: inset 0 0 0 1px var(--text); padding: 1px 2px; }
 .lcol { display: flex; flex-direction: column; gap: 6px; min-width: 210px; }
 .llist { background: var(--extreme); border: 1px solid var(--stroke); border-radius: 2px;
   max-height: 300px; overflow: auto; }
@@ -5615,6 +5616,16 @@ function pitchCrossTip(t, px, py) {
   }
   return "";
 }
+// Set PES path's place: centred between the bottom penalty box's right line
+// (2 px wide, centred on the box's edge) and the canvas' right edge, its
+// bottom margin the same as those two, so it sits in the corner the box
+// leaves. The wrapper's edges are the canvas' 1 px border further out.
+function placeSetFolder(button) {
+  const line = PITCH.w / 2 + pitchLook().box[0] / 2 + 1;
+  const margin = (PITCH.w - line - button.offsetWidth) / 2;
+  button.style.right = 1 + margin + "px";
+  button.style.bottom = 1 + margin + "px";
+}
 function pitchCanvas(t) {
   const cv = h("canvas", { class: "pitch", id: "pitch",
     width: PITCH.w, height: PITCH.h });
@@ -5948,16 +5959,17 @@ function tacticsTab(t) {
     h("input", { type: "checkbox", checked: !!pre.style.fluid, id: "fluid",
       onchange: e => { edit("Fluid formation", () => { pre.style.fluid = e.target.checked; }); render(); } }),
     " Fluid formation"), 16);
-  // While the sidebar's selector is orange or red, a Set PES folder button over
+  // While the sidebar's selector is orange or red, a Set PES path button over
   // the pitch's bottom right, opposite the formation's name: the portraits come
   // from the PES folder, and a member who never notices the selector's colour
   // would see only placeholders. It hides once the folder holds the selected
   // version's exe, the selector's own check.
   // sample wording: the button's label and tooltip.
   const setFolder = pesSelectorClass() ? h("button", { id: "set-pes-folder", onclick: pickPesFolder,
-    title: "The players' portraits are read from the PES folder" }, "Set PES folder") : null;
+    title: "The players' portraits are read from the PES folder" }, "Set PES path") : null;
   const pitchWrap = h("div", { style: "position:relative; width:fit-content" },
     pitchCanvas(t), setFolder, slotPopover(t));
+  if (setFolder) requestAnimationFrame(() => placeSetFolder(setFolder));
   // The pitch's name scrolling, on by default: a view setting, not an edit.
   const scrollNames = h("label", { class: "cb" },
     h("input", { type: "checkbox", checked: S.scrollNames !== false, id: "scroll-names",

@@ -14893,3 +14893,12 @@ because both set one version's folder, and a rewritten main row would move every
 falls back to it.
 Plan: `docs/plans/save_editor.md` "Tactics editor" (the Set PES folder bullet, SE-GUI-50);
 `docs/plans/core/gui.md` "Settings menu" (one storing function, three callers).
+
+## 2026-11-01 — save_editor — the pitch's button reads `Set PES path`, in the corner beside the penalty box
+Decision (maintainer, on the draft): the button is outlined, labelled `Set PES path` on every
+version, centred between the bottom penalty box's right line and the pitch's right edge with
+its bottom margin equal to its side ones, its side padding 2 points.
+Why: the corner the box leaves is the pitch's one empty place there; `Set PES folder` at a
+button's padding (87 points) did not fit PES 2018-2021's 79-point corner (their box is 160 wide,
+PES 2017's 130), and `Set PES path` at 4 points (80) still touched both sides.
+Plan: `docs/plans/save_editor.md` "Tactics editor" (the Set PES path bullet, SE-GUI-50).

@@ -865,12 +865,18 @@ Win32 original hurt the most):
     about 3.05 drawn (inferred from the outlines, not measured on a render). It is the one text
     in the suite not in the regular weight. The
     formation pictures (worklog 8.33, after 0.0.1) carry it in every cell.
-  - **Set PES folder**: while the sidebar's PES selector is orange or red (`plans/core/gui.md`
+  - **Set PES path**: while the sidebar's PES selector is orange or red (`plans/core/gui.md`
     "Live exe check": no folder, no PES exe in it, or another version's exe), a `Set PES
-    folder` button stands over the pitch's bottom-right corner, mirroring the formation's
-    name: its right edge 7 points in from the pitch's right edge, its bottom 6 points up from
-    the bottom edge, on the name's baseline; its tooltip reads `The players' portraits are
-    read from the PES folder` (the selector's own names what the check found). The portraits come from the PES folder,
+    path` button stands in the pitch's bottom-right corner, in the room the bottom penalty
+    box leaves: centred between the box's right line (its outer edge) and the pitch's right
+    edge, its bottom as far from the pitch's bottom edge as its sides are from those two. It
+    is outlined 1 point inside its edge in the text's grey (`#8c8c8c`; a plain button's fill
+    alone reads as a patch of the grass), and its side padding is 2 points, not a button's
+    4, so it fits PES 2018-2021's corner: their box is 160 points wide, PES 2017's 130, which
+    leaves 79 points beside it against 94. The margins are about 9 points on PES 2017 and
+    1.5 on PES 2018-2021 (the label 72 points at the body font). Its tooltip reads `The
+    players' portraits are read from the PES folder` (the selector's own names what the
+    check found). The portraits come from the PES folder,
     and a member who never notices the selector's colour, or reads the readme, would see only
     placeholders and take them for the editor's best. It shows on red too: a folder holding
     another version's exe gives the wrong game's portraits or none. The button reads the
@@ -2103,9 +2109,10 @@ SE-GUI-49  GIVEN SE-GUI-48's save, team, edit and check, the list in the dock
 SE-GUI-50  GIVEN the PES 17 save open on team 718 in the team view, the sidebar on PES 2017,
                 and the sidebar's exe check reporting that the PES folder does not exist
            WHEN the view is drawn
-           THEN a `Set PES folder` button stands over the pitch's bottom-right corner, its
-                right edge 7 points in from the pitch's right edge and its bottom 6 up from
-                the bottom edge, and every starter's portrait is the placeholder; WHEN the check reports the folder holding `PES2017.exe`
+           THEN a `Set PES path` button stands in the pitch's bottom-right corner, its
+                left edge as far from the bottom penalty box's right line as its right edge is
+                from the pitch's right edge and its bottom from the pitch's bottom, within half
+                a point, and every starter's portrait is the placeholder; WHEN the check reports the folder holding `PES2017.exe`
                 THEN the button is gone; WHEN it reports `PES2019.exe` instead THEN it is
                 back; WHEN it is clicked and the folder picker returns
                 `<test folder>/Pro Evolution Soccer 2017` THEN the common settings'
