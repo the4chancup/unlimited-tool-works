@@ -6538,6 +6538,17 @@ briefs, review loops, gates and mutation runs as for any step.
       Counter Attack, one notch down took Possession; Numbers in attack on Medium, two notches
       up took Many then Few; three Ctrl+Z restored all three
       (`.tmp/0_0_2/look_cv38/`)
+  - [ ] cv39 a press held in the Multi-team AATF dialog while its check lands clicks Close
+    (found 2026-11-01 chasing the flaky range test, worklog Issues): the counts line
+    (`multi_aatf.rs` `dialog`, `ui.label(counts)`) appears only once a result is listed, so
+    every widget after it takes the next egui auto id on the landing frame, and a press held
+    across it is released onto the widget that now has the pressed id: a press on the title,
+    released after the check of 701 landed, clicked Close (probe: Close's id moved from
+    `…6570` to `…2913`, the pressed one). `ui.skip_ahead_auto_ids(1)` when the line is not
+    drawn keeps the ids (probe: the dialog stayed open) → verify: a test holding the check's
+    reply on a test channel, pressing the title, landing the reply, releasing: the dialog
+    stays open; red on the current code. The flaky test waits for 701's check before it reads
+    any bounds
   - [x] cv23d the idle Ability stats view's repaint (cv23a's mutants-diff survivor,
     `abilities.rs:741` `&&` → `||`): a test that a frame with no input after the badge has
     landed asks for no repaint, red on the mutant (`left: 0ns`); SWE-2 sidekick
@@ -7328,9 +7339,8 @@ points there.
   message, at `savefile.rs:646`, the first frame after `range_items`, so its title click (meant
   to close the combo's popup) closed the dialog itself; 0-80 and 200-800 ms pass, and 100 ms
   passed once under different load. The dialog opens on 701's check, and 718's never starts
-  (its 500 ms rest needs about 30 frames). Next: what that click lands on when the reply comes
-  in between (the counts line appearing moves the centred dialog), then make the test wait for
-  701's check (`multi_checked`) before it reads any bounds; a test fails, it never flakes
+  (its 500 ms rest needs about 30 frames). The click is released onto Close: a real bug,
+  cv39, which also makes the test wait for 701's check before it reads any bounds
 - open 2026-11-01 — the vital scripts' first reviews (`RUNBOOK.md` "Review rounds", checkpoint
   (e); DECISIONS 2026-11-01): each reviewed whole by SWE-2 rounds once, in this order:
   - [x] the mutation runs' `mutants.py`, `mutants_diff.py`, `extra_mutants.py` (and
