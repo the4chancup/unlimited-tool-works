@@ -3,7 +3,12 @@
 //! another version's patch, the skips' warning lines, the preview
 //! following the save, the row's click, and the entries that open it.
 
-use pes_savefile::interchange::aesthetics_patch::{ALLOCATION_SCHEME_VERSION, AestheticsPatch};
+use std::collections::BTreeMap;
+
+use pes_savefile::interchange::aesthetics_patch::{
+    ALLOCATION_SCHEME_VERSION, AestheticsPatch, PatchPlayer, PatchTeam,
+};
+use pes_savefile::settings_toml::{AppearanceSettings, PlayerSettings, SettingKey};
 
 use super::*;
 
@@ -14,17 +19,88 @@ const CO_SLOT_3: u32 = 71403;
 /// The panel's title, its window's label.
 const TITLE: &str = "Apply aesthetics patch";
 
-/// A patch text for `version` under `scheme`, holding `teams` (`[[teams]]` blocks).
-fn patch_text(version: u16, scheme: u32, teams: &str) -> String {
-    format!(
-        "pes_version = {version}\ntool_version = \"0.1.0\"\nallocation_scheme_version = {scheme}\ncpks = []\ncompiled = 2026-10-13T00:00:00Z\n{teams}"
-    )
+/// A patch text for `version` under `scheme`, holding `teams`.
+fn patch_text(version: PesVersion, scheme: u32, teams: Vec<PatchTeam>) -> String {
+    AestheticsPatch {
+        pes_version: version,
+        tool_version: "0.1.0".to_owned(),
+        allocation_scheme_version: scheme,
+        cpks: vec![],
+        compiled: "2026-10-13T00:00:00Z".parse().unwrap(),
+        teams,
+    }
+    .to_toml()
+    .unwrap()
 }
 
-/// Team `/co/`'s block: slot 03 renamed, with two motions.
-fn co_block() -> String {
-    format!(
-        "\n[[teams]]\nid = {CO}\nname = \"/co/\"\n\n[teams.players.03]\nname = \"PATCHED\"\nshirt_name = \"PATCHED\"\n\n[teams.players.03.appearance.motion]\nhunching_dribbling = 2\ncorner_kick = 3\n"
+/// A `[[teams]]` block.
+fn team(id: u32, name: &str, players: BTreeMap<u8, PatchPlayer>) -> PatchTeam {
+    PatchTeam {
+        id,
+        name: name.to_owned(),
+        players,
+    }
+}
+
+/// A patch entry holding nothing: every key `None`.
+fn bare() -> PatchPlayer {
+    PatchPlayer {
+        name: None,
+        shirt_name: None,
+        boots_id: None,
+        gloves_id: None,
+        base_copy_id: None,
+        appearance: None,
+    }
+}
+
+/// `player`'s own appearance resolved to `version`, `changes` (stored
+/// values, as the patch's table holds them) on top: a whole `[appearance]`
+/// whose diff against the save is `changes` alone.
+fn look_of(
+    player: &PlayerEntry,
+    version: PesVersion,
+    changes: &[(SettingKey, u8)],
+) -> AppearanceSettings {
+    let mut settings = PlayerSettings::from_player(player).unwrap();
+    for (key, value) in changes {
+        settings.set(*key, *value).unwrap();
+    }
+    settings.appearance.resolved(version)
+}
+
+/// `id`'s entry in the open save.
+fn file_player(view: &SaveView, id: u32) -> &PlayerEntry {
+    view.session
+        .as_ref()
+        .expect("an open save")
+        .file()
+        .player(id)
+        .expect("the player")
+}
+
+/// Team `/co/`'s block: slot 03 renamed, his own look with two motions
+/// changed (hunching dribbling and corner kick, shown 2 and 3).
+fn co_block(view: &SaveView) -> PatchTeam {
+    team(
+        CO,
+        "/co/",
+        BTreeMap::from([(
+            3,
+            PatchPlayer {
+                name: Some("PATCHED".to_owned()),
+                shirt_name: Some("PATCHED".to_owned()),
+                appearance: Some(look_of(
+                    file_player(view, CO_SLOT_3),
+                    PesVersion::Pes21,
+                    &[
+                        (SettingKey::HunchingDribbling, 1),
+                        (SettingKey::CornerKick, 2),
+                    ],
+                )),
+                ..bare()
+            },
+        )]),
     )
 }
 
@@ -178,10 +254,12 @@ fn patched_entry(view: &SaveView, text: &str, player_id: u32) -> PlayerEntry {
 /// The `/co/` patch's table rows for 71403 on the PES 21 fixture (item,
 /// old value, new value), in the views' terms and the comparison's order:
 /// the fixture stores his corner kick and hunching (dribbling) motions 0
-/// (shown 1), and his name and shirt name are `PLACEHOLDER`.
-const CO_ROWS: [[&str; 3]; 4] = [
+/// (shown 1), his base copy is player 7511, and his name and shirt name
+/// are `PLACEHOLDER`.
+const CO_ROWS: [[&str; 3]; 5] = [
     ["PLACEHOLDER \u{b7} Corner kick", "1", "3"],
     ["PLACEHOLDER \u{b7} Hunching (dribbling)", "1", "2"],
+    ["PLACEHOLDER \u{b7} Copy from ID", "7511", "71403"],
     ["PLACEHOLDER \u{b7} Name", "PLACEHOLDER", "PATCHED"],
     ["PLACEHOLDER \u{b7} Shirt", "PLACEHOLDER", "PATCHED"],
 ];
@@ -196,11 +274,22 @@ fn table(rows: &[[&str; 3]]) -> Vec<String> {
         .collect()
 }
 
-/// Team 999 `/zz/`'s block. The PES 21 fixture holds every team of the
+/// Team 999 `/zz/`'s block: the PES 21 fixture holds every team of the
 /// teams list (701 to 920), so the team it lacks is the command line
-/// suite's own, no cup's.
-const ZZ_BLOCK: &str =
-    "\n[[teams]]\nid = 999\nname = \"/zz/\"\n\n[teams.players.01]\nname = \"NOBODY\"\n";
+/// suite's own, no cup's. Its one player is a name alone.
+fn zz_team() -> PatchTeam {
+    team(
+        999,
+        "/zz/",
+        BTreeMap::from([(
+            1,
+            PatchPlayer {
+                name: Some("NOBODY".to_owned()),
+                ..bare()
+            },
+        )]),
+    )
+}
 
 /// Team `/f/`, 718 in the PES 21 fixture, whose slot 1 is player 71801.
 const F: u32 = 718;
@@ -210,8 +299,19 @@ const F_SLOT_1: u32 = 71801;
 const CO_SLOT_5: u32 = 71405;
 
 /// Team `/f/`'s block: slot 01 renamed.
-const F_BLOCK: &str =
-    "\n[[teams]]\nid = 718\nname = \"/f/\"\n\n[teams.players.01]\nname = \"PATCHED\"\n";
+fn f_team() -> PatchTeam {
+    team(
+        F,
+        "/f/",
+        BTreeMap::from([(
+            1,
+            PatchPlayer {
+                name: Some("PATCHED".to_owned()),
+                ..bare()
+            },
+        )]),
+    )
+}
 
 /// The first `/co/` slot whose player the open save lacks (a cup player's
 /// id is his team's id × 100 + his slot).
@@ -222,37 +322,67 @@ fn co_missing_slot(view: &SaveView) -> u32 {
         .expect("the fixture's /co/ lacks a slot's player")
 }
 
-/// Team `/co/`'s block writing `slots`' tables (`[teams.players.NN…]`
-/// text), in that order.
-fn co_block_of(slots: &str) -> String {
-    format!("\n[[teams]]\nid = {CO}\nname = \"/co/\"\n{slots}")
+/// `/co/`'s slot `slot` renamed, a player the save lacks in the tests.
+fn co_absent_player(slot: u32) -> (u8, PatchPlayer) {
+    (
+        u8::try_from(slot).expect("a slot fits u8"),
+        PatchPlayer {
+            name: Some("NOBODY".to_owned()),
+            ..bare()
+        },
+    )
 }
 
-/// `/co/`'s slot 03's corner kick motion set to 3 and slot 05's hunching
-/// (dribbling) to 2, two players whose rows differ in their label.
-const CO_TWO_PLAYERS: &str = "\n[teams.players.03.appearance.motion]\ncorner_kick = 3\n\n[teams.players.05.appearance.motion]\nhunching_dribbling = 2\n";
-
-/// `/co/`'s slot `slot` renamed, a player the save lacks in the tests.
-fn co_absent_player(slot: u32) -> String {
-    format!("\n[teams.players.{slot:02}]\nname = \"NOBODY\"\n")
+/// `/co/`'s two players: 03's corner kick and 05's hunching (dribbling),
+/// whose rows differ in their label.
+fn co_two_players(view: &SaveView) -> BTreeMap<u8, PatchPlayer> {
+    BTreeMap::from([
+        (
+            3,
+            PatchPlayer {
+                appearance: Some(look_of(
+                    file_player(view, CO_SLOT_3),
+                    PesVersion::Pes21,
+                    &[(SettingKey::CornerKick, 2)],
+                )),
+                ..bare()
+            },
+        ),
+        (
+            5,
+            PatchPlayer {
+                appearance: Some(look_of(
+                    file_player(view, CO_SLOT_5),
+                    PesVersion::Pes21,
+                    &[(SettingKey::HunchingDribbling, 1)],
+                )),
+                ..bare()
+            },
+        ),
+    ])
 }
 
 /// The two-team patch: `/co/`'s two players and one the save lacks
 /// (`missing`), team 999 the save lacks, then `/f/`'s slot 01.
-fn two_team_patch(missing: u32) -> String {
-    let co = co_block_of(&format!("{CO_TWO_PLAYERS}{}", co_absent_player(missing)));
+fn two_team_patch(view: &SaveView, missing: u32) -> String {
+    let mut players = co_two_players(view);
+    let (slot, absent) = co_absent_player(missing);
+    players.insert(slot, absent);
     patch_text(
-        21,
+        PesVersion::Pes21,
         ALLOCATION_SCHEME_VERSION,
-        &format!("{co}{ZZ_BLOCK}{F_BLOCK}"),
+        vec![team(CO, "/co/", players), zz_team(), f_team()],
     )
 }
 
 /// The two-team patch's rows on the PES 21 fixture: 71403's corner kick,
-/// 71405's hunching (dribbling), 71801's name, every name `PLACEHOLDER`.
-const TWO_TEAM_ROWS: [[&str; 3]; 3] = [
+/// 71405's hunching (dribbling), both their base copies cleared to their
+/// own ids, and 71801's name — every name `PLACEHOLDER`.
+const TWO_TEAM_ROWS: [[&str; 3]; 5] = [
     ["PLACEHOLDER \u{b7} Corner kick", "1", "3"],
+    ["PLACEHOLDER \u{b7} Copy from ID", "7511", "71403"],
     ["PLACEHOLDER \u{b7} Hunching (dribbling)", "1", "2"],
+    ["PLACEHOLDER \u{b7} Copy from ID", "7511", "71405"],
     ["PLACEHOLDER \u{b7} Name", "PLACEHOLDER", "PATCHED"],
 ];
 
@@ -277,11 +407,12 @@ fn roster_slot(view: &SaveView, team: u32, player_id: u32) -> u8 {
 fn the_preview_lists_each_changed_value_and_writes_nothing() {
     let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_preview");
     let before = revision(&view);
-    previewed(
-        &mut window,
-        &mut view,
-        &patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block()),
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
     );
+    previewed(&mut window, &mut view, &text);
 
     let mut expected = vec![
         "Open patch\u{2026}".to_owned(),
@@ -300,7 +431,11 @@ fn the_preview_lists_each_changed_value_and_writes_nothing() {
 #[test]
 fn apply_is_one_undoable_edit_and_the_list_gives_way_to_the_applied_line() {
     let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_apply");
-    let text = patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block());
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
+    );
     let before = player_entry(&view, CO_SLOT_3);
     let expected = patched_entry(&view, &text, CO_SLOT_3);
     assert_ne!(before, expected, "premise: the patch changes 71403");
@@ -335,11 +470,12 @@ fn apply_is_one_undoable_edit_and_the_list_gives_way_to_the_applied_line() {
 fn a_patch_of_another_version_is_refused_with_the_save_untouched() {
     let (mut view, mut window) = open_save(PesVersion::Pes17, "patch_refused");
     let before = revision(&view);
-    let path = previewed(
-        &mut window,
-        &mut view,
-        &patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block()),
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
     );
+    let path = previewed(&mut window, &mut view, &text);
 
     assert_eq!(
         panel_lines(&mut window, &mut view),
@@ -366,15 +502,12 @@ fn a_team_the_save_lacks_is_a_warning_line_and_the_rest_previews() {
         view.session.as_ref().unwrap().file().team(999).is_none(),
         "premise: the fixture lacks team 999"
     );
-    previewed(
-        &mut window,
-        &mut view,
-        &patch_text(
-            21,
-            ALLOCATION_SCHEME_VERSION,
-            &format!("{}{ZZ_BLOCK}", co_block()),
-        ),
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view), zz_team()],
     );
+    previewed(&mut window, &mut view, &text);
 
     let mut expected = vec![
         "Open patch\u{2026}".to_owned(),
@@ -397,7 +530,11 @@ fn a_patch_the_save_holds_no_player_of_shows_its_warnings_alone() {
     previewed(
         &mut window,
         &mut view,
-        &patch_text(21, ALLOCATION_SCHEME_VERSION, ZZ_BLOCK),
+        &patch_text(
+            PesVersion::Pes21,
+            ALLOCATION_SCHEME_VERSION,
+            vec![zz_team()],
+        ),
     );
 
     assert_eq!(
@@ -417,7 +554,11 @@ fn a_patch_the_save_holds_no_player_of_shows_its_warnings_alone() {
 #[test]
 fn the_preview_follows_the_save_and_an_applied_patch_lists_nothing() {
     let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_live");
-    let text = patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block());
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
+    );
     let patched = patched_entry(&view, &text, CO_SLOT_3);
     previewed(&mut window, &mut view, &text);
     assert!(
@@ -455,11 +596,12 @@ fn the_preview_follows_the_save_and_an_applied_patch_lists_nothing() {
 #[test]
 fn a_rows_click_selects_its_player() {
     let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_row_click");
-    previewed(
-        &mut window,
-        &mut view,
-        &patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block()),
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
     );
+    previewed(&mut window, &mut view, &text);
     let slot = view
         .session
         .as_ref()
@@ -494,11 +636,12 @@ fn a_rows_click_selects_its_player() {
 #[test]
 fn an_items_hover_says_its_click_switches_to_the_player() {
     let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_item_hover");
-    previewed(
-        &mut window,
-        &mut view,
-        &patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block()),
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
     );
+    previewed(&mut window, &mut view, &text);
     let item = panel_cell(&mut window, &mut view, CO_ROWS[0][0]).expect("the corner kick's item");
     assert_eq!(
         tooltip_containing(&mut window, &mut view, centre(&item), "this player").as_deref(),
@@ -510,11 +653,12 @@ fn an_items_hover_says_its_click_switches_to_the_player() {
 #[test]
 fn a_second_patch_opened_replaces_the_first_ones_preview() {
     let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_second_open");
-    let path = previewed(
-        &mut window,
-        &mut view,
-        &patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block()),
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
     );
+    let path = previewed(&mut window, &mut view, &text);
     assert_eq!(
         panel_lines(&mut window, &mut view)[1],
         "patch.toml: team 714 /co/, players 03",
@@ -524,10 +668,28 @@ fn a_second_patch_opened_replaces_the_first_ones_preview() {
 
     // The same file rewritten with `/f/`'s block, opened again: the save
     // has not changed.
-    let f_corner_kick = "\n[[teams]]\nid = 718\nname = \"/f/\"\n\n[teams.players.01.appearance.motion]\ncorner_kick = 3\n";
+    let f_corner_kick = team(
+        F,
+        "/f/",
+        BTreeMap::from([(
+            1,
+            PatchPlayer {
+                appearance: Some(look_of(
+                    file_player(&view, F_SLOT_1),
+                    PesVersion::Pes21,
+                    &[(SettingKey::CornerKick, 2)],
+                )),
+                ..bare()
+            },
+        )]),
+    );
     std::fs::write(
         &path,
-        patch_text(21, ALLOCATION_SCHEME_VERSION, f_corner_kick),
+        patch_text(
+            PesVersion::Pes21,
+            ALLOCATION_SCHEME_VERSION,
+            vec![f_corner_kick],
+        ),
     )
     .unwrap();
     open_patch(&mut window, &mut view, path);
@@ -538,7 +700,10 @@ fn a_second_patch_opened_replaces_the_first_ones_preview() {
         "patch.toml: team 718 /f/, players 01".to_owned(),
         "Apply".to_owned(),
     ];
-    expected.extend(table(&[["PLACEHOLDER \u{b7} Corner kick", "1", "3"]]));
+    expected.extend(table(&[
+        ["PLACEHOLDER \u{b7} Corner kick", "1", "3"],
+        ["PLACEHOLDER \u{b7} Copy from ID", "7511", "71801"],
+    ]));
     assert_eq!(panel_lines(&mut window, &mut view), expected);
 }
 
@@ -555,7 +720,8 @@ fn the_summary_lists_the_teams_that_apply_and_each_skip_is_a_line() {
         file.team(999).is_none(),
         "premise: the fixture lacks team 999"
     );
-    previewed(&mut window, &mut view, &two_team_patch(missing));
+    let text = two_team_patch(&view, missing);
+    previewed(&mut window, &mut view, &text);
 
     let mut expected = vec![
         "Open patch\u{2026}".to_owned(),
@@ -576,11 +742,15 @@ fn the_summary_lists_the_teams_that_apply_and_each_skip_is_a_line() {
 fn a_team_whose_every_patch_player_the_save_lacks_is_not_in_the_summary() {
     let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_team_no_players");
     let missing = co_missing_slot(&view);
-    let teams = format!("{}{F_BLOCK}", co_block_of(&co_absent_player(missing)));
+    let (slot, absent) = co_absent_player(missing);
     previewed(
         &mut window,
         &mut view,
-        &patch_text(21, ALLOCATION_SCHEME_VERSION, &teams),
+        &patch_text(
+            PesVersion::Pes21,
+            ALLOCATION_SCHEME_VERSION,
+            vec![team(CO, "/co/", BTreeMap::from([(slot, absent)])), f_team()],
+        ),
     );
 
     let mut expected = vec![
@@ -592,7 +762,7 @@ fn a_team_whose_every_patch_player_the_save_lacks_is_not_in_the_summary() {
             CO * 100 + missing
         ),
     ];
-    expected.extend(table(&TWO_TEAM_ROWS[2..]));
+    expected.extend(table(&TWO_TEAM_ROWS[4..]));
     assert_eq!(panel_lines(&mut window, &mut view), expected);
 }
 
@@ -658,7 +828,11 @@ fn a_file_that_cannot_be_read_is_refused() {
 #[test]
 fn the_preview_follows_another_save_opened() {
     let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_reopen");
-    let text = patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block());
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
+    );
     let patched = patched_entry(&view, &text, CO_SLOT_3);
     previewed(&mut window, &mut view, &text);
     let mut entry = player_entry(&view, CO_SLOT_3);
@@ -696,11 +870,12 @@ fn a_refusal_is_painted_in_the_error_colour_and_a_skip_in_the_warning_colour() {
         visuals.error_fg_color, visuals.warn_fg_color,
         "premise: the two colours differ"
     );
-    let path = previewed(
-        &mut window,
-        &mut view,
-        &patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block()),
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
     );
+    let path = previewed(&mut window, &mut view, &text);
     let refusal = format!(
         "{}: the patch is for PES 2021, the save is PES 2017",
         path.display()
@@ -716,7 +891,11 @@ fn a_refusal_is_painted_in_the_error_colour_and_a_skip_in_the_warning_colour() {
     previewed(
         &mut window,
         &mut view,
-        &patch_text(21, ALLOCATION_SCHEME_VERSION, ZZ_BLOCK),
+        &patch_text(
+            PesVersion::Pes21,
+            ALLOCATION_SCHEME_VERSION,
+            vec![zz_team()],
+        ),
     );
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert_eq!(
@@ -735,7 +914,8 @@ fn a_refusal_is_painted_in_the_error_colour_and_a_skip_in_the_warning_colour() {
 fn a_row_of_the_second_player_selects_him() {
     let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_second_row");
     let missing = co_missing_slot(&view);
-    previewed(&mut window, &mut view, &two_team_patch(missing));
+    let text = two_team_patch(&view, missing);
+    previewed(&mut window, &mut view, &text);
     let first = roster_slot(&view, CO, CO_SLOT_3);
     let second = roster_slot(&view, CO, CO_SLOT_5);
     assert_ne!(first, second, "premise: two roster slots");
@@ -760,11 +940,12 @@ fn a_row_of_the_second_player_selects_him() {
 #[test]
 fn an_edit_after_apply_takes_the_applied_line_away() {
     let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_applied_edit");
-    previewed(
-        &mut window,
-        &mut view,
-        &patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block()),
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
     );
+    previewed(&mut window, &mut view, &text);
     let apply = panel_button(&mut window, &mut view, "Apply").expect("the Apply button");
     click(&mut window, &apply, &mut view);
     assert_eq!(
@@ -791,11 +972,12 @@ fn an_edit_after_apply_takes_the_applied_line_away() {
 #[test]
 fn the_previews_values_are_in_the_monospace_font() {
     let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_monospace");
-    previewed(
-        &mut window,
-        &mut view,
-        &patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block()),
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
     );
+    previewed(&mut window, &mut view, &text);
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let monospace = egui::TextStyle::Monospace.resolve(&window.ctx.style_of(window.ctx.theme()));
     // The Name row's new value, a text no other cell starts with.
@@ -812,11 +994,13 @@ fn the_previews_values_are_in_the_monospace_font() {
 #[test]
 fn a_patch_opened_after_an_apply_says_the_save_holds_it() {
     let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_reopened_after_apply");
-    let path = previewed(
-        &mut window,
-        &mut view,
-        &patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block()),
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
     );
+    let applied = patched_entry(&view, &text, CO_SLOT_3);
+    let path = previewed(&mut window, &mut view, &text);
     let apply = panel_button(&mut window, &mut view, "Apply").expect("the Apply button");
     click(&mut window, &apply, &mut view);
     assert_eq!(
@@ -826,12 +1010,21 @@ fn a_patch_opened_after_an_apply_says_the_save_holds_it() {
     );
     let before = revision(&view);
 
-    // Patch B: slot 03's motions alone, which the save now holds.
-    let motions =
-        "\n[teams.players.03.appearance.motion]\nhunching_dribbling = 2\ncorner_kick = 3\n";
+    // Patch B: the look patch A wrote, which the save now holds.
+    let same = team(
+        CO,
+        "/co/",
+        BTreeMap::from([(
+            3,
+            PatchPlayer {
+                appearance: Some(look_of(&applied, PesVersion::Pes21, &[])),
+                ..bare()
+            },
+        )]),
+    );
     std::fs::write(
         &path,
-        patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block_of(motions)),
+        patch_text(PesVersion::Pes21, ALLOCATION_SCHEME_VERSION, vec![same]),
     )
     .unwrap();
     open_patch(&mut window, &mut view, path);
@@ -867,7 +1060,11 @@ fn the_close_button_closes_the_panel() {
 #[test]
 fn apply_recomputes_a_preview_held_through_a_gesture() {
     let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_held");
-    let text = patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block());
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
+    );
     let patched = patched_entry(&view, &text, CO_SLOT_3);
     previewed(&mut window, &mut view, &text);
     // The preview computed on a settled frame first: a patch just opened

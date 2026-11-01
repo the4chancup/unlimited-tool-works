@@ -79,6 +79,11 @@ pub(crate) struct CheckedSource {
     /// `ingame_face.toml`'s keys, by folder path (`deep::ContentPass::settings`), which planning resolves the compiled players' table
     /// rows from; empty when the deep pass did not run. Read only beside `resolved`.
     pub(crate) settings: BTreeMap<ScopePath, PlayerSettings>,
+    /// The player folders whose `settings.toml` or `ingame_face.toml` was refused
+    /// (`deep::ContentPass::settings_refused`), which planning gives their players no
+    /// `[appearance]` in the patch; empty when the deep pass did not run. Read only
+    /// beside `resolved`.
+    pub(crate) settings_refused: BTreeSet<ScopePath>,
     /// What the source looked like when it was listed, which `compile` checks its tasks'
     /// reads against; `None` when routing or the listing's parse set the source aside.
     /// `check` carries it and does nothing with it.
@@ -315,6 +320,7 @@ fn check_source(
         hand_weighted: BTreeSet::new(),
         metal_models: BTreeSet::new(),
         settings: BTreeMap::new(),
+        settings_refused: BTreeSet::new(),
         revision: None,
         content: None,
     };
@@ -364,6 +370,7 @@ fn check_source(
     let mut hand_weighted = BTreeSet::new();
     let mut metal_models = BTreeSet::new();
     let mut settings = BTreeMap::new();
+    let mut settings_refused = BTreeSet::new();
     if let Some(validated) = &report.validated {
         let pass = deep::content_findings(
             validated,
@@ -375,6 +382,7 @@ fn check_source(
         hand_weighted = pass.hand_weighted;
         metal_models = pass.metal_models;
         settings = pass.settings;
+        settings_refused = pass.settings_refused;
         if !pass.findings.is_empty() {
             report = report.with_content_findings(pass.findings, &context);
         }
@@ -484,6 +492,7 @@ fn check_source(
         hand_weighted,
         metal_models,
         settings,
+        settings_refused,
         revision: Some(revision),
         content,
     }
@@ -1917,6 +1926,7 @@ mod tests {
             hand_weighted: BTreeSet::new(),
             metal_models: BTreeSet::new(),
             settings: BTreeMap::new(),
+            settings_refused: BTreeSet::new(),
             revision: None,
             content: None,
         }
@@ -1942,6 +1952,7 @@ mod tests {
             hand_weighted: BTreeSet::new(),
             metal_models: BTreeSet::new(),
             settings: BTreeMap::new(),
+            settings_refused: BTreeSet::new(),
             revision: None,
             content: None,
         }

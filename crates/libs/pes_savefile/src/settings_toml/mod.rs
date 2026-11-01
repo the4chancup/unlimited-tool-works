@@ -187,20 +187,18 @@ pub struct MotionSettings {
     pub goal_celebration_2: Option<u8>,
 }
 
-impl MotionSettings {
-    /// `self` with every motion key `version` stores filled: a set key keeps
-    /// its value, an absent one takes its `KeySpec` default, a key the
-    /// version does not store (`dribbling` before PES 20) is `None`. The
-    /// aesthetics patch writes every motion key, so a key the file leaves
-    /// out is written at its default.
-    pub fn resolved(&self, version: PesVersion) -> MotionSettings {
-        let mut appearance = AppearanceSettings {
-            motion: self.clone(),
-            ..AppearanceSettings::default()
-        };
+impl AppearanceSettings {
+    /// `self` with every appearance key `version` stores filled: a set key
+    /// keeps its value, an absent one takes its `KeySpec` default, a key
+    /// the version does not store (`dribbling` before PES 20, a `pes15_`
+    /// key on PES 16 to 21) is `None`. The aesthetics patch carries a whole
+    /// look, so a key the file leaves out is written at its default — the
+    /// same values `PlayerSettings::apply`'s appearance write resolves.
+    pub fn resolved(&self, version: PesVersion) -> AppearanceSettings {
+        let mut appearance = self.clone();
         for key in SettingKey::ALL {
             let spec = key.spec();
-            if spec.table != KeyTable::Motion {
+            if spec.table == KeyTable::Top {
                 continue;
             }
             let value = if held_on(key, version) {
@@ -210,7 +208,7 @@ impl MotionSettings {
             };
             set_appearance(&mut appearance, key, value);
         }
-        appearance.motion
+        appearance
     }
 }
 

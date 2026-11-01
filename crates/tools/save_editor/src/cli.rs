@@ -42,7 +42,7 @@ enum SaveEditorCommand {
     /// Patch a save's team from a Team TOML file. The team its [team] id names takes the
     /// file's keys, and the rest of the save is untouched.
     ImportToml(ApplyArgs),
-    /// Apply the Team compiler's aesthetics patch (its players' motions and names) to a save.
+    /// Apply the Team compiler's aesthetics patch (its players' looks and names) to a save.
     ApplyPatch(ApplyArgs),
     /// List everything that differs between two saves of the same version, player by player.
     Diff(DiffArgs),
@@ -244,10 +244,10 @@ fn import_toml(
     Ok(())
 }
 
-/// `apply-patch`: a version or allocation-scheme mismatch (and a pre-Fox patch) is refused
-/// before anything is touched; a team or player the save lacks is an Error finding and the
-/// rest is written. The applied and skipped lines are emitted once `--out` is written, so a
-/// failed write reports none of them.
+/// `apply-patch`: a version or allocation-scheme mismatch is refused before anything is
+/// touched; a team or player the save lacks is an Error finding and the rest is written.
+/// The applied and skipped lines are emitted once `--out` is written, so a failed write
+/// reports none of them.
 fn apply_patch(
     args: &ApplyArgs,
     running: fn() -> Vec<RunningPes>,
