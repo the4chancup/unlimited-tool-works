@@ -40,14 +40,22 @@ EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 # aside. The scripts' `ROOT` stays the repository, where git runs and whose objects the
 # snapshot tests extract; a test that writes under it patches it itself.
 SCRATCH = tempfile.TemporaryDirectory()
+REPOSITORY = mutants.ROOT
+REAL_REMOTE_PENDING = mutants.remote_pending
 ISOLATION = [
     mock.patch.object(mutants_diff, "RESULTS", Path(SCRATCH.name) / "mutants.diff"),
     mock.patch.object(extra_mutants, "OUT_DIR", Path(SCRATCH.name) / "extra_mutants.out"),
     mock.patch.object(mutants, "COST_CACHE", Path(SCRATCH.name) / "mutants-cost.json"),
+    mock.patch.object(mutants, "LOCAL_TMPDIR", Path(SCRATCH.name) / "copies"),
     # A run's refusals ask the real host and read this tree's pending record otherwise; a
-    # test that needs a host or a record patches its own.
+    # test that needs a host patches its own. The record follows a test's own `ROOT`, so a
+    # launch a test makes leaves no record behind for the tests after it.
     mock.patch.object(mutants, "remote_host", lambda: None),
-    mock.patch.object(mutants, "remote_pending", lambda: Path(SCRATCH.name) / "remote-pending"),
+    mock.patch.object(
+        mutants, "remote_pending",
+        lambda: Path(SCRATCH.name) / "remote-pending" if mutants.ROOT == REPOSITORY
+        else REAL_REMOTE_PENDING(),
+    ),
 ]
 
 
@@ -64,10 +72,11 @@ def tearDownModule():
 
 class Isolation(unittest.TestCase):
     def test_no_test_reaches_the_real_results_or_cost_table(self):
-        scratch = Path(tempfile.gettempdir())
+        # The real copies' folder is under the system's temporary folder too.
+        scratch = Path(SCRATCH.name)
         for path in (
             mutants_diff.RESULTS, extra_mutants.OUT_DIR, mutants.COST_CACHE,
-            mutants.remote_pending(),
+            mutants.LOCAL_TMPDIR, mutants.remote_pending(),
         ):
             self.assertTrue(path.is_relative_to(scratch), path)
         self.assertIsNone(mutants.remote_host())
@@ -517,15 +526,9 @@ class PendingRemote(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.root = Path(tmp.name)
-        for patcher in (
-            mock.patch.object(mutants, "ROOT", self.root),
-            mock.patch.object(mutants, "remote_pending", self.real_remote_pending),
-        ):
-            patcher.start()
-            self.addCleanup(patcher.stop)
-
-    # The module's isolation replaces it; these tests check the real one under their root.
-    real_remote_pending = staticmethod(mutants.remote_pending)
+        patcher = mock.patch.object(mutants, "ROOT", self.root)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def pend(self, host: str = "bonfire") -> Path:
         pending = mutants.remote_pending()
@@ -641,7 +644,7 @@ class RunQueue(unittest.TestCase):
             out, _ = second.communicate(timeout=30)
             self.assertTrue(entered.exists(), out.decode(errors="replace"))
 
-    def test_the_lock_is_the_machines_not_one_worktrees(self):
+    def test_the_lock_is_the_users_not_one_worktrees(self):
         self.assertEqual(mutants.RUN_LOCK.name, "mutants.lock")
         self.assertFalse(mutants.RUN_LOCK.is_relative_to(mutants.ROOT))
 
@@ -798,6 +801,7 @@ class SplitShares(unittest.TestCase):
             mock.patch.object(mutants, "remote_memory_max", lambda host: 2**30),
         ):
             mutants.launch_remote("bonfire", ["-p", "cpk"], whole=whole)
+        self.assertFalse(mutants.remote_pending().exists(), "the launch's record left behind")
         (job,) = jobs
         return job
 
