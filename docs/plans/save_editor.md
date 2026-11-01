@@ -1500,6 +1500,16 @@ What this editor adds on top of the lib:
   960-point minimum leaves room for; the list is the dialog's content width (874), and every
   row, a sentence as a height row's players, wraps under its own column, the rule's name
   keeping its own.
+- **Multi-team AATF counts the teams under each system.** One line above the list, and the
+  same line first in its copied text, gives how many of the checked teams were read under
+  each medal system and each height system of the ruleset, in the ruleset's order, a system
+  no team was read under left out (DBC6's 47 teams under DBC7, `aatf_rules.md` "A team no
+  quota system takes" applied: "Height systems: Height 8, Manlet 14, Universal 11,
+  GigaHeight 14"), so an organizer sees a cup's mix without counting. The check
+  reports the systems each team was read under (`aatf`'s team result), not the list's rows,
+  which name a system only when something is off. A ruleset with one medal system or one
+  height system leaves its line out. Draft first (the lead's), with its scenario under
+  SE-GUI-41.
 - **Multi-team AATF's range starts on one team, never reverses, and is checked once it
   rests**: built (`spec/save_editor.md` "Multi-team AATF"). The pictures' range below pairs
   its ends the same way, keeping the whole save as its default, since its run starts only on

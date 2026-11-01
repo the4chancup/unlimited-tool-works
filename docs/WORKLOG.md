@@ -6337,6 +6337,16 @@ briefs, review loops, gates and mutation runs as for any step.
     two plan sentences and two glyph comments behind the code, a comment naming the old AATF
     panel; the lead's fixes), which ends SWE-2's loop. Open: `just mutants-diff a47ecbbd^1`
     and `just mutants-diff f0d4553f crates/libs/team_widgets`, then Astra over cv28-cv32
+  - [ ] cv33 a team no quota system takes is read under the nearest system, fewest errors
+    deciding (`plans/aatf_rules.md` "A team no quota system takes" and the NearestSystem
+    paragraph; DECISIONS 2026-11-01; for the next candidate, the organizer validates it) →
+    verify: the plan's new fixtures, /cookie☆/ (DBC6's 857) as Manlet with no Stat total
+    error, 893 as Height; `check-aatf --rules dbc7` over DBC6 (851-897) changes 857, 893 and
+    897 alone (`.tmp/height_study/` holds today's readings). After the scripts' rework
+  - [ ] cv34 P48: Multi-team AATF counts the teams under each system (`plans/save_editor.md`
+    "Multi-team AATF counts the teams under each system"; DECISIONS 2026-11-01): the draft
+    first (the lead's), then the scenario under SE-GUI-41, then the slice on cv33's team
+    result → verify: DBC6 under DBC7 reads "Height 8, Manlet 14, Universal 11, GigaHeight 14"
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
@@ -7093,7 +7103,7 @@ points there.
 - open 2026-11-01 — the vital scripts' first reviews (`RUNBOOK.md` "Review rounds", checkpoint
   (e); DECISIONS 2026-11-01): each reviewed whole by SWE-2 rounds once, in this order:
   - [ ] the mutation runs' `mutants.py`, `mutants_diff.py`, `extra_mutants.py` (and
-    `mutants_test.py`): round 1 accepted 18 (`.tmp/duck_rulings.md` "S-scripts r1"; among
+    `mutants_test.py`): round 1 accepted 18 (`.tmp/duck_rulings.md` S-scripts r1; among
     them a refused diff run filing the last run's results as its own, a queued run still
     listing the live tree, `extra_mutants` filing an unrun mutant as caught, timeouts left
     off `missed_all.txt`). Rework in three commits, the lead's: (1) snapshot and lock,
