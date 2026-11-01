@@ -33,6 +33,35 @@ HEAD_TREE = subprocess.run(
 # Git's empty tree: a diff from it holds every file of the tree it is diffed with.
 EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
+# Where runs keep their results and this machine's cost table, pointed at a scratch folder for
+# the whole module: a test that reached `mutants.diff/` unpatched set a running run's results
+# aside. The scripts' `ROOT` stays the repository, where git runs and whose objects the
+# snapshot tests extract; a test that writes under it patches it itself.
+SCRATCH = tempfile.TemporaryDirectory()
+ISOLATION = [
+    mock.patch.object(mutants_diff, "RESULTS", Path(SCRATCH.name) / "mutants.diff"),
+    mock.patch.object(extra_mutants, "OUT_DIR", Path(SCRATCH.name) / "extra_mutants.out"),
+    mock.patch.object(mutants, "COST_CACHE", Path(SCRATCH.name) / "mutants-cost.json"),
+]
+
+
+def setUpModule():
+    for patcher in ISOLATION:
+        patcher.start()
+
+
+def tearDownModule():
+    for patcher in reversed(ISOLATION):
+        patcher.stop()
+    SCRATCH.cleanup()
+
+
+class Isolation(unittest.TestCase):
+    def test_no_test_reaches_the_real_results_or_cost_table(self):
+        scratch = Path(tempfile.gettempdir())
+        for path in (mutants_diff.RESULTS, extra_mutants.OUT_DIR, mutants.COST_CACHE):
+            self.assertTrue(path.is_relative_to(scratch), path)
+
 
 def mutant(name: str) -> dict:
     return {"Mutant": {"name": name}}
