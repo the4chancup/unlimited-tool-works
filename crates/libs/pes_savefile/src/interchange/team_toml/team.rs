@@ -1372,19 +1372,40 @@ mod tests {
     /// nine as the game does: the roster slots from 0 that neither
     /// `starting_eleven` nor the twelve name, ascending, so a real
     /// file's import reproduces the game's own 23 to 31. The eleven is
-    /// the document's, or the record's when the document has none.
+    /// the document's, or the record's when the document has none; the
+    /// third case's target eleven differs, so only a fill from the
+    /// document's own gives 23 to 31.
     #[test]
     fn an_imported_bench_fills_the_nine_as_the_game_does() {
         let (file, _) = open(PesVersion::Pes17);
-        let expected = [
+        let bench12: [u8; 12] = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12];
+        let real_eleven = [0, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10];
+        let expected: [u8; 21] = [
             18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12, 23, 24, 25, 26, 27, 28, 29, 30, 31,
         ];
-        for document in [
-            "[tactics]\nstarting_eleven = [0, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
-            "[tactics]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
+        // The third case's premise: a fill from the target's eleven
+        // would differ, so the case separates the two.
+        assert_ne!(
+            bench_fill(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], &bench12),
+            expected[12..],
+            "the two elevens give different fills"
+        );
+        for (document, target_eleven) in [
+            (
+                "[tactics]\nstarting_eleven = [0, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
+                real_eleven,
+            ),
+            (
+                "[tactics]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
+                real_eleven,
+            ),
+            (
+                "[tactics]\nstarting_eleven = [0, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
+                [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            ),
         ] {
             let mut target = file.team(701).expect("team 701").clone();
-            target.tactics.starting_eleven = [0, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10];
+            target.tactics.starting_eleven = target_eleven;
             target.tactics.bench_order = [255; 21];
             let doc = TeamToml::parse(document).expect("parses");
             doc.apply(PesVersion::Pes17, &mut target, &mut [])

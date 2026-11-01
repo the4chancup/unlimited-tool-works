@@ -1306,6 +1306,7 @@ fn workers_replied(window: &mut Headless, view: &mut SaveView) {
                 && view.live.check.pending.is_none()
                 && view.medals.pending.is_none()
                 && view.multi_aatf.check.pending.is_none()
+                && view.comparator.comparison.pending.is_none()
         },
         "a view worker never replied",
     );
