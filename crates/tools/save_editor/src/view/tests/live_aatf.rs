@@ -1539,13 +1539,14 @@ fn inside(inner: accesskit::Rect, outer: accesskit::Rect) -> bool {
 
 /// SE-GUI-47's team, edit and check driven through `Tool::view`: the
 /// tool, its context and the receivers it sends to (kept open), the
-/// window, 71801's and 71808's group headers, and the nodes of the frame
-/// the check landed on, the list in the dock.
+/// save's path, the window, 71801's and 71808's group headers, and the
+/// nodes of the frame the check landed on, the list in the dock.
 struct DockedList {
     tool: crate::Tool,
     ctx: studio_core::ToolContext,
     events_rx: crossbeam_channel::Receiver<studio_core::PipelineEventEnvelope>,
     requests_rx: crossbeam_channel::Receiver<studio_core::ShellRequest>,
+    save_path: PathBuf,
     window: Headless,
     bench_header: String,
     starter_header: String,
@@ -1601,6 +1602,7 @@ fn docked_list(test: &str) -> DockedList {
         ctx,
         events_rx,
         requests_rx,
+        save_path,
         window,
         bench_header,
         starter_header,
@@ -1666,6 +1668,7 @@ fn the_list_pops_out_into_a_window_and_its_close_turns_live_aatf_off() {
     let DockedList {
         mut tool,
         ctx,
+        save_path,
         events_rx: _events_rx,
         requests_rx: _requests_rx,
         mut window,
@@ -1835,7 +1838,14 @@ fn the_list_pops_out_into_a_window_and_its_close_turns_live_aatf_off() {
         "the toolbar's toggle reads off"
     );
 
-    // Turned on again: the list opens in the window.
+    // A fresh tool over the same save and settings, on the same team and
+    // selection: `live_window` is read back from the settings, so turning
+    // Live AATF on opens the list in the window.
+    let mut tool = crate::Tool::new();
+    tool.view.open(&save_path);
+    tool.view.team = TeamChoice::Team(718);
+    tool.view.selected = Some(Selection::Player(718, 0));
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
     tool_click(
         &mut window,
         &mut tool,
