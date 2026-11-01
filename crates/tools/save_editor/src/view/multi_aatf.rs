@@ -419,6 +419,13 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
             && let Some(counts) = system_counts(active.rules.ruleset(), checks)
         {
             ui.label(counts);
+        } else {
+            // The label's one auto id, skipped when it is not drawn: the
+            // widgets after the line would move an id on the landing
+            // frame, and a press held across it is released onto the
+            // widget that took the pressed one (a press on the title
+            // clicks Close).
+            ui.skip_ahead_auto_ids(1);
         }
         let stroke = ui.visuals().widgets.noninteractive.bg_stroke;
         let chrome = LIST_MARGIN.sum() + egui::Vec2::splat(2.0 * stroke.width);
