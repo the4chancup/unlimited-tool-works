@@ -2998,3 +2998,5 @@ worklog passed 7,000 lines.
 - 2026-11-01 — 0.0.1cv cv31: the Ruleset editor's Blank template reads "universal rules set" (the maintainer's wording).
 - 2026-11-01 — Tooling: a mutation run's local half runs on the run's snapshot, extracted, not the working tree, so
   merges during a run are safe; checked with a dds_convert diff run (16 caught) and a stubbed-cargo test.
+- 2026-11-01 — 0.0.1cv cv32: SWE-2 round 1's rework over cv28-cv30: Live AATF's window drags by its title bar alone (a touch
+  hid its dock icon), the toolbar tooltip corrected, four missing tests (row click, dock close tooltip, list height).
