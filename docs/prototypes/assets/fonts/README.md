@@ -13,6 +13,8 @@ row), so the drafts draw text in exactly the files the app does, never in a syst
 | `RobotoFlex-Semibold.ttf` | the pitch's formation name alone, the weight whose stroke matches the game's label as egui draws it (worklog 0.0.1x) | the same, at weight 600 | `2cbd1950…` | SIL OFL 1.1, as the regular weight's (below) |
 | `Hack-Regular.ttf` | monospace | egui 0.37's own copy (`epaint_default_fonts` 0.37.0) | `15f55cc0…` | below (egui's `Hack-Regular.txt`) |
 | `egui-icons.ttf` | egui's own icons (scale 0.90) | the same crate | `12280655…` | below (egui's `egui-icons.txt`) |
+| `NotoEmoji-Regular.ttf` | egui's monochrome emoji (scale 0.81), after the suite's fonts, for what a member types (`☆`, `♂`) | the same crate, its `monochrome_emoji_fonts` feature | `415dc629…` | SIL OFL 1.1 (below) |
+| `emoji-icon-font.ttf` | egui's larger emoji and symbols (scale 0.90), after Noto Emoji (`☆`, `！`, `Ｕ`) | the same | `f426bec3…` | MIT (below) |
 | `symbols.ttf` | the symbols the body font lacks (→, ≡, ✔, ✖ and the like), on its metrics | `scripts/make_symbols.py`'s build of `resources/symbols/`, which writes this copy and `resources/fonts/symbols.ttf` | `ac29b6db…` | the repository's own |
 
 egui-icons' scale is epaint's `FontTweak`, `size-adjust` in the host's `@font-face` rule.

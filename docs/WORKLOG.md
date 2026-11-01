@@ -6286,6 +6286,19 @@ briefs, review loops, gates and mutation runs as for any step.
     SE-GUI-49 in a headless test (the close turns Live AATF off, docked on again; its cross's
     size and stroke the window's, its gap to the pop-out icon the window's pair's); in the
     built window with cv28's look, both pairs' glyphs on one centre line
+  - [ ] cv30 team-wide AATF rows first, the rows' tooltips, the emoji fonts (the maintainer,
+    2026-11-01; after cv29 merges: its tests share `view/tests/live_aatf.rs`):
+    - order: `team_widgets` `violations.rs` (`slot_order` puts the no-slot group first, `part`
+      draws the team's own rows before the players' columns), `save_editor` `multi_aatf.rs`
+      `copy_text` the same; drafted (`save_editor.js` `liveList`, `multiAatfResults`) → verify:
+      a list's and a copy's first group is `Team-wide issues` (on the official ruleset's 718)
+    - tooltips: `Click to switch to this player`, a team-wide row none (`violations.rs` `row`);
+      the Comparator's rows (`comparator.rs`) and the patch panel's items (`prompt.rs`
+      `changes_table`) the same, drafted
+    - fonts: egui's `monochrome_emoji_fonts` on (workspace `Cargo.toml`), `theme.rs`'s comment;
+      the drafts load both files → verify: a `theme` test that `☆`, `！`, `Ｕ` resolve a glyph
+      after `install`; `/cookie☆/` in DBC6's save drawn in the built window
+    Plan `plans/save_editor.md` the Live AATF bullet; `plans/core/gui.md` the theme row
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84

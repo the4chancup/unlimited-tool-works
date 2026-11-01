@@ -1270,7 +1270,8 @@ and no switch drawn; on, the editor **does not edit aesthetics** but through the
   the open save as it stands against the patch applied to a copy of it, laid out as the
   unsaved-changes table: the columns Item, Old value and New value, the item the player's
   display name and the field's label in the views' terms (`TAKUMI · Free kick`), the values
-  in monospace, the item's click selecting the player, recomputed
+  in monospace, the item's click selecting the player (its tooltip `Click to switch to this
+  player`), recomputed
   when the save changes (an edit once it has settled, an undo, another save opened), not
   frozen at Open: a drag or a text edit in flight keeps the last preview drawn, since
   recomputing it every frame would slow the edit, and Apply recomputes a preview so held
@@ -1304,7 +1305,8 @@ The panel over the spec's `diff` report:
   differences.
 - Filter toggles: All / Gameplay / Aesthetics; a team filter; export the diff as
   text.
-- Clicking a diff row jumps to that player in the editor.
+- Clicking a diff row jumps to that player in the editor; its tooltip says so, `Click to
+  switch to this player`.
 - A row is drawn in the views' terms: the field under the label its view draws, its value as
   that view shows it (a free-kick motion 15, where the save stores 14), a field no view shows
   named in words from the report's name with its stored value: its words in sentence case, Id
@@ -1515,8 +1517,12 @@ What this editor adds on top of the lib:
 - **Live AATF.** A toolbar toggle, off by default and remembered in the tool's settings
   (`live_aatf`), for a member who has built the team and is now making it legal. On, a panel
   docked at the bottom of the view lists the violations of the team the view is editing (the
-  selected row's team, else the selector's), errors first, grouped per
-  player under a line naming him, the team's own under `Team-wide issues`, then, while **Show
+  selected row's team, else the selector's), errors first, the team's own first under
+  `Team-wide issues` (a formation or a tier count is the team's first concern, ahead of any
+  one player's; every list of a team's issues, Multi-team AATF's and its copied text
+  included, puts them first), then grouped per player under a line naming him, a player's
+  row tooltip `Click to switch to this player` (a team-wide row has none: it selects nothing,
+  and its group's heading already says what it is), then, while **Show
   suggestions** is on, under a `Suggestions` heading, the team's unused allowances (`Unused`
   rows, `only 4 of 5 cards used`). Show suggestions is a checkbox right of the toggle, drawn only while Live
   AATF is on, off by default and remembered (`live_suggestions`); on, the check asks for the
