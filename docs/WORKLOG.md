@@ -2777,7 +2777,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     the title drawn in it centred once the body set the width; `theme::window_title` gone.
     Gated green (`5ba78b61`); SWE-2 S1s37 0 accepted, Astra A1s37 no concerns
     (`.tmp/phase_08/8_36/rulings_837.md`). Open: the built window
-    - [ ] 8.37b Set all stats and Bump all stats: the number on the sentence's row, at the
+    - [x] 8.37b Set all stats and Bump all stats: the number on the sentence's row, at the
       dialog's right edge (the maintainer, 2026-10-30; DECISIONS "Set all stats' and Bump
       all stats' number on the sentence's row"; `plans/save_editor.md` "Editing UI", the
       sentence after the menus' shortcuts). Drafted: `dlgNum`'s `.num-row`, rendered on both
@@ -2785,6 +2785,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       edge at Cancel's and its vertical centre on the sentence's (red first); overlap tests
       Built (merged `40e36efa`): one fixed-width right-to-left row, the field at the right,
       at least 12 from the sentence; the test covers both dialogs
+      - manual: checked 2026-11-01 (the maintainer, on candidate 0.0.1d's built app)
   - [ ] 8.38 before 0.0.1, the built-window check of 2026-10-30 (release build `044c90d8`, the
     maintainer's PES 2021 save read-only, both themes; `.tmp/phase_08/8_30c/findings.md`, captures
     beside it): the player and team screens, the Player menu, Set all stats, Kit slots, the
@@ -3700,8 +3701,9 @@ briefs, review loops, gates and mutation runs as for any step.
     its failure's text for the CLI to print and the window to show (`show_error_dialog`);
     `tests/subsystem.rs` reads the PE header's subsystem (2); the piped CLI tests pass on it
   - [ ] l2 ST-RUN-04 in the bundle (manual: a double-click opens no console; `team-compiler
-    check` from a terminal prints there; both launchers print and their `pause` waits),
-    asked before it runs; with k3. Runs on the cut's own bundle (0.0.1f): `just release`
+    check` from a terminal prints there), asked before it runs; with k3. 0.0.1's bundle has no
+    launcher (`plans/core/development_plan.md` "The /vg/ League 27 (VGL): preview 0.0.2"):
+    the two launchers' check (each prints, its `pause` waits) runs on 0.0.2's bundle. Runs on the cut's own bundle (0.0.1f): `just release`
     writes the release archive, which it never overwrites, so no bundle is packed before the
     maintainer's final pass
 - [x] 0.0.1m the window's fit and its scaling with the width (the maintainer's UI review,
@@ -6444,15 +6446,14 @@ briefs, review loops, gates and mutation runs as for any step.
   far as it is built, labelled (WIP), `plans/core/development_plan.md` "Development Plan"):
   the bundled settings picking DBC7, built into the exe with the frozen logic version 1, as the Save editor's `aatf_ruleset`
   (ov7: no rules file beside the exe); the clean-machine check (`plans/core/development_plan.md`
-  "Release 0.1.0"'s verification, both launchers included), the exe's size measured crate by
+  "Release 0.1.0"'s verification; 0.0.1's bundle has no launcher, 0.0.2's adds both back, "The
+  /vg/ League 27 (VGL): preview 0.0.2"), the exe's size measured crate by
   crate with `cargo bloat` (35.3 MiB at 0.0.1d2, past the budget's "about 30 MB";
   `spec/core/distribution.md` "Distribution: portable .7z bundle" gets the new measurement),
-  the readme's steps for VGL's organizer (`plans/core/development_plan.md` "The /vg/ League 27
-  (VGL)": `upgrade-dpfl` once for an install with another list, `multicpk_mode` in the
-  settings file), logic version 1's hash
+  logic version 1's hash
   frozen in `LOGIC_VERSIONS` only after the maintainer's final confirmation, given once the UI
   is polished (the maintainer, 2026-10-25: never before it) (`plans/aatf_rules.md` "Loading and validation": a later logic
-  change is version 2), `just release 0.0.1`, handed to DBC's testers and VGL's organizer.
+  change is version 2), `just release 0.0.1`, handed to DBC's testers (VGL's organizer gets 0.0.2, its launchers and readme section).
   Prerequisite: 0.0.1cv, the converge review (`AGENTS.md` "Cutting a release")
   - [x] f1 the preparation (side-lead U, 2026-10-27; DECISIONS "The bundle's `data/` holds its
     settings and DBC7's rules file"): `just release` stages `data/settings.toml`
