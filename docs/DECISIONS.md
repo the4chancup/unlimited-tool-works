@@ -14950,3 +14950,16 @@ selection blue (cv27, seen in a built-window look); a darker grey that keeps the
 leaves the row barely apart from the list (1.3:1). The outline keeps every word at its resting
 contrast (red 4.95:1), and the draft already outlines a hovered combo item the same way.
 Plan: `docs/plans/save_editor.md` "Live AATF" (the paragraph on a row under the pointer).
+
+## 2026-11-01 — save_editor — The Cards left badge is computed on a worker thread
+Decision: the Skills header's badge runs `player_tier` then `card_limits` on a worker
+(`worker::WorkerResult`, as the pitch's medal letters do), a new run starting only when none
+is in flight; until it lands the same player and ruleset's kept badge is drawn, and another
+player's or ruleset's draws nothing.
+Why: measured (cv23, release build, the maintainer's PES 2017 save, team 702, DBC7): an idle
+frame 1.4 ms, the frame after a wheel notch over Speed 114 ms (286 ms under a mutation run's
+load), the whole difference the badge's two calls, each reading the team under every
+candidate height system. A worker spawned per notch would start a 100 ms run per frame of a
+fast turn, so a run waits for the one in flight. The draft computes at once and has no
+waiting state to show; the landed badge looks as it did.
+Plan: `docs/plans/save_editor.md` "The skills' Cards left badge".
