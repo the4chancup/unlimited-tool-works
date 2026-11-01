@@ -42,11 +42,11 @@ TIMEOUT_FACTOR = 3
 MIN_TIMEOUT_SECONDS = 120
 
 
-def crate_dir(name: str) -> Path:
-    """The named workspace crate's directory, from `cargo metadata`."""
+def crate_dir(name: str, root: Path) -> Path:
+    """The named workspace crate's directory in the tree at `root`, from `cargo metadata`."""
     out = subprocess.run(
         ["cargo", "metadata", "--format-version", "1", "--no-deps"],
-        cwd=ROOT,
+        cwd=root,
         check=True,
         capture_output=True,
         text=True,
@@ -240,8 +240,6 @@ def run_crate(
     named for `just mutants`, which calls this for its EXTRA_KINDS and records
     the run in `run.json` beside it for `just mutants-collect` to summarize.
     Returns (the missed lines, the per-outcome counts, the wall seconds)."""
-    directory = crate_dir(crate)
-    crate_rel = directory.relative_to(ROOT)
     tree = tree or mutants.working_tree()
     copy_dir = mutants.LOCAL_TMPDIR / f"extra-mutants-{os.getpid()}"
     if copy_dir.exists():
@@ -251,6 +249,9 @@ def run_crate(
     wall_start = time.monotonic()
     try:
         mutants.extract_tree(tree, copy_dir)
+        # The crate's folder as the snapshot holds it, not the live tree: a queued run
+        # reaches its turn long after its snapshot.
+        crate_rel = crate_dir(crate, copy_dir).relative_to(copy_dir.resolve())
         rows = [row for row in list_mutants(copy_dir / crate_rel) if row[3] in kinds]
         excluded, stale = apply_exclusions(
             rows, crate_rel, exclusions(copy_dir), kinds
@@ -337,7 +338,7 @@ def run_crate(
 def main(argv: list[str]) -> int:
     crate, kinds, list_only = parse_args(argv)
     if list_only:
-        directory = crate_dir(crate)
+        directory = crate_dir(crate, ROOT)
         crate_rel = directory.relative_to(ROOT)
         rows = [row for row in list_mutants(directory) if row[3] in kinds]
         excluded, stale = apply_exclusions(rows, crate_rel, exclusions(ROOT), kinds)

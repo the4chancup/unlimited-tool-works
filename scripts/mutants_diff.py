@@ -65,21 +65,22 @@ def main(argv: list[str]) -> int:
         f.write(diff)
         diff_path = f.name
     try:
-        with mutants.run_lock():
-            return run(diff_path, tree)
+        with mutants.run_lock(), mutants.snapshot_source(tree) as source:
+            return run(diff_path, tree, source)
     finally:
         os.unlink(diff_path)
 
 
-def run(diff_path: str, tree: str) -> int:
+def run(diff_path: str, tree: str, source: Path) -> int:
     """Lists the diff's mutants and runs each crate's (`run_crate`), keeping each crate's
     results under `RESULTS`. `tree` is the working tree the diff was taken against, which the
-    remote is sent."""
+    remote is sent, and `source` its copy (`mutants.snapshot_source`), which the listing and
+    the local halves read."""
     # The mutant list, for the printed line and the local-run estimate. Each
     # entry's `file` names the crate (`crates/<group>/<crate>/...`).
     listing = subprocess.run(
         ["cargo", "mutants", "--in-diff", diff_path, "--list", "--json"],
-        cwd=ROOT,
+        cwd=source,
         capture_output=True,
     )
     if listing.returncode != 0:
@@ -100,7 +101,7 @@ def run(diff_path: str, tree: str) -> int:
     codes = {}
     for crate, count in sorted(counts.items()):
         print(f"mutants_diff: {crate}, {count} mutants", flush=True)
-        codes[crate] = run_crate(diff_path, tree, crate, count)
+        codes[crate] = run_crate(diff_path, tree, source, crate, count)
         out = ROOT / "mutants.out"
         if out.exists():
             out.rename(results / crate)
@@ -118,28 +119,28 @@ def run(diff_path: str, tree: str) -> int:
     return max(codes.values())
 
 
-def run_crate(diff_path: str, tree: str, crate: str, count: int) -> int:
+def run_crate(diff_path: str, tree: str, source: Path, crate: str, count: int) -> int:
     """Runs one crate's mutants of the diff: on the remote whole, split, or here."""
     selection = ["--in-diff", diff_path, "-p", crate]
     estimated = mutants.estimate_seconds([crate] * count)
     print(f"mutants_diff: estimated {estimated:.0f} s on this machine")
     host = mutants.remote_host()
     if host is not None and mutants.REMOTE_ONLY:
-        return mutants.split(selection, host, local=False, tree=tree)
+        return mutants.split(selection, host, tree, source, local=False)
     local_only = crate in mutants.LOCAL_ONLY_CRATES
     if host is not None and estimated >= mutants.SPLIT_THRESHOLD_SECONDS and not local_only:
         half = mutants.estimate_seconds([crate] * count, share=0.5)
         print(f"mutants_diff: split, about {half:.0f} s a half, plus the transfer and polling")
-        return mutants.split(selection, host, tree=tree)
+        return mutants.split(selection, host, tree, source)
     if host is not None and local_only:
         print(f"mutants_diff: {crate} is local-only (LOCAL_ONLY_CRATES)")
-    if host is not None and (refusal := mutants.remote_refusal(host, remote=False)):
+    if refusal := mutants.local_refusal(host):
         print(f"mutants_diff: {refusal}")
         return 1
     print("mutants_diff: running here", flush=True)
     print(f"mutants_diff: cargo mutants {' '.join(selection)}", flush=True)
     mutants.set_aside_last_run()
-    code = mutants.local_mutants(selection, tree).returncode
+    code = mutants.local_mutants(selection, source).returncode
     mutants.update_cost_cache()
     return mutants.report_killed(code)
 
