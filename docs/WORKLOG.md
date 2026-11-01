@@ -6812,6 +6812,21 @@ briefs, review loops, gates and mutation runs as for any step.
     between. In the same
     pass: 0.0.1v's open look outside the app's own windows (the taskbar button, Alt+Tab,
     Explorer's file icon on the exe) → QUESTIONS "Before the release"
+  - [ ] f1d the maintainer's changes after DBC7's commissioner approved 0.0.1f (2026-11-01),
+    on a branch from `release/0.0.1-candidate` (`e39e0a9d`), merged into it and into main,
+    then candidate 0.0.1g staged (until the cut, nothing for later releases starts):
+    - [ ] f1d1 Team TOML: `bench_order` lists 12, import fills the other nine as the game
+      does; a comment before the first formation saying how its players are read; every
+      export comment reworded for a member (`plans/pes_savefile/operations.md` "Team TOML",
+      "For 0.0.1") → verify: team 893 of the maintainer's PES 2017 save exported and imported
+      back writes the save's bytes unchanged (its nine are 23 to 31); a 21-entry array is
+      refused; the comment list reviewed by the lead
+    - [ ] f1d2 every advanced-instruction combo lists both sides under a ruleset with illegal
+      formations (`plans/save_editor.md` "An advanced instruction's list") → verify: under
+      DBC7 a Defence combo offers Counter Target's attacking neighbours; under a ruleset
+      without the flag the lists stay split
+    - [ ] f1d3 cv40 (`2ed17259`, test code only) cherry-picked onto the candidate branch, so
+      its full gates do not flake
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
