@@ -2765,7 +2765,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       player whose base copy named another and on one whose edit flags were clear
       (`scripts/ingame/`, saves backed up); with it, the FoxDen gloves issue rechecked, and
       SE-GUI-34 proved again in its patch form (a `SE-GUI-34 manual: checked` line)
-  - [ ] 8.37 a dialog's title centred over the dialog, as the windows' titles are (the
+  - [x] 8.37 a dialog's title centred over the dialog, as the windows' titles are (the
     maintainer, 2026-10-30, after left-aligned window titles proved out of egui's reach;
     DECISIONS "A dialog's title is centred, as the windows' titles are"). Drafted:
     `index.html` `.window .title` (`text-align: center`), rendered on Set all stats and the
@@ -2776,7 +2776,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     Built with b (Opus sidekick, merged `40e36efa`): the title row reserved before the body,
     the title drawn in it centred once the body set the width; `theme::window_title` gone.
     Gated green (`5ba78b61`); SWE-2 S1s37 0 accepted, Astra A1s37 no concerns
-    (`.tmp/phase_08/8_36/rulings_837.md`). Open: the built window
+    (`.tmp/phase_08/8_36/rulings_837.md`).
+    - manual: checked 2026-11-01 by the lead, in the built window (release build of
+      `f45fceae`): Multi-team AATF's title stands centred over the wide dialog
+      (`.tmp/0_0_2/look/09_multi.png`)
     - [x] 8.37b Set all stats and Bump all stats: the number on the sentence's row, at the
       dialog's right edge (the maintainer, 2026-10-30; DECISIONS "Set all stats' and Bump
       all stats' number on the sentence's row"; `plans/save_editor.md` "Editing UI", the
@@ -6268,7 +6271,7 @@ briefs, review loops, gates and mutation runs as for any step.
     2026-10-31 in cv16b's look, `.tmp/0_0_2/look_cv16b/09_crop.png`: "Extra height" on
     `widgets.hovered.bg_fill`; `team_widgets` `row_paint`) → compare the draft's `.drow:hover`
     first; a change is drafted, rendered and planned before code
-  - [ ] cv28 Live AATF in a window of its own, embedded (a collaborator's suggestion; the
+  - [x] cv28 Live AATF in a window of its own, embedded (a collaborator's suggestion; the
     maintainer, 2026-11-01, for 0.0.1): the pop-out and dock icons (Phosphor's arrow out of
     and into a square, `resources/icons/pop-out.svg`, `dock.svg`, U+E5DE and U+E5DF, the
     font built), the one-column window, `live_window`; with it the bottom dock's grip (the
@@ -6283,8 +6286,12 @@ briefs, review loops, gates and mutation runs as for any step.
     lead's gate re-run green: 2931 tests of five crates): the dock icon sits on egui's title
     bar through its drag area's id (`__title_click`), which an egui upgrade could move (the
     SE-GUI-48 test clicks it by name); the grip is the plain text grey (noninteractive, 140).
-    Open: the built-window look (the window, its title bar's two buttons, the close button's
-    hover under its tooltip area, the grip), and the SWE-2 round over it with `906384d0`'s help
+    SWE-2 and Astra rounds ended (S-cv28-30, S-cv28-32 Astra r1, S-a1 r1).
+    - manual: checked 2026-11-01 by the lead, in the built window (release build of
+      `f45fceae`, DBC6's save read-only, its hash unchanged; `.tmp/0_0_2/look/`): the window's
+      title bar holds the dock icon and the close on one line, the close's hover tooltip
+      (`Turn Live AATF off`) below it, clear of the button; the dock's grip on the dock's top
+      edge, nothing over it
   - [x] cv29 the Live AATF dock's close button (the maintainer, 2026-11-01): right of the
     pop-out icon, the window's close button in the dock's header, turning Live AATF off.
     Drafted (`save_editor.js` `livePanel`, `.live-caps`, `#live-close`; the pop-out and dock
@@ -6295,9 +6302,9 @@ briefs, review loops, gates and mutation runs as for any step.
     header's right end, the pop-out icon in a slot as wide as the window's dock icon so the
     pair's gap (9.78) and centres (25.56) are the window's; `title_slot` shared; help page 02.
     SE-GUI-49 `the_docks_close_button_turns_live_aatf_off` (red: no button labeled `Turn Live
-    AATF off`). Open: the built-window look with cv28's (both pairs' glyphs on one centre
-    line; the glyph-to-cross gap 14.6 in the dock, 15.5 in the window, the two arrows' ink
-    differing), and the SWE-2 round with cv28 and cv30
+    AATF off`).
+    - manual: checked 2026-11-01 by the lead, with cv28's: the dock's pop-out and close and
+      the window's dock icon and close each on one centre line
   - [x] cv30 team-wide AATF rows first, the rows' tooltips, the emoji fonts (the maintainer,
     2026-11-01; after cv29 merges: its tests share `view/tests/live_aatf.rs`):
     - order: `team_widgets` `violations.rs` (`slot_order` puts the no-slot group first, `part`
@@ -6320,8 +6327,10 @@ briefs, review loops, gates and mutation runs as for any step.
     click tests scroll the dock first (`scroll_dock_to_73404s_row`, bounded): the team's
     rows push 73404's row below the fold. SE-GUI-30 and SE-GUI-41 widened to the order and
     the tooltip, cited by the new tests (the lead's). `check-aatf` keeps the check's order
-    (team rows last). Open: `/cookie☆/` in the built window (with cv28's look); the SWE-2
-    round with cv28 and cv29
+    (team rows last).
+    - manual: checked 2026-11-01 by the lead, with cv28's: `/cookie☆/` (857) draws its star
+      in the team list, the dock and Multi-team AATF; its dock reads the team under Manlet
+      (cv33): `Mid 8 of 7`, `Tall 9 of 10`, no Stat total row
   - [x] cv31 the Ruleset editor's Blank template reads `Blank: one tier, no brackets, universal
     rules set` (the maintainer, 2026-11-01: "the universal rules on" sounded off; DECISIONS
     2026-11-01): `view/start.rs`, its two test strings, `help/02_window.md`, the draft
@@ -6370,8 +6379,11 @@ briefs, review loops, gates and mutation runs as for any step.
     plan + DECISIONS (both kinds on one line). Slice `4b913ec8` (SWE-2 sidekick; the lead's
     re-run: save_editor 648 + 46), merged `0338e749`: the Save editor's team check keeps
     aatf's whole result; `multi_aatf.rs` `system_counts`, the DBC6 line pinned from the
-    merged check's 47 real answers. Its built-window look rides with the next built window;
-    its mutants-diff runs with cv33 r2's
+    merged check's 47 real answers. Its mutants-diff runs with cv33 r2's.
+    - manual: checked 2026-11-01 by the lead, in the built window with cv28's: DBC6's 851 to
+      897 under DBC7 read `Medal systems: GGG 4, GGSS 21, GSSSS 20, SSSSSS 1 · Height
+      systems: Height 8, Manlet 14, Universal 11, GigaHeight 14` on one line between the
+      summary and the list; 701 alone, `Height systems: GigaHeight 1` (no medal system)
   - [x] cv35 Set PES path over the team view's pitch while the sidebar's selector is orange or
     red (the maintainer's request, 2026-11-01; `plans/save_editor.md` "Tactics editor", the
     Set PES path bullet; `plans/core/gui.md` "Settings menu"'s one storing function, shared
@@ -6384,8 +6396,16 @@ briefs, review loops, gates and mutation runs as for any step.
     carries the sidebar's `ExeCheck` (moved to `tool.rs`) and `set_pes_folder`, the one
     storing function Fix PES path shares; `tactics.rs` `set_pes_folder_button` centred in the
     corner `team_widgets::pitch::penalty_box_right` leaves, outlined in the text grey, 2-point
-    side padding. SE-GUI-50 measures the margins on PES 2017 (9) and PES 2021 (1.5). Open: its
-    manual pick and its look in the built window. SWE-2 round 1 accepted 2 (S-cv35 r1: the
+    side padding. SE-GUI-50 measures the margins on PES 2017 (9) and PES 2021 (1.5).
+    - manual: checked 2026-11-01 by the lead, in the built window with cv28's (the copy's PES
+      folder pointed at a missing one): on 857's team view the selector is orange and the
+      button stands centred in the pitch's corner (within a point), outlined in the text
+      grey; its click opens the native `Select Folder` picker, and picking
+      `G:\Games\PES2017` stores `pes_folder_path = 'G:\Games\PES20**'`, the selector turns
+      grey and the button goes. (Typing `E:\PES2017` into the picker's Folder box and
+      pressing OK through the harness only navigated into it, twice: the picker's way with
+      a typed path, not the app's.)
+    SWE-2 round 1 accepted 2 (S-cv35 r1: the
     check's copy into the view untested, a stale `fix_pes_folder` doc), ending its loop; the
     fixes ride with brief `.tmp/rv2830/brief_astra_r1.md`
   - [x] cv36 the cv28-32 mutation runs' survivors (`just mutants-diff a47ecbbd^1` and the
