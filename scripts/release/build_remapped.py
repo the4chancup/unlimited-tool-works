@@ -22,19 +22,14 @@ rustup_home = os.environ.get("RUSTUP_HOME")
 root = str(ROOT)
 flags = release.remap_flags(home, cargo_home, rustup_home, root, str(target))
 print("flags:", *flags, sep="\n  ")
-build = subprocess.run(
-    ["cargo", "build", "--release", "--locked", "-p", "studio", "--config",
-     release.rustflags_config(flags)],
-    cwd=ROOT,
-)
+build = subprocess.run(release.build_args(flags), cwd=ROOT)
 if build.returncode != 0:
     sys.exit(f"build failed ({build.returncode})")
 exe = target / "release/utw.exe"
-built = exe.read_bytes()
-leaked = release.leaked_prefixes(
-    built, [p for p in (home, cargo_home, rustup_home, root, str(target)) if p]
-)
-print("leaked prefixes:", leaked or "none")
-print("links the C runtime dynamically:", release.links_crt_dynamically(built))
-print("the user's name anywhere in the exe:", built.lower().count(Path.home().name.lower().encode()))
-sys.exit(1 if leaked or release.links_crt_dynamically(built) else 0)
+try:
+    release.check_exe(exe, release.machine_prefixes(target))
+except release.Refusal as refusal:
+    sys.exit(f"error: {refusal}")
+print("no remapped prefix left, the C runtime linked statically")
+print("the user's name anywhere in the exe:",
+      exe.read_bytes().lower().count(Path.home().name.lower().encode()))

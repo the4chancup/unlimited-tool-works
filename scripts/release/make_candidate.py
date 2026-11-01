@@ -22,7 +22,8 @@ sys.path.insert(0, str(ROOT / "scripts" / "release"))
 import release  # noqa: E402  (its pure helpers: exe_name, launcher_calls, expected_entries)
 
 VERSION = release.workspace_version((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
-EXE = release.target_dir() / "release/utw.exe"
+TARGET = release.target_dir()
+EXE = TARGET / "release/utw.exe"
 DEST = ROOT.parent / "4cc-studio-temp" / (sys.argv[2] if len(sys.argv) > 2 else f"candidate-{VERSION}")
 TOP = DEST / f"{release.PACKAGE}-{VERSION}"
 
@@ -38,18 +39,30 @@ assert not git("status", "--porcelain"), "the tree is dirty"
 head = git("rev-parse", "HEAD")
 assert head.startswith(commit), (head, commit)
 # The exe must postdate the last commit that changed what it is built from (a docs commit
-# after the build changes nothing in it).
+# after the build changes nothing in it); `.cargo` and `rust-toolchain.toml` set the build
+# as much as the sources do.
 code_time = int(git("log", "-1", "--format=%ct", "--", "crates", "Cargo.toml", "Cargo.lock",
-                    "resources"))
+                    ".cargo", "rust-toolchain.toml", "resources"))
 assert EXE.stat().st_mtime > code_time, "the release exe predates the last code commit"
 assert not DEST.exists(), f"{DEST} exists: look at it first"
 
+readme = (ROOT / "resources/bundle/README.txt").read_text(encoding="utf-8")
+assert release.readme_names_version(readme, VERSION), \
+    f"resources/bundle/README.txt's first line does not end with the version {VERSION}"
 help_text = subprocess.run([str(EXE), "--help"], capture_output=True, text=True).stdout
 name = release.exe_name(help_text)
 assert name, "no usage line in --help"
 for bat in release.LAUNCHERS:
     text = (ROOT / "resources/bundle" / bat).read_text(encoding="utf-8")
     assert release.launcher_calls(text, name), bat
+
+# The same check the release runs on the exe it just built: a plain `cargo build --release`
+# after build_remapped.py leaves a newer exe holding the machine's paths, and the mtime
+# check above alone would ship it.
+try:
+    release.check_exe(EXE, release.machine_prefixes(TARGET))
+except release.Refusal as refusal:
+    sys.exit(f"error: {refusal}")
 
 TOP.mkdir(parents=True)
 shutil.copyfile(EXE, TOP / f"{name}.exe")
@@ -59,7 +72,7 @@ for bundled in release.LAUNCHERS + ("README.txt",):
 shutil.copyfile(ROOT / "resources/bundle/data/settings.toml", TOP / "data/settings.toml")
 (TOP / "licenses").mkdir()
 for license_file in release.LICENSES:
-    shutil.copyfile(ROOT / license_file, TOP / "licenses" / license_file)
+    shutil.copyfile(ROOT / license_file, TOP / "licenses" / Path(license_file).name)
 release.write_notices(TOP / "licenses" / release.NOTICES)
 for folder in release.EMPTY_FOLDERS:
     (TOP / folder).mkdir()
