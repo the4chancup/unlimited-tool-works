@@ -1550,6 +1550,32 @@ fn a_key_moved_mid_run_starts_its_badge_when_the_reply_lands() {
     assert_eq!(cards_left_badges(&nodes).len(), 1, "B's badge lands");
 }
 
+// The badge landed and nothing is due: a frame with no input asks for
+// no repaint, so a view left open repaints only on input or a reply.
+#[test]
+fn an_idle_view_asks_for_no_frame() {
+    let path = fixture(PesVersion::Pes17, "cards_left_idle");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(702);
+    view.selected = Some(Selection::Player(702, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let nodes = badge_landed(&mut window, &mut view);
+    assert_eq!(
+        cards_left_badges(&nodes).len(),
+        1,
+        "premise: the badge landed"
+    );
+
+    // No events and nothing due: the frame asks for no repaint.
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        window.repaint_delay,
+        Duration::MAX,
+        "an idle frame asks for no repaint"
+    );
+}
+
 /// The checkbox labels under the `top` panel title down to `bottom`'s
 /// (the whole column when `bottom` is `None`), in draw order: the first
 /// column top to bottom, then the second.
