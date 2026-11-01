@@ -6246,7 +6246,9 @@ briefs, review loops, gates and mutation runs as for any step.
     cost → measure first: a Save editor frame's time on the maintainer's PES 2017 save at Ability
     stats, idle and on a step's frame, headless, release build; then cut where the time goes;
     with it, what one Multi-team AATF check over 220 teams costs the UI thread (cv26's
-    rest cuts how many checks start, not what one costs)
+    rest cuts how many checks start, not what one costs), and what the card badge's
+    `player_tier` and `card_limits` cost on an edit of a team read under the nearest system
+    (since cv33 each runs the candidates' checks; cached per key, once per edit)
   - [x] cv26 the wheel over Multi-team AATF's range combos froze the window for about two
     minutes (found 2026-10-31 in cv16b's built-window look: 42 notches over the first combo,
     23 over the second, 220 teams in range; each step re-checked the range). The maintainer's
@@ -6339,14 +6341,22 @@ briefs, review loops, gates and mutation runs as for any step.
     Astra round 1 over cv28-cv32 accepted 2 (`.tmp/duck_rulings.md` S-cv28-32 Astra r1; the
     third became P49), which ends Astra's loop: the dock's grip lay half under the view above
     it (now inside the dock, `plans/core/gui.md` "Log panel"), and SE-GUI-48's settings
-    readback was unobserved → brief `.tmp/rv2830/brief_astra_r1.md` (SWE-2 sidekick), then a
-    SWE-2 loop over it
+    readback was unobserved → brief `.tmp/rv2830/brief_astra_r1.md` (SWE-2 sidekick), merged
+    `d1c945a0` with cv35's two fixes (the lead's re-run: studio_core 337, save_editor 645 +
+    46). Open: the SWE-2 round over it (`.tmp/rv2830/swe_a1.md`)
   - [ ] cv33 a team no quota system takes is read under the nearest system, fewest errors
     deciding (`plans/aatf_rules.md` "A team no quota system takes" and the NearestSystem
     paragraph; DECISIONS 2026-11-01; for the next candidate, the organizer validates it) →
     verify: the plan's new fixtures, /cookie☆/ (DBC6's 857) as Manlet with no Stat total
     error, 893 as Height; `check-aatf --rules dbc7` over DBC6 (851-897) changes 857, 893 and
-    897 alone (`.tmp/height_study/` holds today's readings). After the scripts' rework
+    897 alone (`.tmp/height_study/` holds today's readings). Slice committed `d2b81a19` on
+    branch cv33 (Opus sidekick; the lead's re-run: aatf 419, save_editor 641 + 46,
+    team_widgets 224; DBC6's diff touches 857, 893, 897 alone). Its seven contradictions
+    accepted (three more fixtures read as the plan's table says; the map return and two
+    silent points, plan and DECISIONS). Open: rework r1, the plan's green GigaHeight team at
+    4146 (`.tmp/0_0_2/brief_cv33_r1.md`, running); then merge and a SWE-2 round (a new pub
+    type over three crates). The whole save also moves 20 teams of 701-799: one like 857, and
+    19 with six giants at 194 now read under Height, with more rows than before
   - [ ] cv34 P48: Multi-team AATF counts the teams under each system (`plans/save_editor.md`
     "Multi-team AATF counts the teams under each system"; DECISIONS 2026-11-01): the draft
     first (the lead's), then the scenario under SE-GUI-41, then the slice on cv33's team

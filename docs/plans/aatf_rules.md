@@ -135,8 +135,11 @@ GigaHeight), so step 1 never picks it: a team that meets none of the systems bef
 under the system nearest its total height. A system's baseline is its quotas times their
 brackets' heights, summed (DBC7: Height 4230, Manlet 4160, Universal 4255); a system with a
 pool spans its baseline to the baseline plus the pool (GigaHeight 4145 to 4195), and a total
-inside the span is 0 cm from it. Every system within 15 cm of the team's total (each height
-read less its allowance) is a candidate, and the team is read under the candidate whose check
+inside the span is 0 cm from it; a bracket stands in a baseline at its height, an `exactly`
+bracket with several heights at the lowest, an `up_to` bracket at its top (no built-in ruleset
+has either). Every system within 15 cm of the team's total (each height read less its
+allowance, the team read under that candidate, since an allowance can depend on the system; a
+player with no tier at none) is a candidate, and the team is read under the candidate whose check
 reports the fewest errors, every error of the team counted, its players' included, warnings
 not; ties go to the nearer, then to the file's order; with no candidate, the last system. A
 green team is unaffected: under the last system it has no error, and every other candidate,
@@ -185,6 +188,7 @@ under, the one step 1 or "A team no quota system takes" chose:
 ```rust
 /// One team's check: what is off, and the systems the team was read under.
 pub struct TeamCheck {
+    /// What is off, in the order `Rules::check_team` gives.
     pub violations: Vec<Violation>,
     /// The medal system the team's medal counts match, by its label; `None` when the
     /// ruleset has no medal systems or the team matches none (a `MedalSystem` violation).
@@ -198,7 +202,10 @@ pub struct TeamCheck {
 The violations alone named a system only when something was off (a `BracketQuota`, a
 `NearestSystem`), so a green team's system could not be told; Multi-team AATF counts the teams
 under each system from these fields (`save_editor.md` "Multi-team AATF counts the teams under
-each system"). The tier helpers that read a player under his team's height system
+each system"). The logic's `check_team` returns them as `#{ violations, medal_system,
+height_system }` (a system's label or id, `()` for none); a list alone, which a rules file
+carrying logic from before the systems were reported returns, names no system, so such a file
+keeps loading and checking. The tier helpers that read a player under his team's height system
 (`tier_values`, `card_limits`, `player_tier`, `apply_tier`) read the system this choice makes,
 never step 1's alone: a Manlet team read under Manlet gets its players' +5, and a quick action
 under another system would set targets the check then flags.
