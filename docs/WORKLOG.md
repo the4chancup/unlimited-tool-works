@@ -2770,7 +2770,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         SWE-2 S1 8 accepted, S2 4, Astra A1 4, SWE-2 S3 3, the loops ended; rulings
         `.tmp/0_0_2/s36c/rulings_c0.md`. S3's SE-PAT-11 and TC-SAV-21 changes reach c1 as
         rework (it branched before them)
-      - [ ] c1 the patch's look: `pes_savefile` and `apply-patch` (the patch's `[appearance]`,
+      - [x] c1 the patch's look: `pes_savefile` and `apply-patch` (the patch's `[appearance]`,
         `boots_id`/`gloves_id` over the field's 14 bits, `base_copy_id`; `PreFox` refused no
         more; `apply` through `PlayerSettings::apply`, the own appearance id, the base copy
         cleared or written, every value checked before the first write; the `from_player` →
@@ -2779,6 +2779,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         player, so the compile tests hold with the new format; the tables still written →
         verify: SE-PAT-07 to 11, TC-SAV-18 (its appearance), 21, TC-BIN-60 to 62;
         `pes_savefile`, `save_editor`, `team_compiler` tests
+        Done 2026-11-01 (SWE-2 sidekick, one rework; merged `ed958e8f`): `PatchPlayer` holds
+        `appearance`, the two IDs (`MODEL_ID_MAX`, 14 bits) and `base_copy_id`;
+        `AppearanceDocument::Patch(version)` writes and reads the whole look with no
+        comments, `MissingKey` and `NotInThisVersion` refusing a partial or foreign one;
+        `AppearanceSettings::resolved` replaces `MotionSettings::resolved`; the compiler
+        carries `settings_refused` from the deep pass and skips an entry with nothing to
+        write. The lossless guard compares every fixture player field by field after apply
+        (bytes for those already holding their own ids: 23 on PES 21's fixture, most
+        players holding a base copy 0 the apply makes his own id). Tests: SE-PAT-07 to 11;
+        TC-SAV-18, 21 and TC-BIN-60 to 62 cited beside the old IDs. The table assertions stay
+        for c2b; `savefile_player_not_stripped` reads the ids before apply until c2b removes it.
+        Files: `pes_savefile` (`interchange/aesthetics_patch/`, `settings_toml/`),
+        `save_editor` (cli, session, patch tests), `team_compiler` (`deep/`, `plan/`,
+        `validation.rs`, `compile.rs`, `output/savefile.rs`, CLI tests)
       - [ ] c2a the compiler's IDs and pre-Fox: `boots_id`/`gloves_id` filled once the tasks'
         outcomes are known, none an invalid file's settings would resolve; the patch on
         pre-Fox → verify: TC-SAV-19, TC-BIN-50 to 59, TC-MOD-95 to 99 against the patch
@@ -2788,8 +2802,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         rewritten or removed (inventory C30-C43) → verify: the gates; no test installs a table
       - [ ] c3 the `<id>.copy` link: the compiler's three checks and the patch's
         `base_copy_id`; the upgrader's step 8 → verify: TC-STR-21, TC-SAV-20, EU-SET-12, 13
-      - [ ] c4 the spec moved (the inventory's S22-S54 …), help and catalog texts, the drafts'
-        message rows, the library parity re-run and its classes re-diagnosed
+      - [ ] c4 the spec moved (the inventory's S22-S54 …), help and catalog texts (among them
+        `messages/catalog.rs`'s "motions and names on PES 2018 to 2021, aesthetics on PES 2015
+        to 2017", wrong since c1), the drafts' message rows, the library parity re-run and its
+        classes re-diagnosed; then 8.36c's review: Astra over its code (checkpoint (b)) and
+        one `mutants-diff` over c1-c4
     - [ ] d in game, before 0.0.2 (PES 2021, then PES 2019, VGL 27's game, and PES 2017): a
       patch applied to an
       unstripped save shows the compiled look in Edit mode, boots and gloves included, on a
