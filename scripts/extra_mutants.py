@@ -12,8 +12,11 @@ kinds' list of what the runs no longer measure, each entry's `why` naming the
 equivalence. An entry that matches no listed mutant of its crate and kinds is
 stale: printed, and written into the missed files as a `stale exclusion` line,
 so `just mutants`' merged `missed_all.txt` shows it for triage. Outcomes land in
-`extra_mutants.out/` (gitignored): `outcomes_<kinds>.tsv` has every mutant of the run's
-kinds, `missed_<kinds>.txt` the survivors as `crates/...:<line>: [<kind>] <what>` lines;
+`extra_mutants.out/` (gitignored): `outcomes_<kinds>.tsv` has a row per mutant run (an
+excluded one is not), written as each is decided, so a run stopped midway keeps them;
+`missed_<kinds>.txt` the survivors as `crates/...:<line>: [<kind>] <what>` lines, and the
+timeouts and untested mutants the same way, tagged `[timeout]` or `[untested]` after the
+location. An untested mutant (`outcome`) fails the run.
 `missed_<crate>.txt` holds the same lines for `just mutants`, which runs the converge
 kinds (`mutants.EXTRA_KINDS`) itself and merges them into `missed_all.txt`. `--list`
 only prints the mutants and their counts, without running anything. `--kind <name>`
@@ -40,6 +43,30 @@ ALL_KINDS = ("bool", "guard", "literal", "normalize", "order")
 # Each mutant's `cargo test` may take up to this multiple of the unmutated baseline.
 TIMEOUT_FACTOR = 3
 MIN_TIMEOUT_SECONDS = 120
+# What `cargo test` prints, lowercase, when a test ran and failed: the only proof a mutant was
+# caught. A failure without it (a build script that could not run, a full disk) tested nothing.
+TEST_FAILED_SIGNS = ("test result: failed", "error: test failed", "error: doctest failed")
+
+
+def outcome(code: int | None, out: str) -> str:
+    """A mutant's outcome from its `cargo test` exit code (None: timed out) and output:
+    `timeout`, `missed`, `unviable` (it does not compile), `caught` (a test failed), or
+    `untested`. A build killed or starved for reasons outside the mutant
+    (`mutants.KILLED_BUILD_SIGNS`, in a build or a test binary) or a failure with no failing
+    test is untested: filed as caught, it hid a mutant nothing tested (4.y-conv lost 273
+    builds' consoles at once), and filed as unviable, a mutant that does compile."""
+    if code is None:
+        return "timeout"
+    if code == 0:
+        return "missed"
+    lowered = out.lower()
+    if any(sign in lowered for sign in mutants.KILLED_BUILD_SIGNS):
+        return "untested"
+    if "could not compile" in lowered:
+        return "unviable"
+    if any(sign in lowered for sign in TEST_FAILED_SIGNS):
+        return "caught"
+    return "untested"
 
 
 def crate_dir(name: str, root: Path) -> Path:
@@ -99,6 +126,12 @@ def exclusions(tree_root: Path) -> list[dict]:
             raise SystemExit(
                 f"extra_mutants: {path}: entry {index} is not exactly "
                 "path, kind, description and why, each a string"
+            )
+        # A misspelt kind matches no mutant, and its staleness is never reported either.
+        if entry["kind"] not in ALL_KINDS:
+            raise SystemExit(
+                f"extra_mutants: {path}: entry {index} has kind {entry['kind']!r}, "
+                f"none of {', '.join(ALL_KINDS)}"
             )
     return entries
 
@@ -243,8 +276,9 @@ def run_crate(
     tree = tree or mutants.working_tree()
     copy_dir = mutants.LOCAL_TMPDIR / f"extra-mutants-{os.getpid()}"
     if copy_dir.exists():
-        # A leftover of an interrupted run under a reused pid: remove it rather than
-        # test against its stale files.
+        # The copy of an interrupted run whose pid this one reuses: removed rather than
+        # tested against. Other interrupted runs' copies stay until
+        # `scripts/rm_mutant_copies.py` removes them.
         mutants.remove_tree(copy_dir)
     wall_start = time.monotonic()
     try:
@@ -268,6 +302,11 @@ def run_crate(
             f"{len(rows)} mutants, {sum(excluded)} excluded",
             flush=True,
         )
+        OUT_DIR.mkdir(exist_ok=True)
+        kinds_key = "_".join(kinds)
+        # A row per mutant as it is decided, so a run stopped hours in keeps what it measured.
+        tsv = OUT_DIR / f"outcomes_{kinds_key}.tsv"
+        write_out(tsv, "")
         outcomes: list[tuple[str, list[str]]] = []
         for i, row in enumerate(rows, 1):
             rel, start, end, kind, line, replacement, description = row
@@ -286,35 +325,25 @@ def run_crate(
                 code, out = cargo_test(crate, copy_dir, timeout)
             finally:
                 target.write_bytes(original)
-            if code is None:
-                outcome = "timeout"
-            elif code == 0:
-                outcome = "missed"
-            elif "could not compile" in out:
-                outcome = "unviable"
-            else:
-                outcome = "caught"
-            outcomes.append((outcome, row))
-            print(f"[{i}/{len(rows)}] {outcome}: {rel}:{line} {description}", flush=True)
-        OUT_DIR.mkdir(exist_ok=True)
-        kinds_key = "_".join(kinds)
-        write_out(
-            OUT_DIR / f"outcomes_{kinds_key}.tsv",
-            "".join(
-                outcome + "\t" + "\t".join(row) + "\n" for outcome, row in outcomes
-            ),
-        )
+            decided = outcome(code, out)
+            outcomes.append((decided, row))
+            with open(tsv, "a", encoding="utf-8", newline="\n") as rows_file:
+                rows_file.write(decided + "\t" + "\t".join(row) + "\n")
+            print(f"[{i}/{len(rows)}] {decided}: {rel}:{line} {description}", flush=True)
         # cargo-mutants' missed.txt shape (workspace-relative path, line, then the
-        # description), tagged with the kind cargo-mutants' lines cannot carry.
-        missed = [
-            f"{(crate_rel / row[0]).as_posix()}:{row[4]}: [{row[3]}] {row[6]}"
-            for outcome, row in outcomes
-            if outcome == "missed"
-        ]
+        # description), tagged with the kind cargo-mutants' lines cannot carry; a timeout
+        # or an untested mutant also with its outcome after the location, as
+        # `mutants.timeout_lines` tags cargo-mutants' timeouts.
+        missed = []
+        for decided, row in outcomes:
+            if decided not in ("missed", "timeout", "untested"):
+                continue
+            tag = "" if decided == "missed" else f"[{decided}] "
+            missed.append(f"{(crate_rel / row[0]).as_posix()}:{row[4]}: {tag}[{row[3]}] {row[6]}")
         missed_text = "".join(text + "\n" for text in missed + stale)
         write_out(OUT_DIR / f"missed_{kinds_key}.txt", missed_text)
         write_out(OUT_DIR / f"missed_{crate}.txt", missed_text)
-        per_outcome = Counter(outcome for outcome, _ in outcomes)
+        per_outcome = Counter(decided for decided, _ in outcomes)
         per_kind = Counter(row[3] for _, row in outcomes)
         print(
             "outcomes: "
@@ -326,6 +355,12 @@ def run_crate(
         )
         wall = time.monotonic() - wall_start
         print(f"wall time: {wall:.0f} s")
+        if per_outcome["untested"]:
+            print(
+                f"{per_outcome['untested']} mutants were NOT tested: a build or a test binary "
+                "was killed or lost its console, or cargo failed before any test ran. Rerun "
+                "them with less running here (the [untested] lines above)."
+            )
         return missed + stale, per_outcome, wall
     finally:
         if copy_dir.exists():
@@ -352,8 +387,8 @@ def main(argv: list[str]) -> int:
         return 0
     tree = mutants.working_tree()
     with mutants.run_lock():
-        run_crate(crate, kinds, tree)
-    return 0
+        _, counts, _ = run_crate(crate, kinds, tree)
+    return 1 if counts["untested"] else 0
 
 
 if __name__ == "__main__":

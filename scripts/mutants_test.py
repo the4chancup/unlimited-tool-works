@@ -17,6 +17,7 @@ import tarfile
 import tempfile
 import tomllib
 import unittest
+from collections import Counter
 from pathlib import Path
 from unittest import mock
 
@@ -37,7 +38,9 @@ def mutant(name: str) -> dict:
     return {"Mutant": {"name": name}}
 
 
-def write_run(out: Path, selected: int, outcomes: list[dict], logs: dict[str, str] = {}) -> None:
+def write_run(
+    out: Path, selected: int, outcomes: list[dict], logs: dict[str, str] | None = None
+) -> None:
     """A `mutants.out` at `out`: a selection of `selected` mutants, the baseline and
     `outcomes`, and each `logs` entry as the log file of that name."""
     out.mkdir(parents=True, exist_ok=True)
@@ -46,7 +49,7 @@ def write_run(out: Path, selected: int, outcomes: list[dict], logs: dict[str, st
     (out / "outcomes.json").write_text(
         json.dumps({"outcomes": [baseline, *outcomes]}), encoding="utf-8"
     )
-    for name, text in logs.items():
+    for name, text in (logs or {}).items():
         (out / name).parent.mkdir(parents=True, exist_ok=True)
         (out / name).write_text(text, encoding="utf-8")
 
@@ -254,13 +257,15 @@ class LocalShare(unittest.TestCase):
 
 
 class CostCache(unittest.TestCase):
-    def update(self, root: Path) -> bool:
-        """Whether `update_cost_cache` over `root`'s `mutants.out` wrote the cache."""
+    def update(self, root: Path) -> dict | None:
+        """The cache `update_cost_cache` over `root`'s `mutants.out` wrote, or None."""
         saved = mutants.ROOT, mutants.COST_CACHE
         mutants.ROOT, mutants.COST_CACHE = root, root / "cost.json"
         try:
             mutants.update_cost_cache()
-            return mutants.COST_CACHE.exists()
+            if not mutants.COST_CACHE.exists():
+                return None
+            return json.loads(mutants.COST_CACHE.read_text(encoding="utf-8"))
         finally:
             mutants.ROOT, mutants.COST_CACHE = saved
 
@@ -277,12 +282,15 @@ class CostCache(unittest.TestCase):
             ]
 
         with tempfile.TemporaryDirectory() as tmp:
+            # `mutant_crate` resolves the crate by the nearest Cargo.toml.
+            (Path(tmp) / "crates" / "libs" / "cpk").mkdir(parents=True)
+            (Path(tmp) / "crates" / "libs" / "cpk" / "Cargo.toml").write_text("")
             out = Path(tmp) / "mutants.out"
             killed = "process didn't exit successfully (exit code: 0xc0000142)"
             write_run(out, 5, outcomes("Unviable"), {"log/m": killed})
-            self.assertFalse(self.update(Path(tmp)))
+            self.assertIsNone(self.update(Path(tmp)))
             write_run(out, 5, outcomes("CaughtMutant"), {"log/m": "test failed"})
-            self.assertTrue(self.update(Path(tmp)))
+            self.assertEqual(self.update(Path(tmp))["mutant"], {"cpk": 1.0})
 
     def test_a_cache_without_remote_mutant_loads_an_empty_table(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -548,9 +556,10 @@ class RunQueue(unittest.TestCase):
                 except BaseException:
                     second.kill()
                     raise
+            # Not whether it printed that it waits: a child that starts slower than the hold
+            # finds the lock free, and the order above already shows the lock held it.
             out, _ = second.communicate(timeout=30)
             self.assertTrue(entered.exists(), out.decode(errors="replace"))
-            self.assertIn(b"waits", out)
 
     def order(self, call) -> list[str]:
         """The events of `call(events)`, with the snapshot, the lock and the snapshot's
@@ -635,7 +644,11 @@ class RunQueue(unittest.TestCase):
 
     def test_an_extra_mutants_run_snapshots_before_it_waits(self):
         def call(events):
-            with mock.patch.object(extra_mutants, "run_crate", lambda *_: events.append("run")):
+            def run_crate(*_):
+                events.append("run")
+                return [], Counter(), 0.0
+
+            with mock.patch.object(extra_mutants, "run_crate", run_crate):
                 extra_mutants.main(["extra_mutants.py", "fpc"])
 
         self.assertEqual(self.order(call), ["snapshot", "lock", "run", "unlock"])
@@ -1029,6 +1042,130 @@ class RemoteRefusal(unittest.TestCase):
         self.assertIn("gates-remote", self.refusal("none", remote=True, gates=0))
         self.assertEqual(self.refusal("none", remote=True, gates=255), "cannot reach bonfire")
         self.assertIsNone(self.refusal("none", remote=True, gates=3))
+
+
+class ExtraRun(unittest.TestCase):
+    """`extra_mutants.run_crate` with the lister, the copy and `cargo test` stubbed: how each
+    mutant's outcome is decided, and what lands in its files."""
+
+    SOURCE = b"true true true true true true true\n"
+    # What `cargo test` printed for each mutant in turn, and the outcome it must give.
+    TESTS = [
+        ((None, ""), "timeout"),
+        ((0, "test result: ok. 12 passed; 0 failed"), "missed"),
+        ((101, "error[E0308]: mismatched types\nerror: could not compile `cpk` (lib) due to 1 "
+               "previous error"), "unviable"),
+        ((101, "test read::reads_the_header ... FAILED\ntest result: FAILED. 11 passed; 1 failed"
+               "\nerror: test failed, to rerun pass `-p cpk --lib`"), "caught"),
+        ((101, "error: could not compile `cpk` (lib)\nCaused by:\n  process didn't exit "
+               "successfully: `rustc --crate-name cpk` (signal: 9, SIGKILL: kill)"), "untested"),
+        # A test binary that lost its console never ran its tests, whatever cargo says.
+        ((101, "error: test failed, to rerun pass `-p cpk --lib`\nCaused by:\n  process didn't "
+               "exit successfully: `cpk-1f2e.exe` (exit code: 0xc0000142, STATUS_DLL_INIT_FAILED)"),
+         "untested"),
+        ((101, "error: failed to run custom build command for `cpk v0.1.0`\nCaused by:\n  "
+               "No space left on device (os error 28)"), "untested"),
+    ]
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.tmp = Path(tmp.name)
+        self.out_dir = self.tmp / "extra_mutants.out"
+        self.rows = [
+            ["src/lib.rs", str(5 * i), str(5 * i + 4), "bool", "1", "false",
+             f"flip {i + 1} | removed: true"]
+            for i in range(len(self.TESTS))
+        ]
+
+        def extract_tree(tree, dest):
+            (dest / "crates/libs/cpk/src").mkdir(parents=True)
+            (dest / "crates/libs/cpk/src/lib.rs").write_bytes(self.SOURCE)
+
+        stale = {"path": "crates/libs/cpk/src/read.rs", "kind": "bool",
+                 "description": "flip 9 | removed: true", "why": "an equivalent flip"}
+        for patcher in (
+            mock.patch.object(mutants, "LOCAL_TMPDIR", self.tmp / "copies"),
+            mock.patch.object(mutants, "extract_tree", extract_tree),
+            mock.patch.object(extra_mutants, "OUT_DIR", self.out_dir),
+            mock.patch.object(extra_mutants, "crate_dir",
+                              lambda name, root: (root / "crates/libs/cpk").resolve()),
+            mock.patch.object(extra_mutants, "list_mutants", lambda directory: self.rows),
+            mock.patch.object(extra_mutants, "exclusions", lambda root: [stale]),
+            mock.patch.object(extra_mutants, "baseline_seconds", lambda crate, cwd: 1.0),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def run_crate(self, results):
+        results = iter(results)
+
+        def cargo_test(crate, cwd, timeout):
+            result = next(results)
+            if isinstance(result, BaseException):
+                raise result
+            return result
+
+        with (
+            mock.patch.object(extra_mutants, "cargo_test", cargo_test),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            return extra_mutants.run_crate("cpk", ["bool"], HEAD_TREE)
+
+    def test_each_outcome_and_the_lines_triage_reads(self):
+        listed, counts, _ = self.run_crate([result for result, _ in self.TESTS])
+        self.assertEqual(
+            counts, {"timeout": 1, "missed": 1, "unviable": 1, "caught": 1, "untested": 3}
+        )
+        expected = [
+            "crates/libs/cpk/src/lib.rs:1: [timeout] [bool] flip 1 | removed: true",
+            "crates/libs/cpk/src/lib.rs:1: [bool] flip 2 | removed: true",
+            "crates/libs/cpk/src/lib.rs:1: [untested] [bool] flip 5 | removed: true",
+            "crates/libs/cpk/src/lib.rs:1: [untested] [bool] flip 6 | removed: true",
+            "crates/libs/cpk/src/lib.rs:1: [untested] [bool] flip 7 | removed: true",
+            "crates/libs/cpk/src/read.rs: [bool] stale exclusion: flip 9 | removed: true",
+        ]
+        self.assertEqual(listed, expected)
+        for name in ("missed_bool.txt", "missed_cpk.txt"):
+            self.assertEqual(
+                (self.out_dir / name).read_text(encoding="utf-8").splitlines(), expected
+            )
+        self.assertEqual(
+            [line.split("\t")[0] for line in
+             (self.out_dir / "outcomes_bool.tsv").read_text(encoding="utf-8").splitlines()],
+            [outcome for _, outcome in self.TESTS],
+        )
+
+    def test_a_run_stopped_midway_keeps_the_outcomes_it_decided(self):
+        results = [result for result, _ in self.TESTS[:2]] + [RuntimeError("the PC went down")]
+        with self.assertRaisesRegex(RuntimeError, "the PC went down"):
+            self.run_crate(results)
+        self.assertEqual(
+            (self.out_dir / "outcomes_bool.tsv").read_text(encoding="utf-8").splitlines(),
+            ["timeout\t" + "\t".join(self.rows[0]), "missed\t" + "\t".join(self.rows[1])],
+        )
+
+    def test_a_standalone_run_with_an_untested_mutant_fails(self):
+        for counts, code in ((Counter(caught=3, missed=1), 0), (Counter(caught=3, untested=1), 1)):
+            with (
+                mock.patch.object(mutants, "working_tree", lambda: HEAD_TREE),
+                mock.patch.object(mutants, "run_lock", contextlib.nullcontext),
+                mock.patch.object(extra_mutants, "run_crate", lambda *_: ([], counts, 1.0)),
+            ):
+                self.assertEqual(extra_mutants.main(["extra_mutants.py", "cpk"]), code)
+
+
+class ExtraExclusions(unittest.TestCase):
+    def test_an_exclusion_of_an_unknown_kind_stops_the_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / ".cargo").mkdir()
+            (Path(tmp) / ".cargo" / "extra_mutants.toml").write_text(
+                '[[exclude]]\npath = "crates/libs/cpk/src/lib.rs"\nkind = "booll"\n'
+                'description = "flip 1 | removed: true"\nwhy = "an equivalent flip"\n',
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(SystemExit, "entry 1.*booll"):
+                extra_mutants.exclusions(Path(tmp))
 
 
 class DiskRefusal(unittest.TestCase):
