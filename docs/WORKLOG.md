@@ -2796,7 +2796,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     panel as drafted and planned, measured with `draft_compare.py` (its widget fills, m2,
     and four of its own misreadings fixed, `3fea5246`). Not checked: the running-game dialog
     (a running PES), the Fox ownership line's Apply link, the AATF screen against its
-    PES 2017 sample, 8.31's list. Found:
+    PES 2017 sample, 8.31's list. The three that concern 0.0.1 (the running-game dialog, the
+    AATF screen, the changes list) go to the maintainer's final pass (f1c; the maintainer,
+    2026-11-01: "I'll cover them"); the Apply link is Fox's, after 0.0.1. Found:
     - [x] a the number dialogs' field the drafts' 52-point box (`plans/save_editor.md`
       "Editing UI", the number row's sentence), not egui's 40; with Astra A1p45libs-1
       (RE-FILE-09's save starts from a file that differs from what it must write) → verify:
