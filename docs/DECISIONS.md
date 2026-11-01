@@ -14919,3 +14919,14 @@ Why: the exe holds Roboto Flex (OFL-1.1, whose notice and license must go with e
 and icon outlines copied from Phosphor (MIT), neither a crate, so `cargo-about`'s notices left
 both out (a release-scripts review, 2026-11-01). Two files copied need no generator code.
 Plan: `docs/plans/core/distribution.md` "Distribution: portable .7z bundle".
+
+## 2026-11-01 — aatf — `check_team` returns a map; a list alone still loads as no system
+Decision: the logic's `check_team` returns `#{ violations, medal_system, height_system }`, and
+the host reads a bare list, as logic from before this change returns, as the violations with no
+system. A candidate's distance reads the team under that candidate; a bracket's baseline height
+is an `exactly` bracket's lowest, an `up_to` bracket's top.
+Why: a rules file carries its own logic, so one saved earlier must keep checking; refusing it
+would strand an organizer's file for two fields only Multi-team AATF's counts read. The plan
+was silent on the shape and on brackets no built-in ruleset has (cv33's sidekick reported both).
+Plan: `docs/plans/aatf_rules.md` "A team no quota system takes", "A team's check says which
+systems it was read under".
