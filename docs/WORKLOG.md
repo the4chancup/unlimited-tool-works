@@ -6875,6 +6875,19 @@ briefs, review loops, gates and mutation runs as for any step.
     `side/shell`, `side/shell2`, `spec-5-6`, six `worktree-agent-*`) listed with what each
     holds, for the maintainer's ruling; (5) from then on, a slice's worktree and branch go
     once it is merged and its review loop has ended, its `.tmp/` copied first
+  - [ ] f4 after the cut, after f3 (the maintainer, 2026-11-01; DECISIONS "CI release builds
+    right after 0.0.1's cut, Windows first"; `plans/core/development_plan.md` Phase 16's
+    release-bundling bullet): CI release builds, sliced:
+    - [ ] f4a the design in `plans/core/distribution.md`: the tag trigger, the draft release's
+      assets, how the Windows asset is checked against the locally checked exe (byte-identical,
+      or the release checks plus the maintainer's look when CI's build cannot match), what
+      the Linux bundle holds (`utw`, `quick_compile.sh`, its archive)
+    - [ ] f4b the Windows bundle built by CI: `scripts/release/release.py`'s checks (no remapped
+      prefix, static C runtime, the user's name absent) passing on CI's exe; the workflow
+      written by the lead (CI is correctness-critical) → verify: a test tag produces a draft
+      release whose `.7z` passes the checks
+    - [ ] f4c the Linux bundle in `release.py` and the workflow, its file list and tests; the
+      GUI run on a real Linux machine (the maintainer's, or a VM) before it is attached
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
