@@ -32,6 +32,7 @@ test:
     {{python}} scripts/run_tests_test.py
     {{python}} scripts/run_tests.py
     {{python}} scripts/mutants_test.py
+    {{python}} scripts/perturb_check_test.py
     {{python}} scripts/bundle_drafts_test.py
     {{python}} scripts/draft_compare_test.py
 
@@ -43,6 +44,7 @@ test-changed base="HEAD":
     {{python}} scripts/run_tests_test.py
     {{python}} scripts/run_tests.py --changed {{base}}
     {{python}} scripts/mutants_test.py
+    {{python}} scripts/perturb_check_test.py
     {{python}} scripts/bundle_drafts_test.py
     {{python}} scripts/draft_compare_test.py
 
