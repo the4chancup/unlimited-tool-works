@@ -64,7 +64,7 @@ fn body(
         }
     }
     if ui
-        .button("Blank: one tier, no brackets, the universal rules on")
+        .button("Blank: one tier, no brackets, universal rules set")
         .clicked()
     {
         guard(view, ctx, Pending::Blank);
