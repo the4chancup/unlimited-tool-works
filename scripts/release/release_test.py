@@ -10,6 +10,7 @@ from release import (
     EMPTY_FOLDERS,
     LAUNCHERS,
     PACKAGE,
+    about_config,
     existing_glob,
     expected_entries,
     exe_name,
@@ -19,6 +20,7 @@ from release import (
     links_crt_dynamically,
     pack,
     readme_names_version,
+    third_party_notices,
     remap_flags,
     rustflags_config,
     sha256_line,
@@ -38,6 +40,62 @@ Commands:
 
 
 class Pure(unittest.TestCase):
+    def test_the_notices_accept_what_cargo_deny_allows(self) -> None:
+        deny = (ROOT / "deny.toml").read_text(encoding="utf-8")
+        config = tomllib.loads(about_config(deny))
+        self.assertEqual(config["accepted"], tomllib.loads(deny)["licenses"]["allow"])
+        self.assertIn("OFL-1.1", config["accepted"])
+        self.assertEqual(config["targets"], ["x86_64-pc-windows-msvc"])
+
+    def test_the_notices_list_each_license_once_with_every_crates_copyright(self) -> None:
+        mit = "MIT License\n\n{}\n\nPermission is hereby granted, free of charge, ...\n"
+
+        def used_by(name: str, version: str, manifest: str) -> dict:
+            return {"crate": {"name": name, "version": version, "manifest_path": manifest}}
+
+        registry = "C:/cargo/registry/src/index.crates.io"
+        about = {"licenses": [
+            {"id": "MIT", "name": "MIT License",
+             "text": mit.format("Copyright (c) 2018 Andrew Gallant"),
+             "used_by": [used_by("memchr", "2.7.4", f"{registry}/memchr-2.7.4/Cargo.toml")]},
+            {"id": "MIT", "name": "MIT License",
+             "text": mit.format("Copyright (c) 2015 The Rust Project Developers"),
+             "used_by": [used_by("bitflags", "2.9.1", f"{registry}/bitflags-2.9.1/Cargo.toml"),
+                         used_by("log", "0.4.27", f"{registry}/log-0.4.27/Cargo.toml"),
+                         # The workspace's own crates are covered by the repository's licenses.
+                         used_by("studio_core", "0.0.1", "C:/repo/crates/studio_core/Cargo.toml")]},
+            {"id": "Apache-2.0", "name": "Apache License 2.0",
+             "text": "Apache License\nVersion 2.0, January 2004\n\nCopyright [yyyy] [name of copyright owner]\n",
+             "used_by": [used_by("zopfli", "0.8.3", f"{registry}/zopfli-0.8.3/Cargo.toml")]},
+            # One copy of the license: lines opening with "copyright" are its text, not a notice.
+            {"id": "OFL-1.1", "name": "SIL Open Font License 1.1",
+             "text": "SIL OPEN FONT LICENSE Version 1.1\n4) The name(s) of the "
+                     "Copyright Holder(s) or the Author(s) of the Font\nCopyright Holder(s) "
+                     "and the Author(s) or with their explicit written\npermission.\n",
+             "used_by": [used_by("epaint_default_fonts", "0.37.0",
+                                 f"{registry}/epaint_default_fonts-0.37.0/Cargo.toml")]},
+            # A copy whose author left the template's placeholder in.
+            {"id": "MIT", "name": "MIT License",
+             "text": mit.format("Copyright (c) <year> <copyright holders>"),
+             "used_by": [used_by("windows-sys", "0.61.2", f"{registry}/windows-sys-0.61.2/Cargo.toml")]},
+        ]}
+        text = third_party_notices(about, Path("C:/repo"))
+        self.assertEqual(text.count("=" * 80 + "\nMIT License\n"), 1)
+        self.assertEqual(text.count("Permission is hereby granted"), 1)
+        self.assertIn("  memchr 2.7.4: Copyright (c) 2018 Andrew Gallant\n", text)
+        self.assertIn("  bitflags 2.9.1: Copyright (c) 2015 The Rust Project Developers\n", text)
+        self.assertIn("  zopfli 0.8.3\n", text)
+        self.assertIn("  windows-sys 0.61.2\n", text)
+        self.assertIn("  epaint_default_fonts 0.37.0\n", text)
+        self.assertIn("\nCopyright Holder(s) and the Author(s) or with their explicit written\n",
+                      text)
+        self.assertNotIn("studio_core", text)
+        # The license text keeps no crate's copyright, only the crates' three lines do, and the
+        # Apache text keeps its placeholder.
+        self.assertEqual(text.count("Copyright (c)"), 3)
+        self.assertIn("Copyright [yyyy] [name of copyright owner]", text)
+        self.assertLess(text.index("MIT License"), text.index("Apache License 2.0"))
+
     def test_workspace_version(self) -> None:
         text = (ROOT / "Cargo.toml").read_text(encoding="utf-8")
         declared = re.search(r'\[workspace\.package\][^[]*?\nversion = "([^"]+)"', text)
@@ -90,8 +148,10 @@ class Pure(unittest.TestCase):
                 "unlimited-tool-works-0.0.1",
                 "unlimited-tool-works-0.0.1/UTW.exe",
                 "unlimited-tool-works-0.0.1/README.txt",
-                "unlimited-tool-works-0.0.1/LICENSE-MIT",
-                "unlimited-tool-works-0.0.1/LICENSE-APACHE",
+                "unlimited-tool-works-0.0.1/licenses",
+                "unlimited-tool-works-0.0.1/licenses/LICENSE-MIT",
+                "unlimited-tool-works-0.0.1/licenses/LICENSE-APACHE",
+                "unlimited-tool-works-0.0.1/licenses/THIRD-PARTY-NOTICES.txt",
                 "unlimited-tool-works-0.0.1/data",
                 "unlimited-tool-works-0.0.1/data/settings.toml",
             },
@@ -203,11 +263,13 @@ class Listing(unittest.TestCase):
             top = stage / f"{PACKAGE}-9.9.9"
             (top / "data").mkdir(parents=True)
             (top / "data/settings.toml").write_bytes(b"x")
+            (top / "licenses").mkdir()
             for bundled in (
                 "Tiny.exe",
                 "README.txt",
-                "LICENSE-MIT",
-                "LICENSE-APACHE",
+                "licenses/LICENSE-MIT",
+                "licenses/LICENSE-APACHE",
+                "licenses/THIRD-PARTY-NOTICES.txt",
             ):
                 (top / bundled).write_bytes(b"x")
             found = pack(seven_z, stage / "tiny.7z", stage, [top.name])
