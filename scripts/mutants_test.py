@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 import tomllib
 import unittest
 from collections import Counter
@@ -26,6 +27,7 @@ sys.path.insert(0, str(SCRIPTS))
 import extra_mutants  # noqa: E402
 import mutants  # noqa: E402
 import mutants_diff  # noqa: E402
+import rm_mutant_copies  # noqa: E402
 
 HEAD_TREE = subprocess.run(
     ["git", "rev-parse", "HEAD^{tree}"], cwd=SCRIPTS, capture_output=True, text=True, check=True
@@ -256,6 +258,7 @@ class SizedConfig(unittest.TestCase):
             ["crates/libs/cpk/src/snapshot_only.rs", "crates/libs/cpk/src/write.rs"],
         )
         self.assertEqual(parsed["timeout_multiplier"], 7.0)
+        self.assertIsInstance(parsed["timeout_multiplier"], float)
         self.assertEqual(parsed["additional_cargo_args"], ["--jobs", "8"])
 
 
@@ -428,6 +431,20 @@ class LocalSource(unittest.TestCase):
         self.assertEqual(second["outputs"], ["elsewhere"], "a caller's --output kept, alone")
         self.assertFalse(first["source"].exists(), "the copy removed once the run ends")
 
+    def test_two_copies_open_at_once_are_two_folders(self):
+        """The Windows recheck opens a copy of the remote half's tree inside the run's own: one
+        name per process would extract both into one folder and delete it under the run."""
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            mock.patch.object(mutants, "LOCAL_TMPDIR", Path(tmp)),
+        ):
+            with mutants.snapshot_source(EMPTY_TREE) as outer:
+                with mutants.snapshot_source(EMPTY_TREE) as inner:
+                    self.assertNotEqual(inner, outer)
+                self.assertFalse(inner.exists())
+                self.assertTrue(outer.exists(), "the inner copy's removal took the run's")
+            self.assertFalse(outer.exists())
+
     def test_a_copy_that_cannot_be_removed_warns_and_the_run_keeps_its_result(self):
         def stuck(path):
             raise PermissionError(13, "in use by another process", str(path))
@@ -569,26 +586,36 @@ class RunQueue(unittest.TestCase):
             "sys.path.insert(0, sys.argv[1])\n"
             "import mutants\n"
             "mutants.LOCK_POLL_SECONDS = 0.05\n"
+            "Path(sys.argv[4]).touch()\n"
             "with mutants.run_lock(Path(sys.argv[2])):\n"
             "    Path(sys.argv[3]).touch()\n"
         )
         with tempfile.TemporaryDirectory() as tmp:
             lock = Path(tmp) / "mutants.lock"
-            entered = Path(tmp) / "entered"
-            argv = [sys.executable, "-c", child, str(SCRIPTS), str(lock), str(entered)]
+            entered, ready = Path(tmp) / "entered", Path(tmp) / "ready"
+            argv = [sys.executable, "-c", child, str(SCRIPTS), str(lock), str(entered), str(ready)]
             with mutants.run_lock(lock):
                 second = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 try:
+                    # The child must reach the lock while it is held: one that starts after the
+                    # release enters freely, and the test would pass with the lock broken.
+                    deadline = time.monotonic() + 30
+                    while not ready.exists() and second.poll() is None:
+                        self.assertLess(time.monotonic(), deadline, "the second run never started")
+                        time.sleep(0.05)
+                    self.assertTrue(ready.exists(), "the second run ended before the lock")
                     with contextlib.suppress(subprocess.TimeoutExpired):
-                        second.wait(timeout=2)
+                        second.wait(timeout=1)
                     self.assertFalse(entered.exists(), "the second run started inside the first")
                 except BaseException:
                     second.kill()
                     raise
-            # Not whether it printed that it waits: a child that starts slower than the hold
-            # finds the lock free, and the order above already shows the lock held it.
             out, _ = second.communicate(timeout=30)
             self.assertTrue(entered.exists(), out.decode(errors="replace"))
+
+    def test_the_lock_is_the_machines_not_one_worktrees(self):
+        self.assertEqual(mutants.RUN_LOCK.name, "mutants.lock")
+        self.assertFalse(mutants.RUN_LOCK.is_relative_to(mutants.ROOT))
 
     def order(self, call) -> list[str]:
         """The events of `call(events)`, with the snapshot, the lock and the snapshot's
@@ -1039,14 +1066,16 @@ class RemoteRefusal(unittest.TestCase):
     """`remote_refusal` through the host's states, for a run that uses the remote and for one
     that does not."""
 
-    def refusal(self, state: str | None, remote: bool, gates: int = 3) -> str | None:
+    def refusal(
+        self, state: str | None, remote: bool, gates: int = 3, used: int = 2**30
+    ) -> str | None:
         def ssh(host, command, **kwargs):
             return subprocess.CompletedProcess([host, command], gates)
 
         with (
             mock.patch.object(mutants, "remote_run_state", lambda host: state),
             mock.patch.object(mutants, "ssh", ssh),
-            mock.patch.object(mutants, "remote_disk_use", lambda host: (2**30, 100 * 2**30)),
+            mock.patch.object(mutants, "remote_disk_use", lambda host: (used, 100 * 2**30)),
             contextlib.redirect_stdout(io.StringIO()),
         ):
             return mutants.remote_refusal("bonfire", remote=remote)
@@ -1066,11 +1095,15 @@ class RemoteRefusal(unittest.TestCase):
                 self.assertIn(words, refusal)
                 self.assertIn("mutants-collect", refusal)
 
-    def test_a_free_host_stops_a_remote_run_only_for_the_gates_or_the_link(self):
+    def test_a_free_host_stops_a_remote_run_only_for_the_gates_the_link_or_its_disk(self):
         self.assertIsNone(self.refusal("none", remote=False, gates=0))
         self.assertIn("gates-remote", self.refusal("none", remote=True, gates=0))
         self.assertEqual(self.refusal("none", remote=True, gates=255), "cannot reach bonfire")
         self.assertIsNone(self.refusal("none", remote=True, gates=3))
+        self.assertIn(
+            "over the budget",
+            self.refusal("none", remote=True, gates=3, used=mutants.REMOTE_DISK_BUDGET + 1),
+        )
 
 
 class ExtraRun(unittest.TestCase):
@@ -1182,6 +1215,23 @@ class ExtraRun(unittest.TestCase):
                 mock.patch.object(extra_mutants, "run_crate", lambda *_: ([], counts, 1.0)),
             ):
                 self.assertEqual(extra_mutants.main(["extra_mutants.py", "cpk"]), code)
+
+
+class LeftCopies(unittest.TestCase):
+    def test_every_copy_a_killed_run_leaves_is_found_and_nothing_else(self):
+        """cargo-mutants names its copy after the `--dir` folder, the run's `source-*` copy
+        of the snapshot: a pattern naming the repository's folder found none of them."""
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            left = ["cargo-mutants-source-47472-TFiBQg.tmp", "source-47472", "extra-mutants-9120"]
+            for name in left:
+                (folder / name).mkdir()
+                (folder / name / "Cargo.toml").write_text("[workspace]\n", encoding="utf-8")
+            (folder / "keep").mkdir()
+            (folder / "keep" / "Cargo.toml").write_text("[workspace]\n", encoding="utf-8")
+            self.assertEqual(
+                sorted(path.name for path in rm_mutant_copies.copies(folder)), sorted(left)
+            )
 
 
 class ExtraExclusions(unittest.TestCase):

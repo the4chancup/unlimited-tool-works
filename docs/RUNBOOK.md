@@ -73,7 +73,7 @@ edits and merges are safe once the run has started, every crate of one `mutants-
 included. Before 2026-11-01 the local half read the live tree, and a merge during a
 `mutants-diff` left team_widgets' local half refusing its diff ("Diff content doesn't match
 source file"). **One run at a time, each queued with its snapshot**: `just mutants`,
-`mutants-diff` and `extra-mutants` snapshot first, then take the machine's lock (`mutants.lock`
+`mutants-diff` and `extra-mutants` snapshot first, then take the user's lock (`mutants.lock`
 beside the cost table, so a worktree's run queues too) for the run's whole length
 (`mutants.run_lock`; `mutants-collect` holds it as well), so a run launched while another is under way waits
 its turn with the tree it was launched on, and edits and merges are safe while it waits. Runs
@@ -201,12 +201,13 @@ next session except through a note that names it. **An archived run keeps its su
 the next run overwrites `mutants.out/`) copies only `*.txt` and `outcomes.json`, never the
 per-mutant `log/` or `remote/` trees: those are what reproduce a survivor, and a survivor is
 reproduced by re-running its mutant, not by reading a week-old log. Whole-folder copies had
-grown `.tmp/` to 17 GB by 3.8. Each local run builds in a
-`%TEMP%\studio-mutants\cargo-mutants-4cc-studio-*.tmp` copy of the tree (one fixed parent,
-`LOCAL_TMPDIR`, so one antivirus exclusion covers every run; until 2026-10-10 directly in
-`%TEMP%`), deleted when the run ends normally; a killed run leaves its copy behind
-(some with a multi-GB `target/`), so after stopping one, delete its copy
-(`scripts/rm_mutant_copies.py`, which refuses anything else). `.cargo/mutants.toml`
+grown `.tmp/` to 17 GB by 3.8. Each local run extracts its snapshot to
+`%TEMP%\studio-mutants\source-*` and builds in `cargo-mutants-source-*.tmp` copies of it (one
+fixed parent, `LOCAL_TMPDIR`, so one antivirus exclusion covers every run; until 2026-10-10
+directly in `%TEMP%`), the extra pass in `extra-mutants-*`, all deleted when the run ends
+normally; a killed run leaves its copies behind (some with a multi-GB `target/`), so after
+stopping one, delete them (`scripts/rm_mutant_copies.py`, which refuses anything else; until
+2026-11-01 it looked for the copies under their old name and found none). `.cargo/mutants.toml`
 sets `gitignore = true` so the copies leave out `.tmp/` and `target/`: before 3.8 each copy
 carried all of `.tmp/`, and two 3.7 runs died of a full disk. The logs alone are large: a
 `pes_savefile` whole-crate run leaves about 20 GiB in `mutants.out/` (5.6b: 8.9 GiB local,
