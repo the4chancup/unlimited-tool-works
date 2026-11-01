@@ -178,6 +178,31 @@ New violation kinds: `MedalSystem { systems: Vec<String> }` (the team; every sys
 the message lists the counts the team may have),
 `ExtraHeight { used: u16, total: u16 }` and `StatTotal { slot, total: u16, limit: u16 }`.
 
+**A team's check says which systems it was read under.** `Rules::check_team` returns the
+team's violations with the medal system its counts matched and the height system it was read
+under, the one step 1 or "A team no quota system takes" chose:
+
+```rust
+/// One team's check: what is off, and the systems the team was read under.
+pub struct TeamCheck {
+    pub violations: Vec<Violation>,
+    /// The medal system the team's medal counts match, by its label; `None` when the
+    /// ruleset has no medal systems or the team matches none (a `MedalSystem` violation).
+    pub medal_system: Option<String>,
+    /// The height system the team was read under; `None` when the ruleset has no height
+    /// systems or no system's `any_player` holds.
+    pub height_system: Option<SystemId>,
+}
+```
+
+The violations alone named a system only when something was off (a `BracketQuota`, a
+`NearestSystem`), so a green team's system could not be told; Multi-team AATF counts the teams
+under each system from these fields (`save_editor.md` "Multi-team AATF counts the teams under
+each system"). The tier helpers that read a player under his team's height system
+(`tier_values`, `card_limits`, `player_tier`, `apply_tier`) read the system this choice makes,
+never step 1's alone: a Manlet team read under Manlet gets its players' +5, and a quick action
+under another system would set targets the check then flags.
+
 **The height findings name their players.** A height row that says only what is off leaves the
 organizer to work out who: DBC7's organizer, checking DBC6's height teams, could not tell which
 players stood in a bracket or where GigaHeight's extra height went. `BracketQuota` gains

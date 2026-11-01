@@ -14902,3 +14902,12 @@ Why: the corner the box leaves is the pitch's one empty place there; `Set PES fo
 button's padding (87 points) did not fit PES 2018-2021's 79-point corner (their box is 160 wide,
 PES 2017's 130), and `Set PES path` at 4 points (80) still touched both sides.
 Plan: `docs/plans/save_editor.md` "Tactics editor" (the Set PES path bullet, SE-GUI-50).
+
+## 2026-11-01 — aatf — a team's check returns the systems it was read under
+Decision: `Rules::check_team` returns a `TeamCheck` (its violations, the medal system matched by
+label, the height system read under) instead of the violations alone; the tier helpers read
+the height system the same choice makes.
+Why: Multi-team AATF's counts (P48) need every team's systems, and the violations name a
+system only when something is off; a second call to find them would run the candidate checks
+twice. The helpers must agree with the check, or a quick action sets targets the check flags.
+Plan: `docs/plans/aatf_rules.md` "A team's check says which systems it was read under".
