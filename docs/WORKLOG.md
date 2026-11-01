@@ -7109,8 +7109,10 @@ points there.
     off `missed_all.txt`). Reworked in `f3018e72`, `6fe3a037`, `8057d0bf`. Round 2 (the
     changed functions, four parts) accepted 5 of parts a, c, d (S-scripts r2; a test that
     set the live `mutants.diff/` aside, fixed `e522ab26`; `rm_mutant_copies.py` finding no
-    copy since the snapshot; fixed `22e28921`); part b's report pending. Five or more: round
-    3 over the round 2 fixes. Then sort `scripts/`' root by job (the maintainer's layout,
+    copy since the snapshot; fixed `22e28921`) and 2 of part b (`perturb_check` reading a
+    missing test as caught, `just extra-mutants` not refusing an uncollected half), plus a
+    failed link filed unviable (a Windows SDK update mid-run; all fixed `c8fb4fc7`). Round 3
+    over the round 2 fixes running (`.tmp/rv_scripts/r3/`). Then sort `scripts/`' root by job (the maintainer's layout,
     2026-11-01: mutation, gates, review, release, drafts, fonts; five tools stay at the
     root), with `.tmp/rv_scripts/sort_scripts.py`
   - [ ] `run_tests.py`, `test_runner.py`, `remote_gates.py`
