@@ -39,7 +39,7 @@ pub use modal::{modal, modal_buttons, modal_fit_contents, modal_frame, modal_sen
 pub(crate) use settings_row::{PathCommit, path_row, path_row_commit, row_label};
 pub use text_box::{text_box, text_box_border};
 pub use toolbar::{toolbar, toolbar_separator};
-pub use wheel::{step_choice, step_number, wheel_steps};
+pub use wheel::{cycle_choice, step_choice, step_number, wheel_steps};
 
 /// The row spacing of a form that draws a drafts' `table.grid` (label, control,
 /// label, control): the drafts pad each cell 2 points above and below, which puts

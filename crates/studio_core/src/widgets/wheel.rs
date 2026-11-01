@@ -1,7 +1,8 @@
 //! The mouse wheel over a closed combo box or a drag value steps its value,
 //! as the system's own controls do: `wheel_steps` reads the wheel for one
-//! control, and `step_choice` and `step_number` turn its steps into the
-//! combo's next item or the number's next value.
+//! control, and `step_choice`, `cycle_choice` and `step_number` turn its
+//! steps into the combo's next item, a toggle's next choice or the number's
+//! next value.
 
 use std::ops::RangeInclusive;
 
@@ -30,7 +31,7 @@ const REST: f64 = 0.5;
 /// the keyboard learns of the loss only on the next frame, where a step
 /// would join its commit.
 /// The caller applies the steps through the control's own change path
-/// (`step_choice`, `step_number`).
+/// (`step_choice`, `cycle_choice`, `step_number`).
 pub fn wheel_steps(ui: &egui::Ui, response: &egui::Response) -> i32 {
     let ctx = ui.ctx();
     // The context's data is shared by every window it draws, and each
@@ -188,6 +189,31 @@ pub fn step_choice<T: PartialEq>(
         at.saturating_sub(distance)
     } else {
         at.saturating_add(distance).min(values.len() - 1)
+    };
+    (target != at).then(|| values.swap_remove(target))
+}
+
+/// The value `steps` places from `current` among `values`, a sliding
+/// toggle's choices in the order it draws them: a positive step takes
+/// an item above, a negative one an item below, wrapping round to the
+/// other end past the first and the last. `None` when that is `current`
+/// itself, or `current` is not among them. A toggle wraps where a combo
+/// box clamps (`step_choice`): clamped, a toggle at an end answers one
+/// direction only, so a two-choice one ignores every notch the other
+/// way, where a combo's long list needs its ends to stop a fast turn.
+pub fn cycle_choice<T: PartialEq>(
+    values: impl IntoIterator<Item = T>,
+    current: &T,
+    steps: i32,
+) -> Option<T> {
+    let mut values: Vec<T> = values.into_iter().collect();
+    let at = values.iter().position(|value| value == current)?;
+    let distance = usize::try_from(steps.unsigned_abs()).expect("the targets have a 32-bit usize")
+        % values.len();
+    let target = if steps > 0 {
+        (at + values.len() - distance) % values.len()
+    } else {
+        (at + distance) % values.len()
     };
     (target != at).then(|| values.swap_remove(target))
 }
@@ -583,6 +609,16 @@ mod tests {
         assert_eq!(step_choice(["a", "b", "c"], &"a", -5), Some("c"));
         assert_eq!(step_choice(["a", "b", "c"], &"b", 0), None);
         assert_eq!(step_choice(["a", "b", "c"], &"z", 1), None);
+    }
+
+    #[test]
+    fn a_toggle_choice_cycles_round_the_ends() {
+        assert_eq!(cycle_choice(["a", "b", "c"], &"a", 1), Some("c"));
+        assert_eq!(cycle_choice(["a", "b", "c"], &"c", -1), Some("a"));
+        assert_eq!(cycle_choice(["a", "b", "c"], &"b", 1), Some("a"));
+        assert_eq!(cycle_choice(["a", "b", "c"], &"b", 0), None);
+        assert_eq!(cycle_choice(["a", "b", "c"], &"z", 1), None);
+        assert_eq!(cycle_choice([false, true], &true, -1), Some(false));
     }
 
     #[test]
