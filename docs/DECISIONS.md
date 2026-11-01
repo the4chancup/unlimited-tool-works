@@ -15017,3 +15017,10 @@ Why: the patch is the compiler's output, written with every key; a missing key i
 patch, or one from before the whole look (motions alone), and applying it with defaults would
 reset the player's other keys without a word.
 Plan: `plans/pes_savefile/operations.md` "Aesthetics patch (new)".
+
+## 2026-11-01 — development plan — DBC7's aesthetics are compiled with Red; UTW serves it with the Save editor alone
+Decision (maintainer): the DBC7 event's aesthetics are compiled with Red; of UTW, only the Save
+editor is used for it.
+Why: 0.0.1 is the Save editor's preview; the Team compiler's pre-Fox patch (8.36c) is not
+part of it, so DBC7's save receives no UTW aesthetics patch.
+Plan: `plans/core/development_plan.md` "Divegrass Before Christmas (DBC)".
