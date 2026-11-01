@@ -201,7 +201,10 @@ sections, briefs, converge audits, decision entries) gets a critique from a revi
 checkpoints only: (a) after writing an Acceptance section; (b) after a worklog step that added a
 new `pub` interface or touched more than one crate, once its code and tests are written; (c) as
 the second half of every converge audit, after the lead's own, the one check of code against the
-plan by a model that wrote neither; (d) reactively, when two attempts on one premise have failed.
+plan by a model that wrote neither; (d) reactively, when two attempts on one premise have failed;
+(e) after a change to a **vital script**, one whose defect silently loses or misreports a
+measurement (the list is in `docs/RUNBOOK.md` "Review rounds"): SWE-2 rounds at least, over
+the whole script the first time it is reviewed, its changed functions after.
 Renames, doc edits and one-file fixes ride along with the next (b) review or with converge; at
 most one scheduled critique per step. Hand the reviewer pointers (plan sections, paths, a diff
 file, acceptance IDs), never a summary of your own. Its brief asks for every concern, ranked by

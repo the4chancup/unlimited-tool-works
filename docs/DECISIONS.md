@@ -14835,3 +14835,14 @@ which snapshots only when the one before ends, so the lead still had to hold edi
 chained `mutants-diff` also deleted the previous run's per-crate results on its way in.
 Plan: `docs/RUNBOOK.md` (mutation runs, the paragraph on snapshots) and `AGENTS.md`'s
 operations rule.
+
+## 2026-11-01 — process — vital scripts get SWE-2 review rounds
+Decision (maintainer): a script whose defect silently loses or misreports a measurement (the
+mutation runs, the test runner, the remote gates, the census and library parity, the release
+build; the list is in `docs/RUNBOOK.md` "Review rounds", checkpoint (e)) gets SWE-2 review
+rounds after a change, the whole script at its first review, Astra too when a change reshapes
+how a run measures. Each not yet reviewed has a worklog item.
+Why: the gates and the mutation runs measure everything else, and nothing measured them:
+`mutants_diff.py` deleted the previous run's results whenever two runs followed each other,
+found only by a question about a chain (2026-11-01).
+Plan: `AGENTS.md` "Second opinion" and `docs/RUNBOOK.md` "Review rounds".

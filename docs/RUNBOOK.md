@@ -324,7 +324,17 @@ an existing interface are covered by the lead's diff review and by converge; (c)
 of every converge audit, after the lead's own, the primary use: the one check of code against
 *plan* (not against the brief, which carries the lead's assumptions) by a model that wrote
 neither; (d) reactively, when
-two attempts on the same premise have failed, the sidekick's included. **Batch, don't stream:**
+two attempts on the same premise have failed, the sidekick's included; (e) after a change to a
+**vital script**: one whose defect silently loses or misreports a measurement, which no gate
+catches because the gates run through it. The list: the mutation runs' `mutants.py`,
+`mutants_diff.py` and `extra_mutants.py`; the test runner `run_tests.py` and `test_runner.py`;
+`remote_gates.py`; `scripts/census/` and `scripts/library_parity/`; the release build's
+`release.py`, `build_remapped.py` and `make_candidate.py`. Their review is SWE-2 rounds at
+least (the same loop, until a round accepts fewer than five), Astra when a change reshapes how
+a run measures; the first review of each covers the whole script, later ones the changed
+functions and their callers. Until 2026-11-01 no script had one, and `mutants_diff.py` had
+been deleting the previous run's results whenever two runs followed each other.
+**Batch, don't stream:**
 renames, doc edits, one-file fixes with no new behavior are never reviewed on their own; their
 diffs ride along with the next (b) review, or with converge. Never more than one *scheduled*
 critique per step; the reactive one (d) is an escalation and is exempt from the ceiling. Hand the

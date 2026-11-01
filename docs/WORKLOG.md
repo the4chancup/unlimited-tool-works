@@ -7090,6 +7090,13 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-01 — the vital scripts' first reviews (`RUNBOOK.md` "Review rounds", checkpoint
+  (e); DECISIONS 2026-11-01): each reviewed whole by SWE-2 rounds once, in this order:
+  - [ ] the mutation runs' `mutants.py`, `mutants_diff.py`, `extra_mutants.py` (and
+    `mutants_test.py`): round 1 running, `.tmp/rv_scripts/`
+  - [ ] `run_tests.py`, `test_runner.py`, `remote_gates.py`
+  - [ ] `release.py`, `build_remapped.py`, `make_candidate.py`
+  - [ ] `scripts/census/`, `scripts/library_parity/`
 - open 2026-11-01, 0.0.2 — two more resamples run on straight alpha (found by the cv18-cv26
   rework, `9f27f121`): `export_upgrader` `carried.rs` `at_128` and `team_compiler`
   `kit_layout.rs` call `dds_convert::resize`, which fringes an edge against transparency the
