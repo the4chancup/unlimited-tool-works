@@ -934,6 +934,52 @@ fn dbc7_with_height_system(line: &str) -> Rules {
     Rules::from_data_block(&DBC7.replacen(original, line, 1)).expect("the edited DBC7 loads")
 }
 
+/// DBC7 reading every team under its height system `id` alone: each quota
+/// system before it gets an `any_player` no team meets (a player of 250 cm
+/// or more), and `id`, if a quota system, becomes a plain one every team
+/// meets, its quotas kept. The check then reports that system's errors as
+/// the choice counts them for a candidate; `giga`, the last, needs only the
+/// three before it barred.
+fn dbc7_under(id: &str) -> Rules {
+    let mut block = DBC7.to_string();
+    for (system, label) in [
+        ("height", "Height"),
+        ("manlet", "Manlet"),
+        ("universal", "Universal"),
+    ] {
+        let line = format!("#{{ id: \"{system}\", label: \"{label}\", by_quotas: true,");
+        assert!(block.contains(&line), "premise: DBC7's {label} line");
+        if system == id {
+            let plain = format!(
+                "#{{ id: \"{system}\", label: \"{label}\", any_player: #{{ height_min: 100 }},"
+            );
+            block = block.replacen(&line, &plain, 1);
+            break;
+        }
+        block = block.replacen(
+            &line,
+            &format!("{line} any_player: #{{ height_min: 250 }},"),
+            1,
+        );
+    }
+    Rules::from_data_block(&block).expect("the edited DBC7 loads")
+}
+
+/// The errors of `team` under DBC7's height system `id` alone (`dbc7_under`).
+fn errors_under(id: &str, team: &TeamView) -> Vec<Violation> {
+    let check = dbc7_under(id).check_team(team).expect("the check runs");
+    assert_eq!(
+        check.height_system.as_deref(),
+        Some(id),
+        "premise: read under {id}"
+    );
+    check
+        .violations
+        .into_iter()
+        .filter(|v| v.severity == Severity::Error)
+        .collect()
+}
+
 /// A team read under the first system gets no `NearestSystem`, whatever
 /// its height checks find: with Height a system for any team holding a
 /// 195 (no quota check), /tsab/ is read under it, its quotas off, and the
@@ -1259,8 +1305,11 @@ fn a_team_15_cm_from_a_baseline_is_a_candidate_and_16_is_not() {
 /// Height table with a 195 at 179 (slot 5) totals 4214 cm, 16 from
 /// Height's 4230 and 19 above GigaHeight's span: read under GigaHeight,
 /// though Height would report fewer errors (Giant one short and the 179 in
-/// no bracket, 2, against GigaHeight's Mid and Manlet off and its
-/// overdrawn pool, 3).
+/// no bracket, 2, against GigaHeight's 3). Tallest first under GigaHeight,
+/// the five 195s and two 185s fill Tall, the four other 185s and the five
+/// 180s leave Mid 9 of 10, and the 179, below Mid's 180, takes a Manlet
+/// slot, so the sixth 175 is Manlet's seventh: Mid and Manlet off and the
+/// pool overdrawn (74 cm).
 #[test]
 fn a_team_no_system_is_within_15_cm_of_is_read_under_the_last() {
     let rules = rules();
@@ -1329,19 +1378,7 @@ fn a_green_giga_team_14_cm_from_manlet_stays_giga() {
         assert_eq!(p.height, 175);
         p.height = 176;
     });
-    // The keepers at 189 count as 185, the special's allowance of 4.
-    let total: u32 = team
-        .players
-        .iter()
-        .map(|p| {
-            let allowance = if p.height == 189 && p.position == Some(position("GK")) {
-                4
-            } else {
-                0
-            };
-            u32::from(p.height) - allowance
-        })
-        .sum();
+    let total = total_height(&team);
     assert_eq!(total, 4146);
     assert_eq!(4160 - total, 14, "Manlet is within the 15 cm reach");
     assert_eq!(
@@ -1352,4 +1389,72 @@ fn a_green_giga_team_14_cm_from_manlet_stays_giga() {
             height_system: Some("giga".to_string()),
         }
     );
+}
+
+/// `team`'s total height: each player's height, a registered goalkeeper at
+/// 189 counted as 185 (DBC7's allowance of 4).
+fn total_height(team: &TeamView) -> u32 {
+    team.players
+        .iter()
+        .map(|p| {
+            let allowance = if p.height == 189 && p.position == Some(position("GK")) {
+                4
+            } else {
+                0
+            };
+            u32::from(p.height) - allowance
+        })
+        .sum()
+}
+
+/// A tie on errors and on distance goes to the earlier system in the file.
+/// The Manlet table with the 185 of slot 14 at 190 and the 180 of slot 1 at
+/// 175 still totals 4160 cm, Manlet's baseline and inside GigaHeight's span:
+/// both 0 cm away (Height 70, Universal 95, no candidates). The 175
+/// regulars of slots 3 and 4 carry Manlet's 82. Under Manlet: the 190 in no
+/// bracket, Manlet 7 of 6, Mid 6 of 7 and Tall 9 of 10, 4 errors; under
+/// GigaHeight: Manlet 7 of 6, Mid 9 of 10 and the two 82s' Stat totals, 4.
+/// Read under Manlet, the earlier.
+#[test]
+fn a_full_tie_goes_to_the_earlier_system() {
+    let rules = rules();
+    let mut team = legal_team(&MANLET, GGSS);
+    assert_eq!(player(&team, 14).height, 185);
+    assert_eq!(player(&team, 1).height, 180);
+    player_mut(&mut team, 14).height = 190;
+    player_mut(&mut team, 1).height = 175;
+    for slot in [3, 4] {
+        assert_eq!(player(&team, slot).height, 175);
+        set_tier(player_mut(&mut team, slot), 82, 8, 3);
+    }
+    assert_eq!(total_height(&team), 4160);
+    assert_eq!(errors_under("manlet", &team).len(), 4);
+    assert_eq!(errors_under("giga", &team).len(), 4);
+    let check = rules.check_team(&team).expect("the check runs");
+    assert_eq!(check.height_system.as_deref(), Some("manlet"));
+}
+
+/// A tie on errors goes to the nearer system when the nearer comes first.
+/// The Height table with the 175 of slot 3 and the 185 of slot 16 at 180
+/// and the 185 of slot 9 at 195 totals 4240 cm: 10 from Height's 4230 and
+/// 15 from Universal's 4255, both within reach (Manlet 80, GigaHeight 45,
+/// no candidates). Every bracket is off under both: Height's Manlet 5 of 6,
+/// Mid 7 of 5, Tall 4 of 6 and Giant 7 of 6, and the same counts against
+/// Universal's 0, 0, 23 and 0, 4 errors each. Read under Height.
+#[test]
+fn a_tie_on_errors_goes_to_the_nearer_even_when_it_comes_first() {
+    let rules = rules();
+    let mut team = legal_team(&HEIGHT, GGSS);
+    for (slot, from, to) in [(3, 175, 180), (16, 185, 180), (9, 185, 195)] {
+        assert_eq!(player(&team, slot).height, from);
+        player_mut(&mut team, slot).height = to;
+    }
+    let total = total_height(&team);
+    assert_eq!(total, 4240);
+    assert_eq!(total - 4230, 10, "Height");
+    assert_eq!(4255 - total, 15, "Universal");
+    assert_eq!(errors_under("height", &team).len(), 4);
+    assert_eq!(errors_under("universal", &team).len(), 4);
+    let check = rules.check_team(&team).expect("the check runs");
+    assert_eq!(check.height_system.as_deref(), Some("height"));
 }
