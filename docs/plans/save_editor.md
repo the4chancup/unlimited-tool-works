@@ -1975,6 +1975,15 @@ SE-GUI-51  GIVEN DBC6's save (`EDIT00000000_DBC6`) open under DBC7, Multi-team A
                 and the copied text's first line is the same; WHEN the range is narrowed to
                 857 THEN it reads `Medal systems: GGSS 1 · Height systems: Manlet 1`; WHEN the
                 ruleset is the official one THEN the line holds the height systems alone
+SE-GUI-52  GIVEN the PES 17 save open on ALL, team 701's (/3/) last player row selected and no
+                control holding the keyboard
+           WHEN Down is pressed
+           THEN team 702's (/a/) row is selected and the detail shows its team view; WHEN Up
+                is pressed THEN 701's last player is selected again; GIVEN 701's team row, the
+                list's first, selected WHEN Up is pressed THEN nothing moves; GIVEN a player's
+                Height field holding the keyboard WHEN Down is pressed THEN the selection
+                stays; WHEN Down is pressed on a row below the list's view THEN the list
+                scrolls so the selected row shows
 SE-GUI-16  GIVEN the save open on a team
            WHEN Team TOML export, then import on another team with only the gameplay section
                 chosen, runs from the interchange dialog

@@ -2934,6 +2934,12 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     pause, or Undo itself. Plan first (`plans/save_editor.md`, the undo bullet: how long the
     pause is, how it meets `edit_settled`'s seal and 8.40) → verify: ten wheel notches on one
     stat, one Undo puts back 60; a notch on another stat between them makes two entries
+  - [ ] 8.43 after 0.0.1 (the maintainer, 2026-11-01): PgUp/PgDn step one player, where a member
+    expects a page key to jump several rows. Kept hidden for 0.0.1 (no help page names them;
+    the plan's feature inventory keeps them from 4ccEditor as "previous/next player from any
+    field"). Either a page of rows per press (the list's visible rows, as a list box does)
+    or removed now that Up and Down walk the list (f1e2); the maintainer picks, then plan,
+    DECISIONS and the inventory row follow → verify: per the pick
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
