@@ -522,7 +522,11 @@ with the teams-list merge; this phase completes them and writes the maintenance-
 
 - Release bundling: the Linux bundle joins the `just release <version>` recipe (see
   `distribution.md` "Distribution and updates", `distribution.md` "Changelog and version
-  display"); Linux tested on a real machine
+  display"); Linux tested on a real machine. Brought forward to right after 0.0.1's cut, with a
+  CI workflow that builds the bundles on a version tag into a draft GitHub Release, the Windows
+  asset checked against the locally checked exe before publishing (DECISIONS 2026-11-01 "CI
+  release builds right after 0.0.1's cut, Windows first"); its design is written into
+  `distribution.md` before it is built
 - Self-updater, the rest of it: the *Update now* option, download/verify/swap, `UTW
   update`, rollback button (see `distribution.md` "Distribution and updates")
 - Desktop GPU BC7 on Phase 4's texture step (`libs/README.md` "First-release desktop GPU BC7"):

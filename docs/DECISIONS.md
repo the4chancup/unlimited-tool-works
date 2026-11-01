@@ -15042,3 +15042,13 @@ Why: the maintainer found the Whack Patch's Edit mode puts any instruction on an
 instruction in all four included; a split list would refuse a member what their cup's game
 allows. Tight Marking stays out, as Edit mode never offers it.
 Plan: `plans/save_editor.md` "An advanced instruction's list"; WORKLOG 0.0.1f1d2.
+
+## 2026-11-01 — development plan — CI release builds right after 0.0.1's cut, Windows first
+Decision (maintainer): 0.0.1 is cut locally as planned (`just release 0.0.1`, Windows only).
+Right after the cut, a CI workflow on a version tag builds the release bundles and attaches them
+to a draft GitHub Release: Windows first, its asset checked against the locally checked exe
+before the draft is published; the Linux bundle joins once it has run on a real machine.
+Why: moving the release build into CI before the cut would delay DBC's 0.0.1, and a CI-built
+exe is a binary nobody has checked; after the cut it serves the next releases, and it moves the
+Linux bundle forward from Phase 16.
+Plan: `plans/core/development_plan.md` "Phase 16: Polish and distribution"; WORKLOG 0.0.1f4.
