@@ -2671,7 +2671,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     code, with 8.34, its scenarios written with it
   - [ ] 8.34 after 8.33 (the maintainer, 2026-10-27): the same for a range of teams, one
     picture per team, in one go. Drafted and approved with 8.33 (above); left: the code
-  - [ ] 8.35 before 0.0.1 (P45, accepted 2026-10-30; DECISIONS "A ruleset carries its
+  - [x] 8.35 before 0.0.1 (P45, accepted 2026-10-30; DECISIONS "A ruleset carries its
     event's logo and page"; drafted, the drafts' `eventLogo` and `eventLogoField`): a
     ruleset's event logo and page
     - [x] a `aatf`: the `page` and `logo` keys, their load checks, the writer's order (logo
@@ -2680,8 +2680,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       2026-10-30 with c (Opus sidekick, merged `b943c67c`): `Ruleset::{page, logo}`,
       `LoadRule::{PageNotWebAddress, LogoNotBase64, LogoNotPng, LogoTooLarge}`, `base64` in
       `aatf`; RE-FILE-03's fixture drops a comma elsewhere on its line 12 (the page line
-      moved the old one). Open: the SWE-2 round (an Opus slice) and the (b) Astra review
-      (a new `pub` interface over two crates), with b
+      moved the old one). Reviewed with b and c: SWE-2 S1p45, Astra A1p45libs and
+      A1p45editors, every loop ended (`.tmp/phase_08/8_29d/rulings_p45.md`)
     - [x] b the Save editor's top-right logo and the Ruleset editor's General fields, the
       picture decoded and sized once in `team_widgets::event_logo` (DECISIONS "The event
       logo is decoded and sized in `team_widgets`"; brief `.tmp/phase_08/8_29d/brief_p45b.md`) →
@@ -3155,8 +3155,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           `aatf_violation` text says "what is wrong". Astra A1d over d1a + d3a: 1 accepted
           (`.tmp/phase_08/8_29d/rulings_d3a.md`), merged `3c08d261`: a held AATF result is drawn
           (dock, Multi-team list and copy, row marks, field crosses, pitch marks) only under
-          the ruleset it was checked with (`aatf_check::held_result`). Open: a SWE-2 round
-          over that fix
+          the ruleset it was checked with (`aatf_check::held_result`); SWE-2 S1a1d over
+          that fix: 2 accepted, ended (`.tmp/phase_08/8_29d/rulings_d3a.md`)
         - [x] d1b the rest of the inventory, in two slices:
           - [x] d1b1 the fields no view draws in words (DECISIONS "A field no view draws is
             named in words; `diff --json` keeps the schema's name"; drafted, the draft's
@@ -3216,8 +3216,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           host; `SMALL_STATS` labels title case; files `labels.rs`, `violations.rs`, the save
           editor's `cli.rs`, `messages.rs`, `abilities.rs`, `terms.rs`, `live_marks.rs`,
           `multi_aatf.rs`, `aatf_check.rs`, `tactics.rs` and their tests. SWE-2 S1d3a: 2
-          accepted, the loop ended (`.tmp/phase_08/8_29d/rulings_d3a.md`). Open: the Astra round over
-          d1a + d3a
+          accepted, the loop ended (`.tmp/phase_08/8_29d/rulings_d3a.md`); Astra A1d over
+          d1a + d3a: 1 accepted, ended
         - [ ] d3b after 0.0.1: every other version's names, gathered from each game (the
           player.rs doc comments name no versions; Marco's RE reports for PES 2021, the
           games on G: for the rest) → verify: a test per version against the gathered names
@@ -6201,7 +6201,7 @@ briefs, review loops, gates and mutation runs as for any step.
     SE-GUI-46): with cv19 (Opus sidekick, `.tmp/release_0_0_1/cv18/brief_cv18.md`), `be2a73b9`, merged
     `8ec3a26d`; `session/selection.rs` `list`, its test pinning the squad (the old one pinned a
     matching team's row alone). SE-GUI-46's GIVEN reworded: 77206 "PRESS /f/" (team 772) holds
-    718's name. Open: SWE-2 and Astra rounds with cv20, cv21, cv24
+    718's name. Reviewed with cv18-cv26 (`.tmp/duck_rulings.md` S-cv18-26: SWE-2 4, Astra 1)
   - [x] cv19 a double click on a team row in the player list sets the team combo from ALL to
     that team and clears the filter text (same origin; the maintainer, 2026-10-31); a team
     row's tooltip reads "Double-click to filter to this team", and the help page names the
@@ -6222,8 +6222,8 @@ briefs, review loops, gates and mutation runs as for any step.
     (`.tmp/release_0_0_1/cv21/brief_cv21.md`), `ee99e55f`, merged `04dd3271`; `team_widgets` `violations.rs`
     (`TeamViolations::starting_eleven`, `part`, `draw_groups`, `suggestion_groups`),
     `save_editor` `aatf_check.rs`. SE-GUI-47 reworded: 718 has no team rows under DBC7, the
-    team-wide placement pinned by `the_starters_groups_stand_left_of_the_benchs`. Open: SWE-2
-    and Astra rounds with cv18-cv25
+    team-wide placement pinned by `the_starters_groups_stand_left_of_the_benchs`. Reviewed
+    with cv18-cv26 (`.tmp/duck_rulings.md` S-cv18-26)
   - [x] cv22 bug (the maintainer, 2026-10-31, PES 17 save, teams /3/ and /a/): in Tactics, an
     advanced instruction set from Unassigned to another (Hug the Touchline) and back keeps the
     unsaved-changes mark, reading "no target -> no target"; /3/'s Defence 1 does not, /a/'s
@@ -6402,7 +6402,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - The whole-crate runs of the 0.0.1 crates: after the cut. `save_editor`'s was stopped
       2026-10-31 (extra kinds done, 40 survivors triaged in `.tmp/release_0_0_1/0_0_1cv/triage_se_extra.md`
       with the lead's rulings; main run 119 of 1052 local mutants); rerun from scratch then
-  - [ ] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30): off
+  - [x] cv8 the Ruleset editor in 0.0.1 as "Ruleset editor (WIP)" (DECISIONS 2026-10-30): off
     `CLI_ONLY`, the label in the sidebar and the title; the unbuilt sections' line points at
     Summary and the preview; RE-GUI-17's round trip confirmed over every field the unbuilt
     sections hold; the stat grid's clip with the preview on at 1280 (8.26's Ruleset half);
@@ -6422,16 +6422,15 @@ briefs, review loops, gates and mutation runs as for any step.
       embedded DBC7, `aatf_ruleset = "dbc7"`, so it has no rules file to regenerate); the
       settings menu's section only for a tool with a form (`has_settings_view`, DECISIONS
       2026-10-30), since the Ruleset editor's table holds only its own state
-    - [ ] cv8's converge: SWE-2 round 1 over cv8 + cv8b in four parts, 1 accepted (the squad's
+    - [x] cv8's converge: SWE-2 round 1 over cv8 + cv8b in four parts, 1 accepted (the squad's
       three load-rule texts pinned, `58f33945`; `.tmp/release_0_0_1/0_0_1cv/rulings_cv8.md`), the loop
       ends; Astra A7: 8 of 8 accepted (`rulings_cv8.md`), so cv8c's rework, a SWE-2 loop
       ended at round A7r1 (3 accepted, fixed by the lead: the title's • counts a typed id, a
       stat total without a band names its stats; `cf2ab895`); Astra A7b 2 accepted (a click
       on an earlier id field lost the typed id, "ability stats"; `0aec8f91`), its loop ends;
       SWE-2 A7b1 0 accepted (`4863558b`), the review loops end (gates-changed f98c0f96
-      green). Open: `just mutants ruleset_editor` (queued detached behind the c2079631
-      collection, `.tmp/release_0_0_1/0_0_1cv/mutants_ruleset_editor.log`); the built window with two tools
-      checked (cv5)
+      green). `just mutants ruleset_editor` ran (`.tmp/release_0_0_1/0_0_1cv/mutants_ruleset_editor.log`),
+      its survivors tested in cv8d; the built window with two tools checked in cv5
     - [x] cv8c merged `8e533110` (gates-changed 80cb2368 green after the two citations moved
       under their doc comments) A7's rework (brief `.tmp/release_0_0_1/0_0_1cv/brief_cv8c.md`; draft, plan and DECISIONS
       2026-10-30 "the summary states the logic's rules" by the lead, the summary goldens
