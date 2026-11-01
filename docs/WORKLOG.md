@@ -2942,16 +2942,20 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     DECISIONS and the inventory row follow → verify: per the pick
   - [ ] 8.44 after 0.0.1 (the maintainer, 2026-11-01): the wheel steps the Tactics view's preset
     selector (1, 2, 3) and formation selector (Kick-off, In-possession, Out-of-possession), as
-    it steps the style toggles (cv38: they wrap round at their ends; whether these wrap too
-    is the plan's to say). Plan first (`plans/save_editor.md` "Tactics editor"), drafted, then
-    built → verify: headless, a notch over each selector moves it one step each way
+    it steps the style toggles, wrapping round at their ends as those do (cv38; the
+    maintainer, 2026-11-01: "They should"; DECISIONS "The wheel steps the preset and formation
+    selectors, wrapping round"). Plan first (`plans/save_editor.md` "Tactics editor"),
+    drafted, then built → verify: headless, a notch over each selector moves it one step each
+    way, and past the last entry to the first
   - [ ] 8.45 after 0.0.1 (the maintainer, 2026-11-01): Ctrl+C on the player list copies the
     selected player's stats, Ctrl+V pastes them onto the selected player, one undoable edit.
-    Plan first (`plans/save_editor.md` "Editing UI"): which fields go (the Copy stats
-    dialog's set is the precedent: `view/menus.rs` `CopySwap`, the draft's `dlgCopySwap`), across teams and
-    versions, while a field holds the keyboard (a text field keeps its own copy and paste),
-    and on a team row (nothing) → verify: headless, Ctrl+C on one player, Ctrl+V on another
-    writes what Copy stats writes; Undo restores him
+    It replicates the Copy stats dialog (the maintainer, 2026-11-01; `view/menus.rs`
+    `CopySwap`, the draft's `dlgCopySwap`; DECISIONS "Ctrl+C and Ctrl+V on the player list do
+    what Copy stats does"): the same fields and the same rules. Plan first
+    (`plans/save_editor.md` "Editing UI"): across teams and versions as the dialog allows,
+    while a field holds the keyboard (a text field keeps its own copy and paste), and on a
+    team row (nothing) → verify: headless, Ctrl+C on one player, Ctrl+V on another writes what
+    Copy stats writes; Undo restores him
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning

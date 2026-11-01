@@ -15061,3 +15061,18 @@ Why: the maintainer found the list could only be walked with the mouse; team row
 the list a member sees, so the walk does not skip them, and a focused control keeps the keys it
 already uses (a number's step, a text cursor).
 Plan: `plans/save_editor.md` "Editing UI", the player list's paragraph; WORKLOG 0.0.1f1e2.
+
+## 2026-11-01 — save_editor — The wheel steps the preset and formation selectors, wrapping round
+Decision (maintainer): after 0.0.1, the wheel over the Tactics view's preset selector and its
+formation selector steps them one entry per notch, wrapping round at their ends as the style
+toggles do.
+Why: the maintainer's request; the wrap matches the toggles beside them (cv38), so every
+stepped control of the view behaves alike.
+Plan: `plans/save_editor.md` "Tactics editor" (written when the step starts); WORKLOG 8.44.
+
+## 2026-11-01 — save_editor — Ctrl+C and Ctrl+V on the player list do what Copy stats does
+Decision (maintainer): after 0.0.1, Ctrl+C on the player list copies the selected player's stats
+and Ctrl+V pastes them onto the selected player, replicating the Copy stats dialog: its fields
+and its rules, one undoable edit.
+Why: the maintainer's request; one rule for one operation, whichever way it is reached.
+Plan: `plans/save_editor.md` "Editing UI" (written when the step starts); WORKLOG 8.45.
