@@ -44,6 +44,10 @@ ISOLATION = [
     mock.patch.object(mutants_diff, "RESULTS", Path(SCRATCH.name) / "mutants.diff"),
     mock.patch.object(extra_mutants, "OUT_DIR", Path(SCRATCH.name) / "extra_mutants.out"),
     mock.patch.object(mutants, "COST_CACHE", Path(SCRATCH.name) / "mutants-cost.json"),
+    # A run's refusals ask the real host and read this tree's pending record otherwise; a
+    # test that needs a host or a record patches its own.
+    mock.patch.object(mutants, "remote_host", lambda: None),
+    mock.patch.object(mutants, "remote_pending", lambda: Path(SCRATCH.name) / "remote-pending"),
 ]
 
 
@@ -61,8 +65,12 @@ def tearDownModule():
 class Isolation(unittest.TestCase):
     def test_no_test_reaches_the_real_results_or_cost_table(self):
         scratch = Path(tempfile.gettempdir())
-        for path in (mutants_diff.RESULTS, extra_mutants.OUT_DIR, mutants.COST_CACHE):
+        for path in (
+            mutants_diff.RESULTS, extra_mutants.OUT_DIR, mutants.COST_CACHE,
+            mutants.remote_pending(),
+        ):
             self.assertTrue(path.is_relative_to(scratch), path)
+        self.assertIsNone(mutants.remote_host())
 
 
 def mutant(name: str) -> dict:
@@ -115,11 +123,14 @@ class KilledBuilds(unittest.TestCase):
             "log/llvm": "LLVM ERROR: out of memory",
             "log/windows": "memory allocation of 1048576 bytes failed",
             "log/console": "process didn't exit successfully (exit code: 0xc0000142, STATUS_DLL_INIT_FAILED)",
+            # A Windows SDK update had removed the system libraries mid-run (2026-11-01).
+            "log/link": "error: linking with `rust-lld` failed: exit code: 1\n  = note: rust-lld: "
+                        "error: could not open 'kernel32.lib': no such file or directory",
             "log/mutant": "error[E0308]: mismatched types",
         }
         outcomes = [
             {"scenario": mutant(name), "summary": "Unviable", "log_path": f"log/{name}"}
-            for name in ("oom", "linker", "llvm", "windows", "console", "mutant")
+            for name in ("oom", "linker", "llvm", "windows", "console", "link", "mutant")
         ]
         outcomes.append({"scenario": mutant("signal"), "summary": "Failure"})
         outcomes.append({"scenario": mutant("caught"), "summary": "CaughtMutant"})
@@ -128,7 +139,7 @@ class KilledBuilds(unittest.TestCase):
             write_run(out, len(outcomes), outcomes, logs)
             self.assertEqual(
                 mutants.killed_builds(out),
-                ["oom", "linker", "llvm", "windows", "console", "signal"],
+                ["oom", "linker", "llvm", "windows", "console", "link", "signal"],
             )
 
 
@@ -506,9 +517,15 @@ class PendingRemote(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.root = Path(tmp.name)
-        patcher = mock.patch.object(mutants, "ROOT", self.root)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        for patcher in (
+            mock.patch.object(mutants, "ROOT", self.root),
+            mock.patch.object(mutants, "remote_pending", self.real_remote_pending),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    # The module's isolation replaces it; these tests check the real one under their root.
+    real_remote_pending = staticmethod(mutants.remote_pending)
 
     def pend(self, host: str = "bonfire") -> Path:
         pending = mutants.remote_pending()
@@ -558,6 +575,17 @@ class PendingRemote(unittest.TestCase):
                 mutants.whole_run("fpc", None, HEAD_TREE, self.root)
             with self.assertRaisesRegex(mutants.Refused, "bonfire.*mutants-collect"):
                 mutants_diff.run_crate("in.diff", HEAD_TREE, self.root, "fpc", 3)
+        # A standalone extra pass would replace the `missed_<crate>.txt` the collection merges.
+        extra_runs = []
+        with (
+            mock.patch.object(mutants, "remote_host", lambda: None),
+            mock.patch.object(mutants, "working_tree", lambda: HEAD_TREE),
+            mock.patch.object(mutants, "run_lock", contextlib.nullcontext),
+            mock.patch.object(extra_mutants, "run_crate", lambda *args: extra_runs.append(args)),
+        ):
+            with self.assertRaisesRegex(SystemExit, "bonfire.*mutants-collect"):
+                extra_mutants.main(["extra_mutants.py", "fpc"])
+        self.assertEqual(extra_runs, [])
         self.assertTrue(last.exists(), "the uncollected half's local results stay")
 
     def test_with_no_record_the_host_decides(self):
