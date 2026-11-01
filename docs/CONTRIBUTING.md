@@ -209,7 +209,7 @@ just gates
 
 The root `justfile` is the one definition of the gates (`cargo fmt --all --check`, `cargo clippy
 --workspace --all-targets -- -D warnings`, the tests `cargo test --workspace` builds, run four
-binaries at once by `scripts/run_tests.py` and then the doc-tests, `cargo check --target
+binaries at once by `scripts/gates/run_tests.py` and then the doc-tests, `cargo check --target
 wasm32-unknown-unknown` for `studio_core` and every lib crate, and `just acceptance`, the
 acceptance-ID scanner in its `report` mode, and `just doc-pointers`, which fails on a
 pointer to a document's section, its path and then the quoted title, whose file or section is
@@ -261,7 +261,7 @@ machine that has one before it lands, and the review pastes their result). `just
 them with a one-line description each.
 
 On Windows every binary `cargo test`, `run` or `bench` launches goes through
-`scripts/test_runner.cmd` (`.cargo/config.toml` `runner`), which caps each process at 6 GB with
+`scripts/gates/test_runner.cmd` (`.cargo/config.toml` `runner`), which caps each process at 6 GB with
 a Job Object. Windows has no OOM killer: an unbounded allocation (a mutant, or the same bug
 written by mistake) would otherwise page the machine down until some unrelated program's
 allocation failed. At the cap the test's own allocation fails, it aborts (`0xC0000409`), and the
@@ -292,10 +292,10 @@ Rules for the justfile, so it stays a command list and not a second build system
 - `just` is a developer tool, installed like rustup (`cargo install just`; CI installs it too); it
   is not a workspace dependency and does not appear in "External Dependencies". The cargo commands
   keep working without it; the justfile is the definition, not a requirement to build. `maturin`
-  (`pip install maturin`) is the same kind of tool for `just bindings`; `scripts/bindings_check.py`
+  (`pip install maturin`) is the same kind of tool for `just bindings`; `scripts/gates/bindings_check.py`
   runs it and reads the wheel path from its output, so the recipe never hardcodes `target/wheels`.
   Pillow (`pip install pillow`) is the same for `just test`: the drafts tooling's tests
-  (`scripts/draft_compare_test.py`) measure text ink in images through it.
+  (`scripts/drafts/draft_compare_test.py`) measure text ink in images through it.
 
 Requirements:
 
@@ -374,7 +374,7 @@ Requirements:
   converge step (`TC-GUI-04 manual: checked 2026-11-02, <what was done>`), and the converge check
   treats that line as the citation; collapsing the phase's step list keeps these lines. Prefer
   an automated proof whenever the UI toolkit allows one; `manual` is for what it does not.
-- `scripts/acceptance.py` checks both halves. Every mode fails on a citation that proves nothing:
+- `scripts/gates/acceptance.py` checks both halves. Every mode fails on a citation that proves nothing:
   one naming an ID no scenario defines or a withdrawn one, an ID-only `//` comment not directly
   above a `#[test]`, a manual check of a scenario not marked `manual`, an ID defined twice, or
   an Acceptance-section line that starts with an ID but is not a scenario. `report` (gate 5)
@@ -399,7 +399,7 @@ Requirements:
   `SUBQ_API_KEY` or the file `STUDIO_SNAP_KEY_FILE` names, outside the repository (one key
   a line, spent in order: a key the service refuses is left for the next). The lead
   runs it and rules each flag like a reviewer concern, its row (the report prints it) going
-  into `scripts/citation_rulings.md`: accepted, the scenario is widened, a scenario is added,
+  into `scripts/gates/citation_rulings.md`: accepted, the scenario is widened, a scenario is added,
   or the test's citation moves to the scenario it proves; rejected, with a one-line reason.
   Answers are cached by state (`snap.out/cache.json`), so a second pass pays for changed pairs
   only; a full pass sends about 1.5M tokens ($0.08).
@@ -418,7 +418,7 @@ Requirements:
   the crates it mutates for its whole length and its baseline repeats the checkpoint's tests;
   and `just mutants <crate>` over each of a phase's crates at converge (when
   `STUDIO_MUTANTS_REMOTE` names an ssh host, it runs half the mutants there; prerequisites in
-  `scripts/mutants.py`). Every survivor is
+  `scripts/mutation/mutants.py`). Every survivor is
   triaged into one of three: a missing test (write it, or a worklog step), an equivalent mutant
   (the mutated code computes the same value; its pattern goes into `.cargo/mutants.toml` with
   the equivalence named, so that file is the list of what the runs no longer measure), or
@@ -428,7 +428,7 @@ Requirements:
   against its own baseline, every crate's survivors in `mutants.diff/missed_all.txt`. What a clean run cannot
   vouch for: `cargo-mutants` rewrites operators, a `!`, match arms and guards, a field, and a
   function's whole return value; it never edits a literal or removes a method call. So `just
-  mutants <crate>` first runs four such kinds (`EXTRA_KINDS` in `scripts/mutants.py`, listed by
+  mutants <crate>` first runs four such kinds (`EXTRA_KINDS` in `scripts/mutation/mutants.py`, listed by
   `crates/dev/extra_mutants`, run locally in a copy of the tree, a few minutes per crate and
   about twenty for `team_compiler`), their survivors in the same `missed_all.txt` tagged with
   their kind and triaged the same way: `literal` removes one alternative of a `matches!` or
@@ -445,14 +445,14 @@ Requirements:
   of its survivors were real gaps (worklog 5.0b). A survivor of the remote half whose only
   catching test is `#[cfg(windows)]` is rerun on this machine when the run is collected, and
   the outcome here replaces the remote one; such a test's mutants are named in
-  `WINDOWS_ONLY_TESTS` in `scripts/mutants.py`, by file and function. So a guard that
+  `WINDOWS_ONLY_TESTS` in `scripts/mutation/mutants.py`, by file and function. So a guard that
   refuses an input the standard library would accept (a leading `+`, which `u8::from_str`
   takes) still gets a test of its own when written: no run will ask for it (the color grammar
   had none, with all its mutants caught; S10's review, 2026-10-09).
 - **Clef scan (retired 2026-10-17).** A decision model asked whether each 60-line window of
-  production code holds a bug (`scripts/clef_scan.py`, `just clef <crate>` and `just
+  production code holds a bug (`scripts/review/clef_scan.py`, `just clef <crate>` and `just
   clef-diff [base]`, Cloudflare's Clef, flags at P >= 0.7, rulings in
-  `scripts/clef_rulings.md`) ran at every phase close from 2026-10-06 and is no longer part of
+  `scripts/review/clef_rulings.md`) ran at every phase close from 2026-10-06 and is no longer part of
   any review. Over 88 ruled flags two were real (a version-gated flag, 4.c-fix1; a memory
   charge released early, 4.y), both scored below every flag at 0.80 or above, and Phase 5's
   close pass raised 22, all false; the cost was the lead's reading of every flag. Its

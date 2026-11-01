@@ -272,7 +272,7 @@ face alone. Three files under `resources/icon/` carry it:
   installs. The preview's archive installs none, so on Wayland its window shows the
   compositor's default until a package does.
 
-`scripts/make_icon.py` makes the three once from the picture, checking each of the ICO's
+`scripts/fonts/make_icon.py` makes the three once from the picture, checking each of the ICO's
 sizes holds its own crop, and they are committed, so a build needs no image tool.
 
 ### Phase 7: glTF support

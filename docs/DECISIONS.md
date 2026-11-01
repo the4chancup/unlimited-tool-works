@@ -14870,6 +14870,17 @@ Why: DBC7's organizer keeps the cup's mix by hand; the check already reads every
 system and showed neither count.
 Plan: `docs/plans/save_editor.md` "Multi-team AATF counts the teams under each system".
 
+## 2026-11-01 — distribution — the bundle's licenses in `licenses/`, with third-party notices
+Decision (maintainer): the bundle ships `LICENSE-MIT`, `LICENSE-APACHE` and a generated
+`THIRD-PARTY-NOTICES.txt` in a `licenses/` folder instead of beside the exe; the repository
+keeps its two license files at its root. The notices come from `cargo-about` at release time,
+accepting the licenses `deny.toml` allows. Candidates are packed as `.7z`, as releases are.
+Why: members open the exe and the readme only, so the top folder keeps to those. The bundle
+shipped the project's own licenses but not the notices of the crates and fonts the exe
+contains, whose licenses ask for them in every copy; `cargo-about` reads them from
+`Cargo.lock`, where a hand-kept list would miss a new dependency.
+Plan: `docs/plans/core/distribution.md` "Distribution: portable .7z bundle".
+
 ## 2026-11-01 — save_editor — Set PES folder over the pitch while the selector is orange or red
 Decision (maintainer's request; two details the lead's): the team view's pitch shows a `Set PES
 folder` button at its bottom right while the sidebar's PES selector is orange or red. It shows

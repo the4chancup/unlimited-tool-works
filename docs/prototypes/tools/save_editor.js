@@ -8292,7 +8292,7 @@ function linkOpen(scr, keys) {
 }
 registerTool({ id: "save-editor", css: SAVE_EDITOR_CSS, draw: renderView, firstShow, controls: draftControls, onKey, closeRequest, screen, linkKeys, linkOpen,
   pesVersionChanged: versionNoticeFollow, titleDetail: () => S.path ? "[" + S.path + "]" : null,
-  // The screens scripts/draft_shots.py captures, as the links this view writes.
+  // The screens scripts/drafts/draft_shots.py captures, as the links this view writes.
   shots: ["save_editor/player", "save_editor/team?selteam=718",
     "save_editor/player?save=pes21&player=701.1&pes=2021",
     "save_editor/team?save=pes21&selteam=701&pes=2021",

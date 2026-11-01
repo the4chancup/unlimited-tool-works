@@ -847,7 +847,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       R, G and B is one edit, committed when the focus leaves all three; the tap test types a
       50% value and checks the exact pick; Escape's discard of typed text tested.
       `mutants-diff 12ffa8c3` (reworks 4 to 6) caught every `color_tools` mutant. Files:
-      `color_tools/{Cargo.toml,src/lib.rs,src/picker.rs}`, `scripts/doc_pointers.py`
+      `color_tools/{Cargo.toml,src/lib.rs,src/picker.rs}`, `scripts/gates/doc_pointers.py`
       (`plans/libs/color_tools.md` listed as the open phase's)
     - [x] 8.7c before the 0.0.1 cut: a click on a suggestion or recent swatch commits and
       closes the popup (P23, accepted 2026-10-26; `plans/libs/color_tools.md` "Color-picker
@@ -1350,7 +1350,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
           `aatf::assemble_file`. Red by hand: the first tier read ("Gold: 6 of 6 cards" against
           "Regular: 3 of 3 cards"), `NoTier` drawn as nothing, the error colour dropped
           (#8C8C8C against #FF0000). The remote below its disk floor mid-run: the clone's
-          build cache removed (`scripts/remote_clean_target.sh`, 28 GB; 47 GB free). Files:
+          build cache removed (`scripts/mutation/remote_clean_target.sh`, 28 GB; 47 GB free). Files:
           `team_widgets/src/cards.rs`, `save_editor/src/view/{abilities,mod}.rs`,
           `view/tests/abilities.rs`, `help/03_abilities.md`. `mutants-diff feeccd42`: 6 caught,
           1 unviable. Review (`.tmp/phase_08/8_9f4d/rulings.md`): SWE-2 S1 accepted 2 of 4 (a failing
@@ -1998,7 +1998,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         Files: `save_editor/src/{cli,session/mod,view/prompt}.rs`, `view/tests/prompt.rs`,
         `save_editor/help/0{1,2}_*.md`, `team_compiler/src/{messages,messages/catalog,
         output/savefile}.rs`, `team_compiler/help/01_command_line.md`
-      - [x] m2 `scripts/draft_compare.py` compares the fill and text colours of the boxes it
+      - [x] m2 `scripts/drafts/draft_compare.py` compares the fill and text colours of the boxes it
         pairs, not only their rects: the fills and greys above passed every geometry check
         Done 2026-10-30 (the lead): `fill_findings` measures every widget pair's fill (the
         box's most common colour) and its text's core colour in both captures, listed under
@@ -2136,7 +2136,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
               the team view 0 over 2 px before the `.row` change (only the header row's units
               move after it, by the app's 6), the player view the same 15 at 1 to 2 px as
               before (the Skills header's units move). Files: `docs/prototypes/{index.html,
-              tools/save_editor.js}`, `plans/save_editor.md`, `scripts/draft_compare.py`
+              tools/save_editor.js}`, `plans/save_editor.md`, `scripts/drafts/draft_compare.py`
             - [x] l3d3b 2026-10-29 (Opus sidekick, merge `01ff1da1`) the build drops the
               overrides (brief `.tmp/phase_08/8_9l/brief_l3d3b.md`): `team.rs` `ROW_GAP` (the header's
               claims Name 182, Short 79), `abilities.rs` `HEADER_GAP`, `menus.rs`
@@ -2469,7 +2469,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     glyph exists in the font (a unit test over the registry); the rail seen in the built
     window, the rail and opened, dark and light
     Done (`75d76461`, `8d2ab7c0`, docs `ef5245ef`, merged `9d9fc444`; Opus sidekick):
-    `scripts/make_icons.py` builds `resources/fonts/icons.ttf` and the drafts' copy (8,604
+    `scripts/fonts/make_icons.py` builds `resources/fonts/icons.ttf` and the drafts' copy (8,604
     bytes, the same on every run) from the 13 tool SVGs and six Phosphor glyphs copied point
     for point as SVGs (the Stadium compiler's buildings among them), on the subset's
     metrics and codepoints; `make_icons_test.py` checks both copies byte for byte and
@@ -2490,7 +2490,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     and a script per tool"; side-lead track A): `docs/prototypes/index.html` from
     `shell.html`, the Save editor's (v2) and the Ruleset editor's drafts ported to
     `tools/*.js` at the 1280 × 800 default, the plans' pointers moved, then
-    `scripts/bundle_drafts.py` → verify: every screen the old pages drew draws the same in the
+    `scripts/drafts/bundle_drafts.py` → verify: every screen the old pages drew draws the same in the
     host (side-by-side captures), the bundle opens alone from another folder
     Done 2026-10-25 (side-lead A, SWE-2 in three slices): the host from `shell.html` with a
     tool registry (`registerTool`: draw, firstShow, controls, onKey, commit), each tool script
@@ -2564,7 +2564,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     - [ ] 8.19c longest values, briefed: `.tmp/phase_08/8_19/brief_8_19c.md`
   - [ ] 8.20 the host's overlay and draft shots (`core/gui.md` "The host's other review aids";
     after 8.19, whose links it walks; the overlay moved into 0.0.1 as 0.0.1ov): the Overlay control and the capture naming, the
-    Save editor's first captures from the built window; `scripts/draft_shots.py` → verify: the
+    Save editor's first captures from the built window; `scripts/drafts/draft_shots.py` → verify: the
     overlay of the built Tactics tab on its draft at 1280 × 800, looked at; a one-line host
     stylesheet edit lists every tool's changed screens, reverted by hand, then lists none.
     Briefed: `.tmp/phase_08/8_20/brief_8_20.md` (the overlay needs built-window captures, which take
@@ -3373,8 +3373,8 @@ briefs, review loops, gates and mutation runs as for any step.
     Export upgrader's catalogs and commands, the help pages, the AATF ruleset headers and logic
     banner (its hash updated), the shared-IDs comment; `studio/tests/help_cli.rs`
     `no_member_visible_text_names_4cc_studio` over the help export and every `--help`
-  - [x] 0.0.1d2 `just release` (`scripts/release.py`), the readme, a run from a clean worktree.
-    Done: `scripts/release.py` with `release_test.py` (7 tests, the listing one through the real
+  - [x] 0.0.1d2 `just release` (`scripts/release/release.py`), the readme, a run from a clean worktree.
+    Done: `scripts/release/release.py` with `release_test.py` (7 tests, the listing one through the real
     7-Zip), the `justfile` recipe, `resources/bundle/README.txt`, the workspace version 0.0.1
     (with 0.1.0 no version could be released). `just release 0.0.1` from a fresh worktree at
     51e32df0: `UnlimitedToolWorks-0.0.1-windows.7z`, 10,743,690 bytes, `sha256sum -c` OK, its
@@ -3618,7 +3618,7 @@ briefs, review loops, gates and mutation runs as for any step.
     (`run_gui_mode` installs the log and the hook, `guard_gui` around the window);
     `studio_core` exports `version_label`. ST-RUN-07 proven
   - [x] k2 the backtrace as module base and offset (`backtrace` crate) in place of std's
-    resolved `Backtrace`; `scripts/symbolize_log.py <log> <symbols folder>` over MSVC's
+    resolved `Backtrace`; `scripts/release/symbolize_log.py <log> <symbols folder>` over MSVC's
     `llvm-symbolizer`; the release profile's `debug = "line-tables-only"` and the recipe's
     `-symbols.7z` (`plans/core/distribution.md`, the release recipe's paragraph); the next
     start's report of a session that did not close normally (the maintainer asked
@@ -3627,8 +3627,8 @@ briefs, review loops, gates and mutation runs as for any step.
     size before and after the profile line (the probe's did not change; if ours grows,
     report it). Done (SWE-2, one rework): `gui_log.rs` (`frame_line`, `backtrace_lines`,
     the `session` closing lines, `InstalledLog`, `unclean_text`, `show_dialog` with the
-    unclean notice at `Info`), `main.rs`, `scripts/symbolize_log.py` and its test (run by
-    `doc-pointers`), `scripts/release.py`'s `-symbols.7z`; the release exe 39,195,648 B before,
+    unclean notice at `Info`), `main.rs`, `scripts/release/symbolize_log.py` and its test (run by
+    `doc-pointers`), `scripts/release/release.py`'s `-symbols.7z`; the release exe 39,195,648 B before,
     39,195,136 after, the `.pdb` 17 MB to 117 MB (`plans/core/architecture.md`)
   - [x] k3 ST-RUN-08 in the built window (manual, asked before it runs; with 0.0.1l's
     ST-RUN-04), on a release build with a panic added by hand: the dialog, exit 101, and the
@@ -3640,7 +3640,7 @@ briefs, review loops, gates and mutation runs as for any step.
       bundle's exe free of it), its own data folder (`.tmp/release_0_0_1/0_0_1k3/`, `k3.py`): the click
       shows a dialog repeating "k3 test panic: About's Copy clicked" and naming `studio.log`;
       once closed the process exits 101; the log holds the message, `about.rs:63:17` and 59
-      frames, which `scripts/symbolize_log.py` names against the kept exe and `.pdb`
+      frames, which `scripts/release/symbolize_log.py` names against the kept exe and `.pdb`
       (`about::show` at `about.rs:63`), and ends "the crash above was shown to the member"
       (kept, symbolized, as `.tmp/release_0_0_1/0_0_1k3/symbolized.log`; the later starts rotated it out).
       ST-RUN-09 the same day: no dialog on the first start (no earlier log) nor after the
@@ -4492,7 +4492,7 @@ briefs, review loops, gates and mutation runs as for any step.
   `C:\Data\Pictures\FSN\Smug\smugredman.png`; `plans/core/development_plan.md` "The icon",
   DECISIONS "The preview's icon and its build dependency"). The maintainer's split:
   the whole picture at 32 and up, a tight square on the head at 24 and 16.
-  - [x] v1 the assets (lead): `scripts/make_icon.py` and `resources/icon/{icon.ico,small.png,
+  - [x] v1 the assets (lead): `scripts/fonts/make_icon.py` and `resources/icon/{icon.ico,small.png,
     window.png}`; the script reads each ICO size back and asserts it is its own crop (a
     one-image ICO fails it: its 16 is the resized whole picture). Preview
     `.tmp/release_0_0_1/0_0_1v/icon_sheet2.png`
@@ -4538,7 +4538,7 @@ briefs, review loops, gates and mutation runs as for any step.
     number boxes, checkbox rows and list rows (all 18 again, re-measured with
     `.tmp/release_0_0_1/0_0_1u/measure_controls.py`; the mono path box 18.4 left for w1b), no bold (the team row, the pitch's labels), ✕ →
     the icon font's X, the tier grip ⠇ → ≡ (the lineup's handle), the number boxes' spin
-    arrows hidden; `scripts/draft_fonts.py` → verified: Selawik, Hack, Phosphor and egui's
+    arrows hidden; `scripts/drafts/draft_fonts.py` → verified: Selawik, Hack, Phosphor and egui's
     two emoji fonts only, on every page (red: the old body font and a canvas `sans-serif`
     restored by hand, 714 findings); glyphs pixel-identical at line height 1.2 and normal
     (12.5 and 14 points, 1x and 2x); the team view still fits its window
@@ -4604,7 +4604,7 @@ briefs, review loops, gates and mutation runs as for any step.
     compared to Segoe UI", alternatives kept open): a few bundleable fonts, each scaled
     (`FontTweak::scale`, `size-adjust` in the drafts) to Segoe UI's measured width (Steam's PES
     2019 path, 425.7 points at 12.5), shown side by side for the maintainer to pick; a pick
-    rebuilds `symbols.ttf` on its metrics (`scripts/make_symbols.py`'s `BODY_FONT`). Trial
+    rebuilds `symbols.ttf` on its metrics (`scripts/fonts/make_symbols.py`'s `BODY_FONT`). Trial
     page made (2026-10-27, the maintainer asked for one): `.tmp/release_0_0_1/0_0_1w/font_trial/index.html`,
     a font dropdown over the draft's player and team views, the candidates unmodified from
     the Google Fonts repository (`fetch.py`; Open Sans 94.9%, Noto Sans 94.2%, Source Sans 3
@@ -5083,7 +5083,7 @@ briefs, review loops, gates and mutation runs as for any step.
     `scripts/ingame/install.py`'s; the gate fails on a hand-planted attribution, reverted.
     `r1`-style round names left out: the one in the tree also named the maintainer, and a bare
     `r\d` pattern flags `[r0, r1, r2, t]`
-  - [x] cm6 `scripts/doc_pointers.py` reads a pointer whose quoted title a comment wraps onto
+  - [x] cm6 `scripts/gates/doc_pointers.py` reads a pointer whose quoted title a comment wraps onto
     its next line (today its title pattern stops at the line end, so such a pointer is
     neither resolved nor reported, and a broken one passes "0 broken") → verify: a test case
     of a wrapped comment pointer, resolved and, perturbed, reported broken (lead's: the
@@ -5605,7 +5605,7 @@ briefs, review loops, gates and mutation runs as for any step.
       `session/rules.rs`, `cli.rs`'s `check-aatf` default)
     - removed: `view/aatf_panel.rs` and its tests, the Panels menu's entry, the quick actions'
       load error line and its dialog, the badge's no-file case
-    - `scripts/release.py`: no `data/rules/`, the staged settings `aatf_ruleset = "dbc7"`, and
+    - `scripts/release/release.py`: no `data/rules/`, the staged settings `aatf_ruleset = "dbc7"`, and
       `release_test.py`; the readme's VGL section (pick `/vg/ League 27` in the dropdown)
     - every current ruleset built into the exe (`plans/aatf_rules.md` "Embedded rulesets";
       DECISIONS "The final pass's fifth rulings"), each file's `name` its description
@@ -5745,7 +5745,7 @@ briefs, review loops, gates and mutation runs as for any step.
     `8060aeef`): the label a bare cell of the grid's first column, the measured label width
     gone (the grid's own sizing pass sizes the column; Jump's box at 1147.6 before and after);
     `the_stats_labels_start_at_one_x_and_their_boxes_at_another`. Measured on its release
-    build with `scripts/draft_compare.py player`: every ability label within 1 px of the
+    build with `scripts/drafts/draft_compare.py player`: every ability label within 1 px of the
     draft; over 2 px only the known Appearance header and the rail's logo
   - [x] ov14 the text colours the draft comparison measured (DECISIONS "Titles and collapsing
     headers at the drafts' strong grey"; `plans/core/gui.md` the Dark/light theme row): the
@@ -5790,7 +5790,7 @@ briefs, review loops, gates and mutation runs as for any step.
       first: "an extension with no MIME type"). Checked on a scratch copy with a stand-in
       (`.tmp/release_0_0_1/0_0_1ov/overlay_check.py`: over at (0, 0) 1280 × 780, beside level with the
       body, the missing line). `acc23548`, merge `670f46dc`
-    - [x] ov4b `scripts/draft_shots.py` and each tool script's `shots` list (8.20's
+    - [x] ov4b `scripts/drafts/draft_shots.py` and each tool script's `shots` list (8.20's
       deliverables 2-3, sidekick). Done 2026-10-29 (Opus, brief `.tmp/release_0_0_1/0_0_1ov/brief_ov4b.md`,
       reviewed; the lead added `shots` to the host's view contract comment): 55 links, 110
       shots at the default and smallest window on a 1920 × 1080 monitor, the page clock
@@ -5813,7 +5813,7 @@ briefs, review loops, gates and mutation runs as for any step.
     as wide as tall: the maintainer, 2026-10-28), each sheet carrying the change's reason under
     its caption (the maintainer, 2026-10-28), generalized from its cases list to a
     revision pair and a link, with its test. Done 2026-10-29 (merge `4daed600`; Opus sidekick,
-    brief `.tmp/release_0_0_1/0_0_1ov/brief_ov5.md`): `scripts/vet_drafts.py --before REV --after REV
+    brief `.tmp/release_0_0_1/0_0_1ov/brief_ov5.md`): `scripts/drafts/vet_drafts.py --before REV --after REV
     --link FRAGMENT --why TEXT [--crop CSS] [--pad N] [--click TEXT]`, exports under
     `.tmp/vet_exports/` (the lead's change from the brief's fixed Windows path), and
     `vet_drafts_test.py` (7 tests, run by hand: it needs Pillow, which `just test` does not
@@ -5863,7 +5863,7 @@ briefs, review loops, gates and mutation runs as for any step.
     brought to the 0.0.1 scope
 - [x] 0.0.1g the bundle for DBC alone (the maintainer, 2026-10-29; `plans/core/development_plan.md`
   "Divegrass Before Christmas", "The /vg/ League 27 (VGL)"; DECISIONS "0.0.1 is the Save
-  editor for DBC alone; VGL's tools wait for 0.0.2"): `scripts/release.py` stages neither
+  editor for DBC alone; VGL's tools wait for 0.0.2"): `scripts/release/release.py` stages neither
   launcher nor `exports/` and `old_exports/`, `resources/bundle/data/settings.toml` picks PES
   2017 (`pes_version`), the readme loses its VGL section and the "pick your PES" step, VGL27's
   rules file and the compiler's settings lines kept; `release_test.py` follows → verify: the
@@ -6031,7 +6031,7 @@ briefs, review loops, gates and mutation runs as for any step.
     2026-10-31; DECISIONS 2026-10-31, `plans/core/distribution.md`): measured before, the
     03:08 release exe held the home folder in 2,336 strings (1,589 cargo registry, 747
     rustup) and the repository's path in one; rustc's last-matching-prefix rule measured on
-    1.98.1. `scripts/release.py` `remap_flags`, `rustflags_config`, `leaked_prefixes`,
+    1.98.1. `scripts/release/release.py` `remap_flags`, `rustflags_config`, `leaked_prefixes`,
     `links_crt_dynamically` and their refusals, `release_test.py` 17 OK (two perturbations
     shown failing). The first release build with the flags (`.tmp/release_0_0_1/0_0_1cv/build_remapped.py`,
     which builds as the recipe does, at `7bff5baf`, 8 min 24 s, every crate rebuilt): no
@@ -6423,7 +6423,7 @@ briefs, review loops, gates and mutation runs as for any step.
       remainder kept with its control, the rules copy written through a temporary file. The
       keyboard stall on the controls that start no check is 8.40. Files: `save_editor`
       `view/`, `session/rules.rs`, `team_widgets` `tactics/`, `studio_core` `widgets/wheel.rs`,
-      `help/core/data_location.md`, `studio` `gui_log.rs`, `scripts/mutants.py`
+      `help/core/data_location.md`, `studio` `gui_log.rs`, `scripts/mutation/mutants.py`
     - [x] `mutants-diff 34d29fe2` over cv6a and cv6b (73 mutants): save_editor 45 caught, 1
       timeout, 9 unviable; studio_core 4 caught; team_widgets 3 caught; studio 7 caught and
       four TIMEOUTs in `gui_log.rs`, each a `spelled_len` of `Some(0)` (`+=` to `*=` on its
@@ -6507,7 +6507,7 @@ briefs, review loops, gates and mutation runs as for any step.
     (`resources/bundle/data/`: `aatf_rules = "rules/dbc7.4ccrules"`, `multicpk_mode` and
     `cpk_name` at their defaults) and `data/rules/dbc7.4ccrules`, joined from `rulesets/dbc7.rhai`
     and `logic/logic.rhai`, refused unless the staged exe's `ruleset-editor validate` and
-    `update-logic` pass it (`scripts/release.py` `stage_data`, 5 new or widened tests in
+    `update-logic` pass it (`scripts/release/release.py` `stage_data`, 5 new or widened tests in
     `release_test.py`). Checked on the release exe: the staged folder holds those files alone;
     each check refuses a perturbed copy; `save-editor check-aatf` from it without `--rules`
     prints what `--rules data/rules/dbc7.4ccrules` prints (DBC7's medal systems). The readme:
@@ -6609,7 +6609,7 @@ The phase's steps are itemized when Phase 9 closes; its format crate was built a
     `.4ccm` (56 parse and read back equal, 5 editor history copies refused for unknown keywords,
     as Rigdio refuses them); `indexmap` enters the workspace; `doc_pointers.py` lists the music
     player plan as open. Files: `crates/libs/music_export/{Cargo.toml,src/{lib,model,tokens,parse,write}.rs,tests/{fixtures.rs,census.rs,fixtures/}}`,
-    `scripts/provenance/music_export/list_4ccm.py`, `scripts/doc_pointers.py`, `Cargo.toml`,
+    `scripts/provenance/music_export/list_4ccm.py`, `scripts/gates/doc_pointers.py`, `Cargo.toml`,
     `docs/spec/core/README.md`
   - [x] 10.0b `MatchState`/`Side`/`TeamState`, `Verdict`, `Condition::eval` and `SongEntry::eval`,
     `needs_goal_minute`. Files: `src/{state,eval}.rs`
@@ -7125,7 +7125,7 @@ points there.
 
 - open 2026-11-01 — the vital scripts' first reviews (`RUNBOOK.md` "Review rounds", checkpoint
   (e); DECISIONS 2026-11-01): each reviewed whole by SWE-2 rounds once, in this order:
-  - [ ] the mutation runs' `mutants.py`, `mutants_diff.py`, `extra_mutants.py` (and
+  - [x] the mutation runs' `mutants.py`, `mutants_diff.py`, `extra_mutants.py` (and
     `mutants_test.py`): round 1 accepted 18 (`.tmp/duck_rulings.md` S-scripts r1; among
     them a refused diff run filing the last run's results as its own, a queued run still
     listing the live tree, `extra_mutants` filing an unrun mutant as caught, timeouts left
@@ -7135,9 +7135,9 @@ points there.
     copy since the snapshot; fixed `22e28921`) and 2 of part b (`perturb_check` reading a
     missing test as caught, `just extra-mutants` not refusing an uncollected half), plus a
     failed link filed unviable (a Windows SDK update mid-run; all fixed `c8fb4fc7`). Round 3
-    over the round 2 fixes running (`.tmp/rv_scripts/r3/`). Then sort `scripts/`' root by job (the maintainer's layout,
-    2026-11-01: mutation, gates, review, release, drafts, fonts; five tools stay at the
-    root), with `.tmp/rv_scripts/sort_scripts.py`
+    over the round 2 fixes accepted 2 (the tests' isolation; fixed `5b99abbb`), which ends
+    the loop. Then `scripts/`' root sorted by job (`68bc589d`, the maintainer's layout:
+    mutation, gates, review, release, drafts, fonts; five tools stay at the root)
   - [ ] `run_tests.py`, `test_runner.py`, `remote_gates.py`
   - [ ] `release.py`, `build_remapped.py`, `make_candidate.py`
   - [ ] `scripts/census/`, `scripts/library_parity/`
@@ -7288,7 +7288,7 @@ points there.
   the pid-named ones pile up. Direction: a per-checkout folder under the crate's own `target/`
   (gone with `cargo clean`, a mutation run's copy has its own), named per test without the
   pid; measure which other crates' tests leave files first
-- resolved 2026-10-22 (`scripts/mutants.py` `remote_disk_use`/`disk_refusal`, the guard every
+- resolved 2026-10-22 (`scripts/mutation/mutants.py` `remote_disk_use`/`disk_refusal`, the guard every
   run that uses the host passes, and the phase-close cleanup: RUNBOOK "The scratch folder"; the
   emptying's first live run is the next run that uses the host) — the VPS half's tests use `~/studio-mutants/tmp` (`REMOTE_TMPDIR`) as their
   temp dir, and a helper that removes its folder at the test's end leaves it on every caught
@@ -7298,7 +7298,7 @@ points there.
   5 mutants to it. Cleaned with `.tmp/lead/bonfire_tmp_cleanup.sh` (the disk at 80% after),
   then the clone's build cache `~/studio-mutants/tree/target` (22 GB; only `just gates-remote`
   builds there, so its next run starts cold) with `.tmp/lead/bonfire_target_cleanup.sh`: 66%.
-  Direction: `scripts/mutants.py` empties the tests' leftovers from `REMOTE_TMPDIR` after it
+  Direction: `scripts/mutation/mutants.py` empties the tests' leftovers from `REMOTE_TMPDIR` after it
   collects a remote half, or the helpers move under `target/` as `save_editor`'s did
 - open 2026-10-23 — a command's `Report` (`events.rs`: its findings sent as events, the worst
   severity deciding the exit code) is copied in `save_editor` and `ruleset_editor` (20.5a),
@@ -7337,7 +7337,7 @@ points there.
   parallel processes) and serialize the tests' device use or lower the budget, whichever the
   measurement points at.
 
-- resolved 2026-10-17 (after Phase 5's close; `scripts/mutants.py` `plan_file_split`) — a split mutation run waits on the
+- resolved 2026-10-17 (after Phase 5's close; `scripts/mutation/mutants.py` `plan_file_split`) — a split mutation run waits on the
   VPS for crates whose tests dominate: the halves are equal (`--shard 0/2` and `1/2`), but with
   half this PC's threads per test (8 vCPUs against 16) the VPS tests `aatf`, `save_editor` and
   `pes_savefile` at 60-80% of the local rate (5.6 runs: 92 against 157 an hour, 163 against 248,
@@ -7348,7 +7348,7 @@ points there.
   another (one extra baseline each, about 75 s for `pes_savefile`) or another way to hand each
   side its list; whichever is used, the merged outcomes must name every listed mutant exactly
   once (checked against `--list` in the summary, a run failing it reported, not summarized).
-  `scripts/mutants.py`; RUNBOOK "Mutation runs and the VPS". Resolved: a whole-crate run
+  `scripts/mutation/mutants.py`; RUNBOOK "Mutation runs and the VPS". Resolved: a whole-crate run
   hands each side a complementary set of source files (`examine_globs` here, `exclude_globs`
   there) sized by the two sides' measured mean seconds per mutant, checked exact against
   `--list` before launch and against the merged outcomes after (exit code 5 otherwise);
@@ -7526,7 +7526,7 @@ points there.
   the crashes began. A killed run leaves its two `%TEMP%\cargo-mutants-4cc-studio-*.tmp`
   copies (3.6 GB each; `.tmp/lead/rm_mutant_copies.py` removes them, clearing the read-only flag
   a test leaves on one file). If a run crashes again at 32 GB, the next lever is one job
-  (`--jobs 1` in `scripts/mutants.py`'s local config).
+  (`--jobs 1` in `scripts/mutation/mutants.py`'s local config).
 - open (2026-10-08, 4.14e3's plan) — pre-Fox: a hand-weighted model behind a `.model.common`
   link is listed whole by its Common path, not split (`spec/model_conversion/hand_split.md`
   "Pipeline integration"): the game then loads a body with hands on the body skeleton. Splitting it

@@ -3,7 +3,7 @@
 # equivalence that makes the mutant unkillable; a mutant that is merely hard to kill stays in.
 
 # These two lines size a bare `cargo mutants` only. `just mutants`/`mutants-diff` run two cargo
-# processes at once (`--jobs 2`) from a copy of this file that `scripts/mutants.py`
+# processes at once (`--jobs 2`) from a copy of this file that `scripts/mutation/mutants.py`
 # (`sized_config`) writes per machine, giving each process half the logical CPUs, and start
 # cargo-mutants at below-normal priority, so the run uses every CPU the user's own work leaves
 # idle rather than holding two back. A bare run keeps the old fixed budget: half of CPUs minus two
@@ -16,7 +16,7 @@ additional_cargo_test_args = ["--", "--test-threads=7"]
 # A mutant's tests time out at five times the baseline's test time, cargo-mutants' default,
 # which leaves a starved low-priority local run (RUNBOOK "Mutation runs") room before a slow
 # test counts as a hang. The baseline is one crate's suite: `just mutants` takes one crate and
-# `mutants-diff` runs each crate on its own (`scripts/mutants_diff.py`). When one diff run tested
+# `mutants-diff` runs each crate on its own (`scripts/mutation/mutants_diff.py`). When one diff run tested
 # every crate, its baseline summed them, and a `music_export` mutant that hung a loop (its tests
 # take 1-2 s) waited 751 s here; three times was tried then, and per-crate baselines replaced it.
 timeout_multiplier = 5.0
@@ -96,7 +96,7 @@ exclude_re = [
     # (`pes_process.rs`). Its Linux arm (`cmdlines`, `probe`), drawn into the Windows half, is
     # listed missed there and caught on Linux by `cmdlines_hold_this_test_process` and
     # `running_pes_lists_a_running_game_with_its_exe` (checked by reading). Its Windows arm,
-    # drawn into the Linux half, is rerun here (`WINDOWS_ONLY_TESTS` in `scripts/mutants.py`).
+    # drawn into the Linux half, is rerun here (`WINDOWS_ONLY_TESTS` in `scripts/mutation/mutants.py`).
     # Its other-platform `probe` compiles on no tested OS.
     # pes_model equivalences, each checked by reasoning rather than a
     # distinguishing input existing:

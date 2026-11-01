@@ -291,7 +291,7 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
 - The backtrace is written as each frame's module base and offset (`0x7ff6a1230000+0x59c4`,
   through the `backtrace` crate), not as names: a release exe names its frames only with its
   `.pdb` beside it, and the bundle does not ship the `.pdb` (`distribution.md`, the release
-  recipe). `scripts/symbolize_log.py <utw.log> <symbols folder>` turns a posted log's frames
+  recipe). `scripts/release/symbolize_log.py <utw.log> <symbols folder>` turns a posted log's frames
   of the exe's module into function, file and line through `llvm-symbolizer` (MSVC's toolset
   ships it), against the release's kept exe and `.pdb`; frames of other modules (the system's
   DLLs) stay as offsets. Off Windows the `backtrace` crate reports no module base (its

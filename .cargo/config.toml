@@ -11,7 +11,7 @@ jobs = -2
 # a 6 GB per-process Job Object so it fails its own allocation and aborts alone.
 # Linux needs none: the kernel OOM-kills, and the VPS half runs memory-capped.
 [target.'cfg(windows)']
-runner = ["scripts/test_runner.cmd", "6G"]
+runner = ["scripts/gates/test_runner.cmd", "6G"]
 
 # The Windows exe links the C runtime statically, so it runs on a clean Windows 10 without the
 # VC++ redistributable, which no member should have to install (spec/core/distribution.md

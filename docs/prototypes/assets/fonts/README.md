@@ -1,7 +1,7 @@
 # Fonts
 
 `icons.ttf` is the shell's icon font, a copy of `resources/fonts/icons.ttf`, which
-`scripts/make_icons.py` writes with it (`resources/fonts/README.md` says what it holds). Its
+`scripts/fonts/make_icons.py` writes with it (`resources/fonts/README.md` says what it holds). Its
 Phosphor glyphs' licence is below.
 
 The other files are the rest of the app's font chain (`plans/core/gui.md`, the Dark/light theme
@@ -15,7 +15,7 @@ row), so the drafts draw text in exactly the files the app does, never in a syst
 | `egui-icons.ttf` | egui's own icons (scale 0.90) | the same crate | `12280655…` | below (egui's `egui-icons.txt`) |
 | `NotoEmoji-Regular.ttf` | egui's monochrome emoji (scale 0.81), after the suite's fonts, for what a member types (`☆`, `♂`) | the same crate, its `monochrome_emoji_fonts` feature | `415dc629…` | SIL OFL 1.1 (below) |
 | `emoji-icon-font.ttf` | egui's larger emoji and symbols (scale 0.90), after Noto Emoji (`☆`, `！`, `Ｕ`) | the same | `f426bec3…` | MIT (below) |
-| `symbols.ttf` | the symbols the body font lacks (→, ≡, ✔, ✖ and the like), on its metrics | `scripts/make_symbols.py`'s build of `resources/symbols/`, which writes this copy and `resources/fonts/symbols.ttf` | `ac29b6db…` | the repository's own |
+| `symbols.ttf` | the symbols the body font lacks (→, ≡, ✔, ✖ and the like), on its metrics | `scripts/fonts/make_symbols.py`'s build of `resources/symbols/`, which writes this copy and `resources/fonts/symbols.ttf` | `ac29b6db…` | the repository's own |
 
 egui-icons' scale is epaint's `FontTweak`, `size-adjust` in the host's `@font-face` rule.
 
