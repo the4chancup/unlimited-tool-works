@@ -6365,10 +6365,14 @@ briefs, review loops, gates and mutation runs as for any step.
     silent points, plan and DECISIONS). Rework r1 `87f60e3a`, the plan's green GigaHeight
     team at 4146 (its red run drops the last system from the candidates: by distance alone
     cannot fail, 4146 lying inside GigaHeight's span); merged `b394d7ff`, gates-changed
-    e4c026da green. SWE-2 round 1 (code and tests) accepted 3 (`.tmp/duck_rulings.md`
-    S-cv33 r1: a miscounted docstring, the two ties of the choice untested), which ends the
-    loop. Open: rework r2 (`.tmp/0_0_2/brief_cv33_r2.md`, running), then its mutants-diff
-    (logic.rhai is not mutated: the Rust side only). The whole save also moves 20 teams of 701-799: one like 857, and
+    e4c026da green. SWE-2 round 1 (code and tests) accepted 2 (`.tmp/duck_rulings.md`
+    S-cv33 r1: the choice's two ties untested; a third, a miscounted docstring, rejected once
+    r2 ran it: the comment was right), which ends the loop. Rework r2 `5e452c54` (the two
+    ties, each red; `dbc7_under` reads a team under one system), merged `d7df42c9` (the
+    lead's re-run: aatf 422). The whole step's built-window check is cv30's (`/cookie☆/`
+    under Manlet). Open: `just mutants-diff 935718bb` over cv33 and cv34 (logic.rhai is not
+    mutated: the Rust side only), running; gates-changed b394d7ff over both merges green
+    (5574 passed, 0 failed). The whole save also moves 20 teams of 701-799: one like 857, and
     19 with six giants at 194 now read under Height, with more rows than before
   - [x] cv34 P48: Multi-team AATF counts the teams under each system (`plans/save_editor.md`
     "Multi-team AATF counts the teams under each system"; DECISIONS 2026-11-01): the draft
