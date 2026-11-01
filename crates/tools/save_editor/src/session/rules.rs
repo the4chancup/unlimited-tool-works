@@ -311,9 +311,12 @@ pub(crate) fn check_teams(rules: &Rules, views: &[Result<TeamView, String>]) -> 
     views
         .par_iter()
         .map(|view| {
-            view.as_ref()
-                .map_err(Clone::clone)
-                .and_then(|view| rules.check_team(view).map_err(|error| error.to_string()))
+            view.as_ref().map_err(Clone::clone).and_then(|view| {
+                rules
+                    .check_team(view)
+                    .map(|check| check.violations)
+                    .map_err(|error| error.to_string())
+            })
         })
         .collect()
 }

@@ -575,7 +575,7 @@ mod tests {
         let rules = Rules::official();
         let (mut file, team) = view(PesVersion::Pes21);
         assert!(team.roster_breaks.is_empty(), "team 701 keeps the order");
-        let found = rules.check_team(&team).expect("the check runs");
+        let found = rules.check_team(&team).expect("the check runs").violations;
         assert!(
             !found
                 .iter()
@@ -591,7 +591,7 @@ mod tests {
         }
         let team = TeamView::new(&file, 701).expect("the team views");
         assert_eq!(team.roster_breaks, vec![(0, 70102), (1, 70101)]);
-        let found = rules.check_team(&team).expect("the check runs");
+        let found = rules.check_team(&team).expect("the check runs").violations;
         // Each break is the first violation of its own slot's rows.
         for (slot, player) in [(0u8, 70102u32), (1, 70101)] {
             let first = found
@@ -928,6 +928,7 @@ mod tests {
             rules
                 .check_team(view)
                 .expect("the check runs")
+                .violations
                 .into_iter()
                 .filter(|violation| violation.severity != Severity::Suggestion)
                 .collect::<Vec<Violation>>()

@@ -110,6 +110,7 @@ fn problems(rules: &Rules, team: &TeamView) -> Vec<Violation> {
     rules
         .check_team(team)
         .expect("the check runs")
+        .violations
         .into_iter()
         .filter(|violation| violation.severity != Severity::Suggestion)
         .collect()
@@ -155,6 +156,7 @@ fn suggestions_for(rules: &Rules, team: &TeamView, slot: u8) -> Vec<ViolationKin
     rules
         .check_team(team)
         .expect("the check runs")
+        .violations
         .into_iter()
         .filter(|violation| violation.severity == Severity::Suggestion)
         .filter(|violation| violation.slot == Some(slot))
@@ -314,6 +316,7 @@ fn player_tier_is_none_exactly_where_check_team_reports_no_tier() {
             let reported: BTreeSet<u8> = rules
                 .check_team(&team)
                 .unwrap_or_else(|e| panic!("{name} {version:?}: {e}"))
+                .violations
                 .iter()
                 .filter_map(|v| {
                     if matches!(v.kind, ViolationKind::NoTier { .. }) {

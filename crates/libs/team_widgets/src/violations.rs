@@ -1239,6 +1239,7 @@ mod tests {
         aatf::Rules::official()
             .check_team(&view)
             .expect("the check runs")
+            .violations
     }
 
     /// The official ruleset's check on team 734 ("/lit/") of the PES 17
