@@ -10,7 +10,7 @@ use crate::interchange::team_toml::{
     SetPiecesSection, SlidersSection, StyleSection, TacticsSection, TeamTomlError,
 };
 use crate::model::instruction::Instruction;
-use crate::model::tactics::{AdvancedInstruction, FormationSlot};
+use crate::model::tactics::{AdvancedInstruction, FormationSlot, bench_fill};
 use crate::model::team::TeamEntry;
 use crate::schema::TacticsSchema;
 use crate::schema::fields::{PresetField, TacticsField};
@@ -32,21 +32,21 @@ pub(super) fn emit_tactics(
         "starting_eleven",
         tactics.starting_eleven.map(array_text),
         "[]",
-        "",
+        "roster slots, counting from 0",
     );
     emit(
         out,
         "bench_order",
         tactics.bench_order.map(array_text),
         "[]",
-        "",
+        "the bench: 12 roster slots, counting from 0",
     );
     emit(
         out,
         "players_to_join_attack",
         tactics.players_to_join_attack.map(array_text),
         "[]",
-        "roster slots; 255 = none",
+        "roster slots, counting from 0; 255 = nobody",
     );
     let sp = &tactics.set_pieces;
     out.push_str("\n[tactics.set_pieces]\n");
@@ -55,49 +55,49 @@ pub(super) fn emit_tactics(
         "free_kick_long",
         sp.free_kick_long.map(|v| v.to_string()),
         "255",
-        "roster slots; 255 = none",
+        "roster slots, counting from 0; 255 = nobody",
     );
     emit(
         out,
         "free_kick_short",
         sp.free_kick_short.map(|v| v.to_string()),
         "255",
-        "roster slots; 255 = none",
+        "roster slots, counting from 0; 255 = nobody",
     );
     emit(
         out,
         "free_kick_second",
         sp.free_kick_second.map(|v| v.to_string()),
         "255",
-        "roster slots; 255 = none",
+        "roster slots, counting from 0; 255 = nobody",
     );
     emit(
         out,
         "corner_left",
         sp.corner_left.map(|v| v.to_string()),
         "255",
-        "roster slots; 255 = none",
+        "roster slots, counting from 0; 255 = nobody",
     );
     emit(
         out,
         "corner_right",
         sp.corner_right.map(|v| v.to_string()),
         "255",
-        "roster slots; 255 = none",
+        "roster slots, counting from 0; 255 = nobody",
     );
     emit(
         out,
         "penalty",
         sp.penalty.map(|v| v.to_string()),
         "255",
-        "roster slots; 255 = none",
+        "roster slots, counting from 0; 255 = nobody",
     );
     emit(
         out,
         "captain",
         sp.captain.map(|v| v.to_string()),
         "255",
-        "roster slots; 255 = none",
+        "roster slots, counting from 0; 255 = nobody",
     );
     let auto = &tactics.auto;
     out.push_str("\n[tactics.auto]\n");
@@ -106,28 +106,28 @@ pub(super) fn emit_tactics(
         "substitution",
         auto.substitution.map(|v| v.to_string()),
         "255",
-        "PES 15+; the stored setting byte",
+        "as the game stores it",
     );
     emit(
         out,
         "offside_trap",
         auto.offside_trap.map(|v| v.to_string()),
         "false",
-        "PES 15+",
+        "",
     );
     emit(
         out,
         "preset_change",
         auto.preset_change.map(|v| v.to_string()),
         "false",
-        "PES 15+",
+        "",
     );
     emit(
         out,
         "attack_defence_levels",
         auto.attack_defence_levels.map(|v| v.to_string()),
         "false",
-        "PES 17+",
+        "PES 17 and later",
     );
     for (i, preset) in tactics.presets.iter().enumerate() {
         let n = i + 1;
@@ -137,7 +137,7 @@ pub(super) fn emit_tactics(
             "man_marking",
             preset.man_marking.map(array_text),
             "[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]",
-            "marked opponent's formation slot per own slot; 255 = none",
+            "for each formation slot, the opponent's formation slot he marks; 255 = nobody",
         );
         out.push_str(&format!("\n[tactics.preset_{n}.style]\n"));
         let style = &preset.style;
@@ -165,7 +165,7 @@ pub(super) fn emit_tactics(
             "fluid",
             style.fluid.map(|v| v.to_string()),
             "false",
-            "PES 16+",
+            "PES 16 and later",
         );
         out.push_str(&format!("\n[tactics.preset_{n}.sliders]\n"));
         let sliders = &preset.sliders;
@@ -195,18 +195,26 @@ pub(super) fn emit_tactics(
             "numbers_in_attack",
             sliders.numbers_in_attack.map(|v| v.to_string()),
             "1",
-            "1 few to 3 many",
+            "1 few, 2 medium, 3 many",
         );
         emit(
             out,
             "numbers_in_defence",
             sliders.numbers_in_defence.map(|v| v.to_string()),
             "1",
-            "1 few to 3 many",
+            "1 few, 2 medium, 3 many",
         );
         for (f, formation) in preset.formations.iter().enumerate() {
             let Some(players) = formation else { continue };
-            out.push_str(&format!("\n[tactics.preset_{n}.formation_{}]\n", f + 1));
+            if n == 1 && f == 0 {
+                out.push_str(
+                    "\n# players: in the order of starting_eleven (its first entry is the first \
+                     player here); roster slots count from 0, so slot 0 is [players.01]\n",
+                );
+            } else {
+                out.push('\n');
+            }
+            out.push_str(&format!("[tactics.preset_{n}.formation_{}]\n", f + 1));
             out.push_str("players = [\n");
             for slot in players.iter() {
                 let entry = slot_text(
@@ -263,7 +271,7 @@ pub(super) fn parse_tactics(item: &Item) -> Result<TacticsSection, TeamTomlError
     let table = as_table(item, "tactics")?;
     let mut tactics = TacticsSection {
         starting_eleven: opt(table, "tactics", "starting_eleven", int_array)?,
-        bench_order: opt(table, "tactics", "bench_order", int_array)?,
+        bench_order: opt(table, "tactics", "bench_order", bench_order)?,
         players_to_join_attack: opt(table, "tactics", "players_to_join_attack", int_array)?,
         ..TacticsSection::default()
     };
@@ -458,6 +466,18 @@ pub(super) fn man_marking(item: &Item, key: &str) -> Result<[u8; 11], TeamTomlEr
     Ok(marking)
 }
 
+/// `bench_order`'s twelve integers (the bench: the record's first
+/// twelve bench entries of twenty-one).
+pub(super) fn bench_order(item: &Item, key: &str) -> Result<[u8; 12], TeamTomlError> {
+    int_array::<12>(item, key).map_err(|error| match error {
+        TeamTomlError::WrongType { key, .. } => TeamTomlError::WrongType {
+            key,
+            expected: "an array of twelve integers",
+        },
+        error => error,
+    })
+}
+
 pub(super) fn formation_players(
     item: &Item,
     key: &str,
@@ -586,7 +606,10 @@ pub(super) fn apply_tactics(
             "tactics.bench_order",
         )?
     {
-        tactics.bench_order = bench;
+        tactics.bench_order[..12].copy_from_slice(&bench);
+        // `tactics.starting_eleven` is the section's eleven when it
+        // carried one (applied above), the record's else.
+        tactics.bench_order[12..].copy_from_slice(&bench_fill(&tactics.starting_eleven, &bench));
     }
     if let Some(join) = section.players_to_join_attack
         && gated(

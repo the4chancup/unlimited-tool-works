@@ -12,7 +12,7 @@ short_name = "SMP"
 
 [tactics]
 starting_eleven = [0, 22, 12, 5, 4, 20, 21, 17, 9, 2, 10]
-bench_order = [11, 19, 15, 14, 8, 6, 3, 16, 7, 18, 13, 1, 255, 255, 255, 255, 255, 255, 255, 255, 255]
+bench_order = [11, 19, 15, 14, 8, 6, 3, 16, 7, 18, 13, 1]
 players_to_join_attack = [255, 255, 255] # roster slots; 255 = none
 
 [tactics.set_pieces]
