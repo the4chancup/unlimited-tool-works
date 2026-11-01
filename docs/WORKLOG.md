@@ -6293,7 +6293,7 @@ briefs, review loops, gates and mutation runs as for any step.
     AATF off`). Open: the built-window look with cv28's (both pairs' glyphs on one centre
     line; the glyph-to-cross gap 14.6 in the dock, 15.5 in the window, the two arrows' ink
     differing), and the SWE-2 round with cv28 and cv30
-  - [ ] cv30 team-wide AATF rows first, the rows' tooltips, the emoji fonts (the maintainer,
+  - [x] cv30 team-wide AATF rows first, the rows' tooltips, the emoji fonts (the maintainer,
     2026-11-01; after cv29 merges: its tests share `view/tests/live_aatf.rs`):
     - order: `team_widgets` `violations.rs` (`slot_order` puts the no-slot group first, `part`
       draws the team's own rows before the players' columns), `save_editor` `multi_aatf.rs`
@@ -6305,7 +6305,18 @@ briefs, review loops, gates and mutation runs as for any step.
     - fonts: egui's `monochrome_emoji_fonts` on (workspace `Cargo.toml`), `theme.rs`'s comment;
       the drafts load both files → verify: a `theme` test that `☆`, `！`, `Ｕ` resolve a glyph
       after `install`; `/cookie☆/` in DBC6's save drawn in the built window
-    Plan `plans/save_editor.md` the Live AATF bullet; `plans/core/gui.md` the theme row
+    Plan `plans/save_editor.md` the Live AATF bullet; `plans/core/gui.md` the theme row.
+    Merged `c2c23f6f` (Opus sidekick; the lead's re-run: five crates, 2,937 tests, clippy,
+    fmt, both scripts): `slot_order` sorts the team's group first (stable), `part` draws it
+    first, `copy_text` follows `issue_groups` unchanged; `SWITCH_TOOLTIP` shared by the list,
+    `comparator.rs` and `prompt.rs`; the feature ends every chain with the two emoji fonts
+    (debug exe +778,240 bytes). Red runs: the order on 734 (two columns, one, report), the
+    copy's order, each tooltip (`Select this player`), `no font has U+2606`. Three Live AATF
+    click tests scroll the dock first (`scroll_dock_to_73404s_row`, bounded): the team's
+    rows push 73404's row below the fold. SE-GUI-30 and SE-GUI-41 widened to the order and
+    the tooltip, cited by the new tests (the lead's). `check-aatf` keeps the check's order
+    (team rows last). Open: `/cookie☆/` in the built window (with cv28's look); the SWE-2
+    round with cv28 and cv29
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84

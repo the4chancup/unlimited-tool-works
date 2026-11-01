@@ -2993,3 +2993,5 @@ worklog passed 7,000 lines.
 - 2026-11-01 — 0.0.1cv cv29 merged `10bbbbf3`: Live AATF's dock ends with the window's close button, turning Live AATF off;
   the pop-out icon takes a slot as wide as the window's dock icon, so both pairs stand alike. The Comparator's and the
   patch panel's rows join cv30's `Click to switch to this player` (the maintainer).
+- 2026-11-01 — 0.0.1cv cv30 merged `c2c23f6f`: a team's AATF issues lead with its team-wide rows (Live AATF, Multi-team
+  AATF and its copy); a row that switches players says `Click to switch to this player`; egui's emoji fonts draw `/cookie☆/`.
