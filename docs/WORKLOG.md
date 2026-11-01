@@ -6089,7 +6089,21 @@ briefs, review loops, gates and mutation runs as for any step.
     alone reproduces it. One backend at rest (~130 ms) is decided after that: if the stall is the drivers'
     loading, the backend set may matter more under load than at rest. A stall that is disk
     contention alone is accepted (the maintainer, 2026-10-31: members rarely run heavy
-    builds while working on cup files); one that is CPU contention is not
+    builds while working on cup files); one that is CPU contention is not.
+    Loads apart, 2026-11-01 (`.tmp/0_0_2/cv13/cv13_load.py`, the launcher's clock alone on
+    the `f45fceae` release exe, the four setups interleaved, 6 rounds; `cv13_load.txt`):
+    first frame median, as is / DX12 / Vulkan / GL: idle 632 / 500 / 532 / 680 ms; disk
+    alone (a below-normal writer fsyncing 64 MB chunks on C:) 690 / 551 / 552 / 766; CPU
+    alone (16 below-normal spinners, global CPU 100%) 2496 / 1774 (max 5582) / 1778 / 4019.
+    So CPU contention is what stalls it, and disk alone barely does. The app runs at Normal
+    priority above the spinners, yet waits: launched at High priority under the same load
+    it was slower still (as is 6.4 s, DX12 6.3, Vulkan 1.1, GL 1.3; 4 rounds), so the wait
+    looks to be outside its own threads (the window manager, the GPU driver's service), not
+    its own work. A probe of every process's CPU over a start (`cv13_who.py`) then caught
+    the app at 0.3 s of CPU over 0.55-1.04 s starts, with a mutation build running beside
+    the spinners: the stall is intermittent. Next, on a quiet machine: more rounds of
+    `cv13_load.py cpu` and `cv13_who.py`, to find the process the start waits on; a WPR
+    trace needs an elevated prompt, so it is the maintainer's if it comes to that
   - [x] cv14 a ruleset may allow illegal formations (the maintainer, 2026-10-31): the Whack
     Patch, a modded PES 2017 exe, no longer rejects formations the game's own drag cannot make;
     4cc Autumn 26 (PES 2017) uses it and allows them (its saves hold some: /jp/ and /s4s/ on
