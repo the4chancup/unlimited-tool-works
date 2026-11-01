@@ -1608,6 +1608,49 @@ fn docked_list(test: &str) -> DockedList {
     }
 }
 
+/// The list's window first opens at the screen's bottom right, inset
+/// from its corner, at its first size.
+#[test]
+fn the_window_first_opens_at_the_screens_bottom_right() {
+    use studio_core::StudioTool;
+
+    let DockedList {
+        mut tool,
+        ctx,
+        events_rx: _events_rx,
+        requests_rx: _requests_rx,
+        mut window,
+        nodes,
+        ..
+    } = docked_list("live_aatf_window_corner");
+    assert!(live_window(&nodes).is_none(), "premise: no window yet");
+    tool_click(
+        &mut window,
+        &mut tool,
+        &ctx,
+        node_labeled(
+            &nodes,
+            Role::Button,
+            "Open Live AATF in a window of its own",
+        ),
+    );
+    window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    // A new window's first frame is egui's sizing pass, drawn invisible.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, &ctx));
+    let frame = live_window(&nodes).expect("the Live AATF window");
+    // The harness's 1224 x 800 screen, less the 16 x 40 inset: the window
+    // ends at (1208, 760) and is 460 x 360.
+    let expected = [748.0, 400.0, 1208.0, 760.0];
+    let measured = [frame.x0, frame.y0, frame.x1, frame.y1];
+    assert!(
+        measured
+            .iter()
+            .zip(expected)
+            .all(|(edge, want)| (edge - want).abs() <= 1.0),
+        "the window's first rect: {measured:?}, expected {expected:?}"
+    );
+}
+
 /// SE-GUI-47's team, edit and check, the list in the dock: its pop-out
 /// icon moves the list into a window titled `Live AATF` holding the
 /// dock's count line and its rows in one column, in roster order (71801,
