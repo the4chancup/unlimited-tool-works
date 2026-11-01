@@ -415,7 +415,7 @@ fn check_aatf(
     for ((id, result), players) in ids.into_iter().zip(results).zip(&listed) {
         let team = session.file().team(id).expect("checked above");
         let violations = match result {
-            Ok(violations) => violations,
+            Ok(check) => check.violations,
             Err(error) => {
                 report.message(aatf_check_failed(id, error));
                 continue;

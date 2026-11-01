@@ -150,7 +150,7 @@ pub(super) fn issues(checks: &[TeamCheck]) -> usize {
     checks
         .iter()
         .filter_map(|check| check.as_ref().ok())
-        .flatten()
+        .flat_map(|check| &check.violations)
         .filter(|violation| {
             matches!(
                 violation.severity,
@@ -200,11 +200,11 @@ pub(super) fn results(
                     ),
                 );
             }
-            Ok(violations) => teams.push(TeamViolations {
+            Ok(check) => teams.push(TeamViolations {
                 team_id: *id,
                 team_name: name,
                 players: &listed[i],
-                violations,
+                violations: &check.violations,
                 starting_eleven: &file
                     .team(*id)
                     .expect("every checked id is a team of the open file")
@@ -239,8 +239,10 @@ fn spawn_check(
         // Unasked, suggestions would tint the whole list blue: most
         // players of a cup team leave some allowance unused.
         if !reply_key.suggestions {
-            for violations in checks.iter_mut().flatten() {
-                violations.retain(|violation| violation.severity != aatf::Severity::Suggestion);
+            for check in checks.iter_mut().flatten() {
+                check
+                    .violations
+                    .retain(|violation| violation.severity != aatf::Severity::Suggestion);
             }
         }
         // A newer check can replace the receiver mid-flight; that send's
