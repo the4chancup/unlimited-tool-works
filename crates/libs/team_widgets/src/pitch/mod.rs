@@ -232,6 +232,15 @@ fn pitch_look(version: PesVersion) -> &'static PitchLook {
     }
 }
 
+/// The x, in canvas points from the canvas' left edge, of the outer edge
+/// of the bottom penalty box's right line on `version`'s pitch: the
+/// canvas' centre, half the box's width and half the lines' 2-point
+/// stroke. The room right of it, beside the box, is where a tool's control
+/// over the pitch stands clear of the markings.
+pub fn penalty_box_right(version: PesVersion) -> f32 {
+    160.0 + pitch_look(version).penalty_box[0] / 2.0 + 1.0
+}
+
 /// A wide name's scroll period in seconds (the game's measured 13.5).
 const NAME_PERIOD: f32 = 13.5;
 /// The scroll's speed, canvas px a second (the game's 40).
