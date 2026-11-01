@@ -14823,3 +14823,15 @@ tree untouched for a whole run was a rule nobody could check. The copy costs one
 (about 50 MB, seconds): cargo-mutants already builds every mutant in a copy of its own.
 Plan: `docs/RUNBOOK.md` (mutation runs, the paragraph on snapshots) and `AGENTS.md`'s
 operations rule.
+
+## 2026-11-01 — tooling — mutation runs queue with their snapshot, not in a chain
+Decision (maintainer): `just mutants`, `mutants-diff` and `extra-mutants` write their snapshot
+first, then take `.tmp/mutants.lock` (an OS lock, gone with the process) for the run's whole
+length; a run launched while another holds it waits, polling every 30 s. Each run is launched
+as its own command, no chains. `mutants-diff` sets the last run's `mutants.diff/` aside as
+`mutants.diff.old` instead of deleting it.
+Why: the snapshot fix made edits safe during a run but not while a run waited in a chain,
+which snapshots only when the one before ends, so the lead still had to hold edits back; a
+chained `mutants-diff` also deleted the previous run's per-crate results on its way in.
+Plan: `docs/RUNBOOK.md` (mutation runs, the paragraph on snapshots) and `AGENTS.md`'s
+operations rule.

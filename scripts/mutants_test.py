@@ -2,7 +2,8 @@
 mutants never ran, which builds were killed, when a split run's summary fails, and which list
 holds a crate's survivors. Each builds a `mutants.out` in a
 temporary directory the way cargo-mutants writes one; nothing reaches the host. Also which
-source the local half hands cargo-mutants (cargo itself stubbed). Run by `just
+source the local half hands cargo-mutants (cargo itself stubbed), and that a run snapshots
+before it waits for the one in progress (`run_lock`). Run by `just
 test` (`python scripts/mutants_test.py`)."""
 import contextlib
 import io
@@ -15,9 +16,17 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+SCRIPTS = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPTS))
+import extra_mutants  # noqa: E402
 import mutants  # noqa: E402
 import mutants_diff  # noqa: E402
+
+HEAD_TREE = subprocess.run(
+    ["git", "rev-parse", "HEAD^{tree}"], cwd=SCRIPTS, capture_output=True, text=True, check=True
+).stdout.strip()
+# Git's empty tree: a diff from it holds every file of the tree it is diffed with.
+EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
 
 def mutant(name: str) -> dict:
@@ -364,6 +373,91 @@ class LocalSource(unittest.TestCase):
         self.assertEqual(first["outputs"], [str(mutants.ROOT)], "results in the root's mutants.out")
         self.assertEqual(second["outputs"], ["elsewhere"], "a caller's --output kept, alone")
         self.assertFalse(first["source"].exists(), "the copy removed once cargo returns")
+
+
+class RunQueue(unittest.TestCase):
+    """A run snapshots the tree when its command starts and only then waits for the run in
+    progress, so nothing launched while another runs has to be held back."""
+
+    def test_a_second_run_waits_for_the_first_to_end(self):
+        child = (
+            "import sys\n"
+            "from pathlib import Path\n"
+            "sys.path.insert(0, sys.argv[1])\n"
+            "import mutants\n"
+            "mutants.LOCK_POLL_SECONDS = 0.05\n"
+            "with mutants.run_lock(Path(sys.argv[2])):\n"
+            "    Path(sys.argv[3]).touch()\n"
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = Path(tmp) / "mutants.lock"
+            entered = Path(tmp) / "entered"
+            argv = [sys.executable, "-c", child, str(SCRIPTS), str(lock), str(entered)]
+            with mutants.run_lock(lock):
+                second = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                try:
+                    with contextlib.suppress(subprocess.TimeoutExpired):
+                        second.wait(timeout=2)
+                    self.assertFalse(entered.exists(), "the second run started inside the first")
+                except BaseException:
+                    second.kill()
+                    raise
+            out, _ = second.communicate(timeout=30)
+            self.assertTrue(entered.exists(), out.decode(errors="replace"))
+            self.assertIn(b"waits", out)
+
+    def order(self, call) -> list[str]:
+        """The events of `call(events)`, with the snapshot and the lock recorded."""
+        events = []
+
+        @contextlib.contextmanager
+        def lock(*_):
+            events.append("lock")
+            yield
+            events.append("unlock")
+
+        def snapshot():
+            events.append("snapshot")
+            return HEAD_TREE
+
+        with mock.patch.object(mutants, "working_tree", snapshot), \
+                mock.patch.object(mutants, "run_lock", lock):
+            call(events)
+        return events
+
+    def test_a_diff_run_snapshots_before_it_waits(self):
+        def call(events):
+            with mock.patch.object(mutants_diff, "run", lambda *_: events.append("run") or 0):
+                mutants_diff.main(["mutants_diff.py", EMPTY_TREE, "scripts/mutants.py"])
+
+        self.assertEqual(self.order(call), ["snapshot", "lock", "run", "unlock"])
+
+    def test_a_whole_crate_run_snapshots_before_it_waits(self):
+        def call(events):
+            with mock.patch.object(mutants, "whole_run", lambda *_: events.append("run") or 0):
+                mutants.main(["mutants.py", "fpc"])
+
+        self.assertEqual(self.order(call), ["snapshot", "lock", "run", "unlock"])
+
+    def test_an_extra_mutants_run_snapshots_before_it_waits(self):
+        def call(events):
+            with mock.patch.object(extra_mutants, "run_crate", lambda *_: events.append("run")):
+                extra_mutants.main(["extra_mutants.py", "fpc"])
+
+        self.assertEqual(self.order(call), ["snapshot", "lock", "run", "unlock"])
+
+    def test_the_last_runs_results_are_set_aside_not_deleted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            results = Path(tmp) / "mutants.diff"
+            results.mkdir()
+            (results / "missed_all.txt").write_text("a survivor\n", encoding="utf-8")
+            old = Path(tmp) / "mutants.diff.old"
+            old.mkdir()
+            (old / "older").write_text("", encoding="utf-8")
+            mutants.set_aside(results)
+            self.assertFalse(results.exists())
+            self.assertEqual((old / "missed_all.txt").read_text(encoding="utf-8"), "a survivor\n")
+            self.assertFalse((old / "older").exists())
 
 
 class DiskRefusal(unittest.TestCase):
