@@ -207,7 +207,11 @@ all side by side.
   under a filter a team's row stays while its own name or any of its players matches. The team
   row replaces the team bar above the old tabs: the team is one click away from its players,
   where a manager looks for it, rather than a strip that took a row from every player. A
-  save opens on ALL with the list's first player row selected.
+  save opens on ALL with the list's first player row selected. **Up and Down** move the
+  selection to the list's previous or next row as shown (team rows included, so the detail
+  turns to the team view on one), the list scrolling to keep it in view, the first and last
+  rows stopping it; they do so while no control holds the keyboard (a focused number steps
+  with them, a text field moves its cursor) and no dialog or popup is open.
   A player row shows his place in the roster (`01` to `23`, the slot `NN` of his id, always
   two digits, so no column is kept for right-aligning a one-digit number), position and name,
   with no team name under ALL or a filter: the team row above its players already names it.
@@ -2274,4 +2278,3 @@ SE-PAT-11  GIVEN SE-PAT-07's save and patch with boots_id = 16384 (past the fiel
            THEN each is refused naming the player and the key, with exit code 2, and --out is
                 not written
 ```
-

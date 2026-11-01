@@ -15052,3 +15052,12 @@ Why: moving the release build into CI before the cut would delay DBC's 0.0.1, an
 exe is a binary nobody has checked; after the cut it serves the next releases, and it moves the
 Linux bundle forward from Phase 16.
 Plan: `plans/core/development_plan.md` "Phase 16: Polish and distribution"; WORKLOG 0.0.1f4.
+
+## 2026-11-01 — save_editor — Up and Down walk the player list
+Decision (maintainer): the Up and Down arrow keys move the player list's selection to the
+previous or next row as shown, team rows included, while no control holds the keyboard and no
+dialog or popup is open; the ends stop it, the list scrolls to keep the row in view.
+Why: the maintainer found the list could only be walked with the mouse; team rows are rows of
+the list a member sees, so the walk does not skip them, and a focused control keeps the keys it
+already uses (a number's step, a text cursor).
+Plan: `plans/save_editor.md` "Editing UI", the player list's paragraph; WORKLOG 0.0.1f1e2.

@@ -3570,6 +3570,27 @@ function onKey(e) {
   }
   if (e.key === "Escape" && S.picker) { closePicker(); render(); }
   if (e.key === "Escape" && S.changesPop) { S.changesPop = false; render(); }
+  // Up and Down walk the list's rows as shown, team rows included, while no
+  // control holds the keyboard (a focused number steps with them instead)
+  // and no dialog or popup is open; the first and last rows stop it.
+  if ((e.key === "ArrowUp" || e.key === "ArrowDown") && S.save && !e.ctrlKey && !e.metaKey
+      && !e.altKey && !document.activeElement.matches("input, select, textarea")
+      && !document.querySelector(".modal-bg") && !S.picker && !S.changesPop) {
+    const rows = [...document.querySelectorAll(".plist .rows .prow")];
+    const at = rows.findIndex(r => r.classList.contains("on"));
+    const next = at < 0 ? null : rows[at + (e.key === "ArrowDown" ? 1 : -1)];
+    if (next) {
+      e.preventDefault();
+      const team = Number(next.dataset.team);
+      S.sel = next.dataset.slot === undefined ? { team } : { team, slot: Number(next.dataset.slot) };
+      render(); updateLink();
+      // After render's own frame puts the list's scroll back: the row comes into view.
+      requestAnimationFrame(() => {
+        const on = document.querySelector(".plist .rows .prow.on");
+        if (on) on.scrollIntoView({ block: "nearest" });
+      });
+    }
+  }
 }
 // ---- Full Player Customization (spec/libs/fpc.md; SE-GUI-11) ----
 // The hide/unhide presets' fields (fpc::preset): the nonexistent ids are the
