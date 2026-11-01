@@ -357,9 +357,19 @@ impl Headless {
         events: Vec<egui::Event>,
     ) -> (Vec<accesskit::Node>, bool) {
         let mut changed = None;
+        let illegal_formations = self.illegal_formations;
         let (nodes, _) = self.frame(events, |ui| {
             changed = Some(crate::test_support::tactics_settings(
-                ui, "tactics", version, tactics, None, view, roster,
+                ui,
+                "tactics",
+                version,
+                tactics,
+                crate::test_support::SettingsContext {
+                    opened: None,
+                    illegal_formations,
+                },
+                view,
+                roster,
             ));
         });
         (nodes, changed.expect("the widget ran"))

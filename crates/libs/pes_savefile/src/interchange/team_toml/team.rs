@@ -129,7 +129,11 @@ impl TeamToml {
             },
             tactics: TacticsSection {
                 starting_eleven: Some(tactics.starting_eleven),
-                bench_order: Some(tactics.bench_order),
+                bench_order: Some(
+                    tactics.bench_order[..12]
+                        .try_into()
+                        .expect("the first twelve of twenty-one"),
+                ),
                 set_pieces: SetPiecesSection {
                     free_kick_long: Some(tactics.set_pieces.free_kick_long),
                     free_kick_short: Some(tactics.set_pieces.free_kick_short),
@@ -168,7 +172,8 @@ impl TeamToml {
         let body = format!("pes_version = {version}");
         let line = padded(
             &body,
-            "the save this was written from; import into another version converts",
+            "the PES version of the save this was exported from; importing into another \
+             version converts the values",
         );
         match self.pes_version {
             Some(_) => out.push_str(&line),
@@ -293,7 +298,7 @@ fn emit_team(out: &mut String, team: &TeamSection) {
         "id",
         team.id.map(|v| v.to_string()),
         "0",
-        "informational: the caller chooses the target team",
+        "the team this was exported from; the command line imports onto it, the Save editor onto the open team",
     );
     emit(
         out,
@@ -318,35 +323,35 @@ fn emit_team(out: &mut String, team: &TeamSection) {
         "manager_id",
         team.manager_id.map(|v| v.to_string()),
         "0",
-        "PES 19+",
+        "PES 19 and later",
     );
     emit(
         out,
         "stadium_id",
         team.stadium_id.map(|v| v.to_string()),
         "0",
-        "PES 19+",
+        "PES 19 and later",
     );
     emit(
         out,
         "color_1",
         team.color_1.map(color_text),
         "[0, 0, 0]",
-        "PES 17+; stored channels, 0-63 each",
+        "PES 17 and later; red, green, blue: 0 to 63 each",
     );
     emit(
         out,
         "color_2",
         team.color_2.map(color_text),
         "[0, 0, 0]",
-        "PES 17+; stored channels, 0-63 each",
+        "PES 17 and later; red, green, blue: 0 to 63 each",
     );
     emit(
         out,
         "kit_slots",
         team.kit_slots.map(kit_slots_text),
         "[{ number = 0, binding = 0 }]",
-        "PES 17",
+        "PES 17 only",
     );
     let flags = &team.edit_flags;
     if flags.name.is_none()
@@ -370,7 +375,7 @@ fn emit_team(out: &mut String, team: &TeamSection) {
         "stadium",
         flags.stadium.map(|v| v.to_string()),
         "false",
-        "PES 20+",
+        "PES 20 and later",
     );
     emit(
         out,
@@ -582,6 +587,7 @@ mod tests {
 
     use super::*;
     use crate::interchange::team_toml::{ImportNote, TeamToml, TeamTomlError};
+    use crate::model::tactics::bench_fill;
     use crate::test_support::{FIXTURES, open, test_salt};
 
     /// `team` with every field defaulted except `id` and `roster`, which Team
@@ -646,7 +652,16 @@ mod tests {
                     .apply(version, &mut target, &mut players)
                     .expect("same-version apply");
                 assert!(notes.is_empty(), "{version:?} team {}: {notes:?}", team.id);
-                assert_eq!(&target, team, "{version:?} team {}", team.id);
+                // `apply` writes the bench's other nine as the game
+                // does, whatever the record held there, so the
+                // field-for-field check expects them computed, not carried.
+                let mut expected = team.clone();
+                let bench: [u8; 12] = expected.tactics.bench_order[..12]
+                    .try_into()
+                    .expect("the first twelve of twenty-one");
+                expected.tactics.bench_order[12..]
+                    .copy_from_slice(&bench_fill(&expected.tactics.starting_eleven, &bench));
+                assert_eq!(&target, &expected, "{version:?} team {}", team.id);
             }
         }
     }
@@ -917,6 +932,21 @@ mod tests {
         assert_eq!(shirt_name_from("lord fulp", PesVersion::Pes19), "LORD FULP");
     }
 
+    /// The formation note sits before the first formation table alone:
+    /// how a formation's `players` read, said once.
+    #[test]
+    fn the_formation_note_sits_before_preset_1s_first_formation_only() {
+        let (file, _) = open(PesVersion::Pes19);
+        let team = file.teams().first().expect("a team");
+        let text = TeamToml::from_team(PesVersion::Pes19, team, &[])
+            .expect("from_team")
+            .to_toml()
+            .expect("to_toml");
+        let note = "# players: in the order of starting_eleven (its first entry is the first player here); roster slots count from 0, so slot 0 is [players.01]";
+        assert!(text.contains(&format!("{note}\n[tactics.preset_1.formation_1]")));
+        assert_eq!(text.matches(note).count(), 1, "the note once");
+    }
+
     /// A formation emits as a multi-line array, one entry per line.
     #[test]
     fn formations_emit_one_entry_per_line() {
@@ -957,7 +987,7 @@ mod tests {
         assert_eq!(
             lines[0],
             format!(
-                "{version_body}{}# the save this was written from; import into another version converts",
+                "{version_body}{}# the PES version of the save this was exported from; importing into another version converts the values",
                 " ".repeat(32 - version_body.len())
             )
         );
@@ -969,7 +999,7 @@ mod tests {
             .find(|l| l.starts_with("manager_id"))
             .expect("a manager_id line");
         let body = format!("manager_id = {}", team.manager_id.expect("PES 19 has it"));
-        let expected = format!("{body}{}# PES 19+", " ".repeat(32 - body.len()));
+        let expected = format!("{body}{}# PES 19 and later", " ".repeat(32 - body.len()));
         assert_eq!(*manager, expected, "the comment sits at column 33");
     }
 
@@ -1314,6 +1344,72 @@ mod tests {
         assert!(
             file.team(999).is_none(),
             "the referee id is not in the save"
+        );
+    }
+
+    /// `bench_order` is the bench alone: the record's first twelve bench
+    /// entries, the nine past them being the game's own fill. A record
+    /// holding a real game's order (the bench, then 23 to 31) exports
+    /// the twelve.
+    #[test]
+    fn an_export_writes_the_twelve_of_the_bench() {
+        let (file, _) = open(PesVersion::Pes17);
+        let mut team = file.team(701).expect("team 701").clone();
+        team.tactics.bench_order = [
+            18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+        ];
+        let text = TeamToml::from_team(PesVersion::Pes17, &team, &[])
+            .expect("from_team")
+            .to_toml()
+            .expect("to_toml");
+        assert!(
+            text.contains("bench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]"),
+            "{text}"
+        );
+    }
+
+    /// An import of the twelve writes them and fills the record's other
+    /// nine as the game does: the roster slots from 0 that neither
+    /// `starting_eleven` nor the twelve name, ascending, so a real
+    /// file's import reproduces the game's own 23 to 31. The eleven is
+    /// the document's, or the record's when the document has none.
+    #[test]
+    fn an_imported_bench_fills_the_nine_as_the_game_does() {
+        let (file, _) = open(PesVersion::Pes17);
+        let expected = [
+            18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+        ];
+        for document in [
+            "[tactics]\nstarting_eleven = [0, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
+            "[tactics]\nbench_order = [18, 16, 22, 14, 6, 15, 1, 17, 4, 13, 20, 12]\n",
+        ] {
+            let mut target = file.team(701).expect("team 701").clone();
+            target.tactics.starting_eleven = [0, 3, 2, 5, 11, 7, 9, 19, 21, 8, 10];
+            target.tactics.bench_order = [255; 21];
+            let doc = TeamToml::parse(document).expect("parses");
+            doc.apply(PesVersion::Pes17, &mut target, &mut [])
+                .expect("applies");
+            assert_eq!(target.tactics.bench_order, expected, "{document}");
+        }
+    }
+
+    /// `bench_order` holds the twelve of the bench: an array of another
+    /// length is refused, its message naming them.
+    #[test]
+    fn a_bench_order_of_another_length_is_refused() {
+        let entries: Vec<String> = (0..21).map(|n| n.to_string()).collect();
+        let err = TeamToml::parse(&format!(
+            "[tactics]\nbench_order = [{}]\n",
+            entries.join(", ")
+        ))
+        .expect_err("twenty-one entries");
+        assert!(
+            matches!(
+                &err,
+                TeamTomlError::WrongType { key, expected }
+                    if key == "tactics.bench_order" && expected.contains("twelve")
+            ),
+            "{err:?}"
         );
     }
 }

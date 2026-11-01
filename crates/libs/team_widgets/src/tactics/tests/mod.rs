@@ -9,9 +9,9 @@ use pes_savefile::model::instruction::Instruction;
 
 use super::*;
 use crate::test_support::{
-    Headless, centre, chip_under, chips_below, combo_row, control_below, control_right_of,
-    controls_below, entry, entry_id, fixture_rows, fixture_tactics, pointer_at, roster_rows,
-    tactics_settings,
+    Headless, SettingsContext, centre, chip_under, chips_below, combo_row, control_below,
+    control_right_of, controls_below, entry, entry_id, fixture_rows, fixture_tactics, pointer_at,
+    roster_rows, tactics_settings,
 };
 
 impl Headless {
@@ -42,6 +42,7 @@ impl Headless {
     ) -> (Vec<accesskit::Node>, bool) {
         let mut changed = None;
         let opened = self.opened_tactics.clone();
+        let illegal_formations = self.illegal_formations;
         let (nodes, _) = self.frame_at(time, events, |ui| {
             // The preset bar as the host draws it, then the panels.
             preset_selector(ui, view);
@@ -52,7 +53,10 @@ impl Headless {
                         "tactics",
                         version,
                         tactics,
-                        opened.as_ref(),
+                        SettingsContext {
+                            opened: opened.as_ref(),
+                            illegal_formations,
+                        },
                         view,
                         roster,
                     ),
@@ -114,6 +118,7 @@ impl Headless {
     ) -> (Vec<(accesskit::NodeId, accesskit::Node)>, bool) {
         let mut changed = None;
         let opened = self.opened_tactics.clone();
+        let illegal_formations = self.illegal_formations;
         let (nodes, _) = self.frame_at_ids(None, events, |ui| {
             preset_selector(ui, view);
             changed = Some(
@@ -123,7 +128,10 @@ impl Headless {
                         "tactics",
                         version,
                         tactics,
-                        opened.as_ref(),
+                        SettingsContext {
+                            opened: opened.as_ref(),
+                            illegal_formations,
+                        },
                         view,
                         roster,
                     ),
@@ -902,13 +910,17 @@ fn the_settings_are_six_even_rows_of_pairs() {
     let mut view = TacticsView::default();
     let rows = fixture_rows(version);
     let roster = roster_rows(&rows);
+    let illegal_formations = window.illegal_formations;
     let (nodes, shapes) = window.frame(vec![], |ui| {
         tactics_settings(
             ui,
             "tactics",
             version,
             &mut tactics,
-            None,
+            SettingsContext {
+                opened: None,
+                illegal_formations,
+            },
             &mut view,
             &roster,
         );

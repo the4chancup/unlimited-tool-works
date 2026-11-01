@@ -545,7 +545,9 @@ fn tactics_block(block: &[u8], version: PesVersion) -> Result<TacticsSection, Le
     }
     tactics.starting_eleven = Some(block[pos..pos + 11].try_into().expect("eleven"));
     pos += 11;
-    tactics.bench_order = Some(block[pos..pos + 21].try_into().expect("twenty-one"));
+    // The document's bench is the first twelve of the block's
+    // twenty-one; `apply` fills the other nine as the game does.
+    tactics.bench_order = Some(block[pos..pos + 12].try_into().expect("twelve"));
     pos += 21;
     // FK long, FK short, FK 2, CK left, CK right, PK; no captain in the block.
     let takers = &block[pos..pos + 6];
