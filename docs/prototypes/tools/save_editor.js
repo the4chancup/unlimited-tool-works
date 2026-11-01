@@ -492,8 +492,9 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .window .num-row span { flex: 1; }
 .panel .drow { display: flex; gap: 8px; padding: 0 4px; white-space: nowrap;
   border-radius: 2px; }
-.panel .drow:hover { background: var(--hover); }
-.panel .drow.sel:hover { background: var(--sel-bg); }
+/* A hovered row is outlined, not filled: a fill under its coloured words (an error's red
+   rule name, a list's grey players) leaves them hard to read. */
+.panel .drow:hover { background: none; box-shadow: inset 0 0 0 1px #969696; }
 .panel .drow .f { width: 190px; flex: none; overflow: hidden; text-overflow: ellipsis; }
 .panel .drow .v { color: var(--strong); }
 .panel .grp { color: var(--strong); margin: 6px 0 2px; }
@@ -551,7 +552,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
    not the dock's 190: the window is narrow, and the sentence needs the room. */
 .panel.live-win .live-body .drow .f { width: 140px; }
 .live-body .drow { display: flex; gap: 8px; padding: 0 4px; white-space: nowrap; border-radius: 2px; }
-.live-body .drow:hover { background: var(--sel-bg); }
+.live-body .drow:hover { background: none; box-shadow: inset 0 0 0 1px #969696; }
 .live-body .drow .f { width: 190px; flex: none; overflow: hidden; text-overflow: ellipsis; }
 .live-body .drow .v { color: var(--strong); }
 /* A height row's players, under it in the plain text colour, wrapping: the

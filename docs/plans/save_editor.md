@@ -1569,7 +1569,11 @@ What this editor adds on top of the lib:
   violations, then the suggestions) the players' groups stand in two columns, the starting
   eleven's on the left and the bench's on the right, each in roster-slot order, and the team's
   own rows span both columns above them: a player's rows are short and the dock spans the
-  view's width, so one column left most of it empty. Multi-team AATF keeps one column: its
+  view's width, so one column left most of it empty. A row under the pointer, here, in
+  Multi-team AATF and in the comparator, is outlined in the hovered widget's stroke (1 point,
+  gray 150 in the dark theme), never filled: a fill under a row's coloured words left an
+  error's red rule name at 2.4:1 on egui's hover grey (1.9:1 on the selection blue the draft
+  had), where the outline leaves it the 5:1 it has at rest. Multi-team AATF keeps one column: its
   report reads team by team, and its rows were just widened to read whole. **Its own
   window**: the pop-out icon at the header's right end (the icon font's arrow out of a square,
   U+E5DE, Phosphor's arrow-square-out; tooltip `Open Live AATF in a window of its own`) moves

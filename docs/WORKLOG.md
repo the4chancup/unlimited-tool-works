@@ -6270,7 +6270,13 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] cv27 a hovered AATF row's grey fill leaves its red rule name hard to read (seen
     2026-10-31 in cv16b's look, `.tmp/0_0_2/look_cv16b/09_crop.png`: "Extra height" on
     `widgets.hovered.bg_fill`; `team_widgets` `row_paint`) → compare the draft's `.drow:hover`
-    first; a change is drafted, rendered and planned before code
+    first; a change is drafted, rendered and planned before code. Compared: the draft's own
+    hover (`--sel-bg`) left the red at 1.9:1, the app's grey at 2.4:1 (`.tmp/0_0_2/cv27/
+    contrast.py`). Drafted (`save_editor.js` `.panel .drow:hover`, `.live-body .drow:hover`:
+    the hovered stroke inside the row, no fill; renders `.tmp/0_0_2/cv27/after_*.png`),
+    planned (`plans/save_editor.md` "Live AATF", the row under the pointer; DECISIONS
+    2026-11-01) → verify: a headless test that a hovered violation row paints no fill and a
+    1-point stroke in `widgets.hovered.bg_stroke`'s colour; the slice is next
   - [x] cv28 Live AATF in a window of its own, embedded (a collaborator's suggestion; the
     maintainer, 2026-11-01, for 0.0.1): the pop-out and dock icons (Phosphor's arrow out of
     and into a square, `resources/icons/pop-out.svg`, `dock.svg`, U+E5DE and U+E5DF, the
