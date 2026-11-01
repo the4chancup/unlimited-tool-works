@@ -286,7 +286,7 @@ fn close_button(ui: &mut egui::Ui) -> egui::Response {
 /// the `Heading` row's height, which the window's dock icon and the dock's
 /// pop-out icon each take as their width too.
 fn title_slot(ui: &egui::Ui) -> f32 {
-    ui.fonts_mut(|fonts| fonts.row_height(&egui::TextStyle::Heading.resolve(ui.style())))
+    ui.text_style_height(&egui::TextStyle::Heading)
 }
 
 /// What the window's frame did: its dock icon or its close button clicked,
@@ -322,6 +322,9 @@ fn window(ui: &egui::Ui, listing: &Listing<'_>) -> WindowFrame {
     .id(id)
     .default_rect(egui::Rect::from_min_max(corner - WINDOW_SIZE, corner))
     .collapsible(false)
+    // After any touch, egui's default drags from anywhere and makes no
+    // title bar interaction, so the dock icon would never be drawn.
+    .drag_area(egui::WindowDrag::TitleBar)
     .resizable(true)
     .open(&mut open)
     .show(ui.ctx(), |ui| {
