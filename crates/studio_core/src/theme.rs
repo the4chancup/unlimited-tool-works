@@ -468,7 +468,7 @@ fn widgets_light() -> egui::style::Widgets {
 /// before the system's fonts. The system fallback finds a font for a letter
 /// of another script, but for a symbol of no script it asks only the
 /// generic families, and on Windows none of them has `☆`, `！` or `Ｕ`,
-/// which cup teams' names hold; the emoji fonts have all three, the same
+/// which cup teams' names hold; `"emoji-icon-font"` has all three, the same
 /// glyphs on every machine. Installed fonts resolve
 /// before the system fallback eframe registers (`Context::set_fonts` replaces the
 /// definitions only, not the context's font providers); `set_fonts` replaces the

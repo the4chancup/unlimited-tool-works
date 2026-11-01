@@ -1806,6 +1806,127 @@ fn the_list_pops_out_into_a_window_and_its_close_turns_live_aatf_off() {
     );
 }
 
+/// `docked_list`'s list popped out through the dock's pop-out icon: the
+/// nodes of the first frame that draws the window (a new window's first
+/// frame is egui's sizing pass, drawn invisible).
+fn popped_out(list: &mut DockedList) -> Vec<accesskit::Node> {
+    use studio_core::StudioTool;
+
+    let DockedList {
+        tool, ctx, window, ..
+    } = list;
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, ctx));
+    tool_click(
+        window,
+        tool,
+        ctx,
+        node_labeled(
+            &nodes,
+            Role::Button,
+            "Open Live AATF in a window of its own",
+        ),
+    );
+    window.frame(Vec::new(), |ui| tool.view(ui, ctx));
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, ctx));
+    assert!(
+        live_window(&nodes).is_some(),
+        "premise: the list popped out into its window"
+    );
+    nodes
+}
+
+/// SE-GUI-48's window keeps its dock icon on a touch screen: once egui has
+/// seen a touch, a window left to drag from anywhere makes no title bar
+/// interaction, which the dock icon stands on. A touch inside the window,
+/// then the next frames each draw the dock icon inside it.
+// SE-GUI-48
+#[test]
+fn a_touch_leaves_the_windows_dock_icon_on_its_title_bar() {
+    use studio_core::StudioTool;
+
+    let mut list = docked_list("live_aatf_window_touch");
+    let nodes = popped_out(&mut list);
+    let DockedList {
+        tool, ctx, window, ..
+    } = &mut list;
+    let dock_icon_inside = |nodes: &[accesskit::Node]| {
+        let frame = live_window(nodes).expect("the Live AATF window");
+        nodes.iter().any(|node| {
+            node.role() == Role::Button
+                && node.label() == Some("Put Live AATF back in its dock")
+                && node.bounds().is_some_and(|bounds| inside(bounds, frame))
+        })
+    };
+    assert!(
+        dock_icon_inside(&nodes),
+        "premise: the dock icon is drawn before the touch"
+    );
+    let frame = live_window(&nodes).expect("the Live AATF window");
+    let at = egui::pos2(
+        ((frame.x0 + frame.x1) / 2.0) as f32,
+        ((frame.y0 + frame.y1) / 2.0) as f32,
+    );
+    let touch = |phase| egui::Event::Touch {
+        device_id: egui::TouchDeviceId(1),
+        id: egui::TouchId(1),
+        phase,
+        pos: at,
+        force: None,
+    };
+    window.frame(
+        vec![touch(egui::TouchPhase::Start), touch(egui::TouchPhase::End)],
+        |ui| tool.view(ui, ctx),
+    );
+    for after in 1..=3 {
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| tool.view(ui, ctx));
+        assert!(
+            dock_icon_inside(&nodes),
+            "frame {after} after the touch draws the dock icon in the window"
+        );
+    }
+}
+
+/// SE-GUI-48's window holds the dock's rows with their click: a violation
+/// row under 71801's group, clicked inside the window, selects him, the
+/// starter 71808 selected before so a click that did nothing fails.
+// SE-GUI-48
+#[test]
+fn a_rows_click_inside_the_window_selects_the_player() {
+    let mut list = docked_list("live_aatf_window_click");
+    let nodes = popped_out(&mut list);
+    let DockedList {
+        tool,
+        ctx,
+        window,
+        bench_header,
+        starter_header,
+        ..
+    } = &mut list;
+    let frame = live_window(&nodes).expect("the Live AATF window");
+    let bench = value_bounds(&nodes, bench_header);
+    let starter = value_bounds(&nodes, starter_header);
+    let row = nodes
+        .iter()
+        .filter(|node| {
+            node.role() == Role::Button
+                && node.bounds().is_some_and(|bounds| {
+                    bounds.y0 >= bench.y1 && bounds.y1 <= starter.y0 && inside(bounds, frame)
+                })
+        })
+        .min_by(|a, b| {
+            let y = |node: &&accesskit::Node| node.bounds().expect("bounds").y0;
+            y(a).partial_cmp(&y(b)).expect("ordered bounds")
+        })
+        .expect("a violation row under 71801's group, inside the window");
+    tool.view.selected = Some(Selection::Player(718, 7));
+    tool_click(window, tool, ctx, row);
+    assert_eq!(
+        tool.view.selected,
+        Some(Selection::Player(718, 0)),
+        "71801's team and slot"
+    );
+}
+
 /// The line segments painted inside `bounds` (a close button's cross),
 /// each one's length and stroke.
 fn segments_inside(
@@ -1832,7 +1953,8 @@ fn segments_inside(
 /// SE-GUI-48's team, edit and check, the list in the dock: the close
 /// button at the dock header's right end, right of the pop-out icon on its
 /// centre line and spaced from it as the window's close button is from its
-/// dock icon, paints the window's cross. Its click turns Live AATF off and
+/// dock icon, paints the window's cross and, hovered, shows the window's
+/// close tooltip, `Turn Live AATF off`. Its click turns Live AATF off and
 /// leaves `live_window` off, so turning Live AATF on again opens the list
 /// in the dock.
 // SE-GUI-49
@@ -1889,6 +2011,21 @@ fn the_docks_close_button_turns_live_aatf_off() {
     let dock_gap = close.x0 - pop_out.x1;
     let dock_cross = segments_inside(&shapes, close);
     assert_eq!(dock_cross.len(), 2, "the dock's cross: {dock_cross:?}");
+    let tooltip = |nodes: &[accesskit::Node]| {
+        nodes
+            .iter()
+            .any(|node| node.value() == Some("Turn Live AATF off"))
+    };
+    assert!(!tooltip(&nodes), "premise: no tooltip before the hover");
+    let hover = vec![egui::Event::PointerMoved(egui::pos2(
+        ((close.x0 + close.x1) / 2.0) as f32,
+        ((close.y0 + close.y1) / 2.0) as f32,
+    ))];
+    let hovered = (0..30).any(|_| {
+        let (_, nodes, _) = window.frame(hover.clone(), |ui| tool.view(ui, &ctx));
+        tooltip(&nodes)
+    });
+    assert!(hovered, "the dock's close button's tooltip");
 
     // Popped out, the window's close button and its dock icon.
     window.frame(away(), |ui| tool.view(ui, &ctx));
