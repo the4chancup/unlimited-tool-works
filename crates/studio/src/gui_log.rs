@@ -281,7 +281,7 @@ pub(crate) fn install_panic_hook() {
 /// One backtrace frame as `{index}: 0x<base>+0x<offset>` (the frame's module base and
 /// the offset into it), not a name: a release exe names its frames only with its `.pdb`
 /// beside it, which the bundle does not ship, so the names are resolved later by
-/// `scripts/symbolize_log.py` against the release's kept symbols. Frame 0 is always
+/// `scripts/release/symbolize_log.py` against the release's kept symbols. Frame 0 is always
 /// inside the exe (the `backtrace` crate is
 /// linked into it), which is how the script tells the exe's module from the system's.
 /// A frame no module claims has no base and reads `{index}: 0x<ip>`; it stays unnamed.

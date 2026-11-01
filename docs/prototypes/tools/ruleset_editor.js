@@ -1947,7 +1947,7 @@ function linkOpen(scr, keys) {
   }
 }
 registerTool({ id: "ruleset-editor", css: RULESET_CSS, draw: drawView, firstShow, onKey, commit, screen, linkKeys, linkOpen,
-  // The screens scripts/draft_shots.py captures, as the links this view writes.
+  // The screens scripts/drafts/draft_shots.py captures, as the links this view writes.
   shots: ["ruleset_editor/general", "ruleset_editor/general?start=0", "ruleset_editor/tiers?start=0",
     "ruleset_editor/heights?start=0", "ruleset_editor/cards?start=0",
     "ruleset_editor/universal?start=0", "ruleset_editor/specials?start=0",

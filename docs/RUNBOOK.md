@@ -10,7 +10,7 @@ and its rules stay in force. Read a section before starting what it covers.
 
 **Whole-crate mutation runs are split with the maintainer's VPS.** On the maintainer's PC the
 user environment variable `STUDIO_MUTANTS_REMOTE=bonfire` (an alias in `~/.ssh/config`) makes
-`just mutants <crate>` run part of the mutants there (`scripts/mutants.py`: the working tree is
+`just mutants <crate>` run part of the mutants there (`scripts/mutation/mutants.py`: the working tree is
 sent as a git bundle, the remote half runs at low priority, its results land in
 `mutants.out/remote/` and the combined survivors in `mutants.out/missed_all.txt`). A whole-crate
 run hands each side a complementary set of the crate's source files rather than `--shard`
@@ -96,11 +96,11 @@ were removed (2026-10-11), when the split came back; the switch stays for the ne
 maintainer moved every mutation run to the VPS again on 2026-10-25 (the switch on), and the
 lead's gates with them (`just gates-remote`); tests and gates came back the same evening, and
 mutation runs split again from 2026-10-26 (the switch off).
-`REMOTE_ONLY = True` in `scripts/mutants.py` makes
+`REMOTE_ONLY = True` in `scripts/mutation/mutants.py` makes
 `just mutants` and `just mutants-diff` run every mutant on the VPS as one whole run (no
 local half, no split threshold; the last local `mutants.out` set aside as
 `mutants.out.old`), and `just gates-remote` runs `just gates` there against a snapshot of
-the working tree (`scripts/remote_gates.py`: the same transfer and clone, so it refuses
+the working tree (`scripts/mutation/remote_gates.py`: the same transfer and clone, so it refuses
 while a mutants half is running or uncollected; the transient service `studio-gates`,
 memory-capped and CPU-idle, run synchronously). The VPS's `just` is installed in
 `~/.cargo/bin` at this machine's version, as cargo-mutants is. The lead uses
@@ -130,7 +130,7 @@ cap, which is the cgroup's page cache being reclaimed, not a kill, so a peak nea
 changes nothing by itself. When a build is killed at the cap, the run fails and lists the
 untested mutants (`report_killed`), and the fix is then memory freed on the host (the
 maintainer's) or a lower `REMOTE_BUILD_JOBS`; past one job, the crate joins
-`LOCAL_ONLY_CRATES` in `scripts/mutants.py`, whose mutants never go to the VPS (a whole-crate run
+`LOCAL_ONLY_CRATES` in `scripts/mutation/mutants.py`, whose mutants never go to the VPS (a whole-crate run
 and any diff holding one of them run locally whole). `team_compiler` was listed from 4.14d, whose
 run lost two builds at the cap with one job, until the Phase 4 converge audit (2026-10-09) found
 the cause: the host's `/tmp` is a 7.8 GiB tmpfs, cargo-mutants' default place for its two copies
@@ -185,10 +185,10 @@ root or an environment variable rather than a scratch path, and a line here or i
 `~/.claude/tools/` on the maintainer's machine: the below-normal build wrapper, the safe amend,
 the sidekick launcher and its waiter, the detached runner, the context and disk watchers, the
 handover's stamp and the review-cost readers; each takes the repository from the directory it
-runs in. A release candidate takes two: `scripts/build_remapped.py` builds the release exe
-with `just release`'s flags and checks it leaks no local path, and `scripts/make_candidate.py
+runs in. A release candidate takes two: `scripts/release/build_remapped.py` builds the release exe
+with `just release`'s flags and checks it leaks no local path, and `scripts/release/make_candidate.py
 <commit>` stages the unpacked bundle from it in `../4cc-studio-temp/candidate-<version>`;
-`scripts/sgrep.py <file> <regex>` greps a draft past its embedded data rows. A review has
+`scripts/drafts/sgrep.py <file> <regex>` greps a draft past its embedded data rows. A review has
 `review_sweep.py <diff>` (the honesty and design sweeps' patterns over the added lines),
 `pure_move_check.py <base> <dir>` (a move changed no code line), `clones.py` (repeated code
 shapes, for the design-health pass) and `acceptance_ids.py <ID or prefix>...` (a scenario's
@@ -208,7 +208,7 @@ grown `.tmp/` to 17 GB by 3.8. Each local run extracts its snapshot to
 fixed parent, `LOCAL_TMPDIR`, so one antivirus exclusion covers every run; until 2026-10-10
 directly in `%TEMP%`), the extra pass in `extra-mutants-*`, all deleted when the run ends
 normally; a killed run leaves its copies behind (some with a multi-GB `target/`), so after
-stopping one, delete them (`scripts/rm_mutant_copies.py`, which refuses anything else; until
+stopping one, delete them (`scripts/mutation/rm_mutant_copies.py`, which refuses anything else; until
 2026-11-01 it looked for the copies under their old name and found none). `.cargo/mutants.toml`
 sets `gitignore = true` so the copies leave out `.tmp/` and `target/`: before 3.8 each copy
 carried all of `.tmp/`, and two 3.7 runs died of a full disk. The logs alone are large: a
@@ -230,7 +230,7 @@ the host's system; when this project's cleanup cannot lift it, the maintainer is
 leftovers, 27 the Save editor's pid-named copies of a fixture save), the disk was at 99% and a
 half lost five mutants. **At each phase's close**, after its last mutation run, the lead
 removes the clone's build cache, `~/studio-mutants/tree/target` (22 GB after two phases; only
-`just gates-remote` builds there, which then starts cold) with `scripts/remote_clean_target.sh`
+`just gates-remote` builds there, which then starts cold) with `scripts/mutation/remote_clean_target.sh`
 (its header has the two ssh lines: a dry run first, then `--delete`); it refuses while a half,
 the gates or a cargo process runs. The same cleanup frees the folder whenever the guard refuses
 for the budget or the floor between closes (2026-10-29: 35 GB, the disk from 13 to 47 GB
@@ -304,7 +304,7 @@ build, count the ones running; a third waits for one to end.
 **Every build and test job runs at below-normal priority** (the maintainer, 2026-10-30): at
 normal priority two jobs left the maintainer's machine barely usable, while a below-normal one
 yields every processor to their own programs and slows only while they use it. The priority is
-inherited, so it is set where a job starts: `scripts/mutants.py` starts cargo-mutants that way,
+inherited, so it is set where a job starts: `scripts/mutation/mutants.py` starts cargo-mutants that way,
 the lead's sidekick launcher starts its `claude` process that way (everything the sidekick runs
 inherits it), and the lead starts its own gates, package tests and release builds through a
 wrapper that does the same (`~/.claude/tools/below_normal.py <command>`). A job found at normal
@@ -341,7 +341,7 @@ least (the same loop, until a round accepts fewer than five), Astra when a chang
 a run measures; the first review of each covers the whole script, later ones the changed
 functions and their callers. Until 2026-11-01 no script had one, and `mutants_diff.py` had
 been deleting the previous run's results whenever two runs followed each other. A test a
-change adds to one is shown to fail by `scripts/perturb_check.py` (a list of perturbations,
+change adds to one is shown to fail by `scripts/review/perturb_check.py` (a list of perturbations,
 each with its test, applied and undone one at a time).
 **Batch, don't stream:**
 renames, doc edits, one-file fixes with no new behavior are never reviewed on their own; their

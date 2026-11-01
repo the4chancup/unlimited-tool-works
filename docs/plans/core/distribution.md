@@ -24,7 +24,7 @@ There is no installer. Each release is a `.7z` archive containing:
   `.md`, because a double-click opens a `.txt` in Notepad on any Windows, where a `.md` opens
   whatever app claimed it, or asks
 
-`just release <version>` (`scripts/release.py`, Windows only) builds the exe with `--locked`,
+`just release <version>` (`scripts/release/release.py`, Windows only) builds the exe with `--locked`,
 stages those files under one top folder, `unlimited-tool-works-<version>/`, so "Extract here"
 makes one folder rather than scattering the files, and packs it with 7-Zip as
 `unlimited-tool-works-<version>-windows.7z` in the `dist/` folder of cargo's target directory
@@ -39,7 +39,7 @@ checks that each launcher it ships calls it (none in 0.0.1), so the executable's
 and the recipe cannot drift from it; the package name `unlimited-tool-works` is the
 recipe's own constant, since no built file states it. Beside the archive it keeps the release's symbols, never in the
 bundle: the built exe and its `.pdb`, packed as `unlimited-tool-works-<version>-symbols.7z`,
-which `scripts/symbolize_log.py` reads to name a posted `utw.log`'s backtrace
+which `scripts/release/symbolize_log.py` reads to name a posted `utw.log`'s backtrace
 (`architecture.md` "Diagnostic logging"). The release profile builds with
 `debug = "line-tables-only"`, so the kept `.pdb` names each frame's file and line as well as
 its function; the line tables live in the `.pdb`, leaving the exe's size as it was.
