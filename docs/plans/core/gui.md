@@ -443,7 +443,10 @@ Like the settings menu it is **assembled from the tools**, not written centrally
   divider resizes it, the height kept across frames. The divider carries a grip at its middle,
   a line 24 points long and 2 high, rounded, in the plain text grey (the noninteractive
   widgets' text colour, the drafts' `--text`, in `.log-divider::after`): egui's resize edge shows only under the pointer, so an open dock gave
-  no sign it could be resized. That frame (header row, chevron, divider and its grip)
+  no sign it could be resized. It lies just inside the dock, its top on the dock's top edge,
+  where the drafts centre it on their 4-point divider: a panel shown after the dock (the
+  view above it) paints over anything drawn above that edge, as egui's own separator line
+  stays inside its panel for the same reason. That frame (header row, chevron, divider and its grip)
   is the widget's own part, apart from the lines it holds: the Save editor's Live AATF list
   (`plans/save_editor.md` "Configurable AATF rules") docks in it too.
 - **Capped display**: only the last few hundred lines are rendered (egui text rendering is not

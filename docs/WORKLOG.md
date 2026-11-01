@@ -6335,8 +6335,12 @@ briefs, review loops, gates and mutation runs as for any step.
     (Sc1-1 to Sc1-3) are the lead's. `live_aatf.rs`, `view/mod.rs`, its tests `live_aatf.rs`
     and `savefile.rs`, `violations.rs`, `theme.rs`. SWE-2 round 2 accepted 4 (S-cv28-30 r2:
     two plan sentences and two glyph comments behind the code, a comment naming the old AATF
-    panel; the lead's fixes), which ends SWE-2's loop. Open: `just mutants-diff a47ecbbd^1`
-    and `just mutants-diff f0d4553f crates/libs/team_widgets`, then Astra over cv28-cv32
+    panel; the lead's fixes), which ends SWE-2's loop. Both mutation runs triaged (cv36).
+    Astra round 1 over cv28-cv32 accepted 2 (`.tmp/duck_rulings.md` S-cv28-32 Astra r1; the
+    third became P49), which ends Astra's loop: the dock's grip lay half under the view above
+    it (now inside the dock, `plans/core/gui.md` "Log panel"), and SE-GUI-48's settings
+    readback was unobserved → brief `.tmp/rv2830/brief_astra_r1.md` (SWE-2 sidekick), then a
+    SWE-2 loop over it
   - [ ] cv33 a team no quota system takes is read under the nearest system, fewest errors
     deciding (`plans/aatf_rules.md` "A team no quota system takes" and the NearestSystem
     paragraph; DECISIONS 2026-11-01; for the next candidate, the organizer validates it) →
@@ -6347,20 +6351,30 @@ briefs, review loops, gates and mutation runs as for any step.
     "Multi-team AATF counts the teams under each system"; DECISIONS 2026-11-01): the draft
     first (the lead's), then the scenario under SE-GUI-41, then the slice on cv33's team
     result → verify: DBC6 under DBC7 reads "Height 8, Manlet 14, Universal 11, GigaHeight 14"
-  - [ ] cv35 Set PES path over the team view's pitch while the sidebar's selector is orange or
+  - [x] cv35 Set PES path over the team view's pitch while the sidebar's selector is orange or
     red (the maintainer's request, 2026-11-01; `plans/save_editor.md` "Tactics editor", the
     Set PES path bullet; `plans/core/gui.md` "Settings menu"'s one storing function, shared
     with Fix PES path; DECISIONS 2026-11-01; draft done, `save_editor.js` `setFolder` and
     `index.html` `storePesFolder`) → verify: SE-GUI-50 headless, its manual pick on the built
     window, the pick stored through `CommonSettings::fix_pes_folder` (`studio_core`, today
-    `pub(crate)` with the shell its only caller), its tests unchanged. For the next candidate
-  - [ ] cv36 the cv28-32 mutation runs' survivors (`just mutants-diff a47ecbbd^1` and the
+    `pub(crate)` with the shell its only caller), its tests unchanged. For the next candidate.
+    Merged `e4c026da` (Opus sidekick, two slices `cb1764fb` and `7853831c`; the lead's re-run:
+    studio_core 336, save_editor 643 + 46, team_widgets 225, clippy, fmt): `ToolContext`
+    carries the sidebar's `ExeCheck` (moved to `tool.rs`) and `set_pes_folder`, the one
+    storing function Fix PES path shares; `tactics.rs` `set_pes_folder_button` centred in the
+    corner `team_widgets::pitch::penalty_box_right` leaves, outlined in the text grey, 2-point
+    side padding. SE-GUI-50 measures the margins on PES 2017 (9) and PES 2021 (1.5). Open: its
+    manual pick and its look in the built window (with item 3 of the handover's looks), the
+    SWE-2 round (a new pub interface over two crates)
+  - [x] cv36 the cv28-32 mutation runs' survivors (`just mutants-diff a47ecbbd^1` and the
     team_widgets rerun from `f0d4553f`, 88 mutants, 1 missed), triaged: two missing tests,
     `team_widgets` `instruction_table`'s row numbers (`instructions.rs:218:31`, `+` to `*`)
     and Live AATF's window first opening at the screen's bottom right (`live_aatf.rs:309:46`);
     `live_aatf.rs:154:67` (`/ 2.0` to `% 2.0` on the pop-out icon's centring space) moves the
     icon about a quarter point, under a pixel, no test, the brief measuring the two sizes
-    behind that reading → brief `.tmp/0_0_2/brief_cv36.md`, tests only
+    behind that reading → brief `.tmp/0_0_2/brief_cv36.md`, tests only. Merged `972093cc`
+    (Opus sidekick, `6eca15d6`; the lead's re-run: save_editor 642 + 46, team_widgets 225);
+    154:67 measured 0.22 point, left untested
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
