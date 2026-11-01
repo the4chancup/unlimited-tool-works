@@ -12,10 +12,13 @@ names where the question came from so the context can be read there.
 
 - **The final pass over the built app's UI** (worklog 0.0.1f1c). Any change it asks for is
   drafted first, looked at in the drafts, then built.
-  - **The candidate:** 0.0.1e, branch `release/0.0.1-candidate` at `1c1f2964`, unpacked at
-    `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1e\unlimited-tool-works-0.0.1\`
+  - **The candidate:** 0.0.1f, branch `release/0.0.1-candidate` at `e39e0a9d`, unpacked at
+    `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1f\unlimited-tool-works-0.0.1\`
     (`COMMIT.txt` beside the folder names its commit; the .7z beside it), full gates green
-    (5580 tests). New since 0.0.1d (worklog cv23a, cv27-cv37): the Cards left badge computed
+    (5584 tests). New since 0.0.1e: the wheel over a Tactics toggle (the style pairs, Few/
+    Medium/Many) wraps round at its ends instead of stopping, as you asked (cv38); the lead
+    checked it in the staged exe (DBC6's save read-only: Counter Attack, a notch down,
+    Possession; Medium, two notches up, Many then Few). New in 0.0.1e, since 0.0.1d (worklog cv23a, cv27-cv37): the Cards left badge computed
     off the UI thread, so the wheel on a stat box keeps pace; a hovered AATF row outlined, not
     filled; Live AATF in a window of its own (pop-out and dock buttons, the dock's grip); a
     team no quota system takes read under the nearest one (DBC6's /cookie☆/ as Manlet);

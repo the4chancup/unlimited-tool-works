@@ -3017,3 +3017,5 @@ worklog passed 7,000 lines.
   at in the built window; the outline showed the rows lack the draft's inset (cv37); cv13_who had timed the crash notice.
 - 2026-11-01 — Candidate 0.0.1e staged at `1c1f2964` (full gates green, 5580 tests): cv23a, cv27-cv37 and the
   emoji fonts since 0.0.1d, each checked by the lead in the staged bundle; cv37's mutants-diff left no survivor.
+- 2026-11-01 — Candidate 0.0.1f staged at `e39e0a9d` (full gates green, 5584 tests): cv38, the wheel over a
+  Tactics toggle wraps round (the maintainer's ask), checked in the staged exe; cv23d's test and its flake fixed.
