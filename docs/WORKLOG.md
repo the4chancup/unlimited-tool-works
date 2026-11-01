@@ -6262,12 +6262,26 @@ briefs, review loops, gates and mutation runs as for any step.
     check over 220 teams (701-920): `team_views` on the UI thread 15 ms, `check_teams` 3.7 s
     wall on all cores and 35.6 s on one thread (about 160 ms a team); a dialog frame listing
     them 52 ms median (p90 117), each frame while it is open.
-    - [ ] cv23a the badge on a worker (plan "The skills' Cards left badge", its last
+    - [x] cv23a the badge on a worker (plan "The skills' Cards left badge", its last
       sentences; DECISIONS 2026-11-01) → verify: a headless test that a notch frame and the
       frame after it run no tier script on the UI thread (the badge's key moves, the held
-      badge stays drawn for the same player), and the frame time re-measured
+      badge stays drawn for the same player), and the frame time re-measured. SWE-2 sidekick
+      (`.tmp/0_0_2/brief_cv23a.md`; its run hung at ~264K tokens after the red runs, resumed
+      for Verify and the report), `3cff6af7`, merged `e60f4365` (the lead's re-run:
+      save_editor 651 + 46, team_widgets 227). `abilities.rs` `Cards`, `spawn_badge`; tests
+      `an_edit_keeps_the_players_badge_drawn_while_the_new_one_runs`,
+      `another_player_draws_no_badge_until_his_lands`,
+      `a_key_moved_mid_run_starts_its_badge_when_the_reply_lands`. Re-measured on the merge
+      (`run3.log`, idle machine): the frame after a notch 0.72 ms median (max 1.09), an idle
+      frame 0.78. Open: the wheel in the built window, with cv27's look
     - [ ] cv23b the Multi-team dialog's 52 ms frames: find where a listing frame's time goes
-      (220 teams' rows laid out each frame), then cut it
+      (220 teams' rows laid out each frame), then cut it. Measured on a quiet machine
+      (`.tmp/0_0_2/cv23/run4.log`, `run4_b.txt`, the merge `e60f4365`): a listing frame 23 ms
+      median (the 52 was under load), of which `violations_list` 21.3, `listed_players` 0.26,
+      the team list 0.02. Each row words its sentence and detail and makes three text layouts
+      every frame, for every team's rows, visible or not. Usable as it is (a report read
+      once, ~40 frames a second); after the cut: lay out only the rows in view, their heights
+      kept per check key and width, or keep the worded rows per check key
     - [ ] cv23c the logic's cost: a team check about 160 ms of CPU, the team reading redone
       by each host call (`height_system` in `player_tier`, `card_limits`, `tier_values` and
       `check_team`); after the cut unless cv23b shows it is what the dialog waits on
@@ -6295,7 +6309,9 @@ briefs, review loops, gates and mutation runs as for any step.
     the hovered stroke inside the row, no fill; renders `.tmp/0_0_2/cv27/after_*.png`),
     planned (`plans/save_editor.md` "Live AATF", the row under the pointer; DECISIONS
     2026-11-01) → verify: a headless test that a hovered violation row paints no fill and a
-    1-point stroke in `widgets.hovered.bg_stroke`'s colour; the slice is next
+    1-point stroke in `widgets.hovered.bg_stroke`'s colour. Code with cv23a's slice
+    (`3cff6af7`, merged `e60f4365`): `row_paint` strokes, `violations.rs`
+    `a_hovered_row_is_outlined_not_filled` (red on the fill). Open: the built-window look
   - [x] cv28 Live AATF in a window of its own, embedded (a collaborator's suggestion; the
     maintainer, 2026-11-01, for 0.0.1): the pop-out and dock icons (Phosphor's arrow out of
     and into a square, `resources/icons/pop-out.svg`, `dock.svg`, U+E5DE and U+E5DF, the
