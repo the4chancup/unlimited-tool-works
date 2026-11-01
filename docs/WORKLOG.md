@@ -6511,7 +6511,14 @@ briefs, review loops, gates and mutation runs as for any step.
     for the comparator), `comparator.rs` `field_row`; tests
     `a_reports_all_clean_stands_the_rows_inset_in`, `a_row_stands_in_the_drows_two_columns`,
     the column tests at 4 / 202 / 152; `gates-changed e60f4365` green (5580 passed). Open:
-    the built-window look against the draft, the mutants-diff
+    the mutants-diff (`just mutants-diff 37c99bd3`, queued)
+    - manual: checked 2026-11-01 by the lead, in the built window (release build of
+      `568cca89`, DBC6's save read-only, a copy as the comparator's second save): heading to
+      name, name to sentence, outline to name, in px, against the draft's renders
+      (`.tmp/0_0_2/look_cv37/offsets.py`): Live AATF docked 5 / 197 / 5 (draft 5 / 196 / 5),
+      in its window 5 / 147 / 5, Multi-team AATF 5 / 197 / 5 (draft 4 / 197 / 4), the
+      comparator 3 / 198 / 4 (its label's `A` inks at its box's edge); the list's border to
+      the outline 7 in both
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
