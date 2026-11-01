@@ -86,4 +86,9 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   Flexible and Very early on those three, taken from PES 2017's and 2021's screens (both list
   the four) rather than looked at (`plans/save_editor.md` "Tactics editor", the sentence on
   Substitution). A look at each game's Game Plan > Automatic settings > Substitution confirms
-  or corrects it; the three are on G:.
+  or corrects it; the three are on G:.- **Playing attitude on PES 2019** (you, 2026-11-01: not editable on 19). The Save editor shows
+  it from PES 2020 only (`plans/save_editor.md` "Editing UI", the Cutscenes group: "star (19+)
+  and playing attitude (20+)"): PES 19's schema has no field for it, and the census found no
+  bit of the PES 19 player record left uncovered that any save sets (`spec/pes_savefile/model.md`
+  "The player record"). Does PES 2019's Edit mode offer a playing attitude on a player? If it
+  does, it is a field still to find (changed in game, the save diffed); if not, the plan holds.
