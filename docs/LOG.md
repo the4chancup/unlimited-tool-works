@@ -3013,3 +3013,5 @@ worklog passed 7,000 lines.
   became Set PES path in the corner beside the penalty box (the maintainer's look); cv28-32 survivors triaged (cv36).
 - 2026-11-01 — cv35 (Set PES path) and cv36 merged; Astra over cv28-cv32 accepted 2 (the dock's grip, a readback test),
   one became P49; the release scripts' SWE-2 round 1 accepted 9, reworked (`rel-r1`), round 2 running.
+- 2026-11-01 — cv33 closed (its mutants-diff: one equivalent survivor); cv23a's wheel and cv27's outline looked
+  at in the built window; the outline showed the rows lack the draft's inset (cv37); cv13_who had timed the crash notice.
