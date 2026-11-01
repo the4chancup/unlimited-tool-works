@@ -6548,7 +6548,8 @@ briefs, review loops, gates and mutation runs as for any step.
     drawn keeps the ids (probe: the dialog stayed open) → verify: a test holding the check's
     reply on a test channel, pressing the title, landing the reply, releasing: the dialog
     stays open; red on the current code. The flaky test waits for 701's check before it reads
-    any bounds
+    any bounds. Ships after 0.0.1's cut (the maintainer, 2026-11-01: "It can wait"): it lands
+    on main, the candidate branch stays at 0.0.1f's `e39e0a9d`
   - [x] cv23d the idle Ability stats view's repaint (cv23a's mutants-diff survivor,
     `abilities.rs:741` `&&` → `||`): a test that a frame with no input after the badge has
     landed asks for no repaint, red on the mutant (`left: 0ns`); SWE-2 sidekick
