@@ -6519,15 +6519,26 @@ briefs, review loops, gates and mutation runs as for any step.
       in its window 5 / 147 / 5, Multi-team AATF 5 / 197 / 5 (draft 4 / 197 / 4), the
       comparator 3 / 198 / 4 (its label's `A` inks at its box's edge); the list's border to
       the outline 7 in both
-  - [ ] cv38 the wheel over a Tactics toggle wraps round (the maintainer, 2026-11-01: "loop
+  - [x] cv38 the wheel over a Tactics toggle wraps round (the maintainer, 2026-11-01: "loop
     through the choices instead of sticking to the left or right"; plan "The wheel over a
     value", ST-WHEEL-05; DECISIONS 2026-11-01): `team_widgets` `tactics/mod.rs`
-    `style_choices` and `number_choices` step through `step_choice`, which clamps; the draft's
-    wheel listener (`docs/prototypes/index.html`) wraps already → verify: ST-WHEEL-05's test
-    with a notch past each end, red on the clamped code
-  - [ ] cv23d the idle Ability stats view's repaint (cv23a's mutants-diff survivor,
+    `style_choices` and `number_choices` stepped through `step_choice`, which clamps; the
+    draft's wheel listener (`docs/prototypes/index.html`) wraps → verify: ST-WHEEL-05's test
+    with a notch past each end, red on the clamped code. SWE-2 sidekick
+    (`.tmp/0_0_2/cv38/brief_cv38.md`; it also moved the two `team_widgets` wheel tests' end
+    rows to the wrap, which the brief had missed), `496fc329`, merged `d27eefa4`:
+    `studio_core` `wheel.rs` `cycle_choice` (a combo still clamps); tests
+    `a_toggle_choice_cycles_round_the_ends`, `wheel_notches_wrap_round_at_the_toggles_ends`
+    (red: `a second notch up wraps round to Counter Attack`)
+  - [x] cv23d the idle Ability stats view's repaint (cv23a's mutants-diff survivor,
     `abilities.rs:741` `&&` → `||`): a test that a frame with no input after the badge has
-    landed asks for no repaint, red on the mutant; SWE-2 sidekick (`.tmp/0_0_2/brief_cv23d.md`)
+    landed asks for no repaint, red on the mutant (`left: 0ns`); SWE-2 sidekick
+    (`.tmp/0_0_2/brief_cv23d.md`), `5ae37b40`, merged `44fd1989`: test
+    `an_idle_view_asks_for_no_frame`. It failed once in the full gates (`left: 0ns`): the
+    worker asks for its repaint after sending the reply, so under load the request lands on
+    the idle frame (reproduced with a temporary 35-70 ms sleep before that request, since
+    undone); the test now runs idle frames until one asks for none (120 s hang guard), red on
+    the mutant (`an idle view keeps asking for a repaint`)
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
