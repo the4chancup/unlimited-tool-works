@@ -2513,6 +2513,98 @@ fn the_pitch_draws_a_starter_s_portrait_from_the_selected_game() {
     );
 }
 
+// While the sidebar's exe check fails the pitch carries a Set PES folder
+// button in its bottom-right corner, the portraits all placeholders; it is
+// gone while the check finds the selected game's exe, back on another
+// version's, and its picker's folder becomes the view's ask.
+// SE-GUI-50
+#[test]
+fn a_set_pes_folder_button_stands_over_the_pitch_while_the_exe_check_fails() {
+    let path = fixture(PesVersion::Pes17, "tactics_set_pes_folder");
+    let scratch = path.parent().expect("the save's folder").to_path_buf();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.pes_version = PesVersion::Pes17;
+    view.pes_exe_check = Some(ExeCheck::NoFolder);
+    let mut window = Headless::sized(1600.0, 1400.0);
+    // The folder the check found missing: the portraits worker reads nothing.
+    view.select_portraits(&window.ctx, &scratch.join("missing"), PesVersion::Pes17);
+    view.selected = Some(Selection::Team(718));
+    let set_folder = |nodes: &[accesskit::Node]| {
+        nodes
+            .iter()
+            .find(|node| node.role() == Role::Button && node.label() == Some("Set PES folder"))
+            .and_then(accesskit::Node::bounds)
+    };
+
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let canvas = canvas_of(&nodes);
+    let button = set_folder(&nodes).expect("the check fails: the button is drawn");
+    assert!(
+        (canvas.x1 - button.x1 - 7.0).abs() < 0.5,
+        "the button's right edge 7 in from the canvas' ({button:?} in {canvas:?})"
+    );
+    assert!(
+        (canvas.y1 - button.y1 - 6.0).abs() < 0.5,
+        "the button's bottom 6 up from the canvas' ({button:?} in {canvas:?})"
+    );
+    let canvas_rect = egui::Rect::from_min_max(
+        egui::pos2(canvas.x0 as f32, canvas.y0 as f32),
+        egui::pos2(canvas.x1 as f32, canvas.y1 as f32),
+    );
+    let portraits: Vec<egui::TextureId> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Mesh(mesh) => {
+                Some((clipped.shape.visual_bounding_rect(), mesh.texture_id))
+            }
+            _ => None,
+        })
+        .filter(|(rect, _)| {
+            canvas_rect.contains_rect(*rect)
+                && (rect.size() - egui::vec2(50.0, 50.0)).length() < 0.5
+        })
+        .map(|(_, texture)| texture)
+        .collect();
+    assert_eq!(
+        portraits.len(),
+        11,
+        "every starter's marker paints a portrait"
+    );
+    assert!(
+        portraits.iter().all(|texture| *texture == portraits[0]),
+        "every starter paints the one placeholder texture: {portraits:?}"
+    );
+
+    view.pes_exe_check = Some(ExeCheck::Found);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(set_folder(&nodes), None, "the check passes: no button");
+
+    view.pes_exe_check = Some(ExeCheck::OtherVersion(PesVersion::Pes19));
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        set_folder(&nodes).is_some(),
+        "another version's exe: the button is back"
+    );
+
+    let picked = scratch.join("Pro Evolution Soccer 2017");
+    view.pick_folder_dialog = {
+        let picked = picked.clone();
+        Box::new(move || Some(picked.clone()))
+    };
+    assert_eq!(view.picked_pes_folder, None, "premise: nothing asked yet");
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Set PES folder"),
+        &mut view,
+    );
+    assert_eq!(
+        view.picked_pes_folder,
+        Some(picked),
+        "the picked folder is the view's ask"
+    );
+}
+
 // The Automatic settings row wraps inside the settings column (the
 // draft's `.row`): the Substitution pair and the three checkboxes each
 // end inside the column's 422 width. And the armed mode draws no note:

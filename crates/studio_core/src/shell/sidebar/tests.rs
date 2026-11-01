@@ -1102,6 +1102,34 @@ fn the_selector_is_colored_by_the_exe_found_in_the_pes_folder() {
     fs::remove_dir_all(&dir).unwrap();
 }
 
+// The tools read the selector's own verdict: after a frame over a folder holding another
+// version's exe, the context every tool gets reports what coloured the selector.
+#[test]
+fn the_tools_context_reports_the_exe_check_the_selector_was_colored_by() {
+    let egui_ctx = test_context();
+    let dir = test_dir("studio_core_sidebar_context_pes19");
+    fs::create_dir_all(&dir).unwrap();
+    fs::write(dir.join("PES2019.exe"), b"").unwrap();
+    let (a, calls_a) = stub("a", "A", None);
+    let mut settings = Settings::default();
+    settings.common.pes_version = PesVersion::Pes21;
+    settings.common.pes_folder_path = dir.display().to_string();
+    let Shell { mut app, .. } =
+        shell_with(settings, vec![a], &[], Some(dir.clone()), vec![calls_a]);
+    assert_eq!(
+        app.ctx.pes_exe_check(),
+        None,
+        "no check before the first frame"
+    );
+
+    frame(&egui_ctx, &mut app, Vec::new(), true);
+    assert_eq!(
+        app.ctx.pes_exe_check(),
+        Some(ExeCheck::OtherVersion(PesVersion::Pes19))
+    );
+    fs::remove_dir_all(&dir).unwrap();
+}
+
 #[test]
 fn the_exe_check_relists_on_a_change_or_on_focus_never_per_frame() {
     let egui_ctx = test_context();

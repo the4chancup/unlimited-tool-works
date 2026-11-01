@@ -4,12 +4,13 @@
 //! and requests to the shell (switch tool, notify).
 
 use std::fmt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::Duration;
 
 use crossbeam_channel::Sender;
 use log::debug;
+use pes_version::PesVersion;
 
 use crate::events::PipelineEventEnvelope;
 use crate::help::{HelpSection, HelpTarget};
@@ -174,6 +175,21 @@ pub enum ShellRequest {
     Close,
 }
 
+/// What the sidebar's exe check found at its last listing of the resolved PES folder
+/// (ST-SIDE-03): the PES selector is red on `OtherVersion`, orange on `NoExe` and
+/// `NoFolder`, uncolored on `Found`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExeCheck {
+    /// The resolved PES folder holds the selected version's exe.
+    Found,
+    /// It exists but holds a different version's exe (wrong selection or wrong path).
+    OtherVersion(PesVersion),
+    /// It exists but holds no `PES20NN.exe` at all.
+    NoExe,
+    /// It does not exist (or cannot be listed).
+    NoFolder,
+}
+
 /// The GUI's repaint waker: `run_gui` installs
 /// `egui::Context::request_repaint_after` once the window exists, so a run's `emit` or a tool's
 /// own deadline reaches a frame while no input arrives. egui stays out of this type, which the
@@ -197,6 +213,9 @@ pub struct ToolContext {
     requests: Sender<ShellRequest>,
     /// The repaint waker, shared by every clone and filled once, when the window is created.
     wake: Arc<OnceLock<Wake>>,
+    /// The sidebar's latest exe check, shared by every clone; `None` until the sidebar's
+    /// first frame, and always in the CLI.
+    pes_exe_check: Arc<Mutex<Option<ExeCheck>>>,
 }
 
 impl ToolContext {
@@ -214,6 +233,7 @@ impl ToolContext {
             events,
             requests,
             wake: Arc::new(OnceLock::new()),
+            pes_exe_check: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -263,6 +283,35 @@ impl ToolContext {
     /// Replaces the tool's settings table and asks the shell to save.
     pub fn set_tool_settings(&self, tool_id: &str, table: toml::Table) {
         self.settings.lock().unwrap().set_tool(tool_id, table);
+        self.request(ShellRequest::SettingsChanged);
+    }
+
+    /// What the PES selector's exe check found in the PES folder, as the sidebar drew it
+    /// this frame (it draws before the active view): a tool that needs the folder to hold
+    /// the selected game reads this verdict rather than listing the folder itself, so it
+    /// never disagrees with the selector's colour. `None` before the sidebar's first frame
+    /// and in the CLI.
+    pub fn pes_exe_check(&self) -> Option<ExeCheck> {
+        *self.pes_exe_check.lock().unwrap()
+    }
+
+    /// Stores the exe check the sidebar's PES selector was coloured by this frame.
+    /// Crate-private: the sidebar alone runs the check.
+    pub(crate) fn set_pes_exe_check(&self, check: ExeCheck) {
+        *self.pes_exe_check.lock().unwrap() = Some(check);
+    }
+
+    /// Points the settings at a PES folder the member picked for the selected version,
+    /// as the running-PES notice's Fix PES path does: that version's own entry, the
+    /// folder as it is, once any version has one; otherwise the main row, with the year
+    /// in the folder's name written `20**`. Then asks the shell to save; the sidebar's
+    /// exe check lists the new folder on its next frame.
+    pub fn set_pes_folder(&self, folder: &Path) {
+        {
+            let mut settings = self.settings.lock().unwrap();
+            let version = settings.common.pes_version;
+            settings.common.fix_pes_folder(folder, version);
+        }
         self.request(ShellRequest::SettingsChanged);
     }
 
@@ -486,6 +535,62 @@ mod tests {
         });
         assert_eq!(calls.load(Ordering::SeqCst), 1, "the notice woke the GUI");
         assert_eq!(delays.lock().unwrap().as_slice(), [Duration::ZERO]);
+    }
+
+    // A picked PES folder lands where Fix PES path puts one, for the selected version:
+    // the main row with the year written `20**` while no version has its own entry, the
+    // version's own entry, the folder as given, once one does; each write asks for a save.
+    #[test]
+    fn set_pes_folder_writes_the_selected_versions_folder_and_asks_for_a_save() {
+        let dir = Path::new("/games");
+        let picked = dir.join("Pro Evolution Soccer 2017");
+
+        let (ctx, _events_rx, requests_rx) = context();
+        {
+            let mut settings = ctx.settings().lock().unwrap();
+            settings.common.pes_version = PesVersion::Pes17;
+            settings.common.pes_folder_path = "/member/set/folder".to_owned();
+        }
+        ctx.set_pes_folder(&picked);
+        assert_eq!(
+            PathBuf::from(ctx.common().pes_folder_path),
+            dir.join("Pro Evolution Soccer 20**"),
+            "no entries: the main row takes the folder with its year as 20**"
+        );
+        assert!(ctx.common().pes_folders.is_empty(), "no entry appeared");
+        assert_eq!(
+            requests_rx.try_recv().unwrap(),
+            ShellRequest::SettingsChanged
+        );
+
+        let (ctx, _events_rx, requests_rx) = context();
+        {
+            let mut settings = ctx.settings().lock().unwrap();
+            settings.common.pes_version = PesVersion::Pes17;
+            settings.common.pes_folder_path = "/member/set/folder".to_owned();
+            settings
+                .common
+                .pes_folders
+                .insert(PesVersion::Pes21, "/elsewhere/PES2021".to_owned());
+        }
+        ctx.set_pes_folder(&picked);
+        let common = ctx.common();
+        assert_eq!(
+            common
+                .pes_folders
+                .get(&PesVersion::Pes17)
+                .map(PathBuf::from),
+            Some(picked),
+            "an entry exists: PES 17's own entry takes the folder as given"
+        );
+        assert_eq!(
+            common.pes_folder_path, "/member/set/folder",
+            "the main row unchanged"
+        );
+        assert_eq!(
+            requests_rx.try_recv().unwrap(),
+            ShellRequest::SettingsChanged
+        );
     }
 
     #[test]

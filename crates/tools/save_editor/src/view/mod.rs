@@ -46,7 +46,7 @@ use pes_version::PesVersion;
 use studio_core::widgets::{
     add_enabled, collapsing_header, modal, modal_buttons, toolbar_separator,
 };
-use studio_core::{ActionEffect, Notice, NoticeAction, NoticeKind, RunningPes};
+use studio_core::{ActionEffect, ExeCheck, Notice, NoticeAction, NoticeKind, RunningPes};
 
 use crate::session::Session;
 use crate::session::rules::{self, Imported};
@@ -180,9 +180,19 @@ pub(crate) struct SaveView {
     /// The Generate dialog's state while it is open (the Player menu's
     /// `settings.toml` and in-game face items); `None` while it is closed.
     generate: Option<generate::Generate>,
-    /// The Generate dialog's Pick-a-folder dialog (`rfd`, stubbed in
-    /// tests — the same pattern as `open_save_dialog`).
+    /// The Pick-a-folder dialog of the Generate dialog and of the pitch's
+    /// Set PES folder button (`rfd`, stubbed in tests — the same pattern
+    /// as `open_save_dialog`).
     pick_folder_dialog: generate::PickFolderDialog,
+    /// The sidebar's PES selector's exe check, refreshed from the context
+    /// each `Tool::view` frame: while it is `Some` and not `Found`, the
+    /// pitch carries the Set PES folder button. `None` in the tests'
+    /// view-only frames until a test sets it.
+    pub(crate) pes_exe_check: Option<ExeCheck>,
+    /// The folder the Set PES folder button's picker returned, drained by
+    /// `Tool::view` into `ctx.set_pes_folder` (the shell owns the
+    /// settings).
+    pub(crate) picked_pes_folder: Option<PathBuf>,
     /// The status-bar notice the last action raised; `Tool::view` forwards
     /// it to the shell's `notify` after the frame.
     pub(crate) notice: Option<Notice>,
@@ -438,6 +448,8 @@ impl SaveView {
             team_export_dialog: interchange::default_export_dialog(),
             generate: None,
             pick_folder_dialog: generate::default_pick_folder(),
+            pes_exe_check: None,
+            picked_pes_folder: None,
             notice: None,
             version_warning: false,
             live_aatf: false,
