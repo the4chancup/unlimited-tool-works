@@ -1200,8 +1200,8 @@ def report_killed(code: int) -> int:
         return code
     print(
         f"{len(here) + len(remote)} mutants were NOT tested: a build process was killed "
-        "for memory or lost its console, or cargo was ended by a signal, and cargo-mutants "
-        "counted them as unviable or in no list."
+        "for memory or lost its console, a link failed (their logs say which), or cargo was "
+        "ended by a signal, and cargo-mutants counted them as unviable or in no list."
     )
     if remote:
         print(
