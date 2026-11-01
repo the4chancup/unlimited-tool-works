@@ -3025,3 +3025,5 @@ worklog passed 7,000 lines.
   apply-patch makes the record his; SE-PAT-07 to 11. SWE-2 sidekick, one rework.
 - 2026-11-01 — cv40: three save_editor view tests raced a worker's reply under load (the held-press, event logo and wheel tests);
   each now waits for the reply it depends on. `gates-changed 99c9a36a` green: the 8.36c1 merge is gated.
+- 2026-11-01 — 0.0.1f1d1-3 on branch `f1d`: a Team TOML bench of 12 whose import fills the other nine as the game does,
+  plain comments, both instruction sides listed under illegal formations, cv40 on the candidate. Review loop ended; mutants-diff 37 caught, 1 unviable.

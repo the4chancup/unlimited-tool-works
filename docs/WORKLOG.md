@@ -6815,20 +6815,41 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] f1d the maintainer's changes after DBC7's commissioner approved 0.0.1f (2026-11-01),
     on a branch from `release/0.0.1-candidate` (`e39e0a9d`), merged into it and into main,
     then candidate 0.0.1g staged (until the cut, nothing for later releases starts):
-    - [ ] f1d1 Team TOML: `bench_order` lists 12, import fills the other nine as the game
+    - [x] f1d1 Team TOML: `bench_order` lists 12, import fills the other nine as the game
       does; a comment before the first formation saying how its players are read; every
       export comment reworded for a member (`plans/pes_savefile/operations.md` "Team TOML",
       "For 0.0.1") → verify: team 893 of the maintainer's PES 2017 save exported and imported
       back writes the save's bytes unchanged (its nine are 23 to 31); a 21-entry array is
-      refused; the comment list reviewed by the lead
-    - [ ] f1d2 every advanced-instruction combo lists both sides under a ruleset with illegal
+      refused; the comment list reviewed by the lead. Done 2026-11-01 (`e41ed378`, rework
+      `14ac4936`, `4dcef0a8`; `pes_savefile` `model/tactics.rs` `bench_fill`,
+      `interchange/team_toml/`, `aatf` tests, spec "Team TOML" with the `.4cct` note): DBC6
+      893 and 701 round trips identical; PES 17's 701 only its nine 255 → 23..31
+    - [x] f1d2 every advanced-instruction combo lists both sides under a ruleset with illegal
       formations (`plans/save_editor.md` "An advanced instruction's list") → verify: under
       DBC7 a Defence combo offers Counter Target's attacking neighbours; under a ruleset
-      without the flag the lists stay split
-    - [ ] f1d3 cv40 (`2ed17259`, test code only) cherry-picked onto the candidate branch, so
-      its full gates do not flake
+      without the flag the lists stay split. Done 2026-11-01 (`e41ed378`, `14ac4936`, help
+      `3851301a`; `team_widgets`, `save_editor` view test
+      `under_illegal_formations_a_defence_combo…`)
+    - [x] f1d3 cv40 (`2ed17259`, test code only) cherry-picked onto the candidate branch, so
+      its full gates do not flake. Done 2026-11-01 as `519e506c` (its held-press hunk left
+      out: cv39 is not on the candidate)
+    - review of f1d1-3 (branch `f1d`, `wt-f1d/.tmp/f1d_rulings.md`): SWE-2 r1 7 accepted
+      (two parts), Astra 1, SWE-2 r2 0, loop ended; `mutants-diff e39e0a9d`: 38 mutants,
+      37 caught, 1 unviable, none missed
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over
+  - [ ] f3 after the cut, first (the maintainer, 2026-11-01: queued so the 5-hour usage
+    window goes to 0.0.1): the repository's branches and worktrees, never pruned (census
+    2026-11-01, `.tmp/lead/branch_census.py`: 155 branches, 130 merged into main; 153
+    worktrees, 21 detached, 1 folder gone). (1) delete the merged branches in no worktree
+    (`git branch -d`; `release/0.0.1-candidate` stays until the cut is done); (2) `git
+    worktree prune`; (3) remove the merged worktrees, each first checked for uncommitted
+    changes and its `.tmp/` copied into main's `.tmp/`, then their branches (kept: review,
+    review3, wt-m, release, ingame, review5, review6, `wt-cand-e` and whatever is in use);
+    (4) the 12 unmerged branches in no worktree (`converge-5`, `l3d`, `side/6.10`,
+    `side/shell`, `side/shell2`, `spec-5-6`, six `worktree-agent-*`) listed with what each
+    holds, for the maintainer's ruling; (5) from then on, a slice's worktree and branch go
+    once it is merged and its review loop has ended, its `.tmp/` copied first
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
