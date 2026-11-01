@@ -6324,15 +6324,18 @@ briefs, review loops, gates and mutation runs as for any step.
     rules set` (the maintainer, 2026-11-01: "the universal rules on" sounded off; DECISIONS
     2026-11-01): `view/start.rs`, its two test strings, `help/02_window.md`, the draft
     (`ruleset_editor.js`, `index.html`'s help copy); the lead's edit
-  - [ ] cv32 cv28-cv30's review rework (SWE-2 round 1 over cv28-cv30, 8 accepted,
+  - [x] cv32 cv28-cv30's review rework (SWE-2 round 1 over cv28-cv30, 8 accepted,
     `.tmp/duck_rulings.md` S-cv28-30 r1) and the cv16-cv26 mutation run's M2
     (`.tmp/0_0_2/triage_cv18_26.md`): the window drags by its title bar alone, so a touch
     leaves its dock icon (Sa1-1); the toolbar toggle's tooltip without "in a panel at the
     bottom" (Sa1-2, drafted); tests of a row click inside the window (Sb1-1), the dock close's
-    tooltip (Sb1-2) and Multi-team AATF's list height (M2); `violations.rs`' module doc names
+    tooltip (Sb1-2) and Multi-team AATF's list height (M2, the painted frame 360 tall, through
+    `painted_frame` shared with the width test, the lead's); `violations.rs`' module doc names
     its real consumers (Sc1-7); the nits Sb1-3, Sc1-5, Sc1-6. The plan's three corrections
-    (Sc1-1 to Sc1-3) are the lead's. Then SWE-2 round 2, `just mutants-diff a47ecbbd^1` and
-    `just mutants-diff f0d4553f crates/libs/team_widgets`, then Astra
+    (Sc1-1 to Sc1-3) are the lead's. `live_aatf.rs`, `view/mod.rs`, its tests `live_aatf.rs`
+    and `savefile.rs`, `violations.rs`, `theme.rs`. Open: SWE-2 round 2, then `just
+    mutants-diff a47ecbbd^1` and `just mutants-diff f0d4553f crates/libs/team_widgets`, then
+    Astra
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
