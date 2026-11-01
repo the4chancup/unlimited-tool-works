@@ -58,9 +58,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REMOTE_BASE = "~/studio-mutants"
 REMOTE_REF = "refs/mutants/remote"
-# One mutation run at a time (`run_lock`); a run launched meanwhile polls for it.
-RUN_LOCK = ROOT / ".tmp" / "mutants.lock"
-LOCK_POLL_SECONDS = 30
 # Whether `just mutants` and `just mutants-diff` run every mutant on the remote
 # (when STUDIO_MUTANTS_REMOTE names one), whatever the size or LOCAL_ONLY_CRATES,
 # and nothing on this machine; `just gates-remote` is the gates' counterpart. A
@@ -173,6 +170,11 @@ REMOTE_RUN = f"{REMOTE_BASE}/run"
 COST_CACHE = (
     Path(os.environ.get("LOCALAPPDATA") or Path.home() / ".cache") / "4cc-studio" / "mutants-cost.json"
 )
+# One mutation run at a time on this machine (`run_lock`), whichever worktree launches it:
+# every run shares the machine's build slots and the remote. A run launched meanwhile polls
+# for it.
+RUN_LOCK = COST_CACHE.with_name("mutants.lock")
+LOCK_POLL_SECONDS = 30
 # The baseline (a cold build and test of the mutated packages in a fresh copy
 # of the tree) of a crate no local run has measured yet: one measured run's
 # 56 s + 8 s for team_compiler, studio_core and studio, rounded.
@@ -254,8 +256,8 @@ def working_tree() -> str:
 
 
 def extract_tree(tree: str, dest: Path) -> None:
-    """Extract git tree `tree` into `dest` (created empty)."""
-    dest.mkdir(parents=True)
+    """Extract git tree `tree` into `dest`, an empty folder (created if absent)."""
+    dest.mkdir(parents=True, exist_ok=True)
     # The whole archive is read before extracting, as `fetch_remote` reads the remote
     # half's results: streamed through a pipe, `git archive` twice sat unexited after
     # writing every member (once for 35 minutes, not reproduced since).
@@ -282,6 +284,30 @@ def remove_tree(path: Path) -> None:
         function(failed)
 
     shutil.rmtree(path, onexc=make_writable)
+
+
+@contextlib.contextmanager
+def snapshot_source(tree: str):
+    """Extract git `tree`, the run's snapshot, to a fresh folder under `LOCAL_TMPDIR` for the
+    run's length and yield its path. Everything the run reads from the tree comes from there:
+    the mutant listing, `.cargo/mutants.toml` and the local half's source. A queued run reaches
+    its turn long after its snapshot, and so can a crate's turn in a diff run; an edit or a
+    merge in between left the diff naming lines the live tree no longer held, and the half
+    refused to start (or a whole-crate half measured code the remote half never saw). A fresh
+    name, not one per process: the Windows recheck opens a second copy inside a run's. The
+    folder is removed at the end; a removal that fails is a warning, never an error that would
+    replace the finished run's result."""
+    LOCAL_TMPDIR.mkdir(parents=True, exist_ok=True)
+    source = Path(tempfile.mkdtemp(dir=LOCAL_TMPDIR, prefix="source-"))
+    try:
+        extract_tree(tree, source)
+        yield source
+    finally:
+        try:
+            remove_tree(source)
+        except OSError as error:
+            print(f"warning: could not remove the run's copy {source}: {error}",
+                  file=sys.stderr, flush=True)
 
 
 def try_lock(handle) -> bool:
@@ -396,9 +422,10 @@ def transfer(host: str, remote_head: str | None) -> None:
 
 
 def sized_config(
-    cpus: int, build_jobs: int | None = None, extra: dict | None = None
+    cpus: int, build_jobs: int | None = None, extra: dict | None = None, *, source: Path
 ) -> str:
-    """`.cargo/mutants.toml`'s text with each of the two cargo processes (`--jobs
+    """`source`'s `.cargo/mutants.toml` (the run's copy, `snapshot_source`) as text,
+    with each of the two cargo processes (`--jobs
     2`) given half of `cpus` logical CPUs, for test threads and, unless
     `build_jobs` sets fewer, build jobs, so together they use every CPU
     without oversubscribing it. The scripts run cargo-mutants at a low
@@ -406,7 +433,7 @@ def sized_config(
     stays usable. `extra` sets more keys — a file split's `examine_globs` or
     `exclude_globs`; a list value extends the base file's list of that key
     rather than replacing it."""
-    config = tomllib.loads((ROOT / ".cargo/mutants.toml").read_text(encoding="utf-8"))
+    config = tomllib.loads((source / ".cargo/mutants.toml").read_text(encoding="utf-8"))
     half = max(1, cpus // 2)
     config["additional_cargo_args"] = ["--jobs", str(build_jobs or half)]
     config["additional_cargo_test_args"] = ["--", f"--test-threads={half}"]
@@ -428,22 +455,25 @@ def sized_config(
     return "\n".join(lines) + "\n"
 
 
-def remote_config(host: str, nproc: int, extra: dict | None = None) -> None:
-    """Write the remote's mutants.toml, sized for the remote's CPUs, its builds
-    held to `REMOTE_BUILD_JOBS` for the memory cap; `extra` carries a file
+def remote_config(host: str, nproc: int, source: Path, extra: dict | None = None) -> None:
+    """Write the remote's mutants.toml from `source`'s, sized for the remote's CPUs, its
+    builds held to `REMOTE_BUILD_JOBS` for the memory cap; `extra` carries a file
     split's `exclude_globs`."""
     ssh(host, f"cat > {REMOTE_BASE}/mutants.remote.toml",
-        input=sized_config(nproc, REMOTE_BUILD_JOBS, extra), text=True, check=True)
+        input=sized_config(nproc, REMOTE_BUILD_JOBS, extra, source=source),
+        text=True, check=True)
 
 
-def local_config(extra: dict | None = None) -> Path:
-    """Write `target/mutants.local.toml`, sized for this machine's CPUs, and
-    return its path for `--config`; `extra` carries a file split's
+def local_config(source: Path, extra: dict | None = None) -> Path:
+    """Write `target/mutants.local.toml` from `source`'s, sized for this machine's CPUs,
+    and return its path for `--config`; `extra` carries a file split's
     `examine_globs`."""
     path = ROOT / "target" / "mutants.local.toml"
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = path.with_suffix(".tmp")
-    temp.write_text(sized_config(os.cpu_count() or 2, extra=extra), encoding="utf-8")
+    temp.write_text(
+        sized_config(os.cpu_count() or 2, extra=extra, source=source), encoding="utf-8"
+    )
     os.replace(temp, path)
     return path
 
@@ -460,44 +490,29 @@ def below_normal() -> dict:
 
 
 def local_mutants(
-    args: list[str], tree: str, config: Path | None = None
+    args: list[str], source: Path, config: Path | None = None
 ) -> subprocess.CompletedProcess:
-    """Runs `cargo mutants <args> --jobs 2` here on git `tree`, the snapshot
-    the run measures, sized by `local_config` and at `below_normal` priority,
-    its copies of the tree in `LOCAL_TMPDIR`: Rust's `temp_dir`, which
+    """Runs `cargo mutants <args> --jobs 2` here on `source`, the run's copy of
+    its snapshot (`snapshot_source`), sized by `local_config` and at `below_normal`
+    priority, its copies of the tree in `LOCAL_TMPDIR`: Rust's `temp_dir`, which
     cargo-mutants copies into, reads `TMP` then `TEMP` on Windows and `TMPDIR`
     elsewhere. Its results land in the root's `mutants.out` unless `args`
     names an `--output`. `config` is a config a file split already wrote (its
-    `examine_globs` must not be regenerated away).
-
-    The tree is extracted to a folder of its own, not read from the working
-    tree: cargo-mutants reads its source when the half starts, a crate's turn
-    in a diff run can come hours after the run took its diff, and an edit or
-    a merge in between leaves the diff naming lines the source no longer
-    holds, so the half refuses to start (or a whole-crate half measures code
-    the remote half never saw)."""
+    `examine_globs` must not be regenerated away)."""
     LOCAL_TMPDIR.mkdir(parents=True, exist_ok=True)
     folder = str(LOCAL_TMPDIR)
     if config is None:
-        config = local_config()
-    source = LOCAL_TMPDIR / f"source-{os.getpid()}"
-    if source.exists():
-        # A leftover of an interrupted run under a reused pid.
-        remove_tree(source)
-    extract_tree(tree, source)
+        config = local_config(source)
     output = [] if "--output" in args else ["--output", str(ROOT)]
-    try:
-        return subprocess.run(
-            [
-                "cargo", "mutants", *args, "--dir", str(source), *output,
-                "--jobs", "2", "--config", str(config),
-            ],
-            cwd=source,
-            env={**os.environ, "TMP": folder, "TEMP": folder, "TMPDIR": folder},
-            **below_normal(),
-        )
-    finally:
-        remove_tree(source)
+    return subprocess.run(
+        [
+            "cargo", "mutants", *args, "--dir", str(source), *output,
+            "--jobs", "2", "--config", str(config),
+        ],
+        cwd=source,
+        env={**os.environ, "TMP": folder, "TEMP": folder, "TMPDIR": folder},
+        **below_normal(),
+    )
 
 
 # What a build killed or starved for reasons outside the mutant leaves in its log, lowercase:
@@ -561,6 +576,9 @@ def remote_run_state(host: str) -> str | None:
             "if [ -f collected ]; then echo none; "
             "elif [ -f exit ]; then echo finished; "
             f"elif systemctl is-active --quiet {REMOTE_UNIT}; then echo running; "
+            # Again: a half that writes `exit` and ends between the first test and
+            # systemd's answer finished.
+            "elif [ -f exit ]; then echo finished; "
             "elif [ -f pid ]; then echo died; "
             "else echo none; fi",
             capture_output=True, text=True, timeout=POLL_CALL_TIMEOUT_SECONDS,
@@ -602,6 +620,30 @@ def remote_refusal(host: str, remote: bool) -> str | None:
     if gates == 0:
         return f"`just gates-remote` is running on {host}: start the new run when it ends"
     return disk_refusal(*remote_disk_use(host))
+
+
+def remote_pending() -> Path:
+    """`.tmp/mutants-remote-pending`, holding the host's name: written when a remote half is
+    launched from this tree, removed when it is fetched. Resolved under `ROOT` at call time,
+    as `extra_run_record` is."""
+    return ROOT / ".tmp" / "mutants-remote-pending"
+
+
+def local_refusal(host: str | None) -> str | None:
+    """Why a run on this machine alone cannot start, or None. First a remote half launched
+    from this tree and not fetched yet (`remote_pending`), whose collection summarizes the
+    local `mutants.out` the new run would set aside: checked whatever STUDIO_MUTANTS_REMOTE
+    says now, since a run with it set empty, the opt-out `report_killed` advises, cannot ask
+    the host. Then, with a host, `remote_refusal`."""
+    pending = remote_pending()
+    if pending.exists():
+        launched_on = pending.read_text(encoding="utf-8").strip()
+        return (
+            f"the remote half launched on {launched_on} is not collected: `just "
+            f"mutants-collect` (with STUDIO_MUTANTS_REMOTE={launched_on}) fetches it, "
+            "then start the new run"
+        )
+    return remote_refusal(host, remote=False) if host is not None else None
 
 
 def remote_disk_use(host: str) -> tuple[int, int]:
@@ -736,6 +778,11 @@ def launch_remote(host: str, selection: list[str], whole: bool = False) -> None:
             check=True,
         )
     memory_max = remote_memory_max(host)
+    # Before the unit starts: a launch call that fails after starting it still leaves a half
+    # to collect. `collect` removes a marker no half answers.
+    pending = remote_pending()
+    pending.parent.mkdir(parents=True, exist_ok=True)
+    pending.write_text(host + "\n", encoding="utf-8")
     ssh(
         host,
         f"echo {memory_max} > {REMOTE_RUN}/memory_max && "
@@ -787,11 +834,12 @@ def wait_remote(host: str) -> tuple[int, float]:
 
 
 def run_split(
-    selection: list[str], host: str, tree: str, remote_head: str | None,
+    selection: list[str], host: str, tree: str, source: Path, remote_head: str | None,
     remote_tree: str | None, nproc: int, local: bool = True,
     local_files: set[str] | None = None,
 ) -> tuple[int, int, float | None, float]:
-    """The local half starts at once, in the foreground with console output as
+    """The local half starts at once on `source`, the copy of the snapshot `tree`, in the
+    foreground with console output as
     today; a thread transfers the snapshot, writes the remote config and launches
     the remote half, so the transfer counts against the remote side only.
     `selection` is the mutant-selection arguments (`["-p", crate]` or
@@ -816,7 +864,7 @@ def run_split(
                 print("remote tree up to date", flush=True)
             else:
                 transfer(host, remote_head)
-            remote_config(host, nproc, remote_extra)
+            remote_config(host, nproc, source, remote_extra)
             # A file split's remote runs with no `--shard`: its config's
             # exclude_globs already name the local half's share.
             launch_remote(host, selection, whole=whole or local_files is not None)
@@ -837,13 +885,13 @@ def run_split(
     thread.start()
     if local_files is None:
         local_run = local_mutants(
-            [*selection, "--shard", "0/2", "--sharding", "round-robin"], tree
+            [*selection, "--shard", "0/2", "--sharding", "round-robin"], source
         )
     else:
         local_run = local_mutants(
             list(selection),
-            tree,
-            config=local_config(extra={"examine_globs": sorted(local_files)}),
+            source,
+            config=local_config(source, extra={"examine_globs": sorted(local_files)}),
         )
     local_seconds = time.monotonic() - start
     thread.join()
@@ -902,6 +950,7 @@ def fetch_remote(host: str, partial: bool = False) -> None:
             f"(cap {int(cap) / 2**30:.2f} GiB)"
         )
     ssh(host, f"touch {REMOTE_RUN}/collected", check=True)
+    remote_pending().unlink(missing_ok=True)
 
 
 def count_lines(path: Path) -> int:
@@ -945,7 +994,8 @@ def recheck_windows(missed: list[str]) -> set[str]:
     args = [arg for crate in crates for arg in ("-p", crate)]
     args += ["--re", pattern, "--output", str(out)]
     print(f"rechecking {len(missed)} Windows-only mutants on this machine", flush=True)
-    run = local_mutants(args, tree)
+    with snapshot_source(tree) as source:
+        run = local_mutants(args, source)
     results = out / "mutants.out"
     if run.returncode == 4 or not (results / "outcomes.json").exists():
         print(
@@ -1140,7 +1190,7 @@ def collect(host: str) -> int:
     """`just mutants-collect`: waits for a remote half this script launched but
     did not fetch (it was stopped, or gave up polling), fetches it and prints the
     summary against the local `mutants.out`, which no run since can have
-    replaced while STUDIO_MUTANTS_REMOTE stayed set (`remote_refusal`). A died half's partial results are fetched too,
+    replaced (`local_refusal`, `remote_refusal`). A died half's partial results are fetched too,
     whether it died before or during the wait, and the run exits 1."""
     state = remote_run_state(host)
     if state is None:
@@ -1148,6 +1198,9 @@ def collect(host: str) -> int:
         return 1
     if state == "none":
         print("no uncollected remote half")
+        if remote_pending().exists():
+            remote_pending().unlink()
+            print("the record of a launch that left no half to collect is removed")
         return 1
     try:
         if state == "died":
@@ -1367,8 +1420,9 @@ def record_split_run(record: dict) -> None:
     os.replace(temp, path)
 
 
-def list_mutants(crate: str, config: Path) -> list[dict]:
-    """The mutants `cargo mutants -p crate --config config` would test, from
+def list_mutants(crate: str, config: Path, source: Path) -> list[dict]:
+    """The mutants `cargo mutants -p crate --config config` would test in `source`
+    (the run's copy, `snapshot_source`), from
     `--list --json` on this machine: each entry's `file` is the source path
     (slash-separated, relative to the tree, what examine/exclude globs match
     whole) and `name` the string the run's outcomes and missed.txt carry."""
@@ -1378,7 +1432,7 @@ def list_mutants(crate: str, config: Path) -> list[dict]:
         # UTF-8, not the Windows locale's code page: each mutant's `diff` quotes the source,
         # and characters such as `●` and `⏵` hold bytes cp1252 has no character for, which
         # killed the reader thread and left the listing empty.
-        cwd=ROOT, capture_output=True, text=True, encoding="utf-8",
+        cwd=source, capture_output=True, text=True, encoding="utf-8",
     )
     if listed.returncode != 0:
         raise RuntimeError(f"listing {crate}'s mutants failed:\n{listed.stderr}")
@@ -1427,14 +1481,14 @@ def check_split(
     return Counter(expected) - Counter(actual), Counter(actual) - Counter(expected)
 
 
-def plan_file_split(crate: str, nproc: int) -> dict:
-    """The split a whole-crate run of `crate` will use, as its `split.json`
+def plan_file_split(crate: str, nproc: int, source: Path) -> dict:
+    """The split a whole-crate run of `crate` in `source` will use, as its `split.json`
     record: `files` when the halves' measured costs give a share a file
     partition can meet, `round-robin` otherwise — an unmeasured half, no
     file split nearer the target than halves, or per-half listings that do
     not recombine to the whole listing (`check_split` over `--list --json`
     with each half's config)."""
-    whole = list_mutants(crate, local_config())
+    whole = list_mutants(crate, local_config(source), source)
     record = {
         "crate": crate,
         "method": "round-robin",
@@ -1460,7 +1514,7 @@ def plan_file_split(crate: str, nproc: int) -> dict:
     # config's, and the remote config's text in a local file — must recombine
     # to the whole listing with no name missing or doubled.
     remote_text = sized_config(
-        nproc, REMOTE_BUILD_JOBS, extra={"exclude_globs": sorted(local_files)}
+        nproc, REMOTE_BUILD_JOBS, extra={"exclude_globs": sorted(local_files)}, source=source
     )
     remote_tmp = tempfile.NamedTemporaryFile(suffix=".toml", delete=False)
     try:
@@ -1469,10 +1523,13 @@ def plan_file_split(crate: str, nproc: int) -> dict:
         local_names = [
             m["name"]
             for m in list_mutants(
-                crate, local_config(extra={"examine_globs": sorted(local_files)})
+                crate, local_config(source, extra={"examine_globs": sorted(local_files)}),
+                source,
             )
         ]
-        remote_names = [m["name"] for m in list_mutants(crate, Path(remote_tmp.name))]
+        remote_names = [
+            m["name"] for m in list_mutants(crate, Path(remote_tmp.name), source)
+        ]
     finally:
         Path(remote_tmp.name).unlink(missing_ok=True)
     missing, doubled = check_split(record["names"], local_names + remote_names)
@@ -1498,14 +1555,14 @@ def plan_file_split(crate: str, nproc: int) -> dict:
 
 
 def split(
-    selection: list[str], host: str, local: bool = True, tree: str | None = None
+    selection: list[str], host: str, tree: str, source: Path, local: bool = True
 ) -> int:
     """The whole split run for one selection: the busy-remote refusal, the
     snapshot, the version check, both halves, the fetch and the summary.
     Without `local` (`REMOTE_ONLY`) the remote runs every mutant. Either way the
     last run's local `mutants.out` is set aside first, as cargo-mutants itself
-    does, so the summary counts this run's results alone. `tree` is the working
-    tree a caller already wrote (`snapshot`)."""
+    does, so the summary counts this run's results alone. `tree` is the run's
+    snapshot (`working_tree`) and `source` its copy (`snapshot_source`)."""
     if local:
         print(f"splitting the run with {host}", flush=True)
     else:
@@ -1519,7 +1576,7 @@ def split(
 
     # The snapshot and the one-call probe come first (a few seconds), so a
     # version mismatch stops before the local half starts.
-    tree = snapshot(tree)
+    snapshot(tree)
     remote_head, remote_tree, nproc, remote_version = remote_state(host)
     local_version = local_mutants_version()
     if local_version != remote_version:
@@ -1536,7 +1593,7 @@ def split(
         # The split is planned and recorded before the halves start, so a
         # later `just mutants-collect` checks this run's merged outcomes
         # against its own listing.
-        record = plan_file_split(selection[1], nproc)
+        record = plan_file_split(selection[1], nproc, source)
         record_split_run(record)
         if record["method"] == "files":
             local_files = set(record["local_files"])
@@ -1561,7 +1618,7 @@ def split(
         extra_run_record().unlink(missing_ok=True)
         split_run_record().unlink(missing_ok=True)
     local_code, remote_code, local_seconds, remote_seconds = run_split(
-        selection, host, tree, remote_head, remote_tree, nproc, local, local_files
+        selection, host, tree, source, remote_head, remote_tree, nproc, local, local_files
     )
     update_cost_cache()
     fetch_remote(host)
@@ -1602,23 +1659,25 @@ def main(argv: list[str]) -> int:
         if host is None:
             print("STUDIO_MUTANTS_REMOTE is not set")
             return 1
-        return collect(host)
+        with run_lock():
+            return collect(host)
     crate = argv[1]
     tree = working_tree()
-    with run_lock():
-        return whole_run(crate, host, tree)
+    with run_lock(), snapshot_source(tree) as source:
+        return whole_run(crate, host, tree, source)
 
 
-def whole_run(crate: str, host: str | None, tree: str) -> int:
-    """`just mutants <crate>` on the snapshot `tree`: split with the remote, or here."""
+def whole_run(crate: str, host: str | None, tree: str, source: Path) -> int:
+    """`just mutants <crate>` on the snapshot `tree`, copied to `source`: split with the
+    remote, or here."""
     if host is not None and REMOTE_ONLY:
-        return split(["-p", crate], host, local=False, tree=tree)
+        return split(["-p", crate], host, tree, source, local=False)
     if host is None or crate in LOCAL_ONLY_CRATES:
         reason = (
             "STUDIO_MUTANTS_REMOTE is not set" if host is None
             else f"{crate} is local-only (LOCAL_ONLY_CRATES)"
         )
-        if host is not None and (refusal := remote_refusal(host, remote=False)):
+        if refusal := local_refusal(host):
             print(refusal)
             return 1
         print(f"{reason}: running every mutant on this machine", flush=True)
@@ -1634,7 +1693,7 @@ def whole_run(crate: str, host: str | None, tree: str) -> int:
         )
         record_extra_run(crate, extra_counts, extra_seconds)
         started = time.monotonic()
-        code = local_mutants(["-p", crate], tree).returncode
+        code = local_mutants(["-p", crate], source).returncode
         update_cost_cache()
         return summarize(
             code,
@@ -1643,7 +1702,7 @@ def whole_run(crate: str, host: str | None, tree: str) -> int:
             (time.monotonic() - started, None),
         )
 
-    return split(["-p", crate], host, tree=tree)
+    return split(["-p", crate], host, tree, source)
 
 
 if __name__ == "__main__":

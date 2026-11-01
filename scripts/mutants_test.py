@@ -2,8 +2,9 @@
 mutants never ran, which builds were killed, when a split run's summary fails, and which list
 holds a crate's survivors. Each builds a `mutants.out` in a
 temporary directory the way cargo-mutants writes one; nothing reaches the host. Also which
-source the local half hands cargo-mutants (cargo itself stubbed), and that a run snapshots
-before it waits for the one in progress (`run_lock`). Run by `just
+source the local half, the listings and the config read (cargo itself stubbed), that a run
+snapshots before it waits for the one in progress (`run_lock`), and that no run here starts
+while a remote half is uncollected (`remote_pending`, ssh stubbed). Run by `just
 test` (`python scripts/mutants_test.py`)."""
 import contextlib
 import io
@@ -195,22 +196,32 @@ class SplitCoverage(unittest.TestCase):
 
 
 class SizedConfig(unittest.TestCase):
-    def test_extra_keys_write_toml_lists_tomllib_reads_back(self):
-        text = mutants.sized_config(
-            16,
-            extra={
-                "examine_globs": ["crates/libs/cpk/src/read.rs"],
-                "exclude_globs": ["crates/libs/cpk/src/write.rs"],
-            },
-        )
+    def test_the_snapshots_config_with_extra_keys_writes_toml_tomllib_reads_back(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp)
+            (source / ".cargo").mkdir()
+            # Keys the live tree's file does not hold: only the snapshot's file has them.
+            (source / ".cargo" / "mutants.toml").write_text(
+                'exclude_globs = ["crates/libs/cpk/src/snapshot_only.rs"]\n'
+                "timeout_multiplier = 7.0\n",
+                encoding="utf-8",
+            )
+            text = mutants.sized_config(
+                16,
+                extra={
+                    "examine_globs": ["crates/libs/cpk/src/read.rs"],
+                    "exclude_globs": ["crates/libs/cpk/src/write.rs"],
+                },
+                source=source,
+            )
         parsed = tomllib.loads(text)
         self.assertEqual(parsed["examine_globs"], ["crates/libs/cpk/src/read.rs"])
-        base = tomllib.loads(
-            (mutants.ROOT / ".cargo" / "mutants.toml").read_text(encoding="utf-8")
-        )["exclude_globs"]
         self.assertEqual(
-            parsed["exclude_globs"], base + ["crates/libs/cpk/src/write.rs"]
+            parsed["exclude_globs"],
+            ["crates/libs/cpk/src/snapshot_only.rs", "crates/libs/cpk/src/write.rs"],
         )
+        self.assertEqual(parsed["timeout_multiplier"], 7.0)
+        self.assertEqual(parsed["additional_cargo_args"], ["--jobs", "8"])
 
 
 class Partition(unittest.TestCase):
@@ -364,15 +375,150 @@ class LocalSource(unittest.TestCase):
             mock.patch.object(mutants.subprocess, "run", run),
         ):
             config = Path(tmp) / "mutants.toml"
-            mutants.local_mutants(["-p", "cpk"], tree, config=config)
-            mutants.local_mutants(["-p", "cpk", "--output", "elsewhere"], tree, config=config)
+            with mutants.snapshot_source(tree) as source:
+                mutants.local_mutants(["-p", "cpk"], source, config=config)
+                mutants.local_mutants(
+                    ["-p", "cpk", "--output", "elsewhere"], source, config=config
+                )
         first, second = calls
         self.assertEqual(first["file"], "the snapshot's line\n")
         self.assertEqual(first["cwd"], first["source"], "cargo starts in the copy")
-        self.assertNotEqual(first["source"], mutants.ROOT)
+        self.assertEqual(first["source"].parent, Path(tmp), "the copy is under LOCAL_TMPDIR")
         self.assertEqual(first["outputs"], [str(mutants.ROOT)], "results in the root's mutants.out")
         self.assertEqual(second["outputs"], ["elsewhere"], "a caller's --output kept, alone")
-        self.assertFalse(first["source"].exists(), "the copy removed once cargo returns")
+        self.assertFalse(first["source"].exists(), "the copy removed once the run ends")
+
+    def test_a_copy_that_cannot_be_removed_warns_and_the_run_keeps_its_result(self):
+        def stuck(path):
+            raise PermissionError(13, "in use by another process", str(path))
+
+        def run() -> int:
+            with mutants.snapshot_source(EMPTY_TREE):
+                return 2
+
+        err = io.StringIO()
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            mock.patch.object(mutants, "LOCAL_TMPDIR", Path(tmp)),
+            mock.patch.object(mutants, "remove_tree", stuck),
+            contextlib.redirect_stderr(err),
+        ):
+            self.assertEqual(run(), 2)
+        self.assertIn("could not remove", err.getvalue())
+
+    def test_the_listings_and_the_extra_pass_read_the_snapshot(self):
+        """A queued run reaches its turn long after its snapshot: its listings and the extra
+        pass's crate folder come from the snapshot's copy, not from the working tree."""
+        cwds = {}
+        real_run = subprocess.run
+
+        def run(args, **kwargs):
+            if args[:2] == ["cargo", "mutants"]:
+                cwds["diff listing" if "--in-diff" in args else "crate listing"] = kwargs["cwd"]
+                return subprocess.CompletedProcess(args, 0, stdout="" if kwargs.get("text") else b"")
+            if args[:2] == ["cargo", "metadata"]:
+                cwds["metadata"] = kwargs["cwd"]
+                manifest = Path(kwargs["cwd"]) / "crates" / "libs" / "fpc" / "Cargo.toml"
+                packages = [{"name": "fpc", "manifest_path": str(manifest)}]
+                return subprocess.CompletedProcess(args, 0, stdout=json.dumps({"packages": packages}))
+            return real_run(args, **kwargs)
+
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            mock.patch.object(subprocess, "run", run),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            source = Path(tmp)
+            self.assertEqual(mutants.list_mutants("fpc", source / "mutants.toml", source), [])
+            self.assertEqual(mutants_diff.run(str(source / "in.diff"), HEAD_TREE, source), 0)
+            self.assertEqual(
+                extra_mutants.crate_dir("fpc", source),
+                (source / "crates" / "libs" / "fpc").resolve(),
+            )
+        self.assertEqual(
+            cwds, {"crate listing": source, "diff listing": source, "metadata": source}
+        )
+
+
+class PendingRemote(unittest.TestCase):
+    """A remote half launched from this tree and not yet fetched refuses every run on this
+    machine alone, whatever STUDIO_MUTANTS_REMOTE says now: its collection summarizes the
+    local `mutants.out` that a new run would set aside."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        patcher = mock.patch.object(mutants, "ROOT", self.root)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def pend(self, host: str = "bonfire") -> Path:
+        pending = mutants.remote_pending()
+        pending.parent.mkdir(parents=True, exist_ok=True)
+        pending.write_text(host + "\n", encoding="utf-8")
+        return pending
+
+    def test_a_launch_records_the_half_before_its_unit_starts(self):
+        recorded_at_start = []
+
+        def ssh(host, remote, **kwargs):
+            if "systemd-run" in remote:
+                recorded_at_start.append(mutants.remote_pending().exists())
+            return subprocess.CompletedProcess([host, remote], 0)
+
+        with (
+            mock.patch.object(mutants, "ssh", ssh),
+            mock.patch.object(mutants, "remote_memory_max", lambda host: 2**30),
+        ):
+            mutants.launch_remote("bonfire", ["-p", "fpc"])
+        self.assertEqual(recorded_at_start, [True])
+        self.assertEqual(mutants.remote_pending().read_text(encoding="utf-8"), "bonfire\n")
+
+    def test_the_fetch_clears_the_record(self):
+        pending = self.pend()
+
+        def ssh(host, remote, **kwargs):
+            if "tar -cf" in remote:
+                return subprocess.CompletedProcess([host, remote], 3, stdout=b"")
+            return subprocess.CompletedProcess(
+                [host, remote], 0, stdout="\n\n" if kwargs.get("text") else b""
+            )
+
+        with mock.patch.object(mutants, "ssh", ssh), contextlib.redirect_stderr(io.StringIO()):
+            mutants.fetch_remote("bonfire", partial=True)
+        self.assertFalse(pending.exists())
+
+    def test_a_run_here_refuses_and_keeps_the_last_results_with_no_host_set(self):
+        self.pend()
+        last = self.root / "mutants.out"
+        last.mkdir()
+        out = io.StringIO()
+        with (
+            mock.patch.object(mutants, "remote_host", lambda: None),
+            contextlib.redirect_stdout(out),
+        ):
+            self.assertEqual(mutants.whole_run("fpc", None, HEAD_TREE, self.root), 1)
+            self.assertEqual(
+                mutants_diff.run_crate("in.diff", HEAD_TREE, self.root, "fpc", 3), 1
+            )
+        self.assertTrue(last.exists(), "the uncollected half's local results stay")
+        self.assertEqual(out.getvalue().count("mutants-collect"), 2, out.getvalue())
+        self.assertIn("bonfire", out.getvalue())
+
+    def test_with_no_record_the_host_decides(self):
+        with mock.patch.object(mutants, "remote_refusal", lambda host, remote: f"{host} {remote}"):
+            self.assertIsNone(mutants.local_refusal(None))
+            self.assertEqual(mutants.local_refusal("bonfire"), "bonfire False")
+
+    def test_a_collect_finding_no_half_clears_a_stale_record(self):
+        pending = self.pend()
+        with (
+            mock.patch.object(mutants, "remote_run_state", lambda host: "none"),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            self.assertEqual(mutants.collect("bonfire"), 1)
+        self.assertFalse(pending.exists())
 
 
 class RunQueue(unittest.TestCase):
@@ -407,7 +553,8 @@ class RunQueue(unittest.TestCase):
             self.assertIn(b"waits", out)
 
     def order(self, call) -> list[str]:
-        """The events of `call(events)`, with the snapshot and the lock recorded."""
+        """The events of `call(events)`, with the snapshot, the lock and the snapshot's
+        extracted copy recorded."""
         events = []
 
         @contextlib.contextmanager
@@ -416,12 +563,19 @@ class RunQueue(unittest.TestCase):
             yield
             events.append("unlock")
 
+        @contextlib.contextmanager
+        def source(tree):
+            events.append("copy")
+            yield Path(tree)
+            events.append("uncopy")
+
         def snapshot():
             events.append("snapshot")
             return HEAD_TREE
 
         with mock.patch.object(mutants, "working_tree", snapshot), \
-                mock.patch.object(mutants, "run_lock", lock):
+                mock.patch.object(mutants, "run_lock", lock), \
+                mock.patch.object(mutants, "snapshot_source", source):
             call(events)
         return events
 
@@ -430,14 +584,28 @@ class RunQueue(unittest.TestCase):
             with mock.patch.object(mutants_diff, "run", lambda *_: events.append("run") or 0):
                 mutants_diff.main(["mutants_diff.py", EMPTY_TREE, "scripts/mutants.py"])
 
-        self.assertEqual(self.order(call), ["snapshot", "lock", "run", "unlock"])
+        self.assertEqual(
+            self.order(call), ["snapshot", "lock", "copy", "run", "uncopy", "unlock"]
+        )
 
     def test_a_whole_crate_run_snapshots_before_it_waits(self):
         def call(events):
             with mock.patch.object(mutants, "whole_run", lambda *_: events.append("run") or 0):
                 mutants.main(["mutants.py", "fpc"])
 
-        self.assertEqual(self.order(call), ["snapshot", "lock", "run", "unlock"])
+        self.assertEqual(
+            self.order(call), ["snapshot", "lock", "copy", "run", "uncopy", "unlock"]
+        )
+
+    def test_a_collect_holds_the_lock(self):
+        """A run queued behind a collect would replace the `mutants.out` it summarizes."""
+
+        def call(events):
+            with mock.patch.object(mutants, "remote_host", lambda: "bonfire"), \
+                    mock.patch.object(mutants, "collect", lambda *_: events.append("run") or 0):
+                mutants.main(["mutants.py", "--collect"])
+
+        self.assertEqual(self.order(call), ["lock", "run", "unlock"])
 
     def test_an_extra_mutants_run_snapshots_before_it_waits(self):
         def call(events):
