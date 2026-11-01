@@ -517,10 +517,11 @@ def local_mutants(
 
 # What a build killed or starved for reasons outside the mutant leaves in its log, lowercase:
 # rustc killed by the OOM killer, the linker killed by it (gcc's `collect2`), LLVM or rustc
-# out of memory, a Windows process that lost its console.
+# out of memory, a Windows process that lost its console, a link that failed (a mutant
+# changes Rust code, which compiled; a Windows SDK update had removed the system libraries).
 KILLED_BUILD_SIGNS = (
     "sigkill", "signal 9 [killed]", "llvm error: out of memory", "memory allocation of",
-    "0xc0000142",
+    "0xc0000142", "error: linking with",
 )
 
 

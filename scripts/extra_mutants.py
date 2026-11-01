@@ -387,6 +387,9 @@ def main(argv: list[str]) -> int:
         return 0
     tree = mutants.working_tree()
     with mutants.run_lock():
+        # An uncollected remote half's collection merges this crate's `missed_<crate>.txt`.
+        if refusal := mutants.local_refusal(mutants.remote_host()):
+            raise SystemExit(f"extra_mutants: {refusal}")
         _, counts, _ = run_crate(crate, kinds, tree)
     return 1 if counts["untested"] else 0
 
