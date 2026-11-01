@@ -20,7 +20,8 @@ touches the user's settings).
 ## The rules `gui.py` keeps
 
 Input goes only into the app's own window: every point is in client coordinates and asserted
-inside the client rect, and nothing is sent until the app's window is the foreground window:
+inside the client rect and with the app's window under it (a notification over the app once
+took a click meant for it), and nothing is sent until the app's window is the foreground window:
 keys sent while another window held the focus once typed into the user's chat box. Captures use
 PrintWindow, never a screen grab, so another window over the app does not end up in the
 picture. `close` sends `WM_CLOSE`, as the window's close button does; the app is never killed.
