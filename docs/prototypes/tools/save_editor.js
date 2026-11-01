@@ -6897,7 +6897,7 @@ function setLive(on) {
 // check at all. sample wording: the tooltip.
 function liveButton() {
   const b = button("▶ Live AATF", () => { setLive(!LIVE.on); render(); },
-    { title: "Check the open team after every edit, in a panel at the bottom (the setting is remembered)" });
+    { title: "Check the open team after every edit (the setting is remembered)" });
   b.className = "livebtn" + (LIVE.on ? " on" : "");
   b.id = "live-toggle";
   return b;

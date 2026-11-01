@@ -1532,7 +1532,7 @@ What this editor adds on top of the lib:
   their free tricks), so unasked they would tint the whole list. In each of the two parts (the
   violations, then the suggestions) the players' groups stand in two columns, the starting
   eleven's on the left and the bench's on the right, each in roster-slot order, and the team's
-  own rows span both columns under them: a player's rows are short and the dock spans the
+  own rows span both columns above them: a player's rows are short and the dock spans the
   view's width, so one column left most of it empty. Multi-team AATF keeps one column: its
   report reads team by team, and its rows were just widened to read whole. **Its own
   window**: the pop-out icon at the header's right end (the icon font's arrow out of a square,
@@ -2054,7 +2054,7 @@ SE-GUI-47  GIVEN the PES 17 save open on team 718 under DBC7, Live AATF on, one 
            THEN the starting eleven's players with rows stand in the dock's left column and the
                 bench player's in its right, each under the line naming him, both columns from
                 the same top (718 has no rows of its own under DBC7: where a team has some, they
-                stand under both columns at the full width, which `team_widgets`' tests pin)
+                stand above both columns at the full width, which `team_widgets`' tests pin)
 SE-GUI-48  GIVEN SE-GUI-47's save, team, edit and check, the list in the dock
            WHEN the pop-out icon at the dock header's right end is clicked
            THEN the dock is gone and a window titled `Live AATF` holds the dock's count line
