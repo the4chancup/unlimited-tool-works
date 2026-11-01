@@ -1567,13 +1567,24 @@ fn an_idle_view_asks_for_no_frame() {
         "premise: the badge landed"
     );
 
-    // No events and nothing due: the frame asks for no repaint.
-    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert_eq!(
-        window.repaint_delay,
-        Duration::MAX,
-        "an idle frame asks for no repaint"
-    );
+    // No events and nothing due: the frames stop asking for a repaint. The
+    // worker asks for one after it has sent the reply, so under load its
+    // request can land on the frames after the landing one (egui answers a
+    // request with two repainting frames); one frame asking for none is
+    // the proof, where a view repainting forever asks on every frame. The
+    // deadline is a hang guard, as in `frames_until`.
+    let deadline = Instant::now() + Duration::from_secs(120);
+    loop {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        if window.repaint_delay == Duration::MAX {
+            break;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "an idle view keeps asking for a repaint"
+        );
+        std::thread::sleep(Duration::from_millis(20));
+    }
 }
 
 /// The checkbox labels under the `top` panel title down to `bottom`'s
