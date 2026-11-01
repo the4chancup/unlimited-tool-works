@@ -6343,7 +6343,7 @@ briefs, review loops, gates and mutation runs as for any step.
     it (now inside the dock, `plans/core/gui.md` "Log panel"), and SE-GUI-48's settings
     readback was unobserved → brief `.tmp/rv2830/brief_astra_r1.md` (SWE-2 sidekick), merged
     `d1c945a0` with cv35's two fixes (the lead's re-run: studio_core 337, save_editor 645 +
-    46). Open: the SWE-2 round over it (`.tmp/rv2830/swe_a1.md`)
+    46). Its SWE-2 round accepted none (`.tmp/duck_rulings.md` S-a1 r1): the loop ends
   - [ ] cv33 a team no quota system takes is read under the nearest system, fewest errors
     deciding (`plans/aatf_rules.md` "A team no quota system takes" and the NearestSystem
     paragraph; DECISIONS 2026-11-01; for the next candidate, the organizer validates it) →
@@ -6353,14 +6353,22 @@ briefs, review loops, gates and mutation runs as for any step.
     branch cv33 (Opus sidekick; the lead's re-run: aatf 419, save_editor 641 + 46,
     team_widgets 224; DBC6's diff touches 857, 893, 897 alone). Its seven contradictions
     accepted (three more fixtures read as the plan's table says; the map return and two
-    silent points, plan and DECISIONS). Open: rework r1, the plan's green GigaHeight team at
-    4146 (`.tmp/0_0_2/brief_cv33_r1.md`, running); then merge and a SWE-2 round (a new pub
-    type over three crates). The whole save also moves 20 teams of 701-799: one like 857, and
+    silent points, plan and DECISIONS). Rework r1 `87f60e3a`, the plan's green GigaHeight
+    team at 4146 (its red run drops the last system from the candidates: by distance alone
+    cannot fail, 4146 lying inside GigaHeight's span); merged `b394d7ff`, gates-changed
+    e4c026da green. SWE-2 round 1 (code and tests) accepted 3 (`.tmp/duck_rulings.md`
+    S-cv33 r1: a miscounted docstring, the two ties of the choice untested), which ends the
+    loop. Open: rework r2 (`.tmp/0_0_2/brief_cv33_r2.md`, running), then its mutants-diff
+    (logic.rhai is not mutated: the Rust side only). The whole save also moves 20 teams of 701-799: one like 857, and
     19 with six giants at 194 now read under Height, with more rows than before
   - [ ] cv34 P48: Multi-team AATF counts the teams under each system (`plans/save_editor.md`
     "Multi-team AATF counts the teams under each system"; DECISIONS 2026-11-01): the draft
     first (the lead's), then the scenario under SE-GUI-41, then the slice on cv33's team
     result → verify: DBC6 under DBC7 reads "Height 8, Manlet 14, Universal 11, GigaHeight 14"
+    (SE-GUI-51). Draft done (`save_editor.js` `multiAatfCounts`, the counts read from the
+    merged check: `.tmp/0_0_2/p48_*.txt`; 893's and 897's sample rows now read under Height),
+    plan + DECISIONS (both kinds on one line). Open: the slice (`.tmp/0_0_2/brief_cv34.md`,
+    SWE-2 sidekick, branch cv34 in wt-cv34, running)
   - [x] cv35 Set PES path over the team view's pitch while the sidebar's selector is orange or
     red (the maintainer's request, 2026-11-01; `plans/save_editor.md` "Tactics editor", the
     Set PES path bullet; `plans/core/gui.md` "Settings menu"'s one storing function, shared
