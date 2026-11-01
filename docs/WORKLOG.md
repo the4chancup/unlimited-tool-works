@@ -6099,9 +6099,12 @@ briefs, review loops, gates and mutation runs as for any step.
     priority above the spinners, yet waits: launched at High priority under the same load
     it was slower still (as is 6.4 s, DX12 6.3, Vulkan 1.1, GL 1.3; 4 rounds), so the wait
     looks to be outside its own threads (the window manager, the GPU driver's service), not
-    its own work. A probe of every process's CPU over a start (`cv13_who.py`) then caught
-    the app at 0.3 s of CPU over 0.55-1.04 s starts, with a mutation build running beside
-    the spinners: the stall is intermittent. Next, on a quiet machine: more rounds of
+    its own work. A probe of every process's CPU over a start (`cv13_who.py`) read 0.55-1.04 s
+    starts at 0.3 s of the app's CPU and 4-5 threads, but those were the crash notice a
+    killed run leaves ("The last session did not close normally"), which carries the
+    window's title, not the first frame (`who_check.py`: a start with the notice up reads 5
+    threads and 0.2 s of CPU, a first frame 20 threads and 0.5 s): void. Both scripts now
+    stop when the notice is up. Next, on a quiet machine: more rounds of
     `cv13_load.py cpu` and `cv13_who.py`, to find the process the start waits on; a WPR
     trace needs an elevated prompt, so it is the maintainer's if it comes to that
   - [x] cv14 a ruleset may allow illegal formations (the maintainer, 2026-10-31): the Whack
@@ -6287,7 +6290,12 @@ briefs, review loops, gates and mutation runs as for any step.
       `another_player_draws_no_badge_until_his_lands`,
       `a_key_moved_mid_run_starts_its_badge_when_the_reply_lands`. Re-measured on the merge
       (`run3.log`, idle machine): the frame after a notch 0.72 ms median (max 1.09), an idle
-      frame 0.78. Open: the wheel in the built window, with cv27's look
+      frame 0.78.
+      - manual: checked 2026-11-01 by the lead, in the built window (release build of
+        `f377b2ce`, DBC6's save read-only, a mutation build running): ten single notches over
+        Attacking Prowess, one per capture about 80 ms apart, each capture one notch behind at
+        most and the last value in the next capture; the badge kept (`.tmp/0_0_2/look_cv23a/
+        notch_up/sheet.png`, `notch_probe.py`)
     - [ ] cv23b the Multi-team dialog's 52 ms frames: find where a listing frame's time goes
       (220 teams' rows laid out each frame), then cut it. Measured on a quiet machine
       (`.tmp/0_0_2/cv23/run4.log`, `run4_b.txt`, the merge `e60f4365`): a listing frame 23 ms
@@ -6314,7 +6322,7 @@ briefs, review loops, gates and mutation runs as for any step.
     reversed screen became the checking one). The pictures' range dialog is not built yet
     (after 0.0.1); the plan holds its clamp. Live AATF's dock does not dim while checking
     (only `checking…`), left as is. The UI-thread measurement moved to cv23
-  - [ ] cv27 a hovered AATF row's grey fill leaves its red rule name hard to read (seen
+  - [x] cv27 a hovered AATF row's grey fill leaves its red rule name hard to read (seen
     2026-10-31 in cv16b's look, `.tmp/0_0_2/look_cv16b/09_crop.png`: "Extra height" on
     `widgets.hovered.bg_fill`; `team_widgets` `row_paint`) → compare the draft's `.drow:hover`
     first; a change is drafted, rendered and planned before code. Compared: the draft's own
@@ -6325,7 +6333,11 @@ briefs, review loops, gates and mutation runs as for any step.
     2026-11-01) → verify: a headless test that a hovered violation row paints no fill and a
     1-point stroke in `widgets.hovered.bg_stroke`'s colour. Code with cv23a's slice
     (`3cff6af7`, merged `e60f4365`): `row_paint` strokes, `violations.rs`
-    `a_hovered_row_is_outlined_not_filled` (red on the fill). Open: the built-window look
+    `a_hovered_row_is_outlined_not_filled` (red on the fill).
+    - manual: checked 2026-11-01 by the lead, in the built window with cv23a's: Live AATF's
+      "Height quota" row under the pointer outlined in grey 150, no fill, the red name as
+      readable as its neighbours' (`.tmp/0_0_2/look_cv23a/03_hover_crop.png`). The outline
+      showed the rows lack the draft's inset: cv37
   - [x] cv28 Live AATF in a window of its own, embedded (a collaborator's suggestion; the
     maintainer, 2026-11-01, for 0.0.1): the pop-out and dock icons (Phosphor's arrow out of
     and into a square, `resources/icons/pop-out.svg`, `dock.svg`, U+E5DE and U+E5DF, the
@@ -6408,7 +6420,7 @@ briefs, review loops, gates and mutation runs as for any step.
     readback was unobserved → brief `.tmp/rv2830/brief_astra_r1.md` (SWE-2 sidekick), merged
     `d1c945a0` with cv35's two fixes (the lead's re-run: studio_core 337, save_editor 645 +
     46). Its SWE-2 round accepted none (`.tmp/duck_rulings.md` S-a1 r1): the loop ends
-  - [ ] cv33 a team no quota system takes is read under the nearest system, fewest errors
+  - [x] cv33 a team no quota system takes is read under the nearest system, fewest errors
     deciding (`plans/aatf_rules.md` "A team no quota system takes" and the NearestSystem
     paragraph; DECISIONS 2026-11-01; for the next candidate, the organizer validates it) →
     verify: the plan's new fixtures, /cookie☆/ (DBC6's 857) as Manlet with no Stat total
@@ -6425,8 +6437,10 @@ briefs, review loops, gates and mutation runs as for any step.
     r2 ran it: the comment was right), which ends the loop. Rework r2 `5e452c54` (the two
     ties, each red; `dbc7_under` reads a team under one system), merged `d7df42c9` (the
     lead's re-run: aatf 422). The whole step's built-window check is cv30's (`/cookie☆/`
-    under Manlet). Open: `just mutants-diff 935718bb` over cv33 and cv34 (logic.rhai is not
-    mutated: the Rust side only), running; gates-changed b394d7ff over both merges green
+    under Manlet). `just mutants-diff 935718bb` over cv33 and cv34 (the Rust side only;
+    logic.rhai is not mutated): 69 caught, one missed, equivalent (`tactics.rs`'s
+    `2.0 * SET_FOLDER_SIDE_PADDING`, the padding being 2.0), no test missing
+    (`.tmp/0_0_2/triage_mutants_cv33_34.md`); gates-changed b394d7ff over both merges green
     (5574 passed, 0 failed). The whole save also moves 20 teams of 701-799: one like 857, and
     19 with six giants at 194 now read under Height, with more rows than before
   - [x] cv34 P48: Multi-team AATF counts the teams under each system (`plans/save_editor.md`
@@ -6476,6 +6490,21 @@ briefs, review loops, gates and mutation runs as for any step.
     behind that reading → brief `.tmp/0_0_2/brief_cv36.md`, tests only. Merged `972093cc`
     (Opus sidekick, `6eca15d6`; the lead's re-run: save_editor 642 + 46, team_widgets 225);
     154:67 measured 0.22 point, left untested
+  - [ ] cv37 the AATF and comparator rows lack the draft's inset and gap (found 2026-11-01 in
+    cv27's look: the hover outline runs 1 px from the rule's name, the draft's 5). The draft's
+    `.drow` (`.panel .drow`, `.live-body .drow`) is `padding: 0 4px` with an 8 px gap after
+    the 190 px `.f` (140 in Live AATF's window), and the group headings (`.grp`) none: its
+    names stand 4 px right of their heading and its sentences 198 px right of the name. The
+    app's `team_widgets` `row` paints the name at the row's left edge and the sentence
+    `rule_col` (190, 140) after it: the names in line with their heading, the sentences 8 px
+    nearer (`.tmp/0_0_2/look_cv23a/gap.py`: 190 px against the draft's 197). → measure every
+    list `row_paint` draws (Live AATF docked and in its window, Multi-team AATF, the
+    comparator) against the draft's render, then inset the row's content 4 points and add the
+    8-point gap where the draft has them; verify: a headless test of the name's and the
+    sentence's x against the row's rect, and the built window within 1 px of the draft. The
+    comparator's rows are one text (`<label> <old> → <new>`, `comparator.rs` `line`) where
+    the draft's (`save_editor.js`, `#cmp-rows`) are a `.drow` too: the label in the 190 px
+    column, `old → new` after it in the strong colour; brought to the draft in the same slice
 
   - [x] cv24 event logos read pixelated (the maintainer, 2026-10-31): `team_widgets`
     `event_logo.rs` uploads the PNG whole with linear sampling and no mipmaps, so a 78 × 84
