@@ -3002,3 +3002,6 @@ worklog passed 7,000 lines.
   hid its dock icon), the toolbar tooltip corrected, four missing tests (row click, dock close tooltip, list height).
 - 2026-11-01 — Tooling: a mutation run snapshots when launched, then queues on an OS lock behind the run in progress (no more
   chains, no edits held back); mutants-diff sets the last results aside as `mutants.diff.old`. 28 script tests.
+- 2026-11-01 — Tooling: the mutation scripts' round 1 rework (snapshot reads, the pending-half record, refusals that file
+  nothing, timeouts listed, extra mutants caught only on a failing test) and round 2's fixes; a test had set the live
+  `mutants.diff/` aside twice (one older result lost). 61 script tests, each shown failing by `scripts/perturb_check.py`.
