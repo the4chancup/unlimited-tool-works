@@ -6812,9 +6812,12 @@ briefs, review loops, gates and mutation runs as for any step.
     between. In the same
     pass: 0.0.1v's open look outside the app's own windows (the taskbar button, Alt+Tab,
     Explorer's file icon on the exe) → QUESTIONS "Before the release"
-  - [ ] f1d the maintainer's changes after DBC7's commissioner approved 0.0.1f (2026-11-01),
+  - [x] f1d the maintainer's changes after DBC7's commissioner approved 0.0.1f (2026-11-01),
     on a branch from `release/0.0.1-candidate` (`e39e0a9d`), merged into it and into main,
-    then candidate 0.0.1g staged (until the cut, nothing for later releases starts):
+    then candidate 0.0.1g staged (until the cut, nothing for later releases starts).
+    Done 2026-11-01: the candidate branch fast-forwarded to `4dcef0a8`, main merged it
+    (`7ae5e36b`); 0.0.1g staged at `4cc-studio-temp/candidate-0.0.1g/`, full gates green
+    (5590 tests); the draft caught up with f1d2 afterwards (`019400fa`):
     - [x] f1d1 Team TOML: `bench_order` lists 12, import fills the other nine as the game
       does; a comment before the first formation saying how its players are read; every
       export comment reworded for a member (`plans/pes_savefile/operations.md` "Team TOML",
@@ -7430,6 +7433,17 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open (2026-11-01, after the cut) — `scripts/gates/run_tests.py` writes its timings to
+  `<repo>/target/run_tests_times.json` (`TIMES`), not to cargo's target folder: a worktree that
+  builds into another tree's target through `CARGO_TARGET_DIR` (the staging worktree
+  `wt-cand-e`) and has no `target/` of its own fails `just test` after every test has passed,
+  before the doc tests and the rest of the gates (0.0.1g's first full run). Worked around by an
+  empty `target/` in the worktree; the fix reads the target folder as `release.target_dir()`
+  does
+- open (2026-11-01, after the cut) — `scripts/release/make_candidate.py` puts the candidate in
+  `<repo>/../4cc-studio-temp/` (`DEST`): run from a worktree under `4cc-studio-temp` (as
+  `wt-cand-e` is), that is `4cc-studio-temp/4cc-studio-temp/`; 0.0.1g was moved up by hand.
+  The fix resolves the folder from the main tree (`git rev-parse --git-common-dir`)
 - resolved (2026-11-01, cv39 `99c9a36a`) — `save_editor` `view::tests::savefile::
   the_last_end_follows_the_first_and_lists_the_teams_from_it` failed once, in the unmutated
   baseline of `just mutants-diff 04ea9425` (`.tmp/0_0_2/mutants_diff_cv23a.log`: `no heading

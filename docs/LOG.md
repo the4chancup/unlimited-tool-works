@@ -3029,3 +3029,5 @@ worklog passed 7,000 lines.
   plain comments, both instruction sides listed under illegal formations, cv40 on the candidate. Review loop ended; mutants-diff 37 caught, 1 unviable.
 - 2026-11-01 — The Save editor draft catches up with f1d2: under a ruleset allowing illegal formations every instruction combo lists both
   sides (the code and plan landed without it). Rendered: DBC7 12 options per combo, Spring 26 split 8 and 5.
+- 2026-11-01 — Candidate 0.0.1g staged (`4cc-studio-temp/candidate-0.0.1g/`, `release/0.0.1-candidate` at `4dcef0a8`): full gates
+  green (5590 tests), the release exe byte-identical to the staged one; f1d is its only change since 0.0.1f.
