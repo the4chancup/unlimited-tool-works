@@ -3729,7 +3729,10 @@ function dlgMultiAatf() {
 function multiAatfResults() {
   return picTeamsIn(multiAatf.checked.from, multiAatf.checked.to).map(t => {
     const rows = liveRows(t);
-    return { team: t, rows: rows && rows.filter(r => r[0] !== "Suggestion") };
+    // The team-wide rows first, as every list of a team's issues puts them; the
+    // players' after, in the check's order.
+    const issues = rows && rows.filter(r => r[0] !== "Suggestion");
+    return { team: t, rows: issues && [...issues.filter(r => !r[2]), ...issues.filter(r => r[2])] };
   });
 }
 function multiAatfText(results) {
@@ -6644,7 +6647,7 @@ function comparatorPanel() {
       lastPid = pid;
     }
     const d = diffRowDraw(field, o, n);
-    const row = h("div", { class: "drow sel", title: "Select this player",
+    const row = h("div", { class: "drow sel", title: "Click to switch to this player",
       onclick: () => { jumpToPlayer(team, pid % 100); render(); } },
       h("span", { class: "f" }, d.label),
       h("span", { class: "v" }, d.oldV + " \u2192 " + d.newV));
@@ -7384,7 +7387,7 @@ function liveList(oneColumn) {
         else jumpToTeam(team);
         render();
       },
-      title: pid ? "Select this player" : "Select the team" },
+      title: pid ? "Click to switch to this player" : null },
       h("span", { class: "f" }, ruleName(rule)), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))),
     ...detailRows(rule, fields, t)];
   // A column's rows under their players' heads, a head again wherever the
@@ -7402,13 +7405,15 @@ function liveList(oneColumn) {
                                   ["Suggestions", rows.filter(r => r[0] === "Suggestion")]]) {
     if (!section.length) continue;
     if (title) body.append(h("div", { class: "grp" }, title));
+    // The team's own rows first: a team-wide issue (a formation, a count of
+    // players) is the cup's first concern, ahead of any one player's.
+    const own = section.filter(r => !r[2]);
+    if (own.length) body.append(h("div", { class: "grp weak" }, "Team-wide issues"), ...own.flatMap(rowEls));
     const players = section.filter(r => r[2]);
     if (players.length && oneColumn) body.append(column(players));
     else if (players.length) body.append(h("div", { class: "lcols" },
       column(players.filter(r => starters.has(slotOf(r[2])))),
       column(players.filter(r => !starters.has(slotOf(r[2]))))));
-    const own = section.filter(r => !r[2]);
-    if (own.length) body.append(h("div", { class: "grp weak" }, "Team-wide issues"), ...own.flatMap(rowEls));
   }
   return body;
 }
@@ -7479,7 +7484,7 @@ function patchPanel() {
       table.append(h("tr", {},
         h("td", { class: "sel",
           onclick: () => { jumpToPlayer(Math.floor(pid / 100), pid % 100); render(); },
-          title: "Select this player" },
+          title: "Click to switch to this player" },
           (p ? displayName(p.name) : String(pid)) + " \u00b7 " + d.label),
         h("td", { class: "mono" }, d.oldV), h("td", { class: "mono" }, d.newV)));
     }

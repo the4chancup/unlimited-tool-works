@@ -226,11 +226,11 @@
     /* The app's own font chains (plans/core/gui.md, the Dark/light theme row), the files
        in assets/fonts/; no system font and no generic family, so a glyph none of them has
        shows as the browser's fallback, which scripts/draft_fonts.py reports. */
-    --font-body: "Roboto Flex", "Symbols", "Icons", "egui-icons";
-    --font-mono: "Hack", "Roboto Flex", "Symbols", "Icons", "egui-icons";
+    --font-body: "Roboto Flex", "Symbols", "Icons", "egui-icons", "Noto Emoji", "emoji-icon-font";
+    --font-mono: "Hack", "Roboto Flex", "Symbols", "Icons", "egui-icons", "Noto Emoji", "emoji-icon-font";
     /* The pitch's formation name alone: the semibold weight, whose stroke matches the
        game's label (worklog 0.0.1x); everything else stays regular. */
-    --font-label: "Roboto Flex Semibold", "Roboto Flex", "Symbols", "Icons", "egui-icons";
+    --font-label: "Roboto Flex Semibold", "Roboto Flex", "Symbols", "Icons", "egui-icons", "Noto Emoji", "emoji-icon-font";
     /* The simulated window's title bar alone: the system's, not the app's, so it takes the
        system's caption font, which scripts/draft_fonts.py lets the bar draw in. */
     --font-os: "Segoe UI", system-ui, sans-serif;
@@ -242,6 +242,10 @@
   @font-face { font-family: "Symbols"; src: url("assets/fonts/symbols.ttf"); }
   @font-face { font-family: "Hack"; src: url("assets/fonts/Hack-Regular.ttf"); }
   @font-face { font-family: "egui-icons"; src: url("assets/fonts/egui-icons.ttf"); size-adjust: 90%; }
+  /* egui's monochrome emoji fonts, last in every chain for what a member types, at egui's
+     scale tweaks (epaint's FontDefinitions::default). */
+  @font-face { font-family: "Noto Emoji"; src: url("assets/fonts/NotoEmoji-Regular.ttf"); size-adjust: 81%; }
+  @font-face { font-family: "emoji-icon-font"; src: url("assets/fonts/emoji-icon-font.ttf"); size-adjust: 90%; }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {

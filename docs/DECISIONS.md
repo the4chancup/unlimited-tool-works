@@ -14777,3 +14777,28 @@ window has its own close; the same corner holding the same button in both places
 one control. The chevron stays: it collapses the dock, which a close does not replace.
 Plan: `plans/save_editor.md` "Configurable AATF rules", the Live AATF bullet ("Its own
 window"), SE-GUI-49.
+
+## 2026-11-01 — save_editor, team_widgets — a team's issues list its team-wide rows first; the rows' tooltips
+Decision (maintainer): every list of a team's AATF issues puts the team-wide rows first, under
+`Team-wide issues`, then the players' groups: Live AATF's dock and window, Multi-team AATF's
+list and its copied text. A player's row says `Click to switch to this player` on hover, and
+so do the Comparator's rows and the patch panel's items, which were `Select this player`; a
+team-wide row has no tooltip (it was `A team-level violation`, which its group's heading says).
+Why: a formation or a tier count is the team's first concern, ahead of any one player's, and
+it was easy to miss under a long list of players. The tooltip names what a click does, the
+same words wherever a row's click switches players.
+Plan: `plans/save_editor.md` "Configurable AATF rules", the Live AATF bullet; "Comparator
+(gameplay + aesthetics)"; the patch panel's preview.
+
+## 2026-11-01 — studio_core — what a member types falls back to egui's emoji fonts, then the system's
+Decision: egui's `monochrome_emoji_fonts` feature is on, so `NotoEmoji-Regular` and
+`emoji-icon-font` follow the suite's fonts in every chain, before eframe's system fallback;
+the drafts load the same two files. The maintainer asked for a font that draws a cup team's
+`/cookie☆/`, size no concern.
+Why: eframe's system fallback finds a font for a letter of another script, but for a symbol of
+no script it asks only the system's generic families, and on Windows none has `☆`, `！` or
+`Ｕ`, three of the characters DBC6's save holds (measured 2026-11-01: 27 of its 45 characters
+past ASCII lie outside the suite's fonts). The emoji fonts have all three, draw the same glyph
+on every machine, and give Studio Web, which has no system fonts, the same coverage. Bundling a
+system font (Segoe UI Symbol) was the alternative: not ours to ship.
+Plan: `plans/core/gui.md`, the Dark/light theme row ("What a member types").
