@@ -489,6 +489,23 @@ fn a_rows_click_selects_its_player() {
     );
 }
 
+/// A preview row's Item cell (71403's corner kick) says on hover what its
+/// click does.
+#[test]
+fn an_items_hover_says_its_click_switches_to_the_player() {
+    let (mut view, mut window) = open_save(PesVersion::Pes21, "patch_item_hover");
+    previewed(
+        &mut window,
+        &mut view,
+        &patch_text(21, ALLOCATION_SCHEME_VERSION, &co_block()),
+    );
+    let item = panel_cell(&mut window, &mut view, CO_ROWS[0][0]).expect("the corner kick's item");
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, centre(&item), "this player").as_deref(),
+        Some("Click to switch to this player")
+    );
+}
+
 // SE-GUI-18
 #[test]
 fn a_second_patch_opened_replaces_the_first_ones_preview() {

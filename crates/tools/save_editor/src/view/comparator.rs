@@ -20,7 +20,7 @@ use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use pes_savefile::ops::compare::{CompareError, DiffScope};
 use pes_version::PesVersion;
-use team_widgets::violations::{SelectedPlayer, player_head, row_paint};
+use team_widgets::violations::{SWITCH_TOOLTIP, SelectedPlayer, player_head, row_paint};
 
 use crate::diff::{self, DiffReport, PlayerReport};
 use crate::messages::version_mismatch_sentence;
@@ -666,6 +666,6 @@ fn line(ui: &mut egui::Ui, line: &Line) -> Option<SelectedPlayer> {
         &[egui::Shape::galley(rect.min, galley, color)],
         text,
         select,
-        select.is_some().then_some("Select this player"),
+        select.is_some().then_some(SWITCH_TOOLTIP),
     )
 }

@@ -19,6 +19,55 @@ fn tool_click(
     press_release(window, centre(node), |ui| tool.view(ui, ctx));
 }
 
+/// Frames scrolling the dock's list until 73404's Height row (the one under
+/// his header) has its centre inside the list's clip and has held still a
+/// frame, bounded; returns that frame's nodes. The team's own rows come
+/// first, so with team 734's four a player's row stands below the dock's
+/// fold, where a click does not reach it.
+fn scroll_dock_to_73404s_row(window: &mut Headless, view: &mut SaveView) -> Vec<accesskit::Node> {
+    let header = "Player 73404  45 Yuki-kun ^~^";
+    let mut last = None;
+    for _ in 0..48 {
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+        // The dock's bar is the lowest: the detail pane's stands above it.
+        let clip = nodes
+            .iter()
+            .filter(|node| node.role() == Role::ScrollBar)
+            .filter_map(accesskit::Node::bounds)
+            .max_by(|a, b| a.y0.partial_cmp(&b.y0).expect("ordered bounds"))
+            .expect("the dock's list scrolls");
+        let row = height_row_below(&nodes, header)
+            .bounds()
+            .expect("the row's bounds");
+        let centre_y = (row.y0 + row.y1) / 2.0;
+        // egui spreads a wheel's delta over the next frames, so a row inside
+        // the clip may still be moving.
+        let settled = last == Some(row);
+        last = Some(row);
+        if clip.y0 <= centre_y && centre_y <= clip.y1 {
+            if settled {
+                return nodes;
+            }
+            continue;
+        }
+        let at = egui::pos2(300.0, ((clip.y0 + clip.y1) / 2.0) as f32);
+        window.frame(
+            vec![
+                egui::Event::PointerMoved(at),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: egui::vec2(0.0, -60.0),
+                    phase: egui::TouchPhase::Move,
+                    source: egui::MouseWheelSource::Wheel,
+                    modifiers: egui::Modifiers::NONE,
+                },
+            ],
+            |ui| show(ui, view, &|| Vec::new()),
+        );
+    }
+    panic!("73404's row never scrolled into the dock's view")
+}
+
 /// Asserts no violation row is drawn under `header` (a row would be a
 /// Button below the header line; a gated control's `-` stand-in — drawn
 /// off the scroll's clip with real bounds — is never one, and nor is a
@@ -1090,7 +1139,8 @@ fn a_rows_click_moves_the_selector_unless_it_reads_all() {
     // checks 734.
     view.team = TeamChoice::Team(718);
     view.selected = Some(Selection::Player(734, 0));
-    let nodes = live_checked(&mut window, &mut view, &[734]);
+    live_checked(&mut window, &mut view, &[734]);
+    let nodes = scroll_dock_to_73404s_row(&mut window, &mut view);
     click(
         &mut window,
         height_row_below(&nodes, "Player 73404  45 Yuki-kun ^~^"),
@@ -1107,7 +1157,8 @@ fn a_rows_click_moves_the_selector_unless_it_reads_all() {
     // click that did nothing would satisfy both assertions.
     view.team = TeamChoice::All;
     view.selected = Some(Selection::Player(734, 0));
-    let nodes = live_checked(&mut window, &mut view, &[734]);
+    live_checked(&mut window, &mut view, &[734]);
+    let nodes = scroll_dock_to_73404s_row(&mut window, &mut view);
     click(
         &mut window,
         height_row_below(&nodes, "Player 73404  45 Yuki-kun ^~^"),
@@ -1130,6 +1181,7 @@ fn a_rows_click_clears_the_filter_so_the_row_shows() {
         row_labels(&nodes).is_empty(),
         "premise: the filter hides every player"
     );
+    let nodes = scroll_dock_to_73404s_row(&mut window, &mut view);
     click(
         &mut window,
         height_row_below(&nodes, "Player 73404  45 Yuki-kun ^~^"),
@@ -1203,10 +1255,11 @@ fn a_worker_that_ends_without_a_reply_is_checked_again() {
 fn a_rows_click_selects_the_player() {
     let (mut view, mut window) = open_734_with("live_aatf_click", &[73401, 73404], 183);
     view.live_aatf = true;
-    let nodes = live_checked(&mut window, &mut view, &[734]);
+    live_checked(&mut window, &mut view, &[734]);
     // Another of 734's players selected first: a click that did nothing
     // would satisfy the assertion anyway.
     view.selected = Some(Selection::Player(734, 0));
+    let nodes = scroll_dock_to_73404s_row(&mut window, &mut view);
     click(
         &mut window,
         height_row_below(&nodes, "Player 73404  45 Yuki-kun ^~^"),

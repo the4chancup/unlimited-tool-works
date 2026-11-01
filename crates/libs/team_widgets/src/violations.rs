@@ -125,11 +125,11 @@ pub struct Wording<'a> {
 
 /// The AATF results of `teams`, worded as `wording` says (the rules they
 /// were checked against and the checked save's version), grouped per
-/// player, as `list_use` says. Under `ListUse::Editing` each part (the
-/// violations, then the suggestions) stands the players' groups in two
-/// columns, the starting eleven's left and the bench's right, with the
-/// team's own rows under both, unless `one_column` asks for one; a report
-/// lists every group in one column.
+/// player, as `list_use` says, the team's own rows first. Under
+/// `ListUse::Editing` each part (the violations, then the suggestions)
+/// stands the players' groups under the team's own rows in two columns,
+/// the starting eleven's left and the bench's right, unless `one_column`
+/// asks for one; a report lists every group in one column.
 /// Returns the player whose row was clicked this frame.
 pub fn violations_list(
     ui: &mut egui::Ui,
@@ -199,14 +199,14 @@ pub fn violations_list(
 const COLUMN_GAP: f32 = 16.0;
 
 /// One part of `team`'s list (its violations, or its suggestions), drawn as
-/// `list_use` says: while editing, the players' groups in two top-aligned
-/// columns of equal width, the starting eleven's left and every other
-/// slot's right, each in `groups`' order, then the team's own group under
-/// both at the full width; a player's rows are short and the dock is wide.
-/// Editing in one column, the players' groups in `groups`' order, then the
-/// team's own. A report reads team by team, so it keeps every group in one
-/// column, its rows only reporting. Returns the player whose row was
-/// clicked.
+/// `list_use` says: while editing, the team's own group first at the full
+/// width, then the players' groups in two top-aligned columns of equal
+/// width, the starting eleven's left and every other slot's right, each in
+/// `groups`' order; a player's rows are short and the dock is wide.
+/// Editing in one column, the team's own group, then the players' in
+/// `groups`' order. A report reads team by team, so it keeps every group in
+/// one column in `groups`' order (the team's own first), its rows only
+/// reporting. Returns the player whose row was clicked.
 fn part(
     ui: &mut egui::Ui,
     team: &TeamViolations<'_>,
@@ -224,10 +224,11 @@ fn part(
             slot.is_some_and(|slot| team.starting_eleven.contains(&slot) == starting)
         })
     };
-    let mut selected = None;
+    let own = groups.iter().filter(|(slot, _)| slot.is_none());
+    let mut selected = draw_groups(ui, team, own, wording, true, rule_col);
     if one_column {
         let players = groups.iter().filter(|(slot, _)| slot.is_some());
-        selected = draw_groups(ui, team, players, wording, true, rule_col);
+        selected = draw_groups(ui, team, players, wording, true, rule_col).or(selected);
     } else if groups.iter().any(|(slot, _)| slot.is_some()) {
         let spacing = ui.spacing().item_spacing.x;
         ui.scope(|ui| {
@@ -251,8 +252,7 @@ fn part(
             });
         });
     }
-    let own = groups.iter().filter(|(slot, _)| slot.is_none());
-    draw_groups(ui, team, own, wording, true, rule_col).or(selected)
+    selected
 }
 
 /// `groups` drawn one after the other, each its header then its rows.
@@ -287,7 +287,7 @@ fn draw_groups<'v>(
 }
 
 /// A team's Suggestion violations in the list's order: one group per
-/// slot, in the check's order, as `issue_groups` groups the others.
+/// slot, the team's own first, as `issue_groups` groups the others.
 fn suggestion_groups(violations: &[aatf::Violation]) -> Vec<(Option<u8>, Vec<&aatf::Violation>)> {
     let suggestions = || {
         violations
@@ -301,9 +301,9 @@ fn suggestion_groups(violations: &[aatf::Violation]) -> Vec<(Option<u8>, Vec<&aa
 }
 
 /// A team's Error and Warning violations in the list's order: one group
-/// per slot, in the check's order (players by slot, the team's own rows
-/// last, `None`), errors before warnings inside a group. A host writing the
-/// list out as text walks this, so the text reads as the list does.
+/// per slot, the team's own rows (`None`) first, then the players' by slot,
+/// errors before warnings inside a group. A host writing the list out as
+/// text walks this, so the text reads as the list does.
 pub fn issue_groups(violations: &[aatf::Violation]) -> Vec<(Option<u8>, Vec<&aatf::Violation>)> {
     slot_order(
         violations
@@ -325,8 +325,11 @@ pub fn issue_groups(violations: &[aatf::Violation]) -> Vec<(Option<u8>, Vec<&aat
     .collect()
 }
 
-/// The slots the given violations fall on, in first-appearance order (the
-/// check's: players by slot, the team's own rows last).
+/// The slots the given violations fall on: the team's own (`None`) first,
+/// then the players' in first-appearance order (the check's, by slot). A
+/// team-wide issue (a formation, a tier count) is the team's first concern,
+/// ahead of any one player's, so every list of a team's issues leads with
+/// it, where the check returns it last.
 fn slot_order<'a>(violations: impl Iterator<Item = &'a aatf::Violation>) -> Vec<Option<u8>> {
     let mut order = Vec::new();
     for violation in violations {
@@ -334,6 +337,8 @@ fn slot_order<'a>(violations: impl Iterator<Item = &'a aatf::Violation>) -> Vec<
             order.push(violation.slot);
         }
     }
+    // Stable: the players keep their order.
+    order.sort_by_key(Option::is_some);
     order
 }
 
@@ -534,6 +539,11 @@ fn group_header(ui: &mut egui::Ui, team: &TeamViolations<'_>, slot: Option<u8>) 
     ui.weak(text);
 }
 
+/// The tooltip of a row whose click switches the view to its player: the
+/// list's player rows, the Save editor's comparator rows and its patch
+/// preview's items, so every such row says the same.
+pub const SWITCH_TOOLTIP: &str = "Click to switch to this player";
+
 /// The rule name's column, the draft's `.f`: 190 points of proportional text,
 /// cut with an ellipsis when longer, never wrapping.
 const RULE_COL: f32 = 190.0;
@@ -565,8 +575,9 @@ fn layout(
 /// `violation_detail`'s lines (the draft's `.drow.detail`) over `players`, the
 /// team's, in the plain text color, wrapped in the same column; the whole row
 /// one click target. While `selects`, a player's row returns
-/// `SelectedPlayer` on click; a team row, or any row of a list that does
-/// not select, only hovers.
+/// `SelectedPlayer` on click and its tooltip is `SWITCH_TOOLTIP`; a team
+/// row, or any row of a list that does not select, only hovers, with no
+/// tooltip.
 fn row(
     ui: &mut egui::Ui,
     team_id: u32,
@@ -646,12 +657,10 @@ fn row(
         label.push_str("; ");
         label.push_str(line);
     }
-    // A report's rows select nothing, so no tooltip talks of selecting.
-    let hover = match (select, selects) {
-        (Some(_), _) => Some("Select this player"),
-        (None, true) => Some("A team-level violation"),
-        (None, false) => None,
-    };
+    // Only a row that switches players says so. A team-wide row selects
+    // nothing and its group's heading already says what it is, and a
+    // report's rows select nothing either.
+    let hover = select.map(|_| SWITCH_TOOLTIP);
     let mut shapes = vec![
         egui::Shape::galley(rect.min, rule_galley, rule_color),
         egui::Shape::galley(
@@ -1237,8 +1246,8 @@ mod tests {
     /// cm) set to 183, which no Red bracket takes: 14 violations, a
     /// `Height` error on each of the two, the team's own (three
     /// `TierCount`, and the red tall quota at 8 of 10) and eight `Unused`
-    /// suggestions on slots 9, 10, 14 and 22. The list draws each player's
-    /// group in roster order, then the team's.
+    /// suggestions on slots 9, 10, 14 and 22. The list draws the team's own
+    /// group, then each player's in roster order.
     // SE-GUI-15
     #[test]
     fn the_list_groups_the_checks_violations_per_player() {
@@ -1266,15 +1275,15 @@ mod tests {
             drawn_lines(&nodes),
             [
                 "Team 734 /lit/",
-                "Player 73401  49 Muh Spooks",
-                "Height: height 183 takes no bracket (185 has room)",
-                "Player 73404  45 Yuki-kun ^~^",
-                "Height: height 183 takes no bracket (185 has room)",
                 "Team-wide issues",
                 "Tier count: 2 Gold players, where the rules want 1",
                 "Tier count: 0 Bronze players, where the rules want 2",
                 "Tier count: 19 Regular players, where the rules want 18",
                 TALL_734,
+                "Player 73401  49 Muh Spooks",
+                "Height: height 183 takes no bracket (185 has room)",
+                "Player 73404  45 Yuki-kun ^~^",
+                "Height: height 183 takes no bracket (185 has room)",
             ]
         );
     }
@@ -1353,15 +1362,15 @@ mod tests {
             drawn_lines(&nodes),
             [
                 "734 /lit/",
-                "Player 73401  49 Muh Spooks",
-                height,
-                "Player 73404  45 Yuki-kun ^~^",
-                height,
                 "Team-wide issues",
                 "Tier count: 2 Gold players, where the rules want 1",
                 "Tier count: 0 Bronze players, where the rules want 2",
                 "Tier count: 19 Regular players, where the rules want 18",
                 TALL_734,
+                "Player 73401  49 Muh Spooks",
+                height,
+                "Player 73404  45 Yuki-kun ^~^",
+                height,
                 "714 /co/",
                 "All clean",
             ]
@@ -2983,9 +2992,9 @@ mod tests {
 
     /// The grouping test's team 734 with one starter made short the same
     /// way: 73401 and 73404 (slots 0 and 3) sit on the bench, and 73402
-    /// (slot 1) starts. While editing, the starter's group stands in the left
-    /// column and the bench's two in the right, both from the same top,
-    /// and the team's own rows under both; a report keeps one column.
+    /// (slot 1) starts. While editing, the team's own rows stand above both
+    /// columns, the starter's group in the left column and the bench's two
+    /// in the right, both from the same top; a report keeps one column.
     #[test]
     fn the_starters_groups_stand_left_of_the_benchs() {
         let mut file = fixture();
@@ -3014,21 +3023,19 @@ mod tests {
         let (nodes, _, _) = window.list(&teams, false, vec![]);
         let starter = line_bounds(&nodes, "Player 73402 ");
         let bench = line_bounds(&nodes, "Player 73401 ");
-        let team_wide = line_bounds(&nodes, "Team-wide issues");
+        let team_rows_bottom = line_bounds(&nodes, "Height quota: ").y1;
         assert!(
             starter.x0 < bench.x0,
             "the starter's group left of the bench's: {starter:?}, {bench:?}"
         );
         let starter_bottom = column_bottom(&nodes, starter.x0);
-        let bench_bottom = column_bottom(&nodes, bench.x0);
         assert!(
             bench.y0 < starter_bottom,
             "the bench's column starts beside the starter's rows: {bench:?}, {starter_bottom}"
         );
         assert!(
-            team_wide.y0 >= starter_bottom && team_wide.y0 >= bench_bottom,
-            "the team's own rows under both columns: {team_wide:?}, {starter_bottom}, \
-             {bench_bottom}"
+            team_rows_bottom <= starter.y0 && team_rows_bottom <= bench.y0,
+            "the team's own rows above both columns: {team_rows_bottom}, {starter:?}, {bench:?}"
         );
 
         let (nodes, _) = window.frame(vec![], |ui| {
@@ -3151,6 +3158,161 @@ mod tests {
         assert!(
             one.iter().all(|column| (column - 140.0).abs() <= 0.5),
             "one column narrows the rule column to 140: {one:?}"
+        );
+    }
+
+    /// The PES 17 fixture with each of `ids`, 185 cm players of team 734,
+    /// made 183, which no Red bracket takes: a `Height` error on each, beside
+    /// the team's own tier counts and tall quota.
+    fn short_734(ids: &[u32]) -> pes_savefile::EditFile {
+        let mut file = fixture();
+        for &id in ids {
+            let player = file.player_mut(id).expect("rostered");
+            assert_eq!(player.basic.height, 185, "premise: {id} is tall");
+            player.basic.height = 183;
+        }
+        file
+    }
+
+    /// The two-column test's team 734 (the bench's 73401 and 73404 and the
+    /// starter 73402 made short) in every list use, two columns, one and a
+    /// report: `Team-wide issues` and its rows, down to the tall quota, the
+    /// team's last, stand above every player's group, since a tier count is
+    /// the team's first concern.
+    // SE-GUI-30
+    #[test]
+    fn the_team_wide_issues_stand_above_every_players_group() {
+        let file = short_734(&[73401, 73404, 73402]);
+        let players = listed_players(&file, 734);
+        let violations = check(&file, 734);
+        let team = file.team(734).expect("team 734");
+        let teams = [TeamViolations {
+            team_id: 734,
+            team_name: &team.name,
+            players: &players,
+            violations: &violations,
+            starting_eleven: &team.tactics.starting_eleven,
+        }];
+        let mut window = Headless::new();
+        for list_use in [
+            ListUse::Editing {
+                show_suggestions: false,
+                one_column: false,
+            },
+            ListUse::Editing {
+                show_suggestions: false,
+                one_column: true,
+            },
+            ListUse::Report,
+        ] {
+            let (nodes, _, _) = window.list_as(&teams, list_use, vec![]);
+            let heading = line_bounds(&nodes, "Team-wide issues");
+            let quota = line_bounds(&nodes, "Height quota: ");
+            assert!(
+                heading.y1 <= quota.y0,
+                "{list_use:?}: the quota under its heading: {heading:?}, {quota:?}"
+            );
+            let player_heads: Vec<accesskit::Rect> = nodes
+                .iter()
+                .filter(|node| {
+                    node.role() == Role::Label
+                        && node.value().is_some_and(|text| text.starts_with("Player "))
+                })
+                .filter_map(accesskit::Node::bounds)
+                .collect();
+            assert_eq!(player_heads.len(), 3, "{list_use:?}: three players' heads");
+            for head in player_heads {
+                assert!(
+                    quota.y1 <= head.y0,
+                    "{list_use:?}: a player's group under the team's rows: {quota:?}, {head:?}"
+                );
+            }
+        }
+    }
+
+    /// The texts the pointer resting at `pos` adds to the list's frame, a
+    /// tooltip's: every value thirty frames with the pointer there draw
+    /// that the frame with the pointer away did not (bounded, the tooltip
+    /// delay 0, so a missing tooltip fails rather than hangs).
+    fn hover_texts(
+        window: &mut Headless,
+        teams: &[TeamViolations],
+        pos: egui::Pos2,
+    ) -> Vec<String> {
+        window
+            .ctx
+            .global_style_mut(|style| style.interaction.tooltip_delay = 0.0);
+        let values = |nodes: &[accesskit::Node]| -> Vec<String> {
+            nodes
+                .iter()
+                .filter_map(|node| node.value())
+                .map(str::to_owned)
+                .collect()
+        };
+        let (away, _, _) = window.list(
+            teams,
+            false,
+            vec![egui::Event::PointerMoved(egui::Pos2::ZERO)],
+        );
+        let away = values(&away);
+        window.list(teams, false, vec![egui::Event::PointerMoved(pos)]);
+        let mut added = Vec::new();
+        for _ in 0..30 {
+            let (nodes, _, _) = window.list(teams, false, vec![]);
+            for value in values(&nodes) {
+                if !away.contains(&value) && !added.contains(&value) {
+                    added.push(value);
+                }
+            }
+        }
+        added
+    }
+
+    /// Team 734 with its two short bench players: hovering a player's row
+    /// (73401's `Height`) shows `Click to switch to this player`, what its
+    /// click does, and hovering a team-wide row (its Gold tier count)
+    /// shows no tooltip.
+    // SE-GUI-30
+    #[test]
+    fn a_players_row_hovers_what_its_click_does_and_a_team_row_nothing() {
+        let file = short_734(&[73401, 73404]);
+        let players = listed_players(&file, 734);
+        let violations = check(&file, 734);
+        let team = file.team(734).expect("team 734");
+        let teams = [TeamViolations {
+            team_id: 734,
+            team_name: &team.name,
+            players: &players,
+            violations: &violations,
+            starting_eleven: &team.tactics.starting_eleven,
+        }];
+        let mut window = Headless::new();
+        let (nodes, _, _) = window.list(&teams, false, vec![]);
+        let player_row = nodes
+            .iter()
+            .find(|node| {
+                node.role() == Role::Button
+                    && node.label() == Some("Height: height 183 takes no bracket (185 has room)")
+            })
+            .expect("a player's row")
+            .clone();
+        let team_row = nodes
+            .iter()
+            .find(|node| {
+                node.role() == Role::Label
+                    && node.value() == Some("Tier count: 2 Gold players, where the rules want 1")
+            })
+            .expect("a team-wide row")
+            .clone();
+        assert_eq!(
+            hover_texts(&mut window, &teams, centre(&player_row)),
+            ["Click to switch to this player"],
+            "a player's row"
+        );
+        assert_eq!(
+            hover_texts(&mut window, &teams, centre(&team_row)),
+            Vec::<String>::new(),
+            "a team-wide row"
         );
     }
 

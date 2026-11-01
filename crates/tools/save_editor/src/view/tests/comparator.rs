@@ -266,6 +266,25 @@ fn the_panel_lists_the_differences_per_team_and_a_rows_click_selects() {
     assert_eq!(view.team, TeamChoice::Team(734), "the selector moved");
 }
 
+/// A diff row of a player the open save rosters (73401's height) says on
+/// hover what its click does.
+#[test]
+fn a_rows_hover_says_its_click_switches_to_the_player() {
+    let (mut view, mut window) = open_734_with("comparator_row_hover", &[73401], 183);
+    let dir = scratch_of(&view);
+    let picked = picked_save(&dir, "picked", |_| {});
+    open_comparator(&mut window, &mut view);
+    pick(&mut window, &mut view, picked);
+    compared(&mut window, &mut view);
+    let pairs = scroll_to(&mut window, &mut view, "Player 73401  49 Muh Spooks");
+    let (_, row) = comparator_button(&pairs, "Height 185 \u{2192} 183");
+    let at = centre(row);
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, at, "this player").as_deref(),
+        Some("Click to switch to this player")
+    );
+}
+
 /// A team whose name holds a colour code heads its group by its display
 /// name: 734's name in the open save coloured red.
 // SE-GUI-13
