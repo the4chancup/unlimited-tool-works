@@ -448,10 +448,11 @@ mod tests {
 
     /// The copied text of 714 /co/ (clean) and 718 /f/ (a player's rows and
     /// the team's own) under 4cc Autumn 26: the header with the counts, each
-    /// team's line after a `>`, `All clean` and the player's and the team's
-    /// lines indented two spaces, each row four, and the Tall quota's
-    /// players (718's 185 cm players and its 189 cm goalkeeper, read at 185,
-    /// in roster order) six.
+    /// team's line after a `>`, `All clean` and the team's and the player's
+    /// lines indented two spaces, the team's first, each row four, and the
+    /// Tall quota's players (718's 185 cm players and its 189 cm goalkeeper,
+    /// read at 185, in roster order) six.
+    // SE-GUI-41
     #[test]
     fn the_copied_text_lists_each_team_after_a_marker_and_its_rows_indented() {
         let session = legal_714_and_short_71801("multi_aatf_copy_text");
@@ -472,15 +473,15 @@ mod tests {
                 ">714 /co/",
                 "  All clean",
                 ">718 /f/",
-                "  71801 ROADTRIP",
-                "    Error  Height  height 183 takes no bracket (185 has room)",
-                "    Error  Special rule  Tall goalkeepers are 189: GKs in this bracket must be 189cm",
                 "  Team-wide issues",
                 "    Error  Tier count  2 Gold players, where the rules want 1",
                 "    Error  Tier count  0 Bronze players, where the rules want 2",
                 "    Error  Tier count  19 Regular players, where the rules want 18",
                 "    Error  Height quota  9 players in the Tall bracket of the Red system, where its quota is 10",
                 "      At 185: GARDEVOIR PAIZURI, PEPSI MAN, DA HOOD, LOLICATGIRLS, RESIZETHEFLASH! (189), HAAAAAAAAAAAAAAN~, BOURBONHOUSE, DONTSHITYOURPANTS, SHII",
+                "  71801 ROADTRIP",
+                "    Error  Height  height 183 takes no bracket (185 has room)",
+                "    Error  Special rule  Tall goalkeepers are 189: GKs in this bracket must be 189cm",
             ]
         );
     }

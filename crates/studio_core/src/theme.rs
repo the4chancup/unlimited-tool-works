@@ -441,8 +441,9 @@ fn widgets_light() -> egui::style::Widgets {
 }
 
 /// Registers the suite's fonts on `ctx`: proportional text resolves from
-/// Roboto Flex, the symbols font, the icon font and `egui-icons`, in that
-/// order, and monospace from egui's Hack, then the same four. The body font
+/// Roboto Flex, the symbols font, the icon font, `egui-icons` and egui's two
+/// emoji fonts, in that order, and monospace from egui's Hack, then the same
+/// six. The body font
 /// `"Roboto Flex"` (the file `resources/fonts/RobotoFlex-Regular.ttf`
 /// bundles) is first because a member's text must resolve from it before
 /// any other font. The symbols font `"symbols"`
@@ -460,7 +461,15 @@ fn widgets_light() -> egui::style::Widgets {
 /// the Tactics pitch's formation name, the one text the suite draws in a
 /// heavier weight, to match the game's stroke. Every build that has
 /// `studio_core` has egui's default fonts, through its `eframe` dependency's
-/// `default_fonts`. Installed fonts resolve
+/// `default_fonts`, and egui's two monochrome emoji fonts,
+/// `"NotoEmoji-Regular"` and `"emoji-icon-font"`, through the workspace's
+/// `monochrome_emoji_fonts`: they end every chain, after `egui-icons`, so
+/// what a member types (a team's or a player's name) falls back to them
+/// before the system's fonts. The system fallback finds a font for a letter
+/// of another script, but for a symbol of no script it asks only the
+/// generic families, and on Windows none of them has `☆`, `！` or `Ｕ`,
+/// which cup teams' names hold; the emoji fonts have all three, the same
+/// glyphs on every machine. Installed fonts resolve
 /// before the system fallback eframe registers (`Context::set_fonts` replaces the
 /// definitions only, not the context's font providers); `set_fonts` replaces the
 /// whole font set, so the definitions start from egui's defaults and add ours.
@@ -931,8 +940,16 @@ mod tests {
                 .expect("the proportional family exists");
             assert_eq!(
                 proportional,
-                &["Roboto Flex", "symbols", "icons", "egui-icons"],
-                "the body font resolves text first, then the symbols, the icons, egui's own"
+                &[
+                    "Roboto Flex",
+                    "symbols",
+                    "icons",
+                    "egui-icons",
+                    "NotoEmoji-Regular",
+                    "emoji-icon-font"
+                ],
+                "the body font resolves text first, then the symbols, the icons, egui's own, \
+                 egui's emoji fonts"
             );
             let monospace = definitions
                 .families
@@ -940,7 +957,15 @@ mod tests {
                 .expect("the monospace family exists");
             assert_eq!(
                 monospace,
-                &["Hack", "Roboto Flex", "symbols", "icons", "egui-icons"],
+                &[
+                    "Hack",
+                    "Roboto Flex",
+                    "symbols",
+                    "icons",
+                    "egui-icons",
+                    "NotoEmoji-Regular",
+                    "emoji-icon-font"
+                ],
                 "monospace keeps Hack first, then the proportional chain"
             );
             assert_eq!(
@@ -964,6 +989,8 @@ mod tests {
                     "symbols".to_owned(),
                     "icons".to_owned(),
                     "egui-icons".to_owned(),
+                    "NotoEmoji-Regular".to_owned(),
+                    "emoji-icon-font".to_owned(),
                 ]),
                 "the label family is the semibold, then the proportional chain"
             );
@@ -1005,6 +1032,27 @@ mod tests {
                 assert!(
                     fonts.has_glyph(&egui::FontId::proportional(14.0), glyph),
                     "no font has U+{:04X}",
+                    u32::from(glyph)
+                );
+            }
+        });
+    }
+
+    /// Symbols a member types in a name that no font of the suite has and
+    /// no Windows generic family does either: DBC6's save holds all three,
+    /// a cup team's `/cookie☆/` among them.
+    #[test]
+    fn a_names_symbols_of_no_script_resolve_a_glyph_after_install() {
+        const TYPED: &str = "\u{2606}\u{ff01}\u{ff35}";
+        let ctx = egui::Context::default();
+        install(&ctx);
+        ctx.run_ui(egui::RawInput::default(), |_| {})
+            .drop_without_applying_deltas();
+        ctx.fonts_mut(|fonts| {
+            for glyph in TYPED.chars() {
+                assert!(
+                    fonts.has_glyph(&egui::FontId::proportional(14.0), glyph),
+                    "no font has U+{:04X} ({glyph})",
                     u32::from(glyph)
                 );
             }
