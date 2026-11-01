@@ -319,8 +319,10 @@ scratch layout and what an archived run keeps; the agents and their harness limi
 review-round rules. Three model families play three roles: the lead (Claude) plans, briefs,
 reviews and talks to the maintainer; the sidekick (SWE-2) implements; the reviewer (GPT Astra,
 through the `duck` skill) critiques what the lead writes. Two operations rules every agent needs:
-nothing edits a crate while its mutation run is queued or going (the run copies the tree when it
-starts), and a failed remote half is reported, never restarted (`cargo mutants` does not resume).
+a mutation run measures the tree as it stood when its command started (both halves run on that
+snapshot), so edits and merges are safe once it has started, but not while a run waits behind
+another command in a chain, which snapshots only when it starts; and a failed remote half is
+reported, never restarted (`cargo mutants` does not resume).
 
 ## When the plan has gaps
 

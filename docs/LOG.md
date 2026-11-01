@@ -2996,3 +2996,5 @@ worklog passed 7,000 lines.
 - 2026-11-01 — 0.0.1cv cv30 merged `c2c23f6f`: a team's AATF issues lead with its team-wide rows (Live AATF, Multi-team
   AATF and its copy); a row that switches players says `Click to switch to this player`; egui's emoji fonts draw `/cookie☆/`.
 - 2026-11-01 — 0.0.1cv cv31: the Ruleset editor's Blank template reads "universal rules set" (the maintainer's wording).
+- 2026-11-01 — Tooling: a mutation run's local half runs on the run's snapshot, extracted, not the working tree, so
+  merges during a run are safe; checked with a dds_convert diff run (16 caught) and a stubbed-cargo test.

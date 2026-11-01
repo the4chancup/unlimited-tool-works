@@ -140,7 +140,7 @@ def run_crate(diff_path: str, tree: str, crate: str, count: int) -> int:
     print("mutants_diff: running here", flush=True)
     print(f"mutants_diff: cargo mutants {' '.join(selection)}", flush=True)
     mutants.set_aside_last_run()
-    code = mutants.local_mutants(selection).returncode
+    code = mutants.local_mutants(selection, tree).returncode
     mutants.update_cost_cache()
     return mutants.report_killed(code)
 

@@ -14810,3 +14810,16 @@ Why: "the universal rules on" read oddly as a button's label; the template still
 universal rule switched on (`document.rs`'s blank document is unchanged).
 Plan: `plans/ruleset_editor.md` describes the Blank template's content, not its label; no
 plan text changes.
+
+## 2026-11-01 — tooling — a mutation run's local half runs on its snapshot, not the working tree
+Decision (maintainer): `local_mutants` extracts the run's snapshot (the git tree object the
+command wrote when it started) under the temp folder and runs cargo-mutants there with
+`--dir`, results still in the root's `mutants.out`; the Windows recheck runs on the tree the
+remote half ran, and a whole-crate local run shares one snapshot with its extra-mutants pass.
+Why: the local half read the live working tree when a crate's turn came, hours into a
+`mutants-diff`, so a merge in between left its diff naming lines the source no longer held and
+the half refused to start (team_widgets on 2026-11-01, ruleset_editor before it); keeping the
+tree untouched for a whole run was a rule nobody could check. The copy costs one `git archive`
+(about 50 MB, seconds): cargo-mutants already builds every mutant in a copy of its own.
+Plan: `docs/RUNBOOK.md` (mutation runs, the paragraph on snapshots) and `AGENTS.md`'s
+operations rule.
