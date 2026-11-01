@@ -17,6 +17,15 @@ fn outfield(x: u8, y: u8) -> FormationSlot {
     FormationSlot { position: 1, x, y }
 }
 
+// The bottom penalty box's right line ends, on its outer side, at the
+// canvas' centre 160 plus half the box's width plus half the 2-point
+// stroke: PES 2017's box is 130 wide, PES 2021's 160.
+#[test]
+fn the_penalty_box_right_line_s_outer_edge_is_half_the_box_and_half_a_stroke_past_the_centre() {
+    assert_eq!(penalty_box_right(PesVersion::Pes17), 226.0);
+    assert_eq!(penalty_box_right(PesVersion::Pes21), 241.0);
+}
+
 // The formation screen's own slot-to-spot mapping: x 0 to 104 across
 // the canvas' width, y 24 at canvas 200.8, just below the halfway line
 // drawn at 192 (y 25.3), the attack end up; the keeper sits on the goal

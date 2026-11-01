@@ -2513,10 +2513,41 @@ fn the_pitch_draws_a_starter_s_portrait_from_the_selected_game() {
     );
 }
 
-// While the sidebar's exe check fails the pitch carries a Set PES folder
-// button in its bottom-right corner, the portraits all placeholders; it is
-// gone while the check finds the selected game's exe, back on another
-// version's, and its picker's folder becomes the view's ask.
+/// The Set PES path button's bounds, if the frame drew it.
+fn set_path_button(nodes: &[accesskit::Node]) -> Option<accesskit::Rect> {
+    nodes
+        .iter()
+        .find(|node| node.role() == Role::Button && node.label() == Some("Set PES path"))
+        .and_then(accesskit::Node::bounds)
+}
+
+/// Asserts the Set PES path button stands in the corner beside the bottom
+/// penalty box: its left edge `margin` from the box's right line (`line`
+/// points from the canvas' left), its right edge `margin` in from the
+/// canvas', its bottom `margin` up from the canvas', each within half a
+/// point.
+fn assert_set_path_margins(nodes: &[accesskit::Node], line: f64, margin: f64, what: &str) {
+    let canvas = canvas_of(nodes);
+    let button = set_path_button(nodes).expect("the check fails: the button is drawn");
+    for (side, gap) in [
+        ("left", button.x0 - (canvas.x0 + line)),
+        ("right", canvas.x1 - button.x1),
+        ("bottom", canvas.y1 - button.y1),
+    ] {
+        assert!(
+            (gap - margin).abs() < 0.5,
+            "{what}: the button's {side} margin is {gap}, not {margin} ({button:?} in {canvas:?})"
+        );
+    }
+}
+
+// While the sidebar's exe check fails the pitch carries a Set PES path
+// button in the corner beside the bottom penalty box, the portraits all
+// placeholders; it is gone while the check finds the selected game's exe,
+// back on another version's, and its picker's folder becomes the view's
+// ask. PES 2017's box is 130 wide, its right line's outer edge at 160 + 65
+// + 1 = 226, leaving 94 points for the 76-point button: margins of 9.
+// PES 2021's box is 160 wide, the line at 241, 79 points left: 1.5.
 // SE-GUI-50
 #[test]
 fn a_set_pes_folder_button_stands_over_the_pitch_while_the_exe_check_fails() {
@@ -2530,24 +2561,28 @@ fn a_set_pes_folder_button_stands_over_the_pitch_while_the_exe_check_fails() {
     // The folder the check found missing: the portraits worker reads nothing.
     view.select_portraits(&window.ctx, &scratch.join("missing"), PesVersion::Pes17);
     view.selected = Some(Selection::Team(718));
-    let set_folder = |nodes: &[accesskit::Node]| {
-        nodes
-            .iter()
-            .find(|node| node.role() == Role::Button && node.label() == Some("Set PES folder"))
-            .and_then(accesskit::Node::bounds)
-    };
 
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_set_path_margins(&nodes, 226.0, 9.0, "PES 2017");
+    // The outline: a 1-point stroke in the dark theme's text grey, inside
+    // the button's own rect, so it adds no size.
+    let button = set_path_button(&nodes).expect("the button is drawn");
+    let outlined = shapes.iter().any(|clipped| match &clipped.shape {
+        egui::Shape::Rect(shape) => {
+            shape.stroke == egui::Stroke::new(1.0, egui::Color32::from_gray(0x8c))
+                && shape.stroke_kind == egui::StrokeKind::Inside
+                && (f64::from(shape.rect.min.x) - button.x0).abs() < 0.5
+                && (f64::from(shape.rect.max.x) - button.x1).abs() < 0.5
+                && (f64::from(shape.rect.min.y) - button.y0).abs() < 0.5
+                && (f64::from(shape.rect.max.y) - button.y1).abs() < 0.5
+        }
+        _ => false,
+    });
+    assert!(
+        outlined,
+        "the button is outlined 1 point inside its edge in #8c8c8c"
+    );
     let canvas = canvas_of(&nodes);
-    let button = set_folder(&nodes).expect("the check fails: the button is drawn");
-    assert!(
-        (canvas.x1 - button.x1 - 7.0).abs() < 0.5,
-        "the button's right edge 7 in from the canvas' ({button:?} in {canvas:?})"
-    );
-    assert!(
-        (canvas.y1 - button.y1 - 6.0).abs() < 0.5,
-        "the button's bottom 6 up from the canvas' ({button:?} in {canvas:?})"
-    );
     let canvas_rect = egui::Rect::from_min_max(
         egui::pos2(canvas.x0 as f32, canvas.y0 as f32),
         egui::pos2(canvas.x1 as f32, canvas.y1 as f32),
@@ -2578,12 +2613,12 @@ fn a_set_pes_folder_button_stands_over_the_pitch_while_the_exe_check_fails() {
 
     view.pes_exe_check = Some(ExeCheck::Found);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    assert_eq!(set_folder(&nodes), None, "the check passes: no button");
+    assert_eq!(set_path_button(&nodes), None, "the check passes: no button");
 
     view.pes_exe_check = Some(ExeCheck::OtherVersion(PesVersion::Pes19));
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
-        set_folder(&nodes).is_some(),
+        set_path_button(&nodes).is_some(),
         "another version's exe: the button is back"
     );
 
@@ -2595,7 +2630,7 @@ fn a_set_pes_folder_button_stands_over_the_pitch_while_the_exe_check_fails() {
     assert_eq!(view.picked_pes_folder, None, "premise: nothing asked yet");
     click(
         &mut window,
-        node_labeled(&nodes, Role::Button, "Set PES folder"),
+        node_labeled(&nodes, Role::Button, "Set PES path"),
         &mut view,
     );
     assert_eq!(
@@ -2603,6 +2638,15 @@ fn a_set_pes_folder_button_stands_over_the_pitch_while_the_exe_check_fails() {
         Some(picked),
         "the picked folder is the view's ask"
     );
+
+    // PES 2021's wider box leaves the narrower corner.
+    let path = fixture(PesVersion::Pes21, "tactics_set_pes_folder_21");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.pes_exe_check = Some(ExeCheck::NoFolder);
+    view.selected = Some(Selection::Team(701));
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_set_path_margins(&nodes, 241.0, 1.5, "PES 2021");
 }
 
 // The Automatic settings row wraps inside the settings column (the
