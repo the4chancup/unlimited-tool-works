@@ -6860,7 +6860,13 @@ briefs, review loops, gates and mutation runs as for any step.
     stop being selectable (`team_widgets` `pitch/lineup.rs` `lineup_row`; brief
     `wt-f1d/.tmp/brief_f1e.md`) → verify: a headless test reads the grab cursor over each
     row's handle, position and name (red: the text cursor); the maintainer drags from a name
-    in the built window
+    in the built window. The press is taken 2 points outside the labels, where egui hands it
+    to a close click-sensing widget (the maintainer: "four areas of glitch per player")
+    - [ ] f1e2 (the maintainer, 2026-11-01, same branch): Up and Down walk the player list
+      (`plans/save_editor.md` "Editing UI", the player list's paragraph; DECISIONS "Up and
+      Down walk the player list"; drafted in `save_editor.js` `onKey`) → verify: headless,
+      Down from a team's last player selects the next team's row and Up returns; the ends
+      stop; a focused number field keeps its arrows; the selected row scrolled into view
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over
   - [ ] f3 after the cut, first (the maintainer, 2026-11-01: queued so the 5-hour usage
@@ -6888,6 +6894,12 @@ briefs, review loops, gates and mutation runs as for any step.
       release whose `.7z` passes the checks
     - [ ] f4c the Linux bundle in `release.py` and the workflow, its file list and tests; the
       GUI run on a real Linux machine (the maintainer's, or a VM) before it is attached
+  - [ ] f5 after the cut (the maintainer, 2026-11-01): cv39's fix (`99c9a36a`: a press held in
+    the Multi-team AATF dialog while its check lands clicked Close) is not on 0.0.1's
+    candidate; DBC's organizer uses Multi-team AATF only at the exports deadline (2026-11-18),
+    so an exe built from main with it is handed to the organizer before that date (0.0.1's
+    gates on the candidate may meet its test's race: `the_last_end_follows_the_first_...`
+    fails under load and passes alone, WORKLOG Issues)
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
@@ -7468,6 +7480,13 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open (2026-11-01, after 0.0.1) — the Ruleset editor's tier handle
+  (`ruleset_editor/src/view/sections/tiers.rs` around line 140) is a `dnd_drag_source` whose
+  content is a selectable `ui.label("⠇")`: the defect f1e fixed in the Tactics lineup rows.
+  egui 0.37's hit test hands a press within `interact_radius` of a click-sensing widget inside
+  a drag area to that widget, so a press just beside the handle's glyph starts a text
+  selection instead of the drag. The fix is the same (`.selectable(false)`), with a test
+  pressing 2 points outside the glyph
 - open (2026-11-01, after the cut) — `scripts/gates/run_tests.py` writes its timings to
   `<repo>/target/run_tests_times.json` (`TIMES`), not to cargo's target folder: a worktree that
   builds into another tree's target through `CARGO_TARGET_DIR` (the staging worktree
