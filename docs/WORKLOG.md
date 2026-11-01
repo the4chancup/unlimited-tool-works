@@ -2921,6 +2921,19 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     no text cursor counts as settled, so only a text field or a value being typed waits →
     verify: Tab to a rating cell, Space, then the next frame seals (one undo entry per
     press) and Live AATF checks without another key; typing in a field still waits
+  - [ ] 8.41 after 0.0.1 (the maintainer, 2026-11-01): the shirt name and the team's short name
+    take upper case only. A letter typed into either field is written upper-case whatever the
+    Caps Lock or Shift state (the game shows them in capitals; a lower-case letter typed today
+    stays lower-case). Plan first (`plans/save_editor.md` "Editing UI": which fields, how a
+    pasted lower-case text and the colour codes are treated), drafted, then built → verify: a
+    headless test types "abc" into each field and reads "ABC" in the record
+  - [ ] 8.42 after 0.0.1 (the maintainer, 2026-11-01): the undo history merges a run of edits to
+    one value. Scrolling a stat from 60 to 70 with the wheel makes ten undo entries today, so
+    reverting it takes ten Undo presses; consecutive edits of the same field (wheel notches,
+    arrow steps, the stepper's clicks) become one entry, closed by an edit of another field, a
+    pause, or Undo itself. Plan first (`plans/save_editor.md`, the undo bullet: how long the
+    pause is, how it meets `edit_settled`'s seal and 8.40) → verify: ten wheel notches on one
+    stat, one Undo puts back 60; a notch on another stat between them makes two entries
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
@@ -6839,6 +6852,15 @@ briefs, review loops, gates and mutation runs as for any step.
     - review of f1d1-3 (branch `f1d`, `wt-f1d/.tmp/f1d_rulings.md`): SWE-2 r1 7 accepted
       (two parts), Astra 1, SWE-2 r2 0, loop ended; `mutants-diff e39e0a9d`: 38 mutants,
       37 caught, 1 unviable, none missed
+  - [ ] f1e the maintainer's f1c pass on 0.0.1g (2026-11-01): everything as listed, except the
+    Tactics "Starting eleven" and "Bench" rows: a press on a row's text selects the text
+    instead of dragging the player (an I-beam over the position and the name; only the gaps
+    drag). On branch `f1e` from `4dcef0a8` (worktree `wt-f1d`), merged into the candidate and
+    main, candidate 0.0.1h staged for the maintainer's look, then gold (f2). The row's labels
+    stop being selectable (`team_widgets` `pitch/lineup.rs` `lineup_row`; brief
+    `wt-f1d/.tmp/brief_f1e.md`) → verify: a headless test reads the grab cursor over each
+    row's handle, position and name (red: the text cursor); the maintainer drags from a name
+    in the built window
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over
   - [ ] f3 after the cut, first (the maintainer, 2026-11-01: queued so the 5-hour usage
