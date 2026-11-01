@@ -2990,3 +2990,6 @@ worklog passed 7,000 lines.
   tests): the height findings name their players, plus cv14-cv26; its `check-aatf --rules dbc7` prints cv16b's lines.
 - 2026-11-01 — 0.0.1cv cv28 merged `de8cf1a2`: Live AATF pops out into an embedded window (one column, its close
   turning Live AATF off, `live_window`), the bottom dock shows a grip. cv29 drafted: the dock gets the window's close.
+- 2026-11-01 — 0.0.1cv cv29 merged `10bbbbf3`: Live AATF's dock ends with the window's close button, turning Live AATF off;
+  the pop-out icon takes a slot as wide as the window's dock icon, so both pairs stand alike. The Comparator's and the
+  patch panel's rows join cv30's `Click to switch to this player` (the maintainer).
