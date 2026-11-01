@@ -24,16 +24,19 @@ fn in_skills_column(nodes: &[accesskit::Node], value: &str) -> bool {
 /// The badge texts a frame's Cards left row drew (`"Regular: 3 of 7"`
 /// or the weak `"No tier matches"`), in left-to-right order: the
 /// Labels at the heading's height or below it of the badge's shapes
-/// (labels of another shape must not pass).
+/// (labels of another shape must not pass). None while another player's
+/// or ruleset's run is up: the row draws nothing then.
 fn cards_left_badges(nodes: &[accesskit::Node]) -> Vec<String> {
-    let heading_y = nodes
+    let Some(heading_y) = nodes
         .iter()
         .find(|node| {
             node.role() == Role::Label && node.value().is_some_and(|v| v.starts_with("Cards left"))
         })
         .and_then(accesskit::Node::bounds)
         .map(|bounds| bounds.y0)
-        .expect("the Cards left heading");
+    else {
+        return Vec::new();
+    };
     let mut badges: Vec<&accesskit::Node> = nodes
         .iter()
         .filter(|node| {
@@ -61,6 +64,48 @@ fn cards_left_badges(nodes: &[accesskit::Node]) -> Vec<String> {
         .iter()
         .filter_map(|node| node.value().map(str::to_owned))
         .collect()
+}
+
+/// The `BadgeKey` a frame of `view` asks the badge for: the session's
+/// revision, the selected player and the active ruleset.
+fn current_badge_key(view: &SaveView) -> BadgeKey {
+    let Some(Selection::Player(team, slot)) = view.selected else {
+        panic!("a player is selected")
+    };
+    BadgeKey {
+        revision: view.session.as_ref().expect("an open save").revision(),
+        team,
+        slot,
+        ruleset: view
+            .rules
+            .as_ref()
+            .expect("a frame resolved the ruleset")
+            .key
+            .clone(),
+    }
+}
+
+/// Frames until the badge worker's answer for the current key lands
+/// (bounded, so a worker that never replies fails rather than hangs);
+/// returns the landing frame's nodes, whose header row draws it.
+fn badge_landed(window: &mut Headless, view: &mut SaveView) -> Vec<accesskit::Node> {
+    frames_until(
+        window,
+        view,
+        |view| {
+            let key = current_badge_key(view);
+            view.cards.pending.is_none()
+                && view
+                    .cards
+                    .result
+                    .as_ref()
+                    .is_some_and(|(held, _)| *held == key)
+        },
+        "the badge worker never answered",
+    )
+    .into_iter()
+    .map(|(_, node)| node)
+    .collect()
 }
 
 // The same rule for a number control's in-progress edit: typing into one
@@ -1064,7 +1109,7 @@ fn the_cards_left_badge_reads_the_players_own_tier() {
     view.open(&path);
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     let rules = aatf::Rules::official();
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
         cards_left_badges(&nodes),
         [expected(&view, &rules, 0)],
@@ -1083,7 +1128,7 @@ fn the_cards_left_badge_reads_the_players_own_tier() {
         .find(|(_, node)| node.role() == Role::CheckBox && node.label() == Some("Heading"))
         .expect("the Heading checkbox");
     action_click(&mut window, &mut view, *heading);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
         cards_left_badges(&nodes),
         [expected(&view, &rules, 0)],
@@ -1095,7 +1140,7 @@ fn the_cards_left_badge_reads_the_players_own_tier() {
     window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
         show(ui, &mut view, &|| Vec::new())
     });
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
         cards_left_badges(&nodes),
         [expected(&view, &rules, 0)],
@@ -1106,7 +1151,7 @@ fn the_cards_left_badge_reads_the_players_own_tier() {
     // The selection recomputes it: slot 1's player, his Heading held,
     // shows his own one-lower count — not slot 0's.
     view.selected = Some(Selection::Player(701, 1));
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
         cards_left_badges(&nodes),
         [expected(&view, &rules, 1)],
@@ -1117,7 +1162,7 @@ fn the_cards_left_badge_reads_the_players_own_tier() {
     // reloads on the changed setting (no fresh window).
     let dbc7 = aatf::builtin("dbc7").expect("DBC7 is built in");
     view.aatf_ruleset = "dbc7".to_owned();
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
         cards_left_badges(&nodes),
         [expected(&view, &dbc7, 1)],
@@ -1182,6 +1227,7 @@ fn an_overdrawn_badge_paints_in_the_error_colour() {
             limits.limit
         )
     };
+    badge_landed(&mut window, &mut view);
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let error_color = window
         .ctx
@@ -1214,7 +1260,7 @@ fn a_player_no_tier_matches_gets_the_stand_in() {
         );
     }
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
         cards_left_badges(&nodes),
         ["No tier matches"],
@@ -1256,7 +1302,8 @@ fn a_failing_tier_check_shows_its_error_in_the_badges_place() {
         );
     }
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes = badge_landed(&mut window, &mut view);
+    let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     // `Cards left:`, then the red click line in the badge's place.
     const LINE: &str = "Tier check failed, click for more information.";
     let error_node = {
@@ -1284,7 +1331,7 @@ fn a_failing_tier_check_shows_its_error_in_the_badges_place() {
         !in_skills_column(&nodes, "No tier matches"),
         "no stand-in beside it"
     );
-    let expected = match view.cards.as_ref() {
+    let expected = match view.cards.result.as_ref() {
         Some((_, crate::view::OwnBadge::Failed(error))) => error.clone(),
         _ => panic!("the failure is kept under its key"),
     };
@@ -1311,6 +1358,196 @@ fn a_failing_tier_check_shows_its_error_in_the_badges_place() {
         label_value(&nodes, &expected),
         "the dialog's body is the check's error"
     );
+}
+
+// The Cards left badge recomputes on a worker thread: an edit moves its
+// key and starts a new run, and until that answer lands the held badge
+// of the same player stays drawn.
+#[test]
+fn an_edit_keeps_the_players_badge_drawn_while_the_new_one_runs() {
+    let path = fixture(PesVersion::Pes17, "cards_left_kept");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(702);
+    view.selected = Some(Selection::Player(702, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let nodes = badge_landed(&mut window, &mut view);
+    let kept = cards_left_badges(&nodes);
+    assert_eq!(kept.len(), 1, "premise: the player's badge landed");
+
+    // A stat edit, as a wheel notch over his Speed writes one: the
+    // revision moves the badge's key. The new run is held in flight by
+    // the channel the test keeps the sender of, keyed to the post-edit
+    // key: a fast run replies between one frame's two passes, so a real
+    // worker cannot be waited on here.
+    let player_id = view
+        .session
+        .as_ref()
+        .unwrap()
+        .file()
+        .team(702)
+        .unwrap()
+        .roster[0]
+        .player_id;
+    let mut edited = player_entry(&view, player_id);
+    assert_ne!(edited.stats.speed, 99, "premise: a real change");
+    edited.stats.speed = 99;
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    let key = current_badge_key(&view);
+    let (sender, replies) = crossbeam_channel::unbounded();
+    view.cards.pending = Some(worker::Pending {
+        key: key.clone(),
+        replies,
+    });
+    for _ in 0..2 {
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        assert_eq!(
+            cards_left_badges(&nodes),
+            kept,
+            "the kept badge while the new run is in flight"
+        );
+        assert!(view.cards.pending.is_some(), "the new run is in flight");
+    }
+
+    // The held run ends unanswered: the next frames start the real one,
+    // which lands the post-edit badge.
+    drop(sender);
+    let nodes = badge_landed(&mut window, &mut view);
+    assert_eq!(cards_left_badges(&nodes).len(), 1, "the new badge lands");
+}
+
+// Another player's badge draws nothing until his own lands: the frame
+// after the selection moves draws the Skills title alone — no Cards
+// left row, no kept badge — then his badge lands.
+#[test]
+fn another_player_draws_no_badge_until_his_lands() {
+    let path = fixture(PesVersion::Pes17, "cards_left_other_player");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(702);
+    view.selected = Some(Selection::Player(702, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let nodes = badge_landed(&mut window, &mut view);
+    assert_eq!(
+        cards_left_badges(&nodes).len(),
+        1,
+        "premise: slot 0's badge landed"
+    );
+
+    // His run held in flight by the channel the test keeps the sender
+    // of, keyed to his own key: a fast run replies between one frame's
+    // two passes, so a real worker cannot be waited on here.
+    view.selected = Some(Selection::Player(702, 1));
+    let (sender, replies) = crossbeam_channel::unbounded();
+    view.cards.pending = Some(worker::Pending {
+        key: current_badge_key(&view),
+        replies,
+    });
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(in_skills_column(&nodes, "Skills"), "the title alone");
+    assert!(
+        !in_skills_column(&nodes, "Cards left:"),
+        "no Cards left row for another player"
+    );
+    assert!(
+        !in_skills_column(&nodes, "Cards left for"),
+        "no Cards left row for another player"
+    );
+    assert!(
+        cards_left_badges(&nodes).is_empty(),
+        "no badge drawn while his run is up"
+    );
+
+    // The held run ends unanswered: the next frames start the real one,
+    // which lands his badge.
+    drop(sender);
+    let nodes = badge_landed(&mut window, &mut view);
+    assert_eq!(cards_left_badges(&nodes).len(), 1, "his badge lands");
+}
+
+// The badge keeps one run in flight: an edit while a run is up waits
+// for its reply, then starts the queued run — the frame the reply lands
+// on asks for the repaint that wakes the next, so no input is needed.
+// The test's own channel holds the first run pending, so no reply can
+// reach a frame until `send` below.
+#[test]
+fn a_key_moved_mid_run_starts_its_badge_when_the_reply_lands() {
+    let path = fixture(PesVersion::Pes17, "cards_left_one_run");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(702);
+    view.selected = Some(Selection::Player(702, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let nodes = badge_landed(&mut window, &mut view);
+    assert_eq!(
+        cards_left_badges(&nodes).len(),
+        1,
+        "premise: the badge landed"
+    );
+
+    // A run in flight for key A, held by the channel the test keeps the
+    // sender of: no reply reaches a frame until `send` below.
+    let (sender, replies) = crossbeam_channel::unbounded();
+    let key_a = current_badge_key(&view);
+    view.cards.pending = Some(worker::Pending {
+        key: key_a.clone(),
+        replies,
+    });
+
+    // An edit moves the key to B: the frame starts no second run, the
+    // pending one stays A's.
+    let player_id = view
+        .session
+        .as_ref()
+        .unwrap()
+        .file()
+        .team(702)
+        .unwrap()
+        .roster[0]
+        .player_id;
+    let mut edited = player_entry(&view, player_id);
+    assert_ne!(edited.stats.speed, 99, "premise: a real change");
+    edited.stats.speed = 99;
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    let (_, _, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        view.cards
+            .pending
+            .as_ref()
+            .is_some_and(|pending| pending.key == key_a),
+        "no second run: the pending one is still A's"
+    );
+
+    // A's reply lands on the next frame: it starts no run in the pass
+    // that polled it (the pass entered with the run still marked in
+    // flight), but asks for the frame that does.
+    sender
+        .send((key_a.clone(), OwnBadge::NoTier))
+        .expect("the held channel takes A's reply");
+    let (_, _, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        window.repaint_delay.is_zero(),
+        "the landing frame asked for the frame that starts B's run"
+    );
+
+    // No events: B's run is in flight or already landed — a fast run
+    // replies between one frame's two passes — with no input asked for.
+    let (_, _, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let key_b = current_badge_key(&view);
+    assert!(
+        view.cards
+            .pending
+            .as_ref()
+            .is_some_and(|pending| pending.key == key_b)
+            || view
+                .cards
+                .result
+                .as_ref()
+                .is_some_and(|(held, _)| *held == key_b),
+        "B's run started with no input"
+    );
+    let nodes = badge_landed(&mut window, &mut view);
+    assert_eq!(cards_left_badges(&nodes).len(), 1, "B's badge lands");
 }
 
 /// The checkbox labels under the `top` panel title down to `bottom`'s
@@ -1702,7 +1939,8 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
 }
 
 /// The settled frame of player 701's slot 0 at the default pane: the
-/// columns' widths settle over the first frames.
+/// columns' widths settle over the first frames and the Cards left
+/// badge's run lands.
 fn settled_player_view(
     test: &str,
 ) -> (
@@ -1715,9 +1953,7 @@ fn settled_player_view(
     view.open(&path);
     view.selected = Some(Selection::Player(701, 0));
     let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
-    for _ in 0..3 {
-        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    }
+    badge_landed(&mut window, &mut view);
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     (window, nodes, shapes)
 }

@@ -17,6 +17,7 @@
 //! a `PES NN+` tooltip naming the first version that has it.
 
 use std::ops::RangeInclusive;
+use std::sync::Arc;
 
 use aatf::TeamView;
 use pes_savefile::EditFile;
@@ -32,6 +33,7 @@ use team_widgets::pitch::POSITION_ROWS;
 use team_widgets::violations::Wording;
 
 use crate::session::Session;
+use crate::view::worker::{Pending, WorkerResult};
 use crate::view::{
     ActiveRules, BadgeKey, OwnBadge, Refusal, SaveView, edit_player, info_strip, live_marks,
     selected_player,
@@ -703,37 +705,59 @@ fn ability_stats(
 /// check that fails on him draws the red click line that opens the
 /// error in `refusal`, then the checkboxes in their two columns, the
 /// skills but the `aside` indices (the aside panel's own).
-/// Returns whether a card was ticked this frame. The computed badge
-/// lives in `cards` under the `BadgeKey`
-/// it was computed for — a `Session::revision` bump, a selection change
-/// or another ruleset recomputes it, and any other frame draws the
-/// kept one. `marks` is Live AATF's held check's: the header's mark,
-/// the skills' and the card budget's in one, stands before the title.
+/// Returns whether a card was ticked this frame. The badge runs on a
+/// worker thread under `cards`'s `BadgeKey`
+/// (`worker::WorkerResult`'s cycle) — a `Session::revision` bump, a
+/// selection change or another ruleset re-asks it — and until the answer
+/// lands the kept one is drawn: the same player's (only the revision
+/// moved), nothing for another player or ruleset. `marks` is Live AATF's
+/// held check's: the header's mark, the skills' and the card budget's in
+/// one, stands before the title.
 fn skills_panel(
     ui: &mut egui::Ui,
     (rules, aside): (Option<&ActiveRules>, Option<&[u8]>),
-    badge: &mut Option<(BadgeKey, OwnBadge)>,
+    badge: &mut Cards,
     session: &mut Session,
     (team_id, slot, marks): (u32, u8, Option<live_marks::Marks<'_>>),
     skills: &mut PlayerSkills,
     refusal: &mut Option<Refusal>,
 ) -> bool {
-    if let Some(active) = rules {
+    let held_badge = rules.and_then(|active| {
         let key = BadgeKey {
             revision: session.revision(),
             team: team_id,
             slot,
             ruleset: active.key.clone(),
         };
-        if badge.as_ref().is_none_or(|(held, _)| *held != key) {
-            *badge = Some((key, own_badge(&active.rules, session.file(), team_id, slot)));
+        // One run in flight: a key that moves while a run is up waits for
+        // its reply (`settled` stays off, so `update` keeps polling
+        // without spawning), and the frame the reply lands on starts the
+        // queued run. A spawn waits for no settled edit: a wheel notch is
+        // a whole edit.
+        let can_start = badge.pending.is_none();
+        let waiting = badge.update(&key, true, can_start, |key| {
+            spawn_badge(ui.ctx(), session.file(), &active.rules, key.clone())
+        });
+        if waiting && badge.pending.is_none() {
+            // A run is due but none could start on this frame (the
+            // in-flight run's reply landed inside `update`): the next
+            // frame starts it, so ask for the frame rather than wait for
+            // input.
+            ui.ctx().request_repaint();
         }
-    }
+        badge
+            .result
+            .as_ref()
+            .filter(|(held, _)| {
+                held.team == key.team && held.slot == key.slot && held.ruleset == key.ruleset
+            })
+            .map(|(_, own)| own)
+    });
     // A tier check that fails on him draws `Cards left` then a red click
     // line in the badge's place, opening its error in the refusal dialog
     // (the AATF check never runs the two functions the badge asks, so a
     // member's edit that breaks only them would otherwise show nowhere).
-    let tier_error = if let Some((_, OwnBadge::Failed(error))) = badge.as_ref() {
+    let tier_error = if let Some(OwnBadge::Failed(error)) = held_badge {
         Some(error.clone())
     } else {
         None
@@ -766,15 +790,15 @@ fn skills_panel(
                 });
             }
         } else {
-            match badge.as_ref() {
-                Some((_, OwnBadge::Tier { label, limits })) => cards::cards_left(
+            match held_badge {
+                Some(OwnBadge::Tier { label, limits }) => cards::cards_left(
                     ui,
                     &cards::CardsBadge::Tier(cards::TierCards { label, limits }),
                 ),
-                Some((_, OwnBadge::NoTier)) => cards::cards_left(ui, &cards::CardsBadge::NoTier),
-                Some((_, OwnBadge::Failed(_))) | None => {
-                    ui.weak("Cards left:");
-                }
+                Some(OwnBadge::NoTier) => cards::cards_left(ui, &cards::CardsBadge::NoTier),
+                // A failing held badge is the error line above; another
+                // player's or ruleset's draws nothing until its own lands.
+                Some(OwnBadge::Failed(_)) | None => {}
             }
         }
     });
@@ -844,14 +868,48 @@ fn skill_index(card: &aatf::Card) -> Option<u8> {
     }
 }
 
-/// What `rules` read team `team_id`'s roster `slot` as on `file`: his own
-/// tier with its card economy, no tier, or a check that failed with its
-/// error (a team the view cannot build, or an empty slot, fails too).
-fn own_badge(rules: &aatf::Rules, file: &EditFile, team_id: u32, slot: u8) -> OwnBadge {
-    let team = match TeamView::new(file, team_id) {
-        Ok(team) => team,
-        Err(error) => return OwnBadge::Failed(error.to_string()),
-    };
+/// The Skills header's Cards left badge (`own_badge`) for a `BadgeKey`:
+/// the last answer with its key and the run in flight
+/// (`worker::WorkerResult`'s poll-and-spawn cycle).
+pub(super) type Cards = WorkerResult<BadgeKey, OwnBadge>;
+
+/// One badge run's worker: `key`'s team viewed on the caller's thread
+/// (the `EditFile` lives there), then `player_tier` and `card_limits` on
+/// the shared ruleset off it, the key riding the reply and a repaint
+/// asked for with it.
+fn spawn_badge(
+    ctx: &egui::Context,
+    file: &EditFile,
+    rules: &Arc<aatf::Rules>,
+    key: BadgeKey,
+) -> Pending<BadgeKey, OwnBadge> {
+    let team = TeamView::new(file, key.team).map_err(|error| error.to_string());
+    let (sender, replies) = crossbeam_channel::unbounded();
+    let rules = Arc::clone(rules);
+    let ctx = ctx.clone();
+    let reply_key = key.clone();
+    let slot = key.slot;
+    std::thread::spawn(move || {
+        let badge = match team {
+            Ok(team) => own_badge(&rules, &team, slot),
+            Err(error) => OwnBadge::Failed(error),
+        };
+        // A newer run can replace the receiver mid-flight; that send's
+        // failure is the superseded thread ending, not an error.
+        if sender.send((reply_key, badge)).is_err() {
+            log::debug!("the badge run's caller dropped a superseded run");
+        }
+        ctx.request_repaint();
+    });
+    Pending { key, replies }
+}
+
+/// What `rules` read `team`'s roster `slot` as: his own tier with its
+/// card economy, no tier, or a check that failed with its error (an
+/// empty slot fails too). The two script calls run on the badge run's
+/// worker thread: each reads the whole team under every candidate
+/// height system.
+fn own_badge(rules: &aatf::Rules, team: &TeamView, slot: u8) -> OwnBadge {
     let Some(player) = team.player(slot) else {
         // The place as the player list numbers it, from 01.
         return OwnBadge::Failed(format!(
@@ -859,8 +917,8 @@ fn own_badge(rules: &aatf::Rules, file: &EditFile, team_id: u32, slot: u8) -> Ow
             u32::from(slot) + 1
         ));
     };
-    match rules.player_tier(&team, player) {
-        Ok(Some(tier)) => match rules.card_limits(&team, player, &tier.id) {
+    match rules.player_tier(team, player) {
+        Ok(Some(tier)) => match rules.card_limits(team, player, &tier.id) {
             Ok(limits) => OwnBadge::Tier {
                 label: tier.label.clone(),
                 limits,
@@ -1158,7 +1216,7 @@ mod tests {
             .find(|&slot| team.player(slot).is_none())
             .expect("an empty slot");
         assert_eq!(slot, 23, "premise: the first slot past a full roster");
-        let badge = super::own_badge(&aatf::Rules::official(), &file, 701, slot);
+        let badge = super::own_badge(&aatf::Rules::official(), &team, slot);
         let super::OwnBadge::Failed(error) = badge else {
             panic!("an empty slot fails the check");
         };
