@@ -21,7 +21,8 @@ fn dbc7_file(edit: impl FnOnce(&mut aatf::Ruleset)) -> String {
 }
 
 /// A PES 21 save open in a window `width` points wide, then `pick` choosing
-/// the ruleset, then three frames so every grid has measured itself.
+/// the ruleset, then three frames so every grid has measured itself, then
+/// frames until the view's workers have replied.
 fn opened_at(test: &str, width: f32, pick: impl FnOnce(&mut SaveView)) -> (SaveView, Headless) {
     let path = fixture(PesVersion::Pes21, test);
     let mut view = SaveView::new();
@@ -31,6 +32,9 @@ fn opened_at(test: &str, width: f32, pick: impl FnOnce(&mut SaveView)) -> (SaveV
     for _ in 0..3 {
         draw(&mut window, &mut view);
     }
+    // A window compared with another waits for every reply, or one may draw
+    // the selected player's Cards left badge the other has not received yet.
+    workers_replied(&mut window, &mut view);
     (view, window)
 }
 

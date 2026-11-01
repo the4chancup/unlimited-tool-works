@@ -1291,6 +1291,26 @@ fn frames_until(
     }
 }
 
+/// Frames until none of the view's workers has a run in flight: each
+/// replies on its own thread, so a test comparing frames, or timing its
+/// input frame by frame, would otherwise meet a reply landing at a moment
+/// set by the machine's load. A frame with no pointer down and nothing
+/// holding the keyboard starts every run the view is due, so after the
+/// view's first frame an empty set means every reply has landed.
+fn workers_replied(window: &mut Headless, view: &mut SaveView) {
+    frames_until(
+        window,
+        view,
+        |view| {
+            view.cards.pending.is_none()
+                && view.live.check.pending.is_none()
+                && view.medals.pending.is_none()
+                && view.multi_aatf.check.pending.is_none()
+        },
+        "a view worker never replied",
+    );
+}
+
 /// Frames until the Live AATF dock's check lands: `pending` empty and the
 /// result keyed to the session's current revision, `ids`, the active
 /// ruleset and the Show suggestions checkbox (bounded, so a worker that
