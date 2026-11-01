@@ -7,6 +7,7 @@
 //! the GK allowance counts as 185 in every system.
 
 use super::*;
+use crate::TeamCheck;
 
 /// The DBC7 data block, a test ruleset.
 const DBC7: &str = include_str!("../../rulesets/dbc7.rhai");
@@ -332,9 +333,12 @@ fn a_manlet_silver_taking_part_of_the_bonus_is_read_as_a_silver() {
 
 /// One centimetre over the pool: the two-210 variant draws exactly 50; a
 /// mid at 181 draws 51, one `ExtraHeight` naming the two 210s' 25 each and
-/// his 1 (every bracket still fills). The team fits no quota system: the
-/// nearest is Manlet, 5 players short in Tall (the 181 in no bracket
-/// there, so Mid holds 9), where Height is 7 short and Universal 18.
+/// his 1 (every bracket still fills). The team fits no quota system, and
+/// its total, 4196 cm (the keepers at 185), is 1 cm over GigaHeight's span
+/// (4145 to 4195), 34 from Height's 4230, 36 from Manlet's 4160 and 59
+/// from Universal's 4255: read under GigaHeight, the only system within 15
+/// cm, and the nearest quota system is Height (the 181 and the 210s in no
+/// bracket there, so Mid holds 9, Tall 5 and Giant none).
 #[test]
 fn a_centimetre_over_the_pool_is_extra_height() {
     let rules = rules();
@@ -354,14 +358,17 @@ fn a_centimetre_over_the_pool_is_extra_height() {
                     ],
                 }
             ),
-            nearest("manlet", &[("mid", 9, 7), ("tall", 5, 10)]),
+            nearest("height", &[("mid", 9, 5), ("tall", 5, 6), ("giant", 0, 6)]),
         ]
     );
 }
 
 /// A player over the pool's `max` takes no bracket: the `Height`
 /// violation and the `BracketQuota` his tall slot leaves (the other 210
-/// still draws his 25, inside the pool). Nearest: Manlet, 5 short in Tall.
+/// still draws his 25, inside the pool). The total, 4196 cm, is read under
+/// GigaHeight as in `a_centimetre_over_the_pool_is_extra_height`, the
+/// nearest quota system Height (34 cm; Manlet 36), where the 211 and the
+/// 210 take no bracket.
 #[test]
 fn a_player_over_the_max_is_a_height_violation() {
     let rules = rules();
@@ -386,14 +393,16 @@ fn a_player_over_the_max_is_a_height_violation() {
                     (16, 210)
                 ]
             ),
-            nearest("manlet", &[("mid", 10, 7), ("tall", 5, 10)]),
+            nearest("height", &[("mid", 10, 5), ("tall", 5, 6), ("giant", 0, 6)]),
         ]
     );
 }
 
 /// A player below every quota bracket takes none: a manlet at 174 is a
-/// `Height` violation and the manlet quota comes up one short. Nearest:
-/// Manlet, 4 short (one Manlet, three Tall), where Height is 7 short.
+/// `Height` violation and the manlet quota comes up one short. The total,
+/// 4144 cm, is 1 cm under GigaHeight's span and 16 from Manlet's 4160, so
+/// the team is read under GigaHeight alone; the nearest quota system is
+/// Manlet (Height is 86 cm away).
 #[test]
 fn a_player_below_the_brackets_is_a_height_violation() {
     let rules = rules();
@@ -798,67 +807,97 @@ const AKATSUKI: [(u8, &str); 23] = [
     (195, "CB"),
 ];
 
-/// The legal team with every slot's height and registered position from
-/// `players`.
-fn dbc6_team(players: &[(u8, &str); 23]) -> TeamView {
+/// /cookie☆/ (857): 9x 185 with its goalkeeper at 189, 8x 180, 6x 175, a
+/// total of 4155; Manlet wants 10 Talls and 7 Mids.
+const COOKIE: [(u8, &str); 23] = [
+    (189, "GK"),
+    (185, "CB"),
+    (185, "CB"),
+    (185, "CB"),
+    (175, "DMF"),
+    (180, "CMF"),
+    (175, "CMF"),
+    (180, "CMF"),
+    (185, "AMF"),
+    (185, "SS"),
+    (175, "CF"),
+    (185, "CB"),
+    (185, "CB"),
+    (185, "CB"),
+    (180, "CMF"),
+    (180, "CMF"),
+    (180, "RMF"),
+    (180, "RMF"),
+    (180, "LMF"),
+    (180, "LMF"),
+    (175, "DMF"),
+    (175, "CF"),
+    (175, "CF"),
+];
+
+/// The legal team with `medals`, every slot's height and registered
+/// position from `players`.
+fn dbc6_team(players: &[(u8, &str); 23], medals: &[(u8, &str)]) -> TeamView {
     let heights = players.map(|(height, _)| height);
-    let mut team = legal_team(&heights, GGSS);
+    let mut team = legal_team(&heights, medals);
     for (slot, (_, registered)) in (0u8..).zip(players) {
         player_mut(&mut team, slot).position = Some(position(registered));
     }
     team
 }
 
-/// /tsab/ under GigaHeight: its six 195s and the 185 of the last slot
-/// (21) take the 7 Tall slots, the other four 185s draw 5 each in Mid
-/// slots, so the pool's 50 is overdrawn by 30. The nearest quota system is
-/// Height, one 180 too many in Mid and one 185 short in Tall.
+/// /tsab/, one 180 where Height wants a 185, fits no quota system. Its
+/// total, 4225 cm, is 5 from Height's 4230 and 30 from GigaHeight's span
+/// (4145 to 4195), so Height is the one system within 15 cm and the team is
+/// read under it: one 180 too many in Mid and one 185 short in Tall, not
+/// GigaHeight's overdrawn pool.
 #[test]
-fn tsab_names_its_draws_and_the_nearest_system() {
+fn tsab_is_read_under_height() {
     let rules = rules();
-    let tall = |slot| (slot, "tall".to_string(), 10);
-    let mid = |slot| (slot, "mid".to_string(), 5);
+    let team = dbc6_team(&TSAB, GGSS);
     assert_eq!(
-        height_rows(&rules, &dbc6_team(&TSAB)),
-        vec![
-            error(
-                None,
-                ViolationKind::ExtraHeight {
-                    used: 80,
-                    total: 50,
-                    draws: vec![
-                        tall(0),
-                        tall(2),
-                        tall(5),
-                        tall(6),
-                        mid(7),
-                        mid(8),
-                        mid(9),
-                        mid(10),
-                        tall(14),
-                        tall(22),
-                    ],
-                }
-            ),
-            nearest("height", &[("mid", 6, 5), ("tall", 5, 6)]),
-        ]
-    );
-}
-
-/// /暁Records/ under GigaHeight: seven 175s for the six Manlet slots, so
-/// all seven are listed and Mid is one short; the goalkeepers' 189 read as
-/// 185. The nearest quota system is Height, one 175 too many and one 180
-/// short.
-#[test]
-fn akatsuki_names_its_brackets_players_and_the_nearest_system() {
-    let rules = rules();
-    let tall = |slot| (slot, "tall".to_string(), 10);
-    let mid = |slot| (slot, "mid".to_string(), 5);
-    assert_eq!(
-        height_rows(&rules, &dbc6_team(&AKATSUKI)),
+        height_rows(&rules, &team),
         vec![
             quota(
-                "giga",
+                "height",
+                "mid",
+                6,
+                5,
+                &[
+                    (4, 180),
+                    (12, 180),
+                    (13, 180),
+                    (17, 180),
+                    (19, 180),
+                    (20, 180)
+                ]
+            ),
+            quota(
+                "height",
+                "tall",
+                5,
+                6,
+                &[(7, 185), (8, 185), (9, 185), (10, 185), (21, 185)]
+            ),
+        ]
+    );
+    let check = rules.check_team(&team).expect("the check runs");
+    assert_eq!(check.height_system.as_deref(), Some("height"));
+}
+
+/// /暁Records/, one 175 where Height wants a 180, fits no quota system; the
+/// goalkeepers' 189 read as 185. Its total, 4225 cm, is 5 from Height's
+/// 4230 and 30 from GigaHeight's span, so the team is read under Height:
+/// seven 175s for its six Manlet slots and Mid one short.
+#[test]
+fn akatsuki_is_read_under_height() {
+    let rules = rules();
+    let team = dbc6_team(&AKATSUKI, GGSS);
+    assert_eq!(
+        height_rows(&rules, &team),
+        vec![
+            quota(
+                "height",
                 "manlet",
                 7,
                 6,
@@ -873,45 +912,16 @@ fn akatsuki_names_its_brackets_players_and_the_nearest_system() {
                 ]
             ),
             quota(
-                "giga",
+                "height",
                 "mid",
-                9,
-                10,
-                &[
-                    (0, 185),
-                    (1, 185),
-                    (2, 180),
-                    (3, 180),
-                    (11, 180),
-                    (12, 185),
-                    (17, 180),
-                    (18, 185),
-                    (19, 185)
-                ]
+                4,
+                5,
+                &[(2, 180), (3, 180), (11, 180), (17, 180)]
             ),
-            error(
-                None,
-                ViolationKind::ExtraHeight {
-                    used: 85,
-                    total: 50,
-                    draws: vec![
-                        mid(0),
-                        mid(1),
-                        tall(5),
-                        tall(8),
-                        tall(9),
-                        tall(10),
-                        mid(12),
-                        tall(16),
-                        mid(18),
-                        mid(19),
-                        tall(22),
-                    ],
-                }
-            ),
-            nearest("height", &[("manlet", 7, 6), ("mid", 4, 5)]),
         ]
     );
+    let check = rules.check_team(&team).expect("the check runs");
+    assert_eq!(check.height_system.as_deref(), Some("height"));
 }
 
 /// DBC7 with its Height system's line replaced by `line`.
@@ -934,7 +944,7 @@ fn a_team_under_the_first_system_gets_no_nearest_system() {
         "#{ id: \"height\", label: \"Height\", any_player: #{ height_min: 195 },",
     );
     assert_eq!(
-        height_rows(&rules, &dbc6_team(&TSAB)),
+        height_rows(&rules, &dbc6_team(&TSAB, GGSS)),
         vec![
             quota(
                 "height",
@@ -961,48 +971,37 @@ fn a_team_under_the_first_system_gets_no_nearest_system() {
     );
 }
 
-/// Two quota systems the team misses by as many players: the earlier in
-/// the file is named. Two 195s, four 185s (the goalkeepers' 189s), eleven
-/// 180s and six 175s are 6 short of Height (four Giant, two Tall) and 6 of
-/// Manlet (six Tall). Under GigaHeight the 180 of slot 1 takes the last
-/// Manlet slot before the 175s are placed, so the 175 of slot 3 is
-/// counted past the Manlet quota, and Tall is one short.
+/// Two quota systems as far from the team's total: the earlier in the file
+/// is named. The two-210 variant with a 175 at 174 and a 180 at 181 still
+/// totals 4195 cm (2x 210, 5x 185 with the keepers, 9x 180, 181, 5x 175,
+/// 174): 35 from Height's 4230 and 35 from Manlet's 4160, inside
+/// GigaHeight's span, so it is read under GigaHeight (the 174 in no
+/// bracket, the 181 drawing 1 over the pool) and Height is named, where
+/// the 174, the 181 and the 210s take no bracket.
 #[test]
-fn a_tie_on_players_short_names_the_earlier_system() {
+fn a_tie_in_centimetres_names_the_earlier_system() {
     let rules = rules();
-    let mut heights = GIGA;
-    heights[2] = 195;
-    heights[5] = 195;
-    heights[16] = 180;
-    let team = legal_team(&heights, GGSS);
+    let mut team = legal_team(&GIGA_210, GGSS);
+    assert_eq!(player(&team, 3).height, 175);
+    assert_eq!(player(&team, 8).height, 180);
+    player_mut(&mut team, 3).height = 174;
+    player_mut(&mut team, 8).height = 181;
+    let rows = height_rows(&rules, &team);
     assert_eq!(
-        height_rows(&rules, &team),
-        vec![
-            quota(
-                "giga",
-                "manlet",
-                7,
-                6,
-                &[
-                    (1, 180),
-                    (3, 175),
-                    (4, 175),
-                    (6, 175),
-                    (15, 175),
-                    (19, 175),
-                    (22, 175)
-                ]
-            ),
-            quota(
-                "giga",
-                "tall",
-                6,
-                7,
-                &[(0, 185), (2, 195), (5, 195), (9, 185), (10, 185), (11, 185)]
-            ),
-            nearest("height", &[("mid", 11, 5), ("tall", 4, 6), ("giant", 2, 6)]),
-        ]
+        rows.last(),
+        Some(&nearest(
+            "height",
+            &[
+                ("manlet", 5, 6),
+                ("mid", 9, 5),
+                ("tall", 5, 6),
+                ("giant", 0, 6)
+            ]
+        )),
+        "{rows:?}"
     );
+    let check = rules.check_team(&team).expect("the check runs");
+    assert_eq!(check.height_system.as_deref(), Some("giga"));
 }
 
 /// Under GigaHeight a player no bracket has room for counts toward the
@@ -1046,20 +1045,311 @@ fn an_unplaced_player_counts_in_the_tallest_bracket_he_reaches_and_draws_nothing
 }
 
 /// A quota system whose `any_player` holds for no player is no candidate:
-/// with Height asking for a player of 200 or more, /tsab/'s nearest is
-/// Manlet, 6 short (five Tall, one Mid).
+/// with Height asking for a player of 200 or more, /tsab/ (4225 cm, 5 from
+/// Height) is read under GigaHeight, 30 cm off its span with no system
+/// nearer, and its nearest quota system is Universal (30 cm from its 4255),
+/// not Manlet (65 from its 4160): Universal's every bracket is off, its six
+/// 175s, six 180s and six 195s against quotas of 0, its five 185s against
+/// 23.
 #[test]
 fn a_system_whose_any_player_fails_is_no_candidate() {
     let rules = dbc7_with_height_system(
         "#{ id: \"height\", label: \"Height\", by_quotas: true, any_player: #{ height_min: 200 },",
     );
-    let rows = height_rows(&rules, &dbc6_team(&TSAB));
+    let team = dbc6_team(&TSAB, GGSS);
+    let rows = height_rows(&rules, &team);
     assert_eq!(
         rows.last(),
         Some(&nearest(
-            "manlet",
-            &[("mid", 6, 7), ("tall", 5, 10), ("giant", 6, 0)]
+            "universal",
+            &[
+                ("manlet", 6, 0),
+                ("mid", 6, 0),
+                ("tall", 5, 23),
+                ("giant", 6, 0)
+            ]
         )),
         "{rows:?}"
+    );
+    let check = rules.check_team(&team).expect("the check runs");
+    assert_eq!(check.height_system.as_deref(), Some("giga"));
+}
+
+/// /cookie☆/ with its own medals (golds 8 and 9, silvers 4 and 6) and its
+/// Manlets at +5 as the save holds them: the silvers at 93, the regulars
+/// at 82.
+fn cookie_team() -> TeamView {
+    let medals: &[(u8, &str)] = &[(8, "gold"), (9, "gold"), (4, "silver"), (6, "silver")];
+    let mut team = dbc6_team(&COOKIE, medals);
+    for slot in [4, 6] {
+        set_tier(player_mut(&mut team, slot), 93, 8, 3);
+    }
+    for slot in [10, 20, 21, 22] {
+        set_tier(player_mut(&mut team, slot), 82, 8, 3);
+    }
+    team
+}
+
+/// /cookie☆/, one 180 where Manlet wants a 185, meets GigaHeight's quotas
+/// and pool, where its Manlets' +5 would be six Stat total errors. Its
+/// total, 4155 cm, is 5 from Manlet's 4160 and inside GigaHeight's span
+/// (4145 to 4195): both are candidates, and Manlet's two bracket errors
+/// beat GigaHeight's six, so it is read under Manlet: Tall 9 of 10, Mid 8
+/// of 7, and no Stat total.
+#[test]
+fn cookie_is_read_under_manlet() {
+    let rules = rules();
+    let team = cookie_team();
+    let check = rules.check_team(&team).expect("the check runs");
+    let errors: Vec<&Violation> = check
+        .violations
+        .iter()
+        .filter(|v| v.severity == Severity::Error)
+        .collect();
+    assert_eq!(
+        errors,
+        [
+            &quota(
+                "manlet",
+                "mid",
+                8,
+                7,
+                &[
+                    (5, 180),
+                    (7, 180),
+                    (14, 180),
+                    (15, 180),
+                    (16, 180),
+                    (17, 180),
+                    (18, 180),
+                    (19, 180)
+                ]
+            ),
+            &quota(
+                "manlet",
+                "tall",
+                9,
+                10,
+                &[
+                    (0, 185),
+                    (1, 185),
+                    (2, 185),
+                    (3, 185),
+                    (8, 185),
+                    (9, 185),
+                    (11, 185),
+                    (12, 185),
+                    (13, 185)
+                ]
+            ),
+        ]
+    );
+    assert_eq!(check.height_system.as_deref(), Some("manlet"));
+    assert_eq!(check.medal_system.as_deref(), Some("GGSS"));
+}
+
+/// A tier helper reads the team under the system the check does:
+/// /cookie☆/'s regular at 175 (slot 10) gets Manlet's +5, 82 on every
+/// ability stat, where GigaHeight would give 77.
+#[test]
+fn a_tier_helper_reads_cookie_under_manlet() {
+    let rules = rules();
+    let team = cookie_team();
+    let values = rules
+        .tier_values(&team, player(&team, 10), "regular")
+        .expect("the values");
+    assert_eq!(values.stats.get(&stat("dribbling")), Some(&82));
+    assert_eq!(values.stats.get(&stat("speed")), Some(&82));
+}
+
+/// The Manlet table with one 185 at 180 (slot 14), totalling 4155 cm: 5
+/// from Manlet's 4160 and inside GigaHeight's span. Under Manlet that is
+/// Tall 9 of 10 and Mid 8 of 7, two errors; under GigaHeight the counts
+/// fill its quotas (two 185s in Mid slots, drawing 10), and each of
+/// `bonused`, 175 regulars set to Manlet's 82, is one Stat total error.
+fn manlet_one_off(bonused: &[u8]) -> TeamView {
+    let mut team = legal_team(&MANLET, GGSS);
+    assert_eq!(player(&team, 14).height, 185);
+    player_mut(&mut team, 14).height = 180;
+    for &slot in bonused {
+        assert_eq!(player(&team, slot).height, 175);
+        set_tier(player_mut(&mut team, slot), 82, 8, 3);
+    }
+    team
+}
+
+/// Between two candidates the one whose check reports fewer errors wins,
+/// the nearer losing: with three bonused regulars, Manlet (5 cm away, two
+/// bracket errors) beats GigaHeight (0 cm, three Stat totals).
+#[test]
+fn the_candidate_with_the_fewest_errors_is_read() {
+    let rules = rules();
+    let check = rules
+        .check_team(&manlet_one_off(&[3, 4, 6]))
+        .expect("the check runs");
+    assert_eq!(check.height_system.as_deref(), Some("manlet"));
+    let errors: Vec<&ViolationKind> = check
+        .violations
+        .iter()
+        .filter(|v| v.severity == Severity::Error)
+        .map(|v| &v.kind)
+        .collect();
+    assert_eq!(errors.len(), 2, "{errors:?}");
+    assert!(
+        errors
+            .iter()
+            .all(|kind| matches!(kind, ViolationKind::BracketQuota { .. })),
+        "{errors:?}"
+    );
+}
+
+/// A tie on errors goes to the nearer system: with two bonused regulars,
+/// GigaHeight (0 cm, two Stat totals) beats Manlet (5 cm, two bracket
+/// errors).
+#[test]
+fn a_tie_on_errors_goes_to_the_nearer_system() {
+    let rules = rules();
+    let check = rules
+        .check_team(&manlet_one_off(&[3, 4]))
+        .expect("the check runs");
+    assert_eq!(check.height_system.as_deref(), Some("giga"));
+    let errors: Vec<&Violation> = check
+        .violations
+        .iter()
+        .filter(|v| v.severity == Severity::Error)
+        .collect();
+    let total = ViolationKind::StatTotal {
+        total: 1886,
+        limit: 1771,
+    };
+    assert_eq!(
+        errors,
+        [&error(Some(3), total.clone()), &error(Some(4), total)]
+    );
+}
+
+/// 15 cm from a baseline is within reach, 16 is not. The Manlet table with
+/// three 185s at 180 (slots 8, 14, 16) totals 4145 cm, 15 from Manlet's
+/// 4160 and on GigaHeight's span: with three regulars at Manlet's 82,
+/// Manlet's two bracket errors beat GigaHeight's three Stat totals. A 175
+/// at 174 (slot 22) makes it 4144, 16 from Manlet, and the team is read
+/// under GigaHeight, though Manlet would report fewer errors (Tall, Mid
+/// and Manlet off and the 174 in no bracket, 4, against the 174, the
+/// Manlet quota and the three Stat totals, 5).
+#[test]
+fn a_team_15_cm_from_a_baseline_is_a_candidate_and_16_is_not() {
+    let rules = rules();
+    let mut team = legal_team(&MANLET, GGSS);
+    for slot in [8, 14, 16] {
+        assert_eq!(player(&team, slot).height, 185);
+        player_mut(&mut team, slot).height = 180;
+    }
+    for slot in [3, 4, 6] {
+        set_tier(player_mut(&mut team, slot), 82, 8, 3);
+    }
+    let check = rules.check_team(&team).expect("the check runs");
+    assert_eq!(check.height_system.as_deref(), Some("manlet"), "4145 cm");
+    assert_eq!(player(&team, 22).height, 175);
+    player_mut(&mut team, 22).height = 174;
+    let check = rules.check_team(&team).expect("the check runs");
+    assert_eq!(check.height_system.as_deref(), Some("giga"), "4144 cm");
+}
+
+/// With no system within 15 cm the team is read under the last one. The
+/// Height table with a 195 at 179 (slot 5) totals 4214 cm, 16 from
+/// Height's 4230 and 19 above GigaHeight's span: read under GigaHeight,
+/// though Height would report fewer errors (Giant one short and the 179 in
+/// no bracket, 2, against GigaHeight's Mid and Manlet off and its
+/// overdrawn pool, 3).
+#[test]
+fn a_team_no_system_is_within_15_cm_of_is_read_under_the_last() {
+    let rules = rules();
+    let team = edited(&HEIGHT, GGSS, 5, |p| {
+        assert_eq!(p.height, 195);
+        p.height = 179;
+    });
+    let check = rules.check_team(&team).expect("the check runs");
+    assert_eq!(check.height_system.as_deref(), Some("giga"));
+}
+
+/// A legal team's check names the systems it was read under and nothing
+/// else: each height system with the GGSS medals, each medal system on
+/// the GigaHeight table; a medal count no system has names no medal
+/// system.
+#[test]
+fn a_legal_teams_check_names_its_medal_and_height_systems() {
+    let rules = rules();
+    let named = |medal: &str, height: &str| TeamCheck {
+        violations: vec![],
+        medal_system: Some(medal.to_string()),
+        height_system: Some(height.to_string()),
+    };
+    for (heights, system) in [
+        (&HEIGHT, "height"),
+        (&MANLET, "manlet"),
+        (&UNIVERSAL, "universal"),
+        (&GIGA, "giga"),
+    ] {
+        assert_eq!(
+            rules
+                .check_team(&legal_team(heights, GGSS))
+                .expect("the check runs"),
+            named("GGSS", system),
+            "{system}"
+        );
+    }
+    for (medals, label) in [(GGG, "GGG"), (GSSSS, "GSSSS"), (SSSSSS, "SSSSSS")] {
+        assert_eq!(
+            rules
+                .check_team(&legal_team(&GIGA, medals))
+                .expect("the check runs"),
+            named(label, "giga"),
+            "{label}"
+        );
+    }
+    let medals: &[(u8, &str)] = &[(2, "gold"), (5, "gold"), (10, "gold"), (9, "silver")];
+    let check = rules
+        .check_team(&legal_team(&GIGA, medals))
+        .expect("the check runs");
+    assert_eq!(check.medal_system, None);
+    assert_eq!(check.height_system.as_deref(), Some("giga"));
+}
+
+/// A team that passes under the last system keeps it while a quota system
+/// is a candidate. The GigaHeight table (4145 cm: 7x 185 with the keepers'
+/// 189 counted as 185, 10x 180, 6x 175) with the 175 of slot 3 at 176
+/// totals 4146 cm: 14 from Manlet's 4160, within the 15, and inside
+/// GigaHeight's span (4145 to 4195). The 176 takes a Manlet slot under
+/// GigaHeight and draws 1 cm of the pool, so the team has no error there,
+/// where under Manlet he takes no bracket and its quotas are off.
+#[test]
+fn a_green_giga_team_14_cm_from_manlet_stays_giga() {
+    let rules = rules();
+    let team = edited(&GIGA, GGSS, 3, |p| {
+        assert_eq!(p.height, 175);
+        p.height = 176;
+    });
+    // The keepers at 189 count as 185, the special's allowance of 4.
+    let total: u32 = team
+        .players
+        .iter()
+        .map(|p| {
+            let allowance = if p.height == 189 && p.position == Some(position("GK")) {
+                4
+            } else {
+                0
+            };
+            u32::from(p.height) - allowance
+        })
+        .sum();
+    assert_eq!(total, 4146);
+    assert_eq!(4160 - total, 14, "Manlet is within the 15 cm reach");
+    assert_eq!(
+        rules.check_team(&team).expect("the check runs"),
+        TeamCheck {
+            violations: vec![],
+            medal_system: Some("GGSS".to_string()),
+            height_system: Some("giga".to_string()),
+        }
     );
 }

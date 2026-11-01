@@ -103,7 +103,7 @@ fn a_specials_weak_foot_limits_report_the_suggestion() {
         p.weak_foot_usage = 2;
         p.weak_foot_accuracy = 2;
     });
-    let found = rules.check_team(&team).expect("the check runs");
+    let found = rules.check_team(&team).expect("the check runs").violations;
     let suggested: Vec<&ViolationKind> = found
         .iter()
         .filter(|v| v.slot == Some(3) && v.severity == Severity::Suggestion)
@@ -288,6 +288,7 @@ fn form_and_injury_resistance_effects_move_the_targets() {
         rules
             .check_team(&team)
             .expect("the check runs")
+            .violations
             .iter()
             .any(|v| v.slot == Some(3) && v.kind == unused("injury_resistance", 1, 2)),
         "the suggestion sees the effect"
@@ -462,7 +463,7 @@ fn a_free_option_is_not_used_by_a_card_free_by_name() {
         .expect("limits");
     assert_eq!(limits.limit, 1, "the `cards` option, not the `free` one");
     assert_eq!(limits.free.get("com"), Some(&1));
-    let found = rules.check_team(&team).expect("the check runs");
+    let found = rules.check_team(&team).expect("the check runs").violations;
     assert!(
         !found.iter().any(|v| v.slot == Some(3)),
         "nothing on slot 3: {found:?}"

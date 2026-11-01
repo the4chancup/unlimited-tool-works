@@ -29,6 +29,12 @@ fn ability_stats() {
      "catching", "clearing", "reflexes", "coverage", "stamina", "tight_possession", "aggression"]
 }
 
+// How far, in centimetres, a height system may be from the total height of a team no quota
+// system takes and still be a system that team is read under. Not a ruleset field: it only
+// chooses which errors an already failing team is shown, never whether a team passes, and only
+// a ruleset with several quota systems reaches it. 15 is about three players a bracket off.
+fn nearest_reach_cm() { 15 }
+
 // ---- Reading a map whose field the file may leave out (its empty value then)
 
 fn num(map, key) { if key in map && map[key] != () { map[key] } else { 0 } }
@@ -79,29 +85,48 @@ fn normalized(rules) {
 
 // ---- The four functions the host calls
 
+// The team's violations, with the medal system its counts matched (its label, `()` when none
+// did or the ruleset has none) and the height system it was read under (its id, or `()`).
 fn check_team(team) {
     let rules = normalized(global::RULESET);
-    let found = [];
-    let reading = rules.height_reading(team);
-    let system = reading.system;
-    let read = rules.read_team(team, system);
-    // Every player is read before any is checked: a height hint names the brackets with
-    // room, which the whole team's reading decides.
-    let room = rules.height_room(system, read);
-    for r in read {
-        if r.tier == () {
-            found.push(#{
-                kind: "NoTier", slot: r.player.slot, heights: rules.tier_heights(r.player.height),
-            });
-            continue;
-        }
-        found += rules.player_checks(team, system, r.player, r.tier, r.profile, room);
+    let reading = rules.team_reading(team);
+    let checks = reading.checks;
+    if checks == () {
+        let read = reading.read;
+        if read == () { read = rules.read_team(team, reading.system); }
+        checks = rules.checks_under(team, reading.system, read, reading.failed);
     }
-    found += rules.team_checks(team, system, read, reading.failed);
+    let found = checks.found;
     if is_def_fn("custom_checks", 1) {
         found += custom_checks(team);
     }
-    found
+    #{
+        violations: found,
+        medal_system: checks.medal_system,
+        height_system: if reading.system == () { () } else { reading.system.id },
+    }
+}
+
+// Every check that depends on the height system, with every player of `team` read under
+// `system` (`read`): each player's, then the team's, as `#{ found, medal_system }`;
+// `failed` is `height_reading`'s. `this` is the ruleset.
+fn checks_under(team, system, read, failed) {
+    let found = [];
+    // Every player is read before any is checked: a height hint names the brackets with
+    // room, which the whole team's reading decides.
+    let room = this.height_room(system, read);
+    for r in read {
+        if r.tier == () {
+            found.push(#{
+                kind: "NoTier", slot: r.player.slot, heights: this.tier_heights(r.player.height),
+            });
+            continue;
+        }
+        found += this.player_checks(team, system, r.player, r.tier, r.profile, room);
+    }
+    let team_found = this.team_checks(team, system, read, failed);
+    found += team_found.found;
+    #{ found: found, medal_system: team_found.medal_system }
 }
 
 // The targets `player` must carry as tier `tier` (its id): every ability stat's, form, injury
@@ -254,29 +279,111 @@ fn rated_at(positions, rating) {
     false
 }
 
-// The first height system that holds: its `any_player` holds for some player (empty:
-// always) and, for a `by_quotas` one, its quota and pool checks find nothing with every
-// player read under it — reading the team under each candidate is what lets an allowance
-// or a tier a special gives under one system count toward that system's quotas. `()` when
-// no system holds; `this` is the ruleset.
+// The height system `team` is read under (`team_reading`), `()` when no system holds; the
+// tier helpers read a player under it, so a quick action and the check agree. `this` is the
+// ruleset.
 fn height_system(team) {
-    this.height_reading(team).system
+    this.team_reading(team).system
 }
 
-// `height_system`'s answer as `system`, and as `failed` each `by_quotas` system tried
-// before it (its `any_player` held, its checks found something) as `#{ id, findings }`,
-// `findings` being `height_findings` with the team read under that system, in the file's
-// order. `this` is the ruleset.
+// The first height system that holds as `system`: its `any_player` holds for some player
+// (empty: always) and, for a `by_quotas` one, its quota and pool checks find nothing with
+// every player read under it — reading the team under each candidate is what lets an
+// allowance or a tier a special gives under one system count toward that system's quotas;
+// `()` when no system holds. As `failed`, each `by_quotas` system tried before it (its
+// `any_player` held, its checks found something) as `#{ system, findings, read }`,
+// `findings` being `height_findings` with the team read under that system (`read`), in the
+// file's order. As `read`, the team read under `system` when that reading was done here,
+// else `()`. `this` is the ruleset.
 fn height_reading(team) {
     let failed = [];
     for system in this.heights.systems {
         if !any_player_holds(team, system) { continue; }
-        if !flag(system, "by_quotas") { return #{ system: system, failed: failed }; }
-        let findings = this.height_findings(system, this.read_team(team, system));
-        if findings.len() == 0 { return #{ system: system, failed: failed }; }
-        failed.push(#{ id: system.id, findings: findings });
+        if !flag(system, "by_quotas") { return #{ system: system, failed: failed, read: () }; }
+        let read = this.read_team(team, system);
+        let findings = this.height_findings(system, read);
+        if findings.len() == 0 { return #{ system: system, failed: failed, read: read }; }
+        failed.push(#{ system: system, findings: findings, read: read });
     }
-    #{ system: (), failed: failed }
+    #{ system: (), failed: failed, read: () }
+}
+
+// `height_reading`'s map with the system the team is read under as `system`, and as
+// `checks` the `checks_under` answer when choosing it ran them (else `()`). A team that
+// `height_reading` leaves to the last system after a quota system failed is read under the
+// candidate whose checks report the fewest errors: each system within `nearest_reach_cm`
+// of the team's total height (`height_distance`), among the quota systems tried and the
+// last system; ties go to the nearer, then to the file's order; with no candidate, the last
+// system. Reading it under the last system alone would show a Manlet team one player off
+// its brackets as its Manlets' raised stats, where the organizer looks for the one
+// team-wide height issue; reading it under the fewest errors alone would pick, for a team
+// far from every quota system, whichever system its errors favour. `this` is the ruleset.
+fn team_reading(team) {
+    let reading = this.height_reading(team);
+    reading.checks = ();
+    if reading.failed.len() == 0 || !this.is_last_system(reading.system) { return reading; }
+    reading.read = this.read_team(team, reading.system);
+    let candidates = reading.failed;
+    candidates.push(#{ system: reading.system, read: reading.read });
+    let best = ();
+    for candidate in candidates {
+        let distance = this.height_distance(candidate.system, candidate.read);
+        if distance > nearest_reach_cm() { continue; }
+        let checks = this.checks_under(team, candidate.system, candidate.read, reading.failed);
+        let errors = 0;
+        for v in checks.found { if severity_of(v) == "error" { errors += 1; } }
+        if best == () || errors < best.errors
+            || (errors == best.errors && distance < best.distance) {
+            best = #{
+                system: candidate.system, read: candidate.read, checks: checks, errors: errors,
+                distance: distance,
+            };
+        }
+    }
+    if best != () {
+        reading.system = best.system;
+        reading.read = best.read;
+        reading.checks = best.checks;
+    }
+    reading
+}
+
+// Whether `system` is the ruleset's last height system, the one that takes every team the
+// systems before it leave. `this` is the ruleset.
+fn is_last_system(system) {
+    let systems = this.heights.systems;
+    system != () && systems.len() > 0 && systems[systems.len() - 1].id == system.id
+}
+
+// How many centimetres the team, read under `system` as `read`, stands from it: its total
+// height (each player's height less his allowance) against the system's baseline (each
+// quota times its bracket's height, summed), or, for a system with `extra_height`, against
+// the span from the baseline to the baseline plus the pool; 0 inside it. `this` is the
+// ruleset.
+fn height_distance(system, read) {
+    let total = 0;
+    for r in read {
+        total += r.player.height - (if r.profile == () { 0 } else { r.profile.allowance });
+    }
+    let quotas = table(system, "quotas");
+    let low = 0;
+    for bracket in this.heights.brackets {
+        if bracket.id in quotas { low += quotas[bracket.id] * bracket_height(bracket); }
+    }
+    let high = low;
+    if "extra_height" in system && system.extra_height != () {
+        high += system.extra_height.total;
+    }
+    if total < low { low - total } else if total > high { total - high } else { 0 }
+}
+
+// The height a bracket stands for in a system's baseline: an `exactly` bracket's lowest
+// height, an `up_to` bracket's top.
+fn bracket_height(bracket) {
+    if "up_to" in bracket { return bracket.up_to; }
+    let lowest = bracket.exactly[0];
+    for h in bracket.exactly { lowest = min(lowest, h); }
+    lowest
 }
 
 // Whether `system`'s `any_player` holds for some player of `team` (empty: always).
@@ -936,8 +1043,10 @@ fn unused(slot, allowance, used, allowed) {
 
 // The tier counts (`counts_as` folded in, the tier without a count being the rest of the
 // squad, the medal tiers' counts matched against the `medal_systems`), the system's bracket
-// quotas and the nearest quota system when they find something, the captain, the
-// goalkeepers and the team settings for the save's version; `this` is the ruleset, `read`
+// quotas and, under the last system, the nearest quota system when they find something, the
+// captain, the goalkeepers and the team settings for the save's version, as
+// `#{ found, medal_system }`: `medal_system` is the label of the medal system the team's
+// counts matched, `()` when none did or the ruleset has none. `this` is the ruleset, `read`
 // is `read_player`'s result per player, `failed` is `height_reading`'s.
 fn team_checks(team, system, read, failed) {
     let found = [];
@@ -955,6 +1064,7 @@ fn team_checks(team, system, read, failed) {
         }
     }
     let medals = 0;
+    let medal_system = ();
     if medal_tiers.len() > 0 {
         let team_counts = #{};
         for r in read {
@@ -962,7 +1072,6 @@ fn team_checks(team, system, read, failed) {
                 team_counts[r.tier.id] = num(team_counts, r.tier.id) + 1;
             }
         }
-        let matched = false;
         let labels = [];
         for m in this.medal_systems {
             labels.push(m.label);
@@ -971,9 +1080,9 @@ fn team_checks(team, system, read, failed) {
             for id in medal_tiers {
                 if num(counts, id) != num(team_counts, id) { fits = false; break; }
             }
-            if fits { matched = true; }
+            if fits && medal_system == () { medal_system = m.label; }
         }
-        if !matched { found.push(#{ kind: "MedalSystem", systems: labels }); }
+        if medal_system == () { found.push(#{ kind: "MedalSystem", systems: labels }); }
         for id in medal_tiers { medals += num(team_counts, id); }
     }
     for tier in this.tiers {
@@ -998,8 +1107,8 @@ fn team_checks(team, system, read, failed) {
     if system != () {
         let height = this.height_findings(system, read);
         found += height;
-        if height.len() > 0 {
-            let nearest = nearest_system(failed);
+        if height.len() > 0 && this.is_last_system(system) {
+            let nearest = this.nearest_system(failed);
             if nearest != () { found.push(nearest); }
         }
     }
@@ -1050,7 +1159,7 @@ fn team_checks(team, system, read, failed) {
             }
         }
     }
-    found
+    #{ found: found, medal_system: medal_system }
 }
 
 // The heights a player in no bracket could take under `system`, before his allowance, as
@@ -1224,26 +1333,29 @@ fn height_findings(system, read) {
     found
 }
 
-// The `NearestSystem` warning for a team whose height checks found something under its
+// The `NearestSystem` warning for a team whose height checks found something under the last
 // system, or `()` when no quota system was tried before it: among `failed`
-// (`height_reading`'s), the system with the fewest players short (per bracket, its quota
-// less its count where positive); ties go to the earlier in the file. `off` is that
-// system's brackets off their quotas as `[bracket, count, quota]`, in the brackets' order.
+// (`height_reading`'s), the system nearest the team's total height in centimetres
+// (`height_distance`); ties go to the earlier in the file. Counting players short instead
+// would name Manlet for a team whose six Giants stand at 194, plainly a Height team. `off`
+// is that system's brackets off their quotas as `[bracket, count, quota]`, in the brackets'
+// order. `this` is the ruleset.
 fn nearest_system(failed) {
     let nearest = ();
-    let fewest = 0;
+    let nearest_distance = 0;
     for tried in failed {
+        let distance = this.height_distance(tried.system, tried.read);
+        if nearest != () && distance >= nearest_distance { continue; }
         let off = [];
-        let short = 0;
         for finding in tried.findings {
-            if finding.kind != "BracketQuota" { continue; }
-            off.push([finding.bracket, finding.count, finding.quota]);
-            short += max(finding.quota - finding.count, 0);
+            if finding.kind == "BracketQuota" {
+                off.push([finding.bracket, finding.count, finding.quota]);
+            }
         }
-        if nearest == () || short < fewest {
-            nearest = #{ kind: "NearestSystem", system: tried.id, off: off, severity: "warning" };
-            fewest = short;
-        }
+        nearest = #{
+            kind: "NearestSystem", system: tried.system.id, off: off, severity: "warning",
+        };
+        nearest_distance = distance;
     }
     nearest
 }

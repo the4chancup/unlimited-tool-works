@@ -69,7 +69,7 @@ pub use rules::{RULES_FILE_EXTENSION, Rules, official_file};
 pub use team::{PlayerView, TeamView, TeamViewError};
 pub use templates::{Template, builtin, templates};
 pub use values::CardLimits;
-pub use violation::{CheckError, Violation, ViolationKind};
+pub use violation::{CheckError, TeamCheck, Violation, ViolationKind};
 
 pub use ruleset::{
     Bracket, BracketHeights, BracketId, Card, Condition, Effects, ExtraHeight, Foot, GroupId,

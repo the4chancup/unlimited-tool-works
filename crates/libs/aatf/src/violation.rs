@@ -7,6 +7,19 @@ use serde::Deserialize;
 
 use crate::ruleset::{BracketId, Card, Position, Severity, Stat, SystemId, TierId};
 
+/// One team's check: what is off, and the systems the team was read under.
+#[derive(Debug, Clone, PartialEq)]
+pub struct TeamCheck {
+    /// What is off, in the order `Rules::check_team` gives.
+    pub violations: Vec<Violation>,
+    /// The medal system the team's medal counts match, by its label; `None` when the
+    /// ruleset has no medal systems or the team matches none (a `MedalSystem` violation).
+    pub medal_system: Option<String>,
+    /// The height system the team was read under; `None` when the ruleset has no height
+    /// systems or no system's `any_player` holds.
+    pub height_system: Option<SystemId>,
+}
+
 /// One finding: a rule a player or the team breaks (`slot` `None` for
 /// the team).
 #[derive(Debug, Clone, PartialEq)]
@@ -236,9 +249,9 @@ pub enum ViolationKind {
         /// slot, the slot's bracket and the centimetres he draws.
         draws: Vec<(u8, BracketId, u8)>,
     },
-    /// A warning beside the height errors of a team read under a system reached after a
-    /// `by_quotas` system failed: the failed system the team misses by the fewest players
-    /// short (ties: the earlier in the file), so the organizer sees how near it came.
+    /// A warning beside the height errors of a team read under the last height system after
+    /// a `by_quotas` system failed: the failed system nearest the team's total height, in
+    /// centimetres (ties: the earlier in the file), so the organizer sees how near it came.
     NearestSystem {
         /// The system.
         system: SystemId,
@@ -594,8 +607,8 @@ pub enum CheckError {
         /// rhai's error text.
         message: String,
     },
-    /// `check_team` returned something other than a list (`type_name`:
-    /// rhai's name for it).
+    /// `check_team` returned something other than a list, or a map whose
+    /// `violations` is no list (`type_name`: rhai's name for it).
     #[error("check_team did not return a list (got {type_name})")]
     NotAList {
         /// rhai's name for the type.
@@ -611,8 +624,9 @@ pub enum CheckError {
         message: String,
     },
     /// A function's result does not convert (`function` names it): a
-    /// `tier_values` or `card_limits` map that is not its values, or a
-    /// `player_tier` answer that is neither `()` nor a tier's id.
+    /// `tier_values` or `card_limits` map that is not its values, a
+    /// `player_tier` answer that is neither `()` nor a tier's id, or a
+    /// `check_team` system that is neither `()` nor a name.
     #[error("{function} did not return its values: {message}")]
     Values {
         /// The script function.
@@ -635,6 +649,44 @@ pub enum CheckError {
         /// The applied tier's label, as the member reads it.
         label: String,
     },
+}
+
+/// `check_team`'s answer: a map of its violations' list and the two
+/// systems' names (`()` for none), or the list alone, which a logic
+/// written before the systems were reported returns and which names no
+/// system. A system that is neither `()` nor a string is `Values`.
+pub(crate) fn team_check(result: Dynamic) -> Result<TeamCheck, CheckError> {
+    if !result.is_map() {
+        return Ok(TeamCheck {
+            violations: violations(result)?,
+            medal_system: None,
+            height_system: None,
+        });
+    }
+    let mut map = result.cast::<Map>();
+    let list = map
+        .remove("violations")
+        .ok_or_else(|| CheckError::NotAList {
+            type_name: "map without `violations`".to_string(),
+        })?;
+    let mut name = |key: &str| -> Result<Option<String>, CheckError> {
+        match map.remove(key) {
+            None => Ok(None),
+            Some(value) if value.is_unit() => Ok(None),
+            Some(value) => value
+                .into_string()
+                .map(Some)
+                .map_err(|type_name| CheckError::Values {
+                    function: "check_team",
+                    message: format!("{key}: {type_name} is no name"),
+                }),
+        }
+    };
+    Ok(TeamCheck {
+        medal_system: name("medal_system")?,
+        height_system: name("height_system")?,
+        violations: violations(list)?,
+    })
 }
 
 /// The violations of `check_team`'s returned list, in its order: every
