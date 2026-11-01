@@ -14940,3 +14940,13 @@ down for counts an organizer reads once, and DBC6 under DBC7, the longest real c
 dialog's width.
 Plan: `docs/plans/save_editor.md` "Multi-team AATF counts the teams under each system"
 (SE-GUI-51).
+
+## 2026-11-01 — save_editor — A hovered AATF or comparator row is outlined, not filled
+Decision: the rows `team_widgets` `row_paint` draws (Live AATF's, Multi-team AATF's, the
+comparator's) mark the pointer with the hovered widget's stroke inside the row, 1 point (gray
+150 dark, 105 light), and no fill; the draft's two hover fills became the same outline.
+Why: an error's red rule name read 2.4:1 on egui's hover grey and 1.9:1 on the draft's
+selection blue (cv27, seen in a built-window look); a darker grey that keeps the red over 3:1
+leaves the row barely apart from the list (1.3:1). The outline keeps every word at its resting
+contrast (red 4.95:1), and the draft already outlines a hovered combo item the same way.
+Plan: `docs/plans/save_editor.md` "Live AATF" (the paragraph on a row under the pointer).
