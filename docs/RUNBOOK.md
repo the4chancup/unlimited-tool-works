@@ -66,14 +66,16 @@ that the split's fixed overhead, about a minute plus up to 15 s of polling, eats
 wall time was not recorded). Manual ssh from
 Git Bash uses `/c/Windows/System32/OpenSSH/ssh.exe bonfire`: Git's own `ssh` cannot reach the
 Windows agent that holds the key. **A run snapshots the working tree when its command starts**
-(a git tree object, `mutants.working_tree`): the remote half runs on a transfer of it and the
-local half on a copy of it extracted under the temp folder, never on the working tree, so
+(a git tree object, `mutants.working_tree`): the remote half runs on a transfer of it, and the
+listing, the config and the local half read a copy of it extracted under the temp folder
+(`mutants.snapshot_source`), never the working tree, so
 edits and merges are safe once the run has started, every crate of one `mutants-diff`
 included. Before 2026-11-01 the local half read the live tree, and a merge during a
 `mutants-diff` left team_widgets' local half refusing its diff ("Diff content doesn't match
 source file"). **One run at a time, each queued with its snapshot**: `just mutants`,
-`mutants-diff` and `extra-mutants` snapshot first, then take `.tmp/mutants.lock` for the
-run's whole length (`mutants.run_lock`), so a run launched while another is under way waits
+`mutants-diff` and `extra-mutants` snapshot first, then take the machine's lock (`mutants.lock`
+beside the cost table, so a worktree's run queues too) for the run's whole length
+(`mutants.run_lock`; `mutants-collect` holds it as well), so a run launched while another is under way waits
 its turn with the tree it was launched on, and edits and merges are safe while it waits. Runs
 are launched as separate commands, never chained: a chain's later run snapshots only when
 the one before ends, and at 4.y-conv a `team_compiler` run queued that way snapshotted a
@@ -142,7 +144,9 @@ costs a poll, not the run: at 2.20i the remote half still hung off one long ssh 
 died with it. If `just mutants` itself stops, `just mutants-collect` waits for the remote half
 and fetches it, including a died half's partial results. A new run refuses to start while a
 remote half is running or uncollected (a local one too, since the collection summarizes the
-local `mutants.out` with the remote half), and a run that uses the VPS also while `just
+local `mutants.out` with the remote half; a launch leaves `.tmp/mutants-remote-pending` until
+the fetch, so a local run refuses even with `STUDIO_MUTANTS_REMOTE` set empty, which cannot ask
+the host), and a run that uses the VPS also while `just
 gates-remote` runs there: both rewrite the remote clone. **A failed half is reported, never restarted:**
 `cargo mutants` does not resume, so a rerun starts from zero, hours of work (at 2.20i the
 sidekick restarted the VPS half and waited on it although the local half had already tested
