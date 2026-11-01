@@ -31,5 +31,5 @@ pub use shell::{
     EXE_NAME, Launch, LaunchMode, StudioApp, TOOL_VERSION, parse_launch, run_cli, version_label,
 };
 pub use status::{ActionEffect, Notice, NoticeAction, NoticeKind, ShellCondition, ToolActivity};
-pub use tool::{AppPaths, CliError, PlannedTool, ShellRequest, StudioTool, ToolContext};
+pub use tool::{AppPaths, CliError, ExeCheck, PlannedTool, ShellRequest, StudioTool, ToolContext};
 pub use widgets::{BottomDock, LogLine, LogPanel};

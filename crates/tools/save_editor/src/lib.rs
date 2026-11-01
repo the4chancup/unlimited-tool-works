@@ -130,11 +130,15 @@ impl StudioTool for Tool {
         let common = ctx.common();
         self.view.hide_ids = common.fpc_hide_ids();
         self.view.pes_version = common.pes_version;
+        self.view.pes_exe_check = ctx.pes_exe_check();
         self.view
             .select_portraits(ui.ctx(), &common.pes_folder(), common.pes_version);
         view::show(ui, &mut self.view, &self.running);
         if std::mem::take(&mut self.view.request_close) {
             ctx.request_close();
+        }
+        if let Some(folder) = self.view.picked_pes_folder.take() {
+            ctx.set_pes_folder(&folder);
         }
         if let Some(notice) = self.view.notice.take() {
             ctx.notify(notice);
@@ -304,5 +308,34 @@ mod tests {
             Some("autumn26")
         );
         assert_eq!(tool.help().topics.len(), 8);
+    }
+
+    // The Set PES folder button's ask reaches the common settings on the
+    // frame it was made: the PES folder setting with its year as 20**.
+    // SE-GUI-50
+    #[test]
+    fn the_picked_pes_folder_is_stored_as_the_pes_folder_setting() {
+        let dir = crate::test_support::scratch("lib_set_pes_folder");
+        let mut settings = studio_core::Settings::default();
+        settings.common.pes_version = pes_version::PesVersion::Pes17;
+        let (ctx, shared, _events_rx, _requests_rx) =
+            crate::test_support::shared_tool_context(&dir, settings);
+        let expected = dir.join("Pro Evolution Soccer 20**");
+        assert_ne!(
+            std::path::PathBuf::from(&shared.lock().unwrap().common.pes_folder_path),
+            expected,
+            "premise: the setting does not hold the folder yet"
+        );
+        let mut tool = Tool::new();
+        tool.view.picked_pes_folder = Some(dir.join("Pro Evolution Soccer 2017"));
+
+        let egui_ctx = egui::Context::default();
+        let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, &ctx));
+        output.drop_without_applying_deltas();
+        assert_eq!(
+            std::path::PathBuf::from(&shared.lock().unwrap().common.pes_folder_path),
+            expected
+        );
+        assert_eq!(tool.view.picked_pes_folder, None, "the ask was taken");
     }
 }
