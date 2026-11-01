@@ -2598,8 +2598,10 @@ const versionInstructions = v => v < 17 ? [] : v === 17 ? INSTRUCTIONS.slice(0, 
   : v >= 20 ? STORED_20 : STORED_18;
 // What a side's combo offers. Tight Marking is left out: it marks an opponent,
 // set in a match; Edit mode does not offer it. A record holding it still shows it.
+// Under a ruleset allowing illegal formations the side split goes: the Whack
+// Patch's Edit mode puts any instruction on any slot.
 const instructionsFor = (v, side) => versionInstructions(v).filter(x => x !== "tight_marking"
-  && (x === "off" || DEFENDING.includes(x) === (side === "defence")));
+  && (x === "off" || illegalFormations() || DEFENDING.includes(x) === (side === "defence")));
 // Instructions whose target-player field applies (the original's rule: the
 // player combo enables for Counter Target on 17, Counter Target or Defensive
 // on 18+).

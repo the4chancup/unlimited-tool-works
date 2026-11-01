@@ -3027,3 +3027,5 @@ worklog passed 7,000 lines.
   each now waits for the reply it depends on. `gates-changed 99c9a36a` green: the 8.36c1 merge is gated.
 - 2026-11-01 — 0.0.1f1d1-3 on branch `f1d`: a Team TOML bench of 12 whose import fills the other nine as the game does,
   plain comments, both instruction sides listed under illegal formations, cv40 on the candidate. Review loop ended; mutants-diff 37 caught, 1 unviable.
+- 2026-11-01 — The Save editor draft catches up with f1d2: under a ruleset allowing illegal formations every instruction combo lists both
+  sides (the code and plan landed without it). Rendered: DBC7 12 options per combo, Spring 26 split 8 and 5.
