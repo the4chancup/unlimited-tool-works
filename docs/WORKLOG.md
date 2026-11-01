@@ -6278,14 +6278,19 @@ briefs, review loops, gates and mutation runs as for any step.
     SE-GUI-48 test clicks it by name); the grip is the plain text grey (noninteractive, 140).
     Open: the built-window look (the window, its title bar's two buttons, the close button's
     hover under its tooltip area, the grip), and the SWE-2 round over it with `906384d0`'s help
-  - [ ] cv29 the Live AATF dock's close button (the maintainer, 2026-11-01): right of the
+  - [x] cv29 the Live AATF dock's close button (the maintainer, 2026-11-01): right of the
     pop-out icon, the window's close button in the dock's header, turning Live AATF off.
     Drafted (`save_editor.js` `livePanel`, `.live-caps`, `#live-close`; the pop-out and dock
     icons a point lower, their ink having stood 1.1 to 1.6 points above the ✕'s centre line);
-    plan `plans/save_editor.md` the Live AATF bullet ("Its own window"), SE-GUI-49 → verify:
-    SE-GUI-49 in a headless test (the close turns Live AATF off, docked on again; its cross's
-    size and stroke the window's, its gap to the pop-out icon the window's pair's); in the
-    built window with cv28's look, both pairs' glyphs on one centre line
+    plan `plans/save_editor.md` the Live AATF bullet ("Its own window"), SE-GUI-49. Merged
+    `10bbbbf3` (Opus sidekick; the lead's re-run: save_editor 636 + 46 tests, clippy, fmt,
+    both scripts): `live_aatf.rs` `close_button` copies egui's window cross, flush at the
+    header's right end, the pop-out icon in a slot as wide as the window's dock icon so the
+    pair's gap (9.78) and centres (25.56) are the window's; `title_slot` shared; help page 02.
+    SE-GUI-49 `the_docks_close_button_turns_live_aatf_off` (red: no button labeled `Turn Live
+    AATF off`). Open: the built-window look with cv28's (both pairs' glyphs on one centre
+    line; the glyph-to-cross gap 14.6 in the dock, 15.5 in the window, the two arrows' ink
+    differing), and the SWE-2 round with cv28 and cv30
   - [ ] cv30 team-wide AATF rows first, the rows' tooltips, the emoji fonts (the maintainer,
     2026-11-01; after cv29 merges: its tests share `view/tests/live_aatf.rs`):
     - order: `team_widgets` `violations.rs` (`slot_order` puts the no-slot group first, `part`
