@@ -12,19 +12,22 @@ names where the question came from so the context can be read there.
 
 - **The final pass over the built app's UI** (worklog 0.0.1f1c). Any change it asks for is
   drafted first, looked at in the drafts, then built.
-  - **The candidate:** branch `release/0.0.1-candidate` at `1fe6c9bf`, unpacked at
-    `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1d\unlimited-tool-works-0.0.1\`
-    (`COMMIT.txt` beside the folder names its commit), staged for the DBC7 organizer's look
-    too. New since 0.0.1c (worklog cv14 to cv26): a height finding names its players and a
-    GigaHeight team the nearest quota system, the lines under the row (the staged exe's
-    `check-aatf --rules dbc7` on the DBC6 save prints cv16b's expected lines); Multi-team
-    AATF 900 wide, its rows wrapping, its range opening on one team and checked once it
-    rests; rulesets that allow illegal formations (Autumn 26, DBC7); the filter listing a
-    matching team's squad, a team row's double click; the wheel over the Tactics sliders and
-    toggles; Live AATF's rows in two columns; the event logo resampled; the colour picker's
-    popup at its widest row; an advanced instruction's target byte kept. Of these, the lead
-    looked at the height lines and the 900 dialog in a built window (cv16b's look), the rest
-    through their headless tests.
+  - **The candidate:** 0.0.1e, branch `release/0.0.1-candidate` at `1c1f2964`, unpacked at
+    `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1e\unlimited-tool-works-0.0.1\`
+    (`COMMIT.txt` beside the folder names its commit; the .7z beside it), full gates green
+    (5580 tests). New since 0.0.1d (worklog cv23a, cv27-cv37): the Cards left badge computed
+    off the UI thread, so the wheel on a stat box keeps pace; a hovered AATF row outlined, not
+    filled; Live AATF in a window of its own (pop-out and dock buttons, the dock's grip); a
+    team no quota system takes read under the nearest one (DBC6's /cookie☆/ as Manlet);
+    Multi-team AATF counting the teams under each system; Set PES path over the pitch while
+    the version's folder is missing; the AATF and comparator rows inset as drafted, the
+    comparator's in two columns; the emoji fonts, so `☆`, `！` and `Ｕ` draw. The lead
+    checked each in the staged bundle itself (a copy, its shipped settings, DBC6's save
+    read-only, its hash unchanged; captures `.tmp/0_0_2/look_0_0_1e/`): ten wheel notches
+    one behind at most; the outline; the window popped out and docked; 857 under Manlet with
+    its two Height quota rows; 851-897 counting `GGG 4, GGSS 21, GSSSS 20, SSSSSS 1 · Height
+    8, Manlet 14, Universal 11, GigaHeight 14`; Set PES path storing `E:\PES20**` and
+    leaving the pitch; the rows within 1 px of the draft; the star in 857's name.
   - **Already measured,** so not worth reporting: every screen the drafts and the build share
     matches the drafts within 1 point (2 where needed), in both themes. What still differs
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.

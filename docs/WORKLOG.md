@@ -6490,7 +6490,7 @@ briefs, review loops, gates and mutation runs as for any step.
     behind that reading → brief `.tmp/0_0_2/brief_cv36.md`, tests only. Merged `972093cc`
     (Opus sidekick, `6eca15d6`; the lead's re-run: save_editor 642 + 46, team_widgets 225);
     154:67 measured 0.22 point, left untested
-  - [ ] cv37 the AATF and comparator rows lack the draft's inset and gap (found 2026-11-01 in
+  - [x] cv37 the AATF and comparator rows lack the draft's inset and gap (found 2026-11-01 in
     cv27's look: the hover outline runs 1 px from the rule's name, the draft's 5). The draft's
     `.drow` (`.panel .drow`, `.live-body .drow`) is `padding: 0 4px` with an 8 px gap after
     the 190 px `.f` (140 in Live AATF's window), and the group headings (`.grp`) none: its
@@ -6510,8 +6510,8 @@ briefs, review loops, gates and mutation runs as for any step.
     `violations.rs` `drow_columns` (`ROW_INSET`, `RULE_GAP`, private; `RULE_COL` now `pub`
     for the comparator), `comparator.rs` `field_row`; tests
     `a_reports_all_clean_stands_the_rows_inset_in`, `a_row_stands_in_the_drows_two_columns`,
-    the column tests at 4 / 202 / 152; `gates-changed e60f4365` green (5580 passed). Open:
-    the mutants-diff (`just mutants-diff 37c99bd3`, queued)
+    the column tests at 4 / 202 / 152; `gates-changed e60f4365` green (5580 passed);
+    `just mutants-diff 37c99bd3`: 48 caught, 9 unviable, no survivor
     - manual: checked 2026-11-01 by the lead, in the built window (release build of
       `568cca89`, DBC6's save read-only, a copy as the comparator's second save): heading to
       name, name to sentence, outline to name, in px, against the draft's renders
