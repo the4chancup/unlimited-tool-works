@@ -1081,6 +1081,7 @@ fn the_same_teams_pass_and_fail_with_silvers_label_changed() {
             rules
                 .check_team(team)
                 .expect("the original checks")
+                .violations
                 .iter()
                 .any(|violation| {
                     matches!(

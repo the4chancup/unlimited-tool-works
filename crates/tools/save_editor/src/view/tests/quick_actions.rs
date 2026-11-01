@@ -500,7 +500,7 @@ fn the_quick_actions_apply_a_tier_as_one_undoable_edit() {
 
     // check_team then reports no Stat-family violation on his slot.
     let team = aatf::TeamView::new(view.session.as_ref().unwrap().file(), 701).unwrap();
-    let violations = rules.check_team(&team).unwrap();
+    let violations = rules.check_team(&team).unwrap().violations;
     let own: Vec<&aatf::Violation> = violations
         .iter()
         .filter(|violation| {

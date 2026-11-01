@@ -670,7 +670,8 @@ fn a_row_dragged_above_another_trades_their_records_between_the_ids() {
     let view_team = aatf::TeamView::new(&reopened, 701).expect("the team views");
     let violations = aatf::Rules::official()
         .check_team(&view_team)
-        .expect("the check runs");
+        .expect("the check runs")
+        .violations;
     assert!(
         violations
             .iter()
