@@ -3015,3 +3015,5 @@ worklog passed 7,000 lines.
   one became P49; the release scripts' SWE-2 round 1 accepted 9, reworked (`rel-r1`), round 2 running.
 - 2026-11-01 — cv33 closed (its mutants-diff: one equivalent survivor); cv23a's wheel and cv27's outline looked
   at in the built window; the outline showed the rows lack the draft's inset (cv37); cv13_who had timed the crash notice.
+- 2026-11-01 — Candidate 0.0.1e staged at `1c1f2964` (full gates green, 5580 tests): cv23a, cv27-cv37 and the
+  emoji fonts since 0.0.1d, each checked by the lead in the staged bundle; cv37's mutants-diff left no survivor.
