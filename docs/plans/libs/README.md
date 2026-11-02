@@ -23,7 +23,8 @@ fallback.
   custom kernels. If that backend is unavailable or unsuitable, use CPU, with no automatic DX12
   fallback initially. The library documents slow BC7 pipeline creation specifically under DX12's
   DXC shader compiler; do not reintroduce that path through fallback. This policy concerns texture
-  compression, not a requirement to change the GUI's rendering backend.
+  compression only: the GUI draws through Direct3D 12 on Windows (`plans/core/gui.md` "The
+  graphics backend"), which does not move the encoder off Vulkan.
 - **Cold-start behavior:** measure cold pipeline creation on Vulkan/Metal and upload/readback cost
   early. Prepare off the UI thread, reuse the compute device and pipelines, and allow CPU work while
   GPU preparation is pending. A cold first compile and end-to-end throughput matter more than
@@ -55,8 +56,9 @@ So:
 - **The encoder is Vulkan's (Metal's on macOS), started on its own thread.** The warm start
   costs less than one 1024² BC7 encode on the CPU, so a ready GPU takes every BC7 texture; a
   start not finished yet (the rare cold one) leaves the CPU encoding, and the GPU takes the
-  textures still waiting once it is ready. Whether a compile starts the GPU at all is decided
-  by whether it has BC7 work, not by a predicted cost: a cold start cannot be predicted.
+  textures still waiting once it is ready. Whether the GPU starts at all is decided by whether
+  the version's compile has BC7 work (it starts with the Team compiler, below), not by a
+  predicted cost: a cold start cannot be predicted.
 - **Submissions are bounded in pixels, not textures:** each one encodes at most a fixed slab of
   rows (`add_compression_task`'s row offset), sized so it runs a small fraction of the 2 s
   timeout on the measured GPU, whatever the texture's size.
@@ -66,6 +68,33 @@ So:
   is valid BC7). A lost device is such a failure too, though wgpu panics on it rather than
   returning an error, and a software adapter (a Vulkan driver running on the CPU) is refused
   at the start, being slower than the CPU encoder.
+- **A driver that crashes is found in a child process, once per driver.** A Vulkan driver can
+  report full support and then fault inside an ordinary call, taking the whole process down
+  with no error to fall back from: Intel's HD Graphics 620 driver 31.0.101.2137 does so in
+  `igvk64.dll` while wgpu creates its first descriptor pool (`Device::new`), on every start,
+  as the GUI met it on 0.0.1's clean-machine check (`plans/core/gui.md` "The graphics
+  backend"). Before a compile first starts the encoder on a given adapter, the exe starts
+  itself hidden with a probe argument (as the crash monitor is started, kept out of
+  `--help`); the child creates the device on the encoder's backend, builds its pipelines and
+  encodes one block, and exits 0. A crash, a non-zero exit or no answer within a bound sized
+  to the measured cold start turns the GPU off for that adapter: the compile goes on on the
+  CPU (BC3/BC1 where BC7 needs the GPU, as above) and its report names the probe's outcome.
+  The result is kept in the data folder keyed by the adapter's vendor, device and driver
+  version, which wgpu reports without creating a device (the laptop listed its adapters
+  before the crash), so a driver update probes again and nothing else does. The probe's
+  pipeline build also warms the driver's shader cache, so the cold start it pays is not paid
+  again in the compile. The alternative, a list of known bad drivers, only covers drivers
+  someone has already seen crash.
+- **The encoder starts when the Team compiler opens, not at the first Compile** (the
+  maintainer, 2026-11-02), on a PES version whose compile encodes BC7 (19-21; on 15-18 no
+  GPU starts): the probe when the adapter's driver has no recorded outcome, then the
+  encoder on its thread, both off the UI thread, so a Compile clicked a while later finds it
+  ready. What it saves depends on the driver's shader cache: on the measured GPU a cold
+  cache, the first start after a driver install or update, costs 16.3 s, which the member
+  then spends looking at the tool rather than waiting on the compile; a warm one costs
+  25-27 ms of pipeline building plus the device's creation, a fraction of a second. A
+  Compile clicked before it is ready goes on as above: the CPU encodes and the GPU joins.
+  Leaving the tool keeps the encoder for the rest of the session, as a compile would.
 
 **The workload the speed is judged on.** A Studio export's textures are PNG by design: members
 edit them losslessly, and flat colors make a PNG smaller than its DDS. So on PES 19-21 nearly

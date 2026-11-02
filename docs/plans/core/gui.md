@@ -42,6 +42,16 @@ The window's opening size and fit, and its scaling under the design width, are b
 `spec/core/gui.md` "Shell layout", the paragraphs "The window's size" and "Scaling with the
 width".
 
+**The graphics backend.** On Windows the window draws through Direct3D 12, with OpenGL as the
+fallback where it is missing; Vulkan is not asked for. eframe's wgpu would try Vulkan first, and
+a driver whose Vulkan crashes takes the program down before the window shows, beyond any
+fallback: Intel's HD Graphics 620 driver (31.0.101.2137) faults in `igvk64.dll` while wgpu
+creates its first descriptor pool, on every start (0.0.1's clean-machine check, 2026-11-02),
+where Direct3D 12 and OpenGL start on the same laptop every time. Direct3D 12 is the
+interface Windows 10 and 11 graphics drivers are built and tested against first. The
+`WGPU_BACKEND` variable still picks one (`vulkan`, `dx12`, `gl`), for a member asked to try
+another. Elsewhere the backends stay wgpu's defaults.
+
 **Window size classes.** The main tools share one window size: switching between them never
 resizes the window. A special tool, one whose use calls for another size, declares its own
 (`StudioTool::window_size`, `None` for the main tools): today only the Music player, compact so
@@ -288,12 +298,12 @@ What exists of this is in `spec/core/gui.md` "Settings menu".
 The settings menu is assembled from injected sections:
 
 - **Common settings** (defined by `studio_core`): PES version, PES folder path, exports folder path,
-  thread count, memory cap, theme, the update check and its interval, and the FPC hide boots and
+  thread count, memory cap, theme, Invert value scrolling ("The wheel over a value"), the
+  update check and its interval, and the FPC hide boots and
   gloves IDs (`plans/save_editor.md` "Full Player Customization (FPC)": number rows bounded to
   the stock band, boots 1 to 100 and gloves 11 to 100). The update check's two rows are drawn
-  from the release whose updater reads them (`core/distribution.md`, step 1, Release 0.2.0),
-  not before: until then a row a member switches off changes nothing, and reads as a check
-  the build never runs. The two keys stay in the file meanwhile. The state the shell writes
+  from 0.0.1, whose updater reads them (`core/distribution.md` "Self-update", step 1). The
+  state the shell writes
   itself (`last_tool`, `last_update_check`, `skipped_version`) has no row. The PES version row
   is the sidebar selector's twin: the same blocker, and a pick spends the running-PES
   auto-switch as the selector's does.
@@ -484,7 +494,10 @@ Each item kind stays in the bar for its lifetime:
 | `Notice` | A few seconds; with an action, until clicked or dismissed. Older notices are not kept — an event worth keeping is also a finding in a log |
 | Standing notice | While the active tool returns it; it ends when clicked, dismissed, or replaced by another notice while shown, and the tool is told |
 
-`update_available` carries an Install action; each condition shows a tooltip and at most one action.
+`update_available` carries a Details action, and its text `Update available: v<version>` is in
+the link blue and opens Details too, as the toolbar's unsaved-changes label opens its list: an
+update has to catch the eye without a dialog opening by itself (`plans/core/distribution.md`
+"Self-update"); each condition shows a tooltip and at most one action.
 
 More rules that keep it worth the row:
 
@@ -744,7 +757,8 @@ loss in the middle of a frame only on the next, so its commit lands there, seale
 frame's end, and a step on the same frame would join it. A disabled control ignores the wheel,
 and an open combo's list scrolls as a list. The step goes through the control's own change path
 (a combo's selection, a drag value's commit), so it is the edit a click or a typed value makes:
-the same validation, one undo step per notch in an editor. The step takes the wheel's delta, so
+the same validation, one undo step per notch in an editor, or one per run of notches in one
+that merges a run of steps to one value (`plans/save_editor.md`, the undo bullet). The step takes the wheel's delta, so
 the scroll area around the control does not scroll too. A wheel that began by scrolling a pane
 keeps scrolling it while the pointer sweeps over such controls, until the wheel has rested 500
 ms: a control sees the wheel only by being hovered, so without the rest rule scrolling the
@@ -754,6 +768,15 @@ calls it, the shared libs' included (`team_widgets` and `color_tools` depend on 
 a wrapper per widget kind would leave out every control built with egui's own constructor. The
 drafts do the same for every `select` and number input (`docs/prototypes/index.html`, the
 wheel listener), so a draft can be tried as the app behaves (ST-WHEEL-01 to ST-WHEEL-04).
+
+**Invert value scrolling**, a common setting (`invert_value_scrolling`, off by default, a
+checkbox after Theme), turns every step above the other way, in every tool: wheel down takes
+the item above or one more, moves a slider and a toggle to the right, and steps a selector
+forward; wheel up the reverse. Only the direction changes: the notch, the rest rule, the
+clamping and wrapping and the undo steps stay, and a pane scrolls as before. A member whose
+wheel or touchpad scrolls the "natural" way (content follows the fingers) reads wheel down as
+"more"; a direction per control would split the suite, so the setting is one switch. It is
+read where the steps are counted (`wheel_steps`), so no control can miss it.
 
 ### No two widgets overlap
 
@@ -1296,6 +1319,33 @@ ST-BAR-08   GIVEN the selector at PES 19 and a notice whose action is
                  auto-switch is spent; GIVEN a stub tool reporting a version-change blocker
                  THEN the action's button is disabled, its hover reads "<label>: <reason>",
                  and a click leaves the setting at PES 19 and the notice in the bar
+ST-UPD-01   GIVEN `check_for_updates` on, `last_update_check` older than the interval, and a
+                 fake releases list holding `v0.0.1`, `v0.0.2` (a pre-release) and `nightly`
+            WHEN the shell starts
+            THEN one background check runs, the first frame not waiting on it, and the status
+                 bar shows `Update available: v0.0.2` in the link blue with a Details button;
+                 `last_update_check` is stored; GIVEN the check off, or the last check inside
+                 the interval THEN no check runs; GIVEN `skipped_version = "0.0.2"` THEN no
+                 offer; GIVEN the list's highest `v0.0.1` THEN no offer; GIVEN the fetch
+                 failing THEN no offer, one log line
+ST-UPD-02   GIVEN the offer shown
+            WHEN its text is clicked, or Details
+            THEN a dialog says "Unlimited Tool Works v0.0.2 pre-alpha is out. You have v0.0.1
+                 pre-alpha.", the release's notes rendered as Markdown, and Update now, Open
+                 release page, Skip this version, Remind me later; WHEN Skip this version THEN
+                 `skipped_version` is `0.0.2` in the settings file and the offer is gone; WHEN
+                 Remind me later THEN the dialog closes and the offer stays
+ST-UPD-03   GIVEN the offer, a fake release whose archive and `SHA256SUMS.txt` match, and a
+                 bundle folder in a temporary directory
+            WHEN Update now is clicked
+            THEN the dialog shows the download's progress, then `Update ready`; the old exe is
+                 in `old/`, the new one and every other bundle file in place, `data/`
+                 untouched; GIVEN the checksum not matching THEN `Update failed` with Retry,
+                 Open release page and Close, and every file as it was; WHEN Retry THEN the
+                 download starts again
+ST-UPD-04  manual  GIVEN the built exe of `v0.0.1-rc.1` (CI's pre-release), on Windows and in WSL
+            WHEN Update now and then Restart now are clicked
+            THEN `v0.0.1-rc.2` is installed and opens on `Updated to v0.0.1-rc.2`
 ST-TTL-01   GIVEN a tool reporting a ToolActivity (label "Team compiler", 12 of 48 done, 72 s
                  elapsed)
             WHEN a frame is drawn
@@ -1433,6 +1483,12 @@ ST-RUN-11   manual  GIVEN ST-RUN-10's dump from a release build
                     WHEN `minidump-stackwalk` reads it against that build's kept `.pdb`
                          (through `dump_syms`' symbol files)
                     THEN the crashed thread's stack names the trigger's function
+ST-RUN-12   GIVEN a window running over a data location
+            WHEN a second copy of the exe starts over the same location
+            THEN the second copy shows no "did not close normally" dialog, logs to
+                 `utw.2.log`, and the first copy's `utw.log` keeps growing; WHEN both
+                 close and one starts again THEN it logs to `utw.log`, reporting the
+                 earlier session closed
 ST-CLI-01   GIVEN a data directory that cannot be written
             WHEN a CLI command runs
             THEN stderr starts with the data_dir_read_only condition as one line, and a notice a
@@ -1474,5 +1530,13 @@ ST-WHEEL-05 GIVEN the Save editor's Tactics tab on the PES 17 save's team 701, p
                  again; WHEN one notch up over Attacking style THEN the choice right of the held
                  one is held, or the leftmost when the held one is the rightmost; WHEN one notch
                  down over Numbers in attack THEN the choice left of the held one is held, or the
-                 rightmost when the held one is the leftmost; each step is one undo entry
+                 rightmost when the held one is the leftmost; each step, taken more than a
+                 second after the one before, is one undo entry
+ST-WHEEL-06 GIVEN ST-WHEEL-01's scroll area with Invert value scrolling on
+            WHEN the pointer is over the drag value and the wheel turns one notch down
+            THEN the value is 181; WHEN one notch up THEN 180; WHEN the pointer is over the
+                 combo and the wheel turns one notch down THEN the first item is selected;
+                 WHEN the setting is off again and one notch down turns over the drag value
+                 THEN it is 179; and a turn over the area's empty space scrolls it the same
+                 way with the setting on or off
 ```

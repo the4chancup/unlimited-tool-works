@@ -166,8 +166,10 @@ the last edit changed are highlighted.
 
 Undo and redo work on whole snapshots of the ruleset and its logic status (a ruleset is a few
 kilobytes): **Update logic** is an edit like a form's, and a snapshot of the ruleset alone would
-make its undo restore an identical ruleset and leave the new logic in place. Closing with
-unsaved changes prompts.
+make its undo restore an identical ruleset and leave the new logic in place. A run of steps
+to one value (wheel notches, a stepper's clicks) merges into one snapshot, ended as the Save
+editor ends one (`plans/save_editor.md`, the undo bullet). Closing with unsaved changes
+prompts.
 
 ## Randomize
 

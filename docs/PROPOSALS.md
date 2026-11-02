@@ -33,6 +33,10 @@ P47 (a height finding names its players, and the nearest quota system) was accep
 P48 (Multi-team AATF counts the teams under each medal and height system) was accepted
 for 0.0.1's next candidate on 2026-11-01 (`DECISIONS.md` "Multi-team AATF counts the
 teams under each system (P48)").
+P49 (a Fielded position row's tooltip says where its click goes) and P50 (Undo and the
+other shortcuts work while a button holds the keyboard) were accepted for 0.0.1 on
+2026-11-02 (`DECISIONS.md` "A Fielded position row says where its click goes (P49)" and
+"Only a text field holds the shortcuts off (P50)").
 
 ## P40 — The Music export editor reorders its players
 
@@ -71,15 +75,3 @@ TOML's `#RRGGBB`.
 Adds: the picker's hex field accepts `#RRGGBB`, `0xRRGGBB` and `RRGGBB` alike in every tool
 that uses it, so a pasted value from an old habit lands instead of being refused. Costs: one
 parse with three prefixes in `color_tools`; the field still shows `#RRGGBB`.
-
-## P49 — A Fielded position row's tooltip says where its click goes
-
-From Astra's review of Live AATF (cv28-cv32, 2026-11-01). Every player's row in Live AATF
-says `Click to switch to this player` on hover (SE-GUI-30), and a click opens that player,
-except a `Fielded position` row's: its click opens his team's row, the preset it names shown
-on a formation carrying the cross on his pitch marker, since the issue is where he stands in
-the tactics, not in his own record.
-
-Adds: that row says `Click to show him on the team's pitch` (or the like) instead, so the
-jump to the team view is expected. Costs: a second tooltip constant in `team_widgets`
-`violations.rs`, chosen by the row's rule, and its line in the draft and SE-GUI-30.

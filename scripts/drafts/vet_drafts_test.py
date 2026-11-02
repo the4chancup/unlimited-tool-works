@@ -1,51 +1,50 @@
 """Tests of scripts/drafts/vet_drafts.py; run as `python scripts/drafts/vet_drafts_test.py`."""
 
+import re
 import tempfile
 import unittest
 from pathlib import Path
 
 from PIL import Image
 
-from vet_drafts import BACKGROUND, compose, default_out, remove_export, why_lines
+from vet_drafts import crop_path, default_out, page_html, remove_export
 
 WHY = ("The drafts' dialog sentences kept the browser's own 12.5-point paragraph margins, "
        "which no rule chose; the app's dialogs space their rows 8 under the title and 10 "
        "before the buttons, so the drafts' sentences now stand 8 from what is around them.")
 
 
-def crops(width: int, height: int) -> list[tuple[str, Image.Image]]:
-    return [(label, Image.new("RGB", (width, height), (255, 255, 255)))
-            for label in ("before", "after")]
+def crops(page: Path) -> list[tuple[str, Path, Image.Image]]:
+    return [(label, crop_path(page, label), Image.new("RGB", (300 + i, 40 + i)))
+            for i, label in enumerate(("before", "after"))]
 
 
-class Compose(unittest.TestCase):
-    def test_wide_crops_stack(self) -> None:
-        # Side by side: 1248 wide, 115 tall, more than four times as wide as tall.
-        sheet = compose("caption", "short", crops(600, 40))
-        self.assertEqual(sheet.size, (632, 43 + 2 * (16 + 40 + 16)))
+class PageHtml(unittest.TestCase):
+    def test_the_caption_heads_the_page_and_the_reason_follows_it(self) -> None:
+        page = page_html("caption", WHY, crops(Path("x.html")))
+        self.assertIn("<h1>caption</h1>", page)
+        self.assertIn('<p class="why">Why: The drafts&#x27; dialog sentences', page)
+        self.assertLess(page.index("<h1>"), page.index('class="why"'))
 
-    def test_square_crops_lie_side_by_side(self) -> None:
-        sheet = compose("caption", "short", crops(300, 300))
-        self.assertEqual(sheet.size, (300 + 300 + 3 * 16, 43 + 16 + 300 + 16))
+    def test_each_crop_stands_under_its_label_at_its_own_size(self) -> None:
+        page = page_html("caption", "short", crops(Path("d/x.html")))
+        figures = re.findall(r'<figcaption>(\w+)</figcaption><img src="([^"]+)" '
+                             r'width="(\d+)" height="(\d+)"', page)
+        self.assertEqual(figures, [("before", "x_before.png", "300", "40"),
+                                   ("after", "x_after.png", "301", "41")])
 
-    def test_the_reason_starts_with_why_and_wraps_to_the_sheet(self) -> None:
-        for size in [(600, 40), (300, 300)]:
-            width = compose("caption", WHY, crops(*size)).width
-            lines = why_lines(WHY, crops(*size))
-            self.assertGreater(len(lines), 1, size)
-            self.assertTrue(lines[0].startswith("Why: "), lines[0])
-            self.assertEqual(" ".join(lines), "Why: " + WHY)
-            self.assertLessEqual(max(len(line) for line in lines), (width - 2 * 16) // 6, size)
+    def test_every_text_is_escaped(self) -> None:
+        page = page_html("Make <tier> & co", "a < b", crops(Path("x.html")))
+        self.assertIn("<h1>Make &lt;tier&gt; &amp; co</h1>", page)
+        self.assertIn("Why: a &lt; b", page)
+        self.assertNotIn("<tier>", page)
 
-    def test_the_drawn_reason_ends_inside_the_sheet(self) -> None:
-        for size in [(600, 40), (300, 300)]:
-            sheet = compose("caption", WHY, crops(*size))
-            lines = why_lines(WHY, crops(*size))
-            pixels = sheet.load()
-            inked = [x for y in range(24, 24 + 13 * len(lines)) for x in range(sheet.width)
-                     if pixels[x, y] != BACKGROUND]
-            self.assertGreater(len(inked), 0, size)
-            self.assertLessEqual(max(inked), sheet.width - 16, size)
+    def test_the_text_is_larger_than_the_drafts_body_text(self) -> None:
+        # The drafts' body text is 12.5 points; the old sheet's PIL font was smaller still.
+        page = page_html("caption", "short", crops(Path("x.html")))
+        sizes = [int(size) for size in re.findall(r"font(?:-size)?: (\d+)px", page)]
+        self.assertTrue(sizes, "the page sets its type sizes")
+        self.assertGreaterEqual(min(sizes), 17)
 
 
 class RemoveExport(unittest.TestCase):
@@ -72,11 +71,16 @@ class RemoveExport(unittest.TestCase):
 
 
 class DefaultOut(unittest.TestCase):
-    def test_a_revision_pair_names_a_safe_file(self) -> None:
+    def test_a_revision_pair_names_a_safe_page(self) -> None:
         out = default_out("HEAD~1", "work")
-        self.assertEqual(out.name, "HEAD_1_work.png")
+        self.assertEqual(out.name, "HEAD_1_work.html")
         self.assertEqual(out.parent.name, "vet")
-        self.assertEqual(default_out("1f9fb937^", "1f9fb937").name, "1f9fb937__1f9fb937.png")
+        self.assertEqual(default_out("1f9fb937^", "1f9fb937").name, "1f9fb937__1f9fb937.html")
+
+    def test_the_crops_lie_beside_the_page(self) -> None:
+        page = Path("vet") / "a_b.html"
+        self.assertEqual(crop_path(page, "before"), Path("vet") / "a_b_before.png")
+        self.assertEqual(crop_path(page, "after"), Path("vet") / "a_b_after.png")
 
 
 if __name__ == "__main__":

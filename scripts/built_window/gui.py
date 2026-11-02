@@ -138,17 +138,23 @@ def shot(out, whole=False):
     print(f"saved {out} ({w}x{h})")
 
 
-KEYS = {"ctrl": 0x11, "shift": 0x10, "alt": 0x12, "esc": 0x1B, "enter": 0x0D, "tab": 0x09}
+KEYS = {
+    "ctrl": 0x11, "shift": 0x10, "alt": 0x12, "esc": 0x1B, "enter": 0x0D, "tab": 0x09,
+    "space": 0x20, "backspace": 0x08, "delete": 0x2E, "home": 0x24, "end": 0x23,
+    "pgup": 0x21, "pgdn": 0x22, "left": 0x25, "up": 0x26, "right": 0x27, "down": 0x28,
+}
+# The navigation keys sit on the extended keyboard: without the flag their scancode is the
+# numeric keypad's, which the app's keyboard layer reads as another key.
+EXTENDED = {0x2E, 0x24, 0x23, 0x21, 0x22, 0x25, 0x26, 0x27, 0x28}
 
 
 def keys(chord):
     codes = [KEYS.get(k) or ord(k.upper()) for k in chord.split("+")]
-    for code in codes:
-        user32.keybd_event(code, 0, 0, None)
-        time.sleep(0.03)
-    for code in reversed(codes):
-        user32.keybd_event(code, 0, 2, None)
-        time.sleep(0.03)
+    for flag, order in ((0, codes), (2, list(reversed(codes)))):  # down, then KEYEVENTF_KEYUP
+        for code in order:
+            scan = user32.MapVirtualKeyW(code, 0)  # MAPVK_VK_TO_VSC
+            user32.keybd_event(code, scan, flag | (1 if code in EXTENDED else 0), None)
+            time.sleep(0.03)
     time.sleep(0.4)
     print(f"sent {chord}")
 
@@ -191,8 +197,27 @@ def open_dialog(path):
     assert edits, "no file-name edit in the dialog"
     user32.SendMessageW(edits[0], 0x000C, 0, ctypes.c_wchar_p(path))  # WM_SETTEXT
     time.sleep(0.3)
-    user32.SendMessageW(dialogs[0], 0x0111, 1, 0)  # WM_COMMAND IDOK
+    user32.PostMessageW(dialogs[0], 0x0111, 1, 0)  # WM_COMMAND IDOK
+    confirm_closed(dialogs[0], path)
     print(f"opened {path}")
+
+
+def windows_path(path):
+    """The path as a member types it: a forward slash is refused, since the dialog may take a
+    path a member would never type, or leave itself open on one."""
+    assert "/" not in path, f"type the path with backslashes: {path}"
+    return path
+
+
+def confirm_closed(dialog, path):
+    """OK only proves the path was accepted once the dialog has gone: a path it rejects leaves
+    it open behind an error box, which the next step would otherwise type into. OK is posted,
+    not sent, because a sent OK returns only once someone closes that error box."""
+    for _ in range(20):
+        if not user32.IsWindow(dialog) or not user32.IsWindowVisible(dialog):
+            return
+        time.sleep(0.25)
+    sys.exit(f"the dialog is still open after OK with {path}: look at it, then `gui.py cancel`")
 
 
 def folder_dialog(path):
@@ -218,15 +243,16 @@ def folder_dialog(path):
     assert edit and user32.IsWindowVisible(edit), "no Folder box in the dialog"
     user32.SendMessageW(edit, 0x000C, 0, ctypes.c_wchar_p(path))  # WM_SETTEXT
     time.sleep(0.3)
-    user32.SendMessageW(dialogs[0], 0x0111, 1, 0)  # WM_COMMAND IDOK
+    user32.PostMessageW(dialogs[0], 0x0111, 1, 0)  # WM_COMMAND IDOK
+    confirm_closed(dialogs[0], path)
     print(f"picked {path}")
 
 
 cmd, args = sys.argv[1], sys.argv[2:]
 if cmd == "open":
-    open_dialog(args[0])
+    open_dialog(windows_path(args[0]))
 elif cmd == "folder":
-    folder_dialog(args[0])
+    folder_dialog(windows_path(args[0]))
 elif cmd == "cancel":
     open_dialog(None)
 elif cmd == "size":

@@ -1018,6 +1018,11 @@ pub(crate) struct ExportToPlan {
     /// (`deep::ContentPass::settings`): the compiled players' table rows resolve from them
     /// (`export_rows`).
     pub(crate) settings: BTreeMap<ScopePath, PlayerSettings>,
+    /// The player folders whose `settings.toml` or `ingame_face.toml` was refused, by
+    /// folder path, as the deep pass found them (`deep::ContentPass::settings_refused`):
+    /// the patch holds no `[appearance]` for their players, an invalid file holding back
+    /// the player's whole look.
+    pub(crate) settings_refused: BTreeSet<ScopePath>,
 }
 
 /// Plans the run over the identity-resolved exports, given in `ExportId` order, for the target
@@ -1061,6 +1066,7 @@ pub(crate) fn plan_run(
         hand_weighted,
         metal_models,
         settings: mut player_settings,
+        settings_refused,
     } in exports
     {
         drop_gltf_folders(export_id, &mut resolved, version, &mut messages);
@@ -1298,6 +1304,7 @@ pub(crate) fn plan_run(
                     .collect(),
                 fpc: folder.fpc,
                 settings: player_settings.remove(&folder.path),
+                settings_refused: settings_refused.contains(&folder.path),
             });
             if let Some(portrait) = &folder.portrait {
                 portraits.extend(

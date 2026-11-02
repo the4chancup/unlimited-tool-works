@@ -52,12 +52,12 @@ implementation is measured against.
 |-----------|------|
 | Set all ability stats (dialog: every ability stat to N, 40 to 99, prefilled with the player's first; weak foot, form and injury untouched) | Kept, same fields and range; no edit flag set (the dialog writes the ability stats, as typing them does, and typing sets none) |
 | Bump all ability stats ±N (dialog, Ctrl+B: N from -10 to 10, remembered; each ability stat clamped to 40 to 99; weak foot, form and injury untouched) | Kept, same, no edit flag set; N is read whole (4ccEditor reads two characters, so -10 bumps by -1) |
-| Copy player stats (source PID → dest PID: height, weight, every ability, form, injury, weak foot, registered and playable positions, playing style, skills, COM styles, stronger foot and hand, star, playing attitude, the free-kick motion only, and the edited-player and gameplay edit flags) | Kept, same field set; the other player is picked by team, then by roster slot (two combo boxes: one list of a cup save's 4,600 players cannot be browsed), and copied onto the selected one |
+| Copy player stats (source PID → dest PID: height, weight, every ability, form, injury, weak foot, registered and playable positions, playing style, skills, COM styles, stronger foot and hand, star, playing attitude, the free-kick motion only, and the edited-player and gameplay edit flags) | Kept, the same field set but the free-kick motion, a look that stays the target's (the maintainer, 2026-11-02: it is a motion like the others); the other player is picked by team, then by roster slot (two combo boxes: one list of a cup save's 4,600 players cannot be browsed), and copied onto the selected one |
 | Swap player stats (two PIDs; the same field set as Copy) | Kept, the other player picked as for Copy |
 | Move a player up or down the list (the spinner beside it: one step per click, within one team; the two players' records trade places between their ids, `base_copy_id` traded back to match each slot, shirt numbers and the captain left with the slots) | Kept as drag reorder, with the same effect ("Editing UI", the Player list bullet) |
 | Toggle FPC settings (Ctrl+I) | Kept (see "Full Player Customization" below) |
 | Quick actions: Make Gold / Make Silver / Make Bronze (from the Autumn 26 edition) / Make Regular / Set stats | Kept, **driven by the AATF rules file** instead of hardcoded rates — the buttons and the checker can never disagree |
-| Hidden shortcuts: PgUp/PgDn (previous/next player from any field) | Kept, the list's selection moving |
+| Hidden shortcuts: PgUp/PgDn (previous/next player from any field) | Kept, the list's selection moving from team row to team row, or 7 rows with one team listed ("Editing UI" below, SE-GUI-53) |
 | Hidden shortcuts: Ctrl+Shift+P (a joke preset), Ctrl+Shift+B (a sound), Ctrl+Shift+H (show the dribbling-motion and hand controls) | Not kept: every control is always drawn |
 | Hidden shortcuts: Ctrl+O (the Open dialog), Ctrl+5 to Ctrl+1 (the Open dialog for PES 15 to 21, reading the file as that version) | Kept as the Open menu's: Ctrl+5 to Ctrl+1 open that version's discovered save at once, since Open detects the version and the dialog would only add a step; Ctrl+O opens the file picker (File operations row above) |
 | Hidden shortcut: Ctrl+Shift+T on the team selector (empties the team's slots past 23; its team index looks one off) | Dropped: cups no longer trim a roster to 23 this way |
@@ -199,7 +199,7 @@ all side by side.
   A **team row** heads each team's players, set apart from a player row by the
   faint fill under it and its name in the strong text colour (no bold: the app
   installs no bold face, and a second font file for one row costs more than it shows): the team's id, its colours
-  1-2 as swatches and its name, then `[click for tactics]` in the weak colour at the normal
+  1-2 as swatches and its name, then `[click for gameplan]` in the weak colour at the normal
   weight (nothing else says where the tactics are; on a narrow row it is elided before the
   name is), a dot when the team's own fields (name, short name, colours,
   ids, kit slots, tactics) have unsaved changes. A click selects the team, and the detail shows
@@ -207,7 +207,18 @@ all side by side.
   under a filter a team's row stays while its own name or any of its players matches. The team
   row replaces the team bar above the old tabs: the team is one click away from its players,
   where a manager looks for it, rather than a strip that took a row from every player. A
-  save opens on ALL with the list's first player row selected.
+  save opens on ALL with the list's first player row selected. **Up and Down** move the
+  selection to the list's previous or next row as shown (team rows included, so the detail
+  turns to the team view on one), the list scrolling to keep it in view, the first and last
+  rows stopping it; they do so while no control holds the keyboard (a focused number steps
+  with them, a text field moves its cursor) and no dialog or popup is open. **PgUp and PgDn**,
+  from any field (4ccEditor's hidden shortcut, which stepped one player), move it from team
+  row to team row while the list holds two team rows or more (ALL, or a filter several teams
+  match), one per press, PgUp from a player to his own team's row first; with one team row
+  (a team picked) they move it 7 rows at a time. The first and last rows, or team rows, stop
+  them. The team rows counted are the list's as filtered, wherever it is scrolled, so a
+  press does the same whatever the window's height; a page of rows, as a list box's keys
+  move, crossed into the next team at a place that depended on it.
   A player row shows his place in the roster (`01` to `23`, the slot `NN` of his id, always
   two digits, so no column is kept for right-aligning a one-digit number), position and name,
   with no team name under ALL or a filter: the team row above its players already names it.
@@ -234,7 +245,12 @@ all side by side.
   times, so the players in between shift one slot along. A drop works on a row of the dragged
   player's own team, in one team's list or under ALL, where each team's rows run unbroken
   under its team row; a drop on another team's row does nothing, and drag is off while a
-  filter is typed, where neighbouring rows are not one team's neighbouring slots. A dot marks players with unsaved changes. Names
+  filter is typed, where neighbouring rows are not one team's neighbouring slots. While a drag
+  is held over a row of his team other than his own, that row, the slot the drop moves him to,
+  is outlined in the selection colour (the draft's `.dragover`), as the lineup lists outline
+  theirs; a row the drop moves nothing onto (his own, another team's, an empty slot's) gets
+  none. A draggable row shows the grab hand wherever the pointer is on it, as the lineup rows
+  do (egui leaves a row that also takes clicks on the arrow, so the row asks for it). A dot marks players with unsaved changes. Names
   render with their savefile colour codes applied as text colours (the in-game
   look; 4ccEditor shows the raw control characters), and the name edit field
   keeps the raw string so codes survive a roundtrip untouched. A code's first six bytes are
@@ -361,7 +377,9 @@ all side by side.
      box's width, under the Nation box above it. Then Stronger foot and Stronger hand (20+),
      each a two-choice toggle, Left | Right, its chosen side filled in the quiet grey of the
      positions' C (`#5a5a5a`), not the selection's blue: a foot or a hand is rarely what a
-     member looks for, and the accent would pull the eye to it; then Registered position, a
+     member looks for, and the accent would pull the eye to it; the chosen side's word in the
+     resting buttons' light grey and the other side's in the normal text grey, so the chosen
+     side reads brighter (the maintainer, 2026-11-02); then Registered position, a
      combo whose entries name each position in full after its abbreviation (`AMF - Attacking
      Midfielder`, British spelling: Centre Back; the TSV output and Set player names to
      positions keep 4ccEditor's names, Center Back, as their parity requires), and Playing
@@ -462,7 +480,8 @@ all side by side.
     16)"; an edit may shorten it but not lengthen it, so it can be fixed a keystroke at a time.
   - Nothing more: a warning, never a block on Save, so editing a save stays frictionless.
   - What 4ccEditor's fields do besides storing, kept: a name or shirt name edit sets the
-    player's edited-player flag; a shirt name is upper-cased as typed; Captain is a radio
+    player's edited-player flag; a shirt name, and the team's short name, are upper-cased as
+    typed or pasted, whatever Shift and Caps Lock say (the game shows both in capitals); Captain is a radio
     that makes this player's slot the team's captain and is not unticked by a second click
     (the captain belongs to the slot). 4ccEditor's "Edited/created player" checkbox is not
     kept: the name and shirt name edits set the flag, and the Team menu's Set edited flag
@@ -486,7 +505,12 @@ all side by side.
     before it already says; `Cards left: No tier matches` when none
     does, the reason after the colon): the tier his stats,
     registered position and height match under that ruleset, as `check-aatf` recognizes it,
-    not one badge per tier, which a member had to match to the player by eye. A tier check that fails on
+    not one badge per tier, which a member had to match to the player by eye. A special's choice
+    that offers cards (VGL 27's captain: one card, or a COM style, or an A position) counts its
+    cards in the limit while it is untaken or taken by a card, so a captain at 4 reads `of 5`
+    before he uses it; once a COM style or an A position takes the choice, the limit is 4
+    again. The check resolves a choice only when an option is needed, so a limit without it
+    showed the bonus only past the limit (a VGL 27 tester's report, 2026-11-02). A tier check that fails on
     the player shows `Tier check failed, click for more information.` in the error colour in
     the badge's place, its click opening a dialog titled `The tier check failed` with the
     error (the AATF check never runs the two functions the badge asks, so a member's edit that
@@ -555,13 +579,47 @@ all side by side.
   keyboard focus, so a drag or a typed value is one undo step, not one per frame. A gesture
   ends when its widget loses the keyboard (a click on another control, a Tab), so a typed
   value and the click that follows are two steps even when one widget call reports both.
+  Only a widget that takes typing (a text field, a number being typed) holds its gesture open
+  while it keeps the keyboard: a button, checkbox, radio, rating cell or list row pressed
+  with Space ends its gesture on that frame, so each press is its own step and Live AATF
+  checks it without waiting for a Tab. A run of steps to one value (wheel notches, arrow
+  presses, a stepper's clicks) merges into one entry: ten notches taking a stat from 60 to 70
+  undo in one press. The run ends at an edit of another value, at Undo or Redo, or after a
+  second with no step (a wheel spun in one go stays one entry; a value nudged again a while
+  later is a new one), and when the keyboard moves to another control, so a typed value and
+  the click after it stay two entries. A run's value is what an entry's merge already keys
+  on, the widget call that made the step, on one player or team: the Tactics tab's settings
+  panel reports as one call, so a run there spans its sliders and toggles, which a member
+  turning two of them within a second undoes together. Edits that are one step by
+  themselves (Copy stats, an import, a dialog's Apply) never join a run.
 - **Unsaved changes** are the difference from the file as opened or last saved, not the undo
   stack's length: undoing back to the saved state clears the dot. A player's dot covers his
   entry and his roster slot's shirt number.
 - Keyboard shortcuts preserved where they earn their keep (Ctrl+S save, Ctrl+F
   clear visual flags, Ctrl+I FPC toggle). Ctrl+I acts on a player, so it does nothing on a
   team row, as the Player menu's entries are disabled there; Ctrl+F is a team operation and
-  acts on the selected row's team.
+  acts on the selected row's team. These, Ctrl+B, Undo and Redo (Ctrl+Z, Ctrl+Y and
+  Ctrl+Shift+Z) and Open's keys (Ctrl+O, Ctrl+5 to Ctrl+1) are held off only while a text
+  field holds the keyboard (a number being typed is one: its own undo is the field's) or a
+  dialog is open, as Ctrl+C and Ctrl+V are; Ctrl+S by a dialog alone. A button, checkbox or
+  rating cell reached with Tab keeps the keyboard after Space, and holding them off there
+  too left Undo dead until Escape, the Space's edit already settled.
+- **Ctrl+C and Ctrl+V** copy and paste what was clicked last of three kinds, while no text
+  field holds the keyboard (a text field keeps its own copy and paste): a player row copies
+  his stats and pastes onto the selected player what Copy stats writes, with its rules; a
+  team row copies the team's Gameplan and pastes onto the selected team what a Gameplan-only
+  import of the copied team's document writes, players by roster slot; on the Tactics view,
+  the preset selector copies the shown preset and the formation selector the shown formation,
+  each pasting onto the one shown. A list row means the selected row, which Up and Down move
+  without a click, so Ctrl+V after Down pastes onto the next row. A paste of another kind does
+  nothing; each paste is one undo step. The clipboard is the editor's own, not the system's:
+  a copy carries a save's records as they were when copied, which another program cannot
+  take, and opening another save empties it. A copy still puts one line naming what it
+  copied on the system clipboard ("Unlimited Tool Works: the stats of SURNAME"): the window
+  hears Ctrl+V only as a paste of the system clipboard's text, and an empty one sends nothing.
+- In a number field being typed, **Up and Down** step the value by one, as a wheel notch
+  does; egui steps a whole-number field by its drag speed (a quarter) and rounds the sum
+  back, so a press changed nothing, and the drag's sensitivity stays as it is.
 - Closing, or opening another save, with unsaved changes prompts: save, discard or cancel,
   over a table of what would be saved or lost, columns Item, Old value and New value (the
   table spans the prompt's width, the two value columns sharing its right part; the prompt
@@ -649,7 +707,8 @@ another version asks nothing, since a game only writes its own version's save.
 ## Tactics editor
 
 Full parity with 4ccEditor's Tactics tab, drawn in the team view under the team's fields:
-preset selector (1/2/3) with fluid
+preset selector (1/2/3; the wheel steps it, and the formation selector, as it steps the
+style toggles, wrapping round at their ends) with fluid
 checkbox, the three sliders (support range, defensive line, compactness) and the two
 numbers in attack and defence (stored 1 to 3, `spec/pes_savefile/operations.md`, each a
 three-choice toggle, Few | Medium | Many, rather than a three-step slider whose number a
@@ -896,7 +955,9 @@ Win32 original hurt the most):
     placed over the pitch after the markers, as the formation's name is drawn after them,
     not painted on the pitch, so the formation pictures never carry it.
 - **Lineup by drag-and-drop**: the starting XI and bench are reorderable lists;
-  **dragging a bench player onto a pitch player swaps them** (and vice versa).
+  **dragging a bench player onto a pitch player swaps them** (and vice versa). While a
+  drag is held over a row, that row, the one the drop replaces, is outlined in the
+  selection colour (the draft's `.dragover`), so a member sees whom the drop swaps out.
   The arrow-button ordering UI is gone.
 - **Click-to-assign roles**: "players to join attack" (and other
   pick-N-players settings) are set by clicking players on the pitch in an
@@ -1001,7 +1062,12 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   offer a slot what the game cannot put there. The side is `pes_savefile`'s (`Instruction`,
   beside `takes_player`), the one place the rule lives. Each list is less Tight Marking: it marks an opponent, which a member sets in a match,
   and Edit mode does not offer it (4ccEditor's lists leave it out for that reason). A record
-  that holds it, or an instruction of the other side, shows it as the current choice. The target-player pick is enabled only for the
+  that holds it, or an instruction of the other side, shows it as the current choice. Under a
+  ruleset that allows illegal formations ("Illegal formations" below) the side split goes:
+  every combo, Attack and Defence alike, lists every instruction of the version's table in
+  stored order, less Tight Marking, since the Whack Patch's Edit mode puts any instruction on
+  any slot (an attacking one in a Defence slot, one instruction in all four). The same
+  instruction twice is never refused, under any ruleset. The target-player pick is enabled only for the
   instructions that take one of ours, Counter Target, Defensive and Anchoring (`pes_savefile`'s
   `Instruction::takes_player`, the one place the rule lives). Picking one of those three from
   an instruction that takes none sets the target to none (255), so a byte the game never read
@@ -1181,6 +1247,11 @@ Contents:
   host's jump-to that names the row's player and its violation (the host lands a
   `FieldedNotA` one on the team row, its preset shown). The groups lead with the team's own rows, then the players' by slot
   (`check_team` returns the team's rows last), each group's errors before its warnings; a team header heads each team's rows;
+  the team header reads `Team <id> <name>` while editing (a report's `<id> <name>`), a
+  group's head `Player <id> - <number> - <name>` (`Team-wide issues` for the team's own),
+  `Player <id>` and the hyphens in the weak colour and the number and name, the team header
+  and `Team-wide issues` in the strong text, every name in its colour codes as the player list draws it,
+  the number in the body font: the grey id steps back, and the name reads as the list shows it;
   suggestions are drawn only when the host asks, in their own group after the violations. A row
   is the rule's name in words and a sentence saying what is wrong, each stat, card, playing
   style and allowance in it named as the game names it (Attacking Prowess, never the rules
@@ -1284,9 +1355,8 @@ and no switch drawn; on, the editor **does not edit aesthetics** but through the
 - The same lock covers every other aesthetics write path: the team operations that write
   appearance fields (set boots/gloves IDs for everyone, set/remove FPC for the team, clear visual
   flags, the FPC toggle), Fix database (it clears the same flags), the aesthetics section of Team TOML and
-  legacy squad imports (the section checkbox is disabled, gameplay and tactics import as before),
-  and Copy and Swap stats, which under the lock leave the free-kick motion (an
-  `[appearance.motion]` key of the export's `settings.toml`) as the target's. A roster drag is
+  legacy squad imports (the section checkbox is disabled, gameplay and tactics import as before).
+  Copy and Swap stats need no lock: they never move a look, the free-kick motion included. A roster drag is
   not a look's edit: it moves a whole player to another slot, his looks with him, and the
   next patch writes each id's looks from its export.
 - **Apply aesthetics patch** is the one aesthetics write open by default: open a patch; the
@@ -1338,6 +1408,9 @@ The panel over the spec's `diff` report:
   text.
 - Clicking a diff row jumps to that player in the editor; its tooltip says so, `Click to
   switch to this player`.
+- A player's rows stand under his head, `Player <id> - <number> - <name>` in the AATF lists'
+  colours (the `violations` widget's paragraph): one head for a player wherever a list names
+  him.
 - A row is drawn in the views' terms: the field under the label its view draws, its value as
   that view shows it (a free-kick motion 15, where the save stores 14), a field no view shows
   named in words from the report's name with its stored value: its words in sentence case, Id
@@ -1427,11 +1500,16 @@ the editor exposes them as:
   when the file's version differs. The sections split the file as the squad load does: names,
   shirt names and shirt numbers go with aesthetics (its `PlayerImport` copies them under
   `importAes`), not with gameplay as the comparator's scopes have them, and so do nationality,
-  age, every motion but the free kick's, the dribbling motion and the base-copy flag and id;
-  the free-kick motion, height, weight, star, playing attitude and stronger hand go with
+  age, every motion and the base-copy flag and id;
+  height, weight, star, playing attitude and stronger hand go with
   gameplay (`editor.h` `PlayerImport`, read 2026-10-21), so a file that loads
-  with 4ccEditor's choices loads the same here. The file's `[team]` keys, which the squad file
-  never carried, go with gameplay. A refusal that comes from a chosen section's keys (a team
+  with 4ccEditor's choices loads the same here. One departure: the squad load copies the
+  free-kick motion with the stats, and here it goes with aesthetics, with the other motions,
+  since it is an `[appearance.motion]` key of the export's `settings.toml` like them (the
+  aesthetics lock then guards it too). The file's `[team]` keys, which the squad file never
+  carried, split: the name, short name, manager and stadium, with their edit flags, go with
+  gameplay; the two team colours, the kit slots and the strip flag go with aesthetics, the
+  team's look. A refusal that comes from a chosen section's keys (a team
   name too long, with gameplay; a shirt number past the field's range, with aesthetics) is
   drawn under the section choices with Apply disabled, the choices still drawn, since
   unticking that section is how the member imports the rest; only a `.4ccs` with more records
@@ -1439,7 +1517,9 @@ the editor exposes them as:
   change nothing (the team's own file, or one applied already) draws Apply disabled and
   `The team already holds every value of the chosen sections.`, as the patch panel's empty
   list says so, rather than recording an edit that changes nothing. The section boxes read
-  Gameplay, Aesthetics and Tactics. The warning list draws each note code's text from the
+  Stats, Aesthetics and Gameplan, the cup's own words for the gameplay and tactics
+  sections (the comparator's Gameplay scope and the command line's `--gameplay` split the
+  fields differently and keep their name). The warning list draws each note code's text from the
   catalog once (its when and its effect, the Messages topic's words too, written for any
   team file rather than for `import-toml`), the code's groups under it: a group is one key in
   words (its last part as the views name it: a stat at the save's version, a skill by its
@@ -1564,8 +1644,10 @@ What this editor adds on top of the lib:
   `Team-wide issues` (a formation or a tier count is the team's first concern, ahead of any
   one player's; every list of a team's issues, Multi-team AATF's and its copied text
   included, puts them first), then grouped per player under a line naming him, a player's
-  row tooltip `Click to switch to this player` (a team-wide row has none: it selects nothing,
-  and its group's heading already says what it is), then, while **Show
+  row tooltip `Click to switch to this player`, a `Fielded position` row's `Click to show him on the team's pitch`
+  (its click opens his team's row on the preset it names, the cross on his marker: the issue
+  is where he stands in the tactics, not his record), a team-wide row's none (it selects
+  nothing, and its group's heading already says what it is), then, while **Show
   suggestions** is on, under a `Suggestions` heading, the team's unused allowances (`Unused`
   rows, `only 4 of 5 cards used`). Show suggestions is a checkbox right of the toggle, drawn only while Live
   AATF is on, off by default and remembered (`live_suggestions`); on, the check asks for the
@@ -1581,7 +1663,17 @@ What this editor adds on top of the lib:
   gray 150 in the dark theme), never filled: a fill under a row's coloured words left an
   error's red rule name at 2.4:1 on egui's hover grey (1.9:1 on the selection blue the draft
   had), where the outline leaves it the 5:1 it has at rest. Multi-team AATF keeps one column: its
-  report reads team by team, and its rows were just widened to read whole. **Its own
+  report reads team by team, and its rows were just widened to read whole. **Copy to
+  clipboard**, Multi-team AATF's button, stands left of the dock's pop-out icon and, in the
+  window, under its close button at the count line's right end. It writes the list as it
+  shows, as Multi-team AATF's copy words a team: a line naming the ruleset as that copy
+  does, the team and its error and warning counts, then the team's groups, then under
+  `Suggestions` the suggestions while Show suggestions is on (a member who wants them out
+  switches them off); a team that passes reads `All clean` there, as the list does. It is
+  never greyed out: before a list is held it copies the line the panel shows (`Checking
+  <team>…`, or `No team is open.`), a failed check its message as the list words it, and a
+  notice `Copied the Live AATF list of <id> <name>.` says it was done (`Copied the Live AATF
+  list.` with no team open). **Its own
   window**: the pop-out icon at the header's right end (the icon font's arrow out of a square,
   U+E5DE, Phosphor's arrow-square-out; tooltip `Open Live AATF in a window of its own`) moves
   the list into an `egui::Window` over the view, and the dock is gone until it comes back.
@@ -1607,7 +1699,8 @@ What this editor adds on top of the lib:
   desktop's own (egui's viewports): it needs no second native window, moves with Studio's, and
   works wherever Studio does; a native window comes after 0.0.2 (worklog), without
   always-on-top, which is desktop-wide, so a member just moves it off the main window. The header reads `N issues · <ruleset>`, counting
-  errors and warnings, or `<team> passes <ruleset> with no issues.` once neither is left;
+  errors and warnings, or `<team> passes <ruleset> with no issues.` once neither is left,
+  the list then reading `All clean` (Multi-team AATF's word) above any suggestions;
   clicking a row selects that player (a
   `FieldedNotA` row selects his team's row instead, the named preset shown on the first of
   its formations that carries the cross, since the pitch its mark is on is the team
@@ -1913,7 +2006,8 @@ SE-GUI-13  GIVEN the save open and a second save of the same version picked in t
                 narrow them; Export writes the text `diff <picked> <open>` prints for the
                 toggled scope, whatever the team filter; clicking a row of a player the open
                 save rosters selects that player (one only in the picked save, or on no
-                roster, is listed and not clickable);
+                roster, is listed and not clickable); each player's rows stand under the
+                head `Player <id> - <number> - <name>`, the id and hyphens in the weak colour;
            GIVEN a save of another version picked THEN it is refused naming both versions
 SE-GUI-14  GIVEN (after Release 0.1.0) the transplant panel, a donor save, one of its teams and
                 that team's export in the exports folder, slots 03 and 07 checked
@@ -1966,11 +2060,93 @@ SE-GUI-51  GIVEN DBC6's save (`EDIT00000000_DBC6`) open under DBC7, Multi-team A
                 and the copied text's first line is the same; WHEN the range is narrowed to
                 857 THEN it reads `Medal systems: GGSS 1 · Height systems: Manlet 1`; WHEN the
                 ruleset is the official one THEN the line holds the height systems alone
+SE-GUI-52  GIVEN the PES 17 save open on ALL, team 701's (/3/) last player row selected and no
+                control holding the keyboard
+           WHEN Down is pressed
+           THEN team 702's (/a/) row is selected and the detail shows its team view; WHEN Up
+                is pressed THEN 701's last player is selected again; GIVEN 701's team row, the
+                list's first, selected WHEN Up is pressed THEN nothing moves; GIVEN a player's
+                Height field holding the keyboard WHEN Down is pressed THEN the selection
+                stays; WHEN Down is pressed on a row below the list's view THEN the list
+                scrolls so the selected row shows
+SE-GUI-53  GIVEN the PES 17 save open on ALL with team 718's player 05 selected
+           WHEN PgDn is pressed
+           THEN the next team's row is selected, and each PgDn after it the next one's,
+                the last team row stopping it; WHEN PgUp is pressed on a player THEN his own
+                team's row is selected, and on a team row the one above it; GIVEN a filter
+                several teams match THEN the same; GIVEN team 718 picked and its player 01
+                selected WHEN PgDn is pressed four times THEN 08, 15, 22 and 23 are selected,
+                the last row stopping it, and PgUp twice then selects 16 and 09
+SE-GUI-54  GIVEN a player selected
+           WHEN "abc" is typed into his shirt name, and into his team's short name
+           THEN the records hold "ABC"
+SE-GUI-55  GIVEN a stat at 60 and the Live AATF check on
+           WHEN ten wheel notches take it to 70 in one go
+           THEN one Undo puts back 60; GIVEN a notch on another stat between two notches
+                THEN they are two entries; GIVEN a rating cell focused by Tab WHEN Space is
+                pressed THEN the next frame's check reads the new rating with no other key
+SE-GUI-56  GIVEN player A's row clicked, Ctrl+C pressed, then player B's row clicked
+           WHEN Ctrl+V is pressed
+           THEN B's record holds what Copy stats from A writes, and one Undo restores B;
+                GIVEN team 701's row copied and team 702's row selected WHEN Ctrl+V is
+                pressed THEN 702 holds what a Gameplan-only import of 701's document
+                writes; GIVEN preset 1 copied from its selector and preset 2 shown WHEN
+                Ctrl+V is pressed THEN preset 2 equals preset 1, and likewise a formation;
+                GIVEN a preset copied WHEN a player row is selected and Ctrl+V pressed
+                THEN nothing changes
+SE-GUI-57  GIVEN a player's Height field being typed in
+           WHEN Up is pressed once
+           THEN the value is one more; a drag over the field moves it as before
+SE-GUI-58  GIVEN a team's Tactics view
+           WHEN the wheel turns one notch over the preset selector on 3, or over the
+                formation selector on Out-of-possession
+           THEN it shows 1, or Kick-off: one step, round past the end
+SE-GUI-59  GIVEN a team's lineup list and a row dragged
+           WHEN the drag is held over another starter's row
+           THEN that row alone is outlined in the selection colour; released off the
+                list, no row is
+SE-GUI-60  GIVEN a PES 19 save under the VGL 27 ruleset and a captain whose cards are under
+                his tier's limit, using no COM style or A position past it (the tester's
+                VGL27 Friendlies save reproduces it by hand)
+           WHEN his Skills panel shows
+           THEN the Cards left badge's limit counts the captain's choice card; WHEN a COM
+                style past the tier's takes the choice THEN the limit drops by one
+SE-GUI-61  GIVEN a player's Stronger foot toggle
+           WHEN it draws
+           THEN the chosen side's word is in the resting buttons' light grey and the
+                other side's in the normal text grey
+SE-GUI-63  GIVEN the PES 17 save open on team 734 under the official rules, Live AATF on, the
+                check returned
+           THEN the list opens with `Team 734 <name>`, each player's group's head reads
+                `Player <id> - <number> - <name>`, `Player <id>` and the hyphens in the weak
+                colour and the number and name in the strong text, a coded name in its codes' colours, and
+                `Team-wide issues` is in the strong text; WHEN the dock's Copy to clipboard is
+                pressed THEN the system clipboard holds the list as text, its first line naming
+                the ruleset, team 734 and its error and warning counts, and a notice says so;
+                WHEN Show suggestions is on and it is pressed again THEN the text ends with
+                `Suggestions` and their groups, and WHEN it is turned off before the next
+                check returns THEN the copied text holds no suggestion; GIVEN Live AATF in its
+                window THEN the button stands at the count line's right end; GIVEN a team that
+                passes THEN the list reads `All clean`, the button is not greyed out and the
+                copied text is the header line and `All clean`
+SE-GUI-64  GIVEN the save open on a team, player 01's row dragged
+           WHEN the drag is held over player 03's row
+           THEN that row alone is outlined in the selection colour; held over his own row,
+                or under ALL over a row of the next team, no row is; released off the list,
+                no row is; GIVEN the pointer over a player row's name, no drag held THEN the
+                cursor is the grab hand; GIVEN a filter typed THEN it is the arrow
+SE-GUI-62  GIVEN the PES 17 save open on a player, the keyboard moved by Tab to a rating cell
+                of his Playable positions and Space pressed on it (the rating stepped)
+           WHEN Ctrl+Z is pressed, the cell still holding the keyboard
+           THEN the rating is back as it was and Undo is disabled; WHEN Ctrl+Y THEN the
+                step is back; GIVEN instead his Name field holding the keyboard after a
+                letter typed THEN Ctrl+Z leaves the editor's undo history as it was
 SE-GUI-16  GIVEN the save open on a team
-           WHEN Team TOML export, then import on another team with only the gameplay section
+           WHEN Team TOML export, then import on another team with only the Stats section
                 chosen, runs from the interchange dialog
            THEN the file written equals the CLI's export, and the import changes only the
-                gameplay fields, with a warning list when the file's version differs
+                gameplay fields (the team's colours, kits and every motion staying the
+                target's), with a warning list when the file's version differs
 SE-GUI-17  GIVEN a `.4ccs` or `.4cct` file, or a Texport
            WHEN it is opened through the import dialog
            THEN its sections import as the Team TOML import does, read-only for the legacy
@@ -2089,7 +2265,8 @@ SE-GUI-30  GIVEN the PES 17 save open on a team with violations under the active
            THEN the docked panel reads `Checking <team>…` until the first check returns, then
                 lists the team's violations under `N issues · <ruleset>`, its `Team-wide
                 issues` group above every player's, a player's row's tooltip `Click to switch
-                to this player` and a team-wide row's none, and clicking a row
+                to this player`, a `FieldedNotA` row's `Click to show him on the team's pitch` and a
+                team-wide row's none, and clicking a row
                 selects that player (a `FieldedNotA` row his team's row, the named preset
                 shown on a formation carrying the cross); WHEN an edit fixes one of them THEN the list stays,
                 marked `checking…`, until the check returns, its row then gone and N one less,
@@ -2225,3 +2402,47 @@ SE-AATF-08 GIVEN SE-AATF-03's save and the command started from a folder holding
                 third checks against the file: the VGL27 violation is not printed
 ```
 
+**8.36c scope.** `apply-patch` with the full-look patch (`plans/pes_savefile/operations.md`
+"Aesthetics patch (new)"): an entry's `[appearance]`, `boots_id`, `gloves_id` and
+`base_copy_id`, on every engine. "A player" is one of the fixture save's cup players; 7511
+and 101334 are copied ids real cup saves hold; an entry's `[appearance]` holds every key its
+version holds, as the compiler writes it, unless the scenario says otherwise.
+
+```
+SE-PAT-07  GIVEN the PES 21 fixture save, a player whose record holds appearance id -1 and
+                 base copy 7511, and a PES 21 patch whose entry for him holds an [appearance]
+                 setting skin_color = 4 and every other key at its default, boots_id = 643 and
+                 gloves_id = 0
+           WHEN apply-patch is run
+           THEN his appearance block and motions hold the entry's values (the bits no key
+                covers at the games' values), his boots 643 and gloves 0, his appearance id and
+                base-copy id his own id; every other byte of the payload is unchanged, and the
+                exit code is 0
+SE-PAT-08  GIVEN the PES 18 fixture save, a player whose record holds base copy 7511 with the
+                 base-copy flag set, and a patch whose entry for him holds an [appearance] and
+                 base_copy_id = 101334; and, apart, the same with no base_copy_id
+           WHEN apply-patch is run on each
+           THEN the first gives him base copy 101334, the flag still set; the second his own
+                id as base copy, the flag clear
+SE-PAT-09  GIVEN the PES 21 fixture save, a player whose record holds base copy 7511 and a
+                 look no template default matches, and a patch whose entry for him holds
+                 boots_id = 643 and no [appearance]
+           WHEN apply-patch is run
+           THEN his boots are 643 and the rest of his record, base copy and appearance id
+                included, is unchanged
+SE-PAT-10  GIVEN the PES 17 and PES 16 fixture saves, a player of each whose record holds base
+                 copy 7511 with the base-copy flag set (PES 17's also appearance id -1), and
+                 for each a patch of its version whose entry for him holds an [appearance]
+                 setting skin_color = 4 and boots_id = 625
+           WHEN apply-patch is run on each
+           THEN each save's player carries the entry's look and boots 625, his base copy his
+                own id with the flag clear, and PES 17's appearance id his own id; each exit
+                code is 0
+SE-PAT-11  GIVEN SE-PAT-07's save and patch with boots_id = 16384 (past the field's 14 bits),
+                 and apart with the [appearance]'s skin_color outside its range, its
+                 skin_color removed, and a dribbling key added (a PES 20 and 21 key) in a PES
+                 19 patch for the PES 19 fixture save
+           WHEN apply-patch is run with each
+           THEN each is refused naming the player and the key, with exit code 2, and --out is
+                not written
+```

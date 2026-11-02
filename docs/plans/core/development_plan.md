@@ -59,6 +59,8 @@ embeds every cup's current rulesets (`spec/aatf_rules.md` "Embedded rulesets"), 
 among them, and the bundle's settings pick DBC7 as the Save editor's `aatf_ruleset` and PES
 2017, DBC's game, as the sidebar's `pes_version`: 0.0.1 is DBC's alone, its testers DBC's
 managers, whose first open shows no version warning (the app's own default stays PES 2019).
+Only the Save editor serves DBC7: the event's aesthetics are compiled with Red, as before, so
+nothing of the Team compiler's output (its CPKs, its aesthetics patch) reaches DBC7's save.
 No rules file rides beside the exe: one in the data folder's `rules/` would list as an
 import, the same ruleset twice in the dropdown, its copy one × from deleted. The settings file
 lives in the bundle's `data/` folder, `data/settings.toml`, which makes the bundle portable
@@ -520,7 +522,11 @@ with the teams-list merge; this phase completes them and writes the maintenance-
 
 - Release bundling: the Linux bundle joins the `just release <version>` recipe (see
   `distribution.md` "Distribution and updates", `distribution.md` "Changelog and version
-  display"); Linux tested on a real machine
+  display"); Linux tested on a real machine. Brought forward to right after 0.0.1's cut, with a
+  CI workflow that builds the bundles on a version tag into a draft GitHub Release, the Windows
+  asset checked against the locally checked exe before publishing (DECISIONS 2026-11-01 "CI
+  release builds right after 0.0.1's cut, Windows first"); its design is written into
+  `distribution.md` before it is built
 - Self-updater, the rest of it: the *Update now* option, download/verify/swap, `UTW
   update`, rollback button (see `distribution.md` "Distribution and updates")
 - Desktop GPU BC7 on Phase 4's texture step (`libs/README.md` "First-release desktop GPU BC7"):

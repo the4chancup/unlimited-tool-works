@@ -557,9 +557,10 @@ impl Session {
         Ok(notes)
     }
 
-    /// Applies the compiler's patch: each listed player's motions and names, nothing of his
-    /// appearance block. The summary lists the teams applied and the items the save lacked;
-    /// a version or scheme mismatch, or a pre-Fox patch, is an error with the save untouched.
+    /// Applies the compiler's patch: each listed player's names and whole look, the record
+    /// made his (appearance id and base copy his own). The summary lists the teams applied
+    /// and the items the save lacked; a version or scheme mismatch is an error with the
+    /// save untouched.
     pub(crate) fn apply_patch(
         &mut self,
         patch: &AestheticsPatch,

@@ -1,4 +1,4 @@
-"""A draft change's before and after, side by side, as one image the maintainer reviews.
+"""A draft change's before and after, side by side, as one page the maintainer reviews.
 
 Run: python scripts/drafts/vet_drafts.py --before REV --after REV --link FRAGMENT --why TEXT
          [--caption TEXT] [--crop CSS] [--pad N] [--click TEXT] [--out PATH] [--exports DIR]
@@ -11,31 +11,33 @@ opens at `index.html#FRAGMENT` (the host keeps the tool, screen and draft state 
 fragment, so a remark's link opens the exact state) in headless Chromium at device scale 1, a
 1900 x 1000 viewport on a 1920 x 1080 screen; `--click` first clicks the first button whose
 name holds that text (`--click "Live AATF"`). The crop is the first element `--crop` matches,
-`--pad` points around it, or the window's client area without `--crop`. The two crops go side
-by side (stacked when that would be too wide) under the caption and the reason, into `--out`
-(by default `.tmp/vet/<before>_<after>.png`).
+`--pad` points around it, or the window's client area without `--crop`. The page `--out` (by
+default `.tmp/vet/<before>_<after>.html`) shows the caption and the reason in type large
+enough to read, then the two crops side by side, each under its label, wrapping under each
+other when the browser window is too narrow for both; the crops are saved beside it as
+`<page>_before.png` and `<page>_after.png`, at their own size.
 
 Playwright (`pip install playwright`, then `playwright install chromium`) and Pillow
 (`pip install pillow`) are installed developer tools, like `just`, not project dependencies.
 """
 
 import argparse
+import html
 import io
 import re
 import shutil
 import subprocess
 import sys
 import tarfile
-import textwrap
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image
 from playwright.sync_api import Browser, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPORTS = ROOT / ".tmp" / "vet_exports"
-BACKGROUND = (58, 63, 71)
-GAP = 16
+# The drafts' window frame's grey, so a crop's edge reads against the page.
+BACKGROUND = "#3a3f47"
 
 
 class VetError(Exception):
@@ -106,51 +108,47 @@ def capture(browser: Browser, index: Path, name: str, link: str, click: str | No
         page.close()
 
 
-def why_lines(why: str, crops: list[tuple[str, Image.Image]]) -> list[str]:
-    """The reason, prefixed `Why:`, wrapped to the sheet's width: the narrower of the two
-    layouts decides, never under 60 characters. PIL's default font is about 6 points a
-    character at most."""
-    wide_w = sum(c.width for _, c in crops) + GAP * (len(crops) + 1)
-    narrow_w = max(c.width for _, c in crops) + 2 * GAP
-    return textwrap.wrap("Why: " + why, max(60, (min(wide_w, narrow_w) - 2 * GAP) // 6))
+def crop_path(page: Path, label: str) -> Path:
+    """Where the page's crop under `label` is saved: `<page>_<label>.png` beside the page."""
+    return page.with_name(f"{page.stem}_{label}.png")
 
 
-def compose(caption: str, why: str, crops: list[tuple[str, Image.Image]]) -> Image.Image:
-    """The crops side by side under the caption, each under its label; stacked instead when side
-    by side the sheet would be more than four times as wide as it is tall (a title bar, a
-    window's top strip), where the two would shrink to slivers in a viewer."""
-    label_h = 16
-    lines = why_lines(why, crops)
-    wide_w = sum(c.width for _, c in crops) + GAP * (len(crops) + 1)
-    head = 26 + 13 * len(lines) + 4
-    wide_h = head + label_h + max(c.height for _, c in crops) + GAP
-    stacked = wide_w > 4 * wide_h
-    if stacked:
-        w = max(c.width for _, c in crops) + 2 * GAP
-        h = head + sum(label_h + c.height + GAP for _, c in crops)
-    else:
-        w, h = wide_w, wide_h
-    sheet = Image.new("RGB", (w, h), BACKGROUND)
-    pen = ImageDraw.Draw(sheet)
-    pen.text((GAP, 6), caption, fill=(255, 255, 255))
-    for i, line in enumerate(lines):
-        pen.text((GAP, 24 + 13 * i), line, fill=(170, 200, 240))
-    x, y = GAP, head
-    for label, c in crops:
-        pen.text((x, y), label, fill=(220, 220, 120))
-        sheet.paste(c, (x, y + label_h))
-        if stacked:
-            y += label_h + c.height + GAP
-        else:
-            x += c.width + GAP
-    return sheet
+def page_html(caption: str, why: str, crops: list[tuple[str, Path, Image.Image]]) -> str:
+    """The page: the caption as its heading, the reason under it prefixed `Why:`, then each
+    crop under its label, at its own pixel size (a scaled crop blurs the draft's 1-pixel
+    lines). `crops` holds each crop's label, its saved file and its image; every text is
+    escaped, as a caption can hold `<` (`Make <tier>`)."""
+    figures = "\n".join(
+        f'<figure><figcaption>{html.escape(label)}</figcaption>'
+        f'<img src="{html.escape(path.name)}" width="{image.width}" height="{image.height}"'
+        f' alt="{html.escape(label)}"></figure>'
+        for label, path, image in crops)
+    return f"""<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>{html.escape(caption)}</title>
+<style>
+body {{ background: {BACKGROUND}; color: #f0f0f0; font: 17px/1.5 system-ui, sans-serif;
+  margin: 24px; }}
+h1 {{ font-size: 24px; margin: 0 0 8px; }}
+p.why {{ color: #c8dcf8; max-width: 90ch; margin: 0 0 20px; }}
+.crops {{ display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }}
+figure {{ margin: 0; }}
+figcaption {{ color: #e6e68c; font-size: 18px; font-weight: 600; margin-bottom: 6px; }}
+img {{ display: block; max-width: none; }}
+</style></head><body>
+<h1>{html.escape(caption)}</h1>
+<p class="why">Why: {html.escape(why)}</p>
+<div class="crops">
+{figures}
+</div>
+</body></html>
+"""
 
 
 def default_out(before: str, after: str) -> Path:
-    """`.tmp/vet/<before>_<after>.png`, each revision's characters outside `A-Za-z0-9._-`
+    """`.tmp/vet/<before>_<after>.html`, each revision's characters outside `A-Za-z0-9._-`
     replaced by `_` (`HEAD~1` holds a `~`, `abc^` a `^`)."""
     safe = [re.sub(r"[^A-Za-z0-9._-]", "_", rev) for rev in (before, after)]
-    return ROOT / ".tmp" / "vet" / f"{safe[0]}_{safe[1]}.png"
+    return ROOT / ".tmp" / "vet" / f"{safe[0]}_{safe[1]}.html"
 
 
 def main(argv: list[str]) -> int:
@@ -168,8 +166,7 @@ def main(argv: list[str]) -> int:
     args = parser.parse_args(argv[1:])
     # A page error's text can hold characters the Windows console's code page cannot print.
     sys.stdout.reconfigure(errors="backslashreplace")
-    # PIL's default font has no arrow: a `→` would draw as a box.
-    caption = args.caption or f"{args.before} -> {args.after}: {args.link}"
+    caption = args.caption or f"{args.before} → {args.after}: {args.link}"
     out = args.out or default_out(args.before, args.after)
     try:
         with sync_playwright() as pw:
@@ -183,10 +180,14 @@ def main(argv: list[str]) -> int:
     except VetError as e:
         print(f"vet_drafts: {e}", file=sys.stderr)
         return 1
-    sheet = compose(caption, args.why, crops)
     out.parent.mkdir(parents=True, exist_ok=True)
-    sheet.save(out)
-    print(f"{out}: {sheet.width} x {sheet.height}")
+    saved = []
+    for label, image in crops:
+        path = crop_path(out, label)
+        image.save(path)
+        saved.append((label, path, image))
+    out.write_bytes(page_html(caption, args.why, saved).encode("utf-8"))
+    print(out)
     return 0
 
 

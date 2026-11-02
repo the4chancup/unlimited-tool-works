@@ -95,7 +95,11 @@ and cargo-mutants files the mutant as unviable (273 of 274 in 23 s at 4.y-conv's
 were removed (2026-10-11), when the split came back; the switch stays for the next time. The
 maintainer moved every mutation run to the VPS again on 2026-10-25 (the switch on), and the
 lead's gates with them (`just gates-remote`); tests and gates came back the same evening, and
-mutation runs split again from 2026-10-26 (the switch off).
+mutation runs split again from 2026-10-26 (the switch off). On 2026-11-02 the maintainer moved
+every new job to the VPS until further notice ("any new jobs must be run on bonfire only"):
+the switch is on, the lead's checks run through `just remote` and `just gates-remote`, and a
+sidekick's `cargo check`, test and clippy runs all go through `just remote`; only `cargo fmt`
+stays local. The order was lifted the same evening (the switch off).
 `REMOTE_ONLY = True` in `scripts/mutation/mutants.py` makes
 `just mutants` and `just mutants-diff` run every mutant on the VPS as one whole run (no
 local half, no split threshold; the last local `mutants.out` set aside as
@@ -301,13 +305,23 @@ build in one worktree takes another's output as up to date: on 2026-10-28 one `s
 build linked another worktree's `aatf` (a constant reported missing in a tree that has it), and
 a doc-test linked a `studio_core` without the function its own tree had just added. Cargo's
 lock on a shared folder serializes builds but does not stop this, so a shared folder makes
-every sidekick's test results suspect. Each folder costs a full build and its disk.
+every sidekick's test results suspect. Each folder costs a full build and its disk. The one
+exception is the staging worktree (`wt-cand-e`), which builds a candidate into the main tree's
+`target/` to spare a full build; afterwards the main tree's next build takes the candidate's
+crates as up to date (on 2026-11-01 main's `gates-changed` failed to compile against the
+candidate's `pes_savefile`). So after staging, touch every file `git diff --name-only
+<candidate> HEAD -- crates Cargo.toml Cargo.lock` lists in the main tree before its next build
+(`.tmp/lead/touch_diverged.py <candidate>`); the staging worktree also needs an empty
+`target/` of its own (`WORKLOG.md` Issues).
 
 **At most two cargo builds at once, on the whole machine** (the maintainer, 2026-10-29): a
 sidekick's, a mutation run's local half, the lead's gates or package tests and a release
 build each count as one. Two already fill the CPU almost entirely, so a third makes nothing
 faster and only risks exhausting the memory and crashing the system. Before starting a
-build, count the ones running; a third waits for one to end.
+build, count the ones running; a third waits for one to end, except a build of a program
+needed as soon as possible (the maintainer, 2026-11-02): a quick tool the next step runs, or a
+build for a manual check, may start as the third, one at a time, at below-normal priority and
+a small `CARGO_BUILD_JOBS`; gates, tests, sidekicks and mutation halves never count as one.
 
 **Every build and test job runs at below-normal priority** (the maintainer, 2026-10-30): at
 normal priority two jobs left the maintainer's machine barely usable, while a below-normal one
