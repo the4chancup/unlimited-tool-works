@@ -245,7 +245,10 @@ all side by side.
   times, so the players in between shift one slot along. A drop works on a row of the dragged
   player's own team, in one team's list or under ALL, where each team's rows run unbroken
   under its team row; a drop on another team's row does nothing, and drag is off while a
-  filter is typed, where neighbouring rows are not one team's neighbouring slots. A dot marks players with unsaved changes. Names
+  filter is typed, where neighbouring rows are not one team's neighbouring slots. While a drag
+  is held over a row of his team other than his own, that row, the slot the drop moves him to,
+  is outlined in the selection colour (the draft's `.dragover`), as the lineup lists outline
+  theirs; his own row and another team's, where the drop moves nothing, get none. A dot marks players with unsaved changes. Names
   render with their savefile colour codes applied as text colours (the in-game
   look; 4ccEditor shows the raw control characters), and the name edit field
   keeps the raw string so codes survive a roundtrip untouched. A code's first six bytes are
@@ -2124,6 +2127,11 @@ SE-GUI-63  GIVEN the PES 17 save open on team 734 under the official rules, Live
                 window THEN the button stands at the count line's right end; GIVEN a team that
                 passes THEN the list reads `All clean`, the button is not greyed out and the
                 copied text is the header line and `All clean`
+SE-GUI-64  GIVEN the save open on a team, player 01's row dragged
+           WHEN the drag is held over player 03's row
+           THEN that row alone is outlined in the selection colour; held over his own row,
+                or under ALL over a row of the next team, no row is; released off the list,
+                no row is
 SE-GUI-62  GIVEN the PES 17 save open on a player, the keyboard moved by Tab to a rating cell
                 of his Playable positions and Space pressed on it (the rating stepped)
            WHEN Ctrl+Z is pressed, the cell still holding the keyboard
