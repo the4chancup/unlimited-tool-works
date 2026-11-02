@@ -1,0 +1,102 @@
+# Release builds (plans/core/distribution.md "Release builds in CI"): each platform's bundle is
+# packed by the same `just release <version>` a developer runs, which builds with --locked and
+# refuses a binary holding the runner's paths, a Windows exe linking the C runtime dynamically,
+# or an archive whose listing differs from the staged files.
+#
+# A tag `v<version>` naming the workspace's version ends in a draft release holding both bundles
+# and SHA256SUMS.txt, the file the updater checks a download against; the maintainer looks at the
+# Windows bundle, writes the notes and publishes. A push to `ci/release-dry-run`, or a run started
+# by hand, stops at the run's artifacts.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+    branches: [ci/release-dry-run]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  bundle:
+    name: bundle (${{ matrix.os }})
+    strategy:
+      matrix:
+        # 22.04, the oldest runner image: its glibc (2.35) is the floor the Linux binary needs.
+        os: [windows-latest, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install the pinned toolchain
+        run: rustup show active-toolchain
+      # No build cache: a release is built from nothing, so no artifact of an earlier build
+      # can reach it.
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: just,cargo-about@0.9.2
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: The workspace's version, and the tag naming it
+        id: version
+        shell: bash
+        run: |
+          version=$(python -c "import tomllib; print(tomllib.load(open('Cargo.toml', 'rb'))['workspace']['package']['version'])")
+          if [[ "$GITHUB_REF_TYPE" == tag && "$GITHUB_REF_NAME" != "v$version" ]]; then
+            echo "::error::the tag $GITHUB_REF_NAME does not name the workspace's version $version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - run: just release ${{ steps.version.outputs.version }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bundle-${{ runner.os }}
+          path: |
+            target/dist/*-windows.7z
+            target/dist/*-windows.7z.sha256
+            target/dist/*-linux.tar.gz
+            target/dist/*-linux.tar.gz.sha256
+          if-no-files-found: error
+      # The exe and its .pdb, never a release asset: they stay with the maintainer, who keeps a
+      # copy past the artifact's 90 days for symbolize_log.py.
+      - if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: symbols-Windows
+          path: target/dist/*-symbols.7z
+          if-no-files-found: error
+          retention-days: 90
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: bundle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: bundle-*
+          merge-multiple: true
+          path: dist
+      - name: SHA256SUMS.txt from both bundles' checksums
+        working-directory: dist
+        run: |
+          sha256sum -c ./*.sha256
+          cat ./*-windows.7z.sha256 ./*-linux.tar.gz.sha256 > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      # A draft: the maintainer publishes it after the look. A version with a pre-release part
+      # (`0.0.1-rc.1`) is marked pre-release.
+      - name: The draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=()
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then prerelease=(--prerelease); fi
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --draft \
+            "${prerelease[@]}" --title "$GITHUB_REF_NAME" --notes "" \
+            dist/*-windows.7z dist/*-linux.tar.gz dist/SHA256SUMS.txt
