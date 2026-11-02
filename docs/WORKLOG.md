@@ -6993,12 +6993,12 @@ briefs, review loops, gates and mutation runs as for any step.
       value reversed (down moves a slider right and raises a number); plan
       (`plans/core/gui.md` "The wheel over a value"), draft, then the slice. Done 2026-11-02
       as `724e4249` on `f1g` (`wheel.rs` `wheel_steps`; ST-WHEEL-06)
-    - [ ] f1g6 `cargo bloat` on the release build (f6's item 2, pulled in): the low-hanging
+    - [x] f1g6 `cargo bloat` on the release build (f6's item 2, pulled in): the low-hanging
       gains only, each measured before it is proposed. Measured 2026-11-02 on `f1g-s4`:
       41,491,456 B (+2.0 MiB from `745ea9f4`). Ruled (DECISIONS "0.0.1 is built by CI"):
-      `codegen-units = 1` declined (-2.64 MiB measured), egui's `default_fonts` off (its unused
-      `Ubuntu-Light.ttf`, 353 KiB) → verify: the release exe without the file's bytes, every
-      font the app draws still loaded (the emoji, Hack, the icons)
+      `codegen-units = 1` declined (-2.64 MiB measured); egui's `default_fonts` kept for good
+      (DECISIONS "egui's default fonts stay": Ubuntu-Light shares one feature with Hack and the
+      emoji fonts). Closed 2026-11-02 with no change taken
     - [ ] f1g7 CI for GitHub releases, Windows and Linux (f4, pulled in): the workflow
       written by the lead (DECISIONS "0.0.1 is built by CI"): `v<version>` builds the Windows
       `.7z` and the Linux `.tar.gz` (Ubuntu 22.04) into a draft release, the release's checks on

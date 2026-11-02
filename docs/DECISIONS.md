@@ -15313,3 +15313,12 @@ check waits for 0.0.2.
 Why: without a real release to update to, the updater meets only a fake server before members
 run it, and a bug in 0.0.1's updater is fixed only by a manual download.
 Plan: `plans/core/distribution.md` "Self-update"; worklog 0.0.1f1g9, 0.0.2-cgu.
+
+## 2026-11-02 — studio_core — egui's default fonts stay, Ubuntu-Light with them
+Decision (the maintainer): the exe keeps egui's `default_fonts`, its unused `Ubuntu-Light.ttf`
+(353 KiB) included, for good.
+Why: egui ships its four fonts behind that one feature (Hack, the two emoji fonts the team names'
+`☆`, `！` and `Ｕ` need, and Ubuntu-Light), and `monochrome_emoji_fonts` requires it; dropping
+one font means vendoring the other three with their licenses and keeping every dependency from
+turning the feature back on, too much for 0.3 MiB.
+Plan: `spec/core/distribution.md` "Size budget".
