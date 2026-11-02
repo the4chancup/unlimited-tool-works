@@ -15106,3 +15106,12 @@ and f1e3's SWE-2 round waits for after it, replacing the entry above's deferred 
 Why: the maintainer's choice of reviewer for the release's last changes; f1e and f1e2 already
 had SWE-2's two rounds.
 Plan: WORKLOG 0.0.1f6.
+
+## 2026-11-02 — gui — On Windows the window draws through Direct3D 12
+Decision (lead, the plan silent): on Windows the shell asks wgpu for Direct3D 12 and OpenGL,
+not Vulkan; the `WGPU_BACKEND` variable still overrides; other platforms keep wgpu's defaults.
+Why: the clean-machine check's laptop (Intel HD Graphics 620) crashes in its Vulkan driver on
+every start, before the window shows, where Direct3D 12 and OpenGL start every time; a driver
+crash cannot be caught, so the only fix is not asking for Vulkan. Direct3D 12 is the
+interface Windows 10 and 11 drivers are built and tested against first.
+Plan: `plans/core/gui.md` "The graphics backend"; WORKLOG 0.0.1f1e4.

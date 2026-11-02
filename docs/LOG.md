@@ -3036,3 +3036,5 @@ worklog passed 7,000 lines.
 - 2026-11-02 — The cut's scope (the maintainer): `cargo bloat`, l2's terminal half and Astra over f1e-f1e3 move after it
   (worklog f6); the clean-machine check gets a script for the maintainer's notebook.
 - 2026-11-02 — The last changes' loop before the cut runs on Astra (the maintainer); f1e3's SWE-2 round moves to f6.
+- 2026-11-02 — The clean-machine check found a crash at every start on an Intel HD 620 laptop, in its Vulkan driver during wgpu's
+  device creation (DX12 and OpenGL start fine): f1e4 has Windows ask for Direct3D 12 and OpenGL only.
