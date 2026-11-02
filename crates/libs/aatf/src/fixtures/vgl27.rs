@@ -667,6 +667,70 @@ fn the_captains_a_positions_option_raises_his_allowance() {
     assert_eq!(problems(&rules, &team), vec![]);
 }
 
+/// `card_limits`' reported limit counts the room an untaken choice
+/// still gives: `resolve_choices` applies an option only when the
+/// player exceeds a limit it raises, so the captain under the silver
+/// limit (no second COM style taking `free: com`, no third A position)
+/// has the `cards` option's +1 in the limit — where a COM style past
+/// the tier's free one takes the choice, the limit is the tier's. A
+/// non-captain silver (slot 5) keeps the tier's limit either way.
+#[test]
+fn the_captains_untaken_choice_counts_its_card_in_the_limit() {
+    let rules = rules();
+    let team = legal_team();
+    assert_eq!(team.captain, Some(10));
+    let tier_limit = i32::from(
+        rules
+            .ruleset()
+            .tiers
+            .iter()
+            .find(|tier| tier.id.as_str() == "silver")
+            .expect("the silver tier")
+            .cards,
+    );
+    let limits_of = |team: &TeamView, slot| {
+        rules
+            .card_limits(team, team.player(slot).expect("a filled slot"), "silver")
+            .expect("limits")
+    };
+    assert_eq!(
+        i32::from(limits_of(&team, 5).limit),
+        tier_limit,
+        "a non-captain silver: `when: captain` does not hold for him"
+    );
+    assert_eq!(
+        i32::from(limits_of(&team, 10).limit),
+        tier_limit,
+        "a COM style past the free one takes the choice"
+    );
+
+    // One COM style (the tier frees one), one A position (two allowed)
+    // and paid cards under the limit: no option is needed, the choice
+    // is untaken and the limit counts the `cards` option's +1.
+    let team = edited(10, |p| {
+        assert_eq!(
+            p.cards
+                .iter()
+                .filter(|c| matches!(c, Card::ComStyle(_)))
+                .count(),
+            2,
+            "premise: two COM styles"
+        );
+        p.cards.retain(|c| *c != card("long_ranger"));
+        assert_eq!(
+            p.ratings.iter().filter(|r| **r == 2).count(),
+            1,
+            "premise: one A position"
+        );
+    });
+    let limits = limits_of(&team, 10);
+    assert!(
+        i32::from(limits.paid) <= tier_limit,
+        "premise: his paid cards under the tier's limit"
+    );
+    assert_eq!(i32::from(limits.limit), tier_limit + 1);
+}
+
 /// The man-marking ban and the support settings are checked, each its
 /// own violation (the settings are stored on every version; the PES 15
 /// build shows them).

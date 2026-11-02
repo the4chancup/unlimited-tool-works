@@ -213,7 +213,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         return;
     };
     let file = session.file();
-    let (_, settled) = edit_settled(ui, *focused);
+    let (_, end) = edit_settled(ui, *focused);
     // A run is due when the key moved on since the last result (a pick is
     // always of the open save's version: the pick and `reset` refuse the
     // rest).
@@ -223,9 +223,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             picked: picked.revision(),
             scope: comparator.scope,
         };
-        comparator.comparison.update(&key, true, settled, |key| {
-            spawn_compare(ui.ctx(), picked.file(), file, key)
-        })
+        comparator
+            .comparison
+            .update(&key, true, end.settled(), |key| {
+                spawn_compare(ui.ctx(), picked.file(), file, key)
+            })
     } else {
         false
     };

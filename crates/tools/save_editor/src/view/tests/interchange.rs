@@ -1,5 +1,5 @@
 //! The team file panel's tests (SE-GUI-16, SE-GUI-17, SE-GUI-22): a Team
-//! TOML imported with gameplay alone as one undoable edit, another
+//! TOML imported with stats alone as one undoable edit, another
 //! version's notes in words, a refusal drawn under the
 //! choices, a squad file's pairing and its refusal, a tactics file, a
 //! Texport, the aesthetics lock, the import following the save, and the
@@ -8,7 +8,6 @@
 use pes_savefile::interchange::legacy::{read_squad, read_tactics};
 use pes_savefile::interchange::team_toml::{TacticsSection, TeamToml};
 use pes_savefile::interchange::texport::Texport;
-use pes_savefile::model::player::PlayerMotion;
 use pes_savefile::pes17_texport;
 
 use crate::session::import_sections::{Sections, keep_sections};
@@ -294,19 +293,24 @@ fn assert_co_and_three_differ(view: &SaveView) {
 
 // SE-GUI-16
 #[test]
-fn a_team_toml_with_gameplay_alone_writes_the_abilities_as_one_undoable_edit() {
-    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_gameplay", THREE);
+fn a_team_toml_with_stats_alone_writes_the_abilities_as_one_undoable_edit() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_stats", THREE);
     assert_co_and_three_differ(&view);
     let source = rostered(&view, CO);
     let before_team = team_entry(&view, THREE);
     let before_players = rostered(&view, THREE);
+    assert_ne!(
+        before_team.colors,
+        team_entry(&view, CO).colors,
+        "premise: /3/'s and /co/'s colours differ"
+    );
     let co = export(&view, CO);
-    let gameplay = Sections {
-        gameplay: true,
+    let stats = Sections {
+        stats: true,
         aesthetics: false,
-        tactics: false,
+        gameplan: false,
     };
-    let expected = lib_import(&view, &kept(&co, gameplay), THREE);
+    let expected = lib_import(&view, &kept(&co, stats), THREE);
     picked(&mut window, &mut view, "co.toml", co.as_bytes());
     assert!(
         panel_lines(&mut window, &mut view)
@@ -315,31 +319,30 @@ fn a_team_toml_with_gameplay_alone_writes_the_abilities_as_one_undoable_edit() {
     );
     assert_eq!(
         checkboxes(&mut window, &mut view),
-        ["Gameplay", "Aesthetics", "Tactics"]
+        ["Stats", "Aesthetics", "Gameplan"]
     );
     toggle(&mut window, &mut view, "Aesthetics");
-    toggle(&mut window, &mut view, "Tactics");
-    assert!(
-        ticked(&mut window, &mut view, "Gameplay"),
-        "gameplay chosen"
-    );
+    toggle(&mut window, &mut view, "Gameplan");
+    assert!(ticked(&mut window, &mut view, "Stats"), "stats chosen");
     assert!(
         !ticked(&mut window, &mut view, "Aesthetics"),
         "aesthetics off"
     );
-    assert!(!ticked(&mut window, &mut view, "Tactics"), "tactics off");
+    assert!(!ticked(&mut window, &mut view, "Gameplan"), "gameplan off");
 
     apply(&mut window, &mut view);
 
     assert_imported(&view, THREE, &expected);
     let team = team_entry(&view, THREE);
     assert_eq!(team.tactics, before_team.tactics, "/3/'s tactics unchanged");
-    // The file's `[team]` keys load with gameplay.
+    // The file's `[team]` name keys load with stats, its look with
+    // aesthetics: the name is the file's, the colours stay /3/'s.
     assert_eq!(
         (before_team.name.as_str(), team.name.as_str()),
         ("/3/", "/co/"),
         "the team's name is the file's"
     );
+    assert_eq!(team.colors, before_team.colors, "the colours stay /3/'s");
     for (slot, (after, (before, co))) in rostered(&view, THREE)
         .iter()
         .zip(before_players.iter().zip(&source))
@@ -352,6 +355,10 @@ fn a_team_toml_with_gameplay_alone_writes_the_abilities_as_one_undoable_edit() {
             "slot {slot}: shirt name"
         );
         assert_eq!(after.appearance, before.appearance, "slot {slot}: the look");
+        assert_eq!(
+            after.motion, before.motion,
+            "slot {slot}: every motion, the free kick's with them"
+        );
         assert_eq!(
             team.roster[slot].number, before_team.roster[slot].number,
             "slot {slot}: the shirt number"
@@ -422,8 +429,8 @@ fn an_aesthetics_import_writes_each_players_own_id_where_the_file_has_no_base_co
     }
     let co = export(&view, CO);
     picked(&mut window, &mut view, "co.toml", co.as_bytes());
-    toggle(&mut window, &mut view, "Gameplay");
-    toggle(&mut window, &mut view, "Tactics");
+    toggle(&mut window, &mut view, "Stats");
+    toggle(&mut window, &mut view, "Gameplan");
 
     apply(&mut window, &mut view);
 
@@ -479,7 +486,7 @@ fn a_file_of_another_version_lists_its_notes_in_words() {
 
     assert_eq!(
         checkboxes(&mut window, &mut view),
-        ["Gameplay", "Aesthetics", "Tactics"]
+        ["Stats", "Aesthetics", "Gameplan"]
     );
     let lines = panel_lines(&mut window, &mut view);
     for line in [
@@ -949,7 +956,7 @@ fn a_refusal_of_a_chosen_section_stands_under_the_choices_until_it_is_unticked()
     let at = |text: &str| lines.iter().position(|line| line == text);
     let refused = at(&refusal).unwrap_or_else(|| panic!("{refusal:?} in {lines:#?}"));
     assert!(
-        at("Tactics").is_some_and(|choice| choice < refused),
+        at("Gameplan").is_some_and(|choice| choice < refused),
         "under the choices"
     );
     assert!(
@@ -968,17 +975,17 @@ fn a_refusal_of_a_chosen_section_stands_under_the_choices_until_it_is_unticked()
     );
     assert_eq!(
         checkboxes(&mut window, &mut view),
-        ["Gameplay", "Aesthetics", "Tactics"]
+        ["Stats", "Aesthetics", "Gameplan"]
     );
     assert!(
         apply_button(&mut window, &mut view).is_disabled(),
         "Apply is disabled"
     );
 
-    toggle(&mut window, &mut view, "Gameplay");
+    toggle(&mut window, &mut view, "Stats");
     assert!(
         !panel_lines(&mut window, &mut view).contains(&refusal),
-        "the refusal goes with gameplay"
+        "the refusal goes with stats"
     );
     assert!(
         !apply_button(&mut window, &mut view).is_disabled(),
@@ -988,7 +995,7 @@ fn a_refusal_of_a_chosen_section_stands_under_the_choices_until_it_is_unticked()
 
 // SE-GUI-17
 #[test]
-fn a_squad_file_pairs_its_records_and_writes_gameplay_and_aesthetics() {
+fn a_squad_file_pairs_its_records_and_writes_stats_and_aesthetics() {
     let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_squad", CO);
     let bytes = lib_fixture("pes19_squad.4ccs");
     let file = view.session.as_ref().unwrap().file();
@@ -1074,10 +1081,7 @@ fn a_squad_file_pairs_its_records_and_writes_gameplay_and_aesthetics() {
         .filter(|line| *line == "\u{2192}")
         .count();
     assert_eq!(arrows, 23, "one row per record");
-    assert_eq!(
-        checkboxes(&mut window, &mut view),
-        ["Gameplay", "Aesthetics"]
-    );
+    assert_eq!(checkboxes(&mut window, &mut view), ["Stats", "Aesthetics"]);
 
     apply(&mut window, &mut view);
     assert_eq!(rostered(&view, CO), expected, "the lib's import");
@@ -1143,7 +1147,7 @@ fn a_tactics_file_offers_tactics_alone_and_writes_them() {
         panel_lines(&mut window, &mut view)
             .contains(&"A legacy tactics file (.4cct) written from a PES 2019 save.".to_owned())
     );
-    assert_eq!(checkboxes(&mut window, &mut view), ["Tactics"]);
+    assert_eq!(checkboxes(&mut window, &mut view), ["Gameplan"]);
     apply(&mut window, &mut view);
     assert_eq!(
         team_entry(&view, CO).tactics,
@@ -1170,7 +1174,7 @@ fn a_texport_offers_every_section_and_names_its_version() {
     );
     assert_eq!(
         checkboxes(&mut window, &mut view),
-        ["Gameplay", "Aesthetics", "Tactics"]
+        ["Stats", "Aesthetics", "Gameplan"]
     );
 }
 
@@ -1225,7 +1229,7 @@ fn a_pes17_texport_without_an_extension_imports_and_undoes() {
     );
     assert_eq!(
         checkboxes(&mut window, &mut view),
-        ["Gameplay", "Aesthetics", "Tactics"]
+        ["Stats", "Aesthetics", "Gameplan"]
     );
     assert!(
         !panel_nodes(&mut window, &mut view)
@@ -1261,9 +1265,9 @@ fn under_the_lock_the_aesthetics_section_is_off_and_never_written() {
     let before = rostered(&view, THREE);
     let co = export(&view, CO);
     let unlocked = Sections {
-        gameplay: true,
+        stats: true,
         aesthetics: false,
-        tactics: true,
+        gameplan: true,
     };
     let expected = lib_import(&view, &kept(&co, unlocked), THREE);
     picked(&mut window, &mut view, "co.toml", co.as_bytes());
@@ -1278,11 +1282,11 @@ fn under_the_lock_the_aesthetics_section_is_off_and_never_written() {
         tooltip_containing(&mut window, &mut view, centre(&aesthetics), "export owns"),
         Some(OWNERSHIP_TIP.to_owned())
     );
+    assert!(ticked(&mut window, &mut view, "Stats"), "stats chosen");
     assert!(
-        ticked(&mut window, &mut view, "Gameplay"),
-        "gameplay chosen"
+        ticked(&mut window, &mut view, "Gameplan"),
+        "gameplan chosen"
     );
-    assert!(ticked(&mut window, &mut view, "Tactics"), "tactics chosen");
 
     apply(&mut window, &mut view);
     assert_imported(&view, THREE, &expected);
@@ -1296,12 +1300,8 @@ fn under_the_lock_the_aesthetics_section_is_off_and_never_written() {
         );
         assert_eq!(after.appearance, before.appearance, "slot {slot}: the look");
         assert_eq!(
-            after.motion,
-            PlayerMotion {
-                free_kick: after.motion.free_kick,
-                ..before.motion.clone()
-            },
-            "slot {slot}: the aesthetics motions"
+            after.motion, before.motion,
+            "slot {slot}: the motions, the free kick's with them"
         );
         assert_eq!(
             team.roster[slot].number, before_team.roster[slot].number,
@@ -1317,7 +1317,7 @@ fn the_staged_import_follows_the_lock_turned_on_and_off_after_the_pick() {
     assert_co_and_three_differ(&view);
     let co = export(&view, CO);
     picked(&mut window, &mut view, "co.toml", co.as_bytes());
-    for label in ["Gameplay", "Aesthetics", "Tactics"] {
+    for label in ["Stats", "Aesthetics", "Gameplan"] {
         assert!(
             ticked(&mut window, &mut view, label),
             "premise: {label} chosen"
@@ -1376,9 +1376,9 @@ fn the_staged_import_follows_an_edit_made_after_the_pick() {
 
 /// Every section chosen.
 const ALL: Sections = Sections {
-    gameplay: true,
+    stats: true,
     aesthetics: true,
-    tactics: true,
+    gameplan: true,
 };
 
 // SE-GUI-16
@@ -1536,13 +1536,13 @@ fn apply_is_disabled_when_no_section_the_file_holds_is_chosen() {
         "pes19_tactics.4cct",
         &lib_fixture("pes19_tactics.4cct"),
     );
-    assert_eq!(checkboxes(&mut window, &mut view), ["Tactics"]);
+    assert_eq!(checkboxes(&mut window, &mut view), ["Gameplan"]);
     assert!(
         !apply_button(&mut window, &mut view).is_disabled(),
         "premise: Apply is enabled"
     );
 
-    toggle(&mut window, &mut view, "Tactics");
+    toggle(&mut window, &mut view, "Gameplan");
     assert!(
         apply_button(&mut window, &mut view).is_disabled(),
         "Apply is disabled"

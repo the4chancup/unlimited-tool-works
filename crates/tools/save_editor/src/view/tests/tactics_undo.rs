@@ -740,21 +740,6 @@ fn centre_below(nodes: &[accesskit::Node], label: &str, role: Role) -> egui::Pos
     centre(node)
 }
 
-/// One wheel notch (`up` or down) with the pointer at `at`: a pointer
-/// move and the wheel event in one frame.
-fn notch(window: &mut Headless, view: &mut SaveView, at: egui::Pos2, up: bool) {
-    let wheel = egui::Event::MouseWheel {
-        unit: egui::MouseWheelUnit::Line,
-        delta: egui::vec2(0.0, if up { 1.0 } else { -1.0 }),
-        phase: egui::TouchPhase::Move,
-        source: egui::MouseWheelSource::Wheel,
-        modifiers: egui::Modifiers::default(),
-    };
-    window.frame(vec![egui::Event::PointerMoved(at), wheel], |ui| {
-        show(ui, view, &|| Vec::new())
-    });
-}
-
 // ST-WHEEL-05
 #[test]
 fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
@@ -784,23 +769,28 @@ fn wheel_notches_over_the_tactics_controls_are_one_undo_step_each() {
     let attacking_style = centre_below(&nodes, "Attacking style", Role::Button);
     let numbers_in_attack = centre_below(&nodes, "Numbers in attack", Role::Button);
 
+    // Each notch more than a second after the one before, so each is its
+    // own undo entry: the run of steps a second of idle ends.
     notch(&mut window, &mut view, rail, true);
     assert_eq!(
         preset(&view).sliders.support_range,
         6,
         "a notch up over the rail adds one"
     );
+    idle_frames(&mut window, &mut view, 61);
     notch(&mut window, &mut view, value_box, true);
     assert_eq!(
         preset(&view).sliders.support_range,
         7,
         "a notch up over the value box adds one more"
     );
+    idle_frames(&mut window, &mut view, 61);
     notch(&mut window, &mut view, attacking_style, true);
     assert!(
         preset(&view).style.attacking_style,
         "a notch up takes Possession, the right choice"
     );
+    idle_frames(&mut window, &mut view, 61);
     notch(&mut window, &mut view, numbers_in_attack, false);
     assert_eq!(
         preset(&view).sliders.numbers_in_attack,

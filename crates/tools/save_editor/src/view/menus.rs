@@ -23,8 +23,8 @@ use crate::session::team_ops::{BootsMode, GlovesMode};
 use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::generate;
 use crate::view::{
-    NUMBER_BOX, Panel, Refusal, SaveView, comparator, refuse_save_being_read, selected_player,
-    selected_team_id,
+    NUMBER_BOX, Panel, Refusal, SaveView, comparator, number_arrows, refuse_save_being_read,
+    selected_player, selected_team_id,
 };
 
 /// The Team menu button (the draft's `teamMenu`): Set edited flag, the
@@ -601,10 +601,9 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                             "Set incremental value:",
                         );
                     });
-                    let start = ui.add_sized(
-                        field_size(ui, NUMBER_BOX),
-                        egui::DragValue::new(&mut boglo.start),
-                    );
+                    let start = number_arrows(ui, &mut boglo.start, 0..=u32::MAX, |ui, value| {
+                        ui.add_sized(field_size(ui, NUMBER_BOX), egui::DragValue::new(value))
+                    });
                     step_number(&mut boglo.start, wheel_steps(ui, &start), 0..=u32::MAX);
                     ui.add_space(columns.range_gap);
                     ui.label("\u{2013}");
@@ -620,10 +619,10 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                             "Set all to the same ID:",
                         );
                     });
-                    let boots_id = ui.add_sized(
-                        field_size(ui, columns.field),
-                        egui::DragValue::new(&mut boglo.boots_id),
-                    );
+                    let boots_id =
+                        number_arrows(ui, &mut boglo.boots_id, 0..=u32::MAX, |ui, value| {
+                            ui.add_sized(field_size(ui, columns.field), egui::DragValue::new(value))
+                        });
                     step_number(
                         &mut boglo.boots_id,
                         wheel_steps(ui, &boots_id),
@@ -656,10 +655,10 @@ pub(crate) fn boglo_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                             "Set all to the same ID:",
                         );
                     });
-                    let gloves_id = ui.add_sized(
-                        field_size(ui, columns.field),
-                        egui::DragValue::new(&mut boglo.gloves_id),
-                    );
+                    let gloves_id =
+                        number_arrows(ui, &mut boglo.gloves_id, 0..=u32::MAX, |ui, value| {
+                            ui.add_sized(field_size(ui, columns.field), egui::DragValue::new(value))
+                        });
                     step_number(
                         &mut boglo.gloves_id,
                         wheel_steps(ui, &gloves_id),
@@ -826,11 +825,14 @@ pub(crate) fn stat_num_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 row,
                 egui::Layout::right_to_left(egui::Align::Center),
                 |ui| {
-                    let field = ui.add(
-                        egui::DragValue::new(&mut stat_num.value)
-                            .range(range.clone())
-                            .min_size(egui::vec2(NUMBER_BOX, row.y)),
-                    );
+                    let field =
+                        number_arrows(ui, &mut stat_num.value, range.clone(), |ui, value| {
+                            ui.add(
+                                egui::DragValue::new(value)
+                                    .range(range.clone())
+                                    .min_size(egui::vec2(NUMBER_BOX, row.y)),
+                            )
+                        });
                     ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
                         ui.label(sentence)
                     });
@@ -905,15 +907,14 @@ impl CopySwap {
         }
     }
 
-    /// OK's operation on `session`, under the aesthetics lock when
-    /// `aesthetics_locked`.
-    fn apply(&self, session: &mut Session, aesthetics_locked: bool) {
+    /// OK's operation on `session`.
+    fn apply(&self, session: &mut Session) {
         match self.mode {
             CopySwapMode::Copy => {
-                session.copy_stats(self.player_id, self.other_id, aesthetics_locked);
+                session.copy_stats(self.player_id, self.other_id);
             }
             CopySwapMode::Swap => {
-                session.swap_stats(self.player_id, self.other_id, aesthetics_locked);
+                session.swap_stats(self.player_id, self.other_id);
             }
         }
     }
@@ -970,7 +971,6 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     }
     let mut close = false;
     let title = view.copy_swap.as_ref().expect("checked above").title();
-    let locked = view.aesthetics_locked();
     let response = modal(
         ui.ctx(),
         egui::Id::unique("save_editor_copy_swap"),
@@ -1051,7 +1051,7 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     close = true;
                 }
                 if ui.button("OK").clicked() {
-                    dialog.apply(session, locked);
+                    dialog.apply(session);
                     close = true;
                 }
             });

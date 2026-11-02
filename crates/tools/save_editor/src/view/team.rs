@@ -25,7 +25,7 @@ use studio_core::widgets::{
 };
 
 use crate::session::Session;
-use crate::view::{SaveView, edit_team, info_strip, selected_team, tactics};
+use crate::view::{SaveView, edit_team, info_strip, number_arrows, selected_team, tactics};
 
 /// One unit of the header's row: a label with its field, or the button.
 #[derive(Debug, Clone, Copy)]
@@ -540,11 +540,13 @@ fn number<T: egui::emath::Numeric>(
 ) {
     let mut shown = shown;
     ui.label(label);
-    let mut response = ui.add(
-        egui::DragValue::new(&mut shown)
-            .range(range.clone())
-            .clamp_existing_to_range(false),
-    );
+    let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
+        ui.add(
+            egui::DragValue::new(value)
+                .range(range.clone())
+                .clamp_existing_to_range(false),
+        )
+    });
     if step_number(&mut shown, wheel_steps(ui, &response), range) {
         response.mark_changed();
     }

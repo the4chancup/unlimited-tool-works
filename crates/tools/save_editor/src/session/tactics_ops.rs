@@ -7,16 +7,32 @@
 //! does for players. egui-free, so the operations are testable without a
 //! frame.
 
+use pes_savefile::model::tactics::{Formation, TacticsPreset};
+
 use crate::session::Session;
 
 impl Session {
     /// Copies preset `from` onto `to` of `team_id`'s tactics (the editor's
     /// "Copy preset N to M" menu).
     pub(crate) fn copy_preset(&mut self, team_id: u32, from: usize, to: usize) {
+        let Some(preset) = self
+            .file
+            .team(team_id)
+            .map(|team| team.tactics.presets[from].clone())
+        else {
+            return;
+        };
+        self.paste_preset(team_id, to, preset);
+    }
+
+    /// `preset` written over `to` of `team_id`'s tactics (Ctrl+V's preset
+    /// paste, the source the clipboard's snapshot rather than a preset of
+    /// the team): `copy_preset`'s write.
+    pub(crate) fn paste_preset(&mut self, team_id: u32, to: usize, preset: TacticsPreset) {
         let Some(mut team) = self.file.team(team_id).cloned() else {
             return;
         };
-        team.tactics.presets[to] = team.tactics.presets[from].clone();
+        team.tactics.presets[to] = preset;
         self.edit_entries(Vec::new(), vec![team]);
     }
 
@@ -33,11 +49,30 @@ impl Session {
     /// Copies formation `from` onto `to` inside `team_id`'s preset
     /// `preset` (the editor's "Copy <formation> to <formation>" menu).
     pub(crate) fn copy_formation(&mut self, team_id: u32, preset: usize, from: usize, to: usize) {
+        let Some(formation) = self
+            .file
+            .team(team_id)
+            .map(|team| team.tactics.presets[preset].formations[from].clone())
+        else {
+            return;
+        };
+        self.paste_formation(team_id, preset, to, formation);
+    }
+
+    /// `formation` written over `to` inside `team_id`'s preset `preset`
+    /// (Ctrl+V's formation paste, the source the clipboard's snapshot):
+    /// `copy_formation`'s write.
+    pub(crate) fn paste_formation(
+        &mut self,
+        team_id: u32,
+        preset: usize,
+        to: usize,
+        formation: Formation,
+    ) {
         let Some(mut team) = self.file.team(team_id).cloned() else {
             return;
         };
-        team.tactics.presets[preset].formations[to] =
-            team.tactics.presets[preset].formations[from].clone();
+        team.tactics.presets[preset].formations[to] = formation;
         self.edit_entries(Vec::new(), vec![team]);
     }
 

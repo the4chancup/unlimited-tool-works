@@ -147,7 +147,8 @@ fn tier_values(player, tier, team) {
 }
 
 // The card economy of `player` as tier `tier`: the paid limit (his extra A positions
-// deducted), the free count per group, the free and required cards, the A positions allowed.
+// deducted, an untaken choice's `cards` counted), the free count per group, the free and
+// required cards, the A positions allowed.
 fn card_limits(player, tier, team) {
     let rules = normalized(global::RULESET);
     let t = rules.tier(tier);
@@ -155,13 +156,29 @@ fn card_limits(player, tier, team) {
     let system = rules.height_system(team);
     let p = rules.profile(team, system, player, tier, rules.tier_free_whens(team, system, player));
     let cards = rules.card_summary(t, p, player);
+    // The check resolves a choice only when an option is needed, so `p`
+    // carries no effect of an untaken choice; the reported limit counts
+    // the room an untaken one still gives: each's first `cards` option
+    // applied to `open`, whose summary's limit stands.
+    let open = p;
+    let limit = cards.limit;
+    for choice in p.choices {
+        if choice.label in p.taken { continue; }
+        for option in choice.options {
+            if "cards" in option {
+                open = apply_effects(open, tier, choice.label, choice.severity, option, choice.from);
+                limit = rules.card_summary(t, open, player).limit;
+                break;
+            }
+        }
+    }
     let free_cards = [];
     for card in p.free_cards { if !(card in free_cards) { free_cards.push(card); } }
     let required_cards = [];
     for required in p.require_cards { required_cards.push(required.card); }
     #{
         paid: cards.paid,
-        limit: cards.limit, free: cards.free, free_cards: free_cards,
+        limit: limit, free: cards.free, free_cards: free_cards,
         required_cards: required_cards, a_positions: cards.a_allowance,
         max_a_positions: p.max_a_positions,
     }

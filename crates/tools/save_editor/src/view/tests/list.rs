@@ -2039,11 +2039,11 @@ fn every_position_fits_its_column_at_the_lists_font() {
     );
 }
 
-// PageDown selects the list's next player row and PageUp the previous,
-// even while a number field holds the keyboard; the team row is skipped,
-// so PageUp on the first player row moves nothing.
+// SE-GUI-53
 #[test]
-fn page_down_and_up_walk_the_lists_player_rows_from_a_number_field() {
+fn page_down_and_up_step_a_page_of_rows_from_a_number_field() {
+    // PageDown and PageUp move a page of rows even while a number field
+    // holds the keyboard; the field's gesture ends on the move.
     let path = fixture(PesVersion::Pes17, "page_keys_walk");
     let mut view = SaveView::new();
     view.open(&path);
@@ -2063,46 +2063,70 @@ fn page_down_and_up_walk_the_lists_player_rows_from_a_number_field() {
         window.ctx.egui_wants_keyboard_input(),
         "premise: the Height field holds the keyboard"
     );
-    let page = |window: &mut Headless, view: &mut SaveView, page_key: egui::Key| {
+    // The page is the whole rows the list shows at once, the team row
+    // counted; a row cut off at the bottom is not counted.
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let frame = list_frame(&window, &shapes);
+    let page = nodes
+        .iter()
+        .filter(|node| {
+            node.role() == Role::Button
+                && node.bounds().is_some_and(|bounds| {
+                    bounds.x0 < f64::from(frame.max.x)
+                        && bounds.y0 >= f64::from(frame.min.y) - 0.5
+                        && bounds.y1 <= f64::from(frame.max.y) + 0.5
+                })
+        })
+        .count();
+    assert!(page > 10, "premise: a page is several rows ({page})");
+    let drawn: Vec<Selection> = selection::list(
+        view.session.as_ref().unwrap().file(),
+        &TeamChoice::Team(734),
+        "",
+    )
+    .iter()
+    .map(|row| match row {
+        selection::ListRow::Team(id) => Selection::Team(*id),
+        selection::ListRow::Player(row) => Selection::Player(row.team_id, row.slot),
+    })
+    .collect();
+    let select = |index: usize| Some(drawn[index.min(drawn.len() - 1)]);
+    let press = |window: &mut Headless, view: &mut SaveView, page_key: egui::Key| {
         window.frame(vec![key(page_key, egui::Modifiers::NONE, true)], |ui| {
             show(ui, view, &|| Vec::new())
         });
     };
 
-    page(&mut window, &mut view, egui::Key::PageDown);
-    assert_eq!(
-        view.selected,
-        Some(Selection::Player(734, 1)),
-        "PageDown selected the next player"
-    );
+    press(&mut window, &mut view, egui::Key::PageDown);
+    assert_eq!(view.selected, select(1 + page), "PageDown moved a page");
     assert_eq!(
         player_entry(&view, roster[0].player_id).basic.height,
         first_height,
         "the key edited no field"
     );
 
-    page(&mut window, &mut view, egui::Key::PageUp);
+    press(&mut window, &mut view, egui::Key::PageUp);
     assert_eq!(
         view.selected,
-        Some(Selection::Player(734, 0)),
-        "PageUp selected the previous player"
+        select((1 + page).min(drawn.len() - 1).saturating_sub(page)),
+        "PageUp moved the page back"
     );
-    page(&mut window, &mut view, egui::Key::PageUp);
+    press(&mut window, &mut view, egui::Key::PageUp);
     assert_eq!(
         view.selected,
-        Some(Selection::Player(734, 0)),
-        "PageUp on the first player row moved nothing"
+        Some(Selection::Team(734)),
+        "the list's first row stops PageUp"
     );
 }
 
-/// PES 17's team 734 listed with his first player selected and the
+/// PES 17's team 734 listed with roster `slot`'s player selected and the
 /// keyboard in his Height field, the window's first frame drawn.
-fn page_keys_from_height(test: &str) -> (SaveView, Headless) {
+fn page_keys_from_height(test: &str, slot: u8) -> (SaveView, Headless) {
     let path = fixture(PesVersion::Pes17, test);
     let mut view = SaveView::new();
     view.open(&path);
     view.team = TeamChoice::Team(734);
-    view.selected = Some(Selection::Player(734, 0));
+    view.selected = Some(Selection::Player(734, slot));
     let mut window = Headless::new();
     let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let height = node_id_right_of(&pairs, "Height", Role::SpinButton);
@@ -2114,16 +2138,18 @@ fn page_keys_from_height(test: &str) -> (SaveView, Headless) {
     (view, window)
 }
 
-// A page key that moves nothing (PageUp on the first player row) leaves
-// the field its keyboard: the member types on where he was.
+// SE-GUI-53
+// A page key that moves nothing (PageDown on the last row) leaves the
+// field its keyboard: the member types on where he was.
 #[test]
 fn a_page_key_that_moves_nothing_keeps_the_fields_keyboard() {
-    let (mut view, mut window) = page_keys_from_height("page_keys_dead_end");
+    // 734's roster fills its 23 slots, so slot 22's row is the list's last.
+    let (mut view, mut window) = page_keys_from_height("page_keys_dead_end", 22);
     window.frame(
-        vec![key(egui::Key::PageUp, egui::Modifiers::NONE, true)],
+        vec![key(egui::Key::PageDown, egui::Modifiers::NONE, true)],
         |ui| show(ui, &mut view, &|| Vec::new()),
     );
-    assert_eq!(view.selected, Some(Selection::Player(734, 0)), "no move");
+    assert_eq!(view.selected, Some(Selection::Player(734, 22)), "no move");
     assert!(
         window.ctx.egui_wants_keyboard_input(),
         "the Height field keeps the keyboard"
@@ -2135,7 +2161,7 @@ fn a_page_key_that_moves_nothing_keeps_the_fields_keyboard() {
 // otherwise finish on the next player.
 #[test]
 fn the_page_keys_wait_while_a_pointer_button_is_held() {
-    let (mut view, mut window) = page_keys_from_height("page_keys_pointer_held");
+    let (mut view, mut window) = page_keys_from_height("page_keys_pointer_held", 0);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let first = nodes
         .iter()
@@ -2162,7 +2188,7 @@ fn the_page_keys_wait_while_a_pointer_button_is_held() {
 // page keys' own gate can keep the selection.
 #[test]
 fn the_page_keys_wait_on_the_frame_a_pointer_button_is_released() {
-    let (mut view, mut window) = page_keys_from_height("page_keys_pointer_released");
+    let (mut view, mut window) = page_keys_from_height("page_keys_pointer_released", 0);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let label = nodes
         .iter()
@@ -2216,5 +2242,515 @@ fn the_list_scrolls_to_keep_a_paged_selection_in_view() {
     assert!(
         bounds.y0 >= f64::from(frame.min.y) - 0.5 && bounds.y1 <= f64::from(frame.max.y) + 0.5,
         "the selected row inside the list: {bounds:?} vs {frame:?}"
+    );
+}
+
+// SE-GUI-52
+#[test]
+fn the_arrows_walk_the_lists_rows_across_the_team_rows() {
+    // Down on team 701's last player row selects team 702's row, the next
+    // row in the list as drawn; Up selects the player again.
+    let path = fixture(PesVersion::Pes17, "arrow_keys_walk");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    let rows = selection::list(view.session.as_ref().unwrap().file(), &TeamChoice::All, "");
+    let last = rows
+        .iter()
+        .rposition(|row| matches!(row, selection::ListRow::Player(row) if row.team_id == 701))
+        .expect("a player row of team 701");
+    let selection::ListRow::Player(player) = rows[last] else {
+        unreachable!("rposition matched a player row")
+    };
+    assert_eq!(
+        rows.get(last + 1),
+        Some(&selection::ListRow::Team(702)),
+        "premise: team 702's row follows 701's last player row"
+    );
+    view.selected = Some(Selection::Player(701, player.slot));
+    let mut window = Headless::new();
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        window.ctx.memory(|memory| memory.focused()).is_none(),
+        "premise: no widget holds the keyboard"
+    );
+
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(702)),
+        "Down selected team 702's row"
+    );
+    window.frame(
+        vec![key(egui::Key::ArrowUp, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, player.slot)),
+        "Up selected 701's last player again"
+    );
+}
+
+// SE-GUI-52
+#[test]
+fn up_on_the_lists_first_row_moves_nothing() {
+    // 701's team row is the list's first: Up stops there.
+    let path = fixture(PesVersion::Pes17, "arrow_keys_first_row");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    let rows = selection::list(view.session.as_ref().unwrap().file(), &TeamChoice::All, "");
+    assert_eq!(
+        rows.first(),
+        Some(&selection::ListRow::Team(701)),
+        "premise: 701's team row is the list's first"
+    );
+    view.selected = Some(Selection::Team(701));
+    let mut window = Headless::new();
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    window.frame(
+        vec![key(egui::Key::ArrowUp, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "Up on the first row moved nothing"
+    );
+}
+
+// SE-GUI-52
+#[test]
+fn down_on_the_lists_last_row_moves_nothing() {
+    // ALL's last row, a player of the last team: Down stops there, and
+    // the step itself reports no move.
+    let path = fixture(PesVersion::Pes17, "arrow_keys_last_row");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    let rows = selection::list(view.session.as_ref().unwrap().file(), &TeamChoice::All, "");
+    let selection::ListRow::Player(player) = rows.last().expect("a last row") else {
+        panic!("premise: the last row is a player row")
+    };
+    let last_selection = Selection::Player(player.team_id, player.slot);
+    view.selected = Some(last_selection);
+    let mut window = Headless::new();
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(last_selection),
+        "Down on the last row moved nothing"
+    );
+    assert!(
+        !player_list::step_selection(&mut view, true, 1),
+        "the step on the last row reports no move"
+    );
+    assert_eq!(view.selected, Some(last_selection));
+}
+
+// SE-GUI-52
+#[test]
+fn the_arrows_wait_while_a_field_holds_the_keyboard() {
+    // A number field editing under the keyboard keeps the key: Down steps
+    // its value, and the selection stays.
+    let path = fixture(PesVersion::Pes17, "arrow_keys_focused");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(734);
+    view.selected = Some(Selection::Player(734, 0));
+    let mut window = Headless::new();
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let height_node = node_id_right_of(&pairs, "Height", Role::SpinButton);
+    // A click puts the field in edit mode: its text takes the keyboard.
+    action_click(&mut window, &mut view, height_node);
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "premise: the Height field holds the keyboard"
+    );
+    let player_id = team_entry(&view, 734).roster[0].player_id;
+    let height = player_entry(&view, player_id).basic.height;
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(734, 0)),
+        "Down with the Height field holding the keyboard moved nothing"
+    );
+    assert_eq!(
+        player_entry(&view, player_id).basic.height,
+        height - 1,
+        "the field kept the key and stepped"
+    );
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "the Height field keeps the keyboard"
+    );
+}
+
+// SE-GUI-52
+#[test]
+fn an_arrow_that_moves_the_selection_grabs_no_widget_focus() {
+    // egui's own arrow navigation between widgets must not grab one on a
+    // press that moved the selection.
+    let path = fixture(PesVersion::Pes17, "arrow_keys_no_focus");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Team(701));
+    let mut window = Headless::new();
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_ne!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "premise: the press moved the selection"
+    );
+    assert_eq!(
+        window.ctx.memory(|memory| memory.focused()),
+        None,
+        "the arrow grabbed no widget's focus"
+    );
+}
+
+// SE-GUI-52
+#[test]
+fn the_list_scrolls_to_keep_an_arrowed_selection_in_view() {
+    // Walked past the rows in view, the list scrolls with the selection:
+    // the selected row stays drawn inside the list's frame.
+    let path = fixture(PesVersion::Pes21, "arrow_keys_scroll");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let in_view = nodes.iter().filter(|node| player_row(node)).count();
+    for _ in 0..in_view + 10 {
+        window.frame(
+            vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+            |ui| show(ui, &mut view, &|| Vec::new()),
+        );
+    }
+    assert_ne!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "premise: the selection moved"
+    );
+    // Only the list's player rows are searched: the player view beside
+    // the list draws toggled buttons of its own (the playable positions)
+    // within the list's height, which would pass with the row not drawn.
+    assert!(
+        matches!(view.selected, Some(Selection::Player(..))),
+        "premise: the walk ended on a player row: {:?}",
+        view.selected
+    );
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let frame = list_frame(&window, &shapes);
+    let selected = nodes
+        .iter()
+        .filter(|node| player_row(node))
+        .find(|node| node.toggled() == Some(accesskit::Toggled::True))
+        .expect("the selected row is drawn");
+    let bounds = selected.bounds().expect("the row's bounds");
+    assert!(
+        bounds.y0 >= f64::from(frame.min.y) - 0.5 && bounds.y1 <= f64::from(frame.max.y) + 0.5,
+        "the selected row inside the list: {bounds:?} vs {frame:?}"
+    );
+}
+
+// SE-GUI-52
+#[test]
+fn the_arrows_wait_while_the_unsaved_changes_list_is_open() {
+    // The unsaved-changes popup is the view's own state, so the arrows'
+    // gate reads it there: egui's popup registry never saw it open.
+    let path = fixture(PesVersion::Pes17, "arrow_keys_changes_list");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Team(701));
+    let mut window = Headless::new();
+
+    // The same press with the list closed selects 701's first player row.
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "premise: Down moves with the list closed"
+    );
+    view.selected = Some(Selection::Team(701));
+
+    // An edit, so the `• unsaved changes` label draws; a click opens its
+    // list under it.
+    let mut edited = player_entry(&view, team_entry(&view, 701).roster[0].player_id);
+    edited.name = "EDITED".to_owned();
+    view.session.as_mut().unwrap().edit_players(vec![edited]);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let label = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("\u{2022} unsaved changes"))
+        .expect("the unsaved-changes label");
+    click(&mut window, label, &mut view);
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(view.changes_list.is_some(), "premise: the list is open");
+
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "Down with the changes list open moved nothing"
+    );
+    assert!(view.changes_list.is_some(), "the list stays open");
+}
+
+// SE-GUI-52
+#[test]
+fn the_arrows_wait_while_a_dialog_is_open() {
+    // The Copy stats dialog up: the modal gate the page keys already had.
+    let path = fixture(PesVersion::Pes17, "arrow_keys_dialog");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::new();
+
+    // The same press with no dialog selects the next player row.
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 1)),
+        "premise: Down moves with no dialog"
+    );
+    view.selected = Some(Selection::Player(701, 0));
+
+    // The Player menu's Copy stats opens the dialog and leaves it up.
+    let nodes = open_menu(&mut window, &mut view, "Player", "Copy stats from");
+    click(&mut window, menu_item(&nodes, "Copy stats from"), &mut view);
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(view.copy_swap.is_some(), "premise: the dialog is open");
+
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "Down with the dialog open moved nothing"
+    );
+    assert!(view.copy_swap.is_some(), "the dialog stays open");
+}
+
+// SE-GUI-52
+#[test]
+fn the_arrows_wait_while_a_pointer_button_is_held() {
+    // As the page keys', a held button holds the arrows: the press still in
+    // flight would finish on the player the key steps to.
+    let path = fixture(PesVersion::Pes17, "arrow_keys_pointer_held");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Team(701));
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let first = nodes
+        .iter()
+        .find(|node| player_row(node))
+        .expect("the list's first player row");
+    window.frame(pointer_at(centre(first), true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "Down with the button held moved nothing"
+    );
+
+    // The release's click selects the row it lands on, and the press after
+    // it walks on again.
+    window.frame(pointer_at(centre(first), false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "premise: the release's click selected the row"
+    );
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 1)),
+        "Down after the release moves one row"
+    );
+}
+
+// SE-GUI-52
+#[test]
+fn the_arrows_wait_while_the_slot_popover_is_open() {
+    // The tactics' slot popover is the view's own state like the changes
+    // list: egui's popup registry never saw it open, so the gate reads it.
+    let path = fixture(PesVersion::Pes21, "arrow_keys_popover");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    let mut window = Headless::sized(DEFAULT_PANE.x, 624.0);
+    open_team_view(&mut window, &mut view, 701);
+
+    // The same press with no popover selects 701's first player row.
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "premise: Down moves with no popover"
+    );
+    view.selected = Some(Selection::Team(701));
+
+    // Open the slot popover on an outfield marker a click can reach.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let canvas = canvas_of(&nodes);
+    let players = team_entry(&view, 701).tactics.presets[0].formations[0].players;
+    let at = (0..11)
+        .filter(|&index| players[index].position != 0)
+        .find_map(|index| marker_point(canvas, &players, index))
+        .expect("a marker a click can reach");
+    click_at(&mut window, at, &mut view);
+    assert!(
+        view.tactics.popover_area().is_some(),
+        "premise: the slot popover is open"
+    );
+
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "Down with the slot popover open moved nothing"
+    );
+}
+
+// SE-GUI-53
+#[test]
+fn the_page_keys_move_the_selection_a_page_of_rows() {
+    // A page is the whole rows the list shows at once, a row cut off at
+    // the bottom not counted; the team rows count, as the arrows count
+    // them; a press that would pass the end lands on it.
+    let path = fixture(PesVersion::Pes17, "page_keys_page");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y - 9.0);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let frame = list_frame(&window, &shapes);
+    let page = nodes
+        .iter()
+        .filter(|node| {
+            node.role() == Role::Button
+                && node.bounds().is_some_and(|bounds| {
+                    bounds.x0 < f64::from(frame.max.x)
+                        && bounds.y0 >= f64::from(frame.min.y) - 0.5
+                        && bounds.y1 <= f64::from(frame.max.y) + 0.5
+                })
+        })
+        .count();
+    assert!(page > 10, "premise: a page is several rows ({page})");
+    // The premise that floor and ceil differ here: a row is cut off at
+    // the bottom (the window is half a row shorter than the default).
+    let cut = nodes
+        .iter()
+        .filter(|node| {
+            node.role() == Role::Button
+                && node.bounds().is_some_and(|bounds| {
+                    bounds.x0 < f64::from(frame.max.x)
+                        && bounds.y0 < f64::from(frame.max.y)
+                        && bounds.y1 > f64::from(frame.max.y) + 0.5
+                })
+        })
+        .count();
+    assert_eq!(cut, 1, "premise: one row is cut off at the bottom");
+    let drawn: Vec<Selection> =
+        selection::list(view.session.as_ref().unwrap().file(), &TeamChoice::All, "")
+            .iter()
+            .map(|row| match row {
+                selection::ListRow::Team(id) => Selection::Team(*id),
+                selection::ListRow::Player(row) => Selection::Player(row.team_id, row.slot),
+            })
+            .collect();
+    let select = |index: usize| Some(drawn[index.min(drawn.len() - 1)]);
+    let at = drawn
+        .iter()
+        .position(|row| *row == view.selected.unwrap())
+        .expect("the selected row is in the list");
+    assert_eq!(
+        at, 1,
+        "premise: the first player row is the second, under 701's team row"
+    );
+    let press = |window: &mut Headless, view: &mut SaveView, down: bool| {
+        window.frame(
+            vec![key(
+                if down {
+                    egui::Key::PageDown
+                } else {
+                    egui::Key::PageUp
+                },
+                egui::Modifiers::NONE,
+                true,
+            )],
+            |ui| show(ui, view, &|| Vec::new()),
+        );
+    };
+    press(&mut window, &mut view, true);
+    assert_eq!(
+        view.selected,
+        select(at + page),
+        "PgDn moved a page of rows"
+    );
+
+    // A press that would pass the last row lands on it; PgUp a page back.
+    view.selected = select(drawn.len() - 2);
+    press(&mut window, &mut view, true);
+    assert_eq!(
+        view.selected,
+        select(drawn.len() - 1),
+        "PgDn near the end lands on the last row"
+    );
+    press(&mut window, &mut view, false);
+    assert_eq!(
+        view.selected,
+        select((drawn.len() - 1).saturating_sub(page)),
+        "PgUp moved a page back"
     );
 }
