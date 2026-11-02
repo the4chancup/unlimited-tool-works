@@ -4317,7 +4317,7 @@ function teamRow(team) {
     h("span", { class: "swatch", style: "background:" + shownHex(team.color_2) }),
     h("span", { class: "pname" }, ...nameSpans(team.name)),
     // What a click on the row opens, for a manager who looks for the tactics.
-    h("span", { class: "thint" }, "[click for tactics]"),
+    h("span", { class: "thint" }, "[click for gameplan]"),
     dirtyTeam(team) ? h("span", { class: "dot", title: "Unsaved changes" }, "●") : null,
     teamMark(team));
 }
