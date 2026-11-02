@@ -632,6 +632,47 @@ mod tests {
         assert_eq!(team.color_2, None, "stats drops color_2");
     }
 
+    /// The one-version edit flags load with the key they flag: PES 15's
+    /// short-name flag and PES 20 on's stadium flag go with stats like the
+    /// name flag.
+    #[test]
+    fn the_versions_own_team_edit_flags_go_with_stats() {
+        /// One version-gated flag of `[team.edit_flags]`, read off a team.
+        type Flag = fn(&TeamEditFlagsSection) -> Option<bool>;
+        let cases: [(PesVersion, &'static str, Flag); 2] = [
+            (PesVersion::Pes15, "short-name", |flags| flags.short_name),
+            (PesVersion::Pes21, "stadium", |flags| flags.stadium),
+        ];
+        for (version, label, flag) in cases {
+            let file = EditFile::from_bytes(&pes_savefile::fixture_save(version))
+                .expect("the fixture reads");
+            let players: Vec<&PlayerEntry> = file.players().iter().collect();
+            let original = TeamToml::from_team(version, file.team(CO).unwrap(), &players).unwrap();
+            let held = flag(&original.team.edit_flags);
+            assert_eq!(
+                held,
+                Some(false),
+                "premise: /co/'s {version:?} document holds the {label} flag"
+            );
+
+            let mut stats = original.clone();
+            keep_sections(&mut stats, ONLY_STATS);
+            assert_eq!(
+                flag(&stats.team.edit_flags),
+                held,
+                "stats keeps the {label} flag"
+            );
+
+            let mut aesthetics = original.clone();
+            keep_sections(&mut aesthetics, ONLY_AESTHETICS);
+            assert_eq!(
+                flag(&aesthetics.team.edit_flags),
+                None,
+                "aesthetics drops the {label} flag"
+            );
+        }
+    }
+
     /// PES 17's `[team]` keys PES 19 lacks split the same way: the kit slots and
     /// the strip flag are the team's look, the name flag stats'.
     #[test]
