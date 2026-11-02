@@ -95,13 +95,6 @@ pub(crate) struct SaveView {
     /// click showed that team alone: the list scrolls to the selected row
     /// on the next draw, then clears this.
     reveal_selected: bool,
-    /// The whole rows the player list showed at once on its last draw
-    /// (a row cut off at the bottom does not count): what a page key's
-    /// step counts, from the scroll area's visible height over a row's
-    /// height. The keys are read in the toolbar before the list draws,
-    /// so the last frame's page stands in for this frame's; 1 until it
-    /// has.
-    list_page_rows: usize,
     /// The team view's Tactics state (`team_widgets`' `TacticsView`:
     /// the preset its panels edit, the formation its lists show, the
     /// armed assignment mode, the open slot popover and Scroll names);
@@ -438,7 +431,6 @@ impl SaveView {
             click_kind: None,
             clip: None,
             reveal_selected: false,
-            list_page_rows: 1,
             tactics: team_widgets::tactics::TacticsView::default(),
             focused: None,
             prompt: None,
@@ -1020,9 +1012,10 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
                 .iter()
                 .any(|event| matches!(event, egui::Event::Paste(_) | egui::Event::PasteImage(_)))
         });
-    // PageDown and PageUp move the list's selection a page of rows from
-    // any field, so they are not held off while a widget has the
-    // keyboard. A held pointer button holds them off, and so does the
+    // PageDown and PageUp move the list's selection from any field, so
+    // they are not held off while a widget has the keyboard: team row to
+    // team row while the list holds two or more, else seven rows at a
+    // time. A held pointer button holds them off, and so does the
     // frame it is released on, where a click completes: the drag or press
     // in flight would finish on the next player.
     let gesture = ui.input(|input| input.pointer.any_down() || input.pointer.any_released());
@@ -1156,7 +1149,7 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         open_menu::open_shortcut(view, shortcut);
     }
     if let Some(forward) = page_step
-        && player_list::step_selection(view, forward, view.list_page_rows)
+        && player_list::page_selection(view, forward)
     {
         // The field gives up the keyboard once the selection moved: its
         // gesture ends as one undo entry on the player it edited, and the
