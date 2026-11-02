@@ -400,7 +400,7 @@ fn paint_row_frame(
 /// A team's own row (the draft's `trow`): one click target the row's width
 /// — the team's id in the weak colour, its colours 1 and 2 as small filled
 /// squares (the shown colour, `channel_to_show`), the name with its colour
-/// codes in the strong text colour, `[click for tactics]` after it in the
+/// codes in the strong text colour, `[click for gameplan]` after it in the
 /// weak colour (the hint is elided before the name is), and a `●` at the
 /// row's right end while the team's own entry has unsaved changes
 /// (`Session::team_dirty`).
@@ -501,7 +501,7 @@ fn team_row(
             name_galley.clone(),
             text,
         );
-        // `[click for tactics]` after the name, in the weak colour at the
+        // `[click for gameplan]` after the name, in the weak colour at the
         // normal weight (the draft's `.thint`): what a click on the row
         // opens. It takes only the room the name left, so it is elided
         // before the name is. An elided name ends a few points short of
@@ -513,7 +513,7 @@ fn team_row(
         if !name_galley.elided && hint_room > 0.0 {
             let mut hint = egui::text::LayoutJob::default();
             hint.append(
-                "[click for tactics]",
+                "[click for gameplan]",
                 0.0,
                 egui::TextFormat::simple(font, weak),
             );
