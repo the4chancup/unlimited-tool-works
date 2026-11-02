@@ -1,9 +1,10 @@
 //! The crash dump, for the crashes the panic hook never sees: a stack overflow or an
 //! access violation in native code leaves a log that simply stops. The window starts a copy of its own exe as
-//! a monitor (`--crash-monitor`), connects to it over a socket file named after the
+//! a monitor (`--crash-monitor`, told its slot's number), connects to it over a socket file named after the
 //! process id in the temp folder, and the `crash-handler` hook asks the connected
-//! monitor for a dump when a crash comes: the monitor writes `utw.dmp` beside
-//! `utw.log`, appends a line naming it, and exits with the window's process. The
+//! monitor for a dump when a crash comes: the monitor writes the slot's dump (`utw.dmp`,
+//! `utw.n.dmp` for the nth copy) beside the slot's log, appends a line naming it, and
+//! exits with the window's process (ST-RUN-12). The
 //! crash test's trigger (`--crash-test stack`) is `overflow_the_stack`, run once the
 //! monitor is up and before any window, so the test needs no display (ST-RUN-10).
 
@@ -23,11 +24,13 @@ use studio_core::EXE_NAME;
 
 use crate::gui_log;
 
-/// `utw.dmp`'s name in the data location, beside `utw.log`.
+/// `utw.dmp`'s name in the data location, beside `utw.log`: slot 1's dump. Slot n's is
+/// `utw.n.dmp` (`instance::slot_file_name`).
 pub(crate) const DUMP_FILE_NAME: &str = "utw.dmp";
-/// The monitor's last log line after a dump written beside the log (ST-RUN-10): the
-/// next start reads it to name the dump in the unclean-session dialog.
-pub(crate) const DUMP_WRITTEN_LINE: &str = "the crash dump was written to utw.dmp beside this log";
+/// What the monitor's line after a dump ends with (ST-RUN-10): the next start reads a
+/// line by this ending to name the dump in the unclean-session dialog, the slot's
+/// number sitting inside the line where `dump_written_line` spells it.
+pub(crate) const DUMP_WRITTEN_ENDING: &str = "beside this log";
 /// The monitor's line when the dump could not be written: the next start reports the
 /// session as simply unclean.
 const DUMP_FAILED_LINE: &str = "the crash dump could not be written";
@@ -40,12 +43,26 @@ const CRASH_TEST_ARG: &str = "--crash-test";
 /// How long `connect` waits for the monitor to accept its socket before giving up.
 const MONITOR_CONNECT_TIMEOUT: Duration = Duration::from_secs(2);
 
+/// The monitor's log line after writing the slot's dump (ST-RUN-10): it names the
+/// dump's file (`utw.dmp` for slot 1, `utw.n.dmp` for slot n), and
+/// `DUMP_WRITTEN_ENDING` is how the next start reads it, whatever the slot.
+pub(crate) fn dump_written_line(slot: u32) -> String {
+    format!(
+        "the crash dump was written to {} {DUMP_WRITTEN_ENDING}",
+        crate::instance::slot_file_name(DUMP_FILE_NAME, slot)
+    )
+}
+
 /// A launch that is not a member's command: the monitor process the window spawns, or
 /// the crash test's trigger (ST-RUN-10).
 pub(crate) enum HiddenLaunch {
-    /// `--crash-monitor <data dir> <socket path>`: serve dump requests over `socket`,
-    /// writing `utw.dmp` and the log line into `data_dir`.
-    Monitor { data_dir: PathBuf, socket: PathBuf },
+    /// `--crash-monitor <data dir> <socket path> <slot>`: serve dump requests over
+    /// `socket`, writing `slot`'s dump and the log line into `data_dir`.
+    Monitor {
+        data_dir: PathBuf,
+        socket: PathBuf,
+        slot: u32,
+    },
     /// `--crash-test stack`: run the window's start, then overflow the stack.
     CrashTest,
 }
@@ -55,10 +72,16 @@ pub(crate) enum HiddenLaunch {
 /// two exact forms is `None`, and clap then reports it as today.
 pub(crate) fn hidden_launch(args: &[OsString]) -> Option<HiddenLaunch> {
     match args {
-        [_, arg, data_dir, socket] if arg == MONITOR_ARG => Some(HiddenLaunch::Monitor {
-            data_dir: data_dir.as_os_str().into(),
-            socket: socket.as_os_str().into(),
-        }),
+        [_, arg, data_dir, socket, slot] if arg == MONITOR_ARG => {
+            match slot.to_str().and_then(|slot| slot.parse::<u32>().ok()) {
+                Some(slot @ 1..) => Some(HiddenLaunch::Monitor {
+                    data_dir: data_dir.as_os_str().into(),
+                    socket: socket.as_os_str().into(),
+                    slot,
+                }),
+                _ => None,
+            }
+        }
         [_, arg, which] if arg == CRASH_TEST_ARG && which == "stack" => {
             Some(HiddenLaunch::CrashTest)
         }
@@ -66,17 +89,20 @@ pub(crate) fn hidden_launch(args: &[OsString]) -> Option<HiddenLaunch> {
     }
 }
 
-/// The monitor's `ServerHandler`: `utw.dmp` beside `utw.log`, replacing the
+/// The monitor's `ServerHandler`: the slot's dump beside the slot's log, replacing the
 /// previous one, and the log line a later start reads to tell a dumped crash from an
 /// unclean one.
 struct DumpWriter {
     data_dir: PathBuf,
+    slot: u32,
     home: Option<String>,
 }
 
 impl minidumper::ServerHandler for DumpWriter {
     fn create_minidump_file(&self) -> Result<(File, PathBuf), io::Error> {
-        let path = self.data_dir.join(DUMP_FILE_NAME);
+        let path = self
+            .data_dir
+            .join(crate::instance::slot_file_name(DUMP_FILE_NAME, self.slot));
         Ok((File::create(&path)?, path))
     }
 
@@ -85,13 +111,19 @@ impl minidumper::ServerHandler for DumpWriter {
         result: Result<minidumper::MinidumpBinary, minidumper::Error>,
     ) -> minidumper::LoopAction {
         let text = match &result {
-            Ok(_) => DUMP_WRITTEN_LINE.to_string(),
+            Ok(_) => dump_written_line(self.slot),
             Err(error) => format!("{DUMP_FAILED_LINE}: {error}"),
         };
         // The crashed thread waits in its hook for the reply the server sends after this
         // returns, so the window writes no closing line after this one; its other threads
         // may still log, which is why the window's log is opened for appending too.
-        append_line(&self.data_dir, self.home.as_deref(), Level::Error, &text);
+        append_line(
+            &self.data_dir,
+            &crate::instance::slot_file_name(gui_log::LOG_FILE_NAME, self.slot),
+            self.home.as_deref(),
+            Level::Error,
+            &text,
+        );
         minidumper::LoopAction::Exit
     }
 
@@ -103,13 +135,14 @@ impl minidumper::ServerHandler for DumpWriter {
     }
 }
 
-/// Appends one `crash_dump` line to `data_dir`'s `utw.log`, the home folder written
-/// as `~`. Append without create: a monitor whose window never opened a log adds none.
-fn append_line(data_dir: &Path, home: Option<&str>, level: Level, text: &str) {
+/// Appends one `crash_dump` line to `data_dir`'s `log_name` (the slot's log), the home
+/// folder written as `~`. Append without create: a monitor whose window never opened a
+/// log adds none.
+fn append_line(data_dir: &Path, log_name: &str, home: Option<&str>, level: Level, text: &str) {
     let line = gui_log::redact_home(&gui_log::log_line(level, "crash_dump", &text), home);
     let appended = OpenOptions::new()
         .append(true)
-        .open(data_dir.join(gui_log::LOG_FILE_NAME))
+        .open(data_dir.join(log_name))
         .and_then(|mut log| log.write_all(line.as_bytes()));
     // The monitor has no logger and the log is where it reports: a failed append is a
     // failure nobody can act on, the project's `log::debug!` case.
@@ -120,15 +153,16 @@ fn append_line(data_dir: &Path, home: Option<&str>, level: Level, text: &str) {
 
 /// The monitor process's whole job: bind `socket`, then serve dump requests until a
 /// dump is written (or fails) or the window's end closes the connection. A failure to
-/// bind or serve is appended to the log, since the monitor's stdio is null and the
-/// window sees only its exit code, and exits with 3, the code of a run that could not
-/// do its job.
-pub(crate) fn run_monitor(data_dir: &Path, socket: &Path) -> ExitCode {
+/// bind or serve is appended to the slot's log, since the monitor's stdio is null and
+/// the window sees only its exit code, and exits with 3, the code of a run that could
+/// not do its job. `slot` is the window's copy number: it names the dump and log.
+pub(crate) fn run_monitor(data_dir: &Path, socket: &Path, slot: u32) -> ExitCode {
     let home = BaseDirs::new().map(|dirs| dirs.home_dir().display().to_string());
     let run = minidumper::Server::with_name(socket.into()).and_then(|mut server| {
         server.run(
             Box::new(DumpWriter {
                 data_dir: data_dir.to_path_buf(),
+                slot,
                 home: home.clone(),
             }),
             &AtomicBool::new(false),
@@ -140,6 +174,7 @@ pub(crate) fn run_monitor(data_dir: &Path, socket: &Path) -> ExitCode {
         Err(error) => {
             append_line(
                 data_dir,
+                &crate::instance::slot_file_name(gui_log::LOG_FILE_NAME, slot),
                 home.as_deref(),
                 Level::Warn,
                 &format!("the crash monitor stopped: {error}"),
@@ -180,12 +215,13 @@ fn connect(monitor: &mut Child, socket: &Path) -> anyhow::Result<minidumper::Cli
 /// for a dump. The socket is named after this process's id in the temp folder: a fixed
 /// name would leave one of two windows unwatched, and a data-location path can pass
 /// the 107 bytes a Windows socket path holds.
-fn start_monitor(program: &Path, data_dir: &Path) -> anyhow::Result<CrashHandler> {
+fn start_monitor(program: &Path, data_dir: &Path, slot: u32) -> anyhow::Result<CrashHandler> {
     let socket = std::env::temp_dir().join(format!("{EXE_NAME}-crash-{}.sock", std::process::id()));
     let mut monitor = Command::new(program)
         .arg(MONITOR_ARG)
         .arg(data_dir)
         .arg(&socket)
+        .arg(slot.to_string())
         // A monitor holding a test's pipe would keep `Output` waiting.
         .stdin(Stdio::null())
         .stdout(Stdio::null())
@@ -229,15 +265,17 @@ fn start_monitor(program: &Path, data_dir: &Path) -> anyhow::Result<CrashHandler
 /// that does not attach) one `Warn` line is logged through `logger` and the window
 /// runs on with the log alone: the dump is a diagnostic, never a reason the window
 /// does not open (ST-RUN-10). `program` is `std::env::current_exe()`'s result, passed
-/// in so a test can name a file that is not an exe.
+/// in so a test can name a file that is not an exe; `slot` is the copy's number, which
+/// the monitor needs to name its dump and log (ST-RUN-12).
 pub(crate) fn watch_crashes(
     program: io::Result<PathBuf>,
     data_dir: &Path,
+    slot: u32,
     logger: &dyn log::Log,
 ) -> Option<CrashHandler> {
     let started = program
         .map_err(anyhow::Error::from)
-        .and_then(|program| start_monitor(&program, data_dir));
+        .and_then(|program| start_monitor(&program, data_dir, slot));
     match started {
         Ok(handler) => Some(handler),
         Err(error) => {
@@ -280,6 +318,7 @@ mod tests {
 
     use super::*;
     use crate::gui_log::{InstalledLog, LOG_FILE_NAME, LastSession, open_log, unclean_text};
+    use crate::instance::slot_file_name;
     use crate::test_dir::TestDir;
 
     fn args(list: &[&str]) -> Vec<OsString> {
@@ -288,16 +327,23 @@ mod tests {
 
     #[test]
     fn hidden_launch_reads_the_monitor_and_crash_test_forms_only() {
-        let Some(HiddenLaunch::Monitor { data_dir, socket }) = hidden_launch(&args(&[
+        let Some(HiddenLaunch::Monitor {
+            data_dir,
+            socket,
+            slot,
+        }) = hidden_launch(&args(&[
             "studio",
             "--crash-monitor",
             "D:\\data",
             "D:\\temp\\s.sock",
-        ])) else {
+            "1",
+        ]))
+        else {
             panic!("the monitor form did not parse")
         };
         assert_eq!(data_dir, PathBuf::from("D:\\data"));
         assert_eq!(socket, PathBuf::from("D:\\temp\\s.sock"));
+        assert_eq!(slot, 1);
         assert!(matches!(
             hidden_launch(&args(&["studio", "--crash-test", "stack"])),
             Some(HiddenLaunch::CrashTest)
@@ -306,6 +352,21 @@ mod tests {
             args(&["studio", "--crash-test", "other"]),
             args(&["studio", "--crash-test"]),
             args(&["studio", "--crash-monitor", "D:\\data"]),
+            args(&["studio", "--crash-monitor", "D:\\data", "D:\\temp\\s.sock"]),
+            args(&[
+                "studio",
+                "--crash-monitor",
+                "D:\\data",
+                "D:\\temp\\s.sock",
+                "x",
+            ]),
+            args(&[
+                "studio",
+                "--crash-monitor",
+                "D:\\data",
+                "D:\\temp\\s.sock",
+                "0",
+            ]),
             args(&["studio", "team-compiler", "check"]),
         ] {
             assert!(hidden_launch(&bad).is_none(), "{bad:?}");
@@ -344,7 +405,7 @@ mod tests {
         fs::write(&not_an_exe, "text").unwrap();
         let logger = CollectLog::default();
         assert!(
-            watch_crashes(Ok(not_an_exe.clone()), dir.path(), &logger).is_none(),
+            watch_crashes(Ok(not_an_exe.clone()), dir.path(), 1, &logger).is_none(),
             "a program that is not an exe still watches crashes"
         );
         let records = logger.records.lock().unwrap();
@@ -366,6 +427,7 @@ mod tests {
         fs::write(&log_path, "v\n").unwrap();
         let writer = DumpWriter {
             data_dir: dir.path().to_path_buf(),
+            slot: 1,
             home: None,
         };
         let (file, path) = writer.create_minidump_file().unwrap();
@@ -389,13 +451,14 @@ mod tests {
         );
         let written = fs::read_to_string(&log_path).unwrap();
         let last = written.lines().next_back().unwrap();
-        assert!(last.ends_with(DUMP_WRITTEN_LINE), "{last}");
+        assert!(last.ends_with(&dump_written_line(1)), "{last}");
 
-        let opened = open_log(dir.path(), "v2").unwrap();
+        let opened = open_log(dir.path(), 1, "v2").unwrap();
         assert_eq!(opened.last_session, LastSession::Dumped);
         let installed = InstalledLog {
             path: log_path,
             last_session: opened.last_session,
+            slot: 1,
         };
         assert_eq!(installed.dump_path(), Some(dir.path().join(DUMP_FILE_NAME)));
         let text = unclean_text(&installed.old_path(), installed.dump_path().as_deref());
@@ -410,7 +473,7 @@ mod tests {
         let dir = TestDir::new("monitor_bind");
         fs::write(dir.path().join(LOG_FILE_NAME), "v\n").unwrap();
         let socket = dir.path().join("no-such-folder").join("s.sock");
-        let code = run_monitor(dir.path(), &socket);
+        let code = run_monitor(dir.path(), &socket, 1);
         assert_eq!(format!("{code:?}"), format!("{:?}", ExitCode::from(3)));
         let written = fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap();
         let last = written.lines().next_back().unwrap();
@@ -428,6 +491,7 @@ mod tests {
         fs::write(dir.path().join(LOG_FILE_NAME), "v\n").unwrap();
         let writer = DumpWriter {
             data_dir: dir.path().to_path_buf(),
+            slot: 1,
             home: None,
         };
         let action =
@@ -444,6 +508,7 @@ mod tests {
         let dir = TestDir::new("dump_no_log");
         let writer = DumpWriter {
             data_dir: dir.path().to_path_buf(),
+            slot: 1,
             home: None,
         };
         let dump = dir.path().join(DUMP_FILE_NAME);
@@ -456,6 +521,40 @@ mod tests {
         assert!(
             !dir.path().join(LOG_FILE_NAME).exists(),
             "the monitor created a log none had opened"
+        );
+    }
+
+    // ST-RUN-12: the monitor's arguments carry the window's slot, and its appended line
+    // goes to that slot's log, not the first copy's `utw.log`.
+    #[test]
+    fn the_monitor_reads_its_slot_and_appends_to_the_slots_log() {
+        let Some(HiddenLaunch::Monitor { slot, .. }) = hidden_launch(&args(&[
+            "studio",
+            "--crash-monitor",
+            "D:\\data",
+            "D:\\temp\\s.sock",
+            "2",
+        ])) else {
+            panic!("the monitor form did not parse")
+        };
+        assert_eq!(slot, 2);
+        assert_eq!(
+            dump_written_line(2),
+            "the crash dump was written to utw.2.dmp beside this log"
+        );
+
+        let dir = TestDir::new("monitor_slot");
+        fs::write(dir.path().join(LOG_FILE_NAME), "first copy\n").unwrap();
+        let slot2_log = slot_file_name(LOG_FILE_NAME, 2);
+        fs::write(dir.path().join(&slot2_log), "v\n").unwrap();
+        append_line(dir.path(), &slot2_log, None, Level::Error, "probe");
+        assert_eq!(
+            fs::read_to_string(dir.path().join(&slot2_log)).unwrap(),
+            "v\nERROR crash_dump: probe\n"
+        );
+        assert_eq!(
+            fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap(),
+            "first copy\n"
         );
     }
 }
