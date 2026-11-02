@@ -5952,10 +5952,10 @@ function tacticsTab(t) {
   // game's, and an organizer sees hidden formations in the pictures.
   const locked = !pre.style.fluid;
   if (locked) S.tac.formation = 0;
-  const presetSel = h("span", { class: "row psel", style: "gap:2px" },
+  const presetSel = h("span", { class: "row psel wsel", style: "gap:2px" },
     weak("Preset"), [0, 1, 2].map(i =>
       selectable(String(i + 1), S.tac.preset === i, () => S.tac.preset = i)));
-  const formationSel = h("span", { class: "row fsel" + (locked ? " off" : ""), style: "gap:2px",
+  const formationSel = h("span", { class: "row fsel wsel" + (locked ? " off" : ""), style: "gap:2px",
       title: locked ? "Formations 2 and 3 are used only while Fluid formation is on"
         : "The game uses formations 2 and 3 only while the preset's fluid formation is on" },
     FORMATIONS.map((f, i) =>
