@@ -453,6 +453,48 @@ fn a_press_on_the_locked_formation_selector_sets_the_clipboard_kind() {
     );
 }
 
+// A press is what sets the kind: a pointer moved over a row without
+// one leaves the last press's, here the preset selector's.
+// SE-GUI-56
+#[test]
+fn a_pointer_move_without_a_press_leaves_the_clipboard_kind() {
+    let path = selector_fixture("clip_hover_no_press");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
+    open_team_view(&mut window, &mut view, 701);
+    let nodes = draw(&mut window, &mut view);
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "2"),
+        &mut view,
+    );
+    assert_eq!(view.tactics.preset, 1, "preset 2 is on screen");
+
+    // One frame whose only event moves the pointer over 701's team
+    // row — no button — then Ctrl+C.
+    let nodes = draw(&mut window, &mut view);
+    let over = centre(team_row(&nodes, &view, 701));
+    send(
+        &mut window,
+        &mut view,
+        vec![egui::Event::PointerMoved(over)],
+    );
+    let name = display_name(&team_entry(&view, 701).name);
+    let (commands, _, _) = window.frame(vec![egui::Event::Copy], |ui| {
+        show(ui, &mut view, &|| Vec::new());
+        ui.ctx().output(|output| output.commands.clone())
+    });
+    let copied = commands.iter().find_map(|command| match command {
+        egui::OutputCommand::CopyText(text) => Some(text),
+        _ => None,
+    });
+    assert_eq!(
+        copied,
+        Some(&format!("Unlimited Tool Works: preset 2 of {name}"))
+    );
+}
+
 // SE-GUI-56
 #[test]
 fn ctrl_c_names_what_it_copied_on_the_system_clipboard() {
