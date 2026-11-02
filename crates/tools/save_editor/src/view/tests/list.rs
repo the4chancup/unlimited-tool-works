@@ -2138,9 +2138,9 @@ fn page_keys_from_height(test: &str, slot: u8) -> (SaveView, Headless) {
     (view, window)
 }
 
-// SE-GUI-53
 // A page key that moves nothing (PageDown on the last row) leaves the
 // field its keyboard: the member types on where he was.
+// SE-GUI-53
 #[test]
 fn a_page_key_that_moves_nothing_keeps_the_fields_keyboard() {
     // 734's roster fills its 23 slots, so slot 22's row is the list's last.
