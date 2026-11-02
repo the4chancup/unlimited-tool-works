@@ -3042,3 +3042,5 @@ worklog passed 7,000 lines.
   driver version, from the notebook's Vulkan crash; built with the encoder's wiring after 0.1.0.
 - 2026-11-02 — The GPU encoder's plan starts it when the Team compiler opens on PES 19-21 (the maintainer), so a later Compile
   finds it warm; the gain is mostly a cold driver cache's 16 s.
+- 2026-11-02 — 0.0.1's cut moves a day (the maintainer); 8.40-8.46 and five new items (f1f) come in first: the lineup's
+  drop row, two instances, Ctrl+C/V of tactics, the captain bonus count, the foot/hand colours.

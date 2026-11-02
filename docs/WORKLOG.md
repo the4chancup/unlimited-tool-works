@@ -2909,7 +2909,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     the old name. Only with no branch open and no mutation run queued (it touches every tool)
     → verify: `git grep dds_convert` lists only DECISIONS and LOG; `just gates`; `just
     doc-pointers`
-  - [ ] 8.40 after 0.0.1: a keyboard edit settles without leaving the control. The Save
+  - [ ] 8.40 for 0.0.1 (pulled in with f1f, 2026-11-02), first queued after 0.0.1: a keyboard edit settles without leaving the control. The Save
     editor's seal and its checks' start wait for `edit_settled` (`view/mod.rs`), which a
     focus kept on a control holds off; a button, checkbox, radio or list row activated by
     Tab + Space keeps the focus, so its edit stays unsealed and Live AATF reads "checking…"
@@ -2921,33 +2921,33 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     no text cursor counts as settled, so only a text field or a value being typed waits →
     verify: Tab to a rating cell, Space, then the next frame seals (one undo entry per
     press) and Live AATF checks without another key; typing in a field still waits
-  - [ ] 8.41 after 0.0.1 (the maintainer, 2026-11-01): the shirt name and the team's short name
+  - [ ] 8.41 for 0.0.1 (pulled in with f1f, 2026-11-02), first queued after 0.0.1 (the maintainer, 2026-11-01): the shirt name and the team's short name
     take upper case only. A letter typed into either field is written upper-case whatever the
     Caps Lock or Shift state (the game shows them in capitals; a lower-case letter typed today
     stays lower-case). Plan first (`plans/save_editor.md` "Editing UI": which fields, how a
     pasted lower-case text and the colour codes are treated), drafted, then built → verify: a
     headless test types "abc" into each field and reads "ABC" in the record
-  - [ ] 8.42 after 0.0.1 (the maintainer, 2026-11-01): the undo history merges a run of edits to
+  - [ ] 8.42 for 0.0.1 (pulled in with f1f, 2026-11-02), first queued after 0.0.1 (the maintainer, 2026-11-01): the undo history merges a run of edits to
     one value. Scrolling a stat from 60 to 70 with the wheel makes ten undo entries today, so
     reverting it takes ten Undo presses; consecutive edits of the same field (wheel notches,
     arrow steps, the stepper's clicks) become one entry, closed by an edit of another field, a
     pause, or Undo itself. Plan first (`plans/save_editor.md`, the undo bullet: how long the
     pause is, how it meets `edit_settled`'s seal and 8.40) → verify: ten wheel notches on one
     stat, one Undo puts back 60; a notch on another stat between them makes two entries
-  - [ ] 8.43 after 0.0.1 (the maintainer, 2026-11-01): PgUp/PgDn step one player, where a member
+  - [ ] 8.43 for 0.0.1 (pulled in with f1f, 2026-11-02), first queued after 0.0.1 (the maintainer, 2026-11-01): PgUp/PgDn step one player, where a member
     expects a page key to jump several rows. Kept hidden for 0.0.1 (no help page names them;
     the plan's feature inventory keeps them from 4ccEditor as "previous/next player from any
     field"). Either a page of rows per press (the list's visible rows, as a list box does)
     or removed now that Up and Down walk the list (f1e2); the maintainer picks, then plan,
     DECISIONS and the inventory row follow → verify: per the pick
-  - [ ] 8.44 after 0.0.1 (the maintainer, 2026-11-01): the wheel steps the Tactics view's preset
+  - [ ] 8.44 for 0.0.1 (pulled in with f1f, 2026-11-02), first queued after 0.0.1 (the maintainer, 2026-11-01): the wheel steps the Tactics view's preset
     selector (1, 2, 3) and formation selector (Kick-off, In-possession, Out-of-possession), as
     it steps the style toggles, wrapping round at their ends as those do (cv38; the
     maintainer, 2026-11-01: "They should"; DECISIONS "The wheel steps the preset and formation
     selectors, wrapping round"). Plan first (`plans/save_editor.md` "Tactics editor"),
     drafted, then built → verify: headless, a notch over each selector moves it one step each
     way, and past the last entry to the first
-  - [ ] 8.45 after 0.0.1 (the maintainer, 2026-11-01): Ctrl+C on the player list copies the
+  - [ ] 8.45 for 0.0.1 (pulled in with f1f, 2026-11-02), first queued after 0.0.1 (the maintainer, 2026-11-01): Ctrl+C on the player list copies the
     selected player's stats, Ctrl+V pastes them onto the selected player, one undoable edit.
     It replicates the Copy stats dialog (the maintainer, 2026-11-01; `view/menus.rs`
     `CopySwap`, the draft's `dlgCopySwap`; DECISIONS "Ctrl+C and Ctrl+V on the player list do
@@ -2956,7 +2956,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     while a field holds the keyboard (a text field keeps its own copy and paste), and on a
     team row (nothing) → verify: headless, Ctrl+C on one player, Ctrl+V on another writes what
     Copy stats writes; Undo restores him
-  - [ ] 8.46 after 0.0.1 (the maintainer, 2026-11-02): one Up or Down press in a number field
+  - [ ] 8.46 for 0.0.1 (pulled in with f1f, 2026-11-02), first queued after 0.0.1 (the maintainer, 2026-11-02): one Up or Down press in a number field
     that is being edited (Height, a stat) steps it one. Today it changes nothing: egui 0.37's
     `DragValue` steps a whole-number field by its drag speed, 0.25 (`drag_value.rs` 83-85), and
     rounds the sum back (512-515), so only four presses in one frame move it. Found by f1e2's
@@ -6914,6 +6914,37 @@ briefs, review loops, gates and mutation runs as for any step.
       through Direct3D 12"; `studio_core` `shell/window_size` `native_options`) → verify: a
       unit test of the backends chosen with and without the variable; the notebook's
       `run_gpu_check.bat` default start opens the window on the new build
+  - [ ] f1f (the maintainer, 2026-11-02: the cut moves a day; DECISIONS "0.0.1 takes a second
+    batch of small changes before its cut"), each item plan sentence and draft first where it
+    changes what a member sees, on a branch from `f1e` once 0.0.1h's items land:
+    - [ ] f1f1 the lineup list (`team_widgets` `pitch/lineup.rs`) outlines the row a dragged
+      row would replace, as the draft's `.dragover` does (`outline: 1px solid var(--sel-fg)`,
+      `index.html`) → verify: headless, a drag held over a starter's row paints the outline
+      on that row and on no other; released elsewhere, none
+    - [ ] f1f2 two copies of UTW.exe run at once, each on its own save (the maintainer's pick
+      of "two editors"). No single-instance guard exists; what breaks is to be found first. A
+      lead: the second start renames the first's live `utw.log` to `utw.old.log`
+      (`studio` `gui_log.rs` `open_log`), reads it as a session that ended without its closing
+      line, and shows the "did not close normally" dialog; the settings and the window
+      place are last-writer-wins. Investigated, planned (`plans/core/gui.md`), then built, or
+      queued after the cut if large → verify: per the plan
+    - [ ] f1f3 Ctrl+C/Ctrl+V on the player list's team rows (the copied team's Gameplan, written
+      as a Gameplan-only import writes it, players by roster slot), on the Tactics view's
+      preset selector (one preset) and its formation selector (one formation), one undoable
+      edit each; with 8.45 (a player row's stats), one keyboard rule for the four. Plan first
+      (`plans/save_editor.md` "Editing UI" and "Tactics editor"), drafted → verify: headless,
+      each copy and paste writes what the matching import or copy writes; Undo restores
+    - [ ] f1f4 a VGL 27 tester (the VGL27 Friendlies save, `C:/Data/4cc/Saves/
+      EDIT00000000_VGL27_Friendlies`, the VGL 27 ruleset): "the captain bonus isn't shown
+      properly in the ui, it checks properly for the cards if it goes over but the bonus
+      doesn't show under the limit". The ruleset's captain special frees the Captaincy card
+      and adds a choice of one card, the COM style or an A position (`aatf` `vgl27.rhai`).
+      Reproduced headless on that save first, then the count's display planned and fixed →
+      verify: the reproduction's test, red first
+    - [ ] f1f5 the Stronger foot/hand toggle: the held side's text reads grey and the other
+      white; the two colours swap (the maintainer, 2026-11-02), in the draft (`.gen .combos
+      .rate.lr .sel.on`) and in `info_strip.rs` `side_row` → verify: headless, the held side's
+      text colour is the resting buttons' and the other side's the normal text grey
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. The maintainer, 2026-11-02: the
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);
