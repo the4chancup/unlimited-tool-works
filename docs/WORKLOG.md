@@ -6999,24 +6999,28 @@ briefs, review loops, gates and mutation runs as for any step.
       `codegen-units = 1` declined (-2.64 MiB measured); egui's `default_fonts` kept for good
       (DECISIONS "egui's default fonts stay": Ubuntu-Light shares one feature with Hack and the
       emoji fonts). Closed 2026-11-02 with no change taken
-    - [ ] f1g7 CI for GitHub releases, Windows and Linux (f4, pulled in; DECISIONS "0.0.1 is
+    - [x] f1g7 CI for GitHub releases, Windows and Linux (f4, pulled in; DECISIONS "0.0.1 is
       built by CI", "How CI's release workflow builds, checks and keeps the bundles"):
       - [x] f1g7a the design: `plans/core/distribution.md` "Release builds in CI" and the
         Linux bundle's paragraph. Done 2026-11-02
-      - [ ] f1g7b `scripts/release/release.py` on Linux: the `.tar.gz` (`tarfile`, `0755` for
+      - [x] f1g7b `scripts/release/release.py` on Linux: the `.tar.gz` (`tarfile`, `0755` for
         `utw`, owner 0, the listing compared), the Linux notices' target, the remap flags'
         Linux key, the readme's Linux line; `release_test.py` for the new helpers (SWE-2
         sidekick) → verify: `release_test.py` red first; `just release 0.0.1` still packs
         the Windows bundle here, its listing unchanged
-      - [ ] f1g7c `.github/workflows/release.yml`, written by the lead: the two jobs, the
+        Done 2026-11-02 as `b8304bfa` on `f1g7`
+      - [x] f1g7c `.github/workflows/release.yml`, written by the lead: the two jobs, the
         draft release with `SHA256SUMS.txt`, the dry run's artifacts → verify: a push to
         `ci/release-dry-run` builds both bundles, each passing the recipe's checks
-      - [ ] f1g7e the Linux binary stripped of its debug info, `utw.debug` packed as
+        Done 2026-11-02 as `705a3a6a`; dry run 4 passed both jobs
+      - [x] f1g7e the Linux binary stripped of its debug info, `utw.debug` packed as
         `-linux-symbols.tar.gz` and uploaded as a run artifact (DECISIONS "The Linux binary
         ships stripped of its debug info"); the dry run's first try failed on a Windows-path
         test (`116e3424`), its second passed: Windows exe opens and closes cleanly
         → verify: release_test on both platforms; the next dry run's binary has no `.debug_*`
         section and keeps `.symtab`
+        Done 2026-11-02 as `f8a8085b`, `ad70f1e6` (`.debug_gdb_scripts` passes, rustc's gdb
+        helpers, no debug info); dry run 4's binary has no `.debug_*` section, keeps `.symtab`
       - [x] f1g7f one test tag `v0.0.1-rc.1` from a branch bumped to it: the release job's
         draft pre-release checked (three assets, `SHA256SUMS.txt` matching both), then the
         draft and the tag deleted on the maintainer's word (`plans/core/distribution.md`
@@ -7031,7 +7035,7 @@ briefs, review loops, gates and mutation runs as for any step.
         here: "the app opens and behaves like on Windows"
     - [x] f1g8 whether 0.0.2-poc fits in 0.0.1: cancelled by the maintainer 2026-11-02 ("we've
       put enough on the plate already"); 0.0.2-poc stays the first work after the cut
-    - [ ] f1g9 the update check with Update now (DECISIONS "The update check ships in 0.0.1"
+    - [x] f1g9 the update check with Update now (DECISIONS "The update check ships in 0.0.1"
       and "The update offer waits in the status bar"; at most 5 MB growth): plan
       (`plans/core/distribution.md` "Self-update"), draft (the dialog's Update now and its
       progress), then three slices: the background check and its state; the status bar's offer
@@ -7043,33 +7047,43 @@ briefs, review loops, gates and mutation runs as for any step.
       slice 1 keeps it `pub` only because slices 2-3 are the first readers of `Release`'s fields.
       Slices 1-2 done 2026-11-02 (`b9608c7c`, `03f92b80`, on `f1g9`); slice 3 postponed to 0.0.2
       (DECISIONS "Update now waits for 0.0.2", worklog 0.0.2-upd)
-      - [ ] f1g9c Update now leaves the dialog (DECISIONS "Update now leaves 0.0.1's dialog");
+      - [x] f1g9c Update now leaves the dialog (DECISIONS "Update now leaves 0.0.1's dialog");
         the check's stamp tested as the current
         time (the mutation run's `now_secs` survivors); `UpdateDialog::up` dropped, the
         dialog's `show` already returning while it is shut; `updater` crate-private → verify:
         ST-UPD-02 headless (three buttons),
         the stamp's test red on `now_secs` returning 0
-    - [ ] f1g10 the comparator's heads with the hyphens (DECISIONS "The comparator's heads take
+        Done 2026-11-03 as `2bbf8f56` on `f1g9`; `updater` stays `pub` until 0.0.2-upd reads
+        `Release`'s asset fields (made private now, those fields would be dead code)
+    - [x] f1g10 the comparator's heads with the hyphens (DECISIONS "The comparator's heads take
       the AATF lists' hyphens"), and Live AATF's `All clean` line with Copy to clipboard never
       greyed, copying what the panel shows (DECISIONS "Live AATF lists \"All clean\""), drafted
       first → verify: headless, red first; the copy with suggestions hidden holds none of them
-    - [ ] f1g11 the player list's drag outlines the row it would land on (the maintainer,
+      Done 2026-11-02 as `5f06d2e7` on `f1g`, the mutation run's gaps `d67604c1`
+    - [x] f1g11 the player list's drag outlines the row it would land on (the maintainer,
       2026-11-02; DECISIONS "The player list outlines the row a drag would move him to"),
       as `team_widgets` `lineup_row` does (`dnd_hover_payload`, a 1-point selection stroke
       outside the row), in `save_editor` `view/player_list.rs` `player_row`; drafted
       (`playerRow`) → verify: SE-GUI-64 headless, red first
-    - [ ] f1g12 the team row's hint reads `[click for gameplan]` (the maintainer, 2026-11-02;
+      Done 2026-11-02 as `b6653046` on `f1g`; mutants-diff `5f06d2e7..` over f1g10's rework
+      and f1g11: 14 caught, 0 missed, 2 unviable
+    - [x] f1g12 the team row's hint reads `[click for gameplan]` (the maintainer, 2026-11-02;
       DECISIONS "The team row's hint names the gameplan"), in `save_editor`
       `view/player_list.rs` `team_row` and its test; drafted (`teamRow`'s `.thint`) → verify:
       the hint's test, red first
-    - [ ] f1g13 the maintainer's look at 0.0.1i-pre2 (2026-11-03; DECISIONS "Four fixes from the
+      Done 2026-11-02: docs `d4797dcc`, code `5e0cc5a7` on main
+    - [x] f1g13 the maintainer's look at 0.0.1i-pre2 (2026-11-03; DECISIONS "Four fixes from the
       look at 0.0.1i-pre2"), drafted: (a) the update interval in minutes, 120 by default, the
-      check run again while the window stays open (`studio_core` `updater.rs` `check_due`,
+      check run again while the window stays open (`studio_core` `updater.rs`,
       `shell/mod.rs` `poll_update`, the settings row, the two spec tables) → verify: ST-UPD-01
       headless, red first; (b) the player list's pointing hand (`player_list.rs`
       `player_row`) → SE-GUI-64; (c) the dragged lineup row keeps its grab point
       (`team_widgets` `pitch/lineup.rs` `lineup_row`) → SE-GUI-65; (d) Stronger foot/hand's
       unpicked side in the strong text colour (`info_strip.rs` `side_row`) → SE-GUI-61
+      Done 2026-11-03: (a) `cd52809b` on `f1g9` (`next_check_at`, a failed check backing off one
+      interval, the settings menu 676 points: DECISIONS "The settings menu is 676 points"); its
+      mutation run left the wake instant and the backoff's length untested, reworked
+      `c6ce8acf` (12 caught, 0 missed, 2 timeouts that stop every check); (b-d) `9d74108a` on `f1g`, mutants 6 caught, 4 unviable
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. The maintainer, 2026-11-02: the
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);

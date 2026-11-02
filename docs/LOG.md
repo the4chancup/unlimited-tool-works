@@ -3058,3 +3058,5 @@ worklog passed 7,000 lines.
   PgUp/PgDn); 0.0.2-poc's move into 0.0.1 cancelled; the update check approved for 0.0.1 (f1g9).
 - 2026-11-02 — f1g10 on `f1g` (`5f06d2e7`: the comparator's hyphenated heads, Live AATF's All clean and a
   Copy never greyed); f1g7a: CI's release workflow designed (`distribution.md` "Release builds in CI").
+- 2026-11-03 — f1g7-f1g13 merged into main: CI's release workflow (the test tag's draft checked and
+  deleted), the update check without Update now (0.0.2), the four fixes from the look at 0.0.1i-pre2.
