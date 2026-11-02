@@ -14,7 +14,9 @@ packs it as `<target>/dist/unlimited-tool-works-<version>-windows.7z` with 7-Zip
 `sha256sum`-format `.sha256` beside it, then lists the archive and refuses unless the listing
 equals the staged set exactly, the empty folders included. On Windows it packs beside it `unlimited-tool-works-<version>-symbols.7z` (the exe and
 its `.pdb`, the symbols `symbolize_log.py` names a posted `utw.log`'s backtrace with), never
-in the bundle; the Linux binary keeps its line tables in itself, so none is packed for it.
+in the bundle; on Linux the binary is stripped of its debug info (most of its size, the
+standard library's: `objcopy` keeps the symbol table and a debuglink), which is packed flat
+as `unlimited-tool-works-<version>-linux-symbols.tar.gz`.
 
 Every refusal prints one `error: <what>` line on stderr and exits 1: a platform that is not
 Windows or Linux, a version that is not the workspace's, a readme whose first line names another
@@ -22,7 +24,9 @@ version, an archive that already exists (a release is never overwritten), a dirt
 `cargo build` that fails, a `--help` with no usage line, a binary that still holds one of the
 remapped paths or, on Windows, names `VCRUNTIME140.dll` (the `--config` flags replaced `+crt-static`
 instead of joining it), a launcher it ships (none in 0.0.1) that does not call the exe's
-name, a 7-Zip that cannot be found or whose `a` fails (Windows only), a `cargo-about` that cannot be found,
+name, a 7-Zip that cannot be found or whose `a` fails (Windows only), an `objcopy` or a
+`readelf` that cannot be found or fails (Linux only), a stripped binary that still carries
+`.debug_` sections or lost its `.symtab` (Linux only), a `cargo-about` that cannot be found,
 whose `generate` fails or that lists no third-party crate, a `.pdb` missing beside the built
 exe (Windows only), a Linux archive whose binary member lost its executable bit, and a listing
 that differs from the staged set (that archive is left for inspection).
@@ -128,14 +132,19 @@ def launcher_calls(bat: str, name: str) -> bool:
 
 
 def existing_glob(version: str) -> str:
-    # Both platforms' archives, their `.sha256`s and the symbols' `.7z`: a release is
-    # never overwritten, whatever its archives are called.
+    # Both platforms' archives, their `.sha256`s and the two symbols archives: a release
+    # is never overwritten, whatever its archives are called.
     return f"*-{version}-*"
 
 
 def symbols_entries(name: str) -> set[str]:
     # Flat, so an "Extract here" gives `symbolize_log.py` the exe and its .pdb side by side.
     return {f"{name}.exe", PDB_NAME}
+
+
+def linux_symbols_entries(binary: str) -> set[str]:
+    # Flat like the Windows symbols': the debug info `objcopy` split out of the binary.
+    return {f"{binary}.debug"}
 
 
 def expected_entries(name: str, version: str, platform: str) -> set[str]:
@@ -194,6 +203,34 @@ def pack_tar(archive: Path, cwd: Path, top_name: str, binary: str) -> set[str]:
         tar.add(cwd / top_name, arcname=top_name, filter=owned_by_nobody)
     with tarfile.open(archive) as tar:
         return {member.name for member in tar.getmembers()}
+
+
+def pack_tar_flat(archive: Path, cwd: Path, name: str) -> set[str]:
+    """Pack the one file `cwd`/`name` into the .tar.gz `archive` under its own name, the
+    Linux symbols archive's shape; returns the member names. `0644`, and owned by uid
+    and gid 0 with no names, as `pack_tar`'s files are."""
+
+    def owned_by_nobody(member: tarfile.TarInfo) -> tarfile.TarInfo:
+        member.uid = member.gid = 0
+        member.uname = member.gname = ""
+        member.mode = 0o644
+        return member
+
+    with tarfile.open(archive, "w:gz") as tar:
+        tar.add(cwd / name, arcname=name, filter=owned_by_nobody)
+    with tarfile.open(archive) as tar:
+        return {member.name for member in tar.getmembers()}
+
+
+def elf_sections(readelf_text: str) -> set[str]:
+    """The section names in `readelf --section-headers --wide`'s table: the token after
+    each `[Nr]` row label when it starts with `.`, as every named section's does. The
+    unnamed first section's `NULL`, its type, is skipped by the same rule."""
+    return {
+        match.group(1)
+        for line in readelf_text.splitlines()
+        if (match := re.match(r"\s*\[\s*\d+\]\s+(\.\S+)", line))
+    }
 
 
 def about_config(deny_toml: str, triple: str) -> str:
@@ -441,7 +478,44 @@ def release(version: str) -> None:
         top = staging / f"{PACKAGE}-{version}"
         top.mkdir()
         binary = f"{name}{plat.suffix}"
-        shutil.copyfile(exe, top / binary)
+        if platform == "windows":
+            shutil.copyfile(exe, top / binary)
+        else:
+            # `line-tables-only` still links the standard library's debug info, most of
+            # the binary: it is moved out beside the bundle as the .pdb is on Windows,
+            # the shipped binary stripped of it but keeping its symbol table and a
+            # debuglink to `utw.debug`.
+            symbols_stage = staging / "symbols"
+            symbols_stage.mkdir()
+            debug = symbols_stage / f"{binary}.debug"
+            objcopy = shutil.which("objcopy")
+            if objcopy is None:
+                raise Refusal("objcopy not found: `objcopy` is not on PATH (binutils provides it)")
+            if subprocess.run(
+                [objcopy, "--only-keep-debug", str(exe), str(debug)]
+            ).returncode:
+                raise Refusal(f"objcopy --only-keep-debug failed ({exe.name})")
+            if subprocess.run(
+                [objcopy, "--strip-debug", f"--add-gnu-debuglink={debug}",
+                 str(exe), str(top / binary)]
+            ).returncode:
+                raise Refusal(f"objcopy --strip-debug failed ({binary})")
+            readelf = shutil.which("readelf")
+            if readelf is None:
+                raise Refusal("readelf not found: `readelf` is not on PATH (binutils provides it)")
+            headers = subprocess.run(
+                [readelf, "--section-headers", "--wide", str(top / binary)],
+                capture_output=True,
+                text=True,
+            )
+            if headers.returncode:
+                raise Refusal(f"readelf --section-headers failed ({binary})")
+            sections = elf_sections(headers.stdout)
+            debug_sections = sorted(s for s in sections if s.startswith(".debug_"))
+            if debug_sections:
+                raise Refusal(f"{binary} still carries debug sections: {', '.join(debug_sections)}")
+            if ".symtab" not in sections:
+                raise Refusal(f"{binary} lost its symbol table with its debug info")
         for bundled in LAUNCHERS + ("README.txt",):
             shutil.copyfile(ROOT / "resources/bundle" / bundled, top / bundled)
         (top / "data").mkdir()
@@ -485,8 +559,7 @@ def release(version: str) -> None:
         if platform == "windows":
             # The symbols archive: the exe and its .pdb, kept out of the bundle for
             # `symbolize_log.py` to name a posted log's frames against. The .pdb keeps
-            # its build name, the one the exe records. The Linux binary keeps its line
-            # tables in itself, so it gets none.
+            # its build name, the one the exe records.
             pdb = target / "release" / PDB_NAME
             if not pdb.exists():
                 raise Refusal(f"{pdb} does not exist; the release's symbols cannot be packed")
@@ -497,6 +570,20 @@ def release(version: str) -> None:
             symbols = dist / f"{PACKAGE}-{version}-symbols.7z"
             found = pack(seven_z, symbols, symbols_stage, [binary, PDB_NAME])
             expected = symbols_entries(name)
+            if found != expected:
+                raise Refusal(
+                    f"the symbols archive's listing differs "
+                    f"(missing {sorted(expected - found)}, extra {sorted(found - expected)}); "
+                    f"{symbols} is left for inspection"
+                )
+            print(symbols)
+        else:
+            # Linux's symbols archive is the debug info `objcopy` split out of the
+            # staged binary, packed flat: a crash's backtrace names its functions, and
+            # `utw.debug` adds the lines (`addr2line`).
+            symbols = dist / f"{PACKAGE}-{version}-linux-symbols.tar.gz"
+            found = pack_tar_flat(symbols, symbols_stage, debug.name)
+            expected = linux_symbols_entries(binary)
             if found != expected:
                 raise Refusal(
                     f"the symbols archive's listing differs "

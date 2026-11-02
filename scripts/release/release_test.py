@@ -17,6 +17,7 @@ from release import (
     about_config,
     build_args,
     check_exe,
+    elf_sections,
     existing_glob,
     expected_entries,
     exe_name,
@@ -24,8 +25,10 @@ from release import (
     launcher_calls,
     leaked_prefixes,
     links_crt_dynamically,
+    linux_symbols_entries,
     pack,
     pack_tar,
+    pack_tar_flat,
     platform_name,
     readme_names_version,
     third_party_notices,
@@ -44,6 +47,33 @@ Usage: UTW [OPTIONS] [COMMAND]
 
 Commands:
   help  Print a help chapter, or export them all as Markdown
+"""
+
+READELF_UNSTRIPPED = """There are 36 section headers, starting at offset 0x1195ae8:
+
+Section Headers:
+  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
+  [ 1] .interp           PROGBITS        0000000000000318 000318 00001c 00   A  0   0  1
+  [14] .text             PROGBITS        0000000000003d60 002d60 a2c4e1 00  AX  0   0 16
+  [30] .debug_info       PROGBITS        0000000000000000 a35f00 5b7a2e 00      0   0  1
+  [31] .debug_abbrev     PROGBITS        0000000000000000 fed92e 001f4a 00      0   0  1
+  [33] .symtab           SYMTAB          0000000000000000 fee878 1b2a30 18     34 500 8
+  [34] .strtab           STRTAB          0000000000000000 11a12a8 15b7c0 00      0   0  1
+  [35] .shstrtab         STRTAB          0000000000000000 12fca68 00017f 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info)
+"""
+
+READELF_STRIPPED = """There are 31 section headers, starting at offset 0xa2cfe8:
+
+Section Headers:
+  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
+  [14] .text             PROGBITS        0000000000003d60 002d60 a2c4e1 00  AX  0   0 16
+  [28] .gnu_debuglink    PROGBITS        0000000000000000 a2c560 000014 00      0   0  4
+  [29] .symtab           SYMTAB          0000000000000000 a2c580 1b2a30 18     30 500 8
+  [30] .strtab           STRTAB          0000000000000000 bdefb0 15b7c0 00      0   0  1
 """
 
 
@@ -295,6 +325,9 @@ class Pure(unittest.TestCase):
             {"UTW.exe", "utw.pdb"},
         )
 
+    def test_linux_symbols_entries(self) -> None:
+        self.assertEqual(linux_symbols_entries("utw"), {"utw.debug"})
+
     def test_existing_glob_covers_both_bundles_and_the_symbols(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             dist = Path(tmp)
@@ -304,6 +337,7 @@ class Pure(unittest.TestCase):
                 "Tiny-0.0.1-linux.tar.gz",
                 "Tiny-0.0.1-linux.tar.gz.sha256",
                 "Tiny-0.0.1-symbols.7z",
+                "Tiny-0.0.1-linux-symbols.tar.gz",
             ):
                 (dist / file).write_bytes(b"x")
             (dist / "Tiny-0.0.2-windows.7z").write_bytes(b"x")
@@ -317,6 +351,7 @@ class Pure(unittest.TestCase):
                         "Tiny-0.0.1-linux.tar.gz",
                         "Tiny-0.0.1-linux.tar.gz.sha256",
                         "Tiny-0.0.1-symbols.7z",
+                        "Tiny-0.0.1-linux-symbols.tar.gz",
                     )
                 ),
             )
@@ -411,6 +446,26 @@ class Pure(unittest.TestCase):
     def test_links_crt_dynamically(self) -> None:
         self.assertTrue(links_crt_dynamically(b"\x00VCRUNTIME140.dll\x00"))
         self.assertFalse(links_crt_dynamically(b"\x00KERNEL32.dll\x00"))
+
+    def test_elf_sections(self) -> None:
+        # The check the recipe runs on the stripped Linux binary: no `.debug_*` left,
+        # the symbol table kept (`.gnu_debuglink` is not a `.debug_` section, and the
+        # unnamed first section's `NULL` is its type, not a name).
+        self.assertEqual(
+            elf_sections(READELF_UNSTRIPPED),
+            {
+                ".interp",
+                ".text",
+                ".debug_info",
+                ".debug_abbrev",
+                ".symtab",
+                ".strtab",
+                ".shstrtab",
+            },
+        )
+        stripped = elf_sections(READELF_STRIPPED)
+        self.assertEqual(stripped, {".text", ".gnu_debuglink", ".symtab", ".strtab"})
+        self.assertEqual([section for section in stripped if section.startswith(".debug_")], [])
 
     def test_check_exe(self) -> None:
         # The check `release()` runs on its build and the candidate runs on the exe it
@@ -513,6 +568,22 @@ class Listing(unittest.TestCase):
                     (0, 0, "", ""),
                     member.name,
                 )
+
+    def test_a_packed_flat_tarball_lists_the_debug_file(self) -> None:
+        # The Linux symbols archive, packed as the recipe packs it: `utw.debug` alone
+        # and flat, `0644`, owned by nobody, as the Windows symbols' entries are flat.
+        with tempfile.TemporaryDirectory() as tmp:
+            stage = Path(tmp)
+            (stage / "utw.debug").write_bytes(b"x")
+            archive = stage / "tiny-symbols.tar.gz"
+            found = pack_tar_flat(archive, stage, "utw.debug")
+            self.assertEqual(found, linux_symbols_entries("utw"))
+            with tarfile.open(archive) as tar:
+                members = {member.name: member for member in tar.getmembers()}
+            self.assertEqual(members["utw.debug"].mode, 0o644)
+            member = members["utw.debug"]
+            self.assertEqual((member.uid, member.gid, member.uname, member.gname),
+                             (0, 0, "", ""))
 
 
 if __name__ == "__main__":
