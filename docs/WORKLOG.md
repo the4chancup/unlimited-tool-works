@@ -7037,9 +7037,11 @@ briefs, review loops, gates and mutation runs as for any step.
       slice 1 keeps it `pub` only because slices 2-3 are the first readers of `Release`'s fields.
       Slices 1-2 done 2026-11-02 (`b9608c7c`, `03f92b80`, on `f1g9`); slice 3 postponed to 0.0.2
       (DECISIONS "Update now waits for 0.0.2", worklog 0.0.2-upd)
-      - [ ] f1g9c Update now's hover reads the plan's; the check's stamp tested as the current
+      - [ ] f1g9c Update now leaves the dialog (DECISIONS "Update now leaves 0.0.1's dialog");
+        the check's stamp tested as the current
         time (the mutation run's `now_secs` survivors); `UpdateDialog::up` dropped, the
-        dialog's `show` already returning while it is shut → verify: ST-UPD-02 headless,
+        dialog's `show` already returning while it is shut; `updater` crate-private → verify:
+        ST-UPD-02 headless (three buttons),
         the stamp's test red on `now_secs` returning 0
     - [ ] f1g10 the comparator's heads with the hyphens (DECISIONS "The comparator's heads take
       the AATF lists' hyphens"), and Live AATF's `All clean` line with Copy to clipboard never

@@ -192,9 +192,9 @@ release checking, download/verification, and binary replacement; `studio` separa
 `teams_list`'s parse/reconcile logic for teams-list reconciliation. Core knows neither
 teams-list/team-ID semantics nor team-format types. No plugin hook or new updater framework is
 needed. This is desktop-only (`#[cfg(not(target_arch = "wasm32"))]`); the browser build updates
-server-side. 0.0.1 ships steps 1 and 2, in the window only, its dialog's **Update now** drawn
-disabled with the hover "The auto-updater comes with 0.0.2": a 0.0.1
-member downloads 0.0.2 by hand, once. 0.0.2 adds steps 3, 4 and 6 (ST-UPD-03, ST-UPD-04),
+server-side. 0.0.1 ships steps 1 and 2, in the window only, its dialog without **Update now**
+(a disabled one reads as an update that is not there): a 0.0.1 member downloads 0.0.2 from
+the release page, once. 0.0.2 adds steps 3, 4 and 6 (ST-UPD-03, ST-UPD-04),
 the command line's notice and rollback (the rollback lives in the newer exe); step 5 and the `update` subcommand come with
 the Team compiler. The HTTP client is `ureq` pinned to `=3.5.0` (default features off,
 `rustls-no-provider` and `platform-verifier`, `rustls` on `ring` handed to it as the crypto
