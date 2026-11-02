@@ -9,14 +9,17 @@
 //! window, the window's dock icon back. Its Show suggestions checkbox is
 //! `live_suggestions`: on, the check asks for the suggestions too, listed
 //! under `Suggestions` after the violations. Copy to clipboard, left of the
-//! dock's pop-out icon and at the count line's right end in the window,
-//! writes the list as it shows (`copy_text`), a notice saying it was done.
+//! dock's pop-out icon and at the count line's right end in the window and
+//! never greyed out, writes the list as it shows (`copy_text`), a notice
+//! saying it was done.
 
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
-use studio_core::widgets::{BottomDock, add_enabled, well_frame};
+use studio_core::widgets::{BottomDock, well_frame};
 use studio_core::{Notice, NoticeKind};
-use team_widgets::violations::{ListUse, SelectedPlayer, Wording, issue_groups, suggestion_groups};
+use team_widgets::violations::{
+    ListUse, SelectedPlayer, Wording, all_clean, issue_groups, suggestion_groups,
+};
 
 use crate::session::rules::{self, TeamCheck};
 use crate::view::aatf_check::{self, CheckKey, TeamsCheck};
@@ -153,46 +156,59 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             ui,
             |ui| {
                 headline(ui, &listing);
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if close_button(ui).clicked() {
-                        *live_aatf = false;
-                    }
-                    // The window's close button stands centred in its slot,
-                    // one item spacing from the dock icon's: the slot's half
-                    // left of the cross and the pop-out icon in a slot of
-                    // its own keep the dock's pair spaced as the window's,
-                    // the cross itself at the header's right end.
-                    let slot = title_slot(ui);
-                    ui.add_space((slot - ui.spacing().icon_width) / 2.0);
-                    let pop_out = ui.allocate_ui_with_layout(
-                        egui::vec2(slot, ui.spacing().interact_size.y),
-                        egui::Layout::centered_and_justified(egui::Direction::TopDown),
-                        |ui| icon_button(ui, studio_core::icons::POP_OUT, POP_OUT_TOOLTIP),
-                    );
-                    if pop_out.inner.clicked() {
-                        *live_window = true;
-                    }
-                    copied = copy_button(ui, has_rows(&listing)).clicked();
-                });
+                // The buttons' ids pinned to a scope of their own: a widget
+                // drawn or skipped in `headline` (the count's variants, the
+                // `checking…` mark) would otherwise renumber them, and egui
+                // resolves a click by the widget's id, so a press held across
+                // the frame the mark appears lands on a stale id and is
+                // dropped.
+                ui.scope_builder(
+                    egui::UiBuilder::new()
+                        .layout(egui::Layout::right_to_left(egui::Align::Center))
+                        .scope_id(egui::Id::unique("save_editor_live_aatf_buttons")),
+                    |ui| {
+                        if close_button(ui).clicked() {
+                            *live_aatf = false;
+                        }
+                        // The window's close button stands centred in its slot,
+                        // one item spacing from the dock icon's: the slot's half
+                        // left of the cross and the pop-out icon in a slot of
+                        // its own keep the dock's pair spaced as the window's,
+                        // the cross itself at the header's right end.
+                        let slot = title_slot(ui);
+                        ui.add_space((slot - ui.spacing().icon_width) / 2.0);
+                        let pop_out = ui.allocate_ui_with_layout(
+                            egui::vec2(slot, ui.spacing().interact_size.y),
+                            egui::Layout::centered_and_justified(egui::Direction::TopDown),
+                            |ui| icon_button(ui, studio_core::icons::POP_OUT, POP_OUT_TOOLTIP),
+                        );
+                        if pop_out.inner.clicked() {
+                            *live_window = true;
+                        }
+                        copied = copy_button(ui).clicked();
+                    },
+                );
             },
             |ui| clicked = rows(ui, &listing, false),
         );
         clicked
     };
-    if copied && let Some((key, checks)) = listing.held {
-        ui.ctx().copy_text(copy_text(
-            file,
-            listing.ruleset,
-            key,
-            checks,
-            key.suggestions && listing.suggestions,
-        ));
-        let id = *key.ids.first().expect("a held result checked a team");
+    if copied {
+        ui.ctx().copy_text(copy_text(&listing));
+        let team = listing.team_id.map(|team_id| {
+            listing
+                .held
+                .and_then(|(key, _)| key.ids.first().copied())
+                .unwrap_or(team_id)
+        });
         *notice = Some(Notice {
-            text: format!(
-                "Copied the Live AATF list of {}.",
-                multi_aatf::team_label(file, id)
-            ),
+            text: match team {
+                Some(id) => format!(
+                    "Copied the Live AATF list of {}.",
+                    multi_aatf::team_label(file, id)
+                ),
+                None => "Copied the Live AATF list.".to_owned(),
+            },
             kind: NoticeKind::Success,
             action: None,
         });
@@ -265,6 +281,12 @@ fn rows(ui: &mut egui::Ui, listing: &Listing<'_>, one_column: bool) -> Option<Se
                         return None;
                     }
                     let (result_key, checks) = listing.held?;
+                    // A team whose checks all ran and found nothing reads
+                    // `All clean`, as a report's does, above the
+                    // suggestions while they show.
+                    if checks.iter().all(Result::is_ok) && aatf_check::issues(checks) == 0 {
+                        all_clean(ui);
+                    }
                     aatf_check::results(
                         ui,
                         listing.file,
@@ -285,40 +307,37 @@ fn rows(ui: &mut egui::Ui, listing: &Listing<'_>, one_column: bool) -> Option<Se
         .inner
 }
 
-/// Whether the held result lists a row — an issue, or a suggestion while
-/// they show: Copy to clipboard is off while the list holds no row.
-fn has_rows(listing: &Listing<'_>) -> bool {
-    let Some((key, checks)) = listing.held else {
-        return false;
+/// The list as it shows, as plain text (the draft's `liveText`): a held
+/// result's ruleset, team and error and warning counts worded as
+/// Multi-team AATF's copy words its header line, then `  All clean` under
+/// a clean team or the team's groups, a failed check's message as the list
+/// words it, then `Suggestions` and their groups while they show. Before a
+/// result is held, the line the panel shows: `Checking <team>…`, or `No
+/// team is open.`.
+fn copy_text(listing: &Listing<'_>) -> String {
+    let file = listing.file;
+    let Some(id) = listing.team_id else {
+        return "No team is open.".to_owned();
     };
-    checks.iter().flatten().any(|check| {
-        check.violations.iter().any(|violation| {
-            violation.severity != aatf::Severity::Suggestion
-                || (key.suggestions && listing.suggestions)
-        })
-    })
-}
-
-/// The list as it shows, as plain text (the draft's `liveText`): the
-/// ruleset's name, the team and its error and warning counts worded as
-/// Multi-team AATF's copy words its header line, then the team's groups,
-/// then `Suggestions` and their groups while they show.
-fn copy_text(
-    file: &EditFile,
-    ruleset: &aatf::Ruleset,
-    key: &CheckKey,
-    checks: &[TeamCheck],
-    suggestions: bool,
-) -> String {
+    let Some((key, checks)) = listing.held else {
+        return format!(
+            "Checking {}\u{2026}",
+            display_name(aatf_check::team_name(file, id))
+        );
+    };
     let wording = Wording {
-        ruleset,
+        ruleset: listing.ruleset,
         version: file.version(),
     };
     let listed = rules::listed_players(file, &key.ids);
     let mut lines = Vec::new();
     for ((&id, check), players) in key.ids.iter().zip(checks).zip(&listed) {
-        let Ok(check) = check else {
-            continue;
+        let check = match check {
+            Ok(check) => check,
+            Err(error) => {
+                lines.push(aatf_check::failed_line(file, id, error));
+                continue;
+            }
         };
         let count = |severity: aatf::Severity| {
             check
@@ -329,20 +348,17 @@ fn copy_text(
         };
         lines.push(format!(
             "{}, team {}: {}, {}",
-            ruleset.name,
+            listing.ruleset.name,
             multi_aatf::team_label(file, id),
             multi_aatf::counted(count(aatf::Severity::Error), "error"),
             multi_aatf::counted(count(aatf::Severity::Warning), "warning"),
         ));
-        multi_aatf::group_lines(
-            file,
-            id,
-            players,
-            &issue_groups(&check.violations),
-            wording,
-            &mut lines,
-        );
-        if suggestions {
+        let groups = issue_groups(&check.violations);
+        if groups.is_empty() {
+            lines.push("  All clean".to_owned());
+        }
+        multi_aatf::group_lines(file, id, players, &groups, wording, &mut lines);
+        if key.suggestions && listing.suggestions {
             let groups = suggestion_groups(&check.violations);
             if !groups.is_empty() {
                 lines.push("Suggestions".to_owned());
@@ -354,9 +370,10 @@ fn copy_text(
 }
 
 /// The Copy to clipboard button (the draft's `liveCopy`), egui's plain
-/// button as Multi-team AATF's is, off while the list holds no row.
-fn copy_button(ui: &mut egui::Ui, enabled: bool) -> egui::Response {
-    add_enabled(ui, enabled, egui::Button::new("Copy to clipboard"))
+/// button as Multi-team AATF's is, never greyed out: the click copies what
+/// the panel shows.
+fn copy_button(ui: &mut egui::Ui) -> egui::Response {
+    ui.add(egui::Button::new("Copy to clipboard"))
 }
 
 /// A frameless icon-font button (the draft's `liveIconButton`), named for
@@ -440,9 +457,17 @@ fn window(ui: &egui::Ui, listing: &Listing<'_>) -> WindowFrame {
         // title bar's close button).
         ui.horizontal(|ui| {
             headline(ui, listing);
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                copied = copy_button(ui, has_rows(listing)).clicked();
-            });
+            // As in the dock's header: the button's id pinned to a scope
+            // of its own, so a `checking…` mark appearing in `headline`
+            // cannot renumber it and drop a press held across the frame.
+            ui.scope_builder(
+                egui::UiBuilder::new()
+                    .layout(egui::Layout::right_to_left(egui::Align::Center))
+                    .scope_id(egui::Id::unique("save_editor_live_aatf_window_buttons")),
+                |ui| {
+                    copied = copy_button(ui).clicked();
+                },
+            );
         });
         rows(ui, listing, true)
     })

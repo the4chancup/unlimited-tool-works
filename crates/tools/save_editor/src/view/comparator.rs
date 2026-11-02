@@ -21,7 +21,7 @@ use pes_savefile::model::names::display_name;
 use pes_savefile::ops::compare::{CompareError, DiffScope};
 use pes_version::PesVersion;
 use team_widgets::violations::{
-    RULE_COL, SWITCH_TOOLTIP, SelectedPlayer, drow_columns, player_head, row_paint,
+    RULE_COL, SWITCH_TOOLTIP, SelectedPlayer, drow_columns, player_head, player_head_job, row_paint,
 };
 
 use crate::diff::{self, DiffReport, PlayerReport};
@@ -157,13 +157,17 @@ pub(super) enum Line {
     /// A strong heading: `Team <id> <name>`, `No team`, or an only-in
     /// section's.
     Heading(String),
-    /// A player's head (`violations`' `Player <id>  <number> <name>`
-    /// format), weak; `select` on every head
-    /// whose player sits on an open-save roster (the picked-only ones have
-    /// none).
+    /// A player's head: the lists' hyphenated `Player <id> - <number> -
+    /// <name>` (`player_head_job` over `rostered`) when a roster holds
+    /// him, `text` as one weak run when none does; `text` is the
+    /// accessible label either way. `select` on every head whose player
+    /// sits on an open-save roster (the picked-only ones have none).
     Head {
         /// The head's text.
         text: String,
+        /// The parts the drawn head needs of a rostered player; `None`
+        /// (no roster holds him) draws `text` alone.
+        rostered: Option<Rostered>,
         /// The player a click selects.
         select: Option<SelectedPlayer>,
         /// His roster team in the save the head is read from (the team
@@ -483,6 +487,16 @@ fn spawn_compare(
     }
 }
 
+/// The parts a rostered player's head draws from (`player_head_job`).
+pub(super) struct Rostered {
+    /// The player id.
+    id: u32,
+    /// His shirt number on the roster the head is read from.
+    number: u16,
+    /// His name as the save stores it (colour codes kept).
+    name: String,
+}
+
 /// A player's place on the first roster holding him.
 #[derive(Clone, Copy)]
 pub(super) struct Place {
@@ -559,8 +573,10 @@ fn lines(report: &DiffReport, picked: &EditFile, open: &EditFile) -> Vec<Line> {
             group = Some(team);
         }
         // A player's head clicks like his rows do (SE-GUI-13).
+        let (text, rostered) = head(open, place, player.id);
         lines.push(Line::Head {
-            text: head(open, place, player.id),
+            text,
+            rostered,
             select: place.map(Place::select),
             team,
         });
@@ -596,8 +612,10 @@ fn lines(report: &DiffReport, picked: &EditFile, open: &EditFile) -> Vec<Line> {
         lines.push(Line::Heading(heading.to_owned()));
         for entry in entries {
             let place = rosters.get(&entry.id).copied();
+            let (text, rostered) = head(file, place, entry.id);
             lines.push(Line::Head {
-                text: head(file, place, entry.id),
+                text,
+                rostered,
                 select: place.filter(|_| clickable).map(Place::select),
                 team: place.map(|place| place.team_id),
             });
@@ -606,16 +624,24 @@ fn lines(report: &DiffReport, picked: &EditFile, open: &EditFile) -> Vec<Line> {
     lines
 }
 
-/// `id`'s head as `file` holds him: `player_head` over his roster place,
-/// `Player <id> <name>` when no roster holds him.
-fn head(file: &EditFile, place: Option<Place>, id: u32) -> String {
+/// `id`'s head as `file` holds him: `player_head` over his roster place
+/// with the drawn head's `Rostered`, `Player <id> <name>` alone when no
+/// roster holds him.
+fn head(file: &EditFile, place: Option<Place>, id: u32) -> (String, Option<Rostered>) {
     let name = file
         .player(id)
         .map(|player| player.name.as_str())
         .unwrap_or("?");
     match place {
-        Some(place) => player_head(id, place.number, name),
-        None => format!("Player {id} {}", display_name(name)),
+        Some(place) => (
+            player_head(id, place.number, name),
+            Some(Rostered {
+                id,
+                number: place.number,
+                name: name.to_owned(),
+            }),
+        ),
+        None => (format!("Player {id} {}", display_name(name)), None),
     }
 }
 
@@ -649,13 +675,19 @@ fn shown(lines: &[Line], team: TeamChoice) -> Vec<&Line> {
 
 /// One line of the list, one text row high (the `violations` list's row
 /// pattern, its `row_paint` tail shared): a heading in the strong color,
-/// a head in the weak, a row the draft's `.drow` two columns; a row or a
+/// a head in the lists' hyphenated style (one weak run when no roster
+/// holds the player), a row the draft's `.drow` two columns; a row or a
 /// head with `select` is a click target reporting the player.
 fn line(ui: &mut egui::Ui, line: &Line) -> Option<SelectedPlayer> {
     let visuals = ui.visuals();
     match line {
         Line::Heading(text) => text_line(ui, text, visuals.strong_text_color(), None),
-        Line::Head { text, select, .. } => text_line(ui, text, visuals.weak_text_color(), *select),
+        Line::Head {
+            text,
+            rostered,
+            select,
+            ..
+        } => head_line(ui, text, rostered.as_ref(), *select),
         Line::Row {
             label,
             values,
@@ -663,6 +695,24 @@ fn line(ui: &mut egui::Ui, line: &Line) -> Option<SelectedPlayer> {
             ..
         } => field_row(ui, label, values, *select),
     }
+}
+
+/// A player's head line: the lists' hyphenated head (`player_head_job`)
+/// for a rostered player, `text` as one weak run for a player no roster
+/// holds; `text` is the row's accessible label either way.
+fn head_line(
+    ui: &mut egui::Ui,
+    text: &str,
+    rostered: Option<&Rostered>,
+    select: Option<SelectedPlayer>,
+) -> Option<SelectedPlayer> {
+    let Some(player) = rostered else {
+        return text_line(ui, text, ui.visuals().weak_text_color(), select);
+    };
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    let job = player_head_job(player.id, player.number, &player.name, &font, ui.visuals());
+    let galley = ui.fonts_mut(|f| f.layout_job(job));
+    galley_line(ui, galley, ui.visuals().text_color(), text, select)
 }
 
 /// A heading's or a head's line: `text` in `color` at the row's left edge.
@@ -674,6 +724,18 @@ fn text_line(
 ) -> Option<SelectedPlayer> {
     let font = egui::TextStyle::Body.resolve(ui.style());
     let galley = ui.painter().layout_no_wrap(text.to_owned(), font, color);
+    galley_line(ui, galley, color, text, select)
+}
+
+/// `galley` at the row's left edge (a heading's or a head's), `label` the
+/// row's accessible label, `select` making the row a click target.
+fn galley_line(
+    ui: &mut egui::Ui,
+    galley: std::sync::Arc<egui::Galley>,
+    fallback: egui::Color32,
+    label: &str,
+    select: Option<SelectedPlayer>,
+) -> Option<SelectedPlayer> {
     let (rect, response) = ui.allocate_exact_size(
         egui::vec2(ui.available_width(), galley.size().y),
         if select.is_some() {
@@ -685,8 +747,8 @@ fn text_line(
     row_paint(
         ui,
         response,
-        &[egui::Shape::galley(rect.min, galley, color)],
-        text,
+        &[egui::Shape::galley(rect.min, galley, fallback)],
+        label,
         select,
         select.is_some().then_some(SWITCH_TOOLTIP),
     )
