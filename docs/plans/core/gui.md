@@ -1327,7 +1327,8 @@ ST-UPD-01   GIVEN `check_for_updates` on, `last_update_check` older than the int
                  `last_update_check` is stored; GIVEN the check off, or the last check inside
                  the interval THEN no check runs; GIVEN `skipped_version = "0.0.2"` THEN no
                  offer; GIVEN the list's highest `v0.0.1` THEN no offer; GIVEN the fetch
-                 failing THEN no offer, one log line
+                 failing THEN no offer, one log line; GIVEN the window left open past the
+                 interval since the last completed check THEN a second check runs
 ST-UPD-02   GIVEN the offer shown
             WHEN its text is clicked, or Details
             THEN a dialog says "Unlimited Tool Works v0.0.2 pre-alpha is out. You have v0.0.1

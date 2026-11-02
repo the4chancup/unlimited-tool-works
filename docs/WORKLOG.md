@@ -7059,6 +7059,14 @@ briefs, review loops, gates and mutation runs as for any step.
       DECISIONS "The team row's hint names the gameplan"), in `save_editor`
       `view/player_list.rs` `team_row` and its test; drafted (`teamRow`'s `.thint`) → verify:
       the hint's test, red first
+    - [ ] f1g13 the maintainer's look at 0.0.1i-pre2 (2026-11-03; DECISIONS "Four fixes from the
+      look at 0.0.1i-pre2"), drafted: (a) the update interval in minutes, 120 by default, the
+      check run again while the window stays open (`studio_core` `updater.rs` `check_due`,
+      `shell/mod.rs` `poll_update`, the settings row, the two spec tables) → verify: ST-UPD-01
+      headless, red first; (b) the player list's pointing hand (`player_list.rs`
+      `player_row`) → SE-GUI-64; (c) the dragged lineup row keeps its grab point
+      (`team_widgets` `pitch/lineup.rs` `lineup_row`) → SE-GUI-65; (d) Stronger foot/hand's
+      unpicked side in the strong text colour (`info_strip.rs` `side_row`) → SE-GUI-61
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. The maintainer, 2026-11-02: the
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);
@@ -7131,6 +7139,13 @@ briefs, review loops, gates and mutation runs as for any step.
     the next start's `Updated to` notice, in two slices (the updater's core, then the
     dialog's states); its end-to-end test first settles how a pre-release can be read
     without every 0.0.1 being offered it → verify: ST-UPD-03 headless, ST-UPD-04
+  - [ ] 0.0.2-cmp the comparator's rows that carry an arrow become three columns, Item, Old
+    value and New value, as the unsaved changes list; its team and player rows unchanged
+    (the maintainer, 2026-11-03)
+  - [ ] 0.0.2-drag the player list's dragged row floats under the pointer as the lineup
+    rows' does, its grab point kept (the maintainer, 2026-11-03)
+  - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
+    if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
   - [ ] 0.0.2-cli the command line's update notice (DECISIONS "The update offer waits in the
     status bar"): from 0.0.2 a command prints one line when a newer release exists
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and

@@ -249,8 +249,9 @@ all side by side.
   is held over a row of his team other than his own, that row, the slot the drop moves him to,
   is outlined in the selection colour (the draft's `.dragover`), as the lineup lists outline
   theirs; a row the drop moves nothing onto (his own, another team's, an empty slot's) gets
-  none. A draggable row shows the grab hand wherever the pointer is on it, as the lineup rows
-  do (egui leaves a row that also takes clicks on the arrow, so the row asks for it). A dot marks players with unsaved changes. Names
+  none. A draggable row shows the pointing hand wherever the pointer is on it (egui leaves a
+  row that also takes clicks on the arrow, so the row asks for it); the lineup rows keep the
+  move cross, which Windows draws for egui's grab hand. A dot marks players with unsaved changes. Names
   render with their savefile colour codes applied as text colours (the in-game
   look; 4ccEditor shows the raw control characters), and the name edit field
   keeps the raw string so codes survive a roundtrip untouched. A code's first six bytes are
@@ -1146,7 +1147,9 @@ What the controls write, where the draft and 4ccEditor's tab (`tab_four_dlg_proc
   the game DBC7 plays, follows both exactly: ten rectangle edges crossed by six players
   dragged in its Lineup/Edit Position (CF's y 40 among them) fall where PES 2016's tables put
   them, and PES 2016's formula gives every one of 150 overalls read there (23 players, nine
-  positions, registered, A and C), so its drag is the rule as it stands. A lineup row released on the grass
+  positions, registered, A and C), so its drag is the rule as it stands. A dragged lineup row is drawn with the point
+  first pressed under the pointer, as the browser draws the draft's (egui alone would centre
+  it on the pointer; SE-GUI-65). A lineup row released on the grass
   does nothing, as in the draft: a row moves players between the lists, never on the pitch.
   While a dragged starter is held over another, that one carries the selected player's corner
   brackets (`#14fbff`), drawn over everything, and the dragged marker goes to 35% opacity over
@@ -2114,7 +2117,7 @@ SE-GUI-60  GIVEN a PES 19 save under the VGL 27 ruleset and a captain whose card
 SE-GUI-61  GIVEN a player's Stronger foot toggle
            WHEN it draws
            THEN the chosen side's word is in the resting buttons' light grey and the
-                other side's in the normal text grey
+                other side's in the strong text colour
 SE-GUI-63  GIVEN the PES 17 save open on team 734 under the official rules, Live AATF on, the
                 check returned
            THEN the list opens with `Team 734 <name>`, each player's group's head reads
@@ -2134,7 +2137,10 @@ SE-GUI-64  GIVEN the save open on a team, player 01's row dragged
            THEN that row alone is outlined in the selection colour; held over his own row,
                 or under ALL over a row of the next team, no row is; released off the list,
                 no row is; GIVEN the pointer over a player row's name, no drag held THEN the
-                cursor is the grab hand; GIVEN a filter typed THEN it is the arrow
+                cursor is the pointing hand; GIVEN a filter typed THEN it is the arrow
+SE-GUI-65  GIVEN the Tactics view, a Starting eleven row pressed 20 points right of its centre
+           WHEN it is dragged
+           THEN the dragged row is drawn with that point under the pointer, not its centre
 SE-GUI-62  GIVEN the PES 17 save open on a player, the keyboard moved by Tab to a rating cell
                 of his Playable positions and Space pressed on it (the rating stepped)
            WHEN Ctrl+Z is pressed, the cell still holding the keyboard
