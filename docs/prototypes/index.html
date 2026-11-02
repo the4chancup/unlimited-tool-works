@@ -1186,7 +1186,7 @@ S.settings = {
     theme: "Dark",
     invert_value_scrolling: false,
     check_for_updates: true,
-    check_interval_hours: 24,
+    check_interval_minutes: 120,
     last_update_check: null,
     skipped_version: null,
     last_tool: null,
@@ -1812,14 +1812,12 @@ const HELP = [
   ] },
   { id: "updates", title: "Updates", topics: [
     { slug: "checking", title: "Checking for updates", body: [
-      "The shell looks for a new release every `check_interval_hours` hours (24 by",
-      "default); `check_for_updates` turns the check off. A newer version shows as",
-      "`Update available` in the status bar; its `Details` shows the release's notes,",
-      "`Update now`, a link to its page, and `Skip this version`, which hides it until",
-      "the next one.",
-      "",
-      "Installing an update replaces the program and keeps the previous exe under",
-      "`old/`."
+      "The shell looks for a new release at startup and every",
+      "`check_interval_minutes` minutes while it stays open (120 by default);",
+      "`check_for_updates` turns the check off. A newer version shows as `Update",
+      "available` in the status bar; its `Details` shows the release's notes, a link",
+      "to its page, where it downloads, and `Skip this version`, which hides it until",
+      "the next one."
     ].join("\n") },
   ] },
   { id: "whats-new", title: "What's new", topics: [
@@ -2441,8 +2439,8 @@ function commonSettingsRows() {
     sRow("Check for updates", "check_for_updates", "Whether the shell looks for new releases.",
       h("input", { type: "checkbox", checked: c.check_for_updates,
         onchange: e => { c.check_for_updates = e.target.checked; settingChanged(); } })),
-    sRow("Check interval (hours)", "check_interval_hours", "Hours between release checks.",
-      num("check_interval_hours", { disabled: !c.check_for_updates })),
+    sRow("Check interval (minutes)", "check_interval_minutes", "Minutes between release checks.",
+      num("check_interval_minutes", { disabled: !c.check_for_updates })),
   ];
 }
 

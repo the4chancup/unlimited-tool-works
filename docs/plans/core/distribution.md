@@ -201,8 +201,9 @@ the Team compiler. The HTTP client is `ureq` pinned to `=3.5.0` (default feature
 provider, the system's certificate store, no gzip, a `User-Agent`): `rustls-no-provider` may
 change in a minor release, hence the exact pin.
 
-1. **Check** (startup, a plain background thread): if `check_for_updates` is on and
-   `last_update_check` is older than `check_interval_hours`, read the repository's list of
+1. **Check** (at startup, and again while the window stays open, on a plain background
+   thread): if `check_for_updates` is on and `last_update_check` is older than
+   `check_interval_minutes` (120 by default, at least 1), read the repository's list of
    GitHub releases and take the highest `v<version>` tag by semver, pre-releases included
    (`releases/latest` skips a release marked Pre-release, which a 0.0.x may be; a tag that is
    not `v` and a semver is passed over), and compare it with the built-in

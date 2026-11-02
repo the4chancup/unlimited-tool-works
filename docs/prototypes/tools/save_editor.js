@@ -183,9 +183,9 @@ input[type=range]:focus { outline: none; }
   min-height: 18px; color: #b4b4b4; }
 .plist .rows .prow:hover { background: var(--hover); }
 .plist .rows .prow.on { background: var(--sel-bg); }
-/* A player row drags from anywhere on it, so the whole row shows the grab hand, never the text
-   I-beam (egui's Grab cursor over a drag source), as the lineup lists' rows do. */
-.plist .rows .prow[draggable=true] { cursor: grab; user-select: none; }
+/* A player row drags from anywhere on it, so the whole row shows the pointing hand, never
+   the text I-beam. */
+.plist .rows .prow[draggable=true] { cursor: pointer; user-select: none; }
 /* The drag handle in the player list and the lineup lists sits 4 points from the row's edge
    (the row's padding) and 4 before the place or position (the row's gap of 5 less 1), so the
    names get the room. */
@@ -302,11 +302,11 @@ input[type=range]:focus { outline: none; }
 .gen .combos .rate.lr { display: grid; grid-template-columns: 1fr 1fr; }
 /* Each side 18 tall, a control's height, so the toggles' rows stand 22 apart as the
    combos' do. */
-.gen .combos .rate.lr .sel { text-align: center; height: 18px; line-height: 18px; color: var(--text); }
+.gen .combos .rate.lr .sel { text-align: center; height: 18px; line-height: 18px; color: var(--strong); }
 /* The chosen side in the quiet grey of the positions grid's C, not the
    accent: a foot or hand is rarely what a member looks for. Its word in the
-   resting buttons' light grey, the other side's in the text grey, so the chosen
-   side reads brighter. */
+   resting buttons' light grey, the other side's in the strong text colour, so the
+   side a click switches to reads white. */
 .gen .combos .rate.lr .sel.on { background: #5a5a5a; color: #b4b4b4; }
 .gen .combos .rate.lr .sel:not(.on):hover { color: #f0f0f0; }
 /* The Captain checkbox centred in its box's width, under the box above it. */
@@ -456,7 +456,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .llist { background: var(--extreme); border: 1px solid var(--stroke); border-radius: 2px;
   max-height: 300px; overflow: auto; }
 .lrow { display: flex; gap: 5px; align-items: center; padding: 1px 4px;
-  white-space: nowrap; min-height: 18px; cursor: grab; user-select: none; }
+  white-space: nowrap; min-height: 18px; cursor: move; user-select: none; }
 .lrow:hover { background: var(--hover); }
 .lrow .fpos { width: 30px; flex: none; color: #b4b4b4; }
 #tac-lists .lrow { overflow: hidden; }
