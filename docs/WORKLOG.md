@@ -6975,11 +6975,13 @@ briefs, review loops, gates and mutation runs as for any step.
       errors before his warnings (the draft headed a player again after other players'
       errors); three more differences rendered for the maintainer's ruling
       (`.tmp/vet/live_heads/`: the heads' grey, the names' colour codes, the team's line)
-    - [ ] f1g2 P49: a `Fielded position` row's tooltip (`team_widgets` `violations.rs`
+    - [x] f1g2 P49: a `Fielded position` row's tooltip (`team_widgets` `violations.rs`
       `row`), drafted (`liveList`) → verify: SE-GUI-30's tooltip half, headless
-    - [ ] f1g3 P50: the toolbar's shortcuts held off only by a text field or a dialog
+    - [x] f1g3 P50: the toolbar's shortcuts held off only by a text field or a dialog
       (`save_editor` `view/mod.rs` `toolbar`, `text_edit_focused` for `typing`) → verify:
-      SE-GUI-62, red first
+      SE-GUI-62, red first.
+      Both done 2026-11-02 as `1b4f0115` on `f1g` (a focused number still holds them off:
+      egui draws it as a `TextEdit` under its own id), SE-GUI-53's citation fix beside it
     - [ ] f1g4 PgUp/PgDn: with at most one team row in view a jump of 7 rows, with two or
       more one team row at a time (the maintainer); drafted first for their look, then
       the plan's sentence and SE-GUI-55's rewrite
