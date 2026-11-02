@@ -7002,17 +7002,10 @@ briefs, review loops, gates and mutation runs as for any step.
     editor's undo merges a run of steps to one value as 8.42 does the Save editor's
     (`plans/ruleset_editor.md` the undo paragraph; DECISIONS "A run of undo steps is keyed by
     the widget call") → verify: ten wheel notches on a tier's count, one Undo; (6) PES 15's
-    fluid formation switch (the maintainer, 2026-11-02): PES 2015 has the game plan's Fluid
-    Formation (Operation Sports' PES 2015 tactics guide; a 2014-11-04 PESGaming thread), but
-    our PES 15 schema maps no byte for it (4ccEditor's `pes15.cpp` comments the read out and
-    its Tactics tab refuses 15; our preset stride is 122 bytes to PES 16's 123), so the Team
-    TOML template, `spec/pes_savefile/operations.md`, the model's docs say "PES 16+", the
-    Tactics view locks a PES 15 preset to Kick-off, and the AATF check fields a PES 15
-    preset's kick-off formation alone. First a census of the PES 15 saves here (the bytes
-    skipped after each preset's settings and after the presets, against presets whose three
-    formations differ), then, if unsettled, an in-game diff on PES 2015 (one preset's switch
-    flipped, saved, compared; the maintainer's PC) → verify: the byte read and written on
-    every PES 15 save, the check fielding a fluid PES 15 preset's three formations
+    fluid formation switch: closed 2026-11-02 without code. PES 2015's game plan has it, but
+    its saves keep no byte of it (the edit file saved after switching it off unchanged, two
+    texports either side of the switch with one payload: `spec/pes_savefile/model.md`, the
+    paragraph after the version quirks), so the schema's absent `fluid` on 15 stands
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in

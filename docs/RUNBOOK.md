@@ -314,7 +314,10 @@ candidate's `pes_savefile`). So after staging, touch every file `git diff --name
 sidekick's, a mutation run's local half, the lead's gates or package tests and a release
 build each count as one. Two already fill the CPU almost entirely, so a third makes nothing
 faster and only risks exhausting the memory and crashing the system. Before starting a
-build, count the ones running; a third waits for one to end.
+build, count the ones running; a third waits for one to end, except a build of a program
+needed as soon as possible (the maintainer, 2026-11-02): a quick tool the next step runs, or a
+build for a manual check, may start as the third, one at a time, at below-normal priority and
+a small `CARGO_BUILD_JOBS`; gates, tests, sidekicks and mutation halves never count as one.
 
 **Every build and test job runs at below-normal priority** (the maintainer, 2026-10-30): at
 normal priority two jobs left the maintainer's machine barely usable, while a below-normal one
