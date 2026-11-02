@@ -7024,8 +7024,11 @@ briefs, review loops, gates and mutation runs as for any step.
         Done 2026-11-03: run 41533635023 (tag at `6788dc28`, branch `ci/test-tag-rc1`) passed all
         three jobs; the draft pre-release held the `.7z` (11.7 MB), the `.tar.gz` (21.9 MB) and
         `SHA256SUMS.txt`, both matching; draft and tag deleted
-      - [ ] f1g7d the dry run's bundles looked at: the Windows exe starts here, the Linux
+      - [x] f1g7d the dry run's bundles looked at: the Windows exe starts here, the Linux
         binary in WSLg (Ubuntu 22.04) → verify: both windows open and close cleanly
+        Done 2026-11-03: dry run 4's Windows exe on the notebook (the GPU check); the Linux
+        bundle by the maintainer on an Ubuntu 24.04 live session in a VM, WSL not starting
+        here: "the app opens and behaves like on Windows"
     - [x] f1g8 whether 0.0.2-poc fits in 0.0.1: cancelled by the maintainer 2026-11-02 ("we've
       put enough on the plate already"); 0.0.2-poc stays the first work after the cut
     - [ ] f1g9 the update check with Update now (DECISIONS "The update check ships in 0.0.1"
