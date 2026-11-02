@@ -754,7 +754,8 @@ loss in the middle of a frame only on the next, so its commit lands there, seale
 frame's end, and a step on the same frame would join it. A disabled control ignores the wheel,
 and an open combo's list scrolls as a list. The step goes through the control's own change path
 (a combo's selection, a drag value's commit), so it is the edit a click or a typed value makes:
-the same validation, one undo step per notch in an editor. The step takes the wheel's delta, so
+the same validation, one undo step per notch in an editor, or one per run of notches in one
+that merges a run of steps to one value (`plans/save_editor.md`, the undo bullet). The step takes the wheel's delta, so
 the scroll area around the control does not scroll too. A wheel that began by scrolling a pane
 keeps scrolling it while the pointer sweeps over such controls, until the wheel has rested 500
 ms: a control sees the wheel only by being hovered, so without the rest rule scrolling the
@@ -1490,5 +1491,6 @@ ST-WHEEL-05 GIVEN the Save editor's Tactics tab on the PES 17 save's team 701, p
                  again; WHEN one notch up over Attacking style THEN the choice right of the held
                  one is held, or the leftmost when the held one is the rightmost; WHEN one notch
                  down over Numbers in attack THEN the choice left of the held one is held, or the
-                 rightmost when the held one is the leftmost; each step is one undo entry
+                 rightmost when the held one is the leftmost; each step, taken more than a
+                 second after the one before, is one undo entry
 ```
