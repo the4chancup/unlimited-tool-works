@@ -1360,6 +1360,89 @@ fn a_failing_tier_check_shows_its_error_in_the_badges_place() {
     );
 }
 
+// The Cards left badge's limit counts the captain's untaken choice:
+// team 781's captain (roster slot 0, a regular under VGL 27) holds no
+// paid cards, no second COM style and no A position past the tier's,
+// so no option is needed and the choice stays untaken — the badge
+// reads `of` the regular limit plus the choice's card. A COM style
+// held takes the `free: com` option instead, and the limit drops back.
+// SE-GUI-60
+#[test]
+fn the_captains_untaken_choice_counts_its_card_in_the_badges_limit() {
+    let path = fixture(PesVersion::Pes19, "cards_left_captain_choice");
+    let rules = aatf::builtin("vgl27").expect("VGL27 is built in");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.aatf_ruleset = "vgl27".to_owned();
+    view.selected = Some(Selection::Player(781, 0));
+    let (label, paid, tier_limit) = {
+        let session = view.session.as_ref().unwrap();
+        assert_eq!(
+            session.file().team(781).unwrap().tactics.set_pieces.captain,
+            0,
+            "premise: roster slot 0 is the captain"
+        );
+        let team = aatf::TeamView::new(session.file(), 781).unwrap();
+        let player = team.player(0).unwrap();
+        let tier = rules
+            .player_tier(&team, player)
+            .unwrap()
+            .expect("the captain matches a tier");
+        assert_eq!(tier.id.as_str(), "regular", "premise: a regular");
+        let limits = rules.card_limits(&team, player, &tier.id).unwrap();
+        assert!(
+            limits.paid <= tier.cards,
+            "premise: his paid cards under the tier's limit"
+        );
+        (
+            tier.label.clone(),
+            i32::from(limits.paid),
+            i32::from(tier.cards),
+        )
+    };
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let nodes = badge_landed(&mut window, &mut view);
+    assert_eq!(
+        cards_left_badges(&nodes),
+        [format!(
+            "{label}: {} of {}",
+            tier_limit + 1 - paid,
+            tier_limit + 1
+        )],
+        "the choice's card counted in the limit while it is untaken"
+    );
+
+    // A COM style held (the regular tier frees none): `free: com` takes
+    // the choice — the map's one `com` entry is the option's — and the
+    // badge's limit drops back to the tier's.
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes19)).unwrap();
+    let captain_id = file.team(781).unwrap().roster[0].player_id;
+    file.player_mut(captain_id).unwrap().skills.com_styles[0] = true;
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.aatf_ruleset = "vgl27".to_owned();
+    view.selected = Some(Selection::Player(781, 0));
+    {
+        let session = view.session.as_ref().unwrap();
+        let team = aatf::TeamView::new(session.file(), 781).unwrap();
+        let limits = rules
+            .card_limits(&team, team.player(0).unwrap(), "regular")
+            .unwrap();
+        assert_eq!(
+            limits.free.get("com"),
+            Some(&1),
+            "premise: the option's free COM style over the tier's none"
+        );
+    }
+    let nodes = badge_landed(&mut window, &mut view);
+    assert_eq!(
+        cards_left_badges(&nodes),
+        [format!("{label}: {tier_limit} of {tier_limit}")],
+        "the limit drops back to the tier's"
+    );
+}
+
 // The Cards left badge recomputes on a worker thread: an edit moves its
 // key and starts a new run, and until that answer lands the held badge
 // of the same player stays drawn.
