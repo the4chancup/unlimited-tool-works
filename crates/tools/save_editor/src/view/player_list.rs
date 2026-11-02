@@ -610,7 +610,12 @@ fn team_row(
 /// filter typed) also makes it a drag source and a drop target: a drop on
 /// a row of the dragged player's own team moves him to it
 /// (`Session::move_player`, SE-GUI-08), a drop on another team's row does
-/// nothing.
+/// nothing. While a drag holds over the row, it is outlined in the
+/// selection colour (the draft's `.dragover`) where the drop would move a
+/// record (`Session::moves_player`), so a member sees which slot the drop
+/// takes; a row the drop writes nothing on gets none. The row shows the
+/// grab hand wherever the pointer is on it (egui leaves a row that also
+/// takes clicks on the arrow, so the row asks for it).
 fn player_row(
     ui: &mut egui::Ui,
     selected: &mut Option<Selection>,
@@ -742,7 +747,24 @@ fn player_row(
         *click_kind = Some(ClickKind::List);
     }
     if layout.draggable {
+        // `dnd_set_drag_payload` shows the grab hand only on a drag source
+        // that senses no click; the row takes clicks, so it asks for the
+        // hand itself.
+        let response = response.on_hover_cursor(egui::CursorIcon::Grab);
         response.dnd_set_drag_payload(*row);
+        // The outline sits outside the band, as a CSS outline sits outside
+        // the box; only a row whose release would move a record gets one.
+        if let Some(dropped) = response.dnd_hover_payload::<Row>()
+            && dropped.team_id == row.team_id
+            && session.moves_player(row.team_id, dropped.slot, row.slot)
+        {
+            ui.painter().rect_stroke(
+                rect,
+                egui::CornerRadius::ZERO,
+                egui::Stroke::new(1.0, ui.visuals().selection.stroke.color),
+                egui::StrokeKind::Outside,
+            );
+        }
         if let Some(dropped) = response.dnd_release_payload::<Row>()
             && dropped.team_id == row.team_id
         {
