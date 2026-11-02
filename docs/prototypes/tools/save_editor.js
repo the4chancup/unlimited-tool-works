@@ -3570,6 +3570,12 @@ function onKey(e) {
     else if (e.key === "b" && !isTeamSel()) { e.preventDefault(); dlgBumpStats(); }
     else if (e.key === "i" && aesUnlocked()) { e.preventDefault(); fpcToggle(curPlayer()); render(); }
     else if (e.key === "f" && aesUnlocked()) { e.preventDefault(); clearVisualFlags(); }
+    else if ((e.key === "c" || e.key === "v") && S.clickKind
+        && !document.activeElement.matches("input, textarea")
+        && !document.querySelector(".modal-bg")) {
+      e.preventDefault();
+      if (e.key === "c") clipCopy(); else clipPaste();
+    }
   }
   if (e.key === "Escape" && S.picker) { closePicker(); render(); }
   if (e.key === "Escape" && S.changesPop) { S.changesPop = false; render(); }
@@ -3594,6 +3600,46 @@ function onKey(e) {
       });
     }
   }
+}
+// Ctrl+C and Ctrl+V act on what was clicked last of three kinds: a list row
+// (then the selected row, which Up and Down move: a player's stats, a team's
+// Gameplan), the preset selector (the shown preset) or the formation
+// selector (the shown formation). A paste of another kind does nothing; each
+// paste is one undo step; another save opened empties the clipboard (SE-GUI-56).
+document.addEventListener("pointerdown", e => {
+  const hit = e.target.closest && e.target.closest(".plist .prow, .psel, .fsel");
+  if (hit) S.clickKind = hit.matches(".prow") ? "list" : hit.matches(".psel") ? "preset" : "formation";
+}, true);
+function clipKind() {
+  if (S.clickKind !== "list") return S.clickKind;
+  return isTeamSel() ? "team" : "player";
+}
+function clipCopy() {
+  const kind = clipKind(), t = selTeam();
+  const data = kind === "player" ? clone(curPlayer().stats)
+    : kind === "team" ? clone(t.tactics)
+    : kind === "preset" ? clone(tacPreset(t)) : clone(tacFormation(t));
+  S.clip = { kind, data, save: S.save };
+  // The app's window hears Ctrl+V only as a paste of the system clipboard's
+  // text, so a copy leaves a line there naming what it copied.
+  const named = kind === "player" ? "the stats of " + displayName(curPlayer().name)
+    : kind === "team" ? "the Gameplan of " + t.name
+    : kind === "preset" ? "preset " + (S.tac.preset + 1) + " of " + t.name
+    : "the " + FORMATIONS[S.tac.formation] + " formation of " + t.name;
+  if (navigator.clipboard) navigator.clipboard.writeText("Unlimited Tool Works: " + named).catch(() => {});
+}
+function clipPaste() {
+  const kind = clipKind(), t = selTeam();
+  if (!S.clip || S.clip.kind !== kind || S.clip.save !== S.save) return;
+  const d = S.clip.data;
+  const what = { player: "stats", team: "Gameplan", preset: "preset", formation: "formation" }[kind];
+  edit("Paste " + what, () => {
+    if (kind === "player") curPlayer().stats = clone(d);
+    else if (kind === "team") t.tactics = clone(d);
+    else if (kind === "preset") t.tactics.presets[S.tac.preset] = clone(d);
+    else tacPreset(t).formations[S.tac.formation] = clone(d);
+  });
+  render();
 }
 // ---- Full Player Customization (spec/libs/fpc.md; SE-GUI-11) ----
 // The hide/unhide presets' fields (fpc::preset): the nonexistent ids are the
@@ -5906,7 +5952,7 @@ function tacticsTab(t) {
   // game's, and an organizer sees hidden formations in the pictures.
   const locked = !pre.style.fluid;
   if (locked) S.tac.formation = 0;
-  const presetSel = h("span", { class: "row", style: "gap:2px" },
+  const presetSel = h("span", { class: "row psel", style: "gap:2px" },
     weak("Preset"), [0, 1, 2].map(i =>
       selectable(String(i + 1), S.tac.preset === i, () => S.tac.preset = i)));
   const formationSel = h("span", { class: "row fsel" + (locked ? " off" : ""), style: "gap:2px",

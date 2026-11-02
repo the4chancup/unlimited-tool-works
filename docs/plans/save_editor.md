@@ -596,9 +596,13 @@ all side by side.
   team row copies the team's Gameplan and pastes onto the selected team what a Gameplan-only
   import of the copied team's document writes, players by roster slot; on the Tactics view,
   the preset selector copies the shown preset and the formation selector the shown formation,
-  each pasting onto the one shown. A paste of another kind does nothing; each paste is one
-  undo step. The clipboard is the editor's own, not the system's: a copy carries a save's
-  records, which another program cannot take.
+  each pasting onto the one shown. A list row means the selected row, which Up and Down move
+  without a click, so Ctrl+V after Down pastes onto the next row. A paste of another kind does
+  nothing; each paste is one undo step. The clipboard is the editor's own, not the system's:
+  a copy carries a save's records as they were when copied, which another program cannot
+  take, and opening another save empties it. A copy still puts one line naming what it
+  copied on the system clipboard ("Unlimited Tool Works: the stats of SURNAME"): the window
+  hears Ctrl+V only as a paste of the system clipboard's text, and an empty one sends nothing.
 - In a number field being typed, **Up and Down** step the value by one, as a wheel notch
   does; egui steps a whole-number field by its drag speed (a quarter) and rounds the sum
   back, so a press changed nothing, and the drag's sensitivity stays as it is.
