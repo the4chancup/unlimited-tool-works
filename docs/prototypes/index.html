@@ -996,16 +996,19 @@ document.addEventListener("keydown", e => {
 // slider (its rail or the value beside it) steps as a number box does, and a sliding toggle
 // (`.rate.wheel`: the Tactics style pairs and Few/Medium/Many) takes the choice to the right on
 // wheel up, the left on wheel down, wrapping round at its ends (a two-choice toggle clamped would
-// answer one direction only); the C/B/A buttons and checkboxes are left out.
+// answer one direction only); a choice of a row selector (`.wsel`: the Tactics preset and
+// formation selectors) steps it the same way, its label word and a locked (`.off`) selector
+// not; the C/B/A buttons and checkboxes are left out.
 // A notch is one step; a touchpad's small deltas add up to one (WHEEL_NOTCH). A wheel that
 // began by scrolling a pane keeps scrolling it while it sweeps over such controls, until it has
 // rested WHEEL_REST ms: scrolling the player view must not edit the boxes it passes.
 const WHEEL_NOTCH = 50, WHEEL_REST = 500;
 let paneWheelAt = -Infinity, wheelSum = 0;
 document.addEventListener("wheel", e => {
-  let el = e.target.closest && e.target.closest("select, input[type=number], input[type=range], .slval, .rate.wheel");
+  let el = e.target.closest && e.target.closest("select, input[type=number], input[type=range], .slval, .rate.wheel, .wsel > .sel");
   if (el && el.classList.contains("slval")) el = el.previousElementSibling;
-  if (!el || el.disabled || el === comboOpen || e.deltaY === 0 || e.timeStamp - paneWheelAt < WHEEL_REST) {
+  if (el && el.classList.contains("sel")) el = el.parentElement;
+  if (!el || el.disabled || el.classList.contains("off") || el === comboOpen || e.deltaY === 0 || e.timeStamp - paneWheelAt < WHEEL_REST) {
     paneWheelAt = e.timeStamp;
     return;
   }
@@ -1017,8 +1020,9 @@ document.addEventListener("wheel", e => {
   // The notch first takes the keyboard from whatever holds it, so a field's typing ends with its
   // own change (and undo step) before the notch makes its own.
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
-  if (el.classList.contains("rate")) {
-    const items = [...el.children], at = items.findIndex(x => x.classList.contains("on"));
+  if (el.classList.contains("rate") || el.classList.contains("wsel")) {
+    const items = [...el.children].filter(x => !el.classList.contains("wsel") || x.classList.contains("sel"));
+    const at = items.findIndex(x => x.classList.contains("on"));
     const i = (at + (up ? 1 : -1) + items.length) % items.length;
     if (at < 0) return;
     items[i].click();
