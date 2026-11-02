@@ -238,6 +238,10 @@ fn bench_row(
 /// interaction radius of a click-sensing widget inside a drag area to
 /// that widget, so a press just beside a selectable label would start a
 /// text selection instead of the row's drag.
+/// While a drag holds over the row, its band is outlined in the
+/// selection colour (the draft's `.dragover`), so a member sees which
+/// row the drop swaps out; a row whose drop would write nothing gets
+/// none (`drop_writes`).
 fn lineup_row(
     ui: &mut egui::Ui,
     id_salt: impl egui::AsIdSalt,
@@ -296,10 +300,41 @@ fn lineup_row(
         .inner
     });
     let row = drag.response;
+    // The outline sits outside the band, as a CSS outline sits outside
+    // the box.
+    if let Some(dropped) = row.dnd_hover_payload::<LineupDrag>()
+        && drop_writes(*dropped, payload)
+    {
+        ui.painter().rect_stroke(
+            row.rect,
+            egui::CornerRadius::ZERO,
+            egui::Stroke::new(1.0, ui.visuals().selection.stroke.color),
+            egui::StrokeKind::Outside,
+        );
+    }
     if drag.inner {
         row.on_hover_text(display_name(raw_name))
     } else {
         row
+    }
+}
+
+/// Whether a release of `dropped` on the row carrying `row` writes the
+/// record, as `starter_row`'s and `bench_row`'s drop arms rule it: a
+/// drop on the dragged row's own place swaps or moves a slot with
+/// itself, which writes nothing (a marker held over his own row lands
+/// there too); every other drop swaps two places or moves the dragged
+/// entry.
+fn drop_writes(dropped: LineupDrag, row: LineupDrag) -> bool {
+    match dropped {
+        LineupDrag::Starter(from) | LineupDrag::Marker(from) => match row {
+            LineupDrag::Starter(index) => from != index,
+            LineupDrag::Bench(_) | LineupDrag::Marker(_) => true,
+        },
+        LineupDrag::Bench(from) => match row {
+            LineupDrag::Bench(index) => from != index,
+            LineupDrag::Starter(_) | LineupDrag::Marker(_) => true,
+        },
     }
 }
 

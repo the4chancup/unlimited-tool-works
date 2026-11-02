@@ -11,7 +11,7 @@ use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::tactics::{Formation, FormationSlot, TeamTactics};
 use pes_version::PesVersion;
 use studio_core::theme::{self, Palette};
-use studio_core::widgets::add_enabled_ui;
+use studio_core::widgets::{add_enabled_ui, cycle_choice, wheel_steps};
 
 use crate::names::append_name;
 use crate::tactics::{
@@ -288,23 +288,35 @@ struct Held {
 /// The formation selector of the formation bar (the draft's
 /// `formationSel`, moved out of `pitch` for the bar over the pitch's and
 /// the assignments' columns): the shown preset's three formations of
-/// `tactics`. While that preset fields its Kick-off formation alone, the
-/// three are disabled with Kick-off selected (`lock_to_fielded`). Writes
-/// `view.formation`, never the record.
+/// `tactics`, the wheel stepping them as it steps the style toggles.
+/// While that preset fields its Kick-off formation alone, the
+/// three are disabled with Kick-off selected (`lock_to_fielded`) and the
+/// wheel does not step. Writes `view.formation`, never the record.
 pub fn formation_selector(ui: &mut egui::Ui, tactics: &TeamTactics, view: &mut TacticsView) {
     let locked = lock_to_fielded(tactics, view);
     add_enabled_ui(ui, !locked, |ui| {
-        ui.horizontal(|ui| {
+        let bar = ui.horizontal(|ui| {
             bar_selector_spacing(ui);
-            for (index, label) in FORMATIONS.iter().enumerate() {
-                ui.selectable_value(&mut view.formation, index, *label);
-            }
-        })
-        .response
-        .on_hover_text(
-            "The game uses formations 2 and 3 only while the preset's fluid formation is on",
-        )
-        .on_disabled_hover_text("Formations 2 and 3 are used only while Fluid formation is on");
+            // The three choices as one control, so the wheel over any
+            // steps it.
+            FORMATIONS
+                .iter()
+                .enumerate()
+                .map(|(index, label)| ui.selectable_value(&mut view.formation, index, *label))
+                .reduce(|left, right| left | right)
+                .expect("the selector has three choices")
+        });
+        bar.response
+            .on_hover_text(
+                "The game uses formations 2 and 3 only while the preset's fluid formation is on",
+            )
+            .on_disabled_hover_text("Formations 2 and 3 are used only while Fluid formation is on");
+        // Wheel up moves right, and `cycle_choice` steps up to an
+        // earlier item, so it takes the steps negated over the choices
+        // in drawn order.
+        if let Some(next) = cycle_choice(0..3, &view.formation, -wheel_steps(ui, &bar.inner)) {
+            view.formation = next;
+        }
     });
 }
 

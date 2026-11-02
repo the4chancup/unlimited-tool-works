@@ -372,13 +372,24 @@ const ATTACK_DEFENCE_LABEL: &str = "Attack/defence levels";
 
 /// The preset selector (the draft's `presetSel`, in the tab's `tacbar`
 /// beside the menus that act on the shown preset): "Preset" then 1, 2
-/// and 3. Writes `view.preset`, never the record.
+/// and 3. The wheel over a choice steps it as the style toggles' does,
+/// up to the right and down to the left, wrapping round past either
+/// end; over "Preset" itself it does nothing. Writes `view.preset`,
+/// never the record.
 pub fn preset_selector(ui: &mut egui::Ui, view: &mut TacticsView) {
     ui.horizontal(|ui| {
         bar_selector_spacing(ui);
         ui.weak("Preset");
-        for preset in 0..3 {
-            ui.selectable_value(&mut view.preset, preset, (preset + 1).to_string());
+        // The three choices as one control, so the wheel over any steps it.
+        let control = (0usize..3)
+            .map(|preset| ui.selectable_value(&mut view.preset, preset, (preset + 1).to_string()))
+            .reduce(|left, right| left | right)
+            .expect("the selector has three choices");
+        // Wheel up moves right, and `cycle_choice` steps up to an earlier
+        // item, so it takes the steps negated over the choices in drawn
+        // order.
+        if let Some(next) = cycle_choice(0..3, &view.preset, -wheel_steps(ui, &control)) {
+            view.preset = next;
         }
     });
 }
