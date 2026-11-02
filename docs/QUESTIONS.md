@@ -31,11 +31,6 @@ names where the question came from so the context can be read there.
     matches the drafts within 1 point (2 where needed), in both themes. What still differs
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
   - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
-- **What the CI dry-run branch carries** (worklog 0.0.1f1g7c). `ci/release-dry-run` pushed
-  from `f1g7` (workflow and `release.py` on top of main) also makes main's unpushed commits
-  public: the docs and plan commits after `edc012ab`, with `f1g`'s code not among them. The
-  alternative: a branch from `edc012ab` holding only the workflow and the `release.py` change
-  (the dry run then builds the code as last pushed). Unblocks the dry run.
 
 ## Cup practice
 

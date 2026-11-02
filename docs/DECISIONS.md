@@ -15364,3 +15364,10 @@ on wasm32 and in its own tests, carries it, and `cargo deny` checks every target
 Why: release candidates are not for members, and a published one is offered to every member
 older than it; the license is a permissive data license with no obligation on Studio's binary.
 Plan: `plans/core/distribution.md` "Release builds in CI"; `spec/core/distribution.md` "License".
+
+## 2026-11-02 — release — The dry run's branch is pushed from f1g7
+Decision (the maintainer): `ci/release-dry-run` is pushed from `f1g7`, the workflow and the
+Linux packing on top of main, which makes main's unpushed commits public with it.
+Why: a branch from the last pushed commit would test the release recipe as last pushed, not the
+one the workflow runs; main's commits ship with 0.0.1 anyway.
+Plan: `plans/core/distribution.md` "Release builds in CI".
