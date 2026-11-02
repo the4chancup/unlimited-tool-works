@@ -3138,10 +3138,18 @@ function requestOpen(key, path) {
 }
 // Edits: one undo entry is a list of (object-path, before, after) patches plus
 // the touched player keys. Reorder pushes a team's slot order, not a field.
-function edit(label, fn) {
+function edit(label, fn, run) {
   const before = snapshot();
   fn();
-  S.undo.push({ label, before, after: snapshot() });
+  // A run of steps to one value (wheel notches, arrow presses, a stepper's
+  // clicks: the field helper's edits) is one undo entry: the same field on the
+  // same selection within a second of the run's last step, no Undo or Redo
+  // between; an action's own edit never joins one.
+  const now = performance.now(), key = run && label + "|" + JSON.stringify(S.sel);
+  const last = S.undo[S.undo.length - 1];
+  if (key && last && S.run && S.run.key === key && now - S.run.at <= 1000) last.after = snapshot();
+  else S.undo.push({ label, before, after: snapshot() });
+  S.run = key ? { key, at: now } : null;
   S.redo = [];
   // The list of changes is computed when it opens: an edit under it (a
   // shortcut's, the pointer's click already closed it) closes it rather
@@ -3155,6 +3163,7 @@ function restore(snap) { S.save.teams = JSON.parse(snap); }
 // object.
 function doUndo() {
   const e = S.undo.pop(); if (!e) return;
+  S.run = null;
   const cur = snapshot(); restore(e.before);
   S.redo.push({ label: e.label, before: e.before, after: cur });
   S.changesPop = false;
@@ -3162,6 +3171,7 @@ function doUndo() {
 }
 function doRedo() {
   const e = S.redo.pop(); if (!e) return;
+  S.run = null;
   const cur = snapshot(); restore(e.after);
   S.undo.push({ label: e.label, before: cur, after: e.after });
   S.changesPop = false;
@@ -3357,7 +3367,7 @@ function setAllStats(p, n) {
 // A small field write helper: every control's change is one undoable edit.
 function set(p, get, put, v, label) {
   if (get(p) === v) return;
-  edit(label || "edit", () => put(p, v));
+  edit(label || "edit", () => put(p, v), true);
 }
 // Drag to reorder (SE-GUI-08): the records move, the roster does not. Slot NN
 // keeps player id `team id × 100 + NN` (plans/aatf_rules.md "The host"), its
@@ -3579,6 +3589,20 @@ function onKey(e) {
   }
   if (e.key === "Escape" && S.picker) { closePicker(); render(); }
   if (e.key === "Escape" && S.changesPop) { S.changesPop = false; render(); }
+  // PgUp and PgDn move the selection by the rows the list shows at once, every
+  // row counted, stopping at the ends; from any field, not under a dialog.
+  if ((e.key === "PageUp" || e.key === "PageDown") && S.save && !e.ctrlKey && !e.metaKey
+      && !e.altKey && !document.querySelector(".modal-bg") && !S.picker && !S.changesPop) {
+    const rows = [...document.querySelectorAll(".plist .rows .prow")];
+    const at = rows.findIndex(r => r.classList.contains("on"));
+    if (at >= 0) {
+      e.preventDefault();
+      const view = document.querySelector(".plist .rows");
+      const page = Math.max(1, Math.floor(view.clientHeight / rows[at].offsetHeight));
+      const to = Math.min(rows.length - 1, Math.max(0, at + (e.key === "PageDown" ? page : -page)));
+      selectRow(rows[to]);
+    }
+  }
   // Up and Down walk the list's rows as shown, team rows included, while no
   // control holds the keyboard (a focused number steps with them instead)
   // and no dialog or popup is open; the first and last rows stop it.
@@ -3588,18 +3612,19 @@ function onKey(e) {
     const rows = [...document.querySelectorAll(".plist .rows .prow")];
     const at = rows.findIndex(r => r.classList.contains("on"));
     const next = at < 0 ? null : rows[at + (e.key === "ArrowDown" ? 1 : -1)];
-    if (next) {
-      e.preventDefault();
-      const team = Number(next.dataset.team);
-      S.sel = next.dataset.slot === undefined ? { team } : { team, slot: Number(next.dataset.slot) };
-      render(); updateLink();
-      // After render's own frame puts the list's scroll back: the row comes into view.
-      requestAnimationFrame(() => {
-        const on = document.querySelector(".plist .rows .prow.on");
-        if (on) on.scrollIntoView({ block: "nearest" });
-      });
-    }
+    if (next) { e.preventDefault(); selectRow(next); }
   }
+}
+// Selects the list row `row` (a key's move), scrolled into view.
+function selectRow(row) {
+  const team = Number(row.dataset.team);
+  S.sel = row.dataset.slot === undefined ? { team } : { team, slot: Number(row.dataset.slot) };
+  render(); updateLink();
+  // After render's own frame puts the list's scroll back: the row comes into view.
+  requestAnimationFrame(() => {
+    const on = document.querySelector(".plist .rows .prow.on");
+    if (on) on.scrollIntoView({ block: "nearest" });
+  });
 }
 // Ctrl+C and Ctrl+V act on what was clicked last of three kinds: a list row
 // (then the selected row, which Up and Down move: a player's stats, a team's
@@ -4419,7 +4444,8 @@ function generalPanel(p, team) {
     onchange: e => { set(p, x => x.name, (x, v) => x.name = v, unescName(e.target.value), "name"); render(); } });
   nameIn.id = "f-name";
   const shirtIn = h("input", { type: "text", size: "1", value: p.shirt_name,
-    onchange: e => { set(p, x => x.shirt_name, (x, v) => x.shirt_name = v, e.target.value, "shirt name"); render(); } });
+    oninput: e => { const el = e.target, at = el.selectionStart; el.value = el.value.toUpperCase(); el.setSelectionRange(at, at); },
+    onchange: e => { set(p, x => x.shirt_name, (x, v) => x.shirt_name = v, e.target.value.toUpperCase(), "shirt name"); render(); } });
   shirtIn.id = "f-shirt";
   // captain is the roster slot, 0-based as stored: a radio a second click
   // cannot untick (the captain belongs to the slot, as in 4ccEditor).
@@ -4557,7 +4583,8 @@ function teamFields(t) {
   // 4 bytes): the box takes three characters.
   const shortIn = h("input", { type: "text", id: "team-short", class: "shirt", value: t.short_name,
     maxlength: 3,
-    onchange: e => { edit("team short name", () => { t.short_name = e.target.value; }); render(); } });
+    oninput: e => { const el = e.target, at = el.selectionStart; el.value = el.value.toUpperCase(); el.setSelectionRange(at, at); },
+    onchange: e => { edit("team short name", () => { t.short_name = e.target.value.toUpperCase(); }); render(); } });
   const colour = (key, label) => {
     const shown = shownHex(t[key]);
     // The Save editor has no kit to extract colours from, so it passes no
