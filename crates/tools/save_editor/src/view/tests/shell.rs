@@ -376,6 +376,7 @@ fn ctrl_shift_z_redoes_not_undoes() {
 
 // Ctrl+Z while a text field holds the keyboard undoes nothing: the
 // field's own undo is egui's.
+// SE-GUI-62
 #[test]
 fn ctrl_z_while_a_text_field_holds_the_keyboard_undoes_nothing() {
     let path = fixture(PesVersion::Pes21, "keys_typing");
@@ -416,6 +417,77 @@ fn ctrl_z_while_a_text_field_holds_the_keyboard_undoes_nothing() {
             .height,
         170
     );
+}
+
+// A rating cell focused by Tab keeps the keyboard after a Space press
+// settles its edit, and it is no text field, so Ctrl+Z there is the
+// editor's undo.
+// SE-GUI-62
+#[test]
+fn ctrl_z_while_a_rating_cell_holds_the_keyboard_undoes_the_step() {
+    let path = fixture(PesVersion::Pes17, "keys_rating_cell");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.selected = Some(Selection::Player(734, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    let player_id = team_entry(&view, 734).roster[0].player_id;
+    let playable = |view: &SaveView| player_entry(view, player_id).positions.playable;
+    assert_eq!(playable(&view)[2], 0, "premise: LWF stores C");
+
+    // The LWF cell's A rating, focused as a Tab lands it (the AccessKit
+    // Focus, which leaves the keyboard on it as Tab would), then Space.
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes: Vec<accesskit::Node> = pairs.iter().map(|(_, node)| node.clone()).collect();
+    let rating_bounds = rating_buttons(&nodes, "LWF")[2]
+        .bounds()
+        .expect("the A rating's bounds");
+    let rating_id = pairs
+        .iter()
+        .find(|(_, node)| {
+            node.role() == Role::Button
+                && node.label() == Some("A")
+                && node.bounds() == Some(rating_bounds)
+        })
+        .map(|(id, _)| *id)
+        .expect("the A rating's AccessKit id");
+    action_focus(&mut window, &mut view, rating_id);
+    window.frame(
+        vec![
+            key(egui::Key::Space, egui::Modifiers::NONE, true),
+            key(egui::Key::Space, egui::Modifiers::NONE, false),
+        ],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        playable(&view)[2],
+        2,
+        "premise: the Space press stored the A rating"
+    );
+
+    // The cell still holds the keyboard, as no text field.
+    let mut wants = false;
+    let mut text_edit = true;
+    window.frame(Vec::new(), |ui| {
+        wants = ui.ctx().egui_wants_keyboard_input();
+        text_edit = ui.ctx().text_edit_focused();
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(wants, "premise: the cell holds the keyboard");
+    assert!(!text_edit, "premise: the cell is no text field");
+    window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(playable(&view)[2], 0, "the rating is back as it was");
+    assert!(
+        !view.session.as_ref().unwrap().can_undo(),
+        "Undo is disabled"
+    );
+
+    // Ctrl+Y, still with the cell focused, puts the step back.
+    window.frame(vec![key(egui::Key::Y, egui::Modifiers::CTRL, true)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(playable(&view)[2], 2, "the step is back");
 }
 
 // `Tool::view` draws the window through the tool impl (a settings error

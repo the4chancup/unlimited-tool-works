@@ -965,11 +965,13 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     let modal_up = view.prompt.is_some()
         || view.edit_mode_question.is_some()
         || ui.ctx().memory(|memory| memory.top_modal_layer()).is_some();
-    // Ctrl+S saves even while a widget holds the keyboard; the other
-    // shortcuts do nothing then (a text field's own undo is egui's).
+    // Ctrl+S saves even while a text field holds the keyboard; the other
+    // shortcuts are held off then (a text field's own undo is egui's). A
+    // button, checkbox or rating cell holding the keyboard after a Space
+    // press does not hold them off: its edit already settled.
     let save_key =
         !modal_up && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::S));
-    let typing = ui.ctx().egui_wants_keyboard_input() || modal_up;
+    let typing = ui.ctx().text_edit_focused() || modal_up;
     // Ctrl+Shift+Z first: `consume_key(Ctrl, Z)` matches it too, so the more
     // specific shortcut has to be tested before the plainer one.
     let redo_key = !typing
@@ -982,7 +984,7 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::Z));
     // Ctrl+F is Clear visual flags on the selected row's team (a player's
     // or a team row's own): an aesthetics write, so a no-op under the
-    // lock, and a no-op while a widget holds the keyboard (`typing`).
+    // lock, and a no-op while a text field holds the keyboard (`typing`).
     let clear_flags_key =
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::F));
     // Ctrl+I is Toggle FPC settings, the same lock as Ctrl+F; Ctrl+B
@@ -992,8 +994,8 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     let bump_key =
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::B));
     // Ctrl+O and a version's Ctrl+digit open as the Open menu does. Not
-    // while a widget holds the keyboard: the menu's click ends the field's
-    // edit first, and a key would not.
+    // while a text field holds the keyboard: the menu's click ends the
+    // field's edit first, and a key would not.
     let open_key = if typing {
         None
     } else {
@@ -1004,15 +1006,14 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     // as `Event::Copy`/`Event::Paste`, never `Event::Key`, held off
     // while a dialog is up or a text edit holds the keyboard — a field
     // keeps its own copy and paste; a focused button does not hold them.
-    let clip_blocked = modal_up || ui.ctx().text_edit_focused();
-    let copy_key = !clip_blocked
+    let copy_key = !typing
         && ui.input(|input| {
             input
                 .events
                 .iter()
                 .any(|event| matches!(event, egui::Event::Copy))
         });
-    let paste_key = !clip_blocked
+    let paste_key = !typing
         && ui.input(|input| {
             input
                 .events
