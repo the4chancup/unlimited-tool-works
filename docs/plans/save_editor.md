@@ -1403,6 +1403,9 @@ The panel over the spec's `diff` report:
   text.
 - Clicking a diff row jumps to that player in the editor; its tooltip says so, `Click to
   switch to this player`.
+- A player's rows stand under his head, `Player <id> - <number> - <name>` in the AATF lists'
+  colours (the `violations` widget's paragraph): one head for a player wherever a list names
+  him.
 - A row is drawn in the views' terms: the field under the label its view draws, its value as
   that view shows it (a free-kick motion 15, where the save stores 14), a field no view shows
   named in words from the report's name with its stored value: its words in sentence case, Id
@@ -1997,7 +2000,8 @@ SE-GUI-13  GIVEN the save open and a second save of the same version picked in t
                 narrow them; Export writes the text `diff <picked> <open>` prints for the
                 toggled scope, whatever the team filter; clicking a row of a player the open
                 save rosters selects that player (one only in the picked save, or on no
-                roster, is listed and not clickable);
+                roster, is listed and not clickable); each player's rows stand under the
+                head `Player <id> - <number> - <name>`, the id and hyphens in the weak colour;
            GIVEN a save of another version picked THEN it is refused naming both versions
 SE-GUI-14  GIVEN (after Release 0.1.0) the transplant panel, a donor save, one of its teams and
                 that team's export in the exports folder, slots 03 and 07 checked
