@@ -905,15 +905,14 @@ impl CopySwap {
         }
     }
 
-    /// OK's operation on `session`, under the aesthetics lock when
-    /// `aesthetics_locked`.
-    fn apply(&self, session: &mut Session, aesthetics_locked: bool) {
+    /// OK's operation on `session`.
+    fn apply(&self, session: &mut Session) {
         match self.mode {
             CopySwapMode::Copy => {
-                session.copy_stats(self.player_id, self.other_id, aesthetics_locked);
+                session.copy_stats(self.player_id, self.other_id);
             }
             CopySwapMode::Swap => {
-                session.swap_stats(self.player_id, self.other_id, aesthetics_locked);
+                session.swap_stats(self.player_id, self.other_id);
             }
         }
     }
@@ -970,7 +969,6 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     }
     let mut close = false;
     let title = view.copy_swap.as_ref().expect("checked above").title();
-    let locked = view.aesthetics_locked();
     let response = modal(
         ui.ctx(),
         egui::Id::unique("save_editor_copy_swap"),
@@ -1051,7 +1049,7 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     close = true;
                 }
                 if ui.button("OK").clicked() {
-                    dialog.apply(session, locked);
+                    dialog.apply(session);
                     close = true;
                 }
             });

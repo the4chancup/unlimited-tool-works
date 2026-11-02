@@ -368,9 +368,8 @@ fn a_long_sentence_widens_the_number_row_to_the_sentence_the_gap_and_the_box() {
 }
 
 /// `entry` with the copy/swap field set taken from `source`: height,
-/// weight, the whole stats, positions and skills, the free-kick motion
-/// alone, and the eight gameplay edit flags: Copy player stats' field
-/// set.
+/// weight, the whole stats, positions and skills, and the eight
+/// gameplay edit flags: Copy player stats' field set.
 fn with_stats_of(entry: &PlayerEntry, source: &PlayerEntry) -> PlayerEntry {
     let mut entry = entry.clone();
     entry.basic.height = source.basic.height;
@@ -378,7 +377,6 @@ fn with_stats_of(entry: &PlayerEntry, source: &PlayerEntry) -> PlayerEntry {
     entry.stats = source.stats.clone();
     entry.positions = source.positions.clone();
     entry.skills = source.skills.clone();
-    entry.motion.free_kick = source.motion.free_kick;
     entry.edit_flags.player = source.edit_flags.player;
     entry.edit_flags.basic_settings = source.edit_flags.basic_settings;
     entry.edit_flags.registered_position = source.edit_flags.registered_position;
@@ -523,7 +521,7 @@ fn run_copy_swap(window: &mut Headless, view: &mut SaveView, item: &str, label: 
 
 // The Copy row: the picked player's field set lands on the
 // selected one and nothing outside it moves — names, nationality, age,
-// every motion but the free kick's, the motion and appearance flags and
+// every motion, the motion and appearance flags and
 // the whole appearance stay — as one undoable edit, saved and reopened.
 // SE-GUI-24
 #[test]
@@ -644,22 +642,20 @@ fn swap_stats_trades_the_field_set_on_pes16() {
     );
 }
 
-// Under the aesthetics lock ("Aesthetics from exports" on, "Edit
-// aesthetics anyway" off) the free kick's motion, a key of the team
-// export's aesthetics, stays each player's: Copy still copies the rest of
-// the field set, and Swap still trades it.
+// The free-kick motion is a look the team's export owns, not a stat:
+// Copy and Swap stats leave each player's his own, the lock or not, and
+// still move the rest of the field set.
 #[test]
-fn copy_and_swap_stats_keep_the_free_kick_motion_under_the_lock() {
+fn copy_and_swap_stats_keep_each_players_free_kick_motion() {
     for (item, test) in [
-        ("Copy stats from", "player_copy_locked"),
-        ("Swap stats with", "player_swap_locked"),
+        ("Copy stats from", "player_copy_free_kick"),
+        ("Swap stats with", "player_swap_free_kick"),
     ] {
         let path = fixture(PesVersion::Pes21, test);
         mark_copy_players(&path, PesVersion::Pes21);
         let mut view = SaveView::new();
         view.open(&path);
-        view.aesthetics_from_exports = true;
-        assert!(view.aesthetics_locked(), "premise: the lock is on");
+        assert!(!view.aesthetics_locked(), "premise: the lock is off");
         let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
         let first_before = player_entry(&view, 70101);
         let second_before = player_entry(&view, 70102);
@@ -674,20 +670,15 @@ fn copy_and_swap_stats_keep_the_free_kick_motion_under_the_lock() {
 
         run_copy_swap(&mut window, &mut view, item, &slot_label(&second_before, 1));
 
-        let keeping_free_kick = |entry: &PlayerEntry, source: &PlayerEntry| {
-            let mut expected = with_stats_of(entry, source);
-            expected.motion.free_kick = entry.motion.free_kick;
-            expected
-        };
         assert_eq!(
             player_entry(&view, 70101),
-            keeping_free_kick(&first_before, &second_before),
+            with_stats_of(&first_before, &second_before),
             "{item}: 70101 takes the field set but his own free-kick motion"
         );
         let second_after = if item == "Copy stats from" {
             second_before.clone()
         } else {
-            keeping_free_kick(&second_before, &first_before)
+            with_stats_of(&second_before, &first_before)
         };
         assert_eq!(
             player_entry(&view, 70102),

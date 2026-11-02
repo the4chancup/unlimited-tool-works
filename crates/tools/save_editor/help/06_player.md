@@ -28,9 +28,9 @@ Appearance section).
 
 The other player is picked by team, then by roster slot. Height, weight, every
 ability, form, injury, weak foot, positions, playing style, skills and COM
-styles, stronger foot and hand, star, playing attitude, the free-kick motion and
-the gameplay edit flags move with the stats. Names, nationality, age, the other
-motions and every appearance field stay as they are.
+styles, stronger foot and hand, star, playing attitude and the gameplay edit
+flags move with the stats. Names, nationality, age, every motion and every
+appearance field stay as they are.
 
 **Generating a player folder**
 
