@@ -95,13 +95,6 @@ pub(crate) struct SaveView {
     /// click showed that team alone: the list scrolls to the selected row
     /// on the next draw, then clears this.
     reveal_selected: bool,
-    /// The whole rows the player list showed at once on its last draw
-    /// (a row cut off at the bottom does not count): what a page key's
-    /// step counts, from the scroll area's visible height over a row's
-    /// height. The keys are read in the toolbar before the list draws,
-    /// so the last frame's page stands in for this frame's; 1 until it
-    /// has.
-    list_page_rows: usize,
     /// The team view's Tactics state (`team_widgets`' `TacticsView`:
     /// the preset its panels edit, the formation its lists show, the
     /// armed assignment mode, the open slot popover and Scroll names);
@@ -438,7 +431,6 @@ impl SaveView {
             click_kind: None,
             clip: None,
             reveal_selected: false,
-            list_page_rows: 1,
             tactics: team_widgets::tactics::TacticsView::default(),
             focused: None,
             prompt: None,
@@ -965,11 +957,13 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     let modal_up = view.prompt.is_some()
         || view.edit_mode_question.is_some()
         || ui.ctx().memory(|memory| memory.top_modal_layer()).is_some();
-    // Ctrl+S saves even while a widget holds the keyboard; the other
-    // shortcuts do nothing then (a text field's own undo is egui's).
+    // Ctrl+S saves even while a text field holds the keyboard; the other
+    // shortcuts are held off then (a text field's own undo is egui's). A
+    // button, checkbox or rating cell holding the keyboard after a Space
+    // press does not hold them off: its edit already settled.
     let save_key =
         !modal_up && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::S));
-    let typing = ui.ctx().egui_wants_keyboard_input() || modal_up;
+    let typing = ui.ctx().text_edit_focused() || modal_up;
     // Ctrl+Shift+Z first: `consume_key(Ctrl, Z)` matches it too, so the more
     // specific shortcut has to be tested before the plainer one.
     let redo_key = !typing
@@ -982,7 +976,7 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::Z));
     // Ctrl+F is Clear visual flags on the selected row's team (a player's
     // or a team row's own): an aesthetics write, so a no-op under the
-    // lock, and a no-op while a widget holds the keyboard (`typing`).
+    // lock, and a no-op while a text field holds the keyboard (`typing`).
     let clear_flags_key =
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::F));
     // Ctrl+I is Toggle FPC settings, the same lock as Ctrl+F; Ctrl+B
@@ -992,8 +986,8 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     let bump_key =
         !typing && ui.input_mut(|input| input.consume_key(egui::Modifiers::CTRL, egui::Key::B));
     // Ctrl+O and a version's Ctrl+digit open as the Open menu does. Not
-    // while a widget holds the keyboard: the menu's click ends the field's
-    // edit first, and a key would not.
+    // while a text field holds the keyboard: the menu's click ends the
+    // field's edit first, and a key would not.
     let open_key = if typing {
         None
     } else {
@@ -1004,24 +998,24 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     // as `Event::Copy`/`Event::Paste`, never `Event::Key`, held off
     // while a dialog is up or a text edit holds the keyboard — a field
     // keeps its own copy and paste; a focused button does not hold them.
-    let clip_blocked = modal_up || ui.ctx().text_edit_focused();
-    let copy_key = !clip_blocked
+    let copy_key = !typing
         && ui.input(|input| {
             input
                 .events
                 .iter()
                 .any(|event| matches!(event, egui::Event::Copy))
         });
-    let paste_key = !clip_blocked
+    let paste_key = !typing
         && ui.input(|input| {
             input
                 .events
                 .iter()
                 .any(|event| matches!(event, egui::Event::Paste(_) | egui::Event::PasteImage(_)))
         });
-    // PageDown and PageUp move the list's selection a page of rows from
-    // any field, so they are not held off while a widget has the
-    // keyboard. A held pointer button holds them off, and so does the
+    // PageDown and PageUp move the list's selection from any field, so
+    // they are not held off while a widget has the keyboard: team row to
+    // team row while the list holds two or more, else seven rows at a
+    // time. A held pointer button holds them off, and so does the
     // frame it is released on, where a click completes: the drag or press
     // in flight would finish on the next player.
     let gesture = ui.input(|input| input.pointer.any_down() || input.pointer.any_released());
@@ -1155,7 +1149,7 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         open_menu::open_shortcut(view, shortcut);
     }
     if let Some(forward) = page_step
-        && player_list::step_selection(view, forward, view.list_page_rows)
+        && player_list::page_selection(view, forward)
     {
         // The field gives up the keyboard once the selection moved: its
         // gesture ends as one undo entry on the player it edited, and the

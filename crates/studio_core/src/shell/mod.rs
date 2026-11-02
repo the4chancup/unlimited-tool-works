@@ -133,6 +133,9 @@ pub struct StudioApp {
     /// The common `theme` setting last applied to the context; `None` until the first
     /// frame, which applies it.
     applied_theme: Option<Theme>,
+    /// The common `invert_value_scrolling` setting last applied to the context's
+    /// wheel flag, as `applied_theme` is for the theme.
+    applied_inverted: Option<bool>,
     /// What the first frame does to the window: `Some(Opening::Fit)` from `new` (the fit of
     /// ST-WIN-01), `Some(Opening::Place(_))` once `opening` found a remembered place (the
     /// first frame checks it against the monitors), `None` once sent.
@@ -197,6 +200,7 @@ impl StudioApp {
             help_window,
             title: WindowTitle::default(),
             applied_theme: None,
+            applied_inverted: None,
             window_start: Some(window_size::Opening::Fit),
             window_place: None,
             window_maximized: false,
@@ -381,15 +385,21 @@ impl eframe::App for StudioApp {
     fn logic(&mut self, egui_ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // The setting, never the system's theme, decides. It is applied once per change, so a
         // change is live at the next frame.
-        let theme = self.ctx.common().theme;
-        if self.applied_theme != Some(theme) {
-            crate::theme::apply(egui_ctx, theme);
+        let common = self.ctx.common();
+        if self.applied_theme != Some(common.theme) {
+            crate::theme::apply(egui_ctx, common.theme);
             // The zoom factor is the shell's alone: the width rule below sets it
             // every frame and would undo a keyboard zoom one frame later. A member
             // who wants larger text has the system's display scaling, which points
             // follow (spec/core/gui.md "Scaling with the width").
             egui_ctx.options_mut(|options| options.zoom_with_keyboard = false);
-            self.applied_theme = Some(theme);
+            self.applied_theme = Some(common.theme);
+        }
+        // Invert value scrolling goes where `wheel_steps` reads it, the context's
+        // data, applied once per change as the theme is.
+        if self.applied_inverted != Some(common.invert_value_scrolling) {
+            crate::widgets::set_inverted(egui_ctx, common.invert_value_scrolling);
+            self.applied_inverted = Some(common.invert_value_scrolling);
         }
         // The window is created at `DEFAULT_SIZE` or at the remembered place
         // `opening` found; the first frame finishes the job.

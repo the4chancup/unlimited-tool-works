@@ -249,7 +249,8 @@ fn lineup_row(
     position: Option<u8>,
     raw_name: &str,
 ) -> egui::Response {
-    let drag = ui.dnd_drag_source(ui.scope_id().with(id_salt), payload, |ui| {
+    let id = ui.scope_id().with(id_salt);
+    let drag = ui.dnd_drag_source(id, payload, |ui| {
         ui.horizontal(|ui| {
             // The whole band is the drop target (the draft's `.lrow` spans
             // the list), not only the handle, position and name.
@@ -299,6 +300,18 @@ fn lineup_row(
         })
         .inner
     });
+    // egui centres a dragged source on the pointer (`dnd_drag_source`'s
+    // own translation of its layer); the draft keeps the point the row
+    // was pressed at under it, so the press's offset from the centre goes
+    // back on top.
+    if ui.ctx().is_being_dragged(id)
+        && let Some(press_origin) = ui.input(|i| i.pointer.press_origin())
+    {
+        ui.ctx().transform_layer_shapes(
+            egui::LayerId::new(egui::Order::Tooltip, id),
+            egui::emath::TSTransform::from_translation(drag.response.rect.center() - press_origin),
+        );
+    }
     let row = drag.response;
     // The outline sits outside the band, as a CSS outline sits outside
     // the box.

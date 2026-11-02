@@ -255,13 +255,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
         view.selected = Some(Selection::Team(id));
         view.reveal_selected = true;
     }
-    // The page the page keys step by: the whole rows the list shows at
-    // once, its visible height over a row's height (a row cut off at the
-    // bottom does not count), read in the toolbar before this frame's
-    // list is laid out.
-    view.list_page_rows = (output.inner_rect.height() / layout.row_height)
-        .floor()
-        .max(1.0) as usize;
     // The viewport spans the bar's strip while nothing scrolls: the frame
     // keeps its own width.
     let frame = egui::Rect::from_min_size(
@@ -285,23 +278,19 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     frame_right
 }
 
+/// The step the page keys move by while the list holds at most one team
+/// row (a team picked): seven rows (the draft's `PAGE_ROWS`).
+const PAGE_ROWS: usize = 7;
+
 /// Selects the row `steps` rows after the selected row in the list as
 /// drawn (the team selector and the filter applied), or the one before
-/// it when `forward` is false: the arrow keys step one row, the page
-/// keys the list's page (`SaveView::list_page_rows`). Every row counts,
-/// the team rows too, so the walk can land on a team's row and select it
-/// as a click does; a step past the first or last row lands on it, and
-/// with the selection not in the list nothing moves. Answers whether the
-/// selection moved.
+/// it when `forward` is false: the arrow keys step one row. Every row
+/// counts, the team rows too, so the walk can land on a team's row and
+/// select it as a click does; a step past the first or last row lands on
+/// it, and with the selection not in the list nothing moves. Answers
+/// whether the selection moved.
 pub(super) fn step_selection(view: &mut SaveView, forward: bool, steps: usize) -> bool {
-    let (Some(session), Some(selected)) = (view.session.as_ref(), view.selected) else {
-        return false;
-    };
-    let drawn: Vec<Selection> = selection::list(session.file(), &view.team, &view.filter)
-        .into_iter()
-        .map(row_selection)
-        .collect();
-    let Some(at) = drawn.iter().position(|row| *row == selected) else {
+    let Some((drawn, at)) = list_and_position(view) else {
         return false;
     };
     let next = if forward {
@@ -314,6 +303,60 @@ pub(super) fn step_selection(view: &mut SaveView, forward: bool, steps: usize) -
     }
     view.selected = Some(drawn[next]);
     true
+}
+
+/// Selects the row a page key moves to: with two team rows or more in
+/// the list as drawn (the team selector and the filter applied, wherever
+/// it is scrolled), the next team row after the selected one, or the one
+/// before it when `forward` is false, a player going to his own team's
+/// row first; with at most one team row, `PAGE_ROWS` rows at a time. The
+/// first and last rows stop it, and so does the first or last team row:
+/// no team row past the selection, nothing moves. Answers whether the
+/// selection moved.
+pub(super) fn page_selection(view: &mut SaveView, forward: bool) -> bool {
+    let Some((drawn, at)) = list_and_position(view) else {
+        return false;
+    };
+    let teams: Vec<usize> = drawn
+        .iter()
+        .enumerate()
+        .filter_map(|(index, row)| matches!(row, Selection::Team(_)).then_some(index))
+        .collect();
+    let next = if teams.len() >= 2 {
+        if forward {
+            teams.iter().find(|index| **index > at)
+        } else {
+            teams.iter().rev().find(|index| **index < at)
+        }
+        .copied()
+        .unwrap_or(at)
+    } else if forward {
+        (at + PAGE_ROWS).min(drawn.len() - 1)
+    } else {
+        at.saturating_sub(PAGE_ROWS)
+    };
+    if next == at {
+        return false;
+    }
+    view.selected = Some(drawn[next]);
+    true
+}
+
+/// The list's rows as drawn (the team selector and the filter applied)
+/// as `Selection`s, and the selected row's index among them; `None` with
+/// no session, no selection, or the selection not in the list.
+fn list_and_position(view: &SaveView) -> Option<(Vec<Selection>, usize)> {
+    let (Some(session), Some(selected)) = (view.session.as_ref(), view.selected) else {
+        return None;
+    };
+    let drawn: Vec<Selection> = selection::list(session.file(), &view.team, &view.filter)
+        .into_iter()
+        .map(row_selection)
+        .collect();
+    drawn
+        .iter()
+        .position(|row| *row == selected)
+        .map(|at| (drawn, at))
 }
 
 /// The `Selection` that names `row`.
@@ -567,7 +610,12 @@ fn team_row(
 /// filter typed) also makes it a drag source and a drop target: a drop on
 /// a row of the dragged player's own team moves him to it
 /// (`Session::move_player`, SE-GUI-08), a drop on another team's row does
-/// nothing.
+/// nothing. While a drag holds over the row, it is outlined in the
+/// selection colour (the draft's `.dragover`) where the drop would move a
+/// record (`Session::moves_player`), so a member sees which slot the drop
+/// takes; a row the drop writes nothing on gets none. The row shows the
+/// grab hand wherever the pointer is on it (egui leaves a row that also
+/// takes clicks on the arrow, so the row asks for it).
 fn player_row(
     ui: &mut egui::Ui,
     selected: &mut Option<Selection>,
@@ -699,7 +747,24 @@ fn player_row(
         *click_kind = Some(ClickKind::List);
     }
     if layout.draggable {
+        // `dnd_set_drag_payload` asks for the grab hand only on a drag
+        // source that senses no click; the row takes clicks, so it asks
+        // for the pointing hand itself.
+        let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
         response.dnd_set_drag_payload(*row);
+        // The outline sits outside the band, as a CSS outline sits outside
+        // the box; only a row whose release would move a record gets one.
+        if let Some(dropped) = response.dnd_hover_payload::<Row>()
+            && dropped.team_id == row.team_id
+            && session.moves_player(row.team_id, dropped.slot, row.slot)
+        {
+            ui.painter().rect_stroke(
+                rect,
+                egui::CornerRadius::ZERO,
+                egui::Stroke::new(1.0, ui.visuals().selection.stroke.color),
+                egui::StrokeKind::Outside,
+            );
+        }
         if let Some(dropped) = response.dnd_release_payload::<Row>()
             && dropped.team_id == row.team_id
         {
