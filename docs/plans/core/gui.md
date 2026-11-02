@@ -302,9 +302,8 @@ The settings menu is assembled from injected sections:
   update check and its interval, and the FPC hide boots and
   gloves IDs (`plans/save_editor.md` "Full Player Customization (FPC)": number rows bounded to
   the stock band, boots 1 to 100 and gloves 11 to 100). The update check's two rows are drawn
-  from the release whose updater reads them (`core/distribution.md`, step 1, Release 0.2.0),
-  not before: until then a row a member switches off changes nothing, and reads as a check
-  the build never runs. The two keys stay in the file meanwhile. The state the shell writes
+  from 0.0.1, whose updater reads them (`core/distribution.md` "Self-update", step 1). The
+  state the shell writes
   itself (`last_tool`, `last_update_check`, `skipped_version`) has no row. The PES version row
   is the sidebar selector's twin: the same blocker, and a pick spends the running-PES
   auto-switch as the selector's does.
@@ -495,7 +494,10 @@ Each item kind stays in the bar for its lifetime:
 | `Notice` | A few seconds; with an action, until clicked or dismissed. Older notices are not kept — an event worth keeping is also a finding in a log |
 | Standing notice | While the active tool returns it; it ends when clicked, dismissed, or replaced by another notice while shown, and the tool is told |
 
-`update_available` carries an Install action; each condition shows a tooltip and at most one action.
+`update_available` carries a Details action, and its text `Update available: v<version>` is in
+the link blue and opens Details too, as the toolbar's unsaved-changes label opens its list: an
+update has to catch the eye without a dialog opening by itself (`plans/core/distribution.md`
+"Self-update"); each condition shows a tooltip and at most one action.
 
 More rules that keep it worth the row:
 
