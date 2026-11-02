@@ -1,15 +1,15 @@
 //! The update offer's Details dialog, as the draft's `openUpdate` draws it: the
 //! release's version line and its notes rendered as the help renders Markdown
-//! in a framed box that scrolls, then Update now, Open release page, Skip this
-//! version and Remind me later. Update now stays disabled here; the download
-//! arrives with it. No dialog opens by itself: the status bar's offer text or
-//! its Details button opens it. Native only: the browser build has no update
-//! check to offer.
+//! in a framed box that scrolls, then Open release page, Skip this version and
+//! Remind me later. Update now and its download come with 0.0.2; until then the
+//! release page is the way to the new version. No dialog opens by itself: the
+//! status bar's offer text or its Details button opens it. Native only: the
+//! browser build has no update check to offer.
 
 use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 
 use crate::updater;
-use crate::widgets::{add_enabled, modal, modal_buttons, modal_sentence_gap};
+use crate::widgets::{modal, modal_buttons, modal_sentence_gap};
 
 /// The dialog's state: whether it is up, and the cache its notes' Markdown
 /// renders through.
@@ -32,11 +32,6 @@ pub(super) enum UpdateAnswer {
 }
 
 impl UpdateDialog {
-    /// Whether the dialog is up (`first_run.up`'s naming).
-    pub(super) fn up(&self) -> bool {
-        self.open
-    }
-
     /// Opens the dialog: the status bar's offer text or its Details button.
     pub(super) fn open(&mut self) {
         self.open = true;
@@ -90,8 +85,6 @@ impl UpdateDialog {
                     let later = ui.button("Remind me later").clicked();
                     let skip = ui.button("Skip this version").clicked();
                     let page = ui.button("Open release page").clicked();
-                    add_enabled(ui, false, egui::Button::new("Update now"))
-                        .on_disabled_hover_text("Arrives with the download");
                     (page, skip, later)
                 })
             },

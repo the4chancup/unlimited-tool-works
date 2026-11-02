@@ -132,19 +132,19 @@ fn the_offer_text_and_details_each_open_the_dialog() {
     let out = frame_until_offer(&egui_ctx, &mut shell.app);
 
     // The text's click opens the dialog: the version sentence, the release's
-    // notes, and the four buttons in the draft's order.
+    // notes, and the three buttons in the draft's order.
     click(&egui_ctx, &mut shell.app, text_node(&out.nodes, OFFER_TEXT));
     let nodes = idle(&egui_ctx, &mut shell.app, 10).nodes;
     text_node(&nodes, "Update available");
     assert!(has_text(&nodes, SENTENCE), "the version sentence is drawn");
     assert!(has_text(&nodes, "Fixes and polish."), "the notes are drawn");
-    assert!(
-        entry(&nodes, "Update now").is_disabled(),
-        "Update now waits for the download"
-    );
     entry(&nodes, "Open release page");
     entry(&nodes, "Skip this version");
     entry(&nodes, "Remind me later");
+    assert!(
+        !has_label(&nodes, "Update now"),
+        "no Update now stands on the dialog in 0.0.1"
+    );
 
     // Closed, the dialog opens again on the Details button.
     click(&egui_ctx, &mut shell.app, entry(&nodes, "Remind me later"));
