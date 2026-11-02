@@ -375,8 +375,9 @@ const ATTACK_DEFENCE_LABEL: &str = "Attack/defence levels";
 /// and 3. The wheel over a choice steps it as the style toggles' does,
 /// up to the right and down to the left, wrapping round past either
 /// end; over "Preset" itself it does nothing. Writes `view.preset`,
-/// never the record.
-pub fn preset_selector(ui: &mut egui::Ui, view: &mut TacticsView) {
+/// never the record. Answers the three choices' union `Response`, so
+/// the host can see a click on one of them.
+pub fn preset_selector(ui: &mut egui::Ui, view: &mut TacticsView) -> egui::Response {
     ui.horizontal(|ui| {
         bar_selector_spacing(ui);
         ui.weak("Preset");
@@ -391,7 +392,9 @@ pub fn preset_selector(ui: &mut egui::Ui, view: &mut TacticsView) {
         if let Some(next) = cycle_choice(0..3, &view.preset, -wheel_steps(ui, &control)) {
             view.preset = next;
         }
-    });
+        control
+    })
+    .inner
 }
 
 /// The spacing of a bar's selector, the preset's and the formation's (the

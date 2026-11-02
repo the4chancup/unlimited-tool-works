@@ -12,6 +12,7 @@ use team_widgets::names::{append_name, plain_format};
 
 use crate::session::Session;
 use crate::session::selection::{self, ListRow, Row, TeamChoice};
+use crate::view::clipboard::{ClickKind, pressed};
 use crate::view::team::channel_to_show;
 use crate::view::{SaveView, Selection, live_marks, quick_actions};
 
@@ -214,6 +215,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                                 let double_clicked = team_row(
                                     ui,
                                     &mut view.selected,
+                                    &mut view.click_kind,
                                     session,
                                     *team_id,
                                     layout,
@@ -229,6 +231,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                                 player_row(
                                     ui,
                                     &mut view.selected,
+                                    &mut view.click_kind,
                                     session,
                                     row,
                                     layout,
@@ -410,6 +413,7 @@ fn paint_row_frame(
 fn team_row(
     ui: &mut egui::Ui,
     selected: &mut Option<Selection>,
+    click_kind: &mut Option<ClickKind>,
     session: &Session,
     team_id: u32,
     layout: RowLayout,
@@ -552,6 +556,9 @@ fn team_row(
     if response.clicked() {
         *selected = Some(Selection::Team(team_id));
     }
+    if pressed(ui, &response) {
+        *click_kind = Some(ClickKind::List);
+    }
     response.double_clicked()
 }
 
@@ -564,6 +571,7 @@ fn team_row(
 fn player_row(
     ui: &mut egui::Ui,
     selected: &mut Option<Selection>,
+    click_kind: &mut Option<ClickKind>,
     session: &mut Session,
     row: &Row,
     layout: RowLayout,
@@ -686,6 +694,9 @@ fn player_row(
     };
     if response.clicked() {
         *selected = Some(Selection::Player(row.team_id, row.slot));
+    }
+    if pressed(ui, &response) {
+        *click_kind = Some(ClickKind::List);
     }
     if layout.draggable {
         response.dnd_set_drag_payload(*row);
