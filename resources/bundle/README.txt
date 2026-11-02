@@ -14,7 +14,7 @@ Getting started
 ---------------
 
 1. Unpack this archive into a folder of its own, anywhere you like.
-2. Open UTW.exe. It keeps its settings in the data folder beside it.
+2. Open UTW.exe (utw on Linux). It keeps its settings in the data folder beside it.
 3. The window starts on PES 2017. If the PES number on the left bar
    turns yellow or red, click the Settings gear at the bottom of the
    bar and set "PES folder" to the path of the folder that holds the

@@ -22,12 +22,13 @@ rustup_home = os.environ.get("RUSTUP_HOME")
 root = str(ROOT)
 flags = release.remap_flags(home, cargo_home, rustup_home, root, str(target))
 print("flags:", *flags, sep="\n  ")
-build = subprocess.run(release.build_args(flags), cwd=ROOT)
+windows = release.PLATFORMS["windows"]
+build = subprocess.run(release.build_args(flags, windows.triple), cwd=ROOT)
 if build.returncode != 0:
     sys.exit(f"build failed ({build.returncode})")
-exe = target / "release/utw.exe"
+exe = target / windows.built
 try:
-    release.check_exe(exe, release.machine_prefixes(target))
+    release.check_exe(exe, release.machine_prefixes(target), "windows")
 except release.Refusal as refusal:
     sys.exit(f"error: {refusal}")
 print("no remapped prefix left, the C runtime linked statically")

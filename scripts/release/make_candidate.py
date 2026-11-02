@@ -62,7 +62,7 @@ for bat in release.LAUNCHERS:
 # after build_remapped.py leaves a newer exe holding the machine's paths, and the mtime
 # check above alone would ship it.
 try:
-    release.check_exe(EXE, release.machine_prefixes(TARGET))
+    release.check_exe(EXE, release.machine_prefixes(TARGET), "windows")
 except release.Refusal as refusal:
     sys.exit(f"error: {refusal}")
 
@@ -75,13 +75,13 @@ shutil.copyfile(ROOT / "resources/bundle/data/settings.toml", TOP / "data/settin
 (TOP / "licenses").mkdir()
 for license_file in release.LICENSES:
     shutil.copyfile(ROOT / license_file, TOP / "licenses" / Path(license_file).name)
-release.write_notices(TOP / "licenses" / release.NOTICES)
+release.write_notices(TOP / "licenses" / release.NOTICES, "windows")
 for folder in release.EMPTY_FOLDERS:
     (TOP / folder).mkdir()
 (DEST / "COMMIT.txt").write_text(f"{head}\n", encoding="utf-8", newline="\n")
 
 staged = sorted(str(p.relative_to(DEST)).replace("\\", "/") for p in [TOP, *TOP.rglob("*")])
-expected = sorted(release.expected_entries(name, VERSION))
+expected = sorted(release.expected_entries(name, VERSION, "windows"))
 print("staged:", staged)
 print("release's set:", expected)
 assert set(staged) == set(expected), "the staged set differs from the release's"
