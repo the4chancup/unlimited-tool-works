@@ -1,5 +1,11 @@
 use super::*;
 
+use crate::file::EditFile;
+use crate::model::player::{PlayerEntry, PlayerMotion};
+use crate::schema::fields::PlayerField;
+use crate::settings_toml::{MotionSettings, PlayerSettings};
+use crate::test_support::{FIXTURES, count, open, record, test_salt};
+
 /// The five required header keys at valid values; a refusal case that
 /// does not mutate the header starts from them.
 const KEYS: &str = "\
@@ -15,9 +21,9 @@ fn doc(tail: &str) -> String {
     format!("{KEYS}{tail}")
 }
 
-/// The sample patch of `spec/pes_savefile/operations.md` "Aesthetics patch
-/// (new)", the motion lines as `settings.toml`'s emitter writes them
-/// (`padded` puts `#` at column 33).
+/// The sample patch `golden()` builds: the header, `/co/` 714 with slot
+/// 05's names, resolved model IDs and whole `[appearance]` — every key
+/// PES 21 holds, no comments — and slot 06's `base_copy_id` alone.
 const GOLDEN: &str = "\
 # aesthetics_patch.toml, written by the Team compiler to its output folder
 pes_version = 21
@@ -33,19 +39,158 @@ name = \"/co/\"                   # for the reader; the id is what is applied
 [teams.players.05]
 name = \"Snuffy\"
 shirt_name = \"SNUFFY\"
+boots_id = 143
+gloves_id = 0
+
+[teams.players.05.appearance]
+skin_color = 4
+iris_color = 0
+
+[teams.players.05.appearance.physique]
+neck_length = 0
+neck_size = 0
+shoulder_height = 0
+shoulder_width = 0
+chest = 0
+waist = 0
+arm_size = 0
+arm_length = 0
+thigh = 0
+calf = 0
+leg_length = 0
+head_length = 0
+head_width = 0
+head_depth = 0
+
+[teams.players.05.appearance.strip]
+sleeves = \"long\"
+inners = \"off\"
+socks = \"standard\"
+undershorts = \"off\"
+untucked = true
+ankle_taping = false
+wrist_taping = \"off\"
+wrist_tape_color_left = 0
+wrist_tape_color_right = 0
+spectacles = 0
+spectacles_color = 0
+gloves = false
+gloves_color = 0
 
 [teams.players.05.appearance.motion]
-hunching_dribbling = 2          # 1 to 3 (PES 20 and 21: 1 to 5)
-free_kick = 4                   # 1 to 16 (PES 20 and 21: 1 to 20)
+hunching_dribbling = 2
+hunching_running = 1
+arm_movement_dribbling = 1
+arm_movement_running = 1
+corner_kick = 1
+free_kick = 4
+penalty_kick = 1
+dribbling = 0
+goal_celebration_1 = 0
+goal_celebration_2 = 0
+
+[teams.players.05.appearance.face]
+jawline = 0
+jaw_height = 0
+cheekbones = 0
+cheekbone_height = 0
+chin_width = 0
+chin_height = 0
+chin_depth = 0
+face_size = 0
+face_height = 0
+brow_width = 0
+inner_eyebrow_height = 0
+eyebrow_depth = 0
+temple_width = 0
+outer_eyebrow_height = 0
+pupil_size = 0
+eye_depth = 0
+inner_eye_position = 0
+inner_eye_height = 0
+outer_eye_position = 0
+eye_corner_height = 0
+upper_eyelid_width_inner = 0
+upper_eyelid_height_inner = 0
+upper_eyelid_width_outer = 0
+upper_eyelid_height_outer = 0
+bottom_eyelid_height = 0
+horizontal_eye_position = 0
+eye_height = 0
+nose_height = 0
+nose_tip_depth = 0
+nostril_width = 0
+nose_depth = 0
+nose_width = 0
+mouth_height = 0
+mouth_depth = 0
+lip_size = 0
+mouth_corner_height = 0
+lip_width = 0
+ear_length = 0
+ear_width = 0
+ear_angle = 0
+pes15_jaw_depth = 0
+pes15_cheekbone_depth = 0
+pes15_mouth_edge_position = 0
+pes15_eyebrow_depth = 0
+pes15_bottom_eyelid_position = 0
+pes15_nasal_bridge_position = 0
+pes15_nasal_root_height = 0
+cheek_type = 0
+forehead_type = 0
+facial_hair_type = 0
+laughter_lines_type = 0
+upper_eyelid_type = 0
+lower_eyelid_type = 0
+eyebrow_type = 0
+neck_line_type = 0
+nose_type = 0
+upper_lip_type = 0
+lower_lip_type = 0
+eyebrow_color_red = 14
+eyebrow_color_green = 10
+eyebrow_color_blue = 7
+eyebrow_style = 0
+eyebrow_density = 3
+eyebrow_thickness = 1
+facial_hair_color_red = 14
+facial_hair_color_green = 10
+facial_hair_color_blue = 7
+facial_hair_thickness = 3
+pes15_eye_white = 0
+
+[teams.players.05.appearance.hair]
+color_red = 14
+color_green = 10
+color_blue = 7
+color_preset = 0
+accessory = false
+accessory_color = 0
+style = 1
+cropped_style = 1
+length = 2
+wave_level = 0
+variation = 0
+front_style = 1
+parted = 1
+side_back_style = 4
+hairline = 1
+forehead_width = 2
 
 [teams.players.06]
-
-[teams.players.06.appearance.motion]
-dribbling = 2                   # 0 to 3, PES 20 and 21 only
+base_copy_id = 101334
 ";
 
-/// The patch `GOLDEN` reads and writes.
+/// The patch `GOLDEN` reads and writes: slot 05's appearance is PES 21's
+/// resolved template with a changed skin colour, sleeves, hunching and
+/// free kick beside the names and IDs; slot 06 carries a copy link alone.
 fn golden() -> AestheticsPatch {
+    let mut appearance = AppearanceSettings::default().resolved(PesVersion::Pes21);
+    appearance.skin_color = Some(4);
+    appearance.strip.sleeves = Some(2);
+    appearance.motion.hunching_dribbling = Some(1);
+    appearance.motion.free_kick = Some(3);
     AestheticsPatch {
         pes_version: PesVersion::Pes21,
         tool_version: "0.1.0".to_string(),
@@ -61,11 +206,10 @@ fn golden() -> AestheticsPatch {
                     PatchPlayer {
                         name: Some("Snuffy".to_string()),
                         shirt_name: Some("SNUFFY".to_string()),
-                        motion: MotionSettings {
-                            hunching_dribbling: Some(1),
-                            free_kick: Some(3),
-                            ..MotionSettings::default()
-                        },
+                        boots_id: Some(143),
+                        gloves_id: Some(0),
+                        base_copy_id: None,
+                        appearance: Some(appearance),
                     },
                 ),
                 (
@@ -73,10 +217,10 @@ fn golden() -> AestheticsPatch {
                     PatchPlayer {
                         name: None,
                         shirt_name: None,
-                        motion: MotionSettings {
-                            dribbling: Some(2),
-                            ..MotionSettings::default()
-                        },
+                        boots_id: None,
+                        gloves_id: None,
+                        base_copy_id: Some(101334),
+                        appearance: None,
                     },
                 ),
             ]),
@@ -105,6 +249,9 @@ fn to_toml_refuses_a_value_parse_would_refuse_back() {
         .players
         .get_mut(&5)
         .expect("player 05")
+        .appearance
+        .as_mut()
+        .expect("the look")
         .motion
         .free_kick = Some(20);
     let err = patch.to_toml().expect_err("free_kick = 21 is out of range");
@@ -116,16 +263,70 @@ fn to_toml_refuses_a_value_parse_would_refuse_back() {
     }
 }
 
-/// A hand-built patch can hold a pre-Fox `pes_version`; `to_toml`
-/// refuses it rather than writing a file `parse` would reject.
+/// A hand-built patch can hold an `[appearance]` a key of its version is
+/// `None` in: `to_toml` refuses it (`MissingKey`) rather than writing a
+/// partial look `parse` would refuse.
 #[test]
-fn to_toml_refuses_a_pre_fox_version() {
-    let patch = patch_at(PesVersion::Pes17, vec![team(701, BTreeMap::new())]);
-    let err = patch.to_toml().expect_err("a pre-Fox patch is not written");
-    assert!(
-        matches!(err, PatchError::PreFox { version } if version == PesVersion::Pes17),
-        "{err:?}"
+fn to_toml_refuses_an_appearance_missing_a_version_key() {
+    let mut patch = golden();
+    patch.teams[0]
+        .players
+        .get_mut(&5)
+        .expect("player 05")
+        .appearance
+        .as_mut()
+        .expect("the look")
+        .iris_color = None;
+    let err = patch.to_toml().expect_err("a partial look is not written");
+    match &err {
+        PatchError::MissingKey { key } => {
+            assert_eq!(key, "teams[0].players.05.appearance.iris_color")
+        }
+        other => panic!("{other:?}"),
+    }
+}
+
+/// A hand-built patch can hold a `Some` of a key its version does not:
+/// `to_toml` refuses it (`NotInThisVersion`) rather than dropping it into
+/// the file, where `parse` would refuse the same key.
+#[test]
+fn to_toml_refuses_a_key_the_version_does_not_hold() {
+    let mut appearance = AppearanceSettings::default().resolved(PesVersion::Pes18);
+    appearance.motion.dribbling = Some(2);
+    let patch = patch_at(
+        PesVersion::Pes18,
+        vec![team(701, BTreeMap::from([(5, look(appearance))]))],
     );
+    let err = patch.to_toml().expect_err("a foreign key is not written");
+    match &err {
+        PatchError::Settings(SettingsError::NotInThisVersion { key }) => {
+            assert_eq!(key, "teams[0].players.05.appearance.motion.dribbling")
+        }
+        other => panic!("{other:?}"),
+    }
+}
+
+/// A hand-built `boots_id` past the field's 14 bits is refused by
+/// `to_toml` at the same path `parse` refuses the line at.
+#[test]
+fn to_toml_refuses_a_boots_id_past_the_field() {
+    let mut patch = golden();
+    patch.teams[0]
+        .players
+        .get_mut(&5)
+        .expect("player 05")
+        .boots_id = Some(16384);
+    let err = patch
+        .to_toml()
+        .expect_err("a 14-bit field holds 0 to 16383");
+    match &err {
+        PatchError::Settings(SettingsError::OutOfRange { key, value, range }) => {
+            assert_eq!(key, "teams[0].players.05.boots_id");
+            assert_eq!(*value, 16384);
+            assert_eq!(range, "0 to 16383");
+        }
+        other => panic!("{other:?}"),
+    }
 }
 
 /// A hand-built `players` map can hold a slot outside `01` to `99`;
@@ -152,25 +353,22 @@ fn to_toml_refuses_a_player_key_outside_01_to_99() {
     }
 }
 
-/// Every motion key `Some` at a non-default value, on PES 21 (with
-/// `dribbling`) and PES 18 (without), two teams.
+/// A resolved look on every version round-trips: a `[teams.players.NN]`
+/// built whole (`name`, the IDs, every key the version holds changed off
+/// its default where the test sets one) writes and parses back equal.
+/// PES 15 holds the `pes15_` keys the later versions drop; PES 21 alone
+/// holds `dribbling`.
 #[test]
-fn every_motion_key_round_trips() {
-    for (pes_version, dribbling) in [(PesVersion::Pes21, Some(2)), (PesVersion::Pes18, None)] {
-        let motion = |goal_celebration_2| MotionSettings {
-            hunching_dribbling: Some(2),
-            hunching_running: Some(3),
-            arm_movement_dribbling: Some(5),
-            arm_movement_running: Some(6),
-            corner_kick: Some(4),
-            free_kick: Some(15),
-            penalty_kick: Some(3),
-            dribbling,
-            goal_celebration_1: Some(40),
-            goal_celebration_2: Some(goal_celebration_2),
-        };
+fn every_version_round_trips() {
+    for version in FIXTURES {
+        let mut appearance = AppearanceSettings::default().resolved(version);
+        appearance.skin_color = Some(4);
+        appearance.strip.sleeves = Some(2);
+        appearance.motion.free_kick = Some(3);
+        appearance.face.cheekbones = Some(5);
+        appearance.hair.color_red = Some(9);
         let patch = AestheticsPatch {
-            pes_version,
+            pes_version: version,
             tool_version: "0.1.0".to_string(),
             allocation_scheme_version: ALLOCATION_SCHEME_VERSION,
             cpks: vec!["4cc_69.cpk".to_string()],
@@ -184,7 +382,10 @@ fn every_motion_key_round_trips() {
                         PatchPlayer {
                             name: Some("Snuffy".to_string()),
                             shirt_name: Some("SNUFFY".to_string()),
-                            motion: motion(120),
+                            boots_id: Some(643),
+                            gloves_id: Some(0),
+                            base_copy_id: None,
+                            appearance: Some(appearance),
                         },
                     )]),
                 },
@@ -196,15 +397,29 @@ fn every_motion_key_round_trips() {
                         PatchPlayer {
                             name: None,
                             shirt_name: None,
-                            motion: motion(150),
+                            boots_id: None,
+                            gloves_id: None,
+                            base_copy_id: Some(101334),
+                            appearance: None,
                         },
                     )]),
                 },
             ],
         };
+        let text = patch.to_toml().expect("emit");
+        let look_at = text.find("[teams.players.05.appearance]").expect("a look");
+        let end = text[look_at..]
+            .find("\n[[teams]]")
+            .map(|i| look_at + i)
+            .unwrap_or(text.len());
+        assert!(
+            !text[look_at..end].lines().any(|line| line.contains('#')),
+            "{version:?}: no comments in a patch's [appearance]"
+        );
         assert_eq!(
-            AestheticsPatch::parse(&patch.to_toml().expect("emit")).expect("round trip"),
-            patch
+            AestheticsPatch::parse(&text).expect("round trip"),
+            patch,
+            "{version:?}"
         );
     }
 }
@@ -214,12 +429,6 @@ fn refusals() {
     // (patch text, the error it must produce); `doc` supplies the valid
     // header keys where a case does not mutate them.
     let cases: Vec<(String, PatchError)> = vec![
-        (
-            "pes_version = 17\ntool_version = \"0.1.0\"\nallocation_scheme_version = 1\ncpks = []\ncompiled = 2026-09-12T14:03:00Z\n".to_string(),
-            PatchError::PreFox {
-                version: PesVersion::Pes17,
-            },
-        ),
         (
             doc("").replace("pes_version = 21", "pes_version = 22"),
             SettingsError::WrongType {
@@ -276,22 +485,59 @@ fn refusals() {
             }
             .into(),
         ),
+        // The model IDs take the field's whole stored range: a string is
+        // `WrongType`, a value past it `OutOfRange` — both at parse, the
+        // patch being the compiler's output, not an author's band.
         (
-            doc("[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05]\nboots_id = 143\n"),
-            SettingsError::UnknownKey {
+            doc("[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05]\nboots_id = \"x\"\n"),
+            SettingsError::WrongType {
                 key: "teams[0].players.05.boots_id".to_string(),
+                expected: "an integer",
             }
             .into(),
         ),
         (
-            doc("[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05.appearance.face]\ncheek_type = 1\n"),
-            SettingsError::UnknownKey {
-                key: "teams[0].players.05.appearance.face".to_string(),
+            doc("[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05]\nboots_id = 16384\n"),
+            SettingsError::OutOfRange {
+                key: "teams[0].players.05.boots_id".to_string(),
+                value: 16384,
+                range: "0 to 16383".to_string(),
             }
             .into(),
         ),
         (
-            doc("[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05.appearance.motion]\nfree_kick = 21\n"),
+            doc("[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05]\ngloves_id = -1\n"),
+            SettingsError::OutOfRange {
+                key: "teams[0].players.05.gloves_id".to_string(),
+                value: -1,
+                range: "0 to 16383".to_string(),
+            }
+            .into(),
+        ),
+        (
+            doc("[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05]\nbase_copy_id = -1\n"),
+            SettingsError::OutOfRange {
+                key: "teams[0].players.05.base_copy_id".to_string(),
+                value: -1,
+                range: "0 to 4294967295".to_string(),
+            }
+            .into(),
+        ),
+        // An `[appearance]` is a whole look or absent: one missing a key
+        // the version holds is `MissingKey` at the absent key's path, not
+        // a partial look applied at defaults.
+        (
+            doc(
+                "[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05.appearance.face]\ncheek_type = 1\n",
+            ),
+            PatchError::MissingKey {
+                key: "teams[0].players.05.appearance.skin_color".to_string(),
+            },
+        ),
+        (
+            doc(
+                "[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05.appearance.motion]\nfree_kick = 21\n",
+            ),
             SettingsError::OutOfRange {
                 key: "teams[0].players.05.appearance.motion.free_kick".to_string(),
                 value: 21,
@@ -310,14 +556,18 @@ fn refusals() {
         // A motion table takes the motion keys alone: a stranger, and a
         // key of another table, are both `UnknownKey`.
         (
-            doc("[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05.appearance.motion]\nfoo = 1\n"),
+            doc(
+                "[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05.appearance.motion]\nfoo = 1\n",
+            ),
             SettingsError::UnknownKey {
                 key: "teams[0].players.05.appearance.motion.foo".to_string(),
             }
             .into(),
         ),
         (
-            doc("[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05.appearance.motion]\nskin_color = 1\n"),
+            doc(
+                "[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05.appearance.motion]\nskin_color = 1\n",
+            ),
             SettingsError::UnknownKey {
                 key: "teams[0].players.05.appearance.motion.skin_color".to_string(),
             }
@@ -327,6 +577,75 @@ fn refusals() {
     for (text, expected) in cases {
         let error = AestheticsPatch::parse(&text).expect_err(&text);
         assert_eq!(error.to_string(), expected.to_string(), "{text}");
+    }
+}
+
+/// A patch missing one key deep in the schema is refused at the absent
+/// key's dotted path, not applied at its default: `golden()`'s text minus
+/// its `iris_color` line is `MissingKey` at `appearance.iris_color`.
+#[test]
+fn a_look_missing_one_key_of_its_version_is_refused() {
+    let text = golden().to_toml().expect("the golden emits");
+    let gone = text.replace("iris_color = 0\n", "");
+    assert_ne!(gone, text, "premise: the line was there");
+    let err = AestheticsPatch::parse(&gone).expect_err("a partial look is refused");
+    match &err {
+        PatchError::MissingKey { key } => {
+            assert_eq!(key, "teams[0].players.05.appearance.iris_color")
+        }
+        other => panic!("{other:?}"),
+    }
+}
+
+/// A key the patch's version does not store is `NotInThisVersion`, not a
+/// stranger's `UnknownKey`: `dribbling` is PES 20 and 21's, so a PES 18
+/// patch holding it is refused naming it.
+#[test]
+fn a_key_the_patchs_version_lacks_is_not_in_this_version() {
+    let text = "pes_version = 18\ntool_version = \"0.1.0\"\nallocation_scheme_version = 1\ncpks = []\ncompiled = 2026-09-12T14:03:00Z\n\n[[teams]]\nid = 714\nname = \"/co/\"\n\n[teams.players.05.appearance.motion]\ndribbling = 2\n";
+    let err = AestheticsPatch::parse(text).expect_err("a foreign key is refused");
+    match &err {
+        PatchError::Settings(SettingsError::NotInThisVersion { key }) => {
+            assert_eq!(key, "teams[0].players.05.appearance.motion.dribbling")
+        }
+        other => panic!("{other:?}"),
+    }
+}
+
+/// A pre-Fox patch parses on the same rules: PES 17's look holds the
+/// pre-Fox layout's keys, a key of PES 15's own layout on PES 21
+/// `NotInThisVersion`.
+#[test]
+fn a_pre_fox_patch_parses_and_refuses_a_key_of_another_era() {
+    let appearance = AppearanceSettings::default().resolved(PesVersion::Pes17);
+    let text = patch_at(
+        PesVersion::Pes17,
+        vec![team(714, BTreeMap::from([(5, look(appearance.clone()))]))],
+    )
+    .to_toml()
+    .expect("a pre-Fox patch emits");
+    assert!(
+        text.contains("[teams.players.05.appearance]"),
+        "the look is in the file"
+    );
+    let patch = AestheticsPatch::parse(&text).expect("a pre-Fox patch parses");
+    assert_eq!(
+        patch.teams[0].players[&5].appearance.as_ref(),
+        Some(&appearance),
+        "the look round-trips"
+    );
+    let mut appearance = AppearanceSettings::default().resolved(PesVersion::Pes21);
+    appearance.face.pes15_nose_angle = Some(2);
+    let patch = patch_at(
+        PesVersion::Pes21,
+        vec![team(714, BTreeMap::from([(5, look(appearance))]))],
+    );
+    let err = patch.to_toml().expect_err("a pes15-only key on PES 21");
+    match &err {
+        PatchError::Settings(SettingsError::NotInThisVersion { key }) => {
+            assert_eq!(key, "teams[0].players.05.appearance.face.pes15_nose_angle")
+        }
+        other => panic!("{other:?}"),
     }
 }
 
@@ -384,11 +703,6 @@ fn utc_datetime_matches_a_day_by_day_calendar() {
 // -------------------------------------------------------------------
 // Apply
 
-use crate::file::EditFile;
-use crate::model::player::{PlayerMotion, STRIPPED_APPEARANCE_ID};
-use crate::schema::fields::PlayerField;
-use crate::test_support::{open, test_salt};
-
 /// A patch at `version` over `teams`.
 fn patch_at(version: PesVersion, teams: Vec<PatchTeam>) -> AestheticsPatch {
     AestheticsPatch {
@@ -401,21 +715,31 @@ fn patch_at(version: PesVersion, teams: Vec<PatchTeam>) -> AestheticsPatch {
     }
 }
 
+/// An entry holding nothing: every key `None`, the save's player kept whole.
+fn bare() -> PatchPlayer {
+    PatchPlayer {
+        name: None,
+        shirt_name: None,
+        boots_id: None,
+        gloves_id: None,
+        base_copy_id: None,
+        appearance: None,
+    }
+}
+
 /// A player with `name` alone.
 fn named(name: &str) -> PatchPlayer {
     PatchPlayer {
         name: Some(name.to_string()),
-        shirt_name: None,
-        motion: MotionSettings::default(),
+        ..bare()
     }
 }
 
-/// A player with `motion` alone.
-fn motion_only(motion: MotionSettings) -> PatchPlayer {
+/// A player with `appearance` alone.
+fn look(appearance: AppearanceSettings) -> PatchPlayer {
     PatchPlayer {
-        name: None,
-        shirt_name: None,
-        motion,
+        appearance: Some(appearance),
+        ..bare()
     }
 }
 
@@ -426,6 +750,22 @@ fn team(id: u32, players: BTreeMap<u8, PatchPlayer>) -> PatchTeam {
         name: String::new(),
         players,
     }
+}
+
+/// `player`'s own appearance for the patch, every key `version` holds set,
+/// `changes` applied on top: a whole `[appearance]` whose diff against his
+/// record is `changes` alone. `changes` are stored values, as the patch's
+/// table holds them.
+fn look_of(
+    player: &PlayerEntry,
+    version: PesVersion,
+    changes: &[(SettingKey, u8)],
+) -> AppearanceSettings {
+    let mut settings = PlayerSettings::from_player(player).expect("the fixture's settings");
+    for (key, value) in changes {
+        settings.set(*key, *value).expect("inside the key's range");
+    }
+    settings.appearance.resolved(version)
 }
 
 /// Every motion key `Some` at a value differing from `motion`'s —
@@ -446,9 +786,12 @@ fn shifted(motion: &PlayerMotion) -> MotionSettings {
     }
 }
 
-/// `before` with the patch's names and `Some` motion keys written —
-/// what `apply` must produce of `before`.
-fn patched(before: &PlayerEntry, patch: &PatchPlayer) -> PlayerEntry {
+/// `before` with the patch's names, `Some` IDs, base copy and
+/// `[appearance]` written — what `apply` must produce of `before`: the
+/// look through `PlayerSettings::apply`, then the record made his (his own
+/// appearance id and base copy where the version has them, the flag
+/// cleared) unless `base_copy_id` links him elsewhere.
+fn patched(before: &PlayerEntry, patch: &PatchPlayer, version: PesVersion) -> PlayerEntry {
     let mut out = before.clone();
     if let Some(name) = &patch.name {
         out.name = name.clone();
@@ -456,44 +799,39 @@ fn patched(before: &PlayerEntry, patch: &PatchPlayer) -> PlayerEntry {
     if let Some(shirt_name) = &patch.shirt_name {
         out.shirt_name = shirt_name.clone();
     }
-    let m = &patch.motion;
-    if let Some(v) = m.hunching_dribbling {
-        out.motion.hunching_dribbling = v;
+    if let Some(appearance) = &patch.appearance {
+        PlayerSettings {
+            appearance: appearance.clone(),
+            ..PlayerSettings::default()
+        }
+        .apply(&mut out, version)
+        .expect("the fixture's own values apply");
+        if out.appearance_id.is_some() {
+            out.appearance_id = Some(out.id);
+        }
+        if patch.base_copy_id.is_none() {
+            out.appearance.base_copy_id = out.id;
+            if out.edit_flags.base_copy.is_some() {
+                out.edit_flags.base_copy = Some(false);
+            }
+        }
     }
-    if let Some(v) = m.hunching_running {
-        out.motion.hunching_running = v;
+    if let Some(id) = patch.base_copy_id {
+        out.appearance.base_copy_id = id;
     }
-    if let Some(v) = m.arm_movement_dribbling {
-        out.motion.arm_movement_dribbling = v;
+    if let Some(id) = patch.boots_id {
+        out.appearance.boots_id = u32::from(id);
     }
-    if let Some(v) = m.arm_movement_running {
-        out.motion.arm_movement_running = v;
-    }
-    if let Some(v) = m.corner_kick {
-        out.motion.corner_kick = v;
-    }
-    if let Some(v) = m.free_kick {
-        out.motion.free_kick = v;
-    }
-    if let Some(v) = m.penalty_kick {
-        out.motion.penalty_kick = v;
-    }
-    if let Some(v) = m.dribbling {
-        out.motion.dribbling = Some(v);
-    }
-    if let Some(v) = m.goal_celebration_1 {
-        out.motion.goal_celebration_1 = v;
-    }
-    if let Some(v) = m.goal_celebration_2 {
-        out.motion.goal_celebration_2 = v;
+    if let Some(id) = patch.gloves_id {
+        out.appearance.gloves_id = u32::from(id);
     }
     out
 }
 
-/// The patch's motions and names apply, nothing else writes, and the bytes
-/// persist through a save write.
+/// The patch's look, names and IDs apply, nothing else writes, and the
+/// bytes persist through a save write.
 #[test]
-fn apply_writes_the_motions_and_names_and_nothing_else() {
+fn apply_writes_the_look_names_and_ids_and_nothing_else() {
     let (mut save, _) = open(PesVersion::Pes21);
     let slots = [5u8, 6, 7];
     let patched_ids: Vec<u32> = slots.iter().map(|s| 70100 + u32::from(*s)).collect();
@@ -503,15 +841,22 @@ fn apply_writes_the_motions_and_names_and_nothing_else() {
     for &id in &patched_ids {
         let player = save.player(id).expect("the fixture has the player");
         let slot = u8::try_from(id % 100).expect("an NN");
+        let mut appearance = PlayerSettings::from_player(player)
+            .expect("the fixture's settings")
+            .appearance;
+        appearance.motion = shifted(&player.motion);
         let patch_player = PatchPlayer {
             name: Some(format!("PATCH{slot:02}")),
             shirt_name: Some(format!("SHIRT{slot:02}")),
-            motion: shifted(&player.motion),
+            boots_id: Some(600 + u16::from(slot)),
+            gloves_id: Some(0),
+            base_copy_id: None,
+            appearance: Some(appearance),
         };
         // The patch's values differ from the save's, or the write
         // proves nothing.
         assert_ne!(
-            patched(player, &patch_player),
+            patched(player, &patch_player, PesVersion::Pes21),
             *player,
             "player {id}: patch values must differ"
         );
@@ -532,7 +877,7 @@ fn apply_writes_the_motions_and_names_and_nothing_else() {
         let before = before.iter().find(|p| p.id == id).expect("in before");
         assert_eq!(
             save.player(id).expect("the player"),
-            &patched(before, patch_player),
+            &patched(before, patch_player, PesVersion::Pes21),
             "player {id}"
         );
     }
@@ -550,7 +895,7 @@ fn apply_writes_the_motions_and_names_and_nothing_else() {
         let before = before.iter().find(|p| p.id == id).expect("in before");
         assert_eq!(
             back.player(id).expect("the player"),
-            &patched(before, patch_player),
+            &patched(before, patch_player, PesVersion::Pes21),
             "player {id} persisted"
         );
     }
@@ -578,8 +923,12 @@ fn an_absent_team_or_player_is_skipped_and_the_rest_applied() {
             5,
             PatchPlayer {
                 name: Some("PATCH05".to_string()),
-                shirt_name: None,
-                motion: shifted(&save.player(70105).expect("present").motion),
+                appearance: Some(look_of(
+                    save.player(70105).expect("present"),
+                    PesVersion::Pes21,
+                    &[(SettingKey::FreeKick, 3)],
+                )),
+                ..bare()
             },
         ),
         (
@@ -587,10 +936,7 @@ fn an_absent_team_or_player_is_skipped_and_the_rest_applied() {
             PatchPlayer {
                 name: Some("GHOST".to_string()),
                 shirt_name: Some("GHOST".to_string()),
-                motion: MotionSettings {
-                    free_kick: Some(3),
-                    ..MotionSettings::default()
-                },
+                ..bare()
             },
         ),
     ]);
@@ -615,7 +961,11 @@ fn an_absent_team_or_player_is_skipped_and_the_rest_applied() {
     let before = before.iter().find(|p| p.id == 70105).expect("in before");
     assert_eq!(
         save.player(70105).expect("the player"),
-        &patched(before, patch.teams[0].players.get(&5).expect("player 05"))
+        &patched(
+            before,
+            patch.teams[0].players.get(&5).expect("player 05"),
+            PesVersion::Pes21
+        )
     );
 }
 
@@ -670,10 +1020,11 @@ fn a_version_or_scheme_mismatch_refuses_before_any_write() {
             },
         ),
         (
-            PesVersion::Pes17,
+            PesVersion::Pes15,
             ALLOCATION_SCHEME_VERSION,
-            PatchError::PreFox {
-                version: PesVersion::Pes17,
+            PatchError::VersionMismatch {
+                patch: PesVersion::Pes15,
+                save: PesVersion::Pes21,
             },
         ),
     ] {
@@ -698,68 +1049,66 @@ fn a_version_or_scheme_mismatch_refuses_before_any_write() {
     }
 }
 
-/// A stripped player's names and motions apply, his appearance id and
-/// block untouched, persisted through a save write.
+/// A `base_copy_id` in the patch links the player to that id and leaves
+/// the flag as the save holds it; without one, an `[appearance]` clears
+/// the copy to his own id and the flag where the version has one.
 #[test]
-fn a_stripped_player_stays_stripped() {
-    let (mut save, _) = open(PesVersion::Pes21);
-    let slots = [5u8, 6];
-    for &slot in &slots {
-        save.player_mut(70100 + u32::from(slot))
-            .expect("present")
-            .appearance_id = Some(STRIPPED_APPEARANCE_ID);
+fn a_base_copy_id_links_him_while_a_look_clears_the_copy() {
+    let (mut save, _) = open(PesVersion::Pes18);
+    let (linked, cleared) = (70105u32, 70106u32);
+    for id in [linked, cleared] {
+        let player = save.player_mut(id).expect("present");
+        player.appearance.base_copy_id = 7511;
+        player.edit_flags.base_copy = Some(true);
     }
-    let before: Vec<PlayerEntry> = slots
+    let before: Vec<PlayerEntry> = [linked, cleared]
         .iter()
-        .map(|slot| {
-            save.player(70100 + u32::from(*slot))
-                .expect("present")
-                .clone()
-        })
+        .map(|id| save.player(*id).expect("present").clone())
         .collect();
-    let players: BTreeMap<u8, PatchPlayer> = slots
-        .iter()
-        .enumerate()
-        .map(|(i, slot)| {
-            (
-                *slot,
-                PatchPlayer {
-                    name: Some(format!("PATCH{slot:02}")),
-                    shirt_name: Some(format!("SHIRT{slot:02}")),
-                    motion: shifted(&before[i].motion),
-                },
-            )
-        })
-        .collect();
-    let patch = patch_at(PesVersion::Pes21, vec![team(701, players)]);
+    let patch = patch_at(
+        PesVersion::Pes18,
+        vec![team(
+            701,
+            BTreeMap::from([
+                (
+                    5,
+                    PatchPlayer {
+                        base_copy_id: Some(101334),
+                        appearance: Some(look_of(&before[0], PesVersion::Pes18, &[])),
+                        ..bare()
+                    },
+                ),
+                (
+                    6,
+                    PatchPlayer {
+                        appearance: Some(look_of(&before[1], PesVersion::Pes18, &[])),
+                        ..bare()
+                    },
+                ),
+            ]),
+        )],
+    );
     patch.apply(&mut save).expect("applies");
-    for (before, (slot, patch_player)) in before.iter().zip(&patch.teams[0].players) {
-        let id = 70100 + u32::from(*slot);
-        let after = save.player(id).expect("the player");
-        assert_eq!(
-            after.appearance_id,
-            Some(STRIPPED_APPEARANCE_ID),
-            "{id} stays stripped"
-        );
-        assert_eq!(
-            after.appearance, before.appearance,
-            "{id}: the appearance block is untouched"
-        );
-        assert_eq!(after, &patched(before, patch_player), "{id}");
-    }
-    // And the stripped ids persist through the write.
-    let back = EditFile::from_bytes(&save.to_bytes(&test_salt()).expect("the save writes"))
-        .expect("reopens");
-    for (before, (slot, patch_player)) in before.iter().zip(&patch.teams[0].players) {
-        let id = 70100 + u32::from(*slot);
-        let after = back.player(id).expect("the player");
-        assert_eq!(
-            after.appearance_id,
-            Some(STRIPPED_APPEARANCE_ID),
-            "{id} persisted stripped"
-        );
-        assert_eq!(after, &patched(before, patch_player), "{id} persisted");
-    }
+    let linked_after = save.player(linked).expect("the player");
+    assert_eq!(
+        linked_after.appearance.base_copy_id, 101334,
+        "the link's id"
+    );
+    assert_eq!(
+        linked_after.edit_flags.base_copy,
+        Some(true),
+        "the flag left as the save held it"
+    );
+    let cleared_after = save.player(cleared).expect("the player");
+    assert_eq!(
+        cleared_after.appearance.base_copy_id, cleared,
+        "no link: his own id"
+    );
+    assert_eq!(
+        cleared_after.edit_flags.base_copy,
+        Some(false),
+        "no link: the flag cleared"
+    );
 }
 
 /// A failure anywhere in pass 1 leaves the whole save untouched: a
@@ -789,7 +1138,8 @@ fn a_broken_patch_is_refused_whole() {
     assert_eq!(save.players(), &before[..]);
     assert_eq!(save.teams(), &teams[..]);
 
-    // `dribbling` on a PES 18 save: the version has no such field.
+    // `dribbling` on a PES 18 save: the version has no such field. A
+    // hand-built patch can carry one, where the text form refuses it.
     let (mut save, _) = open(PesVersion::Pes18);
     let before = save.players().to_vec();
     let teams = save.teams().to_vec();
@@ -799,9 +1149,12 @@ fn a_broken_patch_is_refused_whole() {
             701,
             BTreeMap::from([(
                 5,
-                motion_only(MotionSettings {
-                    dribbling: Some(2),
-                    ..MotionSettings::default()
+                look(AppearanceSettings {
+                    motion: MotionSettings {
+                        dribbling: Some(2),
+                        ..MotionSettings::default()
+                    },
+                    ..AppearanceSettings::default()
                 }),
             )]),
         )],
@@ -829,9 +1182,12 @@ fn a_broken_patch_is_refused_whole() {
             701,
             BTreeMap::from([(
                 5,
-                motion_only(MotionSettings {
-                    corner_kick: Some(8),
-                    ..MotionSettings::default()
+                look(AppearanceSettings {
+                    motion: MotionSettings {
+                        corner_kick: Some(8),
+                        ..MotionSettings::default()
+                    },
+                    ..AppearanceSettings::default()
                 }),
             )]),
         )],
@@ -882,7 +1238,16 @@ fn a_motion_past_the_patch_versions_top_is_refused() {
     ] {
         let patch = patch_at(
             PesVersion::Pes18,
-            vec![team(701, BTreeMap::from([(5, motion_only(motion))]))],
+            vec![team(
+                701,
+                BTreeMap::from([(
+                    5,
+                    look(AppearanceSettings {
+                        motion,
+                        ..AppearanceSettings::default()
+                    }),
+                )]),
+            )],
         );
         let err = patch.apply(&mut save).expect_err("refused");
         match &err {
@@ -932,9 +1297,12 @@ fn a_motion_past_its_keys_range_but_inside_the_field_is_refused() {
             701,
             BTreeMap::from([(
                 5,
-                motion_only(MotionSettings {
-                    free_kick: Some(stored),
-                    ..MotionSettings::default()
+                look(AppearanceSettings {
+                    motion: MotionSettings {
+                        free_kick: Some(stored),
+                        ..MotionSettings::default()
+                    },
+                    ..AppearanceSettings::default()
                 }),
             )]),
         )],
@@ -978,9 +1346,8 @@ fn a_shirt_name_past_latin1_is_refused() {
             BTreeMap::from([(
                 5,
                 PatchPlayer {
-                    name: None,
                     shirt_name: Some("本田".to_string()),
-                    motion: MotionSettings::default(),
+                    ..bare()
                 },
             )]),
         )],
@@ -996,30 +1363,33 @@ fn a_shirt_name_past_latin1_is_refused() {
     assert_eq!(save.teams(), &teams[..]);
 }
 
-/// A patch carrying motions alone leaves both names as they were: `None`
-/// is "not written", never an empty string.
+/// A patch carrying an `[appearance]` alone leaves both names as they
+/// were: `None` is "not written", never an empty string.
 #[test]
-fn a_motion_only_patch_leaves_the_names() {
+fn an_appearance_only_patch_leaves_the_names() {
     let (mut save, _) = open(PesVersion::Pes21);
     let before = save.player(70105).expect("present").clone();
     assert!(
         !before.name.is_empty() && !before.shirt_name.is_empty(),
         "the test needs nonempty names"
     );
+    let mut appearance = look_of(&before, PesVersion::Pes21, &[]);
+    appearance.motion = shifted(&before.motion);
     let patch = patch_at(
         PesVersion::Pes21,
-        vec![team(
-            701,
-            BTreeMap::from([(5, motion_only(shifted(&before.motion)))]),
-        )],
+        vec![team(701, BTreeMap::from([(5, look(appearance))]))],
     );
     patch.apply(&mut save).expect("applies");
     let after = save.player(70105).expect("the player");
-    // The motion applied too, or the name assertions prove nothing.
+    // The look applied too, or the name assertions prove nothing.
     assert_eq!(
         after,
-        &patched(&before, patch.teams[0].players.get(&5).expect("player 05")),
-        "the motion applied and the entry is otherwise his own"
+        &patched(
+            &before,
+            patch.teams[0].players.get(&5).expect("player 05"),
+            PesVersion::Pes21
+        ),
+        "the look applied and the entry is otherwise his own"
     );
     assert_eq!(after.name, before.name);
     assert_eq!(after.shirt_name, before.shirt_name);
@@ -1044,29 +1414,140 @@ fn the_patch_lands_on_the_player_id_not_the_slot() {
         "the swapped-in one stands in his old slot"
     );
     let before = save.player(70110).expect("present").clone();
+    let mut appearance = look_of(save.player(70106).expect("present"), PesVersion::Pes21, &[]);
+    appearance.motion.free_kick =
+        Some((appearance.motion.free_kick.expect("held on PES 21") + 1) % 20);
     let patch = patch_at(
         PesVersion::Pes21,
-        vec![team(
-            701,
-            BTreeMap::from([(
-                6,
-                motion_only(shifted(&save.player(70106).expect("present").motion)),
-            )]),
-        )],
+        vec![team(701, BTreeMap::from([(6, look(appearance.clone()))]))],
     );
     patch.apply(&mut save).expect("applies");
     let moved = save.player(70106).expect("the player");
     let other = save.player(70110).expect("the player");
     assert_eq!(
         moved.motion.free_kick,
-        patch.teams[0]
-            .players
-            .get(&6)
-            .expect("player 06")
-            .motion
-            .free_kick
-            .expect("set"),
+        appearance.motion.free_kick.expect("set"),
         "the patch lands by id, wherever he sits"
     );
     assert_eq!(other, &before, "the swapped-in player is untouched");
+}
+
+/// The lossless guard the `PlayerAppearance.bin` round trip gave: every
+/// fixture player's own settings, applied back to him through the patch's
+/// `[appearance]`, leave his record as it was but for the ids `apply`
+/// makes his own — his appearance id where the version has one and his
+/// base copy — and a player already carrying those ids keeps his record's
+/// bytes whole, on every version's fixture save. A real save can hold a
+/// value past the version's editor range (a celebration, a face type):
+/// a patch cannot carry it, so its apply is refused and counted, the
+/// byte-level premise standing on the players the patch does carry.
+#[test]
+fn a_players_own_settings_applied_by_the_patch_change_only_his_ids() {
+    for version in FIXTURES {
+        let (mut save, _) = open(version);
+        let schema = schema_for(version);
+        let before: Vec<PlayerEntry> = save.players().to_vec();
+        let before_payload = crate::container::SaveContainer::decrypt(
+            &save.to_bytes(&test_salt()).expect("the save writes"),
+        )
+        .expect("decrypts")
+        .payload;
+        // One patch a player, so a look a patch cannot carry — a stored
+        // value past the version's editor range — is a per-player refusal,
+        // not the whole save's.
+        let mut applied: Vec<bool> = Vec::new();
+        let mut unexpressible = 0usize;
+        for before in &before {
+            // `from_player` is the settings' construction; where it
+            // refuses (a stored value the key table cannot express) the
+            // stored-ranges reader carries it verbatim, as the
+            // appearance-row guard does. Either way the value goes into a
+            // patch entry of his own.
+            let appearance = match PlayerSettings::from_player(before) {
+                Ok(settings) => settings.appearance,
+                Err(SettingsError::OutOfRange { .. }) => {
+                    crate::settings_toml::appearance_from(before).expect("stored-ranges read")
+                }
+                Err(err) => panic!("{version:?} player {}: {err:?}", before.id),
+            };
+            let patch = patch_at(
+                version,
+                vec![PatchTeam {
+                    id: before.id / 100,
+                    name: String::new(),
+                    players: BTreeMap::from([(
+                        u8::try_from(before.id % 100).expect("a slot fits u8"),
+                        look(appearance),
+                    )]),
+                }],
+            );
+            match patch.apply(&mut save) {
+                Ok(summary) => applied.push(summary.applied_players.contains(&before.id)),
+                Err(PatchError::Settings(
+                    SettingsError::OutOfRange { .. } | SettingsError::NotInThisVersion { .. },
+                )) => {
+                    unexpressible += 1;
+                    applied.push(false);
+                }
+                Err(err) => panic!("{version:?} player {}: {err:?}", before.id),
+            }
+        }
+        let after_payload = crate::container::SaveContainer::decrypt(
+            &save.to_bytes(&test_salt()).expect("the save writes"),
+        )
+        .expect("decrypts")
+        .payload;
+        assert_eq!(before_payload.len(), after_payload.len());
+        let mut byte_identical = 0usize;
+        for (index, (before, applied)) in before.iter().zip(&applied).enumerate() {
+            let after = save.player(before.id).expect("still held");
+            let mut expected = before.clone();
+            if *applied {
+                // The games' values for the run's unused bits, as
+                // `PlayerSettings::apply` writes them.
+                expected.appearance.ingame_face.write_unused();
+                if expected.appearance_id.is_some() {
+                    expected.appearance_id = Some(expected.id);
+                }
+                expected.appearance.base_copy_id = expected.id;
+                if expected.edit_flags.base_copy.is_some() {
+                    expected.edit_flags.base_copy = Some(false);
+                }
+            }
+            assert_eq!(after, &expected, "{version:?} player {}", before.id);
+            if expected != *before || !applied {
+                continue;
+            }
+            // An applied player his own ids already named: every byte of
+            // his record(s) is the fixture's, the premise the guard
+            // stands on.
+            byte_identical += 1;
+            assert_eq!(
+                record(&after_payload, &schema.players, schema.player.size, index),
+                record(&before_payload, &schema.players, schema.player.size, index),
+                "{version:?} player {}'s record",
+                before.id
+            );
+            if let Some((section, appearance)) = &schema.appearance {
+                let at = (0..count(&after_payload, section))
+                    .map(|i| section.offset + i * appearance.size)
+                    .find(|at| {
+                        u32::from_le_bytes(after_payload[*at..at + 4].try_into().expect("u32"))
+                            == before.id
+                    })
+                    .expect("his appearance record");
+                assert_eq!(
+                    &after_payload[at..at + appearance.size],
+                    &before_payload[at..at + appearance.size],
+                    "{version:?} player {}'s appearance record",
+                    before.id
+                );
+            }
+        }
+        assert!(
+            byte_identical > 0,
+            "{version:?}: no player carried his own ids ({unexpressible} \
+             unexpressible in the patch), the guard proves little"
+        );
+    }
 }

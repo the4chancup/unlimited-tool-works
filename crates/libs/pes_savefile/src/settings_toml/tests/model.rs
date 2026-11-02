@@ -461,24 +461,20 @@ fn a_setting_the_version_lacks_is_skipped_not_refused() {
     assert_eq!(player.appearance.sleeves, 2);
 }
 
-/// `resolved` is the aesthetics patch's view of a settings file's motion
-/// table: every key the version holds at its set value or its `KeySpec`
-/// default, a key the version lacks `None`.
+/// `resolved` is the aesthetics patch's view of a settings file's
+/// appearance tables: every key the version holds at its set value or its
+/// `KeySpec` default, a key the version lacks `None`.
 #[test]
-fn resolved_fills_every_motion_key_the_version_holds() {
-    let as_appearance = |motion: &MotionSettings| AppearanceSettings {
-        motion: motion.clone(),
-        ..AppearanceSettings::default()
-    };
+fn resolved_fills_every_appearance_key_the_version_holds() {
     for version in [PesVersion::Pes18, PesVersion::Pes21] {
-        let resolved = as_appearance(&MotionSettings::default().resolved(version));
+        let resolved = AppearanceSettings::default().resolved(version);
         for key in SettingKey::ALL {
             let spec = key.spec();
-            if spec.table != KeyTable::Motion {
+            if spec.table == KeyTable::Top {
                 continue;
             }
             let expected = if held_on(key, version) {
-                Some(spec.default.expect("every motion key has a default"))
+                Some(spec.default.expect("every non-top key has a default"))
             } else {
                 None
             };
@@ -491,23 +487,23 @@ fn resolved_fills_every_motion_key_the_version_holds() {
     }
     // `dribbling` is PES 20+: `None` resolved on 18, its default on 21.
     assert_eq!(
-        MotionSettings::default()
+        AppearanceSettings::default()
             .resolved(PesVersion::Pes18)
+            .motion
             .dribbling,
         None
     );
     assert_eq!(
-        MotionSettings::default()
+        AppearanceSettings::default()
             .resolved(PesVersion::Pes21)
+            .motion
             .dribbling,
         SettingKey::Dribbling.spec().default
     );
     // A set key keeps its stored value.
-    let set = MotionSettings {
-        free_kick: Some(5),
-        ..MotionSettings::default()
-    };
-    assert_eq!(set.resolved(PesVersion::Pes21).free_kick, Some(5));
+    let mut set = AppearanceSettings::default();
+    set.motion.free_kick = Some(5);
+    assert_eq!(set.resolved(PesVersion::Pes21).motion.free_kick, Some(5));
 }
 
 /// A fully unset settings writes every appearance key's default, so no

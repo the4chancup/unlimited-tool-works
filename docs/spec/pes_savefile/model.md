@@ -117,6 +117,13 @@ group with `decode`/`encode` (`schema/playstyle.rs`), which is what makes cross-
 import work; the lists and the rule for unlisted values are in `operations.md` "Cross-version
 player conversion". `PlayerPositions.playing_style` stays the stored `u8` index.
 
+PES 15 has the game plan's Fluid Formation switch, but its saves do not keep it: the edit file
+saved after switching it off was byte for byte the file before, and two team exports taken
+either side of the switch carry the same payload, their description's export number aside
+(the maintainer's PES 15 files, measured 2026-11-02). `fluid` is therefore absent on PES 15,
+and the AATF check and the Tactics view field a PES 15 preset's kick-off formation alone; what
+the game fields after reloading a save it was switched on in is not measured.
+
 ---
 
 ## Player settings model (settings.toml)

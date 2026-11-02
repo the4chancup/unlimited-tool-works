@@ -207,7 +207,8 @@ The gates, run before claiming anything is done:
 just gates
 ```
 
-The root `justfile` is the one definition of the gates (`cargo fmt --all --check`, `cargo clippy
+The root `justfile` is the one definition of the gates (`just line-endings`, which fails on a
+tracked file whose working copy has other line endings than `.gitattributes` asks, `cargo fmt --all --check`, `cargo clippy
 --workspace --all-targets -- -D warnings`, the tests `cargo test --workspace` builds, run four
 binaries at once by `scripts/gates/run_tests.py` and then the doc-tests, `cargo check --target
 wasm32-unknown-unknown` for `studio_core` and every lib crate, and `just acceptance`, the
@@ -517,7 +518,12 @@ Do not include agent co-authoring lines.
 - **Line endings are LF everywhere** (`.editorconfig`, `.gitattributes`, `.vscode/settings.json`
   all say so). The trap is Python on Windows: text-mode `open()` writes `\r\n` on save and append,
   silently converting a whole file and making every line show as changed. Scripts that touch repo
-  files open them with `newline="\n"`, or read and write bytes. rustfmt emits LF by default.
+  files open them with `newline="\n"`, or read and write bytes; `Path.write_text` takes
+  `newline="\n"` too (Python 3.10+), and its default converts. rustfmt emits LF by default.
+  `just line-endings`, the gates' first, lists every tracked file whose working copy has other
+  endings than `.gitattributes` asks; git normalizes a text file on commit, so only the working
+  copy shows the leak, and the leak still breaks what reads it (`cargo fmt --check`, a hashed
+  file such as `aatf`'s `logic.rhai`). Ten such copies had built up unseen when it was added.
   Binary fixtures are exempt: `.gitattributes` marks `crates/**/tests/fixtures/**` as `-text`, so
   a game file that happens to contain CRLF is stored as is (the first `cpk` fixture commit
   normalized one and shrank it by 97 bytes before this rule existed).

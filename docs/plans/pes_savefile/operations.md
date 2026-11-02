@@ -8,6 +8,24 @@
 
 What exists of this is in `spec/pes_savefile/operations.md` "Team TOML". Planned on top of it:
 
+**For 0.0.1: the bench is twelve, and the comments read as sentences.** A 4cc team has 23
+players, and players past 23 are not supported (the Save editor's bench list shows 12 for a 4cc
+team), so `bench_order` lists the first 12 of the record's 21 entries: the bench. The other nine
+name no player of a 4cc team, and a member reading the file cannot tell them from the bench;
+the game itself writes them as the roster slots the starting eleven and the bench leave out, in
+ascending order (team 893 of a PES 2017 cup save: 23 to 31; some saves hold 255 there instead).
+An import of a 12-entry `bench_order` writes those 12 and fills the nine as the game does: the
+roster slots from 0 that neither `starting_eleven` nor the 12 name, ascending, as many as fit.
+An array of another length is refused (`bench_order` holds 12 roster slots). Before
+`[tactics.preset_1.formation_1]` a comment says how a formation's players are read: the first
+entry is the player `starting_eleven` names first, and so on (`starting_eleven` and the other
+roster-slot arrays count from 0, so slot 0 is `[players.01]`). Every comment the export writes
+reads as a plain description for a member editing the file: no stored-byte jargon ("0-3
+stored" is "0 to 3"), no inverted phrasing ("shirt number, the roster's" is "shirt number"),
+versions spelled as the appearance comments spell them ("PES 17 and later", "PES 17 only"), and
+nothing a member cannot act on ("the record's own field"); where a comment cannot say what a
+value means in plain words, it says where the value comes from ("as the game stores it").
+
 **Roster order.** Export from a team that breaks 4cc's roster order (slot `NN` holding a player
 other than `team id × 100 + NN`: `roster_order_breaks`, `plans/aatf_rules.md` "The host")
 writes the slot as the save holds it, with a note on that slot's header line naming the player
@@ -82,16 +100,27 @@ Still open:
     The compiler plans the patch before its tasks run and fills these two keys once each
     task's outcome is known, then writes the file once: the file never holds an ID
     conditioned on a task.
-  - **No look for a player whose `settings.toml` was invalid**: no `[appearance]` and no ID
-    keys from that file, so the save keeps his record (the Aesthetics export plan's "An
-    invalid `settings.toml` keeps the player's installed look").
+  - **No look for a player whose `settings.toml` or `ingame_face.toml` was invalid**: no
+    `[appearance]` and no ID key his settings would resolve, neither an authored stock ID nor
+    the default a marker or a `Full` export gives, so the save keeps his record and his IDs
+    (the Aesthetics export plan's "An invalid `settings.toml` keeps the player's installed
+    look"); an ID his folder's models or links get still lands. A player left with nothing
+    to write gets no entry at all, so `apply`'s summary lists only players it wrote. Both files' keys go in the one
+    `[appearance]`, so one invalid file holds back the other's, not a half look built from
+    defaults: an invalid file is an Error a member reads and fixes, and a partial table would
+    need an `apply` that writes some keys and leaves others, a second write path for a case
+    the next compile corrects.
 
   The file stays readable as the export's own files are: the same key names, tables and
   values as `settings.toml` and `ingame_face.toml` (`sleeves = "short"`, a motion as the game
   shows it), the face, hair and iris under the player's `appearance` as the joined schema
   holds them, so a reader compares a patch with a player's files key by key. What differs is
   that every value is resolved (no `""` default, no `name = true`, the FPC preset applied) and
-  that there are no per-key range comments: the templates carry those.
+  that there are no per-key range comments: the templates carry those. An `[appearance]` is a
+  whole look or absent: reading a patch refuses one missing a key the version holds, not
+  filling it with the key's default as `settings.toml` does, since the patch is the compiler's
+  output and a missing key means a broken patch (or one written before the whole look, holding
+  motions alone), whose apply would reset the player's other keys.
 
   ```toml
   [teams.players.03]           # slot 03 → player 70203

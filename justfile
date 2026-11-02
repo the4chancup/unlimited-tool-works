@@ -9,7 +9,7 @@ set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]
 python := if os_family() == "windows" { "python" } else { "python3" }
 
 # The verification gates, in order. CI runs this same recipe.
-gates: fmt-check clippy test wasm-check acceptance doc-pointers comment-refs colour-literals
+gates: line-endings fmt-check clippy test wasm-check acceptance doc-pointers comment-refs colour-literals
 
 # The same gates on the mutants host (STUDIO_MUTANTS_REMOTE) against the working tree, while this machine should not carry the load
 gates-remote:
@@ -37,7 +37,7 @@ test:
     {{python}} scripts/drafts/draft_compare_test.py
 
 # The gates with gate 3 over the packages the working tree changes since `base` and the packages depending on them (CONTRIBUTING.md "Testing and verification")
-gates-changed base="HEAD": fmt-check clippy (test-changed base) wasm-check acceptance doc-pointers comment-refs colour-literals
+gates-changed base="HEAD": line-endings fmt-check clippy (test-changed base) wasm-check acceptance doc-pointers comment-refs colour-literals
 
 # Gate 3 over the packages the working tree changes since `base` and the packages depending on them
 test-changed base="HEAD":
@@ -85,6 +85,12 @@ comment-refs:
 colour-literals:
     {{python}} scripts/gates/colour_literals_test.py
     {{python}} scripts/gates/colour_literals.py
+
+# Gate 0, first since it takes a second: the line-endings check's own tests, then the check (every
+# tracked file's working copy has the line endings .gitattributes asks: CONTRIBUTING.md "Toolchain notes")
+line-endings:
+    {{python}} scripts/gates/line_endings_test.py
+    {{python}} scripts/gates/line_endings.py
 
 # Mutation run over one crate (converge); survivors are test gaps, equivalents or dead code; split with STUDIO_MUTANTS_REMOTE when set
 mutants crate:

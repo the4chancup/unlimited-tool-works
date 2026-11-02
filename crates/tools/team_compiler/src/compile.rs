@@ -363,6 +363,7 @@ fn plan(
                 hand_weighted: checked.hand_weighted,
                 metal_models: checked.metal_models,
                 settings: checked.settings,
+                settings_refused: checked.settings_refused,
             });
         }
         sources.push(CompileSource {

@@ -77,6 +77,62 @@ the same with no paths to name, but it is unstable in cargo 1.98. The `.pdb` kee
 (the linker's command line, the object files'): it stays with the maintainer. Its source paths
 are remapped like the exe's, which `symbolize_log.py` prints as they are.
 
+**Linux's bundle** holds the same files with `utw` for `UTW.exe` (the name its `--help` usage
+line prints), packed as `unlimited-tool-works-<version>-linux.tar.gz`, not a `.7z`: a tar
+keeps the binary's executable bit, which `.7z` extraction tools often drop, and a Linux member
+unpacks a `.tar.gz` with what the system already has. `release.py` packs it on Linux with
+Python's `tarfile` (the binary `0755`, every other file `0644`, each entry owned by uid and gid
+0 with no user or group name, so the archive names nobody), lists it back and compares the
+listing with the staged set, as the `.7z` path does. Its notices come from the Linux binary's
+own dependency graph (`cargo-about` run for `x86_64-unknown-linux-gnu`), since the two
+platforms link different crates. The remap flags go on `target.x86_64-unknown-linux-gnu.rustflags`,
+and the static C runtime check is Windows' alone (a Linux binary links the system's glibc). The
+built binary is 269 MB, 207 of it debug info: `line-tables-only` still links in the standard
+library's full debug info, which a Windows exe leaves in its `.pdb` (measured on the first dry
+run's binary). So the recipe moves it out as Windows' symbols are: `objcopy --only-keep-debug`
+writes `utw.debug`, `objcopy --strip-debug --add-gnu-debuglink=utw.debug` strips the shipped
+binary and names it, keeping the symbol table, and `utw.debug` is packed as
+`unlimited-tool-works-<version>-linux-symbols.tar.gz`, never in the bundle. A crash's backtrace
+then names its functions but not its lines, which `utw.debug` gives (`addr2line`). The binary
+drops to 60 MB, the bundle from 66.6 MB to 21.9 MB; stripping the symbols too saves 1.7 MB more
+and loses the names, and `.tar.xz` would pack 15.4 MB but needs an xz decoder in the updater.
+The readme is
+the one file, with a Linux line beside its `UTW.exe`. The binary is built on Ubuntu 22.04 (glibc 2.35),
+the oldest GitHub runner image, so it runs on that release and any newer distribution.
+
+### Release builds in CI
+
+A release is built by GitHub Actions, never on a developer's machine: the binary the
+maintainer checks before publishing is then the one members download (a local build and CI's
+differ at least in the linker's timestamps and the toolchain's machine). The workflow,
+`.github/workflows/release.yml`, runs `release.py` on `windows-latest` and on `ubuntu-22.04`,
+each job checking its own binary with the recipe's checks (no build-machine path in it, the
+static C runtime on Windows, the listing equal to the staged set), then:
+
+- **A tag `v<version>`** (a semver: `v0.0.1`, `v0.0.1-rc.1`) whose version is the workspace's
+  creates a **draft** GitHub release named for the tag, marked pre-release when the version has
+  a pre-release part, holding three assets: the Windows `.7z`, the Linux `.tar.gz` and
+  `SHA256SUMS.txt`, both archives' `sha256sum` lines, the file the updater checks a download
+  against ("Self-update" step 3). A draft is visible to the repository's maintainers alone; the
+  maintainer downloads the Windows asset, gives it the look before the cut, writes the notes
+  (the release's body, the text the updater's dialog shows; from `CHANGELOG.md`'s section once
+  the file exists, after 0.0.1) and publishes it.
+- **A push to `ci/release-dry-run`**, or a run started by hand once the workflow is on the
+  default branch (GitHub offers its **Run workflow** button only for a workflow there), builds
+  and checks the same bundles and uploads them as the run's artifacts only: no tag, no release.
+  That is how the workflow itself is tested before a tag relies on it.
+
+Each job also uploads its symbols archive (Windows' `-symbols.7z`, the exe and its `.pdb`;
+Linux's `-linux-symbols.tar.gz`, `utw.debug`) as a run artifact, never a release asset: it stays with the maintainer, who keeps a copy beside the
+release's other files, since artifacts expire after 90 days and `symbolize_log.py` needs it for
+as long as the release is in use. Before 0.0.1's tag, one test tag `v0.0.1-rc.1`, pushed from a
+branch whose workspace version is bumped to it, runs the release job once: its draft
+pre-release's three assets and their checksums are checked, then the draft and the tag are
+deleted. No release candidate is published: a published pre-release is offered to every
+member whose version it outranks (the check reads pre-releases), so how 0.0.2 tests Update now
+end to end (ST-UPD-04) is 0.0.2's to settle. The Linux bundle's look runs in WSLg (Ubuntu 22.04 on the
+maintainer's PC) before a release is published.
+
 The user extracts the archive anywhere and runs the binary — or, for the common case, drops an
 export into `exports/` (shipped empty beside the binary) and double-clicks
 `quick_compile.bat`, which is the whole Red workflow carried over. Where the suite's persisted data goes
@@ -136,29 +192,51 @@ release checking, download/verification, and binary replacement; `studio` separa
 `teams_list`'s parse/reconcile logic for teams-list reconciliation. Core knows neither
 teams-list/team-ID semantics nor team-format types. No plugin hook or new updater framework is
 needed. This is desktop-only (`#[cfg(not(target_arch = "wasm32"))]`); the browser build updates
-server-side. Release 0.2.0 ships step 1, step 2 as a notice (release notes and a link to the
-release page, no *Update now*) and step 5; steps 3, 4, 6, the `update` subcommand and rollback
-arrive in Phase 16:
+server-side. 0.0.1 ships steps 1 and 2, in the window only, its dialog without **Update now**
+(a disabled one reads as an update that is not there): a 0.0.1 member downloads 0.0.2 from
+the release page, once. 0.0.2 adds steps 3, 4 and 6 (ST-UPD-03, ST-UPD-04),
+the command line's notice and rollback (the rollback lives in the newer exe); step 5 and the `update` subcommand come with
+the Team compiler. The HTTP client is `ureq` pinned to `=3.5.0` (default features off,
+`rustls-no-provider` and `platform-verifier`, `rustls` on `ring` handed to it as the crypto
+provider, the system's certificate store, no gzip, a `User-Agent`): `rustls-no-provider` may
+change in a minor release, hence the exact pin.
 
-1. **Check** (startup, non-blocking background task): if `check_for_updates` is on and the last
-   check is older than the check interval, query the GitHub Releases API (`releases/latest`),
-   compare the `tag_name` semver against the built-in `CARGO_PKG_VERSION`. The release `body`
-   (release notes) comes back in the same response.
-2. **Offer**: if a newer version exists and it isn't the `skipped_version`, show a dialog with the
-   release notes inline and the options *Update now* / *Skip this version* / *Remind me later*; a
-   *Disable update checks* option lives in settings (kept out of the dialog — Red's `fuckoff`). The
-   CLI equivalent is a one-line notice plus a `UTW update` subcommand that performs the
-   check+apply non-interactively.
-3. **Download + verify**: fetch the release's `.7z` asset (the same artifact users download manually
-   — one artifact serves both paths) into a temp folder, verify its SHA256 against a checksum asset,
-   and extract it with the already-in-workspace `sevenz-rust2`. The download **streams** the
+1. **Check** (at startup, and again while the window stays open, on a plain background
+   thread): if `check_for_updates` is on and `last_update_check` is older than
+   `check_interval_minutes` (120 by default, at least 1), read the repository's list of
+   GitHub releases and take the highest `v<version>` tag by semver, pre-releases included
+   (`releases/latest` skips a release marked Pre-release, which a 0.0.x may be; a tag that is
+   not `v` and a semver is passed over), and compare it with the built-in
+   `CARGO_PKG_VERSION`. The release's `body` (its notes) comes in the same response. A
+   completed check stores `last_update_check`; a failed one (offline, rate-limited, a body
+   that does not parse) shows nothing and writes one line to the log.
+2. **Offer**: a newer version that isn't `skipped_version` becomes the status bar's
+   `update_available` condition, `Update available: v<version>` in the link blue, its text and
+   its **Details** button both opening the dialog; nothing opens by itself. The dialog says
+   "Unlimited Tool Works v<new> is out. You have v<own>.", shows the notes as Markdown in a
+   scrolling box (`egui_commonmark`, as the help window), and offers **Update now**, **Open
+   release page**, **Skip this version** (stores `skipped_version`, drops the condition) and
+   **Remind me later** (closes; the next check offers it again). Turning checks off is the
+   settings' `check_for_updates`, kept out of the dialog (Red's `fuckoff`). From 0.0.2 the
+   command line prints a one-line notice when a newer release exists; a `UTW update`
+   subcommand that checks and applies non-interactively comes later.
+3. **Download + verify**: fetch the release's archive for the running platform (the Windows
+   `.7z`, the Linux `.tar.gz`: the artifacts members download by hand, one serving both paths)
+   into a temp folder on the executable's volume, with a progress dialog (`Downloading v<new>…
+   <done> of <total> MB`, a bar, Cancel), verify its SHA-256 against the release's
+   `SHA256SUMS.txt` asset (CI writes it), and extract it (`sevenz-rust2` for the `.7z`;
+   `flate2` and the `tar` crate for the `.tar.gz`). Any failure (the network, the checksum, the
+   archive) changes nothing and shows `Update failed` with the reason, **Retry**, **Open release
+   page** and **Close**. The download **streams** the
    response body (`ureq`'s `into_reader()`) into the temp file, hashing and counting bytes as it
    goes — that is where the dialog's progress comes from, and it sidesteps `ureq`'s 10 MB default
    in-memory body limit, which the convenience readers (`read_to_vec`/`read_to_string`/`read_json`)
    enforce and a release asset exceeds (`into_reader()` is unbounded; `into_with_config().limit()`
    changes either). Both HTTP calls run on a plain background thread.
-4. **Swap**: first stage and verify the new binary on the executable's volume. Move the running
-   binary into `old/`, then put the new binary in place; if replacement fails, restore the original.
+4. **Swap**: first stage and verify the new bundle on the executable's volume. Move the running
+   binary into `old/`, then put the new binary in place, and every other file of the bundle
+   but `data/` (the readme, the licenses, the launchers a later bundle adds) over the old ones;
+   if replacement fails, restore the original.
    This is a recoverable sequence, not one atomic swap; handle file locks and permissions explicitly.
    If the folder isn't writable (e.g. Program Files), use the `elevation` lib's elevated-relaunch
    path or download-and-instruct. Restart only after active work is stopped and unsaved edits are
@@ -179,7 +257,10 @@ arrive in Phase 16:
    `teams_list_read_only`; the embedded list is not used in place of the working one, so the
    user's assignments keep winning until they move the install. The readme and
    `quick_compile.bat` are overwritten without ceremony (not user-edited).
-6. **Restart**: offer to relaunch. The settings file needs no transfer — it stays where it is, and
+6. **Restart**: `Update ready` says "v<new> is installed. Restart to start using it, the version
+   you are running now will stay in the old folder." with **Restart now** (the ordinary close
+   prompts, then the new exe starts and shows `Updated to v<new>` with What's new) and **Later**
+   (the next start runs the new exe). The settings file needs no transfer — it stays where it is, and
    the existing merge of `default_settings()` for missing keys (see `spec/core/gui.md` "Settings menu") absorbs
    new-version settings changes, which is what retired Red's transfer-table mechanism.
 
