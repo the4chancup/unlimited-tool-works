@@ -15390,3 +15390,10 @@ the standard library's debug info; stripped it packs 21.9 MB, and its backtraces
 function names. xz would save 6.5 MB more at the cost of an xz decoder in the updater.
 Plan: `plans/core/distribution.md` "Distribution: portable .7z bundle" (the Linux paragraph),
 "Release builds in CI".
+
+## 2026-11-02 — save_editor — The team row's hint names the gameplan
+Decision (the maintainer): the team row's hint reads `[click for gameplan]`, not `[click for
+tactics]`.
+Why: Gameplan is the word the editor already uses for a team's tactics (the export and import
+dialogs' section), so the hint names what the click opens in the same word.
+Plan: `plans/save_editor.md` (the team row's paragraph, "then `[click for gameplan]`").

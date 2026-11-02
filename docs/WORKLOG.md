@@ -7040,6 +7040,10 @@ briefs, review loops, gates and mutation runs as for any step.
       as `team_widgets` `lineup_row` does (`dnd_hover_payload`, a 1-point selection stroke
       outside the row), in `save_editor` `view/player_list.rs` `player_row`; drafted
       (`playerRow`) → verify: SE-GUI-64 headless, red first
+    - [ ] f1g12 the team row's hint reads `[click for gameplan]` (the maintainer, 2026-11-02;
+      DECISIONS "The team row's hint names the gameplan"), in `save_editor`
+      `view/player_list.rs` `team_row` and its test; drafted (`teamRow`'s `.thint`) → verify:
+      the hint's test, red first
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. The maintainer, 2026-11-02: the
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);

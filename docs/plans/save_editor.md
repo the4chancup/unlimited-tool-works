@@ -199,7 +199,7 @@ all side by side.
   A **team row** heads each team's players, set apart from a player row by the
   faint fill under it and its name in the strong text colour (no bold: the app
   installs no bold face, and a second font file for one row costs more than it shows): the team's id, its colours
-  1-2 as swatches and its name, then `[click for tactics]` in the weak colour at the normal
+  1-2 as swatches and its name, then `[click for gameplan]` in the weak colour at the normal
   weight (nothing else says where the tactics are; on a narrow row it is elided before the
   name is), a dot when the team's own fields (name, short name, colours,
   ids, kit slots, tactics) have unsaved changes. A click selects the team, and the detail shows
