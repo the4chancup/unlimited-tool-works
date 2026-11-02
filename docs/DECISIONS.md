@@ -15201,3 +15201,18 @@ Why: a member on "natural" scrolling reads wheel down as more. One switch read w
 are counted reaches every control, the shared libs' included; a setting per tool would let two
 windows of the suite disagree.
 Plan: `plans/core/gui.md` "The wheel over a value", ST-WHEEL-06; `plans/team_compiler/settings.md`.
+
+## 2026-11-02 — save_editor — Live AATF's heads in two tones, its names coded, a copy button
+Decision (the maintainer, from renders of the draft against the app): a group's head is
+`Player <id>` in the weak colour, then the number and name in the strong text, the name in its
+colour codes, a hyphen between the id, the number and the name (`Player 71808 - 8 - PARTY
+HARD`, the hyphens weak like the id); `Team-wide issues` and the team header in the strong
+text, the header's name coded
+too; the player's number in the body font; one group per player, errors before warnings, in
+every list of a team's issues and its copied text; Live AATF gets Multi-team AATF's Copy to
+clipboard, left of the dock's pop-out icon and under the window's close button, copying the list
+as it shows (suggestions included while shown).
+Why: the draft and the app had drifted (white heads against grey, coded names against plain, a
+head repeated per severity); the grey id keeps the head quiet and the coded name finds the player
+as the list shows him. A member who does not want the suggestions copied turns them off.
+Plan: `plans/save_editor.md`, the `violations` widget's paragraph and "Live AATF"; SE-GUI-63.

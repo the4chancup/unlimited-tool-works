@@ -3885,16 +3885,7 @@ function multiAatfText(results) {
     if (!rows) continue;
     lines.push(">" + team.id + " " + displayName(team.name));
     if (!rows.length) lines.push("  All clean");
-    let lastPid = null;
-    for (const [sev, , pid, rule, fields] of rows) {
-      if (pid !== lastPid) {
-        const p = team.players.find(q => q.id === pid);
-        lines.push("  " + (pid ? pid + " " + displayName(p ? p.name : "") : "Team-wide issues"));
-        lastPid = pid;
-      }
-      lines.push("    " + sev + "  " + ruleName(rule) + "  " + violationSentence(rule, kvOf(fields), sev));
-      for (const d of violationDetail(rule, kvOf(fields), team)) lines.push("      " + d);
-    }
+    lines.push(...teamTextLines(team, rows));
   }
   return lines.join("\n");
 }
@@ -3927,15 +3918,12 @@ function drawMultiAatf() {
   for (const { team, rows } of sampled) {
     list.append(h("div", { class: "grp" }, team.id + " ", ...nameSpans(team.name)));
     if (!rows.length) list.append(h("div", { class: "drow weak" }, "All clean"));
-    let lastPid = null;
-    for (const [sev, , pid, rule, fields] of rows) {
-      if (pid !== lastPid) {
-        list.append(pid ? playerHead(pid) : h("div", { class: "grp weak" }, "Team-wide issues"));
-        lastPid = pid;
-      }
-      list.append(h("div", { class: "drow " + (sev === "Error" ? "err" : "warn") },
-        h("span", { class: "f" }, ruleName(rule)), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))),
-        ...detailRows(rule, fields, team));
+    for (const [pid, group] of issueGroups(rows, team)) {
+      list.append(pid ? playerHead(pid) : h("div", { class: "grp" }, "Team-wide issues"));
+      for (const [sev, , , rule, fields] of group)
+        list.append(h("div", { class: "drow " + (sev === "Error" ? "err" : "warn") },
+          h("span", { class: "f" }, ruleName(rule)), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))),
+          ...detailRows(rule, fields, team));
     }
   }
   const summary = weak(results.length + (results.length === 1 ? " team" : " teams") + " checked, "
@@ -6706,15 +6694,43 @@ function jumpToCross(teamId, pid, kv) {
   S.tac.formation = fieldedFormations(pre)
     .find(f => pre.formations[f].players[i].position === kv.position) ?? 0;
 }
-// A panel row's player header: the id plus, as the player list draws them,
-// his shirt number and colour-coded name. A player the page holds no record
-// for (the picked save's) keeps the bare id.
+// A panel row's player header, `Player <id> - <number> - <name>`: the id and
+// the hyphens in the weak grey, then, as the player list draws them, his shirt
+// number and colour-coded name in the strong text, the number in the body
+// font as the rest of the line. A player the page holds no record for (the
+// picked save's) keeps the bare id.
 function playerHead(pid) {
   const p = curSave().teams.flatMap(t => t.players).find(q => q.id === pid);
-  if (!p) return h("div", { class: "grp weak" }, "Player " + pid);
-  return h("div", { class: "grp weak" },
-    "Player " + pid + "  ", h("span", { class: "mono" }, String(p.number)),
-    " ", h("span", {}, ...nameSpans(p.name)));
+  if (!p) return h("div", { class: "grp" }, weak("Player " + pid));
+  return h("div", { class: "grp" },
+    weak("Player " + pid + " -"), " " + p.number + " ", weak("-"), " ",
+    h("span", {}, ...nameSpans(p.name)));
+}
+// A team's rows in the lists' order, the widget's issue_groups: the team's
+// own rows first, then one group per player by roster slot, each group's
+// errors before its warnings (a stable sort keeps the check's order inside a
+// severity). Every list of a team's rows walks it, its copied text included.
+function issueGroups(rows, team) {
+  const slotOf = pid => { const p = team && team.players.find(q => q.id === pid); return p ? p.slot : 0; };
+  const rank = { Error: 0, Warning: 1, Suggestion: 2 };
+  const pids = [...new Set(rows.map(r => r[2] || 0))]
+    .sort((a, b) => (a ? 1 : 0) - (b ? 1 : 0) || slotOf(a) - slotOf(b));
+  return pids.map(pid => [pid, rows.filter(r => (r[2] || 0) === pid)
+    .sort((a, b) => rank[a[0]] - rank[b[0]])]);
+}
+// A team's rows as text, one line per group's head and per row, indented as
+// Multi-team AATF's copy has them.
+function teamTextLines(team, rows) {
+  const lines = [];
+  for (const [pid, list] of issueGroups(rows, team)) {
+    const p = pid && team.players.find(q => q.id === pid);
+    lines.push("  " + (pid ? pid + " " + displayName(p ? p.name : "") : "Team-wide issues"));
+    for (const [sev, , , rule, fields] of list) {
+      lines.push("    " + sev + "  " + ruleName(rule) + "  " + violationSentence(rule, kvOf(fields), sev));
+      for (const d of violationDetail(rule, kvOf(fields), team)) lines.push("      " + d);
+    }
+  }
+  return lines;
 }
 
 // Panel state: one floating window at a time.
@@ -7477,7 +7493,7 @@ function livePanel() {
   const close = button("✕", () => { setLive(false); render(); }, { frame0: true, title: "Turn Live AATF off" });
   close.id = "live-close";
   const header = h("div", { class: "live-header", id: "live-header" }, chevron, strong("Live AATF"),
-    ...liveHeadline(), h("span", { class: "grow" }), h("span", { class: "live-caps" }, popOut, close));
+    ...liveHeadline(), h("span", { class: "grow" }), h("span", { class: "live-caps" }, liveCopy(), popOut, close));
   if (LIVE.collapsed) return h("div", { class: "live-panel", "data-panel": "live-aatf" }, header);
   const body = liveList(false);
   body.style.height = LIVE.height + "px";
@@ -7505,7 +7521,7 @@ function liveWindow() {
   const win = h("div", { class: "panel live-win", id: "live-window", "data-panel": "live-aatf-window", style: place },
     h("div", { class: "title", onmousedown: e => { if (!e.target.closest("button")) startLiveDrag(e, win); } },
       h("span", { class: "title-text" }, "Live AATF"), dock, close),
-    h("div", { class: "live-header" }, ...liveHeadline()),
+    h("div", { class: "live-header" }, ...liveHeadline(), h("span", { class: "grow" }), liveCopy()),
     liveList(true));
   new ResizeObserver(() => {
     if (!win.isConnected) return;
@@ -7556,32 +7572,56 @@ function liveList(oneColumn) {
       title: rule === "FieldedNotA" ? "Click to show him on the team's pitch" : pid ? "Click to switch to this player" : null },
       h("span", { class: "f" }, ruleName(rule)), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))),
     ...detailRows(rule, fields, t)];
-  // A column's rows under their players' heads, a head again wherever the
-  // player changes (errors come before warnings, so a player can head twice).
-  const column = list => {
+  // A column of players' groups, each under its player's head.
+  const column = groups => {
     const col = h("div", { class: "lcol" });
-    let lastPid = null;
-    for (const r of list) {
-      if (r[2] !== lastPid) { col.append(playerHead(r[2])); lastPid = r[2]; }
-      col.append(...rowEls(r));
-    }
+    for (const [pid, list] of groups) col.append(playerHead(pid), ...list.flatMap(rowEls));
     return col;
   };
+  // The team's line heads the list while it has an error or a warning.
+  if (t && rows.some(r => r[0] !== "Suggestion"))
+    body.append(h("div", { class: "grp" }, "Team " + t.id + " ", ...nameSpans(t.name)));
   for (const [title, section] of [[null, rows.filter(r => r[0] !== "Suggestion")],
                                   ["Suggestions", rows.filter(r => r[0] === "Suggestion")]]) {
     if (!section.length) continue;
     if (title) body.append(h("div", { class: "grp" }, title));
     // The team's own rows first: a team-wide issue (a formation, a count of
     // players) is the cup's first concern, ahead of any one player's.
-    const own = section.filter(r => !r[2]);
-    if (own.length) body.append(h("div", { class: "grp weak" }, "Team-wide issues"), ...own.flatMap(rowEls));
-    const players = section.filter(r => r[2]);
+    const groups = issueGroups(section, t);
+    for (const [, list] of groups.filter(([pid]) => !pid))
+      body.append(h("div", { class: "grp" }, "Team-wide issues"), ...list.flatMap(rowEls));
+    const players = groups.filter(([pid]) => pid);
     if (players.length && oneColumn) body.append(column(players));
     else if (players.length) body.append(h("div", { class: "lcols" },
-      column(players.filter(r => starters.has(slotOf(r[2])))),
-      column(players.filter(r => !starters.has(slotOf(r[2]))))));
+      column(players.filter(([pid]) => starters.has(slotOf(pid)))),
+      column(players.filter(([pid]) => !starters.has(slotOf(pid))))));
   }
   return body;
+}
+// Copy to clipboard, as Multi-team AATF's: the list as it shows, as text, its
+// suggestions too while Show suggestions is on (a member who wants them out
+// switches them off). A header line names the ruleset and counts the issues,
+// as the count line does. Disabled while the list holds no row.
+function liveText() {
+  const t = LIVE.result.team, rows = LIVE.result.rows || [];
+  const issues = rows.filter(r => r[0] !== "Suggestion");
+  const suggestions = rows.filter(r => r[0] === "Suggestion");
+  const n = (sev, word) => { const k = issues.filter(r => r[0] === sev).length;
+    return k + " " + word + (k === 1 ? "" : "s"); };
+  const lines = [RULESETS[D.ruleset].label + ", team " + t.id + " " + displayName(t.name) + ": "
+    + n("Error", "error") + ", " + n("Warning", "warning"), ...teamTextLines(t, issues)];
+  if (suggestions.length) lines.push("Suggestions", ...teamTextLines(t, suggestions));
+  return lines.join("\n");
+}
+function liveCopy() {
+  const res = LIVE.result;
+  const b = button("Copy to clipboard", () => {
+    if (navigator.clipboard) navigator.clipboard.writeText(liveText()).catch(() => {});
+    publishNotice("Copied the Live AATF list of " + res.team.id + " " + displayName(res.team.name) + ".",
+      null, "success");
+  }, { disabled: !(res && res.rows && res.rows.length) });
+  b.id = "live-copy";
+  return b;
 }
 
 // ---- Apply aesthetics patch (SE-GUI-18) ----
