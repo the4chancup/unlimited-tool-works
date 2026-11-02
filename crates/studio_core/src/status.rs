@@ -51,6 +51,19 @@ impl ShellCondition {
             ShellCondition::UpdateAvailable { .. } => "A newer release is out".to_owned(),
         }
     }
+
+    /// The one action a condition may carry beside its text and tooltip: the
+    /// offer's Details opens the update dialog. A condition without one draws
+    /// text only.
+    pub(crate) fn action(&self) -> Option<NoticeAction> {
+        match self {
+            ShellCondition::UpdateAvailable { .. } => Some(NoticeAction {
+                label: "Details".to_owned(),
+                effect: ActionEffect::OpenUpdateDetails,
+            }),
+            ShellCondition::DataDirReadOnly => None,
+        }
+    }
 }
 
 /// What a tool is doing in the background (right slot), shown while a different tool's view is
@@ -132,6 +145,10 @@ pub enum ActionEffect {
     /// written, the running-PES auto-switch spent, the settings saved. Disabled while a tool
     /// reports a version-change blocker, its hover the selector's reason.
     SwitchVersion(PesVersion),
+    /// Open the update offer's Details dialog: the shell's own action, as
+    /// `FixPesPath` is (the release it shows is the shell's state, so no tool
+    /// has a reason to publish it).
+    OpenUpdateDetails,
     /// Point the PES folder at the folder a running PES exe lives in, the main row or the
     /// version's own entry once any exists (the shell's own action — no tool has a reason
     /// to publish it): the sidebar's auto-switch notice offers it when the running game
