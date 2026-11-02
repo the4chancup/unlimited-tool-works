@@ -61,13 +61,16 @@ jobs:
             target/dist/*-linux.tar.gz
             target/dist/*-linux.tar.gz.sha256
           if-no-files-found: error
-      # The exe and its .pdb, never a release asset: they stay with the maintainer, who keeps a
-      # copy past the artifact's 90 days for symbolize_log.py.
-      - if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v7
+      # The symbols, never a release asset: Windows' exe and .pdb, Linux's utw.debug (the debug
+      # info the recipe strips from the shipped binary). They stay with the maintainer, who keeps
+      # a copy past the artifact's 90 days to name a posted log's frames. Each job packs one of
+      # the two names, so the other matches nothing; none at all fails the step.
+      - uses: actions/upload-artifact@v7
         with:
-          name: symbols-Windows
-          path: target/dist/*-symbols.7z
+          name: symbols-${{ runner.os }}
+          path: |
+            target/dist/*-symbols.7z
+            target/dist/*-linux-symbols.tar.gz
           if-no-files-found: error
           retention-days: 90
 
