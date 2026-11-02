@@ -3050,3 +3050,5 @@ worklog passed 7,000 lines.
   build is allowed for a program needed now (a quick tool, a manual-check build; the maintainer).
 - 2026-11-02 — Gate 0, `just line-endings`: a tracked file whose working copy has other line endings than
   .gitattributes asks fails the gates (ten CRLF copies had built up from Python's text-mode writes; the maintainer).
+- 2026-11-02 — 0.0.1f1f done: Ctrl+C/Ctrl+V on rows and the Tactics selectors, undo runs, Tab + Space settling, the
+  page keys, one-step arrows, two copies at once, the captain's choice card; candidate fast-forwarded to `92d1772b`.
