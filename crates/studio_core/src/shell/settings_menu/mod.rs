@@ -28,9 +28,10 @@ use crate::widgets::{
 
 use super::sidebar::{SETTINGS_LABEL, Sidebar, exe_tooltip, version_blocker, version_label};
 
-/// The modal's width, the draft's `.settings-body`, which the common grid's
-/// widest row (the label column, the path edit and Browse) fits.
-const WIDTH: f32 = 660.0;
+/// The modal's width: what the common grid's widest row (the label column,
+/// the path edit and Browse) fits; the draft's `.settings-body` was 660, under
+/// what the label column needs since the update check's rows.
+const WIDTH: f32 = 676.0;
 
 /// The menu's state across frames: whether it is open, the tool the next drawn frame
 /// expands, the "A folder per version" toggle's member-set half, and the path rows'
@@ -379,9 +380,48 @@ impl SettingsMenu {
                 }
                 ui.end_row();
 
-                // The update check's two rows wait for the updater that reads the
-                // keys. Drawn now, a checkbox a member switches off would change
-                // nothing.
+                let updates = row_label(
+                    ui,
+                    "Check for updates",
+                    "check_for_updates",
+                    "Whether the shell looks for new releases.",
+                );
+                let mut on = common.check_for_updates;
+                if checkbox_without_text(ui, &mut on)
+                    .labelled_by(updates.id)
+                    .changed()
+                {
+                    common.check_for_updates = on;
+                    changed = true;
+                }
+                ui.end_row();
+
+                let interval = row_label(
+                    ui,
+                    "Check interval (minutes)",
+                    "check_interval_minutes",
+                    "Minutes between release checks.",
+                );
+                let mut minutes = common.check_interval_minutes;
+                // The interval is off while the check is, as the draft draws it;
+                // typed minutes clamp to at least 1 (the drag clamps entry only,
+                // as the rows above).
+                let mut response = add_enabled(
+                    ui,
+                    common.check_for_updates,
+                    egui::DragValue::new(&mut minutes)
+                        .range(1..=u32::MAX)
+                        .clamp_existing_to_range(false),
+                )
+                .labelled_by(interval.id);
+                if step_number(&mut minutes, wheel_steps(ui, &response), 1..=u32::MAX) {
+                    response.mark_changed();
+                }
+                if response.changed() {
+                    common.check_interval_minutes = minutes;
+                    changed = true;
+                }
+                ui.end_row();
             });
         if changed {
             ctx.settings().lock().unwrap().common = common;

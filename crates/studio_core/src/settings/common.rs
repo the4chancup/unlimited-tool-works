@@ -48,8 +48,8 @@ pub struct CommonSettings {
     pub invert_value_scrolling: bool,
     /// Whether the shell looks for new releases.
     pub check_for_updates: bool,
-    /// Hours between release checks.
-    pub check_interval_hours: u32,
+    /// Minutes between release checks.
+    pub check_interval_minutes: u32,
     /// When the last release check ran, in seconds since the Unix epoch.
     pub last_update_check: Option<u64>,
     /// A release the user chose to skip; the updater stays quiet about it.
@@ -78,7 +78,7 @@ impl Default for CommonSettings {
             theme: Theme::Dark,
             invert_value_scrolling: false,
             check_for_updates: true,
-            check_interval_hours: 24,
+            check_interval_minutes: 120,
             last_update_check: None,
             skipped_version: None,
             last_tool: None,
@@ -585,7 +585,7 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
     // The defaults the spec pins: `spec/team_compiler/settings.md`'s "Common
     // settings (studio_core)" table (version 19, the `20**` folder, `exports/`,
     // 0 auto threads, 80.0, the update check) and `spec/core/distribution.md`'s
-    // "Update state" table (`check_for_updates` true, `check_interval_hours` 24,
+    // "Update state" table (`check_for_updates` true, `check_interval_minutes` 120,
     // `last_update_check` and `skipped_version` empty). `theme` is the dark
     // preset, the default the GUI phase plans, `last_tool` empty on a first
     // run, `window_main` empty until the first close. The hide IDs are the FPC
@@ -610,7 +610,7 @@ pes_folder_path = '/games/Pro Evolution Soccer 20**'
                 theme: Theme::Dark,
                 invert_value_scrolling: false,
                 check_for_updates: true,
-                check_interval_hours: 24,
+                check_interval_minutes: 120,
                 last_update_check: None,
                 skipped_version: None,
                 last_tool: None,

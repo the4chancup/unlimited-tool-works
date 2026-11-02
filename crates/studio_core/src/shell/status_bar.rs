@@ -138,11 +138,10 @@ impl StatusBar {
         monitor_of: impl FnOnce(&egui::ViewportInfo, f32) -> Option<egui::Rect>,
     ) -> Option<ActionEffect> {
         self.expire(ui);
-        let mut effect = None;
         let mut dismissed = false;
         let bar = ui.max_rect();
         let spacing = ui.spacing().item_spacing.x;
-        let left_right = self.left_slot(ui, monitor_of);
+        let (left_right, mut effect) = self.left_slot(ui, monitor_of);
         // Right: the other tools' activities, at their text's width capped at a third
         // of the bar (an activity line is short; the cap keeps a long one from taking
         // the notice's room), packed against the right edge and truncating past the
@@ -241,6 +240,7 @@ impl StatusBar {
                                     ActionEffect::OpenFolder(_)
                                     | ActionEffect::OpenSettings
                                     | ActionEffect::OpenHelp(_)
+                                    | ActionEffect::OpenUpdateDetails
                                     | ActionEffect::SwitchTool(_)
                                     | ActionEffect::FixPesPath { .. } => None,
                                 };
@@ -276,54 +276,87 @@ impl StatusBar {
 
     /// The left slot: the version, always, then the Reset window button while
     /// the window sits off the main class's fitted design size, then one
-    /// icon-and-text entry per held condition, each carrying its tooltip.
-    /// Returns the content's right edge, the middle slot's left bound.
+    /// icon-and-text entry per held condition, each carrying its tooltip and at
+    /// most one action: a `link` condition's text in the link blue, clickable
+    /// with the pointing-hand cursor as its action's button is, both returning
+    /// the action's effect. A condition without an action draws text only.
+    /// Returns the content's right edge (the middle slot's left bound) and a
+    /// clicked condition action's effect, if any.
     fn left_slot(
         &self,
         ui: &mut egui::Ui,
         monitor_of: impl FnOnce(&egui::ViewportInfo, f32) -> Option<egui::Rect>,
-    ) -> f32 {
+    ) -> (f32, Option<ActionEffect>) {
         let (viewport, screen_rect) =
             ui.input(|input| (input.viewport().clone(), input.raw.screen_rect));
         let zoom = ui.ctx().zoom_factor();
-        ui.horizontal(|ui| {
-            ui.label(
-                egui::RichText::new(crate::shell::version_label())
-                    .small()
-                    .weak(),
-            );
-            if window_size::off_design_size(&viewport, screen_rect, zoom, window_size::DEFAULT_SIZE)
-            {
-                let reset = ui
-                    .add(
-                        egui::Button::new(egui::RichText::new("Reset window").small().weak())
-                            .frame(false),
-                    )
-                    .on_hover_text("Back to the default window size, centred on its monitor");
-                if reset.clicked() {
-                    window_size::reset(ui.ctx(), &viewport, monitor_of(&viewport, zoom));
+        let mut effect = None;
+        let right = ui
+            .horizontal(|ui| {
+                ui.label(
+                    egui::RichText::new(crate::shell::version_label())
+                        .small()
+                        .weak(),
+                );
+                if window_size::off_design_size(
+                    &viewport,
+                    screen_rect,
+                    zoom,
+                    window_size::DEFAULT_SIZE,
+                ) {
+                    let reset = ui
+                        .add(
+                            egui::Button::new(egui::RichText::new("Reset window").small().weak())
+                                .frame(false),
+                        )
+                        .on_hover_text("Back to the default window size, centred on its monitor");
+                    if reset.clicked() {
+                        window_size::reset(ui.ctx(), &viewport, monitor_of(&viewport, zoom));
+                    }
                 }
-            }
-            for condition in &self.conditions {
-                // The labels are not selectable: a selectable label senses click+drag and
-                // would shadow the entry's own `hovered`, keeping the tooltip shut.
-                ui.horizontal(|ui| {
-                    ui.add(egui::Label::new(condition.icon()).selectable(false));
-                    ui.add(
-                        egui::Label::new(condition.text())
-                            .truncate()
-                            // The elided label's own "full text" tooltip would
-                            // mask the entry's, which explains the condition.
-                            .show_tooltip_when_elided(false)
-                            .selectable(false),
-                    );
-                })
-                .response
-                .on_hover_text(condition.tooltip());
-            }
-            ui.min_rect().right()
-        })
-        .inner
+                for condition in &self.conditions {
+                    let action = condition.action();
+                    // The labels are not selectable: a selectable label senses click+drag and
+                    // would shadow the entry's own `hovered`, keeping the tooltip shut.
+                    ui.horizontal(|ui| {
+                        ui.add(egui::Label::new(condition.icon()).selectable(false));
+                        let text = egui::RichText::new(condition.text());
+                        let response = match action {
+                            Some(_) => ui
+                                .add(
+                                    egui::Label::new(text.color(ui.visuals().hyperlink_color))
+                                        .truncate()
+                                        // The elided label's own "full text" tooltip
+                                        // would mask the entry's, which explains the
+                                        // condition.
+                                        .show_tooltip_when_elided(false)
+                                        .selectable(false)
+                                        .sense(egui::Sense::click()),
+                                )
+                                .on_hover_cursor(egui::CursorIcon::PointingHand),
+                            None => ui.add(
+                                egui::Label::new(text)
+                                    .truncate()
+                                    .show_tooltip_when_elided(false)
+                                    .selectable(false),
+                            ),
+                        };
+                        if response.clicked() {
+                            effect = action.as_ref().map(|action| action.effect.clone());
+                        }
+                        if let Some(action) = &action
+                            && ui.button(&action.label).clicked()
+                        {
+                            effect = Some(action.effect.clone());
+                        }
+                    })
+                    .response
+                    .on_hover_text(condition.tooltip());
+                }
+                ui.min_rect().right()
+            })
+            .inner;
+        (right, effect)
     }
 }
 
