@@ -15115,3 +15115,14 @@ every start, before the window shows, where Direct3D 12 and OpenGL start every t
 crash cannot be caught, so the only fix is not asking for Vulkan. Direct3D 12 is the
 interface Windows 10 and 11 drivers are built and tested against first.
 Plan: `plans/core/gui.md` "The graphics backend"; WORKLOG 0.0.1f1e4.
+
+## 2026-11-02 — dds_convert — A driver that crashes the GPU encoder is found by a child-process probe
+Decision (maintainer): before a compile first starts the GPU BC7 encoder on an adapter, the exe
+probes it in a hidden child process (device, pipelines, one block); a crash, a failed exit or a
+timeout turns the GPU off for that adapter and driver version, kept in the data folder, so a
+driver update probes again.
+Why: a Vulkan driver can report full support and then crash the process inside an ordinary
+call (the clean-machine check's Intel HD Graphics 620 does in `Device::new`), which no error
+handling reaches; a list of known bad drivers covers only those already seen. The probe's
+pipeline build also warms the driver's shader cache.
+Plan: `plans/libs/README.md` "First-release desktop GPU BC7"; WORKLOG 0.0.1f6.
