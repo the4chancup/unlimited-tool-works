@@ -125,11 +125,12 @@ static C runtime on Windows, the listing equal to the staged set), then:
 Each job also uploads its symbols archive (Windows' `-symbols.7z`, the exe and its `.pdb`;
 Linux's `-linux-symbols.tar.gz`, `utw.debug`) as a run artifact, never a release asset: it stays with the maintainer, who keeps a copy beside the
 release's other files, since artifacts expire after 90 days and `symbolize_log.py` needs it for
-as long as the release is in use. The test pre-releases (`v0.0.1-rc.1`, `rc.2`, built from a
-branch whose workspace version is bumped to theirs) are published as pre-releases so the
-updater can see them (a draft is invisible to its unauthenticated request); semver orders them
-below `0.0.1`, which never offers them. They are the only release candidates ever published,
-while no member has a release yet: later ones stay drafts, since they are not for members. The Linux bundle's look runs in WSLg (Ubuntu 22.04 on the
+as long as the release is in use. Before 0.0.1's tag, one test tag `v0.0.1-rc.1`, pushed from a
+branch whose workspace version is bumped to it, runs the release job once: its draft
+pre-release's three assets and their checksums are checked, then the draft and the tag are
+deleted. No release candidate is published: a published pre-release is offered to every
+member whose version it outranks (the check reads pre-releases), so how 0.0.2 tests Update now
+end to end (ST-UPD-04) is 0.0.2's to settle. The Linux bundle's look runs in WSLg (Ubuntu 22.04 on the
 maintainer's PC) before a release is published.
 
 The user extracts the archive anywhere and runs the binary — or, for the common case, drops an
@@ -191,9 +192,10 @@ release checking, download/verification, and binary replacement; `studio` separa
 `teams_list`'s parse/reconcile logic for teams-list reconciliation. Core knows neither
 teams-list/team-ID semantics nor team-format types. No plugin hook or new updater framework is
 needed. This is desktop-only (`#[cfg(not(target_arch = "wasm32"))]`); the browser build updates
-server-side. 0.0.1 ships steps 1, 2, 3, 4 and 6, in the window only: *Update now* has to be in
-the version updated from, or a 0.0.1 never updates itself. 0.0.2 adds the command line's notice
-and rollback (the rollback lives in the newer exe); step 5 and the `update` subcommand come with
+server-side. 0.0.1 ships steps 1 and 2, in the window only, its dialog's **Update now** drawn
+disabled with the hover "The auto-updater comes with 0.0.2": a 0.0.1
+member downloads 0.0.2 by hand, once. 0.0.2 adds steps 3, 4 and 6 (ST-UPD-03, ST-UPD-04),
+the command line's notice and rollback (the rollback lives in the newer exe); step 5 and the `update` subcommand come with
 the Team compiler. The HTTP client is `ureq` pinned to `=3.5.0` (default features off,
 `rustls-no-provider` and `platform-verifier`, `rustls` on `ring` handed to it as the crypto
 provider, the system's certificate store, no gzip, a `User-Agent`): `rustls-no-provider` may
