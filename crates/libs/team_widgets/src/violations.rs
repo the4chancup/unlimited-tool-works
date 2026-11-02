@@ -548,6 +548,11 @@ fn group_header(ui: &mut egui::Ui, team: &TeamViolations<'_>, slot: Option<u8>) 
 /// preview's items, so every such row says the same.
 pub const SWITCH_TOOLTIP: &str = "Click to switch to this player";
 
+/// The tooltip of a `Fielded position` row, a player's whose click lands
+/// on his team's row with the named preset shown rather than on his
+/// record, so it says where the click goes instead of `SWITCH_TOOLTIP`.
+const FIELDED_TOOLTIP: &str = "Click to show him on the team's pitch";
+
 /// The rule name's column, the draft's `.f`: 190 points of proportional text,
 /// cut with an ellipsis when longer, never wrapping.
 pub const RULE_COL: f32 = 190.0;
@@ -588,9 +593,9 @@ fn layout(
 /// `violation_detail`'s lines (the draft's `.drow.detail`) over `players`, the
 /// team's, in the plain text color, wrapped in the same column; the whole row
 /// one click target. While `selects`, a player's row returns
-/// `SelectedPlayer` on click and its tooltip is `SWITCH_TOOLTIP`; a team
-/// row, or any row of a list that does not select, only hovers, with no
-/// tooltip.
+/// `SelectedPlayer` on click and its tooltip is `SWITCH_TOOLTIP`, a
+/// `Fielded position` row's `FIELDED_TOOLTIP`; a team row, or any row of
+/// a list that does not select, only hovers, with no tooltip.
 fn row(
     ui: &mut egui::Ui,
     team_id: u32,
@@ -670,10 +675,17 @@ fn row(
         label.push_str("; ");
         label.push_str(line);
     }
-    // Only a row that switches players says so. A team-wide row selects
-    // nothing and its group's heading already says what it is, and a
-    // report's rows select nothing either.
-    let hover = select.map(|_| SWITCH_TOOLTIP);
+    // Only a row that switches players says so, a `Fielded position`
+    // row's naming where its click lands instead. A team-wide row
+    // selects nothing and its group's heading already says what it is,
+    // and a report's rows select nothing either.
+    let hover = select.map(|_| {
+        if fielded.is_some() {
+            FIELDED_TOOLTIP
+        } else {
+            SWITCH_TOOLTIP
+        }
+    });
     let mut shapes = vec![
         egui::Shape::galley(rect.min + egui::vec2(name_x, 0.0), rule_galley, rule_color),
         egui::Shape::galley(
@@ -3013,6 +3025,74 @@ mod tests {
                 slot: 3,
                 fielded: None,
             })
+        );
+    }
+
+    /// A `Fielded position` row's click opens his team's row on the named
+    /// preset, not his record, so its tooltip says where the click goes;
+    /// another player's row's keeps `Click to switch to this player`.
+    // SE-GUI-30
+    #[test]
+    fn a_fielded_row_hovers_where_its_click_goes() {
+        let violations = [
+            violation(
+                Some(3),
+                aatf::Severity::Error,
+                aatf::ViolationKind::FieldedNotA {
+                    preset: 1,
+                    position: position("AMF"),
+                    rated_a: vec![position("SS")],
+                },
+            ),
+            violation(
+                Some(3),
+                aatf::Severity::Error,
+                aatf::ViolationKind::Height {
+                    height: 185,
+                    fits: vec![],
+                    room: false,
+                },
+            ),
+        ];
+        let players = [listed(3, 70103, 3, "NAME")];
+        let teams = [TeamViolations {
+            team_id: 701,
+            team_name: "/3/",
+            players: &players,
+            violations: &violations,
+            starting_eleven: &[],
+        }];
+        let mut window = Headless::new();
+        let (nodes, _, _) = window.list(&teams, false, vec![]);
+        let fielded_row = nodes
+            .iter()
+            .find(|node| {
+                node.role() == Role::Button
+                    && node.label()
+                        == Some(
+                            "Fielded position: fielded at AMF in preset 1 without an A \
+                             rating (rated A at SS)",
+                        )
+            })
+            .expect("the Fielded position row")
+            .clone();
+        let height_row = nodes
+            .iter()
+            .find(|node| {
+                node.role() == Role::Button
+                    && node.label() == Some("Height: height 185 takes no bracket")
+            })
+            .expect("the Height row")
+            .clone();
+        assert_eq!(
+            hover_texts(&mut window, &teams, centre(&fielded_row)),
+            ["Click to show him on the team's pitch"],
+            "a Fielded position row"
+        );
+        assert_eq!(
+            hover_texts(&mut window, &teams, centre(&height_row)),
+            ["Click to switch to this player"],
+            "another row of the same player's"
         );
     }
 
