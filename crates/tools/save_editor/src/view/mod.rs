@@ -83,9 +83,9 @@ pub(crate) struct SaveView {
     filter: String,
     /// The selected row.
     selected: Option<Selection>,
-    /// A page key moved the selection, or a team row's double click showed
-    /// that team alone: the list scrolls to the selected row on the next
-    /// draw, then clears this.
+    /// A page or arrow key moved the selection, or a team row's double
+    /// click showed that team alone: the list scrolls to the selected row
+    /// on the next draw, then clears this.
     reveal_selected: bool,
     /// The team view's Tactics state (`team_widgets`' `TacticsView`:
     /// the preset its panels edit, the formation its lists show, the
@@ -914,6 +914,29 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
             }
         })
     };
+    // Up and Down walk every row, the team rows too, so they wait for no
+    // widget to hold the keyboard, where the page keys act from any
+    // field: a focused number steps with them and a text field moves its
+    // cursor, and an open popup (a menu's, a combo's) navigates itself
+    // with them. The modal and gesture gates are the page keys'.
+    let arrow_step = if modal_up
+        || gesture
+        || view.session.is_none()
+        || ui.ctx().memory(|memory| memory.focused()).is_some()
+        || egui::Popup::is_any_open(ui.ctx())
+    {
+        None
+    } else {
+        ui.input_mut(|input| {
+            if input.consume_key(egui::Modifiers::NONE, egui::Key::ArrowDown) {
+                Some(true)
+            } else if input.consume_key(egui::Modifiers::NONE, egui::Key::ArrowUp) {
+                Some(false)
+            } else {
+                None
+            }
+        })
+    };
     let end = studio_core::widgets::toolbar(ui, |ui| {
         open_menu::show(ui, view);
         if add_enabled(ui, view.session.is_some(), egui::Button::new("Save")).clicked() || save_key
@@ -1003,13 +1026,18 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         open_menu::open_shortcut(view, shortcut);
     }
     if let Some(forward) = page_step
-        && player_list::step_player(view, forward)
+        && player_list::step_selection(view, forward, player_list::StepRows::Players)
     {
         // The field gives up the keyboard once the selection moved: its
         // gesture ends as one undo entry on the player it edited, and the
         // next player's field does not inherit the focus and merge his
         // edits into that entry. A key that moved nothing leaves it be.
         surrender_focus(ui);
+        view.reveal_selected = true;
+    }
+    if let Some(forward) = arrow_step
+        && player_list::step_selection(view, forward, player_list::StepRows::EveryRow)
+    {
         view.reveal_selected = true;
     }
     end

@@ -161,7 +161,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     });
     let session = view.session.as_mut().expect("checked above");
     let rows = selection::list(session.file(), &view.team, &view.filter);
-    // A page key moved the selection: its row's index, scrolled to below.
+    // A page or arrow key moved the selection: its row's index, scrolled
+    // to below.
     let reveal = std::mem::take(&mut view.reveal_selected)
         .then(|| {
             rows.iter()
@@ -274,27 +275,41 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     frame_right
 }
 
-/// Selects the player row after the selected row in the list as drawn
-/// (the team selector and the filter applied), or the one before it when
-/// `forward` is false. Team rows are skipped; at either end of the list,
-/// or with the selection not in it, nothing moves. Answers whether the
-/// selection moved.
-pub(super) fn step_player(view: &mut SaveView, forward: bool) -> bool {
+/// Which of the list's rows a `step_selection` walk counts.
+#[derive(Clone, Copy)]
+pub(super) enum StepRows {
+    /// Player rows only, the team rows skipped: the page keys' walk.
+    Players,
+    /// Every row as drawn, the team rows too: the arrow keys' walk.
+    EveryRow,
+}
+
+/// Selects the row after the selected row in the list as drawn (the team
+/// selector and the filter applied), or the one before it when `forward`
+/// is false. `rows` says which rows the walk counts: `StepRows::Players`
+/// skips the team rows, `StepRows::EveryRow` counts them, so the walk can
+/// land on a team's row and select it as a click does. At either end of
+/// the list, or with the selection not in it, nothing moves. Answers
+/// whether the selection moved.
+pub(super) fn step_selection(view: &mut SaveView, forward: bool, rows: StepRows) -> bool {
     let (Some(session), Some(selected)) = (view.session.as_ref(), view.selected) else {
         return false;
     };
-    let rows: Vec<Selection> = selection::list(session.file(), &view.team, &view.filter)
+    let drawn: Vec<Selection> = selection::list(session.file(), &view.team, &view.filter)
         .into_iter()
         .map(row_selection)
         .collect();
-    let Some(at) = rows.iter().position(|row| *row == selected) else {
+    let Some(at) = drawn.iter().position(|row| *row == selected) else {
         return false;
     };
-    let player = |row: &&Selection| matches!(row, Selection::Player(..));
+    let counts = |row: &&Selection| match rows {
+        StepRows::Players => matches!(row, Selection::Player(..)),
+        StepRows::EveryRow => true,
+    };
     let next = if forward {
-        rows[at + 1..].iter().find(player)
+        drawn[at + 1..].iter().find(counts)
     } else {
-        rows[..at].iter().rev().find(player)
+        drawn[..at].iter().rev().find(counts)
     };
     let Some(next) = next else {
         return false;
