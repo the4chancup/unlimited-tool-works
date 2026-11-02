@@ -2956,6 +2956,14 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     while a field holds the keyboard (a text field keeps its own copy and paste), and on a
     team row (nothing) → verify: headless, Ctrl+C on one player, Ctrl+V on another writes what
     Copy stats writes; Undo restores him
+  - [ ] 8.46 after 0.0.1 (the maintainer, 2026-11-02): one Up or Down press in a number field
+    that is being edited (Height, a stat) steps it one. Today it changes nothing: egui 0.37's
+    `DragValue` steps a whole-number field by its drag speed, 0.25 (`drag_value.rs` 83-85), and
+    rounds the sum back (512-515), so only four presses in one frame move it. Found by f1e2's
+    test of SE-GUI-52, which sends four. The fix must not change the drag's sensitivity, which
+    the same speed sets: the arrows step as the wheel does (`abilities.rs` `step_number`).
+    Plan sentence first (`plans/save_editor.md` "Editing UI") → verify: headless, one ArrowUp
+    in the edited Height field adds one, and a drag moves it as before
   - [ ] 8.29 the text pass: every line a member reads reread against CONTRIBUTING's "That text
     flows naturally" (the maintainer, 2026-10-25; DECISIONS "Text a member reads flows
     naturally, and every existing line is swept once"), rewritten where it reads dry, its meaning
@@ -6889,6 +6897,14 @@ briefs, review loops, gates and mutation runs as for any step.
       Down walk the player list"; drafted in `save_editor.js` `onKey`) → verify: headless,
       Down from a team's last player selects the next team's row and Up returns; the ends
       stop; a focused number field keeps its arrows; the selected row scrolled into view
+    - [ ] f1e3 (the maintainer, 2026-11-02, same branch): the import's section boxes read
+      Stats, Aesthetics and Gameplan (the cup's words); the free-kick motion imports with
+      Aesthetics, and Copy and Swap stats stop moving it; `[team]` splits, its colours, kit
+      slots and strip flag going with Aesthetics (`plans/save_editor.md` "Interchange formats in the UI" and
+      the inventory's Copy stats row; DECISIONS "The import's sections are Stats, Aesthetics
+      and Gameplan"; drafted in `save_editor.js` `ixWrite`) → verify: headless, the boxes'
+      labels; a Stats-only import leaves the motions, colours and kits as the target's and an
+      Aesthetics-only import writes them; Copy stats leaves the free-kick motion
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over
   - [ ] f3 after the cut, first (the maintainer, 2026-11-01: queued so the 5-hour usage
