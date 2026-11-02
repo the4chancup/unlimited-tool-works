@@ -3048,3 +3048,5 @@ worklog passed 7,000 lines.
   by a second's pause, Undo or a focus move; the suite's wheel rule and the Ruleset editor's plan follow it.
 - 2026-11-02 — PES 15 keeps no fluid formation switch in its saves (the maintainer's save and texports, measured); a third
   build is allowed for a program needed now (a quick tool, a manual-check build; the maintainer).
+- 2026-11-02 — Gate 0, `just line-endings`: a tracked file whose working copy has other line endings than
+  .gitattributes asks fails the gates (ten CRLF copies had built up from Python's text-mode writes; the maintainer).
