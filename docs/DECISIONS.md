@@ -15090,3 +15090,12 @@ key of the export, so it now goes with the looks and the aesthetics lock guards 
 name Stats, the team's colours and kits read as looks, so they go with Aesthetics.
 Plan: `plans/save_editor.md` "Interchange formats in the UI" and the inventory's Copy stats row; WORKLOG
 0.0.1f1e3.
+
+## 2026-11-02 — release — 0.0.1's cut leaves out the size measurement, a terminal check and Astra
+Decision (maintainer): 0.0.1's cut runs without three of its items, each done right after it:
+the `cargo bloat` measurement into the spec, ST-RUN-04's `team-compiler check` from a terminal,
+and Astra's review of the last three changes (f1e to f1e3), which have SWE-2's. The
+clean-machine check runs on the maintainer's notebook through a script that records a report.
+Why: none changes what DBC's managers get: the size is a record, the Team compiler is not part
+of 0.0.1, and the changes still have the review loop's rounds and mutation runs.
+Plan: WORKLOG 0.0.1f2 and f6.
