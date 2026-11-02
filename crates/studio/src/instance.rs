@@ -96,7 +96,8 @@ mod tests {
         file
     }
 
-    // ST-RUN-12: with no copy running, the claim takes slot 1's `utw.lock`.
+    // With no copy running, the claim takes slot 1's `utw.lock`.
+    // ST-RUN-12
     #[test]
     fn the_first_copy_takes_slot_1() {
         let dir = TestDir::new("claim_first");
@@ -111,7 +112,8 @@ mod tests {
         assert!(matches!(probe.try_lock(), Err(TryLockError::WouldBlock)));
     }
 
-    // ST-RUN-12: a second copy skips held slots, taking the first free one.
+    // A second copy skips held slots, taking the first free one.
+    // ST-RUN-12
     #[test]
     fn a_second_copy_takes_the_first_free_slot() {
         let dir = TestDir::new("claim_second");
@@ -123,8 +125,9 @@ mod tests {
         assert_eq!(claim(dir.path()).unwrap().slot(), 2);
     }
 
-    // ST-RUN-12: a lock the system freed when a copy ended is simply free, so the next
+    // A lock the system freed when a copy ended is simply free, so the next
     // start takes slot 1 again.
+    // ST-RUN-12
     #[test]
     fn a_freed_slot_is_taken_again() {
         let dir = TestDir::new("claim_freed");
@@ -135,8 +138,9 @@ mod tests {
         assert_eq!(claim(dir.path()).unwrap().slot(), 1);
     }
 
-    // ST-RUN-12: the slot's `.n` goes after the name's first part, so `utw.old.log`
+    // The slot's `.n` goes after the name's first part, so `utw.old.log`
     // becomes `utw.2.old.log`, not `utw.old.2.log`.
+    // ST-RUN-12
     #[test]
     fn slot_file_name_inserts_the_slot_after_the_first_part() {
         for name in [
@@ -154,8 +158,9 @@ mod tests {
         assert_eq!(slot_file_name("utw.log", 12), "utw.12.log");
     }
 
-    // ST-RUN-12: with every slot held the claim comes back empty, which the log
+    // With every slot held the claim comes back empty, which the log
     // install reports as no log this run.
+    // ST-RUN-12
     #[test]
     fn past_the_cap_no_slot_is_claimed() {
         let dir = TestDir::new("claim_cap");
