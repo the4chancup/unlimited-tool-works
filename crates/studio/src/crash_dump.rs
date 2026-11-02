@@ -524,8 +524,9 @@ mod tests {
         );
     }
 
-    // ST-RUN-12: the monitor's arguments carry the window's slot, and its appended line
+    // The monitor's arguments carry the window's slot, and its appended line
     // goes to that slot's log, not the first copy's `utw.log`.
+    // ST-RUN-12
     #[test]
     fn the_monitor_reads_its_slot_and_appends_to_the_slots_log() {
         let Some(HiddenLaunch::Monitor { slot, .. }) = hidden_launch(&args(&[

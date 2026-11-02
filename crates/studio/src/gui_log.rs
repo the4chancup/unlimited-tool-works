@@ -962,8 +962,9 @@ mod tests {
         );
     }
 
-    // ST-RUN-12: a second copy's start writes `utw.2.log` and leaves the first copy's
+    // A second copy's start writes `utw.2.log` and leaves the first copy's
     // `utw.log` untouched.
+    // ST-RUN-12
     #[test]
     fn a_second_copy_logs_to_its_own_slots_log() {
         let dir = TestDir::new("second_slot_log");
@@ -992,8 +993,9 @@ mod tests {
         drop(first);
     }
 
-    // ST-RUN-12: with no copy running, the claim takes slot 1 and `open_log` writes
+    // With no copy running, the claim takes slot 1 and `open_log` writes
     // `utw.log`, as before.
+    // ST-RUN-12
     #[test]
     fn a_first_copy_logs_to_utw_log() {
         let dir = TestDir::new("first_slot_log");
@@ -1006,9 +1008,10 @@ mod tests {
         );
     }
 
-    // ST-RUN-12: a second copy's unclean-session report reads its own slot's previous
+    // A second copy's unclean-session report reads its own slot's previous
     // log and names `utw.2.old.log`; the first copy's live `utw.log`, holding no closing
     // line either, is not read.
+    // ST-RUN-12
     #[test]
     fn a_second_copy_reports_its_own_slots_previous_session() {
         let dir = TestDir::new("second_slot_unclean");
