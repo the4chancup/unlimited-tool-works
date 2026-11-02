@@ -120,7 +120,8 @@ release's other files, since artifacts expire after 90 days and `symbolize_log.p
 as long as the release is in use. The test pre-releases (`v0.0.1-rc.1`, `rc.2`, built from a
 branch whose workspace version is bumped to theirs) are published as pre-releases so the
 updater can see them (a draft is invisible to its unauthenticated request); semver orders them
-below `0.0.1`, which never offers them. The Linux bundle's look runs in WSLg (Ubuntu 22.04 on the
+below `0.0.1`, which never offers them. They are the only release candidates ever published,
+while no member has a release yet: later ones stay drafts, since they are not for members. The Linux bundle's look runs in WSLg (Ubuntu 22.04 on the
 maintainer's PC) before a release is published.
 
 The user extracts the archive anywhere and runs the binary — or, for the common case, drops an
