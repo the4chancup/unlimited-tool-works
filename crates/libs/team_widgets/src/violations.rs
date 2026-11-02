@@ -2929,6 +2929,43 @@ mod tests {
         );
     }
 
+    // The head's plain text: the hyphens, and the name code-free.
+    #[test]
+    fn player_head_words_the_id_number_and_display_name() {
+        assert_eq!(
+            player_head(73401, 49, "\x11cff0000ffMuh Spooks"),
+            "Player 73401 - 49 - Muh Spooks"
+        );
+    }
+
+    // A plain (uncoded) name's run in the head's job takes the strong
+    // text, never the `PLACEHOLDER` `append_name` leaves.
+    #[test]
+    fn a_plain_names_run_in_the_head_is_strong() {
+        let visuals = egui::Visuals::dark();
+        let font = egui::FontId::proportional(12.5);
+        let job = player_head_job(73401, 49, "PLAIN", &font, &visuals);
+        let runs: Vec<(egui::Color32, &str)> = job
+            .sections
+            .iter()
+            .map(|section| {
+                (
+                    section.format.color,
+                    &job.text[section.byte_range.start.0..section.byte_range.end.0],
+                )
+            })
+            .collect();
+        assert_eq!(
+            runs,
+            [
+                (visuals.weak_text_color(), "Player 73401 -"),
+                (visuals.strong_text_color(), " 49"),
+                (visuals.weak_text_color(), " - "),
+                (visuals.strong_text_color(), "PLAIN"),
+            ]
+        );
+    }
+
     // The header over a team's rows reads its words and id in the strong
     // text and the name's runs in their colour codes, `Team-wide issues`
     // strong too.

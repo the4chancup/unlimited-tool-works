@@ -398,10 +398,10 @@ fn a_players_head_draws_the_id_weak_the_number_strong_and_the_name_coded() {
     );
     pick(&mut window, &mut view, picked);
     compared(&mut window, &mut view);
-    let head = team_widgets::violations::player_head(73401, 49, &raw);
-    scroll_to(&mut window, &mut view, &head);
+    let head = "Player 73401 - 49 - Muh Spooks";
+    scroll_to(&mut window, &mut view, head);
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    comparator_button(&pairs, &head);
+    comparator_button(&pairs, head);
     let (weak, strong) = {
         let visuals = &window.ctx.style_of(window.ctx.theme()).visuals;
         (visuals.weak_text_color(), visuals.strong_text_color())
