@@ -144,16 +144,26 @@ pub fn offers(release: &Release, own: &Version, skipped: Option<&str>) -> bool {
             != Some(&release.version)
 }
 
-/// Whether the shell starts a check: `check_for_updates` is on and the last
-/// check is older than `check_interval_minutes`, or never ran. `now` is
-/// seconds since the Unix epoch, `last_update_check`'s unit; a clock set
-/// behind the last check keeps it inside the interval rather than counting it
+/// The interval in seconds, `check_interval_minutes` minutes, written once:
+/// the next-check instant and the failure backoff share it.
+pub(crate) fn interval_secs(common: &CommonSettings) -> u64 {
+    u64::from(common.check_interval_minutes) * 60
+}
+
+/// The epoch second the next check may start at, or `None` while
+/// `check_for_updates` is off. Otherwise the later of `retry_at` (a failed
+/// check's backoff) and the last completed check plus the interval, `retry_at`
+/// alone when none ran — and a check is due when the caller's `now` reaches
+/// it. A clock set behind the last check keeps the next check in the future,
+/// the stamp plus the interval being past `now`: the stamp cannot count it
 /// past.
-pub fn check_due(common: &CommonSettings, now: u64) -> bool {
-    common.check_for_updates
-        && common.last_update_check.is_none_or(|last| {
-            now.saturating_sub(last) >= u64::from(common.check_interval_minutes) * 60
+pub(crate) fn next_check_at(common: &CommonSettings, retry_at: u64) -> Option<u64> {
+    common.check_for_updates.then(|| {
+        retry_at.max(match common.last_update_check {
+            Some(last) => last.saturating_add(interval_secs(common)),
+            None => retry_at,
         })
+    })
 }
 
 /// Seconds since the Unix epoch, the unit `last_update_check` stores. A clock
@@ -339,25 +349,54 @@ mod tests {
 
     // ST-UPD-01
     #[test]
-    fn a_check_is_due_past_the_interval_with_checks_on() {
-        const INTERVAL: u64 = 120 * 60;
+    fn the_interval_in_seconds_is_the_settings_minutes() {
+        let mut common = CommonSettings::default();
+        assert_eq!(interval_secs(&common), 7200);
+        common.check_interval_minutes = 1;
+        assert_eq!(interval_secs(&common), 60);
+    }
+
+    // ST-UPD-01
+    #[test]
+    fn the_next_check_uses_the_later_of_the_interval_and_the_backoff() {
         let now = 2_000_000_000;
         let mut common = CommonSettings::default();
         assert_eq!(
-            common.check_interval_minutes, 120,
+            interval_secs(&common),
+            7200,
             "the interval the constants below assume"
         );
         common.check_for_updates = false;
-        assert!(!check_due(&common, now), "checks off");
+        assert_eq!(next_check_at(&common, 0), None, "checks off");
         common.check_for_updates = true;
-        assert!(check_due(&common, now), "never checked");
+        assert_eq!(
+            next_check_at(&common, 0),
+            Some(0),
+            "never checked: the backoff alone, due at once"
+        );
         common.last_update_check = Some(now - 119 * 60);
-        assert!(!check_due(&common, now), "a stamp 119 minutes old");
-        common.last_update_check = Some(now - INTERVAL + 1);
-        assert!(!check_due(&common, now), "inside the interval");
-        common.last_update_check = Some(now - INTERVAL);
-        assert!(check_due(&common, now), "a stamp 120 minutes old");
-        common.last_update_check = Some(1);
-        assert!(check_due(&common, now), "long past");
+        assert_eq!(
+            next_check_at(&common, 0),
+            Some(now + 60),
+            "a stamp 119 minutes old"
+        );
+        common.last_update_check = Some(now - 7200);
+        assert_eq!(
+            next_check_at(&common, 0),
+            Some(now),
+            "a stamp 120 minutes old"
+        );
+        common.last_update_check = Some(now - 3600);
+        assert_eq!(
+            next_check_at(&common, now + 5000),
+            Some(now + 5000),
+            "the backoff wins when later"
+        );
+        common.last_update_check = Some(now + 100);
+        assert_eq!(
+            next_check_at(&common, 0),
+            Some(now + 7300),
+            "a clock set behind keeps the next check in the future"
+        );
     }
 }

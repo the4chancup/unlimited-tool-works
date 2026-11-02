@@ -366,23 +366,22 @@ impl StudioApp {
             UpdatePoll::Idle { retry_at } => {
                 let common = self.ctx.common();
                 let now = updater::now_secs();
-                if now >= retry_at && updater::check_due(&common, now) {
-                    let rx = updater::start_check(Arc::clone(&self.update_fetch), egui_ctx);
-                    self.update_poll = UpdatePoll::Running(rx);
-                    return;
-                }
-                // Wake for the moment a check falls due: the interval's end,
-                // or a failed check's retry instant, whichever is later.
-                let due_at = retry_at.max(match common.last_update_check {
-                    Some(last) => {
-                        last.saturating_add(u64::from(common.check_interval_minutes) * 60)
+                match updater::next_check_at(&common, retry_at) {
+                    // Due now: the check runs on its own thread, drained on a
+                    // later frame.
+                    Some(at) if at <= now => {
+                        let rx = updater::start_check(Arc::clone(&self.update_fetch), egui_ctx);
+                        self.update_poll = UpdatePoll::Running(rx);
                     }
-                    None => now,
-                });
-                if common.check_for_updates && due_at > now {
-                    egui_ctx.request_repaint_after(Duration::from_secs(due_at - now));
+                    // Later: wake for the moment it falls due, so an idle
+                    // window comes back for it.
+                    Some(at) => {
+                        egui_ctx.request_repaint_after(Duration::from_secs(at - now));
+                        self.update_poll = UpdatePoll::Idle { retry_at };
+                    }
+                    // Checks off: nothing to start, nothing to wake for.
+                    None => self.update_poll = UpdatePoll::Idle { retry_at },
                 }
-                self.update_poll = UpdatePoll::Idle { retry_at };
             }
             UpdatePoll::Running(rx) => match rx.try_recv() {
                 Ok(Ok(newest)) => {
@@ -424,23 +423,25 @@ impl StudioApp {
                 }
                 Ok(Err(error)) => {
                     warn!("the update check failed: {error}");
-                    self.update_poll = UpdatePoll::Idle {
-                        retry_at: updater::now_secs().saturating_add(
-                            u64::from(self.ctx.common().check_interval_minutes) * 60,
-                        ),
-                    };
+                    self.back_off();
                 }
                 Err(TryRecvError::Empty) => self.update_poll = UpdatePoll::Running(rx),
                 Err(TryRecvError::Disconnected) => {
                     warn!("the update check's worker ended without a reply");
-                    self.update_poll = UpdatePoll::Idle {
-                        retry_at: updater::now_secs().saturating_add(
-                            u64::from(self.ctx.common().check_interval_minutes) * 60,
-                        ),
-                    };
+                    self.back_off();
                 }
             },
         }
+    }
+
+    /// Sets the failed check's retry instant: one interval from now, held in
+    /// `retry_at` only (the settings never hear of a failed check).
+    #[cfg(not(target_arch = "wasm32"))]
+    fn back_off(&mut self) {
+        self.update_poll = UpdatePoll::Idle {
+            retry_at: updater::now_secs()
+                .saturating_add(updater::interval_secs(&self.ctx.common())),
+        };
     }
 
     /// The browser build checks nothing; its storage is the web phase's.
@@ -1507,17 +1508,29 @@ mod tests {
         });
         let egui_ctx = test_context();
 
+        // `before`/`after` bound the drain's `now_secs`: the retry instant is
+        // the drain plus one interval.
+        let before = crate::updater::now_secs();
         let deadline = std::time::Instant::now() + Duration::from_secs(10);
         loop {
             frame(&egui_ctx, &mut app, Vec::new(), true);
-            if fetches.load(std::sync::atomic::Ordering::SeqCst) >= 1 {
+            if matches!(app.update_poll, UpdatePoll::Idle { retry_at } if retry_at > 0) {
                 break;
             }
             assert!(
                 std::time::Instant::now() < deadline,
-                "the failing check never ran"
+                "the failing check never drained"
             );
         }
+        let after = crate::updater::now_secs();
+        assert!(
+            matches!(
+                app.update_poll,
+                UpdatePoll::Idle { retry_at }
+                    if (before + 7200..=after + 7200).contains(&retry_at)
+            ),
+            "the retry is one interval out"
+        );
         // Frames well past the drained failure: the backoff leaves the fetch
         // at one call rather than retrying every frame.
         for _ in 0..30 {
@@ -1527,6 +1540,135 @@ mod tests {
             fetches.load(std::sync::atomic::Ordering::SeqCst),
             1,
             "a failed check waits its interval, it does not retry each frame"
+        );
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    // ST-UPD-01
+    #[test]
+    fn an_idle_window_wakes_for_the_moment_a_check_falls_due() {
+        for check_on in [true, false] {
+            let dir = TestDir::new("studio_core_update_repaint");
+            let (a, calls_a) = stub("a", "A", None);
+            let mut settings = test_settings(dir.path());
+            settings.common.check_for_updates = check_on;
+            settings.common.last_update_check =
+                Some(crate::updater::now_secs().saturating_sub(3600));
+            let Shell { mut app, .. } = shell_with(
+                settings,
+                vec![a],
+                &[],
+                Some(dir.path().to_path_buf()),
+                vec![calls_a],
+            );
+            // A fetch that must never run: the stamp is inside the interval,
+            // so no check may start whatever the answer to it is.
+            app.update_fetch = std::sync::Arc::new(|| {
+                panic!("no check may start while the last one is inside the interval")
+            });
+            // The sidebar's poll asks for its own repaint to a nearer
+            // deadline; spending the once-per-life auto-switch leaves the
+            // check's the only requester.
+            app.sidebar.auto_switch_used = true;
+            let egui_ctx = test_context();
+
+            // The first frames' own requests are still settling; a later one
+            // shows the due-moment repaint (the stamp plus the interval is
+            // 3600 s out, egui trimming a hair under).
+            frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(1.0));
+            frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(2.0));
+            let out = frame_at(&egui_ctx, &mut app, Vec::new(), true, Some(3.0));
+            let delay = out.repaint_delay.as_secs_f64();
+            if check_on {
+                assert!(
+                    (3590.0..=3600.0).contains(&delay),
+                    "the repaint is asked for the check's due moment, got {delay} s"
+                );
+            } else {
+                assert!(
+                    !(3590.0..=3600.0).contains(&delay),
+                    "checks off: no due moment to wake for, got {delay} s"
+                );
+            }
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    // ST-UPD-01
+    #[test]
+    fn a_later_checks_newer_release_replaces_the_offer() {
+        /// A releases list whose newest is `v0.0.3`, the same shape as
+        /// `updater::RELEASES_FIXTURE`'s.
+        const NEWER_FIXTURE: &str = r#"[
+            {
+                "tag_name": "v0.0.3",
+                "body": "Newer still.\n",
+                "html_url": "https://github.com/the4chancup/unlimited-tool-works/releases/tag/v0.0.3",
+                "assets": []
+            }
+        ]"#;
+        let dir = TestDir::new("studio_core_update_newer");
+        let (a, calls_a) = stub("a", "A", None);
+        let mut settings = test_settings(dir.path());
+        settings.common.check_for_updates = true;
+        let fetches = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let count = std::sync::Arc::clone(&fetches);
+        let Shell { mut app, ctx, .. } = shell_with(
+            settings,
+            vec![a],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a],
+        );
+        app.update_fetch = std::sync::Arc::new(move || {
+            if count.fetch_add(1, std::sync::atomic::Ordering::SeqCst) == 0 {
+                Ok(crate::updater::RELEASES_FIXTURE.to_owned())
+            } else {
+                Ok(NEWER_FIXTURE.to_owned())
+            }
+        });
+        let egui_ctx = test_context();
+
+        // The first check's reply offers v0.0.2.
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        loop {
+            let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+            if has_text(&out.nodes, "Update available: v0.0.2") {
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the first offer never landed"
+            );
+        }
+        // The stamp is set back past the interval, so the next frames run a
+        // second check, whose list's newest is v0.0.3.
+        ctx.settings().lock().unwrap().common.last_update_check = Some(
+            crate::updater::now_secs()
+                .saturating_sub(u64::from(ctx.common().check_interval_minutes) * 60 + 60),
+        );
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let nodes = loop {
+            let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+            if has_text(&out.nodes, "Update available: v0.0.3") {
+                break out.nodes;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the newer offer never landed"
+            );
+        };
+        assert!(
+            !has_text(&nodes, "Update available: v0.0.2"),
+            "the older offer is replaced"
+        );
+        assert_eq!(
+            app.update_release
+                .as_ref()
+                .map(|release| release.version.to_string())
+                .as_deref(),
+            Some("0.0.3"),
+            "the release the offer keeps is the newer one"
         );
     }
 }
