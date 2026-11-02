@@ -12,22 +12,21 @@ names where the question came from so the context can be read there.
 
 - **The final pass over the built app's UI** (worklog 0.0.1f1c). Any change it asks for is
   drafted first, looked at in the drafts, then built.
-  - **The candidate:** 0.0.1e, branch `release/0.0.1-candidate` at `1c1f2964`, unpacked at
-    `C:\Data\4cc\Tools_Mine\4cc-studio-temp\candidate-0.0.1e\unlimited-tool-works-0.0.1\`
-    (`COMMIT.txt` beside the folder names its commit; the .7z beside it), full gates green
-    (5580 tests). New since 0.0.1d (worklog cv23a, cv27-cv37): the Cards left badge computed
-    off the UI thread, so the wheel on a stat box keeps pace; a hovered AATF row outlined, not
-    filled; Live AATF in a window of its own (pop-out and dock buttons, the dock's grip); a
-    team no quota system takes read under the nearest one (DBC6's /cookie☆/ as Manlet);
-    Multi-team AATF counting the teams under each system; Set PES path over the pitch while
-    the version's folder is missing; the AATF and comparator rows inset as drafted, the
-    comparator's in two columns; the emoji fonts, so `☆`, `！` and `Ｕ` draw. The lead
-    checked each in the staged bundle itself (a copy, its shipped settings, DBC6's save
-    read-only, its hash unchanged; captures `.tmp/0_0_2/look_0_0_1e/`): ten wheel notches
-    one behind at most; the outline; the window popped out and docked; 857 under Manlet with
-    its two Height quota rows; 851-897 counting `GGG 4, GGSS 21, GSSSS 20, SSSSSS 1 · Height
-    8, Manlet 14, Universal 11, GigaHeight 14`; Set PES path storing `E:\PES20**` and
-    leaving the pitch; the rows within 1 px of the draft; the star in 857's name.
+  - **The candidate:** 0.0.1i, staged once f1g's loop ends (worklog 0.0.1f1g); its folder and
+    commit land here then. New since 0.0.1g: Tactics rows drag from their names (f1e), Up and
+    Down walk the player list, the import's Stats, Aesthetics and Gameplan boxes, Direct3D 12
+    on Windows; the dragged row's outline (f1f), two copies of the exe at once, Ctrl+C and
+    Ctrl+V on team rows and the Tactics selectors, the VGL captain bonus's count, the Stronger
+    foot colours, undo runs, Tab + Space; then f1g: the Fielded row's tooltip (P49), the
+    shortcuts after Tab + Space (P50), Live AATF's heads and copy button, Invert value
+    scrolling, PgUp/PgDn, and the update check if it lands.
+  - **Yours in the same pass** (worklog 8.38, never checked in the built window): the dialog
+    the Save editor shows when you save while PES 2017 runs; the AATF screen against its PES
+    2017 sample; the list a click on the toolbar's `• unsaved changes` opens (8.31). Also the
+    look outside the app's own windows (worklog 0.0.1f1c): the taskbar button, Alt+Tab and
+    Explorer's icon on the exe.
+  - **The notebook** (worklog 0.0.1f1e4): `run_gpu_check.bat`'s default start on 0.0.1i opens
+    the window on the Intel HD 620, where every start of 0.0.1g crashed in the Vulkan driver.
   - **Already measured,** so not worth reporting: every screen the drafts and the build share
     matches the drafts within 1 point (2 where needed), in both themes. What still differs
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
@@ -78,3 +77,9 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   the four) rather than looked at (`plans/save_editor.md` "Tactics editor", the sentence on
   Substitution). A look at each game's Game Plan > Automatic settings > Substitution confirms
   or corrects it; the three are on G:.
+- **Playing attitude on PES 2019** (you, 2026-11-01: not editable on 19). The Save editor shows
+  it from PES 2020 only (`plans/save_editor.md` "Editing UI", the Cutscenes group: "star (19+)
+  and playing attitude (20+)"): PES 19's schema has no field for it, and the census found no
+  bit of the PES 19 player record left uncovered that any save sets (`spec/pes_savefile/model.md`
+  "The player record"). Does PES 2019's Edit mode offer a playing attitude on a player? If it
+  does, it is a field still to find (changed in game, the save diffed); if not, the plan holds.

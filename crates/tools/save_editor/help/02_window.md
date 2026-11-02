@@ -29,7 +29,7 @@ row, so the right side shows the team's fields and tactics (ALL keeps what you h
 selected).
 
 The list below it holds a row per team and, under it, one per player: the team's row shows
-its id, its two colours and its name followed by `[click for tactics]`, a player's row his
+its id, its two colours and its name followed by `[click for gameplan]`, a player's row his
 shirt number, position and name as the game draws it, colors included. A `●` on a row marks
 a player or the team itself with unsaved changes.
 

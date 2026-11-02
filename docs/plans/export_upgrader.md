@@ -3,7 +3,8 @@
 > **Plan:** work not built yet (the open phase's sections may be partly built). What the suite does now is described in `docs/spec/`.
 
 The Export upgrader is built through the CLI (`spec/export_upgrader.md`, Phase 6). What is
-left is step 13, the optional glTF pass (Phase 7), and the tool's view (Phase 8).
+left is step 8's base copy (worklog 8.36c), step 13, the optional glTF pass (Phase 7), and the
+tool's view (Phase 8).
 
 ---
 
@@ -16,8 +17,15 @@ player (a base-copy id neither 0 nor his own) gets that id's `<id>.copy` link in
 save and the `.ted` and would otherwise be cleared by the first patch; when his folder also
 holds a face of his own, the face stays, the copy is not written and a Warning names both (the
 game showed the copy over that face, so the manager's face was not what the cup saw, which the
-member is told rather than having it chosen for them silently). Loose mode, which has no save,
-writes none. The last step:
+member is told rather than having it chosen for them silently): `base_copy_beside_face`
+(context: the folder, the copied id). A face of his own is a face folder's model; an
+in-game face the upgrader would generate from his record (the `ingame_face.toml` of a
+player with no face folder, or of a folder holding the old `ingame_face` marker) is not one:
+the game drew the copy over that record, so the copy is what the cup saw, and the folder gets
+the link in place of the `ingame_face.toml`, with no Warning. A copying player the upgrade
+gives no folder (a stock-booted player with no face folder) needs no link: no patch entry
+names him, so his record, copy included, stays as the save holds it. Loose mode, which has no
+save, writes none. The last step:
 
 13. **Optional glTF conversion** (`--convert-to-gltf`, off by default) — after the structural
     migration is complete and verified (step 10's report is clean), a second pass converts all
@@ -250,4 +258,27 @@ EU-GUI-07  GIVEN EU-GUI-01's upgrade in flight, another tool's view active
            THEN the Export upgrader's view is active with its prompt; GIVEN close chosen THEN
                 the window closes after the run's last line, the output EU-GUI-01's; GIVEN
                 the window kept THEN the run ends as it would have
+```
+
+**8.36c scope.** Step 8's base copy (above, "What it does"): a record copying another
+player becomes the folder's `<id>.copy` link. 101334 and 7511 are copied ids real cup saves
+hold.
+
+```
+EU-SET-12  GIVEN a save whose records copy another player: slot 05's 101334, with no face
+                 folder and wearing custom boots 430 from "k0430 - Crocs" (EU-PLY-02's); slot
+                 06's 7511, whose face folder holds a face model; slot 07's 101334, whose face
+                 folder holds the old ingame_face marker; and slot 08's his own id, with a face
+                 folder
+           WHEN the export is upgraded with that save
+           THEN Players/05 holds 101334.copy and boots.fmdl and no ingame_face.toml;
+                Players/06 holds its face model and no .copy, and base_copy_beside_face is
+                reported once, naming that folder and 7511; Players/07 holds 101334.copy and
+                no ingame_face.toml; Players/08 holds no .copy; and the shared validation
+                ("Verification") reports no copy_link_ finding, the run ending
+                migration_clean
+EU-SET-13  GIVEN EU-SET-12's export
+           WHEN it is upgraded with --loose
+           THEN the output is written, Players/06 holding its face model as in EU-SET-12,
+                no player folder holds a .copy, and no base_copy_beside_face is reported
 ```

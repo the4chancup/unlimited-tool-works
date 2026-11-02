@@ -135,7 +135,13 @@ went stale, and only CI's `bindings` job saw it (run 24, 2026-09-29). A brief th
 module's closing brace (three times in 2.20f). The lead
 reads the whole diff before it lands, not the report about it; the report is a claim, the diff is
 the evidence. Two failed sidekick attempts on one brief means the brief is suspect before the
-sidekick is. **A brief is sized for one review.** Past about 500 lines of new code, a diff is
+sidekick is. **A brief for a change a member sees or does names the draft that already does
+it** (the file and function or class under `docs/prototypes/`, in its reading list), and one
+the lead cannot point there is not sent: the lead drafts it first, renders or drives it, and
+the plan, DECISIONS and the draft land together. A plan sentence alone is not a draft: 8.44
+(the wheel on the Tactics selectors) was briefed from one and built before the draft knew
+the behaviour (2026-11-02), and three more items of the same batch were found undrafted only
+when the maintainer asked. **A brief is sized for one review.** Past about 500 lines of new code, a diff is
 read but not resteered: a wrong shape in the first module is already copied into the third by
 the time the lead sees it (`model_convert` took a 666-line rework commit after a single review
 of its first four steps). A step expected to exceed that is briefed as ordered slices, each

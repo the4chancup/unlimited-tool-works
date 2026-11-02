@@ -196,10 +196,12 @@ fn a_pre_fox_compile_writes_no_patch() {
 }
 
 // The patch half with no `write_names` marker (the savefile half is `savefile.rs`'s): no
-// name is written, every motion key is, the header names the CPK and the version.
+// name is written, the whole look is (his settings.toml's resolved, every other key the
+// template's), the header names the CPK and the version.
 // TC-SAV-01
+// TC-SAV-18
 #[test]
-fn a_plain_export_s_patch_holds_every_motion_and_no_name() {
+fn a_plain_export_s_patch_holds_his_look_and_no_name() {
     let sandbox = Sandbox::new("patch_plain");
     let export = "exports/co Full Plain";
     // A name longer than PES 21's field: unused without the marker, so not checked either. No
@@ -243,9 +245,12 @@ fn a_plain_export_s_patch_holds_every_motion_and_no_name() {
     let expected = PlayerSettings::parse(&toml)
         .unwrap()
         .appearance
-        .motion
         .resolved(PesVersion::Pes21);
-    assert_eq!(player.motion, expected, "every motion key, resolved");
+    assert_eq!(
+        player.appearance.as_ref(),
+        Some(&expected),
+        "every key of the version's schema, the settings.toml's or the template's"
+    );
 }
 
 // A referee export compiled beside a team export adds no `[[teams]]` entry to the patch.

@@ -288,6 +288,16 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
   replacing the older one, so a crash followed by a relaunch keeps the crash's log; writes the
   Studio version as the log's first line; and writes the user's home directory as `~` in every
   line, because findings carry absolute paths and the file is posted on the cup's server.
+- Two copies of the exe may run at once, each on its own save (the maintainer,
+  2026-11-02). The first takes an exclusive lock on `utw.lock` in the data directory for its
+  session (`File::try_lock`) and logs to `utw.log`; a copy that finds it held takes the next
+  free of `utw.2.lock`, `utw.3.lock`... and logs to the matching `utw.2.log`, its previous
+  run's renamed to `utw.2.old.log`, a crash's dump written as `utw.2.dmp`. Each start reads and rotates its own log alone, so a
+  second start no longer renames the first copy's live log away and reports it as a session
+  that ended without its closing line, and the crash monitor appends to its own window's
+  log. A lock, not a look at the running processes: the system frees it however the copy
+  ends, a crash included, so a stale lock never makes the next start a second copy. The
+  settings stay one file, written by whichever copy changes them last.
 - The backtrace is written as each frame's module base and offset (`0x7ff6a1230000+0x59c4`,
   through the `backtrace` crate), not as names: a release exe names its frames only with its
   `.pdb` beside it, and the bundle does not ship the `.pdb` (`distribution.md`, the release
