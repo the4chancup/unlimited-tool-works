@@ -998,7 +998,8 @@ document.addEventListener("keydown", e => {
 // wheel up, the left on wheel down, wrapping round at its ends (a two-choice toggle clamped would
 // answer one direction only); a choice of a row selector (`.wsel`: the Tactics preset and
 // formation selectors) steps it the same way, its label word and a locked (`.off`) selector
-// not; the C/B/A buttons and checkboxes are left out.
+// not; the C/B/A buttons and checkboxes are left out. Invert value scrolling, a common
+// setting, turns every step the other way.
 // A notch is one step; a touchpad's small deltas add up to one (WHEEL_NOTCH). A wheel that
 // began by scrolling a pane keeps scrolling it while it sweeps over such controls, until it has
 // rested WHEEL_REST ms: scrolling the player view must not edit the boxes it passes.
@@ -1015,7 +1016,7 @@ document.addEventListener("wheel", e => {
   e.preventDefault();
   wheelSum += e.deltaMode ? e.deltaY * WHEEL_NOTCH : e.deltaY;
   if (Math.abs(wheelSum) < WHEEL_NOTCH) return;
-  const up = wheelSum < 0;
+  const up = (wheelSum < 0) !== S.settings.common.invert_value_scrolling;
   wheelSum = 0;
   // The notch first takes the keyboard from whatever holds it, so a field's typing ends with its
   // own change (and undo step) before the notch makes its own.
@@ -1175,6 +1176,7 @@ S.settings = {
     fpc_hide_boots_id: 55,
     fpc_hide_gloves_id: 11,
     theme: "Dark",
+    invert_value_scrolling: false,
     check_for_updates: true,
     check_interval_hours: 24,
     last_update_check: null,
@@ -2328,6 +2330,9 @@ function commonSettingsRows() {
     sRow("FPC hide gloves ID", "fpc_hide_gloves_id", "The gloves ID that Hide body and an fpc_on marker write. The game has no gloves with this ID, and 4cc uses 11.",
       num("fpc_hide_gloves_id", { min: 11, max: 100 })),
     sRow("Theme", "theme", "The window's color theme.", theme),
+    sRow("Invert value scrolling", "invert_value_scrolling", "Turns the wheel's steps over a value the other way: wheel down moves a slider right, raises a number and takes a list's item above, wheel up the reverse. Scrolling a pane is unchanged.",
+      h("input", { type: "checkbox", checked: c.invert_value_scrolling,
+        onchange: e => { c.invert_value_scrolling = e.target.checked; settingChanged(); } })),
     sRow("Check for updates", "check_for_updates", "Whether the shell looks for new releases.",
       h("input", { type: "checkbox", checked: c.check_for_updates,
         onchange: e => { c.check_for_updates = e.target.checked; settingChanged(); } })),

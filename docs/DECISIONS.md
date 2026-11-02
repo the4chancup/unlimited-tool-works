@@ -15192,3 +15192,12 @@ holding the keyboard no longer holds them off.
 Why: Tab then Space leaves the keyboard on the pressed control with its edit settled (8.40),
 and Ctrl+Z did nothing there until Escape (found in the built-app look at 0.0.1h).
 Plan: `plans/save_editor.md`, the keyboard shortcuts bullet; SE-GUI-62.
+
+## 2026-11-02 — studio_core — Invert value scrolling, one common switch
+Decision (the maintainer; the shape the lead's): a common setting `invert_value_scrolling`, off
+by default, turns every wheel step over a value the other way in every tool (wheel down: one
+more, the item above, a slider or toggle to the right); the pane's own scrolling never changes.
+Why: a member on "natural" scrolling reads wheel down as more. One switch read where the steps
+are counted reaches every control, the shared libs' included; a setting per tool would let two
+windows of the suite disagree.
+Plan: `plans/core/gui.md` "The wheel over a value", ST-WHEEL-06; `plans/team_compiler/settings.md`.
