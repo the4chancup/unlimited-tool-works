@@ -494,7 +494,7 @@ fn the_hide_id_rows_write_the_common_settings() {
 
 // The update check's two rows, after Invert value scrolling: the checkbox
 // writes `check_for_updates`, and the interval row (disabled while the check
-// is off) writes whole `check_interval_hours` of at least 1.
+// is off) writes whole `check_interval_minutes` of at least 1.
 #[test]
 fn the_update_check_rows_write_the_common_settings() {
     let dir = TestDir::new("studio_core_settings_update_rows");
@@ -513,7 +513,7 @@ fn the_update_check_rows_write_the_common_settings() {
             !common.check_for_updates,
             "the premise the test flips: the check starts off"
         );
-        assert_eq!(common.check_interval_hours, 24, "the default interval");
+        assert_eq!(common.check_interval_minutes, 120, "the default interval");
     }
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
@@ -525,14 +525,14 @@ fn the_update_check_rows_write_the_common_settings() {
     let check = text_node(&nodes, "Check for updates")
         .bounds()
         .expect("the check row is drawn");
-    let interval_label = text_node(&nodes, "Check interval (hours)")
+    let interval_label = text_node(&nodes, "Check interval (minutes)")
         .bounds()
         .expect("the interval row is drawn");
     assert!(
         check.y0 > invert.y0 && interval_label.y0 > check.y0,
         "the two rows stand after Invert value scrolling, check then interval"
     );
-    let interval = widget_on_row(&nodes, "Check interval (hours)", Role::SpinButton);
+    let interval = widget_on_row(&nodes, "Check interval (minutes)", Role::SpinButton);
     assert!(
         interval.is_disabled(),
         "the interval is off while the check is"
@@ -549,7 +549,7 @@ fn the_update_check_rows_write_the_common_settings() {
         "the click wrote the setting"
     );
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
-    let interval = widget_on_row(&nodes, "Check interval (hours)", Role::SpinButton);
+    let interval = widget_on_row(&nodes, "Check interval (minutes)", Role::SpinButton);
     assert!(!interval.is_disabled(), "the interval is on with the check");
 
     // A typed value writes whole hours; a typed 0 clamps to the minimum 1.
@@ -561,13 +561,13 @@ fn the_update_check_rows_write_the_common_settings() {
         true,
     );
     frame(&egui_ctx, &mut app, vec![key(egui::Key::Enter, true)], true);
-    assert_eq!(ctx.common().check_interval_hours, 12);
+    assert_eq!(ctx.common().check_interval_minutes, 12);
 
     let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
     click(
         &egui_ctx,
         &mut app,
-        widget_on_row(&nodes, "Check interval (hours)", Role::SpinButton),
+        widget_on_row(&nodes, "Check interval (minutes)", Role::SpinButton),
     );
     frame(
         &egui_ctx,
@@ -586,7 +586,7 @@ fn the_update_check_rows_write_the_common_settings() {
     );
     frame(&egui_ctx, &mut app, vec![key(egui::Key::Enter, true)], true);
     assert_eq!(
-        ctx.common().check_interval_hours,
+        ctx.common().check_interval_minutes,
         1,
         "a typed 0 clamps to the minimum"
     );

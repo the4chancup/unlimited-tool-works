@@ -117,7 +117,7 @@ Stored with the settings (common settings, `studio_core`):
 | Key | Replaces (Red) | Default |
 |-----|----------------|---------|
 | `check_for_updates` | `updates_check` ini key | `true` |
-| `check_interval_hours` | hardcoded 60 minutes | `24` (a resident GUI app, not a per-compile CLI run) |
+| `check_interval_minutes` | hardcoded 60 minutes | `120`: minutes between release checks |
 | `last_update_check` | `state/update_check_last.txt` | — |
 | `skipped_version` | `state/update_skip_last.txt` | — |
 

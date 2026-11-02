@@ -22,6 +22,8 @@ mod window_size;
 use std::path::PathBuf;
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::Arc;
+#[cfg(not(target_arch = "wasm32"))]
+use std::time::Duration;
 
 use crossbeam_channel::Receiver;
 #[cfg(not(target_arch = "wasm32"))]
@@ -179,16 +181,17 @@ pub struct StudioApp {
     update_dialog: update_dialog::UpdateDialog,
 }
 
-/// Where the startup update check stands (native only; the browser build checks
-/// nothing): run once per window, off the UI thread.
+/// Where the update check stands (native only; the browser build checks
+/// nothing): one check at a time, off the UI thread, and again once the
+/// interval has passed while the window stays open.
 #[cfg(not(target_arch = "wasm32"))]
 enum UpdatePoll {
-    /// The first frame has not run the due rule yet.
-    NotStarted,
+    /// Nothing in flight. `retry_at` is the epoch-second a failed check may
+    /// retry at: a failure waits one interval, held here only (the settings
+    /// never hear of it); `0` when no failure is pending.
+    Idle { retry_at: u64 },
     /// The check's worker runs; its reply lands here once.
     Running(Receiver<Result<Option<updater::Release>, updater::UpdateError>>),
-    /// The reply drained, or no check was due: nothing left to poll.
-    Done,
 }
 
 impl StudioApp {
@@ -246,7 +249,7 @@ impl StudioApp {
             #[cfg(not(target_arch = "wasm32"))]
             update_fetch: Arc::new(updater::fetch_releases),
             #[cfg(not(target_arch = "wasm32"))]
-            update_poll: UpdatePoll::NotStarted,
+            update_poll: UpdatePoll::Idle { retry_at: 0 },
             #[cfg(not(target_arch = "wasm32"))]
             update_release: None,
             #[cfg(not(target_arch = "wasm32"))]
@@ -344,21 +347,42 @@ impl StudioApp {
         }
     }
 
-    /// The startup update check, run once per window: the first frame starts it
-    /// when the settings say a check is due, a later frame drains the finished
-    /// worker's reply, so no frame waits on the fetch. A completed check stores
+    /// The update check, run by the due rule while the window is open (native
+    /// only; the browser build checks nothing): a check starts whenever the
+    /// settings say one is due — the first frame, and again once the interval
+    /// has passed — and a finished worker's reply is drained on a later frame,
+    /// so no frame waits on the fetch. A completed check stores
     /// `last_update_check` and saves as every settings change does; a release
     /// newer than the build and not the skipped one raises the status bar's
-    /// offer and stays for the Details dialog; a failed check writes one log
-    /// line and shows nothing.
+    /// offer and stays for the Details dialog, replacing a standing offer's
+    /// release unless it is the same one; a failed check writes one log line,
+    /// shows nothing, and waits one interval — held in `retry_at`, never in
+    /// the settings — before retrying. While a check is Idle the frame asks
+    /// egui for the repaint at the moment one falls due, so an idle window
+    /// wakes for it.
     #[cfg(not(target_arch = "wasm32"))]
     fn poll_update(&mut self, egui_ctx: &egui::Context) {
-        match std::mem::replace(&mut self.update_poll, UpdatePoll::Done) {
-            UpdatePoll::NotStarted => {
-                if updater::check_due(&self.ctx.common(), updater::now_secs()) {
+        match std::mem::replace(&mut self.update_poll, UpdatePoll::Idle { retry_at: 0 }) {
+            UpdatePoll::Idle { retry_at } => {
+                let common = self.ctx.common();
+                let now = updater::now_secs();
+                if now >= retry_at && updater::check_due(&common, now) {
                     let rx = updater::start_check(Arc::clone(&self.update_fetch), egui_ctx);
                     self.update_poll = UpdatePoll::Running(rx);
+                    return;
                 }
+                // Wake for the moment a check falls due: the interval's end,
+                // or a failed check's retry instant, whichever is later.
+                let due_at = retry_at.max(match common.last_update_check {
+                    Some(last) => {
+                        last.saturating_add(u64::from(common.check_interval_minutes) * 60)
+                    }
+                    None => now,
+                });
+                if common.check_for_updates && due_at > now {
+                    egui_ctx.request_repaint_after(Duration::from_secs(due_at - now));
+                }
+                self.update_poll = UpdatePoll::Idle { retry_at };
             }
             UpdatePoll::Running(rx) => match rx.try_recv() {
                 Ok(Ok(newest)) => {
@@ -374,7 +398,20 @@ impl StudioApp {
                     let skipped = self.ctx.common().skipped_version;
                     if let Some(release) =
                         newest.filter(|release| updater::offers(release, &own, skipped.as_deref()))
+                        && !matches!(
+                            &self.update_release,
+                            Some(standing) if standing.version == release.version
+                        )
                     {
+                        // A newer release replaces the offer it outranks.
+                        if let Some(old) = self.update_release.take() {
+                            self.status_bar.set_condition(
+                                ShellCondition::UpdateAvailable {
+                                    version: old.version.to_string(),
+                                },
+                                false,
+                            );
+                        }
                         self.status_bar.set_condition(
                             ShellCondition::UpdateAvailable {
                                 version: release.version.to_string(),
@@ -383,14 +420,26 @@ impl StudioApp {
                         );
                         self.update_release = Some(release);
                     }
+                    self.update_poll = UpdatePoll::Idle { retry_at: 0 };
                 }
-                Ok(Err(error)) => warn!("the update check failed: {error}"),
+                Ok(Err(error)) => {
+                    warn!("the update check failed: {error}");
+                    self.update_poll = UpdatePoll::Idle {
+                        retry_at: updater::now_secs().saturating_add(
+                            u64::from(self.ctx.common().check_interval_minutes) * 60,
+                        ),
+                    };
+                }
                 Err(TryRecvError::Empty) => self.update_poll = UpdatePoll::Running(rx),
                 Err(TryRecvError::Disconnected) => {
                     warn!("the update check's worker ended without a reply");
+                    self.update_poll = UpdatePoll::Idle {
+                        retry_at: updater::now_secs().saturating_add(
+                            u64::from(self.ctx.common().check_interval_minutes) * 60,
+                        ),
+                    };
                 }
             },
-            UpdatePoll::Done => {}
         }
     }
 
@@ -1352,13 +1401,14 @@ mod tests {
         });
         let egui_ctx = test_context();
 
-        // Draw frames until the worker's failure is drained, giving up only
-        // past the deadline: the asserts below would hold for a check still in
-        // flight, so a reply that never comes fails here, not silently.
+        // Draw frames until the worker's failure is drained into the backoff,
+        // giving up only past the deadline: the asserts below would hold for a
+        // check still in flight, so a reply that never comes fails here, not
+        // silently.
         let deadline = std::time::Instant::now() + Duration::from_secs(10);
         let nodes = loop {
             let out = frame(&egui_ctx, &mut app, Vec::new(), true);
-            if matches!(app.update_poll, UpdatePoll::Done) {
+            if matches!(app.update_poll, UpdatePoll::Idle { retry_at } if retry_at > 0) {
                 break out.nodes;
             }
             assert!(
@@ -1373,6 +1423,110 @@ mod tests {
         assert!(
             ctx.common().last_update_check.is_none(),
             "a failed check stamps nothing"
+        );
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    // ST-UPD-01
+    #[test]
+    fn a_window_left_open_checks_again_once_the_interval_passes() {
+        let dir = TestDir::new("studio_core_update_again");
+        let (a, calls_a) = stub("a", "A", None);
+        let mut settings = test_settings(dir.path());
+        settings.common.check_for_updates = true;
+        let fetches = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let count = std::sync::Arc::clone(&fetches);
+        let Shell { mut app, ctx, .. } = shell_with(
+            settings,
+            vec![a],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a],
+        );
+        app.update_fetch = std::sync::Arc::new(move || {
+            count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            Ok(crate::updater::RELEASES_FIXTURE.to_owned())
+        });
+        let egui_ctx = test_context();
+
+        // Wait on the stamp, not the fetch's count: the reply is drained (and
+        // the check stamped) a frame or more after the fetch ran, so the
+        // rewind below must follow the drain or the drain overwrites it.
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        loop {
+            frame(&egui_ctx, &mut app, Vec::new(), true);
+            if ctx.common().last_update_check.is_some() {
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the first check never ran"
+            );
+        }
+        // The interval's end moves into the past: the next frames must run a
+        // second check.
+        ctx.settings().lock().unwrap().common.last_update_check = Some(
+            crate::updater::now_secs()
+                .saturating_sub(u64::from(ctx.common().check_interval_minutes) * 60 + 60),
+        );
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        loop {
+            frame(&egui_ctx, &mut app, Vec::new(), true);
+            if fetches.load(std::sync::atomic::Ordering::SeqCst) >= 2 {
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the second check never ran"
+            );
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    // ST-UPD-01
+    #[test]
+    fn a_failed_check_waits_one_interval_before_retrying() {
+        let dir = TestDir::new("studio_core_update_backoff");
+        let (a, calls_a) = stub("a", "A", None);
+        let mut settings = test_settings(dir.path());
+        settings.common.check_for_updates = true;
+        let fetches = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let count = std::sync::Arc::clone(&fetches);
+        let Shell { mut app, .. } = shell_with(
+            settings,
+            vec![a],
+            &[],
+            Some(dir.path().to_path_buf()),
+            vec![calls_a],
+        );
+        app.update_fetch = std::sync::Arc::new(move || {
+            count.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            Err(crate::updater::UpdateError::Fetch(ureq::Error::StatusCode(
+                503,
+            )))
+        });
+        let egui_ctx = test_context();
+
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        loop {
+            frame(&egui_ctx, &mut app, Vec::new(), true);
+            if fetches.load(std::sync::atomic::Ordering::SeqCst) >= 1 {
+                break;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the failing check never ran"
+            );
+        }
+        // Frames well past the drained failure: the backoff leaves the fetch
+        // at one call rather than retrying every frame.
+        for _ in 0..30 {
+            frame(&egui_ctx, &mut app, Vec::new(), true);
+        }
+        assert_eq!(
+            fetches.load(std::sync::atomic::Ordering::SeqCst),
+            1,
+            "a failed check waits its interval, it does not retry each frame"
         );
     }
 }
