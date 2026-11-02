@@ -15322,3 +15322,16 @@ Why: egui ships its four fonts behind that one feature (Hack, the two emoji font
 one font means vendoring the other three with their licenses and keeping every dependency from
 turning the feature back on, too much for 0.3 MiB.
 Plan: `spec/core/distribution.md` "Size budget".
+
+## 2026-11-02 — studio — Update now's screens, and the offer's text in the link blue
+Decision (the maintainer, from the draft's renders, two looks): the status bar's `Update
+available: v0.0.2` is in the link blue, as the toolbar's unsaved-changes label, and the text
+opens Details as its button does. Update now shows the download's progress (`Downloading v0.0.2
+pre-alpha… 4.0 of 11.2 MB`, a bar, Cancel), then `Update ready`: "v0.0.2 pre-alpha is installed.
+Restart to start using it, the version you are running now will stay in the old folder." with
+Restart now (the ordinary close prompts, then the new version, which opens on `Updated to v0.0.2
+pre-alpha`) and Later; a download that does not match the release's checksum shows `Update
+failed`, nothing changed, with Retry, Open release page and Close.
+Why: the offer has to catch the eye without a dialog opening by itself; a failed download is most
+often a passing network fault, which Retry answers in place.
+Plan: `plans/core/distribution.md` "Self-update"; the draft's `openUpdate`, `updateNow`.
