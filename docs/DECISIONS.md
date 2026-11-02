@@ -15226,3 +15226,22 @@ Why: a page of rows crossed into the next team at a place that depended on the w
 a team at a time is how a member walks a save, and the rows in view would make one press do
 different things as the list scrolls.
 Plan: `plans/save_editor.md`, the list paragraph's page keys; SE-GUI-53.
+
+## 2026-11-02 — studio — The update check ships in 0.0.1, on `ureq` with the system's certificates
+Decision (the maintainer, from the lead's estimate): the update check (`plans/core/distribution.md`
+"Self-update", steps 1 and 2: the check and its notice, no download) moves from Release 0.2.0 into
+0.0.1, the exe allowed to grow by up to 5 MB. Its client is `ureq` pinned to `=3.5.0`, default
+features off, `rustls-no-provider` and `platform-verifier`, with `rustls` on `ring` handed to it as
+the crypto provider; no gzip, no bundled root list. How the offer shows itself waits on the
+maintainer (`QUESTIONS.md` "How the update check shows itself").
+Why: 0.0.1's members hear of 0.0.2 only through such a check, and one added later never reaches
+anyone still on 0.0.1. `minreq` was weighed and turned down: its `rustls` keeps the default
+crypto (`aws-lc-rs`, a C library bigger than `ring`, needing a C toolchain in CI), with one
+maintainer marked passively-maintained and no body cap by default. `ureq`'s default `rustls`
+feature bundles `webpki-roots` (CDLA-Permissive-2.0, outside `deny.toml`'s allowlist, and a root
+list that goes stale in an exe nobody updates); the platform verifier reads the system's store.
+`rustls-no-provider` may change in a `ureq` minor release, hence the exact pin. A probe built
+with this setup (`.tmp/f1g9/probe_results.md`) grew a hello-world exe by 2.05 MB, read GitHub's
+releases list, and refused an expired and an unknown-issuer certificate.
+Plan: `plans/core/distribution.md` "Self-update" (rewritten with the rulings above); worklog
+0.0.1f1g9.
