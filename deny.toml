@@ -31,4 +31,7 @@ allow = [
     # Font licenses, for egui's bundled default fonts only (epaint_default_fonts)
     "OFL-1.1",
     "Ubuntu-font-1.0",
+    # A permissive data license: webpki-root-certs, which ureq's certificate verifier
+    # (rustls-platform-verifier) pulls only for wasm32 and its own tests
+    "CDLA-Permissive-2.0",
 ]

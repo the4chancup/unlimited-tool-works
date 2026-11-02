@@ -378,6 +378,14 @@ pub(super) fn shell_in(
         config_dir,
     );
     app.sidebar.probe = || Vec::new();
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        // A test never reaches the network: tests that exercise the update
+        // check replace `update_fetch`, and the rest get an empty releases
+        // list, which `test_settings` never asks for anyway (its
+        // `check_for_updates` is off).
+        app.update_fetch = std::sync::Arc::new(|| Ok("[]".to_owned()));
+    }
     Shell {
         app,
         ctx,
@@ -472,10 +480,12 @@ impl Drop for TestDir {
 /// The settings a shell test starts from: the defaults, except `pes_folder_path`
 /// under `dir` so the exe check never lists the developer's real install
 /// (CONTRIBUTING.md "Testing": a setting whose default finds something on the machine
-/// is set to a path under the test's own folder).
+/// is set to a path under the test's own folder), and `check_for_updates` off
+/// so no shell test starts the update check without setting its own fetch.
 pub(super) fn test_settings(dir: &Path) -> Settings {
     let mut settings = Settings::default();
     settings.common.pes_folder_path = dir.display().to_string();
+    settings.common.check_for_updates = false;
     settings
 }
 

@@ -14,6 +14,8 @@ pub mod shell;
 pub mod status;
 pub mod theme;
 pub mod tool;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod updater;
 pub mod widgets;
 pub use events::{
     Disposition, EventLines, ExportId, ExportRevision, FolderStatus, Message, MessageCode,
