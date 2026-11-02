@@ -248,7 +248,8 @@ all side by side.
   filter is typed, where neighbouring rows are not one team's neighbouring slots. While a drag
   is held over a row of his team other than his own, that row, the slot the drop moves him to,
   is outlined in the selection colour (the draft's `.dragover`), as the lineup lists outline
-  theirs; his own row and another team's, where the drop moves nothing, get none. A dot marks players with unsaved changes. Names
+  theirs; a row the drop moves nothing onto (his own, another team's, an empty slot's) gets
+  none. A dot marks players with unsaved changes. Names
   render with their savefile colour codes applied as text colours (the in-game
   look; 4ccEditor shows the raw control characters), and the name edit field
   keeps the raw string so codes survive a roundtrip untouched. A code's first six bytes are
