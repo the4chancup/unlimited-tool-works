@@ -233,6 +233,13 @@ def elf_sections(readelf_text: str) -> set[str]:
     }
 
 
+def leftover_debug(sections: set[str]) -> list[str]:
+    """The debug-info sections `objcopy --strip-debug` should have removed, sorted. Not
+    `.debug_gdb_scripts`: rustc puts it in the loaded image (a few bytes pointing gdb at
+    Rust's pretty-printers), so a strip keeps it, and it holds no debug info."""
+    return sorted(s for s in sections if s.startswith(".debug_") and s != ".debug_gdb_scripts")
+
+
 def about_config(deny_toml: str, triple: str) -> str:
     """`cargo-about`'s config: it accepts what `cargo deny` allows, so one list rules both, and
     reads the shipped binary's dependency graph for `triple`, since the two platforms link
@@ -511,7 +518,7 @@ def release(version: str) -> None:
             if headers.returncode:
                 raise Refusal(f"readelf --section-headers failed ({binary})")
             sections = elf_sections(headers.stdout)
-            debug_sections = sorted(s for s in sections if s.startswith(".debug_"))
+            debug_sections = leftover_debug(sections)
             if debug_sections:
                 raise Refusal(f"{binary} still carries debug sections: {', '.join(debug_sections)}")
             if ".symtab" not in sections:
