@@ -25,7 +25,7 @@ fn tool_click(
 /// first, so with team 734's four a player's row stands below the dock's
 /// fold, where a click does not reach it.
 fn scroll_dock_to_73404s_row(window: &mut Headless, view: &mut SaveView) -> Vec<accesskit::Node> {
-    let header = "Player 73404  45 Yuki-kun ^~^";
+    let header = "Player 73404 - 45 - Yuki-kun ^~^";
     let mut last = None;
     for _ in 0..48 {
         let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
@@ -969,7 +969,7 @@ fn the_dock_follows_the_open_team_and_the_ruleset() {
 fn a_result_checked_under_another_ruleset_is_not_drawn() {
     let (mut view, mut window) = open_734_with("live_aatf_other_ruleset", &[73401, 73404], 183);
     view.live_aatf = true;
-    let held_group = "Player 73404  45 Yuki-kun ^~^";
+    let held_group = "Player 73404 - 45 - Yuki-kun ^~^";
     let nodes = live_checked(&mut window, &mut view, &[734]);
     assert!(
         nodes.iter().any(|node| node.value() == Some(held_group)),
@@ -1247,7 +1247,7 @@ fn a_rows_click_moves_the_selector_unless_it_reads_all() {
     let nodes = scroll_dock_to_73404s_row(&mut window, &mut view);
     click(
         &mut window,
-        height_row_below(&nodes, "Player 73404  45 Yuki-kun ^~^"),
+        height_row_below(&nodes, "Player 73404 - 45 - Yuki-kun ^~^"),
         &mut view,
     );
     assert_eq!(
@@ -1265,7 +1265,7 @@ fn a_rows_click_moves_the_selector_unless_it_reads_all() {
     let nodes = scroll_dock_to_73404s_row(&mut window, &mut view);
     click(
         &mut window,
-        height_row_below(&nodes, "Player 73404  45 Yuki-kun ^~^"),
+        height_row_below(&nodes, "Player 73404 - 45 - Yuki-kun ^~^"),
         &mut view,
     );
     assert_eq!(view.selected, Some(Selection::Player(734, 3)));
@@ -1288,7 +1288,7 @@ fn a_rows_click_clears_the_filter_so_the_row_shows() {
     let nodes = scroll_dock_to_73404s_row(&mut window, &mut view);
     click(
         &mut window,
-        height_row_below(&nodes, "Player 73404  45 Yuki-kun ^~^"),
+        height_row_below(&nodes, "Player 73404 - 45 - Yuki-kun ^~^"),
         &mut view,
     );
     assert!(view.filter.is_empty(), "the click cleared the filter");
@@ -1366,7 +1366,7 @@ fn a_rows_click_selects_the_player() {
     let nodes = scroll_dock_to_73404s_row(&mut window, &mut view);
     click(
         &mut window,
-        height_row_below(&nodes, "Player 73404  45 Yuki-kun ^~^"),
+        height_row_below(&nodes, "Player 73404 - 45 - Yuki-kun ^~^"),
         &mut view,
     );
     assert_eq!(
@@ -2282,5 +2282,167 @@ fn the_docks_close_button_turns_live_aatf_off() {
     assert!(
         dock_drawn(&nodes) && live_window(&nodes).is_none(),
         "turned on again, the list opens in the dock"
+    );
+}
+
+/// Copy to clipboard clicked at `at` (press on one frame, release on the
+/// next): the text the release frame's `CopyText` command carries, `None`
+/// when it copies nothing.
+fn live_copied(window: &mut Headless, view: &mut SaveView, at: egui::Pos2) -> Option<String> {
+    window.frame(pointer_at(at, true), |ui| show(ui, view, &|| Vec::new()));
+    let (commands, _, _) = window.frame(pointer_at(at, false), |ui| {
+        show(ui, view, &|| Vec::new());
+        ui.ctx().output(|output| output.commands.clone())
+    });
+    commands.into_iter().find_map(|command| match command {
+        egui::OutputCommand::CopyText(text) => Some(text),
+        _ => None,
+    })
+}
+
+/// The dock's Copy to clipboard stands on the header's row left of the
+/// pop-out icon, on while the list holds rows and off while it holds none
+/// (714, the legal team, whose check finds nothing).
+// SE-GUI-63
+#[test]
+fn the_docks_copy_button_stands_left_of_the_pop_out_icon() {
+    let (mut view, mut window) = open_734_with("live_aatf_copy_dock", &[73401, 73404], 183);
+    view.live_aatf = true;
+    let nodes = live_checked(&mut window, &mut view, &[734]);
+    let copy = node_labeled(&nodes, Role::Button, "Copy to clipboard");
+    let pop_out = node_labeled(
+        &nodes,
+        Role::Button,
+        "Open Live AATF in a window of its own",
+    );
+    let (copy_bounds, pop_bounds) = (
+        copy.bounds().expect("the button's bounds"),
+        pop_out.bounds().expect("the icon's bounds"),
+    );
+    assert!(!copy.is_disabled(), "on while the list holds rows");
+    assert!(
+        copy_bounds.x1 <= pop_bounds.x0,
+        "left of the pop-out icon: {copy_bounds:?}, {pop_bounds:?}"
+    );
+    let middle = |rect: accesskit::Rect| (rect.y0 + rect.y1) / 2.0;
+    assert!(
+        (middle(copy_bounds) - middle(pop_bounds)).abs() <= 1.0,
+        "on the header's row: {copy_bounds:?}, {pop_bounds:?}"
+    );
+
+    // A team that passes holds no row: the button is off.
+    let (mut view, mut window) = open_legal_714("live_aatf_copy_off", window);
+    view.live_aatf = true;
+    let nodes = live_checked(&mut window, &mut view, &[714]);
+    assert!(
+        node_labeled(&nodes, Role::Button, "Copy to clipboard").is_disabled(),
+        "off while the list holds no row"
+    );
+}
+
+/// The dock's Copy to clipboard writes the list as plain text — the
+/// ruleset, the team and the error and warning counts on the first line,
+/// then the team's groups as Multi-team AATF's copy words them — and the
+/// notice says what was copied.
+// SE-GUI-63
+#[test]
+fn the_docks_copy_writes_the_list_as_text_and_says_so() {
+    let (mut view, mut window) = open_734_with("live_aatf_copy_text", &[73401, 73404], 183);
+    view.live_aatf = true;
+    let nodes = live_checked(&mut window, &mut view, &[734]);
+    let at = centre(node_labeled(&nodes, Role::Button, "Copy to clipboard"));
+    let text = live_copied(&mut window, &mut view, at).expect("the click copies the list");
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some("Copied the Live AATF list of 734 /lit/.")
+    );
+    assert_eq!(
+        text.lines().collect::<Vec<_>>(),
+        [
+            "4cc Autumn 26, team 734 /lit/: 6 errors, 0 warnings",
+            "  Team-wide issues",
+            "    Error  Tier count  2 Gold players, where the rules want 1",
+            "    Error  Tier count  0 Bronze players, where the rules want 2",
+            "    Error  Tier count  19 Regular players, where the rules want 18",
+            "    Error  Height quota  8 players in the Tall bracket of the Red system, where its quota is 10",
+            "      At 185: knee-chee, The Judge, Huge Orson Welles, Start With the Greeks, The Entire Western Canon (189), or, The Whale (189), Tolstoyevsky's War and Punishment, my diary desu",
+            "  73401 Muh Spooks",
+            "    Error  Height  height 183 takes no bracket (185 has room)",
+            "  73404 Yuki-kun ^~^",
+            "    Error  Height  height 183 takes no bracket (185 has room)",
+        ]
+    );
+}
+
+/// Show suggestions on: the copied text ends with `Suggestions` and their
+/// groups — 734's eight `Unused` rows under their players' heads, worded
+/// as the issue rows are (`Suggestion` the severity word).
+// SE-GUI-63
+#[test]
+fn copying_with_suggestions_shown_appends_suggestions_and_their_groups() {
+    let (mut view, mut window) = open_734_with("live_aatf_copy_suggestions", &[73401, 73404], 183);
+    view.live_aatf = true;
+    view.live_suggestions = true;
+    let nodes = live_checked(&mut window, &mut view, &[734]);
+    let at = centre(node_labeled(&nodes, Role::Button, "Copy to clipboard"));
+    let text = live_copied(&mut window, &mut view, at).expect("the click copies the list");
+    let lines: Vec<&str> = text.lines().collect();
+    let heading = lines
+        .iter()
+        .position(|line| *line == "Suggestions")
+        .expect("the text ends with the suggestions' groups");
+    assert_eq!(
+        lines[..heading].len(),
+        11,
+        "the issues' lines first: {text}"
+    );
+    let tail = &lines[heading + 1..];
+    assert!(
+        tail.iter().all(|line| line.starts_with("  ")),
+        "the suggestions' groups indented: {tail:?}"
+    );
+    let heads = tail.iter().filter(|line| !line.starts_with("    ")).count();
+    let rows = tail
+        .iter()
+        .filter(|line| line.starts_with("    Suggestion  Unused  "))
+        .count();
+    assert_eq!(
+        (heads, rows),
+        (4, 8),
+        "four players' heads, eight Unused rows"
+    );
+}
+
+/// The window's Copy to clipboard stands on the count line's row at the
+/// window's right end, under the title bar's close button.
+// SE-GUI-63
+#[test]
+fn the_windows_copy_button_ends_the_count_line() {
+    let mut list = docked_list("live_aatf_copy_window");
+    let nodes = popped_out(&mut list);
+    let frame = live_window(&nodes).expect("the Live AATF window");
+    let copy = node_labeled(&nodes, Role::Button, "Copy to clipboard")
+        .bounds()
+        .expect("the button's bounds");
+    let count_line = nodes
+        .iter()
+        .filter_map(|node| node.value())
+        .find(|value| value.contains(" issues \u{b7} "))
+        .expect("the count line")
+        .to_owned();
+    let count = value_bounds(&nodes, &count_line);
+    let middle = |rect: accesskit::Rect| (rect.y0 + rect.y1) / 2.0;
+    assert!(
+        (middle(copy) - middle(count)).abs() <= 1.0,
+        "on the count line's row: {copy:?}, {count:?}"
+    );
+    let margin = f64::from(
+        egui::Frame::window(&list.window.ctx.global_style())
+            .inner_margin
+            .right,
+    );
+    assert!(
+        frame.x1 - copy.x1 <= margin + 4.0,
+        "at the window's right end: {copy:?} in {frame:?}, margin {margin}"
     );
 }
