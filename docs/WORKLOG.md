@@ -6971,10 +6971,11 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] f1g (the maintainer, 2026-11-02, after the lead's look at 0.0.1h: a polish batch
     while their look waits; one candidate, 0.0.1i, then their look), each item plan and
     draft first where a member sees it, on a branch from the candidate's `92d1772b`:
-    - [ ] f1g1 the draft's Live AATF list brought to the app's: one group per player, his
-      errors before his warnings (the draft headed a player again after other players'
-      errors); three more differences rendered for the maintainer's ruling
-      (`.tmp/vet/live_heads/`: the heads' grey, the names' colour codes, the team's line)
+    - [ ] f1g1 Live AATF's heads (the maintainer's rulings on `.tmp/vet/live_heads/`,
+      DECISIONS "Live AATF's heads in two tones"): drafted, one group per player in the
+      draft as in the app; then the app: `team_widgets` `violations.rs` `group_header` and
+      the team header as layout jobs (`names.rs` `append_name`), Live AATF's Copy to
+      clipboard (`multi_aatf.rs` `copy_text`'s team block shared) → verify: SE-GUI-63, red first
     - [x] f1g2 P49: a `Fielded position` row's tooltip (`team_widgets` `violations.rs`
       `row`), drafted (`liveList`) → verify: SE-GUI-30's tooltip half, headless
     - [x] f1g3 P50: the toolbar's shortcuts held off only by a text field or a dialog

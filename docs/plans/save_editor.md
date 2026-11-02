@@ -1238,6 +1238,11 @@ Contents:
   host's jump-to that names the row's player and its violation (the host lands a
   `FieldedNotA` one on the team row, its preset shown). The groups lead with the team's own rows, then the players' by slot
   (`check_team` returns the team's rows last), each group's errors before its warnings; a team header heads each team's rows;
+  the team header reads `Team <id> <name>` while editing (a report's `<id> <name>`), a
+  group's head `Player <id> - <number> - <name>` (`Team-wide issues` for the team's own),
+  `Player <id>` and the hyphens in the weak colour and the number and name, the team header
+  and `Team-wide issues` in the strong text, every name in its colour codes as the player list draws it,
+  the number in the body font: the grey id steps back, and the name reads as the list shows it;
   suggestions are drawn only when the host asks, in their own group after the violations. A row
   is the rule's name in words and a sentence saying what is wrong, each stat, card, playing
   style and allowance in it named as the game names it (Attacking Prowess, never the rules
@@ -1646,7 +1651,14 @@ What this editor adds on top of the lib:
   gray 150 in the dark theme), never filled: a fill under a row's coloured words left an
   error's red rule name at 2.4:1 on egui's hover grey (1.9:1 on the selection blue the draft
   had), where the outline leaves it the 5:1 it has at rest. Multi-team AATF keeps one column: its
-  report reads team by team, and its rows were just widened to read whole. **Its own
+  report reads team by team, and its rows were just widened to read whole. **Copy to
+  clipboard**, Multi-team AATF's button, stands left of the dock's pop-out icon and, in the
+  window, under its close button at the count line's right end. It writes the list as it
+  shows, as Multi-team AATF's copy words a team: a line naming the ruleset as that copy
+  does, the team and its error and warning counts, then the team's groups, then under
+  `Suggestions` the suggestions while Show suggestions is on (a member who wants them out
+  switches them off); disabled while the list holds no row, and a notice `Copied the Live
+  AATF list of <id> <name>.` says it was done. **Its own
   window**: the pop-out icon at the header's right end (the icon font's arrow out of a square,
   U+E5DE, Phosphor's arrow-square-out; tooltip `Open Live AATF in a window of its own`) moves
   the list into an `egui::Window` over the view, and the dock is gone until it comes back.
@@ -2082,6 +2094,17 @@ SE-GUI-61  GIVEN a player's Stronger foot toggle
            WHEN it draws
            THEN the chosen side's word is in the resting buttons' light grey and the
                 other side's in the normal text grey
+SE-GUI-63  GIVEN the PES 17 save open on team 734 under the official rules, Live AATF on, the
+                check returned
+           THEN the list opens with `Team 734 <name>`, each player's group's head reads
+                `Player <id> - <number> - <name>`, `Player <id>` and the hyphens in the weak
+                colour and the number and name in the strong text, a coded name in its codes' colours, and
+                `Team-wide issues` is in the strong text; WHEN the dock's Copy to clipboard is
+                pressed THEN the system clipboard holds the list as text, its first line naming
+                the ruleset, team 734 and its error and warning counts, and a notice says so;
+                WHEN Show suggestions is on and it is pressed again THEN the text ends with
+                `Suggestions` and their groups; GIVEN Live AATF in its window THEN the button
+                stands at the count line's right end
 SE-GUI-62  GIVEN the PES 17 save open on a player, the keyboard moved by Tab to a rating cell
                 of his Playable positions and Space pressed on it (the rating stepped)
            WHEN Ctrl+Z is pressed, the cell still holding the keyboard
