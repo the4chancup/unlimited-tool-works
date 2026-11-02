@@ -15354,3 +15354,13 @@ Why: the updater needs one checksum file per release and an exe that knows its o
 before the workflow was tested.
 Plan: `plans/core/distribution.md` "Release builds in CI", "Distribution: portable .7z
 bundle"; worklog 0.0.1f1g7.
+
+## 2026-11-02 — release — Only 0.0.1's two test pre-releases are published; CDLA-Permissive-2.0 allowed
+Decision (the maintainer): `v0.0.1-rc.1` and `rc.2` are published as pre-releases, an exception
+made while no member has a release; every later release candidate stays a draft. `deny.toml`
+allows `CDLA-Permissive-2.0` in its general list (the maintainer chose it over a one-crate
+exception): `webpki-root-certs`, a root-certificate list `rustls-platform-verifier` pulls only
+on wasm32 and in its own tests, carries it, and `cargo deny` checks every target.
+Why: release candidates are not for members, and a published one is offered to every member
+older than it; the license is a permissive data license with no obligation on Studio's binary.
+Plan: `plans/core/distribution.md` "Release builds in CI"; `spec/core/distribution.md` "License".
