@@ -6971,11 +6971,13 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] f1g (the maintainer, 2026-11-02, after the lead's look at 0.0.1h: a polish batch
     while their look waits; one candidate, 0.0.1i, then their look), each item plan and
     draft first where a member sees it, on a branch from the candidate's `92d1772b`:
-    - [ ] f1g1 Live AATF's heads (the maintainer's rulings on `.tmp/vet/live_heads/`,
+    - [x] f1g1 Live AATF's heads (the maintainer's rulings on `.tmp/vet/live_heads/`,
       DECISIONS "Live AATF's heads in two tones"): drafted, one group per player in the
       draft as in the app; then the app: `team_widgets` `violations.rs` `group_header` and
       the team header as layout jobs (`names.rs` `append_name`), Live AATF's Copy to
-      clipboard (`multi_aatf.rs` `copy_text`'s team block shared) → verify: SE-GUI-63, red first
+      clipboard (`multi_aatf.rs` `copy_text`'s team block shared) → verify: SE-GUI-63, red first.
+      Done 2026-11-02 as `3a7d98fc` on `f1g` (heads `Player <id> - <number> - <name>`; the
+      comparator and the copied text keep their old head)
     - [x] f1g2 P49: a `Fielded position` row's tooltip (`team_widgets` `violations.rs`
       `row`), drafted (`liveList`) → verify: SE-GUI-30's tooltip half, headless
     - [x] f1g3 P50: the toolbar's shortcuts held off only by a text field or a dialog
@@ -6983,19 +6985,28 @@ briefs, review loops, gates and mutation runs as for any step.
       SE-GUI-62, red first.
       Both done 2026-11-02 as `1b4f0115` on `f1g` (a focused number still holds them off:
       egui draws it as a `TextEdit` under its own id), SE-GUI-53's citation fix beside it
-    - [ ] f1g4 PgUp/PgDn: with one team row in the list 7 rows a press, with two or more one
+    - [x] f1g4 PgUp/PgDn: with one team row in the list 7 rows a press, with two or more one
       team row at a time (the maintainer; the draft approved 2026-11-02, `onKey`'s page keys,
       `PAGE_ROWS`); `save_editor` `view/mod.rs` `page_step` and its list move → verify:
-      SE-GUI-53, red first
-    - [ ] f1g5 an Invert value scrolling setting, off by default: every wheel step of a
+      SE-GUI-53, red first. Done 2026-11-02 as `6936cd7c` on `f1g` (`page_selection`)
+    - [x] f1g5 an Invert value scrolling setting, off by default: every wheel step of a
       value reversed (down moves a slider right and raises a number); plan
-      (`plans/core/gui.md` "The wheel over a value"), draft, then the slice
+      (`plans/core/gui.md` "The wheel over a value"), draft, then the slice. Done 2026-11-02
+      as `724e4249` on `f1g` (`wheel.rs` `wheel_steps`; ST-WHEEL-06)
     - [ ] f1g6 `cargo bloat` on the release build (f6's item 2, pulled in): the low-hanging
-      gains only, each measured before it is proposed
+      gains only, each measured before it is proposed. Measured 2026-11-02 on `f1g-s4`:
+      41,491,456 B (+2.0 MiB from `745ea9f4`); proposed, waiting on the maintainer:
+      `codegen-units = 1` (measured 38,724,608 B, -2.64 MiB) and egui's `default_fonts` off
+      (its unused `Ubuntu-Light.ttf`, 353 KiB)
     - [ ] f1g7 CI for GitHub releases, Windows and Linux (f4, pulled in): the workflow
-      written by the lead, a dry run on a test tag where possible
-    - [ ] f1g8 whether 0.0.2-poc (8.36c, 8.36d, the PES 2019 proof of concept) fits in 0.0.1:
-      what is left of it, what it would delay, reported to the maintainer
+      written by the lead, a dry run on a test tag where possible (four questions to the
+      maintainer: 0.0.1 through CI, Linux's archive, the Linux look in WSLg, a pushed dry run)
+    - [x] f1g8 whether 0.0.2-poc fits in 0.0.1: cancelled by the maintainer 2026-11-02 ("we've
+      put enough on the plate already"); 0.0.2-poc stays the first work after the cut
+    - [ ] f1g9 the update check (the maintainer approved it for 0.0.1 2026-11-02, at most
+      5 MB growth; `ureq` 3.5, rustls on `ring`, the platform verifier, no gzip): plan
+      (`plans/core/distribution.md` "Self-update"), DECISIONS, draft (proposal uncommitted,
+      four rulings asked), then two slices: the background check and its state, the notice
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. The maintainer, 2026-11-02: the
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);
