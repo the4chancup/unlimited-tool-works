@@ -249,7 +249,8 @@ all side by side.
   is held over a row of his team other than his own, that row, the slot the drop moves him to,
   is outlined in the selection colour (the draft's `.dragover`), as the lineup lists outline
   theirs; a row the drop moves nothing onto (his own, another team's, an empty slot's) gets
-  none. A dot marks players with unsaved changes. Names
+  none. A draggable row shows the grab hand wherever the pointer is on it, as the lineup rows
+  do (egui leaves a row that also takes clicks on the arrow, so the row asks for it). A dot marks players with unsaved changes. Names
   render with their savefile colour codes applied as text colours (the in-game
   look; 4ccEditor shows the raw control characters), and the name edit field
   keeps the raw string so codes survive a roundtrip untouched. A code's first six bytes are
@@ -2132,7 +2133,8 @@ SE-GUI-64  GIVEN the save open on a team, player 01's row dragged
            WHEN the drag is held over player 03's row
            THEN that row alone is outlined in the selection colour; held over his own row,
                 or under ALL over a row of the next team, no row is; released off the list,
-                no row is
+                no row is; GIVEN the pointer over a player row's name, no drag held THEN the
+                cursor is the grab hand; GIVEN a filter typed THEN it is the arrow
 SE-GUI-62  GIVEN the PES 17 save open on a player, the keyboard moved by Tab to a rating cell
                 of his Playable positions and Space pressed on it (the rating stepped)
            WHEN Ctrl+Z is pressed, the cell still holding the keyboard
