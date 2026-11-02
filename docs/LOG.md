@@ -3046,3 +3046,5 @@ worklog passed 7,000 lines.
   drop row, two instances, Ctrl+C/V of tactics, the captain bonus count, the foot/hand colours.
 - 2026-11-02 — f1e's loop closes (f1e3 mutants 21 of 21 caught); 8.42's undo run is planned: keyed by the widget call, ended
   by a second's pause, Undo or a focus move; the suite's wheel rule and the Ruleset editor's plan follow it.
+- 2026-11-02 — PES 15 keeps no fluid formation switch in its saves (the maintainer's save and texports, measured); a third
+  build is allowed for a program needed now (a quick tool, a manual-check build; the maintainer).
