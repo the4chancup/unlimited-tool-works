@@ -15165,3 +15165,14 @@ another inside a widget call needs a field-level diff the stack does not keep. E
 focus move keeps a typed value and the click after it two steps, as the gesture rule says.
 Plan: `plans/save_editor.md`, the undo bullet; `plans/core/gui.md` the wheel paragraph and
 ST-WHEEL-05; `plans/ruleset_editor.md` the undo paragraph.
+
+## 2026-11-02 — save_editor — The clipboard's target is the selected row; a copy names itself on the system clipboard
+Decision (lead): for Ctrl+C/Ctrl+V (8.45, f1f3) a list row means the selected row (Up and Down
+move it without a click), a copy is a snapshot taken when copied, another save opened empties
+the clipboard, and a copy also writes one line naming what it copied to the system clipboard.
+Why: egui-winit 0.37 turns Ctrl+V into `Event::Paste` of the system clipboard's text and sends
+nothing when the clipboard holds no text (`egui-winit` `on_keyboard_input`, the
+`is_paste_command` branch), so without that line a paste after the system clipboard was
+emptied would do nothing; the snapshot is what a clipboard means; a save's records do not
+carry over to another save's teams. Drafted in `save_editor.js` (`clipCopy`, `clipPaste`).
+Plan: `plans/save_editor.md`, the bullet "Ctrl+C and Ctrl+V".
