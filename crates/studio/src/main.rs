@@ -12,6 +12,7 @@
 mod console;
 mod crash_dump;
 mod gui_log;
+mod instance;
 #[cfg(test)]
 mod test_dir;
 
@@ -290,15 +291,26 @@ fn run_gui_mode(tools: Vec<Box<dyn StudioTool>>, crash_test: bool) -> ExitCode {
             return code;
         }
     };
+    // The copy's slot is claimed before the log opens, so a second window logs to its
+    // own `utw.n.log` and never touches the first's (ST-RUN-12): the claim's lock lives
+    // in `instance` until the process ends. A copy past the slots' cap gets none, and
+    // runs with no log as when the location cannot be opened.
+    let instance = paths.data_dir.as_deref().and_then(instance::claim);
     // The log and the hook go in before the window: the log needs the data location the
     // startup resolved, and the hook needs the log so a panic's line lands in it.
-    let installed_log = install_gui_logger(paths.data_dir.as_deref());
+    let installed_log = match (&paths.data_dir, &instance) {
+        (Some(data_dir), Some(instance)) => install_gui_logger(data_dir, instance.slot()),
+        _ => None,
+    };
     install_panic_hook();
     // The monitor starts with the log, once the data location exists: a first run has neither.
     let _crash_handler = match (&installed_log, &paths.data_dir) {
-        (Some(_), Some(data_dir)) => {
-            watch_crashes(std::env::current_exe(), data_dir, log::logger())
-        }
+        (Some(installed), Some(data_dir)) => watch_crashes(
+            std::env::current_exe(),
+            data_dir,
+            installed.slot,
+            log::logger(),
+        ),
         _ => None,
     };
     // ST-RUN-10's trigger, past the monitor's start and before any window, so the test
@@ -375,8 +387,12 @@ fn main() -> ExitCode {
     // The monitor and the crash test are read before the command line is parsed:
     // neither is a command a member types, so neither is in `--help`.
     match hidden_launch(&args) {
-        Some(HiddenLaunch::Monitor { data_dir, socket }) => {
-            return run_monitor(&data_dir, &socket);
+        Some(HiddenLaunch::Monitor {
+            data_dir,
+            socket,
+            slot,
+        }) => {
+            return run_monitor(&data_dir, &socket, slot);
         }
         Some(HiddenLaunch::CrashTest) => return run_gui_mode(tools(), true),
         None => {}

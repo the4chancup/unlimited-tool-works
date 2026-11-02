@@ -1,7 +1,8 @@
-//! The window's diagnostic sink: `utw.log` in the data location, the previous run's
-//! renamed to `utw.old.log` at start, every line flushed as it is written and the
+//! The window's diagnostic sink: the copy's log in the data location (`utw.log` for the
+//! first copy, `utw.n.log` for the nth — `instance.rs` names a copy's slot), the previous
+//! run's renamed to the old log at start, every line flushed as it is written and the
 //! user's home folder written as `~`, because the file is what a member posts with a bug
-//! report (ST-RUN-07). A panic is written to it with a
+//! report (ST-RUN-07, ST-RUN-12). A panic is written to it with a
 //! backtrace of module bases and offsets by the panic hook, and a panic that ends the
 //! window raises a dialog naming the file before the process exits with the code an
 //! unguarded panic would (ST-RUN-08). A session ends with a closing line, so an old log
@@ -21,10 +22,10 @@ use directories::BaseDirs;
 use log::{Level, LevelFilter, Metadata, Record};
 use studio_core::version_label;
 
-/// `utw.log`'s name in the data location.
+/// `utw.log`'s name in the data location, the first copy's (slot 1's).
 pub(crate) const LOG_FILE_NAME: &str = "utw.log";
 /// What the previous run's log is renamed to, so a crash followed by a relaunch keeps
-/// the crash's log.
+/// the crash's log. Slot 1's; slot n's is `utw.n.old.log`.
 const OLD_LOG_FILE_NAME: &str = "utw.old.log";
 
 /// The session's last log line on a normal close and on a crash that was shown to the
@@ -102,12 +103,12 @@ pub(crate) enum LastSession {
 
 /// How the session `log` holds ended (ST-RUN-09, ST-RUN-10). The lines read
 /// `INFO  session: <line>` or `ERROR crash_dump: <line>`, so a marker is what a line
-/// *ends* with. A closing line counts only last, and wins: a second window's monitor
-/// may append into this log (the second start renamed the first window's log away), and
-/// this session still closed. Otherwise the monitor's line counts anywhere, not only
-/// last: the crashed thread waits for the monitor's reply while the window's other
-/// threads run on and may log after it. A log with no line at all (a session that ended
-/// before its first) is unclean.
+/// *ends* with. A closing line counts only last, and wins: a log that ends in it
+/// belongs to a session that closed, whatever a monitor's line earlier said. Otherwise
+/// the monitor's line counts anywhere, not only last: the crashed thread waits for the
+/// monitor's reply while the window's other threads run on and may log after it. It is
+/// matched by its ending, since slot n's line names `utw.n.dmp`. A log with no line at
+/// all (a session that ended before its first) is unclean.
 fn last_session(log: &str) -> LastSession {
     let last = log.lines().rev().find(|line| !line.trim().is_empty());
     if last.is_some_and(|last| last.ends_with(CLOSING_LINE) || last.ends_with(CRASH_REPORTED_LINE))
@@ -116,7 +117,7 @@ fn last_session(log: &str) -> LastSession {
     }
     if log
         .lines()
-        .any(|line| line.ends_with(crate::crash_dump::DUMP_WRITTEN_LINE))
+        .any(|line| line.ends_with(crate::crash_dump::DUMP_WRITTEN_ENDING))
     {
         LastSession::Dumped
     } else {
@@ -124,23 +125,28 @@ fn last_session(log: &str) -> LastSession {
     }
 }
 
-/// What `open_log` opened: `utw.log`'s file, and how the previous run's log it
+/// What `open_log` opened: the slot's log's file, and how the previous run's log it
 /// rotated away ended (ST-RUN-09, ST-RUN-10).
 pub(crate) struct OpenedLog {
     file: File,
     pub(crate) last_session: LastSession,
 }
 
-/// Creates `data_dir/utw.log` with `first_line` as its first line, the previous run's
-/// renamed to `utw.old.log` first: `fs::rename` replaces the older file on Windows
+/// Creates `data_dir`'s `slot` log (`utw.log` for slot 1, `utw.n.log` for slot n) with
+/// `first_line` as its first line, the previous run's renamed to the slot's old log
+/// first: `fs::rename` replaces the older file on Windows
 /// and Linux alike, so a crash followed by a relaunch keeps the crash's log. The old
 /// log is read before the rename: its lines are what tell an ended session from a clean
-/// one (`last_session`; ST-RUN-09, ST-RUN-10).
-pub(crate) fn open_log(data_dir: &Path, first_line: &str) -> io::Result<OpenedLog> {
-    let path = data_dir.join(LOG_FILE_NAME);
+/// one (`last_session`; ST-RUN-09, ST-RUN-10). Only the slot's own files are touched, so
+/// a second copy's start leaves the first copy's live log alone (ST-RUN-12).
+pub(crate) fn open_log(data_dir: &Path, slot: u32, first_line: &str) -> io::Result<OpenedLog> {
+    let path = data_dir.join(crate::instance::slot_file_name(LOG_FILE_NAME, slot));
     let last_session = if path.exists() {
         let old = fs::read(&path)?;
-        fs::rename(&path, data_dir.join(OLD_LOG_FILE_NAME))?;
+        fs::rename(
+            &path,
+            data_dir.join(crate::instance::slot_file_name(OLD_LOG_FILE_NAME, slot)),
+        )?;
         last_session(&String::from_utf8_lossy(&old))
     } else {
         LastSession::Closed
@@ -205,42 +211,51 @@ impl log::Log for FileLog {
     }
 }
 
-/// What `install_gui_logger` reports back: `utw.log`'s path, and how the previous
-/// run's log ended, the signal for the unclean-shutdown dialog the next start shows
-/// before the window opens (ST-RUN-09).
+/// What `install_gui_logger` reports back: the slot's log's path, the copy's slot, and
+/// how the previous run's log ended, the signal for the unclean-shutdown dialog the
+/// next start shows before the window opens (ST-RUN-09).
 pub(crate) struct InstalledLog {
-    /// `utw.log`'s path in the data location.
+    /// The slot's log's path in the data location (`utw.log` for slot 1, `utw.n.log`
+    /// for slot n).
     pub(crate) path: PathBuf,
-    /// How the previous run's `utw.log` ended (ST-RUN-09, ST-RUN-10).
+    /// How the previous run of this slot's log ended (ST-RUN-09, ST-RUN-10).
     pub(crate) last_session: LastSession,
+    /// The copy's slot: it names the old log and the dump this copy reads and writes.
+    pub(crate) slot: u32,
 }
 
 impl InstalledLog {
-    /// `utw.old.log`'s path: the previous run's `utw.log` as `open_log` renamed it.
+    /// The slot's old log's path: the previous run's log as `open_log` renamed it.
     pub(crate) fn old_path(&self) -> PathBuf {
-        self.path.with_file_name(OLD_LOG_FILE_NAME)
+        self.path.with_file_name(crate::instance::slot_file_name(
+            OLD_LOG_FILE_NAME,
+            self.slot,
+        ))
     }
 
-    /// `utw.dmp`'s path beside the log when the previous session's monitor said it
-    /// wrote one and the file is still there (ST-RUN-10), else `None`.
+    /// The slot's dump's path beside the log when the previous session's monitor said
+    /// it wrote one and the file is still there (ST-RUN-10), else `None`.
     pub(crate) fn dump_path(&self) -> Option<PathBuf> {
         if self.last_session != LastSession::Dumped {
             return None;
         }
-        let path = self.path.with_file_name(crate::crash_dump::DUMP_FILE_NAME);
+        let path = self.path.with_file_name(crate::instance::slot_file_name(
+            crate::crash_dump::DUMP_FILE_NAME,
+            self.slot,
+        ));
         path.is_file().then_some(path)
     }
 }
 
-/// Installs `utw.log` as the `log` sink at level `Info` and returns what it opened.
+/// Installs the slot's log (`utw.log` for slot 1, `utw.n.log` for slot n) as the `log`
+/// sink at level `Info` and returns what it opened.
 /// `None` means no log this run: no data location yet (a first run, whose dialog has
 /// not chosen one — a log written elsewhere would leave a folder behind that the
 /// portable choice promised not to), or the file cannot be opened (a read-only location
 /// the status bar already reports) (ST-RUN-07).
-pub(crate) fn install_gui_logger(data_dir: Option<&Path>) -> Option<InstalledLog> {
-    let data_dir = data_dir?;
+pub(crate) fn install_gui_logger(data_dir: &Path, slot: u32) -> Option<InstalledLog> {
     let first_line = format!("{} {}", studio_core::app_name!(), version_label());
-    let opened = open_log(data_dir, &first_line).ok()?;
+    let opened = open_log(data_dir, slot, &first_line).ok()?;
     let home = BaseDirs::new().map(|dirs| dirs.home_dir().display().to_string());
     log::set_boxed_logger(Box::new(FileLog {
         file: Mutex::new(opened.file),
@@ -249,8 +264,9 @@ pub(crate) fn install_gui_logger(data_dir: Option<&Path>) -> Option<InstalledLog
     .ok()?;
     log::set_max_level(LevelFilter::Info);
     Some(InstalledLog {
-        path: data_dir.join(LOG_FILE_NAME),
+        path: data_dir.join(crate::instance::slot_file_name(LOG_FILE_NAME, slot)),
         last_session: opened.last_session,
+        slot,
     })
 }
 
@@ -342,18 +358,26 @@ fn panic_message(payload: &(dyn Any + Send)) -> String {
 
 /// The next start's dialog when the previous session left no closing line (ST-RUN-09):
 /// the session may have crashed in a way the hook cannot see, or Windows may have ended
-/// it, and the wording stays neutral between the two. `old_log` is `utw.old.log`'s
-/// path; `dump` is `utw.dmp`'s when a crashed session's monitor wrote one
+/// it, and the wording stays neutral between the two. `old_log` is the slot's old log's
+/// path; `dump` is its dump's when a crashed session's monitor wrote one
 /// (ST-RUN-10), asked for beside the log; the dump may still show the member's user
 /// name (its module list holds the exe's full path), which the log writes as `~`.
 pub(crate) fn unclean_text(old_log: &Path, dump: Option<&Path>) -> String {
     match dump {
-        Some(dump) => format!(
-            "The last session did not close normally. If it crashed, please post these two files where you report problems: {} and {}. Your home folder is written in the log as ~, but {} may still show your user name.",
-            old_log.display(),
-            dump.display(),
-            crate::crash_dump::DUMP_FILE_NAME
-        ),
+        Some(dump) => {
+            // The dump is named in the text: the member is asked to post it, and the
+            // name is all the warning needs (the path was already given).
+            let dump_name = match dump.file_name() {
+                Some(name) => name.to_string_lossy().into_owned(),
+                None => dump.display().to_string(),
+            };
+            format!(
+                "The last session did not close normally. If it crashed, please post these two files where you report problems: {} and {}. Your home folder is written in the log as ~, but {} may still show your user name.",
+                old_log.display(),
+                dump.display(),
+                dump_name
+            )
+        }
         None => format!(
             "The last session did not close normally. If it crashed, please post this file where you report problems: {}. Your home folder is written in it as ~.",
             old_log.display()
@@ -436,7 +460,8 @@ mod tests {
     use log::Log;
 
     use super::*;
-    use crate::crash_dump::{DUMP_FILE_NAME, DUMP_WRITTEN_LINE};
+    use crate::crash_dump::{DUMP_FILE_NAME, dump_written_line};
+    use crate::instance::{LOCK_FILE_NAME, claim, slot_file_name};
     use crate::test_dir::TestDir;
 
     // ST-RUN-07
@@ -449,7 +474,7 @@ mod tests {
             fs::read_to_string(dir.path().join(OLD_LOG_FILE_NAME)).unwrap(),
             "first run\n"
         );
-        open_log(dir.path(), "Unlimited Tool Works v0.0.1 pre-alpha").unwrap();
+        open_log(dir.path(), 1, "Unlimited Tool Works v0.0.1 pre-alpha").unwrap();
         assert_eq!(
             fs::read_to_string(dir.path().join(OLD_LOG_FILE_NAME)).unwrap(),
             "second run\n"
@@ -464,7 +489,7 @@ mod tests {
     #[test]
     fn a_first_run_leaves_no_old_log() {
         let dir = TestDir::new("fresh");
-        open_log(dir.path(), "Unlimited Tool Works v0.0.1 pre-alpha").unwrap();
+        open_log(dir.path(), 1, "Unlimited Tool Works v0.0.1 pre-alpha").unwrap();
         assert!(!dir.path().join(OLD_LOG_FILE_NAME).exists());
     }
 
@@ -707,13 +732,23 @@ mod tests {
 
         let dumped = format!(
             "{version}\n{}",
-            log_line(Level::Error, "crash_dump", &DUMP_WRITTEN_LINE)
+            log_line(Level::Error, "crash_dump", &dump_written_line(1))
         );
         assert_eq!(last_session(&dumped), LastSession::Dumped, "{dumped}");
         assert_eq!(
             last_session(dumped.trim_end()),
             LastSession::Dumped,
             "no trailing newline"
+        );
+        // A second slot's monitor names its own dump; the ending still reads as a dump.
+        let dumped_slot2 = format!(
+            "{version}\n{}",
+            log_line(Level::Error, "crash_dump", &dump_written_line(2))
+        );
+        assert_eq!(
+            last_session(&dumped_slot2),
+            LastSession::Dumped,
+            "{dumped_slot2}"
         );
         // A window thread still running while the crashed one waited for the monitor's
         // reply may log after the monitor's line.
@@ -723,8 +758,7 @@ mod tests {
             LastSession::Dumped,
             "{logged_after}"
         );
-        // A second window's monitor can append into this window's log (the second start
-        // renamed the first window's log away); this window's own clean close still wins.
+        // A clean close written after the monitor's line still wins: the session closed.
         let closed_after = format!("{dumped}INFO  session: {CLOSING_LINE}\n");
         assert_eq!(
             last_session(&closed_after),
@@ -752,7 +786,7 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            open_log(dir.path(), "v").unwrap().last_session,
+            open_log(dir.path(), 1, "v").unwrap().last_session,
             LastSession::Unclean
         );
 
@@ -763,13 +797,13 @@ mod tests {
         )
         .unwrap();
         assert_eq!(
-            open_log(dir.path(), "v").unwrap().last_session,
+            open_log(dir.path(), 1, "v").unwrap().last_session,
             LastSession::Closed
         );
 
         let dir = TestDir::new("no_old_log");
         assert_eq!(
-            open_log(dir.path(), "v").unwrap().last_session,
+            open_log(dir.path(), 1, "v").unwrap().last_session,
             LastSession::Closed
         );
     }
@@ -779,7 +813,7 @@ mod tests {
     #[test]
     fn open_log_appends_so_a_monitors_line_lands_between_the_windows() {
         let dir = TestDir::new("append");
-        let mut opened = open_log(dir.path(), "v").unwrap();
+        let mut opened = open_log(dir.path(), 1, "v").unwrap();
         let mut monitor = OpenOptions::new()
             .append(true)
             .open(dir.path().join(LOG_FILE_NAME))
@@ -822,6 +856,7 @@ mod tests {
         let installed = InstalledLog {
             path: Path::new("C:\\data").join(LOG_FILE_NAME),
             last_session: LastSession::Unclean,
+            slot: 1,
         };
         assert_eq!(
             installed.old_path(),
@@ -838,6 +873,7 @@ mod tests {
         let installed = InstalledLog {
             path: dir.path().join(LOG_FILE_NAME),
             last_session: LastSession::Dumped,
+            slot: 1,
         };
         assert_eq!(installed.dump_path(), Some(dir.path().join(DUMP_FILE_NAME)));
         let installed = InstalledLog {
@@ -850,6 +886,7 @@ mod tests {
         let installed = InstalledLog {
             path: dir.path().join(LOG_FILE_NAME),
             last_session: LastSession::Dumped,
+            slot: 1,
         };
         assert_eq!(installed.dump_path(), None);
     }
@@ -863,6 +900,7 @@ mod tests {
         let installed = InstalledLog {
             path: dir.path().join(LOG_FILE_NAME),
             last_session: LastSession::Closed,
+            slot: 1,
         };
         assert_eq!(unclean_notice(&installed), None);
 
@@ -891,8 +929,7 @@ mod tests {
     // A process sets one global logger ever, and `main`'s verbosity test installs the
     // CLI's env_logger, so whichever of the two tests ran second in this process would
     // lose. This one drives `install_gui_logger` in a fresh child of the test binary,
-    // the env flag keeping the child from re-spawning itself. The `None` case installs
-    // nothing, so it is checked first, before the install.
+    // the env flag keeping the child from re-spawning itself.
     #[test]
     fn install_gui_logger_writes_the_version_line_and_then_what_is_logged() {
         const CHILD: &str = "STUDIO_TEST_GUI_LOG_INSTALL";
@@ -909,8 +946,7 @@ mod tests {
             return;
         }
         let dir = TestDir::new("install_log");
-        assert!(install_gui_logger(None).is_none());
-        let installed = install_gui_logger(Some(dir.path())).unwrap();
+        let installed = install_gui_logger(dir.path(), 1).unwrap();
         assert_eq!(installed.path, dir.path().join("utw.log"));
         assert_eq!(installed.last_session, LastSession::Closed);
         log::info!("install probe");
@@ -924,5 +960,96 @@ mod tests {
             lines.any(|line| line.contains("install probe")),
             "{written}"
         );
+    }
+
+    // ST-RUN-12: a second copy's start writes `utw.2.log` and leaves the first copy's
+    // `utw.log` untouched.
+    #[test]
+    fn a_second_copy_logs_to_its_own_slots_log() {
+        let dir = TestDir::new("second_slot_log");
+        let first_log = "v\nINFO  session: the first copy is still running\n";
+        fs::write(dir.path().join(LOG_FILE_NAME), first_log).unwrap();
+        let first = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(dir.path().join(LOCK_FILE_NAME))
+            .unwrap();
+        first.try_lock().unwrap();
+        let instance = claim(dir.path()).unwrap();
+        assert_eq!(instance.slot(), 2);
+        open_log(dir.path(), instance.slot(), "v2").unwrap();
+        assert_eq!(
+            fs::read_to_string(dir.path().join(slot_file_name(LOG_FILE_NAME, 2))).unwrap(),
+            "v2\n"
+        );
+        assert_eq!(
+            fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap(),
+            first_log
+        );
+        assert!(!dir.path().join(OLD_LOG_FILE_NAME).exists());
+        drop(first);
+    }
+
+    // ST-RUN-12: with no copy running, the claim takes slot 1 and `open_log` writes
+    // `utw.log`, as before.
+    #[test]
+    fn a_first_copy_logs_to_utw_log() {
+        let dir = TestDir::new("first_slot_log");
+        let instance = claim(dir.path()).unwrap();
+        assert_eq!(instance.slot(), 1);
+        open_log(dir.path(), instance.slot(), "v").unwrap();
+        assert_eq!(
+            fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap(),
+            "v\n"
+        );
+    }
+
+    // ST-RUN-12: a second copy's unclean-session report reads its own slot's previous
+    // log and names `utw.2.old.log`; the first copy's live `utw.log`, holding no closing
+    // line either, is not read.
+    #[test]
+    fn a_second_copy_reports_its_own_slots_previous_session() {
+        let dir = TestDir::new("second_slot_unclean");
+        let first_log = "v\nERROR panic: the first copy is still running\n";
+        fs::write(dir.path().join(LOG_FILE_NAME), first_log).unwrap();
+        fs::write(
+            dir.path().join(slot_file_name(LOG_FILE_NAME, 2)),
+            "v\nERROR panic: boom\n",
+        )
+        .unwrap();
+        let first = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(dir.path().join(LOCK_FILE_NAME))
+            .unwrap();
+        first.try_lock().unwrap();
+        let instance = claim(dir.path()).unwrap();
+        let opened = open_log(dir.path(), instance.slot(), "v2").unwrap();
+        assert_eq!(opened.last_session, LastSession::Unclean);
+        let installed = InstalledLog {
+            path: dir.path().join(slot_file_name(LOG_FILE_NAME, 2)),
+            last_session: opened.last_session,
+            slot: instance.slot(),
+        };
+        let notice = unclean_notice(&installed).unwrap();
+        assert!(
+            notice.contains(&dir.path().join("utw.2.old.log").display().to_string()),
+            "{notice}"
+        );
+        // The first copy's live log was neither read nor rotated.
+        assert_eq!(
+            fs::read_to_string(dir.path().join(LOG_FILE_NAME)).unwrap(),
+            first_log
+        );
+        assert!(!dir.path().join(OLD_LOG_FILE_NAME).exists());
+        assert_eq!(
+            fs::read_to_string(dir.path().join("utw.2.old.log")).unwrap(),
+            "v\nERROR panic: boom\n"
+        );
+        drop(first);
     }
 }
