@@ -1,19 +1,21 @@
 //! The import's section choice: which parts of a Team TOML document an import writes.
 
 use pes_savefile::interchange::team_toml::{
-    EditFlagsSection, PlayerSection, TeamSection, TeamToml,
+    EditFlagsSection, PlayerSection, TeamEditFlagsSection, TeamSection, TeamToml,
 };
 use pes_savefile::settings_toml::{AppearanceSettings, MotionSettings};
 
 /// The import's three section choices: which parts of a team file it writes.
-/// Gameplay is the team's own keys and each player's body, abilities, positions, skills
-/// and free-kick motion; aesthetics is each player's names, shirt number, nationality,
-/// age and look; tactics is the formation, the set-piece takers and the presets.
+/// Stats is the team's name, short name, manager and stadium, with their edit
+/// flags, and each player's body, abilities, positions and skills; aesthetics
+/// is the team's colours, kits and strip flag and each player's names, shirt
+/// number, nationality, age and look, every motion included; gameplan is the
+/// lineup, the set-piece takers and the presets.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct Sections {
-    pub(crate) gameplay: bool,
+    pub(crate) stats: bool,
     pub(crate) aesthetics: bool,
-    pub(crate) tactics: bool,
+    pub(crate) gameplan: bool,
 }
 
 /// `document` reduced to the chosen sections' keys: every key of an unchosen section set
@@ -28,8 +30,8 @@ pub(crate) fn keep_sections(document: &mut TeamToml, sections: Sections) {
         players,
         roster_breaks: _,
     } = document;
-    *team = kept_team(std::mem::take(team), sections.gameplay);
-    *tactics = kept(sections.tactics, std::mem::take(tactics));
+    *team = kept_team(std::mem::take(team), sections);
+    *tactics = kept(sections.gameplan, std::mem::take(tactics));
     for player in players.values_mut() {
         *player = kept_player(std::mem::take(player), sections);
     }
@@ -43,11 +45,17 @@ fn kept<T: Default>(chosen: bool, value: T) -> T {
     if chosen { value } else { T::default() }
 }
 
-/// The `[team]` table (name, short name, manager, stadium, colours, kits) loads with
-/// gameplay: none of it is a player's look or a tactic. The id stays whatever the choice:
+/// The `[team]` table's name half (name, short name, manager, stadium, their
+/// edit flags) loads with stats, its look (the colours, the kit slots, the
+/// strip flag) with aesthetics. The id stays whatever the choice:
 /// the import never writes it, and `apply` reads it as the team the file came from, whose
 /// `id × 100 + slot` base-copy id means "none" and becomes the target player's own id.
-fn kept_team(team: TeamSection, gameplay: bool) -> TeamSection {
+fn kept_team(team: TeamSection, sections: Sections) -> TeamSection {
+    let Sections {
+        stats,
+        aesthetics,
+        gameplan: _,
+    } = sections;
     let TeamSection {
         id,
         name,
@@ -59,26 +67,38 @@ fn kept_team(team: TeamSection, gameplay: bool) -> TeamSection {
         kit_slots,
         edit_flags,
     } = team;
+    let TeamEditFlagsSection {
+        name: name_edited,
+        short_name: short_name_edited,
+        stadium: stadium_edited,
+        strip: strip_edited,
+    } = edit_flags;
     TeamSection {
         id,
-        name: kept(gameplay, name),
-        short_name: kept(gameplay, short_name),
-        manager_id: kept(gameplay, manager_id),
-        stadium_id: kept(gameplay, stadium_id),
-        color_1: kept(gameplay, color_1),
-        color_2: kept(gameplay, color_2),
-        kit_slots: kept(gameplay, kit_slots),
-        edit_flags: kept(gameplay, edit_flags),
+        name: kept(stats, name),
+        short_name: kept(stats, short_name),
+        manager_id: kept(stats, manager_id),
+        stadium_id: kept(stats, stadium_id),
+        color_1: kept(aesthetics, color_1),
+        color_2: kept(aesthetics, color_2),
+        kit_slots: kept(aesthetics, kit_slots),
+        edit_flags: TeamEditFlagsSection {
+            name: kept(stats, name_edited),
+            short_name: kept(stats, short_name_edited),
+            stadium: kept(stats, stadium_edited),
+            strip: kept(aesthetics, strip_edited),
+        },
     }
 }
 
-/// One player's keys split between gameplay (body, abilities, positions, skills, their edit
-/// flags) and aesthetics (names, shirt number, nationality, age, the look and its flags).
+/// One player's keys split between stats (body, abilities, positions, skills, their edit
+/// flags) and aesthetics (names, shirt number, nationality, age, the look, every motion
+/// included, and its flags).
 fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
     let Sections {
-        gameplay,
+        stats,
         aesthetics,
-        tactics: _,
+        gameplan: _,
     } = sections;
     let PlayerSection {
         name,
@@ -91,7 +111,7 @@ fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
         boots_id,
         gloves_id,
         base_copy_id,
-        stats,
+        stats: player_stats,
         positions,
         skills,
         edit_flags,
@@ -140,23 +160,23 @@ fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
         number: kept(aesthetics, number),
         nationality: kept(aesthetics, nationality),
         age: kept(aesthetics, age),
-        height: kept(gameplay, height),
-        weight: kept(gameplay, weight),
+        height: kept(stats, height),
+        weight: kept(stats, weight),
         boots_id: kept(aesthetics, boots_id),
         gloves_id: kept(aesthetics, gloves_id),
         base_copy_id: kept(aesthetics, base_copy_id),
-        stats: kept(gameplay, stats),
-        positions: kept(gameplay, positions),
-        skills: kept(gameplay, skills),
+        stats: kept(stats, player_stats),
+        positions: kept(stats, positions),
+        skills: kept(stats, skills),
         edit_flags: EditFlagsSection {
-            player: kept(gameplay, edited),
-            basic_settings: kept(gameplay, basic_settings),
-            registered_position: kept(gameplay, registered_position),
-            playable_positions: kept(gameplay, playable_positions),
-            abilities: kept(gameplay, abilities),
-            skills: kept(gameplay, skills_edited),
-            playing_style: kept(gameplay, playing_style),
-            com_styles: kept(gameplay, com_styles),
+            player: kept(stats, edited),
+            basic_settings: kept(stats, basic_settings),
+            registered_position: kept(stats, registered_position),
+            playable_positions: kept(stats, playable_positions),
+            abilities: kept(stats, abilities),
+            skills: kept(stats, skills_edited),
+            playing_style: kept(stats, playing_style),
+            com_styles: kept(stats, com_styles),
             motion: kept(aesthetics, motion_edited),
             base_copy: kept(aesthetics, base_copy),
             face: kept(aesthetics, face_edited),
@@ -175,10 +195,7 @@ fn kept_player(player: PlayerSection, sections: Sections) -> PlayerSection {
                 arm_movement_dribbling: kept(aesthetics, arm_movement_dribbling),
                 arm_movement_running: kept(aesthetics, arm_movement_running),
                 corner_kick: kept(aesthetics, corner_kick),
-                // The one motion that loads with gameplay, not with the look: the squad
-                // files members trade carry it with the abilities, and a team loaded with
-                // the same choices must come out the same.
-                free_kick: kept(gameplay, free_kick),
+                free_kick: kept(aesthetics, free_kick),
                 penalty_kick: kept(aesthetics, penalty_kick),
                 dribbling: kept(aesthetics, dribbling),
                 goal_celebration_1: kept(aesthetics, goal_celebration_1),
@@ -197,7 +214,6 @@ mod tests {
     use pes_savefile::EditFile;
     use pes_savefile::interchange::team_toml::TacticsSection;
     use pes_savefile::model::PlayerEntry;
-    use pes_savefile::model::player::PlayerMotion;
     use pes_version::PesVersion;
 
     use super::*;
@@ -226,20 +242,20 @@ mod tests {
         (original, document)
     }
 
-    const ONLY_GAMEPLAY: Sections = Sections {
-        gameplay: true,
+    const ONLY_STATS: Sections = Sections {
+        stats: true,
         aesthetics: false,
-        tactics: false,
+        gameplan: false,
     };
     const ONLY_AESTHETICS: Sections = Sections {
-        gameplay: false,
+        stats: false,
         aesthetics: true,
-        tactics: false,
+        gameplan: false,
     };
-    const ONLY_TACTICS: Sections = Sections {
-        gameplay: false,
+    const ONLY_GAMEPLAN: Sections = Sections {
+        stats: false,
         aesthetics: false,
-        tactics: true,
+        gameplan: true,
     };
 
     /// A key's name and its value as text, `None` when the document leaves it absent (an
@@ -250,16 +266,25 @@ mod tests {
         (name, (*value != T::default()).then(|| format!("{value:?}")))
     }
 
-    fn team_keys(team: &TeamSection) -> Vec<Key> {
+    fn team_stats_keys(team: &TeamSection) -> Vec<Key> {
+        let flags = &team.edit_flags;
         vec![
             key("team.name", &team.name),
             key("team.short_name", &team.short_name),
             key("team.manager_id", &team.manager_id),
             key("team.stadium_id", &team.stadium_id),
+            key("team.edit_flags.name", &flags.name),
+            key("team.edit_flags.short_name", &flags.short_name),
+            key("team.edit_flags.stadium", &flags.stadium),
+        ]
+    }
+
+    fn team_aesthetics_keys(team: &TeamSection) -> Vec<Key> {
+        vec![
             key("team.color_1", &team.color_1),
             key("team.color_2", &team.color_2),
             key("team.kit_slots", &team.kit_slots),
-            key("team.edit_flags", &team.edit_flags),
+            key("team.edit_flags.strip", &team.edit_flags.strip),
         ]
     }
 
@@ -277,7 +302,7 @@ mod tests {
         ]
     }
 
-    fn player_gameplay_keys(player: &PlayerSection) -> Vec<Key> {
+    fn player_stats_keys(player: &PlayerSection) -> Vec<Key> {
         let flags = &player.edit_flags;
         vec![
             key("height", &player.height),
@@ -293,10 +318,6 @@ mod tests {
             key("edit_flags.skills", &flags.skills),
             key("edit_flags.playing_style", &flags.playing_style),
             key("edit_flags.com_styles", &flags.com_styles),
-            key(
-                "appearance.motion.free_kick",
-                &player.appearance.motion.free_kick,
-            ),
         ]
     }
 
@@ -342,6 +363,7 @@ mod tests {
                 &motion.arm_movement_running,
             ),
             key("appearance.motion.corner_kick", &motion.corner_kick),
+            key("appearance.motion.free_kick", &motion.free_kick),
             key("appearance.motion.penalty_kick", &motion.penalty_kick),
             key("appearance.motion.dribbling", &motion.dribbling),
             key(
@@ -357,8 +379,11 @@ mod tests {
 
     /// The keys absent from /co/'s PES 19 document, which PES 19 does not store. The premise
     /// checks skip them, since an absent key proves nothing about the filter.
-    const NOT_IN_PES_19: [&str; 3] = [
+    const NOT_IN_PES_19: [&str; 6] = [
         "team.kit_slots",
+        "team.edit_flags.short_name",
+        "team.edit_flags.stadium",
+        "team.edit_flags.strip",
         "edit_flags.base_copy",
         "appearance.motion.dribbling",
     ];
@@ -413,13 +438,14 @@ mod tests {
 
     fn assert_premises(original: &TeamToml) {
         assert_eq!(original.players.len(), 23, "premise: /co/ has 23 players");
-        assert_held(&[team_keys(&original.team)]);
+        assert_held(&[team_stats_keys(&original.team)]);
+        assert_held(&[team_aesthetics_keys(&original.team)]);
         assert_held(&[tactics_keys(&original.tactics)]);
         let players: Vec<&PlayerSection> = original.players.values().collect();
         assert_held(
             &players
                 .iter()
-                .map(|p| player_gameplay_keys(p))
+                .map(|p| player_stats_keys(p))
                 .collect::<Vec<_>>(),
         );
         assert_held(
@@ -431,21 +457,22 @@ mod tests {
     }
 
     #[test]
-    fn gameplay_alone_keeps_the_team_and_the_players_abilities_and_nothing_else() {
-        let (original, document) = filtered(ONLY_GAMEPLAY);
+    fn stats_alone_keeps_the_teams_name_half_and_the_players_abilities_and_nothing_else() {
+        let (original, document) = filtered(ONLY_STATS);
         assert_premises(&original);
         assert_eq!(document.team.id, Some(CO), "the id is kept");
         assert_kept(
-            team_keys(&document.team),
-            team_keys(&original.team),
-            "gameplay",
+            team_stats_keys(&document.team),
+            team_stats_keys(&original.team),
+            "stats",
         );
-        assert_absent(tactics_keys(&document.tactics), "gameplay");
+        assert_absent(team_aesthetics_keys(&document.team), "stats");
+        assert_absent(tactics_keys(&document.tactics), "stats");
         for (slot, player, kept) in player_pairs(&original, &document) {
-            let context = format!("gameplay, slot {slot}");
+            let context = format!("stats, slot {slot}");
             assert_kept(
-                player_gameplay_keys(&kept),
-                player_gameplay_keys(player),
+                player_stats_keys(&kept),
+                player_stats_keys(player),
                 &context,
             );
             assert_absent(player_aesthetics_keys(&kept), &context);
@@ -453,11 +480,16 @@ mod tests {
     }
 
     #[test]
-    fn aesthetics_alone_keeps_the_players_names_and_looks_and_nothing_else() {
+    fn aesthetics_alone_keeps_the_teams_look_and_the_players_names_and_looks() {
         let (original, document) = filtered(ONLY_AESTHETICS);
         assert_premises(&original);
         assert_eq!(document.team.id, Some(CO), "the id is kept");
-        assert_absent(team_keys(&document.team), "aesthetics");
+        assert_kept(
+            team_aesthetics_keys(&document.team),
+            team_aesthetics_keys(&original.team),
+            "aesthetics",
+        );
+        assert_absent(team_stats_keys(&document.team), "aesthetics");
         assert_absent(tactics_keys(&document.tactics), "aesthetics");
         for (slot, player, kept) in player_pairs(&original, &document) {
             let context = format!("aesthetics, slot {slot}");
@@ -466,24 +498,25 @@ mod tests {
                 player_aesthetics_keys(player),
                 &context,
             );
-            assert_absent(player_gameplay_keys(&kept), &context);
+            assert_absent(player_stats_keys(&kept), &context);
         }
     }
 
     #[test]
-    fn tactics_alone_keeps_the_tactics_table_and_no_player() {
-        let (original, document) = filtered(ONLY_TACTICS);
+    fn gameplan_alone_keeps_the_tactics_table_and_no_player() {
+        let (original, document) = filtered(ONLY_GAMEPLAN);
         assert_premises(&original);
         assert_eq!(document.team.id, Some(CO), "the id is kept");
-        assert_absent(team_keys(&document.team), "tactics");
+        assert_absent(team_stats_keys(&document.team), "gameplan");
+        assert_absent(team_aesthetics_keys(&document.team), "gameplan");
         assert_kept(
             tactics_keys(&document.tactics),
             tactics_keys(&original.tactics),
-            "tactics",
+            "gameplan",
         );
         for (slot, _, kept) in player_pairs(&original, &document) {
-            let context = format!("tactics, slot {slot}");
-            assert_absent(player_gameplay_keys(&kept), &context);
+            let context = format!("gameplan, slot {slot}");
+            assert_absent(player_stats_keys(&kept), &context);
             assert_absent(player_aesthetics_keys(&kept), &context);
         }
         // An emptied player table is dropped, not kept: applied, an empty one still notes
@@ -494,9 +527,9 @@ mod tests {
     #[test]
     fn every_section_on_leaves_the_document_unchanged() {
         let (original, document) = filtered(Sections {
-            gameplay: true,
+            stats: true,
             aesthetics: true,
-            tactics: true,
+            gameplan: true,
         });
         assert_eq!(document, original);
     }
@@ -504,9 +537,9 @@ mod tests {
     #[test]
     fn every_section_off_leaves_only_the_id_the_version_and_the_roster_breaks() {
         let (original, document) = filtered(Sections {
-            gameplay: false,
+            stats: false,
             aesthetics: false,
-            tactics: false,
+            gameplan: false,
         });
         assert_premises(&original);
         let expected = TeamToml {
@@ -524,7 +557,7 @@ mod tests {
     /// /co/'s slot 17 (DOOM) holds a free-kick motion of 15 and a corner-kick motion of 5
     /// (stored values; the file spells them 16 and 6).
     #[test]
-    fn the_free_kick_motion_goes_with_gameplay_and_the_corner_kick_with_aesthetics() {
+    fn the_free_kick_and_corner_kick_motions_go_with_aesthetics() {
         let original = export(&fixture(), CO);
         let doom = &original.players[&17];
         assert_eq!(
@@ -535,23 +568,20 @@ mod tests {
         assert_eq!(doom.appearance.motion.free_kick, Some(15), "premise");
         assert_eq!(doom.appearance.motion.corner_kick, Some(5), "premise");
 
-        let (_, gameplay) = filtered(ONLY_GAMEPLAY);
-        let motion = &gameplay.players[&17].appearance.motion;
-        assert_eq!(
-            motion.free_kick,
-            Some(15),
-            "gameplay keeps the free-kick motion"
-        );
+        let (_, stats) = filtered(ONLY_STATS);
+        let motion = &stats.players[&17].appearance.motion;
+        assert_eq!(motion.free_kick, None, "stats drops the free-kick motion");
         assert_eq!(
             motion.corner_kick, None,
-            "gameplay drops the corner-kick motion"
+            "stats drops the corner-kick motion"
         );
 
         let (_, aesthetics) = filtered(ONLY_AESTHETICS);
         let motion = &aesthetics.players[&17].appearance.motion;
         assert_eq!(
-            motion.free_kick, None,
-            "aesthetics drops the free-kick motion"
+            motion.free_kick,
+            Some(15),
+            "aesthetics keeps the free-kick motion"
         );
         assert_eq!(
             motion.corner_kick,
@@ -560,17 +590,151 @@ mod tests {
         );
     }
 
-    /// /co/'s document with gameplay alone, applied onto /3/ as `Session::import_team` does:
+    /// /co/'s PES 19 document holds both halves of `[team]`: under stats alone its
+    /// colours drop and its name half stays; under aesthetics alone the reverse.
+    #[test]
+    fn the_team_table_splits_between_stats_and_aesthetics() {
+        let (original, aesthetics) = filtered(ONLY_AESTHETICS);
+        assert_ne!(
+            original.team.color_1, original.team.color_2,
+            "premise: two distinct colours"
+        );
+        let team = &aesthetics.team;
+        assert_eq!(
+            team.color_1, original.team.color_1,
+            "aesthetics keeps color_1"
+        );
+        assert_eq!(
+            team.color_2, original.team.color_2,
+            "aesthetics keeps color_2"
+        );
+        assert_eq!(team.name, None, "aesthetics drops the name");
+        assert_eq!(team.short_name, None, "aesthetics drops the short name");
+        assert_eq!(team.manager_id, None, "aesthetics drops the manager");
+        assert_eq!(team.stadium_id, None, "aesthetics drops the stadium");
+
+        let (_, stats) = filtered(ONLY_STATS);
+        let team = &stats.team;
+        assert_eq!(team.name, original.team.name, "stats keeps the name");
+        assert_eq!(
+            team.short_name, original.team.short_name,
+            "stats keeps the short name"
+        );
+        assert_eq!(
+            team.manager_id, original.team.manager_id,
+            "stats keeps the manager"
+        );
+        assert_eq!(
+            team.stadium_id, original.team.stadium_id,
+            "stats keeps the stadium"
+        );
+        assert_eq!(team.color_1, None, "stats drops color_1");
+        assert_eq!(team.color_2, None, "stats drops color_2");
+    }
+
+    /// The one-version edit flags load with the key they flag: PES 15's
+    /// short-name flag and PES 20 on's stadium flag go with stats like the
+    /// name flag.
+    #[test]
+    fn the_versions_own_team_edit_flags_go_with_stats() {
+        /// One version-gated flag of `[team.edit_flags]`, read off a team.
+        type Flag = fn(&TeamEditFlagsSection) -> Option<bool>;
+        let cases: [(PesVersion, &'static str, Flag); 2] = [
+            (PesVersion::Pes15, "short-name", |flags| flags.short_name),
+            (PesVersion::Pes21, "stadium", |flags| flags.stadium),
+        ];
+        for (version, label, flag) in cases {
+            let file = EditFile::from_bytes(&pes_savefile::fixture_save(version))
+                .expect("the fixture reads");
+            let players: Vec<&PlayerEntry> = file.players().iter().collect();
+            let original = TeamToml::from_team(version, file.team(CO).unwrap(), &players).unwrap();
+            let held = flag(&original.team.edit_flags);
+            assert_eq!(
+                held,
+                Some(false),
+                "premise: /co/'s {version:?} document holds the {label} flag"
+            );
+
+            let mut stats = original.clone();
+            keep_sections(&mut stats, ONLY_STATS);
+            assert_eq!(
+                flag(&stats.team.edit_flags),
+                held,
+                "stats keeps the {label} flag"
+            );
+
+            let mut aesthetics = original.clone();
+            keep_sections(&mut aesthetics, ONLY_AESTHETICS);
+            assert_eq!(
+                flag(&aesthetics.team.edit_flags),
+                None,
+                "aesthetics drops the {label} flag"
+            );
+        }
+    }
+
+    /// PES 17's `[team]` keys PES 19 lacks split the same way: the kit slots and
+    /// the strip flag are the team's look, the name flag stats'.
+    #[test]
+    fn pes_17s_kit_slots_and_strip_flag_go_with_aesthetics() {
+        let file = EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes17))
+            .expect("the PES 17 fixture reads");
+        let players: Vec<&PlayerEntry> = file.players().iter().collect();
+        let original =
+            TeamToml::from_team(PesVersion::Pes17, file.team(CO).unwrap(), &players).unwrap();
+        assert!(original.team.kit_slots.is_some(), "premise: kit slots");
+        assert_eq!(
+            original.team.edit_flags.strip,
+            Some(false),
+            "premise: the strip flag"
+        );
+        assert_eq!(
+            original.team.edit_flags.name,
+            Some(false),
+            "premise: the name flag"
+        );
+
+        let mut aesthetics = original.clone();
+        keep_sections(&mut aesthetics, ONLY_AESTHETICS);
+        assert_eq!(
+            aesthetics.team.kit_slots, original.team.kit_slots,
+            "aesthetics keeps the kit slots"
+        );
+        assert_eq!(
+            aesthetics.team.edit_flags.strip,
+            Some(false),
+            "aesthetics keeps the strip flag"
+        );
+        assert_eq!(
+            aesthetics.team.edit_flags.name, None,
+            "aesthetics drops the name flag"
+        );
+
+        let mut stats = original.clone();
+        keep_sections(&mut stats, ONLY_STATS);
+        assert_eq!(stats.team.kit_slots, None, "stats drops the kit slots");
+        assert_eq!(
+            stats.team.edit_flags.strip, None,
+            "stats drops the strip flag"
+        );
+        assert_eq!(
+            stats.team.edit_flags.name,
+            Some(false),
+            "stats keeps the name flag"
+        );
+    }
+
+    /// /co/'s document with stats alone, applied onto /3/ as `Session::import_team` does:
     /// every one of the 23 roster slots compared, 701's slot `i` against 714's slot `i`.
     #[test]
-    fn gameplay_alone_onto_another_team_writes_its_abilities_and_keeps_its_names_and_looks() {
+    fn stats_alone_onto_another_team_writes_its_abilities_and_keeps_its_names_and_looks() {
         let file = fixture();
         let player_at = |team: u32, slot: usize| -> &PlayerEntry {
             let id = file.team(team).unwrap().roster[slot].player_id;
             file.player(id).unwrap()
         };
         let mut document = export(&file, CO);
-        keep_sections(&mut document, ONLY_GAMEPLAY);
+        keep_sections(&mut document, ONLY_STATS);
         document.team.id = Some(THREE);
         let before = file.team(THREE).unwrap().clone();
         let mut team = before.clone();
@@ -592,6 +756,11 @@ mod tests {
             file.team(CO).unwrap().tactics,
             "premise: the tactics differ"
         );
+        assert_ne!(
+            before.colors,
+            file.team(CO).unwrap().colors,
+            "premise: the colours differ"
+        );
         let differ = |what: fn(&PlayerEntry) -> u8| {
             (0..23).any(|slot| what(player_at(THREE, slot)) != what(player_at(CO, slot)))
         };
@@ -610,6 +779,8 @@ mod tests {
         document.apply(VERSION, &mut team, &mut players).unwrap();
 
         assert_eq!(team.tactics, before.tactics, "/3/'s tactics are unchanged");
+        assert_eq!(team.name, "/co/", "the team's name is the file's");
+        assert_eq!(team.colors, before.colors, "/3/'s colours are unchanged");
         for slot in 0..23 {
             let three = player_at(THREE, slot);
             let id = before.roster[slot].player_id;
@@ -629,13 +800,9 @@ mod tests {
             );
             let co = player_at(CO, slot);
             assert_eq!(after.stats, co.stats, "slot {slot}: /co/'s abilities");
-            let motion = PlayerMotion {
-                free_kick: co.motion.free_kick,
-                ..three.motion.clone()
-            };
             assert_eq!(
-                after.motion, motion,
-                "slot {slot}: /co/'s free kick, /3/'s other motions"
+                after.motion, three.motion,
+                "slot {slot}: /3/'s motions, the free kick's with them"
             );
         }
     }

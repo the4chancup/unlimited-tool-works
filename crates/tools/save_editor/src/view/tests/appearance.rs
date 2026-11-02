@@ -649,6 +649,61 @@ fn a_physique_field_shows_stored_minus_limit_and_stores_shown_plus_it() {
     assert_eq!(neck_length(&view), 10, "typed 3 stores 3 + 7");
 }
 
+// The physique scale's arrow step on the same ±7 range: an ArrowDown
+// takes the shown value down one and an ArrowUp puts it back.
+// SE-GUI-57
+#[test]
+fn a_physique_fields_arrow_press_steps_the_shown_value_by_one() {
+    let path = fixture(PesVersion::Pes21, "physique_arrows");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.player_mut(70101).unwrap().appearance.neck_length = 12;
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.aesthetics_from_exports = true;
+    view.edit_aesthetics = true;
+    let neck_length = |view: &SaveView| {
+        view.session
+            .as_ref()
+            .unwrap()
+            .file()
+            .player(70101)
+            .unwrap()
+            .appearance
+            .neck_length
+    };
+    assert_eq!(neck_length(&view), 12, "premise: stored 12");
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    open_appearance(&mut window, &mut view);
+
+    let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Neck length")
+    });
+    let neck = right_of_label(&nodes, "Neck length", Role::SpinButton)
+        .first()
+        .copied()
+        .expect("the Neck length control");
+    assert_eq!(neck.value(), Some("5"), "stored 12 shows 5");
+    click(&mut window, neck, &mut view);
+    // The settle frame lets the field's edit install its key filter,
+    // which keeps the arrows for itself.
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "premise: the Neck length field holds the keyboard"
+    );
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(neck_length(&view), 11, "one ArrowDown stores 4 + 7");
+    window.frame(
+        vec![key(egui::Key::ArrowUp, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(neck_length(&view), 12, "one ArrowUp stores 5 + 7 again");
+}
+
 // A palette swatch click writes its index as one undoable edit.
 #[test]
 fn a_swatch_click_stores_its_index() {

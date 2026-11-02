@@ -106,7 +106,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         return;
     };
     let file = session.file();
-    let (_, settled) = edit_settled(ui, *focused);
+    let (_, end) = edit_settled(ui, *focused);
     // The open team: the selected row's team (a player's or a team row's
     // own — the team the view is editing), else the selector's.
     let team_id = aatf_check::current_team(*team, *selected);
@@ -116,8 +116,14 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         ruleset: active.key.clone(),
         suggestions: *live_suggestions,
     };
-    let checking =
-        aatf_check::update_check(&mut live.check, ui.ctx(), file, &active.rules, key, settled);
+    let checking = aatf_check::update_check(
+        &mut live.check,
+        ui.ctx(),
+        file,
+        &active.rules,
+        key,
+        end.settled(),
+    );
     let listing = Listing {
         file,
         team_id,

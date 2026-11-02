@@ -28,7 +28,7 @@ use crate::view::abilities::{
     STRONGER_HAND_LABEL, SmallStat, gating_tooltip, position_label,
 };
 use crate::view::live_marks::{MarkedField, Marks};
-use crate::view::{SaveView, edit_player, edit_team, selected_player};
+use crate::view::{SaveView, edit_player, edit_team, number_arrows, selected_player};
 
 /// The General info panel's Name field.
 pub(super) const NAME_LABEL: &str = "Name";
@@ -327,10 +327,12 @@ pub(super) fn general(
         );
         pair_half(ui, Half::Second, NUMBER_LABEL, None, |ui| {
             let range = 0..=roster_number_max(schema);
-            let mut response = ui.add_sized(
-                [BOX_WIDTH, ui.spacing().interact_size.y],
-                egui::DragValue::new(&mut shirt_number).range(range.clone()),
-            );
+            let mut response = number_arrows(ui, &mut shirt_number, range.clone(), |ui, value| {
+                ui.add_sized(
+                    [BOX_WIDTH, ui.spacing().interact_size.y],
+                    egui::DragValue::new(value).range(range.clone()),
+                )
+            });
             if step_number(&mut shirt_number, wheel_steps(ui, &response), range) {
                 response.mark_changed();
             }
@@ -524,10 +526,12 @@ fn number_box<N: egui::emath::Numeric + TryFrom<u64>>(
 ) {
     let mut shown = shown;
     let range = N::from_f64(0.0)..=N::try_from(max).unwrap_or(N::MAX);
-    let mut response = ui.add_sized(
-        [BOX_WIDTH, ui.spacing().interact_size.y],
-        egui::DragValue::new(&mut shown).range(range.clone()),
-    );
+    let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
+        ui.add_sized(
+            [BOX_WIDTH, ui.spacing().interact_size.y],
+            egui::DragValue::new(value).range(range.clone()),
+        )
+    });
     if step_number(&mut shown, wheel_steps(ui, &response), range) {
         response.mark_changed();
     }
@@ -597,12 +601,15 @@ fn small_box(
     match (small.get)(stats) {
         Some(stored) => {
             let mut shown = stored + small.shift;
-            let mut response = ui.add_sized(
-                [BOX_WIDTH, ui.spacing().interact_size.y],
-                egui::DragValue::new(&mut shown)
-                    .range(small.min..=small.max)
-                    .clamp_existing_to_range(false),
-            );
+            let range = small.min..=small.max;
+            let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
+                ui.add_sized(
+                    [BOX_WIDTH, ui.spacing().interact_size.y],
+                    egui::DragValue::new(value)
+                        .range(range.clone())
+                        .clamp_existing_to_range(false),
+                )
+            });
             if step_number(
                 &mut shown,
                 wheel_steps(ui, &response),
@@ -728,23 +735,31 @@ fn combos(
 /// The `Left | Right` two-choice toggle of the `Stronger foot`/`Stronger
 /// hand` rows (the draft's `.rate.lr`: the two choices equal halves of
 /// `field_width`, a point apart, the held one filled the positions
-/// grid's C grey with the normal text colour — `Button::selectable`, as
-/// the grid's ratings draw). `FOOT` stores right 0 and left 1; the
-/// toggle draws Left first. Returns the picked side's stored index and
-/// its button's id value (the undo merge key) on a click.
+/// grid's C grey — `Button::selectable`, as the grid's ratings draw).
+/// The held side's word is the resting buttons' light grey, the other
+/// side's the normal text grey, so the chosen side reads brighter; the
+/// other side's hover still brightens it as a button's does (the draft's
+/// `.sel.on` and `.sel:not(.on):hover`). `FOOT` stores right 0 and left
+/// 1; the toggle draws Left first. Returns the picked side's stored
+/// index and its button's id value (the undo merge key) on a click.
 fn side_row(ui: &mut egui::Ui, field_width: f32, held: u8) -> Option<(u8, u64)> {
     let mut picked = None;
     ui.horizontal(|ui| {
         ui.spacing_mut().item_spacing.x = 1.0;
         let side = (field_width - ui.spacing().item_spacing.x) / 2.0;
+        // An unselected side is a resting button, whose own grey is
+        // lighter than the normal text grey the draft wants here: the
+        // resting colour is set to the text colour inside the row, where
+        // only these two buttons draw (the held side's word takes it
+        // explicitly, the other side's as the resting state's). A hover
+        // still takes the hovered state's brighter grey.
+        let resting = ui.visuals().widgets.inactive.fg_stroke.color;
+        ui.visuals_mut().widgets.inactive.fg_stroke.color = ui.visuals().text_color();
         for (label, stored) in [("Left", 1u8), ("Right", 0u8)] {
             let held = held == stored;
             let button = if held {
-                egui::Button::selectable(
-                    true,
-                    egui::RichText::new(label).color(ui.visuals().text_color()),
-                )
-                .fill(studio_core::theme::palette(ui.visuals()).rating_c_fill)
+                egui::Button::selectable(true, egui::RichText::new(label).color(resting))
+                    .fill(studio_core::theme::palette(ui.visuals()).rating_c_fill)
             } else {
                 egui::Button::selectable(false, label)
             };

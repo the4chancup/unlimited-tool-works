@@ -247,8 +247,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // A preview is a save clone, the patch applied and a comparison per
     // player: recomputed on every frame of a slider drag or of typing, it
     // would slow the edit down, so it waits for the gesture's end.
-    let (_, settled) = edit_settled(ui, *focused);
-    if settled {
+    let (_, end) = edit_settled(ui, *focused);
+    if end.settled() {
         patch.refresh(session.file(), revision);
     }
     let mut open = true;

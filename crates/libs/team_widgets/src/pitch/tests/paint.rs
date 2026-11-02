@@ -3023,3 +3023,99 @@ fn the_formation_selector_is_locked_on_pes_15() {
         );
     }
 }
+
+// The wheel over any of the formation selector's choices steps the
+// shown formation, up to the right (Kick-off, In-possession,
+// Out-of-possession) and down to the left, wrapping round past either
+// end; locked on Kick-off while the preset fields it alone it does not
+// step. The selector writes `view.formation`, never the record.
+// SE-GUI-58
+#[test]
+fn the_wheel_steps_the_formation_selector_wrapping_round() {
+    /// One wheel notch over the selector with the pointer at `pos`,
+    /// `up` or down, then a few frames, in case a notch stepped more
+    /// than once.
+    fn notch(
+        window: &mut Headless,
+        pos: egui::Pos2,
+        up: bool,
+        tactics: &mut TeamTactics,
+        view: &mut TacticsView,
+    ) {
+        let wheel = egui::Event::MouseWheel {
+            unit: egui::MouseWheelUnit::Line,
+            delta: egui::vec2(0.0, if up { 1.0 } else { -1.0 }),
+            phase: egui::TouchPhase::Move,
+            source: egui::MouseWheelSource::Wheel,
+            modifiers: egui::Modifiers::default(),
+        };
+        let events = vec![egui::Event::PointerMoved(pos), wheel];
+        window.frame(events, |ui| {
+            formation_selector(ui, tactics, view);
+        });
+        for _ in 0..3 {
+            window.frame(vec![], |ui| {
+                formation_selector(ui, tactics, view);
+            });
+        }
+    }
+
+    let mut window = Headless::sized(900.0, 1100.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    // Fluid formation on, so the preset's three formations can be shown.
+    tactics.presets[0].style.fluid = Some(true);
+    let before = tactics.clone();
+    let mut view = TacticsView::default();
+    let (nodes, _) = window.frame(vec![], |ui| {
+        formation_selector(ui, &tactics, &mut view);
+    });
+    assert_eq!(view.formation, 0, "premise: the view opens on Kick-off");
+    let at = |label: &str| centre(entry(&nodes, Role::Button, label));
+
+    for (hover, up, formation, what) in [
+        ("Kick-off", true, 1, "a notch up takes In-possession"),
+        (
+            "In-possession",
+            true,
+            2,
+            "a notch up takes Out-of-possession",
+        ),
+        (
+            "Out-of-possession",
+            true,
+            0,
+            "a notch up on Out-of-possession wraps to Kick-off",
+        ),
+        (
+            "Kick-off",
+            false,
+            2,
+            "a notch down on Kick-off wraps to Out-of-possession",
+        ),
+        (
+            "Out-of-possession",
+            false,
+            1,
+            "a notch down takes In-possession",
+        ),
+        ("In-possession", false, 0, "a notch down takes Kick-off"),
+    ] {
+        notch(&mut window, at(hover), up, &mut tactics, &mut view);
+        assert_eq!(view.formation, formation, "{what}");
+        assert_eq!(tactics, before, "{what}: the record is untouched");
+    }
+
+    // Locked on Kick-off (Fluid formation off) the selector is disabled:
+    // a notch over it does not step.
+    tactics.presets[0].style.fluid = Some(false);
+    let before = tactics.clone();
+    notch(
+        &mut window,
+        at("In-possession"),
+        true,
+        &mut tactics,
+        &mut view,
+    );
+    assert_eq!(view.formation, 0, "the locked selector does not step");
+    assert_eq!(tactics, before, "the record is untouched");
+}

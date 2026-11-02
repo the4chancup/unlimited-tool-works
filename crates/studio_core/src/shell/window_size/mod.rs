@@ -274,13 +274,45 @@ fn window_icon() -> egui::IconData {
         .expect("the committed PNG decodes; the tests decode both at their stored sizes")
 }
 
+/// The graphics backends the window's wgpu instance may use: `asked` (the set
+/// the `WGPU_BACKEND` variable resolved to) when there is one, else Direct3D
+/// 12 and OpenGL when the window runs on Windows (`windows`), egui-wgpu's own
+/// default `PRIMARY | GL` on the other platforms. Windows leaves Vulkan out:
+/// a driver whose Vulkan faults crashes the process while wgpu creates its
+/// device, before the window shows and before a fallback to another backend
+/// could run.
+#[cfg(not(target_arch = "wasm32"))]
+fn window_backends(asked: Option<eframe::wgpu::Backends>, windows: bool) -> eframe::wgpu::Backends {
+    if let Some(backends) = asked {
+        return backends;
+    }
+    if windows {
+        eframe::wgpu::Backends::DX12 | eframe::wgpu::Backends::GL
+    } else {
+        eframe::wgpu::Backends::PRIMARY | eframe::wgpu::Backends::GL
+    }
+}
+
+/// The window's wgpu configuration: the one `NativeOptions` carries by
+/// default, its new instance's backends replaced by `window_backends`'s pick
+/// of the `WGPU_BACKEND` variable.
+#[cfg(not(target_arch = "wasm32"))]
+fn wgpu_options() -> eframe::egui_wgpu::WgpuConfiguration {
+    let mut create_new = eframe::egui_wgpu::WgpuSetupCreateNew::without_display_handle();
+    create_new.instance_descriptor.backends =
+        window_backends(eframe::wgpu::Backends::from_env(), cfg!(windows));
+    let mut options = eframe::NativeOptions::default().wgpu_options;
+    options.wgpu_setup = eframe::egui_wgpu::WgpuSetup::CreateNew(create_new);
+    options
+}
+
 /// The native window's options for `opening`: `Fit` creates the window at `DEFAULT_SIZE` and
 /// centered, the size the first frame's fit keeps on a monitor that holds it, so nothing
 /// jumps there; `Place` creates it at the record's position (its pixels over its scale, the
 /// points winit converts with the scale of the monitor it creates the window on) and inner
 /// size, not centered (`NativeOptions`' default), and maximized when the record says so, the
 /// place then being the one its restore button gives back. Both carry the `MIN_SIZE` minimum,
-/// the icon and the app id.
+/// the icon, the app id and the wgpu setup `wgpu_options` builds.
 #[cfg(not(target_arch = "wasm32"))]
 pub(super) fn native_options(opening: &Opening) -> eframe::NativeOptions {
     let viewport = egui::ViewportBuilder::default()
@@ -288,10 +320,12 @@ pub(super) fn native_options(opening: &Opening) -> eframe::NativeOptions {
         .with_app_id("unlimited-tool-works")
         .with_icon(window_icon())
         .with_min_inner_size(MIN_SIZE);
+    let wgpu_options = wgpu_options();
     match opening {
         Opening::Fit => eframe::NativeOptions {
             viewport: viewport.with_inner_size(DEFAULT_SIZE),
             centered: true,
+            wgpu_options,
             ..Default::default()
         },
         Opening::Place(place) => eframe::NativeOptions {
@@ -299,6 +333,7 @@ pub(super) fn native_options(opening: &Opening) -> eframe::NativeOptions {
                 .with_position(place.position() / place.scale)
                 .with_inner_size(place.size())
                 .with_maximized(place.maximized),
+            wgpu_options,
             ..Default::default()
         },
     }

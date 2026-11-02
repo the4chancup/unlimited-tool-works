@@ -168,8 +168,8 @@ fn a_drag_on_a_control_is_one_undo_entry() {
     assert_eq!(height(&view), 180, "the one undo restores it");
 }
 
-// A second gesture on the same control, after the first ended, is its own
-// undo entry.
+// A second gesture on the same control, over a second after the first, is
+// its own undo entry.
 #[test]
 fn a_second_gesture_on_the_same_control_is_its_own_entry() {
     let path = fixture(PesVersion::Pes21, "two_gestures");
@@ -194,6 +194,9 @@ fn a_second_gesture_on_the_same_control_is_its_own_entry() {
         });
     };
     drag(&mut window, &mut view, at);
+    // Past the run's one-second pause: a second gesture within it would
+    // join the first's run instead.
+    idle_frames(&mut window, &mut view, 61);
     drag(&mut window, &mut view, at);
     assert_eq!(undo_entries(&mut window, &mut view), 2, "two entries");
 }

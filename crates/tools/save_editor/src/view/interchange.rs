@@ -4,7 +4,7 @@
 //! and whose rest imports a team file onto that team, the file
 //! deciding the format: a Team TOML, a squad (`.4ccs`) or tactics (`.4cct`)
 //! file, or a Texport. The member picks which of the sections the file
-//! holds load (gameplay, aesthetics, tactics), reads what the import will
+//! holds load (stats, aesthetics, gameplan), reads what the import will
 //! not write as written (the catalog's text once per note code, the notes
 //! grouped by key in words with their players) and, for a
 //! squad file, who gets which record. The staged import is the file applied
@@ -180,9 +180,9 @@ impl Export {
 
 /// Every section chosen: the choices as the panel starts.
 const ALL_SECTIONS: Sections = Sections {
-    gameplay: true,
+    stats: true,
     aesthetics: true,
-    tactics: true,
+    gameplan: true,
 };
 
 /// The panel's state on `SaveView` (`view.interchange`): the picked file,
@@ -301,14 +301,14 @@ struct Pairing {
 
 /// The chosen sections applied to copies of the target: what Apply writes
 /// and what it does not.
-struct Import {
+pub(super) struct Import {
     /// The target team as the import leaves it.
-    team: TeamEntry,
+    pub(super) team: TeamEntry,
     /// The target's rostered players as the import leaves them.
-    players: Vec<PlayerEntry>,
+    pub(super) players: Vec<PlayerEntry>,
     /// Whether the import leaves the team or one of its players other than
     /// the save holds them: compared once, when staged, not every frame.
-    changes: bool,
+    pub(super) changes: bool,
     /// The notes grouped by code and, for a key's notes, its path, in
     /// first-seen order; every empty place's note is one group.
     notes: Vec<NoteGroup>,
@@ -444,33 +444,33 @@ fn file_name(path: &Path) -> String {
 /// leaves another document than keeping none. Read from the document, not
 /// from the format: a squad file carries tactics only when it has the
 /// tactics block, and a Team TOML written by hand may hold any part.
-fn held(document: &TeamToml) -> Sections {
+pub(super) fn held(document: &TeamToml) -> Sections {
     let kept = |sections: Sections| {
         let mut kept = document.clone();
         keep_sections(&mut kept, sections);
         kept
     };
     let none = kept(Sections {
-        gameplay: false,
+        stats: false,
         aesthetics: false,
-        tactics: false,
+        gameplan: false,
     });
     let holds = |sections: Sections| kept(sections) != none;
     Sections {
-        gameplay: holds(Sections {
-            gameplay: true,
+        stats: holds(Sections {
+            stats: true,
             aesthetics: false,
-            tactics: false,
+            gameplan: false,
         }),
         aesthetics: holds(Sections {
-            gameplay: false,
+            stats: false,
             aesthetics: true,
-            tactics: false,
+            gameplan: false,
         }),
-        tactics: holds(Sections {
-            gameplay: false,
+        gameplan: holds(Sections {
+            stats: false,
             aesthetics: false,
-            tactics: true,
+            gameplan: true,
         }),
     }
 }
@@ -505,7 +505,7 @@ fn pairing(file: &EditFile, team: &TeamEntry, document: &TeamToml) -> Vec<Pairin
 /// players. The import runs on copies, never on the save: the panel shows
 /// its notes and refusal before anything is written, and Apply then writes
 /// the copies as one undoable edit.
-fn stage(
+pub(super) fn stage(
     file: &EditFile,
     team: &TeamEntry,
     document: &TeamToml,
@@ -905,8 +905,8 @@ fn contents(
     let sections = &mut interchange.sections;
     ui.horizontal_wrapped(|ui| {
         ui.weak("Sections ");
-        if staged.held.gameplay {
-            checkbox(ui, &mut sections.gameplay, "Gameplay");
+        if staged.held.stats {
+            checkbox(ui, &mut sections.stats, "Stats");
         }
         if staged.held.aesthetics {
             if locked {
@@ -917,8 +917,8 @@ fn contents(
                 checkbox(ui, &mut sections.aesthetics, "Aesthetics");
             }
         }
-        if staged.held.tactics {
-            checkbox(ui, &mut sections.tactics, "Tactics");
+        if staged.held.gameplan {
+            checkbox(ui, &mut sections.gameplan, "Gameplan");
         }
     });
     match &staged.import {
@@ -938,9 +938,9 @@ fn contents(
         Ok(_) => {}
     }
     let held = staged.held;
-    let any_chosen = (held.gameplay && sections.gameplay)
+    let any_chosen = (held.stats && sections.stats)
         || (held.aesthetics && sections.aesthetics && !locked)
-        || (held.tactics && sections.tactics);
+        || (held.gameplan && sections.gameplan);
     // The chosen sections would leave the team as it is (its own file, or
     // one applied already): Apply is disabled and says so rather than
     // record an edit that changes nothing.

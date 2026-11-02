@@ -14,6 +14,7 @@ mod aatf_check;
 mod abilities;
 mod appearance;
 mod changes_popup;
+mod clipboard;
 mod comparator;
 mod event_logo;
 mod generate;
@@ -44,7 +45,7 @@ use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    add_enabled, collapsing_header, modal, modal_buttons, toolbar_separator,
+    add_enabled, collapsing_header, modal, modal_buttons, step_number, toolbar_separator,
 };
 use studio_core::{ActionEffect, ExeCheck, Notice, NoticeAction, NoticeKind, RunningPes};
 
@@ -83,10 +84,24 @@ pub(crate) struct SaveView {
     filter: String,
     /// The selected row.
     selected: Option<Selection>,
-    /// A page key moved the selection, or a team row's double click showed
-    /// that team alone: the list scrolls to the selected row on the next
-    /// draw, then clears this.
+    /// What the last click named for Ctrl+C and Ctrl+V (the list, the
+    /// preset selector or the formation selector); clicks elsewhere
+    /// leave it, `None` before the first click of one.
+    click_kind: Option<clipboard::ClickKind>,
+    /// The editor's clipboard: at most one copy, a snapshot taken at
+    /// Ctrl+C; emptied when a save opens.
+    clip: Option<clipboard::Clip>,
+    /// A page or arrow key moved the selection, or a team row's double
+    /// click showed that team alone: the list scrolls to the selected row
+    /// on the next draw, then clears this.
     reveal_selected: bool,
+    /// The whole rows the player list showed at once on its last draw
+    /// (a row cut off at the bottom does not count): what a page key's
+    /// step counts, from the scroll area's visible height over a row's
+    /// height. The keys are read in the toolbar before the list draws,
+    /// so the last frame's page stands in for this frame's; 1 until it
+    /// has.
+    list_page_rows: usize,
     /// The team view's Tactics state (`team_widgets`' `TacticsView`:
     /// the preset its panels edit, the formation its lists show, the
     /// armed assignment mode, the open slot popover and Scroll names);
@@ -420,7 +435,10 @@ impl SaveView {
             team: TeamChoice::All,
             filter: String::new(),
             selected: None,
+            click_kind: None,
+            clip: None,
             reveal_selected: false,
+            list_page_rows: 1,
             tactics: team_widgets::tactics::TacticsView::default(),
             focused: None,
             prompt: None,
@@ -544,6 +562,7 @@ impl SaveView {
                 self.prompt = None;
                 self.edit_mode_question = None;
                 self.refusal = None;
+                self.clip = None;
                 self.boglo = None;
                 self.stat_num = None;
                 self.copy_swap = None;
@@ -661,6 +680,11 @@ fn appearance_arrow(ui: &mut egui::Ui, openness: f32, response: &egui::Response)
 /// gone raises its warning notice then.
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) {
     set_surrender_on_press(ui.ctx());
+    // The undo run's clock, before any widget draws: a widget's push
+    // measures the pause since its run's last step against it.
+    if let Some(session) = view.session.as_mut() {
+        session.set_time(ui.input(|input| input.time));
+    }
     if view
         .rules
         .as_ref()
@@ -799,26 +823,66 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     // Last so the newest refusal, raised by a modal's own Save, sits
     // above the modal that stays up behind it.
     refusal_dialog(ui, view);
-    // One undo entry per gesture: seal when the pointer is up and no
-    // widget holds the keyboard, and when the widget that held it ends
-    // the frame without it — a gesture ends when its widget loses the
-    // keyboard. A `None` to `Some` move never seals (the `focused` doc).
-    let (focused, settled) = edit_settled(ui, view.focused);
-    if settled && let Some(session) = view.session.as_mut() {
-        session.seal();
+    // One undo entry per gesture, a run of steps to one value one entry
+    // across gestures: the soft end (the pointer up with no text edit
+    // holding the keyboard) settles, keeping the run; the keyboard
+    // moving off the widget that held it seals, ending the run too — a
+    // typed value and the click after it stay two entries.
+    let (focused, end) = edit_settled(ui, view.focused);
+    if let Some(session) = view.session.as_mut() {
+        match end {
+            GestureEnd::Held => {}
+            GestureEnd::Settled => session.settle(),
+            GestureEnd::FocusMoved => session.seal(),
+        }
     }
     view.focused = focused;
 }
 
-/// The widget holding the keyboard this frame and whether the edit has
-/// settled: the pointer up with no widget focused, or the widget that
-/// held it having lost it. `show`'s seal condition, which the AATF
-/// checks' start shares, so a check never runs over a mid-gesture file.
-fn edit_settled(ui: &egui::Ui, last_focused: Option<egui::Id>) -> (Option<egui::Id>, bool) {
+/// How the frame left the edit's gesture, the two settled cases told
+/// apart for the undo stack: `show`'s end seals on one, settles on the
+/// other, and the checks' start asks only `settled()`, so a check never
+/// runs over a mid-gesture file.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum GestureEnd {
+    /// Mid-gesture: the pointer is held, or a text edit keeps the
+    /// keyboard (a field, a number being typed).
+    Held,
+    /// The pointer is up and no text edit holds the keyboard — nothing
+    /// focused, or a widget with no text cursor (a button, a rating
+    /// cell) keeping it: the gesture ended but a run of steps under its
+    /// key may still merge (`settle`).
+    Settled,
+    /// The keyboard moved off the widget that held it: the hard end a
+    /// run does not survive (`seal`).
+    FocusMoved,
+}
+
+impl GestureEnd {
+    /// Whether the edit has settled this frame: anything but mid-gesture.
+    fn settled(self) -> bool {
+        !matches!(self, GestureEnd::Held)
+    }
+}
+
+/// The widget holding the keyboard this frame and how the frame left
+/// the edit's gesture: `FocusMoved` when the widget that held it lost
+/// the keyboard (a `None` to `Some` move is never one — a widget can
+/// take focus as its gesture starts), `Settled` when the pointer is up
+/// and no text edit holds it (`text_edit_focused`, which a focused
+/// `DragValue` being typed reports as its `TextEdit` keeps its state
+/// under the DragValue's own id), else `Held`. `show`'s seal rule,
+/// which the AATF checks' start shares.
+fn edit_settled(ui: &egui::Ui, last_focused: Option<egui::Id>) -> (Option<egui::Id>, GestureEnd) {
     let focused = ui.ctx().memory(|memory| memory.focused());
-    let settled = (!ui.input(|input| input.pointer.any_down()) && focused.is_none())
-        || (last_focused.is_some() && last_focused != focused);
-    (focused, settled)
+    let end = if last_focused.is_some() && last_focused != focused {
+        GestureEnd::FocusMoved
+    } else if !ui.input(|input| input.pointer.any_down()) && !ui.ctx().text_edit_focused() {
+        GestureEnd::Settled
+    } else {
+        GestureEnd::Held
+    };
+    (focused, end)
 }
 
 /// Whatever holds the keyboard gives it up. A run's start waits for
@@ -830,6 +894,46 @@ pub(super) fn surrender_focus(ui: &egui::Ui) {
     if let Some(id) = ui.ctx().memory(|memory| memory.focused()) {
         ui.ctx().memory_mut(|memory| memory.surrender_focus(id));
     }
+}
+
+/// A whole-number field's arrow-key step: `value` moved one per
+/// ArrowUp/ArrowDown pressed this frame while the field `add` draws holds
+/// the keyboard, clamped inside `range` as `step_number` does, the presses
+/// consumed first so the drag value's own key step never sees them — egui
+/// steps a key press by the drag speed, a quarter point, which a whole
+/// number rounds back to where it was. The drag speed itself is
+/// untouched, so a drag moves the field as before. The field's id is
+/// only known once drawn, so the last frame's `response.id` stands in,
+/// kept under the call's widget position (`auto_id_with`, stable for a
+/// field drawn every frame). `mark_changed` fires on a moved `value`,
+/// as the wheel's `step_number` makes the caller do.
+pub(super) fn number_arrows<N: egui::emath::Numeric>(
+    ui: &mut egui::Ui,
+    value: &mut N,
+    range: std::ops::RangeInclusive<N>,
+    add: impl FnOnce(&mut egui::Ui, &mut N) -> egui::Response,
+) -> egui::Response {
+    let key = ui.auto_id_with("number field arrows");
+    let focused = ui
+        .data(|data| data.get_temp::<egui::Id>(key))
+        .is_some_and(|id| ui.memory(|memory| memory.has_focus(id)));
+    let steps = if focused {
+        ui.input_mut(|input| {
+            let up = input.count_and_consume_key(egui::Modifiers::NONE, egui::Key::ArrowUp);
+            let down = input.count_and_consume_key(egui::Modifiers::NONE, egui::Key::ArrowDown);
+            i32::try_from(up).expect("a frame's key presses fit an i32")
+                - i32::try_from(down).expect("a frame's key presses fit an i32")
+        })
+    } else {
+        0
+    };
+    let stepped = step_number(value, steps, range);
+    let mut response = add(ui, value);
+    ui.data_mut(|data| data.insert_temp(key, response.id));
+    if stepped {
+        response.mark_changed();
+    }
+    response
 }
 
 /// The editor's focus mode: a press on another widget ends the focused
@@ -895,11 +999,31 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     } else {
         ui.input_mut(open_menu::consume_shortcut)
     };
-    // PageDown and PageUp walk the list's players from any field, so they
-    // are not held off while a widget has the keyboard. A held pointer
-    // button holds them off, and so does the frame it is released on,
-    // where a click completes: the drag or press in flight would finish
-    // on the next player.
+    // Ctrl+C and Ctrl+V copy and paste what the last click named (the
+    // selected row, the shown preset, the shown formation). They arrive
+    // as `Event::Copy`/`Event::Paste`, never `Event::Key`, held off
+    // while a dialog is up or a text edit holds the keyboard — a field
+    // keeps its own copy and paste; a focused button does not hold them.
+    let clip_blocked = modal_up || ui.ctx().text_edit_focused();
+    let copy_key = !clip_blocked
+        && ui.input(|input| {
+            input
+                .events
+                .iter()
+                .any(|event| matches!(event, egui::Event::Copy))
+        });
+    let paste_key = !clip_blocked
+        && ui.input(|input| {
+            input
+                .events
+                .iter()
+                .any(|event| matches!(event, egui::Event::Paste(_) | egui::Event::PasteImage(_)))
+        });
+    // PageDown and PageUp move the list's selection a page of rows from
+    // any field, so they are not held off while a widget has the
+    // keyboard. A held pointer button holds them off, and so does the
+    // frame it is released on, where a click completes: the drag or press
+    // in flight would finish on the next player.
     let gesture = ui.input(|input| input.pointer.any_down() || input.pointer.any_released());
     let page_step = if modal_up || gesture {
         None
@@ -908,6 +1032,34 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
             if input.consume_key(egui::Modifiers::NONE, egui::Key::PageDown) {
                 Some(true)
             } else if input.consume_key(egui::Modifiers::NONE, egui::Key::PageUp) {
+                Some(false)
+            } else {
+                None
+            }
+        })
+    };
+    // Up and Down walk every row, the team rows too, so they wait for no
+    // widget to hold the keyboard, where the page keys act from any
+    // field: a focused number steps with them and a text field moves its
+    // cursor, and an open popup (a menu's, a combo's) navigates itself
+    // with them. The modal and gesture gates are the page keys'. Two
+    // popups egui's registry never sees (the unsaved-changes list and the
+    // tactics' slot popover, both the view's own state drawn through
+    // `egui::Popup`) hold them off the same way.
+    let arrow_step = if modal_up
+        || gesture
+        || view.session.is_none()
+        || view.changes_list.is_some()
+        || view.tactics.popover_area().is_some()
+        || ui.ctx().memory(|memory| memory.focused()).is_some()
+        || egui::Popup::is_any_open(ui.ctx())
+    {
+        None
+    } else {
+        ui.input_mut(|input| {
+            if input.consume_key(egui::Modifiers::NONE, egui::Key::ArrowDown) {
+                Some(true)
+            } else if input.consume_key(egui::Modifiers::NONE, egui::Key::ArrowUp) {
                 Some(false)
             } else {
                 None
@@ -1003,7 +1155,7 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         open_menu::open_shortcut(view, shortcut);
     }
     if let Some(forward) = page_step
-        && player_list::step_player(view, forward)
+        && player_list::step_selection(view, forward, view.list_page_rows)
     {
         // The field gives up the keyboard once the selection moved: its
         // gesture ends as one undo entry on the player it edited, and the
@@ -1011,6 +1163,17 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         // edits into that entry. A key that moved nothing leaves it be.
         surrender_focus(ui);
         view.reveal_selected = true;
+    }
+    if let Some(forward) = arrow_step
+        && player_list::step_selection(view, forward, 1)
+    {
+        view.reveal_selected = true;
+    }
+    if copy_key {
+        clipboard::copy(ui.ctx(), view);
+    }
+    if paste_key {
+        clipboard::paste(view);
     }
     end
 }

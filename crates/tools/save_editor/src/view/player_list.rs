@@ -12,6 +12,7 @@ use team_widgets::names::{append_name, plain_format};
 
 use crate::session::Session;
 use crate::session::selection::{self, ListRow, Row, TeamChoice};
+use crate::view::clipboard::{ClickKind, pressed};
 use crate::view::team::channel_to_show;
 use crate::view::{SaveView, Selection, live_marks, quick_actions};
 
@@ -161,7 +162,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     });
     let session = view.session.as_mut().expect("checked above");
     let rows = selection::list(session.file(), &view.team, &view.filter);
-    // A page key moved the selection: its row's index, scrolled to below.
+    // A page or arrow key moved the selection: its row's index, scrolled
+    // to below.
     let reveal = std::mem::take(&mut view.reveal_selected)
         .then(|| {
             rows.iter()
@@ -213,6 +215,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                                 let double_clicked = team_row(
                                     ui,
                                     &mut view.selected,
+                                    &mut view.click_kind,
                                     session,
                                     *team_id,
                                     layout,
@@ -228,6 +231,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
                                 player_row(
                                     ui,
                                     &mut view.selected,
+                                    &mut view.click_kind,
                                     session,
                                     row,
                                     layout,
@@ -251,6 +255,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
         view.selected = Some(Selection::Team(id));
         view.reveal_selected = true;
     }
+    // The page the page keys step by: the whole rows the list shows at
+    // once, its visible height over a row's height (a row cut off at the
+    // bottom does not count), read in the toolbar before this frame's
+    // list is laid out.
+    view.list_page_rows = (output.inner_rect.height() / layout.row_height)
+        .floor()
+        .max(1.0) as usize;
     // The viewport spans the bar's strip while nothing scrolls: the frame
     // keeps its own width.
     let frame = egui::Rect::from_min_size(
@@ -274,32 +285,34 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     frame_right
 }
 
-/// Selects the player row after the selected row in the list as drawn
-/// (the team selector and the filter applied), or the one before it when
-/// `forward` is false. Team rows are skipped; at either end of the list,
-/// or with the selection not in it, nothing moves. Answers whether the
+/// Selects the row `steps` rows after the selected row in the list as
+/// drawn (the team selector and the filter applied), or the one before
+/// it when `forward` is false: the arrow keys step one row, the page
+/// keys the list's page (`SaveView::list_page_rows`). Every row counts,
+/// the team rows too, so the walk can land on a team's row and select it
+/// as a click does; a step past the first or last row lands on it, and
+/// with the selection not in the list nothing moves. Answers whether the
 /// selection moved.
-pub(super) fn step_player(view: &mut SaveView, forward: bool) -> bool {
+pub(super) fn step_selection(view: &mut SaveView, forward: bool, steps: usize) -> bool {
     let (Some(session), Some(selected)) = (view.session.as_ref(), view.selected) else {
         return false;
     };
-    let rows: Vec<Selection> = selection::list(session.file(), &view.team, &view.filter)
+    let drawn: Vec<Selection> = selection::list(session.file(), &view.team, &view.filter)
         .into_iter()
         .map(row_selection)
         .collect();
-    let Some(at) = rows.iter().position(|row| *row == selected) else {
+    let Some(at) = drawn.iter().position(|row| *row == selected) else {
         return false;
     };
-    let player = |row: &&Selection| matches!(row, Selection::Player(..));
     let next = if forward {
-        rows[at + 1..].iter().find(player)
+        (at + steps).min(drawn.len() - 1)
     } else {
-        rows[..at].iter().rev().find(player)
+        at.saturating_sub(steps)
     };
-    let Some(next) = next else {
+    if next == at {
         return false;
-    };
-    view.selected = Some(*next);
+    }
+    view.selected = Some(drawn[next]);
     true
 }
 
@@ -400,6 +413,7 @@ fn paint_row_frame(
 fn team_row(
     ui: &mut egui::Ui,
     selected: &mut Option<Selection>,
+    click_kind: &mut Option<ClickKind>,
     session: &Session,
     team_id: u32,
     layout: RowLayout,
@@ -542,6 +556,9 @@ fn team_row(
     if response.clicked() {
         *selected = Some(Selection::Team(team_id));
     }
+    if pressed(ui, &response) {
+        *click_kind = Some(ClickKind::List);
+    }
     response.double_clicked()
 }
 
@@ -554,6 +571,7 @@ fn team_row(
 fn player_row(
     ui: &mut egui::Ui,
     selected: &mut Option<Selection>,
+    click_kind: &mut Option<ClickKind>,
     session: &mut Session,
     row: &Row,
     layout: RowLayout,
@@ -676,6 +694,9 @@ fn player_row(
     };
     if response.clicked() {
         *selected = Some(Selection::Player(row.team_id, row.slot));
+    }
+    if pressed(ui, &response) {
+        *click_kind = Some(ClickKind::List);
     }
     if layout.draggable {
         response.dnd_set_drag_payload(*row);

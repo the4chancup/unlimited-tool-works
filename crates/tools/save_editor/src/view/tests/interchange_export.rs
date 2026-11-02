@@ -290,11 +290,7 @@ fn texport_round_trip(version: PesVersion, test: &str, suggested_name: &str, fil
         .filter_map(|node| node.label())
         .collect();
     ticked.sort_unstable();
-    assert_eq!(
-        ticked,
-        ["Aesthetics", "Gameplay", "Tactics"],
-        "every section"
-    );
+    assert_eq!(ticked, ["Aesthetics", "Gameplan", "Stats"], "every section");
     // Read back onto the team it came from, every section changes nothing.
     let lines = panel_lines(&mut window, &mut view);
     assert_eq!(

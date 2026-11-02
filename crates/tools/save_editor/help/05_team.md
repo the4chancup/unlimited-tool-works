@@ -87,12 +87,13 @@ squad file lists which record goes to which player.
 
 Tick the sections to bring in:
 
-- **gameplay** (abilities, skills, height and the like, and the team's name,
-  short name, manager and stadium);
-- **aesthetics** (names, shirt numbers, the look);
-- **tactics**.
+- **Stats** (abilities, skills, height and the like, and the team's name, short
+  name, manager and stadium);
+- **Aesthetics** (names, shirt numbers, the look and every motion, and the team's
+  colours and kits);
+- **Gameplan** (the lineup, the set-piece takers and the three presets).
 
-Only the sections the file holds are offered, and aesthetics stays off while the
+Only the sections the file holds are offered, and Aesthetics stays off while the
 aesthetics lock is on.
 
 A file from another PES version is converted, and the values that could not

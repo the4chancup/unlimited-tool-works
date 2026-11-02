@@ -36,7 +36,7 @@ use crate::session::Session;
 use crate::view::worker::{Pending, WorkerResult};
 use crate::view::{
     ActiveRules, BadgeKey, OwnBadge, Refusal, SaveView, edit_player, info_strip, live_marks,
-    selected_player,
+    number_arrows, selected_player,
 };
 
 /// The Profile grid's registered-position combo.
@@ -962,11 +962,13 @@ fn number_field<T: egui::emath::Numeric>(
     store: impl FnOnce(&mut PlayerEntry, T),
 ) -> egui::Response {
     let mut shown = shown;
-    let mut response = ui.add(
-        egui::DragValue::new(&mut shown)
-            .range(range.clone())
-            .clamp_existing_to_range(false),
-    );
+    let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
+        ui.add(
+            egui::DragValue::new(value)
+                .range(range.clone())
+                .clamp_existing_to_range(false),
+        )
+    });
     if step_number(&mut shown, wheel_steps(ui, &response), range) {
         response.mark_changed();
     }
