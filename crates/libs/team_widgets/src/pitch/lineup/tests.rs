@@ -32,6 +32,22 @@ fn list_frames(shapes: &[egui::epaint::ClippedShape]) -> Vec<egui::Rect> {
         .collect()
 }
 
+/// The bands `shapes` outline in `selection`: the unfilled rects
+/// stroked in it (the lists' frame strokes are another colour).
+fn outlined(shapes: &[egui::epaint::ClippedShape], selection: egui::Color32) -> Vec<egui::Rect> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if shape.fill == egui::Color32::TRANSPARENT && shape.stroke.color == selection =>
+            {
+                Some(shape.rect)
+            }
+            _ => None,
+        })
+        .collect()
+}
+
 // A starter swapped with a bench player: every set-piece role, the
 // joining of the attack and every preset's instruction target the
 // starter held repoint to the incoming player. The captain stays.
@@ -852,26 +868,6 @@ fn a_marker_dropped_on_an_eleven_row_exchanges_the_two() {
 // SE-GUI-59
 #[test]
 fn the_row_under_a_held_drag_is_outlined_in_the_selection_colour() {
-    /// The bands `shapes` outline in `selection`: the unfilled rects
-    /// stroked in it (the lists' frame strokes are another colour).
-    fn outlined(
-        shapes: &[egui::epaint::ClippedShape],
-        selection: egui::Color32,
-    ) -> Vec<egui::Rect> {
-        shapes
-            .iter()
-            .filter_map(|clipped| match &clipped.shape {
-                egui::Shape::Rect(shape)
-                    if shape.fill == egui::Color32::TRANSPARENT
-                        && shape.stroke.color == selection =>
-                {
-                    Some(shape.rect)
-                }
-                _ => None,
-            })
-            .collect()
-    }
-
     let mut window = Headless::sized(900.0, 1100.0);
     let mut tactics = fixture_tactics(PesVersion::Pes21);
     let before = tactics.clone();
@@ -1031,4 +1027,69 @@ fn the_row_under_a_held_drag_is_outlined_in_the_selection_colour() {
     );
     assert!(!changed, "the drop on his own row wrote nothing");
     assert_eq!(tactics, before, "the record is untouched");
+}
+
+// A bench row's drag follows the same rule: held over its own row the
+// drop moves the entry onto itself, which writes nothing, so no band is
+// outlined; over another bench row that row's band alone shows one.
+// SE-GUI-59
+#[test]
+fn a_bench_drag_held_over_its_own_row_outlines_nothing() {
+    let mut window = Headless::sized(900.0, 1100.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let mut selection = egui::Color32::TRANSPARENT;
+    window.frame(vec![], |ui| {
+        selection = ui.visuals().selection.stroke.color;
+    });
+
+    // Bench row 1's drag held over its own row: no band is outlined.
+    let (nodes, _) = window.lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    window.lineup(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(row_centre(&nodes, 11 + 1), true),
+    );
+    let (_, shapes) = window.frame(
+        vec![egui::Event::PointerMoved(row_centre(&nodes, 11 + 1))],
+        |ui| {
+            lineup(
+                ui,
+                "lineup",
+                PesVersion::Pes21,
+                &mut tactics,
+                &mut view,
+                &roster,
+            );
+        },
+    );
+    assert!(
+        outlined(&shapes, selection).is_empty(),
+        "a bench drag over its own row: the drop writes nothing, no outline"
+    );
+
+    // Held over bench row 4: that row's band alone is outlined.
+    let over = row_centre(&nodes, 11 + 4);
+    let (_, shapes) = window.frame(vec![egui::Event::PointerMoved(over)], |ui| {
+        lineup(
+            ui,
+            "lineup",
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+        );
+    });
+    let outlines = outlined(&shapes, selection);
+    let [outline] = outlines.as_slice() else {
+        panic!("bench row 4's band alone is outlined, got {outlines:?}")
+    };
+    assert!(
+        outline.contains(over),
+        "the outline is the band under the pointer ({outline:?}, centre {over:?})"
+    );
 }

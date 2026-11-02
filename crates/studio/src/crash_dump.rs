@@ -368,6 +368,13 @@ mod tests {
                 "0",
             ]),
             args(&["studio", "team-compiler", "check"]),
+            args(&[
+                "studio",
+                "team-compiler",
+                "D:\\data",
+                "D:\\temp\\s.sock",
+                "1",
+            ]),
         ] {
             assert!(hidden_launch(&bad).is_none(), "{bad:?}");
         }
