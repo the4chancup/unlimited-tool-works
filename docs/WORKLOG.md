@@ -7017,10 +7017,13 @@ briefs, review loops, gates and mutation runs as for any step.
         test (`116e3424`), its second passed: Windows exe opens and closes cleanly
         → verify: release_test on both platforms; the next dry run's binary has no `.debug_*`
         section and keeps `.symtab`
-      - [ ] f1g7f one test tag `v0.0.1-rc.1` from a branch bumped to it: the release job's
+      - [x] f1g7f one test tag `v0.0.1-rc.1` from a branch bumped to it: the release job's
         draft pre-release checked (three assets, `SHA256SUMS.txt` matching both), then the
         draft and the tag deleted on the maintainer's word (`plans/core/distribution.md`
         "Release builds in CI")
+        Done 2026-11-03: run 41533635023 (tag at `6788dc28`, branch `ci/test-tag-rc1`) passed all
+        three jobs; the draft pre-release held the `.7z` (11.7 MB), the `.tar.gz` (21.9 MB) and
+        `SHA256SUMS.txt`, both matching; draft and tag deleted
       - [ ] f1g7d the dry run's bundles looked at: the Windows exe starts here, the Linux
         binary in WSLg (Ubuntu 22.04) → verify: both windows open and close cleanly
     - [x] f1g8 whether 0.0.2-poc fits in 0.0.1: cancelled by the maintainer 2026-11-02 ("we've
