@@ -1368,7 +1368,7 @@ fn live_checked(window: &mut Headless, view: &mut SaveView, ids: &[u32]) -> Vec<
 }
 
 /// The group header `slot`'s player gets in the violations list
-/// (`player_head`'s format).
+/// (`player_head`).
 fn player_header(view: &SaveView, team_id: u32, slot: u8) -> String {
     let file = view.session.as_ref().expect("the save opened").file();
     let team = file.team(team_id).expect("the team");

@@ -378,7 +378,8 @@ mod tests {
                 "check_interval_hours = 24\n",
                 "check_interval_hours = 24\n\
                  fpc_hide_boots_id = 55\n\
-                 fpc_hide_gloves_id = 11\n",
+                 fpc_hide_gloves_id = 11\n\
+                 invert_value_scrolling = false\n",
             );
         assert_eq!(
             fs::read_to_string(&path).unwrap(),
@@ -411,6 +412,7 @@ mod tests {
                 "thread_count = 4\n",
                 "thread_count = 4\n\
                  fpc_hide_boots_id = 55\nfpc_hide_gloves_id = 11\n\
+                 invert_value_scrolling = false\n\
                  last_tool = \"save-editor\"\n",
                 1
             ),
@@ -528,7 +530,8 @@ mod tests {
                 .replace(
                     "check_interval_hours = 24\n",
                     "check_interval_hours = 24\n\
-                     fpc_hide_boots_id = 55\nfpc_hide_gloves_id = 11\n"
+                     fpc_hide_boots_id = 55\nfpc_hide_gloves_id = 11\n\
+                     invert_value_scrolling = false\n"
                 ),
             "the comments around the changed value survive"
         );
@@ -574,6 +577,7 @@ mod tests {
                         last_tool = \"team-compiler\"\n\
                         fpc_hide_boots_id = 55\n\
                         fpc_hide_gloves_id = 11\n\
+                        invert_value_scrolling = false\n\
                         \n\
                         [team-compiler]\n\
                         label = 'x'\n\

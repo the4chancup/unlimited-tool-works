@@ -7,6 +7,8 @@
 use pes_savefile::interchange::team_toml::labels::{card_name, stat_name, title_case};
 use pes_version::PesVersion;
 
+use crate::names::append_name;
+
 /// The failing glyph (`✖`, U+2716): the suite's symbols font holds it.
 /// The icon font's subset does not.
 pub const CROSS: char = '\u{2716}';
@@ -148,24 +150,12 @@ pub fn violations_list(
                     if groups.is_empty() {
                         continue;
                     }
-                    ui.strong(format!(
-                        "Team {} {}",
-                        team.team_id,
-                        pes_savefile::model::names::display_name(team.team_name)
-                    ));
+                    team_header(ui, team, true);
                 }
                 ListUse::Report => {
-                    ui.strong(format!(
-                        "{} {}",
-                        team.team_id,
-                        pes_savefile::model::names::display_name(team.team_name)
-                    ));
+                    team_header(ui, team, false);
                     if groups.is_empty() {
-                        // The draft's `.drow weak`: the rows' own inset.
-                        ui.horizontal(|ui| {
-                            ui.add_space(ROW_INSET);
-                            ui.weak("All clean");
-                        });
+                        all_clean(ui);
                     }
                 }
             }
@@ -291,8 +281,12 @@ fn draw_groups<'v>(
 }
 
 /// A team's Suggestion violations in the list's order: one group per
-/// slot, the team's own first, as `issue_groups` groups the others.
-fn suggestion_groups(violations: &[aatf::Violation]) -> Vec<(Option<u8>, Vec<&aatf::Violation>)> {
+/// slot, the team's own first, as `issue_groups` groups the others. A
+/// host writing the list out as text walks this for the suggestions'
+/// part, so the text reads as the list does.
+pub fn suggestion_groups(
+    violations: &[aatf::Violation],
+) -> Vec<(Option<u8>, Vec<&aatf::Violation>)> {
     let suggestions = || {
         violations
             .iter()
@@ -346,16 +340,28 @@ fn slot_order<'a>(violations: impl Iterator<Item = &'a aatf::Violation>) -> Vec<
     order
 }
 
-/// One player's head as the groups draw it: `Player {id}  {number} {name}`
-/// with the name code-free (`name` is the save's raw string). The Save
-/// editor's comparator lists its players under the same head.
+/// A rostered player's head in words, `Player {id} - {number} - {name}`
+/// with the name code-free (`name` is the save's raw string): the text of
+/// the head `player_head_job` draws, the Save editor's comparator's
+/// accessible label.
 pub fn player_head(id: u32, number: u16, name: &str) -> String {
     format!(
-        "Player {}  {} {}",
+        "Player {} - {} - {}",
         id,
         number,
         pes_savefile::model::names::display_name(name)
     )
+}
+
+/// `All clean`, the lists' word for a checked team holding no error or
+/// warning, weak and the rows' inset in (the draft's `.drow weak`): under
+/// a clean team's header in a report, and in Live AATF's well above the
+/// suggestions while they show.
+pub fn all_clean(ui: &mut egui::Ui) {
+    ui.horizontal(|ui| {
+        ui.add_space(ROW_INSET);
+        ui.weak("All clean");
+    });
 }
 
 /// A violation's whole line, `rule_name`, a colon, a space, then
@@ -529,24 +535,101 @@ pub fn rule_name(kind: &aatf::ViolationKind) -> &'static str {
     }
 }
 
-/// One group's header: `Player {id}  {number} {name}` for a rostered player,
-/// `Slot {slot}` for one the host lists no player for, `Team-wide issues`
-/// for the team's own rows.
+/// The header over a team's rows: `Team <id> <name>` while editing, `<id>
+/// <name>` in a report — the words and id in the strong text, the name's
+/// colour codes kept as the list draws them.
+fn team_header(ui: &mut egui::Ui, team: &TeamViolations<'_>, editing: bool) {
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    let strong = ui.visuals().strong_text_color();
+    let mut job = egui::text::LayoutJob::default();
+    let words = if editing {
+        format!("Team {} ", team.team_id)
+    } else {
+        format!("{} ", team.team_id)
+    };
+    job.append(&words, 0.0, egui::TextFormat::simple(font.clone(), strong));
+    append_name(&mut job, team.team_name, &font);
+    head_label(ui, job);
+}
+
+/// A rostered player's head as the lists draw one (`Player <id> -
+/// <number> - <name>`): `Player <id> -` and the second ` - ` in the weak
+/// colour, the number and the name's plain runs in the strong text, the
+/// name's colour codes kept. The groups' headers and the Save editor's
+/// comparator share it, so a player's head reads the same wherever a list
+/// names him.
+pub fn player_head_job(
+    id: u32,
+    number: u16,
+    name: &str,
+    font: &egui::FontId,
+    visuals: &egui::Visuals,
+) -> egui::text::LayoutJob {
+    let strong = visuals.strong_text_color();
+    let weak = egui::TextFormat::simple(font.clone(), visuals.weak_text_color());
+    let mut job = egui::text::LayoutJob::default();
+    job.append(&format!("Player {id} -"), 0.0, weak.clone());
+    job.append(
+        &format!(" {number}"),
+        0.0,
+        egui::TextFormat::simple(font.clone(), strong),
+    );
+    job.append(" - ", 0.0, weak);
+    append_name(&mut job, name, font);
+    fill_plain(&mut job, strong);
+    job
+}
+
+/// `job`'s `PLACEHOLDER` sections — the plain runs `append_name` leaves —
+/// recoloured `color` (the widget's own text colour, which
+/// `TextFormat::default()`'s gray is not).
+fn fill_plain(job: &mut egui::text::LayoutJob, color: egui::Color32) {
+    for section in &mut job.sections {
+        if section.format.color == egui::Color32::PLACEHOLDER {
+            section.format.color = color;
+        }
+    }
+}
+
+/// One group's header: `Player {id} - {number} - {name}` for a rostered
+/// player (`player_head_job`), `Slot {slot}` for one the host lists no
+/// player for, `Team-wide issues` for the team's own rows.
 fn group_header(ui: &mut egui::Ui, team: &TeamViolations<'_>, slot: Option<u8>) {
-    let text = match slot {
-        None => "Team-wide issues".to_string(),
+    let font = egui::TextStyle::Body.resolve(ui.style());
+    let visuals = ui.visuals();
+    let job = match slot {
+        None => egui::text::LayoutJob::single_section(
+            "Team-wide issues".to_owned(),
+            egui::TextFormat::simple(font.clone(), visuals.strong_text_color()),
+        ),
         Some(slot) => match team.players.iter().find(|p| p.slot == slot) {
-            Some(player) => player_head(player.id, player.number, player.name),
-            None => format!("Slot {slot}"),
+            Some(player) => player_head_job(player.id, player.number, player.name, &font, visuals),
+            None => egui::text::LayoutJob::single_section(
+                format!("Slot {slot}"),
+                egui::TextFormat::simple(font.clone(), visuals.weak_text_color()),
+            ),
         },
     };
-    ui.weak(text);
+    head_label(ui, job);
+}
+
+/// `job` drawn as one label, a name's plain runs (the `PLACEHOLDER` sections
+/// `append_name` leaves) taking the strong text colour, as the player list
+/// draws them.
+fn head_label(ui: &mut egui::Ui, mut job: egui::text::LayoutJob) -> egui::Response {
+    fill_plain(&mut job, ui.visuals().strong_text_color());
+    ui.label(job)
 }
 
 /// The tooltip of a row whose click switches the view to its player: the
 /// list's player rows, the Save editor's comparator rows and its patch
 /// preview's items, so every such row says the same.
 pub const SWITCH_TOOLTIP: &str = "Click to switch to this player";
+
+/// The tooltip of a `Fielded position` row, a player's whose click lands
+/// on his team's row with the named preset shown rather than on his
+/// record, so it says where the click goes instead of `SWITCH_TOOLTIP`.
+const FIELDED_TOOLTIP: &str = "Click to show him on the team's pitch";
 
 /// The rule name's column, the draft's `.f`: 190 points of proportional text,
 /// cut with an ellipsis when longer, never wrapping.
@@ -588,9 +671,9 @@ fn layout(
 /// `violation_detail`'s lines (the draft's `.drow.detail`) over `players`, the
 /// team's, in the plain text color, wrapped in the same column; the whole row
 /// one click target. While `selects`, a player's row returns
-/// `SelectedPlayer` on click and its tooltip is `SWITCH_TOOLTIP`; a team
-/// row, or any row of a list that does not select, only hovers, with no
-/// tooltip.
+/// `SelectedPlayer` on click and its tooltip is `SWITCH_TOOLTIP`, a
+/// `Fielded position` row's `FIELDED_TOOLTIP`; a team row, or any row of
+/// a list that does not select, only hovers, with no tooltip.
 fn row(
     ui: &mut egui::Ui,
     team_id: u32,
@@ -670,10 +753,17 @@ fn row(
         label.push_str("; ");
         label.push_str(line);
     }
-    // Only a row that switches players says so. A team-wide row selects
-    // nothing and its group's heading already says what it is, and a
-    // report's rows select nothing either.
-    let hover = select.map(|_| SWITCH_TOOLTIP);
+    // Only a row that switches players says so, a `Fielded position`
+    // row's naming where its click lands instead. A team-wide row
+    // selects nothing and its group's heading already says what it is,
+    // and a report's rows select nothing either.
+    let hover = select.map(|_| {
+        if fielded.is_some() {
+            FIELDED_TOOLTIP
+        } else {
+            SWITCH_TOOLTIP
+        }
+    });
     let mut shapes = vec![
         egui::Shape::galley(rect.min + egui::vec2(name_x, 0.0), rule_galley, rule_color),
         egui::Shape::galley(
@@ -1315,9 +1405,9 @@ mod tests {
                 "Tier count: 0 Bronze players, where the rules want 2",
                 "Tier count: 19 Regular players, where the rules want 18",
                 TALL_734,
-                "Player 73401  49 Muh Spooks",
+                "Player 73401 - 49 - Muh Spooks",
                 "Height: height 183 takes no bracket (185 has room)",
-                "Player 73404  45 Yuki-kun ^~^",
+                "Player 73404 - 45 - Yuki-kun ^~^",
                 "Height: height 183 takes no bracket (185 has room)",
             ]
         );
@@ -1402,9 +1492,9 @@ mod tests {
                 "Tier count: 0 Bronze players, where the rules want 2",
                 "Tier count: 19 Regular players, where the rules want 18",
                 TALL_734,
-                "Player 73401  49 Muh Spooks",
+                "Player 73401 - 49 - Muh Spooks",
                 height,
-                "Player 73404  45 Yuki-kun ^~^",
+                "Player 73404 - 45 - Yuki-kun ^~^",
                 height,
                 "714 /co/",
                 "All clean",
@@ -1505,7 +1595,7 @@ mod tests {
         let stat = "Stat: Attacking Prowess 78, just over the 77 the rules allow";
         assert_eq!(
             drawn_lines(&nodes),
-            ["Team 1 T", "Player 1  9 X", stat_total, height, stat]
+            ["Team 1 T", "Player 1 - 9 - X", stat_total, height, stat]
         );
         let strong_color = window
             .ctx
@@ -1623,16 +1713,16 @@ mod tests {
             lines[at..],
             [
                 "Suggestions",
-                "Player 73410  46 DFW",
+                "Player 73410 - 46 - DFW",
                 "Unused: 4 of 5 paid cards used",
                 "Unused: Weak Foot Usage 2, where the rules allow 4",
-                "Player 73411  1 Start With the Greeks",
+                "Player 73411 - 1 - Start With the Greeks",
                 "Unused: 5 of 6 paid cards used",
                 "Unused: Weak Foot Usage 2, where the rules allow 4",
-                "Player 73415  87 A.M. Pinecone",
+                "Player 73415 - 87 - A.M. Pinecone",
                 "Unused: 4 of 5 paid cards used",
                 "Unused: Weak Foot Usage 2, where the rules allow 4",
-                "Player 73423  2 my diary desu",
+                "Player 73423 - 2 - my diary desu",
                 "Unused: 4 of 5 paid cards used",
                 "Unused: Weak Foot Usage 2, where the rules allow 4",
             ]
@@ -2731,34 +2821,66 @@ mod tests {
             drawn_lines(&nodes),
             [
                 "Team 702 /a/",
-                "Player 70202  2 GUILTY",
+                "Player 70202 - 2 - GUILTY",
                 "Height: height 185 takes no bracket",
             ],
             "the empty team's header is not drawn"
         );
     }
 
-    // The group header draws the name code-free (a cup save's medal
-    // players carry colour codes).
+    /// The colour, then the text, of each of `shape`'s painted runs.
+    fn painted_runs(shape: &egui::epaint::TextShape) -> Vec<(egui::Color32, String)> {
+        shape
+            .galley
+            .job
+            .sections
+            .iter()
+            .map(|section| {
+                (
+                    section.format.color,
+                    shape.galley.job.text[section.byte_range.start.0..section.byte_range.end.0]
+                        .to_owned(),
+                )
+            })
+            .collect()
+    }
+
+    // A player's head reads `Player <id>` in the weak colour, then his
+    // number and his name's runs in the strong text — a coded run in its
+    // code's colour, the codes themselves never drawn. A slot the host
+    // lists no player for stays one weak run.
+    // SE-GUI-63
     #[test]
-    fn a_coded_name_draws_as_plain_text() {
+    fn a_players_head_draws_the_id_weak_the_number_strong_and_the_name_coded() {
         // Player 71801 of the PES 17 fixture save: his name carries two colour
         // codes.
         let file = fixture();
         let raw = file.player(71801).expect("player 71801").name.as_str();
+        let spans = pes_savefile::model::names::name_spans(raw);
         assert!(
-            pes_savefile::model::names::name_color(raw).is_some(),
+            spans.iter().any(|(color, _)| color.is_some()),
             "premise: the fixture name is coded"
         );
-        let violations = [violation(
-            Some(0),
-            aatf::Severity::Error,
-            aatf::ViolationKind::Height {
-                height: 185,
-                fits: vec![],
-                room: false,
-            },
-        )];
+        let violations = [
+            violation(
+                Some(0),
+                aatf::Severity::Error,
+                aatf::ViolationKind::Height {
+                    height: 185,
+                    fits: vec![],
+                    room: false,
+                },
+            ),
+            violation(
+                Some(7),
+                aatf::Severity::Error,
+                aatf::ViolationKind::Height {
+                    height: 185,
+                    fits: vec![],
+                    room: false,
+                },
+            ),
+        ];
         let players = [listed(0, 71801, 50, raw)];
         let teams = [TeamViolations {
             team_id: 718,
@@ -2768,53 +2890,132 @@ mod tests {
             starting_eleven: &[],
         }];
         let mut window = Headless::new();
-        let (nodes, _, _) = window.list(&teams, false, vec![]);
-        let lines = drawn_lines(&nodes);
+        let (nodes, shapes, _) = window.list(&teams, false, vec![]);
+        let (weak, strong) = {
+            let visuals = &window.ctx.style_of(window.ctx.theme()).visuals;
+            (visuals.weak_text_color(), visuals.strong_text_color())
+        };
         assert_eq!(
-            lines,
+            drawn_lines(&nodes),
             [
                 "Team 718 /f/",
-                "Player 71801  50 ROADTRIP",
+                "Player 71801 - 50 - ROADTRIP",
                 "Height: height 185 takes no bracket",
-            ]
+                "Slot 7",
+                "Height: height 185 takes no bracket",
+            ],
+            "the head's drawn text is code-free"
         );
-        assert!(
-            lines.iter().all(|line| !line.contains('\u{11}')),
-            "no colour code byte is drawn"
+        let expected: Vec<(egui::Color32, String)> = [
+            (weak, "Player 71801 -".to_owned()),
+            (strong, " 50".to_owned()),
+            (weak, " - ".to_owned()),
+        ]
+        .into_iter()
+        .chain(spans.iter().map(|(color, text)| {
+            (
+                color.map_or(strong, |[red, green, blue]| {
+                    egui::Color32::from_rgb(red, green, blue)
+                }),
+                (*text).to_owned(),
+            )
+        }))
+        .collect();
+        assert_eq!(painted_runs(text_shape(&shapes, "Player 71801")), expected);
+        assert_eq!(
+            painted_text_color(&shapes, "Slot 7"),
+            weak,
+            "an unlisted slot's head stays weak"
         );
     }
 
+    // The head's plain text: the hyphens, and the name code-free.
     #[test]
-    fn a_coded_team_name_heads_its_rows_as_plain_text() {
+    fn player_head_words_the_id_number_and_display_name() {
+        assert_eq!(
+            player_head(73401, 49, "\x11cff0000ffMuh Spooks"),
+            "Player 73401 - 49 - Muh Spooks"
+        );
+    }
+
+    // A plain (uncoded) name's run in the head's job takes the strong
+    // text, never the `PLACEHOLDER` `append_name` leaves.
+    #[test]
+    fn a_plain_names_run_in_the_head_is_strong() {
+        let visuals = egui::Visuals::dark();
+        let font = egui::FontId::proportional(12.5);
+        let job = player_head_job(73401, 49, "PLAIN", &font, &visuals);
+        let runs: Vec<(egui::Color32, &str)> = job
+            .sections
+            .iter()
+            .map(|section| {
+                (
+                    section.format.color,
+                    &job.text[section.byte_range.start.0..section.byte_range.end.0],
+                )
+            })
+            .collect();
+        assert_eq!(
+            runs,
+            [
+                (visuals.weak_text_color(), "Player 73401 -"),
+                (visuals.strong_text_color(), " 49"),
+                (visuals.weak_text_color(), " - "),
+                (visuals.strong_text_color(), "PLAIN"),
+            ]
+        );
+    }
+
+    // The header over a team's rows reads its words and id in the strong
+    // text and the name's runs in their colour codes, `Team-wide issues`
+    // strong too.
+    // SE-GUI-63
+    #[test]
+    fn a_team_header_draws_its_words_strong_and_the_name_coded() {
         // Team 718 of the PES 17 fixture save, its name given a colour
         // code ahead of its own letters.
         let file = fixture();
         let name = file.team(718).expect("team 718").name.as_str();
         let coded = format!("\x11cff0000ff{name}");
         let violations = [violation(
-            Some(0),
+            None,
             aatf::Severity::Error,
-            aatf::ViolationKind::Height {
-                height: 185,
-                fits: vec![],
-                room: false,
-            },
+            aatf::ViolationKind::Captain,
         )];
-        let players = [listed(0, 71801, 50, "ROADTRIP")];
         let teams = [TeamViolations {
             team_id: 718,
             team_name: &coded,
-            players: &players,
+            players: &[],
             violations: &violations,
             starting_eleven: &[],
         }];
         let mut window = Headless::new();
-        let (nodes, _, _) = window.list(&teams, false, vec![]);
-        let lines = drawn_lines(&nodes);
-        assert_eq!(lines[0], format!("Team 718 {name}"), "{lines:?}");
-        assert!(
-            lines.iter().all(|line| !line.contains('\u{11}')),
-            "no colour code byte is drawn: {lines:?}"
+        let (nodes, shapes, _) = window.list(&teams, false, vec![]);
+        let strong = window
+            .ctx
+            .style_of(window.ctx.theme())
+            .visuals
+            .strong_text_color();
+        assert_eq!(
+            drawn_lines(&nodes),
+            [
+                format!("Team 718 {name}"),
+                "Team-wide issues".to_owned(),
+                "Captain: no captain".to_owned(),
+            ],
+            "the header's drawn text is code-free"
+        );
+        assert_eq!(
+            painted_runs(text_shape(&shapes, "Team 718")),
+            [
+                (strong, "Team 718 ".to_owned()),
+                (egui::Color32::from_rgb(0xff, 0, 0), name.to_owned()),
+            ]
+        );
+        assert_eq!(
+            painted_text_color(&shapes, "Team-wide issues"),
+            strong,
+            "the team's own group head is strong"
         );
     }
 
@@ -3013,6 +3214,74 @@ mod tests {
                 slot: 3,
                 fielded: None,
             })
+        );
+    }
+
+    /// A `Fielded position` row's click opens his team's row on the named
+    /// preset, not his record, so its tooltip says where the click goes;
+    /// another player's row's keeps `Click to switch to this player`.
+    // SE-GUI-30
+    #[test]
+    fn a_fielded_row_hovers_where_its_click_goes() {
+        let violations = [
+            violation(
+                Some(3),
+                aatf::Severity::Error,
+                aatf::ViolationKind::FieldedNotA {
+                    preset: 1,
+                    position: position("AMF"),
+                    rated_a: vec![position("SS")],
+                },
+            ),
+            violation(
+                Some(3),
+                aatf::Severity::Error,
+                aatf::ViolationKind::Height {
+                    height: 185,
+                    fits: vec![],
+                    room: false,
+                },
+            ),
+        ];
+        let players = [listed(3, 70103, 3, "NAME")];
+        let teams = [TeamViolations {
+            team_id: 701,
+            team_name: "/3/",
+            players: &players,
+            violations: &violations,
+            starting_eleven: &[],
+        }];
+        let mut window = Headless::new();
+        let (nodes, _, _) = window.list(&teams, false, vec![]);
+        let fielded_row = nodes
+            .iter()
+            .find(|node| {
+                node.role() == Role::Button
+                    && node.label()
+                        == Some(
+                            "Fielded position: fielded at AMF in preset 1 without an A \
+                             rating (rated A at SS)",
+                        )
+            })
+            .expect("the Fielded position row")
+            .clone();
+        let height_row = nodes
+            .iter()
+            .find(|node| {
+                node.role() == Role::Button
+                    && node.label() == Some("Height: height 185 takes no bracket")
+            })
+            .expect("the Height row")
+            .clone();
+        assert_eq!(
+            hover_texts(&mut window, &teams, centre(&fielded_row)),
+            ["Click to show him on the team's pitch"],
+            "a Fielded position row"
+        );
+        assert_eq!(
+            hover_texts(&mut window, &teams, centre(&height_row)),
+            ["Click to switch to this player"],
+            "another row of the same player's"
         );
     }
 
