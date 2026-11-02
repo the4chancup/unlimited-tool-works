@@ -33,7 +33,7 @@ use crate::view::appearance::fields::{
     MOTIONS, MotionField, PHYSIQUE, Palette, STRIP_ENUMS, combo_options, number_range, option_name,
     palette,
 };
-use crate::view::{Panel, SaveView, edit_player, selected_player};
+use crate::view::{Panel, SaveView, edit_player, number_arrows, selected_player};
 
 /// `edit_flags`' Face checkbox.
 pub(super) const FACE_LABEL: &str = "Face";
@@ -390,11 +390,13 @@ fn physique_grid(
                 let stored = get(appearance);
                 let mut shown = i32::from(stored) - limit;
                 ui.label(*label);
-                let mut response = ui.add(
-                    egui::DragValue::new(&mut shown)
-                        .range(-limit..=limit)
-                        .clamp_existing_to_range(false),
-                );
+                let mut response = number_arrows(ui, &mut shown, -limit..=limit, |ui, value| {
+                    ui.add(
+                        egui::DragValue::new(value)
+                            .range(-limit..=limit)
+                            .clamp_existing_to_range(false),
+                    )
+                });
                 if step_number(&mut shown, wheel_steps(ui, &response), -limit..=limit) {
                     response.mark_changed();
                 }
@@ -634,11 +636,13 @@ fn motion_grid(
                 Some(stored) => {
                     let mut shown = stored;
                     let range = number_range(SettingKey::Dribbling);
-                    let mut response = ui.add(
-                        egui::DragValue::new(&mut shown)
-                            .range(range.clone())
-                            .clamp_existing_to_range(false),
-                    );
+                    let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
+                        ui.add(
+                            egui::DragValue::new(value)
+                                .range(range.clone())
+                                .clamp_existing_to_range(false),
+                        )
+                    });
                     if step_number(&mut shown, wheel_steps(ui, &response), range) {
                         response.mark_changed();
                     }

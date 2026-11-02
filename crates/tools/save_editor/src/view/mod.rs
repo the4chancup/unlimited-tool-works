@@ -44,7 +44,7 @@ use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    add_enabled, collapsing_header, modal, modal_buttons, toolbar_separator,
+    add_enabled, collapsing_header, modal, modal_buttons, step_number, toolbar_separator,
 };
 use studio_core::{ActionEffect, ExeCheck, Notice, NoticeAction, NoticeKind, RunningPes};
 
@@ -87,6 +87,13 @@ pub(crate) struct SaveView {
     /// click showed that team alone: the list scrolls to the selected row
     /// on the next draw, then clears this.
     reveal_selected: bool,
+    /// The whole rows the player list showed at once on its last draw
+    /// (a row cut off at the bottom does not count): what a page key's
+    /// step counts, from the scroll area's visible height over a row's
+    /// height. The keys are read in the toolbar before the list draws,
+    /// so the last frame's page stands in for this frame's; 1 until it
+    /// has.
+    list_page_rows: usize,
     /// The team view's Tactics state (`team_widgets`' `TacticsView`:
     /// the preset its panels edit, the formation its lists show, the
     /// armed assignment mode, the open slot popover and Scroll names);
@@ -421,6 +428,7 @@ impl SaveView {
             filter: String::new(),
             selected: None,
             reveal_selected: false,
+            list_page_rows: 1,
             tactics: team_widgets::tactics::TacticsView::default(),
             focused: None,
             prompt: None,
@@ -832,6 +840,46 @@ pub(super) fn surrender_focus(ui: &egui::Ui) {
     }
 }
 
+/// A whole-number field's arrow-key step: `value` moved one per
+/// ArrowUp/ArrowDown pressed this frame while the field `add` draws holds
+/// the keyboard, clamped inside `range` as `step_number` does, the presses
+/// consumed first so the drag value's own key step never sees them — egui
+/// steps a key press by the drag speed, a quarter point, which a whole
+/// number rounds back to where it was. The drag speed itself is
+/// untouched, so a drag moves the field as before. The field's id is
+/// only known once drawn, so the last frame's `response.id` stands in,
+/// kept under the call's widget position (`auto_id_with`, stable for a
+/// field drawn every frame). `mark_changed` fires on a moved `value`,
+/// as the wheel's `step_number` makes the caller do.
+pub(super) fn number_arrows<N: egui::emath::Numeric>(
+    ui: &mut egui::Ui,
+    value: &mut N,
+    range: std::ops::RangeInclusive<N>,
+    add: impl FnOnce(&mut egui::Ui, &mut N) -> egui::Response,
+) -> egui::Response {
+    let key = ui.auto_id_with("number field arrows");
+    let focused = ui
+        .data(|data| data.get_temp::<egui::Id>(key))
+        .is_some_and(|id| ui.memory(|memory| memory.has_focus(id)));
+    let steps = if focused {
+        ui.input_mut(|input| {
+            let up = input.count_and_consume_key(egui::Modifiers::NONE, egui::Key::ArrowUp);
+            let down = input.count_and_consume_key(egui::Modifiers::NONE, egui::Key::ArrowDown);
+            i32::try_from(up).expect("a frame's key presses fit an i32")
+                - i32::try_from(down).expect("a frame's key presses fit an i32")
+        })
+    } else {
+        0
+    };
+    let stepped = step_number(value, steps, range);
+    let mut response = add(ui, value);
+    ui.data_mut(|data| data.insert_temp(key, response.id));
+    if stepped {
+        response.mark_changed();
+    }
+    response
+}
+
 /// The editor's focus mode: a press on another widget ends the focused
 /// widget's keyboard gesture on the press frame (egui's own default,
 /// `Clicks`, waits for a completed click, so a drag elsewhere would keep
@@ -895,11 +943,11 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     } else {
         ui.input_mut(open_menu::consume_shortcut)
     };
-    // PageDown and PageUp walk the list's players from any field, so they
-    // are not held off while a widget has the keyboard. A held pointer
-    // button holds them off, and so does the frame it is released on,
-    // where a click completes: the drag or press in flight would finish
-    // on the next player.
+    // PageDown and PageUp move the list's selection a page of rows from
+    // any field, so they are not held off while a widget has the
+    // keyboard. A held pointer button holds them off, and so does the
+    // frame it is released on, where a click completes: the drag or press
+    // in flight would finish on the next player.
     let gesture = ui.input(|input| input.pointer.any_down() || input.pointer.any_released());
     let page_step = if modal_up || gesture {
         None
@@ -1031,7 +1079,7 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         open_menu::open_shortcut(view, shortcut);
     }
     if let Some(forward) = page_step
-        && player_list::step_selection(view, forward, player_list::StepRows::Players)
+        && player_list::step_selection(view, forward, view.list_page_rows)
     {
         // The field gives up the keyboard once the selection moved: its
         // gesture ends as one undo entry on the player it edited, and the
@@ -1041,7 +1089,7 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         view.reveal_selected = true;
     }
     if let Some(forward) = arrow_step
-        && player_list::step_selection(view, forward, player_list::StepRows::EveryRow)
+        && player_list::step_selection(view, forward, 1)
     {
         view.reveal_selected = true;
     }

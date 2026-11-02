@@ -1597,3 +1597,205 @@ fn the_field_labels_paint_the_normal_text_colour() {
         );
     }
 }
+
+// SE-GUI-61
+#[test]
+fn the_foot_toggles_held_side_reads_the_resting_buttons_grey() {
+    // The held side's word in the resting buttons' light grey over the
+    // positions' C fill, the other side's in the normal text grey.
+    let path = fixture(PesVersion::Pes17, "foot_toggle_ink");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(734);
+    view.selected = Some(Selection::Player(734, 0));
+    let player_id = team_entry(&view, 734).roster[0].player_id;
+    let held = player_entry(&view, player_id).positions.stronger_foot;
+    let mut window = Headless::new();
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let resting = visuals.widgets.inactive.fg_stroke.color;
+    let text = visuals.text_color();
+    assert_ne!(resting, text, "premise: the two greys differ");
+    let fill = studio_core::theme::palette(&visuals).rating_c_fill;
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let sides = right_of_label(&nodes, "Stronger foot", Role::Button);
+    assert_eq!(sides.len(), 2, "the foot's two sides");
+    // Left is drawn first (stored 1), Right second (stored 0).
+    for (node, stored, label) in [(sides[0], 1u8, "Left"), (sides[1], 0, "Right")] {
+        let bounds = node.bounds().expect("bounds");
+        let shape = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(shape)
+                    if shape.galley.job.text == label
+                        && f64::from(shape.pos.x) >= bounds.x0 - 1.0
+                        && f64::from(shape.pos.x) <= bounds.x1 + 1.0
+                        && f64::from(shape.pos.y) >= bounds.y0 - 1.0
+                        && f64::from(shape.pos.y) <= bounds.y1 + 1.0 =>
+                {
+                    Some(shape)
+                }
+                _ => None,
+            })
+            .next()
+            .unwrap_or_else(|| panic!("no painted {label:?} inside {bounds:?}"));
+        let expected = if held == stored { resting } else { text };
+        assert_eq!(galley_color(shape), expected, "{label}'s colour");
+        if held == stored {
+            assert_eq!(
+                fill_at(&shapes, bounds),
+                Some(fill),
+                "the held side's fill is the positions' C grey"
+            );
+        }
+    }
+}
+
+// SE-GUI-57
+#[test]
+fn an_arrow_press_steps_a_number_field_being_typed_by_one() {
+    // One ArrowUp adds one and one ArrowDown takes one; a drag over the
+    // field moves it as before (a quarter of the value per point: 40
+    // points is ten).
+    let path = fixture(PesVersion::Pes17, "number_arrows");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(734);
+    view.selected = Some(Selection::Player(734, 0));
+    let player_id = team_entry(&view, 734).roster[0].player_id;
+    let height = player_entry(&view, player_id).basic.height;
+    let mut window = Headless::new();
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let height_id = node_id_right_of(&pairs, "Height", Role::SpinButton);
+    let height_bounds = pairs
+        .iter()
+        .find(|(id, _)| *id == height_id)
+        .and_then(|(_, node)| node.bounds())
+        .expect("the Height field's bounds");
+
+    // A drag over the field moves it as before: 40 points right is ten.
+    let at = egui::pos2(
+        ((height_bounds.x0 + height_bounds.x1) / 2.0) as f32,
+        ((height_bounds.y0 + height_bounds.y1) / 2.0) as f32,
+    );
+    window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    window.frame(
+        vec![egui::Event::PointerMoved(at + egui::vec2(40.0, 0.0))],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    window.frame(pointer_at(at + egui::vec2(40.0, 0.0), false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        player_entry(&view, player_id).basic.height,
+        height + 10,
+        "a 40-point drag added ten"
+    );
+
+    // A click puts the field in edit mode: one press steps one. The
+    // settle frame lets the field's edit install its key filter, which
+    // keeps the arrows for itself: without it an arrow pressed the very
+    // frame after the click would walk the keyboard to the next field.
+    action_click(&mut window, &mut view, height_id);
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "premise: the Height field holds the keyboard"
+    );
+    window.frame(
+        vec![key(egui::Key::ArrowUp, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        player_entry(&view, player_id).basic.height,
+        height + 11,
+        "one ArrowUp added one"
+    );
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        player_entry(&view, player_id).basic.height,
+        height + 10,
+        "one ArrowDown took one"
+    );
+
+    // A stat's field the same: one ArrowUp on Speed adds one. The Speed
+    // row may sit below the pane's fold; scroll it inside the clip first.
+    let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Speed")
+    });
+    let speed = right_of_label(&nodes, "Speed", Role::SpinButton)
+        .first()
+        .copied()
+        .expect("the Speed control");
+    click(&mut window, speed, &mut view);
+    // The same settle frame as the Height field's above.
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "premise: the Speed field holds the keyboard"
+    );
+    let before = player_entry(&view, player_id).stats.speed;
+    window.frame(
+        vec![key(egui::Key::ArrowUp, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        player_entry(&view, player_id).stats.speed,
+        before + 1,
+        "one ArrowUp added one"
+    );
+}
+
+// SE-GUI-54
+#[test]
+fn the_shirt_and_short_names_are_upper_cased_as_typed() {
+    let path = fixture(PesVersion::Pes17, "upper_case_typed");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(734);
+    view.selected = Some(Selection::Player(734, 0));
+    let player_id = team_entry(&view, 734).roster[0].player_id;
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    click(&mut window, shirt_field(&nodes), &mut view);
+    type_text(&mut window, &mut view, "abc");
+    assert_eq!(
+        player_entry(&view, player_id).shirt_name,
+        "ABC",
+        "the shirt record is upper case"
+    );
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        shirt_field(&nodes).value(),
+        Some("ABC"),
+        "the shirt field shows it upper case"
+    );
+
+    // The team's short name the same, on its view.
+    open_team_view(&mut window, &mut view, 734);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let short = right_of_label(&nodes, "Short", Role::TextInput)
+        .first()
+        .copied()
+        .expect("the Short field");
+    click(&mut window, short, &mut view);
+    type_text(&mut window, &mut view, "abc");
+    assert_eq!(
+        team_entry(&view, 734).short_name,
+        "ABC",
+        "the short-name record is upper case"
+    );
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        right_of_label(&nodes, "Short", Role::TextInput)
+            .first()
+            .and_then(|node| node.value()),
+        Some("ABC"),
+        "the short-name field shows it upper case"
+    );
+}
