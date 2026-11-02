@@ -6995,18 +6995,29 @@ briefs, review loops, gates and mutation runs as for any step.
       as `724e4249` on `f1g` (`wheel.rs` `wheel_steps`; ST-WHEEL-06)
     - [ ] f1g6 `cargo bloat` on the release build (f6's item 2, pulled in): the low-hanging
       gains only, each measured before it is proposed. Measured 2026-11-02 on `f1g-s4`:
-      41,491,456 B (+2.0 MiB from `745ea9f4`); proposed, waiting on the maintainer:
-      `codegen-units = 1` (measured 38,724,608 B, -2.64 MiB) and egui's `default_fonts` off
-      (its unused `Ubuntu-Light.ttf`, 353 KiB)
+      41,491,456 B (+2.0 MiB from `745ea9f4`). Ruled (DECISIONS "0.0.1 is built by CI"):
+      `codegen-units = 1` declined (-2.64 MiB measured), egui's `default_fonts` off (its unused
+      `Ubuntu-Light.ttf`, 353 KiB) → verify: the release exe without the file's bytes, every
+      font the app draws still loaded (the emoji, Hack, the icons)
     - [ ] f1g7 CI for GitHub releases, Windows and Linux (f4, pulled in): the workflow
-      written by the lead, a dry run on a test tag where possible (four questions to the
-      maintainer: 0.0.1 through CI, Linux's archive, the Linux look in WSLg, a pushed dry run)
+      written by the lead (DECISIONS "0.0.1 is built by CI"): `v<version>` builds the Windows
+      `.7z` and the Linux `.tar.gz` (Ubuntu 22.04) into a draft release, the release's checks on
+      CI's exe; a dry run on `ci/release-dry-run` by hand → verify: the dry run's artifacts pass
+      the checks, the Linux one starts in WSLg
     - [x] f1g8 whether 0.0.2-poc fits in 0.0.1: cancelled by the maintainer 2026-11-02 ("we've
       put enough on the plate already"); 0.0.2-poc stays the first work after the cut
-    - [ ] f1g9 the update check (the maintainer approved it for 0.0.1 2026-11-02, at most
-      5 MB growth; `ureq` 3.5, rustls on `ring`, the platform verifier, no gzip): plan
-      (`plans/core/distribution.md` "Self-update"), DECISIONS, draft (proposal uncommitted,
-      four rulings asked), then two slices: the background check and its state, the notice
+    - [ ] f1g9 the update check with Update now (DECISIONS "The update check ships in 0.0.1"
+      and "The update offer waits in the status bar"; at most 5 MB growth): plan
+      (`plans/core/distribution.md` "Self-update"), draft (the dialog's Update now and its
+      progress), then three slices: the background check and its state; the status bar's offer
+      and its dialog; Update now (download, SHA-256 against the release's checksum file,
+      extract, swap beside `old/`, restart), run from CI's pre-release `v0.0.1-rc.1` to
+      `rc.2` on this PC and in WSL (DECISIONS "Test pre-releases for Update now"); the draft's
+      flow waits on the maintainer's look (QUESTIONS "Update now in the draft")
+    - [ ] f1g10 the comparator's heads with the hyphens (DECISIONS "The comparator's heads take
+      the AATF lists' hyphens"), and Live AATF's `All clean` line with Copy to clipboard never
+      greyed, copying what the panel shows (DECISIONS "Live AATF lists \"All clean\""), drafted
+      first → verify: headless, red first; the copy with suggestions hidden holds none of them
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. The maintainer, 2026-11-02: the
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);
@@ -7038,7 +7049,8 @@ briefs, review loops, gates and mutation runs as for any step.
       release whose `.7z` passes the checks
     - [ ] f4c the Linux bundle in `release.py` and the workflow, its file list and tests; the
       GUI run on a real Linux machine (the maintainer's, or a VM) before it is attached
-  - [ ] f5 after the cut (the maintainer, 2026-11-01): cv39's fix (`99c9a36a`: a press held in
+  - [x] f5 superseded 2026-11-02 (DECISIONS "cv39's fix ships in 0.0.1": onto f1g). Was: after
+    the cut (the maintainer, 2026-11-01): cv39's fix (`99c9a36a`: a press held in
     the Multi-team AATF dialog while its check lands clicked Close) is not on 0.0.1's
     candidate; DBC's organizer uses Multi-team AATF only at the exports deadline (2026-11-18),
     so an exe built from main with it is handed to the organizer before that date (0.0.1's
@@ -7069,6 +7081,11 @@ briefs, review loops, gates and mutation runs as for any step.
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
   the organizer's order and the AATF check of the official save (the plan's paragraph)
+  - [ ] 0.0.2-cgu `codegen-units = 1` timed on the AATF check of a 220-team save, both
+    profiles (the maintainer: taken only if the app runs faster; DECISIONS "Test pre-releases
+    for Update now")
+  - [ ] 0.0.2-cli the command line's update notice (DECISIONS "The update offer waits in the
+    status bar"): from 0.0.2 a command prints one line when a newer release exists
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and
     8.36d, then a proof-of-concept exe for VGL's organizer (no release, no bundle) that
     upgrades and compiles a couple of example teams on PES 2019 → verify: the example teams'

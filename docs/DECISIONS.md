@@ -15245,3 +15245,71 @@ with this setup (`.tmp/f1g9/probe_results.md`) grew a hello-world exe by 2.05 MB
 releases list, and refused an expired and an unknown-issuer certificate.
 Plan: `plans/core/distribution.md` "Self-update" (rewritten with the rulings above); worklog
 0.0.1f1g9.
+
+## 2026-11-02 — studio — The update offer waits in the status bar; its dialog updates in place
+Decision (the maintainer, from the draft's renders): no dialog opens by itself. A newer release
+shows as the status bar's `Update available: v0.0.2` with a **Details** button; Details opens a
+dialog with "Unlimited Tool Works v0.0.2 pre-alpha is out. You have v0.0.1 pre-alpha.", the
+release notes as Markdown in a scrolling box, and **Update now**, **Open release page**, **Skip
+this version**, **Remind me later**. Update now is in 0.0.1: the plan's download and verify, swap
+and restart (`plans/core/distribution.md` "Self-update" steps 3, 4 and 6), as Red's one-click
+update, with the folder kept and the exe swapped rather than Red's sibling folder. The check reads
+GitHub's list of releases and takes the highest version (`releases/latest` skips a release marked
+Pre-release); tags are `v<version>`; Skip this version stores it in `skipped_version`, Remind me
+later closes until the next check; a failed check shows nothing and writes one log line; the two
+Settings rows show from 0.0.1 (this reverses 2026-10-25, "The update check's settings rows wait
+for the updater"). The window checks; the command line does not in 0.0.1, and from 0.0.2 it
+prints a one-line notice when a newer release exists. The draft's status bar reads `v0.0.1
+pre-alpha`, as the app does.
+Why: an update asks for no decision now, and a dialog at the start would land on whatever the
+member opens first. Update now has to be in the version updated from: a 0.0.1 without it never
+updates itself. Rollback lives in the newer exe, so it waits for 0.0.2.
+Plan: `plans/core/distribution.md` "Self-update"; worklog 0.0.1f1g9.
+
+## 2026-11-02 — save_editor — The comparator's heads take the AATF lists' hyphens
+Decision (the maintainer): the save comparator's player heads read `Player <id> - <number> -
+<name>` like the AATF lists' (DECISIONS "Live AATF's heads in two tones"), as the draft's shared
+head already draws them.
+Why: one head for a player wherever a list names him.
+Plan: `plans/save_editor.md` "Comparator (gameplay + aesthetics)".
+
+## 2026-11-02 — release — 0.0.1 is built by CI; the release profile stays the default
+Decision (the maintainer): this overrides 2026-11-01, "CI release builds right after 0.0.1's
+cut, Windows first". The tag `v0.0.1` builds the Windows `.7z` and the Linux `.tar.gz` in CI and
+attaches both to a draft GitHub release; the maintainer's look is on the Windows asset downloaded
+from it, then they publish. The Linux build runs on Ubuntu 22.04 and its look in WSLg on the
+maintainer's PC. The lead may push `ci/release-dry-run` and start the workflow by hand (artifacts
+only, no tag, no release). The release profile stays the default: `codegen-units = 1` measured
+2.64 MiB smaller and is declined for its build time unless it makes the app faster; egui's
+`default_fonts` goes off, dropping its unused `Ubuntu-Light.ttf` (353 KiB).
+Why: the checked binary is then the one members get (a local exe and CI's differ at least in the
+linker's timestamps and toolchain), and the update check has a release to read from 0.0.1 on.
+`.tar.gz` keeps the Linux binary's executable flag, which `.7z` extraction often drops.
+Plan: `plans/core/distribution.md` "Distribution: portable .7z bundle"; worklog 0.0.1f1g6-7.
+
+## 2026-11-02 — save_editor — cv39's fix ships in 0.0.1
+Decision (the maintainer): `99c9a36a` (a press held in the Multi-team AATF dialog while its check
+lands no longer clicks Close) goes onto f1g, so 0.0.1 carries it; worklog f5's separate exe for
+DBC's organizer is dropped.
+Why: its test's race recurs in the candidate's gates and mutation runs without it, and the fix
+is one line and its test.
+Plan: worklog 0.0.1f1g.
+
+## 2026-11-02 — save_editor — Live AATF lists "All clean" for a clean team; Copy never greys out
+Decision (the maintainer): under a team that passes, Live AATF's body lists `All clean`, Multi-team
+AATF's word, below the header that already says the team passes; Copy to clipboard is never
+greyed out and copies what the panel shows (the header line and `All clean`, the rows with
+suggestions while they are shown, `Checking <team>…`, or a failed check's message).
+Why: an empty well read as nothing having run, and a greyed button asked the member to work out
+why; copying what shows needs no rule to learn.
+Plan: `plans/save_editor.md` "Live AATF"; SE-GUI-63.
+
+## 2026-11-02 — release — Test pre-releases for Update now; no deterministic-link flag yet
+Decision (the maintainer): CI may publish `v0.0.1-rc.1` and `v0.0.1-rc.2` as GitHub pre-releases
+so rc.1's Update now is run to rc.2 (this PC and WSL) before the cut; semver orders both below
+`0.0.1`, which never offers them. The linker's `/Brepro` stays out of 0.0.1: the look is on CI's
+asset, so a local exe identical to CI's is not needed. Timing `codegen-units = 1` on the AATF
+check waits for 0.0.2.
+Why: without a real release to update to, the updater meets only a fake server before members
+run it, and a bug in 0.0.1's updater is fixed only by a manual download.
+Plan: `plans/core/distribution.md` "Self-update"; worklog 0.0.1f1g9, 0.0.2-cgu.
