@@ -80,6 +80,8 @@ pub(crate) struct Headless {
     screen: egui::Vec2,
     /// The root viewport's `repaint_delay` of the last run frame.
     repaint_delay: std::time::Duration,
+    /// The pointer cursor the last run frame asked for.
+    cursor_icon: egui::CursorIcon,
     /// The flag the pitch's frames hand `pitch` and the tactics frames
     /// `tactics_settings`: whether the active ruleset allows illegal
     /// formations. Off unless a test sets it.
@@ -106,6 +108,7 @@ impl Headless {
             ctx,
             screen: egui::vec2(width, height),
             repaint_delay: std::time::Duration::MAX,
+            cursor_icon: egui::CursorIcon::Default,
             illegal_formations: false,
             opened_tactics: None,
         }
@@ -114,6 +117,11 @@ impl Headless {
     /// The root viewport's `repaint_delay` of the last run frame.
     pub(crate) fn repaint_delay(&self) -> std::time::Duration {
         self.repaint_delay
+    }
+
+    /// The pointer cursor the last run frame asked for.
+    pub(crate) fn cursor_icon(&self) -> egui::CursorIcon {
+        self.cursor_icon
     }
 
     /// Runs one frame with `events` as its input; returns the frame's
@@ -166,6 +174,7 @@ impl Headless {
             .viewport_output
             .get(&egui::ViewportId::ROOT)
             .map_or(std::time::Duration::MAX, |out| out.repaint_delay);
+        self.cursor_icon = output.platform_output.cursor_icon;
         // Nothing renders here, so the frame's texture deltas are dropped on
         // purpose.
         output.drop_without_applying_deltas();
