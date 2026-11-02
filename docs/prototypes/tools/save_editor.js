@@ -7566,7 +7566,8 @@ function startLiveDrag(e, win) {
 // part's players stand in two columns, the starting eleven's left and the
 // bench's right (a player's rows are short, the dock wide); in the window
 // (`oneColumn`) in one, in roster order. The team's own rows follow under
-// them.
+// them. A team that passes reads "All clean", as Multi-team AATF words it,
+// above its suggestions while they are shown.
 function liveList(oneColumn) {
   const res = LIVE.result;
   const body = h("div", { class: "live-body" + (LIVE.checking ? " checking" : ""), id: "live-rows" });
@@ -7594,6 +7595,7 @@ function liveList(oneColumn) {
   // The team's line heads the list while it has an error or a warning.
   if (t && rows.some(r => r[0] !== "Suggestion"))
     body.append(h("div", { class: "grp" }, "Team " + t.id + " ", ...nameSpans(t.name)));
+  else if (res && res.rows) body.append(h("div", { class: "drow weak" }, "All clean"));
   for (const [title, section] of [[null, rows.filter(r => r[0] !== "Suggestion")],
                                   ["Suggestions", rows.filter(r => r[0] === "Suggestion")]]) {
     if (!section.length) continue;
@@ -7611,28 +7613,34 @@ function liveList(oneColumn) {
   }
   return body;
 }
-// Copy to clipboard, as Multi-team AATF's: the list as it shows, as text, its
-// suggestions too while Show suggestions is on (a member who wants them out
-// switches them off). A header line names the ruleset and counts the issues,
-// as the count line does. Disabled while the list holds no row.
+// Copy to clipboard, as Multi-team AATF's: what the panel shows, as text,
+// never greyed out. A held list: a header line naming the ruleset and counting
+// the issues, as the count line does, then the rows, or "All clean" for a team
+// that passes, and the suggestions while Show suggestions is on (a member who
+// wants them out switches them off). No list yet: the header's own line.
 function liveText() {
-  const t = LIVE.result.team, rows = LIVE.result.rows || [];
+  const res = LIVE.result;
+  if (!res) return "Checking " + displayName(liveTeam().name) + "…";
+  if (res.rows === null) return "No sample run for " + displayName(res.team.name) + " under "
+    + RULESETS[D.ruleset].label + " in the draft.";
+  const t = res.team, rows = res.rows;
   const issues = rows.filter(r => r[0] !== "Suggestion");
   const suggestions = rows.filter(r => r[0] === "Suggestion");
   const n = (sev, word) => { const k = issues.filter(r => r[0] === sev).length;
     return k + " " + word + (k === 1 ? "" : "s"); };
   const lines = [RULESETS[D.ruleset].label + ", team " + t.id + " " + displayName(t.name) + ": "
-    + n("Error", "error") + ", " + n("Warning", "warning"), ...teamTextLines(t, issues)];
+    + n("Error", "error") + ", " + n("Warning", "warning"),
+    ...(issues.length ? teamTextLines(t, issues) : ["  All clean"])];
   if (suggestions.length) lines.push("Suggestions", ...teamTextLines(t, suggestions));
   return lines.join("\n");
 }
 function liveCopy() {
-  const res = LIVE.result;
   const b = button("Copy to clipboard", () => {
+    const team = LIVE.result ? LIVE.result.team : liveTeam();
     if (navigator.clipboard) navigator.clipboard.writeText(liveText()).catch(() => {});
-    publishNotice("Copied the Live AATF list of " + res.team.id + " " + displayName(res.team.name) + ".",
+    publishNotice("Copied the Live AATF list of " + team.id + " " + displayName(team.name) + ".",
       null, "success");
-  }, { disabled: !(res && res.rows && res.rows.length) });
+  });
   b.id = "live-copy";
   return b;
 }

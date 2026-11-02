@@ -1661,8 +1661,10 @@ What this editor adds on top of the lib:
   shows, as Multi-team AATF's copy words a team: a line naming the ruleset as that copy
   does, the team and its error and warning counts, then the team's groups, then under
   `Suggestions` the suggestions while Show suggestions is on (a member who wants them out
-  switches them off); disabled while the list holds no row, and a notice `Copied the Live
-  AATF list of <id> <name>.` says it was done. **Its own
+  switches them off); a team that passes reads `All clean` there, as the list does. It is
+  never greyed out: before a list is held it copies the header's own line (`Checking
+  <team>…`, a failed check's message), and a notice `Copied the Live AATF list of <id>
+  <name>.` says it was done. **Its own
   window**: the pop-out icon at the header's right end (the icon font's arrow out of a square,
   U+E5DE, Phosphor's arrow-square-out; tooltip `Open Live AATF in a window of its own`) moves
   the list into an `egui::Window` over the view, and the dock is gone until it comes back.
@@ -1688,7 +1690,8 @@ What this editor adds on top of the lib:
   desktop's own (egui's viewports): it needs no second native window, moves with Studio's, and
   works wherever Studio does; a native window comes after 0.0.2 (worklog), without
   always-on-top, which is desktop-wide, so a member just moves it off the main window. The header reads `N issues · <ruleset>`, counting
-  errors and warnings, or `<team> passes <ruleset> with no issues.` once neither is left;
+  errors and warnings, or `<team> passes <ruleset> with no issues.` once neither is left,
+  the list then reading `All clean` (Multi-team AATF's word) above any suggestions;
   clicking a row selects that player (a
   `FieldedNotA` row selects his team's row instead, the named preset shown on the first of
   its formations that carries the cross, since the pitch its mark is on is the team
@@ -2111,8 +2114,11 @@ SE-GUI-63  GIVEN the PES 17 save open on team 734 under the official rules, Live
                 pressed THEN the system clipboard holds the list as text, its first line naming
                 the ruleset, team 734 and its error and warning counts, and a notice says so;
                 WHEN Show suggestions is on and it is pressed again THEN the text ends with
-                `Suggestions` and their groups; GIVEN Live AATF in its window THEN the button
-                stands at the count line's right end
+                `Suggestions` and their groups, and WHEN it is turned off before the next
+                check returns THEN the copied text holds no suggestion; GIVEN Live AATF in its
+                window THEN the button stands at the count line's right end; GIVEN a team that
+                passes THEN the list reads `All clean`, the button is not greyed out and the
+                copied text is the header line and `All clean`
 SE-GUI-62  GIVEN the PES 17 save open on a player, the keyboard moved by Tab to a rating cell
                 of his Playable positions and Space pressed on it (the rating stepped)
            WHEN Ctrl+Z is pressed, the cell still holding the keyboard
