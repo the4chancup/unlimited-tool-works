@@ -169,6 +169,15 @@ pub(super) fn team_name(file: &EditFile, id: u32) -> &str {
         .as_str()
 }
 
+/// The line a failed check lists and the list's copy writes (`check-aatf`'s
+/// wording, the team named by its display name).
+pub(super) fn failed_line(file: &EditFile, id: u32, error: &str) -> String {
+    format!(
+        "The AATF check failed for team {id} {}: {error}",
+        display_name(team_name(file, id))
+    )
+}
+
 /// The check's results: one error-coloured line per team whose check
 /// failed (as `check-aatf` reports it), then the `violations_list` itself,
 /// its rows worded under `ruleset` (the active one) and `file`'s version,
@@ -192,13 +201,7 @@ pub(super) fn results(
         let name = team_name(file, *id);
         match check {
             Err(error) => {
-                ui.colored_label(
-                    ui.visuals().error_fg_color,
-                    format!(
-                        "The AATF check failed for team {id} {}: {error}",
-                        display_name(name)
-                    ),
-                );
+                ui.colored_label(ui.visuals().error_fg_color, failed_line(file, *id, error));
             }
             Ok(check) => teams.push(TeamViolations {
                 team_id: *id,

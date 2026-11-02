@@ -237,7 +237,7 @@ fn the_panel_lists_the_differences_per_team_and_a_rows_click_selects() {
     );
     pick(&mut window, &mut view, picked);
     compared(&mut window, &mut view);
-    let pairs = scroll_to(&mut window, &mut view, "Player 73401  49 Muh Spooks");
+    let pairs = scroll_to(&mut window, &mut view, "Player 73401 - 49 - Muh Spooks");
     let nodes = comparator_nodes(&pairs);
     assert!(
         nodes
@@ -247,7 +247,7 @@ fn the_panel_lists_the_differences_per_team_and_a_rows_click_selects() {
     );
     assert!(
         nodes.iter().any(|node| {
-            node.role() == Role::Button && node.label() == Some("Player 73401  49 Muh Spooks")
+            node.role() == Role::Button && node.label() == Some("Player 73401 - 49 - Muh Spooks")
         }),
         "73401's head"
     );
@@ -276,7 +276,7 @@ fn a_rows_hover_says_its_click_switches_to_the_player() {
     open_comparator(&mut window, &mut view);
     pick(&mut window, &mut view, picked);
     compared(&mut window, &mut view);
-    let pairs = scroll_to(&mut window, &mut view, "Player 73401  49 Muh Spooks");
+    let pairs = scroll_to(&mut window, &mut view, "Player 73401 - 49 - Muh Spooks");
     let (_, row) = comparator_button(&pairs, "Height 185 \u{2192} 183");
     let at = centre(row);
     assert_eq!(
@@ -293,7 +293,7 @@ fn a_rows_hover_says_its_click_switches_to_the_player() {
 #[test]
 fn a_row_stands_in_the_drows_two_columns() {
     let (mut view, mut window, _) = compared_73401("comparator_drow");
-    scroll_to(&mut window, &mut view, "Player 73401  49 Muh Spooks");
+    scroll_to(&mut window, &mut view, "Player 73401 - 49 - Muh Spooks");
     let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     /// The painted text inside `bounds` whose galley starts with
     /// `starts_with`.
@@ -341,7 +341,7 @@ fn a_row_stands_in_the_drows_two_columns() {
         .visuals
         .strong_text_color();
     assert_eq!(galley_color(values), strong, "the values' strong colour");
-    let head_bounds = comparator_button(&pairs, "Player 73401  49 Muh Spooks")
+    let head_bounds = comparator_button(&pairs, "Player 73401 - 49 - Muh Spooks")
         .1
         .bounds()
         .expect("the head's bounds");
@@ -351,6 +351,77 @@ fn a_row_stands_in_the_drows_two_columns() {
         "a head stays at the row's left edge: {:?} vs {row:?}",
         head.pos
     );
+}
+
+/// The colour, then the text, of each of `shape`'s painted runs.
+fn painted_runs(shape: &egui::epaint::TextShape) -> Vec<(egui::Color32, String)> {
+    shape
+        .galley
+        .job
+        .sections
+        .iter()
+        .map(|section| {
+            (
+                section.format.color,
+                shape.galley.job.text[section.byte_range.start.0..section.byte_range.end.0]
+                    .to_owned(),
+            )
+        })
+        .collect()
+}
+
+// A rostered player's head draws as the AATF lists' heads do: `Player
+// <id> -` and the second ` - ` in the weak colour, the number and his
+// name's runs in the strong text — a coded run in its code's colour, the
+// codes themselves never drawn.
+// SE-GUI-13
+#[test]
+fn a_players_head_draws_the_id_weak_the_number_strong_and_the_name_coded() {
+    let dir = crate::test_support::scratch("comparator_head_runs");
+    // 73401's height broken and his name given a colour code ahead of its
+    // letters; the unedited fixture picked.
+    let open_path = picked_save(&dir, "open", |file| {
+        let player = file.player_mut(73401).expect("73401 is a player");
+        player.basic.height = 183;
+        player.name = format!("\x11cff0000ff{}", player.name);
+    });
+    let picked = picked_save(&dir, "picked", |_| {});
+    let mut view = SaveView::new();
+    view.open(&open_path);
+    view.panel = Some(Panel::Comparator);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    let raw = player_entry(&view, 73401).name;
+    let spans = name_spans(&raw);
+    assert!(
+        spans.iter().any(|(color, _)| color.is_some()),
+        "premise: 73401's name is coded"
+    );
+    pick(&mut window, &mut view, picked);
+    compared(&mut window, &mut view);
+    let head = team_widgets::violations::player_head(73401, 49, &raw);
+    scroll_to(&mut window, &mut view, &head);
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    comparator_button(&pairs, &head);
+    let (weak, strong) = {
+        let visuals = &window.ctx.style_of(window.ctx.theme()).visuals;
+        (visuals.weak_text_color(), visuals.strong_text_color())
+    };
+    let expected: Vec<(egui::Color32, String)> = [
+        (weak, "Player 73401 -".to_owned()),
+        (strong, " 49".to_owned()),
+        (weak, " - ".to_owned()),
+    ]
+    .into_iter()
+    .chain(spans.iter().map(|(color, text)| {
+        (
+            color.map_or(strong, |[red, green, blue]| {
+                egui::Color32::from_rgb(red, green, blue)
+            }),
+            (*text).to_owned(),
+        )
+    }))
+    .collect();
+    assert_eq!(painted_runs(text_shape(&shapes, "Player 73401")), expected);
 }
 
 /// A team whose name holds a colour code heads its group by its display
@@ -614,7 +685,7 @@ fn the_players_only_in_one_save_list_under_their_headings() {
     action_click(
         &mut window,
         &mut view,
-        comparator_button(&pairs, "Player 73410  46 DFW").0,
+        comparator_button(&pairs, "Player 73410 - 46 - DFW").0,
     );
     assert_eq!(
         view.selected,
@@ -653,14 +724,14 @@ fn the_rows_group_per_team_in_the_open_saves_order() {
         &lines[at..at + 11],
         [
             "Team 734 /lit/",
-            "Player 73401  49 Muh Spooks",
+            "Player 73401 - 49 - Muh Spooks",
             "Height 185 \u{2192} 183",
             // 74301 is on 734 and on 743: his first team is 734, and his
             // head wears his number on 734's slot.
-            "Player 74301  46 NOTHING EVER HAPPENS",
+            "Player 74301 - 46 - NOTHING EVER HAPPENS",
             "Height 189 \u{2192} 183",
             "Team 743 /pol/",
-            "Player 74302  50 STOP WATCHING PORN",
+            "Player 74302 - 50 - STOP WATCHING PORN",
             "Height 185 \u{2192} 183",
             "No team",
             "Player 73410 DFW",
@@ -941,7 +1012,7 @@ fn the_team_filter_keeps_an_only_in_section_by_its_roster() {
         "73410's section keeps its heading: {lines:?}"
     );
     assert!(
-        lines.iter().any(|line| line == "Player 73410  46 DFW"),
+        lines.iter().any(|line| line == "Player 73410 - 46 - DFW"),
         "73410's head kept: {lines:?}"
     );
     assert!(
@@ -963,9 +1034,9 @@ fn the_team_filter_keeps_an_only_in_section_by_its_roster() {
             .collect::<Vec<_>>(),
         [
             "Only in the picked save",
-            "Player 9999998  50 STOP WATCHING PORN",
+            "Player 9999998 - 50 - STOP WATCHING PORN",
             "Only in the open save",
-            "Player 74302  50 STOP WATCHING PORN",
+            "Player 74302 - 50 - STOP WATCHING PORN",
         ],
         "743's only-in players under their headings: {lines:?}"
     );

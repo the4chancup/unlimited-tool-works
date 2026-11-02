@@ -226,6 +226,30 @@ fn a_clean_team_reads_no_issues_and_a_broken_rule_the_count() {
     assert_no_violation_row(&nodes, &header);
 }
 
+/// A team that passes reads `All clean` in the dock's well, Multi-team
+/// AATF's word — above the suggestions while Show suggestions lists them.
+// SE-GUI-63
+#[test]
+fn a_clean_team_lists_all_clean_above_any_suggestions() {
+    let (mut view, mut window) = open_legal_714(
+        "live_aatf_all_clean",
+        Headless::sized(DEFAULT_PANE.x, 800.0),
+    );
+    view.live_aatf = true;
+    view.live_suggestions = true;
+    let nodes = live_checked(&mut window, &mut view, &[714]);
+    assert!(
+        nodes.iter().any(|node| node.value() == Some("All clean")),
+        "the list reads All clean"
+    );
+    let clean = value_bounds(&nodes, "All clean");
+    let heading = value_bounds(&nodes, "Suggestions");
+    assert!(
+        clean.y0 < heading.y0,
+        "All clean above the suggestions: {clean:?}, {heading:?}"
+    );
+}
+
 /// The toggle is a setting: clicking it writes `live_aatf`, the tool's
 /// other keys untouched, and a fresh `Tool` on the same settings draws the
 /// dock on its first view frame; toggled back, the dock is gone.
@@ -2301,8 +2325,9 @@ fn live_copied(window: &mut Headless, view: &mut SaveView, at: egui::Pos2) -> Op
 }
 
 /// The dock's Copy to clipboard stands on the header's row left of the
-/// pop-out icon, on while the list holds rows and off while it holds none
-/// (714, the legal team, whose check finds nothing).
+/// pop-out icon, on while the list holds rows and while it holds none
+/// (714, the legal team, whose check finds nothing: the button is never
+/// greyed out).
 // SE-GUI-63
 #[test]
 fn the_docks_copy_button_stands_left_of_the_pop_out_icon() {
@@ -2330,13 +2355,13 @@ fn the_docks_copy_button_stands_left_of_the_pop_out_icon() {
         "on the header's row: {copy_bounds:?}, {pop_bounds:?}"
     );
 
-    // A team that passes holds no row: the button is off.
+    // A team that passes holds no violation row: the button stays on.
     let (mut view, mut window) = open_legal_714("live_aatf_copy_off", window);
     view.live_aatf = true;
     let nodes = live_checked(&mut window, &mut view, &[714]);
     assert!(
-        node_labeled(&nodes, Role::Button, "Copy to clipboard").is_disabled(),
-        "off while the list holds no row"
+        !node_labeled(&nodes, Role::Button, "Copy to clipboard").is_disabled(),
+        "never greyed out while the list holds no row"
     );
 }
 
@@ -2444,5 +2469,155 @@ fn the_windows_copy_button_ends_the_count_line() {
     assert!(
         frame.x1 - copy.x1 <= margin + 4.0,
         "at the window's right end: {copy:?} in {frame:?}, margin {margin}"
+    );
+}
+
+/// A team that passes: the dock's Copy to clipboard is never greyed out
+/// and its click copies the header line and `  All clean`, as the list
+/// reads.
+// SE-GUI-63
+#[test]
+fn a_clean_teams_copy_button_is_enabled_and_copies_all_clean() {
+    let (mut view, mut window) = open_legal_714(
+        "live_aatf_copy_all_clean",
+        Headless::sized(DEFAULT_PANE.x, 800.0),
+    );
+    view.live_aatf = true;
+    let nodes = live_checked(&mut window, &mut view, &[714]);
+    let copy = node_labeled(&nodes, Role::Button, "Copy to clipboard");
+    assert!(!copy.is_disabled(), "the button is never greyed out");
+    let text =
+        live_copied(&mut window, &mut view, centre(copy)).expect("the click copies the list");
+    let label = {
+        let file = view.session.as_ref().expect("the save opened").file();
+        format!(
+            "714 {}",
+            display_name(&file.team(714).expect("team 714").name)
+        )
+    };
+    assert_eq!(
+        text,
+        format!("4cc Autumn 26, team {label}: 0 errors, 0 warnings\n  All clean"),
+        "the header line and `All clean`"
+    );
+}
+
+/// The copied text's suggestions come only while Show suggestions lists
+/// them: turned off before the next check returns, the copy of the held
+/// (suggestions') result holds no `Suggestions` line.
+// SE-GUI-63
+#[test]
+fn copying_after_suggestions_turned_off_holds_none() {
+    let (mut view, mut window) = open_734_with("live_aatf_copy_sugg_off", &[73401, 73404], 183);
+    view.live_aatf = true;
+    view.live_suggestions = true;
+    let nodes = live_checked(&mut window, &mut view, &[734]);
+    let at = centre(node_labeled(&nodes, Role::Button, "Copy to clipboard"));
+    view.live_suggestions = false;
+    let text = live_copied(&mut window, &mut view, at).expect("the click copies the list");
+    assert!(
+        view.live
+            .check
+            .result
+            .as_ref()
+            .is_some_and(|(key, _)| key.suggestions),
+        "premise: the held result is still the one that asked for suggestions"
+    );
+    assert!(
+        !text
+            .lines()
+            .any(|line| line == "Suggestions" || line.starts_with("    Suggestion  ")),
+        "no Suggestions heading and no suggestion row: {text}"
+    );
+}
+
+/// Before a result is held the button is never greyed out either, and its
+/// click copies the `Checking <team>…` the panel shows. The pointer is held
+/// on the toolbar's empty end, so no check starts before the copy's own
+/// frames (the press frame holds it, the release starts one — too late for
+/// its reply to land inside the click).
+// SE-GUI-63
+#[test]
+fn copying_before_a_result_copies_the_checking_line() {
+    let (mut view, mut window) = open_734_with("live_aatf_copy_checking", &[73401, 73404], 183);
+    view.live_aatf = true;
+    let at_bar = egui::pos2(1090.0, 12.0);
+    let (_, nodes, _) = window.frame(pointer_at(at_bar, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(
+        view.live.check.pending.is_none() && view.live.check.result.is_none(),
+        "premise: no check started while the pointer is held"
+    );
+    let copy = node_labeled(&nodes, Role::Button, "Copy to clipboard");
+    assert!(!copy.is_disabled(), "the button is never greyed out");
+    window.frame(pointer_at(at_bar, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    let text =
+        live_copied(&mut window, &mut view, centre(copy)).expect("the click copies the list");
+    assert_eq!(text, "Checking /lit/\u{2026}");
+}
+
+/// With no team open the dock reads `No team is open.` and the click
+/// copies that line, the notice naming no team.
+// SE-GUI-63
+#[test]
+fn copying_with_no_team_open_copies_the_panels_line() {
+    let (mut view, mut window) = open_734_with("live_aatf_copy_no_team", &[73401], 183);
+    view.live_aatf = true;
+    view.team = TeamChoice::All;
+    view.selected = None;
+    let nodes = draw(&mut window, &mut view);
+    let copy = node_labeled(&nodes, Role::Button, "Copy to clipboard");
+    assert!(!copy.is_disabled(), "the button is never greyed out");
+    let text =
+        live_copied(&mut window, &mut view, centre(copy)).expect("the click copies the list");
+    assert_eq!(text, "No team is open.");
+    assert_eq!(
+        view.notice.as_ref().map(|notice| notice.text.as_str()),
+        Some("Copied the Live AATF list.")
+    );
+}
+
+/// A failed check's copy is the message the list shows for it, naming the
+/// team by its display name — no count header.
+// SE-GUI-63
+#[test]
+fn copying_a_failed_check_copies_the_failed_line() {
+    let path = fixture(PesVersion::Pes17, "live_aatf_copy_failed");
+    let mut view = SaveView::new();
+    view.open(&path);
+    pick_imported(&mut view, "throw19.4ccrules", &throw19());
+    view.team = TeamChoice::Team(743);
+    view.selected = Some(Selection::Player(743, 0));
+    view.live_aatf = true;
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    let nodes = live_checked(&mut window, &mut view, &[743]);
+    let copy = node_labeled(&nodes, Role::Button, "Copy to clipboard");
+    assert!(!copy.is_disabled(), "the button is never greyed out");
+    let text =
+        live_copied(&mut window, &mut view, centre(copy)).expect("the click copies the list");
+    let name = display_name(
+        &view
+            .session
+            .as_ref()
+            .expect("the save opened")
+            .file()
+            .team(743)
+            .expect("team 743")
+            .name,
+    );
+    assert!(
+        text.lines().any(|line| {
+            line.starts_with("The AATF check failed for team 743 ") && line.contains(name.as_str())
+        }),
+        "the failed check's line naming the team: {text}"
+    );
+    assert!(
+        !text
+            .lines()
+            .any(|line| line.contains("team 743") && line.contains("warnings")),
+        "no count header: {text}"
     );
 }

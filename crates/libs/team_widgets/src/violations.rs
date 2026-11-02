@@ -155,11 +155,7 @@ pub fn violations_list(
                 ListUse::Report => {
                     team_header(ui, team, false);
                     if groups.is_empty() {
-                        // The draft's `.drow weak`: the rows' own inset.
-                        ui.horizontal(|ui| {
-                            ui.add_space(ROW_INSET);
-                            ui.weak("All clean");
-                        });
+                        all_clean(ui);
                     }
                 }
             }
@@ -344,17 +340,28 @@ fn slot_order<'a>(violations: impl Iterator<Item = &'a aatf::Violation>) -> Vec<
     order
 }
 
-/// The Save editor's comparator's head: `Player {id}  {number} {name}` with
-/// the name code-free (`name` is the save's raw string). Not the AATF
-/// groups' head, which reads `Player <id> - <number> - <name>`
-/// (`group_header`).
+/// A rostered player's head in words, `Player {id} - {number} - {name}`
+/// with the name code-free (`name` is the save's raw string): the text of
+/// the head `player_head_job` draws, the Save editor's comparator's
+/// accessible label.
 pub fn player_head(id: u32, number: u16, name: &str) -> String {
     format!(
-        "Player {}  {} {}",
+        "Player {} - {} - {}",
         id,
         number,
         pes_savefile::model::names::display_name(name)
     )
+}
+
+/// `All clean`, the lists' word for a checked team holding no error or
+/// warning, weak and the rows' inset in (the draft's `.drow weak`): under
+/// a clean team's header in a report, and in Live AATF's well above the
+/// suggestions while they show.
+pub fn all_clean(ui: &mut egui::Ui) {
+    ui.horizontal(|ui| {
+        ui.add_space(ROW_INSET);
+        ui.weak("All clean");
+    });
 }
 
 /// A violation's whole line, `rule_name`, a colon, a space, then
@@ -545,29 +552,64 @@ fn team_header(ui: &mut egui::Ui, team: &TeamViolations<'_>, editing: bool) {
     head_label(ui, job);
 }
 
+/// A rostered player's head as the lists draw one (`Player <id> -
+/// <number> - <name>`): `Player <id> -` and the second ` - ` in the weak
+/// colour, the number and the name's plain runs in the strong text, the
+/// name's colour codes kept. The groups' headers and the Save editor's
+/// comparator share it, so a player's head reads the same wherever a list
+/// names him.
+pub fn player_head_job(
+    id: u32,
+    number: u16,
+    name: &str,
+    font: &egui::FontId,
+    visuals: &egui::Visuals,
+) -> egui::text::LayoutJob {
+    let strong = visuals.strong_text_color();
+    let weak = egui::TextFormat::simple(font.clone(), visuals.weak_text_color());
+    let mut job = egui::text::LayoutJob::default();
+    job.append(&format!("Player {id} -"), 0.0, weak.clone());
+    job.append(
+        &format!(" {number}"),
+        0.0,
+        egui::TextFormat::simple(font.clone(), strong),
+    );
+    job.append(" - ", 0.0, weak);
+    append_name(&mut job, name, font);
+    fill_plain(&mut job, strong);
+    job
+}
+
+/// `job`'s `PLACEHOLDER` sections — the plain runs `append_name` leaves —
+/// recoloured `color` (the widget's own text colour, which
+/// `TextFormat::default()`'s gray is not).
+fn fill_plain(job: &mut egui::text::LayoutJob, color: egui::Color32) {
+    for section in &mut job.sections {
+        if section.format.color == egui::Color32::PLACEHOLDER {
+            section.format.color = color;
+        }
+    }
+}
+
 /// One group's header: `Player {id} - {number} - {name}` for a rostered
-/// player, `Player {id} -` and the second ` - ` in the weak colour and the
-/// number and name in the strong text, the name's colour codes kept;
-/// `Slot {slot}` for one the host lists no player for, `Team-wide issues`
-/// for the team's own rows.
+/// player (`player_head_job`), `Slot {slot}` for one the host lists no
+/// player for, `Team-wide issues` for the team's own rows.
 fn group_header(ui: &mut egui::Ui, team: &TeamViolations<'_>, slot: Option<u8>) {
     let font = egui::TextStyle::Body.resolve(ui.style());
     let visuals = ui.visuals();
-    let weak = egui::TextFormat::simple(font.clone(), visuals.weak_text_color());
-    let strong = egui::TextFormat::simple(font.clone(), visuals.strong_text_color());
-    let mut job = egui::text::LayoutJob::default();
-    match slot {
-        None => job.append("Team-wide issues", 0.0, strong),
+    let job = match slot {
+        None => egui::text::LayoutJob::single_section(
+            "Team-wide issues".to_owned(),
+            egui::TextFormat::simple(font.clone(), visuals.strong_text_color()),
+        ),
         Some(slot) => match team.players.iter().find(|p| p.slot == slot) {
-            Some(player) => {
-                job.append(&format!("Player {} -", player.id), 0.0, weak.clone());
-                job.append(&format!(" {}", player.number), 0.0, strong);
-                job.append(" - ", 0.0, weak);
-                append_name(&mut job, player.name, &font);
-            }
-            None => job.append(&format!("Slot {slot}"), 0.0, weak),
+            Some(player) => player_head_job(player.id, player.number, player.name, &font, visuals),
+            None => egui::text::LayoutJob::single_section(
+                format!("Slot {slot}"),
+                egui::TextFormat::simple(font.clone(), visuals.weak_text_color()),
+            ),
         },
-    }
+    };
     head_label(ui, job);
 }
 
@@ -575,12 +617,7 @@ fn group_header(ui: &mut egui::Ui, team: &TeamViolations<'_>, slot: Option<u8>) 
 /// `append_name` leaves) taking the strong text colour, as the player list
 /// draws them.
 fn head_label(ui: &mut egui::Ui, mut job: egui::text::LayoutJob) -> egui::Response {
-    let strong = ui.visuals().strong_text_color();
-    for section in &mut job.sections {
-        if section.format.color == egui::Color32::PLACEHOLDER {
-            section.format.color = strong;
-        }
-    }
+    fill_plain(&mut job, ui.visuals().strong_text_color());
     ui.label(job)
 }
 

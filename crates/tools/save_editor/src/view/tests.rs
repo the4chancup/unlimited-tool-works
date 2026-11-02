@@ -1368,18 +1368,13 @@ fn live_checked(window: &mut Headless, view: &mut SaveView, ids: &[u32]) -> Vec<
 }
 
 /// The group header `slot`'s player gets in the violations list
-/// (`Player <id> - <number> - <name>`).
+/// (`player_head`).
 fn player_header(view: &SaveView, team_id: u32, slot: u8) -> String {
     let file = view.session.as_ref().expect("the save opened").file();
     let team = file.team(team_id).expect("the team");
     let roster = &team.roster[usize::from(slot)];
     let player = file.player(roster.player_id).expect("rostered");
-    format!(
-        "Player {} - {} - {}",
-        roster.player_id,
-        roster.number,
-        display_name(&player.name)
-    )
+    team_widgets::violations::player_head(roster.player_id, roster.number, &player.name)
 }
 
 /// The `FieldedNotA` row under `header`'s group (two players can share
