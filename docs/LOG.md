@@ -3040,3 +3040,5 @@ worklog passed 7,000 lines.
   device creation (DX12 and OpenGL start fine): f1e4 has Windows ask for Direct3D 12 and OpenGL only.
 - 2026-11-02 — The GPU BC7 encoder's plan gains its crash guard (the maintainer): a hidden child-process probe per adapter and
   driver version, from the notebook's Vulkan crash; built with the encoder's wiring after 0.1.0.
+- 2026-11-02 — The GPU encoder's plan starts it when the Team compiler opens on PES 19-21 (the maintainer), so a later Compile
+  finds it warm; the gain is mostly a cold driver cache's 16 s.

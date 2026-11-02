@@ -56,8 +56,9 @@ So:
 - **The encoder is Vulkan's (Metal's on macOS), started on its own thread.** The warm start
   costs less than one 1024² BC7 encode on the CPU, so a ready GPU takes every BC7 texture; a
   start not finished yet (the rare cold one) leaves the CPU encoding, and the GPU takes the
-  textures still waiting once it is ready. Whether a compile starts the GPU at all is decided
-  by whether it has BC7 work, not by a predicted cost: a cold start cannot be predicted.
+  textures still waiting once it is ready. Whether the GPU starts at all is decided by whether
+  the version's compile has BC7 work (it starts with the Team compiler, below), not by a
+  predicted cost: a cold start cannot be predicted.
 - **Submissions are bounded in pixels, not textures:** each one encodes at most a fixed slab of
   rows (`add_compression_task`'s row offset), sized so it runs a small fraction of the 2 s
   timeout on the measured GPU, whatever the texture's size.
@@ -84,6 +85,16 @@ So:
   pipeline build also warms the driver's shader cache, so the cold start it pays is not paid
   again in the compile. The alternative, a list of known bad drivers, only covers drivers
   someone has already seen crash.
+- **The encoder starts when the Team compiler opens, not at the first Compile** (the
+  maintainer, 2026-11-02), on a PES version whose compile encodes BC7 (19-21; on 15-18 no
+  GPU starts): the probe when the adapter's driver has no recorded outcome, then the
+  encoder on its thread, both off the UI thread, so a Compile clicked a while later finds it
+  ready. What it saves depends on the driver's shader cache: on the measured GPU a cold
+  cache, the first start after a driver install or update, costs 16.3 s, which the member
+  then spends looking at the tool rather than waiting on the compile; a warm one costs
+  25-27 ms of pipeline building plus the device's creation, a fraction of a second. A
+  Compile clicked before it is ready goes on as above: the CPU encodes and the GPU joins.
+  Leaving the tool keeps the encoder for the rest of the session, as a compile would.
 
 **The workload the speed is judged on.** A Studio export's textures are PNG by design: members
 edit them losslessly, and flat colors make a PNG smaller than its DDS. So on PES 19-21 nearly

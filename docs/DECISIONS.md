@@ -15126,3 +15126,12 @@ call (the clean-machine check's Intel HD Graphics 620 does in `Device::new`), wh
 handling reaches; a list of known bad drivers covers only those already seen. The probe's
 pipeline build also warms the driver's shader cache.
 Plan: `plans/libs/README.md` "First-release desktop GPU BC7"; WORKLOG 0.0.1f6.
+
+## 2026-11-02 — dds_convert — The GPU encoder is started when the Team compiler opens
+Decision (maintainer): on a PES version whose compile encodes BC7 (19-21), the GPU encoder (its
+probe first, when the driver has none recorded) starts when the Team compiler opens, off the UI
+thread, rather than at the first Compile; on PES 15-18 no GPU starts.
+Why: the maintainer's idea, so a Compile clicked a while after opening finds the encoder
+ready. The gain is the driver's cold shader cache, 16.3 s on the measured GPU once per driver
+install or update; with a warm cache it is a fraction of a second.
+Plan: `plans/libs/README.md` "First-release desktop GPU BC7".
