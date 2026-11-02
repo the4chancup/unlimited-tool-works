@@ -36,7 +36,8 @@ a player or the team itself with unsaved changes.
 The filter box above the list finds a team, or a player of any team, by part of a name,
 shirt name or id, so you can find someone without knowing their team first. A team whose name
 matches is listed with its whole squad. Double-click a team's row to show that team alone: the
-team selector picks it and the filter box empties.
+team selector picks it and the filter box empties. Up and Down move through the list's rows,
+team rows included, while no field has the keyboard and no menu or dialog is open.
 
 **Reordering a team**
 
