@@ -1443,6 +1443,12 @@ ST-RUN-11   manual  GIVEN ST-RUN-10's dump from a release build
                     WHEN `minidump-stackwalk` reads it against that build's kept `.pdb`
                          (through `dump_syms`' symbol files)
                     THEN the crashed thread's stack names the trigger's function
+ST-RUN-12   GIVEN a window running over a data location
+            WHEN a second copy of the exe starts over the same location
+            THEN the second copy shows no "did not close normally" dialog, logs to
+                 `utw.2.log`, and the first copy's `utw.log` keeps growing; WHEN both
+                 close and one starts again THEN it logs to `utw.log`, reporting the
+                 earlier session closed
 ST-CLI-01   GIVEN a data directory that cannot be written
             WHEN a CLI command runs
             THEN stderr starts with the data_dir_read_only condition as one line, and a notice a
