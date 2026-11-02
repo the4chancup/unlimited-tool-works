@@ -32,6 +32,9 @@ const REST: f64 = 0.5;
 /// would join its commit.
 /// The caller applies the steps through the control's own change path
 /// (`step_choice`, `cycle_choice`, `step_number`).
+/// While the `Invert value scrolling` switch is on (`set_inverted`) the
+/// steps come back the other way, so a "natural" wheel's down still reads
+/// as more; a pane's own scrolling never changes.
 pub fn wheel_steps(ui: &egui::Ui, response: &egui::Response) -> i32 {
     let ctx = ui.ctx();
     // The context's data is shared by every window it draws, and each
@@ -47,7 +50,28 @@ pub fn wheel_steps(ui: &egui::Ui, response: &egui::Response) -> i32 {
         // turn steps on the next.
         ctx.request_repaint();
     }
-    steps
+    if ctx
+        .data(|data| data.get_temp::<bool>(inverted_key()))
+        .unwrap_or_default()
+    {
+        -steps
+    } else {
+        steps
+    }
+}
+
+/// The `Invert value scrolling` switch, set from the common setting once per
+/// change as the theme is: while `inverted` is on, `wheel_steps` answers its
+/// steps the other way for a member whose wheel or touchpad scrolls the
+/// "natural" way (wheel down read as "more"). A context never given the call
+/// reads it off.
+pub fn set_inverted(ctx: &egui::Context, inverted: bool) {
+    ctx.data_mut(|data| data.insert_temp(inverted_key(), inverted));
+}
+
+/// The context-data key `set_inverted` writes and `wheel_steps` reads.
+fn inverted_key() -> egui::Id {
+    egui::Id::unique("studio_core wheel inverted")
 }
 
 /// The wheel's state across frames, one per window.
@@ -578,6 +602,40 @@ mod tests {
         window.settle();
         assert_eq!(window.value, 201, "one notch, one step");
         assert_eq!(window.offset, 0.0);
+    }
+
+    // ST-WHEEL-06
+    #[test]
+    fn the_invert_switch_turns_every_step_the_other_way() {
+        let mut window = Window::new();
+        set_inverted(&window.ctx, true);
+        window.notch(window.drag_rect.center(), false);
+        assert_eq!(window.value, 181, "a notch down takes one more");
+        window.notch(window.drag_rect.center(), true);
+        assert_eq!(window.value, 180, "a notch up takes one less");
+        window.notch(window.combo_rect.center(), false);
+        assert_eq!(window.selected, 0, "a notch down takes the item above");
+        set_inverted(&window.ctx, false);
+        window.notch(window.drag_rect.center(), false);
+        assert_eq!(window.value, 179, "the switch off, a notch down steps down");
+        // A turn over the empty space scrolls the pane by the same amount
+        // either way.
+        let line = window
+            .ctx
+            .options(|options| options.input_options.line_scroll_speed);
+        window.notch(window.empty_rect.center(), false);
+        let scrolled_off = window.offset;
+        assert!(
+            (scrolled_off - line).abs() < 0.5,
+            "the pane took the turn: offset {scrolled_off}"
+        );
+        set_inverted(&window.ctx, true);
+        window.notch(window.empty_rect.center(), false);
+        assert!(
+            (window.offset - scrolled_off - line).abs() < 0.5,
+            "the same scroll with the switch on: offset {}",
+            window.offset
+        );
     }
 
     #[test]
