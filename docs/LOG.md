@@ -3035,3 +3035,4 @@ worklog passed 7,000 lines.
   motion goes with Aesthetics (Copy and Swap stats stop moving it); `[team]` colours and kits go with Aesthetics.
 - 2026-11-02 — The cut's scope (the maintainer): `cargo bloat`, l2's terminal half and Astra over f1e-f1e3 move after it
   (worklog f6); the clean-machine check gets a script for the maintainer's notebook.
+- 2026-11-02 — The last changes' loop before the cut runs on Astra (the maintainer); f1e3's SWE-2 round moves to f6.

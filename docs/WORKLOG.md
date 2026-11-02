@@ -6942,9 +6942,10 @@ briefs, review loops, gates and mutation runs as for any step.
     so an exe built from main with it is handed to the organizer before that date (0.0.1's
     gates on the candidate may meet its test's race: `the_last_end_follows_the_first_...`
     fails under load and passes alone, WORKLOG Issues)
-  - [ ] f6 after the cut (the maintainer, 2026-11-02), moved out of the cut: (1) Astra's
-    review of f1e, f1e2 and f1e3 (`ec766a55`, `96154896` and f1e3's commit, against
-    `4dcef0a8`), which had SWE-2 rounds only; (2) the exe's size crate by crate, `cargo bloat
+  - [ ] f6 after the cut (the maintainer, 2026-11-02), moved out of the cut: (1) a SWE-2
+    round over f1e3 (its commit against `96154896`), whose loop before the cut runs on Astra
+    (the maintainer: Astra's loop before the cut, SWE-2's after; f1e and f1e2 had SWE-2's two
+    rounds and get Astra's too); (2) the exe's size crate by crate, `cargo bloat
     --release -p studio --crates` on the release's commit, into `spec/core/distribution.md`
     "Size budget"; (3) l2's other half, ST-RUN-04's `team-compiler check` from a terminal
     printing there, on the release bundle (the Team compiler is outside 0.0.1)

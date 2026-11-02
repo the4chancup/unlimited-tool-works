@@ -15099,3 +15099,10 @@ clean-machine check runs on the maintainer's notebook through a script that reco
 Why: none changes what DBC's managers get: the size is a record, the Team compiler is not part
 of 0.0.1, and the changes still have the review loop's rounds and mutation runs.
 Plan: WORKLOG 0.0.1f2 and f6.
+
+## 2026-11-02 — release — Before the cut, the last changes' review loop runs on Astra
+Decision (maintainer): f1e, f1e2 and f1e3 get their review loop from Astra before 0.0.1's cut,
+and f1e3's SWE-2 round waits for after it, replacing the entry above's deferred Astra review.
+Why: the maintainer's choice of reviewer for the release's last changes; f1e and f1e2 already
+had SWE-2's two rounds.
+Plan: WORKLOG 0.0.1f6.
