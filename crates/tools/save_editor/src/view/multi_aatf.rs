@@ -20,7 +20,7 @@ use pes_savefile::model::names::display_name;
 use studio_core::widgets::{add_enabled, modal, modal_buttons, step_choice, wheel_steps};
 use studio_core::{Notice, NoticeKind};
 use team_widgets::violations::{
-    ListUse, Wording, issue_groups, rule_name, sentence, violation_detail,
+    ListUse, ListedPlayer, Wording, issue_groups, rule_name, sentence, violation_detail,
 };
 
 use crate::session::rules::{self, TeamCheck};
@@ -104,7 +104,7 @@ impl MultiAatf {
 }
 
 /// `n` and `word`, plural unless `n` is 1 (`1 error`, `3 warnings`).
-fn counted(n: usize, word: &str) -> String {
+pub(super) fn counted(n: usize, word: &str) -> String {
     if n == 1 {
         format!("1 {word}")
     } else {
@@ -127,7 +127,7 @@ fn range_ids(file: &EditFile, first: u32, last: u32) -> Vec<u32> {
 
 /// Team `id` as the combos and the list name it: its id, then its name
 /// without colour codes.
-fn team_label(file: &EditFile, id: u32) -> String {
+pub(super) fn team_label(file: &EditFile, id: u32) -> String {
     format!("{id} {}", display_name(aatf_check::team_name(file, id)))
 }
 
@@ -327,22 +327,37 @@ fn copy_text(
         if groups.is_empty() {
             lines.push("  All clean".to_owned());
         }
-        for (slot, rows) in groups {
-            lines.push(format!("  {}", group_line(file, id, slot)));
-            for violation in rows {
-                lines.push(format!(
-                    "    {}  {}  {}",
-                    severity_word(violation.severity),
-                    rule_name(&violation.kind),
-                    sentence(violation, id, wording)
-                ));
-                for line in violation_detail(violation, players, wording) {
-                    lines.push(format!("      {line}"));
-                }
+        group_lines(file, id, players, &groups, wording, &mut lines);
+    }
+    lines.join("\n")
+}
+
+/// `team_id`'s `groups` as copied lines on `lines`: each group's head
+/// (`group_line`) two spaces in, each row's severity, rule and sentence four,
+/// and a height row's lines naming its players (`violation_detail`) six.
+/// Live AATF's copy words its team's groups with the same lines.
+pub(super) fn group_lines(
+    file: &EditFile,
+    team_id: u32,
+    players: &[ListedPlayer<'_>],
+    groups: &[(Option<u8>, Vec<&aatf::Violation>)],
+    wording: Wording<'_>,
+    lines: &mut Vec<String>,
+) {
+    for (slot, rows) in groups {
+        lines.push(format!("  {}", group_line(file, team_id, *slot)));
+        for violation in rows {
+            lines.push(format!(
+                "    {}  {}  {}",
+                severity_word(violation.severity),
+                rule_name(&violation.kind),
+                sentence(violation, team_id, wording)
+            ));
+            for line in violation_detail(violation, players, wording) {
+                lines.push(format!("      {line}"));
             }
         }
     }
-    lines.join("\n")
 }
 
 /// The dialog for one frame while it is up: the title naming the ruleset,
