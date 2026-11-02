@@ -998,12 +998,13 @@ fn a_held_drag_outlines_only_the_row_it_would_land_on() {
     assert!(!session.can_undo(), "no undo entry");
 }
 
-// A draggable row shows the grab hand wherever the pointer is on it (egui
-// leaves a row that also takes clicks on the arrow, so the row asks for
-// it); under a filter the row does not drag, and the pointer is the arrow.
+// A draggable row shows the pointing hand wherever the pointer is on it
+// (egui leaves a row that also takes clicks on the arrow, so the row asks
+// for it); under a filter the row does not drag, and the pointer is the
+// arrow.
 // SE-GUI-64
 #[test]
-fn a_draggable_rows_pointer_is_the_grab_hand() {
+fn a_draggable_rows_pointer_is_the_pointing_hand() {
     let path = fixture(PesVersion::Pes21, "drag_cursor");
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
     file.player_mut(70101).unwrap().name = "FIRST".to_owned();
@@ -1025,8 +1026,8 @@ fn a_draggable_rows_pointer_is_the_grab_hand() {
     cursor_at(&mut window, &mut view, at);
     assert_eq!(
         cursor_at(&mut window, &mut view, at),
-        egui::CursorIcon::Grab,
-        "a draggable row's pointer is the grab hand"
+        egui::CursorIcon::PointingHand,
+        "a draggable row's pointer is the pointing hand"
     );
 
     // A filter typed: the row does not drag, so the pointer is the arrow.

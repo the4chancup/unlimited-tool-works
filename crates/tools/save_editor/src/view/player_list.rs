@@ -747,10 +747,10 @@ fn player_row(
         *click_kind = Some(ClickKind::List);
     }
     if layout.draggable {
-        // `dnd_set_drag_payload` shows the grab hand only on a drag source
-        // that senses no click; the row takes clicks, so it asks for the
-        // hand itself.
-        let response = response.on_hover_cursor(egui::CursorIcon::Grab);
+        // `dnd_set_drag_payload` asks for the grab hand only on a drag
+        // source that senses no click; the row takes clicks, so it asks
+        // for the pointing hand itself.
+        let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
         response.dnd_set_drag_payload(*row);
         // The outline sits outside the band, as a CSS outline sits outside
         // the box; only a row whose release would move a record gets one.

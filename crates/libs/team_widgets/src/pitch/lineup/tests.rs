@@ -462,6 +462,55 @@ fn a_drag_started_just_beside_a_rows_labels_moves_the_player() {
     assert_eq!(tactics.bench_order, expect, "row 1 landed at 4");
 }
 
+// A dragged row is drawn with the point first pressed under the pointer,
+// as the browser draws the draft's (egui alone would centre it on the
+// pointer): row 3 pressed twenty points right of its centre and moved by
+// a known offset, its name's painted text lands at its rest position plus
+// that offset.
+// SE-GUI-65
+#[test]
+fn a_dragged_row_keeps_the_point_it_was_pressed_at_under_the_pointer() {
+    let mut window = Headless::sized(900.0, 1100.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let mut rows = fixture_rows(PesVersion::Pes21);
+    rows[usize::from(tactics.starting_eleven[3])].1 = "DRAGGED NAME".to_owned();
+    let roster = roster_rows(&rows);
+    let (_, rest) = window.lineup_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
+    let rest_pos = text_shape(&rest, "DRAGGED NAME").pos;
+    let frame = list_frames(&rest)[0];
+    let (nodes, _) = window.lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    // The row spans the list, so its centre is the list frame's.
+    let press = egui::pos2(frame.center().x + 20.0, row_centre(&nodes, 3).y);
+    window.frame(pointer_at(press, true), |ui| {
+        super::lineup(
+            ui,
+            "lineup",
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+        );
+    });
+    let onto = press + egui::vec2(30.0, 40.0);
+    let (_, shapes) = window.frame(vec![egui::Event::PointerMoved(onto)], |ui| {
+        super::lineup(
+            ui,
+            "lineup",
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+        );
+    });
+    let dragged = text_shape(&shapes, "DRAGGED NAME").pos;
+    let expected = rest_pos + (onto - press);
+    assert!(
+        dragged.distance(expected) <= 0.5,
+        "the dragged name at its rest position plus the offset: {dragged:?} vs {expected:?}"
+    );
+}
+
 // A name longer than the row draws cut, and the row's hover is the
 // whole plain name — the labels sense nothing, so the hover is the
 // row's own (the draft's `.lname` `title`). A name that fits hovers
