@@ -3017,3 +3017,44 @@ worklog passed 7,000 lines.
   at in the built window; the outline showed the rows lack the draft's inset (cv37); cv13_who had timed the crash notice.
 - 2026-11-01 — Candidate 0.0.1e staged at `1c1f2964` (full gates green, 5580 tests): cv23a, cv27-cv37 and the
   emoji fonts since 0.0.1d, each checked by the lead in the staged bundle; cv37's mutants-diff left no survivor.
+- 2026-11-01 — Candidate 0.0.1f staged at `e39e0a9d` (full gates green, 5584 tests): cv38, the wheel over a
+  Tactics toggle wraps round (the maintainer's ask), checked in the staged exe; cv23d's test and its flake fixed.
+- 2026-11-01 — 8.36c0: the full-look patch's Acceptance written (24 Team compiler scenarios, 22 restating the
+  table ones on the patch; SE-PAT-07 to 11; EU-SET-12, 13), the `.copy` findings, four decisions; c1-c4 sliced.
+- 2026-11-01 — 8.36c1 merged (`ed958e8f`): the aesthetics patch carries each player's whole look on every version,
+  apply-patch makes the record his; SE-PAT-07 to 11. SWE-2 sidekick, one rework.
+- 2026-11-01 — cv40: three save_editor view tests raced a worker's reply under load (the held-press, event logo and wheel tests);
+  each now waits for the reply it depends on. `gates-changed 99c9a36a` green: the 8.36c1 merge is gated.
+- 2026-11-01 — 0.0.1f1d1-3 on branch `f1d`: a Team TOML bench of 12 whose import fills the other nine as the game does,
+  plain comments, both instruction sides listed under illegal formations, cv40 on the candidate. Review loop ended; mutants-diff 37 caught, 1 unviable.
+- 2026-11-01 — The Save editor draft catches up with f1d2: under a ruleset allowing illegal formations every instruction combo lists both
+  sides (the code and plan landed without it). Rendered: DBC7 12 options per combo, Spring 26 split 8 and 5.
+- 2026-11-01 — Candidate 0.0.1g staged (`4cc-studio-temp/candidate-0.0.1g/`, `release/0.0.1-candidate` at `4dcef0a8`): full gates
+  green (5590 tests), the release exe byte-identical to the staged one; f1d is its only change since 0.0.1f.
+- 2026-11-02 — f1e3 planned and drafted (the maintainer): the import's boxes read Stats, Aesthetics, Gameplan; the free-kick
+  motion goes with Aesthetics (Copy and Swap stats stop moving it); `[team]` colours and kits go with Aesthetics.
+- 2026-11-02 — The cut's scope (the maintainer): `cargo bloat`, l2's terminal half and Astra over f1e-f1e3 move after it
+  (worklog f6); the clean-machine check gets a script for the maintainer's notebook.
+- 2026-11-02 — The last changes' loop before the cut runs on Astra (the maintainer); f1e3's SWE-2 round moves to f6.
+- 2026-11-02 — The clean-machine check found a crash at every start on an Intel HD 620 laptop, in its Vulkan driver during wgpu's
+  device creation (DX12 and OpenGL start fine): f1e4 has Windows ask for Direct3D 12 and OpenGL only.
+- 2026-11-02 — The GPU BC7 encoder's plan gains its crash guard (the maintainer): a hidden child-process probe per adapter and
+  driver version, from the notebook's Vulkan crash; built with the encoder's wiring after 0.1.0.
+- 2026-11-02 — The GPU encoder's plan starts it when the Team compiler opens on PES 19-21 (the maintainer), so a later Compile
+  finds it warm; the gain is mostly a cold driver cache's 16 s.
+- 2026-11-02 — 0.0.1's cut moves a day (the maintainer); 8.40-8.46 and five new items (f1f) come in first: the lineup's
+  drop row, two instances, Ctrl+C/V of tactics, the captain bonus count, the foot/hand colours.
+- 2026-11-02 — f1e's loop closes (f1e3 mutants 21 of 21 caught); 8.42's undo run is planned: keyed by the widget call, ended
+  by a second's pause, Undo or a focus move; the suite's wheel rule and the Ruleset editor's plan follow it.
+- 2026-11-02 — PES 15 keeps no fluid formation switch in its saves (the maintainer's save and texports, measured); a third
+  build is allowed for a program needed now (a quick tool, a manual-check build; the maintainer).
+- 2026-11-02 — Gate 0, `just line-endings`: a tracked file whose working copy has other line endings than
+  .gitattributes asks fails the gates (ten CRLF copies had built up from Python's text-mode writes; the maintainer).
+- 2026-11-02 — 0.0.1f1f done: Ctrl+C/Ctrl+V on rows and the Tactics selectors, undo runs, Tab + Space settling, the
+  page keys, one-step arrows, two copies at once, the captain's choice card; candidate fast-forwarded to `92d1772b`.
+- 2026-11-02 — 0.0.1h's built-app look: checks 1-3 pass (check 1 in PES 2017), Ctrl+C/V and undo runs as
+  planned; Undo dead while a button holds the keyboard goes to the maintainer as P50.
+- 2026-11-02 — f1g's four slices on branch `f1g` (P49+P50, Live AATF's heads and copy, Invert value scrolling,
+  PgUp/PgDn); 0.0.2-poc's move into 0.0.1 cancelled; the update check approved for 0.0.1 (f1g9).
+- 2026-11-02 — f1g10 on `f1g` (`5f06d2e7`: the comparator's hyphenated heads, Live AATF's All clean and a
+  Copy never greyed); f1g7a: CI's release workflow designed (`distribution.md` "Release builds in CI").

@@ -6,7 +6,7 @@ use std::fs;
 use std::path::Path;
 
 use kit_config::{KitConfig, KitSlot, TexturePresence, texture_names};
-use pes_savefile::interchange::aesthetics_patch::AestheticsPatch;
+use pes_savefile::interchange::aesthetics_patch::{AestheticsPatch, PatchTeam};
 use pes_savefile::player_tables::{AppearanceTable, PlayerTableFile};
 use pes_savefile::settings_toml::{IngameFaceSettings, PlayerSettings, SettingKey};
 use pes_version::PesVersion;
@@ -1106,6 +1106,16 @@ fn patch_of(sandbox: &Sandbox) -> AestheticsPatch {
     AestheticsPatch::parse(&text).unwrap()
 }
 
+/// The patch's `[[teams]]` the run wrote — none when no player has an entry
+/// (no patch file is written at all then).
+fn patch_teams(sandbox: &Sandbox) -> Vec<PatchTeam> {
+    let path = sandbox.root.join("output/aesthetics_patch.toml");
+    if !path.exists() {
+        return Vec::new();
+    }
+    patch_of(sandbox).teams
+}
+
 // TC-BIN-25
 #[test]
 fn a_compiled_player_s_three_rows_join_the_installed_tables_which_keep_theirs() {
@@ -1672,6 +1682,7 @@ fn a_hand_split_face_part_assigns_the_gloves_id_over_an_authored_one() {
 }
 
 // TC-BIN-48
+// TC-BIN-61
 #[test]
 fn a_midcup_export_holding_only_settings_files_writes_the_tables() {
     let sandbox = Sandbox::new("bins_settings_only");
@@ -1723,9 +1734,28 @@ fn a_midcup_export_holding_only_settings_files_writes_the_tables() {
         Some(row[4..].try_into().unwrap()),
         "71405's row is his two files'"
     );
+    // The patch half: the same look in `[appearance]` form, the facial hair
+    // type the `ingame_face.toml`'s.
+    let patch = patch_of(&sandbox);
+    assert_eq!(
+        patch.teams[0].players[&5].appearance.as_ref(),
+        Some(&settings.appearance.resolved(PesVersion::Pes21)),
+        "71405's [appearance]"
+    );
+    assert_eq!(
+        patch.teams[0].players[&5]
+            .appearance
+            .as_ref()
+            .unwrap()
+            .face
+            .facial_hair_type,
+        Some(3),
+        "the facial hair type"
+    );
 }
 
 // TC-BIN-49
+// TC-BIN-62
 #[test]
 fn a_settings_value_past_the_target_s_range_writes_the_key_s_default() {
     let toml = "[appearance.motion]\nhunching_dribbling = 5\ndribbling = 2\n";
@@ -1815,11 +1845,17 @@ fn a_settings_value_past_the_target_s_range_writes_the_key_s_default() {
             no_hair.appearance_row(71405, version).unwrap()[4..],
             "{number}: the in-game hair changes the row"
         );
-        // The patch half: the narrowed hunching, `dribbling` only where the version holds it.
+        // The patch half: the narrowed hunching and facial hair in
+        // `[appearance]` form, `dribbling` only where the version holds it,
+        // the in-game hair carried either way.
         let patch = fs::read_to_string(sandbox.root.join("output/aesthetics_patch.toml")).unwrap();
         if version == PesVersion::Pes18 {
             assert!(
                 patch.contains("hunching_dribbling = 1"),
+                "{number}: {patch}"
+            );
+            assert!(
+                patch.lines().any(|line| line == "facial_hair_type = 20"),
                 "{number}: {patch}"
             );
             assert!(
@@ -1831,12 +1867,23 @@ fn a_settings_value_past_the_target_s_range_writes_the_key_s_default() {
                 patch.contains("hunching_dribbling = 5"),
                 "{number}: {patch}"
             );
+            assert!(
+                patch.lines().any(|line| line == "facial_hair_type = 0"),
+                "{number}: {patch}"
+            );
             assert!(patch.contains("dribbling = 2"), "{number}: {patch}");
+        }
+        for expected in ["style = 4", "color_red = 40"] {
+            assert!(
+                patch.lines().any(|line| line == expected),
+                "{number}: the in-game hair: {patch}"
+            );
         }
     }
 }
 
 // TC-STR-18
+// TC-SAV-21
 #[test]
 fn an_invalid_ingame_face_toml_is_reported_and_the_face_is_the_default() {
     let sandbox = Sandbox::new("str_face_invalid");
@@ -1897,9 +1944,20 @@ fn an_invalid_ingame_face_toml_is_reported_and_the_face_is_the_default() {
         Some(row[4..].try_into().unwrap()),
         "71406: skin colour 4, the template's face"
     );
+    // An invalid settings file holds the player's whole look back from the
+    // patch, and with nothing else of his to write he gets no entry.
+    for slot in [5u8, 6] {
+        assert!(
+            !patch_teams(&sandbox)
+                .iter()
+                .any(|team| team.players.contains_key(&slot)),
+            "slot {slot}: no entry for a refused file"
+        );
+    }
 }
 
 // TC-STR-19
+// TC-SAV-21
 #[test]
 fn a_settings_toml_with_a_moved_key_is_invalid_and_the_face_file_still_applies() {
     let sandbox = Sandbox::new("str_face_keys_moved");
@@ -1941,9 +1999,18 @@ fn a_settings_toml_with_a_moved_key_is_invalid_and_the_face_file_still_applies()
         ),
         "71405: iris 7, the template's skin colour 1"
     );
+    // The patch half: his whole look held back, and with nothing else of
+    // his to write he gets no entry.
+    assert!(
+        !patch_teams(&sandbox)
+            .iter()
+            .any(|team| team.players.contains_key(&5)),
+        "no entry for a refused settings.toml"
+    );
 }
 
 // TC-BIN-47
+// TC-BIN-60
 #[test]
 fn an_ingame_face_toml_s_keys_reach_the_row_beside_a_plain_one_s_defaults() {
     let sandbox = Sandbox::new("bins_face_keys");
@@ -1992,9 +2059,29 @@ fn an_ingame_face_toml_s_keys_reach_the_row_beside_a_plain_one_s_defaults() {
         ),
         "79206's row"
     );
+    // The patch half: the same two looks in `[appearance]` form — 79205 the
+    // defaults beside his `settings.toml`, 79206 the face file's iris and
+    // hair.
+    let patch = patch_of(&sandbox);
+    assert_eq!(
+        patch.teams[0].players[&5].appearance.as_ref(),
+        Some(
+            &PlayerSettings::parse(toml)
+                .unwrap()
+                .appearance
+                .resolved(PesVersion::Pes21)
+        ),
+        "79205's [appearance]"
+    );
+    assert_eq!(
+        patch.teams[0].players[&6].appearance.as_ref(),
+        Some(&settings.appearance.resolved(PesVersion::Pes21)),
+        "79206's [appearance]"
+    );
 }
 
 // TC-BIN-32
+// TC-BIN-50
 #[test]
 fn a_failed_boots_task_keeps_the_installed_pair_and_the_appearance_row_is_still_set() {
     let sandbox = Sandbox::new("bins_boots_failed_row");
@@ -2055,16 +2142,17 @@ fn a_failed_boots_task_keeps_the_installed_pair_and_the_appearance_row_is_still_
         Some(expected[4..].try_into().unwrap()),
         "71405's appearance row carries the key whatever the task's outcome"
     );
-    // The patch half: his motion keys, whatever the failed task's outcome.
+    // The patch half: his whole look, whatever the failed task's outcome.
     let patch = patch_of(&sandbox);
-    let motion = &patch.teams[0].players[&5].motion;
+    let appearance = &patch.teams[0].players[&5].appearance;
     assert_eq!(
-        *motion,
-        authored.appearance.motion.resolved(PesVersion::Pes21)
+        *appearance,
+        Some(authored.appearance.resolved(PesVersion::Pes21))
     );
 }
 
 // TC-BIN-33
+// TC-SAV-21
 #[test]
 fn an_invalid_settings_toml_is_reported_and_the_row_is_the_template_s_defaults() {
     let sandbox = Sandbox::new("bins_settings_invalid_row");
@@ -2106,14 +2194,13 @@ fn an_invalid_settings_toml_is_reported_and_the_row_is_the_template_s_defaults()
         Some(template[4..].try_into().unwrap()),
         "the dropped file leaves the template's row"
     );
-    // The patch half: his motions at their defaults, the dropped file giving none.
-    let patch = patch_of(&sandbox);
-    assert_eq!(
-        patch.teams[0].players[&5].motion,
-        PlayerSettings::default()
-            .appearance
-            .motion
-            .resolved(PesVersion::Pes21)
+    // The patch half: the dropped file holds his whole look back, and with
+    // nothing else of his to write he gets no `[teams.players.NN]` at all.
+    assert!(
+        !patch_teams(&sandbox)
+            .iter()
+            .any(|team| team.players.contains_key(&5)),
+        "no entry for a refused file with nothing else"
     );
 }
 

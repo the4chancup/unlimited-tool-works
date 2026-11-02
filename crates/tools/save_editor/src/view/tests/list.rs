@@ -1612,10 +1612,10 @@ fn the_team_selector_names_a_coded_team_by_its_display_name() {
     );
 }
 
-// The team row draws `[click for tactics]` after the name, in the weak
+// The team row draws `[click for gameplan]` after the name, in the weak
 // colour: nothing else says where the tactics are.
 #[test]
-fn the_team_row_hints_click_for_tactics() {
+fn the_team_row_hints_click_for_gameplan() {
     let path = fixture(PesVersion::Pes21, "team_row_hint");
     let mut view = SaveView::new();
     view.open(&path);
@@ -1630,7 +1630,7 @@ fn the_team_row_hints_click_for_tactics() {
     let bounds = team_row(&nodes, &view, 701)
         .bounds()
         .expect("the team row's bounds");
-    let hint = text_in_rect(&shapes, "[click for tactics]", bounds);
+    let hint = text_in_rect(&shapes, "[click for gameplan]", bounds);
     assert_eq!(galley_color(hint), weak, "the hint in the weak colour");
     let name = text_in_rect(&shapes, "/3/", bounds);
     let gap = hint.pos.x - (name.pos.x + name.galley.size().x);

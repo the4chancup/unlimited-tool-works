@@ -14971,3 +14971,473 @@ the rightmost. Combos, drag values and sliders stay clamped.
 Why: clamped, a toggle at an end answers one direction only, so a two-choice toggle ignored
 every notch but one way; a combo's long list still needs its ends to stop a fast turn.
 Plan: `plans/core/gui.md` "The wheel over a value", ST-WHEEL-05; worklog cv38.
+
+## 2026-11-01 — pes_savefile, team_compiler — either invalid settings file holds back the player's whole look
+Decision: a player whose `settings.toml` or `ingame_face.toml` is invalid gets no `[appearance]`
+in the aesthetics patch and no ID his settings would resolve (an authored stock ID or a
+default), so the save keeps his whole look; his models still compile and an ID they get still
+lands. The plan's earlier "`ingame_face.toml` still applies" beside an invalid `settings.toml`
+goes.
+Why (the maintainer): both findings are Errors, and what is left of a player after an Error
+matters little: the member has to fix the file and recompile. So the simplest fallback wins.
+Both files' keys travel in the one `[appearance]` entry, which `apply` writes whole; a
+partial entry would need a second write path that sets some keys and leaves others, for a case
+that is an Error the member reads and the next compile corrects. Writing the other file's keys
+over defaults would reset the keys the invalid file held, the loss the rule exists to avoid.
+Plan: `plans/pes_savefile/operations.md` "Aesthetics patch (new)",
+`plans/aesthetics_export/settings_toml.md`, `plans/team_compiler/messages.md`; TC-SAV-21.
+
+## 2026-11-01 — team_compiler — a bad `<id>.copy` link drops its player folder
+Decision: `copy_link_duplicate`, `copy_link_with_face` and `copy_link_id_invalid` are Errors
+dropping the player folder (`DropFolder`); an id equal to any player the folder maps to is
+invalid.
+Why: the other link rules (`shared_link_duplicate`, `ingame_face_explicit_face_model`) drop
+the folder, and a compile that guessed which face the member meant would show the wrong one
+without a word. A folder `players.txt` maps to several players writes one id to each, so an id
+that is one of theirs would copy a player onto himself.
+Plan: `plans/aesthetics_export/player_folders.md` (base copy paragraph),
+`plans/team_compiler/messages.md`; TC-STR-21.
+
+## 2026-11-01 — export_upgrader — a base copy replaces the in-game face the upgrader would generate
+Decision: a player whose record copies another gets the `<id>.copy` link in place of the
+`ingame_face.toml` the upgrader would generate from his record (no face folder, or the old
+`ingame_face` marker), with no Warning; only a face folder's model is "a face of his own"
+that keeps the copy out with `base_copy_beside_face`.
+Why: the game draws a copied face over the record's own, so the generated `ingame_face.toml`
+holds a face the cup never saw, and the two together would be refused by the compiler
+(`copy_link_with_face`). A face model is the member's own work, which the Warning leaves in
+place for them to choose.
+Plan: `plans/export_upgrader.md` "What it does"; EU-SET-12.
+
+## 2026-11-01 — pes_savefile — a patch's `[appearance]` is read whole or refused
+Decision: reading an aesthetics patch refuses an `[appearance]` missing a key the patch's
+version holds (`MissingKey`), and one holding a key the version lacks; absent keys are not
+filled with defaults as in `settings.toml`.
+Why: the patch is the compiler's output, written with every key; a missing key is a broken
+patch, or one from before the whole look (motions alone), and applying it with defaults would
+reset the player's other keys without a word.
+Plan: `plans/pes_savefile/operations.md` "Aesthetics patch (new)".
+
+## 2026-11-01 — development plan — DBC7's aesthetics are compiled with Red; UTW serves it with the Save editor alone
+Decision (maintainer): the DBC7 event's aesthetics are compiled with Red; of UTW, only the Save
+editor is used for it.
+Why: 0.0.1 is the Save editor's preview; the Team compiler's pre-Fox patch (8.36c) is not
+part of it, so DBC7's save receives no UTW aesthetics patch.
+Plan: `plans/core/development_plan.md` "Divegrass Before Christmas (DBC)".
+
+## 2026-11-01 — pes_savefile — A Team TOML's `bench_order` lists the 12 of the bench
+Decision: export writes the first 12 of the record's 21 bench entries; an import of 12 fills the
+other nine as the game writes them, the roster slots from 0 that neither `starting_eleven` nor
+the 12 name, ascending; an array of another length is refused.
+Why: the maintainer's ruling (players past 23 are not supported); the nine name no player of a
+4cc team and read as players a member could field. The fill reproduces the game's own bytes
+(team 893 of a PES 2017 cup save: 23 to 31), where keeping the target's nine could name a slot
+the import moved into the eleven or the bench.
+Plan: `plans/pes_savefile/operations.md` "Team TOML"; WORKLOG 0.0.1f1d1.
+
+## 2026-11-01 — save_editor — Illegal formations lift the advanced instructions' side split
+Decision: under a ruleset that allows illegal formations, every advanced-instruction combo lists
+every instruction (less Tight Marking); without the flag the Attack and Defence lists stay split.
+Why: the maintainer found the Whack Patch's Edit mode puts any instruction on any slot, one
+instruction in all four included; a split list would refuse a member what their cup's game
+allows. Tight Marking stays out, as Edit mode never offers it.
+Plan: `plans/save_editor.md` "An advanced instruction's list"; WORKLOG 0.0.1f1d2.
+
+## 2026-11-01 — development plan — CI release builds right after 0.0.1's cut, Windows first
+Decision (maintainer): 0.0.1 is cut locally as planned (`just release 0.0.1`, Windows only).
+Right after the cut, a CI workflow on a version tag builds the release bundles and attaches them
+to a draft GitHub Release: Windows first, its asset checked against the locally checked exe
+before the draft is published; the Linux bundle joins once it has run on a real machine.
+Why: moving the release build into CI before the cut would delay DBC's 0.0.1, and a CI-built
+exe is a binary nobody has checked; after the cut it serves the next releases, and it moves the
+Linux bundle forward from Phase 16.
+Plan: `plans/core/development_plan.md` "Phase 16: Polish and distribution"; WORKLOG 0.0.1f4.
+
+## 2026-11-01 — save_editor — Up and Down walk the player list
+Decision (maintainer): the Up and Down arrow keys move the player list's selection to the
+previous or next row as shown, team rows included, while no control holds the keyboard and no
+dialog or popup is open; the ends stop it, the list scrolls to keep the row in view.
+Why: the maintainer found the list could only be walked with the mouse; team rows are rows of
+the list a member sees, so the walk does not skip them, and a focused control keeps the keys it
+already uses (a number's step, a text cursor).
+Plan: `plans/save_editor.md` "Editing UI", the player list's paragraph; WORKLOG 0.0.1f1e2.
+
+## 2026-11-01 — save_editor — The wheel steps the preset and formation selectors, wrapping round
+Decision (maintainer): after 0.0.1, the wheel over the Tactics view's preset selector and its
+formation selector steps them one entry per notch, wrapping round at their ends as the style
+toggles do.
+Why: the maintainer's request; the wrap matches the toggles beside them (cv38), so every
+stepped control of the view behaves alike.
+Plan: `plans/save_editor.md` "Tactics editor" (written when the step starts); WORKLOG 8.44.
+
+## 2026-11-01 — save_editor — Ctrl+C and Ctrl+V on the player list do what Copy stats does
+Decision (maintainer): after 0.0.1, Ctrl+C on the player list copies the selected player's stats
+and Ctrl+V pastes them onto the selected player, replicating the Copy stats dialog: its fields
+and its rules, one undoable edit.
+Why: the maintainer's request; one rule for one operation, whichever way it is reached.
+Plan: `plans/save_editor.md` "Editing UI" (written when the step starts); WORKLOG 8.45.
+
+## 2026-11-02 — save_editor — The import's sections are Stats, Aesthetics and Gameplan
+Decision (maintainer): the team file import's section boxes read Stats, Aesthetics and
+Gameplan, where they read Gameplay, Aesthetics and Tactics; the comparator's Gameplay scope and
+the command line's `--gameplay` keep their name. The free-kick motion imports with Aesthetics,
+not with the stats, and Copy and Swap stats leave it as the target's. The file's `[team]` keys
+split: name, short name, manager and stadium (with their edit flags) with Stats; the two team
+colours, the kit slots and the strip flag with Aesthetics.
+Why: Stats and Gameplan are 4cc's own words. 4ccEditor's squad load copies the free-kick motion
+with the stats, most likely an oversight: it is a motion like the others, an `[appearance.motion]`
+key of the export, so it now goes with the looks and the aesthetics lock guards it. Under the
+name Stats, the team's colours and kits read as looks, so they go with Aesthetics.
+Plan: `plans/save_editor.md` "Interchange formats in the UI" and the inventory's Copy stats row; WORKLOG
+0.0.1f1e3.
+
+## 2026-11-02 — release — 0.0.1's cut leaves out the size measurement, a terminal check and Astra
+Decision (maintainer): 0.0.1's cut runs without three of its items, each done right after it:
+the `cargo bloat` measurement into the spec, ST-RUN-04's `team-compiler check` from a terminal,
+and Astra's review of the last three changes (f1e to f1e3), which have SWE-2's. The
+clean-machine check runs on the maintainer's notebook through a script that records a report.
+Why: none changes what DBC's managers get: the size is a record, the Team compiler is not part
+of 0.0.1, and the changes still have the review loop's rounds and mutation runs.
+Plan: WORKLOG 0.0.1f2 and f6.
+
+## 2026-11-02 — release — Before the cut, the last changes' review loop runs on Astra
+Decision (maintainer): f1e, f1e2 and f1e3 get their review loop from Astra before 0.0.1's cut,
+and f1e3's SWE-2 round waits for after it, replacing the entry above's deferred Astra review.
+Why: the maintainer's choice of reviewer for the release's last changes; f1e and f1e2 already
+had SWE-2's two rounds.
+Plan: WORKLOG 0.0.1f6.
+
+## 2026-11-02 — gui — On Windows the window draws through Direct3D 12
+Decision (lead, the plan silent): on Windows the shell asks wgpu for Direct3D 12 and OpenGL,
+not Vulkan; the `WGPU_BACKEND` variable still overrides; other platforms keep wgpu's defaults.
+Why: the clean-machine check's laptop (Intel HD Graphics 620) crashes in its Vulkan driver on
+every start, before the window shows, where Direct3D 12 and OpenGL start every time; a driver
+crash cannot be caught, so the only fix is not asking for Vulkan. Direct3D 12 is the
+interface Windows 10 and 11 drivers are built and tested against first.
+Plan: `plans/core/gui.md` "The graphics backend"; WORKLOG 0.0.1f1e4.
+
+## 2026-11-02 — dds_convert — A driver that crashes the GPU encoder is found by a child-process probe
+Decision (maintainer): before a compile first starts the GPU BC7 encoder on an adapter, the exe
+probes it in a hidden child process (device, pipelines, one block); a crash, a failed exit or a
+timeout turns the GPU off for that adapter and driver version, kept in the data folder, so a
+driver update probes again.
+Why: a Vulkan driver can report full support and then crash the process inside an ordinary
+call (the clean-machine check's Intel HD Graphics 620 does in `Device::new`), which no error
+handling reaches; a list of known bad drivers covers only those already seen. The probe's
+pipeline build also warms the driver's shader cache.
+Plan: `plans/libs/README.md` "First-release desktop GPU BC7"; WORKLOG 0.0.1f6.
+
+## 2026-11-02 — dds_convert — The GPU encoder is started when the Team compiler opens
+Decision (maintainer): on a PES version whose compile encodes BC7 (19-21), the GPU encoder (its
+probe first, when the driver has none recorded) starts when the Team compiler opens, off the UI
+thread, rather than at the first Compile; on PES 15-18 no GPU starts.
+Why: the maintainer's idea, so a Compile clicked a while after opening finds the encoder
+ready. The gain is the driver's cold shader cache, 16.3 s on the measured GPU once per driver
+install or update; with a warm cache it is a fraction of a second.
+Plan: `plans/libs/README.md` "First-release desktop GPU BC7".
+
+## 2026-11-02 — save_editor — 0.0.1 takes a second batch of small changes before its cut
+Decision (maintainer): 0.0.1's cut moves a day, and the batch queued for right after it comes
+in first: 8.40-8.46 (a Tab + Space edit settling, upper-case shirt and short names, the undo
+merging a run of edits, PgUp/PgDn stepping a page of rows, the wheel on the Tactics view's
+preset and formation selectors, Ctrl+C/Ctrl+V of a player's stats, one arrow press stepping a
+number field) and five new ones: the lineup list showing the row a drag will replace, two
+copies of UTW.exe running at once, Ctrl+C/Ctrl+V of a team row's Gameplan and of a preset and a
+formation, a VGL 27 tester's report that the captain's bonus card is missing from the count
+under the limit, and the Stronger foot/hand toggle's two text colours swapped.
+Rulings with it: PgUp/PgDn jump the list's visible rows, as a list box does (8.43); Ctrl+V of a
+team row writes what a Gameplan-only import of the copied team's document writes, players
+included by roster slot; "two editors" means two UTW.exe processes, each with its own save.
+Why: the cut could not happen the same day; the items are each a small, self-contained change
+a member notices, cheaper to ship now than in a second release days later.
+Plan: WORKLOG 0.0.1f1f.
+
+## 2026-11-02 — save_editor — A run of undo steps is keyed by the widget call, ended by a focus move
+Decision (lead): a run of steps to one value (8.42) merges a push into the newest entry when it
+has the open entry's merge key (the widget call), names a player or team already in it, and
+comes at most a second after the run's last step; Undo, Redo, a sealed batch (Copy stats, an
+import, a dialog's Apply) and the keyboard moving to another control end it. The Tactics tab's
+settings panel is one widget call, so a run there spans its sliders and toggles. The suite's
+wheel rule (one undo step per notch) yields to an editor's run, and the Ruleset editor's plan
+takes the same run rule, built after the cut.
+Why: the merge key and the entry are what the undo stack already knows; telling one slider from
+another inside a widget call needs a field-level diff the stack does not keep. Ending a run at a
+focus move keeps a typed value and the click after it two steps, as the gesture rule says.
+Plan: `plans/save_editor.md`, the undo bullet; `plans/core/gui.md` the wheel paragraph and
+ST-WHEEL-05; `plans/ruleset_editor.md` the undo paragraph.
+
+## 2026-11-02 — save_editor — The clipboard's target is the selected row; a copy names itself on the system clipboard
+Decision (lead): for Ctrl+C/Ctrl+V (8.45, f1f3) a list row means the selected row (Up and Down
+move it without a click), a copy is a snapshot taken when copied, another save opened empties
+the clipboard, and a copy also writes one line naming what it copied to the system clipboard.
+Why: egui-winit 0.37 turns Ctrl+V into `Event::Paste` of the system clipboard's text and sends
+nothing when the clipboard holds no text (`egui-winit` `on_keyboard_input`, the
+`is_paste_command` branch), so without that line a paste after the system clipboard was
+emptied would do nothing; the snapshot is what a clipboard means; a save's records do not
+carry over to another save's teams. Drafted in `save_editor.js` (`clipCopy`, `clipPaste`).
+Plan: `plans/save_editor.md`, the bullet "Ctrl+C and Ctrl+V".
+
+## 2026-11-02 — save_editor — A Fielded position row says where its click goes (P49)
+Decision (the maintainer, accepting P49): a Live AATF `Fielded position` row's tooltip reads
+`Click to show him on the team's pitch`, every other player's row keeping `Click to switch to this player`.
+Why: that row's click opens his team's row on the named preset, the cross on his marker, not
+his record; the tooltip said otherwise.
+Plan: `plans/save_editor.md` "Live AATF", SE-GUI-30.
+
+## 2026-11-02 — save_editor — Only a text field holds the shortcuts off (P50)
+Decision (the maintainer, accepting P50): Undo, Redo, Ctrl+F, Ctrl+I, Ctrl+B and Open's keys
+are held off only while a text field (a number being typed included) holds the keyboard or a
+dialog is up, the rule Ctrl+C and Ctrl+V already followed; a button, checkbox or rating cell
+holding the keyboard no longer holds them off.
+Why: Tab then Space leaves the keyboard on the pressed control with its edit settled (8.40),
+and Ctrl+Z did nothing there until Escape (found in the built-app look at 0.0.1h).
+Plan: `plans/save_editor.md`, the keyboard shortcuts bullet; SE-GUI-62.
+
+## 2026-11-02 — studio_core — Invert value scrolling, one common switch
+Decision (the maintainer; the shape the lead's): a common setting `invert_value_scrolling`, off
+by default, turns every wheel step over a value the other way in every tool (wheel down: one
+more, the item above, a slider or toggle to the right); the pane's own scrolling never changes.
+Why: a member on "natural" scrolling reads wheel down as more. One switch read where the steps
+are counted reaches every control, the shared libs' included; a setting per tool would let two
+windows of the suite disagree.
+Plan: `plans/core/gui.md` "The wheel over a value", ST-WHEEL-06; `plans/team_compiler/settings.md`.
+
+## 2026-11-02 — save_editor — Live AATF's heads in two tones, its names coded, a copy button
+Decision (the maintainer, from renders of the draft against the app): a group's head is
+`Player <id>` in the weak colour, then the number and name in the strong text, the name in its
+colour codes, a hyphen between the id, the number and the name (`Player 71808 - 8 - PARTY
+HARD`, the hyphens weak like the id); `Team-wide issues` and the team header in the strong
+text, the header's name coded
+too; the player's number in the body font; one group per player, errors before warnings, in
+every list of a team's issues and its copied text; Live AATF gets Multi-team AATF's Copy to
+clipboard, left of the dock's pop-out icon and under the window's close button, copying the list
+as it shows (suggestions included while shown).
+Why: the draft and the app had drifted (white heads against grey, coded names against plain, a
+head repeated per severity); the grey id keeps the head quiet and the coded name finds the player
+as the list shows him. A member who does not want the suggestions copied turns them off.
+Plan: `plans/save_editor.md`, the `violations` widget's paragraph and "Live AATF"; SE-GUI-63.
+
+## 2026-11-02 — save_editor — The page keys step team by team, or 7 rows inside one team
+Decision (the maintainer, the draft approved): with two team rows or more in the list, PgUp and
+PgDn move the selection from team row to team row (PgUp from a player to his own team's row
+first); with one, 7 rows at a time; the ends stop them. "Visible" read as the list's team rows
+as filtered, not those in the view (the lead's reading, the draft approved with it).
+Why: a page of rows crossed into the next team at a place that depended on the window's height;
+a team at a time is how a member walks a save, and the rows in view would make one press do
+different things as the list scrolls.
+Plan: `plans/save_editor.md`, the list paragraph's page keys; SE-GUI-53.
+
+## 2026-11-02 — studio — The update check ships in 0.0.1, on `ureq` with the system's certificates
+Decision (the maintainer, from the lead's estimate): the update check (`plans/core/distribution.md`
+"Self-update", steps 1 and 2: the check and its notice, no download) moves from Release 0.2.0 into
+0.0.1, the exe allowed to grow by up to 5 MB. Its client is `ureq` pinned to `=3.5.0`, default
+features off, `rustls-no-provider` and `platform-verifier`, with `rustls` on `ring` handed to it as
+the crypto provider; no gzip, no bundled root list. How the offer shows itself waits on the
+maintainer (`QUESTIONS.md` "How the update check shows itself").
+Why: 0.0.1's members hear of 0.0.2 only through such a check, and one added later never reaches
+anyone still on 0.0.1. `minreq` was weighed and turned down: its `rustls` keeps the default
+crypto (`aws-lc-rs`, a C library bigger than `ring`, needing a C toolchain in CI), with one
+maintainer marked passively-maintained and no body cap by default. `ureq`'s default `rustls`
+feature bundles `webpki-roots` (CDLA-Permissive-2.0, outside `deny.toml`'s allowlist, and a root
+list that goes stale in an exe nobody updates); the platform verifier reads the system's store.
+`rustls-no-provider` may change in a `ureq` minor release, hence the exact pin. A probe built
+with this setup (`.tmp/f1g9/probe_results.md`) grew a hello-world exe by 2.05 MB, read GitHub's
+releases list, and refused an expired and an unknown-issuer certificate.
+Plan: `plans/core/distribution.md` "Self-update" (rewritten with the rulings above); worklog
+0.0.1f1g9.
+
+## 2026-11-02 — studio — The update offer waits in the status bar; its dialog updates in place
+Decision (the maintainer, from the draft's renders): no dialog opens by itself. A newer release
+shows as the status bar's `Update available: v0.0.2` with a **Details** button; Details opens a
+dialog with "Unlimited Tool Works v0.0.2 pre-alpha is out. You have v0.0.1 pre-alpha.", the
+release notes as Markdown in a scrolling box, and **Update now**, **Open release page**, **Skip
+this version**, **Remind me later**. Update now is in 0.0.1: the plan's download and verify, swap
+and restart (`plans/core/distribution.md` "Self-update" steps 3, 4 and 6), as Red's one-click
+update, with the folder kept and the exe swapped rather than Red's sibling folder. The check reads
+GitHub's list of releases and takes the highest version (`releases/latest` skips a release marked
+Pre-release); tags are `v<version>`; Skip this version stores it in `skipped_version`, Remind me
+later closes until the next check; a failed check shows nothing and writes one log line; the two
+Settings rows show from 0.0.1 (this reverses 2026-10-25, "The update check's settings rows wait
+for the updater"). The window checks; the command line does not in 0.0.1, and from 0.0.2 it
+prints a one-line notice when a newer release exists. The draft's status bar reads `v0.0.1
+pre-alpha`, as the app does.
+Why: an update asks for no decision now, and a dialog at the start would land on whatever the
+member opens first. Update now has to be in the version updated from: a 0.0.1 without it never
+updates itself. Rollback lives in the newer exe, so it waits for 0.0.2.
+Plan: `plans/core/distribution.md` "Self-update"; worklog 0.0.1f1g9.
+
+## 2026-11-02 — save_editor — The comparator's heads take the AATF lists' hyphens
+Decision (the maintainer): the save comparator's player heads read `Player <id> - <number> -
+<name>` like the AATF lists' (DECISIONS "Live AATF's heads in two tones"), as the draft's shared
+head already draws them.
+Why: one head for a player wherever a list names him.
+Plan: `plans/save_editor.md` "Comparator (gameplay + aesthetics)".
+
+## 2026-11-02 — release — 0.0.1 is built by CI; the release profile stays the default
+Decision (the maintainer): this overrides 2026-11-01, "CI release builds right after 0.0.1's
+cut, Windows first". The tag `v0.0.1` builds the Windows `.7z` and the Linux `.tar.gz` in CI and
+attaches both to a draft GitHub release; the maintainer's look is on the Windows asset downloaded
+from it, then they publish. The Linux build runs on Ubuntu 22.04 and its look in WSLg on the
+maintainer's PC. The lead may push `ci/release-dry-run` and start the workflow by hand (artifacts
+only, no tag, no release). The release profile stays the default: `codegen-units = 1` measured
+2.64 MiB smaller and is declined for its build time unless it makes the app faster; egui's
+`default_fonts` goes off, dropping its unused `Ubuntu-Light.ttf` (353 KiB).
+Why: the checked binary is then the one members get (a local exe and CI's differ at least in the
+linker's timestamps and toolchain), and the update check has a release to read from 0.0.1 on.
+`.tar.gz` keeps the Linux binary's executable flag, which `.7z` extraction often drops.
+Plan: `plans/core/distribution.md` "Distribution: portable .7z bundle"; worklog 0.0.1f1g6-7.
+
+## 2026-11-02 — save_editor — cv39's fix ships in 0.0.1
+Decision (the maintainer): `99c9a36a` (a press held in the Multi-team AATF dialog while its check
+lands no longer clicks Close) goes onto f1g, so 0.0.1 carries it; worklog f5's separate exe for
+DBC's organizer is dropped.
+Why: its test's race recurs in the candidate's gates and mutation runs without it, and the fix
+is one line and its test.
+Plan: worklog 0.0.1f1g.
+
+## 2026-11-02 — save_editor — Live AATF lists "All clean" for a clean team; Copy never greys out
+Decision (the maintainer): under a team that passes, Live AATF's body lists `All clean`, Multi-team
+AATF's word, below the header that already says the team passes; Copy to clipboard is never
+greyed out and copies what the panel shows (the header line and `All clean`, the rows with
+suggestions while they are shown, `Checking <team>…`, or a failed check's message).
+Why: an empty well read as nothing having run, and a greyed button asked the member to work out
+why; copying what shows needs no rule to learn.
+Plan: `plans/save_editor.md` "Live AATF"; SE-GUI-63.
+
+## 2026-11-02 — release — Test pre-releases for Update now; no deterministic-link flag yet
+Decision (the maintainer): CI may publish `v0.0.1-rc.1` and `v0.0.1-rc.2` as GitHub pre-releases
+so rc.1's Update now is run to rc.2 (this PC and WSL) before the cut; semver orders both below
+`0.0.1`, which never offers them. The linker's `/Brepro` stays out of 0.0.1: the look is on CI's
+asset, so a local exe identical to CI's is not needed. Timing `codegen-units = 1` on the AATF
+check waits for 0.0.2.
+Why: without a real release to update to, the updater meets only a fake server before members
+run it, and a bug in 0.0.1's updater is fixed only by a manual download.
+Plan: `plans/core/distribution.md` "Self-update"; worklog 0.0.1f1g9, 0.0.2-cgu.
+
+## 2026-11-02 — studio_core — egui's default fonts stay, Ubuntu-Light with them
+Decision (the maintainer): the exe keeps egui's `default_fonts`, its unused `Ubuntu-Light.ttf`
+(353 KiB) included, for good.
+Why: egui ships its four fonts behind that one feature (Hack, the two emoji fonts the team names'
+`☆`, `！` and `Ｕ` need, and Ubuntu-Light), and `monochrome_emoji_fonts` requires it; dropping
+one font means vendoring the other three with their licenses and keeping every dependency from
+turning the feature back on, too much for 0.3 MiB.
+Plan: `spec/core/distribution.md` "Size budget".
+
+## 2026-11-02 — studio — Update now's screens, and the offer's text in the link blue
+Decision (the maintainer, from the draft's renders, two looks): the status bar's `Update
+available: v0.0.2` is in the link blue, as the toolbar's unsaved-changes label, and the text
+opens Details as its button does. Update now shows the download's progress (`Downloading v0.0.2
+pre-alpha… 4.0 of 11.2 MB`, a bar, Cancel), then `Update ready`: "v0.0.2 pre-alpha is installed.
+Restart to start using it, the version you are running now will stay in the old folder." with
+Restart now (the ordinary close prompts, then the new version, which opens on `Updated to v0.0.2
+pre-alpha`) and Later; a download that does not match the release's checksum shows `Update
+failed`, nothing changed, with Retry, Open release page and Close.
+Why: the offer has to catch the eye without a dialog opening by itself; a failed download is most
+often a passing network fault, which Retry answers in place.
+Plan: `plans/core/distribution.md` "Self-update"; the draft's `openUpdate`, `updateNow`.
+
+## 2026-11-02 — release — How CI's release workflow builds, checks and keeps the bundles
+Decision (the lead; the maintainer's rulings left these open): a tag `v<version>` matching the
+workspace's version makes a draft release, a pre-release when the version has a pre-release
+part, with the Windows `.7z`, the Linux `.tar.gz` and one `SHA256SUMS.txt` for both (the file
+the updater reads); the per-archive `.sha256` stays the local recipe's. The dry run starts by a
+push to `ci/release-dry-run`, not the **Run workflow** button the maintainer named: GitHub offers
+it only for a workflow on the default branch, and pushing main is not allowed. The Windows
+symbols archive is a run artifact the maintainer keeps a copy of (artifacts expire after 90
+days), never a release asset. Linux packs no symbols archive: its binary keeps its line tables,
+which its backtraces read at run time. 0.0.1's release notes are written by the maintainer in
+the draft (`CHANGELOG.md` starts after the first release). The test pre-releases are built from
+a branch whose workspace version is bumped to theirs, since the exe compares its own
+`CARGO_PKG_VERSION`.
+Why: the updater needs one checksum file per release and an exe that knows its own version; a
+`.pdb` names the runner's paths and is useless to members; the button would need main pushed
+before the workflow was tested.
+Plan: `plans/core/distribution.md` "Release builds in CI", "Distribution: portable .7z
+bundle"; worklog 0.0.1f1g7.
+
+## 2026-11-02 — release — Only 0.0.1's two test pre-releases are published; CDLA-Permissive-2.0 allowed
+Decision (the maintainer): `v0.0.1-rc.1` and `rc.2` are published as pre-releases, an exception
+made while no member has a release; every later release candidate stays a draft. `deny.toml`
+allows `CDLA-Permissive-2.0` in its general list (the maintainer chose it over a one-crate
+exception): `webpki-root-certs`, a root-certificate list `rustls-platform-verifier` pulls only
+on wasm32 and in its own tests, carries it, and `cargo deny` checks every target.
+Why: release candidates are not for members, and a published one is offered to every member
+older than it; the license is a permissive data license with no obligation on Studio's binary.
+Plan: `plans/core/distribution.md` "Release builds in CI"; `spec/core/distribution.md` "License".
+
+## 2026-11-02 — release — The dry run's branch is pushed from f1g7
+Decision (the maintainer): `ci/release-dry-run` is pushed from `f1g7`, the workflow and the
+Linux packing on top of main, which makes main's unpushed commits public with it.
+Why: a branch from the last pushed commit would test the release recipe as last pushed, not the
+one the workflow runs; main's commits ship with 0.0.1 anyway.
+Plan: `plans/core/distribution.md` "Release builds in CI".
+
+## 2026-11-02 — save_editor — The player list outlines the row a drag would move him to
+Decision (the maintainer): a player row's held drag outlines the row it would land on, in the
+selection colour, as the lineup lists do; his own row and another team's row get no outline,
+the rule the lineup lists' outline follows (a drop that writes nothing shows none).
+Why: without it a member cannot see which slot a drop takes before releasing it.
+Plan: `plans/save_editor.md` "Editing UI", the Player list bullet; SE-GUI-64; the draft's
+`playerRow`.
+
+## 2026-11-02 — release — The Linux binary ships stripped of its debug info
+Decision (the maintainer): the recipe strips the Linux binary's debug info and keeps its symbol
+table; the debug info goes to `utw.debug` in a `-linux-symbols.tar.gz` CI artifact, as Windows'
+`.pdb` does. The archive stays `.tar.gz`. This replaces the lead's earlier "Linux packs no
+symbols archive: its binary keeps its line tables".
+Why: the dry run's Linux bundle was 66.6 MB against Windows' 11.7 MB, 207 of the binary's 269 MB
+the standard library's debug info; stripped it packs 21.9 MB, and its backtraces keep the
+function names. xz would save 6.5 MB more at the cost of an xz decoder in the updater.
+Plan: `plans/core/distribution.md` "Distribution: portable .7z bundle" (the Linux paragraph),
+"Release builds in CI".
+
+## 2026-11-02 — save_editor — The team row's hint names the gameplan
+Decision (the maintainer): the team row's hint reads `[click for gameplan]`, not `[click for
+tactics]`.
+Why: Gameplan is the word the editor already uses for a team's tactics (the export and import
+dialogs' section), so the hint names what the click opens in the same word.
+Plan: `plans/save_editor.md` (the team row's paragraph, "then `[click for gameplan]`").
+
+## 2026-11-02 — studio — Update now waits for 0.0.2
+Decision (the maintainer): 0.0.1 ships the update check and its offer (the status bar's
+text and Details, the dialog with Open release page, Skip this version and Remind me later);
+Update now (download, verify, swap, restart) comes in 0.0.2. 0.0.1's dialog draws it disabled,
+its hover "The auto-updater comes with 0.0.2" (the maintainer's wording;
+disabled rather than left out as the quicker of the two, the code already drawing it so). No test pre-release is published:
+one test tag `v0.0.1-rc.1` runs CI's release job once as a draft, which is then deleted.
+This replaces "Test pre-releases for Update now" and the published half of "Only 0.0.1's two
+test pre-releases are published".
+Why: Update now is the release's largest remaining piece and its riskiest code (it replaces
+the running exe, and a fault in the version updated from cannot be fixed by an update; the
+rollback lives in the newer exe). Without it a 0.0.1 member downloads 0.0.2 by hand, once.
+The test tag keeps the one check the pre-releases gave that 0.0.1 still needs, the release
+job's first run before 0.0.1's own tag; the real releases request is first exercised in the
+field, where a failure shows nothing and logs one line.
+Plan: `plans/core/distribution.md` "Self-update" (what 0.0.1 ships) and "Release builds in CI"
+(the test tag); `plans/core/gui.md` ST-UPD-02.
+
+## 2026-11-02 — studio — Update now leaves 0.0.1's dialog
+Decision (the maintainer): 0.0.1's update dialog has no Update now: Open release page, Skip this
+version and Remind me later. This replaces the disabled button of "Update now waits for 0.0.2".
+Why: a disabled Update now reads as an update that is not actually available; the release page
+is the way to it until 0.0.2's auto-updater.
+Plan: `plans/core/distribution.md` "Self-update" (what 0.0.1 ships); `plans/core/gui.md` ST-UPD-02.
+
+## 2026-11-03 — save_editor, studio — Four fixes from the look at 0.0.1i-pre2
+Decision (the maintainer, after the checklist on 0.0.1i-pre2): for 0.0.1, (1) the update check's
+interval is in minutes, `check_interval_minutes`, 120 by default and at least 1, and the check
+runs again while the window stays open once the interval has passed; (2) the player list's
+draggable rows show the pointing hand; the lineup rows keep the move cross; (3) a dragged lineup
+row keeps the point it was pressed at under the pointer; (4) Stronger foot/hand's unpicked side
+is in the strong text colour (`#dcdcdc`), the picked side's word staying the resting light grey.
+Later: the comparator's arrow rows in three columns (Item, Old value, New value), the player
+list's dragged row floating, an X undoing one change in the unsaved changes list (0.0.2).
+Why: (1) a check only at startup leaves a window open all day unchecked; minutes let the
+interval go below an hour. (2) Windows has no grab-hand cursor and draws egui's grab as the
+four-arrow move cross, which the headless tests could not see (they read egui's request); the
+maintainer took the pointing hand for the player list, the cross for the lineup rows. (3) egui
+centres a dragged source on the pointer; the browser keeps the grab point, as the draft shows.
+(4) The draft had both sides grey (`#b4b4b4` and `#8c8c8c`), where the ask was grey and white.
+Plan: `plans/core/distribution.md` "Self-update" step 1, `plans/core/gui.md` ST-UPD-01;
+`plans/save_editor.md` the player list's paragraph, the lineup paragraph, SE-GUI-61, SE-GUI-64,
+SE-GUI-65.

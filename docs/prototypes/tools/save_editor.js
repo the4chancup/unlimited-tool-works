@@ -183,6 +183,9 @@ input[type=range]:focus { outline: none; }
   min-height: 18px; color: #b4b4b4; }
 .plist .rows .prow:hover { background: var(--hover); }
 .plist .rows .prow.on { background: var(--sel-bg); }
+/* A player row drags from anywhere on it, so the whole row shows the pointing hand, never
+   the text I-beam. */
+.plist .rows .prow[draggable=true] { cursor: pointer; user-select: none; }
 /* The drag handle in the player list and the lineup lists sits 4 points from the row's edge
    (the row's padding) and 4 before the place or position (the row's gap of 5 less 1), so the
    names get the room. */
@@ -299,10 +302,13 @@ input[type=range]:focus { outline: none; }
 .gen .combos .rate.lr { display: grid; grid-template-columns: 1fr 1fr; }
 /* Each side 18 tall, a control's height, so the toggles' rows stand 22 apart as the
    combos' do. */
-.gen .combos .rate.lr .sel { text-align: center; height: 18px; line-height: 18px; }
+.gen .combos .rate.lr .sel { text-align: center; height: 18px; line-height: 18px; color: var(--strong); }
 /* The chosen side in the quiet grey of the positions grid's C, not the
-   accent: a foot or hand is rarely what a member looks for. */
-.gen .combos .rate.lr .sel.on { background: #5a5a5a; color: var(--text); }
+   accent: a foot or hand is rarely what a member looks for. Its word in the
+   resting buttons' light grey, the other side's in the strong text colour, so the
+   side a click switches to reads white. */
+.gen .combos .rate.lr .sel.on { background: #5a5a5a; color: #b4b4b4; }
+.gen .combos .rate.lr .sel:not(.on):hover { color: #f0f0f0; }
 /* The Captain checkbox centred in its box's width, under the box above it. */
 .gen .pair > .box { display: flex; justify-content: center; }
 .info-grid td { padding: 1px 6px 1px 0; }
@@ -450,7 +456,7 @@ table.grid.stats-grid td { padding: 2px 6px; }
 .llist { background: var(--extreme); border: 1px solid var(--stroke); border-radius: 2px;
   max-height: 300px; overflow: auto; }
 .lrow { display: flex; gap: 5px; align-items: center; padding: 1px 4px;
-  white-space: nowrap; min-height: 18px; }
+  white-space: nowrap; min-height: 18px; cursor: move; user-select: none; }
 .lrow:hover { background: var(--hover); }
 .lrow .fpos { width: 30px; flex: none; color: #b4b4b4; }
 #tac-lists .lrow { overflow: hidden; }
@@ -2598,8 +2604,10 @@ const versionInstructions = v => v < 17 ? [] : v === 17 ? INSTRUCTIONS.slice(0, 
   : v >= 20 ? STORED_20 : STORED_18;
 // What a side's combo offers. Tight Marking is left out: it marks an opponent,
 // set in a match; Edit mode does not offer it. A record holding it still shows it.
+// Under a ruleset allowing illegal formations the side split goes: the Whack
+// Patch's Edit mode puts any instruction on any slot.
 const instructionsFor = (v, side) => versionInstructions(v).filter(x => x !== "tight_marking"
-  && (x === "off" || DEFENDING.includes(x) === (side === "defence")));
+  && (x === "off" || illegalFormations() || DEFENDING.includes(x) === (side === "defence")));
 // Instructions whose target-player field applies (the original's rule: the
 // player combo enables for Counter Target on 17, Counter Target or Defensive
 // on 18+).
@@ -3133,10 +3141,18 @@ function requestOpen(key, path) {
 }
 // Edits: one undo entry is a list of (object-path, before, after) patches plus
 // the touched player keys. Reorder pushes a team's slot order, not a field.
-function edit(label, fn) {
+function edit(label, fn, run) {
   const before = snapshot();
   fn();
-  S.undo.push({ label, before, after: snapshot() });
+  // A run of steps to one value (wheel notches, arrow presses, a stepper's
+  // clicks: the field helper's edits) is one undo entry: the same field on the
+  // same selection within a second of the run's last step, no Undo or Redo
+  // between; an action's own edit never joins one.
+  const now = performance.now(), key = run && label + "|" + JSON.stringify(S.sel);
+  const last = S.undo[S.undo.length - 1];
+  if (key && last && S.run && S.run.key === key && now - S.run.at <= 1000) last.after = snapshot();
+  else S.undo.push({ label, before, after: snapshot() });
+  S.run = key ? { key, at: now } : null;
   S.redo = [];
   // The list of changes is computed when it opens: an edit under it (a
   // shortcut's, the pointer's click already closed it) closes it rather
@@ -3150,6 +3166,7 @@ function restore(snap) { S.save.teams = JSON.parse(snap); }
 // object.
 function doUndo() {
   const e = S.undo.pop(); if (!e) return;
+  S.run = null;
   const cur = snapshot(); restore(e.before);
   S.redo.push({ label: e.label, before: e.before, after: cur });
   S.changesPop = false;
@@ -3157,6 +3174,7 @@ function doUndo() {
 }
 function doRedo() {
   const e = S.redo.pop(); if (!e) return;
+  S.run = null;
   const cur = snapshot(); restore(e.after);
   S.undo.push({ label: e.label, before: cur, after: e.after });
   S.changesPop = false;
@@ -3352,7 +3370,7 @@ function setAllStats(p, n) {
 // A small field write helper: every control's change is one undoable edit.
 function set(p, get, put, v, label) {
   if (get(p) === v) return;
-  edit(label || "edit", () => put(p, v));
+  edit(label || "edit", () => put(p, v), true);
 }
 // Drag to reorder (SE-GUI-08): the records move, the roster does not. Slot NN
 // keeps player id `team id × 100 + NN` (plans/aatf_rules.md "The host"), its
@@ -3553,6 +3571,8 @@ document.addEventListener("pointerdown", e => {
 // aesthetics writes: no-ops under the lock; Ctrl+B opens Bump all stats on a
 // player row. Open's work with no save open, and with no PES save of that
 // version found Ctrl+5 to Ctrl+1 open the picker.
+// The page keys' step through one team's rows.
+const PAGE_ROWS = 7;
 function onKey(e) {
   if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === "o" || e.key in OPEN_KEYS)) {
     e.preventDefault();
@@ -3565,9 +3585,102 @@ function onKey(e) {
     else if (e.key === "b" && !isTeamSel()) { e.preventDefault(); dlgBumpStats(); }
     else if (e.key === "i" && aesUnlocked()) { e.preventDefault(); fpcToggle(curPlayer()); render(); }
     else if (e.key === "f" && aesUnlocked()) { e.preventDefault(); clearVisualFlags(); }
+    else if ((e.key === "c" || e.key === "v") && S.clickKind
+        && !document.activeElement.matches("input, textarea")
+        && !document.querySelector(".modal-bg")) {
+      e.preventDefault();
+      if (e.key === "c") clipCopy(); else clipPaste();
+    }
   }
   if (e.key === "Escape" && S.picker) { closePicker(); render(); }
   if (e.key === "Escape" && S.changesPop) { S.changesPop = false; render(); }
+  // PgUp and PgDn: with two team rows or more in the list (ALL, or a filter
+  // several teams match) they move the selection from team row to team row,
+  // one per press, PgUp from a player to his own team's row first; with at
+  // most one (a team picked), PAGE_ROWS rows at a time. The first and last
+  // rows stop them, as the first and last team rows do; from any field, not
+  // under a dialog.
+  if ((e.key === "PageUp" || e.key === "PageDown") && S.save && !e.ctrlKey && !e.metaKey
+      && !e.altKey && !document.querySelector(".modal-bg") && !S.picker && !S.changesPop) {
+    const rows = [...document.querySelectorAll(".plist .rows .prow")];
+    const at = rows.findIndex(r => r.classList.contains("on"));
+    if (at >= 0) {
+      e.preventDefault();
+      const down = e.key === "PageDown";
+      const isTeam = r => r.classList.contains("trow");
+      let to;
+      if (rows.filter(isTeam).length >= 2) {
+        const teams = rows.map((r, i) => isTeam(r) ? i : -1).filter(i => i >= 0);
+        to = down ? teams.find(i => i > at) : teams.findLast(i => i < at);
+        if (to === undefined) to = at;
+      } else {
+        to = Math.min(rows.length - 1, Math.max(0, at + (down ? PAGE_ROWS : -PAGE_ROWS)));
+      }
+      selectRow(rows[to]);
+    }
+  }
+  // Up and Down walk the list's rows as shown, team rows included, while no
+  // control holds the keyboard (a focused number steps with them instead)
+  // and no dialog or popup is open; the first and last rows stop it.
+  if ((e.key === "ArrowUp" || e.key === "ArrowDown") && S.save && !e.ctrlKey && !e.metaKey
+      && !e.altKey && !document.activeElement.matches("input, select, textarea")
+      && !document.querySelector(".modal-bg") && !S.picker && !S.changesPop) {
+    const rows = [...document.querySelectorAll(".plist .rows .prow")];
+    const at = rows.findIndex(r => r.classList.contains("on"));
+    const next = at < 0 ? null : rows[at + (e.key === "ArrowDown" ? 1 : -1)];
+    if (next) { e.preventDefault(); selectRow(next); }
+  }
+}
+// Selects the list row `row` (a key's move), scrolled into view.
+function selectRow(row) {
+  const team = Number(row.dataset.team);
+  S.sel = row.dataset.slot === undefined ? { team } : { team, slot: Number(row.dataset.slot) };
+  render(); updateLink();
+  // After render's own frame puts the list's scroll back: the row comes into view.
+  requestAnimationFrame(() => {
+    const on = document.querySelector(".plist .rows .prow.on");
+    if (on) on.scrollIntoView({ block: "nearest" });
+  });
+}
+// Ctrl+C and Ctrl+V act on what was clicked last of three kinds: a list row
+// (then the selected row, which Up and Down move: a player's stats, a team's
+// Gameplan), the preset selector (the shown preset) or the formation
+// selector (the shown formation). A paste of another kind does nothing; each
+// paste is one undo step; another save opened empties the clipboard (SE-GUI-56).
+document.addEventListener("pointerdown", e => {
+  const hit = e.target.closest && e.target.closest(".plist .prow, .psel, .fsel");
+  if (hit) S.clickKind = hit.matches(".prow") ? "list" : hit.matches(".psel") ? "preset" : "formation";
+}, true);
+function clipKind() {
+  if (S.clickKind !== "list") return S.clickKind;
+  return isTeamSel() ? "team" : "player";
+}
+function clipCopy() {
+  const kind = clipKind(), t = selTeam();
+  const data = kind === "player" ? clone(curPlayer().stats)
+    : kind === "team" ? clone(t.tactics)
+    : kind === "preset" ? clone(tacPreset(t)) : clone(tacFormation(t));
+  S.clip = { kind, data, save: S.save };
+  // The app's window hears Ctrl+V only as a paste of the system clipboard's
+  // text, so a copy leaves a line there naming what it copied.
+  const named = kind === "player" ? "the stats of " + displayName(curPlayer().name)
+    : kind === "team" ? "the Gameplan of " + t.name
+    : kind === "preset" ? "preset " + (S.tac.preset + 1) + " of " + t.name
+    : "the " + FORMATIONS[S.tac.formation] + " formation of " + t.name;
+  if (navigator.clipboard) navigator.clipboard.writeText("Unlimited Tool Works: " + named).catch(() => {});
+}
+function clipPaste() {
+  const kind = clipKind(), t = selTeam();
+  if (!S.clip || S.clip.kind !== kind || S.clip.save !== S.save) return;
+  const d = S.clip.data;
+  const what = { player: "stats", team: "Gameplan", preset: "preset", formation: "formation" }[kind];
+  edit("Paste " + what, () => {
+    if (kind === "player") curPlayer().stats = clone(d);
+    else if (kind === "team") t.tactics = clone(d);
+    else if (kind === "preset") t.tactics.presets[S.tac.preset] = clone(d);
+    else tacPreset(t).formations[S.tac.formation] = clone(d);
+  });
+  render();
 }
 // ---- Full Player Customization (spec/libs/fpc.md; SE-GUI-11) ----
 // The hide/unhide presets' fields (fpc::preset): the nonexistent ids are the
@@ -3788,16 +3901,7 @@ function multiAatfText(results) {
     if (!rows) continue;
     lines.push(">" + team.id + " " + displayName(team.name));
     if (!rows.length) lines.push("  All clean");
-    let lastPid = null;
-    for (const [sev, , pid, rule, fields] of rows) {
-      if (pid !== lastPid) {
-        const p = team.players.find(q => q.id === pid);
-        lines.push("  " + (pid ? pid + " " + displayName(p ? p.name : "") : "Team-wide issues"));
-        lastPid = pid;
-      }
-      lines.push("    " + sev + "  " + ruleName(rule) + "  " + violationSentence(rule, kvOf(fields), sev));
-      for (const d of violationDetail(rule, kvOf(fields), team)) lines.push("      " + d);
-    }
+    lines.push(...teamTextLines(team, rows));
   }
   return lines.join("\n");
 }
@@ -3830,15 +3934,12 @@ function drawMultiAatf() {
   for (const { team, rows } of sampled) {
     list.append(h("div", { class: "grp" }, team.id + " ", ...nameSpans(team.name)));
     if (!rows.length) list.append(h("div", { class: "drow weak" }, "All clean"));
-    let lastPid = null;
-    for (const [sev, , pid, rule, fields] of rows) {
-      if (pid !== lastPid) {
-        list.append(pid ? playerHead(pid) : h("div", { class: "grp weak" }, "Team-wide issues"));
-        lastPid = pid;
-      }
-      list.append(h("div", { class: "drow " + (sev === "Error" ? "err" : "warn") },
-        h("span", { class: "f" }, ruleName(rule)), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))),
-        ...detailRows(rule, fields, team));
+    for (const [pid, group] of issueGroups(rows, team)) {
+      list.append(pid ? playerHead(pid) : h("div", { class: "grp" }, "Team-wide issues"));
+      for (const [sev, , , rule, fields] of group)
+        list.append(h("div", { class: "drow " + (sev === "Error" ? "err" : "warn") },
+          h("span", { class: "f" }, ruleName(rule)), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))),
+          ...detailRows(rule, fields, team));
     }
   }
   const summary = weak(results.length + (results.length === 1 ? " team" : " teams") + " checked, "
@@ -4216,10 +4317,12 @@ function teamRow(team) {
     h("span", { class: "swatch", style: "background:" + shownHex(team.color_2) }),
     h("span", { class: "pname" }, ...nameSpans(team.name)),
     // What a click on the row opens, for a manager who looks for the tactics.
-    h("span", { class: "thint" }, "[click for tactics]"),
+    h("span", { class: "thint" }, "[click for gameplan]"),
     dirtyTeam(team) ? h("span", { class: "dot", title: "Unsaved changes" }, "●") : null,
     teamMark(team));
 }
+// The player row a drag started on (team and slot), while it is held.
+let playerDrag = null;
 function playerRow(team, p) {
   const r = h("div", { class: "prow" + (S.sel && S.sel.team === team.id && S.sel.slot === p.slot ? " on" : ""),
       draggable: "true", "data-slot": p.slot, "data-team": team.id,
@@ -4234,8 +4337,16 @@ function playerRow(team, p) {
   r.addEventListener("dragstart", e => {
     e.dataTransfer.setData("text/plain", team.id + ":" + p.slot);
     e.dataTransfer.effectAllowed = "move";
+    playerDrag = { team: team.id, slot: p.slot };
   });
-  r.addEventListener("dragover", e => { e.preventDefault(); r.classList.add("dragover"); });
+  r.addEventListener("dragend", () => { playerDrag = null; });
+  // The row a drop would move the dragged player to is outlined (egui's
+  // dnd_hover_payload); his own row and another team's, where the drop
+  // changes nothing, are not.
+  r.addEventListener("dragover", e => {
+    e.preventDefault();
+    if (playerDrag && playerDrag.team === team.id && playerDrag.slot !== p.slot) r.classList.add("dragover");
+  });
   r.addEventListener("dragleave", () => r.classList.remove("dragover"));
   r.addEventListener("drop", e => {
     e.preventDefault(); r.classList.remove("dragover");
@@ -4347,7 +4458,8 @@ function generalPanel(p, team) {
     onchange: e => { set(p, x => x.name, (x, v) => x.name = v, unescName(e.target.value), "name"); render(); } });
   nameIn.id = "f-name";
   const shirtIn = h("input", { type: "text", size: "1", value: p.shirt_name,
-    onchange: e => { set(p, x => x.shirt_name, (x, v) => x.shirt_name = v, e.target.value, "shirt name"); render(); } });
+    oninput: e => { const el = e.target, at = el.selectionStart; el.value = el.value.toUpperCase(); el.setSelectionRange(at, at); },
+    onchange: e => { set(p, x => x.shirt_name, (x, v) => x.shirt_name = v, e.target.value.toUpperCase(), "shirt name"); render(); } });
   shirtIn.id = "f-shirt";
   // captain is the roster slot, 0-based as stored: a radio a second click
   // cannot untick (the captain belongs to the slot, as in 4ccEditor).
@@ -4485,7 +4597,8 @@ function teamFields(t) {
   // 4 bytes): the box takes three characters.
   const shortIn = h("input", { type: "text", id: "team-short", class: "shirt", value: t.short_name,
     maxlength: 3,
-    onchange: e => { edit("team short name", () => { t.short_name = e.target.value; }); render(); } });
+    oninput: e => { const el = e.target, at = el.selectionStart; el.value = el.value.toUpperCase(); el.setSelectionRange(at, at); },
+    onchange: e => { edit("team short name", () => { t.short_name = e.target.value.toUpperCase(); }); render(); } });
   const colour = (key, label) => {
     const shown = shownHex(t[key]);
     // The Save editor has no kit to extract colours from, so it passes no
@@ -5880,10 +5993,10 @@ function tacticsTab(t) {
   // game's, and an organizer sees hidden formations in the pictures.
   const locked = !pre.style.fluid;
   if (locked) S.tac.formation = 0;
-  const presetSel = h("span", { class: "row", style: "gap:2px" },
+  const presetSel = h("span", { class: "row psel wsel", style: "gap:2px" },
     weak("Preset"), [0, 1, 2].map(i =>
       selectable(String(i + 1), S.tac.preset === i, () => S.tac.preset = i)));
-  const formationSel = h("span", { class: "row fsel" + (locked ? " off" : ""), style: "gap:2px",
+  const formationSel = h("span", { class: "row fsel wsel" + (locked ? " off" : ""), style: "gap:2px",
       title: locked ? "Formations 2 and 3 are used only while Fluid formation is on"
         : "The game uses formations 2 and 3 only while the preset's fluid formation is on" },
     FORMATIONS.map((f, i) =>
@@ -6607,15 +6720,43 @@ function jumpToCross(teamId, pid, kv) {
   S.tac.formation = fieldedFormations(pre)
     .find(f => pre.formations[f].players[i].position === kv.position) ?? 0;
 }
-// A panel row's player header: the id plus, as the player list draws them,
-// his shirt number and colour-coded name. A player the page holds no record
-// for (the picked save's) keeps the bare id.
+// A panel row's player header, `Player <id> - <number> - <name>`: the id and
+// the hyphens in the weak grey, then, as the player list draws them, his shirt
+// number and colour-coded name in the strong text, the number in the body
+// font as the rest of the line. A player the page holds no record for (the
+// picked save's) keeps the bare id.
 function playerHead(pid) {
   const p = curSave().teams.flatMap(t => t.players).find(q => q.id === pid);
-  if (!p) return h("div", { class: "grp weak" }, "Player " + pid);
-  return h("div", { class: "grp weak" },
-    "Player " + pid + "  ", h("span", { class: "mono" }, String(p.number)),
-    " ", h("span", {}, ...nameSpans(p.name)));
+  if (!p) return h("div", { class: "grp" }, weak("Player " + pid));
+  return h("div", { class: "grp" },
+    weak("Player " + pid + " -"), " " + p.number + " ", weak("-"), " ",
+    h("span", {}, ...nameSpans(p.name)));
+}
+// A team's rows in the lists' order, the widget's issue_groups: the team's
+// own rows first, then one group per player by roster slot, each group's
+// errors before its warnings (a stable sort keeps the check's order inside a
+// severity). Every list of a team's rows walks it, its copied text included.
+function issueGroups(rows, team) {
+  const slotOf = pid => { const p = team && team.players.find(q => q.id === pid); return p ? p.slot : 0; };
+  const rank = { Error: 0, Warning: 1, Suggestion: 2 };
+  const pids = [...new Set(rows.map(r => r[2] || 0))]
+    .sort((a, b) => (a ? 1 : 0) - (b ? 1 : 0) || slotOf(a) - slotOf(b));
+  return pids.map(pid => [pid, rows.filter(r => (r[2] || 0) === pid)
+    .sort((a, b) => rank[a[0]] - rank[b[0]])]);
+}
+// A team's rows as text, one line per group's head and per row, indented as
+// Multi-team AATF's copy has them.
+function teamTextLines(team, rows) {
+  const lines = [];
+  for (const [pid, list] of issueGroups(rows, team)) {
+    const p = pid && team.players.find(q => q.id === pid);
+    lines.push("  " + (pid ? pid + " " + displayName(p ? p.name : "") : "Team-wide issues"));
+    for (const [sev, , , rule, fields] of list) {
+      lines.push("    " + sev + "  " + ruleName(rule) + "  " + violationSentence(rule, kvOf(fields), sev));
+      for (const d of violationDetail(rule, kvOf(fields), team)) lines.push("      " + d);
+    }
+  }
+  return lines;
 }
 
 // Panel state: one floating window at a time.
@@ -7378,7 +7519,7 @@ function livePanel() {
   const close = button("✕", () => { setLive(false); render(); }, { frame0: true, title: "Turn Live AATF off" });
   close.id = "live-close";
   const header = h("div", { class: "live-header", id: "live-header" }, chevron, strong("Live AATF"),
-    ...liveHeadline(), h("span", { class: "grow" }), h("span", { class: "live-caps" }, popOut, close));
+    ...liveHeadline(), h("span", { class: "grow" }), h("span", { class: "live-caps" }, liveCopy(), popOut, close));
   if (LIVE.collapsed) return h("div", { class: "live-panel", "data-panel": "live-aatf" }, header);
   const body = liveList(false);
   body.style.height = LIVE.height + "px";
@@ -7406,7 +7547,7 @@ function liveWindow() {
   const win = h("div", { class: "panel live-win", id: "live-window", "data-panel": "live-aatf-window", style: place },
     h("div", { class: "title", onmousedown: e => { if (!e.target.closest("button")) startLiveDrag(e, win); } },
       h("span", { class: "title-text" }, "Live AATF"), dock, close),
-    h("div", { class: "live-header" }, ...liveHeadline()),
+    h("div", { class: "live-header" }, ...liveHeadline(), h("span", { class: "grow" }), liveCopy()),
     liveList(true));
   new ResizeObserver(() => {
     if (!win.isConnected) return;
@@ -7438,7 +7579,8 @@ function startLiveDrag(e, win) {
 // part's players stand in two columns, the starting eleven's left and the
 // bench's right (a player's rows are short, the dock wide); in the window
 // (`oneColumn`) in one, in roster order. The team's own rows follow under
-// them.
+// them. A team that passes reads "All clean", as Multi-team AATF words it,
+// above its suggestions while they are shown.
 function liveList(oneColumn) {
   const res = LIVE.result;
   const body = h("div", { class: "live-body" + (LIVE.checking ? " checking" : ""), id: "live-rows" });
@@ -7454,35 +7596,66 @@ function liveList(oneColumn) {
         else jumpToTeam(team);
         render();
       },
-      title: pid ? "Click to switch to this player" : null },
+      title: rule === "FieldedNotA" ? "Click to show him on the team's pitch" : pid ? "Click to switch to this player" : null },
       h("span", { class: "f" }, ruleName(rule)), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))),
     ...detailRows(rule, fields, t)];
-  // A column's rows under their players' heads, a head again wherever the
-  // player changes (errors come before warnings, so a player can head twice).
-  const column = list => {
+  // A column of players' groups, each under its player's head.
+  const column = groups => {
     const col = h("div", { class: "lcol" });
-    let lastPid = null;
-    for (const r of list) {
-      if (r[2] !== lastPid) { col.append(playerHead(r[2])); lastPid = r[2]; }
-      col.append(...rowEls(r));
-    }
+    for (const [pid, list] of groups) col.append(playerHead(pid), ...list.flatMap(rowEls));
     return col;
   };
+  // The team's line heads the list while it has an error or a warning.
+  if (t && rows.some(r => r[0] !== "Suggestion"))
+    body.append(h("div", { class: "grp" }, "Team " + t.id + " ", ...nameSpans(t.name)));
+  else if (res && res.rows) body.append(h("div", { class: "drow weak" }, "All clean"));
   for (const [title, section] of [[null, rows.filter(r => r[0] !== "Suggestion")],
                                   ["Suggestions", rows.filter(r => r[0] === "Suggestion")]]) {
     if (!section.length) continue;
     if (title) body.append(h("div", { class: "grp" }, title));
     // The team's own rows first: a team-wide issue (a formation, a count of
     // players) is the cup's first concern, ahead of any one player's.
-    const own = section.filter(r => !r[2]);
-    if (own.length) body.append(h("div", { class: "grp weak" }, "Team-wide issues"), ...own.flatMap(rowEls));
-    const players = section.filter(r => r[2]);
+    const groups = issueGroups(section, t);
+    for (const [, list] of groups.filter(([pid]) => !pid))
+      body.append(h("div", { class: "grp" }, "Team-wide issues"), ...list.flatMap(rowEls));
+    const players = groups.filter(([pid]) => pid);
     if (players.length && oneColumn) body.append(column(players));
     else if (players.length) body.append(h("div", { class: "lcols" },
-      column(players.filter(r => starters.has(slotOf(r[2])))),
-      column(players.filter(r => !starters.has(slotOf(r[2]))))));
+      column(players.filter(([pid]) => starters.has(slotOf(pid)))),
+      column(players.filter(([pid]) => !starters.has(slotOf(pid))))));
   }
   return body;
+}
+// Copy to clipboard, as Multi-team AATF's: what the panel shows, as text,
+// never greyed out. A held list: a header line naming the ruleset and counting
+// the issues, as the count line does, then the rows, or "All clean" for a team
+// that passes, and the suggestions while Show suggestions is on (a member who
+// wants them out switches them off). No list yet: the header's own line.
+function liveText() {
+  const res = LIVE.result;
+  if (!res) return "Checking " + displayName(liveTeam().name) + "…";
+  if (res.rows === null) return "No sample run for " + displayName(res.team.name) + " under "
+    + RULESETS[D.ruleset].label + " in the draft.";
+  const t = res.team, rows = res.rows;
+  const issues = rows.filter(r => r[0] !== "Suggestion");
+  const suggestions = rows.filter(r => r[0] === "Suggestion");
+  const n = (sev, word) => { const k = issues.filter(r => r[0] === sev).length;
+    return k + " " + word + (k === 1 ? "" : "s"); };
+  const lines = [RULESETS[D.ruleset].label + ", team " + t.id + " " + displayName(t.name) + ": "
+    + n("Error", "error") + ", " + n("Warning", "warning"),
+    ...(issues.length ? teamTextLines(t, issues) : ["  All clean"])];
+  if (suggestions.length) lines.push("Suggestions", ...teamTextLines(t, suggestions));
+  return lines.join("\n");
+}
+function liveCopy() {
+  const b = button("Copy to clipboard", () => {
+    const team = LIVE.result ? LIVE.result.team : liveTeam();
+    if (navigator.clipboard) navigator.clipboard.writeText(liveText()).catch(() => {});
+    publishNotice("Copied the Live AATF list of " + team.id + " " + displayName(team.name) + ".",
+      null, "success");
+  });
+  b.id = "live-copy";
+  return b;
 }
 
 // ---- Apply aesthetics patch (SE-GUI-18) ----
@@ -7565,7 +7738,8 @@ function patchPanel() {
 //      and the import half of 22) ----
 // One dialog for Team TOML, .4ccs, .4cct and Texport: the file picked decides
 // the format, the target is the team selected in the editor, and the section
-// choices are the reference's squad load (gameplay / aesthetics / tactics),
+// choices are the reference's squad load (gameplay / aesthetics / tactics,
+// labelled Stats, Aesthetics and Gameplan after the cup's own words),
 // offered only for the sections the file holds. A legacy file is never
 // written: the page offers no export to .4ccs or .4cct. The apply is the
 // lib's one path (a TeamToml document -> apply): slot NN of the file is slot
@@ -7574,9 +7748,12 @@ function patchPanel() {
 // itself is the reference's PlayerImport (main.cpp / editor.h): stats,
 // positions, skills, the basic fields and the gameplay edit flags under
 // gameplay; names, numbers, nationality, age, ids and every appearance
-// field under aesthetics; [team] rides with gameplay (it is the team's own
-// data, never the export-owned appearance the lock guards), [tactics] with
-// tactics.
+// field under aesthetics, the free-kick motion too (the reference loads it
+// with the stats, but it is a motion like the others, which the export
+// owns). [team] splits: its name, short name, manager and stadium (and
+// their edit flags) ride with gameplay, its colours and kit slots (and the
+// strip flag) with aesthetics, the lock guarding them with the looks;
+// [tactics] goes with tactics.
 // sample wording: the panel's labels and notes.
 const NAME_MAX = v => v <= 19 ? 46 : 61;
 const SHIRT_MAX = v => v <= 19 ? 18 : 61;
@@ -7749,16 +7926,11 @@ function ixWarnings(d) {
       for (const sk of src.skills || [])
         if (skillMinVersion(SKILLS.indexOf(sk)) > v)
           warn("import_key_not_in_version (path=" + key + ".skills.skills." + sk + ")");
-      const fk = ((src.appearance || {}).motion || {}).free_kick;
-      if (fk !== undefined && fk > motionTop(v, "free_kick"))
-        warn("import_value_capped (path=" + key + ".appearance.motion.free_kick, from="
-          + fk + ", to=" + motionTop(v, "free_kick") + ")");
     }
     if (s.aesthetics) {
       const ap = src.appearance || {};
       for (const [k, x] of Object.entries(ap.motion || {}))
-        if (k === "free_kick") continue;
-        else if (k === "dribbling" && v < 20)
+        if (k === "dribbling" && v < 20)
           warn("import_key_not_in_version (path=" + key + ".appearance.motion.dribbling)");
         else if (motionTop(v, k) !== undefined && x > motionTop(v, k))
           warn("import_value_capped (path=" + key + ".appearance.motion." + k
@@ -7792,8 +7964,10 @@ function ixWrite(d, t) {
     else if (d.format === "4cct")
       ixWriteTactics(d.cct.tactics, t);
   }
-  if (s.gameplay && (d.format === "toml" || d.format === "ted"))
-    ixWriteTeam(d.model, t);
+  if (d.format === "toml" || d.format === "ted") {
+    if (s.gameplay) ixWriteTeam(d.model, t);
+    if (s.aesthetics) ixWriteTeamLooks(d.model, t);
+  }
   if (d.format === "4cct") return;
   for (const { src, dst } of ixSlots(d, t)) {
     if (!dst) continue;
@@ -7814,19 +7988,25 @@ function ixChanges(d) {
       : v;
   return JSON.stringify(sorted(copy)) !== JSON.stringify(sorted(t));
 }
-// [team]: name, short name, gated ids, colours, kit slots, edit flags -
-// with the section choice it rides with gameplay.
+// [team]'s gameplay half: name, short name, the gated ids and their edit
+// flags.
 function ixWriteTeam(src, dst) {
   const v = version();
   dst.name = src.name; dst.short_name = src.short_name;
   if (v >= 19) {
     dst.manager_id = src.manager_id; dst.stadium_id = src.stadium_id;
   }
-  if (v >= 17) { dst.color_1 = src.color_1; dst.color_2 = src.color_2; }
-  if (v === 17 && src.kit_slots) dst.kit_slots = clone(src.kit_slots);
   dst.edit_flags = { ...dst.edit_flags, ...Object.fromEntries(
     Object.entries(src.edit_flags || {}).filter(([k]) =>
-      k === "stadium" ? v >= 20 : k === "strip" ? v === 17 : k !== "short_name" || v === 15)) };
+      k === "stadium" ? v >= 20 : k === "strip" ? false : k !== "short_name" || v === 15)) };
+}
+// [team]'s aesthetics half: the colours, the kit slots and the strip flag.
+function ixWriteTeamLooks(src, dst) {
+  const v = version();
+  if (v >= 17) { dst.color_1 = src.color_1; dst.color_2 = src.color_2; }
+  if (v === 17 && src.kit_slots) dst.kit_slots = clone(src.kit_slots);
+  const strip = (src.edit_flags || {}).strip;
+  if (v === 17 && strip !== undefined) dst.edit_flags = { ...dst.edit_flags, strip };
 }
 // The [tactics] table: whole except what the file does not carry (a .4cct
 // has no captain and no man_marking; both stay the target's).
@@ -7879,13 +8059,6 @@ function ixWriteGameplay(src, dst, fv) {
     skillMinVersion(SKILLS.indexOf(s)) <= v));
   dst.com_styles = clone(src.com_styles || []);
   dst.height = src.height; dst.weight = src.weight;
-  // The free-kick motion rides with the stats (the reference's PlayerImport
-  // copies mo_fk under importStats), the other motions with aesthetics.
-  const fk = ((src.appearance || {}).motion || {}).free_kick;
-  if (fk !== undefined) {
-    const top = motionTop(v, "free_kick");
-    dst.appearance.motion.free_kick = top !== undefined && fk > top ? top : fk;
-  }
   for (const k of GP_FLAGS)
     if (src.edit_flags && src.edit_flags[k] !== undefined)
       dst.edit_flags[k] = src.edit_flags[k];
@@ -7906,7 +8079,7 @@ function ixWriteAesthetics(src, dst, d) {
   Object.assign(da.physique, ap.physique || {});
   Object.assign(da.strip, ap.strip || {});
   for (const [k, x] of Object.entries(ap.motion || {})) {
-    if (k === "free_kick" || (k === "dribbling" && v < 20)) continue;
+    if (k === "dribbling" && v < 20) continue;
     const top = motionTop(v, k);
     da.motion[k] = top !== undefined && x > top ? top : x;
   }
@@ -8087,8 +8260,9 @@ function interchangePanel() {
           onchange: e => { S.ix.sections[key] = e.target.checked; render(); } }),
         " " + label));
   };
+  const labels = { gameplay: "Stats", aesthetics: "Aesthetics", tactics: "Gameplan" };
   c.append(h("div", { class: "row" }, weak("Sections "),
-    held.map(k => sec(k, k.charAt(0).toUpperCase() + k.slice(1)))));
+    held.map(k => sec(k, labels[k]))));
   if (refusal)
     c.append(h("div", { class: "row err", id: "ix-refused" }, refusal));
   else {
