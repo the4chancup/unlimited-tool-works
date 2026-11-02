@@ -252,6 +252,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
         view.selected = Some(Selection::Team(id));
         view.reveal_selected = true;
     }
+    // The page the page keys step by: the whole rows the list shows at
+    // once, its visible height over a row's height (a row cut off at the
+    // bottom does not count), read in the toolbar before this frame's
+    // list is laid out.
+    view.list_page_rows = (output.inner_rect.height() / layout.row_height)
+        .floor()
+        .max(1.0) as usize;
     // The viewport spans the bar's strip while nothing scrolls: the frame
     // keeps its own width.
     let frame = egui::Rect::from_min_size(
@@ -275,23 +282,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) -> f32 {
     frame_right
 }
 
-/// Which of the list's rows a `step_selection` walk counts.
-#[derive(Clone, Copy)]
-pub(super) enum StepRows {
-    /// Player rows only, the team rows skipped: the page keys' walk.
-    Players,
-    /// Every row as drawn, the team rows too: the arrow keys' walk.
-    EveryRow,
-}
-
-/// Selects the row after the selected row in the list as drawn (the team
-/// selector and the filter applied), or the one before it when `forward`
-/// is false. `rows` says which rows the walk counts: `StepRows::Players`
-/// skips the team rows, `StepRows::EveryRow` counts them, so the walk can
-/// land on a team's row and select it as a click does. At either end of
-/// the list, or with the selection not in it, nothing moves. Answers
-/// whether the selection moved.
-pub(super) fn step_selection(view: &mut SaveView, forward: bool, rows: StepRows) -> bool {
+/// Selects the row `steps` rows after the selected row in the list as
+/// drawn (the team selector and the filter applied), or the one before
+/// it when `forward` is false: the arrow keys step one row, the page
+/// keys the list's page (`SaveView::list_page_rows`). Every row counts,
+/// the team rows too, so the walk can land on a team's row and select it
+/// as a click does; a step past the first or last row lands on it, and
+/// with the selection not in the list nothing moves. Answers whether the
+/// selection moved.
+pub(super) fn step_selection(view: &mut SaveView, forward: bool, steps: usize) -> bool {
     let (Some(session), Some(selected)) = (view.session.as_ref(), view.selected) else {
         return false;
     };
@@ -302,19 +301,15 @@ pub(super) fn step_selection(view: &mut SaveView, forward: bool, rows: StepRows)
     let Some(at) = drawn.iter().position(|row| *row == selected) else {
         return false;
     };
-    let counts = |row: &&Selection| match rows {
-        StepRows::Players => matches!(row, Selection::Player(..)),
-        StepRows::EveryRow => true,
-    };
     let next = if forward {
-        drawn[at + 1..].iter().find(counts)
+        (at + steps).min(drawn.len() - 1)
     } else {
-        drawn[..at].iter().rev().find(counts)
+        at.saturating_sub(steps)
     };
-    let Some(next) = next else {
+    if next == at {
         return false;
-    };
-    view.selected = Some(*next);
+    }
+    view.selected = Some(drawn[next]);
     true
 }
 

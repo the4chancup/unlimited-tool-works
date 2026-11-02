@@ -10,7 +10,7 @@
 use studio_core::widgets::{add_enabled_ui, step_number, wheel_steps};
 
 use crate::session::Session;
-use crate::view::{NUMBER_BOX, Refusal, SaveView, selected_player, surrender_focus};
+use crate::view::{NUMBER_BOX, Refusal, SaveView, number_arrows, selected_player, surrender_focus};
 
 /// The disabled controls' tooltip on a team selection.
 const TEAM_TIP: &str = "The make buttons act on a player: pick a player row";
@@ -159,11 +159,13 @@ fn set_stats_cell(
             // The field's `min_size` sets its width: a `DragValue`'s own
             // minimum would be the 40-point `interact_size`.
             let field = add_enabled_ui(ui, enabled, |ui| {
-                ui.add(
-                    egui::DragValue::new(stat_value)
-                        .range(40..=99)
-                        .min_size(egui::vec2(NUMBER_BOX, size.y)),
-                )
+                number_arrows(ui, stat_value, 40..=99, |ui, value| {
+                    ui.add(
+                        egui::DragValue::new(value)
+                            .range(40..=99)
+                            .min_size(egui::vec2(NUMBER_BOX, size.y)),
+                    )
+                })
             })
             .inner;
             step_number(stat_value, wheel_steps(ui, &field), 40..=99);
