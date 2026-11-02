@@ -10,6 +10,20 @@ names where the question came from so the context can be read there.
 
 ## Before the release
 
+- **An update check in 0.0.1?** (you, 2026-11-02, asking its cost; the draft's Settings draws
+  the two update-check rows the app hides until an updater reads them, `plans/core/gui.md`
+  "Common settings"). The plan's first step is Release 0.2.0's (`plans/core/distribution.md`
+  "Self-update", steps 1 and 2 as a notice): at startup, on a background thread, ask GitHub's
+  `releases/latest`, compare its tag with the exe's version, and show a notice with the release
+  notes and a link, Skip this version and Remind me later. What it would take, the lead's
+  estimate in work: a TLS-capable HTTP client, which the workspace lacks (`ureq` with
+  `rustls`: a new dependency tree, its licenses into `deny.toml`'s allowlist and the
+  notices, about 1-2 MB more exe); two slices (the check and its state; the notice), each
+  drafted, planned with scenarios and reviewed, about 400-600 lines with headless tests on a
+  fake fetcher; and the release side it reads: tags and GitHub releases with the `.7z` as an
+  asset (f1g7's CI). For: 0.0.1's members only hear of 0.0.2 through it, and a check added
+  later reaches no one still on 0.0.1. Against: a network call at startup in a first preview,
+  and the cut waits for two more review loops. Until you rule, the draft's two rows stay.
 - **The final pass over the built app's UI** (worklog 0.0.1f1c). Any change it asks for is
   drafted first, looked at in the drafts, then built.
   - **The candidate:** 0.0.1g, branch `release/0.0.1-candidate` at `4dcef0a8`, unpacked at
