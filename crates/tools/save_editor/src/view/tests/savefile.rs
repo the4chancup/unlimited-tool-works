@@ -721,8 +721,9 @@ fn a_press_held_while_the_check_lands_leaves_the_dialog_open() {
     open_multi_aatf(&mut window, &mut view);
     // The opening check's reply is kept off the frames: the real run's
     // channel is taken and replaced with the test's, its reply kept
-    // until the press is down.
-    let (_, _, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    // until the press is down. The click's release frame started the run,
+    // and no frame has polled it since: a frame here could already land a
+    // fast reply.
     let real = view
         .multi_aatf
         .check
