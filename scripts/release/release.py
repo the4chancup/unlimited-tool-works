@@ -1,41 +1,46 @@
-"""`just release <version>`: pack the portable .7z bundle (`plans/core/distribution.md`
-"Distribution: portable .7z bundle"). Windows only.
+"""`just release <version>`: pack the portable bundle (`plans/core/distribution.md`
+"Distribution: portable .7z bundle"), the .7z on Windows, the .tar.gz on Linux.
 
 The recipe builds `studio` with `--locked`, the build machine's home folder, cargo and rustup
-homes, repository and target directory remapped out of the exe's paths (`remap_flags`), reads the executable's name from the built exe's
+homes, repository and target directory remapped out of the binary's paths (`remap_flags`), reads the executable's name from the built binary's
 `--help` usage line (the name lives in `studio_core`'s `EXE_NAME`, not in this script),
-stages `unlimited-tool-works-<version>/` — the exe as `<name>.exe`, the launchers it ships
+stages `unlimited-tool-works-<version>/` — the binary as `<name>.exe` (`<name>` on Linux), the launchers it ships
 (`LAUNCHERS`, none in 0.0.1), the readme, the license files (`LICENSES`) and the generated
 third-party notices in `licenses/`, the bundled `data/settings.toml`,
 and the empty folders it ships (`EMPTY_FOLDERS`, none in 0.0.1) — under a temporary folder in
 cargo's target directory (asked of `cargo metadata`, since a developer may have moved it),
-packs it as `<target>/dist/unlimited-tool-works-<version>-windows.7z` with a
+packs it as `<target>/dist/unlimited-tool-works-<version>-windows.7z` with 7-Zip, or as
+`-linux.tar.gz` with `tarfile` on Linux (a tar keeps the binary's executable bit), with a
 `sha256sum`-format `.sha256` beside it, then lists the archive and refuses unless the listing
-equals the staged set exactly, the empty folders included. Beside it it packs `unlimited-tool-works-<version>-symbols.7z` (the exe and
+equals the staged set exactly, the empty folders included. On Windows it packs beside it `unlimited-tool-works-<version>-symbols.7z` (the exe and
 its `.pdb`, the symbols `symbolize_log.py` names a posted `utw.log`'s backtrace with), never
-in the bundle.
+in the bundle; the Linux binary keeps its line tables in itself, so none is packed for it.
 
 Every refusal prints one `error: <what>` line on stderr and exits 1: a platform that is not
-Windows, a version that is not the workspace's, a readme whose first line names another
+Windows or Linux, a version that is not the workspace's, a readme whose first line names another
 version, an archive that already exists (a release is never overwritten), a dirty tree, a
-`cargo build` that fails, a `--help` with no usage line, an exe that still holds one of the
-remapped paths or names `VCRUNTIME140.dll` (the `--config` flags replaced `+crt-static`
+`cargo build` that fails, a `--help` with no usage line, a binary that still holds one of the
+remapped paths or, on Windows, names `VCRUNTIME140.dll` (the `--config` flags replaced `+crt-static`
 instead of joining it), a launcher it ships (none in 0.0.1) that does not call the exe's
-name, a 7-Zip that cannot be found or whose `a` fails, a `cargo-about` that cannot be found,
+name, a 7-Zip that cannot be found or whose `a` fails (Windows only), a `cargo-about` that cannot be found,
 whose `generate` fails or that lists no third-party crate, a `.pdb` missing beside the built
-exe, and a listing that differs from the staged set (that archive is left for inspection).
+exe (Windows only), a Linux archive whose binary member lost its executable bit, and a listing
+that differs from the staged set (that archive is left for inspection).
 The pure helpers take their input as text so
 `release_test.py` can call them without git, cargo or 7-Zip.
 """
 
 import argparse
+import dataclasses
 import hashlib
 import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
+import tarfile
 import tempfile
 import tomllib
 from pathlib import Path
@@ -67,8 +72,40 @@ LICENSES = (
 NOTICES = "THIRD-PARTY-NOTICES.txt"
 
 
+@dataclasses.dataclass(frozen=True)
+class Platform:
+    """The facts one platform decides: the rust target triple the build's rustflags key
+    and cargo-about's dependency graph name, the file `cargo build` leaves under cargo's
+    target directory, the suffix the staged binary's name takes, and the release
+    archive's name ending."""
+    triple: str
+    built: str
+    suffix: str
+    archive: str
+
+
+# The two platforms a release packs for, keyed by `platform_name`'s results.
+PLATFORMS = {
+    "windows": Platform(
+        "x86_64-pc-windows-msvc", "release/utw.exe", ".exe", "windows.7z"
+    ),
+    "linux": Platform(
+        "x86_64-unknown-linux-gnu", "release/utw", "", "linux.tar.gz"
+    ),
+}
+
+
 class Refusal(Exception):
     """A reason the release is not made; `main` prints it as the one `error:` line."""
+
+
+def platform_name(sys_platform: str) -> str:
+    """`windows` on win32, `linux` on linux: the values `PLATFORMS` is keyed by."""
+    if sys_platform == "win32":
+        return "windows"
+    if sys_platform == "linux":
+        return "linux"
+    raise Refusal("releases are packed on Windows and Linux only")
 
 
 def workspace_version(cargo_toml: str) -> str:
@@ -91,9 +128,9 @@ def launcher_calls(bat: str, name: str) -> bool:
 
 
 def existing_glob(version: str) -> str:
-    # The bundle's `<package>-<version>-windows.7z`, its `.sha256` and the symbols'
-    # `<package>-<version>-symbols.7z`: a release is never overwritten, whatever its name.
-    return f"*-{version}-*.7z*"
+    # Both platforms' archives, their `.sha256`s and the symbols' `.7z`: a release is
+    # never overwritten, whatever its archives are called.
+    return f"*-{version}-*"
 
 
 def symbols_entries(name: str) -> set[str]:
@@ -101,11 +138,11 @@ def symbols_entries(name: str) -> set[str]:
     return {f"{name}.exe", PDB_NAME}
 
 
-def expected_entries(name: str, version: str) -> set[str]:
+def expected_entries(name: str, version: str, platform: str) -> set[str]:
     top = f"{PACKAGE}-{version}"
     return {
         top,
-        f"{top}/{name}.exe",
+        f"{top}/{name}{PLATFORMS[platform].suffix}",
         f"{top}/README.txt",
         f"{top}/licenses",
         *(f"{top}/licenses/{Path(license_file).name}" for license_file in (*LICENSES, NOTICES)),
@@ -130,7 +167,8 @@ def listing_paths(slt: str) -> set[str]:
 
 
 def pack(seven_z: str, archive: Path, cwd: Path, names: list[str]) -> set[str]:
-    """Pack `names` (relative to `cwd`) into the .7z `archive`; returns its listing's entries."""
+    """Pack `names` (relative to `cwd`) into the .7z `archive`, the Windows bundle's and
+    the symbols' format (the Linux archive is `pack_tar`'s). Returns the listing's entries."""
     if subprocess.run([seven_z, "a", "-t7z", "-mx=9", str(archive), *names], cwd=cwd).returncode:
         raise Refusal(f"7z a failed ({archive.name})")
     listing = subprocess.run(
@@ -139,13 +177,33 @@ def pack(seven_z: str, archive: Path, cwd: Path, names: list[str]) -> set[str]:
     return listing_paths(listing.stdout)
 
 
-def about_config(deny_toml: str) -> str:
+def pack_tar(archive: Path, cwd: Path, top_name: str, binary: str) -> set[str]:
+    """Pack `cwd`/`top_name` recursively into the .tar.gz `archive`; returns its member
+    names. The binary and the directories are `0755`, every other file `0644`, and every
+    member is owned by uid and gid 0 with no names, so the archive names nobody."""
+
+    def owned_by_nobody(member: tarfile.TarInfo) -> tarfile.TarInfo:
+        member.uid = member.gid = 0
+        member.uname = member.gname = ""
+        member.mode = (
+            0o755 if member.isdir() or member.name == f"{top_name}/{binary}" else 0o644
+        )
+        return member
+
+    with tarfile.open(archive, "w:gz") as tar:
+        tar.add(cwd / top_name, arcname=top_name, filter=owned_by_nobody)
+    with tarfile.open(archive) as tar:
+        return {member.name for member in tar.getmembers()}
+
+
+def about_config(deny_toml: str, triple: str) -> str:
     """`cargo-about`'s config: it accepts what `cargo deny` allows, so one list rules both, and
-    reads the Windows exe's dependency graph, the only one a bundle ships."""
+    reads the shipped binary's dependency graph for `triple`, since the two platforms link
+    different crates."""
     allowed = tomllib.loads(deny_toml)["licenses"]["allow"]
     return (
         f"accepted = [{', '.join(json.dumps(license_id) for license_id in allowed)}]\n"
-        'targets = ["x86_64-pc-windows-msvc"]\n'
+        f'targets = ["{triple}"]\n'
         "ignore-build-dependencies = true\n"
         "ignore-dev-dependencies = true\n"
     )
@@ -213,8 +271,9 @@ def third_party_notices(about: dict, workspace: Path) -> str:
     return "".join(out)
 
 
-def write_notices(path: Path) -> None:
-    """Writes `third_party_notices` for the exe's dependency graph at `Cargo.lock`'s versions."""
+def write_notices(path: Path, platform: str) -> None:
+    """Writes `third_party_notices` for the platform binary's dependency graph at
+    `Cargo.lock`'s versions."""
     if shutil.which("cargo-about") is None:
         raise Refusal(
             "cargo-about not found: `cargo install cargo-about --version 0.9.2 --locked "
@@ -222,7 +281,8 @@ def write_notices(path: Path) -> None:
         )
     with tempfile.TemporaryDirectory() as work:
         config = Path(work) / "about.toml"
-        config.write_text(about_config((ROOT / "deny.toml").read_text(encoding="utf-8")),
+        config.write_text(about_config((ROOT / "deny.toml").read_text(encoding="utf-8"),
+                                       PLATFORMS[platform].triple),
                           encoding="utf-8")
         about = Path(work) / "about.json"
         run = subprocess.run([
@@ -255,18 +315,18 @@ def remap_flags(
     return [f"--remap-path-prefix={source}={to}" for source, to in pairs]
 
 
-def rustflags_config(flags: list[str]) -> str:
+def rustflags_config(flags: list[str], triple: str) -> str:
     # `--config` joins this array with the one `.cargo/config.toml` sets on the same key
     # (`+crt-static`); `RUSTFLAGS` would replace it. JSON's string escapes are TOML's.
-    return f"target.x86_64-pc-windows-msvc.rustflags=[{', '.join(map(json.dumps, flags))}]"
+    return f"target.{triple}.rustflags=[{', '.join(map(json.dumps, flags))}]"
 
 
-def build_args(flags: list[str]) -> list[str]:
+def build_args(flags: list[str], triple: str) -> list[str]:
     """The `cargo build` argv `release()` and `build_remapped.py` share, so a flag cannot
     change in one and leave a candidate built unlike the release."""
     return [
         "cargo", "build", "--release", "--locked", "-p", "studio",
-        "--config", rustflags_config(flags),
+        "--config", rustflags_config(flags, triple),
     ]
 
 
@@ -298,16 +358,17 @@ def machine_prefixes(target: Path) -> list[str]:
     return [prefix for prefix in prefixes if prefix]
 
 
-def check_exe(exe: Path, prefixes: list[str]) -> None:
+def check_exe(exe: Path, prefixes: list[str], platform: str) -> None:
     """Refuses the built `exe` when a path the remap should have taken out is still in it,
     or when it links the C runtime dynamically (the `--config` flags replaced `+crt-static`
-    instead of joining it). `release()`, `build_remapped.py` and `make_candidate.py` all run
+    instead of joining it). The C-runtime check is Windows' alone: a Linux binary links
+    the system's libc. `release()`, `build_remapped.py` and `make_candidate.py` all run
     it: a candidate ships only what a release would."""
     built = exe.read_bytes()
     leaked = leaked_prefixes(built, prefixes)
     if leaked:
         raise Refusal(f"{exe} still holds the build machine's paths: {', '.join(leaked)}")
-    if links_crt_dynamically(built):
+    if platform == "windows" and links_crt_dynamically(built):
         raise Refusal(f"{exe} names VCRUNTIME140.dll: the C runtime is not linked statically")
 
 
@@ -330,8 +391,8 @@ def find_7z() -> str | None:
 
 
 def release(version: str) -> None:
-    if sys.platform != "win32":
-        raise Refusal("releases are packed on Windows only")
+    platform = platform_name(sys.platform)
+    plat = PLATFORMS[platform]
     declared = workspace_version((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
     if version != declared:
         raise Refusal(f"version {version} is not the workspace's {declared}")
@@ -357,11 +418,11 @@ def release(version: str) -> None:
     cargo_home = os.environ.get("CARGO_HOME")
     rustup_home = os.environ.get("RUSTUP_HOME")
     flags = remap_flags(home, cargo_home, rustup_home, str(ROOT), str(target))
-    build = subprocess.run(build_args(flags), cwd=ROOT)
+    build = subprocess.run(build_args(flags, plat.triple), cwd=ROOT)
     if build.returncode != 0:
         raise Refusal("cargo build --release --locked -p studio failed")
-    exe = target / "release/utw.exe"
-    check_exe(exe, machine_prefixes(target))
+    exe = target / plat.built
+    check_exe(exe, machine_prefixes(target), platform)
     help_text = subprocess.run(
         [str(exe), "--help"], cwd=ROOT, capture_output=True, text=True
     ).stdout
@@ -372,14 +433,15 @@ def release(version: str) -> None:
         path = ROOT / "resources/bundle" / bat
         if not launcher_calls(path.read_text(encoding="utf-8"), name):
             raise Refusal(f'{path.relative_to(ROOT)} does not call "%~dp0{name}.exe"')
-    archive = dist / f"{PACKAGE}-{version}-windows.7z"
+    archive = dist / f"{PACKAGE}-{version}-{plat.archive}"
     checksum = archive.with_name(archive.name + ".sha256")
     dist.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(dir=dist.parent))
     try:
         top = staging / f"{PACKAGE}-{version}"
         top.mkdir()
-        shutil.copyfile(exe, top / f"{name}.exe")
+        binary = f"{name}{plat.suffix}"
+        shutil.copyfile(exe, top / binary)
         for bundled in LAUNCHERS + ("README.txt",):
             shutil.copyfile(ROOT / "resources/bundle" / bundled, top / bundled)
         (top / "data").mkdir()
@@ -389,47 +451,59 @@ def release(version: str) -> None:
         (top / "licenses").mkdir()
         for license_file in LICENSES:
             shutil.copyfile(ROOT / license_file, top / "licenses" / Path(license_file).name)
-        write_notices(top / "licenses" / NOTICES)
+        write_notices(top / "licenses" / NOTICES, platform)
         for folder in EMPTY_FOLDERS:
             (top / folder).mkdir()
-        seven_z = find_7z()
-        if seven_z is None:
-            raise Refusal(
-                f"7-Zip not found: `7z` is not on PATH and {SEVEN_Z} does not exist"
-            )
-        found = pack(seven_z, archive, staging, [top.name])
-        expected = expected_entries(name, version)
+        if platform == "windows":
+            seven_z = find_7z()
+            if seven_z is None:
+                raise Refusal(
+                    f"7-Zip not found: `7z` is not on PATH and {SEVEN_Z} does not exist"
+                )
+            found = pack(seven_z, archive, staging, [top.name])
+        else:
+            found = pack_tar(archive, staging, top.name, binary)
+        expected = expected_entries(name, version, platform)
         if found != expected:
             raise Refusal(
                 f"the archive's listing differs from the staged set "
                 f"(missing {sorted(expected - found)}, extra {sorted(found - expected)}); "
                 f"{archive} is left for inspection"
             )
+        if platform == "linux":
+            # The tar ships the binary's mode with it, so it is checked like the listing:
+            # a member that lost its executable bit would not start once unpacked.
+            with tarfile.open(archive) as tar:
+                binary_mode = tar.getmember(f"{top.name}/{binary}").mode
+            if not binary_mode & stat.S_IXUSR:
+                raise Refusal(f"{archive}: {top.name}/{binary} is not executable")
         digest = hashlib.sha256(archive.read_bytes()).hexdigest()
         checksum.write_bytes(sha256_line(digest, archive.name).encode("utf-8"))
         print(archive)
         print(checksum)
         print(f"{archive.stat().st_size} bytes")
-        # The symbols archive: the exe and its .pdb, kept out of the bundle for
-        # `symbolize_log.py` to name a posted log's frames against. The .pdb keeps
-        # its build name, the one the exe records.
-        pdb = target / "release" / PDB_NAME
-        if not pdb.exists():
-            raise Refusal(f"{pdb} does not exist; the release's symbols cannot be packed")
-        symbols_stage = staging / "symbols"
-        symbols_stage.mkdir()
-        shutil.copyfile(top / f"{name}.exe", symbols_stage / f"{name}.exe")
-        shutil.copyfile(pdb, symbols_stage / PDB_NAME)
-        symbols = dist / f"{PACKAGE}-{version}-symbols.7z"
-        found = pack(seven_z, symbols, symbols_stage, [f"{name}.exe", PDB_NAME])
-        expected = symbols_entries(name)
-        if found != expected:
-            raise Refusal(
-                f"the symbols archive's listing differs "
-                f"(missing {sorted(expected - found)}, extra {sorted(found - expected)}); "
-                f"{symbols} is left for inspection"
-            )
-        print(symbols)
+        if platform == "windows":
+            # The symbols archive: the exe and its .pdb, kept out of the bundle for
+            # `symbolize_log.py` to name a posted log's frames against. The .pdb keeps
+            # its build name, the one the exe records. The Linux binary keeps its line
+            # tables in itself, so it gets none.
+            pdb = target / "release" / PDB_NAME
+            if not pdb.exists():
+                raise Refusal(f"{pdb} does not exist; the release's symbols cannot be packed")
+            symbols_stage = staging / "symbols"
+            symbols_stage.mkdir()
+            shutil.copyfile(top / binary, symbols_stage / binary)
+            shutil.copyfile(pdb, symbols_stage / PDB_NAME)
+            symbols = dist / f"{PACKAGE}-{version}-symbols.7z"
+            found = pack(seven_z, symbols, symbols_stage, [binary, PDB_NAME])
+            expected = symbols_entries(name)
+            if found != expected:
+                raise Refusal(
+                    f"the symbols archive's listing differs "
+                    f"(missing {sorted(expected - found)}, extra {sorted(found - expected)}); "
+                    f"{symbols} is left for inspection"
+                )
+            print(symbols)
     finally:
         shutil.rmtree(staging)
 
