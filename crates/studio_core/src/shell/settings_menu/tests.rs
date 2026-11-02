@@ -19,7 +19,9 @@ fn text_node<'a>(nodes: &'a [accesskit::Node], text: &str) -> &'a accesskit::Nod
         .unwrap_or_else(|| panic!("no node with text {text:?}"))
 }
 
-/// The widget of `role` drawn on `label`'s grid row (the same y span).
+/// The widget of `role` drawn on `label`'s grid row: the same y span, and
+/// starting right of the label as a grid's widget cell does. The y span alone
+/// would also match a sidebar entry the label's height happens to share.
 fn widget_on_row<'a>(nodes: &'a [accesskit::Node], label: &str, role: Role) -> &'a accesskit::Node {
     let row = text_node(nodes, label)
         .bounds()
@@ -28,9 +30,9 @@ fn widget_on_row<'a>(nodes: &'a [accesskit::Node], label: &str, role: Role) -> &
         .iter()
         .find(|node| {
             node.role() == role
-                && node
-                    .bounds()
-                    .is_some_and(|bounds| bounds.y0 < row.y1 && bounds.y1 > row.y0)
+                && node.bounds().is_some_and(|bounds| {
+                    bounds.y0 < row.y1 && bounds.y1 > row.y0 && bounds.x0 > row.x0
+                })
         })
         .unwrap_or_else(|| panic!("no {role:?} on the {label:?} row"))
 }
@@ -611,6 +613,90 @@ fn the_theme_setting_decides_and_a_pick_applies_at_the_next_frame() {
     let file: toml::Table = toml::from_str(&text).unwrap();
     assert_eq!(file["common"]["theme"].as_str(), Some("light"));
     fs::remove_dir_all(&dir).unwrap();
+}
+
+// The `Invert value scrolling` row, drawn after Theme: its label's tooltip
+// leads with the settings key, a click writes the common setting, and the
+// shell turns the wheel by it from the next frame on.
+#[test]
+fn the_invert_value_scrolling_row_writes_the_setting_and_turns_the_wheel() {
+    let dir = TestDir::new("studio_core_settings_invert_wheel");
+    let (a, calls_a) = stub("a", "A", None);
+    let Shell { mut app, ctx, .. } = shell_with(
+        test_settings(dir.path()),
+        vec![a],
+        &[],
+        Some(dir.path().to_path_buf()),
+        vec![calls_a],
+    );
+    assert!(!ctx.common().invert_value_scrolling, "the premise: off");
+    assert_eq!(ctx.common().thread_count, 0, "the premise: automatic");
+    let egui_ctx = test_context();
+    egui_ctx.all_styles_mut(|style| style.interaction.tooltip_delay = 0.0);
+
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    click(&egui_ctx, &mut app, entry(&nodes, SETTINGS_LABEL));
+    let nodes = idle(&egui_ctx, &mut app, 10).nodes;
+    let theme = text_node(&nodes, "Theme")
+        .bounds()
+        .expect("Theme has bounds");
+    let invert = text_node(&nodes, "Invert value scrolling")
+        .bounds()
+        .expect("the row is drawn");
+    assert!(invert.y0 > theme.y0, "the row stands under Theme's");
+
+    // The gear click leaves the pointer on the rail, the sidebar's overlay
+    // open over the menu's left edge on the test's 800-point screen; resting
+    // it inside the menu closes the overlay before the hover below.
+    frame(
+        &egui_ctx,
+        &mut app,
+        hover(widget_on_row(&nodes, "PES folder", Role::TextInput)),
+        true,
+    );
+    idle(&egui_ctx, &mut app, 8);
+    frame(
+        &egui_ctx,
+        &mut app,
+        hover(text_node(&nodes, "Invert value scrolling")),
+        true,
+    );
+    let nodes = idle(&egui_ctx, &mut app, 8).nodes;
+    assert!(
+        has_text(
+            &nodes,
+            "invert_value_scrolling: Turns the wheel's steps over a value the \
+             other way: wheel down moves a slider right, raises a number and \
+             takes a list's item above, wheel up the reverse. Scrolling a \
+             pane is unchanged."
+        ),
+        "the tooltip is the settings key, then the row's tip"
+    );
+
+    // A click writes the setting, and the next frame's wheel steps the other
+    // way: a notch down takes one more.
+    click(
+        &egui_ctx,
+        &mut app,
+        widget_on_row(&nodes, "Invert value scrolling", Role::CheckBox),
+    );
+    assert!(
+        ctx.common().invert_value_scrolling,
+        "the click wrote the setting"
+    );
+    let nodes = frame(&egui_ctx, &mut app, Vec::new(), true).nodes;
+    frame(
+        &egui_ctx,
+        &mut app,
+        wheel_notch(widget_on_row(&nodes, "Threads", Role::SpinButton), false),
+        true,
+    );
+    idle(&egui_ctx, &mut app, 15);
+    assert_eq!(
+        ctx.common().thread_count,
+        1,
+        "inverted, a notch down takes one more"
+    );
 }
 
 // A text row commits when its edit loses focus or Enter is pressed, not per

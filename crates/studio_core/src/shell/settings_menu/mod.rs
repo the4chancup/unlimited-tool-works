@@ -22,8 +22,8 @@ use pes_version::PesVersion;
 use crate::settings::{CommonSettings, Theme, pes_folder_pattern};
 use crate::tool::{ShellRequest, StudioTool, ToolContext};
 use crate::widgets::{
-    FORM_ROW_SPACING, PathCommit, add_enabled, add_enabled_ui, checkbox, path_row, path_row_commit,
-    row_label, step_choice, step_number, wheel_steps,
+    FORM_ROW_SPACING, PathCommit, add_enabled, add_enabled_ui, checkbox, checkbox_without_text,
+    path_row, path_row_commit, row_label, step_choice, step_number, wheel_steps,
 };
 
 use super::sidebar::{SETTINGS_LABEL, Sidebar, exe_tooltip, version_blocker, version_label};
@@ -356,6 +356,25 @@ impl SettingsMenu {
                 }
                 if picked != common.theme {
                     common.theme = picked;
+                    changed = true;
+                }
+                ui.end_row();
+
+                let invert = row_label(
+                    ui,
+                    "Invert value scrolling",
+                    "invert_value_scrolling",
+                    "Turns the wheel's steps over a value the other way: wheel \
+                     down moves a slider right, raises a number and takes a \
+                     list's item above, wheel up the reverse. Scrolling a pane \
+                     is unchanged.",
+                );
+                let mut on = common.invert_value_scrolling;
+                if checkbox_without_text(ui, &mut on)
+                    .labelled_by(invert.id)
+                    .changed()
+                {
+                    common.invert_value_scrolling = on;
                     changed = true;
                 }
                 ui.end_row();
