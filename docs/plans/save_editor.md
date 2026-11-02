@@ -52,7 +52,7 @@ implementation is measured against.
 |-----------|------|
 | Set all ability stats (dialog: every ability stat to N, 40 to 99, prefilled with the player's first; weak foot, form and injury untouched) | Kept, same fields and range; no edit flag set (the dialog writes the ability stats, as typing them does, and typing sets none) |
 | Bump all ability stats ±N (dialog, Ctrl+B: N from -10 to 10, remembered; each ability stat clamped to 40 to 99; weak foot, form and injury untouched) | Kept, same, no edit flag set; N is read whole (4ccEditor reads two characters, so -10 bumps by -1) |
-| Copy player stats (source PID → dest PID: height, weight, every ability, form, injury, weak foot, registered and playable positions, playing style, skills, COM styles, stronger foot and hand, star, playing attitude, the free-kick motion only, and the edited-player and gameplay edit flags) | Kept, same field set; the other player is picked by team, then by roster slot (two combo boxes: one list of a cup save's 4,600 players cannot be browsed), and copied onto the selected one |
+| Copy player stats (source PID → dest PID: height, weight, every ability, form, injury, weak foot, registered and playable positions, playing style, skills, COM styles, stronger foot and hand, star, playing attitude, the free-kick motion only, and the edited-player and gameplay edit flags) | Kept, the same field set but the free-kick motion, a look that stays the target's (the maintainer, 2026-11-02: it is a motion like the others); the other player is picked by team, then by roster slot (two combo boxes: one list of a cup save's 4,600 players cannot be browsed), and copied onto the selected one |
 | Swap player stats (two PIDs; the same field set as Copy) | Kept, the other player picked as for Copy |
 | Move a player up or down the list (the spinner beside it: one step per click, within one team; the two players' records trade places between their ids, `base_copy_id` traded back to match each slot, shirt numbers and the captain left with the slots) | Kept as drag reorder, with the same effect ("Editing UI", the Player list bullet) |
 | Toggle FPC settings (Ctrl+I) | Kept (see "Full Player Customization" below) |
@@ -1293,9 +1293,8 @@ and no switch drawn; on, the editor **does not edit aesthetics** but through the
 - The same lock covers every other aesthetics write path: the team operations that write
   appearance fields (set boots/gloves IDs for everyone, set/remove FPC for the team, clear visual
   flags, the FPC toggle), Fix database (it clears the same flags), the aesthetics section of Team TOML and
-  legacy squad imports (the section checkbox is disabled, gameplay and tactics import as before),
-  and Copy and Swap stats, which under the lock leave the free-kick motion (an
-  `[appearance.motion]` key of the export's `settings.toml`) as the target's. A roster drag is
+  legacy squad imports (the section checkbox is disabled, gameplay and tactics import as before).
+  Copy and Swap stats need no lock: they never move a look, the free-kick motion included. A roster drag is
   not a look's edit: it moves a whole player to another slot, his looks with him, and the
   next patch writes each id's looks from its export.
 - **Apply aesthetics patch** is the one aesthetics write open by default: open a patch; the
@@ -1436,11 +1435,16 @@ the editor exposes them as:
   when the file's version differs. The sections split the file as the squad load does: names,
   shirt names and shirt numbers go with aesthetics (its `PlayerImport` copies them under
   `importAes`), not with gameplay as the comparator's scopes have them, and so do nationality,
-  age, every motion but the free kick's, the dribbling motion and the base-copy flag and id;
-  the free-kick motion, height, weight, star, playing attitude and stronger hand go with
+  age, every motion and the base-copy flag and id;
+  height, weight, star, playing attitude and stronger hand go with
   gameplay (`editor.h` `PlayerImport`, read 2026-10-21), so a file that loads
-  with 4ccEditor's choices loads the same here. The file's `[team]` keys, which the squad file
-  never carried, go with gameplay. A refusal that comes from a chosen section's keys (a team
+  with 4ccEditor's choices loads the same here. One departure: the squad load copies the
+  free-kick motion with the stats, and here it goes with aesthetics, with the other motions,
+  since it is an `[appearance.motion]` key of the export's `settings.toml` like them (the
+  aesthetics lock then guards it too). The file's `[team]` keys, which the squad file never
+  carried, split: the name, short name, manager and stadium, with their edit flags, go with
+  gameplay; the two team colours, the kit slots and the strip flag go with aesthetics, the
+  team's look. A refusal that comes from a chosen section's keys (a team
   name too long, with gameplay; a shirt number past the field's range, with aesthetics) is
   drawn under the section choices with Apply disabled, the choices still drawn, since
   unticking that section is how the member imports the rest; only a `.4ccs` with more records
@@ -1448,7 +1452,9 @@ the editor exposes them as:
   change nothing (the team's own file, or one applied already) draws Apply disabled and
   `The team already holds every value of the chosen sections.`, as the patch panel's empty
   list says so, rather than recording an edit that changes nothing. The section boxes read
-  Gameplay, Aesthetics and Tactics. The warning list draws each note code's text from the
+  Stats, Aesthetics and Gameplan, the cup's own words for the gameplay and tactics
+  sections (the comparator's Gameplay scope and the command line's `--gameplay` split the
+  fields differently and keep their name). The warning list draws each note code's text from the
   catalog once (its when and its effect, the Messages topic's words too, written for any
   team file rather than for `import-toml`), the code's groups under it: a group is one key in
   words (its last part as the views name it: a stat at the save's version, a skill by its
@@ -1985,10 +1991,11 @@ SE-GUI-52  GIVEN the PES 17 save open on ALL, team 701's (/3/) last player row s
                 stays; WHEN Down is pressed on a row below the list's view THEN the list
                 scrolls so the selected row shows
 SE-GUI-16  GIVEN the save open on a team
-           WHEN Team TOML export, then import on another team with only the gameplay section
+           WHEN Team TOML export, then import on another team with only the Stats section
                 chosen, runs from the interchange dialog
            THEN the file written equals the CLI's export, and the import changes only the
-                gameplay fields, with a warning list when the file's version differs
+                gameplay fields (the team's colours, kits and every motion staying the
+                target's), with a warning list when the file's version differs
 SE-GUI-17  GIVEN a `.4ccs` or `.4cct` file, or a Texport
            WHEN it is opened through the import dialog
            THEN its sections import as the Team TOML import does, read-only for the legacy

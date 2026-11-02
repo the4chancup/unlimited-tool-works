@@ -3031,3 +3031,5 @@ worklog passed 7,000 lines.
   sides (the code and plan landed without it). Rendered: DBC7 12 options per combo, Spring 26 split 8 and 5.
 - 2026-11-01 — Candidate 0.0.1g staged (`4cc-studio-temp/candidate-0.0.1g/`, `release/0.0.1-candidate` at `4dcef0a8`): full gates
   green (5590 tests), the release exe byte-identical to the staged one; f1d is its only change since 0.0.1f.
+- 2026-11-02 — f1e3 planned and drafted (the maintainer): the import's boxes read Stats, Aesthetics, Gameplan; the free-kick
+  motion goes with Aesthetics (Copy and Swap stats stop moving it); `[team]` colours and kits go with Aesthetics.

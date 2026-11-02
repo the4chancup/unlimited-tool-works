@@ -15076,3 +15076,17 @@ and Ctrl+V pastes them onto the selected player, replicating the Copy stats dial
 and its rules, one undoable edit.
 Why: the maintainer's request; one rule for one operation, whichever way it is reached.
 Plan: `plans/save_editor.md` "Editing UI" (written when the step starts); WORKLOG 8.45.
+
+## 2026-11-02 — save_editor — The import's sections are Stats, Aesthetics and Gameplan
+Decision (maintainer): the team file import's section boxes read Stats, Aesthetics and
+Gameplan, where they read Gameplay, Aesthetics and Tactics; the comparator's Gameplay scope and
+the command line's `--gameplay` keep their name. The free-kick motion imports with Aesthetics,
+not with the stats, and Copy and Swap stats leave it as the target's. The file's `[team]` keys
+split: name, short name, manager and stadium (with their edit flags) with Stats; the two team
+colours, the kit slots and the strip flag with Aesthetics.
+Why: Stats and Gameplan are 4cc's own words. 4ccEditor's squad load copies the free-kick motion
+with the stats, most likely an oversight: it is a motion like the others, an `[appearance.motion]`
+key of the export, so it now goes with the looks and the aesthetics lock guards it. Under the
+name Stats, the team's colours and kits read as looks, so they go with Aesthetics.
+Plan: `plans/save_editor.md` "Interchange formats in the UI" and the inventory's Copy stats row; WORKLOG
+0.0.1f1e3.

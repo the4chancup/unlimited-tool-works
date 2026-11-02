@@ -7588,7 +7588,8 @@ function patchPanel() {
 //      and the import half of 22) ----
 // One dialog for Team TOML, .4ccs, .4cct and Texport: the file picked decides
 // the format, the target is the team selected in the editor, and the section
-// choices are the reference's squad load (gameplay / aesthetics / tactics),
+// choices are the reference's squad load (gameplay / aesthetics / tactics,
+// labelled Stats, Aesthetics and Gameplan after the cup's own words),
 // offered only for the sections the file holds. A legacy file is never
 // written: the page offers no export to .4ccs or .4cct. The apply is the
 // lib's one path (a TeamToml document -> apply): slot NN of the file is slot
@@ -7597,9 +7598,12 @@ function patchPanel() {
 // itself is the reference's PlayerImport (main.cpp / editor.h): stats,
 // positions, skills, the basic fields and the gameplay edit flags under
 // gameplay; names, numbers, nationality, age, ids and every appearance
-// field under aesthetics; [team] rides with gameplay (it is the team's own
-// data, never the export-owned appearance the lock guards), [tactics] with
-// tactics.
+// field under aesthetics, the free-kick motion too (the reference loads it
+// with the stats, but it is a motion like the others, which the export
+// owns). [team] splits: its name, short name, manager and stadium (and
+// their edit flags) ride with gameplay, its colours and kit slots (and the
+// strip flag) with aesthetics, the lock guarding them with the looks;
+// [tactics] goes with tactics.
 // sample wording: the panel's labels and notes.
 const NAME_MAX = v => v <= 19 ? 46 : 61;
 const SHIRT_MAX = v => v <= 19 ? 18 : 61;
@@ -7772,16 +7776,11 @@ function ixWarnings(d) {
       for (const sk of src.skills || [])
         if (skillMinVersion(SKILLS.indexOf(sk)) > v)
           warn("import_key_not_in_version (path=" + key + ".skills.skills." + sk + ")");
-      const fk = ((src.appearance || {}).motion || {}).free_kick;
-      if (fk !== undefined && fk > motionTop(v, "free_kick"))
-        warn("import_value_capped (path=" + key + ".appearance.motion.free_kick, from="
-          + fk + ", to=" + motionTop(v, "free_kick") + ")");
     }
     if (s.aesthetics) {
       const ap = src.appearance || {};
       for (const [k, x] of Object.entries(ap.motion || {}))
-        if (k === "free_kick") continue;
-        else if (k === "dribbling" && v < 20)
+        if (k === "dribbling" && v < 20)
           warn("import_key_not_in_version (path=" + key + ".appearance.motion.dribbling)");
         else if (motionTop(v, k) !== undefined && x > motionTop(v, k))
           warn("import_value_capped (path=" + key + ".appearance.motion." + k
@@ -7815,8 +7814,10 @@ function ixWrite(d, t) {
     else if (d.format === "4cct")
       ixWriteTactics(d.cct.tactics, t);
   }
-  if (s.gameplay && (d.format === "toml" || d.format === "ted"))
-    ixWriteTeam(d.model, t);
+  if (d.format === "toml" || d.format === "ted") {
+    if (s.gameplay) ixWriteTeam(d.model, t);
+    if (s.aesthetics) ixWriteTeamLooks(d.model, t);
+  }
   if (d.format === "4cct") return;
   for (const { src, dst } of ixSlots(d, t)) {
     if (!dst) continue;
@@ -7837,19 +7838,25 @@ function ixChanges(d) {
       : v;
   return JSON.stringify(sorted(copy)) !== JSON.stringify(sorted(t));
 }
-// [team]: name, short name, gated ids, colours, kit slots, edit flags -
-// with the section choice it rides with gameplay.
+// [team]'s gameplay half: name, short name, the gated ids and their edit
+// flags.
 function ixWriteTeam(src, dst) {
   const v = version();
   dst.name = src.name; dst.short_name = src.short_name;
   if (v >= 19) {
     dst.manager_id = src.manager_id; dst.stadium_id = src.stadium_id;
   }
-  if (v >= 17) { dst.color_1 = src.color_1; dst.color_2 = src.color_2; }
-  if (v === 17 && src.kit_slots) dst.kit_slots = clone(src.kit_slots);
   dst.edit_flags = { ...dst.edit_flags, ...Object.fromEntries(
     Object.entries(src.edit_flags || {}).filter(([k]) =>
-      k === "stadium" ? v >= 20 : k === "strip" ? v === 17 : k !== "short_name" || v === 15)) };
+      k === "stadium" ? v >= 20 : k === "strip" ? false : k !== "short_name" || v === 15)) };
+}
+// [team]'s aesthetics half: the colours, the kit slots and the strip flag.
+function ixWriteTeamLooks(src, dst) {
+  const v = version();
+  if (v >= 17) { dst.color_1 = src.color_1; dst.color_2 = src.color_2; }
+  if (v === 17 && src.kit_slots) dst.kit_slots = clone(src.kit_slots);
+  const strip = (src.edit_flags || {}).strip;
+  if (v === 17 && strip !== undefined) dst.edit_flags = { ...dst.edit_flags, strip };
 }
 // The [tactics] table: whole except what the file does not carry (a .4cct
 // has no captain and no man_marking; both stay the target's).
@@ -7902,13 +7909,6 @@ function ixWriteGameplay(src, dst, fv) {
     skillMinVersion(SKILLS.indexOf(s)) <= v));
   dst.com_styles = clone(src.com_styles || []);
   dst.height = src.height; dst.weight = src.weight;
-  // The free-kick motion rides with the stats (the reference's PlayerImport
-  // copies mo_fk under importStats), the other motions with aesthetics.
-  const fk = ((src.appearance || {}).motion || {}).free_kick;
-  if (fk !== undefined) {
-    const top = motionTop(v, "free_kick");
-    dst.appearance.motion.free_kick = top !== undefined && fk > top ? top : fk;
-  }
   for (const k of GP_FLAGS)
     if (src.edit_flags && src.edit_flags[k] !== undefined)
       dst.edit_flags[k] = src.edit_flags[k];
@@ -7929,7 +7929,7 @@ function ixWriteAesthetics(src, dst, d) {
   Object.assign(da.physique, ap.physique || {});
   Object.assign(da.strip, ap.strip || {});
   for (const [k, x] of Object.entries(ap.motion || {})) {
-    if (k === "free_kick" || (k === "dribbling" && v < 20)) continue;
+    if (k === "dribbling" && v < 20) continue;
     const top = motionTop(v, k);
     da.motion[k] = top !== undefined && x > top ? top : x;
   }
@@ -8110,8 +8110,9 @@ function interchangePanel() {
           onchange: e => { S.ix.sections[key] = e.target.checked; render(); } }),
         " " + label));
   };
+  const labels = { gameplay: "Stats", aesthetics: "Aesthetics", tactics: "Gameplan" };
   c.append(h("div", { class: "row" }, weak("Sections "),
-    held.map(k => sec(k, k.charAt(0).toUpperCase() + k.slice(1)))));
+    held.map(k => sec(k, labels[k]))));
   if (refusal)
     c.append(h("div", { class: "row err", id: "ix-refused" }, refusal));
   else {
