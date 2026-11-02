@@ -18,8 +18,12 @@ mod title;
 mod window_size;
 
 use std::path::PathBuf;
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::Arc;
 
 use crossbeam_channel::Receiver;
+#[cfg(not(target_arch = "wasm32"))]
+use crossbeam_channel::TryRecvError;
 use log::debug;
 #[cfg(not(target_arch = "wasm32"))]
 use log::warn;
@@ -32,6 +36,8 @@ use crate::status::ActionEffect;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::status::ShellCondition;
 use crate::tool::{PlannedTool, ShellRequest, StudioTool, ToolContext};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::updater;
 
 use self::first_run::FirstRun;
 use self::help_window::HelpWindow;
@@ -153,6 +159,31 @@ pub struct StudioApp {
     monitors: fn(&eframe::Frame) -> Vec<window_size::Monitor>,
     /// The first-run data-location dialog's state.
     first_run: FirstRun,
+    /// The update check's fetch: `updater::fetch_releases` in the window, a fixture
+    /// in the tests. A `dyn Fn`, not a plain `fn` as the sidebar's probe is, so a
+    /// test's fake can wait on a channel it captured.
+    #[cfg(not(target_arch = "wasm32"))]
+    update_fetch: Arc<updater::Fetch>,
+    /// Where the startup update check stands: the first frame asks the due rule, a
+    /// later one drains the reply, then it is done.
+    #[cfg(not(target_arch = "wasm32"))]
+    update_poll: UpdatePoll,
+    /// The release the status bar's offer is about, while the offer stands: the
+    /// Details dialog and the download read it.
+    #[cfg(not(target_arch = "wasm32"))]
+    update_release: Option<updater::Release>,
+}
+
+/// Where the startup update check stands (native only; the browser build checks
+/// nothing): run once per window, off the UI thread.
+#[cfg(not(target_arch = "wasm32"))]
+enum UpdatePoll {
+    /// The first frame has not run the due rule yet.
+    NotStarted,
+    /// The check's worker runs; its reply lands here once.
+    Running(Receiver<Result<Option<updater::Release>, updater::UpdateError>>),
+    /// The reply drained, or no check was due: nothing left to poll.
+    Done,
 }
 
 impl StudioApp {
@@ -207,6 +238,12 @@ impl StudioApp {
             #[cfg(not(target_arch = "wasm32"))]
             monitors: window_size::monitors,
             first_run: FirstRun::new(config_dir),
+            #[cfg(not(target_arch = "wasm32"))]
+            update_fetch: Arc::new(updater::fetch_releases),
+            #[cfg(not(target_arch = "wasm32"))]
+            update_poll: UpdatePoll::NotStarted,
+            #[cfg(not(target_arch = "wasm32"))]
+            update_release: None,
         }
     }
 
@@ -299,6 +336,60 @@ impl StudioApp {
             }
         }
     }
+
+    /// The startup update check, run once per window: the first frame starts it
+    /// when the settings say a check is due, a later frame drains the finished
+    /// worker's reply, so no frame waits on the fetch. A completed check stores
+    /// `last_update_check` and saves as every settings change does; a release
+    /// newer than the build and not the skipped one raises the status bar's
+    /// offer and stays for the Details dialog; a failed check writes one log
+    /// line and shows nothing.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn poll_update(&mut self, egui_ctx: &egui::Context) {
+        match std::mem::replace(&mut self.update_poll, UpdatePoll::Done) {
+            UpdatePoll::NotStarted => {
+                if updater::check_due(&self.ctx.common(), updater::now_secs()) {
+                    let rx = updater::start_check(Arc::clone(&self.update_fetch), egui_ctx);
+                    self.update_poll = UpdatePoll::Running(rx);
+                }
+            }
+            UpdatePoll::Running(rx) => match rx.try_recv() {
+                Ok(Ok(newest)) => {
+                    // A completed check is stamped, whatever it found; a failed
+                    // one is not, so the next start can check again.
+                    self.ctx.settings().lock().unwrap().common.last_update_check =
+                        Some(updater::now_secs());
+                    self.save_settings();
+                    let own = semver::Version::parse(env!("CARGO_PKG_VERSION")).expect(
+                        "CARGO_PKG_VERSION is a semver triple; the workspace cannot \
+                         build without one",
+                    );
+                    let skipped = self.ctx.common().skipped_version;
+                    if let Some(release) =
+                        newest.filter(|release| updater::offers(release, &own, skipped.as_deref()))
+                    {
+                        self.status_bar.set_condition(
+                            ShellCondition::UpdateAvailable {
+                                version: release.version.to_string(),
+                            },
+                            true,
+                        );
+                        self.update_release = Some(release);
+                    }
+                }
+                Ok(Err(error)) => warn!("the update check failed: {error}"),
+                Err(TryRecvError::Empty) => self.update_poll = UpdatePoll::Running(rx),
+                Err(TryRecvError::Disconnected) => {
+                    warn!("the update check's worker ended without a reply");
+                }
+            },
+            UpdatePoll::Done => {}
+        }
+    }
+
+    /// The browser build checks nothing; its storage is the web phase's.
+    #[cfg(target_arch = "wasm32")]
+    fn poll_update(&mut self, _egui_ctx: &egui::Context) {}
 
     /// Tells the active tool its standing notice ended, once, if the bar saw it end since
     /// the last ask.
@@ -493,6 +584,7 @@ impl eframe::App for StudioApp {
         // save, the notice) apply in the frame that switches, not one repaint later.
         self.sidebar
             .poll_running_pes(egui_ctx, &self.tools, &self.ctx);
+        self.poll_update(egui_ctx);
         // Asked before the requests drain, so a notice published this frame replaces the
         // standing one and ends it, and its tool hears so before it is next asked.
         let standing = self
@@ -1084,6 +1176,138 @@ mod tests {
             (calls[0].holds(), calls[1].holds()),
             (1, 1),
             "every tool was asked, none held"
+        );
+    }
+
+    // ST-UPD-01
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn a_due_check_offers_the_newest_release_and_stamps_it() {
+        let dir = TestDir::new("studio_core_update_offer");
+        let data = dir.path().join("data");
+        fs::create_dir_all(&data).unwrap();
+        let (a, calls_a) = stub("a", "A", None);
+        let mut settings = test_settings(dir.path());
+        settings.common.check_for_updates = true;
+        let (gate_tx, gate_rx) = unbounded::<()>();
+        let Shell { mut app, ctx, .. } =
+            shell_with(settings, vec![a], &[], Some(data.clone()), vec![calls_a]);
+        // The fake fetch waits for the gate, so the worker is still fetching
+        // when the first frame ends: a fetch on the UI thread would sit the
+        // whole timeout out inside `frame` and come back a failed check the
+        // asserts below refuse; the bound keeps that a failure, not a hang.
+        app.update_fetch = std::sync::Arc::new(move || {
+            if gate_rx.recv_timeout(Duration::from_secs(10)).is_err() {
+                return Err(crate::updater::UpdateError::Fetch(ureq::Error::StatusCode(
+                    503,
+                )));
+            }
+            Ok(crate::updater::RELEASES_FIXTURE.to_owned())
+        });
+        let egui_ctx = test_context();
+
+        frame(&egui_ctx, &mut app, Vec::new(), true);
+        gate_tx.send(()).unwrap();
+        // The worker answers as soon as the gate opens, but the test cannot
+        // join it: draw frames until its reply lands, giving up only past the
+        // deadline so a reply that never comes fails instead of hanging.
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let nodes = loop {
+            let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+            if ctx.common().last_update_check.is_some() {
+                break out.nodes;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the update check's reply never landed"
+            );
+        };
+        assert!(
+            has_text(&nodes, "Update available: v0.0.2"),
+            "the status bar offers the list's newest release"
+        );
+        assert!(
+            ctx.common().last_update_check.is_some(),
+            "the completed check is stamped"
+        );
+        let written = Settings::load(&data.join(crate::settings::SETTINGS_FILE_NAME)).unwrap();
+        assert!(
+            written.common.last_update_check.is_some(),
+            "the stamp was saved"
+        );
+    }
+
+    // ST-UPD-01
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn no_check_runs_while_checks_are_off_or_the_interval_holds() {
+        let egui_ctx = test_context();
+        for last_check in [None, Some(crate::updater::now_secs())] {
+            let dir = TestDir::new("studio_core_update_not_due");
+            let (a, calls_a) = stub("a", "A", None);
+            let mut settings = test_settings(dir.path());
+            settings.common.check_for_updates = last_check.is_some();
+            settings.common.last_update_check = last_check;
+            let (started_tx, started_rx) = unbounded::<()>();
+            let Shell { mut app, .. } = shell_with(
+                settings,
+                vec![a],
+                &[],
+                Some(dir.path().to_path_buf()),
+                vec![calls_a],
+            );
+            app.update_fetch = std::sync::Arc::new(move || {
+                started_tx.send(()).expect("the test listens");
+                Ok(crate::updater::RELEASES_FIXTURE.to_owned())
+            });
+            idle(&egui_ctx, &mut app, 3);
+            assert!(
+                started_rx.try_recv().is_err(),
+                "no check starts ({last_check:?})"
+            );
+        }
+    }
+
+    // ST-UPD-01
+    #[cfg(not(target_arch = "wasm32"))]
+    #[test]
+    fn a_failed_check_shows_no_offer_and_stamps_nothing() {
+        let dir = TestDir::new("studio_core_update_failed");
+        let data = dir.path().join("data");
+        fs::create_dir_all(&data).unwrap();
+        let (a, calls_a) = stub("a", "A", None);
+        let mut settings = test_settings(dir.path());
+        settings.common.check_for_updates = true;
+        let Shell { mut app, ctx, .. } =
+            shell_with(settings, vec![a], &[], Some(data.clone()), vec![calls_a]);
+        app.update_fetch = std::sync::Arc::new(|| {
+            Err(crate::updater::UpdateError::Fetch(ureq::Error::StatusCode(
+                503,
+            )))
+        });
+        let egui_ctx = test_context();
+
+        // Draw frames until the worker's failure is drained, giving up only
+        // past the deadline: the asserts below would hold for a check still in
+        // flight, so a reply that never comes fails here, not silently.
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let nodes = loop {
+            let out = frame(&egui_ctx, &mut app, Vec::new(), true);
+            if matches!(app.update_poll, UpdatePoll::Done) {
+                break out.nodes;
+            }
+            assert!(
+                std::time::Instant::now() < deadline,
+                "the update check's reply never landed"
+            );
+        };
+        assert!(
+            !has_text(&nodes, "Update available"),
+            "a failed check shows nothing"
+        );
+        assert!(
+            ctx.common().last_update_check.is_none(),
+            "a failed check stamps nothing"
         );
     }
 }

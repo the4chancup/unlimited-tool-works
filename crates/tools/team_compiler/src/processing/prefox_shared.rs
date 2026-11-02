@@ -640,7 +640,7 @@ mod tests {
                 materials,
             })
             .collect();
-        let size = parts.iter().map(|part| part.model.len()).sum();
+        let size: usize = parts.iter().map(|part| part.model.len()).sum();
         let budget = MemoryBudget::new(usize::MAX);
         let result = boots_files(&budget, parts);
         assert_eq!(budget.peak(), size);
