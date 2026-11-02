@@ -15441,3 +15441,12 @@ centres a dragged source on the pointer; the browser keeps the grab point, as th
 Plan: `plans/core/distribution.md` "Self-update" step 1, `plans/core/gui.md` ST-UPD-01;
 `plans/save_editor.md` the player list's paragraph, the lineup paragraph, SE-GUI-61, SE-GUI-64,
 SE-GUI-65.
+
+## 2026-11-03 — studio — The settings menu is 676 points
+Decision: the settings menu is 676 points wide, not the draft's 660: the common grid's label
+column, sized by its widest label "Check interval (minutes)", plus the 472-point path edit and
+Browse, measures about 674 points at egui's body font. The draft keeps 660.
+Why: as with the path edits (2026-10-27), the browser's font is narrower than egui's; a menu
+capped at 660 would shrink the path edit below Steam's PES 2019 path. The update check's rows
+first took it to 662 with the hours label, unrecorded until now.
+Plan: `plans/core/gui.md` "Settings menu", the path row bullet.

@@ -330,8 +330,8 @@ The settings menu is assembled from injected sections:
   so a member reads which folder is set without scrolling inside the box. In egui the edit is 472 points
   with its 8-point margins (a test measures the path's galley inside the drawn edit at the
   body font; the draft's box is 440, its 660-point body leaving no room for 472 beside the
-  label and Browse), and the menu is 660 points: the common grid's widest row (its label column, the edit and Browse) needs
-  656. A tool section's row sits indented under its header with that tool's own label
+  label and Browse), and the menu is 676 points: the common grid's widest row (its label column, the edit and Browse) needs
+  about 674 since the update check's "Check interval (minutes)" label. A tool section's row sits indented under its header with that tool's own label
   column, so a section whose labels are long widens the menu while it is open, rather than
   narrowing its path box below the path.
 - **The PES folder** is one main row for every version, `pes_folder_path`, whose `**` stands
