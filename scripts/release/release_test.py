@@ -24,6 +24,7 @@ from release import (
     find_7z,
     launcher_calls,
     leaked_prefixes,
+    leftover_debug,
     links_crt_dynamically,
     linux_symbols_entries,
     pack,
@@ -71,6 +72,7 @@ Section Headers:
   [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
   [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
   [14] .text             PROGBITS        0000000000003d60 002d60 a2c4e1 00  AX  0   0 16
+  [17] .debug_gdb_scripts PROGBITS       0000000000a2c4f0 a2c4f0 000022 01 AMS  0   0  1
   [28] .gnu_debuglink    PROGBITS        0000000000000000 a2c560 000014 00      0   0  4
   [29] .symtab           SYMTAB          0000000000000000 a2c580 1b2a30 18     30 500 8
   [30] .strtab           STRTAB          0000000000000000 bdefb0 15b7c0 00      0   0  1
@@ -464,8 +466,17 @@ class Pure(unittest.TestCase):
             },
         )
         stripped = elf_sections(READELF_STRIPPED)
-        self.assertEqual(stripped, {".text", ".gnu_debuglink", ".symtab", ".strtab"})
-        self.assertEqual([section for section in stripped if section.startswith(".debug_")], [])
+        self.assertEqual(
+            stripped, {".text", ".debug_gdb_scripts", ".gnu_debuglink", ".symtab", ".strtab"}
+        )
+
+    def test_leftover_debug_passes_the_section_a_strip_keeps(self) -> None:
+        # `.debug_gdb_scripts` is loaded (flag A), so `objcopy --strip-debug` keeps it: the
+        # second dry run's stripped binary held it and was refused. Debug info proper is not.
+        self.assertEqual(leftover_debug(elf_sections(READELF_STRIPPED)), [])
+        self.assertEqual(
+            leftover_debug(elf_sections(READELF_UNSTRIPPED)), [".debug_abbrev", ".debug_info"]
+        )
 
     def test_check_exe(self) -> None:
         # The check `release()` runs on its build and the candidate runs on the exe it
