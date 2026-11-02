@@ -10,17 +10,6 @@ names where the question came from so the context can be read there.
 
 ## Before the release
 
-- **Update now in the draft** (worklog 0.0.1f1g9; DECISIONS "The update offer waits in the
-  status bar"). The lead drafted the flow your Update now asks for: the download's progress
-  with Cancel, then "Update ready" with Restart now and Later (Restart now closes through the
-  unsaved-changes prompts and the new version opens with `Updated to v0.0.2 pre-alpha`), or
-  "Update failed" when the download does not match the release's checksum, changing nothing,
-  with Retry and Open release page. Your first look (2026-11-02) asked for Retry, a comma for
-  Update ready's semicolon, and the bar's text in the link blue, clickable as Details is; all
-  three are in. Renders: `.tmp/vet/update/r2_bar.png`, `r2_ready.png`, `r2_failed.png` (the
-  dialog and the progress as `un_dialog.png`, `un_progress.png`); in the draft, tick "Update
-  available" (and "Update now fails" for the failure), then click its text. Does it read
-  right now?
 - **The final pass over the built app's UI** (worklog 0.0.1f1c). Any change it asks for is
   drafted first, looked at in the drafts, then built.
   - **The candidate:** 0.0.1i, staged once f1g's loop ends (worklog 0.0.1f1g); its folder and

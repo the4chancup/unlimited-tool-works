@@ -548,6 +548,7 @@
   #status-middle { justify-content: center; flex: 1; }
   #status-right { justify-content: flex-end; }
   .cond { display: inline-flex; align-items: center; gap: 3px; }
+  .cond-link { color: var(--link); cursor: pointer; }
   .cond, .act, .notice-txt { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .notice-txt.success { color: var(--success); }
   .notice-txt.info { color: var(--link); }
@@ -559,6 +560,13 @@
      (8 under the title, 10 before the buttons, the larger margin winning): the browser's
      own 1em made them 12.5. */
   .window p { margin: 8px 0; }
+  /* The update's release notes: a framed box that scrolls past a few paragraphs, so a long
+     release keeps the dialog's buttons on screen. */
+  .window .update-notes { max-height: 240px; overflow-y: auto; padding: 0 8px;
+    border: 1px solid var(--stroke); border-radius: 2px; }
+  /* Update now's download: egui's ProgressBar, a filled bar in a track. */
+  .window .update-bar { height: 8px; width: 360px; background: var(--stroke); border-radius: 4px; }
+  .window .update-bar > div { height: 100%; background: var(--sel-fg); border-radius: 4px; }
   a { color: var(--link); }
   /* A path box holds a usual install path whole: Steam's
      C:\Program Files (x86)\Steam\steamapps\common\Pro Evolution Soccer 2019, 71
@@ -1274,9 +1282,13 @@ const CONDITION_DEFS = [
     text: () => "Data folder is read-only",
     tip: () => "Settings and the teams list cannot be saved, so changes last for this session only" },
   { id: "update_available", icon: "\uE20C", // download
-    text: () => "Update available: v0.2.0",
-    tip: () => "A newer release is out",
-    action: { label: "Install", does: "The updater dialog is not part of this draft" } },
+    text: () => "Update available: v" + UPDATE_SAMPLE.version,
+    tip: () => APP_NAME + " v" + UPDATE_SAMPLE.version + " " + UPDATE_SAMPLE.stage
+      + " is out. Details shows what it brings.",
+    // In the link blue and clickable as Details is, as the toolbar's unsaved
+    // changes label: seen without a dialog opening by itself.
+    link: true,
+    action: { label: "Details", run: () => openUpdate() } },
   { id: "pes_install_missing", icon: "\uE4E0", // warning
     text: () => "PES " + S.pesVersion + " not found in the PES folder",
     tip: () => "No PES " + S.pesVersion + " exe under " + resolvedPesFolder() },
@@ -1680,6 +1692,95 @@ function openAbout() {
   render(); // the link carries the open window's name
 }
 
+// The release the update check found (the GitHub release's tag and body).
+// sample wording: the notes stand for the release's CHANGELOG section.
+const UPDATE_SAMPLE = { version: "0.0.2", stage: "pre-alpha", notes: [
+  "**Save editor**",
+  "",
+  "- PES 2019 saves, and VGL27's AATF check on them.",
+  "- PgUp and PgDn step from team row to team row.",
+  "",
+  "**Team compiler**",
+  "",
+  "- Compiles a team's aesthetics into CPKs and the savefile patch, from the command line.",
+].join("\n") };
+// The update_available condition's Details: the release's notes, rendered as
+// the help renders Markdown, Update now, a link to its page, and the two answers.
+// No dialog opens by itself: an update decides nothing now, so it waits in the
+// status bar.
+function openUpdate() {
+  const v = UPDATE_SAMPLE.version;
+  window_("Update available",
+    h("div", {},
+      h("p", {}, APP_NAME + " v" + v + " " + UPDATE_SAMPLE.stage
+        + " is out. You have v0.0.1 pre-alpha."),
+      h("div", { class: "update-notes" }, md(UPDATE_SAMPLE.notes))),
+    [button("Update now", () => updateNow()),
+     button("Open release page", () => window_("Release page",
+        weak("Opens the release's page in the browser"),
+        [button("OK", () => openUpdate())], "update")),
+     button("Skip this version", () => {
+       S.settings.common.skipped_version = v;
+       S.conditions = S.conditions.filter(id => id !== "update_available");
+       saveSettings();
+       closeWindow();
+       render();
+     }),
+     button("Remind me later", closeWindow)], "update");
+  render();
+}
+
+// Update now (distribution.md "Self-update" steps 3, 4 and 6): the release's
+// archive downloads with its progress, is checked against the release's
+// checksum file and unpacked; the exe moves to old/ and the new one takes its
+// place, then a restart finishes it. sample wording; sample sizes. A failure
+// changes nothing and says why, with the release page as the way out.
+const UPDATE_MB = 11.2;
+let updateTimer = null;
+function updateNow() {
+  const v = UPDATE_SAMPLE.version;
+  let mb = 0;
+  const step = () => {
+    const pct = Math.round(100 * mb / UPDATE_MB);
+    window_("Updating to v" + v,
+      h("div", {},
+        h("p", {}, "Downloading v" + v + " " + UPDATE_SAMPLE.stage + "\u2026 "
+          + mb.toFixed(1) + " of " + UPDATE_MB.toFixed(1) + " MB"),
+        h("div", { class: "update-bar" }, h("div", { style: "width:" + pct + "%" }))),
+      [button("Cancel", () => { clearInterval(updateTimer); updateTimer = null; openUpdate(); })],
+      "update");
+  };
+  step();
+  updateTimer = setInterval(() => {
+    mb = Math.min(UPDATE_MB, mb + 0.8);
+    if (mb < UPDATE_MB) { step(); return; }
+    clearInterval(updateTimer); updateTimer = null;
+    if (S.updateFails) {
+      window_("Update failed",
+        h("p", {}, "The download of v" + v + " does not match the release's checksum, so"
+          + " nothing was changed. You can download it from the release page instead."),
+        [button("Retry", () => updateNow()),
+         button("Open release page", () => window_("Release page",
+            weak("Opens the release's page in the browser"),
+            [button("OK", closeWindow)], "update")),
+         button("Close", closeWindow)], "update");
+      return;
+    }
+    window_("Update ready",
+      h("p", {}, "v" + v + " " + UPDATE_SAMPLE.stage + " is installed. Restart to start using it,"
+        + " the version you are running now will stay in the old folder."),
+      [button("Restart now", () => window_("Restart",
+          weak("Closes the window, asking about unsaved changes first, and starts the new version"),
+          [button("OK", () => {
+            closeWindow();
+            S.conditions = S.conditions.filter(id => id !== "update_available");
+            publishNotice("Updated to v" + v + " " + UPDATE_SAMPLE.stage,
+              { label: "What's new", run: () => openHelp({ tool: "whats-new" }) }, "info");
+          })], "update")),
+       button("Later", closeWindow)], "update");
+  }, 120);
+}
+
 // ---- Help window (gui.md "Help window") ----
 // The help chapters (studio_core::help shapes): the four core chapters first,
 // then one per registered tool in sidebar order. sample wording: the bodies
@@ -1711,7 +1812,9 @@ const HELP = [
     { slug: "checking", title: "Checking for updates", body: [
       "The shell looks for a new release every `check_interval_hours` hours (24 by",
       "default); `check_for_updates` turns the check off. A newer version shows as",
-      "`Update available` in the status bar with an `Install` action.",
+      "`Update available` in the status bar; its `Details` shows the release's notes,",
+      "`Update now`, a link to its page, and `Skip this version`, which hides it until",
+      "the next one.",
       "",
       "Installing an update replaces the program and keeps the previous exe under",
       "`old/`."
@@ -2560,7 +2663,7 @@ const WALK = [
   ["ST-SET-01", "the gear: the common rows, then one section per tool with settings (none for the Export upgrader), the active tool's open"],
   ["ST-SET-02", "change Threads in the menu: it saves at once, the Team compiler stub's Threads line follows"],
   ["ST-SET-03", "Data folder unwritable plus a change: the value keeps for the session, the read-only warning shows in the bar"],
-  ["ST-BAR-01", "nothing switched on: the bar shows v0.1.0 alone"],
+  ["ST-BAR-01", "nothing switched on: the bar shows v0.0.1 pre-alpha alone"],
   ["ST-BAR-02", "Save editor busy: its progress sits in the right slot, gone while the Save editor is the view"],
   ["ST-BAR-03", "the Notice buttons: one with an action stays until clicked or dismissed, one without fades, a later one replaces it"],
   ["ST-BAR-04", "the Notice buttons in turn: the write's text is green, the update's link blue, the read-only's warning orange, all centred in the bar"],
@@ -2626,6 +2729,7 @@ function renderDraftControls() {
       button("Poll now", () => pollRunningPes())),
     grp("Status bar"),
     condCb("update_available", "Update available"),
+    cb("Update now fails", !!S.updateFails, v => S.updateFails = v),
     condCb("pes_install_missing", "PES install missing"),
     h("label", { class: "cb" }, "Save editor busy",
       combo([[null, "no"], ["counts", "3/10 · 00:45"], ["free", "00:45, no counts"]],
@@ -2639,7 +2743,7 @@ function renderDraftControls() {
     button("Notice with action", () => publishNotice("Compiled 48 teams",
       { label: "Open output", run: openOutputStub }, "success")),
     // gui.md "Status bar", "After an update": the first start of a new version.
-    button("First start after an update", () => publishNotice("Updated to v0.1.0",
+    button("First start after an update", () => publishNotice("Updated to v0.0.2 pre-alpha",
       { label: "What's new", run: () => openHelp({ tool: "whats-new" }) }, "info")),
     h("label", { class: "cb" }, "Notice timeout, s",
       h("input", { type: "number", id: "notice-timeout", value: S.noticeTimeoutS, min: 0, step: "any",
@@ -2922,7 +3026,7 @@ function renderCenter() {
 function renderStatus() {
   const left = document.getElementById("status-left");
   left.innerHTML = "";
-  left.append(h("span", { class: "weak small" }, "v0.1.0"));
+  left.append(h("span", { class: "weak small" }, "v0.0.1 pre-alpha"));
   // A frameless button in the version's own small weak text, so it reads as
   // part of the bar: the window back to its default size, centred, a
   // maximized one restored first. Absent while the window is at that size.
@@ -2934,9 +3038,9 @@ function renderStatus() {
   showReset();
   for (const c of CONDITION_DEFS) if (S.conditions.includes(c.id))
     left.append(h("span", { class: "cond", title: c.tip() },
-      h("span", { class: "icon" }, c.icon), h("span", {}, c.text()),
-      c.action && button(c.action.label, () =>
-        window_(c.action.label, weak(c.action.does), [button("OK", closeWindow)]))));
+      h("span", { class: "icon" }, c.icon),
+      c.link ? h("span", { class: "cond-link", onclick: c.action.run }, c.text()) : h("span", {}, c.text()),
+      c.action && button(c.action.label, c.action.run)));
   const mid = document.getElementById("status-middle");
   mid.innerHTML = "";
   const n = S.notice;
@@ -3609,6 +3713,7 @@ if (TOOLS.some(t => t.id === hashTool && t.registered)) {
   take("win", v => {
     if (v === "settings") afterLink.push(() => openSettings());
     else if (v === "about") afterLink.push(() => openAbout());
+    else if (v === "update") afterLink.push(() => openUpdate());
     else console.warn("link: win=" + v);
   });
   // The app's unbuilt sections link here with demo=1.
