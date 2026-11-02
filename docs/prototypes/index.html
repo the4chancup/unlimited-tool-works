@@ -1708,6 +1708,9 @@ const UPDATE_SAMPLE = { version: "0.0.2", stage: "pre-alpha", notes: [
 // the help renders Markdown, Update now, a link to its page, and the two answers.
 // No dialog opens by itself: an update decides nothing now, so it waits in the
 // status bar.
+// Update now arrives in 0.0.2 (distribution.md "Self-update"): 0.0.1 draws it
+// disabled, and the release page is the way to the new version.
+const UPDATE_NOW_LATER = "The auto-updater comes with 0.0.2";
 function openUpdate() {
   const v = UPDATE_SAMPLE.version;
   window_("Update available",
@@ -1715,7 +1718,7 @@ function openUpdate() {
       h("p", {}, APP_NAME + " v" + v + " " + UPDATE_SAMPLE.stage
         + " is out. You have v0.0.1 pre-alpha."),
       h("div", { class: "update-notes" }, md(UPDATE_SAMPLE.notes))),
-    [button("Update now", () => updateNow()),
+    [button("Update now", null, { disabled: true, title: UPDATE_NOW_LATER }),
      button("Open release page", () => window_("Release page",
         weak("Opens the release's page in the browser"),
         [button("OK", () => openUpdate())], "update")),
@@ -1730,7 +1733,8 @@ function openUpdate() {
   render();
 }
 
-// Update now (distribution.md "Self-update" steps 3, 4 and 6): the release's
+// Update now, 0.0.2's and reached from no button in 0.0.1 (distribution.md
+// "Self-update" steps 3, 4 and 6): the release's
 // archive downloads with its progress, is checked against the release's
 // checksum file and unpacked; the exe moves to old/ and the new one takes its
 // place, then a restart finishes it. sample wording; sample sizes. A failure
