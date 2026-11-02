@@ -7029,6 +7029,11 @@ briefs, review loops, gates and mutation runs as for any step.
       the AATF lists' hyphens"), and Live AATF's `All clean` line with Copy to clipboard never
       greyed, copying what the panel shows (DECISIONS "Live AATF lists \"All clean\""), drafted
       first → verify: headless, red first; the copy with suggestions hidden holds none of them
+    - [ ] f1g11 the player list's drag outlines the row it would land on (the maintainer,
+      2026-11-02; DECISIONS "The player list outlines the row a drag would move him to"),
+      as `team_widgets` `lineup_row` does (`dnd_hover_payload`, a 1-point selection stroke
+      outside the row), in `save_editor` `view/player_list.rs` `player_row`; drafted
+      (`playerRow`) → verify: SE-GUI-64 headless, red first
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. The maintainer, 2026-11-02: the
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);

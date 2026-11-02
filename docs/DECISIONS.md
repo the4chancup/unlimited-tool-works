@@ -15371,3 +15371,11 @@ Linux packing on top of main, which makes main's unpushed commits public with it
 Why: a branch from the last pushed commit would test the release recipe as last pushed, not the
 one the workflow runs; main's commits ship with 0.0.1 anyway.
 Plan: `plans/core/distribution.md` "Release builds in CI".
+
+## 2026-11-02 — save_editor — The player list outlines the row a drag would move him to
+Decision (the maintainer): a player row's held drag outlines the row it would land on, in the
+selection colour, as the lineup lists do; his own row and another team's row get no outline,
+the rule the lineup lists' outline follows (a drop that writes nothing shows none).
+Why: without it a member cannot see which slot a drop takes before releasing it.
+Plan: `plans/save_editor.md` "Editing UI", the Player list bullet; SE-GUI-64; the draft's
+`playerRow`.

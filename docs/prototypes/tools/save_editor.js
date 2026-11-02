@@ -4318,6 +4318,8 @@ function teamRow(team) {
     dirtyTeam(team) ? h("span", { class: "dot", title: "Unsaved changes" }, "●") : null,
     teamMark(team));
 }
+// The player row a drag started on (team and slot), while it is held.
+let playerDrag = null;
 function playerRow(team, p) {
   const r = h("div", { class: "prow" + (S.sel && S.sel.team === team.id && S.sel.slot === p.slot ? " on" : ""),
       draggable: "true", "data-slot": p.slot, "data-team": team.id,
@@ -4332,8 +4334,16 @@ function playerRow(team, p) {
   r.addEventListener("dragstart", e => {
     e.dataTransfer.setData("text/plain", team.id + ":" + p.slot);
     e.dataTransfer.effectAllowed = "move";
+    playerDrag = { team: team.id, slot: p.slot };
   });
-  r.addEventListener("dragover", e => { e.preventDefault(); r.classList.add("dragover"); });
+  r.addEventListener("dragend", () => { playerDrag = null; });
+  // The row a drop would move the dragged player to is outlined (egui's
+  // dnd_hover_payload); his own row and another team's, where the drop
+  // changes nothing, are not.
+  r.addEventListener("dragover", e => {
+    e.preventDefault();
+    if (playerDrag && playerDrag.team === team.id && playerDrag.slot !== p.slot) r.classList.add("dragover");
+  });
   r.addEventListener("dragleave", () => r.classList.remove("dragover"));
   r.addEventListener("drop", e => {
     e.preventDefault(); r.classList.remove("dragover");
