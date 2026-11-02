@@ -95,7 +95,11 @@ and cargo-mutants files the mutant as unviable (273 of 274 in 23 s at 4.y-conv's
 were removed (2026-10-11), when the split came back; the switch stays for the next time. The
 maintainer moved every mutation run to the VPS again on 2026-10-25 (the switch on), and the
 lead's gates with them (`just gates-remote`); tests and gates came back the same evening, and
-mutation runs split again from 2026-10-26 (the switch off).
+mutation runs split again from 2026-10-26 (the switch off). On 2026-11-02 the maintainer moved
+every new job to the VPS until further notice ("any new jobs must be run on bonfire only"):
+the switch is on, the lead's checks run through `just remote` and `just gates-remote`, and a
+sidekick's `cargo check`, test and clippy runs all go through `just remote`; only `cargo fmt`
+stays local.
 `REMOTE_ONLY = True` in `scripts/mutation/mutants.py` makes
 `just mutants` and `just mutants-diff` run every mutant on the VPS as one whole run (no
 local half, no split threshold; the last local `mutants.out` set aside as
