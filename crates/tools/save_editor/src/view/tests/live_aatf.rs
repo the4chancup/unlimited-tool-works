@@ -250,6 +250,53 @@ fn a_clean_team_lists_all_clean_above_any_suggestions() {
     );
 }
 
+/// `All clean` is the word for a clean team alone: a team with violations
+/// does not read it.
+// SE-GUI-63
+#[test]
+fn a_team_with_issues_lists_no_all_clean() {
+    let (mut view, mut window) = open_734_with("live_aatf_no_clean", &[73401, 73404], 183);
+    view.live_aatf = true;
+    let nodes = live_checked(&mut window, &mut view, &[734]);
+    assert!(
+        nodes
+            .iter()
+            .any(|node| node.value() == Some("Team 734 /lit/")),
+        "premise: the team has rows"
+    );
+    assert!(
+        !nodes.iter().any(|node| node.value() == Some("All clean")),
+        "no All clean for a team with issues"
+    );
+}
+
+/// A team whose check failed reads no `All clean` either: its message
+/// stands alone.
+// SE-GUI-63
+#[test]
+fn a_failed_check_lists_no_all_clean() {
+    let path = fixture(PesVersion::Pes17, "live_aatf_no_clean_failed");
+    let mut view = SaveView::new();
+    view.open(&path);
+    pick_imported(&mut view, "throw19.4ccrules", &throw19());
+    view.team = TeamChoice::Team(743);
+    view.selected = Some(Selection::Player(743, 0));
+    view.live_aatf = true;
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    let nodes = live_checked(&mut window, &mut view, &[743]);
+    assert!(
+        nodes.iter().any(|node| {
+            node.value()
+                .is_some_and(|v| v.starts_with("The AATF check failed for team 743 "))
+        }),
+        "premise: the check failed"
+    );
+    assert!(
+        !nodes.iter().any(|node| node.value() == Some("All clean")),
+        "no All clean for a failed check"
+    );
+}
+
 /// The toggle is a setting: clicking it writes `live_aatf`, the tool's
 /// other keys untouched, and a fresh `Tool` on the same settings draws the
 /// dock on its first view frame; toggled back, the dock is gone.
@@ -2188,6 +2235,16 @@ fn the_docks_close_button_turns_live_aatf_off() {
     assert!(
         (middle(pop_out) - middle(close)).abs() <= 0.5,
         "both on one centre line: {pop_out:?}, {close:?}"
+    );
+    // The cross centred in a `slot`-wide slot one item spacing right of
+    // the pop-out icon's (the icon button's rect is the whole slot): the
+    // dock's pair spaced as the window's.
+    let slot = pop_out.x1 - pop_out.x0;
+    let close_slot_left = (close.x0 + close.x1) / 2.0 - slot / 2.0;
+    let item_spacing = f64::from(window.ctx.global_style().spacing.item_spacing.x);
+    assert!(
+        (close_slot_left - pop_out.x1 - item_spacing).abs() <= 0.01,
+        "the pop-out's slot one item spacing left of the cross's: {pop_out:?}, {close:?}"
     );
     let dock_gap = close.x0 - pop_out.x1;
     let dock_cross = segments_inside(&shapes, close);
