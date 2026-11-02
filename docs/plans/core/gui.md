@@ -1319,6 +1319,33 @@ ST-BAR-08   GIVEN the selector at PES 19 and a notice whose action is
                  auto-switch is spent; GIVEN a stub tool reporting a version-change blocker
                  THEN the action's button is disabled, its hover reads "<label>: <reason>",
                  and a click leaves the setting at PES 19 and the notice in the bar
+ST-UPD-01   GIVEN `check_for_updates` on, `last_update_check` older than the interval, and a
+                 fake releases list holding `v0.0.1`, `v0.0.2` (a pre-release) and `nightly`
+            WHEN the shell starts
+            THEN one background check runs, the first frame not waiting on it, and the status
+                 bar shows `Update available: v0.0.2` in the link blue with a Details button;
+                 `last_update_check` is stored; GIVEN the check off, or the last check inside
+                 the interval THEN no check runs; GIVEN `skipped_version = "0.0.2"` THEN no
+                 offer; GIVEN the list's highest `v0.0.1` THEN no offer; GIVEN the fetch
+                 failing THEN no offer, one log line
+ST-UPD-02   GIVEN the offer shown
+            WHEN its text is clicked, or Details
+            THEN a dialog says "Unlimited Tool Works v0.0.2 pre-alpha is out. You have v0.0.1
+                 pre-alpha.", the release's notes rendered as Markdown, and Update now, Open
+                 release page, Skip this version, Remind me later; WHEN Skip this version THEN
+                 `skipped_version` is `0.0.2` in the settings file and the offer is gone; WHEN
+                 Remind me later THEN the dialog closes and the offer stays
+ST-UPD-03   GIVEN the offer, a fake release whose archive and `SHA256SUMS.txt` match, and a
+                 bundle folder in a temporary directory
+            WHEN Update now is clicked
+            THEN the dialog shows the download's progress, then `Update ready`; the old exe is
+                 in `old/`, the new one and every other bundle file in place, `data/`
+                 untouched; GIVEN the checksum not matching THEN `Update failed` with Retry,
+                 Open release page and Close, and every file as it was; WHEN Retry THEN the
+                 download starts again
+ST-UPD-04  manual  GIVEN the built exe of `v0.0.1-rc.1` (CI's pre-release), on Windows and in WSL
+            WHEN Update now and then Restart now are clicked
+            THEN `v0.0.1-rc.2` is installed and opens on `Updated to v0.0.1-rc.2`
 ST-TTL-01   GIVEN a tool reporting a ToolActivity (label "Team compiler", 12 of 48 done, 72 s
                  elapsed)
             WHEN a frame is drawn
