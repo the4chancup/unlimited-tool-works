@@ -577,7 +577,12 @@ all side by side.
   presses, a stepper's clicks) merges into one entry: ten notches taking a stat from 60 to 70
   undo in one press. The run ends at an edit of another value, at Undo or Redo, or after a
   second with no step (a wheel spun in one go stays one entry; a value nudged again a while
-  later is a new one).
+  later is a new one), and when the keyboard moves to another control, so a typed value and
+  the click after it stay two entries. A run's value is what an entry's merge already keys
+  on, the widget call that made the step, on one player or team: the Tactics tab's settings
+  panel reports as one call, so a run there spans its sliders and toggles, which a member
+  turning two of them within a second undoes together. Edits that are one step by
+  themselves (Copy stats, an import, a dialog's Apply) never join a run.
 - **Unsaved changes** are the difference from the file as opened or last saved, not the undo
   stack's length: undoing back to the saved state clears the dot. A player's dot covers his
   entry and his roster slot's shirt number.

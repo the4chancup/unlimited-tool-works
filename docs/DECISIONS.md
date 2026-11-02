@@ -15151,3 +15151,17 @@ included by roster slot; "two editors" means two UTW.exe processes, each with it
 Why: the cut could not happen the same day; the items are each a small, self-contained change
 a member notices, cheaper to ship now than in a second release days later.
 Plan: WORKLOG 0.0.1f1f.
+
+## 2026-11-02 — save_editor — A run of undo steps is keyed by the widget call, ended by a focus move
+Decision (lead): a run of steps to one value (8.42) merges a push into the newest entry when it
+has the open entry's merge key (the widget call), names a player or team already in it, and
+comes at most a second after the run's last step; Undo, Redo, a sealed batch (Copy stats, an
+import, a dialog's Apply) and the keyboard moving to another control end it. The Tactics tab's
+settings panel is one widget call, so a run there spans its sliders and toggles. The suite's
+wheel rule (one undo step per notch) yields to an editor's run, and the Ruleset editor's plan
+takes the same run rule, built after the cut.
+Why: the merge key and the entry are what the undo stack already knows; telling one slider from
+another inside a widget call needs a field-level diff the stack does not keep. Ending a run at a
+focus move keeps a typed value and the click after it two steps, as the gesture rule says.
+Plan: `plans/save_editor.md`, the undo bullet; `plans/core/gui.md` the wheel paragraph and
+ST-WHEEL-05; `plans/ruleset_editor.md` the undo paragraph.

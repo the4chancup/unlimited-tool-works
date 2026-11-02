@@ -2919,8 +2919,9 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
     positions' rating cells and labels, the tactics' radios, the list rows that re-key the
     check) keep the stall. One rule in `edit_settled` instead: a focus held by a widget with
     no text cursor counts as settled, so only a text field or a value being typed waits →
-    verify: Tab to a rating cell, Space, then the next frame seals (one undo entry per
-    press) and Live AATF checks without another key; typing in a field still waits
+    verify: Tab to a rating cell, Space, then the next frame seals (each press its own
+    gesture, a second apart its own entry: 8.42's run) and Live AATF checks without another
+    key; typing in a field still waits
   - [ ] 8.41 for 0.0.1 (pulled in with f1f, 2026-11-02), first queued after 0.0.1 (the maintainer, 2026-11-01): the shirt name and the team's short name
     take upper case only. A letter typed into either field is written upper-case whatever the
     Caps Lock or Shift state (the game shows them in capitals; a lower-case letter typed today
@@ -6914,6 +6915,10 @@ briefs, review loops, gates and mutation runs as for any step.
       through Direct3D 12"; `studio_core` `shell/window_size` `native_options`) → verify: a
       unit test of the backends chosen with and without the variable; the notebook's
       `run_gpu_check.bat` default start opens the window on the new build
+    - review of f1e1-4 (branch `f1e`, `wt-f1d/.tmp/f1d_rulings.md`): f1e3 Astra 1 accepted
+      (r2, the PES 15 and PES 21 team edit flags), r1 the arrow gate's popups; f1e4 mutants 6
+      missed, 1 accepted, 2 equivalent, 3 Windows-only, reworked (`544bafa7`); `mutants-diff
+      96154896` over f1e2-3: 23 mutants, 21 caught, 2 unviable, none missed
   - [ ] f1f (the maintainer, 2026-11-02: the cut moves a day; DECISIONS "0.0.1 takes a second
     batch of small changes before its cut"), each item plan sentence and draft first where it
     changes what a member sees, on a branch from `f1e` once 0.0.1h's items land:
@@ -6993,7 +6998,10 @@ briefs, review loops, gates and mutation runs as for any step.
     no caller outside its tests) would meet f1e4's crashing Vulkan driver where the wiring
     lands: its plan's guard is written (`plans/libs/README.md` "First-release desktop GPU
     BC7", the bullet "A driver that crashes is found in a child process"; the maintainer,
-    2026-11-02), built with the wiring after 0.1.0, nothing to do here
+    2026-11-02), built with the wiring after 0.1.0, nothing to do here; (5) the Ruleset
+    editor's undo merges a run of steps to one value as 8.42 does the Save editor's
+    (`plans/ruleset_editor.md` the undo paragraph; DECISIONS "A run of undo steps is keyed by
+    the widget call") → verify: ten wheel notches on a tier's count, one Undo
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
