@@ -47,7 +47,9 @@ first-class target the Fox version the cup moves to around April 2027 ("Target v
 **0.0.1 candidate** 0.0.1h (2026-11-02, branch `release/0.0.1-candidate` at `92d1772b`,
 merged into main): 0.0.1g plus f1e (the maintainer's f1c changes) and f1f (the second batch:
 Ctrl+C/Ctrl+V, undo runs, the page keys, two copies at once), each reviewed and
-mutation-measured; it waits for the maintainer's last look (0.0.1f1c), then the cut (f2).
+mutation-measured; full gates green on main (`84dd26bd`); the lead's built-app look passed
+(checks 1-3, check 1 in game, `.tmp/release_0_0_1/f1c_look/results.md`). It waits for the
+maintainer's last look (0.0.1f1c), then the cut (f2).
 **Blocked on:** nothing.
 
 **Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
