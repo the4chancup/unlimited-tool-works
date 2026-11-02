@@ -6905,6 +6905,15 @@ briefs, review loops, gates and mutation runs as for any step.
       and Gameplan"; drafted in `save_editor.js` `ixWrite`) → verify: headless, the boxes'
       labels; a Stats-only import leaves the motions, colours and kits as the target's and an
       Aesthetics-only import writes them; Copy stats leaves the free-kick motion
+    - [ ] f1e4 (the clean-machine check, 2026-11-02): on the maintainer's notebook (Intel HD
+      Graphics 620, driver 31.0.101.2137) every start crashes in the Vulkan driver
+      (`igvk64.dll`, during wgpu's `Device::new`, five dumps alike; `.tmp/lead/clean_check/`),
+      where `WGPU_BACKEND=dx12` and `gl` start three times of three. On Windows the window asks
+      wgpu for Direct3D 12 and OpenGL, not Vulkan; `WGPU_BACKEND` still overrides
+      (`plans/core/gui.md` "The graphics backend"; DECISIONS "On Windows the window draws
+      through Direct3D 12"; `studio_core` `shell/window_size` `native_options`) → verify: a
+      unit test of the backends chosen with and without the variable; the notebook's
+      `run_gpu_check.bat` default start opens the window on the new build
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. The maintainer, 2026-11-02: the
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);

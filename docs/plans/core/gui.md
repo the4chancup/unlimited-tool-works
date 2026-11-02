@@ -42,6 +42,16 @@ The window's opening size and fit, and its scaling under the design width, are b
 `spec/core/gui.md` "Shell layout", the paragraphs "The window's size" and "Scaling with the
 width".
 
+**The graphics backend.** On Windows the window draws through Direct3D 12, with OpenGL as the
+fallback where it is missing; Vulkan is not asked for. eframe's wgpu would try Vulkan first, and
+a driver whose Vulkan crashes takes the program down before the window shows, beyond any
+fallback: Intel's HD Graphics 620 driver (31.0.101.2137) faults in `igvk64.dll` while wgpu
+creates its first descriptor pool, on every start (0.0.1's clean-machine check, 2026-11-02),
+where Direct3D 12 and OpenGL start on the same laptop every time. Direct3D 12 is the
+interface Windows 10 and 11 graphics drivers are built and tested against first. The
+`WGPU_BACKEND` variable still picks one (`vulkan`, `dx12`, `gl`), for a member asked to try
+another. Elsewhere the backends stay wgpu's defaults.
+
 **Window size classes.** The main tools share one window size: switching between them never
 resizes the window. A special tool, one whose use calls for another size, declares its own
 (`StudioTool::window_size`, `None` for the main tools): today only the Music player, compact so
