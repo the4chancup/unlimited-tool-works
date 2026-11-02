@@ -6957,7 +6957,11 @@ briefs, review loops, gates and mutation runs as for any step.
     rounds and get Astra's too); (2) the exe's size crate by crate, `cargo bloat
     --release -p studio --crates` on the release's commit, into `spec/core/distribution.md`
     "Size budget"; (3) l2's other half, ST-RUN-04's `team-compiler check` from a terminal
-    printing there, on the release bundle (the Team compiler is outside 0.0.1)
+    printing there, on the release bundle (the Team compiler is outside 0.0.1); (4) before
+    0.0.2: the Team compiler's GPU DDS encoder asks wgpu for Vulkan or Metal alone
+    (`dds_convert` `gpu.rs` `start(VULKAN | METAL)`), so on a laptop like the clean-machine
+    check's (f1e4: its Vulkan driver crashes in wgpu's device creation) a compile would crash
+    the same way: diagnose there first (a compile on that notebook), then plan
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
