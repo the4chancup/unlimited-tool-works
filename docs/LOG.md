@@ -3052,3 +3052,5 @@ worklog passed 7,000 lines.
   .gitattributes asks fails the gates (ten CRLF copies had built up from Python's text-mode writes; the maintainer).
 - 2026-11-02 — 0.0.1f1f done: Ctrl+C/Ctrl+V on rows and the Tactics selectors, undo runs, Tab + Space settling, the
   page keys, one-step arrows, two copies at once, the captain's choice card; candidate fast-forwarded to `92d1772b`.
+- 2026-11-02 — 0.0.1h's built-app look: checks 1-3 pass (check 1 in PES 2017), Ctrl+C/V and undo runs as
+  planned; Undo dead while a button holds the keyboard goes to the maintainer as P50.

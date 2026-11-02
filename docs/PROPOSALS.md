@@ -83,3 +83,18 @@ the tactics, not in his own record.
 Adds: that row says `Click to show him on the team's pitch` (or the like) instead, so the
 jump to the team view is expected. Costs: a second tooltip constant in `team_widgets`
 `violations.rs`, chosen by the row's rule, and its line in the draft and SE-GUI-30.
+
+## P50 — Undo and the other shortcuts work while a button holds the keyboard
+
+From the lead's built-app look at candidate 0.0.1h (2026-11-02). A member who reaches a
+control with Tab and presses Space (a rating cell, a checkbox, a radio) leaves the keyboard on
+it. Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z, Ctrl+F, Ctrl+I, Ctrl+B, Ctrl+O and the version keys then do
+nothing until he presses Escape or clicks elsewhere. The toolbar holds them off while any
+widget has the keyboard, for a text field's own undo. Ctrl+C and Ctrl+V are held off only by
+a text field, so a focused button already lets them through, and Tab + Space settling (8.40)
+makes this path more common: the Live AATF row appears, and Ctrl+Z does not take it back.
+
+Adds: those shortcuts held off only while a text field (or a number being typed) holds the
+keyboard, the rule Ctrl+C and Ctrl+V already follow. Costs: one condition in the save
+editor's toolbar (`text_edit_focused` in place of `egui_wants_keyboard_input` for those
+keys), and a test with a Tab-focused rating cell; nothing for a member to learn.
