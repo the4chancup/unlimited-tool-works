@@ -6999,11 +6999,20 @@ briefs, review loops, gates and mutation runs as for any step.
       `codegen-units = 1` declined (-2.64 MiB measured); egui's `default_fonts` kept for good
       (DECISIONS "egui's default fonts stay": Ubuntu-Light shares one feature with Hack and the
       emoji fonts). Closed 2026-11-02 with no change taken
-    - [ ] f1g7 CI for GitHub releases, Windows and Linux (f4, pulled in): the workflow
-      written by the lead (DECISIONS "0.0.1 is built by CI"): `v<version>` builds the Windows
-      `.7z` and the Linux `.tar.gz` (Ubuntu 22.04) into a draft release, the release's checks on
-      CI's exe; a dry run on `ci/release-dry-run` by hand → verify: the dry run's artifacts pass
-      the checks, the Linux one starts in WSLg
+    - [ ] f1g7 CI for GitHub releases, Windows and Linux (f4, pulled in; DECISIONS "0.0.1 is
+      built by CI", "How CI's release workflow builds, checks and keeps the bundles"):
+      - [x] f1g7a the design: `plans/core/distribution.md` "Release builds in CI" and the
+        Linux bundle's paragraph. Done 2026-11-02
+      - [ ] f1g7b `scripts/release/release.py` on Linux: the `.tar.gz` (`tarfile`, `0755` for
+        `utw`, owner 0, the listing compared), the Linux notices' target, the remap flags'
+        Linux key, the readme's Linux line; `release_test.py` for the new helpers (SWE-2
+        sidekick) → verify: `release_test.py` red first; `just release 0.0.1` still packs
+        the Windows bundle here, its listing unchanged
+      - [ ] f1g7c `.github/workflows/release.yml`, written by the lead: the two jobs, the
+        draft release with `SHA256SUMS.txt`, the dry run's artifacts → verify: a push to
+        `ci/release-dry-run` builds both bundles, each passing the recipe's checks
+      - [ ] f1g7d the dry run's bundles looked at: the Windows exe starts here, the Linux
+        binary in WSLg (Ubuntu 22.04) → verify: both windows open and close cleanly
     - [x] f1g8 whether 0.0.2-poc fits in 0.0.1: cancelled by the maintainer 2026-11-02 ("we've
       put enough on the plate already"); 0.0.2-poc stays the first work after the cut
     - [ ] f1g9 the update check with Update now (DECISIONS "The update check ships in 0.0.1"
@@ -7036,7 +7045,7 @@ briefs, review loops, gates and mutation runs as for any step.
     `side/shell`, `side/shell2`, `spec-5-6`, six `worktree-agent-*`) listed with what each
     holds, for the maintainer's ruling; (5) from then on, a slice's worktree and branch go
     once it is merged and its review loop has ended, its `.tmp/` copied first
-  - [ ] f4 after the cut, after f3 (the maintainer, 2026-11-01; DECISIONS "CI release builds
+  - [x] f4 superseded 2026-11-02 by f1g7 (DECISIONS "0.0.1 is built by CI"). Was: after the cut, after f3 (the maintainer, 2026-11-01; DECISIONS "CI release builds
     right after 0.0.1's cut, Windows first"; `plans/core/development_plan.md` Phase 16's
     release-bundling bullet): CI release builds, sliced:
     - [ ] f4a the design in `plans/core/distribution.md`: the tag trigger, the draft release's

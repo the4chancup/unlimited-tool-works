@@ -77,6 +77,52 @@ the same with no paths to name, but it is unstable in cargo 1.98. The `.pdb` kee
 (the linker's command line, the object files'): it stays with the maintainer. Its source paths
 are remapped like the exe's, which `symbolize_log.py` prints as they are.
 
+**Linux's bundle** holds the same files with `utw` for `UTW.exe` (the name its `--help` usage
+line prints), packed as `unlimited-tool-works-<version>-linux.tar.gz`, not a `.7z`: a tar
+keeps the binary's executable bit, which `.7z` extraction tools often drop, and a Linux member
+unpacks a `.tar.gz` with what the system already has. `release.py` packs it on Linux with
+Python's `tarfile` (the binary `0755`, every other file `0644`, each entry owned by uid and gid
+0 with no user or group name, so the archive names nobody), lists it back and compares the
+listing with the staged set, as the `.7z` path does. Its notices come from the Linux binary's
+own dependency graph (`cargo-about` run for `x86_64-unknown-linux-gnu`), since the two
+platforms link different crates. The remap flags go on `target.x86_64-unknown-linux-gnu.rustflags`,
+and the static C runtime check is Windows' alone (a Linux binary links the system's glibc). It
+keeps its line tables inside the binary, which Linux's backtraces read at run time, so its log
+names each frame's file and line by itself and no symbols archive is packed. The readme is
+the one file, with a Linux line beside its `UTW.exe`. The binary is built on Ubuntu 22.04 (glibc 2.35),
+the oldest GitHub runner image, so it runs on that release and any newer distribution.
+
+### Release builds in CI
+
+A release is built by GitHub Actions, never on a developer's machine: the binary the
+maintainer checks before publishing is then the one members download (a local build and CI's
+differ at least in the linker's timestamps and the toolchain's machine). The workflow,
+`.github/workflows/release.yml`, runs `release.py` on `windows-latest` and on `ubuntu-22.04`,
+each job checking its own binary with the recipe's checks (no build-machine path in it, the
+static C runtime on Windows, the listing equal to the staged set), then:
+
+- **A tag `v<version>`** (a semver: `v0.0.1`, `v0.0.1-rc.1`) whose version is the workspace's
+  creates a **draft** GitHub release named for the tag, marked pre-release when the version has
+  a pre-release part, holding three assets: the Windows `.7z`, the Linux `.tar.gz` and
+  `SHA256SUMS.txt`, both archives' `sha256sum` lines, the file the updater checks a download
+  against ("Self-update" step 3). A draft is visible to the repository's maintainers alone; the
+  maintainer downloads the Windows asset, gives it the look before the cut, writes the notes
+  (the release's body, the text the updater's dialog shows; from `CHANGELOG.md`'s section once
+  the file exists, after 0.0.1) and publishes it.
+- **A push to `ci/release-dry-run`**, or a run started by hand once the workflow is on the
+  default branch (GitHub offers its **Run workflow** button only for a workflow there), builds
+  and checks the same bundles and uploads them as the run's artifacts only: no tag, no release.
+  That is how the workflow itself is tested before a tag relies on it.
+
+The Windows job also uploads the symbols archive (`-symbols.7z`, the exe and its `.pdb`) as a
+run artifact, never a release asset: it stays with the maintainer, who keeps a copy beside the
+release's other files, since artifacts expire after 90 days and `symbolize_log.py` needs it for
+as long as the release is in use. The test pre-releases (`v0.0.1-rc.1`, `rc.2`, built from a
+branch whose workspace version is bumped to theirs) are published as pre-releases so the
+updater can see them (a draft is invisible to its unauthenticated request); semver orders them
+below `0.0.1`, which never offers them. The Linux bundle's look runs in WSLg (Ubuntu 22.04 on the
+maintainer's PC) before a release is published.
+
 The user extracts the archive anywhere and runs the binary — or, for the common case, drops an
 export into `exports/` (shipped empty beside the binary) and double-clicks
 `quick_compile.bat`, which is the whole Red workflow carried over. Where the suite's persisted data goes

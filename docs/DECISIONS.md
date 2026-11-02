@@ -15335,3 +15335,22 @@ failed`, nothing changed, with Retry, Open release page and Close.
 Why: the offer has to catch the eye without a dialog opening by itself; a failed download is most
 often a passing network fault, which Retry answers in place.
 Plan: `plans/core/distribution.md` "Self-update"; the draft's `openUpdate`, `updateNow`.
+
+## 2026-11-02 — release — How CI's release workflow builds, checks and keeps the bundles
+Decision (the lead; the maintainer's rulings left these open): a tag `v<version>` matching the
+workspace's version makes a draft release, a pre-release when the version has a pre-release
+part, with the Windows `.7z`, the Linux `.tar.gz` and one `SHA256SUMS.txt` for both (the file
+the updater reads); the per-archive `.sha256` stays the local recipe's. The dry run starts by a
+push to `ci/release-dry-run`, not the **Run workflow** button the maintainer named: GitHub offers
+it only for a workflow on the default branch, and pushing main is not allowed. The Windows
+symbols archive is a run artifact the maintainer keeps a copy of (artifacts expire after 90
+days), never a release asset. Linux packs no symbols archive: its binary keeps its line tables,
+which its backtraces read at run time. 0.0.1's release notes are written by the maintainer in
+the draft (`CHANGELOG.md` starts after the first release). The test pre-releases are built from
+a branch whose workspace version is bumped to theirs, since the exe compares its own
+`CARGO_PKG_VERSION`.
+Why: the updater needs one checksum file per release and an exe that knows its own version; a
+`.pdb` names the runner's paths and is useless to members; the button would need main pushed
+before the workflow was tested.
+Plan: `plans/core/distribution.md` "Release builds in CI", "Distribution: portable .7z
+bundle"; worklog 0.0.1f1g7.
