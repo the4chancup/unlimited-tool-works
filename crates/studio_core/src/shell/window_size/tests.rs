@@ -537,6 +537,79 @@ fn both_openings_carry_the_app_id() {
     }
 }
 
+// On Windows the instance asks for Direct3D 12 and OpenGL alone: a driver
+// whose Vulkan faults crashes while wgpu creates its device, before the
+// window shows, where no fallback to another backend can run.
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+fn on_windows_the_backends_are_d3d12_and_opengl_never_vulkan() {
+    let backends = window_backends(None, true);
+    assert_eq!(
+        backends,
+        eframe::wgpu::Backends::DX12 | eframe::wgpu::Backends::GL
+    );
+    assert!(!backends.contains(eframe::wgpu::Backends::VULKAN));
+}
+
+// The off-Windows default; the setup test compares against `window_backends`, so this pins it.
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+fn off_windows_the_backends_are_egui_wgpus_default() {
+    assert_eq!(
+        window_backends(None, false),
+        eframe::wgpu::Backends::PRIMARY | eframe::wgpu::Backends::GL
+    );
+}
+
+// A backend the `WGPU_BACKEND` variable names still wins, on every platform.
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+fn the_backend_variable_keeps_its_pick() {
+    for windows in [true, false] {
+        assert_eq!(
+            window_backends(Some(eframe::wgpu::Backends::VULKAN), windows),
+            eframe::wgpu::Backends::VULKAN
+        );
+    }
+}
+
+// Both openings set the same wgpu setup: a new instance asked only for
+// `window_backends`'s pick of the `WGPU_BACKEND` variable.
+#[cfg(not(target_arch = "wasm32"))]
+#[test]
+fn both_openings_carry_the_picked_backends() {
+    #[cfg(target_os = "windows")]
+    assert!(
+        std::env::var_os("WGPU_BACKEND").is_none(),
+        "the test's premise: the variable unset in the test process"
+    );
+    let place = WindowPlace {
+        x: 100.0,
+        y: 50.0,
+        width: 1100.0,
+        height: 700.0,
+        scale: 1.0,
+        maximized: false,
+    };
+    let expected = window_backends(eframe::wgpu::Backends::from_env(), cfg!(windows));
+    for opening in [Opening::Fit, Opening::Place(place)] {
+        let eframe::egui_wgpu::WgpuSetup::CreateNew(create_new) =
+            native_options(&opening).wgpu_options.wgpu_setup
+        else {
+            panic!("the wgpu setup creates a new instance")
+        };
+        assert_eq!(create_new.instance_descriptor.backends, expected);
+        #[cfg(target_os = "windows")]
+        assert!(
+            !create_new
+                .instance_descriptor
+                .backends
+                .contains(eframe::wgpu::Backends::VULKAN),
+            "Windows asks for no Vulkan"
+        );
+    }
+}
+
 // ST-WIN-01
 #[test]
 fn the_first_frame_with_a_monitor_size_fits_and_centers_the_window_once() {
