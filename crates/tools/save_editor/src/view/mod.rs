@@ -669,6 +669,11 @@ fn appearance_arrow(ui: &mut egui::Ui, openness: f32, response: &egui::Response)
 /// gone raises its warning notice then.
 pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<RunningPes>) {
     set_surrender_on_press(ui.ctx());
+    // The undo run's clock, before any widget draws: a widget's push
+    // measures the pause since its run's last step against it.
+    if let Some(session) = view.session.as_mut() {
+        session.set_time(ui.input(|input| input.time));
+    }
     if view
         .rules
         .as_ref()
@@ -807,26 +812,66 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
     // Last so the newest refusal, raised by a modal's own Save, sits
     // above the modal that stays up behind it.
     refusal_dialog(ui, view);
-    // One undo entry per gesture: seal when the pointer is up and no
-    // widget holds the keyboard, and when the widget that held it ends
-    // the frame without it — a gesture ends when its widget loses the
-    // keyboard. A `None` to `Some` move never seals (the `focused` doc).
-    let (focused, settled) = edit_settled(ui, view.focused);
-    if settled && let Some(session) = view.session.as_mut() {
-        session.seal();
+    // One undo entry per gesture, a run of steps to one value one entry
+    // across gestures: the soft end (the pointer up with no text edit
+    // holding the keyboard) settles, keeping the run; the keyboard
+    // moving off the widget that held it seals, ending the run too — a
+    // typed value and the click after it stay two entries.
+    let (focused, end) = edit_settled(ui, view.focused);
+    if let Some(session) = view.session.as_mut() {
+        match end {
+            GestureEnd::Held => {}
+            GestureEnd::Settled => session.settle(),
+            GestureEnd::FocusMoved => session.seal(),
+        }
     }
     view.focused = focused;
 }
 
-/// The widget holding the keyboard this frame and whether the edit has
-/// settled: the pointer up with no widget focused, or the widget that
-/// held it having lost it. `show`'s seal condition, which the AATF
-/// checks' start shares, so a check never runs over a mid-gesture file.
-fn edit_settled(ui: &egui::Ui, last_focused: Option<egui::Id>) -> (Option<egui::Id>, bool) {
+/// How the frame left the edit's gesture, the two settled cases told
+/// apart for the undo stack: `show`'s end seals on one, settles on the
+/// other, and the checks' start asks only `settled()`, so a check never
+/// runs over a mid-gesture file.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum GestureEnd {
+    /// Mid-gesture: the pointer is held, or a text edit keeps the
+    /// keyboard (a field, a number being typed).
+    Held,
+    /// The pointer is up and no text edit holds the keyboard — nothing
+    /// focused, or a widget with no text cursor (a button, a rating
+    /// cell) keeping it: the gesture ended but a run of steps under its
+    /// key may still merge (`settle`).
+    Settled,
+    /// The keyboard moved off the widget that held it: the hard end a
+    /// run does not survive (`seal`).
+    FocusMoved,
+}
+
+impl GestureEnd {
+    /// Whether the edit has settled this frame: anything but mid-gesture.
+    fn settled(self) -> bool {
+        !matches!(self, GestureEnd::Held)
+    }
+}
+
+/// The widget holding the keyboard this frame and how the frame left
+/// the edit's gesture: `FocusMoved` when the widget that held it lost
+/// the keyboard (a `None` to `Some` move is never one — a widget can
+/// take focus as its gesture starts), `Settled` when the pointer is up
+/// and no text edit holds it (`text_edit_focused`, which a focused
+/// `DragValue` being typed reports as its `TextEdit` keeps its state
+/// under the DragValue's own id), else `Held`. `show`'s seal rule,
+/// which the AATF checks' start shares.
+fn edit_settled(ui: &egui::Ui, last_focused: Option<egui::Id>) -> (Option<egui::Id>, GestureEnd) {
     let focused = ui.ctx().memory(|memory| memory.focused());
-    let settled = (!ui.input(|input| input.pointer.any_down()) && focused.is_none())
-        || (last_focused.is_some() && last_focused != focused);
-    (focused, settled)
+    let end = if last_focused.is_some() && last_focused != focused {
+        GestureEnd::FocusMoved
+    } else if !ui.input(|input| input.pointer.any_down()) && !ui.ctx().text_edit_focused() {
+        GestureEnd::Settled
+    } else {
+        GestureEnd::Held
+    };
+    (focused, end)
 }
 
 /// Whatever holds the keyboard gives it up. A run's start waits for

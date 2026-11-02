@@ -1245,6 +1245,30 @@ fn draw(window: &mut Headless, view: &mut SaveView) -> Vec<accesskit::Node> {
     nodes
 }
 
+/// One wheel notch (`up` or down) with the pointer at `at`: a pointer
+/// move and the wheel event in one frame.
+fn notch(window: &mut Headless, view: &mut SaveView, at: egui::Pos2, up: bool) {
+    let wheel = egui::Event::MouseWheel {
+        unit: egui::MouseWheelUnit::Line,
+        delta: egui::vec2(0.0, if up { 1.0 } else { -1.0 }),
+        phase: egui::TouchPhase::Move,
+        source: egui::MouseWheelSource::Wheel,
+        modifiers: egui::Modifiers::default(),
+    };
+    window.frame(vec![egui::Event::PointerMoved(at), wheel], |ui| {
+        show(ui, view, &|| Vec::new())
+    });
+}
+
+/// `frames` frames with no input: each moves egui's clock by 1/60 s, so
+/// 61 idle past the undo run's one-second pause and 31 past the wheel's
+/// 500 ms pane rest.
+fn idle_frames(window: &mut Headless, view: &mut SaveView, frames: usize) {
+    for _ in 0..frames {
+        window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    }
+}
+
 /// `text` loaded as an imported ruleset named `file_name` and picked, as
 /// `Tool::view` would hand the view a copy read from the data folder's
 /// `rules/` and the setting naming it.

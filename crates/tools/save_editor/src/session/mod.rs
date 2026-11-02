@@ -70,7 +70,8 @@ pub(crate) struct Session {
     file: EditFile,
     /// The path `open` read, or the last `save_to` wrote: where Save writes.
     path: PathBuf,
-    /// Undo and redo, one entry per gesture.
+    /// Undo and redo, one entry per gesture and one per run of steps to
+    /// one value.
     undo: UndoStack,
     /// Every player by id, as opened or last saved.
     baseline_players: HashMap<u32, PlayerEntry>,
@@ -82,6 +83,11 @@ pub(crate) struct Session {
     /// The tick of the last change to the open file (`revision()`; every
     /// change takes a fresh one, so it never repeats).
     revision: u64,
+    /// The frame's clock (egui's `input.time`, seconds), set per frame by
+    /// the view (`set_time`): the undo run's pause measures real seconds,
+    /// not frames. 0.0 until a frame sets it — the command line's pushes,
+    /// all sealed, keep no run either way.
+    now: f64,
 }
 
 impl Session {
@@ -98,6 +104,7 @@ impl Session {
             baseline_teams,
             dirty: false,
             revision: NEXT_REVISION.fetch_add(1, Ordering::Relaxed),
+            now: 0.0,
         })
     }
 
@@ -170,6 +177,7 @@ impl Session {
                 before: Box::new(before),
                 after: Box::new(edited),
             },
+            self.now,
         );
         self.touch();
         self.dirty = self.compute_dirty();
@@ -219,6 +227,7 @@ impl Session {
                     before: Box::new(before),
                     after: Box::new(after),
                 },
+                self.now,
             );
         }
         for (before, after) in changed_teams {
@@ -229,6 +238,7 @@ impl Session {
                     before: Box::new(before),
                     after: Box::new(after),
                 },
+                self.now,
             );
         }
         // One entry for the whole batch, sealed: the next edit does not merge.
@@ -253,6 +263,7 @@ impl Session {
                 before: Box::new(before),
                 after: Box::new(edited),
             },
+            self.now,
         );
         self.touch();
         self.dirty = self.compute_dirty();
@@ -351,9 +362,26 @@ impl Session {
         self.undo.can_redo()
     }
 
-    /// Ends the open gesture: the next change starts a fresh undo entry.
+    /// Ends the open gesture and any run of steps under way: the next
+    /// change starts a fresh undo entry (the keyboard moved off a
+    /// widget, or a sealed operation ran).
     pub(crate) fn seal(&mut self) {
         self.undo.seal();
+    }
+
+    /// Ends only the open gesture, keeping a run of steps to one value:
+    /// a push under the run's key within its pause still joins the
+    /// newest entry (the frame's soft end — the pointer up with no text
+    /// edit holding the keyboard).
+    pub(crate) fn settle(&mut self) {
+        self.undo.settle();
+    }
+
+    /// The frame's clock, in seconds: the undo run's pause is measured
+    /// against it at each push. The view sets it once a frame from
+    /// egui's `input.time` before any widget draws.
+    pub(crate) fn set_time(&mut self, now: f64) {
+        self.now = now;
     }
 
     /// Whether the save differs from the file as opened or last saved, the
