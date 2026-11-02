@@ -3054,3 +3054,5 @@ worklog passed 7,000 lines.
   page keys, one-step arrows, two copies at once, the captain's choice card; candidate fast-forwarded to `92d1772b`.
 - 2026-11-02 — 0.0.1h's built-app look: checks 1-3 pass (check 1 in PES 2017), Ctrl+C/V and undo runs as
   planned; Undo dead while a button holds the keyboard goes to the maintainer as P50.
+- 2026-11-02 — f1g's four slices on branch `f1g` (P49+P50, Live AATF's heads and copy, Invert value scrolling,
+  PgUp/PgDn); 0.0.2-poc's move into 0.0.1 cancelled; the update check approved for 0.0.1 (f1g9).
