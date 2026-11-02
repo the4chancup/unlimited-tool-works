@@ -1665,9 +1665,10 @@ What this editor adds on top of the lib:
   does, the team and its error and warning counts, then the team's groups, then under
   `Suggestions` the suggestions while Show suggestions is on (a member who wants them out
   switches them off); a team that passes reads `All clean` there, as the list does. It is
-  never greyed out: before a list is held it copies the header's own line (`Checking
-  <team>…`, a failed check's message), and a notice `Copied the Live AATF list of <id>
-  <name>.` says it was done. **Its own
+  never greyed out: before a list is held it copies the line the panel shows (`Checking
+  <team>…`, or `No team is open.`), a failed check its message as the list words it, and a
+  notice `Copied the Live AATF list of <id> <name>.` says it was done (`Copied the Live AATF
+  list.` with no team open). **Its own
   window**: the pop-out icon at the header's right end (the icon font's arrow out of a square,
   U+E5DE, Phosphor's arrow-square-out; tooltip `Open Live AATF in a window of its own`) moves
   the list into an `egui::Window` over the view, and the dock is gone until it comes back.
