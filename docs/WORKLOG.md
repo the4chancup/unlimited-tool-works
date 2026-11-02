@@ -7017,6 +7017,10 @@ briefs, review loops, gates and mutation runs as for any step.
         test (`116e3424`), its second passed: Windows exe opens and closes cleanly
         → verify: release_test on both platforms; the next dry run's binary has no `.debug_*`
         section and keeps `.symtab`
+      - [ ] f1g7f one test tag `v0.0.1-rc.1` from a branch bumped to it: the release job's
+        draft pre-release checked (three assets, `SHA256SUMS.txt` matching both), then the
+        draft and the tag deleted on the maintainer's word (`plans/core/distribution.md`
+        "Release builds in CI")
       - [ ] f1g7d the dry run's bundles looked at: the Windows exe starts here, the Linux
         binary in WSLg (Ubuntu 22.04) → verify: both windows open and close cleanly
     - [x] f1g8 whether 0.0.2-poc fits in 0.0.1: cancelled by the maintainer 2026-11-02 ("we've
@@ -7030,7 +7034,13 @@ briefs, review loops, gates and mutation runs as for any step.
       `rc.2` on this PC and in WSL (DECISIONS "Test pre-releases for Update now"); the draft's
       flow waits on the maintainer's look (QUESTIONS "Update now in the draft"). Slice 3 also
       makes `studio_core`'s `updater` module private: nothing outside the crate calls it, and
-      slice 1 keeps it `pub` only because slices 2-3 are the first readers of `Release`'s fields
+      slice 1 keeps it `pub` only because slices 2-3 are the first readers of `Release`'s fields.
+      Slices 1-2 done 2026-11-02 (`b9608c7c`, `03f92b80`, on `f1g9`); slice 3 postponed to 0.0.2
+      (DECISIONS "Update now waits for 0.0.2", worklog 0.0.2-upd)
+      - [ ] f1g9c Update now's hover reads the plan's; the check's stamp tested as the current
+        time (the mutation run's `now_secs` survivors); `UpdateDialog::up` dropped, the
+        dialog's `show` already returning while it is shut → verify: ST-UPD-02 headless,
+        the stamp's test red on `now_secs` returning 0
     - [ ] f1g10 the comparator's heads with the hyphens (DECISIONS "The comparator's heads take
       the AATF lists' hyphens"), and Live AATF's `All clean` line with Copy to clipboard never
       greyed, copying what the panel shows (DECISIONS "Live AATF lists \"All clean\""), drafted
@@ -7110,6 +7120,12 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-cgu `codegen-units = 1` timed on the AATF check of a 220-team save, both
     profiles (the maintainer: taken only if the app runs faster; DECISIONS "Test pre-releases
     for Update now")
+  - [ ] 0.0.2-upd Update now (`plans/core/distribution.md` "Self-update" steps 3, 4 and 6;
+    DECISIONS "Update now waits for 0.0.2"), postponed from 0.0.1's f1g9: download with its
+    progress, SHA-256 against `SHA256SUMS.txt`, extract, the swap beside `old/`, restart and
+    the next start's `Updated to` notice, in two slices (the updater's core, then the
+    dialog's states); its end-to-end test first settles how a pre-release can be read
+    without every 0.0.1 being offered it → verify: ST-UPD-03 headless, ST-UPD-04
   - [ ] 0.0.2-cli the command line's update notice (DECISIONS "The update offer waits in the
     status bar"): from 0.0.2 a command prints one line when a newer release exists
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and

@@ -15397,3 +15397,21 @@ tactics]`.
 Why: Gameplan is the word the editor already uses for a team's tactics (the export and import
 dialogs' section), so the hint names what the click opens in the same word.
 Plan: `plans/save_editor.md` (the team row's paragraph, "then `[click for gameplan]`").
+
+## 2026-11-02 — studio — Update now waits for 0.0.2
+Decision (the maintainer): 0.0.1 ships the update check and its offer (the status bar's
+text and Details, the dialog with Open release page, Skip this version and Remind me later);
+Update now (download, verify, swap, restart) comes in 0.0.2. 0.0.1's dialog draws it disabled,
+its hover "The auto-updater comes with 0.0.2" (the maintainer's wording;
+disabled rather than left out as the quicker of the two, the code already drawing it so). No test pre-release is published:
+one test tag `v0.0.1-rc.1` runs CI's release job once as a draft, which is then deleted.
+This replaces "Test pre-releases for Update now" and the published half of "Only 0.0.1's two
+test pre-releases are published".
+Why: Update now is the release's largest remaining piece and its riskiest code (it replaces
+the running exe, and a fault in the version updated from cannot be fixed by an update; the
+rollback lives in the newer exe). Without it a 0.0.1 member downloads 0.0.2 by hand, once.
+The test tag keeps the one check the pre-releases gave that 0.0.1 still needs, the release
+job's first run before 0.0.1's own tag; the real releases request is first exercised in the
+field, where a failure shows nothing and logs one line.
+Plan: `plans/core/distribution.md` "Self-update" (what 0.0.1 ships) and "Release builds in CI"
+(the test tag); `plans/core/gui.md` ST-UPD-02.
