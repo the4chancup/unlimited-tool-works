@@ -7022,7 +7022,9 @@ briefs, review loops, gates and mutation runs as for any step.
       and its dialog; Update now (download, SHA-256 against the release's checksum file,
       extract, swap beside `old/`, restart), run from CI's pre-release `v0.0.1-rc.1` to
       `rc.2` on this PC and in WSL (DECISIONS "Test pre-releases for Update now"); the draft's
-      flow waits on the maintainer's look (QUESTIONS "Update now in the draft")
+      flow waits on the maintainer's look (QUESTIONS "Update now in the draft"). Slice 3 also
+      makes `studio_core`'s `updater` module private: nothing outside the crate calls it, and
+      slice 1 keeps it `pub` only because slices 2-3 are the first readers of `Release`'s fields
     - [ ] f1g10 the comparator's heads with the hyphens (DECISIONS "The comparator's heads take
       the AATF lists' hyphens"), and Live AATF's `All clean` line with Copy to clipboard never
       greyed, copying what the panel shows (DECISIONS "Live AATF lists \"All clean\""), drafted
@@ -8613,6 +8615,10 @@ points there.
   (they were 2 s and 30 s before, both failing correct code under load). At the next
   `save_editor` mutation run, read those mutants' durations from its outcomes; if they add
   notable time, lower the bound to the longest a loaded machine was measured to need
+- open 2026-11-02 (f1g9a) — `studio_core/src/shell/mod.rs` reached 1313 lines with the update
+  check's poll and its three tests (1089 before; past the thousand already). After 0.0.1's
+  cut, move the update poll and its tests beside `updater.rs`, and the shell's tests into a
+  `tests.rs` of their own, as `settings_menu` has
 
 ---
 
