@@ -269,6 +269,25 @@ impl Session {
         self.dirty = self.compute_dirty();
     }
 
+    /// Whether the record on roster slot `from` moved onto `to` would write
+    /// anything (`move_player`'s own rule, shared with the row's drop
+    /// outline): `from` another slot than `to`, the team in the save, both
+    /// slots inside its roster, and neither slot empty (player id 0).
+    pub(crate) fn moves_player(&self, team_id: u32, from: u8, to: u8) -> bool {
+        if from == to {
+            return false;
+        }
+        let Some(team) = self.file.team(team_id) else {
+            return false;
+        };
+        let (from, to) = (usize::from(from), usize::from(to));
+        let Some(range) = team.roster.get(from.min(to)..=from.max(to)) else {
+            return false;
+        };
+        let lo = from.min(to);
+        range[from - lo].player_id != 0 && range[to - lo].player_id != 0
+    }
+
     /// The player-list drop: the record on roster slot `from` lands on `to`'s player id
     /// and the records between shift one filled slot along, each slot keeping what
     /// belongs to its id (`id`, `appearance_id`, `appearance.base_copy_id`, and the face
@@ -276,22 +295,18 @@ impl Session {
     /// so its ids, the shirt numbers and the captain stay put (slot `NN` holds player
     /// `team id x 100 + NN` by 4cc rule). The whole move is one sealed undo entry.
     /// `from == to`, a team or player the save lacks, or an empty `from` or `to` slot
-    /// does nothing; an empty slot between them is skipped over.
+    /// does nothing (`moves_player`); an empty slot between them is skipped over.
     pub(crate) fn move_player(&mut self, team_id: u32, from: u8, to: u8) {
-        if from == to {
+        if !self.moves_player(team_id, from, to) {
             return;
         }
-        let Some(team) = self.file.team(team_id) else {
-            return;
-        };
         let (from, to) = (usize::from(from), usize::from(to));
-        let Some(range) = team.roster.get(from.min(to)..=from.max(to)) else {
-            return;
-        };
         let lo = from.min(to);
-        if range[from - lo].player_id == 0 || range[to - lo].player_id == 0 {
-            return;
-        }
+        let range = &self
+            .file
+            .team(team_id)
+            .expect("`moves_player` passed: the team is in the save")
+            .roster[lo..=from.max(to)];
         // The filled slots' ids in slot order: the sequence the move rotates.
         let filled: Vec<u32> = range
             .iter()
@@ -790,6 +805,26 @@ mod tests {
 
         assert!(!session.is_dirty());
         assert!(!session.can_undo());
+    }
+
+    // The drop outline's rule is `move_player`'s: a release onto another
+    // filled slot writes; onto the dragged slot itself, an empty slot at
+    // either end, a slot past the roster or a team the save lacks writes
+    // nothing.
+    #[test]
+    fn moves_player_names_only_a_drop_that_writes() {
+        let mut session = open(PesVersion::Pes21, "moves_player");
+        // Slot 1 emptied (70102's record stays in the pool, unrostered).
+        session.file.team_mut(701).unwrap().roster[1].player_id = 0;
+        let len = u8::try_from(session.file().team(701).unwrap().roster.len())
+            .expect("the roster has at most 40 slots");
+
+        assert!(session.moves_player(701, 0, 2), "two filled slots");
+        assert!(!session.moves_player(701, 0, 0), "the dragged slot itself");
+        assert!(!session.moves_player(701, 0, 1), "an empty slot onto");
+        assert!(!session.moves_player(701, 1, 0), "an empty slot dragged");
+        assert!(!session.moves_player(701, 0, len), "a slot past the roster");
+        assert!(!session.moves_player(99999, 0, 1), "a team the save lacks");
     }
 
     // The roster slot's player id, the selection's and `apply_tier`'s one
