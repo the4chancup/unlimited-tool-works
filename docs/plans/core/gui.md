@@ -298,7 +298,8 @@ What exists of this is in `spec/core/gui.md` "Settings menu".
 The settings menu is assembled from injected sections:
 
 - **Common settings** (defined by `studio_core`): PES version, PES folder path, exports folder path,
-  thread count, memory cap, theme, the update check and its interval, and the FPC hide boots and
+  thread count, memory cap, theme, Invert value scrolling ("The wheel over a value"), the
+  update check and its interval, and the FPC hide boots and
   gloves IDs (`plans/save_editor.md` "Full Player Customization (FPC)": number rows bounded to
   the stock band, boots 1 to 100 and gloves 11 to 100). The update check's two rows are drawn
   from the release whose updater reads them (`core/distribution.md`, step 1, Release 0.2.0),
@@ -765,6 +766,15 @@ calls it, the shared libs' included (`team_widgets` and `color_tools` depend on 
 a wrapper per widget kind would leave out every control built with egui's own constructor. The
 drafts do the same for every `select` and number input (`docs/prototypes/index.html`, the
 wheel listener), so a draft can be tried as the app behaves (ST-WHEEL-01 to ST-WHEEL-04).
+
+**Invert value scrolling**, a common setting (`invert_value_scrolling`, off by default, a
+checkbox after Theme), turns every step above the other way, in every tool: wheel down takes
+the item above or one more, moves a slider and a toggle to the right, and steps a selector
+forward; wheel up the reverse. Only the direction changes: the notch, the rest rule, the
+clamping and wrapping and the undo steps stay, and a pane scrolls as before. A member whose
+wheel or touchpad scrolls the "natural" way (content follows the fingers) reads wheel down as
+"more"; a direction per control would split the suite, so the setting is one switch. It is
+read where the steps are counted (`wheel_steps`), so no control can miss it.
 
 ### No two widgets overlap
 
@@ -1493,4 +1503,11 @@ ST-WHEEL-05 GIVEN the Save editor's Tactics tab on the PES 17 save's team 701, p
                  down over Numbers in attack THEN the choice left of the held one is held, or the
                  rightmost when the held one is the leftmost; each step, taken more than a
                  second after the one before, is one undo entry
+ST-WHEEL-06 GIVEN ST-WHEEL-01's scroll area with Invert value scrolling on
+            WHEN the pointer is over the drag value and the wheel turns one notch down
+            THEN the value is 181; WHEN one notch up THEN 180; WHEN the pointer is over the
+                 combo and the wheel turns one notch down THEN the first item is selected;
+                 WHEN the setting is off again and one notch down turns over the drag value
+                 THEN it is 179; and a turn over the area's empty space scrolls it the same
+                 way with the setting on or off
 ```
