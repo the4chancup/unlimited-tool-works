@@ -843,3 +843,192 @@ fn a_marker_dropped_on_an_eleven_row_exchanges_the_two() {
         "the two exchanged in the eleven, every formation unchanged"
     );
 }
+
+// The draft's `.dragover`: the row a drop on it would swap out is
+// outlined in the selection colour while a drag is held over it — a
+// starter's and a bench row's band alike — and a marker held over his
+// own row draws none, that drop exchanging his slot with itself.
+// Released off the lists, no row is outlined.
+// SE-GUI-59
+#[test]
+fn the_row_under_a_held_drag_is_outlined_in_the_selection_colour() {
+    /// The bands `shapes` outline in `selection`: the unfilled rects
+    /// stroked in it (the lists' frame strokes are another colour).
+    fn outlined(
+        shapes: &[egui::epaint::ClippedShape],
+        selection: egui::Color32,
+    ) -> Vec<egui::Rect> {
+        shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape)
+                    if shape.fill == egui::Color32::TRANSPARENT
+                        && shape.stroke.color == selection =>
+                {
+                    Some(shape.rect)
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
+    let mut window = Headless::sized(900.0, 1100.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let before = tactics.clone();
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let mut selection = egui::Color32::TRANSPARENT;
+    window.frame(vec![], |ui| {
+        selection = ui.visuals().selection.stroke.color;
+    });
+
+    // Row 1's drag held over row 4: row 4's band alone is outlined.
+    let (nodes, _) = window.lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let over = row_centre(&nodes, 4);
+    window.lineup(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(row_centre(&nodes, 1), true),
+    );
+    let (_, shapes) = window.frame(vec![egui::Event::PointerMoved(over)], |ui| {
+        lineup(
+            ui,
+            "lineup",
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+        );
+    });
+    let outlines = outlined(&shapes, selection);
+    let [outline] = outlines.as_slice() else {
+        panic!("row 4's band alone is outlined, got {outlines:?}")
+    };
+    assert!(
+        outline.contains(over),
+        "the outline is the band under the pointer ({outline:?}, centre {over:?})"
+    );
+    assert!(
+        outline.height() < ROW_HEIGHT * 2.0,
+        "the outline is one row, not a run of rows ({outline:?})"
+    );
+
+    // A bench row's band outlines the same way.
+    let over = row_centre(&nodes, 11 + 2);
+    let (_, shapes) = window.frame(vec![egui::Event::PointerMoved(over)], |ui| {
+        lineup(
+            ui,
+            "lineup",
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+        );
+    });
+    let outlines = outlined(&shapes, selection);
+    let [outline] = outlines.as_slice() else {
+        panic!("bench row 2's band alone is outlined, got {outlines:?}")
+    };
+    assert!(
+        outline.contains(over),
+        "the bench row's band is outlined ({outline:?}, centre {over:?})"
+    );
+
+    // Held off the lists, then released there: no row is outlined and
+    // nothing drops.
+    let off = egui::pos2(450.0, 900.0);
+    let (_, shapes) = window.frame(vec![egui::Event::PointerMoved(off)], |ui| {
+        lineup(
+            ui,
+            "lineup",
+            PesVersion::Pes21,
+            &mut tactics,
+            &mut view,
+            &roster,
+        );
+    });
+    assert!(
+        outlined(&shapes, selection).is_empty(),
+        "held off the lists outlines no row"
+    );
+    let (_, changed) = window.lineup(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(off, false),
+    );
+    assert!(!changed, "the release off the lists dropped nothing");
+    assert_eq!(tactics, before, "the record is untouched");
+    let (_, shapes) = window.lineup_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
+    assert!(
+        outlined(&shapes, selection).is_empty(),
+        "the drag ended: no row is outlined"
+    );
+
+    // A marker held over his own row: the drop exchanges his slot with
+    // itself, which writes nothing, so the row shows no outline. Over
+    // another starter's row the drop swaps, so that row shows one.
+    let (nodes, _) =
+        window.pitch_and_lineup(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let formation = tactics.presets[0].formations[0].clone();
+    let index = 4;
+    let paint_view = |window: &mut Headless,
+                      events: Vec<egui::Event>,
+                      tactics: &mut TeamTactics,
+                      view: &mut TacticsView,
+                      roster: &[RosterRow<'_>]| {
+        window.frame(events, |ui| {
+            crate::pitch::formation_selector(ui, tactics, view);
+            crate::pitch::pitch(ui, "pitch", PesVersion::Pes21, tactics, view, roster, false);
+            lineup(ui, "lineup", PesVersion::Pes21, tactics, view, roster);
+        })
+    };
+    window.pitch_and_lineup(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(marker_point(&nodes, &formation.players, index), true),
+    );
+    let (_, shapes) = paint_view(
+        &mut window,
+        vec![egui::Event::PointerMoved(row_centre(&nodes, index))],
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(
+        outlined(&shapes, selection).is_empty(),
+        "a marker over his own row: the drop writes nothing, no outline"
+    );
+    let (_, shapes) = paint_view(
+        &mut window,
+        vec![egui::Event::PointerMoved(row_centre(&nodes, 7))],
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    let outlines = outlined(&shapes, selection);
+    let [outline] = outlines.as_slice() else {
+        panic!("row 7's band alone is outlined under the marker, got {outlines:?}")
+    };
+    assert!(
+        outline.contains(row_centre(&nodes, 7)),
+        "the outline is row 7's band ({outline:?})"
+    );
+    // Released on his own row the drop writes nothing, as the missing
+    // outline said.
+    let (_, changed) = window.pitch_and_lineup(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(row_centre(&nodes, index), false),
+    );
+    assert!(!changed, "the drop on his own row wrote nothing");
+    assert_eq!(tactics, before, "the record is untouched");
+}

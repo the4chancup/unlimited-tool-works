@@ -2699,3 +2699,58 @@ fn the_wheel_moves_a_numbers_toggle_up_to_many_and_down_to_few() {
         assert_eq!(tactics, expect, "the stored 7 is kept");
     }
 }
+
+// The wheel over any of the preset selector's choices steps the shown
+// preset, up to the right (1, 2, 3) and down to the left, wrapping
+// round past either end; over the "Preset" word it does nothing. The
+// selector writes `view.preset`, never the record.
+// SE-GUI-58
+#[test]
+fn the_wheel_steps_the_preset_selector_wrapping_round() {
+    let mut window = Headless::sized(422.0, 900.0);
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    let before = tactics.clone();
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+    assert_eq!(view.preset, 0, "premise: the view opens on preset 1");
+    let at = |label: &str| centre(entry(&nodes, Role::Button, label));
+
+    for (hover, up, preset, what) in [
+        ("1", true, 1, "a notch up takes 2"),
+        ("2", true, 2, "a notch up takes 3"),
+        ("3", true, 0, "a notch up on 3 wraps to 1"),
+        ("1", false, 2, "a notch down on 1 wraps to 3"),
+        ("3", false, 1, "a notch down takes 2"),
+        ("2", false, 0, "a notch down takes 1"),
+    ] {
+        let changed =
+            window.notch_tactics(at(hover), up, version, &mut tactics, &mut view, &roster);
+        assert!(
+            !changed,
+            "{what}: the selector writes the view, not the record"
+        );
+        assert_eq!(view.preset, preset, "{what}");
+        assert_eq!(tactics, before, "{what}: the record is untouched");
+    }
+
+    // Over the "Preset" word nothing happens. Last: a turn that scrolls
+    // no control is the pane's, and the wheel's rest would swallow the
+    // next notch for half a second.
+    let word = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("Preset"))
+        .expect("the Preset label");
+    let changed = window.notch_tactics(
+        centre(word),
+        true,
+        version,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    assert!(!changed, "a notch over the word writes nothing");
+    assert_eq!(view.preset, 0, "and moves no preset");
+}
