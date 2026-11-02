@@ -15135,3 +15135,19 @@ Why: the maintainer's idea, so a Compile clicked a while after opening finds the
 ready. The gain is the driver's cold shader cache, 16.3 s on the measured GPU once per driver
 install or update; with a warm cache it is a fraction of a second.
 Plan: `plans/libs/README.md` "First-release desktop GPU BC7".
+
+## 2026-11-02 — save_editor — 0.0.1 takes a second batch of small changes before its cut
+Decision (maintainer): 0.0.1's cut moves a day, and the batch queued for right after it comes
+in first: 8.40-8.46 (a Tab + Space edit settling, upper-case shirt and short names, the undo
+merging a run of edits, PgUp/PgDn stepping a page of rows, the wheel on the Tactics view's
+preset and formation selectors, Ctrl+C/Ctrl+V of a player's stats, one arrow press stepping a
+number field) and five new ones: the lineup list showing the row a drag will replace, two
+copies of UTW.exe running at once, Ctrl+C/Ctrl+V of a team row's Gameplan and of a preset and a
+formation, a VGL 27 tester's report that the captain's bonus card is missing from the count
+under the limit, and the Stronger foot/hand toggle's two text colours swapped.
+Rulings with it: PgUp/PgDn jump the list's visible rows, as a list box does (8.43); Ctrl+V of a
+team row writes what a Gameplan-only import of the copied team's document writes, players
+included by roster slot; "two editors" means two UTW.exe processes, each with its own save.
+Why: the cut could not happen the same day; the items are each a small, self-contained change
+a member notices, cheaper to ship now than in a second release days later.
+Plan: WORKLOG 0.0.1f1f.
