@@ -357,7 +357,7 @@ mod tests {
                         exports_folder_path = \"exports\"\n\
                         memory_cap_percent = 80.0\n\
                         check_for_updates = true\n\
-                        check_interval_hours = 24\n\
+                        check_interval_minutes = 120\n\
                         \n\
                         [team-compiler]\n\
                         # its own note\n\
@@ -375,8 +375,8 @@ mod tests {
                 "last_tool = \"save-editor\"",
             )
             .replace(
-                "check_interval_hours = 24\n",
-                "check_interval_hours = 24\n\
+                "check_interval_minutes = 120\n",
+                "check_interval_minutes = 120\n\
                  fpc_hide_boots_id = 55\n\
                  fpc_hide_gloves_id = 11\n\
                  invert_value_scrolling = false\n",
@@ -392,7 +392,7 @@ mod tests {
         let path = dir.join("settings_missing_key.toml");
         let original = "[common]\n\
                         check_for_updates = true\n\
-                        check_interval_hours = 24\n\
+                        check_interval_minutes = 120\n\
                         exports_folder_path = \"exports\"\n\
                         memory_cap_percent = 80.0\n\
                         pes_folder_path = '/games/Pro Evolution Soccer 20**'\n\
@@ -516,7 +516,7 @@ mod tests {
                         exports_folder_path = \"exports\"\n\
                         memory_cap_percent = 80.0\n\
                         check_for_updates = true\n\
-                        check_interval_hours = 24\n";
+                        check_interval_minutes = 120\n";
         fs::write(&path, original).unwrap();
 
         let mut settings = Settings::load(&path).unwrap();
@@ -528,8 +528,8 @@ mod tests {
             original
                 .replace("pes_version = 19 #", "pes_version = 21 #")
                 .replace(
-                    "check_interval_hours = 24\n",
-                    "check_interval_hours = 24\n\
+                    "check_interval_minutes = 120\n",
+                    "check_interval_minutes = 120\n\
                      fpc_hide_boots_id = 55\nfpc_hide_gloves_id = 11\n\
                      invert_value_scrolling = false\n"
                 ),
@@ -552,7 +552,7 @@ mod tests {
                         pes_folder_path = '/games/Pro Evolution Soccer 20**'\n\
                         theme = \"dark\"\n\
                         check_for_updates = true\n\
-                        check_interval_hours = 24\n\
+                        check_interval_minutes = 120\n\
                         last_tool = \"team-compiler\"\n\
                         \n\
                         [team-compiler]\n\
@@ -573,7 +573,7 @@ mod tests {
                         pes_folder_path = '/games/Pro Evolution Soccer 20**'\n\
                         theme = \"dark\"\n\
                         check_for_updates = true\n\
-                        check_interval_hours = 24\n\
+                        check_interval_minutes = 120\n\
                         last_tool = \"team-compiler\"\n\
                         fpc_hide_boots_id = 55\n\
                         fpc_hide_gloves_id = 11\n\

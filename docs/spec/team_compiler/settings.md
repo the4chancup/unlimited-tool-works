@@ -19,7 +19,7 @@ settings** live in the Team compiler's own settings section.
 | `thread_count` | 0 (auto) | Was a Blue CLI arg; auto = logical cores − 1 |
 | `memory_cap_percent` | 80.0 | Was a Blue CLI arg; memory budget cap, as a percent of the physical memory available at run start (`spec/libs/pipeline.md` "Memory cap"); `0 < percent <= 100` |
 | `check_for_updates` | 1 | Was per-compiler (`updates_check` in Red's ini); becomes a suite-wide update check |
-| `check_interval_hours` | 60 minutes (hardcoded) | `24`: hours between release checks. With `last_update_check` and `skipped_version` (both empty by default), the update state of `spec/core/distribution.md` "Update state". The updater that reads these three keys and `check_for_updates` is not built, so the settings menu draws no row for them |
+| `check_interval_minutes` | 60 minutes (hardcoded) | `120`: minutes between release checks. With `last_update_check` and `skipped_version` (both empty by default), the update state of `spec/core/distribution.md` "Update state" |
 | `last_update_check` | — | Update state (above): when the last release check ran. No row |
 | `skipped_version` | — | Update state (above): a release the member chose to skip. No row |
 | `theme` | — | `dark` or `light`, default `dark`: the GUI's color theme |

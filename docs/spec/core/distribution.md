@@ -29,7 +29,8 @@ dependency side with a `cargo deny` license allowlist (`MIT`, `Apache-2.0`, `Apa
 LLVM-exception`, `BSD-2-Clause`,
 `BSD-3-Clause`, `ISC`, `Zlib`, `BSL-1.0`, `Unicode-*`, `CC0-1.0`, `MPL-2.0` for file-level
 copyleft crates only, plus the font licenses `OFL-1.1` and `Ubuntu-font-1.0` that egui's bundled default fonts
-carry), so a copyleft crate cannot enter the dependency graph unnoticed. The list lives in
+carry, and the data license `CDLA-Permissive-2.0` of the root-certificate list ureq's certificate
+verifier pulls on wasm32), so a copyleft crate cannot enter the dependency graph unnoticed. The list lives in
 `deny.toml`. A license compatible with `MIT OR Apache-2.0` (it puts no copyleft obligation on
 Studio's source or binary) joins the list when a dependency needs it, without asking; any other
 license is a question for the maintainer.
@@ -116,7 +117,7 @@ Stored with the settings (common settings, `studio_core`):
 | Key | Replaces (Red) | Default |
 |-----|----------------|---------|
 | `check_for_updates` | `updates_check` ini key | `true` |
-| `check_interval_hours` | hardcoded 60 minutes | `24` (a resident GUI app, not a per-compile CLI run) |
+| `check_interval_minutes` | hardcoded 60 minutes | `120`: minutes between release checks |
 | `last_update_check` | `state/update_check_last.txt` | — |
 | `skipped_version` | `state/update_skip_last.txt` | — |
 
