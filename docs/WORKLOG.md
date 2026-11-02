@@ -6968,6 +6968,30 @@ briefs, review loops, gates and mutation runs as for any step.
       over f1f4-S5: 128 mutants, 4 timeouts (caught: 120 s waits past the timeout),
       3 missed, pinned by `3036d686`; `mutants-diff 4a0c666b` over S6: 34, 30 caught, 3
       unviable, 1 missed, pinned by `92d1772b`; candidate fast-forwarded to `92d1772b`
+  - [ ] f1g (the maintainer, 2026-11-02, after the lead's look at 0.0.1h: a polish batch
+    while their look waits; one candidate, 0.0.1i, then their look), each item plan and
+    draft first where a member sees it, on a branch from the candidate's `92d1772b`:
+    - [ ] f1g1 the draft's Live AATF list brought to the app's: one group per player, his
+      errors before his warnings (the draft headed a player again after other players'
+      errors); three more differences rendered for the maintainer's ruling
+      (`.tmp/vet/live_heads/`: the heads' grey, the names' colour codes, the team's line)
+    - [ ] f1g2 P49: a `Fielded position` row's tooltip (`team_widgets` `violations.rs`
+      `row`), drafted (`liveList`) → verify: SE-GUI-30's tooltip half, headless
+    - [ ] f1g3 P50: the toolbar's shortcuts held off only by a text field or a dialog
+      (`save_editor` `view/mod.rs` `toolbar`, `text_edit_focused` for `typing`) → verify:
+      SE-GUI-62, red first
+    - [ ] f1g4 PgUp/PgDn: with at most one team row in view a jump of 7 rows, with two or
+      more one team row at a time (the maintainer); drafted first for their look, then
+      the plan's sentence and SE-GUI-55's rewrite
+    - [ ] f1g5 an Invert value scrolling setting, off by default: every wheel step of a
+      value reversed (down moves a slider right and raises a number); plan
+      (`plans/core/gui.md` "The wheel over a value"), draft, then the slice
+    - [ ] f1g6 `cargo bloat` on the release build (f6's item 2, pulled in): the low-hanging
+      gains only, each measured before it is proposed
+    - [ ] f1g7 CI for GitHub releases, Windows and Linux (f4, pulled in): the workflow
+      written by the lead, a dry run on a test tag where possible
+    - [ ] f1g8 whether 0.0.2-poc (8.36c, 8.36d, the PES 2019 proof of concept) fits in 0.0.1:
+      what is left of it, what it would delay, reported to the maintainer
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. The maintainer, 2026-11-02: the
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);

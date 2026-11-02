@@ -7553,7 +7553,7 @@ function liveList(oneColumn) {
         else jumpToTeam(team);
         render();
       },
-      title: pid ? "Click to switch to this player" : null },
+      title: rule === "FieldedNotA" ? "Click to show him on the team's pitch" : pid ? "Click to switch to this player" : null },
       h("span", { class: "f" }, ruleName(rule)), h("span", { class: "v" }, violationSentence(rule, kvOf(fields), sev))),
     ...detailRows(rule, fields, t)];
   // A column's rows under their players' heads, a head again wherever the
