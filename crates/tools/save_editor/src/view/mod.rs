@@ -918,10 +918,15 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     // widget to hold the keyboard, where the page keys act from any
     // field: a focused number steps with them and a text field moves its
     // cursor, and an open popup (a menu's, a combo's) navigates itself
-    // with them. The modal and gesture gates are the page keys'.
+    // with them. The modal and gesture gates are the page keys'. Two
+    // popups egui's registry never sees (the unsaved-changes list and the
+    // tactics' slot popover, both the view's own state drawn through
+    // `egui::Popup`) hold them off the same way.
     let arrow_step = if modal_up
         || gesture
         || view.session.is_none()
+        || view.changes_list.is_some()
+        || view.tactics.popover_area().is_some()
         || ui.ctx().memory(|memory| memory.focused()).is_some()
         || egui::Popup::is_any_open(ui.ctx())
     {

@@ -2446,3 +2446,193 @@ fn the_list_scrolls_to_keep_an_arrowed_selection_in_view() {
         "the selected row inside the list: {bounds:?} vs {frame:?}"
     );
 }
+
+// SE-GUI-52
+#[test]
+fn the_arrows_wait_while_the_unsaved_changes_list_is_open() {
+    // The unsaved-changes popup is the view's own state, so the arrows'
+    // gate reads it there: egui's popup registry never saw it open.
+    let path = fixture(PesVersion::Pes17, "arrow_keys_changes_list");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Team(701));
+    let mut window = Headless::new();
+
+    // The same press with the list closed selects 701's first player row.
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "premise: Down moves with the list closed"
+    );
+    view.selected = Some(Selection::Team(701));
+
+    // An edit, so the `• unsaved changes` label draws; a click opens its
+    // list under it.
+    let mut edited = player_entry(&view, team_entry(&view, 701).roster[0].player_id);
+    edited.name = "EDITED".to_owned();
+    view.session.as_mut().unwrap().edit_players(vec![edited]);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let label = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("\u{2022} unsaved changes"))
+        .expect("the unsaved-changes label");
+    click(&mut window, label, &mut view);
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(view.changes_list.is_some(), "premise: the list is open");
+
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "Down with the changes list open moved nothing"
+    );
+    assert!(view.changes_list.is_some(), "the list stays open");
+}
+
+// SE-GUI-52
+#[test]
+fn the_arrows_wait_while_a_dialog_is_open() {
+    // The Copy stats dialog up: the modal gate the page keys already had.
+    let path = fixture(PesVersion::Pes17, "arrow_keys_dialog");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::new();
+
+    // The same press with no dialog selects the next player row.
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 1)),
+        "premise: Down moves with no dialog"
+    );
+    view.selected = Some(Selection::Player(701, 0));
+
+    // The Player menu's Copy stats opens the dialog and leaves it up.
+    let nodes = open_menu(&mut window, &mut view, "Player", "Copy stats from");
+    click(&mut window, menu_item(&nodes, "Copy stats from"), &mut view);
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(view.copy_swap.is_some(), "premise: the dialog is open");
+
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "Down with the dialog open moved nothing"
+    );
+    assert!(view.copy_swap.is_some(), "the dialog stays open");
+}
+
+// SE-GUI-52
+#[test]
+fn the_arrows_wait_while_a_pointer_button_is_held() {
+    // As the page keys', a held button holds the arrows: the press still in
+    // flight would finish on the player the key steps to.
+    let path = fixture(PesVersion::Pes17, "arrow_keys_pointer_held");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    view.selected = Some(Selection::Team(701));
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let first = nodes
+        .iter()
+        .find(|node| player_row(node))
+        .expect("the list's first player row");
+    window.frame(pointer_at(centre(first), true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "Down with the button held moved nothing"
+    );
+
+    // The release's click selects the row it lands on, and the press after
+    // it walks on again.
+    window.frame(pointer_at(centre(first), false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "premise: the release's click selected the row"
+    );
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 1)),
+        "Down after the release moves one row"
+    );
+}
+
+// SE-GUI-52
+#[test]
+fn the_arrows_wait_while_the_slot_popover_is_open() {
+    // The tactics' slot popover is the view's own state like the changes
+    // list: egui's popup registry never saw it open, so the gate reads it.
+    let path = fixture(PesVersion::Pes21, "arrow_keys_popover");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::All;
+    let mut window = Headless::sized(DEFAULT_PANE.x, 624.0);
+    open_team_view(&mut window, &mut view, 701);
+
+    // The same press with no popover selects 701's first player row.
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 0)),
+        "premise: Down moves with no popover"
+    );
+    view.selected = Some(Selection::Team(701));
+
+    // Open the slot popover on an outfield marker a click can reach.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let canvas = canvas_of(&nodes);
+    let players = team_entry(&view, 701).tactics.presets[0].formations[0].players;
+    let at = (0..11)
+        .filter(|&index| players[index].position != 0)
+        .find_map(|index| marker_point(canvas, &players, index))
+        .expect("a marker a click can reach");
+    click_at(&mut window, at, &mut view);
+    assert!(
+        view.tactics.popover_area().is_some(),
+        "premise: the slot popover is open"
+    );
+
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Team(701)),
+        "Down with the slot popover open moved nothing"
+    );
+}
