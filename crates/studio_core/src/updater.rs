@@ -145,13 +145,14 @@ pub fn offers(release: &Release, own: &Version, skipped: Option<&str>) -> bool {
 }
 
 /// Whether the shell starts a check: `check_for_updates` is on and the last
-/// check is older than `check_interval_hours`, or never ran. `now` is seconds
-/// since the Unix epoch, the key's unit; a clock set behind the last check
-/// keeps it inside the interval rather than counting it past.
+/// check is older than `check_interval_minutes`, or never ran. `now` is
+/// seconds since the Unix epoch, `last_update_check`'s unit; a clock set
+/// behind the last check keeps it inside the interval rather than counting it
+/// past.
 pub fn check_due(common: &CommonSettings, now: u64) -> bool {
     common.check_for_updates
         && common.last_update_check.is_none_or(|last| {
-            now.saturating_sub(last) >= u64::from(common.check_interval_hours) * 3600
+            now.saturating_sub(last) >= u64::from(common.check_interval_minutes) * 60
         })
 }
 
@@ -339,21 +340,23 @@ mod tests {
     // ST-UPD-01
     #[test]
     fn a_check_is_due_past_the_interval_with_checks_on() {
-        const INTERVAL: u64 = 24 * 3600;
+        const INTERVAL: u64 = 120 * 60;
         let now = 2_000_000_000;
         let mut common = CommonSettings::default();
         assert_eq!(
-            common.check_interval_hours, 24,
+            common.check_interval_minutes, 120,
             "the interval the constants below assume"
         );
         common.check_for_updates = false;
         assert!(!check_due(&common, now), "checks off");
         common.check_for_updates = true;
         assert!(check_due(&common, now), "never checked");
+        common.last_update_check = Some(now - 119 * 60);
+        assert!(!check_due(&common, now), "a stamp 119 minutes old");
         common.last_update_check = Some(now - INTERVAL + 1);
         assert!(!check_due(&common, now), "inside the interval");
         common.last_update_check = Some(now - INTERVAL);
-        assert!(check_due(&common, now), "the interval past");
+        assert!(check_due(&common, now), "a stamp 120 minutes old");
         common.last_update_check = Some(1);
         assert!(check_due(&common, now), "long past");
     }

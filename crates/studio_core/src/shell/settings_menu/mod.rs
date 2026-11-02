@@ -29,9 +29,9 @@ use crate::widgets::{
 use super::sidebar::{SETTINGS_LABEL, Sidebar, exe_tooltip, version_blocker, version_label};
 
 /// The modal's width: what the common grid's widest row (the label column,
-/// the path edit and Browse) fits; the draft's `.settings-body` was 660, a
-/// hair under what the label column needs since the update check's rows.
-const WIDTH: f32 = 662.0;
+/// the path edit and Browse) fits; the draft's `.settings-body` was 660, under
+/// what the label column needs since the update check's rows.
+const WIDTH: f32 = 676.0;
 
 /// The menu's state across frames: whether it is open, the tool the next drawn frame
 /// expands, the "A folder per version" toggle's member-set half, and the path rows'
@@ -398,27 +398,27 @@ impl SettingsMenu {
 
                 let interval = row_label(
                     ui,
-                    "Check interval (hours)",
-                    "check_interval_hours",
-                    "Hours between release checks.",
+                    "Check interval (minutes)",
+                    "check_interval_minutes",
+                    "Minutes between release checks.",
                 );
-                let mut hours = common.check_interval_hours;
+                let mut minutes = common.check_interval_minutes;
                 // The interval is off while the check is, as the draft draws it;
-                // typed hours clamp to at least 1 (the drag clamps entry only,
+                // typed minutes clamp to at least 1 (the drag clamps entry only,
                 // as the rows above).
                 let mut response = add_enabled(
                     ui,
                     common.check_for_updates,
-                    egui::DragValue::new(&mut hours)
+                    egui::DragValue::new(&mut minutes)
                         .range(1..=u32::MAX)
                         .clamp_existing_to_range(false),
                 )
                 .labelled_by(interval.id);
-                if step_number(&mut hours, wheel_steps(ui, &response), 1..=u32::MAX) {
+                if step_number(&mut minutes, wheel_steps(ui, &response), 1..=u32::MAX) {
                     response.mark_changed();
                 }
                 if response.changed() {
-                    common.check_interval_hours = hours;
+                    common.check_interval_minutes = minutes;
                     changed = true;
                 }
                 ui.end_row();
