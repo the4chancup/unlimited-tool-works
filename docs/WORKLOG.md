@@ -7011,6 +7011,12 @@ briefs, review loops, gates and mutation runs as for any step.
       - [ ] f1g7c `.github/workflows/release.yml`, written by the lead: the two jobs, the
         draft release with `SHA256SUMS.txt`, the dry run's artifacts → verify: a push to
         `ci/release-dry-run` builds both bundles, each passing the recipe's checks
+      - [ ] f1g7e the Linux binary stripped of its debug info, `utw.debug` packed as
+        `-linux-symbols.tar.gz` and uploaded as a run artifact (DECISIONS "The Linux binary
+        ships stripped of its debug info"); the dry run's first try failed on a Windows-path
+        test (`116e3424`), its second passed: Windows exe opens and closes cleanly
+        → verify: release_test on both platforms; the next dry run's binary has no `.debug_*`
+        section and keeps `.symtab`
       - [ ] f1g7d the dry run's bundles looked at: the Windows exe starts here, the Linux
         binary in WSLg (Ubuntu 22.04) → verify: both windows open and close cleanly
     - [x] f1g8 whether 0.0.2-poc fits in 0.0.1: cancelled by the maintainer 2026-11-02 ("we've

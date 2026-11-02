@@ -86,9 +86,17 @@ Python's `tarfile` (the binary `0755`, every other file `0644`, each entry owned
 listing with the staged set, as the `.7z` path does. Its notices come from the Linux binary's
 own dependency graph (`cargo-about` run for `x86_64-unknown-linux-gnu`), since the two
 platforms link different crates. The remap flags go on `target.x86_64-unknown-linux-gnu.rustflags`,
-and the static C runtime check is Windows' alone (a Linux binary links the system's glibc). It
-keeps its line tables inside the binary, which Linux's backtraces read at run time, so its log
-names each frame's file and line by itself and no symbols archive is packed. The readme is
+and the static C runtime check is Windows' alone (a Linux binary links the system's glibc). The
+built binary is 269 MB, 207 of it debug info: `line-tables-only` still links in the standard
+library's full debug info, which a Windows exe leaves in its `.pdb` (measured on the first dry
+run's binary). So the recipe moves it out as Windows' symbols are: `objcopy --only-keep-debug`
+writes `utw.debug`, `objcopy --strip-debug --add-gnu-debuglink=utw.debug` strips the shipped
+binary and names it, keeping the symbol table, and `utw.debug` is packed as
+`unlimited-tool-works-<version>-linux-symbols.tar.gz`, never in the bundle. A crash's backtrace
+then names its functions but not its lines, which `utw.debug` gives (`addr2line`). The binary
+drops to 60 MB, the bundle from 66.6 MB to 21.9 MB; stripping the symbols too saves 1.7 MB more
+and loses the names, and `.tar.xz` would pack 15.4 MB but needs an xz decoder in the updater.
+The readme is
 the one file, with a Linux line beside its `UTW.exe`. The binary is built on Ubuntu 22.04 (glibc 2.35),
 the oldest GitHub runner image, so it runs on that release and any newer distribution.
 
@@ -114,8 +122,8 @@ static C runtime on Windows, the listing equal to the staged set), then:
   and checks the same bundles and uploads them as the run's artifacts only: no tag, no release.
   That is how the workflow itself is tested before a tag relies on it.
 
-The Windows job also uploads the symbols archive (`-symbols.7z`, the exe and its `.pdb`) as a
-run artifact, never a release asset: it stays with the maintainer, who keeps a copy beside the
+Each job also uploads its symbols archive (Windows' `-symbols.7z`, the exe and its `.pdb`;
+Linux's `-linux-symbols.tar.gz`, `utw.debug`) as a run artifact, never a release asset: it stays with the maintainer, who keeps a copy beside the
 release's other files, since artifacts expire after 90 days and `symbolize_log.py` needs it for
 as long as the release is in use. The test pre-releases (`v0.0.1-rc.1`, `rc.2`, built from a
 branch whose workspace version is bumped to theirs) are published as pre-releases so the
