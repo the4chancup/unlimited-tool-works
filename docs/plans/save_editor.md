@@ -589,7 +589,12 @@ all side by side.
 - Keyboard shortcuts preserved where they earn their keep (Ctrl+S save, Ctrl+F
   clear visual flags, Ctrl+I FPC toggle). Ctrl+I acts on a player, so it does nothing on a
   team row, as the Player menu's entries are disabled there; Ctrl+F is a team operation and
-  acts on the selected row's team.
+  acts on the selected row's team. These, Ctrl+B, Undo and Redo (Ctrl+Z, Ctrl+Y and
+  Ctrl+Shift+Z) and Open's keys (Ctrl+O, Ctrl+5 to Ctrl+1) are held off only while a text
+  field holds the keyboard (a number being typed is one: its own undo is the field's) or a
+  dialog is open, as Ctrl+C and Ctrl+V are; Ctrl+S by a dialog alone. A button, checkbox or
+  rating cell reached with Tab keeps the keyboard after Space, and holding them off there
+  too left Undo dead until Escape, the Space's edit already settled.
 - **Ctrl+C and Ctrl+V** copy and paste what was clicked last of three kinds, while no text
   field holds the keyboard (a text field keeps its own copy and paste): a player row copies
   his stats and pastes onto the selected player what Copy stats writes, with its rules; a
@@ -1622,8 +1627,10 @@ What this editor adds on top of the lib:
   `Team-wide issues` (a formation or a tier count is the team's first concern, ahead of any
   one player's; every list of a team's issues, Multi-team AATF's and its copied text
   included, puts them first), then grouped per player under a line naming him, a player's
-  row tooltip `Click to switch to this player` (a team-wide row has none: it selects nothing,
-  and its group's heading already says what it is), then, while **Show
+  row tooltip `Click to switch to this player`, a `Fielded position` row's `Click to show him on the team's pitch`
+  (its click opens his team's row on the preset it names, the cross on his marker: the issue
+  is where he stands in the tactics, not his record), a team-wide row's none (it selects
+  nothing, and its group's heading already says what it is), then, while **Show
   suggestions** is on, under a `Suggestions` heading, the team's unused allowances (`Unused`
   rows, `only 4 of 5 cards used`). Show suggestions is a checkbox right of the toggle, drawn only while Live
   AATF is on, off by default and remembered (`live_suggestions`); on, the check asks for the
@@ -2075,6 +2082,12 @@ SE-GUI-61  GIVEN a player's Stronger foot toggle
            WHEN it draws
            THEN the chosen side's word is in the resting buttons' light grey and the
                 other side's in the normal text grey
+SE-GUI-62  GIVEN the PES 17 save open on a player, the keyboard moved by Tab to a rating cell
+                of his Playable positions and Space pressed on it (the rating stepped)
+           WHEN Ctrl+Z is pressed, the cell still holding the keyboard
+           THEN the rating is back as it was and Undo is disabled; WHEN Ctrl+Y THEN the
+                step is back; GIVEN instead his Name field holding the keyboard after a
+                letter typed THEN Ctrl+Z leaves the editor's undo history as it was
 SE-GUI-16  GIVEN the save open on a team
            WHEN Team TOML export, then import on another team with only the Stats section
                 chosen, runs from the interchange dialog
@@ -2199,7 +2212,8 @@ SE-GUI-30  GIVEN the PES 17 save open on a team with violations under the active
            THEN the docked panel reads `Checking <team>…` until the first check returns, then
                 lists the team's violations under `N issues · <ruleset>`, its `Team-wide
                 issues` group above every player's, a player's row's tooltip `Click to switch
-                to this player` and a team-wide row's none, and clicking a row
+                to this player`, a `FieldedNotA` row's `Click to show him on the team's pitch` and a
+                team-wide row's none, and clicking a row
                 selects that player (a `FieldedNotA` row his team's row, the named preset
                 shown on a formation carrying the cross); WHEN an edit fixes one of them THEN the list stays,
                 marked `checking…`, until the check returns, its row then gone and N one less,

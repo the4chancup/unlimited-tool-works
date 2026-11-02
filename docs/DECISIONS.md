@@ -15176,3 +15176,19 @@ nothing when the clipboard holds no text (`egui-winit` `on_keyboard_input`, the
 emptied would do nothing; the snapshot is what a clipboard means; a save's records do not
 carry over to another save's teams. Drafted in `save_editor.js` (`clipCopy`, `clipPaste`).
 Plan: `plans/save_editor.md`, the bullet "Ctrl+C and Ctrl+V".
+
+## 2026-11-02 — save_editor — A Fielded position row says where its click goes (P49)
+Decision (the maintainer, accepting P49): a Live AATF `Fielded position` row's tooltip reads
+`Click to show him on the team's pitch`, every other player's row keeping `Click to switch to this player`.
+Why: that row's click opens his team's row on the named preset, the cross on his marker, not
+his record; the tooltip said otherwise.
+Plan: `plans/save_editor.md` "Live AATF", SE-GUI-30.
+
+## 2026-11-02 — save_editor — Only a text field holds the shortcuts off (P50)
+Decision (the maintainer, accepting P50): Undo, Redo, Ctrl+F, Ctrl+I, Ctrl+B and Open's keys
+are held off only while a text field (a number being typed included) holds the keyboard or a
+dialog is up, the rule Ctrl+C and Ctrl+V already followed; a button, checkbox or rating cell
+holding the keyboard no longer holds them off.
+Why: Tab then Space leaves the keyboard on the pressed control with its edit settled (8.40),
+and Ctrl+Z did nothing there until Escape (found in the built-app look at 0.0.1h).
+Plan: `plans/save_editor.md`, the keyboard shortcuts bullet; SE-GUI-62.
