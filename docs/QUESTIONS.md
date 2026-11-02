@@ -10,59 +10,14 @@ names where the question came from so the context can be read there.
 
 ## Before the release
 
-- **How the update check shows itself** (worklog 0.0.1f1g9; the draft's proposal is uncommitted
-  in `index.html`, renders `.tmp/vet/update/bar.html` and `dialog.html`, or tick "Update
-  available" in the draft's controls).
-  - **Where the offer appears.** The plans disagree: `plans/core/distribution.md` "Self-update"
-    step 2 opens a dialog when a newer release is found; `plans/core/gui.md` "Status bar" makes
-    it the `update_available` condition with an Install action. The lead's proposal: no dialog
-    opens by itself; the status bar reads `Update available: v0.0.2` with a **Details** button,
-    which opens a dialog with "Unlimited Tool Works v0.0.2 pre-alpha is out. You have v0.0.1
-    pre-alpha.", the release notes as Markdown in a scrolling box, and **Open release page**,
-    **Skip this version**, **Remind me later**. An update asks for no decision now, and a
-    dialog at the start would land on whatever the member opens first.
-  - **The draft's version label.** The draft's status bar reads `v0.1.0`, its About `v0.0.1
-    pre-alpha` (worklog 8.26). The lead would make the bar `v0.0.1`.
-  - **The lead's choices, to confirm or overrule:** the check reads GitHub's list of releases
-    and takes the highest version, not `releases/latest`, which skips a release marked
-    Pre-release; tags are `v<version>` (CI sets them); the window checks, the command line
-    does not in 0.0.1 (a script never waits on the network); a failed check (offline,
-    rate-limited) shows nothing and writes one log line; Skip this version stores the version
-    in `skipped_version`, Remind me later closes until the next check; the two Settings rows
-    show from 0.0.1 on (reversing DECISIONS 2026-10-25, "The update check's settings rows wait
-    for the updater").
-- **The comparator's head** (DECISIONS 2026-11-02, "Live AATF's heads in two tones"). The
-  hyphens went into the draft's shared head function, so the draft's save comparator now reads
-  `Player 71808 - 8 - PARTY HARD` too, while the app keeps the comparator's `Player 71808  8
-  PARTY HARD` (it is not an AATF list). Hyphens in the comparator as well, or out of its draft?
-- **When Live AATF's Copy to clipboard greys out.** The plan and the app: while the list shows
-  no row. The draft: only when the team has no rows at all, hidden suggestions counted, so with
-  suggestions off and nothing else listed the button copies a header line alone. The lead
-  would bring the draft to the plan.
-- **CI for GitHub releases** (worklog 0.0.1f1g7; it overrides DECISIONS 2026-11-01, "CI
-  release builds right after 0.0.1's cut, Windows first"):
-  - Does 0.0.1 itself go out through CI? The lead's proposal: the tag `v0.0.1` builds both
-    bundles and attaches them to a draft GitHub release; your look is on the Windows `.7z`
-    downloaded from it, then you publish. A local exe and CI's are never byte-identical (the
-    linker's timestamps), so the checked binary is then the one members get, and the update
-    check has a release to read.
-  - Linux's archive: `.tar.gz` (keeps the binary's executable flag, what Linux users expect) or
-    `.7z` as on Windows (often loses the flag on extraction)? The lead: `.tar.gz`.
-  - The Linux look in WSL's Ubuntu with WSLg on this PC, in place of "a real machine"; built
-    on Ubuntu 22.04 so the binary runs on older distributions.
-  - The dry run: may the lead push a branch (`ci/release-dry-run`) and start the workflow by
-    hand, so it uploads both bundles as workflow artifacts only (no tag, no release)?
-- **The release profile** (worklog 0.0.1f1g6; `spec/core/distribution.md` "Size budget": "The
-  release profile stays the default"). `codegen-units = 1` measured 38,724,608 bytes against
-  41,491,456, 2.64 MiB (6.7%) smaller; one cold build took 206 s, its slowdown against the
-  default not measured. Take it for 0.0.1i? Beside it, without a ruling needed unless you say
-  otherwise: egui's `default_fonts` off, dropping its unused `Ubuntu-Light.ttf` (353 KiB).
-- **cv39's fix in 0.0.1** (worklog 0.0.1f5; you, 2026-11-01: "it can wait"). Its test's race
-  (`the_last_end_follows_the_first_...`, a press held in the Multi-team AATF dialog while its
-  check lands) failed once in f1g's checks and passed alone three times; it can fail again in
-  0.0.1i's gates and mutation runs. Pulling `99c9a36a` into f1g (one line of code and its test)
-  stops that and puts the fix in 0.0.1 itself, so f5's separate exe for DBC's organizer
-  before 2026-11-18 is no longer needed. Pull it in?
+- **Update now in the draft** (worklog 0.0.1f1g9; DECISIONS "The update offer waits in the
+  status bar"). The lead drafted the flow your Update now asks for: the download's progress
+  with Cancel, then "Update ready" with Restart now and Later (Restart now closes through the
+  unsaved-changes prompts and the new version opens with `Updated to v0.0.2 pre-alpha`), or
+  "Update failed" when the download does not match the release's checksum, changing nothing,
+  with Open release page. Renders: `.tmp/vet/update/un_dialog.png`, `un_progress.png`,
+  `un_ready.png`, `un_failed.png`; in the draft, tick "Update available" (and "Update now
+  fails" for the failure), then Details. Does it read right?
 - **The final pass over the built app's UI** (worklog 0.0.1f1c). Any change it asks for is
   drafted first, looked at in the drafts, then built.
   - **The candidate:** 0.0.1i, staged once f1g's loop ends (worklog 0.0.1f1g); its folder and
