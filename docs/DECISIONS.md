@@ -15379,3 +15379,14 @@ the rule the lineup lists' outline follows (a drop that writes nothing shows non
 Why: without it a member cannot see which slot a drop takes before releasing it.
 Plan: `plans/save_editor.md` "Editing UI", the Player list bullet; SE-GUI-64; the draft's
 `playerRow`.
+
+## 2026-11-02 — release — The Linux binary ships stripped of its debug info
+Decision (the maintainer): the recipe strips the Linux binary's debug info and keeps its symbol
+table; the debug info goes to `utw.debug` in a `-linux-symbols.tar.gz` CI artifact, as Windows'
+`.pdb` does. The archive stays `.tar.gz`. This replaces the lead's earlier "Linux packs no
+symbols archive: its binary keeps its line tables".
+Why: the dry run's Linux bundle was 66.6 MB against Windows' 11.7 MB, 207 of the binary's 269 MB
+the standard library's debug info; stripped it packs 21.9 MB, and its backtraces keep the
+function names. xz would save 6.5 MB more at the cost of an xz decoder in the updater.
+Plan: `plans/core/distribution.md` "Distribution: portable .7z bundle" (the Linux paragraph),
+"Release builds in CI".
