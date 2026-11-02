@@ -1539,6 +1539,7 @@ fn throw19() -> String {
 mod abilities;
 mod appearance;
 mod changes_popup;
+mod clipboard;
 mod comparator;
 mod event_logo;
 mod generate;

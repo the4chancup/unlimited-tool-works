@@ -14,6 +14,7 @@ mod aatf_check;
 mod abilities;
 mod appearance;
 mod changes_popup;
+mod clipboard;
 mod comparator;
 mod event_logo;
 mod generate;
@@ -83,6 +84,13 @@ pub(crate) struct SaveView {
     filter: String,
     /// The selected row.
     selected: Option<Selection>,
+    /// What the last click named for Ctrl+C and Ctrl+V (the list, the
+    /// preset selector or the formation selector); clicks elsewhere
+    /// leave it, `None` before the first click of one.
+    click_kind: Option<clipboard::ClickKind>,
+    /// The editor's clipboard: at most one copy, a snapshot taken at
+    /// Ctrl+C; emptied when a save opens.
+    clip: Option<clipboard::Clip>,
     /// A page or arrow key moved the selection, or a team row's double
     /// click showed that team alone: the list scrolls to the selected row
     /// on the next draw, then clears this.
@@ -427,6 +435,8 @@ impl SaveView {
             team: TeamChoice::All,
             filter: String::new(),
             selected: None,
+            click_kind: None,
+            clip: None,
             reveal_selected: false,
             list_page_rows: 1,
             tactics: team_widgets::tactics::TacticsView::default(),
@@ -552,6 +562,7 @@ impl SaveView {
                 self.prompt = None;
                 self.edit_mode_question = None;
                 self.refusal = None;
+                self.clip = None;
                 self.boglo = None;
                 self.stat_num = None;
                 self.copy_swap = None;
@@ -988,6 +999,26 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
     } else {
         ui.input_mut(open_menu::consume_shortcut)
     };
+    // Ctrl+C and Ctrl+V copy and paste what the last click named (the
+    // selected row, the shown preset, the shown formation). They arrive
+    // as `Event::Copy`/`Event::Paste`, never `Event::Key`, held off
+    // while a dialog is up or a text edit holds the keyboard — a field
+    // keeps its own copy and paste; a focused button does not hold them.
+    let clip_blocked = modal_up || ui.ctx().text_edit_focused();
+    let copy_key = !clip_blocked
+        && ui.input(|input| {
+            input
+                .events
+                .iter()
+                .any(|event| matches!(event, egui::Event::Copy))
+        });
+    let paste_key = !clip_blocked
+        && ui.input(|input| {
+            input
+                .events
+                .iter()
+                .any(|event| matches!(event, egui::Event::Paste(_) | egui::Event::PasteImage(_)))
+        });
     // PageDown and PageUp move the list's selection a page of rows from
     // any field, so they are not held off while a widget has the
     // keyboard. A held pointer button holds them off, and so does the
@@ -1137,6 +1168,12 @@ fn toolbar(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() -> Vec<Run
         && player_list::step_selection(view, forward, 1)
     {
         view.reveal_selected = true;
+    }
+    if copy_key {
+        clipboard::copy(ui.ctx(), view);
+    }
+    if paste_key {
+        clipboard::paste(view);
     }
     end
 }

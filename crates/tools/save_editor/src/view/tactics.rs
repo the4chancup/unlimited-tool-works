@@ -28,6 +28,7 @@ use team_widgets::tactics::{self, FieldedMark, Medal, RosterRow};
 use team_widgets::violations::{Wording, violation_line};
 
 use crate::session::Session;
+use crate::view::clipboard::{ClickKind, pressed};
 use crate::view::worker::{Pending, WorkerResult};
 use crate::view::{MedalKey, SaveView, edit_settled, edit_team, live_marks, selected_team};
 
@@ -111,6 +112,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         pes_exe_check,
         picked_pes_folder,
         pick_folder_dialog,
+        click_kind,
         ..
     } = view;
     let Some(session) = session.as_mut() else {
@@ -286,11 +288,18 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             )
         };
         let mut preset_ui = bar(ui, top_left.x, settings_right);
-        tactics::preset_selector(&mut preset_ui, tactics);
+        if pressed(ui, &tactics::preset_selector(&mut preset_ui, tactics)) {
+            *click_kind = Some(ClickKind::Preset);
+        }
         changed[0] = tactics::fluid_formation(&mut preset_ui, &mut edited, tactics);
         copy_swap_preset_menu(&mut preset_ui, session, team_id, tactics.preset);
         let mut formbar_ui = bar(ui, pitch_left, right);
-        pitch::formation_selector(&mut formbar_ui, &edited, tactics);
+        if pressed(
+            ui,
+            &pitch::formation_selector(&mut formbar_ui, &edited, tactics),
+        ) {
+            *click_kind = Some(ClickKind::Formation);
+        }
         copy_swap_formation_menu(&mut formbar_ui, session, team_id, tactics);
         checkbox(&mut formbar_ui, &mut tactics.scroll_names, "Scroll names");
         let row2_top = top_left.y + BAR_HEIGHT + ROW_GAP;

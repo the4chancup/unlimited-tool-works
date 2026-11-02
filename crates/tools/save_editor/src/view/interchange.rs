@@ -301,14 +301,14 @@ struct Pairing {
 
 /// The chosen sections applied to copies of the target: what Apply writes
 /// and what it does not.
-struct Import {
+pub(super) struct Import {
     /// The target team as the import leaves it.
-    team: TeamEntry,
+    pub(super) team: TeamEntry,
     /// The target's rostered players as the import leaves them.
-    players: Vec<PlayerEntry>,
+    pub(super) players: Vec<PlayerEntry>,
     /// Whether the import leaves the team or one of its players other than
     /// the save holds them: compared once, when staged, not every frame.
-    changes: bool,
+    pub(super) changes: bool,
     /// The notes grouped by code and, for a key's notes, its path, in
     /// first-seen order; every empty place's note is one group.
     notes: Vec<NoteGroup>,
@@ -444,7 +444,7 @@ fn file_name(path: &Path) -> String {
 /// leaves another document than keeping none. Read from the document, not
 /// from the format: a squad file carries tactics only when it has the
 /// tactics block, and a Team TOML written by hand may hold any part.
-fn held(document: &TeamToml) -> Sections {
+pub(super) fn held(document: &TeamToml) -> Sections {
     let kept = |sections: Sections| {
         let mut kept = document.clone();
         keep_sections(&mut kept, sections);
@@ -505,7 +505,7 @@ fn pairing(file: &EditFile, team: &TeamEntry, document: &TeamToml) -> Vec<Pairin
 /// players. The import runs on copies, never on the save: the panel shows
 /// its notes and refusal before anything is written, and Apply then writes
 /// the copies as one undoable edit.
-fn stage(
+pub(super) fn stage(
     file: &EditFile,
     team: &TeamEntry,
     document: &TeamToml,

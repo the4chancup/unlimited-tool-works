@@ -292,7 +292,13 @@ struct Held {
 /// While that preset fields its Kick-off formation alone, the
 /// three are disabled with Kick-off selected (`lock_to_fielded`) and the
 /// wheel does not step. Writes `view.formation`, never the record.
-pub fn formation_selector(ui: &mut egui::Ui, tactics: &TeamTactics, view: &mut TacticsView) {
+/// Answers the three choices' union `Response`, so the host can see a
+/// click on one of them.
+pub fn formation_selector(
+    ui: &mut egui::Ui,
+    tactics: &TeamTactics,
+    view: &mut TacticsView,
+) -> egui::Response {
     let locked = lock_to_fielded(tactics, view);
     add_enabled_ui(ui, !locked, |ui| {
         let bar = ui.horizontal(|ui| {
@@ -317,7 +323,9 @@ pub fn formation_selector(ui: &mut egui::Ui, tactics: &TeamTactics, view: &mut T
         if let Some(next) = cycle_choice(0..3, &view.formation, -wheel_steps(ui, &bar.inner)) {
             view.formation = next;
         }
-    });
+        bar.inner
+    })
+    .inner
 }
 
 /// Puts `view` on Kick-off while the shown preset of `tactics` fields its

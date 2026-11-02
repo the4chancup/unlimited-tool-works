@@ -78,8 +78,16 @@ impl Session {
     /// `dest`'s (`copy_stat_fields`). Picking the same player is a no-op
     /// (`edit_players` skips an unchanged record).
     pub(crate) fn copy_stats(&mut self, dest_id: u32, source_id: u32) {
-        let (Some(source), Some(dest)) = (self.file.player(source_id), self.file.player(dest_id))
-        else {
+        let Some(source) = self.file.player(source_id).cloned() else {
+            return;
+        };
+        self.copy_stats_from(dest_id, &source);
+    }
+
+    /// `copy_stats` with the source an entry rather than a player of the
+    /// save (Ctrl+V's stats paste: the clipboard's snapshot).
+    pub(crate) fn copy_stats_from(&mut self, dest_id: u32, source: &PlayerEntry) {
+        let Some(dest) = self.file.player(dest_id) else {
             return;
         };
         let mut edited = dest.clone();
