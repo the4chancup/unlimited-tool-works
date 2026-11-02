@@ -57,7 +57,7 @@ implementation is measured against.
 | Move a player up or down the list (the spinner beside it: one step per click, within one team; the two players' records trade places between their ids, `base_copy_id` traded back to match each slot, shirt numbers and the captain left with the slots) | Kept as drag reorder, with the same effect ("Editing UI", the Player list bullet) |
 | Toggle FPC settings (Ctrl+I) | Kept (see "Full Player Customization" below) |
 | Quick actions: Make Gold / Make Silver / Make Bronze (from the Autumn 26 edition) / Make Regular / Set stats | Kept, **driven by the AATF rules file** instead of hardcoded rates — the buttons and the checker can never disagree |
-| Hidden shortcuts: PgUp/PgDn (previous/next player from any field) | Kept, the list's selection moving a page of rows (the rows the list shows at once) |
+| Hidden shortcuts: PgUp/PgDn (previous/next player from any field) | Kept, the list's selection moving from team row to team row, or 7 rows with one team listed ("Editing UI" below, SE-GUI-53) |
 | Hidden shortcuts: Ctrl+Shift+P (a joke preset), Ctrl+Shift+B (a sound), Ctrl+Shift+H (show the dribbling-motion and hand controls) | Not kept: every control is always drawn |
 | Hidden shortcuts: Ctrl+O (the Open dialog), Ctrl+5 to Ctrl+1 (the Open dialog for PES 15 to 21, reading the file as that version) | Kept as the Open menu's: Ctrl+5 to Ctrl+1 open that version's discovered save at once, since Open detects the version and the dialog would only add a step; Ctrl+O opens the file picker (File operations row above) |
 | Hidden shortcut: Ctrl+Shift+T on the team selector (empties the team's slots past 23; its team index looks one off) | Dropped: cups no longer trim a roster to 23 this way |
