@@ -398,17 +398,13 @@ impl StudioApp {
     #[cfg(target_arch = "wasm32")]
     fn poll_update(&mut self, _egui_ctx: &egui::Context) {}
 
-    /// The update offer's Details dialog, drawn while `update_dialog` is up
-    /// and `update_release` still stands (the release it was opened for gone,
-    /// it closes itself). Its answers: Skip this version stores the version as
-    /// `skipped_version`, drops the offer and the release and saves as every
-    /// settings change does; Remind me later only closes, and the backdrop and
-    /// Escape answer it the same.
+    /// The update offer's Details dialog, drawn while `update_release` stands
+    /// (the release it was opened for gone, it closes itself). Its answers:
+    /// Skip this version stores the version as `skipped_version`, drops the
+    /// offer and the release and saves as every settings change does; Remind
+    /// me later only closes, and the backdrop and Escape answer it the same.
     #[cfg(not(target_arch = "wasm32"))]
     fn show_update_dialog(&mut self, egui_ctx: &egui::Context) {
-        if !self.update_dialog.up() {
-            return;
-        }
         let Some(release) = self.update_release.as_ref() else {
             self.update_dialog.close();
             return;
@@ -1256,6 +1252,13 @@ mod tests {
         });
         let egui_ctx = test_context();
 
+        // The stamp must be the check's real finish time: the bounds come from
+        // the epoch read directly here, never `updater::now_secs` (a mutant
+        // that moved it would move the bounds with the stamp and pass).
+        let before = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
         frame(&egui_ctx, &mut app, Vec::new(), true);
         gate_tx.send(()).unwrap();
         // The worker answers as soon as the gate opens, but the test cannot
@@ -1272,18 +1275,30 @@ mod tests {
                 "the update check's reply never landed"
             );
         };
+        let after = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
         assert!(
             has_text(&nodes, "Update available: v0.0.2"),
             "the status bar offers the list's newest release"
         );
+        let stamp = ctx
+            .common()
+            .last_update_check
+            .expect("the completed check is stamped");
         assert!(
-            ctx.common().last_update_check.is_some(),
-            "the completed check is stamped"
+            (before..=after).contains(&stamp),
+            "the stamp {stamp} is inside {before}..={after}"
         );
         let written = Settings::load(&data.join(crate::settings::SETTINGS_FILE_NAME)).unwrap();
+        let stamp = written
+            .common
+            .last_update_check
+            .expect("the stamp was saved");
         assert!(
-            written.common.last_update_check.is_some(),
-            "the stamp was saved"
+            (before..=after).contains(&stamp),
+            "the saved stamp {stamp} is inside {before}..={after}"
         );
     }
 
