@@ -344,10 +344,13 @@ class Pure(unittest.TestCase):
                 r"--remap-path-prefix=E:\build\utw=target",
             ],
         )
-        # Unset homes and a target directory inside the repository add nothing.
+        # Unset homes and a target directory inside the repository add nothing. The paths are
+        # the host's own: "inside" is the host's path rule, so a Windows path under Linux is
+        # inside nothing.
+        home, root = str(Path("/home/member")), str(Path("/src/utw"))
         self.assertEqual(
-            remap_flags(r"C:\Users\Member", None, None, r"C:\src\utw", r"C:\src\utw\target"),
-            [r"--remap-path-prefix=C:\Users\Member=~", r"--remap-path-prefix=C:\src\utw=."],
+            remap_flags(home, None, None, root, str(Path(root) / "target")),
+            [f"--remap-path-prefix={home}=~", f"--remap-path-prefix={root}=."],
         )
 
     def test_rustflags_config_is_the_toml_array_of_the_flags(self) -> None:
