@@ -1,6 +1,8 @@
 """Tests of scripts/release/release.py; `just release` runs them before the recipe."""
 
 import re
+import sys
+import tarfile
 import tempfile
 import tomllib
 import unittest
@@ -15,14 +17,20 @@ from release import (
     about_config,
     build_args,
     check_exe,
+    elf_sections,
     existing_glob,
     expected_entries,
     exe_name,
     find_7z,
     launcher_calls,
     leaked_prefixes,
+    leftover_debug,
     links_crt_dynamically,
+    linux_symbols_entries,
     pack,
+    pack_tar,
+    pack_tar_flat,
+    platform_name,
     readme_names_version,
     third_party_notices,
     remap_flags,
@@ -42,14 +50,49 @@ Commands:
   help  Print a help chapter, or export them all as Markdown
 """
 
+READELF_UNSTRIPPED = """There are 36 section headers, starting at offset 0x1195ae8:
+
+Section Headers:
+  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
+  [ 1] .interp           PROGBITS        0000000000000318 000318 00001c 00   A  0   0  1
+  [14] .text             PROGBITS        0000000000003d60 002d60 a2c4e1 00  AX  0   0 16
+  [30] .debug_info       PROGBITS        0000000000000000 a35f00 5b7a2e 00      0   0  1
+  [31] .debug_abbrev     PROGBITS        0000000000000000 fed92e 001f4a 00      0   0  1
+  [33] .symtab           SYMTAB          0000000000000000 fee878 1b2a30 18     34 500 8
+  [34] .strtab           STRTAB          0000000000000000 11a12a8 15b7c0 00      0   0  1
+  [35] .shstrtab         STRTAB          0000000000000000 12fca68 00017f 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info)
+"""
+
+READELF_STRIPPED = """There are 31 section headers, starting at offset 0xa2cfe8:
+
+Section Headers:
+  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
+  [14] .text             PROGBITS        0000000000003d60 002d60 a2c4e1 00  AX  0   0 16
+  [17] .debug_gdb_scripts PROGBITS       0000000000a2c4f0 a2c4f0 000022 01 AMS  0   0  1
+  [28] .gnu_debuglink    PROGBITS        0000000000000000 a2c560 000014 00      0   0  4
+  [29] .symtab           SYMTAB          0000000000000000 a2c580 1b2a30 18     30 500 8
+  [30] .strtab           STRTAB          0000000000000000 bdefb0 15b7c0 00      0   0  1
+"""
+
 
 class Pure(unittest.TestCase):
     def test_the_notices_accept_what_cargo_deny_allows(self) -> None:
         deny = (ROOT / "deny.toml").read_text(encoding="utf-8")
-        config = tomllib.loads(about_config(deny))
+        config = tomllib.loads(about_config(deny, "x86_64-pc-windows-msvc"))
         self.assertEqual(config["accepted"], tomllib.loads(deny)["licenses"]["allow"])
         self.assertIn("OFL-1.1", config["accepted"])
         self.assertEqual(config["targets"], ["x86_64-pc-windows-msvc"])
+
+    def test_the_notices_read_the_target_the_binary_builds_for(self) -> None:
+        # The two platforms link different crates, so the Linux bundle's notices come
+        # from the Linux target's own dependency graph.
+        deny = (ROOT / "deny.toml").read_text(encoding="utf-8")
+        config = tomllib.loads(about_config(deny, "x86_64-unknown-linux-gnu"))
+        self.assertEqual(config["targets"], ["x86_64-unknown-linux-gnu"])
 
     def test_the_notices_list_each_license_once_with_every_crates_copyright(self) -> None:
         mit = "MIT License\n\n{}\n\nPermission is hereby granted, free of charge, ...\n"
@@ -193,6 +236,12 @@ class Pure(unittest.TestCase):
         self.assertEqual(exe_name(HELP), "UTW")
         self.assertIsNone(exe_name("no usage line\n"))
 
+    def test_platform_name(self) -> None:
+        self.assertEqual(platform_name("win32"), "windows")
+        self.assertEqual(platform_name("linux"), "linux")
+        with self.assertRaisesRegex(Refusal, "Windows and Linux only"):
+            platform_name("darwin")
+
     def test_launcher_calls(self) -> None:
         for bat in ("quick_compile.bat", "quick_upgrade.bat"):
             text = (ROOT / "resources/bundle" / bat).read_text(encoding="utf-8")
@@ -229,7 +278,7 @@ class Pure(unittest.TestCase):
 
     def test_expected_entries(self) -> None:
         self.assertEqual(
-            expected_entries("UTW", "0.0.1"),
+            expected_entries("UTW", "0.0.1", "windows"),
             {
                 "unlimited-tool-works-0.0.1",
                 "unlimited-tool-works-0.0.1/UTW.exe",
@@ -245,10 +294,15 @@ class Pure(unittest.TestCase):
             },
         )
 
+    def test_expected_entries_linux(self) -> None:
+        entries = expected_entries("utw", "0.0.1", "linux")
+        self.assertIn("unlimited-tool-works-0.0.1/utw", entries)
+        self.assertEqual([entry for entry in entries if entry.endswith(".exe")], [])
+
     def test_the_bundle_ships_the_bundled_works_licenses(self) -> None:
         # Roboto Flex's OFL and Phosphor's MIT, the third-party works the suite bundles
         # outside a crate, stage under `licenses/` beside the project's own two.
-        entries = expected_entries("UTW", "0.0.1")
+        entries = expected_entries("UTW", "0.0.1", "windows")
         self.assertIn("unlimited-tool-works-0.0.1/licenses/RobotoFlex-OFL.txt", entries)
         self.assertIn("unlimited-tool-works-0.0.1/licenses/PHOSPHOR-LICENSE.txt", entries)
         for license_file in LICENSES:
@@ -259,7 +313,7 @@ class Pure(unittest.TestCase):
         # in a member's unpacked folder.
         self.assertEqual(LAUNCHERS, ())
         self.assertEqual(EMPTY_FOLDERS, ())
-        entries = expected_entries("UTW", "0.0.1")
+        entries = expected_entries("UTW", "0.0.1", "windows")
         self.assertEqual([entry for entry in entries if entry.endswith(".bat")], [])
         for folder in ("exports", "old_exports"):
             self.assertNotIn(f"unlimited-tool-works-0.0.1/{folder}", entries)
@@ -273,13 +327,19 @@ class Pure(unittest.TestCase):
             {"UTW.exe", "utw.pdb"},
         )
 
-    def test_existing_glob_covers_the_bundle_and_the_symbols(self) -> None:
+    def test_linux_symbols_entries(self) -> None:
+        self.assertEqual(linux_symbols_entries("utw"), {"utw.debug"})
+
+    def test_existing_glob_covers_both_bundles_and_the_symbols(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             dist = Path(tmp)
             for file in (
                 "Tiny-0.0.1-windows.7z",
                 "Tiny-0.0.1-windows.7z.sha256",
+                "Tiny-0.0.1-linux.tar.gz",
+                "Tiny-0.0.1-linux.tar.gz.sha256",
                 "Tiny-0.0.1-symbols.7z",
+                "Tiny-0.0.1-linux-symbols.tar.gz",
             ):
                 (dist / file).write_bytes(b"x")
             (dist / "Tiny-0.0.2-windows.7z").write_bytes(b"x")
@@ -290,7 +350,10 @@ class Pure(unittest.TestCase):
                     for file in (
                         "Tiny-0.0.1-windows.7z",
                         "Tiny-0.0.1-windows.7z.sha256",
+                        "Tiny-0.0.1-linux.tar.gz",
+                        "Tiny-0.0.1-linux.tar.gz.sha256",
                         "Tiny-0.0.1-symbols.7z",
+                        "Tiny-0.0.1-linux-symbols.tar.gz",
                     )
                 ),
             )
@@ -318,16 +381,21 @@ class Pure(unittest.TestCase):
                 r"--remap-path-prefix=E:\build\utw=target",
             ],
         )
-        # Unset homes and a target directory inside the repository add nothing.
+        # Unset homes and a target directory inside the repository add nothing. The paths are
+        # the host's own: "inside" is the host's path rule, so a Windows path under Linux is
+        # inside nothing.
+        home, root = str(Path("/home/member")), str(Path("/src/utw"))
         self.assertEqual(
-            remap_flags(r"C:\Users\Member", None, None, r"C:\src\utw", r"C:\src\utw\target"),
-            [r"--remap-path-prefix=C:\Users\Member=~", r"--remap-path-prefix=C:\src\utw=."],
+            remap_flags(home, None, None, root, str(Path(root) / "target")),
+            [f"--remap-path-prefix={home}=~", f"--remap-path-prefix={root}=."],
         )
 
     def test_rustflags_config_is_the_toml_array_of_the_flags(self) -> None:
         flags = [r"--remap-path-prefix=C:\Users\O'Brien \"x\"=~", "--remap-path-prefix=C:\\src=."]
-        parsed = tomllib.loads(rustflags_config(flags))
+        parsed = tomllib.loads(rustflags_config(flags, "x86_64-pc-windows-msvc"))
         self.assertEqual(parsed["target"]["x86_64-pc-windows-msvc"]["rustflags"], flags)
+        parsed = tomllib.loads(rustflags_config(flags, "x86_64-unknown-linux-gnu"))
+        self.assertEqual(parsed["target"]["x86_64-unknown-linux-gnu"]["rustflags"], flags)
 
     def test_the_config_sets_crt_static_on_the_key_the_release_joins(self) -> None:
         # `--config` joins arrays on one key; on another key (`build.rustflags`) the target's
@@ -336,12 +404,15 @@ class Pure(unittest.TestCase):
         target_flags = config["target"]["x86_64-pc-windows-msvc"]["rustflags"]
         self.assertIn("target-feature=+crt-static", target_flags)
         self.assertNotIn("rustflags", config.get("build", {}))
-        self.assertTrue(rustflags_config([]).startswith("target.x86_64-pc-windows-msvc.rustflags="))
+        self.assertTrue(
+            rustflags_config([], "x86_64-pc-windows-msvc")
+            .startswith("target.x86_64-pc-windows-msvc.rustflags=")
+        )
 
     def test_build_args(self) -> None:
         # The one cargo build command the release and the candidate build share.
         self.assertEqual(
-            build_args([r"--remap-path-prefix=C:\u=~"]),
+            build_args([r"--remap-path-prefix=C:\u=~"], "x86_64-pc-windows-msvc"),
             [
                 "cargo",
                 "build",
@@ -351,6 +422,19 @@ class Pure(unittest.TestCase):
                 "studio",
                 "--config",
                 'target.x86_64-pc-windows-msvc.rustflags=["--remap-path-prefix=C:\\\\u=~"]',
+            ],
+        )
+        self.assertEqual(
+            build_args(["--remap-path-prefix=/home/runner=~"], "x86_64-unknown-linux-gnu"),
+            [
+                "cargo",
+                "build",
+                "--release",
+                "--locked",
+                "-p",
+                "studio",
+                "--config",
+                'target.x86_64-unknown-linux-gnu.rustflags=["--remap-path-prefix=/home/runner=~"]',
             ],
         )
 
@@ -365,6 +449,35 @@ class Pure(unittest.TestCase):
         self.assertTrue(links_crt_dynamically(b"\x00VCRUNTIME140.dll\x00"))
         self.assertFalse(links_crt_dynamically(b"\x00KERNEL32.dll\x00"))
 
+    def test_elf_sections(self) -> None:
+        # The check the recipe runs on the stripped Linux binary: no `.debug_*` left,
+        # the symbol table kept (`.gnu_debuglink` is not a `.debug_` section, and the
+        # unnamed first section's `NULL` is its type, not a name).
+        self.assertEqual(
+            elf_sections(READELF_UNSTRIPPED),
+            {
+                ".interp",
+                ".text",
+                ".debug_info",
+                ".debug_abbrev",
+                ".symtab",
+                ".strtab",
+                ".shstrtab",
+            },
+        )
+        stripped = elf_sections(READELF_STRIPPED)
+        self.assertEqual(
+            stripped, {".text", ".debug_gdb_scripts", ".gnu_debuglink", ".symtab", ".strtab"}
+        )
+
+    def test_leftover_debug_passes_the_section_a_strip_keeps(self) -> None:
+        # `.debug_gdb_scripts` is loaded (flag A), so `objcopy --strip-debug` keeps it: the
+        # second dry run's stripped binary held it and was refused. Debug info proper is not.
+        self.assertEqual(leftover_debug(elf_sections(READELF_STRIPPED)), [])
+        self.assertEqual(
+            leftover_debug(elf_sections(READELF_UNSTRIPPED)), [".debug_abbrev", ".debug_info"]
+        )
+
     def test_check_exe(self) -> None:
         # The check `release()` runs on its build and the candidate runs on the exe it
         # finds: a leaked build-machine path or a dynamic C runtime refuses.
@@ -372,15 +485,27 @@ class Pure(unittest.TestCase):
             exe = Path(tmp) / "utw.exe"
             exe.write_bytes(b"\x00panicked at c:/users/member/.cargo/registry/src/x.rs\x00")
             with self.assertRaisesRegex(Refusal, r"C:\\Users\\Member"):
-                check_exe(exe, [r"C:\Users\Member", r"C:\src\utw"])
+                check_exe(exe, [r"C:\Users\Member", r"C:\src\utw"], "windows")
             exe.write_bytes(b"\x00VCRUNTIME140.dll\x00")
             with self.assertRaisesRegex(Refusal, r"VCRUNTIME140\.dll"):
-                check_exe(exe, [])
+                check_exe(exe, [], "windows")
             exe.write_bytes(b"\x00a clean exe\x00")
-            check_exe(exe, [r"C:\Users\Member", r"C:\src\utw"])
+            check_exe(exe, [r"C:\Users\Member", r"C:\src\utw"], "windows")
+
+    def test_check_exe_linux(self) -> None:
+        # A Linux binary links the system's libc, so naming a C runtime is no refusal;
+        # a leaked build-machine path still is.
+        with tempfile.TemporaryDirectory() as tmp:
+            exe = Path(tmp) / "utw"
+            exe.write_bytes(b"\x00vcruntime140.dll\x00")
+            check_exe(exe, [], "linux")
+            exe.write_bytes(b"\x00/home/runner/work/utw/x.rs\x00")
+            with self.assertRaisesRegex(Refusal, "/home/runner"):
+                check_exe(exe, ["/home/runner/work/utw"], "linux")
 
 
 class Listing(unittest.TestCase):
+    @unittest.skipUnless(sys.platform == "win32", "7-Zip packs the Windows bundle only")
     def test_a_packed_bundle_lists_the_staged_set(self) -> None:
         seven_z = find_7z()
         if seven_z is None:
@@ -402,10 +527,11 @@ class Listing(unittest.TestCase):
             ):
                 (top / bundled).write_bytes(b"x")
             found = pack(seven_z, stage / "tiny.7z", stage, [top.name])
-            expected = expected_entries("Tiny", "9.9.9")
+            expected = expected_entries("Tiny", "9.9.9", "windows")
             self.assertEqual(found, expected)
             self.assertNotEqual(found, expected - {f"{PACKAGE}-9.9.9/README.txt"})
 
+    @unittest.skipUnless(sys.platform == "win32", "7-Zip packs the Windows bundle only")
     def test_a_packed_symbols_archive_lists_its_two_entries(self) -> None:
         # Two bare names under the staging folder, as `release.py` packs the symbols: the
         # archive's entries are flat.
@@ -418,6 +544,57 @@ class Listing(unittest.TestCase):
             (stage / "utw.pdb").write_bytes(b"y")
             found = pack(seven_z, stage / "tiny-symbols.7z", stage, ["Tiny.exe", "utw.pdb"])
             self.assertEqual(found, symbols_entries("Tiny"))
+
+    def test_a_packed_tarball_lists_the_staged_set_and_marks_the_binary(self) -> None:
+        # The Linux bundle: the same staged set as the .7z, but a tar keeps modes and
+        # ownership, so the binary must be executable and no member may name an owner.
+        with tempfile.TemporaryDirectory() as tmp:
+            stage = Path(tmp)
+            top = stage / f"{PACKAGE}-9.9.9"
+            (top / "data").mkdir(parents=True)
+            (top / "data/settings.toml").write_bytes(b"x")
+            (top / "licenses").mkdir()
+            for bundled in (
+                "Tiny",
+                "README.txt",
+                "licenses/LICENSE-MIT",
+                "licenses/LICENSE-APACHE",
+                "licenses/RobotoFlex-OFL.txt",
+                "licenses/PHOSPHOR-LICENSE.txt",
+                "licenses/THIRD-PARTY-NOTICES.txt",
+            ):
+                (top / bundled).write_bytes(b"x")
+            archive = stage / "tiny.tar.gz"
+            found = pack_tar(archive, stage, top.name, "Tiny")
+            self.assertEqual(found, expected_entries("Tiny", "9.9.9", "linux"))
+            with tarfile.open(archive) as tar:
+                members = {member.name: member for member in tar.getmembers()}
+            self.assertEqual(members[top.name].mode, 0o755)
+            self.assertEqual(members[f"{top.name}/Tiny"].mode, 0o755)
+            self.assertEqual(members[f"{top.name}/README.txt"].mode, 0o644)
+            self.assertEqual(members[f"{top.name}/data"].mode, 0o755)
+            for member in members.values():
+                self.assertEqual(
+                    (member.uid, member.gid, member.uname, member.gname),
+                    (0, 0, "", ""),
+                    member.name,
+                )
+
+    def test_a_packed_flat_tarball_lists_the_debug_file(self) -> None:
+        # The Linux symbols archive, packed as the recipe packs it: `utw.debug` alone
+        # and flat, `0644`, owned by nobody, as the Windows symbols' entries are flat.
+        with tempfile.TemporaryDirectory() as tmp:
+            stage = Path(tmp)
+            (stage / "utw.debug").write_bytes(b"x")
+            archive = stage / "tiny-symbols.tar.gz"
+            found = pack_tar_flat(archive, stage, "utw.debug")
+            self.assertEqual(found, linux_symbols_entries("utw"))
+            with tarfile.open(archive) as tar:
+                members = {member.name: member for member in tar.getmembers()}
+            self.assertEqual(members["utw.debug"].mode, 0o644)
+            member = members["utw.debug"]
+            self.assertEqual((member.uid, member.gid, member.uname, member.gname),
+                             (0, 0, "", ""))
 
 
 if __name__ == "__main__":
