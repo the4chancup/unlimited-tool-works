@@ -99,7 +99,7 @@ mutation runs split again from 2026-10-26 (the switch off). On 2026-11-02 the ma
 every new job to the VPS until further notice ("any new jobs must be run on bonfire only"):
 the switch is on, the lead's checks run through `just remote` and `just gates-remote`, and a
 sidekick's `cargo check`, test and clippy runs all go through `just remote`; only `cargo fmt`
-stays local.
+stays local. The order was lifted the same evening (the switch off).
 `REMOTE_ONLY = True` in `scripts/mutation/mutants.py` makes
 `just mutants` and `just mutants-diff` run every mutant on the VPS as one whole run (no
 local half, no split threshold; the last local `mutants.out` set aside as
