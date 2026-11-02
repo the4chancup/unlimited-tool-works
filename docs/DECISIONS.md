@@ -15216,3 +15216,13 @@ Why: the draft and the app had drifted (white heads against grey, coded names ag
 head repeated per severity); the grey id keeps the head quiet and the coded name finds the player
 as the list shows him. A member who does not want the suggestions copied turns them off.
 Plan: `plans/save_editor.md`, the `violations` widget's paragraph and "Live AATF"; SE-GUI-63.
+
+## 2026-11-02 — save_editor — The page keys step team by team, or 7 rows inside one team
+Decision (the maintainer, the draft approved): with two team rows or more in the list, PgUp and
+PgDn move the selection from team row to team row (PgUp from a player to his own team's row
+first); with one, 7 rows at a time; the ends stop them. "Visible" read as the list's team rows
+as filtered, not those in the view (the lead's reading, the draft approved with it).
+Why: a page of rows crossed into the next team at a place that depended on the window's height;
+a team at a time is how a member walks a save, and the rows in view would make one press do
+different things as the list scrolls.
+Plan: `plans/save_editor.md`, the list paragraph's page keys; SE-GUI-53.

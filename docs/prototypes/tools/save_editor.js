@@ -3568,6 +3568,8 @@ document.addEventListener("pointerdown", e => {
 // aesthetics writes: no-ops under the lock; Ctrl+B opens Bump all stats on a
 // player row. Open's work with no save open, and with no PES save of that
 // version found Ctrl+5 to Ctrl+1 open the picker.
+// The page keys' step through one team's rows.
+const PAGE_ROWS = 7;
 function onKey(e) {
   if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === "o" || e.key in OPEN_KEYS)) {
     e.preventDefault();
@@ -3589,17 +3591,28 @@ function onKey(e) {
   }
   if (e.key === "Escape" && S.picker) { closePicker(); render(); }
   if (e.key === "Escape" && S.changesPop) { S.changesPop = false; render(); }
-  // PgUp and PgDn move the selection by the rows the list shows at once, every
-  // row counted, stopping at the ends; from any field, not under a dialog.
+  // PgUp and PgDn: with two team rows or more in the list (ALL, or a filter
+  // several teams match) they move the selection from team row to team row,
+  // one per press, PgUp from a player to his own team's row first; with at
+  // most one (a team picked), PAGE_ROWS rows at a time. The first and last
+  // rows stop them, as the first and last team rows do; from any field, not
+  // under a dialog.
   if ((e.key === "PageUp" || e.key === "PageDown") && S.save && !e.ctrlKey && !e.metaKey
       && !e.altKey && !document.querySelector(".modal-bg") && !S.picker && !S.changesPop) {
     const rows = [...document.querySelectorAll(".plist .rows .prow")];
     const at = rows.findIndex(r => r.classList.contains("on"));
     if (at >= 0) {
       e.preventDefault();
-      const view = document.querySelector(".plist .rows");
-      const page = Math.max(1, Math.floor(view.clientHeight / rows[at].offsetHeight));
-      const to = Math.min(rows.length - 1, Math.max(0, at + (e.key === "PageDown" ? page : -page)));
+      const down = e.key === "PageDown";
+      const isTeam = r => r.classList.contains("trow");
+      let to;
+      if (rows.filter(isTeam).length >= 2) {
+        const teams = rows.map((r, i) => isTeam(r) ? i : -1).filter(i => i >= 0);
+        to = down ? teams.find(i => i > at) : teams.findLast(i => i < at);
+        if (to === undefined) to = at;
+      } else {
+        to = Math.min(rows.length - 1, Math.max(0, at + (down ? PAGE_ROWS : -PAGE_ROWS)));
+      }
       selectRow(rows[to]);
     }
   }

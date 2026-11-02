@@ -6983,9 +6983,10 @@ briefs, review loops, gates and mutation runs as for any step.
       SE-GUI-62, red first.
       Both done 2026-11-02 as `1b4f0115` on `f1g` (a focused number still holds them off:
       egui draws it as a `TextEdit` under its own id), SE-GUI-53's citation fix beside it
-    - [ ] f1g4 PgUp/PgDn: with at most one team row in view a jump of 7 rows, with two or
-      more one team row at a time (the maintainer); drafted first for their look, then
-      the plan's sentence and SE-GUI-55's rewrite
+    - [ ] f1g4 PgUp/PgDn: with one team row in the list 7 rows a press, with two or more one
+      team row at a time (the maintainer; the draft approved 2026-11-02, `onKey`'s page keys,
+      `PAGE_ROWS`); `save_editor` `view/mod.rs` `page_step` and its list move → verify:
+      SE-GUI-53, red first
     - [ ] f1g5 an Invert value scrolling setting, off by default: every wheel step of a
       value reversed (down moves a slider right and raises a number); plan
       (`plans/core/gui.md` "The wheel over a value"), draft, then the slice

@@ -211,10 +211,14 @@ all side by side.
   selection to the list's previous or next row as shown (team rows included, so the detail
   turns to the team view on one), the list scrolling to keep it in view, the first and last
   rows stopping it; they do so while no control holds the keyboard (a focused number steps
-  with them, a text field moves its cursor) and no dialog or popup is open. **PgUp and PgDn**
-  move it a page, the number of rows the list shows at once, as a list box's page keys do,
-  from any field (4ccEditor's hidden shortcut, which stepped one player), the first and last
-  rows stopping them; one row per press would leave them doing what Up and Down do.
+  with them, a text field moves its cursor) and no dialog or popup is open. **PgUp and PgDn**,
+  from any field (4ccEditor's hidden shortcut, which stepped one player), move it from team
+  row to team row while the list holds two team rows or more (ALL, or a filter several teams
+  match), one per press, PgUp from a player to his own team's row first; with one team row
+  (a team picked) they move it 7 rows at a time. The first and last rows, or team rows, stop
+  them. The team rows counted are the list's as filtered, wherever it is scrolled, so a
+  press does the same whatever the window's height; a page of rows, as a list box's keys
+  move, crossed into the next team at a place that depended on it.
   A player row shows his place in the roster (`01` to `23`, the slot `NN` of his id, always
   two digits, so no column is kept for right-aligning a one-digit number), position and name,
   with no team name under ALL or a filter: the team row above its players already names it.
@@ -2052,10 +2056,14 @@ SE-GUI-52  GIVEN the PES 17 save open on ALL, team 701's (/3/) last player row s
                 Height field holding the keyboard WHEN Down is pressed THEN the selection
                 stays; WHEN Down is pressed on a row below the list's view THEN the list
                 scrolls so the selected row shows
-SE-GUI-53  GIVEN the PES 17 save open on ALL with a player row selected
+SE-GUI-53  GIVEN the PES 17 save open on ALL with team 718's player 05 selected
            WHEN PgDn is pressed
-           THEN the selection moves down by the number of rows the list shows at once,
-                stopping at the last row; PgUp moves it back the same way
+           THEN the next team's row is selected, and each PgDn after it the next one's,
+                the last team row stopping it; WHEN PgUp is pressed on a player THEN his own
+                team's row is selected, and on a team row the one above it; GIVEN a filter
+                several teams match THEN the same; GIVEN team 718 picked and its player 01
+                selected WHEN PgDn is pressed four times THEN 08, 15, 22 and 23 are selected,
+                the last row stopping it, and PgUp twice then selects 16 and 09
 SE-GUI-54  GIVEN a player selected
            WHEN "abc" is typed into his shirt name, and into his team's short name
            THEN the records hold "ABC"
