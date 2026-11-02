@@ -15415,3 +15415,10 @@ job's first run before 0.0.1's own tag; the real releases request is first exerc
 field, where a failure shows nothing and logs one line.
 Plan: `plans/core/distribution.md` "Self-update" (what 0.0.1 ships) and "Release builds in CI"
 (the test tag); `plans/core/gui.md` ST-UPD-02.
+
+## 2026-11-02 — studio — Update now leaves 0.0.1's dialog
+Decision (the maintainer): 0.0.1's update dialog has no Update now: Open release page, Skip this
+version and Remind me later. This replaces the disabled button of "Update now waits for 0.0.2".
+Why: a disabled Update now reads as an update that is not actually available; the release page
+is the way to it until 0.0.2's auto-updater.
+Plan: `plans/core/distribution.md` "Self-update" (what 0.0.1 ships); `plans/core/gui.md` ST-UPD-02.
