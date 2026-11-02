@@ -15415,3 +15415,29 @@ job's first run before 0.0.1's own tag; the real releases request is first exerc
 field, where a failure shows nothing and logs one line.
 Plan: `plans/core/distribution.md` "Self-update" (what 0.0.1 ships) and "Release builds in CI"
 (the test tag); `plans/core/gui.md` ST-UPD-02.
+
+## 2026-11-02 — studio — Update now leaves 0.0.1's dialog
+Decision (the maintainer): 0.0.1's update dialog has no Update now: Open release page, Skip this
+version and Remind me later. This replaces the disabled button of "Update now waits for 0.0.2".
+Why: a disabled Update now reads as an update that is not actually available; the release page
+is the way to it until 0.0.2's auto-updater.
+Plan: `plans/core/distribution.md` "Self-update" (what 0.0.1 ships); `plans/core/gui.md` ST-UPD-02.
+
+## 2026-11-03 — save_editor, studio — Four fixes from the look at 0.0.1i-pre2
+Decision (the maintainer, after the checklist on 0.0.1i-pre2): for 0.0.1, (1) the update check's
+interval is in minutes, `check_interval_minutes`, 120 by default and at least 1, and the check
+runs again while the window stays open once the interval has passed; (2) the player list's
+draggable rows show the pointing hand; the lineup rows keep the move cross; (3) a dragged lineup
+row keeps the point it was pressed at under the pointer; (4) Stronger foot/hand's unpicked side
+is in the strong text colour (`#dcdcdc`), the picked side's word staying the resting light grey.
+Later: the comparator's arrow rows in three columns (Item, Old value, New value), the player
+list's dragged row floating, an X undoing one change in the unsaved changes list (0.0.2).
+Why: (1) a check only at startup leaves a window open all day unchecked; minutes let the
+interval go below an hour. (2) Windows has no grab-hand cursor and draws egui's grab as the
+four-arrow move cross, which the headless tests could not see (they read egui's request); the
+maintainer took the pointing hand for the player list, the cross for the lineup rows. (3) egui
+centres a dragged source on the pointer; the browser keeps the grab point, as the draft shows.
+(4) The draft had both sides grey (`#b4b4b4` and `#8c8c8c`), where the ask was grey and white.
+Plan: `plans/core/distribution.md` "Self-update" step 1, `plans/core/gui.md` ST-UPD-01;
+`plans/save_editor.md` the player list's paragraph, the lineup paragraph, SE-GUI-61, SE-GUI-64,
+SE-GUI-65.

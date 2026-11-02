@@ -7017,10 +7017,13 @@ briefs, review loops, gates and mutation runs as for any step.
         test (`116e3424`), its second passed: Windows exe opens and closes cleanly
         → verify: release_test on both platforms; the next dry run's binary has no `.debug_*`
         section and keeps `.symtab`
-      - [ ] f1g7f one test tag `v0.0.1-rc.1` from a branch bumped to it: the release job's
+      - [x] f1g7f one test tag `v0.0.1-rc.1` from a branch bumped to it: the release job's
         draft pre-release checked (three assets, `SHA256SUMS.txt` matching both), then the
         draft and the tag deleted on the maintainer's word (`plans/core/distribution.md`
         "Release builds in CI")
+        Done 2026-11-03: run 41533635023 (tag at `6788dc28`, branch `ci/test-tag-rc1`) passed all
+        three jobs; the draft pre-release held the `.7z` (11.7 MB), the `.tar.gz` (21.9 MB) and
+        `SHA256SUMS.txt`, both matching; draft and tag deleted
       - [ ] f1g7d the dry run's bundles looked at: the Windows exe starts here, the Linux
         binary in WSLg (Ubuntu 22.04) → verify: both windows open and close cleanly
     - [x] f1g8 whether 0.0.2-poc fits in 0.0.1: cancelled by the maintainer 2026-11-02 ("we've
@@ -7037,9 +7040,11 @@ briefs, review loops, gates and mutation runs as for any step.
       slice 1 keeps it `pub` only because slices 2-3 are the first readers of `Release`'s fields.
       Slices 1-2 done 2026-11-02 (`b9608c7c`, `03f92b80`, on `f1g9`); slice 3 postponed to 0.0.2
       (DECISIONS "Update now waits for 0.0.2", worklog 0.0.2-upd)
-      - [ ] f1g9c Update now's hover reads the plan's; the check's stamp tested as the current
+      - [ ] f1g9c Update now leaves the dialog (DECISIONS "Update now leaves 0.0.1's dialog");
+        the check's stamp tested as the current
         time (the mutation run's `now_secs` survivors); `UpdateDialog::up` dropped, the
-        dialog's `show` already returning while it is shut → verify: ST-UPD-02 headless,
+        dialog's `show` already returning while it is shut; `updater` crate-private → verify:
+        ST-UPD-02 headless (three buttons),
         the stamp's test red on `now_secs` returning 0
     - [ ] f1g10 the comparator's heads with the hyphens (DECISIONS "The comparator's heads take
       the AATF lists' hyphens"), and Live AATF's `All clean` line with Copy to clipboard never
@@ -7054,6 +7059,14 @@ briefs, review loops, gates and mutation runs as for any step.
       DECISIONS "The team row's hint names the gameplan"), in `save_editor`
       `view/player_list.rs` `team_row` and its test; drafted (`teamRow`'s `.thint`) → verify:
       the hint's test, red first
+    - [ ] f1g13 the maintainer's look at 0.0.1i-pre2 (2026-11-03; DECISIONS "Four fixes from the
+      look at 0.0.1i-pre2"), drafted: (a) the update interval in minutes, 120 by default, the
+      check run again while the window stays open (`studio_core` `updater.rs` `check_due`,
+      `shell/mod.rs` `poll_update`, the settings row, the two spec tables) → verify: ST-UPD-01
+      headless, red first; (b) the player list's pointing hand (`player_list.rs`
+      `player_row`) → SE-GUI-64; (c) the dragged lineup row keeps its grab point
+      (`team_widgets` `pitch/lineup.rs` `lineup_row`) → SE-GUI-65; (d) Stronger foot/hand's
+      unpicked side in the strong text colour (`info_strip.rs` `side_row`) → SE-GUI-61
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. The maintainer, 2026-11-02: the
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);
@@ -7126,6 +7139,13 @@ briefs, review loops, gates and mutation runs as for any step.
     the next start's `Updated to` notice, in two slices (the updater's core, then the
     dialog's states); its end-to-end test first settles how a pre-release can be read
     without every 0.0.1 being offered it → verify: ST-UPD-03 headless, ST-UPD-04
+  - [ ] 0.0.2-cmp the comparator's rows that carry an arrow become three columns, Item, Old
+    value and New value, as the unsaved changes list; its team and player rows unchanged
+    (the maintainer, 2026-11-03)
+  - [ ] 0.0.2-drag the player list's dragged row floats under the pointer as the lineup
+    rows' does, its grab point kept (the maintainer, 2026-11-03)
+  - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
+    if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
   - [ ] 0.0.2-cli the command line's update notice (DECISIONS "The update offer waits in the
     status bar"): from 0.0.2 a command prints one line when a newer release exists
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and
