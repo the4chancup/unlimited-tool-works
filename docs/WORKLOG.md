@@ -6906,7 +6906,11 @@ briefs, review loops, gates and mutation runs as for any step.
       labels; a Stats-only import leaves the motions, colours and kits as the target's and an
       Aesthetics-only import writes them; Copy stats leaves the free-kick motion
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
-    release 0.0.1`, the clean-machine check, the hand-over
+    release 0.0.1`, the clean-machine check, the hand-over. The maintainer, 2026-11-02: the
+    `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);
+    l2's double-click half (no console window) stays. The clean-machine check runs on the
+    maintainer's notebook with `.tmp/lead/clean_check/clean_check.ps1` (its `.bat` beside it),
+    its report pasted into the step's line
   - [ ] f3 after the cut, first (the maintainer, 2026-11-01: queued so the 5-hour usage
     window goes to 0.0.1): the repository's branches and worktrees, never pruned (census
     2026-11-01, `.tmp/lead/branch_census.py`: 155 branches, 130 merged into main; 153
@@ -6938,6 +6942,12 @@ briefs, review loops, gates and mutation runs as for any step.
     so an exe built from main with it is handed to the organizer before that date (0.0.1's
     gates on the candidate may meet its test's race: `the_last_end_follows_the_first_...`
     fails under load and passes alone, WORKLOG Issues)
+  - [ ] f6 after the cut (the maintainer, 2026-11-02), moved out of the cut: (1) Astra's
+    review of f1e, f1e2 and f1e3 (`ec766a55`, `96154896` and f1e3's commit, against
+    `4dcef0a8`), which had SWE-2 rounds only; (2) the exe's size crate by crate, `cargo bloat
+    --release -p studio --crates` on the release's commit, into `spec/core/distribution.md`
+    "Size budget"; (3) l2's other half, ST-RUN-04's `team-compiler check` from a terminal
+    printing there, on the release bundle (the Team compiler is outside 0.0.1)
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
