@@ -15,6 +15,8 @@ mod status_bar;
 #[cfg(test)]
 mod test_harness;
 mod title;
+#[cfg(not(target_arch = "wasm32"))]
+mod update_dialog;
 mod window_size;
 
 use std::path::PathBuf;
@@ -172,6 +174,9 @@ pub struct StudioApp {
     /// Details dialog and the download read it.
     #[cfg(not(target_arch = "wasm32"))]
     update_release: Option<updater::Release>,
+    /// The update offer's Details dialog: its open state and the notes' cache.
+    #[cfg(not(target_arch = "wasm32"))]
+    update_dialog: update_dialog::UpdateDialog,
 }
 
 /// Where the startup update check stands (native only; the browser build checks
@@ -244,6 +249,8 @@ impl StudioApp {
             update_poll: UpdatePoll::NotStarted,
             #[cfg(not(target_arch = "wasm32"))]
             update_release: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            update_dialog: update_dialog::UpdateDialog::default(),
         }
     }
 
@@ -391,6 +398,37 @@ impl StudioApp {
     #[cfg(target_arch = "wasm32")]
     fn poll_update(&mut self, _egui_ctx: &egui::Context) {}
 
+    /// The update offer's Details dialog, drawn while `update_dialog` is up
+    /// and `update_release` still stands (the release it was opened for gone,
+    /// it closes itself). Its answers: Skip this version stores the version as
+    /// `skipped_version`, drops the offer and the release and saves as every
+    /// settings change does; Remind me later only closes, and the backdrop and
+    /// Escape answer it the same.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn show_update_dialog(&mut self, egui_ctx: &egui::Context) {
+        if !self.update_dialog.up() {
+            return;
+        }
+        let Some(release) = self.update_release.as_ref() else {
+            self.update_dialog.close();
+            return;
+        };
+        if let Some(update_dialog::UpdateAnswer::SkipVersion) =
+            self.update_dialog.show(egui_ctx, release)
+        {
+            let version = release.version.to_string();
+            self.ctx.settings().lock().unwrap().common.skipped_version = Some(version.clone());
+            self.status_bar
+                .set_condition(ShellCondition::UpdateAvailable { version }, false);
+            self.update_release = None;
+            self.save_settings();
+        }
+    }
+
+    /// The browser build has no update dialog.
+    #[cfg(target_arch = "wasm32")]
+    fn show_update_dialog(&mut self, _egui_ctx: &egui::Context) {}
+
     /// Tells the active tool its standing notice ended, once, if the bar saw it end since
     /// the last ask.
     fn tell_standing_end(&mut self) {
@@ -430,11 +468,13 @@ impl StudioApp {
         texts
     }
 
-    /// Opens the help window at `target`. A shell modal (the settings menu, the About popup)
-    /// closes first so it cannot cover the non-modal window.
+    /// Opens the help window at `target`. A shell modal (the settings menu, the About
+    /// popup, the update dialog) closes first so it cannot cover the non-modal window.
     fn open_help(&mut self, target: &HelpTarget) {
         self.settings_menu.close();
         self.sidebar.about_open = false;
+        #[cfg(not(target_arch = "wasm32"))]
+        self.update_dialog.close();
         let active = self
             .tools
             .get(self.active)
@@ -448,7 +488,8 @@ impl StudioApp {
     /// folder, the main row or the version's own entry once any exists, then saves as any
     /// change; `SwitchVersion` makes the selector's manual pick; `OpenSettings` opens the
     /// settings menu on the active tool's section;
-    /// `OpenHelp` opens the help window at the target. `OpenFolder` has no target yet (the
+    /// `OpenHelp` opens the help window at the target; `OpenUpdateDetails` opens the update
+    /// offer's dialog. `OpenFolder` has no target yet (the
     /// compile's "Open output" is a later GUI-phase step): it only dismisses.
     fn apply_notice_effect(&mut self, effect: ActionEffect) {
         match effect {
@@ -465,6 +506,12 @@ impl StudioApp {
             ActionEffect::SwitchVersion(version) => self.sidebar.pick_version(version, &self.ctx),
             ActionEffect::OpenSettings => self.settings_menu.open(self.active, &self.ctx),
             ActionEffect::OpenHelp(target) => self.open_help(&target),
+            #[cfg(not(target_arch = "wasm32"))]
+            ActionEffect::OpenUpdateDetails => self.update_dialog.open(),
+            #[cfg(target_arch = "wasm32")]
+            ActionEffect::OpenUpdateDetails => {
+                debug!("the update dialog does not exist in the browser build");
+            }
             effect @ ActionEffect::OpenFolder(_) => {
                 debug!("notice action {effect:?} has no target yet");
             }
@@ -610,9 +657,11 @@ impl eframe::App for StudioApp {
             egui_ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
             self.set_active(index);
             // The holder's prompt decides; no shell modal (the settings menu, the About
-            // popup) may cover it.
+            // popup, the update dialog) may cover it.
             self.settings_menu.close();
             self.sidebar.about_open = false;
+            #[cfg(not(target_arch = "wasm32"))]
+            self.update_dialog.close();
         }
         let focused = egui_ctx.input(|input| input.focused);
         let activities = self.activities(true);
@@ -709,6 +758,7 @@ impl eframe::App for StudioApp {
                 &self.ctx,
                 &mut self.sidebar,
             );
+            self.show_update_dialog(ui.ctx());
             self.help_window.show(ui.ctx());
         }
     }
@@ -1179,8 +1229,8 @@ mod tests {
         );
     }
 
-    // ST-UPD-01
     #[cfg(not(target_arch = "wasm32"))]
+    // ST-UPD-01
     #[test]
     fn a_due_check_offers_the_newest_release_and_stamps_it() {
         let dir = TestDir::new("studio_core_update_offer");
@@ -1237,8 +1287,8 @@ mod tests {
         );
     }
 
-    // ST-UPD-01
     #[cfg(not(target_arch = "wasm32"))]
+    // ST-UPD-01
     #[test]
     fn no_check_runs_while_checks_are_off_or_the_interval_holds() {
         let egui_ctx = test_context();
@@ -1268,8 +1318,8 @@ mod tests {
         }
     }
 
-    // ST-UPD-01
     #[cfg(not(target_arch = "wasm32"))]
+    // ST-UPD-01
     #[test]
     fn a_failed_check_shows_no_offer_and_stamps_nothing() {
         let dir = TestDir::new("studio_core_update_failed");
