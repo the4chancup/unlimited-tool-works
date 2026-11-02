@@ -183,6 +183,9 @@ input[type=range]:focus { outline: none; }
   min-height: 18px; color: #b4b4b4; }
 .plist .rows .prow:hover { background: var(--hover); }
 .plist .rows .prow.on { background: var(--sel-bg); }
+/* A player row drags from anywhere on it, so the whole row shows the grab hand, never the text
+   I-beam (egui's Grab cursor over a drag source), as the lineup lists' rows do. */
+.plist .rows .prow[draggable=true] { cursor: grab; user-select: none; }
 /* The drag handle in the player list and the lineup lists sits 4 points from the row's edge
    (the row's padding) and 4 before the place or position (the row's gap of 5 less 1), so the
    names get the room. */
