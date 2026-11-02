@@ -150,8 +150,8 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             team: team_id,
             ruleset: active.key.clone(),
         };
-        let (_, settled) = edit_settled(ui, *focused);
-        medals.update(&key, true, settled, |key| {
+        let (_, end) = edit_settled(ui, *focused);
+        medals.update(&key, true, end.settled(), |key| {
             spawn_medals(
                 ui.ctx(),
                 session.file(),

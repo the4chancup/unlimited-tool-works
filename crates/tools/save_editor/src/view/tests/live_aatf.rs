@@ -706,6 +706,107 @@ fn a_keyboard_invoked_set_stats_checks_the_team_again() {
     live_checked(&mut window, &mut view, &[734]);
 }
 
+/// A rating cell pressed from the keyboard (Tab + Space, or AccessKit's
+/// Focus then a Space key, which keep the keyboard focus on it) settles
+/// its edit on that frame — the cell is a widget with no text cursor —
+/// so the check starts with no further input.
+// SE-GUI-55
+#[test]
+fn a_space_pressed_rating_cell_starts_the_check() {
+    let (mut view, mut window) = open_734_with("live_aatf_rating_space", &[73401, 73404], 183);
+    view.live_aatf = true;
+    live_checked(&mut window, &mut view, &[734]);
+    let player_id = team_entry(&view, 734).roster[0].player_id;
+    let playable = |view: &SaveView| player_entry(view, player_id).positions.playable;
+    assert_eq!(playable(&view)[2], 0, "premise: LWF stores C");
+
+    // The LWF cell's A rating, focused as a Tab lands it (the AccessKit
+    // Focus, which leaves the keyboard on it as Tab would).
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let nodes: Vec<accesskit::Node> = pairs.iter().map(|(_, node)| node.clone()).collect();
+    let rating_bounds = rating_buttons(&nodes, "LWF")[2]
+        .bounds()
+        .expect("the A rating's bounds");
+    let rating_id = pairs
+        .iter()
+        .find(|(_, node)| {
+            node.role() == Role::Button
+                && node.label() == Some("A")
+                && node.bounds() == Some(rating_bounds)
+        })
+        .map(|(id, _)| *id)
+        .expect("the A rating's AccessKit id");
+    action_focus(&mut window, &mut view, rating_id);
+    window.frame(
+        vec![
+            key(egui::Key::Space, egui::Modifiers::NONE, true),
+            key(egui::Key::Space, egui::Modifiers::NONE, false),
+        ],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        playable(&view)[2],
+        2,
+        "premise: the Space press stored the A rating"
+    );
+    let revision = view.session.as_ref().expect("the save").revision();
+    draw(&mut window, &mut view);
+    assert!(
+        view.live.check.pending.is_some()
+            || view
+                .live
+                .check
+                .result
+                .as_ref()
+                .is_some_and(|(key, _)| key.revision == revision),
+        "the check started with no further input"
+    );
+    live_checked(&mut window, &mut view, &[734]);
+}
+
+/// A number field being typed holds its gesture while it keeps the
+/// keyboard — its focus is a text edit's, so no check starts — and lets
+/// go on Escape, where the settled edit's check starts.
+// SE-GUI-55
+#[test]
+fn a_number_field_being_typed_starts_no_check() {
+    let (mut view, mut window) = open_734_with("live_aatf_typing_waits", &[73401, 73404], 183);
+    view.live_aatf = true;
+    live_checked(&mut window, &mut view, &[734]);
+    let player_id = team_entry(&view, 734).roster[0].player_id;
+    let height = player_entry(&view, player_id).basic.height;
+
+    // The Height field focused and a digit typed: the gesture stays open.
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let field = node_id_right_of(&pairs, "Height", Role::SpinButton);
+    action_focus(&mut window, &mut view, field);
+    window.frame(vec![egui::Event::Text("9".to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_ne!(
+        player_entry(&view, player_id).basic.height,
+        height,
+        "premise: the typed digit landed"
+    );
+    draw(&mut window, &mut view);
+    assert!(
+        view.live.check.pending.is_none(),
+        "no check while the field holds the keyboard"
+    );
+
+    // Escape lets the keyboard go: the next frame's check starts.
+    window.frame(
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    draw(&mut window, &mut view);
+    assert!(
+        view.live.check.pending.is_some(),
+        "the settled edit's check started"
+    );
+    live_checked(&mut window, &mut view, &[734]);
+}
+
 /// The first roster slot of the held result whose rows are all
 /// suggestions.
 fn held_slot_with_suggestions_alone(view: &SaveView) -> u8 {
