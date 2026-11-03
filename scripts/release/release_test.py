@@ -510,10 +510,13 @@ class Pure(unittest.TestCase):
         # in rustc's order (both apply the last matching prefix), after CFLAGS' own.
         flags = remap_flags("/home/m", "/home/m/.cargo", None, "/src/utw", "/src/utw/target")
         env = c_flags_env(flags, "linux", {"CFLAGS": "-O2"})
+        # Each pair twice: gcc 11 hands only `-fdebug-prefix-map` on to the assembler, so
+        # an assembly file's (ring's `.S`) paths need that spelling too.
         self.assertEqual(
             env["CFLAGS"],
-            "-O2 -ffile-prefix-map=/home/m=~ -ffile-prefix-map=/home/m/.cargo=~cargo"
-            " -ffile-prefix-map=/src/utw=.",
+            "-O2 -ffile-prefix-map=/home/m=~ -fdebug-prefix-map=/home/m=~"
+            " -ffile-prefix-map=/home/m/.cargo=~cargo -fdebug-prefix-map=/home/m/.cargo=~cargo"
+            " -ffile-prefix-map=/src/utw=. -fdebug-prefix-map=/src/utw=.",
         )
         self.assertEqual(env["CXXFLAGS"], env["CFLAGS"].removeprefix("-O2 "))
         # MSVC's cl takes no such flag; Windows keeps C debug info in the .pdb.
