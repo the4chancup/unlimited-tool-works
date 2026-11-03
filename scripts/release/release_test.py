@@ -503,6 +503,23 @@ class Pure(unittest.TestCase):
             with self.assertRaisesRegex(Refusal, "/home/runner"):
                 check_exe(exe, ["/home/runner/work/utw"], "linux")
 
+    def test_a_refusal_names_the_strings_that_hold_a_path(self) -> None:
+        # The refusal shows where a path sits, so a leak is diagnosed from the log alone;
+        # each string once, the strings without it left out.
+        with tempfile.TemporaryDirectory() as tmp:
+            exe = Path(tmp) / "utw"
+            exe.write_bytes(
+                b"\x01\x02/home/runner/.cargo/registry/src/a.c\x00clean text\x00"
+                b"\xff/home/runner/.cargo/registry/src/a.c\x00x/home/runner/work/b.S\x7f"
+            )
+            with self.assertRaises(Refusal) as refused:
+                check_exe(exe, ["/home/runner"], "linux")
+            message = str(refused.exception)
+            self.assertIn("/home/runner/.cargo/registry/src/a.c", message)
+            self.assertIn("x/home/runner/work/b.S", message)
+            self.assertEqual(message.count("registry/src/a.c"), 1)
+            self.assertNotIn("clean text", message)
+
 
 class Listing(unittest.TestCase):
     @unittest.skipUnless(sys.platform == "win32", "7-Zip packs the Windows bundle only")

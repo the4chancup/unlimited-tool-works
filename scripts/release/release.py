@@ -384,6 +384,21 @@ def leaked_prefixes(exe: bytes, prefixes: list[str]) -> list[str]:
     ]
 
 
+def leaking_strings(exe: bytes, prefixes: list[str], limit: int = 20) -> list[str]:
+    """The printable strings of `exe` holding one of `prefixes` (folded as
+    `leaked_prefixes` folds them), each once, at most `limit`: what a refusal shows so a
+    leak is diagnosed from a CI log without the binary."""
+    folded = [prefix.lower().replace("/", "\\") for prefix in prefixes]
+    found: list[str] = []
+    for run in re.finditer(rb"[\x20-\x7e]{4,}", exe):
+        text = run.group().decode("ascii")
+        if text not in found and any(p in text.lower().replace("/", "\\") for p in folded):
+            found.append(text)
+            if len(found) == limit:
+                break
+    return found
+
+
 def links_crt_dynamically(exe: bytes) -> bool:
     return b"vcruntime140" in exe.lower()
 
@@ -411,7 +426,10 @@ def check_exe(exe: Path, prefixes: list[str], platform: str) -> None:
     built = exe.read_bytes()
     leaked = leaked_prefixes(built, prefixes)
     if leaked:
-        raise Refusal(f"{exe} still holds the build machine's paths: {', '.join(leaked)}")
+        strings = "\n  ".join(leaking_strings(built, leaked))
+        raise Refusal(
+            f"{exe} still holds the build machine's paths: {', '.join(leaked)}; in\n  {strings}"
+        )
     if platform == "windows" and links_crt_dynamically(built):
         raise Refusal(f"{exe} names VCRUNTIME140.dll: the C runtime is not linked statically")
 
