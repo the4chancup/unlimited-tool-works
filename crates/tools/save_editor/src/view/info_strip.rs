@@ -737,10 +737,10 @@ fn combos(
 /// hand` rows (the draft's `.rate.lr`: the two choices equal halves of
 /// `field_width`, a point apart, the held one filled the positions
 /// grid's C grey — `Button::selectable`, as the grid's ratings draw).
-/// The held side's word is the resting buttons' light grey, the other
-/// side's the strong text colour, so the unchosen side reads brighter;
-/// the other side's hover still brightens it as a button's does (the draft's
-/// `.sel.on` and `.sel:not(.on):hover`). `FOOT` stores right 0 and left
+/// The held side's word is the strong text colour, the other side's the
+/// normal text grey, so the chosen side reads white; the other side's
+/// hover still brightens it as a button's does (the draft's `.sel.on` and
+/// `.sel:not(.on):hover`). `FOOT` stores right 0 and left
 /// 1; the toggle draws Left first. Returns the picked side's stored
 /// index and its button's id value (the undo merge key) on a click.
 fn side_row(ui: &mut egui::Ui, field_width: f32, held: u8) -> Option<(u8, u64)> {
@@ -749,17 +749,17 @@ fn side_row(ui: &mut egui::Ui, field_width: f32, held: u8) -> Option<(u8, u64)> 
         ui.spacing_mut().item_spacing.x = 1.0;
         let side = (field_width - ui.spacing().item_spacing.x) / 2.0;
         // An unselected side is a resting button, whose own grey is
-        // lighter than the strong text colour the draft wants here: the
-        // resting colour is set to the strong text colour inside the row,
+        // lighter than the normal text grey the draft wants here: the
+        // resting colour is set to the normal text grey inside the row,
         // where only these two buttons draw (the held side's word takes
-        // the resting one explicitly, the other side's as the resting
-        // state's). A hover still takes the hovered state's brighter grey.
-        let resting = ui.visuals().widgets.inactive.fg_stroke.color;
-        ui.visuals_mut().widgets.inactive.fg_stroke.color = ui.visuals().strong_text_color();
+        // the strong text colour explicitly). A hover still takes the
+        // hovered state's brighter grey.
+        let strong = ui.visuals().strong_text_color();
+        ui.visuals_mut().widgets.inactive.fg_stroke.color = ui.visuals().text_color();
         for (label, stored) in [("Left", 1u8), ("Right", 0u8)] {
             let held = held == stored;
             let button = if held {
-                egui::Button::selectable(true, egui::RichText::new(label).color(resting))
+                egui::Button::selectable(true, egui::RichText::new(label).color(strong))
                     .fill(studio_core::theme::palette(ui.visuals()).rating_c_fill)
             } else {
                 egui::Button::selectable(false, label)

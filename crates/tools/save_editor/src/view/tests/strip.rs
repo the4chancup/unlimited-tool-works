@@ -1600,9 +1600,9 @@ fn the_field_labels_paint_the_normal_text_colour() {
 
 // SE-GUI-61
 #[test]
-fn the_foot_toggles_held_side_reads_the_resting_buttons_grey() {
-    // The held side's word in the resting buttons' light grey over the
-    // positions' C fill, the other side's in the strong text colour.
+fn the_foot_toggles_held_side_reads_white() {
+    // The held side's word in the strong text colour over the positions'
+    // C fill, the other side's in the normal text grey.
     let path = fixture(PesVersion::Pes17, "foot_toggle_ink");
     let mut view = SaveView::new();
     view.open(&path);
@@ -1612,9 +1612,13 @@ fn the_foot_toggles_held_side_reads_the_resting_buttons_grey() {
     let held = player_entry(&view, player_id).positions.stronger_foot;
     let mut window = Headless::new();
     let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
-    let resting = visuals.widgets.inactive.fg_stroke.color;
+    let normal = visuals.text_color();
     let strong = visuals.strong_text_color();
-    assert_ne!(resting, strong, "premise: the two greys differ");
+    let resting = visuals.widgets.inactive.fg_stroke.color;
+    assert!(
+        normal != strong && normal != resting && strong != resting,
+        "premise: the three greys differ"
+    );
     let fill = studio_core::theme::palette(&visuals).rating_c_fill;
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let sides = right_of_label(&nodes, "Stronger foot", Role::Button);
@@ -1638,7 +1642,7 @@ fn the_foot_toggles_held_side_reads_the_resting_buttons_grey() {
             })
             .next()
             .unwrap_or_else(|| panic!("no painted {label:?} inside {bounds:?}"));
-        let expected = if held == stored { resting } else { strong };
+        let expected = if held == stored { strong } else { normal };
         assert_eq!(galley_color(shape), expected, "{label}'s colour");
         if held == stored {
             assert_eq!(
