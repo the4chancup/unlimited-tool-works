@@ -7156,6 +7156,19 @@ briefs, review loops, gates and mutation runs as for any step.
     the next start's `Updated to` notice, in two slices (the updater's core, then the
     dialog's states); its end-to-end test first settles how a pre-release can be read
     without every 0.0.1 being offered it → verify: ST-UPD-03 headless, ST-UPD-04
+  - [ ] 0.0.2-tls the update check's TLS without C (DECISIONS "The shipped build is pure
+    Rust by default"): `ring`, `rustls`' crypto provider since f1g9, compiles C and assembly through `cc`,
+    the shipped graph's one crate that does. Candidates, each measured before one is proposed
+    (maturity and audits, maintenance, licence against `deny.toml`, exe growth, the Windows and
+    Linux targets): a pure-Rust `rustls` provider (`rustls-rustcrypto`; `rustls-graviola`, Rust
+    with inline assembly); the system's own TLS where it needs no compiled C; keeping `ring` as
+    a ruled exception. Writing our own crypto is not a candidate. With it, whether the rule
+    allows exceptions and on what terms (the maintainer's ruling per crate, a reason a
+    pure-Rust choice falls short, listed where the gate reads them). Then `CONTRIBUTING.md`
+    states the rule and a gate refuses a shipped-target crate that builds C and is not a
+    listed exception (`cc` in its build graph, `cargo tree -i cc` per release target)
+    → verify: the gate red on an unlisted C crate; the update check's tests; a CI dry run's
+    Linux binary passes the path check
   - [ ] 0.0.2-cmp the comparator's rows that carry an arrow become three columns, Item, Old
     value and New value, as the unsaved changes list; its team and player rows unchanged
     (the maintainer, 2026-11-03)
