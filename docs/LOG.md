@@ -3060,3 +3060,5 @@ worklog passed 7,000 lines.
   Copy never greyed); f1g7a: CI's release workflow designed (`distribution.md` "Release builds in CI").
 - 2026-11-03 — f1g7-f1g13 merged into main: CI's release workflow (the test tag's draft checked and
   deleted), the update check without Update now (0.0.2), the four fixes from the look at 0.0.1i-pre2.
+- 2026-11-03 — f1g14 (`792f4f2a`): a gap click in a combo's list picks the nearer row, the cards'
+  labels in the fields' colour, `Cards used for`; its mutation run moved after the cut.

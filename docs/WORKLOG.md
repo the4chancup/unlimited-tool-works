@@ -7084,7 +7084,7 @@ briefs, review loops, gates and mutation runs as for any step.
       interval, the settings menu 676 points: DECISIONS "The settings menu is 676 points"); its
       mutation run left the wake instant and the backoff's length untested, reworked
       `c6ce8acf` (12 caught, 0 missed, 2 timeouts that stop every check); (b-d) `9d74108a` on `f1g`, mutants 6 caught, 4 unviable
-    - [ ] f1g14 three fixes before gold (the maintainer, 2026-11-03; DECISIONS "Three fixes
+    - [x] f1g14 three fixes before gold (the maintainer, 2026-11-03; DECISIONS "Three fixes
       before 0.0.1 goes gold"), drafted: (a) a click between two rows of a combo's open
       list picks the nearer row, every combo of the suite (`egui::ComboBox` users) → verify:
       ST-COMBO-01 headless, red first; (b) the cards' labels and the badge's words in the
@@ -7092,7 +7092,11 @@ briefs, review loops, gates and mutation runs as for any step.
       → SE-GUI-66; (c) the badge reads `Cards used for` with the paid cards of the limit
       (`team_widgets` `cards.rs`, the help's Abilities chapter, the spec's badge lines)
       → SE-GUI-66. Its mutation run waits until after the cut (f6 (7); DECISIONS "f1g14's
-      mutation run waits until after the cut")
+      mutation run waits until after the cut"). Done 2026-11-03 as `792f4f2a`: `studio_core`
+      `widgets/combo.rs` (`combo_item`, `combo_label`: the popup's `Area` took the gap's click;
+      the reach is two half-gap strips, not one rect over the row, which lost the row's hover
+      highlight: `a_row_under_the_pointer_is_hovered`), its 16 combos; `team_widgets`
+      `cards.rs` (`cards_used`, the labels' colour), the help, the spec's badge lines
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. f1c's last look is on a local
     candidate; the tag's CI build is the only one after it, its draft's bundles checked and
