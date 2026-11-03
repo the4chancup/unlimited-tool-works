@@ -3,7 +3,9 @@
 //! beside Make GK and the X and Y fields.
 
 use pes_savefile::model::tactics::TeamTactics;
-use studio_core::widgets::{add_enabled, add_enabled_ui, step_choice, step_number, wheel_steps};
+use studio_core::widgets::{
+    add_enabled, add_enabled_ui, combo_item, step_choice, step_number, wheel_steps,
+};
 
 use super::{GRID_X, GRID_Y, drop_rule, outfield_y_min, overalls_of, position_label};
 use crate::names::append_name;
@@ -165,7 +167,7 @@ pub(super) fn slot_popover(
                         .selected_text(position_label(slot.position))
                         .show_ui(ui, |ui| {
                             for &value in &choices {
-                                ui.selectable_value(&mut position, value, position_label(value));
+                                combo_item(ui, &mut position, value, position_label(value));
                             }
                         })
                         .response

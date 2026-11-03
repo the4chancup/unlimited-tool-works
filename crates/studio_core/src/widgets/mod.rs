@@ -17,6 +17,7 @@
 
 mod choice;
 mod collapsing_header;
+mod combo;
 mod dock;
 mod enabled;
 mod ink;
@@ -30,6 +31,7 @@ mod wheel;
 
 pub use choice::{checkbox, checkbox_without_text, radio, radio_value};
 pub use collapsing_header::collapsing_header;
+pub use combo::{combo_item, combo_label};
 pub use dock::BottomDock;
 pub use enabled::{add_enabled, add_enabled_ui};
 pub use ink::ink_span;

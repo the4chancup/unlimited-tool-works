@@ -1,7 +1,7 @@
 use super::*;
 
 /// The bounds of the Skills column's header (`ui.strong("Skills")`):
-/// what the Cards left row's tests scope to.
+/// what the Cards used row's tests scope to.
 fn skills_header(nodes: &[accesskit::Node]) -> accesskit::Rect {
     nodes
         .iter()
@@ -21,16 +21,16 @@ fn in_skills_column(nodes: &[accesskit::Node], value: &str) -> bool {
     })
 }
 
-/// The badge texts a frame's Cards left row drew (`"Regular: 3 of 7"`
-/// or the weak `"No tier matches"`), in left-to-right order: the
+/// The badge texts a frame's Cards used row drew (`"Regular: 3 of 7"`
+/// or the `"No tier matches"` stand-in), in left-to-right order: the
 /// Labels at the heading's height or below it of the badge's shapes
 /// (labels of another shape must not pass). None while another player's
 /// or ruleset's run is up: the row draws nothing then.
-fn cards_left_badges(nodes: &[accesskit::Node]) -> Vec<String> {
+fn cards_used_badges(nodes: &[accesskit::Node]) -> Vec<String> {
     let Some(heading_y) = nodes
         .iter()
         .find(|node| {
-            node.role() == Role::Label && node.value().is_some_and(|v| v.starts_with("Cards left"))
+            node.role() == Role::Label && node.value().is_some_and(|v| v.starts_with("Cards used"))
         })
         .and_then(accesskit::Node::bounds)
         .map(|bounds| bounds.y0)
@@ -45,12 +45,12 @@ fn cards_left_badges(nodes: &[accesskit::Node]) -> Vec<String> {
                     .bounds()
                     .is_some_and(|bounds| bounds.y0 >= heading_y - 1.0)
                 && node.value().is_some_and(|value| {
-                    // The badge's text is "tier: left of limit" or the weak
+                    // The badge's text is "tier: paid of limit" or the
                     // stand-in; the "Free cards" panel's own title is not.
                     value == "No tier matches"
                         || value.rsplit_once(": ").is_some_and(|(_, count)| {
-                            count.split_once(" of ").is_some_and(|(left, limit)| {
-                                left.parse::<i32>().is_ok() && limit.parse::<u8>().is_ok()
+                            count.split_once(" of ").is_some_and(|(paid, limit)| {
+                                paid.parse::<i32>().is_ok() && limit.parse::<u8>().is_ok()
                             })
                         })
                 })
@@ -1225,12 +1225,12 @@ fn an_out_of_range_value_draws_as_stored_without_marking_the_player() {
     );
 }
 
-// The Cards left badge is one badge, the player's own tier under the
-// active ruleset (`label: left of limit`, `limit - paid`); a ticked
-// skill that no free group covers lowers it by one; the active
-// ruleset's reading is the badge's.
+// The Cards used badge is one badge, the player's own tier under the
+// active ruleset (`label: paid of limit`); a ticked skill that no free
+// group covers raises it by one; the active ruleset's reading is the
+// badge's.
 #[test]
-fn the_cards_left_badge_reads_the_players_own_tier() {
+fn the_cards_used_badge_reads_the_players_own_tier() {
     /// The badge text `rules` reads for team 701's roster `slot` on the
     /// session's file: his own tier's label over his card economy under
     /// it. The checked player must read as a tier that is not the
@@ -1250,16 +1250,11 @@ fn the_cards_left_badge_reads_the_players_own_tier() {
             "premise: slot {slot}'s own tier is not the ruleset's first"
         );
         let limits = rules.card_limits(&team, player, &tier.id).unwrap();
-        format!(
-            "{}: {} of {}",
-            tier.label,
-            i32::from(limits.limit) - i32::from(limits.paid),
-            limits.limit
-        )
+        format!("{}: {} of {}", tier.label, limits.paid, limits.limit)
     }
-    /// The `left` an `expected` badge text carries (`"Regular: 3 of 7"`
+    /// The `paid` an `expected` badge text carries (`"Regular: 3 of 7"`
     /// reads 3).
-    fn left_of(view: &SaveView, rules: &aatf::Rules, slot: u8) -> i32 {
+    fn paid_of(view: &SaveView, rules: &aatf::Rules, slot: u8) -> i32 {
         expected(view, rules, slot)
             .split(": ")
             .nth(1)
@@ -1268,10 +1263,10 @@ fn the_cards_left_badge_reads_the_players_own_tier() {
             .next()
             .unwrap()
             .parse()
-            .expect("the left count")
+            .expect("the paid count")
     }
 
-    let path = fixture(PesVersion::Pes21, "cards_left");
+    let path = fixture(PesVersion::Pes21, "cards_used");
     // Slot 1's player holds Heading (skill 6), a paid card on every tier:
     // his badge is one lower than slot 0's unticked player's.
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
@@ -1285,14 +1280,14 @@ fn the_cards_left_badge_reads_the_players_own_tier() {
     let rules = aatf::Rules::official();
     let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
-        cards_left_badges(&nodes),
+        cards_used_badges(&nodes),
         [expected(&view, &rules, 0)],
         "the one badge, his own tier's"
     );
 
     // "Heading" (skill 6) is unticked and counts paid on every tier: the
-    // tick lowers the badge by one.
-    let before = left_of(&view, &rules, 0);
+    // tick raises the badge by one.
+    let before = paid_of(&view, &rules, 0);
     // The checkbox sits below the fold under the player header: the tick
     // goes through its AccessKit action (a pointer click lands only
     // inside the scroll's clip).
@@ -1304,11 +1299,11 @@ fn the_cards_left_badge_reads_the_players_own_tier() {
     action_click(&mut window, &mut view, *heading);
     let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
-        cards_left_badges(&nodes),
+        cards_used_badges(&nodes),
         [expected(&view, &rules, 0)],
         "after the tick"
     );
-    assert_eq!(left_of(&view, &rules, 0), before - 1, "one card left fewer");
+    assert_eq!(paid_of(&view, &rules, 0), before + 1, "one more card used");
 
     // Ctrl+Z unticks it: the badge is recomputed, back to the old count.
     window.frame(vec![key(egui::Key::Z, egui::Modifiers::CTRL, true)], |ui| {
@@ -1316,18 +1311,18 @@ fn the_cards_left_badge_reads_the_players_own_tier() {
     });
     let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
-        cards_left_badges(&nodes),
+        cards_used_badges(&nodes),
         [expected(&view, &rules, 0)],
         "after the undo"
     );
-    assert_eq!(left_of(&view, &rules, 0), before, "the badge restored");
+    assert_eq!(paid_of(&view, &rules, 0), before, "the badge restored");
 
     // The selection recomputes it: slot 1's player, his Heading held,
-    // shows his own one-lower count — not slot 0's.
+    // shows his own one-more count — not slot 0's.
     view.selected = Some(Selection::Player(701, 1));
     let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
-        cards_left_badges(&nodes),
+        cards_used_badges(&nodes),
         [expected(&view, &rules, 1)],
         "his badge, not slot 0's"
     );
@@ -1338,14 +1333,14 @@ fn the_cards_left_badge_reads_the_players_own_tier() {
     view.aatf_ruleset = "dbc7".to_owned();
     let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
-        cards_left_badges(&nodes),
+        cards_used_badges(&nodes),
         [expected(&view, &dbc7, 1)],
         "the badge under DBC7"
     );
 }
 
-// The Cards left badge, painted: overdrawn past the tier's limit it is
-// the error colour (slot 0's player made to hold paid cards past his own
+// The Cards used badge, painted: paid past the tier's limit reads the
+// error colour (slot 0's player made to hold paid cards past his own
 // tier's limit by ticking skills in the fixture copy, as the Heading tick
 // above does). A colour is no AccessKit property, so it is read back from
 // the frame's painted shapes.
@@ -1365,7 +1360,7 @@ fn an_overdrawn_badge_paints_in_the_error_colour() {
         galley_color(shape)
     }
 
-    let path = fixture(PesVersion::Pes21, "cards_left_overdrawn");
+    let path = fixture(PesVersion::Pes21, "cards_used_overdrawn");
     // The first dozen skills ticked: enough paid cards that his own
     // tier's limit is passed.
     let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
@@ -1389,17 +1384,12 @@ fn an_overdrawn_badge_paints_in_the_error_colour() {
             .expect("the player matches a tier");
         let limits = rules.card_limits(&team, player, &tier.id).unwrap();
         assert!(
-            i32::from(limits.limit) - i32::from(limits.paid) < 0,
+            i32::from(limits.paid) > i32::from(limits.limit),
             "premise: overdrawn (paid {} of {})",
             limits.paid,
             limits.limit
         );
-        format!(
-            "{}: {} of {}",
-            tier.label,
-            i32::from(limits.limit) - i32::from(limits.paid),
-            limits.limit
-        )
+        format!("{}: {} of {}", tier.label, limits.paid, limits.limit)
     };
     badge_landed(&mut window, &mut view);
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
@@ -1411,13 +1401,75 @@ fn an_overdrawn_badge_paints_in_the_error_colour() {
     assert_eq!(painted_color(&shapes, &badge), error_color);
 }
 
-// The Cards left badge: a player no tier's `when` holds for (`check_team`'s
-// `NoTier`) gets the weak stand-in. VTL11's tiers each gate on an exact
+// The cards' labels paint the normal text colour, `Stronger foot`'s (a
+// card is a player's field, not a setting); a hovered card's label still
+// brightens to the hovered state's.
+// SE-GUI-66
+#[test]
+fn the_cards_labels_paint_the_normal_text_colour() {
+    let path = fixture(PesVersion::Pes21, "cards_label_colour");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    let visuals = window.ctx.style_of(window.ctx.theme()).visuals.clone();
+    let (text_color, weak_color, hovered_color) = (
+        visuals.text_color(),
+        visuals.weak_text_color(),
+        visuals.widgets.hovered.fg_stroke.color,
+    );
+    assert_ne!(text_color, weak_color, "premise: the two greys differ");
+    assert_ne!(text_color, hovered_color, "premise: the hover's differs");
+    let colour_of = |nodes: &[accesskit::Node], shapes: &[egui::epaint::ClippedShape]| {
+        let bounds = node_labeled(nodes, Role::CheckBox, "Heel Trick")
+            .bounds()
+            .expect("bounds");
+        let shape = shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(shape)
+                    if shape.galley.job.text == "Heel Trick"
+                        && f64::from(shape.pos.x) >= bounds.x0 - 1.0
+                        && f64::from(shape.pos.x) <= bounds.x1 + 1.0
+                        && f64::from(shape.pos.y) >= bounds.y0 - 1.0
+                        && f64::from(shape.pos.y) <= bounds.y1 + 1.0 =>
+                {
+                    Some(shape)
+                }
+                _ => None,
+            })
+            .next()
+            .unwrap_or_else(|| panic!("no painted Heel Trick inside {bounds:?}"));
+        galley_color(shape)
+    };
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_eq!(
+        colour_of(&nodes, &shapes),
+        text_color,
+        "Heel Trick's label in the normal colour"
+    );
+
+    // The pointer on it: the label brightens as a button's hover does.
+    let node = node_labeled(&nodes, Role::CheckBox, "Heel Trick").clone();
+    let at = centre(&node);
+    let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(at)], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_eq!(
+        colour_of(&nodes, &shapes),
+        hovered_color,
+        "Heel Trick's label brightens on hover"
+    );
+}
+
+// The Cards used badge: a player no tier's `when` holds for (`check_team`'s
+// `NoTier`) gets the stand-in. VTL11's tiers each gate on an exact
 // height (gold 195, silver 195, regular 180, buffed 188), so most real
 // players match none — PES 21 fixture team 781 slot 0, player 78101.
 #[test]
 fn a_player_no_tier_matches_gets_the_stand_in() {
-    let path = fixture(PesVersion::Pes21, "cards_left_no_tier");
+    let path = fixture(PesVersion::Pes21, "cards_used_no_tier");
     let rules = aatf::builtin("vtl11").expect("VTL11 is built in");
     let mut view = SaveView::new();
     view.open(&path);
@@ -1436,13 +1488,13 @@ fn a_player_no_tier_matches_gets_the_stand_in() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
-        cards_left_badges(&nodes),
+        cards_used_badges(&nodes),
         ["No tier matches"],
-        "the weak stand-in, the one badge"
+        "the stand-in, the one badge"
     );
 }
 
-// The Cards left badge: a ruleset that loads but whose `player_tier` fails on
+// The Cards used badge: a ruleset that loads but whose `player_tier` fails on
 // the selected player (a member's own logic edit) draws the red click line
 // in the badge's place, not `No tier matches` (which would tell him the
 // opposite), whose click opens the error; and the failure is kept under
@@ -1450,7 +1502,7 @@ fn a_player_no_tier_matches_gets_the_stand_in() {
 // frame.
 #[test]
 fn a_failing_tier_check_shows_its_error_in_the_badges_place() {
-    let path = fixture(PesVersion::Pes21, "cards_left_failing_check");
+    let path = fixture(PesVersion::Pes21, "cards_used_failing_check");
     let logic = std::fs::read_to_string(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../libs/aatf/logic/logic.rhai"),
     )
@@ -1478,7 +1530,7 @@ fn a_failing_tier_check_shows_its_error_in_the_badges_place() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     let nodes = badge_landed(&mut window, &mut view);
     let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    // `Cards left:`, then the red click line in the badge's place.
+    // `Cards used:`, then the red click line in the badge's place.
     const LINE: &str = "Tier check failed, click for more information.";
     let error_node = {
         let column_x0 = skills_header(&nodes).x0;
@@ -1498,8 +1550,8 @@ fn a_failing_tier_check_shows_its_error_in_the_badges_place() {
         "the line in the error colour"
     );
     assert!(
-        in_skills_column(&nodes, "Cards left:"),
-        "Cards left: heads it"
+        in_skills_column(&nodes, "Cards used:"),
+        "Cards used: heads it"
     );
     assert!(
         !in_skills_column(&nodes, "No tier matches"),
@@ -1534,7 +1586,7 @@ fn a_failing_tier_check_shows_its_error_in_the_badges_place() {
     );
 }
 
-// The Cards left badge's limit counts the captain's untaken choice:
+// The Cards used badge's limit counts the captain's untaken choice:
 // team 781's captain (roster slot 0, a regular under VGL 27) holds no
 // paid cards, no second COM style and no A position past the tier's,
 // so no option is needed and the choice stays untaken — the badge
@@ -1543,7 +1595,7 @@ fn a_failing_tier_check_shows_its_error_in_the_badges_place() {
 // SE-GUI-60
 #[test]
 fn the_captains_untaken_choice_counts_its_card_in_the_badges_limit() {
-    let path = fixture(PesVersion::Pes19, "cards_left_captain_choice");
+    let path = fixture(PesVersion::Pes19, "cards_used_captain_choice");
     let rules = aatf::builtin("vgl27").expect("VGL27 is built in");
     let mut view = SaveView::new();
     view.open(&path);
@@ -1577,12 +1629,8 @@ fn the_captains_untaken_choice_counts_its_card_in_the_badges_limit() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
-        cards_left_badges(&nodes),
-        [format!(
-            "{label}: {} of {}",
-            tier_limit + 1 - paid,
-            tier_limit + 1
-        )],
+        cards_used_badges(&nodes),
+        [format!("{label}: {paid} of {}", tier_limit + 1)],
         "the choice's card counted in the limit while it is untaken"
     );
 
@@ -1611,25 +1659,25 @@ fn the_captains_untaken_choice_counts_its_card_in_the_badges_limit() {
     }
     let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
-        cards_left_badges(&nodes),
-        [format!("{label}: {tier_limit} of {tier_limit}")],
+        cards_used_badges(&nodes),
+        [format!("{label}: {paid} of {tier_limit}")],
         "the limit drops back to the tier's"
     );
 }
 
-// The Cards left badge recomputes on a worker thread: an edit moves its
+// The Cards used badge recomputes on a worker thread: an edit moves its
 // key and starts a new run, and until that answer lands the held badge
 // of the same player stays drawn.
 #[test]
 fn an_edit_keeps_the_players_badge_drawn_while_the_new_one_runs() {
-    let path = fixture(PesVersion::Pes17, "cards_left_kept");
+    let path = fixture(PesVersion::Pes17, "cards_used_kept");
     let mut view = SaveView::new();
     view.open(&path);
     view.team = TeamChoice::Team(702);
     view.selected = Some(Selection::Player(702, 0));
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     let nodes = badge_landed(&mut window, &mut view);
-    let kept = cards_left_badges(&nodes);
+    let kept = cards_used_badges(&nodes);
     assert_eq!(kept.len(), 1, "premise: the player's badge landed");
 
     // A stat edit, as a wheel notch over his Speed writes one: the
@@ -1659,7 +1707,7 @@ fn an_edit_keeps_the_players_badge_drawn_while_the_new_one_runs() {
     for _ in 0..2 {
         let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         assert_eq!(
-            cards_left_badges(&nodes),
+            cards_used_badges(&nodes),
             kept,
             "the kept badge while the new run is in flight"
         );
@@ -1670,15 +1718,15 @@ fn an_edit_keeps_the_players_badge_drawn_while_the_new_one_runs() {
     // which lands the post-edit badge.
     drop(sender);
     let nodes = badge_landed(&mut window, &mut view);
-    assert_eq!(cards_left_badges(&nodes).len(), 1, "the new badge lands");
+    assert_eq!(cards_used_badges(&nodes).len(), 1, "the new badge lands");
 }
 
 // Another player's badge draws nothing until his own lands: the frame
 // after the selection moves draws the Skills title alone — no Cards
-// left row, no kept badge — then his badge lands.
+// used row, no kept badge — then his badge lands.
 #[test]
 fn another_player_draws_no_badge_until_his_lands() {
-    let path = fixture(PesVersion::Pes17, "cards_left_other_player");
+    let path = fixture(PesVersion::Pes17, "cards_used_other_player");
     let mut view = SaveView::new();
     view.open(&path);
     view.team = TeamChoice::Team(702);
@@ -1686,7 +1734,7 @@ fn another_player_draws_no_badge_until_his_lands() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
-        cards_left_badges(&nodes).len(),
+        cards_used_badges(&nodes).len(),
         1,
         "premise: slot 0's badge landed"
     );
@@ -1703,15 +1751,15 @@ fn another_player_draws_no_badge_until_his_lands() {
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(in_skills_column(&nodes, "Skills"), "the title alone");
     assert!(
-        !in_skills_column(&nodes, "Cards left:"),
-        "no Cards left row for another player"
+        !in_skills_column(&nodes, "Cards used:"),
+        "no Cards used row for another player"
     );
     assert!(
-        !in_skills_column(&nodes, "Cards left for"),
-        "no Cards left row for another player"
+        !in_skills_column(&nodes, "Cards used for"),
+        "no Cards used row for another player"
     );
     assert!(
-        cards_left_badges(&nodes).is_empty(),
+        cards_used_badges(&nodes).is_empty(),
         "no badge drawn while his run is up"
     );
 
@@ -1719,7 +1767,7 @@ fn another_player_draws_no_badge_until_his_lands() {
     // which lands his badge.
     drop(sender);
     let nodes = badge_landed(&mut window, &mut view);
-    assert_eq!(cards_left_badges(&nodes).len(), 1, "his badge lands");
+    assert_eq!(cards_used_badges(&nodes).len(), 1, "his badge lands");
 }
 
 // The badge keeps one run in flight: an edit while a run is up waits
@@ -1729,7 +1777,7 @@ fn another_player_draws_no_badge_until_his_lands() {
 // reach a frame until `send` below.
 #[test]
 fn a_key_moved_mid_run_starts_its_badge_when_the_reply_lands() {
-    let path = fixture(PesVersion::Pes17, "cards_left_one_run");
+    let path = fixture(PesVersion::Pes17, "cards_used_one_run");
     let mut view = SaveView::new();
     view.open(&path);
     view.team = TeamChoice::Team(702);
@@ -1737,7 +1785,7 @@ fn a_key_moved_mid_run_starts_its_badge_when_the_reply_lands() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
-        cards_left_badges(&nodes).len(),
+        cards_used_badges(&nodes).len(),
         1,
         "premise: the badge landed"
     );
@@ -1804,7 +1852,7 @@ fn a_key_moved_mid_run_starts_its_badge_when_the_reply_lands() {
         "B's run started with no input"
     );
     let nodes = badge_landed(&mut window, &mut view);
-    assert_eq!(cards_left_badges(&nodes).len(), 1, "B's badge lands");
+    assert_eq!(cards_used_badges(&nodes).len(), 1, "B's badge lands");
 }
 
 // The badge landed and nothing is due: a frame with no input asks for
@@ -1819,7 +1867,7 @@ fn an_idle_view_asks_for_no_frame() {
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     let nodes = badge_landed(&mut window, &mut view);
     assert_eq!(
-        cards_left_badges(&nodes).len(),
+        cards_used_badges(&nodes).len(),
         1,
         "premise: the badge landed"
     );
@@ -2233,7 +2281,7 @@ fn every_panel_title_stands_six_above_its_first_drawn_row() {
 }
 
 /// The settled frame of player 701's slot 0 at the default pane: the
-/// columns' widths settle over the first frames and the Cards left
+/// columns' widths settle over the first frames and the Cards used
 /// badge's run lands.
 fn settled_player_view(
     test: &str,
@@ -2301,7 +2349,7 @@ fn the_positions_grid_stands_at_the_drafts_pitch() {
 }
 
 // The Skills header's row is one line of text high, as the draft's: the
-// title, "Cards left for" and the chip's text on the column titles' line,
+// title, "Cards used for" and the chip's text on the column titles' line,
 // 8 apart (the draft's `.row` gap, egui's item spacing; the chip's text 4
 // more inside it), and
 // the first checkbox row 19.5 under the title's top.
@@ -2309,7 +2357,7 @@ fn the_positions_grid_stands_at_the_drafts_pitch() {
 fn the_skills_header_is_one_text_line_high() {
     let (_, nodes, _) = settled_player_view("skills_header");
     let skills = label_bounds(&nodes, "Skills");
-    let cards_left = label_bounds(&nodes, "Cards left for");
+    let cards_used = label_bounds(&nodes, "Cards used for");
     let chip = nodes
         .iter()
         .find(|node| {
@@ -2318,13 +2366,13 @@ fn the_skills_header_is_one_text_line_high() {
         .and_then(accesskit::Node::bounds)
         .expect("the chip's text");
     near_draft(skills.height(), 15.0, "the Skills title's height");
-    near_draft(cards_left.y0, skills.y0, "Cards left for's top");
+    near_draft(cards_used.y0, skills.y0, "Cards used for's top");
     near_draft(chip.y0, skills.y0, "the chip's text top");
-    near_draft(cards_left.x0 - skills.x1, 8.0, "Skills to Cards left for");
+    near_draft(cards_used.x0 - skills.x1, 8.0, "Skills to Cards used for");
     near_draft(
-        chip.x0 - cards_left.x1,
+        chip.x0 - cards_used.x1,
         12.0,
-        "Cards left for to the chip's text",
+        "Cards used for to the chip's text",
     );
     for card in ["Heading", "Man Marking"] {
         let row = node_labeled(&nodes, Role::CheckBox, card)

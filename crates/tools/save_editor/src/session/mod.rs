@@ -31,7 +31,7 @@ use studio_core::RunningPes;
 use crate::session::undo::{Change, UndoStack};
 
 /// The ticks `Session::revision` draws from, one per open and per change:
-/// a revision never repeats, so a cache keyed on it (the view's Cards left badge) is
+/// a revision never repeats, so a cache keyed on it (the view's Cards used badge) is
 /// never stale across saves.
 static NEXT_REVISION: AtomicU64 = AtomicU64::new(1);
 
@@ -1156,7 +1156,7 @@ mod tests {
         assert!(session.is_dirty(), "the import changed a player");
     }
 
-    // The Cards left badge's cache key: the revision moves on every change
+    // The Cards used badge's cache key: the revision moves on every change
     // to the open file (an edit pushed, an undo, a redo) and not on a
     // frame's seal.
     #[test]

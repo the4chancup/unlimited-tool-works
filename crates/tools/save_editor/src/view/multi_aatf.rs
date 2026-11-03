@@ -17,7 +17,9 @@ use std::time::Duration;
 
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
-use studio_core::widgets::{add_enabled, modal, modal_buttons, step_choice, wheel_steps};
+use studio_core::widgets::{
+    add_enabled, combo_item, modal, modal_buttons, step_choice, wheel_steps,
+};
 use studio_core::{Notice, NoticeKind};
 use team_widgets::violations::{
     ListUse, ListedPlayer, Wording, issue_groups, rule_name, sentence, violation_detail,
@@ -163,7 +165,7 @@ fn team_combo(ui: &mut egui::Ui, id_salt: &str, file: &EditFile, from: u32, pick
         .width(widest + chrome)
         .show_ui(ui, |ui| {
             for (id, label) in &labels {
-                ui.selectable_value(picked, *id, label);
+                combo_item(ui, picked, *id, label);
             }
         })
         .response;

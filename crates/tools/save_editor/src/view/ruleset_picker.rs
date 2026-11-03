@@ -8,7 +8,9 @@
 //! the × do their file work in `session::rules` and show its outcome in
 //! their dialogs (`dialog`).
 
-use studio_core::widgets::{modal, modal_buttons, modal_sentence_gap, step_choice, wheel_steps};
+use studio_core::widgets::{
+    combo_label, modal, modal_buttons, modal_sentence_gap, step_choice, wheel_steps,
+};
 use studio_core::{Notice, NoticeKind};
 
 use crate::session::rules::{self, ImportCheck, builtins};
@@ -172,7 +174,7 @@ fn remove_import(view: &mut SaveView, file_name: &str) {
 
 /// The imported list read again from the data folder, and the ruleset
 /// resolved afresh on the next frame along with what was computed under
-/// it: a replaced copy keeps its file name, the key the Cards left badge,
+/// it: a replaced copy keeps its file name, the key the Cards used badge,
 /// the medals and the AATF checks are kept under.
 fn reread_imports(view: &mut SaveView) {
     view.imported = rules::imported(view.data_dir.as_deref());
@@ -329,7 +331,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         .width(widest + chrome)
         .show_ui(ui, |ui| {
             for (stem, name) in builtins() {
-                if ui.selectable_label(key == *stem, name).clicked() {
+                if combo_label(ui, key == *stem, name).clicked() {
                     picked = Some((*stem).to_owned());
                 }
             }
@@ -338,7 +340,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             }
             for import in &view.imported {
                 let name = &import.rules.ruleset().name;
-                let row = ui.selectable_label(key == import.file_name, name);
+                let row = combo_label(ui, key == import.file_name, name);
                 if row.clicked() {
                     picked = Some(import.file_name.clone());
                 }
@@ -366,8 +368,7 @@ pub(super) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 }
             }
             ui.separator();
-            if ui
-                .selectable_label(false, IMPORT_ROW)
+            if combo_label(ui, false, IMPORT_ROW)
                 .on_hover_text(IMPORT_TOOLTIP)
                 .clicked()
             {

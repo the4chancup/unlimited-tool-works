@@ -138,7 +138,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     let textures = portraits.textures(ui.ctx(), &player_ids);
     // The badges' medal outlines: `player_tier` per roster slot under the
     // active ruleset, once per `MedalKey` (the open save's revision, the
-    // team, the ruleset) as the Cards left badge is — not every frame.
+    // team, the ruleset) as the Cards used badge is — not every frame.
     // On a worker thread, started once the edit settles: the 23 script
     // calls took about 95 ms on a PES 2021 save's team in a release build,
     // all on the team view's first frame. An edit still reads them again,

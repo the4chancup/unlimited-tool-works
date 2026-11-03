@@ -45,9 +45,9 @@ A greyed control is one the save's PES version does not have: hover it and the
 tooltip names the first version that does (for example PES 19+). The same fields
 stay in the same places on every version, so the page never rearranges.
 
-**Cards left**
+**Cards used**
 
-**Cards left** counts the paid cards the player has left under his own tier of
+**Cards used** counts the paid cards the player holds under his own tier of
 the AATF rules in use (the ruleset picked in the dropdown on the toolbar): the
 tier is the one the rules read him as, the way the AATF check does, from his
 stats, registered position and height, and the paid cards are the skills and COM

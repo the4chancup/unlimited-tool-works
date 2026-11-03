@@ -24,7 +24,8 @@ use pes_savefile::schema::player_max_value;
 use pes_savefile::settings_toml::{Kind, SettingKey};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FORM_ROW_SPACING, add_enabled, add_enabled_ui, step_choice, step_number, wheel_steps,
+    FORM_ROW_SPACING, add_enabled, add_enabled_ui, combo_item, step_choice, step_number,
+    wheel_steps,
 };
 
 use crate::session::Session;
@@ -845,7 +846,7 @@ fn combo_box(
         .selected_text(selected)
         .show_ui(ui, |ui| {
             for (at, option) in options.iter().enumerate() {
-                ui.selectable_value(&mut picked, index(at), option);
+                combo_item(ui, &mut picked, index(at), option);
             }
         });
     let steps = wheel_steps(ui, &combo.response);

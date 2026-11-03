@@ -1,6 +1,6 @@
 //! The player view's three columns (the draft's `playerView`/`.pcols`): General
 //! info (`info_strip::general`), Other stats and Playable positions in
-//! the first, 350 wide; Skills with the Cards left badge in its header
+//! the first, 350 wide; Skills with the Cards used badge in its header
 //! row, the ruleset's apart cards (its `tricks` group, else the skills
 //! its `free_cards` effects name) and COM playing styles in the second;
 //! the 25 ability stats in the
@@ -206,7 +206,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, gap: f32) {
                         );
                     },
                 );
-                // Column 2: Skills (the Cards left badge in its header
+                // Column 2: Skills (the Cards used badge in its header
                 // row), then the ruleset's apart cards in their own
                 // panel when it names them, then COM playing styles,
                 // their two columns 158 wide.
@@ -699,7 +699,7 @@ fn ability_stats(
         });
 }
 
-/// The Skills panel's content: the header row's Cards left badge — the
+/// The Skills panel's content: the header row's Cards used badge — the
 /// player's own tier's, the tier `Rules::player_tier` reads him as, then
 /// that tier's `card_limits`; no tier matching draws the stand-in, and a
 /// check that fails on him draws the red click line that opens the
@@ -753,7 +753,7 @@ fn skills_panel(
             })
             .map(|(_, own)| own)
     });
-    // A tier check that fails on him draws `Cards left` then a red click
+    // A tier check that fails on him draws `Cards used` then a red click
     // line in the badge's place, opening its error in the refusal dialog
     // (the AATF check never runs the two functions the badge asks, so a
     // member's edit that breaks only them would otherwise show nowhere).
@@ -773,7 +773,7 @@ fn skills_panel(
             marks.paint(ui, title.rect, live_marks::MarkedField::Skills);
         }
         if let Some(error) = &tier_error {
-            ui.weak("Cards left:");
+            ui.label("Cards used:");
             let response = ui
                 .add(
                     egui::Label::new(
@@ -791,11 +791,11 @@ fn skills_panel(
             }
         } else {
             match held_badge {
-                Some(OwnBadge::Tier { label, limits }) => cards::cards_left(
+                Some(OwnBadge::Tier { label, limits }) => cards::cards_used(
                     ui,
                     &cards::CardsBadge::Tier(cards::TierCards { label, limits }),
                 ),
-                Some(OwnBadge::NoTier) => cards::cards_left(ui, &cards::CardsBadge::NoTier),
+                Some(OwnBadge::NoTier) => cards::cards_used(ui, &cards::CardsBadge::NoTier),
                 // A failing held badge is the error line above; another
                 // player's or ruleset's draws nothing until its own lands.
                 Some(OwnBadge::Failed(_)) | None => {}
@@ -868,7 +868,7 @@ fn skill_index(card: &aatf::Card) -> Option<u8> {
     }
 }
 
-/// The Skills header's Cards left badge (`own_badge`) for a `BadgeKey`:
+/// The Skills header's Cards used badge (`own_badge`) for a `BadgeKey`:
 /// the last answer with its key and the run in flight
 /// (`worker::WorkerResult`'s poll-and-spawn cycle).
 pub(super) type Cards = WorkerResult<BadgeKey, OwnBadge>;

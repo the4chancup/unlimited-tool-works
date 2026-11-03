@@ -33,7 +33,7 @@ fn opened_at(test: &str, width: f32, pick: impl FnOnce(&mut SaveView)) -> (SaveV
         draw(&mut window, &mut view);
     }
     // A window compared with another waits for every reply, or one may draw
-    // the selected player's Cards left badge the other has not received yet.
+    // the selected player's Cards used badge the other has not received yet.
     workers_replied(&mut window, &mut view);
     (view, window)
 }

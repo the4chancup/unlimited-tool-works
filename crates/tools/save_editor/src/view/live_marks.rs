@@ -106,7 +106,7 @@ pub(super) enum MarkedField {
     /// The Playing style combo (`PlayingStyleRange`).
     PlayingStyle,
     /// The Skills header: the skills (`SkillCardCap`, a required skill
-    /// card) and the card budget its Cards left badge counts (`Cards`,
+    /// card) and the card budget its Cards used badge counts (`Cards`,
     /// `MinCards`), in one mark, since a mark of its own before the badge
     /// would shift the badge whenever it showed.
     Skills,

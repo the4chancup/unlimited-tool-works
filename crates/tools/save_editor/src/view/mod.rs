@@ -158,7 +158,7 @@ pub(crate) struct SaveView {
     /// The import's or the ×'s dialog while one is up, or the picker due
     /// at the frame's end; `None` otherwise.
     rules_dialog: Option<ruleset_picker::RulesDialog>,
-    /// The ruleset the quick actions, the Cards left badge, the medal
+    /// The ruleset the quick actions, the Cards used badge, the medal
     /// outlines and Live AATF use, resolved from `aatf_ruleset` on the
     /// first frame and again only when the setting changes.
     rules: Option<ActiveRules>,
@@ -234,7 +234,7 @@ pub(crate) struct SaveView {
     /// Output rosters to TSV's Save dialog (`rfd`, stubbed in tests: the
     /// `export_dialog` pattern).
     rosters_dialog: comparator::SaveFileDialog,
-    /// The "Cards left" badge's last answer with the `BadgeKey` it ran
+    /// The "Cards used" badge's last answer with the `BadgeKey` it ran
     /// for, and the run in flight: `player_tier` then `card_limits` on a
     /// worker thread, each reading the whole team under every candidate
     /// height system (50 to 70 ms apiece on a PES 2017 save). On the UI
@@ -317,7 +317,7 @@ pub(crate) struct ActiveRules {
     logo: Option<team_widgets::event_logo::EventLogo>,
 }
 
-/// What the Skills column's Cards left badge was computed for: a change of
+/// What the Skills column's Cards used badge was computed for: a change of
 /// the open save (`Session::revision`), of the selection or of the
 /// ruleset recomputes it; anything else keeps a frame's `player_tier` and
 /// `card_limits` cost off.

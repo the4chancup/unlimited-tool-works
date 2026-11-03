@@ -147,7 +147,7 @@ folder's `rules/`.
 What this editor adds on top of the lib:
 
 - **The ruleset dropdown.** A combo box on the toolbar, left of the Live AATF toggle, drawn
-  whether Live AATF is on or off: the ruleset drives the quick actions, the Cards left badge
+  whether Live AATF is on or off: the ruleset drives the quick actions, the Cards used badge
   and which skills the Tricks or Free cards panel holds, not only the check. It lists the
   rulesets built into the binary, every cup's current ones in `aatf_rules.md`
   "Embedded rulesets"'s order, each by its description alone, the file's `name` (`aatf_rules.md`

@@ -16,8 +16,8 @@ use pes_savefile::schema::fields::{PlayerField, PlayerText, RosterField};
 use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FORM_ROW_SPACING, add_enabled, add_enabled_ui, radio, step_choice, step_number, text_box,
-    wheel_steps,
+    FORM_ROW_SPACING, add_enabled, add_enabled_ui, combo_item, radio, step_choice, step_number,
+    text_box, wheel_steps,
 };
 use team_widgets::cards;
 use team_widgets::names::append_name;
@@ -692,7 +692,8 @@ fn combos(
                 .width(field_width)
                 .show_ui(ui, |ui| {
                     for index in 0..POSITIONS.len() {
-                        ui.selectable_value(
+                        combo_item(
+                            ui,
                             &mut registered,
                             index as u8,
                             position_label(index as u8),

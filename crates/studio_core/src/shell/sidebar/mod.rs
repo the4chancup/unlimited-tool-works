@@ -17,7 +17,7 @@ use crate::pes_process::RunningPes;
 use crate::settings::CommonSettings;
 use crate::status::{ActionEffect, Notice, NoticeAction, NoticeKind};
 use crate::tool::{ExeCheck, PlannedTool, ShellRequest, StudioTool, ToolContext};
-use crate::widgets::{add_enabled_ui, step_choice, wheel_steps};
+use crate::widgets::{add_enabled_ui, combo_item, step_choice, wheel_steps};
 
 #[cfg(test)]
 mod tests;
@@ -537,11 +537,7 @@ impl Sidebar {
                     .wrap_mode(egui::TextWrapMode::Extend)
                     .show_ui(ui, |ui| {
                         for version in PesVersion::ALL {
-                            ui.selectable_value(
-                                &mut picked,
-                                version,
-                                version_label(version, false),
-                            );
+                            combo_item(ui, &mut picked, version, version_label(version, false));
                         }
                     })
                     .response;
