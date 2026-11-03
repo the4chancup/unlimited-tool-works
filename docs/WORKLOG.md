@@ -7091,7 +7091,8 @@ briefs, review loops, gates and mutation runs as for any step.
       normal text colour (`save_editor` `view/abilities.rs`, `team_widgets` `cards.rs`)
       → SE-GUI-66; (c) the badge reads `Cards used for` with the paid cards of the limit
       (`team_widgets` `cards.rs`, the help's Abilities chapter, the spec's badge lines)
-      → SE-GUI-66
+      → SE-GUI-66. Its mutation run waits until after the cut (f6 (7); DECISIONS "f1g14's
+      mutation run waits until after the cut")
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. f1c's last look is on a local
     candidate; the tag's CI build is the only one after it, its draft's bundles checked and
@@ -7152,7 +7153,11 @@ briefs, review loops, gates and mutation runs as for any step.
     fluid formation switch: closed 2026-11-02 without code. PES 2015's game plan has it, but
     its saves keep no byte of it (the edit file saved after switching it off unchanged, two
     texports either side of the switch with one payload: `spec/pes_savefile/model.md`, the
-    paragraph after the version quirks), so the schema's absent `fluid` on 15 stands
+    paragraph after the version quirks), so the schema's absent `fluid` on 15 stands; (7)
+    f1g14's mutation run, postponed from the cut (DECISIONS "f1g14's mutation run waits until
+    after the cut"): `just mutants-diff` over f1g14's commit against its parent `108840f5`,
+    run from a worktree at that commit so the cut's later commits stay out of the diff (33
+    mutants listed on the slice's draft diff), every survivor triaged and its tests briefed
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in

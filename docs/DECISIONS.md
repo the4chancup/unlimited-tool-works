@@ -15511,3 +15511,14 @@ Why: a CI run takes far longer than a local incremental build, and run 415563645
 and no build setting. A failure only CI hits at the tag publishes nothing: the workflow fails
 before the draft, and the tag is fixed and pushed again with the maintainer's OK.
 Plan: worklog 0.0.1f2.
+
+## 2026-11-03 — release — f1g14's mutation run waits until after the cut
+Decision (the maintainer): the last slice before 0.0.1 (worklog f1g14: the combo's gap, the
+cards' label colour, `Cards used for`) lands after its review and the lead's check without its
+`mutants-diff`; the run happens first after the cut (worklog f6 (7)), and its survivors' tests
+go into 0.0.2. This departs from AGENTS.md's rule that every surface's survivors are triaged
+before it closes, for this slice only.
+Why: its listing counts 33 mutants over four crates, about 45 minutes of runs by tonight's
+measured rates, and a survivor almost always asks for a test rather than a code change, so the
+shipped exe would not change for it.
+Plan: worklog 0.0.1f1g14, 0.0.1f6.
