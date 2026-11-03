@@ -3062,3 +3062,5 @@ worklog passed 7,000 lines.
   deleted), the update check without Update now (0.0.2), the four fixes from the look at 0.0.1i-pre2.
 - 2026-11-03 — f1g14 (`792f4f2a`): a gap click in a combo's list picks the nearer row, the cards'
   labels in the fields' colour, `Cards used for`; its mutation run moved after the cut.
+- 2026-11-03 — the maintainer's look at 0.0.1i passed; f1g15 (`c2460f32`): Stronger foot's
+  chosen side white, f1g13 having made the other side white; logic version 1 frozen (`c5eea63e`).

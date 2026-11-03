@@ -7097,12 +7097,15 @@ briefs, review loops, gates and mutation runs as for any step.
       the reach is two half-gap strips, not one rect over the row, which lost the row's hover
       highlight: `a_row_under_the_pointer_is_hovered`), its 16 combos; `team_widgets`
       `cards.rs` (`cards_used`, the labels' colour), the help, the spec's badge lines
-    - [ ] f1g15 Stronger foot/hand's chosen side white, the other side the field labels' grey
+    - [x] f1g15 Stronger foot/hand's chosen side white, the other side the field labels' grey
       (the maintainer's look at 0.0.1i, 2026-11-03; DECISIONS "Stronger foot's chosen side
       reads white"), drafted (`save_editor.js` `.rate.lr`): `save_editor` `info_strip.rs`
-      `side_row` → verify: SE-GUI-61 headless, red first; its mutation run with f1g14's (f6 (7))
+      `side_row` → verify: SE-GUI-61 headless, red first; its mutation run with f1g14's (f6 (7)).
+      Done 2026-11-03 as `c2460f32` (`info_strip.rs` `side_row`, `tests/strip.rs`)
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
-    release 0.0.1`, the clean-machine check, the hand-over. f1c's last look is on a local
+    release 0.0.1`, the clean-machine check, the hand-over. The freeze: done 2026-11-03 as
+    `c5eea63e` on the maintainer's confirmation at the look at 0.0.1i (`aatf` `file.rs`
+    `LOGIC_VERSIONS`' comment, `logic_version_1_keeps_the_hash_0_0_1_shipped`). f1c's last look is on a local
     candidate; the tag's CI build is the only one after it, its draft's bundles checked and
     its Windows exe started once (DECISIONS "No CI dry run before the tag"). The maintainer, 2026-11-02: the
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);
