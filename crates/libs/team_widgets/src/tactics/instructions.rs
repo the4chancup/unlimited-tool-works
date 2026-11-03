@@ -10,7 +10,7 @@ use pes_savefile::model::tactics::{AdvancedInstruction, TacticsPreset, TeamTacti
 use pes_savefile::schema::fields::{InstructionPart, InstructionSide, TacticsField};
 use pes_savefile::schema::instruction;
 use pes_version::PesVersion;
-use studio_core::widgets::{add_enabled_ui, step_choice, wheel_steps};
+use studio_core::widgets::{add_enabled_ui, combo_item, step_choice, wheel_steps};
 
 use super::assignments::{Assign, chip};
 use super::{RosterRow, TacticsView, gate_tip, name_at, text_width};
@@ -80,7 +80,7 @@ fn instruction_combo(
         .truncate()
         .show_ui(ui, |ui| {
             for inst in &list {
-                ui.selectable_value(&mut pick, Some(*inst), instruction_label(*inst));
+                combo_item(ui, &mut pick, Some(*inst), instruction_label(*inst));
             }
         })
         .response;

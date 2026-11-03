@@ -261,7 +261,7 @@ pub fn step_number<N: Numeric>(value: &mut N, steps: i32, range: RangeInclusive<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::widgets::add_enabled;
+    use crate::widgets::{add_enabled, combo_item};
 
     /// The controls' scroll area: this tall, inside a taller content.
     const VIEW_HEIGHT: f32 = 200.0;
@@ -354,7 +354,7 @@ mod tests {
                             .selected_text(ITEMS[selected])
                             .show_ui(ui, |ui| {
                                 for (index, item) in ITEMS.iter().enumerate() {
-                                    ui.selectable_value(&mut selected, index, *item);
+                                    combo_item(ui, &mut selected, index, *item);
                                 }
                             })
                             .response;

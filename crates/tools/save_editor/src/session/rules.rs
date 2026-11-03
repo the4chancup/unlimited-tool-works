@@ -1,5 +1,5 @@
 //! The AATF ruleset `check-aatf` and the window share, so the quick
-//! actions, the Cards left badge and Live AATF read a player as the
+//! actions, the Cards used badge and Live AATF read a player as the
 //! command line does: the `aatf_ruleset` setting resolved one way for
 //! both (`resolve`) against the built-in rulesets and the ones imported
 //! into the data folder's `rules/` (`imported`), which the window's import

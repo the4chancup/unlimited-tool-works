@@ -15,7 +15,7 @@ use pes_savefile::schema::{instruction, schema_for};
 use pes_version::PesVersion;
 use studio_core::theme::Palette;
 use studio_core::widgets::{
-    add_enabled, checkbox, cycle_choice, step_choice, step_number, wheel_steps,
+    add_enabled, checkbox, combo_item, cycle_choice, step_choice, step_number, wheel_steps,
 };
 
 use crate::pitch::{FORMATIONS, position_label};
@@ -899,7 +899,7 @@ fn substitution_cell(ui: &mut egui::Ui, version: PesVersion, substitution: &mut 
                 .truncate()
                 .show_ui(ui, |ui| {
                     for (value, label) in &choices {
-                        ui.selectable_value(&mut pick, *value, label.clone());
+                        combo_item(ui, &mut pick, *value, label.clone());
                     }
                 })
                 .response;

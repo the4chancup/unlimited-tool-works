@@ -8,7 +8,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use aatf::{MedalSystem, Ruleset, Stat, Tier, TierId};
 use pes_savefile::interchange::team_toml::labels::ABILITY_STATS;
 use studio_core::widgets::{
-    add_enabled, checkbox, collapsing_header, step_choice, step_number, text_box, wheel_steps,
+    add_enabled, checkbox, collapsing_header, combo_item, step_choice, step_number, text_box,
+    wheel_steps,
 };
 
 use super::Section;
@@ -315,9 +316,9 @@ fn counts_as_cell(ui: &mut egui::Ui, ruleset: &mut Ruleset, index: usize) -> egu
     let response = egui::ComboBox::from_id_salt(("counts_as", index))
         .selected_text(selected)
         .show_ui(ui, |ui| {
-            ui.selectable_value(&mut choice, None, "—");
+            combo_item(ui, &mut choice, None, "—");
             for (id, label) in others() {
-                ui.selectable_value(&mut choice, Some(id.clone()), label);
+                combo_item(ui, &mut choice, Some(id.clone()), label);
             }
         })
         .response

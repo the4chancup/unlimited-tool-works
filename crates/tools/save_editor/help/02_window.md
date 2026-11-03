@@ -70,7 +70,7 @@ They act on the selected player, so a team row leaves them greyed out.
 **AATF ruleset**
 
 The dropdown on the toolbar, left of **Live AATF**, picks the AATF rules the quick actions,
-the Cards left badge and Live AATF use. Every cup's current rules are built in, listed by
+the Cards used badge and Live AATF use. Every cup's current rules are built in, listed by
 name, and the copies in the data folder's `rules` folder follow them. The pick is
 remembered. The ruleset's event logo shows at the window's top right, and when the ruleset
 names its event's page, a click on the logo opens it; a window too narrow for the toolbar and

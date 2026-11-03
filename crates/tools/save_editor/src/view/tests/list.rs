@@ -1042,6 +1042,69 @@ fn a_draggable_rows_pointer_is_the_pointing_hand() {
     );
 }
 
+// A click in the gap between two rows of the team dropdown picks the
+// nearer row, as a native list's rows meet (the popup's `Area` is the
+// widget a click landing between rows would otherwise hit). A touch
+// event first, so the scroll background's drag sense is on as on a
+// machine with a touch screen.
+// ST-COMBO-01
+#[test]
+fn a_gap_click_in_the_team_dropdown_picks_the_nearer_team() {
+    let (mut view, mut window) = open_734_with("combo_gap_team", &[73401], 183);
+    window.frame(
+        vec![egui::Event::Touch {
+            device_id: egui::TouchDeviceId(1),
+            id: egui::TouchId(1),
+            phase: egui::TouchPhase::Start,
+            pos: egui::pos2(250.0, 50.0),
+            force: None,
+        }],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    let (a_name, b_name, b_id) = {
+        let file = view.session.as_ref().expect("the save opened").file();
+        let (a, b) = (&file.teams()[3], &file.teams()[4]);
+        (
+            display_name(&a.name).to_owned(),
+            display_name(&b.name).to_owned(),
+            b.id,
+        )
+    };
+    let nodes = draw(&mut window, &mut view);
+    let combo = nodes
+        .iter()
+        .find(|node| node.role() == Role::ComboBox && node.value() == Some("/lit/"))
+        .expect("the team selector")
+        .clone();
+    click(&mut window, &combo, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds_of = |label: &str| {
+        pairs
+            .iter()
+            .find(|(_, node)| node.role() == Role::Button && node.label() == Some(label))
+            .and_then(|(_, node)| node.bounds())
+            .unwrap_or_else(|| panic!("no popup row {label:?}"))
+    };
+    let (a_bounds, b_bounds) = (bounds_of(&a_name), bounds_of(&b_name));
+    assert!(
+        a_bounds.y1 < b_bounds.y0 && b_bounds.y0 - a_bounds.y1 < 6.0,
+        "premise: two adjacent rows ({a_bounds:?}, {b_bounds:?})"
+    );
+    press_release(
+        &mut window,
+        egui::pos2(
+            ((b_bounds.x0 + b_bounds.x1) / 2.0) as f32,
+            (b_bounds.y0 - 0.5) as f32,
+        ),
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.team,
+        TeamChoice::Team(b_id),
+        "the nearer (lower) row picked"
+    );
+}
+
 /// The `TextShape` whose galley text starts with `starts_with`, drawn
 /// inside `rect`.
 fn text_in_rect<'a>(

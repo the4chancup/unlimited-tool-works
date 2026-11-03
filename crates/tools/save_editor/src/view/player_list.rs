@@ -7,7 +7,7 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::PlayerEntry;
 use pes_savefile::model::names::display_name;
-use studio_core::widgets::{ink_span, step_choice, text_box, wheel_steps};
+use studio_core::widgets::{combo_item, ink_span, step_choice, text_box, wheel_steps};
 use team_widgets::names::{append_name, plain_format};
 
 use crate::session::Session;
@@ -400,9 +400,10 @@ pub(super) fn team_selector(
                 .unwrap_or_else(|| id.to_string()),
         })
         .show_ui(ui, |ui| {
-            ui.selectable_value(&mut chosen, TeamChoice::All, "ALL");
+            combo_item(ui, &mut chosen, TeamChoice::All, "ALL");
             for team in file.teams() {
-                ui.selectable_value(
+                combo_item(
+                    ui,
                     &mut chosen,
                     TeamChoice::Team(team.id),
                     display_name(&team.name),

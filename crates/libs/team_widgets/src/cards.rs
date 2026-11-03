@@ -9,7 +9,7 @@ use pes_savefile::interchange::team_toml::labels::{self, card_name};
 use pes_savefile::model::playstyle::PlayStyle;
 use pes_savefile::schema::fields::PlayerField;
 use pes_savefile::schema::{playstyle, schema_for};
-use studio_core::widgets::{add_enabled, checkbox, step_choice, wheel_steps};
+use studio_core::widgets::{add_enabled, checkbox, combo_item, step_choice, wheel_steps};
 
 /// A skills or COM styles column's width (the draft's `.skcols` 158px):
 /// the host sizes the panels that hold the two columns from it.
@@ -33,7 +33,7 @@ pub struct TierCards<'a> {
     pub limits: &'a aatf::CardLimits,
 }
 
-/// The Cards left row's one badge: the player's own tier under the active ruleset.
+/// The Cards used row's one badge: the player's own tier under the active ruleset.
 #[derive(Clone, Copy)]
 pub enum CardsBadge<'a> {
     /// The tier he is read as, with his card economy under it.
@@ -61,6 +61,11 @@ pub fn card_columns(
     let mut changed = false;
     let per_column = shown.len().div_ceil(2).max(1);
     ui.horizontal(|ui| {
+        // The cards' labels in the fields' normal text colour — the
+        // field labels beside them, not a checkbox's lighter grey: a
+        // card is a player's field, not a setting. A hover's own
+        // brighter grey still applies.
+        ui.visuals_mut().widgets.inactive.fg_stroke.color = ui.visuals().text_color();
         ui.spacing_mut().item_spacing.x = CARD_COLUMN_GAP;
         for chunk in shown.chunks(per_column) {
             ui.vertical(|ui| {
@@ -86,20 +91,21 @@ pub fn card_columns(
     changed
 }
 
-/// The Cards left label and `badge`'s text, drawn inline in the caller's
-/// row (the draft's `cardBadges`): `Cards left for` then the tier's
-/// `label: left of limit` in a chip (the draft's `.badge`; no `cards`
+/// The Cards used label and `badge`'s text, drawn inline in the caller's
+/// row (the draft's `cardBadges`): `Cards used for` then the tier's
+/// `label: paid of limit` in a chip (the draft's `.badge`; no `cards`
 /// after the count, which the label before it says), its text in the
-/// error color when overdrawn; `Cards left:` then `No tier matches`,
-/// weak and with no chip, when no tier's condition holds for him.
-pub fn cards_left(ui: &mut egui::Ui, badge: &CardsBadge<'_>) {
+/// error color when paid exceeds the limit; `Cards used:` then `No tier
+/// matches` when no tier's condition holds for him, all in the fields'
+/// normal text colour.
+pub fn cards_used(ui: &mut egui::Ui, badge: &CardsBadge<'_>) {
     match badge {
         CardsBadge::Tier(tier) => {
-            ui.weak("Cards left for");
-            let left = i32::from(tier.limits.limit) - i32::from(tier.limits.paid);
-            let mut text =
-                egui::RichText::new(format!("{}: {} of {}", tier.label, left, tier.limits.limit));
-            if left < 0 {
+            ui.label("Cards used for");
+            let paid = i32::from(tier.limits.paid);
+            let limit = i32::from(tier.limits.limit);
+            let mut text = egui::RichText::new(format!("{}: {} of {}", tier.label, paid, limit));
+            if paid > limit {
                 text = text.color(ui.visuals().error_fg_color);
             }
             let galley = egui::WidgetText::from(text).into_galley(
@@ -129,8 +135,8 @@ pub fn cards_left(ui: &mut egui::Ui, badge: &CardsBadge<'_>) {
             ));
         }
         CardsBadge::NoTier => {
-            ui.weak("Cards left:");
-            ui.weak("No tier matches");
+            ui.label("Cards used:");
+            ui.label("No tier matches");
         }
     }
 }
@@ -168,7 +174,7 @@ pub fn playing_style_picker(
             .selected_text(selected)
             .show_ui(ui, |ui| {
                 for (index, label) in &styles {
-                    changed |= ui.selectable_value(style, *index, label).changed();
+                    changed |= combo_item(ui, style, *index, label).changed();
                 }
             })
             .response;
@@ -282,14 +288,14 @@ mod tests {
             self.columns(version, skills, pointer_at(pos, false))
         }
 
-        /// One frame of `cards_left` over `badge`, returning the nodes and
+        /// One frame of `cards_used` over `badge`, returning the nodes and
         /// the painted shapes.
         fn badge(
             &mut self,
             badge: CardsBadge,
         ) -> (Vec<accesskit::Node>, Vec<egui::epaint::ClippedShape>) {
             self.frame_at(None, Vec::new(), |ui| {
-                ui.horizontal(|ui| cards_left(ui, &badge));
+                ui.horizontal(|ui| cards_used(ui, &badge));
             })
         }
 
@@ -845,13 +851,14 @@ mod tests {
         assert_eq!(skills.com_styles, expected, "exactly that one flag changed");
     }
 
-    // The Cards left badge, the draft's `cardBadges`: "Cards left for" then
-    // the one badge, the player's own tier's `label: left of limit` (no
-    // `cards` after the count: the label before it says so),
-    // in the error colour when overdrawn. `NoTier` draws "Cards left:" then
-    // the weak stand-in. A colour is no AccessKit property, so it is read back
-    // from the frame's painted shapes: the badge's `TextShape` carries
-    // the `RichText` colour in its galley's sections.
+    // The Cards used badge, the draft's `cardBadges`: "Cards used for" then
+    // the one badge, the player's own tier's `label: paid of limit` (no
+    // `cards` after the count: the label before it says so), all in the
+    // normal text colour except for the error colour when paid is over the
+    // limit. `NoTier` draws "Cards used:" then the stand-in. A colour is no
+    // AccessKit property, so it is read back from the frame's painted
+    // shapes: the badge's `TextShape` carries the `RichText` colour in its
+    // galley's sections.
     #[test]
     fn the_badge_reads_the_own_tiers_economy_coloured_when_overdrawn() {
         let mut window = Headless::new();
@@ -862,34 +869,34 @@ mod tests {
             label: "Gold",
             limits: &under,
         }));
-        text_entry(&nodes, "Cards left for");
-        text_entry(&nodes, "Gold: 2 of 5");
+        text_entry(&nodes, "Cards used for");
+        text_entry(&nodes, "Gold: 3 of 5");
         let text_color = window.ctx.style_of(window.ctx.theme()).visuals.text_color();
         let error_color = window
             .ctx
             .style_of(window.ctx.theme())
             .visuals
             .error_fg_color;
-        assert_eq!(painted_text_color(&shapes, "Gold: 2 of 5"), text_color);
-        // Overdrawn paints the error colour.
+        assert_eq!(painted_text_color(&shapes, "Gold: 3 of 5"), text_color);
+        // Over the limit paints the error colour.
         let (_, shapes) = window.badge(CardsBadge::Tier(TierCards {
             label: "Silver",
             limits: &over,
         }));
-        assert_eq!(painted_text_color(&shapes, "Silver: -3 of 4"), error_color);
-        // No card left is not overdrawn.
+        assert_eq!(painted_text_color(&shapes, "Silver: 7 of 4"), error_color);
+        // The limit met is not overdrawn.
         let (_, shapes) = window.badge(CardsBadge::Tier(TierCards {
             label: "Bronze",
             limits: &spent,
         }));
-        assert_eq!(painted_text_color(&shapes, "Bronze: 0 of 4"), text_color);
-        // No tier matching draws the weak stand-in.
+        assert_eq!(painted_text_color(&shapes, "Bronze: 4 of 4"), text_color);
+        // No tier matching draws the stand-in.
         let (nodes, _) = window.badge(CardsBadge::NoTier);
-        text_entry(&nodes, "Cards left:");
+        text_entry(&nodes, "Cards used:");
         text_entry(&nodes, "No tier matches");
     }
 
-    // The tier's `label: left of limit` sits in a chip, the draft's
+    // The tier's `label: paid of limit` sits in a chip, the draft's
     // `.badge`: a rect in the inactive widget fill with corners rounded 2
     // painted under the text, the text 4 points in from its left edge and
     // the chip no taller than the text. `No tier matches` stays plain.
@@ -908,7 +915,7 @@ mod tests {
             .widgets
             .inactive
             .weak_bg_fill;
-        let text = text_shape(&shapes, "Gold: 2 of 5");
+        let text = text_shape(&shapes, "Gold: 3 of 5");
         let text_rect = egui::Rect::from_min_size(text.pos, text.galley.size());
         let chip = shapes
             .iter()

@@ -23,7 +23,7 @@ use crate::settings::{CommonSettings, Theme, pes_folder_pattern};
 use crate::tool::{ShellRequest, StudioTool, ToolContext};
 use crate::widgets::{
     FORM_ROW_SPACING, PathCommit, add_enabled, add_enabled_ui, checkbox, checkbox_without_text,
-    path_row, path_row_commit, row_label, step_choice, step_number, wheel_steps,
+    combo_item, path_row, path_row_commit, row_label, step_choice, step_number, wheel_steps,
 };
 
 use super::sidebar::{SETTINGS_LABEL, Sidebar, exe_tooltip, version_blocker, version_label};
@@ -346,8 +346,8 @@ impl SettingsMenu {
                 let combo = egui::ComboBox::from_id_salt("settings-theme")
                     .selected_text(theme_label(picked))
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut picked, Theme::Dark, "Dark");
-                        ui.selectable_value(&mut picked, Theme::Light, "Light");
+                        combo_item(ui, &mut picked, Theme::Dark, "Dark");
+                        combo_item(ui, &mut picked, Theme::Light, "Light");
                     })
                     .response
                     .labelled_by(theme.id);
@@ -455,7 +455,7 @@ fn version_row(
             .selected_text(version_label(picked, false))
             .show_ui(ui, |ui| {
                 for version in PesVersion::ALL {
-                    ui.selectable_value(&mut picked, version, version_label(version, false));
+                    combo_item(ui, &mut picked, version, version_label(version, false));
                 }
             })
             .response

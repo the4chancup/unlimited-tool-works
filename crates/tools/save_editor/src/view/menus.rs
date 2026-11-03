@@ -13,7 +13,7 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::names::display_name;
 use studio_core::widgets::{
-    add_enabled, add_enabled_ui, menu_button, modal, modal_buttons, modal_fit_contents,
+    add_enabled, add_enabled_ui, combo_item, menu_button, modal, modal_buttons, modal_fit_contents,
     modal_sentence_gap, radio_value, step_choice, step_number, wheel_steps,
 };
 
@@ -1007,7 +1007,7 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     )
                     .show_ui(ui, |ui| {
                         for team in session.file().teams() {
-                            ui.selectable_value(&mut picked, team.id, display_name(&team.name));
+                            combo_item(ui, &mut picked, team.id, display_name(&team.name));
                         }
                     })
                     .response;
@@ -1036,7 +1036,7 @@ pub(crate) fn copy_swap_dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     )
                     .show_ui(ui, |ui| {
                         for (id, label) in &options {
-                            ui.selectable_value(&mut picked, *id, label);
+                            combo_item(ui, &mut picked, *id, label);
                         }
                     })
                     .response;
