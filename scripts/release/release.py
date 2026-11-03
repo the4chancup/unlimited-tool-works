@@ -364,12 +364,18 @@ def c_flags_env(flags: list[str], platform: str, environ: dict[str, str]) -> dic
     `-ffile-prefix-map` on Linux: C and assembly a build script compiles through `cc`
     (ring's) keep their source paths in their debug info, which rustc's remap never
     rewrites. gcc and clang apply the last matching map, as rustc does, so the order
-    carries over. Windows is left as it is: MSVC's cl takes no such flag, and its C debug
+    carries over. Each pair goes twice, the second as `-fdebug-prefix-map`: gcc 11 (Ubuntu
+    22.04's) hands only that spelling on to the assembler, which writes an assembly file's
+    paths itself. Windows is left as it is: MSVC's cl takes no such flag, and its C debug
     info stays in the .pdb."""
     env = dict(environ)
     if platform != "linux":
         return env
-    maps = [flag.replace("--remap-path-prefix=", "-ffile-prefix-map=", 1) for flag in flags]
+    maps = [
+        flag.replace("--remap-path-prefix=", spelling, 1)
+        for flag in flags
+        for spelling in ("-ffile-prefix-map=", "-fdebug-prefix-map=")
+    ]
     for key in ("CFLAGS", "CXXFLAGS"):
         env[key] = " ".join([env[key], *maps] if env.get(key) else maps)
     return env
