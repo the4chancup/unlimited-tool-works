@@ -135,6 +135,13 @@ todo = "warn"
 [profile.release]
 debug = "line-tables-only"
 
+# ring compiles C and assembly through `cc`, which takes the profile's debug setting: its
+# DWARF would carry the build machine's absolute paths, which rustc's
+# `--remap-path-prefix` never rewrites, into the Linux binary (on Windows they stay in the
+# `.pdb`). The release recipe refuses a binary holding them.
+[profile.release.package.ring]
+debug = false
+
 # Dependencies build without debug info: nobody steps into them, and theirs was most of a dev
 # build's target folder. The workspace's own crates keep theirs.
 [profile.dev.package."*"]

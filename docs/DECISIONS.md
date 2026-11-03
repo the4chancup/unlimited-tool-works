@@ -15450,3 +15450,16 @@ Why: as with the path edits (2026-10-27), the browser's font is narrower than eg
 capped at 660 would shrink the path edit below Steam's PES 2019 path. The update check's rows
 first took it to 662 with the hours label, unrecorded until now.
 Plan: `plans/core/gui.md` "Settings menu", the path row bullet.
+
+## 2026-11-03 — release — ring builds without debug info in the release profile
+Decision: `[profile.release.package.ring] debug = false`; every other crate keeps the
+release profile's line tables.
+Why: CI's 0.0.1i run (41550091294) refused the Linux binary for holding `/home/runner`.
+ring, the update check's TLS, is the one crate the update check added that compiles C (and
+assembly) through `cc`, which passes `-g1` from the package's debug setting; that DWARF
+holds absolute source and build paths, and rustc's `--remap-path-prefix` rewrites only
+Rust's. On Windows the same debug info goes into the `.pdb`, so the exe passed. Mapping the
+paths in `CFLAGS` instead (`-ffile-prefix-map`) would keep ring's C line tables, which no
+crash report needs, at the cost of compiler-specific flags in the release recipe; the
+recipe's path check still refuses a future C crate that leaks.
+Plan: `plans/core/distribution.md` "Release builds in CI".
