@@ -15487,3 +15487,15 @@ cards drew in the checkboxes' light grey, brighter than the fields beside them; 
 maintainer's wording: the paid cards against the limit read at a glance.
 Plan: `plans/core/gui.md` "Prototypes before implementation" (the combo's list), ST-COMBO-01;
 `plans/save_editor.md` the cards' labels and the Cards used badge, SE-GUI-66.
+
+## 2026-11-03 — release — The C compiler maps the build paths as rustc does
+Decision: on Linux the release recipe adds `remap_flags`' pairs to `CFLAGS` and `CXXFLAGS` as
+`-ffile-prefix-map`, in the same order; this replaces "ring builds without debug info in the
+release profile", whose `[profile.release.package.ring] debug = false` is taken back out.
+Why: run 41551900179 failed with the override in place, and run 41553619370, whose refusal now
+lists the strings, showed ring's C and assembly source paths and include folders still in the
+binary: the override did not keep `cc` from emitting their debug info. Mapping the paths fixes
+the cause, keeps ring's line tables like every crate's, and covers any crate built through
+`cc`. Windows is unchanged: MSVC's cl takes no such flag, and its C debug info stays in the
+`.pdb`.
+Plan: `plans/core/distribution.md` "Release builds in CI".
