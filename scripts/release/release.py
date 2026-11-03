@@ -359,6 +359,22 @@ def remap_flags(
     return [f"--remap-path-prefix={source}={to}" for source, to in pairs]
 
 
+def c_flags_env(flags: list[str], platform: str, environ: dict[str, str]) -> dict[str, str]:
+    """`environ` with `remap_flags`' pairs added to `CFLAGS` and `CXXFLAGS` as
+    `-ffile-prefix-map` on Linux: C and assembly a build script compiles through `cc`
+    (ring's) keep their source paths in their debug info, which rustc's remap never
+    rewrites. gcc and clang apply the last matching map, as rustc does, so the order
+    carries over. Windows is left as it is: MSVC's cl takes no such flag, and its C debug
+    info stays in the .pdb."""
+    env = dict(environ)
+    if platform != "linux":
+        return env
+    maps = [flag.replace("--remap-path-prefix=", "-ffile-prefix-map=", 1) for flag in flags]
+    for key in ("CFLAGS", "CXXFLAGS"):
+        env[key] = " ".join([env[key], *maps] if env.get(key) else maps)
+    return env
+
+
 def rustflags_config(flags: list[str], triple: str) -> str:
     # `--config` joins this array with the one `.cargo/config.toml` sets on the same key
     # (`+crt-static`); `RUSTFLAGS` would replace it. JSON's string escapes are TOML's.
@@ -480,7 +496,9 @@ def release(version: str) -> None:
     cargo_home = os.environ.get("CARGO_HOME")
     rustup_home = os.environ.get("RUSTUP_HOME")
     flags = remap_flags(home, cargo_home, rustup_home, str(ROOT), str(target))
-    build = subprocess.run(build_args(flags, plat.triple), cwd=ROOT)
+    build = subprocess.run(
+        build_args(flags, plat.triple), cwd=ROOT, env=c_flags_env(flags, platform, dict(os.environ))
+    )
     if build.returncode != 0:
         raise Refusal("cargo build --release --locked -p studio failed")
     exe = target / plat.built

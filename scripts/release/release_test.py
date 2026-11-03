@@ -16,6 +16,7 @@ from release import (
     Refusal,
     about_config,
     build_args,
+    c_flags_env,
     check_exe,
     elf_sections,
     existing_glob,
@@ -502,6 +503,21 @@ class Pure(unittest.TestCase):
             exe.write_bytes(b"\x00/home/runner/work/utw/x.rs\x00")
             with self.assertRaisesRegex(Refusal, "/home/runner"):
                 check_exe(exe, ["/home/runner/work/utw"], "linux")
+
+    def test_the_c_compiler_maps_the_same_prefixes_as_rustc(self) -> None:
+        # C and assembly built through `cc` (ring's) keep their source paths in their debug
+        # info, which rustc's remap never sees: on Linux the same pairs go to the C compiler,
+        # in rustc's order (both apply the last matching prefix), after CFLAGS' own.
+        flags = remap_flags("/home/m", "/home/m/.cargo", None, "/src/utw", "/src/utw/target")
+        env = c_flags_env(flags, "linux", {"CFLAGS": "-O2"})
+        self.assertEqual(
+            env["CFLAGS"],
+            "-O2 -ffile-prefix-map=/home/m=~ -ffile-prefix-map=/home/m/.cargo=~cargo"
+            " -ffile-prefix-map=/src/utw=.",
+        )
+        self.assertEqual(env["CXXFLAGS"], env["CFLAGS"].removeprefix("-O2 "))
+        # MSVC's cl takes no such flag; Windows keeps C debug info in the .pdb.
+        self.assertEqual(c_flags_env(flags, "windows", {"CFLAGS": "-O2"}), {"CFLAGS": "-O2"})
 
     def test_a_refusal_names_the_strings_that_hold_a_path(self) -> None:
         # The refusal shows where a path sits, so a leak is diagnosed from the log alone;
