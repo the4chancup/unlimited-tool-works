@@ -837,7 +837,8 @@ to the table first (a new dependency, asked for first):
   measured in the built window, not left to the browser, whose look is the system's: the
   checkbox and radio button (a 14-point box or circle on the widget fill, the tick a
   polyline), the slider, a combo's open list (egui's popup under its button, opened by the
-  draft's own code over the `select`), and a scroll bar where the app reserves a band for its
+  draft's own code over the `select`; a click between two of its rows picks the nearer row,
+  as a native list's rows meet, rather than closing the list on nothing), and a scroll bar where the app reserves a band for its
   floating one (the browser's hidden, the band kept clear). Spacing starts from the theme's
   the same way: a draft's margins, gaps and paddings are the ones egui draws with the suite's
   theme (a panel's margin 8, the item spacing 8 across and 3 down, a menu's margin 6 with its
@@ -1541,4 +1542,9 @@ ST-WHEEL-06 GIVEN ST-WHEEL-01's scroll area with Invert value scrolling on
                  WHEN the setting is off again and one notch down turns over the drag value
                  THEN it is 179; and a turn over the area's empty space scrolls it the same
                  way with the setting on or off
+ST-COMBO-01 GIVEN a combo of five items open, its list's rows drawn with the theme's gap
+            WHEN a click lands in the gap between the second and third rows, nearer the third
+            THEN the third item is picked and the list closes; WHEN, reopened, a click lands
+                 nearer the second THEN the second is picked; the same in the Save editor's
+                 team dropdown over the player list
 ```

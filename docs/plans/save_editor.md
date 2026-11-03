@@ -407,7 +407,7 @@ all side by side.
      as the checkboxes' labels are, not the weak one: the weak grey read too dark beside them.
      A label and its field are never closer than 9 points on a pair and 12 in the label-left
      rows and Ability stats; the room this takes comes off the margins either side of the centred view.
-  2. **Skills**, the Cards left badge in its header, the version's skills (up to 41,
+  2. **Skills**, the Cards used badge in its header, the version's skills (up to 41,
      version-gated) but the active ruleset's tricks or free cards, as checkboxes in two columns
      filled column by column; under it **Tricks**, the skills the ruleset's `tricks` card group
      names, in the game's order, two columns filled the same way: a member weighs a skill
@@ -440,7 +440,7 @@ all side by side.
      the labels left-aligned in one column starting at one x and the numbers in another, as
      General info's are; a short label such as Jump then stands far from its number, which
      the maintainer prefers to the ragged left edge right-aligned labels make.
-  The three columns' titles share one line: Skills' row is as tall as its Cards left badge, so
+  The three columns' titles share one line: Skills' row is as tall as its Cards used badge, so
   it starts 3 points above the columns' top, and the columns start 3 points lower than a bare
   title would. Every panel title of the view stands 6 points above the first thing drawn under
   it (a field's frame, a checkbox), the badge's lower half overlapping that gap: the spacing of
@@ -498,12 +498,16 @@ all side by side.
     stored and changes only when the member edits it: drawing a player never edits him (an egui
     number control clamps the value it draws unless told not to, which would mark him unsaved on
     sight).
-  - **The skills' Cards left badge** is the active ruleset's, the toolbar's ruleset dropdown's
+  - **The cards' labels** (the skills', the Tricks or Free cards', the COM styles') and the
+    Cards used badge's words are in the normal text colour, as the field labels (`Stronger
+    foot`, the stats' `Ball Winning`), not the checkboxes' light grey: a card reads as a
+    player's field, not a setting. A hovered card's label still brightens.
+  - **The skills' Cards used badge** is the active ruleset's, the toolbar's ruleset dropdown's
     ("Configurable AATF rules"), and reads the player's own tier
-    alone (`Cards left for Gold: 6 of 8`, the tier and the count in a chip, the draft's
+    alone (`Cards used for Gold: 2 of 8`, the tier, the paid cards and the limit in a chip, the draft's
     `.badge`: the widget fill, corners rounded 2, 4 points of margin across and none down;
     no `cards` after the count, which the label
-    before it already says; `Cards left: No tier matches` when none
+    before it already says; `Cards used: No tier matches` when none
     does, the reason after the colon): the tier his stats,
     registered position and height match under that ruleset, as `check-aatf` recognizes it,
     not one badge per tier, which a member had to match to the player by eye. A special's choice
@@ -1755,7 +1759,7 @@ What this editor adds on top of the lib:
     General info's and Other stats' labels; an ability stat's at its label cell's left edge
     instead (over the cell's padding), where the column's left-aligned labels start, so the
     stats' marks share one column; a panel's header for a row about the panel as a whole (the positions grid, the skills, the
-    Tricks or Free cards panel, the COM styles). The Skills header's Cards left badge has no
+    Tricks or Free cards panel, the COM styles). The Skills header's Cards used badge has no
     mark of its own: its rows mark the Skills header, the group holding the card counts, in
     one mark with the skills' own (the highest severity of both, both in its tooltip), since
     a mark in the row before the badge would shift the badge whenever it showed. The first
@@ -1775,7 +1779,7 @@ What this editor adds on top of the lib:
     the playing style
     for `PlayingStyleRange`, the skills for `SkillCardCap`, the COM styles for
     `ComStyleCap`, the skills or the COM styles for `RequiredCard` by its card's kind, the
-    Skills header for `Cards` and `MinCards` (the Cards left badge's), which no one field causes:
+    Skills header for `Cards` and `MinCards` (the Cards used badge's), which no one field causes:
     `Cards`' budget counts every card kind and the extra A positions, `MinCards`' count the
     paid skills and the extra A positions; and for a suggestion (`Unused`), the field of its
     allowance: the Skills header for the cards, the positions grid for the A positions,
@@ -2026,7 +2030,7 @@ SE-GUI-15  GIVEN the PES 17 save open and no ruleset imported
                 under a separator, and no toolbar menu holds an entry that opens an AATF panel
                 (the Savefile menu's Multi-team AATF…, SE-GUI-41, opens a report dialog over a
                 range of teams); WHEN another
-                ruleset is picked THEN the quick actions and the Cards left badge are that
+                ruleset is picked THEN the quick actions and the Cards used badge are that
                 ruleset's on the next frame, Live AATF's list drops the old ruleset's rows on
                 it and shows the new ruleset's when its check returns (SE-GUI-32 for the setting it
                 writes); WHEN the wheel turns over the closed dropdown THEN it
@@ -2112,7 +2116,7 @@ SE-GUI-60  GIVEN a PES 19 save under the VGL 27 ruleset and a captain whose card
                 his tier's limit, using no COM style or A position past it (the tester's
                 VGL27 Friendlies save reproduces it by hand)
            WHEN his Skills panel shows
-           THEN the Cards left badge's limit counts the captain's choice card; WHEN a COM
+           THEN the Cards used badge's limit counts the captain's choice card; WHEN a COM
                 style past the tier's takes the choice THEN the limit drops by one
 SE-GUI-61  GIVEN a player's Stronger foot toggle
            WHEN it draws
@@ -2141,6 +2145,13 @@ SE-GUI-64  GIVEN the save open on a team, player 01's row dragged
 SE-GUI-65  GIVEN the Tactics view, a Starting eleven row pressed 20 points right of its centre
            WHEN it is dragged
            THEN the dragged row is drawn with that point under the pointer, not its centre
+SE-GUI-66  GIVEN the PES 17 save open on a player whose own tier, Regular, allows 3 paid
+               cards, 3 of them ticked
+           WHEN Abilities shows
+           THEN the Skills header reads `Cards used for` and the chip `Regular: 3 of 3`;
+               `Cards used for` and the skills' labels (`Heel Trick`) paint the normal
+               text colour, `Stronger foot`'s; WHEN a fourth paid card is ticked THEN the
+               chip reads `Regular: 4 of 3` in the error colour
 SE-GUI-62  GIVEN the PES 17 save open on a player, the keyboard moved by Tab to a rating cell
                 of his Playable positions and Space pressed on it (the rating stepped)
            WHEN Ctrl+Z is pressed, the cell still holding the keyboard

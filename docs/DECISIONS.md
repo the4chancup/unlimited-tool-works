@@ -15475,3 +15475,15 @@ but never a written rule, so the update check's choice weighed `ring` only again
 C of `aws-lc-rs`, and its C surfaced only when its DWARF paths failed CI's path check.
 Replacing it before the cut would put new TLS code in 0.0.1 untested by any release.
 Plan: `plans/core/distribution.md` "Self-update" step 1 (the client).
+
+## 2026-11-03 — save_editor, studio — Three fixes before 0.0.1 goes gold
+Decision (the maintainer): (1) a click between two rows of an open combo's list picks the nearer
+row instead of closing the list with no pick (reported on the player list's team dropdown); (2)
+the cards' labels (skills, Tricks or Free cards, COM styles) and the badge's words take the
+field labels' normal text colour, `Stronger foot`'s and `Ball Winning`'s; (3) the badge counts
+the cards used, `Cards used for Regular: 3 of 3`, where it counted the cards left (`0 of 3`).
+Why: (1) the gap between rows is drawn but is no row, and a click there lost the pick; (2) the
+cards drew in the checkboxes' light grey, brighter than the fields beside them; (3) the
+maintainer's wording: the paid cards against the limit read at a glance.
+Plan: `plans/core/gui.md` "Prototypes before implementation" (the combo's list), ST-COMBO-01;
+`plans/save_editor.md` the cards' labels and the Cards used badge, SE-GUI-66.
