@@ -44,12 +44,10 @@ phase (16.x a, unwired)
 (decision entries 2026-09-21 and 2026-09-28). Release target (2026-09-28): 0.1.0 after Phase
 8; phase order 1–6, 8, 0.1.0, 7, 9–16 (`plans/core/development_plan.md` "Releases");
 first-class target the Fox version the cup moves to around April 2027 ("Target versions").
-**0.0.1 candidate** 0.0.1h (2026-11-02, branch `release/0.0.1-candidate` at `92d1772b`,
-merged into main): 0.0.1g plus f1e (the maintainer's f1c changes) and f1f (the second batch:
-Ctrl+C/Ctrl+V, undo runs, the page keys, two copies at once), each reviewed and
-mutation-measured; full gates green on main (`84dd26bd`); the lead's built-app look passed
-(checks 1-3, check 1 in game, `.tmp/release_0_0_1/f1c_look/results.md`). It waits for the
-maintainer's last look (0.0.1f1c), then the cut (f2).
+**0.0.1 released** 2026-11-03 (f2): tag `v0.0.1` on `cc0befb6`, built by CI run
+41564671137, the clean-machine check passed on the notebook, published by the maintainer.
+Next, when the maintainer resumes the lead: f3 (branches and worktrees), the after-cut list
+(f6, f1g14's postponed mutation run among it), then 0.0.2.
 **Blocked on:** nothing.
 
 **Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
@@ -7102,7 +7100,7 @@ briefs, review loops, gates and mutation runs as for any step.
       reads white"), drafted (`save_editor.js` `.rate.lr`): `save_editor` `info_strip.rs`
       `side_row` → verify: SE-GUI-61 headless, red first; its mutation run with f1g14's (f6 (7)).
       Done 2026-11-03 as `c2460f32` (`info_strip.rs` `side_row`, `tests/strip.rs`)
-  - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
+  - [x] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. The freeze: done 2026-11-03 as
     `c5eea63e` on the maintainer's confirmation at the look at 0.0.1i (`aatf` `file.rs`
     `LOGIC_VERSIONS`' comment, `logic_version_1_keeps_the_hash_0_0_1_shipped`). f1c's last look is on a local
@@ -7118,7 +7116,9 @@ briefs, review loops, gates and mutation runs as for any step.
     Graphics 620, 1368 x 912 at 200%), the draft's `UTW.exe` (SHA-256 `1664f03d…`): RESULT
     every check passed (checksum against SHA256SUMS.txt, 8 files, DBC7 settings, CLI and
     check-aatf, the window opened in 1.1 s and closed with exit 0, no console window, sharp
-    and fitting, Open, Live AATF, help, a clean log)
+    and fitting, Open, Live AATF, help, a clean log). Published by the maintainer 2026-11-03
+    03:16 UTC as "Unlimited Tool Works v0.0.1 pre-alpha", not flagged pre-release
+    (`releases/tag/v0.0.1`; its notes `.tmp/release_0_0_1/release_notes_0_0_1.md`)
   - [ ] f3 after the cut, first (the maintainer, 2026-11-01: queued so the 5-hour usage
     window goes to 0.0.1): the repository's branches and worktrees, never pruned (census
     2026-11-01, `.tmp/lead/branch_census.py`: 155 branches, 130 merged into main; 153

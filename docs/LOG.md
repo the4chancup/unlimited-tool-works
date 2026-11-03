@@ -3064,3 +3064,5 @@ worklog passed 7,000 lines.
   labels in the fields' colour, `Cards used for`; its mutation run moved after the cut.
 - 2026-11-03 — the maintainer's look at 0.0.1i passed; f1g15 (`c2460f32`): Stronger foot's
   chosen side white, f1g13 having made the other side white; logic version 1 frozen (`c5eea63e`).
+- 2026-11-03 — 0.0.1 released: tag `v0.0.1` (`cc0befb6`) built by CI run 41564671137, the
+  clean-machine check passed on the notebook, published by the maintainer at 03:16 UTC (f2).
