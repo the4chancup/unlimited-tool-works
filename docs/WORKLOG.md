@@ -7093,7 +7093,9 @@ briefs, review loops, gates and mutation runs as for any step.
       (`team_widgets` `cards.rs`, the help's Abilities chapter, the spec's badge lines)
       → SE-GUI-66
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
-    release 0.0.1`, the clean-machine check, the hand-over. The maintainer, 2026-11-02: the
+    release 0.0.1`, the clean-machine check, the hand-over. f1c's last look is on a local
+    candidate; the tag's CI build is the only one after it, its draft's bundles checked and
+    its Windows exe started once (DECISIONS "No CI dry run before the tag"). The maintainer, 2026-11-02: the
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);
     l2's double-click half (no console window) stays. The clean-machine check runs on the
     maintainer's notebook with `.tmp/lead/clean_check/clean_check.ps1` (its `.bat` beside it),

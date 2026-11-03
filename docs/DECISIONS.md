@@ -15499,3 +15499,15 @@ the cause, keeps ring's line tables like every crate's, and covers any crate bui
 `cc`. Windows is unchanged: MSVC's cl takes no such flag, and its C debug info stays in the
 `.pdb`.
 Plan: `plans/core/distribution.md` "Release builds in CI".
+
+## 2026-11-03 — release — No CI dry run before the tag
+Decision (the maintainer): 0.0.1's last look (f1g13's and f1g14's items) is on a Windows
+candidate built locally by `scripts/release/build_remapped.py`, not on a CI dry run of
+`ci/release-dry-run`. The next CI build is the tag `v0.0.1`'s: the lead checks its draft
+release's bundles and checksums, and the maintainer starts its Windows exe once before
+publishing, as 2026-11-02's "0.0.1 is built by CI" asks.
+Why: a CI run takes far longer than a local incremental build, and run 41556364520 on
+`7c7c78d0` already passed both bundles through the release checks; f1g14 changes no dependency
+and no build setting. A failure only CI hits at the tag publishes nothing: the workflow fails
+before the draft, and the tag is fixed and pushed again with the maintainer's OK.
+Plan: worklog 0.0.1f2.
