@@ -443,6 +443,9 @@
      the tick 2 wide in every state, so a choice made stands out; egui's own leave them grey
      with a 1-point tick. */
   label.cb { display: inline-flex; align-items: center; gap: 4px; color: #b4b4b4; }
+  /* A card's label (the skills, the tricks or free cards, the COM styles) reads as a field
+     label (Stronger foot, Ball Winning), not as a setting; its hover still brightens it. */
+  label.cb.card { color: var(--text); }
   input[type=checkbox], input[type=radio] {
     appearance: none; margin: 0; flex: none; width: 14px; height: 14px; border-radius: 2px;
     background: var(--widget) no-repeat center / 14px 14px; }

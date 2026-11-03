@@ -7084,6 +7084,14 @@ briefs, review loops, gates and mutation runs as for any step.
       interval, the settings menu 676 points: DECISIONS "The settings menu is 676 points"); its
       mutation run left the wake instant and the backoff's length untested, reworked
       `c6ce8acf` (12 caught, 0 missed, 2 timeouts that stop every check); (b-d) `9d74108a` on `f1g`, mutants 6 caught, 4 unviable
+    - [ ] f1g14 three fixes before gold (the maintainer, 2026-11-03; DECISIONS "Three fixes
+      before 0.0.1 goes gold"), drafted: (a) a click between two rows of a combo's open
+      list picks the nearer row, every combo of the suite (`egui::ComboBox` users) → verify:
+      ST-COMBO-01 headless, red first; (b) the cards' labels and the badge's words in the
+      normal text colour (`save_editor` `view/abilities.rs`, `team_widgets` `cards.rs`)
+      → SE-GUI-66; (c) the badge reads `Cards used for` with the paid cards of the limit
+      (`team_widgets` `cards.rs`, the help's Abilities chapter, the spec's badge lines)
+      → SE-GUI-66
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. The maintainer, 2026-11-02: the
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);

@@ -2942,16 +2942,16 @@ function cardLimits(p, t, tier) {
 function cardBadges(p, t) {
   const tier = recognizedTier(p, RULESETS[D.ruleset]);
   return h("span", { class: "row", id: "card-badges",
-      title: "Cards left under the player's own tier of the active ruleset (paid cards vs its limit)" },
-    // "Cards left for Regular: 0 of 3" (no "cards" after the count: the
+      title: "Cards used under the player's own tier of the active ruleset (paid cards vs its limit)" },
+    // "Cards used for Regular: 3 of 3" (no "cards" after the count: the
     // label before it says so); a player no tier matches reads "Cards
-    // left:" then why.
-    weak(tier ? "Cards left for" : "Cards left:"),
+    // used:" then why. The words in the field labels' colour.
+    h("span", {}, tier ? "Cards used for" : "Cards used:"),
     tier ? (() => { const c = cardLimits(p, t, tier);
       return h("span", { class: "badge" + (c.left < 0 ? " over" : ""),
         title: tier.label + ": " + c.paid + " paid of " + c.limit },
-        tier.label + ": " + c.left + " of " + c.limit); })()
-    : weak("No tier matches"));
+        tier.label + ": " + c.paid + " of " + c.limit); })()
+    : h("span", {}, "No tier matches"));
 }
 
 // ---- Savefile discovery (spec/pes_savefile/codec.md "Savefile discovery") ----
@@ -4709,7 +4709,7 @@ function asideCards() {
 }
 // One skill's checkbox, gated by the version that has the skill.
 function skillCheckbox(p, k) {
-  return gated(h("label", { class: "cb" },
+  return gated(h("label", { class: "cb card" },
     h("input", { type: "checkbox", checked: p.skills.includes(k), "data-skill": k,
       onchange: e => {
         set(p, x => x.skills.join(","), (x, v) => {
@@ -4726,7 +4726,7 @@ function skillColumns(p, cards, panel) {
   return h("div", { class: "skcols" }, Array.from({ length: cols }, (_, c) =>
     h("div", { class: "col" }, cards.slice(c * per, (c + 1) * per).map(k => skillCheckbox(p, k)))));
 }
-// The skills but the ruleset's tricks or free cards, the Cards left badge in
+// The skills but the ruleset's tricks or free cards, the Cards used badge in
 // the header; those cards, the COM styles and the non-ability values are
 // their own panels stacked under it.
 function skillsPanel(p, team) {
@@ -4751,7 +4751,7 @@ function asidePanel(p) {
 // The COM playing styles, two columns of checkboxes as wide as the skills
 // panel above them (one column where it is narrowed).
 function comStylesPanel(p) {
-  const comCb = k => h("label", { class: "cb" },
+  const comCb = k => h("label", { class: "cb card" },
     h("input", { type: "checkbox", checked: p.com_styles.includes(k), "data-com": k,
       onchange: e => {
         set(p, x => x.com_styles.join(","), (x, v) => {
@@ -7111,7 +7111,7 @@ function liveButton() {
   return b;
 }
 // The ruleset dropdown, left of the toggle and drawn whether Live AATF is on
-// or off: the ruleset also drives the quick actions, the Cards left badge and
+// or off: the ruleset also drives the quick actions, the Cards used badge and
 // which skills the Tricks or Free cards panel holds. The built-in rulesets by
 // their description alone, then the imported ones, each with an × that
 // removes it, then Import rules file..., a command rather than a choice (the
