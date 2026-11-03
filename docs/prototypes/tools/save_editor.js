@@ -302,12 +302,12 @@ input[type=range]:focus { outline: none; }
 .gen .combos .rate.lr { display: grid; grid-template-columns: 1fr 1fr; }
 /* Each side 18 tall, a control's height, so the toggles' rows stand 22 apart as the
    combos' do. */
-.gen .combos .rate.lr .sel { text-align: center; height: 18px; line-height: 18px; color: var(--strong); }
+.gen .combos .rate.lr .sel { text-align: center; height: 18px; line-height: 18px; color: var(--text); }
 /* The chosen side in the quiet grey of the positions grid's C, not the
    accent: a foot or hand is rarely what a member looks for. Its word in the
-   resting buttons' light grey, the other side's in the strong text colour, so the
-   side a click switches to reads white. */
-.gen .combos .rate.lr .sel.on { background: #5a5a5a; color: #b4b4b4; }
+   strong text colour, the other side's in the field labels' grey, so the
+   chosen side reads white. */
+.gen .combos .rate.lr .sel.on { background: #5a5a5a; color: var(--strong); }
 .gen .combos .rate.lr .sel:not(.on):hover { color: #f0f0f0; }
 /* The Captain checkbox centred in its box's width, under the box above it. */
 .gen .pair > .box { display: flex; justify-content: center; }

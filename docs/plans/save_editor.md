@@ -379,8 +379,8 @@ all side by side.
      each a two-choice toggle, Left | Right, its chosen side filled in the quiet grey of the
      positions' C (`#5a5a5a`), not the selection's blue: a foot or a hand is rarely what a
      member looks for, and the accent would pull the eye to it; the chosen side's word in the
-     resting buttons' light grey and the other side's in the normal text grey, so the chosen
-     side reads brighter (the maintainer, 2026-11-02); then Registered position, a
+     strong text colour and the other side's in the normal text grey, so the chosen side
+     reads white (the maintainer, 2026-11-03); then Registered position, a
      combo whose entries name each position in full after its abbreviation (`AMF - Attacking
      Midfielder`, British spelling: Centre Back; the TSV output and Set player names to
      positions keep 4ccEditor's names, Center Back, as their parity requires), and Playing
@@ -2120,8 +2120,8 @@ SE-GUI-60  GIVEN a PES 19 save under the VGL 27 ruleset and a captain whose card
                 style past the tier's takes the choice THEN the limit drops by one
 SE-GUI-61  GIVEN a player's Stronger foot toggle
            WHEN it draws
-           THEN the chosen side's word is in the resting buttons' light grey and the
-                other side's in the strong text colour
+           THEN the chosen side's word is in the strong text colour and the other
+                side's in the normal text grey
 SE-GUI-63  GIVEN the PES 17 save open on team 734 under the official rules, Live AATF on, the
                 check returned
            THEN the list opens with `Team 734 <name>`, each player's group's head reads

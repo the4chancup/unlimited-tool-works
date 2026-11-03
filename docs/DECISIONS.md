@@ -15522,3 +15522,12 @@ Why: its listing counts 33 mutants over four crates, about 45 minutes of runs by
 measured rates, and a survivor almost always asks for a test rather than a code change, so the
 shipped exe would not change for it.
 Plan: worklog 0.0.1f1g14, 0.0.1f6.
+
+## 2026-11-03 — save_editor — Stronger foot's chosen side reads white
+Decision (the maintainer, at the look at 0.0.1i): the Stronger foot/hand toggle's chosen side's
+word is in the strong text colour (`#dcdcdc`) over the positions' C fill, the other side's in
+the field labels' normal grey (`#8c8c8c`). This replaces item (4) of "Four fixes from the look
+at 0.0.1i-pre2", which made the other side white and kept the chosen side's light grey.
+Why: the chosen side is the one to read at a glance. Item (4) recorded the ask as "grey and
+white" without the side each colour went to, and was built the wrong way round.
+Plan: `plans/save_editor.md` the General info paragraph's Stronger foot, SE-GUI-61.

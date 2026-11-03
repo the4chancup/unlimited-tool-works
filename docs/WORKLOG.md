@@ -7097,6 +7097,10 @@ briefs, review loops, gates and mutation runs as for any step.
       the reach is two half-gap strips, not one rect over the row, which lost the row's hover
       highlight: `a_row_under_the_pointer_is_hovered`), its 16 combos; `team_widgets`
       `cards.rs` (`cards_used`, the labels' colour), the help, the spec's badge lines
+    - [ ] f1g15 Stronger foot/hand's chosen side white, the other side the field labels' grey
+      (the maintainer's look at 0.0.1i, 2026-11-03; DECISIONS "Stronger foot's chosen side
+      reads white"), drafted (`save_editor.js` `.rate.lr`): `save_editor` `info_strip.rs`
+      `side_row` → verify: SE-GUI-61 headless, red first; its mutation run with f1g14's (f6 (7))
   - [ ] f2 logic version 1's hash frozen (on the maintainer's confirmation, after f1c), `just
     release 0.0.1`, the clean-machine check, the hand-over. f1c's last look is on a local
     candidate; the tag's CI build is the only one after it, its draft's bundles checked and
@@ -7159,7 +7163,7 @@ briefs, review loops, gates and mutation runs as for any step.
     texports either side of the switch with one payload: `spec/pes_savefile/model.md`, the
     paragraph after the version quirks), so the schema's absent `fluid` on 15 stands; (7)
     f1g14's mutation run, postponed from the cut (DECISIONS "f1g14's mutation run waits until
-    after the cut"): `just mutants-diff` over f1g14's commit against its parent `108840f5`,
+    after the cut"), f1g15's with it: `just mutants-diff` over f1g14's commit against its parent `108840f5`,
     run from a worktree at that commit so the cut's later commits stay out of the diff (33
     mutants listed on the slice's draft diff), every survivor triaged and its tests briefed
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
