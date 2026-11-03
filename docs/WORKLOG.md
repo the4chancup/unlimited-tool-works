@@ -7111,7 +7111,14 @@ briefs, review loops, gates and mutation runs as for any step.
     `cargo bloat` measurement and l2's `team-compiler check` half wait for after the cut (f6);
     l2's double-click half (no console window) stays. The clean-machine check runs on the
     maintainer's notebook with `.tmp/lead/clean_check/clean_check.ps1` (its `.bat` beside it),
-    its report pasted into the step's line
+    its report pasted into the step's line. Tag `v0.0.1` on `cc0befb6` (gates 5717 passed;
+    no local `just release`, the maintainer's ruling: the tag's CI run is the recipe's),
+    CI run 41564671137 green, its draft's checksums and file sets checked. Clean-machine
+    check 2026-11-03 on the notebook (Windows 10 IoT Enterprise LTSC 19044, i5-7300U, HD
+    Graphics 620, 1368 x 912 at 200%), the draft's `UTW.exe` (SHA-256 `1664f03d…`): RESULT
+    every check passed (checksum against SHA256SUMS.txt, 8 files, DBC7 settings, CLI and
+    check-aatf, the window opened in 1.1 s and closed with exit 0, no console window, sharp
+    and fitting, Open, Live AATF, help, a clean log)
   - [ ] f3 after the cut, first (the maintainer, 2026-11-01: queued so the 5-hour usage
     window goes to 0.0.1): the repository's branches and worktrees, never pruned (census
     2026-11-01, `.tmp/lead/branch_census.py`: 155 branches, 130 merged into main; 153
