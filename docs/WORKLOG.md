@@ -7184,6 +7184,14 @@ briefs, review loops, gates and mutation runs as for any step.
     rows' does, its grab point kept (the maintainer, 2026-11-03)
   - [ ] 0.0.2-undo an X on each row of the unsaved changes list undoing that change alone,
     if a design for changes spanning many fields holds (the maintainer, 2026-11-03)
+  - [ ] 0.0.2-inst a Shift+click on the app's taskbar button opens a new instance, as Windows
+    does for most apps (the maintainer, 2026-11-03)
+  - [ ] 0.0.2-drift the risk of the settings drifting between two instances open at once
+    checked: each saves its own copy, so the last to save may undo the other's change; find
+    out what happens today and rule a fix (the maintainer, 2026-11-03)
+  - [ ] 0.0.2-clip Ctrl+C/Ctrl+V across instances, if possible: players, formations,
+    presets, gameplans copied in one instance and pasted in another (the maintainer,
+    2026-11-03)
   - [ ] 0.0.2-cli the command line's update notice (DECISIONS "The update offer waits in the
     status bar"): from 0.0.2 a command prints one line when a newer release exists
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and
