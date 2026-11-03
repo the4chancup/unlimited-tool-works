@@ -15463,3 +15463,15 @@ paths in `CFLAGS` instead (`-ffile-prefix-map`) would keep ring's C line tables,
 crash report needs, at the cost of compiler-specific flags in the release recipe; the
 recipe's path check still refuses a future C crate that leaks.
 Plan: `plans/core/distribution.md` "Release builds in CI".
+
+## 2026-11-03 — core — The shipped build is pure Rust by default
+Decision (the maintainer): the code compiled into the shipped binaries is Rust by default; a
+crate that compiles C for a release target needs a reason. `ring` (C and assembly, the update
+check's TLS since 2026-11-02's "The update check ships in 0.0.1") stays for 0.0.1; after the
+cut (worklog 0.0.2-tls) pure-Rust replacements are evaluated, with whether the rule allows
+exceptions and on what terms, then the rule goes into `CONTRIBUTING.md` with a gate.
+Why: pure Rust was the reason behind each past choice (egui, the audio backend, `roxmltree`)
+but never a written rule, so the update check's choice weighed `ring` only against the bigger
+C of `aws-lc-rs`, and its C surfaced only when its DWARF paths failed CI's path check.
+Replacing it before the cut would put new TLS code in 0.0.1 untested by any release.
+Plan: `plans/core/distribution.md` "Self-update" step 1 (the client).
