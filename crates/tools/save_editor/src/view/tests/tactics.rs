@@ -2995,7 +2995,7 @@ fn scroll_names_is_a_remembered_view_setting() {
     );
 }
 
-/// Each starter's medal in the `tactics_medals*` fixtures' team 734
+/// Each starter's medal in team 734 of the PES 2017 fixture save
 /// under the official ruleset, as the AATF check reads it: two silvers
 /// and two golds, the other seven no medal tier.
 const TEAM_734_MEDALS: [Option<team_widgets::tactics::Medal>; 11] = {

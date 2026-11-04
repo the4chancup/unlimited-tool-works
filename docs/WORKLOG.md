@@ -7226,7 +7226,8 @@ briefs, review loops, gates and mutation runs as for any step.
     medal outlines held across opening another save; fixed by cv11r (SWE-2, one rework), which
     found the Cards used badge held the same way (both shipped in 0.0.1): `SaveView::open` resets
     both workers, a cross-open test each, the four copies of team 734's medal table one const;
-    a SWE-2 round over cv11r next
+    SWE-2 S1 over it: 1 accepted (the held run's setup in four tests, now
+    `hold_badge_run`), the loop ends
   - [ ] f7 a design-health pass over the tests (the maintainer, 2026-11-04: tests are code,
     `CONTRIBUTING.md` "Tests are code"), after f6's tw2 and cv11r land, before 0.0.2 starts.
     Not a full read of the repo: ~390K Rust lines would be ~600 SWE-2 parts, every concern

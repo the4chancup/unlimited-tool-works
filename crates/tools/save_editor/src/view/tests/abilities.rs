@@ -85,6 +85,19 @@ fn current_badge_key(view: &SaveView) -> BadgeKey {
     }
 }
 
+/// Holds a Cards used run in flight on `view`'s current badge key: no
+/// reply reaches a frame until the test sends one on the returned sender
+/// or drops it (a real run can reply between one frame's two passes, so
+/// it cannot be waited on where a test needs the in-flight frame).
+fn hold_badge_run(view: &mut SaveView) -> crossbeam_channel::Sender<(BadgeKey, OwnBadge)> {
+    let (sender, replies) = crossbeam_channel::unbounded();
+    view.cards.pending = Some(worker::Pending {
+        key: current_badge_key(view),
+        replies,
+    });
+    sender
+}
+
 /// Frames until the badge worker's answer for the current key lands
 /// (bounded, so a worker that never replies fails rather than hangs);
 /// returns the landing frame's nodes, whose header row draws it.
@@ -1698,12 +1711,7 @@ fn an_edit_keeps_the_players_badge_drawn_while_the_new_one_runs() {
     assert_ne!(edited.stats.speed, 99, "premise: a real change");
     edited.stats.speed = 99;
     view.session.as_mut().unwrap().edit_player(1, edited);
-    let key = current_badge_key(&view);
-    let (sender, replies) = crossbeam_channel::unbounded();
-    view.cards.pending = Some(worker::Pending {
-        key: key.clone(),
-        replies,
-    });
+    let sender = hold_badge_run(&mut view);
     for _ in 0..2 {
         let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         assert_eq!(
@@ -1743,11 +1751,7 @@ fn another_player_draws_no_badge_until_his_lands() {
     // of, keyed to his own key: a fast run replies between one frame's
     // two passes, so a real worker cannot be waited on here.
     view.selected = Some(Selection::Player(702, 1));
-    let (sender, replies) = crossbeam_channel::unbounded();
-    view.cards.pending = Some(worker::Pending {
-        key: current_badge_key(&view),
-        replies,
-    });
+    let sender = hold_badge_run(&mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(in_skills_column(&nodes, "Skills"), "the title alone");
     assert!(
@@ -1796,11 +1800,7 @@ fn opening_another_save_keeps_no_cards_used_badge_from_the_previous_one() {
     // sender of, keyed to the new session's key: a fast run replies
     // between one frame's two passes, so a real worker cannot be
     // waited on here.
-    let (sender, replies) = crossbeam_channel::unbounded();
-    view.cards.pending = Some(worker::Pending {
-        key: current_badge_key(&view),
-        replies,
-    });
+    let sender = hold_badge_run(&mut view);
     let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     assert!(
         view.cards.pending.is_some(),
@@ -1848,12 +1848,8 @@ fn a_key_moved_mid_run_starts_its_badge_when_the_reply_lands() {
 
     // A run in flight for key A, held by the channel the test keeps the
     // sender of: no reply reaches a frame until `send` below.
-    let (sender, replies) = crossbeam_channel::unbounded();
     let key_a = current_badge_key(&view);
-    view.cards.pending = Some(worker::Pending {
-        key: key_a.clone(),
-        replies,
-    });
+    let sender = hold_badge_run(&mut view);
 
     // An edit moves the key to B: the frame starts no second run, the
     // pending one stays A's.
