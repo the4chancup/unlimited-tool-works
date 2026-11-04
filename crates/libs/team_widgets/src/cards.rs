@@ -349,6 +349,26 @@ mod tests {
             .unwrap_or_else(|| panic!("no label {text:?}"))
     }
 
+    /// The rect shape of `fill` holding `text_rect`'s centre (a chip
+    /// painted under its text).
+    fn chip_at(
+        shapes: &[egui::epaint::ClippedShape],
+        fill: egui::Color32,
+        text_rect: egui::Rect,
+    ) -> &egui::epaint::RectShape {
+        shapes
+            .iter()
+            .find_map(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape)
+                    if shape.fill == fill && shape.rect.contains(text_rect.center()) =>
+                {
+                    Some(shape)
+                }
+                _ => None,
+            })
+            .expect("a chip in the widget fill under the badge's text")
+    }
+
     /// The `PlayerSkills` of player `id` in `version`'s fixture save.
     fn fixture_skills(version: PesVersion, id: u32) -> PlayerSkills {
         let file = pes_savefile::EditFile::from_bytes(&pes_savefile::fixture_save(version))
@@ -917,17 +937,7 @@ mod tests {
             .weak_bg_fill;
         let text = text_shape(&shapes, "Gold: 3 of 5");
         let text_rect = egui::Rect::from_min_size(text.pos, text.galley.size());
-        let chip = shapes
-            .iter()
-            .find_map(|clipped| match &clipped.shape {
-                egui::Shape::Rect(shape)
-                    if shape.fill == fill && shape.rect.contains(text_rect.center()) =>
-                {
-                    Some(shape)
-                }
-                _ => None,
-            })
-            .expect("a chip in the widget fill under the badge's text");
+        let chip = chip_at(&shapes, fill, text_rect);
         assert!(
             (text_rect.min.x - chip.rect.min.x - 4.0).abs() <= 1.0,
             "the text 4 in from the chip's left ({text_rect:?} in {:?})",
@@ -952,6 +962,38 @@ mod tests {
                 |clipped| matches!(&clipped.shape, egui::Shape::Rect(shape) if shape.fill == fill)
             ),
             "no chip without a tier"
+        );
+
+        // The chip is allocated at its own size: a widget after it in
+        // the row starts one item spacing past its right edge — the 4
+        // of its margin plus the 8 of the gap — and the chip keeps the
+        // row to its own height.
+        let (nodes, shapes) = window.frame(vec![], |ui| {
+            ui.horizontal(|ui| {
+                cards_used(
+                    ui,
+                    &CardsBadge::Tier(TierCards {
+                        label: "Gold",
+                        limits: &under,
+                    }),
+                );
+                ui.label("next");
+            });
+        });
+        let text = text_shape(&shapes, "Gold: 3 of 5");
+        let text_rect = egui::Rect::from_min_size(text.pos, text.galley.size());
+        let chip = chip_at(&shapes, fill, text_rect);
+        let next = text_entry(&nodes, "next").bounds().expect("bounds");
+        assert!(
+            (next.x0 - f64::from(text_rect.max.x) - 12.0).abs() <= 1.0,
+            "the next widget one spacing past the chip's right edge \
+             ({next:?} vs {text_rect:?} vs {:?})",
+            chip.rect
+        );
+        assert!(
+            (next.y0 - f64::from(chip.rect.min.y)).abs() <= 1.0,
+            "the row no taller than the chip ({next:?} vs {:?})",
+            chip.rect
         );
     }
 

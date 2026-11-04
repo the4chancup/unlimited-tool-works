@@ -682,4 +682,98 @@ mod tests {
         Assign::Join.write(version, &mut tactics, &mut view, 0);
         assert_eq!(tactics.players_to_join_attack, [b, u8::MAX, u8::MAX]);
     }
+
+    /// The tooltip a bare `chip` shows while the pointer rests on it,
+    /// drawn in a column `column` wide (`tooltip_delay` is the caller's
+    /// to zero): the text of the Label node the hover adds, `None`
+    /// after a bounded 90 frames.
+    fn chip_tooltip(
+        window: &mut Headless,
+        column: f32,
+        name: &str,
+        hint: &'static str,
+    ) -> Option<String> {
+        let mut draw = |ui: &mut egui::Ui| {
+            ui.allocate_ui_with_layout(
+                egui::vec2(column, 30.0),
+                egui::Layout::left_to_right(egui::Align::Center),
+                |ui| {
+                    chip(ui, name, false, hint);
+                },
+            );
+        };
+        // The pointer moves onto the chip's centre, then rests while
+        // the frames count the delay off.
+        let (nodes, _) = window.frame_at(Some(0.0), vec![], &mut draw);
+        let bounds = nodes
+            .iter()
+            .find(|node| node.role() == Role::Button)
+            .and_then(|node| node.bounds())
+            .expect("the chip");
+        let pos = egui::pos2(
+            ((bounds.x0 + bounds.x1) / 2.0) as f32,
+            ((bounds.y0 + bounds.y1) / 2.0) as f32,
+        );
+        window.frame_at(Some(0.5), vec![egui::Event::PointerMoved(pos)], &mut draw);
+        for frame in 1..90 {
+            let (nodes, _) = window.frame_at(Some(0.5 + f64::from(frame) * 0.5), vec![], &mut draw);
+            if let Some(text) = nodes
+                .iter()
+                .filter(|node| node.role() == Role::Label)
+                .filter_map(|node| node.value())
+                .find(|value| !value.is_empty())
+            {
+                return Some(text.to_owned());
+            }
+        }
+        None
+    }
+
+    // The elide edge: a name that overflows the chip's text area by
+    // less than the padding's two sides is still elided, and its hover
+    // is still the whole name; a name exactly the text area's width is
+    // not elided — its hover is the pick's hint.
+    #[test]
+    fn the_elide_edge_decides_the_chips_hover() {
+        let name = "3DSMAX HAS STOPPED WORKING";
+        let hint = "Click, then a pitch player";
+        let mut text = 0.0f32;
+        Headless::new().frame(vec![], |ui| text = super::super::text_width(ui, name));
+        let chrome = 2.0 * CHIP_PADDING.x;
+        // (the column's width over the text, inside the edge, the
+        // expected hover).
+        for (over, elided, expected) in [
+            // The name overflows the 12-point chrome by 2 — inside the
+            // hover's elide edge.
+            (10.0, true, name),
+            // The column the text plus the chrome wide: the name
+            // exactly fills the text area.
+            (chrome, false, hint),
+        ] {
+            let column = text + over;
+            if elided {
+                assert!(
+                    text > column - chrome && text <= column - 8.0,
+                    "premise: the name's width is inside the edge ({text} vs {column})"
+                );
+            } else {
+                assert_eq!(
+                    column - chrome,
+                    text,
+                    "premise: the name exactly fills the text area"
+                );
+            }
+            // A fresh context each case: the tooltip's frames count
+            // from 0, and egui time only moves forward.
+            let mut window = Headless::new();
+            window
+                .ctx
+                .global_style_mut(|style| style.interaction.tooltip_delay = 0.0);
+            assert_eq!(
+                chip_tooltip(&mut window, column, name, hint),
+                Some(expected.to_owned()),
+                "the chip's hover ({expected:?})"
+            );
+        }
+    }
 }

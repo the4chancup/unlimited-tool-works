@@ -2,7 +2,7 @@ use egui::accesskit::{self, Role};
 
 use super::*;
 use crate::tactics::TacticsView;
-use crate::tactics::tests::click;
+use crate::tactics::tests::{click, group_box, label_bounds};
 use crate::test_support::{
     Headless, button_labels, centre, chip_under, combo_row, entry_id, fixture_rows,
     fixture_tactics, named_assignments, pointer_at, roster_rows,
@@ -272,6 +272,115 @@ fn the_instructions_grid_is_two_equal_columns() {
     }
 }
 
+// The same grid against the panel's edges: the numbers' column from
+// the grid's left, the attack column `INSTR_COLUMN_GAP` right of the
+// widest number's right edge and the defence column ending at the
+// grid's right edge — the two columns filling the panel — the first
+// row's combos `INSTR_ROW_GAP` under the headers' one-line row, the
+// second row's 3 under the first's chips, and the panel ending at the
+// last chip's bottom plus the frame's margin.
+#[test]
+fn the_instructions_grid_sits_against_the_panels_edges() {
+    // The settings column's width as the window's, as the grid test's.
+    let mut window = Headless::sized(422.0, 1200.0);
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let (nodes, shapes) = window.settings_frame(version, &mut tactics, &mut view, &roster);
+    let bounds = |node: &egui::accesskit::Node| node.bounds().expect("bounds");
+    let (margin_right, margin_bottom) = {
+        let style = window.ctx.style_of(window.ctx.theme());
+        let margin = egui::Frame::group(&style).total_margin();
+        (margin.right, margin.bottom)
+    };
+    let mut body_line = 0.0f32;
+    window.frame(vec![], |ui| {
+        body_line = ui.text_style_height(&egui::TextStyle::Body)
+    });
+
+    let [attack0, defence0] = combo_row(&nodes, 0);
+    let [attack1, defence1] = combo_row(&nodes, 1);
+    let (a0, d0, a1, d1) = (
+        bounds(attack0),
+        bounds(defence0),
+        bounds(attack1),
+        bounds(defence1),
+    );
+
+    // The numbers' column `number_width` wide from the grid's left
+    // (the heading's x): the attack column `INSTR_COLUMN_GAP` right of
+    // the widest row number's right edge.
+    let heading = label_bounds(&nodes, "Advanced instructions");
+    let mut number_right = f64::MIN;
+    for text in ["1", "2"] {
+        let number = nodes
+            .iter()
+            .find(|node| {
+                node.role() == Role::Label
+                    && node.value() == Some(text)
+                    && node.bounds().is_some_and(|b| {
+                        b.x1 <= a0.x0 + 0.5 && b.y0 >= a0.y0 - 0.5 && b.y0 <= a1.y1
+                    })
+            })
+            .and_then(|node| node.bounds())
+            .unwrap_or_else(|| panic!("no row number {text:?}"));
+        assert!(
+            (number.x0 - heading.x0).abs() <= 0.5,
+            "the {text} number stands at the grid's left ({number:?} vs {heading:?})"
+        );
+        number_right = number_right.max(number.x1);
+    }
+    assert!(
+        (a0.x0 - number_right - 8.0).abs() <= 0.5,
+        "the attack column starts 8 right of the widest number ({a0:?} vs {number_right})"
+    );
+
+    // The two columns fill the panel: `INSTR_COLUMN_GAP` between them,
+    // the defence column's right edge the grid's — the group's inner
+    // right, the frame's margin in.
+    assert!(
+        (d0.x0 - a0.x1 - 8.0).abs() <= 0.5,
+        "8 between the columns ({a0:?} vs {d0:?})"
+    );
+    let group = group_box(&shapes, heading);
+    let inner_right = f64::from(group.max.x) - f64::from(margin_right);
+    assert!(
+        (d0.x1 - inner_right).abs() <= 0.5 && (d1.x1 - inner_right).abs() <= 0.5,
+        "the defence column ends at the grid's right edge ({d0:?}, {d1:?} vs {inner_right})"
+    );
+
+    // The headers' line one body text line tall, the first row's
+    // combos `INSTR_ROW_GAP` under it, the second row's 3 under the
+    // first's chips.
+    let header = label_bounds(&nodes, "Attack");
+    assert!(
+        (header.y1 - header.y0 - f64::from(body_line)).abs() <= 1.0,
+        "the header is one body line ({header:?} vs {body_line})"
+    );
+    assert!(
+        (a0.y0 - header.y1 - 3.0).abs() <= 0.5,
+        "the first row's combos 3 under the header ({a0:?} vs {header:?})"
+    );
+    let chip0 = chip_under(&nodes, attack0);
+    assert!(
+        (a1.y0 - bounds(chip0).y1 - 3.0).abs() <= 0.5,
+        "the second row's combos 3 under the first's chips ({a1:?} vs {:?})",
+        bounds(chip0)
+    );
+
+    // The grid ends at the last chip's bottom: the panel's box wraps
+    // it with the frame's margin under it.
+    let chip1 = chip_under(&nodes, attack1);
+    assert!(
+        (f64::from(group.max.y) - bounds(chip1).y1 - f64::from(margin_bottom)).abs() <= 0.5,
+        "the panel ends at the last chip's bottom plus the margin ({:?} vs {:?})",
+        group.max.y,
+        bounds(chip1)
+    );
+}
+
 // The draft's `.tacinstr` numbers its two rows: a weak `1` left of the
 // first row's combos, a `2` left of the second's.
 #[test]
@@ -313,9 +422,9 @@ fn the_instruction_rows_are_numbered_1_and_2() {
 
 // The disabled target, as the draft's `pick` draws it: under an
 // instruction that takes none of ours the chip is
-// disabled and names no player of ours — "An opponent" under a
-// held Tight Marking (its byte is the opposing formation's slot),
-// "No target" under a target-less one.
+// disabled, never drawn armed, and names no player of ours — "An
+// opponent" under a held Tight Marking (its byte is the opposing
+// formation's slot), "No target" under a target-less one.
 #[test]
 fn a_target_less_or_opponent_target_shows_no_player_of_ours() {
     let mut window = Headless::sized(800.0, 1200.0);
@@ -346,12 +455,22 @@ fn a_target_less_or_opponent_target_shows_no_player_of_ours() {
     let chip1 = chip_under(&nodes, combos(0)[0]);
     assert!(chip1.is_disabled(), "the Tight Marking chip is disabled");
     assert_eq!(
+        chip1.toggled(),
+        Some(accesskit::Toggled::False),
+        "and it is not armed"
+    );
+    assert_eq!(
         chip1.label(),
         Some("An opponent"),
         "a held Tight Marking's byte is the opponent's"
     );
     let chip2 = chip_under(&nodes, combos(1)[0]);
     assert!(chip2.is_disabled(), "the target-less chip is disabled");
+    assert_eq!(
+        chip2.toggled(),
+        Some(accesskit::Toggled::False),
+        "and it is not armed"
+    );
     assert_eq!(
         chip2.label(),
         Some("No target"),

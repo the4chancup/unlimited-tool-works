@@ -374,4 +374,10 @@ exclude_re = [
     # typed value as it is typed, so no edit is left behind. Pinned by column: the
     # function's other `!` stay measured.
     "team_widgets/src/pitch/popover\\.rs:\\d+:16: delete ! in slot_popover",
+    # `cards_used` allocates the tier chip `galley.size() + chip.total_margin().sum()`, and
+    # `allocate_ui_with_layout` advances the row by the rect the chip's frame uses, not the
+    # size asked: `+` -> `-` only narrows the request (the margin is 4 across, 0 down), so the
+    # chip, the row and the next widget land where they did (measured identical). The `*`
+    # stays measured: it pushes the chip down past the row.
+    "team_widgets/src/cards\\.rs:\\d+:\\d+: replace \\+ with - in cards_used",
 ]

@@ -65,6 +65,33 @@ impl Headless {
         (nodes, changed.expect("the widget ran"))
     }
 
+    /// One frame of `tactics_settings` alone (no preset bar, no opened
+    /// baseline) over `tactics`, `view` and `roster`: the frame's
+    /// AccessKit nodes and painted shapes.
+    pub(crate) fn settings_frame(
+        &mut self,
+        version: PesVersion,
+        tactics: &mut TeamTactics,
+        view: &mut TacticsView,
+        roster: &[RosterRow<'_>],
+    ) -> (Vec<accesskit::Node>, Vec<egui::epaint::ClippedShape>) {
+        let illegal_formations = self.illegal_formations;
+        self.frame(vec![], |ui| {
+            tactics_settings(
+                ui,
+                "tactics",
+                version,
+                tactics,
+                SettingsContext {
+                    opened: None,
+                    illegal_formations,
+                },
+                view,
+                roster,
+            );
+        })
+    }
+
     /// A click at `pos` over the widget (press frame, then the release
     /// frame `clicked()` lands on).
     pub(crate) fn click_tactics(
@@ -547,7 +574,7 @@ fn id_right_of(
 fn settings_half(nodes: &[accesskit::Node]) -> f64 {
     let (min, max) = FORMATION_LABELS
         .iter()
-        .map(|label| formation_label_bounds(nodes, label).x0)
+        .map(|label| label_bounds(nodes, label).x0)
         .fold((f64::MAX, f64::MIN), |(min, max), x| {
             (min.min(x), max.max(x))
         });
@@ -887,12 +914,37 @@ const FORMATION_LABELS: [&str; 12] = [
 ];
 
 /// The bounds of the Label node showing `label` (a cell's label).
-fn formation_label_bounds(nodes: &[accesskit::Node], label: &str) -> accesskit::Rect {
+pub(crate) fn label_bounds(nodes: &[accesskit::Node], label: &str) -> accesskit::Rect {
     nodes
         .iter()
         .find(|node| node.role() == Role::Label && node.value() == Some(label))
         .and_then(|node| node.bounds())
         .unwrap_or_else(|| panic!("no label {label:?}"))
+}
+
+/// The panel's box in `shapes`: the smallest stroked rect holding
+/// `heading`'s centre (a group's outline; the window's frame paints
+/// larger ones).
+pub(crate) fn group_box(
+    shapes: &[egui::epaint::ClippedShape],
+    heading: accesskit::Rect,
+) -> egui::Rect {
+    let heading_centre = egui::pos2(
+        ((heading.x0 + heading.x1) / 2.0) as f32,
+        ((heading.y0 + heading.y1) / 2.0) as f32,
+    );
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Rect(shape)
+                if !shape.stroke.is_empty() && shape.rect.contains(heading_centre) =>
+            {
+                Some(shape.rect)
+            }
+            _ => None,
+        })
+        .min_by(|a, b| a.area().partial_cmp(&b.area()).expect("areas"))
+        .expect("a stroked rect around the heading")
 }
 
 // Formation settings, the draft's `.tacrows`: the twelve settings form
@@ -910,43 +962,12 @@ fn the_settings_are_six_even_rows_of_pairs() {
     let mut view = TacticsView::default();
     let rows = fixture_rows(version);
     let roster = roster_rows(&rows);
-    let illegal_formations = window.illegal_formations;
-    let (nodes, shapes) = window.frame(vec![], |ui| {
-        tactics_settings(
-            ui,
-            "tactics",
-            version,
-            &mut tactics,
-            SettingsContext {
-                opened: None,
-                illegal_formations,
-            },
-            &mut view,
-            &roster,
-        );
-    });
+    let (nodes, shapes) = window.settings_frame(version, &mut tactics, &mut view, &roster);
 
-    // The panel's box: the smallest stroked rect holding the heading's
-    // centre; its inner edge is the labels' left x (a uniform margin).
-    let heading = formation_label_bounds(&nodes, "Formation settings");
-    let heading_centre = egui::pos2(
-        ((heading.x0 + heading.x1) / 2.0) as f32,
-        ((heading.y0 + heading.y1) / 2.0) as f32,
-    );
-    let group = shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::Rect(shape)
-                if !shape.stroke.is_empty() && shape.rect.contains(heading_centre) =>
-            {
-                Some(shape.rect)
-            }
-            _ => None,
-        })
-        .min_by(|a, b| a.area().partial_cmp(&b.area()).expect("areas"))
-        .expect("the Formation settings box");
-    let inner =
-        group.shrink(formation_label_bounds(&nodes, "Attacking style").x0 as f32 - group.min.x);
+    // The box's inner edge is the labels' left x (a uniform margin).
+    let heading = label_bounds(&nodes, "Formation settings");
+    let group = group_box(&shapes, heading);
+    let inner = group.shrink(label_bounds(&nodes, "Attacking style").x0 as f32 - group.min.x);
     let half = (inner.width() - 16.0) / 2.0;
 
     let pairs: [(&str, &str); 6] = [
@@ -960,8 +981,8 @@ fn the_settings_are_six_even_rows_of_pairs() {
     let mut xs = std::collections::BTreeSet::new();
     let mut ys = Vec::new();
     for (left, right) in pairs {
-        let left_bounds = formation_label_bounds(&nodes, left);
-        let right_bounds = formation_label_bounds(&nodes, right);
+        let left_bounds = label_bounds(&nodes, left);
+        let right_bounds = label_bounds(&nodes, right);
         xs.insert(left_bounds.x0 as i64);
         xs.insert(right_bounds.x0 as i64);
         assert!(
@@ -1011,7 +1032,7 @@ fn the_settings_are_six_even_rows_of_pairs() {
     // the control's vertical centre is 14 under the label's bottom.
     let half = settings_half(&nodes);
     for label in FORMATION_LABELS {
-        let bounds = formation_label_bounds(&nodes, label);
+        let bounds = label_bounds(&nodes, label);
         let controls = controls_below(&nodes, label, Role::Button, half);
         let slider = controls_below(&nodes, label, Role::Slider, half);
         assert!(
@@ -2182,6 +2203,59 @@ fn the_automatic_settings_are_a_two_column_grid() {
     );
 }
 
+// The same grid's vertical: the two 24-point rows centred in the
+// cell's free height (`.tacauto` `align-content: center`), so a cell
+// taller than the two rows leaves the same space over the first row —
+// below the heading's item gap — as under the second, inside the
+// frame.
+#[test]
+fn the_automatic_settings_rows_centre_in_the_free_height() {
+    let mut window = Headless::sized(422.0, 1200.0);
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    let (nodes, shapes) = window.settings_frame(version, &mut tactics, &mut view, &roster);
+    let (gap, margin_bottom) = {
+        let style = window.ctx.style_of(window.ctx.theme());
+        (
+            style.spacing.item_spacing.y,
+            egui::Frame::group(&style).total_margin().bottom,
+        )
+    };
+
+    let heading = label_bounds(&nodes, "Automatic settings");
+    // The rows' tops and bottoms from the two right checkboxes, the
+    // controls centred in their 24-point rows.
+    let row_top = |label: &str| {
+        let bounds = entry(&nodes, Role::CheckBox, label)
+            .bounds()
+            .expect("checkbox bounds");
+        (bounds.y0 + bounds.y1) / 2.0 - 12.0
+    };
+    let (row1_top, row2_bottom) = (
+        row_top("Preset change"),
+        row_top("Attack/defence levels") + 24.0,
+    );
+    let group = group_box(&shapes, heading);
+    let inner_bottom = f64::from(group.max.y) - f64::from(margin_bottom);
+
+    let free = inner_bottom - heading.y1 - f64::from(gap);
+    let expected = (free - 48.0) / 2.0;
+    assert!(expected > 10.0, "premise: the cell is taller than the rows");
+    let above = row1_top - (heading.y1 + f64::from(gap));
+    assert!(
+        (above - expected).abs() <= 0.5,
+        "the space over the first row centres it ({above} vs {expected})"
+    );
+    let below = inner_bottom - row2_bottom;
+    assert!(
+        (below - expected).abs() <= 0.5,
+        "the space under the second row centres it ({below} vs {expected})"
+    );
+}
+
 /// The buttons `after` draws that `before` did not (no button with the
 /// same label and bounds), in draw order top to bottom: the items an
 /// opened combo's popup added to the tree. Labels alone cannot pick
@@ -2753,4 +2827,84 @@ fn the_wheel_steps_the_preset_selector_wrapping_round() {
     );
     assert!(!changed, "a notch over the word writes nothing");
     assert_eq!(view.preset, 0, "and moves no preset");
+}
+
+// The bar selectors' choices (the draft's `.sel`s in a `gap: 2px`
+// row): adjacent choices 2 points apart, each 17 tall and its text 5
+// in from its sides — the bar's own items sit 8 apart, pad their text
+// 4 and stand 18 tall. The preset bar's and the formation bar's
+// selectors share the spacing.
+#[test]
+fn the_bar_selectors_are_two_apart_padded_five_and_seventeen_tall() {
+    let mut window = Headless::sized(422.0, 1200.0);
+    let version = PesVersion::Pes21;
+    let mut tactics = fixture_tactics(version);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(version);
+    let roster = roster_rows(&rows);
+    // The choices' texts' widths, for the 5-point side padding.
+    let mut widths = std::collections::BTreeMap::new();
+    window.frame(vec![], |ui| {
+        for text in [
+            "1",
+            "2",
+            "3",
+            "Kick-off",
+            "In-possession",
+            "Out-of-possession",
+        ] {
+            widths.insert(text, text_width(ui, text));
+        }
+    });
+    /// The assertions over `labels`' buttons, in draw order.
+    fn check(
+        nodes: &[accesskit::Node],
+        labels: [&str; 3],
+        widths: &std::collections::BTreeMap<&str, f32>,
+        what: &str,
+    ) {
+        let bounds = |label| {
+            entry(nodes, Role::Button, label)
+                .bounds()
+                .expect("choice bounds")
+        };
+        for pair in labels.windows(2) {
+            let (left, right) = (bounds(pair[0]), bounds(pair[1]));
+            assert!(
+                (right.x0 - left.x1 - 2.0).abs() <= 0.5,
+                "{what}: {:?} and {:?} sit 2 apart ({left:?} vs {right:?})",
+                pair[0],
+                pair[1]
+            );
+        }
+        for label in labels {
+            let b = bounds(label);
+            assert!(
+                b.y1 - b.y0 >= 16.5 && b.y1 - b.y0 < 18.0,
+                "{what}: {label:?} stands 17 tall ({} vs the bar's 18)",
+                b.y1 - b.y0
+            );
+            let text = f64::from(widths[label]);
+            assert!(
+                (b.x1 - b.x0 - text - 10.0).abs() <= 0.5,
+                "{what}: {label:?}'s text padded 5 a side ({} wide, text {text})",
+                b.x1 - b.x0
+            );
+        }
+    }
+
+    // The preset selector's three choices.
+    let (nodes, _) = window.tactics(version, &mut tactics, &mut view, &roster, vec![]);
+    check(&nodes, ["1", "2", "3"], &widths, "the preset selector");
+
+    // The formation bar's, drawn alone.
+    let (nodes, _) = window.frame(vec![], |ui| {
+        crate::pitch::formation_selector(ui, &tactics, &mut view);
+    });
+    check(
+        &nodes,
+        ["Kick-off", "In-possession", "Out-of-possession"],
+        &widths,
+        "the formation selector",
+    );
 }

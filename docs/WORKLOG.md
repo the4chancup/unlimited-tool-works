@@ -7206,11 +7206,11 @@ briefs, review loops, gates and mutation runs as for any step.
     (8) the whole-crate runs of `team_widgets`, `pes_savefile` (cvA1's last item) and
     `save_editor`, started 2026-11-04 at `7400d3dd` (`.tmp/after_cut/mutants_whole.sh`, one
     log and summary folder per crate there), every survivor triaged. `team_widgets` ended
-    07:58 (867 caught, 42 missed, 84 unviable; `triage.md` in its folder): 8 equivalent, 7
-    of them excluded in `.cargo/mutants.toml` (the eighth, `violations.rs` `part`'s own-group
-    flag, shares its extra-kind description with two caught sites, so it stays listed); 34
+    07:58 (867 caught, 42 missed, 84 unviable; `triage.md` in its folder): 9 equivalent, 8
+    of them excluded in `.cargo/mutants.toml` (the ninth, `violations.rs` `part`'s own-group
+    flag, shares its extra-kind description with two caught sites, so it stays listed); 33
     missing tests, briefed as two slices, pitch then tactics (`brief_tw1.md`, `brief_tw2.md`
-    there). Design finding, open: `pitch/popover.rs` `slot_popover`'s outside-press focus
+    there), both landed (`c259be17`, then the tactics slice with the `cards_used` exclusion). Design finding, open: `pitch/popover.rs` `slot_popover`'s outside-press focus
     surrender is unobservable under egui 0.37 (`Focus::end_pass` drops an undrawn widget's
     focus; the DragValue commits as typed), so the block and its "cannot end on its own"
     comment look removable: check against an egui upgrade first; (9) the `review2`
@@ -7230,7 +7230,20 @@ briefs, review loops, gates and mutation runs as for any step.
     by size and file, and the modules past about a thousand lines; (b) SWE-2 sidekick briefs
     for the top 10 to 15 files it names (GUI test modules expected first), each naming its
     blocks, the shared helpers extracted, the tests still passing and still failing under a
-    perturbation; (c) the rest waits for each phase's close design-health pass
+    perturbation; (c) then, to evaluate (the maintainer's idea, 2026-11-04), the rest of the
+    tests swept by a SWE-2 side-lead the maintainer launches in a Devin chat (it compacts
+    itself, where a long sidekick session hangs), running SWE-2 subagents, judging their
+    findings and applying fixes, then reporting every decision. The lead writes its handoff
+    (`.tmp/after_cut/f7/handoff.md`) with: test code only, no assertion changed (a production
+    finding reported, not applied); per change the tests passing, the test count changed only
+    by merged tests, each touched test failing under a hand perturbation, the per-file assert
+    count down only by listed merged duplicates; one commit per test module on its own branch
+    and worktree, each decision naming its commit (keep or `git revert`); the lead's
+    acceptance bar (reach, not truth: a copied scene, repeated checks, a case for an existing
+    table, never a taste-level reshuffle); one cargo build at a time at `CARGO_BUILD_JOBS=4`
+    while a mutation run holds the other, no `rm`, no push; (a)'s ranking worst first, stopping
+    under a block-size threshold, (a) rerun at the end for the before and after; otherwise
+    each phase's close design-health pass covers the rest
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
