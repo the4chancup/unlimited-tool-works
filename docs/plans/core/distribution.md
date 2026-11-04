@@ -275,7 +275,14 @@ covers the "new version is broken" case that Red handles by preserving the entir
 **One changelog, three readers.** `CHANGELOG.md` at the repository root, in the Keep a Changelog
 shape: `## [Unreleased]` on top, then one `## [1.4.0] — 2026-10-02` section per release; inside a
 section, bullets grouped by tool (`**Team compiler** — …`, `**Save editor** — …`, `**General** —
-…` for what every tool shares), because that is how a member reads it even though the version axis is one. It is written in
+…` for what every tool shares), because that is how a member reads it even though the version axis is one. A fix for a
+corner case few members ever reach (a rare sequence of steps, such as a popover left open while
+a page key moves the selection elsewhere) goes in the section's closing `### Minor fixes`
+list, in the same per-tool bullets, not among the headline bullets: a member reads the top of a
+section for what changed in their own use, and a list led by corner cases buries it. A fix for
+a crash, a loss of data or a wrong file written stays among the headline bullets however rare
+its case: the member it reached needs to find it. Every reader below shows the `###` heading
+as written, so the help window's renderer handles it. It is written in
 the step that changes the behavior, like the help topic (see `spec/core/gui.md` "Help window"), from the
 first release on: an entry goes under `[Unreleased]` in the commit that changes something a
 member notices against the last release (a fix for a bug a release shipped, a new or changed

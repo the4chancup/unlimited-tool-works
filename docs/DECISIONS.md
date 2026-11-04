@@ -15531,3 +15531,14 @@ at 0.0.1i-pre2", which made the other side white and kept the chosen side's ligh
 Why: the chosen side is the one to read at a glance. Item (4) recorded the ask as "grey and
 white" without the side each colour went to, and was built the wrong way round.
 Plan: `plans/save_editor.md` the General info paragraph's Stronger foot, SE-GUI-61.
+
+## 2026-11-04 — changelog — corner-case fixes go under "Minor fixes"
+Decision (the maintainer): a release section's fixes for corner cases few members ever reach
+go in a closing `### Minor fixes` list, in the same per-tool bullets; a fix for a crash, a loss
+of data or a wrong file written stays among the headline bullets however rare its case. The
+first entry moved there is `[Unreleased]`'s slot-popover fix (Up and Down dead after a page key).
+Why: a member reads the top of a section for what changed in their own use, and a list led by
+corner cases buries it; a minor-fixes list with no heading, last in the same list, would leave
+no visible end to the important part. The help window's "What's new" renderer handles the
+`###` heading, since every reader shows the file's text as written.
+Plan: `plans/core/distribution.md` "Changelog and version display"; `CONTRIBUTING.md` "Commits".

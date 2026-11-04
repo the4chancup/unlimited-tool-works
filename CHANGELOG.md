@@ -4,6 +4,8 @@ What changed for members, release by release, newest first.
 
 ## [Unreleased]
 
+### Minor fixes
+
 - **Save editor** — Up and Down walk the player list again after a page key left a team's
   Tactics slot popover open behind a player: they did nothing until the team was selected
   again and the popover closed.
