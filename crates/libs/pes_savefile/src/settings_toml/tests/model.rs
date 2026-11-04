@@ -461,6 +461,27 @@ fn a_setting_the_version_lacks_is_skipped_not_refused() {
     assert_eq!(player.appearance.sleeves, 2);
 }
 
+/// `apply_appearance` (Team TOML's write, which keeps a `Some` as authored)
+/// refuses a motion the player's version has no field for, where `apply`
+/// drops the key: `dribbling` on PES 18 is `NotInThisVersion`, and the
+/// refused write leaves the entry as it was.
+#[test]
+fn apply_appearance_refuses_a_motion_the_version_lacks() {
+    let payload18 = payload(PesVersion::Pes18);
+    let mut player = find_player(&payload18, schema_for(PesVersion::Pes18), 70101);
+    assert_eq!(player.motion.dribbling, None, "the field does not exist");
+    let before = player.clone();
+
+    let mut appearance = AppearanceSettings::default();
+    appearance.motion.dribbling = Some(2);
+    let err = apply_appearance(&appearance, &mut player).expect_err("refused");
+    match &err {
+        SettingsError::NotInThisVersion { key } => assert_eq!(key, "dribbling"),
+        other => panic!("{other:?}"),
+    }
+    assert_eq!(player, before, "a refused write changes nothing");
+}
+
 /// `resolved` is the aesthetics patch's view of a settings file's
 /// appearance tables: every key the version holds at its set value or its
 /// `KeySpec` default, a key the version lacks `None`.

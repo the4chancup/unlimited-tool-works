@@ -329,6 +329,19 @@ fn to_toml_refuses_a_boots_id_past_the_field() {
     }
 }
 
+/// The field's top is in range: a boots or gloves ID of `MODEL_ID_MAX`
+/// writes; only one past it is refused.
+#[test]
+fn to_toml_writes_a_model_id_at_the_field_top() {
+    let mut patch = golden();
+    let player = patch.teams[0].players.get_mut(&5).expect("player 05");
+    player.boots_id = Some(MODEL_ID_MAX);
+    player.gloves_id = Some(MODEL_ID_MAX);
+    let text = patch.to_toml().expect("the field's top is in range");
+    assert!(text.contains("boots_id = 16383\n"), "{text}");
+    assert!(text.contains("gloves_id = 16383\n"), "{text}");
+}
+
 /// A hand-built `players` map can hold a slot outside `01` to `99`;
 /// `to_toml` refuses it at the key `parse` would name.
 #[test]

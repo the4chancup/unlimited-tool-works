@@ -7219,7 +7219,8 @@ briefs, review loops, gates and mutation runs as for any step.
     ended 2026-11-04: 2018 caught, 2 missed, 4 timeouts, 149 unviable (`triage.md` in its
     folder): the timeouts are `text_spans` mutants that stop the iterator advancing (caught);
     2 missing tests, a boots or gloves ID of exactly `MODEL_ID_MAX` exported, and dribbling
-    motion set on a version without it refused. Its remote half's fetch stalled on 6.1 GB of
+    motion set on a version without it refused, both added (ps1, SWE-2, landed first time).
+    Its remote half's fetch stalled on 6.1 GB of
     caught mutants' logs at ~41 KB/s: the chain was stopped before `save_editor`, the fetch
     now leaves those logs out (`mutants.py` `REMOTE_FETCH_LIST`), and `save_editor`'s run is
     launched on its own; (9) the `review2`
