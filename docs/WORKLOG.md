@@ -7202,7 +7202,9 @@ briefs, review loops, gates and mutation runs as for any step.
     mutant a diff run over those two crates would, so the diff runs take only the rest, each
     from its own worktree and queued on the lock: f1g14 `mutants-diff 7cb9889c crates/studio_core
     crates/tools/ruleset_editor` at `699a77ab`, f1g15 `mutants-diff ed74a327 crates/libs/aatf` at
-    `f6055ebe` (logs `.tmp/after_cut/f1g14m/`);
+    `f6055ebe` (logs `.tmp/after_cut/f1g14m/`). f1g15's ran 2026-11-04: 0 mutants, correctly
+    (its `aatf` diff is a doc comment and a test); f1g14's and f1e3r's refused that evening
+    (pes_savefile's remote half uncollected) and are relaunched from their worktrees;
     (8) the whole-crate runs of `team_widgets`, `pes_savefile` (cvA1's last item) and
     `save_editor`, started 2026-11-04 at `7400d3dd` (`.tmp/after_cut/mutants_whole.sh`, one
     log and summary folder per crate there), every survivor triaged. `team_widgets` ended
@@ -7213,7 +7215,14 @@ briefs, review loops, gates and mutation runs as for any step.
     there), both landed (`c259be17`, then the tactics slice with the `cards_used` exclusion). Design finding, open: `pitch/popover.rs` `slot_popover`'s outside-press focus
     surrender is unobservable under egui 0.37 (`Focus::end_pass` drops an undrawn widget's
     focus; the DragValue commits as typed), so the block and its "cannot end on its own"
-    comment look removable: check against an egui upgrade first; (9) the `review2`
+    comment look removable: check against an egui upgrade first. `pes_savefile` (at `9ea7bc00`)
+    ended 2026-11-04: 2018 caught, 2 missed, 4 timeouts, 149 unviable (`triage.md` in its
+    folder): the timeouts are `text_spans` mutants that stop the iterator advancing (caught);
+    2 missing tests, a boots or gloves ID of exactly `MODEL_ID_MAX` exported, and dribbling
+    motion set on a version without it refused. Its remote half's fetch stalled on 6.1 GB of
+    caught mutants' logs at ~41 KB/s: the chain was stopped before `save_editor`, the fetch
+    now leaves those logs out (`mutants.py` `REMOTE_FETCH_LIST`), and `save_editor`'s run is
+    launched on its own; (9) the `review2`
     worktree (`../4cc-studio-temp/review2`, detached at the pre-reword `1dd5ab92`, clean):
     its three commits have reworded twins on main by subject (`e704be83` the newest), but
     `git diff 1dd5ab92 e704be83` differs in three files (`team_widgets`

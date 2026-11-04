@@ -913,10 +913,37 @@ def run_split(
     return local_run.returncode, remote_code, local_seconds, remote_seconds
 
 
+# Run by the host's python3 in its clone, its stdout the list `fetch_remote`'s tar packs:
+# every file of `mutants.out` but a caught mutant's log. Those logs are never read here
+# (`killed_builds` reads the unviable ones', the triage the survivors'), and a test that
+# fails by printing big values fills them: pes_savefile's 900 caught logs came to 6.1 GB
+# of its remote half's 6.1, which the link fetched at 41 KB/s. An outcomes.json this cannot
+# read (missing, cut short by a half that died mid-write, another cargo-mutants' shape)
+# keeps every log: a program that failed would fail every retry of the fetch, and the
+# uncollected half would refuse every later run.
+REMOTE_FETCH_LIST = """\
+import json, os
+caught = set()
+try:
+    with open("mutants.out/outcomes.json", encoding="utf-8") as f:
+        for outcome in json.load(f)["outcomes"]:
+            if outcome["summary"] == "CaughtMutant" and outcome.get("log_path"):
+                caught.add(os.path.normpath(os.path.join("mutants.out", outcome["log_path"])))
+except Exception:
+    caught = set()
+for folder, _, files in os.walk("mutants.out"):
+    for name in sorted(files):
+        path = os.path.normpath(os.path.join(folder, name))
+        if path not in caught:
+            print(path)
+"""
+
+
 def fetch_remote(host: str, partial: bool = False) -> None:
-    """Copies the remote half's `mutants.out` and console log into
-    `mutants.out/remote/`, emptied first so nothing of an earlier fetch is
-    counted as this run's, then marks the run collected. A finished half with
+    """Copies the remote half's `mutants.out` (all but the caught mutants' logs:
+    `REMOTE_FETCH_LIST`) and console log into `mutants.out/remote/`, emptied
+    first so nothing of an earlier fetch is counted as this run's, then marks
+    the run collected. A finished half with
     no `mutants.out` fails the fetch; a died one (`partial`) may have none."""
     out = ROOT / "mutants.out" / "remote"
     LOCAL_TMPDIR.mkdir(parents=True, exist_ok=True)
@@ -928,8 +955,8 @@ def fetch_remote(host: str, partial: bool = False) -> None:
         fetched = ssh(
             host,
             f"cd {REMOTE_BASE}/tree && {{ [ -d mutants.out ] || exit 3; }} && "
-            "tar -cf - mutants.out",
-            stdout=archive, stderr=subprocess.PIPE,
+            "set -o pipefail && python3 - | tar -cf - --verbatim-files-from -T -",
+            input=REMOTE_FETCH_LIST.encode(), stdout=archive, stderr=subprocess.PIPE,
         )
         absent = fetched.returncode == 3
         size = archive.seek(0, os.SEEK_END)

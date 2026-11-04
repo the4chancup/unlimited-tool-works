@@ -3077,3 +3077,6 @@ worklog passed 7,000 lines.
 - 2026-11-04 — f6 (1): SWE-2 over f1e3 (3 of 7 accepted); rework f1e3r: the Tactics slot popover closes
   when the team view goes (PgDn had left the arrows dead, a 0.0.1 bug: `CHANGELOG.md` started), two
   version-only keys' routing tested, the team help's section lists completed.
+- 2026-11-04 — f6 (8): pes_savefile's whole run (2 missed, 4 timeouts caught); its remote fetch stalled on 6.1 GB
+  of caught mutants' logs at ~41 KB/s, so the fetch now leaves them out (11 MB). SWE-2 S1: 3 accepted, the
+  loop ends; the RUNBOOK names the remote half's summary folder, which the chain's archive had missed.

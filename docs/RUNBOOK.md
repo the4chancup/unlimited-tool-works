@@ -215,8 +215,11 @@ check, `conpty_run.py` (runs a command under a real terminal). Each says its usa
 docstring. `.tmp/` is ignored by git: nothing there is reviewed, versioned or found by the
 next session except through a note that names it. **An archived run keeps its summary, not its logs.** A run kept aside (in
 `.tmp/<subphase>/mutants_<step>_<what>/`, before
-the next run overwrites `mutants.out/`) copies only `*.txt` and `outcomes.json`, never the
-per-mutant `log/` or `remote/` trees: those are what reproduce a survivor, and a survivor is
+the next run overwrites `mutants.out/`) copies only `*.txt` and `outcomes.json`, the local
+half's from `mutants.out/` and a split run's remote half's from
+`mutants.out/remote/mutants.out/` (`mutants.out/remote/` itself holds only the console log:
+f6's chain copied from there and kept no remote summary of `team_widgets`), never the
+per-mutant `log/` trees: those are what reproduce a survivor, and a survivor is
 reproduced by re-running its mutant, not by reading a week-old log. Whole-folder copies had
 grown `.tmp/` to 17 GB by 3.8. Each local run extracts its snapshot to
 `%TEMP%\studio-mutants\source-*` and builds in `cargo-mutants-source-*.tmp` copies of it (one

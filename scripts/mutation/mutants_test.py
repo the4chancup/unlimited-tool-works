@@ -1051,6 +1051,7 @@ class Fetch(unittest.TestCase):
         def ssh(host, remote, **kwargs):
             self.calls.append(remote)
             if "tar -cf" in remote:
+                self.listed_by = kwargs.get("input")
                 if code == 0:
                     kwargs["stdout"].write(archive.getvalue())
                 return subprocess.CompletedProcess([host, remote], code, stderr=b"")
@@ -1080,6 +1081,53 @@ class Fetch(unittest.TestCase):
         )
         self.assertEqual((self.fetched / "remote_console.txt").read_bytes(), b"the remote log")
         self.assertTrue(any("collected" in call for call in self.calls))
+        # The host's tar packs what the list program prints, and a failing program fails it.
+        self.assertEqual(self.listed_by, mutants.REMOTE_FETCH_LIST.encode())
+        self.assertTrue(any("pipefail" in call and "-T -" in call for call in self.calls))
+
+    def listed(self, outcomes: str | None) -> set[str]:
+        """What `REMOTE_FETCH_LIST` prints over a `mutants.out` holding `outcomes` as its
+        outcomes.json (None: no such file), three mutant logs and a summary list."""
+        clone = self.root / "clone"
+        logs = clone / "mutants.out" / "log"
+        logs.mkdir(parents=True, exist_ok=True)
+        for name in ("caught.log", "unviable.log", "missed.log"):
+            (logs / name).write_text("log\n", encoding="utf-8")
+        (clone / "mutants.out" / "caught.txt").write_text("x\n", encoding="utf-8")
+        if outcomes is None:
+            (clone / "mutants.out" / "outcomes.json").unlink(missing_ok=True)
+        else:
+            (clone / "mutants.out" / "outcomes.json").write_text(outcomes, encoding="utf-8")
+        printed = subprocess.run(
+            [sys.executable, "-"], input=mutants.REMOTE_FETCH_LIST, cwd=clone,
+            capture_output=True, text=True, check=True,
+        ).stdout
+        return {Path(line).as_posix() for line in printed.splitlines()}
+
+    def test_the_fetch_list_leaves_out_only_the_caught_mutants_logs(self):
+        outcomes = {"outcomes": [
+            {"summary": "CaughtMutant", "log_path": "log/caught.log"},
+            {"summary": "Unviable", "log_path": "log/unviable.log"},
+            {"summary": "MissedMutant", "log_path": "log/missed.log"},
+        ]}
+        self.assertEqual(self.listed(json.dumps(outcomes)), {
+            "mutants.out/caught.txt", "mutants.out/outcomes.json",
+            "mutants.out/log/unviable.log", "mutants.out/log/missed.log",
+        })
+
+    def test_an_outcomes_file_it_cannot_read_keeps_every_log(self):
+        logs = {
+            "mutants.out/caught.txt", "mutants.out/log/caught.log",
+            "mutants.out/log/unviable.log", "mutants.out/log/missed.log",
+        }
+        self.assertEqual(self.listed(None), logs)
+        self.assertEqual(self.listed('{"outcomes": [{"summ'), logs | {"mutants.out/outcomes.json"})
+        # Another shape, the first outcome's log already taken as caught before the second
+        # fails: the list still keeps it.
+        other_shape = json.dumps({"outcomes": [
+            {"summary": "CaughtMutant", "log_path": "log/caught.log"}, {"log_path": "x"},
+        ]})
+        self.assertEqual(self.listed(other_shape), logs | {"mutants.out/outcomes.json"})
 
     def test_a_finished_half_without_results_fails_and_stays_uncollected(self):
         with self.assertRaisesRegex(RuntimeError, "left no mutants.out"):
