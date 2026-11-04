@@ -563,6 +563,8 @@ impl SaveView {
                 self.kit_slots = None;
                 self.live.check.reset();
                 self.multi_aatf.reset();
+                self.cards.reset();
+                self.medals.reset();
             }
             Err(error) => {
                 self.refusal = Some(Refusal {

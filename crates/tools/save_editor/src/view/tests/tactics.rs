@@ -2995,6 +2995,26 @@ fn scroll_names_is_a_remembered_view_setting() {
     );
 }
 
+/// Each starter's medal in the `tactics_medals*` fixtures' team 734
+/// under the official ruleset, as the AATF check reads it: two silvers
+/// and two golds, the other seven no medal tier.
+const TEAM_734_MEDALS: [Option<team_widgets::tactics::Medal>; 11] = {
+    use team_widgets::tactics::Medal::{Gold, Silver};
+    [
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        Some(Silver),
+        None,
+        Some(Gold),
+        Some(Silver),
+        Some(Gold),
+    ]
+};
+
 /// The medal outline painted over `badge` (1.5 points inside its
 /// edge): the stroked rect covering the badge's, `None` when none was
 /// painted.
@@ -3134,22 +3154,7 @@ fn the_badges_name_the_starters_medal_tiers() {
     view.open(&path);
     let mut window = Headless::sized(1600.0, 1400.0);
     view.selected = Some(Selection::Team(734));
-    // Each starter's medal under the official ruleset, as the AATF check
-    // reads this fixture's team: two silvers and two golds, the other
-    // seven no medal tier.
-    let mut medals = [
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        Some(Silver),
-        None,
-        Some(Gold),
-        Some(Silver),
-        Some(Gold),
-    ];
+    let mut medals = TEAM_734_MEDALS;
     assert_medal_outlines(&mut window, &mut view, medals, "the first frame");
 
     // Starter 6, a silver, edited to Speed 99: the ruleset's tier is
@@ -3195,7 +3200,7 @@ fn the_badges_name_the_starters_medal_tiers() {
 // nothing.
 #[test]
 fn the_medals_are_read_off_the_first_frame_and_never_from_another_team_or_ruleset() {
-    use team_widgets::tactics::Medal::{Gold, Silver};
+    use team_widgets::tactics::Medal::Gold;
     let path = fixture(PesVersion::Pes17, "tactics_medals_worker");
     let mut view = SaveView::new();
     view.open(&path);
@@ -3219,21 +3224,7 @@ fn the_medals_are_read_off_the_first_frame_and_never_from_another_team_or_rulese
         view.medals.pending.is_some() || view.medals.result.is_some(),
         "the run starts on the release frame"
     );
-    // The fixture team's starters as `the_badges_name_the_starters_medal_tiers`
-    // reads them under the official ruleset.
-    let medals = [
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        Some(Silver),
-        None,
-        Some(Gold),
-        Some(Silver),
-        Some(Gold),
-    ];
+    let medals = TEAM_734_MEDALS;
     assert_medal_outlines(&mut window, &mut view, medals, "once the worker answered");
 
     // Another team's answer held, the pointer down again so no run
@@ -3287,27 +3278,12 @@ fn the_medals_are_read_off_the_first_frame_and_never_from_another_team_or_rulese
 // starter's outline, and the re-read shows the same ones.
 #[test]
 fn an_edit_keeps_the_medal_outlines_until_the_re_read_lands() {
-    use team_widgets::tactics::Medal::{Gold, Silver};
     let path = fixture(PesVersion::Pes17, "tactics_medals_edit");
     let mut view = SaveView::new();
     view.open(&path);
     let mut window = Headless::sized(1600.0, 1400.0);
     view.selected = Some(Selection::Team(734));
-    // The fixture team's starters as `the_badges_name_the_starters_medal_tiers`
-    // reads them under the official ruleset.
-    let medals = [
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        Some(Silver),
-        None,
-        Some(Gold),
-        Some(Silver),
-        Some(Gold),
-    ];
+    let medals = TEAM_734_MEDALS;
     assert_medal_outlines(&mut window, &mut view, medals, "before the edit");
 
     // The toolbar's empty end: a press there starts no gesture, so the
@@ -3344,6 +3320,49 @@ fn an_edit_keeps_the_medal_outlines_until_the_re_read_lands() {
         show(ui, &mut view, &|| Vec::new())
     });
     assert_medal_outlines(&mut window, &mut view, medals, "once the re-read landed");
+}
+
+// Opening another save drops the medals with the rest of the old save's
+// state: on the same team the first frame, drawn with the pointer held
+// so no run starts and none can reply within it, paints no outline —
+// the answer the badges would hold was the previous save's — and the
+// new save's run paints them back once it lands.
+#[test]
+fn opening_another_save_keeps_no_medal_outlines_from_the_previous_one() {
+    let path = fixture(PesVersion::Pes17, "tactics_medals_open");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(1600.0, 1400.0);
+    view.selected = Some(Selection::Team(734));
+    let medals = TEAM_734_MEDALS;
+    assert_medal_outlines(&mut window, &mut view, medals, "before the second open");
+
+    // The same fixture opened again: the point is the open, not the
+    // file.
+    open_again(&mut view, &path);
+    view.selected = Some(Selection::Team(734));
+
+    // The toolbar's empty end: a press there starts no gesture, so no
+    // run starts and no reply can land inside the frame.
+    let at = egui::pos2(1090.0, 12.0);
+    let (_, nodes, shapes) = window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(
+        view.medals.result.is_none() && view.medals.pending.is_none(),
+        "the previous save's medals went with it"
+    );
+    assert_frame_medal_outlines(&view, &nodes, &shapes, [None; 11], "the second open");
+
+    window.frame(pointer_at(at, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert_medal_outlines(
+        &mut window,
+        &mut view,
+        medals,
+        "once the new save's run landed",
+    );
 }
 
 // The badge's right end shows the starter's overall at the position his

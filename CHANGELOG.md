@@ -9,6 +9,9 @@ What changed for members, release by release, newest first.
 - **Save editor** — Up and Down walk the player list again after a page key left a team's
   Tactics slot popover open behind a player: they did nothing until the team was selected
   again and the popover closed.
+- **Save editor** — after opening another save, a team's medal outlines and a player's Cards
+  used badge no longer show the previous save's for a moment: they wait for the new save's own
+  answer.
 
 ## [0.0.1] — 2026-11-03
 

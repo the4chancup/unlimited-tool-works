@@ -1770,6 +1770,62 @@ fn another_player_draws_no_badge_until_his_lands() {
     assert_eq!(cards_used_badges(&nodes).len(), 1, "his badge lands");
 }
 
+// Opening another save drops the badge with the rest of the old save's
+// state: on the same player the first frame draws no Cards used row —
+// the answer it would hold was the previous save's — and the new save's
+// run paints it back once it lands.
+#[test]
+fn opening_another_save_keeps_no_cards_used_badge_from_the_previous_one() {
+    let path = fixture(PesVersion::Pes17, "cards_used_open");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(702);
+    view.selected = Some(Selection::Player(702, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    let nodes = badge_landed(&mut window, &mut view);
+    let badge = cards_used_badges(&nodes);
+    assert_eq!(badge.len(), 1, "premise: the player's badge landed");
+
+    // The same fixture opened again: the point is the open, not the
+    // file.
+    open_again(&mut view, &path);
+    view.team = TeamChoice::Team(702);
+    view.selected = Some(Selection::Player(702, 0));
+
+    // The new run in flight, held by the channel the test keeps the
+    // sender of, keyed to the new session's key: a fast run replies
+    // between one frame's two passes, so a real worker cannot be
+    // waited on here.
+    let (sender, replies) = crossbeam_channel::unbounded();
+    view.cards.pending = Some(worker::Pending {
+        key: current_badge_key(&view),
+        replies,
+    });
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        view.cards.pending.is_some(),
+        "premise: the run is in flight"
+    );
+    assert!(
+        view.cards.result.is_none(),
+        "the previous save's badge went with it"
+    );
+    assert!(
+        cards_used_badges(&nodes).is_empty(),
+        "no badge drawn while the new save's run is up"
+    );
+
+    // The held run ends unanswered: the next frames start the real one,
+    // which lands the badge back.
+    drop(sender);
+    let nodes = badge_landed(&mut window, &mut view);
+    assert_eq!(
+        cards_used_badges(&nodes),
+        badge,
+        "the new save's run lands the badge back"
+    );
+}
+
 // The badge keeps one run in flight: an edit while a run is up waits
 // for its reply, then starts the queued run — the frame the reply lands
 // on asks for the repaint that wakes the next, so no input is needed.

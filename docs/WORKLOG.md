@@ -7221,7 +7221,12 @@ briefs, review loops, gates and mutation runs as for any step.
     then the worktree goes (the maintainer, 2026-11-04). Done 2026-11-04 with nothing to merge:
     `1dd5ab92` is `e704be83` before its amend an hour later, which added the post-Astra SWE-2
     round's fixes (the tests' content-edge bounds, the one-line preset bar, the measured gap);
-    the worktree removed, its scratch kept in `.tmp/worktrees/review2/`
+    the worktree removed, its scratch kept in `.tmp/worktrees/review2/`; (10) Astra A1
+    (Codex) over f1e3r, cv8f, cv10 and cv11 (`.tmp/after_cut/astra_ac/`): 1 accepted, the
+    medal outlines held across opening another save; fixed by cv11r (SWE-2, one rework), which
+    found the Cards used badge held the same way (both shipped in 0.0.1): `SaveView::open` resets
+    both workers, a cross-open test each, the four copies of team 734's medal table one const;
+    a SWE-2 round over cv11r next
   - [ ] f7 a design-health pass over the tests (the maintainer, 2026-11-04: tests are code,
     `CONTRIBUTING.md` "Tests are code"), after f6's tw2 and cv11r land, before 0.0.2 starts.
     Not a full read of the repo: ~390K Rust lines would be ~600 SWE-2 parts, every concern

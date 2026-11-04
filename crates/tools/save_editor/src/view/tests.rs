@@ -121,6 +121,18 @@ fn fixture(version: PesVersion, test: &str) -> PathBuf {
     path
 }
 
+/// Opens `path` again over `view`'s open save: the open itself is the
+/// step under test, and the new session's revision differs.
+fn open_again(view: &mut SaveView, path: &Path) {
+    let before = view.session.as_ref().unwrap().revision();
+    view.open(path);
+    assert_ne!(
+        view.session.as_ref().unwrap().revision(),
+        before,
+        "premise: the new session's revision differs"
+    );
+}
+
 /// `player_id`'s entry as the session holds it.
 fn player_entry(view: &SaveView, player_id: u32) -> PlayerEntry {
     view.session
