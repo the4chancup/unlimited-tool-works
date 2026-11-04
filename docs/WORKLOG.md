@@ -7244,6 +7244,19 @@ briefs, review loops, gates and mutation runs as for any step.
     while a mutation run holds the other, no `rm`, no push; (a)'s ranking worst first, stopping
     under a block-size threshold, (a) rerun at the end for the before and after; otherwise
     each phase's close design-health pass covers the rest
+    - [x] (a) 2026-11-04: `clones.py --files --window 8` (the existing clone finder, which
+      already shaped lines and found repeated runs, given a per-file ranking of test code;
+      `clones_test.py`, 6 tests, each red under one of 7 perturbations, in `just test`): at
+      `69687460`, 26,421 of 161,862 shaped test lines sit in a repeated run of 8 or more.
+      Worst first, the `aatf` fixtures (data builders) set aside: `aesthetics_export`
+      `validate/tests.rs` 1303, `team_compiler` `tests/cli/common_links.rs` 985,
+      `textures.rs` 765, `team_widgets` `pitch/tests/drops.rs` 673, `tests/cli/models.rs` 661,
+      `team_compiler` `processing/mod.rs` 542 and `plan/mod.rs` 532 (inline modules),
+      `tests/cli/prefox_faces.rs` 466, `color_tools` `picker/tests.rs` 460, `team_widgets`
+      `tactics/tests/mod.rs` 430, `export_upgrader` `materials.rs` 390, `studio_core`
+      `shell/settings_menu/tests.rs` 374, `save_editor` `view/tests/team.rs` 371,
+      `tactics_undo.rs` 336, `live_aatf.rs` 308; all but `tactics_undo.rs` past a thousand
+      lines (`.tmp/after_cut/f7/files_w8.txt`, the window-4 ranking beside it)
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in

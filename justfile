@@ -33,6 +33,7 @@ test:
     {{python}} scripts/gates/run_tests.py
     {{python}} scripts/mutation/mutants_test.py
     {{python}} scripts/review/perturb_check_test.py
+    {{python}} scripts/review/clones_test.py
     {{python}} scripts/drafts/bundle_drafts_test.py
     {{python}} scripts/drafts/draft_compare_test.py
 
@@ -45,6 +46,7 @@ test-changed base="HEAD":
     {{python}} scripts/gates/run_tests.py --changed {{base}}
     {{python}} scripts/mutation/mutants_test.py
     {{python}} scripts/review/perturb_check_test.py
+    {{python}} scripts/review/clones_test.py
     {{python}} scripts/drafts/bundle_drafts_test.py
     {{python}} scripts/drafts/draft_compare_test.py
 

@@ -6,8 +6,11 @@ lines found three or more times in one crate, or a run of at least `LONG` lines 
 is a cluster. Clusters are listed per crate, non-test code first, ranked by the lines a helper
 would save ((copies - 1) x run length).
 
-Usage: clones.py [--window N] [--long N] [<crate path prefix> ...] > report.txt
-(prefixes relative to crates/, e.g. `libs/aatf`; none: every crate).
+Usage: clones.py [--window N] [--long N] [--across | --files] [<crate path prefix> ...] > report.txt
+(prefixes relative to crates/, e.g. `libs/aatf`; none: every crate). `--files` ranks the files
+holding test code instead, by how many of their test lines sit in a repeated run, with each
+file's length (the test design-health pass's worst-first list).
+Tests: `python scripts/review/clones_test.py`.
 """
 import argparse
 import re
@@ -229,6 +232,20 @@ def clusters(sequences, window, long):
     return found
 
 
+def file_ranking(sequences, found):
+    """[(file, shaped lines, shaped lines inside a repeated run)] over `sequences`' files, the
+    most repeated first: a line two clusters cover counts once."""
+    covered = defaultdict(set)
+    for _, spans in found:
+        for file, first, last in spans:
+            covered[file].update(
+                number for number, _ in sequences[file] if first <= number <= last
+            )
+    ranking = [(file, len(lines), len(covered[file])) for file, lines in sequences.items()]
+    ranking.sort(key=lambda item: (-item[2], item[0]))
+    return ranking
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--window", type=int, default=4)
@@ -237,6 +254,11 @@ def main():
         "--across",
         action="store_true",
         help="pool every crate's non-test code and list only the runs found in two crates or more",
+    )
+    parser.add_argument(
+        "--files",
+        action="store_true",
+        help="rank the files holding test code by their test lines inside a repeated run",
     )
     parser.add_argument("prefixes", nargs="*")
     args = parser.parse_args()
@@ -267,6 +289,7 @@ def main():
             for file, first, last in spans:
                 print(f"    {file}:{first}-{last}")
         return
+    ranking = []
     for name, crate in crates(args.prefixes):
         source = {}
         tests = {}
@@ -279,6 +302,9 @@ def main():
             for number, line_shape, in_tests in shaped_lines(path):
                 kind = tests if (test_file or in_tests) else source
                 kind.setdefault(relative, []).append((number, line_shape))
+        if args.files:
+            ranking += file_ranking(tests, clusters(tests, args.window, args.long))
+            continue
         for label, sequences in (("source", source), ("tests", tests)):
             found = clusters(sequences, args.window, args.long)
             if not found:
@@ -289,6 +315,13 @@ def main():
                 print(f"  {len(spans)} copies x {run} lines:")
                 for file, first, last in spans:
                     print(f"    {file}:{first}-{last}")
+    if args.files:
+        ranking.sort(key=lambda item: (-item[2], item[0]))
+        print("repeated  shaped  file lines  file (test code; * past 1000 lines)")
+        for file, shaped, repeated in ranking:
+            lines = len((ROOT / file).read_text(encoding="utf-8", errors="replace").splitlines())
+            mark = " *" if lines > 1000 else ""
+            print(f"{repeated:8}  {shaped:6}  {lines:10}  {file}{mark}")
 
 
 if __name__ == "__main__":
