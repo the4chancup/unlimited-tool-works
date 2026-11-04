@@ -7222,6 +7222,15 @@ briefs, review loops, gates and mutation runs as for any step.
     `1dd5ab92` is `e704be83` before its amend an hour later, which added the post-Astra SWE-2
     round's fixes (the tests' content-edge bounds, the one-line preset bar, the measured gap);
     the worktree removed, its scratch kept in `.tmp/worktrees/review2/`
+  - [ ] f7 a design-health pass over the tests (the maintainer, 2026-11-04: tests are code,
+    `CONTRIBUTING.md` "Tests are code"), after f6's tw2 and cv11r land, before 0.0.2 starts.
+    Not a full read of the repo: ~390K Rust lines would be ~600 SWE-2 parts, every concern
+    ruled by the lead. (a) Measure: a script (`scripts/review/`, with its test) hashing
+    normalized ~8-line windows across every crate's `.rs` files lists the duplicated blocks
+    by size and file, and the modules past about a thousand lines; (b) SWE-2 sidekick briefs
+    for the top 10 to 15 files it names (GUI test modules expected first), each naming its
+    blocks, the shared helpers extracted, the tests still passing and still failing under a
+    perturbation; (c) the rest waits for each phase's close design-health pass
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
