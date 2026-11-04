@@ -7184,7 +7184,15 @@ briefs, review loops, gates and mutation runs as for any step.
     f1g14's mutation run, postponed from the cut (DECISIONS "f1g14's mutation run waits until
     after the cut"), f1g15's with it: `just mutants-diff` over f1g14's commit against its parent `7cb9889c`,
     run from a worktree at that commit so the cut's later commits stay out of the diff (33
-    mutants listed on the slice's draft diff), every survivor triaged and its tests briefed
+    mutants listed on the slice's draft diff), every survivor triaged and its tests briefed;
+    (8) the whole-crate runs of `team_widgets`, `pes_savefile` (cvA1's last item) and
+    `save_editor`, started 2026-11-04 at `7400d3dd` (`.tmp/after_cut/mutants_whole.sh`, one
+    log and summary folder per crate there), every survivor triaged; (9) the `review2`
+    worktree (`../4cc-studio-temp/review2`, detached at the pre-reword `1dd5ab92`, clean):
+    its three commits have reworded twins on main by subject (`e704be83` the newest), but
+    `git diff 1dd5ab92 e704be83` differs in three files (`team_widgets`
+    `tactics/instructions.rs`, `save_editor` `view/tests/tactics.rs`, `WORKLOG.md`): whatever of its own is still useful is finished and merged,
+    then the worktree goes (the maintainer, 2026-11-04)
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
