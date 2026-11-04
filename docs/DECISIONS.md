@@ -15553,3 +15553,16 @@ Why: the sweep's "crossed in this diff" fired once per file, so `aesthetics_expo
 `validate/tests.rs` grew from 3,200 to 4,838 lines unflagged; in a file that long a new test's
 copied setup sits far from the helper it should reuse (1,303 of its lines are in repeated runs).
 Plan: `CONTRIBUTING.md` "Architecture rules"; AGENTS.md's design sweep; worklog f7 (b), (d).
+
+## 2026-11-04 — development plan — 0.0.2's proof of concept skips the copy link and may ship as a bundle; PES 2019 is checked first
+Decision (maintainer): the proof of concept for VGL's organizer goes out without 8.36c3 (the
+`<id>.copy` link), which follows it, and may be a bundle rather than the bare exe. 8.36d's
+in-game check runs on PES 2019 first, then PES 2021 and PES 2017. The proof of concept needs
+the gates and the in-game check only: 8.36c4's cross-family review and mutation diff run
+beside it, their fixes landing in 0.0.2. A reported loss of Invitational 1 in a PES 2019 save
+the Save editor wrote is fixed and checked in game before the proof of concept goes out.
+Why: no player of the two example teams uses a copy id; a bundle costs little next to the
+rest; PES 2019 is VGL 27's game and the likeliest for the 4cc's spring cup, the main target
+of 1.0.0; the organizer's pipeline writes the official save through the Save editor.
+Plan: `plans/core/development_plan.md` "The /vg/ League 27 (VGL): preview 0.0.2"; worklog
+0.0.2-poc, 0.0.2-se19, 8.36d.

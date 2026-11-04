@@ -146,9 +146,13 @@ only through the patch (DECISIONS "Every engine carries a player's looks in the 
 patch; no stripped saves"); with today's Fox-only patch of motions and names, the game shows
 the official save's record over the compiled look (`savefile_player_not_stripped`). So
 8.36c and 8.36d are the first work after 0.0.1's cut, and once they hold in game on PES 2019
-the organizer gets a proof-of-concept exe ahead of 0.0.2: no release and no bundle, only
-meant to upgrade and compile a couple of example teams and show their players in game, so
-the league's pipeline is tried on its own install while 0.0.2's other steps are built. 0.0.1
+the organizer gets a proof of concept ahead of 0.0.2: no release (a bundle is fine, as it
+costs little next to the rest), only meant to upgrade and compile a couple of example teams
+and show their players in game, so the league's pipeline is tried on its own install while
+0.0.2's other steps are built. The `<id>.copy` link (8.36c3) waits until after it, since no
+player of the example teams uses a copy id; the Save editor's PES 2019 writes are checked in
+game before it goes out, as the organizer's order below runs the official save through
+them. 0.0.1
 alone could not stand in for it: its compile on PES 2019 shows the save's looks rather than
 the compiled ones, failing on exactly what the league needs. The organizer's order is: the managers' tactical exports (`.ted`) imported into the base save,
 by the Save editor or by PES (whose import leaves the team names to rewrite), making the

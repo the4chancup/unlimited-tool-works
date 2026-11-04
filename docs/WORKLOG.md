@@ -2805,7 +2805,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         to 2017", wrong since c1), the drafts' message rows, the library parity re-run and its
         classes re-diagnosed; then 8.36c's review: Astra over its code (checkpoint (b)) and
         one `mutants-diff` over c1-c4
-    - [ ] d in game, before 0.0.2 (PES 2021, then PES 2019, VGL 27's game, and PES 2017): a
+    - [ ] d in game, before 0.0.2 (PES 2019 first, VGL 27's game and the likeliest for the
+      4cc's spring cup, then PES 2021 and PES 2017; the maintainer, 2026-11-04): a
       patch applied to an
       unstripped save shows the compiled look in Edit mode, boots and gloves included, on a
       player whose base copy named another and on one whose edit flags were clear
@@ -7347,9 +7348,20 @@ briefs, review loops, gates and mutation runs as for any step.
     maintainer, 2026-11-03); drafted first
   - [ ] 0.0.2-cli the command line's update notice (DECISIONS "The update offer waits in the
     status bar"): from 0.0.2 a command prints one line when a newer release exists
+  - [ ] 0.0.2-se19 a PES 2019 save the Save editor wrote loses Invitational 1 in game (an early
+    tester, relayed 2026-11-04: "open a pes19 edit file, change invitational 1, save it, and
+    then try to load it in the game, and i1 will be all placeholders and default stats"):
+    reproduce on a PES 2019 save (edit a player of Invitational 1, save, diff the bytes the
+    write changed against those the edit should), find the cause, its test red first, then
+    the in-game check on PES 2019 → verify: the saved file loads in game with Invitational 1
+    intact. Before 0.0.2-poc reaches the organizer (PES 2019 is VGL 27's game)
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and
-    8.36d, then a proof-of-concept exe for VGL's organizer (no release, no bundle) that
-    upgrades and compiles a couple of example teams on PES 2019 → verify: the example teams'
+    8.36d, then a proof-of-concept exe for VGL's organizer that
+    upgrades and compiles a couple of example teams on PES 2019. 8.36c3 (the `<id>.copy`
+    link) waits until after it: no player of the two example teams uses a copy id (the
+    maintainer, 2026-11-04). A bundle is fine (the maintainer, 2026-11-04), else the exe
+    with the three commands; the gates and the in-game check suffice, 8.36c4's Astra
+    review and `mutants-diff` running beside it, their fixes in 0.0.2 → verify: the example teams'
     players show their compiled faces, boots and gloves in Edit mode on PES 2019. The example
     teams (the maintainer): /dbg/ and /4ccg/, the old exports `DBG Aesthetics Export VGL26`
     and `4CCG Aesthetics Export VGL26` in `C:/Data/4cc/Lab/VGL26/`, upgraded
