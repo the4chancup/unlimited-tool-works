@@ -278,16 +278,7 @@ exclude_re = [
     # worker to the `None` they were and clears maps only a worker's replies fill, which are
     # empty without one. The other arms' change detection stays measured.
     "save_editor/src/view/portraits\\.rs:\\d+:\\d+: delete match arm \\(None, None\\) in Portraits::select",
-    # team_widgets: `two_pairs_width`'s toggle column
-    # `(SLIDERS.len() + index) % 2` -> `*` swaps the toggles between the two columns (five
-    # sliders: `5 * i` and `5 + i` have opposite parities), and the swap leaves the sum
-    # unchanged: every slider's control has one width, so `max(slider, A) + max(slider, B)`
-    # is the same with the toggle sets A and B exchanged, and both columns' widest labels are
-    # sliders' ("Numbers in defence", "Numbers in attack"), which stay put. Measured 868 both
-    # ways at the 900-point test window.
-    # Pinned by line and column: the function's other `+` stay measured.
-    "team_widgets/src/tactics/mod\\.rs:305:28: replace \\+ with \\* in two_pairs_width",
-    # `capped_combo`'s hover guard `text_width > cap - chrome` -> `>=` is equivalent in what
+    # team_widgets: `capped_combo`'s hover guard `text_width > cap - chrome` -> `>=` is equivalent in what
     # is drawn: at exactly equal width the selection fits unelided, and `>=` only adds a
     # tooltip repeating the text the button shows whole. Pinned to its site: `>` -> `<` and
     # `==` stay measured (`instructions.rs`' hover tests).
@@ -348,4 +339,26 @@ exclude_re = [
     # odd number of edges makes it killable: re-check this entry when one is added. The
     # function's only `<=`.
     "team_widgets/src/pitch/mod\\.rs:\\d+:\\d+: replace <= with > in turf_image",
+    # team_widgets: `pitch`'s held marker takes the last frame's `Held` only when
+    # `held.slot == index`, else it builds one from the press origin less his badge centre.
+    # `==` -> `!=` builds it every frame of a drag, from the same press origin and the same
+    # stored spot (nothing is written until the release), so the offset is the same; another
+    # slot's `Held` never reaches a drag, as every frame with nothing held removes it. Pinned
+    # by column: the release's own `held.slot == from` sits further right and stays measured.
+    "team_widgets/src/pitch/mod\\.rs:\\d+:42: replace == with != in pitch",
+    # `pitch`'s starter-row drop guard `onto != from` -> `true` lets a row dropped on his own
+    # marker run `starting_eleven.swap(from, from)`, which leaves the slice as it was.
+    "team_widgets/src/pitch/mod\\.rs:\\d+:\\d+: replace match guard onto != from with true in pitch",
+    # `Assign::write`'s join toggle `members.len() < list.len()` -> `<=` pushes onto a full
+    # list, and the `resize(list.len(), ..)` after it truncates the pushed slot away: a full
+    # list stays as it was either way. Its only `<`.
+    "team_widgets/src/tactics/assignments\\.rs:\\d+:\\d+: replace < with <= in Assign::write",
+    # `paint_portrait_cross`'s outline width `CROSS_WIDTH + 2.0 * CROSS_OUTLINE`: `*` -> `/`
+    # is the same 2.0 while `CROSS_OUTLINE` is 1.0; re-check this entry if the constant
+    # changes. Pinned by column: the function's other operators stay measured.
+    "team_widgets/src/pitch/mod\\.rs:\\d+:51: replace \\* with / in paint_portrait_cross",
+    # `number_choices`' choice width `(available - 2.0 * CHOICE_GAP) / 3.0`: `*` -> `/` is the
+    # same 2.0 while `CHOICE_GAP` is 1.0; re-check this entry if the constant changes. Pinned
+    # by column: the `/ 3.0` stays measured.
+    "team_widgets/src/tactics/mod\\.rs:\\d+:45: replace \\* with / in number_choices",
 ]
