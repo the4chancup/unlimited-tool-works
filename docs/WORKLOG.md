@@ -7210,7 +7210,10 @@ briefs, review loops, gates and mutation runs as for any step.
     its three commits have reworded twins on main by subject (`e704be83` the newest), but
     `git diff 1dd5ab92 e704be83` differs in three files (`team_widgets`
     `tactics/instructions.rs`, `save_editor` `view/tests/tactics.rs`, `WORKLOG.md`): whatever of its own is still useful is finished and merged,
-    then the worktree goes (the maintainer, 2026-11-04)
+    then the worktree goes (the maintainer, 2026-11-04). Done 2026-11-04 with nothing to merge:
+    `1dd5ab92` is `e704be83` before its amend an hour later, which added the post-Astra SWE-2
+    round's fixes (the tests' content-edge bounds, the one-line preset bar, the measured gap);
+    the worktree removed, its scratch kept in `.tmp/worktrees/review2/`
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
