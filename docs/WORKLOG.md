@@ -7206,9 +7206,9 @@ briefs, review loops, gates and mutation runs as for any step.
     (8) the whole-crate runs of `team_widgets`, `pes_savefile` (cvA1's last item) and
     `save_editor`, started 2026-11-04 at `7400d3dd` (`.tmp/after_cut/mutants_whole.sh`, one
     log and summary folder per crate there), every survivor triaged. `team_widgets` ended
-    07:58 (867 caught, 42 missed, 84 unviable; `triage.md` in its folder): 6 equivalent, 5
-    of them excluded in `.cargo/mutants.toml` (the sixth, `violations.rs` `part`'s own-group
-    flag, shares its extra-kind description with two caught sites, so it stays listed); 36
+    07:58 (867 caught, 42 missed, 84 unviable; `triage.md` in its folder): 7 equivalent, 6
+    of them excluded in `.cargo/mutants.toml` (the seventh, `violations.rs` `part`'s own-group
+    flag, shares its extra-kind description with two caught sites, so it stays listed); 35
     missing tests, briefed as two slices, pitch then tactics (`brief_tw1.md`, `brief_tw2.md`
     there); (9) the `review2`
     worktree (`../4cc-studio-temp/review2`, detached at the pre-reword `1dd5ab92`, clean):

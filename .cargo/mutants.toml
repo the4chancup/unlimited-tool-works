@@ -361,4 +361,9 @@ exclude_re = [
     # same 2.0 while `CHOICE_GAP` is 1.0; re-check this entry if the constant changes. Pinned
     # by column: the `/ 3.0` stays measured.
     "team_widgets/src/tactics/mod\\.rs:\\d+:45: replace \\* with / in number_choices",
+    # `style_choices` wheels its pair with `cycle_choice([false, true], .., -steps)`, and
+    # `cycle_choice` wraps: over two choices `n` steps either way land on the same one (both
+    # sides take `n % 2`), so deleting the `-` moves the pair the same way. A three-choice
+    # toggle's direction stays measured (`number_choices`).
+    "team_widgets/src/tactics/mod\\.rs:\\d+:\\d+: delete - in style_choices",
 ]
