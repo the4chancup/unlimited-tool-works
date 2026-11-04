@@ -7271,7 +7271,12 @@ briefs, review loops, gates and mutation runs as for any step.
         links, common links, shared folders, kits, root files, name conflicts, undecided root,
         pre-Fox, content findings; 99 to 816 lines), four shared helpers left in `tests.rs`;
         `pure_move_check.py` identical (7,721 code lines), 227 tests before and after (SWE-2)
-      - [ ] f7b2 its repeated runs into helpers
+      - [ ] f7b2 its repeated runs into tables and helpers (`.tmp/after_cut/f7/brief_f7b2.md`).
+        Finding for every later file: the window-8 ranking counts a file's scenario idiom
+        (here one `report(...)` over a listing, then one `issue_codes` assert: 34 copies of 8
+        lines, each a named behaviour), which is not copied setup; the briefs target the runs
+        of ten shaped lines or more (here 38 clusters: a test writing two cases of one
+        behaviour out twice, a check sequence two tests repeat)
     - [ ] (d) every other test module past a thousand lines split the same way, in due time
       (the maintainer, 2026-11-04: all of them eventually, not at once): 117 files at
       `69687460`, the (a) ranking's `*` rows; meanwhile any diff that grows one splits it
