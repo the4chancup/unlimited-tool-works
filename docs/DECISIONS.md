@@ -13422,7 +13422,7 @@ resting 201, hovered 186, pressed 208, an open menu's button 223 (egui 0.36's st
 colours kept). The lineup lists' position text takes light list colours at 4.5 (the keeper's
 `#847200`, a defender's `#007d99`, a midfielder's `#2f8314`, a forward's `#d92464`); the pitch
 keeps its own on its badges.
-Why: the first light captures (a release build of `4c448424`, `.tmp/0_0_1ov/light/`) showed
+Why: the first light captures (a release build of `ea8a578e`, `.tmp/0_0_1ov/light/`) showed
 unchecked checkboxes, radios and number boxes at grey 230 on 248, a contrast of 1.18 where the
 dark theme's 60 on 27 is 1.56, and the keeper's yellow at 1.26 on the lists' light panel.
 Matching the position colours' dark ratios (9.6 to 12.9) instead gives near-black browns and
@@ -15288,7 +15288,7 @@ linker's timestamps and toolchain), and the update check has a release to read f
 Plan: `plans/core/distribution.md` "Distribution: portable .7z bundle"; worklog 0.0.1f1g6-7.
 
 ## 2026-11-02 — save_editor — cv39's fix ships in 0.0.1
-Decision (the maintainer): `99c9a36a` (a press held in the Multi-team AATF dialog while its check
+Decision (the maintainer): `b5f8bd25` (a press held in the Multi-team AATF dialog while its check
 lands no longer clicks Close) goes onto f1g, so 0.0.1 carries it; worklog f5's separate exe for
 DBC's organizer is dropped.
 Why: its test's race recurs in the candidate's gates and mutation runs without it, and the fix
@@ -15507,7 +15507,7 @@ candidate built locally by `scripts/release/build_remapped.py`, not on a CI dry 
 release's bundles and checksums, and the maintainer starts its Windows exe once before
 publishing, as 2026-11-02's "0.0.1 is built by CI" asks.
 Why: a CI run takes far longer than a local incremental build, and run 41556364520 on
-`7c7c78d0` already passed both bundles through the release checks; f1g14 changes no dependency
+`1316e5ca` already passed both bundles through the release checks; f1g14 changes no dependency
 and no build setting. A failure only CI hits at the tag publishes nothing: the workflow fails
 before the draft, and the tag is fixed and pushed again with the maintainer's OK.
 Plan: worklog 0.0.1f2.

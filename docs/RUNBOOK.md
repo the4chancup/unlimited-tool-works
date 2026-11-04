@@ -187,7 +187,10 @@ scratch. A folder's name being unique, a stale path still finds it (`.tmp/4_17/`
 `.tmp/.old/phase_04/4_17/` now) through the Everything index. **A temporary folder outside the repository** (a git worktree for a review, a
 side-lead, a release or in-game build) goes under `../4cc-studio-temp/<name>`, never loose beside
 the repository: the maintainer browses that folder, and seventeen `4cc-studio-*` siblings had
-buried the repository by 2026-10-26, when they moved there. **A script likely to be run again
+buried the repository by 2026-10-26, when they moved there. **A slice's worktree and branch go
+once it is merged and its review loop has ended**, its `.tmp/` first copied to main's
+`.tmp/worktrees/<folder>/`: never pruned, they had reached 168 worktrees and 171 branches by
+2026-11-04, every `git worktree list` and branch picker a page of finished work. **A script likely to be run again
 goes in `scripts/`, not `.tmp/`**: a one-off probe stays in
 its step's folder, but a tool the next check will reach for (the built-window harness,
 `scripts/built_window/`, had served every check for weeks from three scratch folders) gets a

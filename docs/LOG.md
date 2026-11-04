@@ -2802,7 +2802,7 @@ worklog passed 7,000 lines.
 - **2026-10-29** — Form rows stand 22 apart as the drafts' grids do, through one `studio_core` constant (0.0.1ov2k). The project is to be named Unlimited Tool Works from 0.0.1 on, `UTW.exe`, its folders `unlimited-tool-works` (0.0.1rn planned; the drafts renamed, rn2).
 - **2026-10-29** — Every modal draws through one helper in the drafts' window frame (0.0.1ov2j); Live AATF's rows sit in the log's well at 150 high, the help tree is 220 wide, the Comparator opens top right (0.0.1ov2nop).
 - **2026-10-29** — The suite is named Unlimited Tool Works in code and in every file a member receives: `UTW.exe`, `unlimited-tool-works` folders, `utw.log` (0.0.1rn1).
-- **2026-10-29** — The docs take the new name where a member would see it (titles, CLI examples, folders, the log); "Studio" stays the working name in prose (0.0.1rn3). Checkpoint gates green at `c6d17d9b`: 5,189 tests.
+- **2026-10-29** — The docs take the new name where a member would see it (titles, CLI examples, folders, the log); "Studio" stays the working name in prose (0.0.1rn3). Checkpoint gates green at `21190bba`: 5,189 tests.
 - **2026-10-29** — The player list draws as drafted, its names at the body size (0.0.1ov2m); the log opens with a 180-point body (0.0.1ov2t); the Set number under its sentence, centred first-run labels, Memory cap's `%` outside its box, the help's Messages rows 19 apart (0.0.1ov2q). A dialog's sentence takes 8 points in the drafts (ov2v to build).
 - **2026-10-29** — The team row stands as drafted: colour buttons 22 × 16, its units 6 apart, id boxes 46 wide (0.0.1ov2l). The drafts' Overlay control lays the built window's capture over a draft or beside it (0.0.1ov4a).
 - **2026-10-29** — A dialog's sentence stands 8 over what follows it, as the drafts' paragraphs (0.0.1ov2v).
@@ -2907,32 +2907,32 @@ worklog passed 7,000 lines.
 - **2026-10-30** — k5e merged: the PES 2017 Texport import tested, the Pick dialog on All files for
   PES 2015-2017. PES 2017's own import measured (own team only, the save's name kept); k5f's proof
   Texport accepted by the game. k5g added: confirm the name behavior on the other versions.
-- **2026-10-30** — Candidate 0.0.1c staged at `bddd0027`; every change since 0.0.1b looked at in its
+- **2026-10-30** — Candidate 0.0.1c staged at `684ec6f6`; every change since 0.0.1b looked at in its
   built window (team file panel, unsaved-changes list, light greys, icons, running-game dialog);
   `draft_compare`'s colour checks' first run: no fill or text colour apart. QUESTIONS points at it.
-- **2026-10-30** — k5f merged (`4305c09d`): the panel exports a PES 2017 Texport as the first free
+- **2026-10-30** — k5f merged (`740388f4`): the panel exports a PES 2017 Texport as the first free
   `TEXPORT0000000N`, written from a measured template and the save's records. The records'
   unmodeled bytes are zero, as on 18-21; the game's import of it is the next check.
 - **2026-10-30** — k5f checked in game: PES 2017 lists, offers and imports the panel's Texport of
   /3/; the team's Team TOML after the import equals it but for the edit flags the import
   sets, so the zeroed bytes no field models are not read.
-- **2026-10-30** — 0.0.1cv cv4 merged (`897a4fc0`): the shell's audit findings: Reset window
+- **2026-10-30** — 0.0.1cv cv4 merged (`ba379914`): the shell's audit findings: Reset window
   centres on the window's own monitor, the help's tool chapters follow the rail, the
   data-location topic leads with the bundled `data/` case; `PathKind` dropped in review.
-- **2026-10-30** — 0.0.1cv cv3 merged (`a4a040b1`, gates green: 5405 tests): the Save editor
+- **2026-10-30** — 0.0.1cv cv3 merged (`7e219402`, gates green: 5405 tests): the Save editor
   view's audit findings, PgUp/PgDn among them; the maintainer corrected two Texport facts (the
   game's import names the team from the DLC's bin; TEXPORT numbers are hexadecimal).
-- **2026-10-30** — 0.0.1cv cv8 merged (`4f8c235e`): the Ruleset editor's window in 0.0.1 as
+- **2026-10-30** — 0.0.1cv cv8 merged (`dc41ca85`): the Ruleset editor's window in 0.0.1 as
   "Ruleset editor (WIP)"; its empty settings header led to `has_settings_view` (cv8b).
-- **2026-10-30** — 0.0.1cv cv3b merged (`9eaf553a`): Texport names in hexadecimal, paged
+- **2026-10-30** — 0.0.1cv cv3b merged (`ac53806e`): Texport names in hexadecimal, paged
   selections kept in view, cv3's SWE-2 round 1 findings and k5mut's remote survivors.
-- **2026-10-30** — 0.0.1cv cv3's SWE-2 loop ended (round 2: 1 accepted, fixed at `3ea74954`);
-  `mutants-diff c2079631^1` started over d1b2 and cv3/cv3b/cv4/cv8.
-- **2026-10-30** — 0.0.1cv cv8b merged (`478f89c6`): every squad is 23 (`squad_size` out of the
+- **2026-10-30** — 0.0.1cv cv3's SWE-2 loop ended (round 2: 1 accepted, fixed at `5dd0f6fd`);
+  `mutants-diff 5da2edf0^1` started over d1b2 and cv3/cv3b/cv4/cv8.
+- **2026-10-30** — 0.0.1cv cv8b merged (`b38307f2`): every squad is 23 (`squad_size` out of the
   rules format, logic v1's hash `b2c03566…`), the event logo from any picture, `has_settings_view`.
 - **2026-10-30** — 0.0.1cv Astra A7 over the Ruleset editor: 8 of 8 accepted; cv8c merged
-  (`8e533110`): a typed tier id saved and guarded, the summary states the logic's rules, the
-  bottom bar's "No problems found"; gates-changed 80cb2368 green.
+  (`cc3527e1`): a typed tier id saved and guarded, the summary states the logic's rules, the
+  bottom bar's "No problems found"; gates-changed c813708a green.
 - **2026-10-30** — 0.0.1cv cv8's review loops ended: SWE-2 A7r1 3 accepted, Astra A7b 2 (a
   typed id lost to a click on an earlier id field, fixed), SWE-2 A7b1 0; `just mutants
   ruleset_editor` queued.
@@ -2942,58 +2942,58 @@ worklog passed 7,000 lines.
 - **2026-10-30** — 0.0.1cv cv8e: the drafts' demo mode (`demo=1`): no controls, the window fitted
   to the page and dragged across it; the drafts stay free to rename linked sections, whose links
   then open the tool's first section.
-- **2026-10-30** — 0.0.1cv cv6a and cv6b merged (`267e5c52`, gates green, 5450 tests): the
+- **2026-10-30** — 0.0.1cv cv6a and cv6b merged (`468b49e0`, gates green, 5450 tests): the
   cross-family review's code fixes, every loop ended; `mutants-diff` over them running; the
   Ruleset editor's whole-crate run done, its 16 survivors in cv8d's brief.
-- **2026-10-30** — 0.0.1cv cv8d merged (`a9b5c783`, gates green): the Ruleset editor's unbuilt
+- **2026-10-30** — 0.0.1cv cv8d merged (`e1f7cf41`, gates green): the Ruleset editor's unbuilt
   sections link to their demo online, Save as suggests the opened file's name, the Summary drops
   "Squad of 23."; the whole-crate run's survivors tested. The drafts' demo greys the early tools.
 - **2026-10-31** — 0.0.1cv: A3-3 checked in the built window (the popover's Position pick by
-  pointer); cv6's diff run missed nothing, and cv6t (merged `8a73e438`) tested its last
+  pointer); cv6's diff run missed nothing, and cv6t (merged `064a8eec`) tested its last
   survivors and made a test wait fail fast. cv9 drafted: PES 2017's own pitch, the y-4 floor.
-- **2026-10-31** — 0.0.1cv cv9 merged (`8bbf6053`, gates green): the Tactics pitch draws the open
+- **2026-10-31** — 0.0.1cv cv9 merged (`d93c48d6`, gates green): the Tactics pitch draws the open
   save's version's own formation screen, PES 2017's measured from its texture, and a dragged
   outfielder stops at y 4 as in game. The crate map's button lifts each lib as high as it goes.
 - **2026-10-31** — cv9's diff run: one survivor, equivalent and excluded. The Ruleset editor's
-  General labels say the event page and logo are optional (cv8f, `73f5bac1`). The mutation
-  runs read cargo-mutants' listing as UTF-8 (`ae61e0fe`); the 0.0.1 whole-crate runs started.
+  General labels say the event page and logo are optional (cv8f, `6c7fcd18`). The mutation
+  runs read cargo-mutants' listing as UTF-8 (`cb88578a`); the 0.0.1 whole-crate runs started.
 - **2026-10-31** — The release exe carries no path of the machine that built it: `just release` remaps the home folder and the repository through `cargo --config` (keeping the static C runtime) and refuses an exe that still holds one (cv12).
 - **2026-10-31** — A ruleset may allow illegal formations (the Whack Patch's cups, Autumn 26
-  and DBC7): `universal.illegal_formations`, written and summarized (cv14a, `b83ab5bd`); the
-  Ruleset editor's Universal rules page edits every universal rule (cv14c, `fb937653`). The
+  and DBC7): `universal.illegal_formations`, written and summarized (cv14a, `3fcc6976`); the
+  Ruleset editor's Universal rules page edits every universal rule (cv14c, `22d27b6c`). The
   Save editor's pitch under the flag waits for the whole-crate runs; P46's check is 0.0.2's.
 - **2026-10-31** — The Open menu names a save by its version, with 4ccEditor's Ctrl+5 to
   Ctrl+1 (cv10), and the pitch badges keep their medal outlines through an edit (cv11), merged
-  `93ec67b0`; the pitch under a ruleset allowing illegal formations, merged `d431e50f` (cv14b).
+  `f6bba2af`; the pitch under a ruleset allowing illegal formations, merged `3eab53f3` (cv14b).
   Their mutation run: 38 caught, 5 unviable, no survivor.
 - **2026-10-31** — cv16a: a height row names its players and draws, a GigaHeight team its nearest
   quota system (P47's logic), and `check-aatf --rules dbc7` takes a built-in ruleset (cv15);
-  merged `948add9e`, gated; the DBC6 save keeps every old line and gains 155.
+  merged `80425dda`, gated; the DBC6 save keeps every old line and gains 155.
 - **2026-10-31** — cvA1's rework closed: a renamed PES 15 or 16 Texport lists its new name, and
-  a Team TOML refusal names the value as written (`1f1e6cf1`); SWE-2 0 of 2, Astra no concerns,
+  a Team TOML refusal names the value as written (`a881b621`); SWE-2 0 of 2, Astra no concerns,
   the mutation run 7 caught. Left: pes_savefile's whole-crate run after the cut.
 - **2026-10-31** — cv16b: a height row's players and draws stand in lines under its sentence
   in Live AATF, Multi-team AATF, its copy and `check-aatf`; Multi-team AATF is 900 wide (cv17);
-  merged `308c991b`, gated. Five collaborator requests and a Tactics bug became cv18-cv22.
-- 2026-10-31 — 0.0.1cv cv22 merged `ba756b5a`: an instruction that takes no target puts back its target byte as
+  merged `6993763e`, gated. Five collaborator requests and a Tactics bug became cv18-cv22.
+- 2026-10-31 — 0.0.1cv cv22 merged `7b8d1675`: an instruction that takes no target puts back its target byte as
   opened; cv16's reviews ended (SWE-2 4/17, Astra 3); DBC heights confirmed exact; cv18-cv21 drafted and
-  planned, cv23-cv24 added. `gates-changed 308c991b` green, 12 binaries, 1515 tests.
-- 2026-10-31 — 0.0.1cv cv18+cv19 merged `8ec3a26d` (a matching team's whole squad; a team row's double click);
+  planned, cv23-cv24 added. `gates-changed 6993763e` green, 12 binaries, 1515 tests.
+- 2026-10-31 — 0.0.1cv cv18+cv19 merged `dcd441ac` (a matching team's whole squad; a team row's double click);
   cv16b and cv17 checked in the built window (DBC6 under DBC7); cv26 found there (Multi-team AATF's range
-  wheel froze the window ~2 min). Scripts likely to run again go in `scripts/` (`7111fb08`).
-- 2026-10-31 — 0.0.1cv cv20 merged `31f03c12` (the wheel steps the Tactics sliders and toggles); cv24 reworked
+  wheel froze the window ~2 min). Scripts likely to run again go in `scripts/` (`3c563ba9`).
+- 2026-10-31 — 0.0.1cv cv20 merged `2b21b3e9` (the wheel steps the Tactics sliders and toggles); cv24 reworked
   twice (the logo resampled premultiplied; the maintainer kept egui's swatches, the hex field spans the popup).
-  Reusable scratch scripts moved to `scripts/` (`8cca28ed`), the agents' own to `~/.claude/tools/` (`ebe92a99`).
-- 2026-11-01 — 0.0.1cv cv26 merged `572f4f0f`: Multi-team AATF's range opens on one team, its last end
+  Reusable scratch scripts moved to `scripts/` (`7d8ba469`), the agents' own to `~/.claude/tools/` (`eb22beb0`).
+- 2026-11-01 — 0.0.1cv cv26 merged `5d7fb22b`: Multi-team AATF's range opens on one team, its last end
   clamped to the first, checked once the ends rest 500 ms (the wheel's ~2-minute freeze). cv18-cv26 all merged.
-- 2026-11-01 — Candidate 0.0.1d staged at `1fe6c9bf` for the maintainer and the DBC7 organizer (full gates green, 5534
+- 2026-11-01 — Candidate 0.0.1d staged at `884315ac` for the maintainer and the DBC7 organizer (full gates green, 5534
   tests): the height findings name their players, plus cv14-cv26; its `check-aatf --rules dbc7` prints cv16b's lines.
-- 2026-11-01 — 0.0.1cv cv28 merged `de8cf1a2`: Live AATF pops out into an embedded window (one column, its close
+- 2026-11-01 — 0.0.1cv cv28 merged `6bd86314`: Live AATF pops out into an embedded window (one column, its close
   turning Live AATF off, `live_window`), the bottom dock shows a grip. cv29 drafted: the dock gets the window's close.
-- 2026-11-01 — 0.0.1cv cv29 merged `10bbbbf3`: Live AATF's dock ends with the window's close button, turning Live AATF off;
+- 2026-11-01 — 0.0.1cv cv29 merged `149e99db`: Live AATF's dock ends with the window's close button, turning Live AATF off;
   the pop-out icon takes a slot as wide as the window's dock icon, so both pairs stand alike. The Comparator's and the
   patch panel's rows join cv30's `Click to switch to this player` (the maintainer).
-- 2026-11-01 — 0.0.1cv cv30 merged `c2c23f6f`: a team's AATF issues lead with its team-wide rows (Live AATF, Multi-team
+- 2026-11-01 — 0.0.1cv cv30 merged `7b778cf4`: a team's AATF issues lead with its team-wide rows (Live AATF, Multi-team
   AATF and its copy); a row that switches players says `Click to switch to this player`; egui's emoji fonts draw `/cookie☆/`.
 - 2026-11-01 — 0.0.1cv cv31: the Ruleset editor's Blank template reads "universal rules set" (the maintainer's wording).
 - 2026-11-01 — Tooling: a mutation run's local half runs on the run's snapshot, extracted, not the working tree, so
@@ -3015,21 +3015,21 @@ worklog passed 7,000 lines.
   one became P49; the release scripts' SWE-2 round 1 accepted 9, reworked (`rel-r1`), round 2 running.
 - 2026-11-01 — cv33 closed (its mutants-diff: one equivalent survivor); cv23a's wheel and cv27's outline looked
   at in the built window; the outline showed the rows lack the draft's inset (cv37); cv13_who had timed the crash notice.
-- 2026-11-01 — Candidate 0.0.1e staged at `1c1f2964` (full gates green, 5580 tests): cv23a, cv27-cv37 and the
+- 2026-11-01 — Candidate 0.0.1e staged at `9a890f30` (full gates green, 5580 tests): cv23a, cv27-cv37 and the
   emoji fonts since 0.0.1d, each checked by the lead in the staged bundle; cv37's mutants-diff left no survivor.
-- 2026-11-01 — Candidate 0.0.1f staged at `e39e0a9d` (full gates green, 5584 tests): cv38, the wheel over a
+- 2026-11-01 — Candidate 0.0.1f staged at `57fb85f4` (full gates green, 5584 tests): cv38, the wheel over a
   Tactics toggle wraps round (the maintainer's ask), checked in the staged exe; cv23d's test and its flake fixed.
 - 2026-11-01 — 8.36c0: the full-look patch's Acceptance written (24 Team compiler scenarios, 22 restating the
   table ones on the patch; SE-PAT-07 to 11; EU-SET-12, 13), the `.copy` findings, four decisions; c1-c4 sliced.
-- 2026-11-01 — 8.36c1 merged (`ed958e8f`): the aesthetics patch carries each player's whole look on every version,
+- 2026-11-01 — 8.36c1 merged (`81301b9e`): the aesthetics patch carries each player's whole look on every version,
   apply-patch makes the record his; SE-PAT-07 to 11. SWE-2 sidekick, one rework.
 - 2026-11-01 — cv40: three save_editor view tests raced a worker's reply under load (the held-press, event logo and wheel tests);
-  each now waits for the reply it depends on. `gates-changed 99c9a36a` green: the 8.36c1 merge is gated.
+  each now waits for the reply it depends on. `gates-changed b5f8bd25` green: the 8.36c1 merge is gated.
 - 2026-11-01 — 0.0.1f1d1-3 on branch `f1d`: a Team TOML bench of 12 whose import fills the other nine as the game does,
   plain comments, both instruction sides listed under illegal formations, cv40 on the candidate. Review loop ended; mutants-diff 37 caught, 1 unviable.
 - 2026-11-01 — The Save editor draft catches up with f1d2: under a ruleset allowing illegal formations every instruction combo lists both
   sides (the code and plan landed without it). Rendered: DBC7 12 options per combo, Spring 26 split 8 and 5.
-- 2026-11-01 — Candidate 0.0.1g staged (`4cc-studio-temp/candidate-0.0.1g/`, `release/0.0.1-candidate` at `4dcef0a8`): full gates
+- 2026-11-01 — Candidate 0.0.1g staged (`4cc-studio-temp/candidate-0.0.1g/`, `release/0.0.1-candidate` at `40b274e5`): full gates
   green (5590 tests), the release exe byte-identical to the staged one; f1d is its only change since 0.0.1f.
 - 2026-11-02 — f1e3 planned and drafted (the maintainer): the import's boxes read Stats, Aesthetics, Gameplan; the free-kick
   motion goes with Aesthetics (Copy and Swap stats stop moving it); `[team]` colours and kits go with Aesthetics.
@@ -3051,18 +3051,21 @@ worklog passed 7,000 lines.
 - 2026-11-02 — Gate 0, `just line-endings`: a tracked file whose working copy has other line endings than
   .gitattributes asks fails the gates (ten CRLF copies had built up from Python's text-mode writes; the maintainer).
 - 2026-11-02 — 0.0.1f1f done: Ctrl+C/Ctrl+V on rows and the Tactics selectors, undo runs, Tab + Space settling, the
-  page keys, one-step arrows, two copies at once, the captain's choice card; candidate fast-forwarded to `92d1772b`.
+  page keys, one-step arrows, two copies at once, the captain's choice card; candidate fast-forwarded to `f22a76ae`.
 - 2026-11-02 — 0.0.1h's built-app look: checks 1-3 pass (check 1 in PES 2017), Ctrl+C/V and undo runs as
   planned; Undo dead while a button holds the keyboard goes to the maintainer as P50.
 - 2026-11-02 — f1g's four slices on branch `f1g` (P49+P50, Live AATF's heads and copy, Invert value scrolling,
   PgUp/PgDn); 0.0.2-poc's move into 0.0.1 cancelled; the update check approved for 0.0.1 (f1g9).
-- 2026-11-02 — f1g10 on `f1g` (`5f06d2e7`: the comparator's hyphenated heads, Live AATF's All clean and a
+- 2026-11-02 — f1g10 on `f1g` (`6ab65df9`: the comparator's hyphenated heads, Live AATF's All clean and a
   Copy never greyed); f1g7a: CI's release workflow designed (`distribution.md` "Release builds in CI").
 - 2026-11-03 — f1g7-f1g13 merged into main: CI's release workflow (the test tag's draft checked and
   deleted), the update check without Update now (0.0.2), the four fixes from the look at 0.0.1i-pre2.
-- 2026-11-03 — f1g14 (`792f4f2a`): a gap click in a combo's list picks the nearer row, the cards'
+- 2026-11-03 — f1g14 (`699a77ab`): a gap click in a combo's list picks the nearer row, the cards'
   labels in the fields' colour, `Cards used for`; its mutation run moved after the cut.
-- 2026-11-03 — the maintainer's look at 0.0.1i passed; f1g15 (`c2460f32`): Stronger foot's
-  chosen side white, f1g13 having made the other side white; logic version 1 frozen (`c5eea63e`).
-- 2026-11-03 — 0.0.1 released: tag `v0.0.1` (`cc0befb6`) built by CI run 41564671137, the
+- 2026-11-03 — the maintainer's look at 0.0.1i passed; f1g15 (`ed74a327`): Stronger foot's
+  chosen side white, f1g13 having made the other side white; logic version 1 frozen (`f6055ebe`).
+- 2026-11-03 — 0.0.1 released: tag `v0.0.1` (`c97ce914`) built by CI run 41564671137, the
   clean-machine check passed on the notebook, published by the maintainer at 03:16 UTC (f2).
+- 2026-11-04 — f3: branches and worktrees pruned to `main` and the kept worktrees, unmerged work
+  kept as `refs/archive/*`; 35 commit subjects reworded with `git filter-repo` (trees identical,
+  `v0.0.1` moved to its twin), the docs' cited hashes remapped.
