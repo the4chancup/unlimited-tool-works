@@ -7173,7 +7173,8 @@ briefs, review loops, gates and mutation runs as for any step.
     (the maintainer: Astra's loop before the cut, SWE-2's after; f1e and f1e2 had SWE-2's two
     rounds and get Astra's too); (2) the exe's size crate by crate, `cargo bloat
     --release -p studio --crates` on the release's commit, into `spec/core/distribution.md`
-    "Size budget"; (3) l2's other half, ST-RUN-04's `team-compiler check` from a terminal
+    "Size budget": done 2026-11-04, 41.6 MiB, the update check's HTTPS client the largest new
+    part (`.tmp/after_cut/bloat/`); (3) l2's other half, ST-RUN-04's `team-compiler check` from a terminal
     printing there, on the release bundle (the Team compiler is outside 0.0.1): done
     2026-11-04 with the double-click half (l2's line); (4) the GPU
     DDS encoder (`dds_convert` `gpu.rs`, `start(VULKAN | METAL)`, unwired until after 0.1.0:

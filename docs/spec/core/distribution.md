@@ -58,7 +58,10 @@ past the "about 30 MB" and inside the 50 MB ceiling, and again features: code gr
 `studio_core`'s shell up 0.36; `egui` up 0.57 as the views use more of it; `team_widgets`, `egui_extras`, the
 help window's Markdown and its text shaping about 0.6 together), with `aatf` up 0.28 and `std`
 up 0.4; read-only data is 12.0 MiB, embedded files 5.3 MiB of it (the body font, 0.34 MiB,
-the largest new one). The tables are `cargo bloat --release -p studio --crates`, whose
+the largest new one). Measured for the release itself (0.0.1, commit `c97ce914`):
+41.6 MiB (43,661,824 bytes here; the published exe, built by CI, 43,813,376), code 26.9 MiB:
+the update check's HTTPS client newly linked (`ureq`, `rustls` and `ring`, 0.83 MiB), the Save
+editor up 0.4 to 1.5 MiB, `std` up 0.3, `studio_core` up 0.25; read-only data 13.5 MiB. The tables are `cargo bloat --release -p studio --crates`, whose
 per-crate split is an estimate, as the tool itself says. The release profile stays the default:
 `panic = "abort"` would cut the unwinding tables, but the GUI reports a compile thread's panic
 instead of closing, and LTO trades longer builds for size. The one cut taken is `rhai`'s

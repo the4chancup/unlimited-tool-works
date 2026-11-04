@@ -3072,3 +3072,5 @@ worklog passed 7,000 lines.
 - 2026-11-04 — f6: 0.0.1's whole-crate mutation runs started (team_widgets, pes_savefile, save_editor);
   ST-RUN-04 checked on the published Windows bundle (no console on a double-click, `team-compiler
   check` prints in a terminal), which closes l2 and f6 (3).
+- 2026-11-04 — f6 (2): `cargo bloat` on 0.0.1's commit: 41.6 MiB, up 4.0 from `745ea9f4`, the update
+  check's HTTPS client (0.83 MiB) the largest new part; into spec "Size budget".
