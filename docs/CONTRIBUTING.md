@@ -333,6 +333,16 @@ Requirements:
   that missed this let three GUI tests apply their patch to the maintainer's PES 21 save.
   Machine state is held to the same rule: a test gets the running PES games (the process list)
   through the tool's probe, which it sets, and never reads them directly.
+- **Tests are code.** "Code style" holds for them as for the code they test: they read cleanly,
+  and they carry no bloat. A scene, an input sequence or a set of checks that two tests share
+  lives in one helper of the test module, named for what it does, and each test keeps only its
+  own premises and assertions; a new case of an existing test's behaviour is a row in that
+  test's table of cases (the `for (at, up, stored, ...) in [...]` shape), not a copy of its
+  body. Before writing a helper, use the crate's own (`test_support.rs`, the test module's
+  shape and node finders). A GUI test needs a scene and a few frames for each assertion, so
+  copied setup multiplies fastest there: slice tw1 of the 2026-11-04 `team_widgets` run
+  copied fifty lines of the lit-area test into a second one, until review moved them into
+  `held_dims` and `check_dims`.
 - **Acceptance IDs.** Each tool plan has an "Acceptance" section listing that tool's user-observable
   behavior as scenarios with stable IDs, written before the phase that delivers them (procedure in
   `AGENTS.md` "Working documents"). Format, one entry per behavior:

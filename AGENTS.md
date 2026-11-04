@@ -164,7 +164,9 @@ workspace (the dependents' tests run at the next checkpoint, `CONTRIBUTING.md` "
 verification"); the sidekick's pasted gate tails are a claim. The **honesty sweep** looks for a hidden failure: `#[allow`, `#[expect`,
 `#[ignore`, `.ok();`, `let _ =`, `drop(` on a `Result`, `unwrap_or_default`, `unwrap_or(`, and
 a `while` or `loop` in a test with no bound (`CONTRIBUTING.md`: a test fails, it never hangs). The **design sweep** looks
-for code that passes and is worse, the thing neither the gates nor a model's training penalize:
+for code that passes and is worse, the thing neither the gates nor a model's training penalize,
+over the diff's tests as over its production code (`CONTRIBUTING.md`: tests are code), the
+first item there a test that repeats another's scene or checks instead of sharing a helper:
 `impl .* for` (a new trait: does it have two real implementors?), `dyn `, `_ =>` on one of our
 enums, `== Engine::`/`!= Engine::` (a test against one engine, which a third one would pass
 silently), `.clone()`/`.to_vec()` on bulk data, `as ` casts, two functions differing in a name and a
