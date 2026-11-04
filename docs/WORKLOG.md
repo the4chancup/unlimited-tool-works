@@ -7205,8 +7205,10 @@ briefs, review loops, gates and mutation runs as for any step.
     from its own worktree and queued on the lock: f1g14 `mutants-diff 7cb9889c crates/studio_core
     crates/tools/ruleset_editor` at `699a77ab`, f1g15 `mutants-diff ed74a327 crates/libs/aatf` at
     `f6055ebe` (logs `.tmp/after_cut/f1g14m/`). f1g15's ran 2026-11-04: 0 mutants, correctly
-    (its `aatf` diff is a doc comment and a test); f1g14's and f1e3r's refused that evening
-    (pes_savefile's remote half uncollected) and are relaunched from their worktrees;
+    (its `aatf` diff is a doc comment and a test); f1g14's (relaunched that evening): 9 caught,
+    3 missed, all `studio_core` `widgets/combo.rs`: the gap reach at half the spacing and the
+    current row marked selected now tested (combo1, SWE-2), the below strip's `+` -> `*`
+    equivalent and excluded in `.cargo/mutants.toml`;
     (8) the whole-crate runs of `team_widgets`, `pes_savefile` (cvA1's last item) and
     `save_editor`, started 2026-11-04 at `7400d3dd` (`.tmp/after_cut/mutants_whole.sh`, one
     log and summary folder per crate there), every survivor triaged. `team_widgets` ended

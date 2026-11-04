@@ -47,6 +47,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use egui::accesskit::{self, Role, Toggled};
+
     use super::*;
 
     /// The five items of the test combo.
@@ -62,17 +64,23 @@ mod tests {
         ids: Vec<egui::Id>,
         button: egui::Rect,
         scroll: bool,
+        spacing: f32,
+        nodes: Vec<accesskit::Node>,
     }
 
     impl Window {
         fn new(scroll: bool) -> Window {
+            let ctx = egui::Context::default();
+            ctx.enable_accesskit();
             Window {
-                ctx: egui::Context::default(),
+                ctx,
                 selected: 1,
                 rows: Vec::new(),
                 ids: Vec::new(),
                 button: egui::Rect::NOTHING,
                 scroll,
+                spacing: 0.0,
+                nodes: Vec::new(),
             }
         }
 
@@ -90,14 +98,16 @@ mod tests {
             let mut rows = Vec::new();
             let mut ids = Vec::new();
             let mut button = egui::Rect::NOTHING;
+            let mut spacing = 0.0;
             let scroll = self.scroll;
-            let output = self.ctx.run_ui(input, |ui| {
+            let mut output = self.ctx.run_ui(input, |ui| {
                 if scroll {
                     ui.spacing_mut().combo_height = 40.0;
                 }
                 button = egui::ComboBox::from_id_salt("items")
                     .selected_text(ITEMS[selected])
                     .show_ui(ui, |ui| {
+                        spacing = ui.spacing().item_spacing.y;
                         for (index, item) in ITEMS.iter().enumerate() {
                             let response = combo_item(ui, &mut selected, index, *item);
                             rows.push(response.rect);
@@ -107,11 +117,24 @@ mod tests {
                     .response
                     .rect;
             });
+            let nodes = output
+                .platform_output
+                .accesskit_update
+                .take()
+                .expect("AccessKit is enabled on the context")
+                .nodes
+                .into_iter()
+                .map(|(_, node)| node)
+                .collect();
+            // Nothing renders here, so the frame's texture deltas are dropped
+            // on purpose.
             output.drop_without_applying_deltas();
             self.selected = selected;
             self.rows = rows;
             self.ids = ids;
             self.button = button;
+            self.spacing = spacing;
+            self.nodes = nodes;
         }
 
         /// A press and a release at `pos`, one frame each.
@@ -134,18 +157,19 @@ mod tests {
         }
     }
 
-    /// A click in the gap between the second and third rows, nearer
-    /// `third` (`0.5` above it) or `second` (`0.5` below it).
-    fn click_the_gap(window: &mut Window, nearer_third: bool) {
+    /// A click in the gap between the second and third rows, `from_edge`
+    /// points from the nearer one's edge (`third`'s top or `second`'s
+    /// bottom).
+    fn click_the_gap(window: &mut Window, nearer_third: bool, from_edge: f32) {
         let (second, third) = (window.rows[1], window.rows[2]);
         assert!(
             third.min.y - second.max.y > 1.0,
             "premise: a gap between the rows ({second:?}, {third:?})"
         );
         let y = if nearer_third {
-            third.min.y - 0.5
+            third.min.y - from_edge
         } else {
-            second.max.y + 0.5
+            second.max.y + from_edge
         };
         window.click(egui::pos2(third.center().x, y));
     }
@@ -166,13 +190,13 @@ mod tests {
     fn a_click_in_the_gap_picks_the_nearer_row() {
         let mut window = Window::new(false);
         open(&mut window);
-        click_the_gap(&mut window, true);
+        click_the_gap(&mut window, true, 0.5);
         assert_eq!(window.selected, 2, "the nearer (third) row picked");
         window.frame(Vec::new());
         assert_eq!(window.rows.len(), 0, "the list closed");
 
         open(&mut window);
-        click_the_gap(&mut window, false);
+        click_the_gap(&mut window, false, 0.5);
         assert_eq!(window.selected, 1, "the nearer (second) row picked");
     }
 
@@ -215,5 +239,47 @@ mod tests {
         );
         window.click(egui::pos2(third.center().x, third.min.y - 0.5));
         assert_eq!(window.selected, 2, "the nearer (third) row picked");
+    }
+
+    // A click just short of the gap's middle still picks the nearer
+    // row: the rows' click reach is half the gap, not less.
+    // ST-COMBO-01
+    #[test]
+    fn a_click_just_short_of_the_gaps_middle_picks_the_nearer_row() {
+        let mut window = Window::new(false);
+        open(&mut window);
+        let (second, third) = (window.rows[1], window.rows[2]);
+        let gap = third.min.y - second.max.y;
+        assert_eq!(gap, window.spacing, "premise: the gap is one item spacing");
+        let short = gap / 2.0 - 0.1;
+        click_the_gap(&mut window, true, short);
+        assert_eq!(window.selected, 2, "the nearer (third) row picked");
+
+        open(&mut window);
+        click_the_gap(&mut window, false, short);
+        assert_eq!(window.selected, 1, "the nearer (second) row picked");
+    }
+
+    // The open list marks the current item's row selected, and no
+    // other (AccessKit's toggled state on the row buttons).
+    #[test]
+    fn the_open_list_marks_the_current_row_selected() {
+        let mut window = Window::new(false);
+        open(&mut window);
+        let rows: Vec<&accesskit::Node> = window
+            .nodes
+            .iter()
+            .filter(|node| {
+                node.role() == Role::Button
+                    && node.label().is_some_and(|label| ITEMS.contains(&label))
+            })
+            .collect();
+        assert_eq!(rows.len(), ITEMS.len(), "premise: the rows' nodes");
+        let marked: Vec<Option<&str>> = rows
+            .iter()
+            .filter(|node| node.toggled() == Some(Toggled::True))
+            .map(|node| node.label())
+            .collect();
+        assert_eq!(marked, [Some(ITEMS[1])], "the current row, and it alone");
     }
 }
