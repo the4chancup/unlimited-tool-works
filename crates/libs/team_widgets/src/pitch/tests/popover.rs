@@ -849,6 +849,50 @@ fn the_popover_scrolls_with_the_pitch() {
     near(popover_after.min, popover_before.min + moved, 0.5);
 }
 
+// `TacticsView::popover_area` is the open popover's `Area` id — the id
+// `Memory::area_rect` reads the popover's rect by, whatever other popup
+// is open — and `None` while it is closed.
+#[test]
+fn popover_area_is_the_open_popovers_area_id_or_none() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let formation = tactics.presets[0].formations[0].clone();
+    let index = 3;
+    assert_eq!(view.popover_area(), None, "closed: no area id");
+
+    let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    window.click_pitch(
+        marker_point(&nodes, &formation.players, index),
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+    );
+    window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let area = view.popover_area().expect("open: the popover's area id");
+    let popover = popover_rect(&window.ctx, &view).expect("the open popover's rect");
+    assert_eq!(
+        window.ctx.memory(|memory| memory.area_rect(area)),
+        Some(popover),
+        "the id's rect is the popover's"
+    );
+
+    let grass = grass_point(canvas, &formation.players, egui::Rect::NOTHING);
+    window.pitch(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(grass, true),
+    );
+    assert_eq!(view.popover, None, "premise: the press closed it");
+    assert_eq!(view.popover_area(), None, "closed again: no area id");
+}
+
 // A primary press anywhere outside the popover closes it, as Close
 // does, and as the draft's document `pointerdown` does: a press on the
 // grass closes it; a press inside it, or inside a popup it opened — the

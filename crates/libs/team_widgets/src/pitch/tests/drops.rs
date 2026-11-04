@@ -1668,6 +1668,69 @@ fn overlap(a: egui::Rect, b: egui::Rect) -> f32 {
     width * height
 }
 
+/// Slot `index`'s marker pressed on his badge centre and held at stored
+/// `held`: the canvas and the held frame's darkening fills.
+fn held_dims(
+    window: &mut Headless,
+    tactics: &mut TeamTactics,
+    view: &mut TacticsView,
+    roster: &[RosterRow<'_>],
+    index: usize,
+    held: (u8, u8),
+) -> (egui::Rect, Vec<egui::Rect>) {
+    let players = tactics.presets[0].formations[0].players;
+    let (nodes, _) = window.pitch(PesVersion::Pes21, tactics, view, roster, vec![]);
+    let canvas = canvas_rect(&nodes);
+    let press = centres_of(canvas, &players)[index];
+    let held = spot_centre(canvas, held.0, held.1);
+    window.pitch(
+        PesVersion::Pes21,
+        tactics,
+        view,
+        roster,
+        pointer_at(press, true),
+    );
+    let (shapes, _) = window.pitch_shapes(
+        PesVersion::Pes21,
+        tactics,
+        view,
+        roster,
+        vec![egui::Event::PointerMoved(held)],
+    );
+    (canvas, dim_fills(&shapes))
+}
+
+/// `dims` are a held frame's darkening fills over `lit` on `canvas`:
+/// each positive-sized and inside the canvas, none off the lit
+/// rectangle or overlapping another, together covering the canvas less
+/// the lit rectangle.
+fn check_dims(canvas: egui::Rect, lit: egui::Rect, dims: &[egui::Rect]) {
+    assert!(!dims.is_empty(), "held: the rest is darkened");
+    for (i, dim) in dims.iter().enumerate() {
+        assert!(
+            dim.width() > 0.0 && dim.height() > 0.0,
+            "fill {dim:?} is no sliver between two shared edges"
+        );
+        assert!(
+            canvas.expand(0.5).contains_rect(*dim),
+            "fill {dim:?} inside the canvas"
+        );
+        assert!(overlap(*dim, lit) <= 0.5, "fill {dim:?} off the lit area");
+        for other in &dims[i + 1..] {
+            assert!(
+                overlap(*dim, *other) <= 0.5,
+                "fills {dim:?} and {other:?} do not overlap"
+            );
+        }
+    }
+    let darkened: f32 = dims.iter().map(|dim| dim.area()).sum();
+    assert!(
+        (darkened - (canvas.area() - lit.area())).abs() <= 1.0,
+        "the fills cover the canvas less the lit area: {darkened} against {}",
+        canvas.area() - lit.area()
+    );
+}
+
 // PARTY HARD pressed on his portrait, 15 left of and 40 above his badge
 // centre: the pointer moved 6 to the right from the press takes his
 // marker 2 units right (6 / 2.827 rounds to 2), to (22, 26); 7 leaves him
@@ -2032,54 +2095,22 @@ fn a_held_starter_lights_his_rated_areas_and_darkens_the_rest() {
     let rows = fixture_rows(PesVersion::Pes21);
     let mut roster = roster_rows(&rows);
     party_hard(&mut tactics, &mut roster);
-    let players = tactics.presets[0].formations[0].players;
     let (shapes, _) =
         window.pitch_shapes(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
     assert_eq!(dim_fills(&shapes), [], "nothing held: nothing darkened");
-    let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
-    let canvas = canvas_rect(&nodes);
-    let press = centres_of(canvas, &players)[8];
-    let held = spot_centre(canvas, 30, 26);
 
-    window.pitch(
-        PesVersion::Pes21,
-        &mut tactics,
-        &mut view,
-        &roster,
-        pointer_at(press, true),
-    );
-    let (shapes, _) = window.pitch_shapes(
-        PesVersion::Pes21,
-        &mut tactics,
-        &mut view,
-        &roster,
-        vec![egui::Event::PointerMoved(held)],
-    );
+    let (canvas, dims) = held_dims(&mut window, &mut tactics, &mut view, &roster, 8, (30, 26));
     let lit = egui::Rect::from_min_max(
         canvas.min,
         canvas.min + egui::vec2(SPOT_X0 + SPOT_XS * 20.5, SPOT_Y0 - SPOT_YS * 15.5),
     );
-    let dims = dim_fills(&shapes);
-    assert!(!dims.is_empty(), "held: the rest is darkened");
-    for (i, dim) in dims.iter().enumerate() {
-        assert!(
-            canvas.expand(0.5).contains_rect(*dim),
-            "fill {dim:?} inside the canvas"
-        );
-        assert!(overlap(*dim, lit) <= 0.5, "fill {dim:?} off the lit area");
-        for other in &dims[i + 1..] {
-            assert!(
-                overlap(*dim, *other) <= 0.5,
-                "fills {dim:?} and {other:?} do not overlap"
-            );
-        }
-    }
-    let darkened: f32 = dims.iter().map(|dim| dim.area()).sum();
-    assert!(
-        (darkened - (canvas.area() - lit.area())).abs() <= 1.0,
-        "the fills cover the canvas less the lit area: {darkened} against {}",
-        canvas.area() - lit.area()
+    assert_eq!(
+        lit.left_top(),
+        canvas.left_top(),
+        "premise: the lit area reaches the canvas' left and top edges, so its edges duplicate theirs"
     );
+    check_dims(canvas, lit, &dims);
+    let held = spot_centre(canvas, 30, 26);
     window.pitch(
         PesVersion::Pes21,
         &mut tactics,
@@ -2114,5 +2145,49 @@ fn a_held_starter_lights_his_rated_areas_and_darkens_the_rest() {
         dim_fills(&shapes),
         [],
         "the keeper pressed: nothing darkened"
+    );
+}
+
+// The lit area again, for a rated position whose whole row sits inside
+// the pitch's edges: PARTY HARD rated A at AMF alone — AMF's row (y 26
+// to 34, x 21 to 83) reaches no edge, so the lit rectangle sits half a
+// unit out from the row on every side through the spot mapping, x 20.5
+// to 83.5 and y 34.5 to 25.5 — and the darkened fills cover the canvas
+// less exactly it, none overlapping another or off it.
+// SE-GUI-42
+#[test]
+fn an_interior_rated_area_lights_half_a_unit_out_on_every_side() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let mut roster = roster_rows(&rows);
+    party_hard(&mut tactics, &mut roster);
+    let row = &mut roster[usize::from(tactics.starting_eleven[8])];
+    row.rated = [false; 13];
+    row.rated[usize::from(position_byte("AMF"))] = true;
+    let area = crate::pitch::drop_rule::AREAS_A[usize::from(position_byte("AMF"))];
+    assert!(
+        area.x_min > 5 && area.x_max < 99 && area.y_max < 47,
+        "premise: AMF's area row reaches none of the pitch's edges"
+    );
+    let players = tactics.presets[0].formations[0].players;
+    let (canvas, dims) = held_dims(&mut window, &mut tactics, &mut view, &roster, 8, (30, 26));
+    let held = spot_centre(canvas, 30, 26);
+    assert!(
+        under_no_other_marker(canvas, &players, 8, held),
+        "premise: the hold is under no other marker"
+    );
+    let lit = egui::Rect::from_min_max(
+        canvas.min + egui::vec2(SPOT_X0 + SPOT_XS * 20.5, SPOT_Y0 - SPOT_YS * 34.5),
+        canvas.min + egui::vec2(SPOT_X0 + SPOT_XS * 83.5, SPOT_Y0 - SPOT_YS * 25.5),
+    );
+    check_dims(canvas, lit, &dims);
+    window.pitch(
+        PesVersion::Pes21,
+        &mut tactics,
+        &mut view,
+        &roster,
+        pointer_at(held, false),
     );
 }

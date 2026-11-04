@@ -7206,11 +7206,14 @@ briefs, review loops, gates and mutation runs as for any step.
     (8) the whole-crate runs of `team_widgets`, `pes_savefile` (cvA1's last item) and
     `save_editor`, started 2026-11-04 at `7400d3dd` (`.tmp/after_cut/mutants_whole.sh`, one
     log and summary folder per crate there), every survivor triaged. `team_widgets` ended
-    07:58 (867 caught, 42 missed, 84 unviable; `triage.md` in its folder): 7 equivalent, 6
-    of them excluded in `.cargo/mutants.toml` (the seventh, `violations.rs` `part`'s own-group
-    flag, shares its extra-kind description with two caught sites, so it stays listed); 35
+    07:58 (867 caught, 42 missed, 84 unviable; `triage.md` in its folder): 8 equivalent, 7
+    of them excluded in `.cargo/mutants.toml` (the eighth, `violations.rs` `part`'s own-group
+    flag, shares its extra-kind description with two caught sites, so it stays listed); 34
     missing tests, briefed as two slices, pitch then tactics (`brief_tw1.md`, `brief_tw2.md`
-    there); (9) the `review2`
+    there). Design finding, open: `pitch/popover.rs` `slot_popover`'s outside-press focus
+    surrender is unobservable under egui 0.37 (`Focus::end_pass` drops an undrawn widget's
+    focus; the DragValue commits as typed), so the block and its "cannot end on its own"
+    comment look removable: check against an egui upgrade first; (9) the `review2`
     worktree (`../4cc-studio-temp/review2`, detached at the pre-reword `1dd5ab92`, clean):
     its three commits have reworded twins on main by subject (`e704be83` the newest), but
     `git diff 1dd5ab92 e704be83` differs in three files (`team_widgets`

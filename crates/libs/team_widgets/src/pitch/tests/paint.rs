@@ -1820,6 +1820,10 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
     let mut roster = roster_rows(&rows);
     let players = tactics.presets[0].formations[0].players;
     let (dragged, target) = (3, 6);
+    assert_ne!(
+        players[dragged].position, players[target].position,
+        "premise: the two hold different positions, so the badge tells them apart"
+    );
     // A portrait for the dragged starter, so his marker paints one the
     // brackets must cover.
     let texture = window.ctx.load_texture(
@@ -1920,6 +1924,16 @@ fn a_drag_over_another_marker_marks_the_swap_and_dims_the_dragged() {
         fill,
         Palette::DARK.badge_fill.gamma_multiply(0.35),
         "the dragged badge at 35% opacity"
+    );
+    // And over the teammate a release would swap him with, his badge
+    // reads the teammate's position — what the release gives him — not
+    // his own (his text is painted last, over the teammate's where the
+    // two badges overlap).
+    let texts = badge_texts(&shapes, dragged_badge);
+    assert_eq!(
+        texts.last().map(String::as_str),
+        Some(position_label(players[target].position)),
+        "over the swap target his badge reads the teammate's position: {texts:?}"
     );
     // The brackets are drawn over everything: every arm after the
     // dragged marker's portrait and badge.
@@ -2344,9 +2358,10 @@ fn portrait_at(centre: egui::Pos2) -> egui::Rect {
 // Live AATF's `FieldedNotA` cross: a starter whose row's `fielded` marks
 // his spot on the shown formation carries an X over his whole portrait,
 // corner to corner 6 in, its two 5-wide strokes in the error colour when
-// one mark there is an Error over the same strokes in black 7 wide. It is
-// painted after every marker, so a marker drawn later cannot cover it,
-// and no `✖` glyph is drawn.
+// one mark there is an Error over the same strokes in black 7 wide, a
+// disc half a stroke's width in its colour rounding each of its four
+// ends. It is painted after every marker, so a marker drawn later cannot
+// cover it, and no `✖` glyph is drawn.
 #[test]
 fn a_fielded_mark_paints_an_x_over_the_starters_portrait() {
     let mut window = Headless::sized(600.0, 450.0);
@@ -2415,6 +2430,27 @@ fn a_fielded_mark_paints_an_x_over_the_starters_portrait() {
                 .all(|(want, got)| (*want - *got).length() <= 0.01)),
             "a stroke from {points:?} is no diagonal of the portrait {portrait:?} 6 in"
         );
+    }
+    // A disc half the stroke's width in its colour rounds each of the
+    // four ends (the round caps), two ends a stroke.
+    let discs: Vec<&egui::epaint::CircleShape> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Circle(shape) => Some(shape),
+            _ => None,
+        })
+        .collect();
+    for (_, points, stroke) in [black_a, black_b, red_a, red_b] {
+        for end in points {
+            assert!(
+                discs.iter().any(|disc| {
+                    disc.center.distance(*end) <= 0.01
+                        && (disc.radius - stroke.width / 2.0).abs() <= 0.01
+                        && disc.fill == stroke.color
+                }),
+                "a {stroke:?} stroke's end {end:?} carries no disc half its width in its colour"
+            );
+        }
     }
     assert!(
         !shapes.iter().any(|clipped| {

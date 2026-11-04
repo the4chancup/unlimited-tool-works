@@ -1142,3 +1142,61 @@ fn a_bench_drag_held_over_its_own_row_outlines_nothing() {
         "the outline is the band under the pointer ({outline:?}, centre {over:?})"
     );
 }
+
+// The draft's `.lrow`: the position's ink starts `HANDLE_INSET` after
+// the handle's ends, as the handle's own starts that far in from the
+// row — the labels' boxes alone stand a point off on some letters, so
+// both are placed by their ink.
+#[test]
+fn the_position_ink_starts_four_points_after_the_handles() {
+    let mut window = Headless::sized(900.0, 1100.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let (nodes, shapes) = window.lineup_paint(PesVersion::Pes21, &mut tactics, &mut view, &roster);
+
+    // The painted text shape carrying `text` whose galley's centre is
+    // inside `bounds`.
+    let galley_in = |bounds: egui::accesskit::Rect, text: &str| -> &egui::epaint::TextShape {
+        let inside = egui::Rect::from_min_max(
+            egui::pos2(bounds.x0 as f32, bounds.y0 as f32),
+            egui::pos2(bounds.x1 as f32, bounds.y1 as f32),
+        );
+        shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(shape)
+                    if shape.galley.job.text == text
+                        && inside.contains(shape.pos + shape.galley.size() / 2.0) =>
+                {
+                    Some(shape)
+                }
+                _ => None,
+            })
+            .next()
+            .unwrap_or_else(|| panic!("no painted {text:?} within {inside:?}"))
+    };
+    let mut bearings = Vec::new();
+    for (index, row) in lineup_rows(&nodes).iter().enumerate() {
+        let [handle_node, position_node, _] = row.as_slice() else {
+            panic!("three labels on row {index}")
+        };
+        let handle = galley_in(handle_node.bounds().expect("handle bounds"), "≡");
+        let text = position_node.value().expect("the position's text");
+        let place = galley_in(position_node.bounds().expect("position bounds"), text);
+        let handle_ink = ink_span(&handle.galley);
+        let place_ink = ink_span(&place.galley);
+        bearings.push(place_ink.min);
+        let gap = place.pos.x + place_ink.min - (handle.pos.x + handle_ink.max);
+        assert!(
+            (gap - HANDLE_INSET).abs() <= 0.05,
+            "row {index} ({text}): the position's ink starts {gap} after the handle's, \
+             HANDLE_INSET {HANDLE_INSET} wanted"
+        );
+    }
+    assert!(
+        bearings.iter().any(|min| (*min - bearings[0]).abs() > 0.05),
+        "premise: the rows cover two letters' different left bearings ({bearings:?})"
+    );
+}

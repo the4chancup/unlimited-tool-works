@@ -366,4 +366,12 @@ exclude_re = [
     # sides take `n % 2`), so deleting the `-` moves the pair the same way. A three-choice
     # toggle's direction stays measured (`number_choices`).
     "team_widgets/src/tactics/mod\\.rs:\\d+:\\d+: delete - in style_choices",
+    # `slot_popover`'s outside press surrenders the keyboard unless the press is on the
+    # focused widget: `delete !` inverts that test, and nothing observable follows. The
+    # popover's DragValues are not drawn on that frame, and egui 0.37's `Focus::end_pass`
+    # drops the focus of a widget no pass used (unless it gained the focus that pass), so
+    # `memory.focused()` is `None` after the frame either way; the DragValue commits each
+    # typed value as it is typed, so no edit is left behind. Pinned by column: the
+    # function's other `!` stay measured.
+    "team_widgets/src/pitch/popover\\.rs:\\d+:16: delete ! in slot_popover",
 ]
