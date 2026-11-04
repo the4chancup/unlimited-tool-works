@@ -10,7 +10,8 @@ use pes_savefile::settings_toml::{AppearanceSettings, MotionSettings};
 /// flags, and each player's body, abilities, positions and skills; aesthetics
 /// is the team's colours, kits and strip flag and each player's names, shirt
 /// number, nationality, age and look, every motion included; gameplan is the
-/// lineup, the set-piece takers and the presets.
+/// `[tactics]` table: the lineup, the set-piece takers and captain, the
+/// players who join the attack, the auto-tactics flags and the presets.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub(crate) struct Sections {
     pub(crate) stats: bool,
@@ -721,6 +722,70 @@ mod tests {
             stats.team.edit_flags.name,
             Some(false),
             "stats keeps the name flag"
+        );
+    }
+
+    /// PES 17's `[players.NN.edit_flags]` base-copy flag, which the PES 19
+    /// document lacks, is the look's: it routes with aesthetics like the
+    /// motion and face flags.
+    #[test]
+    fn pes_17s_base_copy_flag_goes_with_aesthetics() {
+        let file = EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes17))
+            .expect("the PES 17 fixture reads");
+        let players: Vec<&PlayerEntry> = file.players().iter().collect();
+        let original =
+            TeamToml::from_team(PesVersion::Pes17, file.team(CO).unwrap(), &players).unwrap();
+        let (slot, flag) = original
+            .players
+            .iter()
+            .find(|(_, player)| player.edit_flags.base_copy.is_some())
+            .map(|(slot, player)| (*slot, player.edit_flags.base_copy))
+            .expect("premise: a player holds the base-copy flag");
+
+        let mut aesthetics = original.clone();
+        keep_sections(&mut aesthetics, ONLY_AESTHETICS);
+        assert_eq!(
+            aesthetics.players[&slot].edit_flags.base_copy, flag,
+            "aesthetics keeps the base-copy flag"
+        );
+
+        let mut stats = original.clone();
+        keep_sections(&mut stats, ONLY_STATS);
+        assert_eq!(
+            stats.players[&slot].edit_flags.base_copy, None,
+            "stats drops the base-copy flag"
+        );
+    }
+
+    /// PES 21's `appearance.motion.dribbling`, which the PES 19 document
+    /// lacks, is a motion: it routes with aesthetics like the free
+    /// kick's.
+    #[test]
+    fn pes_21s_dribbling_motion_goes_with_aesthetics() {
+        let file = EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes21))
+            .expect("the PES 21 fixture reads");
+        let players: Vec<&PlayerEntry> = file.players().iter().collect();
+        let original =
+            TeamToml::from_team(PesVersion::Pes21, file.team(CO).unwrap(), &players).unwrap();
+        let (slot, dribbling) = original
+            .players
+            .iter()
+            .find(|(_, player)| player.appearance.motion.dribbling.is_some())
+            .map(|(slot, player)| (*slot, player.appearance.motion.dribbling))
+            .expect("premise: a player holds the dribbling motion");
+
+        let mut aesthetics = original.clone();
+        keep_sections(&mut aesthetics, ONLY_AESTHETICS);
+        assert_eq!(
+            aesthetics.players[&slot].appearance.motion.dribbling, dribbling,
+            "aesthetics keeps the dribbling motion"
+        );
+
+        let mut stats = original.clone();
+        keep_sections(&mut stats, ONLY_STATS);
+        assert_eq!(
+            stats.players[&slot].appearance.motion.dribbling, None,
+            "stats drops the dribbling motion"
         );
     }
 

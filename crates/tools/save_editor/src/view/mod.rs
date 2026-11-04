@@ -761,6 +761,11 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView, running: &dyn Fn() ->
                 .show(ui, |ui| match view.selected {
                     Some(Selection::Team(_)) => team::show(ui, view),
                     Some(Selection::Player(..)) | None => {
+                        // The pitch that owns the slot popover is gone
+                        // with the team view: close it here, since its
+                        // own outside-press handling no longer runs and
+                        // the arrows' gate reads it.
+                        view.tactics.close_popover();
                         // The player view: the title, the three columns,
                         // then the Appearance section, closed by default.
                         // The room the three fixed columns leave between

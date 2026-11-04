@@ -60,6 +60,14 @@ impl TacticsView {
     pub fn popover_area(&self) -> Option<egui::Id> {
         self.popover.map(|open| open.area_id())
     }
+
+    /// Closes the open slot popover, for a host whose view stops drawing
+    /// the pitch: the popover's own outside-press handling runs only
+    /// while the pitch draws, so a selection that took the view elsewhere
+    /// would leave it set with nothing on screen.
+    pub fn close_popover(&mut self) {
+        self.popover = None;
+    }
 }
 
 impl Default for TacticsView {

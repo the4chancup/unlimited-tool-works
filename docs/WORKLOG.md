@@ -7171,7 +7171,12 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] f6 after the cut (the maintainer, 2026-11-02), moved out of the cut: (1) a SWE-2
     round over f1e3 (its commit against `f1bc0502`), whose loop before the cut runs on Astra
     (the maintainer: Astra's loop before the cut, SWE-2's after; f1e and f1e2 had SWE-2's two
-    rounds and get Astra's too); (2) the exe's size crate by crate, `cargo bloat
+    rounds and get Astra's too): done 2026-11-04, SWE-2 in two parts over `f1bc0502..d2b86004`
+    (rulings `.tmp/worktrees/wt-f1d/f1d_rulings.md`), 3 of 7 accepted, the loop ended; the
+    rework f1e3r: PgDn off a team view left its slot popover set and the arrows dead (shipped in
+    0.0.1, `CHANGELOG.md` started with it), two version-only keys' routing tested, the team
+    help's Gameplan and Aesthetics lists completed; its `mutants-diff` queued behind (8);
+    (2) the exe's size crate by crate, `cargo bloat
     --release -p studio --crates` on the release's commit, into `spec/core/distribution.md`
     "Size budget": done 2026-11-04, 41.6 MiB, the update check's HTTPS client the largest new
     part (`.tmp/after_cut/bloat/`); (3) l2's other half, ST-RUN-04's `team-compiler check` from a terminal

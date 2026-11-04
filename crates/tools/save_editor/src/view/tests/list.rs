@@ -2979,6 +2979,59 @@ fn the_arrows_wait_while_the_slot_popover_is_open() {
     );
 }
 
+// SE-GUI-52
+#[test]
+fn the_arrows_walk_again_once_pgdn_left_the_slot_popover() {
+    // The popover's own outside-press rule runs only while the pitch
+    // draws, and the page keys are not gated by it: PgDn moves the
+    // selection to a player row without a press the popover sees, so the
+    // player view's draw closes the popover for it — else its stale gate
+    // would hold the arrows with nothing on screen.
+    let path = fixture(PesVersion::Pes21, "arrow_keys_popover_pgdn");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 624.0);
+    open_team_view(&mut window, &mut view, 701);
+
+    // Open the slot popover on an outfield marker a click can reach.
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let canvas = canvas_of(&nodes);
+    let players = team_entry(&view, 701).tactics.presets[0].formations[0].players;
+    let at = (0..11)
+        .filter(|&index| players[index].position != 0)
+        .find_map(|index| marker_point(canvas, &players, index))
+        .expect("a marker a click can reach");
+    click_at(&mut window, at, &mut view);
+    assert!(
+        view.tactics.popover_area().is_some(),
+        "premise: the slot popover is open"
+    );
+
+    // One team listed, so PgDn steps seven rows: 701's own row to a
+    // player row, and the popover goes with the team view.
+    page_key_press(&mut window, &mut view, true);
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 6)),
+        "premise: PgDn selected a player row"
+    );
+    assert!(
+        view.tactics.popover_area().is_none(),
+        "the player view took over with the slot popover still set"
+    );
+
+    window.frame(
+        vec![key(egui::Key::ArrowDown, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+    assert_eq!(
+        view.selected,
+        Some(Selection::Player(701, 7)),
+        "Down moved one row from the paged player"
+    );
+}
+
 // SE-GUI-53
 #[test]
 fn the_page_keys_walk_the_team_rows_with_several_listed() {

@@ -3074,3 +3074,6 @@ worklog passed 7,000 lines.
   check` prints in a terminal), which closes l2 and f6 (3).
 - 2026-11-04 — f6 (2): `cargo bloat` on 0.0.1's commit: 41.6 MiB, up 4.0 from `745ea9f4`, the update
   check's HTTPS client (0.83 MiB) the largest new part; into spec "Size budget".
+- 2026-11-04 — f6 (1): SWE-2 over f1e3 (3 of 7 accepted); rework f1e3r: the Tactics slot popover closes
+  when the team view goes (PgDn had left the arrows dead, a 0.0.1 bug: `CHANGELOG.md` started), two
+  version-only keys' routing tested, the team help's section lists completed.

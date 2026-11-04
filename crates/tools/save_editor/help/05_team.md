@@ -89,9 +89,11 @@ Tick the sections to bring in:
 
 - **Stats** (abilities, skills, height and the like, and the team's name, short
   name, manager and stadium);
-- **Aesthetics** (names, shirt numbers, the look and every motion, and the team's
-  colours and kits);
-- **Gameplan** (the lineup, the set-piece takers and the three presets).
+- **Aesthetics** (names, shirt numbers, nationality and age, the look and every
+  motion, and the team's colours and kits);
+- **Gameplan** (the lineup, the set-piece takers and captain, the players who
+  join the attack, the automatic settings' substitution, offside trap, preset
+  change and attack/defence levels, and the three presets).
 
 Only the sections the file holds are offered, and Aesthetics stays off while the
 aesthetics lock is on.
