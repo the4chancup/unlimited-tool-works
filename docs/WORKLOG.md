@@ -7354,7 +7354,17 @@ briefs, review loops, gates and mutation runs as for any step.
     reproduce on a PES 2019 save (edit a player of Invitational 1, save, diff the bytes the
     write changed against those the edit should), find the cause, its test red first, then
     the in-game check on PES 2019 → verify: the saved file loads in game with Invitational 1
-    intact. Before 0.0.2-poc reaches the organizer (PES 2019 is VGL 27's game)
+    intact. Before 0.0.2-poc reaches the organizer (PES 2019 is VGL 27's game).
+    Found so far (2026-11-05, `.tmp/0_0_2/se19/`, on `EDIT00000000_VGL27_Friendlies`, PES
+    2019, through `import-toml`, which writes through the window's `EditFile::save`): an
+    unchanged import leaves the decrypted `data.dat` byte for byte (`decrypter19.exe`), and a
+    short-name change alters 1 byte. So the writer is sound; Invitational 1's players there
+    hold every edit flag false (untouched placeholders), and typing a stat sets no flag, as
+    in 4ccEditor (`main.cpp`: only a name change sets the edited-player flag, "Is a copy" the
+    gameplay ones). Hypothesis: PES 2019 shows the database's placeholder for a record whose
+    flags are clear, so an edit to an unflagged player is invisible. Next, in game once no
+    cargo runs (QUESTIONS "What did the tester change in Invitational 1"): a save with one I1
+    player's abilities typed, flags clear, beside one with `player` and `abilities` set
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and
     8.36d, then a proof-of-concept exe for VGL's organizer that
     upgrades and compiles a couple of example teams on PES 2019. 8.36c3 (the `<id>.copy`
