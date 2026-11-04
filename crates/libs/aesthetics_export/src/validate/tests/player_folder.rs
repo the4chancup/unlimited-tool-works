@@ -227,13 +227,8 @@ fn a_per_player_singleton_below_a_subfolder_is_file_type_disallowed() {
         issue_codes(&report),
         vec![("file_type_disallowed", Disposition::DropFolder); 4]
     );
-    let named: Vec<&str> = report
-        .issues
-        .iter()
-        .map(|issue| issue.context[0].1.as_str())
-        .collect();
     assert_eq!(
-        named,
+        issue_files(&report),
         [
             "jessie/body/face_diff.xml",
             "jessie/Face.XML",
@@ -372,13 +367,8 @@ fn a_disallowed_file_drops_strict_and_keeps_lenient() {
         issue_codes(&lenient),
         vec![("file_type_disallowed", Disposition::Keep)]
     );
-    let player = &lenient.validated.unwrap().players[0];
     assert_eq!(
-        player
-            .files
-            .iter()
-            .map(|file| file.path.name().to_owned())
-            .collect::<Vec<_>>(),
+        player_file_names(&lenient, 0),
         vec!["hair.dds", "readme.doc"]
     );
 }
@@ -504,13 +494,8 @@ fn the_marker_files_are_disallowed_in_a_subfolder_or_with_a_txt_suffix() {
             ("file_type_disallowed", Disposition::Keep),
         ]
     );
-    let named: Vec<&str> = report
-        .issues
-        .iter()
-        .map(|issue| issue.context[0].1.as_str())
-        .collect();
     assert_eq!(
-        named,
+        issue_files(&report),
         [
             "ingame_face.toml.txt",
             "jessie/ingame_face",
@@ -673,13 +658,8 @@ fn a_subfolder_s_markers_and_settings_are_file_type_disallowed() {
         issue_codes(&report),
         vec![("file_type_disallowed", Disposition::Keep); 3]
     );
-    let named: Vec<&str> = report
-        .issues
-        .iter()
-        .map(|issue| issue.context[0].1.as_str())
-        .collect();
     assert_eq!(
-        named,
+        issue_files(&report),
         [
             "jessie/fpc_off",
             "jessie/ingame_face.toml",

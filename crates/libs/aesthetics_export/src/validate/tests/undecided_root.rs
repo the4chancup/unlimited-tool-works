@@ -40,55 +40,29 @@ fn an_undecided_root_reports_the_parse_s_findings_alone() {
 }
 
 #[test]
-fn an_empty_doubled_players_layer_is_dropped_with_its_layer() {
+fn an_empty_doubled_layer_is_dropped_with_its_layer() {
     // `Players/Players/` alone under `Players/` is the doubled layer's own shell:
     // gone with the layer, not a folder named `Players` claiming a slot.
-    let report = report("egg Midcup", &[], &["Players", "Players/Players"], &[]);
-    assert_eq!(
-        issue_codes(&report),
-        vec![
-            ("nested_folders_fixed", Disposition::Keep),
-            ("export_empty", Disposition::DropExport),
-        ]
-    );
-    assert!(report.validated.is_none());
-    assert!(
-        report
-            .parsed
-            .draft
-            .players
-            .iter()
-            .all(|folder| folder.path.name() != "Players"),
-        "{:?}",
-        report
-            .parsed
-            .draft
-            .players
-            .iter()
-            .map(|folder| folder.path.as_str())
-            .collect::<Vec<_>>()
-    );
-}
-
-#[test]
-fn an_empty_doubled_kits_layer_is_dropped_with_its_layer() {
-    let report = report("egg Midcup", &[], &["Kits", "Kits/Kits"], &[]);
-    assert_eq!(
-        issue_codes(&report),
-        vec![
-            ("nested_folders_fixed", Disposition::Keep),
-            ("export_empty", Disposition::DropExport),
-        ]
-    );
-    assert!(report.validated.is_none());
-    assert!(
-        report
-            .parsed
-            .draft
-            .kits
-            .iter()
-            .all(|folder| folder.path.name() != "Kits")
-    );
+    for root in ["Players", "Kits"] {
+        let doubled = format!("{root}/{root}");
+        let report = report("egg Midcup", &[], &[root, doubled.as_str()], &[]);
+        assert_eq!(
+            issue_codes(&report),
+            vec![
+                ("nested_folders_fixed", Disposition::Keep),
+                ("export_empty", Disposition::DropExport),
+            ],
+            "{root}"
+        );
+        assert!(report.validated.is_none(), "{root}");
+        let draft = &report.parsed.draft;
+        let names: Vec<&str> = if root == "Players" {
+            draft.players.iter().map(|f| f.path.name()).collect()
+        } else {
+            draft.kits.iter().map(|f| f.path.name()).collect()
+        };
+        assert!(names.iter().all(|name| *name != root), "{names:?}");
+    }
 }
 
 #[test]

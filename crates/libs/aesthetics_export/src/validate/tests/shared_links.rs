@@ -128,11 +128,7 @@ fn a_dropped_link_target_drops_its_players_and_pass_through_keeps() {
     assert_eq!(strict.issues[1].scope, folder("Players/03 - A"));
     assert_eq!(
         strict.issues[1].context,
-        vec![
-            ("link", "Base.face".to_owned()),
-            ("target", "Faces/Base".to_owned()),
-            ("finding", "file_type_disallowed".to_owned()),
-        ]
+        link_target("Base.face", "Faces/Base", "file_type_disallowed")
     );
     let validated = strict.validated.unwrap();
     assert!(validated.players.is_empty());
@@ -316,11 +312,7 @@ fn a_dropped_target_names_its_own_first_finding() {
     );
     assert_eq!(
         report.issues[2].context,
-        vec![
-            ("link", "Base.face".to_owned()),
-            ("target", "Faces/Base".to_owned()),
-            ("finding", "file_type_disallowed".to_owned()),
-        ]
+        link_target("Base.face", "Faces/Base", "file_type_disallowed")
     );
 }
 

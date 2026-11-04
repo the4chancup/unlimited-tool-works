@@ -2,16 +2,13 @@ use super::*;
 
 #[test]
 fn a_pre_fox_shared_boots_model_without_its_suffix_is_model_name_invalid() {
-    let unsuffixed = report_with(
-        &context_for(pes_version::PesVersion::Pes17),
-        "egg Midcup",
+    let unsuffixed = report_for(
+        pes_version::PesVersion::Pes17,
         &[
             ("Boots/Mud/hat.model", 10),
             ("Players/03 - A/Mud.boots", 0),
             ("Players/03 - A/hair.dds", 9),
         ],
-        &[],
-        &[],
     );
     assert_eq!(
         issue_codes(&unsuffixed),
@@ -28,15 +25,12 @@ fn a_pre_fox_shared_boots_model_without_its_suffix_is_model_name_invalid() {
     assert_eq!(unsuffixed.issues[1].scope, folder("Players/03 - A"));
     assert!(unsuffixed.validated.unwrap().boots.is_empty());
 
-    let suffixed = report_with(
-        &context_for(pes_version::PesVersion::Pes17),
-        "egg Midcup",
+    let suffixed = report_for(
+        pes_version::PesVersion::Pes17,
         &[
             ("Boots/Mud/kit_boots.model", 10),
             ("Players/03 - A/Mud.boots", 0),
         ],
-        &[],
-        &[],
     );
     assert_eq!(issue_codes(&suffixed), vec![]);
     assert_eq!(suffixed.validated.unwrap().boots.len(), 1);
@@ -53,13 +47,7 @@ fn an_edit_hair_file_drops_its_folder_on_pre_fox_only() {
         ("Faces/Longhair/HAIR.XML", 10),
         ("Faces/Longhair/hair_high.model", 10),
     ];
-    let pre_fox = report_with(
-        &context_for(pes_version::PesVersion::Pes17),
-        "egg Midcup",
-        &files,
-        &[],
-        &[],
-    );
+    let pre_fox = report_for(pes_version::PesVersion::Pes17, &files);
     let edithair = |scope: &str, file: &str| ValidationIssue {
         code: "edithair_unsupported",
         scope: folder(scope),
@@ -85,13 +73,7 @@ fn an_edit_hair_file_drops_its_folder_on_pre_fox_only() {
     assert!(validated.players.is_empty());
     assert!(validated.faces.is_empty());
 
-    let fox = report_with(
-        &context_for(pes_version::PesVersion::Pes21),
-        "egg Midcup",
-        &files,
-        &[],
-        &[],
-    );
+    let fox = report_for(pes_version::PesVersion::Pes21, &files);
     assert_eq!(issue_codes(&fox), vec![]);
     let validated = fox.validated.unwrap();
     assert_eq!(validated.players.len(), 2);

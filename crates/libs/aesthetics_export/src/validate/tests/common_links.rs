@@ -21,10 +21,7 @@ fn a_common_link_resolves_or_drops_the_player() {
     assert_eq!(report.issues[0].scope, folder("Players/03 - C"));
     assert_eq!(
         report.issues[0].context,
-        vec![
-            ("link", "missing.fmdl.common".to_owned()),
-            ("path", "Common/missing.fmdl".to_owned()),
-        ]
+        link_path("missing.fmdl.common", "Common/missing.fmdl")
     );
     let validated = report.validated.unwrap();
     assert_eq!(
@@ -46,15 +43,6 @@ fn installed(stems: &[&str]) -> ValidationContext {
         installed_common_textures: stems.iter().map(|stem| vtree::fold_name(stem)).collect(),
         ..crate::testing::context()
     }
-}
-
-/// The file names of the validated export's player `index`.
-fn player_file_names(report: &ValidationReport, index: usize) -> Vec<String> {
-    report.validated.as_ref().unwrap().players[index]
-        .files
-        .iter()
-        .map(|file| file.path.name().to_owned())
-        .collect()
 }
 
 #[test]
@@ -116,10 +104,7 @@ fn with_no_installed_texture_a_texture_link_with_no_target_is_common_link_missin
         );
         assert_eq!(
             report.issues[0].context,
-            vec![
-                ("link", "hair.dds.common".to_owned()),
-                ("path", "Common/hair.dds".to_owned()),
-            ]
+            link_path("hair.dds.common", "Common/hair.dds")
         );
     }
 }
@@ -225,13 +210,8 @@ fn pass_through_keeps_the_resolved_common_link_and_prunes_the_other() {
         vec![("common_link_missing", Disposition::Keep)]
     );
     assert!(report.issues[0].passed_through);
-    let player = &report.validated.unwrap().players[0];
     assert_eq!(
-        player
-            .files
-            .iter()
-            .map(|file| file.path.name().to_owned())
-            .collect::<Vec<_>>(),
+        player_file_names(&report, 0),
         vec!["hair.dds", "torso.fmdl.common"]
     );
 }
@@ -269,6 +249,15 @@ fn a_nested_common_model_file_is_admitted_but_no_link_target() {
     assert_eq!(common, vec!["Common/sub/torso.fmdl"]);
 }
 
+/// The `Common/` paths the player's `.common` links resolve to, in the export `files` parses to.
+fn link_targets(files: &[(&str, u64)]) -> Vec<Option<String>> {
+    let draft = crate::testing::parsed("egg Midcup", files, &[], &[]).draft;
+    links::player_links(&draft.players[0], &draft)
+        .into_iter()
+        .map(|link| link.target.map(|target| target.as_str().to_owned()))
+        .collect()
+}
+
 #[test]
 fn a_common_link_below_a_subfolder_stands_for_the_common_file_at_its_path() {
     let files = [
@@ -285,12 +274,10 @@ fn a_common_link_below_a_subfolder_stands_for_the_common_file_at_its_path() {
             .iter()
             .any(|file| file.path.as_str() == "Players/03 - A/jessie/body.fmdl.common")
     );
-    let draft = crate::testing::parsed("egg Midcup", &files, &[], &[]).draft;
-    let targets: Vec<Option<String>> = links::player_links(&draft.players[0], &draft)
-        .into_iter()
-        .map(|link| link.target.map(|target| target.as_str().to_owned()))
-        .collect();
-    assert_eq!(targets, [Some("Common/jessie/body.fmdl".to_owned())]);
+    assert_eq!(
+        link_targets(&files),
+        [Some("Common/jessie/body.fmdl".to_owned())]
+    );
 }
 
 #[test]
@@ -312,10 +299,7 @@ fn a_common_link_below_a_subfolder_names_no_direct_common_file() {
     assert_eq!(report.issues[0].scope, folder("Players/03 - A"));
     assert_eq!(
         report.issues[0].context,
-        vec![
-            ("link", "body.fmdl.common".to_owned()),
-            ("path", "Common/jessie/body.fmdl".to_owned()),
-        ]
+        link_path("body.fmdl.common", "Common/jessie/body.fmdl")
     );
     assert!(report.validated.unwrap().players.is_empty());
 }
@@ -329,12 +313,10 @@ fn a_texture_link_below_a_subfolder_stands_for_the_common_texture_at_its_path() 
     ];
     let compiled = report("egg Midcup", &files, &[], &[]);
     assert_eq!(issue_codes(&compiled), vec![], "{:?}", compiled.issues);
-    let draft = crate::testing::parsed("egg Midcup", &files, &[], &[]).draft;
-    let targets: Vec<Option<String>> = links::player_links(&draft.players[0], &draft)
-        .into_iter()
-        .map(|link| link.target.map(|target| target.as_str().to_owned()))
-        .collect();
-    assert_eq!(targets, [Some("Common/jessie/hair.dds".to_owned())]);
+    assert_eq!(
+        link_targets(&files),
+        [Some("Common/jessie/hair.dds".to_owned())]
+    );
 
     // With only a direct `Common/hair.dds`, the link still looks at its own path.
     let missing = report(
@@ -353,56 +335,38 @@ fn a_texture_link_below_a_subfolder_stands_for_the_common_texture_at_its_path() 
     );
     assert_eq!(
         missing.issues[0].context,
-        vec![
-            ("link", "hair.dds.common".to_owned()),
-            ("path", "Common/jessie/hair.dds".to_owned()),
-        ]
+        link_path("hair.dds.common", "Common/jessie/hair.dds")
     );
 }
 
 #[test]
 fn a_common_link_naming_a_kit_set_resolves_to_its_lowest_variant() {
-    // `kitN/armor_bsm.dds.common` names the set `Common/`'s `kit1`…`kit9` folders hold of
-    // `armor_bsm.dds`; the link resolves to its lowest variant.
-    let files = [
-        ("Common/kit2/armor_bsm.dds", 9),
-        ("Common/kit1/armor_bsm.dds", 9),
-        ("Players/03 - A/face_high.fmdl", 10),
-        ("Players/03 - A/kitN/armor_bsm.dds.common", 0),
-    ];
-    let folder_report = report("egg Midcup", &files, &[], &[]);
-    assert_eq!(
-        issue_codes(&folder_report),
-        vec![],
-        "{:?}",
-        folder_report.issues
-    );
-    let draft = crate::testing::parsed("egg Midcup", &files, &[], &[]).draft;
-    let targets: Vec<Option<String>> = links::player_links(&draft.players[0], &draft)
-        .into_iter()
-        .map(|link| link.target.map(|target| target.as_str().to_owned()))
-        .collect();
-    assert_eq!(targets, [Some("Common/kit1/armor_bsm.dds".to_owned())]);
-
-    // A `kitN` stem's set: `pants_kitN.dds.common` names `Common/pants_kit2.dds`.
-    let files = [
-        ("Common/pants_kit2.dds", 9),
-        ("Players/03 - A/face_high.fmdl", 10),
-        ("Players/03 - A/pants_kitN.dds.common", 0),
-    ];
-    let stem_report = report("egg Midcup", &files, &[], &[]);
-    assert_eq!(
-        issue_codes(&stem_report),
-        vec![],
-        "{:?}",
-        stem_report.issues
-    );
-    let draft = crate::testing::parsed("egg Midcup", &files, &[], &[]).draft;
-    let targets: Vec<Option<String>> = links::player_links(&draft.players[0], &draft)
-        .into_iter()
-        .map(|link| link.target.map(|target| target.as_str().to_owned()))
-        .collect();
-    assert_eq!(targets, [Some("Common/pants_kit2.dds".to_owned())]);
+    for (files, expected) in [
+        // `kitN/armor_bsm.dds.common` names the set `Common/`'s `kit1`…`kit9` folders hold of
+        // `armor_bsm.dds`; the link resolves to its lowest variant.
+        (
+            &[
+                ("Common/kit2/armor_bsm.dds", 9),
+                ("Common/kit1/armor_bsm.dds", 9),
+                ("Players/03 - A/face_high.fmdl", 10),
+                ("Players/03 - A/kitN/armor_bsm.dds.common", 0),
+            ][..],
+            "Common/kit1/armor_bsm.dds",
+        ),
+        // A `kitN` stem's set: `pants_kitN.dds.common` names `Common/pants_kit2.dds`.
+        (
+            &[
+                ("Common/pants_kit2.dds", 9),
+                ("Players/03 - A/face_high.fmdl", 10),
+                ("Players/03 - A/pants_kitN.dds.common", 0),
+            ][..],
+            "Common/pants_kit2.dds",
+        ),
+    ] {
+        let report = report("egg Midcup", files, &[], &[]);
+        assert_eq!(issue_codes(&report), vec![], "{:?}", report.issues);
+        assert_eq!(link_targets(files), [Some(expected.to_owned())]);
+    }
 }
 
 #[test]
@@ -488,12 +452,7 @@ fn a_common_link_naming_a_set_of_the_kitf_file_alone_resolves_to_it() {
     ];
     let report = report("egg Midcup", &files, &[], &[]);
     assert_eq!(issue_codes(&report), vec![], "{:?}", report.issues);
-    let draft = crate::testing::parsed("egg Midcup", &files, &[], &[]).draft;
-    let targets: Vec<Option<String>> = links::player_links(&draft.players[0], &draft)
-        .into_iter()
-        .map(|link| link.target.map(|target| target.as_str().to_owned()))
-        .collect();
-    assert_eq!(targets, [Some("Common/kitF/b.dds".to_owned())]);
+    assert_eq!(link_targets(&files), [Some("Common/kitF/b.dds".to_owned())]);
 }
 
 #[test]
@@ -516,10 +475,7 @@ fn a_common_link_naming_the_kitf_fallback_or_an_empty_set_is_common_link_missing
     );
     assert_eq!(
         fallback.issues[0].context,
-        vec![
-            ("link", "armor_bsm.dds.common".to_owned()),
-            ("path", "Common/kitF/armor_bsm.dds".to_owned()),
-        ]
+        link_path("armor_bsm.dds.common", "Common/kitF/armor_bsm.dds")
     );
 
     // Another file in a member folder is no member of `armor_bsm`'s set.
@@ -539,10 +495,7 @@ fn a_common_link_naming_the_kitf_fallback_or_an_empty_set_is_common_link_missing
     );
     assert_eq!(
         missing.issues[0].context,
-        vec![
-            ("link", "armor_bsm.dds.common".to_owned()),
-            ("path", "Common/kitN/armor_bsm.dds".to_owned()),
-        ]
+        link_path("armor_bsm.dds.common", "Common/kitN/armor_bsm.dds")
     );
 }
 
@@ -627,10 +580,7 @@ fn a_common_link_in_common_is_no_link_either() {
     );
     assert_eq!(
         report.issues[0].context,
-        vec![
-            ("link", "x.fmdl.common".to_owned()),
-            ("path", "Common/common/x.fmdl".to_owned()),
-        ]
+        link_path("x.fmdl.common", "Common/common/x.fmdl")
     );
 }
 
@@ -654,10 +604,7 @@ fn a_common_link_below_common_is_a_link_to_common_common() {
     );
     assert_eq!(
         missing.issues[0].context,
-        vec![
-            ("link", "hair.png.common".to_owned()),
-            ("path", "Common/common/hair.png".to_owned()),
-        ]
+        link_path("hair.png.common", "Common/common/hair.png")
     );
 
     let clean = report(

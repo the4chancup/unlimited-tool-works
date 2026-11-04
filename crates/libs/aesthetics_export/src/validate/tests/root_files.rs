@@ -115,6 +115,18 @@ fn logo_files_get_one_of_each_role() {
     assert_eq!(logo.small.unwrap().file.path.as_str(), "logo_small.png");
 }
 
+/// The slots the validated export's portraits claim, in map order.
+fn portrait_slots(report: &ValidationReport) -> Vec<u8> {
+    report
+        .validated
+        .as_ref()
+        .unwrap()
+        .portraits
+        .keys()
+        .map(|slot| slot.get())
+        .collect()
+}
+
 // TC-ROOT-04
 #[test]
 fn a_bad_portrait_name_drops_only_that_file() {
@@ -129,16 +141,7 @@ fn a_bad_portrait_name_drops_only_that_file() {
         vec![("portrait_name_invalid", Disposition::DropFile)]
     );
     assert_eq!(report.issues[0].scope, file_scope("Portraits/24.dds"));
-    assert_eq!(
-        report
-            .validated
-            .unwrap()
-            .portraits
-            .keys()
-            .map(|slot| slot.get())
-            .collect::<Vec<_>>(),
-        vec![3]
-    );
+    assert_eq!(portrait_slots(&report), vec![3]);
 }
 
 #[test]
@@ -240,17 +243,7 @@ fn a_portrait_is_named_by_its_slot_as_a_player_folder_is() {
     ] {
         let report = report("egg Midcup", &[(name, 9)], &[], &[]);
         assert_eq!(issue_codes(&report), vec![], "{name}");
-        assert_eq!(
-            report
-                .validated
-                .unwrap()
-                .portraits
-                .keys()
-                .map(|slot| slot.get())
-                .collect::<Vec<_>>(),
-            vec![5],
-            "{name}"
-        );
+        assert_eq!(portrait_slots(&report), vec![5], "{name}");
     }
 }
 
@@ -312,16 +305,7 @@ fn a_portrait_number_past_two_digits_reads_its_slot() {
     // player folder `003` is, `081` (no slot 81) is refused.
     let report = report("egg Midcup", &[("Portraits/003.dds", 9)], &[], &[]);
     assert_eq!(issue_codes(&report), vec![]);
-    assert_eq!(
-        report
-            .validated
-            .unwrap()
-            .portraits
-            .keys()
-            .map(|slot| slot.get())
-            .collect::<Vec<_>>(),
-        vec![3]
-    );
+    assert_eq!(portrait_slots(&report), vec![3]);
 }
 
 #[test]
@@ -390,52 +374,31 @@ fn referee_files_are_unexpected_on_a_team_export() {
 
 #[test]
 fn a_ref_marker_is_admitted_on_a_refs_export() {
-    let report = report(
-        "refs Cup",
-        &[("players.txt", 10), ("ref_marker.dds", 9)],
-        &["Players/Keeper"],
-        &[("players.txt", Ok(b"01 Keeper"))],
-    );
-    assert!(
-        report
-            .issues
-            .iter()
-            .all(|issue| issue.code != "root_file_unexpected")
-    );
-    assert_eq!(
-        report
-            .validated
-            .unwrap()
-            .root
-            .referee_marker
-            .unwrap()
-            .path
-            .as_str(),
-        "ref_marker.dds"
-    );
-
     // The name matches case-insensitively.
-    let mixed = crate::testing::report(
-        "refs Cup",
-        &[("players.txt", 10), ("Ref_Marker.dds", 9)],
-        &["Players/Keeper"],
-        &[("players.txt", Ok(b"01 Keeper"))],
-    );
-    assert!(
-        mixed
-            .issues
-            .iter()
-            .all(|issue| issue.code != "root_file_unexpected")
-    );
-    assert_eq!(
-        mixed
-            .validated
-            .unwrap()
-            .root
-            .referee_marker
-            .unwrap()
-            .path
-            .as_str(),
-        "Ref_Marker.dds"
-    );
+    for name in ["ref_marker.dds", "Ref_Marker.dds"] {
+        let report = report(
+            "refs Cup",
+            &[("players.txt", 10), (name, 9)],
+            &["Players/Keeper"],
+            &[("players.txt", Ok(b"01 Keeper"))],
+        );
+        assert!(
+            report
+                .issues
+                .iter()
+                .all(|issue| issue.code != "root_file_unexpected"),
+            "{name}"
+        );
+        assert_eq!(
+            report
+                .validated
+                .unwrap()
+                .root
+                .referee_marker
+                .unwrap()
+                .path
+                .as_str(),
+            name
+        );
+    }
 }

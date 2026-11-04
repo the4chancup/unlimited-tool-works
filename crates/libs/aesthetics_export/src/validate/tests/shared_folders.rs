@@ -208,14 +208,8 @@ fn a_shared_folder_s_subfolders_follow_a_player_folder_s_rules() {
             ("link_target_dropped", Disposition::DropFolder),
         ]
     );
-    let named: Vec<&str> = disallowed
-        .issues
-        .iter()
-        .take(3)
-        .map(|issue| issue.context[0].1.as_str())
-        .collect();
     assert_eq!(
-        named,
+        issue_files(&disallowed)[..3],
         [
             "jessie/Crocs.boots",
             "jessie/face.xml",
@@ -224,10 +218,7 @@ fn a_shared_folder_s_subfolders_follow_a_player_folder_s_rules() {
     );
     assert_eq!(
         disallowed.issues[3].context,
-        vec![
-            ("link", "skin.dds.common".to_owned()),
-            ("path", "Common/jessie/skin.dds".to_owned()),
-        ]
+        link_path("skin.dds.common", "Common/jessie/skin.dds")
     );
     assert_eq!(disallowed.issues[0].scope, folder("Faces/Round"));
 }
@@ -317,30 +308,17 @@ fn a_shared_folder_s_common_link_whose_target_is_missing_drops_it_and_its_linker
     assert_eq!(report.issues[0].scope, folder("Faces/Round"));
     assert_eq!(
         report.issues[0].context,
-        vec![
-            ("link", "hair.dds.common".to_owned()),
-            ("path", "Common/hair.dds".to_owned()),
-        ]
+        link_path("hair.dds.common", "Common/hair.dds")
     );
     assert_eq!(report.issues[1].scope, folder("Players/03 - A"));
     assert_eq!(
         report.issues[1].context,
-        vec![
-            ("link", "Round.face".to_owned()),
-            ("target", "Faces/Round".to_owned()),
-            ("finding", "common_link_missing".to_owned()),
-        ]
+        link_target("Round.face", "Faces/Round", "common_link_missing")
     );
 
     // On pre-Fox a shared folder's links stay unread, so the file just sits there: no
     // `common_link_missing`, the folder and its linker kept.
-    let prefox = report_with(
-        &context_for(pes_version::PesVersion::Pes17),
-        "egg Midcup",
-        &files,
-        &[],
-        &[],
-    );
+    let prefox = report_for(pes_version::PesVersion::Pes17, &files);
     assert_eq!(issue_codes(&prefox), vec![], "{:?}", prefox.issues);
     let faces = &prefox.validated.unwrap().faces;
     assert_eq!(faces.len(), 1);
@@ -358,13 +336,7 @@ fn a_shared_folder_s_texture_link_claims_its_stem_on_fox_not_on_pre_fox() {
         ("Players/03 - A/Crocs.boots", 0),
         ("Players/03 - A/hair.dds", 9),
     ];
-    let prefox = report_with(
-        &context_for(pes_version::PesVersion::Pes17),
-        "egg Midcup",
-        &files,
-        &[],
-        &[],
-    );
+    let prefox = report_for(pes_version::PesVersion::Pes17, &files);
     assert_eq!(issue_codes(&prefox), vec![], "{:?}", prefox.issues);
     assert_eq!(prefox.validated.unwrap().boots.len(), 1);
     // Its textures still claim their stems there: a `skin.png` beside the `skin.dds` collides.
@@ -373,13 +345,7 @@ fn a_shared_folder_s_texture_link_claims_its_stem_on_fox_not_on_pre_fox() {
         .copied()
         .chain([("Boots/Crocs/skin.png", 9)])
         .collect();
-    let prefox = report_with(
-        &context_for(pes_version::PesVersion::Pes17),
-        "egg Midcup",
-        &with_png,
-        &[],
-        &[],
-    );
+    let prefox = report_for(pes_version::PesVersion::Pes17, &with_png);
     assert_eq!(
         issue_codes(&prefox),
         vec![
@@ -497,17 +463,14 @@ fn a_shared_folder_s_texture_stems_collide_per_directory_of_its_tree() {
 fn a_shared_folder_s_name_rule_applies_at_any_depth_naming_the_path_below() {
     // As a model directly in the folder: `fmdl_name_invalid` on a Fox target, the file named
     // below the folder.
-    let report = report_with(
-        &context_for(pes_version::PesVersion::Pes21),
-        "egg Midcup",
+    let report = report_for(
+        pes_version::PesVersion::Pes21,
         &[
             ("Boots/Crocs/extra/face_high.fmdl", 10),
             ("Boots/Crocs/extra/x.fmdl", 10),
             ("Players/03 - A/Crocs.boots", 0),
             ("Players/03 - A/hair.dds", 9),
         ],
-        &[],
-        &[],
     );
     assert_eq!(
         issue_codes(&report),
@@ -517,13 +480,10 @@ fn a_shared_folder_s_name_rule_applies_at_any_depth_naming_the_path_below() {
             ("link_target_dropped", Disposition::DropFolder),
         ]
     );
-    let named: Vec<&str> = report
-        .issues
-        .iter()
-        .take(2)
-        .map(|issue| issue.context[0].1.as_str())
-        .collect();
-    assert_eq!(named, ["extra/face_high.fmdl", "extra/x.fmdl"]);
+    assert_eq!(
+        issue_files(&report)[..2],
+        ["extra/face_high.fmdl", "extra/x.fmdl"]
+    );
 }
 
 #[test]
@@ -531,9 +491,8 @@ fn a_shared_boots_folder_s_model_link_is_named_by_the_same_suffix_rule() {
     // A `.common` link stands for the file at its name, so where the links count
     // (PES 18-21) a link to a model is named as the model is: `glove_l` is no
     // boots name, and the finding names the link below the folder.
-    let report = report_with(
-        &context_for(pes_version::PesVersion::Pes21),
-        "egg Midcup",
+    let report = report_for(
+        pes_version::PesVersion::Pes21,
         &[
             ("Boots/Crocs/boots.fmdl", 10),
             ("Boots/Crocs/glove_l.fmdl.common", 0),
@@ -541,8 +500,6 @@ fn a_shared_boots_folder_s_model_link_is_named_by_the_same_suffix_rule() {
             ("Players/03 - A/Crocs.boots", 0),
             ("Players/03 - A/hair.dds", 9),
         ],
-        &[],
-        &[],
     );
     assert_eq!(
         issue_codes(&report),
@@ -559,9 +516,8 @@ fn a_shared_boots_folder_s_model_link_is_named_by_the_same_suffix_rule() {
     assert!(report.validated.unwrap().boots.is_empty());
 
     // A link to a boots model and a texture link pass the rule.
-    let report = report_with(
-        &context_for(pes_version::PesVersion::Pes21),
-        "egg Midcup",
+    let report = report_for(
+        pes_version::PesVersion::Pes21,
         &[
             ("Boots/Crocs/boots.fmdl.common", 0),
             ("Boots/Crocs/skin.dds.common", 0),
@@ -570,24 +526,19 @@ fn a_shared_boots_folder_s_model_link_is_named_by_the_same_suffix_rule() {
             ("Players/03 - A/Crocs.boots", 0),
             ("Players/03 - A/hair.dds", 9),
         ],
-        &[],
-        &[],
     );
     assert_eq!(issue_codes(&report), vec![]);
 
     // On PES 15-17 a shared folder's links stay unread (`file_not_used` is the
     // consumer's): the same link is no `model_name_invalid`.
-    let report = report_with(
-        &context_for(pes_version::PesVersion::Pes17),
-        "egg Midcup",
+    let report = report_for(
+        pes_version::PesVersion::Pes17,
         &[
             ("Boots/Crocs/glove_l.fmdl.common", 0),
             ("Common/glove_l.fmdl", 10),
             ("Players/03 - A/Crocs.boots", 0),
             ("Players/03 - A/hair.dds", 9),
         ],
-        &[],
-        &[],
     );
     assert_eq!(issue_codes(&report), vec![]);
 }
