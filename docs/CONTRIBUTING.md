@@ -52,7 +52,10 @@ Placement:
   and tool ids (`team-compiler`).
 - No `utils.rs`, `helpers.rs`, or `misc.rs`. A helper belongs to the module that uses it; one used
   by several modules belongs to the lib that owns the concept. Files, not folders, until a module
-  passes roughly a thousand lines; then a folder with a `mod.rs` of the same name.
+  passes roughly a thousand lines; then a folder with a `mod.rs` of the same name. Test modules
+  too: a `tests.rs` past that keeps the shared helpers and gains a `tests/` folder with one file
+  per concern (`save_editor`'s `view/tests.rs` and `view/tests/`), split as a pure move before
+  anything in it changes, so the review sees the move apart from the edits.
 
 ## Code style
 

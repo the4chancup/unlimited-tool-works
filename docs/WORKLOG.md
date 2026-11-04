@@ -7257,6 +7257,13 @@ briefs, review loops, gates and mutation runs as for any step.
       `shell/settings_menu/tests.rs` 374, `save_editor` `view/tests/team.rs` 371,
       `tactics_undo.rs` 336, `live_aatf.rs` 308; all but `tactics_undo.rs` past a thousand
       lines (`.tmp/after_cut/f7/files_w8.txt`, the window-4 ranking beside it)
+    - [ ] (b) also splits each of those files past a thousand lines by concern
+      (`CONTRIBUTING.md` "Architecture rules", test modules), as a pure move checked by
+      `pure_move_check.py`, its own commit before that file's helper extraction
+    - [ ] (d) every other test module past a thousand lines split the same way, in due time
+      (the maintainer, 2026-11-04: all of them eventually, not at once): 117 files at
+      `69687460`, the (a) ranking's `*` rows; meanwhile any diff that grows one splits it
+      first (AGENTS.md design sweep)
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in

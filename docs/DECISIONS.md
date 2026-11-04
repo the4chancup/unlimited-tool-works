@@ -15542,3 +15542,14 @@ corner cases buries it; a minor-fixes list with no heading, last in the same lis
 no visible end to the important part. The help window's "What's new" renderer handles the
 `###` heading, since every reader shows the file's text as written.
 Plan: `plans/core/distribution.md` "Changelog and version display"; `CONTRIBUTING.md` "Commits".
+
+## 2026-11-04 — code structure — the thousand-line folder rule covers test modules
+Decision (the maintainer): a test module past roughly a thousand lines is split by concern like
+any other module (`tests.rs` keeps the shared helpers, `tests/` holds one file per concern), as
+a pure move in its own commit; the design sweep flags every diff that grows a module already
+past the line, not only the diff that crosses it. The 117 test files over the line at
+`69687460` are split in due time, the f7 top files first.
+Why: the sweep's "crossed in this diff" fired once per file, so `aesthetics_export`'s
+`validate/tests.rs` grew from 3,200 to 4,838 lines unflagged; in a file that long a new test's
+copied setup sits far from the helper it should reuse (1,303 of its lines are in repeated runs).
+Plan: `CONTRIBUTING.md` "Architecture rules"; AGENTS.md's design sweep; worklog f7 (b), (d).
