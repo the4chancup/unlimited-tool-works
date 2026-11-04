@@ -7364,7 +7364,16 @@ briefs, review loops, gates and mutation runs as for any step.
     gameplay ones). Hypothesis: PES 2019 shows the database's placeholder for a record whose
     flags are clear, so an edit to an unflagged player is invisible. Next, in game once no
     cargo runs (QUESTIONS "What did the tester change in Invitational 1"): a save with one I1
-    player's abilities typed, flags clear, beside one with `player` and `abilities` set
+    player's abilities typed, flags clear, beside one with `player` and `abilities` set.
+    The same save's flags per team (`.tmp/0_0_2/se19/flag_tally.py`): every filled VGL team
+    (/2hug/, /dbg/, /ksg/ …, 23 players) holds the edited-player flag on all 23, the
+    gameplay flags (registered and playable positions, abilities, playing style, motion) on
+    nearly all, basic settings, skills and COM styles on some (/domg/: 7, 10 and 5 of 23);
+    every placeholder team (VGL N, Backup N, Invitational N) holds none; the look flags
+    (face, hair, physique, strip) are off on every team. The tester changed at least names
+    and stats (the maintainer, 2026-11-05); a name typed in the info strip sets the
+    edited-player flag, a stat sets nothing. So the in-game check tries: names and stats as
+    the editor leaves them; then with the abilities flag; then with every gameplay flag
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and
     8.36d, then a proof-of-concept exe for VGL's organizer that
     upgrades and compiles a couple of example teams on PES 2019. 8.36c3 (the `<id>.copy`

@@ -32,15 +32,6 @@ names where the question came from so the context can be read there.
     does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
   - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
 
-## Before 0.0.2's proof of concept
-
-- **What did the tester change in Invitational 1** (worklog 0.0.2-se19), and on which save?
-  On a PES 2019 save the writer is byte-exact (an unchanged save and a one-field change
-  checked), so the loss most likely comes from the game ignoring a player whose edit flags
-  are clear: typing stats sets none, as in 4ccEditor. Which fields they changed (stats,
-  names, positions, the team's name), and whether the save was a fresh one or a cup's base,
-  decides what the in-game check tries first; the tester's save itself would settle it.
-
 ## Cup practice
 
 The Music player's three below come from reading Rigdio v2.2.0's controls (worklog 10.0i,
