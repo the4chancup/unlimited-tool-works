@@ -3069,3 +3069,6 @@ worklog passed 7,000 lines.
 - 2026-11-04 — f3: branches and worktrees pruned to `main` and the kept worktrees, unmerged work
   kept as `refs/archive/*`; 35 commit subjects reworded with `git filter-repo` (trees identical,
   `v0.0.1` moved to its twin), the docs' cited hashes remapped.
+- 2026-11-04 — f6: 0.0.1's whole-crate mutation runs started (team_widgets, pes_savefile, save_editor);
+  ST-RUN-04 checked on the published Windows bundle (no console on a double-click, `team-compiler
+  check` prints in a terminal), which closes l2 and f6 (3).

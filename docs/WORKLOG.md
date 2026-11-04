@@ -3802,12 +3802,18 @@ briefs, review loops, gates and mutation runs as for any step.
     runner would lose), the attach in `main` when arguments are present, `startup` returning
     its failure's text for the CLI to print and the window to show (`show_error_dialog`);
     `tests/subsystem.rs` reads the PE header's subsystem (2); the piped CLI tests pass on it
-  - [ ] l2 ST-RUN-04 in the bundle (manual: a double-click opens no console; `team-compiler
-    check` from a terminal prints there), asked before it runs; with k3. 0.0.1's bundle has no
+  - [x] l2 ST-RUN-04 in the bundle (manual: a double-click opens no console; `team-compiler
+    check` from a terminal prints there). 0.0.1's bundle has no
     launcher (`plans/core/development_plan.md` "The /vg/ League 27 (VGL): preview 0.0.2"):
-    the two launchers' check (each prints, its `pause` waits) runs on 0.0.2's bundle. Runs on the cut's own bundle (0.0.1f): `just release`
-    writes the release archive, which it never overwrites, so no bundle is packed before the
-    maintainer's final pass
+    the two launchers' check (each prints, its `pause` waits) runs on 0.0.2's bundle
+    - ST-RUN-04 manual: checked 2026-11-04, the published `unlimited-tool-works-0.0.1-windows.7z`
+      (its SHA256SUMS hash), extracted to `.tmp/after_cut/l2/`: the exe's PE subsystem is 2;
+      launched through Explorer it opened its window and its `--crash-monitor` child, no console
+      window appeared (`double_click.log`); from `cmd` in a pseudo-console (`run.bat` through
+      `scripts/conpty_run.py`) `UTW --help`, an unknown command's error and `UTW team-compiler
+      check` (`Warning no_exports_found`, exit 0) all printed there. Run with no shell
+      between, under `conpty_run.py` alone, nothing prints: the console's owner is then the
+      script's helper process, not a shell, a case no member meets
 - [x] 0.0.1m the window's fit and its scaling with the width (the maintainer's UI review,
   2026-10-26; `plans/core/gui.md` "Shell layout", the paragraphs "The window's size" and
   "Scaling with the width"): the first frame fits the height alone, keeping 1280 wide where
@@ -7168,7 +7174,8 @@ briefs, review loops, gates and mutation runs as for any step.
     rounds and get Astra's too); (2) the exe's size crate by crate, `cargo bloat
     --release -p studio --crates` on the release's commit, into `spec/core/distribution.md`
     "Size budget"; (3) l2's other half, ST-RUN-04's `team-compiler check` from a terminal
-    printing there, on the release bundle (the Team compiler is outside 0.0.1); (4) the GPU
+    printing there, on the release bundle (the Team compiler is outside 0.0.1): done
+    2026-11-04 with the double-click half (l2's line); (4) the GPU
     DDS encoder (`dds_convert` `gpu.rs`, `start(VULKAN | METAL)`, unwired until after 0.1.0:
     no caller outside its tests) would meet f1e4's crashing Vulkan driver where the wiring
     lands: its plan's guard is written (`plans/libs/README.md` "First-release desktop GPU
