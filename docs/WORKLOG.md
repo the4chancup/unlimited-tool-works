@@ -7266,6 +7266,12 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] (b) also splits each of those files past a thousand lines by concern
       (`CONTRIBUTING.md` "Architecture rules", test modules), as a pure move checked by
       `pure_move_check.py`, its own commit before that file's helper extraction
+      - [x] f7b1 `aesthetics_export` `validate/tests.rs` (4,838 lines, 152 tests) split into
+        eleven files by concern under `validate/tests/` (export kind, player folder, shared
+        links, common links, shared folders, kits, root files, name conflicts, undecided root,
+        pre-Fox, content findings; 99 to 816 lines), four shared helpers left in `tests.rs`;
+        `pure_move_check.py` identical (7,721 code lines), 227 tests before and after (SWE-2)
+      - [ ] f7b2 its repeated runs into helpers
     - [ ] (d) every other test module past a thousand lines split the same way, in due time
       (the maintainer, 2026-11-04: all of them eventually, not at once): 117 files at
       `69687460`, the (a) ranking's `*` rows; meanwhile any diff that grows one splits it
