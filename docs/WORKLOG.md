@@ -7197,7 +7197,12 @@ briefs, review loops, gates and mutation runs as for any step.
     f1g14's mutation run, postponed from the cut (DECISIONS "f1g14's mutation run waits until
     after the cut"), f1g15's with it: `just mutants-diff` over f1g14's commit against its parent `7cb9889c`,
     run from a worktree at that commit so the cut's later commits stay out of the diff (33
-    mutants listed on the slice's draft diff), every survivor triaged and its tests briefed;
+    mutants listed on the slice's draft diff), every survivor triaged and its tests briefed.
+    Narrowed 2026-11-04: (8)'s whole-crate runs of `save_editor` and `team_widgets` test every
+    mutant a diff run over those two crates would, so the diff runs take only the rest, each
+    from its own worktree and queued on the lock: f1g14 `mutants-diff 7cb9889c crates/studio_core
+    crates/tools/ruleset_editor` at `699a77ab`, f1g15 `mutants-diff ed74a327 crates/libs/aatf` at
+    `f6055ebe` (logs `.tmp/after_cut/f1g14m/`);
     (8) the whole-crate runs of `team_widgets`, `pes_savefile` (cvA1's last item) and
     `save_editor`, started 2026-11-04 at `7400d3dd` (`.tmp/after_cut/mutants_whole.sh`, one
     log and summary folder per crate there), every survivor triaged; (9) the `review2`
