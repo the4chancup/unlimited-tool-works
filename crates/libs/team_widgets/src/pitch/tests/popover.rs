@@ -488,6 +488,33 @@ fn a_preset_switch_closes_the_popover() {
     assert_eq!(view.popover, None, "a preset switch closes the popover");
 }
 
+// `close_popover` is the host's close, for a view that stops drawing the
+// pitch (the Save editor leaving the team view): the next pitch drawn has
+// no popover.
+#[test]
+fn close_popover_closes_the_open_popover() {
+    let mut window = Headless::sized(600.0, 450.0);
+    let mut tactics = fixture_tactics(PesVersion::Pes21);
+    let mut view = TacticsView::default();
+    let rows = fixture_rows(PesVersion::Pes21);
+    let roster = roster_rows(&rows);
+    let formation = tactics.presets[0].formations[0].clone();
+
+    let (nodes, _) = window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    let at = marker_point(&nodes, &formation.players, 3);
+    window.click_pitch(at, PesVersion::Pes21, &mut tactics, &mut view, &roster);
+    window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    assert!(
+        popover_rect(&window.ctx, &view).is_some(),
+        "premise: the popover is open"
+    );
+
+    view.close_popover();
+    window.pitch(PesVersion::Pes21, &mut tactics, &mut view, &roster, vec![]);
+    assert_eq!(view.popover, None, "closed by the host");
+    assert_eq!(popover_rect(&window.ctx, &view), None, "nothing drawn");
+}
+
 // The popover's Position combo lists the positions the slot's spot
 // offers and writes the picked position byte to the shown formation's
 // slot alone: the fixture's RB at (89, 12) is offered CB and RB, and
