@@ -3666,7 +3666,7 @@ mod tests {
     }
 
     #[test]
-    fn a_bare_local_texture_nothing_supplies_is_missing() {
+    fn a_bare_local_texture_nothing_supplies_is_a_warning_and_the_package_kept() {
         // `./missing.dds` names a texture of the part's own folder; with
         // none there, the pointing leaves it and nothing supplies it.
         let round = |extra: Vec<FileDescriptor>| {
@@ -3695,8 +3695,8 @@ mod tests {
             (code, severity, disposition),
             (
                 "fmdl_texture_not_found",
-                Severity::Error,
-                Disposition::DropFolder
+                Severity::Warning,
+                Disposition::Keep
             )
         );
         assert!(
@@ -3705,6 +3705,7 @@ mod tests {
                 .any(|(key, value)| key == "texture" && value == "./missing.dds"),
             "{context:?}"
         );
+        assert!(!batch.entries.is_empty(), "the package is kept");
 
         // `missing.dds` beside the model resolves the stem: no finding.
         let batch = run_with(

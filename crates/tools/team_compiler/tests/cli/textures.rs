@@ -1143,10 +1143,10 @@ fn a_model_naming_a_kit_f_folder_finds_nothing() {
             "Info fmdl_weights_not_normalized [Keep] at Players/05 - A (file=face_high.fmdl, count=1662)",
             "Info export_identified [Keep] (team=/co/, id=714)",
             "Info team_colors_missing [Keep] ()",
-            "Error fmdl_texture_not_found [DropFolder] at Players/05 - A (model=face_high.fmdl, texture=./kitF/armor_bsm.dds)",
+            "Warning fmdl_texture_not_found [Keep] at Players/05 - A (model=face_high.fmdl, texture=./kitF/armor_bsm.dds)",
         ]
     );
-    assert_eq!(run.exit_code(), 1);
+    assert_eq!(run.exit_code(), 0);
 }
 
 /// The game's kit texture folder, whose fixed files the modded exe swaps per match.
@@ -1229,8 +1229,8 @@ pub(crate) fn tracer_model_pointing(
 }
 
 /// Writes TC-TEX-05's export: slot 05's `face_high.fmdl` naming `hair.dds` in the team's Common
-/// output, and no `Common/`; and slot 03's clean face, so a CPK is written when slot 05's face
-/// is left out.
+/// output, and no `Common/`; and slot 03's clean face, so a CPK is written whatever becomes of
+/// slot 05's face.
 fn write_common_hair_player(sandbox: &Sandbox) {
     sandbox.write(
         "exports/co Midcup Hair/Players/05 - A/face_high.fmdl",
@@ -1271,11 +1271,9 @@ fn install_hair_in(sandbox: &Sandbox, holder: &str) {
     );
 }
 
-/// The slot-05 finding of TC-TEX-05's missing hair, at `severity` and `disposition`.
-fn hair_not_found(severity: &str, disposition: &str) -> String {
-    format!(
-        "{severity} fmdl_texture_not_found [{disposition}] at Players/05 - A (model=face_high.fmdl, texture=/Assets/pes16/model/character/common/714/sourceimages/hair.dds)"
-    )
+/// The slot-05 finding of TC-TEX-05's missing hair.
+fn hair_not_found() -> String {
+    "Warning fmdl_texture_not_found [Keep] at Players/05 - A (model=face_high.fmdl, texture=/Assets/pes16/model/character/common/714/sourceimages/hair.dds)".to_owned()
 }
 
 /// The findings of TC-TEX-05's export, ending with `task`, its face task's.
@@ -1320,9 +1318,9 @@ fn a_common_texture_only_an_earlier_installed_cpk_holds_is_found_and_a_later_one
     );
 }
 
-// TC-TEX-05
+// TC-TEX-21
 #[test]
-fn a_common_texture_only_a_later_installed_cpk_holds_leaves_the_face_out() {
+fn a_common_texture_only_a_later_installed_cpk_holds_is_a_warning_and_the_face_is_kept() {
     let sandbox = Sandbox::new("tex_installed_later");
     write_common_hair_player(&sandbox);
     install_hair_in(&sandbox, "4cc_63_midcup.cpk");
@@ -1331,15 +1329,11 @@ fn a_common_texture_only_a_later_installed_cpk_holds_leaves_the_face_out() {
 
     assert_eq!(
         findings_of(&run.messages(), "co Midcup Hair"),
-        hair_export_findings(&[hair_not_found("Error", "DropFolder")])
+        hair_export_findings(&[hair_not_found()])
     );
-    assert_eq!(run.exit_code(), 1);
+    assert_eq!(run.exit_code(), 0);
     let entries = cpk_entries(&sandbox.root.join("output/4cc_62_midcup.cpk"));
-    let slot_05: Vec<&String> = entries
-        .keys()
-        .filter(|path| path.contains("71405") || path.contains("05 - A"))
-        .collect();
-    assert!(slot_05.is_empty(), "{slot_05:?}");
+    assert!(face_package(&entries).get("face_high.fmdl").is_some());
 }
 
 // TC-TEX-05
@@ -1352,7 +1346,7 @@ fn a_common_texture_with_no_pes_folder_to_look_in_is_a_warning_and_the_face_is_k
 
     assert_eq!(
         findings_of(&run.messages(), "co Midcup Hair"),
-        hair_export_findings(&[hair_not_found("Warning", "Keep")])
+        hair_export_findings(&[hair_not_found()])
     );
     assert_eq!(run.exit_code(), 0);
     let entries = cpk_entries(&sandbox.root.join("output/4cc_62_midcup.cpk"));
@@ -1567,7 +1561,7 @@ fn write_subfolder_hair_player(sandbox: &Sandbox) {
 
 /// The slot-05 finding of the `jessie/` Common path nobody supplies.
 fn subfolder_hair_not_found() -> String {
-    "Error fmdl_texture_not_found [DropFolder] at Players/05 - A (model=face_high.fmdl, texture=/Assets/pes16/model/character/common/714/jessie/sourceimages/hair.dds)".to_owned()
+    "Warning fmdl_texture_not_found [Keep] at Players/05 - A (model=face_high.fmdl, texture=/Assets/pes16/model/character/common/714/jessie/sourceimages/hair.dds)".to_owned()
 }
 
 // TC-TEX-05
@@ -1591,13 +1585,9 @@ fn a_common_subfolder_texture_nobody_holds_is_missing() {
         findings_of(&run.messages(), "co Midcup Hair"),
         hair_export_findings(&[subfolder_hair_not_found()])
     );
-    assert_eq!(run.exit_code(), 1);
+    assert_eq!(run.exit_code(), 0);
     let entries = cpk_entries(&sandbox.root.join("output/4cc_62_midcup.cpk"));
-    let slot_05: Vec<&String> = entries
-        .keys()
-        .filter(|path| path.contains("71405") || path.contains("05 - A"))
-        .collect();
-    assert!(slot_05.is_empty(), "{slot_05:?}");
+    assert!(face_package(&entries).get("face_high.fmdl").is_some());
 }
 
 // TC-TEX-05

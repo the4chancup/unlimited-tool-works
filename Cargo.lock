@@ -1603,6 +1603,7 @@ dependencies = [
  "dds_convert",
  "egui",
  "fmdl",
+ "fpc",
  "ftex",
  "kit_config",
  "pes_model",

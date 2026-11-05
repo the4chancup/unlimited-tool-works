@@ -432,8 +432,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    (`fmdl_model_folder_paths_fix`: a model copied between folders, a boots FMDL in a face
    folder, still names its old folder's directory); unlike a `.mtl`'s game directory, an FMDL
    one is not kept. A stem that resolves nowhere stays that bare stem, as Red wrote it: the
-   compiler's `fmdl_texture_not_found` then leaves the package out where Red packed the model
-   without its texture ("A texture a model names must exist" in
+   compiler's `fmdl_texture_not_found` then warns about it, the package packed without its
+   texture as Red packed it ("A texture a model names must exist" in
    `spec/team_compiler/pipeline.md`), and keeping the old directory would only hide the same
    missing file (19 of the 5,921 FMDLs on the maintainer's machine name such a texture). The
    FMDL rules in full, per texture entry, a census of the 6,053 real FMDLs in export folders
@@ -579,13 +579,20 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    preset's blank-model ID and he would lose the stock boots or the hands he wore (EU-PLY-17). An ID a migrated boots or gloves folder
    claims (his worn ID, merged into his folder or linked from it) is left out whatever its
    value, a stock-band one included: the folder decides that category, and a number beside it
-   would be ignored at every compile (`settings_model_id_conflict`). A custom ID worn by a player that no model folder of the export claims is
-   reported (step 10): the content is missing, and writing the number would point at whatever
-   Studio's block scheme later assigns there. It is `custom_model_missing` (E, the slot, the
-   player's name, the key and the ID), checked for every rostered player of a Full output but
-   in a Midcup output only for one the output gives a folder: a Midcup compile leaves a player
-   without a folder as installed, his content included, while a Full one rebuilds the team from
-   the export alone. Since name writing is opt-in, the upgrader emits `name = true` when the
+   would be ignored at every compile (`settings_model_id_conflict`). A custom ID (above 100)
+   worn by a player that no model folder of the export claims was never packed, so the game
+   drew no model for it, and members set such IDs on purpose for a player whose face folder
+   carries his whole body (VGL26: /fg/ gives its whole roster such IDs). A player the output
+   gives a folder gets the FPC hide preset's ID of the kind in his file (`boots_id = 55`,
+   `gloves_id = 11`, `fpc::HideIds::CONVENTION`), which shows the same no-model, and
+   `custom_model_hidden` (W: the slot, the player's name, the key, the ID and `written`, the ID
+   written) names it, since the folder may also be one the member forgot; the number itself
+   would point at whatever Studio's block scheme later assigns there. A rostered player of a
+   Full output the output gives no folder has no file to carry the ID, and the patch would
+   leave his record's number as it is: for him the content is missing (step 10),
+   `custom_model_missing` (E, the slot, the player's name, the key and the ID). A Midcup
+   output reports neither for a folderless player: its compile leaves him as installed, his
+   content included, while a Full one rebuilds the team from the export alone. Since name writing is opt-in, the upgrader emits `name = true` when the
    player name the compiler derives from the output folder's name (`aesthetics_export`'s rule,
    the name part of `NN - Name`) equals the savefile name, or the explicit string otherwise — which is the case whenever the
    folder was named from the face folder rather than the savefile, and whenever the savefile name
@@ -961,7 +968,8 @@ output is judged as its first compile will judge it.
 Uses `aesthetics_export` (the Studio format's object model, conventions, and validation — the upgrader builds
 and verifies its output with the same crate the compiler consumes it with), `pes_savefile` (savefile
 reading, TOML generation), `archives` (old export loading), `vtree`, `kit_config` (binary → TOML kit
-config conversion), `dds_convert` (the logo comparison's decoding and resampling, step 7, the
+config conversion), `fpc` (the hide preset's boots and gloves IDs, step 8), `dds_convert` (the
+logo comparison's decoding and resampling, step 7, the
 compiler's own resampler so the test judges what the compile would regenerate), the format
 lib crates for content inspection, and `roxmltree` (already the workspace's XML reader, the
 compiler's for a member `face.xml`) for the `face.xml` attribute values step 7 respells. The
@@ -1488,10 +1496,8 @@ EU-SET-02  GIVEN two players with face folders, one wearing stock boots 12 and o
            THEN the first's settings.toml has boots_id = 12, none has a gloves_id, and the custom
                 wearer's has no boots_id; upgraded from the folder "co Midcup Spring", both files
                 also have gloves_id = 0
-EU-SET-03  GIVEN a player whose record wears custom boots 433, which no boots folder carries
-           WHEN the export is upgraded
-           THEN it is reported naming the player and 433, nothing is written, and the exit code
-                is 1
+EU-SET-03  withdrawn: restated as EU-SET-14 (`plans/export_upgrader.md`), a player with a
+           folder getting the hide ID with a Warning
 EU-SET-04  GIVEN one player whose folder's name part equals his save name, a face folder named
                 otherwise than its player's save name, and a save name carrying colour codes
            WHEN the export is upgraded

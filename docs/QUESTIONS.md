@@ -62,18 +62,29 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
 
 ## The proof of concept (0.0.2-poc)
 
-A dry run (2026-11-05, `.tmp/0_0_2/poc/dry_run.py`, the release binary at `46105675`, on
-copies: the upgrade against `EDIT00000000_VGL26`, the compile for PES 2019 into a scratch
-folder) stops on two inputs (worklog 0.0.2-poc):
+All 53 VGL26 exports were upgraded against `EDIT00000000_VGL26` and compiled for PES 2019 on
+copies (2026-11-05, `.tmp/0_0_2/poc/all_run.py`, the release binary at `46105675`; tallies
+`tally.py`, `missing_ids.py`). With the two rules answered that day (a custom ID no folder
+holds becomes the hide ID; a texture nobody supplies is a Warning; worklog 0.0.2-poc1 and
+poc2), three Error classes are left (worklog 0.0.2-poc3):
 
-- **/4ccg/'s player 14.** The VGL26 save gives slot 14 (">page 9") boots ID 2918, and the
-  export's boots folders end at `k2917`, so the upgrade refuses (`custom_model_missing`: a
-  Full output would point the number at whatever the team's block later assigns there) and
-  writes nothing. Which is right: is k2918 missing from the export (a folder to add), is the
-  save's 2918 a stray (to set in the save, or to 0), or should the PoC upgrade /4ccg/ with
-  `--loose`, which infers the wearers from the folder IDs instead of the save?
-- **/dbg/'s missing texture.** Players 10, 16 and 18's `boots.fmdl` name `./medic_bsm.tga`,
-  which the export does not hold (`fmdl_texture_not_found`, an Error, as in the library run on
-  PES 2021): the compile leaves those three players' boots out and builds the rest. Is there a
-  copy of `medic_bsm` to add to their folders, or does the PoC go out with the three Errors
-  showing?
+- **/omg/'s boots numbers.** Six players wear boots 2552, 2554, 2556, 2561, 2562 and 2564,
+  and the export's boots folders named after them are `k2952 - BANISHED`, `k2954 - BROOL`,
+  ... `k2964 - 81514- LET ME DEFEND`: each 400 above the save's number. Under the new rule
+  those six upgrade clean with the hide ID 55 and their boots folders (full bodies:
+  `body.dds`, `belly.dds`) dropped as unworn leftovers, two Warnings each. Is the VGL26 save
+  older than the export here (the cup's own save wearing 2952), and should the upgrader
+  refuse instead when the export holds an unworn folder of the same kind as the missing ID,
+  since that is likelier a mismatch than a full body in the face folder?
+- **/akg/'s `Common/dummy_srm`.** `Common/` holds both `dummy_srm.dds` and `dummy_srm.ftex`,
+  so the upgrade's validation refuses it (`texture_stem_conflict`), as a compile would. The
+  compiler never looks up a `dummy_` stem (the game substitutes it). Does the game ever read
+  a team's own `dummy_` file from the CPK, or can the upgrader drop both as leftovers?
+- **`vertex_too_far_from_origin` (89 Errors in 7 exports).** Rerun with both rules (`4e69334c`,
+  `.tmp/0_0_2/poc/far_faces.py`), the compile's only Error class left drops 47 players' folders.
+  They are mostly two community templates, byte for byte: one `face_high.fmdl` with 739
+  vertices past 5000 units and its `hair_high.fmdl` with 16 sit in 29 folders (/domg/, /ink/,
+  /vn/'s "BLANK" players...), another face with 1,478 in 13 (/aceg/, /hgg2d/, /lcg/). The
+  rule is there for the lag such geometry causes all matchday, and these teams played VGL26
+  with them. Are those far vertices the templates' way of hiding parts (and harmless), so
+  the rule should be a Warning, or did the cup see the lag, so the Error stands?

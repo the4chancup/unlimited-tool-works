@@ -108,23 +108,40 @@ fn the_id_rules_stock_kept_zero_written_midcup_and_folder_claimed() {
     );
 }
 
-// EU-SET-03
+// EU-SET-14
 #[test]
-fn a_missing_custom_model_is_reported() {
-    let sandbox = Sandbox::new("set_missing");
+fn an_unclaimed_custom_model_becomes_the_hide_id_with_a_folder() {
+    let sandbox = Sandbox::new("set_hidden");
     face(&sandbox, "co Spring/Faces/XXX05 - A");
-    sandbox.save_edited("EDIT", PesVersion::Pes21, |file| wears(file, 71405, 433, 0));
+    // "co Summer" gives slot 05 no folder: the same worn IDs are missing there.
+    face(&sandbox, "co Summer/Faces/XXX03 - A");
+    sandbox.save_edited("EDIT", PesVersion::Pes21, |file| {
+        wears(file, 71405, 433, 434)
+    });
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    for line in [
+        "- co Spring: Warning custom_model_hidden (slot=05, name=PLACEHOLDER, key=boots_id, id=433, written=55)",
+        "- co Spring: Warning custom_model_hidden (slot=05, name=PLACEHOLDER, key=gloves_id, id=434, written=11)",
+    ] {
+        assert!(run.stdout().contains(line), "{line}\n{}", run.stdout());
+    }
+    assert!(run.stdout().contains("migration_clean"), "{}", run.stdout());
+    let parsed = settings(&sandbox, "co Full Spring/Players/05 - A/settings.toml");
+    assert_eq!(parsed.boots_id, Some(55));
+    assert_eq!(parsed.gloves_id, Some(11));
+
+    // The same worn IDs without his face folder are missing content.
+    let run = upgrade(&sandbox, "co Summer", "EDIT");
     assert_eq!(run.exit_code(), 1);
-    assert!(
-        run.stdout().contains(
-            "- co Spring: Error custom_model_missing (slot=05, name=PLACEHOLDER, key=boots_id, id=433)"
-        ),
-        "{}",
-        run.stdout()
-    );
-    sandbox.assert_nothing_written("co Full Spring", &run.stdout());
+    for line in [
+        "- co Summer: Error custom_model_missing (slot=05, name=PLACEHOLDER, key=boots_id, id=433)",
+        "- co Summer: Error custom_model_missing (slot=05, name=PLACEHOLDER, key=gloves_id, id=434)",
+    ] {
+        assert!(run.stdout().contains(line), "{line}\n{}", run.stdout());
+    }
+    sandbox.assert_nothing_written("co Full Summer", &run.stdout());
 }
 
 // EU-SET-04

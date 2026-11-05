@@ -654,11 +654,12 @@ folders' textures count too; a `./` path naming a subfolder, `./textures/skin.dd
 path alone), or for a path into the team's Common folder in the export's `Common` folder or in a
 CPK your `DpFileList.bin` lists before the CPK being compiled
 (a midcup export can use Common textures compiled into an earlier midcup CPK). A CPK listed
-after it does not count, because removing it must not break this one. Otherwise that model's face,
-boots or gloves is left out of the CPK, and `compile` reports `fmdl_texture_not_found` with the
-model and the texture. When there is no PES folder or no `DpFileList.bin`, or the list does not
-name the CPK being compiled, the texture may still be there, so the model is kept and the line
-is a warning. A texture whose name starts with `dummy_` is never looked for. The game puts its
+after it does not count, because removing it must not break this one. Otherwise `compile`
+reports `fmdl_texture_not_found` as a warning, one line per missing texture naming the model
+and the texture, and keeps the part: a mesh naming it shows without it. When there is no PES
+folder or no `DpFileList.bin`, or the list does not name the CPK being compiled, the texture
+may still be in an installed CPK that could not be checked, so the line is the same warning.
+A texture whose name starts with `dummy_` is never looked for. The game puts its
 own in its place. `check` does not look for these textures, only `compile` does. A texture in
 the game's own kit texture folder (`/Assets/pes16/model/character/uniform/texture/`) is not
 looked for either. The modded exe swaps the files there for every match, so the model would show

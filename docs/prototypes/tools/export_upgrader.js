@@ -303,7 +303,8 @@ const INPUTS = {
   // --savefile run with Autumn24Q's save, whose /co/ roster wears no custom boots
   // or gloves, print the same seven lines (co_save_autumn24q.txt). A save whose
   // /co/ wears custom items (Genso Cup 2's) ends not clean with
-  // custom_model_missing instead (co_save_genso.txt).
+  // custom_model_missing instead (co_save_genso.txt, measured before a player
+  // with a folder got the hide ID and custom_model_hidden, a Warning).
   co: { target: "export", name: "co Spring.zip",
     path: "C:\\Users\\you\\Downloads\\co Spring.zip",
     team: "/co/", teamId: 714, output: "co Full Spring",

@@ -708,9 +708,9 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     ),
     (
         "fmdl_texture_not_found",
-        CatalogSeverity::ErrorUnlessKept,
-        r#"In PES 2018 to 2021, one of the model's meshes names a texture that nothing supplies: not in the folder, not at the `./` path the mesh names, and for a Common path neither in `Common/` nor in a CPK the `DpFileList.bin` lists before this run's own. It is a Warning when no installed CPK could be checked, since the texture may be there."#,
-        r#"As an Error, that part (face, boots or gloves) is left out, and the line names the first missing texture. As a Warning, it is kept, with one line per missing texture."#,
+        CatalogSeverity::Warning,
+        r#"In PES 2018 to 2021, one of the model's meshes names a texture that nothing supplies: not in the folder, not at the `./` path the mesh names, and for a Common path neither in `Common/` nor in a CPK the `DpFileList.bin` lists before this run's own. The texture may still be in an installed CPK that could not be checked."#,
+        r#"The part is kept, with one line per missing texture: a mesh naming it shows without it."#,
     ),
     (
         "fmdl_texture_kit_path",

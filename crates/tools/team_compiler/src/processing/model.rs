@@ -92,9 +92,9 @@ enum PartTextures {
 /// first, gives the face its body and the gloves its hands (`parts_of`), the gloves reading
 /// the part's `.skl` for that, before any texture path is rewritten. A merge of several parts
 /// into one model is noted in `findings` as `fmdl_merged`. A texture a
-/// part's mesh uses that nothing supplies (`texture_supply`) fails the task with
-/// `fmdl_texture_not_found` at the first one, or, when the installed CPKs cannot be looked in,
-/// is noted in `findings` as `fmdl_texture_not_found`, once per texture. A texture path into
+/// part's mesh uses that nothing supplies, or whose supply cannot be decided
+/// (`texture_supply`), is noted in `findings` as `fmdl_texture_not_found`,
+/// once per texture, the package kept. A texture path into
 /// the game's kit texture folder is left as written and noted once per path as
 /// `fmdl_texture_kit_path` instead: the modded exe swaps the kit textures per match, so a
 /// fixed file there is not the kit the player wears.
@@ -501,14 +501,8 @@ pub(super) fn package(
                     TextureSupply::Supplied => {}
                     // A bare stem the `.mtl` check reports already.
                     TextureSupply::Missing if converted && is_bare(&path.directory) => {}
-                    TextureSupply::Missing => {
-                        return Err(TaskFailure {
-                            code: Code::FmdlTextureNotFound,
-                            context: context(),
-                        });
-                    }
                     // Once per texture: two entries of the table may name one path.
-                    TextureSupply::Unknown => {
+                    TextureSupply::Missing | TextureSupply::Unknown => {
                         let finding = (Code::FmdlTextureNotFound, context());
                         if !findings.contains(&finding) {
                             findings.push(finding);

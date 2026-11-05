@@ -2993,11 +2993,12 @@ fn a_shared_folder_s_texture_link_takes_the_common_file_s_spelling_on_pes_21() {
     assert!(entries.contains_key(armor), "{:#?}", entries.keys());
 }
 
-// TC-MOD-71
+// TC-MOD-100
 #[test]
-fn a_fmdl_texture_named_by_its_path_is_not_found_by_its_name_elsewhere_on_pes_21() {
-    // The root's `skin.dds` is not at `./textures/`.
-    let sandbox = Sandbox::new("mod_texture_path_below_missing");
+fn a_texture_nobody_supplies_is_a_warning_and_the_package_is_kept_on_pes_21() {
+    // The root's `skin.dds` is not at `./textures/`, and nothing supplies
+    // the boots' `./medic_bsm`.
+    let sandbox = Sandbox::new("mod_texture_not_found_kept");
     let export = "co Midcup Textures";
     let player = format!("exports/{export}/Players/05 - A");
     sandbox.write(
@@ -3005,29 +3006,30 @@ fn a_fmdl_texture_named_by_its_path_is_not_found_by_its_name_elsewhere_on_pes_21
         &tracer_model_pointing("fcl_hair.fmdl", &[("shirt.dds", "skin.dds")], "./textures/"),
     );
     sandbox.write(&format!("{player}/skin.dds"), &small_dds());
-    // Another player, so the run writes a CPK without slot 05's face.
     sandbox.write(
-        &format!("exports/{export}/Players/03 - C/face_high.fmdl"),
-        &clean_model(),
+        &format!("{player}/boots.fmdl"),
+        &tracer_model_pointing("boots.fmdl", &[("shirt.dds", "medic_bsm")], "./"),
     );
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 
     let lines = run.messages();
-    assert!(
-        findings_of(&lines, export).contains(
-            &"Error fmdl_texture_not_found [DropFolder] at Players/05 - A (model=face_high.fmdl, texture=./textures/skin.dds)"
-        ),
-        "{lines:#?}"
-    );
+    let findings = findings_of(&lines, export);
+    for line in [
+        "Warning fmdl_texture_not_found [Keep] at Players/05 - A (model=face_high.fmdl, texture=./textures/skin.dds)",
+        "Warning fmdl_texture_not_found [Keep] at Players/05 - A (model=boots.fmdl, texture=./medic_bsm)",
+    ] {
+        assert!(findings.contains(&line), "{line}\n{findings:#?}");
+    }
+    assert_eq!(run.exit_code(), 0, "{lines:#?}");
     let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
-    assert!(
-        !entries
-            .keys()
-            .any(|path| path.contains("/face/real/71405/")),
-        "{:#?}",
-        entries.keys()
-    );
+    for package in ["/face/real/71405/", "/boots/k"] {
+        assert!(
+            entries.keys().any(|path| path.contains(package)),
+            "{package}: {:#?}",
+            entries.keys()
+        );
+    }
 }
 
 // TC-MOD-71

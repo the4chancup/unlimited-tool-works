@@ -416,10 +416,11 @@ pub(crate) enum Code {
     /// read, when the pass drops the winner: the file is left out with it, so planning never
     /// selects a file the pass did not check.
     CommonModelBeatenDropped,
-    /// A texture one of a Fox model's meshes uses, named in the team's Common output, that
-    /// neither the export's `Common/`, the folder's links nor an installed CPK loaded before
-    /// the run's supplies: the model's package is left out, or kept when the installed CPKs
-    /// cannot be looked in.
+    /// A texture one of a Fox model's meshes uses that nothing supplies: not
+    /// the folder nor a `./` path's, and for a path into the team's Common
+    /// output neither the export's `Common/` nor an installed CPK loaded
+    /// before the run's; the same finding when the installed CPKs cannot be
+    /// looked in. The package is kept (`model`, `texture`).
     FmdlTextureNotFound,
     /// A texture path one of a Fox model's meshes names in the game's kit texture folder,
     /// kept unchanged: the modded exe swaps the kit textures per match, so a fixed file
@@ -903,9 +904,6 @@ enum CatalogSeverity {
     ErrorOrWarning,
     /// `E/F`: Fatal when the disposition aborts the run, else an Error.
     ErrorOrFatal,
-    /// `E/W` keyed by the disposition: a Warning when the folder is kept (`Keep`), else an
-    /// Error.
-    ErrorUnlessKept,
 }
 
 impl CatalogSeverity {
@@ -917,9 +915,7 @@ impl CatalogSeverity {
             CatalogSeverity::Error => "Error",
             CatalogSeverity::Fatal => "Fatal",
             CatalogSeverity::ErrorOrInfo => "Error or Info",
-            CatalogSeverity::ErrorOrWarning | CatalogSeverity::ErrorUnlessKept => {
-                "Error or Warning"
-            }
+            CatalogSeverity::ErrorOrWarning => "Error or Warning",
             CatalogSeverity::ErrorOrFatal => "Error or Fatal",
         }
     }
@@ -963,8 +959,6 @@ fn severity(code: &str, disposition: Disposition, raised: bool) -> Severity {
         CatalogSeverity::ErrorOrWarning => Severity::Warning,
         CatalogSeverity::ErrorOrFatal if disposition == Disposition::AbortRun => Severity::Fatal,
         CatalogSeverity::ErrorOrFatal => Severity::Error,
-        CatalogSeverity::ErrorUnlessKept if disposition == Disposition::Keep => Severity::Warning,
-        CatalogSeverity::ErrorUnlessKept => Severity::Error,
     }
 }
 
@@ -1233,21 +1227,15 @@ mod tests {
     }
 
     #[test]
-    fn a_texture_not_found_is_a_warning_only_when_the_folder_is_kept() {
-        let message = |disposition| {
-            tool_message(
-                Code::FmdlTextureNotFound,
-                Scope::Run,
-                disposition,
-                vec![("model", "face_high.fmdl".to_owned())],
-            )
-        };
-        assert_eq!(message(Disposition::Keep).severity, Severity::Warning);
-        assert_eq!(message(Disposition::DropFolder).severity, Severity::Error);
-        assert_eq!(
-            message(Disposition::Keep).code.code,
-            "fmdl_texture_not_found"
+    fn a_texture_not_found_is_a_warning() {
+        let message = tool_message(
+            Code::FmdlTextureNotFound,
+            Scope::Run,
+            Disposition::Keep,
+            vec![("model", "face_high.fmdl".to_owned())],
         );
+        assert_eq!(message.severity, Severity::Warning);
+        assert_eq!(message.code.code, "fmdl_texture_not_found");
     }
 
     #[test]
@@ -1444,7 +1432,7 @@ mod tests {
         assert_eq!(severity("source_changed_during_run"), "Fatal");
         assert_eq!(severity("file_type_disallowed"), "Error or Info");
         assert_eq!(severity("dpfilelist_missing"), "Error or Warning");
-        assert_eq!(severity("fmdl_texture_not_found"), "Error or Warning");
+        assert_eq!(severity("fmdl_texture_not_found"), "Warning");
         assert_eq!(severity("source_read_failed"), "Error or Fatal");
     }
 

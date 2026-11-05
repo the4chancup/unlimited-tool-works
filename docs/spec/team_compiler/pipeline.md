@@ -2010,10 +2010,12 @@ Resolved decisions:
   decides where it is packed (step 6): player folder → relocated to the player's common subfolder;
   Common → referenced in place, once per team.
 - **A texture a model names must exist** (`fmdl_texture_not_found`, `mtl_texture_not_found`): a
-  player whose texture nobody supplies does not look as its author meant, so the finding is an
-  Error and drops the folder on Fox; on pre-Fox it is a Warning that keeps the folder, because
-  the game plays such a face (`messages.md`, the paragraph after "Texture existence is checked
-  **deep**"). A texture used by one of the model's meshes is supplied when
+  player whose texture nobody supplies may not look as its author meant, so it is reported, as
+  a Warning that keeps the package on every engine. Real models carry leftover meshes hidden
+  inside them whose materials name a texture nobody shipped (VGL26's /dbg/ player 10: a
+  three-vertex, one-triangle mesh inside the head, naming `./medic_bsm.tga`); the game plays
+  them, and dropping the package would swap in the default boots or face, a bigger change than
+  one hidden mesh's texture. A texture used by one of the model's meshes is supplied when
   (1) its stem resolves in the model's folder, links included; or (2) its path names the team's
   Common output and the export's `Common/` holds it; or (3) its path names the team's
   Common output and an **installed CPK** holds that path. Case 3 is the midcup export: a partial
@@ -2058,11 +2060,8 @@ Resolved decisions:
   looked up, since the game never loads it. A stem starting with `dummy_` is never looked up,
   wherever its path points: the game substitutes it. The check is made where the model is
   compiled, in its package's task, so `check`, which compiles no model, does not report
-  `fmdl_texture_not_found`. The Error leaves that package out as any failed package is left
-  out (the folder's other packages and its textures still compile), naming the first missing
-  texture in the package's part order, since a failed task reports one finding; the Warning
-  is reported once per missing texture, since the folder compiles and the member sees nothing
-  else. The texture link resolves to the installed texture: the model's path names the team's
+  `fmdl_texture_not_found`. The Warning is reported once per missing texture, the package
+  compiled with the path as the model names it. The texture link resolves to the installed texture: the model's path names the team's
   Common output, and nothing is packed for it. `check` reads the same tables of contents for
   the link, reporting nothing about the walk itself, so `check` and `compile` agree on it. When
   the lookup cannot be made, the link's `common_link_missing` stays an Error: the link is the

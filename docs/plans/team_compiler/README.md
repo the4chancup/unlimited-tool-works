@@ -322,3 +322,24 @@ TC-STR-21  GIVEN /co/ player folders holding, in turn: 101334.copy beside face_h
                 mapping slot 09's folder to 09 and 10 and its link renamed 71410.copy THEN
                 copy_link_id_invalid drops it
 ```
+
+**0.0.2-poc2 scope.** What exists of this is in `spec/team_compiler/pipeline.md` "Resolved
+decisions and open questions", "A texture a model names must exist": a texture nobody
+supplies is a Warning on every engine. TC-MOD-71's last clause and TC-TEX-05's second
+case are restated below and withdrawn.
+
+```
+TC-MOD-100 GIVEN slot 05 holding face_high.fmdl naming ./textures/skin, skin.dds only beside
+                 it rather than in textures/, and boots.fmdl one of whose meshes names
+                 ./medic_bsm, which no file supplies
+           WHEN the export is compiled for PES 21
+           THEN fmdl_texture_not_found is reported as a Warning twice, naming face_high.fmdl
+                and ./textures/skin.dds, then boots.fmdl and ./medic_bsm, and the CPK holds
+                slot 05's face and boots packages (restates TC-MOD-71's last clause)
+TC-TEX-21  GIVEN TC-TEX-05's export and PES folder, only 4cc_63_midcup.cpk (listed after the
+                 CPK compiled) holding the hair texture
+           WHEN the export is compiled for PES 21
+           THEN fmdl_texture_not_found is reported as a Warning naming face_high.fmdl and the
+                hair path, the same line as with no PES folder, and the CPK holds slot 05's
+                face package (restates TC-TEX-05's second case)
+```

@@ -17,6 +17,7 @@ egui.workspace = true
 kit_config.workspace = true
 pes_model.workspace = true
 pes_savefile.workspace = true
+fpc.workspace = true
 fmdl.workspace = true
 ftex.workspace = true
 pes_version.workspace = true

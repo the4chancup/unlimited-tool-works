@@ -15566,3 +15566,29 @@ rest; PES 2019 is VGL 27's game and the likeliest for the 4cc's spring cup, the 
 of 1.0.0; the organizer's pipeline writes the official save through the Save editor.
 Plan: `plans/core/development_plan.md` "The /vg/ League 27 (VGL): preview 0.0.2"; worklog
 0.0.2-poc, 0.0.2-se19, 8.36d.
+
+## 2026-11-05 — export_upgrader — a custom ID no folder holds becomes the hide ID, with a Warning
+Decision (the maintainer): a worn custom boots or gloves ID that no migrated folder claims is
+written to the player's `settings.toml` as the FPC hide preset's ID of its kind (boots 55,
+gloves 11), and a new Warning, `custom_model_hidden`, names the ID written. A rostered
+player of a Full output who gets no folder keeps `custom_model_missing`, the Error: nothing
+of his would carry the ID. Two codes rather than one of two severities, since each of the
+upgrader's codes has one severity and the two cases have different outcomes.
+Why: members set a nonexistent ID on purpose when the face folder carries the whole body, 55
+and 11 being the cup's habit, not a rule; the game drew no model for an ID never packed, which
+the hide ID reproduces, while the number itself would point at whatever Studio's block scheme
+assigns there later. The Error refused 31 of VGL26's 53 exports, 30 for it alone, over 279
+players (/fg/ gives its whole roster such IDs); none of them lacked a folder. A Warning still tells the member, since the folder may be one they forgot.
+Plan: `spec/export_upgrader.md` "What it does", step 8 (built at once); EU-SET-14 in
+`plans/export_upgrader.md` "Acceptance".
+
+## 2026-11-05 — team_compiler — a texture nobody supplies is a Warning on Fox too
+Decision (the maintainer): Fox's `fmdl_texture_not_found` keeps the package and is a Warning,
+once per missing texture, as pre-Fox's `mtl_texture_not_found` already was; the installed-CPK
+lookup stays, sparing a midcup the Warning for a texture an earlier CPK holds.
+Why: real models carry leftover meshes hidden inside them whose materials name textures nobody
+shipped (/dbg/ player 10's boots: a three-vertex, one-triangle mesh inside the head, naming
+`medic_bsm`); Red packed them and the cup played them, while dropping the package swaps in the
+default boots or face, a far bigger change than one hidden mesh's texture.
+Plan: `spec/team_compiler/pipeline.md` "Resolved decisions and open questions" (built at
+once); TC-MOD-100, TC-TEX-21 in `plans/team_compiler/README.md` "Acceptance".

@@ -99,12 +99,20 @@ pub(crate) enum Code {
     /// subfolder `.mtl` names a Common subfolder (`reference`, the path as
     /// written).
     CommonReferenceKept,
-    /// A rostered player's save record wears a custom boots or gloves ID
-    /// (above 100) no migrated folder claims: the content is missing (step
-    /// 8; `slot`, `name`, `key` the ID's own, `id`). Checked for every
-    /// rostered player of a Full output but in a Midcup one only for a
-    /// player the output gives a folder.
+    /// A rostered player of a Full output that the output gives no folder
+    /// wears a custom boots or gloves ID (above 100) no migrated folder
+    /// claims: the content is missing (step 8; `slot`, `name`, `key` the
+    /// ID's own, `id`). A player the output gives a folder is
+    /// `CustomModelHidden` instead; a Midcup output leaves a folderless
+    /// player as installed and reports neither.
     CustomModelMissing,
+    /// A rostered player the output gives a folder wears a custom boots or
+    /// gloves ID (above 100) no migrated folder claims: his
+    /// `settings.toml` gets the hide ID of its kind, which the game shows
+    /// as no model, the way a face folder carrying his whole body wants it
+    /// (step 8; `slot`, `name`, `key` the ID's own, `id` the worn ID,
+    /// `written` the hide ID written). The run stays clean.
+    CustomModelHidden,
     /// A stored value no `settings.toml` key can hold, left out of the
     /// player's file (`slot`, `name`, `key` the dotted key, `value` the
     /// stored value).
@@ -150,6 +158,7 @@ impl Code {
             Code::LogoFallback => "logo_fallback",
             Code::CommonReferenceKept => "common_reference_kept",
             Code::CustomModelMissing => "custom_model_missing",
+            Code::CustomModelHidden => "custom_model_hidden",
             Code::SettingsValueRefused => "settings_value_refused",
             Code::SettingsNotGenerated => "settings_not_generated",
             Code::ModelFolderDestination => "model_folder_destination",
@@ -182,6 +191,7 @@ impl Code {
         Code::LogoFallback,
         Code::CommonReferenceKept,
         Code::CustomModelMissing,
+        Code::CustomModelHidden,
         Code::SettingsValueRefused,
         Code::SettingsNotGenerated,
         Code::ModelFolderDestination,
@@ -489,8 +499,14 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
     (
         "custom_model_missing",
         Severity::Error,
-        r#"In the save, a rostered player wears a custom boots or gloves ID (above 100) that no migrated folder claims. Every rostered player of a `Full` output is checked, but in a `Midcup` output only the players it gives a folder."#,
+        r#"In the save, a rostered player of a `Full` output wears a custom boots or gloves ID (above 100) that no migrated folder claims, and the output gives him no folder."#,
         r#"The content is missing. The run is not clean, so nothing is written. Add the folder to the old export, or take the ID off the player in the save."#,
+    ),
+    (
+        "custom_model_hidden",
+        Severity::Warning,
+        r#"In the save, a rostered player the output gives a folder wears a custom boots or gloves ID (above 100) that no migrated folder claims."#,
+        r#"His `settings.toml` gets the hide ID of its kind (55 for boots, 11 for gloves), which the game shows as no model, the way a face folder carrying his whole body wants it. If a boots or gloves folder was meant, add it to the old export and upgrade again."#,
     ),
     (
         "settings_value_refused",

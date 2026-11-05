@@ -57,7 +57,7 @@ once an hour; work continues past it, but no phase closes with one outstanding.
 **Handover queue:** Astra over 8.36c1-c4 (checkpoint (b); `8bcbf720..46105675`, two parts:
 `pes_savefile` + `save_editor`, then `team_compiler`), queued 2026-11-05: Codex `own`'s weekly
 window was 95% used (resets 2026-11-06 03:48) and the `brother` login's token had expired, which
-only a new sign-in renews.
+only a new sign-in renews. 0.0.2-poc1 and poc2 (`f5058d00..`, two crates) join it.
 
 ---
 
@@ -7445,8 +7445,38 @@ briefs, review loops, gates and mutation runs as for any step.
     PES 2019, no deploy): /dbg/ upgrades clean and compiles with three Errors (players 10, 16
     and 18's boots name a `medic_bsm.tga` the export lacks: those packages left out); /4ccg/'s
     upgrade refuses (`custom_model_missing`: the save gives player 14 boots 2918, the export's
-    folders end at k2917). Both wait on the maintainer (QUESTIONS "The proof of concept"); the
-    in-game half waits for `save_editor`'s mutation run to end (no cargo while PES 2019 runs)
+    folders end at k2917). Both answered by the maintainer 2026-11-05 (DECISIONS): the
+    in-game half waits for `save_editor`'s mutation run to end (no cargo while PES 2019 runs).
+    All 53 VGL26 exports upgraded and compiled the same way (`.tmp/0_0_2/poc/all_run.py`,
+    tally `tally.py`, `missing_ids.py`): 31 upgrades refused, 30 by `custom_model_missing`
+    alone (279 players, every one given a folder), /akg/ also by `texture_stem_conflict`
+    (`Common/dummy_srm.dds` beside `dummy_srm.ftex`).
+    - [x] 0.0.2-poc1 a custom ID no folder claims becomes the hide ID, with a Warning
+      (`spec/export_upgrader.md` "What it does", step 8; EU-SET-14): `custom_model_hidden`
+      (W, `written` the hide ID) for a player the output gives a folder,
+      `custom_model_missing` (E) left for a folderless Full player (`settings.rs`,
+      `messages.rs`, `tests/cli/settings.rs`). SWE-2 sidekick, brief
+      `.tmp/0_0_2/poc/brief_poc12.md`
+    - [x] 0.0.2-poc2 a texture nobody supplies is a Warning on Fox too
+      (`spec/team_compiler/pipeline.md` "A texture a model names must exist"; TC-MOD-100,
+      TC-TEX-21): the `Missing` arm joins `Unknown` (`processing/model.rs`),
+      `ErrorUnlessKept` gone, catalog, help, CHANGELOG; the same sidekick run. SWE-2 review
+      done (3 of 8 accepted, loop ended; rulings `.tmp/duck_rulings.md` "S-poc12"). Open:
+      Astra with the c1-c4 queue, the `mutants-diff f5058d00` (queued)
+    - [x] 0.0.2-poc3 the 53 exports again with poc1 and poc2's binary: every Error left
+      diagnosed (no PES check for the 51 beyond /dbg/ and /4ccg/, the maintainer). Rerun
+      2026-11-05 at `4e69334c` (`.tmp/0_0_2/poc/all/`, the first run in `all_v1/`): 52
+      upgrades clean (279 `custom_model_hidden`), /akg/ refused (`dummy_srm`); the
+      compile's one Error class is `vertex_too_far_from_origin`, 89 in 7 exports, mostly
+      two shared templates (`far_faces.py`); 429 `fmdl_texture_not_found` Warnings; one
+      `settings_model_id_conflict` (/hdg/ 22: his hide gloves ID 11 beside a hand-split
+      face, whose hands decide the gloves at compile; harmless, the upgrader cannot see a
+      face's hands). The three classes wait on QUESTIONS. The
+      first run's compile of the 22 clean upgrades: 78 Fox `fmdl_texture_not_found` Errors
+      (poc2's), 15 `vertex_too_far_from_origin` (/aceg/, /domg/, /gbfg/), 457
+      `settings_value_out_of_range` Warnings (motion values of the VGL26 save past PES
+      2019's ranges). /omg/'s boots numbers, /akg/'s `dummy_srm` and the vertex rule wait on
+      QUESTIONS "The proof of concept"
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
@@ -8968,3 +8998,6 @@ points there.
 ## Log
 
 The dated log is `docs/LOG.md`.
+- 2026-11-05 — 0.0.2-poc1/poc2 (the maintainer's answers): a custom boots or gloves ID no folder holds
+  becomes the hide ID with a Warning (`custom_model_hidden`), and Fox's missing texture is a Warning keeping
+  the package. All 53 VGL26 exports run on copies first: 31 upgrades refused, 279 players. SWE-2 sidekick.

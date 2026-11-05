@@ -1160,7 +1160,8 @@ TC-MOD-71  GIVEN slot 05 holding face_high.fmdl naming ./textures/skin, and text
            THEN the face package's model names skin in the directory
                 .../common/<team>/05 - A/textures/sourceimages/, the CPK holds that
                 directory's #windx11/skin.ftex, and no finding names skin; with skin.dds only
-                elsewhere, fmdl_texture_not_found names ./textures/skin.dds and drops the folder
+                elsewhere, fmdl_texture_not_found names ./textures/skin.dds (that clause
+                restated as TC-MOD-100, `plans/team_compiler/README.md`, the face kept)
 TC-MOD-72  GIVEN Kits/p1, Common/kit1/armor_bsm.dds, Boots/Crocs holding boots.fmdl naming
            ./kitN/armor_bsm and kitN/armor_bsm.dds.common, and slot 05 linking Crocs.boots
            WHEN the export is compiled for PES 21
@@ -1336,8 +1337,9 @@ TC-TEX-05  GIVEN slot 05's face_high.fmdl naming hair in the team's Common outpu
            4cc_63_midcup.cpk holding it, then with no PES folder; and again with the model naming
            hair in the Common output's jessie/ folder, slot 05 holding jessie/hair.dds.common
            and the export Common/jessie/hair.dds
-           THEN the first compiles with no texture finding; the second reports fmdl_texture_not_found as
-                an Error and drops the folder; the third reports it as a Warning and keeps it;
+           THEN the first compiles with no texture finding; the second reports fmdl_texture_not_found
+                (restated as TC-TEX-21, `plans/team_compiler/README.md`, a Warning keeping the
+                face); the third reports it as a Warning and keeps it;
                 the last compiles with no texture finding, the model naming hair in
                 /Assets/pes16/model/character/common/714/jessie/sourceimages/ and the CPK
                 holding that folder's hair.ftex once

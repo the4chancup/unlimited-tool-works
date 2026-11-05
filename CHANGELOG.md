@@ -10,6 +10,11 @@ What changed for members, release by release, newest first.
   through `aesthetics_patch.toml` and the save it is applied to: the patch carries his
   appearance, motions, boots and gloves IDs, and the CPK carries no player tables, so the
   save needs no stripping. PES 2015 to 2017 get the patch too.
+- **Export upgrader** — a player whose save wears a custom boots or gloves ID that no folder
+  of the export holds no longer stops the upgrade: his `settings.toml` gets the hide ID
+  (boots 55, gloves 11), which shows no model as the game did, and a warning names him.
+- **Team compiler** — on PES 2018 to 2021, a model naming a texture nobody supplies is kept,
+  with a warning per missing texture, instead of being left out of the CPK.
 
 ### Minor fixes
 

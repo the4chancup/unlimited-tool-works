@@ -282,3 +282,20 @@ EU-SET-13  GIVEN EU-SET-12's export
            THEN the output is written, Players/06 holding its face model as in EU-SET-12,
                 no player folder holds a .copy, and no base_copy_beside_face is reported
 ```
+
+**0.0.2-poc1 scope.** What exists of this is in `spec/export_upgrader.md` "What it does",
+step 8: a custom ID no folder claims becomes the hide ID of its kind, with a Warning
+(`custom_model_hidden`). The scenario below restates EU-SET-03, which is withdrawn.
+
+```
+EU-SET-14  GIVEN slot 05's face folder "XXX05 - A", his record wearing custom boots 433 and
+                 custom gloves 434, which no boots or gloves folder carries
+           WHEN the export is upgraded
+           THEN his settings.toml has boots_id = 55 and gloves_id = 11, custom_model_hidden
+                is reported twice, a Warning, naming slot 05, boots_id, 433 and 55 written,
+                then gloves_id, 434 and 11 written, the run ends migration_clean and the exit
+                code is 0; GIVEN no folder for slot 05 (no face folder, and no boots or gloves
+                folder he wears) THEN custom_model_missing, an Error,
+                names slot 05, boots_id and 433, nothing is written, and the exit code
+                is 1 (restates EU-SET-03)
+```

@@ -5,7 +5,9 @@
 //! `settings.toml` does not hold. `from_player`'s output is adjusted for what the export's folders
 //! already decide, a line each: a boots or gloves folder of his worn ID
 //! claims the category, so its key is left out whatever the record holds; a
-//! stored 0 stays unset in a Full output but is written `0` in a Midcup one,
+//! custom ID no folder claims becomes the hide ID of its kind, which the
+//! game shows as no model; a stored 0 stays unset in a Full output but is
+//! written `0` in a Midcup one,
 //! where an unset key keeps the installed ID, or under `fpc_on`, where an
 //! unset key gives the hide preset's ID; and name writing is opt-in, so
 //! the file gets `name = true` only when the folder-derived name equals the
@@ -36,7 +38,8 @@ pub(crate) struct SettingsFiles {
 /// The step-8 plan for `roster`'s slots: one `settings.toml` per output
 /// folder in `folders`, and the findings each slot's decisions report.
 /// `full` is the output's coverage tag: only a Full output reports a
-/// folderless player's missing custom model.
+/// folderless player's missing custom model, while a player with a
+/// folder gets the hide ID of its kind written and a warning.
 pub(crate) fn settings_files(
     save: &EditFile,
     roster: &Roster,
@@ -50,23 +53,47 @@ pub(crate) fn settings_files(
             .player(player.id)
             .expect("the roster read his record from the save");
         let folder = folders.get(nn);
-        // A worn custom ID no migrated folder claims is missing content:
-        // checked for every rostered player of a Full output but in a
-        // Midcup one only for a player the output gives a folder (a Midcup
-        // compile leaves a folderless player as installed).
-        for (key, worn, claimed) in [
+        // A worn custom ID no migrated folder claims is missing content
+        // only for a player the output gives no folder, which only a Full
+        // output reports (a Midcup compile leaves a folderless player as
+        // installed). A player with a folder gets the hide ID of the kind
+        // written instead, the no-model a whole-body face folder wants.
+        let mut hidden = [None; 2];
+        for (index, (key, worn, claimed, hide)) in [
             (
                 "boots_id",
                 player.boots_id,
                 folder.is_some_and(|folder| folder.boots_folder),
+                fpc::HideIds::CONVENTION.boots(),
             ),
             (
                 "gloves_id",
                 player.gloves_id,
                 folder.is_some_and(|folder| folder.gloves_folder),
+                fpc::HideIds::CONVENTION.gloves(),
             ),
-        ] {
-            if worn > 100 && !claimed && (full || folder.is_some()) {
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            if worn <= 100 || claimed {
+                continue;
+            }
+            if folder.is_some() {
+                hidden[index] = Some(hide);
+                files.findings.push(tool_message(
+                    Code::CustomModelHidden,
+                    Scope::Export { export_id: INPUT },
+                    Disposition::Keep,
+                    vec![
+                        ("slot", slot.clone()),
+                        ("name", player.name.clone()),
+                        ("key", key.to_owned()),
+                        ("id", worn.to_string()),
+                        ("written", hide.to_string()),
+                    ],
+                ));
+            } else if full {
                 files.findings.push(tool_message(
                     Code::CustomModelMissing,
                     Scope::Export { export_id: INPUT },
@@ -116,11 +143,12 @@ pub(crate) fn settings_files(
             ));
         }
         // `from_player` gives a stock ID (1 to 100) or `None`. A folder of
-        // the category decides it instead; else a stored 0 is written in a
-        // Midcup output, where an unset key keeps the installed ID, or
-        // under `fpc_on`, where an unset key gives the hide preset's
-        // blank-model ID (step 8).
-        for (claimed, stored, field) in [
+        // the category decides it instead; else an unclaimed custom ID's
+        // category gets the hide ID the finding named; else a stored 0 is
+        // written in a Midcup output, where an unset key keeps the
+        // installed ID, or under `fpc_on`, where an unset key gives the
+        // hide preset's blank-model ID (step 8).
+        for (index, (claimed, stored, field)) in [
             (
                 folder.boots_folder,
                 record.appearance.boots_id,
@@ -131,9 +159,17 @@ pub(crate) fn settings_files(
                 record.appearance.gloves_id,
                 &mut settings.gloves_id,
             ),
-        ] {
+        ]
+        .into_iter()
+        .enumerate()
+        {
             if claimed {
                 *field = None;
+            } else if let Some(hide) = hidden[index] {
+                *field = Some(
+                    u8::try_from(hide)
+                        .expect("a hide ID is at most 100, inside the key's 0 to 100"),
+                );
             } else if stored == 0 && (!full || folder.fpc_on) {
                 *field = Some(0);
             }
@@ -299,57 +335,69 @@ mod tests {
         assert_eq!(settings_of(&files, "Players/05 - A").gloves_id, Some(0));
     }
 
+    /// The values of `message`'s context fields named in `keys`, in that
+    /// order.
+    fn context<'a>(message: &'a Message, keys: &[&str]) -> Vec<&'a str> {
+        keys.iter()
+            .map(|wanted| {
+                message
+                    .context
+                    .iter()
+                    .find(|(key, _)| key == wanted)
+                    .unwrap_or_else(|| panic!("no {wanted} in {:?}", message.context))
+                    .1
+                    .as_str()
+            })
+            .collect()
+    }
+
     #[test]
-    fn a_custom_id_no_folder_claims_is_reported_as_full_allows() {
+    fn an_unclaimed_custom_id_is_hidden_with_a_folder_and_missing_without() {
         let save = save_edited(|file| {
             file.player_mut(71405).unwrap().appearance.boots_id = 433;
+            file.player_mut(71405).unwrap().appearance.gloves_id = 434;
             file.player_mut(71406).unwrap().appearance.boots_id = 433;
             // The stock band's top, a game model: not custom content.
             file.player_mut(71407).unwrap().appearance.boots_id = 100;
         });
         let roster = roster_of(&save);
-        // 05 gets a folder that claims no boots; 06 and 07 get none.
+        // 05 gets a folder that claims neither category; 06 and 07 get none.
         let mut folders = BTreeMap::new();
         folders.insert(5, plain("Players/05 - A"));
 
         let files = settings_files(&save, &roster, &folders, true);
-        let missing = findings_named(&files, "custom_model_missing");
-        assert_eq!(missing.len(), 2, "{:?}", files.findings);
-        let slots: Vec<&str> = missing
-            .iter()
-            .map(|message| {
-                message
-                    .context
-                    .iter()
-                    .find(|(key, _)| key == "slot")
-                    .unwrap()
-                    .1
-                    .as_str()
-            })
-            .collect();
-        assert_eq!(slots, ["05", "06"], "every rostered player is checked");
+        // 05's unclaimed custom IDs become the hide IDs, a warning each;
+        // 06's, with no folder to write one in, is missing content.
+        let hidden = findings_named(&files, "custom_model_hidden");
+        assert_eq!(hidden.len(), 2, "{:?}", files.findings);
         assert_eq!(
-            settings_of(&files, "Players/05 - A").boots_id,
-            None,
-            "the missing custom ID is not written"
+            context(hidden[0], &["slot", "key", "id", "written"]),
+            ["05", "boots_id", "433", "55"]
         );
-
-        // Midcup: only the player the output gives a folder is checked.
-        let files = settings_files(&save, &roster, &folders, false);
+        assert_eq!(
+            context(hidden[1], &["slot", "key", "id", "written"]),
+            ["05", "gloves_id", "434", "11"]
+        );
         let missing = findings_named(&files, "custom_model_missing");
         assert_eq!(missing.len(), 1, "{:?}", files.findings);
         assert_eq!(
-            missing[0]
-                .context
-                .iter()
-                .find(|(key, _)| key == "slot")
-                .unwrap()
-                .1,
-            "05"
+            context(missing[0], &["slot", "key", "id"]),
+            ["06", "boots_id", "433"]
         );
+        let settings = settings_of(&files, "Players/05 - A");
+        assert_eq!(settings.boots_id, Some(55));
+        assert_eq!(settings.gloves_id, Some(11));
+
+        // Midcup: the player the output gives a folder is hidden the same.
+        let files = settings_files(&save, &roster, &folders, false);
+        let hidden = findings_named(&files, "custom_model_hidden");
+        assert_eq!(hidden.len(), 2, "{:?}", files.findings);
+        assert!(findings_named(&files, "custom_model_missing").is_empty());
+        assert_eq!(settings_of(&files, "Players/05 - A").boots_id, Some(55));
 
         // No folder at all in Midcup: nothing reported, nothing written.
         let files = settings_files(&save, &roster, &BTreeMap::new(), false);
+        assert!(findings_named(&files, "custom_model_hidden").is_empty());
         assert!(findings_named(&files, "custom_model_missing").is_empty());
         assert!(files.written.is_empty());
     }
