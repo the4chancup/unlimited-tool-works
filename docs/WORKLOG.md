@@ -2791,9 +2791,23 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         Files: `pes_savefile` (`interchange/aesthetics_patch/`, `settings_toml/`),
         `save_editor` (cli, session, patch tests), `team_compiler` (`deep/`, `plan/`,
         `validation.rs`, `compile.rs`, `output/savefile.rs`, CLI tests)
-      - [ ] c2a the compiler's IDs and pre-Fox: `boots_id`/`gloves_id` filled once the tasks'
+      - [x] c2a the compiler's IDs and pre-Fox: `boots_id`/`gloves_id` filled once the tasks'
         outcomes are known, none an invalid file's settings would resolve; the patch on
         pre-Fox → verify: TC-SAV-19, TC-BIN-50 to 59, TC-MOD-95 to 99 against the patch
+        Done 2026-11-05 (SWE-2 sidekick, landed first time; brief `.tmp/0_0_2/s36c/brief_c2a.md`):
+        `ItemRow::counts` is the one rule the tables (`apply`, `left_out`) and the patch
+        follow; `patch_team` gives each player id his rows' IDs provisionally (a refused
+        settings file's taskless ones withheld) and `plan::patch::settle`, against the
+        committed batches `CpkOutput::finish` now returns, drops the uncommitted ones before
+        `write_patch`; rows and the patch are planned on pre-Fox too (the tables stay Fox's),
+        `BinsEdits::patch_planned` writing the CPK the patch names; `settings_id_messages`
+        and `settings_name_messages` lose their pre-Fox gate. TC-SAV-12's two tests became
+        TC-SAV-19's. Lead fix: the two halves' shared export (`patch::pes17_crocs_export`).
+        For c4: `messages/catalog.rs`'s `settings_model_id_conflict` row ("In PES 2018 to
+        2021 team exports") now holds on every version; a `CHANGELOG.md` line for 8.36c.
+        Files: `team_compiler` (`plan/{item_rows,mod,patch}.rs`, `bins/player_tables.rs`,
+        `output/{writer,patch}.rs`, `compile.rs`, `validation.rs`, CLI tests `bins`, `models`,
+        `common_links`, `conversion`, `patch`, `savefile`)
       - [ ] c2b the player tables go: the compiler's table writer, `player_table_missing`,
         `savefile_player_not_stripped`, `pes_savefile`'s `player_tables` (`portrait_path`
         moved), `appearance_row`; the spec scenarios c0 restates withdrawn, their tests

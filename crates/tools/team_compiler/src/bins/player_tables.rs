@@ -39,9 +39,8 @@ impl ItemTable {
     }
 }
 
-/// Applies `rows`' rows of `table` to `list`: each row with a task is set once that task is
-/// among `committed` (the manifest positions of the batches the writer committed), the
-/// installed pair staying when it is not, and each row with none is set outright.
+/// Applies `rows`' rows of `table` to `list`: each row that counts (`ItemRow::counts`) is
+/// set, the installed pair staying when its task is not among `committed`.
 pub(crate) fn apply(
     list: &mut ItemList,
     table: ItemTable,
@@ -49,19 +48,18 @@ pub(crate) fn apply(
     committed: &BTreeSet<usize>,
 ) {
     for row in rows.iter().filter(|row| row.table == table) {
-        match row.task {
-            Some(task) if !committed.contains(&task) => {}
-            _ => list.set(row.player_id, row.id.to_le_bytes()),
+        if row.counts(committed) {
+            list.set(row.player_id, row.id.to_le_bytes());
         }
     }
 }
 
 /// The rows of `table` a missing `BootsList.bin` or `GloveList.bin` leaves out: its `rows`
-/// with no task, or whose task is among `committed`.
+/// that count (`ItemRow::counts`).
 pub(crate) fn left_out(table: ItemTable, rows: &[ItemRow], committed: &BTreeSet<usize>) -> usize {
     rows.iter()
         .filter(|row| row.table == table)
-        .filter(|row| row.task.is_none_or(|task| committed.contains(&task)))
+        .filter(|row| row.counts(committed))
         .count()
 }
 

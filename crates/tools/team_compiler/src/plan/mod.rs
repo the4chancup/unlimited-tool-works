@@ -19,7 +19,6 @@ use aesthetics_export::{
     SharedModelFolder, ValidatedAestheticsExport, ValidatedRoster, common_link_target, kit_folder,
 };
 use kit_config::{KitSlot, TexturePresence};
-use pes_savefile::interchange::aesthetics_patch::PatchTeam;
 use pes_savefile::settings_toml::PlayerSettings;
 use pes_version::{Engine, PesVersion};
 use studio_core::{Disposition, ExportId, Message, Scope};
@@ -75,9 +74,10 @@ pub(crate) struct BuildManifest {
     /// `PlayerAppearance.bin` rows, in export order ("Bins accumulation").
     pub(crate) player_rows: PlayerRows,
     /// The `[[teams]]` blocks of the run's `aesthetics_patch.toml` (`patch::patch_team`), in
-    /// export order, Fox only: empty when no team export compiled a player, and on a pre-Fox
-    /// target, which writes no patch.
-    pub(crate) patch_teams: Vec<PatchTeam>,
+    /// export order, each with the export's item rows `compile` settles its ID keys against
+    /// once every batch's outcome is known (`patch::settle`): empty when no team export
+    /// compiled a player.
+    pub(crate) patch_teams: Vec<patch::PlannedPatchTeam>,
     /// Each planned export's team name as messages show it (`/co/`, `/refs/` for the
     /// referees) and the text of its root `notes.txt`, in export order, for `teamnotes.txt`.
     /// An export without a note is not listed.
@@ -1405,27 +1405,36 @@ pub(crate) fn plan_run(
         }
         // After the shared folders' tasks, which a player linking one takes his row from. A
         // referee has none: the game's referee hook loads slot NN's `k99NN`/`g99NN` by number.
-        // Nor does a pre-Fox target, which writes no `BootsList.bin` or `GloveList.bin`
-        // ("Game paths reference"): rows there would only be reported as
+        // The rows are planned on either engine — the patch takes its boots and gloves IDs
+        // from them — while the tables they write (`BootsList.bin`, `GloveList.bin`,
+        // `PlayerAppearance.bin`, "Game paths reference") exist on Fox alone: on pre-Fox
+        // no row reaches `player_rows`, which would only be reported as
         // `player_table_missing`.
-        let writes_item_rows = match version.engine() {
-            Engine::Fox => team.is_some(),
-            Engine::PreFox => false,
+        let (writes_item_rows, writes_tables) = match version.engine() {
+            Engine::Fox => (team.is_some(), true),
+            Engine::PreFox => (team.is_some(), false),
         };
         if writes_item_rows {
             let rows = export_rows(&tasks, first_task, &row_players, export.coverage, hide_ids);
-            player_rows.items.extend(rows.items);
-            player_rows.appearance.extend(rows.appearance);
             // The same compiled players get the patch's `[[teams]]` block: the run's one
-            // patch across exports, whose header `build` fills in.
+            // patch across exports, whose header `build` fills in and whose provisional
+            // IDs `settle` resolves against the committed batches.
             if let Some(team) = patch::patch_team(
                 &row_players,
+                &rows.items,
                 team_id,
                 export.team_name.as_str(),
                 export.root.write_names,
                 version,
             ) {
-                patch_teams.push(team);
+                patch_teams.push(patch::PlannedPatchTeam {
+                    team,
+                    rows: rows.items.clone(),
+                });
+            }
+            if writes_tables {
+                player_rows.items.extend(rows.items);
+                player_rows.appearance.extend(rows.appearance);
             }
         }
         // A Common textures task per texture directory of `Common/` a target packs — a

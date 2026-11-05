@@ -698,8 +698,9 @@ fn unrecorded_message(
 /// `settings.toml` (the deep pass's `settings`) authors a `boots_id`/`gloves_id` for a
 /// category whose ID the compile assigns from the folder's own models or a shared folder it
 /// links (`item_rows::conflicting_id_keys`, the same decision `export_rows` makes over the
-/// manifest planning never builds under `check`). Only for a team export on a Fox target,
-/// where the compiled players get their table rows. It runs here so that `check` reports a
+/// manifest planning never builds under `check`). Only for a team export,
+/// whose compiled players the tables (Fox) or the patch (every engine) give their IDs.
+/// It runs here so that `check` reports a
 /// `settings.toml`'s findings as `compile` does.
 fn settings_id_messages(
     resolved: &ResolvedAestheticsExport,
@@ -708,14 +709,6 @@ fn settings_id_messages(
     settings: &BTreeMap<ScopePath, PlayerSettings>,
     hand_weighted: &BTreeSet<ScopePath>,
 ) -> Vec<Message> {
-    match version.engine() {
-        Engine::Fox => {}
-        // On pre-Fox the keys reach nothing: no patch is written and the
-        // savefile is left alone until the pre-Fox aesthetics patch exists, so
-        // a warning would single out one ignored key of many. The gate lifts
-        // with it.
-        Engine::PreFox => return Vec::new(),
-    }
     match resolved.identity {
         ExportIdentity::Team { .. } => {}
         // A referee export's settings reach no table or patch yet, so a
@@ -843,7 +836,7 @@ fn fpc_settings_messages(
 
 /// `settings_toml_name_shared` and `settings_name_invalid` on each mapped player folder of a
 /// `write_names` team export of `resolved` (`plan::patch::patch_names`, the same names rule
-/// planning builds the patch with). Only for a team export on a Fox target, where the compiled
+/// planning builds the patch with). Only for a team export, whose compiled
 /// players' names reach the save only through the patch. It runs here so that `check` reports
 /// a `settings.toml`'s findings as `compile` does.
 fn settings_name_messages(
@@ -852,16 +845,13 @@ fn settings_name_messages(
     export_id: ExportId,
     settings: &BTreeMap<ScopePath, PlayerSettings>,
 ) -> Vec<Message> {
-    let slots = match (version.engine(), &resolved.export.roster) {
-        (Engine::Fox, ValidatedRoster::Team(slots)) => slots,
-        // The same gates as `settings_id_messages`: on pre-Fox the keys reach
-        // nothing until the pre-Fox aesthetics patch exists, and a referee
-        // export's settings reach no table yet, so a warning would single out
-        // one ignored key of many. A referee export also cannot carry
-        // `write_names` (the marker is `root_file_unexpected` on one), the
-        // marker the names rule reads. The gates lift once the keys reach the
-        // game.
-        (Engine::Fox, ValidatedRoster::Referees(_)) | (Engine::PreFox, _) => {
+    let slots = match &resolved.export.roster {
+        ValidatedRoster::Team(slots) => slots,
+        // A referee export's settings reach no table or patch yet, so a
+        // warning would single out one ignored key of many. A referee
+        // export also cannot carry `write_names` (the marker is
+        // `root_file_unexpected` on one), the marker the names rule reads.
+        ValidatedRoster::Referees(_) => {
             return Vec::new();
         }
     };

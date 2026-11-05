@@ -16,6 +16,7 @@ use crate::compile::{
 };
 use crate::conversion::HOME_714_05;
 use crate::models::{body_skl, face_package, package_names};
+use crate::patch::read_patch;
 use crate::prefox_faces::{
     CLEAN, card_materials, card_model, compile_pes17, entries_under, face_cpk, face_folder,
     materials_naming, nested_entries, pes17, pre_fox_fixture, sampler_paths, small_dds,
@@ -2317,6 +2318,7 @@ fn clean_model_naming(file_name: &str) -> Vec<u8> {
 }
 
 // TC-MOD-79
+// TC-MOD-99
 #[test]
 fn a_shared_folder_holding_only_a_model_link_takes_its_wearer_s_id() {
     let sandbox = Sandbox::new("cmn_shared_model_link");
@@ -2352,6 +2354,11 @@ fn a_shared_folder_holding_only_a_model_link_takes_its_wearer_s_id() {
         mesh_count(&clean_model())
     );
     assert_eq!(pairs_of(&entries, BOOTS_LIST), [(70201, 11), (71405, 625)]);
+    // The patch half: the same exclusive ID in his entry.
+    assert_eq!(
+        read_patch(&sandbox).teams[0].players[&5].boots_id,
+        Some(625)
+    );
 }
 
 // TC-MOD-83

@@ -1,7 +1,7 @@
 //! `aesthetics_patch.toml`, written into the output folder once the run's outputs are in
 //! place: every compiled player's resolved motions, and a `write_names` export's names
 //! (`spec/pes_savefile/operations.md` "Aesthetics patch"). A run whose plan holds no patch —
-//! no compiled player, or a pre-Fox target — moves an earlier file of the name aside to
+//! no compiled player — moves an earlier file of the name aside to
 //! `.bak`, as `teamnotes` does, so a left-over patch does not speak for a run that wrote
 //! none.
 

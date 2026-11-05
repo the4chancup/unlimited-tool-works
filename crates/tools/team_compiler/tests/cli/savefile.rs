@@ -15,8 +15,7 @@ use studio_core::RunningPes;
 use crate::common::Sandbox;
 use crate::compile::{pes_settings, pes21_settings};
 use crate::deploy::install_pes;
-use crate::patch::{read_patch, write_names_export};
-use crate::prefox_faces::write_slot_05_face;
+use crate::patch::{pes17_crocs_export, read_patch, write_names_export};
 
 /// The salt the tests' own writes use; a save's bytes depend on it, its payload does not.
 const TEST_SALT: [u8; 320] = [7; 320];
@@ -451,25 +450,76 @@ fn a_degraded_run_leaves_the_savefile_alone() {
     assert_eq!(fs::read(&save).unwrap(), before, "byte-identical");
 }
 
-// TC-SAV-12
+// The savefile half (the patch half is `patch.rs`'s): a deployed PES 17 compile applies
+// the patch it just wrote — his look, motions and the linked folder's boots ID, the
+// record made his — and the `write_names` name with it.
+// TC-SAV-19
 #[test]
-fn a_pre_fox_compile_writes_no_patch_and_leaves_the_savefile_alone() {
+fn a_pre_fox_compile_writes_the_patch_and_applies_it_to_the_savefile() {
     let sandbox = Sandbox::new("savefile_prefox");
     install_pes(&sandbox);
     sandbox.write("PES/PES2017.exe", b"the game");
     let save = install_save(&sandbox, PesVersion::Pes17);
-    let before = fs::read(&save).unwrap();
-    write_slot_05_face(&sandbox, "co Full Old");
+    let (export, toml) = pes17_crocs_export(&sandbox);
+    // The premise: the save's team 714 holds 71405, whose boots are not the export's.
+    let before = EditFile::load(&save).unwrap();
+    assert!(before.team(714).is_some(), "the fixture holds team 714");
+    let player05 = before.player(71405).expect("the fixture holds 71405");
+    assert_ne!(player05.appearance.boots_id, 625);
+
+    let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile"]);
+
+    let lines = run.messages();
+    assert_eq!(run.exit_code(), 0, "{lines:#?}");
+    let written = format!(
+        "Info savefile_written [Keep] (path={}, teams=714)",
+        save.display()
+    );
+    assert!(lines.contains(&written), "{lines:#?}");
+    // The save is the pre-run one with the run's own patch applied through the lib.
+    let mut expected = EditFile::from_bytes(&before.to_bytes(&TEST_SALT).unwrap()).unwrap();
+    read_patch(&sandbox).apply(&mut expected).unwrap();
+    let after = EditFile::load(&save).unwrap();
+    assert_eq!(
+        after.to_bytes(&TEST_SALT).unwrap(),
+        expected.to_bytes(&TEST_SALT).unwrap()
+    );
+    let player = after.player(71405).unwrap();
+    assert_eq!(player.appearance.boots_id, 625, "the linked folder's ID");
+    // A motion is stored one below its settings.toml value (1 to 5 stored 0 to 4).
+    assert_eq!(
+        player.motion.hunching_dribbling, 1,
+        "the settings.toml's 2, stored"
+    );
+    // The record is made his: appearance id and base copy his own id,
+    // the base-copy flag clear.
+    assert_eq!(player.appearance_id, Some(71405));
+    assert_eq!(player.appearance.base_copy_id, 71405);
+    assert_eq!(player.edit_flags.base_copy, Some(false));
+    assert_eq!(
+        player.name, player05.name,
+        "no marker, the save's name kept"
+    );
+
+    // The `write_names` half: the marker and `name = "Snuffy"` put his name in the
+    // entry and the save alike.
+    sandbox.write(&format!("{export}/write_names"), b"");
     sandbox.write(
-        "exports/co Full Old/Players/05 - A/settings.toml",
-        b"[appearance.motion]\nhunching_dribbling = 2\n",
+        &format!("{export}/Players/05 - A/settings.toml"),
+        format!("name = \"Snuffy\"\n{toml}").as_bytes(),
     );
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile"]);
 
     assert_eq!(run.exit_code(), 0, "{:#?}", run.messages());
-    assert!(!sandbox.root.join("output/aesthetics_patch.toml").exists());
-    assert_eq!(fs::read(&save).unwrap(), before, "byte-identical");
+    assert_eq!(
+        read_patch(&sandbox).teams[0].players[&5].name.as_deref(),
+        Some("Snuffy")
+    );
+    assert_eq!(
+        EditFile::load(&save).unwrap().player(71405).unwrap().name,
+        "Snuffy"
+    );
 }
 
 // TC-SAV-17's no-game case: nothing running, the sideloaded run writes the save.

@@ -38,7 +38,9 @@ use crate::output::sink::OutputSink;
 use crate::output::teamnotes;
 use crate::output::writer::{BinsEdits, CpkOutput, Referees};
 use crate::paths::REFEREE_TEAM_ID;
-use crate::plan::{BuildManifest, BuildTask, ExportToPlan, overrides, plan_run};
+use crate::plan::{
+    BuildManifest, BuildTask, ExportToPlan, overrides, patch as plan_patch, plan_run,
+};
 use crate::processing::{
     CompileContext, EntryTarget, TEST_BINS_PREFIX, TaskBatch, TaskFiles, dropped_unit, process_task,
 };
@@ -428,6 +430,7 @@ fn build(
     let team_kits = manifest.team_kits;
     let player_rows = manifest.player_rows;
     let patch_teams = manifest.patch_teams;
+    let patch_planned = !patch_teams.is_empty();
     let notes = manifest.notes;
     let shared_ids = manifest.shared_ids;
     let mut last_task_of: BTreeMap<ExportId, usize> = BTreeMap::new();
@@ -548,6 +551,7 @@ fn build(
                         team_kits,
                         player_rows,
                         shared_ids,
+                        patch_planned,
                     },
                     templates,
                 )
@@ -581,12 +585,12 @@ fn build(
 
     // A bins failure is a CPK write failure too: `uniparam_compile_failed` is not reported yet.
     // A working bin that does not parse never gets here, stopped where it was read.
-    let (written, files_written) = match written {
-        Ok((written, entries, messages)) => {
+    let (written, files_written, committed) = match written {
+        Ok((written, entries, messages, committed)) => {
             for message in messages {
                 events.message(message);
             }
-            (written, entries)
+            (written, entries, committed)
         }
         Err(error) => {
             // A team the parts cannot take is its own finding, not a write failure; no part
@@ -633,6 +637,10 @@ fn build(
         &mut events,
     ) {
         Ok(published) => {
+            // The patch's provisional boots and gloves IDs settled against the
+            // committed batches: an ID whose row's task did not commit is removed,
+            // an entry left with nothing dropped, then a team left with no player.
+            let patch_teams = plan_patch::settle(patch_teams, &committed);
             match write_patch(&mut events, output_folder, version, &patch_teams, &staged) {
                 Ok(patch) => {
                     // The savefile step applies the patch the run just wrote, never a
@@ -937,8 +945,8 @@ fn deploy_failed(failure: DeployFailure, download: &Path, output: &Path) -> Mess
 }
 
 /// Writes the run's `aesthetics_patch.toml` into `output_folder` — `patch::write` moves an
-/// earlier one aside to `.bak` when `teams` is empty (no compiled player, or a pre-Fox
-/// target) — reporting `patch_written` with the path and the team ids it covers, and returns
+/// earlier one aside to `.bak` when `teams` is empty (no compiled player) — reporting
+/// `patch_written` with the path and the team ids it covers, and returns
 /// the patch written, for the savefile step to apply. A write or rename failing is
 /// `patch_write_failed` through `abort_output` at the caller, which first rolls a deployment
 /// back and then aborts the run. Called once the run's outputs are

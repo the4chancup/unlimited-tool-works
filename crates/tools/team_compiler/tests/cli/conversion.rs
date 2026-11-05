@@ -26,7 +26,7 @@ use crate::prefox_faces::{
     write_round_hat, write_slot_05_face,
 };
 use crate::textures::texture_fixture;
-use crate::{Face, clean_model, findings_of, sorted_faces};
+use crate::{Face, clean_model, findings_of, patch_written, sorted_faces};
 
 /// The outer CPK path of the tracer's player's face CPK: team 792, slot 05.
 const TRACER_FACE_CPK: &str = "common/character0/model/character/face/real/79205.cpk";
@@ -118,6 +118,7 @@ fn the_tracer_s_fox_models_compile_for_pes_17_as_model_files_with_their_material
             "Info deploy_skipped_by_flag [Keep] (path={})",
             sandbox.display("output/4cc_99_test.cpk")
         ),
+        patch_written(&sandbox, "792"),
     ];
     assert_eq!(lines, expected);
     assert_eq!(run.exit_code(), 0);

@@ -1,15 +1,17 @@
-//! The `aesthetics_patch.toml` planning decides (`spec/team_compiler/pipeline.md` "6. Post-processing",
-//! the Fox half): each compiled team export's players' looks at their resolved values, and a
-//! `write_names` export's names. `patch_names` is the names rule `check` reports and `compile`
-//! builds with, restated from the export alone the way `item_rows::conflicting_id_keys` is.
+//! The `aesthetics_patch.toml` planning decides (`spec/team_compiler/pipeline.md` "6. Post-processing"):
+//! each compiled team export's players' looks at their resolved values, their boots and
+//! gloves IDs as the tables' rows resolve them, and a `write_names` export's names.
+//! `patch_names` is the names rule `check` reports and `compile` builds with, restated from
+//! the export alone the way `item_rows::conflicting_id_keys` is.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use pes_savefile::interchange::aesthetics_patch::{PatchPlayer, PatchTeam};
 use pes_savefile::settings_toml::{AppearanceSettings, NameField, NameSetting, PlayerSettings};
 use pes_version::PesVersion;
 
-use super::item_rows::RowPlayer;
+use super::item_rows::{ItemRow, RowPlayer};
+use crate::bins::player_tables::ItemTable;
 
 /// What the names rule gives of one player folder: the names the patch writes and the facts
 /// its findings read.
@@ -28,7 +30,7 @@ pub(crate) struct PatchNames {
 }
 
 /// The names rule (`spec/aesthetics_export/settings_toml.md` "Name-writing rules"), for a kept
-/// player folder of a `write_names` team export compiled for Fox. `mapped` is how many players
+/// player folder of a `write_names` team export. `mapped` is how many players
 /// the roster maps it to, `player_name` its folder's name part. `name = true` resolves to
 /// `player_name`, `name` or `shirt_name` as a string is written as is, each resolved text
 /// checked as `PlayerSettings::apply` checks it (`NameField::check`), a refused one dropped and
@@ -80,17 +82,36 @@ fn checked(
     }
 }
 
+/// A `[[teams]]` block of the run's `aesthetics_patch.toml` as planning decides it: the
+/// team itself, with each player's boots and gloves IDs provisional, beside the export's
+/// item rows the IDs came from, for `settle`.
+pub(crate) struct PlannedPatchTeam {
+    /// The patch's `[[teams]]` entry: each `boots_id`/`gloves_id` the one `rows` gives,
+    /// a task-gated row's included though the task commits only later.
+    pub(crate) team: PatchTeam,
+    /// The export's item rows the entries' ID keys were read from (`patch_team`): `settle`
+    /// removes an ID whose row's task the writer did not commit.
+    pub(crate) rows: Vec<ItemRow>,
+}
+
 /// The `[[teams]]` block the compiled player folders `players` of one team export give the
 /// patch: `id` the team's, `name` its teams-list name (`/co/`), one `[teams.players.NN]` per
 /// player a folder maps — `NN` his player id's slot — `appearance` his joined settings
 /// resolved to `version` (the template's defaults when the folder has none), `name`/`shirt_name`
-/// the names rule's (`write_names` the export's marker). A folder with a refused settings file
-/// (`settings_refused`) gives no look: his entry holds no `[appearance]`, the save keeping
-/// his whole look; left with nothing at all — no look, no names, no IDs — he gets no entry.
+/// the names rule's (`write_names` the export's marker), and `boots_id`/`gloves_id` his
+/// `rows`' provisionally, two players of one folder holding different ones when their
+/// slots' rows differ. A folder with a refused settings file
+/// (`settings_refused`) gives no look: his entry holds no `[appearance]` and none of the
+/// IDs his settings would resolve — the taskless rows' authored stock ID and marker or
+/// coverage default — the save keeping his whole look and his IDs, while an ID his
+/// folder's models or links get still lands; left with nothing at all — no look, no
+/// names, no IDs — he gets no entry
+/// (one holding only IDs is kept, `settle` deciding them later).
 /// `None` when `players` holds no player with an entry: a patch with no player is no patch,
 /// and the export gets no `[[teams]]` entry.
 pub(super) fn patch_team(
     players: &[RowPlayer],
+    rows: &[ItemRow],
     team_id: u16,
     team_name: &str,
     write_names: bool,
@@ -116,21 +137,40 @@ pub(super) fn patch_team(
             write_names,
             version,
         );
-        let entry = PatchPlayer {
-            name: names.name.clone(),
-            shirt_name: names.shirt_name.clone(),
-            boots_id: None,
-            gloves_id: None,
-            base_copy_id: None,
-            appearance: appearance.clone(),
-        };
-        if holds_nothing(&entry) {
-            continue;
-        }
         for player_id in &player.player_ids {
+            let mut entry = PatchPlayer {
+                name: names.name.clone(),
+                shirt_name: names.shirt_name.clone(),
+                boots_id: None,
+                gloves_id: None,
+                base_copy_id: None,
+                appearance: appearance.clone(),
+            };
+            for table in ItemTable::ALL {
+                if let Some(row) = rows
+                    .iter()
+                    .find(|row| row.table == table && row.player_id == *player_id)
+                {
+                    // A refused settings file holds the IDs his settings would resolve
+                    // back with his whole look — the authored stock ID and the marker or
+                    // coverage default — so the save keeps his; an ID his folder's
+                    // models or links get still lands.
+                    if player.settings_refused && row.task.is_none() {
+                        continue;
+                    }
+                    let id = u16::try_from(row.id).expect("a boots or gloves ID fits 14 bits");
+                    match table {
+                        ItemTable::Boots => entry.boots_id = Some(id),
+                        ItemTable::Gloves => entry.gloves_id = Some(id),
+                    }
+                }
+            }
+            if holds_nothing(&entry) {
+                continue;
+            }
             patch_players.insert(
                 u8::try_from(player_id % 100).expect("a roster slot is under 100"),
-                entry.clone(),
+                entry,
             );
         }
     }
@@ -142,6 +182,38 @@ pub(super) fn patch_team(
         name: team_name.to_owned(),
         players: patch_players,
     })
+}
+
+/// `teams`' provisional `boots_id`/`gloves_id` settled against the batches the writer
+/// committed (`committed`, the manifest positions): an ID whose row does not count by the
+/// tables' own rule (`ItemRow::counts`) is removed, so the save keeps his current one; an
+/// entry left holding nothing is dropped (`holds_nothing`), then a team left with no
+/// player. Called once every batch's outcome is known, before the patch is written.
+pub(crate) fn settle(teams: Vec<PlannedPatchTeam>, committed: &BTreeSet<usize>) -> Vec<PatchTeam> {
+    teams
+        .into_iter()
+        .filter_map(|planned| {
+            let PlannedPatchTeam { mut team, rows } = planned;
+            for (slot, entry) in &mut team.players {
+                let player_id = team.id * 100 + u32::from(*slot);
+                for table in ItemTable::ALL {
+                    let key = match table {
+                        ItemTable::Boots => &mut entry.boots_id,
+                        ItemTable::Gloves => &mut entry.gloves_id,
+                    };
+                    if let Some(row) = rows
+                        .iter()
+                        .find(|row| row.table == table && row.player_id == player_id)
+                        && !row.counts(committed)
+                    {
+                        *key = None;
+                    }
+                }
+            }
+            team.players.retain(|_, entry| !holds_nothing(entry));
+            (!team.players.is_empty()).then_some(team)
+        })
+        .collect()
 }
 
 /// Whether `entry` holds a key to write: a player the patch gives nothing
@@ -174,6 +246,29 @@ mod tests {
         }
     }
 
+    /// A `PatchPlayer` holding the resolved default look alone.
+    fn default_entry() -> PatchPlayer {
+        PatchPlayer {
+            name: None,
+            shirt_name: None,
+            boots_id: None,
+            gloves_id: None,
+            base_copy_id: None,
+            appearance: Some(AppearanceSettings::default().resolved(PesVersion::Pes21)),
+        }
+    }
+
+    /// An `ItemRow` of `table` for `player_id` taking `id`, gated on `task` (`Some`),
+    /// or unconditional (`None`).
+    fn row(table: ItemTable, player_id: u32, id: u32, task: Option<usize>) -> ItemRow {
+        ItemRow {
+            table,
+            player_id,
+            id,
+            task,
+        }
+    }
+
     /// A player the patch gives nothing — a refused settings file and no
     /// names or IDs for him — gets no `[teams.players.NN]` entry; one the
     /// patch has something for keeps his.
@@ -184,6 +279,7 @@ mod tests {
         assert_eq!(
             patch_team(
                 &[row_player(71403, true)],
+                &[],
                 714,
                 "/co/",
                 false,
@@ -196,6 +292,7 @@ mod tests {
         let kept = row_player(71405, false);
         let team = patch_team(
             &[row_player(71403, true), kept],
+            &[],
             714,
             "/co/",
             false,
@@ -209,6 +306,115 @@ mod tests {
         assert!(
             team.players[&5].appearance.is_some(),
             "the kept player's resolved look"
+        );
+    }
+
+    /// Each player id's entry gets the IDs of his rows provisionally, the task-gated
+    /// ones included: a folder two slots map gives each entry its own slot's row's ID,
+    /// and an entry holding only an ID is kept for `settle` to decide.
+    #[test]
+    fn an_entry_holds_his_rows_ids_provisionally() {
+        let mut player = row_player(71405, false);
+        player.player_ids = vec![71405, 71408];
+        let rows = [
+            row(ItemTable::Boots, 71405, 625, Some(1)),
+            row(ItemTable::Boots, 71408, 628, Some(1)),
+            row(ItemTable::Gloves, 71405, 630, Some(2)),
+            row(ItemTable::Gloves, 71408, 630, Some(2)),
+        ];
+        let team = patch_team(&[player], &rows, 714, "/co/", false, PesVersion::Pes21)
+            .expect("a team block");
+        assert_eq!(team.players[&5].boots_id, Some(625));
+        assert_eq!(team.players[&5].gloves_id, Some(630));
+        assert_eq!(team.players[&8].boots_id, Some(628));
+        assert_eq!(team.players[&8].gloves_id, Some(630));
+
+        // A refused settings file takes his look and the IDs his settings would resolve;
+        // a task-gated boots row's ID still lands and alone makes an entry.
+        let refused = row_player(71407, true);
+        let rows = [
+            row(ItemTable::Boots, 71407, 627, Some(1)),
+            row(ItemTable::Gloves, 71407, 0, None),
+        ];
+        let team = patch_team(&[refused], &rows, 714, "/co/", false, PesVersion::Pes21)
+            .expect("the ID alone keeps his entry");
+        let entry = &team.players[&7];
+        assert_eq!(entry.boots_id, Some(627), "the task-gated row's ID lands");
+        assert_eq!(entry.gloves_id, None, "a taskless row's does not");
+        assert_eq!(entry.appearance, None);
+    }
+
+    /// `settle`: an ID whose row's task committed stays, one whose did not is removed —
+    /// a taskless row's unconditionally; an entry left with nothing to write is dropped,
+    /// then a team left with no player.
+    #[test]
+    fn settle_drops_uncommitted_ids_then_empty_entries_and_teams() {
+        let mut committed_entry = default_entry();
+        committed_entry.boots_id = Some(625);
+        let mut failed_entry = default_entry();
+        failed_entry.boots_id = Some(626);
+        failed_entry.gloves_id = Some(630);
+        let id_only = PatchPlayer {
+            name: None,
+            shirt_name: None,
+            boots_id: Some(627),
+            gloves_id: None,
+            base_copy_id: None,
+            appearance: None,
+        };
+        let taskless = PatchPlayer {
+            boots_id: Some(12),
+            ..id_only.clone()
+        };
+        let teams = vec![
+            PlannedPatchTeam {
+                team: PatchTeam {
+                    id: 714,
+                    name: "/co/".to_owned(),
+                    players: BTreeMap::from([
+                        (5, committed_entry.clone()),
+                        (6, failed_entry),
+                        (7, id_only.clone()),
+                        (8, taskless.clone()),
+                    ]),
+                },
+                rows: vec![
+                    row(ItemTable::Boots, 71405, 625, Some(1)),
+                    row(ItemTable::Boots, 71406, 626, Some(2)),
+                    row(ItemTable::Gloves, 71406, 630, Some(2)),
+                    row(ItemTable::Boots, 71407, 627, Some(2)),
+                    row(ItemTable::Boots, 71408, 12, None),
+                ],
+            },
+            // Its one player left with nothing: no `[[teams]]` block for it either.
+            PlannedPatchTeam {
+                team: PatchTeam {
+                    id: 792,
+                    name: "/egg/".to_owned(),
+                    players: BTreeMap::from([(3, id_only)]),
+                },
+                rows: vec![row(ItemTable::Boots, 79203, 627, Some(2))],
+            },
+        ];
+
+        let settled = settle(teams, &BTreeSet::from([1]));
+
+        let [team] = settled.as_slice() else {
+            panic!("the team with a kept entry alone survives: {settled:?}")
+        };
+        assert_eq!(team.id, 714);
+        assert_eq!(team.players[&5].boots_id, Some(625), "committed");
+        assert_eq!(team.players[&6].boots_id, None, "uncommitted");
+        assert_eq!(team.players[&6].gloves_id, None, "uncommitted");
+        assert!(team.players[&6].appearance.is_some(), "his look stays");
+        assert!(
+            !team.players.contains_key(&7),
+            "the ID his failed task gave was his entry's whole write"
+        );
+        assert_eq!(
+            team.players[&8].boots_id,
+            Some(12),
+            "a taskless row's ID stays"
         );
     }
 

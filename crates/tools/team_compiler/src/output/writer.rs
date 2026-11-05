@@ -48,6 +48,11 @@ pub(crate) struct BinsEdits<'a> {
     /// Each planned team export's shared-IDs record to write, whatever its folders' tasks'
     /// outcomes.
     pub(crate) shared_ids: &'a [(u16, SharedIds)],
+    /// A patch team was planned: the patch is the run's work as the tables are, so a run
+    /// that commits nothing still writes a CPK to publish it. Redundant on Fox, where the
+    /// rows `player_rows` holds already stand for it; it decides on pre-Fox, where the
+    /// rows feed the patch instead.
+    pub(crate) patch_planned: bool,
 }
 
 impl BinsEdits<'static> {
@@ -63,6 +68,7 @@ impl BinsEdits<'static> {
             team_kits: &[],
             player_rows: &ROWS,
             shared_ids: &[],
+            patch_planned: false,
         }
     }
 }
@@ -330,15 +336,16 @@ impl CpkOutput {
 
     /// Adds the referee template tree of `templates` and closes the refs CPK
     /// (`finish_referees`), then finishes the team side (`finish_team`). Returns which were
-    /// written, the entries written across them, and the findings: the tree's, then the team
-    /// side's.
+    /// written, the entries written across them, the findings: the tree's, then the team
+    /// side's, and the manifest positions of the batches committed, which the patch's
+    /// provisional IDs are settled against.
     pub(crate) fn finish(
         mut self,
         version: PesVersion,
         bins: WorkingBins,
         edits: BinsEdits<'_>,
         templates: &Templates,
-    ) -> anyhow::Result<(Written, usize, Vec<Message>)> {
+    ) -> anyhow::Result<(Written, usize, Vec<Message>, BTreeSet<usize>)> {
         ensure!(
             self.pending.is_empty(),
             "the writer never received task {} of the manifest",
@@ -349,9 +356,9 @@ impl CpkOutput {
             Some(referees) => self.finish_referees(referees, version, templates, &mut messages)?,
             None => false,
         };
-        let (team, entries, team_messages) = self.finish_team(version, bins, &edits)?;
+        let (team, entries, team_messages, committed) = self.finish_team(version, bins, &edits)?;
         messages.extend(team_messages);
-        Ok((Written { team, refs }, entries, messages))
+        Ok((Written { team, refs }, entries, messages, committed))
     }
 
     /// When an entry of the refs export went in, adds `version`'s engine's referee template
@@ -451,29 +458,31 @@ impl CpkOutput {
     /// (`add_player_tables`); with parts, the teams parts are finished after the sink, the slots
     /// left over written as the placeholder (no part and no placeholder when no file is
     /// written). Returns whether a CPK was written, the entries written across the run's
-    /// outputs so far (`self.entries`: the sink's, the parts' and the refs CPK's), and the
+    /// outputs so far (`self.entries`: the sink's, the parts' and the refs CPK's), the
     /// findings to report: `kit_configs`'
     /// (or `loose_kit_configs`') FPC findings, one `bin_header_repaired` per working bin that
     /// had a header wrong, naming the teams, a `player_table_missing` per list not found that
     /// committed rows were left out of, and a `duplicate_path` for each bin an override
-    /// replaced.
+    /// replaced; and the manifest positions of the batches committed.
     fn finish_team(
         mut self,
         version: PesVersion,
         bins: WorkingBins,
         edits: &BinsEdits<'_>,
-    ) -> anyhow::Result<(bool, usize, Vec<Message>)> {
+    ) -> anyhow::Result<(bool, usize, Vec<Message>, BTreeSet<usize>)> {
         let BinsEdits {
             team_colors,
             team_kits,
             player_rows,
             shared_ids,
+            patch_planned,
         } = *edits;
         // A run in which no team committed anything writes no file, so it adds no bin either,
         // unless the overrides go into the CPK: they are written whatever the exports bring;
         // or the referee configs changed the bins on PES 18-21: their entries need the bin;
         // or player rows were planned: the tables are the run's work as an override is, a
-        // settings-only export's compile otherwise losing its rows with no error; or the
+        // settings-only export's compile otherwise losing its rows with no error — on
+        // pre-Fox, which has no tables, the patch stands for them the same way; or the
         // team colors, a kit's committed `UniColor.bin` entry or a configless slot's edit
         // went in: the bins are then the run's whole work.
         if !self.started
@@ -484,8 +493,14 @@ impl CpkOutput {
             && team_colors.is_empty()
             && player_rows.items.is_empty()
             && player_rows.appearance.is_empty()
+            && !patch_planned
         {
-            return Ok((false, self.entries, Vec::new()));
+            return Ok((
+                false,
+                self.entries,
+                Vec::new(),
+                std::mem::take(&mut self.committed),
+            ));
         }
         self.start()?;
         let WorkingBins {
@@ -591,7 +606,12 @@ impl CpkOutput {
         if let Some(parts) = self.parts {
             self.entries += parts.finish()?;
         }
-        Ok((true, self.entries, messages))
+        Ok((
+            true,
+            self.entries,
+            messages,
+            std::mem::take(&mut self.committed),
+        ))
     }
 
     /// Adds the Fox player tables: each of `lists` (`BootsList.bin` then `GloveList.bin`) the
@@ -812,7 +832,7 @@ mod tests {
     /// `output` finished for PES `version` on the bundled bins with no team colors, the bins
     /// asserted to report nothing: whether a CPK was written.
     fn finish_plain(output: CpkOutput, version: PesVersion) -> anyhow::Result<bool> {
-        let (written, _entries, messages) = output.finish(
+        let (written, _entries, messages, _) = output.finish(
             version,
             WorkingBins::bundled(version, &Templates::embedded()),
             BinsEdits::empty(),
@@ -1191,7 +1211,7 @@ mod tests {
         );
         output.submit(batch(0, &["a/b.bin"], None)).unwrap();
 
-        let (written, _entries, messages) = output
+        let (written, _entries, messages, _) = output
             .finish(
                 PesVersion::Pes21,
                 WorkingBins::bundled(PesVersion::Pes21, &Templates::embedded()),
@@ -1312,7 +1332,7 @@ mod tests {
 
     /// `output` finished for PES 21 on the bundled bins with no team colors.
     fn finish_pes21(output: CpkOutput) -> (Written, Vec<Message>) {
-        let (written, _entries, messages) = output
+        let (written, _entries, messages, _) = output
             .finish(
                 PesVersion::Pes21,
                 bundled(),
@@ -1412,7 +1432,7 @@ mod tests {
         let mut output = with_refs_cpk_for(folder, BTreeMap::new(), 0..1, Engine::PreFox);
         output.submit(batch(0, &["refs/a.bin"], None)).unwrap();
 
-        let (written, _entries, messages) = output
+        let (written, _entries, messages, _) = output
             .finish(
                 PesVersion::Pes17,
                 WorkingBins::bundled(PesVersion::Pes17, &Templates::embedded()),
@@ -1513,7 +1533,7 @@ mod tests {
             })
             .unwrap();
 
-        let (written, _entries, messages) = output
+        let (written, _entries, messages, _) = output
             .finish(
                 PesVersion::Pes17,
                 WorkingBins::bundled(PesVersion::Pes17, &templates),
@@ -2013,7 +2033,7 @@ mod tests {
             ..bundled()
         };
 
-        let (written, _entries, _) = output
+        let (written, _entries, _, _) = output
             .finish(
                 PesVersion::Pes21,
                 bins,
@@ -2168,7 +2188,7 @@ mod tests {
         let path = temp.path().join("cup.cpk");
         let mut output = CpkOutput::new(OutputSink::cpk(path.clone()), BTreeMap::new(), "", None);
         output.submit(batch(0, &["a/b.bin"], None)).unwrap();
-        let (written, _entries, messages) = output
+        let (written, _entries, messages, _) = output
             .finish(
                 PesVersion::Pes21,
                 bins,
@@ -2271,8 +2291,48 @@ mod tests {
             team: false,
             refs: false,
         };
-        assert_eq!(finished, (nothing, 0, Vec::new()));
+        assert_eq!(finished, (nothing, 0, Vec::new(), BTreeSet::new()));
         assert!(!folder.exists(), "no file and no folder");
+    }
+
+    /// The patch is the run's work as the tables are: a run that committed nothing but
+    /// planned a patch team still writes the CPK for it to publish beside, the bins' own
+    /// work as empty.
+    #[test]
+    fn a_run_that_commits_nothing_but_planned_a_patch_still_writes_the_cpk() {
+        let temp = scratch("writer_no_entry_patch");
+        let folder = temp.path().join("run");
+        let mut output = CpkOutput::new(
+            OutputSink::cpk(folder.join("cup.cpk")),
+            BTreeMap::new(),
+            "",
+            None,
+        );
+        output.submit(batch(0, &[], None)).unwrap();
+        let finished = output
+            .finish(
+                PesVersion::Pes17,
+                WorkingBins::bundled(PesVersion::Pes17, &Templates::embedded()),
+                BinsEdits {
+                    patch_planned: true,
+                    ..BinsEdits::empty()
+                },
+                &Templates::embedded(),
+            )
+            .unwrap();
+        assert_eq!(
+            finished,
+            (
+                Written {
+                    team: true,
+                    refs: false
+                },
+                2,
+                Vec::new(),
+                BTreeSet::new()
+            )
+        );
+        assert!(folder.join("cup.cpk").is_file(), "the CPK is written");
     }
 
     #[test]
@@ -2292,7 +2352,7 @@ mod tests {
             team_color: TeamColorBin::read(team_color.clone()).unwrap(),
             ..bundled()
         };
-        let (written, _entries, messages) = output
+        let (written, _entries, messages, _) = output
             .finish(
                 PesVersion::Pes21,
                 broken,
@@ -2356,7 +2416,7 @@ mod tests {
         for batch in batches {
             output.submit(batch).unwrap();
         }
-        let (written, _entries, messages) = output
+        let (written, _entries, messages, _) = output
             .finish(
                 PesVersion::Pes21,
                 bins,
@@ -2516,7 +2576,7 @@ mod tests {
             uni_color: UniColorBin::read(uni_color).unwrap(),
             ..bundled()
         };
-        let (written, _entries, messages) = output
+        let (written, _entries, messages, _) = output
             .finish(
                 PesVersion::Pes21,
                 bins,
@@ -2641,7 +2701,7 @@ mod tests {
             }],
         };
 
-        let (written, _entries, messages) = output
+        let (written, _entries, messages, _) = output
             .finish(
                 PesVersion::Pes21,
                 bins,

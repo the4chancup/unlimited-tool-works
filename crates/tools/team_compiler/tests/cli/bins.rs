@@ -6,7 +6,7 @@ use std::fs;
 use std::path::Path;
 
 use kit_config::{KitConfig, KitSlot, TexturePresence, texture_names};
-use pes_savefile::interchange::aesthetics_patch::{AestheticsPatch, PatchTeam};
+use pes_savefile::interchange::aesthetics_patch::PatchTeam;
 use pes_savefile::player_tables::{AppearanceTable, PlayerTableFile};
 use pes_savefile::settings_toml::{IngameFaceSettings, PlayerSettings, SettingKey};
 use pes_version::PesVersion;
@@ -20,6 +20,7 @@ use crate::compile_exports::{
     bundled_uniform_parameter, config_path, record_of, uni_record, with_uni_record,
 };
 use crate::models::body_skl;
+use crate::patch::read_patch;
 use crate::prefox_faces::write_slot_05_face;
 use crate::{BUNDLED_BINS, clean_model, deploy_skipped, patch_written};
 
@@ -752,7 +753,7 @@ fn a_midcup_fpc_on_pes_17_export_re_emits_the_loose_configs_of_the_kits_it_does_
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
     // p1 patched in place, p2 generated (the install holds no p2 config), p3 unpatched.
-    let expected = pre_fox_lines(
+    let mut expected = pre_fox_lines(
         &sandbox,
         &[
             "co Midcup Kits: Info kit_config_fpc_adjusted [Keep] (slot=p1)",
@@ -760,6 +761,7 @@ fn a_midcup_fpc_on_pes_17_export_re_emits_the_loose_configs_of_the_kits_it_does_
             "co Midcup Kits: Warning kit_config_fpc_unpatched [Keep] (slot=p3)",
         ],
     );
+    expected.push(patch_written(&sandbox, "714"));
     assert_eq!(run.messages(), expected);
     assert_eq!(run.exit_code(), 0);
     let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
@@ -808,7 +810,7 @@ fn an_installed_loose_config_re_encoded_for_the_fpc_values_reports_the_value_it_
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
-    let expected = pre_fox_lines(
+    let mut expected = pre_fox_lines(
         &sandbox,
         &[
             "co Midcup Kits: Info kit_config_fpc_adjusted [Keep] (slot=p1)",
@@ -817,6 +819,7 @@ fn an_installed_loose_config_re_encoded_for_the_fpc_values_reports_the_value_it_
             "co Midcup Kits: Warning kit_config_fpc_unpatched [Keep] (slot=p3)",
         ],
     );
+    expected.push(patch_written(&sandbox, "714"));
     assert_eq!(run.messages(), expected);
     assert_eq!(run.exit_code(), 0);
     let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
@@ -903,13 +906,14 @@ fn the_nearest_cpk_s_loose_config_is_the_one_an_absent_slot_s_edit_starts_from()
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
     // p2's is generated (no installed p2 config in any CPK); p3's is unpatched.
-    let expected = pre_fox_lines(
+    let mut expected = pre_fox_lines(
         &sandbox,
         &[
             "co Midcup Kits: Info kit_config_generated [Keep] at Kits/p2 ()",
             "co Midcup Kits: Warning kit_config_fpc_unpatched [Keep] (slot=p3)",
         ],
     );
+    expected.push(patch_written(&sandbox, "714"));
     assert_eq!(run.messages(), expected, "nothing for p1");
     assert_eq!(run.exit_code(), 0);
     let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
@@ -1100,12 +1104,6 @@ pub(crate) fn pairs_of(entries: &BTreeMap<String, Vec<u8>>, path: &str) -> Vec<(
         .collect()
 }
 
-/// The `aesthetics_patch.toml` the run wrote to the sandbox's output folder, parsed back.
-fn patch_of(sandbox: &Sandbox) -> AestheticsPatch {
-    let text = fs::read_to_string(sandbox.root.join("output/aesthetics_patch.toml")).unwrap();
-    AestheticsPatch::parse(&text).unwrap()
-}
-
 /// The patch's `[[teams]]` the run wrote — none when no player has an entry
 /// (no patch file is written at all then).
 fn patch_teams(sandbox: &Sandbox) -> Vec<PatchTeam> {
@@ -1113,7 +1111,7 @@ fn patch_teams(sandbox: &Sandbox) -> Vec<PatchTeam> {
     if !path.exists() {
         return Vec::new();
     }
-    patch_of(sandbox).teams
+    read_patch(sandbox).teams
 }
 
 // TC-BIN-25
@@ -1192,6 +1190,7 @@ fn a_compiled_player_s_three_rows_join_the_installed_tables_which_keep_theirs() 
 }
 
 // TC-BIN-11
+// TC-BIN-50
 #[test]
 fn a_player_whose_boots_task_fails_keeps_his_installed_boots_row() {
     let sandbox = Sandbox::new("bins_boots_failed");
@@ -1226,9 +1225,16 @@ fn a_player_whose_boots_task_fails_keeps_his_installed_boots_row() {
         entries[BOOTS_LIST] == installed,
         "BootsList.bin keeps (71405, 7)"
     );
+    // The patch half: his entry holds no `boots_id` either, so the save keeps his.
+    assert_eq!(
+        read_patch(&sandbox).teams[0].players[&5].boots_id,
+        None,
+        "the failed task's ID reaches no patch entry"
+    );
 }
 
 // TC-BIN-12
+// TC-BIN-51
 #[test]
 fn a_player_s_own_gloves_and_a_linked_shared_folder_s_set_their_gloves_rows() {
     let sandbox = Sandbox::new("bins_gloves_rows");
@@ -1271,14 +1277,32 @@ fn a_player_s_own_gloves_and_a_linked_shared_folder_s_set_their_gloves_rows() {
             (71409, 629)
         ]
     );
+    // The patch half: the same four gloves IDs in the players' entries.
+    let patch = read_patch(&sandbox);
+    for (slot, id) in [(5u8, 625u16), (7, 644), (8, 644), (9, 629)] {
+        assert_eq!(
+            patch.teams[0].players[&slot].gloves_id,
+            Some(id),
+            "slot {slot:02}'s gloves_id"
+        );
+    }
 }
 
 // TC-BIN-26
+// TC-BIN-52
 #[test]
 fn a_full_export_zeroes_a_markerless_player_s_boots_row_and_a_midcup_keeps_it() {
-    for (coverage, expected) in [
-        ("Full", vec![(71405, 625), (71406, 0), (71407, 0)]),
-        ("Midcup", vec![(71405, 625), (71406, 9), (71407, 0)]),
+    for (coverage, expected, patch_ids) in [
+        (
+            "Full",
+            vec![(71405, 625), (71406, 0), (71407, 0)],
+            [(5u8, Some(625u16)), (6, Some(0)), (7, Some(0))],
+        ),
+        (
+            "Midcup",
+            vec![(71405, 625), (71406, 9), (71407, 0)],
+            [(5u8, Some(625u16)), (6, None), (7, Some(0))],
+        ),
     ] {
         let sandbox = Sandbox::new(&format!("bins_boots_rows_{coverage}"));
         install_tables(
@@ -1308,10 +1332,20 @@ fn a_full_export_zeroes_a_markerless_player_s_boots_row_and_a_midcup_keeps_it() 
         assert_eq!(run.exit_code(), 0, "{coverage}: {:#?}", run.messages());
         let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
         assert_eq!(pairs_of(&entries, BOOTS_LIST), expected, "{coverage}");
+        // The patch half: the same boots IDs in the players' entries — none for the
+        // `Midcup` markerless player, whose save keeps his.
+        let patch = read_patch(&sandbox);
+        for (slot, id) in patch_ids {
+            assert_eq!(
+                patch.teams[0].players[&slot].boots_id, id,
+                "{coverage} slot {slot:02}'s boots_id"
+            );
+        }
     }
 }
 
 // TC-BIN-27
+// TC-BIN-53
 #[test]
 fn with_no_installed_tables_the_run_s_rows_are_left_out_and_each_table_reported() {
     let sandbox = Sandbox::new("bins_no_tables");
@@ -1341,6 +1375,11 @@ fn with_no_installed_tables_the_run_s_rows_are_left_out_and_each_table_reported(
     for table in [BOOTS_LIST, GLOVE_LIST, PLAYER_APPEARANCE] {
         assert!(!entries.contains_key(table), "no {table}");
     }
+    // The patch half: 71405's boots_id is his exclusive ID.
+    assert_eq!(
+        read_patch(&sandbox).teams[0].players[&5].boots_id,
+        Some(625)
+    );
 }
 
 // TC-BIN-28
@@ -1410,6 +1449,7 @@ fn a_compiled_player_s_appearance_row_is_his_settings_toml_s_not_the_installed_o
 }
 
 // TC-BIN-29
+// TC-BIN-54
 #[test]
 fn the_authored_stock_id_the_marker_defaults_and_the_assigned_id_resolve_in_order() {
     let sandbox = Sandbox::new("bins_id_resolution");
@@ -1473,6 +1513,13 @@ fn the_authored_stock_id_the_marker_defaults_and_the_assigned_id_resolve_in_orde
         pairs_of(&entries, GLOVE_LIST),
         [(70201, 31), (71405, 11), (71406, 11), (71407, 0)]
     );
+    // The patch half: the same boots and gloves IDs in the three entries.
+    let patch = read_patch(&sandbox);
+    for (slot, boots, gloves) in [(5u8, 12u16, 11u16), (6, 55, 11), (7, 627, 0)] {
+        let player = &patch.teams[0].players[&slot];
+        assert_eq!(player.boots_id, Some(boots), "slot {slot:02}'s boots_id");
+        assert_eq!(player.gloves_id, Some(gloves), "slot {slot:02}'s gloves_id");
+    }
 }
 
 // The hide preset's boots and gloves IDs are the common settings
@@ -1530,6 +1577,7 @@ fn the_fpc_marker_defaults_are_the_common_settings_hide_ids() {
 }
 
 // TC-BIN-41
+// TC-BIN-59
 #[test]
 fn a_linked_shared_folder_s_gloves_id_wins_over_an_authored_gloves_id() {
     let sandbox = Sandbox::new("bins_gloves_link_conflict");
@@ -1562,9 +1610,15 @@ fn a_linked_shared_folder_s_gloves_id_wins_over_an_authored_gloves_id() {
         [(70201, 31), (71405, 625)],
         "71405's row is his exclusive ID, Crocs's one wearer's, not the authored 3"
     );
+    // The patch half: the same exclusive ID in his entry, not the authored 3.
+    assert_eq!(
+        read_patch(&sandbox).teams[0].players[&5].gloves_id,
+        Some(625)
+    );
 }
 
 // TC-BIN-41
+// TC-BIN-59
 #[test]
 fn a_combined_face_folder_s_boots_part_assigns_the_id() {
     let sandbox = Sandbox::new("bins_face_link_boots_part");
@@ -1602,9 +1656,15 @@ fn a_combined_face_folder_s_boots_part_assigns_the_id() {
         [(70201, 11), (71405, 625)],
         "71405's row is his exclusive ID, not the authored 3"
     );
+    // The patch half: the same exclusive ID in his entry.
+    assert_eq!(
+        read_patch(&sandbox).teams[0].players[&5].boots_id,
+        Some(625)
+    );
 }
 
 // TC-BIN-41
+// TC-BIN-59
 #[test]
 fn a_plainly_linked_folder_holding_no_model_leaves_the_authored_id_its_row() {
     let sandbox = Sandbox::new("bins_plain_link_no_model");
@@ -1643,9 +1703,12 @@ fn a_plainly_linked_folder_holding_no_model_leaves_the_authored_id_its_row() {
         [(70201, 11), (71405, 3)],
         "the authored stock ID is his row, Crocs having nothing to assign"
     );
+    // The patch half: the authored stock ID in his entry too.
+    assert_eq!(read_patch(&sandbox).teams[0].players[&5].boots_id, Some(3));
 }
 
 // TC-BIN-41
+// TC-BIN-59
 #[test]
 fn a_hand_split_face_part_assigns_the_gloves_id_over_an_authored_one() {
     let sandbox = Sandbox::new("bins_hand_split_gloves_id");
@@ -1678,6 +1741,11 @@ fn a_hand_split_face_part_assigns_the_gloves_id_over_an_authored_one() {
         pairs_of(&entries, GLOVE_LIST),
         [(70201, 31), (71405, 625)],
         "71405's row is his exclusive ID, not the authored 3"
+    );
+    // The patch half: the same exclusive ID in his entry.
+    assert_eq!(
+        read_patch(&sandbox).teams[0].players[&5].gloves_id,
+        Some(625)
     );
 }
 
@@ -1736,7 +1804,7 @@ fn a_midcup_export_holding_only_settings_files_writes_the_tables() {
     );
     // The patch half: the same look in `[appearance]` form, the facial hair
     // type the `ingame_face.toml`'s.
-    let patch = patch_of(&sandbox);
+    let patch = read_patch(&sandbox);
     assert_eq!(
         patch.teams[0].players[&5].appearance.as_ref(),
         Some(&settings.appearance.resolved(PesVersion::Pes21)),
@@ -2062,7 +2130,7 @@ fn an_ingame_face_toml_s_keys_reach_the_row_beside_a_plain_one_s_defaults() {
     // The patch half: the same two looks in `[appearance]` form — 79205 the
     // defaults beside his `settings.toml`, 79206 the face file's iris and
     // hair.
-    let patch = patch_of(&sandbox);
+    let patch = read_patch(&sandbox);
     assert_eq!(
         patch.teams[0].players[&5].appearance.as_ref(),
         Some(
@@ -2142,11 +2210,16 @@ fn a_failed_boots_task_keeps_the_installed_pair_and_the_appearance_row_is_still_
         Some(expected[4..].try_into().unwrap()),
         "71405's appearance row carries the key whatever the task's outcome"
     );
-    // The patch half: his whole look, whatever the failed task's outcome.
-    let patch = patch_of(&sandbox);
-    let appearance = &patch.teams[0].players[&5].appearance;
+    // The patch half: his whole look, whatever the failed task's outcome, and no
+    // `boots_id`, so the save keeps his 7.
+    let patch = read_patch(&sandbox);
+    let player = &patch.teams[0].players[&5];
     assert_eq!(
-        *appearance,
+        player.boots_id, None,
+        "the failed task's ID reaches no patch"
+    );
+    assert_eq!(
+        player.appearance,
         Some(authored.appearance.resolved(PesVersion::Pes21))
     );
 }
@@ -2205,6 +2278,7 @@ fn an_invalid_settings_toml_is_reported_and_the_row_is_the_template_s_defaults()
 }
 
 // TC-BIN-30
+// TC-BIN-55
 #[test]
 fn an_fpc_on_player_gets_the_hide_preset_with_the_interference_reported() {
     let sandbox = Sandbox::new("bins_fpc_strip");
@@ -2285,9 +2359,18 @@ fn an_fpc_on_player_gets_the_hide_preset_with_the_interference_reported() {
         ),
         "71405's row"
     );
+    // The patch half: the same resolved look in `[appearance]` form, the preset's
+    // sleeves winning over his and the inners, undershorts and taping as authored.
+    let patch = read_patch(&sandbox);
+    assert_eq!(
+        patch.teams[0].players[&5].appearance.as_ref(),
+        Some(&expected.appearance.resolved(PesVersion::Pes21)),
+        "71405's [appearance]"
+    );
 }
 
 // TC-BIN-30
+// TC-BIN-55
 #[test]
 fn a_midcup_markerless_player_is_not_checked_for_the_gloves_rule() {
     let sandbox = Sandbox::new("bins_fpc_midcup_gloves");
@@ -2331,6 +2414,7 @@ pub(crate) fn record(boots: &[(u16, &str)]) -> Vec<u8> {
 }
 
 // TC-BIN-34
+// TC-BIN-56
 #[test]
 fn a_full_export_s_shared_ids_are_numbered_alphabetically_and_recorded() {
     let sandbox = Sandbox::new("bins_shared_ids_full");
@@ -2369,9 +2453,19 @@ fn a_full_export_s_shared_ids_are_numbered_alphabetically_and_recorded() {
         record(&[(644, "adidas"), (645, "Crocs")]),
         "the CPK records which folder took which shared ID"
     );
+    // The patch half: the same boots IDs in the five entries, Birk under slot 09's own.
+    let patch = read_patch(&sandbox);
+    for (slot, id) in [(5u8, 645u16), (6, 644), (7, 645), (8, 644), (9, 629)] {
+        assert_eq!(
+            patch.teams[0].players[&slot].boots_id,
+            Some(id),
+            "slot {slot:02}'s boots_id"
+        );
+    }
 }
 
 // TC-BIN-35
+// TC-BIN-57
 #[test]
 fn a_midcup_export_keeps_the_installed_shared_ids_for_the_folders_it_resends() {
     let sandbox = Sandbox::new("bins_shared_ids_midcup");
@@ -2415,9 +2509,19 @@ fn a_midcup_export_keeps_the_installed_shared_ids_for_the_folders_it_resends() {
         record(&[(644, "adidas"), (645, "crocs"), (646, "Birk")]),
         "the installed entries kept, the Midcup's folders under their own spellings"
     );
+    // The patch half: the same three boots IDs in the entries.
+    let patch = read_patch(&sandbox);
+    for (slot, id) in [(5u8, 646u16), (6, 645), (7, 646)] {
+        assert_eq!(
+            patch.teams[0].players[&slot].boots_id,
+            Some(id),
+            "slot {slot:02}'s boots_id"
+        );
+    }
 }
 
 // TC-BIN-36
+// TC-BIN-58
 #[test]
 fn a_midcup_export_with_no_installed_record_is_warned_and_records_its_own() {
     // The sandbox's own name must not hold the code it greps for.
@@ -2453,6 +2557,15 @@ fn a_midcup_export_with_no_installed_record_is_warned_and_records_its_own() {
         [(70201, 11), (71405, 644), (71406, 644)]
     );
     assert_eq!(entries[SHARED_IDS_714], record(&[(644, "Birk")]));
+    // The patch half: 644 in both wearers' entries.
+    let patch = read_patch(&sandbox);
+    for slot in [5u8, 6] {
+        assert_eq!(
+            patch.teams[0].players[&slot].boots_id,
+            Some(644),
+            "slot {slot:02}'s boots_id"
+        );
+    }
 
     // Slot 06's link removed, Birk's one wearer is slot 05: it takes his exclusive id, and
     // no folder taking a shared id means no record and no warning.
@@ -2477,6 +2590,11 @@ fn a_midcup_export_with_no_installed_record_is_warned_and_records_its_own() {
         !entries.contains_key(SHARED_IDS_714),
         "{:?}",
         entries.keys()
+    );
+    // The patch half: slot 05's own ID, the shared folder's one wearer.
+    assert_eq!(
+        read_patch(&sandbox).teams[0].players[&5].boots_id,
+        Some(625)
     );
 }
 
@@ -2574,6 +2692,7 @@ fn a_full_export_with_nothing_to_record_writes_an_empty_one() {
 }
 
 // TC-BIN-30
+// TC-BIN-55
 #[test]
 fn a_face_link_feeding_the_own_package_is_no_gloves_id_for_the_checkbox_rule() {
     let sandbox = Sandbox::new("bins_face_link_gloves_rule");

@@ -3080,3 +3080,6 @@ worklog passed 7,000 lines.
 - 2026-11-04 — f6 (8): pes_savefile's whole run (2 missed, 4 timeouts caught); its remote fetch stalled on 6.1 GB
   of caught mutants' logs at ~41 KB/s, so the fetch now leaves them out (11 MB). SWE-2 S1: 3 accepted, the
   loop ends; the RUNBOOK names the remote half's summary folder, which the chain's archive had missed.
+- 2026-11-05 — 8.36c2a: the patch carries each compiled player's boots and gloves IDs by the tables' committed-task
+  rule, and PES 15-17 compiles write and apply a patch too (SWE-2, landed first time; one lead test-helper fix).
+  0.0.2-se19: the PES 2019 writer is byte-exact; the edit-flag hypothesis waits for the game.

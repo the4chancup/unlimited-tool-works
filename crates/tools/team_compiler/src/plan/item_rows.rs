@@ -3,7 +3,8 @@
 //! template's for a file it has not). `BootsList.bin` and `GloveList.bin` are resolved per
 //! category: the folder's own models or a link file take the ID a `Models` task emits them
 //! under once it commits, an authored stock ID is written as is, and else the marker or the
-//! coverage decides the default.
+//! coverage decides the default. On a pre-Fox target, which has no such tables, the item
+//! rows feed the patch's `boots_id`/`gloves_id` by the same rule instead.
 
 use std::collections::BTreeSet;
 
@@ -24,7 +25,7 @@ use crate::paths::PackageKey;
 
 /// One compiled player's row of `BootsList.bin` or `GloveList.bin`, as planning decides it
 /// ("Bins accumulation").
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ItemRow {
     /// The table the row is in.
     pub(crate) table: ItemTable,
@@ -36,6 +37,15 @@ pub(crate) struct ItemRow {
     /// is set only once it commits, the installed row staying when it does not. `None` for
     /// an authored stock ID or a resolved default, which no task emits.
     pub(crate) task: Option<usize>,
+}
+
+impl ItemRow {
+    /// Whether the row's write happens: it has no task, or its task is among `committed`,
+    /// the manifest positions of the batches the writer committed. The tables' `apply` and
+    /// `left_out` and the patch's `settle` all decide a row by it.
+    pub(crate) fn counts(&self, committed: &BTreeSet<usize>) -> bool {
+        self.task.is_none_or(|task| committed.contains(&task))
+    }
 }
 
 /// One compiled player's `PlayerAppearance.bin` row, as planning decides it: the writer
@@ -499,5 +509,26 @@ mod tests {
             .map(|row| row.player_id)
             .collect();
         assert_eq!(appearance, [71403, 71408, 71409, 71411]);
+    }
+
+    /// A taskless row counts outright; a task-gated one once its task is among the
+    /// committed batches, and not before.
+    #[test]
+    fn a_row_counts_without_a_task_or_once_its_task_committed() {
+        let committed = BTreeSet::from([1, 3]);
+        assert!(
+            default(ItemTable::Boots, 71405, 0).counts(&committed),
+            "a taskless row counts"
+        );
+        assert!(set(ItemTable::Boots, 71405, 625, 1).counts(&committed));
+        assert!(set(ItemTable::Boots, 71405, 625, 3).counts(&committed));
+        assert!(
+            !set(ItemTable::Boots, 71405, 625, 2).counts(&committed),
+            "an uncommitted task's row does not"
+        );
+        assert!(
+            !set(ItemTable::Boots, 71405, 625, 4).counts(&committed),
+            "a task that never ran does not"
+        );
     }
 }

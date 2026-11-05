@@ -12,7 +12,7 @@ use pes_version::PesVersion;
 use crate::clean_model;
 use crate::common::Sandbox;
 use crate::compile::{pes_settings, pes21_settings, tracer_kit};
-use crate::prefox_faces::write_slot_05_face;
+use crate::prefox_faces::{card_model, materials_naming, small_dds};
 
 /// The patch in `sandbox`'s output folder, parsed back.
 pub(crate) fn read_patch(sandbox: &Sandbox) -> AestheticsPatch {
@@ -51,6 +51,25 @@ fn a_run_holding_no_patch_moves_an_earlier_one_aside_to_bak() {
         earlier,
         "the earlier one is now the .bak"
     );
+}
+
+/// TC-SAV-19's PES 17 export, `co Full Old` (both halves', the patch's and the savefile's):
+/// slot 05's `settings.toml` (`boots_id = 12`, skin colour 4, a motion key), and his link to
+/// `Boots/Crocs/`, a `.model` with its `.mtl` and texture. Returns the export's folder and
+/// the `settings.toml` text.
+pub(crate) fn pes17_crocs_export(sandbox: &Sandbox) -> (&'static str, &'static str) {
+    let export = "exports/co Full Old";
+    let toml = "boots_id = 12\n[appearance]\nskin_color = 4\n[appearance.motion]\nhunching_dribbling = 2\n";
+    sandbox.write(
+        &format!("{export}/Players/05 - A/settings.toml"),
+        toml.as_bytes(),
+    );
+    sandbox.write(&format!("{export}/Players/05 - A/Crocs.boots"), b"");
+    let crocs = format!("{export}/Boots/Crocs");
+    sandbox.write(&format!("{crocs}/boots.model"), &card_model());
+    sandbox.write(&format!("{crocs}/boots.mtl"), &materials_naming("crocs"));
+    sandbox.write(&format!("{crocs}/crocs.dds"), &small_dds());
+    (export, toml)
 }
 
 /// A `write_names` export: `players.txt` mapping `Snuffy` to slot 05 and `Sharer` to 06 and
@@ -175,24 +194,57 @@ fn check_reports_the_name_findings_compile_does() {
     }
 }
 
-// The patch half (the savefile half is `savefile.rs`'s).
-// TC-SAV-12
+// The patch half (the savefile half is `savefile.rs`'s): the patch is written on PES 17
+// too — its `pes_version` the target's, 71405's entry holding his resolved look and the
+// ID the linked boots folder takes under his slot's own, the authored stock ID losing
+// to it.
+// TC-SAV-19
 #[test]
-fn a_pre_fox_compile_writes_no_patch() {
+fn a_pre_fox_compile_writes_the_patch_his_look_and_the_linked_boots_id() {
     let sandbox = Sandbox::new("patch_prefox");
-    write_slot_05_face(&sandbox, "co Full Old");
-    sandbox.write(
-        "exports/co Full Old/Players/05 - A/settings.toml",
-        b"[appearance.motion]\nhunching_dribbling = 2\n",
-    );
+    let (_, toml) = pes17_crocs_export(&sandbox);
 
     let run = sandbox.run(&pes_settings(&sandbox, 17), &["compile", "--no-deploy"]);
 
     let lines = run.messages();
     assert_eq!(run.exit_code(), 0, "{lines:#?}");
-    let output = sandbox.root.join("output");
-    assert!(!output.join("aesthetics_patch.toml").exists());
-    assert!(!output.join("aesthetics_patch.toml.bak").exists());
+    assert!(
+        lines.iter().any(|line| line
+            == "co Full Old: Warning settings_model_id_conflict [Keep] at \
+                Players/05 - A (key=boots_id)"),
+        "{lines:#?}"
+    );
+    let written = format!(
+        "Info patch_written [Keep] (path={}, teams=714)",
+        sandbox.display("output/aesthetics_patch.toml")
+    );
+    assert!(lines.contains(&written), "{lines:#?}");
+    let patch = read_patch(&sandbox);
+    assert_eq!(patch.pes_version, PesVersion::Pes17);
+    let [team] = patch.teams.as_slice() else {
+        panic!("one [[teams]] entry: {:?}", patch.teams)
+    };
+    let player = &team.players[&5];
+    assert_eq!(
+        player.boots_id,
+        Some(625),
+        "the linked folder's ID under his slot's own, not the authored 12"
+    );
+    assert_eq!(
+        player.gloves_id,
+        Some(0),
+        "the Full export's markerless default"
+    );
+    assert_eq!(player.name, None, "no marker, no name");
+    let expected = PlayerSettings::parse(toml)
+        .unwrap()
+        .appearance
+        .resolved(PesVersion::Pes17);
+    assert_eq!(
+        player.appearance.as_ref(),
+        Some(&expected),
+        "every key of PES 17's schema, the settings.toml's or the template's"
+    );
 }
 
 // The patch half with no `write_names` marker (the savefile half is `savefile.rs`'s): no

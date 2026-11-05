@@ -22,6 +22,7 @@ use crate::common_links::texture_directories;
 use crate::compile::{cpk_entries, pes21_settings, pixels_cut_dds, tracer_kit, tracer_player_file};
 use crate::conversion::HOME_714_05;
 use crate::face_folders::assert_blank_face;
+use crate::patch::read_patch;
 use crate::prefox_faces::{
     BOOTS_K0625, CLEAN, card_materials, card_model, compile_pes17, entries_under, materials_naming,
     small_dds,
@@ -1327,6 +1328,7 @@ fn a_face_link_combines_the_shared_face_folder_into_the_player_s_face() {
 }
 
 // TC-MOD-55
+// TC-MOD-95
 #[test]
 fn a_shared_face_s_boots_model_is_a_part_of_the_linking_player_s_own_boots() {
     let sandbox = Sandbox::new("mod_face_link_boots");
@@ -1361,9 +1363,15 @@ fn a_shared_face_s_boots_model_is_a_part_of_the_linking_player_s_own_boots() {
     assert_eq!(package_names(&entries[boots]), ["boots.fmdl", "boots.skl"]);
     assert_eq!(boots_mesh_count(&entries, boots), tracer_boots_mesh_count());
     assert_eq!(pairs_of(&entries, BOOTS_LIST), [(70201, 11), (71405, 625)]);
+    // The patch half: the same exclusive ID in his entry.
+    assert_eq!(
+        read_patch(&sandbox).teams[0].players[&5].boots_id,
+        Some(625)
+    );
 }
 
 // TC-MOD-58
+// TC-MOD-96
 #[test]
 fn a_shared_face_s_boots_model_converts_with_the_face_folder_s_mtl() {
     let sandbox = Sandbox::new("mod_face_link_boots_model");
@@ -1418,9 +1426,15 @@ fn a_shared_face_s_boots_model_converts_with_the_face_folder_s_mtl() {
         assert_eq!(path, &(HOME_714_05.to_owned(), "skin.dds".to_owned()));
     }
     assert_eq!(pairs_of(&entries, BOOTS_LIST), [(70201, 11), (71405, 625)]);
+    // The patch half: the same exclusive ID in his entry.
+    assert_eq!(
+        read_patch(&sandbox).teams[0].players[&5].boots_id,
+        Some(625)
+    );
 }
 
 // TC-MOD-59
+// TC-MOD-97
 #[test]
 fn a_boots_link_combines_with_the_boots_of_the_player_s_shared_face() {
     let sandbox = Sandbox::new("mod_face_link_boots_link");
@@ -1467,6 +1481,11 @@ fn a_boots_link_combines_with_the_boots_of_the_player_s_shared_face() {
         "Round's meshes plus Crocs's"
     );
     assert_eq!(pairs_of(&entries, BOOTS_LIST), [(70201, 11), (71405, 625)]);
+    // The patch half: the same exclusive ID in his entry.
+    assert_eq!(
+        read_patch(&sandbox).teams[0].players[&5].boots_id,
+        Some(625)
+    );
     // The block's first shared id, which Crocs would take if a player linked it plainly.
     assert!(
         !entries
@@ -1478,6 +1497,7 @@ fn a_boots_link_combines_with_the_boots_of_the_player_s_shared_face() {
 }
 
 // TC-MOD-60
+// TC-MOD-98
 #[test]
 fn a_gloves_link_combines_with_the_hands_split_from_the_player_s_face_model() {
     let sandbox = Sandbox::new("mod_hand_split_gloves_link");
@@ -1530,6 +1550,11 @@ fn a_gloves_link_combines_with_the_hands_split_from_the_player_s_face_model() {
         [8 + 40, 8 + 40]
     );
     assert_eq!(pairs_of(&entries, GLOVE_LIST), [(71405, 625)]);
+    // The patch half: the same exclusive ID in his entry.
+    assert_eq!(
+        read_patch(&sandbox).teams[0].players[&5].gloves_id,
+        Some(625)
+    );
     // The block's first shared id, which Crocs would take if a player linked it plainly.
     assert!(
         !entries
