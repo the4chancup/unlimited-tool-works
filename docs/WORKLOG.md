@@ -2836,7 +2836,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
       Built (merged `72df1947`): one fixed-width right-to-left row, the field at the right,
       at least 12 from the sentence; the test covers both dialogs
       - manual: checked 2026-11-01 (the maintainer, on candidate 0.0.1d's built app)
-  - [ ] 8.38 before 0.0.1, the built-window check of 2026-10-30 (release build `0f001c90`, the
+  - [x] 8.38 (closed by 0.0.1's cut: the maintainer, 2026-11-05, ruled QUESTIONS' "Before the
+    release" obsolete) before 0.0.1, the built-window check of 2026-10-30 (release build `0f001c90`, the
     maintainer's PES 2021 save read-only, both themes; `.tmp/phase_08/8_30c/findings.md`, captures
     beside it): the player and team screens, the Player menu, Set all stats, Kit slots, the
     help window, Live AATF, the light theme, the boots and gloves dialog and the team file
@@ -6847,7 +6848,7 @@ briefs, review loops, gates and mutation runs as for any step.
     makes it portable, so the first start asks nothing. Review: SWE-2 S1 3 of 7 accepted (two
     routed: `plans/core/gui.md` and `plans/core/distribution.md` still list the old bundle;
     a block's own CUSTOM CHECKS now kept), `.tmp/0_0_1f/rulings.md`
-  - [ ] f1c the maintainer's final pass over the built app's UI, before anything is frozen
+  - [x] f1c (closed by the cut, as 8.38) the maintainer's final pass over the built app's UI, before anything is frozen
     (the maintainer, 2026-10-28: "wait for one final pass of the UI from me, before it goes
     golden"), once every UI step of 0.0.1 has landed (w4b, w6b, z2, y4e, y5b, y6b, y7b and the
     lead's built-window checks, which ask before they take focus). The candidate for it
@@ -6867,7 +6868,7 @@ briefs, review loops, gates and mutation runs as for any step.
     going from the rail to the full opaque overlay in one frame, no dim or half-empty frame
     between. In the same
     pass: 0.0.1v's open look outside the app's own windows (the taskbar button, Alt+Tab,
-    Explorer's file icon on the exe) → QUESTIONS "Before the release"
+    Explorer's file icon on the exe) → QUESTIONS "Before the release" (dropped with it, 2026-11-05)
   - [x] f1d the maintainer's changes after DBC7's commissioner approved 0.0.1f (2026-11-01),
     on a branch from `release/0.0.1-candidate` (`57fb85f4`), merged into it and into main,
     then candidate 0.0.1g staged (until the cut, nothing for later releases starts).
@@ -6918,7 +6919,7 @@ briefs, review loops, gates and mutation runs as for any step.
       and Gameplan"; drafted in `save_editor.js` `ixWrite`) → verify: headless, the boxes'
       labels; a Stats-only import leaves the motions, colours and kits as the target's and an
       Aesthetics-only import writes them; Copy stats leaves the free-kick motion
-    - [ ] f1e4 (the clean-machine check, 2026-11-02): on the maintainer's notebook (Intel HD
+    - [x] f1e4 (closed by the cut, as 8.38) (the clean-machine check, 2026-11-02): on the maintainer's notebook (Intel HD
       Graphics 620, driver 31.0.101.2137) every start crashes in the Vulkan driver
       (`igvk64.dll`, during wgpu's `Device::new`, five dumps alike; `.tmp/lead/clean_check/`),
       where `WGPU_BACKEND=dx12` and `gl` start three times of three. On Windows the window asks

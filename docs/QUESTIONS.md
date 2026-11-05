@@ -8,30 +8,6 @@ sidekick work in progress stays in `WORKLOG.md` "Issues"; this file holds nothin
 settle itself. Entries are grouped by what an answer unblocks, newest last within a group; each
 names where the question came from so the context can be read there.
 
-## Before the release
-
-- **The final pass over the built app's UI** (worklog 0.0.1f1c). Any change it asks for is
-  drafted first, looked at in the drafts, then built.
-  - **The candidate:** 0.0.1i, staged once f1g's loop ends (worklog 0.0.1f1g); its folder and
-    commit land here then. New since 0.0.1g: Tactics rows drag from their names (f1e), Up and
-    Down walk the player list, the import's Stats, Aesthetics and Gameplan boxes, Direct3D 12
-    on Windows; the dragged row's outline (f1f), two copies of the exe at once, Ctrl+C and
-    Ctrl+V on team rows and the Tactics selectors, the VGL captain bonus's count, the Stronger
-    foot colours, undo runs, Tab + Space; then f1g: the Fielded row's tooltip (P49), the
-    shortcuts after Tab + Space (P50), Live AATF's heads and copy button, Invert value
-    scrolling, PgUp/PgDn, and the update check if it lands.
-  - **Yours in the same pass** (worklog 8.38, never checked in the built window): the dialog
-    the Save editor shows when you save while PES 2017 runs; the AATF screen against its PES
-    2017 sample; the list a click on the toolbar's `• unsaved changes` opens (8.31). Also the
-    look outside the app's own windows (worklog 0.0.1f1c): the taskbar button, Alt+Tab and
-    Explorer's icon on the exe.
-  - **The notebook** (worklog 0.0.1f1e4): `run_gpu_check.bat`'s default start on 0.0.1i opens
-    the window on the Intel HD 620, where every start of 0.0.1g crashed in the Vulkan driver.
-  - **Already measured,** so not worth reporting: every screen the drafts and the build share
-    matches the drafts within 1 point (2 where needed), in both themes. What still differs
-    does so by ruling: the rail's order, a combo's arrow, the checkboxes' hit areas.
-  - **Then:** the confirmation that freezes logic version 1's hash (0.0.1f2).
-
 ## Cup practice
 
 The Music player's three below come from reading Rigdio v2.2.0's controls (worklog 10.0i,
