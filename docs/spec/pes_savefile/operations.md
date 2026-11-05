@@ -657,35 +657,69 @@ savefile writes for the compiled players, so that the people who build the DLC a
 build the official savefile can be different people. The DLC builder compiles the cup's exports
 without ever seeing the savefile builder's data (the teams' custom tactics, which they send to the
 savefile builder alone), hands over the CPK and the patch, and the savefile builder applies the
-patch to the official save. `interchange/aesthetics_patch` holds the **Fox half** of the
-format; the pre-Fox half is in
+patch to the official save. `interchange/aesthetics_patch` holds the format; what is still
+planned is in
 [`plans/pes_savefile/operations.md`](../../plans/pes_savefile/operations.md) "Aesthetics patch
 (new)".
 
 The Team compiler writes the file to the output folder with the CPKs a compile publishes, its
 header naming the CPKs (empty for a sideload tree, which publishes loose files). A compile with
-nothing to put in it (no compiled player, or a pre-Fox target) writes none and moves an earlier
+nothing to put in it (no compiled player) writes none and moves an earlier
 patch to `aesthetics_patch.toml.bak`, one backup replaced each time; the write happens once the
 run's outputs are in place, so a run that publishes nothing leaves the previous CPK and its
 patch alone. The compiler's own savefile stage is "apply the patch just produced to the local
-save" (see "Savefile update" in the [Team compiler plan](../../plans/team_compiler/pipeline.md)) — one
+save" (see "Savefile update" in the [Team compiler plan](../team_compiler/pipeline.md)) — one
 path, so a patch applied a week later by someone else yields the same bytes the DLC builder's
 machine wrote.
 
-**What it holds depends on the engine.** On **Fox** (PES 18–21) a player's appearance, boots and
-gloves travel in the CPK's database tables, not in the savefile (see "Player settings in exports"
-in the [Aesthetics export plan](../aesthetics_export/settings_toml.md)), so the patch holds what
-the tables cannot carry: every compiled player's **motions** (`[appearance.motion]`, player-record
-fields outside the appearance block a table row holds) and the **names and shirt names** of the
-players of an export with the `write_names` marker at its root (typically an autopilot team,
-whose tactical export carries placeholder names). A patch's `players.NN` is player id `team id × 100 + NN`, the
+**The patch is the one route by which a compiled player's look reaches the game, on every
+engine.** The compiler writes no `PlayerAppearance.bin`, `BootsList.bin` or `GloveList.bin`
+rows and no save is stripped. A patch's `players.NN` is player id `team id × 100 + NN`, the
 export's savefile identity (`spec/aesthetics_export/player_folders.md` "Savefile identity"), whatever roster slot he
-holds, so the patch lands on the player whose models the CPK carries. It is applied whole, with
-no team picker: a managed team's export has
-no marker, so its `name` and `shirt_name` are not used and its players keep the names their
-manager set. On **pre-Fox** (PES 15–17) it holds the `PlayerSettings` schema and the
-compiler-owned fields besides — the only route for aesthetics — and `parse`, `to_toml` and
-`apply` refuse a pre-Fox `pes_version` (`PatchError::PreFox`) until that half is built.
+holds, so the patch lands on the player whose models the CPK carries. Per compiled player an
+entry holds:
+
+- the **`[appearance]` tables**, the `PlayerSettings` schema as his `settings.toml` and
+  `ingame_face.toml` give it together (the face, hair and iris from the latter), every key the
+  version holds written, with the defaults for keys his files lack, so his look is his
+  export's whatever the save held. The motion keys join the others there.
+- **`boots_id` and `gloves_id` over the field's whole stored range** (14 bits on every
+  version, 0 to 16383), not `settings.toml`'s stock band: the resolved ID is the one the
+  order in the [Aesthetics export spec](../aesthetics_export/settings_toml.md)'s "Player
+  settings in exports" reaches (a committed custom output's assigned ID, else the authored
+  stock ID 0 to 100, else the FPC marker's default), and a category whose requested output
+  failed, or a `Midcup` export's markerless default, carries no key, so the save keeps its
+  current ID. The compiler plans the patch before its tasks run and fills these two keys
+  once each task's outcome is known, then writes the file once: the file never holds an ID
+  conditioned on a task.
+- **`base_copy_id`**, the id of the player whose face and hair he copies; `apply` writes it
+  as his base copy with the flag left as the save holds it, where an `[appearance]` entry
+  without one gets its copy cleared to his own id ("Applying a look", below). The
+  player-folder link that fills it is the plan's.
+- **the `name` and `shirt_name` of the players of an export with the `write_names` marker**
+  at its root (typically an autopilot team, whose tactical export carries placeholder
+  names). It is applied whole, with no team picker: a managed team's export has no marker,
+  so its `name` and `shirt_name` are not used and its players keep the names their manager
+  set.
+
+**No look for a player whose `settings.toml` or `ingame_face.toml` was invalid**: no
+`[appearance]` and no ID key his settings would resolve, neither an authored stock ID nor
+the default a marker or a `Full` export gives, so the save keeps his record and his IDs; an
+ID his folder's models or links get still lands. A player left with nothing to write gets no
+entry at all, so `apply`'s summary lists only players it wrote. Both files' keys go in the one
+`[appearance]`, so one invalid file holds back the other's, not a half look built from
+defaults: an invalid file is an Error a member reads and fixes, and a partial table would
+need an `apply` that writes some keys and leaves others, a second write path for a case the
+next compile corrects.
+
+The file stays readable as the export's own files are: the same key names, tables and
+values as `settings.toml` and `ingame_face.toml` (`sleeves = "short"`, a motion as the game
+shows it), the face, hair and iris under the player's `appearance` as the joined schema
+holds them, so a reader compares a patch with a player's files key by key. What differs is
+that every value is resolved (no `""` default, no `name = true`, the FPC preset applied) and
+that there are no per-key range comments: the templates carry those. An `[appearance]` is a
+whole look or absent: reading a patch refuses one missing a key the version holds, since a
+missing key means a broken patch whose apply would reset the player's other keys.
 
 ```toml
 # aesthetics_patch.toml, written by the Team compiler to its output folder
@@ -702,21 +736,44 @@ name = "/a/"                 # for the reader; the id is what is applied
 [teams.players.03]           # slot 03 → player 70203
 name = "Snuffy"              # a write_names export's only; absent = not written
 shirt_name = "SNUFFY"        # likewise
+boots_id = 143               # the resolved ID; absent = the save keeps his
+gloves_id = 0
+base_copy_id = 101334        # a <id>.copy link's id; absent, an [appearance] clears his copy
 
-[teams.players.03.appearance.motion]
-free_kick = 5                # the [appearance.motion] keys, as in settings.toml
+[teams.players.03.appearance]
+skin_color = 2
+# … every key the version holds: the physique, strip, motion, face, hair and iris tables
 ```
+
+**Applying a look also makes the record his.** For a player whose entry holds
+`[appearance]`, `apply` writes it through `PlayerSettings::apply` (every key, the unused
+bits at the games' values), sets the appearance block's player id to his own id, as real
+saves and `populate_players` hold it, and clears his base copy: the base-copy id set to his
+own id (the record's "no copy") and the base-copy flag, on the versions that hold one,
+cleared; unless the entry holds `base_copy_id`, which `apply` writes as his base copy, the
+flag left as the save holds it. The id, because a save still at -1 from the old stripped
+route (the maintainer's test saves) would otherwise ignore the written look. The base copy,
+because a record whose base-copy id names another player shows that player's face and hair
+over his own: in PES 21's Edit mode (2026-10-15) a cup save's "MESSI" copying player 7511 and
+a teammate copying 114624 showed the copied faces; the game shows a copied face with the face
+edit flag clear as with it set (the same save, that flag alone cleared), and over the
+player's own `face.fpk` too (two players with one each, flag set and clear, given a base
+copy). A census of 125 Fox saves on the maintainer's machine (2026-10-14,
+`.tmp/phase_05/5_4/base_copy_census.txt`) found such an id on 0 to 26 players of each real
+PES 21 cup save, up to 117 on PES 19 and 988 on PES 18; counted are ids neither 0 nor the
+player's own. A compiled player whose export describes no face of his own (no face model, no
+`ingame_face.toml`) then shows the Placeholder face, as his export says, where the copy
+showed someone else's. The edit flags (the record's `Edited*` bits) other than the base-copy
+flag are left as the save holds them.
 
 Rules:
 
-- **A Fox patch leaves the appearance block alone.** Applying it changes the motion and name
-  fields alone; the appearance block, its player id included, is left as it is.
 - **Everything is resolved.** `name = true` is the derived string; `fpc_on`/`fpc_off` are the
   preset's concrete field values; the IDs are the resolved ones, already filtered by the compiler's
   "only for content that was actually packed" rule. The patch answers "what will the save contain",
   never "what did the export say" — the export is not needed to apply it.
 - **Applying is `pes_savefile`'s operation** (`AestheticsPatch::apply`): for each player, apply
-  what the file holds (motions and names on Fox), through the same `apply_appearance`
+  what the file holds, through the same `apply_appearance`
   `settings_toml` shares — one path, so a patch applied by someone else yields the same bytes
   the DLC builder's machine wrote.
 - `pes_version` must equal the save's (`VersionMismatch`); there is no cross-version application —
@@ -725,14 +782,13 @@ Rules:
   scheme is refused. A team or player ID absent from the save is skipped and reported in
   `PatchSummary` while the rest applies; referees are team 999 like anywhere else.
 - **A patch is refused whole or applied whole, absences aside.** Every check that can fail
-  (the two versions, a name longer than the version's field, a motion value outside its key's
-  range, a `dribbling` for a version without it) runs before the first write, and a failure
-  leaves the save untouched: the patch is the compiler's output, so a bad value means a broken
-  patch, and a half-applied one would leave a save matching no compile. Only a team or player
-  absent from the save is skipped per item, as above.
+  (the two versions, a name longer than the version's field, an appearance key's value outside
+  its range or its field's width, a key the version does not hold) runs before the first
+  write, and a failure leaves the save untouched: the patch is the compiler's output, so a bad
+  value means a broken patch, and a half-applied one would leave a save matching no
+  compile. Only a team or player absent from the save is skipped per item, as above.
 
-The Fox half's types (`interchange/aesthetics_patch/mod.rs`; the pre-Fox half adds its keys when
-it is built):
+The types (`interchange/aesthetics_patch/mod.rs`):
 
 ```rust
 /// The suite's boots and gloves ID allocation scheme (`team_compiler/pipeline.md`); a patch
@@ -762,8 +818,15 @@ pub struct PatchPlayer {
     /// A `write_names` export's only; `None` = not written.
     pub name: Option<String>,
     pub shirt_name: Option<String>,
-    /// `[appearance.motion]`, as in `settings.toml`; `None` keys are not written.
-    pub motion: MotionSettings,
+    /// The resolved boots ID over the field's whole stored range (0 to 16383); `None` =
+    /// the save keeps his.
+    pub boots_id: Option<u16>,
+    /// Like `boots_id`.
+    pub gloves_id: Option<u16>,
+    /// A `<id>.copy` link's id, written as his base copy; `None` = no link.
+    pub base_copy_id: Option<u32>,
+    /// His whole look, every key the version holds; `None` = the save keeps his look.
+    pub appearance: Option<AppearanceSettings>,
 }
 
 impl AestheticsPatch {
@@ -793,7 +856,6 @@ pub enum PatchSkip {
 pub enum PatchError {
     Toml(String),
     MissingKey { key: String },
-    PreFox { version: PesVersion },
     VersionMismatch { patch: PesVersion, save: PesVersion },
     SchemeMismatch { patch: u32, suite: u32 },
     Settings(SettingsError),

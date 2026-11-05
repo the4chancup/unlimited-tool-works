@@ -6,8 +6,8 @@ Part of the [Library crates plan](README.md). Section headings are unchanged fro
 
 Full Player Customization is one *system* that spans two formats: kit configs (every kit of the
 team, GK included, must carry shirt model 176, shorts model 16, collar 105, winter collar 105) and
-the player's appearance fields (the savefile's on pre-Fox; on Fox the `PlayerAppearance.bin`
-row's, the IDs in the `BootsList`/`GloveList` rows). The presets: the hide preset: long sleeves, tucked shirt, short socks, a
+the player's appearance fields (the savefile's, which the aesthetics patch writes on every
+engine). The presets: the hide preset: long sleeves, tucked shirt, short socks, a
 nonexistent boots ID such as 55, a nonexistent gloves ID such as 11; the un-hide preset: short
 sleeves, untucked, standard socks, boots 0, gloves 0, where gloves 0 is a set of normal
 hands, since the cup's gloves system lets any player wear a gloves model; the partial-hide

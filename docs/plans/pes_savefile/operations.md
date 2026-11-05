@@ -74,100 +74,21 @@ theirs was studied for a writer, and no cup asks for one.
 ### Aesthetics patch (new)
 
 What exists of this is in `spec/pes_savefile/operations.md` "Aesthetics patch (new)" (the
-format, the Fox half's keys and `apply`, `interchange/aesthetics_patch`'s types, the
-compiler's production of the file).
+format and `apply` on every engine, `interchange/aesthetics_patch`'s types, the compiler's
+production of the file).
 
 Still open:
 
-- **The whole look, on every engine** (worklog 8.36c). The patch is the one route by which a
-  compiled player's look reaches the game, on Fox as on pre-Fox: the Team compiler writes no
-  database table rows (`PlayerAppearance.bin`, `BootsList.bin`, `GloveList.bin`) and no save
-  is stripped. A compile writes a patch anyway for the motions, which live only in the save,
-  so the tables never made a team's looks independent of the save; one route removes the
-  stripping before every cup and the gloves clash between `GloveList.bin` and the 4cc gloves
-  patch. Per compiled player, beside the motions and the `write_names` names the spec's
-  format already holds, the patch holds:
-  - the **`[appearance]` tables**, the `PlayerSettings` schema as his `settings.toml` and
-    `ingame_face.toml` give it together (the face, hair and iris from the latter), every key
-    written, with the defaults for keys his files lack, so his look is his export's whatever
-    the save held. The motion keys join them there.
-  - **`boots_id` and `gloves_id` over the field's whole stored range** (14 bits on every
-    version), not `settings.toml`'s stock band: the resolved ID is the one the order in the
-    [Aesthetics export plan](../aesthetics_export/settings_toml.md)'s "Player settings in
-    exports" reaches (a committed custom output's assigned ID, else the authored stock ID 0
-    to 100, else the FPC marker's default), and a category whose requested output failed, or
-    a `Midcup` export's markerless default, carries no key, so the save keeps its current ID.
-    The compiler plans the patch before its tasks run and fills these two keys once each
-    task's outcome is known, then writes the file once: the file never holds an ID
-    conditioned on a task.
-  - **No look for a player whose `settings.toml` or `ingame_face.toml` was invalid**: no
-    `[appearance]` and no ID key his settings would resolve, neither an authored stock ID nor
-    the default a marker or a `Full` export gives, so the save keeps his record and his IDs
-    (the Aesthetics export plan's "An invalid `settings.toml` keeps the player's installed
-    look"); an ID his folder's models or links get still lands. A player left with nothing
-    to write gets no entry at all, so `apply`'s summary lists only players it wrote. Both files' keys go in the one
-    `[appearance]`, so one invalid file holds back the other's, not a half look built from
-    defaults: an invalid file is an Error a member reads and fixes, and a partial table would
-    need an `apply` that writes some keys and leaves others, a second write path for a case
-    the next compile corrects.
-
-  The file stays readable as the export's own files are: the same key names, tables and
-  values as `settings.toml` and `ingame_face.toml` (`sleeves = "short"`, a motion as the game
-  shows it), the face, hair and iris under the player's `appearance` as the joined schema
-  holds them, so a reader compares a patch with a player's files key by key. What differs is
-  that every value is resolved (no `""` default, no `name = true`, the FPC preset applied) and
-  that there are no per-key range comments: the templates carry those. An `[appearance]` is a
-  whole look or absent: reading a patch refuses one missing a key the version holds, not
-  filling it with the key's default as `settings.toml` does, since the patch is the compiler's
-  output and a missing key means a broken patch (or one written before the whole look, holding
-  motions alone), whose apply would reset the player's other keys.
-
-  ```toml
-  [teams.players.03]           # slot 03 → player 70203
-  name = "Snuffy"              # a write_names export's only, as today
-  shirt_name = "SNUFFY"
-  boots_id = 143               # the assigned custom ID, the authored stock ID or the marker's default
-  gloves_id = 0
-
-  [teams.players.03.appearance]
-  skin_color = 2
-  # … the PlayerSettings schema, the motion keys included
-  ```
-
-  **Applying a look also makes the record his.** For a player whose entry holds
-  `[appearance]`, `apply` writes it through `PlayerSettings::apply` (every key, the unused
-  bits at the games' values), sets the appearance block's player id to his own id, as real
-  saves and `populate_players` hold it, and clears his base copy: the base-copy id set to his
-  own id (the record's "no copy") and the base-copy flag, on the versions that hold one,
-  cleared; unless his export carries a `<id>.copy` link
+- **The `<id>.copy` link into `base_copy_id`** (worklog 8.36c3). A player folder's
+  `<id>.copy` link
   (`plans/aesthetics_export/player_folders.md` "Player folders (the Studio export format)",
-  its base copy paragraph), whose id the entry holds (`base_copy_id = 101334`) and
-  `apply` writes as his base copy, the flag left as the save holds it (8.36d checks a copy shows
-  with the flag clear). The id, because a save still at -1 from the old stripped route (the maintainer's
-  test saves) would otherwise ignore the written look. The base copy, because a record whose
-  base-copy id names another player shows that player's face and hair over his own: in PES
-  21's Edit mode (2026-10-15) a cup save's "MESSI" copying player 7511 and a teammate copying
-  114624 showed the copied faces; the game shows a copied face with the face edit flag clear as
-  with it set (the same save, that flag alone cleared), and over the player's own `face.fpk`
-  too (two players with one each, flag set and clear, given a base copy). A census of 125 Fox
-  saves on the maintainer's machine (2026-10-14, `.tmp/phase_05/5_4/base_copy_census.txt`) found such
-  an id on 0 to 26 players of each real PES 21 cup save, up to 117 on PES 19 and 988 on PES
-  18; counted are ids neither 0 nor the player's own. A compiled player whose export describes
-  no face of his own (no face model, no `ingame_face.toml`) then shows the Placeholder face,
-  as his export says, where the copy showed someone else's. The edit flags (the record's `Edited*`
-  bits) are left as the save holds them: 8.36d checks in game that a compiled look shows on a
-  player whose flags are clear, and if one is needed the patch sets it, as a compiler-owned
-  value.
-
-  With it the `PreFox` refusal goes, `pes_savefile`'s player-table code goes with the
-  compiler's table writer (`portrait_path` moving to a module of its own: the Save editor's
-  portraits and the compiler's writer use it), and the lossless guard the appearance-row
-  round trip gave (a save player's settings reproduce his record) is kept as
-  `from_player` → `apply` → the record's bytes.
-- **The save editor's apply path.** Applying is the only aesthetics write path the save
-  editor leaves open by default (see "Read-only aesthetics" in the
-  [Save editor plan](../save_editor.md)); it goes through the editor's undo pipeline and the
-  comparator's preview like any other bulk edit.
+  its base copy paragraph) fills the entry's `base_copy_id`: the key exists already, `apply`
+  writing it as his base copy with the flag left as the save holds it, where an
+  `[appearance]` entry without one gets its base copy cleared to his own id. 8.36d checks a
+  copy shows in game with the flag clear.
+- **The in-game checks of 8.36d**: that a compiled look shows on a player whose edit flags
+  are clear — the patch leaves them as the save holds them, so if one is needed it is set,
+  as a compiler-owned value.
 
 ## Player section population (Phase 19, DB generator)
 

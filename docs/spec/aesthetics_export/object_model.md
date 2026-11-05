@@ -431,8 +431,8 @@ the same thing badly. Consequences:
   players**, but they are identified by **name only** (no embedded IDs). Player folders are the main
   reference point: a player folder references a shared folder with a link file (e.g. `Crocs.boots`).
   At compile time, each shared **boots/gloves** folder gets an auto-assigned ID, and every linked
-  player gets that ID (Fox: his `BootsList`/`GloveList` row in the output CPK; pre-Fox: written to
-  the savefile; only if the shared folder's output actually commits).
+  player gets that ID (written to the savefile through his patch entry's
+  `boots_id`/`gloves_id`, and only if the shared folder's output actually commits).
   Shared *face* folders take no ID: pre-Fox copies the shared face folder per linked player (local
   files layered on top), and Fox merges the parts into each player's own FMDL — see "A link plus
   local models combines" below.

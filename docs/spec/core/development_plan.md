@@ -335,12 +335,15 @@ gates.
   relocation to game paths and Fox FPK packing (`contents_packing`, `export_move`).
 - **`bins/`** — UniColor / TeamColor / UniformParameter accumulation via `uniparam`, DpFileList
   read/write and slot discovery (`bins_update`); on Fox the player appearance tables, read from
-  the installed CPKs by the same walk and written whole: `BootsList.bin` and `GloveList.bin` get
+  the installed CPKs by the same walk and written whole (the tables went at step 8.36c: the
+  full-look aesthetics patch carries the resolved settings and IDs on every engine, and no CPK
+  carries `PlayerAppearance.bin`, `BootsList.bin` or `GloveList.bin`):
+  `BootsList.bin` and `GloveList.bin` got
   a row for every compiled player whose custom boots or gloves output committed (the planned ID),
   a failed output keeping the installed row, a compiled player the `Full` export gives no boots
-  or no gloves losing that installed row, every other row kept; `PlayerAppearance.bin` passes
-  through with no row changed. Phase 5 adds the stock and default-ID rows and the appearance rows
-  from `settings.toml`: this split is the only one in which Phase 4's CPK is game-correct for what
+  or no gloves losing that installed row, every other row kept; `PlayerAppearance.bin` passed
+  through with no row changed. Phase 5 added the stock and default-ID rows and the appearance rows
+  from `settings.toml`: this split was the only one in which Phase 4's CPK was game-correct for what
   it compiled without reading `settings.toml`.
 - **`output/`** — Phase 3's canonical-order writer, staging and promotion to `output/`, with
   the output folder's writability preflight (TC-OUT-*, TC-CLI-06), behind `OutputSink` (CPK, or
@@ -367,14 +370,14 @@ aside), which needs Phase 5's savefile and ID integration and Phase 6's Export u
 `pes_savefile` exists since Phase 2; this phase wires it into its two consumers.
 
 - Savefile writing in the Team compiler (`output/savefile.rs`), Fox first. The resolved settings
-  become, on Fox, each compiled player's appearance table rows (Phase 4's `bins/`, whose boots
-  and gloves rows are set only for committed outputs), the default-ID rows (`plan/item_rows.rs`,
+  became, on Fox, each compiled player's appearance table rows (Phase 4's `bins/`, whose boots
+  and gloves rows were set only for committed outputs), the default-ID rows (`plan/item_rows.rs`,
   where a folder's `fpc_on`/`fpc_off` marker picks the hide preset's ID or 0), and an aesthetics
   patch of motions and a `write_names` export's names, which depend on no asset; the patch is
-  written beside the output and applied to the local save. The pre-Fox patch ("Player settings
-  in exports" in the Aesthetics export plan), the one whose boots and gloves IDs need
-  commit-conditioned mutations, is deferred with pre-Fox's other gaps until the cup next plays a
-  pre-Fox version (worklog issue). The allocation scheme is fixed (40-ID per-team blocks — see
+  written beside the output and applied to the local save. The table rows and the pre-Fox
+  deferral of this paragraph went at step 8.36c: the full-look patch carries the resolved
+  settings, the boots and gloves IDs (commit-conditioned, as the deferred design asked) and the
+  names on every engine. The allocation scheme is fixed (40-ID per-team blocks — see
   the Team compiler plan).
 - `libs/aatf`: the ruleset schema and its load-time validation, the generic Rhai interpreter, the
   host and `apply_tier`, logic identity, and the Autumn 26, Autumn 25, Spring 26, VGL25, VGL26,
@@ -393,11 +396,13 @@ aside), which needs Phase 5's savefile and ID integration and Phase 6's Export u
 (`tests/fixture_save.rs`, through `pes_savefile`'s `test-support` feature); the AATF rulesets'
 fixtures (known-legal and known-violating teams, `apply_tier` then check); the Save editor's CLI
 on fixture saves, every SE scenario cited by a test. In game on PES 21 (worklog 5.5): a stripped
-and seeded save shows the sampled players as before; a compiled team's rows show; an
+and seeded save shows the sampled players as before; a compiled team's rows show (the
+strip-and-seed and the table rows this check exercised went at steps 8.36b and 8.36c); an
 `ingame_face` player whose file sets none of the face and hair keys renders the default face
 (without the marker a folder with no face model gets the blank face, no head;
 `aesthetics_export/settings_toml.md`, the ingame-face run's rules). The gloves half waits on a
-FoxDen change that keeps the table's value (worklog issue). Converge ran a whole-crate mutation
+FoxDen change that keeps the table's value (worklog issue; the table itself went at 8.36c, the
+gloves ID now travelling in the patch — its in-game check is 8.36d's). Converge ran a whole-crate mutation
 run and a Clef scan over `pes_savefile`, `aatf`, `save_editor`, `studio_core`,
 `aesthetics_export` and `team_compiler`, every survivor and flag ruled, and a census of every
 save, `.ted` and editor file and every player table on the maintainer's machine. The second

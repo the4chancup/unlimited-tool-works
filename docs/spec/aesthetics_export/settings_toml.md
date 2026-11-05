@@ -7,29 +7,37 @@ Part of the [Aesthetics export plan](README.md). Section headings are unchanged 
 Aesthetic settings that used to live only in the savefile move into the export as TOML, and the
 compile carries them to the game:
 
-- **Fox (PES 18–21): in the database tables the output CPK carries.** The game takes a player's
-  appearance from `PlayerAppearance.bin`, his boots from `BootsList.bin` and his gloves from
-  `GloveList.bin` whenever his savefile appearance record's player id is -1 (`0xFFFFFFFF`), player
-  by player; a record whose id is set wins over the tables (in-game Test 1, PES 2021: decision
-  entry "aesthetics travel in the database tables"). The official save is therefore stripped once
-  (every appearance id set to -1)
-  and the compiler writes each compiled player's three rows from his two settings files; nothing
-  of a player's appearance is written to the savefile. Gloves need a FoxDen change to keep the table's value (worklog
-  "Issues"); until it does, a Fox gloves row has no effect in the 4cc setup.
+- **On every engine: in the savefile, through the aesthetics patch.** The compile resolves the
+  player's two settings files into the one `[appearance]` entry of `aesthetics_patch.toml`
+  (the motions inside it), beside his resolved boots and gloves IDs and a `write_names`
+  export's names, and the patch is applied to the save — by the compile itself on a
+  configured local savefile, by the save editor on the official one
+  (`spec/pes_savefile/operations.md` "Aesthetics patch (new)"). The compiler writes no
+  `PlayerAppearance.bin`, `BootsList.bin` or `GloveList.bin` rows, and no save is stripped.
 
 **Everything in the files is optional** — each file itself included: a player folder with only
 models is valid. **An absent key takes its default**, the value the templates below show for it,
 on both engines; model-derived ID assignments and FPC
 directives are separate inputs. `name` and `shirt_name` are the exceptions: absent means "not
 written" (see the name rules). A compiled player's appearance is therefore his export (these
-files, his folder's models and markers) and nothing else: no earlier compile, savefile or
-installed table contributes to it, except a boots or gloves ID whose output failed (step 1
-below) and,
-in a `Midcup` export, a category the folder leaves to its default (step 3). A compiled player is
+files, his folder's models and markers) and nothing else: no earlier compile or installed
+save contributes to it, except a boots or gloves ID whose output failed (step 1
+below),
+in a `Midcup` export, a category the folder leaves to its default (step 3), and a player whose
+`settings.toml` or `ingame_face.toml` is invalid, who keeps his installed look (below). A compiled player is
 every player a kept player folder of a team export maps to, whatever his tasks' outcomes. A referee export's
-`settings.toml` reaches no table or patch yet (worklog issue). A `settings.toml`'s and an
+`settings.toml` reaches no patch yet (worklog issue). A `settings.toml`'s and an
 `ingame_face.toml`'s findings, a referee export's included, are reported by `check` and `compile`
 alike.
+
+**An invalid `settings.toml` or `ingame_face.toml` keeps the player's installed look.**
+`settings_toml_invalid` and `ingame_face_toml_invalid` ignore the file, and the patch holds no
+`[appearance]` entry for him and none of the boots or gloves IDs his settings would resolve (an
+authored stock ID, the marker's or a `Full` export's default), so the save keeps his record and
+his IDs, where compiling with the keys' defaults would reset a look on one mistyped value. Both
+files' keys go in the one `[appearance]`, so either file's invalidity holds back the other's.
+An ID his folder's models or links get still lands, his models still compile, and the file
+itself still marks the in-game face (the folder keeps its `ingame_face` marker's effects).
 
 **The files can express everything the savefile's player appearance record holds.** Their joined
 schema is `pes_savefile`'s `PlayerSettings`: all of the decoded player appearance record —
@@ -43,8 +51,7 @@ run is a key or measured unused ("The ingame-face run, decoded" in the
 Completeness
 matters here because these files are the **only** route by which a team's aesthetics reach the
 game: the save editor's own appearance fields are read-only by default (see "Read-only
-aesthetics" in the [Save editor plan](../../plans/save_editor.md)), and on Fox a stripped player's
-appearance bytes are not read at all. The **templates** — `settings.toml`'s, which the Export
+aesthetics" in the [Save editor plan](../../plans/save_editor.md)). The **templates** — `settings.toml`'s, which the Export
 upgrader and the save editor generate, and `ingame_face.toml`'s, which the upgrader writes — are
 what a new player folder starts from, and therefore list every key, one per line, each followed
 on the same line by the comment that gives
@@ -64,15 +71,15 @@ parse (`OutOfRange` naming the key). Besides an integer, both keys accept the em
 means **default** and is the same as an absent key. Each category resolves in this order:
 
 1. The folder's own models or a link file provide the category → the compiler-assigned ID; when
-   that output fails, the player's installed ID stays (Fox: his row of the installed table;
-   pre-Fox: the savefile's current ID), so no ID points at content the CPK lacks. A numeric key
-   is ignored with `settings_model_id_conflict` (W), reported on Fox team exports until the
-   pre-Fox patch and a referee's table rows exist, the only places the key reaches the game.
+   that output fails, the player's installed ID stays (the save's current ID), so no ID points
+   at content the CPK lacks. A numeric key
+   is ignored with `settings_model_id_conflict` (W), reported on team exports, whose players
+   the patch gives their IDs — a referee export's `settings.toml` reaches no patch yet.
 2. A numeric key → that stock ID, whatever FPC marker the folder carries.
 3. Default (`""` or absent) → the folder's FPC marker decides: `fpc_on` writes the hide preset's
    nonexistent IDs (boots 55, gloves 11); `fpc_off` or no marker writes 0 for both (the default
-   boots and a pair of normal hands). In a `Midcup` export with no marker the player keeps his
-   installed row (Fox) or savefile ID (pre-Fox): only a full export resets what a team had
+   boots and a pair of normal hands). In a `Midcup` export with no marker the player keeps the
+   save's current ID: only a full export resets what a team had
    ("Coverage tag" in `object_model.md`).
 
 Gloves are not a goalkeeper-only model here: the cup's gloves system lets any player wear a gloves
@@ -140,7 +147,7 @@ spectacles_color = 0            # 0 white, 1 black, 2 red, 3 blue, 4 yellow, 5 g
 gloves = false                  # true, false (outfield player gloves)
 gloves_color = 0                # 0 to 7
 
-[appearance.motion]             # on Fox written by the aesthetics patch: the tables do not hold motions
+[appearance.motion]
 hunching_dribbling = 1          # 1 to 3 (PES 20 and 21: 1 to 5)
 hunching_running = 1            # 1 to 3 (PES 20 and 21: 1 to 5)
 arm_movement_dribbling = 1      # 1 to 8 (PES 15: 1 to 5; PES 20 and 21: 1 to 10)
@@ -422,9 +429,10 @@ no `true`: a shirt name rarely repeats the player name, and a derived default wo
 thing to read. In a `write_names` export a shared folder applies it to every mapped
 player, like `name`.
 
-On Fox the motions and the names are the parts of this file that reach the savefile, and only
-through the **aesthetics patch**. As for names, an export carrying the `write_names` marker at
-its root has its names written by the patch. The motivating case is an autopilot team (an
+Everything this file resolves reaches the savefile through the **aesthetics patch**: the
+`[appearance]` look (the motions inside it), the resolved boots and gloves IDs, and the names
+of an export carrying the `write_names` marker at its root. The motivating
+case is an autopilot team (an
 aesthetics export by a caretaker, a tactical export by the council, often written before the
 destination team was known, with names like "Gold striker"), whose names must be written over
 the tactical export's; an autopilot team whose tactical export already holds the right names
@@ -433,23 +441,20 @@ the two do not coincide. The patch is applied whole, with no team
 picker: without the marker an export's `name` and `shirt_name` are not used, so a managed team's
 players keep the names their manager set in the save editor, and a generated file's names do no
 harm. No finding reports them unused: every generated file carries names, so it would fire on
-nearly every export. Without the marker the patch is still written: it carries the players'
-motions.
+nearly every export.
 
 Compile-time flow: resolve boots/gloves IDs from the models and link files present (a broken link is
 caught as `link_target_missing` — a check impossible in the current split-tool workflow), falling
 back per category to the authored stock `boots_id`/`gloves_id` → parse accepted TOML → compile →
-resolve the settings and the IDs of content that was actually written, then per engine:
-
-- **Fox:** each compiled player's `PlayerAppearance.bin`, `BootsList.bin` and `GloveList.bin` rows
-  are built from the resolved settings and written into the output CPK with every other player's
-  installed row (see "Bins accumulation" in the [Team compiler plan](../team_compiler/pipeline.md));
-  the resolved motions, and a `write_names` export's names, go into the **aesthetics patch** written
-  with it: motions are player-record fields outside the appearance block a table row holds.
+resolve the settings and the IDs of content that was actually written: each compiled player's
+look, his resolved IDs and a `write_names` export's names go into the **aesthetics patch**
+written with the CPKs (see "Post-processing" in the
+[Team compiler plan](../team_compiler/pipeline.md)).
 
 If a local savefile is configured, the compiler applies that patch to it through `pes_savefile`
-(decrypt, apply, re-encrypt, `.bak`); a Fox patch's write leaves the player's appearance id as it
-is, so a stripped player stays stripped. The patch is what a DLC builder hands to the savefile
+(decrypt, apply, re-encrypt, `.bak`); an entry's `[appearance]` also makes the record the
+player's own, his appearance id and base copy set to his own id. The patch is what a DLC
+builder hands to the savefile
 builder, who applies it in the save editor; the compiler has no other savefile write path (see
 "Post-processing" in the [Team compiler plan](../team_compiler/pipeline.md)).
 

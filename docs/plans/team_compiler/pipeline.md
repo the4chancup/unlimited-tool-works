@@ -47,8 +47,8 @@ structural validation so the live grid can show or edit the ID immediately. An u
 normal team turns the grid's **team ID cell** red and editable — the user types an ID, confirms
 with Enter, and it is written to the teams list (see "GUI: the live-validating team grid").
 
-In **Player folder categorization** (step 6), assigned IDs are written on pre-Fox into the
-savefile, so a compiled team CPK and its savefile must be deployed
+In **Player folder categorization** (step 6), assigned IDs reach the save through the
+aesthetics patch, so a compiled team CPK and its savefile must be deployed
 together, and the aesthetics patch written with the CPK is how they travel together when the
 savefile is on someone else's machine (see "Post-processing"). The deploy-together rule is distribution
 guidance, not a compile blocker.
@@ -105,14 +105,6 @@ What exists of this is in `spec/team_compiler/pipeline.md` "6. Post-processing".
   the deployment back at the end. The end-of-run read stays as it is, since the file can change
   between the two; with `savefile_path = auto` the preflight rarely finds anything, which costs
   one header read.
-- **Aesthetics patch** — on **every engine** it holds everything (names only from a
-  `write_names` export; the CPK carries no player table rows: `plans/pes_savefile/operations.md`
-  "Aesthetics patch (new)", worklog 8.36c): settings.toml settings with
-  `name = true` and FPC markers resolved to concrete values, the authored stock boots/gloves IDs
-  (else the marker's default) for categories requesting no standalone output, and the
-  auto-assigned boots/gloves IDs **only for content that was actually packed**: if a boots/gloves task failed, the affected players
-  keep their existing savefile IDs rather than pointing at absent CPK content, while their
-  independent valid settings still apply.
 - **Run PES** — optional launch of `PES20{version}.exe`, only after the complete deployment
   transaction succeeds. Built in Phase 8 together with sideload mode's Launch PES button, as one
   launcher: both start the same exe the same way, and the GUI phase is where its only manual

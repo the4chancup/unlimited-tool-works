@@ -308,8 +308,8 @@ format:
    into model tasks. Normal teams receive
    boots/gloves IDs from the **hardcoded per-team block scheme**; referee tasks receive their fixed
    slot-derived `k99XX`/`g99XX` IDs instead (see "Player folders" in the [Aesthetics export plan](../aesthetics_export/object_model.md)). Assigned IDs
-   are written, on Fox, into the CPK's own `BootsList.bin`/`GloveList.bin` rows, so the CPK carries
-   them. A missing local savefile stays a **warning** that
+   travel in the `aesthetics_patch.toml`'s `boots_id`/`gloves_id` keys, on every engine. A
+   missing local savefile stays a **warning** that
    skips only the savefile step: the patch is still written, and because allocation is
    deterministic (fixed per-team blocks, exclusive IDs by player number, a folder one player
    wears taking his, shared IDs in alphabetical order), recompiling the same exports later with a savefile configured produces identical IDs, so
@@ -318,7 +318,7 @@ format:
    A face-content FMDL with positive `skh_*_l`/`skh_*_r` weights is **hand auto-split** ("Hand
    auto-split" in the [Model conversion plan](../model_conversion/hand_split.md)), which makes
    the folder a gloves input even when no file is named as a glove. Categorization works from
-   file names, before anything is compiled, and a gloves ID, a `GloveList.bin` row and a gloves
+   file names, before anything is compiled, and a gloves ID and a gloves
    task exist only for a folder planning sees with gloves, so the weights are read before
    planning: the deep pass, which already parses every model, records the FMDLs it finds
    weighted, and planning gives each player folder holding such a face part (its own model or a
@@ -1144,18 +1144,7 @@ describes behavior, not a serial scheduling requirement:
   and reported as a supplied config's is (`kit_config_version_clamped`, the team export's,
   naming the slot): the edit changes it, so the member hears of it. The bin is written
   whenever the run changes it: a committed kit config, a patched slot, a removed config. A kit's UniColor/UniformParameter entry is applied only
-  if that kit's task actually commits — a failed kit never mutates the global bins. On Fox the
-  **player appearance tables** accumulate the same way: every compiled player gets his
-  `PlayerAppearance.bin` row (the appearance bytes built from his resolved `settings.toml`, its
-  defaults for absent keys, nothing from the installed row) and his `BootsList.bin` and
-  `GloveList.bin` rows (the resolved IDs; a failed output still keeps its installed row), and a
-  compiled player of a `Full` export's team whose folder holds no boots or no gloves gets the
-  default-ID rows; every other player
-  keeps his installed rows, so the output carries complete tables (the
-  game reads the highest-priority copy of each whole; the seed rows ride in `4cc_08_bins.cpk`;
-  the base game's copies are
-  wezlib-compressed and the cup's plain, so they are read either way and written plain, which the
-  game accepts, as Test 1's CPKs showed). Final bins are
+  if that kit's task actually commits — a failed kit never mutates the global bins. Final bins are
   built after all task outcomes are known. The working bins are fetched from the user's installed
   CPKs, so recompiles update the current cup state: the download folder's `DpFileList.bin` (the
   binary list PES loads CPKs from) is walked from the bottom up — the bottom has the highest PES
@@ -1163,24 +1152,15 @@ describes behavior, not a serial scheduling requirement:
   alphabetical order) — and, as in Red, the walk starts just below the compiler's own output CPK,
   skipping it and anything with higher priority: this keeps each compilation idempotent even after
   newer midcup CPKs are added further down the list. One exception: in multi-CPK mode the walk
-  for the three player tables starts at the bins CPK itself (`bins_cpk_name`), so a compile
-  replacing `4cc_08_bins.cpk` keeps the seed rows it holds; a multi-CPK compile rebuilds every
-  compiled player's rows from his export, so only the rows of players no export compiles come
-  through from the previous output. Each bin is taken from the first CPK the walk
+  for the shared-IDs records starts at the bins CPK itself (`bins_cpk_name`), so a compile
+  replacing `4cc_08_bins.cpk` keeps the records it holds; a multi-CPK compile rebuilds each
+  compiled team's record from its export, so only a team no export compiles keeps its
+  installed record. Each bin is taken from the first CPK the walk
   finds it in, with the supplying CPK reported; the bundled bases only serve from-scratch compiles.
   A bin no CPK of the walk holds comes from the bundled base, and so does every bin when the
   walk cannot be made: no PES folder, no `DpFileList.bin` (`dpfilelist_missing`), or a list
   that does not name the run's CPK, so nothing is known to come before it (the rule the
-  texture lookup of "Resolved decisions" follows). The three player tables (Fox) have no
-  bundled base: one no CPK of the walk holds is not written, and when the run has rows for it,
-  `player_table_missing` names it and counts the rows left out. We leave it out rather than
-  write a table of the run's rows alone because the game reads the highest-priority copy
-  whole: that table would take every other player's row away (Test 2: a player with no
-  `BootsList.bin` row wears plain black boots). A table the walk finds is written on every run
-  that writes a CPK, changed or not, and reported by `bin_source` like the other bins; one it
-  does not find gets no `bin_source`, there being no bundled base to name. A table is parsed as
-  it is taken: whole 8-byte pairs for `BootsList.bin` and `GloveList.bin`, whole 60-byte rows
-  for `PlayerAppearance.bin`. A listed CPK with no file in `download/` is
+  texture lookup of "Resolved decisions" follows). A listed CPK with no file in `download/` is
   passed over. The walk opens every CPK listed before the run's, also once each bin is found:
   the texture lookup ("Resolved decisions", "A texture a model names must exist") needs every
   table of contents, and each is read once per run. The walk runs before any export is read, and a list, a CPK or a bin in it that
@@ -1295,7 +1275,7 @@ describes behavior, not a serial scheduling requirement:
    - **The run's first CPK is its boundary.** The working-bin walk and the installed texture
      lookup start below the earliest CPK the run writes in the list's order (the refs CPK
      aside: step 5), which is the bins
-     CPK in the official list (the player tables at the bins CPK itself, above), since every
+     CPK in the official list (its shared-IDs records at the bins CPK itself, above), since every
      part the run writes replaces the one installed under its name.
    - **The overrides go into the bins CPK.** An entry at an override's path is left out
      whichever CPK it would have gone to, so an override replaces a team's file as it does in a
@@ -1561,9 +1541,12 @@ describes behavior, not a serial scheduling requirement:
   `aesthetics_patch.toml`, one per run in every output mode, its header naming the CPKs the run
   publishes (none for a sideload tree): the resolved
   savefile writes for the compiled players (format and rules in "Aesthetics patch" in the
-  [Savefile plan](../pes_savefile/operations.md)). On **Fox** it holds the compiled players'
-  motions and a `write_names` export's names (the rest is in the CPK's player appearance tables,
-  "Bins accumulation") and, as on pre-Fox, is written with the CPKs as one more file of the
+  [Savefile plan](../pes_savefile/operations.md)): on every version each compiled player's
+  `[appearance]` (his `settings.toml` and `ingame_face.toml` resolved to concrete values,
+  `name = true` and the FPC markers included), his resolved boots and gloves IDs — the authored
+  stock ID, else the marker's or the coverage's default, or the auto-assigned ID of a package
+  that was actually packed — and, from a `write_names` export, his name and shirt name.
+  It is written with the CPKs as one more file of the
   run's publication, test and sideload trees included (none when the run publishes nothing,
   the previous patch staying as it was; a failed write is `patch_write_failed`), except that a run with nothing to put in it writes
   none and moves an earlier patch to `aesthetics_patch.toml.bak`; so an earlier run's patch
@@ -1601,10 +1584,9 @@ describes behavior, not a serial scheduling requirement:
   unnecessary. Nor do we write with a warning: a write made while Edit mode is open is lost
   without a word, and the warning would come after it. This matters mostly for **sideload
   mode**, whose whole point is compiling while PES stays open: model iterations land through
-  sideloading, and the savefile half of the export (on Fox the motions and names; on pre-Fox
-  also boots/gloves IDs and player settings) lands with the flag, or catches up on the first
-  compile given it or made with PES closed. On Fox the patch's write leaves every appearance id
-  as it is, so a stripped local save stays stripped. In normal mode a running PES already fails
+  sideloading, and the savefile half of the export (each compiled player's look and IDs, and
+  a `write_names` export's names) lands with the flag, or catches up on the first
+  compile given it or made with PES closed. In normal mode a running PES already fails
   deployment on the locked CPK, so the rule adds nothing there. The window (Phase 8) asks the
   Save editor's Edit mode question instead of taking the flag (`plans/team_compiler/gui.md`);
   until then its Compile button runs `compile` without it. The words the compiler shares with
@@ -1626,10 +1608,9 @@ describes behavior, not a serial scheduling requirement:
   (`dpfilelist_cpk_missing`: the installed list names a CPK `download/` lacks, so the game
   runs vanilla), which commits silently, the warning having said why. Sideload mode counts as deployed: its tree in `livecpk\` is
   what the game loads, and its savefile half waiting for Edit mode to be closed is the reason
-  the running-PES skip exists. The incoherence it prevents is pre-Fox's, where a savefile can point at
+  the running-PES skip exists. The incoherence it prevents is a savefile pointing at
   boots/gloves IDs whose content is not installed — exactly what the "only for content actually
-  written" rule exists to prevent; on Fox a compiled player's IDs live in the CPK's own table
-  rows, but the same skip keeps one rule for both engines.
+  written" rule exists to prevent, on either engine.
 - **One transaction: CPKs, patch, savefile** — a deployment keeps every old CPK it replaces
   aside as `{name}.cpk.old` (one CPK too, not only a multi-CPK run) until the patch is written
   and the savefile step has ended without `savefile_invalid` or `savefile_write_failed`; only
@@ -1675,8 +1656,11 @@ pub(crate) struct BuildManifest {
                                              // Common, portraits, kits by slot, logo, collar
     pub(crate) team_colors: Vec<(u16, Vec<Rgb>)>,     // TeamColor.bin
     pub(crate) team_kits: Vec<TeamKits>,              // UniColor.bin, UniformParameter.bin
-    pub(crate) item_rows: Vec<ItemRow>,               // BootsList.bin, GloveList.bin rows
+    pub(crate) patch_teams: Vec<PlannedPatchTeam>,    // the patch's [[teams]] blocks and their
+                                                    // item rows, settled against the committed
+                                                    // tasks before the patch is written
     pub(crate) notes: Vec<(String, String)>,          // teamnotes.txt
+    pub(crate) shared_ids: Vec<(u16, SharedIds)>,     // each team's shared-IDs record
 }
 pub(crate) struct BuildTask {
     pub(crate) export_id: ExportId,
@@ -1806,9 +1790,6 @@ promotion, and the test and sideload trees are "Deploy CPKs" and "5. Writer" abo
 | TeamColor.bin | `common/etc/TeamColor.bin` | same |
 | UniColor.bin | `common/character0/model/character/uniform/team/UniColor.bin` | same |
 | UniformParameter | — | `common/character0/model/character/uniform/team/UniformParameter.bin` |
-| PlayerAppearance.bin | — (PES 17's base data has one and the game reads it for a stripped record, Test 4; not written: a pre-Fox game never applies a `GloveList.bin` row, Tests 4b and 4c, so the savefile patch is needed anyway and the aesthetics go there whole, not split between the CPK and the save) | `common/character0/model/character/appearance/PlayerAppearance.bin` (60-byte rows: player id, then the record's 56 appearance bytes) |
-| BootsList.bin | — (PES 15-17's base data has one; not written, as PlayerAppearance.bin) | `common/character0/model/character/boots/BootsList.bin` ((player id, boots ID) u32 pairs, sorted by id) |
-| GloveList.bin | — (not read by PES 17 for a stripped record, Tests 4b and 4c; not written) | `common/character0/model/character/glove/GloveList.bin` ((player id, gloves ID) u32 pairs, sorted by id) |
 
 ### Resolved decisions and open questions
 
@@ -1831,8 +1812,8 @@ Resolved decisions:
 - **ID allocation**: 40-ID per-team blocks (23 player-exclusive + 17 shared), applied independently
   in the disjoint boots and gloves namespaces (`plan/ids.rs`); `allocation_scheme_version = 1` is
   the aesthetics patch's header field (`pes_savefile`'s `ALLOCATION_SCHEME_VERSION`,
-  `spec/pes_savefile/operations.md` "Aesthetics patch (new)"), and the compiler, which writes no
-  patch yet, records it nowhere. Permanent per scheme version but upgradeable: the sizing, the upgrade mechanism and a
+  `spec/pes_savefile/operations.md` "Aesthetics patch (new)"), which the run's patch carries.
+  Permanent per scheme version but upgradeable: the sizing, the upgrade mechanism and a
   scheme change's cost on each engine live in "Assigns IDs automatically" of the
   [Aesthetics export plan](../aesthetics_export/player_folders.md).
 - **Root normalization**: exactly one usable nested root is flattened; multiple usable roots
@@ -2100,8 +2081,9 @@ Resolved decisions:
   template tree, which is no export's either. Normal single-CPK, multi-CPK and refs routing is
   the writer's (step 5 above).
 - **The aesthetics patch is the compiler's only savefile write path**: a compile writes
-  `aesthetics_patch.toml` to its output folder with the CPKs it publishes (on Fox only motions and a `write_names` export's names, the rest travelling in the CPK's
-  player appearance tables); a configured local savefile is updated by applying that
+  `aesthetics_patch.toml` to its output folder with the CPKs it publishes (each compiled
+  player's look and IDs, and a `write_names` export's names, on every version); a configured
+  local savefile is updated by applying that
   patch, never by a separate write. Reason: the DLC builder and the savefile builder are different
   roles — the official save carries the teams' custom tactics, which the DLC builder must not have —
   so the compile's savefile half has to be a file that can be carried to another machine and applied

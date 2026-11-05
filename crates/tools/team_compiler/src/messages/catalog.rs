@@ -206,18 +206,18 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         "settings_toml_invalid",
         CatalogSeverity::Error,
         r#"A player's `settings.toml` is not UTF-8 text or does not parse as the settings file (the line names the error). The in-game face's keys (`iris_color`, `[appearance.face]`, `[appearance.hair]`) are in `ingame_face.toml`, so one left here is an unknown key."#,
-        r#"The file is ignored, even with `Keep folders with errors` on, and the player compiles with the default settings in its keys' place. His `ingame_face.toml` still applies and his models still build."#,
+        r#"The file is ignored, even with `Keep folders with errors` on. His look, his `ingame_face.toml`'s keys included, and the boots and gloves IDs his settings would give are left out of the patch, so the save keeps them. His models still build, and an ID they or a link give still lands."#,
     ),
     (
         "ingame_face_toml_invalid",
         CatalogSeverity::Error,
         r#"A player's `ingame_face.toml` is not UTF-8 text or does not parse as the in-game face file (the line names the error)."#,
-        r#"Its keys are ignored, even with `Keep folders with errors` on, so the player wears the game's default face, and his `settings.toml` still applies."#,
+        r#"Its keys are ignored, even with `Keep folders with errors` on. His look, his `settings.toml`'s keys included, and the boots and gloves IDs his settings would give are left out of the patch, so the save keeps them. His models still build, and an ID they or a link give still lands."#,
     ),
     (
         "settings_model_id_conflict",
         CatalogSeverity::Warning,
-        r#"In PES 2018 to 2021 team exports, a `settings.toml` sets `boots_id` or `gloves_id` for a part whose ID the compiler assigns on its own (from the folder's own models or a link file)."#,
+        r#"In team exports, a `settings.toml` sets `boots_id` or `gloves_id` for a part whose ID the compiler assigns on its own (from the folder's own models or a link file)."#,
         r#"The compiler's ID wins and the key is ignored."#,
     ),
     (
@@ -229,13 +229,13 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "settings_toml_name_shared",
         CatalogSeverity::Warning,
-        r#"In PES 2018 to 2021, a folder of an export marked `write_names` maps to more than one player, and its `settings.toml` gives `name` or `shirt_name`."#,
+        r#"A folder of an export marked `write_names` maps to more than one player, and its `settings.toml` gives `name` or `shirt_name`."#,
         r#"The name, when it passes the check, is written for all of them."#,
     ),
     (
         "settings_name_invalid",
         CatalogSeverity::Warning,
-        r#"In PES 2018 to 2021, a `name` or `shirt_name` in a `settings.toml` does not fit the version's field or character set (the line names the key)."#,
+        r#"A `name` or `shirt_name` in a `settings.toml` does not fit the version's field or character set (the line names the key)."#,
         r#"It is not written, so the name already in the save is kept."#,
     ),
     (
@@ -800,7 +800,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "savefile_missing",
         CatalogSeverity::Warning,
-        r#"The run's patch holds entries (motions and names on PES 2018 to 2021, aesthetics on PES 2015 to 2017) and no savefile is configured or found. A configured path naming a folder is `savefile_invalid` instead."#,
+        r#"The run's patch holds entries (each compiled player's look and his boots and gloves IDs, and his name and shirt name for an export marked `write_names`) and no savefile is configured or found. A configured path naming a folder is `savefile_invalid` instead."#,
         concat!(
             "The save step is skipped. Apply the patch by hand with `",
             studio_core::exe_name!(),

@@ -161,7 +161,7 @@ test, and sideload modes; savefile success/failure and cancellation. Key behavio
   conversion/packing/logo/texture-conflict findings and
   unsafe-path/ambiguous-roster/required-metadata findings.
 - **Deployment and environment**: the installed ID kept for players whose boots/gloves task failed
-  (Fox: the player's installed table row; pre-Fox: his savefile ID) while independent settings
+  (on every version: his savefile ID, the patch carrying no key for that category) while independent settings
   still apply; with either FPC marker, successful standalone assets
   overriding preset IDs, failed/dropped requested assets preserving existing IDs, and absent
   standalone assets using preset IDs (including pre-Fox face-XML-local parts); a mixed

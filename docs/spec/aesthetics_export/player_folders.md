@@ -33,7 +33,7 @@ Players/
 │   │                          that name from Common/ — see the Unified model format plan)
 │   ├── ingame_face.toml      (the in-game face; marks the folder)
 │   ├── fpc_on                (optional empty marker: apply the FPC preset at compile time; see `fpc_toggle.md` "FPC toggle")
-│   ├── settings.toml         (the player's settings: on Fox they compile into the CPK's database tables, on pre-Fox into the savefile; see below)
+│   ├── settings.toml         (the player's settings: they compile into the aesthetics patch the save takes; see below)
 │   ├── jessie/  shorts/  ...
 │   │                         (optional subfolders of any name and depth: each is a player folder
 │   │                          of its own, merged into this one; see "Subfolders")
@@ -108,15 +108,13 @@ sample paints its eyes into its texture); the marker's player draws both. The fa
 feature types shape the in-game face's own mesh and textures. So 19 players in 20, who wear a
 face model, carried 90 keys that change nothing, in the file a member reads first; a key that
 changes nothing reads as a bug when it is set and nothing happens. A player without the file gets
-the defaults for them: on Fox his row's face, hair and iris fields hold the game's default face
-(not drawn, his face model standing), as an absent key does; on pre-Fox the settings reach
-nothing yet, the patch's pre-Fox half being the plan's (`plans/pes_savefile/operations.md`
-"Aesthetics patch (new)").
+the defaults for them, as an absent key does: his patch entry's face, hair and iris fields hold
+the game's default face (not drawn, his face model standing).
 
 **Findings.** A file that is not UTF-8 or fails to parse, an unknown key included, is
 `ingame_face_toml_invalid` (E, the file and the error): its keys are ignored, as
-`settings_toml_invalid` ignores its file's keys, and the player keeps the in-game face at the
-defaults, the file itself still marking it. A value out of the target's range is
+`settings_toml_invalid` ignores its file's keys (his patch entry holds no `[appearance]`,
+so the save keeps his look), and the file itself still marks the in-game face. A value out of the target's range is
 `settings_value_out_of_range`, as in `settings.toml`. A moved key left in `settings.toml` is an
 unknown key there, so `settings_toml_invalid`, its message naming the key; the help says where
 the face keys went.
@@ -729,9 +727,9 @@ At compile time, the pipeline:
    45 would cross into the referee band and overflow into 5 digits). The block size is fixed for the
    lifetime of a scheme version — IDs are baked into distributed outputs. The ABI is future-upgradeable: a later FoxDen
    change might allow 5-digit IDs, letting each player's boots/gloves ID equal their player ID; any
-   such change is a new scheme version. On Fox the IDs live in the CPK's `BootsList`/`GloveList`
-   rows, so a scheme change needs no savefile remake; on pre-Fox they are baked into distributed
-   savefiles, so a scheme change ships with a from-scratch savefile remake. Either way bumping the
+   such change is a new scheme version. The IDs are baked into distributed
+   savefiles through the aesthetics patch on every engine, so a scheme change ships with a
+   from-scratch savefile remake. Either way bumping the
    version is a sanctioned path rather than a compatibility break
 3. **Splits and packs** everything into the correct game structures (face folder with player ID,
    boots/gloves folders with assigned IDs), rewriting FMDL/MTL/XML texture paths to match

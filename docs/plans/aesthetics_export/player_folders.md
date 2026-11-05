@@ -9,16 +9,6 @@ What exists of this is in `spec/aesthetics_export/player_folders.md` "Player fol
 The Export upgrader generates all the root files from the old Team Note txt and `Logo/` folder when
 migrating.
 
-At compile time, after the spec's steps 0 to 3, the pipeline:
-
-4. **Plans the settings side** for assigned IDs and independent accepted settings — conditional
-   savefile mutations on every engine (the compiler writes no player table rows). Producer
-   commits activate mutations that reference compiled assets; after all outcomes are known,
-   only activated asset mutations plus eligible independent settings are serialized, into the
-   aesthetics patch (`plans/pes_savefile/operations.md` "Aesthetics patch (new)"). This
-   makes the player wear successfully emitted boots/gloves without pointing at failed content — the
-   coordination currently done manually with 4ccEditor.
-
 **A base copy: the `<id>.copy` link file.** A player folder holding an empty file named after a
 player id with the `.copy` extension (`5223.copy`; a stray `.txt` suffix is accepted, as for every
 link file) wears that player's face and hair the game's own way: the aesthetics patch writes the

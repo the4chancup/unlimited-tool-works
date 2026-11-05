@@ -8,34 +8,6 @@ Part of the [Aesthetics export plan](README.md). Section headings are unchanged 
 
 What exists of this is in `spec/aesthetics_export/settings_toml.md` "Player settings in exports (settings.toml)".
 
-**One route on every engine: the savefile.** The spec's Fox half, the database tables the
-output CPK carries over a stripped save, goes (worklog 8.36c): on every engine everything
-resolved goes into the aesthetics patch, which the compiler writes and the save editor
-applies, and the patch carries the whole look (`plans/pes_savefile/operations.md` "Aesthetics
-patch (new)"). A compile writes a patch anyway for the motions, which live only in the save,
-so the tables never made a team's looks independent of the save. Where the spec's steps say
-"his row of the installed table" or "his installed row (Fox)", they read "the save's current
-value" on every engine, as pre-Fox already does. Three consequences: on Fox a DLC whose patch
-was not applied shows none of its compiled looks (the CPK alone carried them before); a
-sideloaded look change reaches the game only through the save step; and a manager's Edit-mode
-change to a look stays in the save until the next compile's patch writes over it, as it did
-before the tables.
-
-**An invalid `settings.toml` keeps the player's installed look.** Today `settings_toml_invalid`
-ignores the file and the player compiles with the defaults in its keys' place, so on Fox his
-appearance row is written from the defaults and his look resets in game while his models
-compile: one mistyped value loses every setting he had. Instead, the keys the invalid file
-would have set are left out of the compile, as a failed boots output leaves the installed ID:
-the patch holds no appearance entry for him, so the save keeps his record. An invalid
-`ingame_face.toml` (`ingame_face_toml_invalid`) does the same, and either file invalid holds
-back both: their keys travel in the one `[appearance]` entry, which is written whole or not
-at all (`plans/pes_savefile/operations.md` "Aesthetics patch (new)"). His models still
-compile, and an ID they get still lands. This is a
-third exception to the spec's "his export and nothing else", beside a failed boots or gloves
-output and a `Midcup` export's defaulted categories, of the same kind: content the export
-failed to state keeps what is installed rather than a default nobody chose. The finding's
-consequence text changes with it (`spec/team_compiler/messages.md`'s row).
-
 The save editor view can also **generate** these TOML files from an existing savefile, giving teams
 a migration path from the current workflow. Generation (`PlayerSettings::from_player`, shared with
 the Export upgrader) writes every key the save's version holds,
@@ -47,8 +19,6 @@ migrates into a folder or link (the old per-team blocks start at 101 too) and th
 leaves out. It writes `name` per the Export upgrader's rule (`true` when the folder's name part
 equals the save's name, the explicit string otherwise; the save editor, generating without a
 folder, writes the string), `shirt_name` as the save's string, and no `height` or `weight`.
-With no save stripped, a record is always the player's look: the save editor's generation
-and the Export upgrader generate from it for every player.
 
 **Edits made in PES come back to the export.** PES is the previewer for what only the game
 shows well (the motions, played in context; the in-game face, built with its sliders), so

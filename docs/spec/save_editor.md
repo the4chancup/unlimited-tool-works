@@ -75,7 +75,7 @@ implementation is measured against.
 
 | Feature | Notes |
 |---------|-------|
-| Apply aesthetics patch | The compiler's `aesthetics_patch.toml` → current save: on pre-Fox the default route by which teams' aesthetics reach the official save, on Fox the compiled players' motions and the resolved `name`/`shirt_name` entries (only from exports carrying the `write_names` marker). See "Read-only aesthetics" in the [Save editor plan](../plans/save_editor.md) |
+| Apply aesthetics patch | The compiler's `aesthetics_patch.toml` → current save: on every engine the route by which a compiled team's whole look reaches the official save — each entry's `[appearance]` (the resolved look, motions included), `boots_id`/`gloves_id` and `base_copy_id`, and the resolved `name`/`shirt_name` entries (only from exports carrying the `write_names` marker). See "Read-only aesthetics" in the [Save editor plan](../plans/save_editor.md) |
 
 ---
 
@@ -280,7 +280,10 @@ The commands:
   file's sections are its selection: a section left out of the file is untouched, so the CLI has
   no section flags. A document with no `id`, or one the save lacks, is refused.
 - `apply-patch` takes the patch, `--base <EDIT>` and `--out <EDIT>` exactly like `import-toml`;
-  it refuses a version or allocation-scheme mismatch before touching anything, prints the per-team
+  the patch holds each compiled player's whole look on every engine (the `[appearance]`
+  entry, boots and gloves IDs, `base_copy_id`, and a `write_names` export's names:
+  `spec/pes_savefile/operations.md` "Aesthetics patch (new)"). It
+  refuses a version or allocation-scheme mismatch before touching anything, prints the per-team
   summary (applied / skipped: not in save), and is the batch form of the GUI action — the savefile
   builder can apply a night's patches in one script. A team is listed as applied only when at
   least one of its players was written: a team the save holds whose patch players it all lacks
@@ -288,8 +291,7 @@ The commands:
   1) and the rest is written. Like every command that writes a save (`import-toml`'s notes),
   its lines are printed
   once `--out` is written: a write that fails prints only its failure (exit 3), never a line
-  saying what was written. A pre-Fox patch is refused until the compiler writes one (deferred
-  with pre-Fox's other gaps). The read-only lock is a GUI guard; a CLI command that writes
+  saying what was written. The read-only lock is a GUI guard; a CLI command that writes
   aesthetics (an `import-toml` whose file holds aesthetics) is explicit by nature and is not
   gated.
 - `diff` prints the comparator's report to stdout, players paired by id, each changed field as
@@ -450,10 +452,11 @@ SE-TOML-09 GIVEN a copy of the PES 21 fixture save
 **Aesthetics patch**
 
 ```
-SE-PAT-01  GIVEN the PES 21 fixture save and a PES 21 aesthetics patch with motions and names
-           for one of its teams
+SE-PAT-01  GIVEN the PES 21 fixture save and a PES 21 aesthetics patch for one of its teams
+                whose entry for a player holds his names and his [appearance] (his whole
+                look, two motions changed)
            WHEN apply-patch is run
-           THEN that team's players carry the patch's motions and names, every other
+           THEN the player carries the patch's names and look, every other
                 byte of the payload is unchanged, the summary lists the team as applied, and the
                 exit code is 0
 SE-PAT-02  GIVEN a PES 21 patch for two teams, the second absent from the save
@@ -593,4 +596,49 @@ SE-TL-05   GIVEN a data directory whose teams_list.txt cannot be read (a folder 
            WHEN export-teams-list --yes is run
            THEN it is refused naming teams_list.txt, nothing is merged or written, and the exit
                 code is 2
+```
+
+**8.36c scope.** `apply-patch` with the full-look patch (`spec/pes_savefile/operations.md`
+"Aesthetics patch (new)"): an entry's `[appearance]`, `boots_id`, `gloves_id` and
+`base_copy_id`, on every engine. "A player" is one of the fixture save's cup players; 7511
+and 101334 are copied ids real cup saves hold; an entry's `[appearance]` holds every key its
+version holds, as the compiler writes it, unless the scenario says otherwise.
+
+```
+SE-PAT-07  GIVEN the PES 21 fixture save, a player whose record holds appearance id -1 and
+                 base copy 7511, and a PES 21 patch whose entry for him holds an [appearance]
+                 setting skin_color = 4 and every other key at its default, boots_id = 643 and
+                 gloves_id = 0
+           WHEN apply-patch is run
+           THEN his appearance block and motions hold the entry's values (the bits no key
+                covers at the games' values), his boots 643 and gloves 0, his appearance id and
+                base-copy id his own id; every other byte of the payload is unchanged, and the
+                exit code is 0
+SE-PAT-08  GIVEN the PES 18 fixture save, a player whose record holds base copy 7511 with the
+                 base-copy flag set, and a patch whose entry for him holds an [appearance] and
+                 base_copy_id = 101334; and, apart, the same with no base_copy_id
+           WHEN apply-patch is run on each
+           THEN the first gives him base copy 101334, the flag still set; the second his own
+                id as base copy, the flag clear
+SE-PAT-09  GIVEN the PES 21 fixture save, a player whose record holds base copy 7511 and a
+                 look no template default matches, and a patch whose entry for him holds
+                 boots_id = 643 and no [appearance]
+           WHEN apply-patch is run
+           THEN his boots are 643 and the rest of his record, base copy and appearance id
+                included, is unchanged
+SE-PAT-10  GIVEN the PES 17 and PES 16 fixture saves, a player of each whose record holds base
+                 copy 7511 with the base-copy flag set (PES 17's also appearance id -1), and
+                 for each a patch of its version whose entry for him holds an [appearance]
+                 setting skin_color = 4 and boots_id = 625
+           WHEN apply-patch is run on each
+           THEN each save's player carries the entry's look and boots 625, his base copy his
+                own id with the flag clear, and PES 17's appearance id his own id; each exit
+                code is 0
+SE-PAT-11  GIVEN SE-PAT-07's save and patch with boots_id = 16384 (past the field's 14 bits),
+                 and apart with the [appearance]'s skin_color outside its range, its
+                 skin_color removed, and a dribbling key added (a PES 20 and 21 key) in a PES
+                 19 patch for the PES 19 fixture save
+           WHEN apply-patch is run with each
+           THEN each is refused naming the player and the key, with exit code 2, and --out is
+                not written
 ```

@@ -17,7 +17,8 @@ pub struct PlayerEntry {
     pub appearance_id: Option<u32>, // the appearance block's player id (PES 17+; `None` on
                                     // 15/16, where the appearance record's own `id` is the
                                     // join key): the player's own, or `STRIPPED_APPEARANCE_ID`
-                                    // (the game's -1) on a stripped Fox save
+                                    // (the game's -1), which a save stripped under the
+                                    // retired table route can still hold
     pub name: String,          // on disk: UTF-8, 46 B (15–19) / 61 B (20/21), NUL-terminated
                                // unless it fills the field (codec.md "Text fields");
                                // 4ccEditor's wchar[61] is only its in-memory buffer
@@ -230,38 +231,6 @@ impl PlayerSettings {
     pub fn update_toml(&self, document: &mut toml_edit::DocumentMut) -> Result<(), SettingsError>;
 }
 ```
-
-A `PlayerSettings` (with its defaults) also produces the **Fox database row**:
-`appearance_row(player_id, version) -> [u8; 60]`, the `PlayerAppearance.bin` row a Fox game
-(PES 18–21) dresses a stripped player (appearance id -1) with — the player id, then the 56
-appearance bytes his player record holds just after the appearance block's base-copy id
-(record bytes 128 to 184 on PES 18/19, 252 to 308 on PES 20/21). The row is one layout on
-every Fox version: the games' own tables hold the same bytes for most players from PES 17 to
-21, and PES 17's, whose record offset in-game Test 4 confirmed, sits at the same place in the
-same 72-byte block, whose fields lie at the same bits on PES 17 to 21 (measured 2026-10-12,
-`.tmp/phase_05/5_1/measure/`). The run's last 4 bytes (the block's last 4) are in no row, so their
-measured-unused bits do not reach a stripped player. A pre-Fox version has no row
-(`SettingsError::NoAppearanceRow`): PES 17 reads one, but its compile writes the savefile
-instead.
-
-The compile writes the rows `appearance_row` produces for a stripped player into its
-`PlayerAppearance.bin`; boots and gloves go to the `BootsList.bin`/`GloveList.bin` pairs,
-not to the row. A pre-Fox version has no row (an error naming the version).
-
-**The Fox player tables** live here too, as one type: `PlayerAppearance.bin` (60-byte rows,
-the player id then the 56 appearance bytes), `BootsList.bin` and `GloveList.bin` ((player
-id, item ID) `u32` pairs), each read whole (a length that is not a whole number of rows is
-an error naming the table), edited by player id (set a row, remove a row) and written
-sorted by player id. A table is read as a CPK stores it: WESYS-wrapped bytes are unwrapped
-first, since every game, PES 15 to 21, ships its `BootsList.bin` and `GloveList.bin`
-wrapped (its `PlayerAppearance.bin` and every cup copy plain), and wrapped bytes read as
-rows refuse only by luck: PES 2020's wrapped boots list is a whole number of pairs and
-would read as garbage (a stream that does not unwrap is an error naming the table).
-The tables are written unwrapped, as the cup's copies are. Every table on the maintainer's
-machine is, once unwrapped, sorted with each id once (103 distinct tables from 215 CPKs and
-42 loose files, PES 15 to 21 installs, cup DLC and Studio's own output, censused 2026-10-16,
-worklog 5.6c1). The Team compiler's bins step edits them through this type, its
-row-selection rules staying in the tool.
 
 No operation writes the appearance id's -1: no save is stripped (step 8.36b).
 

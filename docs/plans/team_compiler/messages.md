@@ -56,16 +56,9 @@ What exists of this is in `spec/team_compiler/messages.md` "Message structure".
 
 What exists of this is in `spec/team_compiler/messages.md` "Catalog".
 
-**With the full-look patch** (worklog 8.36c; `plans/pes_savefile/operations.md` "Aesthetics
-patch (new)"): `player_table_missing` and `savefile_player_not_stripped` go with the player
-tables and the stripped route; `settings_toml_invalid` and `ingame_face_toml_invalid` each
-leave out of the patch the player's `[appearance]` and every ID his settings would resolve
-(an authored stock ID, a marker's or a `Full` export's default), so the save keeps his look and
-his IDs, while his models still compile and an ID they or his links get still lands;
-`settings_model_id_conflict` and the name findings are reported on every engine, the patch
-carrying IDs and names on pre-Fox too (a referee export still reaches no patch). Three link
-rows join "Player folders and shared model folders", beside `shared_link_duplicate`
-(`plans/aesthetics_export/player_folders.md`, its base copy paragraph):
+With the `<id>.copy` link (8.36c3; `plans/aesthetics_export/player_folders.md`, its base copy
+paragraph), three rows join "Player folders and shared model folders", beside
+`shared_link_duplicate`:
 
 | ID | Sev | Condition | Consequence |
 |---|---|---|---|

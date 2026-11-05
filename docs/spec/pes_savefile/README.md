@@ -50,6 +50,7 @@ crates/libs/pes_savefile/src/
 ├── discovery.rs        # Documents\KONAMI layout per version → SavefileCandidate list
 ├── fixtures.rs         # the fixture payloads (each version's payload.bin.zz inflated) behind test_support and `fixture_save`
 ├── test_support.rs     # the fixture containers/saves the test modules share
+├── portrait.rs         # the CPK path of one player's portrait DDS, shared by the compiler and the Save editor
 ├── container/          # bytes ↔ decrypted sections (`container.md` "Container API")
 │   ├── mod.rs          #   SaveContainer, Scheme, ContainerError; decrypt (key/shape trial), to_bytes
 │   ├── pes16_21.rs     #   the shared 16–21 container (salt, header, MT19937 stream, integrity)
@@ -90,13 +91,12 @@ crates/libs/pes_savefile/src/
 │   ├── mod.rs          #   PlayerSettings, AppearanceSettings, SettingsError, the classification tables
 │   ├── document.rs     #   the document text: header, keys, parse/emit/update; the shared [appearance] walkers
 │   ├── keys.rs         #   the SettingKey table (table, name, kind, comment, default)
-│   ├── appearance_row.rs #  the Fox PlayerAppearance.bin row a PlayerSettings produces
 │   └── tests/          #   settings and template tests
 │       ├── mod.rs      #     the shared prelude
 │       ├── model.rs    #     the completeness invariant, from_player, apply
 │       ├── document.rs #     parse, to_toml, update_toml
-│       └── appearance_row.rs # the row's bytes and the pre-Fox refusal
-├── player_tables.rs    # the three Fox player tables (PlayerAppearance/BootsList/GloveList.bin), one PlayerTable<VALUE>
+│       ├── fpc.rs      #     the marker presets and the strip-style check inputs
+│       └── narrow.rs   #     the per-version narrowing (settings_value_out_of_range)
 ├── ops/                # save-to-save operations
 │   ├── mod.rs          #   the module wiring
 │   ├── fingerprint.rs  #   aesthetics fingerprinting / diff
@@ -115,7 +115,7 @@ crates/libs/pes_savefile/src/
     │   └── labels.rs   #     the label vocabularies (positions, ratings, styles, skills)
     ├── legacy.rs       #   .4ccs / .4cct readers, into a TeamToml
     ├── legacy_golden.rs#   the .4ccs parity + literal-offset goldens
-    ├── aesthetics_patch/ #   the compiler's aesthetics_patch.toml, the Fox half: parse, emit, apply
+    ├── aesthetics_patch/ #   the compiler's aesthetics_patch.toml: parse, emit, apply
     │   ├── mod.rs        #     AestheticsPatch, PatchTeam/PatchPlayer, PatchError, PatchSummary
     │   └── tests.rs      #     the patch's tests
     ├── texport.rs      #   Texport read/write over the schema codec (layout: schema/texport.rs)

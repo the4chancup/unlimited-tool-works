@@ -24,8 +24,8 @@ Unlimited Tool Works is a Rust-based **suite of all the tools used by the 4cc co
 tightly integrated main tools, the first of which exists:
 
 1. **The Team compiler** (successor to the AET Compiler) — compiles aesthetics exports into CPK archives,
-   with compile-time model format conversion and compile-time aesthetics (on Fox the output CPK's
-   database tables, on pre-Fox savefile writing)
+   with compile-time model format conversion and compile-time aesthetics (the aesthetics patch,
+   written to the savefile on every engine)
 
 Model format conversion (pre-Fox ↔ Fox) is **not** offered as a standalone tool — it is integrated
 into the Team compiler, which converts models to the target PES version's format at compile time.

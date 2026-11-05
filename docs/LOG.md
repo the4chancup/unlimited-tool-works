@@ -3086,3 +3086,6 @@ worklog passed 7,000 lines.
 - 2026-11-05 — 8.36c2b: the Fox player tables go (about 2,400 lines removed): the compiler neither reads nor writes
   them, `player_table_missing` and `savefile_player_not_stripped` are gone, `pes_savefile` no longer models them
   (`portrait_path` moved to `pes_savefile::portrait`). SWE-2, landed first time; gates rerun green.
+- 2026-11-05 — 8.36c4 texts: the spec says what 8.36c built (the patch carries the whole look on every
+  version, no player tables), its scenarios moved from the plans, the catalog, help and CHANGELOG with it; the
+  settings template's stale motion note dropped. Two SWE-2 sidekicks, first time; parity, Astra, mutants next.

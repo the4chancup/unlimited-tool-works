@@ -48,7 +48,7 @@ gloves_id = ""                  # "" = default (fpc_on: hidden, fpc_off 0, no ma
 # gloves = false                  # true, false (outfield player gloves)
 # gloves_color = 0                # 0 to 7
 
-[appearance.motion]             # on Fox written by the aesthetics patch: the tables do not hold motions
+[appearance.motion]
 # hunching_dribbling = 1          # 1 to 3 (PES 20 and 21: 1 to 5)
 # hunching_running = 1            # 1 to 3 (PES 20 and 21: 1 to 5)
 # arm_movement_dribbling = 1      # 1 to 8 (PES 15: 1 to 5; PES 20 and 21: 1 to 10)

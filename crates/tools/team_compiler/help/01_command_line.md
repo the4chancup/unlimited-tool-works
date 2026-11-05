@@ -914,10 +914,13 @@ When a command ends, its exit code tells a script how it went:
 
 ### The aesthetics patch and your save
 
-On PES 2018 to 2021, every `compile` that builds players also writes `aesthetics_patch.toml`
-in the output folder. It holds each compiled player's motions, taken from his
-`settings.toml` (a motion the file does not set gets the game's default), and, only for an
-export whose root holds the `write_names` marker file, his name and shirt name. The cup's
+Every `compile` that builds players also writes `aesthetics_patch.toml`
+in the output folder, whatever the PES version. It holds each compiled player's look: his
+appearance and motions, taken from his `settings.toml` and `ingame_face.toml` (a key neither
+file sets gets the game's default), the IDs of the boots and gloves he was compiled with,
+and, only for an export whose root holds the `write_names` marker file, his name and shirt
+name. A `settings.toml` or `ingame_face.toml` the run cannot read leaves his look and his
+IDs out of the patch, so the save keeps what it has for him. The cup's
 official save is built with that file. The cup maintainer compiles the exports and hands
 over the CPKs and the patch, and the save builder applies the patch with `UTW
 save-editor apply-patch`.

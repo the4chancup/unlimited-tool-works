@@ -571,21 +571,11 @@ pub(crate) fn emit_appearance(
             continue; // a key the document does not hold
         }
         if spec.table != table {
-            // The motion table's note is the settings template's: a settings
-            // apply writes the motions through the aesthetics patch, where a
-            // team TOML import writes the save directly.
-            let note = if document == AppearanceDocument::Settings && spec.table == KeyTable::Motion
-            {
-                "on Fox written by the aesthetics patch: the tables do not hold motions"
-            } else {
-                ""
-            };
             let table_path = absolute(prefix, spec.table);
             // The document's own root table has no header line: its keys
             // (`ingame_face.toml`'s `iris_color`) sit at the top level.
             if !table_path.is_empty() {
-                let header = padded(&format!("[{table_path}]"), note);
-                out.push_str(&format!("\n{header}\n"));
+                out.push_str(&format!("\n[{table_path}]\n"));
             }
             table = spec.table;
         }

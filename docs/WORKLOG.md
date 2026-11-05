@@ -2834,6 +2834,21 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         to 2017", wrong since c1), the drafts' message rows, the library parity re-run and its
         classes re-diagnosed; then 8.36c's review: Astra over its code (checkpoint (b)) and
         one `mutants-diff` over c1-c4
+        The texts done 2026-11-05 (two SWE-2 sidekicks on disjoint files, both first time;
+        briefs `.tmp/0_0_2/s36c/brief_c4a.md`, `brief_c4b.md`): the built scenarios moved
+        to the spec (SE-PAT-07 to 11; TC-SAV-18, 19, 21, TC-BIN-50 to 62, TC-MOD-95 to 99,
+        TC-REF-20, each restated ID marked withdrawn, TC-BIN-37 and TC-SAV-07 with no
+        restatement), TC-SAV-20 and TC-STR-21 staying for c3; the patch's format and its
+        apply rules moved to `spec/pes_savefile/operations.md`, the 8.36d checks staying in
+        the plan; every spec passage on the tables, a Fox-only patch or a stripped save
+        reworded (the phase histories annotated); the catalog's six rows, the help and a
+        `CHANGELOG.md` line. Lead fixes: the FPC marker rules, which lived in the plan only,
+        moved into `spec/aesthetics_export/fpc_toggle.md` rather than dropped; the two
+        invalid-file rows say the two files make one look (the sidekick's kept "his other
+        file still applies"); the settings template's `[appearance.motion]` note ("on Fox …
+        the tables do not hold motions") dropped from the code, its golden, the tracers'
+        upgraded copies, the spec and the draft; the drafts' catalog rows. Open: the
+        library parity, Astra, the `mutants-diff`
     - [ ] d in game, before 0.0.2 (PES 2019 first, VGL 27's game and the likeliest for the
       4cc's spring cup, then PES 2021 and PES 2017; the maintainer, 2026-11-04): a
       patch applied to an

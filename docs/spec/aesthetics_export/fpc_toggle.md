@@ -6,9 +6,8 @@ Part of the [Aesthetics export plan](README.md). Section headings are unchanged 
 
 FPC (Full Player Customization — see the [Save editor plan](../../plans/save_editor.md)) makes the default
 player model invisible via a specific mix of appearance settings (blank-model boots/gloves IDs
-plus strip settings; Fox: fields of the compiled
-`PlayerAppearance.bin` row, the IDs in the `BootsList`/`GloveList` rows; pre-Fox: savefile
-fields), so that an FBM (Full Body Model) replaces
+plus strip settings, the savefile appearance record's fields, which the aesthetics patch
+writes on every engine), so that an FBM (Full Body Model) replaces
 the player entirely. Setting it through individual `settings.toml` keys would be error-prone;
 instead it gets a folder-level toggle, consistent with the principle that the
 folder view tells the whole story about how the player's models render:
@@ -16,6 +15,29 @@ folder view tells the whole story about how the player's models render:
 - Tolerances, in the same spirit as link files: `fpc_on.txt`, and a bare `fpc` or `fpc.txt`,
   read as `fpc_on` (presence reads as "on"); `fpc_off.txt` reads as `fpc_off`.
 - Both markers in the same folder raise `fpc_conflict` (error; folder discarded).
+- **`fpc_on`** — an empty marker file in a player folder. When present, the compile applies the
+  **FPC enable preset** from `libs/fpc` to the player's settings (the same
+  preset the save editor's FPC toggle uses — one implementation, so the two tools can never drift);
+  they reach the game like every other setting, through the aesthetics patch.
+- **`fpc_off`** — applies the disable preset (visible defaults) instead. Since an absent key takes
+  its default, it differs from no marker only where an authored strip key, or an authored custom
+  skin (7, PES 15 to 17, which the preset resets to 1), would otherwise apply, and in a
+  `Midcup` export, where it writes the preset's IDs and no marker keeps the save's current ID.
+- **Absent = no FPC preset applied**: the player's strip keys and boots/gloves IDs are what his
+  `settings.toml` and its defaults say. No earlier FPC state survives a compile without the
+  marker (except in a `Midcup` export, where a boots or gloves ID the folder does not set keeps
+  the save's current ID, so `fpc_off` is what resets a hidden player's IDs there), since a
+  compiled player's appearance is his file and nothing else (see "Player settings in exports"
+  in [settings.toml](settings_toml.md)). Model-derived ID assignments still apply.
+- Either preset **overrides** the keys it sets (the strip keys and `skin_color`) in the folder's
+  `settings.toml`; explicitly-set keys that get overridden raise `fpc_strip_conflict`.
+- In a `players.txt` multi-mapped folder, the preset applies to all mapped players (like the rest of
+  the folder's settings).
+
+How a folder's models, an authored stock `boots_id`/`gloves_id` and the marker's preset IDs
+resolve, independently per category and for both markers, is the numbered resolution of "Player
+settings in exports" in [settings.toml](settings_toml.md). Other preset fields still apply
+normally.
 
 **Team kit-FPC status and kit configs.** FPC also requires settings on **every one of the team's kit
 configs, including the goalkeeper kit** (modern system, per the [wiki's PES17 FPC
@@ -35,9 +57,8 @@ An export's **team kit-FPC status** is two-state — `EffectiveTeamKitFpc::{On, 
 - **On** when at least one player folder of the validated export carries `fpc_on` (a folder
   validation dropped compiles no player, so its marker does not count) — the configs must then carry the FPC
   values for that player's hiding to work; **Unknown** otherwise — the absence of `fpc_on` markers
-  makes no claim about the team (on pre-Fox its FPC players may live only in the savefile, set
-  through the save editor; on Fox a stripped record's appearance bytes are not read, so there is
-  no savefile-side FPC state), and `fpc_off` markers contribute nothing here because they are
+  makes no claim about the team (its FPC players may live only in the savefile, set
+  through the save editor), and `fpc_off` markers contribute nothing here because they are
   per-player statements.
 - **Generated kit configs** (the `kit_config_generated` path, when a kit folder has no
   `config.toml`) are the template, which carries the FPC values whatever the status: it is the

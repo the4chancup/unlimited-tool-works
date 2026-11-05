@@ -4,6 +4,13 @@ What changed for members, release by release, newest first.
 
 ## [Unreleased]
 
+### Changes
+
+- **Team compiler** — on every PES version, a compiled player's look now reaches the game
+  through `aesthetics_patch.toml` and the save it is applied to: the patch carries his
+  appearance, motions, boots and gloves IDs, and the CPK carries no player tables, so the
+  save needs no stripping. PES 2015 to 2017 get the patch too.
+
 ### Minor fixes
 
 - **Save editor** — Up and Down walk the player list again after a page key left a team's
