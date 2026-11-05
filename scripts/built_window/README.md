@@ -15,7 +15,9 @@ the GPU draws (a texture's sampling, a font's hinting, the window's own scaling)
 
 Each script's docstring has its exact usage. The portable copy is the folder `UTW_APP` names,
 `.tmp/0_0_1s4t_v2/app` by default (its `data/settings.toml` is the copy's own, so a check never
-touches the user's settings).
+touches the user's settings). The window's title is "Unlimited Tool Works". In the default
+window, Open at (88, 17) then the PES 2021 entry at (120, 168) opens the maintainer's real
+save: a check only reads it and never presses Save.
 
 ## The rules `gui.py` keeps
 

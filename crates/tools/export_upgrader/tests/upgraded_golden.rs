@@ -98,6 +98,8 @@ fn the_fox_tracer_upgrades_to_its_golden() {
         "- egg Tracer: Info coverage_tag_chosen (tag=Full, source=default)\n\
          - egg Tracer: Info wearer_assumed at Boots/k2180 - The Chad Stormworks Player (id=2180, slot=05)\n\
          - egg Tracer: Info wearer_assumed at Gloves/g2180 - The Chad Stormworks Player (id=2180, slot=05)\n\
+         - egg Tracer: Info antiblur_dropped at Boots/k2180 - The Chad Stormworks Player/boots.fmdl (meshes=1)\n\
+         - egg Tracer: Info antiblur_dropped at Faces/XXX05 - The Chad Stormworks Player/fcl_hair.fmdl (meshes=1)\n\
          - Info migration_clean\n",
     );
 }

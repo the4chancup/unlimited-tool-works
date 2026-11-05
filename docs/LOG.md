@@ -3091,3 +3091,4 @@ worklog passed 7,000 lines.
   settings template's stale motion note dropped. Two SWE-2 sidekicks, first time; parity, Astra, mutants next.
 - 2026-11-05: 0.0.2-poc4 landed: an unworn item folder pairs by name with the player whose custom ID no folder holds (`wearer_by_name`); a .dds beside a .ftex resolved by use (`texture_duplicate_dropped`). Rulings for poc5-poc7 planned.
 - 2026-11-05: 0.0.2-poc6 landed: what no name pairs (not worn, same number, sorted order, else refused); poc5/poc7 planned from a whole-PC census of 49,122 models; Devin CLI runs start detached (RUNBOOK).
+- 2026-11-05: 0.0.2-poc5 and poc7's upgrader half landed: a model far in every vertex dropped (`model_far_dropped`), anti-blur copies written off (`antiblur_dropped`); anti-blur leaves the materials.toml schema (ruling); poc1/4/6 moved to the spec; in-game checks go to a SWE-2 sidekick (RUNBOOK).

@@ -15646,3 +15646,19 @@ deliberate one; and no partly far model but two synthetic test fixtures, so mesh
 deletion has no file to serve.
 Plan: `plans/export_upgrader.md` "What it does" (the 0.0.2-poc5 and poc7 cleanups);
 `plans/model_conversion/ir.md` "Anti-blur duplicates".
+
+## 2026-11-05 — model_convert / fmdl — anti-blur leaves the IR and the `materials.toml` schema
+Decision: the maintainer's ruling replaces the `antiblur_ignored` Info planned earlier today:
+`materials.toml` loses its `antiblur` key and the families lose their `antiblur` defaults
+(a toml still setting it gets `material_key_unknown`, W, like any unknown key);
+`Material.antiblur` leaves the IR, and the FMDL importer stops splitting a material by its
+meshes' anti-blur request. Applied by the lead as following from the ruling: `fmdl`'s merge
+drops its refusal of parts whose anti-blur requests are encoded in some and not in others.
+Why: Studio writes no anti-blur copies, so a key asking for them would be a setting with no
+effect, and a finding of its own for it would keep alive a concept the schema no longer has.
+The merge refusal only protected a later `antiblur::encode` from skipping a part; with no
+encode after a merge it would refuse native files on the pass-through route, which the ruling
+says neither checks nor touches anti-blur meshes. No `materials.toml` reader exists yet, so no
+member file is affected.
+Plan: `plans/model_conversion/ir.md` "Anti-blur duplicates"; `plans/model_format.md`
+"Engine-neutral keys" and the advanced example; `plans/team_compiler/README.md` TC-MOD-101.

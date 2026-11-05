@@ -272,6 +272,48 @@ pub(crate) fn fmdl_paths(sandbox: &Sandbox, output: &str) -> Vec<(String, String
         .collect()
 }
 
+/// The `fmdl` crate's fixture `name`, lifted to its `Model`.
+fn fixture_model(name: &str) -> fmdl::Model {
+    let file = fmdl::FmdlFile::read(
+        &std::fs::read(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../libs/fmdl/tests/fixtures")
+                .join(name),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    fmdl::Model::from_file(&file).unwrap()
+}
+
+/// The `konami_highneck` FMDL with every vertex moved `dx` units on x:
+/// `6000.0` makes the model far in every vertex, as
+/// `fmdl_vertex_far_from_origin` measures it.
+fn shifted_fmdl(dx: f32) -> Vec<u8> {
+    let mut model = fixture_model("konami_highneck.fmdl");
+    for mesh in &mut model.meshes {
+        for position in &mut mesh.vertices.positions {
+            position[0] += dx;
+        }
+    }
+    model.to_file().unwrap().write()
+}
+
+/// A face-high FMDL of the `addon_oral` fixture's mesh duplicated: two
+/// meshes each requesting an anti-blur copy, the copies flagged
+/// `is_antiblur_mesh` on a fuzzblock material as `encode` writes them.
+fn antiblur_fmdl() -> Vec<u8> {
+    let mut model = fixture_model("addon_oral.fmdl");
+    model.meshes.push(model.meshes[0].clone());
+    model.mesh_groups[0].meshes.push(1);
+    model.extensions.antiblur = false;
+    for mesh in &mut model.meshes {
+        mesh.has_antiblur_meshes = true;
+    }
+    fmdl::ops::antiblur::encode(&mut model).unwrap();
+    model.to_file().unwrap().write()
+}
+
 // EU-MDL-05
 #[test]
 fn common_references_become_the_bare_name_and_the_link() {
@@ -970,4 +1012,141 @@ fn a_dds_beside_an_ftex_of_one_stem_is_resolved_by_use() {
     }
     assert!(!stdout.contains("texture_stem_conflict"), "{stdout}");
     assert!(!stdout.contains("unmigrated_content"), "{stdout}");
+}
+
+// EU-MDL-24
+#[test]
+fn a_model_far_in_every_vertex_is_dropped() {
+    let sandbox = Sandbox::new("mdl_far_models");
+    // Slot 02's face and hair are the template-hiding far models, 204
+    // vertices each; his gloves folder's right glove is another.
+    sandbox.write(
+        "co Spring/Faces/XXX02 - GIANT/face_high.fmdl",
+        &shifted_fmdl(6000.0),
+    );
+    sandbox.write(
+        "co Spring/Faces/XXX02 - GIANT/hair_high.fmdl",
+        &shifted_fmdl(6000.0),
+    );
+    sandbox.write(
+        "co Spring/Gloves/g0331 - ONLY THREAD/glove_l.fmdl",
+        &shifted_fmdl(0.0),
+    );
+    sandbox.write(
+        "co Spring/Gloves/g0331 - ONLY THREAD/glove_r.fmdl",
+        &shifted_fmdl(6000.0),
+    );
+    sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
+        crate::players::wears(file, 71402, 0, 331);
+    });
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 0, "{stdout}");
+    assert!(
+        sandbox
+            .path("co Full Spring/Players/02 - GIANT/glove_l.fmdl")
+            .exists(),
+        "{stdout}"
+    );
+    for name in ["face_high.fmdl", "hair_high.fmdl", "glove_r.fmdl"] {
+        assert!(
+            !sandbox
+                .path(&format!("co Full Spring/Players/02 - GIANT/{name}"))
+                .exists(),
+            "{name}: {stdout}"
+        );
+    }
+    for path in [
+        "Faces/XXX02 - GIANT/face_high.fmdl",
+        "Faces/XXX02 - GIANT/hair_high.fmdl",
+        "Gloves/g0331 - ONLY THREAD/glove_r.fmdl",
+    ] {
+        assert!(
+            stdout.contains(&format!("model_far_dropped at {path} (vertices=204)")),
+            "{path}: {stdout}"
+        );
+    }
+    assert!(stdout.contains("migration_clean"), "{stdout}");
+    assert!(!stdout.contains("unmigrated_content"), "{stdout}");
+}
+
+// EU-MDL-24
+#[test]
+fn a_folder_left_modelless_by_the_drop_hides_the_hands() {
+    let sandbox = Sandbox::new("mdl_far_modelless");
+    // Both gloves far: the folder is modelless, and its wearer gets the
+    // hidden hands any modelless gloves folder gives.
+    crate::players::face(&sandbox, "co Spring/Faces/XXX05 - Ann");
+    sandbox.write(
+        "co Spring/Gloves/g0331 - ONLY THREAD/glove_l.fmdl",
+        &shifted_fmdl(6000.0),
+    );
+    sandbox.write(
+        "co Spring/Gloves/g0331 - ONLY THREAD/glove_r.fmdl",
+        &shifted_fmdl(6000.0),
+    );
+    sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
+        crate::players::wears(file, 71405, 0, 331);
+    });
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 0, "{stdout}");
+    assert!(
+        sandbox
+            .path("co Full Spring/Players/05 - Ann/fpc_on")
+            .exists(),
+        "{stdout}"
+    );
+    assert!(!sandbox.path("co Full Spring/Gloves").exists(), "{stdout}");
+    for name in ["glove_l.fmdl", "glove_r.fmdl"] {
+        assert!(
+            stdout.contains(&format!(
+                "model_far_dropped at Gloves/g0331 - ONLY THREAD/{name}"
+            )),
+            "{name}: {stdout}"
+        );
+    }
+    assert!(!stdout.contains("custom_model_"), "{stdout}");
+    assert!(!stdout.contains("unmigrated_content"), "{stdout}");
+}
+
+// EU-MDL-25
+#[test]
+fn the_antiblur_copies_are_written_off() {
+    let sandbox = Sandbox::new("mdl_antiblur");
+    crate::players::face(&sandbox, "co Spring/Faces/XXX05 - Ann");
+    sandbox.write(
+        "co Spring/Faces/XXX05 - Ann/face_high.fmdl",
+        &antiblur_fmdl(),
+    );
+    sandbox.save("EDIT");
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 0, "{stdout}");
+    assert!(
+        stdout.contains("antiblur_dropped at Faces/XXX05 - Ann/face_high.fmdl (meshes=2)"),
+        "{stdout}"
+    );
+    let file = fmdl::FmdlFile::read(
+        &fs::read(sandbox.path("co Full Spring/Players/05 - Ann/face_high.fmdl")).unwrap(),
+    )
+    .unwrap();
+    let model = fmdl::Model::from_file(&file).unwrap();
+    assert_eq!(model.meshes.len(), 2);
+    for mesh in &model.meshes {
+        assert!(!mesh.is_antiblur_mesh && !mesh.has_antiblur_meshes);
+    }
+    assert!(!model.extensions.antiblur);
+    assert!(
+        !model
+            .materials
+            .iter()
+            .any(|material| material.shader.contains("fuzzblock")),
+        "{:?}",
+        model.materials
+    );
+    assert!(stdout.contains("migration_clean"), "{stdout}");
 }

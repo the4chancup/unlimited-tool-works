@@ -122,8 +122,9 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    link, as in step 4, and reported (I, `merge_kept_shared`, the first clashing path in its
    context), since one path cannot hold both. A boots folder's name is `k` and four digits, a
    gloves folder's `g` and four digits (or three alone, below), then its name part, as Red
-   requires; any other is unmigrated content as a whole. A model folder no save record names
-   is a leftover (step 10): no player wore it in game. A wearer's player folder takes the boots folder's name part before the
+   requires; any other is unmigrated content as a whole. A model folder no save record names,
+   and that no pairing below gives a wearer, is a leftover (step 10): no player wore it in
+   game. A wearer's player folder takes the boots folder's name part before the
    gloves folder's when the name falls to them. Two item folders
    carrying one ID (`k0430 - A`, `k0430 - B`) are one too many: the second by name is
    unmigrated content, as Red skipped it (`folder_error_num_repeated`). On a pre-Fox export they stay shared folders with a link, as
@@ -131,6 +132,46 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    member's own `face.xml`, which names only his face's parts, would drop the merged model
    (`spec/team_compiler/messages.md` "User-supplied `face.xml`"), while a link keeps loading
    the folder by its ID as the old export did.
+
+   **When the save and the folders disagree** (with a roster only): a *missing ID* is a
+   rostered player's worn custom boots or gloves ID (above 100) that no folder of its kind
+   carries; an *unworn folder* is a folder of the kind no save record wears, a modelless one
+   included. Saves get renumbered and folders renamed, so the two drift apart (VGL26's /omg/
+   saved six boots IDs 400 below the folders named after their players, `k2952 - BANISHED`
+   for 2552), and without a pairing the player gets the hide ID (step 8) while his folder is
+   dropped as a leftover, which loses his body. A pairing pairs an ID with a folder,
+   whatever rule makes it: every player wearing that ID wears the folder as if its number
+   were the ID (merged into his folder, or shared as any worn folder), and its finding names
+   the folder, the slot and the save's ID once per wearer. Each is a Warning, since the save
+   says otherwise and the member checks it. In order:
+   1. **By name.** An unworn folder of the ID's kind whose name part, folded to lowercase
+      letters and digits, equals one of the player's names folded the same way (his face
+      folder's whole name, its name part, or his save name) pairs with it, when exactly one
+      such folder does; two or more pair nothing. `wearer_by_name` (W).
+   2. **Not worn.** A missing ID that is the number of a folder of the other kind (gloves
+      2780 beside `k2780`) is a player wearing no custom item of the kind, the common case:
+      he gets the hide ID, and `custom_model_not_worn` (I, `custom_model_hidden`'s context)
+      says so in place of that Warning; a folderless player gets nothing reported, since
+      nothing is missing. The ID takes no part in what follows.
+   3. **By number, then in order**, each kind in turn, boots first, the rounds repeating
+      until neither kind pairs another folder: an unworn folder whose same-numbered folder
+      of the other kind is paired with an ID takes that ID, when it is a missing ID of its
+      own kind (`g2452` takes 2227 from `k2452`), `wearer_by_number` (W, `from` the other
+      folder), until it pairs nothing more; then a kind left with as many missing IDs as
+      unworn folders pairs them in sorted order, ID rank to folder-number rank,
+      `wearer_by_order` (W). One kind at a time, not both at once: on /fg/ both kinds reach
+      equal counts in one round, and ordering the gloves there would pair them by rank,
+      where one step later each follows its boots folder by number.
+   4. **Refused.** A missing ID still left beside an unworn folder of its kind refuses the
+      export (`custom_model_unpaired`, E: the slot, the key and the ID, per wearer), since
+      nothing says which folder is his; one left with no unworn folder gets the hide ID
+      (step 8).
+
+   On VGL26, /fg/, a renumbered save, upgrades with its
+   bodies (its boots in order, its gloves following by number, `g2451 - EMPTY` hiding the
+   hands of the player `k2451 - Acknowledged` names); /@/, /lcg/, /skg/, /smbg/, /sora/ and
+   six /fng/ players are not wearing an item of a kind; /bag/ (boots 3460 beside two `_Back`
+   folders) and /fgog/ (gloves 8447 beside two folders) are refused.
 4. **Keeps shared folders**: a model folder used by **two or more** players stays as a named shared
    folder (`Boots/Crocs/`), and each of those players' folders gets a link file (`Crocs.boots`).
    Naming: nearly all model folders in current exports already carry a descriptive name after their
@@ -582,11 +623,14 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    would be ignored at every compile (`settings_model_id_conflict`). A custom ID (above 100)
    worn by a player that no model folder of the export claims was never packed, so the game
    drew no model for it, and members set such IDs on purpose for a player whose face folder
-   carries his whole body (VGL26: /fg/ gives its whole roster such IDs). A player the output
-   gives a folder gets the FPC hide preset's ID of the kind in his file (`boots_id = 55`,
-   `gloves_id = 11`, `fpc::HideIds::CONVENTION`), which shows the same no-model, and
-   `custom_model_hidden` (W: the slot, the player's name, the key, the ID and `written`, the ID
-   written) names it, since the folder may also be one the member forgot; the number itself
+   carries his whole body (VGL26: /skg/ and five more exports, step 3's "Not worn"). Step 3
+   first pairs what it can of such IDs with unworn folders; what it leaves is this case. A
+   player the output gives a folder gets the FPC hide preset's ID of the kind in his file
+   (`boots_id = 55`, `gloves_id = 11`, `fpc::HideIds::CONVENTION`), which shows the same
+   no-model, and `custom_model_hidden` (W: the slot, the player's name, the key, the ID and
+   `written`, the ID written) names it, since the folder may also be one the member forgot
+   (`custom_model_not_worn`, I, with the same context, in its place when the ID is the number
+   of a folder of the other kind, step 3); the number itself
    would point at whatever Studio's block scheme later assigns there. A rostered player of a
    Full output the output gives no folder has no file to carry the ID, and the patch would
    leave his record's number as it is: for him the content is missing (step 10),
@@ -682,7 +726,16 @@ to moving, flattening, or removing files describe that draft, not destructive ed
     drop the file and keep the folder, the member's content, which the stray copy never
     belonged to. A file of a known kind that sits where the format refuses it (a `face.xml`
     in a subfolder, EU-REP-02) is no stray: it is left for the output's strict check to name,
-    since it is the member's content in the wrong place, not a copy. An entry inside the format's folders that reached the game but that no step migrates
+    since it is the member's content in the wrong place, not a copy. A `.dds` and a `.ftex`
+    of one stem in one folder of the output, which the shared validation refuses
+    (`texture_stem_conflict`), are resolved by use before the output is written: when no
+    model of the export uses the stem (no material's texture reference resolves to it, a
+    `dummy_` stem counting as unused since the game substitutes it, "A texture a model names
+    must exist" in `spec/team_compiler/pipeline.md`), both are leftovers; otherwise the
+    `.ftex` is dropped and the `.dds` kept, `texture_duplicate_dropped` (W: the dropped file,
+    `kept` the `.dds`), and the run stays clean, the `.dds` it duplicated being written
+    (VGL26's /akg/ held `Common/dummy_srm.dds` and `dummy_srm.ftex`, its one refusal). Other
+    pairs of extensions stay refused. An entry inside the format's folders that reached the game but that no step migrates
     (a texture that does not decode, a folder loose mode cannot place) is
     `unmigrated_content`, an Error. So is content Red kept out that the author evidently meant
     for the game, where a leftover would lose it over a slip: two candidates for one place, of
@@ -1242,6 +1295,42 @@ EU-PLY-22  GIVEN one player folder holding ingame_face and another ingame_face.t
                 ingame_face.txt; the team export's two files hold their records' face, hair
                 and iris, every key the save's version holds, and their settings.toml none of
                 those keys; the referee export's two are empty
+EU-PLY-23  GIVEN slot 05's face folder "XXX05 - Bob", his record wearing custom boots 2552, and
+                 the boots folder "k2952 - BOB" nobody wears, holding boots.fmdl
+           WHEN the export is upgraded
+           THEN Players/05 - Bob/ holds boots.fmdl, his settings.toml has no boots_id,
+                wearer_by_name names Boots/k2952 - BOB, slot 05 and 2552, no leftover_dropped
+                names the folder, and the run ends migration_clean; GIVEN a second unworn
+                folder "k2953 - bob" THEN neither pairs by name, and the export is refused
+                (EU-PLY-26)
+EU-PLY-24  GIVEN slot 05's face folder "XXX05 - Hagoromo", his record wearing boots 2780 and
+                 gloves 2780, the boots folder "k2780 - Hagoromoslop" and no gloves folder
+                 2780, and the gloves folder "g2799 - Momo" nobody wears
+           WHEN the export is upgraded
+           THEN his settings.toml has gloves_id 11, custom_model_not_worn (Info) names slot
+                05, gloves_id and 2780, no wearer_by_order is reported, leftover_dropped
+                names Gloves/g2799 - Momo's files, and the run ends migration_clean
+EU-PLY-25  GIVEN slot 01 "XXX01 - CHALICE OF HEAVEN" wearing boots and gloves 2227, slot 05
+                 "XXX05 - PARADISE" wearing boots and gloves 2229, slot 12
+                 "XXX12 - ACKNOWLEDGED" wearing boots and gloves 2226; boots folders
+                 "k2451 - Acknowledged", "k2452 - DEFAULT MALE", "k2455 - DEFAULT FEMALE",
+                 gloves folders "g2451 - EMPTY" (no file), "g2452 - DEFAULT MALE",
+                 "g2455 - DEFAULT FEMALE"
+           WHEN the export is upgraded
+           THEN wearer_by_name pairs Boots/k2451 - Acknowledged with slot 12 (2226);
+                wearer_by_order pairs Boots/k2452 - DEFAULT MALE with slot 01 (2227) and
+                Boots/k2455 - DEFAULT FEMALE with slot 05 (2229); wearer_by_number pairs
+                Gloves/g2452 - DEFAULT MALE with slot 01 (2227, from Boots/k2452 - DEFAULT
+                MALE), Gloves/g2455 - DEFAULT FEMALE with slot 05 (2229) and
+                Gloves/g2451 - EMPTY with slot 12 (2226), whose hands it hides as a
+                modelless folder does (fpc_on, no gloves_id, no custom_model_hidden); the
+                run ends migration_clean
+EU-PLY-26  GIVEN slot 01's face folder "XXX01 - Bard", his record wearing boots 3460, and the
+                 boots folders "k3454 - KitM_Back" and "k3456 - KitL_Back" nobody wears, no
+                 folder numbered 3460 of either kind
+           WHEN the export is upgraded
+           THEN custom_model_unpaired (Error) names slot 01, boots_id and 3460, nothing is
+                written, and the run ends migration_not_clean
 ```
 
 **Kits**
@@ -1483,6 +1572,14 @@ EU-MDL-18  GIVEN a pre-Fox face folder whose .mtl is not XML (an unclosed <mater
            WHEN the export is upgraded
            THEN it is reported as unmigrated content with its parse error, nothing is written,
                 and the exit code is 1
+EU-MDL-23  GIVEN Common/ holding shiny.dds and shiny.ftex, and Common/ also holding
+                 dummy_srm.dds and dummy_srm.ftex; slot 05's face_high.fmdl naming shiny in
+                 the team's Common output and dummy_srm in it
+           WHEN the export is upgraded
+           THEN the output's Common/ holds shiny.dds and no shiny.ftex, and
+                texture_duplicate_dropped names Common/shiny.ftex with kept Common/shiny.dds;
+                it holds neither dummy_srm file, leftover_dropped naming both; no
+                texture_stem_conflict is reported and the run ends migration_clean
 ```
 
 **Player settings**
@@ -1496,7 +1593,7 @@ EU-SET-02  GIVEN two players with face folders, one wearing stock boots 12 and o
            THEN the first's settings.toml has boots_id = 12, none has a gloves_id, and the custom
                 wearer's has no boots_id; upgraded from the folder "co Midcup Spring", both files
                 also have gloves_id = 0
-EU-SET-03  withdrawn: restated as EU-SET-14 (`plans/export_upgrader.md`), a player with a
+EU-SET-03  withdrawn: restated as EU-SET-14 (`spec/export_upgrader.md`), a player with a
            folder getting the hide ID with a Warning
 EU-SET-04  GIVEN one player whose folder's name part equals his save name, a face folder named
                 otherwise than its player's save name, and a save name carrying colour codes
@@ -1528,6 +1625,16 @@ EU-SET-11  GIVEN the PES 18 fixture save, holding a player with cheek_type 5 who
                  export gives no face folder and custom boots
            WHEN his team's export is upgraded with it
            THEN his ingame_face.toml has cheek_type = 5, and nothing is reported about it
+EU-SET-14  GIVEN slot 05's face folder "XXX05 - A", his record wearing custom boots 433 and
+                 custom gloves 434, which no boots or gloves folder carries
+           WHEN the export is upgraded
+           THEN his settings.toml has boots_id = 55 and gloves_id = 11, custom_model_hidden
+                is reported twice, a Warning, naming slot 05, boots_id, 433 and 55 written,
+                then gloves_id, 434 and 11 written, the run ends migration_clean and the exit
+                code is 0; GIVEN no folder for slot 05 (no face folder, and no boots or gloves
+                folder he wears) THEN custom_model_missing, an Error,
+                names slot 05, boots_id and 433, nothing is written, and the exit code
+                is 1 (restates EU-SET-03)
 ```
 
 **Referee exports**

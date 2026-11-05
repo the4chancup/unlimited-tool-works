@@ -459,10 +459,16 @@ fn compare_leaf(failures: &mut Vec<String>, name: &str, ours: Option<&[u8]>, ref
 /// common): the directory of each texture `relocated` names is normalized
 /// away on both sides before the decoded comparison. The other textures'
 /// directories are kept literal so the team-ID substitution in them is still
-/// checked.
+/// checked. The anti-blur copies are normalized away the same way, another
+/// deliberate difference: the upgrade writes an encoded model decoded and
+/// the meshes' requests cleared, so both sides are compared stripped.
 fn decoded_model(bytes: &[u8], relocated: &[&str]) -> fmdl::Model {
     let file = fmdl::FmdlFile::read(bytes).unwrap();
     let mut model = fmdl::Model::from_file(&file).unwrap();
+    fmdl::ops::antiblur::decode(&mut model).unwrap();
+    for mesh in &mut model.meshes {
+        mesh.has_antiblur_meshes = false;
+    }
     for material in &mut model.materials {
         for (_, texture) in &mut material.textures {
             if relocated.contains(&texture.file_name.as_str()) {

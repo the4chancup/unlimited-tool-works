@@ -665,8 +665,52 @@ pub(crate) fn material_references(
                 // copied as it is.
                 Err(_) => continue,
             };
-            if changed > 0 {
-                rewrites.written.push((output.clone(), file.write()));
+            // The anti-blur copies some FMDLs carry (a duplicate per mesh
+            // that asks for one, flagged `is_antiblur_mesh` on a fuzzblock
+            // material) draw every such mesh twice for nothing: they and
+            // the materials only they used are written off, every mesh's
+            // `has_antiblur_meshes` request cleared so nothing adds the
+            // copies back — the same write the texture paths' rewrite
+            // uses.
+            let antiblur = fmdl::Model::from_file(&file)
+                .ok()
+                .filter(|model| model.meshes.iter().any(|mesh| mesh.is_antiblur_mesh))
+                .and_then(|mut model| {
+                    let removed = model
+                        .meshes
+                        .iter()
+                        .filter(|mesh| mesh.is_antiblur_mesh)
+                        .count();
+                    fmdl::ops::antiblur::decode(&mut model)
+                        .and_then(|()| {
+                            for mesh in &mut model.meshes {
+                                mesh.has_antiblur_meshes = false;
+                            }
+                            model.to_file()
+                        })
+                        .ok()
+                        .map(|decoded| (decoded, removed))
+                });
+            // A file that does not lift, decode or write back falls back
+            // silently: it still reaches the output with its copies, which
+            // the compiler packs as they are.
+            match antiblur {
+                Some((decoded, removed)) => {
+                    rewrites.written.push((output.clone(), decoded.write()));
+                    file_findings.push(tool_message(
+                        Code::AntiblurDropped,
+                        Scope::File {
+                            export_id: INPUT,
+                            path: path_scope(input),
+                        },
+                        Disposition::Keep,
+                        vec![("meshes", removed.to_string())],
+                    ));
+                }
+                None if changed > 0 => {
+                    rewrites.written.push((output.clone(), file.write()));
+                }
+                None => {}
             }
             if !file_findings.is_empty() {
                 failures
@@ -1322,6 +1366,37 @@ mod tests {
         assert!(rewrites.written.is_empty());
         assert!(rewrites.links.is_empty());
         assert!(rewrites.findings.is_empty());
+    }
+
+    #[test]
+    fn an_fmdl_the_lift_refuses_keeps_its_rewrite_and_finding() {
+        // Mesh 0's material index dangling: `FmdlFile::read` accepts the
+        // file, `Model::from_file` refuses it.
+        let mut file = FmdlFile::read(&fmdl(&[(
+            "/Assets/pes16/model/character/common/000/sourceimages/",
+            "hair.dds",
+        )]))
+        .unwrap();
+        file.meshes[0].material_instance_id = u16::try_from(file.material_instances.len()).unwrap();
+        let face = file.write();
+        let rewrites = plan(
+            &[(
+                "Faces/XXX07 - A/face_high.fmdl",
+                "Players/07 - A/face_high.fmdl",
+            )],
+            &[],
+            &[("Faces/XXX07 - A/face_high.fmdl", &face)],
+        );
+        // The lift failed after the texture rewrite: the file is written
+        // with it, and the finding the rewrite made is reported.
+        assert_eq!(
+            fmdl_paths(&rewrites, "Players/07 - A/face_high.fmdl")[0],
+            (
+                "/Assets/pes16/model/character/common/714/sourceimages/".to_owned(),
+                "hair.dds".to_owned()
+            )
+        );
+        assert_eq!(codes(&rewrites), ["common_reference_kept"]);
     }
 
     /// `material_references` for the team `/co/` over `copies` and `common`,

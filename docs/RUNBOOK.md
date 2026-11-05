@@ -142,7 +142,11 @@ of the tree, so each copy's `target/` (4 GiB with egui linked) lived in the unit
 per-mutant rebuilds of 1-2 GiB tipped it over the cap; the script now builds the remote half under
 `~/studio-mutants/tmp` on disk (`REMOTE_TMPDIR`). The build copies' size, not the build's memory,
 is what to look at first when a killed build shows up again. A running half is stopped with
-`sudo systemctl stop studio-mutants` on the host.
+`sudo systemctl stop studio-mutants` on the host. The lead stops one with exactly
+`/c/Windows/System32/OpenSSH/ssh.exe bonfire sudo -n systemctl stop studio-mutants`, nothing
+chained (the only form the permission classifier allows; if it refuses, ask, never work around
+it), then `just mutants-collect`. The VPS itself is never stopped: it hosts a production
+service.
 
 **The remote half runs detached** from any ssh session (`~/studio-mutants/run/`: `job.sh`,
 `pid`, `log`, `exit`, `memory_peak`), and the script polls it every 15 s with short ssh calls (30 s until 2026-10-10). A dropped link
@@ -190,7 +194,12 @@ the repository: the maintainer browses that folder, and seventeen `4cc-studio-*`
 buried the repository by 2026-10-26, when they moved there. **A slice's worktree and branch go
 once it is merged and its review loop has ended**, its `.tmp/` first copied to main's
 `.tmp/worktrees/<folder>/`: never pruned, they had reached 168 worktrees and 171 branches by
-2026-11-04, every `git worktree list` and branch picker a page of finished work. **A script likely to be run again
+2026-11-04, every `git worktree list` and branch picker a page of finished work. Left alone
+by every agent: `review`, `review3`, `review5`, `review6`, `release`, `wt-m`, `ingame`, and
+`wt-cand-e`, the release staging worktree (its `CARGO_TARGET_DIR` is main's target). The
+history was reworded and force-pushed on 2026-11-04 (old refs in `refs/archive/pre-reword/`):
+a clone or worktree made before holds the old history, so it refetches and never merges
+it back. **A script likely to be run again
 goes in `scripts/`, not `.tmp/`**: a one-off probe stays in
 its step's folder, but a tool the next check will reach for (the built-window harness,
 `scripts/built_window/`, had served every check for weeks from three scratch folders) gets a
@@ -313,6 +322,24 @@ restart killed none yet only because the lead timed it, 2026-11-05) and at the 2
 detached run outlives both, and only its waiter needs re-arming. It runs at below-normal
 priority, as `run_detached.py` starts everything. Stopping one is a `taskkill` of its process
 tree, the lead's call as for a stall.
+
+**In-game checks are run by a SWE-2 sidekick, not by the lead** (the maintainer, 2026-11-05).
+Driving a game is dozens of screenshot-and-input turns, each one cheap for SWE-2 and costly
+for the lead, so the lead does none of them. It builds the binary and compiles the CPK, then
+briefs the check like any other step: the scenario or question, the game and its test slot,
+the folder the screenshots go to (`.tmp/<step>/ingame/`), and, for each thing to look at,
+what a pass and a failure would look like. The sidekick runs `scripts/ingame/` (its README is
+the brief's reading): the pad and OBS only, never keys or the screen, which take the
+maintainer's keyboard; `saves.py backup` before anything that changes a save and `restore`
+after; the game closed and `install.py revert` run at the end, pass or fail. Its report gives,
+per thing looked at, the verdict, the screenshot file that shows it, and what in the image
+shows it. The lead then reads only those key images, and only where a verdict matters to
+what it lands or is uncertain; the rest of the run stays unread. While the game runs, a
+PES 18-21 check holds every cargo command on the machine (the lead's builds and gates
+included); the brief says which game, so the lead knows when to wait.
+
+**A `git commit` failing with "unable to write new_index file" is transient** on this machine:
+check `git log -1` and `git status` (it may have landed), then run the same command again.
 
 **Sidekicks in parallel worktrees never share a `target/`.** Each worktree's builds go to its
 own `CARGO_TARGET_DIR` (`../4cc-studio-temp/wt-<x>/target`), at `CARGO_BUILD_JOBS=4`. Cargo names a workspace crate's build output by its path relative

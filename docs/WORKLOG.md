@@ -7461,7 +7461,7 @@ briefs, review loops, gates and mutation runs as for any step.
       (`spec/team_compiler/pipeline.md` "A texture a model names must exist"; TC-MOD-100,
       TC-TEX-21): the `Missing` arm joins `Unknown` (`processing/model.rs`),
       `ErrorUnlessKept` gone, catalog, help, CHANGELOG; the same sidekick run. SWE-2 review
-      done (3 of 8 accepted, loop ended; rulings `.tmp/duck_rulings.md` "S-poc12"). Open:
+      done (3 of 8 accepted, loop ended; rulings S-poc12 in the duck rulings file). Open:
       Astra with the c1-c4 queue, the `mutants-diff f5058d00` (queued)
     - [x] 0.0.2-poc3 the 53 exports again with poc1 and poc2's binary: every Error left
       diagnosed (no PES check for the 51 beyond /dbg/ and /4ccg/, the maintainer). Rerun
@@ -7472,26 +7472,31 @@ briefs, review loops, gates and mutation runs as for any step.
       `settings_model_id_conflict` (/hdg/ 22: his hide gloves ID 11 beside a hand-split
       face, whose hands decide the gloves at compile; harmless, the upgrader cannot see a
       face's hands). The three classes wait on QUESTIONS.
-    - [x] 0.0.2-poc4 (code landed; its spec move rides with poc6's, which reworks the same
-      pairing; `players.rs`, new `texture_pairs.rs`, `materials.rs`, `upgrade.rs`,
-      `model_folders.rs`, `messages.rs`, tests `cli/players.rs`, `cli/carried.rs`) the maintainer's two cleanups (`plans/export_upgrader.md` "What it does",
-      the 0.0.2-poc4 cleanups; EU-PLY-23, EU-MDL-23): a worn ID's folder found by name
-      (`wearer_by_name`), a `.dds` beside a `.ftex` resolved (`texture_duplicate_dropped`).
-      SWE-2 sidekick, brief `.tmp/0_0_2/poc/brief_poc4.md`; then rerun `all_run.py`
+    - [x] 0.0.2-poc4 (`players.rs`, new `texture_pairs.rs`, `materials.rs`, `upgrade.rs`,
+      `model_folders.rs`, `messages.rs`, tests `cli/players.rs`, `cli/carried.rs`) the
+      maintainer's two cleanups (`spec/export_upgrader.md` "What it does", steps 3 and 10;
+      EU-PLY-23, EU-MDL-23): a worn ID's folder found by name (`wearer_by_name`), a `.dds`
+      beside a `.ftex` resolved (`texture_duplicate_dropped`). SWE-2 sidekick, brief
+      `.tmp/0_0_2/poc/brief_poc4.md`; then rerun `all_run.py`
     - [x] 0.0.2-poc6 (`players.rs` `pair_wearers`, `settings.rs`, `messages.rs`, `upgrade.rs`,
-      tests `cli/players.rs`; SWE-2 round S-poc6 on the plan, 3 accepted; spec move for
-      poc4 and poc6 next) what no name pairs (`plans/export_upgrader.md` "What it does", "What no
-      name pairs"; `custom_model_not_worn`, `wearer_by_number`, `wearer_by_order`,
-      `custom_model_unpaired`): scenarios, then a rework brief on poc4's session
-    - [ ] 0.0.2-poc5 a model hidden by distance dropped (`plans/export_upgrader.md` "What it
-      does", the 0.0.2-poc5 cleanup; `model_far_dropped`): every flagged VGL26 model is far in
-      its every vertex (`.tmp/0_0_2/poc/far_meshes.py`, `far_meshes.txt`); scenarios, then a
-      SWE-2 brief after poc6 lands. The whole-PC census (`.tmp/0_0_2/poc/far_census/`) found
-      no partly far model but two synthetic fixtures: whole models only
+      tests `cli/players.rs`; SWE-2 round S-poc6 on the plan, 3 accepted) what no name pairs
+      (`spec/export_upgrader.md` "What it does", step 3; `custom_model_not_worn`,
+      `wearer_by_number`, `wearer_by_order`, `custom_model_unpaired`; EU-PLY-24 to 26).
+      Spec move of poc1, poc4 and poc6 done (step 3's "When the save and the folders
+      disagree", steps 8 and 10, the scenarios, the draft's message rows)
+    - [x] 0.0.2-poc5 a model hidden by distance dropped (`plans/export_upgrader.md` "What it
+      does", the 0.0.2-poc5 cleanup; `model_far_dropped`; EU-MDL-24; new `far.rs`,
+      `upgrade.rs`, `model_folders.rs`, `messages.rs`, tests `cli/carried.rs`): whole models
+      only (the census found no partly far community model), the `.mtl` kept (no community
+      `.model` is far). SWE-2 sidekick and one rework (a fresh session after the resumed one
+      stalled), brief `.tmp/0_0_2/poc/brief_poc57.md`. Spec move with poc7's
     - [ ] 0.0.2-poc7 anti-blur duplicates dropped (`plans/export_upgrader.md`, the 0.0.2-poc7
-      cleanup, `antiblur_dropped`; `plans/model_conversion/ir.md` "Anti-blur duplicates",
-      `antiblur_ignored`): scenarios, then two SWE-2 briefs (upgrader; `model_convert`'s
-      exporter, whose consumers' tests include `team_compiler`'s)
+      cleanup, `antiblur_dropped`; `plans/model_conversion/ir.md` "Anti-blur duplicates":
+      `Material.antiblur` and the `materials.toml` key go, `fmdl`'s merge refusal goes).
+      Upgrader half DONE with poc5 (EU-MDL-25; `materials.rs`, the tracer's upgraded FMDLs
+      regenerated, `team_compiler/tests/parity.rs` compares both sides decoded). Next: the
+      compiler half, brief `.tmp/0_0_2/poc/brief_poc7_mc.md` (`model_convert`, `fmdl`'s
+      merge, `team_compiler`; TC-MOD-101; consumers' tests and `just bindings`)
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the

@@ -25,6 +25,13 @@ What changed for members, release by release, newest first.
 - **Export upgrader** — a folder holding one texture as both a `.dds` and a `.ftex` no longer
   stops the upgrade: the `.ftex` is dropped with a warning, or both files when no model uses
   the texture.
+- **Export upgrader** — a model whose every vertex sits more than 5000 units from the
+  origin, the way old templates hid a default face, hair or glove, is dropped with a warning
+  instead of costing the player his folder when the export is compiled. A gloves or boots
+  folder left with no model hides the hands or boots, as an empty one always did.
+- **Export upgrader** — the anti-blur copies older Fox models carry (each mesh drawn a
+  second time, which FoxDen's TAA removal made pointless) are removed from every `.fmdl`, with
+  an info line naming the file.
 
 ### Minor fixes
 

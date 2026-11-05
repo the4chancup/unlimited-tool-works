@@ -8,7 +8,8 @@
 //! roster through `roster`, the player folders planned by `players` (a
 //! referee export's roster and folders by `referees`), the kit folders by
 //! `kits`, the carried folders by `carried`, the `.mtl` rewrites by
-//! `materials`, the `face.xml` respells by `face_xml`, the kit magic by
+//! `materials`, the `face.xml` respells by `face_xml`, the distance-hidden
+//! models' drop by `far`, the kit magic by
 //! `kit_magic`, the pre-Fox model renames by `model_names`, the
 //! `settings.toml` files by `settings`, the output's name through `naming`,
 //! the staging folder by `staging`, and every finding goes through the
@@ -19,6 +20,7 @@
 mod carried;
 mod cli;
 mod face_xml;
+mod far;
 mod kit_magic;
 mod kits;
 mod materials;

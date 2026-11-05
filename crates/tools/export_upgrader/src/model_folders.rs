@@ -17,6 +17,7 @@ use vtree::ScopePath;
 use crate::carried::under;
 use crate::cli::{CLEAN, ERRORS, UpgradeModelsArgs};
 use crate::face_xml::{face_xml_rewrites, kept_common_files};
+use crate::far::far_drops;
 use crate::kit_magic::{drop_collisions, respell_outputs};
 use crate::materials::material_references;
 use crate::messages::{
@@ -375,7 +376,12 @@ pub(crate) fn run(args: &UpgradeModelsArgs, ctx: &ToolContext) -> Result<u8, Cli
     // keeps, then the model renames and the output-path collisions, the
     // `.mtl` rewrites and the `face.xml` respells against the one list.
     let identity = Identity::ModelFolders;
-    let mut plan = model_folder_plan(&export.files, &export.folders);
+    // `upgrade`'s drop too (`far.rs`): a model every vertex of which sits
+    // past the far checks' 5000 units is geometry the compiler refuses.
+    let mut files = export.files.clone();
+    let far = far_drops(&files, true, |path| export.read(path));
+    files.retain(|file| !far.dropped.contains(file));
+    let mut plan = model_folder_plan(&files, &export.folders);
     let respelled = respell_outputs(std::mem::take(&mut plan.copies), &identity);
     let kept = kept_common_files(&respelled, &identity, |path| export.read(path));
     // Model-folder mode has no team ID: the old compile's rename cannot
@@ -411,7 +417,12 @@ pub(crate) fn run(args: &UpgradeModelsArgs, ctx: &ToolContext) -> Result<u8, Cli
     materials.findings.extend(pair_findings);
     let face_xml = face_xml_rewrites(&plan.copies, &identity, |path| export.read(path));
     let mut any_unmigrated = false;
-    for message in plan.findings.into_iter().chain(materials.findings) {
+    for message in plan
+        .findings
+        .into_iter()
+        .chain(far.findings)
+        .chain(materials.findings)
+    {
         if message.code.code.as_ref() == Code::UnmigratedContent.as_str() {
             any_unmigrated = true;
         }

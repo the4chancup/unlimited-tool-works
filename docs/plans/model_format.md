@@ -360,6 +360,12 @@ What exists of this is in `spec/model_format.md` "Engine-neutral keys".
 An unknown `family` is `material_value_invalid`, and a `parameters` name the target engine's
 shader doesn't know is reported with `material_parameter_unused` (I).
 
+`antiblur` leaves the schema (worklog 0.0.2-poc7): the spec's `antiblur` row goes, and so does
+every family's `antiblur` default in "Shader families". Studio writes no anti-blur copies
+(`plans/model_conversion/ir.md` "Anti-blur duplicates"), so the key has nothing left to ask
+for; a toml that still sets it gets `material_key_unknown` like any other unknown key, not a
+finding of its own.
+
 ### Shader families
 
 What exists of this is in `spec/model_format.md` "Shader families".
@@ -449,7 +455,6 @@ occlusion decal using a shader no family covers (the AUO lab export's `eyeocclus
 family = "shaded"
 two_sided = true
 transparent = true
-antiblur = true
 
 [hair.textures]
 base = "hair"

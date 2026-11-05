@@ -353,8 +353,5 @@ TC-MOD-101 GIVEN TC-MOD-34's export (slot 05 holding boots.model, boots.mtl nami
                  skin.dds)
            WHEN the export is compiled for PES 21
            THEN k0625's boots.fmdl holds the source's one mesh, none flagged anti-blur and no
-                fuzzblock material (restates TC-MOD-34's anti-blur clause); GIVEN instead
-                slot 05 holding boots.gltf and a boots.materials.toml setting antiblur = true
-                on its material THEN antiblur_ignored (Info) names that material and the
-                boots.fmdl holds no anti-blur mesh
+                fuzzblock material (restates TC-MOD-34's anti-blur clause)
 ```

@@ -26,6 +26,7 @@ use vtree::ScopePath;
 use crate::carried::{carried_files, under};
 use crate::cli::{ABORTED, CLEAN, ERRORS, INVALID, UpgradeArgs};
 use crate::face_xml::{face_xml_rewrites, kept_common_files};
+use crate::far::far_drops;
 use crate::kit_magic::{drop_collisions, respell_outputs};
 use crate::kits::{KitFolders, kit_folders};
 use crate::materials::material_references;
@@ -164,9 +165,11 @@ impl RunEvents {
         // the Studio export is complete without it and the Warning tells
         // the author what was left behind. A dropped `.ftex` of a resolved
         // `.dds`/`.ftex` pair is the same: the `.dds` it duplicated stayed.
+        // So is a far-hidden model: it never drew anything in game either.
         self.dropped |= message.disposition != Disposition::Keep
             && message.code.code.as_ref() != Code::LeftoverDropped.as_str()
-            && message.code.code.as_ref() != Code::TextureDuplicateDropped.as_str();
+            && message.code.code.as_ref() != Code::TextureDuplicateDropped.as_str()
+            && message.code.code.as_ref() != Code::ModelFarDropped.as_str();
         self.emit(message.scope.export_id(), PipelineEvent::Message(message));
     }
 
@@ -564,6 +567,17 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
     // file copied and written.
     let files = export.files.clone();
     let folders = export.folders.clone();
+    // A model every vertex of which sits past the far checks' 5000 units
+    // is dropped before the folders are planned: the compiler refuses
+    // that geometry, so the export's player would lose his folder at
+    // compile time. The steps then see the folders without it — a gloves
+    // or boots folder it leaves modelless hides the hands or feet as any
+    // modelless one does (`far.rs`).
+    let far = far_drops(&files, referees_at_root, |path| export.read(path));
+    let files: Vec<String> = files
+        .into_iter()
+        .filter(|file| !far.dropped.contains(file))
+        .collect();
     let (mut plan, mut kits, settings) = match &identity {
         Identity::Referees => (
             referee_folders(&files, |path| export.read(path)),
@@ -609,6 +623,9 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
             unreachable!("upgrade's resolve yields a team or the referees")
         }
     };
+    // The dropped models' files are accounted for, so the unmigrated
+    // fallback below skips them.
+    plan.consumed.extend(far.dropped.iter().cloned());
     let mut carried = carried_files(&files, &plan.portraits, |path| export.read(path));
     // The kit magic respells the output names of the player folders' and the
     // carried files' copies, then the model renames apply. `kept` holds the
@@ -687,6 +704,7 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
     for message in plan
         .findings
         .into_iter()
+        .chain(far.findings)
         .chain(kits.findings)
         .chain(carried.findings)
         .chain(materials.findings)

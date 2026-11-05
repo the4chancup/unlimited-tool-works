@@ -119,6 +119,17 @@ pub(crate) enum Code {
     /// subfolder `.mtl` names a Common subfolder (`reference`, the path as
     /// written).
     CommonReferenceKept,
+    /// A model every vertex of which sits more than 5000 units from the
+    /// origin — the old exports' way of hiding a template's default face,
+    /// hair or one glove — dropped since the compiler refuses that
+    /// geometry (`vertices`, the model's vertex count). The run stays
+    /// clean.
+    ModelFarDropped,
+    /// An `.fmdl` carrying anti-blur copies (meshes flagged
+    /// `Is-Antiblur-Meshes`), written without them and with every mesh's
+    /// request for one (`Has-Antiblur-Meshes`) cleared, so no later pass
+    /// adds them back (`meshes`, the count dropped).
+    AntiblurDropped,
     /// A rostered player of a Full output that the output gives no folder
     /// wears a custom boots or gloves ID (above 100) no migrated folder
     /// claims: the content is missing (step 8; `slot`, `name`, `key` the
@@ -194,6 +205,8 @@ impl Code {
             Code::LogoSmallDropped => "logo_small_dropped",
             Code::LogoFallback => "logo_fallback",
             Code::CommonReferenceKept => "common_reference_kept",
+            Code::ModelFarDropped => "model_far_dropped",
+            Code::AntiblurDropped => "antiblur_dropped",
             Code::CustomModelMissing => "custom_model_missing",
             Code::CustomModelNotWorn => "custom_model_not_worn",
             Code::CustomModelUnpaired => "custom_model_unpaired",
@@ -233,6 +246,8 @@ impl Code {
         Code::LogoSmallDropped,
         Code::LogoFallback,
         Code::CommonReferenceKept,
+        Code::ModelFarDropped,
+        Code::AntiblurDropped,
         Code::CustomModelMissing,
         Code::CustomModelNotWorn,
         Code::CustomModelUnpaired,
@@ -564,6 +579,18 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         Severity::Warning,
         r#"An `.mtl` or `.fmdl` reference into the team's `Common/` whose file the input's `Common/` does not hold, or which no link can spell (the model's folder already holds a texture or link of that stem, or a `.mtl` in a subfolder names a Common subfolder)."#,
         r#"It is kept as written, but its three-character Common segment is respelled to the team's ID. An installed CPK may still supply the file."#,
+    ),
+    (
+        "model_far_dropped",
+        Severity::Warning,
+        r#"A model every vertex of which sits more than 5000 units from the origin: how old exports hid a template's default face, hair or glove, by moving the whole model out of view. The line names the file and its vertex count."#,
+        r#"It is not written (the compiler would refuse it), but the run stays clean. A boots or gloves folder left with no model hides the boots or hands."#,
+    ),
+    (
+        "antiblur_dropped",
+        Severity::Info,
+        r#"An `.fmdl` carrying anti-blur copies (the duplicate meshes older files added so motion blur could draw them apart)."#,
+        r#"The copies are written off, the line naming how many; the meshes' request for them is cleared, so nothing adds them back. Nothing to do."#,
     ),
     (
         "custom_model_missing",
