@@ -72,6 +72,15 @@ pub(crate) enum Code {
     /// folder (`slot`, `id` the save's ID). Reported so the pairing can be
     /// checked.
     WearerByName,
+    /// An unworn item folder that followed its same-numbered folder of the
+    /// other kind, taking the worn ID that folder paired with — a missing
+    /// ID of its own kind (`slot`, `id` the save's ID, `from` the other
+    /// kind's folder). Reported so the pairing can be checked.
+    WearerByNumber,
+    /// An unworn item folder paired in sorted order when its kind held as
+    /// many missing custom IDs as unworn folders (`slot`, `id` the save's
+    /// ID). Reported so the pairing can be checked.
+    WearerByOrder,
     /// A folder of the output holding one texture stem as both a `.dds` and
     /// a `.ftex`, which the shared validation refuses: the `.ftex` is
     /// dropped and the `.dds` kept (`kept`, the `.dds`'s output path). A
@@ -117,6 +126,19 @@ pub(crate) enum Code {
     /// `CustomModelHidden` instead; a Midcup output leaves a folderless
     /// player as installed and reports neither.
     CustomModelMissing,
+    /// A rostered player whose worn custom boots or gloves ID is the number
+    /// of a folder of the other kind: the save's way of wearing no custom
+    /// item of the kind. His `settings.toml` gets the hide ID of the kind
+    /// (`slot`, `name`, `key`, `id`, `written`), where
+    /// `CustomModelHidden` reports the same write for a folder the member
+    /// may have forgotten.
+    CustomModelNotWorn,
+    /// A rostered player's worn custom ID (above 100) no rule could pair a
+    /// folder to, left beside an unworn folder of its kind: the save and
+    /// the export disagree and nothing says which folder is his (`slot`,
+    /// `key` the ID's own, `id`). One left with no unworn folder gets the
+    /// hide ID instead (`CustomModelHidden` or `CustomModelNotWorn`).
+    CustomModelUnpaired,
     /// A rostered player the output gives a folder wears a custom boots or
     /// gloves ID (above 100) no migrated folder claims: his
     /// `settings.toml` gets the hide ID of its kind, which the game shows
@@ -160,6 +182,8 @@ impl Code {
             Code::MergeKeptShared => "merge_kept_shared",
             Code::WearerAssumed => "wearer_assumed",
             Code::WearerByName => "wearer_by_name",
+            Code::WearerByNumber => "wearer_by_number",
+            Code::WearerByOrder => "wearer_by_order",
             Code::TextureDuplicateDropped => "texture_duplicate_dropped",
             Code::KitWithoutConfig => "kit_without_config",
             Code::ConfigWithoutKitEntry => "config_without_kit_entry",
@@ -171,6 +195,8 @@ impl Code {
             Code::LogoFallback => "logo_fallback",
             Code::CommonReferenceKept => "common_reference_kept",
             Code::CustomModelMissing => "custom_model_missing",
+            Code::CustomModelNotWorn => "custom_model_not_worn",
+            Code::CustomModelUnpaired => "custom_model_unpaired",
             Code::CustomModelHidden => "custom_model_hidden",
             Code::SettingsValueRefused => "settings_value_refused",
             Code::SettingsNotGenerated => "settings_not_generated",
@@ -195,6 +221,8 @@ impl Code {
         Code::MergeKeptShared,
         Code::WearerAssumed,
         Code::WearerByName,
+        Code::WearerByNumber,
+        Code::WearerByOrder,
         Code::TextureDuplicateDropped,
         Code::KitWithoutConfig,
         Code::ConfigWithoutKitEntry,
@@ -206,6 +234,8 @@ impl Code {
         Code::LogoFallback,
         Code::CommonReferenceKept,
         Code::CustomModelMissing,
+        Code::CustomModelNotWorn,
+        Code::CustomModelUnpaired,
         Code::CustomModelHidden,
         Code::SettingsValueRefused,
         Code::SettingsNotGenerated,
@@ -464,6 +494,18 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         r#"The folder becomes his as if it were numbered with the save's ID, so his model is not lost. Check the pairing is the player meant."#,
     ),
     (
+        "wearer_by_number",
+        Severity::Warning,
+        r#"A boots or gloves folder nobody wears took the ID of its same-numbered folder of the other kind, which was paired by name, number or order (the line names the folder, the slot, the save's ID and `from`, the folder it followed)."#,
+        r#"The folder becomes the player's as if it were numbered with the save's ID, so his model is not lost. Check the pairing is the player meant."#,
+    ),
+    (
+        "wearer_by_order",
+        Severity::Warning,
+        r#"A boots or gloves kind held as many unworn folders as worn custom IDs no folder carried, and they were paired in order of ID and folder number (the line names the folder, the slot and the save's ID)."#,
+        r#"The folder becomes the player's as if it were numbered with the save's ID, so his model is not lost. Check the pairing is the player meant."#,
+    ),
+    (
         "texture_duplicate_dropped",
         Severity::Warning,
         r#"A folder of the upgraded export held one texture stem twice, a `.dds` beside a `.ftex`, which the check would refuse."#,
@@ -528,6 +570,18 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         Severity::Error,
         r#"In the save, a rostered player of a `Full` output wears a custom boots or gloves ID (above 100) that no migrated folder claims, and the output gives him no folder."#,
         r#"The content is missing. The run is not clean, so nothing is written. Add the folder to the old export, or take the ID off the player in the save."#,
+    ),
+    (
+        "custom_model_not_worn",
+        Severity::Info,
+        r#"In the save, a rostered player wears a custom boots or gloves ID that is the number of a folder of the other kind, the save's way of wearing no custom item of the kind."#,
+        r#"His `settings.toml` gets the hide ID of the kind (55 for boots, 11 for gloves), which shows the same no-model. Nothing to do."#,
+    ),
+    (
+        "custom_model_unpaired",
+        Severity::Error,
+        r#"In the save, a rostered player wears a custom boots or gloves ID (above 100) that no boots or gloves folder carries and no rule could pair, while an unworn folder of the kind is left."#,
+        r#"The run is not clean, so nothing is written. Rename the folder meant for him to his ID, or take the ID off the player in the save."#,
     ),
     (
         "custom_model_hidden",

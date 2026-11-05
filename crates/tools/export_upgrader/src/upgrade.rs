@@ -590,7 +590,9 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
             // Step 8: a `settings.toml` per player folder, from the save's
             // records; loose mode's holds `name = true` alone (step 11).
             let settings = match (&invocation.save, &roster) {
-                (Some(save), Some(roster)) => settings_files(save, roster, &plan.folders, full),
+                (Some(save), Some(roster)) => {
+                    settings_files(save, roster, &plan.folders, full, &plan.not_worn)
+                }
                 // Loose mode: no record to read, only the folder's name.
                 _ => loose_settings_files(&plan.folders),
             };

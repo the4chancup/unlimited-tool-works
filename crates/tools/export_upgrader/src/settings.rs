@@ -16,14 +16,14 @@
 //! (step 11) has no records: `loose_settings_files` writes a named folder's
 //! `name = true` alone.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use pes_savefile::EditFile;
 use pes_savefile::settings_toml::{NameSetting, PlayerSettings};
 use studio_core::{Disposition, Message, Scope};
 
 use crate::messages::{Code, INPUT, tool_message};
-use crate::players::OutputFolder;
+use crate::players::{ItemKind, OutputFolder};
 use crate::roster::Roster;
 
 /// Step 8's `settings.toml` files and findings.
@@ -45,6 +45,7 @@ pub(crate) fn settings_files(
     roster: &Roster,
     folders: &BTreeMap<u8, OutputFolder>,
     full: bool,
+    not_worn: &BTreeSet<(ItemKind, u32)>,
 ) -> SettingsFiles {
     let mut files = SettingsFiles::default();
     for (nn, player) in &roster.0 {
@@ -59,14 +60,16 @@ pub(crate) fn settings_files(
         // installed). A player with a folder gets the hide ID of the kind
         // written instead, the no-model a whole-body face folder wants.
         let mut hidden = [None; 2];
-        for (index, (key, worn, claimed, hide)) in [
+        for (index, (kind, key, worn, claimed, hide)) in [
             (
+                ItemKind::Boots,
                 "boots_id",
                 player.boots_id,
                 folder.is_some_and(|folder| folder.boots_folder),
                 fpc::HideIds::CONVENTION.boots(),
             ),
             (
+                ItemKind::Gloves,
                 "gloves_id",
                 player.gloves_id,
                 folder.is_some_and(|folder| folder.gloves_folder),
@@ -79,10 +82,19 @@ pub(crate) fn settings_files(
             if worn <= 100 || claimed {
                 continue;
             }
+            let no_item = not_worn.contains(&(kind, worn));
             if folder.is_some() {
                 hidden[index] = Some(hide);
+                // The hide ID is written either way; the finding says which
+                // reading of the ID it stands for: one numbered by a folder
+                // of the other kind means "no custom item" (Info), any other
+                // may be a folder the member forgot (Warning).
                 files.findings.push(tool_message(
-                    Code::CustomModelHidden,
+                    if no_item {
+                        Code::CustomModelNotWorn
+                    } else {
+                        Code::CustomModelHidden
+                    },
                     Scope::Export { export_id: INPUT },
                     Disposition::Keep,
                     vec![
@@ -93,7 +105,7 @@ pub(crate) fn settings_files(
                         ("written", hide.to_string()),
                     ],
                 ));
-            } else if full {
+            } else if full && !no_item {
                 files.findings.push(tool_message(
                     Code::CustomModelMissing,
                     Scope::Export { export_id: INPUT },
@@ -316,7 +328,7 @@ mod tests {
                 ingame_face: false,
             },
         );
-        let files = settings_files(&save, &roster, &folders, true);
+        let files = settings_files(&save, &roster, &folders, true, &BTreeSet::new());
         assert_eq!(settings_of(&files, "Players/05 - A").boots_id, Some(12));
         assert_eq!(settings_of(&files, "Players/06 - B").boots_id, None);
     }
@@ -329,9 +341,9 @@ mod tests {
         let roster = roster_of(&save);
         let mut folders = BTreeMap::new();
         folders.insert(5, plain("Players/05 - A"));
-        let files = settings_files(&save, &roster, &folders, true);
+        let files = settings_files(&save, &roster, &folders, true, &BTreeSet::new());
         assert_eq!(settings_of(&files, "Players/05 - A").gloves_id, None);
-        let files = settings_files(&save, &roster, &folders, false);
+        let files = settings_files(&save, &roster, &folders, false, &BTreeSet::new());
         assert_eq!(settings_of(&files, "Players/05 - A").gloves_id, Some(0));
     }
 
@@ -365,7 +377,7 @@ mod tests {
         let mut folders = BTreeMap::new();
         folders.insert(5, plain("Players/05 - A"));
 
-        let files = settings_files(&save, &roster, &folders, true);
+        let files = settings_files(&save, &roster, &folders, true, &BTreeSet::new());
         // 05's unclaimed custom IDs become the hide IDs, a warning each;
         // 06's, with no folder to write one in, is missing content.
         let hidden = findings_named(&files, "custom_model_hidden");
@@ -389,14 +401,14 @@ mod tests {
         assert_eq!(settings.gloves_id, Some(11));
 
         // Midcup: the player the output gives a folder is hidden the same.
-        let files = settings_files(&save, &roster, &folders, false);
+        let files = settings_files(&save, &roster, &folders, false, &BTreeSet::new());
         let hidden = findings_named(&files, "custom_model_hidden");
         assert_eq!(hidden.len(), 2, "{:?}", files.findings);
         assert!(findings_named(&files, "custom_model_missing").is_empty());
         assert_eq!(settings_of(&files, "Players/05 - A").boots_id, Some(55));
 
         // No folder at all in Midcup: nothing reported, nothing written.
-        let files = settings_files(&save, &roster, &BTreeMap::new(), false);
+        let files = settings_files(&save, &roster, &BTreeMap::new(), false, &BTreeSet::new());
         assert!(findings_named(&files, "custom_model_hidden").is_empty());
         assert!(findings_named(&files, "custom_model_missing").is_empty());
         assert!(files.written.is_empty());
@@ -412,7 +424,7 @@ mod tests {
         folders.insert(5, plain(&format!("Players/05 - {raw}")));
         // A folder named by its number alone: the explicit save name.
         folders.insert(7, plain("Players/07"));
-        let files = settings_files(&save, &roster, &folders, true);
+        let files = settings_files(&save, &roster, &folders, true, &BTreeSet::new());
         assert_eq!(
             settings_of(&files, &format!("Players/05 - {raw}")).name,
             Some(NameSetting::FromFolder)
@@ -458,7 +470,7 @@ mod tests {
                 ..plain("Players/05 - A")
             },
         );
-        let files = settings_files(&save, &roster, &folders, true);
+        let files = settings_files(&save, &roster, &folders, true, &BTreeSet::new());
         assert_eq!(
             face_of(&files, "Players/05 - A"),
             PlayerSettings::from_player(save.player(71405).unwrap())

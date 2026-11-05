@@ -36,3 +36,21 @@ What exists of this is in `spec/model_conversion/ir.md` "Material sources per fo
   fills the IR's `Material` structs from them; the glTF files themselves are
   never rewritten (exports stay read-only). glTF-only — FMDL and .model keep
   their native mechanisms.
+
+### Anti-blur duplicates
+
+What exists of this is in `spec/model_conversion/ir.md` (`Material.antiblur`, and the
+merge's anti-blur rule).
+
+The FMDL exporter writes no anti-blur duplicates: `antiblur::encode` leaves the IR → FMDL
+path, and `Material.antiblur` is no longer acted on, a family default included (the
+`shadeless` family's `antiblur = true`, `spec/model_format.md` "`materials.toml` schema",
+whose `antiblur` row and family defaults change with this). A `materials.toml` that sets
+`antiblur = true` itself is reported (`antiblur_ignored`, I: the material) and written
+without them. FoxDen's TAA removal script keeps models on Forward shaders sharp, so the copies only
+draw every mesh twice (worklog 0.0.2-poc7). The importer still strips them
+(`antiblur::decode`), as it does today, so a converted model never carries them. The Team
+compiler's pass-through route (a native FMDL packed as it is) neither looks for them nor
+touches them; the Export upgrader drops them once, at the upgrade
+(`plans/export_upgrader.md`, the 0.0.2-poc7 cleanup). The Blender add-on adds them on its
+own, outside this repository (`python_bindings` only reads and writes the formats).

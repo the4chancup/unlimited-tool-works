@@ -15630,3 +15630,19 @@ Why: on VGL26 the sorted rule alone refused 8 exports and gave /skg/'s player 05
 folder's gloves; most missing gloves IDs are the player's own boots folder number. With all
 four, 2 exports are refused (/bag/, /fgog/).
 Plan: `plans/export_upgrader.md` "What it does" (the 0.0.2-poc4 cleanups, "What no name pairs").
+
+## 2026-11-05 — export_upgrader, model_convert — anti-blur duplicates dropped; partly far models left to the compiler
+Decision (the maintainer, with the lead's details): the upgrader drops every FMDL's flagged
+anti-blur meshes (`antiblur::decode`) and clears the meshes' requests for them, with an Info
+(`antiblur_dropped`); the IR → FMDL exporter writes none (`antiblur_ignored` when a
+`materials.toml` asks); the compiler's pass-through route neither checks nor touches them.
+Unflagged fuzzblock meshes are left alone. The far-model drop (`model_far_dropped`) covers
+whole models only.
+Why: FoxDen's TAA removal keeps Forward-shader models sharp, so the copies only double the
+draw. Clearing the request as well keeps a later merge from refusing the file as half
+encoded. The whole-PC census (49,122 `.fmdl`/`.model`, 14,688 distinct) found 3,566 FMDLs
+with flagged copies and 6 with unflagged fuzzblock meshes, which nothing tells from a
+deliberate one; and no partly far model but two synthetic test fixtures, so mesh or face
+deletion has no file to serve.
+Plan: `plans/export_upgrader.md` "What it does" (the 0.0.2-poc5 and poc7 cleanups);
+`plans/model_conversion/ir.md` "Anti-blur duplicates".

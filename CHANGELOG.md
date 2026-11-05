@@ -15,9 +15,13 @@ What changed for members, release by release, newest first.
   (boots 55, gloves 11), which shows no model as the game did, and a warning names him.
 - **Team compiler** — on PES 2018 to 2021, a model naming a texture nobody supplies is kept,
   with a warning per missing texture, instead of being left out of the CPK.
-- **Export upgrader** — a boots or gloves folder nobody wears in the save is given to the
-  player it is named after, when the save gives him a custom ID no folder holds, with a
-  warning naming the pairing, instead of being dropped.
+- **Export upgrader** — when the save gives a player a custom boots or gloves ID no folder
+  holds, a folder nobody wears is given to him instead of being dropped, with a warning
+  naming the pairing: the folder named after him, the folder numbered like the other kind's
+  folder he was given, or, with as many such folders as such IDs, the folders in order. An
+  ID numbered like his folder of the other kind means he wears no custom item of the kind,
+  as before (an info line now). A folder nobody wears left beside an ID nothing pairs stops
+  the upgrade, since nothing says which folder is his.
 - **Export upgrader** — a folder holding one texture as both a `.dds` and a `.ftex` no longer
   stops the upgrade: the `.ftex` is dropped with a warning, or both files when no model uses
   the texture.

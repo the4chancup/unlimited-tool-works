@@ -7478,19 +7478,20 @@ briefs, review loops, gates and mutation runs as for any step.
       the 0.0.2-poc4 cleanups; EU-PLY-23, EU-MDL-23): a worn ID's folder found by name
       (`wearer_by_name`), a `.dds` beside a `.ftex` resolved (`texture_duplicate_dropped`).
       SWE-2 sidekick, brief `.tmp/0_0_2/poc/brief_poc4.md`; then rerun `all_run.py`
-    - [ ] 0.0.2-poc6 what no name pairs (`plans/export_upgrader.md` "What it does", "What no
+    - [x] 0.0.2-poc6 (`players.rs` `pair_wearers`, `settings.rs`, `messages.rs`, `upgrade.rs`,
+      tests `cli/players.rs`; SWE-2 round S-poc6 on the plan, 3 accepted; spec move for
+      poc4 and poc6 next) what no name pairs (`plans/export_upgrader.md` "What it does", "What no
       name pairs"; `custom_model_not_worn`, `wearer_by_number`, `wearer_by_order`,
       `custom_model_unpaired`): scenarios, then a rework brief on poc4's session
     - [ ] 0.0.2-poc5 a model hidden by distance dropped (`plans/export_upgrader.md` "What it
       does", the 0.0.2-poc5 cleanup; `model_far_dropped`): every flagged VGL26 model is far in
       its every vertex (`.tmp/0_0_2/poc/far_meshes.py`, `far_meshes.txt`); scenarios, then a
-      SWE-2 brief after poc4 lands. First a whole-PC census of FMDL and `.model` files for
-      models only partly far, which the maintainer wants handled too (mesh or face deletion)
-    - [ ] 0.0.2-poc7 anti-blur meshes dropped from FMDLs, with an Info: FoxDen's TAA removal
-      makes the FuzzBlock anti-blur copies the Blender add-on adds bloat (the maintainer,
-      2026-11-05); look into how they are recognized (`fmdl::ops::antiblur`) and plan it.
-      The compiler does the same only on the IR route (a converted model drops them); the
-      pass-through route neither checks for them nor touches them (the maintainer, 2026-11-05)
+      SWE-2 brief after poc6 lands. The whole-PC census (`.tmp/0_0_2/poc/far_census/`) found
+      no partly far model but two synthetic fixtures: whole models only
+    - [ ] 0.0.2-poc7 anti-blur duplicates dropped (`plans/export_upgrader.md`, the 0.0.2-poc7
+      cleanup, `antiblur_dropped`; `plans/model_conversion/ir.md` "Anti-blur duplicates",
+      `antiblur_ignored`): scenarios, then two SWE-2 briefs (upgrader; `model_convert`'s
+      exporter, whose consumers' tests include `team_compiler`'s)
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the

@@ -304,6 +304,16 @@ leave a half-done edit or a perturbation in the tree. A
 session that stalled after its one allowed resume is not resumed again; the lead finishes the
 brief's remaining items itself or briefs a fresh session.
 
+**A Devin CLI run is started detached** (the maintainer, 2026-11-05): `python
+~/.claude/tools/run_detached.py <brief>.run.log "git add -A && python
+~/.claude/skills/duck/devin_sidekick.py ..."` (or `duck.py`), with a background waiter beside
+it (`until grep -q "^exit " <log>; do sleep 60; done; tail -40 <log>`) as the notification, and
+the stall watcher as before. A background command dies with the lead's session (an IDE
+restart killed none yet only because the lead timed it, 2026-11-05) and at the 2-hour cap; a
+detached run outlives both, and only its waiter needs re-arming. It runs at below-normal
+priority, as `run_detached.py` starts everything. Stopping one is a `taskkill` of its process
+tree, the lead's call as for a stall.
+
 **Sidekicks in parallel worktrees never share a `target/`.** Each worktree's builds go to its
 own `CARGO_TARGET_DIR` (`../4cc-studio-temp/wt-<x>/target`), at `CARGO_BUILD_JOBS=4`. Cargo names a workspace crate's build output by its path relative
 to the workspace root, so every worktree writes the same file name for the same crate, and a

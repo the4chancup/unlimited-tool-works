@@ -27,7 +27,7 @@ gives no folder (a stock-booted player with no face folder) needs no link: no pa
 names him, so his record, copy included, stays as the save holds it. Loose mode, which has no
 save, writes none.
 
-Two cleanups come with worklog 0.0.2-poc4, where an old export and its save disagree:
+Two cleanups come with worklog 0.0.2-poc4, the pairing's rest with poc6:
 
 - **A worn ID's folder found by name.** A rostered player's worn custom boots or gloves ID
   (above 100) that no item folder of that kind (`Boots/`, `Gloves/`) carries is paired with
@@ -41,20 +41,33 @@ Two cleanups come with worklog 0.0.2-poc4, where an old export and its save disa
   folders named after them (`k2952 - BANISHED` for 2552, `k2964 - 81514- LET ME DEFEND` for
   2564, his face folder being `81514- LET ME DEFEND`), and all six pair; /fg/ pairs three,
   /fng/ one (`.tmp/0_0_2/poc/fallback_measure.py`). Two or more candidates pair nothing.
-- **What no name pairs** (worklog 0.0.2-poc6), in this order, per kind: (1) a missing ID
-  that is the number of a folder of the other kind (gloves 2780 beside `k2780`) is a player
-  wearing no custom item of the kind, the common case: he gets the hide ID,
-  `custom_model_not_worn` (I: slot, key, ID) says so, and the ID takes no part in what
-  follows; (2) a folder whose same-numbered folder of the other kind was paired takes the
-  same ID (`g2452` takes 2227 from `k2452`), `wearer_by_number` (W) naming it; (3) when as
-  many missing IDs as unworn folders of the kind are left, they pair in sorted order, ID
-  rank to folder-number rank, `wearer_by_order` (W) naming each, then (2) runs again;
-  (4) a missing ID still left beside an unworn folder of its kind refuses the export
+- **What no name pairs** (worklog 0.0.2-poc6), with a roster only, after the name pairing.
+  A missing ID is a rostered player's worn custom ID (above 100) that no folder of its kind
+  carries; an unworn folder is one of the kind no save record wears, a modelless one
+  included. A pairing pairs an ID with a folder, whatever rule makes it, the name pairing
+  included: every player wearing that ID wears the folder, and its finding is reported
+  once per wearer (the folder, the slot, the save's ID). (1) A missing ID that is the
+  number of a folder of the other kind (gloves 2780 beside `k2780`) is a player wearing no
+  custom item of the kind, the common case: he gets the hide ID, `custom_model_not_worn`
+  (I, with `custom_model_hidden`'s context) says so in place of that Warning, a folderless
+  player gets nothing reported (nothing is missing), and the ID takes no part in what
+  follows. Then each kind in turn, boots first, the rounds repeating until neither kind
+  pairs another folder: (2) an unworn folder whose same-numbered folder of the other kind
+  is paired with an ID takes that ID, when it is a missing ID of its own kind (`g2452`
+  takes 2227 from `k2452`), `wearer_by_number` (W, `from` the other folder) naming it,
+  until it pairs nothing more; then (3) a kind left with as many missing IDs as unworn
+  folders pairs them in sorted order, ID rank to folder-number rank, `wearer_by_order` (W)
+  naming each. One kind at a time, not both at once: on /fg/ both kinds reach equal counts
+  in one round, and ordering the gloves there would pair them by rank where the boots'
+  order pairing, one step later, lets each follow its boots folder by number. (4) A
+  missing ID still left beside an unworn folder of its kind refuses the export
   (`custom_model_unpaired`, E), since the save and the export disagree and nothing says
-  which folder is his. VGL26 (`.tmp/0_0_2/poc/sorted_measure.py`, `sync_measure.py`): (1)
-  covers /@/, /lcg/, /skg/, /smbg/, /sora/ and six /fng/ players; /fg/'s boots pair 2227
-  and 2229 by (3) and its gloves follow by (2); /bag/ (boots 3460 beside two `_Back`
-  folders) and /fgog/ (gloves 8447 beside two folders) are refused.
+  which folder is his; one left with no unworn folder gets the hide ID as before. VGL26
+  (`.tmp/0_0_2/poc/sorted_measure.py`, `sync_measure.py`, `rules_sim.py`): (1) covers /@/,
+  /lcg/, /skg/, /smbg/, /sora/ and six /fng/ players; /fg/'s boots pair 2227 and 2229 by
+  (3), and its gloves follow by (2), `g2451 - EMPTY` (no file) taking 2226 from
+  `k2451 - Acknowledged` and so hiding his hands as the member meant; /bag/ (boots 3460
+  beside two `_Back` folders) and /fgog/ (gloves 8447 beside two folders) are refused.
 - **A `.dds` beside a `.ftex` of one stem.** In a folder of the output, a stem held by both a
   `.dds` and a `.ftex` (which the shared validation refuses as `texture_stem_conflict`) is
   resolved before the output is written: when no model of the export uses the stem (no
@@ -76,11 +89,31 @@ A third comes with worklog 0.0.2-poc5:
   so without this step the template's player folder is dropped at compile time. A face
   folder the drop leaves with no face model compiles to the blank face, which hides the
   default face as the far model did ("2. Per-export serial steps" in
-  `spec/team_compiler/pipeline.md`). A model with only some meshes or vertices far stays
-  as it is, and the compiler refuses it: no VGL26 file is one. In VGL26 every flagged
+  `spec/team_compiler/pipeline.md`). A gloves folder the drop leaves with no model is a
+  hidden hand, as any modelless gloves folder is (step 3). A model with only some meshes or
+  vertices far stays as it is, and the compiler refuses it: no file on the maintainer's
+  machine is one (`.tmp/0_0_2/poc/far_census/`, 49,122 `.fmdl` and `.model` files, 14,688
+  distinct: 23 far in every vertex, the VGL26 faces and hairs, three old gloves files
+  `glove_l`/`glove_r` and two stadium models; partly far, only two synthetic test
+  fixtures). In VGL26 every flagged
   model is far in its every vertex (`.tmp/0_0_2/poc/far_meshes.py`): 89 files (9 distinct)
   in 47 folders across 7 exports, the most common a `face_high.fmdl` of 739 vertices in 29
-  folders (/domg/, /ink/, /vn/...). The last step:
+  folders (/domg/, /ink/, /vn/...).
+
+And one with worklog 0.0.2-poc7:
+
+- **Anti-blur duplicates dropped.** Every `.fmdl` of the export carrying anti-blur meshes
+  (the copies on a fuzzblock shader the Blender add-on added, flagged `Is-Antiblur-Meshes`)
+  is written without them (`fmdl::ops::antiblur::decode`: the copies and the materials only
+  they used go, the file's anti-blur extension is cleared), and every mesh's request for
+  them (`Has-Antiblur-Meshes`) is cleared too, so no later conversion or merge adds them
+  back or refuses the file as half encoded; `antiblur_dropped` (I: the file, how many
+  meshes) names each file. FoxDen's TAA removal script keeps models on Forward shaders sharp
+  without them, which leaves the copies bloat that draws every mesh twice. 3,566 of the
+  6,374 distinct readable FMDLs on the maintainer's machine carry them (the census above).
+  A mesh on a fuzzblock shader without the flag (6 files) is left as it is: nothing tells a
+  copy from a mesh drawn that way on purpose. The compiler's side, on the IR route alone,
+  is in `plans/model_conversion/ir.md` "Anti-blur duplicates". The last step:
 
 13. **Optional glTF conversion** (`--convert-to-gltf`, off by default) — after the structural
     migration is complete and verified (step 10's report is clean), a second pass converts all
@@ -364,8 +397,8 @@ EU-PLY-23  GIVEN slot 05's face folder "XXX05 - Bob", his record wearing custom 
            THEN Players/05 - Bob/ holds boots.fmdl, his settings.toml has no boots_id,
                 wearer_by_name names Boots/k2952 - BOB, slot 05 and 2552, no leftover_dropped
                 names the folder, and the run ends migration_clean; GIVEN a second unworn
-                folder "k2953 - bob" THEN neither pairs: he gets the hide ID (EU-SET-14) and
-                both folders are leftovers
+                folder "k2953 - bob" THEN neither pairs by name, and the export is refused
+                (EU-PLY-26)
 EU-MDL-23  GIVEN Common/ holding shiny.dds and shiny.ftex, and Common/ also holding
                  dummy_srm.dds and dummy_srm.ftex; slot 05's face_high.fmdl naming shiny in
                  the team's Common output and dummy_srm in it
@@ -374,4 +407,58 @@ EU-MDL-23  GIVEN Common/ holding shiny.dds and shiny.ftex, and Common/ also hold
                 texture_duplicate_dropped names Common/shiny.ftex with kept Common/shiny.dds;
                 it holds neither dummy_srm file, leftover_dropped naming both; no
                 texture_stem_conflict is reported and the run ends migration_clean
+```
+
+**0.0.2-poc6 scope.** "What no name pairs" above.
+
+```
+EU-PLY-24  GIVEN slot 05's face folder "XXX05 - Hagoromo", his record wearing boots 2780 and
+                 gloves 2780, the boots folder "k2780 - Hagoromoslop" and no gloves folder
+                 2780, and the gloves folder "g2799 - Momo" nobody wears
+           WHEN the export is upgraded
+           THEN his settings.toml has gloves_id 11, custom_model_not_worn (Info) names slot
+                05, gloves_id and 2780, no wearer_by_order is reported, leftover_dropped
+                names Gloves/g2799 - Momo's files, and the run ends migration_clean
+EU-PLY-25  GIVEN slot 01 "XXX01 - CHALICE OF HEAVEN" wearing boots and gloves 2227, slot 05
+                 "XXX05 - PARADISE" wearing boots and gloves 2229, slot 12
+                 "XXX12 - ACKNOWLEDGED" wearing boots and gloves 2226; boots folders
+                 "k2451 - Acknowledged", "k2452 - DEFAULT MALE", "k2455 - DEFAULT FEMALE",
+                 gloves folders "g2451 - EMPTY" (no file), "g2452 - DEFAULT MALE",
+                 "g2455 - DEFAULT FEMALE"
+           WHEN the export is upgraded
+           THEN wearer_by_name pairs Boots/k2451 - Acknowledged with slot 12 (2226);
+                wearer_by_order pairs Boots/k2452 - DEFAULT MALE with slot 01 (2227) and
+                Boots/k2455 - DEFAULT FEMALE with slot 05 (2229); wearer_by_number pairs
+                Gloves/g2452 - DEFAULT MALE with slot 01 (2227, from Boots/k2452 - DEFAULT
+                MALE), Gloves/g2455 - DEFAULT FEMALE with slot 05 (2229) and
+                Gloves/g2451 - EMPTY with slot 12 (2226), whose hands it hides as a
+                modelless folder does (fpc_on, no gloves_id, no custom_model_hidden); the
+                run ends migration_clean
+EU-PLY-26  GIVEN slot 01's face folder "XXX01 - Bard", his record wearing boots 3460, and the
+                 boots folders "k3454 - KitM_Back" and "k3456 - KitL_Back" nobody wears, no
+                 folder numbered 3460 of either kind
+           WHEN the export is upgraded
+           THEN custom_model_unpaired (Error) names slot 01, boots_id and 3460, nothing is
+                written, and the run ends migration_not_clean
+```
+
+**0.0.2-poc5 and poc7 scope.** "A model hidden by distance" and "Anti-blur duplicates
+dropped" above.
+
+```
+EU-MDL-24  GIVEN slot 02's face folder "XXX02 - GIANT" holding face_high.fmdl and
+                 hair_high.fmdl, every vertex of both more than 5000 units from the origin,
+                 and the gloves folder "g0331 - ONLY THREAD" his record wears, holding
+                 glove_l.fmdl and a glove_r.fmdl whose every vertex is that far
+           WHEN the export is upgraded
+           THEN Players/02 - GIANT/ holds neither face_high.fmdl nor hair_high.fmdl nor
+                glove_r.fmdl, and holds glove_l.fmdl; model_far_dropped names each of the
+                three with its vertex count, and the run ends migration_clean
+EU-MDL-25  GIVEN slot 05's face folder holding face_high.fmdl with two meshes, each flagged
+                 Has-Antiblur-Meshes and followed by its Is-Antiblur-Meshes copy on a
+                 fuzzblock material
+           WHEN the export is upgraded
+           THEN Players/05's face_high.fmdl holds the two meshes alone, no fuzzblock
+                material, no mesh flagged either way, and no anti-blur extension;
+                antiblur_dropped (Info) names the file with 2; the run ends migration_clean
 ```

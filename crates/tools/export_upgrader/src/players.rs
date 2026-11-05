@@ -52,6 +52,10 @@ pub(crate) struct PlayerFolders {
     pub(crate) portraits: BTreeMap<u8, String>,
     /// Each slot's output player folder (1-23), for step 8.
     pub(crate) folders: BTreeMap<u8, OutputFolder>,
+    /// The `(kind, worn ID)` pairs the pairing's cross-kind rule claims as
+    /// "no custom item of the kind": step 8 writes the hide ID and reports
+    /// `custom_model_not_worn` for them (roster mode; empty in loose).
+    pub(crate) not_worn: BTreeSet<(ItemKind, u32)>,
 }
 
 /// One slot's output player folder as steps 3-4 leave it.
@@ -165,7 +169,7 @@ pub(crate) fn path_scope(path: &str) -> ScopePath {
 
 /// One kind of item folder (the boots folders' `k`, the gloves' `g`, lower
 /// case as the old format requires).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum ItemKind {
     Boots,
     Gloves,
@@ -185,6 +189,31 @@ impl ItemKind {
         match self {
             ItemKind::Boots => 'k',
             ItemKind::Gloves => 'g',
+        }
+    }
+
+    /// The other kind: the pairing's cross-kind rules read it.
+    fn other(self) -> ItemKind {
+        match self {
+            ItemKind::Boots => ItemKind::Gloves,
+            ItemKind::Gloves => ItemKind::Boots,
+        }
+    }
+
+    /// Its index where both kinds are kept in one order (Boots first).
+    fn index(self) -> usize {
+        match self {
+            ItemKind::Boots => 0,
+            ItemKind::Gloves => 1,
+        }
+    }
+
+    /// The `settings.toml` key its worn ID writes (`boots_id`,
+    /// `gloves_id`), in `custom_model_*` contexts.
+    fn key(self) -> &'static str {
+        match self {
+            ItemKind::Boots => "boots_id",
+            ItemKind::Gloves => "gloves_id",
         }
     }
 
@@ -338,13 +367,30 @@ pub(crate) fn player_folders(
         &mut players,
         &mut plan,
     );
-    // Steps 3-4's item folders: who wears each is the save's, or loose
-    // mode's inference from the ID's position in its kind's block (step 11).
-    for kind in [ItemKind::Boots, ItemKind::Gloves] {
+    // Steps 3-4's item folders. The pairing needs both kinds' folders at
+    // once — the cross-kind rules read the other kind's pairings — so it is
+    // collected first, roster mode only; loose mode has none. Who wears
+    // each folder is then the save's, the pairing's, or loose mode's
+    // inference from the ID's position in its kind's block (step 11).
+    let item_sets = [
+        folders_below(files, folders, ItemKind::Boots.top()),
+        folders_below(files, folders, ItemKind::Gloves.top()),
+    ];
+    let pairings = match roster {
+        Some(roster) => pair_wearers(&item_sets[0], &item_sets[1], roster, &players),
+        None => Pairings::default(),
+    };
+    plan.not_worn = pairings.not_worn;
+    plan.findings.extend(pairings.findings);
+    let [boots_set, gloves_set] = item_sets;
+    for (kind, set) in [(ItemKind::Boots, boots_set), (ItemKind::Gloves, gloves_set)] {
         item_folders(
-            folders_below(files, folders, kind.top()),
+            set,
             kind,
-            roster,
+            roster.map(|roster| Wearers {
+                roster,
+                paired: &pairings.folders[kind.index()],
+            }),
             engine,
             &mut same_bytes,
             &mut players,
@@ -597,82 +643,281 @@ fn fold_wearer_name(name: &str) -> String {
         .collect()
 }
 
-/// The name pairing (roster mode): each unworn folder's slot or slots it
-/// pairs, by folder path. A rostered player whose worn custom ID of the
-/// kind (above 100) no folder carries is a candidate; an unworn folder —
-/// parsed, the first of its ID, no save record wearing it — whose folded
-/// name part equals one of his folded names (his face folder's whole name,
-/// its name part, or his save name) is his when it is the only such folder.
-/// Two players may name the one folder: it is then shared as any worn
-/// folder is.
-fn pair_by_name(
-    folders: &BTreeMap<String, Vec<&String>>,
+/// The rule a paired folder got its worn ID by, which the finding names.
+enum PairRule {
+    /// `wearer_by_name`.
+    Name,
+    /// `wearer_by_number`: the other kind's same-numbered folder it
+    /// followed.
+    Number(String),
+    /// `wearer_by_order`.
+    Order,
+}
+
+/// What the pairing pass makes of the two kinds' folders (roster mode):
+/// each paired folder's worn ID and rule, per kind; the `(kind, ID)` pairs
+/// the cross-kind "no custom item" rule claims (step 8's
+/// `custom_model_not_worn`); and the `custom_model_unpaired` refusals.
+#[derive(Default)]
+struct Pairings {
+    /// Paired folders by kind: folder path → (the paired worn ID, the
+    /// rule).
+    folders: [BTreeMap<String, (u32, PairRule)>; 2],
+    /// The `(kind, ID)` pairs the "no custom item" rule claims.
+    not_worn: BTreeSet<(ItemKind, u32)>,
+    /// The refusal findings of the last rule.
+    findings: Vec<Message>,
+}
+
+/// One kind's folders as the pairing pass reads them.
+struct KindState<'a> {
+    /// The parsed folders, first of each ID: (folder path, its number,
+    /// folded name part).
+    folders: Vec<(&'a String, u32, String)>,
+    /// Every parsed ID of the kind, a second folder's of one ID included.
+    carried: BTreeSet<u32>,
+    /// Indexes into `folders` of the unworn ones (no save record wears
+    /// their number, a modelless folder included).
+    unworn: Vec<usize>,
+    /// The missing IDs — a rostered player's worn custom ID (above 100) no
+    /// folder of the kind carries — to their wearer slots.
+    missing: BTreeMap<u32, Vec<u8>>,
+    /// Paired folders: folder path → (the worn ID, the rule).
+    paired: BTreeMap<String, (u32, PairRule)>,
+}
+
+/// `kind`'s folders as the pairing pass reads them.
+fn kind_state<'a>(
     kind: ItemKind,
+    folders: &'a BTreeMap<String, Vec<&String>>,
     roster: &Roster,
-    players: &BTreeMap<u8, PlayerFolder>,
-) -> BTreeMap<String, Vec<u8>> {
-    // The IDs every parseable folder of the kind carries: a worn ID among
-    // them is claimed and no candidate.
-    let carried: BTreeSet<u32> = folders
-        .keys()
-        .filter_map(|folder| {
-            parse_item_name(kind, folder.rsplit('/').next().unwrap_or(folder.as_str()))
-                .map(|(id, _)| id)
-        })
-        .collect();
-    // The unworn candidates, their folded name parts: a folder a second of
-    // its ID is refused, and an unworn one is a leftover the pairing can
-    // still rescue.
-    let mut taken: BTreeSet<u32> = BTreeSet::new();
-    let mut unworn: Vec<(&String, String)> = Vec::new();
+) -> KindState<'a> {
+    let mut parsed = Vec::new();
+    let mut carried = BTreeSet::new();
+    let mut taken = BTreeSet::new();
     for folder in folders.keys() {
         let name = folder.rsplit('/').next().unwrap_or(folder.as_str());
         let Some((id, name_part)) = parse_item_name(kind, name) else {
             continue;
         };
+        carried.insert(id);
         if !taken.insert(id) {
             continue;
         }
-        let worn = (1..=23).any(|nn| {
-            roster
-                .get(nn)
-                .is_some_and(|player| kind.worn_id(player) == id)
-        });
-        if worn {
-            continue;
-        }
-        let folded = fold_wearer_name(&name_part);
-        if !folded.is_empty() {
-            unworn.push((folder, folded));
-        }
+        parsed.push((folder, id, fold_wearer_name(&name_part)));
     }
-    let mut paired: BTreeMap<String, Vec<u8>> = BTreeMap::new();
+    let unworn = parsed
+        .iter()
+        .enumerate()
+        .filter_map(|(index, &(_, id, _))| {
+            (!(1..=23).any(|nn| {
+                roster
+                    .get(nn)
+                    .is_some_and(|player| kind.worn_id(player) == id)
+            }))
+            .then_some(index)
+        })
+        .collect();
+    let mut missing: BTreeMap<u32, Vec<u8>> = BTreeMap::new();
     for nn in 1..=23 {
         let Some(player) = roster.get(nn) else {
             continue;
         };
-        let worn = kind.worn_id(player);
-        if worn <= 100 || carried.contains(&worn) {
-            continue;
-        }
-        let mut names = BTreeSet::new();
-        if let Some(player_folder) = players.get(&nn) {
-            names.insert(fold_wearer_name(&player_folder.face_name));
-            names.insert(fold_wearer_name(&player_folder.face_name_part));
-        }
-        names.insert(fold_wearer_name(&player.name));
-        names.retain(|name| !name.is_empty());
-        let candidates: Vec<&String> = unworn
-            .iter()
-            .filter(|(_, folded)| names.contains(folded))
-            .map(|(folder, _)| *folder)
-            .collect();
-        // Two or more candidate folders for one player: no pairing.
-        if let [folder] = candidates.as_slice() {
-            paired.entry((*folder).clone()).or_default().push(nn);
+        let id = kind.worn_id(player);
+        if id > 100 && !carried.contains(&id) {
+            missing.entry(id).or_default().push(nn);
         }
     }
-    paired
+    KindState {
+        folders: parsed,
+        carried,
+        unworn,
+        missing,
+        paired: BTreeMap::new(),
+    }
+}
+
+/// The pairing pass (roster mode), over both kinds' folder listings at
+/// once — the cross-kind rules read the other kind's pairings. In order:
+/// name first (a missing ID pairs the one unworn folder named after its
+/// wearers — two name-matching folders pair nothing); then a missing ID
+/// that is a folder number of the other kind is claimed as "no custom
+/// item"; then, over both kinds until neither pairs another folder, an
+/// unworn folder follows its paired same-numbered other-kind folder when
+/// the ID is missing of its own kind, and — only when that pairs nothing
+/// more — a kind left with as many missing IDs as unworn folders pairs
+/// them rank to rank; then a missing ID left beside an unworn folder
+/// refuses.
+fn pair_wearers(
+    boots: &BTreeMap<String, Vec<&String>>,
+    gloves: &BTreeMap<String, Vec<&String>>,
+    roster: &Roster,
+    players: &BTreeMap<u8, PlayerFolder>,
+) -> Pairings {
+    let mut kinds = [
+        kind_state(ItemKind::Boots, boots, roster),
+        kind_state(ItemKind::Gloves, gloves, roster),
+    ];
+    let mut pairings = Pairings::default();
+    for kind in [ItemKind::Boots, ItemKind::Gloves] {
+        let state = &mut kinds[kind.index()];
+        for (id, wearers) in &state.missing {
+            let mut names = BTreeSet::new();
+            for &nn in wearers {
+                if let Some(player_folder) = players.get(&nn) {
+                    names.insert(fold_wearer_name(&player_folder.face_name));
+                    names.insert(fold_wearer_name(&player_folder.face_name_part));
+                }
+                if let Some(player) = roster.get(nn) {
+                    names.insert(fold_wearer_name(&player.name));
+                }
+            }
+            names.retain(|name| !name.is_empty());
+            let candidates: Vec<&String> = state
+                .unworn
+                .iter()
+                .map(|&index| &state.folders[index])
+                .filter(|(_, _, folded)| names.contains(folded))
+                .map(|(folder, _, _)| *folder)
+                .collect();
+            // Two or more folders matching the ID's wearers: nothing pairs
+            // by name.
+            if let [folder] = candidates.as_slice() {
+                state
+                    .paired
+                    .insert((*folder).clone(), (*id, PairRule::Name));
+            }
+        }
+        for (folder, id) in state
+            .paired
+            .iter()
+            .map(|(folder, (id, _))| (folder.clone(), *id))
+            .collect::<Vec<_>>()
+        {
+            state.missing.remove(&id);
+            state
+                .unworn
+                .retain(|&index| state.folders[index].0 != &folder);
+        }
+    }
+    // A missing ID that is a folder number of the other kind is "no custom
+    // item of the kind": claimed, and takes no part in what follows.
+    for kind in [ItemKind::Boots, ItemKind::Gloves] {
+        let other = kind.other();
+        let ids: Vec<u32> = kinds[kind.index()].missing.keys().copied().collect();
+        for id in ids {
+            if kinds[other.index()].carried.contains(&id) {
+                kinds[kind.index()].missing.remove(&id);
+                pairings.not_worn.insert((kind, id));
+            }
+        }
+    }
+    // Over both kinds until neither pairs another folder, each kind in
+    // turn: an unworn folder follows a paired same-numbered folder of the
+    // other kind, taking the ID it paired with when that is missing of its
+    // own kind — and only when that pairs nothing more does the kind's own
+    // order rule pair its equal counts rank to rank. A kind's ordered
+    // folders may feed the other kind's next round.
+    loop {
+        let mut progress = false;
+        for kind in [ItemKind::Boots, ItemKind::Gloves] {
+            loop {
+                let mut fired = false;
+                let (state, other_state) = {
+                    let (boots, gloves) = kinds.split_at_mut(1);
+                    match kind {
+                        ItemKind::Boots => (&mut boots[0], &gloves[0]),
+                        ItemKind::Gloves => (&mut gloves[0], &boots[0]),
+                    }
+                };
+                for index in state.unworn.clone() {
+                    let (folder, number, _) = &state.folders[index];
+                    let Some(other_folder) = other_state
+                        .folders
+                        .iter()
+                        .find(|(_, other_number, _)| other_number == number)
+                        .map(|(folder, _, _)| *folder)
+                    else {
+                        continue;
+                    };
+                    let Some(&(id, _)) = other_state.paired.get(other_folder) else {
+                        continue;
+                    };
+                    if !state.missing.contains_key(&id) {
+                        continue;
+                    }
+                    state.paired.insert(
+                        (*folder).clone(),
+                        (id, PairRule::Number(other_folder.clone())),
+                    );
+                    state.missing.remove(&id);
+                    state.unworn.retain(|&other_index| other_index != index);
+                    fired = true;
+                }
+                if !fired {
+                    break;
+                }
+                progress = true;
+            }
+            let state = &mut kinds[kind.index()];
+            if !state.missing.is_empty() && state.missing.len() == state.unworn.len() {
+                let mut by_number = state.unworn.clone();
+                by_number.sort_by_key(|&index| state.folders[index].1);
+                for (&index, id) in by_number
+                    .iter()
+                    .zip(state.missing.keys().copied().collect::<Vec<_>>())
+                {
+                    state
+                        .paired
+                        .insert(state.folders[index].0.clone(), (id, PairRule::Order));
+                }
+                state.missing.clear();
+                state.unworn.clear();
+                progress = true;
+            }
+        }
+        if !progress {
+            break;
+        }
+    }
+    // A missing ID left beside an unworn folder of its kind: the save and
+    // the export disagree — a refusal per wearer of each leftover ID.
+    for kind in [ItemKind::Boots, ItemKind::Gloves] {
+        let state = &kinds[kind.index()];
+        if state.missing.is_empty() || state.unworn.is_empty() {
+            continue;
+        }
+        for (id, wearers) in &state.missing {
+            for &nn in wearers {
+                pairings.findings.push(tool_message(
+                    Code::CustomModelUnpaired,
+                    Scope::Export { export_id: INPUT },
+                    Disposition::Keep,
+                    vec![
+                        ("slot", format!("{nn:02}")),
+                        ("key", kind.key().to_owned()),
+                        ("id", id.to_string()),
+                    ],
+                ));
+            }
+        }
+    }
+    pairings.folders = [
+        std::mem::take(&mut kinds[0].paired),
+        std::mem::take(&mut kinds[1].paired),
+    ];
+    pairings
+}
+
+/// Roster mode's answer to "who may wear a folder of this kind": the save's
+/// wearer map and the pass's pairings for it (`None` in loose mode, where
+/// the wearer is the ID's position in the kind's old block, step 11).
+#[derive(Clone, Copy)]
+struct Wearers<'a> {
+    /// The save's wearer map.
+    roster: &'a Roster,
+    /// The pass's pairings for the kind.
+    paired: &'a BTreeMap<String, (u32, PairRule)>,
 }
 
 /// Steps 3-4's item folders of `kind`: name, ID and wearers resolve, then
@@ -682,7 +927,7 @@ fn pair_by_name(
 fn item_folders(
     folders: BTreeMap<String, Vec<&String>>,
     kind: ItemKind,
-    roster: Option<&Roster>,
+    roster: Option<Wearers>,
     engine: Engine,
     same_bytes: &mut impl FnMut(&str, &str) -> bool,
     players: &mut BTreeMap<u8, PlayerFolder>,
@@ -730,13 +975,6 @@ fn item_folders(
                 .map(|(id, _)| id)
         })
         .min();
-    // The name pairing: which worn custom IDs no folder carries is known
-    // only once every folder of the kind is parsed, so it is collected
-    // before the loop, and a folder no worn ID matches may still pair.
-    let paired = match roster {
-        Some(roster) => pair_by_name(&folders, kind, roster, players),
-        None => BTreeMap::new(),
-    };
     for (folder, folder_files) in folders {
         let folder_name = folder.rsplit('/').next().unwrap_or(folder.as_str());
         // Strays first (step 10): nothing after — not the refusals, not the
@@ -777,9 +1015,9 @@ fn item_folders(
         }
         taken.insert(id, folder.clone());
         let mut wearers: Vec<u8> = match roster {
-            Some(roster) => (1..=23)
+            Some(w) => (1..=23)
                 .filter(|nn| {
-                    roster
+                    w.roster
                         .get(*nn)
                         .is_some_and(|player| kind.worn_id(player) == id)
                 })
@@ -789,18 +1027,23 @@ fn item_folders(
                 .into_iter()
                 .collect(),
         };
-        let mut by_name = false;
+        let mut pairing: Option<(u32, &PairRule)> = None;
         if wearers.is_empty() {
-            // With a roster nobody wears it: a folder named after a player
-            // whose worn custom ID no folder of the kind carries is paired
-            // with him; otherwise its files are leftovers (step 3). Loose
-            // mode keeps the refusal: a folder it cannot place may be
-            // anyone's (step 11).
+            // With a roster nobody wears it: the pass may still have paired
+            // it, by name, number or order; otherwise its files are
+            // leftovers (step 3). Loose mode keeps the refusal: a folder
+            // it cannot place may be anyone's (step 11).
             match roster {
-                Some(_) => match paired.get(&folder) {
-                    Some(slots) => {
-                        wearers = slots.clone();
-                        by_name = true;
+                Some(w) => match w.paired.get(&folder) {
+                    Some(&(paired_id, ref rule)) => {
+                        wearers = (1..=23)
+                            .filter(|nn| {
+                                w.roster
+                                    .get(*nn)
+                                    .is_some_and(|player| kind.worn_id(player) == paired_id)
+                            })
+                            .collect();
+                        pairing = Some((paired_id, rule));
                     }
                     None => {
                         plan.leftovers
@@ -814,11 +1057,11 @@ fn item_folders(
                 }
             }
         }
-        // Step 11: the pairing is an assumption, so the report states it;
-        // the name pairing is reported the same way, the save's worn ID
-        // named so the member can check it.
-        match roster {
-            None => plan.findings.push(tool_message(
+        // Step 11's assumed pairing is stated; a pass pairing is reported
+        // the same way, the save's worn ID named per wearer so the member
+        // can check it.
+        match (roster, pairing) {
+            (None, _) => plan.findings.push(tool_message(
                 Code::WearerAssumed,
                 Scope::Folder {
                     export_id: INPUT,
@@ -830,27 +1073,30 @@ fn item_folders(
                     ("slot", format!("{:02}", wearers[0])),
                 ],
             )),
-            Some(roster) if by_name => {
+            (Some(_), Some((paired_id, rule))) => {
                 for &nn in &wearers {
+                    let mut context =
+                        vec![("slot", format!("{nn:02}")), ("id", paired_id.to_string())];
+                    let code = match rule {
+                        PairRule::Name => Code::WearerByName,
+                        PairRule::Order => Code::WearerByOrder,
+                        PairRule::Number(from) => {
+                            context.push(("from", from.clone()));
+                            Code::WearerByNumber
+                        }
+                    };
                     plan.findings.push(tool_message(
-                        Code::WearerByName,
+                        code,
                         Scope::Folder {
                             export_id: INPUT,
                             path: path_scope(&folder),
                         },
                         Disposition::Keep,
-                        vec![
-                            ("slot", format!("{nn:02}")),
-                            (
-                                "id",
-                                kind.worn_id(roster.get(nn).expect("a paired slot is rostered"))
-                                    .to_string(),
-                            ),
-                        ],
+                        context,
                     ));
                 }
             }
-            Some(_) => {}
+            (Some(_), None) => {}
         }
         // A folder holding no model (nothing, or a `boots.skl` alone) is
         // how a member hid the player's boots or hands: each wearer gets
@@ -2532,7 +2778,9 @@ mod tests {
     }
 
     #[test]
-    fn two_unworn_folders_of_one_name_pair_nobody() {
+    fn two_unworn_folders_of_one_name_refuse_the_missing_id() {
+        // Two candidates for one player: nothing pairs by name, and the
+        // missing ID left beside unworn folders is `custom_model_unpaired`.
         let files = files(&[
             "Faces/XXX05 - BANISHED/face.fmdl",
             "Boots/k2952 - BANISHED/boots.fmdl",
@@ -2552,10 +2800,194 @@ mod tests {
                 .iter()
                 .all(|m| m.code.code != "wearer_by_name")
         );
+        let refused = plan
+            .findings
+            .iter()
+            .find(|m| m.code.code == "custom_model_unpaired")
+            .expect("custom_model_unpaired expected");
+        assert_eq!(refused.severity, Severity::Error);
+        assert_eq!(
+            refused.context,
+            [
+                ("slot".to_owned(), "05".to_owned()),
+                ("key".to_owned(), "boots_id".to_owned()),
+                ("id".to_owned(), "2552".to_owned()),
+            ]
+        );
         assert!(
             !plan.copies.iter().any(|(_, to)| to.ends_with("boots.fmdl")),
             "{:?}",
             plan.copies
         );
+    }
+
+    #[test]
+    fn the_number_rule_runs_across_kinds_in_either_direction() {
+        // A folder paired in one kind lets an unworn same-numbered folder
+        // of the other kind take its ID, whether the first pairing was
+        // boots or gloves: `k2701` follows `g2701` (2700 missing in boots)
+        // and `g2802` follows `k2802` (2800 missing in gloves).
+        let files = files(&[
+            "Faces/XXX05 - Alpha/face.fmdl",
+            "Faces/XXX06 - Beta/face.fmdl",
+            "Gloves/g2701 - Alpha/glove_l.fmdl",
+            "Boots/k2701 - Other/boots.fmdl",
+            "Boots/k2802 - Beta/boots.fmdl",
+            "Gloves/g2802 - Other/glove_l.fmdl",
+        ]);
+        let roster = wearing(&[(5, ("SaveA", 2700, 2700)), (6, ("SaveB", 2800, 2800))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        for (folder, code, context) in [
+            (
+                "Gloves/g2701 - Alpha",
+                "wearer_by_name",
+                vec![
+                    ("slot".to_owned(), "05".to_owned()),
+                    ("id".to_owned(), "2700".to_owned()),
+                ],
+            ),
+            (
+                "Boots/k2802 - Beta",
+                "wearer_by_name",
+                vec![
+                    ("slot".to_owned(), "06".to_owned()),
+                    ("id".to_owned(), "2800".to_owned()),
+                ],
+            ),
+            (
+                "Boots/k2701 - Other",
+                "wearer_by_number",
+                vec![
+                    ("slot".to_owned(), "05".to_owned()),
+                    ("id".to_owned(), "2700".to_owned()),
+                    ("from".to_owned(), "Gloves/g2701 - Alpha".to_owned()),
+                ],
+            ),
+            (
+                "Gloves/g2802 - Other",
+                "wearer_by_number",
+                vec![
+                    ("slot".to_owned(), "06".to_owned()),
+                    ("id".to_owned(), "2800".to_owned()),
+                    ("from".to_owned(), "Boots/k2802 - Beta".to_owned()),
+                ],
+            ),
+        ] {
+            let finding = plan
+                .findings
+                .iter()
+                .find(|m| {
+                    m.code.code == code
+                        && matches!(
+                            &m.scope,
+                            Scope::Folder { path, .. } if path.as_str() == folder
+                        )
+                })
+                .unwrap_or_else(|| panic!("{code} on {folder}: {:?}", plan.findings));
+            assert_eq!(finding.context, context, "{folder}");
+        }
+        for (folder, names) in [
+            ("Players/05 - Alpha", vec!["glove_l.fmdl", "boots.fmdl"]),
+            ("Players/06 - Beta", vec!["boots.fmdl", "glove_l.fmdl"]),
+        ] {
+            for name in names {
+                assert!(
+                    plan.copies
+                        .iter()
+                        .any(|(_, to)| to == &format!("{folder}/{name}")),
+                    "{folder}/{name}: {:?}",
+                    plan.copies
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn the_order_rule_waits_for_the_number_rule() {
+        // `k2999 - Ann` pairs by name; `g2999` follows it by number while
+        // its kind still holds two missing IDs and two unworn folders —
+        // the order rule must not fire first, or `g2999` would take 2601
+        // by rank instead of 2500 by `from`.
+        let files = files(&[
+            "Faces/XXX05 - Ann/face.fmdl",
+            "Faces/XXX06 - Bob/face.fmdl",
+            "Boots/k2999 - Ann/boots.fmdl",
+            "Gloves/g2999 - Other/glove_l.fmdl",
+            "Gloves/g2998 - Other/glove_l.fmdl",
+        ]);
+        let roster = wearing(&[(5, ("SaveA", 2500, 2500)), (6, ("SaveB", 0, 2601))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        let at = |code, folder| {
+            plan.findings
+                .iter()
+                .find(|m| {
+                    m.code.code == code
+                        && matches!(
+                            &m.scope,
+                            Scope::Folder { path, .. } if path.as_str() == folder
+                        )
+                })
+                .unwrap_or_else(|| panic!("{code} on {folder}: {:?}", plan.findings))
+        };
+        assert_eq!(
+            at("wearer_by_number", "Gloves/g2999 - Other").context,
+            [
+                ("slot".to_owned(), "05".to_owned()),
+                ("id".to_owned(), "2500".to_owned()),
+                ("from".to_owned(), "Boots/k2999 - Ann".to_owned()),
+            ]
+        );
+        assert_eq!(
+            at("wearer_by_order", "Gloves/g2998 - Other").context,
+            [
+                ("slot".to_owned(), "06".to_owned()),
+                ("id".to_owned(), "2601".to_owned()),
+            ]
+        );
+        assert!(
+            plan.findings
+                .iter()
+                .all(|m| m.code.code != "custom_model_unpaired"),
+            "{:?}",
+            plan.findings
+        );
+    }
+
+    #[test]
+    fn a_missing_id_the_other_kind_numbers_is_not_worn_and_outside_the_order() {
+        // Slot 05's gloves 2780 is a boots folder's number: no custom
+        // gloves, claimed as `not_worn` for `custom_model_not_worn`, and it
+        // counts toward neither side of the order rule — which still pairs
+        // 3000 to `g2999`.
+        let files = files(&[
+            "Faces/XXX05 - Ann/face.fmdl",
+            "Faces/XXX06 - Bob/face.fmdl",
+            "Boots/k2780 - A/boots.fmdl",
+            "Gloves/g2999 - Other/glove_l.fmdl",
+        ]);
+        let roster = wearing(&[(5, ("SaveA", 0, 2780)), (6, ("SaveB", 0, 3000))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        assert!(plan.not_worn.contains(&(ItemKind::Gloves, 2780)));
+        let finding = plan
+            .findings
+            .iter()
+            .find(|m| m.code.code == "wearer_by_order")
+            .expect("wearer_by_order expected");
+        assert_eq!(
+            finding.context,
+            [
+                ("slot".to_owned(), "06".to_owned()),
+                ("id".to_owned(), "3000".to_owned()),
+            ]
+        );
+        assert!(
+            plan.findings
+                .iter()
+                .all(|m| m.code.code != "custom_model_unpaired"),
+            "{:?}",
+            plan.findings
+        );
+        // `k2780` itself is worn by nobody: a leftover as ever.
+        assert!(plan.leftovers.contains("Boots/k2780 - A/boots.fmdl"));
     }
 }

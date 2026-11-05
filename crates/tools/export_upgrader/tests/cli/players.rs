@@ -1076,7 +1076,7 @@ fn an_unworn_folder_named_for_the_wearer_pairs_his_custom_id() {
 
 // EU-PLY-23
 #[test]
-fn two_unworn_folders_of_one_name_pair_nothing() {
+fn two_unworn_folders_of_one_name_refuse_the_export() {
     let sandbox = Sandbox::new("ply_wearer_by_name_two");
     face(&sandbox, "co Spring/Faces/XXX05 - BANISHED");
     boots(&sandbox, "co Spring/Boots/k2952 - BANISHED");
@@ -1086,30 +1086,163 @@ fn two_unworn_folders_of_one_name_pair_nothing() {
     });
 
     let run = upgrade(&sandbox, "co Spring", "EDIT");
+    assert_eq!(run.exit_code(), 1, "{}", run.stdout());
+    let stdout = run.stdout();
+    // Two candidates for one player: neither pairs, and the missing ID
+    // left beside unworn folders refuses the export (EU-PLY-26).
+    assert!(
+        stdout.contains("Error custom_model_unpaired (slot=05, key=boots_id, id=2552)"),
+        "{stdout}"
+    );
+    assert!(!stdout.contains("wearer_by_name"), "{stdout}");
+    sandbox.assert_nothing_written("co Full Spring", &stdout);
+}
+
+// EU-PLY-24
+#[test]
+fn an_id_numbered_in_the_other_kind_means_no_custom_item() {
+    let sandbox = Sandbox::new("ply_not_worn");
+    face(&sandbox, "co Spring/Faces/XXX05 - Hagoromo");
+    boots(&sandbox, "co Spring/Boots/k2780 - Hagoromoslop");
+    gloves(&sandbox, "co Spring/Gloves/g2799 - Momo");
+    sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
+        wears(file, 71405, 2780, 2780);
+    });
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
     let stdout = run.stdout();
-    assert!(!stdout.contains("wearer_by_name"), "{stdout}");
-    // Two candidates for one player: neither pairs. He gets the hide ID of
-    // the kind (EU-SET-14) and both folders are leftovers.
-    assert!(stdout.contains("custom_model_hidden (slot=05"), "{stdout}");
+    // His gloves ID is a boots folder's number: no custom gloves, the hide
+    // ID reported as such at Info.
+    assert!(
+        stdout.contains("- co Spring: Info custom_model_not_worn (slot=05"),
+        "{stdout}"
+    );
+    for field in ["key=gloves_id", "id=2780", "written=11"] {
+        assert!(stdout.contains(field), "{field}: {stdout}");
+    }
+    assert!(!stdout.contains("wearer_by_order"), "{stdout}");
+    assert!(!stdout.contains("custom_model_hidden"), "{stdout}");
+    for name in ["glove_l.fmdl", "glove_r.fmdl"] {
+        assert!(
+            stdout.contains(&format!("leftover_dropped at Gloves/g2799 - Momo/{name}")),
+            "{name}: {stdout}"
+        );
+    }
     let settings = PlayerSettings::parse(
-        &fs::read_to_string(sandbox.path("co Full Spring/Players/05 - BANISHED/settings.toml"))
+        &fs::read_to_string(sandbox.path("co Full Spring/Players/05 - Hagoromo/settings.toml"))
             .unwrap(),
     )
     .unwrap();
-    assert_eq!(settings.boots_id, Some(55));
-    for folder in ["k2952 - BANISHED", "k2953 - banished"] {
-        for name in ["boots.fmdl", "boots.skl", "shirt.dds"] {
+    assert_eq!(settings.gloves_id, Some(11));
+    // The boots folder is his own worn ID's: it merges and claims the
+    // category, so `boots_id` is left out.
+    assert_eq!(settings.boots_id, None);
+    for (name, bytes) in BOOTS_FILES {
+        assert_eq!(
+            fs::read(sandbox.path(&format!("co Full Spring/Players/05 - Hagoromo/{name}")))
+                .unwrap(),
+            bytes,
+            "{name}"
+        );
+    }
+}
+
+// EU-PLY-25
+#[test]
+fn order_then_number_pair_the_renumbered_saves_folders() {
+    let sandbox = Sandbox::new("ply_order_number");
+    for slot in [
+        "XXX01 - CHALICE OF HEAVEN",
+        "XXX05 - PARADISE",
+        "XXX12 - ACKNOWLEDGED",
+    ] {
+        face(&sandbox, &format!("co Spring/Faces/{slot}"));
+    }
+    for folder in [
+        "k2451 - Acknowledged",
+        "k2452 - DEFAULT MALE",
+        "k2455 - DEFAULT FEMALE",
+    ] {
+        boots(&sandbox, &format!("co Spring/Boots/{folder}"));
+    }
+    fs::create_dir_all(sandbox.path("co Spring/Gloves/g2451 - EMPTY")).unwrap();
+    gloves(&sandbox, "co Spring/Gloves/g2452 - DEFAULT MALE");
+    gloves(&sandbox, "co Spring/Gloves/g2455 - DEFAULT FEMALE");
+    sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
+        wears(file, 71401, 2227, 2227);
+        wears(file, 71405, 2229, 2229);
+        wears(file, 71412, 2226, 2226);
+    });
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 0, "{stdout}");
+    for line in [
+        "- co Spring: Warning wearer_by_name at Boots/k2451 - Acknowledged (slot=12, id=2226)",
+        "- co Spring: Warning wearer_by_order at Boots/k2452 - DEFAULT MALE (slot=01, id=2227)",
+        "- co Spring: Warning wearer_by_order at Boots/k2455 - DEFAULT FEMALE (slot=05, id=2229)",
+        "- co Spring: Warning wearer_by_number at Gloves/g2452 - DEFAULT MALE (slot=01, id=2227, from=Boots/k2452 - DEFAULT MALE)",
+        "- co Spring: Warning wearer_by_number at Gloves/g2455 - DEFAULT FEMALE (slot=05, id=2229, from=Boots/k2455 - DEFAULT FEMALE)",
+        "- co Spring: Warning wearer_by_number at Gloves/g2451 - EMPTY (slot=12, id=2226, from=Boots/k2451 - Acknowledged)",
+    ] {
+        assert!(stdout.contains(&format!("{line}\n")), "{line}: {stdout}");
+    }
+    for (folder, files) in [
+        (
+            "01 - CHALICE OF HEAVEN",
+            vec!["boots.fmdl", "glove_l.fmdl", "glove_r.fmdl"],
+        ),
+        (
+            "05 - PARADISE",
+            vec!["boots.fmdl", "glove_l.fmdl", "glove_r.fmdl"],
+        ),
+        ("12 - ACKNOWLEDGED", vec!["boots.fmdl"]),
+    ] {
+        for name in files {
             assert!(
-                stdout.contains(&format!(
-                    "- co Spring: Warning leftover_dropped at Boots/{folder}/{name}\n"
-                )),
-                "{folder}/{name}: {stdout}"
+                sandbox
+                    .path(&format!("co Full Spring/Players/{folder}/{name}"))
+                    .is_file(),
+                "{folder}/{name}"
             );
         }
     }
-    for entry in sandbox.listing("co Full Spring") {
-        assert!(!entry.ends_with("boots.fmdl"), "{entry}");
-    }
-    assert!(!stdout.contains("unmigrated_content"), "{stdout}");
+    // The modelless gloves folder pairs all the same: slot 12 gets the
+    // `fpc_on` marker, his `gloves_id` is left out, and no hide warning.
+    assert_eq!(
+        fs::read(sandbox.path("co Full Spring/Players/12 - ACKNOWLEDGED/fpc_on")).unwrap(),
+        b""
+    );
+    let settings = PlayerSettings::parse(
+        &fs::read_to_string(sandbox.path("co Full Spring/Players/12 - ACKNOWLEDGED/settings.toml"))
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(settings.gloves_id, None);
+    assert_eq!(settings.boots_id, None);
+    assert!(!stdout.contains("custom_model_hidden"), "{stdout}");
+    assert!(!stdout.contains("custom_model_unpaired"), "{stdout}");
+}
+
+// EU-PLY-26
+#[test]
+fn a_missing_id_left_beside_unworn_folders_refuses_the_export() {
+    let sandbox = Sandbox::new("ply_unpaired");
+    face(&sandbox, "co Spring/Faces/XXX01 - Bard");
+    boots(&sandbox, "co Spring/Boots/k3454 - KitM_Back");
+    boots(&sandbox, "co Spring/Boots/k3456 - KitL_Back");
+    sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
+        wears(file, 71401, 3460, 0);
+    });
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
+    assert_eq!(run.exit_code(), 1, "{}", run.stdout());
+    assert!(
+        run.stdout()
+            .contains("Error custom_model_unpaired (slot=01, key=boots_id, id=3460)"),
+        "{}",
+        run.stdout()
+    );
+    sandbox.assert_nothing_written("co Full Spring", &run.stdout());
 }
