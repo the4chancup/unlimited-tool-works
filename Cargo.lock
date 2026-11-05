@@ -3361,7 +3361,6 @@ dependencies = [
  "sha2",
  "thiserror 2.0.20",
  "toml_edit 0.23.10+spec-1.0.0",
- "wezlib",
 ]
 
 [[package]]

@@ -2808,10 +2808,25 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         Files: `team_compiler` (`plan/{item_rows,mod,patch}.rs`, `bins/player_tables.rs`,
         `output/{writer,patch}.rs`, `compile.rs`, `validation.rs`, CLI tests `bins`, `models`,
         `common_links`, `conversion`, `patch`, `savefile`)
-      - [ ] c2b the player tables go: the compiler's table writer, `player_table_missing`,
+      - [x] c2b the player tables go: the compiler's table writer, `player_table_missing`,
         `savefile_player_not_stripped`, `pes_savefile`'s `player_tables` (`portrait_path`
         moved), `appearance_row`; the spec scenarios c0 restates withdrawn, their tests
         rewritten or removed (inventory C30-C43) → verify: the gates; no test installs a table
+        Done 2026-11-05 (SWE-2 sidekick, landed first time; brief `.tmp/0_0_2/s36c/brief_c2b.md`):
+        about 2,400 lines removed; the writer, the installed walk (its boundary kept for the
+        shared-IDs records), `PlayerRows`, the two findings and their help passages go;
+        `ItemTable` lives beside `ItemRow` as the patch's category key; `portrait_path` is
+        `pes_savefile::portrait`'s; `wezlib` leaves `pes_savefile`; `install_save` installs
+        the fixture unstripped. Tests: TC-BIN-37's and TC-SAV-07's removed, TC-BIN-25's and
+        28's (TC-SAV-18 restates them), every other trimmed to its patch half and cited by
+        its restatement alone; the sidekick added TC-BIN-61's missing `boots_id` assertion.
+        `just acceptance` lists the withdrawn IDs unproven until c4 moves the spec. Gates
+        rerun by the lead: the four crates' tests, clippy, fmt, `doc-pointers`; `just
+        bindings` by the sidekick. Files: `team_compiler` (src `bins/`, `output/`, `plan/`,
+        `messages*`, `compile.rs`, `gui_run.rs`, `view/mod.rs`, `validation.rs`, `paths.rs`,
+        `processing/`; help `01_command_line.md`; CLI tests, `tests/parity.rs`),
+        `pes_savefile` (`portrait.rs` new; `player_tables.rs`, `settings_toml/appearance_row.rs`
+        and its tests deleted; `schema`, `lib.rs`, `Cargo.toml`), `save_editor` (two imports)
       - [ ] c3 the `<id>.copy` link: the compiler's three checks and the patch's
         `base_copy_id`; the upgrader's step 8 → verify: TC-STR-21, TC-SAV-20, EU-SET-12, 13
       - [ ] c4 the spec moved (the inventory's S22-S54 …), help and catalog texts (among them
@@ -6866,7 +6881,7 @@ briefs, review loops, gates and mutation runs as for any step.
     (the maintainer, 2026-10-28: "wait for one final pass of the UI from me, before it goes
     golden"), once every UI step of 0.0.1 has landed (w4b, w6b, z2, y4e, y5b, y6b, y7b and the
     lead's built-window checks, which ask before they take focus). The candidate for it
-    staged 2026-10-29 (`QUESTIONS.md` "The final pass over the built app's UI"): branch
+    staged 2026-10-29 (its QUESTIONS entry, dropped 2026-11-05): branch
     `release/0.0.1-candidate`, the bundle unpacked by `.tmp/release_0_0_1/0_0_1ov/make_candidate.py` at
     `4cc-studio-temp/candidate-0.0.1/` (its file set checked against `release.py`'s
     `expected_entries`; a copy started and closed cleanly). Work goes on past it meanwhile

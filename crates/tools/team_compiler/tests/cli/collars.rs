@@ -227,7 +227,6 @@ fn a_midcup_export_s_collar_goes_into_its_team_s_kits_it_does_not_resend() {
         [
             "co Midcup Collars: Info export_identified [Keep] (team=/co/, id=714)",
             &format!("co Midcup Collars: {TEAM_COLORS_MISSING}"),
-            "Warning player_table_missing [Keep] (table=PlayerAppearance.bin, rows=1)",
         ],
     );
     expected.push(patch_written(&sandbox, "714"));
@@ -894,7 +893,6 @@ fn an_export_whose_only_collar_is_dropped_compiles_without_it() {
             "co Midcup Collars: Error collar_id_invalid [DropFile] at Collars/collar_9999.fmdl (file=collar_9999.fmdl)",
             "co Midcup Collars: Info export_identified [Keep] (team=/co/, id=714)",
             &format!("co Midcup Collars: {TEAM_COLORS_MISSING}"),
-            "Warning player_table_missing [Keep] (table=PlayerAppearance.bin, rows=1)",
         ],
     );
     expected.push(patch_written(&sandbox, "714"));

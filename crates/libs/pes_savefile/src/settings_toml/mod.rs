@@ -7,8 +7,6 @@
 //! of the TOML text. The codec reads and writes the model through
 //! `from_player`/`apply`.
 
-/// The `PlayerAppearance.bin` row a `PlayerSettings` produces (Fox only).
-mod appearance_row;
 pub(crate) mod document;
 /// The settings.toml key table: `SettingKey` and its `KeySpec` columns.
 pub(crate) mod keys;
@@ -474,14 +472,6 @@ pub enum SettingsError {
     NotInThisVersion {
         /// The TOML key.
         key: String,
-    },
-    /// A `PlayerAppearance.bin` row was asked of a version whose game has
-    /// none: a pre-Fox game's appearance travels in the savefile (PES 17
-    /// reads a row, but its compile writes the savefile instead).
-    #[error("{version}: a pre-Fox appearance travels in the savefile, not in PlayerAppearance.bin")]
-    NoAppearanceRow {
-        /// The version the row was asked for.
-        version: PesVersion,
     },
     /// A codec read or write failed (a player never read from a record has no
     /// ingame-face run to read or write through).
@@ -1016,8 +1006,7 @@ impl PlayerSettings {
     /// `apply`'s appearance write, without its TOML-surface checks (the kind
     /// ranges, the name lengths): every appearance key's held value or its
     /// `KeySpec` default onto `next`, the run's unused bits after, a key
-    /// the target version does not store dropped. `appearance_row` shares
-    /// it: the row carries the game's bits, so a stored value past a key's
+    /// the target version does not store dropped. A stored value past a key's
     /// range but inside its field's (a save's own data the file could never
     /// hold) is written as is — the field's bits, `write_player`'s and
     /// `face.set`'s bound, are the check.
@@ -1055,8 +1044,8 @@ impl PlayerSettings {
     /// `settings_value_out_of_range`. A key the version does not store is
     /// left alone: the write drops it (`held_on`), with no finding. A stored
     /// value outside the key's widest range too (a directly written field,
-    /// never a parsed file) is not this method's to touch: `apply`'s and
-    /// `appearance_row`'s checks still refuse it.
+    /// never a parsed file) is not this method's to touch: `apply`'s checks
+    /// still refuse it.
     pub fn narrow_to(&mut self, version: PesVersion) -> Vec<NarrowedValue> {
         let mut narrowed = Vec::new();
         for key in SettingKey::ALL {

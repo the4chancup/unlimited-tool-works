@@ -1629,7 +1629,7 @@ fn a_deploying_compile_installs_the_refs_cpk_with_the_team_s() {
     );
 }
 
-// TC-REF-19
+// TC-REF-20
 #[test]
 fn a_referee_with_the_gloves_checkbox_and_no_gloves_is_reported() {
     let sandbox = Sandbox::new("ref_gloves_checkbox");
@@ -1652,14 +1652,12 @@ fn a_referee_with_the_gloves_checkbox_and_no_gloves_is_reported() {
             "{args:?}: {lines:#?}"
         );
     }
-    let (_, entries) = compile(&sandbox);
-    // A referee has no player-table row: neither CPK holds a PlayerAppearance.bin.
-    assert!(!entries.contains_key(crate::bins::PLAYER_APPEARANCE));
-    assert!(!team_entries(&sandbox).contains_key(crate::bins::PLAYER_APPEARANCE));
+    compile(&sandbox);
+    // A referee's settings reach no patch either.
     assert!(!sandbox.root.join("output/aesthetics_patch.toml").exists());
 }
 
-// TC-REF-19
+// TC-REF-20
 #[test]
 fn a_referee_s_linked_gloves_his_own_package_are_no_winter_gloves() {
     let sandbox = Sandbox::new("ref_gloves_link");

@@ -307,7 +307,7 @@ fn a_pes_17_compile_writes_both_color_bins_and_no_fox_bin() {
         b"#c11200\n#414141\n",
     );
     write_kit(&sandbox, export, "p1");
-    // A player linking a shared boots folder, which on Fox would add a BootsList.bin row.
+    // A player linking a shared boots folder, which on Fox would add a boots ID to the patch.
     let player = format!("exports/{export}/Players/05 - A");
     sandbox.write(&format!("{player}/face_high.model"), &card_model());
     sandbox.write(&format!("{player}/face_high.mtl"), &card_materials());
@@ -347,13 +347,10 @@ fn a_pes_17_compile_writes_both_color_bins_and_no_fox_bin() {
         entries[UNI_COLOR] == base,
         "UniColor.bin is the base, the kit's entry kept"
     );
-    for name in [
-        "UniformParameter.bin",
-        "PlayerAppearance.bin",
-        "BootsList.bin",
-        "GloveList.bin",
-    ] {
-        let written: Vec<&String> = entries.keys().filter(|path| path.ends_with(name)).collect();
-        assert_eq!(written, Vec::<&String>::new(), "{name}");
-    }
+    assert!(
+        !entries
+            .keys()
+            .any(|path| path.ends_with("UniformParameter.bin")),
+        "UniformParameter.bin"
+    );
 }

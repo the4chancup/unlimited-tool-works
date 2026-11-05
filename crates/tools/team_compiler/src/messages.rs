@@ -437,10 +437,6 @@ pub(crate) enum Code {
     InstalledBinUnreadable,
     /// The installed CPK a working bin was taken from, or `bundled` for the bundled base.
     BinSource,
-    /// The run has `BootsList.bin` or `GloveList.bin` rows (Fox) and no installed CPK holds
-    /// the table, which has no bundled base: the table is not written and the rows are left
-    /// out.
-    PlayerTableMissing,
     /// A file of the data directory's `templates/` folder cannot be read; the run stops before
     /// any export is read, the previous CPK kept.
     TemplateOverrideUnreadable,
@@ -493,10 +489,6 @@ pub(crate) enum Code {
     /// A player of the patch is not in the savefile, his team being there (context: the
     /// player id); his entries are not applied, the rest is.
     SavefilePlayerMissing,
-    /// Fox: a compiled player's record in the local save has its appearance id set (a save
-    /// never stripped, or an id the game's Edit mode restored), so the game shows his record,
-    /// not the compiled rows (context: `players`).
-    SavefilePlayerNotStripped,
     /// `--no-deploy`: the CPK was promoted to the output folder instead of installed.
     DeploySkippedByFlag,
     /// A run that deploys, whose `pes_folder_path` is not a folder (no PES installed, or the
@@ -566,7 +558,7 @@ impl Code {
     /// Every code, for the catalog test: a variant missing here would make its first message
     /// panic in `severity`, so a new variant is added to this list too.
     #[cfg(test)]
-    const ALL: [Code; 163] = [
+    const ALL: [Code; 161] = [
         Code::ExportExtractFailed,
         Code::NoExportsFound,
         Code::ExportDisabled,
@@ -691,7 +683,6 @@ impl Code {
         Code::DpfilelistMissing,
         Code::InstalledBinUnreadable,
         Code::BinSource,
-        Code::PlayerTableMissing,
         Code::TemplateOverrideUnreadable,
         Code::TemplateOverrideActive,
         Code::BinHeaderRepaired,
@@ -708,7 +699,6 @@ impl Code {
         Code::SavefileWritten,
         Code::SavefileTeamMissing,
         Code::SavefilePlayerMissing,
-        Code::SavefilePlayerNotStripped,
         Code::DeploySkippedByFlag,
         Code::PesFolderNotFound,
         Code::PesVersionMismatch,
@@ -859,7 +849,6 @@ impl Code {
             Code::DpfilelistMissing => "dpfilelist_missing",
             Code::InstalledBinUnreadable => "installed_bin_unreadable",
             Code::BinSource => "bin_source",
-            Code::PlayerTableMissing => "player_table_missing",
             Code::TemplateOverrideUnreadable => "template_override_unreadable",
             Code::TemplateOverrideActive => "template_override_active",
             Code::BinHeaderRepaired => "bin_header_repaired",
@@ -876,7 +865,6 @@ impl Code {
             Code::SavefileWritten => "savefile_written",
             Code::SavefileTeamMissing => "savefile_team_missing",
             Code::SavefilePlayerMissing => "savefile_player_missing",
-            Code::SavefilePlayerNotStripped => "savefile_player_not_stripped",
             Code::DeploySkippedByFlag => "deploy_skipped_by_flag",
             Code::PesFolderNotFound => "pes_folder_not_found",
             Code::PesVersionMismatch => "pes_version_mismatch",

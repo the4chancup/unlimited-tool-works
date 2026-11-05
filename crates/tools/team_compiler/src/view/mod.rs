@@ -253,9 +253,6 @@ mod tests {
                 "- egg Midcup Tracer: Info fmdl_weights_not_normalized at Players/05 - The Chad Stormworks Player (file=fcl_hair.fmdl, count=1662)".to_owned(),
                 "- egg Midcup Tracer: Info fmdl_weights_not_normalized at Players/05 - The Chad Stormworks Player (file=glove_l.fmdl, count=2)".to_owned(),
                 "- egg Midcup Tracer: Info export_identified (team=/egg/, id=792)".to_owned(),
-                "- Warning player_table_missing (table=BootsList.bin, rows=1)".to_owned(),
-                "- Warning player_table_missing (table=GloveList.bin, rows=1)".to_owned(),
-                "- Warning player_table_missing (table=PlayerAppearance.bin, rows=1)".to_owned(),
                 format!(
                     "- Info patch_written (path={}, teams=792)",
                     root.join("output")

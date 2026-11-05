@@ -1,10 +1,8 @@
-//! The compiled players' rows of the three Fox player tables, decided at planning.
-//! `PlayerAppearance.bin` comes from each folder's `settings.toml` and `ingame_face.toml` (the
-//! template's for a file it has not). `BootsList.bin` and `GloveList.bin` are resolved per
-//! category: the folder's own models or a link file take the ID a `Models` task emits them
-//! under once it commits, an authored stock ID is written as is, and else the marker or the
-//! coverage decides the default. On a pre-Fox target, which has no such tables, the item
-//! rows feed the patch's `boots_id`/`gloves_id` by the same rule instead.
+//! The compiled players' boots and gloves IDs, decided at planning, which the
+//! `aesthetics_patch.toml`'s `[[teams]]` entries carry. They are resolved per category: the
+//! folder's own models or a link file take the ID a `Models` task emits them under once it
+//! commits, an authored stock ID is written as is, and else the marker or the coverage
+//! decides the default.
 
 use std::collections::BTreeSet;
 
@@ -20,54 +18,46 @@ use super::roles::{
     ModelPackage, has_effective_part, link_feeds_own_package, linked_folder, shared_kind_of,
 };
 use super::{BuildTask, TaskKind};
-use crate::bins::player_tables::ItemTable;
 use crate::paths::PackageKey;
 
-/// One compiled player's row of `BootsList.bin` or `GloveList.bin`, as planning decides it
-/// ("Bins accumulation").
+/// One of the two categories a player's boots or gloves ID belongs to: the key the item
+/// rows, the patch's entries and `settings_model_id_conflict` share.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ItemTable {
+    /// Boots: the `boots_id` key, the `ModelPackage::Boots` package.
+    Boots,
+    /// Gloves: the `gloves_id` key, the `ModelPackage::Gloves` package.
+    Gloves,
+}
+
+impl ItemTable {
+    /// Both categories, in the order the patch's entries hold them.
+    pub(crate) const ALL: [ItemTable; 2] = [ItemTable::Boots, ItemTable::Gloves];
+}
+
+/// One compiled player's resolved boots or gloves ID, as planning decides it
+/// ("Bins accumulation"), which the patch writes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ItemRow {
-    /// The table the row is in.
+    /// The category the ID is in.
     pub(crate) table: ItemTable,
     /// The player's id: his team ID times 100 plus his roster slot (71405).
     pub(crate) player_id: u32,
-    /// What his row's item ID becomes.
+    /// What his ID becomes.
     pub(crate) id: u32,
-    /// The manifest position of the task putting the item under `id` into the CPK: the row
-    /// is set only once it commits, the installed row staying when it does not. `None` for
-    /// an authored stock ID or a resolved default, which no task emits.
+    /// The manifest position of the task putting the item under `id` into the CPK: the ID
+    /// lands only once it commits, the save keeping the player's current one when it does
+    /// not. `None` for an authored stock ID or a resolved default, which no task emits.
     pub(crate) task: Option<usize>,
 }
 
 impl ItemRow {
     /// Whether the row's write happens: it has no task, or its task is among `committed`,
-    /// the manifest positions of the batches the writer committed. The tables' `apply` and
-    /// `left_out` and the patch's `settle` all decide a row by it.
+    /// the manifest positions of the batches the writer committed. The patch's `settle`
+    /// decides a row by it.
     pub(crate) fn counts(&self, committed: &BTreeSet<usize>) -> bool {
         self.task.is_none_or(|task| committed.contains(&task))
     }
-}
-
-/// One compiled player's `PlayerAppearance.bin` row, as planning decides it: the writer
-/// builds it from `settings` (`PlayerSettings::appearance_row`), the folder's
-/// `settings.toml` and `ingame_face.toml` joined, the template's for a file it has not; nothing of the installed row
-/// survives. It is written whatever his tasks' outcomes.
-#[derive(Debug, PartialEq)]
-pub(crate) struct AppearanceRow {
-    /// The player's id.
-    pub(crate) player_id: u32,
-    /// What his row is built from.
-    pub(crate) settings: PlayerSettings,
-}
-
-/// A run's compiled players' rows of the three Fox tables (`export_rows`): what the writer
-/// applies to the installed tables.
-#[derive(Debug, Default, PartialEq)]
-pub(crate) struct PlayerRows {
-    /// The `BootsList.bin`/`GloveList.bin` rows.
-    pub(crate) items: Vec<ItemRow>,
-    /// The `PlayerAppearance.bin` rows.
-    pub(crate) appearance: Vec<AppearanceRow>,
 }
 
 /// A compiled player folder as its rows need it.
@@ -84,7 +74,7 @@ pub(super) struct RowPlayer {
     /// The folder's name part, which a `write_names` export's `name = true` resolves to.
     pub(super) player_name: String,
     /// The folder's settings, its `settings.toml` joined with its `ingame_face.toml`'s keys;
-    /// `None` when it holds neither file (the row is the template's).
+    /// `None` when it holds neither file (the patch's `[appearance]` is the template's).
     pub(super) settings: Option<PlayerSettings>,
     /// One of the folder's settings files was refused
     /// (`settings_toml_invalid`/`ingame_face_toml_invalid`): an invalid file holds back the
@@ -92,9 +82,9 @@ pub(super) struct RowPlayer {
     pub(super) settings_refused: bool,
 }
 
-/// The rows of `players`, the compiled player folders of one export whose `coverage` is
-/// given, against `tasks`, the manifest so far, whose export's tasks start at `first`: the
-/// `BootsList.bin`/`GloveList.bin` rows and the `PlayerAppearance.bin` ones. Per category
+/// The item rows of `players`, the compiled player folders of one export whose `coverage`
+/// is given, against `tasks`, the manifest so far, whose export's tasks start at `first`:
+/// the resolved boots and gloves IDs the patch's entries carry. Per category
 /// and in the resolution's order: a player's own package, emitted under each of his slots'
 /// exclusive ids, or the package of a shared folder he links, emitted under its shared id,
 /// each gated on its task, and an authored stock ID for that category then ignored:
@@ -103,22 +93,16 @@ pub(super) struct RowPlayer {
 /// a part of his own package, so his own task is the one. With neither, an authored stock
 /// ID is written, else the default `default_id` resolves: `hide_ids`'s (the common
 /// settings' hide IDs) for `fpc_on`, 0 for `fpc_off` or a `Full` export's markerless player,
-/// and no row for a `Midcup` one's, who keeps his installed row. Gloves alike.
+/// and no row for a `Midcup` one's, the save keeping his ID. Gloves alike.
 pub(super) fn export_rows(
     tasks: &[BuildTask],
     first: usize,
     players: &[RowPlayer],
     coverage: ExportCoverage,
     hide_ids: fpc::HideIds,
-) -> PlayerRows {
+) -> Vec<ItemRow> {
     let mut items = Vec::new();
-    let mut appearance = Vec::new();
     for player in players {
-        let settings = player.settings.clone().unwrap_or_default();
-        appearance.extend(player.player_ids.iter().map(|player_id| AppearanceRow {
-            player_id: *player_id,
-            settings: settings.clone(),
-        }));
         for table in ItemTable::ALL {
             let package = package(table);
             let own = models_task(tasks, first, &player.path, package)
@@ -159,7 +143,7 @@ pub(super) fn export_rows(
             }
         }
     }
-    PlayerRows { items, appearance }
+    items
 }
 
 /// The stock ID `settings` authors for `table`'s category; `None` for `""` or an absent
@@ -247,7 +231,7 @@ fn linked_takes_id(
 /// The ID the resolution's default rule gives a player whose folder provides neither the
 /// category's models nor a stock key: `hide_ids`'s (the common settings' hide IDs) for
 /// `fpc_on`, 0 for `fpc_off` or no marker of a `Full` export's player, and no row for a
-/// `Midcup` export's markerless player, who keeps his installed row.
+/// `Midcup` export's markerless player, the save keeping his ID.
 fn default_id(
     fpc: Option<FpcDirective>,
     table: ItemTable,
@@ -272,7 +256,7 @@ fn default_id(
 /// `check`: a compiler-assigned ID's stand-in (the
 /// rule reads only `== 0`, and an assigned ID is a real model's, never 0), else the authored
 /// stock ID, else `default_id`'s marker or coverage answer. `None` is a `Midcup` export's
-/// markerless player, who keeps his installed row; `check` reads no installed table, so his
+/// markerless player, the save keeping his ID; `check` reads no save, so his
 /// gloves rule does not run. `category_assigned` does not cover a referee's gloves link,
 /// which feeds his slot's package (`link_feeds_own_package`) and takes no shared ID.
 pub(crate) fn check_gloves_id(
@@ -404,7 +388,7 @@ mod tests {
                 | TaskKind::Collar { .. } => None,
             })
             .collect();
-        (report.manifest.player_rows.items, models)
+        (report.manifest.patch_teams[0].rows.clone(), models)
     }
 
     /// The row setting `player_id`'s item of `table` to `id` once task `task` commits.
@@ -492,7 +476,7 @@ mod tests {
         );
         // A's face (0) and boots (1) under slots 03 and 08; B's face (2); Keeper's gloves (3).
         assert_eq!(
-            report.manifest.player_rows.items,
+            report.manifest.patch_teams[0].rows,
             [
                 set(ItemTable::Boots, 71403, 623, 1),
                 set(ItemTable::Boots, 71408, 628, 1),
@@ -500,15 +484,15 @@ mod tests {
                 set(ItemTable::Gloves, 71411, 644, 3),
             ]
         );
-        // And each slot its own appearance row, the template's while the folder has none.
-        let appearance: Vec<u32> = report
-            .manifest
-            .player_rows
-            .appearance
-            .iter()
-            .map(|row| row.player_id)
+        // And each slot its own patch entry, carrying the template's look while the folder
+        // has none.
+        let entry_slots: Vec<u8> = report.manifest.patch_teams[0]
+            .team
+            .players
+            .keys()
+            .copied()
             .collect();
-        assert_eq!(appearance, [71403, 71408, 71409, 71411]);
+        assert_eq!(entry_slots, [3, 8, 9, 11]);
     }
 
     /// A taskless row counts outright; a task-gated one once its task is among the

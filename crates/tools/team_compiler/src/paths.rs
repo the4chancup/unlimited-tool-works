@@ -2,7 +2,7 @@
 //! faces, the shared boots and gloves, a model folder's textures, the team's Common output, the
 //! kits and the logo, the pre-Fox ones (PES 15-17) too:
 //! `spec/team_compiler/pipeline.md` "Game paths reference". The CPK paths have no leading `/`.
-//! The portrait path is `pes_savefile::player_tables::portrait_path`'s, shared with the
+//! The portrait path is `pes_savefile::portrait::portrait_path`'s, shared with the
 //! Save editor.
 
 use std::fs;

@@ -121,9 +121,6 @@ fn compile_no_deploy_writes_the_cpk_to_the_output_folder_and_leaves_pes_alone() 
             "egg Midcup Tracer: Info fmdl_weights_not_normalized [Keep] at Players/05 - The Chad Stormworks Player (file=fcl_hair.fmdl, count=1662)".to_owned(),
             "egg Midcup Tracer: Info fmdl_weights_not_normalized [Keep] at Players/05 - The Chad Stormworks Player (file=glove_l.fmdl, count=2)".to_owned(),
             "egg Midcup Tracer: Info export_identified [Keep] (team=/egg/, id=792)".to_owned(),
-            "Warning player_table_missing [Keep] (table=BootsList.bin, rows=1)".to_owned(),
-            "Warning player_table_missing [Keep] (table=GloveList.bin, rows=1)".to_owned(),
-            "Warning player_table_missing [Keep] (table=PlayerAppearance.bin, rows=1)".to_owned(),
             format!(
                 "Info deploy_skipped_by_flag [Keep] (path={})",
                 promoted.display()
@@ -228,9 +225,6 @@ fn assert_commit_failed(sandbox: &Sandbox, run: &Run, before: &BTreeMap<PathBuf,
             "egg Midcup Tracer: Info fmdl_weights_not_normalized [Keep] at Players/05 - The Chad Stormworks Player (file=fcl_hair.fmdl, count=1662)",
             "egg Midcup Tracer: Info fmdl_weights_not_normalized [Keep] at Players/05 - The Chad Stormworks Player (file=glove_l.fmdl, count=2)",
             "egg Midcup Tracer: Info export_identified [Keep] (team=/egg/, id=792)",
-            "Warning player_table_missing [Keep] (table=BootsList.bin, rows=1)",
-            "Warning player_table_missing [Keep] (table=GloveList.bin, rows=1)",
-            "Warning player_table_missing [Keep] (table=PlayerAppearance.bin, rows=1)"
         ])
     );
     // The error ends with the platform's own text, so only its shape is fixed.

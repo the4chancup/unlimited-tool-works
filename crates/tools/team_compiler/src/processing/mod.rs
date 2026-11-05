@@ -280,7 +280,7 @@ pub(crate) fn process_task(
             )
             .map(|bytes| {
                 let entry = (
-                    pes_savefile::player_tables::portrait_path(ctx.version, *player_id),
+                    pes_savefile::portrait::portrait_path(ctx.version, *player_id),
                     bytes,
                 );
                 (TaskOutput::Entries(vec![entry]), None)

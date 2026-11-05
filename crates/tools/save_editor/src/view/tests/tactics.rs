@@ -2510,7 +2510,7 @@ fn the_pitch_draws_a_starter_s_portrait_from_the_selected_game() {
     // CPK path, in the one listed CPK.
     let starter = usize::from(team_entry(&view, 701).tactics.starting_eleven[4]);
     let player_id = team_entry(&view, 701).roster[starter].player_id;
-    let entry = pes_savefile::player_tables::portrait_path(PesVersion::Pes21, player_id);
+    let entry = pes_savefile::portrait::portrait_path(PesVersion::Pes21, player_id);
     let bytes: &[u8] = include_bytes!("../../../tests/fixtures/portraits/75823_faces.dds");
     let folder = crate::test_support::pes_folder(
         "tactics_portrait_pes",

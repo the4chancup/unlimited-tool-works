@@ -699,7 +699,7 @@ fn unrecorded_message(
 /// category whose ID the compile assigns from the folder's own models or a shared folder it
 /// links (`item_rows::conflicting_id_keys`, the same decision `export_rows` makes over the
 /// manifest planning never builds under `check`). Only for a team export,
-/// whose compiled players the tables (Fox) or the patch (every engine) give their IDs.
+/// whose compiled players the patch gives their IDs.
 /// It runs here so that `check` reports a
 /// `settings.toml`'s findings as `compile` does.
 fn settings_id_messages(
@@ -750,13 +750,13 @@ fn settings_id_messages(
 ///
 /// The marker's preset (`fpc_on` the hide, `fpc_off` the unhide) is applied to the `settings`
 /// planning receives. A folder with a marker and no `settings.toml` gains an entry, which is
-/// what its `PlayerAppearance.bin` row is built from. One `fpc_strip_conflict` is reported per
-/// key the file had set to another value.
+/// what his patch entry's `[appearance]` is built from. One `fpc_strip_conflict` is reported
+/// per key the file had set to another value.
 ///
 /// Then `fpc::check` runs over the strip style the settings give
 /// (`PlayerSettings::strip_style`), `is_fpc_player` being the `fpc_on` marker, with the gloves
 /// ID the resolution gives (`item_rows::check_gloves_id`). That ID is `None` on a `Midcup`
-/// export's markerless player, who keeps his installed row, so his gloves rule does not run.
+/// export's markerless player, the save keeping his own, so his gloves rule does not run.
 /// The lib's `fpc_custom_skin_on_non_fpc` maps to no code: the marker is the check's
 /// `is_fpc_player`, and a custom skin with no marker is the partial-hide setup (a custom body
 /// in a stock jersey), which no marker names. On Fox the deep pass has already narrowed it

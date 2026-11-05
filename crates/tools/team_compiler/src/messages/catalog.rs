@@ -743,12 +743,6 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         r#"Nothing to do."#,
     ),
     (
-        "player_table_missing",
-        CatalogSeverity::Warning,
-        r#"In PES 2018 to 2021, the run has boots-list, gloves-list or player-appearance rows to write, and no installed CPK holds the table, which the compiler has no copy of (the line names the table and the number of rows)."#,
-        r#"The table is not written, because one holding only this run's rows would take every other player's rows away. The rows are left out, so those players' new boots, gloves or appearance do not show."#,
-    ),
-    (
         "template_override_unreadable",
         CatalogSeverity::Fatal,
         r#"A file of the data folder's `templates/` exists but cannot be read, or is a bin that does not parse as its kind (the line gives the file and the whole error)."#,
@@ -848,13 +842,6 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         CatalogSeverity::Error,
         r#"A player the patch covers is not in the save, though his team is (the save editor's `apply-patch` reports the same skip)."#,
         r#"His entries are not applied, but the rest are."#,
-    ),
-    (
-        "savefile_player_not_stripped",
-        CatalogSeverity::Warning,
-        r#"In PES 2018 to 2021, a compiled player in your save has an appearance ID of his own (the save was never stripped, or the game's Edit mode restored the ID), so the game shows his save data, not the compiled one."#,
-        "Nothing to do: until the compiler writes the look into the aesthetics patch, the \
-         game shows his save data.",
     ),
     (
         "deploy_skipped_by_flag",

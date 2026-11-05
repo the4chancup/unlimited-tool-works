@@ -8,14 +8,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::Path;
 
-use pes_savefile::player_tables::{AppearanceTable, PlayerTableFile};
-use pes_savefile::settings_toml::PlayerSettings;
-use pes_version::PesVersion;
 use uniparam::UniformParameter;
 
-use crate::bins::{
-    BOOTS_LIST, GLOVE_LIST, PLAYER_APPEARANCE, dpfl_bytes, install_cpk, item_list, pairs_of,
-};
+use crate::bins::dpfl_bytes;
 use crate::common::{Run, Sandbox};
 use crate::compile::{cpk_entries, kit_texture, pes21_settings, tracer_export, tracer_player_file};
 use crate::compile_exports::{TEAM_COLOR, UNI_COLOR, UNIFORM_PARAMETER};
@@ -581,73 +576,4 @@ fn test_mode_writes_its_loose_files_as_without_multi_cpk_mode() {
         trees.push(snapshot(&sandbox.root.join("output/test_output")));
     }
     assert!(trees[0] == trees[1], "the same loose files");
-}
-
-/// A `PlayerAppearance.bin` row for `player_id`, its 56 bytes all `fill`.
-fn appearance_row(player_id: u32, fill: u8) -> Vec<u8> {
-    let mut row = player_id.to_le_bytes().to_vec();
-    row.extend([fill; 56]);
-    row
-}
-
-// TC-BIN-37
-#[test]
-fn a_multi_cpk_compile_keeps_the_bins_cpk_s_seed_rows_of_players_it_does_not_compile() {
-    let sandbox = Sandbox::new("multicpk_seed_rows");
-    install_pes(&sandbox);
-    // 71423's seed rows, held by the installed bins CPK the run replaces: the only CPK of
-    // the install that has them.
-    let seed_row = appearance_row(71423, 0x5a);
-    install_cpk(
-        &sandbox,
-        "4cc_08_bins.cpk",
-        &[
-            (BOOTS_LIST, &item_list(&[(71423, 7)])),
-            (GLOVE_LIST, &item_list(&[(71423, 7)])),
-            (PLAYER_APPEARANCE, &seed_row),
-        ],
-    );
-    // /co/ Full with a slot 05 holding its own boots and no slot 23 folder.
-    sandbox.write(
-        "exports/co Full Tables/Players/05 - A/boots.fmdl",
-        &tracer_player_file("boots.fmdl"),
-    );
-
-    let run = compile(&sandbox, &multicpk_settings(&sandbox, ""));
-
-    assert_eq!(run.exit_code(), 0, "{:#?}", run.messages());
-    let lines = run.messages();
-    for bin in ["BootsList.bin", "GloveList.bin", "PlayerAppearance.bin"] {
-        assert!(
-            lines.contains(&format!(
-                "Info bin_source [Keep] (bin={bin}, cpk=4cc_08_bins.cpk)"
-            )),
-            "{bin} comes from the bins CPK itself: {lines:#?}"
-        );
-    }
-    let entries = cpk_entries(&sandbox.root.join("output/4cc_08_bins.cpk"));
-    assert_eq!(
-        pairs_of(&entries, BOOTS_LIST),
-        [(71405, 625), (71423, 7)],
-        "71405's compiled pair and 71423's installed one"
-    );
-    assert_eq!(pairs_of(&entries, GLOVE_LIST), [(71405, 0), (71423, 7)]);
-    let table = AppearanceTable::read(
-        PlayerTableFile::PlayerAppearance,
-        &entries[PLAYER_APPEARANCE],
-    )
-    .unwrap();
-    assert_eq!(
-        table.get(71423).copied(),
-        Some(seed_row[4..].try_into().unwrap()),
-        "71423's row as installed"
-    );
-    let compiled = PlayerSettings::default()
-        .appearance_row(71405, PesVersion::Pes21)
-        .unwrap();
-    assert_eq!(
-        table.get(71405).copied(),
-        Some(compiled[4..].try_into().unwrap()),
-        "71405's row from the export"
-    );
 }

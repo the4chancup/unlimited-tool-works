@@ -145,7 +145,7 @@ mod tests {
 
     /// The lines of a clean compile of the sandbox's tracer export, installed into its PES
     /// folder (`install_pes`), up to `patch_written`, whose path `tracer_lines` fills in.
-    const TRACER_LINES: [&str; 10] = [
+    const TRACER_LINES: [&str; 7] = [
         "- Info bin_source (bin=TeamColor.bin, cpk=bundled)",
         "- Info bin_source (bin=UniColor.bin, cpk=bundled)",
         "- Info bin_source (bin=UniformParameter.bin, cpk=bundled)",
@@ -153,9 +153,6 @@ mod tests {
         "- egg Midcup Tracer: Info fmdl_weights_not_normalized at Players/05 - The Chad Stormworks Player (file=fcl_hair.fmdl, count=1662)",
         "- egg Midcup Tracer: Info fmdl_weights_not_normalized at Players/05 - The Chad Stormworks Player (file=glove_l.fmdl, count=2)",
         "- egg Midcup Tracer: Info export_identified (team=/egg/, id=792)",
-        "- Warning player_table_missing (table=BootsList.bin, rows=1)",
-        "- Warning player_table_missing (table=GloveList.bin, rows=1)",
-        "- Warning player_table_missing (table=PlayerAppearance.bin, rows=1)",
     ];
 
     /// `TRACER_LINES`, then the `patch_written` line naming `root`'s output patch, the

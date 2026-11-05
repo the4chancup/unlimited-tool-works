@@ -7,13 +7,11 @@
 //! save it holds over the file when the member leaves Edit mode after changing anything
 //! there, so a write made with it closed stands. Every outcome is a finding.
 
-use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 use pes_savefile::EditFile;
 use pes_savefile::discovery::SavefileCandidate;
 use pes_savefile::interchange::aesthetics_patch::{AestheticsPatch, PatchSkip};
-use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_version::PesVersion;
 use studio_core::{Disposition, RunningPes, Scope};
 
@@ -91,8 +89,8 @@ pub(crate) struct SavefileFailure {
 /// save `located` names, reporting every outcome as a `Keep` finding but the two the caller
 /// emits: no save is the warning `savefile_missing`, a save skipped while the target's game
 /// runs unless `edit_mode_closed`, a patch team or player the save lacks a per-item error
-/// with the rest applied (a save holding none of the patch's players is not rewritten), a
-/// compiled player whose appearance id the save still sets a warning, and the save written,
+/// with the rest applied (a save holding none of the patch's players is not rewritten), and
+/// the save written,
 /// its previous file kept as `.bak`, the info `savefile_written`. An unreadable or
 /// wrong-version save is `Err`(`savefile_invalid`) and a failed `apply` or write
 /// `Err`(`savefile_write_failed`), neither emitted here.
@@ -163,15 +161,6 @@ pub(crate) fn update(
             ],
         });
     }
-    // The players whose appearance id the save sets, read before `apply`: an applied
-    // `[appearance]` writes the id to the player's own, so after it every patched player
-    // reads as set and the warning would fire for all of them.
-    let had_id: BTreeSet<u32> = file
-        .players()
-        .iter()
-        .filter(|player| player.appearance_id != Some(STRIPPED_APPEARANCE_ID))
-        .map(|player| player.id)
-        .collect();
     let summary = match patch.apply(&mut file) {
         Ok(summary) => summary,
         Err(error) => {
@@ -197,27 +186,6 @@ pub(crate) fn update(
                 vec![("player", player.to_string())],
             ),
         }
-    }
-    let mut not_stripped: Vec<u32> = summary
-        .applied_players
-        .iter()
-        .copied()
-        .filter(|id| had_id.contains(id))
-        .collect();
-    not_stripped.sort_unstable();
-    if !not_stripped.is_empty() {
-        report(
-            events,
-            Code::SavefilePlayerNotStripped,
-            vec![(
-                "players",
-                not_stripped
-                    .iter()
-                    .map(u32::to_string)
-                    .collect::<Vec<_>>()
-                    .join(", "),
-            )],
-        );
     }
     // A save holding none of the patch's players is left as it was: writing it would change
     // nothing but turn its `.bak` over, losing the user's previous backup.
@@ -462,8 +430,7 @@ mod tests {
 
         let messages = messages(&rx);
         let codes: Vec<&str> = messages.iter().map(|(code, _)| code.as_str()).collect();
-        // The fixture is not stripped: 71405 is reported, then the save is written.
-        assert_eq!(codes, ["savefile_player_not_stripped", "savefile_written"]);
+        assert_eq!(codes, ["savefile_written"]);
         assert_ne!(fs::read(&save).unwrap(), before, "the save is written");
     }
 
@@ -549,80 +516,15 @@ mod tests {
 
         let messages = messages(&rx);
         let codes: Vec<&str> = messages.iter().map(|(code, _)| code.as_str()).collect();
-        // The fixture is not stripped: 79205, the one player written, is reported.
+        assert_eq!(codes, ["savefile_player_missing", "savefile_written"]);
+        assert_eq!(messages[0].1, [("player".to_owned(), "71405".to_owned())]);
         assert_eq!(
-            codes,
-            [
-                "savefile_player_missing",
-                "savefile_player_not_stripped",
-                "savefile_written"
-            ]
-        );
-        assert_eq!(messages[1].1, [("players".to_owned(), "79205".to_owned())]);
-        assert_eq!(
-            messages[2].1,
+            messages[1].1,
             [
                 ("path".to_owned(), save.display().to_string()),
                 ("teams".to_owned(), "792".to_owned())
             ],
             "714's only patch player was skipped"
-        );
-    }
-
-    #[test]
-    fn savefile_player_not_stripped_lists_the_players_sorted_whatever_the_team_order() {
-        let temp = scratch("savefile_not_stripped_sorted");
-        let save = temp.path().join("EDIT00000000");
-        let file = EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
-        fs::write(&save, file.to_bytes(&[7; 320]).unwrap()).unwrap();
-        let slot_05 = || {
-            BTreeMap::from([(
-                5,
-                PatchPlayer {
-                    name: None,
-                    shirt_name: None,
-                    boots_id: None,
-                    gloves_id: None,
-                    base_copy_id: None,
-                    appearance: Some(AppearanceSettings::default().resolved(PesVersion::Pes21)),
-                },
-            )])
-        };
-        let mut patch = empty_patch();
-        // The patch order is the exports' order, not the teams': `applied_players` is
-        // [79205, 71405], and the warning sorts it for the report.
-        for (id, name) in [(792, "/egg/"), (714, "/co/")] {
-            patch.teams.push(PatchTeam {
-                id,
-                name: name.to_owned(),
-                players: slot_05(),
-            });
-        }
-        let (mut events, rx) = events();
-
-        update(
-            &mut events,
-            Located::Configured(save.clone()),
-            &[],
-            false,
-            &temp.path().join("aesthetics_patch.toml"),
-            &patch,
-        )
-        .unwrap();
-
-        let messages = messages(&rx);
-        let codes: Vec<&str> = messages.iter().map(|(code, _)| code.as_str()).collect();
-        assert_eq!(codes, ["savefile_player_not_stripped", "savefile_written"]);
-        assert_eq!(
-            messages[0].1,
-            [("players".to_owned(), "71405, 79205".to_owned())]
-        );
-        assert_eq!(
-            messages[1].1,
-            [
-                ("path".to_owned(), save.display().to_string()),
-                ("teams".to_owned(), "792, 714".to_owned())
-            ]
         );
     }
 

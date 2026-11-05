@@ -20,13 +20,10 @@ use crate::patch::{pes17_crocs_export, read_patch, write_names_export};
 /// The salt the tests' own writes use; a save's bytes depend on it, its payload does not.
 const TEST_SALT: [u8; 320] = [7; 320];
 
-/// Writes `version`'s fixture save with every player stripped at the sandbox's
+/// Writes `version`'s fixture save as it is at the sandbox's
 /// `savefile_path` (`save/EDIT00000000`, which `sandboxed` names), and returns its path.
 pub(crate) fn install_save(sandbox: &Sandbox, version: PesVersion) -> PathBuf {
-    let mut file = EditFile::from_bytes(&fixture_save(version)).unwrap();
-    for player in file.players_mut() {
-        player.appearance_id = Some(STRIPPED_APPEARANCE_ID);
-    }
+    let file = EditFile::from_bytes(&fixture_save(version)).unwrap();
     let path = sandbox.root.join("save").join("EDIT00000000");
     fs::create_dir_all(path.parent().unwrap()).unwrap();
     fs::write(&path, file.to_bytes(&TEST_SALT).unwrap()).unwrap();
@@ -41,7 +38,6 @@ fn motion_export(sandbox: &Sandbox, export: &str) {
     );
 }
 
-// TC-SAV-01
 // TC-SAV-18
 #[test]
 fn a_deployed_run_applies_its_patch_to_the_savefile_and_keeps_a_bak() {
@@ -66,6 +62,9 @@ fn a_deployed_run_applies_its_patch_to_the_savefile_and_keeps_a_bak() {
         assert_eq!(roster[4].player_id, 71406);
         assert_eq!(roster[5].player_id, 71405);
     }
+    // The scenario's record: appearance id -1 and base copy 7511.
+    file.player_mut(71405).unwrap().appearance_id = Some(STRIPPED_APPEARANCE_ID);
+    file.player_mut(71405).unwrap().appearance.base_copy_id = 7511;
     assert_ne!(
         file.player(71405).unwrap().motion.hunching_dribbling,
         1,
@@ -100,7 +99,7 @@ fn a_deployed_run_applies_its_patch_to_the_savefile_and_keeps_a_bak() {
         player.motion.hunching_dribbling, 1,
         "the settings.toml's 2, stored"
     );
-    // The stripped save's record is made his: appearance id and base copy his own id.
+    // The record is made his: appearance id and base copy his own id.
     assert_eq!(player.appearance_id, Some(71405));
     assert_eq!(player.appearance.base_copy_id, 71405);
     assert_eq!(player.name, file.player(71405).unwrap().name);
@@ -303,30 +302,6 @@ fn a_save_of_another_version_is_savefile_invalid_and_left_alone() {
     );
     assert!(sandbox.root.join("output/4cc_99_test.cpk").is_file());
     assert!(sandbox.root.join("output/aesthetics_patch.toml").is_file());
-}
-
-// TC-SAV-07
-#[test]
-fn a_player_whose_appearance_id_is_set_is_reported_and_stays_set() {
-    let sandbox = Sandbox::new("savefile_not_stripped");
-    install_pes(&sandbox);
-    let save = install_save(&sandbox, PesVersion::Pes21);
-    let mut file = EditFile::load(&save).unwrap();
-    file.player_mut(71405).unwrap().appearance_id = Some(71405);
-    // 71406, whom the export does not compile, is not stripped either: only the patch's
-    // players are checked, so he is not named.
-    file.player_mut(71406).unwrap().appearance_id = Some(71406);
-    fs::write(&save, file.to_bytes(&TEST_SALT).unwrap()).unwrap();
-    motion_export(&sandbox, "co Full Motions");
-
-    let run = sandbox.run(&pes21_settings(&sandbox), &["compile"]);
-
-    let lines = run.messages();
-    assert_eq!(run.exit_code(), 0, "{lines:#?}");
-    let expected = "Warning savefile_player_not_stripped [Keep] (players=71405)".to_owned();
-    assert!(lines.contains(&expected), "{lines:#?}");
-    let after = EditFile::load(&save).unwrap();
-    assert_eq!(after.player(71405).unwrap().appearance_id, Some(71405));
 }
 
 // TC-SAV-08

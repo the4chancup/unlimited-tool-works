@@ -33,7 +33,7 @@ use crate::mtl_search::mtl_for;
 use crate::paths::{PackageKey, REFEREE_TEAM_ID, TextureHome};
 use collars::export_collar;
 use ids::{PlannedModelIds, assigned_shared_ids, folder_ids};
-use item_rows::{PlayerRows, RowPlayer, export_rows};
+use item_rows::{RowPlayer, export_rows};
 use roles::{
     FolderModels, ModelPackage, PlayerFile, below_common, combined_folders, common_file,
     common_folder, common_skeleton, directory_stem, emits_kit_texture, file_stem, is_common_file,
@@ -70,9 +70,6 @@ pub(crate) struct BuildManifest {
     /// Each planned team export's kits, in export order, for its team's `UniColor.bin` record
     /// and `UniformParameter.bin` configs ("Bins accumulation").
     pub(crate) team_kits: Vec<TeamKits>,
-    /// Every planned team export's compiled players' `BootsList.bin`, `GloveList.bin` and
-    /// `PlayerAppearance.bin` rows, in export order ("Bins accumulation").
-    pub(crate) player_rows: PlayerRows,
     /// The `[[teams]]` blocks of the run's `aesthetics_patch.toml` (`patch::patch_team`), in
     /// export order, each with the export's item rows `compile` settles its ID keys against
     /// once every batch's outcome is known (`patch::settle`): empty when no team export
@@ -1015,8 +1012,8 @@ pub(crate) struct ExportToPlan {
     pub(crate) metal_models: BTreeSet<ScopePath>,
     /// Each player folder's settings, its `settings.toml` joined with its
     /// `ingame_face.toml`'s keys, by folder path, as the deep pass found them
-    /// (`deep::ContentPass::settings`): the compiled players' table rows resolve from them
-    /// (`export_rows`).
+    /// (`deep::ContentPass::settings`): the compiled players' patch entries resolve from
+    /// them (`export_rows`, `patch::patch_team`).
     pub(crate) settings: BTreeMap<ScopePath, PlayerSettings>,
     /// The player folders whose `settings.toml` or `ingame_face.toml` was refused, by
     /// folder path, as the deep pass found them (`deep::ContentPass::settings_refused`):
@@ -1049,7 +1046,6 @@ pub(crate) fn plan_run(
     let mut tasks = Vec::new();
     let mut team_colors = Vec::new();
     let mut team_kits = Vec::new();
-    let mut player_rows = PlayerRows::default();
     let mut patch_teams = Vec::new();
     let mut notes = Vec::new();
     let mut shared_ids = Vec::new();
@@ -1403,38 +1399,22 @@ pub(crate) fn plan_run(
                 &mut tasks,
             );
         }
-        // After the shared folders' tasks, which a player linking one takes his row from. A
+        // After the shared folders' tasks, which a player linking one takes his ID from. A
         // referee has none: the game's referee hook loads slot NN's `k99NN`/`g99NN` by number.
-        // The rows are planned on either engine — the patch takes its boots and gloves IDs
-        // from them — while the tables they write (`BootsList.bin`, `GloveList.bin`,
-        // `PlayerAppearance.bin`, "Game paths reference") exist on Fox alone: on pre-Fox
-        // no row reaches `player_rows`, which would only be reported as
-        // `player_table_missing`.
-        let (writes_item_rows, writes_tables) = match version.engine() {
-            Engine::Fox => (team.is_some(), true),
-            Engine::PreFox => (team.is_some(), false),
-        };
-        if writes_item_rows {
+        if team.is_some() {
             let rows = export_rows(&tasks, first_task, &row_players, export.coverage, hide_ids);
             // The same compiled players get the patch's `[[teams]]` block: the run's one
             // patch across exports, whose header `build` fills in and whose provisional
             // IDs `settle` resolves against the committed batches.
             if let Some(team) = patch::patch_team(
                 &row_players,
-                &rows.items,
+                &rows,
                 team_id,
                 export.team_name.as_str(),
                 export.root.write_names,
                 version,
             ) {
-                patch_teams.push(patch::PlannedPatchTeam {
-                    team,
-                    rows: rows.items.clone(),
-                });
-            }
-            if writes_tables {
-                player_rows.items.extend(rows.items);
-                player_rows.appearance.extend(rows.appearance);
+                patch_teams.push(patch::PlannedPatchTeam { team, rows });
             }
         }
         // A Common textures task per texture directory of `Common/` a target packs — a
@@ -1668,7 +1648,6 @@ pub(crate) fn plan_run(
             tasks,
             team_colors,
             team_kits,
-            player_rows,
             patch_teams,
             notes,
             shared_ids,
@@ -2382,7 +2361,7 @@ mod tests {
 
     use super::*;
     use crate::testing::{resolved, resolved_with_issues, to_plan, two_team_colors};
-    use item_rows::ItemRow;
+    use item_rows::{ItemRow, ItemTable};
 
     /// `keys` as a list (`[71405, 71407]`, `[referee 1, referee 20]`).
     fn keys_text(keys: &[PackageKey]) -> String {
@@ -4542,7 +4521,7 @@ mod tests {
         assert!(report.messages.is_empty(), "{:?}", report.messages);
         assert!(report.manifest.team_colors.is_empty());
         assert!(report.manifest.team_kits.is_empty());
-        assert!(report.manifest.player_rows.items.is_empty());
+        assert!(report.manifest.patch_teams.is_empty());
     }
 
     #[test]
@@ -4768,7 +4747,7 @@ mod tests {
     }
 
     #[test]
-    fn a_pre_fox_face_link_combines_and_a_boots_link_loads_the_shared_output_with_no_rows() {
+    fn a_pre_fox_face_link_combines_and_a_boots_link_loads_the_shared_output() {
         let export = resolved(
             "co Midcup Shared",
             &[
@@ -4824,8 +4803,6 @@ mod tests {
             task_files(&report.manifest.tasks[2]),
             ["Boots/Crocs/boots.model", "Boots/Crocs/boots.mtl"]
         );
-        // PES 15-17 have no player tables to point a player at his boots.
-        assert_eq!(report.manifest.player_rows.items, []);
     }
 
     #[test]
@@ -5929,18 +5906,16 @@ mod tests {
         let body: BTreeSet<ScopePath> = [scope_path("Players/05 - A/body.fmdl")].into();
         assert_eq!(models_folder(&tasks[1]).hand_split, body);
         assert_eq!(models_folder(&tasks[3]).hand_split, BTreeSet::new());
-        // The player's `GloveList.bin` row follows the gloves task, as an authored glove's.
-        let gloves: Vec<&ItemRow> = report
-            .manifest
-            .player_rows
-            .items
+        // The player's gloves ID follows the gloves task, as an authored glove's.
+        let gloves: Vec<&ItemRow> = report.manifest.patch_teams[0]
+            .rows
             .iter()
-            .filter(|row| row.table == crate::bins::player_tables::ItemTable::Gloves)
+            .filter(|row| row.table == ItemTable::Gloves)
             .collect();
         assert_eq!(
             gloves,
             [&ItemRow {
-                table: crate::bins::player_tables::ItemTable::Gloves,
+                table: ItemTable::Gloves,
                 player_id: 71405,
                 id: 625,
                 task: Some(1),

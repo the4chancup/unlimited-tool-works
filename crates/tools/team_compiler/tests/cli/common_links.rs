@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 use fmdl::ops::paths::{rewrite_texture_paths, texture_paths};
 use fmdl::{FmdlFile, Model};
 
-use crate::bins::{BOOTS_LIST, install_cpk, install_names, install_tables, item_list, pairs_of};
+use crate::bins::{install_cpk, install_names};
 use crate::common::Sandbox;
 use crate::compile::{
     compiled_players, cpk_entries, pes21_settings, pixels_cut_dds, tracer_kit, tracer_player_file,
@@ -2317,12 +2317,10 @@ fn clean_model_naming(file_name: &str) -> Vec<u8> {
     model.to_file().unwrap().write()
 }
 
-// TC-MOD-79
 // TC-MOD-99
 #[test]
 fn a_shared_folder_holding_only_a_model_link_takes_its_wearer_s_id() {
     let sandbox = Sandbox::new("cmn_shared_model_link");
-    install_tables(&sandbox, &[(BOOTS_LIST, &item_list(&[(70201, 11)]))]);
     let export = "exports/co Midcup Crocs";
     sandbox.write(
         &format!("{export}/Players/05 - A/face_high.fmdl"),
@@ -2353,7 +2351,6 @@ fn a_shared_folder_holding_only_a_model_link_takes_its_wearer_s_id() {
         mesh_count(package.get("boots.fmdl").unwrap()),
         mesh_count(&clean_model())
     );
-    assert_eq!(pairs_of(&entries, BOOTS_LIST), [(70201, 11), (71405, 625)]);
     // The patch half: the same exclusive ID in his entry.
     assert_eq!(
         read_patch(&sandbox).teams[0].players[&5].boots_id,
@@ -2365,7 +2362,6 @@ fn a_shared_folder_holding_only_a_model_link_takes_its_wearer_s_id() {
 #[test]
 fn a_shared_folder_s_model_link_of_another_package_s_name_is_named_invalid() {
     let sandbox = Sandbox::new("cmn_shared_bad_model_link");
-    install_tables(&sandbox, &[(BOOTS_LIST, &item_list(&[(70201, 11)]))]);
     let export = "exports/co Midcup Bad Link";
     sandbox.write(&format!("{export}/Players/05 - A/Crocs.boots"), b"");
     let crocs = format!("{export}/Boots/Crocs");

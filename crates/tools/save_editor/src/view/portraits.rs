@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Context;
 use cpk::{CpkArchive, CpkEntry};
 use crossbeam_channel::{Receiver, Sender};
-use pes_savefile::player_tables::portrait_path;
+use pes_savefile::portrait::portrait_path;
 use pes_version::PesVersion;
 
 /// The portrait folder's prefix in a `download` CPK (`75823.dds` below it).

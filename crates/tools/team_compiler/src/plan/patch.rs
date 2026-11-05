@@ -1,6 +1,6 @@
 //! The `aesthetics_patch.toml` planning decides (`spec/team_compiler/pipeline.md` "6. Post-processing"):
 //! each compiled team export's players' looks at their resolved values, their boots and
-//! gloves IDs as the tables' rows resolve them, and a `write_names` export's names.
+//! gloves IDs as `export_rows` resolves them, and a `write_names` export's names.
 //! `patch_names` is the names rule `check` reports and `compile` builds with, restated from
 //! the export alone the way `item_rows::conflicting_id_keys` is.
 
@@ -10,8 +10,7 @@ use pes_savefile::interchange::aesthetics_patch::{PatchPlayer, PatchTeam};
 use pes_savefile::settings_toml::{AppearanceSettings, NameField, NameSetting, PlayerSettings};
 use pes_version::PesVersion;
 
-use super::item_rows::{ItemRow, RowPlayer};
-use crate::bins::player_tables::ItemTable;
+use super::item_rows::{ItemRow, ItemTable, RowPlayer};
 
 /// What the names rule gives of one player folder: the names the patch writes and the facts
 /// its findings read.
@@ -185,8 +184,8 @@ pub(super) fn patch_team(
 }
 
 /// `teams`' provisional `boots_id`/`gloves_id` settled against the batches the writer
-/// committed (`committed`, the manifest positions): an ID whose row does not count by the
-/// tables' own rule (`ItemRow::counts`) is removed, so the save keeps his current one; an
+/// committed (`committed`, the manifest positions): an ID whose row does not count
+/// (`ItemRow::counts`) is removed, so the save keeps his current one; an
 /// entry left holding nothing is dropped (`holds_nothing`), then a team left with no
 /// player. Called once every batch's outcome is known, before the patch is written.
 pub(crate) fn settle(teams: Vec<PlannedPatchTeam>, committed: &BTreeSet<usize>) -> Vec<PatchTeam> {

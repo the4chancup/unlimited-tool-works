@@ -14,9 +14,7 @@ use std::path::Path;
 use fmdl::ops::paths::texture_paths;
 use fmdl::{FmdlFile, Model};
 
-use crate::bins::{
-    BOOTS_LIST, GLOVE_LIST, SHARED_IDS_714, install_tables, item_list, pairs_of, record,
-};
+use crate::bins::{SHARED_IDS_714, install_bins, record};
 use crate::common::Sandbox;
 use crate::common_links::texture_directories;
 use crate::compile::{cpk_entries, pes21_settings, pixels_cut_dds, tracer_kit, tracer_player_file};
@@ -1327,12 +1325,10 @@ fn a_face_link_combines_the_shared_face_folder_into_the_player_s_face() {
     );
 }
 
-// TC-MOD-55
 // TC-MOD-95
 #[test]
 fn a_shared_face_s_boots_model_is_a_part_of_the_linking_player_s_own_boots() {
     let sandbox = Sandbox::new("mod_face_link_boots");
-    install_tables(&sandbox, &[(BOOTS_LIST, &item_list(&[(70201, 11)]))]);
     let export = "exports/co Midcup Round";
     sandbox.write(&format!("{export}/Players/05 - A/Round.face"), b"");
     for name in ["fcl_hair.fmdl", "boots.fmdl"] {
@@ -1362,7 +1358,6 @@ fn a_shared_face_s_boots_model_is_a_part_of_the_linking_player_s_own_boots() {
     let boots = "Asset/model/character/boots/k0625/#Win/boots.fpk";
     assert_eq!(package_names(&entries[boots]), ["boots.fmdl", "boots.skl"]);
     assert_eq!(boots_mesh_count(&entries, boots), tracer_boots_mesh_count());
-    assert_eq!(pairs_of(&entries, BOOTS_LIST), [(70201, 11), (71405, 625)]);
     // The patch half: the same exclusive ID in his entry.
     assert_eq!(
         read_patch(&sandbox).teams[0].players[&5].boots_id,
@@ -1370,12 +1365,10 @@ fn a_shared_face_s_boots_model_is_a_part_of_the_linking_player_s_own_boots() {
     );
 }
 
-// TC-MOD-58
 // TC-MOD-96
 #[test]
 fn a_shared_face_s_boots_model_converts_with_the_face_folder_s_mtl() {
     let sandbox = Sandbox::new("mod_face_link_boots_model");
-    install_tables(&sandbox, &[(BOOTS_LIST, &item_list(&[(70201, 11)]))]);
     let export = "exports/co Midcup Round";
     sandbox.write(&format!("{export}/Players/05 - A/Round.face"), b"");
     sandbox.write(
@@ -1425,7 +1418,6 @@ fn a_shared_face_s_boots_model_converts_with_the_face_folder_s_mtl() {
     for path in &skin {
         assert_eq!(path, &(HOME_714_05.to_owned(), "skin.dds".to_owned()));
     }
-    assert_eq!(pairs_of(&entries, BOOTS_LIST), [(70201, 11), (71405, 625)]);
     // The patch half: the same exclusive ID in his entry.
     assert_eq!(
         read_patch(&sandbox).teams[0].players[&5].boots_id,
@@ -1433,12 +1425,10 @@ fn a_shared_face_s_boots_model_converts_with_the_face_folder_s_mtl() {
     );
 }
 
-// TC-MOD-59
 // TC-MOD-97
 #[test]
 fn a_boots_link_combines_with_the_boots_of_the_player_s_shared_face() {
     let sandbox = Sandbox::new("mod_face_link_boots_link");
-    install_tables(&sandbox, &[(BOOTS_LIST, &item_list(&[(70201, 11)]))]);
     let export = "exports/co Midcup Round";
     sandbox.write(&format!("{export}/Players/05 - A/Round.face"), b"");
     sandbox.write(&format!("{export}/Players/05 - A/Crocs.boots"), b"");
@@ -1480,7 +1470,6 @@ fn a_boots_link_combines_with_the_boots_of_the_player_s_shared_face() {
         2 * tracer_boots_mesh_count(),
         "Round's meshes plus Crocs's"
     );
-    assert_eq!(pairs_of(&entries, BOOTS_LIST), [(70201, 11), (71405, 625)]);
     // The patch half: the same exclusive ID in his entry.
     assert_eq!(
         read_patch(&sandbox).teams[0].players[&5].boots_id,
@@ -1496,12 +1485,10 @@ fn a_boots_link_combines_with_the_boots_of_the_player_s_shared_face() {
     );
 }
 
-// TC-MOD-60
 // TC-MOD-98
 #[test]
 fn a_gloves_link_combines_with_the_hands_split_from_the_player_s_face_model() {
     let sandbox = Sandbox::new("mod_hand_split_gloves_link");
-    install_tables(&sandbox, &[(GLOVE_LIST, &item_list(&[]))]);
     // A full-body model with both hands on (`tests/fixtures/hand_split/README.md`): 40 faces,
     // of which each hand's split takes 8 and the body keeps 24.
     let body =
@@ -1549,7 +1536,6 @@ fn a_gloves_link_combines_with_the_hands_split_from_the_player_s_face_model() {
         ],
         [8 + 40, 8 + 40]
     );
-    assert_eq!(pairs_of(&entries, GLOVE_LIST), [(71405, 625)]);
     // The patch half: the same exclusive ID in his entry.
     assert_eq!(
         read_patch(&sandbox).teams[0].players[&5].gloves_id,
@@ -1977,7 +1963,7 @@ fn a_midcup_s_new_shared_folder_past_the_installed_record_exhausts_the_pool() {
         .map(|(id, name)| (*id, name.as_str()))
         .collect();
     let installed = record(&entries);
-    install_tables(&sandbox, &[(SHARED_IDS_714, installed.as_slice())]);
+    install_bins(&sandbox, &[(SHARED_IDS_714, installed.as_slice())]);
     // Birk, which the record does not name, is worn by two slots, so it takes a shared id,
     // the 18th needed; a one-wearer folder would take its wearer's exclusive id instead.
     write_shared_boots(&sandbox, "co Midcup Pool", "Birk", None, &[5, 6]);
@@ -2602,10 +2588,6 @@ fn face_count(entries: &BTreeMap<String, Vec<u8>>, path: &str, name: &str) -> us
 #[test]
 fn a_face_model_weighted_to_the_hand_bones_gives_its_hands_to_the_player_s_gloves() {
     let sandbox = Sandbox::new("mod_hand_split");
-    install_tables(
-        &sandbox,
-        &[(BOOTS_LIST, &item_list(&[])), (GLOVE_LIST, &item_list(&[]))],
-    );
     // A full-body model with both hands on (`tests/fixtures/hand_split/README.md`): 40
     // faces, of which each hand's split takes 8 and the body keeps 24. Slot 05 holds it as
     // a face model, slot 06 the same bytes as boots, which are never split.
@@ -2644,7 +2626,6 @@ fn a_face_model_weighted_to_the_hand_bones_gives_its_hands_to_the_player_s_glove
         40,
         "every face of the source, once"
     );
-    assert_eq!(pairs_of(&entries, GLOVE_LIST), [(71405, 625)]);
 
     // Slot 06's boots keep the whole model, and give no gloves.
     let boots = "Asset/model/character/boots/k0626/#Win/boots.fpk";
@@ -2654,11 +2635,6 @@ fn a_face_model_weighted_to_the_hand_bones_gives_its_hands_to_the_player_s_glove
             .keys()
             .any(|path| path.starts_with("Asset/model/character/glove/g0626/")),
         "no gloves for slot 06"
-    );
-    assert_eq!(
-        pairs_of(&entries, BOOTS_LIST),
-        [(71406, 626)],
-        "slot 06's boots"
     );
 }
 

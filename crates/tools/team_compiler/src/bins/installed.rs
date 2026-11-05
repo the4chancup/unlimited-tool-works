@@ -4,10 +4,10 @@
 //! CPK above them, so building on them keeps the cup's colors and kits for every team the run
 //! does not compile. Each bin comes from the nearest of those CPKs that holds it, and from its
 //! bundled base when none does or the walk cannot be made (no PES folder, no list, a list not
-//! naming the run's CPK); a Fox player table, which has no bundled base, is then absent. In
-//! multi-CPK mode the run's own CPK is the bins CPK, whose installed copy the three player
-//! tables' walk starts at: it holds the seed rows of the players no export compiles, which the
-//! run's output replaces. The walk passes over the installed refs CPK when the run writes one,
+//! naming the run's CPK). In
+//! multi-CPK mode the run's own CPK is the bins CPK, whose installed copy the walk opens
+//! first: it holds each team's shared-IDs record, which the run's output replaces. The walk
+//! passes over the installed refs CPK when the run writes one,
 //! since the run replaces it. The same walk keeps every entry path of the CPKs below the
 //! boundary, for the texture lookup, which `check` makes too, reading no bin. On PES 15-17 it
 //! also gathers the loose kit configs (`WorkingBins::loose_kit_configs`).
@@ -24,9 +24,6 @@ use pipeline::CpkStem;
 use studio_core::{Disposition, Message, Scope};
 use uniparam::UniformParameter;
 
-use pes_savefile::player_tables::{AppearanceTable, ItemList, PlayerTableFile};
-
-use super::player_tables::ItemTable;
 use super::shared_ids::SharedIds;
 use super::{TeamColorBin, UniColorBin, WorkingBins};
 use crate::kit_variants::kit_lookup_keys;
@@ -170,9 +167,6 @@ enum Bin {
     TeamColor,
     UniColor,
     UniformParameter,
-    BootsList,
-    GloveList,
-    PlayerAppearance,
 }
 
 impl Bin {
@@ -182,9 +176,6 @@ impl Bin {
             Bin::TeamColor => paths::TEAM_COLOR,
             Bin::UniColor => paths::UNI_COLOR,
             Bin::UniformParameter => paths::UNIFORM_PARAMETER,
-            Bin::BootsList => ItemTable::Boots.file().cpk_path(),
-            Bin::GloveList => ItemTable::Gloves.file().cpk_path(),
-            Bin::PlayerAppearance => PlayerTableFile::PlayerAppearance.cpk_path(),
         }
     }
 
@@ -194,25 +185,7 @@ impl Bin {
             Bin::TeamColor => "TeamColor.bin",
             Bin::UniColor => "UniColor.bin",
             Bin::UniformParameter => "UniformParameter.bin",
-            Bin::BootsList => ItemTable::Boots.file().file_name(),
-            Bin::GloveList => ItemTable::Gloves.file().file_name(),
-            Bin::PlayerAppearance => PlayerTableFile::PlayerAppearance.file_name(),
         }
-    }
-
-    /// Whether the bin is one of the three player tables, the bins a multi-CPK run takes
-    /// from the bins CPK itself.
-    fn is_player_table(self) -> bool {
-        match self {
-            Bin::TeamColor | Bin::UniColor | Bin::UniformParameter => false,
-            Bin::BootsList | Bin::GloveList | Bin::PlayerAppearance => true,
-        }
-    }
-
-    /// Whether the run has a bundled base for the bin when no installed CPK holds it. The
-    /// player tables have none: the seed rows are the cup's own.
-    fn has_base(self) -> bool {
-        !self.is_player_table()
     }
 
     /// Parses `bytes`, unwrapped, as the bin and puts it in `bins` in place of the one there.
@@ -221,18 +194,6 @@ impl Bin {
             Bin::TeamColor => bins.team_color = TeamColorBin::read(bytes)?,
             Bin::UniColor => bins.uni_color = UniColorBin::read(bytes)?,
             Bin::UniformParameter => bins.uniform_parameter = Some(UniformParameter::read(&bytes)?),
-            Bin::BootsList => {
-                bins.boots_list = Some(ItemList::read(ItemTable::Boots.file(), &bytes)?)
-            }
-            Bin::GloveList => {
-                bins.glove_list = Some(ItemList::read(ItemTable::Gloves.file(), &bytes)?)
-            }
-            Bin::PlayerAppearance => {
-                bins.player_appearance = Some(AppearanceTable::read(
-                    PlayerTableFile::PlayerAppearance,
-                    &bytes,
-                )?);
-            }
         }
         Ok(())
     }
@@ -248,8 +209,8 @@ struct Wanted {
 /// Where a CPK the walk opens sits in the list against the run's own.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Place {
-    /// The boundary CPK itself, a multi-CPK run's bins CPK: it supplies the player tables
-    /// alone, its other bins and loose kit configs being the previous output's, which the
+    /// The boundary CPK itself, a multi-CPK run's bins CPK: it supplies the shared-IDs
+    /// records alone, its bins and loose kit configs being the previous output's, which the
     /// run replaces.
     Boundary,
     /// A CPK listed before the boundary, which supplies every bin the walk looks for.
@@ -258,15 +219,15 @@ enum Place {
 
 /// The bins a run compiling `cpk_stem` for `version` builds on, taken from the installed
 /// CPKs of the PES folder `pes_folder`, passing over the refs CPK `refs` when the run writes
-/// one. A bin none of them holds comes from its bundled base in the run's `templates`; a Fox
-/// player table, having none, is then absent. Also returned: the entry paths of the CPKs
+/// one. A bin none of them holds comes from its bundled base in the run's `templates`. Also
+/// returned: the entry paths of the CPKs
 /// walked, each team's shared-IDs record (`take_shared_ids`), and the findings. These are a
 /// `bin_source` per bin found or bundled, and `dpfilelist_missing` when the folder has no list
 /// (an Error when the run `deploys`, a Warning when not). `multicpk` is the run writing the
-/// parts layout: `cpk_stem` is then the bins CPK's stem and the player tables' walk starts at
-/// the installed CPK of its name itself, so the seed rows it holds come through to the output
-/// replacing it. A list, a CPK or a bin that cannot be read is the error: the run stops rather
-/// than build on an older copy.
+/// parts layout: `cpk_stem` is then the bins CPK's stem and the walk starts at
+/// the installed CPK of its name itself, so each team's shared-IDs record it holds comes
+/// through to the output replacing it. A list, a CPK or a bin that cannot be read is the
+/// error: the run stops rather than build on an older copy.
 pub(crate) fn working_bins(
     pes_folder: &Path,
     cpk_stem: &CpkStem,
@@ -277,15 +238,9 @@ pub(crate) fn working_bins(
     templates: &Templates,
 ) -> Result<(WorkingBins, InstalledPaths, Vec<Message>), Unreadable> {
     let mut looked_for = vec![Bin::TeamColor, Bin::UniColor];
-    // Only the Fox versions have the bin, and so a bundled base for it; and only they have
-    // the player tables.
+    // Only the Fox versions have the bin, and so a bundled base for it.
     if templates.uniform_parameter_base(version).is_some() {
-        looked_for.extend([
-            Bin::UniformParameter,
-            Bin::BootsList,
-            Bin::GloveList,
-            Bin::PlayerAppearance,
-        ]);
+        looked_for.push(Bin::UniformParameter);
     }
     let mut wanted: Vec<Wanted> = looked_for
         .into_iter()
@@ -301,9 +256,11 @@ pub(crate) fn working_bins(
     let mut bins = WorkingBins::bundled(version, templates);
     let mut shared_ids = BTreeMap::new();
     let walked = walk(pes_folder, cpk_stem, refs, multicpk, |cpk, name, place| {
-        take_bins(cpk, name, place, &mut wanted, &mut bins)?;
-        if gathers_loose_kit_configs && place == Place::Below {
-            take_loose_kit_configs(cpk, &mut bins.loose_kit_configs)?;
+        if place == Place::Below {
+            take_bins(cpk, name, &mut wanted, &mut bins)?;
+            if gathers_loose_kit_configs {
+                take_loose_kit_configs(cpk, &mut bins.loose_kit_configs)?;
+            }
         }
         take_shared_ids(cpk, &mut shared_ids)
     })?;
@@ -322,12 +279,7 @@ pub(crate) fn working_bins(
         Walk::Walked(paths) => InstalledPaths::Known(WalkedCpks { paths, shared_ids }),
     };
     for Wanted { bin, found } in wanted {
-        let cpk = match found {
-            Some(cpk) => cpk,
-            None if bin.has_base() => "bundled".to_owned(),
-            // No base to name: the table is not written.
-            None => continue,
-        };
+        let cpk = found.unwrap_or_else(|| "bundled".to_owned());
         messages.push(tool_message(
             Code::BinSource,
             Scope::Run,
@@ -391,9 +343,10 @@ type InstalledCpk = CpkArchive<BufReader<File>>;
 /// first, keeping every entry path of each, folded, and calling `take` on each with its listed
 /// name and `Place`: the texture lookup needs every path, so the walk does not stop once the
 /// bins are found. With `from_boundary` (a multi-CPK run, whose boundary is the bins CPK),
-/// the boundary CPK itself is walked first as `Place::Boundary`, for the entries that start
-/// there; its paths do not join the texture lookup's, it being no CPK listed before the
-/// run's. A listed CPK with no file is passed over, and so is the refs CPK `refs` when given;
+/// the boundary CPK itself is walked first as `Place::Boundary`, for the shared-IDs records
+/// that start there; its paths do not join the texture lookup's, it being no CPK listed before
+/// the run's. A listed CPK with no file is passed over, and so is the refs CPK `refs` when
+/// given;
 /// one that cannot be opened, or that `take` fails on, is the error, naming that CPK.
 fn walk(
     pes_folder: &Path,
@@ -475,22 +428,17 @@ fn open_cpk(path: &Path) -> Result<Option<InstalledCpk>, Unreadable> {
         .map_err(unreadable)
 }
 
-/// Takes into `bins` from `cpk`, listed as `name` at `place` in the walk, each of `wanted`
+/// Takes into `bins` from `cpk`, listed as `name` in the walk, each of `wanted`
 /// not found yet that it holds, unwrapped when the bin is WESYS-compressed, and parsed: a bin
 /// that does not parse as its format is as unreadable as one that cannot be read, found here
-/// rather than when the CPK is finished after every export was processed. At the boundary
-/// only the player tables are taken; a CPK below supplies every bin.
+/// rather than when the CPK is finished after every export was processed.
 fn take_bins(
     cpk: &mut InstalledCpk,
     name: &str,
-    place: Place,
     wanted: &mut [Wanted],
     bins: &mut WorkingBins,
 ) -> anyhow::Result<()> {
     for wanted in wanted.iter_mut().filter(|wanted| wanted.found.is_none()) {
-        if place == Place::Boundary && !wanted.bin.is_player_table() {
-            continue;
-        }
         let path_in_cpk = wanted.bin.path();
         let Some(entry) = cpk.entries().iter().find(|entry| entry.path == path_in_cpk) else {
             continue;
@@ -776,14 +724,10 @@ mod tests {
         let hair = paths::common_texture(Engine::Fox, 714, "Hair");
         install_cpk(pes, "4cc_08_bins.cpk", &[(&hair, b"farther")]);
         // The nearer CPK holds every bin the walk looks for: the walk still opens the farther.
-        let pair = [0x39, 0x12, 0x01, 0x00, 0x0b, 0x00, 0x00, 0x00];
-        let bins_61: [(&str, &[u8]); 6] = [
+        let bins_61: [(&str, &[u8]); 3] = [
             (paths::TEAM_COLOR, &team_color_bin(61)),
             (paths::UNI_COLOR, &uni_color_bin(61)),
             (paths::UNIFORM_PARAMETER, &uniform_parameter_bin("61")),
-            (PlayerTableFile::BootsList.cpk_path(), &pair),
-            (PlayerTableFile::GloveList.cpk_path(), &pair),
-            (PlayerTableFile::PlayerAppearance.cpk_path(), &[7; 60]),
         ];
         install_cpk(pes, "4cc_61_midcup.cpk", &bins_61);
         let after = paths::common_texture(Engine::Fox, 714, "after");
@@ -799,14 +743,7 @@ mod tests {
             &Templates::embedded(),
         )
         .unwrap();
-        let every_bin = [
-            "TeamColor.bin",
-            "UniColor.bin",
-            "UniformParameter.bin",
-            "BootsList.bin",
-            "GloveList.bin",
-            "PlayerAppearance.bin",
-        ];
+        let every_bin = ["TeamColor.bin", "UniColor.bin", "UniformParameter.bin"];
         assert_eq!(
             messages,
             every_bin.map(|bin| source(bin, "4cc_61_midcup.cpk")),
@@ -1269,106 +1206,6 @@ mod tests {
     }
 
     #[test]
-    fn the_player_tables_are_taken_on_pes_21_and_not_looked_for_on_pes_17() {
-        let temp = scratch("installed_player_tables");
-        let pes = temp.path();
-        install_list(pes, &["4cc_08_bins.cpk", "4cc_99_test.cpk"]);
-        // Player 70201 with boots 11; one 60-byte appearance row.
-        let boots = [0x39, 0x12, 0x01, 0x00, 0x0b, 0x00, 0x00, 0x00];
-        install_cpk(
-            pes,
-            "4cc_08_bins.cpk",
-            &[
-                (PlayerTableFile::BootsList.cpk_path(), &boots),
-                (PlayerTableFile::PlayerAppearance.cpk_path(), &[7; 60]),
-            ],
-        );
-
-        let (bins, _, messages) = working_bins(
-            pes,
-            &stem(),
-            None,
-            false,
-            PesVersion::Pes21,
-            true,
-            &Templates::embedded(),
-        )
-        .unwrap();
-        assert_eq!(
-            bins.boots_list.map(|list| list.to_bytes()),
-            Some(boots.to_vec())
-        );
-        assert_eq!(bins.glove_list, None, "no CPK holds it");
-        assert_eq!(
-            bins.player_appearance.map(|table| table.to_bytes()),
-            Some(vec![7; 60])
-        );
-        let mut expected = all_bundled().to_vec();
-        expected.extend([
-            source("BootsList.bin", "4cc_08_bins.cpk"),
-            source("PlayerAppearance.bin", "4cc_08_bins.cpk"),
-        ]);
-        assert_eq!(messages, expected, "no bin_source for GloveList.bin");
-
-        let (bins, _, messages) = working_bins(
-            pes,
-            &stem(),
-            None,
-            false,
-            PesVersion::Pes17,
-            true,
-            &Templates::embedded(),
-        )
-        .unwrap();
-        assert_eq!(bins.boots_list, None);
-        assert_eq!(bins.player_appearance, None);
-        assert_eq!(messages, all_bundled()[..2]);
-    }
-
-    #[test]
-    fn an_installed_player_table_that_does_not_parse_is_the_error_naming_its_cpk() {
-        for (name, path, bytes, error) in [
-            (
-                "installed_glove_list_unparsable",
-                PlayerTableFile::GloveList.cpk_path(),
-                vec![0; 12],
-                "GloveList.bin is 12 bytes, not a whole number of 8-byte pairs",
-            ),
-            (
-                "installed_player_appearance_unparsable",
-                PlayerTableFile::PlayerAppearance.cpk_path(),
-                vec![0; 61],
-                "PlayerAppearance.bin is 61 bytes, not a whole number of 60-byte rows",
-            ),
-        ] {
-            let temp = scratch(name);
-            let pes = temp.path();
-            install_list(pes, &["4cc_08_bins.cpk", "4cc_99_test.cpk"]);
-            install_cpk(pes, "4cc_08_bins.cpk", &[(path, &bytes)]);
-
-            let Err(unreadable) = working_bins(
-                pes,
-                &stem(),
-                None,
-                false,
-                PesVersion::Pes21,
-                true,
-                &Templates::embedded(),
-            ) else {
-                panic!("a table that does not parse must be the error");
-            };
-            assert_eq!(
-                unreadable.path,
-                pes.join("download").join("4cc_08_bins.cpk")
-            );
-            assert_eq!(
-                format!("{:#}", unreadable.error),
-                format!("cannot read {path}: {error}")
-            );
-        }
-    }
-
-    #[test]
     fn a_list_that_exists_but_cannot_be_read_is_the_error() {
         let temp = scratch("installed_list_unreadable");
         let pes = temp.path();
@@ -1417,8 +1254,8 @@ mod tests {
     }
 
     #[test]
-    fn in_multi_cpk_mode_the_player_tables_start_at_the_bins_cpk_itself() {
-        let temp = scratch("installed_multicpk_tables");
+    fn in_multi_cpk_mode_no_bin_comes_from_the_bins_cpk_itself() {
+        let temp = scratch("installed_multicpk_boundary");
         let pes = temp.path();
         // The parts layout's boundary is the bins CPK; the teams parts are listed after it.
         install_list(
@@ -1435,16 +1272,13 @@ mod tests {
             ],
         );
         // The installed bins CPK, which the run's output replaces: a UniColor and a texture
-        // of its own, which are not built on, and two player tables, which are.
+        // of its own, which are not built on.
         let bins_texture = paths::common_texture(Engine::Fox, 714, "bins");
-        let boots = [0x39, 0x12, 0x01, 0x00, 0x0b, 0x00, 0x00, 0x00];
         install_cpk(
             pes,
             "4cc_08_bins.cpk",
             &[
                 (paths::UNI_COLOR, &uni_color_bin(8)),
-                (PlayerTableFile::BootsList.cpk_path(), &boots),
-                (PlayerTableFile::PlayerAppearance.cpk_path(), &[9; 60]),
                 (&bins_texture, b"bins"),
             ],
         );
@@ -1466,22 +1300,11 @@ mod tests {
             "the bins CPK's own UniColor is the previous output's: taken from below"
         );
         assert_eq!(
-            bins.boots_list.map(|list| list.to_bytes()),
-            Some(boots.to_vec())
-        );
-        assert_eq!(bins.glove_list, None, "no CPK holds it");
-        assert_eq!(
-            bins.player_appearance.map(|table| table.to_bytes()),
-            Some(vec![9; 60])
-        );
-        assert_eq!(
             messages,
             [
                 source("TeamColor.bin", "bundled"),
                 source("UniColor.bin", "4cc_06_gameplay.cpk"),
                 source("UniformParameter.bin", "bundled"),
-                source("BootsList.bin", "4cc_08_bins.cpk"),
-                source("PlayerAppearance.bin", "4cc_08_bins.cpk"),
             ]
         );
         // The boundary CPK is not a CPK listed before the run's: its paths are not the
@@ -1506,8 +1329,6 @@ mod tests {
         )
         .unwrap();
         assert_eq!(bins.uni_color.into_bytes(), uni_color_bin(6));
-        assert_eq!(bins.boots_list, None);
-        assert_eq!(bins.player_appearance, None);
         assert_eq!(
             messages,
             [

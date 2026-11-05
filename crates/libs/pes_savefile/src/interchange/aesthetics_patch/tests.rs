@@ -1445,7 +1445,7 @@ fn the_patch_lands_on_the_player_id_not_the_slot() {
     assert_eq!(other, &before, "the swapped-in player is untouched");
 }
 
-/// The lossless guard the `PlayerAppearance.bin` round trip gave: every
+/// The lossless guard over the patch's `[appearance]` write: every
 /// fixture player's own settings, applied back to him through the patch's
 /// `[appearance]`, leave his record as it was but for the ids `apply`
 /// makes his own — his appearance id where the version has one and his

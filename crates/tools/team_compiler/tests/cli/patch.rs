@@ -250,7 +250,6 @@ fn a_pre_fox_compile_writes_the_patch_his_look_and_the_linked_boots_id() {
 // The patch half with no `write_names` marker (the savefile half is `savefile.rs`'s): no
 // name is written, the whole look is (his settings.toml's resolved, every other key the
 // template's), the header names the CPK and the version.
-// TC-SAV-01
 // TC-SAV-18
 #[test]
 fn a_plain_export_s_patch_holds_his_look_and_no_name() {

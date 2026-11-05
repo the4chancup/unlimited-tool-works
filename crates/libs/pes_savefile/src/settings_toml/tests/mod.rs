@@ -1,10 +1,9 @@
 //! The `PlayerSettings` tests: the completeness invariant, `from_player`,
-//! `apply` and the key table itself (`model`), the `PlayerAppearance.bin`
-//! row (`appearance_row`), the per-version narrowing (`narrow`), the marker
+//! `apply` and the key table itself (`model`), the per-version narrowing
+//! (`narrow`), the marker
 //! preset and the strip-style check inputs (`fpc`), and the TOML text half
 //! (`document`).
 
-mod appearance_row;
 mod document;
 mod fpc;
 mod model;

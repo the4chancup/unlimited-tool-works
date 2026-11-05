@@ -9,7 +9,6 @@
 
 pub(crate) mod installed;
 pub(crate) mod kit_configs;
-pub(crate) mod player_tables;
 pub(crate) mod shared_ids;
 
 use std::collections::BTreeMap;
@@ -21,7 +20,6 @@ use pes_version::PesVersion;
 use uniparam::UniformParameter;
 
 use crate::templates::Templates;
-use pes_savefile::player_tables::{AppearanceTable, ItemList};
 
 /// One color as the bins hold it: red, green, blue.
 pub(crate) type Rgb = [u8; 3];
@@ -361,14 +359,6 @@ pub(crate) struct WorkingBins {
     /// `UniformParameter.bin`: `Some` on the Fox versions, `None` on PES 15-17, which have no
     /// such bin.
     pub(crate) uniform_parameter: Option<UniformParameter>,
-    /// `BootsList.bin`: `Some` when an installed CPK holds it (Fox only); it has no bundled
-    /// base, so `None` otherwise, and it is then not written.
-    pub(crate) boots_list: Option<ItemList>,
-    /// `GloveList.bin`, as `boots_list`.
-    pub(crate) glove_list: Option<ItemList>,
-    /// `PlayerAppearance.bin`, as `boots_list`: the table the run's compiled players' rows
-    /// are set on.
-    pub(crate) player_appearance: Option<AppearanceTable>,
     /// PES 15-17's loose kit configs (`kit_configs::loose_kit_configs`), by entry name
     /// (`714_DEF_1st_realUni.bin`), unwrapped: every `.bin` in a team's folder under
     /// `uniform/team/` of the installed CPKs, the nearest CPK's copy of each. A `Midcup`
@@ -392,9 +382,6 @@ impl WorkingBins {
             uniform_parameter: templates
                 .uniform_parameter_base(version)
                 .map(|bytes| UniformParameter::read(bytes).expect(parses)),
-            boots_list: None,
-            glove_list: None,
-            player_appearance: None,
             loose_kit_configs: BTreeMap::new(),
         }
     }

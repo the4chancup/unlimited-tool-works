@@ -649,15 +649,6 @@ config or the record of the team's shared IDs) cannot be read or is not a valid 
 of its kind, the compile stops before any export is read (`installed_bin_unreadable`), so the
 CPK you had is kept.
 
-On PES 2018 to 2021 the boots list, the gloves list and the player appearance table also come
-from those CPKs (with `multicpk_mode` on, from the installed `bins_cpk_name` CPK itself
-first), and `compile` points each compiled player whose boots or gloves it built at
-them. The compiler has no copy of these files. A list none of them has is not
-written, so those players' new boots, gloves or appearance do not show in the game, and
-`compile` says so
-with the warning `player_table_missing`, naming the list and how many players were left out. A
-list of only this compile's players would take every other player's rows away.
-
 On PES 2018 to 2021, a texture a model names must be in the folder (his linked shared
 folders' textures count too; a `./` path naming a subfolder, `./textures/skin.dds`, at that
 path alone), or for a path into the team's Common folder in the export's `Common` folder or in a
@@ -876,8 +867,8 @@ exports. A CPK takes teams until the next one would make it larger than `cpk_par
 bytes (3 GiB unless you changed it), and that team starts the next CPK. A team is never split
 between two CPKs. Every one of these CPKs the teams do not need is written as the empty
 placeholder CPK, so a CPK left from an earlier, bigger compile does not stay behind. The files
-the compiler builds for every team (team colors, kit colors, kit configs, the boots and gloves
-lists and the player appearance table) and the files of the `overrides` folder go into the CPK
+the compiler builds for every team (team colors, kit colors, kit configs) and the files of the
+`overrides` folder go into the CPK
 named by the `bins_cpk_name` setting (`4cc_08_bins.cpk`). Every one of these CPKs is installed
 into the game's `download` folder, or none is. The game's `DpFileList.bin` must have all of
 them (a list without the
@@ -957,9 +948,7 @@ compiled for, or cannot take the patch or be written (`savefile_invalid`,
 `savefile_write_failed`) stops the
 run with exit code 3. The new CPKs come out of the game again and are left in the output folder,
 and the CPKs the game had go back in. In `--mode sideload` the same findings are errors
-instead. The exit code is 1 and the new `livecpk` files stay in place. The warning
-`savefile_player_not_stripped` names a compiled player in your save who still has an appearance
-of his own. The game shows his save data, not the compiled one, until the compiler writes
-the look into the aesthetics patch. When no save is found at all, that is
+instead. The exit code is 1 and the new `livecpk` files stay in place.
+When no save is found at all, that is
 only the warning `savefile_missing`, which names the patch file and the command that applies it
 by hand (a `savefile_path` naming a folder is `savefile_invalid` instead).

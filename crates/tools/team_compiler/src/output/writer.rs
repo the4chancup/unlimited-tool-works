@@ -17,10 +17,7 @@ use kit_config::{KitConfig, KitSlot};
 use pes_version::{Engine, PesVersion};
 use studio_core::{Disposition, Message, Scope};
 
-use pes_savefile::player_tables::{AppearanceTable, ItemList, PlayerTableFile};
-
 use crate::bins::kit_configs::{kit_configs, loose_kit_configs};
-use crate::bins::player_tables::{ItemTable, apply, left_out, table_missing};
 use crate::bins::shared_ids::SharedIds;
 use crate::bins::{KitColorEntry, Rgb, WorkingBins, uni_color_kit_number};
 use crate::messages::{Code, tool_message};
@@ -28,13 +25,11 @@ use crate::output::parts::TeamsParts;
 use crate::output::sink::OutputSink;
 use crate::paths::{self, REFEREE_MARKER_COLLAR};
 use crate::plan::TeamKits;
-use crate::plan::item_rows::PlayerRows;
 use crate::processing::TaskBatch;
 use crate::templates::Templates;
 
 /// The manifest's per-team writes beside the tasks' own: the `TeamColor.bin` colors, the
-/// `UniColor.bin`/`UniformParameter.bin` kits, the player tables' rows and the shared-IDs
-/// records.
+/// `UniColor.bin`/`UniformParameter.bin` kits and the shared-IDs records.
 #[derive(Clone, Copy)]
 pub(crate) struct BinsEdits<'a> {
     /// Each planned team's colors for its `TeamColor.bin` record.
@@ -42,16 +37,11 @@ pub(crate) struct BinsEdits<'a> {
     /// Each planned team export's kits, for its `UniColor.bin` record and
     /// `UniformParameter.bin` configs.
     pub(crate) team_kits: &'a [TeamKits],
-    /// Every planned team export's compiled players' `BootsList.bin`, `GloveList.bin` and
-    /// `PlayerAppearance.bin` rows.
-    pub(crate) player_rows: &'a PlayerRows,
     /// Each planned team export's shared-IDs record to write, whatever its folders' tasks'
     /// outcomes.
     pub(crate) shared_ids: &'a [(u16, SharedIds)],
-    /// A patch team was planned: the patch is the run's work as the tables are, so a run
-    /// that commits nothing still writes a CPK to publish it. Redundant on Fox, where the
-    /// rows `player_rows` holds already stand for it; it decides on pre-Fox, where the
-    /// rows feed the patch instead.
+    /// A patch team was planned: the patch is the run's work as an override is, so a run
+    /// that commits nothing still writes a CPK to publish it.
     pub(crate) patch_planned: bool,
 }
 
@@ -59,14 +49,9 @@ impl BinsEdits<'static> {
     /// The empty edits: no team compiled anything.
     #[cfg(test)]
     pub(crate) fn empty() -> BinsEdits<'static> {
-        static ROWS: PlayerRows = PlayerRows {
-            items: Vec::new(),
-            appearance: Vec::new(),
-        };
         BinsEdits {
             team_colors: &[],
             team_kits: &[],
-            player_rows: &ROWS,
             shared_ids: &[],
             patch_planned: false,
         }
@@ -99,8 +84,8 @@ pub(crate) struct CpkOutput {
     /// `kit_configs` edits each slot's installed config in place, or writes the template
     /// where none is installed.
     configless_kits: Vec<(u16, KitSlot)>,
-    /// The manifest positions of the batches committed: a player's boots or gloves row is set
-    /// only when the task building them is among them.
+    /// The manifest positions of the batches committed: a player's boots or gloves ID is
+    /// settled only when the task building them is among them.
     committed: BTreeSet<usize>,
     /// What goes before each bin's game path in the sink: empty, or test mode's `_bins/`.
     bins_prefix: String,
@@ -454,15 +439,13 @@ impl CpkOutput {
     /// `team_colors` (team id, colors) set in its team's record; then `UniColor.bin`, built on
     /// `bins`' the same way, each `Full` export's team of `team_kits` keeping only its kit
     /// tasks' kits in its record, then each committed kit's entry merged into its team's record
-    /// in commit order; then the Fox player tables `bins` holds, with `player_rows` applied
-    /// (`add_player_tables`); with parts, the teams parts are finished after the sink, the slots
+    /// in commit order; with parts, the teams parts are finished after the sink, the slots
     /// left over written as the placeholder (no part and no placeholder when no file is
     /// written). Returns whether a CPK was written, the entries written across the run's
     /// outputs so far (`self.entries`: the sink's, the parts' and the refs CPK's), the
     /// findings to report: `kit_configs`'
     /// (or `loose_kit_configs`') FPC findings, one `bin_header_repaired` per working bin that
-    /// had a header wrong, naming the teams, a `player_table_missing` per list not found that
-    /// committed rows were left out of, and a `duplicate_path` for each bin an override
+    /// had a header wrong, naming the teams, and a `duplicate_path` for each bin an override
     /// replaced; and the manifest positions of the batches committed.
     fn finish_team(
         mut self,
@@ -473,16 +456,14 @@ impl CpkOutput {
         let BinsEdits {
             team_colors,
             team_kits,
-            player_rows,
             shared_ids,
             patch_planned,
         } = *edits;
         // A run in which no team committed anything writes no file, so it adds no bin either,
         // unless the overrides go into the CPK: they are written whatever the exports bring;
         // or the referee configs changed the bins on PES 18-21: their entries need the bin;
-        // or player rows were planned: the tables are the run's work as an override is, a
-        // settings-only export's compile otherwise losing its rows with no error — on
-        // pre-Fox, which has no tables, the patch stands for them the same way; or the
+        // or a patch team was planned: the patch is the run's work as an override is, a
+        // settings-only export's compile otherwise losing it with no error; or the
         // team colors, a kit's committed `UniColor.bin` entry or a configless slot's edit
         // went in: the bins are then the run's whole work.
         if !self.started
@@ -491,8 +472,6 @@ impl CpkOutput {
             && self.kit_colors.is_empty()
             && self.configless_kits.is_empty()
             && team_colors.is_empty()
-            && player_rows.items.is_empty()
-            && player_rows.appearance.is_empty()
             && !patch_planned
         {
             return Ok((
@@ -507,9 +486,6 @@ impl CpkOutput {
             team_color,
             uni_color,
             uniform_parameter,
-            boots_list,
-            glove_list,
-            player_appearance,
             loose_kit_configs: installed_kit_configs,
         } = bins;
         let mut messages = Vec::new();
@@ -586,17 +562,6 @@ impl CpkOutput {
             bin.set_kit(team_id, &entry)?;
         }
         self.add_bin(paths::UNI_COLOR, &bin.into_bytes(), &mut messages)?;
-        let lists = [
-            (ItemTable::Boots, boots_list),
-            (ItemTable::Gloves, glove_list),
-        ];
-        self.add_player_tables(
-            version,
-            lists,
-            player_appearance,
-            player_rows,
-            &mut messages,
-        )?;
         // Every compiled team's shared-IDs record, the planned assignment whatever the
         // folders' tasks' outcomes, beside the bins.
         for (team_id, record) in shared_ids {
@@ -614,64 +579,9 @@ impl CpkOutput {
         ))
     }
 
-    /// Adds the Fox player tables: each of `lists` (`BootsList.bin` then `GloveList.bin`) the
-    /// walk found, with `player_rows`' rows of it applied against the committed batches
-    /// (`apply`), written whole, changed or not, then `player_appearance` when found, with
-    /// each appearance row built from its settings for `version` and set. A table the walk
-    /// did not find is not written, one of this run's rows alone taking every other player's
-    /// away, and `player_table_missing` goes to `messages` naming it with the count of the
-    /// run's rows left out.
-    fn add_player_tables(
-        &mut self,
-        version: PesVersion,
-        lists: [(ItemTable, Option<ItemList>); 2],
-        player_appearance: Option<AppearanceTable>,
-        player_rows: &PlayerRows,
-        messages: &mut Vec<Message>,
-    ) -> anyhow::Result<()> {
-        for (table, list) in lists {
-            match list {
-                Some(mut list) => {
-                    apply(&mut list, table, &player_rows.items, &self.committed);
-                    self.add_bin(table.file().cpk_path(), &list.to_bytes(), messages)?;
-                }
-                None => messages.extend(table_missing(
-                    table.file(),
-                    left_out(table, &player_rows.items, &self.committed),
-                )),
-            }
-        }
-        match player_appearance {
-            Some(mut table) => {
-                for row in &player_rows.appearance {
-                    let bytes = row.settings.appearance_row(row.player_id, version).expect(
-                        "the deep pass narrowed every player's joined settings to this \
-                             version's ranges and the parser bounds the rest",
-                    );
-                    table.set(
-                        row.player_id,
-                        bytes[4..]
-                            .try_into()
-                            .expect("a row is 4 id bytes and 56 more"),
-                    );
-                }
-                self.add_bin(
-                    PlayerTableFile::PlayerAppearance.cpk_path(),
-                    &table.to_bytes(),
-                    messages,
-                )?;
-            }
-            None => messages.extend(table_missing(
-                PlayerTableFile::PlayerAppearance,
-                player_rows.appearance.len(),
-            )),
-        }
-        Ok(())
-    }
-
-    /// A failed task contributes nothing: no entry, no kit config or kit colors to the bins, and
-    /// no player table row. A task with an entry an override replaced still contributes the
-    /// rest, its kit config, kit colors and rows included, and the `duplicate_path` joins its
+    /// A failed task contributes nothing: no entry, no kit config or kit colors to the bins.
+    /// A task with an entry an override replaced still contributes the
+    /// rest, its kit config and kit colors included, and the `duplicate_path` joins its
     /// messages. With parts, the entries are held for the task's team instead of written. A
     /// task of the refs export writes into the refs CPK when there is one, and then does not
     /// start the team side. A `Midcup` kit may commit with no file at all: one resending only
@@ -801,7 +711,6 @@ mod tests {
 
     use cpk::CpkArchive;
     use kit_config::{KitConfig, matches_fpc};
-    use pes_savefile::settings_toml::PlayerSettings;
     use pipeline::MemoryBudget;
     use studio_core::{Disposition, ExportId, Scope};
     use uniparam::UniformParameter;
@@ -809,7 +718,6 @@ mod tests {
     use super::*;
     use crate::bins::{TeamColorBin, UniColorBin};
     use crate::messages::{Code, tool_message};
-    use crate::plan::item_rows::{AppearanceRow, ItemRow};
     use crate::plan::{EffectiveTeamKitFpc, TeamKitEdits};
     use crate::templates::Templates;
     use crate::testing::scratch;
@@ -2643,115 +2551,6 @@ mod tests {
         let (layout, bin, messages) =
             finish_with("writer_fpc_no_cpk", false, EffectiveTeamKitFpc::On);
         assert_eq!((layout, bin, messages), (Vec::new(), None, Vec::new()));
-    }
-
-    #[test]
-    fn the_player_tables_found_follow_uni_color_bin_with_the_committed_rows_set() {
-        let temp = scratch("writer_player_tables");
-        let path = temp.path().join("cup.cpk");
-        let mut output = CpkOutput::new(OutputSink::cpk(path.clone()), BTreeMap::new(), "", None);
-        // Slot 05's boots commit; slot 07's boots task failed.
-        output.submit(batch(0, &["boots/k0625.fpk"], None)).unwrap();
-        output.submit(batch(1, &[], None)).unwrap();
-        let installed = |pairs: &[(u32, u32)]| -> Vec<u8> {
-            pairs
-                .iter()
-                .flat_map(|(player_id, id)| [player_id.to_le_bytes(), id.to_le_bytes()])
-                .flatten()
-                .collect()
-        };
-        let appearance = vec![0x5a; 120];
-        let bins = WorkingBins {
-            boots_list: Some(
-                ItemList::read(
-                    ItemTable::Boots.file(),
-                    &installed(&[(71407, 7), (70201, 11)]),
-                )
-                .unwrap(),
-            ),
-            player_appearance: Some(
-                AppearanceTable::read(PlayerTableFile::PlayerAppearance, &appearance).unwrap(),
-            ),
-            ..bundled()
-        };
-        let player_rows = PlayerRows {
-            items: vec![
-                ItemRow {
-                    table: ItemTable::Boots,
-                    player_id: 71405,
-                    id: 625,
-                    task: Some(0),
-                },
-                ItemRow {
-                    table: ItemTable::Boots,
-                    player_id: 71407,
-                    id: 627,
-                    task: Some(1),
-                },
-                ItemRow {
-                    table: ItemTable::Gloves,
-                    player_id: 71405,
-                    id: 625,
-                    task: Some(0),
-                },
-            ],
-            appearance: vec![AppearanceRow {
-                player_id: 71405,
-                settings: PlayerSettings::default(),
-            }],
-        };
-
-        let (written, _entries, messages, _) = output
-            .finish(
-                PesVersion::Pes21,
-                bins,
-                BinsEdits {
-                    player_rows: &player_rows,
-                    ..BinsEdits::empty()
-                },
-                &Templates::embedded(),
-            )
-            .unwrap();
-
-        assert!(written.team);
-        assert_eq!(
-            messages,
-            [tool_message(
-                Code::PlayerTableMissing,
-                Scope::Run,
-                Disposition::Keep,
-                vec![
-                    ("table", "GloveList.bin".to_owned()),
-                    ("rows", "1".to_owned())
-                ],
-            )],
-            "no GloveList.bin installed"
-        );
-        assert_eq!(
-            layout(&path),
-            [
-                "boots/k0625.fpk",
-                paths::TEAM_COLOR,
-                paths::UNI_COLOR,
-                PlayerTableFile::BootsList.cpk_path(),
-                PlayerTableFile::PlayerAppearance.cpk_path(),
-            ]
-        );
-        assert_eq!(
-            entry(&path, PlayerTableFile::BootsList.cpk_path()),
-            installed(&[(70201, 11), (71405, 625), (71407, 7)])
-        );
-        // The installed table's two rows share one junk player id (0x5a5a5a5a), which the
-        // table keeps once; 71405's new row sorts before it.
-        let mut expected_appearance = PlayerSettings::default()
-            .appearance_row(71405, PesVersion::Pes21)
-            .unwrap()
-            .to_vec();
-        expected_appearance.extend([0x5a; 60]);
-        assert_eq!(
-            entry(&path, PlayerTableFile::PlayerAppearance.cpk_path()),
-            expected_appearance
-        );
     }
 
     /// A multi-CPK writer in `folder/run`: the bins CPK `4cc_08_bins` as the sink after

@@ -625,9 +625,7 @@ fn assert_matches_reference(sandbox: &Sandbox, exports_root: &Path) {
         &["compile", "--no-deploy", exports_root.to_str().unwrap()],
     );
     assert_eq!(run.exit_code(), 0);
-    // Notes only, but for the three player tables: with no PES install there is no table to
-    // build on, so the tracer's boots, gloves and appearance rows are left out, as Red, which
-    // wrote no table, never had them.
+    // Notes only: the tracer's compile reports no warning.
     let mut warnings = Vec::new();
     for envelope in &run.events {
         if let PipelineEvent::Message(message) = &envelope.event
@@ -636,24 +634,7 @@ fn assert_matches_reference(sandbox: &Sandbox, exports_root: &Path) {
             warnings.push((message.code.code.to_string(), message.context.clone()));
         }
     }
-    let table_missing = |table: &str| {
-        (
-            "player_table_missing".to_owned(),
-            vec![
-                ("table".to_owned(), table.to_owned()),
-                ("rows".to_owned(), "1".to_owned()),
-            ],
-        )
-    };
-    assert_eq!(
-        warnings,
-        [
-            table_missing("BootsList.bin"),
-            table_missing("GloveList.bin"),
-            table_missing("PlayerAppearance.bin")
-        ],
-        "the tracer compiles with notes only, but for the three player tables"
-    );
+    assert_eq!(warnings, [], "the tracer compiles with notes only");
 
     let ours = archive(&output.join("4cc_99_test.cpk"));
     let reference = tree(&fixture.join("red"));

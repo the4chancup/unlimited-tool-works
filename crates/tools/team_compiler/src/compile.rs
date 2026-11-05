@@ -237,8 +237,8 @@ pub(crate) fn run(
 /// `layout`'s boundary but the refs CPK `refs` the run replaces, or the bundled bases in
 /// `templates`, and the entry paths of the installed CPKs walked, for the texture lookup,
 /// their findings reported first. In multi-CPK mode the boundary is the bins CPK, whose
-/// installed copy the player tables' walk starts at. A file of the walk that cannot be read
-/// is `installed_bin_unreadable`, Fatal, and `None`: the run stops before any export is read,
+/// installed copy the shared-IDs records' walk starts at. A file of the walk that cannot be
+/// read is `installed_bin_unreadable`, Fatal, and `None`: the run stops before any export is read,
 /// the previous CPK kept, rather than build on an older copy that its CPK, loaded above it,
 /// would put back for every team.
 fn working_bins(
@@ -428,7 +428,6 @@ fn build(
     let task_count = tasks.len();
     let team_colors = manifest.team_colors;
     let team_kits = manifest.team_kits;
-    let player_rows = manifest.player_rows;
     let patch_teams = manifest.patch_teams;
     let patch_planned = !patch_teams.is_empty();
     let notes = manifest.notes;
@@ -525,7 +524,6 @@ fn build(
         let last_tasks = &last_tasks;
         let team_colors = &team_colors;
         let team_kits = &team_kits;
-        let player_rows = &player_rows;
         let shared_ids = &shared_ids;
         let budget = &budget;
         let templates = &context.templates;
@@ -549,7 +547,6 @@ fn build(
                     BinsEdits {
                         team_colors,
                         team_kits,
-                        player_rows,
                         shared_ids,
                         patch_planned,
                     },
