@@ -357,14 +357,15 @@ candidate's `pes_savefile`). So after staging, touch every file `git diff --name
 (`.tmp/lead/touch_diverged.py <candidate>`); the staging worktree also needs an empty
 `target/` of its own (`WORKLOG.md` Issues).
 
-**At most two cargo builds at once, on the whole machine** (the maintainer, 2026-10-29): a
-sidekick's, a mutation run's local half, the lead's gates or package tests and a release
-build each count as one. Two already fill the CPU almost entirely, so a third makes nothing
-faster and only risks exhausting the memory and crashing the system. Before starting a
-build, count the ones running; a third waits for one to end, except a build of a program
-needed as soon as possible (the maintainer, 2026-11-02): a quick tool the next step runs, or a
-build for a manual check, may start as the third, one at a time, at below-normal priority and
-a small `CARGO_BUILD_JOBS`; gates, tests, sidekicks and mutation halves never count as one.
+**At most three cargo builds at once, on the whole machine** (the maintainer, 2026-11-05;
+two until then): a sidekick's, a mutation run's local half, a lead's gates or package tests
+and a release build each count as one. The main lead's side (its sidekicks, its mutation
+run, its own gates) holds two; a side-lead in its own worktree holds the third, its sidekick's
+builds and its own together, so the two never need to sync. Memory was what capped it at two:
+with the Optane's 64 GiB swap on `F:` (2026-10-30) a third build no longer risks exhausting
+it, though two already fill the CPU, so a third shares it rather than adding speed. Before
+starting a build, count your side's; with no side-lead running, the main lead's side may use
+the third for a program needed as soon as possible (a quick tool, a build for a manual check).
 
 **Every build and test job runs at below-normal priority** (the maintainer, 2026-10-30): at
 normal priority two jobs left the maintainer's machine barely usable, while a below-normal one

@@ -16,7 +16,8 @@ import psutil
 
 ROOT = Path(__file__).resolve().parents[2]
 APP = Path(os.environ.get("UTW_APP", ROOT / ".tmp" / "0_0_1s4t_v2" / "app")).resolve()
-EXE = ROOT / "target" / "release" / "utw.exe"
+# A worktree building into its own target (a side-lead's) names it in CARGO_TARGET_DIR.
+EXE = Path(os.environ.get("CARGO_TARGET_DIR", ROOT / "target")) / "release" / "utw.exe"
 SETTINGS = APP / "data" / "settings.toml"
 BACKUP = APP / "data" / "settings.before_ov1.toml"
 
