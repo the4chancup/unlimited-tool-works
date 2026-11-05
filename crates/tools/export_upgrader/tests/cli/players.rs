@@ -1032,3 +1032,84 @@ fn only_the_folderless_player_gets_ingame_face_toml_filled() {
             .ingame_face()
     );
 }
+
+// EU-PLY-23
+#[test]
+fn an_unworn_folder_named_for_the_wearer_pairs_his_custom_id() {
+    let sandbox = Sandbox::new("ply_wearer_by_name");
+    // VGL26 /omg/'s shape: the save numbers him 2552 while the folder made
+    // for him is `k2952`.
+    face(&sandbox, "co Spring/Faces/XXX05 - BANISHED");
+    boots(&sandbox, "co Spring/Boots/k2952 - BANISHED");
+    sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
+        wears(file, 71405, 2552, 0);
+    });
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    let stdout = run.stdout();
+    assert!(
+        stdout.contains(
+            "- co Spring: Warning wearer_by_name at Boots/k2952 - BANISHED (slot=05, id=2552)"
+        ),
+        "{stdout}"
+    );
+    for (name, bytes) in BOOTS_FILES {
+        assert_eq!(
+            fs::read(sandbox.path(&format!("co Full Spring/Players/05 - BANISHED/{name}")))
+                .unwrap(),
+            bytes,
+            "{name}"
+        );
+    }
+    // The folder claimed his category: no `boots_id`, no hide.
+    let settings = PlayerSettings::parse(
+        &fs::read_to_string(sandbox.path("co Full Spring/Players/05 - BANISHED/settings.toml"))
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(settings.boots_id, None);
+    assert!(!stdout.contains("custom_model_hidden"), "{stdout}");
+    assert!(!stdout.contains("Boots/k2952 - BANISHED/"), "{stdout}");
+    assert!(!stdout.contains("unmigrated_content"), "{stdout}");
+}
+
+// EU-PLY-23
+#[test]
+fn two_unworn_folders_of_one_name_pair_nothing() {
+    let sandbox = Sandbox::new("ply_wearer_by_name_two");
+    face(&sandbox, "co Spring/Faces/XXX05 - BANISHED");
+    boots(&sandbox, "co Spring/Boots/k2952 - BANISHED");
+    boots(&sandbox, "co Spring/Boots/k2953 - banished");
+    sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
+        wears(file, 71405, 2552, 0);
+    });
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    let stdout = run.stdout();
+    assert!(!stdout.contains("wearer_by_name"), "{stdout}");
+    // Two candidates for one player: neither pairs. He gets the hide ID of
+    // the kind (EU-SET-14) and both folders are leftovers.
+    assert!(stdout.contains("custom_model_hidden (slot=05"), "{stdout}");
+    let settings = PlayerSettings::parse(
+        &fs::read_to_string(sandbox.path("co Full Spring/Players/05 - BANISHED/settings.toml"))
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(settings.boots_id, Some(55));
+    for folder in ["k2952 - BANISHED", "k2953 - banished"] {
+        for name in ["boots.fmdl", "boots.skl", "shirt.dds"] {
+            assert!(
+                stdout.contains(&format!(
+                    "- co Spring: Warning leftover_dropped at Boots/{folder}/{name}\n"
+                )),
+                "{folder}/{name}: {stdout}"
+            );
+        }
+    }
+    for entry in sandbox.listing("co Full Spring") {
+        assert!(!entry.ends_with("boots.fmdl"), "{entry}");
+    }
+    assert!(!stdout.contains("unmigrated_content"), "{stdout}");
+}

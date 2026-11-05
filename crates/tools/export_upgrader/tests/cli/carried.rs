@@ -916,3 +916,58 @@ fn a_common_file_the_face_xml_names_keeps_its_name() {
         "{xml}"
     );
 }
+
+// EU-MDL-23
+#[test]
+fn a_dds_beside_an_ftex_of_one_stem_is_resolved_by_use() {
+    let sandbox = Sandbox::new("mdl_dds_ftex_pair");
+    // VGL26 /akg/'s shape: `Common/` holds one stem twice, as `.dds` and
+    // `.ftex`; a used stem keeps the `.dds`, an unused one drops both.
+    sandbox.write(
+        "co Spring/Faces/XXX05 - A/face_high.fmdl",
+        &fmdl(&[
+            (
+                "/Assets/pes16/model/character/common/XXX/sourceimages/",
+                "shiny.dds",
+            ),
+            (
+                "/Assets/pes16/model/character/common/XXX/sourceimages/",
+                "dummy_srm.dds",
+            ),
+        ]),
+    );
+    sandbox.write("co Spring/Common/shiny.dds", b"shiny dds");
+    sandbox.write("co Spring/Common/shiny.ftex", b"shiny ftex");
+    sandbox.write("co Spring/Common/dummy_srm.dds", b"dummy dds");
+    sandbox.write("co Spring/Common/dummy_srm.ftex", b"dummy ftex");
+    sandbox.save("EDIT");
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 0, "{stdout}");
+    // The used stem's `.dds` is kept, its `.ftex` dropped and named.
+    assert_eq!(
+        fs::read(sandbox.path("co Full Spring/Common/shiny.dds")).unwrap(),
+        b"shiny dds"
+    );
+    assert!(!sandbox.path("co Full Spring/Common/shiny.ftex").exists());
+    assert!(
+        stdout.contains("- co Spring: Warning texture_duplicate_dropped at Common/shiny.ftex (kept=Common/shiny.dds)"),
+        "{stdout}"
+    );
+    // A `dummy_` stem counts as unused: both files are leftovers.
+    for name in ["dummy_srm.dds", "dummy_srm.ftex"] {
+        assert!(
+            stdout.contains(&format!(
+                "- co Spring: Warning leftover_dropped at Common/{name}\n"
+            )),
+            "{name}: {stdout}"
+        );
+    }
+    for entry in sandbox.listing("co Full Spring") {
+        assert!(!entry.contains("dummy_srm"), "{entry}");
+        assert!(!entry.contains("shiny.ftex"), "{entry}");
+    }
+    assert!(!stdout.contains("texture_stem_conflict"), "{stdout}");
+    assert!(!stdout.contains("unmigrated_content"), "{stdout}");
+}

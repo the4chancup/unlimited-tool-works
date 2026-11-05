@@ -66,6 +66,17 @@ pub(crate) enum Code {
     /// position in its kind's old block of 25, reported so the pairing can be
     /// checked (`id`, the folder's four-digit ID; `slot`, the player's).
     WearerAssumed,
+    /// An item folder no save record wears, paired with a rostered player by
+    /// its name part being one of his names (his face folder's, its name
+    /// part or his save name): his worn custom ID of the kind carried no
+    /// folder (`slot`, `id` the save's ID). Reported so the pairing can be
+    /// checked.
+    WearerByName,
+    /// A folder of the output holding one texture stem as both a `.dds` and
+    /// a `.ftex`, which the shared validation refuses: the `.ftex` is
+    /// dropped and the `.dds` kept (`kept`, the `.dds`'s output path). A
+    /// pair no model uses drops both as leftovers instead.
+    TextureDuplicateDropped,
     /// A kit slot a Note kit entry gives and no `Kit Configs` config does:
     /// the kit still forms, a placeholder the compiler fills (`slot`).
     KitWithoutConfig,
@@ -148,6 +159,8 @@ impl Code {
             Code::RosterSlotEmpty => "roster_slot_empty",
             Code::MergeKeptShared => "merge_kept_shared",
             Code::WearerAssumed => "wearer_assumed",
+            Code::WearerByName => "wearer_by_name",
+            Code::TextureDuplicateDropped => "texture_duplicate_dropped",
             Code::KitWithoutConfig => "kit_without_config",
             Code::ConfigWithoutKitEntry => "config_without_kit_entry",
             Code::KitTextureCopied => "kit_texture_copied",
@@ -181,6 +194,8 @@ impl Code {
         Code::RosterSlotEmpty,
         Code::MergeKeptShared,
         Code::WearerAssumed,
+        Code::WearerByName,
+        Code::TextureDuplicateDropped,
         Code::KitWithoutConfig,
         Code::ConfigWithoutKitEntry,
         Code::KitTextureCopied,
@@ -441,6 +456,18 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         Severity::Info,
         r#"`--loose` paired a boots or gloves folder with the player at its ID's position in the team's old block of 25 (the line names the folder's four-digit ID and the slot)."#,
         r#"The pairing is reported so it can be checked. If it is wrong, rename the folder, or upgrade with `--savefile`."#,
+    ),
+    (
+        "wearer_by_name",
+        Severity::Warning,
+        r#"A boots or gloves folder carries an ID no save record wears, but its name part is a rostered player's name and the save wears a custom ID (above 100) on him that no folder of the kind carries (the line names the folder, the slot and the save's ID)."#,
+        r#"The folder becomes his as if it were numbered with the save's ID, so his model is not lost. Check the pairing is the player meant."#,
+    ),
+    (
+        "texture_duplicate_dropped",
+        Severity::Warning,
+        r#"A folder of the upgraded export held one texture stem twice, a `.dds` beside a `.ftex`, which the check would refuse."#,
+        r#"The `.ftex` is dropped and the `.dds` kept (the line names the dropped file and `kept`, the `.dds`'s path). Check the kept one is the texture meant."#,
     ),
     (
         "kit_without_config",

@@ -25,7 +25,62 @@ the game drew the copy over that record, so the copy is what the cup saw, and th
 the link in place of the `ingame_face.toml`, with no Warning. A copying player the upgrade
 gives no folder (a stock-booted player with no face folder) needs no link: no patch entry
 names him, so his record, copy included, stays as the save holds it. Loose mode, which has no
-save, writes none. The last step:
+save, writes none.
+
+Two cleanups come with worklog 0.0.2-poc4, where an old export and its save disagree:
+
+- **A worn ID's folder found by name.** A rostered player's worn custom boots or gloves ID
+  (above 100) that no item folder of that kind (`Boots/`, `Gloves/`) carries is paired with
+  an item folder of the kind that nobody wears, when exactly one such folder's name part,
+  folded to lowercase letters and digits, equals one of his names folded the same way: his
+  face folder's whole name, its name part, or his save name. The folder is then his as if its
+  number were his ID (merged into his folder, or shared as any worn folder), and
+  `wearer_by_name` (W: the folder, the slot, the save's ID) names the pairing, which the
+  member checks. Without it, step 10's rule gives him the hide ID and drops his folder as a
+  leftover, which loses his body. VGL26's /omg/: six players' save IDs are 400 below the
+  folders named after them (`k2952 - BANISHED` for 2552, `k2964 - 81514- LET ME DEFEND` for
+  2564, his face folder being `81514- LET ME DEFEND`), and all six pair; /fg/ pairs three,
+  /fng/ one (`.tmp/0_0_2/poc/fallback_measure.py`). Two or more candidates pair nothing.
+- **What no name pairs** (worklog 0.0.2-poc6), in this order, per kind: (1) a missing ID
+  that is the number of a folder of the other kind (gloves 2780 beside `k2780`) is a player
+  wearing no custom item of the kind, the common case: he gets the hide ID,
+  `custom_model_not_worn` (I: slot, key, ID) says so, and the ID takes no part in what
+  follows; (2) a folder whose same-numbered folder of the other kind was paired takes the
+  same ID (`g2452` takes 2227 from `k2452`), `wearer_by_number` (W) naming it; (3) when as
+  many missing IDs as unworn folders of the kind are left, they pair in sorted order, ID
+  rank to folder-number rank, `wearer_by_order` (W) naming each, then (2) runs again;
+  (4) a missing ID still left beside an unworn folder of its kind refuses the export
+  (`custom_model_unpaired`, E), since the save and the export disagree and nothing says
+  which folder is his. VGL26 (`.tmp/0_0_2/poc/sorted_measure.py`, `sync_measure.py`): (1)
+  covers /@/, /lcg/, /skg/, /smbg/, /sora/ and six /fng/ players; /fg/'s boots pair 2227
+  and 2229 by (3) and its gloves follow by (2); /bag/ (boots 3460 beside two `_Back`
+  folders) and /fgog/ (gloves 8447 beside two folders) are refused.
+- **A `.dds` beside a `.ftex` of one stem.** In a folder of the output, a stem held by both a
+  `.dds` and a `.ftex` (which the shared validation refuses as `texture_stem_conflict`) is
+  resolved before the output is written: when no model of the export uses the stem (no
+  material's texture reference resolves to it; a `dummy_` stem counts as unused, since the
+  game substitutes it, "A texture a model names must exist" in
+  `spec/team_compiler/pipeline.md`), both are leftovers (`leftover_dropped`); otherwise the
+  `.ftex` is dropped and the `.dds` kept, `texture_duplicate_dropped` (W: the dropped file,
+  `kept` the `.dds`) naming it. VGL26's /akg/ holds `Common/dummy_srm.dds` and
+  `dummy_srm.ftex`, its one refusal. Other pairs of extensions stay refused.
+
+A third comes with worklog 0.0.2-poc5:
+
+- **A model hidden by distance.** A model (`.fmdl`, or a pre-Fox `.model` with the `.mtl` no
+  other model of its folder names) every vertex of which lies more than 5000 units from the
+  origin is dropped, with `model_far_dropped` (W: the file, its vertex count). Such a model
+  draws nothing a camera sees: it is how templates made before the Blender add-on could
+  delete a game mesh hid the default face or hair, by moving it away. The compiler's
+  `vertex_too_far_from_origin` stays an Error, since far geometry lags the match all day,
+  so without this step the template's player folder is dropped at compile time. A face
+  folder the drop leaves with no face model compiles to the blank face, which hides the
+  default face as the far model did ("2. Per-export serial steps" in
+  `spec/team_compiler/pipeline.md`). A model with only some meshes or vertices far stays
+  as it is, and the compiler refuses it: no VGL26 file is one. In VGL26 every flagged
+  model is far in its every vertex (`.tmp/0_0_2/poc/far_meshes.py`): 89 files (9 distinct)
+  in 47 folders across 7 exports, the most common a `face_high.fmdl` of 739 vertices in 29
+  folders (/domg/, /ink/, /vn/...). The last step:
 
 13. **Optional glTF conversion** (`--convert-to-gltf`, off by default) — after the structural
     migration is complete and verified (step 10's report is clean), a second pass converts all
@@ -298,4 +353,25 @@ EU-SET-14  GIVEN slot 05's face folder "XXX05 - A", his record wearing custom bo
                 folder he wears) THEN custom_model_missing, an Error,
                 names slot 05, boots_id and 433, nothing is written, and the exit code
                 is 1 (restates EU-SET-03)
+```
+
+**0.0.2-poc4 scope.** The two cleanups above ("What it does").
+
+```
+EU-PLY-23  GIVEN slot 05's face folder "XXX05 - Bob", his record wearing custom boots 2552, and
+                 the boots folder "k2952 - BOB" nobody wears, holding boots.fmdl
+           WHEN the export is upgraded
+           THEN Players/05 - Bob/ holds boots.fmdl, his settings.toml has no boots_id,
+                wearer_by_name names Boots/k2952 - BOB, slot 05 and 2552, no leftover_dropped
+                names the folder, and the run ends migration_clean; GIVEN a second unworn
+                folder "k2953 - bob" THEN neither pairs: he gets the hide ID (EU-SET-14) and
+                both folders are leftovers
+EU-MDL-23  GIVEN Common/ holding shiny.dds and shiny.ftex, and Common/ also holding
+                 dummy_srm.dds and dummy_srm.ftex; slot 05's face_high.fmdl naming shiny in
+                 the team's Common output and dummy_srm in it
+           WHEN the export is upgraded
+           THEN the output's Common/ holds shiny.dds and no shiny.ftex, and
+                texture_duplicate_dropped names Common/shiny.ftex with kept Common/shiny.dds;
+                it holds neither dummy_srm file, leftover_dropped naming both; no
+                texture_stem_conflict is reported and the run ends migration_clean
 ```

@@ -15592,3 +15592,41 @@ shipped (/dbg/ player 10's boots: a three-vertex, one-triangle mesh inside the h
 default boots or face, a far bigger change than one hidden mesh's texture.
 Plan: `spec/team_compiler/pipeline.md` "Resolved decisions and open questions" (built at
 once); TC-MOD-100, TC-TEX-21 in `plans/team_compiler/README.md` "Acceptance".
+
+## 2026-11-05 — export_upgrader — a worn ID's folder found by name; a .dds beside a .ftex resolved
+Decision (the maintainer): the upgrader cleans rather than refuses where it can. (1) A worn
+custom boots or gloves ID no folder carries is paired with the one unworn folder of its kind
+whose name, folded to letters and digits, equals the player's face folder name, its name part
+or his save name, with a Warning (`wearer_by_name`). (2) A stem held by a `.dds` and a `.ftex`
+in one folder: both dropped as leftovers when no model uses it (a `dummy_` stem counting as
+unused), else the `.ftex` dropped with a Warning (`texture_duplicate_dropped`), the `.dds` kept.
+The ruling's other half, refusing the export when no name pairs and an unworn folder of the
+kind exists, is not built: measured on VGL26 it refuses 9 of 53 exports (93 players), most of
+them teams keeping spare folders beside deliberate full-body IDs; it waits on the maintainer
+(QUESTIONS "The proof of concept").
+Why: VGL26's /omg/ save numbers six players' boots 400 below the folders named after them;
+the hide ID would drop their bodies as leftovers. /akg/'s `dummy_srm` pair was its only
+refusal, and a `dummy_` texture is one the game substitutes.
+Plan: `plans/export_upgrader.md` "What it does" (the 0.0.2-poc4 cleanups), EU-PLY-23, EU-MDL-23.
+
+## 2026-11-05 — export_upgrader — a model hidden by distance is dropped
+Decision (the maintainer): the compiler's 5000-unit vertex rule stays an Error; the upgrader
+cleans what it catches in old exports. A model every vertex of which lies past 5000 units is
+dropped with a Warning (`model_far_dropped`). A model only partly far is left to the
+compiler's Error: building mesh or face deletion for a case no file shows is not done.
+Why: in VGL26 every flagged model (89 files, 9 distinct, 47 folders, 7 exports) is far in
+its every vertex, the templates' old way to hide the default face or hair; a face folder left
+with no face model compiles to the blank face, which hides the default face the same way.
+Plan: `plans/export_upgrader.md` "What it does" (the 0.0.2-poc5 cleanup).
+
+## 2026-11-05 — export_upgrader — what no name pairs: not worn, same number, sorted order, then refused
+Decision (the maintainer): a missing custom ID that is the number of a folder of the other
+kind is a player wearing no custom item of the kind (hide ID, Info `custom_model_not_worn`);
+a folder takes the ID its same-numbered folder of the other kind paired with (Warning
+`wearer_by_number`); as many missing IDs as unworn folders pair in sorted order (Warning
+`wearer_by_order`); a missing ID still left beside an unworn folder of its kind refuses the
+export (`custom_model_unpaired`). Supersedes the 2026-11-05 entry's unbuilt refusal half.
+Why: on VGL26 the sorted rule alone refused 8 exports and gave /skg/'s player 05 a spare
+folder's gloves; most missing gloves IDs are the player's own boots folder number. With all
+four, 2 exports are refused (/bag/, /fgog/).
+Plan: `plans/export_upgrader.md` "What it does" (the 0.0.2-poc4 cleanups, "What no name pairs").

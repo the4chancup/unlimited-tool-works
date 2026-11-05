@@ -105,6 +105,10 @@ pub(crate) fn clean_folder_name(name: &str) -> Option<String> {
 /// and every folder merged into it later, keyed by relative path for the
 /// byte clash check.
 struct PlayerFolder {
+    /// The face folder's whole name (`XXX05 - Snuffy`); `""` when the slot
+    /// has no kept face folder. The name-pairing reads it whole: an item
+    /// folder's name part can spell it (`k2964 - 81514- LET ME DEFEND`).
+    face_name: String,
     /// The face folder's name part, leading spaces and hyphens off; `""`
     /// when the slot has no kept face folder.
     face_name_part: String,
@@ -133,6 +137,7 @@ struct PlayerFolder {
 impl PlayerFolder {
     fn new() -> PlayerFolder {
         PlayerFolder {
+            face_name: String::new(),
             face_name_part: String::new(),
             boots_name_part: String::new(),
             gloves_name_part: String::new(),
@@ -508,6 +513,7 @@ fn face_folders(
             ));
         }
         let player = players.entry(nn).or_insert_with(PlayerFolder::new);
+        player.face_name = folder_name.to_owned();
         player.face_name_part = name_part.to_owned();
         player.has_face = true;
         // A face folder that is the game's own extracted path to its face:
@@ -580,6 +586,95 @@ fn loose_slot(id: u32, lowest: u32) -> Option<u8> {
     (1..=23).contains(&slot).then_some(slot)
 }
 
+/// A name as the wearer pairing compares it: the lowercase letters and
+/// digits alone (`char::is_alphanumeric`, lowercased), so punctuation and
+/// letter case cannot keep a match apart (`81514- LET ME DEFEND` folds to
+/// `81514letmedefend`). An empty remainder names nobody.
+fn fold_wearer_name(name: &str) -> String {
+    name.chars()
+        .filter(|c| c.is_alphanumeric())
+        .flat_map(|c| c.to_lowercase())
+        .collect()
+}
+
+/// The name pairing (roster mode): each unworn folder's slot or slots it
+/// pairs, by folder path. A rostered player whose worn custom ID of the
+/// kind (above 100) no folder carries is a candidate; an unworn folder —
+/// parsed, the first of its ID, no save record wearing it — whose folded
+/// name part equals one of his folded names (his face folder's whole name,
+/// its name part, or his save name) is his when it is the only such folder.
+/// Two players may name the one folder: it is then shared as any worn
+/// folder is.
+fn pair_by_name(
+    folders: &BTreeMap<String, Vec<&String>>,
+    kind: ItemKind,
+    roster: &Roster,
+    players: &BTreeMap<u8, PlayerFolder>,
+) -> BTreeMap<String, Vec<u8>> {
+    // The IDs every parseable folder of the kind carries: a worn ID among
+    // them is claimed and no candidate.
+    let carried: BTreeSet<u32> = folders
+        .keys()
+        .filter_map(|folder| {
+            parse_item_name(kind, folder.rsplit('/').next().unwrap_or(folder.as_str()))
+                .map(|(id, _)| id)
+        })
+        .collect();
+    // The unworn candidates, their folded name parts: a folder a second of
+    // its ID is refused, and an unworn one is a leftover the pairing can
+    // still rescue.
+    let mut taken: BTreeSet<u32> = BTreeSet::new();
+    let mut unworn: Vec<(&String, String)> = Vec::new();
+    for folder in folders.keys() {
+        let name = folder.rsplit('/').next().unwrap_or(folder.as_str());
+        let Some((id, name_part)) = parse_item_name(kind, name) else {
+            continue;
+        };
+        if !taken.insert(id) {
+            continue;
+        }
+        let worn = (1..=23).any(|nn| {
+            roster
+                .get(nn)
+                .is_some_and(|player| kind.worn_id(player) == id)
+        });
+        if worn {
+            continue;
+        }
+        let folded = fold_wearer_name(&name_part);
+        if !folded.is_empty() {
+            unworn.push((folder, folded));
+        }
+    }
+    let mut paired: BTreeMap<String, Vec<u8>> = BTreeMap::new();
+    for nn in 1..=23 {
+        let Some(player) = roster.get(nn) else {
+            continue;
+        };
+        let worn = kind.worn_id(player);
+        if worn <= 100 || carried.contains(&worn) {
+            continue;
+        }
+        let mut names = BTreeSet::new();
+        if let Some(player_folder) = players.get(&nn) {
+            names.insert(fold_wearer_name(&player_folder.face_name));
+            names.insert(fold_wearer_name(&player_folder.face_name_part));
+        }
+        names.insert(fold_wearer_name(&player.name));
+        names.retain(|name| !name.is_empty());
+        let candidates: Vec<&String> = unworn
+            .iter()
+            .filter(|(_, folded)| names.contains(folded))
+            .map(|(folder, _)| *folder)
+            .collect();
+        // Two or more candidate folders for one player: no pairing.
+        if let [folder] = candidates.as_slice() {
+            paired.entry((*folder).clone()).or_default().push(nn);
+        }
+    }
+    paired
+}
+
 /// Steps 3-4's item folders of `kind`: name, ID and wearers resolve, then
 /// each is merged into its one wearer's folder (Fox only), or kept shared
 /// with a link. `roster` is the save's wearer map, `None` in loose mode,
@@ -635,6 +730,13 @@ fn item_folders(
                 .map(|(id, _)| id)
         })
         .min();
+    // The name pairing: which worn custom IDs no folder carries is known
+    // only once every folder of the kind is parsed, so it is collected
+    // before the loop, and a folder no worn ID matches may still pair.
+    let paired = match roster {
+        Some(roster) => pair_by_name(&folders, kind, roster, players),
+        None => BTreeMap::new(),
+    };
     for (folder, folder_files) in folders {
         let folder_name = folder.rsplit('/').next().unwrap_or(folder.as_str());
         // Strays first (step 10): nothing after — not the refusals, not the
@@ -674,7 +776,7 @@ fn item_folders(
             continue;
         }
         taken.insert(id, folder.clone());
-        let wearers: Vec<u8> = match roster {
+        let mut wearers: Vec<u8> = match roster {
             Some(roster) => (1..=23)
                 .filter(|nn| {
                     roster
@@ -687,21 +789,36 @@ fn item_folders(
                 .into_iter()
                 .collect(),
         };
+        let mut by_name = false;
         if wearers.is_empty() {
-            // With a roster nobody wears it: no player wore it in game, so
-            // its files are leftovers (step 3). Loose mode keeps the
-            // refusal: a folder it cannot place may be anyone's (step 11).
+            // With a roster nobody wears it: a folder named after a player
+            // whose worn custom ID no folder of the kind carries is paired
+            // with him; otherwise its files are leftovers (step 3). Loose
+            // mode keeps the refusal: a folder it cannot place may be
+            // anyone's (step 11).
             match roster {
-                Some(_) => plan
-                    .leftovers
-                    .extend(folder_files.iter().map(|file| (*file).clone())),
-                None => refused(&mut *plan, UnmigratedReason::LooseUnplaceable, None),
+                Some(_) => match paired.get(&folder) {
+                    Some(slots) => {
+                        wearers = slots.clone();
+                        by_name = true;
+                    }
+                    None => {
+                        plan.leftovers
+                            .extend(folder_files.iter().map(|file| (*file).clone()));
+                        continue;
+                    }
+                },
+                None => {
+                    refused(&mut *plan, UnmigratedReason::LooseUnplaceable, None);
+                    continue;
+                }
             }
-            continue;
         }
-        // Step 11: the pairing is an assumption, so the report states it.
-        if roster.is_none() {
-            plan.findings.push(tool_message(
+        // Step 11: the pairing is an assumption, so the report states it;
+        // the name pairing is reported the same way, the save's worn ID
+        // named so the member can check it.
+        match roster {
+            None => plan.findings.push(tool_message(
                 Code::WearerAssumed,
                 Scope::Folder {
                     export_id: INPUT,
@@ -712,7 +829,28 @@ fn item_folders(
                     ("id", format!("{id:04}")),
                     ("slot", format!("{:02}", wearers[0])),
                 ],
-            ));
+            )),
+            Some(roster) if by_name => {
+                for &nn in &wearers {
+                    plan.findings.push(tool_message(
+                        Code::WearerByName,
+                        Scope::Folder {
+                            export_id: INPUT,
+                            path: path_scope(&folder),
+                        },
+                        Disposition::Keep,
+                        vec![
+                            ("slot", format!("{nn:02}")),
+                            (
+                                "id",
+                                kind.worn_id(roster.get(nn).expect("a paired slot is rostered"))
+                                    .to_string(),
+                            ),
+                        ],
+                    ));
+                }
+            }
+            Some(_) => {}
         }
         // A folder holding no model (nothing, or a `boots.skl` alone) is
         // how a member hid the player's boots or hands: each wearer gets
@@ -2314,5 +2452,110 @@ mod tests {
                 plan.copies
             );
         }
+    }
+
+    #[test]
+    fn the_wearer_name_fold_keeps_letters_and_digits_lowercased() {
+        for (name, expected) in [
+            ("BANISHED", "banished"),
+            ("81514- LET ME DEFEND", "81514letmedefend"),
+            ("k2952 - BANISHED", "k2952banished"),
+            ("XXX05 - Bob", "xxx05bob"),
+            ("Änn-É", "änné"),
+            ("   ", ""),
+            ("!?.", ""),
+        ] {
+            assert_eq!(fold_wearer_name(name), expected, "{name:?}");
+        }
+    }
+
+    #[test]
+    fn an_unworn_folder_named_for_a_player_pairs_his_unclaimed_id() {
+        // A rostered player's worn custom ID (above 100) no folder of the
+        // kind carries: the one unworn folder named after him is his, the
+        // warning naming the folder, the slot and the save's ID.
+        let files = files(&[
+            "Faces/XXX05 - BANISHED/face.fmdl",
+            "Boots/k2952 - BANISHED/boots.fmdl",
+        ]);
+        let roster = wearing(&[(5, ("SaveName", 2552, 0))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        assert!(
+            plan.copies
+                .iter()
+                .any(|(_, to)| to == "Players/05 - BANISHED/boots.fmdl"),
+            "{:?}",
+            plan.copies
+        );
+        assert!(!plan.leftovers.contains("Boots/k2952 - BANISHED/boots.fmdl"));
+        let finding = plan
+            .findings
+            .iter()
+            .find(|m| m.code.code == "wearer_by_name")
+            .expect("wearer_by_name expected");
+        assert_eq!(finding.severity, Severity::Warning);
+        assert_eq!(finding.disposition, Disposition::Keep);
+        assert_eq!(
+            finding.scope,
+            Scope::Folder {
+                export_id: INPUT,
+                path: ScopePath::new("Boots/k2952 - BANISHED").unwrap()
+            }
+        );
+        assert_eq!(
+            finding.context,
+            [
+                ("slot".to_owned(), "05".to_owned()),
+                ("id".to_owned(), "2552".to_owned()),
+            ]
+        );
+    }
+
+    #[test]
+    fn the_pairing_matches_the_face_folders_whole_name_too() {
+        // The name part of `k2964 - 81514- LET ME DEFEND` is the face
+        // folder's whole name: the face's own name part and the save name
+        // fold differently and only the whole name pairs it.
+        let files = files(&[
+            "Faces/81514- LET ME DEFEND/face.fmdl",
+            "Boots/k2964 - 81514- LET ME DEFEND/boots.fmdl",
+        ]);
+        let roster = wearing(&[(14, ("OTHER", 2564, 0))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        assert!(
+            plan.copies
+                .iter()
+                .any(|(_, to)| to == "Players/14 - LET ME DEFEND/boots.fmdl"),
+            "{:?}",
+            plan.copies
+        );
+    }
+
+    #[test]
+    fn two_unworn_folders_of_one_name_pair_nobody() {
+        let files = files(&[
+            "Faces/XXX05 - BANISHED/face.fmdl",
+            "Boots/k2952 - BANISHED/boots.fmdl",
+            "Boots/k2953 - banished/boots.fmdl",
+        ]);
+        let roster = wearing(&[(5, ("SaveName", 2552, 0))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        for folder in ["k2952 - BANISHED", "k2953 - banished"] {
+            assert!(
+                plan.leftovers
+                    .contains(&format!("Boots/{folder}/boots.fmdl")),
+                "{folder}"
+            );
+        }
+        assert!(
+            plan.findings
+                .iter()
+                .all(|m| m.code.code != "wearer_by_name")
+        );
+        assert!(
+            !plan.copies.iter().any(|(_, to)| to.ends_with("boots.fmdl")),
+            "{:?}",
+            plan.copies
+        );
     }
 }

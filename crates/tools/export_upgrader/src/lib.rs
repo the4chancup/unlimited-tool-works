@@ -35,6 +35,7 @@ mod source;
 mod staging;
 #[cfg(test)]
 mod test_support;
+mod texture_pairs;
 mod upgrade;
 
 use studio_core::{CliError, HelpSection, HelpTopic, StudioTool, ToolContext};

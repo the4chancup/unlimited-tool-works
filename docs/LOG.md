@@ -3089,3 +3089,4 @@ worklog passed 7,000 lines.
 - 2026-11-05 — 8.36c4 texts: the spec says what 8.36c built (the patch carries the whole look on every
   version, no player tables), its scenarios moved from the plans, the catalog, help and CHANGELOG with it; the
   settings template's stale motion note dropped. Two SWE-2 sidekicks, first time; parity, Astra, mutants next.
+- 2026-11-05: 0.0.2-poc4 landed: an unworn item folder pairs by name with the player whose custom ID no folder holds (`wearer_by_name`); a .dds beside a .ftex resolved by use (`texture_duplicate_dropped`). Rulings for poc5-poc7 planned.

@@ -42,6 +42,7 @@ use crate::roster::Roster;
 use crate::settings::{SettingsFiles, loose_settings_files, settings_files};
 use crate::source::{self, OldExport, SourceFailure};
 use crate::staging::{claim_staging, finish_staging, write_output_file};
+use crate::texture_pairs;
 
 /// A command is one run per process, so every event carries the same run id.
 const RUN_ID: RunId = RunId(1);
@@ -161,9 +162,11 @@ impl RunEvents {
         self.worst = self.worst.max(Some(message.severity));
         // A leftover is the one drop that keeps the run clean (step 10):
         // the Studio export is complete without it and the Warning tells
-        // the author what was left behind.
+        // the author what was left behind. A dropped `.ftex` of a resolved
+        // `.dds`/`.ftex` pair is the same: the `.dds` it duplicated stayed.
         self.dropped |= message.disposition != Disposition::Keep
-            && message.code.code.as_ref() != Code::LeftoverDropped.as_str();
+            && message.code.code.as_ref() != Code::LeftoverDropped.as_str()
+            && message.code.code.as_ref() != Code::TextureDuplicateDropped.as_str();
         self.emit(message.scope.export_id(), PipelineEvent::Message(message));
     }
 
@@ -561,7 +564,7 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
     // file copied and written.
     let files = export.files.clone();
     let folders = export.folders.clone();
-    let (mut plan, kits, settings) = match &identity {
+    let (mut plan, mut kits, settings) = match &identity {
         Identity::Referees => (
             referee_folders(&files, |path| export.read(path)),
             KitFolders::default(),
@@ -632,6 +635,26 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
     let (copies, dropped) = drop_collisions(carried_copies, identity.path_id());
     carried.copies = copies;
     carried.findings.extend(dropped);
+    // A `.dds` beside a `.ftex` of one stem in one output folder is a
+    // `texture_stem_conflict` the validation would refuse: the `.ftex`
+    // drops now so the links below are spelled after the kept `.dds`
+    // alone; whether the `.dds` follows is decided once step 7 says which
+    // stems the models wear. The files stay consumed — the pair's findings
+    // account for them.
+    let pairs = texture_pairs::stem_pairs(
+        plan.copies
+            .iter()
+            .chain(&carried.copies)
+            .chain(&kits.copies),
+    );
+    let ftex_dropped: BTreeSet<&str> = pairs.iter().map(|pair| pair.ftex.0.as_str()).collect();
+    plan.copies
+        .retain(|(input, _)| !ftex_dropped.contains(input.as_str()));
+    carried
+        .copies
+        .retain(|(input, _)| !ftex_dropped.contains(input.as_str()));
+    kits.copies
+        .retain(|(input, _)| !ftex_dropped.contains(input.as_str()));
     // `Common/` for the materials: the carried files' respelled output
     // paths, which the links are spelled after.
     let common: Vec<String> = carried
@@ -642,7 +665,22 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
         .collect();
     let all_copies: Vec<(String, String)> =
         plan.copies.iter().chain(&carried.copies).cloned().collect();
-    let materials = material_references(&all_copies, &common, &identity, |path| export.read(path));
+    let mut materials =
+        material_references(&all_copies, &common, &identity, |path| export.read(path));
+    // Now that `materials.used` says which stems the models wear: a used
+    // pair keeps its `.dds` and names the dropped `.ftex`; an unused one
+    // drops both as leftovers, a `dummy_` stem counting as unused.
+    let (pair_findings, dds_dropped) = texture_pairs::resolve(&pairs, &materials.used);
+    if !dds_dropped.is_empty() {
+        plan.copies
+            .retain(|(input, _)| !dds_dropped.contains(input));
+        carried
+            .copies
+            .retain(|(input, _)| !dds_dropped.contains(input));
+        kits.copies
+            .retain(|(input, _)| !dds_dropped.contains(input));
+    }
+    materials.findings.extend(pair_findings);
     let face_xml = face_xml_rewrites(&plan.copies, &identity, |path| export.read(path));
     for message in plan
         .findings

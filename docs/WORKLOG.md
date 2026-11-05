@@ -7471,12 +7471,26 @@ briefs, review loops, gates and mutation runs as for any step.
       two shared templates (`far_faces.py`); 429 `fmdl_texture_not_found` Warnings; one
       `settings_model_id_conflict` (/hdg/ 22: his hide gloves ID 11 beside a hand-split
       face, whose hands decide the gloves at compile; harmless, the upgrader cannot see a
-      face's hands). The three classes wait on QUESTIONS. The
-      first run's compile of the 22 clean upgrades: 78 Fox `fmdl_texture_not_found` Errors
-      (poc2's), 15 `vertex_too_far_from_origin` (/aceg/, /domg/, /gbfg/), 457
-      `settings_value_out_of_range` Warnings (motion values of the VGL26 save past PES
-      2019's ranges). /omg/'s boots numbers, /akg/'s `dummy_srm` and the vertex rule wait on
-      QUESTIONS "The proof of concept"
+      face's hands). The three classes wait on QUESTIONS.
+    - [x] 0.0.2-poc4 (code landed; its spec move rides with poc6's, which reworks the same
+      pairing; `players.rs`, new `texture_pairs.rs`, `materials.rs`, `upgrade.rs`,
+      `model_folders.rs`, `messages.rs`, tests `cli/players.rs`, `cli/carried.rs`) the maintainer's two cleanups (`plans/export_upgrader.md` "What it does",
+      the 0.0.2-poc4 cleanups; EU-PLY-23, EU-MDL-23): a worn ID's folder found by name
+      (`wearer_by_name`), a `.dds` beside a `.ftex` resolved (`texture_duplicate_dropped`).
+      SWE-2 sidekick, brief `.tmp/0_0_2/poc/brief_poc4.md`; then rerun `all_run.py`
+    - [ ] 0.0.2-poc6 what no name pairs (`plans/export_upgrader.md` "What it does", "What no
+      name pairs"; `custom_model_not_worn`, `wearer_by_number`, `wearer_by_order`,
+      `custom_model_unpaired`): scenarios, then a rework brief on poc4's session
+    - [ ] 0.0.2-poc5 a model hidden by distance dropped (`plans/export_upgrader.md` "What it
+      does", the 0.0.2-poc5 cleanup; `model_far_dropped`): every flagged VGL26 model is far in
+      its every vertex (`.tmp/0_0_2/poc/far_meshes.py`, `far_meshes.txt`); scenarios, then a
+      SWE-2 brief after poc4 lands. First a whole-PC census of FMDL and `.model` files for
+      models only partly far, which the maintainer wants handled too (mesh or face deletion)
+    - [ ] 0.0.2-poc7 anti-blur meshes dropped from FMDLs, with an Info: FoxDen's TAA removal
+      makes the FuzzBlock anti-blur copies the Blender add-on adds bloat (the maintainer,
+      2026-11-05); look into how they are recognized (`fmdl::ops::antiblur`) and plan it.
+      The compiler does the same only on the IR route (a converted model drops them); the
+      pass-through route neither checks for them nor touches them (the maintainer, 2026-11-05)
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the

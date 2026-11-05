@@ -22,7 +22,7 @@
 //! directory's stem does. Any other reference follows the team rules.
 
 use std::borrow::Cow;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use aesthetics_export::{
     FileKind, KitToken, ModelFormat, classify, common_link_name, kit_path_token, kit_set_member,
@@ -49,6 +49,11 @@ pub(crate) struct MaterialRewrites {
     pub(crate) written: Vec<(String, Vec<u8>)>,
     /// Empty `.common` link files to write, output paths.
     pub(crate) links: Vec<String>,
+    /// The `(folder, stem)` pairs the read references resolve to: the
+    /// folded output directory and the folded texture stem of every place
+    /// a reference can land (a `.dds`/`.ftex` pair's "used" test). A
+    /// `dummy_` reference's stem is never one: the game substitutes it.
+    pub(crate) used: BTreeSet<(String, String)>,
     /// Findings on the input, in input-path order.
     pub(crate) findings: Vec<Message>,
 }
@@ -223,6 +228,57 @@ struct FileContext<'a> {
     identity: &'a Identity,
 }
 
+/// The mutable state one reference's resolution writes: the `Common/`
+/// links planned so far, the `(folder, stem)` places a reference can land
+/// (`MaterialRewrites::used`), and the findings pushed.
+struct Pass<'a> {
+    /// Link output path → the `Common/` path it names.
+    planned: &'a mut BTreeMap<String, String>,
+    /// The `(folder, stem)` places a reference can land, folded.
+    used: &'a mut BTreeSet<(String, String)>,
+    /// The findings the file's references pushed, in met order.
+    findings: &'a mut Vec<Message>,
+}
+
+/// The folders a bare file-name reference resolves in, nearest first (the
+/// file's folder up to the model folder), or `model_folder/sub` alone for
+/// a `./sub` reference.
+fn lookup_folders(ctx: &FileContext, sub: &str) -> Vec<String> {
+    if !sub.is_empty() {
+        return vec![format!(
+            "{}/{}",
+            ctx.model_folder,
+            sub.trim_end_matches('/')
+        )];
+    }
+    let file_folder = match ctx.rest.rsplit_once('/') {
+        Some((dir, _)) => format!("{}/{dir}", ctx.model_folder),
+        None => ctx.model_folder.to_owned(),
+    };
+    let mut folders = Vec::new();
+    let mut folder = file_folder.as_str();
+    loop {
+        folders.push(folder.to_owned());
+        if folder == ctx.model_folder {
+            break;
+        }
+        folder = folder
+            .rsplit_once('/')
+            .map(|(parent, _)| parent)
+            .expect("a folder below the model folder has a parent");
+    }
+    folders
+}
+
+/// `stem` (folded) marked used in every folder `sub`'s lookup reaches, on
+/// the `used` set the `.dds`/`.ftex` pair rule reads: a reference resolves
+/// to a texture it finds there.
+fn mark_lookup(used: &mut BTreeSet<(String, String)>, ctx: &FileContext, sub: &str, stem: &str) {
+    for folder in lookup_folders(ctx, sub) {
+        used.insert((vtree::fold_name(&folder), stem.to_owned()));
+    }
+}
+
 /// What the caller's reference is (`common_decision`'s outcomes differ):
 /// a team-Common reference (`common/<???>/…`), kept and reported when it
 /// cannot link; or a game directory's stem, linked when it can and
@@ -245,23 +301,25 @@ enum Reference {
 /// referee's FMDL, a team-Common entry his folder holds at `./<sub>` becomes
 /// that, unlinked (`referee_folder_holds`), and a `./` or empty one is
 /// linked as the last class is (`link_referee_bare`).
-fn fmdl_entry(
-    path: &mut fmdl::ops::paths::TexturePath,
-    ctx: &FileContext,
-    planned: &mut BTreeMap<String, String>,
-    findings: &mut Vec<Message>,
-) {
+fn fmdl_entry(path: &mut fmdl::ops::paths::TexturePath, ctx: &FileContext, pass: &mut Pass) {
     if folded_stem(&path.file_name).starts_with("dummy_") {
         return;
     }
     if path.directory.is_empty() || path.directory.starts_with("./") {
         respell_reference(&mut path.directory, &mut path.file_name, ctx.identity);
-        link_referee_bare(ctx, &path.directory, &path.file_name, planned, findings);
+        mark_lookup(
+            pass.used,
+            ctx,
+            path.directory.strip_prefix("./").unwrap_or(""),
+            &folded_stem(&path.file_name),
+        );
+        link_referee_bare(ctx, &path.directory, &path.file_name, pass);
         return;
     }
     // The game's kit texture folder is kept (`fmdl_texture_kit_path`), a
     // directory below it a kit texture's too.
     if vtree::fold_name(&path.directory).starts_with(&vtree::fold_name(FOX_KIT_TEXTURE)) {
+        mark_lookup(pass.used, ctx, "", &folded_stem(&path.file_name));
         return;
     }
     let written = format!("{}{}", path.directory, path.file_name);
@@ -273,13 +331,15 @@ fn fmdl_entry(
         let Some((_marker, sub)) = reference_into_fox_common(&path.directory) else {
             // `common/sourceimages/`, `common/vg/sourceimages/`: not the
             // team's — kept as written.
+            mark_lookup(pass.used, ctx, "", &folded_stem(&path.file_name));
             return;
         };
         let sub = respell(sub, Spelling::Path, ctx.identity).into_owned();
         if let Cow::Owned(name) = respell(&path.file_name, Spelling::Path, ctx.identity) {
             path.file_name = name;
         }
-        if referee_folder_holds(ctx, &sub, &path.file_name, planned) {
+        if referee_folder_holds(ctx, &sub, &path.file_name, pass.planned) {
+            mark_lookup(pass.used, ctx, &sub, &folded_stem(&path.file_name));
             path.directory = format!("./{sub}");
             return;
         }
@@ -297,12 +357,11 @@ fn fmdl_entry(
             Reference::TeamCommon,
             &sub,
             &path.file_name,
-            &*planned,
+            pass,
             &written,
-            findings,
         ) {
             Some(common_rest) => {
-                plan_link(planned, ctx, common_rest);
+                plan_link(pass.planned, ctx, common_rest);
                 path.directory = format!("./{sub}");
             }
             None => respell_marker(
@@ -318,22 +377,17 @@ fn fmdl_entry(
     // folder's every other directory becomes `./`, the `Common/` root's
     // texture linked when the folder holds none of the stem.
     if ctx.kind == FolderKind::Common {
+        mark_lookup(pass.used, ctx, "", &folded_stem(&path.file_name));
         return;
     }
     if let Cow::Owned(name) = respell(&path.file_name, Spelling::Path, ctx.identity) {
         path.file_name = name;
     }
     path.directory = "./".to_owned();
-    if let Some(common_rest) = common_decision(
-        ctx,
-        Reference::GameDir,
-        "",
-        &path.file_name,
-        &*planned,
-        &written,
-        findings,
-    ) {
-        plan_link(planned, ctx, common_rest);
+    if let Some(common_rest) =
+        common_decision(ctx, Reference::GameDir, "", &path.file_name, pass, &written)
+    {
+        plan_link(pass.planned, ctx, common_rest);
     }
 }
 
@@ -351,9 +405,8 @@ fn common_decision(
     class: Reference,
     sub: &str,
     file_name: &str,
-    planned: &BTreeMap<String, String>,
+    pass: &mut Pass,
     written: &str,
-    findings: &mut Vec<Message>,
 ) -> Option<String> {
     let game_dir = matches!(class, Reference::GameDir);
     let stem = folded_stem(file_name);
@@ -387,11 +440,23 @@ fn common_decision(
             }
         })
         .collect();
+    // Every place the reference can land counts the stem used: the
+    // `Common/` members it names, and the folders its file name is looked
+    // up in, nearest first.
+    for &rest in &matching {
+        let (dir, name) = match rest.rsplit_once('/') {
+            Some((dir, name)) => (format!("Common/{dir}"), name),
+            None => ("Common".to_owned(), rest),
+        };
+        pass.used
+            .insert((vtree::fold_name(&dir), folded_stem(name)));
+    }
+    mark_lookup(pass.used, ctx, "", &stem);
     if !game_dir && ctx.kind != FolderKind::Player {
         // A shared folder's or `Common/` file's Common reference is
         // respelled, no link — reported when `Common/` lacks it.
         if matching.is_empty() {
-            findings.push(kept(written, ctx.input));
+            pass.findings.push(kept(written, ctx.input));
         }
         return None;
     }
@@ -411,45 +476,32 @@ fn common_decision(
     };
     let Some(common_rest) = common_rest else {
         if !game_dir {
-            findings.push(kept(written, ctx.input));
+            pass.findings.push(kept(written, ctx.input));
         }
         return None;
     };
     // A `.mtl`/`.fmdl` in a subfolder naming a Common subfolder: the path
     // below it and the link mirroring `Common/` cannot agree.
     if !game_dir && !sub.is_empty() && ctx.rest.contains('/') {
-        findings.push(kept(written, ctx.input));
+        pass.findings.push(kept(written, ctx.input));
         return None;
     }
     // The clash check: the folders a bare name looks in, nearest first
     // (the file's folder up to the model folder), or for a `sub` the one
     // `model folder/sub` folder.
-    let file_folder = match ctx.rest.rsplit_once('/') {
-        Some((dir, _)) => format!("{}/{dir}", ctx.model_folder),
-        None => ctx.model_folder.to_owned(),
-    };
-    let mut folders = Vec::new();
-    if sub.is_empty() {
-        let mut folder = file_folder.as_str();
-        loop {
-            folders.push(folder.to_owned());
-            if folder == ctx.model_folder {
-                break;
-            }
-            folder = folder
-                .rsplit_once('/')
-                .map(|(parent, _)| parent)
-                .expect("a folder below the model folder has a parent");
-        }
-    } else {
-        folders.push(format!("{}/{sub}", ctx.model_folder));
-    }
-    if folders
-        .iter()
-        .any(|folder| folder_claims(ctx, folder, &stem, set_reference, planned, &common_rest))
-    {
+    let folders = lookup_folders(ctx, sub);
+    if folders.iter().any(|folder| {
+        folder_claims(
+            ctx,
+            folder,
+            &stem,
+            set_reference,
+            pass.planned,
+            &common_rest,
+        )
+    }) {
         if !game_dir {
-            findings.push(kept(written, ctx.input));
+            pass.findings.push(kept(written, ctx.input));
         }
         return None;
     }
@@ -540,27 +592,15 @@ fn referee_folder_holds(
 /// respell): linked to the export's `Common/` root texture of its stem when
 /// his folder, nearest first, holds none (step 12 widening class 6's link to
 /// him); silent otherwise, as a game directory's stem is.
-fn link_referee_bare(
-    ctx: &FileContext,
-    directory: &str,
-    file_name: &str,
-    planned: &mut BTreeMap<String, String>,
-    findings: &mut Vec<Message>,
-) {
+fn link_referee_bare(ctx: &FileContext, directory: &str, file_name: &str, pass: &mut Pass) {
     if !is_referee_file(ctx) || !matches!(directory, "" | "./") {
         return;
     }
     let written = format!("{directory}{file_name}");
-    if let Some(common_rest) = common_decision(
-        ctx,
-        Reference::GameDir,
-        "",
-        file_name,
-        planned,
-        &written,
-        findings,
-    ) {
-        plan_link(planned, ctx, common_rest);
+    if let Some(common_rest) =
+        common_decision(ctx, Reference::GameDir, "", file_name, pass, &written)
+    {
+        plan_link(pass.planned, ctx, common_rest);
     }
 }
 
@@ -579,6 +619,7 @@ pub(crate) fn material_references(
     let mut rewrites = MaterialRewrites::default();
     let mut failures: BTreeMap<String, Vec<Message>> = BTreeMap::new();
     let mut planned: BTreeMap<String, String> = BTreeMap::new();
+    let mut used: BTreeSet<(String, String)> = BTreeSet::new();
 
     for (input, output) in copies {
         let Some((kind, model_folder, rest)) = model_folder_of(output) else {
@@ -611,8 +652,13 @@ pub(crate) fn material_references(
                 continue;
             };
             let mut file_findings = Vec::new();
+            let mut pass = Pass {
+                planned: &mut planned,
+                used: &mut used,
+                findings: &mut file_findings,
+            };
             let changed = match fmdl::ops::paths::rewrite_texture_paths(&mut file, |path| {
-                fmdl_entry(path, &ctx, &mut planned, &mut file_findings);
+                fmdl_entry(path, &ctx, &mut pass);
             }) {
                 Ok(changed) => changed,
                 // The string table could not hold the respelled paths:
@@ -665,24 +711,35 @@ pub(crate) fn material_references(
                 vec![],
             ));
         }
+        let mut pass = Pass {
+            planned: &mut planned,
+            used: &mut used,
+            findings: &mut file_findings,
+        };
         let changed = rewrite_texture_paths(&mut set, |path| {
             // `./` or no directory: a local reference — respell it (a
             // referee's bare one linked when only `Common/` holds it) and
             // stop.
             if path.directory.is_empty() || path.directory.starts_with("./") {
                 respell_reference(&mut path.directory, &mut path.file_name, ctx.identity);
-                link_referee_bare(
-                    &ctx,
-                    &path.directory,
-                    &path.file_name,
-                    &mut planned,
-                    &mut file_findings,
-                );
+                if !folded_stem(&path.file_name).starts_with("dummy_") {
+                    mark_lookup(
+                        pass.used,
+                        &ctx,
+                        path.directory.strip_prefix("./").unwrap_or(""),
+                        &folded_stem(&path.file_name),
+                    );
+                }
+                link_referee_bare(&ctx, &path.directory, &path.file_name, &mut pass);
                 return;
             }
             // Every other reference (a game directory's) stays as written,
-            // kit magic included.
+            // kit magic included; its file name is still looked up in the
+            // file's folder first.
             let Some((_marker, sub)) = reference_into_common(&path.directory) else {
+                if !folded_stem(&path.file_name).starts_with("dummy_") {
+                    mark_lookup(pass.used, &ctx, "", &folded_stem(&path.file_name));
+                }
                 return;
             };
             // The reference as written, for the finding's context.
@@ -700,7 +757,8 @@ pub(crate) fn material_references(
             if let Cow::Owned(name) = respell(&path.file_name, Spelling::Path, ctx.identity) {
                 path.file_name = name;
             }
-            if referee_folder_holds(&ctx, &sub, &path.file_name, &planned) {
+            if referee_folder_holds(&ctx, &sub, &path.file_name, pass.planned) {
+                mark_lookup(pass.used, &ctx, &sub, &folded_stem(&path.file_name));
                 path.directory = format!("./{sub}");
                 return;
             }
@@ -709,14 +767,13 @@ pub(crate) fn material_references(
                 Reference::TeamCommon,
                 &sub,
                 &path.file_name,
-                &planned,
+                &mut pass,
                 &written,
-                &mut file_findings,
             ) {
                 // `./` + `sub` + the name as respelled, and the link for
                 // the `Common/` file's own name, planned once.
                 Some(common_rest) => {
-                    plan_link(&mut planned, &ctx, common_rest);
+                    plan_link(pass.planned, &ctx, common_rest);
                     path.directory = format!("./{sub}");
                 }
                 None => {
@@ -739,6 +796,7 @@ pub(crate) fn material_references(
         }
     }
     rewrites.links = planned.keys().cloned().collect();
+    rewrites.used = used;
 
     for (input, _) in copies {
         if let Some(messages) = failures.remove(input.as_str()) {

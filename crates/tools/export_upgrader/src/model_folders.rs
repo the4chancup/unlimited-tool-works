@@ -29,6 +29,7 @@ use crate::players::{
 };
 use crate::source::{self, OldExport};
 use crate::staging::{claim_staging, finish_staging, write_output_file};
+use crate::texture_pairs;
 use crate::upgrade::{Identity, RunEvents, invalid, output_issues, resolve_input, verdict};
 
 /// Where an output folder of model-folder mode goes once dropped into a
@@ -382,6 +383,16 @@ pub(crate) fn run(args: &UpgradeModelsArgs, ctx: &ToolContext) -> Result<u8, Cli
     let (copies, dropped) = drop_collisions(rename_models(respelled, &kept), None);
     plan.copies = copies;
     plan.findings.extend(dropped);
+    // A `.dds` beside a `.ftex` of one stem in one output folder is a
+    // `texture_stem_conflict` the validation would refuse, resolved as in
+    // `upgrade`: the `.ftex` drops first so the links are spelled after
+    // the kept `.dds` alone, and the `.dds` follows when no model wears
+    // the stem.
+    let pairs = texture_pairs::stem_pairs(plan.copies.iter());
+    let ftex_dropped: std::collections::BTreeSet<&str> =
+        pairs.iter().map(|pair| pair.ftex.0.as_str()).collect();
+    plan.copies
+        .retain(|(input, _)| !ftex_dropped.contains(input.as_str()));
     // `Common/` for the materials: the respelled output paths the links are
     // spelled after.
     let common: Vec<String> = plan
@@ -390,7 +401,14 @@ pub(crate) fn run(args: &UpgradeModelsArgs, ctx: &ToolContext) -> Result<u8, Cli
         .filter(|(_, output)| under(output, "common").is_some())
         .map(|(_, output)| output.clone())
         .collect();
-    let materials = material_references(&plan.copies, &common, &identity, |path| export.read(path));
+    let mut materials =
+        material_references(&plan.copies, &common, &identity, |path| export.read(path));
+    let (pair_findings, dds_dropped) = texture_pairs::resolve(&pairs, &materials.used);
+    if !dds_dropped.is_empty() {
+        plan.copies
+            .retain(|(input, _)| !dds_dropped.contains(input));
+    }
+    materials.findings.extend(pair_findings);
     let face_xml = face_xml_rewrites(&plan.copies, &identity, |path| export.read(path));
     let mut any_unmigrated = false;
     for message in plan.findings.into_iter().chain(materials.findings) {
