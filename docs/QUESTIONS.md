@@ -59,3 +59,21 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   bit of the PES 19 player record left uncovered that any save sets (`spec/pes_savefile/model.md`
   "The player record"). Does PES 2019's Edit mode offer a playing attitude on a player? If it
   does, it is a field still to find (changed in game, the save diffed); if not, the plan holds.
+
+## The proof of concept (0.0.2-poc)
+
+A dry run (2026-11-05, `.tmp/0_0_2/poc/dry_run.py`, the release binary at `46105675`, on
+copies: the upgrade against `EDIT00000000_VGL26`, the compile for PES 2019 into a scratch
+folder) stops on two inputs (worklog 0.0.2-poc):
+
+- **/4ccg/'s player 14.** The VGL26 save gives slot 14 (">page 9") boots ID 2918, and the
+  export's boots folders end at `k2917`, so the upgrade refuses (`custom_model_missing`: a
+  Full output would point the number at whatever the team's block later assigns there) and
+  writes nothing. Which is right: is k2918 missing from the export (a folder to add), is the
+  save's 2918 a stray (to set in the save, or to 0), or should the PoC upgrade /4ccg/ with
+  `--loose`, which infers the wearers from the folder IDs instead of the save?
+- **/dbg/'s missing texture.** Players 10, 16 and 18's `boots.fmdl` name `./medic_bsm.tga`,
+  which the export does not hold (`fmdl_texture_not_found`, an Error, as in the library run on
+  PES 2021): the compile leaves those three players' boots out and builds the rest. Is there a
+  copy of `medic_bsm` to add to their folders, or does the PoC go out with the three Errors
+  showing?

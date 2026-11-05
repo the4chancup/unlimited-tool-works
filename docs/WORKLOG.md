@@ -7440,7 +7440,13 @@ briefs, review loops, gates and mutation runs as for any step.
     players show their compiled faces, boots and gloves in Edit mode on PES 2019. The example
     teams (the maintainer): /dbg/ and /4ccg/, the old exports `DBG Aesthetics Export VGL26`
     and `4CCG Aesthetics Export VGL26` in `C:/Data/4cc/Lab/VGL26/`, upgraded
-    against the save `C:/Data/4cc/Saves/EDIT00000000_VGL26`
+    against the save `C:/Data/4cc/Saves/EDIT00000000_VGL26`.
+    Dry run 2026-11-05 (`.tmp/0_0_2/poc/dry_run.py`, on copies, `46105675`'s release binary,
+    PES 2019, no deploy): /dbg/ upgrades clean and compiles with three Errors (players 10, 16
+    and 18's boots name a `medic_bsm.tga` the export lacks: those packages left out); /4ccg/'s
+    upgrade refuses (`custom_model_missing`: the save gives player 14 boots 2918, the export's
+    folders end at k2917). Both wait on the maintainer (QUESTIONS "The proof of concept"); the
+    in-game half waits for `save_editor`'s mutation run to end (no cargo while PES 2019 runs)
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
