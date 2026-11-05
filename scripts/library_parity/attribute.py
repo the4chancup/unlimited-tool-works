@@ -373,11 +373,12 @@ def cause_of(job, side, red, ours, class_, detail, version):
     if class_ == "ours_only" and lower.endswith(".dds") and re.search(
             rf"{re.escape(os.path.splitext(os.path.basename(lower))[0])}\.png", " ".join(job.red_names)):
         return "I27 a PNG source converted to the .dds its material names (Red packs the PNG, which the game cannot read)"
-    # A pre-Fox Common model already named `oral_x`: Red prefixes it again, ours packs it once
-    # (the pair: Red's `oral_oral_x` beside our `oral_x`, U AAE 26, c4).
+    # A pre-Fox Common model already named `oral_x`: Red prefixes it again, ours keeps the name.
+    # Each side's line needs the other's file, so a model ours dropped for another cause stays
+    # unattributed (U AAE 26, c4).
     base = os.path.basename(lower)
     if kind == "common" and base.endswith(".model") and (
-            (class_ == "red_only" and base.startswith("oral_oral_"))
+            (class_ == "red_only" and base.startswith("oral_oral_") and base[len("oral_"):] in job.ours_names)
             or (class_ == "ours_only" and base.startswith("oral_") and "oral_" + base in job.red_names)):
         return "I35 a Common model named oral_x: Red packs it as oral_oral_x, ours as oral_x"
     # The fallbacks: what no class above claims.
@@ -408,6 +409,7 @@ def main():
         job.source = rows[index][1]
         version = rows[index][2]
         job.red_names = {os.path.basename(line.split("\t")[1].lower()) for line in open(report, encoding="utf-8") if line.split("\t")[1]}
+        job.ours_names = {os.path.basename(line.split("\t")[2].lower()) for line in open(report, encoding="utf-8") if line.split("\t")[2]}
         for line in open(report, encoding="utf-8"):
             side, red, ours, class_, detail = line.rstrip("\n").split("\t")
             if class_ in EQUAL:

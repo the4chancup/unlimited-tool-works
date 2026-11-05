@@ -25,7 +25,7 @@ def reports(tag):
     found, current = defaultdict(list), None
     if not os.path.exists(os.path.join(HERE, f"reports_{tag}.txt")):
         print(f"no reports_{tag}.txt: the lines lost and gained are not listed")
-        return found
+        return None
     for line in open(os.path.join(HERE, f"reports_{tag}.txt"), encoding="utf-8"):
         line = line.rstrip("\n")
         if line.startswith("=== "):
@@ -48,7 +48,11 @@ print(f"only in {a_tag}: {len(set(a) - set(b))}; only in {b_tag}: {len(set(b) - 
 for (before, after), paths in sorted(changes.items(), key=lambda item: -len(item[1])):
     print(f"\n{len(paths):4}  {before}\n   -> {after}")
     for path in paths[:5]:
-        lost = [line for line in ra[path] if line not in rb[path]]
+        if ra is None or rb is None:
+            # Counted against a missing side, every line would read as lost or gained.
+            print(f"        {path}")
+            continue
+        lost =[line for line in ra[path] if line not in rb[path]]
         gained = [line for line in rb[path] if line not in ra[path]]
         print(f"        {path}: {len(lost)} lines lost, {len(gained)} gained")
         for line in gained[:3]:
