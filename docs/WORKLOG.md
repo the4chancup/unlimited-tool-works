@@ -54,7 +54,10 @@ and writes what is correctness-critical; the sidekick, SWE-2 through the Devin C
 the cross-family reviews run through the `duck` skill (Astra), the lead running them itself.
 When a review stops for quota, it is queued here (commit range, plan sections) and retried
 once an hour; work continues past it, but no phase closes with one outstanding.
-**Handover queue:** empty; every review Phase 5 queued has run (rulings under `.tmp/5_*/`).
+**Handover queue:** Astra over 8.36c1-c4 (checkpoint (b); `8bcbf720..46105675`, two parts:
+`pes_savefile` + `save_editor`, then `team_compiler`), queued 2026-11-05: Codex `own`'s weekly
+window was 95% used (resets 2026-11-06 03:48) and the `brother` login's token had expired, which
+only a new sign-in renews.
 
 ---
 
@@ -2847,8 +2850,16 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         invalid-file rows say the two files make one look (the sidekick's kept "his other
         file still applies"); the settings template's `[appearance.motion]` note ("on Fox …
         the tables do not hold motions") dropped from the code, its golden, the tracers'
-        upgraded copies, the spec and the draft; the drafts' catalog rows. Open: the
-        library parity, Astra, the `mutants-diff`
+        upgraded copies, the spec and the draft; the drafts' catalog rows.
+        The library parity done 2026-11-05 at `46105675` (tag `c4` against `close6`): the
+        census's outcomes unchanged but for the `.rar` refusal's reworded text (the input
+        lists rebuilt first: 32 VGL26 exports had moved from `Lab/Gud/` to `Lab/VGL26/`,
+        same outcomes); 287 exports through Red, every line in a class but close6's two
+        pairing ties, no D, `I14?` or `warning-slot` line. One new intentional class, I35:
+        a pre-Fox Common model already named `oral_x` (U AAE 26), which Red packs as
+        `oral_oral_x` and ours as `oral_x` (`packed_model_name`, TC-CMN-18). The player
+        tables' removal shows no class: Red never wrote them. Open: Astra (queued, see
+        "Handover queue"), the `mutants-diff` (launched, waiting on `save_editor`'s run)
     - [ ] d in game, before 0.0.2 (PES 2019 first, VGL 27's game and the likeliest for the
       4cc's spring cup, then PES 2021 and PES 2017; the maintainer, 2026-11-04): a
       patch applied to an

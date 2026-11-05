@@ -373,6 +373,13 @@ def cause_of(job, side, red, ours, class_, detail, version):
     if class_ == "ours_only" and lower.endswith(".dds") and re.search(
             rf"{re.escape(os.path.splitext(os.path.basename(lower))[0])}\.png", " ".join(job.red_names)):
         return "I27 a PNG source converted to the .dds its material names (Red packs the PNG, which the game cannot read)"
+    # A pre-Fox Common model already named `oral_x`: Red prefixes it again, ours packs it once
+    # (the pair: Red's `oral_oral_x` beside our `oral_x`, U AAE 26, c4).
+    base = os.path.basename(lower)
+    if kind == "common" and base.endswith(".model") and (
+            (class_ == "red_only" and base.startswith("oral_oral_"))
+            or (class_ == "ours_only" and base.startswith("oral_") and "oral_" + base in job.red_names)):
+        return "I35 a Common model named oral_x: Red packs it as oral_oral_x, ours as oral_x"
     # The fallbacks: what no class above claims.
     if class_ == "cpk_member_missing" and lower.endswith((".txt", ".png")):
         return "I22 a file the game never reads (.txt, .png): Red packs it, ours reports file_not_used"

@@ -48,6 +48,7 @@ A line of one of these needs no action.
 | I32 | a modelless item folder: Red packs an empty package, ours marks the wearers `fpc_on` |
 | I33 | an item folder with a stray FMDL: Red discards it, ours drops the file |
 | I34 | a face whose Common path names the team (`common/o/`): Red discards it, ours migrates it |
+| I35 | a pre-Fox Common model already named `oral_x`: Red packs it as `oral_oral_x`, ours adds the prefix once |
 
 ## Defect candidates (D)
 

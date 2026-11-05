@@ -23,6 +23,9 @@ def outcomes(tag):
 
 def reports(tag):
     found, current = defaultdict(list), None
+    if not os.path.exists(os.path.join(HERE, f"reports_{tag}.txt")):
+        print(f"no reports_{tag}.txt: the lines lost and gained are not listed")
+        return found
     for line in open(os.path.join(HERE, f"reports_{tag}.txt"), encoding="utf-8"):
         line = line.rstrip("\n")
         if line.startswith("=== "):
