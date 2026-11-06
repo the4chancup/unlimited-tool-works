@@ -409,7 +409,8 @@ Requirements:
   citing a boots-ID scenario), and both citations the project had removed as wrong scored
   under 0.3. Every cited scenario had a test above 0.5, so a flag says a test checks an
   unstated case, never that a scenario is unproven. It runs at a phase's close (the
-  design-health pass), never as a gate: it needs the network and a key, read from
+  design-health pass) and before every review round over code (`RUNBOOK.md` "Review rounds"),
+  never as a gate: it needs the network and a key, read from
   `SUBQ_API_KEY` or the file `STUDIO_SNAP_KEY_FILE` names, outside the repository (one key
   a line, spent in order: a key the service refuses is left for the next). The lead
   runs it and rules each flag like a reviewer concern, its row (the report prints it) going

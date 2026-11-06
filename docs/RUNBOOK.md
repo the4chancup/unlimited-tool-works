@@ -409,6 +409,12 @@ functions and their callers. Until 2026-11-01 no script had one, and `mutants_di
 been deleting the previous run's results whenever two runs followed each other. A test a
 change adds to one is shown to fail by `scripts/review/perturb_check.py` (a list of perturbations,
 each with its test, applied and undone one at a time).
+**The citation audit before every review round over code.** The lead runs `just
+citation-audit` (`CONTRIBUTING.md` "Citation audit": cached, so a run pays for changed pairs
+only) and rules its flags before writing the round's brief, so SWE-2 and Astra do not spend
+concerns on a test that does not prove the scenario it cites. It sees only cited pairs: a rule
+the spec states with no scenario of its own, or a test that passes because another rule gives
+the same result on its fixture, is still the reviewers' and the mutation run's to find.
 **Batch, don't stream:**
 renames, doc edits, one-file fixes with no new behavior are never reviewed on their own; their
 diffs ride along with the next (b) review, or with converge. Never more than one *scheduled*

@@ -135,7 +135,7 @@ documents".
 | 7 | glTF support (runs after Release 0.1.0) | `model_convert` (glTF half) | todo |
 | 8 | GUI | `studio_core` shell, `studio`, tool views, `color_tools` widget | todo |
 | 0.0.1 | Preview build: the Save editor for DBC alone, with DBC7's rules file and PES 2017 picked (`core/development_plan.md` "Divegrass Before Christmas") | `just release` | todo |
-| 0.0.2 | Preview build: 0.0.1 plus the Team compiler and Export upgrader through their CLI for VGL 27, with the launchers (`core/development_plan.md` "The /vg/ League 27 (VGL)") | `just release`, the launchers, the console's progress line | todo |
+| 0.0.2 | Preview build: 0.0.1 plus the Team compiler and Export upgrader through their CLI for VGL 27, with the launchers (`core/development_plan.md` "The /vg/ League 27 (VGL)") | `just release`, the launchers (the console's progress line done in 0.0.1a) | todo |
 | 0.1.0 | Release 0.1.0, after Phase 8, a test release (`core/development_plan.md` "Release 0.1.0") | `just release`, `CHANGELOG.md` | todo |
 | 0.2.0 | Release 0.2.0 or a later `0.x` (`core/development_plan.md` "Release 0.2.0") | help chapters, update check + notice, teams-list merge | todo |
 | 9 | Stadium compiler | `stadium_compiler` | todo |
@@ -7545,6 +7545,13 @@ briefs, review loops, gates and mutation runs as for any step.
     file offset 0x1b3c89c, measured 2026-10-31); PES 2015's pair on G: as a second reading;
     `PES2017.exe.old` (2016-10-20) is the release exe. Then in PES 2016's unpacked exe;
     confirmed in game on `.old5`; then the plan's rule, its Acceptance, and the slice
+  - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
+    PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
+    1:30 in a console where Red takes under half that, and its progress line showed no parts
+    for its first 40 seconds) → measure on an idle machine (no mutation run, no cargo) with a
+    release build: Red's and ours on the same export, wall time, three runs, the median; our
+    time split by stage (validation, planning, each task kind, the CPK write) with a
+    sampling profiler; each stage that costs more than Red's whole run gets a worklog step
 - [ ] after 0.0.2: Live AATF in a native window of its own (the maintainer, 2026-11-01; the
   embedded one is cv28): an egui viewport (`show_viewport_immediate`, the embedded window as
   its fallback where the platform has no second window), not always-on-top (desktop-wide, so
