@@ -57,7 +57,9 @@ once an hour; work continues past it, but no phase closes with one outstanding.
 **Handover queue:** Astra over 8.36c1-c4 (checkpoint (b); `8bcbf720..46105675`, two parts:
 `pes_savefile` + `save_editor`, then `team_compiler`), queued 2026-11-05: Codex `own`'s weekly
 window was 95% used (resets 2026-11-06 03:48) and the `brother` login's token had expired, which
-only a new sign-in renews. 0.0.2-poc1 and poc2 (`f5058d00..`, two crates) join it.
+only a new sign-in renews. 0.0.2-poc1 and poc2 (`f5058d00..`, two crates) join it, then
+poc6, poc5 and poc7 (`b74e726a^..34b07fa7`: `export_upgrader`, `model_convert`, `fmdl`,
+`team_compiler`; their SWE-2 rounds ended under five).
 
 ---
 
@@ -8093,10 +8095,9 @@ points there.
   RUSTSEC-2026-0414 and -0433 (`pulldown-cmark` 0.13.4 under `egui_commonmark`, unreached:
   its parser options omit `ENABLE_WIKILINKS`; 0.13.6 fixes both, taken with the next egui
   bump) and five unmaintained crates, so Dependabot stays the advisory watch
-- open (2026-11-06, review S-poc7) — `model_convert/src/formats/fmdl/tests.rs` is 1,320
-  lines and 0.0.2-poc7 grew it by 64: split it before its next growth (by what the tests
-  cover: import, export, round trips), as `CONTRIBUTING.md` asks of a module past a thousand
-  lines
+- resolved (2026-11-06) — `model_convert/src/formats/fmdl/tests.rs` was 1,320 lines
+  (review S-poc7): split as a pure move into `tests/{import,export,round_trip}.rs`, the
+  fixtures and shared helpers staying in `tests.rs` (146 lines); the same 35 tests
 
 - open (2026-11-01, after 0.0.1) — the Ruleset editor's tier handle
   (`ruleset_editor/src/view/sections/tiers.rs` around line 140) is a `dnd_drag_source` whose
