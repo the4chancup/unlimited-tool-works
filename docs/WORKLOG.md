@@ -7553,7 +7553,7 @@ briefs, review loops, gates and mutation runs as for any step.
     `Decoded::uncompressed`, `Target::keep_uncompressed`, the Team compiler's main-kit flag;
     pre-Fox parity's `k2012_sr.dds` now matches Red's uncompressed output; the GPU tests
     call `encode_mips` directly (`just gpu-tests` not run here). Spec moved (the deferred
-    GPU part stays in the plan). Open: the re-timing and the in-game check below. → verify also: the maintainer's PES 21
+    GPU part stays in the plan). Re-timed 2026-11-06 (release build of `f2d524e9`, `.tmp/0_0_2/poc/retime.py`): 0.8 s wall where BC7 took about 1:30, an 8.5 MB CPK. Open: the in-game check below (brief `.tmp/0_0_2/ingame/brief_poc_ingame.md`, item 4). → verify also: the maintainer's PES 21
     test compile (`.tmp/release_0_0_1/0_0_1/manual_run2`, about 1:30 with BC7) re-timed;
     its 45 DXT5 sources pass through either way, and its three uncompressed 4096 × 4096
     sources (`kit.dds` twice, one `shirt.dds`) were the only BC7 encodes and now encode
