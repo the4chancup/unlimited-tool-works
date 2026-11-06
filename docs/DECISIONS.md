@@ -15662,3 +15662,15 @@ says neither checks nor touches anti-blur meshes. No `materials.toml` reader exi
 member file is affected.
 Plan: `plans/model_conversion/ir.md` "Anti-blur duplicates"; `plans/model_format.md`
 "Engine-neutral keys" and the advanced example; `plans/team_compiler/README.md` TC-MOD-101.
+
+## 2026-11-06 — changelog — a tool no release has presented gets no entries
+Decision: `CHANGELOG.md` lists no change to a tool that no release's notes and not the
+`README.md` have presented, even though its code ships in the bundle. For now that means the
+Team compiler and the Export upgrader. The eight entries `[Unreleased]` held for them are
+removed. The release that first presents a tool describes it whole, in one bullet, as 0.0.1
+did the Save editor (the maintainer).
+Why: 0.0.1's notes and the README presented the Save editor and the Ruleset editor alone, so
+no member uses the other two tools yet. Entries about changes to tools nobody has been told
+about would be noise in the "What's new" chapter, the release body and the updater dialog. A
+single bullet that presents the tool tells members what it does.
+Plan: `plans/core/distribution.md` "Changelog and version display"; `CONTRIBUTING.md` "Commits".

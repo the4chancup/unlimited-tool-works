@@ -287,7 +287,12 @@ the step that changes the behavior, like the help topic (see `spec/core/gui.md` 
 first release on: an entry goes under `[Unreleased]` in the commit that changes something a
 member notices against the last release (a fix for a bug a release shipped, a new or changed
 behavior, a speed-up worth telling). A fix for something no release has shipped gets none, so
-the file itself tells the two kinds of fix apart and commit types do not have to. Nothing else
+the file itself tells the two kinds of fix apart and commit types do not have to. A tool no
+release has presented (named in its notes or in the `README.md`) gets no entry either, even
+when its code ships in the bundle: the Team compiler and the Export upgrader were in 0.0.1's
+binary but in neither, so no member uses them yet, and a list of changes to a tool nobody has
+been told about reads as noise. The release that first presents a tool describes it whole, in
+one bullet, as 0.0.1 did the Save editor. Nothing else
 describes releases; the three places a user meets release notes all read this file:
 
 1. **The help window's "What's new" chapter** — the file embedded at build time, newest first.

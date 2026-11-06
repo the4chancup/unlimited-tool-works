@@ -508,7 +508,8 @@ is never generated from commit messages. From the first release on, a commit tha
 something a member notices against the last release (a fix for a bug a release shipped, a new or
 changed behavior, a speed-up worth telling) adds its line under `[Unreleased]` in `CHANGELOG.md`
 itself, a corner-case fix under its `### Minor fixes`; a fix for something no release has
-shipped adds none. There is one `fix` type for both:
+shipped adds none, and neither does a change to a tool no release has presented in its notes or
+the `README.md` (the Team compiler and the Export upgrader until one does). There is one `fix` type for both:
 `git log --grep '^fix(' -- CHANGELOG.md` lists the fixes a release note owes its readers. Write
 the message to a file and `git commit -F` it;
 PowerShell has no heredocs.
