@@ -48,6 +48,18 @@ pub(crate) fn body_skl(version: &str) -> Vec<u8> {
     .unwrap()
 }
 
+/// Writes two boots parts into `folder`, one paired with a skeleton and one without:
+/// `skl_merge_conflict` fails the folder's boots task.
+pub(crate) fn conflicting_boots(sandbox: &Sandbox, folder: &str) {
+    for name in ["boots.fmdl", "kit_boots.fmdl"] {
+        sandbox.write(
+            &format!("{folder}/{name}"),
+            &tracer_player_file("boots.fmdl"),
+        );
+    }
+    sandbox.write(&format!("{folder}/boots.skl"), &body_skl("pes21"));
+}
+
 /// Writes the tracer's face files into `folder` under their own names, and its boots and
 /// gloves models under `boots_name`, `glove_l.fmdl` and `glove_r.fmdl`.
 fn write_player(sandbox: &Sandbox, folder: &str, boots_name: &str) {
@@ -1785,16 +1797,7 @@ fn parts_with_a_skeleton_mismatch_or_a_material_defined_twice_leave_their_boots_
     let sandbox = Sandbox::new("mod_merge_conflicts");
     let export = "exports/co Midcup Conflicts";
     // Slot 05: two boots parts, one paired with a skeleton and one without.
-    for name in ["boots.fmdl", "kit_boots.fmdl"] {
-        sandbox.write(
-            &format!("{export}/Players/05 - A/{name}"),
-            &tracer_player_file("boots.fmdl"),
-        );
-    }
-    sandbox.write(
-        &format!("{export}/Players/05 - A/boots.skl"),
-        &body_skl("pes21"),
-    );
+    conflicting_boots(&sandbox, &format!("{export}/Players/05 - A"));
     sandbox.write(
         &format!("{export}/Players/05 - A/shirt.dds"),
         &tracer_player_file("shirt.dds"),

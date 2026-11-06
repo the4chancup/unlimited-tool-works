@@ -1,7 +1,7 @@
-//! The `aesthetics_patch.toml` `compile` writes to the output folder on a Fox target
+//! The `aesthetics_patch.toml` `compile` writes to the output folder on every engine
 //! (`spec/pes_savefile/operations.md` "Aesthetics patch"): every compiled player's resolved
-//! motions, a `write_names` export's names, the `.bak` an earlier patch is moved to when the
-//! run holds none, and `patch_write_failed` aborting the run.
+//! look and boots and gloves IDs, a `write_names` export's names, the `.bak` an earlier
+//! patch is moved to when the run holds none, and `patch_write_failed` aborting the run.
 
 use std::fs;
 
@@ -12,6 +12,7 @@ use pes_version::PesVersion;
 use crate::clean_model;
 use crate::common::Sandbox;
 use crate::compile::{pes_settings, pes21_settings, tracer_kit};
+use crate::models::conflicting_boots;
 use crate::prefox_faces::{card_model, materials_naming, small_dds};
 
 /// The patch in `sandbox`'s output folder, parsed back.
@@ -50,6 +51,69 @@ fn a_run_holding_no_patch_moves_an_earlier_one_aside_to_bak() {
         fs::read(&bak).unwrap().as_slice(),
         earlier,
         "the earlier one is now the .bak"
+    );
+}
+
+// A run that emits no entry writes nothing and leaves the previous CPK
+// (`spec/team_compiler/pipeline.md` "Output"): a patch whose every entry held
+// only a task-gated ID whose task failed emits no entry either, so the
+// previous CPK and the previous patch stay, no `.bak` turning over.
+#[test]
+fn a_patch_that_settles_to_nothing_leaves_the_previous_cpk_and_patch_alone() {
+    let sandbox = Sandbox::new("patch_settles_nothing");
+    let previous_cpk = b"the previous CPK";
+    let previous_patch = b"the previous patch";
+    sandbox.write("output/4cc_99_test.cpk", previous_cpk);
+    sandbox.write("output/aesthetics_patch.toml", previous_patch);
+    let folder = "exports/co Midcup Settle/Players/05 - A";
+    // All the patch has for him is his boots task's ID: a wrong-type key
+    // refuses his settings.toml, holding his whole look back, and his
+    // `ingame_face.toml` keeps the blank face out, so the failed task is the
+    // folder's whole work — two boots parts, one paired with a skeleton and
+    // one without, are `skl_merge_conflict`.
+    sandbox.write(&format!("{folder}/settings.toml"), b"name = 5\n");
+    sandbox.write(&format!("{folder}/ingame_face.toml"), b"iris_color = 7\n");
+    conflicting_boots(&sandbox, folder);
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+
+    let lines = run.messages();
+    assert_eq!(run.exit_code(), 1, "{lines:#?}");
+    for expected in [
+        "co Midcup Settle: Error settings_toml_invalid [DropFile] at \
+            Players/05 - A/settings.toml (file=settings.toml, error=name: expected true or a string)",
+        "co Midcup Settle: Error skl_merge_conflict [DropFolder] at \
+            Players/05 - A (skeleton=differs)",
+    ] {
+        assert!(
+            lines.iter().any(|line| line == expected),
+            "{expected}: {lines:#?}"
+        );
+    }
+    assert!(
+        lines.iter().all(|line| !line.contains("patch_written")),
+        "{lines:#?}"
+    );
+    let output = sandbox.root.join("output");
+    assert_eq!(
+        fs::read(output.join("4cc_99_test.cpk")).unwrap().as_slice(),
+        previous_cpk,
+        "the previous CPK byte-identical"
+    );
+    assert_eq!(
+        fs::read(output.join("aesthetics_patch.toml"))
+            .unwrap()
+            .as_slice(),
+        previous_patch,
+        "the previous patch byte-identical"
+    );
+    assert!(
+        !output.join("aesthetics_patch.toml.bak").exists(),
+        "no .bak"
+    );
+    assert!(
+        !output.join(".staging").exists(),
+        "the staging went with the run"
     );
 }
 

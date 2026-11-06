@@ -255,7 +255,8 @@ pub(crate) fn version_clamped(
 
 /// `player`'s `settings.toml` parsed; `None` when it has none. `settings_toml_invalid` when
 /// it is not UTF-8 or `PlayerSettings::parse` refuses: the file alone is dropped, the
-/// folder's models still compile, and the player's look is the template's.
+/// folder's models still compile, and his whole look is held back from the patch, the save
+/// keeping his record's.
 pub(super) fn player_settings(
     content: &ContentSource,
     player: &PlayerFolder,
@@ -276,8 +277,9 @@ pub(super) fn player_settings(
 
 /// `player`'s `ingame_face.toml` parsed; `None` when it has none. `ingame_face_toml_invalid`
 /// when it is not UTF-8 or `IngameFaceSettings::parse` refuses: the file stays, its presence
-/// still marking the in-game face, and its keys are ignored — the player's face is the
-/// game's default, his `settings.toml` still applying.
+/// still marking the in-game face, and its keys are ignored; his whole look is held back
+/// from the patch, `settings.toml`'s keys and the IDs they would resolve too; a
+/// `write_names` export still takes his name from them.
 pub(super) fn player_ingame_face(
     content: &ContentSource,
     player: &PlayerFolder,
@@ -902,12 +904,13 @@ mod tests {
         assert_eq!(joined.appearance.skin_color, None);
     }
 
-    /// One file refused leaves the other applied, both ways: a `settings.toml`
-    /// that does not parse is `settings_toml_invalid` and the face file's keys
-    /// still apply; an `ingame_face.toml` that does not parse is
-    /// `ingame_face_toml_invalid` and the settings file's still apply.
+    /// One file refused leaves the other's keys in the settings, both ways: a
+    /// `settings.toml` that does not parse is `settings_toml_invalid` and the face
+    /// file's keys are kept; an `ingame_face.toml` that does not parse is
+    /// `ingame_face_toml_invalid` and the settings file's are kept. Either way the
+    /// player is marked refused, which holds his look back from the patch.
     #[test]
-    fn a_refused_settings_or_ingame_face_file_leaves_the_other_applied() {
+    fn a_refused_settings_or_ingame_face_file_leaves_the_other_s_keys() {
         for (name, files, code, file, disposition, key, value) in [
             (
                 "deep_refused_settings",

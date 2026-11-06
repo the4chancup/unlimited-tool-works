@@ -1015,22 +1015,7 @@ impl PlayerSettings {
         next: &mut PlayerEntry,
         version: PesVersion,
     ) -> Result<(), SettingsError> {
-        // An absent appearance key writes its default; a key the target
-        // version does not store is dropped.
-        let mut appearance = self.appearance.clone();
-        for key in SettingKey::ALL {
-            let spec = key.spec();
-            if spec.table == KeyTable::Top {
-                continue;
-            }
-            let value = if held_on(key, version) {
-                get_appearance(&appearance, key).or(spec.default)
-            } else {
-                None
-            };
-            set_appearance(&mut appearance, key, value);
-        }
-        write_appearance(&appearance, next)?;
+        write_appearance(&self.appearance.resolved(version), next)?;
         next.appearance.ingame_face.write_unused();
         Ok(())
     }

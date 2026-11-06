@@ -2644,8 +2644,8 @@ TC-SAV-21  GIVEN a savefile whose 71405 to 71408 records each hold an appearance
            WHEN it is checked, then compiled for PES 21
            THEN both runs report settings_toml_invalid for 05 and 07 and
                 ingame_face_toml_invalid for 06 and 08, each naming the file and the error
-                (07's naming appearance.hair as an unknown key); the CPK holds no
-                face/real/71406/ or 71408/ path; the patch's entry for 05 holds boots_id
+                (07's naming appearance.hair as an unknown key); the CPK holds 05's
+                boots; the patch's entry for 05 holds boots_id
                 625 alone, no [appearance], and it has no entry for 06 to 08; in the
                 savefile the four records' looks and motions are as they were but for 71405's
                 boots, now 625, the others' boots still 7 (restates TC-BIN-33, TC-STR-18,

@@ -25,6 +25,7 @@ use crate::output::parts::TeamsParts;
 use crate::output::sink::OutputSink;
 use crate::paths::{self, REFEREE_MARKER_COLLAR};
 use crate::plan::TeamKits;
+use crate::plan::patch::{self as plan_patch, PlannedPatchTeam};
 use crate::processing::TaskBatch;
 use crate::templates::Templates;
 
@@ -40,9 +41,11 @@ pub(crate) struct BinsEdits<'a> {
     /// Each planned team export's shared-IDs record to write, whatever its folders' tasks'
     /// outcomes.
     pub(crate) shared_ids: &'a [(u16, SharedIds)],
-    /// A patch team was planned: the patch is the run's work as an override is, so a run
-    /// that commits nothing still writes a CPK to publish it.
-    pub(crate) patch_planned: bool,
+    /// The run's planned patch teams, which `finish_team` settles against the committed
+    /// batches: a patch that still holds an entry then is the run's work as an override
+    /// is, so a run that committed nothing still writes a CPK to publish it; a patch
+    /// that settles to nothing forces none.
+    pub(crate) patch_teams: &'a [PlannedPatchTeam],
 }
 
 impl BinsEdits<'static> {
@@ -53,7 +56,7 @@ impl BinsEdits<'static> {
             team_colors: &[],
             team_kits: &[],
             shared_ids: &[],
-            patch_planned: false,
+            patch_teams: &[],
         }
     }
 }
@@ -429,8 +432,9 @@ impl CpkOutput {
     }
 
     /// Writes the bins and closes the CPK, when a team's batch committed something, there is
-    /// an override, or the referee configs changed the bins on PES 18-21 (else no file exists,
-    /// no bin is built and nothing is reported):
+    /// an override, the referee configs changed the bins on PES 18-21, team colors, a kit's
+    /// colors or a configless slot's edit went in, or the patch holds an entry once its IDs
+    /// are settled (else no file exists, no bin is built and nothing is reported):
     /// `UniformParameter.bin`, built on `bins`' by `kit_configs` from `team_kits` and the
     /// committed kit configs, when that changed it; on PES 15-17, which have no such bin (a
     /// committed kit config there is an error), the installed loose kit configs that
@@ -457,13 +461,14 @@ impl CpkOutput {
             team_colors,
             team_kits,
             shared_ids,
-            patch_planned,
+            patch_teams,
         } = *edits;
         // A run in which no team committed anything writes no file, so it adds no bin either,
         // unless the overrides go into the CPK: they are written whatever the exports bring;
         // or the referee configs changed the bins on PES 18-21: their entries need the bin;
-        // or a patch team was planned: the patch is the run's work as an override is, a
-        // settings-only export's compile otherwise losing it with no error; or the
+        // or the patch still holds an entry once its task-gated IDs are settled against the
+        // committed batches: the patch is the run's work as an override is, a settings-only
+        // export's compile otherwise losing it with no error; or the
         // team colors, a kit's committed `UniColor.bin` entry or a configless slot's edit
         // went in: the bins are then the run's whole work.
         if !self.started
@@ -472,7 +477,7 @@ impl CpkOutput {
             && self.kit_colors.is_empty()
             && self.configless_kits.is_empty()
             && team_colors.is_empty()
-            && !patch_planned
+            && !plan_patch::settles_to_anything(patch_teams, &self.committed)
         {
             return Ok((
                 false,
@@ -711,6 +716,8 @@ mod tests {
 
     use cpk::CpkArchive;
     use kit_config::{KitConfig, matches_fpc};
+    use pes_savefile::interchange::aesthetics_patch::{PatchPlayer, PatchTeam};
+    use pes_savefile::settings_toml::AppearanceSettings;
     use pipeline::MemoryBudget;
     use studio_core::{Disposition, ExportId, Scope};
     use uniparam::UniformParameter;
@@ -2203,9 +2210,9 @@ mod tests {
         assert!(!folder.exists(), "no file and no folder");
     }
 
-    /// The patch is the run's work as the tables are: a run that committed nothing but
-    /// planned a patch team still writes the CPK for it to publish beside, the bins' own
-    /// work as empty.
+    /// The patch is the run's work too: a run that committed nothing but whose patch
+    /// still holds an entry once its IDs are settled still writes the CPK for it to
+    /// publish beside, the bins' own work as empty.
     #[test]
     fn a_run_that_commits_nothing_but_planned_a_patch_still_writes_the_cpk() {
         let temp = scratch("writer_no_entry_patch");
@@ -2217,12 +2224,31 @@ mod tests {
             None,
         );
         output.submit(batch(0, &[], None)).unwrap();
+        // One entry holding a look: it survives the settle whatever committed.
+        let patch_teams = [PlannedPatchTeam {
+            team: PatchTeam {
+                id: 714,
+                name: "/co/".to_owned(),
+                players: BTreeMap::from([(
+                    5,
+                    PatchPlayer {
+                        name: None,
+                        shirt_name: None,
+                        boots_id: None,
+                        gloves_id: None,
+                        base_copy_id: None,
+                        appearance: Some(AppearanceSettings::default().resolved(PesVersion::Pes17)),
+                    },
+                )]),
+            },
+            rows: Vec::new(),
+        }];
         let finished = output
             .finish(
                 PesVersion::Pes17,
                 WorkingBins::bundled(PesVersion::Pes17, &Templates::embedded()),
                 BinsEdits {
-                    patch_planned: true,
+                    patch_teams: &patch_teams,
                     ..BinsEdits::empty()
                 },
                 &Templates::embedded(),

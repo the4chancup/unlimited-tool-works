@@ -18,7 +18,7 @@ use crate::compile_exports::{
     TEAM_COLOR, UNI_COLOR, UNIFORM_PARAMETER, bundled_team_color, bundled_uni_color,
     bundled_uniform_parameter, config_path, record_of, uni_record, with_uni_record,
 };
-use crate::models::body_skl;
+use crate::models::conflicting_boots;
 use crate::patch::read_patch;
 use crate::prefox_faces::write_slot_05_face;
 use crate::{BUNDLED_BINS, clean_model, deploy_skipped, no_deploy_lines, patch_written};
@@ -1045,15 +1045,8 @@ fn patch_teams(sandbox: &Sandbox) -> Vec<PatchTeam> {
 fn a_player_whose_boots_task_fails_gives_him_no_boots_id() {
     let sandbox = Sandbox::new("bins_boots_failed");
     let folder = "exports/co Midcup Boots/Players/05 - A";
-    // Two boots parts, one paired with a skeleton and one without: `skl_merge_conflict`
-    // fails the boots task, and the folder's blank face still commits.
-    for name in ["boots.fmdl", "kit_boots.fmdl"] {
-        sandbox.write(
-            &format!("{folder}/{name}"),
-            &tracer_player_file("boots.fmdl"),
-        );
-    }
-    sandbox.write(&format!("{folder}/boots.skl"), &body_skl("pes21"));
+    // The boots task fails, and the folder's blank face still commits.
+    conflicting_boots(&sandbox, folder);
     sandbox.write(
         &format!("{folder}/shirt.dds"),
         &tracer_player_file("shirt.dds"),
@@ -1718,15 +1711,8 @@ fn a_failed_boots_task_gives_no_id_and_the_look_is_still_written() {
     let sandbox = Sandbox::new("bins_boots_failed_row");
     let export = "exports/co Full Boots";
     let folder = format!("{export}/Players/05 - A");
-    // Two boots parts, one paired with a skeleton and one without: `skl_merge_conflict`
-    // fails the boots task, and the folder's blank face still commits.
-    for name in ["boots.fmdl", "kit_boots.fmdl"] {
-        sandbox.write(
-            &format!("{folder}/{name}"),
-            &tracer_player_file("boots.fmdl"),
-        );
-    }
-    sandbox.write(&format!("{folder}/boots.skl"), &body_skl("pes21"));
+    // The boots task fails, and the folder's blank face still commits.
+    conflicting_boots(&sandbox, &folder);
     sandbox.write(
         &format!("{folder}/shirt.dds"),
         &tracer_player_file("shirt.dds"),

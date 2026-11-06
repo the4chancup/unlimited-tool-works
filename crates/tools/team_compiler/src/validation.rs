@@ -76,8 +76,8 @@ pub(crate) struct CheckedSource {
     /// map on PES 15-17; empty when the deep pass did not run. Read only beside `resolved`.
     pub(crate) metal_models: BTreeSet<ScopePath>,
     /// Each player folder's settings, its `settings.toml` joined with its
-    /// `ingame_face.toml`'s keys, by folder path (`deep::ContentPass::settings`), which planning resolves the compiled players' table
-    /// rows from; empty when the deep pass did not run. Read only beside `resolved`.
+    /// `ingame_face.toml`'s keys, by folder path (`deep::ContentPass::settings`), which planning resolves the compiled players' patch
+    /// entries from; empty when the deep pass did not run. Read only beside `resolved`.
     pub(crate) settings: BTreeMap<ScopePath, PlayerSettings>,
     /// The player folders whose `settings.toml` or `ingame_face.toml` was refused
     /// (`deep::ContentPass::settings_refused`), which planning gives their players no
@@ -711,7 +711,7 @@ fn settings_id_messages(
 ) -> Vec<Message> {
     match resolved.identity {
         ExportIdentity::Team { .. } => {}
-        // A referee export's settings reach no table or patch yet, so a
+        // A referee export's settings reach no patch yet, so a
         // warning would single out one ignored key of many. The gate lifts
         // once they do.
         ExportIdentity::Referees => return Vec::new(),
@@ -847,7 +847,7 @@ fn settings_name_messages(
 ) -> Vec<Message> {
     let slots = match &resolved.export.roster {
         ValidatedRoster::Team(slots) => slots,
-        // A referee export's settings reach no table or patch yet, so a
+        // A referee export's settings reach no patch yet, so a
         // warning would single out one ignored key of many. A referee
         // export also cannot carry `write_names` (the marker is
         // `root_file_unexpected` on one), the marker the names rule reads.

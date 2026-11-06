@@ -664,7 +664,8 @@ planned is in
 
 The Team compiler writes the file to the output folder with the CPKs a compile publishes, its
 header naming the CPKs (empty for a sideload tree, which publishes loose files). A compile with
-nothing to put in it (no compiled player) writes none and moves an earlier
+nothing to put in it (no player holding a key once the IDs of tasks that did not commit are
+dropped) writes none and moves an earlier
 patch to `aesthetics_patch.toml.bak`, one backup replaced each time; the write happens once the
 run's outputs are in place, so a run that publishes nothing leaves the previous CPK and its
 patch alone. The compiler's own savefile stage is "apply the patch just produced to the local

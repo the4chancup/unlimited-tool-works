@@ -8,14 +8,17 @@ use std::path::PathBuf;
 
 use pes_savefile::model::player::STRIPPED_APPEARANCE_ID;
 use pes_savefile::model::team::RosterSlot;
+use pes_savefile::schema::ingame_face::IngameFaceField;
+use pes_savefile::settings_toml::{AppearanceSettings, IngameFaceSettings, PlayerSettings};
 use pes_savefile::{EditFile, fixture_save};
 use pes_version::PesVersion;
 use studio_core::RunningPes;
 
 use crate::common::Sandbox;
-use crate::compile::{pes_settings, pes21_settings};
+use crate::compile::{cpk_entries, pes_settings, pes21_settings, tracer_player_file};
 use crate::deploy::install_pes;
 use crate::patch::{pes17_crocs_export, read_patch, write_names_export};
+use crate::{clean_model, patch_written};
 
 /// The salt the tests' own writes use; a save's bytes depend on it, its payload does not.
 const TEST_SALT: [u8; 320] = [7; 320];
@@ -70,40 +73,166 @@ fn a_deployed_run_applies_its_patch_to_the_savefile_and_keeps_a_bak() {
         1,
         "the premise: the save does not already hold the export's value (2, stored 1)"
     );
+    assert_ne!(
+        file.player(71405).unwrap().name,
+        "Not His Name",
+        "the premise: the export's name is not his"
+    );
     let before_bytes = file.to_bytes(&TEST_SALT).unwrap();
     fs::write(&save, &before_bytes).unwrap();
-    motion_export(&sandbox, "co Full Motions");
+    // The scenario's export, `players.txt` mapping every folder: slot 05's holds a face
+    // model and a settings.toml (skin colour 4, one motion key, and a name, which no
+    // `write_names` marker puts anywhere), slot 06's an `ingame_face.toml` (iris 7,
+    // hair length 5), and one settings-free folder of a face model stands for 07 and 08.
+    let export = "exports/co Full Looks";
+    sandbox.write(
+        &format!("{export}/players.txt"),
+        b"05 A\n06 B\n07 Sharer\n08 Sharer\n",
+    );
+    sandbox.write(
+        &format!("{export}/Players/A/face_high.fmdl"),
+        &clean_model(),
+    );
+    let toml05 = "name = \"Not His Name\"\n[appearance]\nskin_color = 4\n[appearance.motion]\nhunching_dribbling = 2\n";
+    sandbox.write(
+        &format!("{export}/Players/A/settings.toml"),
+        toml05.as_bytes(),
+    );
+    let face06 = "iris_color = 7\n[hair]\nlength = 5\n";
+    sandbox.write(
+        &format!("{export}/Players/B/ingame_face.toml"),
+        face06.as_bytes(),
+    );
+    sandbox.write(
+        &format!("{export}/Players/Sharer/face_high.fmdl"),
+        &clean_model(),
+    );
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile"]);
 
     let lines = run.messages();
     assert_eq!(run.exit_code(), 0, "{lines:#?}");
-    let written = format!(
-        "Info savefile_written [Keep] (path={}, teams=714)",
-        save.display()
+    // The CPK carries no player table and none is reported missing: the patch holds
+    // every compiled player's look.
+    assert!(
+        lines
+            .iter()
+            .all(|line| !line.contains("player_table_missing")),
+        "{lines:#?}"
     );
-    assert!(lines.contains(&written), "{lines:#?}");
-    // The save is the pre-run one with the run's own patch applied through the lib: 71405's
-    // look and motions are his patch entry's, the record made his, 71406 and every other
-    // byte unchanged.
+    for expected in [
+        patch_written(&sandbox, "714"),
+        format!(
+            "Info savefile_written [Keep] (path={}, teams=714)",
+            save.display()
+        ),
+    ] {
+        assert!(lines.contains(&expected), "{expected}: {lines:#?}");
+    }
+    let entries = cpk_entries(&sandbox.root.join("PES/download/4cc_99_test.cpk"));
+    for table in ["PlayerAppearance.bin", "BootsList.bin", "GloveList.bin"] {
+        assert!(
+            entries.keys().all(|path| !path.ends_with(table)),
+            "no {table} in the CPK: {:#?}",
+            entries.keys()
+        );
+    }
+    // The patch names the CPK; entries 05 to 08 each hold his look resolved for
+    // PES 21 — 06's from its `ingame_face.toml`, 07's and 08's the template
+    // default — `boots_id` 0 and `gloves_id` 0, and 05's no name.
+    let patch = read_patch(&sandbox);
+    assert_eq!(patch.cpks, ["4cc_99_test.cpk"], "the patch names the CPK");
+    let [team] = patch.teams.as_slice() else {
+        panic!("one [[teams]] entry: {:?}", patch.teams)
+    };
+    assert_eq!(team.id, 714);
+    assert_eq!(
+        team.players.keys().copied().collect::<Vec<_>>(),
+        [5, 6, 7, 8],
+        "an entry for each compiled player and no other"
+    );
+    let resolved05 = PlayerSettings::parse(toml05)
+        .unwrap()
+        .appearance
+        .resolved(PesVersion::Pes21);
+    let mut settings06 = PlayerSettings::default();
+    settings06.set_ingame_face(IngameFaceSettings::parse(face06).unwrap());
+    let resolved06 = settings06.appearance.resolved(PesVersion::Pes21);
+    let template = AppearanceSettings::default().resolved(PesVersion::Pes21);
+    for (slot, appearance) in [
+        (5u8, resolved05),
+        (6, resolved06),
+        (7, template.clone()),
+        (8, template),
+    ] {
+        let entry = &team.players[&slot];
+        assert_eq!(
+            entry.appearance.as_ref(),
+            Some(&appearance),
+            "slot {slot:02}'s [appearance]"
+        );
+        assert_eq!(entry.boots_id, Some(0), "slot {slot:02}'s boots_id");
+        assert_eq!(entry.gloves_id, Some(0), "slot {slot:02}'s gloves_id");
+    }
+    assert_eq!(team.players[&5].name, None, "no marker, no name");
+    assert_eq!(team.players[&5].shirt_name, None);
+    // The save is the pre-run one with the run's own patch applied through the lib:
+    // each of the four records' appearance block and motions are his entry's, the
+    // record made his, and every other byte unchanged.
     let mut expected = EditFile::from_bytes(&before_bytes).unwrap();
-    read_patch(&sandbox).apply(&mut expected).unwrap();
+    patch.apply(&mut expected).unwrap();
     let after = EditFile::load(&save).unwrap();
     assert_eq!(
         after.to_bytes(&TEST_SALT).unwrap(),
         expected.to_bytes(&TEST_SALT).unwrap()
     );
+    for id in [71405u32, 71406, 71407, 71408] {
+        let player = after.player(id).unwrap();
+        assert_eq!(player.appearance_id, Some(id), "{id}: the record made his");
+        assert_eq!(
+            player.appearance.base_copy_id, id,
+            "{id}: the record made his"
+        );
+    }
     let player = after.player(71405).unwrap();
     // A motion is stored one below its settings.toml value (1 to 5 stored 0 to 4).
     assert_eq!(
         player.motion.hunching_dribbling, 1,
         "the settings.toml's 2, stored"
     );
-    // The record is made his: appearance id and base copy his own id.
-    assert_eq!(player.appearance_id, Some(71405));
-    assert_eq!(player.appearance.base_copy_id, 71405);
-    assert_eq!(player.name, file.player(71405).unwrap().name);
-    assert_eq!(after.player(71406), file.player(71406), "71406 unchanged");
+    assert_eq!(
+        player
+            .appearance
+            .ingame_face
+            .get(IngameFaceField::SkinColor)
+            .unwrap(),
+        4,
+        "the settings.toml's skin colour"
+    );
+    assert_eq!(
+        player.name,
+        file.player(71405).unwrap().name,
+        "no marker, his name as it was"
+    );
+    let player06 = after.player(71406).unwrap();
+    assert_eq!(
+        player06
+            .appearance
+            .ingame_face
+            .get(IngameFaceField::IrisColor)
+            .unwrap(),
+        7,
+        "the ingame_face.toml's iris"
+    );
+    assert_eq!(
+        player06
+            .appearance
+            .ingame_face
+            .get(IngameFaceField::HairLength)
+            .unwrap(),
+        5,
+        "the ingame_face.toml's hair length"
+    );
     assert_eq!(
         fs::read(sandbox.root.join("save").join("EDIT00000000.bak")).unwrap(),
         before_bytes,
@@ -700,4 +829,137 @@ fn a_sideload_run_with_a_save_of_another_version_is_an_error_only() {
         fs::read_dir(&livecpk).unwrap().next().is_some(),
         "not empty"
     );
+}
+
+// The whole GIVEN beside a written CPK (`bins.rs`'s three tests of the scenario stop
+// before anything commits): the refusals are reported by `check` and the deployed
+// `compile` alike, the CPK holds 05's boots, the patch's only entry is his
+// task-given boots ID alone, and the savefile keeps every look but his boots.
+// TC-SAV-21
+#[test]
+fn a_refused_settings_file_holds_back_the_look_and_keeps_the_task_s_boots_id() {
+    let sandbox = Sandbox::new("savefile_refused_look");
+    install_pes(&sandbox);
+    let save = install_save(&sandbox, PesVersion::Pes21);
+    // The scenario's records: 71405 to 71408 each holding an appearance block no
+    // template default matches, and boots 7.
+    let mut file = EditFile::load(&save).unwrap();
+    for (offset, id) in (0u8..).zip([71405u32, 71406, 71407, 71408]) {
+        let player = file.player_mut(id).unwrap();
+        player.appearance.boots_id = 7;
+        player.appearance.chest = 10 + offset;
+        player.appearance.waist = 5 + offset;
+        player.appearance.untucked = true;
+        player.motion.hunching_dribbling = 1 + offset;
+    }
+    fs::write(&save, file.to_bytes(&TEST_SALT).unwrap()).unwrap();
+    let before = EditFile::load(&save).unwrap();
+    for (offset, id) in (0u8..).zip([71405u32, 71406, 71407, 71408]) {
+        let player = before.player(id).unwrap();
+        assert_eq!(player.appearance.boots_id, 7, "{id}: the premise");
+        assert_eq!(player.appearance.chest, 10 + offset, "{id}");
+        assert_eq!(player.appearance.waist, 5 + offset, "{id}");
+        assert!(player.appearance.untucked, "{id}");
+        assert_eq!(player.motion.hunching_dribbling, 1 + offset, "{id}");
+    }
+    let export = "exports/co Full Refused";
+    // Slot 05: his boots compile; his settings.toml holds a key of the wrong type.
+    let player05 = format!("{export}/Players/05 - A");
+    sandbox.write(
+        &format!("{player05}/boots.fmdl"),
+        &tracer_player_file("boots.fmdl"),
+    );
+    sandbox.write(&format!("{player05}/settings.toml"), b"name = 5\n");
+    // Slot 06: an ingame_face.toml that does not parse beside a valid settings.toml.
+    let player06 = format!("{export}/Players/06 - B");
+    sandbox.write(
+        &format!("{player06}/settings.toml"),
+        b"[appearance]\nskin_color = 4\n",
+    );
+    let face06 = "this is not toml";
+    sandbox.write(&format!("{player06}/ingame_face.toml"), face06.as_bytes());
+    // Slot 07: `[appearance.hair]` is an unknown key in settings.toml (hair lives in
+    // ingame_face.toml now), beside a valid ingame_face.toml.
+    let player07 = format!("{export}/Players/07 - C");
+    sandbox.write(
+        &format!("{player07}/settings.toml"),
+        b"[appearance]\nskin_color = 4\n[appearance.hair]\nlength = 5\n",
+    );
+    sandbox.write(&format!("{player07}/ingame_face.toml"), b"iris_color = 7\n");
+    // Slot 08: an ingame_face.toml holding an unknown key.
+    let player08 = format!("{export}/Players/08 - D");
+    let face08 = "nonsense = 1\n";
+    sandbox.write(&format!("{player08}/ingame_face.toml"), face08.as_bytes());
+
+    // `check` and the deployed `compile` report the refused files alike, each file's
+    // error on its own line.
+    for args in [&["check"][..], &["compile"][..]] {
+        let run = sandbox.run(&pes21_settings(&sandbox), args);
+        let lines = run.messages();
+        assert_eq!(run.exit_code(), 1, "{args:?}: {lines:#?}");
+        for expected in [
+            "co Full Refused: Error settings_toml_invalid [DropFile] at Players/05 - A/settings.toml (file=settings.toml, error=name: expected true or a string)".to_owned(),
+            "co Full Refused: Error settings_toml_invalid [DropFile] at Players/07 - C/settings.toml (file=settings.toml, error=appearance.hair: unknown key)".to_owned(),
+            format!(
+                "co Full Refused: Error ingame_face_toml_invalid [Keep] at Players/06 - B/ingame_face.toml (file=ingame_face.toml, error={})",
+                IngameFaceSettings::parse(face06).unwrap_err()
+            ),
+            format!(
+                "co Full Refused: Error ingame_face_toml_invalid [Keep] at Players/08 - D/ingame_face.toml (file=ingame_face.toml, error={})",
+                IngameFaceSettings::parse(face08).unwrap_err()
+            ),
+        ] {
+            assert!(lines.contains(&expected), "{args:?} {expected}: {lines:#?}");
+        }
+    }
+
+    // The CPK, deployed into `download/`: 05's boots committed it.
+    let cpk = sandbox.root.join("PES/download/4cc_99_test.cpk");
+    assert!(cpk.is_file(), "the CPK is written");
+    assert!(
+        cpk_entries(&cpk).contains_key("Asset/model/character/boots/k0625/#Win/boots.fpk"),
+        "05's boots committed"
+    );
+
+    // The patch: 05's entry holds the task-given boots ID alone, no `[appearance]`;
+    // a player whose whole look is refused and who has nothing else gets none.
+    assert!(
+        sandbox.root.join("output/aesthetics_patch.toml").is_file(),
+        "the patch is written"
+    );
+    let patch = read_patch(&sandbox);
+    let entry = patch
+        .teams
+        .iter()
+        .find(|team| team.id == 714)
+        .and_then(|team| team.players.get(&5))
+        .expect("05's entry");
+    assert_eq!(entry.boots_id, Some(625), "the task's ID still lands");
+    assert_eq!(
+        entry.appearance, None,
+        "the refused file holds his look back"
+    );
+    assert_eq!(entry.gloves_id, None);
+    assert_eq!(entry.name, None);
+    assert_eq!(entry.shirt_name, None);
+    assert_eq!(entry.base_copy_id, None);
+    for slot in [6u8, 7, 8] {
+        assert!(
+            patch
+                .teams
+                .iter()
+                .all(|team| !team.players.contains_key(&slot)),
+            "no entry for {slot}"
+        );
+    }
+
+    // The savefile: 71405's boots alone changed; the other three records are as
+    // they were.
+    let after = EditFile::load(&save).unwrap();
+    let mut expected = before.player(71405).unwrap().clone();
+    expected.appearance.boots_id = 625;
+    assert_eq!(after.player(71405).unwrap(), &expected, "his boots alone");
+    for id in [71406u32, 71407, 71408] {
+        assert_eq!(after.player(id), before.player(id), "{id}: as he was");
+    }
 }

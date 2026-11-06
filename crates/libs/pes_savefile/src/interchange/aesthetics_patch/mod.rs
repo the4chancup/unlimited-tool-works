@@ -325,8 +325,9 @@ impl AestheticsPatch {
 
     /// Applies the patch to `save`: each listed player's names, whole look,
     /// model IDs and base copy as his entry holds them — an entry's
-    /// `[appearance]` makes the record his too (appearance id and base copy
-    /// set to his own id, the base-copy flag cleared). Every refusal runs
+    /// `[appearance]` makes the record his too (appearance id set to his own
+    /// id; base copy set to his own id and the base-copy flag cleared, unless
+    /// the entry names a `base_copy_id`). Every refusal runs
     /// before any write: a version or allocation-scheme mismatch, and in
     /// pass 1 each player's names against the version's text fields, each
     /// `Some` appearance key against its range in the version and the
@@ -541,7 +542,12 @@ fn at_player(path: &str, err: SettingsError) -> SettingsError {
             key: reroot(key),
             max,
         },
-        other => other,
+        // Parsing raises the first two, and the patch's own parse names its keys itself;
+        // the last two name no key.
+        SettingsError::UnknownKey { .. }
+        | SettingsError::UnknownLabel { .. }
+        | SettingsError::Codec(_)
+        | SettingsError::Toml(_) => err,
     }
 }
 

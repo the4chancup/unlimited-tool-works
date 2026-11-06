@@ -194,25 +194,52 @@ pub(crate) fn settle(teams: Vec<PlannedPatchTeam>, committed: &BTreeSet<usize>) 
         .filter_map(|planned| {
             let PlannedPatchTeam { mut team, rows } = planned;
             for (slot, entry) in &mut team.players {
-                let player_id = team.id * 100 + u32::from(*slot);
-                for table in ItemTable::ALL {
-                    let key = match table {
-                        ItemTable::Boots => &mut entry.boots_id,
-                        ItemTable::Gloves => &mut entry.gloves_id,
-                    };
-                    if let Some(row) = rows
-                        .iter()
-                        .find(|row| row.table == table && row.player_id == player_id)
-                        && !row.counts(committed)
-                    {
-                        *key = None;
-                    }
-                }
+                settle_entry(entry, *slot, team.id, &rows, committed);
             }
             team.players.retain(|_, entry| !holds_nothing(entry));
             (!team.players.is_empty()).then_some(team)
         })
         .collect()
+}
+
+/// Whether `teams`' patch still holds an entry once its provisional IDs are settled
+/// against `committed`: `settle`'s own rule, asked without settling, the writer's
+/// `finish_team` reading it to decide whether the run writes a CPK for the patch at
+/// all — a patch is the run's work as an override is, so one holding an entry forces
+/// the CPK and one that settles to nothing forces none.
+pub(crate) fn settles_to_anything(teams: &[PlannedPatchTeam], committed: &BTreeSet<usize>) -> bool {
+    teams.iter().any(|planned| {
+        planned.team.players.iter().any(|(slot, entry)| {
+            let mut entry = entry.clone();
+            settle_entry(&mut entry, *slot, planned.team.id, &planned.rows, committed);
+            !holds_nothing(&entry)
+        })
+    })
+}
+
+/// `entry`, slot `slot` of team `team_id`, settled against `committed` as `settle`
+/// settles it: an ID whose row's task did not commit is removed.
+fn settle_entry(
+    entry: &mut PatchPlayer,
+    slot: u8,
+    team_id: u32,
+    rows: &[ItemRow],
+    committed: &BTreeSet<usize>,
+) {
+    let player_id = team_id * 100 + u32::from(slot);
+    for table in ItemTable::ALL {
+        let key = match table {
+            ItemTable::Boots => &mut entry.boots_id,
+            ItemTable::Gloves => &mut entry.gloves_id,
+        };
+        if let Some(row) = rows
+            .iter()
+            .find(|row| row.table == table && row.player_id == player_id)
+            && !row.counts(committed)
+        {
+            *key = None;
+        }
+    }
 }
 
 /// Whether `entry` holds a key to write: a player the patch gives nothing
@@ -415,6 +442,44 @@ mod tests {
             Some(12),
             "a taskless row's ID stays"
         );
+    }
+
+    /// `settles_to_anything` answers as `settle` does, without settling: false
+    /// for a team whose one entry holds only a task-gated `boots_id` whose task
+    /// did not commit, true when it committed, and true for an entry holding an
+    /// `[appearance]` whatever committed.
+    #[test]
+    fn settles_to_anything_decides_whether_the_patch_still_holds_an_entry() {
+        let gated = PatchPlayer {
+            name: None,
+            shirt_name: None,
+            boots_id: Some(627),
+            gloves_id: None,
+            base_copy_id: None,
+            appearance: None,
+        };
+        let team = |entry: PatchPlayer| PlannedPatchTeam {
+            team: PatchTeam {
+                id: 714,
+                name: "/co/".to_owned(),
+                players: BTreeMap::from([(5, entry)]),
+            },
+            rows: vec![row(ItemTable::Boots, 71405, 627, Some(2))],
+        };
+
+        assert!(
+            !settles_to_anything(&[team(gated.clone())], &BTreeSet::from([1])),
+            "the ID his uncommitted task gave was his entry's whole write"
+        );
+        assert!(
+            settles_to_anything(&[team(gated)], &BTreeSet::from([2])),
+            "the committed task's ID keeps the entry"
+        );
+        // An `[appearance]` is no task's to drop: the entry survives even with
+        // no batch committed.
+        let mut with_look = default_entry();
+        with_look.boots_id = Some(627);
+        assert!(settles_to_anything(&[team(with_look)], &BTreeSet::new()));
     }
 
     /// `patch_names` over one folder's settings, `mapped` players, `write_names` as given.

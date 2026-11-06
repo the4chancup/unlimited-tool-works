@@ -429,7 +429,6 @@ fn build(
     let team_colors = manifest.team_colors;
     let team_kits = manifest.team_kits;
     let patch_teams = manifest.patch_teams;
-    let patch_planned = !patch_teams.is_empty();
     let notes = manifest.notes;
     let shared_ids = manifest.shared_ids;
     let mut last_task_of: BTreeMap<ExportId, usize> = BTreeMap::new();
@@ -525,6 +524,7 @@ fn build(
         let team_colors = &team_colors;
         let team_kits = &team_kits;
         let shared_ids = &shared_ids;
+        let patch_teams = &patch_teams;
         let budget = &budget;
         let templates = &context.templates;
         let writer = scope.spawn(move || {
@@ -548,7 +548,7 @@ fn build(
                         team_colors,
                         team_kits,
                         shared_ids,
-                        patch_planned,
+                        patch_teams,
                     },
                     templates,
                 )
@@ -580,7 +580,7 @@ fn build(
         return Ok(end_run(&events, 0));
     }
 
-    // A bins failure is a CPK write failure too: `uniparam_compile_failed` is not reported yet.
+    // A bins failure is a CPK write failure too, with no finding of its own.
     // A working bin that does not parse never gets here, stopped where it was read.
     let (written, files_written, committed) = match written {
         Ok((written, entries, messages, committed)) => {
@@ -942,7 +942,7 @@ fn deploy_failed(failure: DeployFailure, download: &Path, output: &Path) -> Mess
 }
 
 /// Writes the run's `aesthetics_patch.toml` into `output_folder` — `patch::write` moves an
-/// earlier one aside to `.bak` when `teams` is empty (no compiled player) — reporting
+/// earlier one aside to `.bak` when `teams` is empty (no player holds a key once settled) — reporting
 /// `patch_written` with the path and the team ids it covers, and returns
 /// the patch written, for the savefile step to apply. A write or rename failing is
 /// `patch_write_failed` through `abort_output` at the caller, which first rolls a deployment

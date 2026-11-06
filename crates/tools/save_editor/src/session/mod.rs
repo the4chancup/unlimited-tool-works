@@ -572,8 +572,9 @@ impl Session {
         Ok(notes)
     }
 
-    /// Applies the compiler's patch: each listed player's names and whole look, the record
-    /// made his (appearance id and base copy his own). The summary lists the teams applied
+    /// Applies the compiler's patch: each listed player's names, whole look and base copy
+    /// as his entry holds them, an entry's `[appearance]` making the record his
+    /// (`AestheticsPatch::apply`). The summary lists the teams applied
     /// and the items the save lacked; a version or scheme mismatch is an error with the
     /// save untouched.
     pub(crate) fn apply_patch(

@@ -139,7 +139,7 @@ pub(crate) struct ContentPass {
     /// (`hidden_link_findings`).
     hidden_models: BTreeSet<ScopePath>,
     /// Each player folder's parsed `settings.toml` joined with its `ingame_face.toml`'s
-    /// keys, by folder path, which planning resolves the compiled players' table rows from.
+    /// keys, by folder path, which planning resolves the compiled players' patch entries from.
     /// A folder holding neither file is not among them; a file that does not parse
     /// (`settings_toml_invalid`, the file dropped; `ingame_face_toml_invalid`, kept but
     /// ignored) contributes nothing of its own.
@@ -461,8 +461,9 @@ pub(crate) fn content_findings(
                 ));
             }
             // The player's settings are his `settings.toml`'s joined with his
-            // `ingame_face.toml`'s keys: one file refused leaves the other applied,
-            // and holds his whole look back from the patch.
+            // `ingame_face.toml`'s keys: one file refused leaves the other's keys in
+            // `settings` for his name and findings, and holds back from the patch
+            // his whole look and every ID those keys would resolve.
             let mut settings_refused = false;
             let mut settings = match player_settings(content, player) {
                 Ok(settings) => settings.unwrap_or_default(),

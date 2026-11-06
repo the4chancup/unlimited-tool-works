@@ -54,12 +54,9 @@ and writes what is correctness-critical; the sidekick, SWE-2 through the Devin C
 the cross-family reviews run through the `duck` skill (Astra), the lead running them itself.
 When a review stops for quota, it is queued here (commit range, plan sections) and retried
 once an hour; work continues past it, but no phase closes with one outstanding.
-**Handover queue:** Astra over 8.36c1-c4 (checkpoint (b); `8bcbf720..46105675`, two parts:
-`pes_savefile` + `save_editor`, then `team_compiler`), queued 2026-11-05: Codex `own`'s weekly
-window was 95% used (resets 2026-11-06 03:48) and the `brother` login's token had expired, which
-only a new sign-in renews. 0.0.2-poc1 and poc2 (`f5058d00..`, two crates) join it, then
-poc6, poc5 and poc7 (`b74e726a^..34b07fa7`: `export_upgrader`, `model_convert`, `fmdl`,
-`team_compiler`; their SWE-2 rounds ended under five).
+**Handover queue:** Astra over the upgrader half of 0.0.2-poc5 to poc7 (`b74e726a`,
+`55a2b047`), after the SWE-2 rounds over their code now running (2026-11-06: an earlier
+round reviewed poc6's plan only, and poc5's code had none).
 
 ---
 
@@ -2833,7 +2830,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         `pes_savefile` (`portrait.rs` new; `player_tables.rs`, `settings_toml/appearance_row.rs`
         and its tests deleted; `schema`, `lib.rs`, `Cargo.toml`), `save_editor` (two imports)
       - [ ] c3 the `<id>.copy` link: the compiler's three checks and the patch's
-        `base_copy_id`; the upgrader's step 8 → verify: TC-STR-21, TC-SAV-20, EU-SET-12, 13
+        `base_copy_id`; the upgrader's step 8 → verify: TC-STR-21, TC-SAV-20, EU-SET-12, 13.
+        Settle first (review S-36c r1, A1): an entry holding `base_copy_id` alone (an
+        invalid-settings player whose folder keeps its link) leaves a record at appearance id
+        -1 reading its look from the game's table, since `apply` writes the own id only with
+        an `[appearance]`; the spec is silent on whether a link alone makes the record his
       - [ ] c4 the spec moved (the inventory's S22-S54 …), help and catalog texts (among them
         `messages/catalog.rs`'s "motions and names on PES 2018 to 2021, aesthetics on PES 2015
         to 2017", wrong since c1), the drafts' message rows, the library parity re-run and its
@@ -2860,8 +2861,15 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         pairing ties, no D, `I14?` or `warning-slot` line. One new intentional class, I35:
         a pre-Fox Common model already named `oral_x` (U AAE 26), which Red packs as
         `oral_oral_x` and ours as `oral_x` (`packed_model_name`, TC-CMN-18). The player
-        tables' removal shows no class: Red never wrote them. Open: Astra (queued, see
-        "Handover queue"), the `mutants-diff` (launched, waiting on `save_editor`'s run)
+        tables' removal shows no class: Red never wrote them.
+        The review done 2026-11-06 (`.tmp/duck_rulings.md` "S-36c r1" to "r3", "A-36c
+        part 1" and "part 2"): SWE-2 r1 accepted 5, r2 2; Astra 1 over `pes_savefile`
+        (the apply's copy of `AppearanceSettings::resolved`) and 2 over `team_compiler` (a
+        patch that settles to nothing forced a CPK over the previous one; TC-SAV-18's tests
+        built slot 05 alone); SWE-2 r3 over those fixes 1 (two test files past a thousand
+        lines, an issue below). Open: the `mutants-diff 8bcbf720` (launched 2026-11-05 on
+        the code before the review, waiting on `save_editor`'s run), then one over the
+        review's fixes (`a0d58e74^..a0d58e74`)
     - [ ] d in game, before 0.0.2 (PES 2019 first, VGL 27's game and the likeliest for the
       4cc's spring cup, then PES 2021 and PES 2017; the maintainer, 2026-11-04): a
       patch applied to an
@@ -7463,8 +7471,9 @@ briefs, review loops, gates and mutation runs as for any step.
       (`spec/team_compiler/pipeline.md` "A texture a model names must exist"; TC-MOD-100,
       TC-TEX-21): the `Missing` arm joins `Unknown` (`processing/model.rs`),
       `ErrorUnlessKept` gone, catalog, help, CHANGELOG; the same sidekick run. SWE-2 review
-      done (3 of 8 accepted, loop ended; rulings S-poc12 in the duck rulings file). Open:
-      Astra with the c1-c4 queue, the `mutants-diff f5058d00` (queued)
+      done (3 of 8 accepted, loop ended; rulings S-poc12 in the duck rulings file); Astra
+      2026-11-06, no concerns (A-poc12). Open: the `mutants-diff f5058d00` (waiting on
+      `save_editor`'s run)
     - [x] 0.0.2-poc3 the 53 exports again with poc1 and poc2's binary: every Error left
       diagnosed (no PES check for the 51 beyond /dbg/ and /4ccg/, the maintainer). Rerun
       2026-11-05 at `4e69334c` (`.tmp/0_0_2/poc/all/`, the first run in `all_v1/`): 52
@@ -7510,7 +7519,8 @@ briefs, review loops, gates and mutation runs as for any step.
       `model_far_dropped`). Every new count traced: 24 `fmdl_texture_not_found` and 69
       `face_file_not_used` (`face_diff.bin`) come from /akg/ and from the folders the far
       Error used to drop, which now compile (a face folder left with no face model is the
-      blank face). Open: `mutants-diff` over the poc commits (handover queue)
+      blank face). Astra over the compiler half 2026-11-06: no concerns (A-poc7mc). Open:
+      the upgrader half's review (handover queue), `mutants-diff` over the poc commits
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
@@ -8080,6 +8090,12 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open (2026-11-06) — two `team_compiler` test files past a thousand lines grew in 8.36c's
+  review fixes (review S-36c r3): `src/output/writer.rs`'s inline test module (~2,100
+  lines) and `tests/cli/models.rs` (~3,150). Split each by concern as pure moves (the
+  `fmdl` and `aesthetics_patch` splits' way: a parent keeping the shared helpers, one
+  child file per concern, a helper used by one child moved with it), with no cargo-mutants
+  run holding `team_compiler`.
 - resolved (2026-11-06) — GitHub's Dependabot, enabled on the repository on 2026-11-05,
   reported 5 alerts against `zip` 8.6.0: #1 critical, a local/central header differential
   ("zip cloaking") leading to file overwrite; #2 and #4 high, symlink targets during

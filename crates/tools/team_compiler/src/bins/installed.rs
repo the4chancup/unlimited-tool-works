@@ -492,7 +492,7 @@ fn take_loose_kit_configs(
 /// unwrapped when it is WESYS-compressed and parsed: the walk goes nearest CPK first, so the
 /// record kept is the topmost. A record that does not parse is as unreadable as a bin that
 /// does not, found here rather than when the CPK is finished. At the boundary the records are
-/// taken too: the previous output put them there, as the player tables' it also holds.
+/// taken too: the previous output put them there.
 fn take_shared_ids(
     cpk: &mut InstalledCpk,
     records: &mut BTreeMap<u16, SharedIds>,
