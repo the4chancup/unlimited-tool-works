@@ -76,7 +76,10 @@ whole-crate run happens twice per crate: in the lead's audit, where its survivor
 rework brief, and once at close, after the reviewer loop ends. The rework rounds in between are
 measured together, one `just mutants-diff` at each review loop's end over the loop's commits
 (`CONTRIBUTING.md` "Mutation runs"; 2.20f: 45-53 minutes per whole-crate run, 3 for a round's
-diff); (2) **move** what the phase delivered from
+diff). Neither run holds the work up: the next phase starts while a run is under way, and
+the closing phase keeps its row open until the run's survivors are triaged and their tests
+land, which can be days on the VPS alone; avoiding that downtime is worth a phase row open a
+little longer; (2) **move** what the phase delivered from
 `docs/plans/` to the same file and heading in `docs/spec/` (acceptance IDs stay, as the behavior
 contract), correcting it where the code was built differently and converting any future-tense
 wording; deferred parts stay in the plan, and a section partly delivered keeps its heading in both
@@ -103,10 +106,13 @@ prerequisite, so the cut cannot be checked off without it. The per-slice review 
 stand in for it: each reads one surface against its own sections, and none asks whether the
 shipped whole meets its plan. A rule tied to a phase's close alone left 0.0.1's candidate
 with the maintainer, every slice reviewed and the Save editor never converged (2026-10-30).
-One part of the pass waits for 0.0.1's cut instead of holding it: the whole-crate mutation
-runs of its crates. Every slice 0.0.1 ships had its `mutants-diff`, which tests the mutants
-of the lines it changed, while `save_editor`'s whole-crate run alone measured over 30 hours;
-the runs come first after the cut, and their survivors' tests go into the next release.
+One part of the pass never holds a 0.x.x cut: the whole-crate mutation runs of its crates.
+Every slice a release ships had its `mutants-diff`, which tests the mutants of the lines it
+changed, while `save_editor`'s whole-crate run alone measured over 30 hours. During 0.x.x
+the project releases, then patches what the runs find afterwards: a hobby project's
+previews can afford the concession, and its members get fixes sooner than a release held
+for days would give them. The runs come after the cut, and their survivors' tests go into
+the next release, or a patch when a survivor hides a real bug.
 
 **Lead and sidekick.** Sessions run as a lead model that plans, briefs, reviews and talks to the
 user, and a sidekick model (a different family) that implements and runs the gates. The general

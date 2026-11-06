@@ -15704,3 +15704,21 @@ result is waited on, so it never queues days behind a whole run. Resuming covers
 needing an update mid-run.
 Plan: `RUNBOOK.md` "Mutation runs and the VPS"; worklog issue "Whole-crate mutation runs on
 the VPS alone" for the script.
+
+## 2026-11-06 — releases — no 0.x.x release waits on whole-crate mutation runs
+Decision: during 0.x.x a release is cut without waiting for its crates' whole-crate mutation
+runs; they run after the cut, and what they find goes into the next release, or a patch when
+a survivor hides a real bug. Phase closes keep their whole-crate runs (the maintainer).
+Why: the project is a hobby project whose standards are high enough to afford the
+concession; each shipped slice already had its `mutants-diff`, and a whole-crate run takes
+days on the VPS alone, which would hold a release back for little.
+Plan: `AGENTS.md` "Cutting a release"; widens 2026-10-31's "0.0.1's whole-crate mutation runs
+come after its cut" to every 0.x.x release.
+
+## 2026-11-06 — phase close — the next phase starts while the whole-crate runs are under way
+Decision: a phase close's whole-crate mutation runs never hold the work up: the next phase
+starts while they run, and the closing phase's row stays open until their survivors are
+triaged and their tests land (the maintainer).
+Why: on the VPS alone a whole-crate run takes days; waiting for it would leave the project
+idle, and the main goal is to avoid that downtime.
+Plan: `AGENTS.md` "Closing a phase".
