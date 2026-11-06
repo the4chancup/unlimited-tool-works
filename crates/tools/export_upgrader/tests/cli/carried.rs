@@ -1071,7 +1071,7 @@ fn a_model_far_in_every_vertex_is_dropped() {
     assert!(!stdout.contains("unmigrated_content"), "{stdout}");
 }
 
-// EU-MDL-24
+// EU-MDL-26
 #[test]
 fn a_folder_left_modelless_by_the_drop_hides_the_hands() {
     let sandbox = Sandbox::new("mdl_far_modelless");
@@ -1155,7 +1155,7 @@ fn the_antiblur_copies_are_written_off() {
     assert!(stdout.contains("migration_clean"), "{stdout}");
 }
 
-// EU-MDL-25
+// EU-MDL-27
 #[test]
 fn a_carried_fmdl_outside_a_model_folder_is_written_off_too() {
     // `Collars/` is no model folder's kind: the texture-path rewrite

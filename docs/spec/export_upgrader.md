@@ -1629,6 +1629,21 @@ EU-MDL-25  GIVEN slot 05's face folder holding face_high.fmdl with two meshes, e
            THEN Players/05's face_high.fmdl holds the two meshes alone, no fuzzblock
                 material, no mesh flagged either way, and no anti-blur extension;
                 antiblur_dropped (Info) names the file with 2; the run ends migration_clean
+EU-MDL-26  GIVEN slot 05's face folder "XXX05 - Ann" and the gloves folder "g0331 - ONLY
+                 THREAD" his record wears, holding glove_l.fmdl and glove_r.fmdl whose every
+                 vertex is more than 5000 units from the origin
+           WHEN the export is upgraded
+           THEN model_far_dropped names both files, no Gloves/ folder is written, and
+                Players/05 - Ann/ holds fpc_on, his hands hidden as any modelless gloves
+                folder's wearer's are, with no custom_model_ finding; the run ends with no
+                unmigrated_content
+EU-MDL-27  GIVEN Collars/collar_120.fmdl, outside any model folder, with two meshes each
+                 flagged Has-Antiblur-Meshes and followed by its Is-Antiblur-Meshes copy on
+                 a fuzzblock material
+           WHEN the export is upgraded
+           THEN the output's Collars/collar_120.fmdl holds the two meshes alone, no
+                fuzzblock material, no mesh flagged either way, and no anti-blur extension;
+                antiblur_dropped names it with 2; the run ends migration_clean
 ```
 
 **Player settings**
