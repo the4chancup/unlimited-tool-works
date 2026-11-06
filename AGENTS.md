@@ -212,7 +212,7 @@ which crate the sidekick owns and that the rest of the tree is in motion.
 **Second opinion.** A model reviewing its own work shares its own blind spots. The sidekick's
 code is reviewed cross-family by the lead; what the lead writes itself (plans, acceptance
 sections, briefs, converge audits, decision entries) gets a critique from a reviewer of a
-*different model family* (the `duck` skill: Astra, with SWE-2 rounds around it) at these
+*different model family* (the `duck` skill: SWE-2 rounds, then Argon, then Astra; `RUNBOOK.md` "Review rounds") at these
 checkpoints only: (a) after writing an Acceptance section; (b) after a worklog step that added a
 new `pub` interface or touched more than one crate, once its code and tests are written; (c) as
 the second half of every converge audit, after the lead's own, the one check of code against the

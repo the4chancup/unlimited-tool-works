@@ -15722,3 +15722,12 @@ triaged and their tests land (the maintainer).
 Why: on the VPS alone a whole-crate run takes days; waiting for it would leave the project
 idle, and the main goal is to avoid that downtime.
 Plan: `AGENTS.md` "Closing a phase".
+
+## 2026-11-06 — reviews — Argon between SWE-2 and Astra; Devin home no longer runs Astra
+Decision: every review loop runs three layers, cheapest first: SWE-2's loop, then Gemini 4
+Argon High (`gemini-4-argon-high`), then Astra, each looping by the five-accepted rule and the
+cheaper loops rerun after a dearer round's fixes. Argon runs on Devin `home` while it has
+usage, else on `work`; Astra no longer runs on `home` (the maintainer).
+Why: Argon is better than SWE-2 and much cheaper than Astra, so it catches what SWE-2 misses
+before Astra's rounds are spent on it.
+Plan: `RUNBOOK.md` "Review rounds"; `AGENTS.md` "Second opinion".

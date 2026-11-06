@@ -424,6 +424,15 @@ functions and their callers. Until 2026-11-01 no script had one, and `mutants_di
 been deleting the previous run's results whenever two runs followed each other. A test a
 change adds to one is shown to fail by `scripts/review/perturb_check.py` (a list of perturbations,
 each with its test, applied and undone one at a time).
+**Three reviewer layers, cheapest first** (the maintainer, 2026-11-06). SWE-2 (free) runs
+its loop first; then Gemini 4 Argon on High thinking (`duck.py --reviewer argon`, model
+`gemini-4-argon-high`: paid, much cheaper than Astra, better than SWE-2 and not as good as
+Astra); then Astra. Each layer loops by the same rule (another round only when five or more
+were accepted), and after a round's fixes the cheaper layers' loops run again before the next
+round of a dearer one, so each dearer reviewer sees code the cheaper ones have nothing left
+to say about. Argon runs on the Devin `home` login while it has usage, else on `work` when
+a sidekick holds the live login there (switching logins mid-run would break it). Astra no
+longer runs on `home`: on Codex (`--reviewer astra`), or on `work` (`astra-devin`).
 **The citation audit before every review round over code.** The lead runs `just
 citation-audit` (`CONTRIBUTING.md` "Citation audit": cached, so a run pays for changed pairs
 only) and rules its flags before writing the round's brief, so SWE-2 and Astra do not spend

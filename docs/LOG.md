@@ -3099,3 +3099,4 @@ worklog passed 7,000 lines.
 - 2026-11-06: Astra over poc6's tests accepted 5 test gaps in the pairing rules, fixed by a SWE-2 sidekick. Decided with the maintainer: an uncompressed texture stays uncompressed (a PES 15-17 main kit texture and normal maps excepted), briefed with 0.0.2b, whose BC7 encodes were the only slow ones in their PES 21 test compile.
 - 2026-11-06: Whole-crate mutation runs go to the VPS alone from now on (the maintainer); `mutants.py` gets that as its only whole-run path before `team_widgets`'s run (worklog issue).
 - 2026-11-06: No 0.x.x release waits on whole-crate mutation runs: release, then patch what they find (the maintainer).
+- 2026-11-06: Reviews gain a middle layer: SWE-2, then Gemini 4 Argon High (on Devin home), then Astra; home no longer runs Astra (the maintainer).
