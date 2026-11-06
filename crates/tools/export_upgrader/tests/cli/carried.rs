@@ -1112,6 +1112,27 @@ fn a_folder_left_modelless_by_the_drop_hides_the_hands() {
     assert!(!stdout.contains("unmigrated_content"), "{stdout}");
 }
 
+/// The write-off's checks on the `path` written, read back and decoded:
+/// two meshes, none an anti-blur copy or asking for one, the anti-blur
+/// extension cleared and no fuzzblock material left.
+fn antiblur_written_off(path: &std::path::Path) {
+    let file = fmdl::FmdlFile::read(&fs::read(path).unwrap()).unwrap();
+    let model = fmdl::Model::from_file(&file).unwrap();
+    assert_eq!(model.meshes.len(), 2);
+    for mesh in &model.meshes {
+        assert!(!mesh.is_antiblur_mesh && !mesh.has_antiblur_meshes);
+    }
+    assert!(!model.extensions.antiblur);
+    assert!(
+        !model
+            .materials
+            .iter()
+            .any(|material| material.shader.contains("fuzzblock")),
+        "{:?}",
+        model.materials
+    );
+}
+
 // EU-MDL-25
 #[test]
 fn the_antiblur_copies_are_written_off() {
@@ -1130,23 +1151,28 @@ fn the_antiblur_copies_are_written_off() {
         stdout.contains("antiblur_dropped at Faces/XXX05 - Ann/face_high.fmdl (meshes=2)"),
         "{stdout}"
     );
-    let file = fmdl::FmdlFile::read(
-        &fs::read(sandbox.path("co Full Spring/Players/05 - Ann/face_high.fmdl")).unwrap(),
-    )
-    .unwrap();
-    let model = fmdl::Model::from_file(&file).unwrap();
-    assert_eq!(model.meshes.len(), 2);
-    for mesh in &model.meshes {
-        assert!(!mesh.is_antiblur_mesh && !mesh.has_antiblur_meshes);
-    }
-    assert!(!model.extensions.antiblur);
+    antiblur_written_off(&sandbox.path("co Full Spring/Players/05 - Ann/face_high.fmdl"));
+    assert!(stdout.contains("migration_clean"), "{stdout}");
+}
+
+// EU-MDL-25
+#[test]
+fn a_carried_fmdl_outside_a_model_folder_is_written_off_too() {
+    // `Collars/` is no model folder's kind: the texture-path rewrite
+    // does not reach it, but the write-off does — every `.fmdl` of the
+    // export carrying the copies is written without them.
+    let sandbox = Sandbox::new("mdl_antiblur_carried");
+    crate::players::face(&sandbox, "co Spring/Faces/XXX05 - Ann");
+    sandbox.write("co Spring/Collars/collar_120.fmdl", &antiblur_fmdl());
+    sandbox.save("EDIT");
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 0, "{stdout}");
     assert!(
-        !model
-            .materials
-            .iter()
-            .any(|material| material.shader.contains("fuzzblock")),
-        "{:?}",
-        model.materials
+        stdout.contains("antiblur_dropped at Collars/collar_120.fmdl (meshes=2)"),
+        "{stdout}"
     );
+    antiblur_written_off(&sandbox.path("co Full Spring/Collars/collar_120.fmdl"));
     assert!(stdout.contains("migration_clean"), "{stdout}");
 }

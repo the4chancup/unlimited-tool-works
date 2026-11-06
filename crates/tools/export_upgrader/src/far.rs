@@ -183,11 +183,11 @@ mod tests {
         model.to_file().unwrap().write().unwrap()
     }
 
-    /// `far_drops` over `files` (`any_folder` false), `bytes` the read
-    /// answers by name — an unlisted path does not read.
-    fn drops(files: &[&str], bytes: &[(&str, &[u8])]) -> FarDrops {
+    /// `far_drops` over `files`, `bytes` the read answers by name — an
+    /// unlisted path does not read.
+    fn drops(files: &[&str], any_folder: bool, bytes: &[(&str, &[u8])]) -> FarDrops {
         let files: Vec<String> = files.iter().map(|file| (*file).to_owned()).collect();
-        far_drops(&files, false, |path| {
+        far_drops(&files, any_folder, |path| {
             bytes
                 .iter()
                 .find(|(name, _)| *name == path)
@@ -219,6 +219,7 @@ mod tests {
         let face = shifted_fmdl(6000.0);
         let out = drops(
             &["Faces/XXX05/face.fmdl"],
+            false,
             &[("Faces/XXX05/face.fmdl", &face)],
         );
         assert_eq!(
@@ -243,6 +244,7 @@ mod tests {
         let face = partly_far_fmdl();
         let out = drops(
             &["Faces/XXX05/face.fmdl"],
+            false,
             &[("Faces/XXX05/face.fmdl", &face)],
         );
         assert!(out.dropped.is_empty());
@@ -254,6 +256,7 @@ mod tests {
         let face = vertexless_fmdl();
         let out = drops(
             &["Faces/XXX05/face.fmdl"],
+            false,
             &[("Faces/XXX05/face.fmdl", &face)],
         );
         assert!(out.dropped.is_empty());
@@ -265,6 +268,7 @@ mod tests {
         // Only a model is ever dropped: the `.mtl` it alone named stays.
         let out = drops(
             &["Gloves/g0331/glove_r.model", "Gloves/g0331/glove_r.mtl"],
+            false,
             &[("Gloves/g0331/glove_r.model", &glove_r)],
         );
         assert_eq!(
@@ -278,5 +282,33 @@ mod tests {
             message.context,
             vec![("vertices".to_owned(), "140".to_owned())]
         );
+    }
+
+    #[test]
+    fn a_far_model_below_any_folder_is_dropped_when_every_folder_is_in_scope() {
+        // `any_folder` (a referee export's root layout, a model-folder
+        // input's) puts every file below a top folder in scope, a
+        // `Stadium/` model included; the folder list alone keeps it.
+        let stadium = shifted_fmdl(6000.0);
+        let out = drops(
+            &["Stadium/far.fmdl"],
+            true,
+            &[("Stadium/far.fmdl", &stadium)],
+        );
+        assert_eq!(
+            out.dropped.iter().map(String::as_str).collect::<Vec<_>>(),
+            ["Stadium/far.fmdl"]
+        );
+        let [message] = &out.findings[..] else {
+            panic!("one model_far_dropped");
+        };
+        assert_eq!(message.code.code.as_ref(), "model_far_dropped");
+        let out = drops(
+            &["Stadium/far.fmdl"],
+            false,
+            &[("Stadium/far.fmdl", &stadium)],
+        );
+        assert!(out.dropped.is_empty());
+        assert!(out.findings.is_empty());
     }
 }

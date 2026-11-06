@@ -415,6 +415,29 @@ mod tests {
     }
 
     #[test]
+    fn a_folderless_players_not_worn_id_reports_nothing_in_full() {
+        // 05's gloves 434 is the number of a boots folder: "no custom
+        // gloves", which a folderless player has nothing reported for,
+        // while his unclaimed boots ID is still missing content.
+        let save = save_edited(|file| {
+            file.player_mut(71405).unwrap().appearance.boots_id = 433;
+            file.player_mut(71405).unwrap().appearance.gloves_id = 434;
+        });
+        let roster = roster_of(&save);
+        let not_worn = BTreeSet::from([(ItemKind::Gloves, 434)]);
+        let files = settings_files(&save, &roster, &BTreeMap::new(), true, &not_worn);
+        let missing = findings_named(&files, "custom_model_missing");
+        assert_eq!(missing.len(), 1, "{:?}", files.findings);
+        assert_eq!(
+            context(missing[0], &["slot", "key", "id"]),
+            ["05", "boots_id", "433"]
+        );
+        assert!(findings_named(&files, "custom_model_hidden").is_empty());
+        assert!(findings_named(&files, "custom_model_not_worn").is_empty());
+        assert!(files.written.is_empty());
+    }
+
+    #[test]
     fn the_name_is_from_folder_only_when_it_derives_to_the_save_name() {
         let save = save_edited(|_| {});
         let roster = roster_of(&save);

@@ -1356,6 +1356,21 @@ mod tests {
         plan_with_bytes(files, None, Engine::Fox, &[])
     }
 
+    /// The `code` finding on `folder`'s Folder scope in `plan` (panics
+    /// when absent).
+    fn finding_at<'a>(plan: &'a PlayerFolders, code: &str, folder: &str) -> &'a Message {
+        plan.findings
+            .iter()
+            .find(|m| {
+                m.code.code == code
+                    && matches!(
+                        &m.scope,
+                        Scope::Folder { path, .. } if path.as_str() == folder
+                    )
+            })
+            .unwrap_or_else(|| panic!("{code} on {folder}: {:?}", plan.findings))
+    }
+
     #[test]
     fn the_slot_is_two_digits_making_01_to_23() {
         for (name, accepted) in [
@@ -2873,18 +2888,7 @@ mod tests {
                 ],
             ),
         ] {
-            let finding = plan
-                .findings
-                .iter()
-                .find(|m| {
-                    m.code.code == code
-                        && matches!(
-                            &m.scope,
-                            Scope::Folder { path, .. } if path.as_str() == folder
-                        )
-                })
-                .unwrap_or_else(|| panic!("{code} on {folder}: {:?}", plan.findings));
-            assert_eq!(finding.context, context, "{folder}");
+            assert_eq!(finding_at(&plan, code, folder).context, context, "{folder}");
         }
         for (folder, names) in [
             ("Players/05 - Alpha", vec!["glove_l.fmdl", "boots.fmdl"]),
@@ -2917,20 +2921,8 @@ mod tests {
         ]);
         let roster = wearing(&[(5, ("SaveA", 2500, 2500)), (6, ("SaveB", 0, 2601))]);
         let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
-        let at = |code, folder| {
-            plan.findings
-                .iter()
-                .find(|m| {
-                    m.code.code == code
-                        && matches!(
-                            &m.scope,
-                            Scope::Folder { path, .. } if path.as_str() == folder
-                        )
-                })
-                .unwrap_or_else(|| panic!("{code} on {folder}: {:?}", plan.findings))
-        };
         assert_eq!(
-            at("wearer_by_number", "Gloves/g2999 - Other").context,
+            finding_at(&plan, "wearer_by_number", "Gloves/g2999 - Other").context,
             [
                 ("slot".to_owned(), "05".to_owned()),
                 ("id".to_owned(), "2500".to_owned()),
@@ -2938,7 +2930,7 @@ mod tests {
             ]
         );
         assert_eq!(
-            at("wearer_by_order", "Gloves/g2998 - Other").context,
+            finding_at(&plan, "wearer_by_order", "Gloves/g2998 - Other").context,
             [
                 ("slot".to_owned(), "06".to_owned()),
                 ("id".to_owned(), "2601".to_owned()),
@@ -2951,6 +2943,46 @@ mod tests {
             "{:?}",
             plan.findings
         );
+    }
+
+    #[test]
+    fn the_pairing_rounds_repeat_until_neither_kind_pairs() {
+        // Round 1 pairs `g2701` by order — the gloves' one missing ID to
+        // their one unworn folder — while the boots, one missing ID
+        // beside two unworn folders, pair nothing; round 2's number rule
+        // then has `k2701` follow `g2701`. A single pass would leave the
+        // boots' ID beside `k2702` and refuse.
+        let files = files(&[
+            "Faces/XXX05 - Ann/face.fmdl",
+            "Gloves/g2701 - Other/glove_l.fmdl",
+            "Boots/k2701 - Other/boots.fmdl",
+            "Boots/k2702 - Other/boots.fmdl",
+        ]);
+        let roster = wearing(&[(5, ("SaveA", 2500, 2500))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        assert_eq!(
+            finding_at(&plan, "wearer_by_order", "Gloves/g2701 - Other").context,
+            [
+                ("slot".to_owned(), "05".to_owned()),
+                ("id".to_owned(), "2500".to_owned()),
+            ]
+        );
+        assert_eq!(
+            finding_at(&plan, "wearer_by_number", "Boots/k2701 - Other").context,
+            [
+                ("slot".to_owned(), "05".to_owned()),
+                ("id".to_owned(), "2500".to_owned()),
+                ("from".to_owned(), "Gloves/g2701 - Other".to_owned()),
+            ]
+        );
+        assert!(
+            plan.findings
+                .iter()
+                .all(|m| m.code.code != "custom_model_unpaired"),
+            "{:?}",
+            plan.findings
+        );
+        assert!(plan.leftovers.contains("Boots/k2702 - Other/boots.fmdl"));
     }
 
     #[test]

@@ -55,8 +55,7 @@ the cross-family reviews run through the `duck` skill (Astra), the lead running 
 When a review stops for quota, it is queued here (commit range, plan sections) and retried
 once an hour; work continues past it, but no phase closes with one outstanding.
 **Handover queue:** Astra over the upgrader half of 0.0.2-poc5 to poc7 (`b74e726a`,
-`55a2b047`), after the SWE-2 rounds over their code now running (2026-11-06: an earlier
-round reviewed poc6's plan only, and poc5's code had none).
+`55a2b047`), after SWE-2's r2 over poc6's review fixes (0.0.2-poc6's line).
 
 ---
 
@@ -2867,9 +2866,10 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         (the apply's copy of `AppearanceSettings::resolved`) and 2 over `team_compiler` (a
         patch that settles to nothing forced a CPK over the previous one; TC-SAV-18's tests
         built slot 05 alone); SWE-2 r3 over those fixes 1 (two test files past a thousand
-        lines, an issue below). Open: the `mutants-diff 8bcbf720` (launched 2026-11-05 on
-        the code before the review, waiting on `save_editor`'s run), then one over the
-        review's fixes (`a0d58e74^..a0d58e74`)
+        lines, an issue below). Open: one `mutants-diff 8bcbf720` over everything since
+        (8.36c, its review's fixes, 0.0.2-poc1 to poc7), after `save_editor`'s whole-crate
+        run and the in-game checks; the three diffs queued behind that run were stopped
+        2026-11-06 to free its gap for the checks (the maintainer)
     - [ ] d in game, before 0.0.2 (PES 2019 first, VGL 27's game and the likeliest for the
       4cc's spring cup, then PES 2021 and PES 2017; the maintainer, 2026-11-04): a
       patch applied to an
@@ -7472,8 +7472,8 @@ briefs, review loops, gates and mutation runs as for any step.
       TC-TEX-21): the `Missing` arm joins `Unknown` (`processing/model.rs`),
       `ErrorUnlessKept` gone, catalog, help, CHANGELOG; the same sidekick run. SWE-2 review
       done (3 of 8 accepted, loop ended; rulings S-poc12 in the duck rulings file); Astra
-      2026-11-06, no concerns (A-poc12). Open: the `mutants-diff f5058d00` (waiting on
-      `save_editor`'s run)
+      2026-11-06, no concerns (A-poc12). Open: its mutants, measured by 8.36c's
+      `mutants-diff 8bcbf720` (8.36c c4)
     - [x] 0.0.2-poc3 the 53 exports again with poc1 and poc2's binary: every Error left
       diagnosed (no PES check for the 51 beyond /dbg/ and /4ccg/, the maintainer). Rerun
       2026-11-05 at `4e69334c` (`.tmp/0_0_2/poc/all/`, the first run in `all_v1/`): 52
@@ -7494,7 +7494,15 @@ briefs, review loops, gates and mutation runs as for any step.
       (`spec/export_upgrader.md` "What it does", step 3; `custom_model_not_worn`,
       `wearer_by_number`, `wearer_by_order`, `custom_model_unpaired`; EU-PLY-24 to 26).
       Spec move of poc1, poc4 and poc6 done (step 3's "When the save and the folders
-      disagree", steps 8 and 10, the scenarios, the draft's message rows)
+      disagree", steps 8 and 10, the scenarios, the draft's message rows). Code review
+      2026-11-06 (rulings "S-poc6c r1" and "S-poc57u r1" in the duck rulings file, poc5/7's
+      upgrader half alongside): SWE-2 r1 accepted 5 over poc6 and 3 over poc5/7, fixed by a
+      SWE-2 sidekick (brief `.tmp/0_0_2/poc/brief_poc_fix.md`): an `.fmdl` outside a model
+      folder (`Collars/`) now gets the anti-blur write-off, the spec's "every `.fmdl`";
+      tests for the pairing rounds repeating, a folderless player's not-worn ID and the far
+      drop's `any_folder`; `wearer_by_number`'s text. SWE-2 r2 over the fixes accepted 2 (a
+      doc's wrong fact, one more file for the split issue), loop ended. Open: Astra over
+      both (handover queue)
     - [x] 0.0.2-poc5 a model hidden by distance dropped (`plans/export_upgrader.md` "What it
       does", the 0.0.2-poc5 cleanup; `model_far_dropped`; EU-MDL-24; new `far.rs`,
       `upgrade.rs`, `model_folders.rs`, `messages.rs`, tests `cli/carried.rs`): whole models
@@ -7520,7 +7528,8 @@ briefs, review loops, gates and mutation runs as for any step.
       `face_file_not_used` (`face_diff.bin`) come from /akg/ and from the folders the far
       Error used to drop, which now compile (a face folder left with no face model is the
       blank face). Astra over the compiler half 2026-11-06: no concerns (A-poc7mc). Open:
-      the upgrader half's review (handover queue), `mutants-diff` over the poc commits
+      the upgrader half's review (handover queue); its mutants, measured by 8.36c's
+      `mutants-diff 8bcbf720` (8.36c c4)
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
@@ -8090,12 +8099,15 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
-- open (2026-11-06) — two `team_compiler` test files past a thousand lines grew in 8.36c's
-  review fixes (review S-36c r3): `src/output/writer.rs`'s inline test module (~2,100
-  lines) and `tests/cli/models.rs` (~3,150). Split each by concern as pure moves (the
-  `fmdl` and `aesthetics_patch` splits' way: a parent keeping the shared helpers, one
-  child file per concern, a helper used by one child moved with it), with no cargo-mutants
-  run holding `team_compiler`.
+- open (2026-11-06) — files past a thousand lines that recent diffs grew. `team_compiler`,
+  in 8.36c's review fixes (review S-36c r3): `src/output/writer.rs`'s inline test module
+  (~2,100 lines) and `tests/cli/models.rs` (~3,150). `export_upgrader`, in 0.0.2-poc6 and
+  poc5/7 (reviews S-poc6c r1, S-poc57u r1): `src/players.rs` (2,993, its inline test module
+  ~1,730), `tests/cli/players.rs` (1,248), `tests/cli/carried.rs` (1,178) and
+  `src/materials.rs` (2,321). Split each by
+  concern as pure moves (the `fmdl` and `aesthetics_patch` splits' way: a parent keeping
+  the shared helpers, one child file per concern, a helper used by one child moved with
+  it), with no cargo-mutants run holding the crate.
 - resolved (2026-11-06) — GitHub's Dependabot, enabled on the repository on 2026-11-05,
   reported 5 alerts against `zip` 8.6.0: #1 critical, a local/central header differential
   ("zip cloaking") leading to file overwrite; #2 and #4 high, symlink targets during

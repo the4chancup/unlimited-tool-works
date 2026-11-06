@@ -147,8 +147,10 @@ pub(crate) enum Code {
     /// A rostered player's worn custom ID (above 100) no rule could pair a
     /// folder to, left beside an unworn folder of its kind: the save and
     /// the export disagree and nothing says which folder is his (`slot`,
-    /// `key` the ID's own, `id`). One left with no unworn folder gets the
-    /// hide ID instead (`CustomModelHidden` or `CustomModelNotWorn`).
+    /// `key` the ID's own, `id`). One left with no unworn folder is
+    /// reported as any unclaimed ID is: `CustomModelHidden` for a player the
+    /// output gives a folder, `CustomModelMissing` for one a Full output
+    /// gives none.
     CustomModelUnpaired,
     /// A rostered player the output gives a folder wears a custom boots or
     /// gloves ID (above 100) no migrated folder claims: his
@@ -511,7 +513,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
     (
         "wearer_by_number",
         Severity::Warning,
-        r#"A boots or gloves folder nobody wears took the ID of its same-numbered folder of the other kind, which was paired by name, number or order (the line names the folder, the slot, the save's ID and `from`, the folder it followed)."#,
+        r#"A boots or gloves folder nobody wears took the save's ID its same-numbered folder of the other kind was paired with, by name, number or order (the line names the folder, the slot, the save's ID and `from`, the folder it followed)."#,
         r#"The folder becomes the player's as if it were numbered with the save's ID, so his model is not lost. Check the pairing is the player meant."#,
     ),
     (

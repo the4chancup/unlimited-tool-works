@@ -604,6 +604,58 @@ fn link_referee_bare(ctx: &FileContext, directory: &str, file_name: &str, pass: 
     }
 }
 
+/// The anti-blur write-off on `file` (`input` → `output`): the copies
+/// some FMDLs carry (a duplicate per mesh that asks for one, flagged
+/// `is_antiblur_mesh` on a fuzzblock material) draw every such mesh
+/// twice for nothing, so they and the materials only they used are
+/// written off, every mesh's `has_antiblur_meshes` request cleared so
+/// nothing adds the copies back — in a model folder, the same write the
+/// texture paths' rewrite uses. `rewrites` gains the decoded file and `findings` the
+/// `antiblur_dropped`. `false` when the file carries no copies, or does
+/// not lift, decode or write back: it still reaches the output with its
+/// copies, which the compiler packs as they are.
+fn antiblur_write_off(
+    file: &FmdlFile,
+    input: &str,
+    output: &str,
+    rewrites: &mut MaterialRewrites,
+    findings: &mut Vec<Message>,
+) -> bool {
+    let Some((decoded, removed)) = fmdl::Model::from_file(file)
+        .ok()
+        .filter(|model| model.meshes.iter().any(|mesh| mesh.is_antiblur_mesh))
+        .and_then(|mut model| {
+            let removed = model
+                .meshes
+                .iter()
+                .filter(|mesh| mesh.is_antiblur_mesh)
+                .count();
+            fmdl::ops::antiblur::decode(&mut model)
+                .and_then(|()| {
+                    for mesh in &mut model.meshes {
+                        mesh.has_antiblur_meshes = false;
+                    }
+                    model.to_file()
+                })
+                .ok()
+                .map(|decoded| (decoded, removed))
+        })
+    else {
+        return false;
+    };
+    rewrites.written.push((output.to_owned(), decoded.write()));
+    findings.push(tool_message(
+        Code::AntiblurDropped,
+        Scope::File {
+            export_id: INPUT,
+            path: path_scope(input),
+        },
+        Disposition::Keep,
+        vec![("meshes", removed.to_string())],
+    ));
+    true
+}
+
 /// What the upgrade makes of the migrated model folders' `.mtl` and `.fmdl`
 /// files for an export of `identity`. It is one pass with one `planned` link
 /// map, so a link is planned once and each format's clash walk sees the
@@ -622,16 +674,34 @@ pub(crate) fn material_references(
     let mut used: BTreeSet<(String, String)> = BTreeSet::new();
 
     for (input, output) in copies {
-        let Some((kind, model_folder, rest)) = model_folder_of(output) else {
-            continue;
-        };
-        let Some(name) = rest.rsplit('/').next() else {
+        let Some(name) = output.rsplit('/').next() else {
             continue;
         };
         let fmdl = match classify(name) {
             FileKind::Mtl => false,
             FileKind::Model(ModelFormat::Fmdl) => true,
             _ => continue,
+        };
+        let Some((kind, model_folder, rest)) = model_folder_of(output) else {
+            // An `.fmdl` outside a model folder (a carried `Collars/`
+            // file) still gets the write-off, its texture paths kept:
+            // the rewrite's rules are a model folder's. A `.mtl` there is
+            // carried as it is, and so is an `.fmdl` that does not read or
+            // lift.
+            if fmdl
+                && let Ok(bytes) = read(input)
+                && let Ok(file) = FmdlFile::read(&bytes)
+            {
+                let mut file_findings = Vec::new();
+                antiblur_write_off(&file, input, output, &mut rewrites, &mut file_findings);
+                if !file_findings.is_empty() {
+                    failures
+                        .entry(input.clone())
+                        .or_default()
+                        .extend(file_findings);
+                }
+            }
+            continue;
         };
         let ctx = FileContext {
             kind,
@@ -665,52 +735,10 @@ pub(crate) fn material_references(
                 // copied as it is.
                 Err(_) => continue,
             };
-            // The anti-blur copies some FMDLs carry (a duplicate per mesh
-            // that asks for one, flagged `is_antiblur_mesh` on a fuzzblock
-            // material) draw every such mesh twice for nothing: they and
-            // the materials only they used are written off, every mesh's
-            // `has_antiblur_meshes` request cleared so nothing adds the
-            // copies back — the same write the texture paths' rewrite
-            // uses.
-            let antiblur = fmdl::Model::from_file(&file)
-                .ok()
-                .filter(|model| model.meshes.iter().any(|mesh| mesh.is_antiblur_mesh))
-                .and_then(|mut model| {
-                    let removed = model
-                        .meshes
-                        .iter()
-                        .filter(|mesh| mesh.is_antiblur_mesh)
-                        .count();
-                    fmdl::ops::antiblur::decode(&mut model)
-                        .and_then(|()| {
-                            for mesh in &mut model.meshes {
-                                mesh.has_antiblur_meshes = false;
-                            }
-                            model.to_file()
-                        })
-                        .ok()
-                        .map(|decoded| (decoded, removed))
-                });
-            // A file that does not lift, decode or write back falls back
-            // silently: it still reaches the output with its copies, which
-            // the compiler packs as they are.
-            match antiblur {
-                Some((decoded, removed)) => {
-                    rewrites.written.push((output.clone(), decoded.write()));
-                    file_findings.push(tool_message(
-                        Code::AntiblurDropped,
-                        Scope::File {
-                            export_id: INPUT,
-                            path: path_scope(input),
-                        },
-                        Disposition::Keep,
-                        vec![("meshes", removed.to_string())],
-                    ));
-                }
-                None if changed > 0 => {
-                    rewrites.written.push((output.clone(), file.write()));
-                }
-                None => {}
+            if !antiblur_write_off(&file, input, output, &mut rewrites, &mut file_findings)
+                && changed > 0
+            {
+                rewrites.written.push((output.clone(), file.write()));
             }
             if !file_findings.is_empty() {
                 failures
