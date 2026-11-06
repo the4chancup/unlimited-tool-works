@@ -15690,3 +15690,17 @@ memory and soft-crash above a 2048 DXT5's 5.33 MB, which is why Red refuses an u
 there; Red passes them through on Fox, and whether Fox crashes is not known yet (worklog 0.0.2b
 in-game check).
 Plan: `plans/libs/dds_convert.md` "Uncompressed sources stay uncompressed (0.0.2)".
+
+## 2026-11-06 — mutation runs — whole-crate runs on the VPS alone
+Decision: a whole-crate mutation run (`just mutants <crate>`, extra kinds included) runs
+every mutant on the VPS and none on this machine; `just mutants-diff` keeps the split, and
+runs entirely on this machine while a whole run holds the VPS; a stopped run is to resume
+where it stopped (the maintainer).
+Why: whole-crate runs are medium priority, so waiting longer for them is fine (about 2.5
+times the split's), while a long local run blocks in-game checks on the Fox versions and a
+restart of this machine for an update, and a power failure here kills hours of a local half
+that cargo-mutants cannot resume; the VPS rarely goes down. A diff's run is minutes and its
+result is waited on, so it never queues days behind a whole run. Resuming covers the VPS
+needing an update mid-run.
+Plan: `RUNBOOK.md` "Mutation runs and the VPS"; worklog issue "Whole-crate mutation runs on
+the VPS alone" for the script.

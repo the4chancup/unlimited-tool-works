@@ -8120,6 +8120,20 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open (2026-11-06) — Whole-crate mutation runs on the VPS alone (`RUNBOOK.md` "Mutation
+  runs and the VPS", the maintainer's directive). `scripts/mutation/mutants.py` still splits
+  a whole run, and `REMOTE_ONLY` skips its extra kinds, which run only on this machine. To
+  do before `team_widgets`'s whole-crate run: `whole_run` takes the remote-only path for
+  every whole run and refuses when no remote is set; the extra kinds run on the VPS in the
+  same service before cargo-mutants, their results fetched with the rest; the summary
+  learns from the run's own record whether a local half existed (not from `REMOTE_ONLY`),
+  and still rechecks the Windows-only survivors here; `mutants-diff` runs entirely here
+  while a whole run holds the VPS, split otherwise. Then, as a second slice: a stopped run
+  resumes where it stopped (the VPS needing an update mid-run is the case), its tested
+  mutants kept, never retested and never lost from the summary; first check whether
+  cargo-mutants' `--iterate` (skips mutants an earlier run caught) does this for a half
+  stopped mid-run, before writing our own. A vital script: SWE-2 rounds over the changed
+  functions
 - open (2026-11-06) — files past a thousand lines that recent diffs grew. `team_compiler`,
   in 8.36c's review fixes (review S-36c r3): `src/output/writer.rs`'s inline test module
   (~2,100 lines) and `tests/cli/models.rs` (~3,150). `export_upgrader`, in 0.0.2-poc6 and

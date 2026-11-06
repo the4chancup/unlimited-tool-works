@@ -8,7 +8,22 @@ and its rules stay in force. Read a section before starting what it covers.
 
 ## Mutation runs and the VPS
 
-**Whole-crate mutation runs are split with the maintainer's VPS.** On the maintainer's PC the
+**Whole-crate mutation runs go to the VPS alone.** A whole-crate run (`just mutants
+<crate>`, its extra kinds included) runs every mutant on bonfire, nothing on this machine:
+it is medium priority, so a slower result (about 2.5 times the split's: `save_editor`'s
+1990 mutants ran about 27 an hour here and 17 there) is fine, while a long local run blocks
+in-game checks on the Fox versions and a restart of this machine for an update, and a power
+failure here kills hours of a local half's progress, while the VPS rarely goes down.
+`just mutants-diff` keeps the split below: a round's diff is minutes and its result is
+waited on. While a whole run holds the VPS, a diff runs entirely on this machine instead
+of waiting days for its turn there. Until `scripts/mutation/mutants.py` makes this the whole run's only path (worklog
+issue "Whole-crate mutation runs on the VPS alone"), set `REMOTE_ONLY = True` for a
+whole-crate run and back to `False` after its launch; its extra kinds, which only this
+machine runs today, follow as the script prints (`just extra-mutants`). What follows
+describes the split: a diff uses it, and the whole-crate file split it describes is kept
+for when a whole run needs this machine again.
+
+**The split with the maintainer's VPS.** On the maintainer's PC the
 user environment variable `STUDIO_MUTANTS_REMOTE=bonfire` (an alias in `~/.ssh/config`) makes
 `just mutants <crate>` run part of the mutants there (`scripts/mutation/mutants.py`: the working tree is
 sent as a git bundle, the remote half runs at low priority, its results land in
