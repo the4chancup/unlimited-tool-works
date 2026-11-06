@@ -45,57 +45,20 @@ Export upgrader reads no JXL: no old export can hold one, since Red never read i
 decodes at its size, each channel within a few levels of its source's; a `.jxl` in an
 export compiles; the exe's size before and after, measured (`cargo bloat`).
 
-### No BC7 encoding until the GPU encoder (0.0.2)
+### Once the GPU encoder is in: BC7 and uncompressed sources
 
-What exists of the codec rules is in `spec/libs/dds_convert.md` "Target codecs and CPU
-encoder", whose table encodes a new texture for PES 19–21 as BC7.
+Built today (`spec/libs/dds_convert.md` "Target codecs and CPU encoder" and the
+"Passthrough" item of "In-process DDS conversion (replaces texconv)"): no compile encodes
+BC7, and an uncompressed source stays uncompressed but for a normal map and a PES 15-17
+kit's main texture.
 
-Until the GPU BC7 encoder is wired in (`plans/libs/README.md` "First-release desktop GPU
-BC7"), a texture that has to be encoded for PES 19–21 is encoded as for PES 15–18: BC1 when
-it is an opaque color texture eligible for it, BC3 otherwise, DXT5nm for a normal map. A BC7
-source's blocks are still kept on PES 19–21 (no encoding), and a BC7 source for PES 15–18
-is still transcoded to BC3 or BC1. The CPU BC7 encoder stays in the crate for the GPU path's
-fallback and tests, never chosen by a compile. Not the CPU's BC7: it spends 31.7 s of CPU on
-one 2048 × 2048 face's mip chain where BC3 spends 128 ms (`.tmp/release_0_0_2/jxl_bench/findings.md`), a
-team's textures minutes of all-core time, while BC3 is what every legacy compiler shipped for
-those versions. Once the GPU encoder is in, a compile encodes BC7 on the GPU; a machine with
-no usable GPU (or one that fails) keeps BC3/BC1 rather than falling back to the CPU's BC7,
-for the same reason.
+Once the GPU BC7 encoder is wired in (`plans/libs/README.md` "First-release desktop GPU
+BC7"), a compile for PES 19-21 encodes BC7 on the GPU; a machine with no usable GPU (or one
+that fails) keeps BC3/BC1 rather than falling back to the CPU's BC7, whose 31.7 s of CPU per
+2048 face is the reason none is encoded today.
 
-→ verify: a PNG compiled for PES 21 is BC3 (alpha) or BC1 (opaque) in its FTEX; a BC7 DDS
-compiled for PES 21 keeps its blocks byte for byte; no compile reaches the BC7 encoder
-(a test over the conversion's target table).
-
-### Uncompressed sources stay uncompressed (0.0.2)
-
-The spec's "Uncompressed sources are always encoded" (`spec/libs/dds_convert.md` "In-process
-DDS conversion (replaces texconv)", its "Passthrough" item) narrows to two cases. An uncompressed source is written uncompressed
-on every version, except a kit's main texture for PES 15–17, which is still encoded, and a
-normal-role source, which is still encoded to DXT5nm (the shader reads that channel layout,
-so the source's has to change anyway, as for a normal-role BC1 or BC7 source). A member
-saves a texture uncompressed on purpose, rarely and for a reason: a texture whose alpha must
-stay exactly zero to be fully transparent, a UV Step timing texture, which block compression
-visibly damages. BC1 and BC3 lose much of what it was saved for. The kit exception: PES 15–17
-edit the main kit texture in memory to place the seasonal logos, and soft-crash when it is
-larger than a 2048 × 2048 DXT5 with its mips (5.33 MB); Red refuses an uncompressed one
-there. Whether the Fox games do the same is not known; Red passes an uncompressed main kit
-texture through on Fox, and so does Studio until an in-game check says otherwise.
-
-The converter writes the decode back in the A8R8G8B8 layout: a legacy-header DDS on PES
-15–17, an FTEX of format 0 (`ftex`'s `PixelFormat::Argb8`) on PES 18–21. Every uncompressed
-layout the crate reads has 8-bit channels, so nothing is lost. The source's own mips are kept
-when it carries them and generated otherwise, as for an encode. `Decoded` records that its
-source was uncompressed, and a re-laid or re-arranged kit texture keeps that record, so an
-uncompressed kit re-laid for the other engine is written uncompressed too. `Target` gains
-`keep_uncompressed: bool`, which the Team compiler sets false only for a kit's main texture
-on PES 15–17 (the texture the uniform models map as their color, not its mask or srm).
-
-Encoding uncompressed sources again is reconsidered only once the GPU's BC7 is in, and then
-not for every one: BC7 does not reliably keep a pixel's alpha at zero, so a texture relying
-on it for full transparency stays uncompressed, and a texture under a size floor of about 6
-MiB stays as it is. The floor is what keeps UV Step timing textures uncompressed: they are
-all small, so it covers every one without telling them apart from other textures.
-
-→ verify: an uncompressed DDS compiled for PES 21 is an FTEX of format 0 whose decode equals
-the source's; for PES 17 a DDS in the A8R8G8B8 layout with the same decode; an uncompressed
-main kit texture for PES 17 is BC1 or BC3, and for PES 21 format 0.
+Encoding uncompressed sources again is reconsidered then, and not for every one: BC7 does not
+reliably keep a pixel's alpha at zero, so a texture relying on it for full transparency stays
+uncompressed, and a texture under a size floor of about 6 MiB stays as it is. The floor is
+what keeps UV Step timing textures uncompressed: they are all small, so it covers every one
+without telling them apart from other textures.

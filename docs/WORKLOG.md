@@ -2861,7 +2861,7 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         a pre-Fox Common model already named `oral_x` (U AAE 26), which Red packs as
         `oral_oral_x` and ours as `oral_x` (`packed_model_name`, TC-CMN-18). The player
         tables' removal shows no class: Red never wrote them.
-        The review done 2026-11-06 (`.tmp/duck_rulings.md` "S-36c r1" to "r3", "A-36c
+        The review done 2026-11-06 (the duck rulings file's "S-36c r1" to "r3", "A-36c
         part 1" and "part 2"): SWE-2 r1 accepted 5, r2 2; Astra 1 over `pes_savefile`
         (the apply's copy of `AppearanceSettings::resolved`) and 2 over `team_compiler` (a
         patch that settles to nothing forced a CPK over the previous one; TC-SAV-18's tests
@@ -7538,19 +7538,19 @@ briefs, review loops, gates and mutation runs as for any step.
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
     formats) with its verify list
-  - [ ] 0.0.2b no BC7 encoding until the GPU encoder (`plans/libs/dds_convert.md` "No BC7
-    encoding until the GPU encoder (0.0.2)"; DECISIONS 2026-10-30): PES 19–21 encode as
+  - [ ] 0.0.2b no BC7 encoding until the GPU encoder (`spec/libs/dds_convert.md` "Target codecs
+    and CPU encoder"; DECISIONS 2026-10-30): PES 19–21 encode as
     PES 15–18, BC7 sources kept; the Team compiler's tests and goldens that expect BC7
     follow, and the library parity against Red re-run (Red ships BC3). Pulled into the
     0.0.2-poc bundle (the maintainer, 2026-11-06); brief `.tmp/0_0_2/poc/brief_nobc7.md`,
     launched once the A2 test sidekick ends. With it, uncompressed sources stay uncompressed
-    (`plans/libs/dds_convert.md` "Uncompressed sources stay uncompressed (0.0.2)"; DECISIONS
+    (`spec/libs/dds_convert.md` "In-process DDS conversion (replaces texconv)"; DECISIONS
     2026-11-06), a pre-Fox main kit texture excepted. Code landed (SWE-2 sidekick, the commit
     "no BC7 encoding; uncompressed sources stay uncompressed"): `select_codec` never BC7,
     `Decoded::uncompressed`, `Target::keep_uncompressed`, the Team compiler's main-kit flag;
     pre-Fox parity's `k2012_sr.dds` now matches Red's uncompressed output; the GPU tests
-    call `encode_mips` directly (`just gpu-tests` not run here). Open: the spec move of both
-    plan sections, the re-timing and the in-game check below. → verify also: the maintainer's PES 21
+    call `encode_mips` directly (`just gpu-tests` not run here). Spec moved (the deferred
+    GPU part stays in the plan). Open: the re-timing and the in-game check below. → verify also: the maintainer's PES 21
     test compile (`.tmp/release_0_0_1/0_0_1/manual_run2`, about 1:30 with BC7) re-timed;
     its 45 DXT5 sources pass through either way, and its three uncompressed 4096 × 4096
     sources (`kit.dds` twice, one `shirt.dds`) were the only BC7 encodes and now encode

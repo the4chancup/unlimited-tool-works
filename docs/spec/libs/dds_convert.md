@@ -40,8 +40,20 @@ approach in production, in `Engines/stages/lib/dxt.py` + the `texture2ddecoder` 
   normal-role BC7 or BC1 source is decoded and encoded to DXT5nm, because keeping its blocks would
   keep a color layout the shader reads as a normal map. A DX10-header BC1/BC3 is therefore rewritten
   with a legacy header for PES 15–18 rather than re-encoded (the legacy compilers re-encoded every
-  DX10 header to DXT5, a lossy step with no purpose). Uncompressed sources are always encoded:
-  PES 15–17 crash on uncompressed kit textures.
+  DX10 header to DXT5, a lossy step with no purpose). An uncompressed source is written
+  uncompressed, decoded and written back in the A8R8G8B8 layout (a legacy-header DDS on PES
+  15–17, an FTEX of format 0 on PES 18–21; every uncompressed layout the crate reads has 8-bit
+  channels, so nothing is lost; a source's own mips are kept, a missing chain generated). A
+  member saves a texture uncompressed on purpose, rarely and for a reason block compression
+  breaks: alpha that must stay exactly zero, a UV Step timing texture. Two cases are still
+  encoded: a normal-role source, to DXT5nm (the shader reads that layout, as for a normal-role
+  BC1 or BC7 source), and a kit's main texture on PES 15–17, which those versions edit in
+  memory to place the seasonal logos and soft-crash on above a 2048 × 2048 DXT5's 5.33 MB (Red
+  refuses an uncompressed one there). `Decoded::uncompressed` records an uncompressed source,
+  a re-laid or re-arranged kit texture keeping it, and `Target::keep_uncompressed`, which the
+  Team compiler sets false only for that main kit texture, asks for the encode. Whether the Fox
+  games crash on an uncompressed main kit texture is not known yet; Red passes one through on
+  Fox, and so does Studio until an in-game check says otherwise.
 - **Mipmaps**: each mip level is decoded and re-encoded individually; a DDS/FTEX source keeps its
   own mip count whatever its codec, uncompressed included (Konami ships single-mip pre-Fox
   textures; on Fox the Team compiler's deep pass refuses a mipped texture with neither side a
@@ -74,7 +86,14 @@ model-engine generation alone is therefore not the texture-codec selector.
 | Target PES | BC7 input | Newly encoded ordinary raster/color input |
 |---|---|---|
 | 15–18 | Transcode to BC3, or BC1 when eligible below | BC3, or BC1 when eligible below |
-| 19–21 | Retain compatible BC7 blocks | BC7 |
+| 19–21 | Retain compatible BC7 blocks | BC3, or BC1 when eligible below |
+
+**No compile encodes BC7.** A texture encoded for PES 19–21 is encoded as for PES 15–18. The
+CPU's BC7 encoder spends 31.7 s of CPU on one 2048 × 2048 face's mip chain where BC3 spends
+128 ms (`.tmp/release_0_0_2/jxl_bench/findings.md`), a team's textures minutes of all-core
+time, while BC3 is what every legacy compiler shipped for those versions. The encoder stays
+in the crate, for the GPU path's fallback and its tests (`plans/libs/README.md` "First-release
+desktop GPU BC7", `plans/libs/dds_convert.md` for what changes once it is in).
 
 Keep already-compatible compressed blocks when only DDS/FTEX container/header adaptation is needed.
 Normal/data textures retain their role-specific channel and codec requirements.
