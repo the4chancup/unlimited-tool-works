@@ -1158,17 +1158,34 @@ fn order_then_number_pair_the_renumbered_saves_folders() {
         "XXX12 - ACKNOWLEDGED",
     ] {
         face(&sandbox, &format!("co Spring/Faces/{slot}"));
+        sandbox.write(
+            &format!("co Spring/Faces/{slot}/fcl_hair.fmdl"),
+            slot.as_bytes(),
+        );
     }
+    // Every model carries its folder's own text, so a wrong pairing shows
+    // in the copied bytes, not only in the findings.
     for folder in [
         "k2451 - Acknowledged",
         "k2452 - DEFAULT MALE",
         "k2455 - DEFAULT FEMALE",
     ] {
         boots(&sandbox, &format!("co Spring/Boots/{folder}"));
+        sandbox.write(
+            &format!("co Spring/Boots/{folder}/boots.fmdl"),
+            folder.as_bytes(),
+        );
     }
     fs::create_dir_all(sandbox.path("co Spring/Gloves/g2451 - EMPTY")).unwrap();
-    gloves(&sandbox, "co Spring/Gloves/g2452 - DEFAULT MALE");
-    gloves(&sandbox, "co Spring/Gloves/g2455 - DEFAULT FEMALE");
+    for folder in ["g2452 - DEFAULT MALE", "g2455 - DEFAULT FEMALE"] {
+        gloves(&sandbox, &format!("co Spring/Gloves/{folder}"));
+        for name in ["glove_l.fmdl", "glove_r.fmdl"] {
+            sandbox.write(
+                &format!("co Spring/Gloves/{folder}/{name}"),
+                format!("{folder} {name}").as_bytes(),
+            );
+        }
+    }
     sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
         wears(file, 71401, 2227, 2227);
         wears(file, 71405, 2229, 2229);
@@ -1188,22 +1205,33 @@ fn order_then_number_pair_the_renumbered_saves_folders() {
     ] {
         assert!(stdout.contains(&format!("{line}\n")), "{line}: {stdout}");
     }
+    // Each delivered file is its paired folder's own, byte for byte.
     for (folder, files) in [
         (
             "01 - CHALICE OF HEAVEN",
-            vec!["boots.fmdl", "glove_l.fmdl", "glove_r.fmdl"],
+            vec![
+                ("boots.fmdl", "Boots/k2452 - DEFAULT MALE"),
+                ("glove_l.fmdl", "Gloves/g2452 - DEFAULT MALE"),
+                ("glove_r.fmdl", "Gloves/g2452 - DEFAULT MALE"),
+            ],
         ),
         (
             "05 - PARADISE",
-            vec!["boots.fmdl", "glove_l.fmdl", "glove_r.fmdl"],
+            vec![
+                ("boots.fmdl", "Boots/k2455 - DEFAULT FEMALE"),
+                ("glove_l.fmdl", "Gloves/g2455 - DEFAULT FEMALE"),
+                ("glove_r.fmdl", "Gloves/g2455 - DEFAULT FEMALE"),
+            ],
         ),
-        ("12 - ACKNOWLEDGED", vec!["boots.fmdl"]),
+        (
+            "12 - ACKNOWLEDGED",
+            vec![("boots.fmdl", "Boots/k2451 - Acknowledged")],
+        ),
     ] {
-        for name in files {
-            assert!(
-                sandbox
-                    .path(&format!("co Full Spring/Players/{folder}/{name}"))
-                    .is_file(),
+        for (name, source) in files {
+            assert_eq!(
+                fs::read(sandbox.path(&format!("co Full Spring/Players/{folder}/{name}"))).unwrap(),
+                fs::read(sandbox.path(&format!("co Spring/{source}/{name}"))).unwrap(),
                 "{folder}/{name}"
             );
         }

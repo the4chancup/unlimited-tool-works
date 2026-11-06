@@ -7501,8 +7501,12 @@ briefs, review loops, gates and mutation runs as for any step.
       folder (`Collars/`) now gets the anti-blur write-off, the spec's "every `.fmdl`";
       tests for the pairing rounds repeating, a folderless player's not-worn ID and the far
       drop's `any_folder`; `wearer_by_number`'s text. SWE-2 r2 over the fixes accepted 2 (a
-      doc's wrong fact, one more file for the split issue), loop ended. Open: Astra over
-      both (handover queue)
+      doc's wrong fact, one more file for the split issue), loop ended. Astra (rulings
+      "A-poc57u", "A-poc6c A1", "A-poc6c A2"): poc5/7 0 accepted, poc6's code 0, its tests 5,
+      all test gaps, fixed by a SWE-2 sidekick (brief `.tmp/0_0_2/poc/brief_a2_fix.md`): the
+      three name sources table-driven, order by folder number not listing, IDs counted not
+      wearers, name before not-worn, EU-PLY-25 by bytes. Open: SWE-2 over those tests, then
+      Astra A2 r2 (handover queue)
     - [x] 0.0.2-poc5 a model hidden by distance dropped (`plans/export_upgrader.md` "What it
       does", the 0.0.2-poc5 cleanup; `model_far_dropped`; EU-MDL-24; new `far.rs`,
       `upgrade.rs`, `model_folders.rs`, `messages.rs`, tests `cli/carried.rs`): whole models
@@ -7537,7 +7541,17 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2b no BC7 encoding until the GPU encoder (`plans/libs/dds_convert.md` "No BC7
     encoding until the GPU encoder (0.0.2)"; DECISIONS 2026-10-30): PES 19–21 encode as
     PES 15–18, BC7 sources kept; the Team compiler's tests and goldens that expect BC7
-    follow, and the library parity against Red re-run (Red ships BC3)
+    follow, and the library parity against Red re-run (Red ships BC3). Pulled into the
+    0.0.2-poc bundle (the maintainer, 2026-11-06); brief `.tmp/0_0_2/poc/brief_nobc7.md`,
+    launched once the A2 test sidekick ends. With it, uncompressed sources stay uncompressed
+    (`plans/libs/dds_convert.md` "Uncompressed sources stay uncompressed (0.0.2)"; DECISIONS
+    2026-11-06), a pre-Fox main kit texture excepted. → verify also: the maintainer's PES 21
+    test compile (`.tmp/release_0_0_1/0_0_1/manual_run2`, about 1:30 with BC7) re-timed;
+    its 45 DXT5 sources pass through either way, and its three uncompressed 4096 × 4096
+    sources (`kit.dds` twice, one `shirt.dds`) were the only BC7 encodes and now encode
+    nothing, so a run still slow after this step sends the profiling of 0.0.2d elsewhere.
+    Open: in game on PES 2019, whether an uncompressed main kit texture (that export's 4096
+    `kit.dds`) loads and shows the seasonal logos, or soft-crashes as on PES 15–17
   - [ ] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation
     check (0.0.2)"; DECISIONS 2026-10-31, P46 accepted): first the stock game's refusal, read
     where the Whack Patch differs from the exe it was made from: `E:\PES2017\PES2017.exe.old5`

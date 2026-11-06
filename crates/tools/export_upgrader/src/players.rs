@@ -2769,23 +2769,70 @@ mod tests {
     }
 
     #[test]
-    fn the_pairing_matches_the_face_folders_whole_name_too() {
-        // The name part of `k2964 - 81514- LET ME DEFEND` is the face
-        // folder's whole name: the face's own name part and the save name
-        // fold differently and only the whole name pairs it.
-        let files = files(&[
-            "Faces/81514- LET ME DEFEND/face.fmdl",
-            "Boots/k2964 - 81514- LET ME DEFEND/boots.fmdl",
-        ]);
-        let roster = wearing(&[(14, ("OTHER", 2564, 0))]);
-        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
-        assert!(
-            plan.copies
-                .iter()
-                .any(|(_, to)| to == "Players/14 - LET ME DEFEND/boots.fmdl"),
-            "{:?}",
-            plan.copies
-        );
+    fn the_name_rule_reads_all_three_wearer_names() {
+        // One missing boots ID beside two unworn boots folders: the counts
+        // differ, so the order rule cannot pair and only the name rule can —
+        // each case through a different one of its names (the face folder's
+        // whole name, its name part, the save name).
+        for (paths, roster, folder, slot, id, leftover) in [
+            (
+                vec![
+                    "Faces/81514- LET ME DEFEND/face.fmdl",
+                    "Boots/k2964 - 81514- LET ME DEFEND/boots.fmdl",
+                    "Boots/k2965 - Other/boots.fmdl",
+                ],
+                wearing(&[(14, ("SaveA", 2564, 0))]),
+                "Boots/k2964 - 81514- LET ME DEFEND",
+                "14",
+                "2564",
+                "Boots/k2965 - Other/boots.fmdl",
+            ),
+            (
+                vec![
+                    "Faces/XXX05 - Ann/face.fmdl",
+                    "Boots/k2999 - Ann/boots.fmdl",
+                    "Boots/k2998 - Other/boots.fmdl",
+                ],
+                wearing(&[(5, ("SaveA", 2500, 0))]),
+                "Boots/k2999 - Ann",
+                "05",
+                "2500",
+                "Boots/k2998 - Other/boots.fmdl",
+            ),
+            (
+                vec![
+                    "Boots/k2999 - Bob/boots.fmdl",
+                    "Boots/k2998 - Other/boots.fmdl",
+                ],
+                wearing(&[(5, ("Bob", 2500, 0))]),
+                "Boots/k2999 - Bob",
+                "05",
+                "2500",
+                "Boots/k2998 - Other/boots.fmdl",
+            ),
+        ] {
+            let plan = plan_with_bytes(&files(&paths), Some(&roster), Engine::Fox, &[]);
+            assert_eq!(
+                finding_at(&plan, "wearer_by_name", folder).context,
+                [
+                    ("slot".to_owned(), slot.to_owned()),
+                    ("id".to_owned(), id.to_owned()),
+                ],
+                "{folder}"
+            );
+            assert!(
+                plan.leftovers.contains(leftover),
+                "{leftover}: {:?}",
+                plan.leftovers
+            );
+            assert!(
+                plan.findings
+                    .iter()
+                    .all(|m| m.code.code != "custom_model_unpaired"),
+                "{folder}: {:?}",
+                plan.findings
+            );
+        }
     }
 
     #[test]
@@ -3017,5 +3064,102 @@ mod tests {
         );
         // `k2780` itself is worn by nobody: a leftover as ever.
         assert!(plan.leftovers.contains("Boots/k2780 - A/boots.fmdl"));
+    }
+
+    #[test]
+    fn the_order_rule_pairs_id_rank_to_folder_number_rank() {
+        // `g567` lists after `g0999 - X` but numbers before it: the missing
+        // IDs' sorted order meets the folder numbers', not the listing's —
+        // 2800 to 567 (slot 06), 2900 to 999 (slot 05).
+        let files = files(&["Gloves/g567/glove_l.fmdl", "Gloves/g0999 - X/glove_l.fmdl"]);
+        let roster = wearing(&[(5, ("SaveA", 0, 2900)), (6, ("SaveB", 0, 2800))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        for (folder, slot, id) in [
+            ("Gloves/g567", "06", "2800"),
+            ("Gloves/g0999 - X", "05", "2900"),
+        ] {
+            assert_eq!(
+                finding_at(&plan, "wearer_by_order", folder).context,
+                [
+                    ("slot".to_owned(), slot.to_owned()),
+                    ("id".to_owned(), id.to_owned()),
+                ],
+                "{folder}"
+            );
+        }
+        assert!(
+            plan.findings
+                .iter()
+                .all(|m| m.code.code != "custom_model_unpaired"),
+            "{:?}",
+            plan.findings
+        );
+    }
+
+    #[test]
+    fn the_order_rule_counts_missing_ids_not_their_wearers() {
+        // Two wearers of one missing ID beside one unworn folder: one ID to
+        // one folder, so the order rule pairs it and both wear it shared.
+        let files = files(&["Boots/k2701 - Other/boots.fmdl"]);
+        let roster = wearing(&[(5, ("SaveA", 2500, 0)), (6, ("SaveB", 2500, 0))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        for slot in ["05", "06"] {
+            assert!(
+                plan.findings.iter().any(|m| {
+                    m.code.code == "wearer_by_order"
+                        && matches!(
+                            &m.scope,
+                            Scope::Folder { path, .. } if path.as_str() == "Boots/k2701 - Other"
+                        )
+                        && m.context
+                            == [
+                                ("slot".to_owned(), slot.to_owned()),
+                                ("id".to_owned(), "2500".to_owned()),
+                            ]
+                }),
+                "{slot}: {:?}",
+                plan.findings
+            );
+        }
+        assert!(
+            plan.findings
+                .iter()
+                .all(|m| m.code.code != "custom_model_unpaired"),
+            "{:?}",
+            plan.findings
+        );
+        // Both wear it: the shared `Boots/Other/`, a link in each folder.
+        assert!(plan.copies.contains(&(
+            "Boots/k2701 - Other/boots.fmdl".to_owned(),
+            "Boots/Other/boots.fmdl".to_owned()
+        )));
+        for marker in [
+            "Players/05 - Other/Other.boots",
+            "Players/06 - Other/Other.boots",
+        ] {
+            assert!(plan.markers.contains(&marker.to_owned()), "{marker}");
+        }
+    }
+
+    #[test]
+    fn the_name_rule_pairs_before_the_not_worn_check() {
+        // The missing boots 2780 is a gloves folder's number — the "no
+        // custom item" claim — but `k2999 - Ann` pairs it by name first, so
+        // the player wears the folder instead.
+        let files = files(&[
+            "Faces/XXX05 - Ann/face.fmdl",
+            "Boots/k2999 - Ann/boots.fmdl",
+            "Gloves/g2780 - Other/glove_l.fmdl",
+        ]);
+        let roster = wearing(&[(5, ("SaveA", 2780, 0))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        assert_eq!(
+            finding_at(&plan, "wearer_by_name", "Boots/k2999 - Ann").context,
+            [
+                ("slot".to_owned(), "05".to_owned()),
+                ("id".to_owned(), "2780".to_owned()),
+            ]
+        );
+        assert!(!plan.not_worn.contains(&(ItemKind::Boots, 2780)));
     }
 }

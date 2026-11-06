@@ -15674,3 +15674,18 @@ no member uses the other two tools yet. Entries about changes to tools nobody ha
 about would be noise in the "What's new" chapter, the release body and the updater dialog. A
 single bullet that presents the tool tells members what it does.
 Plan: `plans/core/distribution.md` "Changelog and version display"; `CONTRIBUTING.md` "Commits".
+
+## 2026-11-06 — dds_convert — uncompressed sources stay uncompressed, but a pre-Fox main kit texture
+Decision: an uncompressed source texture is written uncompressed (A8R8G8B8: a DDS on PES
+15-17, an FTEX of format 0 on PES 18-21) on every version, except a kit's main texture for PES
+15-17, which is still encoded to BC1 or BC3 (a normal map, too, is still encoded to DXT5nm,
+whose channel layout the shader reads). Encoding them again is reconsidered only with the
+GPU's BC7, and then not for a texture relying on zero alpha, a UV Step timing texture, or one
+under a size floor of about 6 MiB (the maintainer).
+Why: uncompressed textures are rare and saved that way for a reason that block compression
+breaks: BC1 and BC3 lose much quality, BC7 does not reliably keep zero alpha, and UV Step
+timing textures suffer visibly. PES 15-17 place the seasonal logos into the main kit texture in
+memory and soft-crash above a 2048 DXT5's 5.33 MB, which is why Red refuses an uncompressed one
+there; Red passes them through on Fox, and whether Fox crashes is not known yet (worklog 0.0.2b
+in-game check).
+Plan: `plans/libs/dds_convert.md` "Uncompressed sources stay uncompressed (0.0.2)".
