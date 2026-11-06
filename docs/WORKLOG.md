@@ -8078,18 +8078,21 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
-- open (2026-11-06, not urgent) — GitHub's Dependabot, enabled on the repository on
-  2026-11-05, reports 5 alerts against `cbc3868e`, all in `zip` 8.6.0 (`Cargo.lock`), with
-  9.0.5 suggested (a major version: read its changelog for API changes before bumping):
-  #1 critical, a parser differential between the local and central headers ("zip cloaking")
-  leading to file overwrite; #2 high, unbounded symlink-target handling during extraction;
-  #3 moderate, an AES entry's HMAC check bypassed on a premature EOF; #4 high, `extract`
-  writing outside its folder through a symlink target validated only lexically; #5 high, the
-  legacy Shrink/Reduce/Implode decoder trusting a ZIP64 uncompressed size. For each: which crate pulls it in
-  (`cargo tree -i <crate>`), whether the advisory's code path is one the suite reaches (it
-  reads files from members' exports and the game, it serves nothing), and bump or record why
-  not; the gates and `just bindings` after a bump. `cargo deny`/`deps-check` did not flag it:
-  say why in the fix
+- resolved (2026-11-06) — GitHub's Dependabot, enabled on the repository on 2026-11-05,
+  reported 5 alerts against `zip` 8.6.0: #1 critical, a local/central header differential
+  ("zip cloaking") leading to file overwrite; #2 and #4 high, symlink targets during
+  `extract`; #3 moderate, an AES entry's HMAC bypass; #5 high, the legacy
+  Shrink/Reduce/Implode decoder. `zip` 9.0.5 fixes all five and is in use (9.x decodes an
+  entry's name on demand, so `archives`' `Archive::zip` maps a name that fails to decode to
+  `ArchiveError::Zip`, like every other `zip` error). None was reached before: only
+  `archives` uses `zip` (for `export_upgrader` and `team_compiler`; not `python_bindings`,
+  so no `just bindings`), it never calls `extract`, refuses an encrypted entry, builds without
+  the `legacy-zip` feature, and `normalize` refuses `..` and drive names before a name
+  becomes a tree path. `just deps-check` missed it because it runs `cargo deny check
+  licenses` only; `cargo deny check advisories` runs in no gate, and today also fails on
+  RUSTSEC-2026-0414 and -0433 (`pulldown-cmark` 0.13.4 under `egui_commonmark`, unreached:
+  its parser options omit `ENABLE_WIKILINKS`; 0.13.6 fixes both, taken with the next egui
+  bump) and five unmaintained crates, so Dependabot stays the advisory watch
 - open (2026-11-06, review S-poc7) — `model_convert/src/formats/fmdl/tests.rs` is 1,320
   lines and 0.0.2-poc7 grew it by 64: split it before its next growth (by what the tests
   cover: import, export, round trips), as `CONTRIBUTING.md` asks of a module past a thousand

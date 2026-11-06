@@ -159,18 +159,21 @@ impl<R: Read + Seek> Archive<R> {
             let file = archive
                 .by_index_raw(i)
                 .map_err(|error| ArchiveError::Zip(error.to_string()))?;
+            let name = file
+                .name()
+                .map_err(|error| ArchiveError::Zip(error.to_string()))?;
             if file.is_dir() {
                 // A zip directory entry is named `Kits/p2/`; `normalize` drops empty
                 // segments, so the trailing separator goes with them.
-                if !is_root_name(file.name()) {
-                    folders.push(normalize(file.name())?);
+                if !is_root_name(&name) {
+                    folders.push(normalize(&name)?);
                 }
                 continue;
             }
             if file.encrypted() {
                 return Err(ArchiveError::Encrypted);
             }
-            let path = normalize(file.name())?;
+            let path = normalize(&name)?;
             entries.push(Entry {
                 path: path.clone(),
                 size: file.size(),

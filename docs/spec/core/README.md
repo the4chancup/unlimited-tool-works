@@ -148,7 +148,7 @@ Key reasons:
 | `crossbeam-channel` | Tool↔shell event and request channels; the write queue between coordinator and writer | Production-ready |
 | `flate2` | zlib compression (WESYS format, FTEX's compressed chunks) | Production-ready |
 | `sevenz-rust2` | Native .7z reading (replaces 7z.exe); the maintained fork of `sevenz-rust`, which RUSTSEC-2026-0246 marks unmaintained | 0.22.2 in use, no default features (decode only: LZMA, LZMA2, BCJ) |
-| `zip` | Native .zip reading | 8.6.0 in use, no default features plus `deflate` |
+| `zip` | Native .zip reading | 9.0.5 in use, no default features plus `deflate` |
 | `serde` | Serialization: `PesVersion`'s two-digit number form, app settings and `aatf`'s ruleset data today; `serde_json` writes `save-editor diff --json`'s report today and joins with the Blender manifest (`player_aesthetics_editor.md`) and the match-event wire format (`match_feed.md`) in their phases | Production-ready |
 | `clap` | CLI argument parsing | Production-ready |
 | `thiserror` | Ergonomic error enums for the lib crates' error types | Production-ready |

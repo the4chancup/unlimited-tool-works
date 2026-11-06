@@ -83,7 +83,7 @@ windows = { version = "0.62.2", features = ["Win32_Foundation", "Win32_Security"
 winresource = { version = "0.1.34", default-features = false }
 roxmltree = "0.21.1"
 sevenz-rust2 = { version = "0.22.2", default-features = false }
-zip = { version = "8.6.0", default-features = false, features = ["deflate"] }
+zip = { version = "9.0.5", default-features = false, features = ["deflate"] }
 
 # Workspace crates, so a member depends on another by name alone.
 aatf = { path = "crates/libs/aatf" }
