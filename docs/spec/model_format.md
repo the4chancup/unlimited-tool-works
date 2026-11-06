@@ -262,7 +262,7 @@ toml; the Ruleset editor writes its data block without per-field comments).
 Values resolve for each target engine in this order, later winning:
 
 1. **Family defaults** for that engine (table below).
-2. **Engine-neutral keys** (`two_sided`, `transparent`, `antiblur`, `textures`, `parameters`),
+2. **Engine-neutral keys** (`two_sided`, `transparent`, `textures`, `parameters`),
    translated to the engine's representation by the fixed tables below.
 3. **The engine table** (`[mat.fox]` / `[mat.prefox]`): native fields, applied verbatim. A raw
    `alpha_flags` here still yields to an explicit `two_sided`/`transparent` on the bits those
@@ -279,7 +279,6 @@ Ordinary authoring never needs them.
 | `family` | string | `"shaded"` | Shader family; selects both engines' shader and defaults. One of `shaded`, `shadeless`, `metal`, `glass`. |
 | `two_sided` | bool | `false` | Render both faces. Fox: alpha flag bit 32. Pre-Fox: state `twosided`. |
 | `transparent` | bool | `false` | Alpha-blended (semi-transparent) rendering. Fox: alpha flag bit 128 on top of the family's default bits. Pre-Fox: the transparent state set (`zwrite 0`, `alphatest 0`, `alphablend 1`). Omitted = off (no texture inspection — deciding transparency from texture alpha, as the 19to16 converter does, is expensive and surprising). |
-| `antiblur` | bool | family default | Fox: generate anti-blur duplicate meshes for this material's meshes (`Has-Antiblur-Meshes`). Pre-Fox: no equivalent (`.model` has no anti-blur). Listed as engine-neutral for discoverability — it describes the material, not a format quirk — even though only Fox implements it. |
 | `textures` | table | see "Textures" | Canonical role → stem. |
 | `parameters` | table | family default | Shader parameter name → `[x, y, z, w]` (four numbers). Passed to whichever engine defines the name (Fox material parameters, pre-Fox `<vector>` elements); names the target engine's shader doesn't know are dropped. |
 
@@ -301,10 +300,10 @@ containing `translucent`, `3ddc` or `eyeocclusion` are checked first.
 
 | Family | Use | Fox shader / technique | Fox defaults | Pre-Fox shader | Pre-Fox defaults | Inferred from |
 |---|---|---|---|---|---|---|
-| `shaded` | Skin, hair, cloth, boots — the standard lit material (Fox "blin") | `fox3ddf_blin` / `fox3DDF_Blin` | alpha `128`, shadow `0`, `antiblur = false`; `MatParamIndex_0 = [0,0,0,0]`; `normal`/`specular` fall back to the game's `dummy_nrm`/`dummy_srm` | `Basic_C` + the letters of the roles that resolve (see the `Basic_*` ladder below) | opaque state set | Fox shaders containing `blin`/`3ddf`/`hair`; pre-Fox `Basic_*`, `Boots`, `Shirt_*`, `Pants_*` |
-| `shadeless` | Unlit (eyes, decals baked into the texture, emissive parts) (Fox "constant") | `fox3dfw_constant_srgb_ndr_solid` / `fox3DFW_ConstantSRGB_NDR_Solid` | alpha `16`, shadow `5`, `antiblur = true`; no parameters | `Shadeless` — the community-made shader combining the advantages of the stock `Constant` and `Overlay`, which is why both of those infer this family | opaque state set | Fox shaders containing `constant`/`lambert` (or any other `3dfw` shader, with a warning); pre-Fox `Shadeless`, `Constant`, `Overlay` |
+| `shaded` | Skin, hair, cloth, boots — the standard lit material (Fox "blin") | `fox3ddf_blin` / `fox3DDF_Blin` | alpha `128`, shadow `0`; `MatParamIndex_0 = [0,0,0,0]`; `normal`/`specular` fall back to the game's `dummy_nrm`/`dummy_srm` | `Basic_C` + the letters of the roles that resolve (see the `Basic_*` ladder below) | opaque state set | Fox shaders containing `blin`/`3ddf`/`hair`; pre-Fox `Basic_*`, `Boots`, `Shirt_*`, `Pants_*` |
+| `shadeless` | Unlit (eyes, decals baked into the texture, emissive parts) (Fox "constant") | `fox3dfw_constant_srgb_ndr_solid` / `fox3DFW_ConstantSRGB_NDR_Solid` | alpha `16`, shadow `5`; no parameters | `Shadeless` — the community-made shader combining the advantages of the stock `Constant` and `Overlay`, which is why both of those infer this family | opaque state set | Fox shaders containing `constant`/`lambert` (or any other `3dfw` shader, with a warning); pre-Fox `Shadeless`, `Constant`, `Overlay` |
 | `metal` | Metallic surfaces | `fox3ddf_ggx` / `fox3DDF_GGX` | as `shaded`; `metalness` role available | `Basic_CNSR` | opaque state set; `Reflection = [1,1,1,0]`, `Shininess = [0.9,0,0,1]`; `environment` falls back to the compiler's **template environment map** (a real cubemap shipped with the templates, taken from a working export's `env.dds`), so `Basic_CNSR` always has its `R` — a metal without a reflection isn't metal | Fox shaders containing `ggx` |
-| `glass` | Visors, lenses | `pes3dfw_glass2` / `pes3DFW_Glass2` | alpha `16`, shadow `5`, `antiblur = false`; `MatParamIndex_0 = [54,0,0,0]`, `ReflectionIntensity = [1,0,0,0]`, `GlassRoughness = [0,0,0,0]`, `GlassFlatness = [0,0,0,0]`, `PCBoxCenter = [0,15,0,0]`, `PCBoxSize = [250,80,250,0]` | `Basic_C` | transparent state set | Fox shaders containing `glass` |
+| `glass` | Visors, lenses | `pes3dfw_glass2` / `pes3DFW_Glass2` | alpha `16`, shadow `5`; `MatParamIndex_0 = [54,0,0,0]`, `ReflectionIntensity = [1,0,0,0]`, `GlassRoughness = [0,0,0,0]`, `GlassFlatness = [0,0,0,0]`, `PCBoxCenter = [0,15,0,0]`, `PCBoxSize = [250,80,250,0]` | `Basic_C` | transparent state set | Fox shaders containing `glass` |
 
 **The pre-Fox `Basic_*` ladder.** The `Basic_` shader's suffix letters spell the maps it samples:
 `C`olor, `N`ormal, `S`pecular, `R`eflection (an `EnvironmentMap` cubemap plus the `Reflection` and
@@ -323,9 +322,11 @@ State sets (pre-Fox `[prefox.states]` defaults):
 | opaque | 1 | 1 | 0 | 1 | 0 | 0 | 0 |
 | transparent | 1 | 0 | 0 | 0 | 0 | 1 | 0 |
 
-Fox `fuzzblock` shaders (`fox3ddf_blin_fuzzblock`, `…_uvscroll`) are anti-blur helper materials the
-exporter generates; they never appear in a toml — importing an FMDL turns them back into
-`antiblur = true` on the source material.
+Fox `fuzzblock` shaders (`fox3ddf_blin_fuzzblock`, `…_uvscroll`) are the materials of anti-blur
+duplicates, copies of a mesh that once cancelled the game's TAA blur on it. They never appear
+in a toml: an FMDL import strips the duplicates (`antiblur::decode`), and the exporter writes
+none, since the TAA removal script keeps models sharp and the copies would only draw every
+mesh twice.
 
 **Checked against the community's reference.** The cup wiki's Materials page
 (`resources/Materials.wikitext`) differs from these tables in places; each difference was weighed
@@ -337,8 +338,7 @@ two filters only (14,543 samplers) and either state order (16,849 and 13,866 mat
 opaque set's `alphatest` 1 (5,142 opaque materials, as the 19to16 converter writes it; Konami's
 `Boots` files write 0); `Basic_CNSR` read as `shaded` (about two thirds of its 3,298 materials have no
 `EnvironmentMap`); the alpha flag 128 on a forward shader (902 materials) and the add-on's
-`invisible` bit over the family's shadow bits; and an anti-blur duplicate at the source mesh's
-positions (9,973 of 9,994 paired duplicates, one smaller, where the wiki says "slightly smaller"). Shaders the wiki
+`invisible` bit over the family's shadow bits. Shaders the wiki
 documents and no family covers (Fresnel `fox3ddf_blin_incidence`, `fox3dfw_constant_srgb_plain`,
 the UV scroll and step shaders, the `RoughnessMap` sampler) stay native-only, kept verbatim by an
 import.
@@ -382,8 +382,8 @@ without a file behind them is the legacy `dummy_kit*` family, substituted by the
 FMDL stores alpha/shadow flags **per mesh**, not per material. Export writes the material's
 resolved flags to every mesh using it. Import (`fmdl_to_ir`, and the Blender codec) splits a
 material instance whose meshes carry differing flags into one material per distinct
-`(alpha_flags, shadow_flags, antiblur)` combination, suffixed `_2`, `_3`, … — the same rule the
-`pes-fmdl` addon applies when creating Blender materials.
+`(alpha_flags, shadow_flags)` pair, suffixed `_2`, `_3`, …. The `pes-fmdl` add-on's rule also
+splits by the meshes' anti-blur request; ours does not, since nothing downstream reads it.
 
 ### `[mat.prefox]` — pre-Fox (.model/.mtl) table
 

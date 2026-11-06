@@ -855,7 +855,6 @@ fn ir_over(vertices: Vertices, faces: Vec<[u16; 3]>) -> CanonicalModel {
             family: MaterialFamily::Shaded,
             two_sided: None,
             transparent: None,
-            antiblur: None,
             textures: vec![],
             parameters: vec![],
             fox: None,

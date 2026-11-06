@@ -362,7 +362,6 @@ mod tests {
                 family: MaterialFamily::Shaded,
                 two_sided: None,
                 transparent: None,
-                antiblur: None,
                 textures: vec![(TextureRole::Base, 0)],
                 parameters: vec![],
                 fox: None,

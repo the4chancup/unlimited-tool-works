@@ -583,7 +583,7 @@ fn a_model_beside_the_fmdl_of_its_stem_is_ignored_on_pes_21_and_used_on_pes_17()
     }
 }
 
-// TC-MOD-34
+// TC-MOD-101
 #[test]
 fn a_model_alone_is_converted_to_the_boots_fmdl_with_its_texture_in_the_player_s_folder() {
     let sandbox = Sandbox::new("conversion_model_for_fox");
@@ -609,19 +609,22 @@ fn a_model_alone_is_converted_to_the_boots_fmdl_with_its_texture_in_the_player_s
     );
     let file = fmdl::FmdlFile::read(package.get("boots.fmdl").unwrap()).unwrap();
     let boots = fmdl::Model::from_file(&file).unwrap();
-    // The card's one mesh, and the anti-blur mesh the FMDL export makes for it.
-    let anti_blur = boots
-        .meshes
-        .iter()
-        .filter(|mesh| mesh.is_antiblur_mesh)
-        .count();
+    // The card's one mesh, flagged neither way, and no fuzzblock material.
     assert_eq!(
-        (
-            model_mesh_count(&card_model()),
-            boots.meshes.len(),
-            anti_blur
-        ),
-        (1, 2, 1)
+        (model_mesh_count(&card_model()), boots.meshes.len()),
+        (1, 1)
+    );
+    assert!(
+        boots
+            .meshes
+            .iter()
+            .all(|mesh| !mesh.has_antiblur_meshes && !mesh.is_antiblur_mesh)
+    );
+    assert!(
+        boots
+            .materials
+            .iter()
+            .all(|material| !material.shader.contains("fuzzblock"))
     );
     // The `.mtl`'s `./skin.dds`, pointed at the player's texture home by its stem.
     let skin_paths: Vec<(String, String)> = fmdl::ops::paths::texture_paths(&file)
@@ -883,7 +886,7 @@ fn a_selected_gltf_drops_its_folder_on_pes_21_and_one_an_fmdl_beats_is_ignored()
 /// The boots package of team 714's first shared boots folder on PES 21.
 const SHARED_BOOTS_FPK: &str = "Asset/model/character/boots/k0644/#Win/boots.fpk";
 
-// TC-MOD-34, TC-MOD-05
+// TC-MOD-101, TC-MOD-05
 #[test]
 fn a_shared_boots_folder_s_model_is_converted_to_its_boots_fmdl_on_pes_21() {
     let sandbox = Sandbox::new("conversion_shared_model_for_fox");
@@ -916,7 +919,7 @@ fn a_shared_boots_folder_s_model_is_converted_to_its_boots_fmdl_on_pes_21() {
     let package = fpk::FpkFile::read(&entries[SHARED_BOOTS_FPK]).unwrap();
     let file = fmdl::FmdlFile::read(package.get("boots.fmdl").unwrap()).unwrap();
     let boots = fmdl::Model::from_file(&file).unwrap();
-    // The card's one mesh, and the anti-blur mesh the FMDL export makes for it.
+    // The card's one mesh, and no anti-blur copy of it.
     let anti_blur = boots
         .meshes
         .iter()
@@ -928,7 +931,7 @@ fn a_shared_boots_folder_s_model_is_converted_to_its_boots_fmdl_on_pes_21() {
             boots.meshes.len(),
             anti_blur
         ),
-        (1, 2, 1)
+        (1, 1, 0)
     );
     // The `.mtl`'s `./skin.dds`, pointed at the shared output's folder by its stem.
     let skin_paths: Vec<(String, String)> = fmdl::ops::paths::texture_paths(&file)

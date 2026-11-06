@@ -64,8 +64,6 @@ pub struct Material {
     pub two_sided: Option<bool>,
     /// Transparency; `None` defers to the engine table's raw flags.
     pub transparent: Option<bool>,
-    /// The anti-blur helper flag; `None` means not requested.
-    pub antiblur: Option<bool>,
     /// Canonical role to index into `CanonicalModel::textures`.
     pub textures: Vec<(TextureRole, usize)>,
     /// Engine-neutral shader parameters.

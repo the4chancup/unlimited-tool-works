@@ -343,15 +343,3 @@ TC-TEX-21  GIVEN TC-TEX-05's export and PES folder, only 4cc_63_midcup.cpk (list
                 hair path, the same line as with no PES folder, and the CPK holds slot 05's
                 face package (restates TC-TEX-05's second case)
 ```
-
-**0.0.2-poc7 scope.** `plans/model_conversion/ir.md` "Anti-blur duplicates": a converted
-model gets no anti-blur meshes. TC-MOD-34's anti-blur clause is restated below and
-withdrawn.
-
-```
-TC-MOD-101 GIVEN TC-MOD-34's export (slot 05 holding boots.model, boots.mtl naming skin, and
-                 skin.dds)
-           WHEN the export is compiled for PES 21
-           THEN k0625's boots.fmdl holds the source's one mesh, none flagged anti-blur and no
-                fuzzblock material (restates TC-MOD-34's anti-blur clause)
-```

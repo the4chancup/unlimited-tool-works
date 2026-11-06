@@ -112,8 +112,8 @@ pub(super) fn split_parents(bones: &[::fmdl::Bone]) -> Vec<Option<usize>> {
 }
 
 /// IR → FMDL. Validates, resolves each material for Fox, quantizes weights, derives the bone
-/// positions an import did not supply, then runs the format crate's encoders (anti-blur,
-/// vertex loops, mesh splitting — the legacy pipeline's order).
+/// positions an import did not supply, then runs the format crate's encoders (vertex loops,
+/// then mesh splitting).
 pub fn ir_to_fmdl(ir: &CanonicalModel) -> Result<ExportedFox, ConvertError> {
     validate(ir)?;
     let mut findings = Vec::new();
@@ -365,7 +365,7 @@ pub fn ir_to_fmdl(ir: &CanonicalModel) -> Result<ExportedFox, ConvertError> {
             material: mesh.material,
             alpha_flags: material.alpha_flags,
             shadow_flags: material.shadow_flags,
-            has_antiblur_meshes: material.antiblur,
+            has_antiblur_meshes: false,
             is_antiblur_mesh: false,
             custom_bounding_box: mesh.custom_bounding_box.map(|b| ::fmdl::BoundingBox {
                 min: b.min,
@@ -399,9 +399,8 @@ pub fn ir_to_fmdl(ir: &CanonicalModel) -> Result<ExportedFox, ConvertError> {
         bone_matrices: None,
     };
 
-    // The encoders in dependency order: anti-blur duplicates, then the
-    // vertex-loop convention, then mesh splitting.
-    ::fmdl::ops::antiblur::encode(&mut model)?;
+    // The encoders in dependency order: the vertex-loop convention, then
+    // mesh splitting.
     // Recover the loops from the IR vertex order itself — the flag-gated `decode_model`
     // returns identity owners on a model built from the IR, losing the file's loops.
     let owners: Vec<Vec<usize>> = model

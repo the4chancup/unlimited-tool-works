@@ -32,7 +32,10 @@ fn decoded(model: &::fmdl::Model) -> ::fmdl::Model {
 /// `ir_to_fmdl`'s encoder half, run on a decoded model for comparison.
 fn encoded(decoded: &::fmdl::Model) -> ::fmdl::Model {
     let mut model = decoded.clone();
-    ::fmdl::ops::antiblur::encode(&mut model).expect("antiblur encode");
+    // The exporter writes every mesh's anti-blur request clear.
+    for mesh in &mut model.meshes {
+        mesh.has_antiblur_meshes = false;
+    }
     let owners: Vec<Vec<usize>> = model
         .meshes
         .iter()
@@ -109,7 +112,6 @@ fn minimal_ir() -> CanonicalModel {
             family: MaterialFamily::Shaded,
             two_sided: None,
             transparent: None,
-            antiblur: None,
             textures: vec![],
             parameters: vec![],
             fox: None,
@@ -596,20 +598,38 @@ fn missing_maps_get_the_game_dummies() {
 }
 
 #[test]
-fn an_antiblur_material_writes_its_duplicate_and_the_extension_flags() {
-    // A Shadeless material's mesh gets an anti-blur duplicate: the written
-    // file declares `antiblur` and carries the `is_antiblur_mesh` copy a
-    // reader strips again, and the vertex-loop convention every export
-    // encodes is declared.
+fn an_export_writes_no_anti_blur_meshes() {
+    // A Shadeless material and a Fox import whose mesh asks for the
+    // anti-blur duplicates both export clean: no anti-blur mesh, neither
+    // flag set, the `antiblur` extension absent. The vertex-loop
+    // convention every export encodes is still declared.
+    let no_antiblur = |model: &::fmdl::Model| {
+        assert!(!model.extensions.antiblur);
+        assert!(model.meshes.iter().all(|mesh| !mesh.has_antiblur_meshes));
+        assert!(model.meshes.iter().all(|mesh| !mesh.is_antiblur_mesh));
+        assert!(
+            model
+                .materials
+                .iter()
+                .all(|material| !material.shader.contains("fuzzblock"))
+        );
+    };
     let mut ir = minimal_ir();
     ir.materials[0].family = MaterialFamily::Shadeless;
     let exported = ir_to_fmdl(&ir).expect("export");
     let bytes = exported.model.to_file().expect("to_file").write();
     let model = read_fmdl(&bytes);
-    assert!(model.extensions.antiblur);
+    no_antiblur(&model);
     assert!(model.extensions.vertex_loop_preservation);
-    assert!(model.meshes.iter().any(|mesh| mesh.has_antiblur_meshes));
-    assert!(model.meshes.iter().any(|mesh| mesh.is_antiblur_mesh));
+    assert_eq!(model.meshes.len(), 1);
+    assert_eq!(model.materials.len(), 1);
+
+    let mut fox = fmdl_model(fmdl_mesh(0, 0), vec![instance("mat")]);
+    fox.meshes[0].has_antiblur_meshes = true;
+    let imported = fmdl_to_ir(&fox, None).expect("import");
+    let exported = ir_to_fmdl(&imported.model).expect("export");
+    let bytes = exported.model.to_file().expect("to_file").write();
+    no_antiblur(&read_fmdl(&bytes));
 }
 
 #[test]
@@ -701,6 +721,30 @@ fn one_instance_two_flag_sets_splits() {
             detail: "mat_2".to_string(),
         }]
     );
+}
+
+#[test]
+fn the_anti_blur_request_flag_is_no_split_reason() {
+    // One instance behind two meshes differing only in the anti-blur
+    // request flag: alpha and shadow flags equal, one IR material.
+    let mut model = fmdl_model(fmdl_mesh(0, 0), vec![instance("mat")]);
+    let mut asking = fmdl_mesh(0, 0);
+    asking.has_antiblur_meshes = true;
+    model.meshes.push(asking);
+    model.mesh_groups[0].meshes = vec![0, 1];
+    let imported = fmdl_to_ir(&model, None).expect("import");
+    assert_eq!(
+        imported
+            .model
+            .materials
+            .iter()
+            .map(|material| material.name.as_str())
+            .collect::<Vec<_>>(),
+        ["mat"]
+    );
+    assert_eq!(imported.model.meshes[0].material, 0);
+    assert_eq!(imported.model.meshes[1].material, 0);
+    assert!(imported.findings.is_empty());
 }
 
 #[test]
@@ -886,7 +930,7 @@ fn uncarried_prefox_samplers_and_parameters_are_findings() {
 #[test]
 fn a_mesh_matches_its_own_flag_combination() {
     // Two flag combinations on one instance: a mesh's material is the
-    // entry matching all three flags, not the first sharing one.
+    // entry matching both flags, not the first sharing one.
     let mesh = |alpha, shadow| ::fmdl::Mesh {
         vertices: ::fmdl::format::MeshVertices {
             positions: vec![[0.0; 3]],

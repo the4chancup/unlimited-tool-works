@@ -968,11 +968,8 @@ impl From<MergeError> for TaskFailure {
                 }
             }
             // Not a disagreement between the parts a member resolves by name: a part that
-            // fails validation, or parts whose anti-blur duplicates are encoded in some and
-            // not others.
-            MergeError::MixedAntiblur | MergeError::Other(_) => {
-                TaskFailure::from(anyhow::Error::from(error))
-            }
+            // fails validation.
+            MergeError::Other(_) => TaskFailure::from(anyhow::Error::from(error)),
         }
     }
 }

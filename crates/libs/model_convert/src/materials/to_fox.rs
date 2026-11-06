@@ -22,8 +22,6 @@ pub struct FoxDefaults {
     pub alpha_flags: u8,
     /// The default shadow flags.
     pub shadow_flags: u8,
-    /// Whether the family gets anti-blur duplicate meshes by default.
-    pub antiblur: bool,
     /// The default shader parameters.
     pub parameters: &'static [(&'static str, [f32; 4])],
 }
@@ -36,7 +34,6 @@ pub fn defaults(family: MaterialFamily) -> FoxDefaults {
             technique: "fox3DDF_Blin",
             alpha_flags: 128,
             shadow_flags: 0,
-            antiblur: false,
             parameters: &[("MatParamIndex_0", [0.0, 0.0, 0.0, 0.0])],
         },
         MaterialFamily::Shadeless => FoxDefaults {
@@ -44,7 +41,6 @@ pub fn defaults(family: MaterialFamily) -> FoxDefaults {
             technique: "fox3DFW_ConstantSRGB_NDR_Solid",
             alpha_flags: 16,
             shadow_flags: 5,
-            antiblur: true,
             parameters: &[],
         },
         MaterialFamily::Metal => FoxDefaults {
@@ -52,7 +48,6 @@ pub fn defaults(family: MaterialFamily) -> FoxDefaults {
             technique: "fox3DDF_GGX",
             alpha_flags: 128,
             shadow_flags: 0,
-            antiblur: false,
             parameters: &[("MatParamIndex_0", [0.0, 0.0, 0.0, 0.0])],
         },
         MaterialFamily::Glass => FoxDefaults {
@@ -60,7 +55,6 @@ pub fn defaults(family: MaterialFamily) -> FoxDefaults {
             technique: "pes3DFW_Glass2",
             alpha_flags: 16,
             shadow_flags: 5,
-            antiblur: false,
             parameters: &[
                 ("MatParamIndex_0", [54.0, 0.0, 0.0, 0.0]),
                 ("ReflectionIntensity", [1.0, 0.0, 0.0, 0.0]),
@@ -116,8 +110,6 @@ pub struct ResolvedFox {
     pub alpha_flags: u8,
     /// The resolved shadow flags.
     pub shadow_flags: u8,
-    /// Whether the material gets anti-blur duplicate meshes.
-    pub antiblur: bool,
     /// `(sampler name, texture index)`: canonical roles first in `TextureRole` order through
     /// `sampler_for_role`, then `fox.textures` verbatim.
     pub textures: Vec<(String, usize)>,
@@ -223,7 +215,6 @@ pub fn resolve(material: &Material) -> ResolvedFox {
         technique: fox.map_or_else(|| defaults.technique.to_string(), |f| f.technique.clone()),
         alpha_flags,
         shadow_flags,
-        antiblur: material.antiblur.unwrap_or(defaults.antiblur),
         textures,
         unused_roles,
         parameters,
@@ -241,7 +232,6 @@ mod tests {
             family,
             two_sided: None,
             transparent: None,
-            antiblur: None,
             textures: vec![],
             parameters: vec![],
             fox: None,
@@ -256,7 +246,6 @@ mod tests {
         assert_eq!(shaded.technique, "fox3DDF_Blin");
         assert_eq!(shaded.alpha_flags, 128);
         assert_eq!(shaded.shadow_flags, 0);
-        assert!(!shaded.antiblur);
         assert_eq!(
             shaded.parameters,
             [("MatParamIndex_0", [0.0, 0.0, 0.0, 0.0])]
@@ -266,14 +255,12 @@ mod tests {
         assert_eq!(shadeless.technique, "fox3DFW_ConstantSRGB_NDR_Solid");
         assert_eq!(shadeless.alpha_flags, 16);
         assert_eq!(shadeless.shadow_flags, 5);
-        assert!(shadeless.antiblur);
         assert!(shadeless.parameters.is_empty());
         let metal = defaults(MaterialFamily::Metal);
         assert_eq!(metal.shader, "fox3ddf_ggx");
         assert_eq!(metal.technique, "fox3DDF_GGX");
         assert_eq!(metal.alpha_flags, 128);
         assert_eq!(metal.shadow_flags, 0);
-        assert!(!metal.antiblur);
         assert_eq!(
             metal.parameters,
             [("MatParamIndex_0", [0.0, 0.0, 0.0, 0.0])]
@@ -283,7 +270,6 @@ mod tests {
         assert_eq!(glass.technique, "pes3DFW_Glass2");
         assert_eq!(glass.alpha_flags, 16);
         assert_eq!(glass.shadow_flags, 5);
-        assert!(!glass.antiblur);
         assert_eq!(
             glass.parameters,
             [
@@ -332,7 +318,6 @@ mod tests {
         assert_eq!(resolved.technique, "fox3DDF_Blin");
         assert_eq!(resolved.alpha_flags, 128);
         assert_eq!(resolved.shadow_flags, 0);
-        assert!(!resolved.antiblur);
         assert_eq!(
             resolved.parameters,
             [("MatParamIndex_0".to_string(), [0.0, 0.0, 0.0, 0.0])]
@@ -346,7 +331,6 @@ mod tests {
         shadeless.transparent = Some(true);
         let resolved = resolve(&shadeless);
         assert_eq!(resolved.alpha_flags, 144);
-        assert!(resolved.antiblur);
 
         let mut with_table = material(MaterialFamily::Shaded);
         with_table.two_sided = Some(true);

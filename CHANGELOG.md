@@ -32,6 +32,9 @@ What changed for members, release by release, newest first.
 - **Export upgrader** — the anti-blur copies older Fox models carry (each mesh drawn a
   second time, which FoxDen's TAA removal made pointless) are removed from every `.fmdl`, with
   an info line naming the file.
+- **Team compiler** — on PES 2018 to 2021, a model converted from a PES 2015-2017 `.model`
+  gets no anti-blur copies any more, and model parts merged into one `.fmdl` are no longer
+  refused when some carry anti-blur copies and others do not.
 
 ### Minor fixes
 

@@ -360,11 +360,9 @@ What exists of this is in `spec/model_format.md` "Engine-neutral keys".
 An unknown `family` is `material_value_invalid`, and a `parameters` name the target engine's
 shader doesn't know is reported with `material_parameter_unused` (I).
 
-`antiblur` leaves the schema (worklog 0.0.2-poc7): the spec's `antiblur` row goes, and so does
-every family's `antiblur` default in "Shader families". Studio writes no anti-blur copies
-(`plans/model_conversion/ir.md` "Anti-blur duplicates"), so the key has nothing left to ask
-for; a toml that still sets it gets `material_key_unknown` like any other unknown key, not a
-finding of its own.
+The schema has no `antiblur` key (`spec/model_conversion/ir.md` "Anti-blur duplicates"): a
+toml that still sets one gets `material_key_unknown` like any other unknown key, not a finding
+of its own.
 
 ### Shader families
 

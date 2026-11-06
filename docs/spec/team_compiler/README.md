@@ -944,12 +944,14 @@ TC-MOD-33  GIVEN slot 05 holding face_high.fmdl and skin.dds, and linking Faces/
            THEN shared_texture_overridden names skin and Faces/Round, 71405's face package is
                 in the CPK, and slot 05's texture folder holds the skin.ftex converted from the
                 player's skin.dds
-TC-MOD-34  GIVEN slot 05 holding boots.model and boots.mtl naming skin, and skin.dds
+TC-MOD-34  withdrawn: restated as TC-MOD-101 (`spec/team_compiler/README.md`), the FMDL
+           export no longer adding anti-blur meshes
+TC-MOD-101 GIVEN slot 05 holding boots.model and boots.mtl naming skin, and skin.dds
            WHEN the export is compiled for PES 21
            THEN k0625 holds a boots.fmdl the fmdl reader accepts with the source's mesh count
-                plus the anti-blur mesh the FMDL export regenerates (the card head's one mesh
-                becomes two), its texture table naming skin.dds under the player's texture
-                home, and skin.ftex sits in the player's common subfolder
+                (the card head's one mesh), none flagged anti-blur and no fuzzblock material,
+                its texture table naming skin.dds under the player's texture home, and
+                skin.ftex sits in the player's common subfolder (restates TC-MOD-34)
 TC-MOD-35  GIVEN slot 05 holding ingame_face.toml, kit_boots.model, kit_boots.mtl and Crocs.boots,
            Boots/Crocs/ holding boots.model and boots.mtl, linked by no other player; and
            another export whose slot 05 holds ingame_face.toml, Crocs.boots, and parts/boots.model

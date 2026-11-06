@@ -190,7 +190,6 @@ pub fn model_to_ir(model: &Model, mtl: &mtl::MaterialSet) -> Result<Imported, Co
             family: inferred.family,
             two_sided: state("twosided").map(|value| value != 0),
             transparent: state("alphablend").map(|value| value != 0),
-            antiblur: None,
             textures: canonical,
             parameters: vec![],
             fox: None,

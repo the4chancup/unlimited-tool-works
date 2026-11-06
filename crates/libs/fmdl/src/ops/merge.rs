@@ -34,11 +34,6 @@ pub enum MergeError {
         /// The repeated bone name.
         name: String,
     },
-    /// Some parts that request anti-blur carry their duplicates and
-    /// others do not; merging them would leave half of them unencoded
-    /// under the flag that suppresses `antiblur::encode`.
-    #[error("some parts carry their anti-blur duplicates and others do not")]
-    MixedAntiblur,
     /// A part fails `Model::validate`.
     #[error(transparent)]
     Other(#[from] FmdlError),
@@ -63,12 +58,6 @@ pub fn merge(parts: &[Model]) -> Result<Model, MergeError> {
     let mut bone_source: Vec<(usize, usize)> = Vec::new();
     let mut matrices_ok = true;
 
-    // A part *requests* anti-blur when any of its meshes is flagged
-    // `has_antiblur_meshes`; requesting parts must agree on whether the
-    // duplicates are already encoded (the flag), or the merged flag would
-    // suppress `antiblur::encode` on a part that still needs it.
-    let mut requested_antiblur: Option<bool> = None;
-
     for (part_index, part) in parts.iter().enumerate() {
         part.validate()?;
 
@@ -80,15 +69,6 @@ pub fn merge(parts: &[Model]) -> Result<Model, MergeError> {
                 return Err(MergeError::DuplicateBoneName {
                     name: bone.name.clone(),
                 });
-            }
-        }
-
-        if part.meshes.iter().any(|mesh| mesh.has_antiblur_meshes) {
-            match requested_antiblur {
-                Some(encoded) if encoded != part.extensions.antiblur => {
-                    return Err(MergeError::MixedAntiblur);
-                }
-                _ => requested_antiblur = Some(part.extensions.antiblur),
             }
         }
 
@@ -198,13 +178,6 @@ pub fn merge(parts: &[Model]) -> Result<Model, MergeError> {
                 output.extensions.other.push(extension.clone());
             }
         }
-    }
-
-    // When any part requests anti-blur the requesting parts' (common)
-    // value decides — a stray flag on a part that does not request it is
-    // a leftover, not a vote.
-    if let Some(encoded) = requested_antiblur {
-        output.extensions.antiblur = encoded;
     }
 
     // Bone matrices: one 64-byte matrix per unioned bone, taken from the
@@ -516,8 +489,8 @@ mod tests {
         }
     }
 
-    /// ORAL decoded back to its written state: the request flag stays on
-    /// the mesh while `extensions.antiblur` is clear.
+    /// ORAL requesting anti-blur without declaring it: `decode` cleared
+    /// `extensions.antiblur`, and the mesh's request is set again.
     fn unencoded_oral() -> Model {
         let mut oral = model(ORAL);
         crate::ops::antiblur::decode(&mut oral).unwrap();
@@ -525,7 +498,8 @@ mod tests {
         oral
     }
 
-    /// ORAL encoded and still requesting: flag set, duplicates present.
+    /// ORAL requesting anti-blur and declaring it: the file's extension
+    /// flag set, as written.
     fn encoded_oral() -> Model {
         let mut oral = model(ORAL);
         oral.meshes[0].has_antiblur_meshes = true;
@@ -542,11 +516,15 @@ mod tests {
     }
 
     #[test]
-    fn mixed_antiblur_requests_error() {
-        assert!(matches!(
-            merge(&[encoded_oral(), unencoded_oral()]),
-            Err(MergeError::MixedAntiblur)
-        ));
+    fn parts_disagreeing_on_the_anti_blur_flag_merge() {
+        // Nothing encodes after a merge, so parts disagreeing on the
+        // anti-blur flag merge all the same: every mesh kept as it was
+        // and the parts' extension flag OR-ed in.
+        let encoded = encoded_oral();
+        let unencoded = unencoded_oral();
+        let merged = merge(&[encoded.clone(), unencoded.clone()]).unwrap();
+        assert_eq!(merged.meshes, [encoded.meshes, unencoded.meshes].concat());
+        assert!(merged.extensions.antiblur);
     }
 
     #[test]
@@ -567,13 +545,13 @@ mod tests {
     }
 
     #[test]
-    fn a_set_flag_on_a_non_requesting_part_does_not_win() {
-        // No mesh of this part asks for anti-blur, so its flag is only a
-        // leftover; the requesting part's clear flag wins.
+    fn a_set_flag_on_a_non_requesting_part_is_kept() {
+        // No mesh of this part asks for anti-blur; its extension flag
+        // still ORs into the output, like every other extension's.
         let mut flagged = part(&[]);
         flagged.extensions.antiblur = true;
         let merged = merge(&[flagged, unencoded_oral()]).unwrap();
-        assert!(!merged.extensions.antiblur);
+        assert!(merged.extensions.antiblur);
     }
 
     // Two genuinely encoded, requesting parts merge with the flag set,

@@ -7489,14 +7489,26 @@ briefs, review loops, gates and mutation runs as for any step.
       `upgrade.rs`, `model_folders.rs`, `messages.rs`, tests `cli/carried.rs`): whole models
       only (the census found no partly far community model), the `.mtl` kept (no community
       `.model` is far). SWE-2 sidekick and one rework (a fresh session after the resumed one
-      stalled), brief `.tmp/0_0_2/poc/brief_poc57.md`. Spec move with poc7's
-    - [ ] 0.0.2-poc7 anti-blur duplicates dropped (`plans/export_upgrader.md`, the 0.0.2-poc7
-      cleanup, `antiblur_dropped`; `plans/model_conversion/ir.md` "Anti-blur duplicates":
-      `Material.antiblur` and the `materials.toml` key go, `fmdl`'s merge refusal goes).
-      Upgrader half DONE with poc5 (EU-MDL-25; `materials.rs`, the tracer's upgraded FMDLs
-      regenerated, `team_compiler/tests/parity.rs` compares both sides decoded). Next: the
-      compiler half, brief `.tmp/0_0_2/poc/brief_poc7_mc.md` (`model_convert`, `fmdl`'s
-      merge, `team_compiler`; TC-MOD-101; consumers' tests and `just bindings`)
+      stalled), brief `.tmp/0_0_2/poc/brief_poc57.md`. Spec move done with poc7's
+    - [x] 0.0.2-poc7 anti-blur duplicates dropped (`spec/export_upgrader.md` step 7,
+      `antiblur_dropped`, EU-MDL-25; `spec/model_conversion/ir.md` "Anti-blur duplicates").
+      Upgrader half with poc5 (`materials.rs`, the tracer's upgraded FMDLs regenerated,
+      `team_compiler/tests/parity.rs` compares both sides decoded). Compiler half: SWE-2
+      sidekick, landed first time (brief `.tmp/0_0_2/poc/brief_poc7_mc.md`):
+      `Material.antiblur` and the families' defaults gone (`model_convert` `materials/`),
+      the FMDL import splitting by alpha and shadow flags only, the export writing no copies,
+      `fmdl`'s merge taking parts whatever their anti-blur state (`MixedAntiblur` gone),
+      `red_parity.rs` decoding both sides; TC-MOD-34 withdrawn, restated as TC-MOD-101.
+      Spec: `model_format.md` (the `antiblur` key and defaults gone), `ir.md`,
+      `conversion.md`, GLOSSARY; the poc5/7 spec move
+      (`.tmp/0_0_2/poc/spec_move_poc57.py`). The 53 VGL26 exports rerun on `231076bd`'s
+      release binary (all_run v3, compared with v2 by `tally_compare.py`): 51 upgrade, /bag/
+      and /fgog/ refused by `custom_model_unpaired` as poc6 ruled, /akg/ now upgrading; the
+      compile ends clean (v2: 89 `vertex_too_far_from_origin` Errors, now 89
+      `model_far_dropped`). Every new count traced: 24 `fmdl_texture_not_found` and 69
+      `face_file_not_used` (`face_diff.bin`) come from /akg/ and from the folders the far
+      Error used to drop, which now compile (a face folder left with no face model is the
+      blank face). Open: `mutants-diff` over the poc commits (handover queue)
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
@@ -8065,6 +8077,23 @@ Bugs, unexpected behavior, things to revisit. `open` / `resolved (date)`. Resolv
 pruned when their phase closes; they stay in git history. A question only the maintainer
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
+
+- open (2026-11-06, not urgent) — GitHub's Dependabot, enabled on the repository on
+  2026-11-05, reports 5 alerts against `cbc3868e`, all in `zip` 8.6.0 (`Cargo.lock`), with
+  9.0.5 suggested (a major version: read its changelog for API changes before bumping):
+  #1 critical, a parser differential between the local and central headers ("zip cloaking")
+  leading to file overwrite; #2 high, unbounded symlink-target handling during extraction;
+  #3 moderate, an AES entry's HMAC check bypassed on a premature EOF; #4 high, `extract`
+  writing outside its folder through a symlink target validated only lexically; #5 high, the
+  legacy Shrink/Reduce/Implode decoder trusting a ZIP64 uncompressed size. For each: which crate pulls it in
+  (`cargo tree -i <crate>`), whether the advisory's code path is one the suite reaches (it
+  reads files from members' exports and the game, it serves nothing), and bump or record why
+  not; the gates and `just bindings` after a bump. `cargo deny`/`deps-check` did not flag it:
+  say why in the fix
+- open (2026-11-06, review S-poc7) — `model_convert/src/formats/fmdl/tests.rs` is 1,320
+  lines and 0.0.2-poc7 grew it by 64: split it before its next growth (by what the tests
+  cover: import, export, round trips), as `CONTRIBUTING.md` asks of a module past a thousand
+  lines
 
 - open (2026-11-01, after 0.0.1) — the Ruleset editor's tier handle
   (`ruleset_editor/src/view/sections/tiers.rs` around line 140) is a `dnd_drag_source` whose

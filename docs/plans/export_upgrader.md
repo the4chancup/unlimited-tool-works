@@ -31,44 +31,8 @@ What worklog 0.0.2-poc1, poc4 and poc6 built is in `spec/export_upgrader.md` "Wh
 does": step 3 ("When the save and the folders disagree"), step 8 (the hide ID of a
 custom ID no folder claims) and step 10 (a `.dds` beside a `.ftex` of one stem).
 
-Two cleanups come with worklogs 0.0.2-poc5 and poc7, the first:
-
-- **A model hidden by distance.** A model (`.fmdl` or pre-Fox `.model`; a `.model`'s `.mtl`
-  stays, since no community `.model` is far in the census below and telling which `.mtl`
-  only the far model used would repeat the compiler's whole `.mtl` search, subfolders and
-  links included) every vertex of which lies more than 5000 units from the
-  origin is dropped, with `model_far_dropped` (W: the file, its vertex count). Such a model
-  draws nothing a camera sees: it is how templates made before the Blender add-on could
-  delete a game mesh hid the default face or hair, by moving it away. The compiler's
-  `vertex_too_far_from_origin` stays an Error, since far geometry lags the match all day,
-  so without this step the template's player folder is dropped at compile time. A face
-  folder the drop leaves with no face model compiles to the blank face, which hides the
-  default face as the far model did ("2. Per-export serial steps" in
-  `spec/team_compiler/pipeline.md`). A gloves folder the drop leaves with no model is a
-  hidden hand, as any modelless gloves folder is (step 3). A model with only some meshes or
-  vertices far stays as it is, and the compiler refuses it: no file on the maintainer's
-  machine is one (`.tmp/0_0_2/poc/far_census/`, 49,122 `.fmdl` and `.model` files, 14,688
-  distinct: 23 far in every vertex, the VGL26 faces and hairs, three old gloves files
-  `glove_l`/`glove_r` and two stadium models; partly far, only two synthetic test
-  fixtures). In VGL26 every flagged
-  model is far in its every vertex (`.tmp/0_0_2/poc/far_meshes.py`): 89 files (9 distinct)
-  in 47 folders across 7 exports, the most common a `face_high.fmdl` of 739 vertices in 29
-  folders (/domg/, /ink/, /vn/...).
-
-The second, with worklog 0.0.2-poc7:
-
-- **Anti-blur duplicates dropped.** Every `.fmdl` of the export carrying anti-blur meshes
-  (the copies on a fuzzblock shader the Blender add-on added, flagged `Is-Antiblur-Meshes`)
-  is written without them (`fmdl::ops::antiblur::decode`: the copies and the materials only
-  they used go, the file's anti-blur extension is cleared), and every mesh's request for
-  them (`Has-Antiblur-Meshes`) is cleared too, so no later conversion or merge adds them
-  back or refuses the file as half encoded; `antiblur_dropped` (I: the file, how many
-  meshes) names each file. FoxDen's TAA removal script keeps models on Forward shaders sharp
-  without them, which leaves the copies bloat that draws every mesh twice. 3,566 of the
-  6,374 distinct readable FMDLs on the maintainer's machine carry them (the census above).
-  A mesh on a fuzzblock shader without the flag (6 files) is left as it is: nothing tells a
-  copy from a mesh drawn that way on purpose. The compiler's side, on the IR route alone,
-  is in `plans/model_conversion/ir.md` "Anti-blur duplicates". The last step:
+What worklog 0.0.2-poc5 and poc7 built is in `spec/export_upgrader.md` "What it does",
+step 7 (a model hidden by distance, anti-blur duplicates dropped). The last step:
 
 13. **Optional glTF conversion** (`--convert-to-gltf`, off by default) — after the structural
     migration is complete and verified (step 10's report is clean), a second pass converts all
@@ -326,23 +290,3 @@ EU-SET-13  GIVEN EU-SET-12's export
                 no player folder holds a .copy, and no base_copy_beside_face is reported
 ```
 
-**0.0.2-poc5 and poc7 scope.** "A model hidden by distance" and "Anti-blur duplicates
-dropped" above.
-
-```
-EU-MDL-24  GIVEN slot 02's face folder "XXX02 - GIANT" holding face_high.fmdl and
-                 hair_high.fmdl, every vertex of both more than 5000 units from the origin,
-                 and the gloves folder "g0331 - ONLY THREAD" his record wears, holding
-                 glove_l.fmdl and a glove_r.fmdl whose every vertex is that far
-           WHEN the export is upgraded
-           THEN Players/02 - GIANT/ holds neither face_high.fmdl nor hair_high.fmdl nor
-                glove_r.fmdl, and holds glove_l.fmdl; model_far_dropped names each of the
-                three with its vertex count, and the run ends migration_clean
-EU-MDL-25  GIVEN slot 05's face folder holding face_high.fmdl with two meshes, each flagged
-                 Has-Antiblur-Meshes and followed by its Is-Antiblur-Meshes copy on a
-                 fuzzblock material
-           WHEN the export is upgraded
-           THEN Players/05's face_high.fmdl holds the two meshes alone, no fuzzblock
-                material, no mesh flagged either way, and no anti-blur extension;
-                antiblur_dropped (Info) names the file with 2; the run ends migration_clean
-```

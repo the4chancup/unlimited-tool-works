@@ -310,7 +310,6 @@ mod tests {
             family,
             two_sided: None,
             transparent: None,
-            antiblur: None,
             textures: vec![],
             parameters: vec![],
             fox: None,

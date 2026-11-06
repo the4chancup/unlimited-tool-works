@@ -41,6 +41,10 @@ crate.
 12. Encode mesh splitting for FMDL format
 13. Write FMDL binary
 
+Studio's `ir_to_fmdl` follows the second list without step 10: it writes no anti-blur duplicates
+(`spec/model_conversion/ir.md` "Anti-blur duplicates"). Its `fmdl_to_ir` keeps the first list's
+step 4.
+
 ### Performance-critical operation: mesh splitting
 
 Mesh splitting is a graph partitioning algorithm that cuts meshes exceeding hardware limits (32

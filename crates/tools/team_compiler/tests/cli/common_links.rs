@@ -399,9 +399,8 @@ fn write_common_card(sandbox: &Sandbox, export: &str) {
     sandbox.write(&format!("{export}/Common/skin.dds"), &small_dds());
 }
 
-/// The meshes of the card head converted to an FMDL: its one mesh and the anti-blur mesh the
-/// FMDL export makes for it.
-const CONVERTED_CARD_MESHES: usize = 2;
+/// The meshes of the card head converted to an FMDL: its one mesh.
+const CONVERTED_CARD_MESHES: usize = 1;
 
 /// The card head as a model of the player's own: its one material renamed `torso`, in the
 /// model and in its material set, which names `./face.dds`. It merges with the card itself

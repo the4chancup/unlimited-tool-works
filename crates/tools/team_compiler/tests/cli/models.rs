@@ -2393,11 +2393,10 @@ fn per_kit_model_files_on_pes_21_are_a_set_and_only_the_lowest_is_converted() {
         ],
     );
 
-    // The card's one mesh and the anti-blur mesh the FMDL export makes for it: one variant's,
-    // `pants_kit2.model` being read by no task.
+    // The card's one mesh: one variant's, `pants_kit2.model` being read by no task.
     let hair = face_package(&entries);
     let file = FmdlFile::read(hair.get("fcl_hair.fmdl").unwrap()).unwrap();
-    assert_eq!(Model::from_file(&file).unwrap().meshes.len(), 2);
+    assert_eq!(Model::from_file(&file).unwrap().meshes.len(), 1);
 }
 
 // TC-CMN-05

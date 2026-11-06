@@ -101,8 +101,8 @@ Rules (identical to the `fmdl` merge unless stated):
   `bone_group` and every vertex `bone_mapping` are remapped to the unioned indices. In practice
   pre-Fox parts share the standard body skeleton, so the union is the identity; the rule exists so a
   custom-skeleton part cannot be silently merged with a default-skeleton one.
-- **Meshes and mesh groups** are concatenated in part order; `split_group_id` and anti-blur
-  metadata stay per mesh (they are re-encoded on export as usual).
+- **Meshes and mesh groups** are concatenated in part order; `split_group_id` stays per
+  mesh (re-encoded on export as usual).
 - **Materials** are merged by name. Two definitions with the same name must be equal in every
   populated field — for `.model` sources that includes `state_settings`, i.e. the `.mtl` content —
   otherwise `MaterialConflict`. Mesh `material` indices are remapped. Because `model_to_ir` consumes

@@ -21,8 +21,7 @@ pub fn fmdl_to_ir(
     skl: Option<&::fmdl::SklFile>,
 ) -> Result<Imported, ConvertError> {
     let mut model = model.clone();
-    // The legacy pipeline's order: reassemble split meshes first, then strip the anti-blur
-    // duplicates.
+    // Reassemble split meshes first, then strip the anti-blur duplicates.
     ::fmdl::ops::split::decode(&mut model)?;
     ::fmdl::ops::antiblur::decode(&mut model)?;
     let model = &model;
@@ -127,27 +126,22 @@ pub fn fmdl_to_ir(
     // name, the rest are `name_2`, `name_3`, ....
     let mut materials = Vec::new();
     // Per instance: the IR material index each flag combination maps to.
-    let mut instance_materials: Vec<Vec<(u8, u8, bool, usize)>> = Vec::new();
+    let mut instance_materials: Vec<Vec<(u8, u8, usize)>> = Vec::new();
     for (instance_index, instance) in model.materials.iter().enumerate() {
-        let mut combinations: Vec<(u8, u8, bool)> = Vec::new();
+        let mut combinations: Vec<(u8, u8)> = Vec::new();
         for mesh in &model.meshes {
             if mesh.material == instance_index {
-                let flags = (
-                    mesh.alpha_flags,
-                    mesh.shadow_flags,
-                    mesh.has_antiblur_meshes,
-                );
+                let flags = (mesh.alpha_flags, mesh.shadow_flags);
                 if !combinations.contains(&flags) {
                     combinations.push(flags);
                 }
             }
         }
         if combinations.is_empty() {
-            combinations.push((0, 0, false));
+            combinations.push((0, 0));
         }
         let mut entries = Vec::new();
-        for (split, (alpha_flags, shadow_flags, antiblur_meshes)) in combinations.iter().enumerate()
-        {
+        for (split, (alpha_flags, shadow_flags)) in combinations.iter().enumerate() {
             // The first `name_N` free among the instance names and the ones generated so
             // far — `mat` splitting while `mat_2` exists must not collide.
             let name = if split == 0 {
@@ -204,7 +198,6 @@ pub fn fmdl_to_ir(
                 family: inferred.family,
                 two_sided: Some(alpha_flags & 32 != 0),
                 transparent: None,
-                antiblur: Some(*antiblur_meshes),
                 textures: canonical,
                 parameters: vec![],
                 fox: Some(FoxMaterial {
@@ -220,12 +213,7 @@ pub fn fmdl_to_ir(
                 }),
                 prefox: None,
             });
-            entries.push((
-                *alpha_flags,
-                *shadow_flags,
-                *antiblur_meshes,
-                materials.len() - 1,
-            ));
+            entries.push((*alpha_flags, *shadow_flags, materials.len() - 1));
         }
         instance_materials.push(entries);
     }
@@ -253,12 +241,8 @@ pub fn fmdl_to_ir(
         }
         let material = instance_materials[mesh.material]
             .iter()
-            .find(|(alpha, shadow, antiblur, _)| {
-                *alpha == mesh.alpha_flags
-                    && *shadow == mesh.shadow_flags
-                    && *antiblur == mesh.has_antiblur_meshes
-            })
-            .map(|(_, _, _, material)| *material)
+            .find(|(alpha, shadow, _)| *alpha == mesh.alpha_flags && *shadow == mesh.shadow_flags)
+            .map(|(_, _, material)| *material)
             .expect("every mesh's flag combination was collected");
         meshes.push(Mesh {
             vertices: Vertices {

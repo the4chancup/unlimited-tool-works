@@ -615,12 +615,17 @@ fn compare_bytes(red: &[u8], ours: &[u8]) -> (&'static str, String) {
     )
 }
 
-/// The model decoded, every texture's directory dropped and its name read with the compiler's
-/// kit spelling: the directories are the relocation the tiers allow, checked by the texture
-/// rows instead.
+/// The model decoded, the anti-blur copies stripped and the meshes' requests cleared — a
+/// difference by design, Red's output carrying the copies the conversion no longer writes —
+/// and every texture's directory dropped and its name read with the compiler's kit spelling:
+/// the directories are the relocation the tiers allow, checked by the texture rows instead.
 fn decoded_model(bytes: &[u8]) -> Result<Model, String> {
     let file = fmdl::FmdlFile::read(bytes).map_err(|error| error.to_string())?;
     let mut model = Model::from_file(&file).map_err(|error| error.to_string())?;
+    fmdl::ops::antiblur::decode(&mut model).map_err(|error| error.to_string())?;
+    for mesh in &mut model.meshes {
+        mesh.has_antiblur_meshes = false;
+    }
     for material in &mut model.materials {
         for (_, texture) in &mut material.textures {
             texture.directory = String::new();
@@ -732,11 +737,6 @@ fn compare_fmdl(red: &[u8], ours: &[u8]) -> (&'static str, String) {
                 (
                     "shadow_flags",
                     red_mesh.shadow_flags != our_mesh.shadow_flags,
-                ),
-                (
-                    "antiblur flags",
-                    (red_mesh.has_antiblur_meshes, red_mesh.is_antiblur_mesh)
-                        != (our_mesh.has_antiblur_meshes, our_mesh.is_antiblur_mesh),
                 ),
                 (
                     "custom_bounding_box",

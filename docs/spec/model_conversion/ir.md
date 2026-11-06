@@ -97,8 +97,9 @@ pub struct BoundingBox { pub min: [f32; 4], pub max: [f32; 4] }
 
 Shapes this settled after reading the format crates (each is a decision entry): vertices are a
 struct of arrays, not a `Vec<Vertex>`; `Bone.children` is gone (derivable, and a second copy to
-keep in step through folds and prunes); `Mesh` carries no `alpha_flags`/`shadow_flags`/anti-blur
-fields (lifted to the material's `fox` table, see "Engine mapping") and no `split_group_id` (the
+keep in step through folds and prunes); `Mesh` carries no `alpha_flags`/`shadow_flags`
+fields (lifted to the material's `fox` table, see "Engine mapping"), no anti-blur field (the IR
+does not know anti-blur: "Anti-blur duplicates" below) and no `split_group_id` (the
 importers call the format crates' split *decode*, so an imported mesh is whole unless its group
 was too large to be, see below; a glTF `PES_mesh`
 identity is Phase 7's); `extension_headers` are sets of raw header lines, since both format
@@ -153,7 +154,6 @@ pub struct Material {
     pub family: MaterialFamily,                  // Shaded | Shadeless | Metal | Glass
     pub two_sided: Option<bool>,
     pub transparent: Option<bool>,
-    pub antiblur: Option<bool>,
     pub textures: Vec<(TextureRole, usize)>,     // canonical role → index into `textures`
     pub parameters: Vec<(String, [f32; 4])>,     // engine-neutral shader parameters
     pub fox: Option<FoxMaterial>,
@@ -334,6 +334,22 @@ material parsing (not the structure pass), so a missing texture reports
 `mtl_texture_not_found` / `fmdl_texture_not_found` at that stage, not during
 shallow validation.
 
+### Anti-blur duplicates
+
+The FMDL exporter writes no anti-blur duplicates, and the IR does not know the concept: no
+`Material` field and no `materials.toml` key ask for them (`spec/model_format.md` "Engine-neutral
+keys"). FoxDen's TAA removal script keeps models on Forward shaders sharp, so the copies would
+only draw every mesh twice. The FMDL importer still strips them (`antiblur::decode`), so a
+converted model never carries them, and splits a material by its meshes' alpha and shadow flags
+only, never by their anti-blur request, which nothing downstream reads. The Team compiler's
+pass-through route (a native FMDL packed as it is) neither looks for the copies nor touches
+them, and `fmdl`'s merge, which assembles native parts on that route, takes parts whatever their
+anti-blur state ("Extension algorithms" below). `fmdl` keeps `antiblur::encode` as an operation
+of the format: its tests and the Export upgrader's fixtures build anti-blur files with it. The
+Export upgrader drops the copies once, at the upgrade (`spec/export_upgrader.md` step 7). The
+Blender add-on adds them on its own, outside this repository (`python_bindings` only reads and
+writes the formats).
+
 ### Extension algorithms (one implementation each)
 
 Each format extension (mesh splitting, anti-blur, split vertex encoding) lives in the format crate
@@ -346,7 +362,7 @@ implementation:
 |-----------|-------------|---------------------|---------------------|
 | FMDL mesh splitting | `fmdl` | `fmdl_to_ir` | `ir_to_fmdl` |
 | .model mesh splitting | `pes_model` | `model_to_ir` | `ir_to_model` |
-| FMDL anti-blur | `fmdl` | `fmdl_to_ir` | `ir_to_fmdl` |
+| FMDL anti-blur | `fmdl` | `fmdl_to_ir` | none: the export writes no duplicates |
 | Split vertex encoding (FMDL) | `fmdl` | `fmdl_to_ir` | `ir_to_fmdl` |
 | Split vertex encoding (.model) | `pes_model` | `model_to_ir` | `ir_to_model` |
 
@@ -372,9 +388,9 @@ roundtrips").
 bounding box is the union of the parts' boxes, since a bone's box covers every vertex weighted
 to it; per-mesh bone groups remapped), meshes and mesh groups concatenated, materials merged by name (same-name materials with
 differing definitions rejected), buffers and headers rebuilt. A part with repeated bone names
-is refused (union by name is ambiguous), and so are parts whose anti-blur requests are encoded
-in some and not in others: the merged model declares anti-blur only when every requesting part
-carries its duplicates, so a later `antiblur::encode` never skips one. It is not an IR operation: the Team
+is refused (union by name is ambiguous). Parts merge whatever their anti-blur state: every mesh
+is kept as it is and the parts' extension flags are OR-ed, since nothing encodes anti-blur after
+a merge. It is not an IR operation: the Team
 compiler calls it directly to assemble multi-part models and to bake Common-linked models into
 player FMDLs on Fox targets, where the engine cannot load models from the Common folder (see "Common
 model links and model merging" in the [Team compiler plan](../team_compiler/README.md)). The pre-Fox
@@ -433,8 +449,8 @@ the slot's skeleton in place of the template, as it packs a member's `.skl` of t
 ### Roundtrip testing
 
 The IR enables lossless roundtrip tests for same-format paths (see `testing.md` "Testing: IR roundtrips").
-Cross-format roundtrips (FMDL→.model→FMDL) are lossy in known, accepted ways (anti-blur regenerated,
-mesh splits may differ). The IR preserves the metadata so the losses are explicit, not accidental.
+Cross-format roundtrips (FMDL→.model→FMDL) are lossy in known, accepted ways (anti-blur duplicates
+dropped, mesh splits may differ). The IR preserves the metadata so the losses are explicit, not accidental.
 
 ### Data loss behavior
 
@@ -449,7 +465,7 @@ The existing direct converters are already lossy:
 Routing through the IR doesn't add new data loss, and removes the last one: bind transforms travel
 in `Bone.matrix` from the `.skl` or the `.model`'s inline bone table to whichever format is written
 (see "Skeleton in `.model`"). The other losses happen at different pipeline points. The IR
-preserves metadata (e.g., `Material.antiblur`), so if exporting back to FMDL, the metadata is
-available.
+preserves metadata (e.g., a material's `fox` table), so if exporting back to FMDL, the metadata
+is available.
 
 ---
