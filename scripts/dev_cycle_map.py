@@ -15,7 +15,7 @@ STAGES = ["Plan", "Accept", "Brief", "Build", "Review", "Measure", "Close and re
 BANDS = [
     ("maintainer", "Maintainer", "--b-maint"),
     ("docs", "Documents", "--b-docs"),
-    ("lead", "Lead (Claude)", "--b-lead"),
+    ("lead", "Lead (Opus)", "--b-lead"),
     ("sidekick", "Sidekick (SWE-2)", "--b-side"),
     ("reviewers", "Reviewers", "--b-rev"),
     ("checks", "Tests and gates", "--b-check"),
@@ -287,7 +287,7 @@ if (localStorage.getItem("crate_map_theme") === "light")
 </script></head><body>
 <button id="theme" type="button"></button>
 <h1>Unlimited Tool Works: how work moves from a plan to a release</h1>
-<p>Each row is one participant, each column one stage. The lead (Claude) plans, briefs, reviews
+<p>Each row is one participant, each column one stage. The lead (Opus) plans, briefs, reviews
 and talks to the maintainer; the sidekick (SWE-2) implements; three reviewer families critique
 what the lead writes, cheapest first; tests, gates and mutation runs measure what reading cannot.
 Every arrow points from a step to one it feeds. Details live in <code>AGENTS.md</code>,
@@ -317,6 +317,10 @@ const nodes = [...svg.querySelectorAll(".node")];
 const about = document.getElementById("about");
 const hint = about.firstElementChild;
 let pinned = null;
+// Leaving a box waits before the map falls back to the pinned one (or to none): moving
+// from one box to the next crossed the gap between them, and the whole map flickered.
+const HOVER_OFF_MS = 150;
+let leaving = null;
 function show(name) {
   for (const edge of edges) edge.classList.remove("uses", "usedby");
   const node = nodes.find(n => n.dataset.name === name);
@@ -345,8 +349,13 @@ function pin(name) {
   history.replaceState(null, "", address);
 }
 for (const node of nodes) {
-  node.addEventListener("mouseenter", () => show(node.dataset.name));
-  node.addEventListener("mouseleave", () => show(pinned));
+  node.addEventListener("mouseenter", () => {
+    clearTimeout(leaving);
+    show(node.dataset.name);
+  });
+  node.addEventListener("mouseleave", () => {
+    leaving = setTimeout(() => show(pinned), HOVER_OFF_MS);
+  });
   node.addEventListener("click", event => {
     event.stopPropagation();
     pin(node.dataset.name === pinned ? null : node.dataset.name);

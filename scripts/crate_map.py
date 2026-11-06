@@ -365,6 +365,10 @@ const about = document.getElementById("about");
 const hint = about.firstElementChild;
 // The crate a click or the address chose; a hover shows another only while it lasts.
 let pinned = null;
+// Leaving a box waits before the map falls back to the pinned one (or to none): moving
+// from one box to the next crossed the gap between them, and the whole map flickered.
+const HOVER_OFF_MS = 150;
+let leaving = null;
 function show(name) {{
   for (const edge of edges) edge.classList.remove("uses", "usedby");
   const node = nodes.find(n => n.dataset.name === name);
@@ -396,8 +400,13 @@ function pin(name) {{
   history.replaceState(null, "", address);
 }}
 for (const node of nodes) {{
-  node.addEventListener("mouseenter", () => show(node.dataset.name));
-  node.addEventListener("mouseleave", () => show(pinned));
+  node.addEventListener("mouseenter", () => {{
+    clearTimeout(leaving);
+    show(node.dataset.name);
+  }});
+  node.addEventListener("mouseleave", () => {{
+    leaving = setTimeout(() => show(pinned), HOVER_OFF_MS);
+  }});
   node.addEventListener("click", event => {{
     event.stopPropagation();
     pin(node.dataset.name === pinned ? null : node.dataset.name);
