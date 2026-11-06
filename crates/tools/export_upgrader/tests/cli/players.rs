@@ -1158,10 +1158,6 @@ fn order_then_number_pair_the_renumbered_saves_folders() {
         "XXX12 - ACKNOWLEDGED",
     ] {
         face(&sandbox, &format!("co Spring/Faces/{slot}"));
-        sandbox.write(
-            &format!("co Spring/Faces/{slot}/fcl_hair.fmdl"),
-            slot.as_bytes(),
-        );
     }
     // Every model carries its folder's own text, so a wrong pairing shows
     // in the copied bytes, not only in the findings.

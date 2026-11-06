@@ -7505,8 +7505,11 @@ briefs, review loops, gates and mutation runs as for any step.
       "A-poc57u", "A-poc6c A1", "A-poc6c A2"): poc5/7 0 accepted, poc6's code 0, its tests 5,
       all test gaps, fixed by a SWE-2 sidekick (brief `.tmp/0_0_2/poc/brief_a2_fix.md`): the
       three name sources table-driven, order by folder number not listing, IDs counted not
-      wearers, name before not-worn, EU-PLY-25 by bytes. Open: SWE-2 over those tests, then
-      Astra A2 r2 (handover queue)
+      wearers, name before not-worn, EU-PLY-25 by bytes. SWE-2 over those tests (rulings
+      "S-poc6t r1"): 3 accepted, three more rules pinned (equal counts for the order rule,
+      the number rule's own-kind ID, a stock ID never missing), loop ended. Astra A2 r2: one
+      nit (the stock boundary held at boots 100), fixed; the review loops of poc5-7's upgrader
+      half end. Open: the one `mutants-diff` queued over them (8.36c's line)
     - [x] 0.0.2-poc5 a model hidden by distance dropped (`plans/export_upgrader.md` "What it
       does", the 0.0.2-poc5 cleanup; `model_far_dropped`; EU-MDL-24; new `far.rs`,
       `upgrade.rs`, `model_folders.rs`, `messages.rs`, tests `cli/carried.rs`): whole models

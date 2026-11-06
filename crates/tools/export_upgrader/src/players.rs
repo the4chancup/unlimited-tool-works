@@ -3103,24 +3103,32 @@ mod tests {
         let files = files(&["Boots/k2701 - Other/boots.fmdl"]);
         let roster = wearing(&[(5, ("SaveA", 2500, 0)), (6, ("SaveB", 2500, 0))]);
         let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
-        for slot in ["05", "06"] {
-            assert!(
-                plan.findings.iter().any(|m| {
-                    m.code.code == "wearer_by_order"
-                        && matches!(
-                            &m.scope,
-                            Scope::Folder { path, .. } if path.as_str() == "Boots/k2701 - Other"
-                        )
-                        && m.context
-                            == [
-                                ("slot".to_owned(), slot.to_owned()),
-                                ("id".to_owned(), "2500".to_owned()),
-                            ]
-                }),
-                "{slot}: {:?}",
-                plan.findings
-            );
-        }
+        let mut by_order: Vec<Vec<(String, String)>> = plan
+            .findings
+            .iter()
+            .filter(|m| {
+                m.code.code == "wearer_by_order"
+                    && matches!(
+                        &m.scope,
+                        Scope::Folder { path, .. } if path.as_str() == "Boots/k2701 - Other"
+                    )
+            })
+            .map(|m| m.context.clone())
+            .collect();
+        by_order.sort();
+        assert_eq!(
+            by_order,
+            [
+                [
+                    ("slot".to_owned(), "05".to_owned()),
+                    ("id".to_owned(), "2500".to_owned()),
+                ],
+                [
+                    ("slot".to_owned(), "06".to_owned()),
+                    ("id".to_owned(), "2500".to_owned()),
+                ],
+            ]
+        );
         assert!(
             plan.findings
                 .iter()
@@ -3161,5 +3169,106 @@ mod tests {
             ]
         );
         assert!(!plan.not_worn.contains(&(ItemKind::Boots, 2780)));
+    }
+
+    #[test]
+    fn the_order_rule_needs_as_many_missing_ids_as_unworn_folders() {
+        // Two missing boots IDs beside one unworn boots folder: the counts
+        // differ so the order rule does not fire, each wearer is refused
+        // his own ID, and the folder drops as a leftover.
+        let files = files(&["Boots/k2701 - Other/boots.fmdl"]);
+        let roster = wearing(&[(5, ("SaveA", 2500, 0)), (6, ("SaveB", 2600, 0))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        assert!(
+            plan.findings
+                .iter()
+                .all(|m| m.code.code != "wearer_by_order"),
+            "{:?}",
+            plan.findings
+        );
+        let mut refused: Vec<Vec<(String, String)>> = plan
+            .findings
+            .iter()
+            .filter(|m| m.code.code == "custom_model_unpaired")
+            .map(|m| m.context.clone())
+            .collect();
+        refused.sort();
+        assert_eq!(
+            refused,
+            [
+                [
+                    ("slot".to_owned(), "05".to_owned()),
+                    ("key".to_owned(), "boots_id".to_owned()),
+                    ("id".to_owned(), "2500".to_owned()),
+                ],
+                [
+                    ("slot".to_owned(), "06".to_owned()),
+                    ("key".to_owned(), "boots_id".to_owned()),
+                    ("id".to_owned(), "2600".to_owned()),
+                ],
+            ]
+        );
+        assert!(plan.leftovers.contains("Boots/k2701 - Other/boots.fmdl"));
+    }
+
+    #[test]
+    fn the_number_rule_needs_the_id_missing_of_its_own_kind() {
+        // `k2452 - Ann` pairs the missing boots 2600 by name; `g2452`
+        // shares its number, but no gloves ID is missing, so the number
+        // rule does not fire and the folder drops as a leftover.
+        let files = files(&[
+            "Faces/XXX05 - Ann/face.fmdl",
+            "Boots/k2452 - Ann/boots.fmdl",
+            "Gloves/g2452 - Other/glove_l.fmdl",
+        ]);
+        let roster = wearing(&[(5, ("SaveA", 2600, 3))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        assert_eq!(
+            finding_at(&plan, "wearer_by_name", "Boots/k2452 - Ann").context,
+            [
+                ("slot".to_owned(), "05".to_owned()),
+                ("id".to_owned(), "2600".to_owned()),
+            ]
+        );
+        assert!(
+            plan.findings
+                .iter()
+                .all(|m| m.code.code != "wearer_by_number"),
+            "{:?}",
+            plan.findings
+        );
+        assert!(plan.leftovers.contains("Gloves/g2452 - Other/glove_l.fmdl"));
+        assert!(
+            plan.findings
+                .iter()
+                .all(|m| m.code.code != "custom_model_unpaired"),
+            "{:?}",
+            plan.findings
+        );
+    }
+
+    #[test]
+    fn a_stock_item_is_never_missing() {
+        // Stock IDs (at or under 100) are never missing: the unworn folder
+        // beside them pairs nothing and drops as a leftover. Boots 100, the
+        // last stock ID, so the boundary itself is held.
+        let files = files(&["Boots/k2701 - Other/boots.fmdl"]);
+        let roster = wearing(&[(5, ("SaveA", 100, 3))]);
+        let plan = plan_with_bytes(&files, Some(&roster), Engine::Fox, &[]);
+        assert!(
+            plan.findings
+                .iter()
+                .all(|m| !m.code.code.starts_with("wearer_by_")),
+            "{:?}",
+            plan.findings
+        );
+        assert!(
+            plan.findings
+                .iter()
+                .all(|m| m.code.code != "custom_model_unpaired"),
+            "{:?}",
+            plan.findings
+        );
+        assert!(plan.leftovers.contains("Boots/k2701 - Other/boots.fmdl"));
     }
 }
