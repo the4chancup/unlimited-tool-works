@@ -15680,8 +15680,9 @@ Decision: an uncompressed source texture is written uncompressed (A8R8G8B8: a DD
 15-17, an FTEX of format 0 on PES 18-21) on every version, except a kit's main texture for PES
 15-17, which is still encoded to BC1 or BC3 (a normal map, too, is still encoded to DXT5nm,
 whose channel layout the shader reads). Encoding them again is reconsidered only with the
-GPU's BC7, and then not for a texture relying on zero alpha, a UV Step timing texture, or one
-under a size floor of about 6 MiB (the maintainer).
+GPU's BC7, and then not for a texture relying on zero alpha or one under a size floor of
+about 6 MiB, a floor chosen to cover every UV Step timing texture without telling them apart
+(the maintainer).
 Why: uncompressed textures are rare and saved that way for a reason that block compression
 breaks: BC1 and BC3 lose much quality, BC7 does not reliably keep zero alpha, and UV Step
 timing textures suffer visibly. PES 15-17 place the seasonal logos into the main kit texture in

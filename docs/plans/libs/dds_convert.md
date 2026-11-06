@@ -92,8 +92,9 @@ on PES 15–17 (the texture the uniform models map as their color, not its mask 
 
 Encoding uncompressed sources again is reconsidered only once the GPU's BC7 is in, and then
 not for every one: BC7 does not reliably keep a pixel's alpha at zero, so a texture relying
-on it for full transparency stays uncompressed; a UV Step timing texture stays uncompressed;
-and a texture under a size floor (about 6 MiB) stays as it is.
+on it for full transparency stays uncompressed, and a texture under a size floor of about 6
+MiB stays as it is. The floor is what keeps UV Step timing textures uncompressed: they are
+all small, so it covers every one without telling them apart from other textures.
 
 → verify: an uncompressed DDS compiled for PES 21 is an FTEX of format 0 whose decode equals
 the source's; for PES 17 a DDS in the A8R8G8B8 layout with the same decode; an uncompressed
