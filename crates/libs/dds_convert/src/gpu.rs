@@ -597,13 +597,17 @@ mod tests {
             mips: vec![patterned_rgba(6, 10)],
             blocks: None,
             authored_mips: false,
+            uncompressed: false,
         };
-        let target = crate::Target {
-            version: pes_version::PesVersion::Pes21,
-            role: crate::TextureRole::Color,
-        };
-        let gpu_out = crate::convert_with_gpu(&decoded, target, &mut gpu).unwrap();
-        let cpu_out = crate::convert(&decoded, target).unwrap();
+        let emit = encode::emitted_mips(&decoded);
+        let gpu_blocks =
+            encode::encode_mips(crate::BlockCodec::Bc7, &emit, None, Some(&mut gpu)).unwrap();
+        let cpu_blocks = encode::encode_mips(crate::BlockCodec::Bc7, &emit, None, None).unwrap();
+        let format = encode::pixel_format(crate::BlockCodec::Bc7);
+        let gpu_out =
+            encode::container(pes_version::PesVersion::Pes21, format, 6, 10, &gpu_blocks).unwrap();
+        let cpu_out =
+            encode::container(pes_version::PesVersion::Pes21, format, 6, 10, &cpu_blocks).unwrap();
         let info = ftex::info(&gpu_out).unwrap();
         assert_eq!(info, ftex::info(&cpu_out).unwrap());
         // The 64-byte header holds layout fields only; the mip records after
@@ -620,11 +624,7 @@ mod tests {
             );
         }
         assert_eq!(gpu.unavailable(), None);
-        assert_eq!(
-            gpu.mips_on_device(),
-            crate::mips::chain_len(6, 10) as usize,
-            "the GPU took every mip"
-        );
+        assert_eq!(gpu.mips_on_device(), emit.len(), "the GPU took every mip");
     }
 
     #[test]
@@ -641,14 +641,13 @@ mod tests {
             mips: vec![patterned_rgba(width, 4)],
             blocks: None,
             authored_mips: false,
+            uncompressed: false,
         };
-        let target = crate::Target {
-            version: pes_version::PesVersion::Pes21,
-            role: crate::TextureRole::Color,
-        };
-        let gpu_out = crate::convert_with_gpu(&decoded, target, &mut gpu).unwrap();
-        let cpu_out = crate::convert(&decoded, target).unwrap();
-        assert_eq!(gpu_out, cpu_out);
+        let emit = encode::emitted_mips(&decoded);
+        let gpu_blocks =
+            encode::encode_mips(crate::BlockCodec::Bc7, &emit, None, Some(&mut gpu)).unwrap();
+        let cpu_blocks = encode::encode_mips(crate::BlockCodec::Bc7, &emit, None, None).unwrap();
+        assert_eq!(gpu_blocks, cpu_blocks);
         assert!(
             gpu.unavailable().is_some(),
             "the device failure must mark the encoder"
@@ -656,9 +655,11 @@ mod tests {
         assert_eq!(gpu.mips_on_device(), 0);
         // Once down, it stays down: a texture it could take encodes on the CPU too.
         let decoded = crate::decode(PNG_OPAQUE, crate::SourceFormat::Png).unwrap();
-        let gpu_out = crate::convert_with_gpu(&decoded, target, &mut gpu).unwrap();
-        let cpu_out = crate::convert(&decoded, target).unwrap();
-        assert_eq!(gpu_out, cpu_out);
+        let emit = encode::emitted_mips(&decoded);
+        let gpu_blocks =
+            encode::encode_mips(crate::BlockCodec::Bc7, &emit, None, Some(&mut gpu)).unwrap();
+        let cpu_blocks = encode::encode_mips(crate::BlockCodec::Bc7, &emit, None, None).unwrap();
+        assert_eq!(gpu_blocks, cpu_blocks);
         assert!(gpu.unavailable().is_some());
         assert_eq!(gpu.mips_on_device(), 0);
     }
@@ -674,14 +675,13 @@ mod tests {
             mips: vec![patterned_rgba(64, 64)],
             blocks: None,
             authored_mips: false,
+            uncompressed: false,
         };
-        let target = crate::Target {
-            version: pes_version::PesVersion::Pes21,
-            role: crate::TextureRole::Color,
-        };
-        let gpu_out = crate::convert_with_gpu(&decoded, target, &mut gpu).unwrap();
-        let cpu_out = crate::convert(&decoded, target).unwrap();
-        assert_eq!(gpu_out, cpu_out);
+        let emit = encode::emitted_mips(&decoded);
+        let gpu_blocks =
+            encode::encode_mips(crate::BlockCodec::Bc7, &emit, None, Some(&mut gpu)).unwrap();
+        let cpu_blocks = encode::encode_mips(crate::BlockCodec::Bc7, &emit, None, None).unwrap();
+        assert_eq!(gpu_blocks, cpu_blocks);
         assert_eq!(gpu.unavailable(), None);
         assert_eq!(gpu.mips_on_device(), 0);
     }
@@ -697,14 +697,13 @@ mod tests {
             mips: vec![patterned_rgba(64, 64)],
             blocks: None,
             authored_mips: false,
+            uncompressed: false,
         };
-        let target = crate::Target {
-            version: pes_version::PesVersion::Pes21,
-            role: crate::TextureRole::Color,
-        };
-        let gpu_out = crate::convert_with_gpu(&decoded, target, &mut gpu).unwrap();
-        let cpu_out = crate::convert(&decoded, target).unwrap();
-        assert_eq!(gpu_out, cpu_out);
+        let emit = encode::emitted_mips(&decoded);
+        let gpu_blocks =
+            encode::encode_mips(crate::BlockCodec::Bc7, &emit, None, Some(&mut gpu)).unwrap();
+        let cpu_blocks = encode::encode_mips(crate::BlockCodec::Bc7, &emit, None, None).unwrap();
+        assert_eq!(gpu_blocks, cpu_blocks);
         assert!(gpu.unavailable().is_some());
         assert_eq!(gpu.mips_on_device(), 0);
     }

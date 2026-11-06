@@ -465,6 +465,7 @@ fn on_pes_17_a_refs_export_s_refkit_texture_replaces_the_template_s_beside_its_o
         Target {
             version: PesVersion::Pes17,
             role: TextureRole::Color,
+            keep_uncompressed: true,
         },
     )
     .unwrap();
@@ -1099,6 +1100,7 @@ fn on_pes_17_a_ref_marker_replaces_the_template_prop_texture_and_nothing_else() 
         Target {
             version: PesVersion::Pes17,
             role: TextureRole::Color,
+            keep_uncompressed: true,
         },
     )
     .unwrap();

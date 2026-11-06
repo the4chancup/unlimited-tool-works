@@ -140,6 +140,7 @@ pub(crate) fn decode_raster(bytes: &[u8], format: SourceFormat) -> Result<Decode
         mips: vec![pixels],
         blocks: None,
         authored_mips: false,
+        uncompressed: false,
     })
 }
 

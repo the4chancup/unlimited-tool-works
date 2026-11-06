@@ -24,7 +24,7 @@ use crate::compile::{
 };
 use crate::deploy::templates_folder;
 use crate::models::face_package;
-use crate::prefox_faces::{card_materials, card_model, face_cpk, small_dds};
+use crate::prefox_faces::{CLEAN, card_materials, card_model, compile_pes17, face_cpk, small_dds};
 use crate::{CLEAN_PLAYER, clean_model, command_args, findings_of};
 
 /// The player's texture home, the per-player common subfolder.
@@ -108,7 +108,7 @@ fn assert_decodes_as(bytes: &[u8], codec: BlockCodec, label: &str) {
 
 // TC-TEX-01
 #[test]
-fn a_png_skin_is_bc7_with_a_full_mip_chain_on_pes_21_and_bc3_on_pes_18() {
+fn a_png_skin_is_bc3_with_a_full_mip_chain_on_pes_21_and_pes_18() {
     let sandbox = Sandbox::new("tex_png_skin");
     write_skin_player(
         &sandbox,
@@ -120,7 +120,7 @@ fn a_png_skin_is_bc7_with_a_full_mip_chain_on_pes_21_and_bc3_on_pes_18() {
     let skin = format!("{PLAYER_TEXTURES}/skin.ftex");
 
     for (version, format, codec) in [
-        (21, PixelFormat::Bc7, BlockCodec::Bc7),
+        (21, PixelFormat::Bc3, BlockCodec::Bc3),
         (18, PixelFormat::Bc3, BlockCodec::Bc3),
     ] {
         let emitted = compile_entry(&sandbox, "co Midcup Skin", version, &skin);
@@ -271,6 +271,7 @@ fn an_opaque_skin_is_bc1_and_its_normal_map_bc3_with_x_in_alpha_y_in_green_on_pe
         Target {
             version: PesVersion::Pes18,
             role: TextureRole::Normal,
+            keep_uncompressed: true,
         },
     )
     .unwrap();
@@ -315,7 +316,7 @@ fn png_and_tga_kit_textures_are_ftex_under_the_kit_s_names_and_a_webp_portrait_i
     let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
     for (name, width, height, mipmaps) in [("u0714p1", 256, 128, 9), ("u0714p1_back", 128, 64, 8)] {
         let info = ftex::info(&entries[&kit_texture(name)]).unwrap();
-        assert_eq!(info.format, PixelFormat::Bc7, "{name}");
+        assert_eq!(info.format, PixelFormat::Bc1, "{name}");
         assert_eq!(
             (info.width, info.height, info.mipmaps),
             (width, height, mipmaps),
@@ -367,6 +368,7 @@ fn bc1_dds_levels(width: u32, height: u32, levels: u32) -> Vec<u8> {
             mips: blocks,
         }),
         authored_mips: true,
+        uncompressed: false,
     };
     encode_dds(&decoded, BlockCodec::Bc1).unwrap()
 }
@@ -624,7 +626,7 @@ fn a_kit_texture_finding_drops_the_kit() {
 
 // TC-CHK-04
 #[test]
-fn a_4096_kit_drops_on_pes_17_and_compiles_on_pes_21_and_an_uncompressed_kit_is_bc7() {
+fn a_4096_kit_drops_on_pes_17_and_an_uncompressed_main_texture_is_argb8_on_pes_21() {
     let sandbox = Sandbox::new("tex_kit_too_big");
     sandbox.write(
         "exports/co Midcup Kit/Kits/p1/kit.dds",
@@ -657,9 +659,13 @@ fn a_4096_kit_drops_on_pes_17_and_compiles_on_pes_21_and_an_uncompressed_kit_is_
     let pre_fox_kit =
         |name: &str| format!("common/character0/model/character/uniform/texture/{name}.dds");
     assert!(!entries.contains_key(&pre_fox_kit("u0714p1")));
-    assert!(entries.contains_key(&pre_fox_kit("u0714p2")));
+    // p2's uncompressed main texture is encoded on PES 15-17, which soft-crash on one.
+    let emitted = wezlib::decompress_if_wrapped(&entries[&pre_fox_kit("u0714p2")]).unwrap();
+    let layout = ftex::dds::read_layout(&emitted).unwrap();
+    assert_eq!(layout.pixel, ftex::dds::DdsPixel::Format(PixelFormat::Bc3));
 
-    // On Fox a kit's main texture has no size limit of its own: p1 compiles too.
+    // On Fox a kit's main texture has no size limit of its own: p1 compiles too, and p2's
+    // uncompressed one keeps its layout.
     let compile = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
     assert_eq!(
         findings_of(&compile.messages(), "co Midcup Kit"),
@@ -669,7 +675,33 @@ fn a_4096_kit_drops_on_pes_17_and_compiles_on_pes_21_and_an_uncompressed_kit_is_
     assert_eq!(compiled_kits(&sandbox), ["u0714p1", "u0714p2"]);
     let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
     let info = ftex::info(&entries[&kit_texture("u0714p2")]).unwrap();
-    assert_eq!(info.format, PixelFormat::Bc7);
+    assert_eq!(info.format, PixelFormat::Argb8);
+}
+
+// TC-TEX-01
+#[test]
+fn an_uncompressed_player_texture_stays_uncompressed_on_pes_17() {
+    let sandbox = Sandbox::new("tex_uncompressed_skin");
+    let export = "co Midcup Uncompressed";
+    let player = format!("exports/{export}/Players/05 - A");
+    sandbox.write(&format!("{player}/face_high.model"), &card_model());
+    sandbox.write(&format!("{player}/face_high.mtl"), &card_materials());
+    sandbox.write(&format!("{player}/skin.dds"), &uncompressed_dds());
+
+    let entries = compile_pes17(&sandbox, export, &CLEAN);
+
+    let skin = &entries["common/character1/model/character/uniform/common/714/05 - A/skin.dds"];
+    let plain = wezlib::decompress_if_wrapped(skin).unwrap();
+    let layout = ftex::dds::read_layout(&plain).unwrap();
+    assert_eq!(
+        layout.pixel,
+        ftex::dds::DdsPixel::Format(PixelFormat::Argb8)
+    );
+    assert_eq!(
+        decode(&plain, SourceFormat::Dds).unwrap().mips,
+        decode(&uncompressed_dds(), SourceFormat::Dds).unwrap().mips,
+        "the source's own levels, alpha and all"
+    );
 }
 
 // TC-TEX-12
@@ -938,7 +970,7 @@ fn a_common_texture_and_a_shared_folder_s_texture_in_png_are_emitted_as_ftex() {
             .get(path)
             .unwrap_or_else(|| panic!("no {path} among {:?}", entries.keys()));
         let info = ftex::info(emitted).unwrap();
-        assert_eq!(info.format, PixelFormat::Bc7, "{path}");
+        assert_eq!(info.format, PixelFormat::Bc1, "{path}");
         assert_eq!(
             (info.width, info.height, info.mipmaps),
             (256, 128, 9),

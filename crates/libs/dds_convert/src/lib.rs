@@ -158,6 +158,10 @@ pub struct Decoded {
     /// level count is kept on encode; false for raster sources, which get a
     /// generated chain down to 1x1.
     pub authored_mips: bool,
+    /// True when the source was a DDS or FTEX stored uncompressed (any
+    /// layout the crate reads, R8/L8 included); false for block-compressed
+    /// and raster sources.
+    pub uncompressed: bool,
 }
 
 /// The version and role a conversion targets.
@@ -167,6 +171,9 @@ pub struct Target {
     pub version: PesVersion,
     /// Whether the texture is color data or a normal map.
     pub role: TextureRole,
+    /// Whether an uncompressed source is written uncompressed (in the
+    /// A8R8G8B8 layout); `false` asks for an encode.
+    pub keep_uncompressed: bool,
 }
 
 /// Decodes an accepted source to RGBA8 mips plus any compressed blocks it
@@ -190,8 +197,9 @@ pub fn decode(bytes: &[u8], format: SourceFormat) -> Result<Decoded, ConvertErro
 }
 
 /// Applies the codec rules to a decoded texture: compatible compressed
-/// blocks pass through with only a container rebuild, everything else is
-/// re-encoded per target and role. Returns a DDS for PES 15-17, an FTEX
+/// blocks pass through with only a container rebuild, an uncompressed
+/// source whose target keeps it is written uncompressed, everything else
+/// is re-encoded per target and role. Returns a DDS for PES 15-17, an FTEX
 /// for PES 18-21.
 ///
 /// # Errors
@@ -878,6 +886,7 @@ mod tests {
             mips: vec![vec![]],
             blocks: None,
             authored_mips: false,
+            uncompressed: false,
         };
         assert!(matches!(
             convert(
@@ -885,6 +894,7 @@ mod tests {
                 Target {
                     version: PesVersion::Pes17,
                     role: TextureRole::Color,
+                    keep_uncompressed: true,
                 }
             ),
             Err(ConvertError::InvalidDecoded("past 4 GiB"))
@@ -937,15 +947,7 @@ mod tests {
         use block_compression::encode::compress_rgba8;
         use block_compression::{BC7Settings, CompressionVariant};
         let decoded = decode(PNG_OPAQUE, SourceFormat::Png).unwrap();
-        let ftex = convert(
-            &decoded,
-            Target {
-                version: PesVersion::Pes21,
-                role: TextureRole::Color,
-            },
-        )
-        .unwrap();
-        let round_dds = ftex::ftex_to_dds(&ftex).unwrap();
+        let round_dds = encode_dds(&decoded, BlockCodec::Bc7).unwrap();
         let layout = ftex::dds::read_layout(&round_dds).unwrap();
         assert_eq!(
             layout.pixel,
@@ -978,15 +980,7 @@ mod tests {
             128,
         );
         assert_ne!(alpha, opaque_blocks);
-        let translucent_ftex = convert(
-            &translucent,
-            Target {
-                version: PesVersion::Pes21,
-                role: TextureRole::Color,
-            },
-        )
-        .unwrap();
-        let translucent_round = ftex::ftex_to_dds(&translucent_ftex).unwrap();
+        let translucent_round = encode_dds(&translucent, BlockCodec::Bc7).unwrap();
         let translucent_layout = ftex::dds::read_layout(&translucent_round).unwrap();
         assert_eq!(
             &translucent_round
@@ -1096,6 +1090,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes21,
                 role: TextureRole::Color,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1119,6 +1114,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes17,
                 role: TextureRole::Color,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1136,6 +1132,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes21,
                 role: TextureRole::Normal,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1164,6 +1161,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes17,
                 role: TextureRole::Color,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1186,12 +1184,166 @@ mod tests {
             Target {
                 version: PesVersion::Pes18,
                 role: TextureRole::Color,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
         assert_eq!(&ftex[..4], b"FTEX");
         let round = decode(&ftex, SourceFormat::Ftex).unwrap();
         assert_not_worse_than_reference("pes18 bc3", &truth, &round.mips, &source, &reference_bc3);
+    }
+
+    /// The pixel format an emitted container declares, FTEX or DDS.
+    fn emitted_format(output: &[u8]) -> ftex::PixelFormat {
+        if output.starts_with(b"FTEX") {
+            return ftex::info(output).unwrap().format;
+        }
+        match ftex::dds::read_layout(output).unwrap().pixel {
+            ftex::dds::DdsPixel::Format(format) => format,
+            ftex::dds::DdsPixel::Uncompressed { .. } => {
+                panic!("a layout with no FTEX format")
+            }
+        }
+    }
+
+    /// An A8R8G8B8 DDS (the canonical legacy header) of `rgba_mips`, each
+    /// level's RGBA8 pixels stored B,G,R,A per pixel.
+    fn argb8_dds(width: u32, height: u32, rgba_mips: &[Vec<u8>]) -> Vec<u8> {
+        let mut dds = ftex::dds::header_bytes(
+            ftex::PixelFormat::Argb8,
+            width,
+            height,
+            rgba_mips.len() as u32,
+        );
+        for mip in rgba_mips {
+            for pixel in mip.as_chunks::<4>().0 {
+                dds.extend_from_slice(&[pixel[2], pixel[1], pixel[0], pixel[3]]);
+            }
+        }
+        dds
+    }
+
+    #[test]
+    fn an_encode_is_bc1_or_bc3_on_every_version_never_bc7() {
+        let alpha = decode(PNG, SourceFormat::Png).unwrap();
+        let opaque = decode(PNG_OPAQUE, SourceFormat::Png).unwrap();
+        for version in PesVersion::ALL {
+            for role in [TextureRole::Color, TextureRole::Normal] {
+                for decoded in [&alpha, &opaque] {
+                    let output = convert(
+                        decoded,
+                        Target {
+                            version,
+                            role,
+                            keep_uncompressed: true,
+                        },
+                    )
+                    .unwrap();
+                    assert_ne!(
+                        emitted_format(&output),
+                        ftex::PixelFormat::Bc7,
+                        "{version} {role:?}"
+                    );
+                }
+            }
+        }
+        // The two cases the codec pick weighs: alpha makes BC3, opaque BC1; a
+        // normal-role source is BC3 (DXT5nm) whatever its alpha.
+        let target = |role| Target {
+            version: PesVersion::Pes21,
+            role,
+            keep_uncompressed: true,
+        };
+        assert_eq!(
+            emitted_format(&convert(&alpha, target(TextureRole::Color)).unwrap()),
+            ftex::PixelFormat::Bc3
+        );
+        assert_eq!(
+            emitted_format(&convert(&opaque, target(TextureRole::Color)).unwrap()),
+            ftex::PixelFormat::Bc1
+        );
+        assert_eq!(
+            emitted_format(&convert(&opaque, target(TextureRole::Normal)).unwrap()),
+            ftex::PixelFormat::Bc3
+        );
+    }
+
+    #[test]
+    fn an_uncompressed_source_keeps_its_layout_when_the_target_asks() {
+        // 8x4 with two authored levels, alpha 0 in some pixels: every byte
+        // different so a swapped or dropped channel shows.
+        let level = |pixels: u32| {
+            (0..pixels)
+                .flat_map(|i| [i as u8, (i * 7) as u8, (255 - i) as u8, (i % 3) as u8])
+                .collect::<Vec<u8>>()
+        };
+        let source = argb8_dds(8, 4, &[level(32), level(8)]);
+        let decoded = decode(&source, SourceFormat::Dds).unwrap();
+        assert!(decoded.uncompressed);
+        let target = |version, role, keep_uncompressed| Target {
+            version,
+            role,
+            keep_uncompressed,
+        };
+
+        // PES 21: an FTEX of format 0 (Argb8) whose decode is the source's,
+        // alpha-0 pixels and the second level included.
+        let ftex = convert(
+            &decoded,
+            target(PesVersion::Pes21, TextureRole::Color, true),
+        )
+        .unwrap();
+        assert_eq!(ftex::info(&ftex).unwrap().format, ftex::PixelFormat::Argb8);
+        assert_eq!(
+            decode(&ftex, SourceFormat::Ftex).unwrap().mips,
+            decoded.mips
+        );
+
+        // PES 17: a DDS in the same A8R8G8B8 layout, the same decode.
+        let dds = convert(
+            &decoded,
+            target(PesVersion::Pes17, TextureRole::Color, true),
+        )
+        .unwrap();
+        let layout = ftex::dds::read_layout(&dds).unwrap();
+        assert_eq!(
+            layout.pixel,
+            ftex::dds::DdsPixel::Format(ftex::PixelFormat::Argb8)
+        );
+        assert_eq!(decode(&dds, SourceFormat::Dds).unwrap().mips, decoded.mips);
+
+        // `keep_uncompressed` false encodes: alpha pixels make it BC3; the R8
+        // fixture below, whose decode is fully opaque, makes BC1.
+        let encoded = convert(
+            &decoded,
+            target(PesVersion::Pes21, TextureRole::Color, false),
+        )
+        .unwrap();
+        assert_eq!(emitted_format(&encoded), ftex::PixelFormat::Bc3);
+
+        // A normal-role source encodes either way: BC3 in the DXT5nm layout.
+        for keep_uncompressed in [true, false] {
+            let encoded = convert(
+                &decoded,
+                target(PesVersion::Pes21, TextureRole::Normal, keep_uncompressed),
+            )
+            .unwrap();
+            assert_eq!(
+                emitted_format(&encoded),
+                ftex::PixelFormat::Bc3,
+                "keep_uncompressed {keep_uncompressed}"
+            );
+        }
+
+        // An R8 source kept comes back as A8R8G8B8: the same decode; asked to
+        // encode, its opaque pixels are BC1.
+        let r8 = decode(R8_DDS, SourceFormat::Dds).unwrap();
+        assert!(r8.uncompressed);
+        let ftex = convert(&r8, target(PesVersion::Pes21, TextureRole::Color, true)).unwrap();
+        assert_eq!(ftex::info(&ftex).unwrap().format, ftex::PixelFormat::Argb8);
+        assert_eq!(decode(&ftex, SourceFormat::Ftex).unwrap().mips, r8.mips);
+        let encoded = convert(&r8, target(PesVersion::Pes21, TextureRole::Color, false)).unwrap();
+        assert_eq!(emitted_format(&encoded), ftex::PixelFormat::Bc1);
     }
 
     #[test]
@@ -1208,6 +1360,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes17,
                 role: TextureRole::Color,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1247,6 +1400,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes17,
                 role: TextureRole::Color,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1264,23 +1418,25 @@ mod tests {
             &mips_of(BC1_D)[..1],
         );
 
-        // PES 21 color -> BC7 FTEX, whole chain.
+        // PES 21 color -> BC3 FTEX, whole chain.
         let ftex = convert(
             &decoded,
             Target {
                 version: PesVersion::Pes21,
                 role: TextureRole::Color,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
         assert_eq!(&ftex[..4], b"FTEX");
+        assert_eq!(ftex::info(&ftex).unwrap().format, ftex::PixelFormat::Bc3);
         let round = decode(&ftex, SourceFormat::Ftex).unwrap();
         assert_not_worse_than_reference(
-            "png -> pes21 bc7",
+            "png -> pes21 bc3",
             &generated,
             &round.mips,
             &source,
-            &mips_of(BC7_D),
+            &mips_of(BC3_D),
         );
     }
 
@@ -1299,6 +1455,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes17,
                 role: TextureRole::Normal,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1323,6 +1480,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes18,
                 role: TextureRole::Normal,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1345,6 +1503,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes21,
                 role: TextureRole::Normal,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1374,6 +1533,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes21,
                 role: TextureRole::Color,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1384,6 +1544,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes17,
                 role: TextureRole::Color,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1465,6 +1626,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes17,
                 role: TextureRole::Color,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1544,6 +1706,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes21,
                 role: TextureRole::Normal,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1568,6 +1731,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes17,
                 role: TextureRole::Normal,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1594,6 +1758,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes17,
                 role: TextureRole::Normal,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1814,6 +1979,7 @@ mod tests {
         let target = Target {
             version: PesVersion::Pes17,
             role: TextureRole::Color,
+            keep_uncompressed: true,
         };
         let base = || decode(BC3, SourceFormat::Dds).unwrap();
         let refuse = |decoded: &Decoded, what: &str| {
@@ -1889,6 +2055,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes17,
                 role: TextureRole::Color,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1897,6 +2064,7 @@ mod tests {
             Target {
                 version: PesVersion::Pes17,
                 role: TextureRole::Normal,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -1984,6 +2152,7 @@ mod tests {
         let target = Target {
             version: PesVersion::Pes17,
             role: TextureRole::Color,
+            keep_uncompressed: true,
         };
         let first = converter
             .convert(hash, BC3, SourceFormat::Dds, target, CachePolicy::Use)
@@ -2001,6 +2170,7 @@ mod tests {
                 Target {
                     version: PesVersion::Pes18,
                     role: TextureRole::Color,
+                    keep_uncompressed: true,
                 },
                 CachePolicy::Use,
             )
@@ -2017,6 +2187,7 @@ mod tests {
                 Target {
                     version: PesVersion::Pes21,
                     role: TextureRole::Color,
+                    keep_uncompressed: true,
                 },
                 CachePolicy::Bypass,
             )
@@ -2032,10 +2203,12 @@ mod tests {
         let pes21 = Target {
             version: PesVersion::Pes21,
             role: TextureRole::Color,
+            keep_uncompressed: true,
         };
         let pes17 = Target {
             version: PesVersion::Pes17,
             role: TextureRole::Color,
+            keep_uncompressed: true,
         };
         let wrapped_bc3 = wezlib::compress(BC3);
         let cases: [(&[u8], SourceFormat, Target, &[u8]); 2] = [
@@ -2085,6 +2258,7 @@ mod tests {
                 Target {
                     version: PesVersion::Pes17,
                     role: TextureRole::Color,
+                    keep_uncompressed: true,
                 },
                 ftex::PixelFormat::Bc3,
             ),
@@ -2093,6 +2267,7 @@ mod tests {
                 Target {
                     version: PesVersion::Pes17,
                     role: TextureRole::Normal,
+                    keep_uncompressed: true,
                 },
                 ftex::PixelFormat::Bc3,
             ),
@@ -2242,6 +2417,7 @@ mod tests {
             let target = Target {
                 version: PesVersion::Pes21,
                 role: TextureRole::Color,
+                keep_uncompressed: true,
             };
             let converted = ftex::info(&convert(&decoded, target).unwrap()).unwrap();
             assert_eq!(probed.mipmaps, u32::from(converted.mipmaps), "{name}");

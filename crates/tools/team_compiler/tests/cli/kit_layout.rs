@@ -430,6 +430,7 @@ pub(crate) fn bc1_dds(width: u32, height: u32, color: impl Fn(u32, u32) -> [u8; 
         mips: vec![pixels],
         blocks: None,
         authored_mips: false,
+        uncompressed: false,
     };
     encode_dds(&decoded, BlockCodec::Bc1).unwrap()
 }

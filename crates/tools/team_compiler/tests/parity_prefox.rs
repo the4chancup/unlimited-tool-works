@@ -106,13 +106,6 @@ enum Nested {
     /// source unwrapped and its header in one canonical form: mip count 1 with its flags):
     /// the header itself is not compared, its decoding is.
     Texture,
-    /// Tier 2: relocated, and encoded from an uncompressed source to the codec named (raster
-    /// sources are block-compressed on PES 15-17): the same
-    /// dimensions, and the same pixels in every mip once both are decoded, the reference's
-    /// still uncompressed. Exact, not within an encoder's
-    /// error: the one such texture, `k2012_sr.dds`, is a single flat color (opaque black),
-    /// which BC1 encodes losslessly; a noisy source added here needs a measured tolerance.
-    Encoded(&'static [u8; 4]),
 }
 
 const NESTED: &[(&str, Nested)] = &[
@@ -146,7 +139,7 @@ const NESTED: &[(&str, Nested)] = &[
     ("glove_sr.dds", Nested::Texture),
     ("k2012_c.dds", Nested::Texture),
     ("k2012_n.dds", Nested::Texture),
-    ("k2012_sr.dds", Nested::Encoded(b"DXT1")),
+    ("k2012_sr.dds", Nested::Texture),
 ];
 
 /// A `face.xml` `<model>` entry: its type, model path and material path.
@@ -216,9 +209,9 @@ fn relocated_materials(bytes: &[u8]) -> Vec<pes_model::format::mtl::Material> {
         for entry in &mut material.entries {
             if let MaterialEntry::Sampler(sampler) = entry
                 && let Some(name) = sampler.path.strip_prefix("./")
-                && NESTED.iter().any(|(texture, row)| {
-                    *texture == name && matches!(row, Nested::Texture | Nested::Encoded(_))
-                })
+                && NESTED
+                    .iter()
+                    .any(|(texture, row)| *texture == name && matches!(row, Nested::Texture))
             {
                 sampler.path = format!("{RELOCATED}{name}");
             }
@@ -338,7 +331,7 @@ fn compare_face_cpk(
                     }
                 }
             }
-            Nested::Texture | Nested::Encoded(_) => {
+            Nested::Texture => {
                 accounted.push(relocated.clone());
                 let Some(our_bytes) = ours.get(&relocated) else {
                     failures.push(format!("{name}: no {relocated} in our CPK"));
@@ -351,31 +344,11 @@ fn compare_face_cpk(
                         "tier2 {name}: {width}x{height}, reference {ref_width}x{ref_height}"
                     ));
                 }
-                match row {
-                    Nested::Encoded(expected) => {
-                        if codec != **expected {
-                            failures.push(format!(
-                                "tier2 {name}: codec {codec:?}, expected {expected:?}"
-                            ));
-                        }
-                        if decoded_mips(our_bytes) != decoded_mips(reference) {
-                            failures.push(format!("tier2 {name}: decoded mips differ"));
-                        }
-                        if ref_codec != [0; 4] {
-                            failures.push(format!(
-                                "the reference's {name} is no longer uncompressed: the row no longer tests an encoding"
-                            ));
-                        }
-                    }
-                    Nested::Texture => {
-                        if (codec, &payload) != (ref_codec, &ref_payload) {
-                            failures.push(format!("tier2 {name}: codec or pixels differ"));
-                        }
-                        if decoded_mips(our_bytes) != decoded_mips(reference) {
-                            failures.push(format!("tier2 {name}: decoded mips differ"));
-                        }
-                    }
-                    _ => {}
+                if (codec, &payload) != (ref_codec, &ref_payload) {
+                    failures.push(format!("tier2 {name}: codec or pixels differ"));
+                }
+                if decoded_mips(our_bytes) != decoded_mips(reference) {
+                    failures.push(format!("tier2 {name}: decoded mips differ"));
                 }
             }
         }

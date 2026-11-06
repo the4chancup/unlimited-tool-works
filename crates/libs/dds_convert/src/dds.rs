@@ -54,6 +54,9 @@ pub(crate) fn decode_dds(dds: &[u8]) -> Result<Decoded, ConvertError> {
         mips,
         blocks,
         authored_mips: true,
+        // A block codec is the only `DdsPixel` `block_codec` names: none
+        // means the mips decoded through channel masks, stored uncompressed.
+        uncompressed: codec.is_none(),
     })
 }
 

@@ -107,7 +107,8 @@ fn level_moves(drawn_for: KitLayout, width: u32, height: u32) -> Vec<Move> {
 /// every other texel keeps its value. A BC1 or BC3 source keeps its blocks wherever no
 /// destination rectangle reaches and has the others encoded afresh, so its conversion passes
 /// the kit's blocks through as before; any other source comes back as pixels alone, encoded
-/// whole by its conversion. Size, mip count and `authored_mips` are the source's. The copy
+/// whole by its conversion. Size, mip count, `authored_mips` and the uncompressed record are
+/// the source's. The copy
 /// returned is the caller's to charge; the re-decode a BC1 or BC3 source's blocks need is
 /// charged to `budget` here, while it lives.
 ///
@@ -133,6 +134,7 @@ pub(super) fn relaid(
         mips,
         blocks: None,
         authored_mips: decoded.authored_mips,
+        uncompressed: decoded.uncompressed,
     };
     let Some(blocks) = &decoded.blocks else {
         return Ok(relaid);
@@ -378,6 +380,7 @@ pub(super) fn number_atlas_rearranged(
         mips: vec![pixels],
         blocks: None,
         authored_mips: false,
+        uncompressed: decoded.uncompressed,
     }))
 }
 
@@ -442,6 +445,7 @@ mod tests {
             mips: vec![pixels(width, height, color)],
             blocks: None,
             authored_mips: false,
+            uncompressed: false,
         }
     }
 

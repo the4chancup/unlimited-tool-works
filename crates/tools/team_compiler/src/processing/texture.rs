@@ -142,7 +142,7 @@ pub(super) fn folder_textures(
         for (file, role) in source_files {
             match role {
                 PlayerFile::Texture { below, format } => {
-                    let bytes = convert(ctx, format, file.path.name(), &take(files, file))?;
+                    let bytes = convert(ctx, format, file.path.name(), &take(files, file), true)?;
                     copies
                         .entry(vtree::fold_name(&below))
                         .or_default()
@@ -487,12 +487,14 @@ pub(super) fn common_texture(
         "planning lists a Common texture, the marker included, by an extension `dds_convert` \
          accepts",
     );
-    convert(ctx, format, name, &take(files, file))
+    convert(ctx, format, name, &take(files, file), true)
 }
 
 /// The texture file `name`, in `format`, converted for the run's version through its
 /// converter: an FTEX on every Fox target, a DDS on pre-Fox, in the codec the version reads,
 /// with the mip chain a raster source lacks generated, in the role the file's stem gives it.
+/// `keep_uncompressed` is `Target`'s: whether an uncompressed source is written uncompressed
+/// (`false` only for a kit's main texture on PES 15-17, which soft-crash on one).
 /// On pre-Fox a WESYS-wrapped DDS whose blocks the conversion keeps as they are is returned as
 /// it is, still wrapped, which the game reads as it reads a plain DDS. A plain cube-map DDS is
 /// never decoded: it goes out as it is on pre-Fox and as the FTEX cube map
@@ -504,6 +506,7 @@ pub(super) fn convert(
     format: SourceFormat,
     name: &str,
     bytes: &[u8],
+    keep_uncompressed: bool,
 ) -> Result<Vec<u8>, TextureError> {
     // The converter decodes into one 2D image and refuses a cube map, which the game takes on
     // both engines: on pre-Fox the DDS as it is, on Fox the FTEX cube map the container
@@ -522,6 +525,7 @@ pub(super) fn convert(
     let target = Target {
         version: ctx.version,
         role: texture_role(file_stem(name)),
+        keep_uncompressed,
     };
     // A decode may happen inside the converter, so one is charged before the call. Only the
     // converter knows whether it will decode (blocks the target keeps are rewrapped without
@@ -750,10 +754,12 @@ mod tests {
         let dds = tracer_kit();
         let decoded = decode(&dds, SourceFormat::Dds).unwrap();
         for version in [PesVersion::Pes18, PesVersion::Pes21] {
-            let converted = convert(&context(version), SourceFormat::Dds, "kit.dds", &dds).unwrap();
+            let converted =
+                convert(&context(version), SourceFormat::Dds, "kit.dds", &dds, true).unwrap();
             let target = Target {
                 version,
                 role: TextureRole::Color,
+                keep_uncompressed: true,
             };
             assert_eq!(
                 converted,
@@ -766,6 +772,7 @@ mod tests {
             SourceFormat::Dds,
             "kit.dds",
             b"not a DDS",
+            true,
         )
         .unwrap_err();
         let TextureError::Other(error) = error else {
@@ -784,6 +791,7 @@ mod tests {
             SourceFormat::Dds,
             "kit.dds",
             &wrapped,
+            true,
         )
         .unwrap();
         assert!(on_pes_17 == wrapped, "the wrapped source as it is");
@@ -794,11 +802,13 @@ mod tests {
             SourceFormat::Dds,
             "kit.dds",
             &wrapped,
+            true,
         )
         .unwrap();
         let fox = Target {
             version: PesVersion::Pes21,
             role: TextureRole::Color,
+            keep_uncompressed: true,
         };
         assert!(on_pes_21 == dds_convert::convert(&decoded, fox).unwrap());
         // A normal map keeps no BC1 blocks: the wrapped source is converted, to the BC3 its
@@ -808,11 +818,13 @@ mod tests {
             SourceFormat::Dds,
             "kit_nrm.dds",
             &wrapped,
+            true,
         )
         .unwrap();
         let pre_fox_normal = Target {
             version: PesVersion::Pes17,
             role: TextureRole::Normal,
+            keep_uncompressed: true,
         };
         assert!(normal == dds_convert::convert(&decoded, pre_fox_normal).unwrap());
     }
@@ -845,6 +857,7 @@ mod tests {
             SourceFormat::Png,
             "odd.png",
             &texture_fixture("odd.png"),
+            true,
         )
         .unwrap();
         let info = ftex::info(&converted).unwrap();
@@ -858,7 +871,8 @@ mod tests {
                 &context(PesVersion::Pes21),
                 SourceFormat::Dds,
                 "skin.dds",
-                &texture_fixture("bc6h.dds")
+                &texture_fixture("bc6h.dds"),
+                true,
             )),
             (Code::TextureCodecUnsupported, "skin.dds".to_owned())
         );
@@ -873,6 +887,7 @@ mod tests {
             SourceFormat::Dds,
             "skin.dds",
             &texture_fixture("single_level.dds"),
+            true,
         )
         .unwrap();
         let info = ftex::info(&converted).unwrap();

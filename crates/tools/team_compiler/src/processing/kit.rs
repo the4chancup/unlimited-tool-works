@@ -202,16 +202,23 @@ pub(super) fn kit(
         if derives_colors && *stem == "kit" && texture.is_some() {
             derived = derived_colors(&ctx.budget, format, file_name, &bytes);
         }
+        // PES 15-17 edit a kit's main texture in memory to place the seasonal
+        // logos and soft-crash on an uncompressed one, so only it is encoded
+        // there; every other uncompressed source keeps its layout.
+        let keep_uncompressed = match engine {
+            Engine::PreFox => *stem != "kit",
+            Engine::Fox => true,
+        };
         let converted = match drawn_for_other {
             Some(drawn_for) if UV_MAPPED_STEMS.contains(stem) && texture.is_some() => {
-                relaid_texture(ctx, format, file_name, &bytes, drawn_for)?
+                relaid_texture(ctx, format, file_name, &bytes, drawn_for, keep_uncompressed)?
             }
             // By its shape alone, whatever the marker: the marker is about the textures the
             // uniform models map.
             Some(_) | None if NUMBER_ATLAS_STEMS.contains(stem) => {
                 number_atlas(ctx, format, file_name, &bytes)?
             }
-            Some(_) | None => texture::convert(ctx, format, file_name, &bytes)?,
+            Some(_) | None => texture::convert(ctx, format, file_name, &bytes, keep_uncompressed)?,
         };
         entries.push((paths::kit_texture(engine, name), converted));
     }
@@ -361,18 +368,19 @@ fn number_atlas(
     let size = dds_convert::probe(bytes, format).map_err(failure)?;
     if kit_layout::atlas_arrangement(size.width, size.height).is_none_or(|drawn_as| drawn_as == to)
     {
-        return texture::convert(ctx, format, file_name, bytes);
+        return texture::convert(ctx, format, file_name, bytes, true);
     }
     let _decode_charge = texture::decode_charge(&ctx.budget, bytes, format).map_err(failure)?;
     let decoded = decode(bytes, format).map_err(failure)?;
     let Some(atlas) = kit_layout::number_atlas_rearranged(&decoded, to).map_err(failure)? else {
         // Not reached: a decode has the size its header gives. Converted as it is all the same.
-        return texture::convert(ctx, format, file_name, bytes);
+        return texture::convert(ctx, format, file_name, bytes, true);
     };
     let _atlas_charge = ctx.budget.charge(atlas.mips.iter().map(Vec::len).sum());
     let target = Target {
         version: ctx.version,
         role: TextureRole::Color,
+        keep_uncompressed: true,
     };
     dds_convert::convert(&atlas, target).map_err(failure)
 }
@@ -380,7 +388,8 @@ fn number_atlas(
 /// The kit texture `file_name` the uniform models map (its main texture, its mask or its srm),
 /// in `format`, holding `bytes`, drawn for the `drawn_for` layout: decoded, re-laid out for
 /// the other one (`kit_layout::relaid`) and converted for the run's version. Not through the
-/// run's converter, whose cache holds a source file's own conversion, which this is not. A
+/// run's converter, whose cache holds a source file's own conversion, which this is not.
+/// `keep_uncompressed` is `Target`'s, as `kit` computes it per stem. A
 /// failure is the file's, as `texture::convert`'s are. The decode and its re-laid copy are
 /// charged to the run's budget until the conversion is done.
 fn relaid_texture(
@@ -389,6 +398,7 @@ fn relaid_texture(
     file_name: &str,
     bytes: &[u8],
     drawn_for: KitLayout,
+    keep_uncompressed: bool,
 ) -> Result<Vec<u8>, TextureError> {
     let failure = |error| texture::conversion_failure(file_name, error);
     let _decode_charge = texture::decode_charge(&ctx.budget, bytes, format).map_err(failure)?;
@@ -405,6 +415,7 @@ fn relaid_texture(
     let target = Target {
         version: ctx.version,
         role: TextureRole::Color,
+        keep_uncompressed,
     };
     dds_convert::convert(&relaid, target).map_err(failure)
 }

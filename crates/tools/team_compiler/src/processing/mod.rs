@@ -1574,6 +1574,7 @@ mod tests {
             dds_convert::SourceFormat::Dds,
             "ref_marker.dds",
             &dds,
+            true,
         )
         .unwrap();
         assert!(batch.entries[0].1 == converted, "converted as a texture");
@@ -1894,6 +1895,7 @@ mod tests {
                 mips: vec![block.repeat(16 * 16)],
             }),
             authored_mips: true,
+            uncompressed: false,
         };
         dds_convert::encode_dds(&decoded, dds_convert::BlockCodec::Bc1).unwrap()
     }
@@ -2264,6 +2266,7 @@ mod tests {
         let target = dds_convert::Target {
             version: PesVersion::Pes21,
             role: dds_convert::TextureRole::Color,
+            keep_uncompressed: true,
         };
         let relaid = dds_convert::convert(
             &kit_layout::relaid(&MemoryBudget::new(usize::MAX), &decoded, KitLayout::PreFox)
@@ -2289,6 +2292,7 @@ mod tests {
             dds_convert::Target {
                 version: PesVersion::Pes21,
                 role: dds_convert::TextureRole::Color,
+                keep_uncompressed: true,
             },
         )
         .unwrap();
@@ -2343,6 +2347,7 @@ mod tests {
             mips: vec![pixels],
             blocks: None,
             authored_mips: false,
+            uncompressed: false,
         };
         dds_convert::encode_dds(&decoded, dds_convert::BlockCodec::Bc1).unwrap()
     }
@@ -2423,7 +2428,14 @@ mod tests {
             false,
         );
         let as_it_is = |file_name: &str, bytes: &[u8]| {
-            texture::convert(&context, dds_convert::SourceFormat::Dds, file_name, bytes).unwrap()
+            texture::convert(
+                &context,
+                dds_convert::SourceFormat::Dds,
+                file_name,
+                bytes,
+                true,
+            )
+            .unwrap()
         };
         assert_eq!(kit_entry(&batch, "_back"), as_it_is("kit_back.dds", &row));
         assert_eq!(kit_entry(&batch, "_name"), as_it_is("kit_name.dds", &name));

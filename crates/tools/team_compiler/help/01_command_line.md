@@ -36,8 +36,10 @@ line `portrait_conflict` and the whole export is skipped, since the compiler can
 one is meant. A texture (a player's, a shared folder's, a Common one, a kit's or a
 portrait) can be a `.dds`, `.ftex`, `.png`, `.jpg`, `.bmp`, `.webp`, `.tga` or `.tif` file
 (`.jpeg` and `.tiff` work too). Each
-is converted to what the chosen PES version reads: BC7 for PES 2019 to 2021, and BC3 for
-PES 2015 to 2018 (BC1 when the image has no transparency at all). A `.dds` or `.ftex` already in a
+is converted to what the chosen PES version reads: BC3, or BC1 when the image has no
+transparency at all. A `.dds` or `.ftex` stored uncompressed stays uncompressed on every
+version, except a kit's main `kit` texture on PES 2015 to 2017: those versions write the
+season's logos into it in memory and crash on an uncompressed one. A `.dds` or `.ftex` already in a
 format the version reads keeps its compressed blocks, packed into the version's own container
 (a `.dds` as an `.ftex` on PES 2018 to 2021, a `.ftex` as a `.dds` on PES 2015 to 2017).
 Whatever its codec, a `.dds` or `.ftex` keeps the mip levels it brings, and an image of any

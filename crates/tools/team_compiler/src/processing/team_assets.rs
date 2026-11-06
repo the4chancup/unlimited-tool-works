@@ -572,6 +572,7 @@ mod tests {
                     .collect(),
             }),
             authored_mips: true,
+            uncompressed: false,
         };
         encode_dds(&decoded, BlockCodec::Bc1).unwrap()
     }

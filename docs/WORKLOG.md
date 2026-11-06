@@ -7545,7 +7545,12 @@ briefs, review loops, gates and mutation runs as for any step.
     0.0.2-poc bundle (the maintainer, 2026-11-06); brief `.tmp/0_0_2/poc/brief_nobc7.md`,
     launched once the A2 test sidekick ends. With it, uncompressed sources stay uncompressed
     (`plans/libs/dds_convert.md` "Uncompressed sources stay uncompressed (0.0.2)"; DECISIONS
-    2026-11-06), a pre-Fox main kit texture excepted. → verify also: the maintainer's PES 21
+    2026-11-06), a pre-Fox main kit texture excepted. Code landed (SWE-2 sidekick, the commit
+    "no BC7 encoding; uncompressed sources stay uncompressed"): `select_codec` never BC7,
+    `Decoded::uncompressed`, `Target::keep_uncompressed`, the Team compiler's main-kit flag;
+    pre-Fox parity's `k2012_sr.dds` now matches Red's uncompressed output; the GPU tests
+    call `encode_mips` directly (`just gpu-tests` not run here). Open: the spec move of both
+    plan sections, the re-timing and the in-game check below. → verify also: the maintainer's PES 21
     test compile (`.tmp/release_0_0_1/0_0_1/manual_run2`, about 1:30 with BC7) re-timed;
     its 45 DXT5 sources pass through either way, and its three uncompressed 4096 × 4096
     sources (`kit.dds` twice, one `shirt.dds`) were the only BC7 encodes and now encode

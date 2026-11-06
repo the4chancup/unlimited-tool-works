@@ -450,6 +450,7 @@ mod tests {
             mips: vec![pixels.into_iter().flatten().collect()],
             blocks: None,
             authored_mips: false,
+            uncompressed: false,
         }
     }
 

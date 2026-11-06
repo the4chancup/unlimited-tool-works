@@ -728,6 +728,7 @@ fn flat_dds(color: [u8; 4]) -> Vec<u8> {
         mips: vec![[color; 4 * 4].concat()],
         blocks: None,
         authored_mips: false,
+        uncompressed: false,
     };
     dds_convert::encode_dds(&decoded, dds_convert::BlockCodec::Bc1).unwrap()
 }

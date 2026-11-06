@@ -39,9 +39,36 @@ pub(crate) fn convert(
         );
     }
 
+    // An uncompressed color source goes out uncompressed in the A8R8G8B8
+    // layout, which stores B,G,R,A per pixel, the decode's R and B swapped.
+    // A member stores a texture uncompressed on purpose (alpha that must stay
+    // exactly zero, UV Step timing), which block compression damages. A
+    // normal-role source encodes anyway: the shader reads the DXT5nm layout.
+    if decoded.uncompressed && target.keep_uncompressed && target.role == TextureRole::Color {
+        let emit = emitted_mips(decoded);
+        let bgra: Vec<Vec<u8>> = emit
+            .iter()
+            .map(|mip| {
+                mip.pixels
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .flat_map(|pixel| [pixel[2], pixel[1], pixel[0], pixel[3]])
+                    .collect()
+            })
+            .collect();
+        return container(
+            target.version,
+            ftex::PixelFormat::Argb8,
+            decoded.width,
+            decoded.height,
+            &bgra,
+        );
+    }
+
     let emit = emitted_mips(decoded);
     let normal_layout = target.role == TextureRole::Normal || is_bc5_source(decoded);
-    let codec = select_codec(target, normal_layout, &emit);
+    let codec = select_codec(normal_layout, &emit);
     let layout = normal_layout.then(|| target.version.engine());
     let blocks = encode_mips(codec, &emit, layout, gpu)?;
     container(
@@ -116,7 +143,7 @@ pub(crate) fn emitted_mips(decoded: &Decoded) -> Vec<Mip<'_>> {
 /// A usable `gpu` encodes the BC7 mips of a texture it can take (`gpu` is
 /// always `None` on wasm); BC1/BC3, normal maps and everything else stay on
 /// the CPU.
-fn encode_mips(
+pub(crate) fn encode_mips(
     codec: BlockCodec,
     emit: &[Mip],
     normal_layout: Option<Engine>,
@@ -171,14 +198,13 @@ fn is_bc5_source(decoded: &Decoded) -> bool {
 }
 
 /// The output codec when encoding is needed: normal maps are always BC3 in
-/// the DXT5nm layout; color on PES 19-21 is BC7; on PES 15-18 fully opaque
-/// color is BC1 and anything with alpha is BC3.
-fn select_codec(target: Target, normal_layout: bool, emit: &[Mip]) -> BlockCodec {
+/// the DXT5nm layout; a fully opaque color texture is BC1 and anything with
+/// alpha is BC3, on every version. BC7 is never chosen here: its CPU encoder
+/// is too slow for a compile (half a minute on one face texture where BC3
+/// costs a blink).
+fn select_codec(normal_layout: bool, emit: &[Mip]) -> BlockCodec {
     if normal_layout {
         return BlockCodec::Bc3;
-    }
-    if target.version >= PesVersion::Pes19 {
-        return BlockCodec::Bc7;
     }
     if emit.iter().all(|mip| fully_opaque(&mip.pixels)) {
         return BlockCodec::Bc1;
