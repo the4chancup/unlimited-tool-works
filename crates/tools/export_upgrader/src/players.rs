@@ -821,42 +821,38 @@ fn pair_wearers(
     loop {
         let mut progress = false;
         for kind in [ItemKind::Boots, ItemKind::Gloves] {
-            loop {
-                let mut fired = false;
-                let (state, other_state) = {
-                    let (boots, gloves) = kinds.split_at_mut(1);
-                    match kind {
-                        ItemKind::Boots => (&mut boots[0], &gloves[0]),
-                        ItemKind::Gloves => (&mut gloves[0], &boots[0]),
-                    }
+            // One pass pairs all the number rule can this turn: the other
+            // kind's pairings do not change during it, and this kind's
+            // missing IDs and unworn folders only shrink.
+            let (state, other_state) = {
+                let (boots, gloves) = kinds.split_at_mut(1);
+                match kind {
+                    ItemKind::Boots => (&mut boots[0], &gloves[0]),
+                    ItemKind::Gloves => (&mut gloves[0], &boots[0]),
+                }
+            };
+            for index in state.unworn.clone() {
+                let (folder, number, _) = &state.folders[index];
+                let Some(other_folder) = other_state
+                    .folders
+                    .iter()
+                    .find(|(_, other_number, _)| other_number == number)
+                    .map(|(folder, _, _)| *folder)
+                else {
+                    continue;
                 };
-                for index in state.unworn.clone() {
-                    let (folder, number, _) = &state.folders[index];
-                    let Some(other_folder) = other_state
-                        .folders
-                        .iter()
-                        .find(|(_, other_number, _)| other_number == number)
-                        .map(|(folder, _, _)| *folder)
-                    else {
-                        continue;
-                    };
-                    let Some(&(id, _)) = other_state.paired.get(other_folder) else {
-                        continue;
-                    };
-                    if !state.missing.contains_key(&id) {
-                        continue;
-                    }
-                    state.paired.insert(
-                        (*folder).clone(),
-                        (id, PairRule::Number(other_folder.clone())),
-                    );
-                    state.missing.remove(&id);
-                    state.unworn.retain(|&other_index| other_index != index);
-                    fired = true;
+                let Some(&(id, _)) = other_state.paired.get(other_folder) else {
+                    continue;
+                };
+                if !state.missing.contains_key(&id) {
+                    continue;
                 }
-                if !fired {
-                    break;
-                }
+                state.paired.insert(
+                    (*folder).clone(),
+                    (id, PairRule::Number(other_folder.clone())),
+                );
+                state.missing.remove(&id);
+                state.unworn.retain(|&other_index| other_index != index);
                 progress = true;
             }
             let state = &mut kinds[kind.index()];
