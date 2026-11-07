@@ -15,7 +15,8 @@ pub fn redact_home(line: &str, home: Option<&str>) -> String {
 }
 
 /// `line` with every run of characters that spells `home` in any letter case, with `/`
-/// and `\` alike, written as `~`; the rest of the line as written.
+/// and `\` alike, written as `~`; the rest of the line as written. A separator may
+/// also be spelled `\\`, the escape a TOML or JSON basic string writes for one.
 fn redact_any_spelling(line: &str, home: &str) -> String {
     let same = |a: char, b: char| {
         matches!((a, b), ('/' | '\\', '/' | '\\')) || a.to_lowercase().eq(b.to_lowercase())
@@ -27,6 +28,14 @@ fn redact_any_spelling(line: &str, home: &str) -> String {
         for wanted in home.chars() {
             let found = chars.next().filter(|found| same(wanted, *found))?;
             len += found.len_utf8();
+            // A `\\` pair is one escaped separator: its second backslash
+            // belongs to the spelling too.
+            if matches!(wanted, '/' | '\\') && found == '\\' && chars.as_str().starts_with('\\') {
+                len += chars
+                    .next()
+                    .expect("the pair's second backslash")
+                    .len_utf8();
+            }
         }
         Some(len)
     };
@@ -67,6 +76,20 @@ mod tests {
         assert_eq!(
             redact_home("opened c:\\users\\alice\\x", home),
             "opened ~\\x"
+        );
+    }
+
+    /// A `\` inside a TOML or JSON basic string is written `\\`: the
+    /// escaped pair spells the one separator, so a home folder in a
+    /// double-quoted value is redacted too.
+    #[cfg(windows)]
+    // ST-RUN-07
+    #[test]
+    fn redact_home_matches_the_escaped_separator_of_a_quoted_string() {
+        let home = Some("C:\\Users\\Alice");
+        assert_eq!(
+            redact_home("dir = \"C:\\\\Users\\\\Alice\\\\Games\"", home),
+            "dir = \"~\\\\Games\""
         );
     }
 

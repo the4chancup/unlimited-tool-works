@@ -628,7 +628,11 @@ mod tests {
         let dir = scratch("redact_extra");
         let recorder = Recorder::default();
         let settings = dir.join("settings.toml");
-        fs::write(&settings, "pes_folder_path = 'C:/Users/Alice/PES'\n").unwrap();
+        fs::write(
+            &settings,
+            "pes_folder_path = 'C:/Users/Alice/PES'\ndir = \"C:\\\\Users\\\\Alice\\\\Games\"\n",
+        )
+        .unwrap();
         let out = dir.join("repro.zip");
         recorder
             .write_bundle(
@@ -645,9 +649,16 @@ mod tests {
             "I copied the save to ~/Desktop",
             "the member's own text is redacted too"
         );
+        // The doubled backslashes of a basic string's escaped separator
+        // spell the home folder only where paths can be written that way.
+        let quoted = if cfg!(windows) {
+            "dir = \"~\\\\Games\""
+        } else {
+            "dir = \"C:\\\\Users\\\\Alice\\\\Games\""
+        };
         assert_eq!(
             zip_text(&out, "settings.toml"),
-            "pes_folder_path = '~/PES'\n",
+            format!("pes_folder_path = '~/PES'\n{quoted}\n"),
             "the extra's text is redacted"
         );
         assert_eq!(

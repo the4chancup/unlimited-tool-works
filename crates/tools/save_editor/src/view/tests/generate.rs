@@ -8,6 +8,8 @@ use pes_savefile::model::names::display_name;
 use pes_savefile::schema::ingame_face::IngameFaceField;
 use pes_savefile::settings_toml::{IngameFaceSettings, NameSetting, PlayerSettings};
 
+use crate::test_support::{journal_lines, zip_entry};
+
 use super::*;
 
 /// `version`'s fixture open with `(team_id, slot)` selected.
@@ -175,6 +177,25 @@ fn an_existing_settings_toml_keeps_its_comments() {
         settings
     };
     assert_eq!(parsed, expected, "the values are the record's");
+
+    // The file Write replaced is kept as an input, the written file the
+    // output.
+    let lines = journal_lines(&view.recorder, &dir);
+    assert!(
+        lines.contains(&format!("wrote {}", dir.join("settings.toml").display())),
+        "the write is a step: {lines:?}"
+    );
+    let bundle = dir.join("journal.zip");
+    assert_eq!(
+        zip_entry(&bundle, "inputs/1-settings.toml"),
+        b"# mine\nname = \"STALE\"\n",
+        "the replaced file's bytes are an input"
+    );
+    assert_eq!(
+        zip_entry(&bundle, "outputs/0-settings.toml"),
+        std::fs::read(dir.join("settings.toml")).unwrap(),
+        "the written file is the output"
+    );
 }
 
 // A settings.toml already in the folder that does not parse is shown as
@@ -206,6 +227,48 @@ fn an_unparsable_existing_settings_toml_is_the_error() {
     assert!(
         node_labeled(&nodes, Role::Button, "Write").is_disabled(),
         "Write stays disabled"
+    );
+}
+
+// The malformed file's `refused` step is recorded once for the folder,
+// not once per frame the dialog draws or per preview rebuild.
+#[test]
+fn a_malformed_settings_toml_records_its_refusal_once() {
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "generate_refusal_once", 701, 1);
+    let dir = crate::test_support::scratch("generate_refusal_once");
+    std::fs::write(dir.join("settings.toml"), "name = [\n").unwrap();
+    view.pick_folder_dialog = {
+        let dir = dir.clone();
+        Box::new(move || Some(dir.clone()))
+    };
+    player_menu_item(&mut window, &mut view, "Generate settings.toml");
+    let nodes = draw(&mut window, &mut view);
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Pick\u{2026}"),
+        &mut view,
+    );
+    // Frames where nothing changes read nothing again; an edit rebuilds
+    // the preview on the same folder, where the refusal still stands.
+    for _ in 0..3 {
+        draw(&mut window, &mut view);
+    }
+    let player_id = selected_id(&view, 701, 1);
+    let mut entry = player_entry(&view, player_id);
+    entry.basic.height = entry.basic.height.wrapping_add(1);
+    view.session.as_mut().unwrap().edit_player(1, entry);
+    draw(&mut window, &mut view);
+
+    let lines = journal_lines(&view.recorder, &dir);
+    let refused: Vec<&String> = lines
+        .iter()
+        .filter(|line| line.starts_with("refused "))
+        .collect();
+    assert_eq!(refused.len(), 1, "the refusal records once: {lines:?}");
+    assert!(
+        refused[0].contains(&dir.join("settings.toml").display().to_string()),
+        "the step names the file: {}",
+        refused[0]
     );
 }
 

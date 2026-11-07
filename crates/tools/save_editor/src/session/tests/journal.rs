@@ -192,14 +192,23 @@ fn every_model_change_records_its_steps() {
         )),
         "the undone roster field backwards: {lines:?}"
     );
+    // Only the redo's own appended lines: the journal already holds the
+    // field's line both ways, so a redo recorded backwards would pass a
+    // check over the whole list.
+    let before = journal_lines(&recorder, &dir).len();
     check_records(&mut session, &recorder, &dir, "redo", true, |session| {
         session.redo();
     });
     let lines = journal_lines(&recorder, &dir);
-    assert!(lines.contains(&"redo".to_owned()), "the redo header");
+    let appended = &lines[before..];
+    assert!(appended.contains(&"redo".to_owned()), "the redo header");
     assert!(
-        lines.contains(&"team 701: ShortName XYZ → ABC".to_owned()),
+        appended.contains(&"team 701: ShortName XYZ → ABC".to_owned()),
         "the team field forward again: {lines:?}"
+    );
+    assert!(
+        !appended.contains(&"team 701: ShortName ABC → XYZ".to_owned()),
+        "nothing backward in the redo: {lines:?}"
     );
 
     // A name the move's undo lines can hang on: the fixture's
@@ -225,14 +234,20 @@ fn every_model_change_records_its_steps() {
         lines.contains(&format!("player 70101: Name {name_02} → DISTINCT")),
         "the undone trade read as it happened: {lines:?}"
     );
+    // Same shape as the team's redo above: the appended lines only.
+    let before = journal_lines(&recorder, &dir).len();
     check_records(&mut session, &recorder, &dir, "redo", true, |session| {
         session.redo();
     });
+    let lines = journal_lines(&recorder, &dir);
+    let appended = &lines[before..];
     assert!(
-        journal_lines(&recorder, &dir)
-            .contains(&format!("player 70101: Name DISTINCT → {name_02}")),
-        "the redone trade: {:?}",
-        journal_lines(&recorder, &dir)
+        appended.contains(&format!("player 70101: Name DISTINCT → {name_02}")),
+        "the redone trade: {lines:?}"
+    );
+    assert!(
+        !appended.contains(&format!("player 70101: Name {name_02} → DISTINCT")),
+        "nothing backward in the redo: {lines:?}"
     );
     check_records(
         &mut session,

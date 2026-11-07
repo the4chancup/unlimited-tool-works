@@ -7,6 +7,7 @@
 //! hair or iris key; `ingame_face.toml` is the whole in-game face.
 //! The dialogs write no save, so the aesthetics lock does not gate them.
 
+use std::fmt;
 use std::path::{Path, PathBuf};
 
 use pes_savefile::EditFile;
@@ -15,6 +16,7 @@ use pes_savefile::settings_toml::PlayerSettings;
 use studio_core::widgets::{add_enabled, modal, modal_buttons, text_box};
 use studio_core::{Notice, NoticeKind};
 
+use crate::messages::TOOL_ID;
 use crate::session::journal;
 use crate::view::SaveView;
 
@@ -77,6 +79,9 @@ pub(crate) struct Generate {
     preview: Option<Preview>,
     /// The failure of the last Write (or `None`).
     error: Option<String>,
+    /// Whether the folder's own file's refusal is already in the journal:
+    /// one `refused` step per folder, not one per preview built.
+    refusal_recorded: bool,
 }
 
 /// The file's text as the dialog last built it, with what it was built
@@ -91,7 +96,37 @@ struct Preview {
     /// Whether that folder is a directory, Write's gate.
     is_dir: bool,
     /// `text`'s answer for that folder.
-    text: Result<String, String>,
+    text: Result<String, PreviewError>,
+}
+
+/// `text`'s `Err`: the line shown in the preview's place, and — for the
+/// folder's own file's read or parse error — that file and the bare
+/// error, which the journal records as `refused <path>` once per folder.
+struct PreviewError {
+    /// The line the dialog draws where the preview stands.
+    shown: String,
+    /// The folder's own file and its read or parse error, when `shown`
+    /// is that file's.
+    refused: Option<(PathBuf, String)>,
+}
+
+impl PreviewError {
+    /// An error of the generation, not of the folder's own file.
+    fn other(error: impl fmt::Display) -> PreviewError {
+        PreviewError {
+            shown: error.to_string(),
+            refused: None,
+        }
+    }
+
+    /// `path`'s read or parse `error`: shown naming the file, and kept
+    /// for the journal's `refused <path>`.
+    fn file(path: PathBuf, error: impl fmt::Display) -> PreviewError {
+        PreviewError {
+            shown: format!("{}: {error}", path.display()),
+            refused: Some((path, error.to_string())),
+        }
+    }
 }
 
 impl Generate {
@@ -104,6 +139,7 @@ impl Generate {
             folder: String::new(),
             preview: None,
             error: None,
+            refusal_recorded: false,
         }
     }
 }
@@ -113,23 +149,29 @@ impl Generate {
 /// folder's own file when one is there and parses (`update_toml`: its
 /// comments and every other key kept), else the template; for
 /// `ingame_face.toml` the record's face replacing whatever file is there.
-/// `Err` is the text the dialog shows where the preview stands: the first
-/// value `from_player` refuses, the existing file's read or parse error.
-fn text(file: &EditFile, player_id: u32, which: GenFile, folder: &Path) -> Result<String, String> {
+/// `Err`'s `shown` is the text the dialog draws where the preview stands:
+/// the first value `from_player` refuses, the existing file's read or
+/// parse error.
+fn text(
+    file: &EditFile,
+    player_id: u32,
+    which: GenFile,
+    folder: &Path,
+) -> Result<String, PreviewError> {
     let player = file.player(player_id).expect("the dialog's player");
-    let settings = PlayerSettings::from_player(player).map_err(|error| error.to_string())?;
+    let settings = PlayerSettings::from_player(player).map_err(PreviewError::other)?;
     match which {
         GenFile::IngameFace => settings
             .ingame_face()
             .to_toml()
-            .map_err(|error| error.to_string()),
+            .map_err(PreviewError::other),
         GenFile::Settings => {
             let path = folder.join("settings.toml");
             let existing = if folder.is_dir() {
                 match std::fs::read_to_string(&path) {
                     Ok(text) => Some(text),
                     Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
-                    Err(error) => return Err(format!("{}: {error}", path.display())),
+                    Err(error) => return Err(PreviewError::file(path, error)),
                 }
             } else {
                 None
@@ -138,13 +180,13 @@ fn text(file: &EditFile, player_id: u32, which: GenFile, folder: &Path) -> Resul
                 Some(existing) => {
                     let mut document = existing
                         .parse::<toml_edit::DocumentMut>()
-                        .map_err(|error| format!("{error}"))?;
+                        .map_err(|error| PreviewError::file(path, error))?;
                     settings
                         .update_toml(&mut document)
-                        .map_err(|error| error.to_string())?;
+                        .map_err(PreviewError::other)?;
                     Ok(document.to_string())
                 }
-                None => settings.to_toml().map_err(|error| error.to_string()),
+                None => settings.to_toml().map_err(PreviewError::other),
             }
         }
     }
@@ -180,14 +222,30 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     if generate
         .preview
         .as_ref()
+        .is_none_or(|preview| preview.folder != generate.folder)
+    {
+        // A new folder's file is a new possible refusal.
+        generate.refusal_recorded = false;
+    }
+    if generate
+        .preview
+        .as_ref()
         .is_none_or(|preview| preview.folder != generate.folder || preview.revision != revision)
     {
         let folder = Path::new(&generate.folder);
+        let built = text(file, generate.player_id, generate.file, folder);
+        if !generate.refusal_recorded
+            && let Err(error) = &built
+            && let Some((path, reason)) = &error.refused
+        {
+            generate.refusal_recorded = true;
+            journal::refused(path, session.recorder(), reason);
+        }
         generate.preview = Some(Preview {
             folder: generate.folder.clone(),
             revision,
             is_dir: folder.is_dir(),
-            text: text(file, generate.player_id, generate.file, folder),
+            text: built,
         });
     }
     let mut close = false;
@@ -220,7 +278,7 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     );
                 }
                 Err(error) => {
-                    ui.colored_label(ui.visuals().error_fg_color, error.as_str());
+                    ui.colored_label(ui.visuals().error_fg_color, error.shown.as_str());
                 }
             });
         modal_buttons(ui, |ui| {
@@ -232,6 +290,19 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 && let Ok(text) = &preview.text
             {
                 let path = Path::new(&preview.folder).join(generate.file.file_name());
+                // Write destroys the file it replaces: its bytes are kept
+                // as an input first, read now — the member may have
+                // touched it since the preview was built.
+                match std::fs::read(&path) {
+                    Ok(bytes) => session.recorder().keep_input(TOOL_ID, &path, bytes.into()),
+                    Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                    Err(error) => {
+                        log::debug!(
+                            "{}: the replaced file cannot be kept ({error})",
+                            path.display()
+                        )
+                    }
+                }
                 match journal::write_and_record(session.recorder(), &path, text.as_bytes()) {
                     Ok(()) => {
                         *notice = Some(Notice {
