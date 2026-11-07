@@ -7562,13 +7562,18 @@ briefs, review loops, gates and mutation runs as for any step.
     `Decoded::uncompressed`, `Target::keep_uncompressed`, the Team compiler's main-kit flag;
     pre-Fox parity's `k2012_sr.dds` now matches Red's uncompressed output; the GPU tests
     call `encode_mips` directly (`just gpu-tests` not run here). Spec moved (the deferred
-    GPU part stays in the plan). Re-timed 2026-11-06 (release build of `f2d524e9`, `.tmp/0_0_2/poc/retime.py`): 0.8 s wall where BC7 took about 1:30, an 8.5 MB CPK. Open: the in-game check below (brief `.tmp/0_0_2/ingame/brief_poc_ingame.md`, item 4). → verify also: the maintainer's PES 21
+    GPU part stays in the plan). Re-timed 2026-11-06 (release build of `f2d524e9`, `.tmp/0_0_2/poc/retime.py`): 0.8 s wall where BC7 took about 1:30, an 8.5 MB CPK. In game 2026-11-07 (below; `.tmp/0_0_2/ingame/poc/findings.md`): the uncompressed kit loads and draws. → verify also: the maintainer's PES 21
     test compile (`.tmp/release_0_0_1/0_0_1/manual_run2`, about 1:30 with BC7) re-timed;
     its 45 DXT5 sources pass through either way, and its three uncompressed 4096 × 4096
     sources (`kit.dds` twice, one `shirt.dds`) were the only BC7 encodes and now encode
     nothing, so a run still slow after this step sends the profiling of 0.0.2d elsewhere.
-    Open: in game on PES 2019, whether an uncompressed main kit texture (that export's 4096
-    `kit.dds`) loads and shows the seasonal logos, or soft-crashes as on PES 15–17
+    In game on PES 2019 (2026-11-07, SWE-2 sidekick, `.tmp/0_0_2/ingame/poc/findings.md`,
+    `s42`-`s44`): the export compiled with its 4096 `kit.dds` kept uncompressed (8.5 MB
+    CPK) loads, and Edit mode draws the shirt from it, no crash or hang at any screen.
+    Not seen: the seasonal logos, which Edit mode may not place (QUESTIONS "Seasonal logos
+    on an uncompressed kit"). The same run's PoC look passed: /dbg/ and /4ccg/ upgrade
+    and compile clean (about 2 s for both), and the 8 players checked show their own
+    faces and bodies
   - [ ] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation
     check (0.0.2)"; DECISIONS 2026-10-31, P46 accepted): first the stock game's refusal, read
     where the Whack Patch differs from the exe it was made from: `E:\PES2017\PES2017.exe.old5`

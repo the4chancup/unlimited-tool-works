@@ -52,6 +52,12 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   default stats: typed stats showed with every flag clear. Can the tester send the save before
   and after their edit, with what they changed? A byte diff of the two says what the write
   did, which no reconstruction of their steps can.
+- **Seasonal logos on an uncompressed kit.** On PES 2019 an uncompressed 4096 main kit
+  (worklog 0.0.2b) loads and draws in Edit mode with no crash, but no seasonal logo showed
+  (`.tmp/0_0_2/ingame/poc/s42_egg_body.png`). Does PES 2019 place the logos in Edit mode at
+  all, or does this need a match to show whether Fox games write them into an uncompressed
+  kit as PES 15–17 do? The player also draws see-through in that capture; the export's
+  textures are a noise test pattern with alpha about 68, which may be all it is.
 
 ## After the release
 
