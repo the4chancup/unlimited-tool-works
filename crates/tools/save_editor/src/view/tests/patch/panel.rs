@@ -1,4 +1,5 @@
 use super::*;
+use crate::test_support::{journal_lines, zip_entry};
 
 /// Whether the panel is drawn on a frame.
 fn panel_drawn(window: &mut Headless, view: &mut SaveView) -> bool {
@@ -199,5 +200,38 @@ fn opening_one_floating_panel_closes_the_other() {
         view.panel,
         Some(Panel::Comparator),
         "the comparator opens, the patch panel closes"
+    );
+}
+
+// A file the member picks that cannot be parsed is a step of its own and
+// a kept input, like a save that fails to open: `could not read <path>`.
+#[test]
+fn a_picked_file_that_cannot_be_read_records_the_step_and_keeps_it() {
+    let path = fixture(PesVersion::Pes21, "patch_pick_fails");
+    let dir = path.parent().unwrap().to_path_buf();
+    let recorder = Recorder::default();
+    let mut view = SaveView::new();
+    view.recorder = recorder.clone();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    let bad = dir.join("patch.toml");
+    std::fs::write(&bad, b"not a patch").unwrap();
+    open_panel(&mut window, &mut view);
+    open_patch(&mut window, &mut view, bad.clone());
+
+    let lines = journal_lines(&recorder, &dir);
+    let refused = lines
+        .iter()
+        .find(|line| line.starts_with("could not read "))
+        .expect("the failed pick records its own step");
+    assert!(
+        refused.contains("patch.toml"),
+        "the step names the file that failed: {refused}"
+    );
+    let bundle = dir.join("journal.zip");
+    assert_eq!(
+        zip_entry(&bundle, "inputs/1-patch.toml"),
+        b"not a patch",
+        "the picked file's bytes are kept as an input"
     );
 }

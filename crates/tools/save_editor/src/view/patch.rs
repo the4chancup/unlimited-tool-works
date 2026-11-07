@@ -24,6 +24,7 @@ use studio_core::widgets::add_enabled;
 use team_widgets::violations::SelectedPlayer;
 
 use crate::messages::TOOL_ID;
+use crate::session::journal;
 use crate::view::comparator::{self, OpenSaveDialog, Place};
 use crate::view::{Panel, SaveView, aatf_check, edit_settled, prompt, surrender_focus, terms};
 
@@ -113,16 +114,23 @@ impl Patch {
     }
 
     /// Reads and parses the file at `path`, dropping the last patch's
-    /// preview and Applied line.
-    fn load(&mut self, path: PathBuf) {
-        let patch = std::fs::read_to_string(&path)
-            .map_err(|error| format!("cannot read the file ({error})"))
-            .and_then(|text| {
-                AestheticsPatch::parse(&text)
-                    .map(|patch| (patch, text.into_bytes().into()))
-                    .map_err(|error| error.to_string())
-            });
-        self.loaded = Some((path, patch));
+    /// preview and Applied line. A file that cannot be read or parsed is
+    /// recorded with its bytes, like a save that fails to open.
+    fn load(&mut self, path: PathBuf, recorder: &studio_core::Recorder) {
+        let loaded = match std::fs::read_to_string(&path) {
+            Ok(text) => match AestheticsPatch::parse(&text) {
+                Ok(patch) => Ok((patch, text.into_bytes().into())),
+                Err(error) => {
+                    journal::read_failed(&path, recorder, &error, Some(text.into_bytes().into()));
+                    Err(error.to_string())
+                }
+            },
+            Err(error) => {
+                journal::read_failed(&path, recorder, &error, None);
+                Err(format!("cannot read the file ({error})"))
+            }
+        };
+        self.loaded = Some((path, loaded));
         self.preview = None;
         self.applied = None;
     }
@@ -275,7 +283,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         Some(Action::Open) => {
             surrender_focus(ui);
             if let Some(path) = patch_dialog() {
-                patch.load(path);
+                patch.load(path, recorder);
             }
         }
         Some(Action::Apply) => {

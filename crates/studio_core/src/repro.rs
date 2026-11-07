@@ -285,9 +285,12 @@ mod bundle {
     }
 
     /// Drops the leftover temp zip of a failed write: the failure, not
-    /// the litter, is what the caller sees.
+    /// the litter, is what the caller sees. Nothing logged when `tmp`
+    /// never got made — nothing stays either way.
     fn remove_tmp(tmp: &Path) {
-        if let Err(error) = fs::remove_file(tmp) {
+        if tmp.exists()
+            && let Err(error) = fs::remove_file(tmp)
+        {
             log::debug!(
                 "{}: the failed bundle's temp file stays ({error})",
                 tmp.display()
@@ -380,14 +383,16 @@ mod bundle {
         for (index, kept) in journal.outputs.iter().enumerate() {
             put(&entry("outputs", index, kept), &kept.bytes)?;
         }
-        put("words.txt", words.as_bytes())?;
+        put("words.txt", redact_home(words, home).as_bytes())?;
         for (name, bytes) in extras {
             put(name, &redacted(bytes, home))?;
         }
         for (name, bytes) in state {
             put(&format!("state/{name}"), &redacted(bytes, home))?;
         }
-        writer.finish()?;
+        writer
+            .finish()
+            .with_context(|| format!("{}: cannot finish the bundle", tmp.display()))?;
         Ok(())
     }
 }
@@ -465,12 +470,12 @@ mod tests {
         );
         recorder.keep_output(
             "save-editor",
-            Path::new("out/EDIT00000000"),
+            Path::new("/home/member/out/EDIT00000000"),
             Arc::from(&b"OLD"[..]),
         );
         recorder.keep_output(
             "save-editor",
-            Path::new("out/EDIT00000000"),
+            Path::new("/home/member/out/EDIT00000000"),
             Arc::from(&b"NEW_BYTES"[..]),
         );
         // The same path written by another tool is a second output, not a
@@ -523,13 +528,17 @@ mod tests {
             crate::shell::version_label()
         );
         assert_eq!(doc["os"].as_str(), Some(std::env::consts::OS));
+        let missing = doc["missing"].as_array().unwrap();
+        assert_eq!(missing.len(), 1, "{journal}");
         assert_eq!(
-            doc["missing"].as_array().unwrap()[0].as_str(),
+            missing[0].as_str(),
             Some("utw.log"),
             "the unreadable extra is named under `missing`: {journal}"
         );
+        let state = doc["state"].as_array().unwrap();
+        assert_eq!(state.len(), 1, "{journal}");
         assert_eq!(
-            doc["state"].as_array().unwrap()[0].as_str(),
+            state[0].as_str(),
             Some("current.save"),
             "the attachment is named under `state`: {journal}"
         );
@@ -570,6 +579,11 @@ mod tests {
             "the second write to one path replaces the first; another tool's is its own: {journal}"
         );
         assert_eq!(outputs[0]["tool"].as_str(), Some("save-editor"));
+        assert_eq!(
+            outputs[0]["path"].as_str(),
+            Some("~/out/EDIT00000000"),
+            "the output's path is redacted too: {journal}"
+        );
         assert_eq!(outputs[0]["size"].as_integer(), Some(9));
         assert_eq!(
             outputs[0]["sha256"].as_str().unwrap(),
@@ -578,11 +592,18 @@ mod tests {
         );
         assert_eq!(outputs[0]["entry"].as_str(), Some("outputs/0-EDIT00000000"));
         assert_eq!(outputs[1]["tool"].as_str(), Some("team-compiler"));
+        assert_eq!(outputs[1]["size"].as_integer(), Some(4));
+        assert_eq!(
+            outputs[1]["sha256"].as_str().unwrap(),
+            "f404d4ef53431418a111b361b24b6d805798314477493738d95eb6ca347ea17b",
+            "SHA-256 of b\"TEAM\""
+        );
         assert_eq!(outputs[1]["entry"].as_str(), Some("outputs/1-EDIT00000000"));
     }
 
-    // An extra or attachment whose bytes are UTF-8 is written with the
-    // home folder as `~`; a binary goes verbatim.
+    // The member's words, an extra and an attachment whose bytes are
+    // UTF-8 are written with the home folder as `~`; a binary goes
+    // verbatim.
     #[test]
     fn a_utf8_extra_is_written_with_the_home_folder_as_a_tilde() {
         let dir = scratch("redact_extra");
@@ -593,13 +614,18 @@ mod tests {
         recorder
             .write_bundle(
                 &out,
-                "",
+                "I copied the save to C:/Users/Alice/Desktop",
                 &[("settings.toml", settings.as_path())],
                 &[("note.txt", &b"the save is at C:/Users/Alice/saves"[..])],
                 Some("C:/Users/Alice"),
             )
             .unwrap();
 
+        assert_eq!(
+            zip_text(&out, "words.txt"),
+            "I copied the save to ~/Desktop",
+            "the member's own text is redacted too"
+        );
         assert_eq!(
             zip_text(&out, "settings.toml"),
             "pes_folder_path = '~/PES'\n",
@@ -609,6 +635,34 @@ mod tests {
             zip_text(&out, "state/note.txt"),
             "the save is at ~/saves",
             "the attachment's too"
+        );
+    }
+
+    // An attachment whose bytes are not UTF-8 lands byte-equal: a binary
+    // (a save's current state) is never rewritten by the redaction.
+    #[test]
+    fn a_binary_attachment_lands_byte_equal() {
+        let dir = scratch("binary_extra");
+        let recorder = Recorder::default();
+        let packed = dir.join("packed.bin");
+        let bytes: &[u8] = b"\xFF\x00\xFE\x80abc";
+        fs::write(&packed, bytes).unwrap();
+        let out = dir.join("repro.zip");
+        recorder
+            .write_bundle(
+                &out,
+                "",
+                &[("packed.bin", packed.as_path())],
+                &[("state.bin", &b"\xFF\x00\xFE"[..])],
+                Some("C:/Users/Alice"),
+            )
+            .unwrap();
+
+        assert_eq!(zip_bytes(&out, "packed.bin"), bytes, "verbatim");
+        assert_eq!(
+            zip_bytes(&out, "state/state.bin"),
+            b"\xFF\x00\xFE",
+            "verbatim"
         );
     }
 }

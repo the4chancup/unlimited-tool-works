@@ -32,7 +32,7 @@ use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_savefile::schema::texport::texport_writes;
 use pes_version::PesVersion;
 use studio_core::widgets::{add_enabled, add_enabled_ui, checkbox, collapsing_header};
-use studio_core::{Notice, NoticeKind};
+use studio_core::{Notice, NoticeKind, Recorder};
 use team_widgets::names::append_name;
 
 use crate::messages::{TOOL_ID, import_note, when_and_effect};
@@ -376,10 +376,13 @@ impl Interchange {
     }
 
     /// Reads the file at `path` as its name's format, dropping the last
-    /// file's staged import and Applied line.
-    fn pick(&mut self, path: PathBuf) {
+    /// file's staged import and Applied line. A file that cannot be read
+    /// or parsed is recorded with its bytes, like a save that fails to
+    /// open.
+    fn pick(&mut self, path: PathBuf, recorder: &Recorder) {
         let format = Format::of(&path);
-        let read = read(&path, format).map_err(|error| format!("{}: {error}", file_name(&path)));
+        let read =
+            read(&path, format, recorder).map_err(|error| format!("{}: {error}", file_name(&path)));
         self.picked = Some(Picked { path, format, read });
         self.staged = None;
         self.applied = None;
@@ -430,16 +433,36 @@ impl Interchange {
     }
 }
 
-/// The bytes at `path` read as `format`.
-fn read(path: &Path, format: Format) -> anyhow::Result<Read> {
-    let bytes = std::fs::read(path)?;
-    let document = match format {
-        Format::TeamToml => TeamToml::parse(std::str::from_utf8(&bytes)?)?,
-        Format::Squad => return Ok(Read::Squad(bytes)),
-        Format::Tactics => read_tactics(&bytes)?,
-        Format::Texport => Texport::from_bytes(&bytes, None)?.to_team_toml()?,
+/// `bytes` as `format`'s document, `None` for `Format::Squad`: a squad
+/// file's records are read against the rostered players on each stage
+/// instead of once at the pick.
+fn parse(format: Format, bytes: &[u8]) -> anyhow::Result<Option<TeamToml>> {
+    Ok(match format {
+        Format::TeamToml => Some(TeamToml::parse(std::str::from_utf8(bytes)?)?),
+        Format::Squad => None,
+        Format::Tactics => Some(read_tactics(bytes)?),
+        Format::Texport => Some(Texport::from_bytes(bytes, None)?.to_team_toml()?),
+    })
+}
+
+/// The bytes at `path` read as `format`; a refusal is recorded — `could
+/// not read` — with the file's bytes kept when the read reached them.
+fn read(path: &Path, format: Format, recorder: &Recorder) -> anyhow::Result<Read> {
+    let bytes = match std::fs::read(path) {
+        Ok(bytes) => bytes,
+        Err(error) => {
+            journal::read_failed(path, recorder, &error, None);
+            return Err(error.into());
+        }
     };
-    Ok(Read::Document(Box::new(document), bytes))
+    match parse(format, &bytes) {
+        Ok(Some(document)) => Ok(Read::Document(Box::new(document), bytes)),
+        Ok(None) => Ok(Read::Squad(bytes)),
+        Err(error) => {
+            journal::read_failed(path, recorder, &error, Some(bytes.into()));
+            Err(error)
+        }
+    }
 }
 
 /// `path`'s file name, the whole path when it has none.
@@ -745,7 +768,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         Some(Action::Pick) => {
             surrender_focus(ui);
             if let Some(path) = interchange_dialog(version) {
-                interchange.pick(path);
+                interchange.pick(path, recorder);
             }
         }
         Some(Action::Apply) => {

@@ -3,6 +3,7 @@
 //! lines), the `open` refusal's step, and the writes a member picks
 //! outside `Session::write`.
 
+use std::fmt;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -91,14 +92,30 @@ pub(super) fn open_failed(
     bytes: Option<Arc<[u8]>>,
 ) -> anyhow::Error {
     let error = error.context(format!("{}: cannot open the save", path.display()));
-    recorder.step(
-        TOOL_ID,
-        format!("could not open {}: {error:#}", path.display()),
-    );
+    recorder.step(TOOL_ID, format!("could not open {error:#}"));
     if let Some(bytes) = bytes {
         recorder.keep_input(TOOL_ID, path, bytes);
     }
     error
+}
+
+/// `open_failed` for a file the member picked to apply or open in a panel
+/// (a team file, a patch): `could not read <path>: <error>`, and `bytes`
+/// kept as an input when the read reached them (a file that could not be
+/// read keeps nothing).
+pub(crate) fn read_failed(
+    path: &Path,
+    recorder: &Recorder,
+    error: impl fmt::Display,
+    bytes: Option<Arc<[u8]>>,
+) {
+    recorder.step(
+        TOOL_ID,
+        format!("could not read {}: {error}", path.display()),
+    );
+    if let Some(bytes) = bytes {
+        recorder.keep_input(TOOL_ID, path, bytes);
+    }
 }
 
 /// `fs::write` to `path` plus the journal's `wrote <path>` step and the
