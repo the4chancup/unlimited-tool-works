@@ -31,7 +31,7 @@ use pes_version::PesVersion;
 use studio_core::{Recorder, RunningPes};
 
 use crate::messages::TOOL_ID;
-use crate::session::journal::{change_lines, open_failed, player_lines, team_lines};
+use crate::session::journal::{change_lines, open_failed, player_lines, team_lines, write_failed};
 use crate::session::undo::{Change, UndoStack};
 
 /// The ticks `Session::revision` draws from, one per open and per change:
@@ -716,10 +716,15 @@ impl Session {
 
     /// Writes the save to `out`, an existing file there first copied to `<out>.bak` (one
     /// level, as every save does); `out` may be the path the save was opened from.
+    /// A failed write records `could not write <path>` and keeps nothing.
     pub(crate) fn write(&self, out: &Path) -> anyhow::Result<()> {
-        self.file
+        if let Err(error) = self
+            .file
             .save(out)
-            .with_context(|| format!("{}: cannot write the save", out.display()))?;
+            .with_context(|| format!("{}: cannot write the save", out.display()))
+        {
+            return Err(write_failed(&self.recorder, error));
+        }
         self.recorder
             .step(TOOL_ID, format!("wrote {}", out.display()));
         match std::fs::read(out) {

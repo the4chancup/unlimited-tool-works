@@ -1,4 +1,5 @@
 use super::*;
+use crate::test_support::{journal_lines, zip_entry};
 
 // SE-GUI-18
 #[test]
@@ -215,4 +216,43 @@ fn apply_recomputes_a_preview_held_through_a_gesture() {
     let written = player_entry(&view, CO_SLOT_3);
     assert_eq!(written.basic.height, height, "the edit survives");
     assert_eq!(written, expected, "the patch's values land on the edit");
+}
+
+// The Apply's journal: the pick named with its bytes kept at the pick,
+// and the apply beside the field lines `edit_players` records.
+#[test]
+fn an_applied_patch_is_named_and_kept_in_the_journal() {
+    let path = fixture(PesVersion::Pes21, "patch_apply_journal");
+    let dir = path.parent().unwrap().to_path_buf();
+    let recorder = Recorder::default();
+    let mut view = SaveView::new();
+    view.recorder = recorder.clone();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![co_block(&view)],
+    );
+    let patch_path = previewed(&mut window, &mut view, &text);
+    let apply = panel_button(&mut window, &mut view, "Apply").expect("the Apply button");
+    click(&mut window, &apply, &mut view);
+
+    let lines = journal_lines(&recorder, &dir);
+    assert!(
+        lines.contains(&format!("picked {}", patch_path.display())),
+        "the pick is named: {lines:?}"
+    );
+    assert!(
+        lines.contains(&format!(
+            "applied the aesthetics patch {}",
+            patch_path.display()
+        )),
+        "the apply names the file: {lines:?}"
+    );
+    assert_eq!(
+        zip_entry(&dir.join("journal.zip"), "inputs/1-patch.toml"),
+        text.as_bytes(),
+        "the patch file's bytes are kept as an input"
+    );
 }

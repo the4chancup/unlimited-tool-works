@@ -118,16 +118,30 @@ pub(crate) fn read_failed(
     }
 }
 
+/// `open_failed` for a write the member asked for: `could not write
+/// <the error, as the window shows it>` (its context names the path);
+/// nothing is kept — a failed write's bytes are not an output. Returns
+/// the error for the caller to hand back.
+pub(crate) fn write_failed(recorder: &Recorder, error: anyhow::Error) -> anyhow::Error {
+    recorder.step(TOOL_ID, format!("could not write {error:#}"));
+    error
+}
+
 /// `fs::write` to `path` plus the journal's `wrote <path>` step and the
 /// bytes kept as an output: a file the member saved, which a bundle
-/// holds.
+/// holds. A failed write records `could not write <path>` and keeps
+/// nothing.
 pub(crate) fn write_and_record(
     recorder: &Recorder,
     path: &Path,
     bytes: &[u8],
 ) -> anyhow::Result<()> {
-    std::fs::write(path, bytes)
-        .map_err(|error| anyhow!("{}: cannot write the file ({error})", path.display()))?;
+    std::fs::write(path, bytes).map_err(|io| {
+        write_failed(
+            recorder,
+            anyhow!("{}: cannot write the file ({io})", path.display()),
+        )
+    })?;
     recorder.step(TOOL_ID, format!("wrote {}", path.display()));
     recorder.keep_output(TOOL_ID, path, bytes.into());
     Ok(())

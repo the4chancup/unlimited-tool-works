@@ -63,6 +63,9 @@ pub(super) struct Patch {
     /// The save's revision right after Apply's edit: the Applied line
     /// stands while the save is still at it.
     applied: Option<u64>,
+    /// Whether the loaded file's refusal is already in the journal: a
+    /// refusal records once per pick, not once per preview.
+    refusal_recorded: bool,
 }
 
 /// What the patch would change in the open save.
@@ -110,6 +113,7 @@ impl Patch {
             loaded: None,
             preview: None,
             applied: None,
+            refusal_recorded: false,
         }
     }
 
@@ -130,15 +134,22 @@ impl Patch {
                 Err(format!("cannot read the file ({error})"))
             }
         };
+        if let Ok((_, bytes)) = &loaded {
+            recorder.step(TOOL_ID, format!("picked {}", path.display()));
+            recorder.keep_input(TOOL_ID, &path, Arc::clone(bytes));
+        }
         self.loaded = Some((path, loaded));
         self.preview = None;
         self.applied = None;
+        self.refusal_recorded = false;
     }
 
     /// Recomputes the preview when the open save is no longer at the
     /// revision it was computed for: once per change, not every frame.
-    fn refresh(&mut self, file: &EditFile, revision: u64) {
-        let Some((_, Ok((patch, _)))) = &self.loaded else {
+    /// A refusal is recorded once per loaded file (`refusal_recorded`),
+    /// not once per recompute.
+    fn refresh(&mut self, file: &EditFile, revision: u64, recorder: &studio_core::Recorder) {
+        let Some((path, Ok((patch, _)))) = &self.loaded else {
             return;
         };
         if self
@@ -148,7 +159,14 @@ impl Patch {
         {
             return;
         }
-        self.preview = Some((revision, preview(file, patch)));
+        let result = preview(file, patch);
+        if let Err(error) = &result
+            && !self.refusal_recorded
+        {
+            self.refusal_recorded = true;
+            recorder.step(TOOL_ID, format!("refused {}: {error}", path.display()));
+        }
+        self.preview = Some((revision, result));
     }
 }
 
@@ -253,7 +271,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         tactics,
         patch_dialog,
         focused,
-        recorder,
         ..
     } = view;
     if *panel != Some(Panel::Patch) {
@@ -268,7 +285,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
     // would slow the edit down, so it waits for the gesture's end.
     let (_, end) = edit_settled(ui, *focused);
     if end.settled() {
-        patch.refresh(session.file(), revision);
+        patch.refresh(session.file(), revision, session.recorder());
     }
     let mut open = true;
     let action = comparator::panel_window(ui, "Apply aesthetics patch", "save_editor_patch")
@@ -283,23 +300,22 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         Some(Action::Open) => {
             surrender_focus(ui);
             if let Some(path) = patch_dialog() {
-                patch.load(path, recorder);
+                patch.load(path, session.recorder());
             }
         }
         Some(Action::Apply) => {
             // A preview held through a gesture is the save before it:
             // its players written back would undo the edit, so a stale
             // one is recomputed against the save as it stands first.
-            patch.refresh(session.file(), revision);
+            patch.refresh(session.file(), revision, session.recorder());
             if let Some((_, Ok(preview))) = &patch.preview {
-                // The patch file is a kept input, named beside the field
-                // lines `edit_players` records.
-                if let Some((path, Ok((_, bytes)))) = &patch.loaded {
-                    recorder.step(
+                // The patch file is a kept input since the pick, named
+                // beside the field lines `edit_players` records.
+                if let Some((path, Ok(_))) = &patch.loaded {
+                    session.recorder().step(
                         TOOL_ID,
                         format!("applied the aesthetics patch {}", path.display()),
                     );
-                    recorder.keep_input(TOOL_ID, path, Arc::clone(bytes));
                 }
                 session.edit_players(preview.patched.clone());
                 patch.applied = Some(session.revision());

@@ -85,8 +85,8 @@ pub(crate) fn default_export_dialog() -> SaveFileDialog {
 /// path and the comparison's worker state.
 pub(super) struct Comparator {
     /// The picked second save (the report's `first`): its path and its
-    /// session, opened through `Session::open` so a refusal is the
-    /// toolbar's own (`<path>: cannot open the save`).
+    /// session, opened through `Session::open_for_comparison` so a refusal
+    /// is the toolbar's own (`<path>: cannot open the save`).
     pub(super) picked: Option<(PathBuf, Session)>,
     /// The last pick's refusal — a save of another version or one that did
     /// not open — drawn error-coloured under the pick row.
@@ -200,7 +200,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         panel,
         comparator,
         session,
-        recorder,
         team,
         filter,
         selected,
@@ -276,7 +275,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                         surrender_focus(ui);
                         if let Some(path) = open_save_dialog() {
                             comparator.exported = None;
-                            match Session::open_for_comparison(&path, recorder.clone()) {
+                            match Session::open_for_comparison(&path, session.recorder().clone()) {
                                 Ok(picked) if picked.version() == file.version() => {
                                     comparator.picked = Some((path, picked));
                                     comparator.refused = None;

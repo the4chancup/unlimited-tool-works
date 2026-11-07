@@ -592,6 +592,11 @@ mod tests {
         );
         assert_eq!(outputs[0]["entry"].as_str(), Some("outputs/0-EDIT00000000"));
         assert_eq!(outputs[1]["tool"].as_str(), Some("team-compiler"));
+        assert_eq!(
+            outputs[1]["path"].as_str(),
+            Some("out/EDIT00000000"),
+            "a relative path is written as it is"
+        );
         assert_eq!(outputs[1]["size"].as_integer(), Some(4));
         assert_eq!(
             outputs[1]["sha256"].as_str().unwrap(),
@@ -636,6 +641,58 @@ mod tests {
             "the save is at ~/saves",
             "the attachment's too"
         );
+    }
+
+    // A file kept as an input stays kept: two reads of one path are two
+    // inputs — the re-open's first read is the part the bundle exists to
+    // keep, unlike an output, where the last write is the one kept.
+    #[test]
+    fn two_reads_of_one_path_are_two_inputs() {
+        let dir = scratch("reinput");
+        let recorder = Recorder::default();
+        recorder.keep_input(
+            "save-editor",
+            Path::new("a/EDIT00000000"),
+            Arc::from(&b"FIRST"[..]),
+        );
+        recorder.keep_input(
+            "save-editor",
+            Path::new("a/EDIT00000000"),
+            Arc::from(&b"SECOND"[..]),
+        );
+        let out = dir.join("repro.zip");
+        recorder.write_bundle(&out, "", &[], &[], None).unwrap();
+
+        assert_eq!(zip_bytes(&out, "inputs/0-EDIT00000000"), b"FIRST");
+        assert_eq!(zip_bytes(&out, "inputs/1-EDIT00000000"), b"SECOND");
+        let journal = zip_text(&out, "journal.toml");
+        assert_eq!(
+            journal_doc(&journal)["input"].as_array().unwrap().len(),
+            2,
+            "{journal}"
+        );
+    }
+
+    // `out` a directory: the write is an error and the temp sibling is
+    // gone, never a half bundle or a misleading success.
+    #[test]
+    fn a_bundle_write_refuses_a_directory_and_cleans_up() {
+        let dir = scratch("out_is_dir");
+        let recorder = Recorder::default();
+        recorder.step("save-editor", "a step");
+
+        let error = recorder
+            .write_bundle(&dir, "", &[], &[], None)
+            .expect_err("a directory is not a bundle");
+        assert!(
+            format!("{error:#}").contains("cannot move the bundle into place"),
+            "{error:#}"
+        );
+        let tmp = dir.with_file_name(format!(
+            "{}.tmp",
+            dir.file_name().unwrap().to_string_lossy()
+        ));
+        assert!(!tmp.exists(), "the temp sibling is removed");
     }
 
     // An attachment whose bytes are not UTF-8 lands byte-equal: a binary

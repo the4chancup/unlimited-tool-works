@@ -123,6 +123,40 @@ fn every_model_change_records_its_steps() {
         "the team's line"
     );
 
+    // `edit_entries`' team half lands a `team …` line per changed team —
+    // and undo/redo run a team's change the way they run a player's.
+    check_records(
+        &mut session,
+        &recorder,
+        &dir,
+        "edit_entries with a team",
+        true,
+        |session| {
+            let mut edited = session.file().team(701).unwrap().clone();
+            edited.short_name = "ABC".to_owned();
+            session.edit_entries(Vec::new(), vec![edited]);
+        },
+    );
+    assert!(journal_lines(&recorder, &dir).contains(&"team 701: ShortName XYZ → ABC".to_owned()));
+    check_records(&mut session, &recorder, &dir, "undo", true, |session| {
+        session.undo();
+    });
+    let lines = journal_lines(&recorder, &dir);
+    assert!(lines.contains(&"undo".to_owned()), "the undo header");
+    assert!(
+        lines.contains(&"team 701: ShortName ABC → XYZ".to_owned()),
+        "the undone team field backwards: {lines:?}"
+    );
+    check_records(&mut session, &recorder, &dir, "redo", true, |session| {
+        session.redo();
+    });
+    let lines = journal_lines(&recorder, &dir);
+    assert!(lines.contains(&"redo".to_owned()), "the redo header");
+    assert!(
+        lines.contains(&"team 701: ShortName XYZ → ABC".to_owned()),
+        "the team field forward again: {lines:?}"
+    );
+
     // A name the move's undo lines can hang on: the fixture's
     // placeholder records are identical, so 70101's is marked first
     // (direct writes, not model changes — the move's own lines show
@@ -346,6 +380,11 @@ fn an_import_writes_only_the_players_the_roster_names() {
         "the empty slot's entry is noted skipped: {notes:?}"
     );
     let lines = journal_lines(&recorder, &dir);
+    assert!(
+        lines.contains(&"imported Team TOML onto team 701".to_owned()),
+        "the import's header: {lines:?}"
+    );
+    let lines = journal_lines(&recorder, &dir);
     let players: Vec<&String> = lines
         .iter()
         .filter(|line| line.starts_with("player "))
@@ -359,5 +398,38 @@ fn an_import_writes_only_the_players_the_roster_names() {
         session.file().player(70103).unwrap().name,
         "NEWNAME",
         "the rostered player imported"
+    );
+}
+
+// A write the member asked for that fails records `could not write
+// <path>` (the error as the window shows it) and keeps no output.
+#[test]
+fn a_failed_write_records_the_step_and_keeps_nothing() {
+    let dir = crate::test_support::scratch("journal_write_fails");
+    let path = dir.join("EDIT00000000");
+    std::fs::write(&path, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
+    let recorder = Recorder::default();
+    let session = Session::open(&path, recorder.clone()).unwrap();
+    let missing = dir.join("missing").join("EDIT00000000");
+
+    let error = session.write(&missing).unwrap_err();
+    assert!(
+        format!("{error:#}").contains("cannot write the save"),
+        "premise: the write failed: {error:#}"
+    );
+
+    let lines = journal_lines(&recorder, &dir);
+    let failed = lines
+        .iter()
+        .find(|line| line.starts_with("could not write "))
+        .expect("the failed write records its own step");
+    assert!(failed.contains("EDIT00000000"), "{failed}");
+    let bundle = dir.join("journal.zip");
+    let doc: toml::Table =
+        toml::from_str(&String::from_utf8(zip_entry(&bundle, "journal.toml")).unwrap()).unwrap();
+    assert!(
+        doc.get("output")
+            .is_none_or(|outputs| outputs.as_array().unwrap().is_empty()),
+        "no output kept: {doc:?}"
     );
 }

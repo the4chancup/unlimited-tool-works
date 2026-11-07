@@ -235,3 +235,57 @@ fn a_picked_file_that_cannot_be_read_records_the_step_and_keeps_it() {
         "the picked file's bytes are kept as an input"
     );
 }
+
+// A picked file that the preview refuses (another version's patch): the
+// pick is kept and named, and the refusal is recorded once per pick, not
+// once per preview.
+#[test]
+fn a_wrong_version_patch_is_kept_and_refused_once() {
+    let path = fixture(PesVersion::Pes21, "patch_refused_once");
+    let dir = path.parent().unwrap().to_path_buf();
+    let recorder = Recorder::default();
+    let mut view = SaveView::new();
+    view.recorder = recorder.clone();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    let text = patch_text(PesVersion::Pes19, ALLOCATION_SCHEME_VERSION, vec![]);
+    let bad = dir.join("patch.toml");
+    std::fs::write(&bad, &text).unwrap();
+    open_panel(&mut window, &mut view);
+    open_patch(&mut window, &mut view, bad.clone());
+
+    // A second preview after a model change: the same refusal, which
+    // records nothing new.
+    let mut edited = view
+        .session
+        .as_ref()
+        .unwrap()
+        .file()
+        .player(70101)
+        .unwrap()
+        .clone();
+    edited.basic.height = edited.basic.height.wrapping_add(1);
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+
+    let lines = journal_lines(&recorder, &dir);
+    assert!(
+        lines.contains(&format!("picked {}", bad.display())),
+        "the pick is named: {lines:?}"
+    );
+    let refused: Vec<&String> = lines
+        .iter()
+        .filter(|line| line.starts_with("refused "))
+        .collect();
+    assert_eq!(refused.len(), 1, "the refusal records once: {lines:?}");
+    assert!(
+        refused[0].contains("patch.toml"),
+        "the refusal names the file: {}",
+        refused[0]
+    );
+    assert_eq!(
+        zip_entry(&dir.join("journal.zip"), "inputs/1-patch.toml"),
+        text.as_bytes(),
+        "the picked file's bytes are kept as an input"
+    );
+}

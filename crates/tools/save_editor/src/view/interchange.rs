@@ -201,6 +201,9 @@ pub(super) struct Interchange {
     /// `Session::revision` right after Apply's edit: the Applied line
     /// stands while the save is still in it.
     applied: Option<u64>,
+    /// Whether the picked file's refusal is already in the journal: a
+    /// refusal records once per pick, not once per refresh.
+    refusal_recorded: bool,
 }
 
 /// The format the picked file is read as, from its name.
@@ -372,25 +375,34 @@ impl Interchange {
             sections: ALL_SECTIONS,
             staged: None,
             applied: None,
+            refusal_recorded: false,
         }
     }
 
     /// Reads the file at `path` as its name's format, dropping the last
-    /// file's staged import and Applied line. A file that cannot be read
-    /// or parsed is recorded with its bytes, like a save that fails to
-    /// open.
+    /// file's staged import, Applied line and recorded refusal. A file
+    /// that reads is a kept input named `picked <path>`; one that cannot
+    /// be read or parsed is recorded with its bytes, like a save that
+    /// fails to open.
     fn pick(&mut self, path: PathBuf, recorder: &Recorder) {
         let format = Format::of(&path);
         let read =
             read(&path, format, recorder).map_err(|error| format!("{}: {error}", file_name(&path)));
+        if let Ok(read) = &read {
+            recorder.step(TOOL_ID, format!("picked {}", path.display()));
+            recorder.keep_input(TOOL_ID, &path, read.bytes().into());
+        }
         self.picked = Some(Picked { path, format, read });
         self.staged = None;
         self.applied = None;
+        self.refusal_recorded = false;
     }
 
     /// Stages the picked file onto `team` again when `key` differs from
-    /// the one it was staged for: once per change, not every frame.
-    fn refresh(&mut self, file: &EditFile, team: &TeamEntry, key: StageKey) {
+    /// the one it was staged for: once per change, not every frame. A
+    /// refusal is recorded once per pick (`refusal_recorded`), not once
+    /// per recompute.
+    fn refresh(&mut self, file: &EditFile, team: &TeamEntry, key: StageKey, recorder: &Recorder) {
         let Some(Picked {
             path,
             read: Ok(read),
@@ -414,6 +426,10 @@ impl Interchange {
                     (Cow::Owned(document), pairing)
                 }
                 Err(error) => {
+                    if !self.refusal_recorded {
+                        self.refusal_recorded = true;
+                        recorder.step(TOOL_ID, format!("refused {}: {error}", path.display()));
+                    }
                     self.staged = Some((key, Err(format!("{}: {error}", file_name(path)))));
                     return;
                 }
@@ -429,6 +445,12 @@ impl Interchange {
             pairing,
             import: stage(file, team, &document, chosen).map_err(|error| error.to_string()),
         };
+        if let Err(error) = &staged.import
+            && !self.refusal_recorded
+        {
+            self.refusal_recorded = true;
+            recorder.step(TOOL_ID, format!("refused {}: {error}", path.display()));
+        }
         self.staged = Some((key, Ok(staged)));
     }
 }
@@ -709,7 +731,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         team_export_dialog,
         refusal,
         notice,
-        recorder,
         ..
     } = view;
     let Some(session) = session.as_mut() else {
@@ -728,7 +749,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         };
         // A choice ticked below stages here next frame: egui repaints
         // after every input frame.
-        interchange.refresh(file, team, key);
+        interchange.refresh(file, team, key, session.recorder());
     }
     let mut open = true;
     let action = comparator::panel_window(ui, "Team file interchange", "save_editor_interchange")
@@ -768,7 +789,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         Some(Action::Pick) => {
             surrender_focus(ui);
             if let Some(path) = interchange_dialog(version) {
-                interchange.pick(path, recorder);
+                interchange.pick(path, session.recorder());
             }
         }
         Some(Action::Apply) => {
@@ -779,12 +800,13 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 }),
             )) = &interchange.staged
             {
-                // The file applied is a kept input, named with its target
-                // beside the field lines `edit_entries` records.
+                // The file applied is a kept input since the pick, named
+                // with its target beside the field lines `edit_entries`
+                // records.
                 if let Some(picked) = &interchange.picked
-                    && let Ok(read) = &picked.read
+                    && picked.read.is_ok()
                 {
-                    recorder.step(
+                    session.recorder().step(
                         TOOL_ID,
                         format!(
                             "applied {} onto team {}",
@@ -792,7 +814,6 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                             import.team.id
                         ),
                     );
-                    recorder.keep_input(TOOL_ID, &picked.path, read.bytes().into());
                 }
                 session.edit_entries(import.players.clone(), vec![import.team.clone()]);
                 interchange.applied = Some(session.revision());

@@ -9,7 +9,7 @@ use pes_savefile::ops::compare::DiffScope;
 
 use super::*;
 
-use crate::test_support::{TEST_SALT, cli_stdout};
+use crate::test_support::{TEST_SALT, cli_stdout, journal_lines};
 
 /// The PES 17 fixture with `edit` applied, written under `dir` as `name`:
 /// the picked save the dialog stub returns.
@@ -1556,5 +1556,30 @@ fn the_panel_first_opens_at_the_right_and_stays_where_dragged() {
     assert!(
         placed_at(&reopened, 359.0, 190.0),
         "the reopened panel: {reopened:?}"
+    );
+}
+
+// The comparator's pick reads `opened <path> for comparison` in the
+// journal, so the bundle tells the second save's pick from the session's
+// own open.
+#[test]
+fn a_picked_save_reads_as_an_opened_for_comparison_in_the_journal() {
+    let path = fixture(PesVersion::Pes17, "comparator_journal");
+    let dir = path.parent().unwrap().to_path_buf();
+    let recorder = Recorder::default();
+    let mut view = SaveView::new();
+    view.recorder = recorder.clone();
+    view.open(&path);
+    let mut window = Headless::new();
+    let picked = picked_save(&dir, "picked", |_| {});
+    open_comparator(&mut window, &mut view);
+    pick(&mut window, &mut view, picked.clone());
+
+    let lines = journal_lines(&recorder, &dir);
+    assert!(
+        lines
+            .iter()
+            .any(|line| line.contains(" for comparison") && line.contains("picked")),
+        "the pick reads as an opened for comparison: {lines:?}"
     );
 }
