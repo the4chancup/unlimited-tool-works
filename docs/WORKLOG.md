@@ -8142,6 +8142,11 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open (2026-11-07) — The Team compiler's recovery manifest (`plans/team_compiler/pipeline.md`
+  "Recovery manifest", the maintainer's request): early, since only DLCs compiled after it
+  ships carry it. One slice in the writer (each export's manifest and TOML files, the round trip
+  read back from a compiled CPK); no in-game check (every version ignores unread files). The
+  Team decompiler (`plans/team_decompiler.md`, a stub) waits for its own phase.
 - open (2026-11-07) — Repro bundles in every tool (`plans/core/architecture.md` "Repro
   bundles", the maintainer's request after the 0.0.2-se19 report). To slice before briefing:
   (1) the button and dialog drafted in `docs/prototypes/` and looked at by the maintainer

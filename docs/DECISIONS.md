@@ -15744,3 +15744,24 @@ replayed; inputs kept in memory, not reread, because saving over the opened file
 one artifact that reproduces the problem; one facility in studio_core, not one per tool, so the
 bundle's rules are the same everywhere.
 Plan: `plans/core/architecture.md` "Repro bundles" (new).
+
+## 2026-11-07 — team_compiler — a recovery manifest in every CPK; a Team decompiler later
+Decision: the writer packs one TOML per compiled export at 4cc/exports/<team id>/<export folder
+name>.toml: the folder name, the Studio and PES versions, each packed file's CPK path, source
+path and conversion, and the export's TOML files verbatim. No sources, leftovers, hashes, sizes,
+times or absolute paths. A Team decompiler (stub plan) rebuilds an export from it, and by a
+heuristic from CPKs without one. The replica is the compiled one: it recompiles to the same CPK
+(the maintainer: level 2 is enough).
+Why: a lost export's folder names and settings exist nowhere else; the game ignores files it
+does not look up (the 7 KB placeholder CPKs); sources would grow every member's download for a
+rare recovery; a hash has nothing to be checked against, and a time or path would break
+reproducible output and could show a user name.
+Plan: `plans/team_compiler/pipeline.md` "Recovery manifest" (new); `plans/team_decompiler.md` (new).
+
+## 2026-11-07 — team_compiler — the recovery manifest's TOML files are packed as files
+Decision: each export's folder under 4cc/exports/<team id>/ holds manifest.toml (names, versions,
+the file map) and the export's TOML files at their own relative paths, not embedded in the
+manifest as strings (amends the entry above).
+Why: packed files keep their bytes exactly with no escaping code, and a member can take one out
+with any CPK tool; the size is the same either way.
+Plan: `plans/team_compiler/pipeline.md` "Recovery manifest".

@@ -110,6 +110,41 @@ What exists of this is in `spec/team_compiler/pipeline.md` "6. Post-processing".
   launcher: both start the same exe the same way, and the GUI phase is where its only manual
   check lives.
 
+### Recovery manifest
+
+A team's aesthetics export is sometimes lost, and the cup's DLC is then the only copy of its
+look: the files carry the team's ID, but the export's player, model and kit folder names are
+gone (a player folder's name survives in the save only sometimes). So the writer packs a
+folder per compiled export into the CPK, `4cc/exports/<team id>/<export folder name>/`, a
+path no game version reads: every version ignores files it does not look up, as the 7 KB
+placeholder CPKs holding only `placeholder.txt` show. The Team decompiler
+(`plans/team_decompiler.md`) reads it back.
+
+- **`manifest.toml`**: the export's folder name, the Studio version and the PES version it
+  was compiled for; every file the export packed, as its CPK path, the source path relative
+  to the export folder, and the conversion it took (passthrough, rewrap, a texture encoded
+  with a named codec, a model converted, a portrait converted).
+- **The export's TOML files, as files**: `settings.toml`, each kit's `config.toml`, each model
+  folder's `materials.toml`, at their paths relative to the export folder, beside the
+  manifest. Packed as files, not embedded in the manifest as strings: their bytes go in and
+  come out as they are (comments, blank lines, line endings), where an embedded copy needs
+  escaping on the way in and out, and a member can take one out with any CPK tool. The
+  `settings.toml` matters beyond the folder names: the savefile settings reach the game only
+  through the aesthetics patch, so without it the save is the only place they survive.
+- **The replica it allows is the compiled one, not the sources**: a decompiled export
+  recompiles to the same CPK. A file packed as it was comes back exact; a converted one comes
+  back in its compiled form under its original name, which the next compile passes through.
+  We do not embed sources (an uncompressed texture before encoding, a glTF before conversion):
+  they would grow every member's DLC download for a file only an organizer recovering a team
+  ever needs. Leftovers the upgrader dropped are not recorded either: they never reached a
+  player.
+- **No hashes, no sizes, no times, no absolute paths**: the decompiler hashes the CPK's own
+  bytes if it needs to, and has no source to check a hash against otherwise; a time or a path
+  would make two compiles of one export differ and could show a member's user name.
+- Built early, ahead of the decompiler: only DLCs compiled after it ships carry it, so every
+  cup compiled without it is one more that can only be recovered by the decompiler's
+  heuristic.
+
 ### Resolved decisions and open questions
 
 What exists of this is in `spec/team_compiler/pipeline.md` "Resolved decisions and open questions".
