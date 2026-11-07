@@ -47,8 +47,9 @@ use pes_version::PesVersion;
 use studio_core::widgets::{
     add_enabled, collapsing_header, modal, modal_buttons, step_number, toolbar_separator,
 };
-use studio_core::{ActionEffect, ExeCheck, Notice, NoticeAction, NoticeKind, RunningPes};
+use studio_core::{ActionEffect, ExeCheck, Notice, NoticeAction, NoticeKind, Recorder, RunningPes};
 
+use crate::messages::TOOL_ID;
 use crate::session::Session;
 use crate::session::rules::{self, Imported};
 use crate::session::selection::{self, TeamChoice};
@@ -78,6 +79,10 @@ enum Panel {
 pub(crate) struct SaveView {
     /// The open save, if one was opened.
     session: Option<Session>,
+    /// The repro journal `Session::open` and the session's changes record
+    /// into: `Tool::view` refreshes it from `ctx.recorder()` each frame, a
+    /// default one in the tests' view-only frames.
+    pub(crate) recorder: Recorder,
     /// Which team the list shows.
     team: TeamChoice,
     /// The filter box's text.
@@ -425,6 +430,7 @@ impl SaveView {
     pub(crate) fn new() -> SaveView {
         SaveView {
             session: None,
+            recorder: Recorder::default(),
             team: TeamChoice::All,
             filter: String::new(),
             selected: None,
@@ -527,8 +533,10 @@ impl SaveView {
     /// row is not a player); a file the
     /// save refuses is shown as a refusal and the open session is untouched.
     /// The aesthetics lock is deliberately not reset (`edit_aesthetics`).
+    /// A file that fails records its own step and keeps its bytes: the
+    /// file a member reports is the one that failed.
     pub(crate) fn open(&mut self, path: &Path) {
-        match Session::open(path) {
+        match Session::open(path, self.recorder.clone()) {
             Ok(session) => {
                 self.team = TeamChoice::All;
                 self.filter.clear();
@@ -567,6 +575,13 @@ impl SaveView {
                 self.medals.reset();
             }
             Err(error) => {
+                self.recorder.step(
+                    TOOL_ID,
+                    format!("could not open {}: {error:#}", path.display()),
+                );
+                if let Ok(bytes) = std::fs::read(path) {
+                    self.recorder.keep_input(TOOL_ID, path, bytes.into());
+                }
                 self.refusal = Some(Refusal {
                     title: "Cannot open the save",
                     message: format!("{error:#}"),

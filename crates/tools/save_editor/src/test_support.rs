@@ -2,6 +2,7 @@
 //! rather than the system Temp.
 
 use std::fs;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 /// A fresh, empty scratch folder for `test` under the test binary's build folder
@@ -72,6 +73,43 @@ pub(crate) fn shared_tool_context(
         requests_tx,
     );
     (ctx, settings, events_rx, requests_rx)
+}
+
+/// `recorder`'s step lines so far, read back out of a written bundle's
+/// `journal.toml`: the journal's only reader is the bundle. The bundle
+/// lands in `dir` as `journal.zip`.
+pub(crate) fn journal_lines(recorder: &studio_core::Recorder, dir: &Path) -> Vec<String> {
+    let bundle = dir.join("journal.zip");
+    recorder.write_bundle(&bundle, "", &[], None).unwrap();
+    let mut archive = zip::ZipArchive::new(std::fs::File::open(&bundle).unwrap()).unwrap();
+    let mut text = String::new();
+    archive
+        .by_name("journal.toml")
+        .unwrap()
+        .read_to_string(&mut text)
+        .unwrap();
+    let doc: toml::Table = toml::from_str(&text).unwrap();
+    doc.get("step")
+        .and_then(toml::Value::as_array)
+        .map(|steps| {
+            steps
+                .iter()
+                .map(|step| step["what"].as_str().unwrap().to_owned())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// `name`'s bytes inside the zip at `path`.
+pub(crate) fn zip_entry(path: &Path, name: &str) -> Vec<u8> {
+    let mut archive = zip::ZipArchive::new(std::fs::File::open(path).unwrap()).unwrap();
+    let mut bytes = Vec::new();
+    archive
+        .by_name(name)
+        .unwrap()
+        .read_to_end(&mut bytes)
+        .unwrap();
+    bytes
 }
 
 /// The salt the written saves encrypt with (the CLI tests' own).

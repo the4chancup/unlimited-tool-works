@@ -517,7 +517,7 @@ fn a_window_close_prompts_and_each_answer_does_what_it_says() {
         requests.try_recv().expect("the close request"),
         ShellRequest::Close
     );
-    let reopened = Session::open(&path).unwrap();
+    let reopened = Session::open(&path, Recorder::default()).unwrap();
     assert_eq!(
         reopened.file().player(70101).unwrap().basic.height,
         170,
@@ -685,7 +685,7 @@ fn the_prompts_save_runs_the_window_save_first() {
         &running_own,
         modal_button(&pairs, "PES 2021 is running", "Save"),
     );
-    let reopened = Session::open(&path).unwrap();
+    let reopened = Session::open(&path, Recorder::default()).unwrap();
     assert_eq!(
         reopened.file().player(70101).unwrap().basic.height,
         170,
@@ -956,7 +956,7 @@ fn opening_anothers_save_writes_the_first_then_opens_the_picked() {
         other.as_path(),
         "the picked save is open"
     );
-    let reopened = Session::open(&first).unwrap();
+    let reopened = Session::open(&first, Recorder::default()).unwrap();
     assert_eq!(
         reopened.file().player(70101).unwrap().basic.height,
         170,
@@ -998,7 +998,7 @@ fn opening_anothers_save_writes_the_first_then_opens_the_picked() {
         other.as_path(),
         "the second save is open"
     );
-    let reopened = Session::open(&first).unwrap();
+    let reopened = Session::open(&first, Recorder::default()).unwrap();
     assert_eq!(
         reopened.file().player(70101).unwrap().basic.height,
         170,

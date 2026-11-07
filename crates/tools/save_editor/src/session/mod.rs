@@ -15,6 +15,7 @@ pub(crate) mod undo;
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use anyhow::{Context, anyhow};
@@ -24,10 +25,11 @@ use pes_savefile::interchange::team_toml::{ImportNote, TeamToml};
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_savefile::ops::compare::{PlayerDiff, TeamDiff, compare_players, compare_teams};
 use pes_savefile::schema::ingame_face::IngameFaceField;
-use pes_savefile::schema::schema_for;
+use pes_savefile::schema::{VersionSchema, schema_for};
 use pes_version::PesVersion;
-use studio_core::RunningPes;
+use studio_core::{Recorder, RunningPes};
 
+use crate::messages::{TOOL_ID, diff_fields, team_diff_fields};
 use crate::session::undo::{Change, UndoStack};
 
 /// The ticks `Session::revision` draws from, one per open and per change:
@@ -88,14 +90,35 @@ pub(crate) struct Session {
     /// not frames. 0.0 until a frame sets it — the command line's pushes,
     /// all sealed, keep no run either way.
     now: f64,
+    /// The repro journal `changed` records every step into and `open`
+    /// and `write` keep their files in: the context's shared one in the
+    /// window, a default one on the command line, so a bundle covers the
+    /// whole session.
+    recorder: Recorder,
 }
 
 impl Session {
-    /// Opens the save at `path`. The error names the path and what `pes_savefile` refused.
-    pub(crate) fn open(path: &Path) -> anyhow::Result<Session> {
-        let file = EditFile::load(path)
+    /// Opens the save at `path`. The error names the path and what
+    /// `pes_savefile` refused. `recorder` gets the open's step and keeps
+    /// the file's bytes as read — what the tool started from is the part
+    /// a saved-over file would destroy.
+    pub(crate) fn open(path: &Path, recorder: Recorder) -> anyhow::Result<Session> {
+        let bytes: Arc<[u8]> = std::fs::read(path)
+            .with_context(|| format!("{}: cannot open the save", path.display()))?
+            .into();
+        let file = EditFile::from_bytes(&bytes)
             .with_context(|| format!("{}: cannot open the save", path.display()))?;
         let (baseline_players, baseline_teams) = baselines(&file);
+        recorder.step(
+            TOOL_ID,
+            format!(
+                "opened {} ({}, {} bytes)",
+                path.display(),
+                file.version(),
+                bytes.len()
+            ),
+        );
+        recorder.keep_input(TOOL_ID, path, bytes);
         Ok(Session {
             file,
             path: path.to_path_buf(),
@@ -105,6 +128,7 @@ impl Session {
             dirty: false,
             revision: NEXT_REVISION.fetch_add(1, Ordering::Relaxed),
             now: 0.0,
+            recorder,
         })
     }
 
@@ -132,8 +156,13 @@ impl Session {
         self.revision
     }
 
-    /// Marks the model changed: the next `revision`.
-    fn touch(&mut self) {
+    /// Marks the model changed: `steps` recorded in the journal (one per
+    /// field or event, so a bundle replays the change), then the next
+    /// `revision`.
+    fn changed(&mut self, steps: Vec<String>) {
+        for step in steps {
+            self.recorder.step(TOOL_ID, step);
+        }
         self.revision = NEXT_REVISION.fetch_add(1, Ordering::Relaxed);
     }
 
@@ -171,6 +200,7 @@ impl Session {
             return;
         }
         let before = std::mem::replace(entry, edited.clone());
+        let steps = player_lines(&before, &edited, schema_for(self.version()));
         self.undo.push(
             key,
             Change::Player {
@@ -179,7 +209,7 @@ impl Session {
             },
             self.now,
         );
-        self.touch();
+        self.changed(steps);
         self.dirty = self.compute_dirty();
     }
 
@@ -219,6 +249,16 @@ impl Session {
         if changed_players.is_empty() && changed_teams.is_empty() {
             return;
         }
+        // The journal's lines are read off the same before/after pairs the
+        // undo entry takes: a change the model took is a change recorded.
+        let schema = schema_for(self.version());
+        let mut steps = Vec::new();
+        for (before, after) in &changed_players {
+            steps.extend(player_lines(before, after, schema));
+        }
+        for (before, after) in &changed_teams {
+            steps.extend(team_lines(before, after, schema));
+        }
         for (before, after) in changed_players {
             *self.file.player_mut(after.id).expect("resolved above") = after.clone();
             self.undo.push(
@@ -243,7 +283,7 @@ impl Session {
         }
         // One entry for the whole batch, sealed: the next edit does not merge.
         self.undo.seal();
-        self.touch();
+        self.changed(steps);
         self.dirty = self.compute_dirty();
     }
 
@@ -257,6 +297,7 @@ impl Session {
             return;
         }
         let before = std::mem::replace(entry, edited.clone());
+        let steps = team_lines(&before, &edited, schema_for(self.version()));
         self.undo.push(
             key,
             Change::Team {
@@ -265,7 +306,7 @@ impl Session {
             },
             self.now,
         );
-        self.touch();
+        self.changed(steps);
         self.dirty = self.compute_dirty();
     }
 
@@ -348,9 +389,20 @@ impl Session {
 
     /// Undoes the newest gesture; `false` when the stack is empty.
     pub(crate) fn undo(&mut self) -> bool {
+        // The journal's lines come off the entry before `undo` moves it:
+        // the fields' values run from the edit's `after` back to its
+        // `before`.
+        let steps = self.undo.undo_changes().map(|changes| {
+            let schema = schema_for(self.version());
+            let mut steps = vec!["undo".to_owned()];
+            for change in changes {
+                steps.extend(change_lines(change, schema, true));
+            }
+            steps
+        });
         let undone = self.undo.undo(&mut self.file);
         if undone {
-            self.touch();
+            self.changed(steps.expect("`undo` returned true"));
             self.dirty = self.compute_dirty();
         }
         undone
@@ -359,9 +411,17 @@ impl Session {
     /// Reapplies the newest undone gesture; `false` when the redo stack is
     /// empty.
     pub(crate) fn redo(&mut self) -> bool {
+        let steps = self.undo.redo_changes().map(|changes| {
+            let schema = schema_for(self.version());
+            let mut steps = vec!["redo".to_owned()];
+            for change in changes {
+                steps.extend(change_lines(change, schema, false));
+            }
+            steps
+        });
         let redone = self.undo.redo(&mut self.file);
         if redone {
-            self.touch();
+            self.changed(steps.expect("`redo` returned true"));
             self.dirty = self.compute_dirty();
         }
         redone
@@ -564,10 +624,32 @@ impl Session {
             .team(id)
             .ok_or_else(|| anyhow!("the save has no team {id}"))?
             .clone();
+        // For the journal's field lines: the import writes only the team
+        // and its rostered players, so those are the entries compared.
+        let before_team = team.clone();
+        let before_players: Vec<PlayerEntry> = team
+            .roster
+            .iter()
+            .filter(|slot| slot.player_id != 0)
+            .filter_map(|slot| self.file.player(slot.player_id))
+            .cloned()
+            .collect();
         let version = self.version();
         let notes = document.apply(version, &mut team, self.file.players_mut())?;
         *self.file.team_mut(id).expect("found above") = team;
-        self.touch();
+        let schema = schema_for(version);
+        let mut steps = vec![format!("imported Team TOML onto team {id}")];
+        steps.extend(team_lines(
+            &before_team,
+            self.file.team(id).expect("found above"),
+            schema,
+        ));
+        for before in &before_players {
+            if let Some(after) = self.file.player(before.id) {
+                steps.extend(player_lines(before, after, schema));
+            }
+        }
+        self.changed(steps);
         self.dirty = self.compute_dirty();
         Ok(notes)
     }
@@ -582,7 +664,14 @@ impl Session {
         patch: &AestheticsPatch,
     ) -> Result<PatchSummary, PatchError> {
         let summary = patch.apply(&mut self.file)?;
-        self.touch();
+        let mut steps = vec!["applied the aesthetics patch".to_owned()];
+        steps.extend(
+            summary
+                .applied_teams
+                .iter()
+                .map(|id| format!("applied to team {id}")),
+        );
+        self.changed(steps);
         self.dirty = self.compute_dirty();
         Ok(summary)
     }
@@ -592,7 +681,21 @@ impl Session {
     pub(crate) fn write(&self, out: &Path) -> anyhow::Result<()> {
         self.file
             .save(out)
-            .with_context(|| format!("{}: cannot write the save", out.display()))
+            .with_context(|| format!("{}: cannot write the save", out.display()))?;
+        self.recorder
+            .step(TOOL_ID, format!("wrote {}", out.display()));
+        match std::fs::read(out) {
+            Ok(written) => self.recorder.keep_output(TOOL_ID, out, written.into()),
+            // The save was written; a journal that cannot keep it loses the
+            // bundle's output, never the member's write.
+            Err(error) => {
+                log::debug!(
+                    "{}: the written save cannot be kept ({error})",
+                    out.display()
+                )
+            }
+        }
+        Ok(())
     }
 }
 
@@ -640,6 +743,62 @@ fn baselines(file: &EditFile) -> (HashMap<u32, PlayerEntry>, HashMap<u32, TeamEn
     )
 }
 
+/// The journal's `player <id>: <field> <old> → <new>` lines for a change
+/// to `after`'s entry from `before`, one per field `compare_players`
+/// names. An entry never read from a save (a gated field `None`) cannot
+/// be diffed; the step then names the change and the codec's refusal
+/// rather than losing the record of it.
+fn player_lines(before: &PlayerEntry, after: &PlayerEntry, schema: &VersionSchema) -> Vec<String> {
+    match compare_players(before, after, schema) {
+        Ok(diffs) => diffs
+            .iter()
+            .map(|diff| {
+                let (field, old, new) = diff_fields(diff);
+                format!("player {}: {field} {old} → {new}", after.id)
+            })
+            .collect(),
+        Err(error) => vec![format!("player {}: changed ({error})", after.id)],
+    }
+}
+
+/// `player_lines` for a team's entry.
+fn team_lines(before: &TeamEntry, after: &TeamEntry, schema: &VersionSchema) -> Vec<String> {
+    match compare_teams(before, after, schema) {
+        Ok(diffs) => diffs
+            .iter()
+            .map(|diff| {
+                let (field, old, new) = team_diff_fields(diff);
+                format!("team {}: {field} {old} → {new}", after.id)
+            })
+            .collect(),
+        Err(error) => vec![format!("team {}: changed ({error})", after.id)],
+    }
+}
+
+/// A pushed change's journal lines: the fields' values as they move
+/// (`undone`: an undo's lines run from the edit's `after` back to its
+/// `before`).
+fn change_lines(change: &Change, schema: &VersionSchema, undone: bool) -> Vec<String> {
+    match change {
+        Change::Player { before, after } => {
+            let (from, to) = if undone {
+                (after, before)
+            } else {
+                (before, after)
+            };
+            player_lines(from, to, schema)
+        }
+        Change::Team { before, after } => {
+            let (from, to) = if undone {
+                (after, before)
+            } else {
+                (before, after)
+            };
+            team_lines(from, to, schema)
+        }
+    }
+}
+
 /// The refusal a writing operation makes while the PES of `version` runs and
 /// `edit_mode_closed` is not given (the command line's word that the game's
 /// Edit mode is closed, or the window's running-game dialog's Save): the game
@@ -673,6 +832,7 @@ mod tests {
     use pes_savefile::schema::ingame_face::IngameFaceField;
 
     use super::*;
+    use crate::test_support::{journal_lines, zip_entry};
 
     /// Writes `version`'s fixture save under the test's scratch folder and
     /// opens it as a `Session`.
@@ -680,7 +840,7 @@ mod tests {
         let dir = crate::test_support::scratch(test);
         let path = dir.join("EDIT00000000");
         std::fs::write(&path, pes_savefile::fixture_save(version)).unwrap();
-        Session::open(&path).unwrap()
+        Session::open(&path, Recorder::default()).unwrap()
     }
 
     /// Saves `session` over the file it was opened from, no game running.
@@ -1022,7 +1182,7 @@ mod tests {
         // Saved and reopened: the moved fields and the slots' faces are what
         // the file holds (SE-GUI-08's THEN after Save).
         save_in_place(&mut session);
-        let reopened = Session::open(session.path()).unwrap();
+        let reopened = Session::open(session.path(), Recorder::default()).unwrap();
         assert_face_move(&reopened, &marks);
     }
 
@@ -1072,7 +1232,7 @@ mod tests {
         let dir = crate::test_support::scratch("dirty");
         let path = dir.join("EDIT00000000");
         std::fs::write(&path, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
-        let mut session = Session::open(&path).unwrap();
+        let mut session = Session::open(&path, Recorder::default()).unwrap();
         assert!(!session.is_dirty());
         assert!(!session.player_dirty(701, 0));
 
@@ -1105,7 +1265,7 @@ mod tests {
         let dir = crate::test_support::scratch("dirty_flag");
         let path = dir.join("EDIT00000000");
         std::fs::write(&path, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
-        let mut session = Session::open(&path).unwrap();
+        let mut session = Session::open(&path, Recorder::default()).unwrap();
         assert!(!session.can_redo(), "nothing to redo on an open save");
 
         let mut edited = session.file().player(70101).unwrap().clone();
@@ -1135,7 +1295,7 @@ mod tests {
         let dir = crate::test_support::scratch("import_dirty");
         let path = dir.join("EDIT00000000");
         std::fs::write(&path, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
-        let mut session = Session::open(&path).unwrap();
+        let mut session = Session::open(&path, Recorder::default()).unwrap();
         assert!(!session.is_dirty());
 
         use pes_savefile::interchange::team_toml::{PlayerSection, TeamSection};
@@ -1165,7 +1325,7 @@ mod tests {
         let dir = crate::test_support::scratch("revision");
         let path = dir.join("EDIT00000000");
         std::fs::write(&path, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
-        let mut session = Session::open(&path).unwrap();
+        let mut session = Session::open(&path, Recorder::default()).unwrap();
         let opened = session.revision();
 
         // The per-frame seal is not a change.
@@ -1245,5 +1405,297 @@ mod tests {
         session.undo();
         assert_eq!(session.file().player(70101).unwrap().basic.height, before);
         assert!(!session.can_undo(), "each push was its own entry");
+    }
+
+    /// `op`'s effect on `session` moved `revision` and the journal's step
+    /// count together: both grew when `changed` holds, neither otherwise —
+    /// a model change that moves the revision without a step, or a step
+    /// with no model change, fails.
+    fn check_records(
+        session: &mut Session,
+        recorder: &Recorder,
+        dir: &Path,
+        name: &str,
+        changed: bool,
+        op: impl FnOnce(&mut Session),
+    ) {
+        let (revision, steps) = (session.revision(), journal_lines(recorder, dir).len());
+        op(session);
+        assert_eq!(
+            session.revision() != revision,
+            changed,
+            "{name}: the revision"
+        );
+        assert_eq!(
+            journal_lines(recorder, dir).len() > steps,
+            changed,
+            "{name}: the journal"
+        );
+    }
+
+    // Every model change is a recorded step: the operations below move
+    // `revision` and the journal's step count together, and a no-change
+    // edit moves neither (a change cannot reach the model unrecorded).
+    #[test]
+    fn every_model_change_records_its_steps() {
+        let dir = crate::test_support::scratch("journal_changes");
+        let path = dir.join("EDIT00000000");
+        let original = pes_savefile::fixture_save(PesVersion::Pes21);
+        std::fs::write(&path, &original).unwrap();
+        let recorder = Recorder::default();
+        let mut session = Session::open(&path, recorder.clone()).unwrap();
+        assert_eq!(
+            journal_lines(&recorder, &dir),
+            [format!(
+                "opened {} (PES 2021, {} bytes)",
+                path.display(),
+                original.len()
+            )],
+            "the open is the journal's first step"
+        );
+
+        let height_before = session.file().player(70101).unwrap().basic.height;
+        check_records(
+            &mut session,
+            &recorder,
+            &dir,
+            "edit_player",
+            true,
+            |session| {
+                let mut edited = session.file().player(70101).unwrap().clone();
+                edited.basic.height = edited.basic.height.wrapping_add(1);
+                session.edit_player(1, edited);
+            },
+        );
+        // A field's line names the player, the field and the two values.
+        assert_eq!(
+            journal_lines(&recorder, &dir).last().unwrap(),
+            &format!(
+                "player 70101: Height {} → {}",
+                height_before,
+                height_before + 1
+            )
+        );
+
+        check_records(
+            &mut session,
+            &recorder,
+            &dir,
+            "edit_players",
+            true,
+            |session| {
+                let mut edited = Vec::new();
+                for id in [70101, 70102] {
+                    let mut player = session.file().player(id).unwrap().clone();
+                    player.basic.height = player.basic.height.wrapping_add(1);
+                    edited.push(player);
+                }
+                session.edit_players(edited);
+            },
+        );
+        check_records(
+            &mut session,
+            &recorder,
+            &dir,
+            "edit_team",
+            true,
+            |session| {
+                let mut edited = session.file().team(701).unwrap().clone();
+                edited.short_name = "XYZ".to_owned();
+                session.edit_team(1, edited);
+            },
+        );
+        check_records(
+            &mut session,
+            &recorder,
+            &dir,
+            "move_player",
+            true,
+            |session| session.move_player(701, 1, 0),
+        );
+        check_records(&mut session, &recorder, &dir, "undo", true, |session| {
+            session.undo();
+        });
+        check_records(&mut session, &recorder, &dir, "redo", true, |session| {
+            session.redo();
+        });
+        check_records(
+            &mut session,
+            &recorder,
+            &dir,
+            "import_team",
+            true,
+            |session| {
+                use pes_savefile::interchange::team_toml::{PlayerSection, TeamSection};
+                let mut document = TeamToml {
+                    team: TeamSection {
+                        id: Some(701),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                };
+                document.players.insert(
+                    3,
+                    PlayerSection {
+                        name: Some("NEWNAME".to_string()),
+                        ..Default::default()
+                    },
+                );
+                session.import_team(&document).unwrap();
+            },
+        );
+        check_records(
+            &mut session,
+            &recorder,
+            &dir,
+            "apply_patch",
+            true,
+            |session| {
+                use std::collections::BTreeMap;
+
+                use pes_savefile::interchange::aesthetics_patch::{
+                    ALLOCATION_SCHEME_VERSION, AestheticsPatch, PatchPlayer, PatchTeam,
+                };
+                let patch = AestheticsPatch {
+                    pes_version: PesVersion::Pes21,
+                    tool_version: "0.1.0".to_owned(),
+                    allocation_scheme_version: ALLOCATION_SCHEME_VERSION,
+                    cpks: vec![],
+                    compiled: "2026-10-13T00:00:00Z".parse().unwrap(),
+                    teams: vec![PatchTeam {
+                        id: 701,
+                        name: "PATCHED".to_owned(),
+                        players: BTreeMap::from([(
+                            0,
+                            PatchPlayer {
+                                name: Some("PATCHED".to_owned()),
+                                shirt_name: None,
+                                boots_id: None,
+                                gloves_id: None,
+                                base_copy_id: None,
+                                appearance: None,
+                            },
+                        )]),
+                    }],
+                };
+                session.apply_patch(&patch).unwrap();
+            },
+        );
+
+        // An edit of nothing moves neither the revision nor the journal.
+        check_records(
+            &mut session,
+            &recorder,
+            &dir,
+            "a no-change edit",
+            false,
+            |session| {
+                session.edit_player(1, session.file().player(70101).unwrap().clone());
+            },
+        );
+    }
+
+    // The bundle's input is the file as read and its output the file as
+    // written: `open` keeps the exact bytes, `write` the written ones.
+    #[test]
+    fn open_and_write_keep_their_bytes_in_the_bundle() {
+        let dir = crate::test_support::scratch("journal_kept");
+        let path = dir.join("EDIT00000000");
+        let original = pes_savefile::fixture_save(PesVersion::Pes21);
+        std::fs::write(&path, &original).unwrap();
+        let recorder = Recorder::default();
+        let mut session = Session::open(&path, recorder.clone()).unwrap();
+
+        let mut edited = session.file().player(70101).unwrap().clone();
+        edited.basic.height = edited.basic.height.wrapping_add(1);
+        session.edit_player(1, edited);
+        let out = dir.join("EDIT00000000.out");
+        session.write(&out).unwrap();
+
+        let bundle = dir.join("bundle.zip");
+        recorder.write_bundle(&bundle, "", &[], None).unwrap();
+        assert_eq!(
+            zip_entry(&bundle, "inputs/0-EDIT00000000"),
+            original,
+            "the kept input is the file as read"
+        );
+        assert_eq!(
+            zip_entry(&bundle, "outputs/0-EDIT00000000.out"),
+            std::fs::read(&out).unwrap(),
+            "the kept output is the file as written"
+        );
+    }
+
+    // A document's `[players.NN]` names a roster slot, resolved against the
+    // roster as opened, and the import never writes the roster itself
+    // (`team_toml`'s `apply`): a field of a player the roster does not name
+    // cannot change, so the journal holds no line for him. An entry on an
+    // empty slot is noted and writes nothing.
+    #[test]
+    fn an_import_writes_only_the_players_the_roster_names() {
+        let dir = crate::test_support::scratch("journal_import_roster");
+        let path = dir.join("EDIT00000000");
+        std::fs::write(&path, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
+        let recorder = Recorder::default();
+        let mut session = Session::open(&path, recorder.clone()).unwrap();
+        let empty = session
+            .file()
+            .team(701)
+            .unwrap()
+            .roster
+            .iter()
+            .position(|slot| slot.player_id == 0)
+            .map(|i| u8::try_from(i).unwrap())
+            .expect("the roster has an empty slot");
+        let name_before = session.file().player(70103).unwrap().name.clone();
+
+        use pes_savefile::interchange::team_toml::{PlayerSection, TeamSection};
+        let mut document = TeamToml {
+            team: TeamSection {
+                id: Some(701),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        // `[players.03]` is 70103's roster slot; `[players.NN]` on the
+        // empty slot has no player to write to.
+        document.players.insert(
+            3,
+            PlayerSection {
+                name: Some("NEWNAME".to_owned()),
+                ..Default::default()
+            },
+        );
+        document.players.insert(
+            empty + 1,
+            PlayerSection {
+                name: Some("NOBODY".to_owned()),
+                number: Some(9),
+                ..Default::default()
+            },
+        );
+        let notes = session.import_team(&document).unwrap();
+
+        assert!(
+            notes
+                .iter()
+                .any(|note| matches!(note, ImportNote::EmptySlot { .. })),
+            "the empty slot's entry is noted skipped: {notes:?}"
+        );
+        let lines = journal_lines(&recorder, &dir);
+        let players: Vec<&String> = lines
+            .iter()
+            .filter(|line| line.starts_with("player "))
+            .collect();
+        assert_eq!(
+            players,
+            [&format!("player 70103: Name {name_before} → NEWNAME")],
+            "only the rostered player's line: {lines:?}"
+        );
+        assert_eq!(
+            session.file().player(70103).unwrap().name,
+            "NEWNAME",
+            "the rostered player imported"
+        );
     }
 }

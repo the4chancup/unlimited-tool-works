@@ -243,7 +243,7 @@ fn an_ability_edit_marks_the_row_until_ctrl_s_writes_the_save() {
         original,
         "the .bak is the file as opened"
     );
-    let reopened = Session::open(&path).unwrap();
+    let reopened = Session::open(&path, Recorder::default()).unwrap();
     assert_eq!(
         reopened.file().player(70101).unwrap().stats.speed,
         55,

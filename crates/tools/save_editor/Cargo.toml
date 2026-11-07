@@ -39,6 +39,8 @@ pes_savefile = { workspace = true, features = ["test-support"] }
 # The integration tests are their own crate, which `cfg(test)` does not reach: they turn on
 # `test-support` to set the running-game probe instead of reading the process list.
 save_editor = { workspace = true, features = ["test-support"] }
+# The journal tests read a written bundle back.
+zip.workspace = true
 
 [lints]
 workspace = true

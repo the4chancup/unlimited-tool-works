@@ -13,7 +13,7 @@ use pes_savefile::interchange::aesthetics_patch::AestheticsPatch;
 use pes_savefile::interchange::team_toml::TeamToml;
 use pes_savefile::ops::compare::{CompareError, DiffScope};
 use pes_version::PesVersion;
-use studio_core::{CliError, RunningPes, Severity, ToolContext};
+use studio_core::{CliError, Recorder, RunningPes, Severity, ToolContext};
 use team_widgets::violations::Wording;
 
 use crate::events::Report;
@@ -192,7 +192,7 @@ fn refuse_while_running(
 
 /// Opens the save a command reads; an unreadable one is a refusal.
 fn open(path: &Path) -> Result<Session, CliError> {
-    Session::open(path).map_err(invalid)
+    Session::open(path, Recorder::default()).map_err(invalid)
 }
 
 /// Reads the text file a command applies; an unreadable one is a refusal naming it.

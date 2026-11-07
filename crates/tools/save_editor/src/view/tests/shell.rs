@@ -48,7 +48,7 @@ fn an_edit_marks_the_row_until_ctrl_s_writes_the_save() {
             .any(|node| node.label().is_some_and(|label| label.contains('●'))),
         "no dirty player"
     );
-    let reopened = Session::open(&path).unwrap();
+    let reopened = Session::open(&path, Recorder::default()).unwrap();
     assert_eq!(
         reopened.file().player(70101).unwrap().basic.height,
         170,
@@ -266,7 +266,7 @@ fn save_asks_the_edit_mode_question_while_the_saves_own_pes_runs() {
     );
     assert!(view.edit_mode_question.is_none());
     assert!(!view.session.as_ref().unwrap().is_dirty(), "the save wrote");
-    let reopened = Session::open(&path).unwrap();
+    let reopened = Session::open(&path, Recorder::default()).unwrap();
     assert_eq!(
         reopened.file().player(70101).unwrap().basic.height,
         170,

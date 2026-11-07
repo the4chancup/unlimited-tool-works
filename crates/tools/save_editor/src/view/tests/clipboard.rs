@@ -89,7 +89,7 @@ fn ctrl_c_then_ctrl_v_copies_a_players_stats_onto_the_selected_row() {
     // What the paste must write: Copy stats from A onto B, built
     // through the session on a second copy of the same save.
     let expected = {
-        let mut second = Session::open(&path).unwrap();
+        let mut second = Session::open(&path, Recorder::default()).unwrap();
         second.copy_stats(b, a);
         second.file().player(b).unwrap().clone()
     };
@@ -316,7 +316,7 @@ fn ctrl_v_after_an_arrow_key_pastes_onto_the_row_the_key_reached() {
     view.team = TeamChoice::Team(701);
     let (a, b) = (70101, 70102);
     let expected = {
-        let mut second = Session::open(&path).unwrap();
+        let mut second = Session::open(&path, Recorder::default()).unwrap();
         second.copy_stats(b, a);
         second.file().player(b).unwrap().clone()
     };
@@ -353,7 +353,7 @@ fn a_text_field_holding_the_keyboard_keeps_ctrl_c_and_ctrl_v() {
     let (a, b) = (70101, 70102);
     let b_before = player_entry(&view, b);
     let expected = {
-        let mut second = Session::open(&path).unwrap();
+        let mut second = Session::open(&path, Recorder::default()).unwrap();
         second.copy_stats(b, a);
         second.file().player(b).unwrap().clone()
     };

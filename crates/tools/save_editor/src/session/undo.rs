@@ -206,6 +206,18 @@ impl UndoStack {
         self.open = false;
     }
 
+    /// The changes the next `undo` would restore, `None` when the stack
+    /// is empty: the journal's lines are read off them before `undo`
+    /// moves the entry.
+    pub(crate) fn undo_changes(&self) -> Option<&[Change]> {
+        self.undo.last().map(|entry| entry.changes.as_slice())
+    }
+
+    /// `undo_changes` for the next `redo`.
+    pub(crate) fn redo_changes(&self) -> Option<&[Change]> {
+        self.redo.last().map(|entry| entry.changes.as_slice())
+    }
+
     /// Restores each change's `before` into the file and moves the newest
     /// entry to redo; `false` when the stack is empty.
     pub(crate) fn undo(&mut self, file: &mut EditFile) -> bool {

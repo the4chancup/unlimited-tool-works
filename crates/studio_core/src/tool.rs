@@ -14,6 +14,7 @@ use pes_version::PesVersion;
 
 use crate::events::PipelineEventEnvelope;
 use crate::help::{HelpSection, HelpTarget};
+use crate::repro::Recorder;
 use crate::settings::{CommonSettings, Settings};
 use crate::status::{Notice, ToolActivity};
 
@@ -216,6 +217,9 @@ pub struct ToolContext {
     /// The sidebar's latest exe check, shared by every clone; `None` until the sidebar's
     /// first frame, and always in the CLI.
     pes_exe_check: Arc<Mutex<Option<ExeCheck>>>,
+    /// The repro journal every tool's model steps record into; every clone
+    /// shares it, so the bundle covers the whole session.
+    recorder: Recorder,
 }
 
 impl ToolContext {
@@ -234,6 +238,7 @@ impl ToolContext {
             requests,
             wake: Arc::new(OnceLock::new()),
             pes_exe_check: Arc::new(Mutex::new(None)),
+            recorder: Recorder::default(),
         }
     }
 
@@ -263,6 +268,14 @@ impl ToolContext {
     #[cfg(not(target_arch = "wasm32"))]
     pub(crate) fn set_data_dir(&mut self, dir: PathBuf) {
         self.paths.data_dir = Some(dir);
+    }
+
+    /// The repro journal's recorder: a tool records every step that
+    /// changes its model and keeps the files it read and wrote, so the
+    /// bundle "Report a problem" writes can replay the session. Clone it
+    /// to hand it around; every clone writes the one journal.
+    pub fn recorder(&self) -> &Recorder {
+        &self.recorder
     }
 
     /// A copy of the common settings as they are now.

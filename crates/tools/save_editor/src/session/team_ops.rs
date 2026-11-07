@@ -226,6 +226,7 @@ fn in_range(
 #[cfg(test)]
 mod tests {
     use pes_version::PesVersion;
+    use studio_core::Recorder;
 
     use super::*;
 
@@ -235,7 +236,7 @@ mod tests {
         let dir = crate::test_support::scratch(test);
         let path = dir.join("EDIT00000000");
         std::fs::write(&path, pes_savefile::fixture_save(version)).unwrap();
-        Session::open(&path).unwrap()
+        Session::open(&path, Recorder::default()).unwrap()
     }
 
     /// `team_id`'s filled roster slots as `(slot, player_id)`, in slot order.

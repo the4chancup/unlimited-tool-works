@@ -207,6 +207,7 @@ fn preset_id(own: u32, hide_id: u16, preset: u16) -> u16 {
 #[cfg(test)]
 mod tests {
     use pes_version::PesVersion;
+    use studio_core::Recorder;
 
     use super::*;
 
@@ -216,7 +217,7 @@ mod tests {
         let dir = crate::test_support::scratch(test);
         let path = dir.join("EDIT00000000");
         std::fs::write(&path, pes_savefile::fixture_save(version)).unwrap();
-        Session::open(&path).unwrap()
+        Session::open(&path, Recorder::default()).unwrap()
     }
 
     // A preset's ID lands only where the record holds 0 or the hide ID;

@@ -131,6 +131,7 @@ impl StudioTool for Tool {
         self.view.hide_ids = common.fpc_hide_ids();
         self.view.pes_version = common.pes_version;
         self.view.pes_exe_check = ctx.pes_exe_check();
+        self.view.recorder = ctx.recorder().clone();
         self.view
             .select_portraits(ui.ctx(), &common.pes_folder(), common.pes_version);
         view::show(ui, &mut self.view, &self.running);

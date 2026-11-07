@@ -9,6 +9,8 @@ pub mod events;
 pub mod help;
 pub mod icons;
 pub mod pes_process;
+pub mod redact;
+pub mod repro;
 pub mod settings;
 pub mod shell;
 pub mod status;
@@ -23,6 +25,8 @@ pub use events::{
 };
 pub use help::{CatalogRow, HelpSection, HelpTarget, HelpTopic, run_help};
 pub use pes_process::{RunningPes, running_pes};
+pub use redact::redact_home;
+pub use repro::Recorder;
 pub use settings::{COMMON_KEY, CommonSettings, Settings, SettingsError, Theme};
 #[cfg(not(target_arch = "wasm32"))]
 pub use settings::{SETTINGS_FILE_NAME, resolve_data_dir, settings_file_writable, user_config_dir};

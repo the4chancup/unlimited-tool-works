@@ -11,7 +11,7 @@ use aatf::Violation;
 use pes_savefile::interchange::aesthetics_patch::PatchSkip;
 use pes_savefile::interchange::team_toml::ImportNote;
 use pes_savefile::model::names::display_name;
-use pes_savefile::ops::compare::PlayerDiff;
+use pes_savefile::ops::compare::{PlayerDiff, TeamDiff};
 use pes_version::PesVersion;
 use studio_core::{CatalogRow, Disposition, Message, MessageCode, Scope, Severity};
 use team_widgets::violations::{ListedPlayer, Wording, rule_name, sentence, violation_detail};
@@ -449,6 +449,20 @@ pub(crate) fn diff_fields(row: &PlayerDiff) -> (String, String, String) {
             ("face_run".to_owned(), old.to_string(), new.to_string())
         }
     }
+}
+
+/// `diff_fields` for a `TeamDiff`: the differing field by its schema name (a roster or
+/// tactics field's `Debug`, which carries its slot or index) and the old and new values.
+pub(crate) fn team_diff_fields(row: &TeamDiff) -> (String, String, String) {
+    let (field, old, new) = match row {
+        TeamDiff::Field { field, old, new } => (format!("{field:?}"), old, new),
+        TeamDiff::Roster { field, old, new } => (format!("{field:?}"), old, new),
+        TeamDiff::Tactics { field, old, new } => (format!("{field:?}"), old, new),
+        TeamDiff::Text { text, old, new } => {
+            return (format!("{text:?}"), old.clone(), new.clone());
+        }
+    };
+    (field, old.to_string(), new.to_string())
 }
 
 /// The message for one `diff` row of `player`: `field` is the field as the views label it

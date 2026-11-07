@@ -90,6 +90,7 @@ impl Session {
 #[cfg(test)]
 mod tests {
     use pes_version::PesVersion;
+    use studio_core::Recorder;
 
     use crate::test_support;
 
@@ -101,7 +102,7 @@ mod tests {
         let dir = test_support::scratch(test);
         let path = dir.join("EDIT00000000");
         std::fs::write(&path, pes_savefile::fixture_save(version)).unwrap();
-        Session::open(&path).unwrap()
+        Session::open(&path, Recorder::default()).unwrap()
     }
 
     // A preset copy moves the whole preset, man marking included (the game's

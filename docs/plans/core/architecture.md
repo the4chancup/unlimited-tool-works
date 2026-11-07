@@ -417,9 +417,10 @@ first, then the Team compiler and the Export upgrader, then the rest as they are
   SHA-256), a compile started and its findings. We do not record clicks and keys: they are
   large, cannot be replayed on another machine's layout, and add nothing, since every effect
   passes through the model. The journal is taken at the one point each tool already changes
-  its model through, so a step cannot reach the model unrecorded: in the Save editor, the
-  undo stack's push (`session/undo.rs`, every gesture's entries before and after), plus the
-  session's open, import, apply and save. A test per tool pins that every model change goes
+  its model through, so a step cannot reach the model unrecorded: in the Save editor,
+  `Session::changed` (`session/mod.rs`), which every edit, undo, redo, import and patch
+  calls with its field lines, not the undo stack's push, which import and patch bypass;
+  plus the session's open and write. A test per tool pins that every model change goes
   through it.
 - **The inputs are kept as they were opened.** Saving over the file it came from destroys
   the bundle's most important part, so the tool keeps the bytes it read in memory for the
@@ -439,7 +440,9 @@ first, then the Team compiler and the Export upgrader, then the rest as they are
   dialog that writes the bundle (the draft: `docs/prototypes/index.html` `drawReport`; in
   the tail, not beside the log, because the Save editor has no log panel and a member
   looks for it wherever they are), and the panic hook writes one beside the crash's log, since a crash is where a member is least able
-  to say what they did. A journal is cleared when its tool closes the file it describes.
+  to say what they did. A journal is never cleared while the window is open: a second open
+  adds to the first's record, and a file that fails to open is recorded with its bytes like
+  one that succeeds, since the file that failed is the one a member reports.
 - **Replay is the payoff.** `utw <tool-id> replay <bundle>` applies the journal to the kept
   inputs and compares the result with the bundle's written files, byte for byte. A match puts
   the problem in what we write or in the game; a mismatch in a step the model took

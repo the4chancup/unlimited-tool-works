@@ -4205,6 +4205,7 @@ dependencies = [
  "teams_list",
  "toml",
  "toml_edit 0.23.10+spec-1.0.0",
+ "zip",
 ]
 
 [[package]]
@@ -4677,12 +4678,14 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
+ "sha2",
  "thiserror 2.0.20",
  "toml",
  "toml_edit 0.23.10+spec-1.0.0",
  "ureq",
  "vtree",
  "windows",
+ "zip",
 ]
 
 [[package]]

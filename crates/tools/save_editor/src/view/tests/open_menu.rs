@@ -13,6 +13,7 @@ use studio_core::StudioTool;
 
 use super::prompt::modal_button;
 use super::*;
+use crate::test_support::{journal_lines, zip_entry};
 
 /// The SE-GUI-26 tree under a test's scratch folder: a `Documents` folder
 /// holding two PES 21 saves and one PES 19 save in the game's own layout,
@@ -453,7 +454,7 @@ fn save_as_writes_the_picked_path_and_keeps_the_replaced_file_once() {
     );
 
     let session = tool.view.session.as_ref().unwrap();
-    let reopened = Session::open(&target).expect("the target holds a save");
+    let reopened = Session::open(&target, Recorder::default()).expect("the target holds a save");
     // `assert!`, not `assert_eq!`: a failure would print every record.
     assert!(
         reopened.file().players() == session.file().players()
@@ -521,7 +522,8 @@ fn save_as_with_the_game_running_asks_then_writes_the_target() {
     let save = centre(modal_button(&pairs, "PES 2021 is running", "Save"));
     press_release(&mut window, save, |ui| show(ui, &mut view, &running_own));
 
-    let reopened = Session::open(&target).expect("the question's Save wrote the target");
+    let reopened =
+        Session::open(&target, Recorder::default()).expect("the question's Save wrote the target");
     assert_eq!(reopened.file().player(70101).unwrap().basic.height, 170);
     assert_eq!(
         std::fs::read(&path).unwrap(),
@@ -529,4 +531,46 @@ fn save_as_with_the_game_running_asks_then_writes_the_target() {
         "the opened file is unchanged"
     );
     assert_eq!(view.save_path(), Some(target.as_path()));
+}
+
+// A failed open leaves the open save's journal alone and records the file
+// that failed — the one a member reports: the earlier save's step and
+// input stay, and the refusal's own step and its bytes join them.
+#[test]
+fn a_failed_open_keeps_the_journal_and_records_the_file_that_failed() {
+    let path = fixture(PesVersion::Pes21, "journal_failed_open");
+    let dir = path.parent().unwrap().to_path_buf();
+    let bad = dir.join("notasave.txt");
+    std::fs::write(&bad, b"not a save").unwrap();
+    let recorder = Recorder::default();
+    let mut view = SaveView::new();
+    view.recorder = recorder.clone();
+
+    view.open(&path);
+    view.open(&bad);
+
+    let lines = journal_lines(&recorder, &dir);
+    assert!(
+        lines.iter().any(|line| line.starts_with("opened ")),
+        "the first save's step survives the failed open: {lines:?}"
+    );
+    let refused = lines
+        .iter()
+        .find(|line| line.starts_with("could not open "))
+        .expect("the failed open records its own step");
+    assert!(
+        refused.contains(&bad.display().to_string()),
+        "the step names the file that failed: {refused}"
+    );
+    let bundle = dir.join("journal.zip");
+    assert_eq!(
+        zip_entry(&bundle, "inputs/0-EDIT00000000"),
+        fixture_save(PesVersion::Pes21),
+        "the first save's input stays"
+    );
+    assert_eq!(
+        zip_entry(&bundle, "inputs/1-notasave.txt"),
+        b"not a save",
+        "the failed file's bytes are kept as an input"
+    );
 }

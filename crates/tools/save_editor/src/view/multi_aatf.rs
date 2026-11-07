@@ -510,6 +510,7 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
 mod tests {
     use pes_savefile::interchange::team_toml::TeamToml;
     use pes_version::PesVersion;
+    use studio_core::Recorder;
 
     use super::*;
     use crate::session::Session;
@@ -522,7 +523,7 @@ mod tests {
     fn legal_714_and_short_71801(test: &str) -> Session {
         let path = crate::test_support::scratch(test).join("EDIT00000000");
         std::fs::write(&path, pes_savefile::fixture_save(PesVersion::Pes15)).unwrap();
-        let mut session = Session::open(&path).unwrap();
+        let mut session = Session::open(&path, Recorder::default()).unwrap();
         let toml = std::fs::read_to_string(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/tests/fixtures/aatf/official_legal.toml"

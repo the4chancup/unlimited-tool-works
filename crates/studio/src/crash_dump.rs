@@ -139,7 +139,7 @@ impl minidumper::ServerHandler for DumpWriter {
 /// folder written as `~`. Append without create: a monitor whose window never opened a
 /// log adds none.
 fn append_line(data_dir: &Path, log_name: &str, home: Option<&str>, level: Level, text: &str) {
-    let line = gui_log::redact_home(&gui_log::log_line(level, "crash_dump", &text), home);
+    let line = studio_core::redact_home(&gui_log::log_line(level, "crash_dump", &text), home);
     let appended = OpenOptions::new()
         .append(true)
         .open(data_dir.join(log_name))
