@@ -80,7 +80,7 @@ pub(crate) fn shared_tool_context(
 /// lands in `dir` as `journal.zip`.
 pub(crate) fn journal_lines(recorder: &studio_core::Recorder, dir: &Path) -> Vec<String> {
     let bundle = dir.join("journal.zip");
-    recorder.write_bundle(&bundle, "", &[], None).unwrap();
+    recorder.write_bundle(&bundle, "", &[], &[], None).unwrap();
     let mut archive = zip::ZipArchive::new(std::fs::File::open(&bundle).unwrap()).unwrap();
     let mut text = String::new();
     archive

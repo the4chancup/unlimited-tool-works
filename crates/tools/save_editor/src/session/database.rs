@@ -10,13 +10,14 @@
 
 use std::path::Path;
 
-use anyhow::Context;
 use pes_savefile::EditFile;
 use pes_savefile::interchange::team_toml::labels::POSITIONS;
 use pes_savefile::model::{KitSlot, PlayStyle, PlayerEntry, TeamEntry};
 use pes_version::PesVersion;
+use studio_core::Recorder;
 
 use crate::session::Session;
+use crate::session::journal;
 
 /// The skill names the sheet spells, index = the canonical skill slot
 /// (0 Scissors Feint to 40 Through Passing). The spellings are the parity
@@ -194,11 +195,16 @@ fn play_style_name(style: PlayStyle) -> &'static str {
 
 /// Writes the roster sheet at `path`: a UTF-8 byte-order mark first, the
 /// sheet's text after it (a spreadsheet reads accented names right by
-/// the mark). The error names the path.
-pub(crate) fn write_rosters_tsv(file: &EditFile, path: &Path) -> anyhow::Result<()> {
+/// the mark). The error names the path; `recorder` gets the `wrote`
+/// step and keeps the sheet as an output.
+pub(crate) fn write_rosters_tsv(
+    file: &EditFile,
+    recorder: &Recorder,
+    path: &Path,
+) -> anyhow::Result<()> {
     let mut text = String::from("\u{feff}");
     text.push_str(&rosters_tsv(file));
-    std::fs::write(path, text).with_context(|| format!("{}", path.display()))
+    journal::write_and_record(recorder, path, text.as_bytes())
 }
 
 /// The changed players and teams Fix database writes, for
@@ -402,7 +408,7 @@ mod tests {
 
         // The written file: the byte-order mark first, the text after it.
         let path = crate::test_support::scratch("rosters_tsv").join("EDIT.tsv");
-        write_rosters_tsv(&file, &path).unwrap();
+        write_rosters_tsv(&file, &Recorder::default(), &path).unwrap();
         let bytes = std::fs::read(&path).unwrap();
         assert_eq!(
             &bytes[..3],

@@ -35,9 +35,10 @@ use studio_core::widgets::{add_enabled, add_enabled_ui, checkbox, collapsing_hea
 use studio_core::{Notice, NoticeKind};
 use team_widgets::names::append_name;
 
-use crate::messages::{import_note, when_and_effect};
+use crate::messages::{TOOL_ID, import_note, when_and_effect};
 use crate::session::Session;
 use crate::session::import_sections::{Sections, keep_sections};
+use crate::session::journal;
 use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::comparator;
 use crate::view::{
@@ -253,12 +254,21 @@ struct Picked {
 
 /// A picked file as read.
 enum Read {
-    /// A Team TOML, a tactics file or a Texport: its document, read once at
-    /// the pick.
-    Document(Box<TeamToml>),
+    /// A Team TOML, a tactics file or a Texport: its document and the
+    /// bytes it was parsed from, read once at the pick.
+    Document(Box<TeamToml>, Vec<u8>),
     /// A squad file's bytes: its records land on the target's rostered
     /// players, so it is read again whenever the target or the save changes.
     Squad(Vec<u8>),
+}
+
+impl Read {
+    /// The file's bytes as the pick read them.
+    fn bytes(&self) -> &[u8] {
+        match self {
+            Read::Document(_, bytes) | Read::Squad(bytes) => bytes,
+        }
+    }
 }
 
 /// What a staged import was computed for: any change of it stages again.
@@ -394,7 +404,7 @@ impl Interchange {
             return;
         }
         let (document, pairing) = match read {
-            Read::Document(document) => (Cow::Borrowed(&**document), Vec::new()),
+            Read::Document(document, _) => (Cow::Borrowed(&**document), Vec::new()),
             Read::Squad(bytes) => match read_squad(bytes, team, file.players()) {
                 Ok(document) => {
                     let pairing = pairing(file, team, &document);
@@ -429,7 +439,7 @@ fn read(path: &Path, format: Format) -> anyhow::Result<Read> {
         Format::Tactics => read_tactics(&bytes)?,
         Format::Texport => Texport::from_bytes(&bytes, None)?.to_team_toml()?,
     };
-    Ok(Read::Document(Box::new(document)))
+    Ok(Read::Document(Box::new(document), bytes))
 }
 
 /// `path`'s file name, the whole path when it has none.
@@ -676,6 +686,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         team_export_dialog,
         refusal,
         notice,
+        recorder,
         ..
     } = view;
     let Some(session) = session.as_mut() else {
@@ -745,6 +756,21 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                 }),
             )) = &interchange.staged
             {
+                // The file applied is a kept input, named with its target
+                // beside the field lines `edit_entries` records.
+                if let Some(picked) = &interchange.picked
+                    && let Ok(read) = &picked.read
+                {
+                    recorder.step(
+                        TOOL_ID,
+                        format!(
+                            "applied {} onto team {}",
+                            picked.path.display(),
+                            import.team.id
+                        ),
+                    );
+                    recorder.keep_input(TOOL_ID, &picked.path, read.bytes().into());
+                }
                 session.edit_entries(import.players.clone(), vec![import.team.clone()]);
                 interchange.applied = Some(session.revision());
             }
@@ -762,8 +788,7 @@ fn write_export(session: &Session, id: u32, export: Export, path: &Path) -> anyh
         Export::TeamToml => session.export_team(id)?.into_bytes(),
         Export::Texport => texport_bytes(session, id)?,
     };
-    std::fs::write(path, bytes)
-        .map_err(|error| anyhow!("{}: cannot write the file ({error})", path.display()))
+    journal::write_and_record(session.recorder(), path, &bytes)
 }
 
 /// Team `id` of the open save as a Texport of the save's version: the team

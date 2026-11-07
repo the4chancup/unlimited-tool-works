@@ -15,7 +15,6 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use anyhow::Context;
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use pes_savefile::ops::compare::{CompareError, DiffScope};
@@ -27,6 +26,7 @@ use team_widgets::violations::{
 use crate::diff::{self, DiffReport, PlayerReport};
 use crate::messages::version_mismatch_sentence;
 use crate::session::Session;
+use crate::session::journal;
 use crate::session::selection::TeamChoice;
 use crate::view::worker::{Pending, WorkerResult};
 use crate::view::{
@@ -446,7 +446,7 @@ fn write_report(
         .iter()
         .map(|line| format!("{line}\n"))
         .collect();
-    std::fs::write(path, text).with_context(|| path.display().to_string())
+    journal::write_and_record(open.recorder(), path, text.as_bytes())
 }
 
 /// The pick's refusal for a save of another version (the CLI's

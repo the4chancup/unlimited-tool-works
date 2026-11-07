@@ -430,7 +430,7 @@ first, then the Team compiler and the Export upgrader, then the rest as they are
   dialog adds the whole export when the problem is a texture or a model.
 - **The bundle** is one zip (the workspace's `zip` crate): `journal.toml`, the kept inputs,
   the tool's current state written as its format (the save as it would be saved now), the
-  last file each tool wrote, `utw.log`, the Studio version and commit, the OS, the settings
+  last file each tool wrote, `utw.log`, the Studio version as the window shows it, the OS, the settings
   and the game installs found, and the member's own words from a text box in the dialog,
   for what happened outside Studio (a step in game, another tool touching the save). The
   dialog says the bundle holds the member's whole save and paths, written as `~` as in the

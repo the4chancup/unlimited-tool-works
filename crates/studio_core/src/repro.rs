@@ -13,6 +13,7 @@ use std::time::Instant;
 
 /// One tool's recorded steps, kept inputs and kept outputs so far.
 /// `Recorder` shares it: every clone records into the same journal.
+#[derive(Clone)]
 struct Journal {
     /// When the recorder was made; a step's `seconds` measures from it.
     started: Instant,
@@ -37,6 +38,7 @@ impl Journal {
 }
 
 /// One recorded step: when it happened, which tool recorded it, what it did.
+#[derive(Clone)]
 struct Step {
     /// Seconds since the recorder was made.
     #[cfg_attr(
@@ -60,6 +62,7 @@ struct Step {
 
 /// A file kept in memory as it was: the tool that kept it, its path and
 /// its bytes.
+#[derive(Clone)]
 struct KeptFile {
     /// The recording tool's id.
     tool: &'static str,
@@ -136,24 +139,32 @@ impl Recorder {
     }
 
     /// Writes the bundle to `out`: one zip holding `journal.toml` (the
-    /// suite's version, the OS, every step, every kept file's redacted
-    /// path, size and SHA-256 beside its zip entry's name, and the
-    /// `files` that could not be read under `missing`), the inputs under
-    /// `inputs/` and the last outputs under `outputs/` (each named
-    /// `<index>-<file name>` so two files of one name never collide), the
-    /// member's `words` as `words.txt`, and each of `files` read from
-    /// disk under its given name. Every path and step line is written
-    /// with the home folder as `~`. The zip is written to a sibling temp
-    /// and renamed over `out`, so a failed write never leaves a half zip.
+    /// suite's version as the window shows it, the OS, every step, every
+    /// kept file's redacted path, size and SHA-256 beside its zip entry's
+    /// name, the `files` that could not be read under `missing`, and the
+    /// `state` attachments' names), the inputs under `inputs/` and the
+    /// last outputs under `outputs/` (each named `<index>-<file name>`
+    /// so two files of one name never collide), the member's `words` as
+    /// `words.txt`, each of `files` read from disk under its given name,
+    /// and each of `state` under `state/<name>` — bytes the caller holds,
+    /// such as a tool's current state written as its format. Every path
+    /// and step line, and every UTF-8 attachment, is written with the
+    /// home folder as `~`. The zip is written to a sibling temp and
+    /// renamed over `out`, so a failed write never leaves a half zip.
+    /// The journal is cloned under its lock and written from the clone:
+    /// the lock covers a cheap copy of `Arc`s, and a failed or panicking
+    /// write can neither block nor poison the recorders.
     #[cfg(not(target_arch = "wasm32"))]
     pub fn write_bundle(
         &self,
         out: &Path,
         words: &str,
         files: &[(&str, &Path)],
+        state: &[(&str, &[u8])],
         home: Option<&str>,
     ) -> anyhow::Result<()> {
-        bundle::write(&self.journal.lock().unwrap(), out, words, files, home)
+        let journal = self.journal.lock().unwrap().clone();
+        bundle::write(&journal, out, words, files, state, home)
     }
 }
 
@@ -173,17 +184,23 @@ mod bundle {
     use crate::redact::redact_home;
 
     /// `journal.toml` as serialized: the suite's version, the OS, the
-    /// extra files that could not be read under `missing`, then every
-    /// step and every kept file as an array of tables.
+    /// extra files that could not be read under `missing`, the `state`
+    /// attachments' names, then every step and every kept file as an
+    /// array of tables.
     #[derive(Serialize)]
     struct Doc {
-        /// The suite's version (`env!("CARGO_PKG_VERSION")`).
-        version: &'static str,
+        /// The suite's version as the window shows it
+        /// (`crate::shell::version_label` — the stage and a debug build's
+        /// mark included).
+        version: String,
         /// The OS the window ran on (`std::env::consts::OS`).
         os: &'static str,
         /// The `files` names that could not be read; absent when empty.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         missing: Vec<String>,
+        /// The `state` attachments' names, as given; absent when empty.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        state: Vec<String>,
         /// Every recorded step as `[[step]]`.
         #[serde(rename = "step")]
         steps: Vec<StepDoc>,
@@ -242,6 +259,16 @@ mod bundle {
             .collect()
     }
 
+    /// `bytes` with the home folder written as `~` when they are UTF-8
+    /// text; the bytes as they are otherwise (a binary carries no
+    /// readable path and must not be rewritten).
+    fn redacted(bytes: &[u8], home: Option<&str>) -> Vec<u8> {
+        match std::str::from_utf8(bytes) {
+            Ok(text) => redact_home(text, home).into_bytes(),
+            Err(_) => bytes.to_vec(),
+        }
+    }
+
     /// `kept_files`' `journal.toml` rows; `dir` names their entries.
     fn file_docs(dir: &str, kept_files: &[KeptFile], home: Option<&str>) -> Vec<FileDoc> {
         kept_files
@@ -257,12 +284,24 @@ mod bundle {
             .collect()
     }
 
+    /// Drops the leftover temp zip of a failed write: the failure, not
+    /// the litter, is what the caller sees.
+    fn remove_tmp(tmp: &Path) {
+        if let Err(error) = fs::remove_file(tmp) {
+            log::debug!(
+                "{}: the failed bundle's temp file stays ({error})",
+                tmp.display()
+            );
+        }
+    }
+
     /// Writes the bundle; see `Recorder::write_bundle`.
     pub(super) fn write(
         journal: &Journal,
         out: &Path,
         words: &str,
         files: &[(&str, &Path)],
+        state: &[(&str, &[u8])],
         home: Option<&str>,
     ) -> anyhow::Result<()> {
         // The extras are read before `journal.toml` is built, because an
@@ -276,9 +315,10 @@ mod bundle {
             }
         }
         let doc = toml::to_string_pretty(&Doc {
-            version: env!("CARGO_PKG_VERSION"),
+            version: crate::shell::version_label(),
             os: std::env::consts::OS,
             missing,
+            state: state.iter().map(|(name, _)| (*name).to_owned()).collect(),
             steps: journal
                 .steps
                 .iter()
@@ -294,28 +334,30 @@ mod bundle {
         .context("cannot serialize the journal")?;
         let mut tmp = out.to_path_buf();
         tmp.as_mut_os_string().push(".tmp");
-        if let Err(error) = write_zip(&tmp, &doc, journal, words, &extras) {
+        if let Err(error) = write_zip(&tmp, &doc, journal, words, &extras, state, home) {
             // A half zip at `out`'s side is litter, not a half `out`.
-            if let Err(remove) = fs::remove_file(&tmp) {
-                log::debug!(
-                    "{}: the failed bundle's temp file stays ({remove})",
-                    tmp.display()
-                );
-            }
+            remove_tmp(&tmp);
             return Err(error);
         }
-        fs::rename(&tmp, out)
-            .with_context(|| format!("{}: cannot move the bundle into place", tmp.display()))
+        if let Err(error) = fs::rename(&tmp, out) {
+            remove_tmp(&tmp);
+            return Err(error)
+                .with_context(|| format!("{}: cannot move the bundle into place", tmp.display()));
+        }
+        Ok(())
     }
 
     /// The zip's contents into `tmp`: `journal.toml`, the kept inputs and
-    /// outputs, `words.txt` and the extras.
+    /// outputs, `words.txt`, the extras and the `state` attachments —
+    /// every attachment's bytes redacted when they are UTF-8 text.
     fn write_zip(
         tmp: &Path,
         doc: &str,
         journal: &Journal,
         words: &str,
         extras: &[(&str, Vec<u8>)],
+        state: &[(&str, &[u8])],
+        home: Option<&str>,
     ) -> anyhow::Result<()> {
         let file = fs::File::create(tmp)
             .with_context(|| format!("{}: cannot write the bundle", tmp.display()))?;
@@ -323,8 +365,12 @@ mod bundle {
         let options = zip::write::SimpleFileOptions::default()
             .compression_method(zip::CompressionMethod::Deflated);
         let mut put = |name: &str, bytes: &[u8]| -> anyhow::Result<()> {
-            writer.start_file(name, options)?;
-            writer.write_all(bytes)?;
+            writer
+                .start_file(name, options)
+                .with_context(|| format!("the bundle's {name}"))?;
+            writer
+                .write_all(bytes)
+                .with_context(|| format!("the bundle's {name}"))?;
             Ok(())
         };
         put("journal.toml", doc.as_bytes())?;
@@ -336,7 +382,10 @@ mod bundle {
         }
         put("words.txt", words.as_bytes())?;
         for (name, bytes) in extras {
-            put(name, bytes)?;
+            put(name, &redacted(bytes, home))?;
+        }
+        for (name, bytes) in state {
+            put(&format!("state/{name}"), &redacted(bytes, home))?;
         }
         writer.finish()?;
         Ok(())
@@ -347,8 +396,6 @@ mod bundle {
 mod tests {
     use std::fs;
     use std::io::Read;
-
-    use sha2::{Digest, Sha256};
 
     use super::*;
 
@@ -396,14 +443,6 @@ mod tests {
         toml::from_str(text).unwrap()
     }
 
-    /// `bytes`' SHA-256, lowercase hex.
-    fn sha256_hex(bytes: &[u8]) -> String {
-        Sha256::digest(bytes)
-            .iter()
-            .map(|b| format!("{b:02x}"))
-            .collect()
-    }
-
     // A bundle holds the journal (version, OS, the steps in order and the
     // kept files' redacted paths, sizes, SHA-256s and entry names), the
     // inputs and the last outputs under `inputs/`/`outputs/`, the member's
@@ -417,6 +456,7 @@ mod tests {
             "save-editor",
             "opened /home/member/EDIT00000000 (PES 2021, 10 bytes)",
         );
+        std::thread::sleep(std::time::Duration::from_millis(10));
         recorder.step("save-editor", "player 70101: Height 183 → 184");
         recorder.keep_input(
             "save-editor",
@@ -433,6 +473,13 @@ mod tests {
             Path::new("out/EDIT00000000"),
             Arc::from(&b"NEW_BYTES"[..]),
         );
+        // The same path written by another tool is a second output, not a
+        // replacement.
+        recorder.keep_output(
+            "team-compiler",
+            Path::new("out/EDIT00000000"),
+            Arc::from(&b"TEAM"[..]),
+        );
         let settings = dir.join("settings.toml");
         fs::write(&settings, "theme = \"light\"\n").unwrap();
         let out = dir.join("repro.zip");
@@ -445,6 +492,7 @@ mod tests {
                     ("settings.toml", settings.as_path()),
                     ("utw.log", dir.join("no-such.log").as_path()),
                 ],
+                &[("current.save", &b"CURRENT"[..])],
                 Some("/home/member"),
             )
             .unwrap();
@@ -455,25 +503,36 @@ mod tests {
                 "journal.toml",
                 "inputs/0-EDIT00000000",
                 "outputs/0-EDIT00000000",
+                "outputs/1-EDIT00000000",
                 "words.txt",
                 "settings.toml",
+                "state/current.save",
             ]
         );
         assert_eq!(zip_bytes(&out, "inputs/0-EDIT00000000"), b"SAVE_BYTES");
         assert_eq!(zip_bytes(&out, "outputs/0-EDIT00000000"), b"NEW_BYTES");
+        assert_eq!(zip_bytes(&out, "outputs/1-EDIT00000000"), b"TEAM");
+        assert_eq!(zip_bytes(&out, "state/current.save"), b"CURRENT");
         assert_eq!(zip_text(&out, "words.txt"), "the member's words");
         assert_eq!(zip_text(&out, "settings.toml"), "theme = \"light\"\n");
 
         let journal = zip_text(&out, "journal.toml");
         let doc = journal_doc(&journal);
-        assert_eq!(doc["version"].as_str(), Some(env!("CARGO_PKG_VERSION")));
+        assert_eq!(
+            doc["version"].as_str().unwrap(),
+            crate::shell::version_label()
+        );
         assert_eq!(doc["os"].as_str(), Some(std::env::consts::OS));
         assert_eq!(
             doc["missing"].as_array().unwrap()[0].as_str(),
             Some("utw.log"),
             "the unreadable extra is named under `missing`: {journal}"
         );
-        assert!(doc.get("missing").is_some(), "missing: {journal}");
+        assert_eq!(
+            doc["state"].as_array().unwrap()[0].as_str(),
+            Some("current.save"),
+            "the attachment is named under `state`: {journal}"
+        );
 
         let steps = doc["step"].as_array().unwrap();
         assert_eq!(steps.len(), 2, "{journal}");
@@ -487,7 +546,10 @@ mod tests {
             steps[1]["what"].as_str(),
             Some("player 70101: Height 183 → 184")
         );
-        assert!(steps[0]["seconds"].as_float().is_some_and(|s| s >= 0.0));
+        assert!(
+            steps[1]["seconds"].as_float().unwrap() > steps[0]["seconds"].as_float().unwrap(),
+            "the later step's seconds exceed the first's"
+        );
 
         let inputs = doc["input"].as_array().unwrap();
         assert_eq!(inputs.len(), 1, "{journal}");
@@ -496,21 +558,57 @@ mod tests {
         assert_eq!(inputs[0]["size"].as_integer(), Some(10));
         assert_eq!(
             inputs[0]["sha256"].as_str().unwrap(),
-            sha256_hex(b"SAVE_BYTES")
+            "d3fb2163b52a43f0ef3f73b889c4f6bc925950da789e4be415ac49311d86bb66",
+            "SHA-256 of b\"SAVE_BYTES\""
         );
         assert_eq!(inputs[0]["entry"].as_str(), Some("inputs/0-EDIT00000000"));
 
         let outputs = doc["output"].as_array().unwrap();
         assert_eq!(
             outputs.len(),
-            1,
-            "the second write to one path replaces the first: {journal}"
+            2,
+            "the second write to one path replaces the first; another tool's is its own: {journal}"
         );
+        assert_eq!(outputs[0]["tool"].as_str(), Some("save-editor"));
         assert_eq!(outputs[0]["size"].as_integer(), Some(9));
         assert_eq!(
             outputs[0]["sha256"].as_str().unwrap(),
-            sha256_hex(b"NEW_BYTES")
+            "bcb9189612cc6778b450aa557242d7cf09f556ba215ee875b3e4a16f6c681bf4",
+            "SHA-256 of b\"NEW_BYTES\""
         );
         assert_eq!(outputs[0]["entry"].as_str(), Some("outputs/0-EDIT00000000"));
+        assert_eq!(outputs[1]["tool"].as_str(), Some("team-compiler"));
+        assert_eq!(outputs[1]["entry"].as_str(), Some("outputs/1-EDIT00000000"));
+    }
+
+    // An extra or attachment whose bytes are UTF-8 is written with the
+    // home folder as `~`; a binary goes verbatim.
+    #[test]
+    fn a_utf8_extra_is_written_with_the_home_folder_as_a_tilde() {
+        let dir = scratch("redact_extra");
+        let recorder = Recorder::default();
+        let settings = dir.join("settings.toml");
+        fs::write(&settings, "pes_folder_path = 'C:/Users/Alice/PES'\n").unwrap();
+        let out = dir.join("repro.zip");
+        recorder
+            .write_bundle(
+                &out,
+                "",
+                &[("settings.toml", settings.as_path())],
+                &[("note.txt", &b"the save is at C:/Users/Alice/saves"[..])],
+                Some("C:/Users/Alice"),
+            )
+            .unwrap();
+
+        assert_eq!(
+            zip_text(&out, "settings.toml"),
+            "pes_folder_path = '~/PES'\n",
+            "the extra's text is redacted"
+        );
+        assert_eq!(
+            zip_text(&out, "state/note.txt"),
+            "the save is at ~/saves",
+            "the attachment's too"
+        );
     }
 }

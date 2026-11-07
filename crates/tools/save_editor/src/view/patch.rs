@@ -11,6 +11,7 @@
 //! team or player of the patch the save lacks is a warning line.
 
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use pes_savefile::EditFile;
 use pes_savefile::interchange::aesthetics_patch::{AestheticsPatch, PatchError, PatchSkip};
@@ -22,6 +23,7 @@ use pes_savefile::settings_toml::SettingsError;
 use studio_core::widgets::add_enabled;
 use team_widgets::violations::SelectedPlayer;
 
+use crate::messages::TOOL_ID;
 use crate::view::comparator::{self, OpenSaveDialog, Place};
 use crate::view::{Panel, SaveView, aatf_check, edit_settled, prompt, surrender_focus, terms};
 
@@ -42,12 +44,16 @@ pub(super) fn default_patch_dialog() -> OpenSaveDialog {
     Box::new(|| panic!("a test reached a real file dialog: stub patch_dialog"))
 }
 
+/// The patch file as read: the parsed patch with its bytes, kept for the
+/// journal at Apply.
+type Loaded = Result<(AestheticsPatch, Arc<[u8]>), String>;
+
 /// The panel's state on `SaveView` (`view.patch`): the opened patch, its
 /// preview and the save revision Apply left.
 pub(super) struct Patch {
-    /// The last opened file: its path and the patch it holds, or what
-    /// refused it (`cannot read the file (…)`, a parse error).
-    loaded: Option<(PathBuf, Result<AestheticsPatch, String>)>,
+    /// The last opened file: its path and `Loaded`, or what refused it
+    /// (`cannot read the file (…)`, a parse error).
+    loaded: Option<(PathBuf, Loaded)>,
     /// The loaded patch against the open save and the save's
     /// `Session::revision` it was computed for; `apply`'s refusal is its
     /// `Err`. A revision is never drawn twice, across opens too, so it
@@ -111,7 +117,11 @@ impl Patch {
     fn load(&mut self, path: PathBuf) {
         let patch = std::fs::read_to_string(&path)
             .map_err(|error| format!("cannot read the file ({error})"))
-            .and_then(|text| AestheticsPatch::parse(&text).map_err(|error| error.to_string()));
+            .and_then(|text| {
+                AestheticsPatch::parse(&text)
+                    .map(|patch| (patch, text.into_bytes().into()))
+                    .map_err(|error| error.to_string())
+            });
         self.loaded = Some((path, patch));
         self.preview = None;
         self.applied = None;
@@ -120,7 +130,7 @@ impl Patch {
     /// Recomputes the preview when the open save is no longer at the
     /// revision it was computed for: once per change, not every frame.
     fn refresh(&mut self, file: &EditFile, revision: u64) {
-        let Some((_, Ok(patch))) = &self.loaded else {
+        let Some((_, Ok((patch, _)))) = &self.loaded else {
             return;
         };
         if self
@@ -235,6 +245,7 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
         tactics,
         patch_dialog,
         focused,
+        recorder,
         ..
     } = view;
     if *panel != Some(Panel::Patch) {
@@ -273,6 +284,15 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
             // one is recomputed against the save as it stands first.
             patch.refresh(session.file(), revision);
             if let Some((_, Ok(preview))) = &patch.preview {
+                // The patch file is a kept input, named beside the field
+                // lines `edit_players` records.
+                if let Some((path, Ok((_, bytes)))) = &patch.loaded {
+                    recorder.step(
+                        TOOL_ID,
+                        format!("applied the aesthetics patch {}", path.display()),
+                    );
+                    recorder.keep_input(TOOL_ID, path, Arc::clone(bytes));
+                }
                 session.edit_players(preview.patched.clone());
                 patch.applied = Some(session.revision());
             }

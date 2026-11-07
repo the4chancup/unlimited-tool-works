@@ -573,4 +573,24 @@ fn a_failed_open_keeps_the_journal_and_records_the_file_that_failed() {
         b"not a save",
         "the failed file's bytes are kept as an input"
     );
+
+    // A file that cannot be read at all records the step and keeps
+    // nothing.
+    view.open(&dir.join("no-such-file"));
+    let lines = journal_lines(&recorder, &dir);
+    assert_eq!(
+        lines
+            .iter()
+            .filter(|line| line.starts_with("could not open "))
+            .count(),
+        2,
+        "{lines:?}"
+    );
+    assert!(
+        zip::ZipArchive::new(std::fs::File::open(&bundle).unwrap())
+            .unwrap()
+            .by_name("inputs/2-no-such-file")
+            .is_err(),
+        "a file that cannot be read keeps nothing"
+    );
 }

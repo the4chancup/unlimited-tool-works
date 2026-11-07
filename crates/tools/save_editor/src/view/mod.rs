@@ -49,7 +49,6 @@ use studio_core::widgets::{
 };
 use studio_core::{ActionEffect, ExeCheck, Notice, NoticeAction, NoticeKind, Recorder, RunningPes};
 
-use crate::messages::TOOL_ID;
 use crate::session::Session;
 use crate::session::rules::{self, Imported};
 use crate::session::selection::{self, TeamChoice};
@@ -533,8 +532,8 @@ impl SaveView {
     /// row is not a player); a file the
     /// save refuses is shown as a refusal and the open session is untouched.
     /// The aesthetics lock is deliberately not reset (`edit_aesthetics`).
-    /// A file that fails records its own step and keeps its bytes: the
-    /// file a member reports is the one that failed.
+    /// `Session::open` records the open — a refused one names the file
+    /// that failed and keeps the bytes it read.
     pub(crate) fn open(&mut self, path: &Path) {
         match Session::open(path, self.recorder.clone()) {
             Ok(session) => {
@@ -575,13 +574,6 @@ impl SaveView {
                 self.medals.reset();
             }
             Err(error) => {
-                self.recorder.step(
-                    TOOL_ID,
-                    format!("could not open {}: {error:#}", path.display()),
-                );
-                if let Ok(bytes) = std::fs::read(path) {
-                    self.recorder.keep_input(TOOL_ID, path, bytes.into());
-                }
                 self.refusal = Some(Refusal {
                     title: "Cannot open the save",
                     message: format!("{error:#}"),

@@ -6,6 +6,7 @@
 
 pub(crate) mod database;
 pub(crate) mod import_sections;
+pub(crate) mod journal;
 pub(crate) mod player_ops;
 pub(crate) mod rules;
 pub(crate) mod selection;
@@ -25,11 +26,12 @@ use pes_savefile::interchange::team_toml::{ImportNote, TeamToml};
 use pes_savefile::model::{PlayerEntry, TeamEntry};
 use pes_savefile::ops::compare::{PlayerDiff, TeamDiff, compare_players, compare_teams};
 use pes_savefile::schema::ingame_face::IngameFaceField;
-use pes_savefile::schema::{VersionSchema, schema_for};
+use pes_savefile::schema::schema_for;
 use pes_version::PesVersion;
 use studio_core::{Recorder, RunningPes};
 
-use crate::messages::{TOOL_ID, diff_fields, team_diff_fields};
+use crate::messages::TOOL_ID;
+use crate::session::journal::{change_lines, open_failed, player_lines, team_lines};
 use crate::session::undo::{Change, UndoStack};
 
 /// The ticks `Session::revision` draws from, one per open and per change:
@@ -101,13 +103,19 @@ impl Session {
     /// Opens the save at `path`. The error names the path and what
     /// `pes_savefile` refused. `recorder` gets the open's step and keeps
     /// the file's bytes as read — what the tool started from is the part
-    /// a saved-over file would destroy.
+    /// a saved-over file would destroy — and a refused open records its
+    /// own step, keeping the bytes it read.
     pub(crate) fn open(path: &Path, recorder: Recorder) -> anyhow::Result<Session> {
-        let bytes: Arc<[u8]> = std::fs::read(path)
-            .with_context(|| format!("{}: cannot open the save", path.display()))?
-            .into();
-        let file = EditFile::from_bytes(&bytes)
-            .with_context(|| format!("{}: cannot open the save", path.display()))?;
+        let bytes: Arc<[u8]> = match std::fs::read(path) {
+            Ok(bytes) => bytes.into(),
+            Err(error) => return Err(open_failed(path, &recorder, error.into(), None)),
+        };
+        let file = match EditFile::from_bytes(&bytes) {
+            Ok(file) => file,
+            Err(error) => {
+                return Err(open_failed(path, &recorder, error.into(), Some(bytes)));
+            }
+        };
         let (baseline_players, baseline_teams) = baselines(&file);
         recorder.step(
             TOOL_ID,
@@ -146,6 +154,14 @@ impl Session {
     /// The open save, for the read-only operations over two saves (the comparator).
     pub(crate) fn file(&self) -> &EditFile {
         &self.file
+    }
+
+    /// The session's repro journal: the sites that keep a file the member
+    /// picked (an export, the roster sheet) or applied (the CLI's team
+    /// file or patch) record through it — the same journal `changed`,
+    /// `open` and `write` record to.
+    pub(crate) fn recorder(&self) -> &Recorder {
+        &self.recorder
     }
 
     /// The tick of the last change to the open file, which keys the Cards
@@ -664,13 +680,21 @@ impl Session {
         patch: &AestheticsPatch,
     ) -> Result<PatchSummary, PatchError> {
         let summary = patch.apply(&mut self.file)?;
+        if summary.applied_players.is_empty() {
+            return Ok(summary);
+        }
+        // A team is named only when one of its players was written (a cup
+        // player id is its team's id x 100 + slot): `applied_teams` alone
+        // would name a team whose every patched player the save lacked.
         let mut steps = vec!["applied the aesthetics patch".to_owned()];
-        steps.extend(
-            summary
-                .applied_teams
-                .iter()
-                .map(|id| format!("applied to team {id}")),
-        );
+        let mut teams: Vec<u32> = Vec::new();
+        for id in &summary.applied_players {
+            let team = id / 100;
+            if !teams.contains(&team) {
+                teams.push(team);
+                steps.push(format!("applied to team {team}"));
+            }
+        }
         self.changed(steps);
         self.dirty = self.compute_dirty();
         Ok(summary)
@@ -741,62 +765,6 @@ fn baselines(file: &EditFile) -> (HashMap<u32, PlayerEntry>, HashMap<u32, TeamEn
             .map(|team| (team.id, team.clone()))
             .collect(),
     )
-}
-
-/// The journal's `player <id>: <field> <old> → <new>` lines for a change
-/// to `after`'s entry from `before`, one per field `compare_players`
-/// names. An entry never read from a save (a gated field `None`) cannot
-/// be diffed; the step then names the change and the codec's refusal
-/// rather than losing the record of it.
-fn player_lines(before: &PlayerEntry, after: &PlayerEntry, schema: &VersionSchema) -> Vec<String> {
-    match compare_players(before, after, schema) {
-        Ok(diffs) => diffs
-            .iter()
-            .map(|diff| {
-                let (field, old, new) = diff_fields(diff);
-                format!("player {}: {field} {old} → {new}", after.id)
-            })
-            .collect(),
-        Err(error) => vec![format!("player {}: changed ({error})", after.id)],
-    }
-}
-
-/// `player_lines` for a team's entry.
-fn team_lines(before: &TeamEntry, after: &TeamEntry, schema: &VersionSchema) -> Vec<String> {
-    match compare_teams(before, after, schema) {
-        Ok(diffs) => diffs
-            .iter()
-            .map(|diff| {
-                let (field, old, new) = team_diff_fields(diff);
-                format!("team {}: {field} {old} → {new}", after.id)
-            })
-            .collect(),
-        Err(error) => vec![format!("team {}: changed ({error})", after.id)],
-    }
-}
-
-/// A pushed change's journal lines: the fields' values as they move
-/// (`undone`: an undo's lines run from the edit's `after` back to its
-/// `before`).
-fn change_lines(change: &Change, schema: &VersionSchema, undone: bool) -> Vec<String> {
-    match change {
-        Change::Player { before, after } => {
-            let (from, to) = if undone {
-                (after, before)
-            } else {
-                (before, after)
-            };
-            player_lines(from, to, schema)
-        }
-        Change::Team { before, after } => {
-            let (from, to) = if undone {
-                (after, before)
-            } else {
-                (before, after)
-            };
-            team_lines(from, to, schema)
-        }
-    }
 }
 
 /// The refusal a writing operation makes while the PES of `version` runs and
@@ -1477,6 +1445,10 @@ mod tests {
             )
         );
 
+        let batch_heights: Vec<u8> = [70101, 70102]
+            .iter()
+            .map(|id| session.file().player(*id).unwrap().basic.height)
+            .collect();
         check_records(
             &mut session,
             &recorder,
@@ -1493,6 +1465,16 @@ mod tests {
                 session.edit_players(edited);
             },
         );
+        // The batch lands one line per changed player.
+        let lines = journal_lines(&recorder, &dir);
+        for (id, height) in [70101u32, 70102].iter().zip(&batch_heights) {
+            assert!(
+                lines.contains(&format!("player {id}: Height {} → {}", height, height + 1)),
+                "{lines:?}"
+            );
+        }
+
+        let short_before = session.file().team(701).unwrap().short_name.clone();
         check_records(
             &mut session,
             &recorder,
@@ -1505,6 +1487,18 @@ mod tests {
                 session.edit_team(1, edited);
             },
         );
+        assert!(
+            journal_lines(&recorder, &dir)
+                .contains(&format!("team 701: ShortName {short_before} → XYZ")),
+            "the team's line"
+        );
+
+        // A name the move's undo lines can hang on: the fixture's
+        // placeholder records are identical, so 70101's is marked first
+        // (direct writes, not model changes — the move's own lines show
+        // the trade).
+        session.file.player_mut(70101).unwrap().name = "DISTINCT".to_owned();
+        let name_02 = session.file().player(70102).unwrap().name.clone();
         check_records(
             &mut session,
             &recorder,
@@ -1516,9 +1510,21 @@ mod tests {
         check_records(&mut session, &recorder, &dir, "undo", true, |session| {
             session.undo();
         });
+        // The undo's lines run the move backwards: `after → before`.
+        let lines = journal_lines(&recorder, &dir);
+        assert!(
+            lines.contains(&format!("player 70101: Name {name_02} → DISTINCT")),
+            "the undone trade read as it happened: {lines:?}"
+        );
         check_records(&mut session, &recorder, &dir, "redo", true, |session| {
             session.redo();
         });
+        assert!(
+            journal_lines(&recorder, &dir)
+                .contains(&format!("player 70101: Name DISTINCT → {name_02}")),
+            "the redone trade: {:?}",
+            journal_lines(&recorder, &dir)
+        );
         check_records(
             &mut session,
             &recorder,
@@ -1544,6 +1550,35 @@ mod tests {
                 session.import_team(&document).unwrap();
             },
         );
+        let patch = |key: u8| {
+            use std::collections::BTreeMap;
+
+            use pes_savefile::interchange::aesthetics_patch::{
+                ALLOCATION_SCHEME_VERSION, AestheticsPatch, PatchPlayer, PatchTeam,
+            };
+            AestheticsPatch {
+                pes_version: PesVersion::Pes21,
+                tool_version: "0.1.0".to_owned(),
+                allocation_scheme_version: ALLOCATION_SCHEME_VERSION,
+                cpks: vec![],
+                compiled: "2026-10-13T00:00:00Z".parse().unwrap(),
+                teams: vec![PatchTeam {
+                    id: 701,
+                    name: "PATCHED".to_owned(),
+                    players: BTreeMap::from([(
+                        key,
+                        PatchPlayer {
+                            name: Some("PATCHED".to_owned()),
+                            shirt_name: None,
+                            boots_id: None,
+                            gloves_id: None,
+                            base_copy_id: None,
+                            appearance: None,
+                        },
+                    )]),
+                }],
+            }
+        };
         check_records(
             &mut session,
             &recorder,
@@ -1551,34 +1586,28 @@ mod tests {
             "apply_patch",
             true,
             |session| {
-                use std::collections::BTreeMap;
+                // Key 1 is the patch's first player: team 701's 70101.
+                session.apply_patch(&patch(1)).unwrap();
+            },
+        );
+        let lines = journal_lines(&recorder, &dir);
+        assert!(lines.contains(&"applied the aesthetics patch".to_owned()));
+        assert!(
+            lines.contains(&"applied to team 701".to_owned()),
+            "the team a player was written to: {lines:?}"
+        );
 
-                use pes_savefile::interchange::aesthetics_patch::{
-                    ALLOCATION_SCHEME_VERSION, AestheticsPatch, PatchPlayer, PatchTeam,
-                };
-                let patch = AestheticsPatch {
-                    pes_version: PesVersion::Pes21,
-                    tool_version: "0.1.0".to_owned(),
-                    allocation_scheme_version: ALLOCATION_SCHEME_VERSION,
-                    cpks: vec![],
-                    compiled: "2026-10-13T00:00:00Z".parse().unwrap(),
-                    teams: vec![PatchTeam {
-                        id: 701,
-                        name: "PATCHED".to_owned(),
-                        players: BTreeMap::from([(
-                            0,
-                            PatchPlayer {
-                                name: Some("PATCHED".to_owned()),
-                                shirt_name: None,
-                                boots_id: None,
-                                gloves_id: None,
-                                base_copy_id: None,
-                                appearance: None,
-                            },
-                        )]),
-                    }],
-                };
-                session.apply_patch(&patch).unwrap();
+        // A patch every player of which the save lacks writes nothing:
+        // no step, no revision (key 0 is 70100, no such player).
+        check_records(
+            &mut session,
+            &recorder,
+            &dir,
+            "a patch writing nothing",
+            false,
+            |session| {
+                let summary = session.apply_patch(&patch(0)).unwrap();
+                assert!(summary.applied_players.is_empty(), "premise");
             },
         );
 
@@ -1613,7 +1642,11 @@ mod tests {
         session.write(&out).unwrap();
 
         let bundle = dir.join("bundle.zip");
-        recorder.write_bundle(&bundle, "", &[], None).unwrap();
+        recorder.write_bundle(&bundle, "", &[], &[], None).unwrap();
+        assert!(
+            journal_lines(&recorder, &dir).contains(&format!("wrote {}", out.display())),
+            "the write is a step"
+        );
         assert_eq!(
             zip_entry(&bundle, "inputs/0-EDIT00000000"),
             original,

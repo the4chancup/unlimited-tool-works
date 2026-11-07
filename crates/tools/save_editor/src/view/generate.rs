@@ -15,6 +15,7 @@ use pes_savefile::settings_toml::PlayerSettings;
 use studio_core::widgets::{add_enabled, modal, modal_buttons, text_box};
 use studio_core::{Notice, NoticeKind};
 
+use crate::session::journal;
 use crate::view::SaveView;
 
 /// The folder field's Pick dialog (`rfd` in the window, a stub in the
@@ -231,7 +232,7 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 && let Ok(text) = &preview.text
             {
                 let path = Path::new(&preview.folder).join(generate.file.file_name());
-                match std::fs::write(&path, text) {
+                match journal::write_and_record(session.recorder(), &path, text.as_bytes()) {
                     Ok(()) => {
                         *notice = Some(Notice {
                             text: format!(
@@ -245,7 +246,7 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                         close = true;
                     }
                     Err(error) => {
-                        generate.error = Some(format!("{}: {error}", path.display()));
+                        generate.error = Some(format!("{error:#}"));
                     }
                 }
             }
