@@ -45,6 +45,14 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
 - **Which PES version was the 15/16 pattern table measured on?** And is there a log from the
   other one, to say whether the two share it?
 
+## The 0.0.2 Save editor report
+
+- **The tester's files.** The PES 2019 in-game run (worklog 0.0.2-se19) reproduced the
+  tester's placeholders (a name edit on an unflagged player draws PLACEHOLDER) but not their
+  default stats: typed stats showed with every flag clear. Can the tester send the save before
+  and after their edit, with what they changed? A byte diff of the two says what the write
+  did, which no reconstruction of their steps can.
+
 ## After the release
 
 - **Substitution's choices in PES 2018, 2019 and 2020** (worklog 0.0.1y7c; you: "we'll check

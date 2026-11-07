@@ -401,3 +401,50 @@ What exists of this is in `spec/core/architecture.md` "Diagnostic logging".
   display; the start's failure is tested on the start function, given a program that is not
   an exe. A CLI command installs none: its crash prints to the console it runs in, and a script
   calling it in a loop would start a monitor per call.
+
+### Repro bundles
+
+`utw.log` and the crash dump are the traceback of a code fault. A usability problem has none:
+the member did something, the result surprised them, and their account of the steps is all
+there is. A repro bundle is that traceback: every step that changed what a tool holds since
+the window opened, the files it started from and the ones it wrote, in one zip a member saves
+from a button and posts. Every tool takes part that opens a member's files: the Save editor
+first, then the Team compiler and the Export upgrader, then the rest as they are built.
+
+- **The journal records model steps, not input events.** Each step is what a tool's model
+  saw: a file opened (path, size, SHA-256, format version), an edit (the entry, the field, its
+  value before and after), an import, a patch applied, an undo or redo, a file written (path,
+  SHA-256), a compile started and its findings. We do not record clicks and keys: they are
+  large, cannot be replayed on another machine's layout, and add nothing, since every effect
+  passes through the model. The journal is taken at the one point each tool already changes
+  its model through, so a step cannot reach the model unrecorded: in the Save editor, the
+  undo stack's push (`session/undo.rs`, every gesture's entries before and after), plus the
+  session's open, import, apply and save. A test per tool pins that every model change goes
+  through it.
+- **The inputs are kept as they were opened.** Saving over the file it came from destroys
+  the bundle's most important part, so the tool keeps the bytes it read in memory for the
+  session (a PES save is 7 to 11 MB), and the bytes of each file it imported. An aesthetics
+  export is not kept whole (a team's runs to hundreds of MB): the bundle takes its TOML
+  files and a list of every other file (path, size, SHA-256), and a tick box in the save
+  dialog adds the whole export when the problem is a texture or a model.
+- **The bundle** is one zip (the workspace's `zip` crate): `journal.toml`, the kept inputs,
+  the tool's current state written as its format (the save as it would be saved now), the
+  last file each tool wrote, `utw.log`, the Studio version and commit, the OS, the settings
+  and the game installs found, and the member's own words from a text box in the dialog,
+  for what happened outside Studio (a step in game, another tool touching the save). The
+  dialog says the bundle holds the member's whole save and paths, written as `~` as in the
+  log; nothing is ever sent, the member posts the file.
+- **Always recording, written on request.** The journal and the kept inputs live in memory
+  from the first open; a button in the shell (beside the log) writes the bundle, and the
+  panic hook writes one beside the crash's log, since a crash is where a member is least able
+  to say what they did. A journal is cleared when its tool closes the file it describes.
+- **Replay is the payoff.** `utw <tool-id> replay <bundle>` applies the journal to the kept
+  inputs and compares the result with the bundle's written files, byte for byte. A match puts
+  the problem in what we write or in the game; a mismatch in a step the model took
+  unrecorded or a model change the journal reads differently. A log alone cannot tell the two
+  apart (the 0.0.2 Save editor tester's "placeholders and default stats", 2026-11-07: an
+  in-game run reproduced the placeholders and not the stats, and only their own files and
+  steps can say why).
+- **One facility in `studio_core`**: the journal's type, the bundle writer, the button and the
+  dialog are the platform's; each tool contributes its steps and its kept inputs through the
+  tool interface, so the bundle and its rules are the same in every tool.

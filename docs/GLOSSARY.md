@@ -28,6 +28,7 @@ terms next to each other rather than in alphabetical order; adjacency is what ma
 |---|---|---|
 | **Lib crate** | A crate under `crates/libs/` holding one format or one shared concern; depends only on other libs; returns findings, never messages. | `spec/core/architecture.md` "Crate structure" |
 | **`PipelineEvent`** | The typed progress/result event tools emit (`ExportStarted`, `FolderStatus`, `Message`, `Progress`, `Complete`); GUI and CLI render it. | `spec/core/architecture.md` "Event system" |
+| **Repro bundle** | The zip a member saves from a tool (or the panic hook writes): the journal of every model step since the window opened, the files the tool opened as they were read, the files it wrote, the log and the member's own words; `utw <tool-id> replay` reapplies the journal. The traceback of a usability problem, as `utw.log` is of a crash. | `plans/core/architecture.md` "Repro bundles" |
 | **`ScopePath`** | `vtree`'s canonical, platform-neutral, validated path inside an export; addresses events, findings and grid cells. | `spec/libs/README.md` "`vtree` path types" |
 | **Stale-result envelope** | `PipelineEventEnvelope` carrying `run_id` and `export_revision`, so results from an outdated filesystem snapshot cannot overwrite newer state. | `spec/core/architecture.md` "Event system" |
 | **`studio`** | The crate of the single binary, `utw` (`UTW.exe` in the Windows bundle): registers tools, launches the GUI or dispatches `UTW <tool-id> <command>`. | `spec/core/architecture.md` "Crate structure" |

@@ -15731,3 +15731,16 @@ usage, else on `work`; Astra no longer runs on `home` (the maintainer).
 Why: Argon is better than SWE-2 and much cheaper than Astra, so it catches what SWE-2 misses
 before Astra's rounds are spent on it.
 Plan: `RUNBOOK.md` "Review rounds"; `AGENTS.md` "Second opinion".
+
+## 2026-11-07 — studio_core — repro bundles: a journal of model steps and the kept inputs, in every tool
+Decision: every tool that opens a member's files records a journal of model steps (opens, edits
+before and after, imports, patches, undo and redo, writes, compiles and findings) and keeps the
+bytes of the files it opened, in memory; a button (and the panic hook) writes them, with the
+current state, the files written, the log and the member's own words, as one zip; `utw <tool-id>
+replay` reapplies the journal and compares. Save editor first, then the Team compiler and the
+Export upgrader, the rest as built (the maintainer: a traceback for usability issues).
+Why: model steps, not input events, because every effect passes the model and clicks cannot be
+replayed; inputs kept in memory, not reread, because saving over the opened file destroys the
+one artifact that reproduces the problem; one facility in studio_core, not one per tool, so the
+bundle's rules are the same everywhere.
+Plan: `plans/core/architecture.md` "Repro bundles" (new).

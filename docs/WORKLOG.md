@@ -7440,6 +7440,15 @@ briefs, review loops, gates and mutation runs as for any step.
     and stats (the maintainer, 2026-11-05); a name typed in the info strip sets the
     edited-player flag, a stat sets nothing. So the in-game check tries: names and stats as
     the editor leaves them; then with the abilities flag; then with every gameplay flag
+    In game (2026-11-07, `.tmp/0_0_2/ingame/se19/findings.md`, PES 2019 Edit mode, on the
+    maintainer's live save with Invitational 13 standing in, as the Friendlies save does not
+    load): flags clear, a name change shows PLACEHOLDER everywhere, the edit field included,
+    but three stats typed at 99 show and lift the overall 83 → 86; `abilities` alone changes
+    nothing; all nine gameplay flags make the name show (so `player` gates the name); an
+    unchanged import matches the untouched save. So the tester's placeholders reproduce and
+    their default stats do not: only their own files and steps can say why (the plan's
+    "Repro bundles", `plans/core/architecture.md`, is the lasting answer). Open: whether
+    `player` alone suffices; ask the tester for the save before and after their edit.
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and
     8.36d, then a proof-of-concept exe for VGL's organizer that
     upgrades and compiles a couple of example teams on PES 2019. 8.36c3 (the `<id>.copy`
@@ -8128,6 +8137,14 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open (2026-11-07) — Repro bundles in every tool (`plans/core/architecture.md` "Repro
+  bundles", the maintainer's request after the 0.0.2-se19 report). To slice before briefing:
+  (1) the button and dialog drafted in `docs/prototypes/` and looked at by the maintainer;
+  (2) `studio_core`'s journal type and bundle writer, with the Save editor's journal taken at
+  its undo push and session file operations, its inputs kept, and the test that every model
+  change goes through the journal; (3) `utw save-editor replay`; (4) the panic hook's bundle;
+  (5) the Team compiler and the Export upgrader; the rest as each tool is built. Each slice
+  gets SWE-2, Argon and Astra rounds (a new `pub` interface across crates).
 - open (2026-11-06) — Whole-crate mutation runs on the VPS alone (`RUNBOOK.md` "Mutation
   runs and the VPS", the maintainer's directive). `scripts/mutation/mutants.py` still splits
   a whole run, and `REMOTE_ONLY` skips its extra kinds, which run only on this machine. To
