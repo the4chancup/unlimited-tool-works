@@ -10,8 +10,20 @@ manifest was planned, so the manifest records what this tool needs. The rest of 
 
 A team's aesthetics export is sometimes lost, and the DLC of a cup it played in is then the
 only copy of its look. The Team decompiler rebuilds a Studio aesthetics export from such a
-DLC's CPK, for one team, so the team can be compiled again (for a later cup, or another PES
+DLC's CPK, whole or in parts, so the team can be compiled again (for a later cup, or another PES
 version through the compiler's own conversions).
+
+## Picking what to extract
+
+A DLC's CPK holds many teams, and the organizer rarely needs a whole export: often one
+player's folder, one kit or a logo. So the tool opens a CPK and shows a tree of every export
+it can recreate inside it (team, then the export's own folders: player folders, kit folders,
+model folders, logos and the rest, down to single files), each node with a tick box; the
+organizer ticks a whole export, a folder, a subfolder or single files, and extracts the
+selection into a folder of their choice, laid out as in the export (a player folder comes out
+as a player folder, ready to drop into another export). The tree is the same for both paths
+below: from a manifest it holds the exports' real names, from the heuristic the names it could
+recover or invent, marked as such.
 
 ## From a recovery manifest
 
