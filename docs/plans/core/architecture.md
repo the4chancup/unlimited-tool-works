@@ -435,8 +435,10 @@ first, then the Team compiler and the Export upgrader, then the rest as they are
   dialog says the bundle holds the member's whole save and paths, written as `~` as in the
   log; nothing is ever sent, the member posts the file.
 - **Always recording, written on request.** The journal and the kept inputs live in memory
-  from the first open; a button in the shell (beside the log) writes the bundle, and the
-  panic hook writes one beside the crash's log, since a crash is where a member is least able
+  from the first open; "Report a problem" in the sidebar's tail, above Help, opens the
+  dialog that writes the bundle (the draft: `docs/prototypes/index.html` `drawReport`; in
+  the tail, not beside the log, because the Save editor has no log panel and a member
+  looks for it wherever they are), and the panic hook writes one beside the crash's log, since a crash is where a member is least able
   to say what they did. A journal is cleared when its tool closes the file it describes.
 - **Replay is the payoff.** `utw <tool-id> replay <bundle>` applies the journal to the kept
   inputs and compares the result with the bundle's written files, byte for byte. A match puts

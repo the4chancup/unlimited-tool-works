@@ -421,13 +421,15 @@
      The app's combo list is in the body font; the system sans is the nearest a browser
      gives here. The page keeps no generic family (above) so a missing glyph still shows. */
   option { font-family: var(--font-body), sans-serif; }
-  input[type=text], input[type=number] { background: var(--extreme); border: 1px solid var(--stroke); border-radius: 3px; padding: 1px 4px; }
+  /* A multiline TextEdit draws as a single-line one: without the textarea here each browser
+     drew its own default, darker in Firefox than in Chromium. */
+  input[type=text], input[type=number], textarea { background: var(--extreme); border: 1px solid var(--stroke); border-radius: 3px; padding: 1px 4px; }
   input[type=number] { width: 52px; background: var(--widget); border: 0; text-align: center; }
   /* A DragValue has no spin arrows (the browsers draw theirs in the box). */
   input[type=number] { appearance: textfield; -moz-appearance: textfield; }
   input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button {
     -webkit-appearance: none; margin: 0; }
-  input[type=text]:focus, input[type=number]:focus { outline: 1px solid var(--sel-fg); }
+  input[type=text]:focus, input[type=number]:focus, textarea:focus { outline: 1px solid var(--sel-fg); }
   input[type=color] { width: 22px; height: 16px; border: 0; padding: 0; background: none; }
   /* The swatch outlined as a resting text box is (its stroke and corners), so a colour as dark
      as the panel still shows its box. */
@@ -2538,6 +2540,61 @@ function chooseDataLocation(loc) {
   render();
 }
 
+// ---- Report a problem (core/architecture.md "Repro bundles") ----
+// The repro bundle's dialog: what the file holds, the member's own words, and
+// the tick box for whole exports (shown only when a tool opened an export this
+// session). Nothing is sent; Save writes the zip where the member chooses (the
+// system's save dialog, faked here by a fixed path).
+// sample wording: the title, the lines, the text box's hint, the buttons.
+// sample data: each tool's steps since the window opened and its files.
+const REPORT_SAMPLE = {
+  tools: [
+    { label: "Save editor", steps: 14, opened: "EDIT00000000 (7.4 MB)",
+      wrote: "EDIT00000000 at 02:41" },
+    { label: "Team compiler", steps: 2, opened: "2 exports (/dbg/, /4ccg/)",
+      wrote: "4cc_69_midcup.cpk at 02:44" }],
+  exportsOpened: true, exportsSize: "312 MB",
+  savedTo: "~\\Desktop\\utw-report-2026-11-07-0245.zip" };
+const REPORT = { words: "", wholeExports: false, saved: false };
+function openReport() {
+  REPORT.saved = false;
+  drawReport();
+}
+function drawReport() {
+  const r = REPORT, sample = REPORT_SAMPLE;
+  const item = text => h("li", {}, text);
+  window_("Report a problem",
+    h("div", { style: "width:540px" },
+      h("div", {}, "Saves what UTW did since it opened, so the problem can be reproduced."),
+      h("div", {}, "The file is not sent automatically, please post it wherever you usually "
+        + "report problems."),
+      h("div", { style: "margin-top:10px" }, "What happened?"),
+      h("textarea", { style: "width:100%; height:84px; box-sizing:border-box; font: inherit",
+        placeholder: "What you did, what you expected and what you got; also anything "
+          + "done outside UTW, in the game or another tool",
+        oninput: e => { r.words = e.target.value; } }, r.words),
+      h("div", { style: "margin-top:10px" }, "The file holds:"),
+      h("ul", { style: "margin:4px 0 8px 18px; padding:0" },
+        sample.tools.map(t => item(t.label + ": " + t.steps + " steps; opened "
+          + t.opened + "; wrote " + t.wrote)),
+        item("the files as they were opened, before any change"),
+        item("utw.log, the version, your settings and the PES installs found"),
+        sample.exportsOpened
+          ? item("the exports' settings files, and a list of their other files") : null),
+      sample.exportsOpened ? h("label", { title: "Include them when the problem is in a texture "
+          + "or a model itself: one that looks wrong in game, is refused, or fails to convert. "
+          + "For anything else, the list of the exports' files is enough." },
+        h("input", { type: "checkbox", checked: r.wholeExports,
+          onchange: e => { r.wholeExports = e.target.checked; render(); } }),
+        " Also include the exports' textures and models (" + sample.exportsSize + ")") : null,
+      h("div", { style: "margin-top:8px" }, "Your username is rewritten as ~."),
+      r.saved ? h("div", { style: "margin-top:8px" }, "Saved to " + sample.savedTo) : null),
+    r.saved ? [button("Close", closeWindow)]
+      : [button("Save…", () => { r.saved = true; render(); }), button("Cancel", closeWindow)],
+    "report");
+  windowDrawer = drawReport;
+}
+
 // ---- Render: one state object, one pass (gui.md "Shell layout") ----
 // gui.md "Window title": progress first, name last, a plain hyphen before the
 // name. An activity outranks a held notice: the held-notice row of the table is
@@ -2859,6 +2916,7 @@ function sidebarItems(full) {
   items.push(h("div", { class: "tail" },
     // "(WIP)" until the help and the settings menu are complete, as their
     // windows' titles.
+    tailEntry("\uE4E0", "Report a problem", openReport, "report-btn"),
     tailEntry("\uE3E8", "Help (WIP)", () => openHelp({ tool: S.activeTool }), "help-btn"),
     tailEntry("\uE270", "Settings (WIP)", openSettings, "settings-btn")));
   return items;

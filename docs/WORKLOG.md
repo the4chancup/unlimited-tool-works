@@ -8144,7 +8144,10 @@ points there.
 
 - open (2026-11-07) — Repro bundles in every tool (`plans/core/architecture.md` "Repro
   bundles", the maintainer's request after the 0.0.2-se19 report). To slice before briefing:
-  (1) the button and dialog drafted in `docs/prototypes/` and looked at by the maintainer;
+  (1) the button and dialog drafted in `docs/prototypes/` and looked at by the maintainer
+  (done 2026-11-07: `index.html` `drawReport`, the sidebar tail's "Report a problem",
+  looked at by the maintainer, its wording theirs; the icon is the warning glyph until
+  one of its own is drawn);
   (2) `studio_core`'s journal type and bundle writer, with the Save editor's journal taken at
   its undo push and session file operations, its inputs kept, and the test that every model
   change goes through the journal; (3) `utw save-editor replay`; (4) the panic hook's bundle;
