@@ -80,23 +80,25 @@ pub(super) fn change_lines(change: &Change, schema: &VersionSchema, undone: bool
     }
 }
 
-/// The `open` refusal recorded — `could not open <path>: <the error, as
-/// the window shows it>` — and `bytes` kept as an input, when the read
-/// reached them (a file that could not be read keeps nothing): the file
-/// a member reports is the one that failed. Returns the error for
-/// `open` to hand back.
+/// The `open` refusal recorded — `could not open <path>: <the error's
+/// cause>` — and `bytes` kept as an input, when the read reached them (a
+/// file that could not be read keeps nothing): the file a member reports
+/// is the one that failed. The error is contexted after the step so the
+/// line does not repeat it; returned for `open` to hand back.
 pub(super) fn open_failed(
     path: &Path,
     recorder: &Recorder,
     error: anyhow::Error,
     bytes: Option<Arc<[u8]>>,
 ) -> anyhow::Error {
-    let error = error.context(format!("{}: cannot open the save", path.display()));
-    recorder.step(TOOL_ID, format!("could not open {error:#}"));
+    recorder.step(
+        TOOL_ID,
+        format!("could not open {}: {error}", path.display()),
+    );
     if let Some(bytes) = bytes {
         recorder.keep_input(TOOL_ID, path, bytes);
     }
-    error
+    error.context(format!("{}: cannot open the save", path.display()))
 }
 
 /// `open_failed` for a file the member picked to apply or open in a panel
@@ -118,13 +120,22 @@ pub(crate) fn read_failed(
     }
 }
 
-/// `open_failed` for a write the member asked for: `could not write
-/// <the error, as the window shows it>` (its context names the path);
-/// nothing is kept — a failed write's bytes are not an output. Returns
-/// the error for the caller to hand back.
-pub(crate) fn write_failed(recorder: &Recorder, error: anyhow::Error) -> anyhow::Error {
-    recorder.step(TOOL_ID, format!("could not write {error:#}"));
-    error
+/// `read_failed` for a file the member picked that a panel refuses after
+/// a clean read (a staged import, a patch's preview, the comparator's
+/// version mismatch): `refused <path>: <reason>` — recorded once by each
+/// site's own gate (`refusal_recorded`, or the one arm it runs through).
+pub(crate) fn refused(path: &Path, recorder: &Recorder, reason: impl fmt::Display) {
+    recorder.step(TOOL_ID, format!("refused {}: {reason}", path.display()));
+}
+
+/// `read_failed` for a write the member asked for that fails: `could not
+/// write <path>: <error>`; nothing is kept — a failed write's bytes are
+/// not an output.
+pub(crate) fn write_failed(path: &Path, recorder: &Recorder, error: impl fmt::Display) {
+    recorder.step(
+        TOOL_ID,
+        format!("could not write {}: {error}", path.display()),
+    );
 }
 
 /// `fs::write` to `path` plus the journal's `wrote <path>` step and the
@@ -136,12 +147,10 @@ pub(crate) fn write_and_record(
     path: &Path,
     bytes: &[u8],
 ) -> anyhow::Result<()> {
-    std::fs::write(path, bytes).map_err(|io| {
-        write_failed(
-            recorder,
-            anyhow!("{}: cannot write the file ({io})", path.display()),
-        )
-    })?;
+    if let Err(io) = std::fs::write(path, bytes) {
+        write_failed(path, recorder, &io);
+        return Err(anyhow!("{}: cannot write the file ({io})", path.display()));
+    }
     recorder.step(TOOL_ID, format!("wrote {}", path.display()));
     recorder.keep_output(TOOL_ID, path, bytes.into());
     Ok(())

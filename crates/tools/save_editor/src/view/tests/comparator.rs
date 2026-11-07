@@ -1583,3 +1583,32 @@ fn a_picked_save_reads_as_an_opened_for_comparison_in_the_journal() {
         "the pick reads as an opened for comparison: {lines:?}"
     );
 }
+
+// A pick of another version's save records `refused <path>: <reason>`
+// beside its opened-for-comparison step, as the other picks' refusals do.
+#[test]
+fn a_version_mismatched_pick_records_the_refusal_in_the_journal() {
+    let path = fixture(PesVersion::Pes21, "comparator_journal_refused");
+    let dir = path.parent().unwrap().to_path_buf();
+    let recorder = Recorder::default();
+    let mut view = SaveView::new();
+    view.recorder = recorder.clone();
+    view.open(&path);
+    let mut window = Headless::new();
+    let picked = picked_save(&dir, "picked", |_| {});
+    open_comparator(&mut window, &mut view);
+    pick(&mut window, &mut view, picked.clone());
+
+    let lines = journal_lines(&recorder, &dir);
+    let refused: Vec<&String> = lines
+        .iter()
+        .filter(|line| line.starts_with("refused "))
+        .collect();
+    assert_eq!(refused.len(), 1, "the refusal records once: {lines:?}");
+    assert!(refused[0].contains("picked"), "{}", refused[0]);
+    assert!(
+        refused[0].contains("PES 2017"),
+        "the refusal names the picked save's version: {}",
+        refused[0]
+    );
+}

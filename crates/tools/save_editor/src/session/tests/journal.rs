@@ -124,7 +124,13 @@ fn every_model_change_records_its_steps() {
     );
 
     // `edit_entries`' team half lands a `team …` line per changed team —
-    // and undo/redo run a team's change the way they run a player's.
+    // every numeric arm's own Debug spelling too — and undo/redo run a
+    // team's change the way they run a player's.
+    let flag_before = session.file().team(701).unwrap().edit_flags.name;
+    let number_before = session.file().team(701).unwrap().roster[0].number;
+    let support_before = session.file().team(701).unwrap().tactics.presets[0]
+        .sliders
+        .support_range;
     check_records(
         &mut session,
         &recorder,
@@ -134,10 +140,41 @@ fn every_model_change_records_its_steps() {
         |session| {
             let mut edited = session.file().team(701).unwrap().clone();
             edited.short_name = "ABC".to_owned();
+            edited.edit_flags.name = !edited.edit_flags.name;
+            edited.roster[0].number = edited.roster[0].number.wrapping_add(1);
+            edited.tactics.presets[0].sliders.support_range = edited.tactics.presets[0]
+                .sliders
+                .support_range
+                .wrapping_add(1);
             session.edit_entries(Vec::new(), vec![edited]);
         },
     );
-    assert!(journal_lines(&recorder, &dir).contains(&"team 701: ShortName XYZ → ABC".to_owned()));
+    let lines = journal_lines(&recorder, &dir);
+    assert!(lines.contains(&"team 701: ShortName XYZ → ABC".to_owned()));
+    assert!(
+        lines.contains(&format!(
+            "team 701: EditedName {} → {}",
+            u32::from(flag_before),
+            u32::from(!flag_before)
+        )),
+        "a record field's line: {lines:?}"
+    );
+    assert!(
+        lines.contains(&format!(
+            "team 701: Number(0) {} → {}",
+            number_before,
+            number_before + 1
+        )),
+        "a roster field's line: {lines:?}"
+    );
+    assert!(
+        lines.contains(&format!(
+            "team 701: Preset {{ preset: 0, field: SupportRange }} {} → {}",
+            support_before,
+            support_before + 1
+        )),
+        "a tactics field's line: {lines:?}"
+    );
     check_records(&mut session, &recorder, &dir, "undo", true, |session| {
         session.undo();
     });
@@ -146,6 +183,14 @@ fn every_model_change_records_its_steps() {
     assert!(
         lines.contains(&"team 701: ShortName ABC → XYZ".to_owned()),
         "the undone team field backwards: {lines:?}"
+    );
+    assert!(
+        lines.contains(&format!(
+            "team 701: Number(0) {} → {}",
+            number_before + 1,
+            number_before
+        )),
+        "the undone roster field backwards: {lines:?}"
     );
     check_records(&mut session, &recorder, &dir, "redo", true, |session| {
         session.redo();

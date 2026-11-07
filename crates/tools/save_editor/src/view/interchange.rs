@@ -428,7 +428,7 @@ impl Interchange {
                 Err(error) => {
                     if !self.refusal_recorded {
                         self.refusal_recorded = true;
-                        recorder.step(TOOL_ID, format!("refused {}: {error}", path.display()));
+                        journal::refused(path, recorder, &error);
                     }
                     self.staged = Some((key, Err(format!("{}: {error}", file_name(path)))));
                     return;
@@ -449,7 +449,7 @@ impl Interchange {
             && !self.refusal_recorded
         {
             self.refusal_recorded = true;
-            recorder.step(TOOL_ID, format!("refused {}: {error}", path.display()));
+            journal::refused(path, recorder, error);
         }
         self.staged = Some((key, Ok(staged)));
     }

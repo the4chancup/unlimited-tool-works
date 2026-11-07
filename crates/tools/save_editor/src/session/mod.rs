@@ -718,12 +718,10 @@ impl Session {
     /// level, as every save does); `out` may be the path the save was opened from.
     /// A failed write records `could not write <path>` and keeps nothing.
     pub(crate) fn write(&self, out: &Path) -> anyhow::Result<()> {
-        if let Err(error) = self
-            .file
-            .save(out)
-            .with_context(|| format!("{}: cannot write the save", out.display()))
-        {
-            return Err(write_failed(&self.recorder, error));
+        if let Err(error) = self.file.save(out) {
+            write_failed(out, &self.recorder, &error);
+            return Err(anyhow::Error::new(error)
+                .context(format!("{}: cannot write the save", out.display())));
         }
         self.recorder
             .step(TOOL_ID, format!("wrote {}", out.display()));

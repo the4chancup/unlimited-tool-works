@@ -164,7 +164,7 @@ impl Patch {
             && !self.refusal_recorded
         {
             self.refusal_recorded = true;
-            recorder.step(TOOL_ID, format!("refused {}: {error}", path.display()));
+            journal::refused(path, recorder, error);
         }
         self.preview = Some((revision, result));
     }

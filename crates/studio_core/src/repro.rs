@@ -482,8 +482,13 @@ mod tests {
         // replacement.
         recorder.keep_output(
             "team-compiler",
-            Path::new("out/EDIT00000000"),
+            Path::new("/home/member/out/EDIT00000000"),
             Arc::from(&b"TEAM"[..]),
+        );
+        recorder.keep_output(
+            "save-editor",
+            Path::new("out/EDIT00000000"),
+            Arc::from(&b"REL"[..]),
         );
         let settings = dir.join("settings.toml");
         fs::write(&settings, "theme = \"light\"\n").unwrap();
@@ -509,6 +514,7 @@ mod tests {
                 "inputs/0-EDIT00000000",
                 "outputs/0-EDIT00000000",
                 "outputs/1-EDIT00000000",
+                "outputs/2-EDIT00000000",
                 "words.txt",
                 "settings.toml",
                 "state/current.save",
@@ -517,6 +523,7 @@ mod tests {
         assert_eq!(zip_bytes(&out, "inputs/0-EDIT00000000"), b"SAVE_BYTES");
         assert_eq!(zip_bytes(&out, "outputs/0-EDIT00000000"), b"NEW_BYTES");
         assert_eq!(zip_bytes(&out, "outputs/1-EDIT00000000"), b"TEAM");
+        assert_eq!(zip_bytes(&out, "outputs/2-EDIT00000000"), b"REL");
         assert_eq!(zip_bytes(&out, "state/current.save"), b"CURRENT");
         assert_eq!(zip_text(&out, "words.txt"), "the member's words");
         assert_eq!(zip_text(&out, "settings.toml"), "theme = \"light\"\n");
@@ -575,7 +582,7 @@ mod tests {
         let outputs = doc["output"].as_array().unwrap();
         assert_eq!(
             outputs.len(),
-            2,
+            3,
             "the second write to one path replaces the first; another tool's is its own: {journal}"
         );
         assert_eq!(outputs[0]["tool"].as_str(), Some("save-editor"));
@@ -594,8 +601,8 @@ mod tests {
         assert_eq!(outputs[1]["tool"].as_str(), Some("team-compiler"));
         assert_eq!(
             outputs[1]["path"].as_str(),
-            Some("out/EDIT00000000"),
-            "a relative path is written as it is"
+            Some("~/out/EDIT00000000"),
+            "the other tool's same path is its own row: {journal}"
         );
         assert_eq!(outputs[1]["size"].as_integer(), Some(4));
         assert_eq!(
@@ -604,6 +611,13 @@ mod tests {
             "SHA-256 of b\"TEAM\""
         );
         assert_eq!(outputs[1]["entry"].as_str(), Some("outputs/1-EDIT00000000"));
+        assert_eq!(outputs[2]["tool"].as_str(), Some("save-editor"));
+        assert_eq!(
+            outputs[2]["path"].as_str(),
+            Some("out/EDIT00000000"),
+            "a relative path is written as it is"
+        );
+        assert_eq!(outputs[2]["entry"].as_str(), Some("outputs/2-EDIT00000000"));
     }
 
     // The member's words, an extra and an attachment whose bytes are

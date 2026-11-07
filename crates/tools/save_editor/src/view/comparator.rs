@@ -283,8 +283,10 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
                                 Ok(picked) => {
                                     comparator.picked = None;
                                     comparator.comparison.reset();
-                                    comparator.refused =
-                                        Some(mismatch_refusal(picked.version(), file.version()));
+                                    let refused =
+                                        mismatch_refusal(picked.version(), file.version());
+                                    journal::refused(&path, session.recorder(), &refused);
+                                    comparator.refused = Some(refused);
                                 }
                                 Err(error) => {
                                     comparator.picked = None;
