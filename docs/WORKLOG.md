@@ -7590,8 +7590,14 @@ briefs, review loops, gates and mutation runs as for any step.
       the loop ends): the organizer sent to his section before either launcher, a later
       matchday's export named midcup before its upgrade (a Full one removes the team's
       other kits), `apply-patch`'s paths quoted, a launcher's failure reported from its window.
-      Open: the branch and its
-      `just release`, then the rehearsal; the Linux tarball now also carries the two `.bat`
+      Branch `poc/0.0.2-poc.1` (`63a1d183`, the version alone) built by `just release
+      0.0.2-poc.1` 2026-11-08; the rehearsal's launcher half passed on PES 2019
+      (`.tmp/0_0_2/ingame/rehearsal/findings.md`: both upgrade, a rerun leaves them, the
+      compile deploys the slot and patches the save, the readme's quoted `apply-patch` line
+      works). Astra over the official save's write path (A-savepath r1, 2 accepted, fixed by
+      the lead): a written name sets the edited-player flag (SE-PAT-13), and an in-place
+      `apply-patch` that applies no player writes nothing (SE-PAT-12). Open: the
+      rehearsal's in-game half, the rebuild with the fix, a SWE-2 round over it; the Linux tarball now also carries the two `.bat`
       files (`expected_entries` has no platform gate), to settle before 0.0.2
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
@@ -7621,7 +7627,9 @@ briefs, review loops, gates and mutation runs as for any step.
     on an uncompressed kit"). Review: Astra first (2026-11-08, rulings "A-nobc7 r1", the
     expiring `own` window, DECISIONS): 3 accepted, two tests that pass on wrong code
     (`kit_layout.rs`'s copied `uncompressed` flags; the exact codec per version) and the
-    spec's `Decoded` and `Target` shapes; Astra's loop ends. Open: their rework, then the
+    spec's `Decoded` and `Target` shapes; Astra's loop ends. Their rework landed 2026-11-08
+    (SWE-2 sidekick, `.tmp/0_0_2/poc/brief_nobc7_fix.md`: uncompressed sources through the
+    layout tests, the exact codec per version, role and alpha, the spec's shapes). Open: the
     SWE-2 loop over `6834fbdb` and it. The same run's PoC look passed: /dbg/ and /4ccg/ upgrade
     and compile clean (about 2 s for both), and the 8 players checked show their own
     faces and bodies
@@ -8213,7 +8221,9 @@ points there.
   the command: the step's `op` in `studio_core`, written and read back from a bundle, the
   kept files' indexes, the open's and the save write's ops and every player row's (serde on
   `PlayerDiff`, the face run's unused bits, `pes_savefile`'s apply and a file's salt), and
-  replay run over a bundle a `Session` recorded (done 2026-11-08, SWE-2, one rework);
+  replay run over a bundle a `Session` recorded (done 2026-11-08, SWE-2, one rework;
+  Astra first, `.tmp/repro/rulings_3a.md`, round A-repro3a r1: 4 test gaps accepted, their rework
+  landed; open: the SWE-2 loop over 3a and it, then Argon);
   (3b) the `replay` command, its messages and SE-REP-01 to 06; (3c) the team, roster and
   tactics rows, `Session::apply_patch`'s field lines, and a test per `Session` mutator that
   replaying its journal rebuilds the model. 3b and 3c wait until a member's bundle needs

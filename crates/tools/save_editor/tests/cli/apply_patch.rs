@@ -7,7 +7,7 @@ use pes_savefile::EditFile;
 use pes_savefile::interchange::aesthetics_patch::{
     ALLOCATION_SCHEME_VERSION, AestheticsPatch, PatchPlayer, PatchTeam,
 };
-use pes_savefile::model::player::{PlayerEntry, STRIPPED_APPEARANCE_ID};
+use pes_savefile::model::player::{PlayerEditFlags, PlayerEntry, STRIPPED_APPEARANCE_ID};
 use pes_savefile::schema::ingame_face::IngameFaceField;
 use pes_savefile::schema::schema_for;
 use pes_savefile::settings_toml::{AppearanceSettings, PlayerSettings, SettingKey};
@@ -339,6 +339,113 @@ fn a_team_whose_every_patch_player_the_save_lacks_is_not_listed_applied() {
         payload(&sandbox.path("EDIT")),
         "no player was written"
     );
+}
+
+// SE-PAT-12
+#[test]
+fn a_patch_that_writes_no_player_leaves_the_save_and_its_bak_in_place() {
+    let sandbox = Sandbox::new("patch_no_players_in_place");
+    sandbox.fixture(PesVersion::Pes21, "EDIT");
+    let save = EditFile::load(&sandbox.path("EDIT")).unwrap();
+    let slot = (1..=99u8)
+        .find(|slot| save.player(CO * 100 + u32::from(*slot)).is_none())
+        .expect("the fixture's /co/ lacks a slot's player");
+    let text = patch_text(
+        PesVersion::Pes21,
+        ALLOCATION_SCHEME_VERSION,
+        vec![team(
+            CO,
+            "/co/",
+            BTreeMap::from([(
+                slot,
+                PatchPlayer {
+                    name: Some("NOBODY".to_owned()),
+                    ..bare()
+                },
+            )]),
+        )],
+    );
+    fs::write(sandbox.path("patch.toml"), &text).unwrap();
+    fs::write(sandbox.path("EDIT.bak"), b"the previous backup").unwrap();
+    let before = fs::read(sandbox.path("EDIT")).unwrap();
+
+    let run = sandbox.apply("patch.toml", "EDIT", "EDIT");
+    assert_eq!(run.exit_code(), 1);
+    assert_eq!(
+        run.messages(),
+        vec![format!(
+            "Error patch_player_not_in_save (player={})",
+            CO * 100 + u32::from(slot)
+        )]
+    );
+    // `assert!`, not `assert_eq!`: a failure would print two whole saves.
+    assert!(
+        fs::read(sandbox.path("EDIT")).unwrap() == before,
+        "the save was rewritten"
+    );
+    assert_eq!(
+        fs::read(sandbox.path("EDIT.bak")).unwrap(),
+        b"the previous backup",
+        "its .bak"
+    );
+}
+
+// SE-PAT-13
+#[test]
+fn a_written_name_or_shirt_name_sets_the_edited_player_flag() {
+    let sandbox = Sandbox::new("patch_name_flag");
+    sandbox.fixture(PesVersion::Pes19, "EDIT");
+    let save = EditFile::load(&sandbox.path("EDIT")).unwrap();
+    let clear: Vec<&PlayerEntry> = save
+        .players()
+        .iter()
+        .filter(|player| player.id / 100 == 711 && !player.edit_flags.player)
+        .take(2)
+        .collect();
+    let [named, shirted] = clear[..] else {
+        panic!("premise: two of team 711's players with the flag clear on PES 19");
+    };
+    let slot = |player: &PlayerEntry| u8::try_from(player.id % 100).unwrap();
+    let text = patch_text(
+        PesVersion::Pes19,
+        ALLOCATION_SCHEME_VERSION,
+        vec![team(
+            711,
+            "team 711",
+            BTreeMap::from([
+                (
+                    slot(named),
+                    PatchPlayer {
+                        name: Some("NAMED".to_owned()),
+                        ..bare()
+                    },
+                ),
+                (
+                    slot(shirted),
+                    PatchPlayer {
+                        shirt_name: Some("SHIRTED".to_owned()),
+                        ..bare()
+                    },
+                ),
+            ]),
+        )],
+    );
+    fs::write(sandbox.path("patch.toml"), &text).unwrap();
+
+    let run = sandbox.apply("patch.toml", "EDIT", "OUT");
+    assert_eq!(run.exit_code(), 0);
+    let written = EditFile::load(&sandbox.path("OUT")).unwrap();
+    for before in [named, shirted] {
+        assert_eq!(
+            written.player(before.id).unwrap().edit_flags,
+            PlayerEditFlags {
+                player: true,
+                ..before.edit_flags.clone()
+            },
+            "player {}",
+            before.id
+        );
+    }
 }
 
 // SE-PAT-06

@@ -641,4 +641,14 @@ SE-PAT-11  GIVEN SE-PAT-07's save and patch with boots_id = 16384 (past the fiel
            WHEN apply-patch is run with each
            THEN each is refused naming the player and the key, with exit code 2, and --out is
                 not written
+SE-PAT-12  GIVEN SE-PAT-05's patch, a save with a .bak beside it, and --out naming --base
+           WHEN apply-patch is run
+           THEN the players are listed as skipped, the exit code is 1, and the save and its
+                .bak are left byte for byte as they were (a write would change nothing but turn
+                the .bak over, losing the previous backup)
+SE-PAT-13  GIVEN a PES 19 patch writing a name to one player and a shirt name to another, both
+                with the edited-player flag clear in the PES 19 fixture save
+           WHEN apply-patch is run
+           THEN both players' edited-player flag is set (on PES 2019 a name shows in game only
+                with it), and their other edit flags are as the save held them
 ```

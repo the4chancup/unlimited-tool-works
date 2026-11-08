@@ -281,7 +281,16 @@ fn apply_patch(
     for skip in &summary.skipped {
         lines.push(patch_skip(*skip));
     }
-    write_save(&session, &args.out)?;
+    // SE-PAT-12: a save holding none of the patch's players, written back over itself, is
+    // left as it was: the write would change nothing but turn its `.bak` over, losing the
+    // previous backup (as the compile's save step does). A missing --out is never --base.
+    let in_place = matches!(
+        (std::fs::canonicalize(&args.base), std::fs::canonicalize(&args.out)),
+        (Ok(base), Ok(out)) if base == out
+    );
+    if !(summary.applied_players.is_empty() && in_place) {
+        write_save(&session, &args.out)?;
+    }
     for line in lines {
         report.message(line);
     }

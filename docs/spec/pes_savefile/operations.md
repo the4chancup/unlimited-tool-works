@@ -764,8 +764,11 @@ copy). A census of 125 Fox saves on the maintainer's machine (2026-10-14,
 PES 21 cup save, up to 117 on PES 19 and 988 on PES 18; counted are ids neither 0 nor the
 player's own. A compiled player whose export describes no face of his own (no face model, no
 `ingame_face.toml`) then shows the Placeholder face, as his export says, where the copy
-showed someone else's. The edit flags (the record's `Edited*` bits) other than the base-copy
-flag are left as the save holds them.
+showed someone else's. A written name or shirt name sets the edited-player flag, as the Save
+editor's own name edit does: on PES 2019 a name edit shows in game only with that flag set,
+and alone it suffices (in game, 2026-11-08; `DECISIONS.md` "a written name sets the
+edited-player flag"). The other edit flags
+(the record's `Edited*` bits) but the base-copy flag are left as the save holds them.
 
 Rules:
 

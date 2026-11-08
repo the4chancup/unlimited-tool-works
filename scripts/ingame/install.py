@@ -12,7 +12,8 @@ install folder comes from game.py's `GAMES`.
 Every copy is checked by SHA-256. Both commands refuse while the game runs, and refuse to write
 over a slot that holds neither the original (`original_sha256` below) nor the CPK this script
 installed last (its hash recorded beside the kept original), so a slot changed by hand or by
-another tool is never lost. The kept original lives in `.tmp/ingame/pes<GAME>/` of the
+another tool is never lost. A slot already holding CPK itself (a bundle's quick_compile.bat
+deployed it) is accepted by `install`, which records it so `revert` can restore the original. The kept original lives in `.tmp/ingame/pes<GAME>/` of the
 repository (gitignored scratch) and stays there after a revert, ready for the next install.
 """
 
@@ -92,8 +93,11 @@ def install(game_key: str, cpk: Path) -> None:
     if not slot.is_file():
         raise SystemExit(f"{slot} does not exist: check GAMES in game.py and TEST_SLOTS here")
     live = sha256(slot)
-    if live != original and live != last_installed(record):
-        raise SystemExit(f"{slot} holds neither its original nor the CPK installed last: not touching it")
+    installed = sha256(cpk)
+    # A slot already holding `cpk` itself (a launcher's compile deployed it there) loses
+    # nothing to the copy, and recording it lets `revert` restore the original afterwards.
+    if live not in (original, last_installed(record), installed):
+        raise SystemExit(f"{slot} holds neither its original, the CPK installed last nor {cpk}: not touching it")
     if kept.exists():
         if sha256(kept) != original:
             raise SystemExit(f"{kept} is not the slot's original: not touching {slot}")
@@ -102,7 +106,6 @@ def install(game_key: str, cpk: Path) -> None:
             raise SystemExit(f"the original of {slot} is not kept in {kept.parent}: not touching it")
         kept.parent.mkdir(parents=True, exist_ok=True)
         copy_checked(slot, kept, original)
-    installed = sha256(cpk)
     copy_checked(cpk, slot, installed)
     record.write_text(installed + "\n", encoding="utf-8")
     print(f"installed {cpk} into {slot} ({cpk.stat().st_size} bytes); the original is kept as {kept}")

@@ -237,9 +237,10 @@ fn patched_entry(view: &SaveView, text: &str, player_id: u32) -> PlayerEntry {
 /// old value, new value), in the views' terms and the comparison's order:
 /// the fixture stores his corner kick and hunching (dribbling) motions 0
 /// (shown 1), his base copy is player 7511, and his name and shirt name
-/// are `PLACEHOLDER`.
-const CO_ROWS: [[&str; 3]; 5] = [
+/// are `PLACEHOLDER`; the patch writing a name sets his edited-player flag.
+const CO_ROWS: [[&str; 3]; 6] = [
     ["PLACEHOLDER \u{b7} Corner kick", "1", "3"],
+    ["PLACEHOLDER \u{b7} Edited player", "0", "1"],
     ["PLACEHOLDER \u{b7} Hunching (dribbling)", "1", "2"],
     ["PLACEHOLDER \u{b7} Copy from ID", "7511", "71403"],
     ["PLACEHOLDER \u{b7} Name", "PLACEHOLDER", "PATCHED"],
@@ -359,12 +360,14 @@ fn two_team_patch(view: &SaveView, missing: u32) -> String {
 
 /// The two-team patch's rows on the PES 21 fixture: 71403's corner kick,
 /// 71405's hunching (dribbling), both their base copies cleared to their
-/// own ids, and 71801's name — every name `PLACEHOLDER`.
-const TWO_TEAM_ROWS: [[&str; 3]; 5] = [
+/// own ids, and 71801's edited-player flag and name — every name
+/// `PLACEHOLDER`.
+const TWO_TEAM_ROWS: [[&str; 3]; 6] = [
     ["PLACEHOLDER \u{b7} Corner kick", "1", "3"],
     ["PLACEHOLDER \u{b7} Copy from ID", "7511", "71403"],
     ["PLACEHOLDER \u{b7} Hunching (dribbling)", "1", "2"],
     ["PLACEHOLDER \u{b7} Copy from ID", "7511", "71405"],
+    ["PLACEHOLDER \u{b7} Edited player", "0", "1"],
     ["PLACEHOLDER \u{b7} Name", "PLACEHOLDER", "PATCHED"],
 ];
 

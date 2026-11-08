@@ -15820,3 +15820,15 @@ loops; each surface's SWE-2 loop runs after its Astra rework, and Argon follows 
 Why: the slot's window would otherwise go unused, and the order exists so Astra's attention
 goes past what SWE-2 catches, a cost paid once here against a review that would not happen.
 Plan: `docs/RUNBOOK.md` "Review rounds".
+
+## 2026-11-08 — pes_savefile — a written name sets the edited-player flag
+Decision (the lead, from Astra's review of the official save's write path): the aesthetics
+patch's `name` and `shirt_name`, when written, set the player's edited-player flag, as the
+Save editor's own name edit does; the other edit flags but the base-copy flag stay as the save
+holds them. `apply-patch` with `--out` naming `--base` writes nothing when no player applied.
+Why: on PES 2019 a name edit shows in game only with that flag set, and alone it suffices (in
+game, 2026-11-08); a `write_names` export on a player whose flag is clear (3,128 of the PES 19
+fixture's) otherwise reported success and showed PLACEHOLDER. The in-place write with nothing
+applied would only turn the `.bak` over, losing the previous backup, which the compile's
+save step already avoids.
+Plan: `spec/pes_savefile/operations.md` "Aesthetics patch (new)"; SE-PAT-12, SE-PAT-13.

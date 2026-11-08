@@ -414,7 +414,9 @@ impl AestheticsPatch {
 /// the flag, `base_copy` unset — unless the entry's `base_copy_id` links
 /// him to another player, which is written as his base copy with the flag
 /// left as the save holds it. The `Some` model IDs land in the appearance
-/// block's boots and gloves fields; the edit flags other than `base_copy`
+/// block's boots and gloves fields. A `Some` name or shirt name sets the
+/// edited-player flag, as the Save editor's own name edit does (PES 2019
+/// shows a name only with it set); the other edit flags but `base_copy`
 /// are not touched. The copy is encoded into a scratch record of the
 /// version's player size — and, on PES 15/16, its separate appearance
 /// record — so a stored value past the field's width is refused here
@@ -435,6 +437,7 @@ fn build(
             false,
         )?;
         next.name = name.clone();
+        next.edit_flags.player = true;
     }
     if let Some(shirt_name) = &patch.shirt_name {
         check_text(
@@ -444,6 +447,7 @@ fn build(
             true,
         )?;
         next.shirt_name = shirt_name.clone();
+        next.edit_flags.player = true;
     }
     if let Some(appearance) = &patch.appearance {
         let appearance_path = leaf(path, "appearance");

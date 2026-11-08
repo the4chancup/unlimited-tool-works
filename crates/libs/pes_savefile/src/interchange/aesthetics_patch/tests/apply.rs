@@ -43,9 +43,11 @@ fn patched(before: &PlayerEntry, patch: &PatchPlayer, version: PesVersion) -> Pl
     let mut out = before.clone();
     if let Some(name) = &patch.name {
         out.name = name.clone();
+        out.edit_flags.player = true;
     }
     if let Some(shirt_name) = &patch.shirt_name {
         out.shirt_name = shirt_name.clone();
+        out.edit_flags.player = true;
     }
     if let Some(appearance) = &patch.appearance {
         PlayerSettings {
@@ -578,6 +580,53 @@ fn a_name_past_latin1_applies() {
     );
     patch.apply(&mut save).expect("applies");
     assert_eq!(save.player(70105).expect("the player").name, "本田");
+}
+
+/// A written name, and a written shirt name, each set the edited-player
+/// flag of a PES 2019 player whose flag is clear: without it the game
+/// shows PLACEHOLDER for the new name (in game, 2026-11-08). A look alone
+/// leaves the flag clear.
+#[test]
+fn a_written_name_sets_the_edited_player_flag() {
+    let (mut save, _) = open(PesVersion::Pes19);
+    let clear: Vec<u32> = save
+        .players()
+        .iter()
+        .filter(|player| player.id / 100 == 711 && !player.edit_flags.player)
+        .map(|player| player.id)
+        .take(3)
+        .collect();
+    let [name_id, shirt_id, look_id] = clear[..] else {
+        panic!("premise: three of team 711's players have the flag clear, got {clear:?}")
+    };
+    let slot = |id: u32| u8::try_from(id % 100).expect("an NN");
+    let appearance = look_of(
+        save.player(look_id).expect("present"),
+        PesVersion::Pes19,
+        &[],
+    );
+    let patch = patch_at(
+        PesVersion::Pes19,
+        vec![team(
+            711,
+            BTreeMap::from([
+                (slot(name_id), named("NAMED")),
+                (
+                    slot(shirt_id),
+                    PatchPlayer {
+                        shirt_name: Some("SHIRT".to_string()),
+                        ..bare()
+                    },
+                ),
+                (slot(look_id), look(appearance)),
+            ]),
+        )],
+    );
+    patch.apply(&mut save).expect("applies");
+    let flag = |id: u32| save.player(id).expect("the player").edit_flags.player;
+    assert!(flag(name_id), "the name's player {name_id}");
+    assert!(flag(shirt_id), "the shirt name's player {shirt_id}");
+    assert!(!flag(look_id), "the look's player {look_id}");
 }
 
 /// `shirt_name` is single-byte text (chars at most U+00FF): the same
