@@ -54,8 +54,7 @@ and writes what is correctness-critical; the sidekick, SWE-2 through the Devin C
 the cross-family reviews run through the `duck` skill (Astra), the lead running them itself.
 When a review stops for quota, it is queued here (commit range, plan sections) and retried
 once an hour; work continues past it, but no phase closes with one outstanding.
-**Handover queue:** Astra over the upgrader half of 0.0.2-poc5 to poc7 (`b74e726a`,
-`55a2b047`), after SWE-2's r2 over poc6's review fixes (0.0.2-poc6's line).
+**Handover queue:** nothing (poc5 to poc7's Astra ran 2026-11-06).
 
 ---
 
@@ -7577,7 +7576,14 @@ briefs, review loops, gates and mutation runs as for any step.
       settle before briefing: the bundle's version (`release.py` refuses one not the
       workspace's, and the exe's version is what a member's report names) → verify:
       the staged bundle's file list; the PES 2019 rehearsal (/dbg/ and /4ccg/ through the
-      launchers from the extracted bundle, checked in Edit mode)
+      launchers from the extracted bundle, checked in Edit mode).
+      Main's half done 2026-11-08 (SWE-2 sidekick, brief `.tmp/0_0_2/poc/brief_poc8.md`;
+      `release_test.py` 37, `gates-changed` green): the two tuples, the readme (the old
+      "Exports made for Red" line now "in the old format", as `CONTRIBUTING.md` asks; the
+      patch's route to the official save, `apply-patch`'s line), the CHANGELOG's `### New`.
+      Version settled (DECISIONS "the PoC bundle is 0.0.2-poc.1"). Open: the branch and its
+      `just release`, then the rehearsal; the Linux tarball now also carries the two `.bat`
+      files (`expected_entries` has no platform gate), to settle before 0.0.2
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
@@ -7603,7 +7609,11 @@ briefs, review loops, gates and mutation runs as for any step.
     `s42`-`s44`): the export compiled with its 4096 `kit.dds` kept uncompressed (8.5 MB
     CPK) loads, and Edit mode draws the shirt from it, no crash or hang at any screen.
     Not seen: the seasonal logos, which Edit mode may not place (QUESTIONS "Seasonal logos
-    on an uncompressed kit"). The same run's PoC look passed: /dbg/ and /4ccg/ upgrade
+    on an uncompressed kit"). Review: Astra first (2026-11-08, rulings "A-nobc7 r1", the
+    expiring `own` window, DECISIONS): 3 accepted, two tests that pass on wrong code
+    (`kit_layout.rs`'s copied `uncompressed` flags; the exact codec per version) and the
+    spec's `Decoded` and `Target` shapes; Astra's loop ends. Open: their rework, then the
+    SWE-2 loop over `6834fbdb` and it. The same run's PoC look passed: /dbg/ and /4ccg/ upgrade
     and compile clean (about 2 s for both), and the 8 players checked show their own
     faces and bodies
   - [ ] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation

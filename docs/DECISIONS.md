@@ -15799,3 +15799,24 @@ where it happened and the matching for large sessions, worth its cost only once 
 show sessions large enough to need it, while the ops must be in the journal from the first
 bundle members post, or those bundles could never be replayed.
 Plan: `plans/core/architecture.md` "Repro bundles"; worklog, the repro bundles issue.
+
+## 2026-11-08 — release — the PoC bundle is 0.0.2-poc.1, built on a branch, never published
+Decision (the lead; the maintainer: a bundle is fine, no release): the proof of concept for
+VGL's organizer is `just release 0.0.2-poc.1` run in a worktree on a branch whose only commit
+bumps the workspace version, `Cargo.lock` and the readme's first line to `0.0.2-poc.1`; it is
+not tagged, pushed or published, and main keeps `0.0.1` until 0.0.2. The launchers, the
+export folders and the readme's VGL section are on main, as 0.0.2 ships them.
+Why: `release.py` refuses a version that is not the workspace's and a dirty tree, and the
+exe names its version in every report a member sends, so a PoC stamped `0.0.1` would read as
+DBC's build; semver orders `0.0.2-poc.1` below `0.0.2`, so the PoC is offered 0.0.2 when it
+comes and, never published, is offered to no one; 0.0.1's test pre-releases were built on a
+version-bumped branch the same way (2026-11-02, "How CI's release workflow builds").
+Plan: `plans/core/development_plan.md` "The /vg/ League 27 (VGL)"; worklog 0.0.2-poc8.
+
+## 2026-11-08 — reviews — Astra reviews ahead of the SWE-2 loops while the `own` window expires
+Decision (the maintainer: spend the expiring Codex `own` window, the lead's order): Astra
+reviewed 0.0.2b (`6834fbdb`, unreviewed until then) and repro slice 3a before their SWE-2
+loops; each surface's SWE-2 loop runs after its Astra rework, and Argon follows as usual.
+Why: the slot's window would otherwise go unused, and the order exists so Astra's attention
+goes past what SWE-2 catches, a cost paid once here against a review that would not happen.
+Plan: `docs/RUNBOOK.md` "Review rounds".

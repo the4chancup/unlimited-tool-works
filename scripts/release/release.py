@@ -5,9 +5,9 @@ The recipe builds `studio` with `--locked`, the build machine's home folder, car
 homes, repository and target directory remapped out of the binary's paths (`remap_flags`), reads the executable's name from the built binary's
 `--help` usage line (the name lives in `studio_core`'s `EXE_NAME`, not in this script),
 stages `unlimited-tool-works-<version>/` — the binary as `<name>.exe` (`<name>` on Linux), the launchers it ships
-(`LAUNCHERS`, none in 0.0.1), the readme, the license files (`LICENSES`) and the generated
+(`LAUNCHERS`, the two `quick_*.bat`), the readme, the license files (`LICENSES`) and the generated
 third-party notices in `licenses/`, the bundled `data/settings.toml`,
-and the empty folders it ships (`EMPTY_FOLDERS`, none in 0.0.1) — under a temporary folder in
+and the empty folders it ships (`EMPTY_FOLDERS`, `exports/` and `old_exports/`) — under a temporary folder in
 cargo's target directory (asked of `cargo metadata`, since a developer may have moved it),
 packs it as `<target>/dist/unlimited-tool-works-<version>-windows.7z` with 7-Zip, or as
 `-linux.tar.gz` with `tarfile` on Linux (a tar keeps the binary's executable bit), with a
@@ -23,7 +23,7 @@ Windows or Linux, a version that is not the workspace's, a readme whose first li
 version, an archive that already exists (a release is never overwritten), a dirty tree, a
 `cargo build` that fails, a `--help` with no usage line, a binary that still holds one of the
 remapped paths or, on Windows, names `VCRUNTIME140.dll` (the `--config` flags replaced `+crt-static`
-instead of joining it), a launcher it ships (none in 0.0.1) that does not call the exe's
+instead of joining it), a launcher it ships that does not call the exe's
 name, a 7-Zip that cannot be found or whose `a` fails (Windows only), an `objcopy` or a
 `readelf` that cannot be found or fails (Linux only), a stripped binary that still carries
 `.debug_` sections or lost its `.symtab` (Linux only), a `cargo-about` that cannot be found,
@@ -57,10 +57,11 @@ PDB_NAME = "utw.pdb"
 # The bundle's top folder and its archives' name. No built file states it, so it is the
 # recipe's own; the exe's name, which does live in the code, comes from its usage line.
 PACKAGE = "unlimited-tool-works"
-# 0.0.1 is the Save editor's alone; the 0.0.2 preview ships `quick_compile.bat` and
-# `quick_upgrade.bat` again, with the empty `exports/` and `old_exports/` they work in.
-LAUNCHERS: tuple[str, ...] = ()
-EMPTY_FOLDERS: tuple[str, ...] = ()
+# 0.0.1, the Save editor's alone, shipped none of them; the 0.0.2 preview ships
+# `quick_compile.bat` and `quick_upgrade.bat` again, with the empty `exports/` and
+# `old_exports/` they work in.
+LAUNCHERS: tuple[str, ...] = ("quick_compile.bat", "quick_upgrade.bat")
+EMPTY_FOLDERS: tuple[str, ...] = ("exports", "old_exports")
 # The license files the bundle's `licenses/` folder ships, each staged under its file name:
 # members open the exe and the readme, so the top folder keeps to those. The last two cover
 # works the suite bundles outside a crate (the Roboto Flex font, the icon outlines taken

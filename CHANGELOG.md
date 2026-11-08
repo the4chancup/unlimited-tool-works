@@ -4,6 +4,12 @@ What changed for members, release by release, newest first.
 
 ## [Unreleased]
 
+### New
+
+- **Team compiler and Export upgrader** — in the bundle again through `quick_compile.bat`
+  and `quick_upgrade.bat`, with the `exports/` and `old_exports/` folders, for the /vg/
+  League 27 on PES 2019.
+
 ### Minor fixes
 
 - **Save editor** — Up and Down walk the player list again after a page key left a team's

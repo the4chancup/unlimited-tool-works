@@ -290,8 +290,12 @@ class Pure(unittest.TestCase):
                 "unlimited-tool-works-0.0.1/licenses/RobotoFlex-OFL.txt",
                 "unlimited-tool-works-0.0.1/licenses/PHOSPHOR-LICENSE.txt",
                 "unlimited-tool-works-0.0.1/licenses/THIRD-PARTY-NOTICES.txt",
+                "unlimited-tool-works-0.0.1/quick_compile.bat",
+                "unlimited-tool-works-0.0.1/quick_upgrade.bat",
                 "unlimited-tool-works-0.0.1/data",
                 "unlimited-tool-works-0.0.1/data/settings.toml",
+                "unlimited-tool-works-0.0.1/exports",
+                "unlimited-tool-works-0.0.1/old_exports",
             },
         )
 
@@ -309,15 +313,17 @@ class Pure(unittest.TestCase):
         for license_file in LICENSES:
             self.assertTrue((ROOT / license_file).is_file(), license_file)
 
-    def test_the_bundle_ships_no_launcher_and_no_export_folder(self) -> None:
-        # 0.0.1 is the Save editor's alone: a launcher put back by habit fails here, not
-        # in a member's unpacked folder.
-        self.assertEqual(LAUNCHERS, ())
-        self.assertEqual(EMPTY_FOLDERS, ())
+    def test_the_bundle_ships_the_two_launchers_and_the_export_folders(self) -> None:
+        # The names are pinned: the readme walks the member through them, so a bat
+        # renamed in `resources/bundle/` or a folder named differently fails here,
+        # not in a member's unpacked folder.
+        self.assertEqual(LAUNCHERS, ("quick_compile.bat", "quick_upgrade.bat"))
+        self.assertEqual(EMPTY_FOLDERS, ("exports", "old_exports"))
+        for bat in LAUNCHERS:
+            self.assertTrue((ROOT / "resources/bundle" / bat).is_file(), bat)
         entries = expected_entries("UTW", "0.0.1", "windows")
-        self.assertEqual([entry for entry in entries if entry.endswith(".bat")], [])
-        for folder in ("exports", "old_exports"):
-            self.assertNotIn(f"unlimited-tool-works-0.0.1/{folder}", entries)
+        for name in ("quick_compile.bat", "quick_upgrade.bat", "exports", "old_exports"):
+            self.assertIn(f"unlimited-tool-works-0.0.1/{name}", entries)
 
     def test_sha256_line(self) -> None:
         self.assertEqual(sha256_line("ab12cd", "a.7z"), "ab12cd  a.7z\n")
@@ -552,8 +558,12 @@ class Listing(unittest.TestCase):
             (top / "data").mkdir(parents=True)
             (top / "data/settings.toml").write_bytes(b"x")
             (top / "licenses").mkdir()
+            (top / "exports").mkdir()
+            (top / "old_exports").mkdir()
             for bundled in (
                 "Tiny.exe",
+                "quick_compile.bat",
+                "quick_upgrade.bat",
                 "README.txt",
                 "licenses/LICENSE-MIT",
                 "licenses/LICENSE-APACHE",
@@ -590,8 +600,12 @@ class Listing(unittest.TestCase):
             (top / "data").mkdir(parents=True)
             (top / "data/settings.toml").write_bytes(b"x")
             (top / "licenses").mkdir()
+            (top / "exports").mkdir()
+            (top / "old_exports").mkdir()
             for bundled in (
                 "Tiny",
+                "quick_compile.bat",
+                "quick_upgrade.bat",
                 "README.txt",
                 "licenses/LICENSE-MIT",
                 "licenses/LICENSE-APACHE",
