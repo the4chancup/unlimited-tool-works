@@ -1,5 +1,5 @@
 use super::*;
-use crate::test_support::{journal_lines, zip_entry};
+use crate::test_support::{journal_lines, steps_with, zip_entry};
 
 /// Whether the panel is drawn on a frame.
 fn panel_drawn(window: &mut Headless, view: &mut SaveView) -> bool {
@@ -273,10 +273,7 @@ fn a_wrong_version_patch_is_kept_and_refused_once() {
         lines.contains(&format!("picked {}", bad.display())),
         "the pick is named: {lines:?}"
     );
-    let refused: Vec<&String> = lines
-        .iter()
-        .filter(|line| line.starts_with("refused "))
-        .collect();
+    let refused = steps_with(&lines, "refused ");
     assert_eq!(refused.len(), 1, "the refusal records once: {lines:?}");
     assert!(
         refused[0].contains("patch.toml"),

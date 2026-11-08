@@ -273,9 +273,10 @@ pub(crate) fn savefile_menu(ui: &mut egui::Ui, view: &mut SaveView) {
         ui.separator();
         if ui.button("Output rosters to TSV\u{2026}").clicked() {
             let written = (view.rosters_dialog)("EDIT.tsv").map(|path| {
-                refuse_save_being_read(&path, session.path(), "roster sheet").and_then(|()| {
-                    database::write_rosters_tsv(session.file(), session.recorder(), &path)
-                })
+                refuse_save_being_read(&path, session.path(), "roster sheet", session.recorder())
+                    .and_then(|()| {
+                        database::write_rosters_tsv(session.file(), session.recorder(), &path)
+                    })
             });
             if let Some(Err(error)) = written {
                 view.refusal = Some(Refusal {

@@ -18,24 +18,20 @@ use crate::session::undo::Change;
 
 /// The journal's `player <id>: <field> <old> → <new>` lines for a change
 /// to `after`'s entry from `before`, one per field `compare_players`
-/// names. An entry never read from a save (a gated field `None`) cannot
-/// be diffed; the step then names the change and the codec's refusal
-/// rather than losing the record of it.
+/// names.
 pub(super) fn player_lines(
     before: &PlayerEntry,
     after: &PlayerEntry,
     schema: &VersionSchema,
 ) -> Vec<String> {
-    match compare_players(before, after, schema) {
-        Ok(diffs) => diffs
-            .iter()
-            .map(|diff| {
-                let (field, old, new) = diff_fields(diff);
-                format!("player {}: {field} {old} → {new}", after.id)
-            })
-            .collect(),
-        Err(error) => vec![format!("player {}: changed ({error})", after.id)],
-    }
+    compare_players(before, after, schema)
+        .expect("a session's entries match its version's schema")
+        .iter()
+        .map(|diff| {
+            let (field, old, new) = diff_fields(diff);
+            format!("player {}: {field} {old} → {new}", after.id)
+        })
+        .collect()
 }
 
 /// `player_lines` for a team's entry.
@@ -44,16 +40,14 @@ pub(super) fn team_lines(
     after: &TeamEntry,
     schema: &VersionSchema,
 ) -> Vec<String> {
-    match compare_teams(before, after, schema) {
-        Ok(diffs) => diffs
-            .iter()
-            .map(|diff| {
-                let (field, old, new) = team_diff_fields(diff);
-                format!("team {}: {field} {old} → {new}", after.id)
-            })
-            .collect(),
-        Err(error) => vec![format!("team {}: changed ({error})", after.id)],
-    }
+    compare_teams(before, after, schema)
+        .expect("a session's entries match its version's schema")
+        .iter()
+        .map(|diff| {
+            let (field, old, new) = team_diff_fields(diff);
+            format!("team {}: {field} {old} → {new}", after.id)
+        })
+        .collect()
 }
 
 /// A pushed change's journal lines: the fields' values as they move
@@ -136,6 +130,20 @@ pub(crate) fn write_failed(path: &Path, recorder: &Recorder, error: impl fmt::Di
         TOOL_ID,
         format!("could not write {}: {error}", path.display()),
     );
+}
+
+/// `error` handed back after `write_failed` records it, for a write the
+/// member asked for that never reaches `write_and_record` (its
+/// destination refused, its text failing to build): the write is a step
+/// whether or not a byte landed.
+pub(crate) fn write_refused(
+    path: &Path,
+    recorder: &Recorder,
+    error: impl Into<anyhow::Error>,
+) -> anyhow::Error {
+    let error = error.into();
+    write_failed(path, recorder, &error);
+    error
 }
 
 /// `fs::write` to `path` plus the journal's `wrote <path>` step and the

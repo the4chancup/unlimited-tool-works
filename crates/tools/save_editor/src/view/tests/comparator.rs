@@ -9,7 +9,9 @@ use pes_savefile::ops::compare::DiffScope;
 
 use super::*;
 
-use crate::test_support::{TEST_SALT, cli_stdout, journal_lines};
+use crate::test_support::{
+    TEST_SALT, assert_write_refused, assert_wrote_and_kept, cli_stdout, journal_lines, steps_with,
+};
 
 /// The PES 17 fixture with `edit` applied, written under `dir` as `name`:
 /// the picked save the dialog stub returns.

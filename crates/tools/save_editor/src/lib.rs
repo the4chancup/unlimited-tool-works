@@ -367,4 +367,24 @@ mod tests {
             "the view's check is the context's"
         );
     }
+
+    // The view's journal is the context's own: a step recorded through the
+    // view's recorder lands in the bundle "Report a problem" writes.
+    #[test]
+    fn the_view_records_into_the_contexts_journal() {
+        let dir = crate::test_support::scratch("lib_recorder");
+        let (ctx, _events_rx, _requests_rx) =
+            crate::test_support::tool_context(&dir, studio_core::Settings::default());
+        let mut tool = Tool::new();
+        let egui_ctx = egui::Context::default();
+        let output = egui_ctx.run_ui(egui::RawInput::default(), |ui| tool.view(ui, &ctx));
+        output.drop_without_applying_deltas();
+
+        tool.view.recorder.step(TOOL_ID, "the marker step");
+        let lines = crate::test_support::journal_lines(ctx.recorder(), &dir);
+        assert!(
+            lines.contains(&"the marker step".to_owned()),
+            "the view's recorder writes the context's journal: {lines:?}"
+        );
+    }
 }

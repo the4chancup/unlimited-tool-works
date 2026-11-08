@@ -206,10 +206,13 @@ fn read_text(path: &Path) -> Result<String, CliError> {
 }
 
 /// Writes `text` to `path`, replacing an existing file; a failure names the file.
-/// `recorder` gets the `wrote` step and keeps the file as an output.
-fn write_text(recorder: &Recorder, path: &Path, text: &str) -> Result<(), CliError> {
-    session::journal::write_and_record(recorder, path, text.as_bytes())
-        .map_err(|error| CliError::new(WRITE_FAILED, error))
+fn write_text(path: &Path, text: &str) -> Result<(), CliError> {
+    fs::write(path, text.as_bytes()).map_err(|error| {
+        CliError::new(
+            WRITE_FAILED,
+            anyhow!("{}: cannot write the file ({error})", path.display()),
+        )
+    })
 }
 
 /// Writes the session's save to `out`; a failure is the write-failed code.
@@ -233,9 +236,6 @@ fn import_toml(
     let text = read_text(&args.file)?;
     let document = TeamToml::parse(&text)
         .map_err(|error| invalid(anyhow!("{}: {error}", args.file.display())))?;
-    session
-        .recorder()
-        .keep_input(TOOL_ID, &args.file, text.into_bytes().into());
     let notes = session.import_team(&document).map_err(invalid)?;
     let lines: Vec<_> = notes.iter().map(import_note).collect();
     write_save(&session, &args.out)?;
@@ -259,9 +259,6 @@ fn apply_patch(
     let text = read_text(&args.file)?;
     let patch = AestheticsPatch::parse(&text)
         .map_err(|error| invalid(anyhow!("{}: {error}", args.file.display())))?;
-    session
-        .recorder()
-        .keep_input(TOOL_ID, &args.file, text.into_bytes().into());
     let summary = session
         .apply_patch(&patch)
         .map_err(|error| invalid(anyhow!("{}: {error}", args.file.display())))?;
@@ -333,7 +330,7 @@ fn export_toml(args: &ExportTomlArgs, report: &mut Report) -> Result<(), CliErro
         }
     };
     for (id, path, text) in files {
-        write_text(session.recorder(), &path, &text)?;
+        write_text(&path, &text)?;
         report.message(message(
             Code::TeamExported,
             vec![

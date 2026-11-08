@@ -11,7 +11,7 @@ use pes_savefile::interchange::texport::Texport;
 use pes_savefile::pes17_texport;
 
 use crate::session::import_sections::{Sections, keep_sections};
-use crate::test_support::{cli_stdout, journal_lines, zip_entry};
+use crate::test_support::{cli_stdout, journal_lines, steps_with, zip_entry};
 use crate::view::appearance::OWNERSHIP_TIP;
 use crate::view::interchange::LIST_HEIGHT;
 

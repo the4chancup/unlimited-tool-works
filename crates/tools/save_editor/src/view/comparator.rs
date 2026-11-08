@@ -19,6 +19,7 @@ use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
 use pes_savefile::ops::compare::{CompareError, DiffScope};
 use pes_version::PesVersion;
+use studio_core::Recorder;
 use team_widgets::violations::{
     RULE_COL, SWITCH_TOOLTIP, SelectedPlayer, drow_columns, player_head, player_head_job, row_paint,
 };
@@ -132,11 +133,11 @@ impl Comparator {
 
     /// Another save opened (`SaveView::open`): the pick stays — a member
     /// compares several saves against one reference — unless the new save
-    /// is of another version, refused as any pick is; the result and the
-    /// comparison in flight go either way, and the team filter back to
-    /// All (another save's teams are not this one's) with the export's
-    /// line.
-    pub(super) fn reset(&mut self, open_version: PesVersion) {
+    /// is of another version, refused as any pick is, and the refusal
+    /// recorded as the pick's own would be; the result and the comparison
+    /// in flight go either way, and the team filter back to All (another
+    /// save's teams are not this one's) with the export's line.
+    pub(super) fn reset(&mut self, open_version: PesVersion, recorder: &Recorder) {
         self.comparison.reset();
         self.refused = None;
         self.filter_team = TeamChoice::All;
@@ -145,8 +146,10 @@ impl Comparator {
         if let Some(picked) = picked_version
             && picked != open_version
         {
-            self.picked = None;
-            self.refused = Some(mismatch_refusal(picked, open_version));
+            let path = self.picked.take().expect("picked above").0;
+            let refused = mismatch_refusal(picked, open_version);
+            journal::refused(&path, recorder, &refused);
+            self.refused = Some(refused);
         }
     }
 }
@@ -441,9 +444,10 @@ fn write_report(
     (picked_path, picked): (&Path, &Session),
     scope: Option<DiffScope>,
 ) -> anyhow::Result<()> {
-    refuse_save_being_read(path, open.path(), "difference report")?;
-    refuse_save_being_read(path, picked_path, "difference report")?;
-    let text: String = diff::report_lines(picked.file(), open.file(), scope)?
+    refuse_save_being_read(path, open.path(), "difference report", open.recorder())?;
+    refuse_save_being_read(path, picked_path, "difference report", open.recorder())?;
+    let text: String = diff::report_lines(picked.file(), open.file(), scope)
+        .map_err(|error| journal::write_refused(path, open.recorder(), error))?
         .iter()
         .map(|line| format!("{line}\n"))
         .collect();

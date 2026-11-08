@@ -170,6 +170,9 @@ fn export_reports_the_written_path_and_refuses_a_folder_that_is_not() {
         "the Wrote line: {lines:?}"
     );
 
+    // The export is a journal step and its bytes the kept output.
+    assert_wrote_and_kept(&view.recorder, &dir, &target, "outputs/0-diff.txt");
+
     // A folder that does not exist: the refusal dialog names the path.
     let missing = dir.join("none").join("diff.txt");
     view.export_dialog = Box::new({
@@ -203,8 +206,10 @@ fn export_reports_the_written_path_and_refuses_a_folder_that_is_not() {
 
 /// Export's dialog stubbed to `destination`, a spelling of one of the two
 /// saves, and Export clicked: the refusal names it in the export panel's
-/// sentence, the save's bytes are unchanged and no Wrote line shows.
+/// sentence, the save's bytes are unchanged, no Wrote line shows and the
+/// refused write records `could not write <path>`, keeping no output.
 fn assert_export_refused(view: &mut SaveView, window: &mut Headless, destination: PathBuf) {
+    let dir = scratch_of(view);
     let before = std::fs::read(&destination).unwrap();
     view.export_dialog = Box::new({
         let destination = destination.clone();
@@ -233,6 +238,7 @@ fn assert_export_refused(view: &mut SaveView, window: &mut Headless, destination
         assert!(label_value(&nodes, text), "the refusal shows {text:?}");
     }
     assert!(view.comparator.exported.is_none(), "no Wrote line");
+    assert_write_refused(&view.recorder, &dir, &destination);
 }
 
 #[test]
@@ -543,15 +549,56 @@ fn a_version_mismatched_pick_records_the_refusal_in_the_journal() {
     pick(&mut window, &mut view, picked.clone());
 
     let lines = journal_lines(&recorder, &dir);
-    let refused: Vec<&String> = lines
-        .iter()
-        .filter(|line| line.starts_with("refused "))
-        .collect();
+    let refused = steps_with(&lines, "refused ");
     assert_eq!(refused.len(), 1, "the refusal records once: {lines:?}");
     assert!(refused[0].contains("picked"), "{}", refused[0]);
     assert!(
         refused[0].contains("PES 2017"),
         "the refusal names the picked save's version: {}",
+        refused[0]
+    );
+}
+
+// A held pick dropped for its version when another version's save opens
+// records `refused <path>` once, as the pick's own refusal does: the drop
+// is a refusal the panel shows.
+#[test]
+fn a_held_pick_dropped_on_another_versions_open_records_the_refusal() {
+    let path = fixture(PesVersion::Pes21, "comparator_reset_refused");
+    let dir = path.parent().unwrap().to_path_buf();
+    let recorder = Recorder::default();
+    let mut view = SaveView::new();
+    view.recorder = recorder.clone();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_comparator(&mut window, &mut view);
+    let picked = picked_pes21(&dir);
+    pick(&mut window, &mut view, picked.clone());
+    assert_eq!(
+        view.comparator.picked.as_ref().map(|(path, _)| path),
+        Some(&picked),
+        "premise: the pick held"
+    );
+
+    let pes17 = picked_save(&dir, "pes17", |_| {});
+    view.open(&pes17);
+    assert!(view.comparator.picked.is_none(), "the pick dropped");
+
+    let lines = journal_lines(&recorder, &dir);
+    let refused = steps_with(&lines, "refused ");
+    assert_eq!(
+        refused.len(),
+        1,
+        "the dropped pick's refusal records once: {lines:?}"
+    );
+    assert!(
+        refused[0].starts_with(&format!("refused {}: ", picked.display())),
+        "the refusal names the dropped pick: {}",
+        refused[0]
+    );
+    assert!(
+        refused[0].contains("PES 2021"),
+        "the refusal names the dropped save's version: {}",
         refused[0]
     );
 }

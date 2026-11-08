@@ -3,7 +3,9 @@
 //! players.
 
 use super::*;
-use crate::test_support::{journal_lines, zip_entry};
+use crate::test_support::{
+    assert_write_refused, assert_wrote_and_kept, journal_lines, steps_with, zip_entry,
+};
 
 /// `op`'s effect on `session` moved `revision` and the journal's step
 /// count together: both grew when `changed` holds, neither otherwise —
@@ -365,21 +367,11 @@ fn open_and_write_keep_their_bytes_in_the_bundle() {
     let out = dir.join("EDIT00000000.out");
     session.write(&out).unwrap();
 
-    let bundle = dir.join("bundle.zip");
-    recorder.write_bundle(&bundle, "", &[], &[], None).unwrap();
-    assert!(
-        journal_lines(&recorder, &dir).contains(&format!("wrote {}", out.display())),
-        "the write is a step"
-    );
+    assert_wrote_and_kept(&recorder, &dir, &out, "outputs/0-EDIT00000000.out");
     assert_eq!(
-        zip_entry(&bundle, "inputs/0-EDIT00000000"),
+        zip_entry(&dir.join("journal.zip"), "inputs/0-EDIT00000000"),
         original,
         "the kept input is the file as read"
-    );
-    assert_eq!(
-        zip_entry(&bundle, "outputs/0-EDIT00000000.out"),
-        std::fs::read(&out).unwrap(),
-        "the kept output is the file as written"
     );
 }
 
@@ -405,11 +397,14 @@ fn an_import_writes_only_the_players_the_roster_names() {
         .map(|i| u8::try_from(i).unwrap())
         .expect("the roster has an empty slot");
     let name_before = session.file().player(70103).unwrap().name.clone();
+    let short_before = session.file().team(701).unwrap().short_name.clone();
+    assert_ne!(short_before, "IMP", "premise: a field the import writes");
 
     use pes_savefile::interchange::team_toml::{PlayerSection, TeamSection};
     let mut document = TeamToml {
         team: TeamSection {
             id: Some(701),
+            short_name: Some("IMP".to_owned()),
             ..Default::default()
         },
         ..Default::default()
@@ -444,11 +439,11 @@ fn an_import_writes_only_the_players_the_roster_names() {
         lines.contains(&"imported Team TOML onto team 701".to_owned()),
         "the import's header: {lines:?}"
     );
-    let lines = journal_lines(&recorder, &dir);
-    let players: Vec<&String> = lines
-        .iter()
-        .filter(|line| line.starts_with("player "))
-        .collect();
+    assert!(
+        lines.contains(&format!("team 701: ShortName {short_before} → IMP")),
+        "the team's own line: {lines:?}"
+    );
+    let players = steps_with(&lines, "player ");
     assert_eq!(
         players,
         [&format!("player 70103: Name {name_before} → NEWNAME")],
@@ -458,6 +453,11 @@ fn an_import_writes_only_the_players_the_roster_names() {
         session.file().player(70103).unwrap().name,
         "NEWNAME",
         "the rostered player imported"
+    );
+    assert_eq!(
+        session.file().team(701).unwrap().short_name,
+        "IMP",
+        "the team's field imported"
     );
 }
 
@@ -478,18 +478,5 @@ fn a_failed_write_records_the_step_and_keeps_nothing() {
         "premise: the write failed: {error:#}"
     );
 
-    let lines = journal_lines(&recorder, &dir);
-    let failed = lines
-        .iter()
-        .find(|line| line.starts_with("could not write "))
-        .expect("the failed write records its own step");
-    assert!(failed.contains("EDIT00000000"), "{failed}");
-    let bundle = dir.join("journal.zip");
-    let doc: toml::Table =
-        toml::from_str(&String::from_utf8(zip_entry(&bundle, "journal.toml")).unwrap()).unwrap();
-    assert!(
-        doc.get("output")
-            .is_none_or(|outputs| outputs.as_array().unwrap().is_empty()),
-        "no output kept: {doc:?}"
-    );
+    assert_write_refused(&recorder, &dir, &missing);
 }

@@ -407,8 +407,10 @@ mod tests {
         assert_eq!(offset, lines.len(), "one block per team, no more");
 
         // The written file: the byte-order mark first, the text after it.
-        let path = crate::test_support::scratch("rosters_tsv").join("EDIT.tsv");
-        write_rosters_tsv(&file, &Recorder::default(), &path).unwrap();
+        let dir = crate::test_support::scratch("rosters_tsv");
+        let path = dir.join("EDIT.tsv");
+        let recorder = Recorder::default();
+        write_rosters_tsv(&file, &recorder, &path).unwrap();
         let bytes = std::fs::read(&path).unwrap();
         assert_eq!(
             &bytes[..3],
@@ -416,6 +418,10 @@ mod tests {
             "the UTF-8 byte-order mark"
         );
         assert_eq!(&bytes[3..], tsv.as_bytes(), "the sheet's text follows");
+
+        // The sheet's write is a journal step and its bytes the kept
+        // output.
+        crate::test_support::assert_wrote_and_kept(&recorder, &dir, &path, "outputs/0-EDIT.tsv");
     }
 
     // SE-GUI-27

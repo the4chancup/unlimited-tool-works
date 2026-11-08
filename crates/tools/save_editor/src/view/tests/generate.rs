@@ -8,7 +8,7 @@ use pes_savefile::model::names::display_name;
 use pes_savefile::schema::ingame_face::IngameFaceField;
 use pes_savefile::settings_toml::{IngameFaceSettings, NameSetting, PlayerSettings};
 
-use crate::test_support::{journal_lines, zip_entry};
+use crate::test_support::{assert_wrote_and_kept, journal_lines, steps_with, zip_entry};
 
 use super::*;
 
@@ -186,21 +186,12 @@ fn an_existing_settings_toml_keeps_its_comments() {
 
     // The file Write replaced is kept as an input, the written file the
     // output.
-    let lines = journal_lines(&view.recorder, &dir);
-    assert!(
-        lines.contains(&format!("wrote {}", dir.join("settings.toml").display())),
-        "the write is a step: {lines:?}"
-    );
-    let bundle = dir.join("journal.zip");
+    let written = dir.join("settings.toml");
+    assert_wrote_and_kept(&view.recorder, &dir, &written, "outputs/0-settings.toml");
     assert_eq!(
-        zip_entry(&bundle, "inputs/1-settings.toml"),
+        zip_entry(&dir.join("journal.zip"), "inputs/1-settings.toml"),
         b"# mine\nname = \"STALE\"\n",
         "the replaced file's bytes are an input"
-    );
-    assert_eq!(
-        zip_entry(&bundle, "outputs/0-settings.toml"),
-        std::fs::read(dir.join("settings.toml")).unwrap(),
-        "the written file is the output"
     );
 }
 
@@ -253,10 +244,7 @@ fn a_malformed_settings_toml_records_could_not_read_once_per_folder() {
     pick_folder(&mut window, &mut view, dir_b.clone());
 
     let lines = journal_lines(&view.recorder, &dir);
-    let could_not_read: Vec<&String> = lines
-        .iter()
-        .filter(|line| line.starts_with("could not read "))
-        .collect();
+    let could_not_read = steps_with(&lines, "could not read ");
     assert_eq!(
         could_not_read.len(),
         2,
@@ -424,10 +412,7 @@ fn an_unreadable_existing_settings_toml_is_the_error() {
     // The read failure is one `could not read` step; nothing is kept for
     // a file the read never reached.
     let lines = journal_lines(&view.recorder, &dir);
-    let could_not_read: Vec<&String> = lines
-        .iter()
-        .filter(|line| line.starts_with("could not read "))
-        .collect();
+    let could_not_read = steps_with(&lines, "could not read ");
     assert_eq!(
         could_not_read.len(),
         1,

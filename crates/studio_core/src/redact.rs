@@ -30,7 +30,7 @@ fn redact_any_spelling(line: &str, home: &str) -> String {
             len += found.len_utf8();
             // A `\\` pair is one escaped separator: its second backslash
             // belongs to the spelling too.
-            if matches!(wanted, '/' | '\\') && found == '\\' && chars.as_str().starts_with('\\') {
+            if found == '\\' && chars.as_str().starts_with('\\') {
                 len += chars
                     .next()
                     .expect("the pair's second backslash")

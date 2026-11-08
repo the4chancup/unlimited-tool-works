@@ -13,14 +13,6 @@ fn journal_view(test: &str, target: u32, recorder: &Recorder) -> (SaveView, Head
     (view, Headless::sized(DEFAULT_PANE.x, 1400.0), dir)
 }
 
-/// The lines starting `prefix` in `lines`.
-fn steps_with<'a>(lines: &'a [String], prefix: &str) -> Vec<&'a String> {
-    lines
-        .iter()
-        .filter(|line| line.starts_with(prefix))
-        .collect()
-}
-
 // A file the member picks is a kept input named `picked`; a document the
 // lib's `stage` refuses is a `refused` step once per pick, not once per
 // refresh.

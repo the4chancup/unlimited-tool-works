@@ -1,5 +1,7 @@
 use pes_savefile::model::KitSlot;
 
+use crate::test_support::assert_write_refused;
+
 use super::*;
 
 /// The Savefile menu's popup open for one frame: a click on the Savefile
@@ -295,10 +297,12 @@ fn the_locked_savefile_menu_disables_fix_database_only() {
 }
 
 // The open save is refused as the roster sheet's destination: the
-// refusal names it, and the save's bytes stay.
+// refusal names it, the save's bytes stay, and the refused write records
+// `could not write <path>`, keeping no output.
 #[test]
 fn output_rosters_to_tsv_refuses_the_open_save() {
     let path = fixture(PesVersion::Pes21, "tsv_refuses_the_save");
+    let dir = path.parent().unwrap().to_path_buf();
     let before = std::fs::read(&path).unwrap();
     let mut view = SaveView::new();
     view.open(&path);
@@ -328,6 +332,7 @@ fn output_rosters_to_tsv_refuses_the_open_save() {
     for text in ["Cannot write the roster sheet", sentence.as_str()] {
         assert!(label_value(&nodes, text), "the refusal shows {text:?}");
     }
+    assert_write_refused(&view.recorder, &dir, &path);
 }
 
 /// The Multi-team AATF dialog's title under 4cc Autumn 26, the ruleset a

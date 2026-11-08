@@ -13,7 +13,7 @@ use pes_savefile::interchange::texport::Texport;
 use pes_savefile::model::TeamColor;
 use studio_core::NoticeKind;
 
-use crate::test_support::{cli_stdout, journal_lines, zip_entry};
+use crate::test_support::{assert_write_refused, assert_wrote_and_kept, cli_stdout};
 use crate::view::interchange::Export;
 
 use super::*;
@@ -243,18 +243,7 @@ fn the_team_toml_written_is_the_command_lines_export() {
     assert!(view.refusal.is_none(), "no refusal");
 
     // The export is a journal step and its bytes the kept output.
-    let wrote = format!("wrote {}", written.display());
-    let lines = journal_lines(&view.recorder, &folder);
-    assert_eq!(
-        lines.iter().filter(|line| **line == wrote).count(),
-        1,
-        "one wrote step: {lines:?}"
-    );
-    assert_eq!(
-        zip_entry(&folder.join("journal.zip"), "outputs/0-panel.toml"),
-        std::fs::read(&written).unwrap(),
-        "the kept output is the file as written"
-    );
+    assert_wrote_and_kept(&view.recorder, &folder, &written, "outputs/0-panel.toml");
 }
 
 /// Team `/co/` of `version`'s fixture exported as a Texport under the name
@@ -597,26 +586,7 @@ fn a_failed_export_records_could_not_write_and_keeps_no_output() {
     export(&mut window, &mut view, "Team TOML\u{2026}", &written);
 
     assert!(view.refusal.is_some(), "premise: the write failed");
-    let lines = journal_lines(&view.recorder, &folder);
-    let failed: Vec<&String> = lines
-        .iter()
-        .filter(|line| line.starts_with("could not write "))
-        .collect();
-    assert_eq!(failed.len(), 1, "the failed write is a step: {lines:?}");
-    assert!(
-        failed[0].contains(&written.display().to_string()),
-        "the step names the path: {}",
-        failed[0]
-    );
-    let doc: toml::Table = toml::from_str(
-        &String::from_utf8(zip_entry(&folder.join("journal.zip"), "journal.toml")).unwrap(),
-    )
-    .unwrap();
-    assert!(
-        doc.get("output")
-            .is_none_or(|outputs| outputs.as_array().unwrap().is_empty()),
-        "no output kept: {doc:?}"
-    );
+    assert_write_refused(&view.recorder, &folder, &written);
 }
 
 // SE-GUI-17
@@ -690,5 +660,9 @@ fn assert_save_refused(test: &str, pick: impl Fn(&Path) -> PathBuf) {
             );
         }
         assert!(view.notice.is_none(), "{label}: no Wrote notice");
+
+        // The refused write is a `could not write` step and keeps no
+        // output: a failed write's bytes are not an output.
+        assert_write_refused(&view.recorder, &folder, &destination);
     }
 }

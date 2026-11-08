@@ -100,6 +100,62 @@ pub(crate) fn journal_lines(recorder: &studio_core::Recorder, dir: &Path) -> Vec
         .unwrap_or_default()
 }
 
+/// The lines starting `prefix` in `lines` (`journal_lines`' output read
+/// for one step kind: `refused `, `could not read `, …).
+pub(crate) fn steps_with<'a>(lines: &'a [String], prefix: &str) -> Vec<&'a String> {
+    lines
+        .iter()
+        .filter(|line| line.starts_with(prefix))
+        .collect()
+}
+
+/// Asserts `path`'s write is the journal's one `wrote` step and that the
+/// bundle keeps `entry` byte-equal to the file written.
+pub(crate) fn assert_wrote_and_kept(
+    recorder: &studio_core::Recorder,
+    dir: &Path,
+    path: &Path,
+    entry: &str,
+) {
+    let wrote = format!("wrote {}", path.display());
+    let lines = journal_lines(recorder, dir);
+    assert_eq!(
+        lines.iter().filter(|line| **line == wrote).count(),
+        1,
+        "one wrote step: {lines:?}"
+    );
+    assert_eq!(
+        zip_entry(&dir.join("journal.zip"), entry),
+        fs::read(path).unwrap(),
+        "the kept output is the file as written"
+    );
+}
+
+/// Asserts `destination`'s refused write is the journal's one `could not
+/// write` step and that the bundle keeps no output: a failed write's
+/// bytes are not an output.
+pub(crate) fn assert_write_refused(
+    recorder: &studio_core::Recorder,
+    dir: &Path,
+    destination: &Path,
+) {
+    let lines = journal_lines(recorder, dir);
+    let step = format!("could not write {}: ", destination.display());
+    let failed = steps_with(&lines, &step);
+    assert_eq!(failed.len(), 1, "the refused write records once: {lines:?}");
+    let doc: toml::Table = toml::from_str(
+        &String::from_utf8(zip_entry(&dir.join("journal.zip"), "journal.toml")).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        doc["output"]
+            .as_array()
+            .expect("the journal's output list")
+            .is_empty(),
+        "no output kept: {doc:?}"
+    );
+}
+
 /// `name`'s bytes inside the zip at `path`.
 pub(crate) fn zip_entry(path: &Path, name: &str) -> Vec<u8> {
     let mut archive = zip::ZipArchive::new(std::fs::File::open(path).unwrap()).unwrap();

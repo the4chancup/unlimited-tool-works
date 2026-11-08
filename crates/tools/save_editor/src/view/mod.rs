@@ -50,6 +50,7 @@ use studio_core::widgets::{
 use studio_core::{ActionEffect, ExeCheck, Notice, NoticeAction, NoticeKind, Recorder, RunningPes};
 
 use crate::session::Session;
+use crate::session::journal;
 use crate::session::rules::{self, Imported};
 use crate::session::selection::{self, TeamChoice};
 
@@ -547,7 +548,7 @@ impl SaveView {
                         }
                         selection::ListRow::Team(_) => None,
                     });
-                self.comparator.reset(session.version());
+                self.comparator.reset(session.version(), &self.recorder);
                 open_menu::push_recent(&mut self.recents, path);
                 self.session = Some(session);
                 self.generation += 1;
@@ -1258,21 +1259,24 @@ pub(super) fn write_now(
 /// Refuses an export's `destination` when it is `save`, a save being read,
 /// before the `what` (the export's name) is written over it: compared
 /// canonicalized, so one file under two names still matches, and a path
-/// that does not exist yet is no match.
+/// that does not exist yet is no match. The refused write is a step —
+/// `could not write <path>`, the path already the step's subject so the
+/// reason alone follows it.
 pub(super) fn refuse_save_being_read(
     destination: &Path,
     save: &Path,
     what: &str,
+    recorder: &Recorder,
 ) -> anyhow::Result<()> {
     if let (Ok(destination_file), Ok(save_file)) = (
         std::fs::canonicalize(destination),
         std::fs::canonicalize(save),
     ) && destination_file == save_file
     {
-        anyhow::bail!(
-            "{}: that is the save being read, and a {what} written over it would lose it",
-            destination.display()
-        );
+        let reason =
+            format!("that is the save being read, and a {what} written over it would lose it");
+        journal::write_failed(destination, recorder, &reason);
+        anyhow::bail!("{}: {reason}", destination.display());
     }
     Ok(())
 }

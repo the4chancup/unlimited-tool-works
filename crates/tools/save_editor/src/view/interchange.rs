@@ -827,11 +827,12 @@ pub(crate) fn show(ui: &mut egui::Ui, view: &mut SaveView) {
 /// the open save itself is refused before anything is written, as the
 /// command line refuses its `--out` (`refuse_save_being_read`).
 fn write_export(session: &Session, id: u32, export: Export, path: &Path) -> anyhow::Result<()> {
-    refuse_save_being_read(path, session.path(), export.name())?;
+    refuse_save_being_read(path, session.path(), export.name(), session.recorder())?;
     let bytes = match export {
-        Export::TeamToml => session.export_team(id)?.into_bytes(),
-        Export::Texport => texport_bytes(session, id)?,
-    };
+        Export::TeamToml => session.export_team(id).map(String::into_bytes),
+        Export::Texport => texport_bytes(session, id),
+    }
+    .map_err(|error| journal::write_refused(path, session.recorder(), error))?;
     journal::write_and_record(session.recorder(), path, &bytes)
 }
 
