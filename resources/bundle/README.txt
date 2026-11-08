@@ -24,6 +24,8 @@ Getting started
    whatever the left bar says. If the PES number on the left bar turns yellow or red, click
    the Settings gear at the bottom of the bar and set "PES folder" to the path of the
    folder that holds the PES exe.
+4. VGL's organizer reads "For VGL's organizer" at the end before running either launcher:
+   its order and its settings change come before the steps between here and there.
 
 
 Checking a team for the DBC
@@ -121,9 +123,10 @@ For VGL's organizer
    step 4 of "Compiling" shows, and run, with the save's own path in place of
    official\EDIT00000000:
 
-       UTW.exe save-editor apply-patch output\aesthetics_patch.toml --base official\EDIT00000000 --out official\EDIT00000000
+       UTW.exe save-editor apply-patch output\aesthetics_patch.toml --base "official\EDIT00000000" --out "official\EDIT00000000"
 
-   The file already there is kept as EDIT00000000.bak.
+   Keep the quotes around both paths: a path with a space in it fails without them. The
+   file already there is kept as EDIT00000000.bak.
 
 4. A later matchday is compiled into one CPK of its own. Change the line back to
    multicpk_mode = false, and change the line
@@ -137,6 +140,11 @@ For VGL's organizer
    Before compiling it, move the exports compiled on earlier matchdays out of the exports
    folder, so that it holds only this matchday's: a team with two exports there (its first
    Full export and a new Midcup one) has both refused, as duplicate_aesthetics_export.
+
+   A later matchday's export only adds to the team, so it has to be a Midcup one before
+   it is upgraded: its old name must contain midcup or additions (rename "co day 5" to
+   "co midcup day 5", for example). The upgrade makes any other name a Full export, and
+   compiling a Full export removes every kit of the team it does not hold.
 
 5. The patch is the last write to the official save. A .ted imported after it writes that
    team's players over their looks, so the patch has to be applied again.
@@ -158,4 +166,6 @@ If something goes wrong
 Every message names a code, such as fpc_undershorts_break_hiding.
 The help explains each one, just click the ? button at the bottom of the left bar.
 
-If the tool crashes, please post the log file found in the data folder.
+If the window crashes, please post the log file found in the data folder. If a launcher
+fails, copy what its black window says before pressing a key to close it, and post that:
+the launchers write no log file.

@@ -7586,7 +7586,10 @@ briefs, review loops, gates and mutation runs as for any step.
       multi-CPK set before the first compile, earlier matchdays' exports out of `exports/`,
       the referee export's own command (the bat always passes `--savefile`), compile again
       after `upgrade-dpfl`, Multi-team AATF's first and last team picked, which launcher
-      follows the left bar's PES; reworked by the lead, Astra's second round open.
+      follows the left bar's PES; reworked by the lead. Round 2 (A-poc8 r2, 4 accepted,
+      the loop ends): the organizer sent to his section before either launcher, a later
+      matchday's export named midcup before its upgrade (a Full one removes the team's
+      other kits), `apply-patch`'s paths quoted, a launcher's failure reported from its window.
       Open: the branch and its
       `just release`, then the rehearsal; the Linux tarball now also carries the two `.bat`
       files (`expected_entries` has no platform gate), to settle before 0.0.2
