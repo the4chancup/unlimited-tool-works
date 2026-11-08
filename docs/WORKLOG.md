@@ -7462,8 +7462,14 @@ briefs, review loops, gates and mutation runs as for any step.
     nothing; all nine gameplay flags make the name show (so `player` gates the name); an
     unchanged import matches the untouched save. So the tester's placeholders reproduce and
     their default stats do not: only their own files and steps can say why (the plan's
-    "Repro bundles", `plans/core/architecture.md`, is the lasting answer). Open: whether
-    `player` alone suffices; ask the tester for the save before and after their edit.
+    "Repro bundles", `plans/core/architecture.md`, is the lasting answer). In game again
+    (2026-11-08, the same findings.md, part 2): `player` alone shows the name, as all nine
+    flags did. The window sets exactly that flag when a member types a name or a shirt name
+    (`info_strip.rs`, so in 0.0.1 too), and a stat needs none, so the window's edits of a
+    placeholder team show on PES 2019 and the PoC does not wait on this step. Still open: the
+    tester's own files and steps (QUESTIONS "The 0.0.2 Save editor report"); an import
+    (Team TOML, legacy) carries the file's flags as written, so a hand-renamed
+    TOML with `edit_flags.player = false` stays PLACEHOLDER in game
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and
     8.36d, then a proof-of-concept exe for VGL's organizer that
     upgrades and compiles a couple of example teams on PES 2019. 8.36c3 (the `<id>.copy`
@@ -7561,6 +7567,17 @@ briefs, review loops, gates and mutation runs as for any step.
       blank face). Astra over the compiler half 2026-11-06: no concerns (A-poc7mc). Open:
       the upgrader half's review (handover queue); its mutants, measured by 8.36c's
       `mutants-diff 8bcbf720` (8.36c c4)
+    - [ ] 0.0.2-poc8 the bundle for VGL's organizer (found 2026-11-08: no step had it): the
+      two launchers, `exports/` and `old_exports/` back in `release.py`'s `LAUNCHERS` and
+      `EMPTY_FOLDERS`, the readme's VGL section and "pick your PES" step
+      restored from `3d7fdc33^`'s `resources/bundle/README.txt`, the section gaining the
+      plan's order (`core/development_plan.md` "The /vg/ League 27 (VGL)": the patch the last
+      write, the official save's AATF check); `release_test.py`'s
+      `test_the_bundle_ships_no_launcher_and_no_export_folder` rewritten, not deleted. To
+      settle before briefing: the bundle's version (`release.py` refuses one not the
+      workspace's, and the exe's version is what a member's report names) → verify:
+      the staged bundle's file list; the PES 2019 rehearsal (/dbg/ and /4ccg/ through the
+      launchers from the extracted bundle, checked in Edit mode)
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
