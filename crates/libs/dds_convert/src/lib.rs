@@ -1229,7 +1229,7 @@ mod tests {
         let opaque = decode(PNG_OPAQUE, SourceFormat::Png).unwrap();
         for version in PesVersion::ALL {
             for role in [TextureRole::Color, TextureRole::Normal] {
-                for decoded in [&alpha, &opaque] {
+                for (decoded, opaque_source) in [(&alpha, false), (&opaque, true)] {
                     let output = convert(
                         decoded,
                         Target {
@@ -1239,33 +1239,22 @@ mod tests {
                         },
                     )
                     .unwrap();
-                    assert_ne!(
+                    // The cases the codec pick weighs: alpha makes BC3, opaque
+                    // BC1; a normal-role source is BC3 (DXT5nm) whatever its
+                    // alpha. No version encodes BC7.
+                    let expected = if role == TextureRole::Color && opaque_source {
+                        ftex::PixelFormat::Bc1
+                    } else {
+                        ftex::PixelFormat::Bc3
+                    };
+                    assert_eq!(
                         emitted_format(&output),
-                        ftex::PixelFormat::Bc7,
-                        "{version} {role:?}"
+                        expected,
+                        "{version} {role:?} opaque {opaque_source}"
                     );
                 }
             }
         }
-        // The two cases the codec pick weighs: alpha makes BC3, opaque BC1; a
-        // normal-role source is BC3 (DXT5nm) whatever its alpha.
-        let target = |role| Target {
-            version: PesVersion::Pes21,
-            role,
-            keep_uncompressed: true,
-        };
-        assert_eq!(
-            emitted_format(&convert(&alpha, target(TextureRole::Color)).unwrap()),
-            ftex::PixelFormat::Bc3
-        );
-        assert_eq!(
-            emitted_format(&convert(&opaque, target(TextureRole::Color)).unwrap()),
-            ftex::PixelFormat::Bc1
-        );
-        assert_eq!(
-            emitted_format(&convert(&opaque, target(TextureRole::Normal)).unwrap()),
-            ftex::PixelFormat::Bc3
-        );
     }
 
     #[test]

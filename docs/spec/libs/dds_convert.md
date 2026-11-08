@@ -193,9 +193,23 @@ pub enum BlockCodec { Bc1, Bc2, Bc3, Bc4, Bc5, Bc7 }
 pub struct Blocks { pub codec: BlockCodec, pub mips: Vec<Vec<u8>> }
 
 /// A source decoded to straight-alpha RGBA8, top mip first, every mip the source carried.
-pub struct Decoded { pub width: u32, pub height: u32, pub mips: Vec<Vec<u8>>, pub blocks: Option<Blocks>, pub authored_mips: bool }
+pub struct Decoded {
+    pub width: u32,
+    pub height: u32,
+    pub mips: Vec<Vec<u8>>,
+    pub blocks: Option<Blocks>,
+    pub authored_mips: bool,
+    /// True for a DDS or FTEX source stored uncompressed; a target may write that layout back.
+    pub uncompressed: bool,
+}
 
-pub struct Target { pub version: PesVersion, pub role: TextureRole }
+/// The version and role a conversion targets.
+pub struct Target {
+    pub version: PesVersion,
+    pub role: TextureRole,
+    /// Whether an uncompressed source is written uncompressed; `false` asks for an encode.
+    pub keep_uncompressed: bool,
+}
 
 pub fn decode(bytes: &[u8], format: SourceFormat) -> Result<Decoded, ConvertError>;
 pub fn convert(decoded: &Decoded, target: Target) -> Result<Vec<u8>, ConvertError>;

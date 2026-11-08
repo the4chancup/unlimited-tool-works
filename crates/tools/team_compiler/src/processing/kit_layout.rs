@@ -422,6 +422,9 @@ fn write_glyph(
 
 #[cfg(test)]
 mod tests {
+    use dds_convert::{Target, TextureRole, convert};
+    use pes_version::PesVersion;
+
     use super::*;
 
     /// A budget no test fills: these tests check pixels, not charges.
@@ -527,6 +530,31 @@ mod tests {
             }
         }
         assert_eq!(relaid(&unlimited(), &fox, KitLayout::Fox).unwrap(), pre_fox);
+
+        // An uncompressed source's record is copied: a Fox version's target
+        // writes the re-laid texture uncompressed; the pre-Fox main kit, the
+        // one target that asks for an encode, is encoded.
+        let uncompressed = Decoded {
+            uncompressed: true,
+            ..banded(&PRE_FOX_256)
+        };
+        let target = |version, keep_uncompressed| Target {
+            version,
+            role: TextureRole::Color,
+            keep_uncompressed,
+        };
+        let fox = relaid(&unlimited(), &uncompressed, KitLayout::PreFox).unwrap();
+        let emitted = convert(&fox, target(PesVersion::Pes19, true)).unwrap();
+        assert_eq!(
+            ftex::info(&emitted).unwrap().format,
+            ftex::PixelFormat::Argb8
+        );
+        let pre_fox = relaid(&unlimited(), &fox, KitLayout::Fox).unwrap();
+        let emitted = convert(&pre_fox, target(PesVersion::Pes17, false)).unwrap();
+        assert_eq!(
+            ftex::dds::read_layout(&emitted).unwrap().pixel,
+            ftex::dds::DdsPixel::Format(ftex::PixelFormat::Bc1)
+        );
     }
 
     #[test]
@@ -836,6 +864,29 @@ mod tests {
         for x in [175, 1975] {
             assert_eq!(texel(top, 2048, x, 128), DIGIT_COLORS[0], "x {x}");
         }
+
+        // An uncompressed atlas's record is copied: re-arranged and converted
+        // for a Fox version, it is emitted uncompressed.
+        let column = Decoded {
+            uncompressed: true,
+            ..column_atlas(128, &CELL_EDGES_2048)
+        };
+        let row = number_atlas_rearranged(&column, KitLayout::Fox)
+            .unwrap()
+            .expect("a column re-arranged for a Fox target");
+        let emitted = convert(
+            &row,
+            Target {
+                version: PesVersion::Pes19,
+                role: TextureRole::Color,
+                keep_uncompressed: true,
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            ftex::info(&emitted).unwrap().format,
+            ftex::PixelFormat::Argb8
+        );
     }
 
     #[test]
@@ -871,6 +922,29 @@ mod tests {
                 assert_eq!(texel(top, 128, x, y), expected, "({x}, {y})");
             }
         }
+
+        // An uncompressed row keeps its layout on a pre-Fox column too: a
+        // number atlas's target always asks to keep it.
+        let row = Decoded {
+            uncompressed: true,
+            ..row_atlas(2048, 256)
+        };
+        let column = number_atlas_rearranged(&row, KitLayout::PreFox)
+            .unwrap()
+            .expect("a row re-arranged for a pre-Fox target");
+        let emitted = convert(
+            &column,
+            Target {
+                version: PesVersion::Pes17,
+                role: TextureRole::Color,
+                keep_uncompressed: true,
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            ftex::dds::read_layout(&emitted).unwrap().pixel,
+            ftex::dds::DdsPixel::Format(ftex::PixelFormat::Argb8)
+        );
     }
 
     #[test]
