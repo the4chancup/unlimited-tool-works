@@ -37,8 +37,9 @@ fn player_menu_item(window: &mut Headless, view: &mut SaveView, item: &str) {
     click(window, menu_item(&nodes, item), view);
 }
 
-/// `dir` returned by the folder pick stub: Pick clicked, then Write.
-fn pick_and_write(window: &mut Headless, view: &mut SaveView, dir: PathBuf) {
+/// `dir` returned by the folder pick stub and Pick clicked: the next
+/// frame's nodes.
+fn pick_folder(window: &mut Headless, view: &mut SaveView, dir: PathBuf) -> Vec<accesskit::Node> {
     view.pick_folder_dialog = Box::new(move || Some(dir.clone()));
     let nodes = draw(window, view);
     click(
@@ -46,7 +47,12 @@ fn pick_and_write(window: &mut Headless, view: &mut SaveView, dir: PathBuf) {
         node_labeled(&nodes, Role::Button, "Pick\u{2026}"),
         view,
     );
-    let nodes = draw(window, view);
+    draw(window, view)
+}
+
+/// `dir` picked through `pick_folder`, then Write clicked.
+fn pick_and_write(window: &mut Headless, view: &mut SaveView, dir: PathBuf) {
+    let nodes = pick_folder(window, view, dir);
     click(window, node_labeled(&nodes, Role::Button, "Write"), view);
 }
 
@@ -205,18 +211,8 @@ fn an_unparsable_existing_settings_toml_is_the_error() {
     let (mut view, mut window) = open_on(PesVersion::Pes21, "generate_bad_toml", 701, 1);
     let dir = crate::test_support::scratch("generate_bad_toml");
     std::fs::write(dir.join("settings.toml"), "name = [\n").unwrap();
-    view.pick_folder_dialog = {
-        let dir = dir.clone();
-        Box::new(move || Some(dir.clone()))
-    };
     player_menu_item(&mut window, &mut view, "Generate settings.toml");
-    let nodes = draw(&mut window, &mut view);
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Pick\u{2026}"),
-        &mut view,
-    );
-    let nodes = draw(&mut window, &mut view);
+    let nodes = pick_folder(&mut window, &mut view, dir);
     assert!(
         nodes.iter().any(|node| {
             node.value()
@@ -230,26 +226,18 @@ fn an_unparsable_existing_settings_toml_is_the_error() {
     );
 }
 
-// The malformed file's `refused` step is recorded once for the folder,
-// not once per frame the dialog draws or per preview rebuild.
+// The malformed file's `could not read` step is recorded once per folder
+// picked — not once per frame or per preview rebuild, and again for the
+// next folder the member picks — its bytes kept as an input.
 #[test]
-fn a_malformed_settings_toml_records_its_refusal_once() {
-    let (mut view, mut window) = open_on(PesVersion::Pes21, "generate_refusal_once", 701, 1);
-    let dir = crate::test_support::scratch("generate_refusal_once");
+fn a_malformed_settings_toml_records_could_not_read_once_per_folder() {
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "generate_failure_once", 701, 1);
+    let dir = crate::test_support::scratch("generate_failure_once");
     std::fs::write(dir.join("settings.toml"), "name = [\n").unwrap();
-    view.pick_folder_dialog = {
-        let dir = dir.clone();
-        Box::new(move || Some(dir.clone()))
-    };
     player_menu_item(&mut window, &mut view, "Generate settings.toml");
-    let nodes = draw(&mut window, &mut view);
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Pick\u{2026}"),
-        &mut view,
-    );
+    pick_folder(&mut window, &mut view, dir.clone());
     // Frames where nothing changes read nothing again; an edit rebuilds
-    // the preview on the same folder, where the refusal still stands.
+    // the preview on the same folder, where the failure still stands.
     for _ in 0..3 {
         draw(&mut window, &mut view);
     }
@@ -259,17 +247,41 @@ fn a_malformed_settings_toml_records_its_refusal_once() {
     view.session.as_mut().unwrap().edit_player(1, entry);
     draw(&mut window, &mut view);
 
+    // A second folder's malformed file: its own step and kept bytes.
+    let dir_b = crate::test_support::scratch("generate_failure_once_b");
+    std::fs::write(dir_b.join("settings.toml"), "name = {\n").unwrap();
+    pick_folder(&mut window, &mut view, dir_b.clone());
+
     let lines = journal_lines(&view.recorder, &dir);
-    let refused: Vec<&String> = lines
+    let could_not_read: Vec<&String> = lines
         .iter()
-        .filter(|line| line.starts_with("refused "))
+        .filter(|line| line.starts_with("could not read "))
         .collect();
-    assert_eq!(refused.len(), 1, "the refusal records once: {lines:?}");
-    assert!(
-        refused[0].contains(&dir.join("settings.toml").display().to_string()),
-        "the step names the file: {}",
-        refused[0]
+    assert_eq!(
+        could_not_read.len(),
+        2,
+        "each folder records once: {lines:?}"
     );
+    let bundle = dir.join("journal.zip");
+    for (index, folder, bytes) in [
+        (1_usize, &dir, &b"name = [\n"[..]),
+        (2, &dir_b, &b"name = {\n"[..]),
+    ] {
+        let step = format!(
+            "could not read {}: ",
+            folder.join("settings.toml").display()
+        );
+        let line = could_not_read[index - 1];
+        assert!(
+            line.starts_with(&step) && line.len() > step.len(),
+            "the step names the file and its error: {line}"
+        );
+        assert_eq!(
+            zip_entry(&bundle, &format!("inputs/{index}-settings.toml")),
+            bytes,
+            "{index}: the unreadable file's bytes are kept"
+        );
+    }
 }
 
 // The file fixed outside and its folder picked again: the pick reads the
@@ -279,30 +291,15 @@ fn picking_the_same_folder_again_reads_its_fixed_file() {
     let (mut view, mut window) = open_on(PesVersion::Pes21, "generate_repick", 701, 1);
     let dir = crate::test_support::scratch("generate_repick");
     std::fs::write(dir.join("settings.toml"), "name = [\n").unwrap();
-    view.pick_folder_dialog = {
-        let dir = dir.clone();
-        Box::new(move || Some(dir.clone()))
-    };
     player_menu_item(&mut window, &mut view, "Generate settings.toml");
-    let nodes = draw(&mut window, &mut view);
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Pick\u{2026}"),
-        &mut view,
-    );
-    let nodes = draw(&mut window, &mut view);
+    let nodes = pick_folder(&mut window, &mut view, dir.clone());
     assert!(
         node_labeled(&nodes, Role::Button, "Write").is_disabled(),
         "premise: the broken file disables Write"
     );
 
     std::fs::write(dir.join("settings.toml"), "# fixed\nname = \"STALE\"\n").unwrap();
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Pick\u{2026}"),
-        &mut view,
-    );
-    let nodes = draw(&mut window, &mut view);
+    let nodes = pick_folder(&mut window, &mut view, dir);
     assert!(
         nodes.iter().any(|node| node
             .value()
@@ -410,18 +407,8 @@ fn an_unreadable_existing_settings_toml_is_the_error() {
     let (mut view, mut window) = open_on(PesVersion::Pes21, "generate_unreadable", 701, 1);
     let dir = crate::test_support::scratch("generate_unreadable");
     std::fs::create_dir(dir.join("settings.toml")).unwrap();
-    view.pick_folder_dialog = {
-        let dir = dir.clone();
-        Box::new(move || Some(dir.clone()))
-    };
     player_menu_item(&mut window, &mut view, "Generate settings.toml");
-    let nodes = draw(&mut window, &mut view);
-    click(
-        &mut window,
-        node_labeled(&nodes, Role::Button, "Pick\u{2026}"),
-        &mut view,
-    );
-    let nodes = draw(&mut window, &mut view);
+    let nodes = pick_folder(&mut window, &mut view, dir.clone());
     let shown = dir.join("settings.toml").display().to_string();
     assert!(
         nodes
@@ -432,6 +419,38 @@ fn an_unreadable_existing_settings_toml_is_the_error() {
     assert!(
         node_labeled(&nodes, Role::Button, "Write").is_disabled(),
         "Write stays disabled"
+    );
+
+    // The read failure is one `could not read` step; nothing is kept for
+    // a file the read never reached.
+    let lines = journal_lines(&view.recorder, &dir);
+    let could_not_read: Vec<&String> = lines
+        .iter()
+        .filter(|line| line.starts_with("could not read "))
+        .collect();
+    assert_eq!(
+        could_not_read.len(),
+        1,
+        "one could not read step: {lines:?}"
+    );
+    let step = format!("could not read {shown}: ");
+    assert!(
+        could_not_read[0].starts_with(&step) && could_not_read[0].len() > step.len(),
+        "the step names the file and its error: {}",
+        could_not_read[0]
+    );
+    let doc: toml::Table = toml::from_str(
+        &String::from_utf8(zip_entry(&dir.join("journal.zip"), "journal.toml")).unwrap(),
+    )
+    .unwrap();
+    let inputs = doc["input"]
+        .as_array()
+        .expect("the save's own input is kept");
+    assert!(
+        inputs
+            .iter()
+            .all(|input| input["path"].as_str() != Some(shown.as_str())),
+        "the unreadable file keeps nothing: {inputs:?}"
     );
 }
 

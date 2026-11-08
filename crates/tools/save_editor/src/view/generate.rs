@@ -9,6 +9,7 @@
 
 use std::fmt;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
@@ -79,9 +80,10 @@ pub(crate) struct Generate {
     preview: Option<Preview>,
     /// The failure of the last Write (or `None`).
     error: Option<String>,
-    /// Whether the folder's own file's refusal is already in the journal:
-    /// one `refused` step per folder, not one per preview built.
-    refusal_recorded: bool,
+    /// Whether the folder's own file's read or parse failure is already
+    /// in the journal: one `could not read` step per folder picked or
+    /// typed (a re-pick of the same folder reads and records again).
+    failure_recorded: bool,
 }
 
 /// The file's text as the dialog last built it, with what it was built
@@ -95,19 +97,34 @@ struct Preview {
     revision: u64,
     /// Whether that folder is a directory, Write's gate.
     is_dir: bool,
-    /// `text`'s answer for that folder.
-    text: Result<String, PreviewError>,
+    /// `text`'s answer for that folder (the shown line on `Err`: the
+    /// file failure it carries is taken out before the preview is
+    /// stored).
+    text: Result<String, String>,
 }
 
 /// `text`'s `Err`: the line shown in the preview's place, and — for the
-/// folder's own file's read or parse error — that file and the bare
-/// error, which the journal records as `refused <path>` once per folder.
+/// folder's own file's read or parse error — the failure the journal
+/// records as `could not read <path>` once per folder.
 struct PreviewError {
     /// The line the dialog draws where the preview stands.
     shown: String,
-    /// The folder's own file and its read or parse error, when `shown`
-    /// is that file's.
-    refused: Option<(PathBuf, String)>,
+    /// The folder's own file's read or parse failure, when `shown` is
+    /// that file's.
+    failed_read: Option<FailedRead>,
+}
+
+/// The folder's own file's read or parse failure, for
+/// `journal::read_failed`'s `could not read <path>: <error>` step.
+struct FailedRead {
+    /// The file that failed.
+    path: PathBuf,
+    /// Its read or parse error, the step's reason.
+    error: String,
+    /// The file's bytes when the read reached them (a parse failure's):
+    /// kept as an input, since the file that failed is the one a member
+    /// reports.
+    bytes: Option<Arc<[u8]>>,
 }
 
 impl PreviewError {
@@ -115,16 +132,20 @@ impl PreviewError {
     fn other(error: impl fmt::Display) -> PreviewError {
         PreviewError {
             shown: error.to_string(),
-            refused: None,
+            failed_read: None,
         }
     }
 
     /// `path`'s read or parse `error`: shown naming the file, and kept
-    /// for the journal's `refused <path>`.
-    fn file(path: PathBuf, error: impl fmt::Display) -> PreviewError {
+    /// for the journal's `could not read <path>`.
+    fn file(path: PathBuf, error: impl fmt::Display, bytes: Option<Arc<[u8]>>) -> PreviewError {
         PreviewError {
             shown: format!("{}: {error}", path.display()),
-            refused: Some((path, error.to_string())),
+            failed_read: Some(FailedRead {
+                path,
+                error: error.to_string(),
+                bytes,
+            }),
         }
     }
 }
@@ -139,7 +160,7 @@ impl Generate {
             folder: String::new(),
             preview: None,
             error: None,
-            refusal_recorded: false,
+            failure_recorded: false,
         }
     }
 }
@@ -171,16 +192,19 @@ fn text(
                 match std::fs::read_to_string(&path) {
                     Ok(text) => Some(text),
                     Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
-                    Err(error) => return Err(PreviewError::file(path, error)),
+                    Err(error) => return Err(PreviewError::file(path, error, None)),
                 }
             } else {
                 None
             };
             match existing {
                 Some(existing) => {
-                    let mut document = existing
-                        .parse::<toml_edit::DocumentMut>()
-                        .map_err(|error| PreviewError::file(path, error))?;
+                    let mut document =
+                        existing
+                            .parse::<toml_edit::DocumentMut>()
+                            .map_err(|error| {
+                                PreviewError::file(path, error, Some(existing.into_bytes().into()))
+                            })?;
                     settings
                         .update_toml(&mut document)
                         .map_err(PreviewError::other)?;
@@ -224,8 +248,8 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
         .as_ref()
         .is_none_or(|preview| preview.folder != generate.folder)
     {
-        // A new folder's file is a new possible refusal.
-        generate.refusal_recorded = false;
+        // A new folder's file is a new possible failure.
+        generate.failure_recorded = false;
     }
     if generate
         .preview
@@ -234,18 +258,28 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
     {
         let folder = Path::new(&generate.folder);
         let built = text(file, generate.player_id, generate.file, folder);
-        if !generate.refusal_recorded
-            && let Err(error) = &built
-            && let Some((path, reason)) = &error.refused
+        // The preview stores the line shown; the file failure the built
+        // `Err` carries is recorded once per folder picked or typed.
+        let (previewed, failed) = match built {
+            Ok(text) => (Ok(text), None),
+            Err(error) => (Err(error.shown), error.failed_read),
+        };
+        if !generate.failure_recorded
+            && let Some(failed) = failed
         {
-            generate.refusal_recorded = true;
-            journal::refused(path, session.recorder(), reason);
+            generate.failure_recorded = true;
+            journal::read_failed(
+                &failed.path,
+                session.recorder(),
+                &failed.error,
+                failed.bytes,
+            );
         }
         generate.preview = Some(Preview {
             folder: generate.folder.clone(),
             revision,
             is_dir: folder.is_dir(),
-            text: built,
+            text: previewed,
         });
     }
     let mut close = false;
@@ -278,7 +312,7 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                     );
                 }
                 Err(error) => {
-                    ui.colored_label(ui.visuals().error_fg_color, error.shown.as_str());
+                    ui.colored_label(ui.visuals().error_fg_color, error.as_str());
                 }
             });
         modal_buttons(ui, |ui| {
@@ -292,16 +326,12 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 let path = Path::new(&preview.folder).join(generate.file.file_name());
                 // Write destroys the file it replaces: its bytes are kept
                 // as an input first, read now — the member may have
-                // touched it since the preview was built.
+                // touched it since the preview was built. A failed read is
+                // a `could not read` step; the write proceeds either way.
                 match std::fs::read(&path) {
                     Ok(bytes) => session.recorder().keep_input(TOOL_ID, &path, bytes.into()),
                     Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-                    Err(error) => {
-                        log::debug!(
-                            "{}: the replaced file cannot be kept ({error})",
-                            path.display()
-                        )
-                    }
+                    Err(error) => journal::read_failed(&path, session.recorder(), &error, None),
                 }
                 match journal::write_and_record(session.recorder(), &path, text.as_bytes()) {
                     Ok(()) => {
