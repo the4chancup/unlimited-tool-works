@@ -8160,7 +8160,8 @@ points there.
   one of its own is drawn);
   (2) `studio_core`'s journal type and bundle writer, with the Save editor's journal taken at
   `Session::changed` and its file operations, its inputs kept, and the test that every model
-  change goes through the journal (done 2026-11-07, SWE-2, one rework; review rounds open); (3) `utw save-editor replay`; (4) the panic hook's bundle;
+  change goes through the journal (done 2026-11-07, SWE-2; reviewed to 2026-11-08: SWE-2 r1-r11,
+  Astra X1, Argon A1-A3, reworks to `eef1a9e1`; the loop's `mutants-diff 188cf158^..` open); (3) `utw save-editor replay`; (4) the panic hook's bundle;
   (5) the Team compiler and the Export upgrader; the rest as each tool is built. Each slice
   gets SWE-2, Argon and Astra rounds (a new `pub` interface across crates).
 - open (2026-11-06) — Whole-crate mutation runs on the VPS alone (`RUNBOOK.md` "Mutation

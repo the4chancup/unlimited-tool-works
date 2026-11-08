@@ -417,18 +417,16 @@ mod tests {
         (file_name.to_owned(), description.to_owned())
     }
 
-    /// The one `<kind> <path>: ` step in `lines`, asserted the only one
-    /// and naming `path`.
-    fn one_step<'a>(lines: &'a [String], kind: &str, path: &Path) -> &'a String {
+    /// Asserts `lines` hold one `<kind> ` step, and that it names `path`.
+    fn one_step(lines: &[String], kind: &str, path: &Path) {
         let steps = crate::test_support::steps_with(lines, &format!("{kind} "));
         assert_eq!(steps.len(), 1, "one {kind} step: {lines:?}");
-        let step = steps[0];
         assert!(
-            step.starts_with(&format!("{kind} {}: ", path.display())),
-            "the step names {}: {step}",
-            path.display()
+            steps[0].starts_with(&format!("{kind} {}: ", path.display())),
+            "the step names {}: {}",
+            path.display(),
+            steps[0]
         );
-        step
     }
 
     /// A built-in stem resolves to its ruleset, no notice; with no data
