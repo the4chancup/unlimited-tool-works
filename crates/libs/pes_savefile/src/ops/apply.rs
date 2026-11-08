@@ -140,10 +140,33 @@ mod tests {
 
     #[test]
     fn a_text_row_applies_and_a_stale_one_is_refused() {
-        let (a, b, row) = row_of(|p| p.shirt_name.push('Z'));
-        assert!(matches!(row, PlayerDiff::Text { .. }));
-        applies(&a, &row, &b);
-        stale(&b, &row, &b.shirt_name);
+        for (text, edit, held_of, other_of) in [
+            (
+                PlayerText::Name,
+                (|p: &mut PlayerEntry| p.name.push('Z')) as fn(&mut PlayerEntry),
+                (|p: &PlayerEntry| &p.name) as fn(&PlayerEntry) -> &String,
+                (|p: &PlayerEntry| &p.shirt_name) as fn(&PlayerEntry) -> &String,
+            ),
+            (
+                PlayerText::ShirtName,
+                (|p: &mut PlayerEntry| p.shirt_name.push('Z')) as fn(&mut PlayerEntry),
+                (|p: &PlayerEntry| &p.shirt_name) as fn(&PlayerEntry) -> &String,
+                (|p: &PlayerEntry| &p.name) as fn(&PlayerEntry) -> &String,
+            ),
+        ] {
+            let (a, b, row) = row_of(edit);
+            assert!(
+                matches!(row, PlayerDiff::Text { text: named, .. } if named == text),
+                "{text:?}: {row:?}"
+            );
+            assert_eq!(
+                other_of(&b),
+                other_of(&a),
+                "{text:?}: the edit leaves the other text as it was"
+            );
+            applies(&a, &row, &b);
+            stale(&b, &row, held_of(&b));
+        }
     }
 
     #[test]

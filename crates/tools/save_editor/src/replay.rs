@@ -285,6 +285,8 @@ mod tests {
     use std::path::Path;
 
     use pes_savefile::container::SaveContainer;
+    use pes_savefile::model::ingame_face::IngameFace;
+    use pes_savefile::ops::fingerprint::face_hash;
     use pes_savefile::schema::fields::PlayerField;
     use pes_savefile::schema::ingame_face::IngameFaceField;
     use pes_version::PesVersion;
@@ -318,11 +320,57 @@ mod tests {
         session.edit_player(key, edited);
     }
 
-    /// `session` saved to `written/EDIT00000000` under `dir`.
-    fn save_written(session: &mut Session, dir: &Path) {
-        let out = dir.join("written/EDIT00000000");
+    /// `face` with every field of its layout zeroed: its measured-unused
+    /// bits recomputed, `IngameFace::unused` being the lib's own.
+    fn unused_bits(face: &IngameFace) -> Vec<u8> {
+        let mut zeroed = face.clone();
+        for field in IngameFaceField::ALL {
+            if zeroed.get(field).is_ok() {
+                zeroed.set(field, 0).expect("0 fits every field");
+            }
+        }
+        zeroed.bytes().to_vec()
+    }
+
+    /// `player`'s ingame-face run's measured-unused bits flipped, pushed
+    /// as one edit under `key`. `set_unused` is the lib's own door to
+    /// them, so the edit goes through the row a replay applies; the row's
+    /// fingerprints are the journal line's, unread on apply, and the
+    /// recorded op is `compare_players`' own either way.
+    fn edit_face_run(session: &mut Session, id: u32, key: u64) {
+        let mut edited = session.file().player(id).unwrap().clone();
+        let old_bits = unused_bits(&edited.appearance.ingame_face);
+        let new_bits: Vec<u8> = old_bits.iter().map(|byte| !byte).collect();
+        let old = face_hash(&edited.appearance.ingame_face);
+        let row = PlayerDiff::FaceRun {
+            old,
+            new: old,
+            old_bits,
+            new_bits,
+        };
+        apply_player(&mut edited, &row).expect("the run's own bits apply");
+        assert_ne!(
+            Some(&edited),
+            session.file().player(id),
+            "premise: the unused bits flipped"
+        );
+        session.edit_player(key, edited);
+    }
+
+    /// The op of `bundle`'s step whose line holds `needle`.
+    fn op_of<'a>(bundle: &'a Bundle, needle: &str) -> &'a toml::Table {
+        bundle
+            .steps
+            .iter()
+            .find(|step| step.what.contains(needle))
+            .and_then(|step| step.op.as_ref())
+            .unwrap_or_else(|| panic!("no op on the step holding {needle:?}"))
+    }
+
+    /// `session` saved to `out`, its folder made first.
+    fn save_written(session: &mut Session, out: &Path) {
         std::fs::create_dir_all(out.parent().unwrap()).unwrap();
-        session.save_to(&out, &[], false).unwrap();
+        session.save_to(out, &[], false).unwrap();
     }
 
     /// `bundle`'s kept output `index` replaced by `f`'s re-encryption of
@@ -335,7 +383,8 @@ mod tests {
 
     // The journal's own steps replay to the kept write: the open's
     // input, every player op in order (the undo's backwards and the
-    // redo's forwards again), the wrote's output compared and equal.
+    // redo's forwards again, a row of each of the op's four kinds), the
+    // wrote's output compared and equal.
     #[test]
     fn a_recorded_session_replays_to_one_matching_write() {
         let dir = scratch("replay_matches");
@@ -347,6 +396,9 @@ mod tests {
         edited.shirt_name.push('Z');
         session.edit_player(2, edited);
         let mut edited = session.file().player(70101).unwrap().clone();
+        edited.name.push('Z');
+        session.edit_player(3, edited);
+        let mut edited = session.file().player(70101).unwrap().clone();
         let nose = edited
             .appearance
             .ingame_face
@@ -357,10 +409,20 @@ mod tests {
             .ingame_face
             .set(IngameFaceField::NoseType, nose ^ 1)
             .expect("fits");
-        session.edit_player(3, edited);
-        save_written(&mut session, &dir);
+        session.edit_player(4, edited);
+        edit_face_run(&mut session, 70101, 5);
+        save_written(&mut session, &dir.join("written/EDIT00000000"));
 
-        let outcomes = replay(&bundle_of(&recorder, &dir)).unwrap();
+        let bundle = bundle_of(&recorder, &dir);
+        assert!(
+            bundle.steps.iter().any(|step| {
+                step.op
+                    .as_ref()
+                    .is_some_and(|op| op.get("row").and_then(|row| row.get("FaceRun")).is_some())
+            }),
+            "premise: the face-run op is in the bundle"
+        );
+        let outcomes = replay(&bundle).unwrap();
 
         assert_eq!(
             outcomes.len(),
@@ -370,9 +432,108 @@ mod tests {
         assert!(
             matches!(
                 &outcomes[0],
-                Outcome::Matches { step: 9, line } if line.starts_with("wrote ")
+                Outcome::Matches { step: 11, line } if line.starts_with("wrote ")
             ),
             "the wrote step's position and line: {outcomes:?}"
+        );
+    }
+
+    // Two opens and three writes over two paths, the first path written
+    // twice: the second open's step names kept input 1 and the second
+    // path's write names kept output 1 — replay reads the files they
+    // name, so the write to the second path is compared, the first
+    // path's earlier write `Replaced`, its last `Matches`. The second
+    // save's bytes differ so a wrong index could never compare equal.
+    #[test]
+    fn a_second_open_and_path_replay_by_their_kept_indexes() {
+        let dir = scratch("replay_indexes");
+        let (mut session, recorder) = session(&dir);
+        edit_height(&mut session, 70101, 1);
+        let p = dir.join("p").join("EDIT00000000");
+        save_written(&mut session, &p);
+
+        let other = dir.join("EDIT00000001");
+        let mut second_save = EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes21))
+            .expect("the fixture reads");
+        second_save.player_mut(70101).unwrap().basic.weight = second_save
+            .player(70101)
+            .unwrap()
+            .basic
+            .weight
+            .wrapping_add(1);
+        second_save.save(&other).expect("the second save writes");
+        let mut session_b = Session::open(&other, recorder.clone()).unwrap();
+        edit_height(&mut session_b, 70101, 2);
+        let q = dir.join("q").join("EDIT00000000");
+        save_written(&mut session_b, &q);
+        edit_height(&mut session_b, 70101, 3);
+        save_written(&mut session_b, &p);
+
+        let bundle = bundle_of(&recorder, &dir);
+        assert_eq!(
+            op_of(&bundle, "EDIT00000001")
+                .get("input")
+                .and_then(|input| input.as_integer()),
+            Some(1),
+            "the second save's open names kept input 1"
+        );
+        assert_eq!(
+            op_of(&bundle, &q.display().to_string())
+                .get("output")
+                .and_then(|output| output.as_integer()),
+            Some(1),
+            "the second path's write names kept output 1"
+        );
+
+        let outcomes = replay(&bundle).unwrap();
+
+        let [first, second, third] = outcomes.as_slice() else {
+            panic!("expected three reported writes, got {outcomes:?}")
+        };
+        assert!(
+            matches!(first, Outcome::Replaced { step: 3, .. }),
+            "the first path's earlier write: {first:?}"
+        );
+        assert!(
+            matches!(second, Outcome::Matches { step: 6, .. }),
+            "the second path's write: {second:?}"
+        );
+        assert!(
+            matches!(third, Outcome::Matches { step: 8, .. }),
+            "the first path's last write: {third:?}"
+        );
+    }
+
+    // A write after the undo and another after the redo are each
+    // compared at their own step: both ops replay, the undoed file's
+    // write matching as the redone one's does.
+    #[test]
+    fn a_write_after_undo_and_after_redo_each_compare() {
+        let dir = scratch("replay_undo_redo");
+        let (mut session, recorder) = session(&dir);
+        edit_height(&mut session, 70101, 1);
+        save_written(&mut session, &dir.join("p/EDIT00000000"));
+        assert!(session.undo());
+        save_written(&mut session, &dir.join("q/EDIT00000000"));
+        assert!(session.redo());
+        save_written(&mut session, &dir.join("r/EDIT00000000"));
+
+        let outcomes = replay(&bundle_of(&recorder, &dir)).unwrap();
+
+        let [first, second, third] = outcomes.as_slice() else {
+            panic!("expected three compared writes, got {outcomes:?}")
+        };
+        assert!(
+            matches!(first, Outcome::Matches { step: 3, .. }),
+            "the edit's write: {first:?}"
+        );
+        assert!(
+            matches!(second, Outcome::Matches { step: 6, .. }),
+            "the undo's write: {second:?}"
+        );
+        assert!(
+            matches!(third, Outcome::Matches { step: 9, .. }),
+            "the redo's write: {third:?}"
         );
     }
 
@@ -386,7 +547,7 @@ mod tests {
         let (mut session, recorder) = session(&dir);
         edit_height(&mut session, 70101, 1);
         let weight = session.file().player(70102).unwrap().basic.weight;
-        save_written(&mut session, &dir);
+        save_written(&mut session, &dir.join("written/EDIT00000000"));
         let mut bundle = bundle_of(&recorder, &dir);
 
         edit_output(&mut bundle, 0, |bytes, salt| {
@@ -438,7 +599,7 @@ mod tests {
         let dir = scratch("replay_first_byte");
         let (mut session, recorder) = session(&dir);
         edit_height(&mut session, 70101, 1);
-        save_written(&mut session, &dir);
+        save_written(&mut session, &dir.join("written/EDIT00000000"));
         let mut bundle = bundle_of(&recorder, &dir);
 
         let original = bundle.outputs[0].bytes.clone();
@@ -480,7 +641,7 @@ mod tests {
         let dir = scratch("replay_only_lists");
         let (mut session, recorder) = session(&dir);
         edit_height(&mut session, 70101, 1);
-        save_written(&mut session, &dir);
+        save_written(&mut session, &dir.join("written/EDIT00000000"));
         let mut bundle = bundle_of(&recorder, &dir);
 
         edit_output(&mut bundle, 0, |bytes, salt| {
@@ -514,7 +675,7 @@ mod tests {
         let (mut session, recorder) = session(&dir);
         let height = session.file().player(70101).unwrap().basic.height;
         edit_height(&mut session, 70101, 1);
-        save_written(&mut session, &dir);
+        save_written(&mut session, &dir.join("written/EDIT00000000"));
         let mut bundle = bundle_of(&recorder, &dir);
 
         let step = bundle
@@ -552,9 +713,9 @@ mod tests {
     fn a_second_write_to_one_path_replaces_the_first() {
         let dir = scratch("replay_replaced");
         let (mut session, recorder) = session(&dir);
-        save_written(&mut session, &dir);
+        save_written(&mut session, &dir.join("written/EDIT00000000"));
         edit_height(&mut session, 70101, 1);
-        save_written(&mut session, &dir);
+        save_written(&mut session, &dir.join("written/EDIT00000000"));
         let mut bundle = bundle_of(&recorder, &dir);
         bundle.version = "v9.9.9 another build".to_owned();
 
@@ -586,7 +747,7 @@ mod tests {
         let dir = scratch("replay_bad_op");
         let (mut session, recorder) = session(&dir);
         edit_height(&mut session, 70101, 1);
-        save_written(&mut session, &dir);
+        save_written(&mut session, &dir.join("written/EDIT00000000"));
         let mut bundle = bundle_of(&recorder, &dir);
         let bogus: toml::Table = toml::from_str("kind = \"bogus\"\nx = 1\n").unwrap();
         bundle.steps[1].op = Some(bogus);
