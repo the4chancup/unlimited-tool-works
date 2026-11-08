@@ -13,7 +13,9 @@ use pes_savefile::interchange::texport::Texport;
 use pes_savefile::model::TeamColor;
 use studio_core::NoticeKind;
 
-use crate::test_support::{assert_write_refused, assert_wrote_and_kept, cli_stdout};
+use crate::test_support::{
+    assert_write_refused, assert_wrote_and_kept, cli_stdout, journal_lines, steps_with,
+};
 use crate::view::interchange::Export;
 
 use super::*;
@@ -592,55 +594,91 @@ fn a_failed_export_records_could_not_write_and_keeps_no_output() {
 // An export whose build fails (a roster slot's player id the save does
 // not hold, set through the session's own edit) is refused with the
 // build's error — a `could not write` step that keeps no output, the
-// write never reached.
+// write never reached, and the step says what the refusal said: the
+// whole chain the dialog shows.
 #[test]
 fn an_export_that_fails_to_build_is_refused_and_records_could_not_write() {
-    let (mut view, mut window) = open_on(PesVersion::Pes21, "export_build_fails", CO);
     let missing = 9_999_999;
-    assert!(
-        team_entry(&view, CO)
-            .roster
-            .iter()
-            .all(|slot| slot.player_id != missing)
-            && view
-                .session
-                .as_ref()
-                .expect("an open save")
-                .file()
-                .player(missing)
-                .is_none(),
-        "premise: the save lacks player {missing}"
-    );
-    let mut team = team_entry(&view, CO);
-    team.roster
-        .iter_mut()
-        .find(|slot| slot.player_id != 0)
-        .expect("a rostered slot")
-        .player_id = missing;
-    view.session
-        .as_mut()
-        .expect("an open save")
-        .edit_team(1, team);
+    for (label, format, message) in [
+        (
+            "Team TOML\u{2026}",
+            "toml",
+            format!("team {CO} cannot be exported: player {missing} is not in the save"),
+        ),
+        (
+            "Texport\u{2026}",
+            "texport",
+            format!("team {CO}'s player {missing} is not in the save"),
+        ),
+    ] {
+        let test = format!("export_build_fails_{format}");
+        let (mut view, mut window) = open_on(PesVersion::Pes21, &test, CO);
+        assert!(
+            team_entry(&view, CO)
+                .roster
+                .iter()
+                .all(|slot| slot.player_id != missing)
+                && view
+                    .session
+                    .as_ref()
+                    .expect("an open save")
+                    .file()
+                    .player(missing)
+                    .is_none(),
+            "{label}: premise: the save lacks player {missing}"
+        );
+        let mut team = team_entry(&view, CO);
+        team.roster
+            .iter_mut()
+            .find(|slot| slot.player_id != 0)
+            .expect("a rostered slot")
+            .player_id = missing;
+        view.session
+            .as_mut()
+            .expect("an open save")
+            .edit_team(1, team);
 
-    let folder = save_folder(&view);
-    let destination = folder.join("failed.ted");
-    export(&mut window, &mut view, "Texport\u{2026}", &destination);
+        let folder = save_folder(&view);
+        let destination = folder.join("failed.ted");
+        export(&mut window, &mut view, label, &destination);
 
-    let message = format!("team {CO}'s player {missing} is not in the save");
-    assert_eq!(
-        view.refusal
+        let refusal = view
+            .refusal
             .as_ref()
-            .map(|refusal| (refusal.title, refusal.message.as_str())),
-        Some(("Cannot export the team", message.as_str()))
-    );
-    // The refusal dialog shows it (the modal's first frame is its sizing
-    // pass, so it is the next frame's nodes that hold it).
-    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
-    for text in ["Cannot export the team", message.as_str()] {
-        assert!(label_value(&nodes, text), "the refusal shows {text:?}");
+            .unwrap_or_else(|| panic!("{label}: the export is refused"));
+        assert_eq!(
+            (refusal.title, refusal.message.as_str()),
+            ("Cannot export the team", message.as_str()),
+            "{label}"
+        );
+        // The refusal dialog shows it (the modal's first frame is its
+        // sizing pass, so it is the next frame's nodes that hold it).
+        let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        for text in ["Cannot export the team", message.as_str()] {
+            assert!(
+                label_value(&nodes, text),
+                "{label}: the refusal shows {text:?}"
+            );
+        }
+        assert!(!destination.exists(), "{label}: nothing written");
+
+        // The step after its `could not write <destination>: ` prefix is
+        // the refusal's own message: a dropped cause fails here.
+        let lines = journal_lines(&view.recorder, &folder);
+        let prefix = format!("could not write {}: ", destination.display());
+        let failed = steps_with(&lines, &prefix);
+        assert_eq!(
+            failed.len(),
+            1,
+            "{label}: one could not write step: {lines:?}"
+        );
+        assert_eq!(
+            &failed[0][prefix.len()..],
+            message.as_str(),
+            "{label}: the step is the refusal's message"
+        );
+        assert_write_refused(&view.recorder, &folder, &destination);
     }
-    assert!(!destination.exists(), "nothing written");
-    assert_write_refused(&view.recorder, &folder, &destination);
 }
 
 // SE-GUI-17

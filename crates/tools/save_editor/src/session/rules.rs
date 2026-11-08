@@ -392,12 +392,11 @@ mod tests {
     }
 
     /// `name` picked under `dir` with `description`, checked clean
-    /// against `dir`'s imports: the pick's path and the `Import`.
-    fn clean_import(dir: &Path, name: &str, description: &str) -> (PathBuf, Import) {
+    /// against `dir`'s imports (`Import::path` holds the pick).
+    fn clean_import(dir: &Path, name: &str, description: &str) -> Import {
         let text = renamed(description);
         let path = picked(dir, name, &text);
-        let import = clean(check_import(&path, &text, &imported(Some(dir))));
-        (path, import)
+        clean(check_import(&path, &text, &imported(Some(dir))))
     }
 
     /// The imported rows of `dir`, each its file name and description.
@@ -416,6 +415,20 @@ mod tests {
     /// `(file name, description)` as owned strings, for comparing rows.
     fn row(file_name: &str, description: &str) -> (String, String) {
         (file_name.to_owned(), description.to_owned())
+    }
+
+    /// The one `<kind> <path>: ` step in `lines`, asserted the only one
+    /// and naming `path`.
+    fn one_step<'a>(lines: &'a [String], kind: &str, path: &Path) -> &'a String {
+        let steps = crate::test_support::steps_with(lines, &format!("{kind} "));
+        assert_eq!(steps.len(), 1, "one {kind} step: {lines:?}");
+        let step = steps[0];
+        assert!(
+            step.starts_with(&format!("{kind} {}: ", path.display())),
+            "the step names {}: {step}",
+            path.display()
+        );
+        step
     }
 
     /// A built-in stem resolves to its ruleset, no notice; with no data
@@ -698,20 +711,14 @@ mod tests {
         let dir = crate::test_support::scratch("import_data_is_a_file");
         let data = dir.join("data");
         std::fs::write(&data, b"a file").unwrap();
-        let (_path, to_import) = clean_import(&dir, "autumn25.4ccrules", "4cc Autumn 25");
+        let to_import = clean_import(&dir, "autumn25.4ccrules", "4cc Autumn 25");
         let recorder = Recorder::default();
 
         import(&data, &to_import, &recorder).expect_err("the copy cannot be written");
 
         let copy = data.join(RULES_FOLDER).join("autumn25.4ccrules");
         let lines = crate::test_support::journal_lines(&recorder, &dir);
-        let failed = crate::test_support::steps_with(&lines, "could not write ");
-        assert_eq!(failed.len(), 1, "one could not write step: {lines:?}");
-        assert!(
-            failed[0].starts_with(&format!("could not write {}: ", copy.display())),
-            "the step names the copy: {}",
-            failed[0]
-        );
+        one_step(&lines, "could not write", &copy);
         assert!(
             crate::test_support::steps_with(&lines, "imported ").is_empty(),
             "nothing imported: {lines:?}"
@@ -726,20 +733,14 @@ mod tests {
         let dir = crate::test_support::scratch("import_copy_is_a_folder");
         let folder = dir.join(RULES_FOLDER);
         std::fs::create_dir_all(folder.join("autumn25.4ccrules")).unwrap();
-        let (_path, to_import) = clean_import(&dir, "autumn25.4ccrules", "4cc Autumn 25");
+        let to_import = clean_import(&dir, "autumn25.4ccrules", "4cc Autumn 25");
         let recorder = Recorder::default();
 
         import(&dir, &to_import, &recorder).expect_err("the rename over a folder fails");
 
         let copy = folder.join("autumn25.4ccrules");
         let lines = crate::test_support::journal_lines(&recorder, &dir);
-        let failed = crate::test_support::steps_with(&lines, "could not write ");
-        assert_eq!(failed.len(), 1, "one could not write step: {lines:?}");
-        assert!(
-            failed[0].starts_with(&format!("could not write {}: ", copy.display())),
-            "the step names the copy: {}",
-            failed[0]
-        );
+        one_step(&lines, "could not write", &copy);
         assert!(
             crate::test_support::steps_with(&lines, "imported ").is_empty(),
             "nothing imported: {lines:?}"
@@ -758,7 +759,7 @@ mod tests {
         let dir = crate::test_support::scratch("import_replace_gone");
         copy_in(&dir, "autumn25.4ccrules", "4cc Autumn 25");
         copy_in(&dir, "vgl25.4ccrules", "/vg/ League 25");
-        let (_path, to_import) = clean_import(&dir, "autumn25.4ccrules", "/vg/ League 25");
+        let to_import = clean_import(&dir, "autumn25.4ccrules", "/vg/ League 25");
         assert_eq!(to_import.replaces.len(), 2, "premise: both replaced");
         let gone = dir.join(RULES_FOLDER).join("vgl25.4ccrules");
         std::fs::remove_file(&gone).unwrap();
@@ -776,13 +777,7 @@ mod tests {
             )),
             "the copy's step: {lines:?}"
         );
-        let failed = crate::test_support::steps_with(&lines, "could not remove ");
-        assert_eq!(failed.len(), 1, "one could not remove step: {lines:?}");
-        assert!(
-            failed[0].starts_with(&format!("could not remove {}: ", gone.display())),
-            "the step names the gone copy: {}",
-            failed[0]
-        );
+        one_step(&lines, "could not remove", &gone);
         let at = |prefix: &str| {
             lines
                 .iter()
@@ -807,13 +802,7 @@ mod tests {
         remove(&dir, "gone.4ccrules", &recorder).expect_err("nothing to remove");
 
         let lines = crate::test_support::journal_lines(&recorder, &dir);
-        let failed = crate::test_support::steps_with(&lines, "could not remove ");
-        assert_eq!(failed.len(), 1, "one could not remove step: {lines:?}");
-        assert!(
-            failed[0].starts_with(&format!("could not remove {}: ", copy.display())),
-            "the step names the copy: {}",
-            failed[0]
-        );
+        one_step(&lines, "could not remove", &copy);
         assert!(
             crate::test_support::steps_with(&lines, "removed ").is_empty(),
             "nothing removed: {lines:?}"

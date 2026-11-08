@@ -1,7 +1,9 @@
 //! The session's journal lines: what each mutating call records through
 //! `Session::changed` (`edit_*` field lines, `undo`/`redo`'s reversed
 //! lines), the `open` refusal's step, and the writes a member picks
-//! outside `Session::write`.
+//! outside `Session::write`. A step's error or reason is formatted
+//! `{:#}`, so the step carries the whole chain the dialog shows; for a
+//! plain `io::Error` or a string the alternate form is the plain one.
 
 use std::fmt;
 use std::path::Path;
@@ -87,7 +89,7 @@ pub(super) fn open_failed(
 ) -> anyhow::Error {
     recorder.step(
         TOOL_ID,
-        format!("could not open {}: {error}", path.display()),
+        format!("could not open {}: {error:#}", path.display()),
     );
     if let Some(bytes) = bytes {
         recorder.keep_input(TOOL_ID, path, bytes);
@@ -107,7 +109,7 @@ pub(crate) fn read_failed(
 ) {
     recorder.step(
         TOOL_ID,
-        format!("could not read {}: {error}", path.display()),
+        format!("could not read {}: {error:#}", path.display()),
     );
     if let Some(bytes) = bytes {
         recorder.keep_input(TOOL_ID, path, bytes);
@@ -127,7 +129,7 @@ pub(crate) fn picked(path: &Path, recorder: &Recorder, bytes: Arc<[u8]>) {
 /// version mismatch): `refused <path>: <reason>` — recorded once by each
 /// site's own gate (`refusal_recorded`, or the one arm it runs through).
 pub(crate) fn refused(path: &Path, recorder: &Recorder, reason: impl fmt::Display) {
-    recorder.step(TOOL_ID, format!("refused {}: {reason}", path.display()));
+    recorder.step(TOOL_ID, format!("refused {}: {reason:#}", path.display()));
 }
 
 /// The `imported <picked> as <copy>` step for a file a member's action
@@ -153,7 +155,7 @@ pub(crate) fn removed(path: &Path, recorder: &Recorder) {
 pub(crate) fn remove_failed(path: &Path, recorder: &Recorder, error: impl fmt::Display) {
     recorder.step(
         TOOL_ID,
-        format!("could not remove {}: {error}", path.display()),
+        format!("could not remove {}: {error:#}", path.display()),
     );
 }
 
@@ -163,7 +165,7 @@ pub(crate) fn remove_failed(path: &Path, recorder: &Recorder, error: impl fmt::D
 pub(crate) fn write_failed(path: &Path, recorder: &Recorder, error: impl fmt::Display) {
     recorder.step(
         TOOL_ID,
-        format!("could not write {}: {error}", path.display()),
+        format!("could not write {}: {error:#}", path.display()),
     );
 }
 
