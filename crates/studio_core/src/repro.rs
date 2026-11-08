@@ -398,14 +398,14 @@ mod bundle {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use std::fs;
     use std::io::Read;
 
     use super::*;
 
     /// A fresh scratch folder for `test` under the system temp.
-    fn scratch(test: &str) -> PathBuf {
+    pub(crate) fn scratch(test: &str) -> PathBuf {
         let dir =
             std::env::temp_dir().join(format!("studio_core_repro_{test}_{}", std::process::id()));
         if dir.exists() {
@@ -439,12 +439,12 @@ mod tests {
     }
 
     /// `name`'s text inside the zip at `path`.
-    fn zip_text(path: &Path, name: &str) -> String {
+    pub(crate) fn zip_text(path: &Path, name: &str) -> String {
         String::from_utf8(zip_bytes(path, name)).unwrap()
     }
 
     /// `journal`'s `journal.toml` parsed.
-    fn journal_doc(text: &str) -> toml::Table {
+    pub(crate) fn journal_doc(text: &str) -> toml::Table {
         toml::from_str(text).unwrap()
     }
 
@@ -696,6 +696,20 @@ mod tests {
             2,
             "{journal}"
         );
+    }
+
+    // The journal's file bytes have no business in a debug line: the
+    // impl is the `Recorder(..)` placeholder whatever the recorder holds.
+    #[test]
+    fn a_recorders_debug_is_its_placeholder() {
+        let recorder = Recorder::default();
+        recorder.step("save-editor", "a step");
+        recorder.keep_input(
+            "save-editor",
+            Path::new("a/EDIT00000000"),
+            Arc::from(&b"BYTES"[..]),
+        );
+        assert_eq!(format!("{recorder:?}"), "Recorder(..)");
     }
 
     // `out` a directory: the write is an error and the temp sibling is

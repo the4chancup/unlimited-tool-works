@@ -1,4 +1,3 @@
-
 use studio_core::Scope;
 use teams_list::{TeamId, TeamName};
 
@@ -599,6 +598,39 @@ fn a_game_directory_reference_is_left_as_written() {
     assert!(rewrites.written.is_empty());
     assert!(rewrites.links.is_empty());
     assert!(rewrites.findings.is_empty());
+}
+
+#[test]
+fn the_used_set_marks_every_folder_a_non_dummy_reference_reaches() {
+    // `used` feeds the `.dds`/`.ftex` pair rule: a local or a game
+    // directory reference marks its folded stem in every folder its
+    // lookup reaches (the file's folder up to the model folder, or the
+    // `./sub` one alone); a `dummy_` stem in either place is the game's,
+    // marking nothing.
+    let rewrites = plan(
+        &[("a", "Players/07 - A/realkit/face.mtl")],
+        &[],
+        &[(
+            "a",
+            &mtl(&[
+                "shins.dds",
+                "./worn/skin.ftex",
+                "model/character/uniform/texture/u0814p1.dds",
+                "model/character/uniform/texture/dummy_pad.dds",
+                "./dummy_eye.ftex",
+            ]),
+        )],
+    );
+    let expected: BTreeSet<(String, String)> = [
+        ("players/07 - a".to_owned(), "shins".to_owned()),
+        ("players/07 - a/realkit".to_owned(), "shins".to_owned()),
+        ("players/07 - a/worn".to_owned(), "skin".to_owned()),
+        ("players/07 - a".to_owned(), "u0814p1".to_owned()),
+        ("players/07 - a/realkit".to_owned(), "u0814p1".to_owned()),
+    ]
+    .into_iter()
+    .collect();
+    assert_eq!(rewrites.used, expected);
 }
 
 #[test]

@@ -412,6 +412,7 @@ mod tests {
 
     use super::*;
     use crate::events::{PipelineEvent, RunId};
+    use crate::repro::tests::{journal_doc, scratch, zip_text};
     use crate::status::NoticeKind;
 
     /// A context over fresh channels, with the receivers it sends to.
@@ -623,5 +624,35 @@ mod tests {
             "the event still reaches its receiver"
         );
         ctx.request_repaint_after(Duration::from_secs(1));
+    }
+
+    // A step recorded through a clone lands in the one journal the
+    // original's recorder writes: every `recorder()` hands out the same
+    // one, so the bundle covers the whole session.
+    #[test]
+    fn every_clones_recorder_writes_the_one_journal() {
+        let (ctx, _events_rx, _requests_rx) = context();
+        ctx.recorder()
+            .step("save-editor", "a step through the context");
+        ctx.clone()
+            .recorder()
+            .step("save-editor", "a step through a clone");
+
+        let out = scratch("tool_recorder").join("repro.zip");
+        ctx.recorder()
+            .write_bundle(&out, "", &[], &[], None)
+            .unwrap();
+
+        let journal = zip_text(&out, "journal.toml");
+        let doc = journal_doc(&journal);
+        let steps = doc["step"].as_array().unwrap();
+        assert_eq!(
+            steps
+                .iter()
+                .map(|step| step["what"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            ["a step through the context", "a step through a clone"],
+            "{journal}"
+        );
     }
 }

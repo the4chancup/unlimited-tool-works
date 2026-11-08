@@ -184,6 +184,28 @@ mod tests {
     }
 
     #[test]
+    fn a_common_link_claims_its_texture_target_s_name_only() {
+        // A `.common` link stands in for `Common/<target>`: one to a
+        // texture claims the target's stem, so the contested stem forms
+        // no pair; one to a non-texture claims nothing and leaves the
+        // pair to form.
+        let contested = pairs_of(&[
+            ("Common/shiny.dds", "Common/shiny.dds"),
+            ("Common/shiny.ftex", "Common/shiny.ftex"),
+            ("Common/shiny.dds.common", "Common/shiny.dds.common"),
+        ]);
+        assert!(contested.is_empty(), "{contested:?}");
+        let pairs = pairs_of(&[
+            ("Common/quiet.dds", "Common/quiet.dds"),
+            ("Common/quiet.ftex", "Common/quiet.ftex"),
+            ("Common/quiet.fmdl.common", "Common/quiet.fmdl.common"),
+        ]);
+        assert_eq!(pairs.len(), 1, "{pairs:?}");
+        assert_eq!(pairs[0].stem, "quiet");
+        assert_eq!(pairs[0].dds.0, "Common/quiet.dds");
+    }
+
+    #[test]
     fn resolve_keeps_the_dds_of_a_used_pair_and_drops_both_of_an_unused() {
         let pairs = pairs_of(&[
             ("Common/shiny.dds", "Common/shiny.dds"),

@@ -93,6 +93,18 @@ mod tests {
         );
     }
 
+    /// Off Windows paths are letter-case exact: the home folder written
+    /// exactly is redacted.
+    #[cfg(not(windows))]
+    // ST-RUN-07
+    #[test]
+    fn redact_home_replaces_the_home_folder_as_written() {
+        assert_eq!(
+            redact_home("opened /home/alice/x", Some("/home/alice")),
+            "opened ~/x"
+        );
+    }
+
     #[test]
     fn redact_home_without_a_home_leaves_the_line_as_it_is() {
         let line = "opened C:\\Users\\member\\a.bin";

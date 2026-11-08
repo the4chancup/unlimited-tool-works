@@ -944,6 +944,38 @@ mod tests {
     }
 
     #[test]
+    fn an_unused_pairs_dds_follows_its_ftex_but_the_rest_migrates() {
+        // A `.dds`/`.ftex` pair no material names the stem of: the
+        // `.ftex` drops with the pair's resolve and the `.dds` follows as
+        // a leftover; the folder's other files migrate.
+        let root = scratch("models_run_unused_pair");
+        fs::create_dir_all(root.join("new models/Textures")).unwrap();
+        for name in [
+            "u0XXXp1.dds",
+            "u0XXXp1.ftex",
+            "portrait.dds",
+            "ingame_face.txt",
+        ] {
+            fs::write(root.join("new models/Textures").join(name), name).unwrap();
+        }
+        let (ctx, _events_rx) = test_ctx();
+        let args = UpgradeModelsArgs {
+            folder: root.join("new models"),
+            output: None,
+        };
+
+        run(&args, &ctx).unwrap();
+        let out = root.join("new models upgraded/Textures");
+        // The pair's respelled `kit1` files are both gone.
+        let mut files: Vec<String> = fs::read_dir(&out)
+            .unwrap_or_else(|_| panic!("the output folder {out:?} was published"))
+            .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        files.sort();
+        assert_eq!(files, ["ingame_face.toml", "portrait.dds"], "{out:?}");
+    }
+
+    #[test]
     fn a_stray_in_a_model_folder_is_dropped_as_a_leftover() {
         // Step 10's stray rule: the backup file is no `.txt` note and no
         // kind `classify` knows — a `leftover_dropped` finding and no copy,

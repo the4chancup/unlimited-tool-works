@@ -317,6 +317,14 @@ exclude_re = [
     # to a multiple of the smaller one's ulp, at least 2^-32, so no difference equals it
     # (a sweep of every f32 from 1.0 to 3.0 finds none).
     "studio_core/src/shell/window_size/mod\\.rs:\\d+:\\d+: replace < with <= in resends_position",
+    # studio_core: `window_backends` joins backend flags that share no bit (`DX12 | GL`,
+    # `PRIMARY | GL`: wgpu's `PRIMARY` is Vulkan, Metal, DX12 and WebGPU, never GL), so `^`
+    # gives the same set; the bit-packing class of the first entry.
+    "studio_core/src/shell/window_size/mod\\.rs:\\d+:\\d+: replace \\| with \\^ in window_backends",
+    # studio_core: `fetch_releases` is the real GET of GitHub's releases list, the window's
+    # `update_fetch`; the tests hand the shell a fixture fetch instead (a test never reaches the
+    # network), so no test calls it.
+    "replace fetch_releases -> Result<String, UpdateError> with",
     # save_editor: `set_stats_cell` caps the button at the cell less
     # the gap and the number field, a cap that never binds: the list is a fixed 240-point
     # panel, so the cell is at least 83.75 wide (a natural column, or 108.5 when the columns

@@ -1,4 +1,3 @@
-
 use super::*;
 use crate::test_support::{scratch, test_ctx};
 
@@ -395,4 +394,52 @@ fn each_started_export_is_processed_once_after_its_start() {
             format!("processed {}", OUTPUT.0),
         ]
     );
+}
+
+#[test]
+fn an_unused_pairs_dds_is_dropped_and_the_other_copies_written() {
+    // A `.dds`/`.ftex` pair no material names the stem of: the `.dds`
+    // follows its `.ftex` as a leftover wherever the pair sat, and the
+    // retain drops it alone — the player folder's and the kit's other
+    // files reach the output.
+    let root = scratch("upgrade_unused_pair");
+    fs::create_dir_all(root.join("co Midcup Spring/Faces/XXX15 - A")).unwrap();
+    fs::create_dir_all(root.join("co Midcup Spring/Kit Textures")).unwrap();
+    fs::write(root.join("co Midcup Spring/co Note.txt"), b"Team: /co/\r\n").unwrap();
+    for name in [
+        "u0XXXp1.dds",
+        "u0XXXp1.ftex",
+        "portrait.dds",
+        "ingame_face.txt",
+    ] {
+        fs::write(
+            root.join("co Midcup Spring/Faces/XXX15 - A").join(name),
+            name,
+        )
+        .unwrap();
+    }
+    fs::write(
+        root.join("co Midcup Spring/Kit Textures/u0XXXp2.dds"),
+        b"kit",
+    )
+    .unwrap();
+    let (ctx, _events_rx) = test_ctx();
+    let args = UpgradeArgs {
+        export: root.join("co Midcup Spring"),
+        savefile: None,
+        loose: true,
+        coverage: None,
+        output: None,
+    };
+
+    let exit = run(&args, &ctx).unwrap();
+    drop(ctx);
+    assert_eq!(exit, CLEAN);
+    let out = root.join("co Midcup Spring upgraded");
+    let player = out.join("Players/15 - A");
+    assert!(player.join("portrait.dds").is_file(), "{player:?}");
+    // The pair's respelled `kit1` files are both gone.
+    assert!(!player.join("kit1.dds").exists(), "{player:?}");
+    assert!(!player.join("kit1.ftex").exists(), "{player:?}");
+    assert!(out.join("Kits/p2/kit.dds").is_file(), "{out:?}");
 }

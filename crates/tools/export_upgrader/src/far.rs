@@ -160,10 +160,19 @@ mod tests {
     /// The fixture `.fmdl` with every vertex moved `dx` units on x
     /// (`6000.0` makes the model far in every vertex).
     fn shifted_fmdl(dx: f32) -> Vec<u8> {
+        shifted_fmdl_by([dx, 0.0, 0.0])
+    }
+
+    /// The fixture `.fmdl` with every vertex moved by `shift` — `[d; 3]`
+    /// puts each vertex `3 d²` from the origin, `3000.0` past the far
+    /// limit and `2000.0` under it.
+    fn shifted_fmdl_by(shift: [f32; 3]) -> Vec<u8> {
         let mut model = fmdl::Model::from_file(&FmdlFile::read(HIGHNECK).unwrap()).unwrap();
         for mesh in &mut model.meshes {
             for position in &mut mesh.vertices.positions {
-                position[0] += dx;
+                for (component, d) in position.iter_mut().zip(shift) {
+                    *component += d;
+                }
             }
         }
         model.to_file().unwrap().write()
@@ -246,6 +255,31 @@ mod tests {
             &["Faces/XXX05/face.fmdl"],
             false,
             &[("Faces/XXX05/face.fmdl", &face)],
+        );
+        assert!(out.dropped.is_empty());
+        assert!(out.findings.is_empty());
+    }
+
+    #[test]
+    fn the_far_check_sums_all_three_axes() {
+        // A one-axis shift leaves two of the sum's terms near zero;
+        // shifting all three exercises every term: `3 * 3000²` is past
+        // the limit and `3 * 2000²` under it.
+        let far = shifted_fmdl_by([3000.0; 3]);
+        let out = drops(
+            &["Faces/XXX05/face.fmdl"],
+            false,
+            &[("Faces/XXX05/face.fmdl", &far)],
+        );
+        assert_eq!(
+            out.dropped.iter().map(String::as_str).collect::<Vec<_>>(),
+            ["Faces/XXX05/face.fmdl"]
+        );
+        let near = shifted_fmdl_by([2000.0; 3]);
+        let out = drops(
+            &["Faces/XXX05/face.fmdl"],
+            false,
+            &[("Faces/XXX05/face.fmdl", &near)],
         );
         assert!(out.dropped.is_empty());
         assert!(out.findings.is_empty());
