@@ -286,21 +286,19 @@ fn a_version_or_scheme_mismatch_is_refused_with_nothing_written() {
     assert!(!sandbox.path("OUT").exists());
 }
 
-// SE-PAT-05
-#[test]
-fn a_team_whose_every_patch_player_the_save_lacks_is_not_listed_applied() {
-    let sandbox = Sandbox::new("patch_no_players");
-    sandbox.fixture(PesVersion::Pes21, "EDIT");
-    let save = EditFile::load(&sandbox.path("EDIT")).unwrap();
-    // Two slots of /co/ whose player ids the save lacks (a cup player id is the team's
-    // id x 100 + slot).
-    let empty: Vec<u8> = (1..=99u8)
+/// The first `count` slots of /co/ whose player ids `save` lacks (a cup player id is the
+/// team's id x 100 + slot), and a patch renaming each of them.
+fn absent_co_patch(save: &EditFile, count: usize) -> (Vec<u8>, String) {
+    let slots: Vec<u8> = (1..=99u8)
         .filter(|slot| save.player(CO * 100 + u32::from(*slot)).is_none())
+        .take(count)
         .collect();
-    let [first, second, ..] = empty[..] else {
-        panic!("the fixture's /co/ lacks two slots' players: {empty:?}");
-    };
-    let players: BTreeMap<u8, PatchPlayer> = [first, second]
+    assert_eq!(
+        slots.len(),
+        count,
+        "the fixture's /co/ lacks {count} slots' players: {slots:?}"
+    );
+    let players = slots
         .iter()
         .map(|slot| {
             (
@@ -317,13 +315,23 @@ fn a_team_whose_every_patch_player_the_save_lacks_is_not_listed_applied() {
         ALLOCATION_SCHEME_VERSION,
         vec![team(CO, "/co/", players)],
     );
+    (slots, text)
+}
+
+// SE-PAT-05
+#[test]
+fn a_team_whose_every_patch_player_the_save_lacks_is_not_listed_applied() {
+    let sandbox = Sandbox::new("patch_no_players");
+    sandbox.fixture(PesVersion::Pes21, "EDIT");
+    let save = EditFile::load(&sandbox.path("EDIT")).unwrap();
+    let (slots, text) = absent_co_patch(&save, 2);
     fs::write(sandbox.path("patch.toml"), &text).unwrap();
 
     let run = sandbox.apply("patch.toml", "EDIT", "OUT");
     assert_eq!(run.exit_code(), 1);
     assert_eq!(
         run.messages(),
-        [first, second]
+        slots
             .iter()
             .map(|slot| {
                 format!(
@@ -347,24 +355,8 @@ fn a_patch_that_writes_no_player_leaves_the_save_and_its_bak_in_place() {
     let sandbox = Sandbox::new("patch_no_players_in_place");
     sandbox.fixture(PesVersion::Pes21, "EDIT");
     let save = EditFile::load(&sandbox.path("EDIT")).unwrap();
-    let slot = (1..=99u8)
-        .find(|slot| save.player(CO * 100 + u32::from(*slot)).is_none())
-        .expect("the fixture's /co/ lacks a slot's player");
-    let text = patch_text(
-        PesVersion::Pes21,
-        ALLOCATION_SCHEME_VERSION,
-        vec![team(
-            CO,
-            "/co/",
-            BTreeMap::from([(
-                slot,
-                PatchPlayer {
-                    name: Some("NOBODY".to_owned()),
-                    ..bare()
-                },
-            )]),
-        )],
-    );
+    let (slots, text) = absent_co_patch(&save, 1);
+    let slot = slots[0];
     fs::write(sandbox.path("patch.toml"), &text).unwrap();
     fs::write(sandbox.path("EDIT.bak"), b"the previous backup").unwrap();
     let before = fs::read(sandbox.path("EDIT")).unwrap();

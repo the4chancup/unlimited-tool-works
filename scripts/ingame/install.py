@@ -12,9 +12,10 @@ install folder comes from game.py's `GAMES`.
 Every copy is checked by SHA-256. Both commands refuse while the game runs, and refuse to write
 over a slot that holds neither the original (`original_sha256` below) nor the CPK this script
 installed last (its hash recorded beside the kept original), so a slot changed by hand or by
-another tool is never lost. A slot already holding CPK itself (a bundle's quick_compile.bat
-deployed it) is accepted by `install`, which records it so `revert` can restore the original. The kept original lives in `.tmp/ingame/pes<GAME>/` of the
-repository (gitignored scratch) and stays there after a revert, ready for the next install.
+another tool is never lost. A slot already holding the CPK itself (a bundle's quick_compile.bat
+deployed it) is accepted by `install` once an earlier install has kept the original, and
+recorded so `revert` can restore it. The kept original lives in `.tmp/ingame/pes<GAME>/` of
+the repository (gitignored scratch) and stays there after a revert, ready for the next install.
 """
 
 import hashlib
@@ -106,7 +107,8 @@ def install(game_key: str, cpk: Path) -> None:
             raise SystemExit(f"the original of {slot} is not kept in {kept.parent}: not touching it")
         kept.parent.mkdir(parents=True, exist_ok=True)
         copy_checked(slot, kept, original)
-    copy_checked(cpk, slot, installed)
+    if live != installed:
+        copy_checked(cpk, slot, installed)
     record.write_text(installed + "\n", encoding="utf-8")
     print(f"installed {cpk} into {slot} ({cpk.stat().st_size} bytes); the original is kept as {kept}")
 

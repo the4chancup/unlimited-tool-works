@@ -247,7 +247,8 @@ fn import_toml(
 
 /// `apply-patch`: a version or allocation-scheme mismatch is refused before anything is
 /// touched; a team or player the save lacks is an Error finding and the rest is written.
-/// The applied and skipped lines are emitted once `--out` is written, so a failed write
+/// The applied and skipped lines are emitted once `--out` is written, or once the write is
+/// skipped because the patch applied no player in place (SE-PAT-12), so a failed write
 /// reports none of them.
 fn apply_patch(
     args: &ApplyArgs,
@@ -285,7 +286,7 @@ fn apply_patch(
     // left as it was: the write would change nothing but turn its `.bak` over, losing the
     // previous backup (as the compile's save step does). A missing --out is never --base.
     let in_place = matches!(
-        (std::fs::canonicalize(&args.base), std::fs::canonicalize(&args.out)),
+        (fs::canonicalize(&args.base), fs::canonicalize(&args.out)),
         (Ok(base), Ok(out)) if base == out
     );
     if !(summary.applied_players.is_empty() && in_place) {

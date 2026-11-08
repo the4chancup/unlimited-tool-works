@@ -12,6 +12,10 @@ What changed for members, release by release, newest first.
 
 ### Minor fixes
 
+- **Save editor** — an aesthetics patch's names now show in game on PES 2019: applying it
+  marks each renamed player as edited, as typing the name does, where they showed
+  PLACEHOLDER. `apply-patch` writing back over its own save with no player applied now
+  leaves the save and its `.bak` as they were, instead of replacing the previous backup.
 - **Save editor** — Up and Down walk the player list again after a page key left a team's
   Tactics slot popover open behind a player: they did nothing until the team was selected
   again and the popover closed.
