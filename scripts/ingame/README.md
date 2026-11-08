@@ -122,5 +122,6 @@ Run every command from the repository root. Screenshots go under `.tmp/` (gitign
   confirmed makes the game write its save itself, so look, do not confirm.
 - No `DpFileList.bin`, and no CPK but the test slot. `install.py` writes the slot alone (through
   a `.partial` file beside it, renamed into place once its hash matches) and refuses when the
-  game runs or the slot holds neither its original nor the CPK it installed last.
+  game runs or the slot holds neither its original, the CPK it installed last nor the CPK
+  being installed (a launcher's compile deployed it; accepted once the original is kept).
 - No game executable or Sider file: `game.py` only starts and ends them.

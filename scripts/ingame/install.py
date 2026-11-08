@@ -107,10 +107,12 @@ def install(game_key: str, cpk: Path) -> None:
             raise SystemExit(f"the original of {slot} is not kept in {kept.parent}: not touching it")
         kept.parent.mkdir(parents=True, exist_ok=True)
         copy_checked(slot, kept, original)
-    if live != installed:
+    if live == installed:
+        print(f"{slot} already holds {cpk}: recorded; the original is kept as {kept}")
+    else:
         copy_checked(cpk, slot, installed)
+        print(f"installed {cpk} into {slot} ({cpk.stat().st_size} bytes); the original is kept as {kept}")
     record.write_text(installed + "\n", encoding="utf-8")
-    print(f"installed {cpk} into {slot} ({cpk.stat().st_size} bytes); the original is kept as {kept}")
 
 
 def revert(game_key: str) -> None:

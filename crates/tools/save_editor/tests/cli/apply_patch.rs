@@ -286,8 +286,8 @@ fn a_version_or_scheme_mismatch_is_refused_with_nothing_written() {
     assert!(!sandbox.path("OUT").exists());
 }
 
-/// The first `count` slots of /co/ whose player ids `save` lacks (a cup player id is the
-/// team's id x 100 + slot), and a patch renaming each of them.
+/// The first `count` slots of /co/ whose player ids `save`, a PES 21 save, lacks (a cup
+/// player id is the team's id x 100 + slot), and a PES 21 patch renaming each of them.
 fn absent_co_patch(save: &EditFile, count: usize) -> (Vec<u8>, String) {
     let slots: Vec<u8> = (1..=99u8)
         .filter(|slot| save.player(CO * 100 + u32::from(*slot)).is_none())
@@ -296,7 +296,7 @@ fn absent_co_patch(save: &EditFile, count: usize) -> (Vec<u8>, String) {
     assert_eq!(
         slots.len(),
         count,
-        "the fixture's /co/ lacks {count} slots' players: {slots:?}"
+        "the fixture's /co/ has fewer than {count} slots without a player: {slots:?}"
     );
     let players = slots
         .iter()
