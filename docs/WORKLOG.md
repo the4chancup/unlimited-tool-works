@@ -7581,7 +7581,13 @@ briefs, review loops, gates and mutation runs as for any step.
       `release_test.py` 37, `gates-changed` green): the two tuples, the readme (the old
       "Exports made for Red" line now "in the old format", as `CONTRIBUTING.md` asks; the
       patch's route to the official save, `apply-patch`'s line), the CHANGELOG's `### New`.
-      Version settled (DECISIONS "the PoC bundle is 0.0.2-poc.1"). Open: the branch and its
+      Version settled (DECISIONS "the PoC bundle is 0.0.2-poc.1"). Astra over the readme
+      2026-11-08 (A-poc8 r1, 7 accepted): Save and close the editor before the launchers,
+      multi-CPK set before the first compile, earlier matchdays' exports out of `exports/`,
+      the referee export's own command (the bat always passes `--savefile`), compile again
+      after `upgrade-dpfl`, Multi-team AATF's first and last team picked, which launcher
+      follows the left bar's PES; reworked by the lead, Astra's second round open.
+      Open: the branch and its
       `just release`, then the rehearsal; the Linux tarball now also carries the two `.bat`
       files (`expected_entries` has no platform gate), to settle before 0.0.2
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";

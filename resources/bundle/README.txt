@@ -19,10 +19,11 @@ Getting started
 1. Unpack this archive into a folder of its own, anywhere you like.
 2. Open UTW.exe (utw on Linux). It keeps its settings in the data folder beside it.
 3. The window starts on PES 2017, the game the DBC is played on. VGL's organizer picks
-   PES 2019 on the left bar before opening a save, and the two launchers below then work
-   on PES 2019 too, since they read the PES picked there. If the PES number on the left bar
-   turns yellow or red, click the Settings gear at the bottom of the bar and set
-   "PES folder" to the path of the folder that holds the PES exe.
+   PES 2019 on the left bar before opening a save. quick_compile.bat below compiles for the
+   PES picked there; quick_upgrade.bat upgrades for the PES of the savefile dropped onto it,
+   whatever the left bar says. If the PES number on the left bar turns yellow or red, click
+   the Settings gear at the bottom of the bar and set "PES folder" to the path of the
+   folder that holds the PES exe.
 
 
 Checking a team for the DBC
@@ -52,6 +53,13 @@ Exports in the old format need upgrading once before they compile here.
    upgraded again: the next run lists it as not upgraded ("the output folder already
    exists") and leaves its folder in exports as it is.
 
+The referee export (its name starts with refs, such as "refs Spring") takes no savefile, so
+quick_upgrade.bat lists it as not upgraded. Upgrade it from a console in this folder (step
+4 of "Compiling" below shows how to open one), with the export's own name in place of
+refs Spring:
+
+    UTW.exe export-upgrader upgrade "old_exports\refs Spring" -o exports
+
 
 Compiling
 ---------
@@ -74,20 +82,36 @@ Compiling
 
        UTW.exe team-compiler upgrade-dpfl --yes
 
-   This is needed once per game folder.
+   This is needed once per game folder. After dpfilelist_outdated, the compile installed
+   nothing and left the save as it was, so double-click quick_compile.bat again.
 
 
 For VGL's organizer
 -------------------
 
-1. The game needs the cup's official DpFileList.bin: step 4 of "Compiling" above installs it.
+1. Before the first compile: the game needs the cup's official DpFileList.bin (step 4 of
+   "Compiling" above installs it), and the league's first DLC is compiled into several
+   CPKs. With the window closed, open data\settings.toml in Notepad, change the line
+
+       multicpk_mode = false
+
+   to
+
+       multicpk_mode = true
+
+   and save the file. quick_compile.bat then puts the teams into 4cc_41_teams.cpk and the CPKs
+   after it, filling each one up to its size limit, and the files every team shares into
+   4cc_08_bins.cpk. Without it, the first compile goes into 4cc_99_test.cpk, which the game
+   loads last, over every team and midcup CPK compiled after it.
 
 2. The work runs in this order. The managers' tactical exports (the .ted files) go into
    the base save first: import them in the Save editor (the Team menu's "Import / export
    team file...") or in the game's own Edit mode, whose import leaves the team names to
-   rewrite. That makes the official save. Then upgrade the old exports against it (drag
-   the official save onto quick_upgrade.bat), compile the exports (quick_compile.bat),
-   and apply the compile's patch to the official save.
+   rewrite. That makes the official save. In the Save editor, click Save on the toolbar,
+   then close UTW.exe: the launchers change the save on disk, and an editor still open on
+   it would write its own copy back over theirs at its next Save. Then upgrade the old
+   exports against it (drag the official save onto quick_upgrade.bat), compile the exports
+   (quick_compile.bat), and apply the compile's patch to the official save.
 
 3. The compile also writes a patch, aesthetics_patch.toml in the output folder beside
    UTW.exe, and applies it to a save: the one savefile_path names in data\settings.toml,
@@ -101,20 +125,7 @@ For VGL's organizer
 
    The file already there is kept as EDIT00000000.bak.
 
-4. The league's first DLC is compiled into several CPKs. With the window closed, open
-   data\settings.toml in Notepad, change the line
-
-       multicpk_mode = false
-
-   to
-
-       multicpk_mode = true
-
-   and save the file. quick_compile.bat then puts the teams into 4cc_41_teams.cpk and the CPKs
-   after it, filling each one up to its size limit, and the files every team shares into
-   4cc_08_bins.cpk.
-
-5. A later matchday is compiled into one CPK of its own. Change the line back to
+4. A later matchday is compiled into one CPK of its own. Change the line back to
    multicpk_mode = false, and change the line
 
        cpk_name = "4cc_99_test"
@@ -123,15 +134,22 @@ For VGL's organizer
 
        cpk_name = "4cc_61_midcup"
 
-6. The patch is the last write to the official save. A .ted imported after it writes that
+   Before compiling it, move the exports compiled on earlier matchdays out of the exports
+   folder, so that it holds only this matchday's: a team with two exports there (its first
+   Full export and a new Midcup one) has both refused, as duplicate_aesthetics_export.
+
+5. The patch is the last write to the official save. A .ted imported after it writes that
    team's players over their looks, so the patch has to be applied again.
 
-7. A later matchday's compile writes a new patch, so what goes out is a new official
+6. A later matchday's compile writes a new patch, so what goes out is a new official
    save, not only the new CPKs: the players' looks live in the save.
 
-8. Before the official save goes out, check it against the league's rules: pick
-   /vg/ League 27 in the dropdown on the toolbar, left of Live AATF, then run Live AATF
-   on a team, or Multi-team AATF in the Savefile menu for all of them at once.
+7. Before the official save goes out, open it in the Save editor and check it against the
+   league's rules: pick /vg/ League 27 in the dropdown on the toolbar, left of Live AATF,
+   then run Live AATF on a team. For all of them at once, open Multi-team AATF in the
+   Savefile menu. It starts on the save's first team alone, so pick the league's first
+   team in its first Teams box and its last team in the second, then wait until
+   "checking..." is gone.
 
 
 If something goes wrong
