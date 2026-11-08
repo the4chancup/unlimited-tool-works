@@ -2417,6 +2417,33 @@ SE-AATF-08 GIVEN SE-AATF-03's save and the command started from a folder holding
            THEN the first prints SE-AATF-03's VGL27 violation; the second checks nothing,
                 exits 2 and its error names `nosuch` and every embedded ruleset's stem; the
                 third checks against the file: the VGL27 violation is not printed
+SE-REP-01  GIVEN a repro bundle (`plans/core/architecture.md` "Repro bundles") whose journal
+                opens the save, sets player 70101's Height from the value the save holds to
+                another and writes the save, the save so written its kept output
+           WHEN `save-editor replay` is run on it
+           THEN it prints that the write matches and exits 0
+SE-REP-02  GIVEN SE-REP-01's bundle with the Height step taken out of its journal
+           WHEN `save-editor replay` is run on it
+           THEN it prints that the write differs, naming player 70101's Height with the
+                replayed value and the written one, and exits 1
+SE-REP-03  GIVEN SE-REP-01's bundle with the Height step's old value one above the value the
+                save holds
+           WHEN `save-editor replay` is run on it
+           THEN it stops at that step, printing its line, the value the save holds and the
+                one the step expected; it compares no write and exits 1
+SE-REP-04  GIVEN SE-REP-01's bundle whose journal writes the save to the same path a second
+                time after the Height step, the second write its kept output
+           WHEN `save-editor replay` is run on it
+           THEN it prints the first write as replaced by a later one and not compared, the
+                second as matching, and exits 0
+SE-REP-05  GIVEN SE-REP-01's bundle recorded by another Studio version
+           WHEN `save-editor replay` is run on it
+           THEN it prints both versions, replays the bundle as in SE-REP-01 and exits 0
+SE-REP-06  GIVEN a file that is not a zip, then SE-REP-01's bundle with one byte of its kept
+                input changed
+           WHEN `save-editor replay` is run on each
+           THEN each prints why it is not a bundle it can replay (not a zip; the input's
+                bytes do not match the journal's SHA-256), replays nothing and exits 2
 ```
 
 The full-look patch's `apply-patch` scenarios (SE-PAT-07 to 11) moved to

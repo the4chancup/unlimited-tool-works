@@ -15774,3 +15774,17 @@ round's fixes no longer send the work back through Argon (amends the 2026-11-06 
 Why: SWE-2 is free, so it still clears the cheap concerns around every paid round, while an
 Argon rerun inside Astra's loop spent paid rounds on code Argon had already passed.
 Plan: `RUNBOOK.md` "Review rounds".
+
+## 2026-11-08 — studio_core, save_editor — replay reads a typed op beside each journal line
+Decision: a journal step that changes the model carries an `op` table beside its line; replay
+reads the ops and never parses the lines. The Save editor's field ops are `pes_savefile`'s
+comparator rows (`PlayerDiff`, `TeamDiff`, given serde derives) with the entry id, the face
+run's row carrying the runs' unused bits beside its fingerprints; the open and the save write
+name their kept input and output by index. Replay checks each row's old value before applying it, stops at the first that
+differs, and compares each kept write byte for byte under that output's own salt.
+Why: parsing the lines would freeze their wording as a format and cannot recover a name
+holding ` → ` or a face run shown as a fingerprint; serde on the rows already written, not a
+second table of field names, keeps one list of fields; the old-value check names the step
+where an unrecorded change happened, which a final comparison alone cannot; every write
+salts afresh, so only the output's own salt can reproduce its bytes.
+Plan: `plans/core/architecture.md` "Repro bundles" ("Replay reads a typed change").

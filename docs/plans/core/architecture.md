@@ -451,6 +451,30 @@ first, then the Team compiler and the Export upgrader, then the rest as they are
   apart (the 0.0.2 Save editor tester's "placeholders and default stats", 2026-11-07: an
   in-game run reproduced the placeholders and not the stats, and only their own files and
   steps can say why).
+- **Replay reads a typed change beside each line, never the line.** A step is a line for the
+  reader (`player 70101: Height 180 → 190`) and, when it changes the model, an `op`: a table
+  written beside it in `journal.toml`. The lines stay as they are; reading them back would
+  make their wording a wire format that a rewording breaks silently, a name may hold ` → `
+  itself, a roster or tactics field's name carries its slot in its own syntax, and an
+  ingame-face run's unused bits are shown only as a fingerprint, which nothing can apply. In
+  the Save editor the op of a field line is the comparator row it was printed from
+  (`pes_savefile`'s `PlayerDiff` or `TeamDiff`, which derive serde for it, with the entry's
+  id; the face run's row carries the two runs' unused bits beside their fingerprints, so it
+  applies like the others); the session's open names the kept input it read by its index,
+  and a save written the kept output by its index. A step with no op (a pick, a refusal, an import's heading line, the comparator's
+  second open) is a note replay skips. Replay applies each row through `pes_savefile` after
+  checking that the entry holds the row's old value: the first step whose old value differs
+  is where the model changed unrecorded, and replay stops there, naming the step and both
+  values. Each save write is compared at its step: the replayed save encrypted under the
+  kept output's own salt (every write salts afresh, so under any other salt no byte could
+  match), byte for byte; a write a later one to the same path replaced was not kept and is
+  listed as not compared. A mismatch lists the fields that differ between the replayed save
+  and the written one, entry by entry (the comparator again), or, when every entry matches,
+  the first differing byte; the bundle's current state, once the dialog writes one, is
+  compared last the same way. The command exits 0 when every compared write matches, 1 when
+  one differs or a step's old value does, and 2 for a file it cannot read as a bundle (not a
+  zip, no journal, a kept file whose bytes do not match the journal's SHA-256). A bundle from another Studio version replays with both versions named, and a
+  step whose op this build cannot read fails, naming the step.
 - **One facility in `studio_core`**: the journal's type, the bundle writer, the button and the
   dialog are the platform's; each tool contributes its steps and its kept inputs through the
   tool interface, so the bundle and its rules are the same in every tool.

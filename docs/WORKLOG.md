@@ -8172,9 +8172,22 @@ points there.
   `Session::changed` and its file operations, its inputs kept, and the test that every model
   change goes through the journal (done 2026-11-07, SWE-2; reviewed to 2026-11-08: SWE-2 r1-r11,
   Astra X1, Argon A1-A3, reworks to `eef1a9e1`; the loop's `mutants-diff 188cf158^..` done
-  2026-11-08: 60 mutants, 3 missed, all Write's `NotFound` guard, `generate.rs:333`, tested in se_kills_2a); (3) `utw save-editor replay`; (4) the panic hook's bundle;
-  (5) the Team compiler and the Export upgrader; the rest as each tool is built. Each slice
-  gets SWE-2, Argon and Astra rounds (a new `pub` interface across crates).
+  2026-11-08: 60 mutants, 3 missed, all Write's `NotFound` guard, `generate.rs:333`, tested in se_kills_2a); (3) `utw save-editor replay` (the plan's "Replay reads a typed
+  change", DECISIONS 2026-11-08), in three slices: (3a) the player side end to end below
+  the command: the step's `op` in `studio_core`, written and read back from a bundle, the
+  kept files' indexes, the open's and the save write's ops and every player row's (serde on
+  `PlayerDiff`, the face run's unused bits, `pes_savefile`'s apply and a file's salt), and
+  replay run over a bundle a `Session` recorded; (3b) the `replay` command, its messages
+  and SE-REP-01 to 06; (3c) the team, roster and tactics rows, `Session::apply_patch`'s
+  field lines, and a test per `Session` mutator that replaying its journal rebuilds the
+  model; (4) the
+  "Report a problem" button and dialog in the shell (the draft's `drawReport`), each tool's
+  current state through the tool interface, and replay comparing that state last: slice 2
+  built the writer and nothing calls it outside tests yet, so no member can write a bundle
+  until this lands, and it lands after (3) so the first bundles members post replay; (5) the
+  panic hook's bundle; (6) the Team compiler and the Export upgrader; the rest as each tool
+  is built. Each slice gets SWE-2, Argon and Astra rounds (a new `pub` interface across
+  crates).
 - open (2026-11-06) — Whole-crate mutation runs on the VPS alone (`RUNBOOK.md` "Mutation
   runs and the VPS", the maintainer's directive). `scripts/mutation/mutants.py` still splits
   a whole run, and `REMOTE_ONLY` skips its extra kinds, which run only on this machine. To
