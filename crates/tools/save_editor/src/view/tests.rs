@@ -645,6 +645,14 @@ fn shirt_field(nodes: &[accesskit::Node]) -> &accesskit::Node {
     field_right_of_label(nodes, "Shirt (", Role::TextInput)
 }
 
+/// Asserts drawing the open save edited nothing: no unsaved change, no
+/// undo entry (a stored value out of its range draws as stored).
+fn assert_drawing_edited_nothing(view: &SaveView) {
+    let session = view.session.as_ref().unwrap();
+    assert!(!session.is_dirty(), "drawing left no unsaved changes");
+    assert!(!session.can_undo(), "drawing pushed no undo entry");
+}
+
 /// The undo stack's depth, counted by Ctrl+Z until it is empty (bounded, so
 /// a stuck stack fails rather than hangs). An empty frame first, the one
 /// egui repaints after every input frame: a dialog closed on the frame

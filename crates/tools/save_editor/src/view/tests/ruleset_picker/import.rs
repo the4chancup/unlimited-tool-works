@@ -310,6 +310,29 @@ fn a_clean_file_is_copied_listed_and_picked_and_a_reimport_replaces_it() {
     let pairs = open_dropdown(&mut window, &mut tool, &ctx);
     assert_eq!(popup_rows(&pairs), rows_with(&["4cc Autumn 25"]));
 
+    // Esc is the question's Cancel too: it closes, the copy unchanged.
+    click_in_dropdown(&mut window, &mut tool, &ctx, IMPORT_ROW);
+    let pairs = tool_frame(&mut window, &mut tool, &ctx, Vec::new());
+    assert!(
+        dialog_lines(&pairs, replace).first().map(String::as_str) == Some(replace),
+        "premise: the question is up"
+    );
+    tool_frame(
+        &mut window,
+        &mut tool,
+        &ctx,
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+    );
+    assert!(
+        !dialog_up(&tool_frame(&mut window, &mut tool, &ctx, Vec::new())),
+        "Esc closed the question"
+    );
+    assert_eq!(
+        std::fs::read_to_string(&copy).unwrap(),
+        first,
+        "Esc wrote nothing"
+    );
+
     click_in_dropdown(&mut window, &mut tool, &ctx, IMPORT_ROW);
     click_in_dialog(&mut window, &mut tool, &ctx, replace, "Replace");
     assert_eq!(std::fs::read_to_string(&copy).unwrap(), corrected);
@@ -497,6 +520,31 @@ fn the_x_asks_then_deletes_the_copy_and_falls_back_to_the_first_builtin() {
     assert!(copy.exists(), "nothing deleted before the answer");
     click_in_dialog(&mut window, &mut tool, &ctx, title, "Cancel");
     assert!(copy.exists(), "Cancel deleted nothing");
+
+    // Esc answers Cancel too: the copy stands and the pick stays.
+    click_in_dropdown(&mut window, &mut tool, &ctx, "Remove 4cc Autumn 25");
+    let pairs = tool_frame(&mut window, &mut tool, &ctx, Vec::new());
+    assert!(
+        dialog_lines(&pairs, title).first().map(String::as_str) == Some(title),
+        "premise: the question is up"
+    );
+    tool_frame(
+        &mut window,
+        &mut tool,
+        &ctx,
+        vec![key(egui::Key::Escape, egui::Modifiers::NONE, true)],
+    );
+    assert!(
+        !dialog_up(&tool_frame(&mut window, &mut tool, &ctx, Vec::new())),
+        "Esc closed the question"
+    );
+    assert!(copy.exists(), "Esc deleted nothing");
+    let nodes = nodes_of(&tool_frame(&mut window, &mut tool, &ctx, Vec::new()));
+    assert_eq!(
+        dropdown(&nodes).value(),
+        Some("4cc Autumn 25"),
+        "the import stays in use"
+    );
 
     click_in_dropdown(&mut window, &mut tool, &ctx, "Remove 4cc Autumn 25");
     click_in_dialog(&mut window, &mut tool, &ctx, title, "Remove");

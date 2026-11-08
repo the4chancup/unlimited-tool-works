@@ -333,6 +333,32 @@ exclude_re = [
     # column, since the `left` line after it subtracts too and stays measured.
     "save_editor/src/view/quick_actions\\.rs:\\d+:30: replace - with \\+ in set_stats_cell",
     "save_editor/src/view/quick_actions\\.rs:\\d+:60: replace - with [+/] in set_stats_cell",
+    # save_editor: `team_row` draws the hint only when `hint_room > 0.0`; `>=` differs only when
+    # the elided name's end lands on the room to the bit, where the hint has no width to draw
+    # in either way. Pinned by column, the row's other comparisons staying measured.
+    "save_editor/src/view/player_list\\.rs:\\d+:45: replace > with >= in team_row",
+    # save_editor: `player_field_term`'s arms for Height, Weight, Age, Dribbling motion, Boots
+    # ID and Gloves ID each build the term the `_` arm builds (`report_term` over the
+    # field's `field_words`, the label being those words and the value stored as shown). The
+    # arms stay, tying each term to its view's label constant; re-check when a label changes.
+    "save_editor/src/view/terms\\.rs:\\d+:\\d+: delete match arm PlayerField::(Height|Weight|Age|DribblingMotion|BootsId|GlovesId) in player_field_term",
+    # save_editor: `small_stat`'s `stored + shift` and `shown - shift`: its only caller passes
+    # the Appearance section's `CUTSCENE_STATS`, whose shifts are all 0, so `-` for `+` and
+    # `+` for `-` give the same value (`*` stays measured: 0 times a value is not the value).
+    # Re-check if a cutscene stat gets a shift.
+    "save_editor/src/view/abilities\\.rs:\\d+:24: replace \\+ with - in small_stat",
+    "save_editor/src/view/abilities\\.rs:\\d+:58: replace - with \\+ in small_stat",
+    # save_editor: `RATINGS_WIDTH`'s `2.0 * RATING_GAP` -> `+` is the same 4.0 while
+    # `RATING_GAP` is 2.0 (`paint_portrait_cross`'s class); re-check if the constant changes.
+    "save_editor/src/view/abilities\\.rs:\\d+:52: replace \\* with \\+$",
+    # save_editor: `motion_grid` counts the cells it draws two to a row, and `maybe_end_row`
+    # asks only the count's parity, which `-= 1` gives as `+= 1` does once the count is past
+    # the first loop's seven. Column 22 also matches the first loop's own `+= 1`, caught only by
+    # its underflow panic: accepted loss. Re-check if `per_row` changes.
+    "save_editor/src/view/appearance/mod\\.rs:\\d+:(18|22): replace \\+= with -= in motion_grid",
+    # save_editor: the Set PES folder button's `2.0 * SET_FOLDER_SIDE_PADDING` -> `+` is the
+    # same 4.0 while the padding is 2.0; re-check if the constant changes.
+    "save_editor/src/view/tactics\\.rs:\\d+:35: replace \\* with \\+ in set_pes_folder_button",
     # dds_convert: `pass_through` is a shortcut that skips decoding a DDS whose blocks the
     # target keeps. Replaced by `Ok(None)`, the cache falls back to `decode_dds` + `convert`,
     # whose `Decoded` carries the same block data (`mip_data`'s slices) and whose encoder takes

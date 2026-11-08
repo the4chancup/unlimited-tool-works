@@ -156,9 +156,8 @@ fn a_stored_celebration_past_its_top_draws_as_stored_without_marking_the_player(
         Some("200"),
         "the control draws the stored 200"
     );
+    assert_drawing_edited_nothing(&view);
     let session = view.session.as_ref().unwrap();
-    assert!(!session.is_dirty(), "drawing left no unsaved changes");
-    assert!(!session.can_undo(), "drawing pushed no undo entry");
     assert_eq!(
         session
             .file()
@@ -169,6 +168,119 @@ fn a_stored_celebration_past_its_top_draws_as_stored_without_marking_the_player(
         200,
         "the value stands as stored"
     );
+}
+
+// The same rule on a signed physique field: a stored 15 on Neck length
+// (a ±7 scale) draws the 8 it means, never clamped to the shown top.
+#[test]
+fn a_stored_physique_past_its_top_draws_as_stored_without_marking_the_player() {
+    let path = fixture(PesVersion::Pes21, "appearance_neck_15");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    assert_ne!(
+        file.player(70101).unwrap().appearance.neck_length,
+        15,
+        "premise: Neck length starts else"
+    );
+    file.player_mut(70101).unwrap().appearance.neck_length = 15;
+    file.save(&path).unwrap();
+
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.aesthetics_from_exports = true;
+    view.edit_aesthetics = true;
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    open_appearance(&mut window, &mut view);
+    let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Neck length")
+    });
+    let neck = right_of_label(&nodes, "Neck length", Role::SpinButton)
+        .first()
+        .copied()
+        .expect("the Neck length control");
+    assert_eq!(neck.value(), Some("8"), "the control draws the stored 15");
+    assert_drawing_edited_nothing(&view);
+    let session = view.session.as_ref().unwrap();
+    assert_eq!(
+        session.file().player(70101).unwrap().appearance.neck_length,
+        15,
+        "the value stands as stored"
+    );
+}
+
+// A wheel notch down on a signed physique field showing 0 steps it to
+// -1 (stored 6 on the ±7 scale), not to the range's other end.
+#[test]
+fn a_wheel_notch_down_on_a_physique_field_at_zero_steps_below() {
+    let path = fixture(PesVersion::Pes21, "appearance_neck_wheel");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.player_mut(70101).unwrap().appearance.neck_length = 7;
+    file.save(&path).unwrap();
+
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.aesthetics_from_exports = true;
+    view.edit_aesthetics = true;
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    open_appearance(&mut window, &mut view);
+    let neck_of = |view: &SaveView| {
+        view.session
+            .as_ref()
+            .unwrap()
+            .file()
+            .player(70101)
+            .unwrap()
+            .appearance
+            .neck_length
+    };
+    assert_eq!(neck_of(&view), 7, "premise: Neck length shows 0");
+    let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Neck length")
+    });
+    let neck = right_of_label(&nodes, "Neck length", Role::SpinButton)
+        .first()
+        .copied()
+        .expect("the Neck length control");
+    assert_eq!(neck.value(), Some("0"), "premise: the stored 7 shows 0");
+    // The scroll's own wheel leaves the pane's wheel unrested 500 ms.
+    idle_frames(&mut window, &mut view, 31);
+    notch(&mut window, &mut view, centre(neck), false);
+
+    assert_eq!(neck_of(&view), 6, "a notch down from 0 stores -1's 6");
+    let nodes = draw(&mut window, &mut view);
+    let neck = right_of_label(&nodes, "Neck length", Role::SpinButton)
+        .first()
+        .copied()
+        .expect("the Neck length control");
+    assert_eq!(neck.value(), Some("-1"), "the control draws -1");
+}
+
+// A stored star the save holds draws in the Cutscenes group's box (the
+// group stays editable above the lock, so the section is drawn locked).
+#[test]
+fn a_stored_star_draws_in_the_cutscenes_box() {
+    let path = fixture(PesVersion::Pes21, "appearance_star_3");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    assert_ne!(
+        file.player(70101).unwrap().stats.star,
+        Some(3),
+        "premise: Star starts else"
+    );
+    file.player_mut(70101).unwrap().stats.star = Some(3);
+    file.save(&path).unwrap();
+
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.aesthetics_from_exports = true;
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    open_appearance(&mut window, &mut view);
+    let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::Label && node.value() == Some("Star")
+    });
+    let star = right_of_label(&nodes, "Star", Role::SpinButton)
+        .first()
+        .copied()
+        .expect("the Star control");
+    assert_eq!(star.value(), Some("3"), "the box draws the stored star");
 }
 
 // The same rule's low end: a draw of 1 stores 0 in a 1-based motion and 1

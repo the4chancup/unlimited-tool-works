@@ -72,6 +72,7 @@ crates/studio_core/src/
 │   ├── grid.rs       #   progress grid (rows × cells, FolderStatus colors, fades)
 │   ├── log_panel.rs  #   capped log, auto-scroll, filters, cross-linking
 │   └── run_strip.rs
+├── repro.rs          # the repro journal's Recorder and the bundle writer ("Repro bundles")
 ├── theme.rs          # the shared Visuals preset, fonts, the icon font's registration
 └── updater.rs        # release check, download/verify, binary swap, rollback (desktop only)
 ```

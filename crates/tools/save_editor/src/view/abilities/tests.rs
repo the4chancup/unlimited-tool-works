@@ -113,6 +113,22 @@ fn the_aside_holds_the_tricks_else_the_free_skills() {
         Some(("Free cards", vec![skill("heading")]))
     );
 
+    // A skill named twice lists once: twice in the `tricks` group,
+    // or once under each of two specials.
+    let rs = ruleset("card_groups: #{ tricks: [\"malicia\", \"malicia\"] },");
+    assert_eq!(aside_cards(&rs), Some(("Tricks", vec![skill("malicia")])));
+    let rs = ruleset(
+        "specials: [
+                #{ label: \"a\", then: #{ free_cards: [\"malicia\"] } },
+                #{ label: \"b\", when: #{ captain: true },
+                   then: #{ free_cards: [\"malicia\"] } },
+            ],",
+    );
+    assert_eq!(
+        aside_cards(&rs),
+        Some(("Free cards", vec![skill("malicia")]))
+    );
+
     // Neither: no aside panel.
     assert_eq!(aside_cards(&ruleset("")), None);
 }

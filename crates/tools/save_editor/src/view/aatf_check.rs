@@ -257,3 +257,31 @@ fn spawn_check(
     });
     Pending { key, replies }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A check that holds one violation of `severity`.
+    fn check_with(severity: aatf::Severity) -> Vec<TeamCheck> {
+        vec![Ok(aatf::TeamCheck {
+            violations: vec![aatf::Violation {
+                slot: Some(0),
+                severity,
+                kind: aatf::ViolationKind::PositionRange,
+            }],
+            medal_system: None,
+            height_system: None,
+        })]
+    }
+
+    // A warning-only check counts as an issue; a suggestion does not (the
+    // header's `N issues` and Multi-team's `with issues` are Error and
+    // Warning counts).
+    #[test]
+    fn a_warning_counts_as_an_issue_and_a_suggestion_does_not() {
+        assert_eq!(issues(&check_with(aatf::Severity::Error)), 1);
+        assert_eq!(issues(&check_with(aatf::Severity::Warning)), 1);
+        assert_eq!(issues(&check_with(aatf::Severity::Suggestion)), 0);
+    }
+}

@@ -591,6 +591,9 @@ fn field_words_names_a_field_in_words() {
     for (name, words) in [
         ("NoseHeight", "Nose height"),
         ("Color1Red", "Colour 1 red"),
+        // A digit run is one word: the break sits after it, before a
+        // capital, never inside it.
+        ("Color12Red", "Colour 12 red"),
         ("Pes15JawDepth", "Jaw depth (PES 2015)"),
         ("TeamId", "Team ID"),
         ("EditedAbilities", "Edited abilities"),

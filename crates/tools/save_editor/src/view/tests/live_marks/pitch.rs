@@ -95,6 +95,95 @@ fn a_fielded_violation_crosses_the_starters_portrait_on_the_pitch() {
     );
 }
 
+/// A `FieldedNotA` at warning severity still crosses the starter's
+/// portrait, in the warning colour: a violation drawn is a violation
+/// regardless of severity (the ruleset's own severities decide).
+#[test]
+fn a_fielded_warning_crosses_the_starters_portrait_in_the_warning_colour() {
+    let (mut view, mut window) = open_734("live_marks_fielded_warning");
+    view.live_aatf = true;
+    // The official file's FieldedNotA demoted to a warning.
+    let rules = aatf::official_file().replacen(
+        "kind: \"FieldedNotA\", slot: slot,",
+        "kind: \"FieldedNotA\", severity: \"warning\", slot: slot,",
+        1,
+    );
+    assert_ne!(rules, aatf::official_file(), "premise: the demotion landed");
+    pick_imported(&mut view, "fielded_warning.4ccrules", &rules);
+    // The same move as the error cross's: a starter onto a position his
+    // ratings do not hold at A.
+    let index = 4;
+    let mut team = team_entry(&view, 734);
+    let slot = team.tactics.starting_eleven[index];
+    let player_id = team.roster[usize::from(slot)].player_id;
+    let position_byte = unrated_position_byte(&view, player_id);
+    let kick_off = &mut team.tactics.presets[0].formations[0];
+    assert_ne!(
+        kick_off.players[index].position, position_byte,
+        "premise: the move changes his spot"
+    );
+    kick_off.players[index].position = position_byte;
+    view.session
+        .as_mut()
+        .expect("the save opened")
+        .edit_team(1, team);
+
+    live_checked(&mut window, &mut view, &[734]);
+    let violations = view.live.check.result.as_ref().unwrap().1[0]
+        .as_ref()
+        .unwrap();
+    let (fielded_slot, severity) = violations
+        .violations
+        .iter()
+        .find_map(|violation| {
+            if let aatf::ViolationKind::FieldedNotA { preset: 1, .. } = violation.kind {
+                Some((violation.slot, violation.severity))
+            } else {
+                None
+            }
+        })
+        .expect("premise: a FieldedNotA on preset 1");
+    assert_eq!(fielded_slot, Some(slot), "the moved starter's slot");
+    assert_eq!(
+        severity,
+        aatf::Severity::Warning,
+        "premise: the held violation is a warning"
+    );
+
+    view.selected = Some(Selection::Team(734));
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let canvas = canvas_of(&nodes);
+    let shown_slot = team_entry(&view, 734).tactics.presets[0].formations[0].players[index];
+    let badge =
+        egui::Rect::from_center_size(clamped_centre(canvas, shown_slot), egui::vec2(50.0, 14.0));
+    let portrait = egui::Rect::from_min_max(
+        egui::pos2(badge.left(), badge.top() - 50.0),
+        egui::pos2(badge.right(), badge.top()),
+    );
+    let strokes = pitch_cross_strokes(&shapes);
+    let [black, _, colour, _] = strokes.as_slice() else {
+        panic!("expected one cross's four strokes, got {}", strokes.len())
+    };
+    assert_eq!(black.color, egui::Color32::BLACK, "the outline is black");
+    assert_eq!(
+        colour.color,
+        window
+            .ctx
+            .style_of(window.ctx.theme())
+            .visuals
+            .warn_fg_color,
+        "the warning colour"
+    );
+    assert!(
+        strokes
+            .iter()
+            .all(|stroke| portrait.contains(stroke.points[0])
+                && portrait.contains(stroke.points[1])
+                && (stroke.points[0] - stroke.points[1]).x.abs() > 30.0),
+        "the strokes cross his portrait {portrait:?}"
+    );
+}
+
 /// A painted line segment's ends, width and colour.
 struct Stroke {
     points: [egui::Pos2; 2],

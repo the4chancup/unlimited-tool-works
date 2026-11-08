@@ -309,6 +309,8 @@ mod tests {
             Some("autumn26")
         );
         assert_eq!(tool.help().topics.len(), 8);
+        // The settings menu lists the tool's section.
+        assert!(tool.has_settings_view());
     }
 
     // The Set PES path button's ask reaches the common settings on the

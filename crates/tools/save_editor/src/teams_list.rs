@@ -172,6 +172,20 @@ mod tests {
         assert_eq!(list, TeamsList::parse(TeamsList::UPSTREAM).unwrap());
     }
 
+    // A `teams_list.txt` path under a regular file is "no list there" too:
+    // Linux reports it as `NotADirectory` (the arm this kills, so the
+    // kill is Linux-only), Windows as `NotFound`.
+    #[test]
+    fn a_teams_list_path_under_a_file_falls_back_to_upstream() {
+        let dir = crate::test_support::scratch("teams_list_under_a_file");
+        let file = dir.join("data");
+        fs::write(&file, "a file, not a folder").unwrap();
+        assert_eq!(
+            load_working(Some(&file.join(FILE_NAME))).unwrap(),
+            TeamsList::parse(TeamsList::UPSTREAM).unwrap()
+        );
+    }
+
     /// With no data directory, a `teams_list.txt` in the current directory is not read: the
     /// working list is the upstream one.
     #[test]

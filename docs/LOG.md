@@ -3101,3 +3101,4 @@ worklog passed 7,000 lines.
 - 2026-11-06: No 0.x.x release waits on whole-crate mutation runs: release, then patch what they find (the maintainer).
 - 2026-11-06: Reviews gain a middle layer: SWE-2, then Gemini 4 Argon High (on Devin home), then Astra; home no longer runs Astra (the maintainer).
 - 2026-11-08: The Argon and Astra review loops run one after the other, each paid round between two SWE-2 subloops; Astra's fixes no longer go back through Argon (the maintainer).
+- 2026-11-08: The Save editor's whole-crate mutation run triaged; its first slice of missing tests landed (an out-of-range physique, Injury Resistance or Star drawn as stored, Esc on the rules-file questions, the id order of the prompt and Multi-team lists, among others), 22 equivalent mutants excluded.

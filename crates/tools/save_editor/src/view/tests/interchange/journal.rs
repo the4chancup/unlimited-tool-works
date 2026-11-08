@@ -101,3 +101,77 @@ fn an_apply_names_the_file_and_target_in_the_journal() {
         "the apply names the file and its target: {lines:?}"
     );
 }
+
+// A squad file `read_squad` refuses is a `refused` step once per pick
+// too, not once per refresh — the same rule as a staged refusal's.
+#[test]
+fn a_squad_file_the_read_refuses_records_the_refusal_once() {
+    let recorder = Recorder::default();
+    // PES 19's save, whose records the PES 19 squad file's count matches.
+    let path = fixture(PesVersion::Pes19, "journal_squad_refused");
+    let dir = path.parent().unwrap().to_path_buf();
+    let mut view = SaveView::new();
+    view.recorder = recorder.clone();
+    view.open(&path);
+    view.team = TeamChoice::Team(THREE);
+    view.selected = Some(Selection::Team(THREE));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 1400.0);
+
+    // A slot emptied: the file's records have one fewer rostered player
+    // to land on than they hold, which `read_squad` refuses.
+    let bytes = lib_fixture(SQUAD_19);
+    let mut team = team_entry(&view, THREE);
+    let slot = team
+        .roster
+        .iter()
+        .position(|slot| slot.player_id != 0)
+        .expect("a filled slot");
+    team.roster[slot].player_id = 0;
+    assert!(
+        read_squad(
+            &bytes,
+            &team,
+            view.session.as_ref().unwrap().file().players()
+        )
+        .is_err(),
+        "premise: the read refuses the file on the emptied slot"
+    );
+    view.session.as_mut().unwrap().edit_team(1, team);
+
+    let path = picked(&mut window, &mut view, SQUAD_19, &bytes);
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    assert!(
+        panel_lines(&mut window, &mut view)
+            .iter()
+            .any(|line| line.starts_with(&format!("{SQUAD_19}:"))),
+        "premise: the read was refused"
+    );
+
+    // A second stage after a model change: the same refusal, which
+    // records nothing new.
+    let mut edited = view
+        .session
+        .as_ref()
+        .unwrap()
+        .file()
+        .players()
+        .first()
+        .expect("a player")
+        .clone();
+    edited.basic.height = edited.basic.height.wrapping_add(1);
+    view.session.as_mut().unwrap().edit_player(2, edited);
+    for _ in 0..3 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+
+    let lines = journal_lines(&recorder, &dir);
+    let refused = steps_with(&lines, "refused ");
+    assert_eq!(refused.len(), 1, "the refusal records once: {lines:?}");
+    assert!(
+        refused[0].contains(&path.display().to_string()),
+        "the step names the picked file: {}",
+        refused[0]
+    );
+}

@@ -709,4 +709,29 @@ mod tests {
         assert_eq!(counted(1, "warning"), "1 warning");
         assert_eq!(counted(2, "team"), "2 teams");
     }
+
+    // Another save opened drops the last one's state whole: the range was
+    // its teams', the result was checked under them.
+    #[test]
+    fn opening_another_save_resets_the_dialog() {
+        let file = EditFile::from_bytes(&pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
+        let mut multi = MultiAatf::new();
+        multi.open(&file);
+        assert!(multi.range.is_some(), "premise: a range picked");
+        assert!(multi.open, "premise: the dialog is up");
+        multi.check.result = Some((
+            CheckKey {
+                revision: 0,
+                ids: vec![701],
+                ruleset: "autumn26".to_owned(),
+                suggestions: false,
+            },
+            Vec::new(),
+        ));
+        multi.reset();
+        assert!(multi.range.is_none(), "the old save's range is gone");
+        assert!(!multi.open, "the dialog is closed");
+        assert!(multi.check.result.is_none(), "the old result is gone");
+        assert!(multi.check.pending.is_none());
+    }
 }

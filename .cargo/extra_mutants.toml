@@ -179,3 +179,57 @@ path = "crates/tools/ruleset_editor/src/view/mod.rs"
 kind = "bool"
 description = "in new: start_open: false becomes true | removed: false"
 why = "the modal start page (New from template) draws only over a document, and set_document, the one way to get one, sets start_open false"
+
+[[exclude]]
+path = "crates/tools/save_editor/src/session/undo.rs"
+kind = "bool"
+description = "in new: open: false becomes true | removed: false"
+why = "open is read only while the undo stack holds an entry; a new stack holds none, and the first push sets it"
+
+[[exclude]]
+path = "crates/tools/save_editor/src/view/appearance/mod.rs"
+kind = "bool"
+description = "in motion_grid: egui::DragValue::new(value) .range(range.clone()).clamp_existing_to_range arg 1: false becomes true | removed: false"
+why = "the dribbling motion is a 2-bit field (PES 20 and 21 only): every stored value lies in the control's 0 to 3, so the clamp never moves one"
+
+[[exclude]]
+path = "crates/tools/save_editor/src/view/mod.rs"
+kind = "bool"
+description = "in new: reveal_selected: false becomes true | removed: false"
+why = "the first list draw follows open(), which selects the first player row with the list unscrolled: revealing it scrolls nothing"
+
+[[exclude]]
+path = "crates/tools/save_editor/src/view/mod.rs"
+kind = "bool"
+description = "in new: version_warning: false becomes true | removed: false"
+why = "read only with a save open, and open() sets it true when it sets the session"
+
+[[exclude]]
+path = "crates/tools/save_editor/src/view/mod.rs"
+kind = "bool"
+description = "in save_to: write_now arg 4: false becomes true | removed: false"
+why = "the own-game check it skips ran just before (save_to returns when running() lists the save's version), so both calls see the same games"
+
+[[exclude]]
+path = "crates/tools/save_editor/src/view/multi_aatf.rs"
+kind = "bool"
+description = "in new: open: false becomes true | removed: false"
+why = "the dialog draws only with a range, and the only code that sets the range (MultiAatf::open) sets open with it"
+
+[[exclude]]
+path = "crates/tools/save_editor/src/view/multi_aatf.rs"
+kind = "bool"
+description = "in dialog: suggestions: false becomes true | removed: false"
+why = "every reader of the Multi-team result (the Report list, the summary, the copied text) drops suggestions itself"
+
+[[exclude]]
+path = "crates/tools/save_editor/src/view/team.rs"
+kind = "bool"
+description = "in number: egui::DragValue::new(value) .range(range.clone()).clamp_existing_to_range arg 1: false becomes true | removed: false"
+why = "every caller's range is its field's whole stored range (manager u32, stadium u16, kit number u8, binding / 64 of 24 bits), so the clamp never moves a value; re-check on a new caller"
+
+[[exclude]]
+path = "crates/tools/save_editor/src/teams_list.rs"
+kind = "literal"
+description = "in load_working: the matches! pattern loses an alternative | removed: | io::ErrorKind::NotADirectory"
+why = "killable only where a path under a file reports NotADirectory (Linux, the test a_teams_list_path_under_a_file_falls_back_to_upstream); Windows reports NotFound and the extra kinds run here"

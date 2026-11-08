@@ -573,6 +573,62 @@ fn an_unlisted_players_rows_come_after_the_listed() {
     );
 }
 
+// SE-GUI-05: the unlisted changed players themselves run in id order
+// (the names are in reverse id order, so id order is not name order).
+#[test]
+fn unlisted_players_run_in_id_order() {
+    let path = fixture(PesVersion::Pes21, "prompt_unlisted_order");
+    let mut view = SaveView::new();
+    view.open(&path);
+    // Slots 0-5 emptied: 70101-70106 leave the listed rows.
+    let mut team = team_entry(&view, 701);
+    for (slot, id) in (70101_u32..=70106).enumerate() {
+        assert_eq!(
+            team.roster[slot].player_id, id,
+            "premise: slot {slot} rosters {id}"
+        );
+        team.roster[slot].player_id = 0;
+    }
+    view.session.as_mut().unwrap().edit_team(1, team);
+    let file = view.session.as_ref().unwrap().file();
+    for id in 70101_u32..=70106 {
+        assert!(
+            !file
+                .teams()
+                .iter()
+                .any(|team| team.roster.iter().any(|slot| slot.player_id == id)),
+            "premise: no roster lists {id}"
+        );
+    }
+    for (key, name) in [
+        (70101_u32, "F"),
+        (70102, "E"),
+        (70103, "D"),
+        (70104, "C"),
+        (70105, "B"),
+        (70106, "A"),
+    ] {
+        let mut edited = player_entry(&view, key);
+        edited.name = name.to_owned();
+        view.session
+            .as_mut()
+            .unwrap()
+            .edit_player(u64::from(key), edited);
+    }
+
+    let rows = prompt::rows(view.session.as_ref().unwrap()).expect("the rows compute");
+    let items: Vec<&str> = rows
+        .iter()
+        .filter(|row| row.term.label == "Name")
+        .map(|row| row.item.as_str())
+        .collect();
+    assert_eq!(
+        items,
+        ["F", "E", "D", "C", "B", "A"],
+        "the unlisted players' rows in id order"
+    );
+}
+
 // SE-GUI-05's Save under "another save opened": the open file is written
 // first, then the picked save opens.
 #[test]

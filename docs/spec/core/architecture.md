@@ -136,6 +136,7 @@ crates/studio_core/src/
 ├── events.rs         # PipelineEvent, PipelineEventEnvelope, FolderStatus, Message + Severity/Disposition, EventLines (an event's one-line text)
 ├── status.rs         # ShellCondition, ToolActivity, Notice — the status bar's typed items
 ├── pes_process.rs    # the running-PES probe (below): which PES games run now, and from where
+├── redact.rs         # the home folder written `~` in the log's lines and a repro bundle's text
 ├── help/
 │   └── mod.rs        #   HelpSection/HelpTopic, HelpTarget (tool, topic, anchor)
 ├── settings/

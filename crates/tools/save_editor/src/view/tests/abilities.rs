@@ -932,12 +932,51 @@ fn an_out_of_range_value_draws_as_stored_without_marking_the_player() {
         .copied()
         .expect("the Speed control");
     assert_eq!(speed.value(), Some("30"), "the control draws the stored 30");
+    assert_drawing_edited_nothing(&view);
     let session = view.session.as_ref().unwrap();
-    assert!(!session.is_dirty(), "drawing left no unsaved changes");
-    assert!(!session.can_undo(), "drawing pushed no undo entry");
     assert_eq!(
         session.file().player(70101).unwrap().stats.speed,
         30,
+        "the value stands as stored"
+    );
+}
+
+// The same rule on a shifted field: Injury Resistance stores one under
+// its shown 1-3, so a stored 3 draws the 4 it means, never clamped.
+#[test]
+fn an_out_of_range_injury_resistance_draws_as_stored_without_marking_the_player() {
+    let path = fixture(PesVersion::Pes21, "injury_draws_no_edit");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    assert_ne!(
+        file.player(70101).unwrap().stats.injury_resistance,
+        3,
+        "premise: Injury Resistance starts else"
+    );
+    file.player_mut(70101).unwrap().stats.injury_resistance = 3;
+    file.save(&path).unwrap();
+
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, DEFAULT_PANE.y);
+    for _ in 0..5 {
+        window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    }
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let injury = right_of_label(&nodes, "Injury Resistance", Role::SpinButton)
+        .first()
+        .copied()
+        .expect("the Injury Resistance control");
+    assert_eq!(injury.value(), Some("4"), "the control draws the stored 3");
+    assert_drawing_edited_nothing(&view);
+    let session = view.session.as_ref().unwrap();
+    assert_eq!(
+        session
+            .file()
+            .player(70101)
+            .unwrap()
+            .stats
+            .injury_resistance,
+        3,
         "the value stands as stored"
     );
 }

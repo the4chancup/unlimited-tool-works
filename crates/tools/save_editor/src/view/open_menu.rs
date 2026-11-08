@@ -239,3 +239,24 @@ fn recent_label(path: &Path) -> String {
         .collect();
     parts[parts.len().saturating_sub(3)..].join("\\")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn paths(names: &[&str]) -> Vec<PathBuf> {
+        names.iter().map(PathBuf::from).collect()
+    }
+
+    // The last opened file stands first: a path already in the list moves
+    // there once, a new one prepends. The list is uncapped — it holds
+    // this run of the program's opens.
+    #[test]
+    fn a_pushed_path_stands_first_once() {
+        let mut recents = paths(&["a", "b", "c"]);
+        push_recent(&mut recents, Path::new("b"));
+        assert_eq!(recents, paths(&["b", "a", "c"]));
+        push_recent(&mut recents, Path::new("d"));
+        assert_eq!(recents, paths(&["d", "b", "a", "c"]));
+    }
+}

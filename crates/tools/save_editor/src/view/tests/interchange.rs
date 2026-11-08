@@ -406,6 +406,54 @@ fn a_team_toml_with_stats_alone_writes_the_abilities_as_one_undoable_edit() {
     );
 }
 
+// SE-GUI-16: the extension names the format case-insensitively, so a
+// `CO.TOML` reads as a Team TOML like `co.toml` does.
+#[test]
+fn an_upper_case_extension_reads_as_a_team_toml() {
+    let (mut view, mut window) =
+        open_on(PesVersion::Pes19, "interchange_upper_case_extension", THREE);
+    let co = export(&view, CO);
+    picked(&mut window, &mut view, "CO.TOML", co.as_bytes());
+    assert!(
+        panel_lines(&mut window, &mut view)
+            .contains(&"A Team TOML written from a PES 2019 save.".to_owned()),
+        "the intro names a Team TOML"
+    );
+}
+
+// The section choices offer only what the file holds: an aesthetics-only
+// file offers Aesthetics alone, a stats-only one Stats alone.
+// SE-GUI-17
+#[test]
+fn the_section_choices_offer_only_the_sections_the_file_holds() {
+    let (mut view, mut window) = open_on(PesVersion::Pes19, "interchange_held_sections", THREE);
+    let only = |stats, aesthetics, gameplan| Sections {
+        stats,
+        aesthetics,
+        gameplan,
+    };
+    let co = export(&view, CO);
+
+    let aesthetics = kept(&co, only(false, true, false)).to_toml().unwrap();
+    let path = beside_save(&view, "co_aesthetics.toml", aesthetics.as_bytes());
+    open_panel(&mut window, &mut view);
+    pick(&mut window, &mut view, path);
+    assert_eq!(
+        checkboxes(&mut window, &mut view),
+        ["Aesthetics"],
+        "an aesthetics-only file offers Aesthetics alone"
+    );
+
+    let stats = kept(&co, only(true, false, false)).to_toml().unwrap();
+    let path = beside_save(&view, "co_stats.toml", stats.as_bytes());
+    pick(&mut window, &mut view, path);
+    assert_eq!(
+        checkboxes(&mut window, &mut view),
+        ["Stats"],
+        "a stats-only file offers Stats alone"
+    );
+}
+
 /// A base-copy id of `team × 100 + slot` in the file means "no base copy":
 /// imported onto another team it becomes each target player's own id, never
 /// the source player's. The rule reads the file's own `[team] id`, so the

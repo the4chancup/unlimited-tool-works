@@ -7294,7 +7294,12 @@ briefs, review loops, gates and mutation runs as for any step.
     Its remote half's fetch stalled on 6.1 GB of
     caught mutants' logs at ~41 KB/s: the chain was stopped before `save_editor`, the fetch
     now leaves those logs out (`mutants.py` `REMOTE_FETCH_LIST`), and `save_editor`'s run is
-    launched on its own; (9) the `review2`
+    launched on its own. It was collected 2026-11-07: 104 missed, 16 timeouts, ruled caught
+    (`.tmp/after_cut/mutants_whole_save_editor/triage.md`, the six `worker.rs` timeouts by
+    inference, their logs overwritten); 22 equivalent, excluded (9 extra-kind, 13
+    cargo-mutants); slice 1 of the missing tests landed 2026-11-08 (se_kills_1, SWE-2, after
+    two pure-move splits); slice 2, the layout and widget-flag survivors and the undecided
+    `abilities.rs:547`, next; (9) the `review2`
     worktree (`../4cc-studio-temp/review2`, detached at the pre-reword `1dd5ab92`, clean):
     its three commits have reworded twins on main by subject (`e704be83` the newest), but
     `git diff 1dd5ab92 e704be83` differs in three files (`team_widgets`

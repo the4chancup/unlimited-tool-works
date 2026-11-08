@@ -88,6 +88,42 @@ fn a_row_dragged_above_another_trades_their_records_between_the_ids() {
     );
 }
 
+// SE-GUI-08: a filter box holding only spaces is no filter — the drag
+// stays on, as it does with the box empty.
+#[test]
+fn a_whitespace_only_filter_keeps_the_drag_on() {
+    let path = fixture(PesVersion::Pes21, "drag_whitespace_filter");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.player_mut(70101).unwrap().name = "FIRST".to_owned();
+    file.player_mut(70102).unwrap().name = "SECOND".to_owned();
+    file.save(&path).unwrap();
+
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    view.filter = " ".to_owned();
+    let mut window = Headless::new();
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let labels = row_labels(&nodes);
+    assert_eq!(
+        &labels[..2],
+        ["01 CB FIRST", "02 CB SECOND"],
+        "premise: a spaces-only filter hides no row"
+    );
+
+    let from = centre(row(&nodes, "02 CB SECOND"));
+    let onto = centre(row(&nodes, "01 CB FIRST"));
+    drag(&mut window, from, onto, &mut view);
+
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let labels = row_labels(&nodes);
+    assert_eq!(
+        &labels[..2],
+        ["01 CB SECOND ●", "02 CB FIRST ●"],
+        "the drag traded the records under the spaces-only filter"
+    );
+}
+
 // SE-GUI-08, under ALL, where each team's rows run unbroken under its
 // team row: a drop on a row of the dragged player's own team moves him as
 // in one team's list; a drop on another team's row or on a team row does

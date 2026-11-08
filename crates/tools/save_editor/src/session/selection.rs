@@ -293,6 +293,31 @@ mod tests {
         assert_eq!(list(&file, &TeamChoice::All, "/f/"), expected);
     }
 
+    // A team whose name carries capitals matches the filter
+    // case-insensitively, as a player's does: PES 21's 827 is `/umaJP/`,
+    // found by `umajp`.
+    #[test]
+    fn list_filter_matches_a_capitalised_team_name_case_insensitively() {
+        let file = open(PesVersion::Pes21);
+        assert_eq!(file.team(827).unwrap().name, "/umaJP/", "premise");
+        let players: HashMap<u32, &PlayerEntry> = file
+            .players()
+            .iter()
+            .map(|player| (player.id, player))
+            .collect();
+        // Premise: none of 827's rostered players matches `umajp`, so the
+        // row is listed only by the team's own name.
+        for row in rostered(&file, 827) {
+            let player = players[&row.player_id];
+            assert!(
+                !matches(player, "umajp"),
+                "premise: {} does not match umajp",
+                player.id
+            );
+        }
+        assert!(list(&file, &TeamChoice::Team(701), "umajp").contains(&ListRow::Team(827)));
+    }
+
     // A filter matching one player: his team's row heads him, no other
     // team's row is drawn.
     #[test]

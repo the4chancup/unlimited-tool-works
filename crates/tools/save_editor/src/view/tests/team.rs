@@ -441,6 +441,45 @@ fn a_stored_short_name_past_three_shows_whole_until_edited() {
     assert_eq!(team_entry(&view, 701).short_name, "ABC");
 }
 
+// The same refusal as the name field's, on the short name's own rule:
+// `€` is a char the single-byte field never stores, so the keystroke
+// changes nothing and no undo entry lands.
+#[test]
+fn a_char_the_short_name_field_cannot_store_is_not_taken() {
+    let path = fixture(PesVersion::Pes21, "short_name_refused_char");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    open_team_view(&mut window, &mut view, 701);
+    assert_eq!(
+        team_entry(&view, 701).short_name,
+        "3",
+        "premise: team 701's short name"
+    );
+
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let field = nodes
+        .iter()
+        .find(|node| node.role() == Role::TextInput && node.value() == Some("3"))
+        .expect("the Short name field");
+    click(&mut window, field, &mut view);
+    type_text(&mut window, &mut view, "€");
+
+    let session = view.session.as_ref().unwrap();
+    assert!(!session.can_undo(), "the refused keystroke pushed no edit");
+    assert_eq!(
+        team_entry(&view, 701).short_name,
+        "3",
+        "the stored short name stands"
+    );
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let field = right_of_label(&nodes, "Short", Role::TextInput)
+        .first()
+        .copied()
+        .expect("the Short field");
+    assert_eq!(field.value(), Some("3"), "the field shows the stored name");
+}
+
 // `TEAM_ROW`'s claims: each unit's drawn span — measured on the one
 // row the default pane gives — is covered by its claim, so no unit draws
 // past the row's right edge (a stale claim under-measures and a widget
@@ -714,6 +753,52 @@ fn the_short_name_upper_cases_caps_at_three_and_sets_the_flags() {
             "the short-name flag on {version}"
         );
     }
+}
+
+// A stadium ID edit sets the version's stadium flag (PES 20/21 store
+// it), the way a name edit sets the name flag.
+#[test]
+fn a_stadium_id_edit_sets_the_stadium_flag() {
+    let path = fixture(PesVersion::Pes21, "stadium_id_flag");
+    let mut view = SaveView::new();
+    view.open(&path);
+    assert_eq!(
+        team_entry(&view, 701).edit_flags.stadium,
+        Some(false),
+        "premise: the stadium flag starts clear"
+    );
+    let stored = team_entry(&view, 701)
+        .stadium_id
+        .expect("PES 21 stores the stadium ID");
+    let typed = if stored == 9 { "8" } else { "9" };
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    open_team_view(&mut window, &mut view, 701);
+
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let control = right_of_label(&nodes, "Stadium ID", Role::SpinButton)
+        .first()
+        .copied()
+        .expect("the Stadium ID control");
+    click(&mut window, control, &mut view);
+    window.frame(vec![egui::Event::Text(typed.to_owned())], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    window.frame(
+        vec![key(egui::Key::Enter, egui::Modifiers::NONE, true)],
+        |ui| show(ui, &mut view, &|| Vec::new()),
+    );
+
+    let team = team_entry(&view, 701);
+    assert_eq!(
+        team.stadium_id,
+        Some(typed.parse().expect("a digit")),
+        "the typed id stores"
+    );
+    assert_eq!(
+        team.edit_flags.stadium,
+        Some(true),
+        "the edit sets the stadium flag"
+    );
 }
 
 // The team view's fields:

@@ -106,6 +106,112 @@ fn multi_team_aatf_checks_and_lists_every_team_of_the_range() {
     assert_eq!(listed, ["734 /lit/"], "734 alone is listed");
 }
 
+// A save whose team records are out of id order still lists and offers
+// the teams in id order: the checked list's rows and the combo's items
+// both run sorted (a save can hold 703 before 702).
+// SE-GUI-41
+#[test]
+fn the_multi_list_and_combos_run_in_id_order_not_record_order() {
+    let path = fixture(PesVersion::Pes21, "multi_aatf_order");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.teams_mut().swap(1, 2);
+    file.save(&path).unwrap();
+
+    let mut view = SaveView::new();
+    view.open(&path);
+    let order = |view: &SaveView| -> Vec<u32> {
+        view.session
+            .as_ref()
+            .unwrap()
+            .file()
+            .teams()
+            .iter()
+            .map(|team| team.id)
+            .collect()
+    };
+    let at = |view: &SaveView, id: u32| {
+        order(view)
+            .iter()
+            .position(|team| *team == id)
+            .expect("the team is there")
+    };
+    assert!(
+        at(&view, 703) < at(&view, 702),
+        "premise: the save holds 703 before 702"
+    );
+    let label =
+        |view: &SaveView, id: u32| format!("{id} {}", display_name(&team_entry(view, id).name));
+    let (label_702, label_703) = (label(&view, 702), label(&view, 703));
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    let ids = all_team_ids(&view);
+    let last = label(&view, *ids.last().unwrap());
+    pick_range_end(&mut window, &mut view, 1, &last);
+
+    // The checked list's rows: 702's line above 703's. The wait compares
+    // the ids as a set, not their order — the order is what's asserted.
+    let pairs = frames_until(
+        &mut window,
+        &mut view,
+        |view| {
+            let check = &view.multi_aatf.check;
+            check.pending.is_none()
+                && check.result.as_ref().is_some_and(|(key, _)| {
+                    let mut got = key.ids.clone();
+                    got.sort_unstable();
+                    got == ids
+                })
+        },
+        "the Multi-team AATF check never returned",
+    );
+    let lines = multi_lines(&pairs);
+    let line_at = |label: &str| {
+        lines
+            .iter()
+            .position(|line| line == label)
+            .unwrap_or_else(|| panic!("{label:?} in {lines:?}"))
+    };
+    assert!(
+        line_at(&label_702) < line_at(&label_703),
+        "the list runs in id order: {lines:?}"
+    );
+
+    // The first combo's popup: 702's item above 703's.
+    let combo = range_combos(&pairs)[0];
+    let (left, right) = {
+        let bounds = combo.bounds().expect("drawn bounds");
+        (bounds.x0, bounds.x1)
+    };
+    click(&mut window, combo, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let mut items: Vec<(f64, String)> = pairs
+        .iter()
+        .filter(|(_, node)| {
+            node.role() == Role::Button
+                && node
+                    .bounds()
+                    .is_some_and(|bounds| (left..right).contains(&bounds.x0))
+        })
+        .map(|(_, node)| {
+            (
+                node.bounds().expect("drawn bounds").y0,
+                node.label().expect("the item's label").to_owned(),
+            )
+        })
+        .collect();
+    items.sort_by(|a, b| a.0.partial_cmp(&b.0).expect("drawn bounds"));
+    let item_at = |label: &str| {
+        items
+            .iter()
+            .position(|(_, text)| text == label)
+            .unwrap_or_else(|| panic!("{label:?} in the popup"))
+    };
+    assert!(
+        item_at(&label_702) < item_at(&label_703),
+        "the combo's items run in id order: {items:?}"
+    );
+}
+
 /// The line above the list counts the systems the checked teams were read
 /// under: Autumn 26 holds two height systems and no medal ones, and 706
 /// reads under Red, 707 under Green, so the range 706 to 707 draws

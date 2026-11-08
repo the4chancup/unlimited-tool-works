@@ -170,7 +170,6 @@ pub(super) fn marked_field(kind: &aatf::ViolationKind) -> Option<MarkedField> {
 /// the Tricks panel), the skills for any other group.
 fn unused_field(allowance: &str) -> MarkedField {
     match allowance {
-        "cards" => MarkedField::Skills,
         "a_positions" => MarkedField::PlayablePositions,
         "weak_foot_usage" => MarkedField::WeakFootUsage,
         "weak_foot_accuracy" => MarkedField::WeakFootAccuracy,
