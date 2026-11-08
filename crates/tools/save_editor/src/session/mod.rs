@@ -171,9 +171,8 @@ impl Session {
     }
 
     /// The session's repro journal: the sites that keep a file the member
-    /// picked (an export, the roster sheet) or applied (the CLI's team
-    /// file or patch) record through it — the same journal `changed`,
-    /// `open` and `write` record to.
+    /// picked (an export, the roster sheet) record through it — the same
+    /// journal `changed`, `open` and `write` record to.
     pub(crate) fn recorder(&self) -> &Recorder {
         &self.recorder
     }

@@ -11,7 +11,6 @@
 //! team or player of the patch the save lacks is a warning line.
 
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use pes_savefile::EditFile;
 use pes_savefile::interchange::aesthetics_patch::{AestheticsPatch, PatchError, PatchSkip};
@@ -45,9 +44,8 @@ pub(super) fn default_patch_dialog() -> OpenSaveDialog {
     Box::new(|| panic!("a test reached a real file dialog: stub patch_dialog"))
 }
 
-/// The patch file as read: the parsed patch with its bytes, kept for the
-/// journal at Apply.
-type Loaded = Result<(AestheticsPatch, Arc<[u8]>), String>;
+/// The patch file as read: the parsed patch, or the refusal's text.
+type Loaded = Result<AestheticsPatch, String>;
 
 /// The panel's state on `SaveView` (`view.patch`): the opened patch, its
 /// preview and the save revision Apply left.
@@ -123,7 +121,10 @@ impl Patch {
     fn load(&mut self, path: PathBuf, recorder: &studio_core::Recorder) {
         let loaded = match std::fs::read_to_string(&path) {
             Ok(text) => match AestheticsPatch::parse(&text) {
-                Ok(patch) => Ok((patch, text.into_bytes().into())),
+                Ok(patch) => {
+                    journal::picked(&path, recorder, text.into_bytes().into());
+                    Ok(patch)
+                }
                 Err(error) => {
                     journal::read_failed(&path, recorder, &error, Some(text.into_bytes().into()));
                     Err(error.to_string())
@@ -134,9 +135,6 @@ impl Patch {
                 Err(format!("cannot read the file ({error})"))
             }
         };
-        if let Ok((_, bytes)) = &loaded {
-            journal::picked(&path, recorder, Arc::clone(bytes));
-        }
         self.loaded = Some((path, loaded));
         self.preview = None;
         self.applied = None;
@@ -148,7 +146,7 @@ impl Patch {
     /// A refusal is recorded once per loaded file (`refusal_recorded`),
     /// not once per recompute.
     fn refresh(&mut self, file: &EditFile, revision: u64, recorder: &studio_core::Recorder) {
-        let Some((path, Ok((patch, _)))) = &self.loaded else {
+        let Some((path, Ok(patch))) = &self.loaded else {
             return;
         };
         if self

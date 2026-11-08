@@ -167,20 +167,6 @@ pub(crate) fn write_failed(path: &Path, recorder: &Recorder, error: impl fmt::Di
     );
 }
 
-/// `error` handed back after `write_failed` records it, for a write the
-/// member asked for that never reaches `write_and_record` (its
-/// destination refused, its text failing to build): the write is a step
-/// whether or not a byte landed.
-pub(crate) fn write_refused(
-    path: &Path,
-    recorder: &Recorder,
-    error: impl Into<anyhow::Error>,
-) -> anyhow::Error {
-    let error = error.into();
-    write_failed(path, recorder, &error);
-    error
-}
-
 /// `fs::write` to `path` plus the journal's `wrote <path>` step and the
 /// bytes kept as an output: a file the member saved, which a bundle
 /// holds. A failed write records `could not write <path>` and keeps

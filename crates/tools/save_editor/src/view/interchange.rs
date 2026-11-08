@@ -19,6 +19,7 @@
 
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::anyhow;
 use pes_savefile::EditFile;
@@ -257,21 +258,13 @@ struct Picked {
 
 /// A picked file as read.
 enum Read {
-    /// A Team TOML, a tactics file or a Texport: its document and the
-    /// bytes it was parsed from, read once at the pick.
-    Document(Box<TeamToml>, Vec<u8>),
-    /// A squad file's bytes: its records land on the target's rostered
-    /// players, so it is read again whenever the target or the save changes.
-    Squad(Vec<u8>),
-}
-
-impl Read {
-    /// The file's bytes as the pick read them.
-    fn bytes(&self) -> &[u8] {
-        match self {
-            Read::Document(_, bytes) | Read::Squad(bytes) => bytes,
-        }
-    }
+    /// A Team TOML, a tactics file or a Texport: its document, read once
+    /// at the pick.
+    Document(Box<TeamToml>),
+    /// A squad file's bytes, shared with the kept input: its records land
+    /// on the target's rostered players, so it is read again whenever the
+    /// target or the save changes.
+    Squad(Arc<[u8]>),
 }
 
 /// What a staged import was computed for: any change of it stages again.
@@ -388,9 +381,6 @@ impl Interchange {
         let format = Format::of(&path);
         let read =
             read(&path, format, recorder).map_err(|error| format!("{}: {error}", file_name(&path)));
-        if let Ok(read) = &read {
-            journal::picked(&path, recorder, read.bytes().into());
-        }
         self.picked = Some(Picked { path, format, read });
         self.staged = None;
         self.applied = None;
@@ -418,7 +408,7 @@ impl Interchange {
             return;
         }
         let (document, pairing) = match read {
-            Read::Document(document, _) => (Cow::Borrowed(&**document), Vec::new()),
+            Read::Document(document) => (Cow::Borrowed(&**document), Vec::new()),
             Read::Squad(bytes) => match read_squad(bytes, team, file.players()) {
                 Ok(document) => {
                     let pairing = pairing(file, team, &document);
@@ -466,8 +456,9 @@ fn parse(format: Format, bytes: &[u8]) -> anyhow::Result<Option<TeamToml>> {
     })
 }
 
-/// The bytes at `path` read as `format`; a refusal is recorded — `could
-/// not read` — with the file's bytes kept when the read reached them.
+/// The bytes at `path` read as `format`: a file that reads is a `picked`
+/// step with its bytes kept; a refusal is recorded — `could not read` —
+/// with the file's bytes kept when the read reached them.
 fn read(path: &Path, format: Format, recorder: &Recorder) -> anyhow::Result<Read> {
     let bytes = match std::fs::read(path) {
         Ok(bytes) => bytes,
@@ -477,8 +468,15 @@ fn read(path: &Path, format: Format, recorder: &Recorder) -> anyhow::Result<Read
         }
     };
     match parse(format, &bytes) {
-        Ok(Some(document)) => Ok(Read::Document(Box::new(document), bytes)),
-        Ok(None) => Ok(Read::Squad(bytes)),
+        Ok(Some(document)) => {
+            journal::picked(path, recorder, bytes.into());
+            Ok(Read::Document(Box::new(document)))
+        }
+        Ok(None) => {
+            let bytes: Arc<[u8]> = bytes.into();
+            journal::picked(path, recorder, Arc::clone(&bytes));
+            Ok(Read::Squad(bytes))
+        }
         Err(error) => {
             journal::read_failed(path, recorder, &error, Some(bytes.into()));
             Err(error)
@@ -831,7 +829,7 @@ fn write_export(session: &Session, id: u32, export: Export, path: &Path) -> anyh
         Export::TeamToml => session.export_team(id).map(String::into_bytes),
         Export::Texport => texport_bytes(session, id),
     }
-    .map_err(|error| journal::write_refused(path, session.recorder(), error))?;
+    .inspect_err(|error| journal::write_failed(path, session.recorder(), error))?;
     journal::write_and_record(session.recorder(), path, &bytes)
 }
 

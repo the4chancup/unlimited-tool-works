@@ -76,6 +76,27 @@ fn a_pick_that_fails_to_parse_records_could_not_read_and_keeps_the_bytes() {
     );
 }
 
+// A squad file, re-read per target rather than parsed at the pick, is a
+// kept input named `picked` like a document's.
+#[test]
+fn a_squad_file_is_a_kept_pick_too() {
+    let recorder = Recorder::default();
+    let (mut view, mut window, dir) = journal_view("journal_squad_picked", CO, &recorder);
+    let bytes = lib_fixture(SQUAD_19);
+    let path = picked(&mut window, &mut view, SQUAD_19, &bytes);
+
+    let lines = journal_lines(&recorder, &dir);
+    assert!(
+        lines.contains(&format!("picked {}", path.display())),
+        "the pick is named: {lines:?}"
+    );
+    assert_eq!(
+        zip_entry(&dir.join("journal.zip"), "inputs/1-pes19_squad.4ccs"),
+        bytes,
+        "the squad file's bytes are kept as an input"
+    );
+}
+
 // Apply names the file applied and its target beside the field lines
 // `edit_entries` records.
 #[test]

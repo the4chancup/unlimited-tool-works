@@ -589,6 +589,60 @@ fn a_failed_export_records_could_not_write_and_keeps_no_output() {
     assert_write_refused(&view.recorder, &folder, &written);
 }
 
+// An export whose build fails (a roster slot's player id the save does
+// not hold, set through the session's own edit) is refused with the
+// build's error — a `could not write` step that keeps no output, the
+// write never reached.
+#[test]
+fn an_export_that_fails_to_build_is_refused_and_records_could_not_write() {
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "export_build_fails", CO);
+    let missing = 9_999_999;
+    assert!(
+        team_entry(&view, CO)
+            .roster
+            .iter()
+            .all(|slot| slot.player_id != missing)
+            && view
+                .session
+                .as_ref()
+                .expect("an open save")
+                .file()
+                .player(missing)
+                .is_none(),
+        "premise: the save lacks player {missing}"
+    );
+    let mut team = team_entry(&view, CO);
+    team.roster
+        .iter_mut()
+        .find(|slot| slot.player_id != 0)
+        .expect("a rostered slot")
+        .player_id = missing;
+    view.session
+        .as_mut()
+        .expect("an open save")
+        .edit_team(1, team);
+
+    let folder = save_folder(&view);
+    let destination = folder.join("failed.ted");
+    export(&mut window, &mut view, "Texport\u{2026}", &destination);
+
+    let message = format!("team {CO}'s player {missing} is not in the save");
+    assert_eq!(
+        view.refusal
+            .as_ref()
+            .map(|refusal| (refusal.title, refusal.message.as_str())),
+        Some(("Cannot export the team", message.as_str()))
+    );
+    // The refusal dialog shows it (the modal's first frame is its sizing
+    // pass, so it is the next frame's nodes that hold it).
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    for text in ["Cannot export the team", message.as_str()] {
+        assert!(label_value(&nodes, text), "the refusal shows {text:?}");
+    }
+    assert!(!destination.exists(), "nothing written");
+    assert_write_refused(&view.recorder, &folder, &destination);
+}
+
 // SE-GUI-17
 #[test]
 fn on_pes_15_and_16_the_texport_is_disabled_and_says_why() {

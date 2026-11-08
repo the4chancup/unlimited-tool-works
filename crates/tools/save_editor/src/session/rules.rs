@@ -56,8 +56,8 @@ pub(crate) struct Choice {
 
 /// A rules file picked for import, checked before anything is written.
 pub(crate) enum ImportCheck {
-    /// The file does not read or does not load: one line per finding,
-    /// each naming its line and column or its key path.
+    /// The file does not load: one line per finding, each naming its
+    /// line and column or its key path.
     Errors(Vec<String>),
     /// The file's description is the built-in ruleset's of that
     /// description: two rows would read the same, and a built-in one is
@@ -391,6 +391,15 @@ mod tests {
         }
     }
 
+    /// `name` picked under `dir` with `description`, checked clean
+    /// against `dir`'s imports: the pick's path and the `Import`.
+    fn clean_import(dir: &Path, name: &str, description: &str) -> (PathBuf, Import) {
+        let text = renamed(description);
+        let path = picked(dir, name, &text);
+        let import = clean(check_import(&path, &text, &imported(Some(dir))));
+        (path, import)
+    }
+
     /// The imported rows of `dir`, each its file name and description.
     fn rows(dir: &Path) -> Vec<(String, String)> {
         imported(Some(dir))
@@ -680,5 +689,134 @@ mod tests {
                 "{description}"
             );
         }
+    }
+
+    /// A data folder that is a file: `rules/` cannot be made under it,
+    /// so the copy is a `could not write` step and nothing is imported.
+    #[test]
+    fn a_data_folder_that_is_a_file_records_could_not_write() {
+        let dir = crate::test_support::scratch("import_data_is_a_file");
+        let data = dir.join("data");
+        std::fs::write(&data, b"a file").unwrap();
+        let (_path, to_import) = clean_import(&dir, "autumn25.4ccrules", "4cc Autumn 25");
+        let recorder = Recorder::default();
+
+        import(&data, &to_import, &recorder).expect_err("the copy cannot be written");
+
+        let copy = data.join(RULES_FOLDER).join("autumn25.4ccrules");
+        let lines = crate::test_support::journal_lines(&recorder, &dir);
+        let failed = crate::test_support::steps_with(&lines, "could not write ");
+        assert_eq!(failed.len(), 1, "one could not write step: {lines:?}");
+        assert!(
+            failed[0].starts_with(&format!("could not write {}: ", copy.display())),
+            "the step names the copy: {}",
+            failed[0]
+        );
+        assert!(
+            crate::test_support::steps_with(&lines, "imported ").is_empty(),
+            "nothing imported: {lines:?}"
+        );
+    }
+
+    /// The copy's own path a folder: the rename over it fails, the
+    /// refused write is `could not write` and the temporary file the copy
+    /// is written through does not stay.
+    #[test]
+    fn a_copy_path_that_is_a_folder_records_could_not_write() {
+        let dir = crate::test_support::scratch("import_copy_is_a_folder");
+        let folder = dir.join(RULES_FOLDER);
+        std::fs::create_dir_all(folder.join("autumn25.4ccrules")).unwrap();
+        let (_path, to_import) = clean_import(&dir, "autumn25.4ccrules", "4cc Autumn 25");
+        let recorder = Recorder::default();
+
+        import(&dir, &to_import, &recorder).expect_err("the rename over a folder fails");
+
+        let copy = folder.join("autumn25.4ccrules");
+        let lines = crate::test_support::journal_lines(&recorder, &dir);
+        let failed = crate::test_support::steps_with(&lines, "could not write ");
+        assert_eq!(failed.len(), 1, "one could not write step: {lines:?}");
+        assert!(
+            failed[0].starts_with(&format!("could not write {}: ", copy.display())),
+            "the step names the copy: {}",
+            failed[0]
+        );
+        assert!(
+            crate::test_support::steps_with(&lines, "imported ").is_empty(),
+            "nothing imported: {lines:?}"
+        );
+        assert!(
+            !folder.join("autumn25.4ccrules.tmp").exists(),
+            "no temporary file left"
+        );
+    }
+
+    /// A replaced copy deleted between `check_import` and `import` (the
+    /// member removed it meanwhile): the new copy lands and is `imported`,
+    /// the gone one's removal is `could not remove` and the import fails.
+    #[test]
+    fn a_replaced_copy_gone_records_imported_then_could_not_remove() {
+        let dir = crate::test_support::scratch("import_replace_gone");
+        copy_in(&dir, "autumn25.4ccrules", "4cc Autumn 25");
+        copy_in(&dir, "vgl25.4ccrules", "/vg/ League 25");
+        let (_path, to_import) = clean_import(&dir, "autumn25.4ccrules", "/vg/ League 25");
+        assert_eq!(to_import.replaces.len(), 2, "premise: both replaced");
+        let gone = dir.join(RULES_FOLDER).join("vgl25.4ccrules");
+        std::fs::remove_file(&gone).unwrap();
+        let recorder = Recorder::default();
+
+        import(&dir, &to_import, &recorder).expect_err("the gone copy cannot be removed");
+
+        let copy = dir.join(RULES_FOLDER).join("autumn25.4ccrules");
+        let lines = crate::test_support::journal_lines(&recorder, &dir);
+        assert!(
+            lines.contains(&format!(
+                "imported {} as {}",
+                to_import.path.display(),
+                copy.display()
+            )),
+            "the copy's step: {lines:?}"
+        );
+        let failed = crate::test_support::steps_with(&lines, "could not remove ");
+        assert_eq!(failed.len(), 1, "one could not remove step: {lines:?}");
+        assert!(
+            failed[0].starts_with(&format!("could not remove {}: ", gone.display())),
+            "the step names the gone copy: {}",
+            failed[0]
+        );
+        let at = |prefix: &str| {
+            lines
+                .iter()
+                .position(|line| line.starts_with(prefix))
+                .unwrap_or_else(|| panic!("a {prefix:?} step in {lines:?}"))
+        };
+        assert!(
+            at("imported ") < at("could not remove "),
+            "the copy lands before the removal fails: {lines:?}"
+        );
+    }
+
+    /// The ×'s name `rules/` does not hold: the delete is `could not
+    /// remove`, no `removed` step.
+    #[test]
+    fn removing_a_name_the_rules_folder_lacks_records_could_not_remove() {
+        let dir = crate::test_support::scratch("import_remove_gone");
+        copy_in(&dir, "autumn25.4ccrules", "4cc Autumn 25");
+        let copy = dir.join(RULES_FOLDER).join("gone.4ccrules");
+        let recorder = Recorder::default();
+
+        remove(&dir, "gone.4ccrules", &recorder).expect_err("nothing to remove");
+
+        let lines = crate::test_support::journal_lines(&recorder, &dir);
+        let failed = crate::test_support::steps_with(&lines, "could not remove ");
+        assert_eq!(failed.len(), 1, "one could not remove step: {lines:?}");
+        assert!(
+            failed[0].starts_with(&format!("could not remove {}: ", copy.display())),
+            "the step names the copy: {}",
+            failed[0]
+        );
+        assert!(
+            crate::test_support::steps_with(&lines, "removed ").is_empty(),
+            "nothing removed: {lines:?}"
+        );
     }
 }

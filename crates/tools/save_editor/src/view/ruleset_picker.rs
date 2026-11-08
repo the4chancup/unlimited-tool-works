@@ -111,7 +111,7 @@ fn check(view: &mut SaveView, path: &std::path::Path) -> Option<RulesDialog> {
     let text = match std::str::from_utf8(&bytes) {
         Ok(text) => text,
         Err(error) => {
-            journal::read_failed(path, &view.recorder, error, Some(Arc::clone(&bytes)));
+            journal::read_failed(path, &view.recorder, error, Some(bytes));
             return Some(unreadable(file, error));
         }
     };

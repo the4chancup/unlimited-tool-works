@@ -540,8 +540,14 @@ fn with_no_data_folder_an_import_is_refused() {
     );
     assert_eq!(view.aatf_ruleset, "autumn26");
 
-    // The refusal is a `refused` step; no copy, so no `wrote` step.
+    // The pick's `picked` step stands (the file loaded), the refusal is
+    // a `refused` step, and no copy lands, so no `imported` step.
     let lines = journal_lines(&view.recorder, &dir);
+    assert_eq!(
+        steps_with(&lines, "picked "),
+        [&format!("picked {}", path.display())],
+        "the file is a pick: {lines:?}"
+    );
     let refused = steps_with(&lines, "refused ");
     assert_eq!(refused.len(), 1, "one refused step: {lines:?}");
     assert!(
@@ -550,7 +556,7 @@ fn with_no_data_folder_an_import_is_refused() {
         refused[0]
     );
     assert!(
-        steps_with(&lines, "wrote ").is_empty(),
+        steps_with(&lines, "imported ").is_empty(),
         "no copy written: {lines:?}"
     );
 }

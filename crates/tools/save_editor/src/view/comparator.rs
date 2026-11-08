@@ -447,7 +447,7 @@ fn write_report(
     refuse_save_being_read(path, open.path(), "difference report", open.recorder())?;
     refuse_save_being_read(path, picked_path, "difference report", open.recorder())?;
     let text: String = diff::report_lines(picked.file(), open.file(), scope)
-        .map_err(|error| journal::write_refused(path, open.recorder(), error))?
+        .expect("two saves of one version compare")
         .iter()
         .map(|line| format!("{line}\n"))
         .collect();
