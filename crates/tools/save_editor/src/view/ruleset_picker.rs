@@ -8,11 +8,14 @@
 //! the × do their file work in `session::rules` and show its outcome in
 //! their dialogs (`dialog`).
 
+use std::sync::Arc;
+
 use studio_core::widgets::{
     combo_label, modal, modal_buttons, modal_sentence_gap, step_choice, wheel_steps,
 };
 use studio_core::{Notice, NoticeKind};
 
+use crate::session::journal;
 use crate::session::rules::{self, ImportCheck, builtins};
 use crate::view::{Refusal, SaveView, comparator};
 
@@ -88,45 +91,85 @@ pub(super) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
 }
 
 /// The picked file at `path` checked: its refusal shown, its import done,
-/// or the dialog that comes first returned.
+/// or the dialog that comes first returned. The file is read once, into
+/// the bytes the journal keeps and the text the check needs: a file that
+/// loads is a `picked` step with its bytes (a built-in's name then adds
+/// `refused`), and one that does not a `could not read` — the file a
+/// member reports is the one that failed.
 fn check(view: &mut SaveView, path: &std::path::Path) -> Option<RulesDialog> {
     let file = path.file_name().map_or_else(
         || path.display().to_string(),
         |name| name.to_string_lossy().into_owned(),
     );
-    match rules::check_import(path, &view.imported) {
-        ImportCheck::Errors(findings) => Some(RulesDialog::Errors { file, findings }),
+    let bytes: Arc<[u8]> = match std::fs::read(path) {
+        Ok(bytes) => bytes.into(),
+        Err(error) => {
+            journal::read_failed(path, &view.recorder, &error, None);
+            return Some(unreadable(file, error));
+        }
+    };
+    let text = match std::str::from_utf8(&bytes) {
+        Ok(text) => text,
+        Err(error) => {
+            journal::read_failed(path, &view.recorder, error, Some(Arc::clone(&bytes)));
+            return Some(unreadable(file, error));
+        }
+    };
+    match rules::check_import(path, text, &view.imported) {
+        ImportCheck::Errors(findings) => {
+            journal::read_failed(path, &view.recorder, findings.join("; "), Some(bytes));
+            Some(RulesDialog::Errors { file, findings })
+        }
         ImportCheck::BuiltinName(description) => {
+            journal::picked(path, &view.recorder, bytes);
+            let message = format!(
+                "{file} is named {description}, as a built-in ruleset is. Rename it in its \
+                 RULESET block, then import it again."
+            );
+            journal::refused(path, &view.recorder, &message);
             view.refusal = Some(Refusal {
                 title: NOT_IMPORTED,
-                message: format!(
-                    "{file} is named {description}, as a built-in ruleset is. Rename it in its \
-                     RULESET block, then import it again."
-                ),
+                message,
             });
             None
         }
-        ImportCheck::Clean(import) if import.replaces.is_empty() => {
-            finish_import(view, &file, &import);
-            None
+        ImportCheck::Clean(import) => {
+            journal::picked(path, &view.recorder, bytes);
+            if import.replaces.is_empty() {
+                finish_import(view, &file, &import);
+                None
+            } else {
+                Some(RulesDialog::Replace { file, import })
+            }
         }
-        ImportCheck::Clean(import) => Some(RulesDialog::Replace { file, import }),
+    }
+}
+
+/// The picked file's read failure as `check`'s Errors dialog (`cannot
+/// read the file: <error>`): the io error and the UTF-8 error alike.
+fn unreadable(file: String, error: impl std::fmt::Display) -> RulesDialog {
+    RulesDialog::Errors {
+        file,
+        findings: vec![format!("cannot read the file: {error}")],
     }
 }
 
 /// `import` copied into the data folder and picked, with the success
-/// notice; a refusal when there is no data folder or the copy fails.
+/// notice; a refusal when there is no data folder or the copy fails —
+/// either one a `refused` or `could not write` step (`rules::import`
+/// records the rest).
 fn finish_import(view: &mut SaveView, file: &str, import: &rules::Import) {
     let Some(data_dir) = view.data_dir.as_deref() else {
+        let message =
+            format!("{file} was not imported because there is no data folder to keep its copy in.");
+        journal::refused(&import.path, &view.recorder, &message);
         view.refusal = Some(Refusal {
             title: NOT_IMPORTED,
-            message: format!(
-                "{file} was not imported because there is no data folder to keep its copy in."
-            ),
+            message,
         });
         return;
     };
-    match rules::import(data_dir, import) {
+    match rules::import(data_dir, import, &view.recorder) {
         Ok(()) => {
             view.aatf_ruleset = import.file_name.clone();
             view.notice = Some(Notice {
@@ -154,7 +197,7 @@ fn remove_import(view: &mut SaveView, file_name: &str) {
         .data_dir
         .as_deref()
         .expect("an imported row is listed only from a data folder");
-    match rules::remove(data_dir, file_name) {
+    match rules::remove(data_dir, file_name, &view.recorder) {
         Ok(()) => {
             if view.aatf_ruleset == file_name {
                 view.aatf_ruleset = rules::FIRST_BUILTIN.to_owned();

@@ -1,5 +1,7 @@
 use super::*;
 
+use crate::test_support::{journal_lines, steps_with, zip_entry};
+
 /// The official file with its description `description`.
 fn renamed(description: &str) -> String {
     let text = aatf::official_file().replacen(
@@ -174,7 +176,8 @@ fn a_file_with_errors_is_refused_listing_its_findings() {
             1,
         )
         .replacen("suggestions: [\"cards\"", "suggestions: [\"bogus\"", 1);
-    stub_picker(&mut tool, Some(picked(&dir, "autumn25.4ccrules", &text)));
+    let path = picked(&dir, "autumn25.4ccrules", &text);
+    stub_picker(&mut tool, Some(path.clone()));
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     tool_frame(&mut window, &mut tool, &ctx, Vec::new());
     click_in_dropdown(&mut window, &mut tool, &ctx, IMPORT_ROW);
@@ -215,6 +218,26 @@ fn a_file_with_errors_is_refused_listing_its_findings() {
     );
     let pairs = open_dropdown(&mut window, &mut tool, &ctx);
     assert_eq!(popup_rows(&pairs), rows_with(&[]), "the list as it was");
+
+    // The refused file is a `could not read` step with its bytes kept —
+    // not a `picked` one, the loader never took it.
+    let lines = journal_lines(ctx.recorder(), &dir);
+    let failed = steps_with(&lines, "could not read ");
+    assert_eq!(failed.len(), 1, "one could not read step: {lines:?}");
+    assert!(
+        failed[0].starts_with(&format!("could not read {}: ", path.display())),
+        "the step names the file: {}",
+        failed[0]
+    );
+    assert!(
+        steps_with(&lines, "picked ").is_empty(),
+        "no picked step: {lines:?}"
+    );
+    assert_eq!(
+        zip_entry(&dir.join("journal.zip"), "inputs/0-autumn25.4ccrules"),
+        text.as_bytes(),
+        "the refused file's bytes are kept"
+    );
 }
 
 /// A clean file named like no built-in is copied into the data folder's
@@ -416,6 +439,18 @@ fn a_reimport_matching_two_imports_names_both() {
     );
     click_in_dialog(&mut window, &mut tool, &ctx, replace, "Replace");
     assert!(!dir.join("rules").join("vgl25.4ccrules").exists());
+
+    // The replaced copy of the other name is a `removed` step; the one of
+    // the same name was overwritten, not deleted.
+    let lines = journal_lines(ctx.recorder(), &dir);
+    assert_eq!(
+        steps_with(&lines, "removed "),
+        [&format!(
+            "removed {}",
+            dir.join("rules").join("vgl25.4ccrules").display()
+        )],
+        "the other name's copy: {lines:?}"
+    );
     let pairs = open_dropdown(&mut window, &mut tool, &ctx);
     assert_eq!(popup_rows(&pairs), rows_with(&["/vg/ League 25"]));
 }
@@ -426,10 +461,9 @@ fn a_reimport_matching_two_imports_names_both() {
 #[test]
 fn a_file_named_like_a_builtin_is_refused_naming_it() {
     let (mut tool, ctx, _requests, dir) = tool_with("ruleset_import_builtin", "autumn26");
-    stub_picker(
-        &mut tool,
-        Some(picked(&dir, "vgl27.4ccrules", &renamed("/vg/ League 27"))),
-    );
+    let text = renamed("/vg/ League 27");
+    let path = picked(&dir, "vgl27.4ccrules", &text);
+    stub_picker(&mut tool, Some(path.clone()));
     let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
     tool_frame(&mut window, &mut tool, &ctx, Vec::new());
     click_in_dropdown(&mut window, &mut tool, &ctx, IMPORT_ROW);
@@ -449,6 +483,27 @@ fn a_file_named_like_a_builtin_is_refused_naming_it() {
         ctx.tool_settings("save-editor")["aatf_ruleset"].as_str(),
         Some("autumn26")
     );
+
+    // The file is a `picked` step with its bytes kept, then `refused`
+    // with the dialog's message.
+    let lines = journal_lines(ctx.recorder(), &dir);
+    assert_eq!(
+        steps_with(&lines, "picked "),
+        [&format!("picked {}", path.display())],
+        "the file is a pick too: {lines:?}"
+    );
+    let refused = steps_with(&lines, "refused ");
+    assert_eq!(refused.len(), 1, "one refused step: {lines:?}");
+    assert!(
+        refused[0].starts_with(&format!("refused {}: ", path.display())),
+        "the step names the file: {}",
+        refused[0]
+    );
+    assert_eq!(
+        zip_entry(&dir.join("journal.zip"), "inputs/0-vgl27.4ccrules"),
+        text.as_bytes(),
+        "the picked file's bytes are kept"
+    );
 }
 
 /// With no data folder there is nowhere to keep a copy: a clean file is
@@ -457,11 +512,12 @@ fn a_file_named_like_a_builtin_is_refused_naming_it() {
 #[test]
 fn with_no_data_folder_an_import_is_refused() {
     let dir = crate::test_support::scratch("ruleset_import_no_data_folder");
+    let path = picked(&dir, "autumn25.4ccrules", &renamed("4cc Autumn 25"));
     let mut view = SaveView::new();
-    view.rules_file_dialog = {
-        let path = picked(&dir, "autumn25.4ccrules", &renamed("4cc Autumn 25"));
-        Box::new(move || Some(path.clone()))
-    };
+    view.rules_file_dialog = Box::new({
+        let path = path.clone();
+        move || Some(path.clone())
+    });
     let mut window = Headless::new();
     let nodes = draw(&mut window, &mut view);
     click(&mut window, dropdown(&nodes), &mut view);
@@ -483,6 +539,20 @@ fn with_no_data_folder_an_import_is_refused() {
         ]
     );
     assert_eq!(view.aatf_ruleset, "autumn26");
+
+    // The refusal is a `refused` step; no copy, so no `wrote` step.
+    let lines = journal_lines(&view.recorder, &dir);
+    let refused = steps_with(&lines, "refused ");
+    assert_eq!(refused.len(), 1, "one refused step: {lines:?}");
+    assert!(
+        refused[0].starts_with(&format!("refused {}: ", path.display())),
+        "the step names the picked file: {}",
+        refused[0]
+    );
+    assert!(
+        steps_with(&lines, "wrote ").is_empty(),
+        "no copy written: {lines:?}"
+    );
 }
 
 /// The imported row's × asks first, naming the ruleset and saying its
@@ -520,6 +590,11 @@ fn the_x_asks_then_deletes_the_copy_and_falls_back_to_the_first_builtin() {
     assert!(copy.exists(), "nothing deleted before the answer");
     click_in_dialog(&mut window, &mut tool, &ctx, title, "Cancel");
     assert!(copy.exists(), "Cancel deleted nothing");
+    let lines = journal_lines(ctx.recorder(), &dir);
+    assert!(
+        steps_with(&lines, "removed ").is_empty(),
+        "Cancel removes nothing: {lines:?}"
+    );
 
     // Esc answers Cancel too: the copy stands and the pick stays.
     click_in_dropdown(&mut window, &mut tool, &ctx, "Remove 4cc Autumn 25");
@@ -539,6 +614,11 @@ fn the_x_asks_then_deletes_the_copy_and_falls_back_to_the_first_builtin() {
         "Esc closed the question"
     );
     assert!(copy.exists(), "Esc deleted nothing");
+    let lines = journal_lines(ctx.recorder(), &dir);
+    assert!(
+        steps_with(&lines, "removed ").is_empty(),
+        "Esc removes nothing: {lines:?}"
+    );
     let nodes = nodes_of(&tool_frame(&mut window, &mut tool, &ctx, Vec::new()));
     assert_eq!(
         dropdown(&nodes).value(),
@@ -549,6 +629,12 @@ fn the_x_asks_then_deletes_the_copy_and_falls_back_to_the_first_builtin() {
     click_in_dropdown(&mut window, &mut tool, &ctx, "Remove 4cc Autumn 25");
     click_in_dialog(&mut window, &mut tool, &ctx, title, "Remove");
     assert!(!copy.exists(), "the copy is deleted");
+    let lines = journal_lines(ctx.recorder(), &dir);
+    assert_eq!(
+        steps_with(&lines, "removed "),
+        [&format!("removed {}", copy.display())],
+        "the copy's removal is a step: {lines:?}"
+    );
     assert_eq!(
         ctx.tool_settings("save-editor")["aatf_ruleset"].as_str(),
         Some("autumn26")
@@ -558,4 +644,129 @@ fn the_x_asks_then_deletes_the_copy_and_falls_back_to_the_first_builtin() {
     let pairs = open_dropdown(&mut window, &mut tool, &ctx);
     assert_eq!(popup_rows(&pairs), rows_with(&[]), "the row is gone");
     assert!(notices(&requests).is_empty(), "no notice");
+}
+
+// A clean import's journal: the picked file's `picked` step and its
+// bytes kept as an input, then the copy's `imported … as …` step — the
+// app's own copies stay out of the bundle, so no `wrote` step and no
+// kept output.
+#[test]
+fn a_clean_import_records_the_pick_and_the_imported_step() {
+    let (mut tool, ctx, _requests, dir) = tool_with("ruleset_import_journal", "autumn26");
+    let text = renamed("4cc Autumn 25");
+    let path = picked(&dir, "autumn25.4ccrules", &text);
+    stub_picker(&mut tool, Some(path.clone()));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    tool_frame(&mut window, &mut tool, &ctx, Vec::new());
+    click_in_dropdown(&mut window, &mut tool, &ctx, IMPORT_ROW);
+    let copy = dir.join("rules").join("autumn25.4ccrules");
+    assert!(copy.exists(), "premise: the copy is written");
+
+    let lines = journal_lines(ctx.recorder(), &dir);
+    assert_eq!(
+        steps_with(&lines, "picked "),
+        [&format!("picked {}", path.display())],
+        "the picked file's step: {lines:?}"
+    );
+    assert_eq!(
+        zip_entry(&dir.join("journal.zip"), "inputs/0-autumn25.4ccrules"),
+        text.as_bytes(),
+        "the picked file's bytes are kept"
+    );
+    assert_eq!(
+        steps_with(&lines, "imported "),
+        [&format!(
+            "imported {} as {}",
+            path.display(),
+            copy.display()
+        )],
+        "the import's step: {lines:?}"
+    );
+    assert!(
+        steps_with(&lines, "wrote ").is_empty(),
+        "no wrote step: {lines:?}"
+    );
+    let doc: toml::Table = toml::from_str(
+        &String::from_utf8(zip_entry(&dir.join("journal.zip"), "journal.toml")).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        doc.get("output")
+            .is_none_or(|outputs| outputs.as_array().unwrap().is_empty()),
+        "the copy keeps no output: {doc:?}"
+    );
+}
+
+// A pick that cannot be read at all is the `cannot read the file` finding
+// and a `could not read` step, keeping nothing.
+#[test]
+fn a_pick_that_cannot_be_read_records_could_not_read_and_keeps_nothing() {
+    let (mut tool, ctx, _requests, dir) = tool_with("ruleset_import_unreadable", "autumn26");
+    let path = dir.join("picked").join("gone.4ccrules");
+    stub_picker(&mut tool, Some(path.clone()));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    tool_frame(&mut window, &mut tool, &ctx, Vec::new());
+    click_in_dropdown(&mut window, &mut tool, &ctx, IMPORT_ROW);
+    let pairs = tool_frame(&mut window, &mut tool, &ctx, Vec::new());
+    assert!(
+        dialog_lines(&pairs, "The rules file has errors")
+            .iter()
+            .any(|line| line.starts_with("cannot read the file: ")),
+        "the read failure is a finding"
+    );
+
+    let lines = journal_lines(ctx.recorder(), &dir);
+    let failed = steps_with(&lines, "could not read ");
+    assert_eq!(failed.len(), 1, "one could not read step: {lines:?}");
+    assert!(
+        failed[0].starts_with(&format!("could not read {}: ", path.display())),
+        "the step names the file: {}",
+        failed[0]
+    );
+    let doc: toml::Table = toml::from_str(
+        &String::from_utf8(zip_entry(&dir.join("journal.zip"), "journal.toml")).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        doc.get("input")
+            .is_none_or(|inputs| inputs.as_array().unwrap().is_empty()),
+        "an unreadable file keeps nothing: {doc:?}"
+    );
+}
+
+// A pick whose bytes are not UTF-8 is a `could not read` step with the
+// bytes kept, as a file the loader refuses keeps them.
+#[test]
+fn a_non_utf8_pick_records_could_not_read_and_keeps_the_bytes() {
+    let (mut tool, ctx, _requests, dir) = tool_with("ruleset_import_utf8", "autumn26");
+    let bytes = b"not \xff utf8";
+    let folder = dir.join("picked");
+    std::fs::create_dir_all(&folder).unwrap();
+    let path = folder.join("bad.4ccrules");
+    std::fs::write(&path, bytes).unwrap();
+    stub_picker(&mut tool, Some(path.clone()));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    tool_frame(&mut window, &mut tool, &ctx, Vec::new());
+    click_in_dropdown(&mut window, &mut tool, &ctx, IMPORT_ROW);
+    let pairs = tool_frame(&mut window, &mut tool, &ctx, Vec::new());
+    assert!(
+        dialog_lines(&pairs, "The rules file has errors")
+            .iter()
+            .any(|line| line.starts_with("cannot read the file: ")),
+        "the read failure is a finding"
+    );
+
+    let lines = journal_lines(ctx.recorder(), &dir);
+    let failed = steps_with(&lines, "could not read ");
+    assert_eq!(failed.len(), 1, "one could not read step: {lines:?}");
+    assert!(
+        failed[0].starts_with(&format!("could not read {}: ", path.display())),
+        "the step names the file: {}",
+        failed[0]
+    );
+    assert_eq!(
+        zip_entry(&dir.join("journal.zip"), "inputs/0-bad.4ccrules"),
+        &bytes[..],
+        "the unreadable file's bytes are kept"
+    );
 }

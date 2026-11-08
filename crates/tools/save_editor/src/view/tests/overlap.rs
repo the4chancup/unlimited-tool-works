@@ -519,7 +519,9 @@ fn ruleset_dialogs(version: PesVersion) -> Screens {
             .replacen("suggestions: [\"cards\"", "suggestions: [\"bogus\"", 1),
     )
     .unwrap();
-    let ImportCheck::Errors(findings) = rules::check_import(&broken, &[]) else {
+    let ImportCheck::Errors(findings) =
+        rules::check_import(&broken, &std::fs::read_to_string(&broken).unwrap(), &[])
+    else {
         panic!("premise: the broken file is refused");
     };
     view.rules_dialog = Some(RulesDialog::Errors {
@@ -537,7 +539,11 @@ fn ruleset_dialogs(version: PesVersion) -> Screens {
     std::fs::create_dir_all(&dir).unwrap();
     let again = dir.join("autumn25.4ccrules");
     std::fs::write(&again, &renamed).unwrap();
-    let ImportCheck::Clean(import) = rules::check_import(&again, &view.imported) else {
+    let ImportCheck::Clean(import) = rules::check_import(
+        &again,
+        &std::fs::read_to_string(&again).unwrap(),
+        &view.imported,
+    ) else {
         panic!("premise: the file imports");
     };
     assert!(

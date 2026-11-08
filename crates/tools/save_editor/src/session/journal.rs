@@ -114,12 +114,47 @@ pub(crate) fn read_failed(
     }
 }
 
+/// The `picked <path>` step for a file the member picked that reads, its
+/// `bytes` kept as an input: what the tool started from is the part a
+/// saved-over file would destroy.
+pub(crate) fn picked(path: &Path, recorder: &Recorder, bytes: Arc<[u8]>) {
+    recorder.step(TOOL_ID, format!("picked {}", path.display()));
+    recorder.keep_input(TOOL_ID, path, bytes);
+}
+
 /// `read_failed` for a file the member picked that a panel refuses after
 /// a clean read (a staged import, a patch's preview, the comparator's
 /// version mismatch): `refused <path>: <reason>` — recorded once by each
 /// site's own gate (`refusal_recorded`, or the one arm it runs through).
 pub(crate) fn refused(path: &Path, recorder: &Recorder, reason: impl fmt::Display) {
     recorder.step(TOOL_ID, format!("refused {}: {reason}", path.display()));
+}
+
+/// The `imported <picked> as <copy>` step for a file a member's action
+/// copied into the app's own folders (the ruleset import's data-folder
+/// copy): a step, not a kept file — the app's own copies stay out of the
+/// bundle, and the pick is already its input.
+pub(crate) fn imported(picked: &Path, copy: &Path, recorder: &Recorder) {
+    recorder.step(
+        TOOL_ID,
+        format!("imported {} as {}", picked.display(), copy.display()),
+    );
+}
+
+/// The `removed <path>` step for a file a member's action deleted: an
+/// import's replaced copies, the ×'s own copy.
+pub(crate) fn removed(path: &Path, recorder: &Recorder) {
+    recorder.step(TOOL_ID, format!("removed {}", path.display()));
+}
+
+/// `write_failed` for a deletion the member asked for that fails:
+/// `could not remove <path>: <error>`; nothing was a kept output either
+/// way — a delete keeps nothing.
+pub(crate) fn remove_failed(path: &Path, recorder: &Recorder, error: impl fmt::Display) {
+    recorder.step(
+        TOOL_ID,
+        format!("could not remove {}: {error}", path.display()),
+    );
 }
 
 /// `read_failed` for a write the member asked for that fails: `could not

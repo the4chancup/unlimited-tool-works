@@ -135,8 +135,7 @@ impl Patch {
             }
         };
         if let Ok((_, bytes)) = &loaded {
-            recorder.step(TOOL_ID, format!("picked {}", path.display()));
-            recorder.keep_input(TOOL_ID, &path, Arc::clone(bytes));
+            journal::picked(&path, recorder, Arc::clone(bytes));
         }
         self.loaded = Some((path, loaded));
         self.preview = None;

@@ -220,9 +220,9 @@ fn a_picked_file_that_cannot_be_read_records_the_step_and_keeps_it() {
     open_patch(&mut window, &mut view, bad.clone());
 
     let lines = journal_lines(&recorder, &dir);
-    let refused = lines
-        .iter()
-        .find(|line| line.starts_with("could not read "))
+    let refused = steps_with(&lines, "could not read ")
+        .into_iter()
+        .next()
         .expect("the failed pick records its own step");
     assert!(
         refused.contains("patch.toml"),

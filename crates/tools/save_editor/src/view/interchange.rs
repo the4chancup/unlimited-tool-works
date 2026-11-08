@@ -389,8 +389,7 @@ impl Interchange {
         let read =
             read(&path, format, recorder).map_err(|error| format!("{}: {error}", file_name(&path)));
         if let Ok(read) = &read {
-            recorder.step(TOOL_ID, format!("picked {}", path.display()));
-            recorder.keep_input(TOOL_ID, &path, read.bytes().into());
+            journal::picked(&path, recorder, read.bytes().into());
         }
         self.picked = Some(Picked { path, format, read });
         self.staged = None;

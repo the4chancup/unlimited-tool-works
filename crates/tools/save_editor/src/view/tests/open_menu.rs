@@ -13,7 +13,7 @@ use studio_core::StudioTool;
 
 use super::prompt::modal_button;
 use super::*;
-use crate::test_support::{journal_lines, zip_entry};
+use crate::test_support::{journal_lines, steps_with, zip_entry};
 
 /// The SE-GUI-26 tree under a test's scratch folder: a `Documents` folder
 /// holding two PES 21 saves and one PES 19 save in the game's own layout,
@@ -554,9 +554,9 @@ fn a_failed_open_keeps_the_journal_and_records_the_file_that_failed() {
         lines.iter().any(|line| line.starts_with("opened ")),
         "the first save's step survives the failed open: {lines:?}"
     );
-    let refused = lines
-        .iter()
-        .find(|line| line.starts_with("could not open "))
+    let refused = steps_with(&lines, "could not open ")
+        .into_iter()
+        .next()
         .expect("the failed open records its own step");
     assert!(
         refused.contains(&bad.display().to_string()),
@@ -578,14 +578,7 @@ fn a_failed_open_keeps_the_journal_and_records_the_file_that_failed() {
     // nothing.
     view.open(&dir.join("no-such-file"));
     let lines = journal_lines(&recorder, &dir);
-    assert_eq!(
-        lines
-            .iter()
-            .filter(|line| line.starts_with("could not open "))
-            .count(),
-        2,
-        "{lines:?}"
-    );
+    assert_eq!(steps_with(&lines, "could not open ").len(), 2, "{lines:?}");
     assert!(
         zip::ZipArchive::new(std::fs::File::open(&bundle).unwrap())
             .unwrap()

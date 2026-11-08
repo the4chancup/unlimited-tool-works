@@ -7,7 +7,7 @@
 //! `check_teams` are the check both the command line and Live AATF run.
 
 use std::collections::HashMap;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
 use aatf::{LoadError, Rules, TeamView};
@@ -15,7 +15,10 @@ use anyhow::anyhow;
 use pes_savefile::EditFile;
 use pes_savefile::model::PlayerEntry;
 use rayon::prelude::*;
+use studio_core::Recorder;
 use team_widgets::violations::ListedPlayer;
+
+use crate::session::journal;
 
 /// One team's AATF check: its violations and the systems it was read
 /// under, or the error text (a team view or the script).
@@ -66,6 +69,9 @@ pub(crate) enum ImportCheck {
 
 /// A rules file that loads, ready to be copied into `rules/`.
 pub(crate) struct Import {
+    /// The picked file it was checked from (`path` of `check_import`), for
+    /// the journal's steps naming it after the confirmation's wait.
+    pub(crate) path: PathBuf,
     /// The copy's file name: the picked file's, ending in `.4ccrules` so
     /// that `imported` lists it, or an import's whose name differs from
     /// that only in case.
@@ -95,14 +101,11 @@ pub(crate) fn builtins() -> &'static [(&'static str, String)] {
     })
 }
 
-/// The rules file at `path` checked for import against the `imported`
-/// rulesets, as `Rules::load` loads it. Writes nothing.
-pub(crate) fn check_import(path: &Path, imported: &[Imported]) -> ImportCheck {
-    let text = match std::fs::read_to_string(path) {
-        Ok(text) => text,
-        Err(error) => return ImportCheck::Errors(vec![format!("cannot read the file: {error}")]),
-    };
-    let rules = match Rules::load(&text) {
+/// The rules file `text` at `path` checked for import against the
+/// `imported` rulesets, as `Rules::load` loads it. Writes nothing; the
+/// caller reads the file, so a bundle can keep its bytes.
+pub(crate) fn check_import(path: &Path, text: &str, imported: &[Imported]) -> ImportCheck {
+    let rules = match Rules::load(text) {
         Ok(rules) => rules,
         Err(LoadError::Rules(errors)) => {
             return ImportCheck::Errors(errors.iter().map(ToString::to_string).collect());
@@ -141,44 +144,72 @@ pub(crate) fn check_import(path: &Path, imported: &[Imported]) -> ImportCheck {
         })
         .collect();
     ImportCheck::Clean(Import {
+        path: path.to_path_buf(),
         file_name,
         description,
         replaces,
-        text,
+        text: text.to_owned(),
     })
 }
 
 /// `import` copied into `data_dir`'s `rules/` (created when missing), then
 /// the copies it replaces deleted. The copy is written whole to a temporary
 /// file beside it, then renamed over its name, so a write that fails leaves
-/// the list as it was, an earlier copy of the same name included.
-pub(crate) fn import(data_dir: &Path, import: &Import) -> std::io::Result<()> {
+/// the list as it was, an earlier copy of the same name included. The copy
+/// is an `imported <picked> as <copy>` step — the app's own copies stay
+/// out of the bundle — a failed one `could not write`, and each replaced
+/// copy a `removed` step (`could not remove` on its failure).
+pub(crate) fn import(data_dir: &Path, import: &Import, recorder: &Recorder) -> std::io::Result<()> {
     let folder = data_dir.join(RULES_FOLDER);
-    std::fs::create_dir_all(&folder)?;
+    let copy = folder.join(&import.file_name);
+    if let Err(error) = std::fs::create_dir_all(&folder) {
+        journal::write_failed(&copy, recorder, &error);
+        return Err(error);
+    }
     // Not a `.4ccrules` file, so `imported` never lists a leftover one.
     let temporary = folder.join(format!("{}.tmp", import.file_name));
-    let written = std::fs::write(&temporary, &import.text)
-        .and_then(|()| std::fs::rename(&temporary, folder.join(&import.file_name)));
+    let written =
+        std::fs::write(&temporary, &import.text).and_then(|()| std::fs::rename(&temporary, &copy));
     if let Err(error) = written {
         // The write's error is the one to report; a temporary file left
         // behind is a diagnostic.
         if let Err(removal) = std::fs::remove_file(&temporary) {
             log::debug!("{}: kept: {removal}", temporary.display());
         }
+        journal::write_failed(&copy, recorder, &error);
         return Err(error);
     }
+    journal::imported(&import.path, &copy, recorder);
     for (_, file_name) in &import.replaces {
         // The copy of the same file name was just overwritten.
         if *file_name != import.file_name {
-            std::fs::remove_file(folder.join(file_name))?;
+            let replaced = folder.join(file_name);
+            match std::fs::remove_file(&replaced) {
+                Ok(()) => journal::removed(&replaced, recorder),
+                Err(error) => {
+                    journal::remove_failed(&replaced, recorder, &error);
+                    return Err(error);
+                }
+            }
         }
     }
     Ok(())
 }
 
-/// The imported copy `file_name` deleted from `data_dir`'s `rules/`.
-pub(crate) fn remove(data_dir: &Path, file_name: &str) -> std::io::Result<()> {
-    std::fs::remove_file(data_dir.join(RULES_FOLDER).join(file_name))
+/// The imported copy `file_name` deleted from `data_dir`'s `rules/`: a
+/// `removed` step, or `could not remove` when the delete fails.
+pub(crate) fn remove(data_dir: &Path, file_name: &str, recorder: &Recorder) -> std::io::Result<()> {
+    let copy = data_dir.join(RULES_FOLDER).join(file_name);
+    match std::fs::remove_file(&copy) {
+        Ok(()) => {
+            journal::removed(&copy, recorder);
+            Ok(())
+        }
+        Err(error) => {
+            journal::remove_failed(&copy, recorder, &error);
+            Err(error)
+        }
+    }
 }
 
 /// The rules file at `path` read and loaded; a file that does not read
@@ -464,8 +495,7 @@ mod tests {
 
     /// A file that does not load is refused with one line per finding,
     /// `LoadError::Rules` fanning out to one line per broken rule and any
-    /// other error its own line; a file that does not read is one line too;
-    /// nothing is written.
+    /// other error its own line; nothing is written.
     #[test]
     fn a_file_that_does_not_load_is_refused_with_its_findings_and_nothing_written() {
         let dir = crate::test_support::scratch("import_errors");
@@ -492,20 +522,11 @@ mod tests {
             ),
         ];
         for (path, expected) in cases {
-            match check_import(&path, &[]) {
+            let text = std::fs::read_to_string(&path).unwrap();
+            match check_import(&path, &text, &[]) {
                 ImportCheck::Errors(findings) => assert_eq!(findings, expected, "{path:?}"),
                 _ => panic!("{path:?} was not refused"),
             }
-        }
-        match check_import(&dir.join("picked").join("none.4ccrules"), &[]) {
-            ImportCheck::Errors(findings) => {
-                assert_eq!(findings.len(), 1, "{findings:?}");
-                assert!(
-                    findings[0].starts_with("cannot read the file: "),
-                    "{findings:?}"
-                );
-            }
-            _ => panic!("a file that does not read was not refused"),
         }
         assert!(!dir.join(RULES_FOLDER).exists(), "nothing written");
     }
@@ -516,8 +537,9 @@ mod tests {
     fn a_builtin_description_is_refused_naming_it() {
         let dir = crate::test_support::scratch("import_builtin");
         for description in ["4cc Autumn 26", "/vg/ League 27"] {
-            let path = picked(&dir, "cup.4ccrules", &renamed(description));
-            match check_import(&path, &[]) {
+            let text = renamed(description);
+            let path = picked(&dir, "cup.4ccrules", &text);
+            match check_import(&path, &text, &[]) {
                 ImportCheck::BuiltinName(name) => assert_eq!(name, description),
                 _ => panic!("{description} was not refused"),
             }
@@ -533,11 +555,12 @@ mod tests {
         let dir = crate::test_support::scratch("import_first");
         assert!(!dir.join(RULES_FOLDER).exists(), "premise: no rules/ yet");
         let text = renamed("4cc Autumn 25");
-        let import_check = clean(check_import(&picked(&dir, "autumn25.4ccrules", &text), &[]));
+        let path = picked(&dir, "autumn25.4ccrules", &text);
+        let import_check = clean(check_import(&path, &text, &[]));
         assert_eq!(import_check.file_name, "autumn25.4ccrules");
         assert_eq!(import_check.description, "4cc Autumn 25");
         assert!(import_check.replaces.is_empty(), "nothing replaced");
-        import(&dir, &import_check).unwrap();
+        import(&dir, &import_check, &Recorder::default()).unwrap();
         assert_eq!(
             std::fs::read_to_string(dir.join(RULES_FOLDER).join("autumn25.4ccrules")).unwrap(),
             text,
@@ -545,10 +568,11 @@ mod tests {
         );
         assert_eq!(rows(&dir), [row("autumn25.4ccrules", "4cc Autumn 25")]);
 
-        let text = picked(&dir, "vgl25.txt", &renamed("/vg/ League 25"));
-        let other_ending = clean(check_import(&text, &imported(Some(&dir))));
+        let text = renamed("/vg/ League 25");
+        let path = picked(&dir, "vgl25.txt", &text);
+        let other_ending = clean(check_import(&path, &text, &imported(Some(&dir))));
         assert_eq!(other_ending.file_name, "vgl25.4ccrules");
-        import(&dir, &other_ending).unwrap();
+        import(&dir, &other_ending, &Recorder::default()).unwrap();
         assert_eq!(
             rows(&dir),
             [
@@ -575,7 +599,11 @@ mod tests {
             let before =
                 std::fs::read_to_string(dir.join(RULES_FOLDER).join("autumn25.4ccrules")).unwrap();
             let path = picked(&dir, file_name, &renamed(description));
-            let replacing = clean(check_import(&path, &imported(Some(&dir))));
+            let replacing = clean(check_import(
+                &path,
+                &std::fs::read_to_string(&path).unwrap(),
+                &imported(Some(&dir)),
+            ));
             assert_eq!(
                 replacing.replaces,
                 [row("4cc Autumn 25", "autumn25.4ccrules")],
@@ -587,7 +615,7 @@ mod tests {
                 "{file_name}: nothing written before the confirmation"
             );
             assert_eq!(rows(&dir).len(), 1, "{file_name}: nothing written");
-            import(&dir, &replacing).unwrap();
+            import(&dir, &replacing, &Recorder::default()).unwrap();
             assert_eq!(rows(&dir), [row(file_name, description)], "{file_name}");
         }
 
@@ -595,7 +623,11 @@ mod tests {
         copy_in(&dir, "autumn25.4ccrules", "4cc Autumn 25");
         copy_in(&dir, "vgl25.4ccrules", "/vg/ League 25");
         let path = picked(&dir, "autumn25.4ccrules", &renamed("/vg/ League 25"));
-        let replacing = clean(check_import(&path, &imported(Some(&dir))));
+        let replacing = clean(check_import(
+            &path,
+            &std::fs::read_to_string(&path).unwrap(),
+            &imported(Some(&dir)),
+        ));
         assert_eq!(
             replacing.replaces,
             [
@@ -603,7 +635,7 @@ mod tests {
                 row("4cc Autumn 25", "autumn25.4ccrules")
             ]
         );
-        import(&dir, &replacing).unwrap();
+        import(&dir, &replacing, &Recorder::default()).unwrap();
         assert_eq!(rows(&dir), [row("autumn25.4ccrules", "/vg/ League 25")]);
     }
 
@@ -613,7 +645,7 @@ mod tests {
         let dir = crate::test_support::scratch("import_remove");
         copy_in(&dir, "autumn25.4ccrules", "4cc Autumn 25");
         copy_in(&dir, "vgl25.4ccrules", "/vg/ League 25");
-        remove(&dir, "autumn25.4ccrules").unwrap();
+        remove(&dir, "autumn25.4ccrules", &Recorder::default()).unwrap();
         assert!(!dir.join(RULES_FOLDER).join("autumn25.4ccrules").exists());
         assert_eq!(rows(&dir), [row("vgl25.4ccrules", "/vg/ League 25")]);
     }
@@ -629,8 +661,8 @@ mod tests {
             copy_in(&dir, "cup.4ccrules", "Cup");
             let text = renamed(description);
             let path = picked(&dir, "Cup.4ccrules", &text);
-            let replacing = clean(check_import(&path, &imported(Some(&dir))));
-            import(&dir, &replacing).unwrap();
+            let replacing = clean(check_import(&path, &text, &imported(Some(&dir))));
+            import(&dir, &replacing, &Recorder::default()).unwrap();
             assert_eq!(
                 rows(&dir),
                 [row("cup.4ccrules", description)],
