@@ -15765,3 +15765,12 @@ manifest as strings (amends the entry above).
 Why: packed files keep their bytes exactly with no escaping code, and a member can take one out
 with any CPK tool; the size is the same either way.
 Plan: `plans/team_compiler/pipeline.md` "Recovery manifest".
+
+## 2026-11-08 — reviews — the Argon and Astra loops run one after the other
+Decision: the SWE-2 loop, then the Argon loop, then the Astra loop, consecutive and distinct;
+each Argon or Astra round has a SWE-2 subloop before it and one over its fixes, and an Astra
+round's fixes no longer send the work back through Argon (amends the 2026-11-06 entry's
+"cheaper loops rerun after a dearer round's fixes" for the paid layers; the maintainer).
+Why: SWE-2 is free, so it still clears the cheap concerns around every paid round, while an
+Argon rerun inside Astra's loop spent paid rounds on code Argon had already passed.
+Plan: `RUNBOOK.md` "Review rounds".
