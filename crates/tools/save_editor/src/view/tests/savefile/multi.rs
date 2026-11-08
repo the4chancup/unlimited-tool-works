@@ -668,3 +668,29 @@ fn a_resting_range_asks_for_the_frames_its_check_needs() {
         "the frame the rest ends on asks for the next at once"
     );
 }
+
+// Each range combo's closed box is its widest team label's text plus the
+// chrome (the button padding on both sides, the gap and the arrow), so a
+// pick never resizes it — and never moves the other combo.
+#[test]
+fn the_range_combos_width_is_their_widest_label_plus_the_chrome() {
+    let path = fixture(PesVersion::Pes17, "multi_aatf_combo_width");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    open_multi_aatf(&mut window, &mut view);
+    let file = view.session.as_ref().expect("the save opened").file();
+    // Both ends open on 701, the lowest id, so both popups list every
+    // team and share one widest label.
+    let labels: Vec<String> = file
+        .teams()
+        .iter()
+        .map(|team| multi_aatf::team_label(file, team.id))
+        .collect();
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let combos = range_combos(&pairs);
+    assert_eq!(combos.len(), 2, "premise: the two range combos");
+    for combo in combos {
+        assert_combo_width(&window, combo, &labels);
+    }
+}

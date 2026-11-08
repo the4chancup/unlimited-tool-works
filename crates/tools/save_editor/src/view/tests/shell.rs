@@ -658,6 +658,23 @@ fn an_unreadable_file_is_refused_and_keeps_the_open_save() {
     );
 }
 
+// The panes reach two points into the shell's bottom margin and end 6
+// over the status bar, the draft's padding under the view: the detail
+// pane's frame fills the pane to that edge.
+#[test]
+fn the_panes_end_six_over_the_status_bar() {
+    let path = fixture(PesVersion::Pes21, "pane_bottom");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let (_, _, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let frame = pane_frame(&shapes, window.screen);
+    assert!(
+        (window.screen.y - frame.max.y - 6.0).abs() <= 0.5,
+        "the detail pane's frame ends 6 over the status bar ({frame:?})"
+    );
+}
+
 /// The tool, the PES 21 fixture save under `test`'s scratch folder, and a context whose
 /// selector reads `selector`, with the handle the test moves the selector through.
 fn version_warning_tool(

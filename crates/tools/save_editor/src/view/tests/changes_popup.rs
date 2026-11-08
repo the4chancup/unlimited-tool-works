@@ -421,6 +421,37 @@ fn the_list_is_460_points_wide_with_its_margins() {
     );
 }
 
+// The 640's other end: a row wider than the cap scrolls inside the box
+// instead of growing it — the outer box stops at 640 (the draft's
+// `.chpop` `max-width`, margins and stroke counted in).
+// SE-GUI-43
+#[test]
+fn rows_wider_than_the_cap_hold_the_popup_at_640() {
+    let path = fixture(PesVersion::Pes21, "changes_list_cap_width");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut edited = player_entry(&view, 70101);
+    assert_ne!(edited.name, "W".repeat(52), "premise: a real change");
+    edited.name = "W".repeat(52);
+    view.session.as_mut().unwrap().edit_player(1, edited);
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    // The table is wider than the box: it scrolls sideways.
+    assert!(
+        list_nodes(&pairs).iter().any(|node| {
+            node.role() == Role::ScrollBar
+                && node.bounds().is_some_and(|b| b.x1 - b.x0 > b.y1 - b.y0)
+        }),
+        "premise: the rows overflow the box's width"
+    );
+    let (_, popup) = label_and_popup(&mut window, &mut view);
+    assert!(
+        (popup.width() - 640.0).abs() <= 0.5,
+        "the outer box caps at 640: {popup:?}"
+    );
+}
+
 // SE-GUI-43: the list opens 3 points under the label at its left edge
 // where the window has room; at the default pane, where the label sits
 // too far right for a 460-point list, it slides left to 8 points inside

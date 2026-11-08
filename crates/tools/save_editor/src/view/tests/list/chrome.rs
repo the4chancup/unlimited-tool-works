@@ -105,6 +105,27 @@ fn the_team_selector_names_a_coded_team_by_its_display_name() {
     );
 }
 
+/// The `[click for gameplan]` hint's text shape painted inside `bounds`
+/// (a team row's), when one draws.
+fn hint_in_row(
+    shapes: &[egui::epaint::ClippedShape],
+    bounds: accesskit::Rect,
+) -> Option<&egui::epaint::TextShape> {
+    shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(shape)
+                if shape.galley.job.text.starts_with("[click")
+                    && f64::from(shape.pos.y) >= bounds.y0
+                    && f64::from(shape.pos.y) <= bounds.y1 =>
+            {
+                Some(shape)
+            }
+            _ => None,
+        })
+        .next()
+}
+
 // The team row draws `[click for gameplan]` after the name, in the weak
 // colour: nothing else says where the tactics are.
 #[test]
@@ -157,27 +178,48 @@ fn the_team_rows_hint_elides_before_the_name() {
     view.open(&path);
     view.team = TeamChoice::Team(701);
     let mut window = Headless::new();
+    let padding = f64::from(
+        window
+            .ctx
+            .style_of(window.ctx.theme())
+            .spacing
+            .button_padding
+            .x,
+    );
     let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let bounds = team_row(&nodes, &view, 701)
         .bounds()
         .expect("the team row's bounds");
     let name_shape = text_in_rect(&shapes, &name, bounds);
+    let name_x = f64::from(name_shape.pos.x);
     assert!(!name_shape.galley.elided, "the name still paints whole");
-    let hint = shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::Text(shape)
-                if shape.galley.job.text.starts_with("[click")
-                    && f64::from(shape.pos.y) >= bounds.y0
-                    && f64::from(shape.pos.y) <= bounds.y1 =>
-            {
-                Some(shape)
-            }
-            _ => None,
-        })
-        .next()
-        .expect("the hint still paints, elided");
+    let hint = hint_in_row(&shapes, bounds).expect("the hint still paints, elided");
     assert!(hint.galley.elided, "the hint elides before the name does");
+    assert_centred_on_row(hint, bounds, "the hint");
+    let hint_end = f64::from(hint.pos.x + hint.galley.size().x);
+    assert!(
+        hint_end <= bounds.x1 - padding + 0.5,
+        "the hint ends inside the row's right less the padding ({hint_end} vs {})",
+        bounds.x1 - padding
+    );
+
+    // The same row with the team dirty: the dot's room comes off the
+    // hint's too, so it still ends at the row's right less the padding.
+    let mut team = team_entry(&view, 701);
+    team.short_name = "ZED".to_owned();
+    view.session.as_mut().unwrap().edit_team(1, team);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds = team_row(&nodes, &view, 701)
+        .bounds()
+        .expect("the team row's bounds");
+    dot_in_row(&shapes, bounds);
+    let hint = hint_in_row(&shapes, bounds).expect("the hint still paints before the dot");
+    let hint_end = f64::from(hint.pos.x + hint.galley.size().x);
+    assert!(
+        hint_end <= bounds.x1 - padding + 0.5,
+        "the hint keeps the dot's room off the row's right ({hint_end} vs {})",
+        bounds.x1 - padding
+    );
 
     // A name the panel cannot hold keeps the row to itself: no hint at
     // all, the name elided instead.
@@ -195,15 +237,58 @@ fn the_team_rows_hint_elides_before_the_name() {
     let name_shape = text_in_rect(&shapes, "NNNN", bounds);
     assert!(name_shape.galley.elided, "the name elides");
     assert!(
-        !shapes.iter().any(|clipped| match &clipped.shape {
-            egui::Shape::Text(shape) => {
-                shape.galley.job.text.starts_with("[click")
-                    && f64::from(shape.pos.y) >= bounds.y0
-                    && f64::from(shape.pos.y) <= bounds.y1
-            }
-            _ => false,
-        }),
+        hint_in_row(&shapes, bounds).is_none(),
         "no hint paints on the full row"
+    );
+
+    // Wide glyphs: the elided name's galley ends well short of its room
+    // (the cut falls between letters), so the hint's room is positive —
+    // still no hint: the elision, not the room, drops it. Which glyph
+    // lands the cut past an item spacing is the font's own, so the widest
+    // candidates are laid out as the row truncates them and the first
+    // leaving the room is picked.
+    let spacing = f64::from(
+        window
+            .ctx
+            .style_of(window.ctx.theme())
+            .spacing
+            .item_spacing
+            .x,
+    );
+    let body = egui::TextStyle::Body.resolve(&window.ctx.style_of(window.ctx.theme()));
+    let trunc = (bounds.x1 - padding - name_x) as f32;
+    let name = ["W", "M", "@", "O", "m", "w", "%", "&", "Q", "#"]
+        .iter()
+        .map(|glyph| glyph.repeat(52))
+        .find(|name| {
+            let mut job = egui::text::LayoutJob::default();
+            team_widgets::names::append_name(&mut job, name.as_str(), &body);
+            job.wrap = egui::text::TextWrapping::truncate_at_width(trunc);
+            let galley = window.ctx.fonts_mut(|fonts| fonts.layout_job(job));
+            trunc - galley.size().x > spacing as f32
+        })
+        .expect("a wide-glyph name whose cut leaves the hint room");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.team_mut(701).unwrap().name = name.clone();
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let bounds = team_row(&nodes, &view, 701)
+        .bounds()
+        .expect("the team row's bounds");
+    let name_shape = text_in_rect(&shapes, &name[..4], bounds);
+    assert!(name_shape.galley.elided, "the name elides");
+    let name_end = f64::from(name_shape.pos.x + name_shape.galley.size().x);
+    assert!(
+        bounds.x1 - padding - (name_end + spacing) > 0.0,
+        "premise: the elided name leaves the hint room ({name_end} vs {})",
+        bounds.x1 - padding
+    );
+    assert!(
+        hint_in_row(&shapes, bounds).is_none(),
+        "no hint paints on the elided row"
     );
 }
 
@@ -397,7 +482,7 @@ fn the_lists_column_draws_no_separator_lines() {
     let (window, nodes, shapes) = scrolling_list("list_no_separators");
     let frame = list_frame(&window, &shapes);
     let bar = list_scroll_bar(&nodes);
-    let (pane_left, _) = pane_frame(&shapes, window.screen);
+    let pane_left = f64::from(pane_frame(&shapes, window.screen).min.x);
     assert!(
         (pane_left - bar.x1 - 4.0).abs() <= 0.5,
         "the detail pane 4 after the bar ({pane_left} vs {})",

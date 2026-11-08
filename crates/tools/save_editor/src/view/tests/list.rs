@@ -25,6 +25,18 @@ fn text_in_rect<'a>(
         .unwrap_or_else(|| panic!("no painted text {starts_with:?} inside {rect:?}"))
 }
 
+/// Asserts `shape`'s galley centres vertically on `bounds`' row within
+/// half a point.
+#[track_caller]
+fn assert_centred_on_row(shape: &egui::epaint::TextShape, bounds: accesskit::Rect, what: &str) {
+    let row_centre = (bounds.y0 + bounds.y1) / 2.0;
+    let centre = f64::from(shape.pos.y + shape.galley.size().y / 2.0);
+    assert!(
+        (centre - row_centre).abs() <= 0.5,
+        "{what} centres on the row ({centre} vs {row_centre})"
+    );
+}
+
 // SE-GUI-01
 #[test]
 fn an_open_save_lists_every_rostered_player_and_shows_the_first() {
@@ -448,6 +460,7 @@ fn a_player_rows_handle_stands_4_from_its_edge_and_4_before_the_place() {
             .unwrap_or_else(|| panic!("the row {place:?} paints its place"));
         let handle_ink = ink(handle);
         let place_ink = ink(text);
+        assert_centred_on_row(handle, row, "the handle");
         let inset = f64::from(handle_ink.left()) - row.x0;
         assert!(
             (inset - 4.0).abs() <= 0.5,

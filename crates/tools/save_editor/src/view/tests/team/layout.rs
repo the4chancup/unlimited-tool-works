@@ -356,7 +356,7 @@ fn the_team_view_fits_the_default_pane() {
             window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
         shapes = frame_shapes;
     }
-    let (left, _) = pane_frame(&shapes, window.screen);
+    let left = f64::from(pane_frame(&shapes, window.screen).min.x);
     let bottom = shapes
         .iter()
         .map(|clipped| clipped.shape.visual_bounding_rect())

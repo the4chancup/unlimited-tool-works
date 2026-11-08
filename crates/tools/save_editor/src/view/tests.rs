@@ -679,7 +679,7 @@ fn undo_entries(window: &mut Headless, view: &mut SaveView) -> usize {
 
 /// The detail pane's frame: the widest full-height rect past the list's
 /// own (its left edge is the player list's right edge).
-fn pane_frame(shapes: &[egui::epaint::ClippedShape], screen: egui::Vec2) -> (f64, f64) {
+fn pane_frame(shapes: &[egui::epaint::ClippedShape], screen: egui::Vec2) -> egui::Rect {
     shapes
         .iter()
         .filter_map(|clipped| match &clipped.shape {
@@ -688,11 +688,11 @@ fn pane_frame(shapes: &[egui::epaint::ClippedShape], screen: egui::Vec2) -> (f64
                     && shape.rect.width() > screen.x * 0.5
                     && shape.rect.height() > screen.y * 0.75 =>
             {
-                Some((f64::from(shape.rect.min.x), f64::from(shape.rect.max.x)))
+                Some(shape.rect)
             }
             _ => None,
         })
-        .min_by(|a, b| a.0.partial_cmp(&b.0).expect("ordered bounds"))
+        .min_by(|a, b| a.min.x.partial_cmp(&b.min.x).expect("ordered bounds"))
         .expect("the detail pane's frame rect")
 }
 
@@ -721,6 +721,36 @@ fn list_frame(window: &Headless, shapes: &[egui::epaint::ClippedShape]) -> egui:
             _ => None,
         })
         .expect("the player list's frame rect")
+}
+
+/// Asserts the closed `combo`'s width is `labels`' widest galley at the
+/// Button text size plus the closed combo's chrome (the button padding
+/// twice, the icon's gap and the icon) — the width the view's combos
+/// carry so a pick never resizes them.
+#[track_caller]
+fn assert_combo_width(window: &Headless, combo: &accesskit::Node, labels: &[String]) {
+    let style = window.ctx.style_of(window.ctx.theme());
+    let font = egui::TextStyle::Button.resolve(&style);
+    let widest = labels
+        .iter()
+        .map(|label| {
+            window.ctx.fonts_mut(|fonts| {
+                fonts
+                    .layout_no_wrap(label.clone(), font.clone(), egui::Color32::WHITE)
+                    .size()
+                    .x
+            })
+        })
+        .fold(0.0_f32, f32::max);
+    let spacing = &style.spacing;
+    let expected = f64::from(
+        widest + 2.0 * spacing.button_padding.x + spacing.icon_spacing + spacing.icon_width,
+    );
+    let bounds = combo.bounds().expect("the combo's bounds");
+    assert!(
+        (bounds.width() - expected).abs() <= 0.5,
+        "the closed combo is the widest label plus the chrome ({expected}): {bounds:?}"
+    );
 }
 
 /// The player list's scroll bar: the leftmost `ScrollBar` node (the

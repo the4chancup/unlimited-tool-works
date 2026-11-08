@@ -351,6 +351,18 @@ exclude_re = [
     # save_editor: `RATINGS_WIDTH`'s `2.0 * RATING_GAP` -> `+` is the same 4.0 while
     # `RATING_GAP` is 2.0 (`paint_portrait_cross`'s class); re-check if the constant changes.
     "save_editor/src/view/abilities\\.rs:\\d+:52: replace \\* with \\+$",
+    # save_editor: Multi-team AATF's list chrome, `2.0 * stroke.width` -> `/`, is the same 2.0
+    # while the noninteractive `bg_stroke` is 1 point wide (egui's default in both themes,
+    # which the theme leaves); `multi_copy.rs` pins the list at 874 x 360. Re-check if the
+    # theme sets that stroke.
+    "save_editor/src/view/multi_aatf\\.rs:\\d+:64: replace \\* with / in dialog",
+    # save_editor: the player view's right column, `set_width(columns + 2.0 * gap)`: the
+    # abilities row inside already spans `columns + 2 * gap`, so a narrower width, or
+    # `2 + gap`'s at most 2 points wider, changes no drawn rect (the three columns' rects
+    # measured byte-identical under `-`, `*` -> `+` and `*` -> `/` over the crate's tests);
+    # `+` -> `*`, far wider, stays measured.
+    "save_editor/src/view/mod\\.rs:\\d+:54: replace \\+ with - in show",
+    "save_editor/src/view/mod\\.rs:\\d+:60: replace \\* with [+/] in show",
     # save_editor: `motion_grid` counts the cells it draws two to a row, and `maybe_end_row`
     # asks only the count's parity, which `-= 1` gives as `+= 1` does once the count is past
     # the first loop's seven. Column 22 also matches the first loop's own `+= 1`, caught only by

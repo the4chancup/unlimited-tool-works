@@ -482,7 +482,7 @@ fn a_drag_on_the_lists_right_edge_does_not_resize_it() {
     let column = |window: &mut Headless, view: &mut SaveView| {
         let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
         let width = list_scroll_bar(&nodes).x1 - f64::from(list_frame(window, &shapes).min.x);
-        (width, pane_frame(&shapes, window.screen).0)
+        (width, f64::from(pane_frame(&shapes, window.screen).min.x))
     };
     window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
     let (width, before) = column(&mut window, &mut view);

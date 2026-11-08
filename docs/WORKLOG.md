@@ -7301,8 +7301,15 @@ briefs, review loops, gates and mutation runs as for any step.
     two pure-move splits); slice 2a landed 2026-11-08 (se_kills_2a, SWE-2: widget flags,
     the ruleset dropdown's selected row and separators, the Open menu's separators, focus
     surrender, paste-as-image, Write's `NotFound` guard; `info_strip` `small_box`'s
-    unreachable gated arm became an `expect`); 2b, the layout survivors and the undecided
-    `abilities.rs:547`, next; (9) the `review2`
+    unreachable gated arm became an `expect`); 2b landed 2026-11-08 (se_kills_2b, SWE-2: the
+    panes' bottom, the closed combos' widths, the team row's hint and the handle, the changes
+    popup's cap, General info's block gaps; `multi_aatf.rs:433` excluded, equivalent at a
+    1-point stroke; three narrowing mutants of `view/mod.rs`'s right-column `set_width`
+    excluded, the content already spanning it). Open, a design finding: `abilities.rs` `playable_positions`'
+    `column_width` measured 350 against an available 350 over the whole suite (9,008
+    frames), so its `max` and `+ CELL_PADDING` decide nothing where the tests look; whether
+    a wider window or font ever makes them bind is unmeasured. Its `+` -> `*` mutant stays
+    a survivor until that is settled; (9) the `review2`
     worktree (`../4cc-studio-temp/review2`, detached at the pre-reword `1dd5ab92`, clean):
     its three commits have reworded twins on main by subject (`e704be83` the newest), but
     `git diff 1dd5ab92 e704be83` differs in three files (`team_widgets`

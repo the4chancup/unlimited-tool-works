@@ -248,6 +248,25 @@ fn the_dropdown_stands_left_of_live_aatf_and_lists_the_builtins() {
     assert_eq!(popup_rows(&pairs), expected, "the built-ins, in order");
 }
 
+// The closed dropdown is as wide as its widest row's text plus the
+// chrome (the button padding on both sides, the gap and the arrow), so
+// a pick never resizes the toolbar. With no imports the widest is the
+// longest built-in or the command row.
+#[test]
+fn the_dropdowns_width_is_its_widest_row_plus_the_chrome() {
+    let path = fixture(PesVersion::Pes17, "ruleset_picker_width");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let labels: Vec<String> = BUILTINS
+        .iter()
+        .map(|name| (*name).to_owned())
+        .chain([IMPORT_ROW.to_owned()])
+        .collect();
+    let nodes = draw(&mut window, &mut view);
+    assert_combo_width(&window, dropdown(&nodes), &labels);
+}
+
 /// In the open dropdown exactly the active ruleset's row reads selected:
 /// the active built-in's alone while there are no imports; with an
 /// import active, its row's alone (Import rules file…, a command, reads
