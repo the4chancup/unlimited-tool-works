@@ -5,6 +5,7 @@
 use std::collections::{HashMap, HashSet};
 
 use pes_version::PesVersion;
+use serde::{Deserialize, Serialize};
 
 use crate::codec::{self, CodecError};
 use crate::file::EditFile;
@@ -19,7 +20,7 @@ use crate::schema::ingame_face::{INGAME_FACE_FIELDS, IngameFaceField};
 use crate::schema::{RecordSchema, VersionSchema};
 
 /// Every difference between two players of the same version.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PlayerDiff {
     /// A bit-run field of the record.
     Field {
@@ -50,12 +51,16 @@ pub enum PlayerDiff {
     },
     /// The run's measured-unused bits differ (`IngameFace::unused`: no field
     /// of its layout names them); the hashes are `ops::fingerprint`'s
-    /// fingerprints of the two runs.
+    /// fingerprints of the two runs, the bits what a replay applies.
     FaceRun {
         /// `a`'s fingerprint.
         old: FaceHash,
         /// `b`'s fingerprint.
         new: FaceHash,
+        /// `a`'s measured-unused bits (`IngameFace::unused`).
+        old_bits: Vec<u8>,
+        /// `b`'s measured-unused bits.
+        new_bits: Vec<u8>,
     },
 }
 
@@ -258,10 +263,13 @@ pub fn compare_players(
             });
         }
     }
-    if fa.unused() != fb.unused() {
+    let (old_bits, new_bits) = (fa.unused(), fb.unused());
+    if old_bits != new_bits {
         diffs.push(PlayerDiff::FaceRun {
             old: face_hash(fa),
             new: face_hash(fb),
+            old_bits,
+            new_bits,
         });
     }
     Ok(diffs)
@@ -561,6 +569,8 @@ mod tests {
             [PlayerDiff::FaceRun {
                 old: face_hash(face),
                 new: face_hash(&b.appearance.ingame_face),
+                old_bits: face.unused(),
+                new_bits: b.appearance.ingame_face.unused(),
             }]
         );
         assert_ne!(face_hash(face), face_hash(&b.appearance.ingame_face));
@@ -650,6 +660,8 @@ mod tests {
                 PlayerDiff::FaceRun {
                     old: face_hash(face),
                     new: face_hash(&b.appearance.ingame_face),
+                    old_bits: face.unused(),
+                    new_bits: b.appearance.ingame_face.unused(),
                 },
             ]
         );

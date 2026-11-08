@@ -27,6 +27,7 @@ serde_json.workspace = true
 studio_core.workspace = true
 team_widgets.workspace = true
 teams_list.workspace = true
+thiserror.workspace = true
 toml.workspace = true
 toml_edit.workspace = true
 

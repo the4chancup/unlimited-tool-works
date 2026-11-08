@@ -108,7 +108,7 @@ fn row(diffs: &[PlayerDiff], key: &str, id: u32) -> Option<(u32, u32)> {
 /// any other field, or a `FaceRun` row.
 fn run_changed(diffs: &[PlayerDiff]) -> Option<(u32, u32)> {
     diffs.iter().find_map(|d| match d {
-        PlayerDiff::FaceRun { old, new } => {
+        PlayerDiff::FaceRun { old, new, .. } => {
             Some((u32::from_be_bytes(old.0), u32::from_be_bytes(new.0)))
         }
         _ => None,

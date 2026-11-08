@@ -461,6 +461,48 @@ fn an_import_writes_only_the_players_the_roster_names() {
     );
 }
 
+// The model steps carry their typed ops as `journal.toml` writes them:
+// the open's kept-input index, the edit's comparator row beside its
+// line, the write's kept-output index.
+#[test]
+fn the_model_steps_carry_their_ops_beside_their_lines() {
+    let dir = crate::test_support::scratch("journal_ops");
+    let path = dir.join("EDIT00000000");
+    std::fs::write(&path, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
+    let recorder = Recorder::default();
+    let mut session = Session::open(&path, recorder.clone()).unwrap();
+    let height = session.file().player(70101).unwrap().basic.height;
+    let mut edited = session.file().player(70101).unwrap().clone();
+    edited.basic.height = edited.basic.height.wrapping_add(1);
+    session.edit_player(1, edited);
+    let out = dir.join("EDIT00000000.out");
+    session.write(&out).unwrap();
+
+    // `journal_lines` writes the bundle to `dir`'s `journal.zip`.
+    let lines = journal_lines(&recorder, &dir);
+    assert_eq!(
+        lines.len(),
+        3,
+        "opened, the edit's line, the wrote: {lines:?}"
+    );
+    let doc: toml::Table = toml::from_str(
+        &String::from_utf8(zip_entry(&dir.join("journal.zip"), "journal.toml")).unwrap(),
+    )
+    .unwrap();
+    let steps = doc["step"].as_array().unwrap();
+    let expected: toml::Value = toml::from_str("kind = \"open\"\ninput = 0\n").unwrap();
+    assert_eq!(steps[0]["op"], expected, "the open's op");
+    let expected: toml::Value = toml::from_str(&format!(
+        "kind = \"player\"\nid = 70101\n\n[row.Field]\n\
+         field = \"Height\"\nold = {height}\nnew = {}\n",
+        height.wrapping_add(1)
+    ))
+    .unwrap();
+    assert_eq!(steps[1]["op"], expected, "the edit's op");
+    let expected: toml::Value = toml::from_str("kind = \"wrote\"\noutput = 0\n").unwrap();
+    assert_eq!(steps[2]["op"], expected, "the wrote's op");
+}
+
 // A write the member asked for that fails records `could not write
 // <path>` (the error as the window shows it) and keeps no output.
 #[test]

@@ -637,6 +637,8 @@ fn fields_no_view_draws_are_named_in_words() {
             &PlayerDiff::FaceRun {
                 old: FaceHash([0; 4]),
                 new: FaceHash([0xff; 4]),
+                old_bits: Vec::new(),
+                new_bits: Vec::new(),
             },
         ),
         "Other face data",

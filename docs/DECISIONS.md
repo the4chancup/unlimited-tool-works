@@ -15788,3 +15788,14 @@ second table of field names, keeps one list of fields; the old-value check names
 where an unrecorded change happened, which a final comparison alone cannot; every write
 salts afresh, so only the output's own salt can reproduce its bytes.
 Plan: `plans/core/architecture.md` "Repro bundles" ("Replay reads a typed change").
+
+## 2026-11-08 — studio_core, save_editor — the replay command waits for a bundle that needs it
+Decision: the journal's typed ops and replay below the command land (slice 3a); the command,
+its messages and the team rows (3b, 3c) wait until a member's bundle needs them. Until then a
+bundle is read with `save-editor diff` of its kept input against its written save, beside the
+journal (the maintainer: the cheapest path, the 0.0.2-poc first).
+Why: a diff row with no journal line already names an unrecorded change; replay adds the step
+where it happened and the matching for large sessions, worth its cost only once real bundles
+show sessions large enough to need it, while the ops must be in the journal from the first
+bundle members post, or those bundles could never be replayed.
+Plan: `plans/core/architecture.md` "Repro bundles"; worklog, the repro bundles issue.

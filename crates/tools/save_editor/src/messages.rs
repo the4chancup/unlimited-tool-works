@@ -445,7 +445,7 @@ pub(crate) fn diff_fields(row: &PlayerDiff) -> (String, String, String) {
         PlayerDiff::Face { field, old, new } => {
             (format!("{field:?}"), old.to_string(), new.to_string())
         }
-        PlayerDiff::FaceRun { old, new } => {
+        PlayerDiff::FaceRun { old, new, .. } => {
             ("face_run".to_owned(), old.to_string(), new.to_string())
         }
     }
@@ -716,7 +716,9 @@ mod tests {
         assert_eq!(
             line_of(&PlayerDiff::FaceRun {
                 old: FaceHash([0, 1, 0xab, 0xff]),
-                new: FaceHash([0; 4])
+                new: FaceHash([0; 4]),
+                old_bits: Vec::new(),
+                new_bits: Vec::new()
             }),
             "Info player_diff (player=70105, field=face_run, old=0001abff, new=00000000)"
         );

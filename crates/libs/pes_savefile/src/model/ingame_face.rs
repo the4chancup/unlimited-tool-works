@@ -199,6 +199,30 @@ impl IngameFace {
         )
     }
 
+    /// `unused`'s inverse: every bit a field of the run's layout does not
+    /// cover taken from `bits`, the fields themselves kept — one run's
+    /// measured-unused bits transplanted onto another run of the same
+    /// layout. `RunSize` when `bits` is not the run's length.
+    pub(crate) fn set_unused(&mut self, bits: &[u8]) -> Result<(), CodecError> {
+        if bits.len() != self.0.len() {
+            return Err(CodecError::RunSize {
+                expected: self.0.len(),
+                got: bits.len(),
+            });
+        }
+        let layout = self.layout();
+        let mask = field_mask(
+            self.0.len(),
+            IngameFaceField::ALL
+                .into_iter()
+                .filter(|field| in_layout(field.layout(), layout)),
+        );
+        for ((byte, mask), bits) in self.0.iter_mut().zip(&mask).zip(bits) {
+            *byte = (*byte & mask) | (bits & !mask);
+        }
+        Ok(())
+    }
+
     /// Writes every `UNUSED_FACE_BITS` row of the run's layout at its value,
     /// what the games' own editors write.
     pub(crate) fn write_unused(&mut self) {
@@ -328,6 +352,39 @@ mod tests {
         face.write_unused();
         assert_eq!(face.bytes().len(), 48);
         assert_eq!(face.bytes()[46..], [0, 0], "the rows that fit are written");
+    }
+
+    // `unused`'s inverse: another run's measured-unused bits land on the
+    // run's own, every layout field kept (a FaceRun row applied is the
+    // field values' own plus the other run's unused bits).
+    #[test]
+    fn set_unused_takes_another_runs_unused_bits_and_keeps_the_fields() {
+        let mut face = IngameFace::from_bytes(run());
+        let other = IngameFace::from_bytes(run().iter().map(|b| !b).collect());
+        let before = face.clone();
+        assert_ne!(face.unused(), other.unused(), "premise");
+
+        face.set_unused(&other.unused()).expect("same length");
+
+        assert_eq!(face.unused(), other.unused());
+        for spec in INGAME_FACE_FIELDS
+            .iter()
+            .filter(|spec| in_layout(spec.field.layout(), face.layout()))
+        {
+            assert_eq!(
+                face.get(spec.field).expect("covered"),
+                before.get(spec.field).expect("covered"),
+                "{:?} changed",
+                spec.field
+            );
+        }
+        assert!(matches!(
+            face.set_unused(&[0; 49]),
+            Err(CodecError::RunSize {
+                expected: 50,
+                got: 49
+            })
+        ));
     }
 
     #[test]

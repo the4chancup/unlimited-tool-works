@@ -31,7 +31,9 @@ use pes_version::PesVersion;
 use studio_core::{Recorder, RunningPes};
 
 use crate::messages::TOOL_ID;
-use crate::session::journal::{change_lines, open_failed, player_lines, team_lines, write_failed};
+use crate::session::journal::{
+    Op, Step, change_lines, op_table, open_failed, player_lines, team_lines, write_failed,
+};
 use crate::session::undo::{Change, UndoStack};
 
 /// The ticks `Session::revision` draws from, one per open and per change:
@@ -130,17 +132,21 @@ impl Session {
             }
         };
         let (baseline_players, baseline_teams) = baselines(&file);
-        recorder.step(
-            TOOL_ID,
-            format!(
-                "opened {}{} ({}, {} bytes)",
-                path.display(),
-                suffix,
-                file.version(),
-                bytes.len()
-            ),
+        let what = format!(
+            "opened {}{} ({}, {} bytes)",
+            path.display(),
+            suffix,
+            file.version(),
+            bytes.len()
         );
-        recorder.keep_input(TOOL_ID, path, bytes);
+        let input = recorder.keep_input(TOOL_ID, path, bytes);
+        if suffix.is_empty() {
+            // The session's own open names the kept input it read: replay
+            // starts from it. The comparator's second open is a note.
+            recorder.step_op(TOOL_ID, what, op_table(&Op::Open { input }));
+        } else {
+            recorder.step(TOOL_ID, what);
+        }
         Ok(Session {
             file,
             path: path.to_path_buf(),
@@ -186,11 +192,15 @@ impl Session {
     }
 
     /// Marks the model changed: `steps` recorded in the journal (one per
-    /// field or event, so a bundle replays the change), then the next
+    /// field or event, each carrying its typed change where the ops
+    /// cover it, so a bundle replays the change), then the next
     /// `revision`.
-    fn changed(&mut self, steps: Vec<String>) {
+    fn changed(&mut self, steps: Vec<Step>) {
         for step in steps {
-            self.recorder.step(TOOL_ID, step);
+            match step.op {
+                Some(op) => self.recorder.step_op(TOOL_ID, step.line, op_table(&op)),
+                None => self.recorder.step(TOOL_ID, step.line),
+            }
         }
         self.revision = NEXT_REVISION.fetch_add(1, Ordering::Relaxed);
     }
@@ -423,7 +433,7 @@ impl Session {
         // `before`.
         let steps = self.undo.undo_changes().map(|changes| {
             let schema = schema_for(self.version());
-            let mut steps = vec!["undo".to_owned()];
+            let mut steps = vec![Step::note("undo")];
             for change in changes {
                 steps.extend(change_lines(change, schema, true));
             }
@@ -442,7 +452,7 @@ impl Session {
     pub(crate) fn redo(&mut self) -> bool {
         let steps = self.undo.redo_changes().map(|changes| {
             let schema = schema_for(self.version());
-            let mut steps = vec!["redo".to_owned()];
+            let mut steps = vec![Step::note("redo")];
             for change in changes {
                 steps.extend(change_lines(change, schema, false));
             }
@@ -667,7 +677,7 @@ impl Session {
         let notes = document.apply(version, &mut team, self.file.players_mut())?;
         *self.file.team_mut(id).expect("found above") = team;
         let schema = schema_for(version);
-        let mut steps = vec![format!("imported Team TOML onto team {id}")];
+        let mut steps = vec![Step::note(format!("imported Team TOML onto team {id}"))];
         steps.extend(team_lines(
             &before_team,
             self.file.team(id).expect("found above"),
@@ -699,13 +709,13 @@ impl Session {
         // A team is named only when one of its players was written (a cup
         // player id is its team's id x 100 + slot): `applied_teams` alone
         // would name a team whose every patched player the save lacked.
-        let mut steps = vec!["applied the aesthetics patch".to_owned()];
+        let mut steps = vec![Step::note("applied the aesthetics patch")];
         let mut teams: Vec<u32> = Vec::new();
         for id in &summary.applied_players {
             let team = id / 100;
             if !teams.contains(&team) {
                 teams.push(team);
-                steps.push(format!("applied to team {team}"));
+                steps.push(Step::note(format!("applied to team {team}")));
             }
         }
         self.changed(steps);
@@ -722,19 +732,23 @@ impl Session {
             return Err(anyhow::Error::new(error)
                 .context(format!("{}: cannot write the save", out.display())));
         }
-        self.recorder
-            .step(TOOL_ID, format!("wrote {}", out.display()));
-        match std::fs::read(out) {
-            Ok(written) => self.recorder.keep_output(TOOL_ID, out, written.into()),
+        let output = match std::fs::read(out) {
+            Ok(written) => Some(self.recorder.keep_output(TOOL_ID, out, written.into())),
             // The save was written; a journal that cannot keep it loses the
             // bundle's output, never the member's write.
             Err(error) => {
                 log::debug!(
                     "{}: the written save cannot be kept ({error})",
                     out.display()
-                )
+                );
+                None
             }
-        }
+        };
+        self.recorder.step_op(
+            TOOL_ID,
+            format!("wrote {}", out.display()),
+            op_table(&Op::Wrote { output }),
+        );
         Ok(())
     }
 }

@@ -329,7 +329,9 @@ pub(crate) fn dialog(ui: &mut egui::Ui, view: &mut SaveView) {
                 // touched it since the preview was built. A failed read is
                 // a `could not read` step; the write proceeds either way.
                 match std::fs::read(&path) {
-                    Ok(bytes) => session.recorder().keep_input(TOOL_ID, &path, bytes.into()),
+                    Ok(bytes) => {
+                        session.recorder().keep_input(TOOL_ID, &path, bytes.into());
+                    }
                     Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
                     Err(error) => journal::read_failed(&path, session.recorder(), &error, None),
                 }

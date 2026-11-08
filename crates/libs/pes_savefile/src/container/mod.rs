@@ -123,6 +123,23 @@ impl SaveContainer {
     }
 }
 
+/// The salt under which `bytes` were encrypted — the one `to_bytes` needs to
+/// write them again: a keyed save carries its 320-byte salt as its first 320
+/// bytes, PES 15's seed is its byte 0 (the rest of the salt unused). The
+/// container's own errors when `bytes` is no save.
+pub fn file_salt(bytes: &[u8]) -> Result<[u8; 320], ContainerError> {
+    match SaveContainer::decrypt(bytes)?.scheme {
+        Scheme::Pes15 => {
+            let mut salt = [0u8; 320];
+            salt[0] = bytes[0];
+            Ok(salt)
+        }
+        Scheme::Keyed(_) => Ok(bytes[..320]
+            .try_into()
+            .expect("a keyed save's decrypt passes only with a 320-byte salt")),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -283,6 +300,26 @@ mod tests {
     /// A fixed non-zero salt for the synthetic round trips.
     fn test_salt() -> [u8; 320] {
         std::array::from_fn(|i| (i % 251) as u8 + 1)
+    }
+
+    /// The file's own salt reproduces it byte for byte on every version;
+    /// another salt does not, so the check cannot pass on a wrong one.
+    #[test]
+    fn file_salt_reproduces_every_fixture() {
+        for version in crate::test_support::FIXTURES {
+            let (file, bytes) = crate::test_support::open(version);
+            assert_ne!(
+                file.to_bytes(&[7; 320]).expect("the save writes"),
+                bytes,
+                "{version:?}: not just any salt reproduces the file"
+            );
+            assert_eq!(
+                file.to_bytes(&file_salt(&bytes).expect("the file's salt"))
+                    .expect("the save writes"),
+                bytes,
+                "{version:?}: the file's own salt reproduces it"
+            );
+        }
     }
 
     #[test]

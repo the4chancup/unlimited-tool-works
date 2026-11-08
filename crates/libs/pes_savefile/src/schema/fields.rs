@@ -2,8 +2,10 @@
 //! Indexed variants carry the element index (`Skill(3)`); the tables say where each
 //! version stores it.
 
+use serde::{Deserialize, Serialize};
+
 /// A bit-run field of the player record (the appearance record on PES 15/16).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PlayerField {
     /// The player id (team id x 100 + slot for cup players).
     Id,
@@ -201,7 +203,7 @@ pub enum PlayerField {
 }
 
 /// A text field of the player record.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PlayerText {
     /// The player name, UTF-8, colour codes included.
     Name,

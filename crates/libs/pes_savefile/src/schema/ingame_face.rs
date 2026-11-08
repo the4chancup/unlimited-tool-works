@@ -5,6 +5,7 @@
 //! (`spec/pes_savefile/model.md`, "The ingame-face run").
 
 use pes_version::PesVersion;
+use serde::{Deserialize, Serialize};
 
 use super::FieldSpec;
 
@@ -36,7 +37,7 @@ impl FaceLayout {
 
 /// A bit run inside the ingame-face run. Offsets are relative to the run's
 /// first byte (byte 22 of the appearance block).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum IngameFaceField {
     /// Player (outfield) gloves, byte 0 bit 0.
     PlayerGloves,

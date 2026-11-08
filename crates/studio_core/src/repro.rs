@@ -11,6 +11,12 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
+/// Reading a bundle back, for `utw <tool-id> replay`.
+#[cfg(not(target_arch = "wasm32"))]
+mod read;
+#[cfg(not(target_arch = "wasm32"))]
+pub use read::{Bundle, BundleFile, BundleStep, read_bundle};
+
 /// One tool's recorded steps, kept inputs and kept outputs so far.
 /// `Recorder` shares it: every clone records into the same journal.
 #[derive(Clone)]
@@ -58,6 +64,13 @@ struct Step {
         expect(dead_code, reason = "read only by the native bundle writer")
     )]
     what: String,
+    /// The step's typed change beside the line, what a replay applies;
+    /// `None` on a step that changed nothing (a pick, a refusal, a heading).
+    #[cfg_attr(
+        target_arch = "wasm32",
+        expect(dead_code, reason = "read only by the native bundle writer")
+    )]
+    op: Option<toml::Table>,
 }
 
 /// A file kept in memory as it was: the tool that kept it, its path and
@@ -99,42 +112,67 @@ impl Recorder {
     /// Appends one step `what`: `tool`'s line, timed from the recorder's
     /// start.
     pub fn step(&self, tool: &'static str, what: impl Into<String>) {
+        self.push_step(tool, what, None);
+    }
+
+    /// `step` with the step's typed change beside its line: the table a
+    /// replay applies where the line is only read. Steps that change the
+    /// model record through here; notes (a pick, a refusal, a heading,
+    /// a line whose change the ops do not cover) record through `step`.
+    pub fn step_op(&self, tool: &'static str, what: impl Into<String>, op: toml::Table) {
+        self.push_step(tool, what, Some(op));
+    }
+
+    /// `step` and `step_op`'s append.
+    fn push_step(&self, tool: &'static str, what: impl Into<String>, op: Option<toml::Table>) {
         let mut journal = self.journal.lock().unwrap();
         let seconds = journal.started.elapsed().as_secs_f64();
         journal.steps.push(Step {
             seconds,
             tool,
             what: what.into(),
+            op,
         });
     }
 
     /// Keeps `bytes` as the file `tool` read at `path`. The bundle's
     /// inputs hold every one, same path or not: what the tool started
-    /// from is the part a saved-over file would destroy.
-    pub fn keep_input(&self, tool: &'static str, path: &Path, bytes: Arc<[u8]>) {
-        self.journal.lock().unwrap().inputs.push(KeptFile {
+    /// from is the part a saved-over file would destroy. Returns the
+    /// kept file's index in the bundle's `[[input]]` list.
+    pub fn keep_input(&self, tool: &'static str, path: &Path, bytes: Arc<[u8]>) -> usize {
+        let mut journal = self.journal.lock().unwrap();
+        journal.inputs.push(KeptFile {
             tool,
             path: path.to_path_buf(),
             bytes,
         });
+        journal.inputs.len() - 1
     }
 
     /// Keeps `bytes` as the file `tool` wrote at `path`. The bundle
     /// holds the last write per path — the one the member has — so a
     /// kept write replaces an earlier one for the same tool and path.
-    pub fn keep_output(&self, tool: &'static str, path: &Path, bytes: Arc<[u8]>) {
+    /// Returns the kept file's index in the bundle's `[[output]]` list
+    /// (the replaced slot's on a replacement).
+    pub fn keep_output(&self, tool: &'static str, path: &Path, bytes: Arc<[u8]>) -> usize {
         let mut journal = self.journal.lock().unwrap();
         match journal
             .outputs
-            .iter_mut()
-            .find(|kept| kept.tool == tool && kept.path == path)
+            .iter()
+            .position(|kept| kept.tool == tool && kept.path == path)
         {
-            Some(kept) => kept.bytes = bytes,
-            None => journal.outputs.push(KeptFile {
-                tool,
-                path: path.to_path_buf(),
-                bytes,
-            }),
+            Some(index) => {
+                journal.outputs[index].bytes = bytes;
+                index
+            }
+            None => {
+                journal.outputs.push(KeptFile {
+                    tool,
+                    path: path.to_path_buf(),
+                    bytes,
+                });
+                journal.outputs.len() - 1
+            }
         }
     }
 
@@ -213,7 +251,8 @@ mod bundle {
     }
 
     /// One `[[step]]` row: seconds since the recorder's start, the tool
-    /// and its line.
+    /// and its line, and the typed change a replay applies when the step
+    /// carried one.
     #[derive(Serialize)]
     struct StepDoc {
         /// Seconds since the recorder was made.
@@ -222,6 +261,10 @@ mod bundle {
         tool: &'static str,
         /// The step's line, the home folder written as `~`.
         what: String,
+        /// The step's typed change; absent on a note (an op holds no
+        /// path, so it is never redacted).
+        #[serde(skip_serializing_if = "Option::is_none")]
+        op: Option<toml::Table>,
     }
 
     /// One `[[input]]`/`[[output]]` row: what the kept file is and where
@@ -252,7 +295,7 @@ mod bundle {
     }
 
     /// `bytes`' SHA-256, lowercase hex.
-    fn sha256(bytes: &[u8]) -> String {
+    pub(super) fn sha256(bytes: &[u8]) -> String {
         Sha256::digest(bytes)
             .iter()
             .map(|b| format!("{b:02x}"))
@@ -329,6 +372,7 @@ mod bundle {
                     seconds: step.seconds,
                     tool: step.tool,
                     what: redact_home(&step.what, home),
+                    op: step.op.clone(),
                 })
                 .collect(),
             inputs: file_docs("inputs", &journal.inputs, home),

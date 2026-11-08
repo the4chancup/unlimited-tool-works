@@ -11,51 +11,114 @@ use std::sync::Arc;
 
 use anyhow::anyhow;
 use pes_savefile::model::{PlayerEntry, TeamEntry};
-use pes_savefile::ops::compare::{compare_players, compare_teams};
+use pes_savefile::ops::compare::{PlayerDiff, compare_players, compare_teams};
 use pes_savefile::schema::VersionSchema;
+use serde::{Deserialize, Serialize};
 use studio_core::Recorder;
 
 use crate::messages::{TOOL_ID, diff_fields, team_diff_fields};
 use crate::session::undo::Change;
 
-/// The journal's `player <id>: <field> <old> → <new>` lines for a change
+/// A step's typed change, written beside its line as `journal.toml`'s
+/// `[step.op]` table: what a replay applies where the line is only read.
+/// Internally tagged (`kind`); the fields serialize as the table's own
+/// keys.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub(crate) enum Op {
+    /// The session's own open: `input` is the kept input's index in the
+    /// bundle's `[[input]]` list.
+    Open {
+        /// The kept input the save was read from.
+        input: usize,
+    },
+    /// One comparator row of a player edit, the entry's id beside it.
+    Player {
+        /// The player the row applies to.
+        id: u32,
+        /// The comparator row the line was printed from.
+        row: PlayerDiff,
+    },
+    /// A save write: `output` is the kept output's index in the bundle's
+    /// `[[output]]` list, `None` when the written file could not be read
+    /// back to keep.
+    Wrote {
+        /// The kept output the member has.
+        output: Option<usize>,
+    },
+}
+
+/// A journal step for `Session::changed`: its line and, when the change
+/// is one replay applies, the `Op` the line was read off.
+pub(super) struct Step {
+    /// The step's line.
+    pub(super) line: String,
+    /// The step's typed change; `None` on a heading or a line the ops do
+    /// not cover (team, roster and tactics rows are not replayed).
+    pub(super) op: Option<Op>,
+}
+
+impl Step {
+    /// A step replay skips: a heading, or a line the ops do not cover.
+    pub(super) fn note(line: impl Into<String>) -> Step {
+        Step {
+            line: line.into(),
+            op: None,
+        }
+    }
+}
+
+/// `op` as the `[step.op]` table `journal.toml` writes beside the line.
+/// Every variant's fields are serde data, so the table always comes out.
+pub(super) fn op_table(op: &Op) -> toml::Table {
+    toml::Table::try_from(op).expect("every Op variant's fields are serde data")
+}
+
+/// The journal's `player <id>: <field> <old> → <new>` steps for a change
 /// to `after`'s entry from `before`, one per field `compare_players`
-/// names.
+/// names, each carrying the `PlayerDiff` the line was printed from.
 pub(super) fn player_lines(
     before: &PlayerEntry,
     after: &PlayerEntry,
     schema: &VersionSchema,
-) -> Vec<String> {
+) -> Vec<Step> {
     compare_players(before, after, schema)
         .expect("a session's entries match its version's schema")
         .iter()
         .map(|diff| {
             let (field, old, new) = diff_fields(diff);
-            format!("player {}: {field} {old} → {new}", after.id)
+            Step {
+                line: format!("player {}: {field} {old} → {new}", after.id),
+                op: Some(Op::Player {
+                    id: after.id,
+                    row: diff.clone(),
+                }),
+            }
         })
         .collect()
 }
 
-/// `player_lines` for a team's entry.
+/// `player_lines` for a team's entry: the ops do not cover team, roster
+/// or tactics rows yet, so the lines record as notes.
 pub(super) fn team_lines(
     before: &TeamEntry,
     after: &TeamEntry,
     schema: &VersionSchema,
-) -> Vec<String> {
+) -> Vec<Step> {
     compare_teams(before, after, schema)
         .expect("a session's entries match its version's schema")
         .iter()
         .map(|diff| {
             let (field, old, new) = team_diff_fields(diff);
-            format!("team {}: {field} {old} → {new}", after.id)
+            Step::note(format!("team {}: {field} {old} → {new}", after.id))
         })
         .collect()
 }
 
-/// A pushed change's journal lines: the fields' values as they move
+/// A pushed change's journal steps: the fields' values as they move
 /// (`undone`: an undo's lines run from the edit's `after` back to its
 /// `before`).
-pub(super) fn change_lines(change: &Change, schema: &VersionSchema, undone: bool) -> Vec<String> {
+pub(super) fn change_lines(change: &Change, schema: &VersionSchema, undone: bool) -> Vec<Step> {
     match change {
         Change::Player { before, after } => {
             let (from, to) = if undone {

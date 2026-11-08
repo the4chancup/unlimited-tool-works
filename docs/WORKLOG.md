@@ -8194,10 +8194,12 @@ points there.
   the command: the step's `op` in `studio_core`, written and read back from a bundle, the
   kept files' indexes, the open's and the save write's ops and every player row's (serde on
   `PlayerDiff`, the face run's unused bits, `pes_savefile`'s apply and a file's salt), and
-  replay run over a bundle a `Session` recorded; (3b) the `replay` command, its messages
-  and SE-REP-01 to 06; (3c) the team, roster and tactics rows, `Session::apply_patch`'s
-  field lines, and a test per `Session` mutator that replaying its journal rebuilds the
-  model; (4) the
+  replay run over a bundle a `Session` recorded (done 2026-11-08, SWE-2, one rework);
+  (3b) the `replay` command, its messages and SE-REP-01 to 06; (3c) the team, roster and
+  tactics rows, `Session::apply_patch`'s field lines, and a test per `Session` mutator that
+  replaying its journal rebuilds the model. 3b and 3c wait until a member's bundle needs
+  them (the maintainer, 2026-11-08, DECISIONS): until then a bundle is read with
+  `save-editor diff` of its kept input against its written save beside the journal; (4) the
   "Report a problem" button and dialog in the shell (the draft's `drawReport`), each tool's
   current state through the tool interface, and replay comparing that state last: slice 2
   built the writer and nothing calls it outside tests yet, so no member can write a bundle

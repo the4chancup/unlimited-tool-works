@@ -4,6 +4,9 @@
 /// scripts' byte rules.
 #[cfg(test)]
 mod appearance_golden;
+/// Applying a comparator row to an entry: the replayed side of the rows
+/// `compare` produces.
+pub mod apply;
 /// The comparator: every stored-field difference between two same-version
 /// players or saves.
 pub mod compare;

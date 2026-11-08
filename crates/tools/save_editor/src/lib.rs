@@ -11,6 +11,13 @@ mod cli;
 mod diff;
 mod events;
 mod messages;
+/// Replaying a repro bundle's journal (native only: bundles live on disk).
+#[cfg(not(target_arch = "wasm32"))]
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "called only from the module's tests")
+)]
+mod replay;
 mod session;
 mod settings;
 mod teams_list;
