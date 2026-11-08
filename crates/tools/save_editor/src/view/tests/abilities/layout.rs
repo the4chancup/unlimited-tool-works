@@ -482,6 +482,45 @@ fn a_positions_label_click_registers_it_as_one_edit() {
     assert_eq!(registered(&view), 1, "and the registered stays CB");
 }
 
+// A drag across a position's label selects no text: the labels opt out
+// of egui's selectable labels (a drag past the click's 6-point reach is
+// no click either, so it registers nothing).
+#[test]
+fn a_drag_across_a_positions_label_selects_no_text() {
+    let path = fixture(PesVersion::Pes21, "positions_label_drag");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::sized(DEFAULT_PANE.x, 800.0);
+    let registered = |view: &SaveView| player_entry(view, 70101).positions.registered;
+    assert_eq!(registered(&view), 1, "premise: registered CB");
+
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let ss = label_bounds(&nodes, "SS");
+    let mid = ((ss.y0 + ss.y1) / 2.0) as f32;
+    drag(
+        &mut window,
+        egui::pos2(ss.x0 as f32 + 1.0, mid),
+        egui::pos2(ss.x1 as f32 - 1.0, mid),
+        &mut view,
+    );
+    window.frame(vec![egui::Event::Copy], |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(
+        !window
+            .commands
+            .iter()
+            .any(|command| matches!(command, egui::OutputCommand::CopyText(_))),
+        "the drag selected no text: {:?}",
+        window.commands
+    );
+    assert_eq!(registered(&view), 1, "the drag is not a click");
+    assert!(
+        !view.session.as_ref().unwrap().can_undo(),
+        "no edit was pushed"
+    );
+}
+
 // The player view's two-choice toggles (the draft's `.rate.lr`): Stronger
 // foot and Stronger hand draw Left | Right as two equal halves of the
 // row's field, the held side filled the positions grid's C grey

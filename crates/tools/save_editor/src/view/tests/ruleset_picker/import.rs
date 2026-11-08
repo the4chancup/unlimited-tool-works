@@ -411,6 +411,26 @@ fn an_imported_rows_text_stays_clear_of_its_x() {
     );
 }
 
+/// An imported row's × reports its `Remove <name>` label and enabled,
+/// like any working button — a disabled report would read it as greyed
+/// out while it still works (its `WidgetInfo` is hand-set: the glyph
+/// names nothing).
+// SE-GUI-15
+#[test]
+fn an_imported_rows_x_reports_its_name_enabled() {
+    let (mut tool, ctx, _requests, dir) = tool_with("ruleset_picker_x_enabled", "autumn26");
+    place_import(&dir, "autumn25.4ccrules", &renamed("4cc Autumn 25"));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    tool_frame(&mut window, &mut tool, &ctx, Vec::new());
+    let pairs = open_dropdown(&mut window, &mut tool, &ctx);
+    let nodes = nodes_of(&pairs);
+    assert_widget_named(
+        node_labeled(&nodes, Role::Button, "Remove 4cc Autumn 25"),
+        Role::Button,
+        "Remove 4cc Autumn 25",
+    );
+}
+
 /// A file matching one import by its file name and another by its
 /// description names both in the confirmation; Replace leaves one row.
 // SE-GUI-15

@@ -1803,3 +1803,5 @@ fn the_shirt_and_short_names_are_upper_cased_as_typed() {
         "the short-name field shows it upper case"
     );
 }
+
+mod labels;

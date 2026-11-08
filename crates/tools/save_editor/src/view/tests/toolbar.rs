@@ -134,61 +134,6 @@ fn hovering_team_while_player_is_open_switches_the_menus() {
     );
 }
 
-/// `menu`'s entries top to bottom, and the y of each separator line
-/// between them (the horizontal lines in the panel's stroke colour across
-/// the entries' column).
-fn menu_entries(
-    window: &mut Headless,
-    view: &mut SaveView,
-    menu: &str,
-    first: &str,
-) -> (Vec<(String, f64, f64)>, Vec<f64>) {
-    open_menu(window, view, menu, first);
-    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
-    let first = menu_item(&nodes, first).bounds().expect("bounds");
-    let mut entries: Vec<(String, f64, f64)> = nodes
-        .iter()
-        .filter(|node| node.role() == Role::Button)
-        .filter_map(|node| {
-            let bounds = node.bounds()?;
-            let label = node.label()?;
-            ((bounds.x0 - first.x0).abs() < 0.5 && bounds.y0 >= first.y0)
-                .then(|| (label.to_owned(), bounds.y0, bounds.y1))
-        })
-        .collect();
-    entries.sort_by(|a, b| a.1.partial_cmp(&b.1).expect("ordered entries"));
-    let stroke = window
-        .ctx
-        .global_style()
-        .visuals
-        .widgets
-        .noninteractive
-        .bg_stroke;
-    let mut lines: Vec<f64> = shapes
-        .iter()
-        .filter_map(|clipped| match &clipped.shape {
-            egui::Shape::LineSegment { points, stroke: s }
-                if *s == stroke
-                    && points[0].y == points[1].y
-                    && f64::from(points[0].x.min(points[1].x)) <= first.x0 + 8.0
-                    && f64::from(points[0].x.max(points[1].x)) >= first.x1 - 8.0 =>
-            {
-                Some(f64::from(points[0].y))
-            }
-            _ => None,
-        })
-        .collect();
-    lines.sort_by(|a, b| a.partial_cmp(b).expect("ordered lines"));
-    (entries, lines)
-}
-
-/// Whether a separator line stands between entries `above` and `below`.
-fn separated(entries: &[(String, f64, f64)], lines: &[f64], above: usize, below: usize) -> bool {
-    lines
-        .iter()
-        .any(|&y| entries[above].2 <= y && y <= entries[below].1)
-}
-
 /// No Panels menu; the Savefile menu holds the whole save's work grouped
 /// by what it acts on: the Comparator and Apply aesthetics patch, a
 /// separator, the roster sheet and Multi-team AATF, a separator, Fix
@@ -347,6 +292,18 @@ fn the_team_views_title_reads_id_and_name_and_sits_midway_in_ink() {
         (above - below).abs() <= 1.0,
         "the ink gaps {above} above and {below} below"
     );
+}
+
+// With no save open the menus that act on one are drawn disabled: Player,
+// Team and Savefile alike (SE-GUI-22's disabled-in-place rule).
+#[test]
+fn the_menus_are_disabled_with_no_save_open() {
+    let mut view = SaveView::new();
+    let mut window = Headless::new();
+    let nodes = draw(&mut window, &mut view);
+    for menu in ["Player", "Team", "Savefile"] {
+        assert!(menu_button(&nodes, menu).is_disabled(), "{menu}");
+    }
 }
 
 /// A dirty session's `• unsaved changes` paints in the link blue, not the

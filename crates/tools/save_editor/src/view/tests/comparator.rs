@@ -150,6 +150,50 @@ fn comparator_button<'a>(
         .unwrap_or_else(|| panic!("no window button {label:?}"))
 }
 
+// A scope button activated with no pointer press — AccessKit's Click,
+// which moves no focus — while a field holds the keyboard still starts
+// its run: the button gives up the field's keyboard itself (an
+// `edit_settled` Held would hold the run off forever).
+#[test]
+fn a_scope_pick_without_a_pointer_press_still_runs() {
+    let (mut view, mut window, _) = compared_73401("comparator_keyboard_pick");
+    // The Name field takes the keyboard.
+    let nodes = draw(&mut window, &mut view);
+    click(&mut window, name_field(&nodes), &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert!(
+        window.ctx.egui_wants_keyboard_input(),
+        "premise: the Name field holds the keyboard"
+    );
+
+    let (gameplay, _) = comparator_button(&pairs, "Gameplay");
+    action_click(&mut window, &mut view, gameplay);
+    assert!(
+        !window.ctx.egui_wants_keyboard_input(),
+        "the pick surrendered the field's keyboard"
+    );
+    assert_eq!(
+        view.comparator.scope,
+        Some(DiffScope::Gameplay),
+        "the scope pick landed"
+    );
+    compared(&mut window, &mut view);
+}
+
+// The Comparator resizes by its edges (the patch and team-file panels'
+// window shares the helper): the window reports the bottom-right
+// corner's `Splitter` handle.
+#[test]
+fn the_comparator_window_reports_its_resize_corner() {
+    let path = fixture(PesVersion::Pes17, "comparator_resizable");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+    let pairs = open_comparator(&mut window, &mut view);
+    let nodes: Vec<accesskit::Node> = pairs.into_iter().map(|(_, node)| node).collect();
+    assert_resizable_window(&nodes, "Comparator");
+}
+
 /// A PES 21 fixture written under `dir`, for a pick of another version.
 fn picked_pes21(dir: &Path) -> PathBuf {
     let path = dir.join("picked21");

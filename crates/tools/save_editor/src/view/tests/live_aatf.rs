@@ -2678,3 +2678,5 @@ fn copying_a_failed_check_copies_the_failed_line() {
         "no count header: {text}"
     );
 }
+
+mod chrome;

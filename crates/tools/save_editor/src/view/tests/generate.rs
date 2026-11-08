@@ -111,6 +111,17 @@ fn generated_settings_writes_the_explicit_colour_coded_name() {
         ),
         "the status-bar notice"
     );
+
+    // The write is a `wrote` step with the file kept; the fresh folder's
+    // missing settings.toml is "no file yet", not a failed read: no
+    // `could not read` step for it.
+    let written = dir.join("settings.toml");
+    assert_wrote_and_kept(&view.recorder, &dir, &written, "outputs/0-settings.toml");
+    let lines = journal_lines(&view.recorder, &dir);
+    assert!(
+        steps_with(&lines, "could not read ").is_empty(),
+        "no could not read step: {lines:?}"
+    );
 }
 
 // SE-GUI-33
@@ -324,6 +335,44 @@ fn a_player_at_minus_one_is_generated() {
     assert_eq!(parsed, expected, "the values are the record's");
 }
 
+// The preview is not a selectable text: hovering it leaves the usual
+// cursor, never the text cursor.
+#[test]
+fn the_preview_is_not_selectable() {
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "generate_preview_select", 701, 1);
+    let dir = crate::test_support::scratch("generate_preview_select");
+    player_menu_item(&mut window, &mut view, "Generate settings.toml");
+    pick_folder(&mut window, &mut view, dir);
+
+    // The preview's label: the dialog's longest text.
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let preview = super::prompt::dialog_nodes(&pairs, "Generate settings.toml")
+        .into_iter()
+        .filter(|node| node.role() == Role::Label)
+        .filter_map(|node| node.value().map(|value| (value.len(), node)))
+        .max_by_key(|(len, _)| *len)
+        .map(|(_, node)| node)
+        .expect("the preview's label");
+    // A point on the label's first line: its centre sits below the
+    // scroll area's fold.
+    let bounds = preview.bounds().expect("the label's bounds");
+    let at = egui::pos2(
+        ((bounds.x0 + bounds.x1) / 2.0) as f32,
+        (bounds.y0 + 5.0) as f32,
+    );
+    let cursor = window
+        .frame(vec![egui::Event::PointerMoved(at)], |ui| {
+            show(ui, &mut view, &|| Vec::new());
+            ui.ctx().output(|output| output.cursor_icon)
+        })
+        .0;
+    assert_ne!(
+        cursor,
+        egui::CursorIcon::Text,
+        "the preview's hover is not a text cursor"
+    );
+}
+
 // Write waits for a real folder: empty or a path that is not a directory
 // it stays disabled; a picked directory enables it.
 #[test]
@@ -436,6 +485,45 @@ fn an_unreadable_existing_settings_toml_is_the_error() {
             .iter()
             .all(|input| input["path"].as_str() != Some(shown.as_str())),
         "the unreadable file keeps nothing: {inputs:?}"
+    );
+}
+
+// A settings.toml that read cleanly at the preview but fails to read at
+// Write — replaced by a folder of its name, a failure that is not "not
+// found" — records one `could not read` step: Write keeps the file it
+// replaces as an input, and a file it cannot read is a failure, never a
+// silent gap.
+#[test]
+fn a_settings_toml_unreadable_at_write_records_could_not_read() {
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "generate_write_unreadable", 701, 1);
+    let dir = crate::test_support::scratch("generate_write_unreadable");
+    std::fs::write(dir.join("settings.toml"), "# mine\nname = \"STALE\"\n").unwrap();
+    player_menu_item(&mut window, &mut view, "Generate settings.toml");
+    let nodes = pick_folder(&mut window, &mut view, dir.clone());
+    assert!(
+        !node_labeled(&nodes, Role::Button, "Write").is_disabled(),
+        "premise: the file read cleanly at the preview"
+    );
+    std::fs::remove_file(dir.join("settings.toml")).unwrap();
+    std::fs::create_dir(dir.join("settings.toml")).unwrap();
+    click(
+        &mut window,
+        node_labeled(&nodes, Role::Button, "Write"),
+        &mut view,
+    );
+
+    let lines = journal_lines(&view.recorder, &dir);
+    let could_not_read = steps_with(&lines, "could not read ");
+    assert_eq!(
+        could_not_read.len(),
+        1,
+        "one could not read step: {lines:?}"
+    );
+    let step = format!("could not read {}: ", dir.join("settings.toml").display());
+    assert!(
+        could_not_read[0].starts_with(&step) && could_not_read[0].len() > step.len(),
+        "the step names the file and its error: {}",
+        could_not_read[0]
     );
 }
 

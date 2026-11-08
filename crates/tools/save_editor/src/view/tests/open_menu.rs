@@ -197,6 +197,82 @@ fn the_open_menu_lists_the_discovered_saves_the_recent_file_and_the_picker() {
     assert_eq!(session.version(), PesVersion::Pes19);
 }
 
+// A separator stands between the discovered saves and the recents when
+// both lists exist, and before Choose file… when either does — never
+// elsewhere (SE-GUI-26's grouped entries).
+#[test]
+fn the_open_menus_separators_stand_only_between_its_groups() {
+    /// The open menu: `documents` discovered (None stubs empty) and
+    /// `recent` opened first if given; `first` is the menu's top entry.
+    /// Its entries and separator ys.
+    fn case(
+        documents: Option<&Path>,
+        recent: Option<PathBuf>,
+        first: &str,
+    ) -> (Vec<(String, f64, f64)>, Vec<f64>) {
+        let mut view = SaveView::new();
+        match documents {
+            Some(documents) => {
+                discover_counted(&mut view, documents);
+            }
+            None => view.discover = Box::new(|_| Vec::new()),
+        }
+        if let Some(recent) = recent {
+            view.open(&recent);
+        }
+        let mut window = Headless::new();
+        menu_entries(&mut window, &mut view, "Open", first)
+    }
+
+    // Neither list: Choose file… alone, no separator.
+    let (entries, lines) = case(None, None, "Choose file");
+    assert_eq!(entries.len(), 1, "Choose file… alone: {entries:?}");
+    assert!(lines.is_empty(), "no separator: {lines:?}");
+
+    // Discovered only: the separator before Choose file… alone.
+    let tree = tree("open_menu_sep_discovered");
+    let (entries, lines) = case(Some(&tree.documents), None, PES19_ENTRY);
+    assert_eq!(entries.len(), 4, "three saves, the picker: {entries:?}");
+    assert_eq!(lines.len(), 1, "one separator: {lines:?}");
+    assert!(
+        separated(&entries, &lines, 2, 3),
+        "between the saves and Choose file…"
+    );
+
+    // Recents only: the separator before Choose file… alone.
+    let (entries, lines) = case(
+        None,
+        Some(tree.elsewhere.clone()),
+        "open_menu_sep_discovered\\elsewhere\\EDIT00000000",
+    );
+    assert_eq!(entries.len(), 2, "the recent, the picker: {entries:?}");
+    assert_eq!(lines.len(), 1, "one separator: {lines:?}");
+    assert!(separated(&entries, &lines, 0, 1), "before Choose file…");
+
+    // Both: a separator between the lists and one before Choose file…,
+    // none between the saves.
+    let (entries, lines) = case(
+        Some(&tree.documents),
+        Some(tree.elsewhere.clone()),
+        PES19_ENTRY,
+    );
+    assert_eq!(
+        entries.len(),
+        5,
+        "the saves, the recent, the picker: {entries:?}"
+    );
+    assert_eq!(lines.len(), 2, "two separators: {lines:?}");
+    assert!(
+        !separated(&entries, &lines, 0, 1) && !separated(&entries, &lines, 1, 2),
+        "none between the discovered saves"
+    );
+    assert!(
+        separated(&entries, &lines, 2, 3),
+        "between the saves and the recents"
+    );
+    assert!(separated(&entries, &lines, 3, 4), "before Choose file…");
+}
+
 // SE-GUI-26
 #[test]
 fn choose_file_starts_in_the_selected_versions_save_folder() {

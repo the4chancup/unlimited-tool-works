@@ -150,6 +150,36 @@ fn a_page_key_that_moves_nothing_keeps_the_fields_keyboard() {
     );
 }
 
+// A press on something not focusable — a field's label — while a field
+// holds the keyboard ends the field's focus on the press frame, not the
+// click's: a drag elsewhere would keep the field's undo entries merging
+// and Ctrl+Z swallowed were focus held to the release (the editor's
+// surrender-on-press).
+#[test]
+fn a_press_elsewhere_takes_the_fields_keyboard() {
+    let (mut view, mut window) = page_keys_from_height("focus_surrender_press", 0);
+    let (_, nodes, _) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    let label = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some("Height"))
+        .expect("the Height label");
+    let at = centre(label);
+    window.frame(pointer_at(at, true), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(
+        window.ctx.memory(|memory| memory.focused()).is_none(),
+        "the press surrendered the field's keyboard"
+    );
+    window.frame(pointer_at(at, false), |ui| {
+        show(ui, &mut view, &|| Vec::new())
+    });
+    assert!(
+        window.ctx.memory(|memory| memory.focused()).is_none(),
+        "the release took no focus back"
+    );
+}
+
 // While a pointer button is held (a number being dragged, a button
 // pressed), the page keys do nothing: the gesture in flight would
 // otherwise finish on the next player.

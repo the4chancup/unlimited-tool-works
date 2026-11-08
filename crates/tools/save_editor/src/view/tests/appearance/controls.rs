@@ -933,3 +933,39 @@ fn ticking_base_copy_sets_the_seven_gameplay_flags_one_undoable_edit() {
     );
     assert!(seven_set(&view), "the seven stay set");
 }
+
+// On a version that has no `base_copy` flag (PES 19 and on) the Base copy
+// checkbox is drawn disabled in place with `PES 15 to 18 only` on hover —
+// the group's gate, like the gated `-` stand-ins.
+// SE-GUI-06
+#[test]
+fn the_base_copy_flag_is_disabled_in_place_on_pes21() {
+    let path = fixture(PesVersion::Pes21, "base_copy_gated");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.aesthetics_from_exports = true;
+    view.edit_aesthetics = true;
+    view.selected = Some(Selection::Player(701, 0));
+    let mut window = Headless::sized(DEFAULT_PANE.x, 700.0);
+    open_appearance(&mut window, &mut view);
+
+    let nodes = scroll_into_view(&mut window, &mut view, |node| {
+        node.role() == Role::CheckBox && node.label() == Some("Base copy")
+    });
+    // The group is unlocked, so a disabled box is the version gate, not
+    // the lock.
+    assert!(
+        !right_of_label(&nodes, "Copy from ID", Role::SpinButton)[0].is_disabled(),
+        "premise: the group is unlocked"
+    );
+    let base_copy = nodes
+        .iter()
+        .find(|node| node.role() == Role::CheckBox && node.label() == Some("Base copy"))
+        .expect("the Base copy flag on PES 21");
+    assert!(base_copy.is_disabled(), "PES 21 holds no such flag");
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, centre(base_copy), "PES 15 to 18"),
+        Some("PES 15 to 18 only".to_owned()),
+        "the gate's hover"
+    );
+}

@@ -115,6 +115,42 @@ fn ctrl_c_then_ctrl_v_copies_a_players_stats_onto_the_selected_row() {
     assert_eq!(player_entry(&view, b), b_before, "one undo restores B");
 }
 
+// SE-GUI-56: Ctrl+V arriving as `PasteImage` (the clipboard holding an
+// image with no text form) pastes the clip as `Paste` does.
+#[test]
+fn ctrl_v_arriving_as_paste_image_pastes_the_clip() {
+    let path = stats_fixture("clip_paste_image");
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    let (a, b) = (70101, 70102);
+    let b_before = player_entry(&view, b);
+    let expected = {
+        let mut second = Session::open(&path, Recorder::default()).unwrap();
+        second.copy_stats(b, a);
+        second.file().player(b).unwrap().clone()
+    };
+    assert_ne!(expected, b_before, "premise: the copy changes B");
+
+    let mut window = Headless::sized(DEFAULT_PANE.x, 900.0);
+    click_player_row(&mut window, &mut view, 701, 0);
+    ctrl_c(&mut window, &mut view);
+    click_player_row(&mut window, &mut view, 701, 1);
+    send(
+        &mut window,
+        &mut view,
+        vec![egui::Event::PasteImage(std::sync::Arc::new(
+            egui::ColorImage::filled([1, 1], egui::Color32::BLACK),
+        ))],
+    );
+
+    assert_eq!(
+        player_entry(&view, b),
+        expected,
+        "B's record is what Copy stats from A writes"
+    );
+}
+
 // SE-GUI-56
 #[test]
 fn ctrl_v_of_a_team_row_writes_the_copied_teams_gameplan() {

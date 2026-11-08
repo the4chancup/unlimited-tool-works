@@ -230,6 +230,24 @@ fn the_labels_click_lists_the_changes_without_the_prompts_answers() {
     );
 }
 
+// The list's Item cells read the rows; they are no click targets — a
+// selectable table would hover `Click to switch to this player` and answer with an
+// index the popup ignores.
+// SE-GUI-43
+#[test]
+fn the_lists_item_cells_take_no_click() {
+    let (mut view, _) = three_changes("changes_list_no_click");
+    let mut window = Headless::new();
+    click_label(&mut window, &mut view);
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    super::prompt::assert_item_cell_takes_no_click(
+        &mut window,
+        &mut view,
+        &list_nodes(&pairs),
+        "PLACEHOLDER · Height",
+    );
+}
+
 // SE-GUI-43
 #[test]
 fn a_click_outside_esc_and_the_label_again_close_the_list() {

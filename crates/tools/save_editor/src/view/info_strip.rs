@@ -16,8 +16,8 @@ use pes_savefile::schema::fields::{PlayerField, PlayerText, RosterField};
 use pes_savefile::schema::{VersionSchema, portable_text_max, schema_for};
 use pes_version::PesVersion;
 use studio_core::widgets::{
-    FORM_ROW_SPACING, add_enabled, add_enabled_ui, combo_item, radio, step_choice, step_number,
-    text_box, wheel_steps,
+    FORM_ROW_SPACING, add_enabled_ui, combo_item, radio, step_choice, step_number, text_box,
+    wheel_steps,
 };
 use team_widgets::cards;
 use team_widgets::names::append_name;
@@ -588,9 +588,11 @@ pub(super) fn other_stats(
     }
 }
 
-/// `small`'s box for a pair half: the shifted `DragValue` for a field the
-/// version stores (a stored value past the shown range drawn as stored),
-/// the disabled `-` for one it lacks.
+/// `small`'s box for a pair half: the shifted `DragValue` (a stored value
+/// past the shown range drawn as stored). `SmallStat::get` stays an
+/// `Option` for the Appearance section's gated stats; the Other stats
+/// panel's four are stored on every version, so the gated `-` stand-in
+/// has no draw here.
 fn small_box(
     ui: &mut egui::Ui,
     session: &mut Session,
@@ -598,40 +600,28 @@ fn small_box(
     stats: &PlayerStats,
     small: &SmallStat,
 ) {
-    match (small.get)(stats) {
-        Some(stored) => {
-            let mut shown = stored + small.shift;
-            let range = small.min..=small.max;
-            let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
-                ui.add_sized(
-                    [BOX_WIDTH, ui.spacing().interact_size.y],
-                    egui::DragValue::new(value)
-                        .range(range.clone())
-                        .clamp_existing_to_range(false),
-                )
-            });
-            if step_number(
-                &mut shown,
-                wheel_steps(ui, &response),
-                small.min..=small.max,
-            ) {
-                response.mark_changed();
-            }
-            if response.changed() {
-                edit_player(session, player_id, response.id.value(), move |player| {
-                    (small.set)(&mut player.stats, shown - small.shift);
-                });
-            }
-        }
-        None => {
-            add_enabled(
-                ui,
-                false,
-                egui::Button::new("-")
-                    .min_size(egui::vec2(BOX_WIDTH, ui.spacing().interact_size.y)),
-            )
-            .on_disabled_hover_text(gating_tooltip(small.field));
-        }
+    let stored = (small.get)(stats).expect("SMALL_STATS' four fields are stored on every version");
+    let mut shown = stored + small.shift;
+    let range = small.min..=small.max;
+    let mut response = number_arrows(ui, &mut shown, range.clone(), |ui, value| {
+        ui.add_sized(
+            [BOX_WIDTH, ui.spacing().interact_size.y],
+            egui::DragValue::new(value)
+                .range(range.clone())
+                .clamp_existing_to_range(false),
+        )
+    });
+    if step_number(
+        &mut shown,
+        wheel_steps(ui, &response),
+        small.min..=small.max,
+    ) {
+        response.mark_changed();
+    }
+    if response.changed() {
+        edit_player(session, player_id, response.id.value(), move |player| {
+            (small.set)(&mut player.stats, shown - small.shift);
+        });
     }
 }
 

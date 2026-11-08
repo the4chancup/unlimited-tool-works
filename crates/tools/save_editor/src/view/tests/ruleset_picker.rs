@@ -44,32 +44,104 @@ fn dropdown(nodes: &[accesskit::Node]) -> &accesskit::Node {
         .expect("a combo box left of the Live AATF toggle on its row")
 }
 
-/// The open dropdown's rows, top to bottom: the Buttons inside its list
-/// box, an imported row's × right after its row.
-fn popup_rows(pairs: &[(accesskit::NodeId, accesskit::Node)]) -> Vec<String> {
+/// One open-dropdown row's label, `toggled` state and bounds.
+type DropdownRow = (String, Option<accesskit::Toggled>, accesskit::Rect);
+
+/// The open dropdown's row nodes, top to bottom: the Buttons inside its
+/// list box, an imported row's × right after its row.
+fn popup_row_nodes(pairs: &[(accesskit::NodeId, accesskit::Node)]) -> Vec<&accesskit::Node> {
     let by_id: HashMap<accesskit::NodeId, &accesskit::Node> =
         pairs.iter().map(|(id, node)| (*id, node)).collect();
     let (list, _) = pairs
         .iter()
         .find(|(_, node)| node.role() == Role::ListBox)
         .expect("the dropdown's open list");
-    let mut rows: Vec<(f64, f64, String)> = Vec::new();
+    let mut rows: Vec<&accesskit::Node> = Vec::new();
     let mut stack = vec![*list];
     while let Some(id) = stack.pop() {
         let node = by_id[&id];
         stack.extend(node.children());
-        if node.role() == Role::Button
-            && let (Some(label), Some(bounds)) = (node.label(), node.bounds())
-        {
-            rows.push((bounds.y0, bounds.x0, label.to_owned()));
+        if node.role() == Role::Button && node.label().is_some() {
+            rows.push(node);
         }
     }
     rows.sort_by(|a, b| {
-        a.0.partial_cmp(&b.0)
-            .expect("ordered bounds")
-            .then(a.1.partial_cmp(&b.1).expect("ordered bounds"))
+        let key = |node: &&accesskit::Node| {
+            let bounds = node.bounds().expect("row bounds");
+            (bounds.y0, bounds.x0)
+        };
+        key(a).partial_cmp(&key(b)).expect("ordered bounds")
     });
-    rows.into_iter().map(|(_, _, label)| label).collect()
+    rows
+}
+
+/// The open dropdown's rows, top to bottom: the Buttons inside its list
+/// box, an imported row's × right after its row.
+fn popup_rows(pairs: &[(accesskit::NodeId, accesskit::Node)]) -> Vec<String> {
+    popup_row_nodes(pairs)
+        .into_iter()
+        .map(|node| node.label().expect("a labeled row").to_owned())
+        .collect()
+}
+
+/// The ys of the horizontal lines spanning the open dropdown's rows (its
+/// separators), top to bottom; the `ListBox` node carries no bounds, so
+/// the rows' own rect is the measure.
+fn list_separators(
+    pairs: &[(accesskit::NodeId, accesskit::Node)],
+    shapes: &[egui::epaint::ClippedShape],
+) -> Vec<f64> {
+    let rows = popup_row_nodes(pairs);
+    let span = rows.iter().filter_map(|node| node.bounds()).fold(
+        (f64::MAX, f64::MIN, f64::MAX, f64::MIN),
+        |(top, bottom, left, right), bounds| {
+            (
+                top.min(bounds.y0),
+                bottom.max(bounds.y1),
+                left.min(bounds.x0),
+                right.max(bounds.x1),
+            )
+        },
+    );
+    let (top, bottom, left, right) = span;
+    let mut ys: Vec<f64> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, .. }
+                if points[0].y == points[1].y
+                    && f64::from(points[0].y) >= top
+                    && f64::from(points[0].y) <= bottom
+                    && f64::from(points[0].x.min(points[1].x)) <= left + 1.0
+                    && f64::from(points[0].x.max(points[1].x)) >= right - 1.0 =>
+            {
+                Some(f64::from(points[0].y))
+            }
+            _ => None,
+        })
+        .collect();
+    ys.sort_by(|a, b| a.partial_cmp(b).expect("ordered ys"));
+    ys
+}
+
+/// The open dropdown's rows' `(label, toggled, bounds)` and separator ys
+/// for one `view`: the dropdown opened if closed, the open frame read.
+fn dropdown_state(window: &mut Headless, view: &mut SaveView) -> (Vec<DropdownRow>, Vec<f64>) {
+    let nodes = draw(window, view);
+    if !nodes.iter().any(|node| node.role() == Role::ListBox) {
+        click(window, dropdown(&nodes), view);
+    }
+    let (_, pairs, shapes) = window.frame_ids(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let rows = popup_row_nodes(&pairs)
+        .into_iter()
+        .map(|node| {
+            (
+                node.label().expect("a labeled row").to_owned(),
+                node.toggled(),
+                node.bounds().expect("row bounds"),
+            )
+        })
+        .collect();
+    (rows, list_separators(&pairs, &shapes))
 }
 
 /// The quick actions' Make buttons' labels, sorted.
@@ -174,6 +246,100 @@ fn the_dropdown_stands_left_of_live_aatf_and_lists_the_builtins() {
     let mut expected: Vec<&str> = BUILTINS.to_vec();
     expected.push(IMPORT_ROW);
     assert_eq!(popup_rows(&pairs), expected, "the built-ins, in order");
+}
+
+/// In the open dropdown exactly the active ruleset's row reads selected:
+/// the active built-in's alone while there are no imports; with an
+/// import active, its row's alone (Import rules file…, a command, reads
+/// never selected). The separator between the built-ins and the imports
+/// stands only when imports exist.
+// SE-GUI-15
+#[test]
+fn only_the_active_rulesets_row_reads_selected() {
+    let toggled = |rows: &[DropdownRow]| -> Vec<String> {
+        rows.iter()
+            .filter(|(_, flag, _)| *flag == Some(accesskit::Toggled::True))
+            .map(|(label, _, _)| label.clone())
+            .collect()
+    };
+    // A separator stands between the rows labeled `above` and `below`.
+    let gap_split = |rows: &[DropdownRow], separators: &[f64], above: &str, below: &str| -> bool {
+        let at = |label: &str| {
+            rows.iter()
+                .find(|(name, _, _)| name == label)
+                .map(|(_, _, bounds)| *bounds)
+                .unwrap_or_else(|| panic!("{label:?}'s bounds"))
+        };
+        let (above, below) = (at(above), at(below));
+        separators.iter().any(|&y| above.y1 <= y && y <= below.y0)
+    };
+
+    let path = fixture(PesVersion::Pes17, "ruleset_picker_toggles");
+    let mut view = SaveView::new();
+    view.open(&path);
+    let mut window = Headless::new();
+
+    // No imports: the active built-in's row alone selected, one
+    // separator (before the command row).
+    let (rows, separators) = dropdown_state(&mut window, &mut view);
+    assert_eq!(
+        toggled(&rows),
+        ["4cc Autumn 26"],
+        "only the active row reads selected: {rows:?}"
+    );
+    assert_eq!(
+        rows.last().map(|(label, flag, _)| (label.as_str(), *flag)),
+        Some((IMPORT_ROW, Some(accesskit::Toggled::False))),
+        "the command row reads unselected"
+    );
+    assert_eq!(
+        separators.len(),
+        1,
+        "one separator, before the command row: {separators:?}"
+    );
+    assert!(
+        gap_split(
+            &rows,
+            &separators,
+            "Divegrass Before Christmas 7",
+            IMPORT_ROW
+        ),
+        "between the last built-in and the command"
+    );
+
+    // With an import active: its row selected alone, the separator
+    // between the built-ins and it (the command's own stands below the
+    // popup's fold, as in the no-imports case).
+    pick_imported(
+        &mut view,
+        "cup.4ccrules",
+        &aatf::official_file().replacen("name: \"4cc Autumn 26\"", "name: \"Cup Rules\"", 1),
+    );
+    let (rows, separators) = dropdown_state(&mut window, &mut view);
+    assert_eq!(
+        toggled(&rows),
+        ["Cup Rules"],
+        "the import's row alone: {rows:?}"
+    );
+    assert_eq!(
+        rows.last().map(|(label, flag, _)| (label.as_str(), *flag)),
+        Some((IMPORT_ROW, Some(accesskit::Toggled::False))),
+        "the command row reads unselected"
+    );
+    assert_eq!(
+        separators.len(),
+        1,
+        "the imports' separator: {separators:?}"
+    );
+    assert!(
+        gap_split(
+            &rows,
+            &separators,
+            "Divegrass Before Christmas 7",
+            "Cup Rules"
+        ),
+        "between the last built-in and the import"
+    );
 }
 
 /// With no save open the dropdown is drawn too, the ruleset driving

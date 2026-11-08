@@ -157,6 +157,26 @@ pub(super) fn table_rows(nodes: &[&accesskit::Node]) -> Vec<(String, String, Str
         .collect()
 }
 
+/// The Item cell `value` of a `selectable(false)` changes table: its
+/// hover names no action — a selectable cell would offer to switch to
+/// the row's player, an answer the table's caller ignores.
+pub(super) fn assert_item_cell_takes_no_click(
+    window: &mut Headless,
+    view: &mut SaveView,
+    nodes: &[&accesskit::Node],
+    value: &str,
+) {
+    let item = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some(value))
+        .unwrap_or_else(|| panic!("no Item cell {value:?}"));
+    assert_eq!(
+        tooltip_containing(window, view, centre(item), "switch to this player"),
+        None,
+        "{value:?} offers no player switch"
+    );
+}
+
 /// The prompt's painted rect: the modal's `egui::Area` id is the one
 /// `prompt::show` registers (the `Role::Dialog` node carries no bounds).
 fn prompt_rect(window: &mut Headless) -> egui::Rect {
@@ -484,6 +504,24 @@ pub(super) fn modal_button<'a>(
         .into_iter()
         .find(|node| node.role() == Role::Button && node.label() == Some(label))
         .unwrap_or_else(|| panic!("no {label:?} in the {heading:?} modal"))
+}
+
+// SE-GUI-05: the prompt's Item cells read the rows; they are no click
+// targets — a selectable table would hover `Click to switch to this player` and
+// answer with an index the prompt ignores.
+#[test]
+fn the_prompts_item_cells_take_no_click() {
+    let path = fixture(PesVersion::Pes21, "prompt_no_click");
+    let mut view = dirty_view(&path);
+    prompt::open(&mut view, Pending::Close);
+    let mut window = Headless::new();
+    let (_, pairs, _) = window.frame_ids(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+    assert_item_cell_takes_no_click(
+        &mut window,
+        &mut view,
+        &dialog_nodes(&pairs, "Unsaved changes"),
+        "PLACEHOLDER · Height",
+    );
 }
 
 // SE-GUI-05: a player rostered on two teams gets his own rows under his

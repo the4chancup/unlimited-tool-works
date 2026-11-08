@@ -7298,7 +7298,10 @@ briefs, review loops, gates and mutation runs as for any step.
     (`.tmp/after_cut/mutants_whole_save_editor/triage.md`, the six `worker.rs` timeouts by
     inference, their logs overwritten); 22 equivalent, excluded (9 extra-kind, 13
     cargo-mutants); slice 1 of the missing tests landed 2026-11-08 (se_kills_1, SWE-2, after
-    two pure-move splits); slice 2, the layout and widget-flag survivors and the undecided
+    two pure-move splits); slice 2a landed 2026-11-08 (se_kills_2a, SWE-2: widget flags,
+    the ruleset dropdown's selected row and separators, the Open menu's separators, focus
+    surrender, paste-as-image, Write's `NotFound` guard; `info_strip` `small_box`'s
+    unreachable gated arm became an `expect`); 2b, the layout survivors and the undecided
     `abilities.rs:547`, next; (9) the `review2`
     worktree (`../4cc-studio-temp/review2`, detached at the pre-reword `1dd5ab92`, clean):
     its three commits have reworded twins on main by subject (`e704be83` the newest), but
@@ -8161,7 +8164,8 @@ points there.
   (2) `studio_core`'s journal type and bundle writer, with the Save editor's journal taken at
   `Session::changed` and its file operations, its inputs kept, and the test that every model
   change goes through the journal (done 2026-11-07, SWE-2; reviewed to 2026-11-08: SWE-2 r1-r11,
-  Astra X1, Argon A1-A3, reworks to `eef1a9e1`; the loop's `mutants-diff 188cf158^..` open); (3) `utw save-editor replay`; (4) the panic hook's bundle;
+  Astra X1, Argon A1-A3, reworks to `eef1a9e1`; the loop's `mutants-diff 188cf158^..` done
+  2026-11-08: 60 mutants, 3 missed, all Write's `NotFound` guard, `generate.rs:333`, tested in se_kills_2a); (3) `utw save-editor replay`; (4) the panic hook's bundle;
   (5) the Team compiler and the Export upgrader; the rest as each tool is built. Each slice
   gets SWE-2, Argon and Astra rounds (a new `pub` interface across crates).
 - open (2026-11-06) — Whole-crate mutation runs on the VPS alone (`RUNBOOK.md` "Mutation
@@ -8183,7 +8187,10 @@ points there.
   (~2,100 lines) and `tests/cli/models.rs` (~3,150). `export_upgrader`, in 0.0.2-poc6 and
   poc5/7 (reviews S-poc6c r1, S-poc57u r1): `src/players.rs` (2,993, its inline test module
   ~1,730), `tests/cli/players.rs` (1,248), `tests/cli/carried.rs` (1,178) and
-  `src/materials.rs` (2,321). Split each by
+  `src/materials.rs` (2,321). `save_editor`, in se_kills_2a: `src/view/tests.rs` (the
+  helpers hub, 1,688), whose new helpers had no smaller home; `view/tests/live_aatf.rs`
+  (2,682) and `view/tests/strip.rs` (1,807) grew only a `mod` line, their new tests in
+  child files. Split each by
   concern as pure moves (the `fmdl` and `aesthetics_patch` splits' way: a parent keeping
   the shared helpers, one child file per concern, a helper used by one child moved with
   it), with no cargo-mutants run holding the crate.

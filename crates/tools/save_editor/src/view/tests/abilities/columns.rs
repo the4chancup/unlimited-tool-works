@@ -664,7 +664,25 @@ fn the_chosen_ratings_paint_their_fills_and_letters() {
     ];
     for (position, rating, fill, text) in cases {
         let letter = ["C", "B", "A"][rating];
-        let button = rating_buttons(&nodes, position)[rating];
+        let ratings = rating_buttons(&nodes, position);
+        let expected: Vec<Option<accesskit::Toggled>> = (0..3)
+            .map(|index| {
+                Some(if index == rating {
+                    accesskit::Toggled::True
+                } else {
+                    accesskit::Toggled::False
+                })
+            })
+            .collect();
+        assert_eq!(
+            ratings
+                .iter()
+                .map(|node| node.toggled())
+                .collect::<Vec<_>>(),
+            expected,
+            "{position}: only the chosen square reports selected"
+        );
+        let button = ratings[rating];
         let bounds = button.bounds().expect("bounds");
         assert_eq!(
             fill_at(&shapes, bounds),

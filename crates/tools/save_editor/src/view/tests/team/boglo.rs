@@ -78,6 +78,16 @@ fn type_into(
     draw(window, view)
 }
 
+// The range's end reads as an enabled label: it takes no click or focus,
+// but a disabled report would read a working readout as greyed out to a
+// screen reader (its `WidgetInfo` is hand-set).
+#[test]
+fn the_ranges_end_reports_an_enabled_label() {
+    let (_view, _window, nodes) = open_boglo("boglo_readout_enabled");
+    let end = boglo_fields(&nodes).end;
+    assert_widget_named(end, Role::Label, end.value().expect("the readout's value"));
+}
+
 // The dialog's layout (the draft's `dlgBoglo`): a group per side titled `Boot IDs` and
 // `Glove IDs`, each option's field in one column across both groups, the
 // one-ID boxes as wide as the incremental range (its start, the dash and

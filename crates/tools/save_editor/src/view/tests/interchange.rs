@@ -893,6 +893,54 @@ fn the_applied_line_stands_after_an_apply_that_wrote_until_the_next_change() {
     );
 }
 
+// An elided picked file name shows the full path alone on hover: the
+// label's own elided-text tooltip stays off, or the bare name would draw
+// a second line over it.
+#[test]
+fn an_elided_picked_name_shows_the_path_alone_on_hover() {
+    let (mut view, mut window) = open_on(PesVersion::Pes21, "interchange_long_name", CO);
+    // Long enough to elide in the room the Pick button leaves, short
+    // enough for a Windows path.
+    let name = format!("co_{}.toml", "x".repeat(110));
+    let text = export(&view, CO);
+    let path = picked(&mut window, &mut view, &name, text.as_bytes());
+    let nodes = panel_nodes(&mut window, &mut view);
+    // egui names an elided label by its whole text.
+    let label = nodes
+        .iter()
+        .find(|node| node.role() == Role::Label && node.value() == Some(name.as_str()))
+        .expect("the picked file's label");
+    let bounds = label.bounds().expect("bounds");
+    let font =
+        window.ctx.style_of(window.ctx.theme()).text_styles[&egui::TextStyle::Monospace].clone();
+    let unelided = window
+        .ctx
+        .fonts_mut(|fonts| fonts.layout_no_wrap(name.clone(), font, egui::Color32::WHITE));
+    assert!(
+        f64::from(unelided.size().x) > bounds.x1 - bounds.x0 + 2.0,
+        "premise: the name is elided ({bounds:?} vs {})",
+        unelided.size().x
+    );
+
+    let tip = path.display().to_string();
+    assert_eq!(
+        tooltip_containing(&mut window, &mut view, centre(label), &tip),
+        Some(tip),
+        "the path on hover"
+    );
+    // The pointer still rests: the label's own elided-text tooltip would
+    // add its `name` label — a second node of that value.
+    let nodes = panel_nodes(&mut window, &mut view);
+    assert_eq!(
+        nodes
+            .iter()
+            .filter(|node| node.value() == Some(name.as_str()))
+            .count(),
+        1,
+        "no elided-text tooltip drawn"
+    );
+}
+
 mod journal;
 mod legacy;
 mod notes;

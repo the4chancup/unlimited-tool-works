@@ -28,6 +28,10 @@ struct Headless {
     /// How soon the last frame asked egui for the next one: its root
     /// viewport's `repaint_delay`, `Duration::MAX` when it asked for none.
     repaint_delay: Duration,
+    /// The last frame's `platform_output.commands`: a `CopyText` is queued
+    /// at end-of-pass, after `contents` ran, so `frame`'s return cannot
+    /// carry it.
+    commands: Vec<egui::OutputCommand>,
 }
 
 impl Headless {
@@ -48,6 +52,7 @@ impl Headless {
             ctx,
             screen: egui::vec2(width, height),
             repaint_delay: Duration::MAX,
+            commands: Vec::new(),
         }
     }
 
@@ -96,6 +101,7 @@ impl Headless {
             .take()
             .expect("AccessKit is enabled on the context");
         let shapes = std::mem::take(&mut output.shapes);
+        self.commands = std::mem::take(&mut output.platform_output.commands);
         self.repaint_delay = output
             .viewport_output
             .get(&egui::ViewportId::ROOT)
@@ -942,6 +948,104 @@ fn label_value(nodes: &[accesskit::Node], value: &str) -> bool {
     nodes
         .iter()
         .any(|node| node.role() == Role::Label && node.value() == Some(value))
+}
+
+/// Asserts `node` reports `role`, a name of `name` and enabled — the
+/// three parts a `WidgetInfo::labeled` reports; a Label's name is its
+/// value (matched from the front: a count may follow, as in
+/// `Name (12/45)`), another role's its label.
+#[track_caller]
+fn assert_widget_named(node: &accesskit::Node, role: Role, name: &str) {
+    assert_eq!(node.role(), role, "{name:?}");
+    let named = if role == Role::Label {
+        node.value().is_some_and(|value| value.starts_with(name))
+    } else {
+        node.label() == Some(name)
+    };
+    assert!(named, "{name:?}: {:?}", node.label().or(node.value()));
+    assert!(!node.is_disabled(), "{name:?} reports disabled");
+}
+
+/// Asserts the window titled `title` reports a `Role::Splitter` node at
+/// its bottom-right corner — the handle a resizable `egui::Window`
+/// reports (`.resizable(false)` drops them all).
+#[track_caller]
+fn assert_resizable_window(nodes: &[accesskit::Node], title: &str) {
+    let frame = nodes
+        .iter()
+        .find(|node| {
+            node.role() == Role::Window
+                && node.label().is_some_and(|label| label.starts_with(title))
+        })
+        .and_then(accesskit::Node::bounds)
+        .unwrap_or_else(|| panic!("the {title:?} window"));
+    let corner = nodes
+        .iter()
+        .filter(|node| {
+            node.role() == Role::Splitter
+                && node.label() == Some("Resize window bottom-right corner")
+        })
+        .filter_map(accesskit::Node::bounds)
+        .any(|bounds| {
+            ((bounds.x0 + bounds.x1) / 2.0 - frame.x1).abs() <= 8.0
+                && ((bounds.y0 + bounds.y1) / 2.0 - frame.y1).abs() <= 8.0
+        });
+    assert!(corner, "{title:?} has no bottom-right resize handle");
+}
+
+/// `menu`'s entries top to bottom, and the y of each separator line
+/// between them (the horizontal lines in the panel's stroke colour across
+/// the entries' column).
+fn menu_entries(
+    window: &mut Headless,
+    view: &mut SaveView,
+    menu: &str,
+    first: &str,
+) -> (Vec<(String, f64, f64)>, Vec<f64>) {
+    open_menu(window, view, menu, first);
+    let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, view, &|| Vec::new()));
+    let first = menu_item(&nodes, first).bounds().expect("bounds");
+    let mut entries: Vec<(String, f64, f64)> = nodes
+        .iter()
+        .filter(|node| node.role() == Role::Button)
+        .filter_map(|node| {
+            let bounds = node.bounds()?;
+            let label = node.label()?;
+            ((bounds.x0 - first.x0).abs() < 0.5 && bounds.y0 >= first.y0)
+                .then(|| (label.to_owned(), bounds.y0, bounds.y1))
+        })
+        .collect();
+    entries.sort_by(|a, b| a.1.partial_cmp(&b.1).expect("ordered entries"));
+    let stroke = window
+        .ctx
+        .global_style()
+        .visuals
+        .widgets
+        .noninteractive
+        .bg_stroke;
+    let mut lines: Vec<f64> = shapes
+        .iter()
+        .filter_map(|clipped| match &clipped.shape {
+            egui::Shape::LineSegment { points, stroke: s }
+                if *s == stroke
+                    && points[0].y == points[1].y
+                    && f64::from(points[0].x.min(points[1].x)) <= first.x0 + 8.0
+                    && f64::from(points[0].x.max(points[1].x)) >= first.x1 - 8.0 =>
+            {
+                Some(f64::from(points[0].y))
+            }
+            _ => None,
+        })
+        .collect();
+    lines.sort_by(|a, b| a.partial_cmp(b).expect("ordered lines"));
+    (entries, lines)
+}
+
+/// Whether a separator line stands between entries `above` and `below`.
+fn separated(entries: &[(String, f64, f64)], lines: &[f64], above: usize, below: usize) -> bool {
+    lines
+        .iter()
+        .any(|&y| entries[above].2 <= y && y <= entries[below].1)
 }
 
 /// The pane the shell leaves a tool's view at the 1280 x 780 default
