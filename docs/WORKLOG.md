@@ -2868,7 +2868,8 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         lines, an issue below). Open: one `mutants-diff 8bcbf720` over everything since
         (8.36c, its review's fixes, 0.0.2-poc1 to poc7), after `save_editor`'s whole-crate
         run and the in-game checks; the three diffs queued behind that run were stopped
-        2026-11-06 to free its gap for the checks (the maintainer). Launched 2026-11-09 with
+        2026-11-06 to free its gap for the checks (the maintainer). First run 2026-11-08, its
+        27 survivors killed or excluded in `aa337513`; run again 2026-11-09 with
         0.0.2-poc8 to poc11 in it (592 mutants over `team_compiler`, `export_upgrader`,
         `pes_savefile`, `dds_convert`; `save_editor` left to its next whole-crate run), then
         the library parity's rerun, tag `p11` against `c4`, c4's input lists and teams list
