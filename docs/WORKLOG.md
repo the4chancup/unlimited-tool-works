@@ -7935,6 +7935,19 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] slice 4: the legacy kit token (`u0???p0`-style, `kit6_u0827p0.dds`) refused in an
       export's file names and paths, naming the upgrader (the bullet above); its spec first.
       After the PoC is handed over (the maintainer, 2026-11-09: not needed for it)
+  - [ ] 0.0.2-poc13 VGL27 keeps the managers' boots and gloves IDs (the maintainer,
+    2026-11-09, after the PoC): managers keep the old format and Red for their own tests, so
+    an official DLC whose boots/gloves IDs differ from what they sent (Studio's slot-based
+    40-per-team block, 3745 for team 792's slot 05, against the old exports' own `k`/`g`
+    IDs in a 25-per-team block) breaks their test CPKs against the official save. Shape
+    (*lead*, veto any): the upgrader records each player's original boots and gloves ID in
+    his `settings.toml`; a legacy compiler setting (on for VGL27 only, dropped once the cup
+    moves to the new format) packs and patches those IDs instead of the slot's. Spec,
+    DECISIONS entry and scenarios first, then a SWE-2 brief per tool. To check while
+    specifying: faces and kits are slot- and team-named in both formats (believed equal, not
+    rechecked); an old export's ID outside its team's 25-block (reproduce or refuse);
+    FoxDen's per-kit boots/gloves packages use the 40-block, so legacy IDs get none (old
+    exports have none)
   - [ ] 0.0.2-chk library parity against checkpoints, not Red (the maintainer, 2026-11-09:
     parity with Red was proven once the core was built; divergence is expected since, and
     accounting for it at every run grows costlier). *Lead*, the shape (veto any):
