@@ -1308,7 +1308,7 @@ TC-MOD-102 GIVEN Common/legs.fmdl naming hair in
            WHEN the export is compiled for PES 21 with cpk_name 4cc_62_midcup
            THEN no texture finding names hair, and the packed Common model names it in
                 /Assets/pes16/model/character/common/714/sourceimages/
-TC-MOD-103 GIVEN slot 05's boots.fmdl naming dummy_kit in
+TC-MOD-103 GIVEN slot 05's boots.fmdl naming team_kit in
            /Assets/pes16/model/character/common/000/sourceimages/, slot 06's face_high.fmdl naming
            hair in /Assets/pes16/model/character/common/biz/sourceimages/, slot 07's naming zero
            in /Assets/pes16/model/character/common/sourceimages/ and skin in
@@ -1338,6 +1338,14 @@ TC-MOD-105 GIVEN slot 05's face_high.fmdl naming hair in common_folder/jessie/, 
            WHEN the export is checked for PES 21
            THEN fmdl_common_path_invalid names both directories, each text naming
                 team_common_folder/ and upgrade-models, and drops both folders
+TC-MOD-106 GIVEN slot 05's face_high.fmdl naming dummy_kit in team_common_folder/, slot 06's
+           naming Dummy_GK_Kit_Back in ./, slot 07's face_high.model whose face_high.mtl names
+           team_common_folder/dummy_kit_srm.dds, and slot 08's face_high.fmdl naming dummy_nrm
+           and dummy_kitten, neither present
+           WHEN the export is checked for PES 21, then for PES 17
+           THEN both times dummy_kit_name_old names slot 05's, 06's and 07's textures, each
+                text naming team_kit and export-upgrader, and drops their folders, and no
+                finding names slot 08's model
 ```
 
 **Textures**
@@ -1894,11 +1902,19 @@ TC-CMN-05  GIVEN a kit set's kit 1 and kit 2 models (pants_kit1.fmdl and pants_k
            .model files, or boots_kit*) anywhere in slot 05's folder or the folders he combines
            WHEN the export is compiled for PES 21
            THEN kit_variant_model_left_out is reported and only kit 1's model is compiled
-TC-CMN-06  GIVEN slot 05's face model referencing dummy_kit and dummy_kit_srm, or (PES 17) a .mtl
-           naming a dummy_kit stem or a game path, neither present
-           WHEN the export is checked, then compiled for PES 21 (the .mtl: checked for PES 17)
-           THEN no texture-existence finding is reported either time, and the packed model's
-                paths name dummy_kit and dummy_kit_srm verbatim
+TC-CMN-06  withdrawn: restated as TC-CMN-36 (`spec/team_compiler/README.md`), the kit stand-in
+           written team_kit in an export since step 0.0.2-poc12
+TC-CMN-36  GIVEN slot 05's face_high.fmdl naming team_kit and Team_Kit_Srm in
+           team_common_folder/ and team_gk_kit in ./, slot 06's face_high.model whose
+           face_high.mtl names team_common_folder/team_kit.dds and a game path, none present
+           WHEN the export is checked, then compiled for PES 21, then for PES 17
+           THEN no texture-existence finding is reported any time; on PES 21 the packed face
+                model names dummy_kit and dummy_kit_srm in
+                /Assets/pes16/model/character/common/714/sourceimages/ and dummy_gk_kit, and
+                slot 06's converted model dummy_kit there too; on PES 17 slot 05's converted
+                .mtl and slot 06's .mtl name
+                model/character/uniform/common/714/dummy_kit.dds, slot 05's also dummy_kit_srm
+                and dummy_gk_kit there, and slot 06's the game path as written
 TC-CMN-07  GIVEN slot 05 holding, or linking a face folder holding, pants_kit1.model and
            pants_kit2.model with their .mtl files (or one .mtl they share)
            WHEN the export is compiled for PES 17

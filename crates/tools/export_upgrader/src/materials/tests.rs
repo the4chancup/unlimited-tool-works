@@ -370,7 +370,7 @@ fn fmdl_entries_the_classes_keep_are_not_written() {
     // `sourceimages/` (kept as written, not `common_folder/`), twice to set
     // the fixture's fourth entry.
     let face = fmdl(&[
-        ("team_common_folder/", "dummy_kit.dds"),
+        ("team_common_folder/", "dummy_nrm.dds"),
         (
             "/Assets/pes16/model/character/uniform/texture/",
             "u0XXXp1.dds",
@@ -676,6 +676,36 @@ fn the_used_set_marks_every_folder_a_non_dummy_reference_reaches() {
 }
 
 #[test]
+fn a_kit_stand_in_s_old_spelling_is_written_the_studio_way_and_nothing_else_is() {
+    for (name, studio) in [
+        ("dummy_kit.dds", "team_kit.dds"),
+        ("dummy_gk_kit.dds", "team_gk_kit.dds"),
+        ("dummy_kit_srm.dds", "team_kit_srm.dds"),
+        ("dummy_gk_kit_back.dds", "team_gk_kit_back.dds"),
+        // Letter cases fold; the stem is written lowercase, the extension kept.
+        ("Dummy_Kit_SRM.dds", "team_kit_srm.dds"),
+        ("DUMMY_GK_KIT.DDS", "team_gk_kit.DDS"),
+        // An FMDL texture entry, which carries no extension.
+        ("dummy_kit", "team_kit"),
+        ("Dummy_GK_Kit", "team_gk_kit"),
+    ] {
+        assert_eq!(studio_kit_name(name), Some(studio.to_owned()), "{name}");
+    }
+    for name in [
+        "dummy_kitten.dds",
+        "dummy_gk_kitten.dds",
+        "dummy_nrm.dds",
+        "dummy_srm.dds",
+        "dummy_bsm.dds",
+        "team_kit.dds",
+        "team_kitten.dds",
+        "hair.dds",
+    ] {
+        assert_eq!(studio_kit_name(name), None, "{name}");
+    }
+}
+
+#[test]
 fn a_common_keeper_reference_names_the_respelled_file() {
     let rewrites = plan(
         &[("face", "Players/07 - A/face.mtl")],
@@ -701,12 +731,12 @@ fn a_common_dummy_stem_gets_its_marker_respelled_alone() {
         &[],
         &[(
             "face",
-            &mtl(&["model/character/uniform/common/XXX/dummy_kit.dds"]),
+            &mtl(&["model/character/uniform/common/XXX/dummy_nrm.dds"]),
         )],
     );
     let text = written_text(&rewrites, "Players/07 - A/face.mtl");
     assert!(
-        text.contains("path=\"team_common_folder/dummy_kit.dds\""),
+        text.contains("path=\"team_common_folder/dummy_nrm.dds\""),
         "{text}"
     );
     assert!(rewrites.links.is_empty());
@@ -725,7 +755,7 @@ fn a_common_dummy_stem_in_a_sub_keeps_the_sub_as_written() {
     );
     let text = written_text(&rewrites, "Players/07 - A/face.mtl");
     assert!(
-        text.contains("path=\"team_common_folder/u0XXXp0/dummy_kit.dds\""),
+        text.contains("path=\"team_common_folder/u0XXXp0/team_kit.dds\""),
         "{text}"
     );
     assert!(rewrites.links.is_empty());

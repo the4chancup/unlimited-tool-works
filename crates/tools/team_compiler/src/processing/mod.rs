@@ -732,7 +732,7 @@ mod tests {
         let batch = process_task(3, task, files, &context);
 
         assert!(batch.messages.is_empty(), "{:?}", batch.messages);
-        assert_eq!(parts, 2 * 8160, "the tracer's two gloves");
+        assert_eq!(parts, 2 * 8189, "the tracer's two gloves");
         assert_eq!(budget.peak(), parts);
     }
 

@@ -4,7 +4,7 @@
 //! player's own models at that output; and what a lenient file-type check keeps around them,
 //! which nothing reads.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use fmdl::ops::paths::{rewrite_texture_paths, texture_paths};
 use fmdl::{FmdlFile, Model};
@@ -1861,18 +1861,24 @@ fn clean_model_naming_in(from: &str, name: &str, directory: &str) -> Vec<u8> {
 }
 
 /// `clean_model()` with each `(from, name, directory)` of `entries` renamed and pointed
-/// as given.
+/// as given; a `from` the model does not name panics, so a stale argument fails the
+/// test instead of passing it vacuously.
 fn clean_model_naming_each(entries: &[(&str, &str, &str)]) -> Vec<u8> {
     let mut file = FmdlFile::read(&clean_model()).unwrap();
+    let mut named = BTreeSet::new();
     rewrite_texture_paths(&mut file, |path| {
         if let Some((_, name, directory)) =
             entries.iter().find(|(from, _, _)| path.file_name == *from)
         {
+            named.insert(path.file_name.clone());
             path.file_name = (*name).to_owned();
             path.directory = (*directory).to_owned();
         }
     })
     .unwrap();
+    for (from, _, _) in entries {
+        assert!(named.contains(*from), "{from} is no texture of the model");
+    }
     file.write()
 }
 
@@ -1882,14 +1888,14 @@ fn an_fmdl_common_directory_naming_anything_but_team_folder_or_sourceimages_is_r
     let sandbox = Sandbox::new("mod_fmdl_common_invalid");
     let export = "exports/co Midcup Nested";
     let dir = |folder: &str| format!("/Assets/pes16/model/character/common/{folder}/sourceimages/");
-    // Slot 05's boots name `dummy_kit` in `common/000/` (the community's placeholder,
-    // a `dummy_` stem's entry checked alike), slot 06's face `hair` in `common/biz/`
+    // Slot 05's boots name `team_kit` in `common/000/` (the community's placeholder,
+    // a stand-in's entry checked alike), slot 06's face `hair` in `common/biz/`
     // (a team's name), `Common/legs.fmdl` `skin` in `common/XXX/`, and slot 07's
     // `zero` in `sourceimages/` and `skin` in `Team_Folder` in any letter case: the
     // two admissible folders, which no finding names.
     sandbox.write(
         &format!("{export}/Players/05 - A/boots.fmdl"),
-        &clean_model_naming_in("dummy_kit.dds", "dummy_kit.dds", &dir("000")),
+        &clean_model_naming_in("team_kit.dds", "team_kit.dds", &dir("000")),
     );
     sandbox.write(
         &format!("{export}/Players/06 - B/face_high.fmdl"),
@@ -1898,7 +1904,7 @@ fn an_fmdl_common_directory_naming_anything_but_team_folder_or_sourceimages_is_r
     sandbox.write(
         &format!("{export}/Players/07 - C/face_high.fmdl"),
         &clean_model_naming_each(&[
-            ("dummy_kit.dds", "zero.dds", GAME_COMMON_DIRECTORY),
+            ("team_kit.dds", "zero.dds", GAME_COMMON_DIRECTORY),
             (
                 "dummy_nrm.dds",
                 "skin.dds",
@@ -1924,7 +1930,7 @@ fn an_fmdl_common_directory_naming_anything_but_team_folder_or_sourceimages_is_r
             [
                 format!(
                     "Error fmdl_common_path_invalid [DropFolder] at Players/05 - A \
-                     (model=boots.fmdl, texture={dir_000}dummy_kit.dds, directory={dir_000})"
+                     (model=boots.fmdl, texture={dir_000}team_kit.dds, directory={dir_000})"
                 ),
                 format!(
                     "Error fmdl_common_path_invalid [DropFolder] at Players/06 - B \
@@ -1942,6 +1948,80 @@ fn an_fmdl_common_directory_naming_anything_but_team_folder_or_sourceimages_is_r
             "PES {version}: {lines:#?}"
         );
         assert_eq!(run.exit_code(), 1, "PES {version}");
+    }
+}
+
+// TC-MOD-106
+#[test]
+fn a_model_naming_the_kit_stand_in_s_old_spelling_is_refused() {
+    let sandbox = Sandbox::new("mod_dummy_kit_old");
+    let export = "exports/co Midcup Nested";
+    // Slot 05's face names `dummy_kit` in `team_common_folder/` and slot 06's
+    // `Dummy_GK_Kit_Back` in `./`, the stand-in's old spelling, the game's, in any
+    // letter case; slot 07's `.mtl` names `team_common_folder/dummy_kit_srm.dds`; and
+    // slot 08's `dummy_nrm` and `dummy_kitten`, the game's own `dummy_` stems and no
+    // stand-in, which no finding names.
+    sandbox.write(
+        &format!("{export}/Players/05 - A/face_high.fmdl"),
+        &clean_model_naming_in("team_kit.dds", "dummy_kit.dds", "team_common_folder/"),
+    );
+    sandbox.write(
+        &format!("{export}/Players/06 - B/face_high.fmdl"),
+        &clean_model_naming_in("dummy_nrm.dds", "Dummy_GK_Kit_Back", "./"),
+    );
+    sandbox.write(
+        &format!("{export}/Players/07 - C/face_high.model"),
+        &card_model(),
+    );
+    let mtl = String::from_utf8(pre_fox_fixture("cardhead_materials.mtl"))
+        .unwrap()
+        .replace("./texture.dds", "team_common_folder/dummy_kit_srm.dds");
+    sandbox.write(
+        &format!("{export}/Players/07 - C/face_high.mtl"),
+        mtl.as_bytes(),
+    );
+    sandbox.write(
+        &format!("{export}/Players/08 - D/face_high.fmdl"),
+        &clean_model_naming_each(&[
+            ("team_kit.dds", "dummy_kitten.dds", "./"),
+            ("dummy_nrm.dds", "dummy_nrm.dds", "./"),
+        ]),
+    );
+
+    for (settings, version) in [(pes21_settings(&sandbox), 21), (pes17(&sandbox), 17)] {
+        let run = sandbox.run(&settings, &["check"]);
+
+        let lines = run.messages();
+        assert_eq!(
+            findings_of(&lines, "co Midcup Nested"),
+            [
+                "Error dummy_kit_name_old [DropFolder] at Players/05 - A \
+                 (model=face_high.fmdl, texture=team_common_folder/dummy_kit.dds)",
+                "Error dummy_kit_name_old [DropFolder] at Players/06 - B \
+                 (model=face_high.fmdl, texture=./Dummy_GK_Kit_Back)",
+                "Error dummy_kit_name_old [DropFolder] at Players/07 - C \
+                 (file=face_high.mtl, texture=team_common_folder/dummy_kit_srm.dds)",
+                "Info export_identified [Keep] (team=/co/, id=714)",
+            ],
+            "PES {version}: {lines:#?}"
+        );
+        assert_eq!(run.exit_code(), 1, "PES {version}");
+    }
+    // The finding's text says the stand-in is written `team_kit`, and that the
+    // upgrader respells it.
+    let help = team_compiler::Tool::new().help();
+    let row = help
+        .messages
+        .iter()
+        .find(|row| row.code == "dummy_kit_name_old")
+        .unwrap();
+    for word in ["`team_kit`", "export-upgrader upgrade", "upgrade-models"] {
+        assert!(
+            row.when.contains(word) || row.effect.contains(word),
+            "{word}: {} / {}",
+            row.when,
+            row.effect
+        );
     }
 }
 
@@ -1964,12 +2044,12 @@ fn an_fmdl_s_short_common_directories_compile_as_their_long_forms() {
     // their long forms: the twins of one model, compiled identically.
     let spellings = [
         [
-            ("dummy_kit.dds", "hair.dds", "team_common_folder/"),
+            ("team_kit.dds", "hair.dds", "team_common_folder/"),
             ("dummy_nrm.dds", "skin.dds", "Team_Common_Folder/jessie/"),
             ("dummy_srm.dds", "zero.dds", "common_folder/"),
         ],
         [
-            ("dummy_kit.dds", "hair.dds", TEAM_COMMON_DIRECTORY),
+            ("team_kit.dds", "hair.dds", TEAM_COMMON_DIRECTORY),
             (
                 "dummy_nrm.dds",
                 "skin.dds",
@@ -2057,12 +2137,12 @@ fn an_fmdl_directory_with_anything_after_common_folder_or_starting_common_is_ref
     // root folder.
     sandbox.write(
         &format!("{export}/Players/05 - A/face_high.fmdl"),
-        &clean_model_naming_in("dummy_kit.dds", "hair.dds", "common_folder/jessie/"),
+        &clean_model_naming_in("team_kit.dds", "hair.dds", "common_folder/jessie/"),
     );
     sandbox.write(
         &format!("{export}/Players/06 - B/face_high.fmdl"),
         &clean_model_naming_in(
-            "dummy_kit.dds",
+            "team_kit.dds",
             "hair.dds",
             "common/team_folder/sourceimages/",
         ),
@@ -2641,7 +2721,7 @@ fn a_shared_folder_s_model_link_of_a_non_boots_name_drops_the_folder() {
 /// The clean model as a Common model of its own: its materials renamed with a `_common` tail
 /// so it merges with the clean model itself with no material in common (two copies of one
 /// FMDL would define every material twice, over textures in different places), and its
-/// `dummy_kit.dds` renamed `file_name`, pointed at the game's own Common texture folder,
+/// `team_kit.dds` renamed `file_name`, pointed at the game's own Common texture folder,
 /// which names no team.
 fn clean_model_naming(file_name: &str) -> Vec<u8> {
     let file = FmdlFile::read(&clean_model()).unwrap();
@@ -2649,7 +2729,7 @@ fn clean_model_naming(file_name: &str) -> Vec<u8> {
     for material in &mut model.materials {
         material.name.push_str("_common");
         for (_, texture) in &mut material.textures {
-            if texture.file_name == "dummy_kit.dds" {
+            if texture.file_name == "team_kit.dds" {
                 texture.file_name = file_name.to_owned();
                 texture.directory = GAME_COMMON_DIRECTORY.to_owned();
             }

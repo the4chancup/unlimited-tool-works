@@ -13,7 +13,7 @@ use anyhow::Context;
 use pes_version::{Engine, PesVersion};
 use vtree::ScopePath;
 
-use crate::plan::roles::ModelPackage;
+use crate::plan::roles::{ModelPackage, file_stem};
 use crate::texture_lookup;
 use crate::user_face_xml::{COMMON_FOLDER, TEAM_COMMON_FOLDER, TEAM_FOLDER};
 
@@ -380,6 +380,53 @@ pub(crate) fn export_fmdl_directory(directory: &str) -> String {
         return format!("{FOX_COMMON_DIRECTORY}sourceimages/");
     }
     directory.to_owned()
+}
+
+/// The kit stand-in's prefixes, the Studio spelling and the game's the modded exes
+/// substitute (`spec/model_format.md` "Kit-dependent assets"): a file stem is a stand-in
+/// when, folded, it is a Studio one alone or followed by `_` and anything (`team_kit`,
+/// `team_kit_srm`, `Team_GK_Kit_Back`); `team_kitten` is none. The old spelling, which
+/// `dummy_kit_name_old` refuses, is the same test on `dummy_kit` and `dummy_gk_kit`;
+/// `dummy_kitten`, `dummy_nrm` and every other `dummy_` stem are no stand-in.
+const KIT_STAND_IN: [(&str, &str); 2] =
+    [("team_kit", "dummy_kit"), ("team_gk_kit", "dummy_gk_kit")];
+
+/// Which of `prefixes` `stem`, a folded file stem, spells: the prefix alone, or the
+/// prefix, `_` and anything after it (`team_kit`, `team_kit_srm`; not `team_kitten`).
+fn stand_in_prefix<'a>(stem: &str, prefixes: &'a [&'static str]) -> Option<&'a str> {
+    prefixes.iter().copied().find(|prefix| {
+        stem == *prefix
+            || stem
+                .strip_prefix(prefix)
+                .is_some_and(|rest| rest.starts_with('_'))
+    })
+}
+
+/// `name`, a texture file name an export's model or `.mtl` names, when its file stem is a
+/// kit stand-in, written in the game's spelling the modded exes substitute: the folded
+/// stem with `team_` replaced by `dummy_`, the extension kept (`Team_Kit_Srm.dds` ->
+/// `dummy_kit_srm.dds`, `team_gk_kit` -> `dummy_gk_kit`). `None` for any other name
+/// (`team_kitten`, `hair.dds`, and the game's own `dummy_` stems included: they are no
+/// stand-in). Every rule that reads an export's texture path sees the game's spelling
+/// alone.
+pub(crate) fn kit_stand_in_game_name(name: &str) -> Option<String> {
+    let stem = file_stem(name);
+    let folded = vtree::fold_name(stem);
+    stand_in_prefix(&folded, &KIT_STAND_IN.map(|(studio, _)| studio))?;
+    Some(format!(
+        "dummy_{}{}",
+        &folded["team_".len()..],
+        &name[stem.len()..]
+    ))
+}
+
+/// Whether `name`'s file stem is the kit stand-in in its old spelling, the game's — the
+/// stand-in test on `dummy_kit` and `dummy_gk_kit` — which `dummy_kit_name_old` refuses:
+/// `dummy_kit_srm`, `Dummy_GK_Kit` are, `dummy_kitten`, `dummy_nrm` and every other
+/// `dummy_` stem are not.
+pub(crate) fn is_old_kit_stand_in(name: &str) -> bool {
+    let folded = vtree::fold_name(file_stem(name));
+    stand_in_prefix(&folded, &KIT_STAND_IN.map(|(_, game)| game)).is_some()
 }
 
 /// The CPK path of one kit texture, by its game name (`u0792g1`, `u0792g1_back`), converted
@@ -787,6 +834,63 @@ mod tests {
             "common/team_folder/sourceimages/",
         ] {
             assert_eq!(export_fmdl_directory(directory), directory, "{directory}");
+        }
+    }
+
+    #[test]
+    fn a_kit_stand_in_s_file_name_gets_the_game_spelling_and_no_other_name_does() {
+        for (name, game) in [
+            ("team_kit.dds", "dummy_kit.dds"),
+            ("team_gk_kit.dds", "dummy_gk_kit.dds"),
+            ("team_kit_srm.dds", "dummy_kit_srm.dds"),
+            ("team_gk_kit_back.dds", "dummy_gk_kit_back.dds"),
+            // Letter cases fold; the stem is written lowercase, the extension kept.
+            ("Team_Kit_Srm.dds", "dummy_kit_srm.dds"),
+            ("TEAM_GK_KIT_Back.DDS", "dummy_gk_kit_back.DDS"),
+            // An FMDL texture entry, which carries no extension.
+            ("team_kit", "dummy_kit"),
+            ("Team_GK_Kit", "dummy_gk_kit"),
+        ] {
+            assert_eq!(
+                kit_stand_in_game_name(name),
+                Some(game.to_owned()),
+                "{name}"
+            );
+        }
+        for name in [
+            "team_kitten.dds",
+            "team_kits.dds",
+            "team_gk_kitten.dds",
+            "dummy_kit.dds",
+            "dummy_nrm.dds",
+            "hair.dds",
+        ] {
+            assert_eq!(kit_stand_in_game_name(name), None, "{name}");
+        }
+    }
+
+    #[test]
+    fn the_old_spelling_of_a_kit_stand_in_is_only_dummy_kit_and_dummy_gk_kit() {
+        for name in [
+            "dummy_kit.dds",
+            "dummy_gk_kit.dds",
+            "dummy_kit_srm.dds",
+            "Dummy_GK_Kit_Back",
+            "DUMMY_KIT.DDS",
+        ] {
+            assert!(is_old_kit_stand_in(name), "{name}");
+        }
+        for name in [
+            "dummy_kitten.dds",
+            "dummy_gk_kitten.dds",
+            "dummy_nrm.dds",
+            "dummy_srm.dds",
+            "dummy_bsm.dds",
+            "dummy.dds",
+            "team_kit.dds",
+            "hair.dds",
+        ] {
+            assert!(!is_old_kit_stand_in(name), "{name}");
         }
     }
 

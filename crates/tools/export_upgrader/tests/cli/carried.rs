@@ -512,7 +512,7 @@ fn a_fox_face_folder_s_common_kit_reference_links_the_set() {
     assert!(!stdout.contains("common_link_missing"), "{stdout}");
 }
 
-// EU-MDL-09
+// EU-MDL-41
 #[test]
 fn a_prefox_face_folder_s_kit_magic_files_references_and_face_xml_migrate() {
     let sandbox = Sandbox::new("mdl_kit_magic");
@@ -589,7 +589,7 @@ fn a_prefox_face_folder_s_kit_magic_files_references_and_face_xml_migrate() {
             "./kit1.dds",
             "./kit2.dds",
             "./kitN/armor.dds",
-            "./dummy_kit.dds"
+            "./team_kit.dds"
         ]
     );
     let xml = fs::read(sandbox.path("co Full Spring/Players/07 - A/face.xml")).unwrap();
@@ -602,7 +602,7 @@ fn a_prefox_face_folder_s_kit_magic_files_references_and_face_xml_migrate() {
             ("./".to_owned(), "kit1.dds".to_owned()),
             ("./".to_owned(), "kit2.dds".to_owned()),
             ("./kitN/".to_owned(), "armor".to_owned()),
-            ("common_folder/".to_owned(), "dummy_kit.dds".to_owned()),
+            ("common_folder/".to_owned(), "team_kit.dds".to_owned()),
         ]
     );
 }
@@ -782,7 +782,7 @@ fn an_fmdl_s_folders_below_common_are_respelled_team_folder() {
     assert_eq!(
         fmdl_paths(&sandbox, "co Full Spring/Players/07 - A/face_high.fmdl")[..4],
         [
-            ("team_common_folder/".to_owned(), "dummy_kit.dds".to_owned(),),
+            ("team_common_folder/".to_owned(), "team_kit.dds".to_owned(),),
             ("team_common_folder/".to_owned(), "hair".to_owned()),
             (
                 "/Assets/pes16/model/character/common/team_folder/foo/".to_owned(),
@@ -804,6 +804,70 @@ fn an_fmdl_s_folders_below_common_are_respelled_team_folder() {
         1,
         "{stdout}"
     );
+}
+
+// EU-MDL-42
+#[test]
+fn the_kit_stand_in_s_old_spelling_is_written_team_kit_in_both_modes() {
+    let sandbox = Sandbox::new("mdl_kit_stand_in");
+    sandbox.write("co Spring/Faces/XXX07 - A/face_high_win32.model", b"face");
+    sandbox.write(
+        "co Spring/Faces/XXX07 - A/face.mtl",
+        &mtl(&[
+            "model/character/uniform/common/XXX/Dummy_Kit_SRM.dds",
+            "model/character/uniform/common/XXX/dummy_gk_kit.dds",
+            "./dummy_kitten.dds",
+        ]),
+    );
+    sandbox.write(
+        "co Spring/Faces/XXX08 - B/face_high.fmdl",
+        &fmdl(&[
+            ("./", "dummy_kit_back"),
+            (
+                "/Assets/pes16/model/character/common/sourceimages/",
+                "dummy_nrm",
+            ),
+        ]),
+    );
+    sandbox.save("EDIT");
+
+    let save = sandbox.arg("EDIT");
+    for loose in [false, true] {
+        if loose {
+            fs::remove_dir_all(sandbox.path("co Full Spring")).unwrap();
+        }
+        let input = sandbox.arg("co Spring");
+        let args: Vec<&str> = if loose {
+            vec!["upgrade", &input, "--loose"]
+        } else {
+            vec!["upgrade", &input, "--savefile", &save]
+        };
+        let run = sandbox.run(&args);
+        let stdout = run.stdout();
+        assert_eq!(run.exit_code(), 0, "loose={loose}: {stdout}");
+        let text = mtl_text(&sandbox, "co Full Spring/Players/07 - A/face.mtl");
+        for path in [
+            "team_common_folder/team_kit_srm.dds",
+            "team_common_folder/team_gk_kit.dds",
+            "./dummy_kitten.dds",
+        ] {
+            assert!(text.contains(path), "loose={loose} {path}: {text}");
+        }
+        assert_eq!(
+            fmdl_paths(&sandbox, "co Full Spring/Players/08 - B/face_high.fmdl")[..2],
+            [
+                ("./".to_owned(), "team_kit_back".to_owned()),
+                ("common_folder/".to_owned(), "dummy_nrm".to_owned()),
+            ],
+            "loose={loose}"
+        );
+        // No finding names them: a kept reference is the only one these files
+        // could draw.
+        assert!(
+            !stdout.contains("common_reference_kept"),
+            "loose={loose}: {stdout}"
+        );
+    }
 }
 
 // EU-MDL-40

@@ -447,6 +447,19 @@ pub(crate) enum Code {
     /// out (a `Common/` FMDL's, the file alone, its linking players following
     /// `link_target_dropped`). `export-upgrader upgrade-models` respells an old FMDL.
     FmdlCommonPathInvalid,
+    /// A texture an export's model names by the kit stand-in's old spelling, the game's:
+    /// a stem that, folded, is `dummy_kit` or `dummy_gk_kit`, alone or followed by `_`
+    /// and anything (`dummy_kit_srm`, `Dummy_GK_Kit`), in an FMDL texture entry or a
+    /// `.mtl` sampler path, whatever its directory. The Studio format writes the
+    /// stand-in `team_kit` (`team_gk_kit` for a keeper's), which the compiler writes
+    /// back in the game's spelling; the old one is refused so that files spelled in it
+    /// do not live on. The game's own `dummy_nrm`, `dummy_srm` and `dummy_bsm`, and any
+    /// other `dummy_` stem, are none. Every entry is checked, a mesh-unused one's
+    /// included. The model's or `.mtl`'s folder is left out (a `Common/` file's, the
+    /// file alone), and `export-upgrader upgrade` (`upgrade-models` for a model alone)
+    /// respells it (`model`, an FMDL, or `file`, a `.mtl`; `texture`, the path as
+    /// written).
+    DummyKitNameOld,
     /// A file a task reads cannot be read from its export; its folder is left out.
     SourceReadFailed,
     /// A task could not build its entries; its folder is left out.
@@ -580,7 +593,7 @@ impl Code {
     /// Every code, for the catalog test: a variant missing here would make its first message
     /// panic in `severity`, so a new variant is added to this list too.
     #[cfg(test)]
-    const ALL: [Code; 162] = [
+    const ALL: [Code; 163] = [
         Code::ExportExtractFailed,
         Code::NoExportsFound,
         Code::ExportDisabled,
@@ -701,6 +714,7 @@ impl Code {
         Code::FmdlTextureNotFound,
         Code::FmdlTextureKitPath,
         Code::FmdlCommonPathInvalid,
+        Code::DummyKitNameOld,
         Code::SourceReadFailed,
         Code::FolderPackFailed,
         Code::DpfilelistMissing,
@@ -868,6 +882,7 @@ impl Code {
             Code::FmdlTextureNotFound => "fmdl_texture_not_found",
             Code::FmdlTextureKitPath => "fmdl_texture_kit_path",
             Code::FmdlCommonPathInvalid => "fmdl_common_path_invalid",
+            Code::DummyKitNameOld => "dummy_kit_name_old",
             Code::SourceReadFailed => "source_read_failed",
             Code::FolderPackFailed => "folder_pack_failed",
             Code::DpfilelistMissing => "dpfilelist_missing",

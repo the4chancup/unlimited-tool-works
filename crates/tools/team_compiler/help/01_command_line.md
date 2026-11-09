@@ -675,11 +675,15 @@ a team ID, `XXX`, a team's name or a folder after `common_folder/`, is refused a
 `fmdl_common_path_invalid`, which leaves the model's folder out, and
 `export-upgrader upgrade-models` respells an old model's folder.
 A texture whose name starts with `dummy_` is never looked for. The game puts its
-own in its place. `check` does not look for these textures, only `compile` does. A texture in
+own in its place. The same goes for `team_kit` and its family (`team_kit_srm`, and
+`team_gk_kit` for a keeper): the modded exe puts the team's kit texture there, and the compiler
+writes the name the exe looks for, `dummy_kit`. A model naming `dummy_kit` itself, the old
+spelling, is refused (`dummy_kit_name_old`); `export-upgrader upgrade-models` respells it.
+`check` does not look for these textures, only `compile` does. A texture in
 the game's own kit texture folder (`/Assets/pes16/model/character/uniform/texture/`) is not
 looked for either. The modded exe swaps the files there for every match, so the model would show
 whichever kit is being worn. Its path is kept and `compile` reports the warning
-`fmdl_texture_kit_path`. A part that should follow the kit uses the `dummy_kit` textures or a
+`fmdl_texture_kit_path`. A part that should follow the kit uses the `team_kit` textures or a
 `kitN` texture of its own. A part that should not uses a texture of the player's folder or of
 `Common`. A texture
 link (`hair.dds.common`) may also name a texture that such an earlier CPK holds in the team's

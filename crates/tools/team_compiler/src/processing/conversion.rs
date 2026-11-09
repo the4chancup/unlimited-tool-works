@@ -275,22 +275,33 @@ pub(super) fn fmdl_for_fox(
     Ok(Some(converted))
 }
 
-/// The `.model` `bytes` read, with the `.mtl` `mtl` defining its materials.
+/// The `.model` `bytes` read, with the `.mtl` `mtl` defining its materials, a kit
+/// stand-in the `.mtl` names read in the game's spelling, so a model converted for
+/// Fox names what the exes substitute.
 fn pre_fox_bundle(bytes: &[u8], mtl: &[u8]) -> anyhow::Result<NativeModelBundle> {
     let model = pes_model::model::Model::from_file(&PreFoxModel::read(bytes)?)?;
-    let mtl = MaterialSet::read(mtl)?;
+    let mut mtl = MaterialSet::read(mtl)?;
+    pes_model::ops::paths::rewrite_texture_paths(&mut mtl, |path| {
+        if let Some(game_name) = paths::kit_stand_in_game_name(&path.file_name) {
+            path.file_name = game_name;
+        }
+    });
     Ok(NativeModelBundle::PreFox { model, mtl })
 }
 
 /// The FMDL `bytes` read, with the `.skl` `skeleton` as its bind pose when there is one.
 /// Its texture directories' short forms are read as their long forms first
 /// (`paths::export_fmdl_directory`), so the conversion sees the long form alone and a
-/// `.mtl` written from it names what the long spelling would.
+/// `.mtl` written from it names what the long spelling would; a kit stand-in's file
+/// name is read in the game's spelling in the same pass.
 fn fox_bundle(bytes: &[u8], skeleton: Option<&[u8]>) -> anyhow::Result<NativeModelBundle> {
     let mut model = fmdl::Model::from_file(&fmdl::FmdlFile::read(bytes)?)?;
     for material in &mut model.materials {
         for (_, texture) in &mut material.textures {
             texture.directory = paths::export_fmdl_directory(&texture.directory);
+            if let Some(game_name) = paths::kit_stand_in_game_name(&texture.file_name) {
+                texture.file_name = game_name;
+            }
         }
     }
     let skl = skeleton.map(fmdl::SklFile::read).transpose()?;

@@ -24,8 +24,12 @@ use crate::compile::{
 };
 use crate::deploy::templates_folder;
 use crate::models::face_package;
-use crate::prefox_faces::{CLEAN, card_materials, card_model, compile_pes17, face_cpk, small_dds};
+use crate::prefox_faces::{
+    CLEAN, card_materials, card_model, compile_pes17, face_cpk, face_folder, nested_entries,
+    sampler_paths, small_dds,
+};
 use crate::{CLEAN_PLAYER, clean_model, command_args, findings_of};
+use pes_model::format::mtl::MaterialEntry;
 
 /// The player's texture home, the per-player common subfolder.
 const PLAYER_TEXTURES: &str = "Asset/model/character/common/714/05 - A/sourceimages/#windx11";
@@ -2403,41 +2407,140 @@ fn a_shared_folder_s_model_naming_a_texture_in_common_finds_it_there() {
     );
 }
 
-// TC-CMN-06
+// TC-CMN-36
 #[test]
-fn dummy_kit_textures_are_never_looked_for_and_keep_their_names() {
-    let sandbox = Sandbox::new("tex_dummy_kit");
+fn kit_stand_in_textures_are_never_looked_for_and_written_in_the_game_spelling() {
+    let sandbox = Sandbox::new("tex_team_kit");
+    let export = "co Midcup Dummy";
+    let player = |slot: &str| format!("exports/{export}/Players/{slot}");
+    // Slot 05's face names `team_kit` and `Team_Kit_Srm` in `team_common_folder/` and
+    // `team_gk_kit` in `./`; slot 06's `.mtl` names `team_common_folder/team_kit.dds`
+    // and a game path. None of them is present: the exes substitute the stand-ins.
+    let mut model = FmdlFile::read(&tracer_player_file("fcl_hair.fmdl")).unwrap();
+    let entries = [
+        ("team_kit.dds", "team_kit.dds", "team_common_folder/"),
+        ("dummy_srm.dds", "Team_Kit_Srm.dds", "team_common_folder/"),
+        ("dummy_nrm.dds", "team_gk_kit.dds", "./"),
+    ];
+    rewrite_texture_paths(&mut model, |path| {
+        if let Some((_, name, directory)) =
+            entries.iter().find(|(from, _, _)| path.file_name == *from)
+        {
+            path.file_name = (*name).to_owned();
+            path.directory = (*directory).to_owned();
+        }
+    })
+    .unwrap();
     sandbox.write(
-        "exports/co Midcup Dummy/Players/05 - A/face_high.fmdl",
-        &tracer_model_renaming(
-            "fcl_hair.fmdl",
-            &[
-                ("dummy_kit.dds", "dummy_kit.dds"),
-                ("dummy_srm.dds", "dummy_kit_srm.dds"),
-            ],
-        ),
+        &format!("{}/face_high.fmdl", player("05 - A")),
+        &model.write(),
     );
+    sandbox.write(
+        &format!("{}/face_high.model", player("06 - B")),
+        &card_model(),
+    );
+    let game_path = "model/character/face/common/face_eyelash.dds";
+    let mut set = pes_model::format::mtl::MaterialSet::read(&card_materials()).unwrap();
+    let material = &mut set.materials[0];
+    let MaterialEntry::Sampler(sampler) = material.entries[0].clone() else {
+        panic!("the card material's first entry is its sampler");
+    };
+    material.entries[0] = MaterialEntry::Sampler(pes_model::format::mtl::Sampler {
+        path: "team_common_folder/team_kit.dds".to_owned(),
+        ..sampler.clone()
+    });
+    material.entries.insert(
+        1,
+        MaterialEntry::Sampler(pes_model::format::mtl::Sampler {
+            path: game_path.to_owned(),
+            ..sampler
+        }),
+    );
+    sandbox.write(&format!("{}/face_high.mtl", player("06 - B")), &set.write());
 
-    for command in ["check", "compile"] {
-        let run = sandbox.run(&pes21_settings(&sandbox), &command_args(command));
-        let messages = run.messages();
-        assert!(
-            messages
-                .iter()
-                .all(|line| !line.contains("fmdl_texture_not_found")),
-            "{command}: {messages:?}"
-        );
-        assert_eq!(run.exit_code(), 0, "{command}");
+    for (settings, version) in [
+        (pes21_settings(&sandbox), 21),
+        (pes_settings(&sandbox, 17), 17),
+    ] {
+        for command in ["check", "compile"] {
+            let run = sandbox.run(&settings, &command_args(command));
+            let messages = run.messages();
+            assert!(
+                messages.iter().all(|line| {
+                    !line.contains("fmdl_texture_not_found")
+                        && !line.contains("mtl_texture_not_found")
+                }),
+                "PES {version} {command}: {messages:?}"
+            );
+            assert_eq!(run.exit_code(), 0, "PES {version} {command}");
+        }
+        let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
+        if version == 21 {
+            // Slot 05's packed model names the stand-ins in the game's spelling, the
+            // keeper's kept at the `./` it was written at.
+            let packed =
+                FmdlFile::read(face_package(&entries).get("face_high.fmdl").unwrap()).unwrap();
+            let names: Vec<String> = texture_paths(&packed)
+                .unwrap()
+                .into_iter()
+                .filter(|path| {
+                    path.file_name.starts_with("dummy_kit")
+                        || path.file_name.starts_with("dummy_gk_kit")
+                })
+                .map(|path| format!("{}{}", path.directory, path.file_name))
+                .collect();
+            assert_eq!(
+                names,
+                [
+                    "/Assets/pes16/model/character/common/714/sourceimages/dummy_kit.dds",
+                    "./dummy_gk_kit.dds",
+                    "/Assets/pes16/model/character/common/714/sourceimages/dummy_kit_srm.dds",
+                ],
+                "PES {version}"
+            );
+            // Slot 06's converted model names the same.
+            let face_06 = "Asset/model/character/face/real/71406/#Win/face.fpk";
+            let package = fpk::FpkFile::read(&entries[face_06]).unwrap();
+            let converted = FmdlFile::read(package.get("face_high.fmdl").unwrap()).unwrap();
+            let names: Vec<String> = texture_paths(&converted)
+                .unwrap()
+                .into_iter()
+                .map(|path| format!("{}{}", path.directory, path.file_name))
+                .collect();
+            assert!(
+                names.contains(
+                    &"/Assets/pes16/model/character/common/714/sourceimages/dummy_kit.dds"
+                        .to_owned()
+                ),
+                "PES {version}: {names:?}"
+            );
+        } else {
+            // Slot 05's converted `.mtl` names every stand-in at the team's Common;
+            // slot 06's `.mtl` names `dummy_kit` there and the game path as written.
+            let face_05 = nested_entries(&entries[&face_cpk(5)]);
+            let mtl_05 = &face_05[&format!("{}face_high.mtl", face_folder(5))];
+            assert_eq!(
+                sampler_paths(mtl_05),
+                [
+                    "model/character/uniform/common/714/dummy_kit.dds",
+                    "model/character/uniform/common/714/dummy_gk_kit.dds",
+                    "model/character/uniform/common/714/dummy_kit_srm.dds",
+                    "/Assets/pes16/model/character/face/real/00000/sourceimages/shirt.dds",
+                ],
+                "PES {version}"
+            );
+            let face_06 = nested_entries(&entries[&face_cpk(6)]);
+            let mtl_06 = &face_06[&format!("{}face_high.mtl", face_folder(6))];
+            assert_eq!(
+                sampler_paths(mtl_06),
+                [
+                    "model/character/uniform/common/714/dummy_kit.dds",
+                    game_path,
+                ],
+                "PES {version}"
+            );
+        }
     }
-    let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
-    let model = FmdlFile::read(face_package(&entries).get("face_high.fmdl").unwrap()).unwrap();
-    let names: Vec<String> = texture_paths(&model)
-        .unwrap()
-        .into_iter()
-        .filter(|path| path.directory == "/Assets/pes16/model/character/common/714/sourceimages/")
-        .map(|path| path.file_name)
-        .collect();
-    assert_eq!(names, ["dummy_kit.dds", "dummy_kit_srm.dds"]);
 }
 
 // TC-TEX-13

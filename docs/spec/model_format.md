@@ -159,15 +159,27 @@ Rules:
   feature and stays available on pre-Fox targets through the model-name suffix (a model whose
   name's suffix is `uniform` gets the type; the suffix table in the Aesthetics export plan's "Model
   names"); it has no Fox counterpart and is not part of the cross-engine format.
-- `dummy_kit` (and `dummy_kit_back/_chest/_leg/_name/_nrm/_srm`), a reserved texture name the modded
-  exes (on Fox, FoxDen's kit swapper) replace at load time with a kit texture of that role of the
-  team (on PES 17 in Edit mode kit 2's, whatever kit the player wears; a file at the path is not
-  read). It overlaps what `kitN` expresses with the export's own files, but is the only way for a
-  model to wear the team's compiled kit texture itself, and gets **second-class support**: the compiler treats these stems as **game-provided** (like the Fox `dummy_nrm`/`dummy_srm`
-  fallbacks), so a material may name them, the texture-existence check is skipped for them, and the
-  path is emitted verbatim for the exe to substitute. Nothing is copied or generated for them: the
-  substitution logic now lives in the exes and is stable, unlike the earlier Sider-script era that
-  made Red's kit-1 fallback copies necessary. New exports should use `kitN` for their own files.
+- The **kit stand-in** `team_kit` (and `team_kit_back/_chest/_leg/_name/_nrm/_srm`; the
+  keeper's `team_gk_kit`, as `u0XXXgN` became `gk_kitN`), a reserved texture name the modded
+  exes (on Fox, FoxDen's kit swapper) replace at load time with a kit texture of that role of
+  the team (on PES 17 in Edit mode kit 2's, whatever kit the player wears; a file at the path
+  is not read). The exes and FoxDen match the game's spelling `dummy_kit` (`dummy_gk_kit`),
+  which the community's models named; the Studio format writes `team_kit` instead (the
+  maintainer, 2026-11-09: more intuitive to a new member), and the compiler writes the game's
+  spelling in every output, the whole stem in lowercase (`Team_Kit_Srm` → `dummy_kit_srm`), the
+  rest of the name and the directory compiled as any other path's. A stem is a stand-in when,
+  folded, it is `team_kit` or `team_gk_kit`, alone or followed by `_` and anything (the exes
+  replace the prefix and keep the rest: `dummy_kit_back` becomes `u0TTTpK_back`);
+  `team_kitten` is none. The old spelling is refused (`dummy_kit_name_old`, the maintainer:
+  accepting it would let files spelled in it live on, unintuitive to new members); only the
+  Export upgrader reads it, and respells it. The stand-in overlaps what `kitN` expresses with
+  the export's own files, but is the only way for a model to wear the team's compiled kit
+  texture itself, and gets **second-class support**: the compiler treats these stems as
+  **game-provided** (like the Fox `dummy_nrm`/`dummy_srm` fallbacks, which are the game's own
+  and keep their names), so a material may name them and the texture-existence check is
+  skipped for them. Nothing is copied or generated for them: the substitution logic now lives
+  in the exes and is stable, unlike the earlier Sider-script era that made Red's kit-1
+  fallback copies necessary. New exports should use `kitN` for their own files.
 
 ---
 
@@ -366,8 +378,8 @@ are dropped for that engine (`material_texture_unused`, I):
 | `detail_normal` | — | `DetailNormalMap` | none |
 
 The one set of **reserved stems** a toml may name
-without a file behind them is the legacy `dummy_kit*` family, substituted by the modded exes (see
-"Kit-dependent assets"); the existence check skips them.
+without a file behind them is the kit stand-in, the `team_kit*` and `team_gk_kit*` family,
+substituted by the modded exes (see "Kit-dependent assets"); the existence check skips them.
 
 ### `[mat.fox]` — Fox (FMDL) table
 

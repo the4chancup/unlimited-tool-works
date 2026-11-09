@@ -172,6 +172,61 @@ fn folded_stem(name: &str) -> String {
     vtree::fold_name(stem)
 }
 
+/// The kit stand-in's prefixes: the Studio format's (`team_`) and the game's (`dummy_`),
+/// which the upgrader respells between. A file stem is a stand-in when, folded, it is
+/// one alone or followed by `_` and anything; `team_kitten`, `dummy_kitten` and the
+/// game's own `dummy_nrm` are none.
+const KIT_STAND_IN: [(&str, &str); 2] =
+    [("team_kit", "dummy_kit"), ("team_gk_kit", "dummy_gk_kit")];
+
+/// Whether `stem`, a folded file stem, spells `prefix`: it alone, or it and `_` and
+/// anything after it.
+fn stand_in_stem(stem: &str, prefix: &str) -> bool {
+    stem == prefix
+        || stem
+            .strip_prefix(prefix)
+            .is_some_and(|rest| rest.starts_with('_'))
+}
+
+/// `name`, a texture file name, in the Studio spelling when it spells the kit stand-in
+/// the old way, the game's: the stem in lowercase with `dummy_` written `team_`, the
+/// extension kept (`Dummy_Kit_SRM.dds` → `team_kit_srm.dds`, `dummy_gk_kit` →
+/// `team_gk_kit`). `None` for any other name (`dummy_nrm`, `dummy_kitten`, `team_kit`
+/// itself, `hair.dds`).
+fn studio_kit_name(name: &str) -> Option<String> {
+    let folded = folded_stem(name);
+    if !KIT_STAND_IN
+        .iter()
+        .any(|(_, game)| stand_in_stem(&folded, game))
+    {
+        return None;
+    }
+    let stem_len = name
+        .rsplit_once('.')
+        .map_or(name.len(), |(stem, _)| stem.len());
+    Some(format!(
+        "team_{}{}",
+        &folded["dummy_".len()..],
+        &name[stem_len..]
+    ))
+}
+
+/// Whether `name` is the kit stand-in written the Studio way (`team_kit`,
+/// `team_gk_kit`, alone or `_`-suffixed, folded): the modded exes substitute it, so it
+/// is never looked up, linked or marked used, as a `dummy_` stem is not.
+fn is_studio_kit_stand_in(name: &str) -> bool {
+    let folded = folded_stem(name);
+    KIT_STAND_IN
+        .iter()
+        .any(|(studio, _)| stand_in_stem(&folded, studio))
+}
+
+/// Whether the game supplies the texture `name`: a `dummy_` stem or a kit stand-in,
+/// which the upgrader never looks up and never applies kit magic to.
+fn game_supplied(name: &str) -> bool {
+    folded_stem(name).starts_with("dummy_") || is_studio_kit_stand_in(name)
+}
+
 /// Whether the file `name` claims the folded texture stem `stem` in its
 /// folder: a texture of that stem, or a `.common` link to one (a model's
 /// link, `hair.model.common`, claims no texture stem) — or, for a `kitN`
@@ -356,8 +411,9 @@ enum Reference {
     GameDir,
 }
 
-/// One FMDL texture entry's outcome, class by class: a `dummy_` stem is kept
-/// as written (the game substitutes it), its directory below `common/`
+/// One FMDL texture entry's outcome, class by class: a `dummy_` stem or a kit
+/// stand-in is kept as written (the game substitutes it), the stand-in's old
+/// `dummy_kit` spelling respelled the Studio way, its directory below `common/`
 /// respelled all the same (`respell_fox_directory`), the compiler refusing
 /// any other folder there; a `./` or
 /// empty directory has its
@@ -374,7 +430,10 @@ enum Reference {
 /// that, unlinked (`referee_folder_holds`), and a `./` or empty one is
 /// linked as the last class is (`link_referee_bare`).
 fn fmdl_entry(path: &mut fmdl::ops::paths::TexturePath, ctx: &FileContext, pass: &mut Pass) {
-    if folded_stem(&path.file_name).starts_with("dummy_") {
+    if game_supplied(&path.file_name) {
+        if let Some(name) = studio_kit_name(&path.file_name) {
+            path.file_name = name;
+        }
         respell_fox_directory(&mut path.directory);
         return;
     }
@@ -866,12 +925,18 @@ pub(crate) fn material_references(
             findings: &mut file_findings,
         };
         let changed = rewrite_texture_paths(&mut set, |path| {
+            // The kit stand-in's old spelling is written the Studio way in every
+            // path, whatever its directory; the stand-in is then the game's to
+            // substitute, never looked up, linked or marked used.
+            if let Some(name) = studio_kit_name(&path.file_name) {
+                path.file_name = name;
+            }
             // `./` or no directory: a local reference — respell it (a
             // referee's bare one linked when only `Common/` holds it) and
             // stop.
             if path.directory.is_empty() || path.directory.starts_with("./") {
                 respell_reference(&mut path.directory, &mut path.file_name);
-                if !folded_stem(&path.file_name).starts_with("dummy_") {
+                if !game_supplied(&path.file_name) {
                     mark_lookup(
                         pass.used,
                         &ctx,
@@ -879,23 +944,25 @@ pub(crate) fn material_references(
                         &folded_stem(&path.file_name),
                     );
                 }
-                link_referee_bare(&ctx, &path.directory, &path.file_name, &mut pass);
+                if !is_studio_kit_stand_in(&path.file_name) {
+                    link_referee_bare(&ctx, &path.directory, &path.file_name, &mut pass);
+                }
                 return;
             }
             // Every other reference (a game directory's) stays as written,
             // kit magic included; its file name is still looked up in the
             // file's folder first.
             let Some((_marker, sub)) = reference_into_common(&path.directory) else {
-                if !folded_stem(&path.file_name).starts_with("dummy_") {
+                if !game_supplied(&path.file_name) {
                     mark_lookup(pass.used, &ctx, "", &folded_stem(&path.file_name));
                 }
                 return;
             };
             // The reference as written, for the finding's context.
             let written = format!("{}{}", path.directory, path.file_name);
-            // A `dummy_` stem is the game's; its `???` alone is respelled,
-            // no lookup and no kit magic (MA1-2: the game supplies it).
-            if folded_stem(&path.file_name).starts_with("dummy_") {
+            // A `dummy_` stem or a stand-in is the game's; its `???` alone is
+            // respelled, no lookup and no kit magic (MA1-2: the game supplies it).
+            if game_supplied(&path.file_name) {
                 // `sub` borrows `path.directory`: owned for the rewrite.
                 let sub = sub.to_owned();
                 respell_marker(&mut path.directory, TEAM_COMMON_FOLDER, &sub);

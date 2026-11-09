@@ -462,10 +462,11 @@ then processed as an independent parallel task (Blue: `coordinator._model_folder
    rule, not by path: the Fox `dummy_nrm`/`dummy_srm` an FMDL names are no texture at all (the
    FMDL import reads them as the role absent, `model_format.md` "Textures": pre-Fox has no
    sampler for a missing normal or specular map, so a converted `shaded` material takes the
-   `Basic_*` rung its real textures give), and a reserved `dummy_kit*` stem is pointed at the
-   target's convention, on pre-Fox the team's Common texture directory
+   `Basic_*` rung its real textures give), and a kit stand-in (`team_kit*`, `team_gk_kit*`,
+   written in the game's `dummy_kit*`/`dummy_gk_kit*`, "Kit-dependent assets") is pointed at
+   the target's convention, on pre-Fox the team's Common texture directory
    (`model/character/uniform/common/<team>/dummy_kit.dds`, where a member's own pre-Fox `.mtl`
-   names it `team_common_folder/dummy_kit.dds`), since the Fox directory means nothing to PES 15-17 and
+   names it `team_common_folder/team_kit.dds`), since the Fox directory means nothing to PES 15-17 and
    the modded exes substitute the stem there. The other way, a `.mtl` path naming the
    team's Common (`team_common_folder/<stem>.dds` or its long form, how
    a member's pre-Fox `.mtl` names a texture in `Common/`) is pointed at the first of the
@@ -497,7 +498,9 @@ then processed as an independent parallel task (Blue: `coordinator._model_folder
    Common textures sit in Fox's folder. A directory the short forms cannot spell (one below
    the team's Common not ending `sourceimages/`, one below the game's `sourceimages/`) is
    written long. The compiled FMDL always holds the long form with the team's ID, the path
-   the game loads.
+   the game loads. The same read writes a kit stand-in's file name in the game's spelling
+   (`team_kit.dds` → `dummy_kit.dds`, "Kit-dependent assets"), in an FMDL's texture table and
+   in a `.mtl`'s sampler paths alike, so the compiled model names what the exes substitute.
 3. **Fox mode fixups** — FMDL files renamed by stripping prefixes to the allowed names (arbitrary
    names route to the `fcl_hair.fmdl` merge — Red's fallback generalized), and all models resolving
    to the same allowed name — including `.common` links to Common models, which Fox cannot load at
@@ -1087,10 +1090,20 @@ describes behavior, not a serial scheduling requirement:
   the others are left out with `kit_variant_model_left_out`, as on Fox: the member's base model
   is what both engines agree on; a lone variant (`pants_kit1.model` with no other number) is an
   ordinary model there, a part of his boots or gloves under the marker as any other. A `.common` link to a per-kit variant has no role on PES 15-17
-  (`file_not_used`): the Common models task packs the linked model and lists no set. The legacy
-  `dummy_kit*` stems keep working as **reserved, game-substituted names**: the texture-existence
-  checks (`mtl_texture_not_found`, `material_texture_not_found`, FMDL path checks) skip them and the
-  path is emitted verbatim. Red's `dummy_kit_replace.py` — copying the team's kit 1 textures over
+  (`file_not_used`): the Common models task packs the linked model and lists no set. The kit
+  stand-in (`spec/model_format.md` "Kit-dependent assets": `team_kit*` and `team_gk_kit*`,
+  folded) is a **reserved, game-substituted name**: the texture-existence checks
+  (`mtl_texture_not_found`, `material_texture_not_found`, FMDL path checks) skip it, and every
+  output writes it in the game's spelling, the stem lowercased with `team_` replaced by
+  `dummy_` (`team_kit_srm` → `dummy_kit_srm`, `team_gk_kit` → `dummy_gk_kit`), its directory
+  compiled as any other path's (the team's ID for `team_common_folder/`). The compiler reads an
+  export's stand-ins in the game's spelling where it reads a texture path for processing, by
+  one function beside the short Common forms' ("ID replacement"), so every later rule meets
+  the game's spelling alone, as it did before the Studio spelling existed. The old spelling in
+  an export (a stem that, folded, is `dummy_kit` or `dummy_gk_kit`, alone or followed by `_`,
+  in an `.mtl` sampler path or an FMDL texture entry) is `dummy_kit_name_old`, checked by the
+  deep pass on the path as written; the game's own `dummy_nrm`, `dummy_srm` and `dummy_bsm`,
+  and any other `dummy_` stem, are no stand-in and keep their names, never looked up. Red's `dummy_kit_replace.py` — copying the team's kit 1 textures over
   `dummy_kit*` in Common as a fallback for the substitution — is **not ported**: that fallback dates
   from when the substitution lived in Sider scripts; it is in the exes now and stable.
 - **Bins accumulation** — team colors (from the root `colors.txt`, when present: its first four
@@ -2055,7 +2068,8 @@ Resolved decisions:
   It is the walk "Bins accumulation" makes for the working bins; Red's texture lookup also
   kept only CPKs named `midcup`, `uniform` or `faces`, a filter dropped here. A
   multi-CPK run searches before the first CPK it writes. Each CPK's table of contents is read
-  once per run. A path naming anything else (the game's own textures, `dummy_*`) is kept as it
+  once per run. A path naming anything else (the game's own textures, a `dummy_*` stem or a
+  kit stand-in) is kept as it
   is and not looked up: the game's data CPKs are not read. When the lookup cannot be made (no
   PES folder, no `DpFileList.bin`, or a list that does not name the CPK being compiled, so
   nothing is known to come before it), case 3 cannot be decided, and the finding is a Warning
@@ -2085,8 +2099,9 @@ Resolved decisions:
   is by a file of its set. Both
   compare folded, as stems fold everywhere else. A texture is used when the material instance
   of one of the model's meshes names it; an entry of the texture table no mesh uses is not
-  looked up, since the game never loads it. A stem starting with `dummy_` is never looked up,
-  wherever its path points: the game substitutes it. The check is made where the model is
+  looked up, since the game never loads it. A stem starting with `dummy_` (a kit stand-in
+  read in the game's spelling among them) is never looked up, wherever its path points: the
+  game substitutes it or holds it. The check is made where the model is
   compiled, in its package's task, so `check`, which compiles no model, does not report
   `fmdl_texture_not_found`. The Warning is reported once per missing texture, the package
   compiled with the path as the model names it. The texture link resolves to the installed texture: the model's path names the team's

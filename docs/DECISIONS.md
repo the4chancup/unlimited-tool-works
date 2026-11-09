@@ -16026,6 +16026,49 @@ Plan: `spec/team_compiler/pipeline.md` step 2 "ID replacement" and "Common",
 `spec/team_compiler/messages.md` `fmdl_common_path_invalid`, `spec/export_upgrader.md` step 7,
 the draft's catalog, the compiler's help; scenarios TC-MOD-104, 105, EU-MDL-40, EU-MDL-39
 edited.
+
+## 2026-11-09 — team_compiler, export_upgrader — the kit stand-in is written `team_kit`; `dummy_kit` is refused
+Decision (the maintainer; the lead's choices marked *lead*), amending the poc12 entries above:
+- **The Studio format writes the kit stand-in `team_kit`** (the maintainer: more intuitive than
+  `dummy_kit`), and **an export still naming `dummy_kit` is refused** (the maintainer:
+  accepting the old names would let files spelled in them live on, unintuitive to new
+  members; only the Export upgrader reads them). The compiler writes the game's `dummy_kit` in
+  every output, since every modded exe and FoxDen's swapper match that spelling.
+- *Lead*: the family follows (`team_kit_back`, `_chest`, `_leg`, `_name`, `_nrm`, `_srm`), the
+  keeper's `dummy_gk_kit` becomes `team_gk_kit` (as `u0XXXgN` became `gk_kitN`). A stem is a
+  stand-in when, folded, it is `team_kit` or `team_gk_kit`, alone or followed by `_` and
+  anything (the exes replace the prefix and keep the rest); `team_kitten` is none. Output
+  writes the whole stem in lowercase with `team_` replaced by `dummy_` (`Team_Kit_Srm` →
+  `dummy_kit_srm`): the exes and FoxDen compare the lowercase spelling, and the kit textures'
+  role suffixes are lowercase.
+- *Lead*: the compiler reads an export's stand-ins in the game's spelling where it reads a
+  texture path for processing, by one function beside slice 2's short Common forms, so the
+  rules written for `dummy_` stems (never looked up, pointed at the team's Common on PES
+  15-17) apply unchanged. The old spelling (a stem that, folded, is `dummy_kit` or
+  `dummy_gk_kit`, alone or followed by `_`) in an FMDL texture entry or a `.mtl` sampler path
+  is `dummy_kit_name_old` (E), checked by the deep pass on the spelling as written, on every
+  target, the folder discarded as the Common spelling refusals discard it. The game's own
+  `dummy_nrm`, `dummy_srm`, `dummy_bsm`, and any other `dummy_` stem, keep their names and
+  stay never looked up.
+- *Lead*: the upgrader writes the stand-in's stem in lowercase with `dummy_` replaced by
+  `team_`, the extension kept, in `.mtl` paths and FMDL tables, in both modes, with no finding.
+- *Lead*: FoxDen's work-in-progress `02_kitswappers.lua` (ours, the maintainer: as the
+  chairman he decides what enters the official scripts) gets back the swapper its rewrite
+  dropped, for the exes' two prefixes `dummy_kit` and `dummy_gk_kit`, the rest of the name
+  kept, through its `exists` gate; FoxDen never learns `team_kit`, since the compiler writes
+  the game's spelling. A separate slice, in FoxDen's own repository.
+- *Lead*: the legacy kit token (`u0` + three characters + `p` or `g` + a digit, as in
+  `kit6_u0827p0.dds`), today packed as an ordinary name, is refused by the same reasoning in a
+  slice of its own after this one, so this slice's review stays one surface.
+Why not keep reading `dummy_kit` beside `team_kit`: two spellings of one thing are the
+ambiguity this step removes from the Common paths, and the old one is the one the
+community's templates would keep copying.
+Plan: `spec/model_format.md` "Kit-dependent assets", `spec/team_compiler/pipeline.md`
+("ID replacement", "Kit-dependent assets", "A texture a model names must exist", the PES 15-17
+conversion), `spec/team_compiler/messages.md` `dummy_kit_name_old`, `fmdl_texture_kit_path`,
+`mtl_texture_not_found`, `spec/export_upgrader.md` step 7, the compiler's help, the draft's
+catalog, `CHANGELOG.md`; scenarios TC-MOD-106, TC-CMN-36, EU-MDL-41, 42 (TC-CMN-06, EU-MDL-09
+withdrawn for them); TC-MOD-103 and EU-MDL-39, added in this step, edited in place.
 ## 2026-11-09 — core, balls_compiler, stadium_compiler — one Compiler for every export kind; balls get an arranger; stadiums and billboards become exports
 Decision (the maintainer; the lead's choices marked *lead*):
 - **One Compiler compiles every export kind in the exports folder** (the maintainer's

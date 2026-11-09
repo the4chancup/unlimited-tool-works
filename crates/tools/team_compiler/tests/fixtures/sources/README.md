@@ -16,7 +16,8 @@ step 4.2 is not in them, and the tests over these archives assert faces and kits
 rewritten at step 4.30 by `.tmp/4_30/make_tracer_archives_4_30.py`, the kit's icon file becoming the
 empty marker `Kits/g1/icon_11`, every other entry's bytes kept; rebuilt at step 0.0.2-poc12 by
 `scripts/provenance/fixtures/tracer_archives_team_folder.py` with the tracer's respelled
-`fcl_hair.fmdl`, every other entry kept, the bad CRC included):
+`fcl_hair.fmdl`, every other entry kept, the bad CRC included, and again by it when the
+tracer's stand-in became `team_kit`):
 
 | File | Contents | For |
 |---|---|---|

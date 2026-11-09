@@ -106,6 +106,12 @@ pub(super) struct ModelRead {
     /// directory (folded) in table order. Every entry is checked, a `dummy_` stem's
     /// included. Always empty for a pre-Fox model or a material set.
     pub(super) common_directories: Vec<CommonDirectory>,
+    /// The texture paths an FMDL's table names by the kit stand-in's old spelling, the
+    /// game's, which `dummy_kit_name_old` refuses (`paths::is_old_kit_stand_in`):
+    /// directory and file name as written, one per distinct texture (folded) in table
+    /// order. Every entry is checked, a mesh-unused one's included. Always empty for a
+    /// pre-Fox model or a material set.
+    pub(super) old_kit_names: Vec<String>,
 }
 
 /// One texture directory a parsed FMDL names that `fmdl_common_path_invalid` refuses.
@@ -138,6 +144,7 @@ pub(super) fn fired(kind: ModelKind, bytes: &[u8]) -> Result<ModelRead, String> 
         ModelKind::Fmdl => {
             let file = FmdlFile::read(bytes).map_err(|error| error.to_string())?;
             let model = Model::from_file(&file).map_err(|error| error.to_string())?;
+            let (common_directories, old_kit_names) = texture_table(&file)?;
             ModelRead {
                 fired: fmdl::check::check(&model)
                     .into_iter()
@@ -151,7 +158,8 @@ pub(super) fn fired(kind: ModelKind, bytes: &[u8]) -> Result<ModelRead, String> 
                 }),
                 hidden: every_mesh_hidden(&model),
                 materials: Vec::new(),
-                common_directories: common_directories(&file)?,
+                common_directories,
+                old_kit_names,
             }
         }
         ModelKind::PreFoxModel => {
@@ -178,6 +186,7 @@ pub(super) fn fired(kind: ModelKind, bytes: &[u8]) -> Result<ModelRead, String> 
                 hidden: false,
                 materials,
                 common_directories: Vec::new(),
+                old_kit_names: Vec::new(),
             }
         }
         ModelKind::Mtl => {
@@ -192,17 +201,22 @@ pub(super) fn fired(kind: ModelKind, bytes: &[u8]) -> Result<ModelRead, String> 
                 hidden: false,
                 materials: set.materials.into_iter().map(material_read).collect(),
                 common_directories: Vec::new(),
+                old_kit_names: Vec::new(),
             }
         }
     };
     Ok(read)
 }
 
-/// The directories `file`, a parsed FMDL, names that `fmdl_common_path_invalid`
-/// refuses, one per distinct directory (folded) in table order, its `texture` the
-/// first entry spelling it. Every entry of the texture table is checked, a `dummy_`
-/// stem's included: the spelling is the export's, so one rule covers them all. The
-/// `.mtl`'s two short forms are read as their long forms first
+/// The texture-table entries of `file`, a parsed FMDL, the deep pass refuses, in one
+/// pass over the table: the directories `fmdl_common_path_invalid` refuses, one per
+/// distinct directory (folded) in table order, each `texture` the first entry spelling
+/// it, and the texture paths naming the kit stand-in's old spelling, which
+/// `dummy_kit_name_old` refuses (`paths::is_old_kit_stand_in`), one per distinct
+/// texture (folded) in table order, the path as written. Every entry of the texture
+/// table is checked by each rule, a `dummy_` stem's and a mesh-unused one's included:
+/// the spelling is the export's, so the rules cover them all. The `.mtl`'s two short
+/// forms are read as their long forms first
 /// (`paths::export_fmdl_directory`), so `team_common_folder/<sub>` and
 /// `common_folder/` are admitted as `team_folder` and `sourceimages`; refused are a
 /// folder below the game's Fox common directory (`paths::FOX_COMMON_DIRECTORY`)
@@ -210,9 +224,11 @@ pub(super) fn fired(kind: ModelKind, bytes: &[u8]) -> Result<ModelRead, String> 
 /// short directory with anything after `common_folder/` (`common_folder/jessie/`),
 /// and one starting `common/`, a CPK's root folder, each as the `.mtl`'s
 /// `user_face_xml::reference` reads them.
-fn common_directories(file: &FmdlFile) -> Result<Vec<CommonDirectory>, String> {
-    let mut seen = BTreeSet::new();
-    let mut found = Vec::new();
+fn texture_table(file: &FmdlFile) -> Result<(Vec<CommonDirectory>, Vec<String>), String> {
+    let mut seen_directories = BTreeSet::new();
+    let mut seen_textures = BTreeSet::new();
+    let mut directories = Vec::new();
+    let mut old_kit_names = Vec::new();
     for path in fmdl::ops::paths::texture_paths(file).map_err(|error| error.to_string())? {
         let invalid = match path
             .directory
@@ -228,14 +244,20 @@ fn common_directories(file: &FmdlFile) -> Result<Vec<CommonDirectory>, String> {
                     ))
             }
         };
-        if invalid && seen.insert(vtree::fold_name(&path.directory)) {
-            found.push(CommonDirectory {
-                texture: format!("{}{}", path.directory, path.file_name),
+        let texture = format!("{}{}", path.directory, path.file_name);
+        if invalid && seen_directories.insert(vtree::fold_name(&path.directory)) {
+            directories.push(CommonDirectory {
+                texture: texture.clone(),
                 directory: path.directory,
             });
         }
+        if crate::paths::is_old_kit_stand_in(&path.file_name)
+            && seen_textures.insert(vtree::fold_name(&texture))
+        {
+            old_kit_names.push(texture);
+        }
     }
-    Ok(found)
+    Ok((directories, old_kit_names))
 }
 
 /// Whether `directory`, an FMDL texture path's directory with the short forms already

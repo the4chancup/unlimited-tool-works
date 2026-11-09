@@ -62,7 +62,8 @@ enum Supply {
 }
 
 /// Whether the texture `path`, a `.mtl` sampler's path as written, is supplied from `sources`.
-/// A `dummy_` stem is never looked for. A path below the `.mtl`'s folder
+/// A `dummy_` stem or a kit stand-in (`team_kit*`, `team_gk_kit*`), which the exes
+/// substitute, is never looked for. A path below the `.mtl`'s folder
 /// (`./shorts/y.dds`, `texture_lookup::path_below`) is supplied when the place that path names
 /// holds its stem (folded; the places file each kit set's member under its set's `kitN`
 /// key, so a `kitN` reference finds a member and a `kitF` path none), and missing
@@ -85,7 +86,9 @@ fn supply(path: &str, sources: &TextureSources) -> Supply {
     let key = vtree::fold_name(stem);
     let holds = |stems: &BTreeSet<String>| stems.contains(&key);
     let place_holds = |place: &TexturePlace| place.contains_key(&key);
-    if key.starts_with("dummy_") {
+    // A `dummy_` stem and a kit stand-in (`team_kit*`, `team_gk_kit*`) are the game's to
+    // substitute: never looked for.
+    if key.starts_with("dummy_") || crate::paths::kit_stand_in_game_name(file_name).is_some() {
         return Supply::Supplied;
     }
     if let Some(subdirectory) = texture_lookup::path_below(directory) {
@@ -147,7 +150,10 @@ fn supply(path: &str, sources: &TextureSources) -> Supply {
 /// `mtl_common_path_invalid` instead, which discards
 /// what holds the `.mtl` (`xml_common_path_invalid`'s rule for a `.mtl`, on every target:
 /// the spelling is the export's, so `check` and a compile for either engine judge it
-/// alike). `scope` is a model folder's
+/// alike). A path naming the kit stand-in's old spelling (a stem that, folded, is
+/// `dummy_kit` or `dummy_gk_kit`, alone or `_`-suffixed, whatever its directory) is
+/// `dummy_kit_name_old`, discarding the same; one path gets both findings when it trips
+/// both rules. `scope` is a model folder's
 /// `Folder` (the `.mtl` of a player or shared folder's tree, whose finding drops the folder)
 /// or a `Common/` `.mtl`'s `File` (whose finding drops the file alone).
 pub(super) fn texture_findings(
@@ -176,9 +182,18 @@ pub(super) fn texture_findings(
     }
     named
         .into_iter()
-        .filter_map(|(path, naming)| {
+        .flat_map(|(path, naming)| {
+            // A `Common/` `.mtl` is a file of `Common/`; a folder's takes the folder.
+            // The call's other scopes do not reach here.
+            let drop = match scope {
+                IssueScope::File(_) => Disposition::DropFile,
+                IssueScope::Folder(_) | IssueScope::Export | IssueScope::RosterEntry { .. } => {
+                    Disposition::DropFolder
+                }
+            };
+            let mut findings = Vec::new();
             if let Reference::CommonInvalid = reference(path) {
-                return Some(ContentFinding {
+                findings.push(ContentFinding {
                     code: Code::MtlCommonPathInvalid.as_str(),
                     scope: scope.clone(),
                     context: vec![
@@ -186,26 +201,30 @@ pub(super) fn texture_findings(
                         ("attribute", "path".to_owned()),
                         ("value", path.to_owned()),
                     ],
-                    // A `Common/` `.mtl` is a file of `Common/`; a folder's takes the folder.
-                    // The call's other scopes do not reach here.
-                    disposition: match scope {
-                        IssueScope::File(_) => Disposition::DropFile,
-                        IssueScope::Folder(_)
-                        | IssueScope::Export
-                        | IssueScope::RosterEntry { .. } => Disposition::DropFolder,
-                    },
+                    disposition: drop,
                     pass_through_eligible: false,
                 });
             }
-            if supply(path, sources) != Supply::Missing {
-                return None;
+            // The stand-in's old spelling, refused on the spelling as written: a path
+            // that is also `CommonInvalid` gets both findings, each naming its own fix.
+            if crate::paths::is_old_kit_stand_in(texture_lookup::split(path).1) {
+                findings.push(ContentFinding {
+                    code: Code::DummyKitNameOld.as_str(),
+                    scope: scope.clone(),
+                    context: vec![("file", name.to_owned()), ("texture", path.to_owned())],
+                    disposition: drop,
+                    pass_through_eligible: false,
+                });
+            }
+            if !findings.is_empty() || supply(path, sources) != Supply::Missing {
+                return findings;
             }
             let code = if naming.iter().any(|material| used.contains(material)) {
                 Code::MtlTextureNotFound
             } else {
                 Code::MtlTextureUnusedMissing
             };
-            Some(ContentFinding {
+            findings.push(ContentFinding {
                 code: code.as_str(),
                 scope: scope.clone(),
                 context: vec![
@@ -215,7 +234,8 @@ pub(super) fn texture_findings(
                 ],
                 disposition: Disposition::Keep,
                 pass_through_eligible: false,
-            })
+            });
+            findings
         })
         .collect()
 }
@@ -847,6 +867,65 @@ mod tests {
                     disposition: Disposition::DropFolder,
                     pass_through_eligible: false,
                 },
+                finding("mtl_texture_not_found", "./skin.dds", "head"),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_kit_stand_in_is_not_looked_for_either() {
+        for path in [
+            "./team_kit.dds",
+            "team_gk_kit.dds",
+            "./Team_Kit_Srm.dds",
+            "team_common_folder/team_kit_srm.dds",
+        ] {
+            assert_eq!(
+                supplied(path, &[], &[], Some(&[])),
+                Supply::Supplied,
+                "{path}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_path_naming_the_stand_in_s_old_spelling_is_an_error_and_a_refused_directory_gets_both() {
+        let old = "team_common_folder/dummy_kit.dds";
+        let both = "common/dummy_kit.dds";
+        let found = findings(&[material("head", &[old, both, "./skin.dds"])], &["head"]);
+
+        // Both refusals drop the folder and a path tripping both gets both findings,
+        // each naming its own fix; the other path's miss is still reported.
+        let scope = IssueScope::Folder(ScopePath::new("Players/05 - A").unwrap());
+        let invalid = |code: &'static str, context: Vec<(&'static str, String)>| ContentFinding {
+            code,
+            scope: scope.clone(),
+            context,
+            disposition: Disposition::DropFolder,
+            pass_through_eligible: false,
+        };
+        assert_eq!(
+            found,
+            [
+                invalid(
+                    "dummy_kit_name_old",
+                    vec![("file", "face.mtl".to_owned()), ("texture", old.to_owned()),]
+                ),
+                invalid(
+                    "mtl_common_path_invalid",
+                    vec![
+                        ("file", "face.mtl".to_owned()),
+                        ("attribute", "path".to_owned()),
+                        ("value", both.to_owned()),
+                    ]
+                ),
+                invalid(
+                    "dummy_kit_name_old",
+                    vec![
+                        ("file", "face.mtl".to_owned()),
+                        ("texture", both.to_owned()),
+                    ]
+                ),
                 finding("mtl_texture_not_found", "./skin.dds", "head"),
             ]
         );

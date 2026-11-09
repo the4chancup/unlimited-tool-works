@@ -192,24 +192,25 @@ fn a_common_texture_of_a_mtl_is_found_in_an_earlier_installed_cpk_only() {
 }
 
 // not looked up
-// TC-CMN-06
+// TC-CMN-36
 #[test]
-fn a_game_path_and_a_dummy_texture_are_not_looked_for() {
+fn a_game_path_and_a_kit_stand_in_are_not_looked_for_and_the_stand_in_is_written_the_game_s() {
     let sandbox = Sandbox::new("prefox_mtl_texture_game_path");
     let export = "co Midcup Lashes";
+    let game_path = "model/character/face/common/face_eyelash.dds";
     let mut set = MaterialSet::read(&card_materials()).unwrap();
     let material = &mut set.materials[0];
     let MaterialEntry::Sampler(sampler) = material.entries[0].clone() else {
         panic!("the card material's first entry is its sampler");
     };
     material.entries[0] = MaterialEntry::Sampler(pes_model::format::mtl::Sampler {
-        path: "model/character/face/common/face_eyelash.dds".to_owned(),
+        path: game_path.to_owned(),
         ..sampler.clone()
     });
     material.entries.insert(
         1,
         MaterialEntry::Sampler(pes_model::format::mtl::Sampler {
-            path: "./dummy_kit_01.dds".to_owned(),
+            path: "team_common_folder/team_kit.dds".to_owned(),
             ..sampler
         }),
     );
@@ -219,6 +220,21 @@ fn a_game_path_and_a_dummy_texture_are_not_looked_for() {
     let lines = check.messages();
     assert_eq!(findings_of(&lines, export), [IDENTIFIED], "{lines:#?}");
     assert_eq!(check.exit_code(), 0);
+
+    let compile = sandbox.run(&pes17(&sandbox), &["compile", "--no-deploy"]);
+    assert_eq!(compile.exit_code(), 0);
+    let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
+    let face = nested_entries(&entries[&face_cpk(5)]);
+    let mtl = &face[&format!("{}face_high.mtl", face_folder(5))];
+    // The stand-in is written in the game's spelling at the team's Common; the
+    // game path is kept as written.
+    assert_eq!(
+        sampler_paths(mtl),
+        [
+            game_path,
+            "model/character/uniform/common/714/dummy_kit.dds",
+        ]
+    );
 }
 
 /// Writes slot 05 of `co Midcup Hair`: `face_high.mtl` naming `hair.dds` in the `jessie/`

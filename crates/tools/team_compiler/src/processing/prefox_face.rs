@@ -1748,6 +1748,12 @@ pub(super) fn read_materials(
 /// left as it is.
 pub(super) fn point_materials(set: &mut MaterialSet, places: &MaterialPlaces) {
     rewrite_texture_paths(set, |path| {
+        // A kit stand-in is read in the game's spelling first, so the lookup and the
+        // Common respelling see `dummy_kit` alone and the `.mtl` written names what
+        // the exes substitute.
+        if let Some(game_name) = crate::paths::kit_stand_in_game_name(&path.file_name) {
+            path.file_name = game_name;
+        }
         let (folder, source, file) = &places.below;
         let below = texture_lookup::path_below(&path.directory).map(|subdirectory| {
             folder
@@ -1794,7 +1800,9 @@ pub(super) fn point_materials(set: &mut MaterialSet, places: &MaterialPlaces) {
 }
 
 /// Points every texture path of `set`, a converted model's material set, whose file stem is a
-/// reserved kit stem (`dummy_kit`, `dummy_kit_<role>`, case-folded) at `common_directory`, the
+/// reserved kit stem (`dummy_kit`, `dummy_kit_<role>`, the keeper's `dummy_gk_kit` the
+/// same, case-folded — the spellings an export's stand-ins are read in) at
+/// `common_directory`, the
 /// team's Common texture directory, as `<stem>.dds`, the stem as spelled: the modded exes
 /// substitute the active kit's texture for that stem there, and the Fox directory a converted
 /// FMDL names means nothing to PES 15-17. A member's own `.mtl` already names the pre-Fox
@@ -1802,8 +1810,7 @@ pub(super) fn point_materials(set: &mut MaterialSet, places: &MaterialPlaces) {
 pub(super) fn point_reserved_kit_stems(set: &mut MaterialSet, common_directory: &str) {
     rewrite_texture_paths(set, |path| {
         let stem = file_stem(&path.file_name);
-        let key = vtree::fold_name(stem);
-        if key == "dummy_kit" || key.starts_with("dummy_kit_") {
+        if crate::paths::is_old_kit_stand_in(&path.file_name) {
             common_directory.clone_into(&mut path.directory);
             path.file_name = format!("{stem}.dds");
         }
@@ -2085,6 +2092,9 @@ mod tests {
         for (file_name, pointed) in [
             ("dummy_kit.dds", "dummy_kit.dds"),
             ("Dummy_Kit_SRM.ftex", "Dummy_Kit_SRM.dds"),
+            // The keeper's prefix, alone and with a role's rest, is reserved the same.
+            ("dummy_gk_kit.dds", "dummy_gk_kit.dds"),
+            ("Dummy_GK_Kit_Back.ftex", "Dummy_GK_Kit_Back.dds"),
         ] {
             let mut set = fox_set(file_name);
             point_reserved_kit_stems(&mut set, common);

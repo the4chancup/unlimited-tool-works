@@ -498,7 +498,8 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    as the compiler never looks one up, but for a team's Common folder there, respelled
    `team_common_folder/` (`000/` in the community's templates, which name `dummy_kit` there:
    the compiler refuses any other folder, a dummy's too) and the game's `common/sourceimages/`
-   respelled `common_folder/`; a directory starting `./` is the Studio spelling already, its
+   respelled `common_folder/`; a kit stand-in's stem among them is respelled too, as in a
+   `.mtl` (below: `dummy_kit` → `team_kit`); a directory starting `./` is the Studio spelling already, its
    kit magic alone respelled, as a `.mtl`'s; the game's kit texture folder
    `/Assets/pes16/model/character/uniform/texture/` is kept as written (25 real FMDLs), as the
    compiler keeps it (`fmdl_texture_kit_path`): repointing it at the model's folder would lose
@@ -584,12 +585,19 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    `team_folder` there too, the rest of the value kept
    (`model/character/uniform/common/XXX/oral_hand_l_*.model` →
    `team_common_folder/oral_hand_l_*.model`). The upgrader is the **only** Studio component that reads the legacy spelling — the
-   compiler has no notion of it. `dummy_kit*` references are left as they are — the compiler
-   keeps them as reserved game-substituted names; a `.mtl`'s `dummy_` stem in a Common path
+   compiler has no notion of it. The kit stand-in's old spelling, the game's, becomes the
+   Studio one (`spec/model_format.md` "Kit-dependent assets", which the compiler writes back
+   for the exes and refuses in the old spelling, `dummy_kit_name_old`): a texture stem that,
+   folded, is `dummy_kit` or `dummy_gk_kit`, alone or followed by `_` and anything, is written
+   in lowercase with `dummy_` replaced by `team_` (`Dummy_Kit_SRM.dds` → `team_kit_srm.dds`,
+   `dummy_gk_kit` → `team_gk_kit`), the extension kept, in `.mtl` paths and FMDL texture
+   tables alike, in both modes and with no finding; the game's own `dummy_nrm`, `dummy_srm`
+   and `dummy_bsm`, and any other `dummy_` stem, keep their names. A `dummy_` stem is looked
+   up nowhere and reported never, the stand-in's included; in a `.mtl`'s Common path
    (`model/character/uniform/common/XXX/dummy_kit.dds`, the real /jp/ Summer 25 export's
-   `XXX15 - Sister`) is looked up nowhere and reported never, its Common alone respelled
-   (`team_common_folder/dummy_kit.dds`), since
-   the compiler emits a member's `.mtl` as written. The goalkeeper token **`u0???g`** and a
+   `XXX15 - Sister`) its Common is respelled with it
+   (`team_common_folder/team_kit.dds`), since
+   the compiler emits a member's `.mtl` as written but for those two spellings. The goalkeeper token **`u0???g`** and a
    digit (`u0XXXg1.dds` in a `Common/`, which a keeper's model names) becomes `gk_kit` and that
    digit, in both modes, in file and folder names and in `.mtl`/`face.xml` paths and FMDL path
    tables alike (`u0714g1` → `gk_kit1`), `u0???g0` → `gk_kitN` in those paths but → `gk_kitF`
@@ -1624,15 +1632,27 @@ EU-MDL-28  GIVEN Common/u0XXXp1/kit1.dds, Common/u0XXXp1/kit2.dds, Common/u0XXXp
                 kit2/kit_tex1.dds, the FMDL textures are ./kitN/ kit_tex2 and ./kitN/ kit_tex1,
                 the player folder holds the link kitN/kit_tex2.dds.common, and the shared
                 validation finds it resolving
-EU-MDL-09  GIVEN a model folder holding u0XXXp1.dds, u0714p2.dds, a folder u0XXXp0/ and
+EU-MDL-09  withdrawn: restated as EU-MDL-41 (`spec/export_upgrader.md`), the kit stand-in
+           written team_kit since step 0.0.2-poc12
+EU-MDL-41  GIVEN a model folder holding u0XXXp1.dds, u0714p2.dds, a folder u0XXXp0/ and
                 jacket_u0XXXp1.model, the textures named by its .mtl and its FMDL path table,
                 which also name dummy_kit.dds, and the model by its zlib-wrapped face.xml as
                 ./jacket_u0XXXp0.model
            WHEN the export is upgraded
            THEN the folder holds kit1.dds, kit2.dds, kitF/ and jacket_kit1.model, the references
                 to the two files name kit1 and kit2 and those to the folder kitN/, the face.xml
-                names ./jacket_kitN.model and is written unwrapped, and the dummy_kit reference
-                is unchanged
+                names ./jacket_kitN.model and is written unwrapped, and the dummy_kit references
+                name team_kit.dds, the .mtl's in ./ and the FMDL's in common_folder/
+EU-MDL-42  GIVEN a pre-Fox face folder whose face.mtl names
+                model/character/uniform/common/XXX/Dummy_Kit_SRM.dds,
+                model/character/uniform/common/XXX/dummy_gk_kit.dds and ./dummy_kitten.dds, and
+                a Fox face folder whose face_high.fmdl names dummy_kit_back in ./ and dummy_nrm
+                in /Assets/pes16/model/character/common/sourceimages/
+           WHEN the export is upgraded, then with --loose
+           THEN both times the .mtl names team_common_folder/team_kit_srm.dds,
+                team_common_folder/team_gk_kit.dds and ./dummy_kitten.dds, the FMDL names
+                team_kit_back in ./ and dummy_nrm in common_folder/, no finding names them, and
+                the exit code is 0
 EU-MDL-10  withdrawn: restated as EU-MDL-31 (`spec/export_upgrader.md`), the keeper's token
            written gk_kitN since step 0.0.2-poc11
 EU-MDL-31  GIVEN Common/u0XXXg1.dds and Common/u0XXXp1.dds of different bytes, and a keeper's
@@ -1665,7 +1685,7 @@ EU-MDL-39  GIVEN a Fox face folder whose face_high.fmdl names dummy_kit in
                 /Assets/pes16/model/character/common/000/foo/ and zero in
                 /Assets/pes16/model/character/common/sourceimages/, Common/ holding no hair
            WHEN the export is upgraded
-           THEN the FMDL names dummy_kit and hair in team_common_folder/, shoe in
+           THEN the FMDL names team_kit and hair in team_common_folder/, shoe in
                 /Assets/pes16/model/character/common/team_folder/foo/ and zero in
                 common_folder/, common_reference_kept names the hair reference, and the exit
                 code is 0

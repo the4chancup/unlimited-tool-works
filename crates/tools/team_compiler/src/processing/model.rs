@@ -626,11 +626,16 @@ fn convert_part(
         None => {
             // An export FMDL may spell its Common directories short: read them as
             // their long forms first, so the conversion, the hand split and the
-            // path pointing all see the long form alone. One that does not read
+            // path pointing all see the long form alone; a kit stand-in's file name
+            // is read in the game's spelling in the same pass, so those rules see
+            // `dummy_kit` alone. One that does not read
             // reaches the conversion's `model_conversion_failed` as it is.
             if let Ok(mut file) = FmdlFile::read(&part.bytes)
                 && let Ok(changed) = rewrite_texture_paths(&mut file, |path| {
                     path.directory = paths::export_fmdl_directory(&path.directory);
+                    if let Some(game_name) = paths::kit_stand_in_game_name(&path.file_name) {
+                        path.file_name = game_name;
+                    }
                 })
                 && changed > 0
             {

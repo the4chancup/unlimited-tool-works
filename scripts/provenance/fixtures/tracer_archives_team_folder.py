@@ -1,6 +1,7 @@
 """Rebuild the Team compiler's tracer archives (`tests/fixtures/sources/egg Midcup Tracer*`) with
-the respelled `fcl_hair.fmdl` (worklog 0.0.2-poc12: its `dummy_kit` directory names
-`common/team_folder/`, no `000`).
+the respelled `fcl_hair.fmdl` (worklog 0.0.2-poc12: first its `dummy_kit` directory named
+`common/team_folder/`, no `000`; then the stand-in itself `team_kit`, `fmdl_team_kit.rs`).
+Run once after each respelling of the studio tracer's file, before it is committed.
 
 Each archive's `fcl_hair.fmdl` must be byte-identical to the studio tracer's file at HEAD (the
 pre-respell bytes) before it is replaced by the working copy's; every other entry keeps its
@@ -26,7 +27,7 @@ STAGE = ROOT / ".tmp/0_0_2/poc12/archive_stage"
 old = subprocess.run(["git", "show", "HEAD:crates/tools/team_compiler/tests/fixtures/" + REL],
                      cwd=ROOT, check=True, capture_output=True).stdout
 new = FIXTURE.read_bytes()
-assert old != new and len(old) == 115849, len(old)
+assert old != new, "the working copy's fcl_hair.fmdl is not respelled"
 
 
 def raw_stored(path, info):

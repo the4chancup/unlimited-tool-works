@@ -7892,7 +7892,29 @@ briefs, review loops, gates and mutation runs as for any step.
       `paths.rs`, `user_face_xml.rs`, `deep/model.rs`, `processing/{model,conversion}.rs`,
       `messages.rs`, `messages/catalog.rs`, `tests/cli/common_links.rs`; `export_upgrader`
       `materials/{mod,tests}.rs`, `tests/cli/carried.rs`; the two goldens and READMEs
-    - [ ] slice 3: `team_kit` (bullet above), FoxDen's swapper with it
+    - [x] slice 3: `team_kit` (bullet above): spec (DECISIONS 2026-11-09 "the kit stand-in is
+      written `team_kit`", `dummy_kit_name_old`; TC-MOD-106, TC-CMN-36, EU-MDL-41, 42, TC-CMN-06
+      and EU-MDL-09 withdrawn, TC-MOD-103 and EU-MDL-39 edited in place); the lead's fixtures
+      (the studio tracer's four FMDLs, `deep/boots_far.fmdl`, the three `sources/` archives,
+      `deep/co Midcup Far.7z` rebuilt by `deep_fixtures.py`); SWE-2 sidekick,
+      `.tmp/0_0_2/poc12/brief3.md` + `brief3b.md`: `paths::kit_stand_in_game_name` read in
+      `convert_part`, `conversion::{fox_bundle,pre_fox_bundle}` and `point_materials`,
+      `is_old_kit_stand_in` refused by the deep pass, the upgrader's `studio_kit_name`. The
+      lead's review: the upgrader's four `dummy_`-or-stand-in tests shared as `game_supplied`;
+      two perturbations red (`point_materials` respell skipped: both TC-CMN-36 tests;
+      the upgrader leaving `dummy_kit`: its unit tests). The Fox tracer golden's four player
+      FMDLs regenerated (`regen_goldens.py --out regen3`; the referee tracer's unchanged; the
+      gloves keep the old `dummy_kit` string unread, as slice 2's `000`). Files: `team_compiler`
+      `paths.rs`, `deep/{materials,model,mod}.rs`, `processing/{model,conversion,prefox_face,
+      mod}.rs`, `messages.rs`, `messages/catalog.rs`, `reader/mod.rs`, `validation.rs`,
+      `tests/cli/{common_links,textures,prefox_textures}.rs`; `export_upgrader`
+      `materials/{mod,tests}.rs`, `tests/cli/carried.rs`; the fixtures and READMEs
+    - [ ] slice 3b: FoxDen's work-in-progress `02_kitswappers.lua` gets back the `dummy_kit` /
+      `dummy_gk_kit` swapper (DECISIONS entry above), its gate test's stale cases 1-3 brought
+      to the rewrite; FoxDen's own repository, `tests/setup_lua51.py` first
+    - [ ] slice 4: the legacy kit token (`u0???p0`-style, `kit6_u0827p0.dds`) refused in an
+      export's file names and paths, naming the upgrader (the bullet above); its spec first.
+      After the PoC is handed over (the maintainer, 2026-11-09: not needed for it)
   - [ ] 0.0.2-chk library parity against checkpoints, not Red (the maintainer, 2026-11-09:
     parity with Red was proven once the core was built; divergence is expected since, and
     accounting for it at every run grows costlier). *Lead*, the shape (veto any):

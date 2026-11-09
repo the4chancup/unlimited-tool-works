@@ -1576,6 +1576,15 @@ fn file_outcome(
             false,
         ));
     }
+    for texture in &read.old_kit_names {
+        // The old spelling, refused as the Common one is: never passed through.
+        findings.push(finding(
+            Code::DummyKitNameOld.as_str(),
+            vec![("model", name.to_owned()), ("texture", texture.clone())],
+            disposition,
+            false,
+        ));
+    }
     // On Fox the file is packed as it is, the game drawing nothing of it as the member saw.
     let dropped_hidden = match engine {
         Engine::PreFox => read.hidden,

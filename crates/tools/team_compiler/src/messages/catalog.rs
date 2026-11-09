@@ -716,13 +716,19 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         "fmdl_texture_kit_path",
         CatalogSeverity::Warning,
         r#"In PES 2018 to 2021, a texture path a mesh names points into the game's kit texture folder (`/Assets/pes16/model/character/uniform/texture/`), where the modded exe swaps those files per match, so the model would not show the kit it names."#,
-        r#"Kept with the path unchanged. A part that should follow the kit uses a `dummy_kit` or `kitN` texture instead."#,
+        r#"Kept with the path unchanged. A part that should follow the kit uses a `team_kit` or `kitN` texture instead."#,
     ),
     (
         "fmdl_common_path_invalid",
         CatalogSeverity::Error,
         r#"An `.fmdl` names a texture in a folder below the game's common folder (`/Assets/pes16/model/character/common/`) other than `team_folder`, the folder that stands for the team's Common, or `sourceimages`, the game's own: `000`, the placeholder of the community's model templates, a team ID, `XXX` or a team's name; or it names one the short spellings cannot write, a folder after `common_folder/` (`common_folder/x/`) or a directory starting `common/`."#,
         r#"The model's folder is left out (for a model in `Common/`, only the file is left out, and the players linking it get `link_target_dropped`). The team's Common is written `team_common_folder/` there (`team_folder` in the long form); `export-upgrader upgrade-models` respells an `.fmdl` that names an old folder."#,
+    ),
+    (
+        "dummy_kit_name_old",
+        CatalogSeverity::Error,
+        r#"A model names the kit stand-in by its old spelling, the game's `dummy_kit` or `dummy_gk_kit` (any letter case, and with any suffix after an `_`, such as `dummy_kit_srm`), in an `.fmdl` texture entry or a `.mtl` texture path, whatever folder the path names. The game's own `dummy_nrm`, `dummy_srm` and `dummy_bsm`, and any other `dummy_` name, are no stand-in."#,
+        r#"The model's or `.mtl`'s folder is left out (for a file in `Common/`, only the file is left out). The kit stand-in is written `team_kit` in the model (`team_gk_kit` for a keeper's); `export-upgrader upgrade` respells it in an export, `export-upgrader upgrade-models` in a model folder alone."#,
     ),
     (
         "folder_pack_failed",
