@@ -73,7 +73,8 @@ Each team of the patch is one line, `patch_team_applied`, listed only when at le
 players was written: a team whose patch players the save lacks entirely is not listed. A team
 or a player the save does not hold is the error line `patch_team_not_in_save` or
 `patch_player_not_in_save`. The rest of the patch is applied and written, and the command exits
-1.
+1. A save holding none of the patch's players, written back over itself (`--out` the same file
+as `--base`), is left as it was, so its `.bak` stays your previous backup.
 
 Like every command that writes a save, its lines come once `--out` is written, so a write that
 fails prints only its failure.

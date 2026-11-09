@@ -288,7 +288,9 @@ The commands:
   builder can apply a night's patches in one script. A team is listed as applied only when at
   least one of its players was written: a team the save holds whose patch players it all lacks
   prints only their skips. A skipped team or player is an error (exit
-  1) and the rest is written. Like every command that writes a save (`import-toml`'s notes),
+  1) and the rest is written; a save holding none of the patch's players, with `--out` naming
+  `--base`, is not rewritten, so its `.bak` stays the previous backup (SE-PAT-12). Like every
+  command that writes a save (`import-toml`'s notes),
   its lines are printed
   once `--out` is written: a write that fails prints only its failure (exit 3), never a line
   saying what was written. The read-only lock is a GUI guard; a CLI command that writes
@@ -356,8 +358,8 @@ finding that drops something says so with its own code.
 | `import_slot_empty` | Warning | `import-toml`: a `[players.NN]` whose roster slot is empty; skipped (`slot`) | warns and goes on |
 | `import_text_cropped` | Warning | `import-toml`: a name or shirt name longer than the save's field; cut to it at whole characters and colour codes (`path`; `cropped`, the cut text as the game shows it, colour codes left out) | warns and goes on |
 | `patch_team_applied` | Info | `apply-patch`: the save holds the team and at least one of its patch players was written (`team`); a team whose players the save all lacks is not listed | informational; goes on |
-| `patch_team_not_in_save` | Error | `apply-patch`: the save has no team with this id; its players were not looked at (`team`) | the rest is written; exit 1 |
-| `patch_player_not_in_save` | Error | `apply-patch`: the save has no player with this id (`player`) | the rest is written; exit 1 |
+| `patch_team_not_in_save` | Error | `apply-patch`: the save has no team with this id; its players were not looked at (`team`) | the rest is written (a save holding none of the patch's players is not rewritten in place); exit 1 |
+| `patch_player_not_in_save` | Error | `apply-patch`: the save has no player with this id (`player`) | the rest is written (a save holding none of the patch's players is not rewritten in place); exit 1 |
 | `player_diff` | Info | `diff`: one field of a player in both saves, old to new (`player`, `field`, `old`, `new`) | the report's rows; differences are the output, exit 0 |
 | `player_only_in` | Info | `diff`: a player in one save alone (`player`, `save`: `first` or `second`) | informational; goes on |
 | `teams_list_added` | Info | `export-teams-list`: a team of the save the list lacked, appended or put into a placeholder's slot (`team`, `name`) | merged; written only with `--yes` |

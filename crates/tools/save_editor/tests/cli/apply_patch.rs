@@ -326,6 +326,9 @@ fn a_team_whose_every_patch_player_the_save_lacks_is_not_listed_applied() {
     let save = EditFile::load(&sandbox.path("EDIT")).unwrap();
     let (slots, text) = absent_co_patch(&save, 2);
     fs::write(sandbox.path("patch.toml"), &text).unwrap();
+    // An --out already on disk that is not --base is still written (SE-PAT-12 skips only
+    // the in-place write).
+    fs::write(sandbox.path("OUT"), b"an earlier output").unwrap();
 
     let run = sandbox.apply("patch.toml", "EDIT", "OUT");
     assert_eq!(run.exit_code(), 1);
@@ -387,14 +390,26 @@ fn a_patch_that_writes_no_player_leaves_the_save_and_its_bak_in_place() {
 fn a_written_name_or_shirt_name_sets_the_edited_player_flag() {
     let sandbox = Sandbox::new("patch_name_flag");
     sandbox.fixture(PesVersion::Pes19, "EDIT");
-    let save = EditFile::load(&sandbox.path("EDIT")).unwrap();
-    let clear: Vec<&PlayerEntry> = save
+    let clear: Vec<u32> = EditFile::load(&sandbox.path("EDIT"))
+        .unwrap()
         .players()
         .iter()
         .filter(|player| player.id / 100 == 711 && !player.edit_flags.player)
+        .map(|player| player.id)
         .take(2)
         .collect();
-    let [named, shirted] = clear[..] else {
+    // Two of their other edit flags set and the rest clear, so a write that resets them
+    // either way shows.
+    set_up_save(&sandbox, "EDIT", |file| {
+        for id in &clear {
+            let flags = &mut file.player_mut(*id).unwrap().edit_flags;
+            flags.abilities = true;
+            flags.motion = true;
+        }
+    });
+    let save = EditFile::load(&sandbox.path("EDIT")).unwrap();
+    let players: Vec<&PlayerEntry> = clear.iter().map(|id| save.player(*id).unwrap()).collect();
+    let [named, shirted] = players[..] else {
         panic!("premise: two of team 711's players with the flag clear on PES 19");
     };
     let slot = |player: &PlayerEntry| u8::try_from(player.id % 100).unwrap();

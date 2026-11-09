@@ -267,12 +267,12 @@ const CATALOG: &[(Code, &str, &str)] = &[
     (
         Code::PatchTeamNotInSave,
         r#"`apply-patch` could not find a team with this id in the save, so its players were not looked at."#,
-        r#"The rest is written, and the command exits 1."#,
+        r#"The rest is written, and the command exits 1. A save holding none of the patch's players is not rewritten over itself."#,
     ),
     (
         Code::PatchPlayerNotInSave,
         r#"`apply-patch` could not find a player with this id in the save."#,
-        r#"The rest is written, and the command exits 1."#,
+        r#"The rest is written, and the command exits 1. A save holding none of the patch's players is not rewritten over itself."#,
     ),
     (
         Code::PlayerDiff,
