@@ -3128,3 +3128,4 @@ worklog passed 7,000 lines.
 - 2026-11-09: poc11 measured: its gates green and its 127 mutants all caught or unviable; Astra's second round over the save-path fix found nothing. The queued `mutants-diff 8bcbf720` (8.36c to poc11, 592 mutants) and the library parity's rerun launched.
 - 2026-11-09: `mutants-diff 8bcbf720` rerun through poc11: no missing test, one stale exclusion repointed. The library parity against Red rerun (p11, 469 exports): every difference in a class, five new intentional ones (anti-blur, far drops, three Red discards or packs).
 - 2026-11-09: Astra reviewed poc11 ahead of its SWE-2 and Argon loops (4 accepted): a Fox `Common/` `.mtl` refusal drops the linking player, as the spec now says; stale help and draft lines fixed.
+- 2026-11-09: Whole-crate mutation runs go to the VPS alone (`mutants.py` slice 1): extra kinds there too, the wait holds no lock, and `mutants-diff` runs here while the VPS is busy.

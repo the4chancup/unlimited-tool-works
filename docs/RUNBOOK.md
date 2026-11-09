@@ -14,18 +14,20 @@ it is medium priority, so a slower result (about 2.5 times the split's: `save_ed
 1990 mutants ran about 27 an hour here and 17 there) is fine, while a long local run blocks
 in-game checks on the Fox versions and a restart of this machine for an update, and a power
 failure here kills hours of a local half's progress, while the VPS rarely goes down.
-`just mutants-diff` keeps the split below: a round's diff is minutes and its result is
-waited on. While a whole run holds the VPS, a diff runs entirely on this machine instead
-of waiting days for its turn there. Until `scripts/mutation/mutants.py` makes this the whole run's only path (worklog
-issue "Whole-crate mutation runs on the VPS alone"), set `REMOTE_ONLY = True` for a
-whole-crate run and back to `False` after its launch; its extra kinds, which only this
-machine runs today, follow as the script prints (`just extra-mutants`). What follows
+The run refuses when `STUDIO_MUTANTS_REMOTE` names no host, and for a crate in
+`LOCAL_ONLY_CRATES`; its extra kinds run on the VPS in the same service before
+cargo-mutants and their results come home with the fetch. It holds the run lock only
+while it launches and while it fetches and summarizes, never while it waits
+(`just mutants-collect` waits the same way), so `just mutants-diff` runs while a whole
+run is under way: it keeps the split below, a round's diff being minutes and its result
+waited on, except while the VPS is busy or unreachable, when it runs entirely on this
+machine instead of waiting days for its turn there. What follows
 describes the split: a diff uses it, and the whole-crate file split it describes is kept
 for when a whole run needs this machine again.
 
 **The split with the maintainer's VPS.** On the maintainer's PC the
 user environment variable `STUDIO_MUTANTS_REMOTE=bonfire` (an alias in `~/.ssh/config`) makes
-`just mutants <crate>` run part of the mutants there (`scripts/mutation/mutants.py`: the working tree is
+`just mutants-diff` run part of a larger crate's mutants there (`scripts/mutation/mutants.py`: the working tree is
 sent as a git bundle, the remote half runs at low priority, its results land in
 `mutants.out/remote/` and the combined survivors in `mutants.out/missed_all.txt`). A whole-crate
 run hands each side a complementary set of the crate's source files rather than `--shard`
@@ -116,7 +118,7 @@ the switch is on, the lead's checks run through `just remote` and `just gates-re
 sidekick's `cargo check`, test and clippy runs all go through `just remote`; only `cargo fmt`
 stays local. The order was lifted the same evening (the switch off).
 `REMOTE_ONLY = True` in `scripts/mutation/mutants.py` makes
-`just mutants` and `just mutants-diff` run every mutant on the VPS as one whole run (no
+`just mutants-diff` run every mutant on the VPS as one whole run, as `just mutants` always does (no
 local half, no split threshold; the last local `mutants.out` set aside as
 `mutants.out.old`), and `just gates-remote` runs `just gates` there against a snapshot of
 the working tree (`scripts/mutation/remote_gates.py`: the same transfer and clone, so it refuses
@@ -150,7 +152,7 @@ changes nothing by itself. When a build is killed at the cap, the run fails and 
 untested mutants (`report_killed`), and the fix is then memory freed on the host (the
 maintainer's) or a lower `REMOTE_BUILD_JOBS`; past one job, the crate joins
 `LOCAL_ONLY_CRATES` in `scripts/mutation/mutants.py`, whose mutants never go to the VPS (a whole-crate run
-and any diff holding one of them run locally whole). `team_compiler` was listed from 4.14d, whose
+of one refuses, and any diff holding one of them runs locally whole). `team_compiler` was listed from 4.14d, whose
 run lost two builds at the cap with one job, until the Phase 4 converge audit (2026-10-09) found
 the cause: the host's `/tmp` is a 7.8 GiB tmpfs, cargo-mutants' default place for its two copies
 of the tree, so each copy's `target/` (4 GiB with egui linked) lived in the unit's memory and the
@@ -167,12 +169,13 @@ service.
 `pid`, `log`, `exit`, `memory_peak`), and the script polls it every 15 s with short ssh calls (30 s until 2026-10-10). A dropped link
 costs a poll, not the run: at 2.20i the remote half still hung off one long ssh session and
 died with it. If `just mutants` itself stops, `just mutants-collect` waits for the remote half
-and fetches it, including a died half's partial results. A new run refuses to start while a
-remote half is running or uncollected (a local one too, since the collection summarizes the
-local `mutants.out` with the remote half; a launch leaves `.tmp/mutants-remote-pending` until
-the fetch, so a local run refuses even with `STUDIO_MUTANTS_REMOTE` set empty, which cannot ask
-the host), and a run that uses the VPS also while `just
-gates-remote` runs there: both rewrite the remote clone. **A failed half is reported, never restarted:**
+and fetches it, including a died half's partial results. A run that uses the VPS refuses to start while a
+remote half is running or uncollected, or while `just gates-remote` runs there: both rewrite
+the remote clone. A run on this machine alone refuses only while this tree's launch record
+(`.tmp/mutants-remote-pending`, kept until the fetch) names a half whose run also had a local
+half, since that collection summarizes the local `mutants.out`; a whole run's has none, and
+the record is read with no call to the host, so `STUDIO_MUTANTS_REMOTE` set empty changes
+nothing. **A failed half is reported, never restarted:**
 `cargo mutants` does not resume, so a rerun starts from zero, hours of work (at 2.20i the
 sidekick restarted the VPS half and waited on it although the local half had already tested
 every mutant). A brief that starts a whole-crate run says so.

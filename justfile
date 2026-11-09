@@ -94,11 +94,11 @@ line-endings:
     {{python}} scripts/gates/line_endings_test.py
     {{python}} scripts/gates/line_endings.py
 
-# Mutation run over one crate (converge); survivors are test gaps, equivalents or dead code; split with STUDIO_MUTANTS_REMOTE when set
+# Mutation run over one crate (converge); survivors are test gaps, equivalents or dead code; every mutant on the STUDIO_MUTANTS_REMOTE host, refused without one
 mutants crate:
     {{python}} scripts/mutation/mutants.py {{crate}}
 
-# The remote half of a split run whose `just mutants` stopped early: waits for it, fetches it, prints the summary
+# The remote half of a whole or split run whose command stopped early: waits for it, fetches it, prints the summary
 mutants-collect:
     {{python}} scripts/mutation/mutants.py --collect
 

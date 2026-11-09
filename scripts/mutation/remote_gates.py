@@ -1,7 +1,7 @@
 """`just gates-remote`: `just gates` run on the mutants host (`STUDIO_MUTANTS_REMOTE`)
 against the whole working tree, for while this machine should not carry the
 load (2026-10-10: four MEMORY_MANAGEMENT bugchecks here, the last during a run;
-`mutants.REMOTE_ONLY` moves the mutation runs the same way).
+`mutants.REMOTE_ONLY` moves the diff mutation runs the same way).
 
 The tree goes over as a mutation run sends it (`mutants.snapshot`,
 `mutants.transfer`), into the same remote clone, so this refuses to start while
@@ -47,7 +47,7 @@ def main(command: list[str]) -> int:
     if host is None:
         print("STUDIO_MUTANTS_REMOTE is not set")
         return 1
-    refusal = mutants.remote_refusal(host, remote=True)
+    refusal = mutants.remote_refusal(host)
     if refusal is not None:
         print(refusal)
         return 1

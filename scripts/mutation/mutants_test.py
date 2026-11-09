@@ -4,8 +4,8 @@ holds a crate's survivors. Each builds a `mutants.out` in a
 temporary directory the way cargo-mutants writes one; nothing reaches the host. Also which
 source the local half, the listings and the config read (cargo itself stubbed), that a run
 snapshots before it waits for the one in progress (`run_lock`), and that no run here starts
-while a remote half is uncollected (`remote_pending`, ssh stubbed). Run by `just
-test` (`python scripts/mutation/mutants_test.py`)."""
+while this tree's own remote half with a local one is uncollected (`remote_pending`,
+ssh stubbed). Run by `just test` (`python scripts/mutation/mutants_test.py`)."""
 import contextlib
 import io
 import json
@@ -153,13 +153,24 @@ class KilledBuilds(unittest.TestCase):
 
 
 class Summarize(unittest.TestCase):
-    def summarize(self, root: Path, remote_only: bool = False) -> int:
+    def summarize(
+        self,
+        root: Path,
+        remote_only: bool = False,
+        local_half: bool = True,
+        extra_run: Path | None = None,
+    ) -> tuple[int, str]:
         # The maintainer's switch is set here, not read: the test holds in either mode.
         saved = mutants.ROOT, mutants.REMOTE_ONLY
         mutants.ROOT, mutants.REMOTE_ONLY = root, remote_only
+        out = io.StringIO()
         try:
-            with contextlib.redirect_stdout(io.StringIO()):
-                return mutants.summarize(0, 0, root / "remote_console.txt", (None, None))
+            with contextlib.redirect_stdout(out):
+                code = mutants.summarize(
+                    0, 0, root / "remote_console.txt", (None, None),
+                    local_half=local_half, extra_run=extra_run,
+                )
+            return code, out.getvalue()
         finally:
             mutants.ROOT, mutants.REMOTE_ONLY = saved
 
@@ -168,11 +179,45 @@ class Summarize(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             write_run(root / "mutants.out" / "remote" / "mutants.out", 1, caught)
-            self.assertEqual(self.summarize(root), 1)
+            self.assertEqual(self.summarize(root)[0], 1)
             # A remote-only run has no local half to start.
-            self.assertEqual(self.summarize(root, remote_only=True), 0)
+            self.assertEqual(self.summarize(root, remote_only=True)[0], 0)
             write_run(root / "mutants.out", 1, caught)
-            self.assertEqual(self.summarize(root), 0)
+            self.assertEqual(self.summarize(root)[0], 0)
+
+    def test_a_run_with_no_local_half_reads_only_the_remote_half(self):
+        """A whole run has no local half: a stale local `mutants.out` beside the
+        fetched one — a missed line, a killed build, no `mutants.json` — reaches
+        neither the merged list nor the exit code."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            local = root / "mutants.out"
+            (local / "log").mkdir(parents=True)
+            (local / "missed.txt").write_text(
+                "crates/libs/cpk/src/lib.rs:1:1: a stale local survivor\n", encoding="utf-8"
+            )
+            (local / "outcomes.json").write_text(
+                json.dumps({"outcomes": [
+                    {"scenario": mutant("killed"), "summary": "Unviable",
+                     "log_path": "log/k"},
+                ]}),
+                encoding="utf-8",
+            )
+            (local / "log" / "k").write_text(
+                "error: could not compile (signal: 9, SIGKILL: kill)", encoding="utf-8"
+            )
+            remote = local / "remote" / "mutants.out"
+            write_run(remote, 1, [{"scenario": mutant("r"), "summary": "MissedMutant"}])
+            (remote / "missed.txt").write_text(
+                "crates/libs/cpk/src/read.rs:2:2: a remote survivor\n", encoding="utf-8"
+            )
+            code, out = self.summarize(root, local_half=False)
+            missed_all = (local / "missed_all.txt").read_text(encoding="utf-8").splitlines()
+        self.assertEqual(code, 2)
+        self.assertEqual(missed_all, ["crates/libs/cpk/src/read.rs:2:2: a remote survivor"])
+        self.assertNotIn("never started", out)
+        self.assertNotIn("NOT tested", out)
+        self.assertFalse(any(line.startswith("local") for line in out.splitlines()))
 
 
 class SplitCoverage(unittest.TestCase):
@@ -182,7 +227,10 @@ class SplitCoverage(unittest.TestCase):
         try:
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
-                code = mutants.summarize(0, 0, root / "remote_console.txt", (None, None))
+                code = mutants.summarize(
+                    0, 0, root / "remote_console.txt", (None, None),
+                    local_half=True, extra_run=None,
+                )
             return code, out.getvalue()
         finally:
             mutants.ROOT = saved
@@ -518,9 +566,11 @@ class LocalSource(unittest.TestCase):
 
 
 class PendingRemote(unittest.TestCase):
-    """A remote half launched from this tree and not yet fetched refuses every run on this
-    machine alone, whatever STUDIO_MUTANTS_REMOTE says now: its collection summarizes the
-    local `mutants.out` that a new run would set aside."""
+    """A remote half launched from this tree, not yet fetched, and recorded with a
+    local half refuses every run on this machine alone, whatever
+    STUDIO_MUTANTS_REMOTE says now: its collection summarizes the local
+    `mutants.out` that a new run would set aside. A half with none, and one
+    launched from another tree, refuse nothing here."""
 
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
@@ -530,10 +580,13 @@ class PendingRemote(unittest.TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    def pend(self, host: str = "bonfire") -> Path:
+    def pend(self, host: str = "bonfire", local_half: bool = True, extra: bool = False) -> Path:
         pending = mutants.remote_pending()
         pending.parent.mkdir(parents=True, exist_ok=True)
-        pending.write_text(host + "\n", encoding="utf-8")
+        pending.write_text(
+            json.dumps({"host": host, "local_half": local_half, "extra": extra}) + "\n",
+            encoding="utf-8",
+        )
         return pending
 
     def test_a_launch_records_the_half_before_its_unit_starts(self):
@@ -550,7 +603,10 @@ class PendingRemote(unittest.TestCase):
         ):
             mutants.launch_remote("bonfire", ["-p", "fpc"])
         self.assertEqual(recorded_at_start, [True])
-        self.assertEqual(mutants.remote_pending().read_text(encoding="utf-8"), "bonfire\n")
+        self.assertEqual(
+            json.loads(mutants.remote_pending().read_text(encoding="utf-8")),
+            {"host": "bonfire", "local_half": True, "extra": False},
+        )
 
     def test_the_fetch_clears_the_record(self):
         pending = self.pend()
@@ -574,8 +630,9 @@ class PendingRemote(unittest.TestCase):
             mock.patch.object(mutants, "remote_host", lambda: None),
             contextlib.redirect_stdout(io.StringIO()),
         ):
-            with self.assertRaisesRegex(mutants.Refused, "bonfire.*mutants-collect"):
-                mutants.whole_run("fpc", None, HEAD_TREE, self.root)
+            # A whole run refuses for the VPS rule before the pending record matters.
+            with self.assertRaisesRegex(mutants.Refused, "VPS"):
+                mutants.whole_run("fpc", None, HEAD_TREE)
             with self.assertRaisesRegex(mutants.Refused, "bonfire.*mutants-collect"):
                 mutants_diff.run_crate("in.diff", HEAD_TREE, self.root, "fpc", 3)
         # A standalone extra pass would replace the `missed_<crate>.txt` the collection merges.
@@ -591,10 +648,29 @@ class PendingRemote(unittest.TestCase):
         self.assertEqual(extra_runs, [])
         self.assertTrue(last.exists(), "the uncollected half's local results stay")
 
-    def test_with_no_record_the_host_decides(self):
-        with mock.patch.object(mutants, "remote_refusal", lambda host, remote: f"{host} {remote}"):
-            self.assertIsNone(mutants.local_refusal(None))
-            self.assertEqual(mutants.local_refusal("bonfire"), "bonfire False")
+    def test_with_no_record_the_host_is_not_asked(self):
+        """Only this tree's own uncollected local half stops a run here: a half
+        launched from another tree is collected there, so a busy host alone is
+        no reason to refuse."""
+        with (
+            mock.patch.object(mutants, "remote_run_state", lambda host: "running"),
+            mock.patch.object(
+                mutants, "remote_refusal", lambda host: self.fail("the host was asked")
+            ),
+        ):
+            self.assertIsNone(mutants.local_refusal())
+
+    def test_a_record_with_no_local_half_lets_a_run_here_start(self):
+        """A whole run's remote half reads nothing of this tree's `mutants.out`:
+        its collection never merges the local results a new run would replace."""
+        self.pend(local_half=False)
+        self.assertIsNone(mutants.local_refusal())
+
+    def test_a_record_with_a_local_half_refuses_as_today(self):
+        self.pend(local_half=True)
+        refusal = mutants.local_refusal()
+        self.assertIn("bonfire", refusal)
+        self.assertIn("mutants-collect", refusal)
 
     def test_a_collect_finding_no_half_clears_a_stale_record(self):
         pending = self.pend()
@@ -685,13 +761,14 @@ class RunQueue(unittest.TestCase):
         )
 
     def test_a_whole_crate_run_snapshots_before_it_waits(self):
+        """The lock and the snapshot's copy moved into `whole_run`, which must be
+        free to drop the lock while the remote half runs: what `main` still
+        guarantees is the snapshot at the command's start."""
         def call(events):
             with mock.patch.object(mutants, "whole_run", lambda *_: events.append("run") or 0):
                 mutants.main(["mutants.py", "fpc"])
 
-        self.assertEqual(
-            self.order(call), ["snapshot", "lock", "copy", "run", "uncopy", "unlock"]
-        )
+        self.assertEqual(self.order(call), ["snapshot", "run"])
 
     def test_a_refused_whole_crate_run_exits_1_saying_why(self):
         out = io.StringIO()
@@ -706,15 +783,17 @@ class RunQueue(unittest.TestCase):
         self.order(call)
         self.assertIn("`just gates-remote` is running on bonfire", out.getvalue())
 
-    def test_a_collect_holds_the_lock(self):
-        """A run queued behind a collect would replace the `mutants.out` it summarizes."""
+    def test_a_collect_is_not_wrapped_in_the_lock(self):
+        """A collect's wait on the remote half lasts as long as the half does, so
+        `main` holds no lock over it: the fetch and summary take it inside
+        `collect` (`CollectRemote`)."""
 
         def call(events):
             with mock.patch.object(mutants, "remote_host", lambda: "bonfire"), \
                     mock.patch.object(mutants, "collect", lambda *_: events.append("run") or 0):
                 mutants.main(["mutants.py", "--collect"])
 
-        self.assertEqual(self.order(call), ["lock", "run", "unlock"])
+        self.assertEqual(self.order(call), ["run"])
 
     def test_an_empty_diff_sets_the_last_results_aside_in_its_turn(self):
         """A rerun after fixes that changed nothing under its paths still leaves no results
@@ -754,6 +833,167 @@ class RunQueue(unittest.TestCase):
             self.assertFalse((old / "older").exists())
 
 
+class WholeRun(unittest.TestCase):
+    """`just mutants <crate>` runs every mutant on the VPS alone (RUNBOOK
+    "Mutation runs and the VPS"): the launch under the run lock, the days-long
+    wait without it, and nothing cargo-mutants or extra on this machine."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        patcher = mock.patch.object(mutants, "ROOT", self.root)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def launch(self, remote_only: bool = False) -> tuple[int, dict, str]:
+        """`whole_run` with everything past the refusals stubbed: the recorded
+        `upload_and_launch` and `finish_remote_run` keywords, and the output."""
+        launched, finished = {}, {}
+        out = io.StringIO()
+
+        def upload(*args, **kwargs):
+            launched.update(kwargs)
+
+        def finish(*args, **kwargs):
+            finished["args"] = args
+            finished.update(kwargs)
+            return 0
+
+        with (
+            mock.patch.object(mutants, "REMOTE_ONLY", remote_only),
+            mock.patch.object(mutants, "run_lock", contextlib.nullcontext),
+            mock.patch.object(
+                mutants, "snapshot_source", lambda tree: contextlib.nullcontext(self.root)
+            ),
+            mock.patch.object(mutants, "remote_start", lambda host, tree: (None, None, 8)),
+            mock.patch.object(mutants, "upload_and_launch", upload),
+            mock.patch.object(mutants, "wait_remote", lambda host: (0, 9.0)),
+            mock.patch.object(mutants, "finish_remote_run", finish),
+            mock.patch.object(
+                mutants, "local_mutants",
+                lambda *a, **k: self.fail("cargo-mutants ran here"),
+            ),
+            mock.patch.object(
+                mutants, "plan_file_split",
+                lambda *a, **k: self.fail("a file split was planned"),
+            ),
+            mock.patch.object(
+                extra_mutants, "run_crate",
+                lambda *a, **k: self.fail("the extra pass ran here"),
+            ),
+            contextlib.redirect_stdout(out),
+        ):
+            code = mutants.whole_run("cpk", "bonfire", HEAD_TREE)
+        return code, {"launch": launched, "finish": finished}, out.getvalue()
+
+    def test_without_a_host_or_for_a_local_only_crate_a_whole_run_refuses(self):
+        with (
+            mock.patch.object(
+                mutants, "set_aside_last_run", lambda: self.fail("set aside")
+            ),
+            mock.patch.object(
+                mutants, "run_lock", lambda *a, **k: self.fail("the run lock was taken")
+            ),
+            mock.patch.object(
+                mutants, "ssh", lambda *a, **k: self.fail("ssh was called")
+            ),
+            mock.patch.object(
+                mutants.subprocess, "run", lambda *a, **k: self.fail("cargo ran")
+            ),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            with self.assertRaisesRegex(mutants.Refused, "VPS.*STUDIO_MUTANTS_REMOTE"):
+                mutants.whole_run("cpk", None, HEAD_TREE)
+            with mock.patch.object(mutants, "LOCAL_ONLY_CRATES", frozenset({"cpk"})):
+                with self.assertRaisesRegex(mutants.Refused, "cpk.*LOCAL_ONLY_CRATES"):
+                    mutants.whole_run("cpk", "bonfire", HEAD_TREE)
+
+    def test_every_mutant_runs_remote_whatever_remote_only_says(self):
+        for remote_only in (False, True):
+            code, calls, out = self.launch(remote_only=remote_only)
+            self.assertEqual(code, 0)
+            self.assertEqual(
+                calls["launch"], {"whole": True, "local_half": False, "extra": True}
+            )
+            self.assertEqual(calls["finish"]["local_half"], False)
+            self.assertEqual(
+                calls["finish"]["extra_run"],
+                self.root / "mutants.out" / "remote" / "extra_mutants.out" / "run.json",
+            )
+            self.assertEqual(calls["finish"]["args"][1:3], (0, 0))
+        self.assertTrue(
+            out.startswith("running every mutant on bonfire (a whole-crate run)"),
+            out,
+        )
+
+    def test_the_wait_holds_no_run_lock(self):
+        """A whole run waits days on its remote half; the run lock covers only
+        the launch and the fetch-and-summary, so a diff run can go ahead."""
+        probes = []
+
+        def probe(tag):
+            with open(self.root / "mutants.lock", "a+b") as handle:
+                probes.append((tag, mutants.try_lock(handle)))
+
+        real_lock = mutants.run_lock
+        with (
+            mock.patch.object(
+                mutants, "run_lock",
+                lambda *a, **k: real_lock(self.root / "mutants.lock"),
+            ),
+            mock.patch.object(
+                mutants, "snapshot_source",
+                lambda tree: contextlib.nullcontext(self.root),
+            ),
+            mock.patch.object(
+                mutants, "remote_start", lambda host, tree: (None, None, 8)
+            ),
+            mock.patch.object(
+                mutants, "upload_and_launch", lambda *a, **k: probe("launch")
+            ),
+            mock.patch.object(
+                mutants, "wait_remote", lambda host: probe("wait") or (0, 1.0)
+            ),
+            mock.patch.object(
+                mutants, "finish_remote_run", lambda *a, **k: probe("finish") or 0
+            ),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            self.assertEqual(mutants.whole_run("cpk", "bonfire", HEAD_TREE), 0)
+        self.assertEqual(probes, [("launch", False), ("wait", True), ("finish", False)])
+
+    def test_remote_extra_records_the_pass_and_fails_on_an_untested_mutant(self):
+        """The remote job's `--remote-extra` runs the extra kinds on the clone's
+        own tree and records them for the fetch, failing on an untested mutant."""
+        runs = []
+        with (
+            mock.patch.object(
+                extra_mutants, "run_crate",
+                lambda *a: runs.append(a) or ([], Counter(caught=2), 3.5),
+            ),
+            mock.patch.object(
+                mutants, "run_lock", lambda *a, **k: self.fail("a lock was taken")
+            ),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            self.assertEqual(mutants.main(["mutants.py", "--remote-extra", "cpk"]), 0)
+        self.assertEqual(runs, [("cpk", list(mutants.EXTRA_KINDS))])
+        record = json.loads(
+            (self.root / "extra_mutants.out" / "run.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            record, {"crate": "cpk", "counts": {"caught": 2}, "seconds": 3.5}
+        )
+        with (
+            mock.patch.object(
+                extra_mutants, "run_crate", lambda *a: ([], Counter(untested=1), 1.0)
+            ),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            self.assertEqual(mutants.main(["mutants.py", "--remote-extra", "cpk"]), 1)
+
+
 class SplitShares(unittest.TestCase):
     """Each half of a split tests its own share: halves given the same shard would halve a
     diff run, which has no coverage check, with every count looking right."""
@@ -765,8 +1005,9 @@ class SplitShares(unittest.TestCase):
             calls["local"] = (args, config)
             return subprocess.CompletedProcess(args, 0)
 
-        def launch_remote(host, selection, whole=False):
+        def launch_remote(host, selection, whole=False, **kwargs):
             calls["whole"] = whole
+            calls["launch"] = kwargs
 
         with (
             mock.patch.multiple(
@@ -786,10 +1027,12 @@ class SplitShares(unittest.TestCase):
             )
         return calls
 
-    def job(self, whole: bool) -> str:
+    def job(self, whole: bool, **kwargs) -> str:
         jobs = []
+        remotes = []
 
         def ssh(host, remote, **kwargs):
+            remotes.append(remote)
             if "/job.sh" in remote and "input" in kwargs:
                 jobs.append(kwargs["input"].decode())
             return subprocess.CompletedProcess([host, remote], 0)
@@ -800,9 +1043,10 @@ class SplitShares(unittest.TestCase):
             mock.patch.object(mutants, "ssh", ssh),
             mock.patch.object(mutants, "remote_memory_max", lambda host: 2**30),
         ):
-            mutants.launch_remote("bonfire", ["-p", "cpk"], whole=whole)
+            mutants.launch_remote("bonfire", ["-p", "cpk"], whole=whole, **kwargs)
         self.assertFalse(mutants.remote_pending().exists(), "the launch's record left behind")
         (job,) = jobs
+        self.remotes = remotes
         return job
 
     def test_round_robin_halves_take_shards_0_and_1(self):
@@ -811,13 +1055,14 @@ class SplitShares(unittest.TestCase):
             calls["local"], (["-p", "cpk", "--shard", "0/2", "--sharding", "round-robin"], None)
         )
         self.assertFalse(calls["whole"])
+        self.assertEqual(calls["launch"], {"local_half": True, "extra": False})
         self.assertIn("--shard 1/2 --sharding round-robin ", self.job(whole=False))
 
     def test_a_split_refuses_before_it_touches_any_result(self):
         """A refusal the caller counted as a run filed the last run's `mutants.out` as its
         own (`mutants_diff.run`): a split refuses by raising, before setting anything aside."""
         with (
-            mock.patch.object(mutants, "remote_refusal", lambda host, remote: "busy"),
+            mock.patch.object(mutants, "remote_refusal", lambda host: "busy"),
             mock.patch.object(mutants, "set_aside_last_run", lambda: self.fail("set aside")),
             contextlib.redirect_stdout(io.StringIO()),
         ):
@@ -826,7 +1071,7 @@ class SplitShares(unittest.TestCase):
         with (
             mock.patch.multiple(
                 mutants,
-                remote_refusal=lambda host, remote: None,
+                remote_refusal=lambda host: None,
                 snapshot=lambda tree: tree,
                 remote_state=lambda host: (None, None, 8, "cargo-mutants 25.3.1"),
                 local_mutants_version=lambda: "cargo-mutants 25.2.0",
@@ -843,19 +1088,48 @@ class SplitShares(unittest.TestCase):
         self.assertTrue(calls["whole"])
         self.assertNotIn("--shard", self.job(whole=True))
 
+    def test_a_whole_runs_job_runs_the_extra_pass_first_and_a_diffs_never(self):
+        """A whole run's remote job runs the extra kinds before cargo-mutants, at
+        one build job for the unit's memory cap, logging the pass's code but
+        leaving `run/exit` cargo-mutants'; the cleanup clears the clone's
+        `extra_mutants.out` with its `mutants.out`, so a failed pass leaves no
+        last run's record to fetch."""
+        job = self.job(whole=True, local_half=False, extra=True)
+        self.assertIn(
+            "CARGO_BUILD_JOBS=1 nice -n 19 ionice -c3 python3 scripts/mutation/"
+            "mutants.py --remote-extra cpk\n",
+            job,
+        )
+        self.assertLess(job.index("--remote-extra"), job.index("cargo mutants"))
+        self.assertIn('echo "extra pass exit $?"', job)
+        self.assertLess(job.index("extra pass exit"), job.index("cargo mutants"))
+        self.assertLess(job.index("cargo mutants"), job.index("code=$?"))
+        self.assertTrue(
+            any("extra_mutants.out" in remote for remote in self.remotes),
+            "the launch's cleanup never removed the clone's extra_mutants.out",
+        )
+        diff_job = self.job(whole=False)
+        self.assertNotIn("remote-extra", diff_job)
+        self.assertNotIn("extra pass exit", diff_job)
+
 
 class SummaryLists(unittest.TestCase):
     """What a finished split run's summary writes into `missed_all.txt`, the file triage
     reads, and when it fails the run."""
 
-    def summarize(self, root: Path) -> tuple[int, str]:
+    def summarize(
+        self, root: Path, local_half: bool = True, extra_run: Path | None = None
+    ) -> tuple[int, str]:
         out = io.StringIO()
         with (
             mock.patch.object(mutants, "ROOT", root),
             mock.patch.object(mutants, "REMOTE_ONLY", False),
             contextlib.redirect_stdout(out),
         ):
-            code = mutants.summarize(0, 0, root / "remote_console.txt", (None, None))
+            code = mutants.summarize(
+                0, 0, root / "remote_console.txt", (None, None),
+                local_half=local_half, extra_run=extra_run,
+            )
         return code, out.getvalue()
 
     def test_survivors_and_timeouts_of_both_halves_and_the_extra_pass_merge_line_by_line(self):
@@ -887,7 +1161,9 @@ class SummaryLists(unittest.TestCase):
                 "crates/libs/cpk/src/lib.rs:50: [literal] remove `b\"CPK \"` from the magic list\n",
                 encoding="utf-8",
             )
-            code, _ = self.summarize(root)
+            code, _ = self.summarize(
+                root, extra_run=root / "extra_mutants.out" / "run.json"
+            )
             self.assertEqual(code, 2)
             self.assertEqual(
                 (local / "missed_all.txt").read_text(encoding="utf-8").splitlines(),
@@ -915,6 +1191,46 @@ class SummaryLists(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("1 mutants were NOT tested", out)
         self.assertIn("  replace pad -> usize with 0", out)
+
+    def test_the_fetched_extra_record_merges_and_a_missing_one_fails(self):
+        """A whole run's extra pass record comes home with the fetch: its counts
+        join the table and its `missed_<crate>.txt` the merged list; a run that
+        should have the record and has none lost the pass's outcomes, so the
+        summary fails instead of filing them clean."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "mutants.out" / "remote" / "mutants.out"
+            write_run(remote, 1, [{"scenario": mutant("r"), "summary": "CaughtMutant"}])
+            extra = root / "mutants.out" / "remote" / "extra_mutants.out"
+            extra.mkdir(parents=True)
+            record = extra / "run.json"
+            record.write_text(
+                json.dumps(
+                    {"crate": "cpk", "seconds": 4.0,
+                     "counts": {"missed": 1, "caught": 2}}
+                ),
+                encoding="utf-8",
+            )
+            (extra / "missed_cpk.txt").write_text(
+                "crates/libs/cpk/src/lib.rs:5: [bool] flip it\n", encoding="utf-8"
+            )
+            code, out = self.summarize(
+                root, local_half=False, extra_run=record
+            )
+            self.assertEqual(code, 2)
+            self.assertEqual(
+                (root / "mutants.out" / "missed_all.txt")
+                .read_text(encoding="utf-8")
+                .splitlines(),
+                ["crates/libs/cpk/src/lib.rs:5: [bool] flip it"],
+            )
+            self.assertIn("extra", out)
+            record.unlink()
+            code, out = self.summarize(
+                root, local_half=False, extra_run=record
+            )
+        self.assertGreaterEqual(code, 1)
+        self.assertIn("the extra pass left no record: see the remote log", out)
 
 
 class DiffRun(unittest.TestCase):
@@ -1023,6 +1339,71 @@ class DiffRun(unittest.TestCase):
         )
 
 
+class DiffBusy(unittest.TestCase):
+    """A diff crate run asks the host before splitting: busy or unreachable
+    (a whole run holds it for days) it runs here whole; `REMOTE_ONLY` is
+    unchanged."""
+
+    def run_crate(self, state: str | None, remote_only: bool = False):
+        calls = {}
+        out = io.StringIO()
+        with (
+            mock.patch.object(mutants, "estimate_seconds", lambda crates, share=1.0: 999.0),
+            mock.patch.object(mutants, "remote_host", lambda: "bonfire"),
+            mock.patch.object(mutants, "REMOTE_ONLY", remote_only),
+            mock.patch.object(
+                mutants, "remote_run_state",
+                lambda host: calls.__setitem__("state", host) or state,
+            ),
+            mock.patch.object(
+                mutants, "split",
+                lambda *a, **k: calls.__setitem__("split", (a, k)) or 0,
+            ),
+            mock.patch.object(
+                mutants, "local_refusal",
+                lambda: calls.__setitem__("refusal", True) or None,
+            ),
+            mock.patch.object(mutants, "set_aside_last_run", lambda: None),
+            mock.patch.object(
+                mutants, "local_mutants",
+                lambda *a, **k: calls.__setitem__("local", a)
+                or subprocess.CompletedProcess(a, 0),
+            ),
+            mock.patch.object(mutants, "update_cost_cache", lambda *a, **k: None),
+            mock.patch.object(mutants, "report_killed", lambda code, **k: code),
+            contextlib.redirect_stdout(out),
+        ):
+            code = mutants_diff.run_crate("in.diff", HEAD_TREE, Path("src"), "cpk", 3)
+        return code, calls, out.getvalue()
+
+    def test_a_busy_remote_runs_the_crate_here_whole(self):
+        for state, word in (
+            ("running", "running"), ("finished", "finished"),
+            ("died", "died"), (None, "unreachable"),
+        ):
+            code, calls, out = self.run_crate(state)
+            self.assertEqual(code, 0)
+            self.assertNotIn("split", calls)
+            self.assertIn("local", calls)
+            self.assertIn("refusal", calls, "local_refusal still runs first")
+            self.assertIn(
+                f"bonfire is busy (a remote half {word}): running here", out
+            )
+
+    def test_a_free_remote_splits_as_today(self):
+        code, calls, out = self.run_crate("none")
+        self.assertEqual(code, 0)
+        self.assertIn("split", calls)
+        self.assertNotIn("local", calls)
+        self.assertIn("split, about", out)
+
+    def test_remote_only_still_sends_every_mutant_remote(self):
+        code, calls, out = self.run_crate("running", remote_only=True)
+        self.assertEqual(code, 0)
+        self.assertNotIn("state", calls, "REMOTE_ONLY never asks the host's state")
+        self.assertEqual(calls["split"][1], {"local": False})
+
+
 class Fetch(unittest.TestCase):
     """`fetch_remote` with ssh stubbed: the archive arrives on the stdout it is given."""
 
@@ -1115,6 +1496,24 @@ class Fetch(unittest.TestCase):
             "mutants.out/log/unviable.log", "mutants.out/log/missed.log",
         })
 
+    def test_the_fetch_list_brings_a_whole_runs_extra_pass_home(self):
+        """A whole run's extra pass leaves its record under the clone's
+        `extra_mutants.out/` — `run.json`, `missed_<crate>.txt`, the outcomes
+        tsvs — all small, all fetched, while the caught-log filter still holds."""
+        outcomes = {"outcomes": [
+            {"summary": "CaughtMutant", "log_path": "log/caught.log"},
+        ]}
+        extra = self.root / "clone" / "extra_mutants.out"
+        extra.mkdir(parents=True)
+        (extra / "run.json").write_text("{}\n", encoding="utf-8")
+        (extra / "missed_cpk.txt").write_text("x\n", encoding="utf-8")
+        (extra / "outcomes_bool.tsv").write_text("caught\tx\n", encoding="utf-8")
+        listed = self.listed(json.dumps(outcomes))
+        self.assertIn("extra_mutants.out/run.json", listed)
+        self.assertIn("extra_mutants.out/missed_cpk.txt", listed)
+        self.assertIn("extra_mutants.out/outcomes_bool.tsv", listed)
+        self.assertNotIn("mutants.out/log/caught.log", listed)
+
     def test_an_outcomes_file_it_cannot_read_keeps_every_log(self):
         logs = {
             "mutants.out/caught.txt", "mutants.out/log/caught.log",
@@ -1142,12 +1541,135 @@ class Fetch(unittest.TestCase):
         self.assertFalse(any("collected" in call for call in self.calls))
 
 
+class CollectRemote(unittest.TestCase):
+    """`just mutants-collect`: the wait on the remote half holds no run lock,
+    the fetch and summary take it, and the launch record decides whether the
+    run had a local half and ran the extra pass."""
+
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        patcher = mock.patch.object(mutants, "ROOT", self.root)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def pend(self, host: str = "bonfire", local_half: bool = True, extra: bool = False) -> Path:
+        pending = mutants.remote_pending()
+        pending.parent.mkdir(parents=True, exist_ok=True)
+        pending.write_text(
+            json.dumps({"host": host, "local_half": local_half, "extra": extra}) + "\n",
+            encoding="utf-8",
+        )
+        return pending
+
+    def test_the_wait_holds_no_run_lock(self):
+        probes = []
+
+        def probe(tag):
+            with open(self.root / "mutants.lock", "a+b") as handle:
+                probes.append((tag, mutants.try_lock(handle)))
+
+        real_lock = mutants.run_lock
+        with (
+            mock.patch.object(mutants, "remote_run_state", lambda host: "finished"),
+            mock.patch.object(
+                mutants, "run_lock",
+                lambda *a, **k: real_lock(self.root / "mutants.lock"),
+            ),
+            mock.patch.object(
+                mutants, "wait_remote", lambda host: probe("wait") or (0, 1.0)
+            ),
+            mock.patch.object(
+                mutants, "fetch_remote", lambda *a, **k: probe("fetch")
+            ),
+            mock.patch.object(mutants, "update_cost_cache", lambda *a, **k: None),
+            mock.patch.object(mutants, "summarize", lambda *a, **k: 0),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            self.assertEqual(mutants.collect("bonfire"), 0)
+        self.assertEqual(probes, [("wait", True), ("fetch", False)])
+
+    def test_a_record_with_no_local_half_and_the_extra_pass_summarizes_as_a_whole_run(self):
+        """A whole run's record says there was no local half and the remote ran
+        the extra pass: the summary reads the fetched `mutants.out` and the
+        fetched `run.json` alone — a stale local `mutants.out` and the local
+        cost table are left untouched."""
+        self.pend(local_half=False, extra=True)
+        local = self.root / "mutants.out"
+        local.mkdir(parents=True)
+        (local / "missed.txt").write_text(
+            "crates/libs/cpk/src/lib.rs:1:1: a stale local survivor\n", encoding="utf-8"
+        )
+        remote = local / "remote"
+        fetched = remote / "mutants.out"
+
+        def fetch(host, partial=False):
+            write_run(fetched, 1, [{"scenario": mutant("r"), "summary": "MissedMutant"}])
+            (fetched / "missed.txt").write_text(
+                "crates/libs/cpk/src/read.rs:2:2: a remote survivor\n", encoding="utf-8"
+            )
+            extra = remote / "extra_mutants.out"
+            extra.mkdir(parents=True)
+            (extra / "run.json").write_text(
+                json.dumps(
+                    {"crate": "cpk", "seconds": 2.0, "counts": {"missed": 1}}
+                ),
+                encoding="utf-8",
+            )
+            (extra / "missed_cpk.txt").write_text(
+                "crates/libs/cpk/src/lib.rs:5: [bool] flip it\n", encoding="utf-8"
+            )
+            (remote / "remote_console.txt").write_text("log\n", encoding="utf-8")
+
+        costs = []
+        with (
+            mock.patch.object(mutants, "remote_run_state", lambda host: "finished"),
+            mock.patch.object(mutants, "run_lock", contextlib.nullcontext),
+            mock.patch.object(mutants, "wait_remote", lambda host: (2, 9.0)),
+            mock.patch.object(mutants, "fetch_remote", fetch),
+            mock.patch.object(
+                mutants, "update_cost_cache", lambda *a, **k: costs.append(a or k)
+            ),
+            contextlib.redirect_stdout(io.StringIO()),
+        ):
+            code = mutants.collect("bonfire")
+        self.assertEqual(code, 2)
+        self.assertEqual(
+            (local / "missed_all.txt").read_text(encoding="utf-8").splitlines(),
+            [
+                "crates/libs/cpk/src/read.rs:2:2: a remote survivor",
+                "crates/libs/cpk/src/lib.rs:5: [bool] flip it",
+            ],
+        )
+        # The local `mutant` and `baseline` cost entries stay as they were: only
+        # the fetched half folds into `remote_mutant`.
+        self.assertEqual(costs, [(fetched, "remote_mutant")])
+
+    def test_a_collect_reports_a_half_already_collected_while_it_waited(self):
+        """Its own run fetched the half before this collect's turn at the lock:
+        a second fetch would summarize a record that is gone."""
+        states = iter(["finished", "none"])
+        out = io.StringIO()
+        with (
+            mock.patch.object(mutants, "remote_run_state", lambda host: next(states)),
+            mock.patch.object(mutants, "wait_remote", lambda host: (0, 1.0)),
+            mock.patch.object(mutants, "run_lock", contextlib.nullcontext),
+            mock.patch.object(
+                mutants, "fetch_remote", lambda *a, **k: self.fail("a second fetch")
+            ),
+            contextlib.redirect_stdout(out),
+        ):
+            self.assertEqual(mutants.collect("bonfire"), 1)
+        self.assertIn("already collected", out.getvalue())
+
+
 class RemoteRefusal(unittest.TestCase):
-    """`remote_refusal` through the host's states, for a run that uses the remote and for one
-    that does not."""
+    """`remote_refusal` through the host's states, for a run that uses the remote:
+    every caller does (`local_refusal` asks this tree's record alone)."""
 
     def refusal(
-        self, state: str | None, remote: bool, gates: int = 3, used: int = 2**30
+        self, state: str | None, gates: int = 3, used: int = 2**30
     ) -> str | None:
         def ssh(host, command, **kwargs):
             return subprocess.CompletedProcess([host, command], gates)
@@ -1158,31 +1680,28 @@ class RemoteRefusal(unittest.TestCase):
             mock.patch.object(mutants, "remote_disk_use", lambda host: (used, 100 * 2**30)),
             contextlib.redirect_stdout(io.StringIO()),
         ):
-            return mutants.remote_refusal("bonfire", remote=remote)
+            return mutants.remote_refusal("bonfire")
 
-    def test_an_unreachable_host_stops_only_a_run_that_uses_it(self):
-        self.assertEqual(self.refusal(None, remote=True), "cannot reach bonfire")
-        self.assertIsNone(self.refusal(None, remote=False))
+    def test_an_unreachable_host_stops_the_run(self):
+        self.assertEqual(self.refusal(None), "cannot reach bonfire")
 
-    def test_a_half_not_collected_stops_every_run(self):
+    def test_a_half_not_collected_stops_the_run(self):
         for state, words in (
             ("running", "is still running"),
             ("finished", "has finished but is not collected"),
             ("died", "stopped before it finished"),
         ):
-            for remote in (True, False):
-                refusal = self.refusal(state, remote=remote)
-                self.assertIn(words, refusal)
-                self.assertIn("mutants-collect", refusal)
+            refusal = self.refusal(state)
+            self.assertIn(words, refusal)
+            self.assertIn("mutants-collect", refusal)
 
-    def test_a_free_host_stops_a_remote_run_only_for_the_gates_the_link_or_its_disk(self):
-        self.assertIsNone(self.refusal("none", remote=False, gates=0))
-        self.assertIn("gates-remote", self.refusal("none", remote=True, gates=0))
-        self.assertEqual(self.refusal("none", remote=True, gates=255), "cannot reach bonfire")
-        self.assertIsNone(self.refusal("none", remote=True, gates=3))
+    def test_a_free_host_stops_the_run_only_for_the_gates_the_link_or_its_disk(self):
+        self.assertIn("gates-remote", self.refusal("none", gates=0))
+        self.assertEqual(self.refusal("none", gates=255), "cannot reach bonfire")
+        self.assertIsNone(self.refusal("none", gates=3))
         self.assertIn(
             "over the budget",
-            self.refusal("none", remote=True, gates=3, used=mutants.REMOTE_DISK_BUDGET + 1),
+            self.refusal("none", gates=3, used=mutants.REMOTE_DISK_BUDGET + 1),
         )
 
 

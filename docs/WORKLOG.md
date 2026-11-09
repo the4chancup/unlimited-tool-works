@@ -8416,14 +8416,13 @@ points there.
   is built. Each slice gets SWE-2, Argon and Astra rounds (a new `pub` interface across
   crates).
 - open (2026-11-06) — Whole-crate mutation runs on the VPS alone (`RUNBOOK.md` "Mutation
-  runs and the VPS", the maintainer's directive). `scripts/mutation/mutants.py` still splits
-  a whole run, and `REMOTE_ONLY` skips its extra kinds, which run only on this machine. To
-  do before `team_widgets`'s whole-crate run: `whole_run` takes the remote-only path for
-  every whole run and refuses when no remote is set; the extra kinds run on the VPS in the
-  same service before cargo-mutants, their results fetched with the rest; the summary
-  learns from the run's own record whether a local half existed (not from `REMOTE_ONLY`),
-  and still rechecks the Windows-only survivors here; `mutants-diff` runs entirely here
-  while a whole run holds the VPS, split otherwise. Then, as a second slice: a stopped run
+  runs and the VPS", the maintainer's directive). Slice 1 done 2026-11-09 (SWE-2 sidekick,
+  `.tmp/mutation_vps/brief_vps_only.md`; `mutants_test.py` 79, 9 perturbations red): a whole
+  run refuses without a host, runs every mutant there, its extra kinds first in the same
+  service (`--remote-extra`) and fetched with the rest; the launch record says whether a
+  local half exists, which the summary, `collect` and `local_refusal` read; the wait holds
+  no run lock, and `mutants-diff` runs here while the VPS is busy. Open: its SWE-2 loop (a
+  vital script), Astra after it (it reshapes how a run measures). Then, as a second slice: a stopped run
   resumes where it stopped (the VPS needing an update mid-run is the case), its tested
   mutants kept, never retested and never lost from the summary; first check whether
   cargo-mutants' `--iterate` (skips mutants an earlier run caught) does this for a half

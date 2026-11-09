@@ -15,12 +15,13 @@ to `mutants.diff/<crate>/` when its run ends, and `mutants.diff/missed_all.txt` 
 crate's survivors and, tagged `[timeout]`, its timeouts.
 
 A crate run whose mutants would cost more than a few minutes locally splits with
-`STUDIO_MUTANTS_REMOTE` like `just mutants` does (see `mutants.py`): the
+`STUDIO_MUTANTS_REMOTE` (the split `mutants.py` describes): the
 estimate is the baseline plus the per-crate per-mutant costs this machine has
 measured (`mutants.estimate_seconds`), so a pes_savefile diff splits while a
-one-line `fpc` fix stays local. A crate in `mutants.LOCAL_ONLY_CRATES` never
-splits. With `mutants.REMOTE_ONLY` set every mutant runs on the remote,
-whatever the estimate.
+one-line `fpc` fix stays local. While the remote is busy — a whole-crate run
+holds it for days — the crate runs here whole instead. A crate in
+`mutants.LOCAL_ONLY_CRATES` never splits. With `mutants.REMOTE_ONLY` set every
+mutant runs on the remote, whatever the estimate.
 """
 
 import json
@@ -136,7 +137,9 @@ def run(diff_path: str, tree: str, source: Path) -> int:
 
 
 def run_crate(diff_path: str, tree: str, source: Path, crate: str, count: int) -> int:
-    """Runs one crate's mutants of the diff: on the remote whole, split, or here."""
+    """Runs one crate's mutants of the diff: on the remote whole (`REMOTE_ONLY`),
+    split, or here — here too while the remote is busy: a whole-crate run holds
+    it for days."""
     selection = ["--in-diff", diff_path, "-p", crate]
     estimated = mutants.estimate_seconds([crate] * count)
     print(f"mutants_diff: estimated {estimated:.0f} s on this machine")
@@ -145,19 +148,26 @@ def run_crate(diff_path: str, tree: str, source: Path, crate: str, count: int) -
         return mutants.split(selection, host, tree, source, local=False)
     local_only = crate in mutants.LOCAL_ONLY_CRATES
     if host is not None and estimated >= mutants.SPLIT_THRESHOLD_SECONDS and not local_only:
-        half = mutants.estimate_seconds([crate] * count, share=0.5)
-        print(f"mutants_diff: split, about {half:.0f} s a half, plus the transfer and polling")
-        return mutants.split(selection, host, tree, source)
+        state = mutants.remote_run_state(host)
+        if state == "none":
+            half = mutants.estimate_seconds([crate] * count, share=0.5)
+            print(f"mutants_diff: split, about {half:.0f} s a half, plus the transfer and polling")
+            return mutants.split(selection, host, tree, source)
+        print(
+            f"mutants_diff: {host} is busy (a remote half "
+            f"{state or 'unreachable'}): running here",
+            flush=True,
+        )
     if host is not None and local_only:
         print(f"mutants_diff: {crate} is local-only (LOCAL_ONLY_CRATES)")
-    if refusal := mutants.local_refusal(host):
+    if refusal := mutants.local_refusal():
         raise mutants.Refused(refusal)
     print("mutants_diff: running here", flush=True)
     print(f"mutants_diff: cargo mutants {' '.join(selection)}", flush=True)
     mutants.set_aside_last_run()
     code = mutants.local_mutants(selection, source).returncode
     mutants.update_cost_cache()
-    return mutants.report_killed(code)
+    return mutants.report_killed(code, local_half=True)
 
 
 def missed_lines(out: Path) -> list[str]:
