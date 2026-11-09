@@ -7604,8 +7604,14 @@ briefs, review loops, gates and mutation runs as for any step.
       fix (main merged, `2ad1210a`; archive SHA-256 `5c8bff89…`, its checksum file matching,
       the exe `v0.0.2-poc.1`; the first build kept in `target/dist_prev_63a1d183`). SWE-2
       over the fix (S-savepath r1, 7 accepted: the CHANGELOG line, tidying; r2, 4 accepted,
-      the loop ends; neither rework changes the bundle's behaviour). Open: the hand-over to
-      VGL's organizer (the maintainer's), the Argon round over the fix; the Linux tarball now also carries the two `.bat`
+      the loop ends; neither rework changes the bundle's behaviour). VGL27 Friendlies
+      through the bundle 2026-11-09 (the maintainer's material; `F:/VGL27 Friendlies sorted`,
+      39 teams): 37 upgrade and compile clean for PES 2019. Found: a team the bundle's
+      `teams_list.txt` lacks (/end/, /wuwa/, new in the save) fails `team_name_unknown`, and
+      the readme never says to run `save-editor export-teams-list <save> --yes` first; /wuwa/'s
+      note colour typo `##8C96C5` refuses its whole upgrade (QUESTIONS); /bag/ as poc6 ruled.
+      Open: the readme's teams-list step, the hand-over to VGL's organizer (the
+      maintainer's); the Linux tarball now also carries the two `.bat`
       files (`expected_entries` has no platform gate), to settle before 0.0.2
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,

@@ -10,6 +10,13 @@ names where the question came from so the context can be read there.
 
 ## Cup practice
 
+- **A Team Note's mistyped colour line.** /wuwa/'s VGL27 Friendlies export notes its 2nd
+  player colours as `##8C96C5 - #000000` (two `#`), and the Export upgrader refuses the whole
+  export (`unmigrated_content`, `colors_unreadable`), so the team cannot be compiled until the
+  manager fixes one character. Should the upgrader read a doubled `#` as one, skip the line
+  with a Warning and upgrade the rest, or keep refusing so the manager fixes it? (worklog
+  "0.0.2-poc8"; `.tmp/vgl27f/findings.md`)
+
 The Music player's three below come from reading Rigdio v2.2.0's controls (worklog 10.0i,
 `plans/music_player.md` "Playback semantics"):
 
