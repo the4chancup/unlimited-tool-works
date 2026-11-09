@@ -7641,6 +7641,21 @@ briefs, review loops, gates and mutation runs as for any step.
     2026-11-09 (main merged, `aad5c957`; archive SHA-256 `af0cf4f1…`, its checksum file
     matching, the exe `v0.0.2-poc.1`, the readme's teams-list step present; the third build
     kept in `target/dist_prev_48483ba9`)
+  - [x] 0.0.2-poc10 the embedded teams list carries VGL27's allocation (the maintainer,
+    2026-11-09; DECISIONS "the embedded list carries VGL27's allocation";
+    `spec/libs/teams_list.md`): 781–832 from the organizer's paste, 833–834 `VGL 53`/`VGL 54`,
+    the readme's step 2 no longer merges the save's teams first (the command kept for a team
+    joining later). Files: `teams_list` `data/teams_list.txt` (written by
+    `.tmp/0_0_2/poc/vgl27_teams_apply.py` from `vgl27_teams_paste.txt`: only 787–834 change),
+    `src/lib.rs` (the content-pinning test replaced by `upstream_has_one_row_per_team_id`; red
+    with the 833 row dropped by hand), `resources/bundle/README.txt`. The Friendlies saves
+    number teams as VGL26 plus /END/ 835 and /wuwa/ 836 (`export-teams-list` dry run,
+    `.tmp/0_0_2/poc/teams_check.py`), so they no longer match the list. Tests that leaned on
+    the embedded list, measured by running every consumer's tests with its 220 rows all
+    placeholders (`.tmp/0_0_2/poc/teamless_list.py`): `export_upgrader` alone, 110 cli and 4
+    unit tests and the golden case (/egg/ left the list); they now read a simulated list,
+    `tests/fixtures/teams_list.txt` (six teams), from the sandbox's data directory and
+    `test_support::test_ctx`'s, and pass with the teamless list as with the real one
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
     withdrawn whole (today SE-STR 8, SE-TRN 3, `spec/save_editor.md`) moves to
     `docs/spec/withdrawn_ids.md`, its lines as written, reason and successor kept; (2) a run

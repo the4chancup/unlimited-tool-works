@@ -2,7 +2,7 @@
 
 use std::fs;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use studio_core::{AppPaths, PipelineEventEnvelope, Settings, ToolContext};
 
@@ -17,7 +17,25 @@ pub(crate) fn scratch(name: &str) -> PathBuf {
     root
 }
 
-/// A `ToolContext` whose events land on the returned receiver.
+/// The unit tests' data directory, made once per process: it holds the
+/// fixture `teams_list.txt` (`tests/fixtures/README.md`) and nothing else.
+fn data_dir() -> PathBuf {
+    static DATA_DIR: OnceLock<PathBuf> = OnceLock::new();
+    DATA_DIR
+        .get_or_init(|| {
+            let root = scratch("data_dir");
+            fs::write(
+                root.join("teams_list.txt"),
+                include_str!("../tests/fixtures/teams_list.txt"),
+            )
+            .unwrap();
+            root
+        })
+        .clone()
+}
+
+/// A `ToolContext` whose events land on the returned receiver, its data
+/// directory [`data_dir`].
 pub(crate) fn test_ctx() -> (
     ToolContext,
     crossbeam_channel::Receiver<PipelineEventEnvelope>,
@@ -29,7 +47,7 @@ pub(crate) fn test_ctx() -> (
             Arc::new(Mutex::new(Settings::default())),
             AppPaths {
                 exe_dir: PathBuf::new(),
-                data_dir: None,
+                data_dir: Some(data_dir()),
             },
             events_tx,
             requests_tx,

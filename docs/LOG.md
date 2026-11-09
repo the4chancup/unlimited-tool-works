@@ -3120,3 +3120,4 @@ worklog passed 7,000 lines.
 - 2026-11-09: The 0.0.2-poc.1 bundle rebuilt with the `kit_tex` fix (archive `af0cf4f1…`); PES 2019's motion flag queued for an in-game check, and the withdrawn-scenario step now copies every compacted line whole first.
 - 2026-11-09: Withdrawn scenarios out of the way (0.0.2-acc): the two areas withdrawn whole and every run of consecutive withdrawn IDs move, as written, to `spec/withdrawn_ids.md`; the runs leave one range line in place, and the acceptance gate reads both.
 - 2026-11-09: PES 2019 shows a player's edited motions with every edit flag clear (Edit mode's Motion page, in game), so the aesthetics patch's motions need no flag; only a name needs `player`.
+- 2026-11-09: The embedded teams list carries VGL27's allocation (781–832, the organizer's), so the organizer's readme no longer merges the save's teams first; the list's test checks one row per ID 701–920, never who holds which.

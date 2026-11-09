@@ -33,34 +33,20 @@ mod tests {
         );
     }
 
+    /// The shipped list changes with every league's allocation, so this checks only what
+    /// any version of it must hold: one row for each team ID, 701 to 920, in order (a team
+    /// or a placeholder). Which team holds which ID is the data's business, not a test's.
     #[test]
-    fn upstream_parses_to_220_rows() {
+    fn upstream_has_one_row_per_team_id() {
         let list = list(TeamsList::UPSTREAM);
-        assert_eq!(list.rows().len(), 220);
-
-        let umajp = TeamName::new("UMAJP").unwrap();
-        assert_eq!(list.id_of(&umajp), TeamId::new(827).ok());
-        assert_eq!(
-            list.name_of(TeamId::new(827).unwrap()).unwrap().as_str(),
-            "/umajp/"
-        );
-        assert_eq!(
-            list.id_of(&TeamName::new("/@/").unwrap()),
-            TeamId::new(781).ok()
-        );
-
-        // 9 Backup + 16 VGL + 70 Invitational rows have names that do not fold.
-        let placeholders = list
+        let ids: Vec<u16> = list
             .rows()
             .iter()
-            .filter(|row| matches!(row, Row::Placeholder { .. }))
-            .count();
-        assert_eq!(placeholders, 95);
-        assert!(matches!(
-            &list.rows()[71],
-            Row::Placeholder { cells } if cells[0] == "772" && cells[1] == "Backup 1" && cells.len() == 4
-        ));
-        assert_eq!(list.teams().count(), 125);
+            .map(|row| match row {
+                Row::Team { cells, .. } | Row::Placeholder { cells } => cells[0].parse().unwrap(),
+            })
+            .collect();
+        assert_eq!(ids, (701..=920).collect::<Vec<u16>>());
     }
 
     #[test]

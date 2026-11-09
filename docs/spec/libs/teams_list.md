@@ -43,10 +43,15 @@ updater depend on the whole export object model for one file format.
   Never writes: callers own filesystem I/O and the read-only handling (`teams_list_read_only`).
 
 Consumers: `aesthetics_export` (identity resolution), `team_compiler` (ID cell write); the
-later consumers are in `plans/libs/teams_list.md`. `wasm32`-clean. Tested against
-the tab-separated `teams_list.txt` of Red's unreleased development branch as a fixture (released
-Red's list separates its two columns, header `ID Name` included, by a space, which this reader
-refuses naming the file; 220 rows, `/umaJP/` mixed case, `/@/`, the `Backup N`
-placeholders) plus reconcile cases for each summary bucket.
+later consumers are in `plans/libs/teams_list.md`. `wasm32`-clean. The embedded list started
+as the tab-separated `teams_list.txt` of Red's unreleased development branch (released Red's
+list separates its two columns, header `ID Name` included, by a space, which this reader
+refuses naming the file; 220 rows, the `Backup N`, `VGL N` and `Invitational N` placeholders),
+its /vg/ League block (781–834) since replaced by each league's own allocation (VGL27's
+781–832 at 0.0.2-poc, 833–834 the placeholders `VGL 53` and `VGL 54`). The list changes
+with every allocation, so its tests check only what any version holds (one row per ID
+701–920, in order; an unchanged write-back byte for byte), never which team holds which ID;
+the parser's cases (fold, placeholders, carried columns) are tested on lists of their own,
+plus reconcile cases for each summary bucket.
 
 ---

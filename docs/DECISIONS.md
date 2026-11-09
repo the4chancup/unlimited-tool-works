@@ -15871,3 +15871,21 @@ the upgrader's collision check folds away, and a member reading it sees no diffe
 file is. A grammar where only a `kitN` reference makes a set was considered and dropped:
 model sets have no reference, so it needed a second rule for models.
 Plan: `spec/export_upgrader.md` "What it does" (the kit magic paragraph); EU-MDL-28.
+
+## 2026-11-09 — teams_list — the embedded list carries VGL27's allocation
+Decision (the maintainer, over the Friendlies save's numbering): the embedded
+`teams_list.txt`'s /vg/ League block takes the organizer's VGL27 allocation
+(https://pastebin.com/raw/adx6eKb0): its 52 teams at 781–832 in the paste's order, 833 and
+834 the placeholders `VGL 53` and `VGL 54` like the `VGL 55`–`VGL 70` rows after them; the
+teams the allocation leaves out (/alg/, /egg/, /esg/, /fg/, /ink/, /smtg/, /snowg/, /wowg/)
+leave the list; the paste's "Transfer No." column is not carried (nothing reads it), and
+the boots columns follow the ID as on every row. The list's test checks only what any
+version holds (one row per ID 701–920, in order), never which team holds which ID.
+Why: the organizer's readme told him to merge the save's teams into the list from a console
+before the first upgrade; a shipped list already numbered as the league is one step less.
+The Friendlies save (VGL26's numbering plus /END/ 835 and /wuwa/ 836) no longer matches the
+list; the official save is built to the allocation. A test pinning IDs would need editing
+at every allocation and checks only that the numbers were typed twice; for the same reason
+no test runs on the embedded list's content (the maintainer): a test that resolves a team
+brings a simulated list of its own (`export_upgrader`'s `tests/fixtures/teams_list.txt`).
+Plan: `spec/libs/teams_list.md` (the embedded list's paragraph).
