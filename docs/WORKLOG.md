@@ -7761,6 +7761,26 @@ briefs, review loops, gates and mutation runs as for any step.
       folder, which the spec's row and TC-XML-19 now say (test in `common_links.rs`); the
       upgrader's model-folder help, the draft's two catalog rows and its refusal line no
       longer name team IDs. Open: the SWE-2 loop over poc11 and these fixes, then Argon's
+  - [ ] 0.0.2-poc12 no ambiguous Common spelling (the maintainer, 2026-11-09, ruling on
+    poc11's *lead* choices after Astra's round). Rulings:
+    - the short form is `common_folder/`, not `common/`: `common` is also the CPK's root
+      folder (`common/character1/…`), so `common/team_folder/x.dds` reads as an archive path.
+      Accepted: `model/character/uniform/common/team_folder/…` and
+      `common_folder/team_folder/…` (a game file below it: the long form or
+      `common_folder/<name>`); a reference starting `common/` is refused. The upgrader
+      writes `common_folder/team_folder/`
+    - an FMDL texture directory naming a three-character (or any other) folder after
+      `model/character/common/` is refused as a `.mtl` path is; the upgrader respells it
+      `team_folder`. `common/000/` is no game folder: the 4cc community made it. A member
+      fixes a refused FMDL with `upgrade-models`, or later in Blender (the new plugin will
+      write `team_folder` on export); the refusal's text points at `upgrade-models`
+    - the ID-only collision (`u0731p2.dds` beside `u0XXXp2.dds`): Red renames every
+      three-character tag to the team's ID in `os.listdir` order, each rename replacing a
+      file of its new name (`name_editing.py` `filenames_id_replace`), so a `u0XXX` copy
+      (sorted after digits) ships whatever the team: the upgrader keeps it with no ID, loose
+      mode included. Open: two numbered copies with no `u0XXX` (asked 2026-11-09)
+    Order: spec, DECISIONS and scenarios first (lead), then (a) the compiler, (b) the
+    upgrader, each a brief; the PoC rebuilt after, the Friendlies upgraded again
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
     withdrawn whole (today SE-STR 8, SE-TRN 3, `spec/save_editor.md`) moves to
     `docs/spec/withdrawn_ids.md`, its lines as written, reason and successor kept; (2) a run
