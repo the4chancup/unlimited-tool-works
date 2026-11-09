@@ -5,6 +5,7 @@
 
 use std::fs;
 
+use crate::carried::{fmdl, fmdl_paths};
 use crate::common::Sandbox;
 
 /// `upgrade <input> --savefile <save>`.
@@ -869,4 +870,67 @@ fn a_midcup_texture_of_a_slot_no_row_names_is_that_kits_update() {
     assert!(!sandbox.path(&format!("{output}/Kits/g2")).exists());
     // No finding names p3 or its textures.
     assert!(!stdout.contains("p3"), "{stdout}");
+}
+
+// EU-MDL-28
+#[test]
+fn a_legacy_kit_folder_s_file_name_tokens_become_kit_tex() {
+    let sandbox = Sandbox::new("kit_folder_name_tokens");
+    for (dir, name, bytes) in [
+        ("u0XXXp1", "kit1.dds", b"p1 kit1" as &[u8]),
+        ("u0XXXp1", "kit2.dds", b"p1 kit2"),
+        ("u0XXXp2", "kit1.dds", b"p2 kit1"),
+        ("u0XXXp2", "kit2.dds", b"p2 kit2"),
+    ] {
+        sandbox.write(&format!("co Spring/Common/{dir}/{name}"), bytes);
+    }
+    for (dir, bytes) in [
+        ("u0XXXp1", b"face p1 kit1" as &[u8]),
+        ("u0XXXp2", b"face p2 kit1"),
+    ] {
+        sandbox.write(&format!("co Spring/Faces/XXX07 - A/{dir}/kit1.dds"), bytes);
+    }
+    sandbox.write(
+        "co Spring/Faces/XXX07 - A/face_high.fmdl",
+        &fmdl(&[
+            (
+                "/Assets/pes16/model/character/common/XXX/u0XXXp0/sourceimages/",
+                "kit2",
+            ),
+            ("./u0XXXp0/", "kit1"),
+        ]),
+    );
+    sandbox.save("EDIT");
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    // The file names' Studio tokens are `kit_tex`, no token at all: the
+    // respelled directories' `kitN`/`kit1`/`kit2` are the only ones read.
+    assert_eq!(
+        fmdl_paths(&sandbox, "co Full Spring/Players/07 - A/face_high.fmdl")[..2],
+        [
+            ("./kitN/".to_owned(), "kit_tex2".to_owned()),
+            ("./kitN/".to_owned(), "kit_tex1".to_owned()),
+        ]
+    );
+    assert_eq!(
+        fs::read(sandbox.path("co Full Spring/Players/07 - A/kitN/kit_tex2.dds.common")).unwrap(),
+        b""
+    );
+    for (path, bytes) in [
+        ("Common/kit1/kit_tex1.dds", b"p1 kit1" as &[u8]),
+        ("Common/kit1/kit_tex2.dds", b"p1 kit2"),
+        ("Common/kit2/kit_tex1.dds", b"p2 kit1"),
+        ("Common/kit2/kit_tex2.dds", b"p2 kit2"),
+        ("Players/07 - A/kit1/kit_tex1.dds", b"face p1 kit1"),
+        ("Players/07 - A/kit2/kit_tex1.dds", b"face p2 kit1"),
+    ] {
+        assert_eq!(
+            fs::read(sandbox.path(&format!("co Full Spring/{path}"))).unwrap(),
+            bytes,
+            "{path}"
+        );
+    }
+    let stdout = run.stdout();
+    assert!(!stdout.contains("common_link_missing"), "{stdout}");
 }

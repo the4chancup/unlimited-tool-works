@@ -130,20 +130,20 @@ fn an_fmdl_common_reference_with_a_studio_token_beside_the_legacy_one_links_the_
     let rewrites = plan(
         &[("boots", "Boots/VIVLOS/boots.fmdl")],
         &[
-            "Common/Kit1_kit1.dds",
-            "Common/Kit1_kit2.dds",
-            "Common/Kit1_kit3.dds",
-            "Common/Kit1_kit4.dds",
+            "Common/kit_tex1_kit1.dds",
+            "Common/kit_tex1_kit2.dds",
+            "Common/kit_tex1_kit3.dds",
+            "Common/kit_tex1_kit4.dds",
         ],
         &[("boots", &boots)],
     );
     assert_eq!(
         fmdl_paths(&rewrites, "Boots/VIVLOS/boots.fmdl")[0],
-        ("./".to_owned(), "Kit1_kitN.dds".to_owned())
+        ("./".to_owned(), "kit_tex1_kitN.dds".to_owned())
     );
     assert_eq!(
         rewrites.links,
-        ["Boots/VIVLOS/Kit1_kitN.dds.common".to_owned()]
+        ["Boots/VIVLOS/kit_tex1_kitN.dds.common".to_owned()]
     );
     assert!(rewrites.findings.is_empty());
 }

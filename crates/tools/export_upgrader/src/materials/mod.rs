@@ -33,7 +33,7 @@ use pes_model::ops::paths::rewrite_texture_paths;
 use studio_core::{Disposition, Message, Scope};
 
 use crate::carried::under;
-use crate::kit_magic::{Spelling, respell};
+use crate::kit_magic::{Spelling, respell_split};
 use crate::messages::{Code, INPUT, UnmigratedReason, tool_message, unmigrated};
 use crate::players::path_scope;
 use crate::source::SourceFailure;
@@ -155,13 +155,15 @@ fn model_folder_of(output: &str) -> Option<(FolderKind, &str, &str)> {
     Some((kind, &output[..top.len() + 1 + folder.len()], rest))
 }
 
-/// `directory`'s and `file_name`'s kit magic respelled (`Spelling::Path`,
-/// every `u0???p`/`u0???g` token in each).
+/// `directory`'s and `file_name`'s kit magic respelled (`Spelling::Path`)
+/// as one path: a `u0???p` token in `directory` marks `file_name`'s Studio
+/// tokens as it does a whole path's.
 fn respell_reference(directory: &mut String, file_name: &mut String, identity: &Identity) {
-    if let Cow::Owned(new) = respell(directory, Spelling::Path, identity) {
+    let (dir, name) = respell_split(directory, file_name, Spelling::Path, identity);
+    if let Cow::Owned(new) = dir {
         *directory = new;
     }
-    if let Cow::Owned(new) = respell(file_name, Spelling::Path, identity) {
+    if let Cow::Owned(new) = name {
         *file_name = new;
     }
 }
@@ -334,8 +336,9 @@ fn fmdl_entry(path: &mut fmdl::ops::paths::TexturePath, ctx: &FileContext, pass:
             mark_lookup(pass.used, ctx, "", &folded_stem(&path.file_name));
             return;
         };
-        let sub = respell(sub, Spelling::Path, ctx.identity).into_owned();
-        if let Cow::Owned(name) = respell(&path.file_name, Spelling::Path, ctx.identity) {
+        let (sub, name) = respell_split(sub, &path.file_name, Spelling::Path, ctx.identity);
+        let sub = sub.into_owned();
+        if let Cow::Owned(name) = name {
             path.file_name = name;
         }
         if referee_folder_holds(ctx, &sub, &path.file_name, pass.planned) {
@@ -380,7 +383,16 @@ fn fmdl_entry(path: &mut fmdl::ops::paths::TexturePath, ctx: &FileContext, pass:
         mark_lookup(pass.used, ctx, "", &folded_stem(&path.file_name));
         return;
     }
-    if let Cow::Owned(name) = respell(&path.file_name, Spelling::Path, ctx.identity) {
+    // A `u0???p` token in the dropped directory still marks the file
+    // name's Studio tokens: the entry's two halves are one path.
+    if let Cow::Owned(name) = respell_split(
+        &path.directory,
+        &path.file_name,
+        Spelling::Path,
+        ctx.identity,
+    )
+    .1
+    {
         path.file_name = name;
     }
     path.directory = "./".to_owned();
@@ -824,9 +836,11 @@ pub(crate) fn material_references(
                 respell_marker(&mut path.directory, COMMON_PREFIX.len(), &sub, ctx.identity);
                 return;
             }
-            // The `sub` and the file name respelled (`Spelling::Path`).
-            let sub = respell(sub, Spelling::Path, ctx.identity).into_owned();
-            if let Cow::Owned(name) = respell(&path.file_name, Spelling::Path, ctx.identity) {
+            // The `sub` and the file name respelled (`Spelling::Path`) as
+            // one path.
+            let (sub, name) = respell_split(sub, &path.file_name, Spelling::Path, ctx.identity);
+            let sub = sub.into_owned();
+            if let Cow::Owned(name) = name {
                 path.file_name = name;
             }
             if referee_folder_holds(&ctx, &sub, &path.file_name, pass.planned) {

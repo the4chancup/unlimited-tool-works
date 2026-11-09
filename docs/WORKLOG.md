@@ -7620,11 +7620,15 @@ briefs, review loops, gates and mutation runs as for any step.
       files (`expected_entries` has no platform gate), to settle before 0.0.2
   - [ ] 0.0.2-poc9 a legacy kit folder's file names lose their Studio tokens
     (`spec/export_upgrader.md` "What it does", the kit magic paragraph; DECISIONS
-    2026-11-09; EU-MDL-28): GBPEN's `Common/u0XXXpK/kit1.dds` upgraded to `kitK/kit1.dds`
-    read as kit-1 variants, so 45 FMDL references found nothing and 21 textures never
-    reached the CPK (VGL27 Friendlies, `.tmp/vgl27f/findings.md`). Next: the sidekick's
-    slice (`kit_magic.rs`, `materials/mod.rs`), then gbpen upgraded and compiled again from
-    the sorted source, its CPK listing `common/798/kitK/sourceimages/#windx11/Kit1.ftex`
+    2026-11-09, two entries; EU-MDL-28): GBPEN's `Common/u0XXXpK/kit1.dds` upgraded to
+    `kitK/kit1.dds` read as kit-1 variants, so 45 FMDL references found nothing and 21
+    textures never reached the CPK (VGL27 Friendlies, `.tmp/vgl27f/findings.md`). The
+    upgrader now writes an author's token as `kit_tex` (`kit2/kit_tex1.dds`; the maintainer,
+    over a capital `K`), the same-segment case included; `respell_split` reads an FMDL or
+    `.mtl` reference's two halves as one path. Files: `export_upgrader` `kit_magic.rs`,
+    `materials/mod.rs`, `materials/tests.rs`, `tests/cli/kits.rs`. Next: gbpen upgraded
+    and compiled again from the sorted source, its CPK listing
+    `common/798/kitK/sourceimages/#windx11/kit_tex1.ftex`; the PoC rebuilt
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the

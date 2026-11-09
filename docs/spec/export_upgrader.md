@@ -538,12 +538,16 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    the reference's respelled name (`kitN.dds.common`) and present when `Common/`'s directory
    holds a member of its set, as the shared validation resolves such a link. A name segment
    holding a legacy `p` token and also a Studio token of the author's (`kit1_u0827p0.dds`, five
-   VGL26 exports) has that token's `k` written `K` (`Kit1_kitN.dds`, `Common/Kit1_kit1.dds`), in
-   names and references alike: a stem's first token is its kit token, so `kit1_kitN` would read
-   as variant 1 and its set would never link. A path whose directory segment holds the legacy
-   `p` token gives the Studio tokens of its file name the same `K` (`Common/u0XXXp2/kit1.dds`
-   → `Common/kit2/Kit1.dds`, the FMDL texture `common/XXX/u0XXXp0/sourceimages/kit1` →
-   `./kitN/` `Kit1`; GBPEN's post-VGL26 export, 45 references in 19 models): a file name's
+   VGL26 exports) has that token's `kit` written `kit_tex` (`kit_tex1_kitN.dds`,
+   `Common/kit_tex1_kit1.dds`), in names and references alike: a stem's first token is its kit
+   token, so `kit1_kitN` would read as variant 1 and its set would never link. `kit_tex1` holds
+   no token (`kit` must be followed by the digit, `N` or `F` itself) and says what the file is,
+   a texture its author named `kit1`; a capital `Kit1`, the first spelling, differed only in
+   letter case, which Windows does not tell apart and the upgrader's own collision check folds
+   away. A path whose directory segment holds the legacy `p` token gives the Studio tokens of
+   its file name the same respelling (`Common/u0XXXp2/kit1.dds` → `Common/kit2/kit_tex1.dds`,
+   the FMDL texture `common/XXX/u0XXXp0/sourceimages/kit1` → `./kitN/` `kit_tex1`; GBPEN's
+   post-VGL26 export, 45 references in 19 models): a file name's
    token wins over every directory segment (`aesthetics_export`'s `kit_path_token`), so
    `kit2/kit1.dds` would read as variant 1 in a `kit2` folder, the reference `kitN/kit1` as no
    reference at all, and the per-kit folder set would neither link nor pack. A reference whose
@@ -1558,10 +1562,11 @@ EU-MDL-28  GIVEN Common/u0XXXp1/kit1.dds, Common/u0XXXp1/kit2.dds, Common/u0XXXp
                 u0XXXp2/kit1.dds whose FMDL names the textures
                 common/XXX/u0XXXp0/sourceimages/kit2 and ./u0XXXp0/kit1
            WHEN the export is upgraded
-           THEN Common/ holds kit1/Kit1.dds, kit1/Kit2.dds, kit2/Kit1.dds and kit2/Kit2.dds, the
-                player folder holds kit1/Kit1.dds and kit2/Kit1.dds, the FMDL textures are
-                ./kitN/ Kit2 and ./kitN/ Kit1, the player folder holds the link
-                kitN/Kit2.dds.common, and the shared validation finds it resolving
+           THEN Common/ holds kit1/kit_tex1.dds, kit1/kit_tex2.dds, kit2/kit_tex1.dds and
+                kit2/kit_tex2.dds, the player folder holds kit1/kit_tex1.dds and
+                kit2/kit_tex1.dds, the FMDL textures are ./kitN/ kit_tex2 and ./kitN/ kit_tex1,
+                the player folder holds the link kitN/kit_tex2.dds.common, and the shared
+                validation finds it resolving
 EU-MDL-09  GIVEN a model folder holding u0XXXp1.dds, u0714p2.dds, a folder u0XXXp0/ and
                 jacket_u0XXXp1.model, the textures named by its .mtl and its FMDL path table,
                 which also name dummy_kit.dds, and the model by its zlib-wrapped face.xml as

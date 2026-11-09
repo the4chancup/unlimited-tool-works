@@ -3116,3 +3116,4 @@ worklog passed 7,000 lines.
 - 2026-11-09: The PoC rehearsal's in-game half passed on PES 2019: the compile-patched save loads and 8 /dbg/ and /4ccg/ players show their own faces, bodies, boots and gloves; the 0.0.2-poc.1 bundle rebuilt with the save-path fix.
 - 2026-11-09: VGL27 Friendlies (39 teams) through the 0.0.2-poc.1 bundle: 37 upgrade and compile clean for PES 2019; a team new to the league failed `team_name_unknown`, so the organizer's readme now merges the save's teams into the teams list first (`save-editor export-teams-list`).
 - 2026-11-09: A Team Note's mistyped colour keeps refusing its export (the maintainer's ruling on /wuwa/'s `##8C96C5`): no repair, no skipped line.
+- 2026-11-09: The Export upgrader writes an author's kit token below a legacy kit folder as `kit_tex` (`kit2/kit_tex1.dds`), so GBPEN's per-kit Common textures stop reading as kit variants and reach the CPK; the same-segment case moves from a capital `K` to it (EU-MDL-28).

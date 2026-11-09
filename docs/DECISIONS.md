@@ -15857,3 +15857,17 @@ them. Respelling in the upgrader keeps the compiler's grammar
 whole, and is the mechanism the same-segment case already uses; changing the compiler's
 precedence would reopen every Studio-spelled path.
 Plan: `spec/export_upgrader.md` "What it does" (the kit magic paragraph); EU-MDL-28.
+
+## 2026-11-09 — export_upgrader — an author's kit token beside a legacy one becomes `kit_tex`
+Decision (the maintainer, over the lead's capital `K`): where the upgrader must stop an
+author's Studio kit token from reading as one (beside a legacy `u0???p` token in its segment,
+or in the file name below a legacy kit folder, the entry above), it writes its `kit` as
+`kit_tex`: `kit1` → `kit_tex1`, `kitN` → `kit_texN`, `kitF` → `kit_texF`. This replaces the
+capital `K` for both cases, the same-segment one of 2026-10-18 included (`kit1_u0827p0.dds` →
+`kit_tex1_kitN.dds`). The compiler's token grammar stays as it is.
+Why: `Kit1` differs from `kit1` only in letter case, which Windows does not tell apart and
+the upgrader's collision check folds away, and a member reading it sees no difference;
+`kit_tex1` holds no token (`kit` must be followed by the digit, `N` or `F`) and says what the
+file is. A grammar where only a `kitN` reference makes a set was considered and dropped:
+model sets have no reference, so it needed a second rule for models.
+Plan: `spec/export_upgrader.md` "What it does" (the kit magic paragraph); EU-MDL-28.

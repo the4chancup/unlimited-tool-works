@@ -5,8 +5,11 @@
 //! in model-folder mode), matched in the letter case written, anywhere
 //! and every occurrence. In a path segment
 //! holding a `u0???p` token, a Studio kit token already there
-//! (`kit1_u0827p1.dds`, which some VGL26 exports write) gets its `k`
-//! written `K` so the respelled token stays the only one. Only the upgrader
+//! (`kit1_u0827p1.dds`, which some VGL26 exports write) gets its `kit`
+//! written `kit_tex` so the respelled token stays the only one; a `u0???p`
+//! token in a directory segment respells the file name's Studio tokens the
+//! same (`u0XXXp2/kit1.dds` → `kit2/kit_tex1.dds`), a file name's token
+//! winning over every directory segment's. Only the upgrader
 //! reads the legacy spelling.
 
 use std::borrow::Cow;
@@ -39,18 +42,25 @@ pub(crate) enum Spelling {
 /// in the letter case written, anywhere, left to right, every occurrence.
 /// In each
 /// `/`-separated segment that holds a `p` token, every Studio kit token the
-/// segment already holds gets its `k` written `K`, so the respelled token is
-/// the segment's only one for `find_token` to read (`kit1_u0827p0.dds` →
-/// `Kit1_kitN.dds`, `u0???g` not triggering it). Borrowed when nothing
-/// changed.
+/// segment already holds gets its `kit` written `kit_tex`, so the respelled
+/// token is the segment's only one for `find_token` to read
+/// (`kit1_u0827p0.dds` → `kit_tex1_kitN.dds`, `u0???g` not triggering it);
+/// a `p` token in a directory segment respells the file name's Studio
+/// tokens the same way (`u0XXXp2/kit1.dds` → `kit2/kit_tex1.dds`), a file
+/// name's token winning over every directory segment's. Borrowed when
+/// nothing changed.
 pub(crate) fn respell<'a>(text: &'a str, spelling: Spelling, identity: &Identity) -> Cow<'a, str> {
     let bytes = text.as_bytes();
     // The edits, as (start, end, replacement) byte ranges of `text`,
-    // disjoint: the legacy respells, and the `k`→`K` of every Studio kit
-    // token in a segment holding a legacy `p` one.
+    // disjoint: the legacy respells, and the `kit`→`kit_tex` of every Studio
+    // kit token in a segment holding a legacy `p` one, the file name's when
+    // a directory segment holds one.
     let mut edits: Vec<(usize, usize, Cow<str>)> = Vec::new();
     let mut last = 0;
     let mut marked = BTreeSet::new();
+    // The file-name segment's start: a `p` token in a directory segment
+    // marks it too.
+    let name_start = text.rfind('/').map_or(0, |slash| slash + 1);
     for at in 0..bytes.len() {
         // A match starting inside the one before it is not taken (the
         // earlier one wins, left to right).
@@ -97,13 +107,18 @@ pub(crate) fn respell<'a>(text: &'a str, spelling: Spelling, identity: &Identity
             let start = text[..at].rfind('/').map_or(0, |slash| slash + 1);
             let end = text[at..].find('/').map_or(text.len(), |slash| at + slash);
             marked.insert((start, end));
+            // The token stands in a directory segment: the file name's
+            // Studio tokens are marked as its own segment's are.
+            if end <= name_start {
+                marked.insert((name_start, text.len()));
+            }
         }
         edits.push((at, end, replacement));
         last = end;
     }
     for (start, end) in marked {
         for k in kit_token_starts(&text[start..end]) {
-            edits.push((start + k, start + k + 1, Cow::Borrowed("K")));
+            edits.push((start + k, start + k + "kit".len(), Cow::Borrowed("kit_tex")));
         }
     }
     if edits.is_empty() {
@@ -119,6 +134,29 @@ pub(crate) fn respell<'a>(text: &'a str, spelling: Spelling, identity: &Identity
     }
     out.push_str(&text[cursor..]);
     Cow::Owned(out)
+}
+
+/// `directory` (ending in `/` when it names one) and `file_name`, the two
+/// halves of one path an FMDL path-table entry or a `.mtl` sampler stores
+/// apart, respelled as `respell` respells their joined path: a `u0???p`
+/// token in `directory` marks `file_name`'s Studio tokens as it does a
+/// whole path's. Both borrowed when nothing changed.
+pub(crate) fn respell_split<'a, 'b>(
+    directory: &'a str,
+    file_name: &'b str,
+    spelling: Spelling,
+    identity: &Identity,
+) -> (Cow<'a, str>, Cow<'b, str>) {
+    let Cow::Owned(respelled) = respell(&format!("{directory}{file_name}"), spelling, identity)
+    else {
+        return (Cow::Borrowed(directory), Cow::Borrowed(file_name));
+    };
+    let (directory, file_name) = match respelled.rsplit_once('/') {
+        Some((directory, file_name)) => (format!("{directory}/"), file_name.to_owned()),
+        // No directory half was given, and the respelled name holds none.
+        None => (String::new(), respelled),
+    };
+    (Cow::Owned(directory), Cow::Owned(file_name))
 }
 
 /// The copies with their output names respelled (`Spelling::Name`) below a
@@ -357,22 +395,26 @@ mod tests {
     }
 
     #[test]
-    fn a_studio_token_beside_a_legacy_one_gets_its_k_written_capital() {
+    fn a_studio_token_beside_a_legacy_one_becomes_kit_tex() {
         assert_eq!(
             respell("kit1_u0827p0.dds", Spelling::Path, &team()),
-            "Kit1_kitN.dds"
+            "kit_tex1_kitN.dds"
         );
         assert_eq!(
             respell("kit1_u0827p1.dds", Spelling::Name, &team()),
-            "Kit1_kit1.dds"
+            "kit_tex1_kit1.dds"
         );
         assert_eq!(
             respell("kitN_u0XXXp2.dds", Spelling::Name, &team()),
-            "KitN_kit2.dds"
+            "kit_texN_kit2.dds"
+        );
+        assert_eq!(
+            respell("kitF_u0XXXp2.dds", Spelling::Name, &team()),
+            "kit_texF_kit2.dds"
         );
         assert_eq!(
             respell("kit1_kit2_u0XXXp3.dds", Spelling::Name, &team()),
-            "Kit1_Kit2_kit3.dds"
+            "kit_tex1_kit_tex2_kit3.dds"
         );
         assert_eq!(
             respell("skit1_u0XXXp1.dds", Spelling::Name, &team()),
@@ -392,7 +434,7 @@ mod tests {
         // A segment after a `/` is read from its first character.
         assert_eq!(
             respell("ltd/kit1_u0XXXp1.dds", Spelling::Name, &team()),
-            "ltd/Kit1_kit1.dds"
+            "ltd/kit_tex1_kit1.dds"
         );
         assert_eq!(
             respell("kit1_u0XXXg1.dds", Spelling::Name, &team()),
@@ -402,6 +444,73 @@ mod tests {
             respell("kit1_x.dds", Spelling::Name, &team()),
             Cow::Borrowed(_)
         ));
+    }
+
+    #[test]
+    fn a_legacy_token_in_a_directory_segment_marks_the_file_name_s() {
+        // A `u0???p` directory respells every Studio kit token the file
+        // name below it holds, as it does its own segment's.
+        assert_eq!(
+            respell("u0XXXp2/kit1.dds", Spelling::Name, &team()),
+            "kit2/kit_tex1.dds"
+        );
+        assert_eq!(
+            respell("u0XXXp0/kit1", Spelling::Path, &team()),
+            "kitN/kit_tex1"
+        );
+        assert_eq!(
+            respell("u0XXXp0/kit1.dds", Spelling::Name, &team()),
+            "kitF/kit_tex1.dds"
+        );
+        assert_eq!(
+            respell("ltd/u0XXXp1/pants_kit3.dds", Spelling::Name, &team()),
+            "ltd/kit1/pants_kit_tex3.dds"
+        );
+        // A `g` token's directory is no `p` token's: the file name is left.
+        assert_eq!(
+            respell("u0XXXg1/kit1.dds", Spelling::Name, &team()),
+            "u0714g1/kit1.dds"
+        );
+        // The file name's own respelled token is no Studio token of the
+        // author's: it is not rewritten.
+        assert_eq!(
+            respell("u0XXXp1/u0XXXp2.dds", Spelling::Name, &team()),
+            "kit1/kit2.dds"
+        );
+        assert_eq!(
+            respell("u0XXXp2/armor_bsm.dds", Spelling::Name, &team()),
+            "kit2/armor_bsm.dds"
+        );
+    }
+
+    #[test]
+    fn the_respelled_token_holds_no_token() {
+        // `kit_tex` was never a token: the name reads as plain text.
+        for stem in ["kit_tex1", "kit_texN", "kit_texF"] {
+            assert_eq!(aesthetics_export::kit_token(stem), None, "{stem}");
+        }
+    }
+
+    #[test]
+    fn a_split_reference_respells_as_one_path() {
+        let (dir, name) = respell_split("./u0XXXp0/", "kit1", Spelling::Path, &team());
+        assert_eq!(dir, "./kitN/");
+        assert_eq!(name, "kit_tex1");
+        let (dir, name) = respell_split("u0XXXp2/", "kit1.dds", Spelling::Path, &team());
+        assert_eq!(dir, "kit2/");
+        assert_eq!(name, "kit_tex1.dds");
+        // No legacy token in the directory: the file name decides alone.
+        let (dir, name) = respell_split("./ltd/", "kit1", Spelling::Path, &team());
+        assert_eq!(dir, "./ltd/");
+        assert_eq!(name, "kit1");
+        // Nothing to respell: both halves are borrowed.
+        let (dir, name) = respell_split("./", "armor_bsm", Spelling::Path, &team());
+        assert!(matches!(dir, Cow::Borrowed(_)));
+        assert!(matches!(name, Cow::Borrowed(_)));
+        // An empty directory half is no directory segment.
+        let (dir, name) = respell_split("", "u0XXXp1.dds", Spelling::Name, &team());
+        assert_eq!(dir, "");
+        assert_eq!(name, "kit1.dds");
     }
 
     #[test]
