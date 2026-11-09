@@ -177,8 +177,8 @@ impl Code {
             | Code::AatfRulesetGone
             | Code::FpcGlovesCheckboxWinterGloves
             | Code::FpcCustomSkinOnNonFpc => Severity::Warning,
-            // A skipped team or player is an error and the rest is written (`apply-patch`
-            // exits 1); so is a dropped teams-list change and a list that cannot be written
+            // A skipped team or player is an error and the rest is written, if any applied
+            // (`apply-patch` exits 1); so is a dropped teams-list change and a list that cannot be written
             // (`export-teams-list` exits 1).
             Code::PatchTeamNotInSave
             | Code::PatchPlayerNotInSave

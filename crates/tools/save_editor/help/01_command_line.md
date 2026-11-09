@@ -76,8 +76,8 @@ or a player the save does not hold is the error line `patch_team_not_in_save` or
 1. A save holding none of the patch's players, written back over itself (`--out` the same file
 as `--base`), is left as it was, so its `.bak` stays your previous backup.
 
-Like every command that writes a save, its lines come once `--out` is written, so a write that
-fails prints only its failure.
+Like every command that writes a save, its lines come once `--out` is written (or, for a save
+left as it was, once nothing needs writing), so a write that fails prints only its failure.
 
 **Comparing two saves**
 

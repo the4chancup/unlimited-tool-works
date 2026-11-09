@@ -107,7 +107,8 @@ struct ApplyArgs {
     /// The save to read (EDIT00000000), which is never written unless it is also --out.
     #[arg(long, value_name = "SAVE")]
     base: PathBuf,
-    /// Where the patched save goes. An existing file there is kept as <out>.bak.
+    /// Where the patched save goes. An existing file there is kept as <out>.bak when it is
+    /// written; apply-patch leaves --out as it was when it is --base and no player applied.
     #[arg(long, value_name = "SAVE")]
     out: PathBuf,
     /// The game's Edit mode is closed: write the savefile even while its PES runs.
@@ -246,7 +247,8 @@ fn import_toml(
 }
 
 /// `apply-patch`: a version or allocation-scheme mismatch is refused before anything is
-/// touched; a team or player the save lacks is an Error finding and the rest is written.
+/// touched; a team or player the save lacks is an Error finding and the rest is written
+/// (SE-PAT-12 aside).
 /// The applied and skipped lines are emitted once `--out` is written, or once the write is
 /// skipped because the patch applied no player in place (SE-PAT-12), so a failed write
 /// reports none of them.

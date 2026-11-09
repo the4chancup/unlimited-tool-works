@@ -292,7 +292,7 @@ The commands:
   `--base`, is not rewritten, so its `.bak` stays the previous backup (SE-PAT-12). Like every
   command that writes a save (`import-toml`'s notes),
   its lines are printed
-  once `--out` is written: a write that fails prints only its failure (exit 3), never a line
+  once `--out` is written, or once that in-place write is skipped: a write that fails prints only its failure (exit 3), never a line
   saying what was written. The read-only lock is a GUI guard; a CLI command that writes
   aesthetics (an `import-toml` whose file holds aesthetics) is explicit by nature and is not
   gated.
