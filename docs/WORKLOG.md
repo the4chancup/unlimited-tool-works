@@ -7706,8 +7706,8 @@ briefs, review loops, gates and mutation runs as for any step.
       `src/{user_face_xml,deep/materials,deep/mod,processing/model,processing/prefox_face,
       messages,messages/catalog}.rs`, `help/01_command_line.md`, tests (TC-XML-18 to 20,
       TC-MOD-102; 25 inputs respelled). Open: `tests/cli/patch.rs:61`
-      (`a_patch_that_settles_to_nothing_…`, 8.36c) cites no scenario, which fails
-      `acceptance.py` since before this step
+      (`a_patch_that_settles_to_nothing_…`, 8.36c) cites no scenario, which `acceptance.py
+      report` lists (exit 0) since before this step
     - [x] (b) the upgrader: `Identity::Team` holds the name alone, no teams list read
       (`load_teams_list` gone, the fixture list too); the save's team found by name, first in
       record order, a later one `save_team_name_repeated` (W); the collision rule's ID the
@@ -7718,8 +7718,19 @@ briefs, review loops, gates and mutation runs as for any step.
       `src/{upgrade/mod,roster,kit_magic,materials/mod,face_xml,messages,…}.rs`, tests
       (EU-ROOT-08 to 10, EU-MDL-29 to 33, EU-MF-08 to 09, EU-REF-13). The tracer goldens hold
       none of the changed spellings: `upgraded_golden` and parity pass unregenerated
-    - [ ] the PoC rebuilt, the Friendlies re-upgraded from their originals; then, by the
-      maintainer's order (11-09), the queued long jobs (mutation runs) rather than new slices
+    - [x] the PoC rebuilt 2026-11-09 (main merged, `3db25937`; archive SHA-256 `8c6a61bb…`,
+      the exe `v0.0.2-poc.1`; the fifth build kept in `target/dist_prev_7842756b`); the
+      Friendlies' 39 originals through its extracted exe against the organizer's save
+      (`.tmp/0_0_2/poc11/run_friendlies.py`, output `G:/VGL27 Friendlies run poc11/`, F:
+      being full): 36 upgrade, no `common/<3 chars>/` and no `u0???p`/`g` left in the
+      upgraded tree; /bag/ and /wuwa/ refused as ruled; /CIV4XG/ refused (exit 2, the save
+      holds no /civ4xg/: its VGL26 slot is the placeholder "VGL 9", whose roster the old
+      build read by the list's ID). The compile: /alg/, /ink/, /smtg/ `team_name_unknown`
+      (VGL27's allocation omits them); Common texture misses 96 → 54, the only new ones
+      /END/'s `outline.dds` (19), a team the poc10 run could not upgrade. Then, by the
+      maintainer's order (11-09), the queued long jobs rather than new slices:
+      `.tmp/0_0_2/poc11/long_jobs.log` (`gates-changed 1814e675`, then `mutants-diff
+      1814e675` over the two crates), Astra r2 over the save-path fix
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
     withdrawn whole (today SE-STR 8, SE-TRN 3, `spec/save_editor.md`) moves to
     `docs/spec/withdrawn_ids.md`, its lines as written, reason and successor kept; (2) a run
