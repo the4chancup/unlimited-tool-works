@@ -68,8 +68,9 @@ each player who wears it, or move its files into a player folder with the
 model renamed `boots.fmdl` or `glove_*.fmdl`. A top-level folder holding no
 file directly in it (such as a folder of player folders) is reported as
 `unmigrated_content` and left out. No team
-is known, so a `???` placeholder and the goalkeeper `u0???g` token stay as
-written. The output is the folder `<folder> upgraded` beside the input, or
+is known, so two copies of a file whose names differ only in the team's ID
+(`u0731p2.dds` beside `u0XXXp2.dds`) are reported as `unmigrated_content`
+rather than one of them picked. The output is the folder `<folder> upgraded` beside the input, or
 the folder `-o` names, which must not exist yet.
 
 The original export is never modified. A file, a folder or a Team Note entry the migration

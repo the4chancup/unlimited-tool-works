@@ -483,6 +483,40 @@ fn a_common_model_link_converts_the_model_with_its_common_mtl_into_the_player_s_
     );
 }
 
+// TC-XML-19
+#[test]
+fn a_common_mtl_naming_a_team_id_drops_the_linking_player_s_folder_on_fox() {
+    // Fox packs no `Common/` `.mtl` of its own: each linking player's model converts with it,
+    // so its refusal drops his folder, where pre-Fox drops the file (TC-XML-08).
+    let sandbox = Sandbox::new("cmn_mtl_team_id_fox");
+    let export = "exports/co Midcup Card";
+    sandbox.write(&format!("{export}/Players/05 - A/legs.model.common"), b"");
+    write_common_card(&sandbox, export);
+    let path = "common/797/skin.dds";
+    let mtl = String::from_utf8(card_materials())
+        .unwrap()
+        .replace("./skin.dds", path)
+        .into_bytes();
+    sandbox.write(&format!("{export}/Common/legs.mtl"), &mtl);
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
+
+    let lines = run.messages();
+    let invalid = format!(
+        "Error mtl_common_path_invalid [DropFolder] at Players/05 - A \
+         (file=Common/legs.mtl, attribute=path, value={path})"
+    );
+    assert_eq!(
+        findings_of(&lines, "co Midcup Card"),
+        [
+            invalid.as_str(),
+            "Info export_identified [Keep] (team=/co/, id=714)"
+        ],
+        "{lines:#?}"
+    );
+    assert_eq!(run.exit_code(), 1);
+}
+
 // TC-MOD-61
 #[test]
 fn a_common_model_converted_with_the_player_s_own_mtl_names_his_texture_of_its_stem() {

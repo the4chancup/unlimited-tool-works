@@ -7754,6 +7754,13 @@ briefs, review loops, gates and mutation runs as for any step.
     - [x] measured 2026-11-09: `gates-changed 1814e675` green (43 binaries, 2,058 tests);
       `mutants-diff 1814e675` over the two crates: 127 mutants, 111 caught, 16 unviable, no
       survivor or timeout (`.tmp/0_0_2/poc11/mutants_diff/`)
+    - [x] review: Astra first (A-poc11 r1, Codex, 2026-11-09; the maintainer: a review for the
+      reset Codex window, ahead of the SWE-2 and Argon loops as DECISIONS 2026-11-08 did;
+      `.tmp/0_0_2/poc11/rulings_poc11.md`): 4 accepted,
+      Astra's loop ends. A `Common/` `.mtl`'s refusal on PES 18-21 drops the linking player's
+      folder, which the spec's row and TC-XML-19 now say (test in `common_links.rs`); the
+      upgrader's model-folder help, the draft's two catalog rows and its refusal line no
+      longer name team IDs. Open: the SWE-2 loop over poc11 and these fixes, then Argon's
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
     withdrawn whole (today SE-STR 8, SE-TRN 3, `spec/save_editor.md`) moves to
     `docs/spec/withdrawn_ids.md`, its lines as written, reason and successor kept; (2) a run

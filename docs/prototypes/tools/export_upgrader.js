@@ -297,7 +297,7 @@ const MODELS_OLD = { exit: 1, lines: [
 const INPUTS = {
   egg: { target: "export", name: "EGG Aesthetics Export VGL26",
     path: "C:\\Users\\you\\Downloads\\EGG Aesthetics Export VGL26",
-    team: "/egg/", teamId: 792, output: "egg Full Aesthetics Export VGL26",
+    team: "/egg/", output: "egg Full Aesthetics Export VGL26",
     runs: { savefile: EGG_SAVE21, loose: EGG_LOOSE } },
   // co Spring.zip (a .zip counts as an export): its --loose run and its
   // --savefile run with Autumn24Q's save, whose /co/ roster wears no custom boots
@@ -307,14 +307,14 @@ const INPUTS = {
   // with a folder got the hide ID and custom_model_hidden, a Warning).
   co: { target: "export", name: "co Spring.zip",
     path: "C:\\Users\\you\\Downloads\\co Spring.zip",
-    team: "/co/", teamId: 714, output: "co Full Spring",
+    team: "/co/", output: "co Full Spring",
     runs: { savefile: CO_FIXTURE, loose: CO_FIXTURE } },
   // @'s loose run ends not clean (two boots at the block's last positions go
   // to no player); a savefile it does not hold refuses the run (exit 2), its
-  // line built at run time (upgrade.rs ~363's format).
+  // line built at run time (upgrade/mod.rs ~346's format).
   at: { target: "export", name: "@  Aesthetics Export VGL26",
     path: "C:\\Users\\you\\Downloads\\@  Aesthetics Export VGL26",
-    team: "/@/", teamId: 781, output: "@ Full  Aesthetics Export VGL26",
+    team: "/@/", output: "@ Full  Aesthetics Export VGL26",
     runs: { savefile: { exit: 2, lines: [] }, loose: AT_LOOSE } },
   // A referee export takes neither argument: one run, as the CLI prints it.
   refs: { target: "export", name: "refs Tracer",
@@ -415,9 +415,9 @@ function instantResult(exit, text) {
   S.result = { exit, output: outputInto() };
   render();
 }
-// upgrade.rs ~363: "--savefile {}: it does not hold the resolved team {name}
-// ({id})"; the savefile is the field's value at run time.
-const refusalText = () => `error: --savefile ${savefile()}: it does not hold the resolved team ${input().team} (${input().teamId})`;
+// upgrade/mod.rs ~346: "--savefile {} does not hold the export's team {name}";
+// the savefile is the field's value at run time.
+const refusalText = () => `error: --savefile ${savefile()} does not hold the export's team ${input().team}`;
 // staging.rs ~25: "{}: the output folder already exists"; upgrade aborts on
 // the folder it would create, upgrade-models on the output directory itself.
 const abortText = () => input().target === "models"

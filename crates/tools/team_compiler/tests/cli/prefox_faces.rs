@@ -1964,7 +1964,7 @@ fn a_common_mtl_naming_an_invalid_common_path_drops_the_linking_player_s_folder(
     );
     let common = format!("exports/{export}/Common");
     sandbox.write(&format!("{common}/legs.model"), &card_model());
-    // The set parses but names a Common path whose segment is not three characters.
+    // The set parses but names a Common folder other than `team_folder`.
     let mtl = String::from_utf8(pre_fox_fixture("cardhead_materials.mtl"))
         .unwrap()
         .replace("./texture.dds", "model/character/uniform/common/o/env.dds")

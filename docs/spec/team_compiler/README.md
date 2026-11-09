@@ -1623,11 +1623,14 @@ TC-XML-18  GIVEN Common/legs.model, Common/hair.dds and Common/jessie/skin.dds, 
 TC-XML-19  GIVEN slot 05's face.xml naming model/character/uniform/common/XXX/legs.model, slot 06's
            face_high.mtl naming common/797/hair.dds, and slot 07's naming
            model/character/uniform/common/o/env.dds, with Common/legs.model, Common/hair.dds and
-           Common/env.dds
-           WHEN the export is checked for PES 17, and slot 06's and slot 07's folders (each a
-           .model's) for PES 21
+           Common/env.dds, and slot 08 linking Common/legs.model, whose Common/legs.mtl names
+           common/797/skin.dds
+           WHEN the export is checked for PES 17, and slot 06's, slot 07's and slot 08's folders
+           (each a .model's) for PES 21
            THEN xml_common_path_invalid names slot 05's path on PES 17 and mtl_common_path_invalid
-                slot 06's and slot 07's on both versions, each folder named dropped
+                slot 06's and slot 07's on both versions, each folder named dropped; on PES 21
+                mtl_common_path_invalid names Common/legs.mtl's path on slot 08's folder, which is
+                dropped (on PES 17 Common/legs.mtl alone is, TC-XML-08)
 TC-XML-20  GIVEN slot 05's face_high.mtl naming common/uni_pattern_nrm00.dds and its face.xml
            naming common/uniform_sub.model typed parts, neither held by the export
            WHEN the export is compiled for PES 17
