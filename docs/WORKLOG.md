@@ -7927,7 +7927,11 @@ briefs, review loops, gates and mutation runs as for any step.
       only /alg/, /ink/, /smtg/ `team_name_unknown`, no `fmdl_texture_not_found` naming a kit
       stand-in. `F:/VGL27 Friendlies sorted` was found emptied but for its manifest (not by
       this work's scripts, which only read it); the set was rebuilt on C:
-      (`.tmp/vgl27f/sort_copy_c.py`, the save's SHA-256 matching the manifest's)
+      (`.tmp/vgl27f/sort_copy_c.py`, the save's SHA-256 matching the manifest's). Rebuilt
+      again for the readme's reread (`19a7fb3f`; branch `f1c0b5f8`, archive `c89d7728…`, its
+      checksum matching; code unchanged since the run, the previous build in
+      `target/dist_prev_f815f1b1`). FoxDen's swapper goes beside the bundle, handed over by
+      the maintainer; the readme does not name it
     - [ ] slice 4: the legacy kit token (`u0???p0`-style, `kit6_u0827p0.dds`) refused in an
       export's file names and paths, naming the upgrader (the bullet above); its spec first.
       After the PoC is handed over (the maintainer, 2026-11-09: not needed for it)
