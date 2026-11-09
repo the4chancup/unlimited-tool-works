@@ -24,8 +24,9 @@ Getting started
    whatever the left bar says. If the PES number on the left bar turns yellow or red, click
    the Settings gear at the bottom of the bar and set "PES folder" to the path of the
    folder that holds the PES exe.
-4. VGL's organizer reads "For VGL's organizer" at the end before running either launcher:
-   its order and its settings change come before the steps between here and there.
+4. VGL's organizer: read "For VGL's organizer" at the end before running either launcher.
+   It changes one setting and sets the order of the work, and both come before the
+   sections in between.
 
 
 Checking a team for the DBC
@@ -84,8 +85,9 @@ Compiling
 
        UTW.exe team-compiler upgrade-dpfl --yes
 
-   This is needed once per game folder. After dpfilelist_outdated, the compile installed
-   nothing and left the save as it was, so double-click quick_compile.bat again.
+   This is needed once per game folder. If the report said dpfilelist_outdated, the
+   compile installed nothing and did not touch the save, so double-click quick_compile.bat
+   again afterwards.
 
 
 For VGL's organizer
@@ -103,24 +105,25 @@ For VGL's organizer
 
    and save the file. quick_compile.bat then puts the teams into 4cc_41_teams.cpk and the CPKs
    after it, filling each one up to its size limit, and the files every team shares into
-   4cc_08_bins.cpk. Without it, the first compile goes into 4cc_99_test.cpk, which the game
-   loads last, over every team and midcup CPK compiled after it.
+   4cc_08_bins.cpk. Without this change, the first compile goes into 4cc_99_test.cpk
+   instead. The game loads that CPK last, so it would cover every team and midcup CPK
+   compiled later.
 
 2. The work runs in this order. The managers' tactical exports (the .ted files) go into
    the base save first: import them in the Save editor (the Team menu's "Import / export
-   team file...") or in the game's own Edit mode, whose import leaves the team names to
-   rewrite. That makes the official save. In the Save editor, click Save on the toolbar,
-   then close UTW.exe: the launchers change the save on disk, and an editor still open on
-   it would write its own copy back over theirs at its next Save. Then upgrade the old
-   exports against the official save (drag it onto quick_upgrade.bat), compile the
-   exports (quick_compile.bat), and apply the compile's patch to the official save.
+   team file...") or in the game's own Edit mode (its import leaves the team names for you
+   to rewrite). That makes the official save. In the Save editor, click Save on the
+   toolbar, then close UTW.exe: the launchers change the save on disk, and an editor still
+   open on it would overwrite their changes the next time you click Save. Then upgrade
+   the old exports against the official save (drag it onto quick_upgrade.bat), compile
+   the exports (quick_compile.bat), and apply the compile's patch to the official save.
 
-   The upgrade and the compile know a team by its row in data\teams_list.txt. The list
-   shipped here holds the league's 52 teams at their VGL 27 IDs, /@/ 781 to /zzz/ 832,
-   so each team of the official save needs the same ID. A team the list lacks is refused
-   as team_name_unknown. If a team joins later, open a console in this folder as step 4
-   of "Compiling" shows, and run, with the save's own path in place of
-   official\EDIT00000000:
+   The upgrade finds each team in the save by its name. The compile finds its ID in
+   data\teams_list.txt, which holds the league's 52 teams at their VGL 27 IDs, /@/ 781
+   to /zzz/ 832, so each team of the official save needs the same ID. The compile
+   refuses a team the list lacks, as team_name_unknown. If a team joins later, open a
+   console in this folder as step 4 of "Compiling" shows, and run, with the save's own
+   path in place of official\EDIT00000000:
 
        UTW.exe save-editor export-teams-list "official\EDIT00000000"
 
@@ -177,7 +180,7 @@ If something goes wrong
 -----------------------
 
 Every message names a code, such as fpc_undershorts_break_hiding.
-The help explains each one, just click the ? button at the bottom of the left bar.
+The help explains each one: click the ? button at the bottom of the left bar.
 
 If the window crashes, please post the log file found in the data folder. If a launcher
 fails, copy what its black window says before pressing a key to close it, and post that:
