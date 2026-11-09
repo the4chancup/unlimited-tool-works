@@ -7468,14 +7468,14 @@ briefs, review loops, gates and mutation runs as for any step.
     placeholder team show on PES 2019 and the PoC does not wait on this step. Still open: the
     tester's own files and steps (QUESTIONS "The 0.0.2 Save editor report"); an import
     (Team TOML, legacy) carries the file's flags as written, so a hand-renamed
-    TOML with `edit_flags.player = false` stays PLACEHOLDER in game. Not yet checked (the
-    maintainer, 2026-11-09): whether the `motion` flag gates motions as `player` gates the
-    name; the patch writes motions (`settings.toml` `appearance.motion`) and sets no flag
-    for them. In game next: a placeholder player whose patch changes a goal celebration and
-    the penalty-kick motion, motion flag clear against set, read in Edit mode's motion
-    screen; if gated, the patch sets the flag with a written motion, as for a name (the
-    look flags face/hair/physique/strip are off on every team and the 11-09 rehearsal's
-    looks showed, so they gate nothing the patch writes there)
+    TOML with `edit_flags.player = false` stays PLACEHOLDER in game. The `motion` flag gates
+    nothing (asked by the maintainer, checked in game on PES 2019 2026-11-09,
+    `.tmp/0_0_2/ingame/se19/findings.md` part 3): team 853's player 01 with free kick 10,
+    penalty kick 4 and goal celebration 1 at 100 and all 13 flags clear shows all three on
+    Edit mode's Motion page, against player 02's 1s, so the patch's motions, written with no
+    flag, need none (the look flags face/hair/physique/strip are off on every team and the
+    11-09 rehearsal's looks showed, so they gate nothing the patch writes there either; only
+    `player`, for a name, matters)
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and
     8.36d, then a proof-of-concept exe for VGL's organizer that
     upgrades and compiles a couple of example teams on PES 2019. 8.36c3 (the `<id>.copy`
