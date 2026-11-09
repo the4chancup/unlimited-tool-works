@@ -15952,3 +15952,49 @@ Plan: `AGENTS.md` "Working documents" (the summary and the size rule), "Environm
 `RUNBOOK.md` (header, "Phases and releases", "Lead and sidekick", "Review rounds"); live
 pointers repointed (`WORKLOG.md`, `GLOSSARY.md`, `CONTRIBUTING.md`, `plans/README.md`, the census
 and library-parity READMEs, `review_sweep.py`).
+
+## 2026-11-09 — team_compiler, export_upgrader — no ambiguous Common spelling: `team_common_folder/`, `team_folder` in FMDLs, collisions without an ID
+Decision (the maintainer; the lead's choices marked *lead*), amending 2026-11-09 "the Studio
+format names no team ID":
+- **The short forms are `team_common_folder/` and `common_folder/`**: the team's Common is
+  `team_common_folder/<path>` (one folder, any letter case: "the team's common folder", the
+  export's `Common/` the files come from, the maintainer; `_folder` stays on every shorthand
+  and placeholder, `team_folder`, `kit_folder`, `common_folder`, as the tag that marks one,
+  and `common` alone would be the CPK's root again) or
+  `model/character/uniform/common/team_folder/<path>`; a game file directly below the uniform
+  Common folder `common_folder/<name>` or the long form (the maintainer, after a census: 592 of
+  13,788 real `.mtl` and `face.xml` files name 14,102 such game files,
+  `.tmp/0_0_2/poc12/census_game_common.txt`). Any folder after `common_folder/`
+  (`common_folder/team_folder/` included, *lead*: one spelling for the team's Common) and a
+  `path`, `material` or `.mtl` sampler path starting `common/` are refused
+  (`xml_common_path_invalid`, `mtl_common_path_invalid`). The upgrader writes
+  `team_common_folder/`.
+- **An FMDL's Fox Common directory** names `team_folder` or nothing else: any other folder
+  after `/Assets/pes16/model/character/common/` is `fmdl_common_path_invalid` (E), its text
+  pointing at `upgrade-models`, on every texture entry, a `dummy_` stem's included (the
+  maintainer: one rule, no `000` left). *Lead*: the game's own `common/sourceimages/` stays
+  admissible (17,804 loose FMDLs name it); every entry is checked, used or not, as every `.mtl`
+  sampler is; checked by the deep pass, whatever the target; a `Common/` FMDL's refusal drops
+  the file alone, its linking players following `link_target_dropped`, as a model check's
+  does; the compiler's own templates are not checked. The upgrader respells the folder
+  `team_folder`. *Lead*: it reads any folder there but `sourceimages` as the team's (`000`,
+  `999`, `XXX`, IDs, `biz`, `vg`, `ikachan`), as it reads a pre-Fox `.mtl`'s `common/<any>/`.
+- **The ID-only collision needs no team ID.** A copy whose three characters are not all digits
+  is renamed by the old compile whatever the team and lists after the numbered ones, so the last
+  such copy in Windows's name order is kept, in every mode (the maintainer: the `u0XXX` copy;
+  *lead*: a lettered tag other than `XXX` counts as `XXX` does, the same rename). Numbered copies
+  alone (`u0731p2.dds` beside `u0799p2.dds`) refuse the export, save or none, as
+  `unmigrated_content` (the maintainer: too broken to fix automatically; no export holds one).
+Why: `common` is also a CPK's root folder (`common/character1/…`), so `common/team_folder/x.dds`
+reads as an archive path; `common/000/` is no game folder but the community's placeholder, so
+a `000` read as the team is the same ambiguity in a binary file, which `upgrade-models` (and the
+planned Blender plugin) respells. Red's rename gives a numbered copy already spelled with the
+team's ID no rename, so which numbered copy shipped depends on the ID; a lettered one never is.
+Census: `.tmp/0_0_2/poc12/fmdl_dirs_real.txt` (3,908 of 10,727 real FMDLs name a folder after
+the Fox common directory, 3,744 of them `000`).
+Plan: `spec/team_compiler/messages.md` (`xml_common_path_invalid`, `fmdl_common_path_invalid`,
+"User-supplied `face.xml`"), `spec/team_compiler/pipeline.md` (steps 1-2, Common),
+`spec/export_upgrader.md` step 7; the drafts' catalogs; scenarios TC-XML-21, 22, TC-MOD-103,
+EU-MDL-34 to 39, EU-REF-14, EU-MF-10 (TC-XML-20, EU-MDL-29, 30, 32, 33, EU-REF-13, EU-MF-08
+withdrawn for them); TC-MOD-88, TC-XML-01, 12, 18, 19, TC-CMN-18, 25 take
+`team_common_folder/` in their GIVEN, their outcomes unchanged.

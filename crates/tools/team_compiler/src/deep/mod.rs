@@ -1563,6 +1563,19 @@ fn file_outcome(
             }
         })
         .collect();
+    for found in &read.common_directories {
+        // The export's spelling, refused wherever the FMDL sits: never passed through.
+        findings.push(finding(
+            Code::FmdlCommonPathInvalid.as_str(),
+            vec![
+                ("model", name.to_owned()),
+                ("texture", found.texture.clone()),
+                ("directory", found.directory.clone()),
+            ],
+            disposition,
+            false,
+        ));
+    }
     // On Fox the file is packed as it is, the game drawing nothing of it as the member saw.
     let dropped_hidden = match engine {
         Engine::PreFox => read.hidden,
@@ -3042,7 +3055,7 @@ mod tests {
                 ("Players/05 - B/face_high.model", card()),
                 (
                     "Players/05 - B/face_high.mtl",
-                    materials_naming(&[("card", &["common/team_folder/jessie/skin.dds"])]),
+                    materials_naming(&[("card", &["team_common_folder/jessie/skin.dds"])]),
                 ),
                 ("Players/05 - B/jessie/skin.dds.common", Vec::new()),
                 ("Common/jessie/skin.dds", bc1_dds(4, 4)),
@@ -3065,7 +3078,7 @@ mod tests {
                 ("Players/05 - B/face_high.model", card()),
                 (
                     "Players/05 - B/face_high.mtl",
-                    materials_naming(&[("card", &["common/team_folder/jessie/skin.dds"])]),
+                    materials_naming(&[("card", &["team_common_folder/jessie/skin.dds"])]),
                 ),
                 ("Players/05 - B/jessie/legs.model.common", Vec::new()),
                 ("Common/jessie/legs.model", card()),
@@ -3084,7 +3097,7 @@ mod tests {
                 "mtl_texture_not_found",
                 folder("Players/05 - B"),
                 "face_high.mtl",
-                "common/team_folder/jessie/skin.dds",
+                "team_common_folder/jessie/skin.dds",
                 "card"
             )],
             "{findings:#?}"

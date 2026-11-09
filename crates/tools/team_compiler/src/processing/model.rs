@@ -757,14 +757,16 @@ fn split_fmdl(bytes: &[u8]) -> anyhow::Result<SplitFmdl> {
 /// name none — gives the directory, with that texture's own subdirectory
 /// below it (`jessie/`), and the texture is supplied. Else a path into the team's pre-Fox
 /// Common folder
-/// (`common/team_folder/` or `model/character/uniform/common/team_folder/`, how a member's
+/// (`team_common_folder/` or `model/character/uniform/common/team_folder/`, how a member's
 /// pre-Fox `.mtl` names a texture of
 /// `Common/`), read as the deep pass reads it (`user_face_xml::reference`), is pointed at the
 /// team's Fox Common output at its subdirectory below `Common/` (`common_home` for a direct
 /// one, its `jessie/` subdirectory for `jessie/skin`), whether or not the export holds it
 /// there, and its supply is returned, decided here where the reference is resolved
-/// (`common_below_supply`). A file directly below `common/`, the game's own, keeps the long
-/// form `model/character/uniform/common/`, a short `common/` respelled to it. Any other texture is one
+/// (`common_below_supply`). A file directly below `common_folder/`, the game's own, keeps
+/// the long
+/// form `model/character/uniform/common/`, a short `common_folder/` respelled to it. Any
+/// other texture is one
 /// of the game's own, whose directory names the team as `000` or `team_folder`, replaced by
 /// `team_segment`.
 /// The file name is never changed: the game itself respells a reference for the kit picked.
@@ -796,7 +798,8 @@ fn point_texture(
                     );
                     (Some(common_home.of(subdirectory)), Some(supply))
                 }
-                // The game's own file, its short `common/` spelling written as the long one.
+                // The game's own file, its short `common_folder/` spelling written as the
+                // long one.
                 Reference::GameCommon(_) => (Some(UNIFORM_COMMON.to_owned()), None),
                 Reference::Local(_) | Reference::CommonInvalid | Reference::Unchecked(_) => {
                     (None, None)
@@ -812,7 +815,9 @@ fn point_texture(
 }
 
 /// `directory` with its team's folder segment replaced by `team_segment` (`/714/`): `000`,
-/// as the game's own FMDLs name the team, or `team_folder` in any letter case, the
+/// which the compiler's own template models name the team by (a member's `000` below the
+/// Fox common directory is `fmdl_common_path_invalid` before this runs, so the replacement
+/// serves the templates alone), or `team_folder` in any letter case, the
 /// Studio spelling. Any other segment stays as it is: a member never writes a directory
 /// the path table holds, so none is refused.
 fn team_directory(directory: &str, team_segment: &str) -> String {
@@ -1258,13 +1263,14 @@ mod tests {
             .map_or_else(TexturePlace::default, |(place, _)| place.clone())
     }
 
-    /// The directory `point_texture` gives the path `file_name` in the game's team `000`
+    /// The directory `point_texture` gives the path `file_name` in the game's team
+    /// `team_folder`
     /// folder for team 792, the part's own stems being `own`, going to `/home/`, and its
     /// linked stems `linked`, going to `/common/`; asserts the file name is kept.
     fn pointed_between(file_name: &str, own: &[&str], linked: &[&str]) -> String {
         let mut path = TexturePath {
             file_name: file_name.to_owned(),
-            directory: "/Assets/pes16/model/character/common/000/sourceimages/".to_owned(),
+            directory: "/Assets/pes16/model/character/common/team_folder/sourceimages/".to_owned(),
         };
         let (own, linked) = (place("", own), place("", linked));
         let (home, common) = (plain("/home/"), plain("/common/"));
@@ -1329,7 +1335,7 @@ mod tests {
             );
         }
         assert_eq!(
-            pointed_from("common/team_folder/", "shirt.dds", &[], &["shirt"]),
+            pointed_from("team_common_folder/", "shirt.dds", &[], &["shirt"]),
             "/common/"
         );
         assert_eq!(
@@ -1372,7 +1378,7 @@ mod tests {
     fn a_game_file_directly_below_common_keeps_the_long_form_in_either_spelling() {
         // The game's own file, not looked up in `Common/` even when it holds the stem; the
         // short form is written as the long one, which the long form already is.
-        for directory in ["common/", "model/character/uniform/common/"] {
+        for directory in ["common_folder/", "model/character/uniform/common/"] {
             assert_eq!(
                 pointed_from(
                     directory,
@@ -1497,7 +1503,7 @@ mod tests {
 
     #[test]
     fn a_common_path_into_a_subfolder_resolves_at_that_path_alone() {
-        let pre_fox = "common/team_folder/jessie/";
+        let pre_fox = "team_common_folder/jessie/";
         assert_eq!(
             pointed_at_below(pre_fox, "skin.dds", &["jessie/skin"]),
             "/common/jessie/"
@@ -1550,7 +1556,8 @@ mod tests {
         let pointed = |file_name: &str, below: &[&str]| {
             let mut path = TexturePath {
                 file_name: file_name.to_owned(),
-                directory: "/Assets/pes16/model/character/common/000/sourceimages/".to_owned(),
+                directory: "/Assets/pes16/model/character/common/team_folder/sourceimages/"
+                    .to_owned(),
             };
             let folders = TextureFolders::default();
             let directory = below

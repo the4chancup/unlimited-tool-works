@@ -397,8 +397,8 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "mtl_common_path_invalid",
         CatalogSeverity::Error,
-        r#"A `.mtl` texture path below `model/character/uniform/common/` (or its short form `common/`) names a folder there other than `team_folder`, the folder that stands for the team's Common: a team ID, `XXX` or another team's name."#,
-        r#"The `.mtl`'s folder is left out. For a `.mtl` in `Common/`, only the file is left out. The team's Common is written `common/team_folder/`; an export upgraded before 0.0.2 is upgraded again from its original."#,
+        r#"A `.mtl` texture path below `model/character/uniform/common/` names a folder there other than `team_folder`, the folder that stands for the team's Common: a team ID, `XXX` or another team's name. So does a folder after `common_folder/` (the game's own, where a reference names only a file directly below it) or a path starting `common/`, the archive's own root folder, which no reference names."#,
+        r#"The `.mtl`'s folder is left out. For a `.mtl` in `Common/`, only the file is left out. The team's Common is written `team_common_folder/`; an export upgraded before 0.0.2 is upgraded again from its original."#,
     ),
     (
         "xml_root_tag_invalid",
@@ -427,8 +427,8 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "xml_common_path_invalid",
         CatalogSeverity::Error,
-        r#"A `path` or `material` of a member's `face.xml` below `model/character/uniform/common/` (or its short form `common/`) names a folder there other than `team_folder`, the folder that stands for the team's Common: a team ID, `XXX` or another team's name."#,
-        r#"The folder is left out. The team's Common is written `common/team_folder/`; an export upgraded before 0.0.2 is upgraded again from its original."#,
+        r#"A `path` or `material` of a member's `face.xml` below `model/character/uniform/common/` names a folder there other than `team_folder`, the folder that stands for the team's Common: a team ID, `XXX` or another team's name. So does a folder after `common_folder/` (the game's own, where a reference names only a file directly below it) or a value starting `common/`, the archive's own root folder, which no reference names."#,
+        r#"The folder is left out. The team's Common is written `team_common_folder/`; an export upgraded before 0.0.2 is upgraded again from its original."#,
     ),
     (
         "xml_oral_prefix_missing",
@@ -717,6 +717,12 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         CatalogSeverity::Warning,
         r#"In PES 2018 to 2021, a texture path a mesh names points into the game's kit texture folder (`/Assets/pes16/model/character/uniform/texture/`), where the modded exe swaps those files per match, so the model would not show the kit it names."#,
         r#"Kept with the path unchanged. A part that should follow the kit uses a `dummy_kit` or `kitN` texture instead."#,
+    ),
+    (
+        "fmdl_common_path_invalid",
+        CatalogSeverity::Error,
+        r#"An `.fmdl` names a texture in a folder below the game's common folder (`/Assets/pes16/model/character/common/`) other than `team_folder`, the folder that stands for the team's Common, or `sourceimages`, the game's own: `000`, the placeholder of the community's model templates, a team ID, `XXX` or a team's name."#,
+        r#"The model's folder is left out (for a model in `Common/`, only the file is left out, and the players linking it get `link_target_dropped`). The team's Common is written `team_folder` there; `export-upgrader upgrade-models` respells an `.fmdl` that names an old folder."#,
     ),
     (
         "folder_pack_failed",

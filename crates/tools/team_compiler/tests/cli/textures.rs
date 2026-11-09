@@ -1225,14 +1225,15 @@ fn a_texture_path_into_the_game_s_kit_folder_is_kept_with_a_warning() {
     );
 }
 
-/// The game's team-`000` Common texture directory, which a compile makes the team's.
-const COMMON_000: &str = "/Assets/pes16/model/character/common/000/sourceimages/";
+/// The `team_folder` Common texture directory, which a compile makes the team's.
+const COMMON_TEAM_FOLDER: &str = "/Assets/pes16/model/character/common/team_folder/sourceimages/";
 
 /// The tracer's model `model` (`fcl_hair.fmdl`) with each texture `(file name, new file name)`
-/// of `renames` renamed and pointed at `COMMON_000`, through `fmdl`'s texture-path rewriting;
+/// of `renames` renamed and pointed at `COMMON_TEAM_FOLDER`, through `fmdl`'s texture-path
+/// rewriting;
 /// asserts a mesh uses every renamed texture, so the compiler looks for it.
 pub(crate) fn tracer_model_renaming(model: &str, renames: &[(&str, &str)]) -> Vec<u8> {
-    tracer_model_pointing(model, renames, COMMON_000)
+    tracer_model_pointing(model, renames, COMMON_TEAM_FOLDER)
 }
 
 /// `tracer_model_renaming` with the renamed textures pointed at `directory` (`./textures/`).
@@ -1573,9 +1574,10 @@ fn a_nested_texture_link_only_the_direct_installed_texture_satisfies_is_common_l
     }
 }
 
-/// The `jessie/` subdirectory of team `000`'s Common output, a `Common/` subfolder's texture
-/// home as a model names it.
-const JESSIE_000: &str = "/Assets/pes16/model/character/common/000/jessie/sourceimages/";
+/// The `jessie/` subdirectory of the `team_folder` Common output, a `Common/` subfolder's
+/// texture home as a model names it.
+const JESSIE_TEAM_FOLDER: &str =
+    "/Assets/pes16/model/character/common/team_folder/jessie/sourceimages/";
 
 /// Writes slot 05 of `exports/co Midcup Hair`: `face_high.fmdl` naming `hair.dds` in the
 /// `jessie/` subdirectory of the team's Common output; and slot 03's clean face, so a CPK is
@@ -1583,7 +1585,11 @@ const JESSIE_000: &str = "/Assets/pes16/model/character/common/000/jessie/source
 fn write_subfolder_hair_player(sandbox: &Sandbox) {
     sandbox.write(
         "exports/co Midcup Hair/Players/05 - A/face_high.fmdl",
-        &tracer_model_pointing("fcl_hair.fmdl", &[("shirt.dds", "hair.dds")], JESSIE_000),
+        &tracer_model_pointing(
+            "fcl_hair.fmdl",
+            &[("shirt.dds", "hair.dds")],
+            JESSIE_TEAM_FOLDER,
+        ),
     );
     sandbox.write(
         &format!("exports/co Midcup Hair/{CLEAN_PLAYER}"),
@@ -2330,7 +2336,7 @@ fn a_texture_entry_no_mesh_uses_is_not_looked_for() {
     rewrite_texture_paths(&mut file, |path| {
         if index == unused {
             path.file_name = "unused.dds".to_owned();
-            path.directory = COMMON_000.to_owned();
+            path.directory = COMMON_TEAM_FOLDER.to_owned();
         }
         index += 1;
     })

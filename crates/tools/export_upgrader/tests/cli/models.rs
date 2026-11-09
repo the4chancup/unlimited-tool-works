@@ -232,7 +232,7 @@ fn each_input_folder_is_migrated_and_its_destination_reported() {
     sandbox.assert_nothing_written("bad models upgraded", &stdout);
 }
 
-// EU-MF-08
+// EU-MF-10
 #[test]
 fn common_references_and_links_resolve_in_the_staged_export() {
     let sandbox = Sandbox::new("mf_common_links");
@@ -253,7 +253,7 @@ fn common_references_and_links_resolve_in_the_staged_export() {
     let run = upgrade_models(&sandbox, "new models", &[]);
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
     let face = mtl_text(&sandbox, "new models upgraded/07 - A/face.mtl");
-    for expected in ["./hair.dds", "common/team_folder/gone.dds"] {
+    for expected in ["./hair.dds", "team_common_folder/gone.dds"] {
         assert!(face.contains(expected), "{expected}: {face}");
     }
     assert_eq!(

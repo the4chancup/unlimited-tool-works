@@ -343,13 +343,13 @@ fn a_referee_s_references_name_his_flattened_files_and_a_common_one_is_linked() 
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
 }
 
-// EU-REF-13
+// EU-REF-14
 #[test]
 fn a_referee_s_missing_common_reference_is_kept_as_team_folder() {
     let sandbox = Sandbox::new("ref_kept_common");
     sandbox.write("refs Spring/refs.txt", b"01 arbiter\n");
     // Neither the referee's `common/` nor the export's `Common/` holds the
-    // texture: kept a game path, its Common written `common/team_folder/`.
+    // texture: kept a game path, its Common written `team_common_folder/`.
     sandbox.write(
         "refs Spring/Players/arbiter/face/face.mtl",
         &mtl(&["model/character/uniform/common/999/refkit/texture.dds"]),
@@ -359,7 +359,7 @@ fn a_referee_s_missing_common_reference_is_kept_as_team_folder() {
     let run = upgrade(&sandbox, "refs Spring");
     let text = mtl_text(&sandbox, "refs Spring upgraded/Players/arbiter/face.mtl");
     assert!(
-        text.contains("path=\"common/team_folder/refkit/texture.dds\""),
+        text.contains("path=\"team_common_folder/refkit/texture.dds\""),
         "{text}"
     );
     assert!(

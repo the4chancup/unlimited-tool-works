@@ -129,7 +129,7 @@ fn write_common_hair_mtl(sandbox: &Sandbox) -> String {
         sandbox,
         "co Midcup Hair",
         "05 - A",
-        &materials_at("common/team_folder/hair.dds"),
+        &materials_at("team_common_folder/hair.dds"),
     );
     format!(
         "{}[team-compiler]\ncpk_name = \"4cc_62_midcup\"\n",
@@ -179,7 +179,7 @@ fn a_common_texture_of_a_mtl_is_found_in_an_earlier_installed_cpk_only() {
     let later = Sandbox::new("prefox_mtl_installed_later");
     let settings = write_common_hair_mtl(&later);
     install_pre_fox_hair_in(&later, "4cc_63_midcup.cpk");
-    let not_found = "Warning mtl_texture_not_found [Keep] at Players/05 - A (file=face_high.mtl, texture=common/team_folder/hair.dds, materials=card)";
+    let not_found = "Warning mtl_texture_not_found [Keep] at Players/05 - A (file=face_high.mtl, texture=team_common_folder/hair.dds, materials=card)";
     assert_eq!(hair_check_lines(&later, &settings), [not_found, IDENTIFIED]);
 
     // No PES folder: the CPKs cannot be looked in, which holds nothing, the same Warning.

@@ -384,9 +384,9 @@ pub(crate) fn run(args: &UpgradeModelsArgs, ctx: &ToolContext) -> Result<u8, Cli
     let mut plan = model_folder_plan(&files, &export.folders);
     let respelled = respell_outputs(std::mem::take(&mut plan.copies));
     let kept = kept_common_files(&respelled, |path| export.read(path));
-    // Model-folder mode has no team ID: the old compile's rename cannot
-    // be replayed, its collisions staying unmigrated content.
-    let (copies, dropped) = drop_collisions(rename_models(respelled, &kept), None);
+    // The old compile's rename is replayed without an ID: a lettered copy
+    // wins in every mode, numbered copies alone staying unmigrated content.
+    let (copies, dropped) = drop_collisions(rename_models(respelled, &kept));
     plan.copies = copies;
     plan.findings.extend(dropped);
     // A `.dds` beside a `.ftex` of one stem in one output folder is a

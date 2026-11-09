@@ -492,7 +492,7 @@ fn a_common_mtl_naming_a_team_id_drops_the_linking_player_s_folder_on_fox() {
     let export = "exports/co Midcup Card";
     sandbox.write(&format!("{export}/Players/05 - A/legs.model.common"), b"");
     write_common_card(&sandbox, export);
-    let path = "common/797/skin.dds";
+    let path = "common_folder/797/skin.dds";
     let mtl = String::from_utf8(card_materials())
         .unwrap()
         .replace("./skin.dds", path)
@@ -968,9 +968,11 @@ pub(crate) fn model_naming_in(file_name: &str, directory: &str) -> Vec<u8> {
 
 /// The game's own Common texture folder, which names no team.
 const GAME_COMMON_DIRECTORY: &str = "/Assets/pes16/model/character/common/sourceimages/";
-/// Team 714's Common texture folder: a texture there that the export does not hold is looked
-/// for, where one in the game's own (`GAME_COMMON_DIRECTORY`) is not.
-const TEAM_COMMON_DIRECTORY: &str = "/Assets/pes16/model/character/common/714/sourceimages/";
+/// The team's Common texture folder, `team_folder` as a model spells it: a texture there
+/// that the export does not hold is looked for, where one in the game's own
+/// (`GAME_COMMON_DIRECTORY`) is not.
+const TEAM_COMMON_DIRECTORY: &str =
+    "/Assets/pes16/model/character/common/team_folder/sourceimages/";
 
 // TC-TEX-11
 #[test]
@@ -1625,7 +1627,7 @@ fn a_common_path_into_a_subfolder_resolves_at_that_path_on_pes_21() {
     sandbox.write(&format!("{player}/face_high.model"), &card_model());
     let mtl = String::from_utf8(pre_fox_fixture("cardhead_materials.mtl"))
         .unwrap()
-        .replace("./texture.dds", "common/team_folder/jessie/skin.dds")
+        .replace("./texture.dds", "team_common_folder/jessie/skin.dds")
         .into_bytes();
     sandbox.write(&format!("{player}/face_high.mtl"), &mtl);
     sandbox.write(&format!("{player}/jessie/skin.dds.common"), b"");
@@ -1850,6 +1852,96 @@ fn a_common_model_s_team_folder_directory_names_the_team_s_common_output() {
             .all(|directory| directory == "/Assets/pes16/model/character/common/714/sourceimages/"),
         "{directories:?}"
     );
+}
+
+/// `clean_model()` with the texture `from` renamed `name` and pointed at `directory`.
+fn clean_model_naming_in(from: &str, name: &str, directory: &str) -> Vec<u8> {
+    clean_model_naming_each(&[(from, name, directory)])
+}
+
+/// `clean_model()` with each `(from, name, directory)` of `entries` renamed and pointed
+/// as given.
+fn clean_model_naming_each(entries: &[(&str, &str, &str)]) -> Vec<u8> {
+    let mut file = FmdlFile::read(&clean_model()).unwrap();
+    rewrite_texture_paths(&mut file, |path| {
+        if let Some((_, name, directory)) =
+            entries.iter().find(|(from, _, _)| path.file_name == *from)
+        {
+            path.file_name = (*name).to_owned();
+            path.directory = (*directory).to_owned();
+        }
+    })
+    .unwrap();
+    file.write()
+}
+
+// TC-MOD-103
+#[test]
+fn an_fmdl_common_directory_naming_anything_but_team_folder_or_sourceimages_is_refused() {
+    let sandbox = Sandbox::new("mod_fmdl_common_invalid");
+    let export = "exports/co Midcup Nested";
+    let dir = |folder: &str| format!("/Assets/pes16/model/character/common/{folder}/sourceimages/");
+    // Slot 05's boots name `dummy_kit` in `common/000/` (the community's placeholder,
+    // a `dummy_` stem's entry checked alike), slot 06's face `hair` in `common/biz/`
+    // (a team's name), `Common/legs.fmdl` `skin` in `common/XXX/`, and slot 07's
+    // `zero` in `sourceimages/` and `skin` in `Team_Folder` in any letter case: the
+    // two admissible folders, which no finding names.
+    sandbox.write(
+        &format!("{export}/Players/05 - A/boots.fmdl"),
+        &clean_model_naming_in("dummy_kit.dds", "dummy_kit.dds", &dir("000")),
+    );
+    sandbox.write(
+        &format!("{export}/Players/06 - B/face_high.fmdl"),
+        &clean_model_naming_in("dummy_nrm.dds", "hair.dds", &dir("biz")),
+    );
+    sandbox.write(
+        &format!("{export}/Players/07 - C/face_high.fmdl"),
+        &clean_model_naming_each(&[
+            ("dummy_kit.dds", "zero.dds", GAME_COMMON_DIRECTORY),
+            (
+                "dummy_nrm.dds",
+                "skin.dds",
+                "/Assets/pes16/model/character/common/Team_Folder/sourceimages/",
+            ),
+        ]),
+    );
+    sandbox.write(
+        &format!("{export}/Common/legs.fmdl"),
+        &clean_model_naming_in("dummy_nrm.dds", "skin.dds", &dir("XXX")),
+    );
+    sandbox.write(&format!("{export}/Players/08 - D/legs.fmdl.common"), b"");
+
+    let dir_000 = dir("000");
+    let dir_biz = dir("biz");
+    let dir_xxx = dir("XXX");
+    for (settings, version) in [(pes21_settings(&sandbox), 21), (pes17(&sandbox), 17)] {
+        let run = sandbox.run(&settings, &["check"]);
+
+        let lines = run.messages();
+        assert_eq!(
+            findings_of(&lines, "co Midcup Nested"),
+            [
+                format!(
+                    "Error fmdl_common_path_invalid [DropFolder] at Players/05 - A \
+                     (model=boots.fmdl, texture={dir_000}dummy_kit.dds, directory={dir_000})"
+                ),
+                format!(
+                    "Error fmdl_common_path_invalid [DropFolder] at Players/06 - B \
+                     (model=face_high.fmdl, texture={dir_biz}hair.dds, directory={dir_biz})"
+                ),
+                format!(
+                    "Error fmdl_common_path_invalid [DropFile] at Common/legs.fmdl \
+                     (model=legs.fmdl, texture={dir_xxx}skin.dds, directory={dir_xxx})"
+                ),
+                "Error link_target_dropped [DropFolder] at Players/08 - D \
+                 (link=legs.fmdl.common, target=Common/legs.fmdl, finding=fmdl_common_path_invalid)"
+                    .to_owned(),
+                "Info export_identified [Keep] (team=/co/, id=714)".to_owned(),
+            ],
+            "PES {version}: {lines:#?}"
+        );
+        assert_eq!(run.exit_code(), 1, "PES {version}");
+    }
 }
 
 // TC-CMN-23

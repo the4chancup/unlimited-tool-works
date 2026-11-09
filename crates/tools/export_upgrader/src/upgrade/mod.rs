@@ -356,15 +356,6 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
         (None, _) | (Some(_), Identity::Referees | Identity::ModelFolders) => None,
     };
 
-    // The ID the old compile renamed the files under (step 7's collision
-    // rule): the save team's, 999 for a referee export; none without a
-    // save, a loose run's collisions staying unmigrated content.
-    let compile_id = match &identity {
-        Identity::Referees => Some(999),
-        Identity::Team { .. } => save_team,
-        Identity::ModelFolders => None,
-    };
-
     // Step 2: the team's roster, when a save is given — its players by slot,
     // read by the save team's ID (loose mode and referee exports have none).
     let roster = match (&invocation.save, save_team) {
@@ -636,10 +627,10 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
         &kept,
     );
     let carried_copies = renamed.split_off(plan_len);
-    let (copies, dropped) = drop_collisions(renamed, compile_id);
+    let (copies, dropped) = drop_collisions(renamed);
     plan.copies = copies;
     plan.findings.extend(dropped);
-    let (copies, dropped) = drop_collisions(carried_copies, compile_id);
+    let (copies, dropped) = drop_collisions(carried_copies);
     carried.copies = copies;
     carried.findings.extend(dropped);
     // A `.dds` beside a `.ftex` of one stem in one output folder is a

@@ -352,6 +352,12 @@ pub(crate) fn referee_marker(engine: Engine) -> String {
 /// (`fmdl_texture_kit_path`, `spec/model_format.md` "Kit-dependent assets").
 pub(crate) const KIT_TEXTURE_DIRECTORY: &str = "/Assets/pes16/model/character/uniform/texture/";
 
+/// The game's Fox common directory, as an FMDL texture path's directory spells it: the
+/// folder below it names the team's Common (`team_folder`, written out as the team's ID)
+/// or is the game's own (`sourceimages`), and any other is refused
+/// (`fmdl_common_path_invalid`).
+pub(crate) const FOX_COMMON_DIRECTORY: &str = "/Assets/pes16/model/character/common/";
+
 /// The CPK path of one kit texture, by its game name (`u0792g1`, `u0792g1_back`), converted
 /// for a target of `engine`: an FTEX on Fox, a DDS on pre-Fox.
 pub(crate) fn kit_texture(engine: Engine, name: &str) -> String {

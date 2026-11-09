@@ -498,7 +498,7 @@ fn on_pes_17_a_referee_s_face_xml_names_the_template_s_refkit_files_the_export_l
     sandbox.write(&format!("{folder}/face_high.mtl"), &card_materials());
     sandbox.write(&format!("{folder}/skin.dds"), &small_dds());
     let arm = "model/character/uniform/common/team_folder/refkit/oral_arm_*.model";
-    let refkit_mtl = "common/team_folder/refkit/refkit.mtl";
+    let refkit_mtl = "team_common_folder/refkit/refkit.mtl";
     let xml = format!(
         "<config>\n   \
          <model level=\"0\" type=\"face_neck\" path=\"./oral_face_high_*.model\" material=\"./face_high.mtl\"/>\n   \
@@ -701,7 +701,7 @@ fn on_pes_17_a_referee_s_own_face_xml_with_fpc_off_takes_the_refkit_body_it_does
     sandbox.write(&format!("{folder}/skin.dds"), &small_dds());
     sandbox.write(&format!("{folder}/fpc_off"), b"");
     let arm = "model/character/uniform/common/team_folder/refkit/oral_arm_*.model";
-    let refkit_mtl = "common/team_folder/refkit/refkit.mtl";
+    let refkit_mtl = "team_common_folder/refkit/refkit.mtl";
     let xml = format!(
         "<config>\n   \
          <model level=\"0\" type=\"face_neck\" path=\"./oral_face_high_*.model\" material=\"./face_high.mtl\"/>\n   \
@@ -812,7 +812,7 @@ fn on_pes_17_a_refkit_hand_a_referee_s_face_xml_lists_leaves_the_other_hand_appe
         sandbox.write(&format!("{folder}/fpc_off"), b"");
         let hand_l =
             format!("model/character/uniform/common/team_folder/{refkit}/oral_hand_l_*.model");
-        let refkit_mtl = "common/team_folder/refkit/refkit.mtl";
+        let refkit_mtl = "team_common_folder/refkit/refkit.mtl";
         let xml = format!(
             "<config>\n   \
              <model level=\"0\" type=\"face_neck\" path=\"./oral_face_high_*.model\" material=\"./face_high.mtl\"/>\n   \

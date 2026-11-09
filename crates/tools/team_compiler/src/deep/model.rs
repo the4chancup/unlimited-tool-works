@@ -1,6 +1,9 @@
 //! The deep pass's model checks (`spec/team_compiler/messages.md` "Model checks"): which rules
 //! the format crates' checks fire on a native model (`.fmdl`, `.model`) or a `.mtl`, one
-//! entry per code, and whether a model (`.fmdl` or `.model`) carries hand weights.
+//! entry per code, whether a model (`.fmdl` or `.model`) carries hand weights, and which
+//! directories below the game's Fox common directory an FMDL's texture table names.
+
+use std::collections::BTreeSet;
 
 use fmdl::{FmdlFile, Model};
 use model_convert::formats::fmdl::every_mesh_hidden;
@@ -96,6 +99,22 @@ pub(super) struct ModelRead {
     /// with its `.mtl`'s (`model_material_undefined`) and looks for the textures of the ones
     /// its meshes bind (`mtl_texture_not_found`).
     pub(super) materials: Vec<MaterialRead>,
+    /// The texture directories an FMDL's table names below the game's Fox common directory
+    /// (`paths::FOX_COMMON_DIRECTORY`) whose folder is not `team_folder` or `sourceimages`,
+    /// `fmdl_common_path_invalid`'s, one per distinct directory (folded) in table order.
+    /// Every entry is checked, a `dummy_` stem's included. Always empty for a pre-Fox model
+    /// or a material set.
+    pub(super) common_directories: Vec<CommonDirectory>,
+}
+
+/// One texture directory a parsed FMDL names that `fmdl_common_path_invalid` refuses.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct CommonDirectory {
+    /// The texture path the finding names, directory and file name as written (the first
+    /// entry spelling `directory`).
+    pub(super) texture: String,
+    /// The directory as written.
+    pub(super) directory: String,
 }
 
 /// One material a parsed pre-Fox file names (`ModelRead::materials`).
@@ -116,9 +135,8 @@ pub(super) struct MaterialRead {
 pub(super) fn fired(kind: ModelKind, bytes: &[u8]) -> Result<ModelRead, String> {
     let read = match kind {
         ModelKind::Fmdl => {
-            let model = FmdlFile::read(bytes)
-                .and_then(|file| Model::from_file(&file))
-                .map_err(|error| error.to_string())?;
+            let file = FmdlFile::read(bytes).map_err(|error| error.to_string())?;
+            let model = Model::from_file(&file).map_err(|error| error.to_string())?;
             ModelRead {
                 fired: fmdl::check::check(&model)
                     .into_iter()
@@ -132,6 +150,7 @@ pub(super) fn fired(kind: ModelKind, bytes: &[u8]) -> Result<ModelRead, String> 
                 }),
                 hidden: every_mesh_hidden(&model),
                 materials: Vec::new(),
+                common_directories: common_directories(&file)?,
             }
         }
         ModelKind::PreFoxModel => {
@@ -157,6 +176,7 @@ pub(super) fn fired(kind: ModelKind, bytes: &[u8]) -> Result<ModelRead, String> 
                 metal: false,
                 hidden: false,
                 materials,
+                common_directories: Vec::new(),
             }
         }
         ModelKind::Mtl => {
@@ -170,10 +190,49 @@ pub(super) fn fired(kind: ModelKind, bytes: &[u8]) -> Result<ModelRead, String> 
                 metal: false,
                 hidden: false,
                 materials: set.materials.into_iter().map(material_read).collect(),
+                common_directories: Vec::new(),
             }
         }
     };
     Ok(read)
+}
+
+/// The directories `file`, a parsed FMDL, names below the game's Fox common directory
+/// (`paths::FOX_COMMON_DIRECTORY`) whose folder is not `team_folder` or `sourceimages`
+/// (each matched in any letter case): `fmdl_common_path_invalid`'s, one per distinct
+/// directory (folded) in table order, its `texture` the first entry spelling it. Every
+/// entry of the texture table is checked, a `dummy_` stem's included: the spelling is the
+/// export's, so one rule covers them all.
+fn common_directories(file: &FmdlFile) -> Result<Vec<CommonDirectory>, String> {
+    let mut seen = BTreeSet::new();
+    let mut found = Vec::new();
+    for path in fmdl::ops::paths::texture_paths(file).map_err(|error| error.to_string())? {
+        let Some(folder) = path
+            .directory
+            .get(..crate::paths::FOX_COMMON_DIRECTORY.len())
+            .filter(|prefix| prefix.eq_ignore_ascii_case(crate::paths::FOX_COMMON_DIRECTORY))
+            .map(|_| {
+                path.directory[crate::paths::FOX_COMMON_DIRECTORY.len()..]
+                    .split('/')
+                    .next()
+                    .unwrap_or("")
+            })
+        else {
+            continue;
+        };
+        if folder.is_empty()
+            || folder.eq_ignore_ascii_case("team_folder")
+            || folder.eq_ignore_ascii_case("sourceimages")
+            || !seen.insert(vtree::fold_name(&path.directory))
+        {
+            continue;
+        }
+        found.push(CommonDirectory {
+            texture: format!("{}{}", path.directory, path.file_name),
+            directory: path.directory,
+        });
+    }
+    Ok(found)
 }
 
 /// `material` of a material set as the deep pass keeps it: its name and every sampler's

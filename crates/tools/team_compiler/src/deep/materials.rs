@@ -72,7 +72,7 @@ enum Supply {
 /// `./` path and a
 /// bare name (read as `./`) are missing: the face packs no texture the folder does not hold. A
 /// path into the team's uniform Common folder
-/// (`common/team_folder/<name>` or `model/character/uniform/common/team_folder/<name>`,
+/// (`team_common_folder/<name>` or `model/character/uniform/common/team_folder/<name>`,
 /// `<name>` a name or a `Common/` subfolder's
 /// `jessie/skin.dds`) is supplied when `Common/` holds the stem at that path
 /// (`sources.common` for a direct one, `sources.common_below` for a subfolder's, which
@@ -126,7 +126,8 @@ fn supply(path: &str, sources: &TextureSources) -> Supply {
         Reference::Common { .. } if holds(sources.common) => Supply::Supplied,
         Reference::Common { .. } if sources.installed.is_some_and(holds) => Supply::Supplied,
         Reference::Common { .. } => Supply::Missing,
-        // The game's own file directly below `common/`, and any other form: not looked up.
+        // The game's own file directly below `common_folder/`, and any other form: not
+        // looked up.
         // A refused path never reaches here (`texture_findings` reports it first).
         Reference::CommonInvalid | Reference::GameCommon(_) | Reference::Unchecked(_) => {
             Supply::Supplied
@@ -140,7 +141,9 @@ fn supply(path: &str, sources: &TextureSources) -> Supply {
 /// naming the file, the path as written and the materials naming it, in the `.mtl`'s order.
 /// When one of those materials is among `used`, the names the meshes of the models paired with
 /// the `.mtl` bind, it is `mtl_texture_not_found`, else `mtl_texture_unused_missing`; both keep
-/// what holds the `.mtl`. A Common path naming a folder other than `team_folder` is
+/// what holds the `.mtl`. A Common path naming a folder other than `team_folder`, a
+/// folder after `common_folder/`, or one
+/// starting `common/` (a CPK's root folder, which no reference names), is
 /// `mtl_common_path_invalid` instead, which discards
 /// what holds the `.mtl` (`xml_common_path_invalid`'s rule for a `.mtl`, on every target:
 /// the spelling is the export's, so `check` and a compile for either engine judge it
@@ -550,7 +553,7 @@ mod tests {
         // the `kitF` names themselves finding nothing.
         for path in [
             "model/character/uniform/common/team_folder/jessie/kitN_pants.dds",
-            "common/team_folder/jessie/pants_kitN.dds",
+            "team_common_folder/jessie/pants_kitN.dds",
         ] {
             assert_eq!(
                 supplied_below(path, &["jessie/kitF_pants", "jessie/pants_kitF"], None),
@@ -560,7 +563,7 @@ mod tests {
         }
         for path in [
             "model/character/uniform/common/team_folder/jessie/kitF_pants.dds",
-            "common/team_folder/jessie/pants_kitF.dds",
+            "team_common_folder/jessie/pants_kitF.dds",
         ] {
             assert_eq!(
                 supplied_below(path, &["jessie/kitF_pants", "jessie/pants_kitF"], None),
@@ -574,7 +577,7 @@ mod tests {
     fn a_kit_reference_in_a_common_subfolder_is_supplied_by_a_variant_at_its_path() {
         // A variant of the set at `jessie/` supplies the `kitN` reference there; one held
         // at `Common/`'s root does not: the path resolves at `jessie/` alone.
-        let path = "common/team_folder/jessie/kitN_pants.dds";
+        let path = "team_common_folder/jessie/kitN_pants.dds";
         assert_eq!(
             supplied_below(path, &["jessie/kit1_pants"], None),
             Supply::Supplied
@@ -694,7 +697,7 @@ mod tests {
         // `supplied` has nothing at any path below `Common/` (the pre-Fox shape before the
         // check): the subfolder path is a miss where it was not looked for, supplied where
         // the kept textures or the installed CPKs hold it at that path.
-        let path = "common/team_folder/jessie/hair.dds";
+        let path = "team_common_folder/jessie/hair.dds";
         assert_eq!(supplied(path, &[], &[], Some(&[])), Supply::Missing);
         assert_eq!(
             supplied_below(path, &["jessie/hair"], Some(&[])),
@@ -713,7 +716,7 @@ mod tests {
         // The `kitN` directory stands for the set of its `kit1`-`kit9` siblings:
         // `Common/kit1/armor.dds`, `Common/kitF/armor.dds` and an installed CPK's `kit1/`
         // copy each supply it; missing with none of them.
-        let path = "common/team_folder/kitN/armor.dds";
+        let path = "team_common_folder/kitN/armor.dds";
         assert_eq!(
             supplied_below(path, &["kit1/armor"], None),
             Supply::Supplied
@@ -728,7 +731,7 @@ mod tests {
         );
         assert_eq!(supplied_below(path, &[], Some(&[])), Supply::Missing);
         // A `kitF` path names no file: missing even when `Common/kitF/armor.dds` is held.
-        let kitf = "common/team_folder/kitF/armor.dds";
+        let kitf = "team_common_folder/kitF/armor.dds";
         assert_eq!(
             supplied_below(kitf, &["kitF/armor"], Some(&[])),
             Supply::Missing
@@ -804,7 +807,7 @@ mod tests {
 
     #[test]
     fn a_miss_only_unused_materials_name_is_info_and_one_without_a_lookup_is_the_same_warning() {
-        let gone = "common/team_folder/gone.dds";
+        let gone = "team_common_folder/gone.dds";
         let cap = "model/character/uniform/common/team_folder/cap.dds";
         let found = findings(
             &[
@@ -852,7 +855,7 @@ mod tests {
     #[test]
     fn a_common_mtl_s_invalid_folder_drops_the_file_alone() {
         // A `Common/` `.mtl` is a file of `Common/`: the finding drops the file, not a folder.
-        let path = "common/refs/refkit/env.dds";
+        let path = "common_folder/refs/refkit/env.dds";
         let mtl = ScopePath::new("Common/jessie/x.mtl").unwrap();
         let folders = common_held(&[]);
         let common_below = BTreeSet::new();
@@ -894,7 +897,7 @@ mod tests {
         // spelling: kept and looked up, the usual not-found finding, not the refusal.
         for path in [
             "model/character/uniform/common/team_folder/env.dds",
-            "common/Team_Folder/env.dds",
+            "Team_Common_Folder/env.dds",
         ] {
             assert_eq!(
                 findings(&[material("head", &[path])], &["head"]),
@@ -908,7 +911,7 @@ mod tests {
     fn the_invalid_folder_check_runs_on_a_fox_target_too() {
         // The spelling is the export's: a `check` and a compile for either engine judge it
         // alike, so the refusal reports on Fox as on pre-Fox.
-        let path = "common/797/hair.dds";
+        let path = "common_folder/797/hair.dds";
         let common_below = BTreeSet::new();
         let folders = slot_05(&[], &[]);
         let mtl = ScopePath::new("Players/05 - A/face.mtl").unwrap();

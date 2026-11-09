@@ -236,9 +236,12 @@ pub(crate) enum Code {
     /// PES 2015 to 2017: a texture nobody supplies that only `.mtl` materials no mesh uses
     /// name; the game never loads it, so nothing is left out.
     MtlTextureUnusedMissing,
-    /// A `.mtl` sampler `path` below the uniform Common folder (`common/` its short form)
-    /// naming a folder there other than `team_folder`, the team's Common: a team ID, `XXX`
-    /// or another team's name; `xml_common_path_invalid`'s rule for a `.mtl`, on every
+    /// A `.mtl` sampler `path` below the uniform Common folder (`team_common_folder/`
+    /// its team's Common written short) naming a folder there other than `team_folder`,
+    /// the team's Common: a team ID,
+    /// `XXX` or another team's name; or a folder after `common_folder/`, `team_folder`
+    /// included; or one starting `common/`, a CPK's root folder, which
+    /// no reference names; `xml_common_path_invalid`'s rule for a `.mtl`, on every
     /// target since the spelling is the export's. The `.mtl`'s folder is left out (a
     /// `Common/` `.mtl`'s, the file alone).
     MtlCommonPathInvalid,
@@ -252,8 +255,11 @@ pub(crate) enum Code {
     /// uniform Common folder, a file the export does not hold; the folder is left out.
     XmlModelNotFound,
     /// A `path` or `material` of a member's own `face.xml` below the uniform Common folder
-    /// (`common/` its short form) naming a folder there other than `team_folder`, the
-    /// team's Common; a file directly below `common/` is the game's own
+    /// (`team_common_folder/` its team's Common written short) naming a folder there
+    /// other than `team_folder`,
+    /// the team's Common, or a folder after `common_folder/`, `team_folder` included, or
+    /// spelled `common/`, a CPK's root folder, which no reference
+    /// names; a file directly below `common_folder/` is the game's own
     /// (`xml_path_unchecked`). The folder is left out.
     XmlCommonPathInvalid,
     /// PES 2016: a model of a member's own `face.xml` whose file name starts with none of
@@ -430,6 +436,14 @@ pub(crate) enum Code {
     /// kept unchanged: the modded exe swaps the kit textures per match, so a fixed file
     /// there is not the kit the player wears.
     FmdlTextureKitPath,
+    /// An FMDL texture directory below the game's Fox common directory
+    /// (`/Assets/pes16/model/character/common/`) naming a folder there other than
+    /// `team_folder`, the team's Common, or the game's own `sourceimages/`: `000`, the
+    /// community's template placeholder, a team ID, `XXX` or a team's name. Every entry
+    /// of the texture table is checked, a `dummy_` stem's included, and the folder is left
+    /// out (a `Common/` FMDL's, the file alone, its linking players following
+    /// `link_target_dropped`). `export-upgrader upgrade-models` respells an old FMDL.
+    FmdlCommonPathInvalid,
     /// A file a task reads cannot be read from its export; its folder is left out.
     SourceReadFailed,
     /// A task could not build its entries; its folder is left out.
@@ -563,7 +577,7 @@ impl Code {
     /// Every code, for the catalog test: a variant missing here would make its first message
     /// panic in `severity`, so a new variant is added to this list too.
     #[cfg(test)]
-    const ALL: [Code; 161] = [
+    const ALL: [Code; 162] = [
         Code::ExportExtractFailed,
         Code::NoExportsFound,
         Code::ExportDisabled,
@@ -683,6 +697,7 @@ impl Code {
         Code::CommonModelBeatenDropped,
         Code::FmdlTextureNotFound,
         Code::FmdlTextureKitPath,
+        Code::FmdlCommonPathInvalid,
         Code::SourceReadFailed,
         Code::FolderPackFailed,
         Code::DpfilelistMissing,
@@ -849,6 +864,7 @@ impl Code {
             Code::CommonModelBeatenDropped => "common_model_beaten_dropped",
             Code::FmdlTextureNotFound => "fmdl_texture_not_found",
             Code::FmdlTextureKitPath => "fmdl_texture_kit_path",
+            Code::FmdlCommonPathInvalid => "fmdl_common_path_invalid",
             Code::SourceReadFailed => "source_read_failed",
             Code::FolderPackFailed => "folder_pack_failed",
             Code::DpfilelistMissing => "dpfilelist_missing",
@@ -1462,5 +1478,25 @@ mod tests {
             row("file_type_disallowed").3,
             "With `Strict file type check` on, this is an Error and the folder is left out (in `Collars/`, only the file is left out). With it off, it is an Info and nothing is left out."
         );
+    }
+
+    // TC-MOD-103
+    // TC-XML-22
+    #[test]
+    fn a_common_path_refusal_names_the_spelling_to_write() {
+        // The refused member reads how to write the team's Common instead: `team_folder`
+        // and the upgrader for an FMDL he cannot edit by hand, the short form for a path.
+        let effect = |code: &str| CATALOG.iter().find(|row| row.0 == code).unwrap().3;
+        let fmdl = effect("fmdl_common_path_invalid");
+        for word in ["`team_folder`", "`export-upgrader upgrade-models`"] {
+            assert!(fmdl.contains(word), "{word}: {fmdl}");
+        }
+        for code in ["xml_common_path_invalid", "mtl_common_path_invalid"] {
+            assert!(
+                effect(code).contains("`team_common_folder/`"),
+                "{code}: {}",
+                effect(code)
+            );
+        }
     }
 }

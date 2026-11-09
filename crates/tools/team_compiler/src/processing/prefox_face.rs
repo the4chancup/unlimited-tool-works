@@ -1294,7 +1294,7 @@ impl<'a> XmlFace<'a> {
     /// (`written_local`, noting in `findings`); a Common one naming the model as the team's
     /// Common output packs it (`oral_<stem>_*.model`, below its subfolder's path for a
     /// subfolder's file, the team ID in place of `team_folder`), packing nothing; a file
-    /// directly below `common/` (the game's own) by its long form; any
+    /// directly below `common_folder/` (the game's own) by its long form; any
     /// other form as it is.
     fn written_path(
         &mut self,
@@ -1331,7 +1331,8 @@ impl<'a> XmlFace<'a> {
     /// The `material` value `value` as written: a `./` reference as it is, its `.mtl` packed,
     /// or naming the Common one a `.mtl.common` link stands for (`written_local`, noting in
     /// `findings`); a Common one naming the `.mtl` in the team's Common output under its name,
-    /// packing nothing; a file directly below `common/` (the game's own) by its long form;
+    /// packing nothing; a file directly below `common_folder/` (the game's own) by its long
+    /// form;
     /// any other form as it is.
     fn written_material(
         &mut self,
@@ -1742,7 +1743,7 @@ pub(super) fn read_materials(
 /// the places that path names alone, each texture where its home puts it. A `team_folder`
 /// path no place holds the stem of still names the team's Common output, written with the
 /// team's ID in `team_folder`'s place (`user_face_xml::reference`): the export's `Common/`
-/// does not supply it, but an installed CPK may. A file directly below `common/` (the
+/// does not supply it, but an installed CPK may. A file directly below `common_folder/` (the
 /// game's own) is written in the long form, the only one the game reads. Any other path is
 /// left as it is.
 pub(super) fn point_materials(set: &mut MaterialSet, places: &MaterialPlaces) {
@@ -2071,7 +2072,7 @@ mod tests {
 
     #[test]
     fn a_converted_model_s_reserved_kit_stem_is_pointed_at_the_team_s_common_directory() {
-        let fox_directory = "/Assets/pes16/model/character/common/000/sourceimages/";
+        let fox_directory = "/Assets/pes16/model/character/common/team_folder/sourceimages/";
         let common = "model/character/uniform/common/792/";
         // The card's `.mtl` with its one texture path under the Fox directory an FMDL names.
         let fox_set = |file_name: &str| {

@@ -85,10 +85,11 @@ pub(crate) enum Reference {
     /// in the folder, `./jessie/body/oral_x_*.model` names `jessie/body/oral_x_win32.model`).
     /// Holds the path, its directory as written.
     Local(String),
-    /// `common/team_folder/<name>` or its long form
-    /// `model/character/uniform/common/team_folder/<name>` (`team_folder` in any letter
+    /// `team_common_folder/<name>` or its long form
+    /// `model/character/uniform/common/team_folder/<name>` (`team_common_folder` and
+    /// `team_folder` in any letter
     /// case): a file directly in the export's `Common/`, its `*` read as `win32`;
-    /// `team_folder/<subfolder>/<name>`, a file of that subfolder of `Common/`, which on
+    /// `team_common_folder/<subfolder>/<name>`, a file of that subfolder of `Common/`, which on
     /// PES 15-17 the team's Common output packs at its own path. `team_folder` stands for
     /// the team, written out as the team's ID.
     Common {
@@ -96,14 +97,18 @@ pub(crate) enum Reference {
         /// `*` read as `win32`.
         file_name: String,
     },
-    /// A folder other than `team_folder` after `common/` or its long form (`common/797/`,
-    /// `common/XXX/`, `common/o/`): the Studio format names no team ID
-    /// (`xml_common_path_invalid` in a `face.xml`, `mtl_common_path_invalid` in a `.mtl`).
+    /// A folder after `common_folder/`, `team_folder` included (`common_folder/797/`,
+    /// `common_folder/team_folder/x.dds`), or other than `team_folder` after its long form
+    /// (`model/character/uniform/common/797/`), or a value starting
+    /// `common/`, a CPK's root folder, which no reference names: the Studio format names no
+    /// team ID (`xml_common_path_invalid` in a `face.xml`, `mtl_common_path_invalid` in a
+    /// `.mtl`).
     CommonInvalid,
-    /// A file directly below `common/` or its long form (`common/specular.dds`): the game's
+    /// A file directly below `common_folder/` or its long form (`common_folder/specular.dds`):
+    /// the game's
     /// own file, which a Common path into a folder never names. Holds the file's name;
-    /// written out, a short `common/<name>` becomes the long form, the only one the game
-    /// reads.
+    /// written out, a short `common_folder/<name>` becomes the long form, the only one the
+    /// game reads.
     GameCommon(String),
     /// Any other form, which the compiler cannot resolve (`xml_path_unchecked`): a face Common
     /// path, a `./` path with an empty, `.` or `..` segment, a bare name. Holds the value as
@@ -116,8 +121,14 @@ pub(crate) enum Reference {
 pub(crate) const UNIFORM_COMMON: &str = "model/character/uniform/common/";
 
 /// The folder of the uniform Common folder that stands for the team's own, in a member's
-/// `face.xml` or `.mtl`: `common/team_folder/`, the game's team ID written without one.
+/// `face.xml` or `.mtl`: `team_folder` under the long form or `team_common_folder/`
+/// written short, the game's team ID written without one. Each name is compared ASCII
+/// case-insensitively.
 const TEAM_FOLDER: &str = "team_folder";
+
+/// The team's Common written short in a `path`/`material` value: `team_common_folder/`,
+/// one folder, compared ASCII case-insensitively.
+const TEAM_COMMON_FOLDER: &str = "team_common_folder/";
 
 /// What the `path` or `material` value `value` names (`Reference`).
 pub(crate) fn reference(value: &str) -> Reference {
@@ -130,29 +141,55 @@ pub(crate) fn reference(value: &str) -> Reference {
         let (directory, name) = split(path);
         return Reference::Local(format!("{directory}{}", name.replace('*', "win32")));
     }
-    let rest = [UNIFORM_COMMON, "common/"]
-        .iter()
-        .find_map(|prefix| value.strip_prefix(prefix));
-    let Some(rest) = rest else {
+    // `common` is a CPK's root folder (`common/character1/…`), not a reference prefix: a
+    // value starting `common/` names the archive and is refused.
+    if value.starts_with("common/") {
+        return Reference::CommonInvalid;
+    }
+    if let Some(path) = value
+        .get(..TEAM_COMMON_FOLDER.len())
+        .filter(|prefix| prefix.eq_ignore_ascii_case(TEAM_COMMON_FOLDER))
+        .map(|_| &value[TEAM_COMMON_FOLDER.len()..])
+    {
+        return common_rest(value, path);
+    }
+    let rest = value
+        .strip_prefix(UNIFORM_COMMON)
+        .map(|rest| (rest, true))
+        .or_else(|| {
+            value
+                .strip_prefix("common_folder/")
+                .map(|rest| (rest, false))
+        });
+    let Some((rest, long_form)) = rest else {
         return Reference::Unchecked(value.to_owned());
     };
     match rest.split_once('/') {
-        Some((folder, path)) if folder.eq_ignore_ascii_case(TEAM_FOLDER) => {
-            if path.is_empty() || path.ends_with('/') {
-                return Reference::Unchecked(value.to_owned());
-            }
-            // Only the file name's `*` is the game's placeholder; a subfolder is named as
-            // written.
-            let file_name = match path.rsplit_once('/') {
-                Some((directory, name)) => format!("{directory}/{}", name.replace('*', "win32")),
-                None => path.replace('*', "win32"),
-            };
-            Reference::Common { file_name }
+        // `team_folder` under the long form alone: the short form spells the team's Common
+        // `team_common_folder/`, so a folder after `common_folder/` is refused.
+        Some((folder, path)) if long_form && folder.eq_ignore_ascii_case(TEAM_FOLDER) => {
+            common_rest(value, path)
         }
         Some(_) => Reference::CommonInvalid,
         None if rest.is_empty() => Reference::Unchecked(value.to_owned()),
         None => Reference::GameCommon(rest.to_owned()),
     }
+}
+
+/// The file `path` below the team's Common names (`Reference::Common`), read after
+/// `team_folder/` or `team_common_folder/`: `*` in the file name read as `win32`;
+/// `Unchecked` for an empty path or a directory alone.
+fn common_rest(value: &str, path: &str) -> Reference {
+    if path.is_empty() || path.ends_with('/') {
+        return Reference::Unchecked(value.to_owned());
+    }
+    // Only the file name's `*` is the game's placeholder; a subfolder is named as
+    // written.
+    let file_name = match path.rsplit_once('/') {
+        Some((directory, name)) => format!("{directory}/{}", name.replace('*', "win32")),
+        None => path.replace('*', "win32"),
+    };
+    Reference::Common { file_name }
 }
 
 /// Why a `face.xml` cannot be read.
@@ -583,7 +620,7 @@ fn model_findings(
 
 /// The finding on the `attribute` (`path` or `material`) of value `value`, naming a file of
 /// `kind`: `xml_path_unchecked` for a form the compiler cannot resolve (a file directly
-/// below `common/` included),
+/// below `common_folder/` included),
 /// `xml_common_path_invalid` for a Common reference naming a folder other than
 /// `team_folder`,
 /// `xml_model_not_found` when the file it names is not among `files`: neither one `resolve`
@@ -872,7 +909,7 @@ mod tests {
             Reference::Local("face_high_win32.model".to_owned())
         );
         for value in [
-            "common/team_folder/legs_*.model",
+            "team_common_folder/legs_*.model",
             "model/character/uniform/common/team_folder/legs_*.model",
             "model/character/uniform/common/Team_Folder/legs_*.model",
         ] {
@@ -884,7 +921,8 @@ mod tests {
                 "{value}"
             );
         }
-        // A subfolder of `Common/` is named as written, the file name's `*` read as `win32`.
+        // A subfolder of `Common/` is named as written, the file name's `*` read as `win32`,
+        // `team_common_folder` in any letter case.
         assert_eq!(
             reference("model/character/uniform/common/team_folder/a/b.model"),
             Reference::Common {
@@ -892,30 +930,38 @@ mod tests {
             }
         );
         assert_eq!(
-            reference("common/team_folder/a/b_*.model"),
+            reference("Team_Common_Folder/a/b_*.model"),
             Reference::Common {
                 file_name: "a/b_win32.model".to_owned(),
             }
         );
-        // Any other folder after `common/` is refused: a team ID, `XXX` or another name,
-        // however long.
+        // Any folder after `common_folder/`, `team_folder` included, is refused; so is any
+        // other folder after the long form, a team ID, `XXX` or another name, however
+        // long; and any value starting `common/`, a CPK's root folder, whatever follows it.
         for invalid in [
             "model/character/uniform/common/797/x.dds",
             "model/character/uniform/common/XXX/a/b.model",
             "model/character/uniform/common/XX/legs.model",
+            "common_folder/797/x.dds",
+            "common_folder/XXX/a/",
+            "common_folder/XXX/",
+            "common_folder/o/env.dds",
+            "common_folder/refs/refkit/x.dds",
+            "common_folder/team_folder/legs.model",
+            "common_folder/team_folder/",
+            "common/team_folder/legs.model",
             "common/797/x.dds",
-            "common/XXX/a/",
-            "common/XXX/",
-            "common/o/env.dds",
-            "common/refs/refkit/x.dds",
+            "common/specular.dds",
+            "common/character1/model/character/uniform/common/714/x.dds",
+            "common/",
         ] {
             assert_eq!(reference(invalid), Reference::CommonInvalid, "{invalid}");
         }
-        // A file directly below `common/` is the game's own, in either spelling.
+        // A file directly below `common_folder/` is the game's own, in either spelling.
         for (value, name) in [
-            ("common/specular.dds", "specular.dds"),
+            ("common_folder/specular.dds", "specular.dds"),
             ("model/character/uniform/common/legs.model", "legs.model"),
-            ("common/team_folder", "team_folder"),
+            ("common_folder/team_folder", "team_folder"),
         ] {
             assert_eq!(
                 reference(value),
@@ -942,9 +988,9 @@ mod tests {
             "./../b.model",
             "./a/../b.model",
             "x.model",
-            "common/",
-            "common/team_folder/",
-            "common/team_folder/a/",
+            "common_folder/",
+            "team_common_folder/",
+            "team_common_folder/a/",
             "model/character/uniform/common/team_folder/",
         ] {
             assert_eq!(
@@ -1014,7 +1060,7 @@ mod tests {
         assert_eq!(found("./body.mtl", FileKind::Mtl), path("Common/body.mtl"));
         assert_eq!(found("./body.mtl", model), None);
         assert_eq!(
-            found("common/team_folder/legs.model", model),
+            found("team_common_folder/legs.model", model),
             path("Common/legs.model")
         );
         assert_eq!(found("model/character/face/common/legs.model", model), None);
@@ -1188,7 +1234,7 @@ mod tests {
             Some("Common/refkit/Oral_Thigh_win32.model")
         );
         assert_eq!(
-            found("common/team_folder/REFKIT/refkit.mtl", FileKind::Mtl).as_deref(),
+            found("team_common_folder/REFKIT/refkit.mtl", FileKind::Mtl).as_deref(),
             Some("Common/refkit/refkit.mtl")
         );
         // A subfolder's file is no direct one, and a direct file is in no subfolder.
@@ -1239,7 +1285,7 @@ mod tests {
             checked_with(&template_common, arm_upper),
             Vec::<String>::new()
         );
-        let nothing = "common/team_folder/refkit/oral_nothing_*.model";
+        let nothing = "team_common_folder/refkit/oral_nothing_*.model";
         assert_eq!(
             checked_with(&template_common, nothing),
             [format!(

@@ -338,16 +338,37 @@ fn an_fmdl_in_a_subfolder_naming_a_common_subfolder_is_kept() {
 }
 
 #[test]
-fn the_fox_common_reference_needs_the_marker_and_sourceimages() {
+fn the_fox_common_reference_needs_a_folder_but_sourceimages_and_sourceimages() {
     assert_eq!(
         reference_into_fox_common("/Assets/pes16/model/character/common/000/sourceimages/"),
         Some(("000", ""))
     );
-    // A marker of another length is none even when the rest ends in
-    // `sourceimages/`; a three-character marker's rest must end in it.
+    // Any folder but the game's own `sourceimages` is the team's, however
+    // long: a team ID, `XXX`, a name.
+    for (directory, marker) in [
+        (
+            "/Assets/pes16/model/character/common/00/sourceimages/",
+            "00",
+        ),
+        (
+            "/Assets/pes16/model/character/common/0000/sourceimages/",
+            "0000",
+        ),
+        (
+            "/Assets/pes16/model/character/common/ikachan/sourceimages/",
+            "ikachan",
+        ),
+    ] {
+        assert_eq!(
+            reference_into_fox_common(directory),
+            Some((marker, "")),
+            "{directory}"
+        );
+    }
+    // The game's own `sourceimages` is no team's, and the rest must end in
+    // `sourceimages/`.
     for directory in [
-        "/Assets/pes16/model/character/common/00/sourceimages/",
-        "/Assets/pes16/model/character/common/0000/sourceimages/",
+        "/Assets/pes16/model/character/common/sourceimages/",
         "/Assets/pes16/model/character/common/000/not_the_marker_end_at_all/",
     ] {
         assert_eq!(reference_into_fox_common(directory), None, "{directory}");
@@ -358,7 +379,7 @@ fn the_fox_common_reference_needs_the_marker_and_sourceimages() {
 fn fmdl_entries_the_classes_keep_are_not_written() {
     let face = fmdl(&[
         (
-            "/Assets/pes16/model/character/common/000/sourceimages/",
+            "/Assets/pes16/model/character/common/team_folder/sourceimages/",
             "dummy_kit.dds",
         ),
         (
@@ -380,6 +401,45 @@ fn fmdl_entries_the_classes_keep_are_not_written() {
     );
     // Nothing respelled, nothing linked, nothing reported: no rewrite.
     assert!(rewrites.written.is_empty());
+    assert!(rewrites.links.is_empty());
+    assert!(rewrites.findings.is_empty());
+}
+
+#[test]
+fn a_common_directory_without_sourceimages_keeps_its_path_and_names_team_folder() {
+    // `common/000/foo/` is no team-Common reference (no `sourceimages/`
+    // end) but its folder is the old spelling the compiler refuses: kept,
+    // the folder respelled, nothing linked or reported. The game's own
+    // `common/sourceimages/` beside it stays as written.
+    let face = fmdl(&[
+        ("/Assets/pes16/model/character/common/000/foo/", "a.dds"),
+        (
+            "/Assets/pes16/model/character/common/sourceimages/",
+            "zero.dds",
+        ),
+    ]);
+    let rewrites = plan(
+        &[(
+            "Faces/XXX07 - A/face_high.fmdl",
+            "Players/07 - A/face_high.fmdl",
+        )],
+        &[],
+        &[("Faces/XXX07 - A/face_high.fmdl", &face)],
+    );
+    // The first two entries: `fmdl` keeps the base model's own after them.
+    assert_eq!(
+        fmdl_paths(&rewrites, "Players/07 - A/face_high.fmdl")[..2],
+        [
+            (
+                "/Assets/pes16/model/character/common/team_folder/foo/".to_owned(),
+                "a.dds".to_owned()
+            ),
+            (
+                "/Assets/pes16/model/character/common/sourceimages/".to_owned(),
+                "zero.dds".to_owned()
+            ),
+        ]
+    );
     assert!(rewrites.links.is_empty());
     assert!(rewrites.findings.is_empty());
 }
@@ -662,7 +722,7 @@ fn a_common_dummy_stem_gets_its_marker_respelled_alone() {
     );
     let text = written_text(&rewrites, "Players/07 - A/face.mtl");
     assert!(
-        text.contains("path=\"common/team_folder/dummy_kit.dds\""),
+        text.contains("path=\"team_common_folder/dummy_kit.dds\""),
         "{text}"
     );
     assert!(rewrites.links.is_empty());
@@ -681,7 +741,7 @@ fn a_common_dummy_stem_in_a_sub_keeps_the_sub_as_written() {
     );
     let text = written_text(&rewrites, "Players/07 - A/face.mtl");
     assert!(
-        text.contains("path=\"common/team_folder/u0XXXp0/dummy_kit.dds\""),
+        text.contains("path=\"team_common_folder/u0XXXp0/dummy_kit.dds\""),
         "{text}"
     );
     assert!(rewrites.links.is_empty());
@@ -726,7 +786,7 @@ fn a_kit_set_reference_with_a_member_in_the_folder_is_kept() {
     assert_eq!(rewrites.links.len(), 0);
     let text = written_text(&rewrites, "Players/07 - A/face.mtl");
     assert!(
-        text.contains("path=\"common/team_folder/kitN.dds\""),
+        text.contains("path=\"team_common_folder/kitN.dds\""),
         "{text}"
     );
     assert_eq!(rewrites.findings.len(), 1);
@@ -760,7 +820,7 @@ fn a_shared_folder_mtl_reference_to_a_missing_common_file_is_kept() {
     assert!(rewrites.links.is_empty());
     let text = written_text(&rewrites, "Boots/Crocs/boots.mtl");
     assert!(
-        text.contains("path=\"common/team_folder/hair.dds\""),
+        text.contains("path=\"team_common_folder/hair.dds\""),
         "{text}"
     );
     assert_eq!(rewrites.findings.len(), 1);
@@ -815,7 +875,7 @@ fn a_common_mtl_keeps_its_common_references() {
     );
     let text = written_text(&rewrites, "Common/hair.mtl");
     assert!(
-        text.contains("path=\"common/team_folder/hair.dds\""),
+        text.contains("path=\"team_common_folder/hair.dds\""),
         "{text}"
     );
     assert!(rewrites.links.is_empty());
@@ -849,7 +909,7 @@ fn a_named_common_segment_kept_is_respelled_team_folder() {
         &[("Faces/XXX07 - A/face.mtl", &face)],
     );
     let out = written_text(&rewrites, "Players/07 - A/face.mtl");
-    assert!(out.contains("common/team_folder/fbm_s.dds"), "{out}");
+    assert!(out.contains("team_common_folder/fbm_s.dds"), "{out}");
     assert_eq!(
         rewrites
             .findings
@@ -871,7 +931,7 @@ fn a_common_mtl_s_segment_of_another_length_is_respelled_team_folder() {
     );
     let out = written_text(&rewrites, "Common/refkit.mtl");
     assert!(
-        out.contains("common/team_folder/refkit/texture.dds"),
+        out.contains("team_common_folder/refkit/texture.dds"),
         "{out}"
     );
     assert_eq!(
@@ -899,7 +959,7 @@ fn model_folder_mode_writes_team_folder_too() {
         &[("k0431/x.mtl", &file)],
     );
     let out = written_text(&rewrites, "Boots/k0431/x.mtl");
-    assert_eq!(out.matches("common/team_folder/x.dds").count(), 2, "{out}");
+    assert_eq!(out.matches("team_common_folder/x.dds").count(), 2, "{out}");
 }
 
 /// The one output path's `.mtl` text, parsed back.
@@ -979,7 +1039,7 @@ fn a_common_subfolder_reference_links_at_the_path_below_the_folder() {
         ["Players/07 - A/jessie/hair.dds.common".to_owned()]
     );
     let out = written_text(&rewrites, "Players/07 - A/realkit/x.mtl");
-    assert!(out.contains("common/team_folder/jessie/hair.dds"), "{out}");
+    assert!(out.contains("team_common_folder/jessie/hair.dds"), "{out}");
     let kept = rewrites
         .findings
         .iter()
@@ -1015,7 +1075,7 @@ fn a_folder_file_of_the_stem_keeps_the_reference() {
         &[("Faces/XXX07 - A/face.mtl", &face)],
     );
     let out = written_text(&rewrites, "Players/07 - A/face.mtl");
-    assert!(out.contains("common/team_folder/hair.dds"), "{out}");
+    assert!(out.contains("team_common_folder/hair.dds"), "{out}");
     assert!(rewrites.links.is_empty());
     // From a subfolder `.mtl` the bare name looks up to the model folder,
     // so the root's `hair.png` keeps it too.
@@ -1031,7 +1091,7 @@ fn a_folder_file_of_the_stem_keeps_the_reference() {
         &[("Faces/XXX07 - A/realkit/apc.mtl", &face)],
     );
     let out = written_text(&rewrites, "Players/07 - A/realkit/apc.mtl");
-    assert!(out.contains("common/team_folder/hair.dds"), "{out}");
+    assert!(out.contains("team_common_folder/hair.dds"), "{out}");
     assert!(rewrites.links.is_empty());
     // A model's link of that stem claims no texture: the link is made.
     let rewrites = plan(
@@ -1164,7 +1224,7 @@ fn the_common_file_must_match_both_folder_and_stem() {
         &[("Faces/XXX07 - A/face.mtl", &face)],
     );
     let out = written_text(&rewrites, "Players/07 - A/face.mtl");
-    assert!(out.contains("common/team_folder/hair.dds"), "{out}");
+    assert!(out.contains("team_common_folder/hair.dds"), "{out}");
     assert!(rewrites.links.is_empty());
 }
 
@@ -1201,7 +1261,7 @@ fn a_shared_folder_mtl_keeps_the_reference_with_team_folder() {
         &[("Boots/k0430 - Crocs/boots.mtl", &boots)],
     );
     let out = written_text(&rewrites, "Boots/Crocs/boots.mtl");
-    assert!(out.contains("common/team_folder/hair.dds"), "{out}");
+    assert!(out.contains("team_common_folder/hair.dds"), "{out}");
     assert!(rewrites.links.is_empty());
     assert!(rewrites.findings.is_empty());
 }
@@ -1303,7 +1363,7 @@ fn a_referee_common_reference_his_folder_holds_names_it_there() {
     );
     let text = written_text(&rewrites, "Players/07 - A/face.mtl");
     assert!(
-        text.contains("path=\"common/team_folder/hair.dds\""),
+        text.contains("path=\"team_common_folder/hair.dds\""),
         "{text}"
     );
     assert!(rewrites.links.is_empty());
@@ -1339,7 +1399,7 @@ fn a_referee_common_subfolder_reference_names_the_folder_s_subfolder() {
     );
     let text = written_text(&rewrites, "Players/arbiter/kit/face.mtl");
     assert!(
-        text.contains("path=\"common/team_folder/kit/sock.dds\""),
+        text.contains("path=\"team_common_folder/kit/sock.dds\""),
         "{text}"
     );
     assert_eq!(codes(&rewrites), ["common_reference_kept"]);
@@ -1456,7 +1516,7 @@ fn a_kept_common_reference_writes_team_folder_in_either_mode() {
         );
         let text = written_text(&rewrites, "Players/15 - Snuffy/face.mtl");
         assert!(
-            text.contains("path=\"common/team_folder/kit1/missing.dds\""),
+            text.contains("path=\"team_common_folder/kit1/missing.dds\""),
             "{text}"
         );
         assert_eq!(codes(&rewrites), ["common_reference_kept"]);

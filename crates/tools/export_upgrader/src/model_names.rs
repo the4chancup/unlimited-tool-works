@@ -608,19 +608,16 @@ mod tests {
 
     #[test]
     fn a_rename_colliding_with_an_earlier_output_drops_the_later() {
-        let (copies, findings) = crate::kit_magic::drop_collisions(
-            rename_models(
-                vec![
-                    (
-                        "a".to_owned(),
-                        "Players/07 - A/oral_x_win32.model".to_owned(),
-                    ),
-                    ("b".to_owned(), "Players/07 - A/x.model".to_owned()),
-                ],
-                &BTreeSet::new(),
-            ),
-            None,
-        );
+        let (copies, findings) = crate::kit_magic::drop_collisions(rename_models(
+            vec![
+                (
+                    "a".to_owned(),
+                    "Players/07 - A/oral_x_win32.model".to_owned(),
+                ),
+                ("b".to_owned(), "Players/07 - A/x.model".to_owned()),
+            ],
+            &BTreeSet::new(),
+        ));
         assert_eq!(
             copies,
             vec![("a".to_owned(), "Players/07 - A/x.model".to_owned())]

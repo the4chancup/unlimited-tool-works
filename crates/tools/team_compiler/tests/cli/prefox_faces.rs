@@ -2105,7 +2105,7 @@ fn a_common_path_is_supplied_by_a_texture_directly_in_common_alone() {
     // Slot 05's own `.mtl` names `cloth.dds` in the team's Common output, which only a
     // texture directly in `Common/` supplies: not a subfolder's texture of the stem, packed
     // under `sub/`, nor a direct file of the stem that is no texture.
-    let path = "common/team_folder/cloth.dds";
+    let path = "team_common_folder/cloth.dds";
     let missing = format!(
         "Warning mtl_texture_not_found [Keep] at Players/05 - A (file=face_high.mtl, texture={path}, materials=card)"
     );

@@ -368,7 +368,7 @@ fn common_references_become_the_bare_name_and_the_link() {
     );
 }
 
-// EU-MDL-29
+// EU-MDL-34
 #[test]
 fn a_reference_whose_common_file_is_missing_is_kept_and_warned() {
     let sandbox = Sandbox::new("mdl_common_missing");
@@ -386,7 +386,7 @@ fn a_reference_whose_common_file_is_missing_is_kept_and_warned() {
     let run = upgrade(&sandbox, "co Spring", "EDIT16");
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
     let face = mtl_text(&sandbox, "co Full Spring/Players/07 - A/face.mtl");
-    assert!(face.contains("common/team_folder/hair.dds"), "{face}");
+    assert!(face.contains("team_common_folder/hair.dds"), "{face}");
     let stdout = run.stdout();
     assert!(
         stdout.contains(
@@ -396,7 +396,7 @@ fn a_reference_whose_common_file_is_missing_is_kept_and_warned() {
     );
 }
 
-// EU-MDL-30
+// EU-MDL-35
 #[test]
 fn a_prefox_common_segment_of_any_name_is_the_team_s_common() {
     let sandbox = Sandbox::new("mdl_common_segment");
@@ -428,7 +428,7 @@ fn a_prefox_common_segment_of_any_name_is_the_team_s_common() {
     assert_eq!(run.exit_code(), 0, "{stdout}");
     let face = mtl_text(&sandbox, "vg Full Spring/Players/07 - A/face.mtl");
     assert!(face.contains("./env.dds"), "{face}");
-    assert!(face.contains("common/team_folder/fbm_s.dds"), "{face}");
+    assert!(face.contains("team_common_folder/fbm_s.dds"), "{face}");
     assert_eq!(
         fs::read(sandbox.path("vg Full Spring/Players/07 - A/env.dds.common")).unwrap(),
         b""
@@ -687,13 +687,13 @@ fn two_files_the_old_id_rename_made_one_keep_the_last_renamed() {
     }
 }
 
-// EU-MDL-33
+// EU-MDL-37
 #[test]
-fn without_a_save_the_old_id_rename_is_unmigrated_content() {
+fn without_a_save_the_lettered_copy_still_wins_the_old_rename_s_collision() {
     let sandbox = Sandbox::new("mdl_id_rename_loose");
-    // EU-MDL-21's export: no save, so no ID the old compile renamed under —
-    // the collision rule cannot be replayed and each group keeps its first,
-    // the renamed inputs reported.
+    // EU-MDL-21's export, no save: the lettered `u0XXX` copy is what the old
+    // compile shipped whatever ID the team had, so the loose run keeps it as
+    // the saved one does.
     for (name, bytes) in [
         ("u0714p2.dds", b"older p2" as &[u8]),
         ("u0XXXp2.dds", b"newer p2"),
@@ -706,25 +706,111 @@ fn without_a_save_the_old_id_rename_is_unmigrated_content() {
     let input = sandbox.arg("co Spring");
     let run = sandbox.run(&["upgrade", &input, "--loose"]);
     let stdout = run.stdout();
-    assert_eq!(run.exit_code(), 1, "{stdout}");
-    for (path, other) in [
-        (
-            "Faces/XXX07 - Ann/u0XXXp2.dds",
-            "Faces/XXX07 - Ann/u0714p2.dds",
-        ),
-        (
-            "Faces/XXX07 - Ann/u0XXXp3.dds",
-            "Faces/XXX07 - Ann/u0715p3.dds",
-        ),
+    assert_eq!(run.exit_code(), 0, "{stdout}");
+    assert!(stdout.contains("migration_clean"), "{stdout}");
+    assert_eq!(
+        fs::read(sandbox.path("co Full Spring/Players/07 - Ann/kit2.dds")).unwrap(),
+        b"newer p2"
+    );
+    assert_eq!(
+        fs::read(sandbox.path("co Full Spring/Players/07 - Ann/kit3.dds")).unwrap(),
+        b"team p3"
+    );
+    for line in [
+        "leftover_dropped at Faces/XXX07 - Ann/u0714p2.dds",
+        "leftover_dropped at Faces/XXX07 - Ann/u0715p3.dds",
     ] {
-        assert!(
-            stdout.contains(&format!(
-                "unmigrated_content at {path} (reason=path_taken, other={other})"
-            )),
-            "{path}: {stdout}"
-        );
+        assert!(stdout.contains(line), "{line}: {stdout}");
     }
-    sandbox.assert_nothing_written("co Full Spring", &stdout);
+}
+
+// EU-MDL-38
+#[test]
+fn numbered_copies_alone_are_unmigrated_content_save_or_none() {
+    for (sandbox_name, loose) in [("mdl_id_only_save", false), ("mdl_id_only_loose", true)] {
+        let sandbox = Sandbox::new(sandbox_name);
+        // `u0714` beside `u0799` and no lettered copy: which one the old
+        // compile shipped depended on the team's ID, and an export holding
+        // two is too broken to repair by rule.
+        sandbox.write("co Spring/Faces/XXX07 - Ann/u0714p2.dds", b"older p2");
+        sandbox.write("co Spring/Faces/XXX07 - Ann/u0799p2.dds", b"other p2");
+        let input = sandbox.arg("co Spring");
+        let save = sandbox.arg("EDIT");
+        if !loose {
+            sandbox.save("EDIT");
+        }
+        let args: Vec<&str> = if loose {
+            vec!["upgrade", &input, "--loose"]
+        } else {
+            vec!["upgrade", &input, "--savefile", &save]
+        };
+
+        let run = sandbox.run(&args);
+        let stdout = run.stdout();
+        assert_eq!(run.exit_code(), 1, "loose={loose}: {stdout}");
+        assert!(
+            stdout.contains(
+                "unmigrated_content at Faces/XXX07 - Ann/u0799p2.dds (reason=path_taken, other=Faces/XXX07 - Ann/u0714p2.dds)"
+            ),
+            "loose={loose}: {stdout}"
+        );
+        sandbox.assert_nothing_written("co Full Spring", &stdout);
+    }
+}
+
+// EU-MDL-39
+#[test]
+fn an_fmdl_s_folders_below_common_are_respelled_team_folder() {
+    let sandbox = Sandbox::new("mdl_fox_common_folders");
+    sandbox.write(
+        "co Spring/Faces/XXX07 - A/face_high.fmdl",
+        &fmdl(&[
+            (
+                "/Assets/pes16/model/character/common/000/sourceimages/",
+                "dummy_kit.dds",
+            ),
+            (
+                "/Assets/pes16/model/character/common/ikachan/sourceimages/",
+                "hair",
+            ),
+            ("/Assets/pes16/model/character/common/sourceimages/", "zero"),
+        ]),
+    );
+    sandbox.save("EDIT");
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
+    let stdout = run.stdout();
+    assert_eq!(run.exit_code(), 0, "{stdout}");
+    assert_eq!(
+        fmdl_paths(&sandbox, "co Full Spring/Players/07 - A/face_high.fmdl")[..3],
+        [
+            (
+                "/Assets/pes16/model/character/common/team_folder/sourceimages/".to_owned(),
+                "dummy_kit.dds".to_owned(),
+            ),
+            (
+                "/Assets/pes16/model/character/common/team_folder/sourceimages/".to_owned(),
+                "hair".to_owned(),
+            ),
+            (
+                "/Assets/pes16/model/character/common/sourceimages/".to_owned(),
+                "zero".to_owned(),
+            ),
+        ]
+    );
+    // `hair`, a Common reference `Common/` lacks, is reported kept; the
+    // `dummy_` stem's respell reports nothing.
+    assert!(
+        stdout.contains(
+            "common_reference_kept at Faces/XXX07 - A/face_high.fmdl (reference=/Assets/pes16/model/character/common/ikachan/sourceimages/hair)"
+        ),
+        "{stdout}"
+    );
+    assert_eq!(
+        stdout.matches("common_reference_kept").count(),
+        1,
+        "{stdout}"
+    );
 }
 
 // EU-MDL-13
@@ -972,7 +1058,7 @@ fn prefox_wrapped_models_and_their_mtls_and_links_rename() {
     assert!(!stdout.contains("common_link_missing"), "{stdout}");
 }
 
-// EU-MDL-32
+// EU-MDL-36
 #[test]
 fn a_common_file_the_face_xml_names_keeps_its_name() {
     let sandbox = Sandbox::new("mdl_common_kept");
@@ -995,7 +1081,7 @@ fn a_common_file_the_face_xml_names_keeps_its_name() {
     );
     let xml = fs::read_to_string(sandbox.path("co Full Spring/Players/07 - A/face.xml")).unwrap();
     assert!(
-        xml.contains("path=\"common/team_folder/oral_hand_l_*.model\""),
+        xml.contains("path=\"team_common_folder/oral_hand_l_*.model\""),
         "{xml}"
     );
 }

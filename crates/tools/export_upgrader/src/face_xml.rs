@@ -167,7 +167,7 @@ fn strip_prefix_ci<'a>(value: &'a str, prefix: &str) -> Option<&'a str> {
 /// `value`, a `path`/`material` value under `COMMON_PREFIX`, respelled to
 /// the Studio spelling of the team's Common: the prefix and whatever
 /// folder stood after it (`XXX`, a team ID, a team's name) become
-/// `common/team_folder/`, the rest of the value kept. A value without a
+/// `team_common_folder/`, the rest of the value kept. A value without a
 /// segment after `common/` is borrowed, as is an empty one.
 fn respell_common_segment(value: &str) -> Cow<'_, str> {
     let Some(rest) = strip_prefix_ci(value, COMMON_PREFIX) else {
@@ -179,7 +179,7 @@ fn respell_common_segment(value: &str) -> Cow<'_, str> {
     if segment.is_empty() {
         return Cow::Borrowed(value);
     }
-    Cow::Owned(format!("common/team_folder/{path}"))
+    Cow::Owned(format!("team_common_folder/{path}"))
 }
 
 /// The `Common/` path a `face.xml` `path`/`material` value names, as the
@@ -288,7 +288,7 @@ pub(crate) fn named_paths(
 /// `text`, a parseable `face.xml`, with the `path` and `material`
 /// attribute values that name the player folder's own (`./`) or the
 /// team's Common (`model/character/uniform/common/`, any letter case) kit
-/// magic respelled — a Common value respelled `common/team_folder/` first
+/// magic respelled — a Common value respelled `team_common_folder/` first
 /// (`respell_common_segment`) — a
 /// referee's Common value naming one of `folder_files` first spelled
 /// below his folder (`flattened_common_value`); `Cow::Borrowed` when
@@ -418,7 +418,7 @@ mod tests {
         let text = String::from_utf8(rewrites[0].1.clone()).unwrap();
         assert_eq!(
             text,
-            "<face><model path=\"common/team_folder/gk_kit1_shirt.model\"/></face>"
+            "<face><model path=\"team_common_folder/gk_kit1_shirt.model\"/></face>"
         );
     }
 
@@ -512,7 +512,7 @@ mod tests {
         assert_eq!(rewrites.len(), 1);
         assert_eq!(
             String::from_utf8(rewrites[0].1.clone()).unwrap(),
-            "<config><model path=\"common/team_folder/oral_shirt_*.model\" material=\"common/team_folder/a.mtl\"/></config>"
+            "<config><model path=\"team_common_folder/oral_shirt_*.model\" material=\"team_common_folder/a.mtl\"/></config>"
         );
     }
 
@@ -525,7 +525,7 @@ mod tests {
         assert_eq!(rewrites.len(), 1);
         assert_eq!(
             String::from_utf8(rewrites[0].1.clone()).unwrap(),
-            "<config><model path=\"common/team_folder/x.model\"/></config>"
+            "<config><model path=\"team_common_folder/x.model\"/></config>"
         );
     }
 
@@ -617,7 +617,7 @@ mod tests {
         // A team's: `team_folder`, then the kit magic.
         assert_eq!(
             rewrite(&team(), "07 - A"),
-            "<config><model path=\"common/team_folder/parts_body.model\"/><model path=\"./oral_x_*.model\" material=\"common/team_folder/kit/kit1.mtl\"/></config>"
+            "<config><model path=\"team_common_folder/parts_body.model\"/><model path=\"./oral_x_*.model\" material=\"team_common_folder/kit/kit1.mtl\"/></config>"
         );
     }
 
@@ -633,7 +633,7 @@ mod tests {
         assert_eq!(rewrites.len(), 1);
         assert_eq!(
             String::from_utf8(rewrites[0].1.clone()).unwrap(),
-            "<config><model path=\"common/team_folder/parts_body.model\"/></config>"
+            "<config><model path=\"team_common_folder/parts_body.model\"/></config>"
         );
     }
 }

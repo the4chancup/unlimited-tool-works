@@ -465,20 +465,23 @@ then processed as an independent parallel task (Blue: `coordinator._model_folder
    `Basic_*` rung its real textures give), and a reserved `dummy_kit*` stem is pointed at the
    target's convention, on pre-Fox the team's Common texture directory
    (`model/character/uniform/common/<team>/dummy_kit.dds`, where a member's own pre-Fox `.mtl`
-   names it `common/team_folder/dummy_kit.dds`), since the Fox directory means nothing to PES 15-17 and
+   names it `team_common_folder/dummy_kit.dds`), since the Fox directory means nothing to PES 15-17 and
    the modded exes substitute the stem there. The other way, a `.mtl` path naming the
-   team's Common (`common/team_folder/<stem>.dds` or its long form, how
+   team's Common (`team_common_folder/<stem>.dds` or its long form, how
    a member's pre-Fox `.mtl` names a texture in `Common/`) is pointed at the first of the
    part's texture places holding its stem, nearest first, as any reference is, and with none
    at the Fox Common texture directory, at its subdirectory below `Common/`, whether or not
    `Common/` holds the stem, since an installed CPK may hold it there; whether it is supplied is decided apart,
    by the deep check (`fmdl_texture_not_found` for a path nothing supplies). A path naming
-   the game's own file directly below `common/` that no texture place holds is written in the
-   long form `model/character/uniform/common/<name>`, a short `common/<name>` respelled to it.
-2. **ID replacement** — the team folder (`team_folder` in a `.mtl` or `face.xml`, the FMDL's
-   too or its three characters) becomes the team's ID in file contents (FMDL texture path tables via
-   the `fmdl` crate's texture-path rewriting, `ops::paths::rewrite_texture_paths`; `.mtl` texture
-   paths pre-Fox, the short `common/` form written long) and in file names.
+   the game's own file directly below the uniform Common folder that no texture place holds is
+   written in the long form `model/character/uniform/common/<name>`, a short
+   `common_folder/<name>` respelled to it.
+2. **ID replacement** — the team folder (`team_folder` in a `.mtl`, a `face.xml` and an FMDL's
+   Fox common directory, the only spelling the deep pass admits there:
+   `fmdl_common_path_invalid`, `mtl_common_path_invalid`) becomes the team's ID in file
+   contents (FMDL texture path tables via the `fmdl` crate's texture-path rewriting,
+   `ops::paths::rewrite_texture_paths`; `.mtl` texture paths pre-Fox, the short
+   `team_common_folder/` and `common_folder/` forms written long) and in file names.
 3. **Fox mode fixups** — FMDL files renamed by stripping prefixes to the allowed names (arbitrary
    names route to the `fcl_hair.fmdl` merge — Red's fallback generalized), and all models resolving
    to the same allowed name — including `.common` links to Common models, which Fox cannot load at
@@ -635,7 +638,7 @@ then processed as an independent parallel task (Blue: `coordinator._model_folder
    (`hair.png.common`), a stem set in a Common material file, or a Common-linked model's own
    textures (merged into the player's FMDL on Fox or not), such a texture is packed once in the
    team's Common output (the Common row of the Game paths table) and the model's path is rewritten
-   to point there, on both engines, as a member's `common/team_folder/` path points there with
+   to point there, on both engines, as a member's `team_common_folder/` path points there with
    the team ID substituted (Red's `common/XXX/` handling, whose `XXX` the Studio format spells
    `team_folder`, `messages.md` "User-supplied `face.xml`").
    Relocating them per player would defeat the reason a texture is in Common (one file for many
@@ -2049,10 +2052,9 @@ Resolved decisions:
   /hdg/'s models name for their per-kit sets; on PES 15-17
   `model/character/uniform/common/<team>/<sub>/`, a `.mtl`'s Common form, `messages.md`
   "User-supplied `face.xml`"). An FMDL's team folder is `team_folder` (any letter case), the
-  Studio spelling the Export upgrader writes, beside the three-character placeholder read
-  there before it (`000`, as the game's own FMDLs name the team): FMDL directories are the
-  model tools' output, never typed by a member, and the compiler points an FMDL texture by its
-  stem whatever the directory, so it refuses none of them (DECISIONS 2026-11-09). The export's `Common/` holds it when it holds the stem at that subdirectory
+  Studio spelling the Export upgrader writes; the deep pass has already refused any other
+  folder there but the game's own `sourceimages/` (`fmdl_common_path_invalid`, the
+  community's `000` included), so the rule never meets one. The export's `Common/` holds it when it holds the stem at that subdirectory
   among the files the target packs (on PES 18-21 a subfolder file only when a link names or
   brings it,
   "Common textures" above); an installed CPK holds it when its table of contents lists the

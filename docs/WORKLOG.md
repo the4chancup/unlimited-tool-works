@@ -7773,14 +7773,114 @@ briefs, review loops, gates and mutation runs as for any step.
       `model/character/common/` is refused as a `.mtl` path is; the upgrader respells it
       `team_folder`. `common/000/` is no game folder: the 4cc community made it. A member
       fixes a refused FMDL with `upgrade-models`, or later in Blender (the new plugin will
-      write `team_folder` on export); the refusal's text points at `upgrade-models`
+      write `team_folder` on export); the refusal's text points at `upgrade-models`. A
+      `dummy_` stem's directory is refused and respelled too (the maintainer, 2026-11-09):
+      one rule, no `000` left in a Studio FMDL. The game's own `common/sourceimages/` is
+      no team folder and stays admissible. Census (`.tmp/0_0_2/poc12/fmdl_dirs_real.txt`,
+      loose files outside output trees, texture pairing read heuristically from the string
+      table): 3,908 of 10,727 real FMDLs name a folder there, 3,744 of them `000` (690 beside
+      dummy names alone); others: `999` 98, `biz` 52, `vg` 43, `n` 16, `ck` 7, IDs, `0000`.
+      So the upgrader reads any folder after the Fox common directory but `sourceimages` as
+      the team's, as it reads a pre-Fox `.mtl`'s `common/<any>/`. The compiler's fixture
+      FMDLs holding `000` (`rg -l -a`, 20): `tracer/old/` and `tracer_refs/old/` are legacy
+      inputs and stay; `tracer/studio/` and `deep/boots_far.fmdl` are compiler inputs, to be
+      respelled (lead: fixtures); `tracer/upgraded/` and `tracer_refs/upgraded/` are the
+      upgrader's goldens, regenerated after (b). The compiler's own templates
+      (`templates.rs`, `referee_marker.rs`) are no export and keep theirs
     - the ID-only collision (`u0731p2.dds` beside `u0XXXp2.dds`): Red renames every
       three-character tag to the team's ID in `os.listdir` order, each rename replacing a
       file of its new name (`name_editing.py` `filenames_id_replace`), so a `u0XXX` copy
       (sorted after digits) ships whatever the team: the upgrader keeps it with no ID, loose
-      mode included. Open: two numbered copies with no `u0XXX` (asked 2026-11-09)
-    Order: spec, DECISIONS and scenarios first (lead), then (a) the compiler, (b) the
-    upgrader, each a brief; the PoC rebuilt after, the Friendlies upgraded again
+      mode included. Two or more numbered copies of one name (`u0731p2.dds` beside
+      `u0799p2.dds`) refuse the export in every mode, save or not: too broken to fix
+      automatically, and no export is known to hold one (the maintainer, 2026-11-09). The
+      collision rule then reads no team ID (the save's ID stays for the roster's player
+      IDs, `roster.rs`)
+    - the short form becomes one folder, `team_common_folder/…` (the maintainer, 2026-11-09,
+      replacing `common_folder/team_folder/…` before it lands; first `common_team_folder`, then
+      `team_common_folder`: "the team's common folder", the export's `Common/` the files come
+      from, which matters more to members than the CPK's layout). *Lead*, the rest: the
+      long form `model/character/uniform/common/team_folder/…` stays (the game's path with
+      the placeholder); a reference starting `common/` stays refused (the PoC builds wrote
+      it). A game file directly below the uniform Common folder keeps its short form
+      `common_folder/<name>` (the maintainer, after a census,
+      `.tmp/0_0_2/poc12/census_game_common.py`: 592 of 13,788 real `.mtl` and `face.xml`
+      files name 14,102 such game files, `specular.dds` and the `uni_pattern_*` maps first,
+      against 1,389 naming the team's Common); any folder after `common_folder/` is refused,
+      `common_folder/team_folder/` included (*lead*: one spelling for the team's Common).
+      Folded into slice 1 before its commit: its scenarios are edited in place, none
+      withdrawn, since none has landed
+    - the kit texture the modded exes substitute is written `team_kit` in the Studio format
+      (the maintainer, 2026-11-09: "more intuitive" than `dummy_kit`). *Lead*, the rest:
+      the family follows (`team_kit_back`, `_chest`, `_leg`, `_name`, `_nrm`, `_srm`, any
+      letter case), and the keeper's `dummy_gk_kit` becomes `team_gk_kit` (as `u0XXXgN`
+      became `gk_kitN`); the compiler writes `dummy_kit…`/`dummy_gk_kit…` in every output
+      (`.mtl`, FMDL texture table, pre-Fox conversion), since the substitution matches the
+      path the game loads: every modded exe on G: holds the two prefixes
+      (`.tmp/0_0_2/poc12/exe_dummy_strings.py`; PES 15-17
+      `common\character1\model\character\uniform\common\???\dummy_kit`, PES 19-21
+      `Asset\model\character\common\???\sourceimages\#windx11\dummy_kit`, `dummy_gk_kit`
+      beside each; PES 2018.exe shows neither, its patch region unread), and so does FoxDen's
+      committed `02_kitswappers.lua` (keeper spelled `dummy_kit_gk` there, which the exes do
+      not use; its uncommitted Studio-tailored rewrite has no dummy-kit swapper at all, while its
+      `tests/test_02_kitswappers_gate.lua` case 4 still expects one). That rewrite is ours,
+      work in progress (the maintainer, 2026-11-09: as the chairman he decides what goes into
+      the official scripts), so the slice also restores the swapper there (*lead*): the
+      exes' two prefixes, `dummy_kit` and `dummy_gk_kit`, replaced by the kit config's
+      `KitFile` with the rest of the name kept (`dummy_kit_back` → `u0TTTpK_back`), through
+      the `exists` gate, a keeper case and a suffix case added to the gate test; without it
+      a stock exe with FoxDen shows no kit on a `dummy_kit` model. Today `prefox_face.rs`'s reserved-stem test misses
+      `dummy_gk_kit` (it reads `dummy_kit` and `dummy_kit_*`), fixed in the slice; a `dummy_kit` or `dummy_gk_kit`
+      stem in an export is refused (the maintainer, 2026-11-09: the compiler accepting the
+      old names would let files spelled in them live on, unintuitive to new members, so
+      every old spelling is refused and only the upgrader reads it). *Lead*, by the same
+      rule: a legacy kit token (`u0` + three characters + `p` or `g` + a digit, any case,
+      as in `kit6_u0827p0.dds`) in a file name or a path the compiler reads is refused too,
+      naming the upgrader; today the compiler has no finding for it
+      (`spec/team_compiler/pipeline.md` "Kit-dependent assets": a file so named packs as an
+      ordinary texture, and the exes' `u0???p0` swap still serves it). The upgrader respells both (`upgrade`,
+      `upgrade-models`); the game's own `dummy_nrm`, `dummy_srm`, `dummy_bsm`
+      stay as they are (real game files). `kit_token` reads no token in `team_kit`
+      (`kit` takes a digit, `N` or `F`), and no file or code name spells it today. Second
+      slice of this step, briefed after the first lands, before the PoC rebuild, so the
+      PoC and the Friendlies run happen once (third, after the FMDL short forms below)
+    - an FMDL texture directory takes the two short forms too (the maintainer, 2026-11-09:
+      one spelling a member learns for both formats): `team_common_folder/<sub>` stands for
+      `/Assets/pes16/model/character/common/team_folder/<sub>sourceimages/`, and
+      `common_folder/` for the game's own `/Assets/pes16/model/character/common/sourceimages/`
+      (`sourceimages/` is the folder Fox keeps every Common texture in, so the short forms
+      leave it out). No tool reads a Studio FMDL before the compile but ours and the new
+      Blender plugin (the maintainer). *Lead*, the rest: the long forms stay admissible, as
+      in a `.mtl`; any other folder there stays `fmdl_common_path_invalid`; the upgrader writes
+      the short forms; the compiler writes the full path with the team's ID in every
+      output, as it does for `team_folder` today. Second slice of this step, before
+      `team_kit`, since both change the FMDL paths the two crates read and write
+    Order: spec, DECISIONS and scenarios first (lead), then one brief over both crates (the
+    compiler's refusal and the upgrader's respelling land together: the upgraded goldens hold
+    `000`, so neither half is green alone), the lead regenerating the goldens; the PoC rebuilt
+    after, the Friendlies upgraded again
+    - [x] spec: DECISIONS 2026-11-09 "no ambiguous Common spelling" (*lead*: `sourceimages`
+      admissible, every texture entry checked, a `Common/` FMDL's refusal the file alone,
+      any folder but `sourceimages` the team's in the upgrader, a lettered tag as `XXX`);
+      `spec/team_compiler/{messages,pipeline,README}.md`, `spec/export_upgrader.md` step 7,
+      the drafts' catalogs, `CHANGELOG.md`; TC-XML-21, 22, TC-MOD-103, EU-MDL-34 to 39,
+      EU-REF-14, EU-MF-10 (TC-XML-20, EU-MDL-29, 30, 32, 33, EU-REF-13, EU-MF-08 withdrawn);
+      seven compiler scenarios' GIVEN respelled. Staged, the sidekick's baseline
+    - [x] fixtures (lead, `cf80cf48`): the studio tracer's four FMDLs, `deep/boots_far.fmdl`
+      and the three archives built from them name `common/team_folder/` for `dummy_kit`
+      (green on the old compiler, which reads it)
+    - [x] the code (slice 1): SWE-2 sidekick, `.tmp/0_0_2/poc12/brief.md`, then
+      `rework1.md` (`team_common_folder/`); the lead's review added three tests, reran the
+      gates and two perturbations red; the Fox tracer golden's four player FMDLs regenerated
+      (`regen_goldens.py`; `tracer_refs/upgraded/` unchanged), parity and `upgraded_golden`
+      green; `just gates-changed cf80cf48` green (14 binaries, 2067 tests; acceptance 787
+      scenarios, 728 proven, nothing new unproven). Files: `team_compiler` `user_face_xml.rs`,
+      `deep/{model,materials,mod}.rs`, `paths.rs`, `processing/{model,prefox_face}.rs`,
+      `messages.rs`, `messages/catalog.rs`, `help/01_command_line.md`; `export_upgrader`
+      `face_xml.rs`, `materials/{mod,tests}.rs`, `kit_magic.rs`, `model_folders.rs`,
+      `model_names.rs`, `upgrade/mod.rs`, `messages.rs`; both crates' CLI tests
+    - [ ] slice 2: the FMDL short forms (bullet above): spec, DECISIONS, scenarios, brief
+    - [ ] slice 3: `team_kit` (bullet above), FoxDen's swapper with it
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
     withdrawn whole (today SE-STR 8, SE-TRN 3, `spec/save_editor.md`) moves to
     `docs/spec/withdrawn_ids.md`, its lines as written, reason and successor kept; (2) a run
@@ -8400,6 +8500,12 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open (2026-11-09) — `compile::tests::a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run`
+  depends on the machine's free memory: the run's budget cap comes from the physical memory
+  available, and with 232 MB free (a poc12 sidekick's run, 2026-11-09)
+  `keeps_archive` declines the archive and `source.content.is_some()` fails; it passed on a
+  rerun with 2.2 GB free. The test should pin the cap (the budget it plans with) rather than
+  read the host's; a flaky gate trains everyone to rerun until green.
 - open (2026-11-07) — The Team compiler's recovery manifest (`plans/team_compiler/pipeline.md`
   "Recovery manifest", the maintainer's request): early, since only DLCs compiled after it
   ships carry it. One slice in the writer (each export's manifest and TOML files, the round trip

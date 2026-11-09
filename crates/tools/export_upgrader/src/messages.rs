@@ -592,7 +592,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         "common_reference_kept",
         Severity::Warning,
         r#"An `.mtl` or `.fmdl` reference into the team's `Common/` whose file the input's `Common/` does not hold, or which no link can spell (the model's folder already holds a texture or link of that stem, or a `.mtl` in a subfolder names a Common subfolder)."#,
-        r#"It is kept as written, its Common written `common/team_folder/`, the team's Common in the new spelling. An installed CPK may still supply the file."#,
+        r#"It is kept as written, its Common written `team_common_folder/`, the team's Common in the new spelling. An installed CPK may still supply the file."#,
     ),
     (
         "model_far_dropped",

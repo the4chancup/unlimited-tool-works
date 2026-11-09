@@ -163,7 +163,7 @@ beside the link,
 else one in the player's or shared folder holding the link), and a `.fmdl` of the same name in
 `Common` is used instead when there is one. A
 converted model's `.mtl` path into the team's PES 2015 to 2017 Common folder
-(`model/character/uniform/common/team_folder/skin.dds`, or `common/team_folder/skin.dds`
+(`model/character/uniform/common/team_folder/skin.dds`, or `team_common_folder/skin.dds`
 written short) is pointed at a texture of that name in the
 model's own folders (a `skin.dds` of the player's), and otherwise at the team's Common output,
 whether `Common` holds that texture or not, and
@@ -287,8 +287,11 @@ face, listed in a `face.xml` that `compile` writes with each model's type read f
 A player folder may hold its own `face.xml` instead (directly in it, not in a subfolder), and both
 commands check its content. What is known not to work leaves the folder
 out: a file that does not parse, a root other than `<config>`, a `<model>` without `type` or
-`path`, a `./` or Common reference to a file the export does not hold, a Common path without
-its 3-character folder, on PES 2016 a model name not starting with `face_high_`, `hair_high_`
+`path`, a `./` or Common reference to a file the export does not hold, a Common path naming
+a folder other than `team_folder` or a folder after `common_folder/` (the game's own
+folder, where a reference names only a file directly below it) or spelled `common/` (the
+CPK's own root folder, which no reference names), on PES 2016 a model name not starting
+with `face_high_`, `hair_high_`
 or `oral_`, and a `<dif>` beside a `face_diff.xml` (not beside a `face_diff.bin`:
 the `<dif>` is for PES 2015 to 2017, the bin for PES 2018 to 2021). What the
 compiler cannot vouch for is kept and warned about: an unknown element, attribute or `type`, a
@@ -296,7 +299,7 @@ compiler cannot vouch for is kept and warned about: an unknown element, attribut
 `.model` of the folder the xml
 does not list is `xml_model_unlisted`, and it is not packed. A `level` other than 0 is noted. `compile` writes the xml back with its `./`
 files each packed under the name its reference gives, each Common model's path written with the team ID
-in place of its 3-character folder, the `face_neck`
+in place of `team_folder`, the `face_neck`
 stand-in appended when no entry has that type (`xml_face_neck_added`), and for PES 2015
 `uniform` written `uniform_sub` (`xml_uniform_pes15`). Only the models and `.mtl` files the
 xml names are packed, and its own `<dif>`, else the folder's face diff, is the face's. For
@@ -662,6 +665,11 @@ reports `fmdl_texture_not_found` as a warning, one line per missing texture nami
 and the texture, and keeps the part: a mesh naming it shows without it. When there is no PES
 folder or no `DpFileList.bin`, or the list does not name the CPK being compiled, the texture
 may still be in an installed CPK that could not be checked, so the line is the same warning.
+A texture path's directory below the game's common folder (`/Assets/pes16/model/character/common/`)
+names the team's Common as `team_folder`, or the game's own `sourceimages`, and nothing else:
+`000` (the placeholder the community's model templates carry), a team ID, `XXX` or a team's
+name there is refused as the error `fmdl_common_path_invalid`, which leaves the model's
+folder out, and `export-upgrader upgrade-models` respells an old model's folder.
 A texture whose name starts with `dummy_` is never looked for. The game puts its
 own in its place. `check` does not look for these textures, only `compile` does. A texture in
 the game's own kit texture folder (`/Assets/pes16/model/character/uniform/texture/`) is not
@@ -677,7 +685,7 @@ looks in those CPKs too.
 On PES 2015 to 2017, `check` and `compile` both look for the textures a `.mtl` names, and
 report their findings the same way. A `./` path must name a texture of the player's folder (his
 linked shared folders' textures count too), and a path into the team's Common folder
-(`common/team_folder/...` or `model/character/uniform/common/team_folder/...`) a texture of
+(`team_common_folder/...` or `model/character/uniform/common/team_folder/...`) a texture of
 `Common` or of a CPK listed before the
 CPK being compiled, as above. A missing texture that a mesh uses is the warning
 `mtl_texture_not_found`. The folder is still compiled, since the game shows some such faces as they were made, but look
