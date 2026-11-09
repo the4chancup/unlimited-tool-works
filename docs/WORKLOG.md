@@ -7613,7 +7613,9 @@ briefs, review loops, gates and mutation runs as for any step.
       DECISIONS 2026-11-09); /bag/ as poc6 ruled.
       The readme's step 2 now merges the save's teams first (`resources/bundle/README.txt`;
       its command as printed, a quoted path with a space, run from `cmd` on a fresh extract
-      added /END/ 835 and /wuwa/ 836). Open: the bundle's rebuild with it, the hand-over to
+      added /END/ 835 and /wuwa/ 836). Rebuilt with it 2026-11-09 (main merged, `48483ba9`;
+      archive SHA-256 `b1d8223c…`, its checksum file matching, the exe `v0.0.2-poc.1`; the
+      second build kept in `target/dist_prev_2ad1210a`). Open: the hand-over to
       VGL's organizer (the maintainer's); the Linux tarball now also carries the two `.bat`
       files (`expected_entries` has no platform gate), to settle before 0.0.2
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
