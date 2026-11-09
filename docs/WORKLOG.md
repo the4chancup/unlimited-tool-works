@@ -7468,7 +7468,14 @@ briefs, review loops, gates and mutation runs as for any step.
     placeholder team show on PES 2019 and the PoC does not wait on this step. Still open: the
     tester's own files and steps (QUESTIONS "The 0.0.2 Save editor report"); an import
     (Team TOML, legacy) carries the file's flags as written, so a hand-renamed
-    TOML with `edit_flags.player = false` stays PLACEHOLDER in game
+    TOML with `edit_flags.player = false` stays PLACEHOLDER in game. Not yet checked (the
+    maintainer, 2026-11-09): whether the `motion` flag gates motions as `player` gates the
+    name; the patch writes motions (`settings.toml` `appearance.motion`) and sets no flag
+    for them. In game next: a placeholder player whose patch changes a goal celebration and
+    the penalty-kick motion, motion flag clear against set, read in Edit mode's motion
+    screen; if gated, the patch sets the flag with a written motion, as for a name (the
+    look flags face/hair/physique/strip are off on every team and the 11-09 rehearsal's
+    looks showed, so they gate nothing the patch writes there)
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and
     8.36d, then a proof-of-concept exe for VGL's organizer that
     upgrades and compiles a couple of example teams on PES 2019. 8.36c3 (the `<id>.copy`
@@ -7618,7 +7625,7 @@ briefs, review loops, gates and mutation runs as for any step.
       second build kept in `target/dist_prev_2ad1210a`). Open: the hand-over to
       VGL's organizer (the maintainer's); the Linux tarball now also carries the two `.bat`
       files (`expected_entries` has no platform gate), to settle before 0.0.2
-  - [ ] 0.0.2-poc9 a legacy kit folder's file names lose their Studio tokens
+  - [x] 0.0.2-poc9 a legacy kit folder's file names lose their Studio tokens
     (`spec/export_upgrader.md` "What it does", the kit magic paragraph; DECISIONS
     2026-11-09, two entries; EU-MDL-28): GBPEN's `Common/u0XXXpK/kit1.dds` upgraded to
     `kitK/kit1.dds` read as kit-1 variants, so 45 FMDL references found nothing and 21
@@ -7630,13 +7637,17 @@ briefs, review loops, gates and mutation runs as for any step.
     gbpen upgraded and compiled again for PES 2019 from the sorted source with a HEAD
     build, the CPK holds all 28 per-kit textures under `common/798/kit1`…`kit4` and the
     `kitN` fallbacks, `file_not_used` and `kit_variant_missing` 0, one
-    `fmdl_texture_not_found` left (`timing.dds`, never shipped). Next: the PoC rebuilt
+    `fmdl_texture_not_found` left (`timing.dds`, never shipped). The PoC rebuilt with it
+    2026-11-09 (main merged, `aad5c957`; archive SHA-256 `af0cf4f1…`, its checksum file
+    matching, the exe `v0.0.2-poc.1`, the readme's teams-list step present; the third build
+    kept in `target/dist_prev_48483ba9`)
   - [ ] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
     withdrawn whole (today SE-STR 8, SE-TRN 3, `spec/save_editor.md`) moves to
-    `docs/spec/withdrawn_ids.md`, one line per area, its reason and successor kept; (2) a run
+    `docs/spec/withdrawn_ids.md`, its lines as written, reason and successor kept; (2) a run
     of consecutive withdrawn IDs in a live area becomes one range line in place
     (`TC-BIN-03 to 09  withdrawn: <reason>`; TC-BIN alone holds 24 of 53), numbering still
-    visible where the next scenario is written. `scripts/gates/acceptance.py` reads both
+    visible where the next scenario is written, each compacted line first copied whole into
+    `withdrawn_ids.md` (a compacted line counts as removed). `scripts/gates/acceptance.py` reads both
     (an ID in a range or in the file is defined and withdrawn: reuse fails as defined twice,
     a citation as withdrawn), with tests; `CONTRIBUTING.md`'s "withdrawn" sentence updated;
     count with `.tmp/withdrawn_areas.py`
