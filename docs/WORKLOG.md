@@ -7656,6 +7656,12 @@ briefs, review loops, gates and mutation runs as for any step.
     unit tests and the golden case (/egg/ left the list); they now read a simulated list,
     `tests/fixtures/teams_list.txt` (six teams), from the sandbox's data directory and
     `test_support::test_ctx`'s, and pass with the teamless list as with the real one
+    (`6268280c`). The PoC rebuilt with it 2026-11-09 (main merged, `7842756b`; archive
+    SHA-256 `1d39755d…`, its checksum file matching, the exe `v0.0.2-poc.1`, the readme
+    naming 781–832; the fourth build kept in `target/dist_prev_aad5c957`). Its exe's dry
+    run on the Friendlies saves: /END/, /wuwa/, /xivg/, /zzz/ overridden and 30 league teams
+    `teams_list_unresolved` (each on an ID the allocation gives another team), as expected
+    of a save numbered as VGL26
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
     withdrawn whole (today SE-STR 8, SE-TRN 3, `spec/save_editor.md`) moves to
     `docs/spec/withdrawn_ids.md`, its lines as written, reason and successor kept; (2) a run
