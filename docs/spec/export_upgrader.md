@@ -214,7 +214,10 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    3 gives `icon_<N>`, any other third part none, as Red read it (`bins_update.py` ignores
    what is no such number); an entry of one part or of more than three does not read. An entry whose colors do not read is reported
    (step 10) and keeps its slot, which gets no `colors.txt`, the later entries keeping theirs: Red dropped it and shifted
-   every later kit's colors one slot down, onto another kit's config. The Note's kit-entry order maps
+   every later kit's colors one slot down, onto another kit's config. A mistyped color
+   (`##8C96C5`) is not repaired: the ways a manager can mistype a line have no end, and a
+   Warning that let the rest upgrade would mostly go unread, so the refusal makes the manager
+   fix the Note (DECISIONS 2026-11-09). The Note's kit-entry order maps
    entries to slots (player entries → `p1`…, `gk:` entries → `g1`…), matching how Red numbered them
    in `UniColor.bin`. An entry whose slot has no config still becomes its kit folder, holding
    its `colors.txt` alone, which the compiler builds as a placeholder kit in a `Full` export

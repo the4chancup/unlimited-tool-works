@@ -7609,7 +7609,8 @@ briefs, review loops, gates and mutation runs as for any step.
       39 teams): 37 upgrade and compile clean for PES 2019. Found: a team the bundle's
       `teams_list.txt` lacks (/end/, /wuwa/, new in the save) fails `team_name_unknown`, and
       the readme never says to run `save-editor export-teams-list <save> --yes` first; /wuwa/'s
-      note colour typo `##8C96C5` refuses its whole upgrade (QUESTIONS); /bag/ as poc6 ruled.
+      note colour typo `##8C96C5` refuses its whole upgrade, which stays (the maintainer,
+      DECISIONS 2026-11-09); /bag/ as poc6 ruled.
       The readme's step 2 now merges the save's teams first (`resources/bundle/README.txt`;
       its command as printed, a quoted path with a space, run from `cmd` on a fresh extract
       added /END/ 835 and /wuwa/ 836). Open: the bundle's rebuild with it, the hand-over to

@@ -15832,3 +15832,13 @@ fixture's) otherwise reported success and showed PLACEHOLDER. The in-place write
 applied would only turn the `.bak` over, losing the previous backup, which the compile's
 save step already avoids.
 Plan: `spec/pes_savefile/operations.md` "Aesthetics patch (new)"; SE-PAT-12, SE-PAT-13.
+
+## 2026-11-09 — export_upgrader — a mistyped Note colour keeps refusing the export
+Decision (the maintainer): a Team Note colour the grammar does not read, such as /wuwa/'s
+VGL27 Friendlies `- 2nd player: ##8C96C5 - #000000`, stays `unmigrated_content`
+(`colors_unreadable`) and refuses the export; the upgrader neither repairs a doubled `#` nor
+skips the line with a Warning.
+Why: the ways a manager can mistype a Note have no end, so repairing one of them is a rule
+per typo; a Warning that let the rest upgrade would mostly go unread, and the team would
+compile with a kit's colours silently missing, where the refusal names the line to fix.
+Plan: `spec/export_upgrader.md` "What it does" (the Note's colour entries); EU-KIT-17.
