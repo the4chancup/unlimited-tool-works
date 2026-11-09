@@ -397,8 +397,8 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "mtl_common_path_invalid",
         CatalogSeverity::Error,
-        r#"In PES 2015 to 2017, a `.mtl` texture path below `model/character/uniform/common/` has a folder after `common/` that is not three characters long (the team's Common goes under its three-digit ID, so the path reaches nothing)."#,
-        r#"The `.mtl`'s folder is left out. For a `.mtl` in `Common/`, only the file is left out."#,
+        r#"A `.mtl` texture path below `model/character/uniform/common/` (or its short form `common/`) names a folder there other than `team_folder`, the folder that stands for the team's Common: a team ID, `XXX` or another team's name."#,
+        r#"The `.mtl`'s folder is left out. For a `.mtl` in `Common/`, only the file is left out. The team's Common is written `common/team_folder/`; an export upgraded before 0.0.2 is upgraded again from its original."#,
     ),
     (
         "xml_root_tag_invalid",
@@ -427,8 +427,8 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "xml_common_path_invalid",
         CatalogSeverity::Error,
-        r#"A Common `path` or `material` of a member's `face.xml` has no three-character folder after `common/`."#,
-        r#"The folder is left out."#,
+        r#"A `path` or `material` of a member's `face.xml` below `model/character/uniform/common/` (or its short form `common/`) names a folder there other than `team_folder`, the folder that stands for the team's Common: a team ID, `XXX` or another team's name."#,
+        r#"The folder is left out. The team's Common is written `common/team_folder/`; an export upgraded before 0.0.2 is upgraded again from its original."#,
     ),
     (
         "xml_oral_prefix_missing",

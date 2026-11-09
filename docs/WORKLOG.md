@@ -7690,6 +7690,27 @@ briefs, review loops, gates and mutation runs as for any step.
     reads the save's team by the list ID (`Roster::read`) and refuses an unlisted team
     (`team_name_unknown`); the compiler admits a three-character `common/` subfolder on pre-Fox
     (`mtl_common_path_invalid`, `xml_common_path_invalid`)
+    - [x] spec: DECISIONS 2026-11-09 "the Studio format names no team ID" (the lead's choices
+      marked: refusal on every target, FMDL directories tolerant, `g0` as `p0`, the collision
+      rule's ID from the save, loose mode none); `spec/team_compiler/messages.md`,
+      `pipeline.md`, `spec/model_format.md`, `spec/export_upgrader.md`,
+      `plans/export_upgrader.md` "GUI", the draft's catalog; TC-XML-18 to 20, TC-MOD-102,
+      EU-ROOT-08 to 10, EU-MDL-29 to 33, EU-MF-08 to 09, EU-REF-13. The upgrader spec's
+      withdrawals land with (b): its tests cite them until then
+    - [x] (a) the compiler: `user_face_xml::reference` reads `common/team_folder/` in either
+      prefix and letter case (`Common`), refuses any other folder (`CommonInvalid`, on every
+      target), a file directly below `common/` the game's own (`GameCommon`, written long in a
+      `.mtl`, `face.xml` and a converted FMDL); an unpointed `team_folder` `.mtl` path written
+      with the team's ID; FMDL directories read `team_folder` beside `000`; `refkit_body`
+      reads a member's `team_folder/refkit/` in any case (lead's fix, TC-REF-16 extended).
+      `src/{user_face_xml,deep/materials,deep/mod,processing/model,processing/prefox_face,
+      messages,messages/catalog}.rs`, `help/01_command_line.md`, tests (TC-XML-18 to 20,
+      TC-MOD-102; 25 inputs respelled). Open: `tests/cli/patch.rs:61`
+      (`a_patch_that_settles_to_nothing_…`, 8.36c) cites no scenario, which fails
+      `acceptance.py` since before this step
+    - [ ] (b) the upgrader, after (a)
+    - [ ] the PoC rebuilt, the Friendlies re-upgraded from their originals; then, by the
+      maintainer's order (11-09), the queued long jobs (mutation runs) rather than new slices
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
     withdrawn whole (today SE-STR 8, SE-TRN 3, `spec/save_editor.md`) moves to
     `docs/spec/withdrawn_ids.md`, its lines as written, reason and successor kept; (2) a run

@@ -236,9 +236,11 @@ pub(crate) enum Code {
     /// PES 2015 to 2017: a texture nobody supplies that only `.mtl` materials no mesh uses
     /// name; the game never loads it, so nothing is left out.
     MtlTextureUnusedMissing,
-    /// A `.mtl` sampler `path` below the uniform Common folder whose folder after `common/`
-    /// (the team's ID) is not three characters long; `xml_common_path_invalid`'s rule for a
-    /// `.mtl`, such a path reaching nothing in game. The folder is left out.
+    /// A `.mtl` sampler `path` below the uniform Common folder (`common/` its short form)
+    /// naming a folder there other than `team_folder`, the team's Common: a team ID, `XXX`
+    /// or another team's name; `xml_common_path_invalid`'s rule for a `.mtl`, on every
+    /// target since the spelling is the export's. The `.mtl`'s folder is left out (a
+    /// `Common/` `.mtl`'s, the file alone).
     MtlCommonPathInvalid,
     /// A member's own `face.xml` whose root element is not `<config>`; the folder is left out.
     XmlRootTagInvalid,
@@ -249,8 +251,10 @@ pub(crate) enum Code {
     /// A `path` or `material` of a member's own `face.xml` naming, by `./` or by the
     /// uniform Common folder, a file the export does not hold; the folder is left out.
     XmlModelNotFound,
-    /// A uniform Common `path` or `material` of a member's own `face.xml` whose folder after
-    /// `common/` (the team's ID) is not three characters long; the folder is left out.
+    /// A `path` or `material` of a member's own `face.xml` below the uniform Common folder
+    /// (`common/` its short form) naming a folder there other than `team_folder`, the
+    /// team's Common; a file directly below `common/` is the game's own
+    /// (`xml_path_unchecked`). The folder is left out.
     XmlCommonPathInvalid,
     /// PES 2016: a model of a member's own `face.xml` whose file name starts with none of
     /// `face_high_`, `hair_high_`, `oral_`, which that game needs to load it; the folder is

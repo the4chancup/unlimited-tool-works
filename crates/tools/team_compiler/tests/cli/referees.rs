@@ -497,8 +497,8 @@ fn on_pes_17_a_referee_s_face_xml_names_the_template_s_refkit_files_the_export_l
     );
     sandbox.write(&format!("{folder}/face_high.mtl"), &card_materials());
     sandbox.write(&format!("{folder}/skin.dds"), &small_dds());
-    let arm = "model/character/uniform/common/999/refkit/oral_arm_*.model";
-    let refkit_mtl = "model/character/uniform/common/999/refkit/refkit.mtl";
+    let arm = "model/character/uniform/common/team_folder/refkit/oral_arm_*.model";
+    let refkit_mtl = "common/team_folder/refkit/refkit.mtl";
     let xml = format!(
         "<config>\n   \
          <model level=\"0\" type=\"face_neck\" path=\"./oral_face_high_*.model\" material=\"./face_high.mtl\"/>\n   \
@@ -525,7 +525,11 @@ fn on_pes_17_a_referee_s_face_xml_names_the_template_s_refkit_files_the_export_l
         ordered_entries(&face[&format!("{face_folder}/face.xml")]),
         [
             entry("face_neck", "./oral_face_high_*.model", "./face_high.mtl"),
-            entry("parts", arm, refkit_mtl),
+            entry(
+                "parts",
+                "model/character/uniform/common/999/refkit/oral_arm_*.model",
+                "model/character/uniform/common/999/refkit/refkit.mtl"
+            ),
         ]
     );
     // The face packs nothing for the template's file: the refs CPK carries it.
@@ -696,8 +700,8 @@ fn on_pes_17_a_referee_s_own_face_xml_with_fpc_off_takes_the_refkit_body_it_does
     sandbox.write(&format!("{folder}/face_high.mtl"), &card_materials());
     sandbox.write(&format!("{folder}/skin.dds"), &small_dds());
     sandbox.write(&format!("{folder}/fpc_off"), b"");
-    let arm = "model/character/uniform/common/999/refkit/oral_arm_*.model";
-    let refkit_mtl = "model/character/uniform/common/999/refkit/refkit.mtl";
+    let arm = "model/character/uniform/common/team_folder/refkit/oral_arm_*.model";
+    let refkit_mtl = "common/team_folder/refkit/refkit.mtl";
     let xml = format!(
         "<config>\n   \
          <model level=\"0\" type=\"face_neck\" path=\"./oral_face_high_*.model\" material=\"./face_high.mtl\"/>\n   \
@@ -715,7 +719,11 @@ fn on_pes_17_a_referee_s_own_face_xml_with_fpc_off_takes_the_refkit_body_it_does
     // refkit's, listed once.
     let mut expected = vec![
         entry("face_neck", "./oral_face_high_*.model", "./face_high.mtl"),
-        entry("parts", arm, refkit_mtl),
+        entry(
+            "parts",
+            "model/character/uniform/common/999/refkit/oral_arm_*.model",
+            "model/character/uniform/common/999/refkit/refkit.mtl",
+        ),
     ];
     expected.extend(refkit_entries(&["arm"]));
     assert_eq!(ordered_entries(&face["face.xml"]), expected);
@@ -786,45 +794,55 @@ fn on_pes_17_a_referee_s_own_boots_or_gloves_leave_out_the_refkit_s() {
 // TC-REF-16
 #[test]
 fn on_pes_17_a_refkit_hand_a_referee_s_face_xml_lists_leaves_the_other_hand_appended() {
-    let sandbox = Sandbox::new("ref_refkit_hand_by_hand");
-    sandbox.write(&format!("{REFS}/players.txt"), b"01 Ref A\n");
-    let folder = format!("{REFS}/Players/Ref A");
-    // A `face.xml` names a packed name: the card head is written under it.
-    sandbox.write(
-        &format!("{folder}/oral_face_high_win32.model"),
-        &card_model(),
-    );
-    sandbox.write(&format!("{folder}/face_high.mtl"), &card_materials());
-    sandbox.write(&format!("{folder}/skin.dds"), &small_dds());
-    sandbox.write(&format!("{folder}/fpc_off"), b"");
-    let hand_l = "model/character/uniform/common/999/refkit/oral_hand_l_*.model";
-    let refkit_mtl = "model/character/uniform/common/999/refkit/refkit.mtl";
-    let xml = format!(
-        "<config>\n   \
-         <model level=\"0\" type=\"face_neck\" path=\"./oral_face_high_*.model\" material=\"./face_high.mtl\"/>\n   \
-         <model level=\"0\" type=\"gloveL\" path=\"{hand_l}\" material=\"{refkit_mtl}\"/>\n\
-         </config>\n"
-    );
-    sandbox.write(&format!("{folder}/face.xml"), xml.as_bytes());
+    // The refkit's folder in any letter case, as every Common path is compared.
+    for (sandbox_name, refkit) in [
+        ("ref_refkit_hand_by_hand", "refkit"),
+        ("ref_refkit_hand_by_hand_cased", "RefKit"),
+    ] {
+        let sandbox = Sandbox::new(sandbox_name);
+        sandbox.write(&format!("{REFS}/players.txt"), b"01 Ref A\n");
+        let folder = format!("{REFS}/Players/Ref A");
+        // A `face.xml` names a packed name: the card head is written under it.
+        sandbox.write(
+            &format!("{folder}/oral_face_high_win32.model"),
+            &card_model(),
+        );
+        sandbox.write(&format!("{folder}/face_high.mtl"), &card_materials());
+        sandbox.write(&format!("{folder}/skin.dds"), &small_dds());
+        sandbox.write(&format!("{folder}/fpc_off"), b"");
+        let hand_l =
+            format!("model/character/uniform/common/team_folder/{refkit}/oral_hand_l_*.model");
+        let refkit_mtl = "common/team_folder/refkit/refkit.mtl";
+        let xml = format!(
+            "<config>\n   \
+             <model level=\"0\" type=\"face_neck\" path=\"./oral_face_high_*.model\" material=\"./face_high.mtl\"/>\n   \
+             <model level=\"0\" type=\"gloveL\" path=\"{hand_l}\" material=\"{refkit_mtl}\"/>\n\
+             </config>\n"
+        );
+        sandbox.write(&format!("{folder}/face.xml"), xml.as_bytes());
 
-    let face = compile_ref_a_face_pes17(&sandbox);
+        let face = compile_ref_a_face_pes17(&sandbox);
 
-    // The refkit's hand he lists is no glove of his own: only that hand is not appended.
-    let mut expected = vec![(
-        "gloveL".to_owned(),
-        hand_l.to_owned(),
-        refkit_mtl.to_owned(),
-    )];
-    expected.extend(refkit_entries(&["hand_l"]));
-    assert_eq!(refkit_entries_of(&face["face.xml"]), expected);
+        // The refkit's hand he lists is no glove of his own: only that hand is not appended.
+        let mut expected = vec![(
+            "gloveL".to_owned(),
+            format!("model/character/uniform/common/999/{refkit}/oral_hand_l_*.model"),
+            "model/character/uniform/common/999/refkit/refkit.mtl".to_owned(),
+        )];
+        expected.extend(refkit_entries(&["hand_l"]));
+        assert_eq!(refkit_entries_of(&face["face.xml"]), expected, "{refkit}");
+    }
 }
 
 /// The (type, path, material) of the entries of the `face.xml` `bytes` naming a model of the
-/// referee template's body, in order.
+/// referee template's body, in order, its folder in any letter case.
 fn refkit_entries_of(bytes: &[u8]) -> Vec<(String, String, String)> {
     ordered_entries(bytes)
         .into_iter()
-        .filter(|(_, path, _)| path.starts_with("model/character/uniform/common/999/refkit/"))
+        .filter(|(_, path, _)| {
+            path.to_ascii_lowercase()
+                .starts_with("model/character/uniform/common/999/refkit/")
+        })
         .collect()
 }
 

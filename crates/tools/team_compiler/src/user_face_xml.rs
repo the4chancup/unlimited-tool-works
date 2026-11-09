@@ -85,34 +85,39 @@ pub(crate) enum Reference {
     /// in the folder, `./jessie/body/oral_x_*.model` names `jessie/body/oral_x_win32.model`).
     /// Holds the path, its directory as written.
     Local(String),
-    /// `model/character/uniform/common/<segment>/<name>`: a file directly in the export's
-    /// `Common/`, its `*` read as `win32`; `<segment>/<subfolder>/<name>`, a file of that
-    /// subfolder of `Common/`, which on PES 15-17 the team's Common output packs at its own
-    /// path. The segment stands for the team ID and must be three characters long
-    /// (`xml_common_path_invalid`).
+    /// `common/team_folder/<name>` or its long form
+    /// `model/character/uniform/common/team_folder/<name>` (`team_folder` in any letter
+    /// case): a file directly in the export's `Common/`, its `*` read as `win32`;
+    /// `team_folder/<subfolder>/<name>`, a file of that subfolder of `Common/`, which on
+    /// PES 15-17 the team's Common output packs at its own path. `team_folder` stands for
+    /// the team, written out as the team's ID.
     Common {
-        /// The folder segment after `common/`, as written.
-        segment: String,
         /// The file's path relative to `Common/` (its name for a direct file), the file name's
         /// `*` read as `win32`.
         file_name: String,
     },
+    /// A folder other than `team_folder` after `common/` or its long form (`common/797/`,
+    /// `common/XXX/`, `common/o/`): the Studio format names no team ID
+    /// (`xml_common_path_invalid` in a `face.xml`, `mtl_common_path_invalid` in a `.mtl`).
+    CommonInvalid,
+    /// A file directly below `common/` or its long form (`common/specular.dds`): the game's
+    /// own file, which a Common path into a folder never names. Holds the file's name;
+    /// written out, a short `common/<name>` becomes the long form, the only one the game
+    /// reads.
+    GameCommon(String),
     /// Any other form, which the compiler cannot resolve (`xml_path_unchecked`): a face Common
     /// path, a `./` path with an empty, `.` or `..` segment, a bare name. Holds the value as
     /// written.
     Unchecked(String),
 }
 
-/// The game folder a `Common` reference names its file in, before the team's segment and the
-/// file's path relative to `Common/`.
-const UNIFORM_COMMON: &str = "model/character/uniform/common/";
+/// The game folder a `Common` or `GameCommon` reference names its file in, before
+/// `team_folder` and the file's path relative to `Common/` for a `Common` one.
+pub(crate) const UNIFORM_COMMON: &str = "model/character/uniform/common/";
 
-/// Whether `segment`, the folder a uniform Common reference names after `common/` (the team's
-/// ID, which is written under three digits), is not three characters long
-/// (`xml_common_path_invalid` in a `face.xml`, `mtl_common_path_invalid` in a `.mtl`).
-pub(crate) fn common_segment_invalid(segment: &str) -> bool {
-    segment.chars().count() != 3
-}
+/// The folder of the uniform Common folder that stands for the team's own, in a member's
+/// `face.xml` or `.mtl`: `common/team_folder/`, the game's team ID written without one.
+const TEAM_FOLDER: &str = "team_folder";
 
 /// What the `path` or `material` value `value` names (`Reference`).
 pub(crate) fn reference(value: &str) -> Reference {
@@ -125,22 +130,29 @@ pub(crate) fn reference(value: &str) -> Reference {
         let (directory, name) = split(path);
         return Reference::Local(format!("{directory}{}", name.replace('*', "win32")));
     }
-    if let Some(rest) = value.strip_prefix(UNIFORM_COMMON)
-        && let Some((segment, path)) = rest.split_once('/')
-        && !path.is_empty()
-        && !path.ends_with('/')
-    {
-        // Only the file name's `*` is the game's placeholder; a subfolder is named as written.
-        let file_name = match path.rsplit_once('/') {
-            Some((directory, name)) => format!("{directory}/{}", name.replace('*', "win32")),
-            None => path.replace('*', "win32"),
-        };
-        return Reference::Common {
-            segment: segment.to_owned(),
-            file_name,
-        };
+    let rest = [UNIFORM_COMMON, "common/"]
+        .iter()
+        .find_map(|prefix| value.strip_prefix(prefix));
+    let Some(rest) = rest else {
+        return Reference::Unchecked(value.to_owned());
+    };
+    match rest.split_once('/') {
+        Some((folder, path)) if folder.eq_ignore_ascii_case(TEAM_FOLDER) => {
+            if path.is_empty() || path.ends_with('/') {
+                return Reference::Unchecked(value.to_owned());
+            }
+            // Only the file name's `*` is the game's placeholder; a subfolder is named as
+            // written.
+            let file_name = match path.rsplit_once('/') {
+                Some((directory, name)) => format!("{directory}/{}", name.replace('*', "win32")),
+                None => path.replace('*', "win32"),
+            };
+            Reference::Common { file_name }
+        }
+        Some(_) => Reference::CommonInvalid,
+        None if rest.is_empty() => Reference::Unchecked(value.to_owned()),
+        None => Reference::GameCommon(rest.to_owned()),
     }
-    Reference::Unchecked(value.to_owned())
 }
 
 /// Why a `face.xml` cannot be read.
@@ -318,7 +330,7 @@ pub(crate) fn resolve<'a>(
         Reference::Local(path) => {
             named(&files.own_local(kind), path).or_else(|| named(&files.linked_local(kind), path))
         }
-        Reference::Common { file_name, .. } => {
+        Reference::Common { file_name } => {
             // Each by its path relative to `Common/`, which for a direct file is its name.
             let common: Vec<(String, &FileDescriptor)> = files
                 .common
@@ -331,7 +343,7 @@ pub(crate) fn resolve<'a>(
                 .collect();
             named(&common, file_name)
         }
-        Reference::Unchecked(_) => None,
+        Reference::CommonInvalid | Reference::GameCommon(_) | Reference::Unchecked(_) => None,
     }
 }
 
@@ -420,7 +432,7 @@ const PES16_PREFIXES: [&str; 3] = ["face_high_", "hair_high_", "oral_"];
 ///
 /// - Errors, dropping the folder: a `<model>` without `type` (`xml_model_type_missing`) or
 ///   without `path` (`xml_model_path_missing`, and no other finding on its path); a Common
-///   reference whose segment is not three characters (`xml_common_path_invalid`); a `./` or
+///   reference naming a folder other than `team_folder` (`xml_common_path_invalid`); a `./` or
 ///   Common reference naming no file `resolve` finds (`xml_model_not_found`); on PES 2016 a
 ///   model file name starting with none of `face_high_`, `hair_high_`, `oral_`, in any case
 ///   (`xml_oral_prefix_missing`); a `<dif>` beside a `face_diff.xml` (`xml_dif_conflict`; a
@@ -570,8 +582,10 @@ fn model_findings(
 }
 
 /// The finding on the `attribute` (`path` or `material`) of value `value`, naming a file of
-/// `kind`: `xml_path_unchecked` for a form the compiler cannot resolve,
-/// `xml_common_path_invalid` for a Common reference whose segment is not three characters,
+/// `kind`: `xml_path_unchecked` for a form the compiler cannot resolve (a file directly
+/// below `common/` included),
+/// `xml_common_path_invalid` for a Common reference naming a folder other than
+/// `team_folder`,
 /// `xml_model_not_found` when the file it names is not among `files`: neither one `resolve`
 /// finds nor, for a Common reference, one of `files.template_common` of that kind.
 fn reference_finding(
@@ -586,8 +600,10 @@ fn reference_finding(
     ];
     let reference = reference(value);
     match &reference {
-        Reference::Unchecked(_) => return Some(kept(Code::XmlPathUnchecked, context)),
-        Reference::Common { segment, .. } if common_segment_invalid(segment) => {
+        Reference::GameCommon(_) | Reference::Unchecked(_) => {
+            return Some(kept(Code::XmlPathUnchecked, context));
+        }
+        Reference::CommonInvalid => {
             return Some(error(Code::XmlCommonPathInvalid, context));
         }
         Reference::Local(_) | Reference::Common { .. } => {}
@@ -599,11 +615,14 @@ fn reference_finding(
     // and the face packs nothing for it, naming it in the Common output where the refs CPK
     // holds it unless the export's file of that path replaced it.
     let in_template = match &reference {
-        Reference::Common { file_name, .. } => {
+        Reference::Common { file_name } => {
             classify(file_name) == kind
                 && files.template_common.contains(&vtree::fold_name(file_name))
         }
-        Reference::Local(_) | Reference::Unchecked(_) => false,
+        Reference::Local(_)
+        | Reference::CommonInvalid
+        | Reference::GameCommon(_)
+        | Reference::Unchecked(_) => false,
     };
     (!in_template).then(|| error(Code::XmlModelNotFound, context))
 }
@@ -852,28 +871,58 @@ mod tests {
             reference("./face_high_*.model"),
             Reference::Local("face_high_win32.model".to_owned())
         );
-        assert_eq!(
-            reference("model/character/uniform/common/XXX/legs_*.model"),
-            Reference::Common {
-                segment: "XXX".to_owned(),
-                file_name: "legs_win32.model".to_owned(),
-            }
-        );
+        for value in [
+            "common/team_folder/legs_*.model",
+            "model/character/uniform/common/team_folder/legs_*.model",
+            "model/character/uniform/common/Team_Folder/legs_*.model",
+        ] {
+            assert_eq!(
+                reference(value),
+                Reference::Common {
+                    file_name: "legs_win32.model".to_owned(),
+                },
+                "{value}"
+            );
+        }
         // A subfolder of `Common/` is named as written, the file name's `*` read as `win32`.
         assert_eq!(
-            reference("model/character/uniform/common/XXX/a/b.model"),
+            reference("model/character/uniform/common/team_folder/a/b.model"),
             Reference::Common {
-                segment: "XXX".to_owned(),
                 file_name: "a/b.model".to_owned(),
             }
         );
         assert_eq!(
-            reference("model/character/uniform/common/XXX/a/b_*.model"),
+            reference("common/team_folder/a/b_*.model"),
             Reference::Common {
-                segment: "XXX".to_owned(),
                 file_name: "a/b_win32.model".to_owned(),
             }
         );
+        // Any other folder after `common/` is refused: a team ID, `XXX` or another name,
+        // however long.
+        for invalid in [
+            "model/character/uniform/common/797/x.dds",
+            "model/character/uniform/common/XXX/a/b.model",
+            "model/character/uniform/common/XX/legs.model",
+            "common/797/x.dds",
+            "common/XXX/a/",
+            "common/XXX/",
+            "common/o/env.dds",
+            "common/refs/refkit/x.dds",
+        ] {
+            assert_eq!(reference(invalid), Reference::CommonInvalid, "{invalid}");
+        }
+        // A file directly below `common/` is the game's own, in either spelling.
+        for (value, name) in [
+            ("common/specular.dds", "specular.dds"),
+            ("model/character/uniform/common/legs.model", "legs.model"),
+            ("common/team_folder", "team_folder"),
+        ] {
+            assert_eq!(
+                reference(value),
+                Reference::GameCommon(name.to_owned()),
+                "{value}"
+            );
+        }
         // A `./` path into a subfolder names the file at that path, relative to the xml's
         // folder: only its file name's `*` is read as `win32`.
         assert_eq!(
@@ -893,9 +942,10 @@ mod tests {
             "./../b.model",
             "./a/../b.model",
             "x.model",
-            "model/character/uniform/common/legs.model",
-            "model/character/uniform/common/XXX/a/",
-            "model/character/uniform/common/XXX/",
+            "common/",
+            "common/team_folder/",
+            "common/team_folder/a/",
+            "model/character/uniform/common/team_folder/",
         ] {
             assert_eq!(
                 reference(unchecked),
@@ -964,13 +1014,13 @@ mod tests {
         assert_eq!(found("./body.mtl", FileKind::Mtl), path("Common/body.mtl"));
         assert_eq!(found("./body.mtl", model), None);
         assert_eq!(
-            found("model/character/uniform/common/XXX/legs.model", model),
+            found("common/team_folder/legs.model", model),
             path("Common/legs.model")
         );
         assert_eq!(found("model/character/face/common/legs.model", model), None);
         // A Common file of another kind is not the one named.
         assert_eq!(
-            found("model/character/uniform/common/XXX/body.mtl", model),
+            found("model/character/uniform/common/team_folder/body.mtl", model),
             None
         );
     }
@@ -1131,31 +1181,27 @@ mod tests {
         };
         assert_eq!(
             found(
-                "model/character/uniform/common/XXX/refkit/oral_thigh_*.model",
+                "model/character/uniform/common/team_folder/refkit/oral_thigh_*.model",
                 model
             )
             .as_deref(),
             Some("Common/refkit/Oral_Thigh_win32.model")
         );
         assert_eq!(
-            found(
-                "model/character/uniform/common/XXX/REFKIT/refkit.mtl",
-                FileKind::Mtl
-            )
-            .as_deref(),
+            found("common/team_folder/REFKIT/refkit.mtl", FileKind::Mtl).as_deref(),
             Some("Common/refkit/refkit.mtl")
         );
         // A subfolder's file is no direct one, and a direct file is in no subfolder.
         assert_eq!(
             found(
-                "model/character/uniform/common/XXX/oral_thigh_win32.model",
+                "model/character/uniform/common/team_folder/oral_thigh_win32.model",
                 model
             ),
             None
         );
         assert_eq!(
             found(
-                "model/character/uniform/common/XXX/refkit/legs.model",
+                "model/character/uniform/common/team_folder/refkit/legs.model",
                 model
             ),
             None
@@ -1176,7 +1222,7 @@ mod tests {
                 folder: &folder,
             };
             let text = format!(
-                r#"<config><model level="0" type="parts" path="{path}" material="model/character/uniform/common/999/refkit/refkit.mtl"/></config>"#
+                r#"<config><model level="0" type="parts" path="{path}" material="model/character/uniform/common/team_folder/refkit/refkit.mtl"/></config>"#
             );
             lines(check(
                 &parse(text.as_bytes()).unwrap(),
@@ -1185,15 +1231,15 @@ mod tests {
                 PesVersion::Pes17,
             ))
         };
-        let arm = "model/character/uniform/common/999/refkit/oral_arm_*.model";
+        let arm = "model/character/uniform/common/team_folder/refkit/oral_arm_*.model";
         assert_eq!(checked_with(&template_common, arm), Vec::<String>::new());
         // Compared case-folded, as the export's own files are.
-        let arm_upper = "model/character/uniform/common/999/REFKIT/Oral_Arm_*.model";
+        let arm_upper = "model/character/uniform/common/Team_Folder/REFKIT/Oral_Arm_*.model";
         assert_eq!(
             checked_with(&template_common, arm_upper),
             Vec::<String>::new()
         );
-        let nothing = "model/character/uniform/common/999/refkit/oral_nothing_*.model";
+        let nothing = "common/team_folder/refkit/oral_nothing_*.model";
         assert_eq!(
             checked_with(&template_common, nothing),
             [format!(
@@ -1201,7 +1247,7 @@ mod tests {
             )]
         );
         // A file of the tree is named by its own kind only.
-        let mtl_as_model = "model/character/uniform/common/999/refkit/refkit.mtl";
+        let mtl_as_model = "model/character/uniform/common/team_folder/refkit/refkit.mtl";
         assert_eq!(
             checked_with(&template_common, mtl_as_model),
             [format!(
@@ -1209,7 +1255,7 @@ mod tests {
             )]
         );
         // Without the tree, a team export's, neither file is there.
-        let material = "model/character/uniform/common/999/refkit/refkit.mtl";
+        let material = "model/character/uniform/common/team_folder/refkit/refkit.mtl";
         assert_eq!(
             checked_with(&[], arm),
             [
@@ -1248,11 +1294,11 @@ mod tests {
                 ],
             ),
             (
-                r#"<model type="parts" path="./hat.model" material="model/character/uniform/common/XXX/hat.mtl"/>"#,
+                r#"<model type="parts" path="./hat.model" material="model/character/uniform/common/team_folder/hat.mtl"/>"#,
                 &[],
                 &[
                     "xml_model_not_found [DropFolder] (attribute=path, value=./hat.model)",
-                    "xml_model_not_found [DropFolder] (attribute=material, value=model/character/uniform/common/XXX/hat.mtl)",
+                    "xml_model_not_found [DropFolder] (attribute=material, value=model/character/uniform/common/team_folder/hat.mtl)",
                 ],
             ),
         ];
@@ -1265,7 +1311,7 @@ mod tests {
     fn a_common_or_linked_face_reference_that_exists_and_a_missing_material_are_no_finding() {
         assert_eq!(
             with_face(
-                r#"<model type="parts" path="model/character/uniform/common/XXX/legs.model" material="model/character/uniform/common/XXX/body.mtl"/><model type="parts" path="./hair_high.model"/>"#,
+                r#"<model type="parts" path="model/character/uniform/common/team_folder/legs.model" material="model/character/uniform/common/team_folder/body.mtl"/><model type="parts" path="./hair_high.model"/>"#,
                 &[]
             ),
             Vec::<String>::new()
@@ -1278,7 +1324,7 @@ mod tests {
             <model type="face_neck" path="./Face_High_x.model"/>
             <model type="parts" path="./oral_hat.model"/>
             <model type="uniform" path="./body_uniform.model"/>
-            <model type="parts" path="model/character/uniform/common/XXX/legs.model"/>
+            <model type="parts" path="model/character/uniform/common/team_folder/legs.model"/>
             <model type="parts" path="model/character/face/common/hat.model"/>
         </config>"#;
         let own = ["Face_High_x.model", "oral_hat.model", "body_uniform.model"];
@@ -1286,7 +1332,7 @@ mod tests {
             checked(text, &own, PesVersion::Pes16),
             [
                 "xml_oral_prefix_missing [DropFolder] (path=./body_uniform.model)",
-                "xml_oral_prefix_missing [DropFolder] (path=model/character/uniform/common/XXX/legs.model)",
+                "xml_oral_prefix_missing [DropFolder] (path=model/character/uniform/common/team_folder/legs.model)",
                 "xml_oral_prefix_missing [DropFolder] (path=model/character/face/common/hat.model)",
                 "xml_path_unchecked [Keep] (attribute=path, value=model/character/face/common/hat.model)",
             ]

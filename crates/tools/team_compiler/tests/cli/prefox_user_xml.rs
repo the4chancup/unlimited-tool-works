@@ -196,7 +196,7 @@ fn on_pes_17_a_face_diff_bin_the_xml_s_dif_replaces_is_not_checked() {
 fn a_member_s_xml_pairing_a_common_model_with_a_mtl_lacking_its_materials_drops_the_folder() {
     let sandbox = Sandbox::new("user_xml_common_undefined");
     let export = "co Midcup Xml";
-    let legs = r#"type="parts" path="model/character/uniform/common/714/legs.model" material="./legs.mtl""#;
+    let legs = r#"type="parts" path="common/team_folder/legs.model" material="./legs.mtl""#;
     write_folder(
         &sandbox,
         export,
@@ -381,7 +381,7 @@ fn a_member_s_xml_is_written_back_with_its_own_names_and_the_common_model_s_pack
     let xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<config>\n\
         \t<model level=\"0\" type=\"face_neck\" path=\"./face_high.model\" material=\"./face_high.mtl\"/>\n\
         \t<model level=\"1\" type=\"cape\" glow=\"1\" path=\"./hat_parts.model\" material=\"./hat_parts.mtl\"/>\n\
-        \t<model level=\"0\" type=\"parts\" path=\"model/character/uniform/common/XXX/legs.model\" material=\"model/character/uniform/common/XXX/legs.mtl\"/>\n\
+        \t<model level=\"0\" type=\"parts\" path=\"common/team_folder/legs.model\" material=\"common/team_folder/legs.mtl\"/>\n\
         </config>\n";
     write_face_and_hat(&sandbox, export, Some(xml));
     let common = format!("exports/{export}/Common");
@@ -443,7 +443,7 @@ fn a_member_s_xml_is_written_back_with_its_own_names_and_the_common_model_s_pack
 fn a_member_s_xml_names_a_common_subfolder_s_files_which_pack_at_their_own_path() {
     let sandbox = Sandbox::new("user_xml_common_subfolder");
     let export = "co Midcup Xml";
-    let refkit = "model/character/uniform/common/XXX/refkit/";
+    let refkit = "model/character/uniform/common/team_folder/refkit/";
     let thigh =
         format!(r#"type="parts" path="{refkit}oral_thigh_*.model" material="{refkit}refkit.mtl""#);
     write_folder(
@@ -1452,6 +1452,197 @@ fn a_shared_xml_s_kit_reference_is_completed_from_the_player_s_kitf_files() {
             ("parts", "./pants_kitN.model", "./pants_kitN.mtl"),
         ])
     );
+}
+
+// TC-XML-18
+#[test]
+fn the_team_s_common_is_written_team_folder_in_either_prefix_and_any_letter_case() {
+    let sandbox = Sandbox::new("user_xml_team_folder");
+    let export = "co Midcup Xml";
+    // Slot 05's xml names `Common/legs.model` by the short form and, in any letter case, by
+    // the long one: two entries for one file, which packs once.
+    write_folder(
+        &sandbox,
+        export,
+        "05 - A",
+        "face_high",
+        &face_xml(&[
+            FACE_HIGH,
+            r#"type="parts" path="common/team_folder/legs.model""#,
+            r#"type="parts" path="model/character/uniform/common/Team_Folder/legs.model""#,
+        ]),
+    );
+    // Slot 06's `face_high.mtl` names `hair`, `jessie/skin` and `fur` in the team's Common:
+    // the first two `Common/` holds, `fur` nothing does.
+    let player = format!("exports/{export}/Players/06 - B");
+    sandbox.write(&format!("{player}/face_high.model"), &card_model());
+    let mtl = String::from_utf8(pre_fox_fixture("cardhead_materials.mtl"))
+        .unwrap()
+        .replace("./texture.dds", "common/team_folder/hair.dds")
+        .replacen(
+            "    <state",
+            "    <sampler name=\"NormalMap\" path=\"common/team_folder/jessie/skin.dds\" />\n    \
+             <sampler name=\"SpecularMap\" path=\"common/team_folder/fur.dds\" />\n    <state",
+            1,
+        );
+    sandbox.write(&format!("{player}/face_high.mtl"), mtl.as_bytes());
+    let common = format!("exports/{export}/Common");
+    sandbox.write(&format!("{common}/legs.model"), &card_model());
+    sandbox.write(&format!("{common}/hair.dds"), &small_dds());
+    sandbox.write(&format!("{common}/jessie/skin.dds"), &small_dds());
+
+    let entries = compile_pes17(
+        &sandbox,
+        export,
+        &[
+            "Warning mtl_texture_not_found [Keep] at Players/06 - B (file=face_high.mtl, texture=common/team_folder/fur.dds, materials=card)",
+            IDENTIFIED,
+            "Info team_colors_missing [Keep] ()",
+        ],
+    );
+
+    let face = slot_face(&entries, 5);
+    // Both entries name the packed model alike, `team_folder` written as the team's ID.
+    let expected = format!(
+        "{HEAD}   \
+         <model level=\"0\" type=\"face_neck\" path=\"./face_high.model\" material=\"./face_high.mtl\" />\r\n   \
+         <model level=\"0\" type=\"parts\" path=\"model/character/uniform/common/714/oral_legs_*.model\" />\r\n   \
+         <model level=\"0\" type=\"parts\" path=\"model/character/uniform/common/714/oral_legs_*.model\" />\r\n\
+         {}",
+        dif_tail(&template("face_diff.bin"))
+    );
+    assert_eq!(String::from_utf8_lossy(&face["face.xml"]), expected);
+    let face = slot_face(&entries, 6);
+    assert_eq!(
+        sampler_paths(&face["face_high.mtl"]),
+        [
+            "model/character/uniform/common/714/hair.dds",
+            "model/character/uniform/common/714/jessie/skin.dds",
+            "model/character/uniform/common/714/fur.dds",
+        ]
+    );
+    // `fur`, pointed at the team's Common output though nothing packs it.
+    let common = common_output(&entries);
+    let names: Vec<&str> = common.keys().copied().collect();
+    assert_eq!(names, ["hair.dds", "oral_legs_win32.model"]);
+    assert!(
+        entries
+            .contains_key("common/character1/model/character/uniform/common/714/jessie/skin.dds")
+    );
+}
+
+// TC-XML-19
+#[test]
+fn a_folder_other_than_team_folder_after_common_is_refused_on_every_target() {
+    let sandbox = Sandbox::new("user_xml_common_invalid");
+    let export = "co Midcup Xml";
+    // Slot 05's xml names a model by its legacy three-character folder.
+    write_folder(
+        &sandbox,
+        export,
+        "05 - A",
+        "face_high",
+        &face_xml(&[
+            FACE_HIGH,
+            r#"type="parts" path="model/character/uniform/common/XXX/legs.model""#,
+        ]),
+    );
+    // Slot 06's `.mtl` names a texture by a team ID, slot 07's by another name: the same
+    // rule a `face.xml` entry is judged by.
+    for (slot, path) in [
+        ("06 - B", "common/797/hair.dds"),
+        ("07 - C", "model/character/uniform/common/o/env.dds"),
+    ] {
+        let player = format!("exports/{export}/Players/{slot}");
+        sandbox.write(&format!("{player}/face_high.model"), &card_model());
+        let mtl = String::from_utf8(pre_fox_fixture("cardhead_materials.mtl"))
+            .unwrap()
+            .replace("./texture.dds", path);
+        sandbox.write(&format!("{player}/face_high.mtl"), mtl.as_bytes());
+    }
+    let common = format!("exports/{export}/Common");
+    sandbox.write(&format!("{common}/legs.model"), &card_model());
+    sandbox.write(&format!("{common}/hair.dds"), &small_dds());
+    sandbox.write(&format!("{common}/env.dds"), &small_dds());
+
+    let mtls = [
+        "Error mtl_common_path_invalid [DropFolder] at Players/06 - B (file=face_high.mtl, attribute=path, value=common/797/hair.dds)",
+        "Error mtl_common_path_invalid [DropFolder] at Players/07 - C (file=face_high.mtl, attribute=path, value=model/character/uniform/common/o/env.dds)",
+    ];
+    let expected_17: Vec<&str> = [
+        "Error xml_common_path_invalid [DropFolder] at Players/05 - A (attribute=path, value=model/character/uniform/common/XXX/legs.model)",
+    ]
+    .into_iter()
+    .chain(mtls)
+    .chain([IDENTIFIED])
+    .collect();
+    // A `face.xml` is ignored on Fox (`xml_ignored_fox`); the `.mtl` rule applies on
+    // every target all the same.
+    let expected_21: Vec<&str> = mtls
+        .into_iter()
+        .chain([IDENTIFIED])
+        .chain(["Info xml_ignored_fox [Keep] at Players/05 - A (file=face.xml)"])
+        .collect();
+    for (version, settings, expected) in [
+        (17, pes17(&sandbox), expected_17),
+        (21, pes21_settings(&sandbox), expected_21),
+    ] {
+        let run = sandbox.run(&settings, &["check"]);
+
+        let lines = run.messages();
+        assert_eq!(
+            findings_of(&lines, export),
+            expected,
+            "PES {version}: {lines:#?}"
+        );
+        assert_eq!(run.exit_code(), 1, "PES {version}");
+    }
+}
+
+// TC-XML-20
+#[test]
+fn a_file_directly_below_common_is_the_game_s_own_written_in_the_long_form() {
+    let sandbox = Sandbox::new("user_xml_game_common");
+    let export = "co Midcup Xml";
+    // `face_high.mtl` names the game's own `uni_pattern_nrm00.dds`, and the xml a
+    // `uniform_sub.model` below `common/`, which is no entry of the export's `Common/`.
+    write_folder(
+        &sandbox,
+        export,
+        "05 - A",
+        "face_high",
+        &face_xml(&[FACE_HIGH, r#"type="parts" path="common/uniform_sub.model""#]),
+    );
+    let player = format!("exports/{export}/Players/05 - A");
+    let mtl = String::from_utf8(pre_fox_fixture("cardhead_materials.mtl"))
+        .unwrap()
+        .replace("./texture.dds", "common/uni_pattern_nrm00.dds");
+    sandbox.write(&format!("{player}/face_high.mtl"), mtl.as_bytes());
+
+    let entries = compile_pes17(
+        &sandbox,
+        export,
+        &[
+            "Warning xml_path_unchecked [Keep] at Players/05 - A (attribute=path, value=common/uniform_sub.model)",
+            IDENTIFIED,
+            "Info team_colors_missing [Keep] ()",
+        ],
+    );
+
+    let face = slot_05_face(&entries);
+    assert_eq!(
+        sampler_paths(&face["face_high.mtl"]),
+        ["model/character/uniform/common/uni_pattern_nrm00.dds"]
+    );
+    // Written with the game's own long form, the only one the game reads.
+    let expected = format!(
+        "{HEAD}   \
+         <model level=\"0\" type=\"face_neck\" path=\"./face_high.model\" material=\"./face_high.mtl\" />\r\n   \
+         <model level=\"0\" type=\"parts\" path=\"model/character/uniform/common/uniform_sub.model\" />\r\n\
+         {}",
+        dif_tail(&template("face_diff.bin"))
+    );
+    assert_eq!(String::from_utf8_lossy(&face["face.xml"]), expected);
 }
 
 /// The `<dif>` text of the `face.xml` `bytes` decoded, its line ends and indent left out.

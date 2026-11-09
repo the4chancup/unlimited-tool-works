@@ -163,7 +163,8 @@ beside the link,
 else one in the player's or shared folder holding the link), and a `.fmdl` of the same name in
 `Common` is used instead when there is one. A
 converted model's `.mtl` path into the team's PES 2015 to 2017 Common folder
-(`model/character/uniform/common/XXX/skin.dds`) is pointed at a texture of that name in the
+(`model/character/uniform/common/team_folder/skin.dds`, or `common/team_folder/skin.dds`
+written short) is pointed at a texture of that name in the
 model's own folders (a `skin.dds` of the player's), and otherwise at the team's Common output,
 whether `Common` holds that texture or not, and
 `fmdl_texture_not_found` reports one nobody supplies (below). The textures in `Common`
@@ -676,7 +677,8 @@ looks in those CPKs too.
 On PES 2015 to 2017, `check` and `compile` both look for the textures a `.mtl` names, and
 report their findings the same way. A `./` path must name a texture of the player's folder (his
 linked shared folders' textures count too), and a path into the team's Common folder
-(`model/character/uniform/common/XXX/...`) a texture of `Common` or of a CPK listed before the
+(`common/team_folder/...` or `model/character/uniform/common/team_folder/...`) a texture of
+`Common` or of a CPK listed before the
 CPK being compiled, as above. A missing texture that a mesh uses is the warning
 `mtl_texture_not_found`. The folder is still compiled, since the game shows some such faces as they were made, but look
 at the player in the game. One that only a material no mesh uses names is an info line,

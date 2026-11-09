@@ -49,7 +49,8 @@ use crate::plan::roles::{
 use crate::plan::{ENVIRONMENT_MAP_STEM, ModelFolder};
 use crate::texture_lookup::{self, TextureFolders, TexturePlace};
 use crate::user_face_xml::{
-    Child, FaceFiles, ModelElement, Reference, UserFaceXml, parse, reference, resolve, variant_of,
+    Child, FaceFiles, ModelElement, Reference, UNIFORM_COMMON, UserFaceXml, parse, reference,
+    resolve, variant_of,
 };
 
 /// The `face.xml` type the game loads a player's face model as. A face whose models include
@@ -1141,12 +1142,22 @@ fn refkit_body(
         .filter_map(|(_, path)| path.map(listed_model_name))
         .collect();
     // The refkit's entries he lists by hand are the template's body, not his own boots or
-    // gloves: one refkit hand listed by hand leaves the other to be appended.
+    // gloves: one refkit hand listed by hand leaves the other to be appended. A listed path
+    // is the refkit's when it names the refs Common output's `refkit/` directory, spelled
+    // `999/refkit/` in the generated entries or `team_folder/refkit/` in his own xml.
     let fold_directory = vtree::fold_name(&directory);
+    let in_refkit = |path: &str| {
+        vtree::fold_name(path).starts_with(&fold_directory)
+            || matches!(
+                reference(path),
+                Reference::Common { ref file_name }
+                    if vtree::fold_name(file_name).starts_with("refkit/")
+            )
+    };
     let own: Vec<(Option<&str>, String)> = listed
         .iter()
         .filter_map(|(xml_type, path)| Some((*xml_type, (*path)?)))
-        .filter(|(_, path)| !vtree::fold_name(path).starts_with(&fold_directory))
+        .filter(|(_, path)| !in_refkit(path))
         .map(|(xml_type, path)| (xml_type, listed_model_name(path)))
         .collect();
     let combines = |package: ModelPackage| {
@@ -1282,7 +1293,8 @@ impl<'a> XmlFace<'a> {
     /// The `path` value `value` as written: a `./` reference as it is, its file packed
     /// (`written_local`, noting in `findings`); a Common one naming the model as the team's
     /// Common output packs it (`oral_<stem>_*.model`, below its subfolder's path for a
-    /// subfolder's file, the team ID in place of the 3-character segment), packing nothing; any
+    /// subfolder's file, the team ID in place of `team_folder`), packing nothing; a file
+    /// directly below `common/` (the game's own) by its long form; any
     /// other form as it is.
     fn written_path(
         &mut self,
@@ -1301,7 +1313,7 @@ impl<'a> XmlFace<'a> {
             // The Common output packs every `Common/` model under its packed name, so the
             // member's spelling would name a file it does not hold (`prefox_common`); a
             // subfolder's, below the subfolder's own path there, kept as written.
-            Reference::Common { file_name, .. } => {
+            Reference::Common { file_name } => {
                 let (directory, name) = match file_name.rsplit_once('/') {
                     Some((directory, name)) => (format!("{directory}/"), name),
                     None => (String::new(), file_name.as_str()),
@@ -1311,14 +1323,16 @@ impl<'a> XmlFace<'a> {
                     &format!("{directory}{}", packed_model_name(file_stem(name))),
                 ))
             }
-            Reference::Unchecked(_) => Ok(value.to_owned()),
+            Reference::GameCommon(name) => Ok(format!("{UNIFORM_COMMON}{name}")),
+            Reference::CommonInvalid | Reference::Unchecked(_) => Ok(value.to_owned()),
         }
     }
 
     /// The `material` value `value` as written: a `./` reference as it is, its `.mtl` packed,
     /// or naming the Common one a `.mtl.common` link stands for (`written_local`, noting in
     /// `findings`); a Common one naming the `.mtl` in the team's Common output under its name,
-    /// packing nothing; any other form as it is.
+    /// packing nothing; a file directly below `common/` (the game's own) by its long form;
+    /// any other form as it is.
     fn written_material(
         &mut self,
         value: &str,
@@ -1329,10 +1343,9 @@ impl<'a> XmlFace<'a> {
             Reference::Local(name) => {
                 self.written_local(value, &name, FileKind::Mtl, files, findings)
             }
-            Reference::Common { file_name, .. } => {
-                Ok(format!("{}{file_name}", self.common_directory))
-            }
-            Reference::Unchecked(_) => Ok(value.to_owned()),
+            Reference::Common { file_name } => Ok(format!("{}{file_name}", self.common_directory)),
+            Reference::GameCommon(name) => Ok(format!("{UNIFORM_COMMON}{name}")),
+            Reference::CommonInvalid | Reference::Unchecked(_) => Ok(value.to_owned()),
         }
     }
 
@@ -1523,7 +1536,10 @@ fn names_model(xml: &UserFaceXml, model: &FaceModel, named: &FaceFiles) -> bool 
                         && role_position(named.folder, target)
                         && variant_of(referenced, &relative(&target.path, named.folder)).is_some()
                 }
-                Reference::Common { .. } | Reference::Unchecked(_) => false,
+                Reference::Common { .. }
+                | Reference::CommonInvalid
+                | Reference::GameCommon(_)
+                | Reference::Unchecked(_) => false,
             };
             set_variant
                 || resolve(&path, named, model_kind).is_some_and(|file| file.path == target.path)
@@ -1723,7 +1739,11 @@ pub(super) fn read_materials(
 /// (`jessie/`, `TextureDirectory::of`) and `<stem>.dds`, the `kitN` spelling a member's
 /// `kitN` entry holds respelling the reference the game respells for the kit picked. A path
 /// below the `.mtl`'s folder (`texture_lookup::path_below`) is looked up the same way in
-/// the places that path names alone, each texture where its home puts it. Any other path is
+/// the places that path names alone, each texture where its home puts it. A `team_folder`
+/// path no place holds the stem of still names the team's Common output, written with the
+/// team's ID in `team_folder`'s place (`user_face_xml::reference`): the export's `Common/`
+/// does not supply it, but an installed CPK may. A file directly below `common/` (the
+/// game's own) is written in the long form, the only one the game reads. Any other path is
 /// left as it is.
 pub(super) fn point_materials(set: &mut MaterialSet, places: &MaterialPlaces) {
     rewrite_texture_paths(set, |path| {
@@ -1755,6 +1775,19 @@ pub(super) fn point_materials(set: &mut MaterialSet, places: &MaterialPlaces) {
             let (subdirectory, name) = texture_lookup::split(below);
             path.directory = directory.of(subdirectory);
             path.file_name = format!("{name}.dds");
+            return;
+        }
+        match reference(&format!("{}{}", path.directory, path.file_name)) {
+            Reference::Common { file_name } => {
+                let (subdirectory, name) = texture_lookup::split(&file_name);
+                path.directory = folder.common_directory.of(subdirectory);
+                path.file_name = name.to_owned();
+            }
+            Reference::GameCommon(name) => {
+                path.directory = UNIFORM_COMMON.to_owned();
+                path.file_name = name;
+            }
+            Reference::Local(_) | Reference::CommonInvalid | Reference::Unchecked(_) => {}
         }
     });
 }

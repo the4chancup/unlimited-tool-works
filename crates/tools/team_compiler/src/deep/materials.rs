@@ -24,7 +24,7 @@ use crate::plan::roles::{
     FolderModels, PlayerFile, below_common, common_folder, file_stem, player_file,
 };
 use crate::texture_lookup::{self, TextureFolders, TexturePlace};
-use crate::user_face_xml::{Reference, common_segment_invalid, reference};
+use crate::user_face_xml::{Reference, reference};
 
 /// Where the textures a `.mtl`'s paths name may come from, each by its folded stem.
 pub(super) struct TextureSources<'a> {
@@ -72,7 +72,8 @@ enum Supply {
 /// `./` path and a
 /// bare name (read as `./`) are missing: the face packs no texture the folder does not hold. A
 /// path into the team's uniform Common folder
-/// (`model/character/uniform/common/<team>/<name>`, `<name>` a name or a `Common/` subfolder's
+/// (`common/team_folder/<name>` or `model/character/uniform/common/team_folder/<name>`,
+/// `<name>` a name or a `Common/` subfolder's
 /// `jessie/skin.dds`) is supplied when `Common/` holds the stem at that path
 /// (`sources.common` for a direct one, `sources.common_below` for a subfolder's, which
 /// resolves there alone), or an installed CPK holds it there; an installed lookup that
@@ -110,7 +111,7 @@ fn supply(path: &str, sources: &TextureSources) -> Supply {
         // A Common path into a `Common/` subfolder resolves at its path below `Common/`
         // among the Common textures the export packs there (`sources.common_below`), then
         // the installed CPKs'.
-        Reference::Common { file_name, .. } if file_name.contains('/') => {
+        Reference::Common { file_name } if file_name.contains('/') => {
             let below = vtree::fold_name(file_stem(&file_name));
             let holds_below = |stems: &BTreeSet<String>| stems.contains(&below);
             if holds_below(sources.common_below) {
@@ -125,7 +126,11 @@ fn supply(path: &str, sources: &TextureSources) -> Supply {
         Reference::Common { .. } if holds(sources.common) => Supply::Supplied,
         Reference::Common { .. } if sources.installed.is_some_and(holds) => Supply::Supplied,
         Reference::Common { .. } => Supply::Missing,
-        Reference::Unchecked(_) => Supply::Supplied,
+        // The game's own file directly below `common/`, and any other form: not looked up.
+        // A refused path never reaches here (`texture_findings` reports it first).
+        Reference::CommonInvalid | Reference::GameCommon(_) | Reference::Unchecked(_) => {
+            Supply::Supplied
+        }
     }
 }
 
@@ -135,10 +140,11 @@ fn supply(path: &str, sources: &TextureSources) -> Supply {
 /// naming the file, the path as written and the materials naming it, in the `.mtl`'s order.
 /// When one of those materials is among `used`, the names the meshes of the models paired with
 /// the `.mtl` bind, it is `mtl_texture_not_found`, else `mtl_texture_unused_missing`; both keep
-/// what holds the `.mtl`. On a pre-Fox target (`engine`), a Common path whose folder after
-/// `common/` is not three characters is `mtl_common_path_invalid` instead, which discards
-/// what holds the `.mtl` (`xml_common_path_invalid`'s rule for a `.mtl`: on Fox the paths
-/// are rewritten at conversion, so the rule is meaningless there). `scope` is a model folder's
+/// what holds the `.mtl`. A Common path naming a folder other than `team_folder` is
+/// `mtl_common_path_invalid` instead, which discards
+/// what holds the `.mtl` (`xml_common_path_invalid`'s rule for a `.mtl`, on every target:
+/// the spelling is the export's, so `check` and a compile for either engine judge it
+/// alike). `scope` is a model folder's
 /// `Folder` (the `.mtl` of a player or shared folder's tree, whose finding drops the folder)
 /// or a `Common/` `.mtl`'s `File` (whose finding drops the file alone).
 pub(super) fn texture_findings(
@@ -147,7 +153,6 @@ pub(super) fn texture_findings(
     used: &BTreeSet<&str>,
     sources: &TextureSources,
     scope: &IssueScope,
-    engine: Engine,
 ) -> Vec<ContentFinding> {
     // Each distinct path with the materials naming it, in the order the `.mtl` names them.
     let mut named: Vec<(&str, Vec<&str>)> = Vec::new();
@@ -166,18 +171,10 @@ pub(super) fn texture_findings(
             }
         }
     }
-    // On Fox the paths are rewritten at conversion, so the rule is meaningless there.
-    let checks_common = match engine {
-        Engine::PreFox => true,
-        Engine::Fox => false,
-    };
     named
         .into_iter()
         .filter_map(|(path, naming)| {
-            if checks_common
-                && let Reference::Common { segment, .. } = reference(path)
-                && common_segment_invalid(&segment)
-            {
+            if let Reference::CommonInvalid = reference(path) {
                 return Some(ContentFinding {
                     code: Code::MtlCommonPathInvalid.as_str(),
                     scope: scope.clone(),
@@ -496,7 +493,7 @@ mod tests {
         assert_eq!(supplied_to(root, "./hair.dds"), Supply::Supplied);
     }
 
-    const COMMON_HAIR: &str = "model/character/uniform/common/XXX/hair.dds";
+    const COMMON_HAIR: &str = "model/character/uniform/common/team_folder/hair.dds";
 
     #[test]
     fn a_stem_the_folder_holds_is_supplied_whatever_directory_and_case_the_path_spells() {
@@ -504,7 +501,7 @@ mod tests {
             "./skin.dds",
             "./Skin.DDS",
             "skin.dds",
-            "model/character/uniform/common/XXX/SKIN.dds",
+            "model/character/uniform/common/team_folder/SKIN.dds",
             "model/character/face/real/skin.dds",
         ] {
             assert_eq!(
@@ -552,8 +549,8 @@ mod tests {
         // their sets: `jessie/kitN_pants.dds` and `jessie/pants_kitN.dds` resolve to them,
         // the `kitF` names themselves finding nothing.
         for path in [
-            "model/character/uniform/common/000/jessie/kitN_pants.dds",
-            "model/character/uniform/common/000/jessie/pants_kitN.dds",
+            "model/character/uniform/common/team_folder/jessie/kitN_pants.dds",
+            "common/team_folder/jessie/pants_kitN.dds",
         ] {
             assert_eq!(
                 supplied_below(path, &["jessie/kitF_pants", "jessie/pants_kitF"], None),
@@ -562,8 +559,8 @@ mod tests {
             );
         }
         for path in [
-            "model/character/uniform/common/000/jessie/kitF_pants.dds",
-            "model/character/uniform/common/000/jessie/pants_kitF.dds",
+            "model/character/uniform/common/team_folder/jessie/kitF_pants.dds",
+            "common/team_folder/jessie/pants_kitF.dds",
         ] {
             assert_eq!(
                 supplied_below(path, &["jessie/kitF_pants", "jessie/pants_kitF"], None),
@@ -577,7 +574,7 @@ mod tests {
     fn a_kit_reference_in_a_common_subfolder_is_supplied_by_a_variant_at_its_path() {
         // A variant of the set at `jessie/` supplies the `kitN` reference there; one held
         // at `Common/`'s root does not: the path resolves at `jessie/` alone.
-        let path = "model/character/uniform/common/000/jessie/kitN_pants.dds";
+        let path = "common/team_folder/jessie/kitN_pants.dds";
         assert_eq!(
             supplied_below(path, &["jessie/kit1_pants"], None),
             Supply::Supplied
@@ -626,7 +623,7 @@ mod tests {
         // every engine: nothing at `refkit/` is a miss.
         assert_eq!(
             supplied(
-                "model/character/uniform/common/XXX/refkit/skin.dds",
+                "model/character/uniform/common/team_folder/refkit/skin.dds",
                 &[],
                 &[],
                 Some(&[])
@@ -650,10 +647,11 @@ mod tests {
     #[test]
     fn a_common_path_below_a_subfolder_resolves_at_that_path_among_the_common_textures_a_link_reaches()
      {
-        // `model/character/uniform/common/000/jessie/skin.dds` names `Common/jessie/skin.dds`:
+        // `model/character/uniform/common/team_folder/jessie/skin.dds` names
+        // `Common/jessie/skin.dds`:
         // supplied when that file is among the textures the pass keeps, or an installed CPK
         // holds it at that path below `Common/`; missing otherwise.
-        let path = "model/character/uniform/common/000/jessie/skin.dds";
+        let path = "model/character/uniform/common/team_folder/jessie/skin.dds";
         assert_eq!(
             supplied_below(path, &["jessie/skin"], None),
             Supply::Supplied
@@ -696,7 +694,7 @@ mod tests {
         // `supplied` has nothing at any path below `Common/` (the pre-Fox shape before the
         // check): the subfolder path is a miss where it was not looked for, supplied where
         // the kept textures or the installed CPKs hold it at that path.
-        let path = "model/character/uniform/common/XXX/jessie/hair.dds";
+        let path = "common/team_folder/jessie/hair.dds";
         assert_eq!(supplied(path, &[], &[], Some(&[])), Supply::Missing);
         assert_eq!(
             supplied_below(path, &["jessie/hair"], Some(&[])),
@@ -715,7 +713,7 @@ mod tests {
         // The `kitN` directory stands for the set of its `kit1`-`kit9` siblings:
         // `Common/kit1/armor.dds`, `Common/kitF/armor.dds` and an installed CPK's `kit1/`
         // copy each supply it; missing with none of them.
-        let path = "model/character/uniform/common/000/kitN/armor.dds";
+        let path = "common/team_folder/kitN/armor.dds";
         assert_eq!(
             supplied_below(path, &["kit1/armor"], None),
             Supply::Supplied
@@ -730,7 +728,7 @@ mod tests {
         );
         assert_eq!(supplied_below(path, &[], Some(&[])), Supply::Missing);
         // A `kitF` path names no file: missing even when `Common/kitF/armor.dds` is held.
-        let kitf = "model/character/uniform/common/000/kitF/armor.dds";
+        let kitf = "common/team_folder/kitF/armor.dds";
         assert_eq!(
             supplied_below(kitf, &["kitF/armor"], Some(&[])),
             Supply::Missing
@@ -767,7 +765,6 @@ mod tests {
             &used.iter().copied().collect(),
             &sources,
             &scope,
-            Engine::PreFox,
         )
     }
 
@@ -807,8 +804,8 @@ mod tests {
 
     #[test]
     fn a_miss_only_unused_materials_name_is_info_and_one_without_a_lookup_is_the_same_warning() {
-        let gone = "model/character/uniform/common/XXX/gone.dds";
-        let cap = "model/character/uniform/common/XXX/cap.dds";
+        let gone = "common/team_folder/gone.dds";
+        let cap = "model/character/uniform/common/team_folder/cap.dds";
         let found = findings(
             &[
                 material("unused", &["./skin.dds", COMMON_HAIR, gone]),
@@ -828,7 +825,7 @@ mod tests {
     }
 
     #[test]
-    fn a_common_path_whose_segment_is_not_three_characters_is_an_error_dropping_the_folder() {
+    fn a_common_path_naming_a_folder_other_than_the_team_s_is_an_error_dropping_the_folder() {
         let path = "model/character/uniform/common/o/env.dds";
         let found = findings(&[material("head", &[path, "./skin.dds"])], &["head"]);
 
@@ -853,9 +850,9 @@ mod tests {
     }
 
     #[test]
-    fn a_common_mtl_s_invalid_segment_drops_the_file_alone() {
+    fn a_common_mtl_s_invalid_folder_drops_the_file_alone() {
         // A `Common/` `.mtl` is a file of `Common/`: the finding drops the file, not a folder.
-        let path = "model/character/uniform/common/o/env.dds";
+        let path = "common/refs/refkit/env.dds";
         let mtl = ScopePath::new("Common/jessie/x.mtl").unwrap();
         let folders = common_held(&[]);
         let common_below = BTreeSet::new();
@@ -873,7 +870,6 @@ mod tests {
             &BTreeSet::from(["head"]),
             &sources,
             &scope,
-            Engine::PreFox,
         );
 
         assert_eq!(
@@ -893,12 +889,12 @@ mod tests {
     }
 
     #[test]
-    fn a_common_path_with_a_three_character_segment_is_checked_as_usual() {
-        // `714` a team ID, `XXX` the team placeholder a member writes: both kept and
-        // looked up, so each is the usual not-found finding, not the invalid one.
+    fn a_common_path_in_either_spelling_is_checked_as_usual() {
+        // `team_folder`, the folder a member writes for the team's Common in either
+        // spelling: kept and looked up, the usual not-found finding, not the refusal.
         for path in [
-            "model/character/uniform/common/714/env.dds",
-            "model/character/uniform/common/XXX/env.dds",
+            "model/character/uniform/common/team_folder/env.dds",
+            "common/Team_Folder/env.dds",
         ] {
             assert_eq!(
                 findings(&[material("head", &[path])], &["head"]),
@@ -909,8 +905,10 @@ mod tests {
     }
 
     #[test]
-    fn the_invalid_segment_check_does_not_run_for_a_fox_target() {
-        let path = "model/character/uniform/common/o/env.dds";
+    fn the_invalid_folder_check_runs_on_a_fox_target_too() {
+        // The spelling is the export's: a `check` and a compile for either engine judge it
+        // alike, so the refusal reports on Fox as on pre-Fox.
+        let path = "common/797/hair.dds";
         let common_below = BTreeSet::new();
         let folders = slot_05(&[], &[]);
         let mtl = ScopePath::new("Players/05 - A/face.mtl").unwrap();
@@ -928,10 +926,21 @@ mod tests {
             &BTreeSet::from(["head"]),
             &sources,
             &scope,
-            Engine::Fox,
         );
 
-        // Fox rewrites the paths at conversion: the usual miss, not the refusal.
-        assert_eq!(found, [finding("mtl_texture_not_found", path, "head")]);
+        assert_eq!(
+            found,
+            [ContentFinding {
+                code: "mtl_common_path_invalid",
+                scope,
+                context: vec![
+                    ("file", "face.mtl".to_owned()),
+                    ("attribute", "path".to_owned()),
+                    ("value", path.to_owned()),
+                ],
+                disposition: Disposition::DropFolder,
+                pass_through_eligible: false,
+            }]
+        );
     }
 }

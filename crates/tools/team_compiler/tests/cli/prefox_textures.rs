@@ -129,7 +129,7 @@ fn write_common_hair_mtl(sandbox: &Sandbox) -> String {
         sandbox,
         "co Midcup Hair",
         "05 - A",
-        &materials_at("model/character/uniform/common/XXX/hair.dds"),
+        &materials_at("common/team_folder/hair.dds"),
     );
     format!(
         "{}[team-compiler]\ncpk_name = \"4cc_62_midcup\"\n",
@@ -179,7 +179,7 @@ fn a_common_texture_of_a_mtl_is_found_in_an_earlier_installed_cpk_only() {
     let later = Sandbox::new("prefox_mtl_installed_later");
     let settings = write_common_hair_mtl(&later);
     install_pre_fox_hair_in(&later, "4cc_63_midcup.cpk");
-    let not_found = "Warning mtl_texture_not_found [Keep] at Players/05 - A (file=face_high.mtl, texture=model/character/uniform/common/XXX/hair.dds, materials=card)";
+    let not_found = "Warning mtl_texture_not_found [Keep] at Players/05 - A (file=face_high.mtl, texture=common/team_folder/hair.dds, materials=card)";
     assert_eq!(hair_check_lines(&later, &settings), [not_found, IDENTIFIED]);
 
     // No PES folder: the CPKs cannot be looked in, which holds nothing, the same Warning.
@@ -229,7 +229,7 @@ fn write_subfolder_hair_mtl(sandbox: &Sandbox) -> String {
         sandbox,
         "co Midcup Hair",
         "05 - A",
-        &materials_at("model/character/uniform/common/XXX/jessie/hair.dds"),
+        &materials_at("model/character/uniform/common/team_folder/jessie/hair.dds"),
     );
     format!(
         "{}[team-compiler]\ncpk_name = \"4cc_62_midcup\"\n",
@@ -241,7 +241,7 @@ fn write_subfolder_hair_mtl(sandbox: &Sandbox) -> String {
 // TC-XML-17
 #[test]
 fn a_common_subfolder_texture_of_a_mtl_is_found_in_common_or_an_earlier_installed_cpk() {
-    let not_found = "Warning mtl_texture_not_found [Keep] at Players/05 - A (file=face_high.mtl, texture=model/character/uniform/common/XXX/jessie/hair.dds, materials=card)";
+    let not_found = "Warning mtl_texture_not_found [Keep] at Players/05 - A (file=face_high.mtl, texture=model/character/uniform/common/team_folder/jessie/hair.dds, materials=card)";
 
     // Nobody holds it: the list names the CPKs but none is written, so the lookup is made.
     let missing = Sandbox::new("prefox_mtl_subfolder_missing");

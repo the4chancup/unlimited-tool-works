@@ -1274,7 +1274,7 @@ TC-MOD-87  GIVEN slot 05's face parts defining one material over textures in two
            THEN merge_material_conflict names the material and nothing of slot 05 is in
                 the CPK
 TC-MOD-88  GIVEN slot 05 holding boots.model with a boots.mtl naming
-           model/character/uniform/common/714/shirt.dds
+           common/team_folder/shirt.dds
            WHEN the export is compiled for PES 21
            THEN the converted boots name shirt in
                 /Assets/pes16/model/character/common/714/sourceimages/, found there when
@@ -1301,6 +1301,13 @@ TC-MOD-92  GIVEN slot 05 holding a face model and notes.txt
            WHEN the export is compiled with strict_file_type_check on
            THEN file_not_used names notes.txt, file_type_disallowed is not reported, and the
                 folder compiles as if it were absent
+TC-MOD-102 GIVEN Common/legs.fmdl naming hair in
+           /Assets/pes16/model/character/common/team_folder/sourceimages/, no Common/hair.*, and
+           TC-TEX-05's PES folder whose 4cc_61_midcup.cpk holds
+           Asset/model/character/common/714/sourceimages/#windx11/hair.ftex
+           WHEN the export is compiled for PES 21 with cpk_name 4cc_62_midcup
+           THEN no texture finding names hair, and the packed Common model names it in
+                /Assets/pes16/model/character/common/714/sourceimages/
 ```
 
 **Textures**
@@ -1497,7 +1504,7 @@ TC-CHK-09  GIVEN Common/ holding legs.model and a legs.mtl with ztest 0, slot 05
 TC-XML-01  GIVEN slot 05 holding face_high.model, hat_parts.model and its own face.xml with three
            entries: ./face_high.model typed face_neck; ./hat_parts.model typed "cape", with a
            <model> attribute "glow" and level="1"; and
-           model/character/uniform/common/XXX/legs.model typed parts, which Common/ holds; a
+           common/team_folder/legs.model typed parts, which Common/ holds; a
            second export whose slot 05 face.xml names ./jessie/body/oral_x_*.model with
            ./jessie/body/x.mtl, both of which jessie/body/ holds, x.mtl naming skin.dds, and
            ./face_high.model typed face_neck with face_high.mtl, beside the root's skin.dds;
@@ -1561,7 +1568,7 @@ TC-XML-11  GIVEN slot 05 holding face_high.model, face_high.mtl, a face.xml carr
                 folder's face_diff.bin byte for byte and xml_ignored_fox is reported
 TC-XML-12  GIVEN slot 05 holding face_high.model, face_high.mtl, a legs.mtl defining none of
            Common/legs.model's materials, and a face.xml listing face_high and
-           model/character/uniform/common/714/legs.model with material ./legs.mtl
+           common/team_folder/legs.model with material ./legs.mtl
            WHEN the export is compiled for PES 17
            THEN model_material_undefined is reported naming Common/legs.model, legs.mtl and
                 the undefined names, and the folder is left out of the CPK
@@ -1600,6 +1607,33 @@ TC-XML-17  GIVEN slot 05 holding jessie/body/x.model with jessie/body/x.mtl nami
                 own folder up, never in a subfolder the path does not name; a path into the team's
                 Common directory is found in Common/ at that path or in an installed CPK listed
                 before the compiled one
+TC-XML-18  GIVEN Common/legs.model, Common/hair.dds and Common/jessie/skin.dds, slot 05's own
+           face.xml naming common/team_folder/legs.model and
+           model/character/uniform/common/Team_Folder/legs.model, and slot 06's face_high.mtl
+           naming common/team_folder/hair.dds and common/team_folder/jessie/skin.dds, which no
+           texture link of his folder names, and common/team_folder/fur.dds, which nothing holds,
+           each on a material his face_high.model binds
+           WHEN the export is compiled for PES 17
+           THEN no finding names the two legs entries, both written
+                model/character/uniform/common/714/oral_legs_*.model; slot 06's emitted .mtl names
+                model/character/uniform/common/714/hair.dds,
+                model/character/uniform/common/714/jessie/skin.dds and
+                model/character/uniform/common/714/fur.dds, and mtl_texture_not_found names
+                common/team_folder/fur.dds alone, both folders kept
+TC-XML-19  GIVEN slot 05's face.xml naming model/character/uniform/common/XXX/legs.model, slot 06's
+           face_high.mtl naming common/797/hair.dds, and slot 07's naming
+           model/character/uniform/common/o/env.dds, with Common/legs.model, Common/hair.dds and
+           Common/env.dds
+           WHEN the export is checked for PES 17, and slot 06's and slot 07's folders (each a
+           .model's) for PES 21
+           THEN xml_common_path_invalid names slot 05's path on PES 17 and mtl_common_path_invalid
+                slot 06's and slot 07's on both versions, each folder named dropped
+TC-XML-20  GIVEN slot 05's face_high.mtl naming common/uni_pattern_nrm00.dds and its face.xml
+           naming common/uniform_sub.model typed parts, neither held by the export
+           WHEN the export is compiled for PES 17
+           THEN the emitted .mtl names model/character/uniform/common/uni_pattern_nrm00.dds and no
+                finding names it; xml_path_unchecked names common/uniform_sub.model, written
+                model/character/uniform/common/uniform_sub.model, and the folder is kept
 ```
 
 **Kits**
@@ -1868,12 +1902,12 @@ TC-CMN-15  GIVEN Common/sub/legs.model that does not parse, with or without a le
                 team's Common output holds no model of stem legs, the beaten FMDL dropped with it
 TC-CMN-18  GIVEN Common/refkit/oral_thigh_win32.model and Common/refkit/refkit.mtl (in a refs
            export, the referee template tree's), and slot 05's own face.xml naming
-           model/character/uniform/common/XXX/refkit/oral_thigh_*.model with material
-           .../common/XXX/refkit/refkit.mtl
+           model/character/uniform/common/team_folder/refkit/oral_thigh_*.model with material
+           common/team_folder/refkit/refkit.mtl
            WHEN the export is compiled for PES 17
            THEN no xml_path_unchecked is reported, the team's Common output (the referee CPK)
                 holds refkit/oral_thigh_win32.model and refkit/refkit.mtl, and the entry is
-                written with the team's ID in place of XXX
+                written with the team's ID in place of team_folder
 TC-CMN-20  GIVEN Common/jessie/body.fmdl, and slot 05 holding face_high.fmdl and
            jessie/body.fmdl.common
            WHEN the export is compiled for PES 21, then for PES 17
@@ -1915,7 +1949,7 @@ TC-CMN-24  GIVEN slot 05 holding ingame_face.toml, studs.dds and jessie/kit_boot
 TC-CMN-25  GIVEN Common/jessie/body.fmdl naming hair, Common/jessie/hair.dds and Common/hair.dds
            of other bytes, and slot 05 holding face_high.fmdl and jessie/body.fmdl.common; a
            second export whose slot 05 holds face_high.model, a face_high.mtl naming skin by
-           the pre-Fox Common path model/character/uniform/common/000/jessie/skin.dds, and
+           the pre-Fox Common path common/team_folder/jessie/skin.dds, and
            jessie/skin.dds.common, beside Common/jessie/skin.dds; and a third whose slot 05
            holds his own face_high.model with a face_high.mtl naming ./skin.dds, beside
            Common/skin.dds

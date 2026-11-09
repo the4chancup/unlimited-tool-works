@@ -1591,10 +1591,7 @@ fn a_common_path_into_a_subfolder_resolves_at_that_path_on_pes_21() {
     sandbox.write(&format!("{player}/face_high.model"), &card_model());
     let mtl = String::from_utf8(pre_fox_fixture("cardhead_materials.mtl"))
         .unwrap()
-        .replace(
-            "./texture.dds",
-            "model/character/uniform/common/000/jessie/skin.dds",
-        )
+        .replace("./texture.dds", "common/team_folder/jessie/skin.dds")
         .into_bytes();
     sandbox.write(&format!("{player}/face_high.mtl"), &mtl);
     sandbox.write(&format!("{player}/jessie/skin.dds.common"), b"");
@@ -1759,6 +1756,66 @@ fn a_player_s_mtl_paired_with_his_own_model_does_not_resolve_in_common() {
         "{lines:#?}"
     );
     assert_eq!(run.exit_code(), 0, "{lines:#?}");
+}
+
+// TC-MOD-102
+#[test]
+fn a_common_model_s_team_folder_directory_names_the_team_s_common_output() {
+    let sandbox = Sandbox::new("cmn_fmdl_team_folder");
+    let export = "exports/co Midcup Nested";
+    let player = format!("{export}/Players/05 - A");
+    sandbox.write(&format!("{player}/face_high.fmdl"), &clean_model());
+    sandbox.write(&format!("{player}/legs.fmdl.common"), b"");
+    // `Common/legs.fmdl` names `hair` in `team_folder`, the Studio spelling of the team's
+    // Common directory; the export holds no `hair`.
+    sandbox.write(
+        &format!("{export}/Common/legs.fmdl"),
+        &model_naming_in(
+            "hair.dds",
+            "/Assets/pes16/model/character/common/team_folder/sourceimages/",
+        ),
+    );
+    install_names(
+        &sandbox,
+        &[
+            "4cc_61_midcup.cpk",
+            "4cc_62_midcup.cpk",
+            "4cc_63_midcup.cpk",
+        ],
+    );
+    install_cpk(
+        &sandbox,
+        "4cc_61_midcup.cpk",
+        &[(
+            "Asset/model/character/common/714/sourceimages/#windx11/hair.ftex",
+            b"compiled on an earlier day",
+        )],
+    );
+    let settings = format!(
+        "{}[team-compiler]\ncpk_name = \"4cc_62_midcup\"\n",
+        pes21_settings(&sandbox)
+    );
+
+    let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
+
+    let lines = run.messages();
+    assert!(
+        findings_of(&lines, "co Midcup Nested").iter().all(|line| {
+            !line.contains("fmdl_texture_not_found") && !line.contains("mtl_texture_not_found")
+        }),
+        "{lines:#?}"
+    );
+    assert_eq!(run.exit_code(), 0, "{lines:#?}");
+    let entries = cpk_entries(&sandbox.root.join("output/4cc_62_midcup.cpk"));
+    let package = face_package(&entries);
+    let directories = texture_directories(package.get("fcl_hair.fmdl").unwrap(), "hair.dds");
+    assert!(!directories.is_empty());
+    assert!(
+        directories
+            .iter()
+            .all(|directory| directory == "/Assets/pes16/model/character/common/714/sourceimages/"),
+        "{directories:?}"
+    );
 }
 
 // TC-CMN-23

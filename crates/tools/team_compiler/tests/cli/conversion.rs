@@ -649,7 +649,7 @@ fn a_converted_path_into_the_pre_fox_common_folder_names_the_fox_one_when_common
     // The card head's material set naming `shirt` in the team's pre-Fox Common folder, the way
     // a member's own `.mtl` names a texture in `Common/`.
     let text = String::from_utf8(pre_fox_fixture("cardhead_materials.mtl")).unwrap();
-    let pre_fox_path = "model/character/uniform/common/714/shirt.dds";
+    let pre_fox_path = "common/team_folder/shirt.dds";
     let mtl = text.replace("./texture.dds", pre_fox_path).into_bytes();
     let write = |sandbox: &Sandbox, common: bool| {
         let player = slot_05(export);
@@ -705,7 +705,7 @@ fn a_converted_path_into_the_pre_fox_common_folder_names_the_fox_one_when_common
     assert_eq!(
         lines,
         [
-            "Warning mtl_texture_not_found [Keep] at Players/05 - A (file=boots.mtl, texture=model/character/uniform/common/714/shirt.dds, materials=card)",
+            "Warning mtl_texture_not_found [Keep] at Players/05 - A (file=boots.mtl, texture=common/team_folder/shirt.dds, materials=card)",
             identified,
             no_colors,
             "Warning fmdl_texture_not_found [Keep] at Players/05 - A (model=boots.model, texture=/Assets/pes16/model/character/common/714/sourceimages/shirt.dds)",

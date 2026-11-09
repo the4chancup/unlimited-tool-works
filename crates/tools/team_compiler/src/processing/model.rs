@@ -32,7 +32,7 @@ use crate::plan::roles::{
     is_common_file, skeleton_slot,
 };
 use crate::texture_lookup::{self, TextureFolders, TexturePlace};
-use crate::user_face_xml::{Reference, reference};
+use crate::user_face_xml::{Reference, UNIFORM_COMMON, reference};
 
 /// One model of the package: a part of the output model its allowed name names, from the
 /// folder's own files, a combined shared folder's, or the export's `Common/` folder through a
@@ -757,13 +757,16 @@ fn split_fmdl(bytes: &[u8]) -> anyhow::Result<SplitFmdl> {
 /// name none — gives the directory, with that texture's own subdirectory
 /// below it (`jessie/`), and the texture is supplied. Else a path into the team's pre-Fox
 /// Common folder
-/// (`model/character/uniform/common/<team>/`, how a member's pre-Fox `.mtl` names a texture of
+/// (`common/team_folder/` or `model/character/uniform/common/team_folder/`, how a member's
+/// pre-Fox `.mtl` names a texture of
 /// `Common/`), read as the deep pass reads it (`user_face_xml::reference`), is pointed at the
 /// team's Fox Common output at its subdirectory below `Common/` (`common_home` for a direct
 /// one, its `jessie/` subdirectory for `jessie/skin`), whether or not the export holds it
 /// there, and its supply is returned, decided here where the reference is resolved
-/// (`common_below_supply`). Any other texture is one
-/// of the game's own, whose directory names the team as `000`, replaced by `team_segment`.
+/// (`common_below_supply`). A file directly below `common/`, the game's own, keeps the long
+/// form `model/character/uniform/common/`, a short `common/` respelled to it. Any other texture is one
+/// of the game's own, whose directory names the team as `000` or `team_folder`, replaced by
+/// `team_segment`.
 /// The file name is never changed: the game itself respells a reference for the kit picked.
 fn point_texture(
     path: &mut TexturePath,
@@ -784,7 +787,7 @@ fn point_texture(
         None => {
             let written = format!("{}{}", path.directory, path.file_name);
             match reference(&written) {
-                Reference::Common { file_name, .. } => {
+                Reference::Common { file_name } => {
                     let (subdirectory, _) = texture_lookup::split(&file_name);
                     let supply = common_below_supply(
                         file_stem(&file_name),
@@ -793,15 +796,39 @@ fn point_texture(
                     );
                     (Some(common_home.of(subdirectory)), Some(supply))
                 }
-                Reference::Local(_) | Reference::Unchecked(_) => (None, None),
+                // The game's own file, its short `common/` spelling written as the long one.
+                Reference::GameCommon(_) => (Some(UNIFORM_COMMON.to_owned()), None),
+                Reference::Local(_) | Reference::CommonInvalid | Reference::Unchecked(_) => {
+                    (None, None)
+                }
             }
         }
     };
     path.directory = match place {
         Some(directory) => directory,
-        None => path.directory.replace("/000/", team_segment),
+        None => team_directory(&path.directory, team_segment),
     };
     supply
+}
+
+/// `directory` with its team's folder segment replaced by `team_segment` (`/714/`): `000`,
+/// as the game's own FMDLs name the team, or `team_folder` in any letter case, the
+/// Studio spelling. Any other segment stays as it is: a member never writes a directory
+/// the path table holds, so none is refused.
+fn team_directory(directory: &str, team_segment: &str) -> String {
+    let id = team_segment.trim_matches('/');
+    directory
+        .replace("/000/", team_segment)
+        .split('/')
+        .map(|segment| {
+            if segment.eq_ignore_ascii_case("team_folder") {
+                id
+            } else {
+                segment
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("/")
 }
 
 /// Points `path`, a texture reference naming a path below its file's folder
@@ -1286,13 +1313,14 @@ mod tests {
 
     #[test]
     fn a_pre_fox_common_path_goes_to_the_common_directory_when_common_holds_its_stem() {
-        let pre_fox = "model/character/uniform/common/714/";
+        let pre_fox = "model/character/uniform/common/team_folder/";
         assert_eq!(
             pointed_from(pre_fox, "shirt.dds", &[], &["shirt"]),
             "/common/"
         );
-        // The team's segment as a member's pre-Fox `.mtl` may spell it, and a kit reference.
-        for segment in ["XXX", "000"] {
+        // `team_folder` in any letter case, and its short form, as a member's pre-Fox
+        // `.mtl` spells the team's Common, and a kit reference.
+        for segment in ["team_folder", "Team_Folder"] {
             let directory = format!("model/character/uniform/common/{segment}/");
             assert_eq!(
                 pointed_from(&directory, "shirt.dds", &[], &["shirt"]),
@@ -1300,6 +1328,10 @@ mod tests {
                 "{segment}"
             );
         }
+        assert_eq!(
+            pointed_from("common/team_folder/", "shirt.dds", &[], &["shirt"]),
+            "/common/"
+        );
         assert_eq!(
             pointed_from(pre_fox, "pants_kitN.dds", &[], &["pants_kit2"]),
             "/common/"
@@ -1327,13 +1359,31 @@ mod tests {
         }
         assert_eq!(
             pointed_from(
-                "model/character/uniform/common/714/05 - A/",
+                "model/character/uniform/common/team_folder/05 - A/",
                 "shirt.dds",
                 &[],
                 &["shirt"]
             ),
             "/common/05 - A/"
         );
+    }
+
+    #[test]
+    fn a_game_file_directly_below_common_keeps_the_long_form_in_either_spelling() {
+        // The game's own file, not looked up in `Common/` even when it holds the stem; the
+        // short form is written as the long one, which the long form already is.
+        for directory in ["common/", "model/character/uniform/common/"] {
+            assert_eq!(
+                pointed_from(
+                    directory,
+                    "uni_pattern_nrm00.dds",
+                    &[],
+                    &["uni_pattern_nrm00"]
+                ),
+                "model/character/uniform/common/",
+                "{directory}"
+            );
+        }
     }
 
     /// The directory `point_texture` gives the pre-Fox Common path `directory` + `file_name`
@@ -1376,8 +1426,8 @@ mod tests {
         let known = installed_lookup(&installed, 714);
         let uninstalled = InstalledPaths::Unknown;
         let unknown = installed_lookup(&uninstalled, 714);
-        let direct = "model/character/uniform/common/000/";
-        let jessie_dir = "model/character/uniform/common/000/jessie/";
+        let direct = "model/character/uniform/common/team_folder/";
+        let jessie_dir = "model/character/uniform/common/team_folder/jessie/";
         let jessie = "/Assets/pes16/model/character/common/714/jessie/sourceimages/";
         assert_eq!(
             common_supply(direct, "skin.dds", &[], &known),
@@ -1410,6 +1460,17 @@ mod tests {
             common_supply(jessie_dir, "skin.dds", &["jessie/skin"], &unknown),
             (jessie.to_owned(), TextureSupply::Supplied)
         );
+        // An FMDL's own texture table names the team `team_folder` too (in any letter
+        // case) beside the game's own `000`: each becomes the team's segment, so the
+        // path is the team's Common output's and its supply is decided there.
+        for segment in ["team_folder", "Team_Folder", "000"] {
+            let directory = format!("/Assets/pes16/model/character/common/{segment}/sourceimages/");
+            assert_eq!(
+                common_supply(&directory, "skin.dds", &[], &known),
+                (COMMON_714.to_owned(), TextureSupply::Supplied),
+                "{segment}"
+            );
+        }
     }
 
     /// `pointed_from` with the `Common/` textures `below`, each at its path below `Common/`:
@@ -1436,7 +1497,7 @@ mod tests {
 
     #[test]
     fn a_common_path_into_a_subfolder_resolves_at_that_path_alone() {
-        let pre_fox = "model/character/uniform/common/000/jessie/";
+        let pre_fox = "common/team_folder/jessie/";
         assert_eq!(
             pointed_at_below(pre_fox, "skin.dds", &["jessie/skin"]),
             "/common/jessie/"

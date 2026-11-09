@@ -854,7 +854,6 @@ fn common_mtl_findings(common: &[FileDescriptor], passes: &mut [ContentPass], ke
             &used,
             &sources,
             &IssueScope::File(file.path.clone()),
-            Engine::PreFox,
         ));
     }
 }
@@ -1179,7 +1178,6 @@ fn folder_findings(
                 &used,
                 &sources,
                 &scope,
-                engine,
             ));
         }
         if let Some((_, outcome)) = xmls.iter().find(|(xml, _)| xml.path == file.path) {
@@ -1220,7 +1218,6 @@ fn folder_findings(
                     &used,
                     &sources,
                     &scope,
-                    engine,
                 ));
             }
         }
@@ -3045,10 +3042,7 @@ mod tests {
                 ("Players/05 - B/face_high.model", card()),
                 (
                     "Players/05 - B/face_high.mtl",
-                    materials_naming(&[(
-                        "card",
-                        &["model/character/uniform/common/000/jessie/skin.dds"],
-                    )]),
+                    materials_naming(&[("card", &["common/team_folder/jessie/skin.dds"])]),
                 ),
                 ("Players/05 - B/jessie/skin.dds.common", Vec::new()),
                 ("Common/jessie/skin.dds", bc1_dds(4, 4)),
@@ -3071,10 +3065,7 @@ mod tests {
                 ("Players/05 - B/face_high.model", card()),
                 (
                     "Players/05 - B/face_high.mtl",
-                    materials_naming(&[(
-                        "card",
-                        &["model/character/uniform/common/000/jessie/skin.dds"],
-                    )]),
+                    materials_naming(&[("card", &["common/team_folder/jessie/skin.dds"])]),
                 ),
                 ("Players/05 - B/jessie/legs.model.common", Vec::new()),
                 ("Common/jessie/legs.model", card()),
@@ -3093,7 +3084,7 @@ mod tests {
                 "mtl_texture_not_found",
                 folder("Players/05 - B"),
                 "face_high.mtl",
-                "model/character/uniform/common/000/jessie/skin.dds",
+                "common/team_folder/jessie/skin.dds",
                 "card"
             )],
             "{findings:#?}"
@@ -3111,7 +3102,7 @@ mod tests {
                 "Players/05 - B/face_high.mtl",
                 materials_naming(&[(
                     "card",
-                    &["model/character/uniform/common/000/jessie/skin.dds"],
+                    &["model/character/uniform/common/team_folder/jessie/skin.dds"],
                 )]),
             ),
             ("Common/jessie/skin.dds", bc1_dds(4, 4)),
@@ -3132,7 +3123,7 @@ mod tests {
                     "mtl_texture_not_found",
                     folder("Players/05 - B"),
                     "face_high.mtl",
-                    "model/character/uniform/common/000/jessie/skin.dds",
+                    "model/character/uniform/common/team_folder/jessie/skin.dds",
                     "card"
                 )],
                 "{files:?}"

@@ -15889,3 +15889,48 @@ at every allocation and checks only that the numbers were typed twice; for the s
 no test runs on the embedded list's content (the maintainer): a test that resolves a team
 brings a simulated list of its own (`export_upgrader`'s `tests/fixtures/teams_list.txt`).
 Plan: `spec/libs/teams_list.md` (the embedded list's paragraph).
+
+## 2026-11-09 — team_compiler, export_upgrader — the Studio format names no team ID: `common/team_folder/`, `gk_kitN`
+Decision (the maintainer; the lead's choices marked *lead*):
+- **The team's Common** is written `common/team_folder/<path>` in a member's `.mtl` and
+  `face.xml`, the short form of `model/character/uniform/common/team_folder/<path>`, which
+  reads the same; referee exports write it too (no `999`). A path naming a file directly
+  below `model/character/uniform/common/` (the game's own `uniform.mtl`,
+  `uni_pattern_nrm00.dds`) is the game's file and may also be written `common/<name>`; the
+  compiler writes the full form out. Any other folder after `common/` (`797`, `XXX`, `o`,
+  `refs`) is refused: `mtl_common_path_invalid`, `xml_common_path_invalid` (*lead*: on every
+  target, the spelling being the export's, not the target's). The compiler still writes the
+  team's ID (999 for referees) in what it packs: that is the game's path, not the export's.
+  *Lead*: an FMDL path table's Fox Common directory reads `team_folder` there too, and its
+  three characters keep today's reading: the game's own FMDLs name the team `000` there
+  (117 real boots FMDLs), and the compiler points FMDL textures by stem whatever the
+  directory, so no member types that segment.
+- **The keeper's token** `u0???gD` becomes `gk_kitD` (`u0XXXg1.dds` → `gk_kit1.dds`), in
+  names and references, in both modes. *Lead*: `u0???g0` becomes `gk_kitN` in a path and
+  `gk_kitF` in a name, as `u0???p0` does; a `u0???g` not followed by a digit is no token.
+  `gk_kit1` holds the token `kit1`, so the keeper's textures are a kit set read with the
+  outfielders' kit number, which the compiler already handles.
+- **The upgrader reads no teams list.** The team's name comes from the Note's `Team:` line,
+  else the export name's first word, unchecked against any list, so a team the list no
+  longer holds (a historical one) upgrades; `team_name_unknown` remains only for a value or
+  name that is no team name (empty, or holding a space or an inner `/`). The save's team is
+  the first in record order whose name, colour codes stripped, folds to that team name; a
+  later one of the same name is reported (`save_team_name_repeated`, W). *Lead*: the save
+  team's ID is what the old compile's rename rule needs to tell the file it renamed from
+  the one already spelled with the team's ID (`u0731p2.dds` beside `u0XXXp2.dds`); in loose
+  mode there is none, so such a collision is `unmigrated_content`, as in model-folder mode.
+Why: the Studio format has no place for a team ID of any kind, and `XXX` is legacy too. The
+upgrader wrote the list's ID because Red's compile did, which also made an export unupgradable
+once its team left the list. `team` was rejected as the folder name: the compiler writes every
+team's kit configs to the game's `model/character/uniform/team/`, one level from where
+`common/team/` would sit; `team_folder` occurs in no CPK (1,569 custom ones read) or export
+(663) on the maintainer's machine. `kitN` for the keeper was rejected: six exports hold
+`u0XXXg1.dds` beside `u0XXXp1.dds` in one `Common/` (/jp/ Summer 24 among them), which would
+become one name. Census: `.tmp/0_0_2/poc11_census/`.
+Plan: `spec/team_compiler/messages.md` ("User-supplied `face.xml`", the XML/MTL rows),
+`spec/team_compiler/pipeline.md` (the Common paths), `spec/model_format.md` ("Kit-dependent
+assets"), `spec/export_upgrader.md` (steps 2, 6, 7, "CLI", catalog), `plans/export_upgrader.md`
+"GUI"; scenarios TC-XML-18 to 20, TC-MOD-102, EU-ROOT-08 to 10, EU-MDL-29 to 33, EU-MF-08 to
+09, EU-REF-13 (EU-ROOT-03, EU-MDL-06, 10, 14, 22, EU-MF-02 and 04 withdrawn for them);
+TC-MOD-88, TC-XML-01, TC-XML-12, TC-CMN-18 and TC-CMN-25 take `common/team_folder/` in their
+GIVEN, their outcomes unchanged.

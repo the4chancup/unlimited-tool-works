@@ -337,8 +337,8 @@ pass-through-eligible, and the logo goes as one unit.
 | `xml_model_type_missing` | E | `<model>` without `type` | folder discarded |
 | `xml_model_path_missing` | E | `<model>` without `path` | folder discarded |
 | `xml_model_not_found` | E | `path` (or `material`) is a `./` or Common reference whose file is missing from the export | folder discarded |
-| `xml_common_path_invalid` | E | Common reference without 3-char subfolder | folder discarded |
-| `mtl_common_path_invalid` | E | on a pre-Fox target, `xml_common_path_invalid`'s rule for a `.mtl`: a sampler `path` below `model/character/uniform/common/` whose subfolder is not three characters long (`common/o/env.dds`) — the team's Common is written under its three-digit ID, so such a path reaches nothing (on Fox the conversion rewrites the paths, so the rule is meaningless there) | folder discarded (the `.mtl`'s folder; a `Common/` `.mtl`'s, the file alone) |
+| `xml_common_path_invalid` | E | a `path` or `material` below `model/character/uniform/common/` (or its short form `common/`) naming a folder there other than `team_folder`, the team's Common: a team ID or `XXX` (`common/797/`, the legacy spelling, which the Studio format does not have), another team's name (`common/o/`, `common/refs/`). The text says the team's Common is written `common/team_folder/`, and that an export upgraded before 0.0.2 is upgraded again from its original. A file directly below `common/` is the game's own (`xml_path_unchecked`) | folder discarded |
+| `mtl_common_path_invalid` | E | `xml_common_path_invalid`'s rule for a `.mtl` sampler `path`, on every target: the spelling is the export's, so a `check` and a compile for either engine judge it alike | folder discarded (the `.mtl`'s folder; a `Common/` `.mtl`'s, the file alone) |
 | `xml_oral_prefix_missing` | E | PES16 target: model file name starting with none of `face_high_`/`hair_high_`/`oral_` | folder discarded |
 | `xml_dif_conflict` | E | two sources for one datum in one folder: the xml carries a `<dif>` and the folder also has `face_diff.xml`, or, on either engine, the folder has both `face_diff.bin` and `face_diff.xml`. A `<dif>` beside a `face_diff.bin` is no conflict: it is the dual-engine layout of the current referee exports, the xml's `<dif>` going out on PES 15-17 (the `face_diff.bin` ignored there with no finding, as a file only the other engine reads) and the `face_diff.bin` on PES 18-21 (where the xml is `xml_ignored_fox`) | folder discarded |
 | `xml_element_unknown` | W | a child of `<config>` other than `<model>`/`<dif>` | kept verbatim |
@@ -423,15 +423,22 @@ tracer's Fumos folder: `./face_high_*.model` beside `face_high_win32.model`) was
   `win32`, spelled as the xml spells it) and the reference is written as it is. We do not
   rename the file to its `oral_<stem>_win32` packed name and respell the reference, because the
   xml is the member's statement of what the game should load, and Red kept both as written.
-- A `model/character/uniform/common/<3 chars>/<name>` reference has the 3-character segment
-  replaced by the team ID (any other length is `xml_common_path_invalid`), and `<name>` (`*` as
+- A `common/team_folder/<name>` reference, or its long form
+  `model/character/uniform/common/team_folder/<name>` (`team_folder` in any letter case), names
+  the team's Common: it is written with `team_folder` replaced by the team's ID (999 for a refs
+  export), the long form's prefix always, and `<name>` (`*` as
   `win32`) names a file directly in the export's `Common/`, case-folded, else `xml_model_not_found`;
-  `<subfolder>/<name>` (`.../common/999/refkit/oral_arm_*.model`, `<subfolder>` at any depth)
+  `<subfolder>/<name>` (`common/team_folder/refkit/oral_arm_*.model`, `<subfolder>` at any depth)
   names a file in that
   subfolder of `Common/`, which the team's Common output packs at its own path (`pipeline.md`
   "Common"), and in a refs export a file of the referee template's `common/999/` tree counts
   too when the export does not hold one of that path (`blue_port.md` "Referee export
-  processing").
+  processing"). We write `team_folder`, not the team's ID or `XXX`, because the Studio format
+  holds no team ID of any kind: an export compiles under whatever ID the teams list gives its
+  team, and `XXX` is the legacy placeholder, which only the Export upgrader reads (DECISIONS
+  2026-11-09). Any other folder after `common/` is `xml_common_path_invalid`; a file directly
+  below `common/` (`common/uniform.mtl`, the game's own) is the last bullet's, written in the
+  long form, the only one the game reads.
   A `.model` is written as the team's Common output packs it, `oral_<stem>_*.model` (the Common
   output renames every model, as Red's `model_names_fix` does, and Red then respells the xml);
   a `.mtl` keeps its name there.
@@ -441,7 +448,8 @@ tracer's Fumos folder: `./face_high_*.model` beside `face_high_win32.model`) was
   respells the entry for the kit picked, and completes the set as a generated face's is
   (`pipeline.md` "Kit-dependent assets", `kit_variant_missing`).
 - A `material` is resolved the same way; an entry without one is written without one.
-- Any other path form is `xml_path_unchecked` and written as it is.
+- Any other path form is `xml_path_unchecked` and written as it is, but for a short
+  `common/<name>`, written `model/character/uniform/common/<name>`.
 
 What is emitted from such a folder: each referenced `.model` under its name, each referenced
 `.mtl` under its own name with its texture paths pointed as a generated face's are, the
@@ -509,7 +517,7 @@ agree. A shared face folder's `.mtl` files are checked in that folder's own pass
 own textures: a shared face is complete by itself, and a texture a player holds of a stem it
 names does not count. Past the folder, a `./` or bare path is missing (the face packs no
 texture the folder does not hold); a path of the Common form
-`model/character/uniform/common/<3 chars>/<path>` (`<path>` a name, or a `Common/` subfolder's
+`common/team_folder/<path>` or its long form (`<path>` a name, or a `Common/` subfolder's
 `jessie/skin.dds`, at any depth; a `kitN/` directory stands for its set, a file of the set supplying it, as in
 `pipeline.md`) is supplied when `Common/` holds the stem at that path, or an installed CPK
 holds `common/character1/model/character/uniform/common/<team>/<path>` as a `.dds`
@@ -524,9 +532,10 @@ the compiler cannot tell that harmless miss from one that shows, and refusing a 
 plays would fail the parity standard; the Warning tells the member where to look. A `Common/`
 `.mtl` is packed once for the team, so its mesh-used names are those every kept `Common/`
 `.model` binds, and its paths resolve among the `Common/` textures and the installed CPKs. A
-Common-form path the check calls supplied is still packed with its segment as written (the
-face task points only stems the folder holds): whether Red respells it is a question for the
-pre-Fox parity step. A pre-Fox texture `.common` link
+Common-form path the face task does not point (it points only stems the folder holds) is
+written `model/character/uniform/common/<team ID>/<path>`, the ID 999 for a refs export, and a
+short `common/<name>` naming the game's own file `model/character/uniform/common/<name>`: the
+game reads neither `team_folder` nor the short form. A pre-Fox texture `.common` link
 whose target is not in the export stays `common_link_missing`, not yet satisfied by an installed
 CPK: the face task points a link by its target's name, so lifting that needs the task to point
 a targetless link by the link's own stem, an improvement deferred until the cup next plays a
