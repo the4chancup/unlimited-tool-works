@@ -7641,7 +7641,7 @@ briefs, review loops, gates and mutation runs as for any step.
     2026-11-09 (main merged, `aad5c957`; archive SHA-256 `af0cf4f1…`, its checksum file
     matching, the exe `v0.0.2-poc.1`, the readme's teams-list step present; the third build
     kept in `target/dist_prev_48483ba9`)
-  - [ ] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
+  - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
     withdrawn whole (today SE-STR 8, SE-TRN 3, `spec/save_editor.md`) moves to
     `docs/spec/withdrawn_ids.md`, its lines as written, reason and successor kept; (2) a run
     of consecutive withdrawn IDs in a live area becomes one range line in place
@@ -7650,7 +7650,14 @@ briefs, review loops, gates and mutation runs as for any step.
     `withdrawn_ids.md` (a compacted line counts as removed). `scripts/gates/acceptance.py` reads both
     (an ID in a range or in the file is defined and withdrawn: reuse fails as defined twice,
     a citation as withdrawn), with tests; `CONTRIBUTING.md`'s "withdrawn" sentence updated;
-    count with `.tmp/withdrawn_areas.py`
+    count with `.tmp/withdrawn_areas.py`. Done: 38 lines archived (the two areas' 11, and 27
+    in eight runs, now range lines in `spec/export_upgrader.md` and `spec/team_compiler/README.md`;
+    runs of one stay as written), by `.tmp/acc/migrate.py`; the scan's IDs, flags, citations,
+    problems and unproven list identical before and after (`.tmp/acc/compare.py`), each
+    removed line found verbatim in the archive; 10 new gate tests red on stubs, 8 perturbations
+    of the gate each failing one (`.tmp/acc/perturb.py`). Files: `scripts/gates/acceptance.py`,
+    `acceptance_test.py`, `docs/spec/withdrawn_ids.md`, the three specs, `spec/README.md`,
+    `CONTRIBUTING.md`
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the

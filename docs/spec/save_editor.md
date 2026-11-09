@@ -481,15 +481,6 @@ SE-PAT-06  GIVEN SE-PAT-01's save and patch, and an --out that cannot be written
            THEN it fails naming --out, with exit code 3, and no team is listed as applied
 ```
 
-**Transplant**
-
-```
-SE-TRN-01  withdrawn: the save-writing transplant is removed (8.9j5c); its successor writes
-           the team's export, SE-GUI-14 (`plans/save_editor.md`)
-SE-TRN-02  withdrawn: the save-writing transplant is removed (8.9j5c)
-SE-TRN-03  withdrawn: the save-writing transplant is removed (8.9j5c)
-```
-
 **Diff**
 
 ```
@@ -558,19 +549,6 @@ SE-AATF-07 GIVEN the settings' aatf_ruleset naming the embedded vgl27 and the of
                 written to a file given by --rules
            WHEN check-aatf is run on SE-AATF-03's save
            THEN the --rules file is the one checked: the VGL27 violation is not printed
-```
-
-**Stripped save**
-
-```
-SE-STR-01  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
-SE-STR-02  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
-SE-STR-03  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
-SE-STR-04  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
-SE-STR-05  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
-SE-STR-06  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
-SE-STR-07  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
-SE-STR-08  withdrawn: no save is stripped, and strip-and-seed and check-stripped are gone (step 8.36b)
 ```
 
 **Teams list**

@@ -365,7 +365,12 @@ Requirements:
   editor; `ST` the shell,
   which is no tool: its scenarios are in `plans/core/gui.md` "Acceptance"), `KIT` an area
   within the tool, the number never reused once assigned; a withdrawn scenario keeps its ID with
-  the text `withdrawn: <reason>`. Scenarios describe observable outcomes (files written, findings
+  the text `withdrawn: <reason>`. A withdrawn line may leave its spec only for
+  `spec/withdrawn_ids.md`, copied there as written first: an area whose every scenario is
+  withdrawn moves whole, and a run of consecutive withdrawn IDs in a live area becomes one range
+  line in place (`TC-BIN-25 to 33  withdrawn: <reason>`), so the area's numbers taken stay in
+  sight where its next scenario is written. The acceptance gate reads both, and fails a range
+  whose lines the file lacks. Scenarios describe observable outcomes (files written, findings
   emitted, savefile fields set, CLI output), never internal structure; if the implementation could
   change without the scenario changing, the scenario is fine. Behavior defined by a fixture or the
   parity standard (byte-identical CPK, format round-trips) is not restated as a scenario.

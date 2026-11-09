@@ -417,8 +417,7 @@ TC-STR-17  GIVEN a Fox target, Boots/Crocs/ holding torso.fmdl and Boots/Mud/ ho
            THEN fmdl_name_invalid is reported for Crocs, which is dropped with its linking player
                 (link_target_dropped); Mud, its player and the player holding torso.fmdl (face
                 content by the name table) report no Warning or Error
-TC-STR-18  withdrawn: restated as TC-SAV-21 (step 8.36c)
-TC-STR-19  withdrawn: restated as TC-SAV-21 (step 8.36c)
+TC-STR-18 to 19  withdrawn: each one's text, reason and successor in `spec/withdrawn_ids.md`
 TC-STR-20  GIVEN /co/ slots 05, 06 and 07 holding, in turn, ingame_face.toml, a bare
                  ingame_face and ingame_face.txt, and no model
            WHEN the export is checked, then compiled for PES 21
@@ -1246,9 +1245,7 @@ TC-MOD-70  GIVEN Boots/Crocs/boots.fmdl, Boots/Tabi/boots.fmdl, and slot 05 hold
                 place of jessie/Crocs.boots
            THEN the compile reports no shared_link_duplicate and his boots are Crocs';
                 the check reports shared_link_duplicate and drops the folder
-TC-MOD-58  withdrawn: restated as TC-MOD-96 (step 8.36c)
-TC-MOD-59  withdrawn: restated as TC-MOD-97 (step 8.36c)
-TC-MOD-60  withdrawn: restated as TC-MOD-98 (step 8.36c)
+TC-MOD-58 to 60  withdrawn: each one's text, reason and successor in `spec/withdrawn_ids.md`
 TC-MOD-84  GIVEN slot 05 holding Face_High.fmdl and face_high.mtl, which a PES 17 output packs
            under one name, letter case aside
            WHEN the export is compiled for PES 17
@@ -2057,10 +2054,7 @@ TC-BIN-21  GIVEN TC-BIN-05's install with 4cc_61_midcup.cpk replaced by bytes th
            WHEN a /co/ export is compiled with cpk_name 4cc_99_test
            THEN installed_bin_unreadable is reported naming 4cc_61_midcup.cpk, no export is
                 read, no CPK is written, and the exit code is 3
-TC-BIN-10  withdrawn: restated as TC-BIN-25 (`spec/team_compiler/README.md`), which also
-           gives the compiled player's gloves and appearance rows
-TC-BIN-11  withdrawn: restated as TC-BIN-50 (step 8.36c)
-TC-BIN-12  withdrawn: restated as TC-BIN-51 (step 8.36c)
+TC-BIN-10 to 12  withdrawn: each one's text, reason and successor in `spec/withdrawn_ids.md`
 TC-BIN-13  GIVEN an installed TeamColor.bin whose record for team 799 starts with color bytes in
            place of its team ID and color count
            WHEN a /co/ export is compiled
@@ -2441,23 +2435,9 @@ which would find the developer's own save).
 **Player tables**
 
 ```
-TC-BIN-25  withdrawn: restated as TC-SAV-18 (step 8.36c)
-TC-BIN-26  withdrawn: restated as TC-BIN-52 (step 8.36c)
-TC-BIN-27  withdrawn: restated as TC-BIN-53 (step 8.36c)
-TC-BIN-28  withdrawn: restated as TC-SAV-18 (step 8.36c)
-TC-BIN-29  withdrawn: restated as TC-BIN-54 (step 8.36c)
-TC-BIN-30  withdrawn: restated as TC-BIN-55 (step 8.36c)
-TC-BIN-31  withdrawn: restated as TC-BIN-49 (`spec/team_compiler/README.md`), the
-           face and hair keys read from ingame_face.toml since step 0.0.1h
-TC-BIN-32  withdrawn: restated as TC-BIN-50 (step 8.36c)
-TC-BIN-33  withdrawn: restated as TC-SAV-21 (step 8.36c)
-TC-BIN-37  withdrawn: the installed table rows the bins CPK kept went with the player tables
-           (step 8.36c)
-TC-BIN-38  withdrawn: restated as TC-BIN-48 (`spec/team_compiler/README.md`), the
-           facial hair type read from ingame_face.toml since step 0.0.1h
-TC-BIN-47  withdrawn: restated as TC-BIN-60 (step 8.36c)
-TC-BIN-48  withdrawn: restated as TC-BIN-61 (step 8.36c)
-TC-BIN-49  withdrawn: restated as TC-BIN-62 (step 8.36c)
+TC-BIN-25 to 33  withdrawn: each one's text, reason and successor in `spec/withdrawn_ids.md`
+TC-BIN-37 to 38  withdrawn: each one's text, reason and successor in `spec/withdrawn_ids.md`
+TC-BIN-47 to 49  withdrawn: each one's text, reason and successor in `spec/withdrawn_ids.md`
 ```
 
 **Aesthetics patch and savefile**
@@ -2541,9 +2521,7 @@ The /co/ block's shared IDs are 644 to 660 (`spec/aesthetics_export/player_folde
 IDs automatically").
 
 ```
-TC-BIN-34  withdrawn: restated as TC-BIN-56 (step 8.36c)
-TC-BIN-35  withdrawn: restated as TC-BIN-57 (step 8.36c)
-TC-BIN-36  withdrawn: restated as TC-BIN-58 (step 8.36c)
+TC-BIN-34 to 36  withdrawn: each one's text, reason and successor in `spec/withdrawn_ids.md`
 TC-BIN-39  GIVEN no installed CPK holding a /co/ record, and a Midcup /co/ export whose only
                 player folder, slot 05, holds a settings.toml
            WHEN it is compiled for PES 21

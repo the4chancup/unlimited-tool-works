@@ -1689,9 +1689,7 @@ EU-SET-04  GIVEN one player whose folder's name part equals his save name, a fac
            WHEN the export is upgraded
            THEN their settings.toml files hold name = true, name = the save name, and name = the
                 save name with its codes byte for byte, in a folder named without them
-EU-SET-05  withdrawn: restated as EU-SET-11 (`spec/export_upgrader.md`), his
-           cheek_type in ingame_face.toml since step 0.0.1h
-EU-SET-06  withdrawn: no save is stripped (step 8.36b), so settings_from_stripped_record is gone
+EU-SET-05 to 06  withdrawn: each one's text, reason and successor in `spec/withdrawn_ids.md`
 EU-SET-07  GIVEN a player whose record holds the hide strip and boots and gloves IDs of his own,
                 with their folders, each holding its model
            WHEN the export is upgraded

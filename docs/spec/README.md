@@ -19,6 +19,7 @@ decisions); the Team compiler and the library crates have their own documents.
 | [Model conversion](model_conversion/README.md) | `model_convert` lib: IR, conversion between the engines, mesh splitting, the Python bindings' side of the Blender integration |
 | [Savefile](pes_savefile/README.md) | `pes_savefile` lib: crypto, schema-driven codec, player/team/tactics model, interchange formats |
 | [Library crates](libs/README.md) | The remaining lib crates: format parsers, DDS conversion, color tools (kit-color extraction), archives, the task pipeline |
+| [Withdrawn scenario IDs](withdrawn_ids.md) | The withdrawn acceptance scenarios that left their spec, as written there, so their IDs are never reused |
 
 How the two trees evolve is in the plan index, "How these documents evolve". Coding rules live
 in [`../CONTRIBUTING.md`](../CONTRIBUTING.md), domain terms in [`../GLOSSARY.md`](../GLOSSARY.md),
