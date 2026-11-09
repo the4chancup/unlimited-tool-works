@@ -5,7 +5,15 @@ Team compiler (aesthetics exports to CPK archives), a save editor, and the small
 them (kit configs, referees, balls, music, match tracking, model conversion), in a single binary
 that is both a GUI and a CLI.
 
-**Status: in development, not released yet.** Six of twenty phases are done:
+**Status: in development, with a first preview out.** 0.0.1, released 2026-11-03, is the save
+editor alone, for the Divegrass Before Christmas cup on PES 2017: players, teams and tactics,
+the aesthetics patch, the roster sheet, Live and Multi-team AATF checks, the comparator, undo
+and redo, and a command line for batch work. The next preview, 0.0.2, adds the Team compiler
+and the Export upgrader for /vg/ League 27 on PES 2019, run from two launchers
+(`quick_upgrade.bat`, `quick_compile.bat`); a pre-release build of it is being tried before
+it goes to the league's organizer. `CHANGELOG.md` lists what each release changed.
+
+Six of twenty phases are done:
 
 - **Phases 1 and 2**, the foundations: readers and writers for the game's files (CPK, FPK,
   FTEX, DDS, WESYS, uniparam, zip/7z), both model families (FMDL for PES 18-21, `.model`/`.mtl`
@@ -20,18 +28,16 @@ that is both a GUI and a CLI.
 - **Phase 6**, the Export upgrader: an export in the old layout migrated once to the new one.
 
 Phase 8, the window, is under way: the shell (sidebar, help, log panel, settings), the color
-picker, the AATF card pickers, and the save editor's views (the player list, the player and
-team views with the Tactics pitch, the AATF check and Live AATF, team file import and export,
-the aesthetics patch, the list of unsaved changes). The first preview, 0.0.1, is the save
-editor alone, for the Divegrass Before Christmas cup on PES 2017; a 0.0.2 preview adds the
-Team compiler and the Export upgrader, through their command line, for /vg/ League 27. The
-`.4ccm` music format (Rigdio's) is built ahead of its phase.
+picker, the AATF card pickers, and the save editor's views, the ones 0.0.1 ships. The `.4ccm`
+music format (Rigdio's) and the first parts of the Ruleset editor are built ahead of their
+phases.
 
-4,261 tests, all gates green. Every finished tool also runs from the command line
+5,862 tests, all gates green. Every finished tool also runs from the command line
 (`UTW <tool> <command>`), the way to use those the window does not show yet.
 
-The architectural plan lives in `docs/plans/` (start at `docs/plans/README.md`). `AGENTS.md` is
-the short orientation for anyone working on the code; `docs/CONTRIBUTING.md` holds the coding
+What the suite does now is specified in `docs/spec/` (start at `docs/spec/README.md`), what
+comes next is planned in `docs/plans/` (start at `docs/plans/README.md`). `AGENTS.md` is the
+short orientation for anyone working on the code; `docs/CONTRIBUTING.md` holds the coding
 rules and verification gates; `docs/WORKLOG.md` says where the work currently stands.
 
 ## License
