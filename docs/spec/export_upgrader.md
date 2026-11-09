@@ -540,7 +540,15 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    holding a legacy `p` token and also a Studio token of the author's (`kit1_u0827p0.dds`, five
    VGL26 exports) has that token's `k` written `K` (`Kit1_kitN.dds`, `Common/Kit1_kit1.dds`), in
    names and references alike: a stem's first token is its kit token, so `kit1_kitN` would read
-   as variant 1 and its set would never link. In a
+   as variant 1 and its set would never link. A path whose directory segment holds the legacy
+   `p` token gives the Studio tokens of its file name the same `K` (`Common/u0XXXp2/kit1.dds`
+   → `Common/kit2/Kit1.dds`, the FMDL texture `common/XXX/u0XXXp0/sourceimages/kit1` →
+   `./kitN/` `Kit1`; GBPEN's post-VGL26 export, 45 references in 19 models): a file name's
+   token wins over every directory segment (`aesthetics_export`'s `kit_path_token`), so
+   `kit2/kit1.dds` would read as variant 1 in a `kit2` folder, the reference `kitN/kit1` as no
+   reference at all, and the per-kit folder set would neither link nor pack. A reference whose
+   directory and file name are stored apart (an FMDL path-table entry, a `.mtl` texture) is
+   one path for this rule. In a
    `face.xml`, only the `path` and `material` attributes' values change, the rest of the file
    byte for byte as written, `<dif>` included; their `???` stays, the compiler respelling any
    three characters there. The upgrader is the **only** Studio component that reads the legacy spelling — the
@@ -1545,6 +1553,15 @@ EU-MDL-08  GIVEN an FMDL texture common/XXX/u0XXXp0/sourceimages/armor_bsm, and
            THEN the FMDL texture is ./kitN/ armor_bsm, the model's folder holds the link
                 kitN/armor_bsm.dds.common, Common/ holds kit1/armor_bsm.dds, and the shared
                 validation finds the link resolving
+EU-MDL-28  GIVEN Common/u0XXXp1/kit1.dds, Common/u0XXXp1/kit2.dds, Common/u0XXXp2/kit1.dds and
+                Common/u0XXXp2/kit2.dds, and a face folder holding u0XXXp1/kit1.dds and
+                u0XXXp2/kit1.dds whose FMDL names the textures
+                common/XXX/u0XXXp0/sourceimages/kit2 and ./u0XXXp0/kit1
+           WHEN the export is upgraded
+           THEN Common/ holds kit1/Kit1.dds, kit1/Kit2.dds, kit2/Kit1.dds and kit2/Kit2.dds, the
+                player folder holds kit1/Kit1.dds and kit2/Kit1.dds, the FMDL textures are
+                ./kitN/ Kit2 and ./kitN/ Kit1, the player folder holds the link
+                kitN/Kit2.dds.common, and the shared validation finds it resolving
 EU-MDL-09  GIVEN a model folder holding u0XXXp1.dds, u0714p2.dds, a folder u0XXXp0/ and
                 jacket_u0XXXp1.model, the textures named by its .mtl and its FMDL path table,
                 which also name dummy_kit.dds, and the model by its zlib-wrapped face.xml as

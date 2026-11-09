@@ -15842,3 +15842,18 @@ Why: the ways a manager can mistype a Note have no end, so repairing one of them
 per typo; a Warning that let the rest upgrade would mostly go unread, and the team would
 compile with a kit's colours silently missing, where the refusal names the line to fix.
 Plan: `spec/export_upgrader.md` "What it does" (the Note's colour entries); EU-KIT-17.
+
+## 2026-11-09 — export_upgrader — a legacy kit folder's file names lose their Studio tokens
+Decision (the lead, from the VGL27 Friendlies run): when a path's directory segment holds the
+legacy `u0???p` token, every Studio kit token in its file name gets its `k` written `K`
+(`Common/u0XXXp2/kit1.dds` → `Common/kit2/Kit1.dds`), in output names and in references
+alike, an FMDL or `.mtl` reference's directory and file name read as one path; the existing
+rule for a token beside a legacy one in the same segment (`Kit1_kitN.dds`) is unchanged.
+Why: the compiler reads a file name's token before any directory's (`kit_path_token`), so
+GBPEN's per-kit Common folders, upgraded to `kit1/kit1.dds`, `kit2/kit1.dds`, read as kit
+variants of the file name: 45 FMDL references in 19 models found nothing
+(`fmdl_texture_not_found`), 21 textures were dropped (`file_not_used`), and the CPK lacked
+them. Respelling in the upgrader keeps the compiler's grammar
+whole, and is the mechanism the same-segment case already uses; changing the compiler's
+precedence would reopen every Studio-spelled path.
+Plan: `spec/export_upgrader.md` "What it does" (the kit magic paragraph); EU-MDL-28.
