@@ -14,7 +14,7 @@ A line of one of these needs no action.
 |---|---|
 | I1 | `*.fpk.xml` dropped: Red copies the source's, the Studio format has none |
 | I2 | a relocated copy: one Red texture, a copy per wearer |
-| I4 | `kitN` spelling of kit-dependent names |
+| I4 | `kitN` spelling of kit-dependent names (with 0.0.2-poc9's `kit_texK` and poc11's `gk_kitN`: Red's name then pairs with none of ours) |
 | I5 | a Full export's kit placeholders and rebuilt bins |
 | I6 | kit config names |
 | I7 | the number atlas re-arranged |
@@ -49,6 +49,11 @@ A line of one of these needs no action.
 | I33 | an item folder with a stray FMDL: Red discards it, ours drops the file |
 | I34 | a face whose Common path names the team (`common/o/`): Red discards it, ours migrates it |
 | I35 | a pre-Fox Common model already named `oral_x`: Red packs it as `oral_oral_x`, ours keeps `oral_x` |
+| I36 | a model whose anti-blur copies the upgrade strips (0.0.2-poc7, `antiblur_dropped`): decoded, the meshes match, Red's mesh groups keep the copies |
+| I37 | a model far from the origin the upgrade drops (0.0.2-poc7, `model_far_dropped`): Red packs it |
+| I38 | an item folder Red discards for the other engine's file (`boots.fmdl` on PES 17), ours converts it (`spec/team_compiler/pipeline.md` step 3) |
+| I39 | a Common model on Fox: Red packs it in the team's Common, ours writes no Common model there (a linked one baked into its players, an unlinked one ignored with no finding; `pipeline.md` step 3) |
+| I40 | a Common file the upgrade drops as a leftover (step 10): Red packs it |
 
 ## Defect candidates (D)
 

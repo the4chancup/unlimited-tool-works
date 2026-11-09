@@ -34,6 +34,10 @@ WEARER = re.compile(r"wearer_assumed at (Boots|Gloves)/([kg])(\d+).*?\(id=\d+, s
 ITEM_FOLDER = re.compile(r" at (Boots|Gloves)/([kg]\d+) - (.*?) \(", re.M)
 TEAM = re.compile(r"export_identified \(team=[^,]*, id=(\d+)\)")
 MISSING = ("red_only", "cpk_member_missing", "fpk_member_missing")
+# The upgrade's per-model findings, by the model's item folder (`Boots/k2201 - name`) or its
+# face slot (`Faces/XXX17 - name`, `Players/05 - name`).
+ITEM_MODEL = r" at (?:Boots|Gloves)/([kg]\d+)"
+FACE_MODEL = r" at (?:Faces|Players)/\w{0,3}?(\d\d)\b"
 # The exports holding game-path face folders.
 GAME_PATH_EXPORTS = {"FGOG Aesthetic Export from VGL6", "FGOG Aesthetic Export minipatch.zip", "co_fetus_new_aesthetics"}
 
@@ -95,6 +99,11 @@ class Job:
         # (step 10): Red discards the whole folder, ours packs the rest.
         stray = re.findall(r"leftover_dropped at (?:Boots|Gloves)/([kg]\d+)[^/\n]*/[^/\n]+\.fmdl$", self.upgrade, re.M)
         self.stray_slots = {self.item_slot[folder] for folder in stray if folder in self.item_slot}
+        # The item folders and face slots holding a model the upgrade dropped far from the
+        # origin, or stripped of its anti-blur copies (0.0.2-poc7).
+        self.dropped = {code: ({i.lower() for i in re.findall(code + ITEM_MODEL, self.upgrade)},
+                               set(re.findall(code + FACE_MODEL, self.upgrade)))
+                        for code in ("model_far_dropped", "antiblur_dropped")}
         # Slots whose face folder Red discarded for a broken `.mtl`/`face.xml` (`xml_check.py`).
         red_run = os.path.join(job, "red_run.txt")
         text = open(red_run, encoding="utf-8", errors="replace").read() if os.path.isfile(red_run) else ""
@@ -107,6 +116,11 @@ class Job:
         # Common folder must use a path with" block per reference, its folder two lines down).
         self.red_common_path = set(re.findall(
             r"Files loaded from the Common folder must use a path with\n[^\n]*\n- Folder: +\w{3}(\d\d)\b", text))
+        # Slots wearing a boots or gloves folder Red discarded for a file of the other engine
+        # ("This folder will be discarded", `boots.fmdl is not allowed` on PES 17).
+        self.red_discarded_items = {self.item_slot[item.lower()] for item in re.findall(
+            r"This folder will be discarded\n- Folder: +([kg]\d+)\b[^\n]*\n- \([^)\n]* is not allowed\)", text)
+            if item.lower() in self.item_slot}
 
     def slot_of(self, path):
         if self.team is not None:
@@ -197,6 +211,39 @@ def entry_lists(detail):
     return ast.literal_eval(red + "]"), ast.literal_eval("[" + ours)
 
 
+def respelled(name):
+    """A file name holding Red's kit magic (`u0782p1`, after Red's team fill) as the upgrade
+    writes it: `p0` as `kitn` and `pD` as `kitD`, a keeper's `g0`/`gD` as `gk_kitn`/`gk_kitD`
+    (0.0.2-poc11), and an author's own leading `kitD` token as `kit_texD` (0.0.2-poc9)."""
+    stem, ext = os.path.splitext(name.lower())
+    stem = re.sub(r"u0\w{3}p0", "kitn", stem)
+    stem = re.sub(r"u0\w{3}p(\d)", r"kit\1", stem)
+    stem = re.sub(r"u0\w{3}g0", "gk_kitn", stem)
+    stem = re.sub(r"u0\w{3}g(\d)", r"gk_kit\1", stem)
+    return re.sub(r"^kit(\d)", r"kit_tex\1", stem) + ext
+
+
+def respelled_textures(detail):
+    """Whether an `fmdl_differs` detail's texture lists differ only by `respelled`, its
+    materials equal: `materials [..] vs [..], textures [..] vs [..]`, any `; ...` after."""
+    match = re.match(r"(?:materials (\[.*?\]) vs \1, )?textures (\[.*?\]) vs (\[.*?\])", detail)
+    if not match:
+        return False
+    red, ours = ast.literal_eval(match.group(2)), ast.literal_eval(match.group(3))
+    pairs = list(zip(red, ours))
+    # At least one pair respelled, not merely recased: a case-only list is I24's.
+    return len(red) == len(ours) and all(r.lower() == o.lower() or respelled(r) == o.lower() for r, o in pairs) \
+        and any(r.lower() != o.lower() for r, o in pairs)
+
+
+def model_owner(job, code, lower):
+    """Whether the path's item folder or face slot held a model the upgrade reported `code` for."""
+    items, slots = job.dropped[code]
+    item = re.search(r"/(?:boots|glove)/([kg]\d+)/", lower)
+    face = re.search(r"/face/real/\d{3}(\d\d)/", lower) or re.search(r"/common/\d{3}/(\d\d) - ", lower)
+    return bool(item and item.group(1) in items or face and face.group(1) in slots)
+
+
 def kind_of(path):
     lower = path.lower()
     name = lower.rsplit("/", 1)[-1]
@@ -226,7 +273,7 @@ def cause_of(job, side, red, ours, class_, detail, version):
     lower = path.lower()
     kind = kind_of(path)
     slot = job.slot_of(path)
-    if class_ == "dropped_fpk_xml":
+    if class_ == "dropped_fpk_xml" or class_ == "cpk_member_missing" and lower.endswith(".fpk.xml"):
         return "I1 fpk.xml dropped"
     # A game-path face folder's face.xml under Red is one Red generated at the player's path,
     # the member's tree nested below it.
@@ -268,12 +315,25 @@ def cause_of(job, side, red, ours, class_, detail, version):
         return "error: " + ",".join(kit_errors)
     if slot is not None and job.errors.get(slot):
         return "error: " + ",".join(sorted(job.errors[slot]))
+    # The upgrade drops a model far from the origin (0.0.2-poc7, `model_far_dropped`); Red packs
+    # it, so its package lacks the model or differs in its members.
+    if class_ in MISSING + ("fpk_differs", "relocated_id_differs") and model_owner(job, "model_far_dropped", lower):
+        return "I37 a model far from the origin the upgrade drops (model_far_dropped): Red packs it"
     # A face naming the team's Common as `common/o/` was refused by Red ("broken mtl files",
     # or its Common-path block for a face.xml); ours migrates it.
     if slot is not None and (job.red_discarded.get(slot) == "broken mtl files" or slot in job.red_common_path):
         return "I34 a face whose Common path names the team (common/o/): Red discards it, ours migrates it"
     if slot is not None and "is not allowed" in job.red_discarded.get(slot, ""):
         return "I25 face folder Red discards for the other engine's file (face.skl on PES 17), ours ignores the file"
+    if class_ == "ours_only" and kind in ("boots", "gloves") and slot in job.red_discarded_items:
+        return ("I38 an item folder Red discards for the other engine's file (boots.fmdl on PES 17), "
+                "ours converts it (pipeline.md step 3)")
+    if class_ == "red_only" and kind == "common" and version == str(config.FOX_VERSION) and lower.endswith((".fmdl", ".skl")):
+        return ("I39 a Common model: Red packs it in the team's Common, ours writes no Common model on Fox "
+                "(a linked one baked into its players, an unlinked one ignored; pipeline.md step 3)")
+    if class_ == "red_only" and kind == "common" and re.search(
+            rf"leftover_dropped at Common/{re.escape(os.path.splitext(os.path.basename(lower))[0])}\.\w+$", job.upgrade, re.M | re.I):
+        return "I40 a Common file the upgrade drops as a leftover (step 10): Red packs it"
     if class_ == "red_only" and side == "refs" and kind == "face" and version == "21":
         return "I18 referee without a face model gets no face"
     if class_ == "red_only" and kind == "face" and slot is not None and not slot.startswith("Kits/"):
@@ -297,6 +357,19 @@ def cause_of(job, side, red, ours, class_, detail, version):
     if class_ == "fmdl_texture_names_differ" or (class_ == "ours_only" and re.search(r"(^|[_ ])kit(n|f|\d)([_.]|$)", os.path.basename(lower))) \
             or (class_ == "cpk_member_missing" and re.search(r"u0\w{3}[pg]\d", os.path.basename(lower))):
         return "I4 kitN spelling"
+    # Red's kit-magic name, which ours packs respelled (`kit_tex1_kitN`, `gk_kit1`): the two
+    # sides no longer pair by name. A model's texture list, a Red file left unpaired, Red's
+    # Common keeper file paired with our kit texture of its old name, a `.mtl` sampler.
+    base = os.path.basename(lower)
+    magic = re.search(r"u0\w{3}[pg]\d", base) and respelled(base) in job.ours_names
+    if magic and (class_ == "red_only" and kind in ("boots", "gloves", "common", "face")
+                  or class_ == "relocated_differs" and kind == "common"):
+        return "I4 kitN spelling"
+    if class_ == "mtl_differs" and "red's unmatched: " in detail:
+        paths = [os.path.basename(p) for p in re.findall(r'path: "([^"]+)"', detail.split("red's unmatched: ", 1)[1])
+                 if re.search(r"u0\w{3}[pg]\d", p.lower())]
+        if paths and all(respelled(p) in job.ours_names for p in paths):
+            return "I4 kitN spelling"
     if job.full and (class_ in ("uniparam_differs", "bin_records_differ")
                      or (class_ == "ours_only" and kind in ("kit texture", "kit config", "bins"))):
         return "I5 Full placeholders and rebuilt bins"
@@ -330,10 +403,18 @@ def cause_of(job, side, red, ours, class_, detail, version):
         return "I23 hand auto-split: a face model's hands moved into the gloves (model_hand_split, fmdl_merged)"
     if class_ in ("fmdl_differs", "bytes_differ") and kind in ("boots", "gloves") and lower.endswith((".fmdl", ".skl")) and job.item_retargeted:
         return "I14 re-bound through the IR (skeleton_retargeted)"
+    if class_ == "fmdl_differs" and respelled_textures(detail) and "; " not in detail:
+        return "I4 kitN spelling"
     if class_ == "fmdl_differs" and re.match(r"(?:materials (\[.*?\]) vs \1, )?textures \[", detail):
         textures = re.search(r"textures (\[.*?\]) vs (\[.*?\])", detail)
         if textures and textures.group(1).lower() == textures.group(2).lower() and ", meshes" not in detail:
             return "I24 FMDL texture names keep their letter case (Red lowercases a kit-magic name)"
+    # The upgrade strips a model's anti-blur copies (0.0.2-poc7, `antiblur_dropped`):
+    # `red_parity` decodes both sides, so the meshes match and the mesh groups keep Red's
+    # copies' entries.
+    if class_ == "fmdl_differs" and detail.endswith("mesh groups") and model_owner(job, "antiblur_dropped", lower) and (
+            detail == "mesh groups" or respelled_textures(detail.rsplit("; ", 1)[0])):
+        return "I36 anti-blur copies the upgrade strips (antiblur_dropped): Red's mesh groups keep them"
     if class_ == "fmdl_differs":
         return "I14? fmdl differs (re-bound or paired)"
     if class_ == "xml_differs" and detail.startswith("entries "):

@@ -2877,7 +2877,16 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         caught, 89 unviable, 3 timeouts (`pair_wearers`' fixpoint loop never ending, ruled
         caught), 1 missed, equivalent: `IngameFace::set_unused`'s disjoint `|` -> `^`, whose
         exclusion still named the pre-`5c1f6370` `write_undecoded`, repointed; no missing
-        test (`.tmp/0_0_2/poc11/mutants_diff_8bcbf720/triage.md`)
+        test (`.tmp/0_0_2/poc11/mutants_diff_8bcbf720/triage.md`). The library parity p11
+        (release build of `ee80b0ac`, c4's input lists; our compiler given c4's teams list,
+        since the embedded VGL27 allocation would refuse most of the library): the census's
+        312 changed outcomes all traced (`.tmp/library_parity/census/diagnosis_p11.md`: the
+        unlisted teams poc11 upgrades, poc7's far and anti-blur drops, poc9's FMDL kit paths,
+        `2b028e34`'s pairing; 5 `path_taken` refusals are poc11's loose-mode lead choice);
+        469 exports through Red, every line in a class but c4's one pairing tie, no D,
+        `I14?` or `warning-slot` line, after five new intentional classes and two widened
+        (`attribute.py`, `classes.md`: I36 anti-blur, I37 far drop, I38 to I40, I4 for
+        `kit_tex`/`gk_kit`, I1; `.tmp/library_parity/library/diagnosis_p11.md`)
     - [ ] d in game, before 0.0.2 (PES 2019 first, VGL 27's game and the likeliest for the
       4cc's spring cup, then PES 2021 and PES 2017; the maintainer, 2026-11-04): a
       patch applied to an
