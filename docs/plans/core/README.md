@@ -25,8 +25,11 @@ because the Team compiler only supports the Studio player-folder format; the thr
 files, sharing only the platform and their own lib crates — the tracker feeds live match events to
 the Music player, letting it run the match soundboard autonomously; the **Refs arranger** prepares
 referee exports' `players.txt` and hands the compile off to the Team compiler, which owns referee
-compilation; the **balls export** is the suite's third export kind, compiled by the Balls compiler
-into its own CPK; and the **Player aesthetics editor** hands model viewing to Blender (launched with
+compilation; the **balls export** is the suite's third export kind, compiled into its own CPK; the
+Team compiler grows into the suite's one **Compiler** for every export kind (team, refs, balls,
+stadium and billboard exports, each into its own CPK in one run), with a Balls arranger editing
+the ball list as the Refs arranger edits referee slots (DECISIONS 2026-11-09, "one Compiler for
+every export kind"); and the **Player aesthetics editor** hands model viewing to Blender (launched with
 a manifest consumed by the community's all-in-one `pes-models` extension) instead of embedding a 3D
 preview — it only gains a labeled approximate in-app preview if the Team compiler's future
 3D-preview feature creates the shared `model_viewport` lib; and the **Team creator** is a wizard
@@ -168,7 +171,8 @@ What exists of this is in `spec/core/README.md` "Key Decisions Summary".
 | GUI actions | Single Compile button (becomes Cancel) | Staged operations superseded by the unified pipeline |
 | Export upgrader | Dedicated tool crate | Merges single-user model folders into player folders; shared folders + link files; savefile-driven ID mapping |
 | Refs tooling | Arranger + handoff, no engine split | The Refs arranger edits the refs export's `players.txt` (via `aesthetics_export`) and switches to the Team compiler for the compile — a compile-engine lib crate would have one thin extra consumer |
-| Balls tooling | Standalone compiler + balls export | Ball content shares nothing with aesthetics exports (own paths, bins, CPK), so the Balls compiler owns its compile on the shared libs; balls become the third export kind in `exports/` (first word `balls`, skipped by the Team compiler) |
+| Balls tooling | Balls arranger + balls export, compiled by the Compiler | Ball content shares nothing with aesthetics exports (own paths, bins, CPK), so the balls kind keeps its own pipeline and CPK inside the Compiler's run; balls become the third export kind in `exports/` (first word `balls`, skipped by the Team compiler until the kind lands) |
+| One Compiler | Every export kind (team, refs, balls, stadium, billboards) compiled in one run, each into its own CPK; stadiums one export per stadium (`stadium`), billboards their own kind (`billboards`) | The organizer compiles one DLC: one check pass, one deploy, one settings page, where three tools meant three; the kinds already share the pipeline, conversion and packing libs and the progress grid. Crate layout settled when Phase 9 opens (guardrail 3) |
 | Distribution | Portable `.7z` (binary + `quick_compile.bat` + exports/ + teams list + readme), no installer | Extract anywhere and run; no elevation, no registry. Extract-and-run with no external runtime is the requirement, not file count — Red's many-file bundle causes users no trouble |
 | Quick-compile launcher | `quick_compile.bat` → `UTW --gui team-compiler compile`; GUI-subsystem exe + `AttachConsole` for CLI output; `exports/` beside the exe in both data modes | Red's `0_all_in_one.bat` is the one script users actually run; the GUI autorun keeps that double-click habit while showing the grid/log instead of a console. `gui_run` trait hook reuses the tool's CLI grammar, so no second command surface |
 | Studio Web | Post-release lite browser edition, not a first-release gate; lib crates `wasm32`-checked in CI from Phase 1 | Convenience for compiling/editing one's own team from another PC via a bookmark, never full-cup compilation (4 GB `wasm32` ceiling); the cheap file-picking tier ships first, the pipeline tier needs adapters + COOP/COEP hosting on the community server |

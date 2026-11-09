@@ -16026,3 +16026,37 @@ Plan: `spec/team_compiler/pipeline.md` step 2 "ID replacement" and "Common",
 `spec/team_compiler/messages.md` `fmdl_common_path_invalid`, `spec/export_upgrader.md` step 7,
 the draft's catalog, the compiler's help; scenarios TC-MOD-104, 105, EU-MDL-40, EU-MDL-39
 edited.
+## 2026-11-09 — core, balls_compiler, stadium_compiler — one Compiler for every export kind; balls get an arranger; stadiums and billboards become exports
+Decision (the maintainer; the lead's choices marked *lead*):
+- **One Compiler compiles every export kind in the exports folder** (the maintainer's
+  proposal): team exports, the refs export, the balls export, stadium exports and billboard
+  exports, each kind into its own CPK, in one run with one check pass, one deploy and one
+  message panel. The Team compiler already compiles two kinds (team and refs) into separate
+  CPKs per run; the balls and stadium pipelines join that run instead of shipping as two tools.
+- **The Balls compiler's list editing becomes the Balls arranger** (the maintainer): it edits
+  `balls.txt` and hands the compile off, as the Refs arranger does with `players.txt`. The
+  balls export's format and pipeline stay as planned.
+- **A stadium is a stadium export of its own**, one folder per stadium in `exports/`, named
+  with a marker word, never part of a team export (the maintainer: each team owns a stadium,
+  but council members, not managers, usually provide them). *Lead*: the word is `stadium`.
+- **A stadium's ID comes from a list**, as today's `stadium_list.txt` (the maintainer).
+  Later, maybe: the IDs ordered by team name, as the balls list's should be (the maintainer).
+- **Billboards are an export kind of their own, and a stadium export may carry its own too**
+  (the maintainer: both if possible, the own kind at least), as the old stadium compiler
+  reads global patterns from `billboards_to_add/` and a stadium's from its folder's
+  `Billboards/`. *Lead*: the word is `billboards`.
+- **Every stadium goes into the one stadium CPK, every billboard into the one billboard CPK**
+  (the maintainer: forty stadium CPKs cannot be afforded); a stadium is independent as a
+  folder, not as a CPK.
+- *Lead*: the crate layout is decided when Phase 9 opens, after the guardrail 3 measurement
+  (the worklog's issue): one Compiler crate with a module per kind under today's guardrail,
+  or a crate per kind if the guardrail is amended for test cost. The tool id (proposed
+  `compiler`, `team-compiler` kept as an alias for a release), the sidebar label and
+  `export_balls_skipped` (TC-SRC-04, shipped) change when the balls kind lands; the plans'
+  other mentions of the two compilers are respelled before Phase 9's acceptance is written.
+Why one tool: the three plans already share the pipeline, conversion and packing libs and the
+progress grid, and the organizer compiles one DLC; three tools meant three settings pages and
+three runs for it.
+Plan: `plans/core/README.md` (the structural points, "Key Decisions Summary"),
+`plans/stadium_compiler.md` "Stadium and billboard exports", `plans/balls_compiler.md`'s
+opening.

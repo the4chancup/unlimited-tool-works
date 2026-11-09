@@ -24,6 +24,29 @@ stadium export folders into CPK files, using a three-stage pipeline like Red:
 
 It becomes the `stadium_compiler` tool crate in the suite.
 
+## Stadium and billboard exports
+
+Stadiums and billboards are compiled as export kinds of the suite's one Compiler, beside team,
+refs and balls exports, not by a tool of their own (DECISIONS 2026-11-09, "one Compiler for
+every export kind"; the crate layout is settled when Phase 9 opens). Each kind goes into its
+own CPK in the run, so the old tool's "compile mode" (stadium CPK, billboard CPK, or both)
+becomes the Compiler's choice of what to compile.
+
+- **A stadium export** is one folder per stadium in `exports/`, its name starting with the
+  marker word `stadium`. A stadium belongs to a team, but council members rather than
+  managers usually provide it, so a team export never has to carry one.
+- **Its stadium ID comes from a list**, as the old tool's `stadium_list.txt` (`63
+  4ccg_spankneseum`: the ID, then the folder). Later, maybe: the IDs ordered by team name,
+  as the balls list's order should be.
+- **Billboards** come two ways, as in the old tool: a **billboards export** (marker word
+  `billboards`) holds global patterns (`4cc`, `hdg`: the old `billboards_to_add/`), and a
+  stadium export's own `Billboards/` holds its stadium's (the old
+  `stadiums_to_add/<folder>/Billboards/`). The billboards export is required; a stadium's
+  own `Billboards/` is supported too unless Phase 9's planning finds a cost against it.
+- **One stadium CPK and one billboard CPK** hold every stadium and every billboard (the old
+  defaults: `4cc_30_stadiums0`, `4cc_15_billboard`). A stadium is independent as a folder,
+  never as a CPK: a CPK per stadium would put forty CPKs in the DLC.
+
 ## New formats to port
 
 | Format | Source | Size | Placement |

@@ -6,10 +6,16 @@ The Balls compiler (`crates/tools/balls_compiler`, tool id `balls-compiler`, sid
 label "Balls compiler") is the successor to the **4cc balls compiler 2.03**, a batch
 file from the same era as the original AET compiler batch. It compiles a **balls
 export** — the ball models, thumbnails, and menu list for PES's ball selection
-screen — into its own CPK. Unlike the [Refs arranger](refs_arranger.md), this is a
-real compiler: ball content has nothing to do with aesthetics exports (own game paths, own
-`pesdb` bins, own CPK), so the tool owns its compile end to end, built on the
-existing lib crates. Platform context is in the [core plan](core/README.md).
+screen — into its own CPK. Platform context is in the [core plan](core/README.md).
+
+**It becomes two parts** (DECISIONS 2026-11-09, "one Compiler for every export kind"): the
+compile below ("Compilation pipeline", the bins, the CPK) is one export kind of the suite's
+one Compiler, which already compiles team and refs exports into their own CPKs, and the list
+editing ("GUI", "Saving") becomes the **Balls arranger**, which edits `balls.txt` and hands
+the compile off as the [Refs arranger](refs_arranger.md) does. Ball content still shares
+nothing with aesthetics exports (own game paths, own `pesdb` bins, own CPK): the kind keeps
+its own pipeline and CPK inside the run. The sections below keep the Balls compiler's names
+until the plans are respelled for the Compiler, before Phase 9; what they specify is unchanged.
 
 As with the AET compilers, the old tool defines *what* to produce, not *how* (see
 "Relationship to the old compiler").

@@ -8534,6 +8534,18 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open (2026-11-09) — One Compiler for every export kind (DECISIONS 2026-11-09): before Phase
+  9's acceptance is written, the plans naming the Balls and Stadium compilers (about 30 files)
+  are respelled for the Compiler and the Balls arranger, and the crate layout is chosen.
+  The layout waits on whether guardrail 3 (`spec/core/architecture.md` "Workspace
+  guardrails") is amended for test cost, which the maintainer wants only if worth it:
+  measured mutation cost per mutant (build + tests) is about 217 s for `save_editor`, 91 s
+  for `pes_savefile`, 50 s for `team_widgets`, 23 s for `team_compiler`. First,
+  `.tmp/lead/test_times.py <crate>` (nextest per-test times, the libtest wall time with and
+  without each binary's slowest tests) over those crates, on an idle machine, to see whether
+  a few tests dominate; a split pays only where slow suites are many tests, not a few. After
+  0.0.2-poc ships (the maintainer: the PoC first).
+
 - open (2026-11-09) — A member's `Collars/` FMDL is packed as it is on PES 18-21
   (`processing/mod.rs` `TaskKind::Collar`, `Engine::Fox if is_fmdl => Ok(bytes)`): its texture
   table is never read, so a `team_folder` directory keeps the placeholder instead of the team's
