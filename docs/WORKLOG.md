@@ -2868,7 +2868,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         lines, an issue below). Open: one `mutants-diff 8bcbf720` over everything since
         (8.36c, its review's fixes, 0.0.2-poc1 to poc7), after `save_editor`'s whole-crate
         run and the in-game checks; the three diffs queued behind that run were stopped
-        2026-11-06 to free its gap for the checks (the maintainer)
+        2026-11-06 to free its gap for the checks (the maintainer). Launched 2026-11-09 with
+        0.0.2-poc8 to poc11 in it (592 mutants over `team_compiler`, `export_upgrader`,
+        `pes_savefile`, `dds_convert`; `save_editor` left to its next whole-crate run), then
+        the library parity's rerun, tag `p11` against `c4`, c4's input lists and teams list
+        (`.tmp/0_0_2/poc11/long_jobs2.sh`, log `long_jobs2.log`)
     - [ ] d in game, before 0.0.2 (PES 2019 first, VGL 27's game and the likeliest for the
       4cc's spring cup, then PES 2021 and PES 2017; the maintainer, 2026-11-04): a
       patch applied to an
@@ -7611,7 +7615,9 @@ briefs, review loops, gates and mutation runs as for any step.
       fix (main merged, `2ad1210a`; archive SHA-256 `5c8bff89…`, its checksum file matching,
       the exe `v0.0.2-poc.1`; the first build kept in `target/dist_prev_63a1d183`). SWE-2
       over the fix (S-savepath r1, 7 accepted: the CHANGELOG line, tidying; r2, 4 accepted,
-      the loop ends; neither rework changes the bundle's behaviour). VGL27 Friendlies
+      the loop ends; neither rework changes the bundle's behaviour). Astra r2 over the fix
+      after its SWE-2 and Argon loops (A-savepath r2, Codex, 2026-11-09,
+      `.tmp/0_0_2/poc/astra_savepath2.report.md`): no concerns, Astra's loop ends. VGL27 Friendlies
       through the bundle 2026-11-09 (the maintainer's material; `F:/VGL27 Friendlies sorted`,
       39 teams): 37 upgrade and compile clean for PES 2019. Found: a team the bundle's
       `teams_list.txt` lacks (/end/, /wuwa/, new in the save) fails `team_name_unknown`, and
@@ -7662,8 +7668,8 @@ briefs, review loops, gates and mutation runs as for any step.
     run on the Friendlies saves: /END/, /wuwa/, /xivg/, /zzz/ overridden and 30 league teams
     `teams_list_unresolved` (each on an ID the allocation gives another team), as expected
     of a save numbered as VGL26
-  - [ ] 0.0.2-poc11 the upgrader writes no team ID and needs no teams list (the maintainer,
-    2026-11-09; clarification done, nothing specified or built yet). Rulings:
+  - [x] 0.0.2-poc11 the upgrader writes no team ID and needs no teams list (the maintainer,
+    2026-11-09; done 2026-11-09). Rulings:
     the upgrader must not depend on the team being in the current list (a historical team
     upgrades); the original save's team is found by name, a name held twice taking the first in
     record order with a warning; the Studio format has no team ID of any kind and `XXX` is
@@ -7731,6 +7737,9 @@ briefs, review loops, gates and mutation runs as for any step.
       maintainer's order (11-09), the queued long jobs rather than new slices:
       `.tmp/0_0_2/poc11/long_jobs.log` (`gates-changed 1814e675`, then `mutants-diff
       1814e675` over the two crates), Astra r2 over the save-path fix
+    - [x] measured 2026-11-09: `gates-changed 1814e675` green (43 binaries, 2,058 tests);
+      `mutants-diff 1814e675` over the two crates: 127 mutants, 111 caught, 16 unviable, no
+      survivor or timeout (`.tmp/0_0_2/poc11/mutants_diff/`)
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
     withdrawn whole (today SE-STR 8, SE-TRN 3, `spec/save_editor.md`) moves to
     `docs/spec/withdrawn_ids.md`, its lines as written, reason and successor kept; (2) a run
