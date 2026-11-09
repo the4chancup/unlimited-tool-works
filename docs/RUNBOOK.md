@@ -1,10 +1,13 @@
 # Runbook
 
 How the lead runs the project's machinery: mutation runs and the VPS that shares them, the scratch
-folder, the agents and their harness limits, and the full rules of the review rounds. Moved here
-from `AGENTS.md` on 2026-10-14, verbatim, because the Codex CLI truncates a project doc past
-32 KB and its reviewers never saw `AGENTS.md`'s last quarter; `AGENTS.md` keeps a summary of each
-and its rules stay in force. Read a section before starting what it covers.
+folder, the agents and their harness limits, how phases and releases open and close, briefing
+and reviewing a sidekick, and the full rules of the review rounds. Moved here from `AGENTS.md`,
+verbatim, because a harness truncates a project doc: the Codex CLI past 32 KB (2026-10-14, the
+mutation, scratch, agent and review sections), Devin past 16 KB (2026-11-09, the phase and
+sidekick sections, whose length had pushed the review sweeps, "When the plan has gaps" and
+"Conduct" past a Devin lead's cut); `AGENTS.md` keeps a summary of each and its rules stay in
+force. Read a section before starting what it covers.
 
 ## Mutation runs and the VPS
 
@@ -401,6 +404,185 @@ with no report and its test run killed, and a resume had to finish it. The launc
 so ("every cargo command in the foreground, a timeout up to 600000 ms; split the packages over
 several calls if one would take longer").
 
+## Phases and releases
+
+**Before a tool phase** (any phase whose deliverable is a tool crate, or savefile writing): the
+tool's plan gets an "Acceptance" section: stable-ID, GIVEN/WHEN/THEN scenarios for the
+user-observable behavior that phase delivers (format in `CONTRIBUTING.md` "Testing"). Written
+just-in-time for that phase only, never for the whole project up front: requirements written far
+ahead of the code that meets them go stale. Lib phases do not get one; for a format crate the
+fixture and the parity standard *are* the spec. A scenario for something a legacy tool already
+does (a control Studio keeps or replaces) states the effect read from that tool's source, citing
+the function, never one inferred from the control's name: SE-GUI-08 was written from the plan's
+"drag-and-drop reordering replaces the up/down spinner" and reordered the roster, where
+4ccEditor's spinner trades the two players' records between their ids, and the draft built on it
+carried the error two more days, every review checking the draft against the scenario.
+
+**Closing a phase**, in this order: (1) **converge**: audit the code against the phase's plan
+sections and acceptance IDs, the lead's own audit first (every plan code block compared line by
+line with the type it specifies, every step's verify criterion re-run), its gaps fixed, and only
+then the cross-family reviewer ("Review rounds"), so the reviewer's attention goes to what the lead could
+not see rather than to what it did not look for; every requirement that is missing, partial or
+untested becomes a new worklog step, and the phase stays open until those are done. A requirement the plan *explicitly
+defers* to a later phase (a "before implementing X, extend Y" note, an open question naming its
+phase) is not a gap and stays in the plan. The lead's audit ends with a **design-health pass**
+over the phase's crates, separate from requirements coverage: the design sweep ("Lead and sidekick") run
+over the whole phase's code rather than one diff, `just mutants <crate>` (the extra mutant
+kinds included) run over each crate with every survivor triaged (`CONTRIBUTING.md` "Mutation
+runs"), `just citation-audit` with every flag ruled (`CONTRIBUTING.md` "Citation audit"), and
+every `pub` item listed with the consumer that justifies it (a crate, the CLI, the bindings,
+or a plan section naming one). A crate that reads a file format also gets a **census**: every file of that format on the maintainer's
+machine (found through the Everything index, archives opened) run through read, the semantic
+round trip and `check`, tallied by outcome, each failing class diagnosed before it is fixed or
+recorded as a refusal, and re-run after every fix with a regression check (`scripts/census/`: the file list, the tally
+and the regression check; its README says how a run fits them). A phase that changes the Team compiler or the Export upgrader also reruns the
+library parity against Red (`scripts/library_parity/`, `plans/team_compiler/testing.md`), each
+new difference class diagnosed. Fixtures and mutation runs only test the files someone thought to add; the
+first census, at 2.20g, found about 1900 community `.model` files the reader refused. A census of
+a bit-packed format also tallies the bits real records set that no schema field covers: a round
+trip keeps them, so only this tally shows a field modeled too narrow (at 2.20i it found PES 18's
+dribbling-arm motion read as 2 bits of 3, misread for 2,808 players). Coverage asks
+"is everything the plan wants there?"; this pass asks "did the phase make the code harder to
+change?", which no test or lint measures and which compounds silently across phases. The
+whole-crate run happens twice per crate: in the lead's audit, where its survivors seed the first
+rework brief, and once at close, after the reviewer loop ends. The rework rounds in between are
+measured together, one `just mutants-diff` at each review loop's end over the loop's commits
+(`CONTRIBUTING.md` "Mutation runs"; 2.20f: 45-53 minutes per whole-crate run, 3 for a round's
+diff). Neither run holds the work up: the next phase starts while a run is under way, and
+the closing phase keeps its row open until the run's survivors are triaged and their tests
+land, which can be days on the VPS alone; avoiding that downtime is worth a phase row open a
+little longer; (2) **move** what the phase delivered from
+`docs/plans/` to the same file and heading in `docs/spec/` (acceptance IDs stay, as the behavior
+contract), correcting it where the code was built differently and converting any future-tense
+wording; deferred parts stay in the plan, and a section partly delivered keeps its heading in both
+trees, the plan's part pointing at the spec section it builds on; `just doc-pointers` then lists
+every pointer left naming the old tree, and code points at the spec alone; `GLOSSARY.md`'s
+rows for the moved terms are repointed by hand, since a pointer into a plan file that still
+exists (as a stub naming its spec twin) resolves and the check passes it (5.6's close left
+three, fixed at 6.0b), after which the
+gates run, comment-only edits included: a comment can sit inside text a test pins (5.6e
+repointed one in `aatf`'s hashed `logic.rhai`, and the crate's close mutation run found its
+baseline failing); (3) collapse the
+worklog's step list to the phase row, keeping its `manual: checked`
+lines, which are the manual scenarios' proofs (`CONTRIBUTING.md` "Testing"); (4) bring the
+root `README.md` to the closed phase: what the suite does now, the phases done and the one
+next, the test count from the gates' last run, in words for someone who has never opened
+`docs/` (it is the first page a visitor reads, and it still said Phase 3 was under way after
+four more phases had closed). Moving per phase, not at the
+end of the project, is what keeps the spec true while the memory of the work is fresh.
+
+**Cutting a release** whose phases are still open (0.0.1, a preview cut from Phase 8) runs
+step (1) of "Closing a phase", the converge and its design-health pass, over what the
+release ships, before the cut; the release's cut step in the worklog names it as a
+prerequisite, so the cut cannot be checked off without it. The per-slice review loops do not
+stand in for it: each reads one surface against its own sections, and none asks whether the
+shipped whole meets its plan. A rule tied to a phase's close alone left 0.0.1's candidate
+with the maintainer, every slice reviewed and the Save editor never converged (2026-10-30).
+One part of the pass never holds a 0.x.x cut: the whole-crate mutation runs of its crates.
+Every slice a release ships had its `mutants-diff`, which tests the mutants of the lines it
+changed, while `save_editor`'s whole-crate run alone measured over 30 hours. During 0.x.x
+the project releases, then patches what the runs find afterwards: a hobby project's
+previews can afford the concession, and its members get fixes sooner than a release held
+for days would give them. The runs come after the cut, and their survivors' tests go into
+the next release, or a patch when a survivor hides a real bug.
+
+## Lead and sidekick
+
+**Lead and sidekick.** Sessions run as a lead model that plans, briefs, reviews and talks to the
+user, and a sidekick model (a different family) that implements and runs the gates. The general
+method of briefing and of reviewing a delegate's work is the user-level `helium` skill: the lead
+invokes it before writing a brief or reviewing a delegate's diff, the sidekick when a brief
+arrives; what follows here is this project's own part, and wins where the two differ. The lead
+hand-writes only what is *correctness-critical*: things whose wrong version passes instead of
+failing: workspace lints, CI, `rust-toolchain.toml`, the acceptance-ID scanner, any fixture or
+golden file, any measurement. Everything with a plan section to implement against is briefed to
+the sidekick. A brief names the plan section(s) and `CONTRIBUTING.md` as reading to do *before*
+coding (the sidekick does not inherit the lead's context), tells the sidekick to invoke the
+`karpathy-guidelines` skill first (skills the lead has loaded are not active in the sidekick;
+an uninstructed sidekick never invokes one), plus the acceptance IDs, the `→ verify:`
+criterion, and the rule that a plan gap is *reported*, never silently decided. The same rule
+covers the brief itself: an item of the brief that turns out unused or wrong (a dependency the
+code never calls, a helper that does not exist) is reported in the closing section, not
+implemented verbatim; the sidekick sees the code, the lead wrote the brief from a reading of it
+(2.18's brief listed a `log` dependency the crate never used, and it landed until review). The brief's
+verification list names the tests of every crate that *consumes* the one being changed, not
+only the crate's own: a change to `fmdl`'s reader that every game `body.skl` tripped passed
+`cargo test -p fmdl` and was caught only by `model_convert`'s tests at the lead's gate run.
+`fmdl`'s and `pes_model`'s consumers include `python_bindings`, whose test is `just bindings`,
+outside `just gates`: 2.20g-h added fixtures to both crates, the smoke test's fixture counts
+went stale, and only CI's `bindings` job saw it (run 24, 2026-09-29). A brief that adds tests says to insert them with the editor tool inside the file's existing
+`#[cfg(test)]` module, never to append them with shell redirection, which lands them after the
+module's closing brace (three times in 2.20f). The lead
+reads the whole diff before it lands, not the report about it; the report is a claim, the diff is
+the evidence. Two failed sidekick attempts on one brief means the brief is suspect before the
+sidekick is. **A brief for a change a member sees or does names the draft that already does
+it** (the file and function or class under `docs/prototypes/`, in its reading list), and one
+the lead cannot point there is not sent: the lead drafts it first, renders or drives it, and
+the plan, DECISIONS and the draft land together. A plan sentence alone is not a draft: 8.44
+(the wheel on the Tactics selectors) was briefed from one and built before the draft knew
+the behaviour (2026-11-02), and three more items of the same batch were found undrafted only
+when the maintainer asked. **A brief is sized for one review.** Past about 500 lines of new code, a diff is
+read but not resteered: a wrong shape in the first module is already copied into the third by
+the time the lead sees it (`model_convert` took a 666-line rework commit after a single review
+of its first four steps). A step expected to exceed that is briefed as ordered slices, each
+landing as its own commit and reviewed before the next slice is briefed (`format/` first, then
+`ops/`, then `check.rs`, for a format crate); generated tables and fixtures do not count toward
+the size.
+
+**The lead sees the report, not the run.** The harness shows the lead only the sidekick's final
+report, never its compiler runs, so an error fixed by a workaround (a suppression, a loosened
+assertion, an `#[ignore]`, a discarded `Result`) is invisible unless declared. Every brief
+therefore requires a closing section, "Errors hit and how each was resolved": one line per
+compiler, clippy or test failure met during the work and the fix applied, plus an explicit list
+of any suppression, ignored test, removed or weakened assertion (or "none"), and, for every test
+added for new behavior, the failing assertion text from its red run before the change ("red
+first" is otherwise a claim the lead never sees; a test with no meaningful "before", such as a
+new format crate's fixture round-trip, says so). Omitting the section or an item is a brief
+violation, not an oversight. On the lead's side, every review before a commit includes two
+sweeps of the diff and re-runs the changed packages' tests, clippy and fmt in the real
+workspace (the dependents' tests run at the next checkpoint, `CONTRIBUTING.md` "Testing and
+verification"); the sidekick's pasted gate tails are a claim. The **honesty sweep** looks for a hidden failure: `#[allow`, `#[expect`,
+`#[ignore`, `.ok();`, `let _ =`, `drop(` on a `Result`, `unwrap_or_default`, `unwrap_or(`, and
+a `while` or `loop` in a test with no bound (`CONTRIBUTING.md`: a test fails, it never hangs). The **design sweep** looks
+for code that passes and is worse, the thing neither the gates nor a model's training penalize,
+over the diff's tests as over its production code (`CONTRIBUTING.md`: tests are code), the
+first item there a test that repeats another's scene or checks instead of sharing a helper:
+`impl .* for` (a new trait: does it have two real implementors?), `dyn `, `_ =>` on one of our
+enums, `== Engine::`/`!= Engine::` (a test against one engine, which a third one would pass
+silently), `.clone()`/`.to_vec()` on bulk data, `as ` casts, two functions differing in a name and a
+branch, `pub` items with no caller outside the crate, a module past roughly a thousand lines
+that the diff grows (a test module too: crossing the line once is not the only flag, or a file
+already past it grows unchecked; `aesthetics_export`'s `validate/tests.rs` reached 4,838), a comment naming or alluding to a legacy tool outside a parity test (`Red`,
+`Blue`, `reference`, `add-on`, `Python`, `texconv`, `always`), a comment that does not stand on
+its own (it cites a plan, a decision, a step or a review: `just comment-refs`; or it is a chain
+of parentheses a maintainer has to read twice). The **mutation run** (`just
+mutants-diff <the loop's first commit's parent>`, once per review loop, over every diff the loop
+landed) is the third check and the only one that is a measurement rather than a reading: each
+survivor is an assertion the sweeps cannot see because it was never written (the `kit_config`
+probe found twenty such gaps in a crate that had passed both sweeps, converge and the
+cross-family reviewer), and every survivor is triaged per `CONTRIBUTING.md` "Mutation runs"
+before the surface closes, the missing tests going into one rework brief. A decision model's bug scan of
+each 60-line window (the Clef scan) is retired: `CONTRIBUTING.md` "Clef scan" says why and
+what a successor must show first. Each sweep item is a
+`CONTRIBUTING.md` rule; the sweeps exist because a rule nobody greps for is a rule the review
+applies only when it happens to notice. When a review finds slop
+neither list names, the fix is a new entry in this section or in `CONTRIBUTING.md`, not a longer review:
+the rules are the project's whole substitute for taste, and any quality they do not express is
+quality nobody is checking.
+
+**Plan-defined shapes are copied, not recalled.** Where the plan gives a code block for a type,
+a trait or a signature, the implementation starts from that block, pasted, and any deviation is a
+decision entry, never a silent rewrite. Phase 1's first converge lost three of its seven reviewer
+slots to shapes the lead had written from memory, all three of them written down in the plan.
+
+**Working in parallel.** Lead and sidekick share one working tree, so when both write code at
+once (the lead on a correctness-critical crate, the sidekick on a briefed one) they work in
+disjoint crates, and each verifies with crate-scoped commands (`cargo test -p vtree`,
+`cargo clippy -p vtree --all-targets -- -D warnings`) while the other's crate may not compile
+yet. The lead never leaves the workspace unbuildable longer than one edit (declare a module only
+once its file exists), and runs `just gates-changed` once, after both are done. The brief says
+which crate the sidekick owns and that the rest of the tree is in motion.
+
 ## Review rounds
 
 **Second opinion.** A model reviewing its own work is bounded by its own training: same data, same
@@ -487,11 +669,12 @@ lead, with this paragraph and the `duck` skill's "technically correct is not eno
 accepted 14 of 17, 10 of 11 and 11 of 12 concerns on whether each was true, each fix's
 clause the next round's concern, and two rounds added a rule no real export reaches (an
 `.ftex` kit texture in a pre-Fox export: none of the 58 on the maintainer's machine). So every
-acceptance now names its reach (`AGENTS.md` "Second opinion": a real export's outcome, a
+acceptance now names its reach (a real export's outcome, a
 contradiction, an unobservable THEN, a wrong fact), and one that names none is rejected; a
 nit fixed in passing counts toward no round. Re-ruled that way, the third round accepted 4.
 Past the fifth round on one surface the lead reports the counts and the
-classes found to the user and continues unless told otherwise: a check-in, not a stop. Each
+classes found to the user and continues unless told otherwise: a check-in, not a stop. A review stopped for quota is queued in the worklog's "Handover
+queue". Each
 round's reviewer is a fresh `run_subagent`, never a resumed one (`resume`), even though resuming
 saves the re-exploration: 2.20d's fourth round ran both on the same surface, and the reviewer
 resumed from round three returned four concerns, all among the fresh reviewer's seven, which

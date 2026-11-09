@@ -351,7 +351,7 @@ Requirements:
   `held_dims` and `check_dims`.
 - **Acceptance IDs.** Each tool plan has an "Acceptance" section listing that tool's user-observable
   behavior as scenarios with stable IDs, written before the phase that delivers them (procedure in
-  `AGENTS.md` "Working documents"). Format, one entry per behavior:
+  `RUNBOOK.md` "Before a tool phase"). Format, one entry per behavior:
 
   ```
   TC-KIT-03  GIVEN a kit folder without colors.txt

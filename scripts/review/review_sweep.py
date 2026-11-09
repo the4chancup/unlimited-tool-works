@@ -1,4 +1,4 @@
-"""The review's honesty and design sweeps (AGENTS.md "Lead and sidekick") over the added lines
+"""The review's honesty and design sweeps (RUNBOOK.md "Lead and sidekick") over the added lines
 of a diff file: every added line matching one of the patterns, with its file. Read-only; a hit is
 a line to look at, not a finding.
 

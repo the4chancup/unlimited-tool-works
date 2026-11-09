@@ -1,6 +1,6 @@
 # Format census kit
 
-A format crate's census (AGENTS.md "Closing a phase"): every file of that format on the
+A format crate's census (RUNBOOK.md "Closing a phase"): every file of that format on the
 maintainer's machine run through the crate's read, its semantic round trip and `check`, tallied
 by outcome, each failing class diagnosed, and the census re-run after every fix with a
 regression check. These three scripts are the parts that do not depend on the format:

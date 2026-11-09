@@ -115,13 +115,13 @@ steps, which every phase has: **converge** (the lead's own audit first, then the
 reviewer's, both against the phase's plan sections and acceptance IDs; each gap becomes a new
 step above it, and the phase waits for them) and **rewrite**
 (what the phase delivered moved from `docs/plans/` to `docs/spec/`, corrected where it was built
-differently; `AGENTS.md` "Working documents"). Then collapse its step list
+differently; `RUNBOOK.md` "Phases and releases"). Then collapse its step list
 below to this one row, keeping its `manual: checked` lines (the step-level detail stays in git
 history), and bring the root `README.md` to the closed phase. Tool phases (3–6, 8–15, 17, 19, 20) also
 open with an **acceptance** step: the tool plan's "Acceptance" section for that phase, written
 before any code (GUI scenarios that no automated test can prove are marked `manual` and proven by
-a recorded check at converge — `CONTRIBUTING.md` "Testing"). Procedure: `AGENTS.md` "Working
-documents".
+a recorded check at converge — `CONTRIBUTING.md` "Testing"). Procedure: `RUNBOOK.md` "Phases and
+releases".
 
 | Phase | Scope | Crates | Status |
 |---|---|---|---|
@@ -3716,7 +3716,7 @@ briefs, review loops, gates and mutation runs as for any step.
   draws no in-game hair and the same painted iris for 7 and 10; the marker's player draws both
 - [x] 0.0.1i `libs/aatf`'s audit for 0.0.1 (the maintainer's "a rock-solid AATF check comes
   first", 2026-10-24; side-lead track B, 2026-10-25): the converge audit and design-health
-  pass of `AGENTS.md` "Closing a phase" over the crate alone (`plans/aatf_rules.md`,
+  pass of `RUNBOOK.md` "Closing a phase" over the crate alone (`plans/aatf_rules.md`,
   `spec/aatf_rules.md` and their acceptance IDs: every requirement present and tested; the
   design-tell sweep; `just mutants aatf` with every survivor triaged; `just citation-audit`;
   every `pub` item and its consumer), plus a census: every save on the machine through
@@ -6072,7 +6072,7 @@ briefs, review loops, gates and mutation runs as for any step.
 - [ ] 0.0.1cv the Save editor's converge review before the cut (the maintainer asked,
   2026-10-30, whether a review loop had covered the whole UI: none had; every loop ran per
   slice or surface, the crate audits covered `aatf` (0.0.1i) and the libs but `team_widgets`
-  (la), and 0.0.1ov and 8.38 compared the look, not the code). `AGENTS.md` "Closing a phase"
+  (la), and 0.0.1ov and 8.38 compared the look, not the code). `RUNBOOK.md` "Closing a phase"
   step (1) over 0.0.1's surface, the Save editor on PES 2017 (`save_editor`, `team_widgets`,
   `studio_core`'s shell, about 56,000 lines with 38,000 of tests): the lead's audit first
   (every `plans/save_editor.md` section 0.0.1 ships compared with its code, every SE-GUI
@@ -6080,7 +6080,7 @@ briefs, review loops, gates and mutation runs as for any step.
   the whole surface), its gaps briefed; then Astra over the surface in parts, a SWE-2 loop
   after each round; the whole-crate mutation runs of `save_editor` and `team_widgets`,
   after the cut (DECISIONS 2026-10-31, "0.0.1's whole-crate mutation runs come after its
-  cut"). Runs beside the maintainer's final pass (0.0.1f1c); the cut waits on it (`AGENTS.md`
+  cut"). Runs beside the maintainer's final pass (0.0.1f1c); the cut waits on it (`RUNBOOK.md`
   "Cutting a release")
   - [x] cv1 the lead's audit (2026-10-30, at `5d0c105d`): six read-only parts (layout,
     player and team, tactics, AATF and interchange, the SE-GUI scenarios, the shell),
@@ -6911,7 +6911,7 @@ briefs, review loops, gates and mutation runs as for any step.
   frozen in `LOGIC_VERSIONS` only after the maintainer's final confirmation, given once the UI
   is polished (the maintainer, 2026-10-25: never before it) (`plans/aatf_rules.md` "Loading and validation": a later logic
   change is version 2), `just release 0.0.1`, handed to DBC's testers (VGL's organizer gets 0.0.2, its launchers and readme section).
-  Prerequisite: 0.0.1cv, the converge review (`AGENTS.md` "Cutting a release")
+  Prerequisite: 0.0.1cv, the converge review (`RUNBOOK.md` "Cutting a release")
   - [x] f1 the preparation (side-lead U, 2026-10-27; DECISIONS "The bundle's `data/` holds its
     settings and DBC7's rules file"): `just release` stages `data/settings.toml`
     (`resources/bundle/data/`: `aatf_rules = "rules/dbc7.4ccrules"`, `multicpk_mode` and
@@ -7399,7 +7399,7 @@ briefs, review loops, gates and mutation runs as for any step.
     - [ ] (d) every other test module past a thousand lines split the same way, in due time
       (the maintainer, 2026-11-04: all of them eventually, not at once): 117 files at
       `69687460`, the (a) ranking's `*` rows; meanwhile any diff that grows one splits it
-      first (AGENTS.md design sweep)
+      first (RUNBOOK.md design sweep)
 - [ ] 0.0.2 the VGL preview (`plans/core/development_plan.md` "The /vg/ League 27 (VGL)").
   Prerequisites: 8.36c and 8.36d (the full-look aesthetics patch, checked in game on PES
   2019), before the PES 2019 rehearsal; the readme's VGL section gains the patch's place in
@@ -7915,7 +7915,7 @@ The phase's steps are itemized when Phase 9 closes; its format crate was built a
     `docs/plans/music_player.md`, `docs/DECISIONS.md`,
     `crates/libs/music_export/src/{lib,model,eval,state,select,resolve,parse}.rs`
 - [x] 10.0f the legacy-behavior audit (the maintainer, 2026-10-21, after SE-GUI-08's reorder
-  was found written from a control's name; `AGENTS.md` "Before a tool phase"): every behavior
+  was found written from a control's name; `RUNBOOK.md` "Before a tool phase"): every behavior
   of Rigdio v2.2.0 (`Tools_4cc/rigdio`; the fork only where the plan adopts it) compared with
   the crate's code and the plan, citing both sides: the `.4ccm` keywords, conditions,
   selection, resolution and normalisation first (built), the player's controls second (planned
@@ -7948,7 +7948,7 @@ The phase's steps are itemized when Phase 9 closes; its format crate was built a
     ends the Astra loop, its tests in rework 4; the closing SWE-2 round S3 (0 accepted, a nit
     fixed in passing) ends it; rulings `.tmp/phase_10/10_0g/duck_rulings.md`. Done 2026-10-21
 - [x] 10.0h the Music export editor's legacy-behavior audit (the maintainer, 2026-10-27: tool
-  work prepared ahead while 0.0.1's build queue is busy; `AGENTS.md` "Before a tool phase"):
+  work prepared ahead while 0.0.1's build queue is busy; `RUNBOOK.md` "Before a tool phase"):
   every behavior of RigDJ (`Tools_4cc/rigdio` at `ad604a1`, rigdio v2.2.0, RigDJ v1.16.0:
   `rigdj.py` and what it calls) compared with `plans/music_export_editor.md`, citing both
   sides, each row ruled into the plan and DECISIONS. 42 rows (`.tmp/phase_10/10_0h/rigdj_audit.md`,
@@ -8389,7 +8389,7 @@ request (2026-10-14), to show the members who offered to help shape the ruleset 
   toolbar's entries, the CLI's `random` (RE-RND, RE-CLI-04) → verify: 1,000 seeds per preset,
   and the share of seeds that needed a redraw measured and reported
 - [ ] 20.8 the help chapter, and the Ruleset editor active on the shell's sidebar
-- [ ] 20.9 converge (AGENTS.md "Closing a phase"), RE-GUI-16 checked by hand
+- [ ] 20.9 converge (RUNBOOK.md "Closing a phase"), RE-GUI-16 checked by hand
 
 ---
 
@@ -8659,7 +8659,7 @@ points there.
   detector then skips), and runs at two points (the maintainer's question of 2026-10-23):
   in `just gates`, failing on any cluster the keep list does not hold, so a diff that adds a
   copy is fixed or ruled before it lands, with no reliance on a reviewer noticing; and at
-  every phase's close, whole-crate, in the design-health pass (`AGENTS.md` "Closing a
+  every phase's close, whole-crate, in the design-health pass (`RUNBOOK.md` "Closing a
   phase", beside `just mutants` and `just citation-audit`), where the keep list's entries for
   the phase's crates are read again, since a kept pair that grew a third copy is no longer
   a pair. `AGENTS.md` and CONTRIBUTING "Code style" say both. State: (1) done, the rulings in

@@ -15934,3 +15934,21 @@ assets"), `spec/export_upgrader.md` (steps 2, 6, 7, "CLI", catalog), `plans/expo
 09, EU-REF-13 (EU-ROOT-03, EU-MDL-06, 10, 14, 22, EU-MF-02 and 04 withdrawn for them);
 TC-MOD-88, TC-XML-01, TC-XML-12, TC-CMN-18 and TC-CMN-25 take `common/team_folder/` in their
 GIVEN, their outcomes unchanged.
+
+## 2026-11-09 — process — AGENTS.md fits the smallest injection: its phase and sidekick procedure moves to RUNBOOK.md
+Decision (the maintainer: "if the agents file gets cut off then it's too large for its
+purpose"): `AGENTS.md` stays under 16,000 bytes. Its "Before a tool phase", "Closing a phase"
+and "Cutting a release" paragraphs move verbatim to `RUNBOOK.md` "Phases and releases", its
+"Lead and sidekick" to "Working in parallel" paragraphs to `RUNBOOK.md` "Lead and sidekick";
+its "Second opinion" summary is dropped, `RUNBOOK.md` "Review rounds" holding the full rule
+(the quota-queue sentence moved there); a few sentences of history and a stale description
+of the roles are cut. `AGENTS.md` keeps a summary paragraph naming each moved section.
+Why: Devin injects 16,384 bytes of the file (Codex 32 KB); at 33,662 bytes the cut fell inside
+the review sweeps, so a Devin lead never saw "When the plan has gaps" (a recommended option is
+applied, not asked) or "Conduct", and asked the maintainer a question the rule settles. The
+2026-10-14 split for Codex's limit set the pattern: the procedure lives in the runbook, the
+briefing file keeps what every agent needs.
+Plan: `AGENTS.md` "Working documents" (the summary and the size rule), "Environment";
+`RUNBOOK.md` (header, "Phases and releases", "Lead and sidekick", "Review rounds"); live
+pointers repointed (`WORKLOG.md`, `GLOSSARY.md`, `CONTRIBUTING.md`, `plans/README.md`, the census
+and library-parity READMEs, `review_sweep.py`).

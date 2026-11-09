@@ -49,8 +49,8 @@ and briefs and reviewer prompts quote plan text with its path.
 
 - **Acceptance sections.** Before the phase that delivers a tool, that tool's plan gains an
   "Acceptance" section: stable-ID GIVEN/WHEN/THEN scenarios for the user-observable behavior the
-  phase adds (format in `CONTRIBUTING.md` "Testing"; procedure in `AGENTS.md` "Working
-  documents"). They are written just-in-time, one phase at a time, not for the whole suite up
+  phase adds (format in `CONTRIBUTING.md` "Testing"; procedure in `RUNBOOK.md` "Before
+  a tool phase"). They are written just-in-time, one phase at a time, not for the whole suite up
   front. Lib crate plans do not get them: for a format crate the fixtures and the parity standard
   are the specification.
 - **The move at phase close.** When a phase closes, after the converge audit has confirmed the

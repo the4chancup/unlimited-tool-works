@@ -1,7 +1,7 @@
 # Library parity
 
 The measurement every phase close that changes the Team compiler or the Export upgrader reruns
-(`docs/plans/team_compiler/testing.md`, AGENTS.md "Closing a phase"): every old (AET) export on
+(`docs/plans/team_compiler/testing.md`, RUNBOOK.md "Closing a phase"): every old (AET) export on
 the maintainer's machine is upgraded (the **upgrade census**), and each one that upgrades clean
 is compiled by us and by Red, the two outputs compared entry by entry (the **library run**),
 and every difference attributed to a class (`classes.md`). It is not a test: the inputs are
