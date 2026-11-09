@@ -2872,7 +2872,11 @@ found (2026-10-15; the prototype rule and the launcher were fixed that day, DECI
         0.0.2-poc8 to poc11 in it (592 mutants over `team_compiler`, `export_upgrader`,
         `pes_savefile`, `dds_convert`; `save_editor` left to its next whole-crate run), then
         the library parity's rerun, tag `p11` against `c4`, c4's input lists and teams list
-        (`.tmp/0_0_2/poc11/long_jobs2.sh`, log `long_jobs2.log`)
+        (`.tmp/0_0_2/poc11/long_jobs2.sh`, log `long_jobs2.log`). The mutants-diff: 499
+        caught, 89 unviable, 3 timeouts (`pair_wearers`' fixpoint loop never ending, ruled
+        caught), 1 missed, equivalent: `IngameFace::set_unused`'s disjoint `|` -> `^`, whose
+        exclusion still named the pre-`5c1f6370` `write_undecoded`, repointed; no missing
+        test (`.tmp/0_0_2/poc11/mutants_diff_8bcbf720/triage.md`)
     - [ ] d in game, before 0.0.2 (PES 2019 first, VGL 27's game and the likeliest for the
       4cc's spring cup, then PES 2021 and PES 2017; the maintainer, 2026-11-04): a
       patch applied to an
