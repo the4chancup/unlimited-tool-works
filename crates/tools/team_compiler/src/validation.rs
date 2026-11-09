@@ -2121,13 +2121,13 @@ mod tests {
 
     #[test]
     fn compile_keeps_both_small_7z_exports_for_their_tasks_and_check_keeps_none() {
-        // The archives decompress to 34 and 153,538 bytes, 153,572 kept in all: far under an
+        // The archives decompress to 34 and 153,553 bytes, 153,587 kept in all: far under an
         // eighth of the cap, and the cap less the floor leaves room for both.
         assert_eq!(
             seven_z_pass("keep_7z_compile", 2 << 30, true),
             [
                 ("co Midcup Spring.7z".to_owned(), Some(34)),
-                ("egg Midcup Tracer.7z".to_owned(), Some(153_538)),
+                ("egg Midcup Tracer.7z".to_owned(), Some(153_553)),
             ]
         );
         assert_eq!(
@@ -2141,11 +2141,11 @@ mod tests {
 
     #[test]
     fn an_archive_the_kept_ones_leave_no_room_for_is_not_kept() {
-        // The cap leaves 153,560 bytes past the floor: room for the first archive checked,
-        // `co Midcup Spring.7z` (34 bytes), or for the tracer (153,538) alone, but 12 bytes
-        // short of both (153,572), so the tracer, checked second, is let go.
+        // The cap leaves 153,575 bytes past the floor: room for the first archive checked,
+        // `co Midcup Spring.7z` (34 bytes), or for the tracer (153,553) alone, but 12 bytes
+        // short of both (153,587), so the tracer, checked second, is let go.
         assert_eq!(
-            seven_z_pass("keep_7z_running_total", (1 << 30) + 153_560, true),
+            seven_z_pass("keep_7z_running_total", (1 << 30) + 153_575, true),
             [
                 ("co Midcup Spring.7z".to_owned(), Some(34)),
                 ("egg Midcup Tracer.7z".to_owned(), None),

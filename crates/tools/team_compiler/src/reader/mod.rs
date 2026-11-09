@@ -587,7 +587,7 @@ mod tests {
         assert_eq!(
             sizes,
             [
-                ("egg Midcup Tracer.7z", 153_538),
+                ("egg Midcup Tracer.7z", 153_553),
                 ("egg Midcup Tracer.zip", 0)
             ]
         );

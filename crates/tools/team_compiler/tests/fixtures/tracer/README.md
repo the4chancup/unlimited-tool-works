@@ -25,7 +25,10 @@ gloves since step 4.3.
   `.fclo` and the `.skl` are byte-identical to Red's templates (the skeleton is PES 21's
   `body.skl`); `face_diff.bin` is the player's own. `face.fpk.xml` is dropped: the compiler writes
   the FPK. `boots.fmdl` (from `Boots/k2180 - .../`), `glove_l.fmdl` and `glove_r.fmdl` (from
-  `Gloves/g2180 - .../`) unchanged, beside the face: the Studio format has no ID-named folders,
+  `Gloves/g2180 - .../`) unchanged, beside the face (but for the four models' `dummy_kit`
+  directory, respelled from the community's `common/000/` to `common/team_folder/` at step
+  0.0.2-poc12 by `scripts/provenance/fixtures/fmdl_team_folder.rs`, the compiler refusing any
+  other team folder there): the Studio format has no ID-named folders,
   the compiler assigns slot 05's exclusive ID (3745 for team 792). The boots folder's
   `boots.skl` is left out, being byte-identical to PES 21's `body.skl`, which the compiler
   injects for a boots model with no skeleton of its own; its `shirt.dds` is byte-identical to the
