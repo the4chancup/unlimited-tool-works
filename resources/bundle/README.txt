@@ -111,9 +111,21 @@ For VGL's organizer
    team file...") or in the game's own Edit mode, whose import leaves the team names to
    rewrite. That makes the official save. In the Save editor, click Save on the toolbar,
    then close UTW.exe: the launchers change the save on disk, and an editor still open on
-   it would write its own copy back over theirs at its next Save. Then upgrade the old
-   exports against it (drag the official save onto quick_upgrade.bat), compile the exports
-   (quick_compile.bat), and apply the compile's patch to the official save.
+   it would write its own copy back over theirs at its next Save. Then add the league's
+   teams to the teams list (below), upgrade the old exports against the official save
+   (drag it onto quick_upgrade.bat), compile the exports (quick_compile.bat), and apply
+   the compile's patch to the official save.
+
+   The upgrade and the compile know a team by its row in data\teams_list.txt, and a team
+   the list lacks is refused as team_name_unknown. A team new to the league may be
+   missing from the list shipped here. To add the save's teams, open a console in this
+   folder as step 4 of "Compiling" shows, and run, with the save's own path in place of
+   official\EDIT00000000:
+
+       UTW.exe save-editor export-teams-list "official\EDIT00000000"
+
+   It changes nothing yet: it lists the teams it would add. If that reads right, run it
+   again with --yes at the end. Run it again whenever a new team joins the official save.
 
 3. The compile also writes a patch, aesthetics_patch.toml in the output folder beside
    UTW.exe, and applies it to a save: the one savefile_path names in data\settings.toml,

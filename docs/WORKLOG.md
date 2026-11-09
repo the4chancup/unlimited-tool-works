@@ -7610,8 +7610,10 @@ briefs, review loops, gates and mutation runs as for any step.
       `teams_list.txt` lacks (/end/, /wuwa/, new in the save) fails `team_name_unknown`, and
       the readme never says to run `save-editor export-teams-list <save> --yes` first; /wuwa/'s
       note colour typo `##8C96C5` refuses its whole upgrade (QUESTIONS); /bag/ as poc6 ruled.
-      Open: the readme's teams-list step, the hand-over to VGL's organizer (the
-      maintainer's); the Linux tarball now also carries the two `.bat`
+      The readme's step 2 now merges the save's teams first (`resources/bundle/README.txt`;
+      its command as printed, a quoted path with a space, run from `cmd` on a fresh extract
+      added /END/ 835 and /wuwa/ 836). Open: the bundle's rebuild with it, the hand-over to
+      VGL's organizer (the maintainer's); the Linux tarball now also carries the two `.bat`
       files (`expected_entries` has no platform gate), to settle before 0.0.2
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
