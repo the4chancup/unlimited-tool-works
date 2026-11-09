@@ -7662,6 +7662,34 @@ briefs, review loops, gates and mutation runs as for any step.
     run on the Friendlies saves: /END/, /wuwa/, /xivg/, /zzz/ overridden and 30 league teams
     `teams_list_unresolved` (each on an ID the allocation gives another team), as expected
     of a save numbered as VGL26
+  - [ ] 0.0.2-poc11 the upgrader writes no team ID and needs no teams list (the maintainer,
+    2026-11-09; clarification done, nothing specified or built yet). Rulings:
+    the upgrader must not depend on the team being in the current list (a historical team
+    upgrades); the original save's team is found by name, a name held twice taking the first in
+    record order with a warning; the Studio format has no team ID of any kind and `XXX` is
+    legacy too; a keeper's `u0XXXgN` becomes `gk_kitN` (keeper and outfielder textures are
+    picked together, so `g1` is kit 1's: `gk_kit1` holds the token `kit1`; not `kitN`, since
+    a real `Common/` holds `u0XXXg1.dds` beside `u0XXXp1.dds`: /jp/ Summer 24, aes test cup
+    18.1, Spring 24, Summer 25, Winter 25, VRG VGL26, `.tmp/0_0_2/poc11_census/report.txt`);
+    a shared `Boots/`/`Gloves/` `.mtl` naming Common by game path: one in 194 (agf AGL9-11's
+    `Gloves/g3901/materials.mtl`, `dummy_kit.dds` alone); the team's Common folder name, `team`
+    or `team_folder` (`common/team/` collides; census `.tmp/0_0_2/poc11_census/report2.txt`):
+    1,569 custom CPKs hold below `uniform/common/` only team IDs (701-773, 999) and `refs`, no
+    `team`/`team_folder`; no export's `Common/` holds either; but the game's own
+    `model/character/uniform/team/` (team kits, `team/referee/`) is in 69 export trees and
+    packer templates, so `team` is a real game folder name one level up; the team's Common is written `common/team_folder/`
+    (no `common/XXX/`, no ID; `team` rejected, see below); a default PES file's full game path (`model/character/uniform/common/…`)
+    stays admissible and may also be written `common/…`; a three-character segment below
+    `common/` (`797`, `XXX`) is refused in a Studio export (PoC-upgraded exports are upgraded
+    again from their originals); referee exports write `common/team_folder/` too, not `999`.
+    Order: (a) the compiler reads `common/team_folder/` and the `common/…` short form and
+    refuses a three-character segment; then (b) the upgrader finds the save's team by name,
+    reads no teams list, writes `team_folder` and `gk_kitN`. Spec, DECISIONS and scenarios
+    first (lead), then one brief per slice. Today the upgrader writes the list ID
+    in `Common/???/` segments and `u0???g` (`materials::common_segment`, `kit_magic::respell`),
+    reads the save's team by the list ID (`Roster::read`) and refuses an unlisted team
+    (`team_name_unknown`); the compiler admits a three-character `common/` subfolder on pre-Fox
+    (`mtl_common_path_invalid`, `xml_common_path_invalid`)
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
     withdrawn whole (today SE-STR 8, SE-TRN 3, `spec/save_editor.md`) moves to
     `docs/spec/withdrawn_ids.md`, its lines as written, reason and successor kept; (2) a run
