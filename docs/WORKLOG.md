@@ -7626,9 +7626,20 @@ briefs, review loops, gates and mutation runs as for any step.
     upgrader now writes an author's token as `kit_tex` (`kit2/kit_tex1.dds`; the maintainer,
     over a capital `K`), the same-segment case included; `respell_split` reads an FMDL or
     `.mtl` reference's two halves as one path. Files: `export_upgrader` `kit_magic.rs`,
-    `materials/mod.rs`, `materials/tests.rs`, `tests/cli/kits.rs`. Next: gbpen upgraded
-    and compiled again from the sorted source, its CPK listing
-    `common/798/kitK/sourceimages/#windx11/kit_tex1.ftex`; the PoC rebuilt
+    `materials/mod.rs`, `materials/tests.rs`, `tests/cli/kits.rs` (`975e68a7`). Real data:
+    gbpen upgraded and compiled again for PES 2019 from the sorted source with a HEAD
+    build, the CPK holds all 28 per-kit textures under `common/798/kit1`…`kit4` and the
+    `kitN` fallbacks, `file_not_used` and `kit_variant_missing` 0, one
+    `fmdl_texture_not_found` left (`timing.dds`, never shipped). Next: the PoC rebuilt
+  - [ ] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
+    withdrawn whole (today SE-STR 8, SE-TRN 3, `spec/save_editor.md`) moves to
+    `docs/spec/withdrawn_ids.md`, one line per area, its reason and successor kept; (2) a run
+    of consecutive withdrawn IDs in a live area becomes one range line in place
+    (`TC-BIN-03 to 09  withdrawn: <reason>`; TC-BIN alone holds 24 of 53), numbering still
+    visible where the next scenario is written. `scripts/gates/acceptance.py` reads both
+    (an ID in a range or in the file is defined and withdrawn: reuse fails as defined twice,
+    a citation as withdrawn), with tests; `CONTRIBUTING.md`'s "withdrawn" sentence updated;
+    count with `.tmp/withdrawn_areas.py`
   - [ ] 0.0.2a JPEG XL sources (`plans/libs/dds_convert.md` "JPEG XL sources (0.0.2)";
     DECISIONS 2026-10-30): the decode timing picked `jxl` 0.8.0 (`.tmp/release_0_0_2/jxl_bench/`); next,
     one slice (`dds_convert`, the extension table, the two pickers, the docs listing the
