@@ -75,8 +75,7 @@ impl StudioTool for Tool {
         );
     }
 
-    /// The tool has no settings: the teams list path is the compiler's own
-    /// (`spec/export_upgrader.md` step 6).
+    /// The tool has no settings.
     fn default_settings(&self) -> toml::Table {
         toml::Table::new()
     }

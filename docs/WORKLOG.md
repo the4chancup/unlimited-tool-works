@@ -7708,7 +7708,16 @@ briefs, review loops, gates and mutation runs as for any step.
       TC-MOD-102; 25 inputs respelled). Open: `tests/cli/patch.rs:61`
       (`a_patch_that_settles_to_nothing_…`, 8.36c) cites no scenario, which fails
       `acceptance.py` since before this step
-    - [ ] (b) the upgrader, after (a)
+    - [x] (b) the upgrader: `Identity::Team` holds the name alone, no teams list read
+      (`load_teams_list` gone, the fixture list too); the save's team found by name, first in
+      record order, a later one `save_team_name_repeated` (W); the collision rule's ID the
+      save team's (999 referees, none loose or model-folder: EU-MDL-33); kept Common game paths
+      written `common/team_folder/` (FMDL `/Assets/pes16/model/character/common/team_folder/`);
+      `u0???gD` → `gk_kitD` (`g0` as `p0`), its segment marking an author's `kit` token
+      `kit_tex` as a `p` token's does (lead's fix: the compiler reads a stem's first token).
+      `src/{upgrade/mod,roster,kit_magic,materials/mod,face_xml,messages,…}.rs`, tests
+      (EU-ROOT-08 to 10, EU-MDL-29 to 33, EU-MF-08 to 09, EU-REF-13). The tracer goldens hold
+      none of the changed spellings: `upgraded_golden` and parity pass unregenerated
     - [ ] the PoC rebuilt, the Friendlies re-upgraded from their originals; then, by the
       maintainer's order (11-09), the queued long jobs (mutation runs) rather than new slices
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area

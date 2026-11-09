@@ -51,9 +51,10 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    A face folder whose slot the save's roster leaves empty (a roster of 22 with a `XXX23`
    folder) still becomes its player folder, with no `settings.toml`, and is reported (W,
    `roster_slot_empty`, the slot in its context): the compiler's validation then rules on the
-   slot as for any export. The roster is read by player ID (`team_id * 100 + NN`, "Savefile
-   identity" in `spec/aesthetics_export/player_folders.md`), never by position: a real save's
-   roster need not be in slot order.
+   slot as for any export. The team is the save's team of the export's name (step 6), whatever
+   ID the save gives it, and its roster is read by player ID (`team_id * 100 + NN`, that ID,
+   "Savefile identity" in `spec/aesthetics_export/player_folders.md`), never by position: a
+   real save's roster need not be in slot order.
 3. **Builds player folders**: each player's face folder contents move into `Players/NN - Name/` (NN
    from the face folder's `XXXxx` suffix: its first three characters are the `XXX` placeholder
    or a baked-in team ID, any three characters, and NN the two after them, as Red reads them;
@@ -329,16 +330,20 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    the line is the first holding `Team:` in that letter case, as Red reads it), the
    canonical `/xx/` first-word key derived from the export folder name as the fallback when no
    Note, no `Team:` line or an empty one exists — an export named after something else than its team (e.g.
-   "Numbers" for `/#/`) must still resolve. A `Team:` line naming no team of the list is not
-   skipped for the folder name: it is `team_name_unknown`, naming the line, as Red stops on it
-   unless its user adds the team at its prompt (its `team_id_get.py`), because a Note that names a team the list lacks says the export may
-   be another team's than its folder name suggests. The
-   resolved key is used for the `teams_list.txt` lookup and as the output's first word ("CLI"); the
-   list is the data directory's `teams_list.txt`, the file the Team compiler's default
-   `teams_list_path` names, else the embedded list, and one that cannot be read or parsed aborts
-   (exit 3), as the compiler's does: the upgrader has no setting of its own for it, since an
-   export it resolves against one list and the compiler against another would compile as
-   another team; the
+   "Numbers" for `/#/`) must still resolve. The key is the team's name, folded as the teams
+   list folds one (`teams_list::TeamName`), and is checked against **no list**: the upgrader
+   reads no `teams_list.txt`, so a team the current list no longer holds (a historical one, a
+   team of another league) upgrades, its ID being the compiler's business at compile time
+   (DECISIONS 2026-11-09). A `Team:` value, or a first word, that is no team name (empty, or
+   holding a space or an inner `/`) is `team_name_unknown`, naming the line or the export, and
+   nothing is written: it is not skipped for the folder name, since a Note whose `Team:` line
+   does not read says the export may be another team's than its folder name suggests. The
+   save's team (step 2) is the first in the save's record order whose name, its colour codes
+   stripped (`display_name()`), folds to the key, whatever ID the save gives it: the save the
+   export was made against may number the team otherwise than the current list. A later team
+   of the save folding to the same name is reported (`save_team_name_repeated`, W, on the
+   export, the two teams' IDs in its context, `team` and `kept`) and left out: a real cup save
+   holds `/4ccg/` twice. The key is also the output's first word ("CLI"); the
    complete folder name remains the display/source name, and the Studio output carries no Note (the format has no `Team:` line —
    see the Team compiler plan's "Root files").
 7. **Carries over** Portraits, Collars, and Common, and **converts the Logo folder**. An old
@@ -414,18 +419,21 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    and VG's 2017-2018 faces, since the 2016 batch compiler wrote a pre-Fox export's `Common/` to
    `model/character/uniform/common/<team name>/` and those faces loaded the files there) or
    another team's (`common/refs/refkit/texture.dds`, a referee kit's `.mtl` copied into ASP's
-   4CCC face), because a Studio export names no Common but its own and the compiler refuses a
-   segment that is not three characters, so any other reading lets the upgrade end clean and
-   the compile fail; a segment of another length that stays a game path is written as the
-   team's ID, `XXX` in model-folder mode. The Fox common directory keeps a three-character
-   `???`: the batch compiler wrote a Fox export's Common to `common/XXX/`)
+   4CCC face), because a Studio export names no Common but its own and the compiler refuses any
+   folder after `common/` but `team_folder`, so any other reading lets the upgrade end clean and
+   the compile fail; a reference that stays a game path is written in the Studio spelling of
+   the team's Common, `common/team_folder/` followed by the rest of the path, in every mode and
+   for a referee export too (`spec/team_compiler/messages.md` "User-supplied `face.xml`"; no
+   team ID of any kind, DECISIONS 2026-11-09). The Fox common directory is the three
+   characters' alone: the batch compiler wrote a Fox export's Common to `common/XXX/`, and one
+   kept as a game path becomes `/Assets/pes16/model/character/common/team_folder/`)
    cannot simply become the bare name `./hair.dds` — that would resolve in the player folder and fail — so the
    upgrader writes the bare name **and creates the texture link** `hair.dds.common` (the
    `Common/` file's own name, whose extension the link names) at the root of the
    model's player folder, which is the Studio spelling of the same reference. A shared
    `Boots/` or `Gloves/` folder's `.mtl`, and a `.mtl` in `Common/` (343 such references in
    the maintainer's 1,489 `Common/` `.mtl` files, the compiler emitting a member's `.mtl` as
-   written), keeps its Common references as written, save the `???` below, with no finding when the input's
+   written), keeps its Common references as game paths, respelled `common/team_folder/` as above, with no finding when the input's
    `Common/` holds the texture (one it lacks is reported as below): the pre-Fox compile does not read a shared folder's links
    (they wait until the cup next plays a pre-Fox version) and `.mtl` is pre-Fox alone, while
    the game path is supplied from the carried `Common/` (a link
@@ -457,12 +465,10 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    the model will wear), or a Common subfolder named from a `.mtl` in a subfolder (the path below that `.mtl`
    and the link mirroring `Common/` cannot agree) — is reported (`common_reference_kept`, W,
    on the `.mtl`, the reference as written in the context, `reference`: an installed CPK may
-   hold it, so it is no unmigrated content) and left as it was, save
-   its `???`, which becomes the resolved team's ID as Red's `path_id_change` respelled it
-   (here and for the goalkeeper token below, a referee export's ID is 999, the one Red compiled
-   referees under; model-folder mode, having no team, leaves it): the
+   hold it, so it is no unmigrated content) and left a game path, its Common respelled
+   `common/team_folder/` as above: the
    compiler then finds the file in an installed CPK's Common when a midcup export ships without
-   it (`fmdl_texture_not_found`'s lookup), which the `XXX` placeholder never names. An
+   it (`fmdl_texture_not_found`'s lookup), reading `team_folder` as the team's ID there. An
    FMDL texture whose stem is **not in the model's folder but is in the input's `Common/`** gets
    the same stem and link, whatever directory the FMDL named: Red's referee pass points such a
    texture at the team's Common folder, and its team pass pointed it at the model's folder,
@@ -494,7 +500,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    `Common/` root's texture when the model's folder, nearest first from the FMDL's own folder,
    holds none of it. A shared folder's FMDL is linked as a player folder's, the Fox compile
    reading a shared folder's links; a `Common/` FMDL gets the shared `.mtl` rule (its Common
-   references kept, `???` respelled, reported when `Common/` lacks the texture, its other
+   references kept, respelled `team_folder`, reported when `Common/` lacks the texture, its other
    directories kept). An FMDL that does not read is copied as it is. This applies to structural migration, not only optional glTF conversion.
    In the same pass, the legacy kit-dependent path magic is rewritten to the Studio spelling:
    `u0???p1`…`u0???p9` → `kit1`…`kit9`, in file and folder names and in `.mtl`/`face.xml` paths
@@ -507,7 +513,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    variant instead (71 real `u0???p0` files, `MARISA`'s `k4465` holding `u0875p0` to `p4`). The `???` matches any three characters: authors wrote the
    `XXX` placeholder literally or baked the real team ID in (`u0872p1.dds`), and both forms mean the
    same thing. The token is matched as Red's `path_id_change` matches it: `u0`, three ASCII
-   letters or digits, then `p` and a digit (or `g`), in that letter case, anywhere in a name or
+   letters or digits, then `p` or `g` and a digit, in that letter case, anywhere in a name or
    path and every occurrence (`skin_u0771p3.dds`, `Common/ltd/u0XXXp5/`). The names renamed
    are those below a player folder, below a shared `Boots/`/`Gloves/` folder and below
    `Common/` (the kit folders have their own naming, `Kit Textures/` step 6's); an output path,
@@ -520,12 +526,16 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    each the team's ID and replaced the file already under the new name, in the folder's listing
    order, Windows's case-folded name order. The one it wrote last is what the game loaded, and is
    kept: the last renamed one in that order, an input already spelled with the team's ID being
-   replaced by any renamed one. The others are leftovers (step 10), since no compile shipped them.
+   replaced by any renamed one. The team's ID here is the one the save gives the export's team
+   (step 6), 999 for a referee export, the ID Red compiled referees under: the old compile's,
+   read to tell what it shipped, and never written. The others are leftovers (step 10), since no compile shipped them.
    We do not refuse these, because the old compile's pick was neither a refusal nor arbitrary:
    the real JP Genso Cup exports' `k0860` holds an older `u0731p2.dds` beside the newer
    `u0XXXp2.dds` the cup showed, and GBPEN VGL26's `g2336` copies spelled `u0799` (another
-   team's ID) and `u0XXX`. Model-folder mode knows no team ID, so its collisions stay
-   `unmigrated_content`.
+   team's ID) and `u0XXX`. Loose mode and model-folder mode read no save, so they know no team
+   ID, and their collisions stay `unmigrated_content`: the teams list's ID, which loose mode
+   read until 0.0.2, is no longer read, and a guess at which spelling was the team's could keep
+   the file the cup never showed.
    The kit folder token is a texture set's alone (`spec/model_format.md` "Kit-dependent
    assets"): a `face.xml` naming a model in a `u0???p0/` folder is respelled `./kitN/…` as
    written, which the compile does not resolve; no real export holds one.
@@ -537,14 +547,15 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    `u0XXXp1.dds` to `p3`: /vg/'s Autumn 24 export) links like any other, the link named after
    the reference's respelled name (`kitN.dds.common`) and present when `Common/`'s directory
    holds a member of its set, as the shared validation resolves such a link. A name segment
-   holding a legacy `p` token and also a Studio token of the author's (`kit1_u0827p0.dds`, five
+   holding a legacy `p` or `g` token and also a Studio token of the author's (`kit1_u0827p0.dds`, five
    VGL26 exports) has that token's `kit` written `kit_tex` (`kit_tex1_kitN.dds`,
-   `Common/kit_tex1_kit1.dds`), in names and references alike: a stem's first token is its kit
+   `Common/kit_tex1_kit1.dds`, `kit1_u0XXXg2.dds` → `kit_tex1_gk_kit2.dds`, since `gk_kit2`
+   holds the token `kit2`), in names and references alike: a stem's first token is its kit
    token, so `kit1_kitN` would read as variant 1 and its set would never link. `kit_tex1` holds
    no token (`kit` must be followed by the digit, `N` or `F` itself) and says what the file is,
    a texture its author named `kit1`; a capital `Kit1`, the first spelling, differed only in
    letter case, which Windows does not tell apart and the upgrader's own collision check folds
-   away. A path whose directory segment holds the legacy `p` token gives the Studio tokens of
+   away. A path whose directory segment holds a legacy `p` or `g` token gives the Studio tokens of
    its file name the same respelling (`Common/u0XXXp2/kit1.dds` → `Common/kit2/kit_tex1.dds`,
    the FMDL texture `common/XXX/u0XXXp0/sourceimages/kit1` → `./kitN/` `kit_tex1`; GBPEN's
    post-VGL26 export, 45 references in 19 models): a file name's
@@ -554,19 +565,27 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    directory and file name are stored apart (an FMDL path-table entry, a `.mtl` texture) is
    one path for this rule. In a
    `face.xml`, only the `path` and `material` attributes' values change, the rest of the file
-   byte for byte as written, `<dif>` included; their `???` stays, the compiler respelling any
-   three characters there. The upgrader is the **only** Studio component that reads the legacy spelling — the
+   byte for byte as written, `<dif>` included; a Common path's folder after `common/` becomes
+   `team_folder` there too, the rest of the value kept
+   (`model/character/uniform/common/XXX/oral_hand_l_*.model` →
+   `common/team_folder/oral_hand_l_*.model`). The upgrader is the **only** Studio component that reads the legacy spelling — the
    compiler has no notion of it. `dummy_kit*` references are left as they are — the compiler
    keeps them as reserved game-substituted names; a `.mtl`'s `dummy_` stem in a Common path
    (`model/character/uniform/common/XXX/dummy_kit.dds`, the real /jp/ Summer 25 export's
-   `XXX15 - Sister`) is looked up nowhere and reported never, its `???` alone respelled, since
-   the compiler emits a member's `.mtl` as written. The goalkeeper token **`u0???g`**
-   (`u0XXXg1.dds` in a `Common/`, which a keeper's model names) is no variant set in Studio,
-   which has one kit number for every player ("Kit-dependent assets"): in a whole-export upgrade
-   its three ID characters become the resolved team's ID, in file and folder names and in
-   `.mtl`/`face.xml` paths and FMDL path tables alike, as Red respells it, so a model and a file
-   that spelled the ID differently (`XXX` in one, the ID in the other) match again. Model-folder
-   mode has no team and leaves the token as written. Pre-Fox **model-type prefixes become suffixes**:
+   `XXX15 - Sister`) is looked up nowhere and reported never, its Common alone respelled
+   (`common/team_folder/dummy_kit.dds`), since
+   the compiler emits a member's `.mtl` as written. The goalkeeper token **`u0???g`** and a
+   digit (`u0XXXg1.dds` in a `Common/`, which a keeper's model names) becomes `gk_kit` and that
+   digit, in both modes, in file and folder names and in `.mtl`/`face.xml` paths and FMDL path
+   tables alike (`u0714g1` → `gk_kit1`), `u0???g0` → `gk_kitN` in those paths but → `gk_kitF`
+   in a file or folder name, as `u0???p0` does; its three characters are any, as the `p`
+   token's, so a model and a file that spelled them differently (`XXX` in one, the ID in the
+   other) match again. Studio has one kit number for every player ("Kit-dependent assets"):
+   outfield and keeper textures are picked together, so `g1` is what a keeper wears with kit 1,
+   and `gk_kit1` holds the token `kit1`, a variant of the set `gk_kitN`. We do not write `kitN`,
+   the `p` token's spelling, because six real exports hold `u0XXXg1.dds` beside `u0XXXp1.dds`
+   in one `Common/` (/jp/ Summer 24 among them), which would become one name (DECISIONS
+   2026-11-09). A `u0???g` followed by no digit is no token and stays as written. Pre-Fox **model-type prefixes become suffixes**:
    Red typed `face.xml` entries by a leading type (`gloveL_foo.model`, matched case-insensitively
    with underscores ignored, or a `model_type_<x>` token anywhere); the Studio format puts the type
    last (`foo_gloveL.model`, `foo_model_type_<x>.model` — see "Model names: a free part plus a
@@ -953,7 +972,7 @@ resolves against the migrated Common through `aesthetics_export`'s validation; p
 `.mtl` referencing `model/character/uniform/common/XXX/hair.dds` (asserting `./hair.dds` in the
 migrated `.mtl`, a `hair.dds.common` link beside it, and the stem resolving into Common through
 validation) and one such reference whose file is absent from `Common/` (asserting it is reported
-and left unchanged).
+and kept a game path, written `common/team_folder/hair.dds`).
 
 ## CLI
 
@@ -991,9 +1010,9 @@ would surprise more than the refusal. A referee export takes no tag and refuses 
 that already exists is refused, naming it: replacing it would lose edits made since an earlier
 upgrade. A team export takes `--savefile` or `--loose`, exactly one: loose mode is an assumption
 the user opts into (step 11), never a silent fallback; a referee export takes neither, and is refused with either. A
-savefile that does not hold the resolved team is refused naming the team; an export whose team
-resolves neither from its Note nor from its name is reported (`team_name_unknown`, the
-compiler's code) and nothing is written. `upgrade-models` is model-folder mode; its output is one
+savefile that holds no team of the export's name (step 6) is refused naming the team; an
+export whose Note's `Team:` value or name gives no team name is reported (`team_name_unknown`,
+the compiler's code) and nothing is written. `upgrade-models` is model-folder mode; its output is one
 folder per migrated input folder under the output directory, by default a sibling folder named
 after the input with ` upgraded` appended, or the directory `-o` names. That directory is the
 output folder, refused like `upgrade`'s when it exists: we do not write into an existing one,
@@ -1009,8 +1028,7 @@ extract, reported `export_extract_failed` as the compiler does; nothing is writt
 `upgrade` input that is a file other than a `.zip` or `.7z`, an `upgrade-models` input that is
 not a folder, the flags above, a savefile that
 does not read as a save or lacks the team; nothing is written), **3** aborted: before anything
-is written (the output folder exists, or it or its staging folder below cannot be created; the
-data directory's `teams_list.txt` exists but does not read or parse, step 6), or when a file
+is written (the output folder exists, or it or its staging folder below cannot be created), or when a file
 of the output cannot be written, the error naming it and the incomplete staging folder. Both
 commands write into a **staging folder**, the output's name with `.upgrading` appended, beside
 where the output goes; the shared validation reads it there, and the verdict then renames it
@@ -1048,7 +1066,8 @@ validation's findings on what was written.
 | `no_old_export` | E | step 1: the input holds nothing an old export holds; nothing is written | — |
 | `export_extract_failed` | E | the archive does not open or its listing is refused (the compiler's code); nothing is written | `path`, `error` |
 | `source_read_failed` | E | a file of the input does not read after its listing did (the compiler's code); it is not migrated and the run reports on and ends not clean, so nothing is written; an unreadable Note (it decides the team) or a referee export's `refs.txt` (it decides the roster) stops the run at once | `path`, `error` |
-| `team_name_unknown` | E | the team resolves to no row of the list (the compiler's code), the `Team:` line's file or the export named; nothing is written | `name` |
+| `team_name_unknown` | E | the Note's `Team:` value, or the export name's first word, is no team name (empty, or holding a space or an inner `/`; the compiler's code, step 6), the `Team:` line's file or the export named; nothing is written | `name` |
+| `save_team_name_repeated` | W | step 6: a later team of the save folds to the export's team name; the first in record order is the export's, the later left out | `team` (the later team's ID), `kept` (the first's) |
 | `unmigrated_content` | E | an entry inside the old format's folders that reached the game and that no step migrates, or that step 10's boundary keeps an Error (two candidates for one place, a misnamed whole folder), entry by entry; a Note entry whose colors do not read is one, its line in the context, and so is a kit config that does not decode (step 5), its error in the context | `reason` (the cause), `other` (the other candidate's input path, where two claim one place), then `line` (a Note entry) or `error` (a kit config, a texture, an `.mtl`) |
 | `migration_clean` | I | last line: no Error finding, and no finding drops anything but a leftover ("Verification"'s clean migrated export); exit 0 | — |
 | `migration_not_clean` | I | last line otherwise: nothing is written ("Verification"); exit 1 after any finding that drops anything but a leftover | — |
@@ -1078,7 +1097,8 @@ compiler's for a member `face.xml`) for the `face.xml` attribute values step 7 r
 format lib crates it inspects content with are `fmdl` and `pes_model` (the models step 7
 renames and whose texture paths it rewrites; `pes_model`'s tolerant `.mtl` read is the
 upgrader's alone), `ftex` (a kit texture's FTEX decoded, step 5) and `wezlib` (a wrapped
-`face.xml` read, step 7); `teams_list` resolves the team (step 6), and `studio_core`,
+`face.xml` read, step 7); `teams_list`'s `TeamName` folds the team's name (step 6; its list
+is not read), and `studio_core`,
 `pes_version`, `clap`, `anyhow`, `toml` (the settings table) and `egui` are the tool-crate
 skeleton's (`core/architecture.md` "Crate structure"). Old-format knowledge stays in
 this tool. The structural migration (steps 1–12) does no model-format conversion, but does rewrite
@@ -1190,11 +1210,8 @@ EU-ROOT-02 GIVEN an old export "co Spring 26" without any Note txt
            WHEN it is upgraded
            THEN the team resolves from the first word, the output is "co Full Spring 26", and it
                 holds no colors.txt, notes.txt or Note txt
-EU-ROOT-03 GIVEN an old export "co Spring 26" whose Note's Team: line names no team of the
-                teams list, and one "Numbers" without any Note
-           WHEN each is upgraded
-           THEN team_name_unknown is reported naming the Team: line for the first and the
-                folder name for the second, no output is written, and the exit code is 1
+EU-ROOT-03 withdrawn: restated as EU-ROOT-08 and EU-ROOT-09 (`spec/export_upgrader.md`),
+           the team's name read against no teams list since step 0.0.2-poc11
 EU-ROOT-04 GIVEN a Note with team colors and an "Other Notes" section
            WHEN the export is upgraded
            THEN the output's root colors.txt holds the Note's team colors, one per line in the
@@ -1215,6 +1232,23 @@ EU-ROOT-07 GIVEN a Note whose team colors hold "- 1st: 048 146 082 - 255 255 255
            THEN the root colors.txt holds 048 146 082 and #FFFFFF, one per line,
                 leftover_dropped is reported at the Note naming the first line, and the exit
                 code is 0
+EU-ROOT-08 GIVEN a teams list holding /co/ as 714 and no /hist/, the old exports "hist Spring 26"
+                (its Note's Team: line naming /hist/) and "co Spring 26", each holding the face
+                folder "XXX05", and a save holding /hist/ as team 760 and /co/ as team 750,
+                player 76005 named Ann and player 75005 named Bob
+           WHEN each is upgraded with that save
+           THEN the outputs "hist Full Spring 26" and "co Full Spring 26" hold Players/05 - Ann/
+                and Players/05 - Bob/, and the exit codes are 0
+EU-ROOT-09 GIVEN an old export "--- .zip" without any Note, and an old export "co Spring 26" whose
+                Note's Team: line is "co op"
+           WHEN each is upgraded
+           THEN team_name_unknown is reported naming the export for the first and the Team: line
+                for the second, no output is written, and the exit code is 1
+EU-ROOT-10 GIVEN EU-ROOT-08's "co Spring 26" and a save holding /co/ as team 750 and, later in its
+                record order, as team 714, player 75005 named Bob and player 71405 named Cy
+           WHEN it is upgraded with that save
+           THEN save_team_name_repeated names 714 and 750, the output holds Players/05 - Bob/,
+                and the exit code is 0
 ```
 
 **Player folders**
@@ -1533,18 +1567,22 @@ EU-MDL-05  GIVEN a pre-Fox face folder whose .mtl references face_srm.dds, a fil
                 model/character/boots/k0002/ek0062_n.dds as written and ./hair.dds, realkit's
                 references ./hair.dds, the player folder's root holds the texture link
                 hair.dds.common, and realkit/ holds none
-EU-MDL-06  GIVEN a .mtl reference into model/character/uniform/common/XXX/ whose file Common/
+EU-MDL-06  withdrawn: restated as EU-MDL-29 (`spec/export_upgrader.md`), a kept Common path
+           written common/team_folder/ since step 0.0.2-poc11
+EU-MDL-29  GIVEN a .mtl reference model/character/uniform/common/XXX/hair.dds whose file Common/
                 lacks
            WHEN the export is upgraded
-           THEN it is reported naming the reference, the .mtl keeps it as written, its XXX
-                now 714, and the exit code is 0
-EU-MDL-22  GIVEN a pre-Fox /vg/ export whose face folder's .mtl references
+           THEN it is reported naming the reference, the .mtl keeps it as
+                common/team_folder/hair.dds, and the exit code is 0
+EU-MDL-22  withdrawn: restated as EU-MDL-30 (`spec/export_upgrader.md`), a kept Common path
+           written common/team_folder/ since step 0.0.2-poc11
+EU-MDL-30  GIVEN a pre-Fox /vg/ export whose face folder's .mtl references
                 model/character/uniform/common/vg/env.dds and
                 model/character/uniform/common/VG/fbm_s.dds, and Common/ holding env.dds alone
            WHEN the export is upgraded
            THEN the .mtl references ./env.dds beside the link env.dds.common, the fbm_s
-                reference is reported and kept as written, its VG now 758, and the exit code
-                is 0
+                reference is reported and kept as common/team_folder/fbm_s.dds, and the exit
+                code is 0
 EU-MDL-07  GIVEN a Fox face folder whose FMDL path table names hair in the Fox common directory,
                 and skin under another directory, hair and skin being in Common/ and not in the
                 folder
@@ -1576,16 +1614,24 @@ EU-MDL-09  GIVEN a model folder holding u0XXXp1.dds, u0714p2.dds, a folder u0XXX
                 to the two files name kit1 and kit2 and those to the folder kitN/, the face.xml
                 names ./jacket_kitN.model and is written unwrapped, and the dummy_kit reference
                 is unchanged
-EU-MDL-10  GIVEN Common/u0XXXg1.dds and a keeper's face folder whose FMDL names u0714g1
+EU-MDL-10  withdrawn: restated as EU-MDL-31 (`spec/export_upgrader.md`), the keeper's token
+           written gk_kitN since step 0.0.2-poc11
+EU-MDL-31  GIVEN Common/u0XXXg1.dds and Common/u0XXXp1.dds of different bytes, and a keeper's
+                face folder whose FMDL names u0714g1
            WHEN the export is upgraded
-           THEN Common/ holds u0714g1.dds and the keeper's FMDL texture and link both name
-                u0714g1
+           THEN Common/ holds gk_kit1.dds and kit1.dds with those bytes, the keeper's FMDL
+                texture names gk_kit1 beside the link gk_kit1.dds.common, and the shared
+                validation finds the link resolving
 EU-MDL-21  GIVEN a /co/ export whose face folder "XXX07 - Ann" holds u0714p2.dds and
                 u0XXXp2.dds, and u0715p3.dds and u0XXXp3.dds, the four of different bytes
            WHEN the export is upgraded
            THEN Players/07 - Ann/ holds kit2.dds with u0XXXp2.dds's bytes and kit3.dds with
                 u0XXXp3.dds's, leftover_dropped is reported for u0714p2.dds and u0715p3.dds, and
                 the exit code is 0
+EU-MDL-33  GIVEN EU-MDL-21's export
+           WHEN it is upgraded with --loose
+           THEN unmigrated_content is reported for u0XXXp2.dds and u0XXXp3.dds, naming
+                u0714p2.dds and u0715p3.dds, nothing is written, and the exit code is 1
 EU-MDL-11  GIVEN a pre-Fox folder without a face.xml holding gloveL_foo.model, bar_gloveR.model
                 and plain.model, and one with a face.xml holding gloveL_baz.model
            WHEN the export is upgraded
@@ -1604,11 +1650,14 @@ EU-MDL-13  GIVEN a Fox face folder whose FMDL names skin under
            WHEN the export is upgraded
            THEN the FMDL names skin as a texture of its own folder and zero under its directory
                 as written, and neither is reported
-EU-MDL-14  GIVEN a pre-Fox face folder whose face.xml names
+EU-MDL-14  withdrawn: restated as EU-MDL-32 (`spec/export_upgrader.md`), a face.xml's Common
+           path written common/team_folder/ since step 0.0.2-poc11
+EU-MDL-32  GIVEN a pre-Fox face folder whose face.xml names
                 model/character/uniform/common/XXX/oral_hand_l_*.model, with
                 Common/oral_hand_l_win32.model
            WHEN the export is upgraded
-           THEN Common/ keeps oral_hand_l_win32.model, and the face.xml names it as before
+           THEN Common/ keeps oral_hand_l_win32.model, and the face.xml names
+                common/team_folder/oral_hand_l_*.model
 EU-MDL-15  GIVEN Portraits/player_XXX07.dds, and slot 07's face folder holding a portrait.dds
                 of different bytes
            WHEN the export is upgraded
@@ -1760,6 +1809,12 @@ EU-REF-06  GIVEN a referee folder whose face/face.mtl references
            THEN the .mtl references hair, skin, ./kit/sock and whistle, the referee folder holds
                 hair.dds, skin.dds, kit/sock.dds and the link whistle.dds.common, and the shared
                 validation finds the link resolving
+EU-REF-13  GIVEN a referee folder whose face/face.mtl references
+                model/character/uniform/common/999/refkit/texture.dds, a file neither its common/
+                nor the export's Common/ holds
+           WHEN the export is upgraded
+           THEN it is reported naming the reference, the .mtl keeps it as
+                common/team_folder/refkit/texture.dds, and the exit code is 0
 EU-REF-07  GIVEN the old export folder "refs Summer" holding Players/ and no refs.txt
            WHEN it is upgraded
            THEN it is reported as holding no refs.txt, nothing is written, and the exit code
@@ -1858,21 +1913,27 @@ EU-MF-01   GIVEN a folder holding a Fox face folder "XXX15 - Snuffy" whose file 
            THEN the output holds 15 - Snuffy/ with kit1 in every file name and reference,
                 Crocs/ with crocs_gloveL.model, k0431/, Snuffy/ with a bare ingame_face.toml,
                 and an upgraded Common/, and the report names each output folder with where it goes
-EU-MF-02   GIVEN a player folder's .mtl referencing model/character/uniform/common/XXX/hair.dds,
-                another reference whose file Common/ lacks, a .mtl.common link, and Common/
+EU-MF-02   withdrawn: restated as EU-MF-08 (`spec/export_upgrader.md`), a kept Common path
+           written common/team_folder/ since step 0.0.2-poc11
+EU-MF-08   GIVEN a player folder's .mtl referencing model/character/uniform/common/XXX/hair.dds
+                and model/character/uniform/common/XXX/fur.dds, a .mtl.common link, and Common/
                 holding hair.dds and a .mtl referencing face.dds
            WHEN upgrade-models runs
-           THEN the player's .mtl references ./hair.dds beside the link hair.dds.common, the
-                other reference is reported and left as written, Common's .mtl keeps its
-                reference to face.dds as written, the .mtl.common link is kept, the shared
+           THEN the player's .mtl references ./hair.dds beside the link hair.dds.common, the fur
+                reference is reported and kept as common/team_folder/fur.dds, Common's .mtl keeps
+                its reference to face.dds as written, the .mtl.common link is kept, the shared
                 validation finds every link resolving, and the exit code is 0
 EU-MF-03   GIVEN a top-level folder holding no file directly in it (a players/ folder of model
                 folders, or a folder holding only Thumbs.db)
            WHEN upgrade-models runs
            THEN it is reported as unmigrated content, nothing is written, and the exit code is 1
-EU-MF-04   GIVEN a model folder whose FMDL names u0XXXg1
+EU-MF-04   withdrawn: restated as EU-MF-09 (`spec/export_upgrader.md`), the keeper's token
+           written gk_kitN in both modes since step 0.0.2-poc11
+EU-MF-09   GIVEN a model folder holding u0XXXg1.dds and u0XXXg2.dds, whose FMDL names u0XXXg1
+                and u0XXXg0
            WHEN upgrade-models runs
-           THEN the migrated FMDL names u0XXXg1 as written
+           THEN the folder holds gk_kit1.dds and gk_kit2.dds, and the FMDL names gk_kit1 and
+                gk_kitN
 EU-MF-05   GIVEN two face folders of one slot ("XXX15 - A", "XXX15 - B"), a face folder without
                 a number and a boots folder no player folder links
            WHEN upgrade-models runs

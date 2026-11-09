@@ -3123,3 +3123,4 @@ worklog passed 7,000 lines.
 - 2026-11-09: The embedded teams list carries VGL27's allocation (781–832, the organizer's), so the organizer's readme no longer merges the save's teams first; the list's test checks one row per ID 701–920, never who holds which.
 - 2026-11-09: The 0.0.2-poc.1 bundle rebuilt with VGL27's teams list (archive `1d39755d…`); the root README brought to 0.0.1's release and 0.0.2's launchers.
 - 2026-11-09: The Team compiler reads the team's Common as `common/team_folder/` (0.0.2-poc11 (a)): a three-character or other folder after `common/` is refused on every target, and a game file below `common/` may be written short.
+- 2026-11-09: The Export upgrader writes no team ID and reads no teams list (0.0.2-poc11 (b)): the save's team is found by name, a kept Common path reads `common/team_folder/`, and a keeper's `u0XXXgN` becomes `gk_kitN`.

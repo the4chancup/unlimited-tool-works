@@ -17,14 +17,6 @@ the folder with 7-Zip's `7z a`, so the three hold the same files.
   repository's `.gitignore` ignores the name except below a `tests/fixtures/` folder, so tree
   copies that honor it (the mutation runs') keep this one.
 
-## `teams_list.txt`
-
-The teams list every test runs with: the in-process sandbox writes it as its data directory's
-`teams_list.txt`, and the unit tests' context reads it from a data directory of its own. It
-holds the teams the tests' exports name, at the IDs their expectations use (`/co/` 714 as the
-fixture save holds it), so no test leans on the embedded list, which changes with every
-league's allocation. A test that needs another list writes its own over it.
-
 ## `jp Summer 18/`
 
 `JP Note.txt` alone: the real Note of `JP Aesthetic Export for Summer 18` (Teams_Main), byte for

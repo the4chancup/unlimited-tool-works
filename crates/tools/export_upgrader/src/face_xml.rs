@@ -14,7 +14,6 @@ use aesthetics_export::common_link_name;
 use roxmltree::Document;
 
 use crate::kit_magic::{Spelling, respell};
-use crate::materials::common_segment;
 use crate::source::SourceFailure;
 use crate::upgrade::Identity;
 
@@ -147,12 +146,8 @@ fn folder_files(copies: &[(String, String)], output: &str) -> BTreeSet<String> {
 /// `None` for any other value, which the team rule's kit magic alone
 /// respells; a `./` value is never changed here, a missing one being the
 /// compile's `xml_model_not_found` (no link resolves a `path`).
-fn flattened_common_value(
-    raw: &str,
-    identity: &Identity,
-    folder_files: &BTreeSet<String>,
-) -> Option<String> {
-    let below = common_below(raw, identity)?;
+fn flattened_common_value(raw: &str, folder_files: &BTreeSet<String>) -> Option<String> {
+    let below = common_below(raw)?;
     if !folder_files.contains(&below) {
         return None;
     }
@@ -169,24 +164,22 @@ fn strip_prefix_ci<'a>(value: &'a str, prefix: &str) -> Option<&'a str> {
         .map(|_| &value[prefix.len()..])
 }
 
-/// `value`, a `path`/`material` value under `COMMON_PREFIX`, with its
-/// segment respelled (`common_segment`) when it is not three characters;
-/// a three-character one is left as written, the compiler reading it, and
-/// a value without a segment is borrowed.
-fn respell_common_segment<'a>(value: &'a str, identity: &Identity) -> Cow<'a, str> {
+/// `value`, a `path`/`material` value under `COMMON_PREFIX`, respelled to
+/// the Studio spelling of the team's Common: the prefix and whatever
+/// folder stood after it (`XXX`, a team ID, a team's name) become
+/// `common/team_folder/`, the rest of the value kept. A value without a
+/// segment after `common/` is borrowed, as is an empty one.
+fn respell_common_segment(value: &str) -> Cow<'_, str> {
     let Some(rest) = strip_prefix_ci(value, COMMON_PREFIX) else {
         return Cow::Borrowed(value);
     };
     let Some((segment, path)) = rest.split_once('/') else {
         return Cow::Borrowed(value);
     };
-    if segment.is_empty() || segment.chars().count() == 3 {
+    if segment.is_empty() {
         return Cow::Borrowed(value);
     }
-    Cow::Owned(format!(
-        "{COMMON_PREFIX}{}/{path}",
-        common_segment(segment, identity)
-    ))
+    Cow::Owned(format!("common/team_folder/{path}"))
 }
 
 /// The `Common/` path a `face.xml` `path`/`material` value names, as the
@@ -195,14 +188,14 @@ fn respell_common_segment<'a>(value: &'a str, identity: &Identity) -> Cow<'a, st
 /// as the `Common/` outputs are (`Spelling::Name`) and folded; `None`
 /// when it names none (a value naming a folder gives a path no file has,
 /// which keeps nothing).
-fn common_below(value: &str, identity: &Identity) -> Option<String> {
+fn common_below(value: &str) -> Option<String> {
     let rest = strip_prefix_ci(value, COMMON_PREFIX)?;
     let (_segment, path) = rest.split_once('/')?;
     let path = match path.rsplit_once('/') {
         Some((dir, name)) => format!("{dir}/{}", name.replace('*', "win32")),
         None => path.replace('*', "win32"),
     };
-    Some(vtree::fold_name(&respell(&path, Spelling::Name, identity)))
+    Some(vtree::fold_name(&respell(&path, Spelling::Name)))
 }
 
 /// The `Common/` paths (folded, below `Common/`) that keep their names
@@ -211,7 +204,6 @@ fn common_below(value: &str, identity: &Identity) -> Option<String> {
 /// is left as written with its folder, so its target keeps its name too.
 pub(crate) fn kept_common_files(
     copies: &[(String, String)],
-    identity: &Identity,
     mut read: impl FnMut(&str) -> Result<Vec<u8>, SourceFailure>,
 ) -> BTreeSet<String> {
     let xml = xml_folders(copies);
@@ -235,7 +227,7 @@ pub(crate) fn kept_common_files(
             .flat_map(|element| element.attributes())
         {
             if matches!(attribute.name(), "path" | "material")
-                && let Some(below) = common_below(&text[attribute.range_value()], identity)
+                && let Some(below) = common_below(&text[attribute.range_value()])
             {
                 kept.insert(below);
             }
@@ -296,8 +288,8 @@ pub(crate) fn named_paths(
 /// `text`, a parseable `face.xml`, with the `path` and `material`
 /// attribute values that name the player folder's own (`./`) or the
 /// team's Common (`model/character/uniform/common/`, any letter case) kit
-/// magic respelled — a Common value's segment that is not three
-/// characters respelled the team's first (`common_segment`) — a
+/// magic respelled — a Common value respelled `common/team_folder/` first
+/// (`respell_common_segment`) — a
 /// referee's Common value naming one of `folder_files` first spelled
 /// below his folder (`flattened_common_value`); `Cow::Borrowed` when
 /// nothing changed.
@@ -319,18 +311,18 @@ fn respell_face_xml<'a>(
             }
             let raw = &text[attribute.range_value()];
             let flattened = match identity {
-                Identity::Referees => flattened_common_value(raw, identity, folder_files),
+                Identity::Referees => flattened_common_value(raw, folder_files),
                 Identity::Team { .. } | Identity::ModelFolders => None,
             };
             let value = flattened.as_deref().unwrap_or(raw);
             if !(value.starts_with("./") || strip_prefix_ci(value, COMMON_PREFIX).is_some()) {
                 return None;
             }
-            // A segment that is not three characters is respelled the
-            // team's ID (model-folder mode's `XXX`), then the kit magic
-            // as today; a flattened value's `./` has no segment left.
-            let respelled = respell_common_segment(value, identity);
-            let new = respell(&respelled, Spelling::Path, identity);
+            // The folder after `common/` becomes `team_folder`, whatever
+            // it was, then the kit magic as today; a flattened value's
+            // `./` has no folder left.
+            let respelled = respell_common_segment(value);
+            let new = respell(&respelled, Spelling::Path);
             (new != raw).then(|| (attribute.range_value(), new.into_owned()))
         })
         .collect();
@@ -348,13 +340,12 @@ fn respell_face_xml<'a>(
 
 #[cfg(test)]
 mod tests {
-    use teams_list::{TeamId, TeamName};
+    use teams_list::TeamName;
 
     use super::*;
 
     fn team() -> Identity {
         Identity::Team {
-            id: TeamId::new(714).unwrap(),
             name: TeamName::new("co").unwrap(),
         }
     }
@@ -417,7 +408,7 @@ mod tests {
     }
 
     #[test]
-    fn a_common_path_s_u0xxxg_respells_the_team() {
+    fn a_common_path_respells_team_folder_and_the_keeper_token() {
         let copies = vec![("Faces/x".to_owned(), "Players/07 - A/face.xml".to_owned())];
         let text =
             "<face><model path=\"model/character/uniform/common/XXX/u0XXXg1_shirt.model\"/></face>";
@@ -427,7 +418,7 @@ mod tests {
         let text = String::from_utf8(rewrites[0].1.clone()).unwrap();
         assert_eq!(
             text,
-            "<face><model path=\"model/character/uniform/common/XXX/u0714g1_shirt.model\"/></face>"
+            "<face><model path=\"common/team_folder/gk_kit1_shirt.model\"/></face>"
         );
     }
 
@@ -502,7 +493,7 @@ mod tests {
         let copies = vec![("Faces/x".to_owned(), "Players/07 - A/face.xml".to_owned())];
         let text = "<config><model path=\"model/character/uniform/common/o/oral_hand_l_*.model\" material=\"model/character/uniform/common/XXX/sub/x.mtl\"/></config>";
         let mut read = reader(vec![("Faces/x".to_owned(), text.as_bytes().to_vec())]);
-        let kept = kept_common_files(&copies, &team(), &mut read);
+        let kept = kept_common_files(&copies, &mut read);
         assert_eq!(
             kept.iter().collect::<Vec<_>>(),
             ["oral_hand_l_win32.model", "sub/x.mtl"]
@@ -510,10 +501,10 @@ mod tests {
     }
 
     #[test]
-    fn a_common_segment_of_another_length_is_respelled_the_id() {
-        // The compiler reads any three-character segment as the team's
-        // Common and refuses any other: `o` becomes the team's ID, a
-        // three-character `XXX` is left as written.
+    fn a_common_path_s_folder_becomes_team_folder_whatever_it_was() {
+        // `o`, `XXX`, an ID: the compiler refuses any folder after
+        // `common/` but `team_folder`, so whatever stood there is
+        // respelled to it.
         let copies = vec![("Faces/x".to_owned(), "Players/07 - A/face.xml".to_owned())];
         let text = "<config><model path=\"model/character/uniform/common/o/oral_shirt_*.model\" material=\"model/character/uniform/common/XXX/a.mtl\"/></config>";
         let mut read = reader(vec![("Faces/x".to_owned(), text.as_bytes().to_vec())]);
@@ -521,12 +512,12 @@ mod tests {
         assert_eq!(rewrites.len(), 1);
         assert_eq!(
             String::from_utf8(rewrites[0].1.clone()).unwrap(),
-            "<config><model path=\"model/character/uniform/common/714/oral_shirt_*.model\" material=\"model/character/uniform/common/XXX/a.mtl\"/></config>"
+            "<config><model path=\"common/team_folder/oral_shirt_*.model\" material=\"common/team_folder/a.mtl\"/></config>"
         );
     }
 
     #[test]
-    fn model_folder_mode_writes_the_placeholder_segment() {
+    fn model_folder_mode_writes_team_folder_too() {
         let copies = vec![("Faces/x".to_owned(), "Players/07 - A/face.xml".to_owned())];
         let text = "<config><model path=\"model/character/uniform/common/o/x.model\"/></config>";
         let mut read = reader(vec![("Faces/x".to_owned(), text.as_bytes().to_vec())]);
@@ -534,7 +525,7 @@ mod tests {
         assert_eq!(rewrites.len(), 1);
         assert_eq!(
             String::from_utf8(rewrites[0].1.clone()).unwrap(),
-            "<config><model path=\"model/character/uniform/common/XXX/x.model\"/></config>"
+            "<config><model path=\"common/team_folder/x.model\"/></config>"
         );
     }
 
@@ -543,7 +534,7 @@ mod tests {
         let copies = vec![("Faces/x".to_owned(), "Players/07 - A/face.xml".to_owned())];
         let text = "<config><model path=\"./x.model\" material=\"model/character/uniform/common/\"/><model path=\"model/character/uniform/common/XXX\"/></config>";
         let mut read = reader(vec![("Faces/x".to_owned(), text.as_bytes().to_vec())]);
-        assert!(kept_common_files(&copies, &team(), &mut read).is_empty());
+        assert!(kept_common_files(&copies, &mut read).is_empty());
     }
 
     #[test]
@@ -556,7 +547,7 @@ mod tests {
             ),
         ];
         let mut read = reader(vec![("Faces/x".to_owned(), b"<config/>".to_vec())]);
-        let kept = kept_common_files(&copies, &team(), &mut read);
+        let kept = kept_common_files(&copies, &mut read);
         assert_eq!(kept.iter().collect::<Vec<_>>(), ["oral_y_win32.model"]);
     }
 
@@ -568,7 +559,7 @@ mod tests {
                 .as_bytes(),
         );
         let mut read = reader(vec![("Faces/x".to_owned(), wrapped)]);
-        let kept = kept_common_files(&copies, &team(), &mut read);
+        let kept = kept_common_files(&copies, &mut read);
         assert_eq!(kept.iter().collect::<Vec<_>>(), ["oral_hand_l_win32.model"]);
     }
 
@@ -623,10 +614,10 @@ mod tests {
             rewrite(&refs(), "arbiter"),
             "<config><model path=\"./parts_body.model\"/><model path=\"./oral_x_*.model\" material=\"./kit/kit1.mtl\"/></config>"
         );
-        // A team's: the kit magic alone.
+        // A team's: `team_folder`, then the kit magic.
         assert_eq!(
             rewrite(&team(), "07 - A"),
-            "<config><model path=\"model/character/uniform/common/XXX/parts_body.model\"/><model path=\"./oral_x_*.model\" material=\"model/character/uniform/common/XXX/kit/kit1.mtl\"/></config>"
+            "<config><model path=\"common/team_folder/parts_body.model\"/><model path=\"./oral_x_*.model\" material=\"common/team_folder/kit/kit1.mtl\"/></config>"
         );
     }
 
@@ -638,6 +629,11 @@ mod tests {
         ];
         let text = "<config><model path=\"model/character/uniform/common/XXX/parts_body.model\"/></config>";
         let mut read = reader(vec![("x".to_owned(), text.as_bytes().to_vec())]);
-        assert!(face_xml_rewrites(&copies, &refs(), &mut read).is_empty());
+        let rewrites = face_xml_rewrites(&copies, &refs(), &mut read);
+        assert_eq!(rewrites.len(), 1);
+        assert_eq!(
+            String::from_utf8(rewrites[0].1.clone()).unwrap(),
+            "<config><model path=\"common/team_folder/parts_body.model\"/></config>"
+        );
     }
 }

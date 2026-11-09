@@ -1,12 +1,14 @@
 //! The `.mtl` texture references and FMDL path-table entries into the
 //! team's `Common/`. A reference naming a `Common/` file becomes the bare
-//! name plus the `.common` link spelling it. One no link can spell stays as
-//! written, its `???` respelled the identity's path ID, and is reported
-//! `common_reference_kept`: a link beside a local file of its stem would
+//! name plus the `.common` link spelling it. One no link can spell stays a
+//! game path, its Common written `common/team_folder/` (the Fox common
+//! directory for an FMDL), and is reported `common_reference_kept`: a
+//! link beside a local file of its stem would
 //! drop the folder, and a nearer local file would win the lookup silently.
 //!
 //! A shared folder's (`Boots/`, `Gloves/`) or a `Common/` `.mtl` keeps its
-//! Common references as written, `???` respelled and no link, with
+//! Common references as written, respelled `common/team_folder/` and no
+//! link, with
 //! `common_reference_kept` only when `Common/` lacks what it names. An
 //! `.mtl` is read by the pre-Fox compile alone, which does not read a shared
 //! folder's links, so a link there would lose the texture. A shared
@@ -115,9 +117,10 @@ fn claims_stem(name: &str, stem: &str, set_reference: Option<&str>) -> bool {
 /// A reference's `???` marker and `sub` (the path below the Common
 /// directory, ending in `/` or empty) when its directory is
 /// `model/character/uniform/common/` + a non-empty segment + `/`, in any
-/// letter case; `None` otherwise. The compiler reads any three-character
-/// segment as the team's Common and refuses any other, so one of another
-/// length is still the team's (`common_segment` respells it).
+/// letter case; `None` otherwise. The compiler refuses any folder after
+/// `common/` but `team_folder`, so whatever stands there is the team's
+/// Common (`respell_marker` respells it). A file directly below `common/`
+/// is the game's own, not the team's.
 fn reference_into_common(directory: &str) -> Option<(&str, &str)> {
     let prefix = directory.get(..COMMON_PREFIX.len())?;
     if !prefix.eq_ignore_ascii_case(COMMON_PREFIX) {
@@ -158,8 +161,8 @@ fn model_folder_of(output: &str) -> Option<(FolderKind, &str, &str)> {
 /// `directory`'s and `file_name`'s kit magic respelled (`Spelling::Path`)
 /// as one path: a `u0???p` token in `directory` marks `file_name`'s Studio
 /// tokens as it does a whole path's.
-fn respell_reference(directory: &mut String, file_name: &mut String, identity: &Identity) {
-    let (dir, name) = respell_split(directory, file_name, Spelling::Path, identity);
+fn respell_reference(directory: &mut String, file_name: &mut String) {
+    let (dir, name) = respell_split(directory, file_name, Spelling::Path);
     if let Cow::Owned(new) = dir {
         *directory = new;
     }
@@ -168,29 +171,15 @@ fn respell_reference(directory: &mut String, file_name: &mut String, identity: &
     }
 }
 
-/// The segment a Common path's `???` marker is written as: the identity's
-/// path ID, three digits (a team export's, 999 the referees'); in
-/// model-folder mode (no path ID) `written` kept when it is three
-/// characters and `XXX` otherwise — the compiler reads any
-/// three-character segment as the team's Common and refuses any other.
-pub(crate) fn common_segment(written: &str, identity: &Identity) -> String {
-    match identity.path_id() {
-        Some(id) => format!("{id:03}"),
-        None if written.chars().count() == 3 => written.to_owned(),
-        None => "XXX".to_owned(),
-    }
-}
-
-/// The `???` of `directory`'s Common path respelled (`common_segment`) in
-/// place: `prefix_len` the `model/character/…/common/` prefix's length
-/// (either format's) and `rest` what follows it (`sub` for an `.mtl`,
-/// `sub` + `sourceimages/` for an FMDL), still applied.
-fn respell_marker(directory: &mut String, prefix_len: usize, rest: &str, identity: &Identity) {
-    let end = directory[prefix_len..]
-        .find('/')
-        .expect("the callers matched the marker and the `/` after it");
-    let marker = common_segment(&directory[prefix_len..prefix_len + end], identity);
-    *directory = format!("{}{marker}/{rest}", &directory[..prefix_len]);
+/// `directory`, a kept Common game path, written in the Studio spelling:
+/// `prefix` (`common/` for a `.mtl`'s short form, the Fox common
+/// directory's own for an FMDL's kept whole path) then `team_folder/`
+/// where the input's folder stood, then `rest` as written (`sub` for an
+/// `.mtl`, `sub` + `sourceimages/` for an FMDL). The Studio format names
+/// no team ID: the compiler reads `team_folder` as the team's Common and
+/// refuses any other folder after `common/`.
+fn respell_marker(directory: &mut String, prefix: &str, rest: &str) {
+    *directory = format!("{prefix}team_folder/{rest}");
 }
 
 /// The `common_reference_kept` on a `.mtl`/FMDL file (`written` the
@@ -308,7 +297,7 @@ fn fmdl_entry(path: &mut fmdl::ops::paths::TexturePath, ctx: &FileContext, pass:
         return;
     }
     if path.directory.is_empty() || path.directory.starts_with("./") {
-        respell_reference(&mut path.directory, &mut path.file_name, ctx.identity);
+        respell_reference(&mut path.directory, &mut path.file_name);
         mark_lookup(
             pass.used,
             ctx,
@@ -336,7 +325,7 @@ fn fmdl_entry(path: &mut fmdl::ops::paths::TexturePath, ctx: &FileContext, pass:
             mark_lookup(pass.used, ctx, "", &folded_stem(&path.file_name));
             return;
         };
-        let (sub, name) = respell_split(sub, &path.file_name, Spelling::Path, ctx.identity);
+        let (sub, name) = respell_split(sub, &path.file_name, Spelling::Path);
         let sub = sub.into_owned();
         if let Cow::Owned(name) = name {
             path.file_name = name;
@@ -369,9 +358,8 @@ fn fmdl_entry(path: &mut fmdl::ops::paths::TexturePath, ctx: &FileContext, pass:
             }
             None => respell_marker(
                 &mut path.directory,
-                FOX_COMMON_PREFIX.len(),
+                FOX_COMMON_PREFIX,
                 &format!("{sub}sourceimages/"),
-                ctx.identity,
             ),
         }
         return;
@@ -385,14 +373,7 @@ fn fmdl_entry(path: &mut fmdl::ops::paths::TexturePath, ctx: &FileContext, pass:
     }
     // A `u0???p` token in the dropped directory still marks the file
     // name's Studio tokens: the entry's two halves are one path.
-    if let Cow::Owned(name) = respell_split(
-        &path.directory,
-        &path.file_name,
-        Spelling::Path,
-        ctx.identity,
-    )
-    .1
-    {
+    if let Cow::Owned(name) = respell_split(&path.directory, &path.file_name, Spelling::Path).1 {
         path.file_name = name;
     }
     path.directory = "./".to_owned();
@@ -805,7 +786,7 @@ pub(crate) fn material_references(
             // referee's bare one linked when only `Common/` holds it) and
             // stop.
             if path.directory.is_empty() || path.directory.starts_with("./") {
-                respell_reference(&mut path.directory, &mut path.file_name, ctx.identity);
+                respell_reference(&mut path.directory, &mut path.file_name);
                 if !folded_stem(&path.file_name).starts_with("dummy_") {
                     mark_lookup(
                         pass.used,
@@ -833,12 +814,12 @@ pub(crate) fn material_references(
             if folded_stem(&path.file_name).starts_with("dummy_") {
                 // `sub` borrows `path.directory`: owned for the rewrite.
                 let sub = sub.to_owned();
-                respell_marker(&mut path.directory, COMMON_PREFIX.len(), &sub, ctx.identity);
+                respell_marker(&mut path.directory, "common/", &sub);
                 return;
             }
             // The `sub` and the file name respelled (`Spelling::Path`) as
             // one path.
-            let (sub, name) = respell_split(sub, &path.file_name, Spelling::Path, ctx.identity);
+            let (sub, name) = respell_split(sub, &path.file_name, Spelling::Path);
             let sub = sub.into_owned();
             if let Cow::Owned(name) = name {
                 path.file_name = name;
@@ -862,9 +843,7 @@ pub(crate) fn material_references(
                     plan_link(pass.planned, &ctx, common_rest);
                     path.directory = format!("./{sub}");
                 }
-                None => {
-                    respell_marker(&mut path.directory, COMMON_PREFIX.len(), &sub, ctx.identity)
-                }
+                None => respell_marker(&mut path.directory, "common/", &sub),
             }
         });
         if changed > 0 || stray_text {

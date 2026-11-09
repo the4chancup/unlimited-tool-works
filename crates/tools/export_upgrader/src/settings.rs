@@ -257,7 +257,6 @@ pub(crate) fn loose_settings_files(folders: &BTreeMap<u8, OutputFolder>) -> Sett
 mod tests {
     use pes_savefile::settings_toml::IngameFaceSettings;
     use pes_version::PesVersion;
-    use teams_list::TeamId;
 
     use super::*;
 
@@ -271,7 +270,7 @@ mod tests {
 
     /// `/co/`'s roster read from `save` (team 714).
     fn roster_of(save: &EditFile) -> Roster {
-        Roster::read(save, TeamId::new(714).unwrap())
+        Roster::read(save, 714)
     }
 
     /// A slot's output folder at `path` (`Players/NN …`), claiming neither

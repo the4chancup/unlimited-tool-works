@@ -97,6 +97,6 @@ lose it). It is 2 when the command was refused before anything was written
 takes, a savefile that does not read
 as a save or does not hold the team). It is 3 when the run aborted, either
 before anything is written (the output folder exists, a leftover `.upgrading`
-folder cannot be removed, the teams list cannot be read or parsed, or the output cannot
+folder cannot be removed, or the output cannot
 be created) or when the output cannot be written, moved into place or removed
 and the incomplete output is left.

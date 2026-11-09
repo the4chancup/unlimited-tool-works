@@ -1,12 +1,15 @@
 //! The legacy kit-dependent magic and its Studio spelling: `u0???pN`
 //! (`u0` and three ASCII letters or digits, `p` and a digit) becomes
-//! `kit<N>` in a path and `kitF` in a file or folder name, `u0???g`
-//! becomes `u0<path ID>g` (the team's, 999 for referees; kept as written
-//! in model-folder mode), matched in the letter case written, anywhere
-//! and every occurrence. In a path segment
-//! holding a `u0???p` token, a Studio kit token already there
+//! `kit<N>` in a path and `kitF` in a file or folder name, `u0???g` and a
+//! digit `D` 1-9 becomes `gk_kitD` and `u0???g0` `gk_kitN` in a path,
+//! `gk_kitF` in a file or folder name, as `u0???p` does — the keeper's
+//! textures are a kit set read with the outfielders' kit number
+//! (`spec/model_format.md`
+//! "Kit-dependent assets"). Matched in the letter case written, anywhere
+//! and every occurrence, in both modes. In a path segment
+//! holding a `u0???p` or `u0???g` token, a Studio kit token already there
 //! (`kit1_u0827p1.dds`, which some VGL26 exports write) gets its `kit`
-//! written `kit_tex` so the respelled token stays the only one; a `u0???p`
+//! written `kit_tex` so the respelled token stays the only one; a legacy
 //! token in a directory segment respells the file name's Studio tokens the
 //! same (`u0XXXp2/kit1.dds` → `kit2/kit_tex1.dds`), a file name's token
 //! winning over every directory segment's. Only the upgrader
@@ -20,36 +23,35 @@ use studio_core::{Disposition, Message, Scope};
 
 use crate::messages::{Code, INPUT, UnmigratedReason, tool_message, unmigrated};
 use crate::players::path_scope;
-use crate::upgrade::Identity;
 
 /// Where a respelled kit token stands: a file or folder name, or a path a
 /// reference names.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Spelling {
-    /// `u0???p0` becomes `kitF`: the file a kit without a variant of its
-    /// own loads.
+    /// `u0???p0` becomes `kitF`, `u0???g0` `gk_kitF`: the file a kit
+    /// without a variant of its own loads.
     Name,
-    /// `u0???p0` becomes `kitN`: the reference to the variant of the kit
-    /// picked.
+    /// `u0???p0` becomes `kitN`, `u0???g0` `gk_kitN`: the reference to the
+    /// variant of the kit picked.
     Path,
 }
 
 /// `text` with every legacy kit token respelled: `u0`, three ASCII letters
 /// or digits, then `p` and a digit `d` becomes `kit<d>` (`d` = 0: `kitF`
 /// or `kitN` by `spelling`); `u0`, three ASCII letters or digits, then `g`
-/// becomes `u0<the identity's path ID, three digits>g`, or stays as
-/// written when the identity has no path ID (model-folder mode). Matched
+/// and a digit `d` becomes `gk_kit<d>` (`d` = 0: `gk_kitF` or `gk_kitN` by
+/// `spelling`); a `u0???g` followed by no digit is no token. Matched
 /// in the letter case written, anywhere, left to right, every occurrence.
 /// In each
-/// `/`-separated segment that holds a `p` token, every Studio kit token the
-/// segment already holds gets its `kit` written `kit_tex`, so the respelled
-/// token is the segment's only one for `find_token` to read
-/// (`kit1_u0827p0.dds` → `kit_tex1_kitN.dds`, `u0???g` not triggering it);
-/// a `p` token in a directory segment respells the file name's Studio
+/// `/`-separated segment that holds a legacy token, every Studio kit token
+/// the segment already holds gets its `kit` written `kit_tex`, so the
+/// respelled token is the segment's only one for `find_token` to read
+/// (`kit1_u0827p0.dds` → `kit_tex1_kitN.dds`, `kit1_u0XXXg2.dds` →
+/// `kit_tex1_gk_kit2.dds`); a legacy token in a directory segment respells the file name's Studio
 /// tokens the same way (`u0XXXp2/kit1.dds` → `kit2/kit_tex1.dds`), a file
 /// name's token winning over every directory segment's. Borrowed when
 /// nothing changed.
-pub(crate) fn respell<'a>(text: &'a str, spelling: Spelling, identity: &Identity) -> Cow<'a, str> {
+pub(crate) fn respell<'a>(text: &'a str, spelling: Spelling) -> Cow<'a, str> {
     let bytes = text.as_bytes();
     // The edits, as (start, end, replacement) byte ranges of `text`,
     // disjoint: the legacy respells, and the `kit`→`kit_tex` of every Studio
@@ -78,42 +80,32 @@ pub(crate) fn respell<'a>(text: &'a str, spelling: Spelling, identity: &Identity
         {
             continue;
         }
-        let (replacement, end, legacy): (Cow<str>, usize, bool) = match bytes.get(at + 5) {
-            Some(&b'p') => match bytes.get(at + 6) {
-                Some(&b'0') => (
-                    Cow::Borrowed(match spelling {
-                        Spelling::Name => "kitF",
-                        Spelling::Path => "kitN",
-                    }),
-                    at + 7,
-                    true,
-                ),
-                Some(digit) if digit.is_ascii_digit() => (
-                    Cow::Owned(format!("kit{}", char::from(*digit))),
-                    at + 7,
-                    true,
-                ),
-                _ => continue,
-            },
-            Some(&b'g') => match identity.path_id() {
-                Some(id) => (Cow::Owned(format!("u0{id:03}g")), at + 6, false),
-                // Model-folder mode has no team: the token stays as written.
-                None => continue,
-            },
+        // `p` the outfielders' set, `g` the keeper's: both respell to a kit
+        // token (`gk_kit1` holds `kit1`), the one kit number picking both.
+        let set = match bytes.get(at + 5) {
+            Some(&b'p') => "kit",
+            Some(&b'g') => "gk_kit",
             _ => continue,
         };
-        if legacy {
-            // The `/`-separated segment the token stands in.
-            let start = text[..at].rfind('/').map_or(0, |slash| slash + 1);
-            let end = text[at..].find('/').map_or(text.len(), |slash| at + slash);
-            marked.insert((start, end));
-            // The token stands in a directory segment: the file name's
-            // Studio tokens are marked as its own segment's are.
-            if end <= name_start {
-                marked.insert((name_start, text.len()));
-            }
+        let number = match (bytes.get(at + 6), spelling) {
+            (Some(&b'0'), Spelling::Name) => 'F',
+            (Some(&b'0'), Spelling::Path) => 'N',
+            (Some(digit), _) if digit.is_ascii_digit() => char::from(*digit),
+            // A `u0???p` or `u0???g` followed by no digit is no token.
+            _ => continue,
+        };
+        let end = at + 7;
+        // The `/`-separated segment the token stands in: the compiler reads a
+        // stem's first kit token, so a Studio one already there is marked.
+        let start = text[..at].rfind('/').map_or(0, |slash| slash + 1);
+        let segment_end = text[at..].find('/').map_or(text.len(), |slash| at + slash);
+        marked.insert((start, segment_end));
+        // The token stands in a directory segment: the file name's Studio
+        // tokens are marked as its own segment's are.
+        if segment_end <= name_start {
+            marked.insert((name_start, text.len()));
         }
-        edits.push((at, end, replacement));
+        edits.push((at, end, Cow::Owned(format!("{set}{number}"))));
         last = end;
     }
     for (start, end) in marked {
@@ -145,10 +137,8 @@ pub(crate) fn respell_split<'a, 'b>(
     directory: &'a str,
     file_name: &'b str,
     spelling: Spelling,
-    identity: &Identity,
 ) -> (Cow<'a, str>, Cow<'b, str>) {
-    let Cow::Owned(respelled) = respell(&format!("{directory}{file_name}"), spelling, identity)
-    else {
+    let Cow::Owned(respelled) = respell(&format!("{directory}{file_name}"), spelling) else {
         return (Cow::Borrowed(directory), Cow::Borrowed(file_name));
     };
     let (directory, file_name) = match respelled.rsplit_once('/') {
@@ -163,10 +153,7 @@ pub(crate) fn respell_split<'a, 'b>(
 /// player folder (`Players/<folder>/`), a shared folder (`Boots/<name>/`,
 /// `Gloves/<name>/`) or `Common/`; every other output, and those folders'
 /// own names, as they are.
-pub(crate) fn respell_outputs(
-    copies: Vec<(String, String)>,
-    identity: &Identity,
-) -> Vec<(String, String)> {
+pub(crate) fn respell_outputs(copies: Vec<(String, String)>) -> Vec<(String, String)> {
     copies
         .into_iter()
         .map(|(from, to)| {
@@ -183,7 +170,7 @@ pub(crate) fn respell_outputs(
                         "Common" => ("Common/", rest),
                         _ => (&to[..], ""),
                     };
-                    match respell(below, Spelling::Name, identity) {
+                    match respell(below, Spelling::Name) {
                         Cow::Owned(below) => format!("{keep}{below}"),
                         Cow::Borrowed(_) => to,
                     }
@@ -199,8 +186,9 @@ pub(crate) fn respell_outputs(
 /// `vtree::fold_name`, another copy's already takes: one copy per folded
 /// output path, the kept ones at their own positions in the input list's
 /// order. A group whose inputs were one file to the old compile's ID
-/// rename (`path_id` `Some`: every input path spells one old-compile
-/// name, folded, and the rename changed at least one's) keeps the
+/// rename (`compile_id` `Some` — the save team's ID, 999 for referees:
+/// every input path spells one old-compile name, folded, and the rename
+/// changed at least one's) keeps the
 /// renamed input ordered last in Windows's name order — the rename ran
 /// in listing order, replacing the file under the new name, so the last
 /// renamed is what the game loaded — and reports each other input
@@ -210,7 +198,7 @@ pub(crate) fn respell_outputs(
 /// input path.
 pub(crate) fn drop_collisions(
     copies: Vec<(String, String)>,
-    path_id: Option<u16>,
+    compile_id: Option<u32>,
 ) -> (Vec<(String, String)>, Vec<Message>) {
     /// What becomes of a colliding copy.
     #[derive(Clone)]
@@ -227,7 +215,7 @@ pub(crate) fn drop_collisions(
     }
     let mut dropped: Vec<Option<Dropped>> = vec![None; copies.len()];
     for group in groups.into_values() {
-        match renamed_winner(&copies, &group, path_id) {
+        match renamed_winner(&copies, &group, compile_id) {
             Some(winner) => {
                 for &index in &group {
                     if index != winner {
@@ -274,15 +262,16 @@ pub(crate) fn drop_collisions(
 /// The index of the group's kept copy under the old compile's ID rename:
 /// every input path spelling one old-compile name, folded, with the
 /// rename changing at least one's, the winner the renamed input ordered
-/// last in Windows's name order. `None` for any other group (no path ID,
-/// different old-compile names, no input renamed), which the list-order
+/// last in Windows's name order. `None` for any other group (no ID the
+/// old compile renamed under — a loose or model-folder run —,
+/// different old-compile names, or no input renamed), which the list-order
 /// rule keeps.
 fn renamed_winner(
     copies: &[(String, String)],
     group: &[usize],
-    path_id: Option<u16>,
+    compile_id: Option<u32>,
 ) -> Option<usize> {
-    let id = path_id?;
+    let id = compile_id?;
     let mut names = BTreeSet::new();
     let mut changed = Vec::new();
     for &index in group {
@@ -301,10 +290,10 @@ fn renamed_winner(
 }
 
 /// The old compile's name of `path`: every `u0` + three ASCII letters or
-/// digits + `p` or `g` token's three characters replaced by `id`, three
-/// digits, matched in the letter case written, left to right,
-/// non-overlapping.
-fn old_compile_name(path: &str, id: u16) -> String {
+/// digits + `p` or `g` token's three characters replaced by `id` at three
+/// digits (the save team's, 999 for referees), matched in the letter case
+/// written, left to right, non-overlapping.
+fn old_compile_name(path: &str, id: u32) -> String {
     let bytes = path.as_bytes();
     let mut out = String::with_capacity(path.len());
     let mut cursor = 0;
@@ -333,38 +322,52 @@ fn old_compile_name(path: &str, id: u16) -> String {
 
 #[cfg(test)]
 mod tests {
-    use teams_list::{TeamId, TeamName};
-
     use super::*;
 
-    fn team() -> Identity {
-        Identity::Team {
-            id: TeamId::new(714).unwrap(),
-            name: TeamName::new("co").unwrap(),
-        }
-    }
+    /// `/co/`'s save team ID for the collision rule (714, as the fixture
+    /// save numbers it).
+    const COMPILE_ID: Option<u32> = Some(714);
 
     #[test]
     fn every_u0_p_token_becomes_kit_d() {
-        assert_eq!(respell("u0XXXp1.dds", Spelling::Name, &team()), "kit1.dds");
-        assert_eq!(
-            respell("skin_u0771p3.dds", Spelling::Name, &team()),
-            "skin_kit3.dds"
-        );
+        assert_eq!(respell("u0XXXp1.dds", Spelling::Name), "kit1.dds");
+        assert_eq!(respell("skin_u0771p3.dds", Spelling::Name), "skin_kit3.dds");
         // `p0` is `kitF` in a name, `kitN` in a path.
-        assert_eq!(respell("u0875p0.dds", Spelling::Name, &team()), "kitF.dds");
+        assert_eq!(respell("u0875p0.dds", Spelling::Name), "kitF.dds");
         assert_eq!(
-            respell("./u0875p0/armor.dds", Spelling::Path, &team()),
+            respell("./u0875p0/armor.dds", Spelling::Path),
             "./kitN/armor.dds"
         );
-        assert_eq!(
-            respell("u0XXXg1.dds", Spelling::Name, &team()),
-            "u0714g1.dds"
-        );
         // Every occurrence, anywhere.
+        assert_eq!(respell("u0XXXp1_u0XXXp2", Spelling::Name), "kit1_kit2");
+    }
+
+    #[test]
+    fn the_keeper_token_becomes_gk_kit() {
+        assert_eq!(respell("u0XXXg1.dds", Spelling::Name), "gk_kit1.dds");
+        assert_eq!(respell("u0714g3.dds", Spelling::Path), "gk_kit3.dds");
+        // `g0` is `gk_kitF` in a name, `gk_kitN` in a path — as `p0` is
+        // `kitF`/`kitN`.
+        assert_eq!(respell("u0XXXg0.dds", Spelling::Name), "gk_kitF.dds");
+        assert_eq!(respell("u0XXXg0.dds", Spelling::Path), "gk_kitN.dds");
+        // Its `???` are any three characters: a file and a model that
+        // spelled them differently match again.
         assert_eq!(
-            respell("u0XXXp1_u0XXXg1", Spelling::Name, &team()),
-            "kit1_u0714g1"
+            respell("u0714g1_u0XXXg1", Spelling::Name),
+            "gk_kit1_gk_kit1"
+        );
+        // A `u0???g` followed by no digit is no token.
+        for text in ["u0XXXg.dds", "u0XXXgray.dds"] {
+            assert!(
+                matches!(respell(text, Spelling::Name), Cow::Borrowed(_)),
+                "{text}"
+            );
+        }
+        // A `gk_kit` Studio token the author wrote beside a `p` one is
+        // marked `kit_tex` like any other.
+        assert_eq!(
+            respell("u0XXXp1_gk_kit2.dds", Spelling::Name),
+            "kit1_gk_kit_tex2.dds"
         );
     }
 
@@ -381,7 +384,7 @@ mod tests {
             "portrait.dds",
         ] {
             assert!(
-                matches!(respell(text, Spelling::Name, &team()), Cow::Borrowed(_)),
+                matches!(respell(text, Spelling::Name), Cow::Borrowed(_)),
                 "{text}"
             );
         }
@@ -389,59 +392,57 @@ mod tests {
 
     #[test]
     fn a_match_starting_inside_a_match_is_not_taken() {
-        // The `g` match at 0 ends at 6; the `p` at 7 starts a token at 2 —
-        // inside the first match, left to right.
-        assert_eq!(respell("u0u0ZgAp1", Spelling::Name, &team()), "u0714gAp1");
+        // The `g` token at 0 ends at 7; the token at 2 starts inside it —
+        // the earlier one wins, left to right.
+        assert_eq!(respell("u0u0Zg1p1", Spelling::Name), "gk_kit1p1");
     }
 
     #[test]
     fn a_studio_token_beside_a_legacy_one_becomes_kit_tex() {
         assert_eq!(
-            respell("kit1_u0827p0.dds", Spelling::Path, &team()),
+            respell("kit1_u0827p0.dds", Spelling::Path),
             "kit_tex1_kitN.dds"
         );
         assert_eq!(
-            respell("kit1_u0827p1.dds", Spelling::Name, &team()),
+            respell("kit1_u0827p1.dds", Spelling::Name),
             "kit_tex1_kit1.dds"
         );
         assert_eq!(
-            respell("kitN_u0XXXp2.dds", Spelling::Name, &team()),
+            respell("kitN_u0XXXp2.dds", Spelling::Name),
             "kit_texN_kit2.dds"
         );
         assert_eq!(
-            respell("kitF_u0XXXp2.dds", Spelling::Name, &team()),
+            respell("kitF_u0XXXp2.dds", Spelling::Name),
             "kit_texF_kit2.dds"
         );
         assert_eq!(
-            respell("kit1_kit2_u0XXXp3.dds", Spelling::Name, &team()),
+            respell("kit1_kit2_u0XXXp3.dds", Spelling::Name),
             "kit_tex1_kit_tex2_kit3.dds"
         );
         assert_eq!(
-            respell("skit1_u0XXXp1.dds", Spelling::Name, &team()),
+            respell("skit1_u0XXXp1.dds", Spelling::Name),
             "skit1_kit1.dds"
         );
         // `Kit2` was never a token: its K stays.
+        assert_eq!(respell("Kit2_u0XXXp1.dds", Spelling::Name), "Kit2_kit1.dds");
+        // Only the token's own segment is rewritten.
         assert_eq!(
-            respell("Kit2_u0XXXp1.dds", Spelling::Name, &team()),
-            "Kit2_kit1.dds"
-        );
-        // Only the token's own segment is rewritten; a `g` token does not
-        // trigger it.
-        assert_eq!(
-            respell("kit1/x_u0XXXp1.dds", Spelling::Name, &team()),
+            respell("kit1/x_u0XXXp1.dds", Spelling::Name),
             "kit1/x_kit1.dds"
         );
         // A segment after a `/` is read from its first character.
         assert_eq!(
-            respell("ltd/kit1_u0XXXp1.dds", Spelling::Name, &team()),
+            respell("ltd/kit1_u0XXXp1.dds", Spelling::Name),
             "ltd/kit_tex1_kit1.dds"
         );
+        // A keeper's token is a kit token too (`gk_kit2` holds `kit2`):
+        // the compiler reads a stem's first, so the author's is marked.
         assert_eq!(
-            respell("kit1_u0XXXg1.dds", Spelling::Name, &team()),
-            "kit1_u0714g1.dds"
+            respell("kit1_u0XXXg2.dds", Spelling::Name),
+            "kit_tex1_gk_kit2.dds"
         );
         assert!(matches!(
-            respell("kit1_x.dds", Spelling::Name, &team()),
+            respell("kit1_x.dds", Spelling::Name),
             Cow::Borrowed(_)
         ));
     }
@@ -451,34 +452,31 @@ mod tests {
         // A `u0???p` directory respells every Studio kit token the file
         // name below it holds, as it does its own segment's.
         assert_eq!(
-            respell("u0XXXp2/kit1.dds", Spelling::Name, &team()),
+            respell("u0XXXp2/kit1.dds", Spelling::Name),
             "kit2/kit_tex1.dds"
         );
+        assert_eq!(respell("u0XXXp0/kit1", Spelling::Path), "kitN/kit_tex1");
         assert_eq!(
-            respell("u0XXXp0/kit1", Spelling::Path, &team()),
-            "kitN/kit_tex1"
-        );
-        assert_eq!(
-            respell("u0XXXp0/kit1.dds", Spelling::Name, &team()),
+            respell("u0XXXp0/kit1.dds", Spelling::Name),
             "kitF/kit_tex1.dds"
         );
         assert_eq!(
-            respell("ltd/u0XXXp1/pants_kit3.dds", Spelling::Name, &team()),
+            respell("ltd/u0XXXp1/pants_kit3.dds", Spelling::Name),
             "ltd/kit1/pants_kit_tex3.dds"
         );
-        // A `g` token's directory is no `p` token's: the file name is left.
+        // A `g` token's directory marks them as a `p` token's does.
         assert_eq!(
-            respell("u0XXXg1/kit1.dds", Spelling::Name, &team()),
-            "u0714g1/kit1.dds"
+            respell("u0XXXg1/kit2.dds", Spelling::Name),
+            "gk_kit1/kit_tex2.dds"
         );
         // The file name's own respelled token is no Studio token of the
         // author's: it is not rewritten.
         assert_eq!(
-            respell("u0XXXp1/u0XXXp2.dds", Spelling::Name, &team()),
+            respell("u0XXXp1/u0XXXp2.dds", Spelling::Name),
             "kit1/kit2.dds"
         );
         assert_eq!(
-            respell("u0XXXp2/armor_bsm.dds", Spelling::Name, &team()),
+            respell("u0XXXp2/armor_bsm.dds", Spelling::Name),
             "kit2/armor_bsm.dds"
         );
     }
@@ -489,52 +487,58 @@ mod tests {
         for stem in ["kit_tex1", "kit_texN", "kit_texF"] {
             assert_eq!(aesthetics_export::kit_token(stem), None, "{stem}");
         }
+        // `gk_kit1` holds the token `kit1` (the keeper's textures are a
+        // kit set read with the outfielders' kit number).
+        assert_eq!(
+            aesthetics_export::kit_token("gk_kit1"),
+            Some((
+                aesthetics_export::KitToken::Variant(1),
+                "gk_kitN".to_owned()
+            ))
+        );
     }
 
     #[test]
     fn a_split_reference_respells_as_one_path() {
-        let (dir, name) = respell_split("./u0XXXp0/", "kit1", Spelling::Path, &team());
+        let (dir, name) = respell_split("./u0XXXp0/", "kit1", Spelling::Path);
         assert_eq!(dir, "./kitN/");
         assert_eq!(name, "kit_tex1");
-        let (dir, name) = respell_split("u0XXXp2/", "kit1.dds", Spelling::Path, &team());
+        let (dir, name) = respell_split("u0XXXp2/", "kit1.dds", Spelling::Path);
         assert_eq!(dir, "kit2/");
         assert_eq!(name, "kit_tex1.dds");
         // No legacy token in the directory: the file name decides alone.
-        let (dir, name) = respell_split("./ltd/", "kit1", Spelling::Path, &team());
+        let (dir, name) = respell_split("./ltd/", "kit1", Spelling::Path);
         assert_eq!(dir, "./ltd/");
         assert_eq!(name, "kit1");
         // Nothing to respell: both halves are borrowed.
-        let (dir, name) = respell_split("./", "armor_bsm", Spelling::Path, &team());
+        let (dir, name) = respell_split("./", "armor_bsm", Spelling::Path);
         assert!(matches!(dir, Cow::Borrowed(_)));
         assert!(matches!(name, Cow::Borrowed(_)));
         // An empty directory half is no directory segment.
-        let (dir, name) = respell_split("", "u0XXXp1.dds", Spelling::Name, &team());
+        let (dir, name) = respell_split("", "u0XXXp1.dds", Spelling::Name);
         assert_eq!(dir, "");
         assert_eq!(name, "kit1.dds");
     }
 
     #[test]
     fn player_and_common_outputs_respell_their_rest() {
-        let copies = respell_outputs(
-            vec![
-                ("a".into(), "Players/07 - A/u0XXXp1.dds".into()),
-                ("b".into(), "Players/07 - A/u0XXXp0/armor.dds".into()),
-                ("c".into(), "Common/ltd/u0XXXp5/a.dds".into()),
-                ("d".into(), "Common/u0XXXg1.dds".into()),
-                ("e".into(), "Boots/Crocs/body_d_u0XXXp0.dds".into()),
-                ("f".into(), "Portraits/07.dds".into()),
-                ("g".into(), "Kits/p1/kit.dds".into()),
-                ("h".into(), "Players/07 - u0XXXp1/x.dds".into()),
-            ],
-            &team(),
-        );
+        let copies = respell_outputs(vec![
+            ("a".into(), "Players/07 - A/u0XXXp1.dds".into()),
+            ("b".into(), "Players/07 - A/u0XXXp0/armor.dds".into()),
+            ("c".into(), "Common/ltd/u0XXXp5/a.dds".into()),
+            ("d".into(), "Common/u0XXXg1.dds".into()),
+            ("e".into(), "Boots/Crocs/body_d_u0XXXp0.dds".into()),
+            ("f".into(), "Portraits/07.dds".into()),
+            ("g".into(), "Kits/p1/kit.dds".into()),
+            ("h".into(), "Players/07 - u0XXXp1/x.dds".into()),
+        ]);
         assert_eq!(
             copies,
             vec![
                 ("a".to_owned(), "Players/07 - A/kit1.dds".to_owned()),
                 ("b".to_owned(), "Players/07 - A/kitF/armor.dds".to_owned()),
                 ("c".to_owned(), "Common/ltd/kit5/a.dds".to_owned()),
-                ("d".to_owned(), "Common/u0714g1.dds".to_owned()),
+                ("d".to_owned(), "Common/gk_kit1.dds".to_owned()),
                 ("e".to_owned(), "Boots/Crocs/body_d_kitF.dds".to_owned()),
                 ("f".to_owned(), "Portraits/07.dds".to_owned()),
                 ("g".to_owned(), "Kits/p1/kit.dds".to_owned()),
@@ -546,14 +550,11 @@ mod tests {
     #[test]
     fn respelled_names_collide_as_before() {
         let (copies, findings) = drop_collisions(
-            respell_outputs(
-                vec![
-                    ("a".into(), "Players/07 - A/u0XXXp1.dds".into()),
-                    ("b".into(), "Players/07 - A/u0714p1.dds".into()),
-                ],
-                &team(),
-            ),
-            team().path_id(),
+            respell_outputs(vec![
+                ("a".into(), "Players/07 - A/u0XXXp1.dds".into()),
+                ("b".into(), "Players/07 - A/u0714p1.dds".into()),
+            ]),
+            COMPILE_ID,
         );
         assert_eq!(
             copies,
@@ -598,7 +599,7 @@ mod tests {
                     .iter()
                     .map(|from| ((*from).to_owned(), "Players/07 - Ann/kit2.dds".to_owned()))
                     .collect(),
-                team().path_id(),
+                COMPILE_ID,
             );
             assert_eq!(
                 copies,
@@ -638,7 +639,7 @@ mod tests {
                     "Players/07 - Ann/kit3.dds".to_owned(),
                 ),
             ],
-            team().path_id(),
+            COMPILE_ID,
         );
         assert_eq!(
             copies,
@@ -673,7 +674,7 @@ mod tests {
                     "Players/07 - Ann/kit1.dds".to_owned(),
                 ),
             ],
-            team().path_id(),
+            COMPILE_ID,
         );
         assert_eq!(
             copies,
@@ -704,7 +705,7 @@ mod tests {
     }
 
     #[test]
-    fn without_a_path_id_a_collision_keeps_the_first() {
+    fn without_a_compile_id_a_collision_keeps_the_first() {
         let (copies, findings) = drop_collisions(
             vec![
                 (
@@ -747,17 +748,37 @@ mod tests {
     }
 
     #[test]
-    fn a_referee_export_respells_the_placeholder_999() {
-        assert_eq!(
-            respell("u0XXXg1.dds", Spelling::Name, &Identity::Referees),
-            "u0999g1.dds"
+    fn a_referee_export_s_collision_reads_the_999_rename() {
+        // The referee export's old compile renamed under 999: a `u0999`
+        // input and a `u0XXX` one were one file to it.
+        let (copies, findings) = drop_collisions(
+            vec![
+                (
+                    "Players/arbiter/u0XXXp2.dds".to_owned(),
+                    "Players/arbiter/kit2.dds".to_owned(),
+                ),
+                (
+                    "Players/arbiter/u0999p2.dds".to_owned(),
+                    "Players/arbiter/kit2.dds".to_owned(),
+                ),
+            ],
+            Some(999),
         );
         assert_eq!(
-            respell_outputs(
-                vec![("a".into(), "Common/u0XXXg1.dds".into())],
-                &Identity::Referees
-            ),
-            vec![("a".to_owned(), "Common/u0999g1.dds".to_owned())]
+            copies,
+            vec![(
+                "Players/arbiter/u0XXXp2.dds".to_owned(),
+                "Players/arbiter/kit2.dds".to_owned()
+            )]
+        );
+        assert_eq!(findings.len(), 1);
+        assert_eq!(findings[0].code.code.as_ref(), "leftover_dropped");
+        assert_eq!(
+            findings[0].scope,
+            Scope::File {
+                export_id: INPUT,
+                path: path_scope("Players/arbiter/u0999p2.dds")
+            }
         );
     }
 
@@ -780,17 +801,5 @@ mod tests {
         for unchanged in ["k0abcp1.dds", "uaXXXp1.dds", "u0X-Xp1.dds", "u0XXXq1.dds"] {
             assert_eq!(old_compile_name(unchanged, 714), unchanged);
         }
-    }
-
-    #[test]
-    fn model_folders_leave_the_goalkeeper_token_as_written() {
-        assert!(matches!(
-            respell("u0XXXg1.dds", Spelling::Name, &Identity::ModelFolders),
-            Cow::Borrowed(_)
-        ));
-        assert_eq!(
-            respell("u0XXXp1_u0XXXg1", Spelling::Path, &Identity::ModelFolders),
-            "kit1_u0XXXg1"
-        );
     }
 }

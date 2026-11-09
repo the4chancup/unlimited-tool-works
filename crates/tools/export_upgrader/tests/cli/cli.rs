@@ -306,16 +306,8 @@ fn the_refusals_before_anything_is_written() {
     fs::write(sandbox.path("notes.txt"), b"text").unwrap();
     old_export(&sandbox, "co Spring", Some("/co/"));
     fs::write(sandbox.path("not-a-save.bin"), b"no save").unwrap();
-    // A savefile that does not hold the resolved team. Every fixture save
-    // holds every resolvable team of the embedded list, so the sandbox's data
-    // directory gets a one-row list naming /newteam/ at 903 — a team the list
-    // gained after the save was written — and the save is the PES 18 fixture,
-    // whose teams end at 902.
-    fs::write(
-        sandbox.path("data/teams_list.txt"),
-        "ID\tName\n903\t/newteam/\n",
-    )
-    .unwrap();
+    // A savefile that does not hold the resolved team: no fixture save has a
+    // team named /newteam/.
     old_export(&sandbox, "newteam Spring", Some("/newteam/"));
     let save18 = sandbox.arg("EDIT18");
     fs::write(

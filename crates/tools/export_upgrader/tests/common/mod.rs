@@ -36,11 +36,6 @@ impl Sandbox {
             fs::remove_dir_all(&root).unwrap();
         }
         fs::create_dir_all(root.join("data")).unwrap();
-        fs::copy(
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/teams_list.txt"),
-            root.join("data/teams_list.txt"),
-        )
-        .unwrap();
         Sandbox { root }
     }
 

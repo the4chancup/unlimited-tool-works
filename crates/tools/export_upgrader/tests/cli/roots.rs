@@ -278,42 +278,137 @@ fn a_shift_jis_notes_ascii_colors_read() {
     );
 }
 
-// EU-ROOT-03
+// EU-ROOT-08
 #[test]
-fn a_team_the_list_lacks_is_reported_nothing_written() {
-    let sandbox = Sandbox::new("root_unknown_team");
-    // "co Spring 26" holds a Note whose Team: line names no team of the teams
-    // list (`/newteam/` is no row of the embedded list).
+fn a_team_no_list_holds_upgrades_and_the_save_s_own_id_decides() {
+    let sandbox = Sandbox::new("root_no_list_team");
+    // A teams list holding /co/ at 714 and no /hist/ at all: it is not
+    // read — /hist/ upgrades all the same, and /co/'s roster is read from
+    // the save's own numbering (750), not the list's.
+    sandbox.write("data/teams_list.txt", b"ID\tName\n714\t/co/\n");
+    fs::create_dir_all(sandbox.path("hist Spring 26/Faces/XXX05")).unwrap();
+    fs::write(
+        sandbox.path("hist Spring 26/hist Note.txt"),
+        b"Team: /hist/\r\n",
+    )
+    .unwrap();
+    fs::create_dir_all(sandbox.path("co Spring 26/Faces/XXX05")).unwrap();
+    sandbox.save_edited("EDIT", PesVersion::Pes21, |file| {
+        // The fixture's /co/ sits at 714: renumber it away so the save
+        // holds /co/ at 750 alone, /hist/ at 760 alone.
+        file.team_mut(714).unwrap().name = "/old/".to_owned();
+        file.team_mut(750).unwrap().name = "/co/".to_owned();
+        file.team_mut(760).unwrap().name = "/hist/".to_owned();
+        file.player_mut(76005).unwrap().name = "Ann".to_owned();
+        file.player_mut(75005).unwrap().name = "Bob".to_owned();
+        // The two teams' worn custom IDs, or `custom_model_missing` is
+        // all the run reports.
+        for id in 75001..=75023 {
+            crate::players::wears(file, id, 0, 0);
+        }
+        for id in 76001..=76023 {
+            crate::players::wears(file, id, 0, 0);
+        }
+    });
+
+    for (input, output, player) in [
+        ("hist Spring 26", "hist Full Spring 26", "05 - Ann"),
+        ("co Spring 26", "co Full Spring 26", "05 - Bob"),
+    ] {
+        let run = upgrade(&sandbox, input, "EDIT");
+        assert_eq!(run.exit_code(), 0, "{input}: {}", run.stdout());
+        assert!(
+            sandbox.path(&format!("{output}/Players/{player}")).is_dir(),
+            "{input}: {}",
+            run.stdout()
+        );
+    }
+}
+
+// EU-ROOT-09
+#[test]
+fn a_value_or_name_that_is_no_team_name_is_reported_nothing_written() {
+    let sandbox = Sandbox::new("root_no_team_name");
+    // "--- .zip" holds an old export (`Other/`), no Note; `---` folds to
+    // no team name.
+    let options = zip::write::SimpleFileOptions::default();
+    let mut writer = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+    writer.start_file("---/Other/readme.txt", options).unwrap();
+    std::io::Write::write_all(&mut writer, b"x").unwrap();
+    let bytes = writer.finish().unwrap().into_inner();
+    sandbox.write("--- .zip", &bytes);
+    // "co Spring 26"'s Note gives `co op`, no team name either.
     fs::create_dir_all(sandbox.path("co Spring 26")).unwrap();
     fs::write(
         sandbox.path("co Spring 26/co Note.txt"),
-        b"Team: /newteam/\r\n\r\nTeam Colours:\r\n- 1st: 048 146 082",
+        b"Team: co op\r\n\r\nTeam Colours:\r\n- 1st: 048 146 082",
     )
     .unwrap();
-    // "Numbers" holds an old export (`Other/`) and no Note; `/numbers/` is no
-    // row of the list either.
-    fs::create_dir_all(sandbox.path("Numbers/Other")).unwrap();
-    fs::write(sandbox.path("Numbers/Other/readme.txt"), b"x").unwrap();
     sandbox.save("EDIT");
     let before = sandbox.listing("");
 
-    let run = upgrade(&sandbox, "co Spring 26", "EDIT");
-    assert_eq!(run.exit_code(), 1);
+    let run = upgrade(&sandbox, "--- .zip", "EDIT");
+    assert_eq!(run.exit_code(), 1, "{}", run.stdout());
+    // The archive's stem is `--- `, its trailing space kept in the export's
+    // label: it folds to no team name.
     assert!(
         run.stdout()
-            .contains("- co Spring 26: Error team_name_unknown at co Note.txt (name=/newteam/)"),
+            .contains("- --- : Error team_name_unknown (name=---)\n"),
         "{}",
         run.stdout()
     );
 
-    let run = upgrade(&sandbox, "Numbers", "EDIT");
-    assert_eq!(run.exit_code(), 1);
+    let run = upgrade(&sandbox, "co Spring 26", "EDIT");
+    assert_eq!(run.exit_code(), 1, "{}", run.stdout());
     assert!(
         run.stdout()
-            .contains("- Numbers: Error team_name_unknown (name=Numbers)"),
+            .contains("- co Spring 26: Error team_name_unknown at co Note.txt (name=co op)"),
         "{}",
         run.stdout()
     );
 
     assert_eq!(sandbox.listing(""), before, "nothing is written");
+}
+
+// EU-ROOT-10
+#[test]
+fn the_first_save_team_of_the_name_is_read_the_later_reported() {
+    let sandbox = Sandbox::new("root_repeated_team");
+    fs::create_dir_all(sandbox.path("co Spring 26/Faces/XXX05")).unwrap();
+    sandbox.save_edited("EDIT", PesVersion::Pes21, |file| {
+        // /co/ twice: 750 first in record order (its entry swapped before
+        // 714's, which the fixture keeps at index 13 against 49), 714
+        // later.
+        let (first, later) = (
+            file.teams().iter().position(|team| team.id == 750).unwrap(),
+            file.teams().iter().position(|team| team.id == 714).unwrap(),
+        );
+        file.teams_mut().swap(first, later);
+        file.team_mut(750).unwrap().name = "/co/".to_owned();
+        file.player_mut(75005).unwrap().name = "Bob".to_owned();
+        file.player_mut(71405).unwrap().name = "Cy".to_owned();
+        for id in 75001..=75023 {
+            crate::players::wears(file, id, 0, 0);
+        }
+    });
+
+    let run = upgrade(&sandbox, "co Spring 26", "EDIT");
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    assert!(
+        run.stdout()
+            .contains("- co Spring 26: Warning save_team_name_repeated (team=714, kept=750)"),
+        "{}",
+        run.stdout()
+    );
+    // The roster is read from the first of the name: 75005, not 71405.
+    assert!(
+        sandbox.path("co Full Spring 26/Players/05 - Bob").is_dir(),
+        "{}",
+        run.stdout()
+    );
+    assert!(
+        !sandbox.path("co Full Spring 26/Players/05 - Cy").exists(),
+        "{}",
+        run.stdout()
+    );
 }

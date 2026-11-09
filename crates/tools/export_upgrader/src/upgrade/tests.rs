@@ -16,31 +16,6 @@ fn an_input_ending_in_a_dot_or_dot_dot_resolves_to_its_folder() {
 }
 
 #[test]
-fn load_teams_list_falls_back_to_the_embedded_list() {
-    let root = scratch("teams_list_missing");
-    let embedded = TeamsList::parse(TeamsList::UPSTREAM).unwrap();
-    // No `teams_list.txt` in the data directory, and no data directory at
-    // all: the embedded list.
-    assert_eq!(load_teams_list(Some(&root)).unwrap(), embedded);
-    assert_eq!(load_teams_list(None).unwrap(), embedded);
-}
-
-#[test]
-fn load_teams_list_aborts_on_an_unreadable_or_unparsable_file() {
-    let root = scratch("teams_list_bad");
-    // A `teams_list.txt` that is a folder cannot be read.
-    fs::create_dir(root.join("teams_list.txt")).unwrap();
-    let error = load_teams_list(Some(&root)).unwrap_err();
-    assert_eq!(error.exit_code, ABORTED, "{error}");
-    // One that does not parse is aborted too.
-    fs::remove_dir_all(&root).unwrap();
-    fs::create_dir_all(&root).unwrap();
-    fs::write(root.join("teams_list.txt"), "not a list").unwrap();
-    let error = load_teams_list(Some(&root)).unwrap_err();
-    assert_eq!(error.exit_code, ABORTED, "{error}");
-}
-
-#[test]
 fn worst_tracks_the_worst_severity_reported() {
     let (ctx, _events_rx) = test_ctx();
     let mut events = RunEvents::new(&ctx);

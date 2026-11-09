@@ -93,7 +93,11 @@ Studio can use it. The planned Export upgrader is the only Studio component that
 spelling, and it rewrites it to `kitN`/`kit1`…`kit9`, a `u0XXXp0` file or folder (the file
 a kit without a variant loaded) to `kitF`. The legacy pattern is `u0` + **any three characters** + `p` +
 digit: authors wrote the `XXX` placeholder literally *or* baked the real team ID in (`u0872p1.dds`),
-and both forms mean the same thing, so both are detected and both are renamed.
+and both forms mean the same thing, so both are detected and both are renamed. The keeper's
+legacy `u0XXXg1` … `g9` becomes `gk_kit1` … `gk_kit9` (`g0` as `p0` does, `gk_kitN` or
+`gk_kitF`): a set like any other, its stem's token read with the one kit number below, named
+apart from the `p` set because a real `Common/` holds `u0XXXg1.dds` beside `u0XXXp1.dds`
+(DECISIONS 2026-11-09).
 
 There is one number. PES lets the user pick a single kit number per team, which selects the
 outfield and goalkeeper kit textures together; with `kitN` the export supplies its *own* files and

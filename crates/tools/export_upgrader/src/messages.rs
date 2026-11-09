@@ -35,6 +35,10 @@ pub(crate) enum Code {
     /// The archive does not open or its listing is refused (the compiler's
     /// code); nothing is written (`path`, `error`).
     ExportExtractFailed,
+    /// A later team of the save folds to the export's team name: the first
+    /// in record order is the export's, the later left out (`team` the
+    /// later team's ID, `kept` the first's).
+    SaveTeamNameRepeated,
     /// An entry inside the old format's folders that no step migrates
     /// (step 10), entry by entry; a leftover outside them is
     /// `leftover_dropped`. Its context opens with `reason`, the cause
@@ -186,6 +190,7 @@ impl Code {
             Code::NoOldExport => "no_old_export",
             Code::RefsTxtMissing => "refs_txt_missing",
             Code::ExportExtractFailed => "export_extract_failed",
+            Code::SaveTeamNameRepeated => "save_team_name_repeated",
             Code::UnmigratedContent => "unmigrated_content",
             Code::MigrationClean => "migration_clean",
             Code::MigrationNotClean => "migration_not_clean",
@@ -227,6 +232,7 @@ impl Code {
         Code::NoOldExport,
         Code::RefsTxtMissing,
         Code::ExportExtractFailed,
+        Code::SaveTeamNameRepeated,
         Code::UnmigratedContent,
         Code::MigrationClean,
         Code::MigrationNotClean,
@@ -457,6 +463,12 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         r#"Nothing is written. Repack the archive, or unpack it into a folder first."#,
     ),
     (
+        "save_team_name_repeated",
+        Severity::Warning,
+        r#"The save holds the export's team name on a later team too (the line names both teams' IDs)."#,
+        r#"The first team of that name in the save's order is used; the later one is left out."#,
+    ),
+    (
         "unmigrated_content",
         Severity::Error,
         r#"Content of the input that reached the game, or was clearly meant for it, but that the migration does not carry into the output: two files or folders claiming one place (a second face folder of one slot, two portraits of one), a whole folder under a name the old format refuses, a Team Note entry whose colors do not read, a kit config that does not decode. The line names the cause, and, where another file or folder took the place, that one's path."#,
@@ -580,7 +592,7 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         "common_reference_kept",
         Severity::Warning,
         r#"An `.mtl` or `.fmdl` reference into the team's `Common/` whose file the input's `Common/` does not hold, or which no link can spell (the model's folder already holds a texture or link of that stem, or a `.mtl` in a subfolder names a Common subfolder)."#,
-        r#"It is kept as written, but its three-character Common segment is respelled to the team's ID. An installed CPK may still supply the file."#,
+        r#"It is kept as written, its Common written `common/team_folder/`, the team's Common in the new spelling. An installed CPK may still supply the file."#,
     ),
     (
         "model_far_dropped",
@@ -694,8 +706,8 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
     (
         "team_name_unknown",
         Severity::Error,
-        r#"The export's team is not in the teams list: the Team Note's `Team:` line when there is one, else the export's name (the line names the value)."#,
-        r#"Nothing is written. Check the name, or add the team to the list."#,
+        r#"The Team Note's `Team:` line, or the export's name when there is no such line, is no team name: it is empty, or holds a space or an inner `/` (the line names the value)."#,
+        r#"Nothing is written. Fix the `Team:` line or rename the export so its first word is the team's name."#,
     ),
     (
         "export_tag_missing",
@@ -1048,8 +1060,9 @@ pub(crate) fn read_failed(
     )
 }
 
-/// `team_name_unknown`: the team resolves to no row of the list, the `Team:`
-/// line's file or the export named (`name`, the value as written). A shared
+/// `team_name_unknown`: the `Team:` value or the export name's first word is
+/// no team name, the `Team:` line's file or the export named (`name`, the
+/// value as written). A shared
 /// code — one of `ISSUE_CODES` — so it has no `Code` variant and takes the
 /// catalog's row.
 pub(crate) fn team_name_unknown(scope: Scope, name: String) -> Message {
@@ -1139,6 +1152,7 @@ mod tests {
             ("common_file_disallowed", Severity::Error),
             ("export_empty", Severity::Error),
             ("team_name_unknown", Severity::Error),
+            ("save_team_name_repeated", Severity::Warning),
             ("nested_folders_fixed", Severity::Warning),
             ("kit_textures_inherited", Severity::Info),
         ] {
@@ -1300,7 +1314,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             row.3,
-            "Nothing is written. Check the name, or add the team to the list."
+            "Nothing is written. Fix the `Team:` line or rename the export so its first word is the team's name."
         );
         // `file_type_disallowed` takes the compiler's `when` too; the effect is the
         // run's verdict, the strict check the upgrade's validation runs making it an Error.

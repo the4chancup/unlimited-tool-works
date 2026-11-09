@@ -232,7 +232,7 @@ fn each_input_folder_is_migrated_and_its_destination_reported() {
     sandbox.assert_nothing_written("bad models upgraded", &stdout);
 }
 
-// EU-MF-02
+// EU-MF-08
 #[test]
 fn common_references_and_links_resolve_in_the_staged_export() {
     let sandbox = Sandbox::new("mf_common_links");
@@ -253,7 +253,7 @@ fn common_references_and_links_resolve_in_the_staged_export() {
     let run = upgrade_models(&sandbox, "new models", &[]);
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
     let face = mtl_text(&sandbox, "new models upgraded/07 - A/face.mtl");
-    for expected in ["./hair.dds", "model/character/uniform/common/XXX/gone.dds"] {
+    for expected in ["./hair.dds", "common/team_folder/gone.dds"] {
         assert!(face.contains(expected), "{expected}: {face}");
     }
     assert_eq!(
@@ -327,30 +327,43 @@ fn a_face_folder_without_a_model_migrates_its_files() {
     );
 }
 
-// EU-MF-04
+// EU-MF-09
 #[test]
-fn a_goalkeeper_token_is_kept_as_written_without_a_team() {
+fn a_goalkeeper_token_respells_to_gk_kit_without_a_team() {
     let sandbox = Sandbox::new("mf_keeper_token");
     sandbox.write(
         "new models/XXX01 - Keeper/face.fmdl",
-        &fmdl(&[(
-            "/Assets/pes16/model/character/face/real/00000/sourceimages/",
-            "u0XXXg1.dds",
-        )]),
+        &fmdl(&[
+            (
+                "/Assets/pes16/model/character/face/real/00000/sourceimages/",
+                "u0XXXg1.dds",
+            ),
+            (
+                "/Assets/pes16/model/character/face/real/00000/sourceimages/",
+                "u0XXXg0.dds",
+            ),
+        ]),
     );
-    sandbox.write("new models/XXX01 - Keeper/u0XXXg1.dds", b"gk");
+    sandbox.write("new models/XXX01 - Keeper/u0XXXg1.dds", b"gk1");
+    sandbox.write("new models/XXX01 - Keeper/u0XXXg2.dds", b"gk2");
 
     let run = upgrade_models(&sandbox, "new models", &[]);
-    assert!(
-        sandbox
-            .path("new models upgraded/01 - Keeper/u0XXXg1.dds")
-            .exists(),
-        "{}",
-        run.stdout()
-    );
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    for name in ["gk_kit1.dds", "gk_kit2.dds"] {
+        assert!(
+            sandbox
+                .path(&format!("new models upgraded/01 - Keeper/{name}"))
+                .exists(),
+            "{name}: {}",
+            run.stdout()
+        );
+    }
     assert_eq!(
-        fmdl_paths(&sandbox, "new models upgraded/01 - Keeper/face.fmdl")[0],
-        ("./".to_owned(), "u0XXXg1.dds".to_owned())
+        fmdl_paths(&sandbox, "new models upgraded/01 - Keeper/face.fmdl")[..2],
+        [
+            ("./".to_owned(), "gk_kit1.dds".to_owned()),
+            ("./".to_owned(), "gk_kitN.dds".to_owned())
+        ]
     );
 }
 

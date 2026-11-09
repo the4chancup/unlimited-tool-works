@@ -7,7 +7,6 @@ use std::collections::BTreeMap;
 
 use pes_savefile::EditFile;
 use pes_savefile::model::names::display_name;
-use teams_list::TeamId;
 
 /// One rostered player of the resolved team, as the save records him (step 2).
 #[derive(Debug)]
@@ -34,14 +33,15 @@ pub(crate) struct RosteredPlayer {
 pub(crate) struct Roster(pub(crate) BTreeMap<u8, RosteredPlayer>);
 
 impl Roster {
-    /// The team's roster in `save`: every roster entry whose player ID is the
+    /// The roster of the save's team `team` (its record ID, whatever the
+    /// save numbers it) in `save`: every roster entry whose player ID is the
     /// team's `team_id * 100 + NN` with NN 1-23 and whose record the save
     /// holds. A roster entry naming a player of another team (a real save's
     /// roster may hold a transferred player) is not a slot of this team's
     /// folders: it is skipped.
-    pub(crate) fn read(save: &EditFile, team: TeamId) -> Roster {
+    pub(crate) fn read(save: &EditFile, team: u32) -> Roster {
         let mut players = BTreeMap::new();
-        if let Some(team) = save.team(u32::from(team.get())) {
+        if let Some(team) = save.team(team) {
             for slot in &team.roster {
                 // The slot number is the last two digits of the team's own
                 // player ID (`team_id * 100 + NN`); 0 (empty) and any other
@@ -79,7 +79,6 @@ impl Roster {
 #[cfg(test)]
 mod tests {
     use pes_version::PesVersion;
-    use teams_list::TeamId;
 
     use super::*;
 
@@ -100,7 +99,7 @@ mod tests {
             team.roster.swap(0, 22);
             team.roster[5].player_id = 71523;
         });
-        let roster = Roster::read(&file, TeamId::new(714).unwrap());
+        let roster = Roster::read(&file, 714);
         // The swapped entries land on their own slots by ID.
         assert!(roster.get(23).is_some(), "71423 at its own slot");
         assert_eq!(
@@ -122,7 +121,7 @@ mod tests {
                 .unwrap();
             team.roster[position].player_id = 0;
         });
-        let roster = Roster::read(&file, TeamId::new(714).unwrap());
+        let roster = Roster::read(&file, 714);
         assert!(roster.get(23).is_none());
         assert!(roster.get(1).is_some());
     }

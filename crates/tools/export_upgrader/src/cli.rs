@@ -22,9 +22,8 @@ pub(crate) const ERRORS: u8 = 1;
 /// Exit code of an invalid invocation: nothing was written.
 pub(crate) const INVALID: u8 = 2;
 /// Exit code of a run aborted: before anything is written (the output or
-/// staging folder exists or cannot be created, the teams list cannot be
-/// read), or when a file of the output cannot be written, the incomplete
-/// staging folder left.
+/// staging folder exists or cannot be created), or when a file of the
+/// output cannot be written, the incomplete staging folder left.
 pub(crate) const ABORTED: u8 = 3;
 
 #[derive(Debug, Subcommand)]

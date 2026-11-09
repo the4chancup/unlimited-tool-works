@@ -17,21 +17,11 @@ pub(crate) fn scratch(name: &str) -> PathBuf {
     root
 }
 
-/// The unit tests' data directory, made once per process: it holds the
-/// fixture `teams_list.txt` (`tests/fixtures/README.md`) and nothing else.
+/// The unit tests' data directory, made once per process: it holds nothing
+/// (the upgrader reads no list of its own).
 fn data_dir() -> PathBuf {
     static DATA_DIR: OnceLock<PathBuf> = OnceLock::new();
-    DATA_DIR
-        .get_or_init(|| {
-            let root = scratch("data_dir");
-            fs::write(
-                root.join("teams_list.txt"),
-                include_str!("../tests/fixtures/teams_list.txt"),
-            )
-            .unwrap();
-            root
-        })
-        .clone()
+    DATA_DIR.get_or_init(|| scratch("data_dir")).clone()
 }
 
 /// A `ToolContext` whose events land on the returned receiver, its data

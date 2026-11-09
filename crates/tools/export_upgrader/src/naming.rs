@@ -207,14 +207,13 @@ pub(crate) fn output_name(
 
 #[cfg(test)]
 mod tests {
-    use teams_list::{TeamId, TeamName};
+    use teams_list::TeamName;
 
     use super::*;
 
-    /// `/co/`'s identity (the acceptance section's test team, id 714).
+    /// `/co/`'s identity (the acceptance section's test team).
     fn co() -> Identity {
         Identity::Team {
-            id: TeamId::new(714).unwrap(),
             name: TeamName::new("co").unwrap(),
         }
     }

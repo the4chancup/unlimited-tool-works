@@ -190,14 +190,24 @@ fn the_name_is_true_explicit_or_the_coded_save_name() {
 #[test]
 fn a_value_past_the_assumed_cap_is_written_as_stored() {
     let sandbox = Sandbox::new("set_past_top");
-    // /an/ player 70504, the PES 18 fixture save's slot-4 "Paul Levesque":
-    // found by walking the fixture's players for a `cheek_type` past the
-    // assumed cap (his 5, inside the field's bits the unmeasured cap is),
-    // 2026-10-18. No face folder and custom boots: his folder marks the
+    // The PES 18 fixture save's /an/ is team 704, as the save itself numbers
+    // it; its slot-04 player wears k0430 and holds a `cheek_type` past the
+    // assumed cap (his 5, inside the field's bits the unmeasured cap is).
+    // No face folder and custom boots: his folder marks the
     // in-game face, so the key lands in `ingame_face.toml`.
     boots(&sandbox, "an Spring/Boots/k0430 - Crocs");
     sandbox.save_edited("EDIT18", PesVersion::Pes18, |file| {
-        wears(file, 70504, 430, 0);
+        // The rest of the roster's worn custom IDs, or
+        // `custom_model_missing` is all the run reports.
+        for id in 70401..=70423 {
+            wears(file, id, 0, 0);
+        }
+        wears(file, 70404, 430, 0);
+        let mut settings = PlayerSettings::default();
+        settings.appearance.face.cheek_type = Some(5);
+        settings
+            .apply(file.player_mut(70404).unwrap(), PesVersion::Pes18)
+            .unwrap();
     });
 
     let run = upgrade(&sandbox, "an Spring", "EDIT18");

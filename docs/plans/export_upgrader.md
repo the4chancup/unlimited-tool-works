@@ -118,12 +118,14 @@ refined with the maintainer before `view/` is written:
 - **The savefile field names the team it needs.** Once a team export is dropped (a referee
   export's field is disabled and shows nothing beside it: it takes no save), its team is
   resolved (the Note's `Team:` line, else the name, step 6) and the field shows
-  `needs /egg/ (792)` beside it; a save picked or discovered that lacks the team turns the
+  `needs /egg/` beside it (the name alone: the upgrader reads no teams list and the save's team
+  is found by name, `spec/export_upgrader.md` step 6); a save picked or discovered that holds
+  no team of that name turns the
   field red, the refusal's sentence as its tooltip, and Upgrade stays disabled, so a manager
   whose save comes from another cup or version learns it before the run rather than from its
-  exit 2. A team that resolves to no row of the list shows `team unknown: <name>` instead and
+  exit 2. A Note or name that gives no team name shows `no team name` instead and
   disables nothing of its own (Upgrade still needs a save or loose, EU-GUI-01): the save is
-  then not checked for the team, which has no id to look for, and the run reports
+  then not checked for the team, which has no name to look for, and the run reports
   `team_name_unknown` before any check of the save for the team, as the CLI does; a picked
   or discovered file that does not read as a save turns the field red with the read error as its tooltip,
   Upgrade disabled. An export whose Note or archive does not read at the drop leaves the field
@@ -181,7 +183,7 @@ refined with the maintainer before `view/` is written:
   the notice and no Move button: its output is folders to drop into an export, not an export.
   Any other run publishes no notice, having nothing to open. A new input clears the previous
   run's report, the log and the list included: the report is about the input it ran on.
-- No settings section: the tool has no settings (step 6: the teams list path is the compiler's).
+- No settings section: the tool has no settings (step 6: it reads no teams list).
 
 ## Dependencies
 

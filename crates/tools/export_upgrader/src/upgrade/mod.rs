@@ -6,7 +6,6 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
-use std::io;
 use std::path::{Path, PathBuf};
 
 use aesthetics_export::{
@@ -15,12 +14,13 @@ use aesthetics_export::{
 };
 use anyhow::anyhow;
 use pes_savefile::EditFile;
+use pes_savefile::model::names::display_name;
 use pes_version::PesVersion;
 use studio_core::{
     CliError, Disposition, ExportId, Message, PipelineEvent, PipelineEventEnvelope, RunId, Scope,
     Severity, ToolContext,
 };
-use teams_list::{TeamId, TeamName, TeamsList};
+use teams_list::TeamName;
 use vtree::ScopePath;
 
 use crate::carried::{carried_files, under};
@@ -93,37 +93,20 @@ pub(crate) fn verdict(worst: Option<Severity>, dropped: bool) -> (Code, u8) {
     }
 }
 
-/// What the run upgrades: a listed team's export, the referee package, or a
-/// folder of model folders (no team).
+/// What the run upgrades: a team's export, the referee package, or a
+/// folder of model folders (no team). The Studio format names no team ID:
+/// the save's team is found by name, whatever ID the save gives it.
 #[derive(Debug)]
 pub(crate) enum Identity {
-    /// A listed team; `id` is strictly 701-920.
+    /// A team, by the canonical `/xx/` name.
     Team {
-        /// The teams-list id.
-        id: TeamId,
         /// The canonical `/xx/` name.
         name: TeamName,
     },
     /// A referee export; its name's first word is `refs`.
     Referees,
-    /// Model-folder mode's: no team, so no ID is written where a path or a
-    /// name carried the `???` placeholder (plan "Model-folder mode").
+    /// Model-folder mode's: no team.
     ModelFolders,
-}
-
-impl Identity {
-    /// The three-digit ID a whole-export upgrade writes where a game path or
-    /// a name carried the `???` placeholder: the team's, or 999 for a referee
-    /// export, the ID the game compiles referees under (plan step 7). `None`
-    /// for model-folder mode, which has no team and leaves the placeholder
-    /// as written.
-    pub(crate) fn path_id(&self) -> Option<u16> {
-        match self {
-            Identity::Team { id, .. } => Some(id.get()),
-            Identity::Referees => Some(999),
-            Identity::ModelFolders => None,
-        }
-    }
 }
 
 /// A run's event stream: the findings it reports to the console (one line
@@ -220,8 +203,7 @@ pub(crate) fn aborted(error: anyhow::Error) -> CliError {
 }
 
 /// What `check_invocation` approved (the "CLI" paragraph's checks): the
-/// input resolved and named, the flags checked, the save loaded, the teams
-/// list parsed.
+/// input resolved and named, the flags checked, the save loaded.
 struct Invocation {
     /// The input path, made absolute.
     path: PathBuf,
@@ -231,13 +213,11 @@ struct Invocation {
     referees: bool,
     /// The save `--savefile` loaded, when given.
     save: Option<EditFile>,
-    /// The working teams list.
-    teams_list: TeamsList,
 }
 
 /// The "CLI" paragraph's invocation checks, before anything is written
 /// (`run`'s order, `spec/export_upgrader.md` "CLI").
-fn check_invocation(args: &UpgradeArgs, ctx: &ToolContext) -> Result<Invocation, CliError> {
+fn check_invocation(args: &UpgradeArgs) -> Result<Invocation, CliError> {
     // "CLI": the export must exist and be a folder or a `.zip`/`.7z`.
     let path = &args.export;
     if !path.exists() {
@@ -287,21 +267,18 @@ fn check_invocation(args: &UpgradeArgs, ctx: &ToolContext) -> Result<Invocation,
         None => None,
     };
 
-    // "CLI": the teams list, the data directory's file or the embedded one.
-    let teams_list = load_teams_list(ctx.paths().data_dir.as_deref())?;
     Ok(Invocation {
         path,
         name,
         referees,
         save,
-        teams_list,
     })
 }
 
 /// Runs `upgrade`: the invocation check, then the export opened and resolved,
 /// written and reported, validated and judged.
 pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError> {
-    let invocation = check_invocation(args, ctx)?;
+    let invocation = check_invocation(args)?;
     let mut events = RunEvents::new(ctx);
 
     // Step 1: the export itself.
@@ -328,9 +305,9 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
     }
 
     // Step 6: the identity — a referee export, else the Note's `Team:` line,
-    // else the name's first word, each against the teams list. A team export's
-    // Note is consumed here and below; a referee export's is a leftover
-    // (step 9).
+    // else the name's first word, each checked against no list (a team the
+    // current list no longer holds still upgrades). A team export's Note is
+    // consumed here and below; a referee export's is a leftover (step 9).
     let note_path = note::find(&export.files).map(str::to_owned);
     let note_text = match (&note_path, invocation.referees) {
         (Some(note_path), false) => match export.read(note_path) {
@@ -351,7 +328,6 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
         invocation.referees,
         team_value,
         note_path.as_deref(),
-        &invocation.teams_list,
     ) {
         Ok(identity) => identity,
         Err((scope, name)) => {
@@ -361,23 +337,38 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
         }
     };
 
-    // "CLI": the savefile must hold the resolved team.
-    if let (Some(save), Identity::Team { id, name }) = (&invocation.save, &identity)
-        && save.team(u32::from(id.get())).is_none()
-    {
-        return Err(invalid(anyhow!(
-            "--savefile {} does not hold the export's team {name} ({id})",
-            args.savefile
-                .as_ref()
-                .expect("the save came from --savefile")
-                .display()
-        )));
-    }
+    // "CLI": the savefile must hold the resolved team — the first in the
+    // save's record order folding to its name, whatever ID the save gives
+    // it; each later one of the name is reported and not read (step 6).
+    let save_team = match (&invocation.save, &identity) {
+        (Some(save), Identity::Team { name }) => match team_in_save(save, name, &mut events) {
+            Some(id) => Some(id),
+            None => {
+                return Err(invalid(anyhow!(
+                    "--savefile {} does not hold the export's team {name}",
+                    args.savefile
+                        .as_ref()
+                        .expect("the save came from --savefile")
+                        .display()
+                )));
+            }
+        },
+        (None, _) | (Some(_), Identity::Referees | Identity::ModelFolders) => None,
+    };
+
+    // The ID the old compile renamed the files under (step 7's collision
+    // rule): the save team's, 999 for a referee export; none without a
+    // save, a loose run's collisions staying unmigrated content.
+    let compile_id = match &identity {
+        Identity::Referees => Some(999),
+        Identity::Team { .. } => save_team,
+        Identity::ModelFolders => None,
+    };
 
     // Step 2: the team's roster, when a save is given — its players by slot,
-    // read by ID (loose mode and referee exports have none).
-    let roster = match (&invocation.save, &identity) {
-        (Some(save), Identity::Team { id, .. }) => Some(Roster::read(save, *id)),
+    // read by the save team's ID (loose mode and referee exports have none).
+    let roster = match (&invocation.save, save_team) {
+        (Some(save), Some(id)) => Some(Roster::read(save, id)),
         _ => None,
     };
 
@@ -634,24 +625,21 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
     // renamed in one call, so a link sees its `Common/` target's rename. A
     // path another already takes is the later input's and is reported, the
     // finding joining its own list's findings.
-    let plan_copies = respell_outputs(std::mem::take(&mut plan.copies), &identity);
-    let kept = kept_common_files(&plan_copies, &identity, |path| export.read(path));
+    let plan_copies = respell_outputs(std::mem::take(&mut plan.copies));
+    let kept = kept_common_files(&plan_copies, |path| export.read(path));
     let plan_len = plan_copies.len();
     let mut renamed = rename_models(
         plan_copies
             .into_iter()
-            .chain(respell_outputs(
-                std::mem::take(&mut carried.copies),
-                &identity,
-            ))
+            .chain(respell_outputs(std::mem::take(&mut carried.copies)))
             .collect(),
         &kept,
     );
     let carried_copies = renamed.split_off(plan_len);
-    let (copies, dropped) = drop_collisions(renamed, identity.path_id());
+    let (copies, dropped) = drop_collisions(renamed, compile_id);
     plan.copies = copies;
     plan.findings.extend(dropped);
-    let (copies, dropped) = drop_collisions(carried_copies, identity.path_id());
+    let (copies, dropped) = drop_collisions(carried_copies, compile_id);
     carried.copies = copies;
     carried.findings.extend(dropped);
     // A `.dds` beside a `.ftex` of one stem in one output folder is a
@@ -862,15 +850,15 @@ fn first_of_two_colors(colors: &str) -> Option<&str> {
 }
 
 /// The export's identity (step 6): `Referees` for a referee export, else the
-/// Note's `Team:` value folded and looked up in the teams list, else the
-/// name's first word the same way. `Err((scope, name))` is `team_name_unknown`
-/// reporting the `Team:` line's file or the export, with the value as written.
+/// Note's `Team:` value folded, else the name's first word folded — each
+/// checked against no list, so a team no list holds still resolves.
+/// `Err((scope, name))` is `team_name_unknown` reporting the `Team:` line's
+/// file or the export, with the value as written.
 fn resolve(
     export_name: &str,
     referees: bool,
     team_value: Option<String>,
     note_path: Option<&str>,
-    teams_list: &TeamsList,
 ) -> Result<Identity, (Scope, String)> {
     if referees {
         return Ok(Identity::Referees);
@@ -881,25 +869,46 @@ fn resolve(
             path: ScopePath::new(note_path.expect("a `Team:` value came from a Note"))
                 .expect("every listed path was checked when the source opened"),
         };
-        return match TeamName::new(&value)
-            .ok()
-            .and_then(|name| lookup(name, teams_list))
-        {
-            Some(identity) => Ok(identity),
-            None => Err((scope, value)),
+        return match TeamName::new(&value) {
+            Ok(name) => Ok(Identity::Team { name }),
+            Err(_) => Err((scope, value)),
         };
     }
-    match aesthetics_export::team_name(export_name).and_then(|name| lookup(name, teams_list)) {
-        Some(identity) => Ok(identity),
+    match aesthetics_export::team_name(export_name) {
+        Some(name) => Ok(Identity::Team { name }),
         None => Err((Scope::Export { export_id: INPUT }, export_name.to_owned())),
     }
 }
 
-/// The team `name`'s row in the teams list, as an identity.
-fn lookup(name: TeamName, teams_list: &TeamsList) -> Option<Identity> {
-    teams_list
-        .id_of(&name)
-        .map(|id| Identity::Team { id, name })
+/// The save's team of the export's name (step 6): the ID of the first of
+/// `save.teams()` in record order whose name, colour codes stripped
+/// (`display_name`), trims and folds to `name` — whatever ID the save
+/// gives it, the save the export was made against numbering the team
+/// otherwise than today. Each later one folding to the same name is
+/// reported (`save_team_name_repeated`, W, on the export; `team` the
+/// later team's ID, `kept` the first's) and not read. `None` when the
+/// save holds none.
+fn team_in_save(save: &EditFile, name: &TeamName, events: &mut RunEvents) -> Option<u32> {
+    let mut first = None;
+    for team in save.teams() {
+        let display = display_name(&team.name);
+        let Ok(found) = TeamName::new(display.trim()) else {
+            continue;
+        };
+        if found != *name {
+            continue;
+        }
+        match first {
+            None => first = Some(team.id),
+            Some(kept) => events.message(tool_message(
+                Code::SaveTeamNameRepeated,
+                Scope::Export { export_id: INPUT },
+                Disposition::Keep,
+                vec![("team", team.id.to_string()), ("kept", kept.to_string())],
+            )),
+        }
+    }
+    first
 }
 
 /// Whether the input `path` is a leftover (step 10's two kinds of entry):
@@ -935,39 +944,6 @@ fn is_leftover(path: &str, referees: bool, referees_at_root: bool) -> bool {
         return top.eq_ignore_ascii_case("other");
     }
     !referees_at_root
-}
-
-/// The teams list: `<data_dir>/teams_list.txt` when present, else the embedded
-/// list (the upgrader has no setting of its own for it, step 6); unreadable or
-/// unparsable aborts, as the compiler's loader's.
-fn load_teams_list(data_dir: Option<&Path>) -> Result<TeamsList, CliError> {
-    let path = match data_dir {
-        Some(dir) => dir.join("teams_list.txt"),
-        None => return Ok(embedded_teams_list()),
-    };
-    let text = match fs::read_to_string(&path) {
-        Ok(text) => text,
-        Err(error) if error.kind() == io::ErrorKind::NotFound => {
-            return Ok(embedded_teams_list());
-        }
-        Err(error) => {
-            return Err(aborted(anyhow!(
-                "cannot read the teams list {}: {error}",
-                path.display()
-            )));
-        }
-    };
-    TeamsList::parse(&text).map_err(|error| {
-        aborted(anyhow!(
-            "{} is not a valid teams list: {error}",
-            path.display()
-        ))
-    })
-}
-
-fn embedded_teams_list() -> TeamsList {
-    TeamsList::parse(TeamsList::UPSTREAM)
-        .expect("the embedded teams list parses; the teams_list crate's tests check it")
 }
 
 /// Lists `output`, parses it back and validates it ("Verification"), reporting
