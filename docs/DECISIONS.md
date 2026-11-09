@@ -15998,3 +15998,31 @@ Plan: `spec/team_compiler/messages.md` (`xml_common_path_invalid`, `fmdl_common_
 EU-MDL-34 to 39, EU-REF-14, EU-MF-10 (TC-XML-20, EU-MDL-29, 30, 32, 33, EU-REF-13, EU-MF-08
 withdrawn for them); TC-MOD-88, TC-XML-01, 12, 18, 19, TC-CMN-18, 25 take
 `team_common_folder/` in their GIVEN, their outcomes unchanged.
+
+## 2026-11-09 — team_compiler, export_upgrader — an FMDL takes the short forms too: `team_common_folder/`, `common_folder/`
+Decision (the maintainer; the lead's choices marked *lead*), amending the entry above:
+- **An FMDL texture directory takes the `.mtl`'s two short forms** (the maintainer: one
+  spelling a member learns for both formats): `team_common_folder/<sub>` (any letter case,
+  `<sub>` an optional `Common/` subfolder path) stands for
+  `/Assets/pes16/model/character/common/team_folder/<sub>sourceimages/`, and `common_folder/`
+  for the game's own `/Assets/pes16/model/character/common/sourceimages/` (the maintainer:
+  `sourceimages` is the folder Fox keeps every Common texture in, so the short forms leave it
+  out). No tool reads a Studio FMDL before the compile but ours and the planned Blender plugin
+  (the maintainer).
+- *Lead*: the long forms stay admissible, as in a `.mtl`. Anything after `common_folder/` in
+  an FMDL directory, and a directory starting `common/`, are `fmdl_common_path_invalid`, the
+  `.mtl`'s rule. The compiler reads an export FMDL's short directories as their long forms
+  where its texture table is read, by one function, so every later rule sees the long form
+  alone and both spellings compile to the same texture paths (TC-MOD-104); the compiled FMDL holds
+  the long form with the team's ID. The upgrader writes the short forms, the long one only for
+  a directory they cannot spell (one below the team's Common not ending `sourceimages/`, one
+  below the game's `sourceimages/`).
+- *Lead*: a scenario added earlier in the same worklog step is edited in place when the step
+  changes its outcome (EU-MDL-39), one from an earlier step withdrawn and restated (EU-MDL-13
+  as EU-MDL-40): nothing outside the step cites the first.
+Why not map an FMDL's `common_folder/` to the pre-Fox `model/character/uniform/common/` as a
+`.mtl`'s is: an FMDL is Fox's, and Fox keeps its common textures in its own folder.
+Plan: `spec/team_compiler/pipeline.md` step 2 "ID replacement" and "Common",
+`spec/team_compiler/messages.md` `fmdl_common_path_invalid`, `spec/export_upgrader.md` step 7,
+the draft's catalog, the compiler's help; scenarios TC-MOD-104, 105, EU-MDL-40, EU-MDL-39
+edited.

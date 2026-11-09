@@ -15,6 +15,7 @@ use vtree::ScopePath;
 
 use crate::plan::roles::ModelPackage;
 use crate::texture_lookup;
+use crate::user_face_xml::{COMMON_FOLDER, TEAM_COMMON_FOLDER, TEAM_FOLDER};
 
 /// The team id the referees' content carries in game paths and FMDL texture paths
 /// (`common/999/Ref A/`). It is not a `TeamId`: no teams-list row has it, and nothing is
@@ -357,6 +358,29 @@ pub(crate) const KIT_TEXTURE_DIRECTORY: &str = "/Assets/pes16/model/character/un
 /// or is the game's own (`sourceimages`), and any other is refused
 /// (`fmdl_common_path_invalid`).
 pub(crate) const FOX_COMMON_DIRECTORY: &str = "/Assets/pes16/model/character/common/";
+
+/// The directory an export FMDL's texture path names, with the `.mtl`'s two short
+/// forms read as their long forms, so a member learns one spelling for both formats
+/// (`spec/team_compiler/pipeline.md` "ID replacement"): `team_common_folder/<sub>`
+/// (any letter case, `<sub>` a `Common/` subfolder path or empty) stands for
+/// `team_folder/<sub>sourceimages/` below `FOX_COMMON_DIRECTORY`, and `common_folder/`
+/// for `sourceimages/` below it, the game's own. The prefixes' letter case is the one
+/// `user_face_xml::reference` reads. Every rule that reads an export FMDL's texture
+/// table sees the long form alone; any other directory is returned unchanged, the
+/// short forms' own invalid spellings (`common_folder/jessie/`, `common/`) included.
+pub(crate) fn export_fmdl_directory(directory: &str) -> String {
+    if let Some(sub) = directory
+        .get(..TEAM_COMMON_FOLDER.len())
+        .filter(|prefix| prefix.eq_ignore_ascii_case(TEAM_COMMON_FOLDER))
+        .map(|_| &directory[TEAM_COMMON_FOLDER.len()..])
+    {
+        return format!("{FOX_COMMON_DIRECTORY}{TEAM_FOLDER}/{sub}sourceimages/");
+    }
+    if directory == COMMON_FOLDER {
+        return format!("{FOX_COMMON_DIRECTORY}sourceimages/");
+    }
+    directory.to_owned()
+}
 
 /// The CPK path of one kit texture, by its game name (`u0792g1`, `u0792g1_back`), converted
 /// for a target of `engine`: an FTEX on Fox, a DDS on pre-Fox.
@@ -729,6 +753,40 @@ mod tests {
             "./textures/",
         ] {
             assert_eq!(common.subdirectory(directory), None, "{directory}");
+        }
+    }
+
+    #[test]
+    fn an_export_fmdl_s_short_common_directories_read_as_their_long_forms() {
+        let common = FOX_COMMON_DIRECTORY;
+        for (short, long) in [
+            ("team_common_folder/", "team_folder/sourceimages/"),
+            (
+                "team_common_folder/Boots/",
+                "team_folder/Boots/sourceimages/",
+            ),
+            ("TEAM_COMMON_FOLDER/kitN/", "team_folder/kitN/sourceimages/"),
+            ("Team_Common_Folder/a/b/", "team_folder/a/b/sourceimages/"),
+            ("common_folder/", "sourceimages/"),
+        ] {
+            assert_eq!(
+                export_fmdl_directory(short),
+                format!("{common}{long}"),
+                "{short}"
+            );
+        }
+        for directory in [
+            // A model-folder path, a long form, the game's kit texture folder, and
+            // the spellings the deep pass refuses (`common_folder/` with a folder
+            // after it, `common/`): all unchanged.
+            "./",
+            "team_folder/jessie/sourceimages/",
+            &format!("{common}team_folder/jessie/sourceimages/"),
+            "/Assets/pes16/model/character/uniform/texture/",
+            "common_folder/jessie/",
+            "common/team_folder/sourceimages/",
+        ] {
+            assert_eq!(export_fmdl_directory(directory), directory, "{directory}");
         }
     }
 

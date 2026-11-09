@@ -602,10 +602,7 @@ fn a_prefox_face_folder_s_kit_magic_files_references_and_face_xml_migrate() {
             ("./".to_owned(), "kit1.dds".to_owned()),
             ("./".to_owned(), "kit2.dds".to_owned()),
             ("./kitN/".to_owned(), "armor".to_owned()),
-            (
-                "/Assets/pes16/model/character/common/sourceimages/".to_owned(),
-                "dummy_kit.dds".to_owned(),
-            ),
+            ("common_folder/".to_owned(), "dummy_kit.dds".to_owned()),
         ]
     );
 }
@@ -773,6 +770,7 @@ fn an_fmdl_s_folders_below_common_are_respelled_team_folder() {
                 "/Assets/pes16/model/character/common/ikachan/sourceimages/",
                 "hair",
             ),
+            ("/Assets/pes16/model/character/common/000/foo/", "shoe"),
             ("/Assets/pes16/model/character/common/sourceimages/", "zero"),
         ]),
     );
@@ -782,20 +780,15 @@ fn an_fmdl_s_folders_below_common_are_respelled_team_folder() {
     let stdout = run.stdout();
     assert_eq!(run.exit_code(), 0, "{stdout}");
     assert_eq!(
-        fmdl_paths(&sandbox, "co Full Spring/Players/07 - A/face_high.fmdl")[..3],
+        fmdl_paths(&sandbox, "co Full Spring/Players/07 - A/face_high.fmdl")[..4],
         [
+            ("team_common_folder/".to_owned(), "dummy_kit.dds".to_owned(),),
+            ("team_common_folder/".to_owned(), "hair".to_owned()),
             (
-                "/Assets/pes16/model/character/common/team_folder/sourceimages/".to_owned(),
-                "dummy_kit.dds".to_owned(),
+                "/Assets/pes16/model/character/common/team_folder/foo/".to_owned(),
+                "shoe".to_owned(),
             ),
-            (
-                "/Assets/pes16/model/character/common/team_folder/sourceimages/".to_owned(),
-                "hair".to_owned(),
-            ),
-            (
-                "/Assets/pes16/model/character/common/sourceimages/".to_owned(),
-                "zero".to_owned(),
-            ),
+            ("common_folder/".to_owned(), "zero".to_owned()),
         ]
     );
     // `hair`, a Common reference `Common/` lacks, is reported kept; the
@@ -813,7 +806,7 @@ fn an_fmdl_s_folders_below_common_are_respelled_team_folder() {
     );
 }
 
-// EU-MDL-13
+// EU-MDL-40
 #[test]
 fn a_fox_fmdl_s_other_directories_and_common_sourceimages_behave() {
     let sandbox = Sandbox::new("mdl_fox_dirs");
@@ -839,10 +832,7 @@ fn a_fox_fmdl_s_other_directories_and_common_sourceimages_behave() {
         fmdl_paths(&sandbox, "co Full Spring/Players/07 - A/face_high.fmdl")[..2],
         [
             ("./".to_owned(), "skin".to_owned()),
-            (
-                "/Assets/pes16/model/character/common/sourceimages/".to_owned(),
-                "zero".to_owned(),
-            ),
+            ("common_folder/".to_owned(), "zero".to_owned()),
         ]
     );
     let stdout = run.stdout();

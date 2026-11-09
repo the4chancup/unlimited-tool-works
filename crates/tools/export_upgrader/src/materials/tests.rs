@@ -212,10 +212,7 @@ fn an_fmdl_common_reference_whose_texture_is_missing_is_kept() {
     );
     assert_eq!(
         fmdl_paths(&rewrites, "Players/07 - A/face_high.fmdl")[0],
-        (
-            "/Assets/pes16/model/character/common/team_folder/sourceimages/".to_owned(),
-            "hair.dds".to_owned()
-        )
+        ("team_common_folder/".to_owned(), "hair.dds".to_owned())
     );
     assert!(rewrites.links.is_empty());
     assert_eq!(rewrites.findings.len(), 1);
@@ -256,10 +253,7 @@ fn an_fmdl_common_reference_the_folder_claims_is_kept() {
     );
     assert_eq!(
         fmdl_paths(&rewrites, "Players/07 - A/face_high.fmdl")[0],
-        (
-            "/Assets/pes16/model/character/common/team_folder/sourceimages/".to_owned(),
-            "hair.dds".to_owned()
-        )
+        ("team_common_folder/".to_owned(), "hair.dds".to_owned())
     );
     assert!(rewrites.links.is_empty());
     assert_eq!(
@@ -288,10 +282,7 @@ fn an_fmdl_common_reference_in_another_letter_case_respells_the_marker() {
     );
     assert_eq!(
         fmdl_paths(&rewrites, "Players/07 - A/face_high.fmdl")[0],
-        (
-            "/Assets/pes16/model/character/common/team_folder/sourceimages/".to_owned(),
-            "hair.dds".to_owned()
-        )
+        ("team_common_folder/".to_owned(), "hair.dds".to_owned())
     );
     assert_eq!(
         rewrites
@@ -321,10 +312,7 @@ fn an_fmdl_in_a_subfolder_naming_a_common_subfolder_is_kept() {
     );
     assert_eq!(
         fmdl_paths(&rewrites, "Players/07 - A/realkit/x.fmdl")[0],
-        (
-            "/Assets/pes16/model/character/common/team_folder/Boots/sourceimages/".to_owned(),
-            "x.dds".to_owned()
-        )
+        ("team_common_folder/Boots/".to_owned(), "x.dds".to_owned())
     );
     assert!(rewrites.links.is_empty());
     assert_eq!(
@@ -377,17 +365,22 @@ fn the_fox_common_reference_needs_a_folder_but_sourceimages_and_sourceimages() {
 
 #[test]
 fn fmdl_entries_the_classes_keep_are_not_written() {
+    // The kept spellings: the Studio short form for a `dummy_` stem, the
+    // game's kit texture folder, and a directory below the game's own
+    // `sourceimages/` (kept as written, not `common_folder/`), twice to set
+    // the fixture's fourth entry.
     let face = fmdl(&[
-        (
-            "/Assets/pes16/model/character/common/team_folder/sourceimages/",
-            "dummy_kit.dds",
-        ),
+        ("team_common_folder/", "dummy_kit.dds"),
         (
             "/Assets/pes16/model/character/uniform/texture/",
             "u0XXXp1.dds",
         ),
         (
-            "/Assets/pes16/model/character/common/sourceimages/",
+            "/Assets/pes16/model/character/common/sourceimages/sub/",
+            "zero.dds",
+        ),
+        (
+            "/Assets/pes16/model/character/common/sourceimages/sub/",
             "zero.dds",
         ),
     ]);
@@ -410,7 +403,7 @@ fn a_common_directory_without_sourceimages_keeps_its_path_and_names_team_folder(
     // `common/000/foo/` is no team-Common reference (no `sourceimages/`
     // end) but its folder is the old spelling the compiler refuses: kept,
     // the folder respelled, nothing linked or reported. The game's own
-    // `common/sourceimages/` beside it stays as written.
+    // `common/sourceimages/` beside it is written `common_folder/`.
     let face = fmdl(&[
         ("/Assets/pes16/model/character/common/000/foo/", "a.dds"),
         (
@@ -434,10 +427,7 @@ fn a_common_directory_without_sourceimages_keeps_its_path_and_names_team_folder(
                 "/Assets/pes16/model/character/common/team_folder/foo/".to_owned(),
                 "a.dds".to_owned()
             ),
-            (
-                "/Assets/pes16/model/character/common/sourceimages/".to_owned(),
-                "zero.dds".to_owned()
-            ),
+            ("common_folder/".to_owned(), "zero.dds".to_owned()),
         ]
     );
     assert!(rewrites.links.is_empty());
@@ -547,10 +537,7 @@ fn a_common_fmdl_keeps_its_common_references() {
     );
     assert_eq!(
         fmdl_paths(&rewrites, "Common/boots.fmdl")[0],
-        (
-            "/Assets/pes16/model/character/common/team_folder/sourceimages/".to_owned(),
-            "x.dds".to_owned()
-        )
+        ("team_common_folder/".to_owned(), "x.dds".to_owned())
     );
     assert!(rewrites.links.is_empty());
     assert!(rewrites.findings.is_empty());
@@ -594,10 +581,7 @@ fn an_fmdl_the_lift_refuses_keeps_its_rewrite_and_finding() {
     // with it, and the finding the rewrite made is reported.
     assert_eq!(
         fmdl_paths(&rewrites, "Players/07 - A/face_high.fmdl")[0],
-        (
-            "/Assets/pes16/model/character/common/team_folder/sourceimages/".to_owned(),
-            "hair.dds".to_owned()
-        )
+        ("team_common_folder/".to_owned(), "hair.dds".to_owned())
     );
     assert_eq!(codes(&rewrites), ["common_reference_kept"]);
 }

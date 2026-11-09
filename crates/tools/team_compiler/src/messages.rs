@@ -439,7 +439,10 @@ pub(crate) enum Code {
     /// An FMDL texture directory below the game's Fox common directory
     /// (`/Assets/pes16/model/character/common/`) naming a folder there other than
     /// `team_folder`, the team's Common, or the game's own `sourceimages/`: `000`, the
-    /// community's template placeholder, a team ID, `XXX` or a team's name. Every entry
+    /// community's template placeholder, a team ID, `XXX` or a team's name; or written
+    /// short, a directory with anything after `common_folder/` or one starting
+    /// `common/` (the short forms themselves, `team_common_folder/<sub>` and
+    /// `common_folder/`, are admitted). Every entry
     /// of the texture table is checked, a `dummy_` stem's included, and the folder is left
     /// out (a `Common/` FMDL's, the file alone, its linking players following
     /// `link_target_dropped`). `export-upgrader upgrade-models` respells an old FMDL.

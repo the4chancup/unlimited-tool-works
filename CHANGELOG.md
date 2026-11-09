@@ -9,7 +9,7 @@ What changed for members, release by release, newest first.
 - **Team compiler and Export upgrader** — in the bundle again through `quick_compile.bat`
   and `quick_upgrade.bat`, with the `exports/` and `old_exports/` folders, for the /vg/
   League 27 on PES 2019. An upgraded export names no team ID: its references into the
-  team's Common read `team_common_folder/` (`team_folder` inside a model), and a
+  team's Common read `team_common_folder/`, in its `.mtl` files and models alike, and a
   keeper's `u0XXXg1` textures become `gk_kit1`. A team the current teams list no longer
   holds upgrades too, its roster found in the original save by the team's name.
 - **Team compiler** — a model naming the team's Common by a team ID or the community's

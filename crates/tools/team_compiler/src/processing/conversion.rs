@@ -19,6 +19,7 @@ use pes_version::PesVersion;
 use super::{CompileContext, Finding, TaskFailure};
 use crate::deep::{FAR_VERTEX_CODES, Fired, summed};
 use crate::messages::Code;
+use crate::paths;
 
 /// What the materials of a model converted to the other engine's format are.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -282,8 +283,16 @@ fn pre_fox_bundle(bytes: &[u8], mtl: &[u8]) -> anyhow::Result<NativeModelBundle>
 }
 
 /// The FMDL `bytes` read, with the `.skl` `skeleton` as its bind pose when there is one.
+/// Its texture directories' short forms are read as their long forms first
+/// (`paths::export_fmdl_directory`), so the conversion sees the long form alone and a
+/// `.mtl` written from it names what the long spelling would.
 fn fox_bundle(bytes: &[u8], skeleton: Option<&[u8]>) -> anyhow::Result<NativeModelBundle> {
-    let model = fmdl::Model::from_file(&fmdl::FmdlFile::read(bytes)?)?;
+    let mut model = fmdl::Model::from_file(&fmdl::FmdlFile::read(bytes)?)?;
+    for material in &mut model.materials {
+        for (_, texture) in &mut material.textures {
+            texture.directory = paths::export_fmdl_directory(&texture.directory);
+        }
+    }
     let skl = skeleton.map(fmdl::SklFile::read).transpose()?;
     Ok(NativeModelBundle::Fox { model, skl })
 }

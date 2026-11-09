@@ -121,14 +121,18 @@ pub(crate) enum Reference {
 pub(crate) const UNIFORM_COMMON: &str = "model/character/uniform/common/";
 
 /// The folder of the uniform Common folder that stands for the team's own, in a member's
-/// `face.xml` or `.mtl`: `team_folder` under the long form or `team_common_folder/`
-/// written short, the game's team ID written without one. Each name is compared ASCII
-/// case-insensitively.
-const TEAM_FOLDER: &str = "team_folder";
+/// `face.xml` or `.mtl` or an FMDL's Fox common directory: `team_folder` under the long
+/// form or `team_common_folder/` written short, the game's team ID written without one.
+/// Each name is compared ASCII case-insensitively.
+pub(crate) const TEAM_FOLDER: &str = "team_folder";
 
-/// The team's Common written short in a `path`/`material` value: `team_common_folder/`,
-/// one folder, compared ASCII case-insensitively.
-const TEAM_COMMON_FOLDER: &str = "team_common_folder/";
+/// The team's Common written short in a `path`/`material` value or an FMDL's texture
+/// directory: `team_common_folder/`, one folder, compared ASCII case-insensitively.
+pub(crate) const TEAM_COMMON_FOLDER: &str = "team_common_folder/";
+
+/// The game's own Common folder written short in a `path`/`material` value or an
+/// FMDL's texture directory: `common_folder/`, compared as written.
+pub(crate) const COMMON_FOLDER: &str = "common_folder/";
 
 /// What the `path` or `material` value `value` names (`Reference`).
 pub(crate) fn reference(value: &str) -> Reference {
@@ -156,11 +160,7 @@ pub(crate) fn reference(value: &str) -> Reference {
     let rest = value
         .strip_prefix(UNIFORM_COMMON)
         .map(|rest| (rest, true))
-        .or_else(|| {
-            value
-                .strip_prefix("common_folder/")
-                .map(|rest| (rest, false))
-        });
+        .or_else(|| value.strip_prefix(COMMON_FOLDER).map(|rest| (rest, false)));
     let Some((rest, long_form)) = rest else {
         return Reference::Unchecked(value.to_owned());
     };

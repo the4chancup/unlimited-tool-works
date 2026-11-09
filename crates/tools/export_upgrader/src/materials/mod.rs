@@ -1,8 +1,10 @@
 //! The `.mtl` texture references and FMDL path-table entries into the
 //! team's `Common/`. A reference naming a `Common/` file becomes the bare
 //! name plus the `.common` link spelling it. One no link can spell stays a
-//! game path, its Common written `team_common_folder/` (the Fox common
-//! directory for an FMDL), and is reported `common_reference_kept`: a
+//! game path, its Common written `team_common_folder/` (the same short
+//! form in an FMDL, whose `sourceimages/` level the spelling leaves out;
+//! the game's own `common/sourceimages/` is written `common_folder/`), and
+//! is reported `common_reference_kept`: a
 //! link beside a local file of its stem would
 //! drop the folder, and a nearer local file would win the lookup silently.
 //!
@@ -64,20 +66,30 @@ pub(crate) struct MaterialRewrites {
 /// any letter case.
 const COMMON_PREFIX: &str = "model/character/uniform/common/";
 
-/// The team's `Common/` as the Studio format writes it in a `.mtl` or a
-/// `face.xml` path: `team_common_folder/`, one folder ("the team's common
-/// folder"), the spelling the compiler reads.
+/// The team's `Common/` as the Studio format writes it in a `.mtl`, a
+/// `face.xml` path or an FMDL texture path: `team_common_folder/`, one
+/// folder ("the team's common folder"), the spelling the compiler reads.
 const TEAM_COMMON_FOLDER: &str = "team_common_folder/";
+
+/// The game's own Common as the Studio format writes it in an FMDL
+/// texture path: `common_folder/`, the `.mtl`'s spelling, for
+/// `FOX_GAME_COMMON` alone.
+const GAME_COMMON_FOLDER: &str = "common_folder/";
 
 /// The game's common directory an FMDL texture names, below which the
 /// team's Common stands (`common_home` for the Fox engine:
 /// `…/common/<team>/<sub>sourceimages/`).
 const FOX_COMMON_PREFIX: &str = "/Assets/pes16/model/character/common/";
 
-/// The team's Common directory as the Studio format writes it in an FMDL
-/// texture path: `team_folder` below the game's common directory
-/// (`FOX_COMMON_PREFIX`), the only spelling the compiler admits there
-/// (`fmdl_common_path_invalid`).
+/// The game's own directory below `FOX_COMMON_PREFIX` (where its shared
+/// textures such as `zero.dds` sit), written `GAME_COMMON_FOLDER` in an
+/// FMDL texture path.
+const FOX_GAME_COMMON: &str = "/Assets/pes16/model/character/common/sourceimages/";
+
+/// The team's Common directory in an FMDL texture path's long form:
+/// `team_folder` below the game's common directory (`FOX_COMMON_PREFIX`),
+/// the only spelling the compiler admits there (`fmdl_common_path_invalid`).
+/// Kept only for a directory the short form cannot spell.
 const FOX_TEAM_FOLDER: &str = "/Assets/pes16/model/character/common/team_folder/";
 
 /// The game's kit texture folder an FMDL texture keeps
@@ -132,6 +144,25 @@ fn respell_fox_team_folder(directory: &mut String) -> bool {
     let rest = rest.to_owned();
     respell_marker(directory, FOX_TEAM_FOLDER, &rest);
     true
+}
+
+/// `directory` respelled as step 7 writes a kept one below `FOX_COMMON_PREFIX`: a
+/// team's-Common directory ending `sourceimages/` in its short form
+/// `team_common_folder/<sub>` (`sub` the `Common/` subfolder path between the marker
+/// and `sourceimages/`, empty for `Common/` itself), the game's exact
+/// `common/sourceimages/` (any letter case) as `common_folder/`, a directory below
+/// the game's as written, and any other folder's (`common/000/foo/`, which the short
+/// form cannot spell) kept long with its folder respelled `team_folder`. Anything
+/// else is left unchanged.
+fn respell_fox_directory(directory: &mut String) {
+    if let Some((_marker, sub)) = reference_into_fox_common(directory) {
+        let sub = sub.to_owned();
+        respell_marker(directory, TEAM_COMMON_FOLDER, &sub);
+    } else if vtree::fold_name(directory) == vtree::fold_name(FOX_GAME_COMMON) {
+        respell_marker(directory, GAME_COMMON_FOLDER, "");
+    } else {
+        respell_fox_team_folder(directory);
+    }
 }
 
 /// The folded stem of a file name (`hair.dds` → `hair`, `Hair.PNG` the
@@ -215,9 +246,10 @@ fn respell_reference(directory: &mut String, file_name: &mut String) {
 }
 
 /// `directory`, a kept Common game path, written in the Studio spelling:
-/// `folder` (`TEAM_COMMON_FOLDER` for a `.mtl`, the Fox common directory's
-/// plus `team_folder/` for an FMDL's kept whole path) then `rest` as
-/// written (`sub` for an `.mtl`, `sub` + `sourceimages/` for an FMDL). The
+/// `folder` (`TEAM_COMMON_FOLDER` for a `.mtl`, and for an FMDL's kept
+/// team's-Common directory too, whose `sourceimages/` the short form
+/// leaves out, or `GAME_COMMON_FOLDER` for the game's own) then `rest` as
+/// written (`sub` for a `.mtl` or an FMDL). The
 /// Studio format names no team ID: the compiler reads `team_folder` as the
 /// team's Common and refuses any other folder after `common_folder/` (or
 /// one spelled `common/`, the CPK's root folder).
@@ -325,14 +357,16 @@ enum Reference {
 }
 
 /// One FMDL texture entry's outcome, class by class: a `dummy_` stem is kept
-/// as written (the game substitutes it), its folder below `common/` respelled
-/// `team_folder` all the same, the compiler refusing any other; a `./` or
+/// as written (the game substitutes it), its directory below `common/`
+/// respelled all the same (`respell_fox_directory`), the compiler refusing
+/// any other folder there; a `./` or
 /// empty directory has its
 /// kit magic respelled only; the game's kit texture folder is kept, as the
-/// compiler keeps it; the team's Common (`common/<folder>/[sub/]sourceimages/`,
+/// compiler keeps it; the game's own `common/sourceimages/` is written
+/// `common_folder/`, a directory below it as written; the team's Common (`common/<folder>/[sub/]sourceimages/`,
 /// the folder any but `sourceimages`)
 /// is linked as an `.mtl`'s Common reference (a `Common/` FMDL's kept,
-/// `???` respelled, reported when `Common/` lacks the texture); any other
+/// written `team_common_folder/<sub>`, reported when `Common/` lacks the texture); any other
 /// directory below `common/` is kept, its folder respelled `team_folder`;
 /// every other directory becomes `./`,
 /// the `Common/` root's texture linked when the folder holds none. In a
@@ -341,7 +375,7 @@ enum Reference {
 /// linked as the last class is (`link_referee_bare`).
 fn fmdl_entry(path: &mut fmdl::ops::paths::TexturePath, ctx: &FileContext, pass: &mut Pass) {
     if folded_stem(&path.file_name).starts_with("dummy_") {
-        respell_fox_team_folder(&mut path.directory);
+        respell_fox_directory(&mut path.directory);
         return;
     }
     if path.directory.is_empty() || path.directory.starts_with("./") {
@@ -368,12 +402,12 @@ fn fmdl_entry(path: &mut fmdl::ops::paths::TexturePath, ctx: &FileContext, pass:
         .is_some_and(|prefix| prefix.eq_ignore_ascii_case(FOX_COMMON_PREFIX))
     {
         let Some((_marker, sub)) = reference_into_fox_common(&path.directory) else {
-            // `common/sourceimages/` is the game's own, kept as written; a
-            // folder there the game's is not but whose path is no
-            // `sourceimages/` one (`common/000/foo/`) is the team's Common
-            // too, kept with the folder respelled `team_folder`, no link and
-            // no finding.
-            respell_fox_team_folder(&mut path.directory);
+            // `common/sourceimages/` is the game's own, written `common_folder/`, a
+            // directory below it kept as written; a folder there the game's is not
+            // but whose path is no `sourceimages/` one (`common/000/foo/`) is the
+            // team's Common too, kept long with the folder respelled `team_folder`,
+            // no link and no finding.
+            respell_fox_directory(&mut path.directory);
             mark_lookup(pass.used, ctx, "", &folded_stem(&path.file_name));
             return;
         };
@@ -408,11 +442,9 @@ fn fmdl_entry(path: &mut fmdl::ops::paths::TexturePath, ctx: &FileContext, pass:
                 plan_link(pass.planned, ctx, common_rest);
                 path.directory = format!("./{sub}");
             }
-            None => respell_marker(
-                &mut path.directory,
-                FOX_TEAM_FOLDER,
-                &format!("{sub}sourceimages/"),
-            ),
+            // Kept a game path in the short form: `team_common_folder/` and the
+            // `Common/` subfolder path, the compiler's `sourceimages/` left out.
+            None => respell_marker(&mut path.directory, TEAM_COMMON_FOLDER, &sub),
         }
         return;
     }

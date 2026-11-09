@@ -482,6 +482,22 @@ then processed as an independent parallel task (Blue: `coordinator._model_folder
    contents (FMDL texture path tables via the `fmdl` crate's texture-path rewriting,
    `ops::paths::rewrite_texture_paths`; `.mtl` texture paths pre-Fox, the short
    `team_common_folder/` and `common_folder/` forms written long) and in file names.
+   An FMDL texture directory takes the same two short forms as a `.mtl`, so a member learns
+   one spelling for both formats: `team_common_folder/<sub>` (any letter case, `<sub>` an
+   optional `Common/` subfolder path such as `Boots/` or `kitN/`) stands for
+   `/Assets/pes16/model/character/common/team_folder/<sub>sourceimages/`, and `common_folder/`
+   for the game's own `/Assets/pes16/model/character/common/sourceimages/`. `sourceimages/` is
+   the folder Fox keeps every Common texture in, which the short forms leave out. Each export
+   FMDL's short directories are read as their long forms the moment its texture table is
+   read, by one function, so every later rule (the deep pass's checks, the pointing above,
+   this replacement, the PES 15-17 conversion) sees the long form alone and an FMDL compiles
+   to the same texture paths whichever spelling it uses (not the same bytes: the `fmdl`
+   rewrite appends a changed path's strings and keeps the old ones, which nothing reads). We do not map `common_folder/` to the
+   pre-Fox `model/character/uniform/common/` as a `.mtl` does: an FMDL is Fox's, and its
+   Common textures sit in Fox's folder. A directory the short forms cannot spell (one below
+   the team's Common not ending `sourceimages/`, one below the game's `sourceimages/`) is
+   written long. The compiled FMDL always holds the long form with the team's ID, the path
+   the game loads.
 3. **Fox mode fixups** — FMDL files renamed by stripping prefixes to the allowed names (arbitrary
    names route to the `fcl_hair.fmdl` merge — Red's fallback generalized), and all models resolving
    to the same allowed name — including `.common` links to Common models, which Fox cannot load at
@@ -2051,8 +2067,8 @@ Resolved decisions:
   subfolder's, which
   /hdg/'s models name for their per-kit sets; on PES 15-17
   `model/character/uniform/common/<team>/<sub>/`, a `.mtl`'s Common form, `messages.md`
-  "User-supplied `face.xml`"). An FMDL's team folder is `team_folder` (any letter case), the
-  Studio spelling the Export upgrader writes; the deep pass has already refused any other
+  "User-supplied `face.xml`"). An FMDL's team folder is `team_folder` (any letter case), a
+  short `team_common_folder/` read as it before any rule ("ID replacement"); the deep pass has already refused any other
   folder there but the game's own `sourceimages/` (`fmdl_common_path_invalid`, the
   community's `000` included), so the rule never meets one. The export's `Common/` holds it when it holds the stem at that subdirectory
   among the files the target packs (on PES 18-21 a subfolder file only when a link names or

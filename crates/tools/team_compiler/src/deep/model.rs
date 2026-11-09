@@ -99,11 +99,12 @@ pub(super) struct ModelRead {
     /// with its `.mtl`'s (`model_material_undefined`) and looks for the textures of the ones
     /// its meshes bind (`mtl_texture_not_found`).
     pub(super) materials: Vec<MaterialRead>,
-    /// The texture directories an FMDL's table names below the game's Fox common directory
-    /// (`paths::FOX_COMMON_DIRECTORY`) whose folder is not `team_folder` or `sourceimages`,
-    /// `fmdl_common_path_invalid`'s, one per distinct directory (folded) in table order.
-    /// Every entry is checked, a `dummy_` stem's included. Always empty for a pre-Fox model
-    /// or a material set.
+    /// The texture directories an FMDL's table names that `fmdl_common_path_invalid`
+    /// refuses: below the game's Fox common directory (`paths::FOX_COMMON_DIRECTORY`)
+    /// whose folder is not `team_folder` or `sourceimages`, or written short with
+    /// anything after `common_folder/` or starting `common/`, one per distinct
+    /// directory (folded) in table order. Every entry is checked, a `dummy_` stem's
+    /// included. Always empty for a pre-Fox model or a material set.
     pub(super) common_directories: Vec<CommonDirectory>,
 }
 
@@ -197,42 +198,66 @@ pub(super) fn fired(kind: ModelKind, bytes: &[u8]) -> Result<ModelRead, String> 
     Ok(read)
 }
 
-/// The directories `file`, a parsed FMDL, names below the game's Fox common directory
-/// (`paths::FOX_COMMON_DIRECTORY`) whose folder is not `team_folder` or `sourceimages`
-/// (each matched in any letter case): `fmdl_common_path_invalid`'s, one per distinct
-/// directory (folded) in table order, its `texture` the first entry spelling it. Every
-/// entry of the texture table is checked, a `dummy_` stem's included: the spelling is the
-/// export's, so one rule covers them all.
+/// The directories `file`, a parsed FMDL, names that `fmdl_common_path_invalid`
+/// refuses, one per distinct directory (folded) in table order, its `texture` the
+/// first entry spelling it. Every entry of the texture table is checked, a `dummy_`
+/// stem's included: the spelling is the export's, so one rule covers them all. The
+/// `.mtl`'s two short forms are read as their long forms first
+/// (`paths::export_fmdl_directory`), so `team_common_folder/<sub>` and
+/// `common_folder/` are admitted as `team_folder` and `sourceimages`; refused are a
+/// folder below the game's Fox common directory (`paths::FOX_COMMON_DIRECTORY`)
+/// other than `team_folder` or `sourceimages` (each matched in any letter case), a
+/// short directory with anything after `common_folder/` (`common_folder/jessie/`),
+/// and one starting `common/`, a CPK's root folder, each as the `.mtl`'s
+/// `user_face_xml::reference` reads them.
 fn common_directories(file: &FmdlFile) -> Result<Vec<CommonDirectory>, String> {
     let mut seen = BTreeSet::new();
     let mut found = Vec::new();
     for path in fmdl::ops::paths::texture_paths(file).map_err(|error| error.to_string())? {
-        let Some(folder) = path
+        let invalid = match path
             .directory
-            .get(..crate::paths::FOX_COMMON_DIRECTORY.len())
-            .filter(|prefix| prefix.eq_ignore_ascii_case(crate::paths::FOX_COMMON_DIRECTORY))
-            .map(|_| {
-                path.directory[crate::paths::FOX_COMMON_DIRECTORY.len()..]
-                    .split('/')
-                    .next()
-                    .unwrap_or("")
-            })
-        else {
-            continue;
-        };
-        if folder.is_empty()
-            || folder.eq_ignore_ascii_case("team_folder")
-            || folder.eq_ignore_ascii_case("sourceimages")
-            || !seen.insert(vtree::fold_name(&path.directory))
+            .strip_prefix(crate::user_face_xml::COMMON_FOLDER)
         {
-            continue;
+            // `common_folder/` alone is the game's own, admitted by the folder check
+            // below; anything after it is refused.
+            Some(rest) if !rest.is_empty() => true,
+            _ => {
+                path.directory.starts_with("common/")
+                    || fox_common_folder_invalid(&crate::paths::export_fmdl_directory(
+                        &path.directory,
+                    ))
+            }
+        };
+        if invalid && seen.insert(vtree::fold_name(&path.directory)) {
+            found.push(CommonDirectory {
+                texture: format!("{}{}", path.directory, path.file_name),
+                directory: path.directory,
+            });
         }
-        found.push(CommonDirectory {
-            texture: format!("{}{}", path.directory, path.file_name),
-            directory: path.directory,
-        });
     }
     Ok(found)
+}
+
+/// Whether `directory`, an FMDL texture path's directory with the short forms already
+/// read as their long forms, names a folder below the game's Fox common directory
+/// (`paths::FOX_COMMON_DIRECTORY`, matched in any letter case) other than
+/// `team_folder` or `sourceimages` (each matched in any letter case).
+fn fox_common_folder_invalid(directory: &str) -> bool {
+    let Some(folder) = directory
+        .get(..crate::paths::FOX_COMMON_DIRECTORY.len())
+        .filter(|prefix| prefix.eq_ignore_ascii_case(crate::paths::FOX_COMMON_DIRECTORY))
+        .map(|_| {
+            directory[crate::paths::FOX_COMMON_DIRECTORY.len()..]
+                .split('/')
+                .next()
+                .unwrap_or("")
+        })
+    else {
+        return false;
+    };
+    !(folder.is_empty()
+        || folder.eq_ignore_ascii_case(crate::user_face_xml::TEAM_FOLDER)
+        || folder.eq_ignore_ascii_case("sourceimages"))
 }
 
 /// `material` of a material set as the deep pass keeps it: its name and every sampler's

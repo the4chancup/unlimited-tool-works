@@ -7879,8 +7879,42 @@ briefs, review loops, gates and mutation runs as for any step.
       `messages.rs`, `messages/catalog.rs`, `help/01_command_line.md`; `export_upgrader`
       `face_xml.rs`, `materials/{mod,tests}.rs`, `kit_magic.rs`, `model_folders.rs`,
       `model_names.rs`, `upgrade/mod.rs`, `messages.rs`; both crates' CLI tests
-    - [ ] slice 2: the FMDL short forms (bullet above): spec, DECISIONS, scenarios, brief
+    - [x] slice 2: the FMDL short forms (bullet above): spec, DECISIONS, scenarios (TC-MOD-104,
+      105, EU-MDL-40; EU-MDL-13 withdrawn, EU-MDL-39 edited in place); SWE-2 sidekick,
+      `.tmp/0_0_2/poc12/brief2.md`: `paths::export_fmdl_directory` read in `convert_part` and
+      `conversion::fox_bundle`, the deep pass's refusal, the upgrader's `respell_fox_directory`.
+      The lead's review: two perturbations red (case-sensitive read: the unit test;
+      `convert_part`'s read skipped: TC-MOD-104); the deep pass's call is unobservable (both
+      short forms are admitted either way) and kept so the long form decides admission; a
+      collar FMDL's paths are never read on Fox (Issues). Both upgraded tracer goldens
+      regenerated (`regen_goldens.py --out regen2`: the Fox tracer's four player FMDLs, the
+      referee tracer's two gloves; only the respelled strings differ). Files: `team_compiler`
+      `paths.rs`, `user_face_xml.rs`, `deep/model.rs`, `processing/{model,conversion}.rs`,
+      `messages.rs`, `messages/catalog.rs`, `tests/cli/common_links.rs`; `export_upgrader`
+      `materials/{mod,tests}.rs`, `tests/cli/carried.rs`; the two goldens and READMEs
     - [ ] slice 3: `team_kit` (bullet above), FoxDen's swapper with it
+  - [ ] 0.0.2-chk library parity against checkpoints, not Red (the maintainer, 2026-11-09:
+    parity with Red was proven once the core was built; divergence is expected since, and
+    accounting for it at every run grows costlier). *Lead*, the shape (veto any):
+    - the p11 run (`3c512628`, every line attributed) is the last measured against Red; its
+      commit's outputs become checkpoint 1: per job, the CPK entries' names and hashes, kept
+      under `.tmp/library_parity/checkpoints/<tag>/` (machine-local, as the inputs are)
+    - a phase close reruns the upgrade census (`regress_check.py` already compares against the
+      previous tag) and our compile alone, diffed entry by entry against the last checkpoint;
+      each changed entry is traced to a commit of the phase (intended: the checkpoint is
+      re-pinned, the diff's summary in the commit) or is a defect (a worklog step). Red is not
+      run, and `classes.md`'s thirty-odd Red classes are not re-attributed
+    - an entry is diagnosed by rebuilding the checkpoint's commit in a worktree and rerunning
+      that job, so the checkpoint keeps hashes, not GBs of output
+    - Red comes back only for a question about what the old tool did (a member's report, a
+      newly ported area's first build), at a checkpoint of its own
+    - the committed tracer cases (`tests/parity.rs` against `red/`) stay as they are: small,
+      run in CI, and `parity.rs` changed in 4 commits since 2026-10-20 (22 in all); they become checkpoint
+      goldens of our own output the first time keeping one costs more than re-pinning
+    Lands in `spec/team_compiler/testing.md` (the library paragraph's rationale),
+    `scripts/library_parity/` (a `checkpoint.py` writing and diffing manifests, the README's
+    rerun order), RUNBOOK.md "Closing a phase" and AGENTS.md's one sentence. After poc12 and
+    the PoC; until then no Red run is due (the next is a phase close's)
   - [x] 0.0.2-acc withdrawn scenarios out of the way (the maintainer, 2026-11-09): (1) an area
     withdrawn whole (today SE-STR 8, SE-TRN 3, `spec/save_editor.md`) moves to
     `docs/spec/withdrawn_ids.md`, its lines as written, reason and successor kept; (2) a run
@@ -8500,6 +8534,14 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open (2026-11-09) — A member's `Collars/` FMDL is packed as it is on PES 18-21
+  (`processing/mod.rs` `TaskKind::Collar`, `Engine::Fox if is_fmdl => Ok(bytes)`): its texture
+  table is never read, so a `team_folder` directory keeps the placeholder instead of the team's
+  ID, and since poc12 slice 2 so do `team_common_folder/` and `common_folder/` (the upgrader
+  keeps a collar's paths as written, so it writes neither). Found by slice 2's sidekick; not
+  measured how many real collars name the Fox common directory. The fix reads a collar like a
+  package part (the short forms, then the ID replacement), or refuses the Common directories
+  there.
 - open (2026-11-09) — `compile::tests::a_7z_export_s_source_keeps_its_decompressed_content_into_the_planned_run`
   depends on the machine's free memory: the run's budget cap comes from the physical memory
   available, and with 232 MB free (a poc12 sidekick's run, 2026-11-09)

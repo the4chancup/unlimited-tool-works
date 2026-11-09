@@ -721,8 +721,8 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "fmdl_common_path_invalid",
         CatalogSeverity::Error,
-        r#"An `.fmdl` names a texture in a folder below the game's common folder (`/Assets/pes16/model/character/common/`) other than `team_folder`, the folder that stands for the team's Common, or `sourceimages`, the game's own: `000`, the placeholder of the community's model templates, a team ID, `XXX` or a team's name."#,
-        r#"The model's folder is left out (for a model in `Common/`, only the file is left out, and the players linking it get `link_target_dropped`). The team's Common is written `team_folder` there; `export-upgrader upgrade-models` respells an `.fmdl` that names an old folder."#,
+        r#"An `.fmdl` names a texture in a folder below the game's common folder (`/Assets/pes16/model/character/common/`) other than `team_folder`, the folder that stands for the team's Common, or `sourceimages`, the game's own: `000`, the placeholder of the community's model templates, a team ID, `XXX` or a team's name; or it names one the short spellings cannot write, a folder after `common_folder/` (`common_folder/x/`) or a directory starting `common/`."#,
+        r#"The model's folder is left out (for a model in `Common/`, only the file is left out, and the players linking it get `link_target_dropped`). The team's Common is written `team_common_folder/` there (`team_folder` in the long form); `export-upgrader upgrade-models` respells an `.fmdl` that names an old folder."#,
     ),
     (
         "folder_pack_failed",

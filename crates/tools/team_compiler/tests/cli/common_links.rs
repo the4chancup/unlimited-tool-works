@@ -25,6 +25,7 @@ use crate::prefox_faces::{
 use crate::textures::texture_fixture;
 use crate::{clean_model, findings_of};
 use pes_model::format::mtl::MaterialSet;
+use studio_core::StudioTool;
 
 const FACE_05: &str = "Asset/model/character/face/real/71405/#Win/face.fpk";
 const FACE_05_FPKD: &str = "Asset/model/character/face/real/71405/#Win/face.fpkd";
@@ -1941,6 +1942,164 @@ fn an_fmdl_common_directory_naming_anything_but_team_folder_or_sourceimages_is_r
             "PES {version}: {lines:#?}"
         );
         assert_eq!(run.exit_code(), 1, "PES {version}");
+    }
+}
+
+// TC-MOD-104
+#[test]
+fn an_fmdl_s_short_common_directories_compile_as_their_long_forms() {
+    let sandbox = Sandbox::new("mod_fmdl_short_forms");
+    let export = "exports/co Midcup Nested";
+    let player = format!("{export}/Players/05 - A");
+    sandbox.write(
+        &format!("{export}/Common/hair.dds"),
+        &tracer_player_file("shirt.dds"),
+    );
+    sandbox.write(
+        &format!("{export}/Common/jessie/skin.dds"),
+        &tracer_player_file("shirt.dds"),
+    );
+    // The model's three textures named in the `.mtl`'s two short forms,
+    // `team_common_folder/` in any letter case and `common_folder/`, or in
+    // their long forms: the twins of one model, compiled identically.
+    let spellings = [
+        [
+            ("dummy_kit.dds", "hair.dds", "team_common_folder/"),
+            ("dummy_nrm.dds", "skin.dds", "Team_Common_Folder/jessie/"),
+            ("dummy_srm.dds", "zero.dds", "common_folder/"),
+        ],
+        [
+            ("dummy_kit.dds", "hair.dds", TEAM_COMMON_DIRECTORY),
+            (
+                "dummy_nrm.dds",
+                "skin.dds",
+                "/Assets/pes16/model/character/common/team_folder/jessie/sourceimages/",
+            ),
+            ("dummy_srm.dds", "zero.dds", GAME_COMMON_DIRECTORY),
+        ],
+    ];
+    for (settings, version) in [(pes21_settings(&sandbox), 21), (pes17(&sandbox), 17)] {
+        let mut twins = Vec::new();
+        for entries in &spellings {
+            sandbox.write(
+                &format!("{player}/face_high.fmdl"),
+                &clean_model_naming_each(entries),
+            );
+            let run = sandbox.run(&settings, &["compile", "--no-deploy"]);
+            let lines = run.messages();
+            assert_eq!(run.exit_code(), 0, "PES {version}: {lines:#?}");
+            let findings: Vec<String> = findings_of(&lines, "co Midcup Nested")
+                .into_iter()
+                .map(str::to_owned)
+                .collect();
+            let entries = cpk_entries(&sandbox.root.join("output/4cc_99_test.cpk"));
+            twins.push((findings, entries));
+        }
+        let [(short_findings, short), (long_findings, long)] = twins.try_into().unwrap();
+        assert_eq!(short_findings, long_findings, "PES {version}");
+        assert_eq!(
+            short.keys().collect::<Vec<_>>(),
+            long.keys().collect::<Vec<_>>(),
+            "PES {version} entry names"
+        );
+        // The texture paths every model names, `.mtl` files' on pre-Fox: the
+        // same on both runs (not byte-equal files: the rewrite keeps a changed
+        // path's old strings).
+        let paths = |entries: &BTreeMap<String, Vec<u8>>| -> BTreeMap<String, Vec<String>> {
+            let mut named = BTreeMap::new();
+            if version == 17 {
+                for (name, bytes) in nested_entries(&entries[&face_cpk(5)]) {
+                    if name.ends_with(".mtl") {
+                        named.insert(name, sampler_paths(&bytes));
+                    }
+                }
+            } else {
+                let package = face_package(entries);
+                for (name, bytes) in package.entries() {
+                    if name.ends_with(".fmdl") {
+                        let file = FmdlFile::read(bytes).unwrap();
+                        named.insert(
+                            name.to_owned(),
+                            texture_paths(&file)
+                                .unwrap()
+                                .into_iter()
+                                .map(|path| format!("{}{}", path.directory, path.file_name))
+                                .collect(),
+                        );
+                    }
+                }
+            }
+            named
+        };
+        let short_paths = paths(&short);
+        let long_paths = paths(&long);
+        assert_eq!(short_paths, long_paths, "PES {version} texture paths");
+        if version == 21 {
+            assert_eq!(
+                short_paths["face_high.fmdl"],
+                [
+                    "/Assets/pes16/model/character/common/714/sourceimages/hair.dds",
+                    "/Assets/pes16/model/character/common/714/jessie/sourceimages/skin.dds",
+                    "/Assets/pes16/model/character/common/sourceimages/zero.dds",
+                ]
+            );
+        }
+    }
+}
+
+// TC-MOD-105
+#[test]
+fn an_fmdl_directory_with_anything_after_common_folder_or_starting_common_is_refused() {
+    let sandbox = Sandbox::new("mod_fmdl_short_invalid");
+    let export = "exports/co Midcup Nested";
+    // Slot 05's face names `hair` below `common_folder/`, which names the
+    // game's own Common alone; slot 06's names it in `common/`, a CPK's
+    // root folder.
+    sandbox.write(
+        &format!("{export}/Players/05 - A/face_high.fmdl"),
+        &clean_model_naming_in("dummy_kit.dds", "hair.dds", "common_folder/jessie/"),
+    );
+    sandbox.write(
+        &format!("{export}/Players/06 - B/face_high.fmdl"),
+        &clean_model_naming_in(
+            "dummy_kit.dds",
+            "hair.dds",
+            "common/team_folder/sourceimages/",
+        ),
+    );
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
+
+    let lines = run.messages();
+    assert_eq!(
+        findings_of(&lines, "co Midcup Nested"),
+        [
+            "Error fmdl_common_path_invalid [DropFolder] at Players/05 - A \
+             (model=face_high.fmdl, texture=common_folder/jessie/hair.dds, \
+             directory=common_folder/jessie/)",
+            "Error fmdl_common_path_invalid [DropFolder] at Players/06 - B \
+             (model=face_high.fmdl, texture=common/team_folder/sourceimages/hair.dds, \
+             directory=common/team_folder/sourceimages/)",
+            "Info export_identified [Keep] (team=/co/, id=714)",
+        ],
+        "{lines:#?}"
+    );
+    assert_eq!(run.exit_code(), 1, "{lines:#?}");
+    // The finding's text says how the team's Common is written there, and
+    // that the upgrader respells an `.fmdl` that names an old folder.
+    let help = team_compiler::Tool::new().help();
+    let row = help
+        .messages
+        .iter()
+        .find(|row| row.code == "fmdl_common_path_invalid")
+        .unwrap();
+    for word in ["`team_common_folder/`", "upgrade-models"] {
+        assert!(
+            row.when.contains(word) || row.effect.contains(word),
+            "{word}: {} / {}",
+            row.when,
+            row.effect
+        );
     }
 }
 

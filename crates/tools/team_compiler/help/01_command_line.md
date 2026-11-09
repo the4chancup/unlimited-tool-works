@@ -665,11 +665,15 @@ reports `fmdl_texture_not_found` as a warning, one line per missing texture nami
 and the texture, and keeps the part: a mesh naming it shows without it. When there is no PES
 folder or no `DpFileList.bin`, or the list does not name the CPK being compiled, the texture
 may still be in an installed CPK that could not be checked, so the line is the same warning.
-A texture path's directory below the game's common folder (`/Assets/pes16/model/character/common/`)
-names the team's Common as `team_folder`, or the game's own `sourceimages`, and nothing else:
-`000` (the placeholder the community's model templates carry), a team ID, `XXX` or a team's
-name there is refused as the error `fmdl_common_path_invalid`, which leaves the model's
-folder out, and `export-upgrader upgrade-models` respells an old model's folder.
+A model's texture directory names the team's Common as in a `.mtl`: `team_common_folder/`,
+then a subfolder of `Common` if any (`team_common_folder/Boots/`), and the game's own common
+textures as `common_folder/`. The long forms work too: `team_folder` or the game's own
+`sourceimages` below the game's common folder (`/Assets/pes16/model/character/common/`),
+`team_common_folder/Boots/` being `/Assets/pes16/model/character/common/team_folder/Boots/sourceimages/`
+in full. Anything else there, `000` (the placeholder the community's model templates carry),
+a team ID, `XXX`, a team's name or a folder after `common_folder/`, is refused as the error
+`fmdl_common_path_invalid`, which leaves the model's folder out, and
+`export-upgrader upgrade-models` respells an old model's folder.
 A texture whose name starts with `dummy_` is never looked for. The game puts its
 own in its place. `check` does not look for these textures, only `compile` does. A texture in
 the game's own kit texture folder (`/Assets/pes16/model/character/uniform/texture/`) is not

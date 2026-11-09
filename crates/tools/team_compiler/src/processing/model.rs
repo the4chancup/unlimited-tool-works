@@ -624,6 +624,18 @@ fn convert_part(
             };
         }
         None => {
+            // An export FMDL may spell its Common directories short: read them as
+            // their long forms first, so the conversion, the hand split and the
+            // path pointing all see the long form alone. One that does not read
+            // reaches the conversion's `model_conversion_failed` as it is.
+            if let Ok(mut file) = FmdlFile::read(&part.bytes)
+                && let Ok(changed) = rewrite_texture_paths(&mut file, |path| {
+                    path.directory = paths::export_fmdl_directory(&path.directory);
+                })
+                && changed > 0
+            {
+                part.bytes = file.write();
+            }
             let skeleton = part.skeleton.as_deref();
             if let Some(converted) = fmdl_for_fox(model, &part.bytes, skeleton, ctx, &mut reported)?
             {

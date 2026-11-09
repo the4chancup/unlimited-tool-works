@@ -1320,6 +1320,24 @@ TC-MOD-103 GIVEN slot 05's boots.fmdl naming dummy_kit in
                 each text naming team_folder and upgrade-models, and drops their folders, names
                 Common/legs.fmdl's, which is dropped, slot 08's folder following it with
                 link_target_dropped, and no finding names slot 07's model
+TC-MOD-104 GIVEN slot 05's face_high.fmdl naming hair in team_common_folder/, skin in
+           Team_Common_Folder/jessie/ and zero in common_folder/, with Common/hair.dds and
+           Common/jessie/skin.dds, and a twin export, of the same name, whose model names them
+           in /Assets/pes16/model/character/common/team_folder/sourceimages/,
+           /Assets/pes16/model/character/common/team_folder/jessie/sourceimages/ and
+           /Assets/pes16/model/character/common/sourceimages/
+           WHEN each is compiled for PES 21, then for PES 17
+           THEN each target's two CPKs hold the same entry names, each model of one names the
+                texture paths its twin names, the two runs report the same findings, and the
+                PES 21 model names hair in
+                /Assets/pes16/model/character/common/714/sourceimages/, skin in
+                /Assets/pes16/model/character/common/714/jessie/sourceimages/ and zero in
+                /Assets/pes16/model/character/common/sourceimages/
+TC-MOD-105 GIVEN slot 05's face_high.fmdl naming hair in common_folder/jessie/, and slot 06's
+           naming hair in common/team_folder/sourceimages/
+           WHEN the export is checked for PES 21
+           THEN fmdl_common_path_invalid names both directories, each text naming
+                team_common_folder/ and upgrade-models, and drops both folders
 ```
 
 **Textures**
