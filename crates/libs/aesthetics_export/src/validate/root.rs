@@ -176,6 +176,7 @@ pub(crate) fn check_root(
         notes: None,
         referee_marker: None,
         write_names: false,
+        legacy_ids: None,
     };
     for file in &draft.root_files {
         if is_logo_candidate(file) {
@@ -191,7 +192,9 @@ pub(crate) fn check_root(
                 check_notes(file, metadata, context, &mut artifacts, issues);
             }
             FileKind::Metadata(MetadataFile::RefsTxt | MetadataFile::RefLists) if referees => {}
-            FileKind::Metadata(MetadataFile::LegacyIdsToml) if !referees => {}
+            FileKind::Metadata(MetadataFile::LegacyIdsToml) if !referees => {
+                artifacts.legacy_ids = Some(file.clone());
+            }
             FileKind::Metadata(MetadataFile::ColorsTxt) => {
                 artifacts.team_colors = Some(file.clone());
             }

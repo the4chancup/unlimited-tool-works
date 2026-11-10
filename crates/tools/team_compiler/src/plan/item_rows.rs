@@ -7,13 +7,14 @@
 use std::collections::BTreeSet;
 
 use aesthetics_export::{
-    ExportCoverage, FpcDirective, PlayerFolder, SharedKind, ValidatedAestheticsExport,
+    ExportCoverage, FpcDirective, PlayerFolder, PlayerSlot, SharedKind, ValidatedAestheticsExport,
 };
 use pes_savefile::settings_toml::PlayerSettings;
 use pes_version::Engine;
 use vtree::ScopePath;
 
 use super::ids::shared_folders_taking_ids;
+use super::legacy_ids::LegacyIds;
 use super::roles::{
     ModelPackage, has_effective_part, link_feeds_own_package, linked_folder, shared_kind_of,
 };
@@ -71,6 +72,10 @@ pub(super) struct RowPlayer {
     pub(super) linked: Vec<ScopePath>,
     /// The folder's `fpc_on`/`fpc_off` marker; `None` when it has none.
     pub(super) fpc: Option<FpcDirective>,
+    /// The packages the folder's effective boots and gloves have a part of
+    /// (`has_effective_part`; computed only under `legacy_ids`, empty otherwise): under
+    /// the file, a slot recording no old ID of a kind his folder packs gets no row of it.
+    pub(super) own_parts: Vec<ModelPackage>,
     /// The folder's name part, which a `write_names` export's `name = true` resolves to.
     pub(super) player_name: String,
     /// The folder's settings, its `settings.toml` joined with its `ingame_face.toml`'s keys;
@@ -94,27 +99,32 @@ pub(super) struct RowPlayer {
 /// ID is written, else the default `default_id` resolves: `hide_ids`'s (the common
 /// settings' hide IDs) for `fpc_on`, 0 for `fpc_off` or a `Full` export's markerless player,
 /// and no row for a `Midcup` one's, the save keeping his ID. Gloves alike.
+///
+/// `legacy_ids` is the export's `legacy_ids.toml` when it holds one: the resolution is then
+/// per slot, not per folder (`legacy_rows`).
 pub(super) fn export_rows(
     tasks: &[BuildTask],
     first: usize,
     players: &[RowPlayer],
     coverage: ExportCoverage,
     hide_ids: fpc::HideIds,
+    legacy_ids: Option<&LegacyIds>,
 ) -> Vec<ItemRow> {
     let mut items = Vec::new();
     for player in players {
         for table in ItemTable::ALL {
             let package = package(table);
+            if let Some(legacy) = legacy_ids {
+                items.extend(legacy_rows(
+                    tasks, first, player, table, legacy, coverage, hide_ids,
+                ));
+                continue;
+            }
             let own = models_task(tasks, first, &player.path, package)
                 .map(|(task, keys)| (task, keys.iter().map(|key| row_id(*key)).collect()));
             let linked = || {
-                player.linked.iter().find_map(|path| {
-                    let (task, keys) = models_task(tasks, first, path, package)?;
-                    let key = *keys
-                        .first()
-                        .expect("a shared folder's package is emitted under its one shared id");
-                    Some((task, vec![row_id(key); player.player_ids.len()]))
-                })
+                linked_id(tasks, first, player, package)
+                    .map(|(task, id)| (task, vec![id; player.player_ids.len()]))
             };
             match own.or_else(linked) {
                 Some((task, ids)) => {
@@ -144,6 +154,106 @@ pub(super) fn export_rows(
         }
     }
     items
+}
+
+/// `player`'s rows of `table`'s category under `legacy`, the export's `legacy_ids.toml`:
+/// a slot the file records an old ID of the kind for takes it as his row, gated on the
+/// `Models` task of `package` emitting it, his own folder's or the earlier slot's that
+/// packs it once for both. A slot it records none for gets no row when his folder packs
+/// the kind anyway (`own_parts`), the save keeping his ID; when his folder has no package
+/// of the kind he resolves as an export without the file does: a linked shared folder's
+/// ID, an authored stock ID, then the marker's or coverage's default.
+fn legacy_rows(
+    tasks: &[BuildTask],
+    first: usize,
+    player: &RowPlayer,
+    table: ItemTable,
+    legacy: &LegacyIds,
+    coverage: ExportCoverage,
+    hide_ids: fpc::HideIds,
+) -> Vec<ItemRow> {
+    let package = package(table);
+    let mut items = Vec::new();
+    for &player_id in &player.player_ids {
+        let slot =
+            PlayerSlot::new(u8::try_from(player_id % 100).expect("a roster slot is under 100"))
+                .expect("a player id's last digits are his roster slot");
+        if let Some(id) = legacy.old_id(slot, table) {
+            // An old ID no task packs (the folder recording it holds no model of the kind)
+            // gives no row: the save keeps his ID rather than naming an empty package.
+            if let Some(task) = task_holding(tasks, first, package, id) {
+                items.push(ItemRow {
+                    table,
+                    player_id,
+                    id,
+                    task: Some(task),
+                });
+            }
+        } else if !player.own_parts.contains(&package) {
+            // As an export without the file resolves: a linked folder's ID, an authored
+            // stock ID, the marker's or coverage's default.
+            let resolved = linked_id(tasks, first, player, package)
+                .map(|(task, id)| (id, Some(task)))
+                .or_else(|| {
+                    authored_id(player.settings.as_ref(), table)
+                        .map(u32::from)
+                        .map(|id| (id, None))
+                })
+                .or_else(|| default_id(player.fpc, table, coverage, hide_ids).map(|id| (id, None)));
+            if let Some((id, task)) = resolved {
+                items.push(ItemRow {
+                    table,
+                    player_id,
+                    id,
+                    task,
+                });
+            }
+        }
+    }
+    items
+}
+
+/// The manifest position and shared ID of the `Models` task of `tasks`, from `first` on,
+/// building `package` of a shared folder `player` links; `None` when no link of his has a
+/// task of that package.
+fn linked_id(
+    tasks: &[BuildTask],
+    first: usize,
+    player: &RowPlayer,
+    package: ModelPackage,
+) -> Option<(usize, u32)> {
+    player.linked.iter().find_map(|path| {
+        let (task, keys) = models_task(tasks, first, path, package)?;
+        let key = *keys
+            .first()
+            .expect("a shared folder's package is emitted under its one shared id");
+        Some((task, row_id(key)))
+    })
+}
+
+/// The manifest position of the `Models` task of `tasks`, from `first` on, that emits
+/// `package` under `id`, whichever folder's it is: the task a `legacy_ids.toml` slot's
+/// row is gated on, his own folder's or the earlier slot's packing the old ID once for
+/// both. `None` when no task emits it, the file naming an ID no folder packs: the slot
+/// then gets no row.
+fn task_holding(
+    tasks: &[BuildTask],
+    first: usize,
+    package: ModelPackage,
+    id: u32,
+) -> Option<usize> {
+    tasks
+        .iter()
+        .enumerate()
+        .skip(first)
+        .find_map(|(index, task)| match &task.kind {
+            TaskKind::Models {
+                package: built,
+                ids,
+                ..
+            } if *built == package && ids.contains(&PackageKey::Id(id)) => Some(index),
+            _ => None,
+        })
 }
 
 /// The stock ID `settings` authors for `table`'s category; `None` for `""` or an absent
@@ -337,7 +447,8 @@ mod tests {
     use studio_core::ExportId;
 
     use super::*;
-    use crate::plan::plan_run;
+    use crate::plan::legacy_ids::LegacyIds;
+    use crate::plan::{PlanReport, plan_run};
     use crate::testing::{resolved, to_plan, two_team_colors};
 
     /// A `Models` task as the tests compare it: its manifest position, package and ids.
@@ -362,11 +473,15 @@ mod tests {
             &[],
             None,
         );
-        let report = plan_run(
+        rows_and_models(plan_run(
             vec![to_plan(ExportId(0), export, two_team_colors(), None)],
             PesVersion::Pes21,
             fpc::HideIds::CONVENTION,
-        );
+        ))
+    }
+
+    /// `report`'s rows and `Models` tasks, as `planned` compares them.
+    fn rows_and_models(report: PlanReport) -> (Vec<ItemRow>, Vec<PlannedModels>) {
         let models = report
             .manifest
             .tasks
@@ -389,6 +504,25 @@ mod tests {
             })
             .collect();
         (report.manifest.patch_teams[0].rows.clone(), models)
+    }
+
+    /// `resolved`'s export `name`, planned for PES 21 with `ids` as its
+    /// `legacy_ids.toml` (parse errors are the parser's own tests'). Its rows and
+    /// `Models` tasks, as `planned` gives them.
+    fn planned_with_ids(
+        name: &str,
+        files: &[(&str, u64)],
+        players_txt: Option<&[u8]>,
+        ids: &str,
+    ) -> (Vec<ItemRow>, Vec<PlannedModels>) {
+        let export = resolved(name, files, &[], players_txt);
+        let mut to_plan = to_plan(ExportId(0), export, two_team_colors(), None);
+        to_plan.legacy_ids = Some(LegacyIds::from_toml(ids).unwrap());
+        rows_and_models(plan_run(
+            vec![to_plan],
+            PesVersion::Pes21,
+            fpc::HideIds::CONVENTION,
+        ))
     }
 
     /// The row setting `player_id`'s item of `table` to `id` once task `task` commits.
@@ -455,6 +589,88 @@ mod tests {
                 set(ItemTable::Boots, 71407, 627, 4),
             ]
         );
+    }
+
+    // One old gloves ID two folders record packs once, the first slot's folder holding
+    // the task both rows point at.
+    #[test]
+    fn an_old_id_two_folders_record_packs_once_and_gives_both_slots_its_row() {
+        let (rows, models) = planned_with_ids(
+            "co Midcup Rows",
+            &[
+                ("Players/05 - A/glove_l.fmdl", 1),
+                ("Players/06 - B/glove_l.fmdl", 1),
+            ],
+            None,
+            "[05]\ngloves = 2310\n[06]\ngloves = 2310\n",
+        );
+
+        assert_eq!(
+            models,
+            [
+                (0, ModelPackage::Face, vec![71405]),
+                (1, ModelPackage::Gloves, vec![2310]),
+                (2, ModelPackage::Face, vec![71406]),
+            ]
+        );
+        assert_eq!(
+            rows,
+            [
+                set(ItemTable::Gloves, 71405, 2310, 1),
+                set(ItemTable::Gloves, 71406, 2310, 1),
+            ]
+        );
+    }
+
+    // A slot the file gives no old ID of a kind gets no key of it: a folder mapping
+    // two slots gives its keys per slot, so slot 05's row does not take 07's ID; a
+    // folder holding parts of a kind it records nothing of packs none.
+    #[test]
+    fn a_slot_without_a_recorded_id_gets_no_key_and_no_row_of_the_kind() {
+        let (rows, models) = planned_with_ids(
+            "co Full Rows",
+            &[
+                ("Players/Shared/boots.fmdl", 1),
+                ("Players/09 - D/boots.fmdl", 1),
+            ],
+            Some(b"05 Shared\n07 Shared\n09 09 - D\n"),
+            "[07]\nboots = 2305\n",
+        );
+
+        // Shared's boots emit under 07's 2305 alone: no key for 05, none for 09, so
+        // D's boots are not packed at all.
+        assert_eq!(
+            models,
+            [
+                (0, ModelPackage::Face, vec![71405, 71407]),
+                (1, ModelPackage::Boots, vec![2305]),
+                (2, ModelPackage::Face, vec![71409]),
+            ]
+        );
+        assert_eq!(
+            rows,
+            [
+                set(ItemTable::Boots, 71407, 2305, 1),
+                default(ItemTable::Gloves, 71405, 0),
+                default(ItemTable::Gloves, 71407, 0),
+                default(ItemTable::Gloves, 71409, 0),
+            ]
+        );
+    }
+
+    // An old ID the file records for a slot whose folder holds no model of the kind is
+    // packed by no task, so it gives no row: the save keeps his ID.
+    #[test]
+    fn a_recorded_old_id_no_task_packs_gives_no_row() {
+        let (rows, models) = planned_with_ids(
+            "co Full Rows",
+            &[("Players/05 - A/face_high.fmdl", 1)],
+            None,
+            "[05]\nboots = 2305\n",
+        );
+
+        assert_eq!(models, [(0, ModelPackage::Face, vec![71405])]);
+        assert_eq!(rows, [default(ItemTable::Gloves, 71405, 0)]);
     }
 
     #[test]

@@ -5,6 +5,7 @@
 pub(crate) mod collars;
 pub(crate) mod ids;
 pub(crate) mod item_rows;
+pub(crate) mod legacy_ids;
 pub(crate) mod overrides;
 pub(crate) mod patch;
 pub(crate) mod roles;
@@ -15,8 +16,9 @@ use std::ops::Range;
 
 use aesthetics_export::{
     ExportCoverage, ExportIdentity, FileDescriptor, FileKind, FpcDirective, KitFolder, KitsFolder,
-    LogoFiles, ModelFormat, PlayerFolder, PlayerIndex, ResolvedAestheticsExport, SharedKind,
-    SharedModelFolder, ValidatedAestheticsExport, ValidatedRoster, common_link_target, kit_folder,
+    LogoFiles, ModelFormat, PlayerFolder, PlayerIndex, PlayerSlot, ResolvedAestheticsExport,
+    SharedKind, SharedModelFolder, ValidatedAestheticsExport, ValidatedRoster, common_link_target,
+    kit_folder,
 };
 use kit_config::{KitSlot, TexturePresence};
 use pes_savefile::settings_toml::PlayerSettings;
@@ -33,15 +35,16 @@ use crate::mtl_search::mtl_for;
 use crate::paths::{PackageKey, REFEREE_TEAM_ID, TextureHome};
 use collars::export_collar;
 use ids::{PlannedModelIds, assigned_shared_ids, folder_ids};
-use item_rows::{RowPlayer, export_rows};
+use item_rows::{ItemTable, RowPlayer, export_rows};
+use legacy_ids::LegacyIds;
 use roles::{
     FolderModels, ModelPackage, PlayerFile, below_common, combined_folders, common_file,
-    common_folder, common_skeleton, directory_stem, emits_kit_texture, file_stem, is_common_file,
-    is_direct_root_folder_file, is_hand_split, is_package_model, is_read_common_file,
-    is_selected_common_model, leaves_out_kit_variants, link_combines, link_feeds_own_package,
-    link_name, linked_common_files, linked_folder, native_format, other_format, package_of,
-    part_source_models, player_file, role_files, selected_common_model, shared_folders,
-    shared_kind_of, skeleton_slot, texture_format,
+    common_folder, common_skeleton, directory_stem, emits_kit_texture, file_stem,
+    has_effective_part, is_common_file, is_direct_root_folder_file, is_hand_split,
+    is_package_model, is_read_common_file, is_selected_common_model, leaves_out_kit_variants,
+    link_combines, link_feeds_own_package, link_name, linked_common_files, linked_folder,
+    native_format, other_format, package_of, part_source_models, player_file, role_files,
+    selected_common_model, shared_folders, shared_kind_of, skeleton_slot, texture_format,
 };
 
 /// What planning produced: the manifest and the findings planning itself made.
@@ -1020,6 +1023,11 @@ pub(crate) struct ExportToPlan {
     /// the patch holds no `[appearance]` for their players, an invalid file holding back
     /// the player's whole look.
     pub(crate) settings_refused: BTreeSet<ScopePath>,
+    /// The export's `legacy_ids.toml` parsed, as the deep pass found it
+    /// (`deep::ContentPass::legacy_ids`): the old boots and gloves IDs of a VGL27 export,
+    /// which `mapped_folders` and `export_rows` pack and patch under instead of the
+    /// team's block; `None` when the export has none.
+    pub(crate) legacy_ids: Option<LegacyIds>,
 }
 
 /// Plans the run over the identity-resolved exports, given in `ExportId` order, for the target
@@ -1063,6 +1071,7 @@ pub(crate) fn plan_run(
         metal_models,
         settings: mut player_settings,
         settings_refused,
+        legacy_ids,
     } in exports
     {
         drop_gltf_folders(export_id, &mut resolved, version, &mut messages);
@@ -1281,7 +1290,7 @@ pub(crate) fn plan_run(
         // building their boots and gloves.
         let first_task = tasks.len();
         let mut row_players = Vec::new();
-        let mapped = mapped_folders(players, &export.roster, team);
+        let mapped = mapped_folders(players, &export.roster, team, legacy_ids.as_ref());
         for MappedFolder {
             folder,
             packages,
@@ -1299,6 +1308,21 @@ pub(crate) fn plan_run(
                     .map(|shared| shared.path.clone())
                     .collect(),
                 fpc: folder.fpc,
+                own_parts: match legacy_ids {
+                    Some(_) => [ModelPackage::Boots, ModelPackage::Gloves]
+                        .into_iter()
+                        .filter(|package| {
+                            has_effective_part(
+                                &export,
+                                &folder,
+                                *package,
+                                version.engine(),
+                                &hand_weighted,
+                            )
+                        })
+                        .collect(),
+                    None => Vec::new(),
+                },
                 settings: player_settings.remove(&folder.path),
                 settings_refused: settings_refused.contains(&folder.path),
             });
@@ -1402,7 +1426,14 @@ pub(crate) fn plan_run(
         // After the shared folders' tasks, which a player linking one takes his ID from. A
         // referee has none: the game's referee hook loads slot NN's `k99NN`/`g99NN` by number.
         if team.is_some() {
-            let rows = export_rows(&tasks, first_task, &row_players, export.coverage, hide_ids);
+            let rows = export_rows(
+                &tasks,
+                first_task,
+                &row_players,
+                export.coverage,
+                hide_ids,
+                legacy_ids.as_ref(),
+            );
             // The same compiled players get the patch's `[[teams]]` block: the run's one
             // patch across exports, whose header `build` fills in and whose provisional
             // IDs `settle` resolves against the committed batches.
@@ -1690,7 +1721,10 @@ fn folder_tasks(
             // The face task packs a split model's hands as entries of its own `face.xml`.
             Engine::PreFox => false,
         };
-        if models.is_empty() && !blank && !hands {
+        // A package no slot of the folder gives a key to is not planned at all: under
+        // `legacy_ids.toml` a slot records no old ID of the kind, or an earlier slot took
+        // his, and nothing is emitted for it.
+        if ids.is_empty() || (models.is_empty() && !blank && !hands) {
             continue;
         }
         tasks.push(task(
@@ -2096,27 +2130,45 @@ struct MappedFolder {
 
 /// The roster-mapped folders of `players`, by `player_folders`, as `MappedFolder`s: of a team
 /// export, `team` given, a slot's face keyed by its player id and its boots and gloves by
-/// its exclusive id of the team's block; of a refs export, every package of referee slot NN
-/// keyed by the slot (`referee0NN`, `k99NN`, `g99NN`).
+/// its exclusive id of the team's block, or under a `legacy_ids.toml` by the old ID the
+/// file records for him, each old ID packed once by the first slot in roster order
+/// recording it, a slot the file gives no ID of a kind getting no key of it; of a refs
+/// export, every package of referee slot NN keyed by the slot (`referee0NN`, `k99NN`,
+/// `g99NN`).
 fn mapped_folders(
     players: Vec<PlayerFolder>,
     roster: &ValidatedRoster,
     team: Option<TeamId>,
+    legacy_ids: Option<&LegacyIds>,
 ) -> Vec<MappedFolder> {
     match (roster, team) {
         (ValidatedRoster::Team(slots), Some(id)) => {
             let model_ids = PlannedModelIds::for_team(id);
+            // The old IDs the export's earlier slots already packed, boots and gloves
+            // separately: an old ID another slot recorded first gets no key.
+            let mut taken = (BTreeSet::new(), BTreeSet::new());
             player_folders(players, slots)
                 .into_iter()
                 .map(|(folder, slots)| MappedFolder {
                     packages: ModelPackage::ALL.map(|package| {
                         let keys = slots
                             .iter()
-                            .map(|slot| match package {
-                                ModelPackage::Face => PackageKey::Id(slot.player_id(id)),
-                                ModelPackage::Boots | ModelPackage::Gloves => {
-                                    PackageKey::Id(u32::from(model_ids.exclusive(*slot)))
-                                }
+                            .filter_map(|slot| match package {
+                                ModelPackage::Face => Some(PackageKey::Id(slot.player_id(id))),
+                                ModelPackage::Boots => boots_gloves_key(
+                                    legacy_ids,
+                                    &mut taken.0,
+                                    *slot,
+                                    ItemTable::Boots,
+                                    model_ids.exclusive(*slot),
+                                ),
+                                ModelPackage::Gloves => boots_gloves_key(
+                                    legacy_ids,
+                                    &mut taken.1,
+                                    *slot,
+                                    ItemTable::Gloves,
+                                    model_ids.exclusive(*slot),
+                                ),
                             })
                             .collect();
                         (package, keys)
@@ -2142,6 +2194,27 @@ fn mapped_folders(
         (ValidatedRoster::Team(_), None) | (ValidatedRoster::Referees(_), Some(_)) => {
             unreachable!("validation and identity both read a refs export from its `/refs/` name")
         }
+    }
+}
+
+/// The key a team player's boots or gloves `package` is emitted under for `slot`: without
+/// `legacy_ids` his exclusive ID of the team's block, with it the old ID the file records
+/// for him when `taken` does not already hold it (each old ID packed once per team, by the
+/// first slot in roster order recording it); `None` for a slot the file gives no ID of
+/// the kind or whose old ID an earlier slot took.
+fn boots_gloves_key(
+    legacy_ids: Option<&LegacyIds>,
+    taken: &mut BTreeSet<u32>,
+    slot: PlayerSlot,
+    table: ItemTable,
+    exclusive: u16,
+) -> Option<PackageKey> {
+    match legacy_ids {
+        None => Some(PackageKey::Id(u32::from(exclusive))),
+        Some(ids) => ids
+            .old_id(slot, table)
+            .filter(|id| taken.insert(*id))
+            .map(PackageKey::Id),
     }
 }
 

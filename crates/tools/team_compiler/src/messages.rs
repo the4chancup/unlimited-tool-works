@@ -117,6 +117,11 @@ pub(crate) enum Code {
     /// the team's shared IDs: its folders are numbered alphabetically, as a `Full` export's,
     /// and may take IDs the main CPK gives other folders.
     SharedIdsUnrecorded,
+    /// A team export's root `legacy_ids.toml` that is not UTF-8 text or does not parse as the
+    /// old boots and gloves IDs the Export upgrader writes (a table per slot, `boots` and
+    /// `gloves` keys above the stock band): the file is ignored and the export compiles on
+    /// the compiler's own IDs.
+    LegacyIdsInvalid,
     /// A slot with a portrait in its player folder and one in `Portraits/` whose bytes differ:
     /// the export is skipped, since the compiler cannot tell which one the manager means.
     PortraitConflict,
@@ -593,7 +598,7 @@ impl Code {
     /// Every code, for the catalog test: a variant missing here would make its first message
     /// panic in `severity`, so a new variant is added to this list too.
     #[cfg(test)]
-    const ALL: [Code; 163] = [
+    const ALL: [Code; 164] = [
         Code::ExportExtractFailed,
         Code::NoExportsFound,
         Code::ExportDisabled,
@@ -625,6 +630,7 @@ impl Code {
         Code::BootsIdPoolExhausted,
         Code::GlovesIdPoolExhausted,
         Code::SharedIdsUnrecorded,
+        Code::LegacyIdsInvalid,
         Code::PortraitConflict,
         Code::LinkCombined,
         Code::SettingsTomlInvalid,
@@ -793,6 +799,7 @@ impl Code {
             Code::BootsIdPoolExhausted => "boots_id_pool_exhausted",
             Code::GlovesIdPoolExhausted => "gloves_id_pool_exhausted",
             Code::SharedIdsUnrecorded => "shared_ids_unrecorded",
+            Code::LegacyIdsInvalid => "legacy_ids_invalid",
             Code::PortraitConflict => "portrait_conflict",
             Code::LinkCombined => "link_combined",
             Code::SettingsTomlInvalid => "settings_toml_invalid",

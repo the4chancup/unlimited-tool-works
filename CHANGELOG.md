@@ -6,6 +6,11 @@ What changed for members, release by release, newest first.
 
 ### New
 
+- **Export upgrader and Team compiler** — VGL27 keeps the managers' own boots and gloves
+  IDs: `quick_upgrade.bat` upgrades with `--legacy-ids`, which copies every boots or
+  gloves folder into each player wearing it and records the ID its old name carried in
+  `legacy_ids.toml`; the compiler packs those models under the old IDs, so a manager's
+  Red test build and the official DLC agree.
 - **Team compiler and Export upgrader** — in the bundle again through `quick_compile.bat`
   and `quick_upgrade.bat`, with the `exports/` and `old_exports/` folders, for the /vg/
   League 27 on PES 2019. An upgraded export names no team ID: its references into the

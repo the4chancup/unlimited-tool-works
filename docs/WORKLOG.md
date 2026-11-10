@@ -47,9 +47,9 @@ first-class target the Fox version the cup moves to around April 2027 ("Target v
 **0.0.1 released** 2026-11-03 (f2): tag `v0.0.1` on `c97ce914`, built by CI run
 41564671137, the clean-machine check passed on the notebook, published by the maintainer.
 Next: the after-cut list (f6, f1g14's postponed mutation run among it), then 0.0.2.
-**Blocked on:** nothing. 0.0.2-poc13 (VGL27's legacy boots and gloves IDs) re-specified
-(poc13a2): the upgrader's `--legacy-ids` (poc13c) and the compiler's packing (poc13d) run
-as two SWE-2 slices; then ux1, then the PoC goes to the maintainer.
+**Blocked on:** nothing. 0.0.2-poc13 (VGL27's legacy boots and gloves IDs) is built: the
+upgrader's `--legacy-ids` (poc13c) and the compiler's packing (poc13d); the block check
+(poc13e) waits for 0.0.2. Next: ux1, then the PoC goes to the maintainer.
 
 **Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
 and writes what is correctness-critical; the sidekick, SWE-2 through the Devin CLI, implements;
@@ -7970,7 +7970,13 @@ briefs, review loops, gates and mutation runs as for any step.
       `legacy_merge_clash` (E), `legacy_ids.toml` only with the flag (EU-SET-15 to 17).
       `export_upgrader` `cli.rs`, `players.rs`, `settings.rs`, `upgrade/mod.rs`,
       `messages.rs`, `help/01_command_line.md`; the Fox tracer golden loses the file
-    - [ ] poc13d the compiler's legacy packing (SWE-2 brief `.tmp/0_0_2/poc13/brief_d.md`)
+    - [x] poc13d the compiler's legacy packing (2026-11-10, SWE-2, landed first time; lead:
+      an old ID no task packs gives no row, a stale comment, `quick_upgrade.bat` passes
+      `--legacy-ids`): a root `legacy_ids.toml` (parsed in the deep pass,
+      `legacy_ids_invalid`) re-keys each slot's own boots/gloves package to its old ID,
+      packed once per team, rows resolved per slot (TC-LEG-01/02). `team_compiler`
+      `plan/legacy_ids.rs`, `plan/mod.rs`, `plan/item_rows.rs`, `deep/`, `messages`;
+      `aesthetics_export` `validate/`; `resources/bundle/quick_upgrade.bat`
     - [ ] poc13e the block check (0.0.2, after the PoC): `legacy_id_out_of_block`, the data
       directory's table (TC-LEG-03/04)
   - [ ] 0.0.2-ux1 the CLI's progress line and finding times (the maintainer, 2026-11-10;

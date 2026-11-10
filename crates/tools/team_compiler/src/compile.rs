@@ -366,6 +366,7 @@ fn plan(
                 metal_models: checked.metal_models,
                 settings: checked.settings,
                 settings_refused: checked.settings_refused,
+                legacy_ids: checked.legacy_ids,
             });
         }
         sources.push(CompileSource {

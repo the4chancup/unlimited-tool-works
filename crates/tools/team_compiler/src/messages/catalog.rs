@@ -191,6 +191,12 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
         r#"Its folders are numbered alphabetically, as a `Full` export's are, and may take IDs an installed CPK gives other folders."#,
     ),
     (
+        "legacy_ids_invalid",
+        CatalogSeverity::Error,
+        r#"A `legacy_ids.toml` at the export's root is not UTF-8 text, or it cannot be read as the old boots and gloves IDs the Export upgrader writes (the line names the error)."#,
+        r#"The file is ignored, so the export's boots and gloves are packed under the compiler's own IDs instead of the recorded old ones."#,
+    ),
+    (
         "portrait_conflict",
         CatalogSeverity::Error,
         r#"A player has a portrait in his folder and a different one for his slot in `Portraits/` (two identical files count as one)."#,

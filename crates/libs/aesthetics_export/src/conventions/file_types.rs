@@ -99,8 +99,8 @@ pub enum MetadataFile {
     /// `readme.txt`: free text for humans.
     Readme,
     /// `legacy_ids.toml`: the old export's boots and gloves IDs, which the
-    /// Export upgrader writes for the Team compiler's `legacy_boots_ids`
-    /// setting; a team export's root file only.
+    /// Export upgrader's legacy mode writes and the Team compiler then packs
+    /// instead of its own; a team export's root file only.
     LegacyIdsToml,
 }
 

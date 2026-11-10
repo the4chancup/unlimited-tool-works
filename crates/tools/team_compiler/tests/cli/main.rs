@@ -18,6 +18,7 @@ mod deep;
 mod deploy;
 mod face_folders;
 mod kit_layout;
+mod legacy_ids;
 mod logo;
 mod models;
 mod multicpk;

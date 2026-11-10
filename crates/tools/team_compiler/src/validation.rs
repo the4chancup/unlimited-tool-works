@@ -33,6 +33,7 @@ use crate::plan::ids::{
     PlannedModelIds, assigned_shared_ids, folder_ids, shared_folders_with_no_model,
 };
 use crate::plan::item_rows::{check_gloves_id, conflicting_id_keys};
+use crate::plan::legacy_ids::LegacyIds;
 use crate::plan::mapped_players;
 use crate::plan::patch::patch_names;
 use crate::plan::roles::{
@@ -84,6 +85,10 @@ pub(crate) struct CheckedSource {
     /// `[appearance]` in the patch; empty when the deep pass did not run. Read only
     /// beside `resolved`.
     pub(crate) settings_refused: BTreeSet<ScopePath>,
+    /// The team export's `legacy_ids.toml` parsed (`deep::ContentPass::legacy_ids`): the
+    /// old boots and gloves IDs of a VGL27 export; `None` when it has none, it did not
+    /// parse, or the deep pass did not run. Read only beside `resolved`.
+    pub(crate) legacy_ids: Option<LegacyIds>,
     /// What the source looked like when it was listed, which `compile` checks its tasks'
     /// reads against; `None` when routing or the listing's parse set the source aside.
     /// `check` carries it and does nothing with it.
@@ -321,6 +326,7 @@ fn check_source(
         metal_models: BTreeSet::new(),
         settings: BTreeMap::new(),
         settings_refused: BTreeSet::new(),
+        legacy_ids: None,
         revision: None,
         content: None,
     };
@@ -371,6 +377,7 @@ fn check_source(
     let mut metal_models = BTreeSet::new();
     let mut settings = BTreeMap::new();
     let mut settings_refused = BTreeSet::new();
+    let mut legacy_ids = None;
     if let Some(validated) = &report.validated {
         let pass = deep::content_findings(
             validated,
@@ -383,6 +390,7 @@ fn check_source(
         metal_models = pass.metal_models;
         settings = pass.settings;
         settings_refused = pass.settings_refused;
+        legacy_ids = pass.legacy_ids;
         if !pass.findings.is_empty() {
             report = report.with_content_findings(pass.findings, &context);
         }
@@ -493,6 +501,7 @@ fn check_source(
         metal_models,
         settings,
         settings_refused,
+        legacy_ids,
         revision: Some(revision),
         content,
     }
@@ -1917,6 +1926,7 @@ mod tests {
             metal_models: BTreeSet::new(),
             settings: BTreeMap::new(),
             settings_refused: BTreeSet::new(),
+            legacy_ids: None,
             revision: None,
             content: None,
         }
@@ -1943,6 +1953,7 @@ mod tests {
             metal_models: BTreeSet::new(),
             settings: BTreeMap::new(),
             settings_refused: BTreeSet::new(),
+            legacy_ids: None,
             revision: None,
             content: None,
         }

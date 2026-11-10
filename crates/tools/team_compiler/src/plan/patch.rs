@@ -266,6 +266,7 @@ mod tests {
             player_ids: vec![id],
             linked: Vec::new(),
             fpc: None,
+            own_parts: Vec::new(),
             player_name: "A".to_owned(),
             settings: Some(PlayerSettings::default()),
             settings_refused,

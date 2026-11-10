@@ -1,9 +1,10 @@
 //! The deep pass's checks of a folder's small data files, each read whole and parsed: a face
 //! folder's face diff, a kit's `config.toml`, a player's `settings.toml` and
-//! `ingame_face.toml`, and a kit's or the root `colors.txt`. Their findings are
+//! `ingame_face.toml`, a kit's or the root `colors.txt`, and the root `legacy_ids.toml`.
+//! Their findings are
 //! `face_diff_invalid`, `xml_dif_conflict`, `kit_config_invalid`,
 //! `kit_config_version_clamped`, `kit_config_option_ignored`, `settings_toml_invalid`,
-//! `ingame_face_toml_invalid` and `color_entry_invalid`. None of them is
+//! `ingame_face_toml_invalid`, `legacy_ids_invalid` and `color_entry_invalid`. None of them is
 //! pass-through-eligible: a file that cannot be read leaves no value to keep, and a clamped
 //! config value, an ignored config option and a refused `colors.txt` line are Warnings, which
 //! drop nothing.
@@ -12,7 +13,7 @@ use std::fmt;
 
 use aesthetics_export::{
     ColorLineRefusal, ContentFinding, Disposition, FileDescriptor, IssueScope, KitFolder,
-    PlayerFolder, read_colors_txt,
+    PlayerFolder, RootArtifacts, read_colors_txt,
 };
 use kit_config::{KitConfig, apply_fpc};
 use pes_savefile::settings_toml::{IngameFaceSettings, PlayerSettings};
@@ -23,6 +24,7 @@ use super::{read, relative};
 use crate::face_diff;
 use crate::messages::Code;
 use crate::plan::EffectiveTeamKitFpc;
+use crate::plan::legacy_ids::LegacyIds;
 use crate::plan::roles::{FolderModels, PlayerFile, player_file};
 use crate::reader::ContentSource;
 
@@ -331,6 +333,27 @@ pub(super) fn colors_findings(
         .collect()
 }
 
+/// The export's root `legacy_ids.toml` parsed; `None` when it has none.
+/// `legacy_ids_invalid` when it is not UTF-8 or `LegacyIds::from_toml` refuses: the file
+/// alone is dropped, the export compiling on the compiler's own boots and gloves IDs.
+pub(super) fn legacy_ids(
+    content: &ContentSource,
+    root: &RootArtifacts,
+) -> Result<Option<LegacyIds>, ContentFinding> {
+    let Some(file) = root.legacy_ids.as_ref() else {
+        return Ok(None);
+    };
+    parsed_toml(
+        content,
+        file,
+        Code::LegacyIdsInvalid,
+        &IssueScope::File(file.path.clone()),
+        Disposition::DropFile,
+        LegacyIds::from_toml,
+    )
+    .map(Some)
+}
+
 /// The TOML file `file`, directly in its folder, as `parse` reads it; or `code` on `scope`
 /// with `disposition` when it is not UTF-8 text or `parse` refuses it, the context naming the
 /// file and the error. A file that cannot be read is `source_read_failed` instead.
@@ -361,7 +384,7 @@ fn parsed_toml<T, E: fmt::Display>(
 
 #[cfg(test)]
 mod tests {
-    use aesthetics_export::{ContentFinding, Disposition, IssueScope};
+    use aesthetics_export::{ContentFinding, Disposition, IssueScope, PlayerSlot};
     use kit_config::KitConfig;
     use pes_savefile::settings_toml::PlayerSettings;
     use pes_version::PesVersion;
@@ -371,6 +394,7 @@ mod tests {
         dropping, findings_for, findings_of, fixture, folder, pass_for, path, texture, tracer_file,
     };
     use crate::plan::EffectiveTeamKitFpc;
+    use crate::plan::item_rows::ItemTable;
     use crate::testing::scratch;
 
     /// A Fox model in which `fmdl`'s check finds nothing (the tracer's right glove), for a
@@ -963,5 +987,49 @@ mod tests {
                 "{name}: a refused file holds his whole look back"
             );
         }
+    }
+
+    /// A root `legacy_ids.toml` parses into the pass, and one that does not parse is
+    /// `legacy_ids_invalid` on the file and gives it nothing.
+    #[test]
+    fn a_root_legacy_ids_toml_parses_into_the_pass_and_an_invalid_one_is_dropped() {
+        let temp = scratch("deep_legacy_ids");
+        let pass = pass_for(
+            PesVersion::Pes21,
+            temp.path(),
+            &[
+                ("legacy_ids.toml", b"[05]\nboots = 2305\n".to_vec()),
+                ("Players/03 - A/face_high.fmdl", clean_model()),
+            ],
+            &[],
+            &[],
+        );
+        assert_eq!(pass.findings, [], "{:?}", pass.findings);
+        let ids = pass.legacy_ids.expect("the file parsed");
+        assert_eq!(
+            ids.old_id(PlayerSlot::new(5).unwrap(), ItemTable::Boots),
+            Some(2305)
+        );
+
+        let temp = scratch("deep_legacy_ids_bad");
+        let pass = pass_for(
+            PesVersion::Pes21,
+            temp.path(),
+            &[
+                ("legacy_ids.toml", b"[05]\nboots = 2305\n[24]\n".to_vec()),
+                ("Players/03 - A/face_high.fmdl", clean_model()),
+            ],
+            &[],
+            &[],
+        );
+        assert_eq!(pass.legacy_ids, None);
+        let [finding] = pass.findings.as_slice() else {
+            panic!("one finding: {:?}", pass.findings)
+        };
+        assert_eq!(finding.code, "legacy_ids_invalid");
+        assert_eq!(finding.scope, IssueScope::File(path("legacy_ids.toml")));
+        assert_eq!(finding.disposition, Disposition::DropFile);
+        assert_eq!(finding.context[0], ("file", "legacy_ids.toml".to_owned()));
+        assert!(finding.context[1].0 == "error" && !finding.context[1].1.is_empty());
     }
 }

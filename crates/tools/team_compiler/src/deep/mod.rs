@@ -90,6 +90,7 @@ use crate::bins::{KIT_COLORS, TEAM_COLORS};
 use crate::kit_variants::kit_lookup_keys;
 use crate::messages::Code;
 use crate::plan::EffectiveTeamKitFpc;
+use crate::plan::legacy_ids::LegacyIds;
 use crate::plan::roles::{
     FolderModels, PlayerFile, below_common, combined_folders, common_file, directory_stem,
     emits_kit_texture, file_stem, is_common_file, is_direct_root_folder_file, is_read_common_file,
@@ -103,7 +104,8 @@ use crate::user_face_xml::{
 };
 use collar::collar_findings;
 use documents::{
-    colors_findings, face_diff_findings, kit_config_findings, player_ingame_face, player_settings,
+    colors_findings, face_diff_findings, kit_config_findings, legacy_ids, player_ingame_face,
+    player_settings,
 };
 use materials::{TextureSources, held_common, held_textures, texture_findings};
 use model::{MaterialRead, ModelKind, fired};
@@ -148,6 +150,11 @@ pub(crate) struct ContentPass {
     /// folder path: an invalid settings file holds back the player's whole look, so the
     /// patch's entries for his players hold no `[appearance]`.
     pub(crate) settings_refused: BTreeSet<ScopePath>,
+    /// The team export's `legacy_ids.toml` parsed (`documents::legacy_ids`): the old boots
+    /// and gloves IDs of a VGL27 export, which planning emits the affected slots' own
+    /// packages under; `None` when the export has none or it did not parse
+    /// (`legacy_ids_invalid`, the file dropped).
+    pub(crate) legacy_ids: Option<LegacyIds>,
 }
 
 impl ContentPass {
@@ -169,6 +176,7 @@ impl ContentPass {
         self.hidden_models.extend(other.hidden_models);
         self.settings.extend(other.settings);
         self.settings_refused.extend(other.settings_refused);
+        self.legacy_ids = self.legacy_ids.take().or(other.legacy_ids);
     }
 }
 
@@ -668,6 +676,10 @@ pub(crate) fn content_findings(
     }
     if let Some(colors) = &export.root.team_colors {
         findings.extend(colors_findings(content, colors, TEAM_COLORS));
+    }
+    match legacy_ids(content, &export.root) {
+        Ok(ids) => pass.legacy_ids = ids,
+        Err(finding) => findings.push(finding),
     }
     pass
 }
@@ -1624,6 +1636,7 @@ fn file_outcome(
         hidden_models,
         settings: BTreeMap::new(),
         settings_refused: BTreeSet::new(),
+        legacy_ids: None,
     }
 }
 

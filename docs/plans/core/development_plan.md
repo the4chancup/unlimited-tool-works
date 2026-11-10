@@ -121,7 +121,10 @@ report can be read:
   lands.
 - `quick_upgrade.bat` upgrades every export in the bundle's `old_exports/` (folders, `.zip`,
   `.7z`) into `exports/` against the savefile dropped onto it, then prints how many were
-  upgraded and how many were not. A team export needs `--savefile` or `--loose` (`spec/export_upgrader.md` "CLI"),
+  upgraded and how many were not. It passes `--legacy-ids` (`plans/export_upgrader.md`
+  "What it does"): the bundle exists for VGL27, whose exports keep the managers' old boots
+  and gloves IDs, and a bat without it would compile the cup on the compiler's own IDs.
+  A team export needs `--savefile` or `--loose` (`spec/export_upgrader.md` "CLI"),
   and loose mode is an assumption the user opts into, so the bat asks for the save rather than
   falling back to loose; with no file dropped it says how to drop one and stops. An export
   already upgraded is refused on a second run, its folder in `exports/` existing (replacing
