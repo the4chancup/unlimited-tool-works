@@ -70,6 +70,8 @@ paragraph), three rows join "Player folders and shared model folders", beside
 
 | ID | Sev | Condition | Consequence |
 |---|---|---|---|
+| `legacy_id_missing` | W | with `legacy_boots_ids` on, a boots or gloves output none of whose wearers has an old ID of its kind in `legacy_ids.toml` (context: the folder) (`pipeline.md` "Legacy boots and gloves IDs (VGL27)") | output not packed; its wearers' patch entries leave that kind's ID as the save holds it |
+| `legacy_id_out_of_block` | E | with `legacy_boots_ids` on, an old ID outside its team's block in `legacy_boots_blocks.txt`, or of a team the table does not list (context: the ID, the folder, the block or "none") | that ID not packed, its wearers' patch entries leave that kind's ID as the save holds it; the output's other old IDs are packed |
 | `teams_list_read_only` | W | a teams-list write (ID cell, updater merge) failed because the data directory is not writable | write dropped; the in-memory list is unchanged (no elevation — see `pipeline.md` "Resolved decisions", "Teams list") |
 | `export_disabled` | I | as the spec's row | GUI: a greyed row with **Enable** (`gui.md` "Row actions") |
 | `export_tag_missing` | E | as the spec's row | GUI: the row offers the two tags as buttons |

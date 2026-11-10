@@ -323,6 +323,38 @@ TC-STR-21  GIVEN /co/ player folders holding, in turn: 101334.copy beside face_h
                 copy_link_id_invalid drops it
 ```
 
+**0.0.2-poc13 scope.** The VGL27 legacy setting (`pipeline.md` "Legacy boots and gloves
+IDs (VGL27)", `settings.md` `legacy_boots_ids`). /gbfg/ is team 796 in the embedded teams
+list, its block 2301 to 2325 in the embedded block table, its Studio block 3901 to 3940.
+
+```
+TC-LEG-01  GIVEN legacy_boots_ids on and a /gbfg/ export whose slot 05 holds boots.fmdl, whose
+                 slots 06 and 07 link the shared Boots/Crocs/, whose slot 08 holds
+                 gloves.fmdl, and whose legacy_ids.toml gives [05] boots = 2305, [06] boots =
+                 2306 and [07] boots = 2307
+           WHEN it is compiled for PES 21
+           THEN the CPK holds boots packages 2305, 2306 and 2307, the last two the same
+                Crocs model, and no boots or gloves package numbered 3901 to 3940; the patch
+                gives 79605, 79606 and 79607 boots_id 2305, 2306 and 2307; slot 08's gloves
+                are reported once as legacy_id_missing (Warning, naming his folder), no
+                gloves package is written for him, and his patch entry carries no gloves_id;
+                GIVEN legacy_boots_ids off THEN the compile is the one Studio's IDs give,
+                legacy_ids.toml is neither packed nor reported, and no legacy_ finding is
+                reported
+TC-LEG-02  GIVEN TC-LEG-01's export, its legacy_ids.toml also giving [09] gloves = 2522 for
+                 slot 09's gloves.fmdl
+           WHEN it is compiled with legacy_boots_ids on
+           THEN legacy_id_out_of_block is reported as an Error naming 2522, slot 09's folder
+                and 2301 to 2325, and no gloves package 2522 is written; GIVEN the block
+                table's /gbfg/ row removed THEN every legacy ID of the export is reported
+                legacy_id_out_of_block, its block "none"
+TC-LEG-03  GIVEN a data directory with no legacy_boots_blocks.txt
+           WHEN a compile runs with legacy_boots_ids off, then with it on
+           THEN the first creates no file and the second creates it from the embedded copy,
+                its header Name and FirstBootsID and its /gbfg/ row 2301; GIVEN that row
+                edited to 2326 THEN TC-LEG-01's 2305 is legacy_id_out_of_block
+```
+
 **0.0.2-poc2 scope.** What exists of this is in `spec/team_compiler/pipeline.md` "Resolved
 decisions and open questions", "A texture a model names must exist": a texture nobody
 supplies is a Warning on every engine. TC-MOD-71's last clause and TC-TEX-05's second

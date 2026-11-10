@@ -16103,3 +16103,28 @@ three runs for it.
 Plan: `plans/core/README.md` (the structural points, "Key Decisions Summary"),
 `plans/stadium_compiler.md` "Stadium and billboard exports", `plans/balls_compiler.md`'s
 opening.
+
+## 2026-11-10 — team_compiler, export_upgrader — VGL27 compiles with the managers' own boots and gloves IDs
+Decision (the maintainer's, 0.0.2-poc13): a temporary `legacy_boots_ids` compiler setting, on
+for VGL27 only, packs and patches each player's old boots and gloves IDs, which the upgrader
+records in the export's root `legacy_ids.toml` (one table per slot, every upgrade). An output
+with no recorded ID is left out (`legacy_id_missing`, W); a shared folder whose wearers
+recorded several IDs is packed once per ID; an ID outside its team's 25-ID block in
+`legacy_boots_blocks.txt` (data folder, `Name` and `FirstBootsID`, the wiki's PES 2019 boots
+table from /2hug/ on) is dropped (`legacy_id_out_of_block`, E). VGL28 runs on Studio's IDs
+and all of it is removed.
+Why: managers keep the old format and Red for their test compiles against the official
+save, so Studio's 40-ID allocation broke every custom boots/gloves ID in their tests. One
+team-level file rather than keys in `settings.toml`, so the file members edit carries nothing
+that leaves with VGL27; blocks from the cup's own table rather than `101 + 25 × (ID − 701)`,
+because the cup assigns a block once per team for good (GBFG's is 2301, while the formula
+gives 2476 from Studio's team 796 and Red's VGL26 list 2501 from 797); a missing ID is skipped rather than given a slot ID, which could land in another
+team's old block. Lead's choices: the file's name and shape, written by every upgrade (a flag
+only VGL27's organizers would remember is one more way to compile with Studio's IDs by
+mistake), and an out-of-block Error dropping only that ID, not the folder; the file opens with a comment
+naming what reads it, and a modelless folder (`fpc_on`) is not recorded, Studio packing
+nothing for it.
+Plan: `plans/team_compiler/pipeline.md` "Legacy boots and gloves IDs (VGL27)",
+`plans/team_compiler/settings.md`, `plans/team_compiler/messages.md` "Catalog",
+`plans/export_upgrader.md` "What it does" (step 8), the 0.0.2-poc13 scopes of both plans'
+"Acceptance".

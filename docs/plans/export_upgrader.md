@@ -31,6 +31,27 @@ What worklog 0.0.2-poc1, poc4 and poc6 built is in `spec/export_upgrader.md` "Wh
 does": step 3 ("When the save and the folders disagree"), step 8 (the hide ID of a
 custom ID no folder claims) and step 10 (a `.dds` beside a `.ftex` of one stem).
 
+Step 8 also writes, with worklog 0.0.2-poc13, the export's root `legacy_ids.toml` for the
+Team compiler's VGL27 legacy setting (`plans/team_compiler/pipeline.md` "Legacy boots and
+gloves IDs (VGL27)"): a table per player slot holding the custom boots and gloves IDs
+(above 100) of the migrated folders he wears, the ID each folder's name carries (`k0430 -
+Crocs` gives `boots = 430`), loose mode's inferred wearers included, under a comment saying
+what reads it:
+
+```toml
+# The old export's boots and gloves IDs, read only by the Team compiler's legacy_boots_ids setting (VGL27).
+[05]
+boots = 2305
+gloves = 2310
+```
+
+A player wearing no migrated folder of a kind has no key for it (a modelless folder, which
+step 3 turns into `fpc_on`, is not migrated: Studio packs nothing for it), and an export
+with no such player gets no file. `aesthetics_export` admits it as a team export's root
+metadata file, so the shared validation ("Verification") does not report it. Every upgrade writes it, whatever the cup: it costs one small
+file, and a flag only VGL27's organizers would remember is one more way to compile the cup
+with Studio's IDs by mistake. It goes with the setting once VGL27 is over.
+
 What worklog 0.0.2-poc5 and poc7 built is in `spec/export_upgrader.md` "What it does",
 step 7 (a model hidden by distance, anti-blur duplicates dropped). The last step:
 
@@ -267,6 +288,21 @@ EU-GUI-07  GIVEN EU-GUI-01's upgrade in flight, another tool's view active
            THEN the Export upgrader's view is active with its prompt; GIVEN close chosen THEN
                 the window closes after the run's last line, the output EU-GUI-01's; GIVEN
                 the window kept THEN the run ends as it would have
+```
+
+**0.0.2-poc13 scope.** Step 8's `legacy_ids.toml` (above, "What it does").
+
+```
+EU-SET-15  GIVEN EU-PLY-02's export (slot 05 wearing custom boots 430 from "k0430 - Crocs"),
+                 slots 06 and 07 both wearing custom gloves 431 from the gloves folder
+                 "g0431", and slot 08 wearing stock boots 55
+           WHEN the export is upgraded with its save
+           THEN the root's legacy_ids.toml holds [05] boots = 430, [06] gloves = 431 and
+                [07] gloves = 431, and no table for slot 08; GIVEN an export whose players
+                wear only stock boots and gloves THEN no legacy_ids.toml is written
+EU-SET-16  GIVEN EU-LOOSE-01's export
+           WHEN it is upgraded with --loose
+           THEN legacy_ids.toml holds [03] boots = 128 and [05] boots = 130
 ```
 
 **8.36c scope.** Step 8's base copy (above, "What it does"): a record copying another

@@ -47,7 +47,9 @@ first-class target the Fox version the cup moves to around April 2027 ("Target v
 **0.0.1 released** 2026-11-03 (f2): tag `v0.0.1` on `c97ce914`, built by CI run
 41564671137, the clean-machine check passed on the notebook, published by the maintainer.
 Next: the after-cut list (f6, f1g14's postponed mutation run among it), then 0.0.2.
-**Blocked on:** nothing.
+**Blocked on:** nothing. 0.0.2-poc13 (VGL27's legacy boots and gloves IDs) is specified
+(poc13a); its block table lacks the /feg/ and /uma/ rows (`QUESTIONS.md`), which poc13b and c
+do not wait for.
 
 **Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
 and writes what is correctness-critical; the sidekick, SWE-2 through the Devin CLI, implements;
@@ -7942,15 +7944,17 @@ briefs, review loops, gates and mutation runs as for any step.
     2026-11-09, after the PoC): managers keep the old format and Red for their own tests, so
     an official DLC whose boots/gloves IDs differ from what they sent (Studio's slot-based
     40-per-team block, 3745 for team 792's slot 05, against the old exports' own `k`/`g`
-    IDs in a 25-per-team block) breaks their test CPKs against the official save. Shape
-    (*lead*, veto any): the upgrader records each player's original boots and gloves ID in
-    his `settings.toml`; a legacy compiler setting (on for VGL27 only, dropped once the cup
-    moves to the new format) packs and patches those IDs instead of the slot's. Spec,
-    DECISIONS entry and scenarios first, then a SWE-2 brief per tool. To check while
-    specifying: faces and kits are slot- and team-named in both formats (believed equal, not
-    rechecked); an old export's ID outside its team's 25-block (reproduce or refuse);
-    FoxDen's per-kit boots/gloves packages use the 40-block, so legacy IDs get none (old
-    exports have none)
+    IDs in a 25-per-team block) breaks their test CPKs against the official save.
+    - [x] poc13a spec (2026-11-10, the maintainer's rulings): `plans/team_compiler/pipeline.md`
+      "Legacy boots and gloves IDs (VGL27)", `settings.md` `legacy_boots_ids`, `messages.md`
+      (`legacy_id_missing`, `legacy_id_out_of_block`), `plans/export_upgrader.md` step 8's
+      `legacy_ids.toml`; scenarios TC-LEG-01 to 03, EU-SET-15 and 16; DECISIONS 2026-11-10.
+      Faces and kits rechecked equal (Red names both by team ID and slot, boots/gloves by
+      the folder name's ID, `export_move.py`). The embedded block table
+      `crates/tools/team_compiler/data/legacy_boots_blocks.txt` (59 VGL rows, the wiki's PES
+      2019 boots table from /2hug/ on). Open: the /feg/ and /uma/ rows, from the maintainer
+    - [ ] poc13b the upgrader's `legacy_ids.toml` (SWE-2 brief)
+    - [ ] poc13c the compiler's setting, table and packing (SWE-2 brief, after poc13b)
   - [ ] 0.0.2-chk library parity against checkpoints, not Red (the maintainer, 2026-11-09:
     parity with Red was proven once the core was built; divergence is expected since, and
     accounting for it at every run grows costlier). *Lead*, the shape (veto any):

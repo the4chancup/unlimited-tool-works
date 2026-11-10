@@ -110,6 +110,47 @@ What exists of this is in `spec/team_compiler/pipeline.md` "6. Post-processing".
   launcher: both start the same exe the same way, and the GUI phase is where its only manual
   check lives.
 
+### Legacy boots and gloves IDs (VGL27)
+
+VGL27's managers keep the old export format and Red for their own test compiles, against the
+official DLC's save. Red packs a boots or gloves folder under the ID its name carries
+(`k0430 - Crocs` is boots 430), each team's IDs inside the 25-ID block the cup gave it once
+for good; Studio's ID allocation ("2. Per-export serial steps", the 40-ID per-team blocks in
+`spec/aesthetics_export/player_folders.md`) gives the same model another ID, so a manager's
+test CPK and the official save disagree on every custom boots and gloves ID. The legacy
+setting (`legacy_boots_ids`, `settings.md`) packs and patches the old IDs instead, for
+VGL27 only: VGL28 runs on Studio's IDs, and the setting, its table and the export's file are
+then removed. It is temporary, so it changes as little as it can: faces and kits need
+nothing (both tools name them by team ID and slot), stock-band IDs (1 to 100) are untouched,
+and nothing else in the compile reads the setting.
+
+- **The old IDs** come from the export's root file `legacy_ids.toml`, which the Export
+  upgrader writes (`plans/export_upgrader.md` "What it does"): per player slot, the custom
+  boots and gloves IDs (above 100) his migrated folders were packed under. A known root
+  file: validation does not warn about it, and with the setting off the compiler neither
+  reads nor packs it. One table per team rather than keys in each `settings.toml`, so the
+  file members edit carries nothing that leaves with VGL27.
+- **The blocks** come from `legacy_boots_blocks.txt` in the data directory (beside
+  `teams_list.txt`, created from the embedded copy the first time the setting is on),
+  two tab-separated columns, `Name` and `FirstBootsID`, one row per VGL team; a block is
+  `FirstBootsID` to `FirstBootsID + 24`, for boots and gloves alike. The embedded copy is
+  the wiki's PES 2019 boots table from /2hug/ on (/feg/ and /uma/ supplied by the
+  maintainer). A team is found by its teams-list name, letter case aside.
+- **Packing.** Each boots or gloves output (a player's own, or a shared folder) is packed
+  once under each distinct old ID its wearers recorded for that kind, instead of the slot's
+  or the shared pool's ID: a shared folder whose wearers recorded two IDs is packed twice. An
+  output whose wearers recorded none is left out (`legacy_id_missing`, Warning, naming the
+  folder): a manager's new folder has no ID the official save could hold, and the patch
+  leaves that kind's ID of its wearers as the save holds it. The aesthetics patch gives
+  every other wearer his own old ID. FoxDen's per-kit boots and gloves packages are
+  not written for these IDs: old exports have none.
+- **Out of block.** An old ID outside its team's block, or any old ID of a team the table
+  does not list, is an Error (`legacy_id_out_of_block`, naming the ID, the folder and the
+  block, or "none"): an ID in another team's block puts one model on two teams. Only that
+  ID is dropped (not packed, its wearers' patch entries leaving the save's ID), not the
+  folder: the folder's face and other IDs are not in question. The real GBFG VGL26 export's `g2522` and `g2523` are such IDs (its block is 2301 to
+  2325, /ksg/'s 2501 to 2525).
+
 ### Recovery manifest
 
 A team's aesthetics export is sometimes lost, and the cup's DLC is then the only copy of its
