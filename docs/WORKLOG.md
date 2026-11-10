@@ -7300,7 +7300,10 @@ briefs, review loops, gates and mutation runs as for any step.
     of them excluded in `.cargo/mutants.toml` (the ninth, `violations.rs` `part`'s own-group
     flag, shares its extra-kind description with two caught sites, so it stays listed); 33
     missing tests, briefed as two slices, pitch then tactics (`brief_tw1.md`, `brief_tw2.md`
-    there), both landed (`c259be17`, then the tactics slice with the `cards_used` exclusion). Design finding, open: `pitch/popover.rs` `slot_popover`'s outside-press focus
+    there), both landed (`c259be17`, then the tactics slice with the `cards_used` exclusion).
+    Its rerun (VPS, ended 2026-11-10, 44,329 s): 901 caught, 84 unviable, 1 missed, the
+    `violations.rs` `draw_groups` own-groups flag, equivalent and excluded in
+    `.cargo/extra_mutants.toml` (no own-group violation has a slot to select). Design finding, open: `pitch/popover.rs` `slot_popover`'s outside-press focus
     surrender is unobservable under egui 0.37 (`Focus::end_pass` drops an undrawn widget's
     focus; the DragValue commits as typed), so the block and its "cannot end on its own"
     comment look removable: check against an egui upgrade first. `pes_savefile` (at `9ea7bc00`)

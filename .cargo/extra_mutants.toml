@@ -233,3 +233,9 @@ path = "crates/tools/save_editor/src/teams_list.rs"
 kind = "literal"
 description = "in load_working: the matches! pattern loses an alternative | removed: | io::ErrorKind::NotADirectory"
 why = "killable only where a path under a file reports NotADirectory (Linux, the test a_teams_list_path_under_a_file_falls_back_to_upstream); Windows reports NotFound and the extra kinds run here"
+
+[[exclude]]
+path = "crates/libs/team_widgets/src/violations.rs"
+kind = "bool"
+description = "in part: draw_groups arg 5: true becomes false | removed: true"
+why = "the team's own groups: every violation there has no slot, and row selects only a slotted one"
