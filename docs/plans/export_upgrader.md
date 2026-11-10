@@ -105,6 +105,9 @@ built: `spec/export_upgrader.md` "CLI"):
   block saying so. For an organizer moving a cup's library
   (about 50 teams) to Studio once per cup; the launcher keeps calling one export at a time,
   since its summary line counts them. `upgrade-models` stays one folder.
+- **The progress line.** On a terminal, `upgrade` and `upgrade-models` draw the console's
+  progress line as `compile` does, counting the input exports and the files written
+  (`plans/core/architecture.md` "The console's progress line and run summary").
 
 ## GUI
 
@@ -303,6 +306,18 @@ EU-SET-15  GIVEN EU-PLY-02's export (slot 05 wearing custom boots 430 from "k043
 EU-SET-16  GIVEN EU-LOOSE-01's export
            WHEN it is upgraded with --loose
            THEN legacy_ids.toml holds [03] boots = 128 and [05] boots = 130
+```
+
+**0.0.2-ux1 scope.** The progress line ("CLI"). Observed through the console printer's
+counters with the line drawn (the console's own test harness), on EU-CLI-01's export.
+
+```
+EU-CLI-12  GIVEN EU-CLI-01's /co/ export and its save
+           WHEN `upgrade` runs with the progress line drawn
+           THEN the line's exports counter reads 0/1 from the first event and 1/1 after the
+                output's validation, never a total of 2; its parts counter appears once the
+                files are planned, its total the number of files the output holds, and
+                reaches it; the finding lines on stdout are those of a run without the line
 ```
 
 **8.36c scope.** Step 8's base copy (above, "What it does"): a record copying another

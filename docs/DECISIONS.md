@@ -16128,3 +16128,24 @@ Plan: `plans/team_compiler/pipeline.md` "Legacy boots and gloves IDs (VGL27)",
 `plans/team_compiler/settings.md`, `plans/team_compiler/messages.md` "Catalog",
 `plans/export_upgrader.md` "What it does" (step 8), the 0.0.2-poc13 scopes of both plans'
 "Acceptance".
+
+## 2026-11-10 — studio, export_upgrader, team_compiler — the upgrader's progress line counts its inputs and files; `--timestamps` for profiling
+Decision (the maintainer's rulings, 0.0.2-ux1): the upgrader's console progress line counts
+the input exports and their parts, as the compiler's does; the compiler keeps reporting
+findings in manifest order, and `check`/`compile --timestamps` prefixes each finding line with
+the seconds, to the millisecond, since the run started at the moment the finding was made.
+Lead's choices: the output half is named through a new `PipelineEvent::ExportNamed`, which
+the counter does not count (the upgrader sent two `ExportStarted` per upgrade, so one upgrade
+read `0/2` and its done count moved only at the end); every input's `ExportStarted` goes out
+before the first is read; the upgrader's parts are the files it writes into the staging
+folder (a count known once steps 3 to 10 have planned them; the reading and planning before
+show the clock alone); a task's findings are timed when the task finished on its worker,
+others when reported; a flag, not a setting, and the GUI log shows no times.
+Why: findings in arrival order would change from run to run, breaking the CLI tests and any
+script reading stdout, and the CPK's layout follows the same order; the "waves" are the
+writer's manifest-order commit holding a finished task behind a slower one, which the
+timestamps make visible without changing the order.
+Plan: `plans/core/architecture.md` "The console's progress line and run summary",
+`plans/export_upgrader.md` "CLI" and its 0.0.2-ux1 scope (EU-CLI-12),
+`plans/team_compiler/settings.md` "CLI", `plans/team_compiler/README.md` 0.0.2-ux1 scope
+(TC-CLI-13).

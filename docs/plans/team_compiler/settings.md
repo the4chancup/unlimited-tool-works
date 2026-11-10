@@ -47,3 +47,13 @@ The `--gui` form (the core plan's "Launch modes") is what `quick_compile.bat` ru
 is live — and queues the compile until the initial exports check has completed, then triggers the
 same code path as the Compile button with the parsed `--mode`. `quick_compile_close_on_success`
 governs what happens when that run ends.
+
+`check` and `compile` take `--timestamps`, off by default, for profiling a run: each finding
+line on stdout starts with the seconds since the run started, to the millisecond, when the
+finding was made (`+12.345 - co Spring.zip: Warning …`). A task's findings were made when the
+task finished processing on its worker, every other finding when it was reported. The lines
+keep their order (findings are reported in manifest order, so the CPK and the log read the
+same on every run, `pipeline.md` "3. Per-model-folder parallel steps (rayon)"), so their
+times need not increase: a task that waited behind a slower one shows when it was really
+done. A flag rather than a setting, since it serves one run being looked at; the GUI's log
+does not show the times.

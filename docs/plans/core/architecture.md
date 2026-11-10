@@ -237,7 +237,14 @@ the Team compiler emits as each task of its build manifest commits (`spec/team_c
 "3. Per-model-folder parallel steps (rayon)", its first paragraph: a model folder, a kit, the logo, a Common directory, the collars, the
 portraits, the referee marker), `total` being the manifest's task count; "parts", not "folders",
 because a task is not always a folder, and a counter that named folders would not add up to the
-export's folders. A run whose stream ends with no `Complete` (a `check`, an upgrade, a compile
+export's folders. The Export upgrader draws the same line: its exports are the inputs the
+command names, every input's `ExportStarted` sent before the first is read so the total is
+whole from the start (an upgrade's output half is named for its findings' lines by
+`PipelineEvent::ExportNamed`, which the counter does not count, so one upgrade reads `0/1`,
+never `0/2`), its input's `ExportProcessed` comes once its output is validated, and its parts
+are the files it writes into the staging folder (`total` once steps 3 to 10 have planned
+them, so the parts counter appears after the reading and planning, where the clock alone
+moves). A run whose stream ends with no `Complete` (a `check`, an upgrade, a compile
 stopped before it compiled) leaves no line: the printer cannot know a `Complete` is coming
 until the stream ends, so it draws from the first export and clears the line when the stream
 ends without one, rather than leaving a count that reads as unfinished.

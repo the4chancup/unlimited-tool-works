@@ -7955,6 +7955,12 @@ briefs, review loops, gates and mutation runs as for any step.
       2019 boots table from /2hug/ on). Open: the /feg/ and /uma/ rows, from the maintainer
     - [ ] poc13b the upgrader's `legacy_ids.toml` (SWE-2 brief)
     - [ ] poc13c the compiler's setting, table and packing (SWE-2 brief, after poc13b)
+  - [ ] 0.0.2-ux1 the CLI's progress line and finding times (the maintainer, 2026-11-10;
+    DECISIONS 2026-11-10): the upgrader's line counted its output half as an export (`0/2`)
+    and drew no parts; the compiler's findings came in waves (manifest-order commits, kept).
+    Specified: `plans/core/architecture.md` "The console's progress line and run summary",
+    `plans/export_upgrader.md` "CLI" (EU-CLI-12), `plans/team_compiler/settings.md` "CLI"
+    `--timestamps` (TC-CLI-13). Next: SWE-2 briefs, after poc13b (both touch the upgrader)
   - [ ] 0.0.2-chk library parity against checkpoints, not Red (the maintainer, 2026-11-09:
     parity with Red was proven once the core was built; divergence is expected since, and
     accounting for it at every run grows costlier). *Lead*, the shape (veto any):

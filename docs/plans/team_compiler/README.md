@@ -355,6 +355,17 @@ TC-LEG-03  GIVEN a data directory with no legacy_boots_blocks.txt
                 edited to 2326 THEN TC-LEG-01's 2305 is legacy_id_out_of_block
 ```
 
+**0.0.2-ux1 scope.** `--timestamps` (`settings.md` "CLI").
+
+```
+TC-CLI-13  GIVEN TC-CLI-11's root (a kit whose task fails, a disabled export)
+           WHEN `compile --timestamps` runs, then `compile` alone
+           THEN every finding line of the first is the second's same line, in the same
+                order, prefixed by `+<seconds>.<three digits> `, each time no greater than
+                the run's wall time; the second run's lines carry no prefix; `check
+                --timestamps` prefixes its lines the same way
+```
+
 **0.0.2-poc2 scope.** What exists of this is in `spec/team_compiler/pipeline.md` "Resolved
 decisions and open questions", "A texture a model names must exist": a texture nobody
 supplies is a Warning on every engine. TC-MOD-71's last clause and TC-TEX-05's second
