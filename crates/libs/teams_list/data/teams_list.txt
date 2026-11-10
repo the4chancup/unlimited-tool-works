@@ -1,221 +1,221 @@
-ID	Name	MinBootsID	MaxBootsID
-701	/3/	101	125
-702	/a/	126	150
-703	/aco/	151	175
-704	/adv/	176	200
-705	/an/	201	225
-706	/asp/	226	250
-707	/b/	251	275
-708	/bant/	276	300
-709	/biz/	301	325
-710	/c/	326	350
-711	/cgl/	351	375
-712	/ck/	376	400
-713	/cm/	401	425
-714	/co/	426	450
-715	/d/	451	475
-716	/diy/	476	500
-717	/e/	501	525
-718	/f/	526	550
-719	/fa/	551	575
-720	/fit/	576	600
-721	/g/	601	625
-722	/gd/	626	650
-723	/gif/	651	675
-724	/h/	676	700
-725	/his/	701	725
-726	/hm/	726	750
-727	/hr/	751	775
-728	/i/	776	800
-729	/ic/	801	825
-730	/int/	826	850
-731	/jp/	851	875
-732	/k/	876	900
-733	/lgbt/	901	925
-734	/lit/	926	950
-735	/m/	951	975
-736	/mlp/	976	1000
-737	/mu/	1001	1025
-738	/n/	1026	1050
-739	/o/	1051	1075
-740	/out/	1076	1100
-741	/p/	1101	1125
-742	/po/	1126	1150
-743	/pol/	1151	1175
-744	/pw/	1176	1200
-745	/r9k/	1201	1225
-746	/s/	1226	1250
-747	/s4s/	1251	1275
-748	/sci/	1276	1300
-749	/soc/	1301	1325
-750	/sp/	1326	1350
-751	/t/	1351	1375
-752	/tg/	1376	1400
-753	/toy/	1401	1425
-754	/trv/	1426	1450
-755	/tv/	1451	1475
-756	/u/	1476	1500
-757	/v/	1501	1525
-758	/vg/	1526	1550
-759	/vm/	1551	1575
-760	/vmg/	1576	1600
-761	/vp/	1601	1625
-762	/vr/	1626	1650
-763	/vrpg/	1651	1675
-764	/vst/	1676	1700
-765	/vt/	1701	1725
-766	/w/	1726	1750
-767	/wg/	1751	1775
-768	/wsg/	1776	1800
-769	/x/	1801	1825
-770	/xs/	1826	1850
-771	/y/	1851	1875
-772	Backup 1	1876	1900
-773	Backup 2	1901	1925
-774	Backup 3	1926	1950
-775	Backup 4	1951	1975
-776	Backup 5	1976	2000
-777	Backup 6	2001	2025
-778	Backup 7	2026	2050
-779	Backup 8	2051	2075
-780	Backup 9	2076	2100
-781	/@/	2101	2125
-782	/1999/	2126	2150
-783	/2hug/	2151	2175
-784	/4ccg/	2176	2200
-785	/aceg/	2201	2225
-786	/akg/	2226	2250
-787	/bag/	2251	2275
-788	/civ4xg/	2276	2300
-789	/dbg/	2301	2325
-790	/domg/	2326	2350
-791	/drg/	2351	2375
-792	/END/	2376	2400
-793	/feg/	2401	2425
-794	/fgog/	2426	2450
-795	/fng/	2451	2475
-796	/gbfg/	2476	2500
-797	/gbpen/	2501	2525
-798	/gfg/	2526	2550
-799	/gig/	2551	2575
-800	/hanny/	2576	2600
-801	/hbr/	2601	2625
-802	/hdg/	2626	2650
-803	/hgg2d/	2651	2675
-804	/hsrg/	2676	2700
-805	/kfg/	2701	2725
-806	/ksg/	2726	2750
-807	/lcg/	2751	2775
-808	/llsifg/	2776	2800
-809	/mggg/	2801	2825
-810	/mjg/	2826	2850
-811	/nepgen/	2851	2875
-812	/nikg/	2876	2900
-813	/omg/	2901	2925
-814	/pcrg/	2926	2950
-815	/pg/	2951	2975
-816	/pmmm/	2976	3000
-817	/psg/	3001	3025
-818	/skg/	3026	3050
-819	/smbg/	3051	3075
-820	/sora/	3076	3100
-821	/tf2g/	3101	3125
-822	/trg/	3126	3150
-823	/trick/	3151	3175
-824	/uma/	3176	3200
-825	/umaJP/	3201	3225
-826	/utg/	3226	3250
-827	/vn/	3251	3275
-828	/vrg/	3276	3300
-829	/wtg/	3301	3325
-830	/wuwa/	3326	3350
-831	/xivg/	3351	3375
-832	/zzz/	3376	3400
-833	VGL 53	3401	3425
-834	VGL 54	3426	3450
-835	VGL 55	3451	3475
-836	VGL 56	3476	3500
-837	VGL 57	3501	3525
-838	VGL 58	3526	3550
-839	VGL 59	3551	3575
-840	VGL 60	3576	3600
-841	VGL 61	3601	3625
-842	VGL 62	3626	3650
-843	VGL 63	3651	3675
-844	VGL 64	3676	3700
-845	VGL 65	3701	3725
-846	VGL 66	3726	3750
-847	VGL 67	3751	3775
-848	VGL 68	3776	3800
-849	VGL 69	3801	3825
-850	VGL 70	3826	3850
-851	Invitational 1	3851	3875
-852	Invitational 2	3876	3900
-853	Invitational 3	3901	3925
-854	Invitational 4	3926	3950
-855	Invitational 5	3951	3975
-856	Invitational 6	3976	4000
-857	Invitational 7	4001	4025
-858	Invitational 8	4026	4050
-859	Invitational 9	4051	4075
-860	Invitational 10	4076	4100
-861	Invitational 11	4101	4125
-862	Invitational 12	4126	4150
-863	Invitational 13	4151	4175
-864	Invitational 14	4176	4200
-865	Invitational 15	4201	4225
-866	Invitational 16	4226	4250
-867	Invitational 17	4251	4275
-868	Invitational 18	4276	4300
-869	Invitational 19	4301	4325
-870	Invitational 20	4326	4350
-871	Invitational 21	4351	4375
-872	Invitational 22	4376	4400
-873	Invitational 23	4401	4425
-874	Invitational 24	4426	4450
-875	Invitational 25	4451	4475
-876	Invitational 26	4476	4500
-877	Invitational 27	4501	4525
-878	Invitational 28	4526	4550
-879	Invitational 29	4551	4575
-880	Invitational 30	4576	4600
-881	Invitational 31	4601	4625
-882	Invitational 32	4626	4650
-883	Invitational 33	4651	4675
-884	Invitational 34	4676	4700
-885	Invitational 35	4701	4725
-886	Invitational 36	4726	4750
-887	Invitational 37	4751	4775
-888	Invitational 38	4776	4800
-889	Invitational 39	4801	4825
-890	Invitational 40	4826	4850
-891	Invitational 41	4851	4875
-892	Invitational 42	4876	4900
-893	Invitational 43	4901	4925
-894	Invitational 44	4926	4950
-895	Invitational 45	4951	4975
-896	Invitational 46	4976	5000
-897	Invitational 47	5001	5025
-898	Invitational 48	5026	5050
-899	Invitational 49	5051	5075
-900	Invitational 50	5076	5100
-901	Invitational 51	5101	5125
-902	Invitational 52	5126	5150
-903	Invitational 53	5151	5175
-904	Invitational 54	5176	5200
-905	Invitational 55	5201	5225
-906	Invitational 56	5226	5250
-907	Invitational 57	5251	5275
-908	Invitational 58	5276	5300
-909	Invitational 59	5301	5325
-910	Invitational 60	5326	5350
-911	Invitational 61	5351	5375
-912	Invitational 62	5376	5400
-913	Invitational 63	5401	5425
-914	Invitational 64	5426	5450
-915	Invitational 65	5451	5475
-916	Invitational 66	5476	5500
-917	Invitational 67	5501	5525
-918	Invitational 68	5526	5550
-919	Invitational 69	5551	5575
-920	Invitational 70	5576	5600
+ID	Name
+701	/3/
+702	/a/
+703	/aco/
+704	/adv/
+705	/an/
+706	/asp/
+707	/b/
+708	/bant/
+709	/biz/
+710	/c/
+711	/cgl/
+712	/ck/
+713	/cm/
+714	/co/
+715	/d/
+716	/diy/
+717	/e/
+718	/f/
+719	/fa/
+720	/fit/
+721	/g/
+722	/gd/
+723	/gif/
+724	/h/
+725	/his/
+726	/hm/
+727	/hr/
+728	/i/
+729	/ic/
+730	/int/
+731	/jp/
+732	/k/
+733	/lgbt/
+734	/lit/
+735	/m/
+736	/mlp/
+737	/mu/
+738	/n/
+739	/o/
+740	/out/
+741	/p/
+742	/po/
+743	/pol/
+744	/pw/
+745	/r9k/
+746	/s/
+747	/s4s/
+748	/sci/
+749	/soc/
+750	/sp/
+751	/t/
+752	/tg/
+753	/toy/
+754	/trv/
+755	/tv/
+756	/u/
+757	/v/
+758	/vg/
+759	/vm/
+760	/vmg/
+761	/vp/
+762	/vr/
+763	/vrpg/
+764	/vst/
+765	/vt/
+766	/w/
+767	/wg/
+768	/wsg/
+769	/x/
+770	/xs/
+771	/y/
+772	Backup 1
+773	Backup 2
+774	Backup 3
+775	Backup 4
+776	Backup 5
+777	Backup 6
+778	Backup 7
+779	Backup 8
+780	Backup 9
+781	/@/
+782	/1999/
+783	/2hug/
+784	/4ccg/
+785	/aceg/
+786	/akg/
+787	/bag/
+788	/civ4xg/
+789	/dbg/
+790	/domg/
+791	/drg/
+792	/END/
+793	/feg/
+794	/fgog/
+795	/fng/
+796	/gbfg/
+797	/gbpen/
+798	/gfg/
+799	/gig/
+800	/hanny/
+801	/hbr/
+802	/hdg/
+803	/hgg2d/
+804	/hsrg/
+805	/kfg/
+806	/ksg/
+807	/lcg/
+808	/llsifg/
+809	/mggg/
+810	/mjg/
+811	/nepgen/
+812	/nikg/
+813	/omg/
+814	/pcrg/
+815	/pg/
+816	/pmmm/
+817	/psg/
+818	/skg/
+819	/smbg/
+820	/sora/
+821	/tf2g/
+822	/trg/
+823	/trick/
+824	/uma/
+825	/umaJP/
+826	/utg/
+827	/vn/
+828	/vrg/
+829	/wtg/
+830	/wuwa/
+831	/xivg/
+832	/zzz/
+833	VGL 53
+834	VGL 54
+835	VGL 55
+836	VGL 56
+837	VGL 57
+838	VGL 58
+839	VGL 59
+840	VGL 60
+841	VGL 61
+842	VGL 62
+843	VGL 63
+844	VGL 64
+845	VGL 65
+846	VGL 66
+847	VGL 67
+848	VGL 68
+849	VGL 69
+850	VGL 70
+851	Invitational 1
+852	Invitational 2
+853	Invitational 3
+854	Invitational 4
+855	Invitational 5
+856	Invitational 6
+857	Invitational 7
+858	Invitational 8
+859	Invitational 9
+860	Invitational 10
+861	Invitational 11
+862	Invitational 12
+863	Invitational 13
+864	Invitational 14
+865	Invitational 15
+866	Invitational 16
+867	Invitational 17
+868	Invitational 18
+869	Invitational 19
+870	Invitational 20
+871	Invitational 21
+872	Invitational 22
+873	Invitational 23
+874	Invitational 24
+875	Invitational 25
+876	Invitational 26
+877	Invitational 27
+878	Invitational 28
+879	Invitational 29
+880	Invitational 30
+881	Invitational 31
+882	Invitational 32
+883	Invitational 33
+884	Invitational 34
+885	Invitational 35
+886	Invitational 36
+887	Invitational 37
+888	Invitational 38
+889	Invitational 39
+890	Invitational 40
+891	Invitational 41
+892	Invitational 42
+893	Invitational 43
+894	Invitational 44
+895	Invitational 45
+896	Invitational 46
+897	Invitational 47
+898	Invitational 48
+899	Invitational 49
+900	Invitational 50
+901	Invitational 51
+902	Invitational 52
+903	Invitational 53
+904	Invitational 54
+905	Invitational 55
+906	Invitational 56
+907	Invitational 57
+908	Invitational 58
+909	Invitational 59
+910	Invitational 60
+911	Invitational 61
+912	Invitational 62
+913	Invitational 63
+914	Invitational 64
+915	Invitational 65
+916	Invitational 66
+917	Invitational 67
+918	Invitational 68
+919	Invitational 69
+920	Invitational 70
