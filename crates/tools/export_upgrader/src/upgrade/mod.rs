@@ -578,6 +578,7 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
                 &folders,
                 roster.as_ref(),
                 version.engine(),
+                args.legacy_ids,
                 |a, b| match (export.read(a), export.read(b)) {
                     (Ok(a), Ok(b)) => a == b,
                     _ => false,
@@ -592,10 +593,13 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
                 // Loose mode: no record to read, only the folder's name.
                 _ => loose_settings_files(&plan.folders),
             };
-            // The root `legacy_ids.toml`, the worn folders' old IDs for the
-            // Team compiler's `legacy_boots_ids` setting: written in both
-            // modes, for a team export only.
-            if let Some(file) = legacy_ids(&plan.folders) {
+            // The root `legacy_ids.toml`, the worn folders' old IDs: only
+            // `--legacy-ids` writes it — its presence is what turns the Team
+            // compiler's legacy packing on — and only a team export reaches
+            // this branch.
+            if args.legacy_ids
+                && let Some(file) = legacy_ids(&plan.folders)
+            {
                 settings.written.push(("legacy_ids.toml".to_owned(), file));
             }
             let kits = kit_folders(

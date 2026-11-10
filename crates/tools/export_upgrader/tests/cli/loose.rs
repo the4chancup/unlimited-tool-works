@@ -10,10 +10,17 @@ use pes_savefile::settings_toml::{NameSetting, PlayerSettings};
 use crate::common::Sandbox;
 use crate::players::{boots, face};
 
+/// `upgrade <input> --loose`, `flags` appended.
+fn upgrade_loose_with(sandbox: &Sandbox, input: &str, flags: &[&str]) -> crate::common::Run {
+    let input = sandbox.arg(input);
+    let mut args = vec!["upgrade", &input, "--loose"];
+    args.extend_from_slice(flags);
+    sandbox.run(&args)
+}
+
 /// `upgrade <input> --loose`.
 fn upgrade_loose(sandbox: &Sandbox, input: &str) -> crate::common::Run {
-    let input = sandbox.arg(input);
-    sandbox.run(&["upgrade", &input, "--loose"])
+    upgrade_loose_with(sandbox, input, &[])
 }
 
 // EU-LOOSE-01
@@ -84,12 +91,12 @@ fn loose_mode_records_the_inferred_ids() {
     boots(&sandbox, "a Spring/Boots/k0128 - Rex");
     boots(&sandbox, "a Spring/Boots/k0130");
 
-    let run = upgrade_loose(&sandbox, "a Spring");
+    let run = upgrade_loose_with(&sandbox, "a Spring", &["--legacy-ids"]);
     assert_eq!(run.exit_code(), 0, "{}", run.stdout());
     assert_eq!(
         fs::read_to_string(sandbox.path("a Full Spring/legacy_ids.toml")).unwrap(),
         concat!(
-            "# The old export's boots and gloves IDs, read only by the Team compiler's legacy_boots_ids setting (VGL27).\n",
+            "# The old export's boots and gloves IDs, which the Team compiler packs instead of its own (VGL27).\n",
             "[03]\nboots = 128\n",
             "[05]\nboots = 130\n",
         )

@@ -19,11 +19,23 @@ pub(crate) fn unmigrated_found(run: &crate::common::Run) -> usize {
         .count()
 }
 
-/// `upgrade <input> --savefile <save>`.
-pub(crate) fn upgrade(sandbox: &Sandbox, input: &str, save: &str) -> crate::common::Run {
+/// `upgrade <input> --savefile <save>`, `flags` appended.
+pub(crate) fn upgrade_with(
+    sandbox: &Sandbox,
+    input: &str,
+    save: &str,
+    flags: &[&str],
+) -> crate::common::Run {
     let input = sandbox.arg(input);
     let save = sandbox.arg(save);
-    sandbox.run(&["upgrade", &input, "--savefile", &save])
+    let mut args = vec!["upgrade", &input, "--savefile", &save];
+    args.extend_from_slice(flags);
+    sandbox.run(&args)
+}
+
+/// `upgrade <input> --savefile <save>`.
+pub(crate) fn upgrade(sandbox: &Sandbox, input: &str, save: &str) -> crate::common::Run {
+    upgrade_with(sandbox, input, save, &[])
 }
 
 /// The four files of the real tracer Fox face folder
@@ -72,6 +84,18 @@ pub(crate) fn wears(file: &mut pes_savefile::EditFile, id: u32, boots_id: u32, g
     player.appearance.gloves_id = gloves_id;
 }
 
+/// The `Players/` entry for slot `nn` under `output` (`NN` or
+/// `NN - name`), whatever name the run gave it.
+fn player_folder(sandbox: &Sandbox, output: &str, nn: &str) -> String {
+    sandbox
+        .listing(&format!("{output}/Players"))
+        .into_iter()
+        .find(|entry| {
+            !entry.contains('/') && (*entry == nn || entry.starts_with(&format!("{nn} - ")))
+        })
+        .unwrap_or_else(|| panic!("no player folder for slot {nn}"))
+}
+
 // EU-PLY-02
 #[test]
 fn a_wearer_without_a_face_folder_gets_one_with_ingame_face() {
@@ -104,6 +128,85 @@ fn a_wearer_without_a_face_folder_gets_one_with_ingame_face() {
             .ingame_face()
     );
     assert!(!sandbox.path("co Full Spring/Boots").exists());
+}
+
+// EU-SET-17
+#[test]
+fn a_shared_item_folder_merges_into_every_wearer_in_legacy_mode() {
+    let sandbox = Sandbox::new("ply_legacy_ids");
+    // EU-SET-15's export: slots 06 and 07 both wear g0431.
+    let export = |name: &str| {
+        face(&sandbox, &format!("{name}/Faces/XXX03 - A"));
+        boots(&sandbox, &format!("{name}/Boots/k0430 - Crocs"));
+        gloves(&sandbox, &format!("{name}/Gloves/g0431"));
+        sandbox.write(&format!("{name}/Boots/k0440 - Empty/boots.skl"), b"skl");
+    };
+    export("co Spring");
+    sandbox.save_edited("EDIT", pes_version::PesVersion::Pes21, |file| {
+        wears(file, 71405, 430, 0);
+        wears(file, 71406, 0, 431);
+        wears(file, 71407, 0, 431);
+        wears(file, 71408, 55, 0);
+        wears(file, 71409, 440, 0);
+    });
+
+    let run = upgrade_with(&sandbox, "co Spring", "EDIT", &["--legacy-ids"]);
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    assert!(run.stdout().contains("migration_clean"), "{}", run.stdout());
+    for nn in ["06", "07"] {
+        let folder = player_folder(&sandbox, "co Full Spring", nn);
+        for (name, bytes) in [("glove_l.fmdl", b"glove_l"), ("glove_r.fmdl", b"glove_r")] {
+            assert_eq!(
+                fs::read(sandbox.path(&format!("co Full Spring/Players/{folder}/{name}"))).unwrap(),
+                bytes,
+                "{folder}/{name}"
+            );
+        }
+    }
+    // No shared gloves folder and no link file anywhere in the output.
+    for entry in sandbox.listing("co Full Spring") {
+        assert!(!entry.starts_with("Gloves"), "{entry}");
+        assert!(!entry.ends_with(".gloves"), "{entry}");
+    }
+
+    // The same export, slot 06's face folder also holding a
+    // `glove_l.fmdl` with other bytes: `legacy_merge_clash` is an Error
+    // and nothing is written.
+    export("co Summer");
+    face(&sandbox, "co Summer/Faces/XXX06 - B");
+    sandbox.write("co Summer/Faces/XXX06 - B/glove_l.fmdl", b"other");
+    let run = upgrade_with(&sandbox, "co Summer", "EDIT", &["--legacy-ids"]);
+    assert_eq!(run.exit_code(), 1, "{}", run.stdout());
+    assert!(
+        run.stdout().contains(
+            "- co Summer: Error legacy_merge_clash at Gloves/g0431 (path=glove_l.fmdl)\n"
+        ),
+        "{}",
+        run.stdout()
+    );
+    sandbox.assert_nothing_written("co Full Summer", &run.stdout());
+
+    // The same export without the flag: g0431 stays shared, a link per
+    // wearer.
+    export("co Autumn");
+    let run = upgrade(&sandbox, "co Autumn", "EDIT");
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    for (name, bytes) in [("glove_l.fmdl", b"glove_l"), ("glove_r.fmdl", b"glove_r")] {
+        assert_eq!(
+            fs::read(sandbox.path(&format!("co Full Autumn/Gloves/g0431/{name}"))).unwrap(),
+            bytes,
+            "{name}"
+        );
+    }
+    for nn in ["06", "07"] {
+        let folder = player_folder(&sandbox, "co Full Autumn", nn);
+        assert_eq!(
+            fs::read(sandbox.path(&format!("co Full Autumn/Players/{folder}/g0431.gloves")))
+                .unwrap(),
+            b"",
+            "{folder}/g0431.gloves"
+        );
+    }
 }
 
 // EU-PLY-05

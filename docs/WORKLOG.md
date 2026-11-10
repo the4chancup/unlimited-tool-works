@@ -7964,7 +7964,12 @@ briefs, review loops, gates and mutation runs as for any step.
       folders, the file only then; EU-SET-15 to 17), the compiler reads the file's presence
       (no setting, no `legacy_id_missing`; `legacy_ids_invalid`; TC-LEG-01/02); the block
       check moves to 0.0.2 proper (TC-LEG-03/04)
-    - [ ] poc13c the upgrader's `--legacy-ids` (SWE-2 brief `.tmp/0_0_2/poc13/brief_c.md`)
+    - [x] poc13c the upgrader's `--legacy-ids` (2026-11-10, SWE-2, landed first time; lead:
+      two stale comments, the test's setup shared, the help page): a Fox export's worn
+      boots/gloves folder merges into every wearer (`MergeMode`), a clash is
+      `legacy_merge_clash` (E), `legacy_ids.toml` only with the flag (EU-SET-15 to 17).
+      `export_upgrader` `cli.rs`, `players.rs`, `settings.rs`, `upgrade/mod.rs`,
+      `messages.rs`, `help/01_command_line.md`; the Fox tracer golden loses the file
     - [ ] poc13d the compiler's legacy packing (SWE-2 brief `.tmp/0_0_2/poc13/brief_d.md`)
     - [ ] poc13e the block check (0.0.2, after the PoC): `legacy_id_out_of_block`, the data
       directory's table (TC-LEG-03/04)

@@ -14,9 +14,9 @@
 //! raw save name (a derived name cannot carry colour codes). A value no
 //! `settings.toml` can hold is left out and reported, not fatal. Loose mode
 //! (step 11) has no records: `loose_settings_files` writes a named folder's
-//! `name = true` alone. Both modes also write the root `legacy_ids.toml`,
-//! the old export's boots and gloves IDs the Team compiler's
-//! `legacy_boots_ids` setting reads.
+//! `name = true` alone. A `--legacy-ids` upgrade (VGL27's legacy mode) also
+//! writes the root `legacy_ids.toml`, the old export's boots and gloves IDs
+//! the Team compiler then packs instead of its own.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -260,9 +260,8 @@ pub(crate) fn loose_settings_files(folders: &BTreeMap<u8, OutputFolder>) -> Sett
 /// packed under in the old export, `boots` first. Only an ID above 100 is
 /// recorded (a stock ID is the game's own) and only a migrated folder's
 /// (a modelless one packs nothing); `None` — no file — when no slot has
-/// one. Written in both modes, its cost one small file: a setting only
-/// one cup's organizers would remember to toggle is one more way to ship
-/// the wrong IDs.
+/// one. `--legacy-ids` alone writes it (VGL27's legacy mode): the file's
+/// presence is what turns the compiler's legacy packing on.
 pub(crate) fn legacy_ids(folders: &BTreeMap<u8, OutputFolder>) -> Option<Vec<u8>> {
     let mut tables = String::new();
     for (nn, folder) in folders {
@@ -283,7 +282,7 @@ pub(crate) fn legacy_ids(folders: &BTreeMap<u8, OutputFolder>) -> Option<Vec<u8>
     }
     (!tables.is_empty()).then(|| {
         let mut file = String::from(
-            "# The old export's boots and gloves IDs, read only by the Team compiler's legacy_boots_ids setting (VGL27).\n",
+            "# The old export's boots and gloves IDs, which the Team compiler packs instead of its own (VGL27).\n",
         );
         file.push_str(&tables);
         file.into_bytes()
@@ -604,7 +603,7 @@ mod tests {
             legacy_ids(&folders).map(|bytes| String::from_utf8(bytes).unwrap()),
             Some(
                 concat!(
-                    "# The old export's boots and gloves IDs, read only by the Team compiler's legacy_boots_ids setting (VGL27).\n",
+                    "# The old export's boots and gloves IDs, which the Team compiler packs instead of its own (VGL27).\n",
                     "[03]\nboots = 128\n",
                     "[05]\ngloves = 130\n",
                     "[07]\nboots = 430\ngloves = 431\n",

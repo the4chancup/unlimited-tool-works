@@ -142,6 +142,7 @@ fn a_model_file_in_any_letter_case_makes_a_loose_run_pre_fox() {
         export: root.join("co Spring"),
         savefile: None,
         loose: true,
+        legacy_ids: false,
         coverage: None,
         output: None,
     };
@@ -174,6 +175,7 @@ fn a_refs_txt_that_is_not_utf8_is_unmigrated_and_no_players_txt_is_written() {
         export: root.join("refs Spring"),
         savefile: None,
         loose: false,
+        legacy_ids: false,
         coverage: None,
         output: None,
     };
@@ -227,6 +229,7 @@ fn a_second_note_and_an_unclaimed_file_get_their_reasons() {
         export: root.join("co Spring"),
         savefile: None,
         loose: true,
+        legacy_ids: false,
         coverage: None,
         output: None,
     };
@@ -341,6 +344,7 @@ fn each_started_export_is_processed_once_after_its_start() {
         export: root.join("co Spring"),
         savefile: None,
         loose: true,
+        legacy_ids: false,
         coverage: None,
         output: None,
     };
@@ -403,6 +407,7 @@ fn an_unused_pairs_dds_is_dropped_and_the_other_copies_written() {
         export: root.join("co Midcup Spring"),
         savefile: None,
         loose: true,
+        legacy_ids: false,
         coverage: None,
         output: None,
     };

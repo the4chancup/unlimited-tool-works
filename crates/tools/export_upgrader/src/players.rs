@@ -8,8 +8,11 @@
 //!
 //! A boots or gloves folder one player wears merges into his folder on a Fox
 //! export. One worn by two or more, or any worn one on a pre-Fox export,
-//! stays a named shared folder with a link file. Each slot's output folder
-//! lands in `PlayerFolders::folders` for the `settings.toml` generation
+//! stays a named shared folder with a link file — unless `--legacy-ids`
+//! (VGL27's legacy mode) is given, where a Fox folder merges into every
+//! wearer instead and a byte clash is the `legacy_merge_clash` Error rather
+//! than `merge_kept_shared`. Each slot's output folder lands in
+//! `PlayerFolders::folders` for the `settings.toml` generation
 //! (`settings.rs`). A referee export's folders are `referees.rs`'s, and loose
 //! mode pairs each item folder's wearer from its ID's position in its kind's
 //! old block of 25.
@@ -361,7 +364,9 @@ fn folders_below<'a>(
 /// What steps 2-3 make of `files`' face folders for a team export (a referee
 /// export's folders are `referees.rs`'s: `run` does not call this for one) with
 /// `roster` for the names and empty slots (`None` in loose mode), and steps
-/// 3-4 make of its boots and gloves folders for `engine` and `same_bytes`.
+/// 3-4 make of its boots and gloves folders for `engine`, `legacy_ids`
+/// (`--legacy-ids`, VGL27's legacy mode: a Fox folder merges into every
+/// wearer rather than staying shared) and `same_bytes`.
 /// `folders` is the export's folder listing: a `Faces/`, `Boots/` or
 /// `Gloves/` subfolder holding no file below it is still a folder (step 3's
 /// empty face folder, and the modelless item folder).
@@ -370,6 +375,7 @@ pub(crate) fn player_folders(
     folders: &[String],
     roster: Option<&Roster>,
     engine: Engine,
+    legacy_ids: bool,
     mut same_bytes: impl FnMut(&str, &str) -> bool,
 ) -> PlayerFolders {
     let mut plan = PlayerFolders::default();
@@ -397,6 +403,11 @@ pub(crate) fn player_folders(
     plan.not_worn = pairings.not_worn;
     plan.findings.extend(pairings.findings);
     let [boots_set, gloves_set] = item_sets;
+    let merge = match engine {
+        Engine::PreFox => MergeMode::Never,
+        Engine::Fox if legacy_ids => MergeMode::EveryWearer,
+        Engine::Fox => MergeMode::OneWearer,
+    };
     for (kind, set) in [(ItemKind::Boots, boots_set), (ItemKind::Gloves, gloves_set)] {
         item_folders(
             set,
@@ -405,7 +416,7 @@ pub(crate) fn player_folders(
                 roster,
                 paired: &pairings.folders[kind.index()],
             }),
-            engine,
+            merge,
             &mut same_bytes,
             &mut players,
             &mut plan,
@@ -930,15 +941,40 @@ struct Wearers<'a> {
     paired: &'a BTreeMap<String, (u32, PairRule)>,
 }
 
+/// How a worn item folder merges (step 3): the engine's and
+/// `--legacy-ids`'s joint answer.
+#[derive(Clone, Copy)]
+enum MergeMode {
+    /// A Fox export's folder merges into its one wearer; more share it.
+    OneWearer,
+    /// A Fox export's folder under `--legacy-ids` (VGL27's legacy mode)
+    /// merges into every wearer, a byte clash becoming the
+    /// `legacy_merge_clash` Error rather than `merge_kept_shared`.
+    EveryWearer,
+    /// A pre-Fox export's folder never merges: every worn one stays shared.
+    Never,
+}
+
+impl MergeMode {
+    /// The engine the mode comes from: `Never` is pre-Fox's.
+    fn engine(self) -> Engine {
+        match self {
+            MergeMode::OneWearer | MergeMode::EveryWearer => Engine::Fox,
+            MergeMode::Never => Engine::PreFox,
+        }
+    }
+}
+
 /// Steps 3-4's item folders of `kind`: name, ID and wearers resolve, then
 /// each is merged into its one wearer's folder (Fox only), or kept shared
-/// with a link. `roster` is the save's wearer map, `None` in loose mode,
-/// where the wearer is the ID's position in the kind's block (step 11).
+/// with a link — `merge` says how (`MergeMode`). `roster` is the save's
+/// wearer map, `None` in loose mode, where the wearer is the ID's
+/// position in the kind's block (step 11).
 fn item_folders(
     folders: BTreeMap<String, Vec<&String>>,
     kind: ItemKind,
     roster: Option<Wearers>,
-    engine: Engine,
+    merge: MergeMode,
     same_bytes: &mut impl FnMut(&str, &str) -> bool,
     players: &mut BTreeMap<u8, PlayerFolder>,
     plan: &mut PlayerFolders,
@@ -992,7 +1028,7 @@ fn item_folders(
         // sees them.
         let (strays, folder_files): (Vec<&String>, Vec<&String>) = folder_files
             .into_iter()
-            .partition(|file| is_stray(file_name(file), Some((kind, engine))));
+            .partition(|file| is_stray(file_name(file), Some((kind, merge.engine()))));
         plan.leftovers
             .extend(strays.iter().map(|file| (*file).clone()));
         let refused =
@@ -1148,24 +1184,30 @@ fn item_folders(
                 }
             }
         }
-        // On a Fox export a folder used by exactly one player merges into his
-        // folder; pre-Fox never merges, and a path two folders share, folded
-        // (`Skin.dds` and `skin.dds` are one on Windows), with different bytes
-        // keeps the item folder shared instead (`merge_kept_shared`, the
-        // first clashing path in its context).
-        let never_merges = match engine {
-            Engine::PreFox => true,
-            Engine::Fox => false,
-        };
-        let player = &players[&wearers[0]];
-        let share = never_merges
-            || wearers.len() > 1
-            || folder_files
-                .iter()
-                .find_map(|file| {
+        // How the folder merges: `Never` (pre-Fox) keeps every worn folder
+        // shared, `OneWearer` merges it into its one wearer and shares it
+        // between two or more, `EveryWearer` (`--legacy-ids`, VGL27) merges
+        // it into every wearer — nothing stays shared, so each one's own
+        // package carries the folder's one old ID. A path the item folder
+        // and a merging player folder share, folded (`Skin.dds` and
+        // `skin.dds` are one on Windows), with different bytes is a clash,
+        // the first such path in the finding's context: `merge_kept_shared`
+        // keeps the folder shared outside legacy mode; in legacy mode it is
+        // `legacy_merge_clash`, an Error — a folder kept shared would pack
+        // on Studio's IDs — and the merge goes through all the same, the
+        // run writing nothing.
+        let never_merges = matches!(merge, MergeMode::Never);
+        let legacy = matches!(merge, MergeMode::EveryWearer);
+        // The wearers the folder merges into: all of them in legacy mode,
+        // the one outside it (a share never reaches the merge).
+        let merging: &[u8] = if legacy { &wearers } else { &wearers[..1] };
+        let mut share = never_merges || (!legacy && wearers.len() > 1);
+        if !share {
+            let clash = merging.iter().find_map(|&nn| {
+                folder_files.iter().find_map(|file| {
                     let relative = &file[folder.len() + 1..];
                     let folded = vtree::fold_name(relative);
-                    player
+                    players[&nn]
                         .files
                         .iter()
                         .find(|(path, _)| vtree::fold_name(path) == folded)
@@ -1173,18 +1215,27 @@ fn item_folders(
                             (!same_bytes(existing, file)).then(|| relative.to_owned())
                         })
                 })
-                .is_some_and(|path| {
-                    plan.findings.push(tool_message(
-                        Code::MergeKeptShared,
-                        Scope::Folder {
-                            export_id: INPUT,
-                            path: path_scope(&folder),
-                        },
-                        Disposition::Keep,
-                        vec![("path", path)],
-                    ));
-                    true
-                });
+            });
+            if let Some(path) = clash {
+                plan.findings.push(tool_message(
+                    if legacy {
+                        Code::LegacyMergeClash
+                    } else {
+                        Code::MergeKeptShared
+                    },
+                    Scope::Folder {
+                        export_id: INPUT,
+                        path: path_scope(&folder),
+                    },
+                    Disposition::Keep,
+                    vec![("path", path)],
+                ));
+                // Outside legacy mode the clash keeps the folder shared; in
+                // legacy mode the merge goes through, the Error already
+                // keeping the run from writing.
+                share = !legacy;
+            }
+        }
         plan.consumed
             .extend(folder_files.iter().map(|file| (*file).clone()));
         if share {
@@ -1198,22 +1249,25 @@ fn item_folders(
                 wearers,
             });
         } else {
-            let player = players
-                .get_mut(&wearers[0])
-                .expect("the wearer's folder was ensured");
-            for file in &folder_files {
-                let relative = &file[folder.len() + 1..];
-                let folded = vtree::fold_name(relative);
-                // A folded-equal path the merge already holds (byte-equal by
-                // the clash check above) keeps the player folder's spelling.
-                if player
-                    .files
-                    .keys()
-                    .any(|path| vtree::fold_name(path) == folded)
-                {
-                    continue;
+            for &nn in merging {
+                let player = players
+                    .get_mut(&nn)
+                    .expect("the wearer's folder was ensured");
+                for file in &folder_files {
+                    let relative = &file[folder.len() + 1..];
+                    let folded = vtree::fold_name(relative);
+                    // A folded-equal path the player folder already holds
+                    // keeps its own file: byte-equal copies merge, and a
+                    // clash's finding names the folder file left out.
+                    if player
+                        .files
+                        .keys()
+                        .any(|path| vtree::fold_name(path) == folded)
+                    {
+                        continue;
+                    }
+                    player.files.insert(relative.to_owned(), (*file).clone());
                 }
-                player.files.insert(relative.to_owned(), (*file).clone());
             }
         }
     }
@@ -1352,12 +1406,17 @@ mod tests {
                 .find(|(listed, _)| *listed == path)
                 .map(|(_, bytes)| *bytes)
         };
-        player_folders(files, &ancestors_of(files), roster, engine, |a, b| {
-            match (bytes_of(a), bytes_of(b)) {
+        player_folders(
+            files,
+            &ancestors_of(files),
+            roster,
+            engine,
+            false,
+            |a, b| match (bytes_of(a), bytes_of(b)) {
                 (Some(a), Some(b)) => a == b,
                 _ => false,
-            }
-        })
+            },
+        )
     }
 
     /// `player_folders` with no roster, Fox, and a byte check that answers
@@ -2575,6 +2634,7 @@ mod tests {
             &files(&["Faces", "Faces/XXX05 - Bob", "Boots", "Boots/k0430 - Crocs"]),
             Some(&wearing(&[(5, ("SaveName", 430, 0))])),
             Engine::Fox,
+            false,
             |_, _| false,
         );
         assert!(plan.folders.contains_key(&5), "{:?}", plan.folders.keys());
@@ -2610,6 +2670,7 @@ mod tests {
                 (4, ("NoFace", 430, 0)),
             ])),
             Engine::Fox,
+            false,
             |_, _| false,
         );
         // One `fpc_on` each; the empty face folder leaves 03 no

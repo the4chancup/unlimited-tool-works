@@ -3,7 +3,7 @@ format the Team compiler reads. Its commands run from a terminal opened in the
 folder that holds `UTW.exe`.
 
 ```text
-UTW export-upgrader upgrade <export> [--savefile <EDIT> | --loose] [--coverage full|midcup] [-o <dir>]
+UTW export-upgrader upgrade <export> [--savefile <EDIT> | --loose] [--coverage full|midcup] [--legacy-ids] [-o <dir>]
 UTW export-upgrader upgrade-models <folder> [-o <dir>]
 ```
 
@@ -20,6 +20,13 @@ falls in (`k0128` is player 03 of the 126 block). Each pairing is reported as
 positions or past it belongs to no player and is reported as
 `unmigrated_content`. Without a save no look is written. A player folder with a name still
 gets a `settings.toml` whose only setting is `name = true`.
+
+`--legacy-ids` is VGL27's legacy mode, for the organizer: every boots or
+gloves folder is copied into each player wearing it, so no shared one is left,
+and a root `legacy_ids.toml` records the ID each folder's name carried. The
+Team compiler then packs those models under the old IDs, the ones the
+managers' own Red builds use. A copied file that would replace a different
+one in a player's folder is `legacy_merge_clash`, and nothing is written.
 
 The output is a new folder beside the input, or inside the folder `-o` names
 (created when missing). Its name is the team's key with the coverage tag
