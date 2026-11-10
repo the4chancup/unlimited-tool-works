@@ -49,8 +49,10 @@ Name	FirstBootsID
 /nikg/	3026
 /END/	3051
 /wuwa/	3076
+/feg/	3101
 /@/	3126
 /hgg2d/	3151
+/uma/	3176
 /gig/	3226
 /umaJP/	3376
 /utg/	3401

@@ -59,14 +59,6 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
   kit as PES 15–17 do? The player also draws see-through in that capture; the export's
   textures are a noise test pattern with alpha about 68, which may be all it is.
 
-## VGL27's legacy boots and gloves IDs
-
-- **The /feg/ and /uma/ blocks.** The embedded block table
-  (`crates/tools/team_compiler/data/legacy_boots_blocks.txt`, worklog 0.0.2-poc13a) comes from
-  the wiki's PES 2019 boots table, which gives these two VGL teams no row. What is each one's
-  FirstBootsID? Until they are added, a legacy compile refuses every old ID of theirs
-  (`legacy_id_out_of_block`, block "none").
-
 ## After the release
 
 - **Substitution's choices in PES 2018, 2019 and 2020** (worklog 0.0.1y7c; you: "we'll check

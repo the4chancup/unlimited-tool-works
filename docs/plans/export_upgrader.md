@@ -31,26 +31,39 @@ What worklog 0.0.2-poc1, poc4 and poc6 built is in `spec/export_upgrader.md` "Wh
 does": step 3 ("When the save and the folders disagree"), step 8 (the hide ID of a
 custom ID no folder claims) and step 10 (a `.dds` beside a `.ftex` of one stem).
 
-Step 8 also writes, with worklog 0.0.2-poc13, the export's root `legacy_ids.toml` for the
-Team compiler's VGL27 legacy setting (`plans/team_compiler/pipeline.md` "Legacy boots and
-gloves IDs (VGL27)"): a table per player slot holding the custom boots and gloves IDs
-(above 100) of the migrated folders he wears, the ID each folder's name carries (`k0430 -
-Crocs` gives `boots = 430`), loose mode's inferred wearers included, under a comment saying
-what reads it:
+With worklog 0.0.2-poc13, `upgrade --legacy-ids` is the legacy mode whose output the Team
+compiler packs on the old boots and gloves IDs (`plans/team_compiler/pipeline.md` "Legacy
+boots and gloves IDs (VGL27)"). The organizer upgrades every VGL27 export with it, midcups
+included, while managers keep sending Red exports. It changes two things and nothing else:
 
-```toml
-# The old export's boots and gloves IDs, read only by the Team compiler's legacy_boots_ids setting (VGL27).
-[05]
-boots = 2305
-gloves = 2310
-```
+- **No shared boots or gloves folders.** A folder two or more players wear is not kept
+  shared (step 4): step 3's merge copies it into each wearer's folder, as it merges a
+  single wearer's, so each wearer's own package carries the folder's one old ID. A merge
+  that would clash with a file already in a wearer's folder (step 3's `merge_kept_shared`,
+  one wearer or several) is an Error instead, `legacy_merge_clash` (the first clashing path
+  in its context), and the export is not written: a folder kept shared would pack on Studio's
+  IDs. Pre-Fox exports, whose item folders step 3 never merges, keep their shared folders:
+  the mode is for VGL27's PES 2019 exports.
+- **Step 8 also writes the root `legacy_ids.toml`**: a table per player slot holding the
+  custom boots and gloves IDs (above 100) of the migrated folders he wears, the ID each
+  folder's name carries (`k0430 - Crocs` gives `boots = 430`), loose mode's inferred
+  wearers included, under a comment saying what reads it:
 
-A player wearing no migrated folder of a kind has no key for it (a modelless folder, which
-step 3 turns into `fpc_on`, is not migrated: Studio packs nothing for it), and an export
-with no such player gets no file. `aesthetics_export` admits it as a team export's root
-metadata file, so the shared validation ("Verification") does not report it. Every upgrade writes it, whatever the cup: it costs one small
-file, and a flag only VGL27's organizers would remember is one more way to compile the cup
-with Studio's IDs by mistake. It goes with the setting once VGL27 is over.
+  ```toml
+  # The old export's boots and gloves IDs, which the Team compiler packs instead of its own (VGL27).
+  [05]
+  boots = 2305
+  gloves = 2310
+  ```
+
+  A player wearing no migrated folder of a kind has no key for it (a modelless folder, which
+  step 3 turns into `fpc_on`, is not migrated: Studio packs nothing for it), and an export
+  with no such player gets no file. `aesthetics_export` admits it as a team export's root
+  metadata file, so the shared validation ("Verification") does not report it.
+
+Without `--legacy-ids` neither happens. A flag rather than every upgrade: copying shared
+folders changes the export's layout, which only the cup that needs it should get, and the
+file's presence is what turns the compiler's legacy packing on. Both go with VGL27.
 
 What worklog 0.0.2-poc5 and poc7 built is in `spec/export_upgrader.md` "What it does",
 step 7 (a model hidden by distance, anti-blur duplicates dropped). The last step:
@@ -86,10 +99,10 @@ What exists of this is in `spec/export_upgrader.md` "CLI". Step 13 adds `--conve
 `upgrade` (off by default):
 
 ```text
-UTW export-upgrader upgrade <export>... [--savefile <EDIT>] [--loose] [--coverage full|midcup] [--convert-to-gltf] [-o <dir>]
+UTW export-upgrader upgrade <export>... [--savefile <EDIT>] [--loose] [--coverage full|midcup] [--legacy-ids] [--convert-to-gltf] [-o <dir>]
 ```
 
-One addition to the built commands (the coverage tag and the staging folder's sweep are
+`--legacy-ids` is VGL27's legacy mode ("What it does", 0.0.2-poc13). One addition to the built commands (the coverage tag and the staging folder's sweep are
 built: `spec/export_upgrader.md` "CLI"):
 
 - **Several exports at once.** `upgrade` takes one or more exports, with one `--savefile` or
@@ -293,19 +306,29 @@ EU-GUI-07  GIVEN EU-GUI-01's upgrade in flight, another tool's view active
                 the window kept THEN the run ends as it would have
 ```
 
-**0.0.2-poc13 scope.** Step 8's `legacy_ids.toml` (above, "What it does").
+**0.0.2-poc13 scope.** The legacy mode, `--legacy-ids` (above, "What it does").
 
 ```
 EU-SET-15  GIVEN EU-PLY-02's export (slot 05 wearing custom boots 430 from "k0430 - Crocs"),
                  slots 06 and 07 both wearing custom gloves 431 from the gloves folder
                  "g0431", and slot 08 wearing stock boots 55
-           WHEN the export is upgraded with its save
+           WHEN the export is upgraded with its save and --legacy-ids
            THEN the root's legacy_ids.toml holds [05] boots = 430, [06] gloves = 431 and
                 [07] gloves = 431, and no table for slot 08; GIVEN an export whose players
-                wear only stock boots and gloves THEN no legacy_ids.toml is written
+                wear only stock boots and gloves THEN no legacy_ids.toml is written; GIVEN
+                the first export upgraded without --legacy-ids THEN no legacy_ids.toml is
+                written
 EU-SET-16  GIVEN EU-LOOSE-01's export
-           WHEN it is upgraded with --loose
+           WHEN it is upgraded with --loose and --legacy-ids
            THEN legacy_ids.toml holds [03] boots = 128 and [05] boots = 130
+EU-SET-17  GIVEN EU-SET-15's export
+           WHEN it is upgraded with its save and --legacy-ids
+           THEN slots 06's and 07's player folders each hold g0431's files, no Gloves/ folder
+                and no .gloves link file is written, and the run is migration_clean; GIVEN
+                slot 06's face folder also holding a file at one of g0431's paths with other
+                bytes THEN legacy_merge_clash is reported as an Error naming that path and
+                nothing is written; GIVEN the export upgraded without --legacy-ids THEN g0431
+                is kept shared with two link files, as EU-PLY-02 has it
 ```
 
 **0.0.2-ux1 scope.** The progress line ("CLI"). Observed through the console printer's

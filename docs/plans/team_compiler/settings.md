@@ -21,7 +21,6 @@ What exists of this is in `spec/team_compiler/settings.md` "Team compiler settin
 | Setting | Old default | New default | Controls |
 |---|---|---|---|
 | `run_pes` | 0 | same | Launch PES after compiling (only after a successful deployment; a degraded run never launches) |
-| `legacy_boots_ids` | — | 0 | VGL27 only: pack and patch the boots and gloves IDs the export's `legacy_ids.toml` recorded instead of Studio's allocation (`pipeline.md` "Legacy boots and gloves IDs (VGL27)"); removed with VGL28 |
 | `quick_compile_close_on_success` | — | 0 | After a compile started by GUI autorun (`quick_compile.bat` → `UTW --gui team-compiler compile`), close the window when the run completes with no Error-level findings and nothing skipped for errors; stay open on errors, failed deployment, or cancellation so the grid/log can be reviewed. Warnings alone still close (they are in the logs, as Red's `pause_allow = 0` reasoned). Never applies to a manual Compile click |
 
 ### Path resolution

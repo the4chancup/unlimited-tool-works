@@ -47,9 +47,9 @@ first-class target the Fox version the cup moves to around April 2027 ("Target v
 **0.0.1 released** 2026-11-03 (f2): tag `v0.0.1` on `c97ce914`, built by CI run
 41564671137, the clean-machine check passed on the notebook, published by the maintainer.
 Next: the after-cut list (f6, f1g14's postponed mutation run among it), then 0.0.2.
-**Blocked on:** nothing. 0.0.2-poc13 (VGL27's legacy boots and gloves IDs): the upgrader
-writes `legacy_ids.toml` (poc13b), the compiler's half (poc13c) is next; the block table lacks
-the /feg/ and /uma/ rows (`QUESTIONS.md`), which poc13c does not wait for.
+**Blocked on:** nothing. 0.0.2-poc13 (VGL27's legacy boots and gloves IDs) re-specified
+(poc13a2): the upgrader's `--legacy-ids` (poc13c) and the compiler's packing (poc13d) run
+as two SWE-2 slices; then ux1, then the PoC goes to the maintainer.
 
 **Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
 and writes what is correctness-critical; the sidekick, SWE-2 through the Devin CLI, implements;
@@ -7952,14 +7952,22 @@ briefs, review loops, gates and mutation runs as for any step.
       Faces and kits rechecked equal (Red names both by team ID and slot, boots/gloves by
       the folder name's ID, `export_move.py`). The embedded block table
       `crates/tools/team_compiler/data/legacy_boots_blocks.txt` (59 VGL rows, the wiki's PES
-      2019 boots table from /2hug/ on). Open: the /feg/ and /uma/ rows, from the maintainer
+      2019 boots table from /2hug/ on); /feg/ 3101 and /uma/ 3176 from the organizer (11-10)
     - [x] poc13b the upgrader's `legacy_ids.toml` (2026-11-10, SWE-2, landed first time): step 8
       writes the root file from the worn migrated folders' IDs above 100, in both modes
       (EU-SET-15/16); a team export's root admits it, a referee export's does not.
       `export_upgrader` `players.rs` (`ItemFolder`), `settings.rs` (`legacy_ids`),
       `upgrade/mod.rs`; `aesthetics_export` `file_types.rs`, `validate/root.rs`, `folders.rs`;
       the Fox tracer's `upgraded/` golden gains the file (slot 05, 2180)
-    - [ ] poc13c the compiler's setting, table and packing (SWE-2 brief, after poc13b)
+    - [x] poc13a2 re-spec (2026-11-10 evening, the maintainer's rulings; DECISIONS
+      2026-11-10): legacy mode is the upgrader's `--legacy-ids` (no shared boots/gloves
+      folders, the file only then; EU-SET-15 to 17), the compiler reads the file's presence
+      (no setting, no `legacy_id_missing`; `legacy_ids_invalid`; TC-LEG-01/02); the block
+      check moves to 0.0.2 proper (TC-LEG-03/04)
+    - [ ] poc13c the upgrader's `--legacy-ids` (SWE-2 brief `.tmp/0_0_2/poc13/brief_c.md`)
+    - [ ] poc13d the compiler's legacy packing (SWE-2 brief `.tmp/0_0_2/poc13/brief_d.md`)
+    - [ ] poc13e the block check (0.0.2, after the PoC): `legacy_id_out_of_block`, the data
+      directory's table (TC-LEG-03/04)
   - [ ] 0.0.2-ux1 the CLI's progress line and finding times (the maintainer, 2026-11-10;
     DECISIONS 2026-11-10): the upgrader's line counted its output half as an export (`0/2`)
     and drew no parts; the compiler's findings came in waves (manifest-order commits, kept).
