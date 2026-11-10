@@ -73,6 +73,29 @@ fn the_ids_position_in_the_block_pairs_the_wearer() {
     assert!(!sandbox.path(&format!("{out}/Boots")).exists());
 }
 
+// EU-SET-16
+#[test]
+fn loose_mode_records_the_inferred_ids() {
+    let sandbox = Sandbox::new("loose_legacy_ids");
+    // EU-LOOSE-01's export: /a/'s old block is 126 to 150, so 0128 is slot
+    // 03 and 0130 slot 05.
+    sandbox.write("a Spring/a Note.txt", b"Team: /a/\r\n");
+    face(&sandbox, "a Spring/Faces/XXX03 - Ann");
+    boots(&sandbox, "a Spring/Boots/k0128 - Rex");
+    boots(&sandbox, "a Spring/Boots/k0130");
+
+    let run = upgrade_loose(&sandbox, "a Spring");
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    assert_eq!(
+        fs::read_to_string(sandbox.path("a Full Spring/legacy_ids.toml")).unwrap(),
+        concat!(
+            "# The old export's boots and gloves IDs, read only by the Team compiler's legacy_boots_ids setting (VGL27).\n",
+            "[03]\nboots = 128\n",
+            "[05]\nboots = 130\n",
+        )
+    );
+}
+
 // EU-LOOSE-02
 #[test]
 fn the_ids_naming_no_player_are_unmigrated_content() {

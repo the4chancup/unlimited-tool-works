@@ -14,7 +14,9 @@
 //! raw save name (a derived name cannot carry colour codes). A value no
 //! `settings.toml` can hold is left out and reported, not fatal. Loose mode
 //! (step 11) has no records: `loose_settings_files` writes a named folder's
-//! `name = true` alone.
+//! `name = true` alone. Both modes also write the root `legacy_ids.toml`,
+//! the old export's boots and gloves IDs the Team compiler's
+//! `legacy_boots_ids` setting reads.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -23,7 +25,7 @@ use pes_savefile::settings_toml::{NameSetting, PlayerSettings};
 use studio_core::{Disposition, Message, Scope};
 
 use crate::messages::{Code, INPUT, tool_message};
-use crate::players::{ItemKind, OutputFolder};
+use crate::players::{ItemFolder, ItemKind, OutputFolder};
 use crate::roster::Roster;
 
 /// Step 8's `settings.toml` files and findings.
@@ -65,14 +67,14 @@ pub(crate) fn settings_files(
                 ItemKind::Boots,
                 "boots_id",
                 player.boots_id,
-                folder.is_some_and(|folder| folder.boots_folder),
+                folder.is_some_and(|folder| folder.boots_folder.is_some()),
                 fpc::HideIds::CONVENTION.boots(),
             ),
             (
                 ItemKind::Gloves,
                 "gloves_id",
                 player.gloves_id,
-                folder.is_some_and(|folder| folder.gloves_folder),
+                folder.is_some_and(|folder| folder.gloves_folder.is_some()),
                 fpc::HideIds::CONVENTION.gloves(),
             ),
         ]
@@ -162,12 +164,12 @@ pub(crate) fn settings_files(
         // hide preset's blank-model ID (step 8).
         for (index, (claimed, stored, field)) in [
             (
-                folder.boots_folder,
+                folder.boots_folder.is_some(),
                 record.appearance.boots_id,
                 &mut settings.boots_id,
             ),
             (
-                folder.gloves_folder,
+                folder.gloves_folder.is_some(),
                 record.appearance.gloves_id,
                 &mut settings.gloves_id,
             ),
@@ -253,6 +255,41 @@ pub(crate) fn loose_settings_files(folders: &BTreeMap<u8, OutputFolder>) -> Sett
     files
 }
 
+/// The root `legacy_ids.toml`'s bytes (step 8): one table per player slot
+/// holding the IDs the migrated boots and gloves folders he wears were
+/// packed under in the old export, `boots` first. Only an ID above 100 is
+/// recorded (a stock ID is the game's own) and only a migrated folder's
+/// (a modelless one packs nothing); `None` — no file — when no slot has
+/// one. Written in both modes, its cost one small file: a setting only
+/// one cup's organizers would remember to toggle is one more way to ship
+/// the wrong IDs.
+pub(crate) fn legacy_ids(folders: &BTreeMap<u8, OutputFolder>) -> Option<Vec<u8>> {
+    let mut tables = String::new();
+    for (nn, folder) in folders {
+        let mut keys = String::new();
+        if let Some(ItemFolder::Migrated(id)) = folder.boots_folder
+            && id > 100
+        {
+            keys.push_str(&format!("boots = {id}\n"));
+        }
+        if let Some(ItemFolder::Migrated(id)) = folder.gloves_folder
+            && id > 100
+        {
+            keys.push_str(&format!("gloves = {id}\n"));
+        }
+        if !keys.is_empty() {
+            tables.push_str(&format!("[{nn:02}]\n{keys}"));
+        }
+    }
+    (!tables.is_empty()).then(|| {
+        let mut file = String::from(
+            "# The old export's boots and gloves IDs, read only by the Team compiler's legacy_boots_ids setting (VGL27).\n",
+        );
+        file.push_str(&tables);
+        file.into_bytes()
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use pes_savefile::settings_toml::IngameFaceSettings;
@@ -279,8 +316,8 @@ mod tests {
         OutputFolder {
             path: path.to_owned(),
             named: false,
-            boots_folder: false,
-            gloves_folder: false,
+            boots_folder: None,
+            gloves_folder: None,
             fpc_on: false,
             ingame_face: false,
         }
@@ -321,8 +358,8 @@ mod tests {
             OutputFolder {
                 path: "Players/06 - B".to_owned(),
                 named: true,
-                boots_folder: true,
-                gloves_folder: false,
+                boots_folder: Some(ItemFolder::Migrated(430)),
+                gloves_folder: None,
                 fpc_on: false,
                 ingame_face: false,
             },
@@ -517,8 +554,8 @@ mod tests {
             OutputFolder {
                 path: "Players/03 - Ann".to_owned(),
                 named: true,
-                boots_folder: false,
-                gloves_folder: false,
+                boots_folder: None,
+                gloves_folder: None,
                 fpc_on: false,
                 ingame_face: false,
             },
@@ -537,5 +574,58 @@ mod tests {
             }
         );
         assert!(files.findings.is_empty());
+    }
+
+    #[test]
+    fn legacy_ids_lists_each_slots_migrated_ids_above_the_stock_band() {
+        let wearing = |path: &str, boots: Option<u32>, gloves: Option<u32>| OutputFolder {
+            boots_folder: boots.map(ItemFolder::Migrated),
+            gloves_folder: gloves.map(ItemFolder::Migrated),
+            ..plain(path)
+        };
+        let mut folders = BTreeMap::new();
+        // Boots only, gloves only, both (boots first), the stock band's
+        // top left out and its first step over kept, a modelless claim and
+        // a folderless slot giving no table.
+        folders.insert(3, wearing("Players/03 - A", Some(128), None));
+        folders.insert(5, wearing("Players/05", None, Some(130)));
+        folders.insert(7, wearing("Players/07 - B", Some(430), Some(431)));
+        folders.insert(9, wearing("Players/09", Some(100), Some(99)));
+        folders.insert(11, wearing("Players/11", Some(101), None));
+        folders.insert(
+            13,
+            OutputFolder {
+                boots_folder: Some(ItemFolder::Modelless),
+                ..plain("Players/13")
+            },
+        );
+        folders.insert(15, plain("Players/15"));
+        assert_eq!(
+            legacy_ids(&folders).map(|bytes| String::from_utf8(bytes).unwrap()),
+            Some(
+                concat!(
+                    "# The old export's boots and gloves IDs, read only by the Team compiler's legacy_boots_ids setting (VGL27).\n",
+                    "[03]\nboots = 128\n",
+                    "[05]\ngloves = 130\n",
+                    "[07]\nboots = 430\ngloves = 431\n",
+                    "[11]\nboots = 101\n",
+                )
+                .to_owned()
+            )
+        );
+        // A modelless folder alone claims the category but adds no key; a
+        // slot with neither kind gets no table, so no slot having an ID
+        // means no file at all.
+        let mut folders = BTreeMap::new();
+        folders.insert(
+            3,
+            OutputFolder {
+                boots_folder: Some(ItemFolder::Modelless),
+                ..plain("Players/03 - A")
+            },
+        );
+        folders.insert(5, wearing("Players/05", Some(55), Some(60)));
+        assert_eq!(legacy_ids(&folders), None);
+        assert_eq!(legacy_ids(&BTreeMap::new()), None);
     }
 }

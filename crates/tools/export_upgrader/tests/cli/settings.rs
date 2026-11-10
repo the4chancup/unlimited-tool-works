@@ -144,6 +144,47 @@ fn an_unclaimed_custom_model_becomes_the_hide_id_with_a_folder() {
     sandbox.assert_nothing_written("co Full Summer", &run.stdout());
 }
 
+// EU-SET-15
+#[test]
+fn the_worn_item_folder_ids_are_recorded_in_legacy_ids_toml() {
+    let sandbox = Sandbox::new("set_legacy_ids");
+    face(&sandbox, "co Spring/Faces/XXX03 - A");
+    // Slot 05 has no face folder, as in EU-PLY-02: the boots folder's name
+    // part names him.
+    boots(&sandbox, "co Spring/Boots/k0430 - Crocs");
+    gloves(&sandbox, "co Spring/Gloves/g0431");
+    // Slot 09's worn boots folder holds no model: it claims the category
+    // (fpc_on) but records no ID.
+    sandbox.write("co Spring/Boots/k0440 - Empty/boots.skl", b"skl");
+    sandbox.save_edited("EDIT", PesVersion::Pes21, |file| {
+        wears(file, 71405, 430, 0);
+        wears(file, 71406, 0, 431);
+        wears(file, 71407, 0, 431);
+        wears(file, 71408, 55, 0);
+        wears(file, 71409, 440, 0);
+    });
+
+    let run = upgrade(&sandbox, "co Spring", "EDIT");
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    assert!(run.stdout().contains("migration_clean"), "{}", run.stdout());
+    assert_eq!(
+        fs::read_to_string(sandbox.path("co Full Spring/legacy_ids.toml")).unwrap(),
+        concat!(
+            "# The old export's boots and gloves IDs, read only by the Team compiler's legacy_boots_ids setting (VGL27).\n",
+            "[05]\nboots = 430\n",
+            "[06]\ngloves = 431\n",
+            "[07]\ngloves = 431\n",
+        )
+    );
+
+    // An export whose players wear only stock IDs writes no file.
+    face(&sandbox, "co Summer/Faces/XXX03 - A");
+    sandbox.save_edited("EDIT2", PesVersion::Pes21, |file| wears(file, 71403, 12, 3));
+    let run = upgrade(&sandbox, "co Summer", "EDIT2");
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    assert!(!sandbox.path("co Full Summer/legacy_ids.toml").exists());
+}
+
 // EU-SET-04
 #[test]
 fn the_name_is_true_explicit_or_the_coded_save_name() {

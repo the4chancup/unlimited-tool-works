@@ -58,6 +58,18 @@ pub(crate) struct PlayerFolders {
     pub(crate) not_worn: BTreeSet<(ItemKind, u32)>,
 }
 
+/// What came of the boots or gloves folder a player's worn ID names.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ItemFolder {
+    /// It migrated (merged into the player folder, or kept shared with a
+    /// link): the ID the folder's name carries, which `legacy_ids.toml`
+    /// records.
+    Migrated(u32),
+    /// It held no model (step 3): it claims the category — its wearer is
+    /// `fpc_on` — but packs nothing, so it records no ID.
+    Modelless,
+}
+
 /// One slot's output player folder as steps 3-4 leave it.
 #[derive(Debug)]
 pub(crate) struct OutputFolder {
@@ -66,10 +78,11 @@ pub(crate) struct OutputFolder {
     /// The folder's name has a name part after its number: `Players/03 -
     /// Ann`, not `Players/05`.
     pub(crate) named: bool,
-    /// A boots folder of his worn ID was merged into it or is linked from it.
-    pub(crate) boots_folder: bool,
+    /// A boots folder of his worn ID was merged into it or is linked from
+    /// it, or a modelless one claims the category.
+    pub(crate) boots_folder: Option<ItemFolder>,
     /// The same for a gloves folder.
-    pub(crate) gloves_folder: bool,
+    pub(crate) gloves_folder: Option<ItemFolder>,
     /// A modelless boots or gloves folder of his worn ID marked him `fpc_on`
     /// (step 3): step 8 keeps an unclaimed category's stored 0 explicit.
     pub(crate) fpc_on: bool,
@@ -121,10 +134,11 @@ struct PlayerFolder {
     /// The worn gloves folder's name part, `""` when none.
     gloves_name_part: String,
     /// A boots folder of his worn ID was merged into the folder or is linked
-    /// from it (step 8's "the folder decides the category").
-    boots_folder: bool,
+    /// from it (step 8's "the folder decides the category"), or a modelless
+    /// one claims it.
+    boots_folder: Option<ItemFolder>,
     /// The same for a gloves folder.
-    gloves_folder: bool,
+    gloves_folder: Option<ItemFolder>,
     /// A kept face folder exists for the slot.
     has_face: bool,
     /// The `ingame_face.toml` marker file to write.
@@ -145,8 +159,8 @@ impl PlayerFolder {
             face_name_part: String::new(),
             boots_name_part: String::new(),
             gloves_name_part: String::new(),
-            boots_folder: false,
-            gloves_folder: false,
+            boots_folder: None,
+            gloves_folder: None,
             has_face: false,
             marker: false,
             fpc_on: false,
@@ -1110,8 +1124,8 @@ fn item_folders(
                 player.marker = player.marker || !player.has_face;
                 player.fpc_on = true;
                 match kind {
-                    ItemKind::Boots => player.boots_folder = true,
-                    ItemKind::Gloves => player.gloves_folder = true,
+                    ItemKind::Boots => player.boots_folder = Some(ItemFolder::Modelless),
+                    ItemKind::Gloves => player.gloves_folder = Some(ItemFolder::Modelless),
                 }
             }
             plan.leftovers
@@ -1126,11 +1140,11 @@ fn item_folders(
             match kind {
                 ItemKind::Boots => {
                     player.boots_name_part = name_part.clone();
-                    player.boots_folder = true;
+                    player.boots_folder = Some(ItemFolder::Migrated(id));
                 }
                 ItemKind::Gloves => {
                     player.gloves_name_part = name_part.clone();
-                    player.gloves_folder = true;
+                    player.gloves_folder = Some(ItemFolder::Migrated(id));
                 }
             }
         }
@@ -2614,9 +2628,9 @@ mod tests {
             }
         }
         assert!(plan.leftovers.contains("Boots/k0430 - EMPTY/boots.skl"));
-        assert!(plan.folders[&3].boots_folder);
-        assert!(plan.folders[&3].gloves_folder);
-        assert!(plan.folders[&4].boots_folder);
+        assert_eq!(plan.folders[&3].boots_folder, Some(ItemFolder::Modelless));
+        assert_eq!(plan.folders[&3].gloves_folder, Some(ItemFolder::Modelless));
+        assert_eq!(plan.folders[&4].boots_folder, Some(ItemFolder::Modelless));
         // `EMPTY` names nobody: 04's name fell to the save's.
         assert_eq!(plan.folders[&4].path, "Players/04 - NoFace");
     }

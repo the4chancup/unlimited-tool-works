@@ -44,6 +44,29 @@ fn unexpected_root_files_and_folders_are_dropped() {
 }
 
 #[test]
+fn a_team_exports_root_legacy_ids_toml_is_admitted_a_referee_exports_is_not() {
+    let team = report(
+        "egg Midcup",
+        &[("legacy_ids.toml", 12), ("Players/03 - A/hair.dds", 9)],
+        &[],
+        &[],
+    );
+    assert_eq!(issue_codes(&team), vec![]);
+
+    let refs = report(
+        "refs Cup",
+        &[("players.txt", 10), ("legacy_ids.toml", 12)],
+        &["Players/Keeper"],
+        &[("players.txt", Ok(b"01 Keeper"))],
+    );
+    assert_eq!(
+        issue_codes(&refs),
+        vec![("root_file_unexpected", Disposition::DropFile)]
+    );
+    assert_eq!(refs.issues[0].scope, file_scope("legacy_ids.toml"));
+}
+
+#[test]
 fn a_write_names_marker_at_the_root_is_a_team_exports_flag() {
     let team = report(
         "egg Midcup",

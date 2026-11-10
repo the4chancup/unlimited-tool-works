@@ -40,7 +40,7 @@ use crate::note;
 use crate::players::{path_scope, player_folders};
 use crate::referees::{find_refs_txt, players_txt, referee_folders};
 use crate::roster::Roster;
-use crate::settings::{SettingsFiles, loose_settings_files, settings_files};
+use crate::settings::{SettingsFiles, legacy_ids, loose_settings_files, settings_files};
 use crate::source::{self, OldExport, SourceFailure};
 use crate::staging::{claim_staging, finish_staging, write_output_file};
 use crate::texture_pairs;
@@ -585,13 +585,19 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
             );
             // Step 8: a `settings.toml` per player folder, from the save's
             // records; loose mode's holds `name = true` alone (step 11).
-            let settings = match (&invocation.save, &roster) {
+            let mut settings = match (&invocation.save, &roster) {
                 (Some(save), Some(roster)) => {
                     settings_files(save, roster, &plan.folders, full, &plan.not_worn)
                 }
                 // Loose mode: no record to read, only the folder's name.
                 _ => loose_settings_files(&plan.folders),
             };
+            // The root `legacy_ids.toml`, the worn folders' old IDs for the
+            // Team compiler's `legacy_boots_ids` setting: written in both
+            // modes, for a team export only.
+            if let Some(file) = legacy_ids(&plan.folders) {
+                settings.written.push(("legacy_ids.toml".to_owned(), file));
+            }
             let kits = kit_folders(
                 &files,
                 version,

@@ -1,0 +1,4 @@
+# The old export's boots and gloves IDs, read only by the Team compiler's legacy_boots_ids setting (VGL27).
+[05]
+boots = 2180
+gloves = 2180
