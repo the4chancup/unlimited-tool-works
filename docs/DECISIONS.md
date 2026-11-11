@@ -16343,3 +16343,22 @@ first; a fixed width costs a cut value, which the hover gives back. A screen rea
 row as one name, where "185 → 183" says which value is which and three bare words do not.
 Plan: `plans/save_editor.md` "Comparator (gameplay + aesthetics)", the player list's
 paragraph, SE-GUI-13, SE-GUI-69; the draft's `comparatorPanel`.
+
+## 2026-11-12 — aatf — An illegal formation is one only a tool outside PES can make
+Decision (the maintainer, on the first reading of PES 2017's executable): "Illegal mainly
+means something that can only be obtained through tools external to PES." The check of P46
+therefore tests whether the stock game's own screens could have produced a stored
+formation, not whether the stock game refuses it. This replaces the premise of 2026-10-31,
+"The illegal formation check is the stock game's refusal, in the host": the stock exe holds
+no such refusal. Where the Whack Patch differs from the exe it was made from, it switches
+off a match-time rewrite of the line counts (one keeper, two to five defenders, one to six
+midfielders, one to five forwards) and the drag's re-pick of a dropped starter's position;
+the one area test in the exe refuses a drop in one group of screens and is untouched. The
+host, the flag, the warning and "only on versions read and confirmed" stand.
+Why: a cup that forbids illegal formations forbids what its members could not have made in
+the game it plays, whatever the game would do with it afterwards. That entry's own reason
+against the drop rule ("a later drag never moves an earlier starter back") is unproven and
+is being read with the rest: if every starter's position is one the drop offers at his spot
+in everything the stock screens make, the drop rule is the test's main clause.
+Plan: `plans/aatf_rules.md` "The illegal formation check (0.0.2)"; worklog 0.0.2c; the
+reading in `.tmp/0_0_2/formation/research/report.md`.

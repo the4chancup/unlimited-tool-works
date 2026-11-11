@@ -90,27 +90,33 @@ logic never reads it: the logic's hash and version ignore it, as they ignore the
 unchanged and keeps the game's rule. The built-in Autumn 26 and DBC7 set it; the others
 leave it out.
 
-**The illegal formation check (0.0.2).** Under a ruleset without the flag, a team whose
-formations hold one the stock game refuses gets an `IllegalFormation` warning naming the
-preset, the formation and each starter at fault, in Live AATF and `check-aatf` alike, so a
-member who edited a team in 4ccEditor-1, or brought one from a cup that allowed them, sees it
-before the stock game does. The rule is the stock game's own refusal, read from its
-executable, never the drop rule: a later drag never moves an earlier starter back into his
-area, so formations every step of which the game made can hold a starter outside his
-position's area, and a check built on the drop rule would flag them. The refusal is found
-where the Whack Patch disables it: `G:\Games\PES2015` holds PES 2015's stock exe beside its
-Whack Patch, and `E:\PES2017\PES2017.exe.old5` is the PES 2017 exe the Whack Patch was made
-from (the last before it, dated 2025-05-17): those two PES 2017 exes differ in 70 bytes over
-25 runs, so the patch's edits point at the check, which is then read there and in PES 2016's
-unpacked executable, and confirmed in game (a formation each side of the rule, under the
-stock exe). The check is the `libs/aatf` host's, in Rust beside the checks the host runs
+**The illegal formation check (0.0.2).** An illegal formation is one that only a tool
+outside PES can make (4ccEditor's Tactics tab, a patched exe's free drag): the game's own
+screens could not have produced it. Under a ruleset without the flag, a team whose
+formations hold one gets an `IllegalFormation` warning naming the preset, the formation and
+what in it the game could not have made, in Live AATF and `check-aatf` alike, so a member
+who edited a team in 4ccEditor-1, or brought one from a cup that allowed them, sees it
+before the cup's own check does. The test is therefore what the stock screens can produce,
+read from PES 2017's executable. It is no refusal of the game's, which has none: read where
+the Whack Patch differs from the exe it was made from (`E:\PES2017\PES2017.exe.old5`, 70
+bytes in 25 runs), the patch switches off a match-time rewrite of a formation's line counts
+(one keeper in the first slot, two to five defenders, one to six midfielders, one to five
+forwards: positions outside them are changed, in slot order) and the drag's re-pick of a
+dropped starter's position, and no comparison of a starter's spot with his position's area;
+the one area test in the exe refuses a drop in one group of screens and is left as it was.
+The test's clauses are still being read: the positions a drop offers at each spot and what
+else a spot is held to, the other ways the screens set a spot or a position (the Select
+Position menu, a swap, the preset formations), and whether the screens themselves keep the
+line counts. Until they are read and each is looked at in game under the stock exe, nothing
+here is built. The check is the `libs/aatf` host's, in Rust beside the checks the host runs
 around the file's logic, never in the logic: the rule is the game's, the same for every cup,
 and in the logic it would copy the game's tables into every file and take a logic version;
-the ruleset's flag only turns it off. The position areas it may read live in `team_widgets`
-today (the drop rule's tables), which `libs/aatf` cannot depend on: they move to
-`pes_savefile` for both. Until the refusal is
-read, nothing here is built. The check runs on the versions whose executable it was read
-and confirmed on; a save of another version gets none, rather than a rule guessed for it.
+the ruleset's flag only turns it off. The tables it reads live in `team_widgets` today (the
+drop rule's, taken from PES 2016), which `libs/aatf` cannot depend on: they move to
+`pes_savefile` for both. The check runs on the versions whose executable it was read and
+confirmed on; a save of another version gets none, rather than a rule guessed for it (PES
+2015's pair on G: could not be read: its patch is a memory dump with detours outside the
+image, and no clean exe of its build is there).
 
 **Medal systems.** A tier a medal system names has no `count` and no `counts_as`, and no tier
 `counts_as` it; the tier that is the rest of the squad takes what the team's system leaves.

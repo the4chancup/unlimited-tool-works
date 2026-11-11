@@ -1899,12 +1899,17 @@ briefs, review loops, gates and mutation runs as for any step.
     - the same run's PoC look passed: /dbg/ and /4ccg/ upgrade and compile clean (about 2 s
       for both), and the 8 players checked show their own faces and bodies
   - [ ] 0.0.2c the illegal formation check (`plans/aatf_rules.md` "The illegal formation
-    check (0.0.2)"; DECISIONS 2026-10-31, P46 accepted): first the stock game's refusal, read
-    where the Whack Patch differs from the exe it was made from: `E:\PES2017\PES2017.exe.old5`
-    (the maintainer: the last exe before the patch; 70 bytes over 25 runs differ, the first at
-    file offset 0x1b3c89c, measured 2026-10-31); PES 2015's pair on G: as a second reading;
-    `PES2017.exe.old` (2016-10-20) is the release exe. Then in PES 2016's unpacked exe;
-    confirmed in game on `.old5`; then the plan's rule, its Acceptance, and the slice
+    check (0.0.2)"; DECISIONS 2026-10-31, P46 accepted; 2026-11-12 "An illegal formation is
+    one only a tool outside PES can make"): what the stock screens can produce, read from
+    PES 2017's exe, then looked at in game on `PES2017.exe.old5`; then the plan's rule, its
+    Acceptance, and the slice
+    - [x] the first reading, 2026-11-12 (Opus, `.tmp/0_0_2/formation/research/report.md`):
+      the Whack Patch's 25 runs read; no area refusal among them, a match-time rewrite of
+      the line counts and the drag's re-pick switched off
+    - [ ] the second reading (`.tmp/0_0_2/formation/rework1.md`): the drop's offered
+      positions per spot, the screens' other ways to set a spot or a position, the line
+      counts in the editor; the test's clauses, a formation breaking each
+    - [ ] each clause looked at in game under the stock exe (Pending looks when listed)
   - [ ] 0.0.2d profile a compile against Red, after 0.0.2b (the maintainer, 2026-11-06: one
     PES 2021 export, `egg Midcup Big` in `.tmp/release_0_0_1/0_0_1/manual_run2/`, took about
     1:30 in a console where Red takes under half that, and its progress line showed no parts
