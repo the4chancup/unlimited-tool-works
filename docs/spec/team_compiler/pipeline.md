@@ -1007,8 +1007,17 @@ describes behavior, not a serial scheduling requirement:
 - **Kit-dependent assets** — `kitN`/`kit1`…`kit9` tokens in file names and written paths (FMDL
   path tables, `.mtl` sampler paths, `face.xml` model paths) pass through **verbatim**; the modded
   exes match that spelling directly, and the historical `u0XXXp0` magic is legacy that only the
-  Export upgrader understands (the compiler has no finding for it — a leftover reference just fails
-  the ordinary texture-existence checks). A variant set serves the export's kit numbers
+  Export upgrader understands and respells. In an export it is refused, as the old kit
+  stand-in is: a legacy token (`u0`, three ASCII letters or digits, `p` or `g` and a digit, in
+  the letter case the upgrader matches) in a file or folder name, or in a path a model, `.mtl` or
+  `face.xml` names (checked by the deep pass), is `kit_token_old`, naming the upgrader, before
+  anything is compiled. Before, a file so named packed as an ordinary texture
+  and the exes' `u0???p0` swap still served it, so files spelled the old way lived on in
+  exports nobody upgraded; we refuse rather than read both spellings because two spellings of
+  one thing are what a new member cannot tell apart. The match is the upgrader's, one function
+  in `aesthetics_export` for both tools, so whatever the compiler refuses the upgrader
+  respells, and a case the upgrader leaves (`U0XXXP1`, a `u0XXXg` with no digit) is no token
+  to either. A variant set serves the export's kit numbers
   from its fallback (`kitF`, else the lowest variant with `kit_variant_missing`): copied
   into each gap on PES 15-17, written once under the reference's spelling on PES 18-21,
   where FoxDen loads it for a kit without a variant of its own; per-kit *model* sets

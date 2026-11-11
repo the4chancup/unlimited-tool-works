@@ -16189,3 +16189,18 @@ Plan: no plan edit needed: `plans/team_compiler/pipeline.md` "Legacy boots and g
 Decision (the lead's, 0.0.2-poc13g): `legacy_id_out_of_block` names the folder that would have packed the ID: a kept-shared folder holding it is named, and the player folders that only link it are not, since they pack nothing of that kind; a player folder holding its own model of the kind is named as before. Only the report changes: which slot takes an old ID first, the packages and the patch rows stay as they are.
 Why: the plan already puts the check "on what the export packs"; one line per wearer for one folder told the member the same thing several times (the VGL27 Friendlies' compile), and named folders whose fix is elsewhere.
 Plan: `plans/team_compiler/pipeline.md` "Legacy boots and gloves IDs (VGL27)", "Out of block", the sentence "The Error names the folder that would have packed the ID, once".
+
+## 2026-11-11 — team_compiler, aesthetics_export — the legacy kit token is refused as the upgrader matches it
+Decision: the compiler refuses a legacy kit token (`u0`, three ASCII letters or digits, `p` or
+`g` and a digit) in an export's file and folder names and in the paths its models, `.mtl`s and
+`face.xml`s name, as `kit_token_old` (Error, the holding folder dropped; in `Common/` the file
+or folder alone), naming `export-upgrader`. The match is the upgrader's, case as written, by
+one function in `aesthetics_export` both tools call; the worklog's earlier "any case" is not
+taken. A name is reported once, on the outermost file or folder whose own name holds a token;
+a path once per file and distinct path.
+Why: the compiler must refuse exactly what the upgrader respells. An any-case match would
+refuse `U0714P1.dds`, which the upgrader leaves as it is, so the member would be told to run
+a tool that cannot fix it; one function keeps the two tools from drifting. One finding per
+folder rather than per file under it, since the fix (an upgrade) is the same for all of them.
+Plan: `spec/team_compiler/messages.md` (`kit_token_old`), `spec/team_compiler/pipeline.md`
+"Kit-dependent assets", `spec/model_format.md` "Output naming"; TC-STR-22, TC-MOD-107.

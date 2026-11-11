@@ -150,7 +150,8 @@ Rules:
 - **Output naming.** The token (but `kitF`, which names no output file) passes through
   unchanged into emitted file names and into every path the compiler writes — FMDL path
   tables, `.mtl` sampler paths, `face.xml` model paths. Nothing in
-  Studio, the Blender side included, ever produces `u0XXX`.
+  Studio, the Blender side included, ever produces `u0XXX`, and the compiler refuses it in an
+  export's names and paths (`kit_token_old`); only the Export upgrader reads it.
 
 **What this replaces.** Two older ways of getting "the kit texture" onto a model existed:
 

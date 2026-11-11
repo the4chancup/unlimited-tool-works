@@ -425,6 +425,14 @@ TC-STR-20  GIVEN /co/ slots 05, 06 and 07 holding, in turn, ingame_face.toml, a 
                 neither reports a disallowed file nor a finding on 05; the CPK holds no
                 face/real/71405/ path and a blank face package for 71406 and 71407, as for
                 a folder with no marker
+TC-STR-22  GIVEN /co/ slot 05 holding face_high.fmdl and kit1_u0714p1.dds; Common/ holding a
+                 folder u0XXXp0/ with two textures; and slot 06 holding face_high.fmdl,
+                 U0714P1.dds and u0XXXg_back.dds
+           WHEN the export is checked for PES 21
+           THEN kit_token_old names slot 05's kit1_u0714p1.dds and drops that folder, and
+                names Common/u0XXXp0/ once, neither of its textures, dropping it alone; each
+                text names export-upgrader; no kit_token_old names a file of slot 06, whose
+                two names are no token (a capital U0 and P; a g with no digit)
 ```
 
 **Roster**
@@ -1346,6 +1354,13 @@ TC-MOD-106 GIVEN slot 05's face_high.fmdl naming dummy_kit in team_common_folder
            THEN both times dummy_kit_name_old names slot 05's, 06's and 07's textures, each
                 text naming team_kit and export-upgrader, and drops their folders, and no
                 finding names slot 08's model
+TC-MOD-107 GIVEN slot 05's face_high.fmdl naming u0XXXp1.dds in team_common_folder/, slot 06's
+           face_high.model whose face_high.mtl names ./u0714g1.dds twice, and slot 07's
+           face_high.fmdl naming ./kitN.dds, with its kit1 and kit2 variants
+           WHEN the export is checked for PES 21, then for PES 17
+           THEN both times kit_token_old names slot 05's and slot 06's references, slot 06's
+                once, each text naming export-upgrader, and drops both folders; no
+                kit_token_old names slot 07's model
 ```
 
 **Textures**
