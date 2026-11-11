@@ -345,8 +345,8 @@ pes_version = 19                # the PES version of the save this was exported 
 id = 841                        # the team this was exported from; the command line imports onto it, the Save editor onto the open team
 name = "/98hu/"                 # colour codes as in the save
 short_name = "I1"
-manager_id = 1000               # PES 19 and later
-stadium_id = 12                 # PES 19 and later
+manager_id = 1000               # PES 17 and later
+stadium_id = 12                 # PES 17 and later
 color_1 = [31, 58, 15]          # PES 17 and later; red, green, blue: 0 to 63 each
 color_2 = [63, 63, 63]
 kit_slots = [{ number = 0, binding = 0 }, ...]   # PES 17 only; ten entries, values as stored
@@ -975,10 +975,11 @@ report, 2026-11-11), or players with blank names and stats. The field the game n
 manager id: of four files built from one game-made Texport of 772, the zero-encoded one and
 that one with every player's id copy restored showed blank names and stats, while that one
 with only the team record's +4 restored worked like the game's own file, and so did a file
-from the writer that copies the save's records (PES 2017, in game, 2026-11-11). Among the bytes no field models: the team record's u32 at +4, the team's
-**manager id** (on PES 17 equal to the team id on 218 of 220 teams; on 19 the game's own coach
-ids), tactics values, and each player record's second copy of the player id and the `ff ff`
-after it. The coach block is the save's **coach record** that manager id names: a section of
+from the writer that copies the save's records (PES 2017, in game, 2026-11-11). The team
+record's u32 at +4 is the team's **manager id** (on PES 17 equal to the team id on 218 of 220
+teams; on 19 the game's own coach ids), a field of the codec from PES 17 on. Among the bytes
+no field models: tactics values, and each player record's second copy of the player id and the
+`ff ff` after it. The coach block is the save's **coach record** that manager id names: a section of
 88-byte records sorted by coach id (the u32 at +0) and closed by an all-`ff` record, its count
 a u16 in the payload header after the team count (`VersionSchema::coaches`, measured on the
 reference saves 2026-11-11: `0x410118`, count at `0x62` (17); `0x40a35c`, `0x66` (18);

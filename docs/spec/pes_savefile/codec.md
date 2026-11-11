@@ -130,9 +130,14 @@ pub fn schema_for(version: PesVersion) -> &'static VersionSchema;
 `Formation { preset, formation, slot, part: FormationPart }`, `Instruction { preset, side:
 InstructionSide, index, part: InstructionPart }`, `Starting(u8)`, `Bench(u8)`,
 `PlayerToJoinAttack(u8)`, `ManMarking { preset, slot }`, the set-piece takers, `Captain`, the
-auto flags). Two kinds of field the reference never reads are measured instead and enter the
-generator as its `MEASURED_FIELDS` table: the man-marking runs (every version) and PES 15's
-three auto flags, so a regeneration keeps them. Variant names are the
+auto flags). Three kinds of field the reference never reads are measured instead and enter the
+generator as its `MEASURED_FIELDS` table: the man-marking runs (every version), PES 15's
+three auto flags, and the PES 17 and 18 team record's manager id (the u32 at +4) and home
+stadium id (the u16 at +10), which the reference reads only from PES 19 on, so a regeneration
+keeps them. The team ids sit at PES 19's offsets, with PES 19's `ff ff` at +8, +12 and +16
+around them; on the reference saves (2026-11-11) the u32 at +4 equals the team id on 218 of
+220 PES 17 teams and 200 of 202 PES 18 ones, and the u16 at +10 equals the same team's PES 19
+stadium on 198 of 210 and 168 of 202 (21 distinct values on 18). Variant names are the
 readable model names (`TightPossession`, not `tight_pos`); the table module's doc comment says
 which reference walk it was derived from, and this section is the evidence trail. The generator
 is `scripts/derive_savefile_schema.py <reference source dir> <crate>/src/schema`; it is committed so

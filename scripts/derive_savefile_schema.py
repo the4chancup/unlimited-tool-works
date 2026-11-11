@@ -497,7 +497,11 @@ WIDTH_FIXES = {(18, "mo_armd"): 3}
 # formation slot i's assignment: the marked opponent's formation slot, 0xFF
 # none); the three presets sit one preset_stride apart, and PES 21 shares PES
 # 20's tables. "auto_flags": PES 15's three auto-flag bytes, in the order PES
-# 16's derived walk reads them.
+# 16's derived walk reads them. "team_ids": (field, byte, bit width) of the team
+# record fields the reference reads only from PES 19 on, at PES 19's offsets: on
+# the reference saves the u32 at +4 equals the team id on 218 of 220 PES 17 teams
+# and 200 of 202 PES 18 ones, and the u16 at +10 equals the same team's PES 19
+# stadium on 198 of 210 and 168 of 202.
 MEASURED_FIELDS = {
     "man_marking": {15: 0x73, 16: 0x73, 17: 0x95, 18: 0x95, 19: 0x95, 20: 0x95},
     "auto_flags": {
@@ -507,13 +511,17 @@ MEASURED_FIELDS = {
             ("auto_preset_change", 0x200),
         ],
     },
+    "team_ids": {
+        17: [("manager_id", 4, 32), ("stadium_id", 10, 16)],
+        18: [("manager_id", 4, 32), ("stadium_id", 10, 16)],
+    },
 }
 PLAYER_TEXT = {"name": ("Name", "The player name, UTF-8, colour codes included."),
                "shirt_name": ("ShirtName", "The shirt name, single-byte text.")}
 TEAM = {
     "id": ("Id", "The team id."),
-    "manager_id": ("ManagerId", "Manager id (PES 19+)."),
-    "stadium_id": ("StadiumId", "Home stadium id (PES 19+)."),
+    "manager_id": ("ManagerId", "Manager id (PES 17+)."),
+    "stadium_id": ("StadiumId", "Home stadium id (PES 17+)."),
     "b_edit_name": ("EditedName", "The team name was edited."),
     "b_edit_shortname": ("EditedShortName", "The short name was edited (PES 15)."),
     "b_edit_stadium": ("EditedStadium", "The home stadium was edited (PES 20+)."),
@@ -793,6 +801,17 @@ VERSIONS = {
 }
 
 
+def insert_by_offset(fields, row):
+    """`fields` with an injected bit-run `row` before the first bit run that starts after it,
+    so the emitted table keeps the walk's order."""
+    at = next(
+        i
+        for i, f in enumerate(fields)
+        if f["kind"] == "bits" and f["bit_offset"] > row["bit_offset"]
+    )
+    return fields[:at] + [row] + fields[at:]
+
+
 def version_rs(version, spec, walks):
     label = "PES 20 and 21" if version == 20 else f"PES {version}"
     out = [f"//! The {label} field tables, derived mechanically (method and checks:",
@@ -811,12 +830,7 @@ def version_rs(version, spec, walks):
         # The block's first u32 is the appearance id: the reference reads past it, so the
         # row is injected like the 15/16 appearance record's `id` (which is the join key).
         row = {"field": "appearance_id", "kind": "bits", "bit_offset": block * 8, "width": 32}
-        at = next(
-            i
-            for i, f in enumerate(fields)
-            if f["kind"] == "bits" and f["bit_offset"] > block * 8
-        )
-        fields = fields[:at] + [row] + fields[at:]
+        fields = insert_by_offset(fields, row)
     s, a, t = split_rows(fields, PLAYER, PLAYER_TEXT)
     body += record_rs("PLAYER", "PlayerField", "PlayerText", rec["size"], s, a, t,
                       f"The {label} player record.", ingame_face=run)
@@ -830,7 +844,10 @@ def version_rs(version, spec, walks):
                           f"The {label} appearance record; the player id at +0 keys it to its player record.",
                           ingame_face=run)
     rec = walks[spec["team"]]
-    s, a, t = split_rows(rec["fields"], TEAM, TEAM_TEXT)
+    fields = rec["fields"]
+    for name, byte, width in MEASURED_FIELDS["team_ids"].get(version, []):
+        fields = insert_by_offset(fields, {"field": name, "kind": "bits", "bit_offset": byte * 8, "width": width})
+    s, a, t = split_rows(fields, TEAM, TEAM_TEXT)
     body += record_rs("TEAM", "TeamField", "TeamText", rec["size"], s, a, t, f"The {label.split(' and')[0]} team record.")
     if "team21" in spec:
         rec = walks[spec["team21"]]

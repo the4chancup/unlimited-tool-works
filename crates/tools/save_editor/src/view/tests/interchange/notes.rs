@@ -34,8 +34,8 @@ fn a_file_of_another_version_lists_its_notes_in_words() {
     assert!(
         expected
             .iter()
-            .any(|line| line.contains("(path=team.manager_id)")),
-        "premise: the command line notes the manager id: {expected:#?}"
+            .any(|line| line.contains("(path=team.edit_flags.stadium)")),
+        "premise: the command line notes the stadium flag: {expected:#?}"
     );
 
     assert_eq!(
@@ -92,8 +92,8 @@ fn a_file_of_another_version_lists_its_notes_in_words() {
 
     // A team key's group is its subject alone, in the warning colour.
     assert!(
-        lines.contains(&"Manager ID".to_owned()),
-        "Manager ID in {lines:#?}"
+        lines.contains(&"Stadium edit flag".to_owned()),
+        "Stadium edit flag in {lines:#?}"
     );
     let warn = window
         .ctx
@@ -101,7 +101,7 @@ fn a_file_of_another_version_lists_its_notes_in_words() {
         .visuals
         .warn_fg_color;
     assert_eq!(
-        painted(&mut window, &mut view, "Manager ID"),
+        painted(&mut window, &mut view, "Stadium edit flag"),
         warn,
         "a team key in the warning colour"
     );

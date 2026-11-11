@@ -352,12 +352,16 @@ fn colour_unit(
             .on_disabled_hover_text(gating_tooltip(
                 [TeamField::Color1Red, TeamField::Color2Red][index],
             ));
-            ui.weak(format_hex([0, 0, 0]));
+            ui.label(
+                egui::RichText::new(format_hex([0, 0, 0]))
+                    .monospace()
+                    .weak(),
+            );
         }
     }
 }
 
-/// The manager ID pair (PES 19+, `Option` on the entry). Elsewhere the
+/// The manager ID pair (PES 17+, `Option` on the entry). Elsewhere the
 /// pair draws disabled with the `PES NN+` tooltip, in the same place.
 fn manager_unit(
     ui: &mut egui::Ui,
@@ -389,7 +393,7 @@ fn manager_unit(
     }
 }
 
-/// The stadium ID pair (PES 19+, `Option` on the entry): a changed
+/// The stadium ID pair (PES 17+, `Option` on the entry): a changed
 /// stadium ID sets the stadium flag where the version has it (PES
 /// 20/21). Elsewhere the pair draws disabled with the `PES NN+` tooltip,
 /// in the same place.

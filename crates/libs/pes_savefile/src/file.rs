@@ -541,6 +541,31 @@ mod tests {
         }
     }
 
+    /// PES 17 and 18 keep the manager id (the team record's u32 at +4) and
+    /// the home stadium id (its u16 at +10) where PES 19 does, and every
+    /// team reads them there.
+    #[test]
+    fn pes17_and_18_teams_read_their_manager_and_stadium_ids() {
+        let mut stadiums = std::collections::BTreeSet::new();
+        for version in [PesVersion::Pes17, PesVersion::Pes18] {
+            let (file, _) = open(version);
+            for team in file.teams() {
+                let record = file.team_records(team.id).expect("the team's records").team;
+                let manager = record_id(&record[4..]);
+                let stadium = u16::from_le_bytes(record[10..12].try_into().expect("a u16"));
+                stadiums.insert(stadium);
+                assert_eq!(
+                    (team.manager_id, team.stadium_id),
+                    (Some(manager), Some(stadium)),
+                    "{version:?} team {}",
+                    team.id
+                );
+            }
+        }
+        // Every PES 17 fixture team has stadium 29; the PES 18 one's vary.
+        assert!(stadiums.len() > 1, "premise: the stadiums differ");
+    }
+
     /// A save reports its container's serial, the one a PES 2017 Texport
     /// written from it carries.
     #[test]
@@ -627,6 +652,41 @@ mod tests {
                 "payload byte {i} changed outside the edited records"
             );
         }
+    }
+
+    /// A PES 17 team given team 702's manager and stadium 46 (the PES 19
+    /// fixture's team 100 plays there) writes them at +4 (u32) and +10
+    /// (u16), reads them back, and no other byte of its record changes.
+    #[test]
+    fn a_pes17_manager_and_stadium_edit_writes_only_their_bytes() {
+        let (manager, stadium) = (702u32, 46u16);
+        let (mut file, _) = open(PesVersion::Pes17);
+        let before = file.team_records(701).expect("team 701").team.to_vec();
+        assert_ne!(
+            before[4..8],
+            manager.to_le_bytes(),
+            "premise: another manager"
+        );
+        assert_ne!(
+            before[10..12],
+            stadium.to_le_bytes(),
+            "premise: another stadium"
+        );
+        let team = file.team_mut(701).expect("team 701");
+        team.manager_id = Some(manager);
+        team.stadium_id = Some(stadium);
+
+        let out = file.to_bytes(&test_salt()).expect("the save writes");
+        let back = EditFile::from_bytes(&out).expect("the save reopens");
+        let team = back.team(701).expect("team 701");
+        assert_eq!(
+            (team.manager_id, team.stadium_id),
+            (Some(manager), Some(stadium))
+        );
+        let mut expected = before;
+        expected[4..8].copy_from_slice(&manager.to_le_bytes());
+        expected[10..12].copy_from_slice(&stadium.to_le_bytes());
+        assert_eq!(back.team_records(701).expect("team 701").team, expected);
     }
 
     /// A payload ending exactly at a section's count field still reads the

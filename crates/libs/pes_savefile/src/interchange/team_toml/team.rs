@@ -323,14 +323,14 @@ fn emit_team(out: &mut String, team: &TeamSection) {
         "manager_id",
         team.manager_id.map(|v| v.to_string()),
         "0",
-        "PES 19 and later",
+        "PES 17 and later",
     );
     emit(
         out,
         "stadium_id",
         team.stadium_id.map(|v| v.to_string()),
         "0",
-        "PES 19 and later",
+        "PES 17 and later",
     );
     emit(
         out,
@@ -775,14 +775,14 @@ mod tests {
     /// version (or no version) makes it an error. Either way nothing applied.
     #[test]
     fn a_version_gated_team_field_is_a_note_across_versions_and_an_error_within() {
-        let (file, _) = open(PesVersion::Pes18);
+        let (file, _) = open(PesVersion::Pes16);
         let team = file.teams().first().expect("a team");
 
         let foreign =
             TeamToml::parse("pes_version = 21\n\n[team]\nmanager_id = 5\n").expect("parses");
         let mut target = team.clone();
         let notes = foreign
-            .apply(PesVersion::Pes18, &mut target, &mut [])
+            .apply(PesVersion::Pes16, &mut target, &mut [])
             .expect("note, not error");
         assert_eq!(
             notes,
@@ -794,12 +794,12 @@ mod tests {
 
         for text in [
             "[team]\nmanager_id = 5\n",
-            "pes_version = 18\n\n[team]\nmanager_id = 5\n",
+            "pes_version = 16\n\n[team]\nmanager_id = 5\n",
         ] {
             let doc = TeamToml::parse(text).expect("parses");
             let mut target = team.clone();
             let err = doc
-                .apply(PesVersion::Pes18, &mut target, &mut [])
+                .apply(PesVersion::Pes16, &mut target, &mut [])
                 .expect_err("hard error");
             assert!(
                 matches!(err, TeamTomlError::NotInThisVersion { .. }),
@@ -999,7 +999,7 @@ mod tests {
             .find(|l| l.starts_with("manager_id"))
             .expect("a manager_id line");
         let body = format!("manager_id = {}", team.manager_id.expect("PES 19 has it"));
-        let expected = format!("{body}{}# PES 19 and later", " ".repeat(32 - body.len()));
+        let expected = format!("{body}{}# PES 17 and later", " ".repeat(32 - body.len()));
         assert_eq!(*manager, expected, "the comment sits at column 33");
     }
 

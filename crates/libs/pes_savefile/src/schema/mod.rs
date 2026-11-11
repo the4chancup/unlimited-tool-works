@@ -648,8 +648,8 @@ mod tests {
             .find(|version| schema_for(*version).team.has(TeamField::ManagerId));
         assert_eq!(
             expected,
-            Some(PesVersion::Pes19),
-            "the Team tab's tooltip says PES 19+"
+            Some(PesVersion::Pes17),
+            "the Team tab's tooltip says PES 17+"
         );
         assert_eq!(first_version_with_team(TeamField::ManagerId), expected);
     }

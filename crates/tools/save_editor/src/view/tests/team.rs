@@ -689,12 +689,12 @@ fn on_pes16_the_colours_ids_and_kit_slots_draw_disabled_with_their_versions() {
             "the colour field's tooltip"
         );
     }
-    // Manager ID and Stadium ID, each its disabled stand-in with "PES 19+".
+    // Manager ID and Stadium ID, each its disabled stand-in with "PES 17+".
     for label in ["Manager ID", "Stadium ID"] {
         let dash = disabled_dash(&nodes, label);
         assert_eq!(
             tooltip_after_hover(&mut window, &mut view, centre(dash)),
-            Some("PES 19+".to_string()),
+            Some("PES 17+".to_string()),
             "{label}'s tooltip"
         );
     }
