@@ -25,13 +25,22 @@ vtree.workspace = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 directories.workspace = true
+flate2.workspace = true
 rfd.workspace = true
 rustls.workspace = true
 semver.workspace = true
 serde_json.workspace = true
+# `util` is the extraction of a whole `.7z` into a folder, which the updater unpacks a
+# release with; it adds no crate.
+sevenz-rust2 = { workspace = true, features = ["util"] }
 sha2.workspace = true
+tar.workspace = true
 ureq.workspace = true
 zip.workspace = true
+
+# The updater's tests pack a fake release as a `.7z`; the shipped build only reads one.
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+sevenz-rust2 = { workspace = true, features = ["compress"] }
 
 [target.'cfg(windows)'.dependencies]
 raw-window-handle.workspace = true
