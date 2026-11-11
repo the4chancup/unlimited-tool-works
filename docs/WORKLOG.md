@@ -7983,7 +7983,7 @@ briefs, review loops, gates and mutation runs as for any step.
       time; `team_compiler` `plan/legacy_blocks.rs` new, `plan/mod.rs`, `plan/item_rows.rs`,
       `cli.rs`, `compile.rs`, `messages`; TC-LEG-03/04 and two more cases). Open: an
       out-of-block ID a kept-shared folder holds is also reported on each wearer's player
-      folder, which packs nothing of it (duplicate Error lines; after the PoC). Why: the rebuilt
+      folder, which packs nothing of it (duplicate Error lines): poc13g. Why: the rebuilt
       0.0.2-poc.2's Friendlies compile stopped on a Fatal `cpk_write_failed`, /hanny/ packing
       /gfg/'s `k2351`): `legacy_id_out_of_block`, the data directory's table (TC-LEG-03/04);
       SWE-2 brief `.tmp/0_0_2/poc13/brief_e.md`. /utg/ packs 3252-3273, outside its table
@@ -8004,6 +8004,11 @@ briefs, review loops, gates and mutation runs as for any step.
       packs it under its wearers' recorded old ID (the earlier design's shared half);
       `legacy_merge_clash` goes. SWE-2 slice poc13f after the 03:20 reset, then rebuild
       0.0.2-poc.2 and rerun the Friendlies
+    - [x] poc13g an out-of-block old ID reported once, on the folder that would pack it, not
+      on each player folder linking a kept-shared one (2026-11-11, SWE-2, landed first time;
+      DECISIONS 2026-11-11; plan `pipeline.md` "Out of block"): `plan/mod.rs`
+      (`MappedFolder::refused` by kind, reported in `plan_run` where the folder's
+      `own_parts` has the kind), TC-LEG-03's tests in `tests/cli/legacy_ids.rs` (one new)
     - [ ] the maintainer's asks for the PoC if they fit (2026-11-10), each checked first.
       Bats keep their `quick_` names (the maintainer, 11-10)
       - [x] why /nepgen/'s `SWITCH EXCLUSIVE` became a shared gloves folder with one wearer

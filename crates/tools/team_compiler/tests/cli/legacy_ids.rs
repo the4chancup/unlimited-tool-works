@@ -367,14 +367,11 @@ fn a_kept_shared_folder_whose_old_id_is_out_of_block_is_not_packed() {
         .iter()
         .filter(|line| line.contains("legacy_id_out_of_block"))
         .collect();
-    // Once per folder and ID: each linker's folder, and the shared folder itself.
+    // Once, on the folder that would have packed the ID: the linkers' folders
+    // pack no boots of their own, so the shared folder alone is named.
     assert_eq!(
         out_of_block,
-        [
-            &out_of_block_line("Boots/Crocs", 2522, "2301-2325"),
-            &out_of_block_line("Players/05 - A", 2522, "2301-2325"),
-            &out_of_block_line("Players/08 - D", 2522, "2301-2325"),
-        ]
+        [&out_of_block_line("Boots/Crocs", 2522, "2301-2325")]
     );
     assert_eq!(
         boots_gloves_paths(&sandbox),
@@ -388,6 +385,55 @@ fn a_kept_shared_folder_whose_old_id_is_out_of_block_is_not_packed() {
     assert_eq!(team.players[&5].boots_id, Some(2522));
     assert_eq!(team.players[&8].boots_id, Some(2522));
     assert_eq!(team.players[&6].gloves_id, Some(2310));
+}
+
+// TC-LEG-03
+#[test]
+fn an_own_model_and_a_linked_one_report_each_kind_on_its_packing_folder() {
+    let sandbox = Sandbox::new("leg_ids_own_linked");
+    // The sandbox's default teams list does not hold /gbfg/.
+    sandbox.write("data/teams_list.txt", b"ID\tName\n796\t/gbfg/\n");
+    let export = "exports/gbfg Full Legacy";
+    // Slot 05's own boots and the shared gloves folder he links, each recorded
+    // under an old ID outside /gbfg/'s block.
+    sandbox.write(
+        &format!("{export}/Players/05 - A/boots.fmdl"),
+        &clean_model(),
+    );
+    sandbox.write(&format!("{export}/Players/05 - A/Mitts.gloves"), b"");
+    sandbox.write(
+        &format!("{export}/Gloves/Mitts/glove_l.fmdl"),
+        &clean_model(),
+    );
+    sandbox.write(
+        &format!("{export}/legacy_ids.toml"),
+        b"[05]\nboots = 2522\ngloves = 2523\n",
+    );
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+
+    let lines = run.messages();
+    assert_eq!(run.exit_code(), 1, "{lines:#?}");
+    let out_of_block: Vec<&String> = lines
+        .iter()
+        .filter(|line| line.contains("legacy_id_out_of_block"))
+        .collect();
+    // Each kind named once on the folder that would have packed it: the shared
+    // folder for the linked gloves, the player's own folder for his boots.
+    assert_eq!(
+        out_of_block,
+        [
+            &out_of_block_line("Gloves/Mitts", 2523, "2301-2325"),
+            &out_of_block_line("Players/05 - A", 2522, "2301-2325"),
+        ]
+    );
+    assert_eq!(boots_gloves_paths(&sandbox), Vec::<String>::new());
+    let patch = read_patch(&sandbox);
+    let [team] = patch.teams.as_slice() else {
+        panic!("one [[teams]] entry")
+    };
+    assert_eq!(team.players[&5].boots_id, Some(2522));
+    assert_eq!(team.players[&5].gloves_id, Some(2523));
 }
 
 // TC-LEG-03

@@ -16184,3 +16184,8 @@ Plan: `plans/core/distribution.md` "Data location: asked on first run", the para
 Decision (the maintainer's answer): the VGL27 block table keeps the wiki's rows; /utg/'s export (3252 to 3273, its row 3401) and /hanny/'s (2351 to 2373, /gfg/'s block) carry wrong IDs, and the block check refusing those folders (`legacy_id_out_of_block`) is the intended outcome; the managers renumber.
 Why: an ID outside the team's block is a numbering mistake in the export, not a table error; packing it would put the models on another team's IDs or on IDs the cup never assigned.
 Plan: no plan edit needed: `plans/team_compiler/pipeline.md` "Legacy boots and gloves IDs (VGL27)", "Out of block", already specifies the refusal.
+
+## 2026-11-11 — team_compiler — an out-of-block old ID is reported once, on the folder that would pack it
+Decision (the lead's, 0.0.2-poc13g): `legacy_id_out_of_block` names the folder that would have packed the ID: a kept-shared folder holding it is named, and the player folders that only link it are not, since they pack nothing of that kind; a player folder holding its own model of the kind is named as before. Only the report changes: which slot takes an old ID first, the packages and the patch rows stay as they are.
+Why: the plan already puts the check "on what the export packs"; one line per wearer for one folder told the member the same thing several times (the VGL27 Friendlies' compile), and named folders whose fix is elsewhere.
+Plan: `plans/team_compiler/pipeline.md` "Legacy boots and gloves IDs (VGL27)", "Out of block", the sentence "The Error names the folder that would have packed the ID, once".

@@ -3145,3 +3145,4 @@ worklog passed 7,000 lines.
 - 2026-11-11: 0.0.2-poc13e landed: a legacy old ID outside its team's VGL27 block is `legacy_id_out_of_block` and not packed; the Friendlies' /hanny/ (on /gfg/'s IDs) no longer stops the compile on a duplicate path.
 - 2026-11-11: The 0.0.2-poc.2 bundle rebuilt with poc13e/f (archive `1cabaa13…`): the Friendlies upgrade 36/39 with `--legacy-ids` and compile with no Fatal; C: cleaned to 137 GB free.
 - 2026-11-11: 0.0.2-poc14 landed: `dpfilelist_outdated` and `cpk_name_unlisted` stop the run at the preflight (Fatal, exit 3, nothing compiled); the bundle's `settings.toml` carries a comment per setting in Red's layout and a fresh write starts from it.
+- 2026-11-11: 0.0.2-poc13g landed: an out-of-block legacy ID is reported once, on the folder that would pack it, not on each player folder linking a kept-shared one.

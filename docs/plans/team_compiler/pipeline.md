@@ -158,6 +158,9 @@ can: faces and kits need nothing (both tools name them by team ID and slot), sto
   check is on what the export packs, not on what players wear: that folder is not packed
   under that ID, but its wearers' patch entries still carry it (a player may wear another
   team's boots, as a manager's save sets it), and the folder's other IDs are packed. The
+  Error names the folder that would have packed the ID, once: a player folder that only
+  links a kept-shared folder packs nothing of that kind, so the shared folder alone is
+  named, not each wearer. The
   table lives in the data directory (beside `teams_list.txt`, created from the embedded copy
   the first time a legacy export is compiled), two tab-separated columns, `Name` and
   `FirstBootsID`, one row per VGL team; a block is `FirstBootsID` to `FirstBootsID + 24`,

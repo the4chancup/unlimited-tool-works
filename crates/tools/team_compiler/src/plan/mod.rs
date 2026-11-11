@@ -1343,15 +1343,62 @@ pub(crate) fn plan_run(
             team,
             legacy_ids.as_ref(),
             legacy_block.as_ref(),
-            export_id,
-            &mut messages,
         );
         for MappedFolder {
             folder,
             packages,
             player_ids,
+            refused,
         } in mapped
         {
+            // The packages the folder's effective boots and gloves have a part of
+            // (`has_effective_part`), computed only under `legacy_ids`: its rows and
+            // a refused old ID's report read them.
+            let own_parts: Vec<ModelPackage> = match legacy_ids {
+                Some(_) => [ModelPackage::Boots, ModelPackage::Gloves]
+                    .into_iter()
+                    .filter(|package| {
+                        has_effective_part(
+                            &export,
+                            &folder,
+                            *package,
+                            version.engine(),
+                            &hand_weighted,
+                        )
+                    })
+                    .collect(),
+                None => Vec::new(),
+            };
+            // A refused old ID is named once on the folder that would have packed
+            // it: this one when it has a part of a kind recording it. A folder only
+            // linking a kept-shared folder packs nothing of the kind, so the shared
+            // folder alone is named.
+            let mut reported = BTreeSet::new();
+            for (package, of_kind) in [
+                (ModelPackage::Boots, &refused.0),
+                (ModelPackage::Gloves, &refused.1),
+            ] {
+                if !own_parts.contains(&package) {
+                    continue;
+                }
+                for old in of_kind {
+                    if reported.insert(*old) {
+                        messages.push(tool_message(
+                            Code::LegacyIdOutOfBlock,
+                            Scope::Folder {
+                                export_id,
+                                path: folder.path.clone(),
+                            },
+                            Disposition::Keep,
+                            vec![
+                                ("id", old.to_string()),
+                                ("folder", folder.path.as_str().to_owned()),
+                                ("block", block_text(legacy_block.as_ref())),
+                            ],
+                        ));
+                    }
+                }
+            }
             row_players.push(RowPlayer {
                 path: folder.path.clone(),
                 player_ids: player_ids.clone(),
@@ -1363,21 +1410,7 @@ pub(crate) fn plan_run(
                     .map(|shared| shared.path.clone())
                     .collect(),
                 fpc: folder.fpc,
-                own_parts: match legacy_ids {
-                    Some(_) => [ModelPackage::Boots, ModelPackage::Gloves]
-                        .into_iter()
-                        .filter(|package| {
-                            has_effective_part(
-                                &export,
-                                &folder,
-                                *package,
-                                version.engine(),
-                                &hand_weighted,
-                            )
-                        })
-                        .collect(),
-                    None => Vec::new(),
-                },
+                own_parts,
                 settings: player_settings.remove(&folder.path),
                 settings_refused: settings_refused.contains(&folder.path),
             });
@@ -2173,8 +2206,9 @@ fn kit_variant_model_messages(
 }
 
 /// A roster-mapped player folder as planning builds it: the keys each of its packages is
-/// emitted under, one per slot mapping it in slot order, and those slots' player ids, which
-/// its portrait and its rows go by (none for a referee, who has no player id).
+/// emitted under, one per slot mapping it in slot order, those slots' player ids, which
+/// its portrait and its rows go by (none for a referee, who has no player id), and the
+/// recorded old IDs the block check refuses (`legacy_id_out_of_block`).
 struct MappedFolder {
     /// The player folder.
     folder: PlayerFolder,
@@ -2182,6 +2216,10 @@ struct MappedFolder {
     packages: [(ModelPackage, Vec<PackageKey>); 3],
     /// The player id of each slot mapping the folder, in slot order.
     player_ids: Vec<u32>,
+    /// The recorded old IDs the block check refuses, the boots' then the gloves'
+    /// (`boots_gloves_key`): each is reported once on the folder packing its kind
+    /// (`legacy_id_out_of_block`). Always empty for a referee, who records none.
+    refused: (BTreeSet<u32>, BTreeSet<u32>),
 }
 
 /// The roster-mapped folders of `players`, by `player_folders`, as `MappedFolder`s: of a team
@@ -2189,17 +2227,16 @@ struct MappedFolder {
 /// its exclusive id of the team's block, or under a `legacy_ids.toml` by the old ID the
 /// file records for him, each old ID packed once by the first slot in roster order
 /// recording it, a slot the file gives no ID of a kind getting no key of it, and one
-/// recording an ID outside `legacy_block` getting none either, each such ID reported once
-/// per folder (`legacy_id_out_of_block`); of a refs export, every package of referee slot
-/// NN keyed by the slot (`referee0NN`, `k99NN`, `g99NN`).
+/// recording an ID outside `legacy_block` getting none either, each such ID collected by
+/// kind for the caller to report once on the folder that would have packed it
+/// (`legacy_id_out_of_block`); of a refs export, every package of referee slot NN keyed
+/// by the slot (`referee0NN`, `k99NN`, `g99NN`).
 fn mapped_folders(
     players: Vec<PlayerFolder>,
     roster: &ValidatedRoster,
     team: Option<TeamId>,
     legacy_ids: Option<&LegacyIds>,
     legacy_block: Option<&RangeInclusive<u32>>,
-    export_id: ExportId,
-    messages: &mut Vec<Message>,
 ) -> Vec<MappedFolder> {
     match (roster, team) {
         (ValidatedRoster::Team(slots), Some(id)) => {
@@ -2210,11 +2247,11 @@ fn mapped_folders(
             player_folders(players, slots)
                 .into_iter()
                 .map(|(folder, slots)| {
-                    let path = folder.path.clone();
-                    // The folder's recorded old IDs the block check refuses, reported
-                    // once each however many slots or packages record them.
-                    let mut refused = BTreeSet::new();
-                    let mapped = MappedFolder {
+                    // The folder's recorded old IDs the block check refuses, boots
+                    // and gloves separately: an ID of either is reported once,
+                    // however many slots record it.
+                    let mut refused = (BTreeSet::new(), BTreeSet::new());
+                    MappedFolder {
                         packages: ModelPackage::ALL.map(|package| {
                             let keys = slots
                                 .iter()
@@ -2224,7 +2261,7 @@ fn mapped_folders(
                                         legacy_ids,
                                         legacy_block,
                                         &mut taken.0,
-                                        &mut refused,
+                                        &mut refused.0,
                                         *slot,
                                         ItemTable::Boots,
                                         model_ids.exclusive(*slot),
@@ -2233,7 +2270,7 @@ fn mapped_folders(
                                         legacy_ids,
                                         legacy_block,
                                         &mut taken.1,
-                                        &mut refused,
+                                        &mut refused.1,
                                         *slot,
                                         ItemTable::Gloves,
                                         model_ids.exclusive(*slot),
@@ -2244,23 +2281,8 @@ fn mapped_folders(
                         }),
                         player_ids: slots.iter().map(|slot| slot.player_id(id)).collect(),
                         folder,
-                    };
-                    for old in &refused {
-                        messages.push(tool_message(
-                            Code::LegacyIdOutOfBlock,
-                            Scope::Folder {
-                                export_id,
-                                path: path.clone(),
-                            },
-                            Disposition::Keep,
-                            vec![
-                                ("id", old.to_string()),
-                                ("folder", path.as_str().to_owned()),
-                                ("block", block_text(legacy_block)),
-                            ],
-                        ));
+                        refused,
                     }
-                    mapped
                 })
                 .collect()
         }
@@ -2275,6 +2297,7 @@ fn mapped_folders(
                 }),
                 player_ids: Vec::new(),
                 folder,
+                refused: (BTreeSet::new(), BTreeSet::new()),
             })
             .collect(),
         (ValidatedRoster::Team(_), None) | (ValidatedRoster::Referees(_), Some(_)) => {
@@ -2289,7 +2312,7 @@ fn mapped_folders(
 /// per team, by the first slot in roster order recording it); `None` for a slot the file
 /// gives no ID of the kind, whose old ID an earlier slot took, or whose old ID the block
 /// check refuses, the refused one collected into `refused` for the caller to report once
-/// per folder (`legacy_id_out_of_block`).
+/// on the folder packing the kind (`legacy_id_out_of_block`).
 fn boots_gloves_key(
     legacy_ids: Option<&LegacyIds>,
     block: Option<&RangeInclusive<u32>>,
