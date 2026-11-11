@@ -79,7 +79,9 @@ pub(crate) fn decode(bytes: &[u8]) -> Result<Decoded, ConvertError> {
         {
             Event::FrameHeader => {}
             Event::FrameComplete { .. } => break,
-            // A request for more input: the file ends inside the frame.
+            // A request for more input (the file ends inside the frame), or the
+            // file's end with no frame shown, which no encoder writes: both read
+            // as a file cut short.
             _ => return Err(ConvertError::Truncated),
         }
     }

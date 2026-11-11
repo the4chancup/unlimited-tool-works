@@ -8,6 +8,9 @@ Writes, each through a sibling temp file and `os.replace` after every check:
 
 - `crates/libs/dds_convert/tests/fixtures/source.lossless.jxl`: `source.png` (32x16 RGBA, the
   alpha ramp) lossless, effort 7; libjxl's own decode asserted equal to the PNG's pixels.
+- `crates/libs/dds_convert/tests/fixtures/source.lossless.container.jxl`: that codestream in the
+  ISOBMFF container (the `JXL ` signature box, `ftyp`, one `jxlc` box), the form an encoder
+  writes when the file carries metadata; libjxl's decode asserted equal to the PNG's pixels.
 - `crates/libs/dds_convert/tests/fixtures/source.lossy.jxl`: the same at distance 1.0, effort 7.
 - `crates/libs/dds_convert/tests/fixtures/source.lossy.jxl.rgba`: libjxl's decode of the lossy
   file, raw RGBA8 rows (the reference a decoder is judged against, as `source.webp.rgba`).
@@ -38,6 +41,17 @@ def lossless(pixels):
     return data
 
 
+def container(codestream, pixels):
+    """`codestream` in JPEG XL's ISOBMFF container (ISO/IEC 18181-2): the signature box, the
+    `ftyp` box naming the `jxl ` brand, then the codestream whole in one `jxlc` box."""
+    signature = b"\x00\x00\x00\x0cJXL \x0d\x0a\x87\x0a"
+    ftyp = b"\x00\x00\x00\x14ftypjxl \x00\x00\x00\x00jxl "
+    jxlc = (8 + len(codestream)).to_bytes(4, "big") + b"jxlc" + codestream
+    data = signature + ftyp + jxlc
+    assert np.array_equal(imagecodecs.jpegxl_decode(data), pixels), "container round trip"
+    return data
+
+
 def write(path, data):
     tmp = path.with_name(path.name + ".tmp")
     tmp.write_bytes(data)
@@ -54,8 +68,11 @@ def main():
     assert reference.shape == source.shape and reference.dtype == np.uint8, reference.shape
     kit = rgba(TEXTURES / "kit.png")
     portrait = rgba(TEXTURES / "portrait.png")
+    bare = lossless(source)
+    assert bare[:2] == b"\xff\x0a", "libjxl wrote a bare codestream"
     outputs = [
-        (DDS / "source.lossless.jxl", lossless(source)),
+        (DDS / "source.lossless.jxl", bare),
+        (DDS / "source.lossless.container.jxl", container(bare, source)),
         (DDS / "source.lossy.jxl", lossy),
         (DDS / "source.lossy.jxl.rgba", reference.tobytes()),
         (TEXTURES / "kit.jxl", lossless(kit)),

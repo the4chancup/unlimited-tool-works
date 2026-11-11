@@ -464,6 +464,7 @@ mod tests {
     const PNG: &[u8] = include_bytes!("../tests/fixtures/source.png");
     const PNG_OPAQUE: &[u8] = include_bytes!("../tests/fixtures/source_opaque.png");
     const JXL_LOSSLESS: &[u8] = include_bytes!("../tests/fixtures/source.lossless.jxl");
+    const JXL_CONTAINER: &[u8] = include_bytes!("../tests/fixtures/source.lossless.container.jxl");
     const JXL_LOSSY: &[u8] = include_bytes!("../tests/fixtures/source.lossy.jxl");
     const FTEX_BC1: &[u8] = include_bytes!("../tests/fixtures/konami_bc1_bibs_metalness.ftex");
     const DDS_BC1: &[u8] = include_bytes!("../tests/fixtures/konami_bc1_bibs_metalness.dds");
@@ -1052,10 +1053,13 @@ mod tests {
 
     #[test]
     fn a_lossless_jxl_decodes_as_its_png_does() {
-        assert_eq!(
-            decode(JXL_LOSSLESS, SourceFormat::Jxl).unwrap(),
-            decode(PNG, SourceFormat::Png).unwrap()
-        );
+        // The bare codestream, then the same codestream in the ISOBMFF container.
+        for jxl in [JXL_LOSSLESS, JXL_CONTAINER] {
+            assert_eq!(
+                decode(jxl, SourceFormat::Jxl).unwrap(),
+                decode(PNG, SourceFormat::Png).unwrap()
+            );
+        }
     }
 
     #[test]
@@ -2439,6 +2443,11 @@ mod tests {
             ("source.png", PNG, SourceFormat::Png),
             ("6x3 tga", tga.as_slice(), SourceFormat::Tga),
             ("source.lossless.jxl", JXL_LOSSLESS, SourceFormat::Jxl),
+            (
+                "source.lossless.container.jxl",
+                JXL_CONTAINER,
+                SourceFormat::Jxl,
+            ),
             ("source.lossy.jxl", JXL_LOSSY, SourceFormat::Jxl),
         ] {
             let probed = probe(bytes, format).unwrap();
@@ -2458,7 +2467,7 @@ mod tests {
         }
         // The generated chains, spelled out: 6x3, 3x1, 1x1, and 32x16 down to 1x1.
         assert_eq!(probe(&tga, SourceFormat::Tga).unwrap().mipmaps, 3);
-        for jxl in [JXL_LOSSLESS, JXL_LOSSY] {
+        for jxl in [JXL_LOSSLESS, JXL_CONTAINER, JXL_LOSSY] {
             assert_eq!(
                 probe(jxl, SourceFormat::Jxl).unwrap(),
                 Probe {

@@ -54,6 +54,7 @@ Added for JPEG XL sources (0.0.2a) by `scripts/provenance/fixtures/fixtures_jxl.
 | File | Made with | Notes |
 |---|---|---|
 | `source.lossless.jxl` | lossless JXL of `source.png` | libjxl's decode equals the PNG's pixels (asserted by the script) |
+| `source.lossless.container.jxl` | `source.lossless.jxl`'s codestream in the ISOBMFF container (signature, `ftyp`, one `jxlc` box) | the form an encoder writes when a file carries metadata; libjxl's decode equals the PNG's pixels (asserted by the script) |
 | `source.lossy.jxl` | lossy JXL of `source.png`, distance 1.0 | drops the colour under zero alpha, libjxl's default |
 | `source.lossy.jxl.rgba` | libjxl's decode of `source.lossy.jxl` | the reference decode (RGBA8, row-major, 32x16); another decoder may differ by rounding, so compare within a tolerance |
 
