@@ -442,6 +442,104 @@ fn a_held_drag_outlines_only_the_row_it_would_land_on() {
     assert!(!session.can_undo(), "no undo entry");
 }
 
+// The dragged row is drawn under the pointer, the point first pressed
+// kept under it, as a dragged lineup row is: row 03 pressed 20 points
+// right of its name's start and moved by a known offset paints its name
+// once, at its rest position plus that offset, after row 04's place (a
+// layer over the list, not the list's own). With a filter typed the row
+// does not drag: the same press and move paint the name at rest alone.
+// SE-GUI-69
+#[test]
+fn a_dragged_row_floats_with_the_point_pressed_under_the_pointer() {
+    let path = fixture(PesVersion::Pes21, "drag_float");
+    let mut file = EditFile::from_bytes(&fixture_save(PesVersion::Pes21)).unwrap();
+    file.player_mut(70103).unwrap().name = "DRAGGED NAME".to_owned();
+    file.save(&path).unwrap();
+    let mut view = SaveView::new();
+    view.open(&path);
+    view.team = TeamChoice::Team(701);
+    let mut window = Headless::new();
+    // The name's paints over the list's frame, with their place in the
+    // paint order: once row 03 is selected, the detail pane draws his name
+    // too, outside it.
+    let names_in_list = |window: &Headless, shapes: &[egui::epaint::ClippedShape]| {
+        let frame = list_frame(window, shapes);
+        shapes
+            .iter()
+            .enumerate()
+            .filter_map(|(index, clipped)| match &clipped.shape {
+                egui::Shape::Text(shape)
+                    if shape.galley.job.text == "DRAGGED NAME" && frame.contains(shape.pos) =>
+                {
+                    Some((index, shape.pos))
+                }
+                _ => None,
+            })
+            .collect::<Vec<(usize, egui::Pos2)>>()
+    };
+    let offset = egui::vec2(30.0, 40.0);
+    for (filter, floats) in [("", true), ("dragged", false)] {
+        view.filter = filter.to_owned();
+        let (_, nodes, shapes) = window.frame(Vec::new(), |ui| show(ui, &mut view, &|| Vec::new()));
+        let [(_, rest)] = names_in_list(&window, &shapes)[..] else {
+            panic!("premise: the name painted once at rest (filter {filter:?})")
+        };
+        let press = egui::pos2(rest.x + 20.0, centre(row(&nodes, "03 CB DRAGGED NAME")).y);
+        window.frame(pointer_at(press, true), |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+        let (_, _, shapes) = window.frame(vec![egui::Event::PointerMoved(press + offset)], |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+        let painted = names_in_list(&window, &shapes);
+        let [(index, at)] = painted.as_slice() else {
+            panic!("the name painted once (filter {filter:?}), got {painted:?}")
+        };
+        if floats {
+            let expected = rest + offset;
+            assert!(
+                at.distance(expected) <= 0.5,
+                "the dragged name at its rest position plus the move: {at:?} vs {expected:?}"
+            );
+            let place_04 = nodes
+                .iter()
+                .find(|node| {
+                    player_row(node) && node.label().is_some_and(|label| label.starts_with("04 "))
+                })
+                .and_then(accesskit::Node::bounds)
+                .expect("row 04's bounds");
+            let place = shapes
+                .iter()
+                .position(|clipped| match &clipped.shape {
+                    egui::Shape::Text(shape) => {
+                        shape.galley.job.text == "04"
+                            && f64::from(shape.pos.y) >= place_04.y0
+                            && f64::from(shape.pos.y) <= place_04.y1
+                    }
+                    _ => false,
+                })
+                .expect("row 04's place painted");
+            assert!(
+                *index > place,
+                "the dragged name paints over the list, after row 04's place ({index} vs {place})"
+            );
+        } else {
+            assert!(
+                at.distance(rest) <= 0.5,
+                "under a filter the name stays at rest: {at:?} vs {rest:?}"
+            );
+        }
+        // Released where it was pressed: the drop moves nothing.
+        window.frame(pointer_at(press, false), |ui| {
+            show(ui, &mut view, &|| Vec::new())
+        });
+        assert!(
+            !view.session.as_ref().unwrap().is_dirty(),
+            "the drag moved no record"
+        );
+    }
+}
+
 // A draggable row shows the pointing hand wherever the pointer is on it
 // (egui leaves a row that also takes clicks on the arrow, so the row asks
 // for it); under a filter the row does not drag, and the pointer is the
