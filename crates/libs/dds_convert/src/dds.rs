@@ -20,7 +20,7 @@ pub(crate) fn decode_ftex(bytes: &[u8]) -> Result<Decoded, ConvertError> {
 /// target might keep.
 pub(crate) fn decode_dds(dds: &[u8]) -> Result<Decoded, ConvertError> {
     let layout = read_layout(dds)?;
-    let codec = block_codec(&layout);
+    let codec = block_codec(layout.pixel);
     // block_compression offsets its RGBA output in u32 (decode.rs:221): a
     // padded level-0 mip past 4 GiB would wrap the offset.
     if codec.is_some() {
@@ -66,7 +66,7 @@ pub(crate) fn decode_dds(dds: &[u8]) -> Result<Decoded, ConvertError> {
 /// be decoded and encoded instead.
 pub(crate) fn pass_through(dds: &[u8], target: Target) -> Result<Option<Vec<u8>>, ConvertError> {
     let layout = read_layout(dds)?;
-    let Some((codec, _)) = block_codec(&layout) else {
+    let Some((codec, _)) = block_codec(layout.pixel) else {
         return Ok(None);
     };
     if !encode::compatible(target.version, codec, target.role) {
@@ -126,13 +126,21 @@ fn mip_size(layout: &DdsLayout, level: u32, width: u32, height: u32) -> Result<u
     Ok(ftex::mip_size(format, width, height, 1, 0) as u64)
 }
 
-/// The block codec behind the layout's pixel format, when it is one this
-/// crate keeps or emits, paired with its `block_compression` variant.
-fn block_codec(layout: &DdsLayout) -> Option<(BlockCodec, CompressionVariant)> {
-    let format = match layout.pixel {
+/// The block codec behind `pixel`, when it is one this crate keeps or
+/// emits, paired with its `block_compression` variant. `None` for a
+/// pixel-stored layout, the notion `Decoded::uncompressed` records.
+pub(crate) fn block_codec(pixel: DdsPixel) -> Option<(BlockCodec, CompressionVariant)> {
+    let format = match pixel {
         DdsPixel::Format(format) => format,
         DdsPixel::Uncompressed { .. } => return None,
     };
+    block_codec_of(format)
+}
+
+/// The block codec `format` is, when it is one this crate keeps or emits,
+/// paired with its `block_compression` variant: `None` for a pixel-stored
+/// format and for a block format no target keeps.
+pub(crate) fn block_codec_of(format: PixelFormat) -> Option<(BlockCodec, CompressionVariant)> {
     Some(match format {
         PixelFormat::Bc1 => (BlockCodec::Bc1, CompressionVariant::BC1),
         PixelFormat::Bc2 => (BlockCodec::Bc2, CompressionVariant::BC2),

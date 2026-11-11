@@ -26,8 +26,8 @@ use crate::compile::{
 use crate::deploy::templates_folder;
 use crate::models::face_package;
 use crate::prefox_faces::{
-    CLEAN, card_materials, card_model, compile_pes17, face_cpk, face_folder, nested_entries,
-    sampler_paths, small_dds,
+    CLEAN, card_materials, card_model, compile_pes17, face_cpk, face_folder, materials_naming,
+    nested_entries, sampler_paths, small_dds,
 };
 use crate::{CLEAN_PLAYER, clean_model, command_args, findings_of};
 use pes_model::format::mtl::MaterialEntry;
@@ -440,6 +440,27 @@ fn uncompressed_dds() -> Vec<u8> {
     .unwrap()
 }
 
+/// A single-level `width`x`height` DDS stored uncompressed (A8R8G8B8), written by the
+/// converter itself so the header reads as stored uncompressed.
+fn uncompressed_dds_at(width: u32, height: u32) -> Vec<u8> {
+    dds_convert::convert(
+        &Decoded {
+            width,
+            height,
+            mips: vec![vec![0; (width * height * 4) as usize]],
+            blocks: None,
+            authored_mips: true,
+            uncompressed: true,
+        },
+        Target {
+            version: PesVersion::Pes17,
+            role: TextureRole::Color,
+            keep_uncompressed: true,
+        },
+    )
+    .unwrap()
+}
+
 /// Writes `exports/co Midcup Sizes`: slot 03 a 3x3 skin, slot 04 a 300x300 one, slot 05 PNG bytes
 /// under `skin.dds` (renamed, not resaved), slot 07 a 512x461 one with a full mip chain,
 /// each beside the hair model naming it, and a kit, so the CPK is written whatever the
@@ -758,6 +779,60 @@ fn an_uncompressed_player_texture_stays_uncompressed_on_pes_17() {
         decode(&plain, SourceFormat::Dds).unwrap().mips,
         decode(&uncompressed_dds(), SourceFormat::Dds).unwrap().mips,
         "the source's own levels, alpha and all"
+    );
+}
+
+// TC-TEX-07
+#[test]
+fn an_uncompressed_player_texture_of_an_odd_size_compiles_on_pes_17() {
+    let sandbox = Sandbox::new("tex_uncompressed_odd");
+    let export = "co Midcup Uncompressed Odd";
+    let player = format!("exports/{export}/Players/05 - A");
+    sandbox.write(&format!("{player}/face_high.model"), &card_model());
+    sandbox.write(&format!("{player}/face_high.mtl"), &card_materials());
+    // 1002x1004: a side no multiple of 4, which only a texture the compile
+    // block-compresses is refused for.
+    sandbox.write(
+        &format!("{player}/skin.dds"),
+        &uncompressed_dds_at(1002, 1004),
+    );
+
+    let entries = compile_pes17(&sandbox, export, &CLEAN);
+
+    let skin = &entries["common/character1/model/character/uniform/common/714/05 - A/skin.dds"];
+    let plain = wezlib::decompress_if_wrapped(skin).unwrap();
+    let layout = ftex::dds::read_layout(&plain).unwrap();
+    assert_eq!(
+        layout.pixel,
+        ftex::dds::DdsPixel::Format(PixelFormat::Argb8)
+    );
+    assert_eq!((layout.width, layout.height), (1002, 1004));
+}
+
+// TC-TEX-01, TC-TEX-09
+#[test]
+fn an_uncompressed_common_texture_stays_uncompressed_on_pes_17() {
+    let sandbox = Sandbox::new("tex_common_uncompressed");
+    let export = "co Midcup Uncompressed Common";
+    let player = format!("exports/{export}/Players/05 - A");
+    sandbox.write(&format!("{player}/face_high.model"), &card_model());
+    sandbox.write(
+        &format!("{player}/face_high.mtl"),
+        &materials_naming("hair"),
+    );
+    sandbox.write(&format!("{player}/hair.dds.common"), b"");
+    sandbox.write(
+        &format!("exports/{export}/Common/hair.dds"),
+        &uncompressed_dds(),
+    );
+
+    let entries = compile_pes17(&sandbox, export, &CLEAN);
+
+    let hair = &entries["common/character1/model/character/uniform/common/714/hair.dds"];
+    let plain = wezlib::decompress_if_wrapped(hair).unwrap();
+    assert_eq!(
+        ftex::dds::read_layout(&plain).unwrap().pixel,
+        ftex::dds::DdsPixel::Format(PixelFormat::Argb8)
     );
 }
 

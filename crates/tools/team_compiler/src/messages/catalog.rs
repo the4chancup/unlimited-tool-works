@@ -541,7 +541,7 @@ pub(super) const CATALOG: &[(&str, CatalogSeverity, &str, &str)] = &[
     (
         "texture_not_div4",
         CatalogSeverity::Error,
-        r#"In PES 2015 to 2017, a texture has a side that is not a multiple of 4. Every texture there is written block-compressed, and those games cannot make one at such a size."#,
+        r#"In PES 2015 to 2017, a texture the compiler writes block-compressed has a side that is not a multiple of 4, and those games cannot make a compressed texture at such a size. A `.dds` or `.ftex` stored uncompressed is written as it is in the color role, so it does not get this finding; a normal map is encoded either way."#,
         r#"It is left out, as for `texture_too_small`, even with `Keep folders with errors` on."#,
     ),
     (

@@ -39,6 +39,7 @@ use crate::templates::Templates;
 use conversion::ConvertedMaterials;
 pub(crate) use materialize::{EntryTarget, TEST_BINS_PREFIX};
 use materialize::{TaskOutput, materialize};
+pub(crate) use texture::texture_role;
 
 /// The bytes of every file a task reads (`TaskKind::files`), keyed by the file's export path:
 /// read from the export's source by the coordinator before the task is processed.

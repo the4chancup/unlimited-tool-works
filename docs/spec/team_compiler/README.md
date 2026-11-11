@@ -1419,9 +1419,11 @@ TC-TEX-05  GIVEN slot 05's face_high.fmdl naming hair in the team's Common outpu
 TC-TEX-06  GIVEN p1/kit.png, p1/kit_back.tga and Portraits/05.webp
            WHEN the export is compiled for PES 21
            THEN u0714p1.ftex and u0714p1_back.ftex are emitted and 71405.dds is a DDS
-TC-TEX-07  GIVEN slot 05 holding skin.png of 1002x1002 pixels
-           WHEN the export is compiled for PES 17
-           THEN texture_not_div4 is reported and the folder is dropped
+TC-TEX-07  GIVEN slot 05 holding skin.png of 1002x1002 pixels, and another export whose
+           slot 05 holds an uncompressed skin.dds of 1002x1004 beside its face_high.model
+           WHEN each export is compiled for PES 17
+           THEN texture_not_div4 is reported and the first folder is dropped; the second
+                compiles with no finding, its skin.dds emitted uncompressed (A8R8G8B8)
 TC-TEX-08  GIVEN a /co/ export whose slot 05 holds a face model naming skin and hair, skin.dds,
            and hair.dds already WESYS-wrapped; and dds_compression = true, then false, then
            auto with multicpk_mode off, then on

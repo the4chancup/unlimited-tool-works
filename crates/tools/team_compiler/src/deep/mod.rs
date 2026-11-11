@@ -1684,15 +1684,14 @@ fn file_outcome(
     let kind = match checked {
         Checked::Model(kind) => kind,
         Checked::Texture(format, rule) => {
-            let found = texture_finding(format, rule, &bytes)
+            let found = texture_finding(format, rule, file_stem(name), &bytes)
                 .map(|code| {
                     // A renamed file cannot be converted as the format its name declares, nor
                     // can one whose header cannot be read or whose codec or kind the converter
                     // refuses: packed, each would fail its task; nor can a pre-Fox side that is
-                    // no multiple of 4 be kept: every pre-Fox texture is written
-                    // block-compressed, and Direct3D 9 cannot create a block-compressed texture
-                    // whose sides are not multiples of 4. A texture of another odd size
-                    // converts, and what the game makes of it is the member's risk.
+                    // no multiple of 4 be kept: a texture the compile writes block-compressed
+                    // is one Direct3D 9 cannot create at such a size. A texture of another
+                    // odd size converts, and what the game makes of it is the member's risk.
                     let eligible = !matches!(
                         code,
                         Code::TextureTypeMismatch

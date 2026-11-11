@@ -251,6 +251,7 @@ pub struct Target {
     pub version: PesVersion,
     pub role: TextureRole,
     /// Whether an uncompressed source is written uncompressed; `false` asks for an encode.
+    /// Applies to a color texture only: a normal map is encoded either way.
     pub keep_uncompressed: bool,
 }
 
@@ -276,7 +277,10 @@ pub fn resize_straight_alpha(pixels: &[u8], width: u32, height: u32, new_width: 
 pub fn encode_png(pixels: &[u8], width: u32, height: u32) -> Result<Vec<u8>, ConvertError>;
 
 /// What a source's header says of its texture, read without decoding a pixel.
-pub struct Probe { pub width: u32, pub height: u32, pub mipmaps: u32 }
+pub struct Probe { pub width: u32, pub height: u32, pub mipmaps: u32,
+    /// True for a DDS or FTEX source stored uncompressed, `Decoded::uncompressed`'s notion;
+    /// false for a block-compressed or raster source.
+    pub uncompressed: bool }
 pub fn probe(bytes: &[u8], format: SourceFormat) -> Result<Probe, ConvertError>;
 
 /// SHA-256 of the source bytes, computed once when the file is materialized and reused.
@@ -339,7 +343,9 @@ through `ftex::dds::read_layout` (a WESYS-wrapped one unwrapped first), an FTEX'
 `ftex::info`, a raster source's through the `image` decoder's dimensions, a JPEG XL's through
 `jxl`'s basic info. `Probe.mipmaps` is the
 level count the converted texture carries: a DDS or FTEX source's own count, and for a raster
-source the full chain down to 1x1, which conversion generates. `probe` fails on a header `decode`
+source the full chain down to 1x1, which conversion generates. `Probe.uncompressed` is
+`Decoded::uncompressed`'s notion read from the header: true for a DDS or FTEX stored
+uncompressed, false for a block-compressed codec and for every raster source. `probe` fails on a header `decode`
 would fail to read; it says nothing of the pixel data behind the header, so a texture that
 probes can still fail to decode.
 

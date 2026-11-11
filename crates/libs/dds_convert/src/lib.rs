@@ -3,7 +3,8 @@
 //!
 //! Three pure steps and one stateful wrapper: [`decode`] turns any accepted
 //! source into straight-alpha RGBA8 mips plus, for DDS/FTEX, the compressed
-//! blocks it carried and a flag saying the mip chain is the source's own;
+//! blocks it carried and two flags: that the mip chain is the source's own
+//! and that the source was stored uncompressed;
 //! [`convert`] applies the codec rules to a decoded texture and returns the
 //! finished container bytes (a DDS for PES 15-17, an FTEX for PES 18-21);
 //! [`Converter`] is the session cache in front of both. [`encode_dds`] is
@@ -176,7 +177,8 @@ pub struct Target {
     /// Whether the texture is color data or a normal map.
     pub role: TextureRole,
     /// Whether an uncompressed source is written uncompressed (in the
-    /// A8R8G8B8 layout); `false` asks for an encode.
+    /// A8R8G8B8 layout); `false` asks for an encode. Applies to a color
+    /// texture only: a normal map is encoded either way.
     pub keep_uncompressed: bool,
 }
 
@@ -264,12 +266,16 @@ pub struct Probe {
     /// source's own, a raster source's full chain down to 1x1, which
     /// conversion generates.
     pub mipmaps: u32,
+    /// True when the source is a DDS or FTEX stored uncompressed, the
+    /// notion [`Decoded::uncompressed`] records; false for a
+    /// block-compressed or raster source.
+    pub uncompressed: bool,
 }
 
-/// Reads a source's size and level count from its header alone, for checks
-/// that must not pay a decode per texture: a DDS's (WESYS-wrapped or not)
-/// through its DDS header, an FTEX's through its FTEX header, a raster
-/// source's through its decoder's header read.
+/// Reads a source's size, level count and stored layout from its header
+/// alone, for checks that must not pay a decode per texture: a DDS's
+/// (WESYS-wrapped or not) through its DDS header, an FTEX's through its
+/// FTEX header, a raster source's through its decoder's header read.
 ///
 /// # Errors
 ///
@@ -284,6 +290,9 @@ pub fn probe(bytes: &[u8], format: SourceFormat) -> Result<Probe, ConvertError> 
                 width: layout.width,
                 height: layout.height,
                 mipmaps: layout.mipmaps,
+                // The notion `Decoded::uncompressed` records: a pixel-stored
+                // layout, which is no block codec the crate keeps.
+                uncompressed: dds::block_codec(layout.pixel).is_none(),
             })
         }
         SourceFormat::Ftex => {
@@ -292,6 +301,7 @@ pub fn probe(bytes: &[u8], format: SourceFormat) -> Result<Probe, ConvertError> 
                 width: u32::from(info.width),
                 height: u32::from(info.height),
                 mipmaps: u32::from(info.mipmaps),
+                uncompressed: dds::block_codec_of(info.format).is_none(),
             })
         }
         SourceFormat::Png
@@ -311,6 +321,7 @@ fn raster_probe((width, height): (u32, u32)) -> Probe {
         width,
         height,
         mipmaps: mips::chain_len(width, height),
+        uncompressed: false,
     }
 }
 
@@ -2500,7 +2511,8 @@ mod tests {
                 Probe {
                     width: 32,
                     height: 16,
-                    mipmaps: 6
+                    mipmaps: 6,
+                    uncompressed: false,
                 }
             );
         }
@@ -2513,6 +2525,45 @@ mod tests {
             probe(&wrapped, SourceFormat::Dds).unwrap(),
             probe(BC7, SourceFormat::Dds).unwrap()
         );
+    }
+
+    #[test]
+    fn probe_reports_the_stored_layout_uncompressed_or_block_compressed() {
+        // An uncompressed FTEX, written by the conversion itself (format 0).
+        let uncompressed_ftex = convert(
+            &Decoded {
+                width: 4,
+                height: 4,
+                mips: vec![vec![0; 4 * 4 * 4]],
+                blocks: None,
+                authored_mips: true,
+                uncompressed: true,
+            },
+            Target {
+                version: PesVersion::Pes21,
+                role: TextureRole::Color,
+                keep_uncompressed: true,
+            },
+        )
+        .unwrap();
+        for (name, bytes, format, expected) in [
+            ("rgba8.dds", RGBA8, SourceFormat::Dds, true),
+            (
+                "uncompressed ftex",
+                &uncompressed_ftex[..],
+                SourceFormat::Ftex,
+                true,
+            ),
+            ("bc1.dds", BC1, SourceFormat::Dds, false),
+            ("bc1 ftex", FTEX_BC1, SourceFormat::Ftex, false),
+            ("source.png", PNG, SourceFormat::Png, false),
+        ] {
+            assert_eq!(
+                probe(bytes, format).unwrap().uncompressed,
+                expected,
+                "{name}"
+            );
+        }
     }
 
     #[test]

@@ -3,11 +3,12 @@
 //! read or refuses, a side under one block, and the size rules a texture is held to by where
 //! it is and the target's engine.
 
-use dds_convert::{ConvertError, SourceFormat};
+use dds_convert::{ConvertError, SourceFormat, TextureRole};
 use ftex::FtexError;
 use pes_version::{Engine, PesVersion};
 
 use crate::messages::Code;
+use crate::processing::texture_role;
 
 /// The size rule a texture is held to past the smallest side.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -19,7 +20,9 @@ pub(super) enum SizeRule {
     /// when it carries a mip chain and neither side is a power of two.
     FoxMipmapped,
     /// Any other texture on a pre-Fox target: `texture_not_div4` on a side that is not a
-    /// multiple of 4, since every pre-Fox texture is written block-compressed.
+    /// multiple of 4, the size a block-compressed texture cannot have there; a
+    /// stored-uncompressed source in the color role is written as it is and skips the
+    /// rule.
     PreFox,
     /// A portrait, a `Portraits/` file or a player folder's `portrait.*`, on any target:
     /// `texture_not_pow2` on a side that is not a power of two, whatever its level count.
@@ -67,8 +70,16 @@ fn signature_format(bytes: &[u8]) -> Option<SourceFormat> {
 /// signature (a file renamed, not resaved; its header is not read), then, from the header,
 /// `texture_too_small` on a side under 4 pixels (one block), then the size rule. A header
 /// the probe refuses is a finding on the file too (`probe_failure`), so the texture's task never
-/// meets it: a Common texture's would fail every Common texture with it.
-pub(super) fn texture_finding(format: SourceFormat, rule: SizeRule, bytes: &[u8]) -> Option<Code> {
+/// meets it: a Common texture's would fail every Common texture with it. `stem` is the
+/// file's stem as `file_stem` gives it (a path below its folder may still lead it, the role
+/// reading the tail), which decides the texture's role the same way the compile's
+/// `convert` does.
+pub(super) fn texture_finding(
+    format: SourceFormat,
+    rule: SizeRule,
+    stem: &str,
+    bytes: &[u8],
+) -> Option<Code> {
     if signature_format(bytes).is_some_and(|sniffed| sniffed != format) {
         return Some(Code::TextureTypeMismatch);
     }
@@ -94,7 +105,11 @@ pub(super) fn texture_finding(format: SourceFormat, rule: SizeRule, bytes: &[u8]
                 .then_some(Code::TextureNotPow2)
         }
         SizeRule::PreFox => {
-            (probe.width % 4 != 0 || probe.height % 4 != 0).then_some(Code::TextureNotDiv4)
+            // Only a texture the compile block-compresses is held to the 4-pixel block: a
+            // stored-uncompressed source in the color role is written as it is.
+            let compressed = !(probe.uncompressed && texture_role(stem) == TextureRole::Color);
+            (compressed && (probe.width % 4 != 0 || probe.height % 4 != 0))
+                .then_some(Code::TextureNotDiv4)
         }
         SizeRule::Portrait => (!power_of_two).then_some(Code::TextureNotPow2),
     }
@@ -274,6 +289,48 @@ mod tests {
         );
     }
 
+    /// A single-level `width`x`height` DDS stored uncompressed, written by the
+    /// converter itself so its header reads as stored uncompressed.
+    fn uncompressed_dds(width: u32, height: u32) -> Vec<u8> {
+        dds_convert::convert(
+            &dds_convert::Decoded {
+                width,
+                height,
+                mips: vec![vec![0; (width * height * 4) as usize]],
+                blocks: None,
+                authored_mips: true,
+                uncompressed: true,
+            },
+            dds_convert::Target {
+                version: PesVersion::Pes17,
+                role: TextureRole::Color,
+                keep_uncompressed: true,
+            },
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn a_stored_uncompressed_color_texture_skips_the_pre_fox_size_rule() {
+        // A stored-uncompressed source in the color role is written as it is: no
+        // block-compressed texture is made of it, so a side that is no multiple
+        // of 4 is no finding. In the normal-map role it is encoded, and a raster
+        // source is encoded either way.
+        let skin = uncompressed_dds(1002, 1002);
+        for (stem, expected) in [("skin", None), ("skin_nrm", Some(Code::TextureNotDiv4))] {
+            assert_eq!(
+                texture_finding(SourceFormat::Dds, SizeRule::PreFox, stem, &skin),
+                expected,
+                "{stem}"
+            );
+        }
+        let png = dds_convert::encode_png(&vec![128; 1002 * 1002 * 4], 1002, 1002).unwrap();
+        assert_eq!(
+            texture_finding(SourceFormat::Png, SizeRule::PreFox, "skin", &png),
+            Some(Code::TextureNotDiv4)
+        );
+    }
+
     #[test]
     fn a_texture_whose_header_is_cut_is_unreadable_and_drops_its_folder() {
         let temp = scratch("deep_texture_cut");
@@ -329,17 +386,20 @@ mod tests {
     fn a_texture_the_probe_refuses_is_unreadable_or_of_an_unsupported_codec() {
         let rule = SizeRule::FoxMipmapped;
         assert_eq!(
-            texture_finding(SourceFormat::Dds, rule, b"junk"),
+            texture_finding(SourceFormat::Dds, rule, "skin", b"junk"),
             Some(Code::TextureUnreadable)
         );
         // A 4x4 BC1 DDS with `DDSCAPS2_VOLUME` (0x200000) set in its `capabilities2`, the
         // 4-byte field at file offset 112 (the magic, then 108 bytes into the header): a
         // volume texture, a kind of DDS the target cannot be given.
         let mut volume = bc1_dds(4, 4);
-        assert_eq!(texture_finding(SourceFormat::Dds, rule, &volume), None);
+        assert_eq!(
+            texture_finding(SourceFormat::Dds, rule, "skin", &volume),
+            None
+        );
         volume[112..116].copy_from_slice(&0x0020_0000_u32.to_le_bytes());
         assert_eq!(
-            texture_finding(SourceFormat::Dds, rule, &volume),
+            texture_finding(SourceFormat::Dds, rule, "skin", &volume),
             Some(Code::TextureCodecUnsupported)
         );
     }
@@ -456,6 +516,7 @@ mod tests {
                 texture_finding(
                     SourceFormat::Dds,
                     rule,
+                    "skin",
                     &bc1_dds_levels(width, height, levels)
                 ),
                 expected,

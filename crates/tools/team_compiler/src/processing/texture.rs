@@ -701,8 +701,10 @@ pub(super) fn portrait(
 
 /// The role of a texture by its `stem`: a normal map when the stem ends in `_nrm` in any
 /// case, the suffix of the game's own normal maps (`skin_nrm`, `oral_nrm`), read without a
-/// kit token, which sits after the role suffix (`pants_nrm_kit1`). Color otherwise.
-pub(super) fn texture_role(stem: &str) -> TextureRole {
+/// kit token, which sits after the role suffix (`pants_nrm_kit1`). Color otherwise. The
+/// deep pass decides a texture's role by the same function, so its checks and the
+/// conversion cannot disagree.
+pub(crate) fn texture_role(stem: &str) -> TextureRole {
     let stem = without_kit_token(stem);
     let bytes = stem.as_bytes();
     let tail = bytes.len().checked_sub(4).map(|at| &bytes[at..]);

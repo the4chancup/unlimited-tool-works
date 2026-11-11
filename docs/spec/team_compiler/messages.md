@@ -287,9 +287,10 @@ names its textures; elsewhere (`Common/`, portraits) the file is dropped; the lo
 exception — main and `_small` fail as one atomic producer of the game's three sizes. A file is
 `texture_type_mismatch` when its bytes open with the signature of another accepted format than
 its extension's; TGA has no signature, so a `.tga` is a mismatch only when it opens with
-another's. An uncompressed texture is no finding, a kit's included: it is encoded like any
-raster source (`spec/libs/dds_convert.md` "Passthrough"), which is what PES 15–17's crash on
-uncompressed kits needed)
+another's. An uncompressed texture is no finding: a `.dds` or `.ftex` stored uncompressed
+is written uncompressed, except a kit's main texture on PES 15–17 (which those versions
+crash on uncompressed) and a normal map, both encoded like any raster source
+(`spec/libs/dds_convert.md` "Passthrough"))
 
 The deep pass reports `texture_type_mismatch`, `texture_too_small`, `texture_not_pow2`,
 `texture_not_div4` and `kit_texture_too_big` from each texture's header (`probe` in
@@ -297,8 +298,9 @@ The deep pass reports `texture_type_mismatch`, `texture_too_small`, `texture_not
 before any ID is planned for it. A mismatched file gets that one finding: its header is another
 format's, so its size is not read. `texture_type_mismatch` is not pass-through-eligible, because
 the file cannot be converted as the format its name declares; nor is `texture_not_div4`, because
-every pre-Fox texture is written block-compressed (BC1 or BC3), and the pre-Fox games' Direct3D 9
-renderer cannot create a block-compressed texture whose sides are not multiples of 4. The other
+a texture it holds is one the compile block-compresses (BC1 or BC3), and the pre-Fox games'
+Direct3D 9 renderer cannot create a block-compressed texture whose sides are not multiples of
+4. The other
 three size findings are eligible: the texture converts, and what the game makes of it is the
 member's risk. A texture whose header the
 probe refuses is a finding here too, at the same place as a mismatched file's:
@@ -322,7 +324,7 @@ pass-through-eligible, and the logo goes as one unit.
 |---|---|---|---|
 | `texture_too_small` | E | a side under 4 pixels, one block | discarded |
 | `texture_not_pow2` | E | a side that is not a power of two on a portrait (any target), or neither side a power of two on a Fox target on a texture that carries a mip chain: a raster source always (its chain is generated), a DDS or FTEX source with more than one level (a single-level one passes at any size). PES 21 draws a mipped texture with one such side (512x461, 797x64) and a 4096 kit. Not reported on a kit's main texture on PES 15-17, where `kit_texture_too_big` covers it | discarded |
-| `texture_not_div4` | E | pre-Fox: a side that is not a multiple of 4 (every pre-Fox texture is written block-compressed); not pass-through-eligible | discarded |
+| `texture_not_div4` | E | pre-Fox: a side that is not a multiple of 4 on a texture the compile block-compresses (a `.dds`/`.ftex` stored uncompressed in the color role is written as it is and gets no finding); not pass-through-eligible | discarded |
 | `kit_texture_too_big` | E | a kit's main texture (`kit`, its own or the one inherited from `all/`) wider or taller than 2048 pixels, or with a side that is not a power of two; PES 15-17 only | discarded |
 | `texture_type_mismatch` | E | header doesn't match extension (renamed, not resaved) | discarded |
 | `texture_unreadable` | E | the header cannot be read as the format the name declares and matches no other accepted format's signature (not a texture, or cut short before its header ends); reported by the deep pass from the header at the place's disposition, as `texture_type_mismatch` is (the file alone in `Common/`, so its other textures are kept; the folder for a model folder's or a kit's); not pass-through-eligible | discarded |
