@@ -141,3 +141,60 @@ fn a_legacy_ids_toml_that_does_not_parse_is_an_error_and_the_export_compiles_on_
     };
     assert_eq!(team.players[&5].boots_id, Some(3905));
 }
+
+// TC-LEG-05
+#[test]
+fn a_legacy_export_packs_a_kept_shared_folder_under_its_wearers_old_id() {
+    let sandbox = Sandbox::new("leg_ids_shared");
+    // The sandbox's default teams list does not hold /gbfg/.
+    sandbox.write("data/teams_list.txt", b"ID\tName\n796\t/gbfg/\n");
+    let export = "exports/gbfg Full Legacy";
+    // Slots 05 and 08 link the shared boots folder, slot 06 alone the
+    // shared gloves one.
+    sandbox.write(&format!("{export}/Players/05 - A/Crocs.boots"), b"");
+    sandbox.write(&format!("{export}/Players/08 - D/Crocs.boots"), b"");
+    sandbox.write(&format!("{export}/Players/06 - C/Mitts.gloves"), b"");
+    sandbox.write(&format!("{export}/Boots/Crocs/boots.fmdl"), &clean_model());
+    sandbox.write(
+        &format!("{export}/Gloves/Mitts/glove_l.fmdl"),
+        &clean_model(),
+    );
+    sandbox.write(
+        &format!("{export}/legacy_ids.toml"),
+        b"[05]\nboots = 2305\n[06]\ngloves = 2310\n[08]\nboots = 2305\n",
+    );
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+
+    let lines = run.messages();
+    assert_eq!(run.exit_code(), 0, "{lines:#?}");
+    assert_eq!(
+        boots_gloves_paths(&sandbox),
+        [
+            "Asset/model/character/boots/k2305/#Win/boots.fpk",
+            "Asset/model/character/glove/g2310/#Win/glove.fpk",
+        ],
+        "the old IDs packed once each, none of the Studio block 3901-3940"
+    );
+    let patch = read_patch(&sandbox);
+    let [team] = patch.teams.as_slice() else {
+        panic!("one [[teams]] entry")
+    };
+    assert_eq!(team.players[&5].boots_id, Some(2305));
+    assert_eq!(team.players[&8].boots_id, Some(2305));
+    assert_eq!(team.players[&6].gloves_id, Some(2310));
+
+    // Without the file the same export compiles on Studio's IDs: the
+    // shared folder's shared ID, and slot 06's exclusive one for the
+    // gloves folder he alone links.
+    fs::remove_file(sandbox.root.join(format!("{export}/legacy_ids.toml"))).unwrap();
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+    assert_eq!(run.exit_code(), 0, "{:#?}", run.messages());
+    assert_eq!(
+        boots_gloves_paths(&sandbox),
+        [
+            "Asset/model/character/boots/k3924/#Win/boots.fpk",
+            "Asset/model/character/glove/g3906/#Win/glove.fpk",
+        ]
+    );
+}

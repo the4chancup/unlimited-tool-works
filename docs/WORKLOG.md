@@ -7979,7 +7979,12 @@ briefs, review loops, gates and mutation runs as for any step.
       `aesthetics_export` `validate/`; `resources/bundle/quick_upgrade.bat`
     - [ ] poc13e the block check (0.0.2, after the PoC): `legacy_id_out_of_block`, the data
       directory's table (TC-LEG-03/04)
-    - [ ] OPEN, the maintainer's call (2026-11-10): the 0.0.2-poc.2 bundle (archive
+    - [x] poc13f a legacy merge that clashes keeps the folder shared, packed under its
+      old ID (2026-11-11, SWE-2, landed first time; TC-LEG-05, EU-SET-17): `export_upgrader`
+      `players.rs`, `messages.rs` (`legacy_merge_clash` gone), `help/`; `team_compiler`
+      `plan/ids.rs` (`legacy_folder_id`), `plan/mod.rs`. The shared-ID record still names
+      such a folder's Studio shared ID (a legacy midcup re-keys it from its own file).
+      Why: the 0.0.2-poc.2 bundle (archive
       `76267e04…`) upgrades 21 of the 39 VGL27 Friendlies with `--legacy-ids`, against 36
       without it: 78 `legacy_merge_clash` in 15 teams, an item folder's texture sharing a
       wearer's face texture name with other bytes (`skin.dds` 35, `face.dds` 14, `head.dds`

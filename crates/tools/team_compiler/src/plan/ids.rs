@@ -14,6 +14,8 @@ use pes_version::Engine;
 use teams_list::TeamId;
 use vtree::ScopePath;
 
+use super::item_rows::ItemTable;
+use super::legacy_ids::LegacyIds;
 use super::roles::{FolderModels, PlayerFile, link_feeds_own_package, package_of, player_file};
 use crate::bins::shared_ids::SharedIds;
 
@@ -233,6 +235,35 @@ pub(crate) fn folder_ids<'a>(
         }
     }
     ids
+}
+
+/// The old ID `folder` packs under in a legacy export (`legacy_ids.toml`, VGL27): the one
+/// the first roster slot linking it plainly, in roster order, records for `kind`. `None`
+/// when no linker records one of the kind, the folder keeping the ID `folder_ids` gave it.
+/// A shared folder a legacy upgrade kept (its merge clashed) packs this way, as does one
+/// linked by a single slot.
+pub(crate) fn legacy_folder_id(
+    export: &ValidatedAestheticsExport,
+    engine: Engine,
+    kind: SharedKind,
+    folder: &SharedModelFolder,
+    hand_weighted: &BTreeSet<ScopePath>,
+    legacy: &LegacyIds,
+) -> Option<u32> {
+    let table = match kind {
+        SharedKind::Boots => ItemTable::Boots,
+        SharedKind::Gloves => ItemTable::Gloves,
+        SharedKind::Face => return None,
+    };
+    let name_key = vtree::fold_name(&folder.folder_name);
+    let ValidatedRoster::Team(slots) = &export.roster else {
+        return None;
+    };
+    slots
+        .iter()
+        .map(|(slot, index)| (*slot, &export.players[index.0]))
+        .find(|(_, player)| links_plainly(export, player, engine, kind, &name_key, hand_weighted))
+        .and_then(|(slot, _)| legacy.old_id(slot, table))
 }
 
 /// The shared folders of `kind` in `export` that a roster-mapped player folder links plainly

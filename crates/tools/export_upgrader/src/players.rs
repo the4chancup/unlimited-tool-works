@@ -10,9 +10,10 @@
 //! export. One worn by two or more, or any worn one on a pre-Fox export,
 //! stays a named shared folder with a link file — unless `--legacy-ids`
 //! (VGL27's legacy mode) is given, where a Fox folder merges into every
-//! wearer instead and a byte clash is the `legacy_merge_clash` Error rather
-//! than `merge_kept_shared`. Each slot's output folder lands in
-//! `PlayerFolders::folders` for the `settings.toml` generation
+//! wearer instead. A byte clash keeps the folder shared in every mode
+//! (`merge_kept_shared`); in legacy mode the wearers still record its old
+//! ID, which the compiler packs the shared folder under. Each slot's
+//! output folder lands in `PlayerFolders::folders` for the `settings.toml` generation
 //! (`settings.rs`). A referee export's folders are `referees.rs`'s, and loose
 //! mode pairs each item folder's wearer from its ID's position in its kind's
 //! old block of 25.
@@ -948,8 +949,8 @@ enum MergeMode {
     /// A Fox export's folder merges into its one wearer; more share it.
     OneWearer,
     /// A Fox export's folder under `--legacy-ids` (VGL27's legacy mode)
-    /// merges into every wearer, a byte clash becoming the
-    /// `legacy_merge_clash` Error rather than `merge_kept_shared`.
+    /// merges into every wearer, a byte clash keeping the folder shared as
+    /// outside the mode.
     EveryWearer,
     /// A pre-Fox export's folder never merges: every worn one stays shared.
     Never,
@@ -1187,15 +1188,13 @@ fn item_folders(
         // How the folder merges: `Never` (pre-Fox) keeps every worn folder
         // shared, `OneWearer` merges it into its one wearer and shares it
         // between two or more, `EveryWearer` (`--legacy-ids`, VGL27) merges
-        // it into every wearer — nothing stays shared, so each one's own
-        // package carries the folder's one old ID. A path the item folder
-        // and a merging player folder share, folded (`Skin.dds` and
-        // `skin.dds` are one on Windows), with different bytes is a clash,
-        // the first such path in the finding's context: `merge_kept_shared`
-        // keeps the folder shared outside legacy mode; in legacy mode it is
-        // `legacy_merge_clash`, an Error — a folder kept shared would pack
-        // on Studio's IDs — and the merge goes through all the same, the
-        // run writing nothing.
+        // it into every wearer, so each one's own package carries the
+        // folder's one old ID. A path the item folder and a merging player
+        // folder share, folded (`Skin.dds` and `skin.dds` are one on
+        // Windows), with different bytes is a clash, the first such path in
+        // the finding's context: `merge_kept_shared` keeps the folder shared
+        // in every mode; in legacy mode the wearers still record its old ID,
+        // which the compiler packs the shared folder under.
         let never_merges = matches!(merge, MergeMode::Never);
         let legacy = matches!(merge, MergeMode::EveryWearer);
         // The wearers the folder merges into: all of them in legacy mode,
@@ -1218,11 +1217,7 @@ fn item_folders(
             });
             if let Some(path) = clash {
                 plan.findings.push(tool_message(
-                    if legacy {
-                        Code::LegacyMergeClash
-                    } else {
-                        Code::MergeKeptShared
-                    },
+                    Code::MergeKeptShared,
                     Scope::Folder {
                         export_id: INPUT,
                         path: path_scope(&folder),
@@ -1230,10 +1225,7 @@ fn item_folders(
                     Disposition::Keep,
                     vec![("path", path)],
                 ));
-                // Outside legacy mode the clash keeps the folder shared; in
-                // legacy mode the merge goes through, the Error already
-                // keeping the run from writing.
-                share = !legacy;
+                share = true;
             }
         }
         plan.consumed

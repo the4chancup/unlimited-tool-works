@@ -22,11 +22,12 @@ positions or past it belongs to no player and is reported as
 gets a `settings.toml` whose only setting is `name = true`.
 
 `--legacy-ids` is VGL27's legacy mode, for the organizer: every boots or
-gloves folder is copied into each player wearing it, so no shared one is left,
-and a root `legacy_ids.toml` records the ID each folder's name carried. The
-Team compiler then packs those models under the old IDs, the ones the
-managers' own Red builds use. A copied file that would replace a different
-one in a player's folder is `legacy_merge_clash`, and nothing is written.
+gloves folder is copied into each player wearing it, and a root
+`legacy_ids.toml` records the ID each folder's name carried. The Team
+compiler then packs those models under the old IDs, the ones the managers'
+own Red builds use. A folder with a file that would replace a different one
+in a player's folder stays shared, and is packed under its old ID all the
+same.
 
 The output is a new folder beside the input, or inside the folder `-o` names
 (created when missing). Its name is the team's key with the coverage tag

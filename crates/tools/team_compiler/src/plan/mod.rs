@@ -34,7 +34,7 @@ use crate::messages::{Code, tool_message};
 use crate::mtl_search::mtl_for;
 use crate::paths::{PackageKey, REFEREE_TEAM_ID, TextureHome};
 use collars::export_collar;
-use ids::{PlannedModelIds, assigned_shared_ids, folder_ids};
+use ids::{PlannedModelIds, assigned_shared_ids, folder_ids, legacy_folder_id};
 use item_rows::{ItemTable, RowPlayer, export_rows};
 use legacy_ids::LegacyIds;
 use roles::{
@@ -1243,6 +1243,23 @@ pub(crate) fn plan_run(
                     .collect(),
                 None => Vec::new(),
             };
+            // A legacy export's `legacy_ids.toml`: a folder packs under the old ID its
+            // first plain linker in roster order records for the kind, when one does;
+            // otherwise it keeps the ID the team's block gave it.
+            if let Some(legacy) = &legacy_ids {
+                for (folder, id) in &mut packing {
+                    if let Some(old) = legacy_folder_id(
+                        &export,
+                        version.engine(),
+                        kind,
+                        folder,
+                        &hand_weighted,
+                        legacy,
+                    ) {
+                        *id = old;
+                    }
+                }
+            }
             packing.sort_by_key(|(_, id)| *id);
             for (folder, shared_id) in packing {
                 let mut folder = ModelFolder {

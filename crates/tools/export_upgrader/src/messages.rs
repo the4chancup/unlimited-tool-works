@@ -66,11 +66,6 @@ pub(crate) enum Code {
     /// bytes: the item folder is kept shared with a link instead (`path`, the
     /// first clashing path relative to the player folder).
     MergeKeptShared,
-    /// The same clash under `--legacy-ids` (VGL27's legacy mode), which
-    /// keeps nothing shared: an Error — a folder kept shared would pack on
-    /// Studio's IDs — and nothing is written (`path`, the first clashing
-    /// path relative to the player folder).
-    LegacyMergeClash,
     /// Loose mode's assumed wearer of an item folder (step 11): the ID's
     /// position in its kind's old block of 25, reported so the pairing can be
     /// checked (`id`, the folder's four-digit ID; `slot`, the player's).
@@ -203,7 +198,6 @@ impl Code {
             Code::MtlStrayTextDropped => "mtl_stray_text_dropped",
             Code::RosterSlotEmpty => "roster_slot_empty",
             Code::MergeKeptShared => "merge_kept_shared",
-            Code::LegacyMergeClash => "legacy_merge_clash",
             Code::WearerAssumed => "wearer_assumed",
             Code::WearerByName => "wearer_by_name",
             Code::WearerByNumber => "wearer_by_number",
@@ -246,7 +240,6 @@ impl Code {
         Code::MtlStrayTextDropped,
         Code::RosterSlotEmpty,
         Code::MergeKeptShared,
-        Code::LegacyMergeClash,
         Code::WearerAssumed,
         Code::WearerByName,
         Code::WearerByNumber,
@@ -516,12 +509,6 @@ const CATALOG: &[(&str, Severity, &str, &str)] = &[
         Severity::Info,
         r#"A player folder and a boots or gloves folder that would merge into it share a file path with different bytes."#,
         r#"The boots or gloves folder is kept shared with a link instead."#,
-    ),
-    (
-        "legacy_merge_clash",
-        Severity::Error,
-        r#"With --legacy-ids, a boots or gloves folder's file would replace a different file at the same path in a wearer's player folder (the line names the path)."#,
-        r#"Nothing is written: in legacy mode a folder kept shared would be packed under the Team compiler's own IDs, not the old one. Rename the clashing file in the input and upgrade again."#,
     ),
     (
         "wearer_assumed",

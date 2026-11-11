@@ -170,21 +170,38 @@ fn a_shared_item_folder_merges_into_every_wearer_in_legacy_mode() {
     }
 
     // The same export, slot 06's face folder also holding a
-    // `glove_l.fmdl` with other bytes: `legacy_merge_clash` is an Error
-    // and nothing is written.
+    // `glove_l.fmdl` with other bytes: the clash keeps g0431 shared, a
+    // link per wearer, and `legacy_ids.toml` still records its old ID.
     export("co Summer");
     face(&sandbox, "co Summer/Faces/XXX06 - B");
     sandbox.write("co Summer/Faces/XXX06 - B/glove_l.fmdl", b"other");
     let run = upgrade_with(&sandbox, "co Summer", "EDIT", &["--legacy-ids"]);
-    assert_eq!(run.exit_code(), 1, "{}", run.stdout());
+    assert_eq!(run.exit_code(), 0, "{}", run.stdout());
+    assert!(run.stdout().contains("migration_clean"), "{}", run.stdout());
     assert!(
-        run.stdout().contains(
-            "- co Summer: Error legacy_merge_clash at Gloves/g0431 (path=glove_l.fmdl)\n"
-        ),
+        run.stdout()
+            .contains("- co Summer: Info merge_kept_shared at Gloves/g0431 (path=glove_l.fmdl)\n"),
         "{}",
         run.stdout()
     );
-    sandbox.assert_nothing_written("co Full Summer", &run.stdout());
+    assert_eq!(
+        fs::read(sandbox.path("co Full Summer/Gloves/g0431/glove_l.fmdl")).unwrap(),
+        b"glove_l"
+    );
+    for nn in ["06", "07"] {
+        let folder = player_folder(&sandbox, "co Full Summer", nn);
+        assert_eq!(
+            fs::read(sandbox.path(&format!("co Full Summer/Players/{folder}/g0431.gloves")))
+                .unwrap(),
+            b"",
+            "{folder}/g0431.gloves"
+        );
+    }
+    let ids = fs::read_to_string(sandbox.path("co Full Summer/legacy_ids.toml")).unwrap();
+    assert!(
+        ids.contains("[06]\ngloves = 431\n[07]\ngloves = 431\n"),
+        "{ids}"
+    );
 
     // The same export without the flag: g0431 stays shared, a link per
     // wearer.
