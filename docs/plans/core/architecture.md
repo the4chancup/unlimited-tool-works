@@ -111,6 +111,23 @@ message rather than silently opening the GUI. A tool decides its own readiness: 
 queues the autorun until the initial exports check has completed, then fires it — the same
 precondition as a manual Compile click, so the grid never compiles unchecked state.
 
+**A run's log file.** `--log-file <FILE>` is a global option, accepted before or after the
+tool's id as `-v` is. With it a CLI run appends everything it prints to FILE, between a first
+line `$ UTW <the arguments>` and a last line `exit <code>`, and its stdout leaves the Info
+findings out: a compile prints hundreds of them around the few Warnings and Errors a member
+has to act on, and the file is where the rest is read. The file takes every finding line as
+stdout prints it without the option, and what the run writes to stderr (a notice, the run's
+summary whether or not a terminal draws it, the `error:` line); the progress line, redrawn in
+place, is not in it. The option is the exe's, not the launchers': started from a bat, this
+exe's output cannot be redirected or piped (`UTW.exe ... > file` and `UTW.exe ... | findstr`
+both received nothing when measured, the "Windows subsystem" arrangement below: a
+GUI-subsystem exe that attaches to its parent's console writes to that console, whatever
+`cmd` redirected), so a bat can neither keep nor filter what the exe prints. The file is
+appended to, so that `quick_upgrade.bat`, which runs the exe once per export, has one log of
+its whole run; a launcher deletes the file before its first run. A FILE that cannot be opened
+refuses the run before it starts (exit 2), and a write to it that fails ends the run as a
+failed console write does (exit 3): a log that silently stops is worse than none.
+
 **Windows subsystem.** A Rust exe is either a console or a GUI application, and this binary is both.
 It is built as a GUI-subsystem exe (`#![windows_subsystem = "windows"]`) so double-clicking it, or
 `quick_compile.bat`, never flashes a console window; when CLI arguments are present it calls

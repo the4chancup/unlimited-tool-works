@@ -1702,6 +1702,11 @@ briefs, review loops, gates and mutation runs as for any step.
   - [ ] 0.0.2-statlbl the label of an ability stat the save's version does not have (Tight
     Possession, Aggression, ...) in the same darker colour as a greyed card's label (the
     maintainer, 2026-11-03); drafted first
+  - [ ] 0.0.2-log the run's log file (the maintainer, 2026-11-12; DECISIONS "A CLI run takes
+    `--log-file`"; `plans/core/architecture.md` "Launch modes", ST-CLI-04): `--log-file
+    <FILE>` appends the whole run to the file and leaves Info findings out of stdout; the
+    two launchers pass it. Then the bundle's readme, the changelog line and poc.5
+    -> verify: ST-CLI-04's test; the launchers' tests; a launcher run in a real console
   - [ ] 0.0.2-cli the command line's update notice (DECISIONS "The update offer waits in the
     status bar"): from 0.0.2 a command prints one line when a newer release exists
   - [x] 0.0.2-se19 dropped 2026-11-11 (the maintainer: the tester's save is lost; DECISIONS

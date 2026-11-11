@@ -16405,3 +16405,21 @@ patched exe and 4ccEditor both write two starters on one spot or a unit apart (w
 cv14g's save held two CMFs on one spot).
 Open: the distance itself, to read from the exe's teammate detection and the editor's pitch.
 Plan: `plans/aatf_rules.md` "The illegal formation check (0.0.2)"; worklog 0.0.2c.
+
+## 2026-11-12 — core — A CLI run takes `--log-file`, and the launchers pass it
+Decision (the maintainer): asked how the warnings and errors of an upgrade or a compile are
+read in the PoC bundle, where a run prints hundreds of Info lines and writes no file; a
+launcher-only change was accepted first, then replaced: "It might be better to just edit the
+exe than deal with cmd shenanigans." `--log-file <FILE>`, a global option: the run appends
+everything it prints to FILE between `$ UTW <arguments>` and `exit <code>`, and stdout leaves
+the Info findings out. `quick_compile.bat` and `quick_upgrade.bat` pass it
+(`compile_log.txt`, `upgrade_log.txt`), each deleting its log first.
+Why: the launcher-only route cannot work. Measured the same day: from a bat, `UTW.exe ... >
+file`, `UTW.exe ... | findstr` and `2>&1` all receive nothing, the exe being a GUI-subsystem
+one that attaches to its parent's console. One option carries both effects because nobody
+asked for one without the other; it appends because the upgrade launcher runs the exe once
+per export.
+Not chosen: a severity filter and a log as two options; a log the exe truncates (the upgrade
+launcher would keep only its last export).
+Plan: `plans/core/architecture.md` "Launch modes" ("A run's log file"), ST-CLI-04;
+`plans/core/development_plan.md` "The /vg/ League 27 (VGL)"; worklog 0.0.2-log.

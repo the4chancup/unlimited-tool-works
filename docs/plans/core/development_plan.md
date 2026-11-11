@@ -132,6 +132,12 @@ report can be read:
   refusal from another, so the readme tells the member to move upgraded old exports out of
   `old_exports/`, which an organizer receiving exports over several days needs. The bat goes
   when the Export upgrader's view lands.
+- Both pass `--log-file` (`architecture.md` "Launch modes"): the window shows the warnings
+  and errors alone, and `compile_log.txt` or `upgrade_log.txt` beside the launcher holds the
+  whole run, Info findings included, for reading afterwards and for posting when something
+  fails. Each launcher deletes its log before its first run, and `quick_upgrade.bat` adds its
+  tally line to it. Each ends by saying that Info messages were left out and where the full
+  report is.
 
 The organizer's PES 2019 install carries the official DpFileList (an install with another
 list takes it with `team-compiler upgrade-dpfl`, run once from a console in the bundle's
