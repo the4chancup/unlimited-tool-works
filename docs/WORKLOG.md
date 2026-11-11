@@ -49,7 +49,8 @@ first-class target the Fox version the cup moves to around April 2027 ("Target v
 Next: the after-cut list (f6, f1g14's postponed mutation run among it), then 0.0.2.
 **Blocked on:** nothing. 0.0.2-poc13 (VGL27's legacy boots and gloves IDs) is built: the
 upgrader's `--legacy-ids` (poc13c) and the compiler's packing (poc13d); the block check
-(poc13e) waits for 0.0.2. Next: the 0.0.2-poc.2 bundle goes to the maintainer; ux1 after it.
+(poc13e) was brought in. Next: the 0.0.2-poc.2 bundle (archive `1cabaa13…`) goes to the
+maintainer; ux1 after it.
 
 **Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
 and writes what is correctness-critical; the sidekick, SWE-2 through the Devin CLI, implements;
@@ -8013,6 +8014,13 @@ briefs, review loops, gates and mutation runs as for any step.
       `settings.toml` and readme; the branch's tests spelling the old default left as they
       are); main keeps `4cc_99_test`. `upgrade-dpfl` maps CPKs by stem, so a member's
       `4cc_90_test.cpk` keeps its name
+    - [x] 0.0.2-poc.2 rebuilt with poc13e/f (2026-11-11; branch `9eafbfad`, archive SHA-256
+      `1cabaa13…`, previous builds in `target/dist_prev_*`). The Friendlies through its
+      extracted exe with `--legacy-ids` (`.tmp/0_0_2/poc13/run_friendlies.py`): 36 of 39
+      upgrade (/bag/, /wuwa/, /CIV4XG/ refused, as poc12), each with `legacy_ids.toml`; the
+      compile exits 1 with no Fatal, its Errors only `legacy_id_out_of_block` (/hanny/ 25,
+      /utg/ 17; QUESTIONS) and /alg/, /ink/, /smtg/ `team_name_unknown`; `4cc_90_test.cpk`
+      and the patch written. Not checked in game
   - [ ] 0.0.2-ux1 the CLI's progress line and finding times (the maintainer, 2026-11-10;
     DECISIONS 2026-11-10): the upgrader's line counted its output half as an export (`0/2`)
     and drew no parts; the compiler's findings came in waves (manifest-order commits, kept).
