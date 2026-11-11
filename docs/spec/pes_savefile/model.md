@@ -627,11 +627,26 @@ physique, strip) on a Fox player whose screens were visited, whether a value cha
 a player whose only visit was the hairstyle picker, confirmed on the entry it showed, stayed
 byte-identical, so which screen sets them is not isolated.
 
+### What the player's edit flags gate in game
+
+Measured in PES 2019's Edit mode (2026-11-07 to 11-09, on a cup save, a placeholder team's
+players): with every flag clear, a name written to the record shows PLACEHOLDER everywhere,
+the edit field included, while stats typed at 99 show and lift the overall; the `player` flag
+alone makes the name show; `abilities` alone changes nothing; `motion` gates nothing (a free
+kick, a penalty kick and a goal celebration written with every flag clear show on the Motion
+page), and the look flags (face, hair, physique, strip) are off on every team of a save whose
+compiled looks show. So of the flags only `player` matters to what the suite writes, and for
+a name. In VGL 27's Friendlies save every filled team holds `player` on all 23 players and
+the gameplay flags on nearly all, and every placeholder team holds none. The Save editor sets
+`player` when a member types a name or a shirt name, as 4ccEditor does; an import (Team TOML,
+legacy) writes the file's flags as they are, so a hand-renamed TOML with `edit_flags.player
+= false` stays PLACEHOLDER in game. Other versions are unmeasured.
+
 ### Open points
 
 Not determined by the census: PES 20's competition stride (49,528 B is not 65 × 760); PES 15's
 header 0x4A reading 1855 over an all-empty kit table; PES 16's competition-entry start (the
 ids begin 128 B before the wiki's size implies); the strip entries' layout beyond the key and
-the colour-looking bytes; the 32 header bytes; the edit flags' meanings (the wiki's words,
-unmeasured). Not measured in Edit mode: the manager entries, competitions, stadium names, the
+the colour-looking bytes; the 32 header bytes; the edit flags' meanings beyond the section above (the wiki's
+words). Not measured in Edit mode: the manager entries, competitions, stadium names, the
 commentary-name id, the print name, and the team record's emblem, stadium and banner bytes.

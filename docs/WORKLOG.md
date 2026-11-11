@@ -9,57 +9,34 @@ is in `AGENTS.md` ("Working documents").
 
 ## Current status
 
-**Phase:** 8 (GUI) is next in the phase order, after the DBC work below. Phase 6 (Export
-upgrader) closed 2026-10-20; Phase 5 (Savefile integration) 2026-10-17. Phases 1 to 4 done
-(Phase 4 closed 2026-10-12, Phase 3 2026-10-02, Phase 2 2026-09-30). Built ahead of their
-phases: 10.0a-g (`music_export`, its plan section, `pub` audit and whole-crate mutation run
-done, then matched to Rigdio's reading by the 10.0f audit; converging with Phase 10), 16.w (the platform floor) and 20.0a-d (the Ruleset editor's
-coverage table and draft, the DBC7 ruleset).
-**Next:** for Divegrass Before Christmas (exports due 2026-11-18; `plans/core/development_plan.md`
-"Divegrass Before Christmas"), a working Save editor with a rock-solid AATF check comes first
-(the maintainer, 2026-10-24): the Save editor's view (8.9: slices 1-3 done, with the Tactics
-pitch as the game's, 8.9g and 8.9i; its slice 4 under way: the AATF panel and Live AATF done
-(8.9j1-j3), the comparator done (8.9j4), the save-writing transplant removed (8.9j5c; the
-export-writing one waits for 0.1.0); 8.9f's slice 4: v2 is
-the base, ported in five subslices, 4a the frame, 4b Abilities and 4c Appearance and Tactics done, 4d (the one cards badge, on 0.0.1i's `Rules::player_tier`) done and reviewed; 8.9h closed by the window's 960 × 600 minimum; 8.29, the text pass, under way: a (the Save editor's
-window, catalog, CLI, help and draft) done, c (the Team compiler and the upgrader) under way
-on side-lead U's branch, c1 to c5 done, the help chapters' fact audit (c4e) included, c6 outside its locks; 8.9l, the open and save scenarios, done 2026-10-29
-(SE-GUI-21 checked in game on PES 2021 and 2017, its texts corrected in 8.9m m5); 8.9m, the logic's speed
-rewrite before the v1 freeze; 0.0.1j's audit read, j1 and j2 open; the maintainer's
-proposal rulings of 2026-10-26 added 0.0.1o-r, k4 and 8.7c), `libs/aatf`'s hardening (the repetition rework done and
-reviewed; the audit 0.0.1i done and reviewed), `ingame_face.toml` (0.0.1h, done 2026-10-25: the compiler,
-the upgrader and the Save editor's generation on the new file, SE-GUI-34 checked in game), then the 0.0.1 cut (0.0.1f, its preparation f1 done on side-lead U's branch: the Save editor, DBC7's rules file, and the Team compiler
-and Export upgrader through their CLI for VGL 27, PES 2019, from late November; 0.0.1a-e and g
-done), then Phase 8's other views and Release 0.1.0. The Ruleset editor (Phase 20) left 0.0.1
-and resumes after 0.1.0: 20.3-20.5, 20.6a1 and 20.6a2a (Tiers) done and reviewed. Done for DBC so far: 20.0d-e (the DBC7 ruleset and its organizer's choices), 8.4
-(the usability pass; P1-P14 accepted 2026-10-25, planned as 8.10's row actions and 8.22;
-`PROPOSALS.md` P15-P22 wait for the maintainer's rulings), 8.5 (the Save
-editor's draft), the shell (8.6a-e), the color picker (8.7a-b), `team_widgets` (8.8), egui 0.37
-and the release stage (8.11, 8.13). The face_diff model comparison (Issues, "a face diff is
-engine-specific") follows the editor. The shell's own icon font (8.14) is built, its look in
-the built window open.
-No side-lead runs: tracks A (the drafts, 8.16-8.19a and 8.25's half) and B (0.0.1i) ran on
-2026-10-25 and are merged; the record is `.tmp/lead/tracks.md`. 2.5b (GPU BC7) is step 16.x, its `dds_convert` half built ahead of its
-phase (16.x a, unwired)
-(decision entries 2026-09-21 and 2026-09-28). Release target (2026-09-28): 0.1.0 after Phase
-8; phase order 1–6, 8, 0.1.0, 7, 9–16 (`plans/core/development_plan.md` "Releases");
-first-class target the Fox version the cup moves to around April 2027 ("Target versions").
-**0.0.1 released** 2026-11-03 (f2): tag `v0.0.1` on `c97ce914`, built by CI run
-41564671137, the clean-machine check passed on the notebook, published by the maintainer.
-Next: the after-cut list (f6, f1g14's postponed mutation run among it), then 0.0.2.
-**Blocked on:** nothing. 0.0.2-poc13 (VGL27's legacy boots and gloves IDs) is built: the
-upgrader's `--legacy-ids` (poc13c) and the compiler's packing (poc13d); the block check
-(poc13e) was brought in. poc14 (the maintainer's asks of 2026-11-10: the DpFileList
-findings Fatal, the commented settings file) is landed and built: 0.0.2-poc.3 (archive
-`991cc670…`) beside poc.2 (`1cabaa13…`) goes to the maintainer. ux1 (the CLI's progress
-line and `--timestamps`) is landed, not in any bundle yet.
+**Now: Release 0.0.2, the VGL preview** (`plans/core/development_plan.md` "The /vg/ League 27
+(VGL)"). The cut holds every open 0.0.2 step (DECISIONS 2026-11-11 "0.0.2 holds every open
+0.0.2 step"), worked in this order:
+1. Update now (0.0.2-upd, its slices below), then the command line's notice (0.0.2-cli) and
+   the TLS provider (0.0.2-tls).
+2. The illegal formation check (0.0.2c): the stock game's rule is being read from the PES
+   2017 executable.
+3. The Save editor asks of 2026-11-03 (0.0.2-cmp, -drag, -undo, -statlbl, -inst, -drift,
+   -clip).
+4. The measurements: the compile profile against Red (0.0.2d), `codegen-units` (0.0.2-cgu).
+5. The library checkpoints (0.0.2-chk), then the cut.
 
-**Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
-and writes what is correctness-critical; the sidekick, SWE-2 through the Devin CLI, implements;
-the cross-family reviews run through the `duck` skill (Astra), the lead running them itself.
-When a review stops for quota, it is queued here (commit range, plan sections) and retried
-once an hour; work continues past it, but no phase closes with one outstanding.
-**Handover queue:** nothing (poc5 to poc7's Astra ran 2026-11-06).
+**The PoC for VGL's organizer:** 0.0.2-poc.4 is built (`4cc-studio-temp/poc/target/dist`,
+archive SHA-256 `775fcf8c…`, branch `vgl27` at `73397383`: main of 2026-11-11, so with the
+old kit token's refusal, no BC7 encoding, JPEG XL sources and `--timestamps`), beside poc.3
+and poc.2. Its in-game check and its hand-over are the maintainer's.
+**Blocked on:** nothing.
+**Behind 0.0.2:** Phase 8's other views and Release 0.1.0, then the phase order 1–6, 8,
+0.1.0, 7, 9–16 (`plans/core/development_plan.md` "Releases"; the first-class target is the
+Fox version the cup moves to around April 2027, "Target versions"). Phases 1 to 6 are
+closed; 0.0.1 was released 2026-11-03 (tag `v0.0.1` on `c97ce914`). Built ahead of their
+phases: 10.0a-g (`music_export`), 16.w (the platform floor), 16.x a (`dds_convert`'s GPU
+BC7 half, unwired), 20.0 to 20.6a2a (the Ruleset editor, resuming after 0.1.0).
+
+**Working mode.** `RUNBOOK.md` "How the work runs": the lead plans, briefs, reviews and
+writes what is correctness-critical; sidekicks implement, two or three at once; a review's
+depth follows its surface's tier. A review that cannot run is queued in the lead's handover,
+and no phase closes with one outstanding.
 
 ---
 
@@ -1679,11 +1656,18 @@ briefs, review loops, gates and mutation runs as for any step.
     profiles (the maintainer: taken only if the app runs faster; DECISIONS "Test pre-releases
     for Update now")
   - [ ] 0.0.2-upd Update now (`plans/core/distribution.md` "Self-update" steps 3, 4 and 6;
-    DECISIONS "Update now waits for 0.0.2"), postponed from 0.0.1's f1g9: download with its
-    progress, SHA-256 against `SHA256SUMS.txt`, extract, the swap beside `old/`, restart and
-    the next start's `Updated to` notice, in two slices (the updater's core, then the
-    dialog's states); its end-to-end test first settles how a pre-release can be read
-    without every 0.0.1 being offered it → verify: ST-UPD-03 headless, ST-UPD-04
+    DECISIONS "Update now waits for 0.0.2", "Update now's dialog: what the plan left open"),
+    postponed from 0.0.1's f1g9 → verify: ST-UPD-03, 05 and 06 headless, ST-UPD-04 by hand
+    - [x] slice 1, 2026-11-11 (`b6954512`, Opus): the updater's core, `updater::install`
+      (download, SHA-256, unpack, the swap with its undo)
+    - [ ] slice 2a the dialog's stages: Update now, the download's progress and Cancel,
+      `Update failed`, `Update ready` (ST-UPD-03)
+    - [ ] slice 2b Later's `Update ready` in the status bar, Restart now, `UTW_RELEASES_URL`
+      (ST-UPD-05), the CHANGELOG line
+    - [ ] slice 3 the `Updated to` notice (`last_run_version`) and the help's Updates and
+      What's new chapters (ST-UPD-06)
+    - [ ] slice 4 the settings menu's rollback (`plans/core/distribution.md` "Rollback")
+    - [ ] ST-UPD-04 by hand, on Windows and on Linux
   - [ ] 0.0.2-tls the update check's TLS without C (DECISIONS "The shipped build is pure
     Rust by default"): `ring`, `rustls`' crypto provider since f1g9, compiles C and assembly through `cc`,
     the shipped graph's one crate that does. Candidates, each measured before one is proposed
@@ -1717,25 +1701,10 @@ briefs, review loops, gates and mutation runs as for any step.
     maintainer, 2026-11-03); drafted first
   - [ ] 0.0.2-cli the command line's update notice (DECISIONS "The update offer waits in the
     status bar"): from 0.0.2 a command prints one line when a newer release exists
-  - [ ] 0.0.2-se19 a PES 2019 save the Save editor wrote loses Invitational 1 in game (an early
-    tester, relayed 2026-11-04: "open a pes19 edit file, change invitational 1, save it, and
-    then try to load it in the game, and i1 will be all placeholders and default stats"):
-    reproduce on a PES 2019 save (edit a player of Invitational 1, save, diff the bytes the
-    write changed against those the edit should), find the cause, its test red first, then
-    the in-game check on PES 2019 → verify: the saved file loads in game with Invitational 1
-    intact. Before 0.0.2-poc reaches the organizer (PES 2019 is VGL 27's game). Landed:
-    - the writer found sound 2026-11-05 (`.tmp/0_0_2/se19/`): an unchanged import leaves the
-      decrypted `data.dat` byte for byte, a short-name change alters 1 byte; placeholder
-      teams hold no edit flag, filled VGL teams the edited-player flag (`flag_tally.py`)
-    - in game on PES 2019 2026-11-07 and 11-08 (`.tmp/0_0_2/ingame/se19/findings.md` parts 1
-      and 2): with every flag clear a name shows PLACEHOLDER and typed stats show; `player`
-      alone shows the name, and the window sets it on a name or shirt-name edit, so the
-      tester's placeholders reproduce, their default stats do not, and the PoC does not wait
-    - in game 2026-11-09 (part 3): the `motion` flag gates nothing, nor do the look flags
-      (face, hair, physique, strip) for what the patch writes; only `player`, for a name
-    Still open: the tester's own files and steps (QUESTIONS "The 0.0.2 Save editor report");
-    an import (Team TOML, legacy) carries the file's flags as written, so a hand-renamed
-    TOML with `edit_flags.player = false` stays PLACEHOLDER in game
+  - [x] 0.0.2-se19 dropped 2026-11-11 (the maintainer: the tester's save is lost; DECISIONS
+    "0.0.2 holds every open 0.0.2 step"): the writer was found sound, and what the edit
+    flags gate in game is in `spec/pes_savefile/model.md` "What the player's edit flags gate
+    in game"
   - [ ] 0.0.2-poc the first work after 0.0.1's cut (the maintainer, 2026-10-31): 8.36c and
     8.36d, then a proof-of-concept exe for VGL's organizer that
     upgrades and compiles a couple of example teams on PES 2019. 8.36c3 (the `<id>.copy`
@@ -2129,8 +2098,8 @@ writes first. A look leaves this list when its finding or `manual:` line lands i
   form; PES 2019, then 2021 and 2017; 8.36d; harness
 - The Friendlies compiled with `--legacy-ids` (`4cc_90_test.cpk` and the patched save), boots
   and gloves under their old IDs in Edit mode; PES 2019; 0.0.2-poc13's poc.2; harness
-- The 0.0.2-poc.3 bundle from a fresh extract: its launchers' upgrade and compile, the teams in
-  Edit mode; PES 2019; 0.0.2-poc13's poc.3; harness
+- The 0.0.2-poc.4 bundle from a fresh extract: its launchers' upgrade and compile, the teams in
+  Edit mode; PES 2019; 0.0.2-poc; maintainer (theirs, 2026-11-11)
 - A team's home stadium id (the u16 at +6) edited by the Save editor shows as that stadium in
   game; PES 2015 and 2016; 0.0.2-st15 (DECISIONS 2026-11-11); harness
 - A pre-Fox texture written uncompressed with a side no multiple of 4 (a 1030 × 513 hair part)
@@ -2175,6 +2144,24 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-11 (the worklog's collapse) — What the collapse left for the lead, from its
+  report (`.tmp/sidelead/sk_wl.report.md`): (1) the closed issues' in-game results, Tests 2,
+  4, 4b, 4c and 5 (the BootsList and GloveList rows, the referee collars on PES 17 and 21),
+  are in git history only (`git show 85d6d966:docs/WORKLOG.md`): check the spec holds each,
+  and move in what it lacks; (2) five rulings recorded only in the worklog get their
+  DECISIONS entries (the PoC branch's `4cc_90_test`, 0.0.2-chk's checkpoints, 0.0.2b in the
+  PoC bundle, the bats' `quick_` names, 0.0.2-acc's archive rule); (3) states to settle:
+  open children under closed parents (ux1, poc12 slice 4, 4c's r2, f4a-c), items open though
+  recorded done (k5b, k5b2, 8.36c4, f1e to f1g, poc13's asks), closed items still naming
+  something open (8.36b, 20.6a1), the tags 8.9m and 0.0.1g each used twice.
+- open 2026-11-11 (the census index, `.tmp/sidelead/sk_census.report.md`) — (1) 603 upgraded
+  or Studio FMDLs still carry an old Common path in their strings that no texture reference
+  uses (a raw-bytes search finds 8,783 files, the references 8,180): which tool leaves the
+  string, and whether the game reads it, is untraced. (2) `spec/export_upgrader.md`'s "6,053
+  FMDLs in export folders" names no folders, so no query reproduces it (the index reads
+  4,793 with repositories skipped): restate it from the index. (3) The team library holds no
+  `Collars` FMDL at all: the 146 counted for S-poc12s4 were copies under this repository's
+  `.tmp/`, so the issue below stays unmeasured on real exports.
 - open 2026-11-11 (S-poc12s4 r1; `export_upgrader` `kit_magic.rs` `respell_outputs`) — The
   Export upgrader respells the old kit token only below `Players/`, `Boots/`, `Gloves/` and
   in `Common/`, and `kit_token_old` follows it there. Whether Red's kit magic also rewrote
