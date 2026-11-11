@@ -22,7 +22,8 @@ BANDS = [
     ("mutation", "Mutation testing", "--b-mut"),
 ]
 
-# (id, label, band, stage column, sub-row 0 or 1, what it is)
+# (id, label, band, stage column, row within the band from 0, what it is). A band is as
+# tall as its rows: the reviewers take three, one column, since all three review.
 NODES = [
     ("directives", "Directives", "maintainer", 0, 0,
      "Rules and choices the maintainer sets; each lands in a plan, AGENTS.md or RUNBOOK.md "
@@ -104,15 +105,15 @@ NODES = [
      "A SWE-2 sidekick drives PES through the pad and OBS harness (scripts/ingame/), working "
      "through the worklog's pending looks, and writes its findings and captures to files "
      "for the lead and the maintainer."),
-    ("swe", "SWE-2 rounds", "reviewers", 3, 0,
+    ("swe", "SWE-2 rounds", "reviewers", 4, 0,
      "The free first layer, on every surface: rounds until one accepts fewer than five "
      "concerns (one round for scripts and documents). It runs again after a dearer "
      "layer's fixes."),
-    ("argon", "Carbon rounds", "reviewers", 4, 0,
+    ("argon", "Carbon rounds", "reviewers", 4, 1,
      "Gemini 4 Carbon High, the middle layer: better than SWE-2, much cheaper than Astra. "
      "Shipped code gets one paid round; only what writes game files or saves gets both "
      "paid loops."),
-    ("astra", "Astra rounds", "reviewers", 5, 0,
+    ("astra", "Astra rounds", "reviewers", 4, 2,
      "GPT-6 Astra, the last layer, on what the cheaper ones could not see. Each layer loops "
      "until a round accepts fewer than five; a loop not started within a week folds into "
      "the converge audit."),
@@ -189,11 +190,17 @@ EDGES = [
     ("directives", "plan_write"), ("worklog", "plan_write"), ("converge", "extra"),
 ]
 
-LEFT, TOP, COL_W, BOX_W, BOX_H, BAND_H, SUB_Y = 150, 40, 205, 176, 30, 92, (14, 54)
+LEFT, TOP, COL_W, BOX_W, BOX_H, ROW_TOP, ROW_STEP = 150, 40, 205, 176, 30, 14, 40
 BOW = 0.18
 WIDTH = LEFT + len(STAGES) * COL_W + 10
-HEIGHT = TOP + len(BANDS) * BAND_H + 10
-BAND_INDEX = {key: i for i, (key, _, _) in enumerate(BANDS)}
+BAND_ROWS = {key: 1 + max(n[4] for n in NODES if n[2] == key) for key, _, _ in BANDS}
+BAND_H = {key: ROW_TOP + rows * ROW_STEP - 2 for key, rows in BAND_ROWS.items()}
+BAND_Y = {}
+HEIGHT = TOP
+for key, _, _ in BANDS:
+    BAND_Y[key] = HEIGHT
+    HEIGHT += BAND_H[key]
+HEIGHT += 10
 
 ids = [n[0] for n in NODES]
 assert len(ids) == len(set(ids)), "a node id appears twice"
@@ -203,14 +210,14 @@ for source, target in EDGES:
     assert source in ids and target in ids, f"unknown node in edge {source} -> {target}"
 assert len(EDGES) == len(set(EDGES)), "an edge appears twice"
 for n in NODES:
-    assert n[2] in BAND_INDEX and 0 <= n[3] < len(STAGES) and n[4] in (0, 1), n[0]
+    assert n[2] in BAND_Y and 0 <= n[3] < len(STAGES) and n[4] >= 0, n[0]
     assert len(n[1]) * 6.5 <= BOX_W - 8, f"label too long for its box: {n[1]}"
 
 
 def box(node):
     _, _, band, col, sub, _ = node
     x = LEFT + col * COL_W + (COL_W - BOX_W) / 2
-    y = TOP + BAND_INDEX[band] * BAND_H + SUB_Y[sub]
+    y = BAND_Y[band] + ROW_TOP + sub * ROW_STEP
     return x, y
 
 
@@ -233,11 +240,11 @@ for i, stage in enumerate(STAGES):
     x = LEFT + i * COL_W + COL_W / 2
     svg.append(f'<text class="stage" x="{x:.0f}" y="{TOP - 14}" font-size="13" '
                f'text-anchor="middle">{html.escape(stage)}</text>')
-for i, (key, label, colour) in enumerate(BANDS):
-    y = TOP + i * BAND_H
-    svg.append(f'<rect class="band" x="0" y="{y}" width="{WIDTH}" height="{BAND_H - 4}" '
+for key, label, colour in BANDS:
+    y, band_h = BAND_Y[key], BAND_H[key]
+    svg.append(f'<rect class="band" x="0" y="{y}" width="{WIDTH}" height="{band_h - 4}" '
                f'rx="6" style="fill: var({colour})"/>')
-    svg.append(f'<text class="band-label" x="12" y="{y + BAND_H / 2 + 2:.0f}" '
+    svg.append(f'<text class="band-label" x="12" y="{y + band_h / 2 + 2:.0f}" '
                f'font-size="13">{html.escape(label)}</text>')
 for source, target in EDGES:
     (ax, ay), (bx, by) = CENTER[source], CENTER[target]
