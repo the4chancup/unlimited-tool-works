@@ -338,7 +338,7 @@ fn the_block_table_is_written_for_a_legacy_compile_and_edits_take() {
     );
 }
 
-// TC-LEG-03, TC-LEG-05
+// TC-LEG-03
 #[test]
 fn a_kept_shared_folder_whose_old_id_is_out_of_block_is_not_packed() {
     let sandbox = Sandbox::new("leg_ids_shared_block");

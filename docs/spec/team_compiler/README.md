@@ -958,7 +958,11 @@ TC-MOD-101 GIVEN slot 05 holding boots.model and boots.mtl naming skin, and skin
            THEN k0625 holds a boots.fmdl the fmdl reader accepts with the source's mesh count
                 (the card head's one mesh), none flagged anti-blur and no fuzzblock material,
                 its texture table naming skin.dds under the player's texture home, and
-                skin.ftex sits in the player's common subfolder (restates TC-MOD-34)
+                skin.ftex sits in the player's common subfolder (restates TC-MOD-34); GIVEN
+                the three files in Boots/Crocs/ instead, linked by slots 05 and 07 THEN
+                shared_ids_unrecorded is reported as a Warning, k0644 holds boots.fmdl and
+                boots.skl, the model one mesh with none flagged anti-blur, its texture table
+                naming skin.dds under k0644/, and k0644/#windx11/ holds skin.ftex
 TC-MOD-35  GIVEN slot 05 holding ingame_face.toml, kit_boots.model, kit_boots.mtl and Crocs.boots,
            Boots/Crocs/ holding boots.model and boots.mtl, linked by no other player; and
            another export whose slot 05 holds ingame_face.toml, Crocs.boots, and parts/boots.model
@@ -1154,12 +1158,12 @@ TC-MOD-66  GIVEN slot 05 holding face_high.model with face_high.mtl naming skin.
                 converted hair_high.fmdl names skin in the texture home's own folder, where its
                 .mtl is, and no texture_not_found is reported
 TC-MOD-67  GIVEN slot 05 holding face_high.fmdl, jessie/ingame_face.toml and
-           jessie/settings.toml
+           jessie/settings.toml, and then another marker beside them, jessie/fpc_off
            WHEN the export is checked, then compiled for PES 21 with
                 strict_file_type_check = false
-           THEN the check reports file_type_disallowed for each of the two and drops the
-                folder; the lenient compile keeps it with the two as Infos, neither
-                counting (no marker, no settings), and the player keeps his face
+           THEN the check reports file_type_disallowed for each of them and drops the
+                folder; the lenient compile keeps it with each as an Info, none counting
+                (no marker, no fpc, no settings), and the player keeps his face
 TC-MOD-68  GIVEN Boots/Crocs holding boots.fmdl and extra/x_boots.fmdl, slot 05 linking it
            WHEN the export is compiled for PES 21
            THEN no file_type_disallowed is reported and the boots package holds
@@ -1369,11 +1373,14 @@ TC-MOD-107 GIVEN slot 05's face_high.fmdl naming u0XXXp1.dds in team_common_fold
 TC-TEX-01  GIVEN slot 05 holding skin.png (1024x1024 with alpha) referenced by its face model;
            and another export whose Common/ holds hair.png, named by the Common/legs.fmdl slot
            05 links, and whose Boots/Crocs/, linked by slot 05, holds sole.png beside its
-           boots.fmdl
-           WHEN the first is compiled for PES 21, then PES 18, and the second for PES 21
-           THEN the emitted skin.ftex decodes as BC7 with 11 mip levels, then as BC3 with 11;
-                the second CPK's Common hair.ftex and k0625's sole.ftex (Crocs under slot 05's
-                own ID) are BC7 with a full mip chain
+           boots.fmdl, both PNGs opaque and 256x128; and a third export whose slot 05 holds
+           skin.dds uncompressed (RGBA8) beside its face_high.model
+           WHEN the first is compiled for PES 21, then PES 18, the second for PES 21, and the
+                third for PES 17
+           THEN the emitted skin.ftex decodes as BC3 with 11 mip levels both times (no compile
+                encodes BC7); the second CPK's Common hair.ftex and k0625's sole.ftex (Crocs
+                under slot 05's own ID) are BC1 with a full mip chain of 9; the third's
+                skin.dds stays A8R8G8B8, holding the source's own levels
 TC-TEX-02  GIVEN slot 05 holding skin.dds already BC7 with a full mip chain
            WHEN the export is compiled for PES 21, then PES 18
            THEN on 21 the FTEX's mip data converts back to the source DDS unchanged; on 18 it is BC3
@@ -1526,8 +1533,9 @@ TC-CHK-03  GIVEN slot 05 holding a settings.toml with a key of the wrong type
 TC-CHK-04  GIVEN p1/kit.dds of 4096x4096 and p2/kit.dds uncompressed (RGBA8)
            WHEN the export is compiled for PES 17, then for PES 21
            THEN on 17 kit_texture_too_big is reported for p1 and the kit dropped; on 21 p1
-                compiles with no texture finding; p2 gets none on either, and its
-                u0714p2.ftex on 21 is BC7
+                compiles with no texture finding; p2 gets none on either, its u0714p2.dds on
+                17 is BC3 (a pre-Fox main kit texture is never uncompressed), and its
+                u0714p2.ftex on 21 stays uncompressed, A8R8G8B8
 TC-CHK-05  GIVEN a root logo.png whose bytes are not a decodable image
            WHEN the export is checked
            THEN logo_file_invalid is reported and no logo is emitted when compiled
@@ -2018,11 +2026,14 @@ TC-CMN-23  GIVEN Common/jessie/hair_high.model with Common/jessie/hair_high.mtl 
                 output holds, and no mtl_texture_not_found is reported
 TC-CMN-24  GIVEN slot 05 holding ingame_face.toml, studs.dds and jessie/kit_boots.model.common,
            and Common/jessie/kit_boots.model with Common/jessie/kit_boots.mtl naming
-           ./studs.dds and Common/jessie/studs.dds
+           ./studs.dds and Common/jessie/studs.dds; then the same at Common/'s root, slot 05
+           holding kit_boots.model.common and a studs.dds of other bytes than Common's
            WHEN the export is compiled for PES 17
            THEN the boots.mtl in k0625's package names
                 model/character/uniform/common/<team>/jessie/studs.dds, the Common output
-                holds it, and no mtl_texture_not_found is reported
+                holds it, and no mtl_texture_not_found is reported; at the root it names
+                model/character/uniform/common/<team>/studs.dds, which the Common output
+                holds, his own studs.dds shadowing nothing
 TC-CMN-25  GIVEN Common/jessie/body.fmdl naming hair, Common/jessie/hair.dds and Common/hair.dds
            of other bytes, and slot 05 holding face_high.fmdl and jessie/body.fmdl.common; a
            second export whose slot 05 holds face_high.model, a face_high.mtl naming skin by
@@ -2449,7 +2460,9 @@ TC-DEP-01  GIVEN a PES folder with PES2021.exe, download/DpFileList.bin listing 
            WHEN the tracer is compiled for PES 21
            THEN download/4cc_99_test.cpk holds the run's CPK (with multicpk_mode on, download/
                 holds each CPK of the run), no .cpk.partial remains, nothing else is added to
-                download/, output/ holds no CPK and no .staging/, and the exit code is 0
+                download/, output/ holds no CPK and no .staging/, and the exit code is 0;
+                GIVEN download/ also holding a 4cc_99_test.cpk.old a killed run left THEN
+                no .cpk.old remains either
 TC-DEP-02  GIVEN the same with the old CPK held open without delete sharing
            WHEN it is compiled
            THEN old_cpk_locked is reported, output/4cc_99_test.cpk holds the run's CPK, the old

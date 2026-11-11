@@ -221,7 +221,7 @@ fn a_save_keeps_the_events_page_and_logo_out_of_the_logic() {
     );
 }
 
-// RE-GUI-02
+// RE-FILE-10
 #[test]
 fn save_as_writes_a_copy_and_later_saves_follow_it() {
     let dir = crate::test_support::scratch("file_save_as");

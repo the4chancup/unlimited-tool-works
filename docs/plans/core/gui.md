@@ -1502,6 +1502,17 @@ ST-CLI-02   manual  GIVEN a compile run from a terminal
                          a finding line goes to stdout, and one summary line remains when the run
                          ends; GIVEN the same command with stderr piped THEN neither is drawn and
                          stdout holds exactly the lines it holds in a terminal
+ST-CLI-03   GIVEN the tracer export; then a Midcup export whose player folders A and B each
+                  hold a boots.fmdl that is not a model, A a face_high.fmdl too, and whose
+                  folder C, a clean face, players.txt does not list
+            WHEN each is compiled for PES 21
+            THEN the first reports progress once per part, the count rising by one to the
+                 parts' total, and its summary, the run's last event, counts the CPK's entries
+                 as files written and 0 exports skipped, folders skipped and folders with
+                 errors; the second reports model_broken three times and player_unlisted for
+                 C, and its summary counts 3 folders skipped and 2 folders with errors: a
+                 folder counts once whatever its findings, and C's Warning skips it with no
+                 error; without C, 2 and 2
 ```
 
 **The wheel over a value** ("The wheel over a value")
@@ -1512,7 +1523,10 @@ ST-WHEEL-01 GIVEN a scroll area taller than its view holding a drag value at 180
             WHEN the pointer is over the drag value and the wheel turns one notch up
             THEN the value is 181 and the scroll area's offset is unchanged; WHEN two notches down
                  THEN 179; WHEN the pointer is over the combo and the wheel turns two notches up
-                 THEN the first item is selected (one step, then clamped, no wrap)
+                 THEN the first item is selected (one step, then clamped, no wrap); GIVEN the
+                 value at 180 WHEN two notches down come in one frame THEN it is 179 on that
+                 frame and 178 on the next, one step a frame, and stays 178, the offset
+                 unchanged
 ST-WHEEL-02 GIVEN ST-WHEEL-01's scroll area
             WHEN the wheel turns over the area's empty space and, under 500 ms later, again with
                  the pointer over the drag value

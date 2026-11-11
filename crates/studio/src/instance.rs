@@ -97,7 +97,6 @@ mod tests {
     }
 
     // With no copy running, the claim takes slot 1's `utw.lock`.
-    // ST-RUN-12
     #[test]
     fn the_first_copy_takes_slot_1() {
         let dir = TestDir::new("claim_first");
@@ -160,7 +159,6 @@ mod tests {
 
     // With every slot held the claim comes back empty, which the log
     // install reports as no log this run.
-    // ST-RUN-12
     #[test]
     fn past_the_cap_no_slot_is_claimed() {
         let dir = TestDir::new("claim_cap");

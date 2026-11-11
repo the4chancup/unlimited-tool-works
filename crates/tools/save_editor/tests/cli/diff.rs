@@ -101,7 +101,7 @@ fn each_changed_field_is_a_row_and_the_scopes_keep_their_own() {
         .assert_refused(2, &["--gameplay"]);
 }
 
-// SE-DIF-01
+// SE-DIF-06
 #[test]
 fn the_text_names_a_field_as_its_view_does_and_json_keeps_the_schema_name() {
     let sandbox = Sandbox::new("diff_view_label");
