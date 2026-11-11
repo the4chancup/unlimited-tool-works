@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Old exports and the UTW format: what the upgrade does</title>
+<style>
+/* Dark by default; the button switches to light, remembered in this browser. The three
+   hues (players, boots and gloves, kits) are validated for both surfaces; everything else
+   is told apart by its border style and its label, never by colour alone. */
+:root { --page: #1a1a19; --text: #e6e6e3; --soft: #b4b4ae; --hint: #85857f;
+  --box: #242422; --line: #8c8c86; --code: #2c2c29; --rule: #3a3a37;
+  --players: #3987e5; --boots: #d95926; --kits: #199e70; --edge-rest: 0.55; }
+:root[data-theme="light"] { --page: #fcfcfb; --text: #20201e; --soft: #4a4a46; --hint: #7a7a74;
+  --box: #ffffff; --line: #8a8a84; --code: #f0efec; --rule: #dddcd8;
+  --players: #2a78d6; --boots: #eb6834; --kits: #1baf7a; --edge-rest: 0.45; }
+body { font-family: "Segoe UI", system-ui, sans-serif; margin: 0; color: var(--text);
+  background: var(--page); line-height: 1.5; }
+main { max-width: 1040px; margin: 0 auto; padding: 28px 24px 60px; }
+h1 { font-size: 26px; margin: 0 0 6px; }
+h2 { font-size: 19px; margin: 40px 0 8px; padding-top: 16px; border-top: 1px solid var(--rule); }
+p, li { font-size: 15px; color: var(--soft); max-width: 860px; }
+p.lead { font-size: 16px; color: var(--text); }
+code { background: var(--code); padding: 0 4px; border-radius: 3px; font-size: 13.5px;
+  color: var(--text); font-family: Consolas, "Cascadia Mono", monospace; }
+#theme { position: absolute; top: 24px; right: 24px; font: inherit; font-size: 13px;
+  color: var(--text); background: var(--code); border: 1px solid var(--line);
+  border-radius: 4px; padding: 3px 10px; cursor: pointer; }
+table { border-collapse: collapse; margin: 12px 0; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px;
+  border-bottom: 1px solid var(--rule); }
+th { color: var(--text); font-weight: 600; }
+td { color: var(--soft); }
+td:first-child { color: var(--text); white-space: nowrap; }
+.callout { border-left: 4px solid var(--players); background: var(--box); padding: 10px 16px;
+  margin: 16px 0; border-radius: 0 4px 4px 0; }
+.callout p { margin: 4px 0; color: var(--text); }
+figure { margin: 18px 0 8px; }
+figcaption { font-size: 14px; color: var(--hint); max-width: 860px; margin-top: 6px; }
+svg { width: 100%; height: auto; display: block; }
+svg text { fill: var(--text); font-family: "Segoe UI", system-ui, sans-serif; }
+svg .title { font-family: Consolas, "Cascadia Mono", monospace; font-size: 14px; font-weight: 600; }
+svg .sub { fill: var(--soft); font-size: 12.5px; }
+svg .head { font-size: 15px; font-weight: 600; }
+svg .row { font-size: 14px; }
+svg .note { fill: var(--hint); font-size: 12.5px; }
+svg .box { fill: var(--box); stroke: var(--line); stroke-width: 1.2; }
+svg .box.dashed { stroke-dasharray: 5 4; }
+svg .box.save { stroke-width: 3; }
+svg .stripe.players { fill: var(--players); } svg .stripe.boots { fill: var(--boots); }
+svg .stripe.kits { fill: var(--kits); } svg .stripe.plain { fill: var(--line); }
+svg .edge { fill: none; stroke-width: 2; opacity: var(--edge-rest); transition: opacity .12s; }
+svg .edge.players { stroke: var(--players); } svg .edge.boots { stroke: var(--boots); }
+svg .edge.kits { stroke: var(--kits); } svg .edge.plain { stroke: var(--line); }
+svg .edge.info { stroke-dasharray: 6 5; }
+svg .arrow { fill: none; stroke: var(--line); stroke-width: 2; }
+svg .num { fill: var(--text); font-weight: 700; font-size: 13px; }
+svg .numdot { fill: var(--code); stroke: var(--line); }
+svg.map .node { transition: opacity .12s; }
+svg.map.focus .node, svg.map.focus .edge { opacity: 0.15; }
+svg.map.focus .node.on { opacity: 1; }
+svg.map.focus .edge.on { opacity: 1; stroke-width: 3; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 13.5px; color: var(--soft);
+  margin: 8px 0 0; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; }
+.sw.players { background: var(--players); } .sw.boots { background: var(--boots); }
+.sw.kits { background: var(--kits); }
+.sw.plain { background: var(--box); border: 1.5px solid var(--line); }
+.sw.dashed { background: var(--box); border: 1.5px dashed var(--line); }
+.sw.save { background: var(--box); border: 3px solid var(--line); }
+.ln { display: inline-block; width: 30px; border-top: 2px solid var(--soft); }
+.ln.info { border-top-style: dashed; }
+</style></head>
+<body>
+<button id="theme" type="button">Light</button>
+<main>
+
+<h1>Old exports and the UTW format</h1>
+<p class="lead">The managers keep making their exports in the old format (the AET format, the
+layout the wiki's export page describes) and keep testing them with Red, as before. Unlimited
+Tool Works compiles a different layout, the <strong>UTW format</strong>, so each old export
+is upgraded once before you compile it. This page shows what changes and how the upgrade
+gets there.</p>
+
+<div class="callout">
+<p><strong>In one sentence:</strong> <code>quick_upgrade.bat</code> reads each export in
+<code>old_exports</code> together with the official save, and writes a new copy in the UTW
+format into <code>exports</code>. The old export is never changed.</p>
+</div>
+
+<h2>What is different</h2>
+<p>The two formats hold the same models, textures and kits. What changes is where things
+sit, and how much the folders tell you without looking in the save.</p>
+<table>
+<tr><th></th><th>AET format (old)</th><th>UTW format (new)</th></tr>
+<tr><td>A player's look</td><td>Spread over three places: his face in <code>Faces/</code>, his
+boots in <code>Boots/</code>, his gloves in <code>Gloves/</code>.</td><td>One folder per player,
+<code>Players/05 - Snuffy/</code>, holding his face, hair, boots and gloves.</td></tr>
+<tr><td>Who wears which boots</td><td>Boots and gloves folders are numbered
+(<code>k0915</code>, <code>g2635</code>). Only the save says which player wears which
+number.</td><td>The player's own folder says it: the boots are in it, or a small link file in
+it points to boots several players share.</td></tr>
+<tr><td>Kits</td><td>Configs in <code>Kit Configs/</code>, textures in <code>Kit Textures/</code>,
+colours in the Team Note.</td><td>One folder per kit, <code>Kits/p1/</code> to
+<code>Kits/p9/</code> and <code>Kits/g1/</code>, each holding its texture, its settings and
+its colours together.</td></tr>
+<tr><td>Skin colour, build, strip style</td><td>Only in the save.</td><td>Copied from the
+official save into each player's <code>settings.toml</code>, so the export carries them
+too. The compile's patch writes them into the save, so the two always agree.</td></tr>
+<tr><td>Team colours and notes</td><td>In the Team Note text file.</td><td>In
+<code>colors.txt</code> and <code>notes.txt</code>.</td></tr>
+<tr><td>Boots and gloves IDs</td><td>The numbers in the folder names.</td><td>The same
+numbers, kept in <code>legacy_ids.toml</code>. The official DLC keeps the IDs each manager
+chose, so the test CPKs they build with Red still match the official save.</td></tr>
+<tr><td>The export's name</td><td><code>co Spring</code></td><td><code>co Full Spring</code>
+(<code>Midcup</code> instead of <code>Full</code> when the old name said "midcup" or
+"additions").</td></tr>
+</table>
+
+<h2>Where everything goes</h2>
+<p>Each box on the left is part of an old export; the lines show where it ends up in the
+upgraded one. Point at a box to follow only its lines.</p>
+<figure>
+<svg class="map" id="map" viewBox="0 0 1000 690" role="img"
+  aria-label="Map from the parts of an old export to the parts of an upgraded one">
+  <text class="head" x="20" y="30">Old export (AET format)</text>
+  <text class="head" x="660" y="30">Upgraded export (UTW format)</text>
+  <text class="note" x="460" y="30" text-anchor="middle">quick_upgrade.bat reads both</text>
+
+  <!-- the lines first, so the boxes sit on top of them -->
+  <g id="edges">
+    <path class="edge players" data-a="L1" data-b="R1" d="M320 142 C470 142 510 140 660 140"/>
+    <path class="edge boots" data-a="L2" data-b="R1" d="M320 194 C470 194 510 158 660 158"/>
+    <path class="edge boots" data-a="L3" data-b="R1" d="M320 246 C470 246 510 176 660 176"/>
+    <path class="edge boots" data-a="L2" data-b="R2" d="M320 194 C470 194 510 246 660 246"/>
+    <path class="edge boots" data-a="L3" data-b="R2" d="M320 246 C470 246 510 256 660 256"/>
+    <path class="edge boots" data-a="L2" data-b="R8" d="M320 194 C470 194 510 574 660 574"/>
+    <path class="edge boots" data-a="L3" data-b="R8" d="M320 246 C470 246 510 586 660 586"/>
+    <path class="edge kits" data-a="L4" data-b="R3" d="M320 298 C470 298 510 302 660 302"/>
+    <path class="edge kits" data-a="L5" data-b="R3" d="M320 350 C470 350 510 312 660 312"/>
+    <path class="edge plain info" data-a="L6" data-b="R3" d="M320 402 C470 402 510 322 660 322"/>
+    <path class="edge plain" data-a="L6" data-b="R4" d="M320 402 C470 402 510 372 660 372"/>
+    <path class="edge plain" data-a="L7" data-b="R5" d="M320 454 C470 454 510 424 660 424"/>
+    <path class="edge plain" data-a="L8" data-b="R6" d="M320 506 C470 506 510 476 660 476"/>
+    <path class="edge plain" data-a="L9" data-b="R7" d="M320 558 C470 558 510 528 660 528"/>
+    <path class="edge plain" data-a="L10" data-b="R9" d="M320 610 C470 610 510 642 660 642"/>
+    <path class="edge plain info" data-a="S" data-b="R1" d="M570 60 C625 60 615 200 660 200"/>
+    <path class="edge plain info" data-a="S" data-b="R2" d="M570 80 C625 80 615 266 660 266"/>
+  </g>
+
+  <g class="node" id="L1"><rect class="box" x="20" y="120" width="300" height="44" rx="5"/>
+    <rect class="stripe players" x="20" y="120" width="6" height="44" rx="2"/>
+    <text class="title" x="36" y="139">Faces/XXX05 - Snuffy/</text>
+    <text class="sub" x="36" y="157">a player's face and hair</text></g>
+  <g class="node" id="L2"><rect class="box" x="20" y="172" width="300" height="44" rx="5"/>
+    <rect class="stripe boots" x="20" y="172" width="6" height="44" rx="2"/>
+    <text class="title" x="36" y="191">Boots/k0915 - Crocs/</text>
+    <text class="sub" x="36" y="209">boots, named by their ID</text></g>
+  <g class="node" id="L3"><rect class="box" x="20" y="224" width="300" height="44" rx="5"/>
+    <rect class="stripe boots" x="20" y="224" width="6" height="44" rx="2"/>
+    <text class="title" x="36" y="243">Gloves/g2635 - Mitts/</text>
+    <text class="sub" x="36" y="261">gloves, named by their ID</text></g>
+  <g class="node" id="L4"><rect class="box" x="20" y="276" width="300" height="44" rx="5"/>
+    <rect class="stripe kits" x="20" y="276" width="6" height="44" rx="2"/>
+    <text class="title" x="36" y="295">Kit Configs/</text>
+    <text class="sub" x="36" y="313">one settings file per kit</text></g>
+  <g class="node" id="L5"><rect class="box" x="20" y="328" width="300" height="44" rx="5"/>
+    <rect class="stripe kits" x="20" y="328" width="6" height="44" rx="2"/>
+    <text class="title" x="36" y="347">Kit Textures/</text>
+    <text class="sub" x="36" y="365">u0XXXp1.dds and the others</text></g>
+  <g class="node" id="L6"><rect class="box" x="20" y="380" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="399">Team Note.txt</text>
+    <text class="sub" x="36" y="417">team and kit colours, other notes</text></g>
+  <g class="node" id="L7"><rect class="box" x="20" y="432" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="451">Portraits/player_XXX05.dds</text>
+    <text class="sub" x="36" y="469">the players' portraits</text></g>
+  <g class="node" id="L8"><rect class="box" x="20" y="484" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="503">Logo/</text>
+    <text class="sub" x="36" y="521">the team's emblems</text></g>
+  <g class="node" id="L9"><rect class="box" x="20" y="536" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="555">Common/, Collars/</text>
+    <text class="sub" x="36" y="573">files the players share</text></g>
+  <g class="node" id="L10"><rect class="box dashed" x="20" y="588" width="300" height="44" rx="5"/>
+    <text class="title" x="36" y="607">Other/</text>
+    <text class="sub" x="36" y="625">anything the old compiler did not use</text></g>
+  <g class="node" id="S"><rect class="box save" x="350" y="46" width="220" height="48" rx="5"/>
+    <text class="title" x="366" y="65">The official save</text>
+    <text class="sub" x="366" y="83">read, never changed</text></g>
+  <g class="node" id="R1"><rect class="box" x="660" y="120" width="320" height="100" rx="5"/>
+    <rect class="stripe players" x="660" y="120" width="6" height="100" rx="2"/>
+    <text class="title" x="676" y="139">Players/05 - Snuffy/</text>
+    <text class="sub" x="676" y="157">his face and hair</text>
+    <text class="sub" x="676" y="174">boots or gloves only he wears</text>
+    <text class="sub" x="676" y="191">Crocs.boots: a link to shared boots</text>
+    <text class="sub" x="676" y="208">settings.toml: his looks, from the save</text></g>
+  <g class="node" id="R2"><rect class="box" x="660" y="232" width="320" height="44" rx="5"/>
+    <rect class="stripe boots" x="660" y="232" width="6" height="44" rx="2"/>
+    <text class="title" x="676" y="251">Boots/Crocs/, Gloves/Mitts/</text>
+    <text class="sub" x="676" y="269">only when two or more players wear them</text></g>
+  <g class="node" id="R3"><rect class="box" x="660" y="290" width="320" height="44" rx="5"/>
+    <rect class="stripe kits" x="660" y="290" width="6" height="44" rx="2"/>
+    <text class="title" x="676" y="309">Kits/p1/ … Kits/p9/, Kits/g1/</text>
+    <text class="sub" x="676" y="327">texture, settings and colours, per kit</text></g>
+  <g class="node" id="R4"><rect class="box" x="660" y="350" width="320" height="44" rx="5"/>
+    <text class="title" x="676" y="369">colors.txt, notes.txt</text>
+    <text class="sub" x="676" y="387">team colours and notes, from the Note</text></g>
+  <g class="node" id="R5"><rect class="box" x="660" y="402" width="320" height="44" rx="5"/>
+    <text class="title" x="676" y="421">Portraits/05.dds</text>
+    <text class="sub" x="676" y="439">renamed by the player's number</text></g>
+  <g class="node" id="R6"><rect class="box" x="660" y="454" width="320" height="44" rx="5"/>
+    <text class="title" x="676" y="473">logo.png</text>
+    <text class="sub" x="676" y="491">and logo_small.png when there is one</text></g>
+  <g class="node" id="R7"><rect class="box" x="660" y="506" width="320" height="44" rx="5"/>
+    <text class="title" x="676" y="525">Common/, Collars/</text>
+    <text class="sub" x="676" y="543">as they were</text></g>
+  <g class="node" id="R8"><rect class="box" x="660" y="558" width="320" height="44" rx="5"/>
+    <rect class="stripe boots" x="660" y="558" width="6" height="44" rx="2"/>
+    <text class="title" x="676" y="577">legacy_ids.toml</text>
+    <text class="sub" x="676" y="595">the boots and gloves IDs the manager used</text></g>
+  <g class="node" id="R9"><rect class="box dashed" x="660" y="620" width="320" height="44" rx="5"/>
+    <text class="title" x="676" y="639">Not carried</text>
+    <text class="sub" x="676" y="657">left out and listed in the window</text></g>
+</svg>
+<div class="legend">
+  <span><i class="sw players"></i>players</span>
+  <span><i class="sw boots"></i>boots and gloves</span>
+  <span><i class="sw kits"></i>kits</span>
+  <span><i class="sw plain"></i>team files</span>
+  <span><i class="sw save"></i>the official save</span>
+  <span><i class="sw dashed"></i>not used in the game</span>
+  <span><i class="ln"></i>files move</span>
+  <span><i class="ln info"></i>information is read</span>
+</div>
+<figcaption>Boots and gloves go one of two ways, decided by the save: into the player's
+own folder when he alone wears them, or into a shared folder when two or more players do.
+The Note is read twice: its kit colours go to each kit, its team colours and notes to the
+two text files.</figcaption>
+</figure>
+
+<h2>Why the upgrade needs the official save</h2>
+<p>An old boots folder is only a number and a name. Nothing in the export says who wears
+it: the save does. The upgrade looks every number up in the official save and sorts the
+boots and gloves accordingly.</p>
+<figure>
+<svg viewBox="0 0 1000 300" role="img"
+  aria-label="Example: two boots folders sorted by the players the save names">
+  <text class="head" x="20" y="24">Old export</text>
+  <text class="head" x="360" y="24">The official save says</text>
+  <text class="head" x="680" y="24">Upgraded export</text>
+
+  <path class="edge boots info" d="M300 72 C330 72 330 80 360 80"/>
+  <path class="edge boots info" d="M300 72 C330 72 330 122 360 122"/>
+  <path class="edge boots info" d="M300 194 C330 194 330 164 360 164"/>
+  <path class="edge boots" d="M640 80 C660 80 660 66 680 66"/>
+  <path class="edge boots" d="M640 80 C660 80 660 124 680 124"/>
+  <path class="edge boots" d="M640 122 C660 122 660 66 680 66"/>
+  <path class="edge boots" d="M640 122 C660 122 660 182 680 182"/>
+  <path class="edge boots" d="M640 164 C660 164 660 240 680 240"/>
+
+  <rect class="box" x="20" y="50" width="280" height="44" rx="5"/>
+  <rect class="stripe boots" x="20" y="50" width="6" height="44" rx="2"/>
+  <text class="title" x="36" y="69">Boots/k0915 - Crocs/</text>
+  <text class="sub" x="36" y="86">boots number 915</text>
+  <rect class="box" x="20" y="172" width="280" height="44" rx="5"/>
+  <rect class="stripe boots" x="20" y="172" width="6" height="44" rx="2"/>
+  <text class="title" x="36" y="191">Boots/k0920 - Blades/</text>
+  <text class="sub" x="36" y="208">boots number 920</text>
+
+  <rect class="box save" x="360" y="50" width="280" height="138" rx="5"/>
+  <text class="row" x="378" y="85">player 05, Snuffy: boots 915</text>
+  <text class="row" x="378" y="127">player 08, Fumo: boots 915</text>
+  <text class="row" x="378" y="169">player 11, Jessie: boots 920</text>
+
+  <rect class="box" x="680" y="44" width="300" height="44" rx="5"/>
+  <rect class="stripe boots" x="680" y="44" width="6" height="44" rx="2"/>
+  <text class="title" x="696" y="63">Boots/Crocs/</text>
+  <text class="sub" x="696" y="80">shared: two players wear it</text>
+  <rect class="box" x="680" y="102" width="300" height="44" rx="5"/>
+  <rect class="stripe players" x="680" y="102" width="6" height="44" rx="2"/>
+  <text class="title" x="696" y="121">Players/05 - Snuffy/</text>
+  <text class="sub" x="696" y="138">Crocs.boots, a link to the shared folder</text>
+  <rect class="box" x="680" y="160" width="300" height="44" rx="5"/>
+  <rect class="stripe players" x="680" y="160" width="6" height="44" rx="2"/>
+  <text class="title" x="696" y="179">Players/08 - Fumo/</text>
+  <text class="sub" x="696" y="196">Crocs.boots, a link to the shared folder</text>
+  <rect class="box" x="680" y="218" width="300" height="44" rx="5"/>
+  <rect class="stripe players" x="680" y="218" width="6" height="44" rx="2"/>
+  <text class="title" x="696" y="237">Players/11 - Jessie/</text>
+  <text class="sub" x="696" y="254">the Blades files themselves</text>
+  <text class="note" x="20" y="290">Both numbers, 915 and 920, are also written into legacy_ids.toml, so the compiled boots keep them.</text>
+</svg>
+<figcaption>Crocs is worn by two players, so it stays one shared folder and each wearer gets
+a link to it. Blades is worn by one player, so its files move into his folder. This is why
+the save you drop onto <code>quick_upgrade.bat</code> must be the official one: a save where
+a player wears other boots would sort them differently.</figcaption>
+</figure>
+
+<h2>Where the upgrade fits in your work</h2>
+<p>The same order as in the README's "For VGL's organizer" section, drawn out.</p>
+<figure>
+<svg viewBox="0 0 1000 250" role="img" aria-label="The five steps from the managers' files to the official save">
+  <defs><marker id="tip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+    orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="var(--line)"/></marker></defs>
+  <g>
+    <rect class="box save" x="10" y="40" width="176" height="150" rx="6"/>
+    <circle class="numdot" cx="32" cy="62" r="13"/><text class="num" x="32" y="67" text-anchor="middle">1</text>
+    <text x="52" y="67" class="head">The official save</text>
+    <text class="sub" x="24" y="96">Import the managers'</text>
+    <text class="sub" x="24" y="114">.ted files into the base</text>
+    <text class="sub" x="24" y="132">save, click Save, then</text>
+    <text class="sub" x="24" y="150">close the window.</text>
+  </g>
+  <path class="arrow" d="M186 115 L204 115" marker-end="url(#tip)"/>
+  <g>
+    <rect class="box" x="206" y="40" width="176" height="150" rx="6"/>
+    <circle class="numdot" cx="228" cy="62" r="13"/><text class="num" x="228" y="67" text-anchor="middle">2</text>
+    <text x="248" y="67" class="head">Old exports</text>
+    <text class="sub" x="220" y="96">Put the managers'</text>
+    <text class="sub" x="220" y="114">exports (folders, .zip</text>
+    <text class="sub" x="220" y="132">or .7z) in old_exports.</text>
+  </g>
+  <path class="arrow" d="M382 115 L400 115" marker-end="url(#tip)"/>
+  <g>
+    <rect class="box" x="402" y="40" width="176" height="150" rx="6"/>
+    <rect class="stripe players" x="402" y="40" width="6" height="150" rx="2"/>
+    <circle class="numdot" cx="428" cy="62" r="13"/><text class="num" x="428" y="67" text-anchor="middle">3</text>
+    <text x="448" y="67" class="head">Upgrade</text>
+    <text class="sub" x="420" y="96">Drag the official save</text>
+    <text class="sub" x="420" y="114">onto quick_upgrade.bat.</text>
+    <text class="sub" x="420" y="132">The UTW copies land</text>
+    <text class="sub" x="420" y="150">in exports.</text>
+  </g>
+  <path class="arrow" d="M578 115 L596 115" marker-end="url(#tip)"/>
+  <g>
+    <rect class="box" x="598" y="40" width="176" height="150" rx="6"/>
+    <circle class="numdot" cx="620" cy="62" r="13"/><text class="num" x="620" y="67" text-anchor="middle">4</text>
+    <text x="640" y="67" class="head">Compile</text>
+    <text class="sub" x="612" y="96">Close PES, double-click</text>
+    <text class="sub" x="612" y="114">quick_compile.bat: the</text>
+    <text class="sub" x="612" y="132">CPKs go into the game,</text>
+    <text class="sub" x="612" y="150">and a patch is written.</text>
+  </g>
+  <path class="arrow" d="M774 115 L792 115" marker-end="url(#tip)"/>
+  <g>
+    <rect class="box save" x="794" y="40" width="196" height="150" rx="6"/>
+    <circle class="numdot" cx="816" cy="62" r="13"/><text class="num" x="816" y="67" text-anchor="middle">5</text>
+    <text x="836" y="67" class="head">Patch the save</text>
+    <text class="sub" x="808" y="96">The patch goes into the</text>
+    <text class="sub" x="808" y="114">official save: by itself</text>
+    <text class="sub" x="808" y="132">when it is the game's own</text>
+    <text class="sub" x="808" y="150">save, else one command.</text>
+  </g>
+  <text class="note" x="10" y="226">Step 3 upgrades each old export once; step 4 compiles every export in exports, each time it runs.</text>
+</svg>
+<figcaption>Steps 1 and 5 change the same save: the upgrade in step 3 only reads it, and the
+compile's patch in step 5 writes the players' looks and their boots and gloves IDs back into
+it.</figcaption>
+</figure>
+
+<h2>What the upgrade window tells you</h2>
+<ul>
+<li><strong>Each export is upgraded whole or not at all.</strong> When something stops an
+export (a team the save does not hold, a file that cannot be read), nothing is written
+for it, and the window says why above its count of exports upgraded. Fix the cause and run
+<code>quick_upgrade.bat</code> again.</li>
+<li><strong>Files the game never used are left out.</strong> Red never put the
+<code>Other</code> folder, backup copies or stray files into the game, so the upgrade leaves
+them out too and lists each one as a warning; the export still upgrades.</li>
+<li><strong>An export is upgraded once.</strong> If its folder is already in
+<code>exports</code>, the window lists it as not upgraded ("the output folder already
+exists") and leaves the folder as it is. Move upgraded exports out of
+<code>old_exports</code> once they are done.</li>
+<li><strong>The referee export takes no save.</strong> Its name starts with
+<code>refs</code>; the README's "Upgrading old exports" section has the one command that
+upgrades it.</li>
+</ul>
+
+</main>
+<script>
+// The theme button: dark by default, the choice remembered in this browser.
+const root = document.documentElement, button = document.getElementById("theme");
+function setTheme(theme) {
+  if (theme === "light") root.dataset.theme = "light"; else delete root.dataset.theme;
+  button.textContent = theme === "light" ? "Dark" : "Light";
+}
+setTheme(localStorage.getItem("utw-theme"));
+button.addEventListener("click", () => {
+  const next = root.dataset.theme === "light" ? "dark" : "light";
+  localStorage.setItem("utw-theme", next);
+  setTheme(next);
+});
+
+// The map: pointing at a box shows only its lines and the boxes they join.
+const map = document.getElementById("map");
+const edges = [...map.querySelectorAll(".edge")];
+let leave = null;
+for (const node of map.querySelectorAll(".node")) {
+  node.addEventListener("mouseenter", () => {
+    clearTimeout(leave);
+    map.querySelectorAll(".on").forEach(el => el.classList.remove("on"));
+    map.classList.add("focus");
+    node.classList.add("on");
+    for (const edge of edges) {
+      if (edge.dataset.a === node.id || edge.dataset.b === node.id) {
+        edge.classList.add("on");
+        document.getElementById(edge.dataset.a).classList.add("on");
+        document.getElementById(edge.dataset.b).classList.add("on");
+      }
+    }
+  });
+  // A short delay, so moving from one box to the next does not flicker.
+  node.addEventListener("mouseleave", () => {
+    leave = setTimeout(() => {
+      map.classList.remove("focus");
+      map.querySelectorAll(".on").forEach(el => el.classList.remove("on"));
+    }, 120);
+  });
+}
+</script>
+</body></html>
