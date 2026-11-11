@@ -4581,7 +4581,7 @@ function teamView(t) {
     h("div", { class: "row" },
       teamFields(t),
       namedCols(h("table", { class: "grid info-grid" },
-        chunk([num("Manager ID", "manager_id", 17), num("Stadium ID", "stadium_id", 17)],
+        chunk([num("Manager ID", "manager_id", 17), num("Stadium ID", "stadium_id", 15)],
           colCount("team-info")).map(r => h("tr", {}, r))), "team-info"),
       button("Kit slots\u2026", dlgKitSlots,
         { title: "The kit slot assignments, rarely edited" })),
@@ -7886,8 +7886,6 @@ function ixWarnings(d) {
       const team = d.model;
       if (v < 17 && team.manager_id !== undefined && team.manager_id !== null)
         warn("import_key_not_in_version (path=team.manager_id)");
-      if (v < 17 && team.stadium_id !== undefined && team.stadium_id !== null)
-        warn("import_key_not_in_version (path=team.stadium_id)");
       if (v !== 17 && team.kit_slots)
         warn("import_key_not_in_version (path=team.kit_slots)");
       if (v < 20 && team.edit_flags && team.edit_flags.stadium !== undefined)
