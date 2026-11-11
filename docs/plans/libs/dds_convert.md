@@ -38,12 +38,15 @@ JPEG one is, with no warning of its own; a lossy JXL also drops the colour under
 transparent pixels unless its encoder is told to keep it (libjxl's default), as image
 editors that zero it do. The rule is one wherever a picture is picked: the aesthetics
 export's extension table (`aesthetics_export` "conventions") counts `.jxl` as a texture,
-and the Save editor's portrait picker and the Ruleset editor's logo picker list it. The
+the Team compiler's format sniffing knows its signatures, and the Ruleset editor's logo
+picker lists it (the Save editor picks no picture: its portraits come from the game's
+CPKs). The
 Export upgrader reads no JXL: no old export can hold one, since Red never read it.
 
 → verify: a lossless JXL of a PNG fixture decodes to that PNG's pixels exactly; a lossy one
-decodes at its size, each channel within a few levels of its source's; a `.jxl` in an
-export compiles; the exe's size before and after, measured (`cargo bloat`).
+decodes at its size, each channel within a few levels of libjxl's own decode (the fixtures:
+`dds_convert/tests/fixtures/README.md`); a `.jxl` in an export compiles (TC-TEX-22); the
+exe's size before and after, measured (`cargo bloat`).
 
 ### Once the GPU encoder is in: BC7 and uncompressed sources
 

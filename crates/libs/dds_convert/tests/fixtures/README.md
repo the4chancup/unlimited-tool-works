@@ -48,6 +48,15 @@ row-major, 32x16):
 | `source.webp` | Pillow, lossless WebP of `source.png` with `exact` | keeps RGB under zero alpha; its decode equals the PNG's pixels |
 | `source_opaque.jpg` | Pillow, baseline JPEG of `source_opaque.png`, quality 95, 4:4:4 | lossy (max channel difference 4 from the PNG); decoders may differ by IDCT rounding, so the expected decode is Pillow's, compared within a tolerance |
 
+Added for JPEG XL sources (0.0.2a) by `scripts/provenance/fixtures/fixtures_jxl.py` (libjxl
+0.12.0 through `imagecodecs` 2026.10.10, effort 7):
+
+| File | Made with | Notes |
+|---|---|---|
+| `source.lossless.jxl` | lossless JXL of `source.png` | libjxl's decode equals the PNG's pixels (asserted by the script) |
+| `source.lossy.jxl` | lossy JXL of `source.png`, distance 1.0 | drops the colour under zero alpha, libjxl's default |
+| `source.lossy.jxl.rgba` | libjxl's decode of `source.lossy.jxl` | the reference decode (RGBA8, row-major, 32x16); another decoder may differ by rounding, so compare within a tolerance |
+
 texconv expands every one-channel format (BC4, R8, L8) to R = G = B with alpha 255; BC5 decodes
 with B = 0.
 
