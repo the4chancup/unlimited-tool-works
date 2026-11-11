@@ -37,7 +37,7 @@ pub mod settings_toml;
 mod test_support;
 
 pub use codec::CodecError;
-pub use file::{EditFile, SaveError};
+pub use file::{EditFile, SaveError, TeamRecords};
 /// The fixture saves and the PES 17 Texport as whole encrypted files, for
 /// other crates' tests.
 #[cfg(feature = "test-support")]

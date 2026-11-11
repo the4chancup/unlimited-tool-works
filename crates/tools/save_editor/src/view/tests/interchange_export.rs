@@ -451,6 +451,36 @@ fn a_pes_17_texport_carries_the_open_saves_serial() {
     assert_eq!(texport.serial, serial, "the open save's serial");
 }
 
+/// A PES 2017 Texport carries the save's own records: the team record's
+/// manager id, which no field models, and the coach record it names.
+#[test]
+fn a_pes_17_texport_carries_the_teams_manager_and_its_coach_record() {
+    let (mut view, mut window) = open_on(PesVersion::Pes17, "export_texport_17_coach", CO);
+    let (manager, coach) = {
+        let file = view.session.as_ref().expect("an open save").file();
+        let records = file.team_records(CO).expect("the team's records");
+        let coach = records.coach.expect("the team's coach record").to_vec();
+        (records.team[4..8].to_vec(), coach)
+    };
+    assert_ne!(manager, [0; 4], "premise: the save names a manager");
+    let written = save_folder(&view).join("TEXPORT00000000");
+
+    export(&mut window, &mut view, "Texport\u{2026}", &written);
+
+    let texport = SaveContainer::decrypt(&std::fs::read(&written).expect("the Texport is written"))
+        .expect("the Texport decrypts");
+    assert_eq!(
+        texport.payload[0x10054 + 4..0x10054 + 8],
+        manager[..],
+        "the manager id"
+    );
+    assert_eq!(
+        texport.payload[0x10234..0x1028C],
+        coach[..],
+        "the coach record"
+    );
+}
+
 #[test]
 fn both_exports_carry_the_edits_the_save_holds_unsaved() {
     let (mut view, mut window) = open_on(PesVersion::Pes21, "export_unsaved", CO);

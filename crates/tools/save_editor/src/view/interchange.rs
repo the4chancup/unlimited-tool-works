@@ -834,31 +834,42 @@ fn write_export(session: &Session, id: u32, export: Export, path: &Path) -> anyh
 }
 
 /// Team `id` of the open save as a Texport of the save's version: the team
-/// and its rostered players in roster order, from the version's template.
+/// and its rostered players in roster order, from the save's own records
+/// (the team's, its coach's and each player's) with the open save's
+/// entries, unsaved edits included, written over them.
 fn texport_bytes(session: &Session, id: u32) -> anyhow::Result<Vec<u8>> {
     let file = session.file();
-    let team = file
-        .team(id)
-        .ok_or_else(|| anyhow!("the save has no team {id}"))?;
+    let no_team = || anyhow!("the save has no team {id}");
+    let team = file.team(id).ok_or_else(no_team)?;
+    let records = file.team_records(id).ok_or_else(no_team)?;
     let players = team
         .roster
         .iter()
         .filter(|slot| slot.player_id != 0)
         .map(|slot| {
-            file.player(slot.player_id)
-                .ok_or_else(|| anyhow!("team {id}'s player {} is not in the save", slot.player_id))
+            let player_id = slot.player_id;
+            let missing = || anyhow!("team {id}'s player {player_id} is not in the save");
+            let player = file.player(player_id).ok_or_else(missing)?;
+            Ok((player, file.player_record(player_id).ok_or_else(missing)?))
         })
-        .collect::<anyhow::Result<Vec<&PlayerEntry>>>()?;
+        .collect::<anyhow::Result<Vec<(&PlayerEntry, &[u8])>>>()?;
     // The salt's first 32 bytes become the file's key. Seeded with the
     // team's and its players' ids as well as the clock, two teams exported
     // in one instant still get different keys, as every file the game
     // writes has its own.
     let ids: Vec<u8> = std::iter::once(id)
-        .chain(players.iter().map(|player| player.id))
+        .chain(players.iter().map(|(player, _)| player.id))
         .flat_map(u32::to_le_bytes)
         .collect();
     let salt = fresh_salt(&ids);
-    let texport = Texport::new(file.version(), team, &players, &salt, file.serial())?;
+    let texport = Texport::new(
+        file.version(),
+        team,
+        &records,
+        &players,
+        &salt,
+        file.serial(),
+    )?;
     Ok(texport.to_bytes(&salt)?)
 }
 

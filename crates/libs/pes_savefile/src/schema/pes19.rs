@@ -1010,6 +1010,10 @@ pub(crate) static PES19: VersionSchema = VersionSchema {
         count_offset: 0x64,
     },
     team: &TEAM,
+    coaches: Some(SectionLayout {
+        offset: 0x5fecbc,
+        count_offset: 0x66,
+    }),
     rosters: SectionLayout {
         offset: 0x6773c4,
         count_offset: 0x64,

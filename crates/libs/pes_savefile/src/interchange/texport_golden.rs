@@ -12,7 +12,7 @@ use pes_version::PesVersion;
 use crate::codec::{read_player, read_player_into, read_tactics_into};
 use crate::container::{MasterKey, SaveContainer, Scheme};
 use crate::fixtures::{pes17_texport, pes17_texport_container, pes17_texport_payload};
-use crate::interchange::texport::{Texport, TexportError};
+use crate::interchange::texport::{Texport, TexportError, file_records};
 use crate::model::names::display_name;
 use crate::model::player::PlayerEntry;
 use crate::model::team::TeamEntry;
@@ -351,16 +351,18 @@ fn pes17_texport_opens_through_the_container_and_round_trips() {
     assert_eq!(t.to_bytes(&test_salt()).expect("encodes"), bytes);
 }
 
-/// A PES 2017 Texport written from the fixture's own team and players: its
-/// payload outside the records is the fixture's at every byte but
-/// `0x30..0x50`, the per-file bytes, and `0x50..0x10050`, the emblem, which
-/// the writer leaves zero; its records read back to the fixture's; its
-/// container carries the game's labels and thumbnail and the caller's
-/// serial, and reads back to the same team and players.
+/// A PES 2017 Texport written from the fixture's own team, players and
+/// records: its payload, the records included, is the fixture's at every
+/// byte but `0x30..0x50`, the per-file bytes, and `0x50..0x10050`, the
+/// emblem, which the writer leaves zero; its container carries the game's
+/// labels and thumbnail and the caller's serial, and reads back to the same
+/// team and players.
 #[test]
 fn a_pes17_texport_is_written_from_its_own_records() {
     let fixture = Texport::from_bytes(&pes17_texport(), None).expect("opens");
-    let players: Vec<&PlayerEntry> = fixture.players().iter().collect();
+    let (records, player_records) = file_records(&fixture);
+    let players: Vec<(&PlayerEntry, &[u8])> =
+        fixture.players().iter().zip(player_records).collect();
     let serial: Vec<u8> = "S-1-5-21-0-0-0-1000"
         .encode_utf16()
         .flat_map(u16::to_le_bytes)
@@ -368,6 +370,7 @@ fn a_pes17_texport_is_written_from_its_own_records() {
     let made = Texport::new(
         PesVersion::Pes17,
         fixture.team(),
+        &records,
         &players,
         &test_salt(),
         &serial,
@@ -387,34 +390,25 @@ fn a_pes17_texport_is_written_from_its_own_records() {
         "premise: the fixture's emblem is not zero"
     );
     assert_eq!(container.payload.len(), real.len(), "the payload's size");
-    // The records hold bytes the codec does not model (id copies, text past a
-    // name's terminator), which the writer leaves zero, as on 18-21: they are
-    // compared through the read-back below. Every byte outside them is the
-    // template's, so it equals the fixture's.
-    let schema = schema_for(PesVersion::Pes17);
-    let old = texport_old(PesVersion::Pes17).expect("PES 2017 offsets");
-    let width = fixture.team().roster.len();
-    let records = [
-        old.team_at..old.team_at + schema.team.size,
-        old.roster_at..old.roster_at + schema.roster.size,
-        old.tactics_at..old.tactics_at + schema.tactic.size,
-        old.players_at..old.players_at + width * schema.player.size,
-    ];
+    // The records are written over the fixture's own, so they equal it byte
+    // for byte, the bytes the codec does not model (id copies, text past a
+    // name's terminator) included. Every byte outside them is the
+    // template's, so it equals the fixture's too.
     let blanked = 0x30..0x10050;
-    let first = container
-        .payload
-        .iter()
-        .zip(&real)
-        .enumerate()
-        .filter(|(offset, _)| !records.iter().any(|r| r.contains(offset)))
-        .find(|&(offset, (&written, &real))| {
-            written != if blanked.contains(&offset) { 0 } else { real }
-        });
+    let first =
+        container
+            .payload
+            .iter()
+            .zip(&real)
+            .enumerate()
+            .find(|&(offset, (&written, &real))| {
+                written != if blanked.contains(&offset) { 0 } else { real }
+            });
     if let Some((offset, (written, real))) = first {
         panic!(
             "first difference at {offset:#x}: written {written:#04x}, the fixture's {real:#04x} \
              (expected zero in 0x30..0x50, the per-file bytes, and 0x50..0x10050, the emblem; \
-             the fixture's byte elsewhere outside the records)"
+             the fixture's byte elsewhere, the records included)"
         );
     }
 
