@@ -88,7 +88,7 @@ fn supply(path: &str, sources: &TextureSources) -> Supply {
     let place_holds = |place: &TexturePlace| place.contains_key(&key);
     // A `dummy_` stem and a kit stand-in (`team_kit*`, `team_gk_kit*`) are the game's to
     // substitute: never looked for.
-    if key.starts_with("dummy_") || crate::paths::kit_stand_in_game_name(file_name).is_some() {
+    if crate::paths::game_supplied(file_name) {
         return Supply::Supplied;
     }
     if let Some(subdirectory) = texture_lookup::path_below(directory) {
@@ -164,9 +164,12 @@ pub(super) fn names_export_file(value: &str) -> bool {
 /// alike). A path naming the kit stand-in's old spelling (a stem that, folded, is
 /// `dummy_kit` or `dummy_gk_kit`, alone or `_`-suffixed, whatever its directory) is
 /// `dummy_kit_name_old`, discarding the same; one path gets both findings when it trips
-/// both rules. A path naming a file of the export (`names_export_file`, or a bare name) and holding a
-/// legacy kit token (`aesthetics_export::legacy_kit_tokens`, the path as written) is
-/// `kit_token_old`, discarding the same, beside any other.
+/// both rules. In a `.mtl` the Export upgrader respells (`super::kit_token_checked`, the
+/// `.mtl`'s path `sources.below` names), a path naming a file of the export
+/// (`names_export_file`, or a bare name), other than a Common one naming a texture the
+/// game supplies (`paths::game_supplied`), and holding a legacy kit token
+/// (`aesthetics_export::legacy_kit_tokens`, the path as written) is `kit_token_old`,
+/// discarding the same, beside any other.
 /// `scope` is a model folder's
 /// `Folder` (the `.mtl` of a player or shared folder's tree, whose finding drops the folder)
 /// or a `Common/` `.mtl`'s `File` (whose finding drops the file alone).
@@ -233,7 +236,17 @@ pub(super) fn texture_findings(
             // A bare name is the folder's own too in a `.mtl`: `supply` looks it up there,
             // and the upgrader respells it (a `face.xml` value has no such form).
             let into_export = names_export_file(path) || !path.contains('/');
-            if into_export && !legacy_kit_tokens(path).is_empty() {
+            // The upgrader keeps a Common path naming a texture the game supplies as
+            // written, its subfolder included; a folder's own path it respells whatever
+            // the file name.
+            let game_supplied_in_common = matches!(reference(path), Reference::Common { .. })
+                && crate::paths::game_supplied(texture_lookup::split(path).1);
+            // `below.1` is the `.mtl`'s own export path.
+            if into_export
+                && !game_supplied_in_common
+                && super::kit_token_checked(sources.below.1)
+                && !legacy_kit_tokens(path).is_empty()
+            {
                 findings.push(ContentFinding {
                     code: Code::KitTokenOld.as_str(),
                     scope: scope.clone(),

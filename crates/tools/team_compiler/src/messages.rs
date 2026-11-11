@@ -472,13 +472,14 @@ pub(crate) enum Code {
     DummyKitNameOld,
     /// A legacy kit token, the old export format's kit magic (`u0`, three ASCII letters or
     /// digits, `p` or `g` and a digit, in that letter case: `kit6_u0827p0.dds`,
-    /// `Common/u0XXXp1/`), in a file or folder name in the export or in a path a model,
-    /// `.mtl` or `face.xml` names: the match `aesthetics_export::legacy_kit_tokens` makes,
-    /// which the Export upgrader respells. The Studio format spells it `kit1` to `kit9`,
-    /// `kitN` or `kitF` (`gk_kit…` for a keeper's). A name is reported once, on the
-    /// outermost file or folder holding it (`path`); a path once per file and distinct path
-    /// (`file`, `reference`). The folder holding it is left out (in `Common/`, the file
-    /// alone).
+    /// `Common/u0XXXp1/`), in a file or folder name below a player, Boots or Gloves folder or
+    /// in `Common/`, or in a path a model, `.mtl` or `face.xml` there names: the match
+    /// `aesthetics_export::legacy_kit_tokens` makes, where the Export upgrader respells it.
+    /// The Studio format spells it `kit1` to `kit9`, `kitN` or `kitF` (`gk_kit…` for a
+    /// keeper's). A name is reported once, on the outermost file or folder holding it
+    /// (`path`); a path once per file and distinct path (`file`, `reference`). The folder
+    /// holding it is left out (in `Common/`, the file, or the subfolder so named with every
+    /// file below it).
     KitTokenOld,
     /// A file a task reads cannot be read from its export; its folder is left out.
     SourceReadFailed,

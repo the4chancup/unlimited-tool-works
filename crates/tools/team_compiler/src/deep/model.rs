@@ -117,7 +117,9 @@ pub(super) struct ModelRead {
     /// (`names_export_directory`) holding a legacy kit token, which `kit_token_old` refuses
     /// (`aesthetics_export::legacy_kit_tokens`): directory and file name as written, one per
     /// distinct texture (folded) in table order. Every such entry is checked, a mesh-unused
-    /// one's included. Always empty for a pre-Fox model or a material set.
+    /// one's included, but one naming a texture the game supplies (`paths::game_supplied`),
+    /// whose path the Export upgrader keeps as written. Always empty for a pre-Fox model or a
+    /// material set.
     pub(super) legacy_kit_paths: Vec<String>,
 }
 
@@ -225,9 +227,11 @@ pub(super) fn fired(kind: ModelKind, bytes: &[u8]) -> Result<ModelRead, String> 
 /// `dummy_kit_name_old` refuses (`paths::is_old_kit_stand_in`), one per distinct
 /// texture (folded) in table order, the path as written, and the texture paths holding a
 /// legacy kit token in a folder of the export (`names_export_directory`), which
-/// `kit_token_old` refuses, the same way. Every entry of the texture
-/// table is checked by each rule, a `dummy_` stem's and a mesh-unused one's included:
-/// the spelling is the export's, so the rules cover them all. The `.mtl`'s two short
+/// `kit_token_old` refuses, the same way, but for a texture the game supplies
+/// (`paths::game_supplied`), whose path the Export upgrader keeps as written. Every entry
+/// of the texture table is checked by the other two rules, a `dummy_` stem's and a
+/// mesh-unused one's included, and by this one but for those textures: the spelling is the
+/// export's, so the rules cover them all. The `.mtl`'s two short
 /// forms are read as their long forms first
 /// (`paths::export_fmdl_directory`), so `team_common_folder/<sub>` and
 /// `common_folder/` are admitted as `team_folder` and `sourceimages`; refused are a
@@ -265,6 +269,7 @@ fn texture_table(file: &FmdlFile) -> Result<TextureTable, String> {
             });
         }
         if in_export
+            && !crate::paths::game_supplied(&path.file_name)
             && !legacy_kit_tokens(&texture).is_empty()
             && seen_legacy.insert(vtree::fold_name(&texture))
         {

@@ -2020,13 +2020,24 @@ fn a_model_naming_the_kit_stand_in_s_old_spelling_is_refused() {
 fn a_path_holding_the_legacy_kit_token_is_refused() {
     let sandbox = Sandbox::new("mod_kit_token_old");
     let export = "exports/co Midcup Nested";
-    // Slot 05's face names `u0XXXp1.dds` in `team_common_folder/`; slot 06's `.mtl` names
-    // `./u0714g1.dds` in two samplers, one path reported once; slot 07's face names
-    // `./kitN.dds`, the Studio token, with its `kit1` and `kit2` variants beside it, which
-    // no finding names.
+    // Slot 05's face names `u0XXXp1.dds` in `team_common_folder/`, and two textures the
+    // game supplies with a token beside them, which the upgrader leaves as written; slot
+    // 06's `.mtl` names `./u0714g1.dds` in two samplers, one path reported once, a `dummy_`
+    // stem holding a token in its own folder, which the upgrader respells there, and two
+    // game-supplied textures in a `Common/` subfolder so named, which it leaves; slot 07's
+    // face names `./kitN.dds`, the Studio token, with its `kit1` and `kit2` variants beside
+    // it, which no finding names.
     sandbox.write(
         &format!("{export}/Players/05 - A/face_high.fmdl"),
-        &clean_model_naming_in("team_kit.dds", "u0XXXp1.dds", "team_common_folder/"),
+        &clean_model_naming_each(&[
+            ("team_kit.dds", "u0XXXp1.dds", "team_common_folder/"),
+            ("dummy_nrm.dds", "dummy_u0XXXp1.dds", "./"),
+            (
+                "dummy_srm.dds",
+                "team_kit_srm.dds",
+                "team_common_folder/u0XXXp1/",
+            ),
+        ]),
     );
     sandbox.write(
         &format!("{export}/Players/06 - B/face_high.model"),
@@ -2037,9 +2048,13 @@ fn a_path_holding_the_legacy_kit_token_is_refused() {
         .replace(
             r#"<sampler name="DiffuseMap" path="./texture.dds" srgb="1" minfilter="linear" magfilter="linear" />"#,
             r#"<sampler name="DiffuseMap" path="./u0714g1.dds" srgb="1" minfilter="linear" magfilter="linear" />
-    <sampler name="NormalMap" path="./u0714g1.dds" srgb="0" minfilter="linear" magfilter="linear" />"#,
+    <sampler name="NormalMap" path="./u0714g1.dds" srgb="0" minfilter="linear" magfilter="linear" />
+    <sampler name="SpecularMap" path="./dummy_u0714p1.dds" srgb="0" minfilter="linear" magfilter="linear" />
+    <sampler name="TranslucentMap" path="team_common_folder/u0714p1/team_kit.dds" srgb="0" minfilter="linear" magfilter="linear" />
+    <sampler name="RoughnessMap" path="team_common_folder/u0714p1/dummy_nrm.dds" srgb="0" minfilter="linear" magfilter="linear" />"#,
         );
     assert_eq!(mtl.matches("./u0714g1.dds").count(), 2);
+    assert!(mtl.contains("team_common_folder/u0714p1/dummy_nrm.dds"));
     sandbox.write(
         &format!("{export}/Players/06 - B/face_high.mtl"),
         mtl.as_bytes(),
@@ -2051,20 +2066,54 @@ fn a_path_holding_the_legacy_kit_token_is_refused() {
     for variant in ["kit1.dds", "kit2.dds"] {
         sandbox.write(&format!("{export}/Players/07 - C/{variant}"), &small_dds());
     }
+    // Slot 08 links a shared face folder, and the export holds a collar: the upgrader
+    // respells nothing in either, so no name or path of theirs is refused, a `face.xml`'s
+    // included.
+    sandbox.write(&format!("{export}/Players/08 - D/Round.face"), b"");
+    let round = format!("{export}/Faces/Round");
+    sandbox.write(&format!("{round}/u0XXXp1.model"), &card_model());
+    sandbox.write(
+        &format!("{round}/u0XXXp1.mtl"),
+        &materials_naming("u0XXXp1"),
+    );
+    sandbox.write(&format!("{round}/u0XXXp1.dds"), &small_dds());
+    sandbox.write(
+        &format!("{round}/face.xml"),
+        br#"<?xml version="1.0" encoding="UTF-8"?>
+<config>
+   <model level="0" type="face_neck" path="./u0XXXp1.model" material="./u0XXXp1.mtl"/>
+</config>
+"#,
+    );
+    sandbox.write(
+        &format!("{export}/Collars/collar_12.fmdl"),
+        &clean_model_naming_in("team_kit.dds", "u0XXXp1.dds", "./"),
+    );
 
-    for (settings, version) in [(pes21_settings(&sandbox), 21), (pes17(&sandbox), 17)] {
+    let refused = [
+        "Error kit_token_old [DropFolder] at Players/05 - A \
+         (file=face_high.fmdl, reference=team_common_folder/u0XXXp1.dds)",
+        "Error kit_token_old [DropFolder] at Players/06 - B \
+         (file=face_high.mtl, reference=./u0714g1.dds)",
+        "Error kit_token_old [DropFolder] at Players/06 - B \
+         (file=face_high.mtl, reference=./dummy_u0714p1.dds)",
+        "Info export_identified [Keep] (team=/co/, id=714)",
+    ];
+    // PES 21 reads no `face.xml`, and builds the shared face's `.model` as a hair part.
+    let fox_face = [
+        "Info xml_ignored_fox [Keep] at Faces/Round (file=face.xml)",
+        "Info fmdl_fcl_hair_fallback [Keep] at Faces/Round (file=u0XXXp1.model)",
+    ];
+    for (settings, version, own) in [
+        (pes21_settings(&sandbox), 21, &fox_face[..]),
+        (pes17(&sandbox), 17, &[]),
+    ] {
         let run = sandbox.run(&settings, &["check"]);
 
         let lines = run.messages();
         assert_eq!(
             findings_of(&lines, "co Midcup Nested"),
-            [
-                "Error kit_token_old [DropFolder] at Players/05 - A \
-                 (file=face_high.fmdl, reference=team_common_folder/u0XXXp1.dds)",
-                "Error kit_token_old [DropFolder] at Players/06 - B \
-                 (file=face_high.mtl, reference=./u0714g1.dds)",
-                "Info export_identified [Keep] (team=/co/, id=714)",
-            ],
+            [&refused[..], own].concat(),
             "PES {version}: {lines:#?}"
         );
         assert_eq!(run.exit_code(), 1, "PES {version}");

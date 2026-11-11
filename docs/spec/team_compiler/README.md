@@ -1358,13 +1358,20 @@ TC-MOD-106 GIVEN slot 05's face_high.fmdl naming dummy_kit in team_common_folder
            THEN both times dummy_kit_name_old names slot 05's, 06's and 07's textures, each
                 text naming team_kit and export-upgrader, and drops their folders, and no
                 finding names slot 08's model
-TC-MOD-107 GIVEN slot 05's face_high.fmdl naming u0XXXp1.dds in team_common_folder/, slot 06's
-           face_high.model whose face_high.mtl names ./u0714g1.dds twice, and slot 07's
-           face_high.fmdl naming ./kitN.dds, with its kit1 and kit2 variants
+TC-MOD-107 GIVEN slot 05's face_high.fmdl naming u0XXXp1.dds in team_common_folder/ and the
+           game-supplied ./dummy_u0XXXp1.dds and team_common_folder/u0XXXp1/team_kit_srm.dds,
+           slot 06's face_high.model whose face_high.mtl names ./u0714g1.dds twice,
+           ./dummy_u0714p1.dds and the game-supplied team_common_folder/u0714p1/team_kit.dds
+           and team_common_folder/u0714p1/dummy_nrm.dds, slot 07's face_high.fmdl naming
+           ./kitN.dds, with its kit1 and kit2 variants, slot 08 linking the shared face folder
+           Faces/Round (u0XXXp1.dds, u0XXXp1.model, u0XXXp1.mtl, a face.xml naming
+           ./u0XXXp1.model), and Collars/collar_12.fmdl naming ./u0XXXp1.dds
            WHEN the export is checked for PES 21, then for PES 17
-           THEN both times kit_token_old names slot 05's and slot 06's references, slot 06's
-                once, each text naming export-upgrader, and drops both folders; no
-                kit_token_old names slot 07's model
+           THEN both times kit_token_old names slot 05's u0XXXp1.dds reference and slot 06's
+                ./u0714g1.dds (once) and ./dummy_u0714p1.dds, each text naming
+                export-upgrader, and drops both folders; no kit_token_old names a
+                game-supplied path in an FMDL or into the team's Common in a .mtl, slot 07's
+                model, Faces/Round or the collar
 ```
 
 **Textures**
