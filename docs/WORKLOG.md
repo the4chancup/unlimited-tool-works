@@ -49,7 +49,7 @@ first-class target the Fox version the cup moves to around April 2027 ("Target v
 Next: the after-cut list (f6, f1g14's postponed mutation run among it), then 0.0.2.
 **Blocked on:** nothing. 0.0.2-poc13 (VGL27's legacy boots and gloves IDs) is built: the
 upgrader's `--legacy-ids` (poc13c) and the compiler's packing (poc13d); the block check
-(poc13e) waits for 0.0.2. Next: ux1, then the PoC goes to the maintainer.
+(poc13e) waits for 0.0.2. Next: the 0.0.2-poc.2 bundle goes to the maintainer; ux1 after it.
 
 **Working mode (since 2026-10-10).** The lead (Claude, in Claude Code) plans, briefs, reviews
 and writes what is correctness-critical; the sidekick, SWE-2 through the Devin CLI, implements;
@@ -7979,12 +7979,33 @@ briefs, review loops, gates and mutation runs as for any step.
       `aesthetics_export` `validate/`; `resources/bundle/quick_upgrade.bat`
     - [ ] poc13e the block check (0.0.2, after the PoC): `legacy_id_out_of_block`, the data
       directory's table (TC-LEG-03/04)
+    - [ ] OPEN, the maintainer's call (2026-11-10): the 0.0.2-poc.2 bundle (archive
+      `76267e04…`) upgrades 21 of the 39 VGL27 Friendlies with `--legacy-ids`, against 36
+      without it: 78 `legacy_merge_clash` in 15 teams, an item folder's texture sharing a
+      wearer's face texture name with other bytes (`skin.dds` 35, `face.dds` 14, `head.dds`
+      10). Outside legacy mode such a folder stays shared (`merge_kept_shared`). Run:
+      `.tmp/0_0_2/poc13/run_friendlies.py`, log `.tmp/0_0_2/poc13/friendlies_run/log.txt`.
+      Ruled (the maintainer, 2026-11-10): a clashing folder stays shared and the compiler
+      packs it under its wearers' recorded old ID (the earlier design's shared half);
+      `legacy_merge_clash` goes. SWE-2 slice poc13f after the 03:20 reset, then rebuild
+      0.0.2-poc.2 and rerun the Friendlies
+    - [ ] the maintainer's asks for the PoC if they fit (2026-11-10), each checked first:
+      why /nepgen/'s `SWITCH EXCLUSIVE` became a shared gloves folder with one wearer
+      (`C:/Data/unlimited-tool-works-0.0.2-poc.1/exports/nepgen Full Aesthetics Export Bote
+      Edition`); the settings file written with its defaults (the PES path above all) and a
+      comment per setting at creation, so the CLI runs without the GUI; the outdated `dpfl`
+      finding made blocking. Bats keep their `quick_` names (the maintainer, 11-10)
+    - [ ] the embedded `dpfl`'s `4cc_99_test` renamed `4cc_90_test`, Red's default output CPK
+      name, for the VGL27 experiment only (the maintainer, 2026-11-10): on the PoC branch,
+      with the test CPK's own name if it follows the entry; main keeps `4cc_99_test`
   - [ ] 0.0.2-ux1 the CLI's progress line and finding times (the maintainer, 2026-11-10;
     DECISIONS 2026-11-10): the upgrader's line counted its output half as an export (`0/2`)
     and drew no parts; the compiler's findings came in waves (manifest-order commits, kept).
     Specified: `plans/core/architecture.md` "The console's progress line and run summary",
     `plans/export_upgrader.md` "CLI" (EU-CLI-12), `plans/team_compiler/settings.md` "CLI"
-    `--timestamps` (TC-CLI-13). Next: SWE-2 briefs, after poc13b (both touch the upgrader)
+    `--timestamps` (TC-CLI-13). After the PoC (the maintainer, 2026-11-10: cosmetic, not
+    needed for it). The upgrade's `ExportProcessed(INPUT)` comes before the validation today
+    and its output half sends its own, so the step also moves the first and drops the second
   - [ ] 0.0.2-chk library parity against checkpoints, not Red (the maintainer, 2026-11-09:
     parity with Red was proven once the core was built; divergence is expected since, and
     accounting for it at every run grows costlier). *Lead*, the shape (veto any):

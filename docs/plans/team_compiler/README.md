@@ -342,6 +342,15 @@ TC-LEG-02  GIVEN TC-LEG-01's export, its legacy_ids.toml holding a line that is 
            WHEN it is compiled
            THEN legacy_ids_invalid is reported as an Error naming the file, and the export
                 compiles as it does without the file
+TC-LEG-05  GIVEN a /gbfg/ export whose shared folder Boots/Crocs (boots.fmdl) slots 05 and
+                 08 link, whose shared folder Gloves/Mitts (glove_l.fmdl) slot 06 alone
+                 links, and whose legacy_ids.toml gives [05] boots = 2305, [08] boots =
+                 2305 and [06] gloves = 2310
+           WHEN it is compiled for PES 21
+           THEN the CPK holds boots package 2305 and gloves package 2310, each once, and no
+                boots or gloves package numbered 3901 to 3940; the patch gives 79605 and
+                79608 boots_id 2305 and 79606 gloves_id 2310; GIVEN the export without
+                legacy_ids.toml THEN Crocs and Mitts pack on Studio's IDs
 ```
 
 **0.0.2 scope (after the PoC).** The block check (`pipeline.md` "Legacy boots and gloves IDs

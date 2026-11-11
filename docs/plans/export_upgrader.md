@@ -36,14 +36,17 @@ compiler packs on the old boots and gloves IDs (`plans/team_compiler/pipeline.md
 boots and gloves IDs (VGL27)"). The organizer upgrades every VGL27 export with it, midcups
 included, while managers keep sending Red exports. It changes two things and nothing else:
 
-- **No shared boots or gloves folders.** A folder two or more players wear is not kept
-  shared (step 4): step 3's merge copies it into each wearer's folder, as it merges a
-  single wearer's, so each wearer's own package carries the folder's one old ID. A merge
-  that would clash with a file already in a wearer's folder (step 3's `merge_kept_shared`,
-  one wearer or several) is an Error instead, `legacy_merge_clash` (the first clashing path
-  in its context), and the export is not written: a folder kept shared would pack on Studio's
-  IDs. Pre-Fox exports, whose item folders step 3 never merges, keep their shared folders:
-  the mode is for VGL27's PES 2019 exports.
+- **Shared boots or gloves folders merge into every wearer.** A folder two or more players
+  wear is not kept shared (step 4): step 3's merge copies it into each wearer's folder, as
+  it merges a single wearer's, so each wearer's own package carries the folder's one old ID.
+  A merge that would clash with a file already in any wearer's folder keeps the folder
+  shared, as step 3 does outside the mode (`merge_kept_shared`, the first clashing path in
+  its context), and the wearers' `legacy_ids.toml` tables still record its ID, which the
+  compiler packs the shared folder under. We keep it shared rather than refuse the export
+  because real exports clash often: a full-body boots folder carries its own `skin.dds`,
+  `face.dds` or `head.dds` beside the face folder's (15 of the 39 VGL27 Friendlies, 78
+  folders). Pre-Fox exports, whose item folders step 3 never merges, keep their shared
+  folders: the mode is for VGL27's PES 2019 exports.
 - **Step 8 also writes the root `legacy_ids.toml`**: a table per player slot holding the
   custom boots and gloves IDs (above 100) of the migrated folders he wears, the ID each
   folder's name carries (`k0430 - Crocs` gives `boots = 430`), loose mode's inferred
@@ -326,8 +329,10 @@ EU-SET-17  GIVEN EU-SET-15's export
            THEN slots 06's and 07's player folders each hold g0431's files, no Gloves/ folder
                 and no .gloves link file is written, and the run is migration_clean; GIVEN
                 slot 06's face folder also holding a file at one of g0431's paths with other
-                bytes THEN legacy_merge_clash is reported as an Error naming that path and
-                nothing is written; GIVEN the export upgraded without --legacy-ids THEN g0431
+                bytes THEN merge_kept_shared is reported naming that path, g0431 is kept
+                shared with a link file in slots 06's and 07's folders, legacy_ids.toml
+                still holds [06] gloves = 431 and [07] gloves = 431, and the run is
+                migration_clean; GIVEN the export upgraded without --legacy-ids THEN g0431
                 is kept shared with two link files, as EU-PLY-02 has it
 ```
 

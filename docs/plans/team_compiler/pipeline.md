@@ -134,8 +134,8 @@ can: faces and kits need nothing (both tools name them by team ID and slot), sto
   not parse is an Error (`legacy_ids_invalid`), the file ignored and the export compiled on
   Studio's IDs. One table per team rather than keys in each `settings.toml`, so the file
   members edit carries nothing that leaves with VGL27.
-- **Packing.** A legacy upgrade writes no shared boots or gloves folder (each wearer's
-  folder holds its own copy), so only a player folder's own packages change: a slot whose
+- **Packing.** A legacy upgrade merges each worn boots or gloves folder into its wearers'
+  folders, so mostly a player folder's own packages change: a slot whose
   table records an ID of a kind has that package emitted under the old ID instead of his
   exclusive one, and his patch row carries it. Slots that shared a Red folder recorded its
   one ID and hold byte-identical copies, so each old ID is packed once per team, by the
@@ -145,7 +145,10 @@ can: faces and kits need nothing (both tools name them by team ID and slot), sto
   is not packed for that kind, and the patch leaves his ID of that kind as the save holds
   it, with no finding: every VGL27 export goes through the upgrader, so a missing ID is no
   manager's mistake, and a slot ID could land in another team's old block. A shared folder
-  a hand-made export still has packs on Studio's IDs as usual. FoxDen's per-kit boots and
+  the upgrade kept (its merge clashed with a wearer's file) packs under the old ID its
+  first plain linker in roster order records for its kind, whether it would take a shared
+  ID or that slot's exclusive one; its wearers' rows find that package as above. A shared
+  folder no linker records an ID for packs on Studio's IDs as usual. FoxDen's per-kit boots and
   gloves packages are not written for these IDs: old exports have none.
 - **Out of block** (0.0.2, after the PoC: not built with poc13). An old ID outside its
   team's block in `legacy_boots_blocks.txt`, or any old ID of a team the table does not
