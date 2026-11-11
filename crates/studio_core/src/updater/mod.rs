@@ -13,6 +13,8 @@
 mod install;
 mod swap;
 
+#[cfg(test)]
+pub(crate) use install::test_bundle;
 pub use install::{InstallError, Installed, OpenUrl, Progress, install};
 pub use swap::SwapStep;
 
@@ -272,6 +274,11 @@ pub(crate) const RELEASES_FIXTURE: &str = r#"[
                 "size": 11234567
             },
             {
+                "name": "unlimited-tool-works-0.0.2-linux.tar.gz",
+                "browser_download_url": "https://github.com/the4chancup/unlimited-tool-works/releases/download/v0.0.2/unlimited-tool-works-0.0.2-linux.tar.gz",
+                "size": 12345678
+            },
+            {
                 "name": "SHA256SUMS.txt",
                 "browser_download_url": "https://github.com/the4chancup/unlimited-tool-works/releases/download/v0.0.2/SHA256SUMS.txt",
                 "size": 123
@@ -310,7 +317,7 @@ mod tests {
             release.page_url,
             "https://github.com/the4chancup/unlimited-tool-works/releases/tag/v0.0.2"
         );
-        assert_eq!(release.assets.len(), 2);
+        assert_eq!(release.assets.len(), 3);
         assert_eq!(
             release.assets[0].name,
             "unlimited-tool-works-0.0.2-windows.7z"
@@ -320,7 +327,11 @@ mod tests {
             "https://github.com/the4chancup/unlimited-tool-works/releases/download/v0.0.2/unlimited-tool-works-0.0.2-windows.7z"
         );
         assert_eq!(release.assets[0].size, 11234567);
-        assert_eq!(release.assets[1].name, "SHA256SUMS.txt");
+        assert_eq!(
+            release.assets[1].name,
+            "unlimited-tool-works-0.0.2-linux.tar.gz"
+        );
+        assert_eq!(release.assets[2].name, "SHA256SUMS.txt");
     }
 
     // ST-UPD-01

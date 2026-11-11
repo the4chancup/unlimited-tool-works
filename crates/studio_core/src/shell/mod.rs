@@ -173,10 +173,16 @@ pub struct StudioApp {
     #[cfg(not(target_arch = "wasm32"))]
     update_poll: UpdatePoll,
     /// The release the status bar's offer is about, while the offer stands: the
-    /// Details dialog and the download read it.
+    /// Details dialog and the download read it. An `Arc`, so the install's
+    /// worker thread shares it with the dialog.
     #[cfg(not(target_arch = "wasm32"))]
-    update_release: Option<updater::Release>,
-    /// The update offer's Details dialog: its open state and the notes' cache.
+    update_release: Option<Arc<updater::Release>>,
+    /// The update's download: `updater::open_url` in the window, a fake in
+    /// the tests, as `update_fetch` is for the check.
+    #[cfg(not(target_arch = "wasm32"))]
+    update_open_url: Arc<updater::OpenUrl>,
+    /// The update dialog: its open state, its stage with the install while one
+    /// runs, and the notes' cache.
     #[cfg(not(target_arch = "wasm32"))]
     update_dialog: update_dialog::UpdateDialog,
 }
@@ -252,6 +258,8 @@ impl StudioApp {
             update_poll: UpdatePoll::Idle { retry_at: 0 },
             #[cfg(not(target_arch = "wasm32"))]
             update_release: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            update_open_url: Arc::new(updater::open_url),
             #[cfg(not(target_arch = "wasm32"))]
             update_dialog: update_dialog::UpdateDialog::default(),
         }
@@ -359,9 +367,13 @@ impl StudioApp {
     /// shows nothing, and waits one interval — held in `retry_at`, never in
     /// the settings — before retrying. While a check is Idle the frame asks
     /// egui for the repaint at the moment one falls due, so an idle window
-    /// wakes for it.
+    /// wakes for it. Nothing runs while an install runs or after one
+    /// succeeded: a check could replace the release under the update dialog.
     #[cfg(not(target_arch = "wasm32"))]
     fn poll_update(&mut self, egui_ctx: &egui::Context) {
+        if self.update_dialog.holds_checks() {
+            return;
+        }
         match std::mem::replace(&mut self.update_poll, UpdatePoll::Idle { retry_at: 0 }) {
             UpdatePoll::Idle { retry_at } => {
                 let common = self.ctx.common();
@@ -417,7 +429,7 @@ impl StudioApp {
                             },
                             true,
                         );
-                        self.update_release = Some(release);
+                        self.update_release = Some(Arc::new(release));
                     }
                     self.update_poll = UpdatePoll::Idle { retry_at: 0 };
                 }
@@ -448,26 +460,38 @@ impl StudioApp {
     #[cfg(target_arch = "wasm32")]
     fn poll_update(&mut self, _egui_ctx: &egui::Context) {}
 
-    /// The update offer's Details dialog, drawn while `update_release` stands
-    /// (the release it was opened for gone, it closes itself). Its answers:
-    /// Skip this version stores the version as `skipped_version`, drops the
-    /// offer and the release and saves as every settings change does; Remind
-    /// me later only closes, and the backdrop and Escape answer it the same.
+    /// The update dialog, drawn while `update_release` stands (the release it
+    /// was opened for gone, it closes itself); its Update now installs into
+    /// the program's folder. Its answers: Skip this version stores the version
+    /// as `skipped_version`, drops the offer and the release and saves as
+    /// every settings change does; the others only close it.
     #[cfg(not(target_arch = "wasm32"))]
     fn show_update_dialog(&mut self, egui_ctx: &egui::Context) {
         let Some(release) = self.update_release.as_ref() else {
             self.update_dialog.close();
             return;
         };
-        if let Some(update_dialog::UpdateAnswer::SkipVersion) =
-            self.update_dialog.show(egui_ctx, release)
-        {
-            let version = release.version.to_string();
-            self.ctx.settings().lock().unwrap().common.skipped_version = Some(version.clone());
-            self.status_bar
-                .set_condition(ShellCondition::UpdateAvailable { version }, false);
-            self.update_release = None;
-            self.save_settings();
+        let answer = self.update_dialog.show(
+            egui_ctx,
+            release,
+            &self.ctx.paths().exe_dir,
+            &self.update_open_url,
+        );
+        match answer {
+            Some(update_dialog::UpdateAnswer::SkipVersion) => {
+                let version = release.version.to_string();
+                self.ctx.settings().lock().unwrap().common.skipped_version = Some(version.clone());
+                self.status_bar
+                    .set_condition(ShellCondition::UpdateAvailable { version }, false);
+                self.update_release = None;
+                self.save_settings();
+            }
+            Some(
+                update_dialog::UpdateAnswer::RemindLater
+                | update_dialog::UpdateAnswer::RestartNow
+                | update_dialog::UpdateAnswer::Later,
+            )
+            | None => {}
         }
     }
 
@@ -810,8 +834,11 @@ impl eframe::App for StudioApp {
     }
 
     /// The window's last normal place, and whether it was maximized, go into `window_main` as
-    /// the window closes. eframe calls this once, on every exit path.
+    /// the window closes. eframe calls this once, on every exit path. A running update
+    /// install is cancelled first and waited for, so its swap is never cut midway.
     fn on_exit(&mut self) {
+        #[cfg(not(target_arch = "wasm32"))]
+        self.update_dialog.stop_install();
         if let Some(place) = self.window_place {
             self.ctx.settings().lock().unwrap().common.window_main = Some(WindowPlace {
                 maximized: self.window_maximized,

@@ -340,25 +340,31 @@ fn create_temp(temp: &Path) -> io::Result<()> {
     fs::create_dir(temp)
 }
 
+/// The program's folder before and after an update, the release archives that
+/// carry the new one and the network seam that serves them: what the
+/// install's tests and the update dialog's share.
 #[cfg(test)]
-mod tests {
+pub(crate) mod test_bundle {
     use std::collections::{BTreeMap, HashMap};
     use std::io::Cursor;
+    use std::time::Duration;
+
+    use crossbeam_channel::{Receiver, RecvTimeoutError};
 
     use super::*;
 
     /// The new bundle's folder inside its archive.
-    const TOP: &str = "unlimited-tool-works-0.0.2";
+    pub(super) const TOP: &str = "unlimited-tool-works-0.0.2";
 
     /// The empty folder the new bundle adds.
-    const NEW_FOLDER: &str = "exports";
+    pub(super) const NEW_FOLDER: &str = "exports";
 
     /// A file name and its text.
-    type Files = Vec<(String, &'static str)>;
+    pub(crate) type Files = Vec<(String, &'static str)>;
 
     /// The new bundle's files, relative to its folder: the program, the readme,
     /// the default settings, a license and a launcher.
-    fn new_files() -> Files {
+    pub(crate) fn new_files() -> Files {
         vec![
             (exe_file_name(), "new program"),
             ("README.txt".to_owned(), "new readme"),
@@ -370,7 +376,7 @@ mod tests {
 
     /// The program's folder before the update: the same files with the old
     /// version's bytes, and the member's own settings.
-    fn old_files() -> Files {
+    pub(crate) fn old_files() -> Files {
         vec![
             (exe_file_name(), "old program"),
             ("README.txt".to_owned(), "old readme"),
@@ -381,7 +387,7 @@ mod tests {
     }
 
     /// A fresh `<temp>/studio_core_updater_<name>_<pid>` holding `files`.
-    fn folder_with(name: &str, files: &Files) -> PathBuf {
+    pub(crate) fn folder_with(name: &str, files: &Files) -> PathBuf {
         let root =
             std::env::temp_dir().join(format!("studio_core_updater_{name}_{}", std::process::id()));
         if root.exists() {
@@ -397,7 +403,7 @@ mod tests {
 
     /// Every folder (`None`) and file (its text) under `root`, by its path
     /// relative to `root` with `/` separators.
-    fn snapshot(root: &Path) -> BTreeMap<String, Option<String>> {
+    pub(crate) fn snapshot(root: &Path) -> BTreeMap<String, Option<String>> {
         fn walk(root: &Path, folder: &Path, into: &mut BTreeMap<String, Option<String>>) {
             for entry in fs::read_dir(folder).unwrap() {
                 let path = entry.unwrap().path();
@@ -422,7 +428,7 @@ mod tests {
     /// `files` (by their paths in the archive) and the empty `folders`, packed
     /// as an archive of `kind`. In a `.tar.gz` the program is executable
     /// (`0o755`) and every other file `0o644`, as the release packs them.
-    fn pack_entries(kind: ArchiveKind, files: &Files, folders: &[String]) -> Vec<u8> {
+    pub(super) fn pack_entries(kind: ArchiveKind, files: &Files, folders: &[String]) -> Vec<u8> {
         match kind {
             ArchiveKind::SevenZ => {
                 let mut writer = sevenz_rust2::ArchiveWriter::new(Cursor::new(Vec::new())).unwrap();
@@ -468,7 +474,7 @@ mod tests {
 
     /// `files` and the empty `NEW_FOLDER`, packed under `TOP` as an archive of
     /// `kind`: the shape a release's archive has.
-    fn pack(kind: ArchiveKind, files: &Files) -> Vec<u8> {
+    pub(super) fn pack(kind: ArchiveKind, files: &Files) -> Vec<u8> {
         let under_top: Files = files
             .iter()
             .map(|(relative, text)| (format!("{TOP}/{relative}"), *text))
@@ -477,14 +483,14 @@ mod tests {
     }
 
     /// The archive asset's name for `kind`.
-    fn archive_name(kind: ArchiveKind) -> String {
+    pub(super) fn archive_name(kind: ArchiveKind) -> String {
         format!("unlimited-tool-works-0.0.2{}", kind.suffix())
     }
 
     /// `SHA256SUMS.txt` as the release workflow writes it: the Windows line,
     /// then the Linux one; `kind`'s line carries `hash`, the other a hash of
     /// nothing in the test.
-    fn checksums(kind: ArchiveKind, hash: &str) -> Vec<u8> {
+    pub(super) fn checksums(kind: ArchiveKind, hash: &str) -> Vec<u8> {
         let other = [0xab_u8; 32];
         [ArchiveKind::SevenZ, ArchiveKind::TarGz]
             .into_iter()
@@ -500,15 +506,71 @@ mod tests {
             .into_bytes()
     }
 
+    /// The URL release v0.0.2 serves the asset `name` from, as the releases
+    /// list names it.
+    fn asset_url(name: &str) -> String {
+        format!(
+            "https://github.com/the4chancup/unlimited-tool-works/releases/download/v0.0.2/{name}"
+        )
+    }
+
+    /// A download's body: its first half, then, once `gate` lets go (a send,
+    /// or its sender dropped), the rest. A gate held ten seconds fails the
+    /// read, so a test that never lets go fails instead of hanging.
+    struct HeldBody {
+        /// The first half.
+        first: Cursor<Vec<u8>>,
+        /// What the second half waits for; `None` once passed, or for a body
+        /// that never waits.
+        gate: Option<Receiver<()>>,
+        /// The second half.
+        rest: Cursor<Vec<u8>>,
+    }
+
+    impl Read for HeldBody {
+        fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+            let read = self.first.read(buf)?;
+            if read > 0 {
+                return Ok(read);
+            }
+            if let Some(gate) = self.gate.take()
+                && gate.recv_timeout(Duration::from_secs(10)) == Err(RecvTimeoutError::Timeout)
+            {
+                return Err(io::Error::other("the test never let the download go on"));
+            }
+            self.rest.read(buf)
+        }
+    }
+
+    /// The network seam serving each of `assets` (name, bytes) at its release
+    /// URL, every body in two reads so a download reports progress between
+    /// them. With a `gate`, an archive's second half waits for it
+    /// (`SHA256SUMS.txt` never does).
+    pub(crate) fn serve(
+        assets: Vec<(String, Vec<u8>)>,
+        gate: Option<Receiver<()>>,
+    ) -> Box<OpenUrl> {
+        let served: HashMap<String, (bool, Vec<u8>)> = assets
+            .into_iter()
+            .map(|(name, bytes)| (asset_url(&name), (name != CHECKSUMS_ASSET, bytes)))
+            .collect();
+        Box::new(
+            move |requested: &str| -> Result<Box<dyn Read + Send>, ureq::Error> {
+                let (is_archive, bytes) =
+                    served.get(requested).ok_or(ureq::Error::StatusCode(404))?;
+                let (first, rest) = bytes.split_at(bytes.len() / 2);
+                Ok(Box::new(HeldBody {
+                    first: Cursor::new(first.to_vec()),
+                    gate: gate.clone().filter(|_| *is_archive),
+                    rest: Cursor::new(rest.to_vec()),
+                }))
+            },
+        )
+    }
+
     /// Release v0.0.2 listing `assets` (name, bytes), and the network seam
-    /// serving each by its URL, every body in two reads so a download
-    /// reports progress between them.
-    fn release(assets: Vec<(String, Vec<u8>)>) -> (Release, Box<OpenUrl>) {
-        let url = |name: &str| {
-            format!(
-                "https://github.com/the4chancup/unlimited-tool-works/releases/download/v0.0.2/{name}"
-            )
-        };
+    /// serving each by its URL (`serve`, no gate).
+    pub(super) fn release(assets: Vec<(String, Vec<u8>)>) -> (Release, Box<OpenUrl>) {
         let release = Release {
             version: Version::new(0, 0, 2),
             notes: String::new(),
@@ -518,44 +580,64 @@ mod tests {
                 .iter()
                 .map(|(name, bytes)| ReleaseAsset {
                     name: name.clone(),
-                    download_url: url(name),
+                    download_url: asset_url(name),
                     size: bytes.len() as u64,
                 })
                 .collect(),
         };
-        let served: HashMap<String, Vec<u8>> = assets
-            .into_iter()
-            .map(|(name, bytes)| (url(&name), bytes))
-            .collect();
-        let open_url = move |requested: &str| -> Result<Box<dyn Read + Send>, ureq::Error> {
-            let bytes = served.get(requested).ok_or(ureq::Error::StatusCode(404))?;
-            let (first, rest) = bytes.split_at(bytes.len() / 2);
-            Ok(Box::new(
-                Cursor::new(first.to_vec()).chain(Cursor::new(rest.to_vec())),
-            ))
-        };
-        (release, Box::new(open_url))
+        (release, serve(assets, None))
+    }
+
+    /// The assets (name, bytes) of a release whose `kind` archive is
+    /// `archive`: the archive first, then a `SHA256SUMS.txt` listing `hash`
+    /// for it (`None`: the archive's own).
+    pub(super) fn archive_assets(
+        kind: ArchiveKind,
+        archive: Vec<u8>,
+        hash: Option<String>,
+    ) -> Vec<(String, Vec<u8>)> {
+        let hash = hash.unwrap_or_else(|| to_hex(&Sha256::digest(&archive)));
+        vec![
+            (archive_name(kind), archive),
+            (CHECKSUMS_ASSET.to_owned(), checksums(kind, &hash)),
+        ]
     }
 
     /// A release whose `kind` archive is `archive`, and a `SHA256SUMS.txt`
     /// listing `hash` for it (`None`: the archive's own).
-    fn archive_release(
+    pub(super) fn archive_release(
         kind: ArchiveKind,
         archive: Vec<u8>,
         hash: Option<String>,
     ) -> (Release, Box<OpenUrl>) {
-        let hash = hash.unwrap_or_else(|| to_hex(&Sha256::digest(&archive)));
-        release(vec![
-            (archive_name(kind), archive),
-            (CHECKSUMS_ASSET.to_owned(), checksums(kind, &hash)),
-        ])
+        release(archive_assets(kind, archive, hash))
     }
 
     /// A release whose `kind` archive holds the new bundle, and a
     /// `SHA256SUMS.txt` listing `hash` for it (`None`: the archive's own).
-    fn bundle_release(kind: ArchiveKind, hash: Option<String>) -> (Release, Box<OpenUrl>) {
+    pub(super) fn bundle_release(
+        kind: ArchiveKind,
+        hash: Option<String>,
+    ) -> (Release, Box<OpenUrl>) {
         archive_release(kind, pack(kind, &new_files()), hash)
     }
+
+    /// The running platform's archive of the new bundle and a
+    /// `SHA256SUMS.txt` listing `hash` for it (`None`: the archive's own), by
+    /// name, the archive first: the assets the releases list's `v0.0.2`
+    /// names for this platform.
+    pub(crate) fn running_assets(hash: Option<String>) -> Vec<(String, Vec<u8>)> {
+        let kind = ArchiveKind::RUNNING;
+        archive_assets(kind, pack(kind, &new_files()), hash)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use super::test_bundle::*;
+    use super::*;
 
     /// Both archive kinds, with a name for the test folders and messages.
     const KINDS: [(ArchiveKind, &str); 2] =
