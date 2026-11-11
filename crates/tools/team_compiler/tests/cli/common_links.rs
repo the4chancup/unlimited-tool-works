@@ -2009,20 +2009,10 @@ fn a_model_naming_the_kit_stand_in_s_old_spelling_is_refused() {
     }
     // The finding's text says the stand-in is written `team_kit`, and that the
     // upgrader respells it.
-    let help = team_compiler::Tool::new().help();
-    let row = help
-        .messages
-        .iter()
-        .find(|row| row.code == "dummy_kit_name_old")
-        .unwrap();
-    for word in ["`team_kit`", "export-upgrader upgrade", "upgrade-models"] {
-        assert!(
-            row.when.contains(word) || row.effect.contains(word),
-            "{word}: {} / {}",
-            row.when,
-            row.effect
-        );
-    }
+    crate::assert_row_says(
+        "dummy_kit_name_old",
+        &["`team_kit`", "export-upgrader upgrade", "upgrade-models"],
+    );
 }
 
 // TC-MOD-107

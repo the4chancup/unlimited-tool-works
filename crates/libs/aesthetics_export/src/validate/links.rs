@@ -1,9 +1,9 @@
 //! Link files resolved against shared folders and `Common/`, and the
 //! cascade ("Validation semantics" → "Dropped link targets", "Drop order"):
-//! after every folder's own findings, a dropped `Common` file takes its
-//! linking shared folders down and a dropped shared folder or `Common` file
-//! takes its linking players down, then a shared folder no surviving
-//! player links is orphaned.
+//! after every folder's own findings, a dropped `Common` file (or one below
+//! a dropped `Common/` subfolder) takes its linking shared folders down and a
+//! dropped shared folder or `Common` file takes its linking players down,
+//! then a shared folder no surviving player links is orphaned.
 
 use std::collections::BTreeSet;
 
