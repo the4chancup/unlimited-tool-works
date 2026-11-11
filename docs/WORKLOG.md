@@ -1660,16 +1660,18 @@ briefs, review loops, gates and mutation runs as for any step.
     postponed from 0.0.1's f1g9 → verify: ST-UPD-03, 05 and 06 headless, ST-UPD-04 by hand
     - [x] slice 1, 2026-11-11 (`b6954512`, Opus): the updater's core, `updater::install`
       (download, SHA-256, unpack, the swap with its undo)
-    - [ ] slice 2a the dialog's stages: Update now, the download's progress and Cancel,
-      `Update failed`, `Update ready` (ST-UPD-03)
-    - [ ] slice 2b Later's `Update ready` in the status bar, Restart now, `UTW_RELEASES_URL`
-      (ST-UPD-05), the CHANGELOG line; with it the tests slice 1's `mutants-diff` asks for
-      (2026-11-12, 5 missed, all test gaps): a download whose read is interrupted once still
-      completes, and one whose read fails is `InstallError::Download` with nothing changed
-      (`install.rs` `download`, 3 mutants); a failed swap's sentence names its step
-      (`SwapStep`'s `Display`); the program's file name pinned per platform (`exe_file_name`)
+    - [x] slice 2a, 2026-11-11 (`7e37bb5c`, Opus): the dialog's stages, Update now, the
+      download's progress and Cancel, `Update failed`, `Update ready` (ST-UPD-03)
+    - [x] slice 2b, 2026-11-12 (`62b92662`, Opus): `Update ready` on the status bar, Restart
+      now, `UTW_RELEASES_URL` (ST-UPD-05); the tests for slice 1's five mutation gaps
+    - [ ] the dialogs and a real restart looked at in the built exe, against a releases list
+      served from this PC (`UTW_RELEASES_URL`, plain http by ureq's defaults, read not run):
+      each stage's look, which log slot the restarted program takes while the old one is
+      still closing (ST-RUN-12), and whether it clears the old files
     - [ ] slice 3 the `Updated to` notice (`last_run_version`) and the help's Updates and
-      What's new chapters (ST-UPD-06)
+      What's new chapters (ST-UPD-06); with it the offer's tooltip as the draft words it
+      (`<app> v<new> is out. Details shows what it brings.`, the bar says "A newer release
+      is out" today, where `Update ready`'s names the version)
     - [ ] slice 4 the settings menu's rollback (`plans/core/distribution.md` "Rollback")
     - [ ] ST-UPD-04 by hand, on Windows and on Linux
   - [ ] 0.0.2-tls the update check's TLS without C (DECISIONS "The shipped build is pure
