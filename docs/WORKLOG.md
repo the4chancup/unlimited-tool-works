@@ -8135,7 +8135,9 @@ briefs, review loops, gates and mutation runs as for any step.
     generator's `MEASURED_FIELDS["team_ids"]`, `pes17.rs`/`pes18.rs` regenerated, tests on
     the 17/18 fixtures (`file.rs`), the gated tests moved to 16, the Team TOML comment, the
     docs and the draft; on 15/16 the colour stand-in's hex is monospace (the row's layout).
-    Opus sidekick (`8cb837d6`, merge `395e734c`); SWE-2 review pending
+    Opus sidekick (`8cb837d6`, merge `395e734c`). SWE-2 S-ids r1: 2 accepted (a Texport's
+    coach record follows the edited manager id, which Astra A-r17 found too; a doc line), the
+    loop ended; Carbon after 11-15
   - [ ] 0.0.2-st15 the home stadium id on PES 2015 and 2016 (the maintainer, 2026-11-11: low
     importance, whenever convenient): measure where the 15/16 team record keeps its
     stadium (`spec/pes_savefile/model.md` "The team record" lists "home stadium" in bytes 4

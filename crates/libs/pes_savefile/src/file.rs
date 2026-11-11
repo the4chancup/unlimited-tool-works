@@ -33,9 +33,9 @@ pub struct EditFile {
 pub struct TeamRecords<'a> {
     /// The team record.
     pub team: &'a [u8],
-    /// The coach record the team record's manager id (its u32 at +4) names;
-    /// `None` when the version has no coach section or no record carries
-    /// that id.
+    /// The coach record the team's manager id names, as edited (the id the
+    /// Texport writer writes over the team record); `None` when the version
+    /// has no coach section or no record carries that id.
     pub coach: Option<&'a [u8]>,
     /// The roster record.
     pub roster: &'a [u8],
@@ -292,7 +292,7 @@ impl EditFile {
     }
 
     /// Team `id`'s own record bytes as loaded, and the coach record its
-    /// manager id names; `None` when the save has no team `id`. The records
+    /// manager id (as edited) names; `None` when the save has no team `id`. The records
     /// sit where `to_bytes` writes the team: its section's offset plus the
     /// team's index times the record size.
     pub fn team_records(&self, id: u32) -> Option<TeamRecords<'_>> {
@@ -306,7 +306,9 @@ impl EditFile {
         let team = record(&schema.teams, schema.team.size);
         Some(TeamRecords {
             team,
-            coach: self.coach_record(record_id(&team[4..])),
+            coach: self.teams[index]
+                .manager_id
+                .and_then(|manager| self.coach_record(manager)),
             roster: record(&schema.rosters, schema.roster.size),
             tactics: record(&schema.tactics, schema.tactic.size),
         })
@@ -687,6 +689,28 @@ mod tests {
         expected[4..8].copy_from_slice(&manager.to_le_bytes());
         expected[10..12].copy_from_slice(&stadium.to_le_bytes());
         assert_eq!(back.team_records(701).expect("team 701").team, expected);
+    }
+
+    /// A team's coach record follows its manager id as edited, unsaved: the
+    /// Texport writer writes the edited id over the team record, so the coach
+    /// block beside it must be the one that id names, and an id naming no
+    /// coach record gives none.
+    #[test]
+    fn a_teams_coach_record_follows_its_edited_manager_id() {
+        let (mut file, _) = open(PesVersion::Pes17);
+        let coach_id = |file: &EditFile| {
+            file.team_records(701)
+                .expect("team 701")
+                .coach
+                .map(record_id)
+        };
+        assert_eq!(coach_id(&file), Some(701), "premise: 701's own coach");
+
+        file.team_mut(701).expect("team 701").manager_id = Some(702);
+        assert_eq!(coach_id(&file), Some(702));
+
+        file.team_mut(701).expect("team 701").manager_id = Some(999_999);
+        assert_eq!(coach_id(&file), None, "no coach record carries 999999");
     }
 
     /// A payload ending exactly at a section's count field still reads the

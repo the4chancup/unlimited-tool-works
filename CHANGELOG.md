@@ -41,7 +41,8 @@ What changed for members, release by release, newest first.
 - **Save editor** — a PES 2017 Texport it wrote imported and listed its players in Edit, but
   the kick-off screen's "Starting Lineup" showed nobody. A Texport (PES 2017 to 2021) is now
   written from the save's own records, as the game writes one: the team keeps its manager and
-  coach, and every value the editor does not show keeps the save's.
+  coach (a Manager ID changed in the editor brings that manager's coach), and every value the
+  editor does not show keeps the save's.
 
 ### Minor fixes
 

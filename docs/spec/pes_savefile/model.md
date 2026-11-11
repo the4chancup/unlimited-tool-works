@@ -563,13 +563,13 @@ wiki's names (what a Save editor's team page would model):
   stadium settings and edit flags (bits 215 and 216 set in about 10,400 of 15,221 records); 28
   to 67 the kit slots (uncovered on 18 alone); 68 to 79 rivals; 80 to 151 0xFF with
   banner-edited flags at 149 to 151; 226 to 346 the custom stadium name; 347 to 410 banners.
-- **19** (416 B): 8 to 22; 25 to 31 the wiki's "Unknown B to E" (by 21's layout the goal-net
+- **19** (416 B): 8 and 9, and 12 to 22; 25 to 31 the wiki's "Unknown B to E" (by 21's layout the goal-net
   colours, media backdrop, stadium settings, the 10-bit edited-settings mask and partner
   images; the census ran them to 51 and started the kit slots at 52, but the measured block
   starts at 32 and the rivals follow it at 72 as on every other Fox version, so the byte
   counts between 25 and 51 are not to be trusted); 32 to 71 the kit slots; 72 to 83 rivals; 85 to 87
   banner flags; 162 to 178 the stadium name; 283 to 344 banners.
-- **20/21** (528/588 B): 8 to 22; 25 to 33 goal-net colours, media backdrop RGB, edited-stadium
+- **20/21** (528/588 B): 8 and 9, and 12 to 22; 25 to 33 goal-net colours, media backdrop RGB, edited-stadium
   flags, goal, turf, sideline and seats, the 10-bit mask; 36 to 47 three partner-image ids
   (0xFFFFFFFF); 48 to 87 the kit slots; 88 to 99 rivals; 101 to 103 banner flags; 359 to 422
   banners; the 181-byte stadium name was set in no save.

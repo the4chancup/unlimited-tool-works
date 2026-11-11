@@ -362,7 +362,9 @@ fn lay_records(
     let team_record = sized("team", records.team, schema.team.size)?;
     let coach = records.coach.ok_or(TexportError::NoCoach {
         team: team.id,
-        manager: record_id(&team_record[4..]),
+        manager: team
+            .manager_id
+            .unwrap_or_else(|| record_id(&team_record[4..])),
     })?;
     let bases = [
         (off.team, team_record),
@@ -1807,12 +1809,16 @@ mod tests {
             let team = first_rostered_team(&file);
             let records = file.team_records(team.id).expect("the team's records");
             let players = save_players(&file, team);
-            let manager = record_id(&records.team[4..]);
+            // An edited manager id, which the error names, not the save's.
+            let manager = 999_999;
+            assert_ne!(record_id(&records.team[4..]), manager, "premise");
+            let mut edited = team.clone();
+            edited.manager_id = Some(manager);
             let no_coach = TeamRecords {
                 coach: None,
                 ..records
             };
-            let err = Texport::new(version, team, &no_coach, &players, &test_salt(), &[])
+            let err = Texport::new(version, &edited, &no_coach, &players, &test_salt(), &[])
                 .expect_err("no coach record");
             assert!(
                 matches!(
