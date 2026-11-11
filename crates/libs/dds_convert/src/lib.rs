@@ -466,6 +466,9 @@ mod tests {
     const JXL_LOSSLESS: &[u8] = include_bytes!("../tests/fixtures/source.lossless.jxl");
     const JXL_CONTAINER: &[u8] = include_bytes!("../tests/fixtures/source.lossless.container.jxl");
     const JXL_LOSSY: &[u8] = include_bytes!("../tests/fixtures/source.lossy.jxl");
+    const JXL_RGB: &[u8] = include_bytes!("../tests/fixtures/source.rgb.jxl");
+    const JXL_GREY_ALPHA: &[u8] = include_bytes!("../tests/fixtures/source.grey_alpha.jxl");
+    const JXL_16BIT: &[u8] = include_bytes!("../tests/fixtures/source.16bit.jxl");
     const FTEX_BC1: &[u8] = include_bytes!("../tests/fixtures/konami_bc1_bibs_metalness.ftex");
     const DDS_BC1: &[u8] = include_bytes!("../tests/fixtures/konami_bc1_bibs_metalness.dds");
     const CUBE: &[u8] =
@@ -1059,6 +1062,28 @@ mod tests {
                 decode(jxl, SourceFormat::Jxl).unwrap(),
                 decode(PNG, SourceFormat::Png).unwrap()
             );
+        }
+    }
+
+    /// A JPEG XL stored without alpha, in greyscale, or at 16 bits decodes to
+    /// the same RGBA8 a PNG gives: alpha 255 where none is stored, R = G = B
+    /// from the grey, 16-bit samples back on their 8-bit levels (fixtures
+    /// README: each is `source.png` re-laid).
+    #[test]
+    fn a_jxl_of_another_layout_decodes_to_rgba8() {
+        let png = decode(PNG, SourceFormat::Png).unwrap();
+        let texels = || png.mips[0].as_chunks::<4>().0.iter();
+        let rgb: Vec<u8> = texels().flat_map(|t| [t[0], t[1], t[2], 255]).collect();
+        let grey: Vec<u8> = texels().flat_map(|t| [t[0], t[0], t[0], t[3]]).collect();
+        for (name, jxl, expected) in [
+            ("rgb", JXL_RGB, &rgb),
+            ("grey_alpha", JXL_GREY_ALPHA, &grey),
+            ("16bit", JXL_16BIT, &png.mips[0]),
+        ] {
+            let decoded = decode(jxl, SourceFormat::Jxl).unwrap();
+            assert_eq!((decoded.width, decoded.height), (32, 16), "{name}");
+            assert_eq!(decoded.mips.len(), 1, "{name}");
+            assert_eq!(&decoded.mips[0], expected, "{name}");
         }
     }
 
@@ -2467,7 +2492,9 @@ mod tests {
         }
         // The generated chains, spelled out: 6x3, 3x1, 1x1, and 32x16 down to 1x1.
         assert_eq!(probe(&tga, SourceFormat::Tga).unwrap().mipmaps, 3);
-        for jxl in [JXL_LOSSLESS, JXL_CONTAINER, JXL_LOSSY] {
+        // The first 20 bytes hold the whole header but not the pixels, which
+        // `decode` refuses as cut short: `probe` reads the header alone.
+        for jxl in [JXL_LOSSLESS, JXL_CONTAINER, JXL_LOSSY, &JXL_LOSSLESS[..20]] {
             assert_eq!(
                 probe(jxl, SourceFormat::Jxl).unwrap(),
                 Probe {

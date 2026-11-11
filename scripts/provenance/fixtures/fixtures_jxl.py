@@ -11,6 +11,11 @@ Writes, each through a sibling temp file and `os.replace` after every check:
 - `crates/libs/dds_convert/tests/fixtures/source.lossless.container.jxl`: that codestream in the
   ISOBMFF container (the `JXL ` signature box, `ftyp`, one `jxlc` box), the form an encoder
   writes when the file carries metadata; libjxl's decode asserted equal to the PNG's pixels.
+- `crates/libs/dds_convert/tests/fixtures/source.rgb.jxl`, `source.grey_alpha.jxl` and
+  `source.16bit.jxl`: the layouts a member's editor also writes, each lossless, effort 7, and
+  asserted to decode back to what was encoded: `source.png`'s RGB without its alpha; a greyscale
+  with alpha (the grey is the PNG's red channel, the alpha its alpha); its RGBA at 16 bits per
+  sample (each 8-bit value times 257, so every sample sits exactly on an 8-bit level).
 - `crates/libs/dds_convert/tests/fixtures/source.lossy.jxl`: the same at distance 1.0, effort 7.
 - `crates/libs/dds_convert/tests/fixtures/source.lossy.jxl.rgba`: libjxl's decode of the lossy
   file, raw RGBA8 rows (the reference a decoder is judged against, as `source.webp.rgba`).
@@ -70,9 +75,16 @@ def main():
     portrait = rgba(TEXTURES / "portrait.png")
     bare = lossless(source)
     assert bare[:2] == b"\xff\x0a", "libjxl wrote a bare codestream"
+    rgb = np.ascontiguousarray(source[:, :, :3])
+    grey_alpha = np.ascontiguousarray(source[:, :, [0, 3]])
+    deep = source.astype(np.uint16) * 257
+    assert deep.dtype == np.uint16 and deep.max() == 65535, deep.max()
     outputs = [
         (DDS / "source.lossless.jxl", bare),
         (DDS / "source.lossless.container.jxl", container(bare, source)),
+        (DDS / "source.rgb.jxl", lossless(rgb)),
+        (DDS / "source.grey_alpha.jxl", lossless(grey_alpha)),
+        (DDS / "source.16bit.jxl", lossless(deep)),
         (DDS / "source.lossy.jxl", lossy),
         (DDS / "source.lossy.jxl.rgba", reference.tobytes()),
         (TEXTURES / "kit.jxl", lossless(kit)),

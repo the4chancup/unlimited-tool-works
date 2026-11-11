@@ -55,6 +55,9 @@ Added for JPEG XL sources (0.0.2a) by `scripts/provenance/fixtures/fixtures_jxl.
 |---|---|---|
 | `source.lossless.jxl` | lossless JXL of `source.png` | libjxl's decode equals the PNG's pixels (asserted by the script) |
 | `source.lossless.container.jxl` | `source.lossless.jxl`'s codestream in the ISOBMFF container (signature, `ftyp`, one `jxlc` box) | the form an encoder writes when a file carries metadata; libjxl's decode equals the PNG's pixels (asserted by the script) |
+| `source.rgb.jxl` | `source.png`'s RGB without its alpha, lossless | decodes with alpha 255; libjxl's decode equals what was encoded (asserted by the script) |
+| `source.grey_alpha.jxl` | a greyscale with alpha, lossless: the grey is `source.png`'s red channel, the alpha its alpha | decodes with R = G = B; libjxl's decode equals what was encoded |
+| `source.16bit.jxl` | `source.png`'s RGBA at 16 bits per sample (each value times 257), lossless | every sample on an 8-bit level, so it decodes to the PNG's pixels exactly; libjxl's decode equals what was encoded |
 | `source.lossy.jxl` | lossy JXL of `source.png`, distance 1.0 | drops the colour under zero alpha, libjxl's default |
 | `source.lossy.jxl.rgba` | libjxl's decode of `source.lossy.jxl` | the reference decode (RGBA8, row-major, 32x16); another decoder may differ by rounding, so compare within a tolerance |
 

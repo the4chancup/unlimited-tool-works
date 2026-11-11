@@ -8129,7 +8129,8 @@ briefs, review loops, gates and mutation runs as for any step.
     `SourceFormat::Jxl`), the extension table, the compiler's sniffing, the Ruleset editor's
     logo picker; TC-TEX-22, RE-GUI-19 widened; built without AVX-512 (DECISIONS
     2026-11-11), exe +2.5 MiB. SWE-2 S-jxl r1: 2 accepted (a container fixture, a comment),
-    its loop ended; Astra pending (after A-r17's, on Codex `brother`), then Carbon (11-15)
+    its loop ended. Astra A-jxl r1: 2 accepted (fixtures without alpha, greyscale, 16-bit; a
+    probe of a file cut after its header), its loop ended; Carbon after 11-15
   - [x] 0.0.2-ids the team's manager id (+4, u32) and home stadium id (+10, u16) on PES 17
     and 18 (`spec/pes_savefile/codec.md`, the measured fields; DECISIONS 2026-11-11): the
     generator's `MEASURED_FIELDS["team_ids"]`, `pes17.rs`/`pes18.rs` regenerated, tests on
