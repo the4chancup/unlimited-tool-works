@@ -1348,16 +1348,22 @@ ST-UPD-03   GIVEN the offer, a fake release whose archive and `SHA256SUMS.txt` m
                  updater's sentence, "Nothing was changed. You can download v0.0.2 from the
                  release page instead.", Retry, Open release page and Close, and every file
                  as it was; WHEN Retry THEN the download starts again; GIVEN Cancel clicked
-                 while it downloads THEN the offer's dialog is back and every file as it was
+                 while it downloads THEN the offer's dialog is back and every file as it was;
+                 GIVEN a click outside the dialog, or Escape, while it downloads THEN the
+                 download's line stays; GIVEN a check falling due while it downloads THEN no
+                 request starts; GIVEN the window closed while it downloads THEN the worker
+                 has ended and every file is as it was; GIVEN a failure that could not put
+                 the old files back THEN `Update failed` leaves "Nothing was changed." out
 ST-UPD-04  manual  GIVEN the release bundle of a test version, `0.0.2-rc.1`, started with
                  `UTW_RELEASES_URL` naming a list whose one release is the bundle of
                  `0.0.2-rc.2`, on Windows and on Linux
             WHEN Update now and then Restart now are clicked
             THEN `v0.0.2-rc.2` is installed and opens on `Updated to v0.0.2-rc.2`
-ST-UPD-05   GIVEN `Update ready` after an update to `v0.0.2`
+ST-UPD-05   GIVEN `Update ready` after an update to `v0.0.2`, the status bar reading
+                 `Update ready: v0.0.2`
             WHEN Later is clicked
-            THEN the status bar reads `Update ready: v0.0.2` and its Details opens `Update
-                 ready` again, not the offer; a check falling due starts no request; WHEN
+            THEN the bar still reads so and its Details opens `Update ready` again, not the
+                 offer; a check falling due starts no request; WHEN
                  Restart now THEN the window is asked to close, and once it has closed the
                  program at the bundle's path is started, once; GIVEN a tool holding the
                  close and its prompt cancelled THEN nothing is started, then or at a later

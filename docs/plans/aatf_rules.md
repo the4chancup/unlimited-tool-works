@@ -104,10 +104,13 @@ bytes in 25 runs), the patch switches off a match-time rewrite of a formation's 
 forwards: positions outside them are changed, in slot order) and the drag's re-pick of a
 dropped starter's position, and no comparison of a starter's spot with his position's area;
 the one area test in the exe refuses a drop in one group of screens and is left as it was.
-The test's clauses are still being read: the positions a drop offers at each spot and what
-else a spot is held to, the other ways the screens set a spot or a position (the Select
-Position menu, a swap, the preset formations), and whether the screens themselves keep the
-line counts. Until they are read and each is looked at in game under the stock exe, nothing
+Its main clause is the drop rule's: every starter's position is one the game's drop offers
+at his spot, since the stock screens never leave a starter otherwise (the maintainer,
+2026-11-12, from play; the earlier objection, that a later drag never moves an earlier
+starter back, named no case). The other clauses are still being read: what else a spot is
+held to, the other ways the screens set a spot or a position (the Select Position menu, a
+swap, the preset formations), and whether the screens themselves keep the line counts (the
+maintainer looks at six defenders and at no forward in game). Until they are read and each is looked at in game under the stock exe, nothing
 here is built. The check is the `libs/aatf` host's, in Rust beside the checks the host runs
 around the file's logic, never in the logic: the rule is the game's, the same for every cup,
 and in the logic it would copy the game's tables into every file and take a logic version;

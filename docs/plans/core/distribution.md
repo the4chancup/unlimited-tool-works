@@ -285,8 +285,8 @@ change in a minor release, hence the exact pin.
 6. **Restart**: `Update ready` says "v<new> is installed. Restart to start using it, the version
    you are running now will stay in the old folder." with **Restart now** (the ordinary close
    prompts, then the new exe starts and shows `Updated to v<new>` with What's new) and **Later**
-   (the next start runs the new exe). After **Later** the status bar's offer reads `Update
-   ready: v<new>`, its tooltip "<app> v<new> is installed. Restart to start using it.", and
+   (the next start runs the new exe). Once the update is installed the status bar's offer
+   reads `Update ready: v<new>`, its tooltip "<app> v<new> is installed. Restart to start using it.", and
    its text and Details open `Update ready` again; no check runs for the rest of the session
    and Update now is not offered twice (a second one would move the new program into `old/`,
    over the version to roll back to). Restart now asks the window to close as its close button
