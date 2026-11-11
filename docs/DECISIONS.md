@@ -16298,3 +16298,34 @@ and the in-game run reproduced only half of it.
 Why: 0.0.2's report button lets a member send the files with the report, which is what the
 dropped one lacked; nothing in the list is worth a release without it.
 Plan: worklog 0.0.2's steps; `.tmp/lead/handover.md` "RELEASE PATH".
+
+## 2026-11-11 — studio — Update now's dialog: what the plan left open, settled before its second slice
+Decision (the lead; the plan was silent or offered two ways on each): (1) a failure shows the
+updater's own sentence, then "Nothing was changed. You can download v<new> from the release
+page instead."; Cancel is no failure and returns to the offer; while the download runs the
+backdrop and Escape do nothing, and a window closed then cancels it and waits for the
+updater's thread. (2) A folder that cannot be written to is a failure like the others, found
+before the download; no elevated relaunch. (3) After Later the status bar reads `Update
+ready: v<new>` and its Details opens Update ready, and no check runs for the rest of the
+session. (4) Restart now starts the program at the bundle's own path once the window has
+closed; a close a tool's prompt holds drops the restart. (5) `Updated to v<new>` shows when
+the running version is newer than `last_run_version`, a state key the shell writes; absent
+(a fresh install, a settings file 0.0.1 wrote), no notice. (6) The end-to-end test reads its
+releases through the environment variable `UTW_RELEASES_URL`, a test hook no help topic
+names. (7) Two more slices follow the dialog's: the notice with the help's Updates and What's
+new chapters it opens, then the settings menu's rollback.
+Why: (1) the updater already words each failure for a member, and one sentence per cause in
+the dialog would be a second copy; a click outside a running download should not decide
+anything. (2) The bundle is a portable folder, unpacked where its member can write; the
+elevated path would be code for a case the release page already answers. (3) A second Update
+now would move the new program into `old/`, over the only version to roll back to. (4) After
+the swap the running program's own path is in `old/` on Linux, so the path is taken from the
+bundle, not asked of the system. (5) A marker file the swap leaves would miss an update done
+by hand; a missing key cannot tell a fresh install from 0.0.1, and a notice on a fresh
+install would be wrong. (6) A published pre-release is offered to every member it outranks,
+so the test's releases must be ones no member's check reads; one variable serves a list
+served from this PC and a test repository's alike. (7) Each is a member-visible piece of its
+own, reviewed alone.
+Plan: `plans/core/distribution.md` "Self-update" steps 3, 4 and 6, "Release builds in CI";
+`plans/core/gui.md` ST-UPD-03 to ST-UPD-06; the draft's `openUpdate`, `updateNow`,
+`openUpdateReady`.

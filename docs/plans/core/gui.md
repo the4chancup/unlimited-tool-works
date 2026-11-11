@@ -1341,14 +1341,32 @@ ST-UPD-02   GIVEN the offer shown
 ST-UPD-03   GIVEN the offer, a fake release whose archive and `SHA256SUMS.txt` match, and a
                  bundle folder in a temporary directory
             WHEN Update now is clicked
-            THEN the dialog shows the download's progress, then `Update ready`; the old exe is
+            THEN the dialog shows the download's progress (`Downloading v0.0.2 pre-alpha…
+                 <done> of <total> MB`, a bar, Cancel), then `Update ready`; the old exe is
                  in `old/`, the new one and every other bundle file in place, `data/`
-                 untouched; GIVEN the checksum not matching THEN `Update failed` with Retry,
-                 Open release page and Close, and every file as it was; WHEN Retry THEN the
-                 download starts again
-ST-UPD-04  manual  GIVEN the built exe of `v0.0.1-rc.1` (CI's pre-release), on Windows and in WSL
+                 untouched; GIVEN the checksum not matching THEN `Update failed` with the
+                 updater's sentence, "Nothing was changed. You can download v0.0.2 from the
+                 release page instead.", Retry, Open release page and Close, and every file
+                 as it was; WHEN Retry THEN the download starts again; GIVEN Cancel clicked
+                 while it downloads THEN the offer's dialog is back and every file as it was
+ST-UPD-04  manual  GIVEN the release bundle of a test version, `0.0.2-rc.1`, started with
+                 `UTW_RELEASES_URL` naming a list whose one release is the bundle of
+                 `0.0.2-rc.2`, on Windows and on Linux
             WHEN Update now and then Restart now are clicked
-            THEN `v0.0.1-rc.2` is installed and opens on `Updated to v0.0.1-rc.2`
+            THEN `v0.0.2-rc.2` is installed and opens on `Updated to v0.0.2-rc.2`
+ST-UPD-05   GIVEN `Update ready` after an update to `v0.0.2`
+            WHEN Later is clicked
+            THEN the status bar reads `Update ready: v0.0.2` and its Details opens `Update
+                 ready` again, not the offer; a check falling due starts no request; WHEN
+                 Restart now THEN the window is asked to close, and once it has closed the
+                 program at the bundle's path is started, once; GIVEN a tool holding the
+                 close and its prompt cancelled THEN nothing is started, then or at a later
+                 close
+ST-UPD-06   GIVEN a settings file whose `last_run_version` is `0.0.1`, in a build of `0.0.2`
+            WHEN the shell starts
+            THEN the notice `Updated to v0.0.2 pre-alpha` shows and the settings file says
+                 `0.0.2`; GIVEN it absent, or `0.0.2`, or `0.0.3` THEN no notice, and the
+                 file says `0.0.2`
 ST-TTL-01   GIVEN a tool reporting a ToolActivity (label "Team compiler", 12 of 48 done, 72 s
                  elapsed)
             WHEN a frame is drawn

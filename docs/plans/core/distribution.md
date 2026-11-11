@@ -129,8 +129,12 @@ as long as the release is in use. Before 0.0.1's tag, one test tag `v0.0.1-rc.1`
 branch whose workspace version is bumped to it, runs the release job once: its draft
 pre-release's three assets and their checksums are checked, then the draft and the tag are
 deleted. No release candidate is published: a published pre-release is offered to every
-member whose version it outranks (the check reads pre-releases), so how 0.0.2 tests Update now
-end to end (ST-UPD-04) is 0.0.2's to settle. The Linux bundle's look runs in WSLg (Ubuntu 22.04 on the
+member whose version it outranks (the check reads pre-releases). Update now is therefore
+tested end to end (ST-UPD-04) against releases no member's check reads: the environment
+variable `UTW_RELEASES_URL`, when set, replaces the address the check reads the list of
+releases from, so a test build reads a list served from this PC or a test repository's, whose
+assets are two test bundles. It is a test hook, in no help topic and no settings file: whoever
+can set a program's environment can already replace the program. The Linux bundle's look runs in WSLg (Ubuntu 22.04 on the
 maintainer's PC) before a release is published.
 
 The user extracts the archive anywhere and runs the binary — or, for the common case, drops an
@@ -238,8 +242,13 @@ change in a minor release, hence the exact pin.
    <done> of <total> MB`, a bar, Cancel), verify its SHA-256 against the release's
    `SHA256SUMS.txt` asset (CI writes it), and extract it (`sevenz-rust2` for the `.7z`;
    `flate2` and the `tar` crate for the `.tar.gz`). Any failure (the network, the checksum, the
-   archive) changes nothing and shows `Update failed` with the reason, **Retry**, **Open release
-   page** and **Close**. The download **streams** the
+   archive, a folder that cannot be written to) changes nothing and shows `Update failed` with
+   the reason (the updater's own sentence for it), then "Nothing was changed. You can download
+   v<new> from the release page instead.", and **Retry**, **Open release page** and **Close**.
+   Cancel is no failure: it returns to the offer. While the download runs the dialog stays
+   (the backdrop and Escape do nothing: a stray click must neither cancel a download nor hide
+   one that is running), and a window closed then cancels it and waits for the updater's
+   thread, so a swap is never cut midway. The download **streams** the
    response body (`ureq`'s `into_reader()`) into the temp file, hashing and counting bytes as it
    goes — that is where the dialog's progress comes from, and it sidesteps `ureq`'s 10 MB default
    in-memory body limit, which the convenience readers (`read_to_vec`/`read_to_string`/`read_json`)
@@ -249,10 +258,14 @@ change in a minor release, hence the exact pin.
    binary into `old/`, then put the new binary in place, and every other file of the bundle
    but `data/` (the readme, the licenses, the launchers a later bundle adds) over the old ones;
    if replacement fails, restore the original.
-   This is a recoverable sequence, not one atomic swap; handle file locks and permissions explicitly.
-   If the folder isn't writable (e.g. Program Files), use the `elevation` lib's elevated-relaunch
-   path or download-and-instruct. Restart only after active work is stopped and unsaved edits are
-   handled by the ordinary close prompts.
+   This is a recoverable sequence, not one atomic swap. When putting the old files back fails
+   too, the files set aside stay in `.update/backup` inside the program's folder, the failure
+   names that folder (and does not say nothing was changed), and no later update starts until
+   the member has put them back or removed the folder. A folder that isn't writable (e.g.
+   Program Files) is found before the download starts and is a failure like the others, the
+   release page its way out: no elevated relaunch, since the bundle is a folder the member
+   unpacks wherever they can write. Restart only after active work is stopped and unsaved
+   edits are handled by the ordinary close prompts.
 5. **Teams list reconciliation** (on the first start of the new binary, not during the swap): the
    new binary carries the new upstream list embedded; the working `data/teams_list.txt` may contain
    user-added ID assignments (the grid's inline ID-cell writes — see the [Team compiler
@@ -272,7 +285,16 @@ change in a minor release, hence the exact pin.
 6. **Restart**: `Update ready` says "v<new> is installed. Restart to start using it, the version
    you are running now will stay in the old folder." with **Restart now** (the ordinary close
    prompts, then the new exe starts and shows `Updated to v<new>` with What's new) and **Later**
-   (the next start runs the new exe). The settings file needs no transfer — it stays where it is, and
+   (the next start runs the new exe). After **Later** the status bar's offer reads `Update
+   ready: v<new>`, its tooltip "<app> v<new> is installed. Restart to start using it.", and
+   its text and Details open `Update ready` again; no check runs for the rest of the session
+   and Update now is not offered twice (a second one would move the new program into `old/`,
+   over the version to roll back to). Restart now asks the window to close as its close button
+   does; when the close goes through, the program at the bundle's own path, now the new one,
+   is started, and a close that a tool's prompt holds drops the restart. A start whose version
+   is newer than the one that last ran (`last_run_version`, state the shell writes as it does
+   `last_tool`; absent on a fresh install and after 0.0.1, which then show no notice) shows
+   `Updated to v<new>`. The settings file needs no transfer — it stays where it is, and
    the existing merge of `default_settings()` for missing keys (see `spec/core/gui.md` "Settings menu") absorbs
    new-version settings changes, which is what retired Red's transfer-table mechanism.
 
