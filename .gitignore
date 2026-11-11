@@ -19,6 +19,9 @@
 # Citation audit report and answer cache (`just citation-audit`)
 /snap.out/
 
+# The census index of the real exports and its roots (scripts/census/README.md), kept across scratch cleanups
+/.census/
+
 # OS noise
 Thumbs.db
 .DS_Store

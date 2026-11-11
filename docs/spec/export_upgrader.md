@@ -494,7 +494,7 @@ to moving, flattening, or removing files describe that draft, not destructive ed
    `spec/team_compiler/pipeline.md`), and keeping the old directory would only hide the same
    missing file (19 of the 5,921 FMDLs on the maintainer's machine name such a texture). The
    FMDL rules in full, per texture entry, a census of the 6,053 real FMDLs in export folders
-   behind them (`.tmp/phase_06/6_4/fmdl_dir_census.txt`): a `dummy_` stem keeps its directory,
+   behind them (its directories tallied by `python scripts/census/query.py fmdl-dirs . --examples 200`): a `dummy_` stem keeps its directory,
    as the compiler never looks one up, but for a team's Common folder there, respelled
    `team_common_folder/` (`000/` in the community's templates, which name `dummy_kit` there:
    the compiler refuses any other folder, a dummy's too) and the game's `common/sourceimages/`
