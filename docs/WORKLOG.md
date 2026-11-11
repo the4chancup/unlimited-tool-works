@@ -2184,6 +2184,14 @@ points there.
   open children under closed parents (ux1, poc12 slice 4, 4c's r2, f4a-c), items open though
   recorded done (k5b, k5b2, 8.36c4, f1e to f1g, poc13's asks), closed items still naming
   something open (8.36b, 20.6a1), the tags 8.9m and 0.0.1g each used twice.
+- open 2026-11-12 (0.0.2-log, `.tmp/0_0_2/poc5/redirect_probe.bat`) — started from `cmd` or a
+  bat, the exe's output can be neither redirected nor piped: `UTW.exe --version > file`,
+  `| findstr` and `2>&1` each received 0 bytes, where Git Bash and a Rust `Command`, which
+  hand the handles over themselves, receive every line. So `save-editor diff ... > report.txt`
+  typed at a `cmd` prompt writes an empty file. `plans/core/architecture.md` "Windows
+  subsystem" names only the interleaved prompt as the arrangement's cost. Unmeasured:
+  PowerShell. `--log-file` covers a tool's findings; a `diff` or `--json` to a file from
+  `cmd` has no route yet (a console-subsystem shim beside the exe is the usual one).
 - open 2026-11-12 (0.0.2-drag) — the player list draws only the rows in view, so a row
   dragged while the wheel scrolls its place out of view stops floating until the release
   (the drop still lands). Harmless on a team's list, which fits the window; a fix would
