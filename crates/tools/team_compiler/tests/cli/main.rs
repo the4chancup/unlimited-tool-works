@@ -225,6 +225,25 @@ fn snapshot(root: &Path) -> BTreeMap<PathBuf, Vec<u8>> {
     files
 }
 
+/// Asserts that the catalog row of the finding `code`, as the help shows it, says each of
+/// `words` in its When or its Effect text.
+fn assert_row_says(code: &str, words: &[&str]) {
+    let help = studio_core::StudioTool::help(&team_compiler::Tool::new());
+    let row = help
+        .messages
+        .iter()
+        .find(|row| row.code == code)
+        .unwrap_or_else(|| panic!("no catalog row for {code}"));
+    for word in words {
+        assert!(
+            row.when.contains(word) || row.effect.contains(word),
+            "{code}, {word}: {} / {}",
+            row.when,
+            row.effect
+        );
+    }
+}
+
 /// The lines of `lines` about `source`, without their `<source>: ` prefix, so the findings of
 /// sources holding the same export compare equal.
 fn findings_of<'a>(lines: &'a [String], source: &str) -> Vec<&'a str> {

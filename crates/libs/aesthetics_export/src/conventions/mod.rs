@@ -14,8 +14,8 @@ pub use file_types::{
 pub(crate) use file_types::{icon_number, is_logo_texture, shared_link_name, strip_prefix_ci};
 pub(crate) use kit_token::names_kit_fallback;
 pub use kit_token::{
-    KitToken, kit_folder, kit_path_token, kit_set_member, kit_token, kit_token_starts,
-    variant_path, variant_stem, without_kit_token,
+    KitToken, LegacyKitToken, kit_folder, kit_path_token, kit_set_member, kit_token,
+    kit_token_starts, legacy_kit_tokens, variant_path, variant_stem, without_kit_token,
 };
 pub use player_folder::{ModelSuffix, ends_with_name, is_player_singleton, model_suffix};
 pub(crate) use player_folder::{is_boots, is_explicit_face, is_gloves};

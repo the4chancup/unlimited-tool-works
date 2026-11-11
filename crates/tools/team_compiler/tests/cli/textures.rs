@@ -1194,8 +1194,7 @@ fn a_texture_path_into_the_game_s_kit_folder_is_kept_with_a_warning() {
     let sandbox = Sandbox::new("tex_kit_path");
     let export = "exports/co Midcup Kit Path";
     let player = format!("{export}/Players/05 - A");
-    // The tracer's hair naming `u0714p1.dds` in the game's kit texture folder; a same-stem
-    // texture of the player's own proves the path is not pointed at his copy.
+    // The tracer's hair naming `u0714p1.dds` in the game's kit texture folder.
     sandbox.write(
         &format!("{player}/face_high.fmdl"),
         &tracer_model_pointing(
@@ -1204,7 +1203,6 @@ fn a_texture_path_into_the_game_s_kit_folder_is_kept_with_a_warning() {
             KIT_TEXTURE_DIRECTORY,
         ),
     );
-    sandbox.write(&format!("{player}/u0714p1.dds"), &tracer_kit());
 
     let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
 

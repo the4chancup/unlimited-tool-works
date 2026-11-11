@@ -28,7 +28,10 @@ pub use folders::{
     SharedLink, SharedModelFolder,
 };
 pub use issues::{ContentFinding, Disposition, ISSUE_CODES, IssueScope, ValidationIssue};
-pub(crate) use issues::{content_issue, dropped_scopes, issue, issue_in, strict_disposition};
+pub(crate) use issues::{
+    common_file_dropped, content_issue, dropped_scopes, is_below, issue, issue_in,
+    strict_disposition,
+};
 pub use links::common_link_files;
 pub use roster::{PlayerIndex, ValidatedRoster};
 
@@ -410,7 +413,9 @@ impl ParsedAestheticsExport {
                 common: draft
                     .common
                     .iter()
-                    .filter(|file| file_kept(file))
+                    .filter(|file| {
+                        !common_file_dropped(&file.path, &dropped_folders, &dropped_files)
+                    })
                     .cloned()
                     .collect(),
                 root,

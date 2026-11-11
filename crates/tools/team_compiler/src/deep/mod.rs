@@ -78,7 +78,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use aesthetics_export::{
     ContentFinding, Disposition, FileDescriptor, FileKind, IssueScope, KitTextureSource,
     ModelFormat, PlayerFolder, SharedKind, SharedModelFolder, ValidatedAestheticsExport,
-    common_link_target,
+    common_link_target, legacy_kit_tokens,
 };
 use dds_convert::SourceFormat;
 use pes_savefile::settings_toml::PlayerSettings;
@@ -107,7 +107,7 @@ use documents::{
     colors_findings, face_diff_findings, kit_config_findings, legacy_ids, player_ingame_face,
     player_settings,
 };
-use materials::{TextureSources, held_common, held_textures, texture_findings};
+use materials::{TextureSources, held_common, held_textures, names_export_file, texture_findings};
 use model::{MaterialRead, ModelKind, fired};
 use pairings::{material_finding, pairings, searched_common_mtls, used_names};
 use portrait::{folder_portrait, portrait_conflict, portrait_findings};
@@ -313,12 +313,26 @@ pub(crate) fn content_findings(
         }
         Engine::PreFox => None,
     };
+    // A name holding a legacy kit token is refused whatever the target reads, and what it
+    // drops (the file, or every file below the subfolder) is neither checked nor kept.
+    let common_names = common_kit_token_names(&export.common);
+    let refused_by_name = |file: &FileDescriptor| {
+        common_names.iter().any(|finding| match &finding.scope {
+            IssueScope::File(path) | IssueScope::Folder(path) => {
+                at_or_below(file.path.as_str(), path.as_str())
+            }
+            IssueScope::Export | IssueScope::RosterEntry { .. } => false,
+        })
+    };
     // Each group below is collected in its items' order (rayon's indexed `collect`), so the
     // findings come out in file order whatever the workers' scheduling.
     let mut common: Vec<ContentPass> = export
         .common
         .par_iter()
         .map(|file| {
+            if refused_by_name(file) {
+                return ContentPass::default();
+            }
             // The Common tasks and the linking players read only the files the target reads
             // (`is_read_common_file`: on Fox `Common/` itself and the subfolder files a link
             // reaches), and a model there only when the target selects it for its stem, and on
@@ -381,6 +395,7 @@ pub(crate) fn content_findings(
     for (file, pass) in export.common.iter().zip(&common) {
         if !is_read_common_file(&file.path, engine, &linked_common)
             || drops_file(&pass.findings, pass_through)
+            || refused_by_name(file)
         {
             continue;
         }
@@ -570,7 +585,8 @@ pub(crate) fn content_findings(
         })
         .collect();
     let mut pass = ContentPass::default();
-    for group in [players, faces, boots_and_gloves, common] {
+    let common_names = vec![ContentPass::findings_only(common_names)];
+    for group in [players, faces, boots_and_gloves, common_names, common] {
         for found in group {
             pass.append(found);
         }
@@ -958,7 +974,9 @@ struct ReadFolder<'a> {
     hidden_common: &'a [FileDescriptor],
 }
 
-/// The findings of the files of the model folder `read` that the deep pass reads
+/// The findings of the files of the model folder `read`: first `kit_token_old` for each name
+/// in it holding a legacy kit token, every file's whether read or not (`kit_token_names`);
+/// then those of the files the deep pass reads
 /// (`checked_as`, textures held to `size_rule`): each on the folder's scope,
 /// an Error dropping the folder, the file named below the folder (not a file with no role, such
 /// as a model the target's own format beats, nor a per-kit model variant left out, nor on Fox
@@ -1143,7 +1161,7 @@ fn folder_findings(
     // The Common `.mtl` files looked up for this folder so far: two links finding one are one
     // lookup.
     let mut looked_up: BTreeSet<&ScopePath> = BTreeSet::new();
-    let mut pass = ContentPass::default();
+    let mut pass = ContentPass::findings_only(kit_token_names(folder, files));
     for (file, found) in files.iter().zip(per_file) {
         pass.append(found);
         pass.findings
@@ -1267,7 +1285,9 @@ struct XmlOutcome {
 /// game): when it cannot be read, `source_read_failed`; when it does not parse, one finding
 /// dropping the folder, `xml_broken` (not UTF-8, not well-formed XML), `xml_root_tag_invalid`
 /// (its root is not `<config>`) or `face_diff_invalid` (its `<dif>` is no face diff the game
-/// reads), naming the file and the reason; else `user_face_xml::check`'s, with the xml.
+/// reads), naming the file and the reason; else `user_face_xml::check`'s, then
+/// `kit_token_old` for each path holding a legacy kit token (`xml_legacy_kit_paths`), with
+/// the xml.
 fn user_xml_findings(
     content: &ContentSource,
     file: &FileDescriptor,
@@ -1305,13 +1325,50 @@ fn user_xml_findings(
             return unparsed(vec![finding((code, Disposition::DropFolder, context))]);
         }
     };
-    XmlOutcome {
-        findings: user_face_xml::check(&xml, &name, files, version)
+    let mut findings: Vec<ContentFinding> = user_face_xml::check(&xml, &name, files, version)
+        .into_iter()
+        .map(finding)
+        .collect();
+    findings.extend(
+        xml_legacy_kit_paths(&xml)
             .into_iter()
-            .map(finding)
-            .collect(),
+            .map(|reference| ContentFinding {
+                code: Code::KitTokenOld.as_str(),
+                scope: scope.clone(),
+                context: vec![("file", name.clone()), ("reference", reference.to_owned())],
+                disposition: Disposition::DropFolder,
+                pass_through_eligible: false,
+            }),
+    );
+    XmlOutcome {
+        findings,
         parsed: Some(xml),
     }
+}
+
+/// The `path` and `material` values of `xml`'s `<model>` entries naming a file of the export
+/// (`materials::names_export_file`) and holding a legacy kit token
+/// (`aesthetics_export::legacy_kit_tokens`), as written, each distinct value once in
+/// source order: the paths `kit_token_old` refuses in a member's own `face.xml`.
+fn xml_legacy_kit_paths(xml: &UserFaceXml) -> Vec<&str> {
+    let mut paths: Vec<&str> = Vec::new();
+    for child in &xml.children {
+        let Child::Model(model) = child else {
+            continue;
+        };
+        for value in [model.attribute("path"), model.attribute("material")]
+            .into_iter()
+            .flatten()
+        {
+            if names_export_file(value)
+                && !legacy_kit_tokens(value).is_empty()
+                && !paths.contains(&value)
+            {
+                paths.push(value);
+            }
+        }
+    }
+    paths
 }
 
 /// Whether `file`, of the model folder at `folder` whose own
@@ -1413,6 +1470,101 @@ fn read(
             disposition,
             pass_through_eligible: false,
         })
+}
+
+/// The outermost names holding a legacy kit token in the folder at `folder` (its export
+/// path) and among its `files`, as export paths: the folder's own path alone when its own
+/// name holds one, else each file's or subfolder's outermost such name, each once (folded),
+/// in file order. A folder so named stands for every file below it: the fix, an upgrade, is
+/// the same for all of them.
+fn legacy_token_names<'a>(folder: &'a str, files: &'a [FileDescriptor]) -> Vec<&'a str> {
+    if legacy_token_name_end(folder).is_some() {
+        return vec![folder];
+    }
+    let mut seen = BTreeSet::new();
+    files
+        .iter()
+        .filter_map(|file| {
+            let path = file.path.as_str();
+            let name = &path[..legacy_token_name_end(path)?];
+            seen.insert(vtree::fold_name(name)).then_some(name)
+        })
+        .collect()
+}
+
+/// `kit_token_old` on the model folder `folder` (a player's or a shared one) for each
+/// outermost name holding a legacy kit token (`legacy_token_names`), naming the name's path
+/// in the export and dropping the folder.
+fn kit_token_names(folder: &ScopePath, files: &[FileDescriptor]) -> Vec<ContentFinding> {
+    legacy_token_names(folder.as_str(), files)
+        .into_iter()
+        .map(|path| {
+            kit_token_name_finding(
+                IssueScope::Folder(folder.clone()),
+                Disposition::DropFolder,
+                path,
+            )
+        })
+        .collect()
+}
+
+/// `kit_token_old` for each outermost name in `Common/` holding a legacy kit token
+/// (`legacy_token_names`), with that name's path: a file's on the file, which drops it
+/// alone, and a subfolder's on the subfolder, which drops every file below it.
+fn common_kit_token_names(common: &[FileDescriptor]) -> Vec<ContentFinding> {
+    legacy_token_names(COMMON, common)
+        .into_iter()
+        .map(|name| {
+            let (scope, disposition) = match common.iter().find(|file| file.path.as_str() == name) {
+                Some(file) => (IssueScope::File(file.path.clone()), Disposition::DropFile),
+                None => (
+                    IssueScope::Folder(
+                        ScopePath::new(name)
+                            .expect("a file's export path cut before a `/` is a valid path"),
+                    ),
+                    Disposition::DropFolder,
+                ),
+            };
+            kit_token_name_finding(scope, disposition, name)
+        })
+        .collect()
+}
+
+/// The `Common/` folder's export path.
+const COMMON: &str = "Common";
+
+/// The `kit_token_old` finding on `scope` for the name at export path `path`.
+fn kit_token_name_finding(
+    scope: IssueScope,
+    disposition: Disposition,
+    path: &str,
+) -> ContentFinding {
+    ContentFinding {
+        code: Code::KitTokenOld.as_str(),
+        scope,
+        context: vec![("path", path.to_owned())],
+        disposition,
+        pass_through_eligible: false,
+    }
+}
+
+/// Whether the export path `path` is the name at export path `name` or below it.
+fn at_or_below(path: &str, name: &str) -> bool {
+    path.strip_prefix(name)
+        .is_some_and(|rest| rest.is_empty() || rest.starts_with('/'))
+}
+
+/// The end, in bytes, of the outermost `/`-separated name of `path` holding a legacy kit
+/// token (`aesthetics_export::legacy_kit_tokens`), so that `path` cut there is that name's
+/// path; `None` when no name of it holds one. A token never holds a `/`, so the name is the
+/// one the first token stands in.
+fn legacy_token_name_end(path: &str) -> Option<usize> {
+    let start = legacy_kit_tokens(path).first()?.start;
+    Some(
+        path[start..]
+            .find('/')
+            .map_or(path.len(), |slash| start + slash),
+    )
 }
 
 /// `path` below `folder`, its subfolder kept (`face/hair.fmdl`): how a finding on a folder
@@ -1593,6 +1745,14 @@ fn file_outcome(
         findings.push(finding(
             Code::DummyKitNameOld.as_str(),
             vec![("model", name.to_owned()), ("texture", texture.clone())],
+            disposition,
+            false,
+        ));
+    }
+    for reference in &read.legacy_kit_paths {
+        findings.push(finding(
+            Code::KitTokenOld.as_str(),
+            vec![("file", name.to_owned()), ("reference", reference.clone())],
             disposition,
             false,
         ));
@@ -2362,6 +2522,98 @@ mod tests {
     /// A `face.xml` whose one `<model>`, typed `parts`, holds `attributes`.
     fn one_model_xml(attributes: &str) -> Vec<u8> {
         format!(r#"<config><model level="0" type="parts" {attributes}/></config>"#).into_bytes()
+    }
+
+    #[test]
+    fn a_name_holding_the_legacy_kit_token_is_reported_once_on_its_outermost_name() {
+        let descriptors = |paths: &[&str]| -> Vec<FileDescriptor> {
+            paths
+                .iter()
+                .map(|text| FileDescriptor {
+                    path: path(text),
+                    source: path(text),
+                    size: 1,
+                    kind: aesthetics_export::classify(path(text).name()),
+                })
+                .collect()
+        };
+        let refused = |folder_path: &str, name: &str| ContentFinding {
+            code: "kit_token_old",
+            scope: folder(folder_path),
+            context: vec![("path", name.to_owned())],
+            disposition: Disposition::DropFolder,
+            pass_through_eligible: false,
+        };
+        // A subfolder so named is reported once, not its two files; a file so named on its
+        // own; capitals are no token.
+        let files = descriptors(&[
+            "Players/05 - A/face_high.fmdl",
+            "Players/05 - A/u0XXXp2/a.dds",
+            "Players/05 - A/u0XXXp2/kit1_u0714p1.dds",
+            "Players/05 - A/kit1_u0714p1.dds",
+            "Players/05 - A/U0714P1.dds",
+        ]);
+        assert_eq!(
+            kit_token_names(&path("Players/05 - A"), &files),
+            [
+                refused("Players/05 - A", "Players/05 - A/u0XXXp2"),
+                refused("Players/05 - A", "Players/05 - A/kit1_u0714p1.dds"),
+            ]
+        );
+        // A folder so named is reported once, on its own name.
+        let files = descriptors(&["Boots/u0XXXp1/boots.fmdl", "Boots/u0XXXp1/x/u0714p1.dds"]);
+        assert_eq!(
+            kit_token_names(&path("Boots/u0XXXp1"), &files),
+            [refused("Boots/u0XXXp1", "Boots/u0XXXp1")]
+        );
+    }
+
+    #[test]
+    fn a_face_xml_path_holding_the_legacy_kit_token_is_refused_once_per_distinct_value() {
+        let findings = slot_05_findings(
+            "deep_xml_kit_token",
+            &[
+                ("hat.model", card()),
+                ("hat.mtl", card_materials()),
+                ("texture.dds", bc1_dds(4, 4)),
+                (
+                    "face.xml",
+                    br#"<config><model level="0" type="parts" path="./hat.model" material="./u0XXXp1.mtl"/><model level="0" type="parts" path="./u0714g1.model" material="./u0XXXp1.mtl"/><model level="0" type="parts" path="./U0714G1.model" material="./hat.mtl"/><model level="0" type="parts" path="model/character/uniform/common/797/u0714p1.model" material="./hat.mtl"/></config>"#.to_vec(),
+                ),
+            ],
+        );
+        let refused = |reference: &str| ContentFinding {
+            code: "kit_token_old",
+            scope: folder("Players/05 - A"),
+            context: vec![
+                ("file", "face.xml".to_owned()),
+                ("reference", reference.to_owned()),
+            ],
+            disposition: Disposition::DropFolder,
+            pass_through_eligible: false,
+        };
+        let token_findings: Vec<&ContentFinding> = findings
+            .iter()
+            .filter(|finding| finding.code == "kit_token_old")
+            .collect();
+        assert_eq!(
+            token_findings,
+            [&refused("./u0XXXp1.mtl"), &refused("./u0714g1.model")],
+            "{findings:#?}"
+        );
+        // A path into the game's own folders is read (it has a finding of its own) but is
+        // the game's spelling, which no `kit_token_old` names.
+        assert!(
+            findings
+                .iter()
+                .any(|finding| finding.code == "xml_common_path_invalid"
+                    && finding
+                        .context
+                        .iter()
+                        .any(|(_, value)| value
+                            == "model/character/uniform/common/797/u0714p1.model")),
+            "{findings:#?}"
+        );
     }
 
     #[test]
