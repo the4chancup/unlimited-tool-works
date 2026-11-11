@@ -26,8 +26,9 @@ started.
 
 **A checkpoint is one command.** `just checkpoint` runs `gates-changed` and `mutants-diff`
 since the last gated commit and then moves that commit, the git ref
-`refs/checkpoints/gated`, to HEAD (`scripts/gates/checkpoint.py`; a clone seeds the ref
-once, as the script says). It runs at the end of a review loop, at a worklog step's close,
+`refs/checkpoints/gated`, to the commit it started on (`scripts/gates/checkpoint.py`; a
+clone seeds the ref once, as the script says). The gates read the working tree, so a commit
+or an edit made while they run leaves the ref where it was, and the checkpoint is run again. It runs at the end of a review loop, at a worklog step's close,
 after a merge, and before a push is asked for. `just checkpoint-status` says how far HEAD is
 past the gate, what is not pushed, and what CI made of the pushed head: the lead runs it
 after every push the maintainer makes, and a red run is looked at before other work. The

@@ -48,6 +48,10 @@ class Repo:
 
     def just(self, command, cwd):
         recipe = command[1]
+        # Both recipes run since the commit gated before: over another range the gates would
+        # pass on commits they never read.
+        if command != ["just", recipe, "gated-before"] or cwd != checkpoint.ROOT:
+            raise AssertionError(f"unexpected run {command} in {cwd}")
         self.ran.append(recipe)
         self.during.get(recipe, lambda repo: None)(self)
         return types.SimpleNamespace(returncode=self.codes.get(recipe, 0))

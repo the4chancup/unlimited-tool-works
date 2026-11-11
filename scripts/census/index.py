@@ -255,7 +255,7 @@ def build(roots_path, index_path, keep_repositories):
     db.executemany("INSERT INTO skips VALUES (?, ?)",
                    [(rule, skips[rule]) for rule in (*SKIPPED_NAMES, "repository", "unreadable", "links")])
     meta = {"built": started, "seconds": round(time.time() - started, 1), "roots": json.dumps(roots),
-            "roots_file": str(roots_path), "keep_repositories": int(keep_repositories)}
+            "roots_file": str(roots_path.resolve()), "keep_repositories": int(keep_repositories)}
     db.execute("DELETE FROM meta")
     db.executemany("INSERT INTO meta VALUES (?, ?)", meta.items())
     db.commit()

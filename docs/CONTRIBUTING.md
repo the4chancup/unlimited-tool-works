@@ -248,7 +248,7 @@ right before its mutation run ("Mutation runs" below), which then starts from a 
 green; a worklog step's close; a merge of another branch. The full `just gates` runs before a
 release build, and CI runs it on every push. `just checkpoint` is the
 checkpoint's one command: it runs `gates-changed` and `mutants-diff` since the last gated
-commit and moves that commit to HEAD (`RUNBOOK.md` "How the work runs"). A push is asked
+commit and moves that commit to the one it started on (`RUNBOOK.md` "How the work runs"). A push is asked
 for only when `just checkpoint-status` shows no commit past the gate, so CI is never a
 stretch's first full run: a push of commits no checkpoint had gated went red on
 a broken doc pointer (2026-11-11). A failure a checkpoint finds in a dependent
