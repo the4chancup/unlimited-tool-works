@@ -26,6 +26,10 @@ What changed for members, release by release, newest first.
 - **Team compiler** — `check` and `compile` take `--timestamps`: each finding line starts
   with the seconds since the run started when the finding was made, for seeing where a slow
   compile spends its time.
+- **Team compiler** — a file or folder name, or a path to one of the export's files, still
+  spelled with the old kit token (`u0XXXp1`, `kit6_u0827p0.dds`, `Common/u0XXXp0/`) is
+  refused, with a hint to run the export through the Export upgrader, which respells it
+  `kit1`, `kitN` or `kitF`. Paths into the game's own folders keep the game's names.
 
 ### Minor fixes
 

@@ -7940,16 +7940,22 @@ briefs, review loops, gates and mutation runs as for any step.
       checksum matching; code unchanged since the run, the previous build in
       `target/dist_prev_f815f1b1`). FoxDen's swapper goes beside the bundle, handed over by
       the maintainer; the readme does not name it
-    - [ ] slice 4: the legacy kit token (`u0???p0`-style, `kit6_u0827p0.dds`) refused in an
+    - [x] slice 4: the legacy kit token (`u0???p0`-style, `kit6_u0827p0.dds`) refused in an
       export's file names and paths, naming the upgrader (the bullet above); its spec first.
       After the PoC is handed over (the maintainer, 2026-11-09: not needed for it)
       - [x] spec (lead): `kit_token_old` (`spec/team_compiler/messages.md`, `pipeline.md`
         "Kit-dependent assets", `spec/model_format.md` "Output naming", the draft's catalog);
         TC-STR-22, TC-MOD-107; DECISIONS 2026-11-11 (the upgrader's case-exact match, one
         function in `aesthetics_export`, not the "any case" above)
-      - [ ] the code: Opus sidekick, `.tmp/0_0_2/poc12s4/brief.md`; rework 1
-        (`rework1.md`): a `DropFolder` on a `Common/` subfolder drops its files, and paths
-        are checked only into the export (spec `a28ecd84`, DECISIONS 2026-11-11)
+      - [x] the code (`9382b068`, merged `abe8e0ff`): Opus sidekick, `.tmp/0_0_2/poc12s4/brief.md`;
+        rework 1 (`rework1.md`): a `DropFolder` on a `Common/` subfolder drops its files,
+        and paths are checked only into the export (spec `a28ecd84`, DECISIONS 2026-11-11).
+        `aesthetics_export` `legacy_kit_tokens` (the upgrader's `respell` calls it),
+        `validate/` `common_file_dropped`; `team_compiler` `deep/mod.rs`, `materials.rs`,
+        `model.rs`, `messages`; TC-STR-22, TC-MOD-107, TC-MOD-91's fixture. The `.mtl`
+        call of `names_export_file` has no test of its own (its `face.xml` twin has)
+      - [ ] review rounds: SWE-2 and Carbon loops wait for a Devin login (2026-11-15); an
+        Astra round on `brother` meanwhile
   - [ ] 0.0.2-poc13 VGL27 keeps the managers' boots and gloves IDs (the maintainer,
     2026-11-09, after the PoC): managers keep the old format and Red for their own tests, so
     an official DLC whose boots/gloves IDs differ from what they sent (Studio's slot-based

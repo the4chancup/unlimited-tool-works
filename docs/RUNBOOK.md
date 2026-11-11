@@ -610,18 +610,21 @@ been deleting the previous run's results whenever two runs followed each other. 
 change adds to one is shown to fail by `scripts/review/perturb_check.py` (a list of perturbations,
 each with its test, applied and undone one at a time).
 **Three reviewer loops, cheapest first, one after the other** (the maintainer, 2026-11-06;
-made consecutive 2026-11-08). SWE-2 (free) runs its loop first; then the loop of Gemini 4
-Argon on High thinking (`duck.py --reviewer argon`, model `gemini-4-argon-high`: paid, much
-cheaper than Astra, better than SWE-2 and not as good as Astra); then Astra's loop. Each loops
-by the same rule (another round only when five or more were accepted). Every Argon or Astra
+made consecutive 2026-11-08). SWE-2 runs its loop first; then the loop of Gemini 4
+Carbon on High thinking (`duck.py --reviewer carbon`, model `gemini-4-carbon-high`: paid, much
+cheaper than Astra, better than SWE-2 and not as good as Astra; it replaced Gemini 4 Argon on
+2026-11-11, at Argon's price while its promotion lasts); then Astra's loop. Each loops
+by the same rule (another round only when five or more were accepted). Every Carbon or Astra
 round sits between two SWE-2 subloops, each looping by that rule: one before it, so the dearer
 reviewer sees code SWE-2 has nothing left to say about, and one over its fixes (which is the
 next round's "before"). A paid loop never reruns inside another: an Astra round's fixes get
-the SWE-2 subloop, then the next Astra round, never an Argon one. Example, accepted counts in
-brackets: SWE(7) SWE(3) | Argon(6) SWE(2) Argon(3) SWE(1) | Astra(8) SWE(4) Astra(2) SWE(0).
-Argon runs on the Devin `home` login while it has usage, else on `work` when
-a sidekick holds the live login there (switching logins mid-run would break it). Astra no
-longer runs on `home`: on Codex (`--reviewer astra`), or on `work` (`astra-devin`).
+the SWE-2 subloop, then the next Astra round, never a Carbon one. Example, accepted counts in
+brackets: SWE(7) SWE(3) | Carbon(6) SWE(2) Carbon(3) SWE(1) | Astra(8) SWE(4) Astra(2) SWE(0).
+Which login runs each reviewer changes with the accounts' plans; the lead's memory holds the
+current routing. A Devin login on the Free plan runs nothing. Carbon spends a Devin plan's
+usage far faster than SWE-2's hidden limit does; Astra runs on Codex (`--reviewer astra`).
+A reviewer with no usable login waits for one: its loop is queued in the worklog, and the
+next loop in the order runs meanwhile.
 **The citation audit before every review round over code.** The lead runs `just
 citation-audit` (`CONTRIBUTING.md` "Citation audit": cached, so a run pays for changed pairs
 only) and rules its flags before writing the round's brief, so SWE-2 and Astra do not spend
