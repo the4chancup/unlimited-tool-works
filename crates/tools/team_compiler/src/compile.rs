@@ -27,7 +27,7 @@ use studio_core::{Disposition, ExportId, Message, RunningPes, Scope, Severity, T
 
 use crate::bins::WorkingBins;
 use crate::bins::installed::{self, InstalledPaths};
-use crate::cli::RunInputs;
+use crate::cli::{self, RunInputs};
 use crate::events::RunEvents;
 use crate::messages::{Code, size_text, tool_message};
 use crate::output::deploy::{self, DeployFailure, Download, Installed, Staging};
@@ -356,6 +356,12 @@ fn plan(
                 ExportIdentity::Team { id, .. } => installed.shared_ids(id.get()).cloned(),
                 ExportIdentity::Referees => None,
             };
+            // The team's VGL27 block, `None` when the table does not list it: under a
+            // parsed `legacy_ids.toml`, every recorded old ID is then out of block.
+            let legacy_block = checked
+                .legacy_ids
+                .as_ref()
+                .and_then(|_| inputs.legacy_blocks.of(&resolved.export.team_name));
             exports.push(ExportToPlan {
                 export_id: checked.source.export_id,
                 export: resolved,
@@ -367,6 +373,7 @@ fn plan(
                 settings: checked.settings,
                 settings_refused: checked.settings_refused,
                 legacy_ids: checked.legacy_ids,
+                legacy_block,
             });
         }
         sources.push(CompileSource {
@@ -376,6 +383,11 @@ fn plan(
         });
     }
 
+    // The data directory gets the VGL27 block table to edit once a run compiles a legacy
+    // export: best-effort, and `check` never writes it.
+    if exports.iter().any(|export| export.legacy_ids.is_some()) {
+        cli::create_legacy_blocks(ctx.paths().data_dir.as_deref());
+    }
     let report = plan_run(exports, version, inputs.hide_ids);
     for message in report.messages.into_iter().chain(overrides_active) {
         events.message(message);
@@ -1993,6 +2005,7 @@ mod tests {
             common: ctx.common(),
             hide_ids: fpc::HideIds::CONVENTION,
             teams_list: TeamsList::parse("ID\tName\n792\t/egg/\n").unwrap(),
+            legacy_blocks: crate::plan::legacy_blocks::LegacyBlocks::embedded(),
             exports_root: root.join("exports"),
             exports: Vec::new(),
         }

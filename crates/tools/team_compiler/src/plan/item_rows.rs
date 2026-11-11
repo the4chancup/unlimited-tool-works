@@ -5,6 +5,7 @@
 //! decides the default.
 
 use std::collections::BTreeSet;
+use std::ops::RangeInclusive;
 
 use aesthetics_export::{
     ExportCoverage, FpcDirective, PlayerFolder, PlayerSlot, SharedKind, ValidatedAestheticsExport,
@@ -14,6 +15,7 @@ use pes_version::Engine;
 use vtree::ScopePath;
 
 use super::ids::shared_folders_taking_ids;
+use super::legacy_blocks::in_block;
 use super::legacy_ids::LegacyIds;
 use super::roles::{
     ModelPackage, has_effective_part, link_feeds_own_package, linked_folder, shared_kind_of,
@@ -101,7 +103,7 @@ pub(super) struct RowPlayer {
 /// and no row for a `Midcup` one's, the save keeping his ID. Gloves alike.
 ///
 /// `legacy_ids` is the export's `legacy_ids.toml` when it holds one: the resolution is then
-/// per slot, not per folder (`legacy_rows`).
+/// per slot, not per folder (`legacy_rows`), and `block` the team's VGL27 old-ID block.
 pub(super) fn export_rows(
     tasks: &[BuildTask],
     first: usize,
@@ -109,6 +111,7 @@ pub(super) fn export_rows(
     coverage: ExportCoverage,
     hide_ids: fpc::HideIds,
     legacy_ids: Option<&LegacyIds>,
+    block: Option<&RangeInclusive<u32>>,
 ) -> Vec<ItemRow> {
     let mut items = Vec::new();
     for player in players {
@@ -116,7 +119,13 @@ pub(super) fn export_rows(
             let package = package(table);
             if let Some(legacy) = legacy_ids {
                 items.extend(legacy_rows(
-                    tasks, first, player, table, legacy, coverage, hide_ids,
+                    tasks,
+                    first,
+                    player,
+                    table,
+                    (legacy, block),
+                    coverage,
+                    hide_ids,
                 ));
                 continue;
             }
@@ -156,10 +165,14 @@ pub(super) fn export_rows(
     items
 }
 
-/// `player`'s rows of `table`'s category under `legacy`, the export's `legacy_ids.toml`:
+/// `player`'s rows of `table`'s category under `legacy`, the export's `legacy_ids.toml`
+/// and its team's VGL27 block:
 /// a slot the file records an old ID of the kind for takes it as his row, gated on the
-/// `Models` task of `package` emitting it, his own folder's or the earlier slot's that
-/// packs it once for both. A slot it records none for gets no row when his folder packs
+/// `Models` task of `package` emitting it when the ID lies in `block`, his own folder's
+/// or the earlier slot's that packs it once for both, and held unconditionally when the
+/// block check refuses it (`legacy_id_out_of_block`): no task packs it, but the patch
+/// keeps it, a player wearing another team's boots as his save sets it. A slot it
+/// records none for gets no row when his folder packs
 /// the kind anyway (`own_parts`), the save keeping his ID; when his folder has no package
 /// of the kind he resolves as an export without the file does: a linked shared folder's
 /// ID, an authored stock ID, then the marker's or coverage's default.
@@ -168,10 +181,11 @@ fn legacy_rows(
     first: usize,
     player: &RowPlayer,
     table: ItemTable,
-    legacy: &LegacyIds,
+    legacy: (&LegacyIds, Option<&RangeInclusive<u32>>),
     coverage: ExportCoverage,
     hide_ids: fpc::HideIds,
 ) -> Vec<ItemRow> {
+    let (legacy, block) = legacy;
     let package = package(table);
     let mut items = Vec::new();
     for &player_id in &player.player_ids {
@@ -179,14 +193,24 @@ fn legacy_rows(
             PlayerSlot::new(u8::try_from(player_id % 100).expect("a roster slot is under 100"))
                 .expect("a player id's last digits are his roster slot");
         if let Some(id) = legacy.old_id(slot, table) {
-            // An old ID no task packs (the folder recording it holds no model of the kind)
-            // gives no row: the save keeps his ID rather than naming an empty package.
-            if let Some(task) = task_holding(tasks, first, package, id) {
+            if in_block(block, id) {
+                // An old ID no task packs (the folder recording it holds no model of the
+                // kind) gives no row: the save keeps his ID rather than naming an empty
+                // package.
+                if let Some(task) = task_holding(tasks, first, package, id) {
+                    items.push(ItemRow {
+                        table,
+                        player_id,
+                        id,
+                        task: Some(task),
+                    });
+                }
+            } else {
                 items.push(ItemRow {
                     table,
                     player_id,
                     id,
-                    task: Some(task),
+                    task: None,
                 });
             }
         } else if !player.own_parts.contains(&package) {
@@ -518,6 +542,9 @@ mod tests {
         let export = resolved(name, files, &[], players_txt);
         let mut to_plan = to_plan(ExportId(0), export, two_team_colors(), None);
         to_plan.legacy_ids = Some(LegacyIds::from_toml(ids).unwrap());
+        // The tests' old IDs sit inside this block; the block check's own cases cover
+        // the out-of-block paths.
+        to_plan.legacy_block = Some(2301..=2325);
         rows_and_models(plan_run(
             vec![to_plan],
             PesVersion::Pes21,

@@ -3142,3 +3142,4 @@ worklog passed 7,000 lines.
 - 2026-11-10: poc13c landed (SWE-2, first time): `upgrade --legacy-ids` copies every worn boots/gloves folder into each wearer (a clash is `legacy_merge_clash`) and alone writes `legacy_ids.toml`.
 - 2026-11-10: poc13d landed (SWE-2, first time): a root `legacy_ids.toml` makes the compiler pack each slot's own boots and gloves under his old ID, once per team; `quick_upgrade.bat` passes `--legacy-ids`. 0.0.2-poc13 built but for the block check (0.0.2).
 - 2026-11-11: 0.0.2-poc13f landed: under `--legacy-ids` a clashing boots/gloves merge keeps the folder shared and the compiler packs it under its wearers' old ID (`legacy_merge_clash` gone); the Friendlies had 15 of 39 refused by it.
+- 2026-11-11: 0.0.2-poc13e landed: a legacy old ID outside its team's VGL27 block is `legacy_id_out_of_block` and not packed; the Friendlies' /hanny/ (on /gfg/'s IDs) no longer stops the compile on a duplicate path.

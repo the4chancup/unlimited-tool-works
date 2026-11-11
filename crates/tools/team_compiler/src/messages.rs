@@ -122,6 +122,11 @@ pub(crate) enum Code {
     /// `gloves` keys above the stock band): the file is ignored and the export compiles on
     /// the compiler's own IDs.
     LegacyIdsInvalid,
+    /// A `legacy_ids.toml` records an old boots or gloves ID outside its team's block in
+    /// `legacy_boots_blocks.txt`, or the table does not list the team: the folder is not
+    /// packed under that ID (a shared folder holding it not at all), its wearers' patch
+    /// entries still carrying it.
+    LegacyIdOutOfBlock,
     /// A slot with a portrait in its player folder and one in `Portraits/` whose bytes differ:
     /// the export is skipped, since the compiler cannot tell which one the manager means.
     PortraitConflict,
@@ -598,7 +603,7 @@ impl Code {
     /// Every code, for the catalog test: a variant missing here would make its first message
     /// panic in `severity`, so a new variant is added to this list too.
     #[cfg(test)]
-    const ALL: [Code; 164] = [
+    const ALL: [Code; 165] = [
         Code::ExportExtractFailed,
         Code::NoExportsFound,
         Code::ExportDisabled,
@@ -631,6 +636,7 @@ impl Code {
         Code::GlovesIdPoolExhausted,
         Code::SharedIdsUnrecorded,
         Code::LegacyIdsInvalid,
+        Code::LegacyIdOutOfBlock,
         Code::PortraitConflict,
         Code::LinkCombined,
         Code::SettingsTomlInvalid,
@@ -800,6 +806,7 @@ impl Code {
             Code::GlovesIdPoolExhausted => "gloves_id_pool_exhausted",
             Code::SharedIdsUnrecorded => "shared_ids_unrecorded",
             Code::LegacyIdsInvalid => "legacy_ids_invalid",
+            Code::LegacyIdOutOfBlock => "legacy_id_out_of_block",
             Code::PortraitConflict => "portrait_conflict",
             Code::LinkCombined => "link_combined",
             Code::SettingsTomlInvalid => "settings_toml_invalid",

@@ -7977,7 +7977,11 @@ briefs, review loops, gates and mutation runs as for any step.
       packed once per team, rows resolved per slot (TC-LEG-01/02). `team_compiler`
       `plan/legacy_ids.rs`, `plan/mod.rs`, `plan/item_rows.rs`, `deep/`, `messages`;
       `aesthetics_export` `validate/`; `resources/bundle/quick_upgrade.bat`
-    - [ ] poc13e the block check, brought into the PoC (2026-11-11, lead: the rebuilt
+    - [x] poc13e the block check, brought into the PoC (2026-11-11, SWE-2, landed first
+      time; `team_compiler` `plan/legacy_blocks.rs` new, `plan/mod.rs`, `plan/item_rows.rs`,
+      `cli.rs`, `compile.rs`, `messages`; TC-LEG-03/04 and two more cases). Open: an
+      out-of-block ID a kept-shared folder holds is also reported on each wearer's player
+      folder, which packs nothing of it (duplicate Error lines; after the PoC). Why: the rebuilt
       0.0.2-poc.2's Friendlies compile stopped on a Fatal `cpk_write_failed`, /hanny/ packing
       /gfg/'s `k2351`): `legacy_id_out_of_block`, the data directory's table (TC-LEG-03/04);
       SWE-2 brief `.tmp/0_0_2/poc13/brief_e.md`. /utg/ packs 3252-3273, outside its table

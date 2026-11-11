@@ -2101,6 +2101,7 @@ mod tests {
             common: crate::testing::tool_context(root, "").common(),
             hide_ids: fpc::HideIds::CONVENTION,
             teams_list: teams_list::TeamsList::parse("ID\tName\n714\t/co/\n792\t/egg/\n").unwrap(),
+            legacy_blocks: crate::plan::legacy_blocks::LegacyBlocks::embedded(),
             exports_root: exports.clone(),
             exports: Vec::new(),
         };

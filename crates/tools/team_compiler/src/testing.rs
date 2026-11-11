@@ -184,6 +184,7 @@ pub(crate) fn to_plan(
         settings: BTreeMap::new(),
         settings_refused: BTreeSet::new(),
         legacy_ids: None,
+        legacy_block: None,
     }
 }
 

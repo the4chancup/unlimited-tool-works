@@ -198,3 +198,236 @@ fn a_legacy_export_packs_a_kept_shared_folder_under_its_wearers_old_id() {
         ]
     );
 }
+
+/// One `legacy_id_out_of_block` line, as `messages` renders it, on `folder` for `id`
+/// under `block` (`2301-2325`, or `none` when the table does not list the team).
+fn out_of_block_line(folder: &str, id: u32, block: &str) -> String {
+    format!(
+        "gbfg Full Legacy: Error legacy_id_out_of_block [Keep] at {folder} (id={id}, \
+         folder={folder}, block={block})"
+    )
+}
+
+// TC-LEG-03
+#[test]
+fn an_old_id_outside_the_teams_block_is_an_error_and_not_packed() {
+    let sandbox = Sandbox::new("leg_ids_block");
+    // TC-LEG-01's export, plus slot 09's gloves recorded under /ksg/'s block (2522) and
+    // slot 10's boots one past the block's end (2326 is 2301 + 25, the first ID outside
+    // a 25-ID block).
+    let export = legacy_export(
+        &sandbox,
+        Some(
+            b"[05]\nboots = 2305\n[06]\ngloves = 2310\n[07]\ngloves = 2310\n[09]\ngloves = 2522\n[10]\nboots = 2326\n",
+        ),
+    );
+    sandbox.write(
+        &format!("{export}/Players/09 - E/glove_l.fmdl"),
+        &clean_model(),
+    );
+    sandbox.write(
+        &format!("{export}/Players/10 - F/boots.fmdl"),
+        &clean_model(),
+    );
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+
+    let lines = run.messages();
+    assert_eq!(run.exit_code(), 1, "{lines:#?}");
+    for (folder, id) in [("Players/09 - E", 2522), ("Players/10 - F", 2326)] {
+        assert!(
+            lines
+                .iter()
+                .any(|line| *line == out_of_block_line(folder, id, "2301-2325")),
+            "{lines:#?}"
+        );
+    }
+    assert_eq!(
+        boots_gloves_paths(&sandbox),
+        [
+            "Asset/model/character/boots/k2305/#Win/boots.fpk",
+            "Asset/model/character/glove/g2310/#Win/glove.fpk",
+        ],
+        "the in-block old IDs packed, neither 2522 nor 2326"
+    );
+    let patch = read_patch(&sandbox);
+    let [team] = patch.teams.as_slice() else {
+        panic!("one [[teams]] entry")
+    };
+    assert_eq!(team.players[&5].boots_id, Some(2305));
+    assert_eq!(team.players[&9].gloves_id, Some(2522));
+    assert_eq!(team.players[&10].boots_id, Some(2326));
+
+    // The compile wrote the data directory's block table. Its /gbfg/ row removed, every
+    // recorded old ID is out of block (its block `none`) and none of them packs; the
+    // patch keeps them all.
+    let table = fs::read_to_string(sandbox.root.join("data/legacy_boots_blocks.txt")).unwrap();
+    let without_gbfg: String = table
+        .lines()
+        .filter(|line| !line.starts_with("/gbfg/"))
+        .map(|line| format!("{line}\n"))
+        .collect();
+    sandbox.write("data/legacy_boots_blocks.txt", without_gbfg.as_bytes());
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+    let lines = run.messages();
+    assert_eq!(run.exit_code(), 1, "{lines:#?}");
+    for (folder, id) in [
+        ("Players/05 - A", 2305),
+        ("Players/06 - B", 2310),
+        ("Players/07 - C", 2310),
+        ("Players/09 - E", 2522),
+        ("Players/10 - F", 2326),
+    ] {
+        assert!(
+            lines
+                .iter()
+                .any(|line| *line == out_of_block_line(folder, id, "none")),
+            "{lines:#?}"
+        );
+    }
+    assert_eq!(boots_gloves_paths(&sandbox), Vec::<String>::new());
+    let patch = read_patch(&sandbox);
+    let [team] = patch.teams.as_slice() else {
+        panic!("one [[teams]] entry")
+    };
+    assert_eq!(team.players[&5].boots_id, Some(2305));
+    assert_eq!(team.players[&6].gloves_id, Some(2310));
+}
+
+// TC-LEG-04
+#[test]
+fn the_block_table_is_written_for_a_legacy_compile_and_edits_take() {
+    let sandbox = Sandbox::new("leg_ids_table");
+    let export = legacy_export(&sandbox, None);
+    let table = "data/legacy_boots_blocks.txt";
+
+    // An export without legacy_ids.toml creates no file, and `check` creates none
+    // either, of a legacy export included.
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+    assert_eq!(run.exit_code(), 0, "{:#?}", run.messages());
+    assert!(!sandbox.root.join(table).exists());
+    sandbox.write(&format!("{export}/legacy_ids.toml"), LEGACY_IDS);
+    let run = sandbox.run(&pes21_settings(&sandbox), &["check"]);
+    assert_eq!(run.exit_code(), 0, "{:#?}", run.messages());
+    assert!(!sandbox.root.join(table).exists(), "`check` writes nothing");
+
+    // The first compile of a legacy export writes it from the embedded copy.
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+    assert_eq!(run.exit_code(), 0, "{:#?}", run.messages());
+    let text = fs::read_to_string(sandbox.root.join(table)).unwrap();
+    assert_eq!(text.lines().next(), Some("Name\tFirstBootsID"));
+    assert!(
+        text.lines().any(|line| line == "/gbfg/\t2301"),
+        "the table's /gbfg/ row: {text}"
+    );
+
+    // Its /gbfg/ row edited to 2326, TC-LEG-01's 2305 is out of block (the table the
+    // run reads is the member's).
+    sandbox.write(
+        table,
+        text.replacen("/gbfg/\t2301", "/gbfg/\t2326", 1).as_bytes(),
+    );
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+    let lines = run.messages();
+    assert_eq!(run.exit_code(), 1, "{lines:#?}");
+    assert!(
+        lines
+            .iter()
+            .any(|line| *line == out_of_block_line("Players/05 - A", 2305, "2326-2350")),
+        "{lines:#?}"
+    );
+}
+
+// TC-LEG-03, TC-LEG-05
+#[test]
+fn a_kept_shared_folder_whose_old_id_is_out_of_block_is_not_packed() {
+    let sandbox = Sandbox::new("leg_ids_shared_block");
+    // The sandbox's default teams list does not hold /gbfg/.
+    sandbox.write("data/teams_list.txt", b"ID\tName\n796\t/gbfg/\n");
+    let export = "exports/gbfg Full Legacy";
+    // TC-LEG-05's export, the linkers' recorded boots ID out of /gbfg/'s block.
+    sandbox.write(&format!("{export}/Players/05 - A/Crocs.boots"), b"");
+    sandbox.write(&format!("{export}/Players/08 - D/Crocs.boots"), b"");
+    sandbox.write(&format!("{export}/Players/06 - C/Mitts.gloves"), b"");
+    sandbox.write(&format!("{export}/Boots/Crocs/boots.fmdl"), &clean_model());
+    sandbox.write(
+        &format!("{export}/Gloves/Mitts/glove_l.fmdl"),
+        &clean_model(),
+    );
+    sandbox.write(
+        &format!("{export}/legacy_ids.toml"),
+        b"[05]\nboots = 2522\n[06]\ngloves = 2310\n[08]\nboots = 2522\n",
+    );
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+
+    let lines = run.messages();
+    assert_eq!(run.exit_code(), 1, "{lines:#?}");
+    let out_of_block: Vec<&String> = lines
+        .iter()
+        .filter(|line| line.contains("legacy_id_out_of_block"))
+        .collect();
+    // Once per folder and ID: each linker's folder, and the shared folder itself.
+    assert_eq!(
+        out_of_block,
+        [
+            &out_of_block_line("Boots/Crocs", 2522, "2301-2325"),
+            &out_of_block_line("Players/05 - A", 2522, "2301-2325"),
+            &out_of_block_line("Players/08 - D", 2522, "2301-2325"),
+        ]
+    );
+    assert_eq!(
+        boots_gloves_paths(&sandbox),
+        ["Asset/model/character/glove/g2310/#Win/glove.fpk"],
+        "Crocs packed nowhere: not under 2522, not under a Studio ID"
+    );
+    let patch = read_patch(&sandbox);
+    let [team] = patch.teams.as_slice() else {
+        panic!("one [[teams]] entry")
+    };
+    assert_eq!(team.players[&5].boots_id, Some(2522));
+    assert_eq!(team.players[&8].boots_id, Some(2522));
+    assert_eq!(team.players[&6].gloves_id, Some(2310));
+}
+
+// TC-LEG-03
+#[test]
+fn another_teams_old_id_is_an_error_and_only_the_owning_team_packs_it() {
+    let sandbox = Sandbox::new("leg_ids_friendlies");
+    // /gbfg/ (block 2301 to 2325) and /dbg/ (block 2001 to 2025), each held by the
+    // embedded teams list and the block table alike.
+    sandbox.write(
+        "data/teams_list.txt",
+        b"ID\tName\n789\t/dbg/\n796\t/gbfg/\n",
+    );
+    for (export, folder) in [
+        ("gbfg Full Legacy", "05 - A"),
+        ("dbg Full Legacy", "05 - B"),
+    ] {
+        sandbox.write(
+            &format!("exports/{export}/Players/{folder}/boots.fmdl"),
+            &clean_model(),
+        );
+        sandbox.write(
+            &format!("exports/{export}/legacy_ids.toml"),
+            b"[05]\nboots = 2305\n",
+        );
+    }
+
+    let run = sandbox.run(&pes21_settings(&sandbox), &["compile", "--no-deploy"]);
+
+    let lines = run.messages();
+    // /dbg/'s 2305 is out of its block: an Error on it, not the duplicate path's Fatal.
+    assert_eq!(run.exit_code(), 1, "{lines:#?}");
+    assert!(
+        lines.iter().any(|line| line
+            == "dbg Full Legacy: Error legacy_id_out_of_block [Keep] at Players/05 - B \
+                (id=2305, folder=Players/05 - B, block=2001-2025)"),
+        "{lines:#?}"
+    );
+    assert_eq!(
+        boots_gloves_paths(&sandbox),
+        ["Asset/model/character/boots/k2305/#Win/boots.fpk"],
+        "one k2305, /gbfg/'s"
+    );
+}

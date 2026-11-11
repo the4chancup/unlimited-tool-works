@@ -18,6 +18,7 @@ use teams_list::TeamsList;
 use crate::compile::{CpkLayout, OutputMode, RunPaths, RunningGame};
 use crate::messages::TOOL_ID;
 use crate::output::deploy;
+use crate::plan::legacy_blocks::LegacyBlocks;
 use crate::reader::is_archive;
 use crate::settings::{SavefilePath, TeamCompilerSettings, from_table};
 use crate::{check, compile, upgrade};
@@ -99,6 +100,10 @@ pub(crate) struct RunInputs {
     /// The working teams list (the embedded one when none is installed), which maps each
     /// export's team name to its id.
     pub(crate) teams_list: TeamsList,
+    /// The VGL27 old-ID blocks (the data directory's `legacy_boots_blocks.txt` when it
+    /// holds one, else the embedded table), which a legacy export's recorded old IDs are
+    /// checked against.
+    pub(crate) legacy_blocks: LegacyBlocks,
     /// The folder scanned for exports.
     pub(crate) exports_root: PathBuf,
     /// The `--export` paths, as given; empty for every export under the root.
@@ -432,6 +437,7 @@ fn resolve_inputs(
     paths: &AppPaths,
 ) -> Result<RunInputs, CliError> {
     let teams_list = load_teams_list(&settings.teams_list_path, paths.data_dir.as_deref())?;
+    let legacy_blocks = load_legacy_blocks(paths.data_dir.as_deref())?;
     Ok(RunInputs {
         settings,
         hide_ids: common
@@ -439,6 +445,7 @@ fn resolve_inputs(
             .expect("read_settings refuses an out-of-band hide ID"),
         common,
         teams_list,
+        legacy_blocks,
         exports_root,
         exports,
     })
@@ -498,6 +505,59 @@ fn create_teams_list(setting: &Path, data_dir: Option<&Path>) {
 fn embedded_teams_list() -> TeamsList {
     TeamsList::parse(TeamsList::UPSTREAM)
         .expect("the embedded teams list parses; the teams_list crate's tests check it")
+}
+
+/// The block table file's fixed name in the data directory: no setting, as the file is
+/// the VGL27 stopgap the `legacy_ids.toml` one is.
+const LEGACY_BLOCKS_FILE: &str = "legacy_boots_blocks.txt";
+
+/// The VGL27 block table at `LEGACY_BLOCKS_FILE` in the data directory when present,
+/// else the embedded copy; a file that cannot be read or parsed aborts, as the teams
+/// list's does.
+fn load_legacy_blocks(data_dir: Option<&Path>) -> Result<LegacyBlocks, CliError> {
+    let Some(dir) = data_dir else {
+        return Ok(LegacyBlocks::embedded());
+    };
+    let path = dir.join(LEGACY_BLOCKS_FILE);
+    let text = match fs::read_to_string(&path) {
+        Ok(text) => text,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            return Ok(LegacyBlocks::embedded());
+        }
+        Err(error) => {
+            return Err(CliError::new(
+                ABORTED,
+                anyhow!("{}: cannot read the block table ({error})", path.display()),
+            ));
+        }
+    };
+    LegacyBlocks::parse(&text).map_err(|error| {
+        CliError::new(
+            ABORTED,
+            anyhow!("{} is not a valid block table ({error})", path.display()),
+        )
+    })
+}
+
+/// `compile` gives the member the VGL27 block table to edit: with a data directory and
+/// no file there, it writes the embedded copy when the run compiles an export whose
+/// `legacy_ids.toml` parsed (`check` never writes it). Best-effort, as
+/// `create_teams_list` is: a failure leaves the embedded table to be read with a warning
+/// naming the path, never a failure.
+pub(crate) fn create_legacy_blocks(data_dir: Option<&Path>) {
+    let Some(data_dir) = data_dir else {
+        return;
+    };
+    let path = data_dir.join(LEGACY_BLOCKS_FILE);
+    if path.exists() {
+        return;
+    }
+    if let Err(error) = crate::paths::replace_file(&path, LegacyBlocks::EMBEDDED.as_bytes()) {
+        log::warn!(
+            "{}: the block table cannot be written ({error}); the embedded table is used",
+            path.display()
+        );
+    }
 }
 
 /// The exports root: the command line's (relative to the current directory), else the
