@@ -42,7 +42,9 @@ use crate::referees::{find_refs_txt, players_txt, referee_folders};
 use crate::roster::Roster;
 use crate::settings::{SettingsFiles, legacy_ids, loose_settings_files, settings_files};
 use crate::source::{self, OldExport, SourceFailure};
-use crate::staging::{claim_staging, finish_staging, write_output_file};
+use crate::staging::{
+    PlannedWrite, claim_staging, finish_staging, write_output_file, write_planned,
+};
 use crate::texture_pairs;
 
 /// A command is one run per process, so every event carries the same run id.
@@ -141,6 +143,20 @@ impl RunEvents {
         );
     }
 
+    /// A name for the findings of `export_id`, which is no export of its own
+    /// in this run (the upgrade's output, the second half of the one
+    /// export): the console names its findings by this name, and no counter
+    /// counts it.
+    pub(crate) fn named(&self, export_id: ExportId, display_name: &str) {
+        self.emit(
+            Some(export_id),
+            PipelineEvent::ExportNamed {
+                export_id,
+                display_name: display_name.to_owned(),
+            },
+        );
+    }
+
     /// One finding, addressed to the export its scope names.
     pub(crate) fn message(&mut self, message: Message) {
         self.worst = self.worst.max(Some(message.severity));
@@ -167,6 +183,12 @@ impl RunEvents {
             Some(export_id),
             PipelineEvent::ExportProcessed { export_id },
         );
+    }
+
+    /// `processed` of `total` parts done (the files the run writes into its
+    /// staging folder).
+    pub(crate) fn progress(&self, processed: usize, total: usize) {
+        self.emit(None, PipelineEvent::Progress { processed, total });
     }
 
     /// The worst severity reported so far; `None` when no finding was.
@@ -410,7 +432,7 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
     // "CLI": the staging folder beside the output, claimed before anything
     // is written; an earlier run's leftover is removed and reported.
     let (staging, removed) = claim_staging(&output)?;
-    events.started(OUTPUT, &named.name);
+    events.named(OUTPUT, &named.name);
     if let Some(choice) = named.tag {
         events.message(tool_message(
             Code::CoverageTagChosen,
@@ -439,6 +461,9 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
     // are written as the Note spells them, one per line. The Note itself is
     // never written.
     let mut any_unmigrated = false;
+    // The root files above count as parts already done when the first
+    // `Progress` goes.
+    let mut root_files = 0;
     if let Some(note_text) = &note_text {
         let note_scope = || Scope::File {
             export_id: INPUT,
@@ -483,16 +508,21 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
         }
         if !colors.is_empty() {
             write_output_file(&staging, "colors.txt", colors.as_bytes())?;
+            root_files += 1;
         }
         if let Some(notes) = note::other_notes(note_text) {
             write_output_file(&staging, "notes.txt", format!("{notes}\n").as_bytes())?;
+            root_files += 1;
         }
     }
     // Step 9: the referee roster becomes the root `players.txt`; a
     // `refs.txt` that is not UTF-8 is unmigrated content and none is
     // written, the output validation then reporting the missing roster.
     match &refs_txt {
-        Some((_, Some(text))) => write_output_file(&staging, "players.txt", text.as_bytes())?,
+        Some((_, Some(text))) => {
+            write_output_file(&staging, "players.txt", text.as_bytes())?;
+            root_files += 1;
+        }
         Some((path, None)) => {
             any_unmigrated = true;
             events.message(unmigrated(
@@ -704,6 +734,12 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
         }
         events.message(message);
     }
+    // The files the run writes, each a part the progress line counts once
+    // planning is over: the copies a rewrite does not replace, then each
+    // list's own files. A rewritten `.mtl` or `face.xml` replaces its
+    // input's copy, and a written `ingame_face.toml` the empty marker at
+    // its path (step 8), so each decision is made once, here.
+    let mut planned = Vec::new();
     for (from, to) in plan
         .copies
         .iter()
@@ -717,25 +753,27 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
             // A rewritten `.mtl` or `face.xml` replaces its input's copy.
             continue;
         }
-        match export.read(from) {
-            Ok(bytes) => write_output_file(&staging, to, &bytes)?,
-            Err(failure) => {
-                // One file's failure does not cost the rest.
-                events.message(read_failed(INPUT, failure, Disposition::DropFile));
-            }
-        }
+        planned.push(PlannedWrite::Copy {
+            input: from,
+            output: to,
+        });
     }
-    for (path, bytes) in &kits.written {
-        write_output_file(&staging, path, bytes)?;
-    }
-    for (path, bytes) in &materials.written {
-        write_output_file(&staging, path, bytes)?;
-    }
-    for (path, bytes) in &face_xml {
-        write_output_file(&staging, path, bytes)?;
+    for (path, bytes) in kits
+        .written
+        .iter()
+        .chain(&materials.written)
+        .chain(&face_xml)
+    {
+        planned.push(PlannedWrite::Bytes {
+            output: path,
+            bytes,
+        });
     }
     for link in &materials.links {
-        write_output_file(&staging, link, b"")?;
+        planned.push(PlannedWrite::Bytes {
+            output: link,
+            bytes: &[],
+        });
     }
     for marker in &plan.markers {
         // Step 8's filled `ingame_face.toml` supersedes the empty marker file
@@ -743,11 +781,20 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
         if settings.written.iter().any(|(path, _)| path == marker) {
             continue;
         }
-        write_output_file(&staging, marker, b"")?;
+        planned.push(PlannedWrite::Bytes {
+            output: marker,
+            bytes: &[],
+        });
     }
     for (path, bytes) in &settings.written {
-        write_output_file(&staging, path, bytes)?;
+        planned.push(PlannedWrite::Bytes {
+            output: path,
+            bytes,
+        });
     }
+    write_planned(&staging, &planned, root_files, &mut events, |path| {
+        export.read(path)
+    })?;
     // Every player folder exists even when no file lands in it: an empty
     // face folder's player folder is what makes the compiler write the
     // blank face (step 3).
@@ -816,15 +863,13 @@ pub(crate) fn run(args: &UpgradeArgs, ctx: &ToolContext) -> Result<u8, CliError>
     if any_unmigrated {
         events.unmigrated();
     }
-    // The input's half ends here: read and migrated, whatever it left behind.
-    events.processed(INPUT);
 
     // "Verification": the shared validation on what was written, read in the
     // staging folder. Every issue goes through `events.message`, whose
     // disposition sets `dropped`.
     validate_output(&staging, &named.name, version, &mut events);
-    // The output's half ends with its validation.
-    events.processed(OUTPUT);
+    // The upgrade's one export ends once its output is validated.
+    events.processed(INPUT);
 
     // "CLI": the verdict line and the exit code: not clean when a finding
     // was an Error or dropped anything, the tool's own and the output

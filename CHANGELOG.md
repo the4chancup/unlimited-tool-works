@@ -26,6 +26,8 @@ What changed for members, release by release, newest first.
 
 ### Minor fixes
 
+- **Export upgrader** — the progress line in a terminal counts one upgrade as one export
+  (`0/1`, not `0/2`), and counts the files it writes, where only the clock moved.
 - **Save editor** — an aesthetics patch's names now show in game on PES 2019: applying it
   marks each renamed player as edited, as typing the name does, where they showed
   PLACEHOLDER. `apply-patch` writing back over its own save with no player applied now

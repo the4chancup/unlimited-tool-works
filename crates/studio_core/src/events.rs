@@ -54,6 +54,15 @@ pub enum PipelineEvent {
         /// Human-readable name for the row label.
         display_name: String,
     },
+    /// A name for the findings of an export id that is not an export of its own in the
+    /// run: the Export upgrader's output, the second half of one upgrade. It names the
+    /// id for `EventLines` exactly as `ExportStarted` does, but no counter counts it.
+    ExportNamed {
+        /// The export the name is for.
+        export_id: ExportId,
+        /// Human-readable name for the findings' lines.
+        display_name: String,
+    },
     /// An export left the pipeline, whatever its outcome.
     ExportProcessed {
         /// The export.
@@ -268,7 +277,8 @@ impl Scope {
 /// Turns pipeline events into the console's `-` lines: one self-contained line per `Message`
 /// (source name, severity, code, location, context fields), so lines from exports processed in
 /// parallel never need a header to be read. Remembers each export's source name from its
-/// `ExportStarted` event, so one value serves one run: export ids restart with the next.
+/// `ExportStarted` or `ExportNamed` event, so one value serves one run: export ids restart with
+/// the next.
 #[derive(Debug, Default)]
 pub struct EventLines {
     names: HashMap<ExportId, String>,
@@ -284,6 +294,10 @@ impl EventLines {
     pub fn line(&mut self, event: &PipelineEvent) -> Option<String> {
         match event {
             PipelineEvent::ExportStarted {
+                export_id,
+                display_name,
+            }
+            | PipelineEvent::ExportNamed {
                 export_id,
                 display_name,
             } => {
@@ -443,6 +457,31 @@ mod tests {
         assert_eq!(
             printer().line(&event).unwrap(),
             "- co Midcup Spring.zip: Info export_identified"
+        );
+    }
+
+    #[test]
+    fn a_named_exports_findings_carry_its_name() {
+        // The name of an id that is no export of its own (the upgrader's
+        // output) serves its findings' lines exactly as a started one's.
+        let mut printer = printer();
+        assert_eq!(
+            printer.line(&PipelineEvent::ExportNamed {
+                export_id: ExportId(2),
+                display_name: "co Full Spring".to_owned(),
+            }),
+            None
+        );
+        let event = message(
+            Severity::Error,
+            "file_type_disallowed",
+            Scope::Export {
+                export_id: ExportId(2),
+            },
+        );
+        assert_eq!(
+            printer.line(&event).unwrap(),
+            "- co Full Spring: Error file_type_disallowed"
         );
     }
 

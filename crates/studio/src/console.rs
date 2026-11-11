@@ -93,6 +93,7 @@ fn print_events(
                 *folders_with_errors,
             )),
             PipelineEvent::ExportProcessed { .. }
+            | PipelineEvent::ExportNamed { .. }
             | PipelineEvent::FolderStatus { .. }
             | PipelineEvent::Message(_)
             | PipelineEvent::Output(_)
@@ -157,7 +158,8 @@ impl RunCounts {
             PipelineEvent::Progress { processed, total } => {
                 self.parts = Some((*processed, *total));
             }
-            PipelineEvent::FolderStatus { .. }
+            PipelineEvent::ExportNamed { .. }
+            | PipelineEvent::FolderStatus { .. }
             | PipelineEvent::Message(_)
             | PipelineEvent::Output(_)
             | PipelineEvent::Complete { .. }
@@ -263,13 +265,19 @@ pub(crate) fn spawn_notice_printer(requests: Receiver<ShellRequest>) -> JoinHand
 #[cfg(test)]
 mod tests {
     use std::borrow::Cow;
+    use std::fs;
+    use std::path::Path;
+    use std::sync::{Arc, Mutex};
 
     use crossbeam_channel::unbounded;
+    use pes_version::PesVersion;
     use studio_core::{
-        Disposition, ExportId, Message, MessageCode, Notice, NoticeKind, RunId, Scope, Severity,
+        AppPaths, Disposition, ExportId, Message, MessageCode, Notice, NoticeKind, RunId, Scope,
+        Settings, Severity, StudioTool, ToolContext,
     };
 
     use super::*;
+    use crate::test_dir::TestDir;
 
     /// The `export_id`-less envelope every run's events share.
     fn envelope(event: PipelineEvent) -> PipelineEventEnvelope {
@@ -338,6 +346,137 @@ mod tests {
         }
         drop(tx);
         rx
+    }
+
+    /// The files below `folder`, counted; a folder itself is no file.
+    fn file_count(folder: &Path) -> usize {
+        fs::read_dir(folder)
+            .unwrap()
+            .map(|entry| {
+                let path = entry.unwrap().path();
+                if path.is_dir() { file_count(&path) } else { 1 }
+            })
+            .sum()
+    }
+
+    /// A counters line's parts pair (`1/9 parts`), `None` when it has none.
+    fn parts_of(line: &str) -> Option<(usize, usize)> {
+        let pair = line.strip_suffix(" parts")?.rsplit(" | ").next()?;
+        let (done, total) = pair.split_once('/')?;
+        let count = |text: &str| text.replace(',', "").parse().ok();
+        Some((count(done)?, count(total)?))
+    }
+
+    // EU-CLI-12
+    #[test]
+    fn an_upgrades_progress_line_counts_its_one_export_and_the_files_it_writes() {
+        // EU-CLI-01's /co/ export and its save, run in-process through the
+        // tool's command line as the binary's sandbox runs it.
+        let dir = TestDir::new("console_upgrade");
+        let export = dir.path().join("co - Spring");
+        fs::create_dir_all(export.join("Other")).unwrap();
+        fs::write(export.join("Other/readme.txt"), b"x").unwrap();
+        fs::write(
+            export.join("co Note.txt"),
+            b"Team: /co/\r\n\r\nTeam Colours:\r\n- 1st: 048 146 082\r\n",
+        )
+        .unwrap();
+        let face = export.join("Faces/XXX05 - A");
+        fs::create_dir_all(&face).unwrap();
+        for (name, bytes) in [
+            ("fcl_hair.fmdl", b"hair" as &[u8]),
+            ("face_diff.bin", b"diff"),
+            ("shirt.dds", b"shirt"),
+            ("portrait.dds", b"portrait"),
+        ] {
+            fs::write(face.join(name), bytes).unwrap();
+        }
+        let save = dir.path().join("EDIT");
+        fs::write(&save, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
+
+        let tool = export_upgrader::Tool::new();
+        let mut settings = Settings::parse("").unwrap();
+        settings.merge_defaults(tool.id(), &tool.default_settings());
+        let (events_tx, events_rx) = unbounded();
+        let (requests_tx, _requests_rx) = unbounded();
+        let ctx = ToolContext::new(
+            Arc::new(Mutex::new(settings)),
+            AppPaths {
+                exe_dir: dir.path().to_path_buf(),
+                data_dir: Some(dir.path().join("data")),
+            },
+            events_tx,
+            requests_tx,
+        );
+        let matches = tool
+            .cli_command()
+            .try_get_matches_from([
+                "export-upgrader",
+                "upgrade",
+                export.to_str().unwrap(),
+                "--savefile",
+                save.to_str().unwrap(),
+            ])
+            .unwrap();
+        assert_eq!(tool.cli_run(&matches, &ctx).unwrap(), 0);
+        drop(ctx);
+        let events: Vec<PipelineEventEnvelope> = events_rx.iter().collect();
+
+        // The counters the line draws, after each event.
+        let mut counts = RunCounts::new();
+        let lines: Vec<String> = events
+            .iter()
+            .filter_map(|envelope| {
+                counts.observe(&envelope.event);
+                counts.line()
+            })
+            .collect();
+        assert_eq!(lines.first().map(String::as_str), Some("0/1 exports"));
+        assert!(
+            lines.iter().all(|line| !line.contains("/2 exports")),
+            "one upgrade is one export, never two: {lines:?}"
+        );
+        // The parts are the files the output holds: `colors.txt`, the face
+        // folder's files and its `settings.toml` here.
+        let files = file_count(&dir.path().join("co Full - Spring"));
+        // A line keeps its parts pair until the next `Progress`, so
+        // consecutive duplicates collapse to the events' own sequence.
+        let mut parts: Vec<(usize, usize)> =
+            lines.iter().filter_map(|line| parts_of(line)).collect();
+        parts.dedup();
+        assert!(
+            !parts.is_empty(),
+            "the parts counter appears once the files are planned"
+        );
+        assert!(
+            parts.iter().all(|(_, total)| *total == files),
+            "the parts total is the output's file count: {parts:?} for {files} files"
+        );
+        assert!(
+            parts.windows(2).all(|pair| pair[0].0 + 1 == pair[1].0),
+            "each write counts one part: {parts:?}"
+        );
+        assert_eq!(parts.last().unwrap().0, files);
+        assert_eq!(
+            lines.last().unwrap(),
+            &format!("1/1 exports | {0}/{0} parts", grouped(files))
+        );
+
+        // The finding lines are the run's, the line drawn or not.
+        let printed = |draw: bool| {
+            let (tx, rx) = unbounded();
+            for envelope in events.iter().cloned() {
+                tx.send(envelope).unwrap();
+            }
+            drop(tx);
+            let (mut out, mut err) = (Vec::new(), Vec::new());
+            print_events(rx, draw, &mut out, &mut err).unwrap();
+            (out, err)
+        };
+        let (out_draw, _) = printed(true);
+        let (out_piped, err_piped) = printed(false);
+        assert_eq!(out_draw, out_piped, "the line changes no stdout byte");
+        assert_eq!(err_piped, b"", "nothing is drawn on a piped stderr");
     }
 
     #[test]
@@ -414,6 +553,22 @@ mod tests {
             total: 6,
         });
         assert_eq!(counts.line().as_deref(), Some("1/2 exports | 3/6 parts"));
+    }
+
+    #[test]
+    fn an_exports_name_alone_is_no_export_started() {
+        // A name for an id that is no export of its own (the upgrader's
+        // output) neither starts the drawing nor raises the total.
+        let mut counts = RunCounts::new();
+        counts.observe(&PipelineEvent::ExportStarted {
+            export_id: ExportId(1),
+            display_name: "co Spring".to_owned(),
+        });
+        counts.observe(&PipelineEvent::ExportNamed {
+            export_id: ExportId(2),
+            display_name: "co Full Spring".to_owned(),
+        });
+        assert_eq!(counts.line().as_deref(), Some("0/1 exports"));
     }
 
     #[test]

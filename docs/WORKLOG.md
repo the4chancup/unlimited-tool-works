@@ -8051,6 +8051,13 @@ briefs, review loops, gates and mutation runs as for any step.
     `--timestamps` (TC-CLI-13). After the PoC (the maintainer, 2026-11-10: cosmetic, not
     needed for it). The upgrade's `ExportProcessed(INPUT)` comes before the validation today
     and its output half sends its own, so the step also moves the first and drops the second
+    - [x] ux1a the upgrader's line (EU-CLI-12): `PipelineEvent::ExportNamed` names the output
+      half, which no counter counts (`0/1`, then `1/1` once validated); the parts are the
+      files written into the staging folder, `staging.rs` `write_planned` shared by both
+      runs. `studio_core` `events.rs`, `studio` `console.rs`, `export_upgrader` `upgrade/`,
+      `model_folders.rs`, `staging.rs`; match arms in three tools' test helpers. No test for
+      a failed read's part (no fixture fails a read mid-write)
+    - [ ] ux1b `--timestamps` on `check` and `compile` (TC-CLI-13)
   - [ ] 0.0.2-chk library parity against checkpoints, not Red (the maintainer, 2026-11-09:
     parity with Red was proven once the core was built; divergence is expected since, and
     accounting for it at every run grows costlier). *Lead*, the shape (veto any):

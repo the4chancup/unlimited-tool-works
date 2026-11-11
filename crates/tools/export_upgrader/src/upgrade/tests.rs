@@ -328,22 +328,27 @@ fn a_missing_shared_link_target_drops_its_folder() {
 }
 
 #[test]
-fn each_started_export_is_processed_once_after_its_start() {
-    // The console's exports counter reads `0/2` for a whole upgrade when neither the
-    // input nor the output is ever reported processed.
+fn the_input_is_processed_once_its_named_output_is_validated() {
+    // One upgrade is one export: the output is only named for its findings'
+    // lines, and the input's `processed` comes after the output's
+    // validation, so the console's counter reads `0/1` then `1/1`.
     let root = scratch("upgrade_processed");
-    fs::create_dir_all(root.join("co Spring/Boots/k0430 - Crocs")).unwrap();
+    fs::create_dir_all(root.join("co Spring/Faces/XXX05 - Bob/alt")).unwrap();
     fs::write(root.join("co Spring/co Note.txt"), b"Team: /co/\r\n").unwrap();
+    // `alt/face.xml` is copied as it is, and the output's check refuses it:
+    // the finding is the output's, and `processed` must follow it.
     fs::write(
-        root.join("co Spring/Boots/k0430 - Crocs/boots.MODEL"),
-        b"model",
+        root.join("co Spring/Faces/XXX05 - Bob/alt/face.xml"),
+        b"<config/>",
     )
     .unwrap();
+    let save = root.join("EDIT");
+    fs::write(&save, pes_savefile::fixture_save(PesVersion::Pes21)).unwrap();
     let (ctx, events_rx) = test_ctx();
     let args = UpgradeArgs {
         export: root.join("co Spring"),
-        savefile: None,
-        loose: true,
+        savefile: Some(save),
+        loose: false,
         legacy_ids: false,
         coverage: None,
         output: None,
@@ -358,8 +363,12 @@ fn each_started_export_is_processed_once_after_its_start() {
             PipelineEvent::ExportStarted { export_id, .. } => {
                 Some(format!("started {}", export_id.0))
             }
+            PipelineEvent::ExportNamed { export_id, .. } => Some(format!("named {}", export_id.0)),
             PipelineEvent::ExportProcessed { export_id } => {
                 Some(format!("processed {}", export_id.0))
+            }
+            PipelineEvent::Message(message) if message.scope.export_id() == Some(OUTPUT) => {
+                Some(format!("output {}", message.code.code))
             }
             _ => None,
         })
@@ -368,9 +377,9 @@ fn each_started_export_is_processed_once_after_its_start() {
         events,
         [
             format!("started {}", INPUT.0),
-            format!("started {}", OUTPUT.0),
+            format!("named {}", OUTPUT.0),
+            "output file_type_disallowed".to_owned(),
             format!("processed {}", INPUT.0),
-            format!("processed {}", OUTPUT.0),
         ]
     );
 }

@@ -9,9 +9,11 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use anyhow::anyhow;
-use studio_core::CliError;
+use studio_core::{CliError, Disposition};
 
-use crate::upgrade::aborted;
+use crate::messages::{INPUT, read_failed};
+use crate::source::SourceFailure;
+use crate::upgrade::{RunEvents, aborted};
 
 /// The claim on the output folder both commands make before anything is
 /// written, one rule for both modes: an existing `output` is refused rather
@@ -68,6 +70,58 @@ pub(crate) fn claim_staging(output: &Path) -> Result<(PathBuf, bool), CliError> 
         ))
     })?;
     Ok((staging, removed))
+}
+
+/// One file the run plans to write into the staging folder.
+pub(crate) enum PlannedWrite<'a> {
+    /// `input` read from the old export, its bytes written at `output`; a
+    /// failed read is `source_read_failed` on the input, not an abort.
+    Copy {
+        /// The input-relative path read.
+        input: &'a str,
+        /// The staging-relative path written.
+        output: &'a str,
+    },
+    /// `bytes` written at `output`.
+    Bytes {
+        /// The staging-relative path written.
+        output: &'a str,
+        /// The file's contents.
+        bytes: &'a [u8],
+    },
+}
+
+/// Writes every `planned` file into `staging` in list order, each one a
+/// part the run's progress counts: `Progress` goes once before the first,
+/// `done` the files the run already wrote (an upgrade's root files), then
+/// after each write, `total` every file the run writes. A copy whose input
+/// read fails still counts: the run has moved past it, and a counter that
+/// stops short reads as hung.
+pub(crate) fn write_planned(
+    staging: &Path,
+    planned: &[PlannedWrite<'_>],
+    done: usize,
+    events: &mut RunEvents,
+    mut read: impl FnMut(&str) -> Result<Vec<u8>, SourceFailure>,
+) -> Result<(), CliError> {
+    let total = done + planned.len();
+    events.progress(done, total);
+    for (index, write) in planned.iter().enumerate() {
+        match write {
+            PlannedWrite::Copy { input, output } => match read(input) {
+                Ok(bytes) => write_output_file(staging, output, &bytes)?,
+                // One file's failure does not cost the rest.
+                Err(failure) => {
+                    events.message(read_failed(INPUT, failure, Disposition::DropFile));
+                }
+            },
+            PlannedWrite::Bytes { output, bytes } => {
+                write_output_file(staging, output, bytes)?;
+            }
+        }
+        events.progress(done + index + 1, total);
+    }
+    Ok(())
 }
 
 /// Writes `bytes` to `staging`'s file at `relative`, parent folders created;

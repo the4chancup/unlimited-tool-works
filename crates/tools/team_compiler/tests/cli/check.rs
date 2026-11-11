@@ -39,7 +39,8 @@ fn check_brackets_each_export_with_its_start_and_end() {
                     assert_eq!(*export_id, ExportId(0));
                     "processed"
                 }
-                PipelineEvent::FolderStatus { .. }
+                PipelineEvent::ExportNamed { .. }
+                | PipelineEvent::FolderStatus { .. }
                 | PipelineEvent::Output(_)
                 | PipelineEvent::Progress { .. }
                 | PipelineEvent::Complete { .. }

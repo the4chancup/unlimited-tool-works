@@ -21,15 +21,14 @@ use crate::far::far_drops;
 use crate::kit_magic::{drop_collisions, respell_outputs};
 use crate::materials::material_references;
 use crate::messages::{
-    Code, INPUT, OUTPUT, UnmigratedReason, extract_failed, issue_message, read_failed,
-    tool_message, unmigrated,
+    Code, INPUT, OUTPUT, UnmigratedReason, extract_failed, issue_message, tool_message, unmigrated,
 };
 use crate::model_names::rename_models;
 use crate::players::{
     ItemKind, clean_folder_name, file_name, is_stray, parse_item_name, path_scope, slot_of,
 };
 use crate::source::{self, OldExport};
-use crate::staging::{claim_staging, finish_staging, write_output_file};
+use crate::staging::{PlannedWrite, claim_staging, finish_staging, write_planned};
 use crate::texture_pairs;
 use crate::upgrade::{Identity, RunEvents, invalid, output_issues, resolve_input, verdict};
 
@@ -361,7 +360,7 @@ pub(crate) fn run(args: &UpgradeModelsArgs, ctx: &ToolContext) -> Result<u8, Cli
     };
     let output_name = output_name.to_string_lossy().into_owned();
     let (staging, removed) = claim_staging(&output)?;
-    events.started(OUTPUT, &output_name);
+    events.named(OUTPUT, &output_name);
     if removed {
         events.message(tool_message(
             Code::StagingFolderRemoved,
@@ -432,8 +431,11 @@ pub(crate) fn run(args: &UpgradeModelsArgs, ctx: &ToolContext) -> Result<u8, Cli
         events.unmigrated();
     }
 
-    // The writes publish the staged paths: the `Players/`/`Boots/`/`Gloves/`
-    // level comes off, each output folder droppable as it stands.
+    // The files the run writes, each a part the progress line counts once
+    // planning is over, as in `upgrade`. The writes publish the staged
+    // paths: the `Players/`/`Boots/`/`Gloves/` level comes off, each output
+    // folder droppable as it stands.
+    let mut planned = Vec::new();
     for (from, to) in &plan.copies {
         if materials.written.iter().any(|(output, _)| output == to)
             || face_xml.iter().any(|(output, _)| output == to)
@@ -441,25 +443,30 @@ pub(crate) fn run(args: &UpgradeModelsArgs, ctx: &ToolContext) -> Result<u8, Cli
             // A rewritten `.mtl` or `face.xml` replaces its input's copy.
             continue;
         }
-        match export.read(from) {
-            Ok(bytes) => write_output_file(&staging, published(to), &bytes)?,
-            Err(failure) => {
-                events.message(read_failed(INPUT, failure, Disposition::DropFile));
-            }
-        }
+        planned.push(PlannedWrite::Copy {
+            input: from,
+            output: published(to),
+        });
     }
-    for (path, bytes) in &materials.written {
-        write_output_file(&staging, published(path), bytes)?;
-    }
-    for (path, bytes) in &face_xml {
-        write_output_file(&staging, published(path), bytes)?;
+    for (path, bytes) in materials.written.iter().chain(&face_xml) {
+        planned.push(PlannedWrite::Bytes {
+            output: published(path),
+            bytes,
+        });
     }
     for link in &materials.links {
-        write_output_file(&staging, published(link), b"")?;
+        planned.push(PlannedWrite::Bytes {
+            output: published(link),
+            bytes: &[],
+        });
     }
     for marker in &plan.markers {
-        write_output_file(&staging, published(marker), b"")?;
+        planned.push(PlannedWrite::Bytes {
+            output: published(marker),
+            bytes: &[],
+        });
     }
+    write_planned(&staging, &planned, 0, &mut events, |path| export.read(path))?;
 
     // The report names, per output folder, where it goes once dropped in.
     for folder in &plan.folders {
@@ -474,8 +481,6 @@ pub(crate) fn run(args: &UpgradeModelsArgs, ctx: &ToolContext) -> Result<u8, Cli
             vec![("into", folder.destination.into_value().to_owned())],
         ));
     }
-    // The input's half ends here: read and migrated, as in `upgrade`.
-    events.processed(INPUT);
 
     // "Verification": the shared validation on the output as it will sit
     // once dropped into an export (the published paths placed back below
@@ -510,8 +515,9 @@ pub(crate) fn run(args: &UpgradeModelsArgs, ctx: &ToolContext) -> Result<u8, Cli
         };
         events.message(issue_message(&issue, OUTPUT));
     }
-    // The output's half ends with its validation.
-    events.processed(OUTPUT);
+    // The run's one export ends once its output is validated, as in
+    // `upgrade`.
+    events.processed(INPUT);
 
     // "CLI": the verdict line and the exit code, as `upgrade`'s, the verdict
     // publishing the staging folder or removing it: only a clean run writes
@@ -525,6 +531,7 @@ pub(crate) fn run(args: &UpgradeModelsArgs, ctx: &ToolContext) -> Result<u8, Cli
 #[cfg(test)]
 mod tests {
     use std::fs;
+    use std::path::Path;
 
     use studio_core::{PipelineEvent, PipelineEventEnvelope};
 
@@ -870,6 +877,17 @@ mod tests {
         assert_eq!(staged("Other/x", &folders), "Other/x");
     }
 
+    /// The files below `folder`, counted; a folder itself is no file.
+    fn file_count(folder: &Path) -> usize {
+        fs::read_dir(folder)
+            .unwrap()
+            .map(|entry| {
+                let path = entry.unwrap().path();
+                if path.is_dir() { file_count(&path) } else { 1 }
+            })
+            .sum()
+    }
+
     /// The codes of the run's `Message` events, in order.
     fn codes(events_rx: &crossbeam_channel::Receiver<PipelineEventEnvelope>) -> Vec<String> {
         events_rx
@@ -905,12 +923,16 @@ mod tests {
     }
 
     #[test]
-    fn each_started_export_is_processed_once_after_its_start() {
-        // The console's exports counter reads `0/2` for a whole run when neither the input
-        // nor the output is ever reported processed.
+    fn the_input_is_processed_once_its_named_output_is_validated() {
+        // As `upgrade`'s: one run is one export, the output only named for
+        // its findings' lines, the input's `processed` after the output's
+        // validation.
         let root = scratch("models_run_processed");
-        fs::create_dir_all(root.join("new models/k0431")).unwrap();
-        fs::write(root.join("new models/k0431/boots.model"), b"model").unwrap();
+        fs::create_dir_all(root.join("new models/XXX05 - A/alt")).unwrap();
+        fs::write(root.join("new models/XXX05 - A/face.fmdl"), b"face").unwrap();
+        // `alt/face.xml` is copied as it is, and the output's check refuses
+        // it: the finding is the output's, and `processed` must follow it.
+        fs::write(root.join("new models/XXX05 - A/alt/face.xml"), b"<config/>").unwrap();
         let (ctx, events_rx) = test_ctx();
         let args = UpgradeModelsArgs {
             folder: root.join("new models"),
@@ -926,8 +948,14 @@ mod tests {
                 PipelineEvent::ExportStarted { export_id, .. } => {
                     Some(format!("started {}", export_id.0))
                 }
+                PipelineEvent::ExportNamed { export_id, .. } => {
+                    Some(format!("named {}", export_id.0))
+                }
                 PipelineEvent::ExportProcessed { export_id } => {
                     Some(format!("processed {}", export_id.0))
+                }
+                PipelineEvent::Message(message) if message.scope.export_id() == Some(OUTPUT) => {
+                    Some(format!("output {}", message.code.code))
                 }
                 _ => None,
             })
@@ -936,10 +964,46 @@ mod tests {
             events,
             [
                 format!("started {}", INPUT.0),
-                format!("started {}", OUTPUT.0),
+                format!("named {}", OUTPUT.0),
+                "output model_folder_destination".to_owned(),
+                "output file_type_disallowed".to_owned(),
                 format!("processed {}", INPUT.0),
-                format!("processed {}", OUTPUT.0),
             ]
+        );
+    }
+
+    #[test]
+    fn the_parts_counter_rises_by_one_to_the_files_the_output_holds() {
+        // The parts are the files the run writes: one `Progress` before
+        // them, one after each, the last at the output's file count.
+        let root = scratch("models_run_parts");
+        fs::create_dir_all(root.join("new models/k0431")).unwrap();
+        fs::write(root.join("new models/k0431/boots.model"), b"model").unwrap();
+        let (ctx, events_rx) = test_ctx();
+        let args = UpgradeModelsArgs {
+            folder: root.join("new models"),
+            output: None,
+        };
+
+        run(&args, &ctx).unwrap();
+        drop(ctx);
+
+        let progress: Vec<(usize, usize)> = events_rx
+            .iter()
+            .filter_map(|envelope| match envelope.event {
+                PipelineEvent::Progress { processed, total } => Some((processed, total)),
+                _ => None,
+            })
+            .collect();
+        let files = file_count(&root.join("new models upgraded"));
+        assert!(
+            progress.iter().all(|(_, total)| *total == files),
+            "every Progress carries the output's file count: {progress:?}"
+        );
+        assert_eq!(
+            progress.iter().map(|(done, _)| *done).collect::<Vec<_>>(),
+            (0..=files).collect::<Vec<_>>(),
+            "the count rises by one to the output's file count"
         );
     }
 
