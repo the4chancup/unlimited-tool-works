@@ -246,7 +246,10 @@ the checks a slice's own change fails first. `just gates-changed <the last commi
 at>` runs once over every commit since, at a checkpoint: the end of a surface's review loop,
 right before its mutation run ("Mutation runs" below), which then starts from a tree known
 green; a worklog step's close; a merge of another branch. The full `just gates` runs before a
-release build, and CI runs it on every push. A failure a checkpoint finds in a dependent
+release build, and CI runs it on every push. A push is asked for only at a commit `just
+gates-changed <the last gated commit>` passed at, run after the stretch's last commit, so
+CI is never a stretch's first full run: a push of commits no checkpoint had gated went red on
+a broken doc pointer (2026-11-11). A failure a checkpoint finds in a dependent
 package is fixed by a commit of its own (or an amend of the newest unpushed one) naming the
 commit that caused it: the history stays local until the push, so a later find costs a short
 search over a few small commits, while running every dependent's tests on every commit cost
