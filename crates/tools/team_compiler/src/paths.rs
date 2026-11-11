@@ -420,6 +420,16 @@ pub(crate) fn kit_stand_in_game_name(name: &str) -> Option<String> {
     ))
 }
 
+/// Whether the game supplies the texture file `name` a model or `.mtl` names: a stem that,
+/// folded, starts `dummy_` (`dummy_nrm`, the old stand-in `dummy_kit`), or a kit stand-in
+/// (`team_kit`, `team_gk_kit_back`). The modded exes substitute such a texture, so the
+/// compiler never looks it up, and the Export upgrader keeps a path to it as written in an
+/// FMDL, and in a `.mtl` when the path is into the team's Common.
+pub(crate) fn game_supplied(name: &str) -> bool {
+    vtree::fold_name(file_stem(name)).starts_with("dummy_")
+        || kit_stand_in_game_name(name).is_some()
+}
+
 /// Whether `name`'s file stem is the kit stand-in in its old spelling, the game's — the
 /// stand-in test on `dummy_kit` and `dummy_gk_kit` — which `dummy_kit_name_old` refuses:
 /// `dummy_kit_srm`, `Dummy_GK_Kit` are, `dummy_kitten`, `dummy_nrm` and every other

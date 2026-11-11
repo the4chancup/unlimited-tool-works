@@ -132,8 +132,16 @@ fn a_name_holding_the_legacy_kit_token_is_refused_once_on_its_outermost_name() {
         "{lines:#?}"
     );
     assert_eq!(run.exit_code(), 1, "{lines:#?}");
-    // The finding's text names the upgrader that respells the token.
-    assert_row_says("kit_token_old", &["export-upgrader upgrade"]);
+    // The finding's text names the folders it checks, the letter case it matches, and the
+    // upgrader that respells the token.
+    assert_row_says(
+        "kit_token_old",
+        &[
+            "inside a player, Boots or Gloves folder or in `Common/`",
+            "`u0`, `p` and `g` in lowercase as shown",
+            "export-upgrader upgrade",
+        ],
+    );
 }
 
 // TC-MOD-16

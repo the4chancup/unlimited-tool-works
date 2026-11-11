@@ -1285,9 +1285,9 @@ struct XmlOutcome {
 /// game): when it cannot be read, `source_read_failed`; when it does not parse, one finding
 /// dropping the folder, `xml_broken` (not UTF-8, not well-formed XML), `xml_root_tag_invalid`
 /// (its root is not `<config>`) or `face_diff_invalid` (its `<dif>` is no face diff the game
-/// reads), naming the file and the reason; else `user_face_xml::check`'s, then
-/// `kit_token_old` for each path holding a legacy kit token (`xml_legacy_kit_paths`), with
-/// the xml.
+/// reads), naming the file and the reason; else `user_face_xml::check`'s, then, in a player
+/// folder's `face.xml` (`kit_token_checked`), `kit_token_old` for each path holding a legacy
+/// kit token (`xml_legacy_kit_paths`), with the xml.
 fn user_xml_findings(
     content: &ContentSource,
     file: &FileDescriptor,
@@ -1329,8 +1329,13 @@ fn user_xml_findings(
         .into_iter()
         .map(finding)
         .collect();
-    findings.extend(
+    let legacy_kit_paths = if kit_token_checked(&file.path) {
         xml_legacy_kit_paths(&xml)
+    } else {
+        Vec::new()
+    };
+    findings.extend(
+        legacy_kit_paths
             .into_iter()
             .map(|reference| ContentFinding {
                 code: Code::KitTokenOld.as_str(),
@@ -1472,18 +1477,44 @@ fn read(
         })
 }
 
+/// Whether the Export upgrader respells a legacy kit token in the file at export path `path`,
+/// in its name and in the paths it names: it does for a file below a player folder
+/// (`Players/<folder>/`), a Boots or Gloves folder (`Boots/<folder>/`, `Gloves/<folder>/`)
+/// or in `Common/`, and for no other (a shared face folder's, a collar's). `kit_token_old`
+/// checks exactly these files: refusing a token anywhere else would send the member to an
+/// upgrade that leaves it as written. The upgrader's half of this rule is its
+/// `respell_outputs`. The root folders are matched in any letter case, as the export's
+/// content folders are.
+fn kit_token_checked(path: &ScopePath) -> bool {
+    let mut segments = path.segments();
+    let root = segments.next().unwrap_or_default();
+    let is = |name: &str| root.eq_ignore_ascii_case(name);
+    // How many segments below the root the file needs: a model folder's own name is not
+    // respelled, so a player, Boots or Gloves file sits below its folder.
+    let depth = if is("Players") || is("Boots") || is("Gloves") {
+        2
+    } else if is(COMMON) {
+        1
+    } else {
+        return false;
+    };
+    segments.count() >= depth
+}
+
 /// The outermost names below the folder at `folder` (its export path) holding a legacy kit
-/// token, among its `files`, as export paths: each file's or subfolder's outermost such name,
-/// once (folded), in file order. A subfolder so named stands for every file below it: the
-/// fix, an upgrade, is the same for all of them. The folder's own name is not checked: the
-/// Export upgrader respells the names below a player, shared or `Common/` folder and keeps
-/// that folder's own, so refusing it would send the member to a tool that changes nothing.
+/// token, among its `files` the upgrader respells (`kit_token_checked`), as export paths:
+/// each file's or subfolder's outermost such name, once (folded), in file order. A subfolder
+/// so named stands for every file below it: the fix, an upgrade, is the same for all of them.
+/// The folder's own name is not checked: the Export upgrader respells the names below a
+/// player, Boots, Gloves or `Common/` folder and keeps that folder's own, so refusing it would
+/// send the member to a tool that changes nothing.
 fn legacy_token_names<'a>(folder: &str, files: &'a [FileDescriptor]) -> Vec<&'a str> {
     // Below the folder: past its path and the `/` after it.
     let below = folder.len() + 1;
     let mut seen = BTreeSet::new();
     files
         .iter()
+        .filter(|file| kit_token_checked(&file.path))
         .filter_map(|file| {
             let path = file.path.as_str();
             let name = &path[..below + legacy_token_name_end(path.get(below..)?)?];
@@ -1749,7 +1780,12 @@ fn file_outcome(
             false,
         ));
     }
-    for reference in &read.legacy_kit_paths {
+    let legacy_kit_paths = if kit_token_checked(&file.path) {
+        read.legacy_kit_paths.as_slice()
+    } else {
+        &[]
+    };
+    for reference in legacy_kit_paths {
         findings.push(finding(
             Code::KitTokenOld.as_str(),
             vec![("file", name.to_owned()), ("reference", reference.clone())],
@@ -2598,6 +2634,28 @@ mod tests {
             kit_token_names(&path("Boots/u0XXXp1"), &files),
             [refused("Boots/u0XXXp1", "Boots/u0XXXp1/x/u0714p1.dds")]
         );
+    }
+
+    #[test]
+    fn the_legacy_kit_token_is_checked_where_the_upgrader_respells_it() {
+        // Below a player, Boots or Gloves folder, its root in any letter case, and in
+        // `Common/`; not a model folder's own name, a shared face folder or a collar.
+        for (at, checked) in [
+            ("Players/05 - A/face.mtl", true),
+            ("players/05 - A/x/face.mtl", true),
+            ("Boots/Crocs/boots.fmdl", true),
+            ("GLOVES/Mitts/glove_l.fmdl", true),
+            ("Common/u0XXXp1.dds", true),
+            ("common/jessie/u0XXXp1.dds", true),
+            ("Players/05 - A", false),
+            ("Boots/Crocs", false),
+            ("Common", false),
+            ("Faces/Round/face.mtl", false),
+            ("Collars/collar_12.fmdl", false),
+            ("Kits/kit1/u0XXXp1.dds", false),
+        ] {
+            assert_eq!(kit_token_checked(&path(at)), checked, "{at}");
+        }
     }
 
     #[test]
