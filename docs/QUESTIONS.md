@@ -47,28 +47,12 @@ The Refs arranger's three below come from its readiness audit (worklog 13.0a,
 
 ## The 0.0.2 Save editor report
 
-- **The tester's files.** The PES 2019 in-game run (worklog 0.0.2-se19) reproduced the
-  tester's placeholders (a name edit on an unflagged player draws PLACEHOLDER) but not their
-  default stats: typed stats showed with every flag clear. Can the tester send the save before
-  and after their edit, with what they changed? A byte diff of the two says what the write
-  did, which no reconstruction of their steps can.
 - **Seasonal logos on an uncompressed kit.** On PES 2019 an uncompressed 4096 main kit
   (worklog 0.0.2b) loads and draws in Edit mode with no crash, but no seasonal logo showed
   (`.tmp/0_0_2/ingame/poc/s42_egg_body.png`). Does PES 2019 place the logos in Edit mode at
   all, or does this need a match to show whether Fox games write them into an uncompressed
   kit as PES 15–17 do? The player also draws see-through in that capture; the export's
   textures are a noise test pattern with alpha about 68, which may be all it is.
-
-## The 0.0.2 cut
-
-- **What the cut waits for.** The handover now opens with the release's blocking path
-  (`RUNBOOK.md` "How the work runs"), and the lead's reading of it for 0.0.2 is: Update now
-  (0.0.2-upd, with the command line's notice and the TLS provider), the in-game check of the
-  PoC bundle, the library checkpoints (0.0.2-chk), then the cut. Which of the other open
-  0.0.2 steps must be in it: the illegal formation check (0.0.2c), the compile profile
-  against Red (0.0.2d), `codegen-units` (0.0.2-cgu), the tester's report (0.0.2-se19), the
-  Save editor asks of 2026-11-03 (cmp, drag, undo, inst, drift, clip, statlbl)? Until
-  answered they wait behind the path above.
 
 ## After the release
 
