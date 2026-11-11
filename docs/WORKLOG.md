@@ -7954,10 +7954,12 @@ briefs, review loops, gates and mutation runs as for any step.
         `validate/` `common_file_dropped`; `team_compiler` `deep/mod.rs`, `materials.rs`,
         `model.rs`, `messages`; TC-STR-22, TC-MOD-107, TC-MOD-91's fixture. The `.mtl`
         call of `names_export_file` has no test of its own (its `face.xml` twin has)
-      - [ ] review rounds: SWE-2 and Carbon loops wait for a Devin login (2026-11-15). Astra
-        ran meanwhile: A-poc12s4, 2 accepted (names below a player or shared folder and in
-        `Common/` only; a bare `.mtl` name is the folder's own; DECISIONS 2026-11-11), its
-        loop ended
+      - [ ] review rounds. Astra A-poc12s4: 2 accepted (names below a player or shared folder
+        and in `Common/` only; a bare `.mtl` name is the folder's own; DECISIONS 2026-11-11),
+        its loop ended. SWE-2 S-poc12s4 r1 (two parts): part a 2 nits (`aa38922c`); part b 5
+        accepted, the check wider than the upgrader's respelling (`Faces/`, collars,
+        game-supplied names; the catalog row's text): rework by Opus sidekick `sk_kto`
+        (`.tmp/0_0_2/poc12s4/brief_scope.md`), then SWE-2 r2; Carbon after 11-15
   - [ ] 0.0.2-poc13 VGL27 keeps the managers' boots and gloves IDs (the maintainer,
     2026-11-09, after the PoC): managers keep the old format and Red for their own tests, so
     an official DLC whose boots/gloves IDs differ from what they sent (Studio's slot-based
@@ -8742,6 +8744,13 @@ pruned when their phase closes; they stay in git history. A question only the ma
 can answer is not an issue: it goes to `docs/QUESTIONS.md`, and an issue that waits on one
 points there.
 
+- open 2026-11-11 (S-poc12s4 r1; `export_upgrader` `kit_magic.rs` `respell_outputs`) — The
+  Export upgrader respells the old kit token only below `Players/`, `Boots/`, `Gloves/` and
+  in `Common/`, and `kit_token_old` follows it there. Whether Red's kit magic also rewrote
+  tokens in collar models (`Collars/`) is unchecked: if it did, an old export's collar
+  naming `u0???pN` compiled right under Red and ships the token verbatim now, and the
+  upgrader should respell collars too (and `kit_token_old` follow). Check Red's
+  `path_id_change` callers on `main`.
 - resolved 2026-11-11 (report17; `Texport::new`, `EditFile::team_records`) — A PES 2017
   Texport exported by the save editor (0.0.2-poc.1, a DBC7 tester's `/racestars/`) showed no
   players in the kick-off screen's "Starting Lineup", though Edit listed them: `Texport::new`
