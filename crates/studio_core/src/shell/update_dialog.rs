@@ -151,8 +151,7 @@ impl UpdateDialog {
     /// Draws the dialog while it is up and returns the member's answer when
     /// one lands, the dialog then closed. Update now and Retry install
     /// `release` into `bundle`, the program's folder, downloading through
-    /// `open_url`. A running install's reports are read on every call, the
-    /// dialog hidden or not.
+    /// `open_url`.
     pub(super) fn show(
         &mut self,
         ctx: &egui::Context,
@@ -160,7 +159,6 @@ impl UpdateDialog {
         bundle: &Path,
         open_url: &Arc<OpenUrl>,
     ) -> Option<UpdateAnswer> {
-        self.poll_install();
         if !self.open {
             return None;
         }
@@ -200,12 +198,15 @@ impl UpdateDialog {
         Some(answer)
     }
 
-    /// Reads the running install's reports: the last progress stays for the
-    /// line, and the outcome moves the dialog on. A cancelled install brings
-    /// the offer back; a worker gone without an outcome is a failure.
-    fn poll_install(&mut self) {
+    /// Reads the running install's reports, the dialog hidden or not: the
+    /// last progress stays for the line, and the outcome moves the dialog on.
+    /// A cancelled install brings the offer back; a worker gone without an
+    /// outcome is a failure. Returns whether the install succeeded on this
+    /// call, once per install, so the shell turns the offer into `Update
+    /// ready` then.
+    pub(super) fn poll_install(&mut self) -> bool {
         let Stage::Downloading(install) = &mut self.stage else {
-            return;
+            return false;
         };
         let next = loop {
             match install.reports.try_recv() {
@@ -213,7 +214,7 @@ impl UpdateDialog {
                 Ok(Report::Done(Ok(_))) => break Stage::Ready,
                 Ok(Report::Done(Err(InstallError::Cancelled))) => break Stage::Offer,
                 Ok(Report::Done(Err(error))) => break Stage::Failed(Failure::of(&error)),
-                Err(TryRecvError::Empty) => return,
+                Err(TryRecvError::Empty) => return false,
                 Err(TryRecvError::Disconnected) => {
                     log::warn!("the update's worker ended without an outcome");
                     break Stage::Failed(Failure {
@@ -224,6 +225,7 @@ impl UpdateDialog {
             }
         };
         self.stage = next;
+        matches!(self.stage, Stage::Ready)
     }
 }
 

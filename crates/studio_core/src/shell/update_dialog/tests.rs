@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::Read;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crossbeam_channel::{Sender, bounded};
@@ -38,6 +38,10 @@ const WAY_OUT: &str = "You can download v0.0.2 from the release page instead.";
 /// `Update failed`'s second paragraph when nothing was changed.
 const NOTHING_CHANGED: &str =
     "Nothing was changed. You can download v0.0.2 from the release page instead.";
+/// The bar's text once the fixture's `v0.0.2` is installed.
+const READY_TEXT: &str = "Update ready: v0.0.2";
+/// The bundle's program, spelled out as each platform names it.
+const PROGRAM: &str = if cfg!(windows) { "UTW.exe" } else { "utw" };
 
 /// A shell whose update check answers the shared releases fixture at once:
 /// the offer lands on the bar once the worker's reply is drained. Returns the
@@ -81,6 +85,42 @@ fn update_shell(name: &str, assets: Vec<(String, Vec<u8>)>) -> (Shell, PathBuf, 
 fn update_now(egui_ctx: &egui::Context, app: &mut StudioApp) {
     let nodes = open_details(egui_ctx, app);
     click(egui_ctx, app, entry(&nodes, "Update now"));
+}
+
+/// A shell whose update has installed into a fresh program folder, the
+/// dialog showing `Update ready`. Returns the shell, the program's folder,
+/// the context its frames ran on and the dialog's nodes.
+fn ready_shell(name: &str) -> (Shell, PathBuf, egui::Context, Vec<accesskit::Node>) {
+    let (mut shell, bundle, go_on) = update_shell(name, running_assets(None));
+    drop(go_on);
+    let egui_ctx = test_context();
+    update_now(&egui_ctx, &mut shell.app);
+    let nodes = frame_until_text(&egui_ctx, &mut shell.app, READY_SENTENCE);
+    (shell, bundle, egui_ctx, nodes)
+}
+
+/// Replaces `app`'s program start with a recorder, returning the paths it
+/// is asked to start, in order.
+fn record_starts(app: &mut StudioApp) -> Arc<Mutex<Vec<PathBuf>>> {
+    let starts = Arc::new(Mutex::new(Vec::new()));
+    let recorded = Arc::clone(&starts);
+    app.update_start = Box::new(move |path: &Path| {
+        recorded.lock().unwrap().push(path.to_owned());
+        Ok(())
+    });
+    starts
+}
+
+/// Asserts that the bar reads `Update ready: v0.0.2` and no offer is left.
+fn assert_ready_bar(nodes: &[accesskit::Node], when: &str) {
+    assert!(
+        nodes.iter().any(|node| node.value() == Some(READY_TEXT)),
+        "the bar reads {READY_TEXT:?} {when}"
+    );
+    assert!(
+        !has_text(nodes, "Update available"),
+        "no offer is left {when}"
+    );
 }
 
 /// The download's line once `done` MB of the archive are in.
@@ -140,6 +180,18 @@ fn make_check_due(shell: &Shell) {
     let interval = crate::updater::interval_secs(&settings.common);
     settings.common.last_update_check =
         Some(crate::updater::now_secs().saturating_sub(interval + 60));
+}
+
+/// Makes `app`'s update check answer the releases fixture and count its
+/// fetches, returning the count.
+fn count_fetches(app: &mut StudioApp) -> Arc<AtomicUsize> {
+    let fetches = Arc::new(AtomicUsize::new(0));
+    let counted = Arc::clone(&fetches);
+    app.update_fetch = Arc::new(move || {
+        counted.fetch_add(1, Ordering::SeqCst);
+        Ok(crate::updater::RELEASES_FIXTURE.to_owned())
+    });
+    fetches
 }
 
 /// Asserts that ten frames start no check: none is running after them and
@@ -479,6 +531,7 @@ fn cancel_during_the_download_brings_the_offer_back() {
 }
 
 // A stray click or key must neither cancel a download nor hide one that runs.
+// ST-UPD-03
 #[test]
 fn the_backdrop_and_escape_leave_the_download_on_screen() {
     let (mut shell, bundle, go_on) = update_shell("dialog_backdrop", running_assets(None));
@@ -521,16 +574,12 @@ fn the_backdrop_and_escape_leave_the_download_on_screen() {
 // A check could replace the release under the dialog, so none runs while an
 // install runs or after one succeeded; a failed install leaves them as they
 // were.
+// ST-UPD-03
 #[test]
 fn no_check_runs_while_an_install_runs_or_after_it_succeeded() {
     let (mut shell, bundle, go_on) =
         update_shell("dialog_no_check", running_assets(Some("11".repeat(32))));
-    let fetches = Arc::new(AtomicUsize::new(0));
-    let counted = Arc::clone(&fetches);
-    shell.app.update_fetch = Arc::new(move || {
-        counted.fetch_add(1, Ordering::SeqCst);
-        Ok(crate::updater::RELEASES_FIXTURE.to_owned())
-    });
+    let fetches = count_fetches(&mut shell.app);
     let egui_ctx = test_context();
     update_now(&egui_ctx, &mut shell.app);
     frame_until_text(&egui_ctx, &mut shell.app, &download_line("0.0"));
@@ -572,6 +621,7 @@ fn no_check_runs_while_an_install_runs_or_after_it_succeeded() {
 
 // The window closed during a download cancels it and waits for its worker, so
 // a swap is never cut midway.
+// ST-UPD-03
 #[test]
 fn a_window_closed_during_the_download_waits_for_the_worker() {
     let (mut shell, bundle, go_on) = update_shell("dialog_exit", running_assets(None));
@@ -625,6 +675,7 @@ fn a_worker_that_ends_without_an_outcome_is_a_failure() {
 
 // Only a failure that left the program's folder as it was says so: when the
 // old files could not be put back, something was changed.
+// ST-UPD-03
 #[test]
 fn update_failed_says_nothing_was_changed_only_when_so() {
     let (mut shell, _data) = offer_shell("studio_core_update_not_restored");
@@ -653,4 +704,128 @@ fn update_failed_says_nothing_was_changed_only_when_so() {
             "{error}"
         );
     }
+}
+
+// ST-UPD-05
+#[test]
+fn the_bar_reads_update_ready_after_the_install_and_details_opens_it_again() {
+    let (mut shell, bundle, egui_ctx, nodes) = ready_shell("dialog_bar_ready");
+    assert_ready_bar(&nodes, "at Update ready");
+
+    click(&egui_ctx, &mut shell.app, entry(&nodes, "Later"));
+    let nodes = frame(&egui_ctx, &mut shell.app, Vec::new(), true).nodes;
+    assert!(!has_text(&nodes, READY_SENTENCE), "Later closed the dialog");
+    assert_ready_bar(&nodes, "after Later");
+
+    click(&egui_ctx, &mut shell.app, entry(&nodes, "Details"));
+    let nodes = idle(&egui_ctx, &mut shell.app, 10).nodes;
+    text_node(&nodes, READY_SENTENCE);
+    assert!(
+        !has_text(&nodes, SENTENCE),
+        "Details does not open the offer"
+    );
+
+    let fetches = count_fetches(&mut shell.app);
+    make_check_due(&shell);
+    assert_no_check(&egui_ctx, &mut shell.app, &fetches, "after Later");
+    fs::remove_dir_all(bundle).unwrap();
+}
+
+// ST-UPD-05
+#[test]
+fn the_bar_reads_update_ready_when_the_install_ends_behind_a_held_close() {
+    let (mut shell, bundle, go_on) = update_shell("dialog_bar_hidden", running_assets(None));
+    let egui_ctx = test_context();
+    update_now(&egui_ctx, &mut shell.app);
+    let held = download_line("0.0");
+    frame_until_text(&egui_ctx, &mut shell.app, &held);
+
+    *shell.calls[0].unsaved.lock().unwrap() = true;
+    let out = frame_closing(&egui_ctx, &mut shell.app);
+    assert!(out.commands.contains(&egui::ViewportCommand::CancelClose));
+    assert!(
+        !has_text(&out.nodes, &held),
+        "the held close hid the dialog"
+    );
+
+    drop(go_on);
+    let nodes = frame_until_text(&egui_ctx, &mut shell.app, READY_TEXT);
+    assert_ready_bar(&nodes, "with the dialog hidden");
+    assert!(!has_text(&nodes, READY_SENTENCE), "the dialog stays hidden");
+    fs::remove_dir_all(bundle).unwrap();
+}
+
+// ST-UPD-05
+#[test]
+fn restart_now_closes_the_window_then_starts_the_new_program_once() {
+    let (mut shell, bundle, egui_ctx, nodes) = ready_shell("dialog_restart");
+    let starts = record_starts(&mut shell.app);
+
+    click(&egui_ctx, &mut shell.app, entry(&nodes, "Restart now"));
+    let out = frame(&egui_ctx, &mut shell.app, Vec::new(), true);
+    assert!(
+        out.commands.contains(&egui::ViewportCommand::Close),
+        "Restart now asks the window to close"
+    );
+    assert!(
+        starts.lock().unwrap().is_empty(),
+        "nothing starts before the window has closed"
+    );
+
+    shell.app.on_exit();
+    assert_eq!(*starts.lock().unwrap(), vec![bundle.join(PROGRAM)]);
+    shell.app.on_exit();
+    assert_eq!(
+        starts.lock().unwrap().len(),
+        1,
+        "a second exit starts nothing"
+    );
+    fs::remove_dir_all(bundle).unwrap();
+}
+
+// ST-UPD-05
+#[test]
+fn a_close_a_tool_holds_drops_the_restart_for_good() {
+    let (mut shell, bundle, egui_ctx, nodes) = ready_shell("dialog_restart_held");
+    let starts = record_starts(&mut shell.app);
+    *shell.calls[0].unsaved.lock().unwrap() = true;
+
+    click(&egui_ctx, &mut shell.app, entry(&nodes, "Restart now"));
+    let out = frame(&egui_ctx, &mut shell.app, Vec::new(), true);
+    assert!(out.commands.contains(&egui::ViewportCommand::Close));
+    let out = frame_closing(&egui_ctx, &mut shell.app);
+    assert!(
+        out.commands.contains(&egui::ViewportCommand::CancelClose),
+        "the tool holds the close"
+    );
+    click(&egui_ctx, &mut shell.app, entry(&out.nodes, "Cancel"));
+
+    // The work saved, the close button later closes the window.
+    *shell.calls[0].unsaved.lock().unwrap() = false;
+    frame(&egui_ctx, &mut shell.app, Vec::new(), true);
+    let out = frame_closing(&egui_ctx, &mut shell.app);
+    assert!(
+        !out.commands.contains(&egui::ViewportCommand::CancelClose),
+        "the premise: nothing holds the later close"
+    );
+    shell.app.on_exit();
+    assert!(
+        starts.lock().unwrap().is_empty(),
+        "a held close dropped the restart"
+    );
+    fs::remove_dir_all(bundle).unwrap();
+}
+
+// ST-UPD-05
+#[test]
+fn later_starts_nothing_when_the_window_closes() {
+    let (mut shell, bundle, egui_ctx, nodes) = ready_shell("dialog_later");
+    let starts = record_starts(&mut shell.app);
+
+    click(&egui_ctx, &mut shell.app, entry(&nodes, "Later"));
+    let out = frame_closing(&egui_ctx, &mut shell.app);
+    assert!(!out.commands.contains(&egui::ViewportCommand::CancelClose));
+    shell.app.on_exit();
+    assert!(starts.lock().unwrap().is_empty(), "Later starts nothing");
+    fs::remove_dir_all(bundle).unwrap();
 }

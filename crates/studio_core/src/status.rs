@@ -19,6 +19,12 @@ pub enum ShellCondition {
         /// The version available.
         version: String,
     },
+    /// The offer's release is installed and waits for a restart: the offer
+    /// becomes this reminder, its Details opening `Update ready` again.
+    UpdateReady {
+        /// The version installed.
+        version: String,
+    },
 }
 
 impl ShellCondition {
@@ -26,7 +32,9 @@ impl ShellCondition {
     pub(crate) fn icon(&self) -> &'static str {
         match self {
             ShellCondition::DataDirReadOnly => crate::icons::WARNING,
-            ShellCondition::UpdateAvailable { .. } => crate::icons::DOWNLOAD_SIMPLE,
+            ShellCondition::UpdateAvailable { .. } | ShellCondition::UpdateReady { .. } => {
+                crate::icons::DOWNLOAD_SIMPLE
+            }
         }
     }
 
@@ -37,6 +45,7 @@ impl ShellCondition {
             ShellCondition::UpdateAvailable { version } => {
                 format!("Update available: v{version}")
             }
+            ShellCondition::UpdateReady { version } => format!("Update ready: v{version}"),
         }
     }
 
@@ -49,6 +58,11 @@ impl ShellCondition {
                     .to_owned()
             }
             ShellCondition::UpdateAvailable { .. } => "A newer release is out".to_owned(),
+            ShellCondition::UpdateReady { version } => format!(
+                "{} {} is installed. Restart to start using it.",
+                crate::APP_NAME,
+                crate::shell::version_label_of(version, false)
+            ),
         }
     }
 
@@ -57,10 +71,12 @@ impl ShellCondition {
     /// text only.
     pub(crate) fn action(&self) -> Option<NoticeAction> {
         match self {
-            ShellCondition::UpdateAvailable { .. } => Some(NoticeAction {
-                label: "Details".to_owned(),
-                effect: ActionEffect::OpenUpdateDetails,
-            }),
+            ShellCondition::UpdateAvailable { .. } | ShellCondition::UpdateReady { .. } => {
+                Some(NoticeAction {
+                    label: "Details".to_owned(),
+                    effect: ActionEffect::OpenUpdateDetails,
+                })
+            }
             ShellCondition::DataDirReadOnly => None,
         }
     }
@@ -160,4 +176,30 @@ pub enum ActionEffect {
         /// selection while the notice is up, so the click must not read it back.
         version: PesVersion,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn an_installed_update_reads_as_ready_with_the_offers_icon_and_details() {
+        let ready = ShellCondition::UpdateReady {
+            version: "0.0.2".to_owned(),
+        };
+        let offer = ShellCondition::UpdateAvailable {
+            version: "0.0.2".to_owned(),
+        };
+        assert_eq!(ready.text(), "Update ready: v0.0.2");
+        assert_eq!(
+            ready.tooltip(),
+            "Unlimited Tool Works v0.0.2 pre-alpha is installed. Restart to start using it."
+        );
+        assert_eq!(ready.icon(), offer.icon());
+        assert!(
+            offer.action().is_some(),
+            "the premise: the offer has Details"
+        );
+        assert_eq!(ready.action(), offer.action());
+    }
 }

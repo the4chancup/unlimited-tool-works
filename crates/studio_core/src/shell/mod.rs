@@ -19,6 +19,10 @@ mod title;
 mod update_dialog;
 mod window_size;
 
+#[cfg(not(target_arch = "wasm32"))]
+use std::io;
+#[cfg(not(target_arch = "wasm32"))]
+use std::path::Path;
 use std::path::PathBuf;
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::Arc;
@@ -104,7 +108,7 @@ pub fn version_label() -> String {
 /// version's major and minor, so a bump can never leave a stale word. A version that
 /// does not parse is a build error the workspace cannot have, so `expect`, not a
 /// fallback.
-fn version_label_of(version: &str, debug: bool) -> String {
+pub(crate) fn version_label_of(version: &str, debug: bool) -> String {
     let mut parts = version.split('.');
     let number = |part: Option<&str>| {
         part.and_then(|part| part.parse::<u32>().ok())
@@ -185,7 +189,20 @@ pub struct StudioApp {
     /// runs, and the notes' cache.
     #[cfg(not(target_arch = "wasm32"))]
     update_dialog: update_dialog::UpdateDialog,
+    /// Set by `Update ready`'s Restart now, cleared by a close a tool holds:
+    /// while set, the window's close starts the new program.
+    #[cfg(not(target_arch = "wasm32"))]
+    update_restart: bool,
+    /// Starts the program at the given path without waiting for it: a real
+    /// process in the window, a recorder in the tests.
+    #[cfg(not(target_arch = "wasm32"))]
+    update_start: Box<StartProgram>,
 }
+
+/// What Restart now calls once the window has closed: start the program at a
+/// path, not waiting for it.
+#[cfg(not(target_arch = "wasm32"))]
+type StartProgram = dyn Fn(&Path) -> io::Result<()>;
 
 /// Where the update check stands (native only; the browser build checks
 /// nothing): one check at a time, off the UI thread, and again once the
@@ -262,6 +279,11 @@ impl StudioApp {
             update_open_url: Arc::new(updater::open_url),
             #[cfg(not(target_arch = "wasm32"))]
             update_dialog: update_dialog::UpdateDialog::default(),
+            #[cfg(not(target_arch = "wasm32"))]
+            update_restart: false,
+            // The child is not waited for: it outlives the window that starts it.
+            #[cfg(not(target_arch = "wasm32"))]
+            update_start: Box::new(|path| std::process::Command::new(path).spawn().map(drop)),
         }
     }
 
@@ -462,15 +484,29 @@ impl StudioApp {
 
     /// The update dialog, drawn while `update_release` stands (the release it
     /// was opened for gone, it closes itself); its Update now installs into
-    /// the program's folder. Its answers: Skip this version stores the version
-    /// as `skipped_version`, drops the offer and the release and saves as
-    /// every settings change does; the others only close it.
+    /// the program's folder, and an install that succeeds, the dialog shown or
+    /// hidden, turns the bar's offer into `Update ready`. Its answers: Skip
+    /// this version stores the version as `skipped_version`, drops the offer
+    /// and the release and saves as every settings change does; Restart now
+    /// arms the restart and asks the window to close as its close button does
+    /// (`on_exit` starts the new program); the others only close it.
     #[cfg(not(target_arch = "wasm32"))]
     fn show_update_dialog(&mut self, egui_ctx: &egui::Context) {
         let Some(release) = self.update_release.as_ref() else {
             self.update_dialog.close();
             return;
         };
+        if self.update_dialog.poll_install() {
+            let version = release.version.to_string();
+            self.status_bar.set_condition(
+                ShellCondition::UpdateAvailable {
+                    version: version.clone(),
+                },
+                false,
+            );
+            self.status_bar
+                .set_condition(ShellCondition::UpdateReady { version }, true);
+        }
         let answer = self.update_dialog.show(
             egui_ctx,
             release,
@@ -486,11 +522,11 @@ impl StudioApp {
                 self.update_release = None;
                 self.save_settings();
             }
-            Some(
-                update_dialog::UpdateAnswer::RemindLater
-                | update_dialog::UpdateAnswer::RestartNow
-                | update_dialog::UpdateAnswer::Later,
-            )
+            Some(update_dialog::UpdateAnswer::RestartNow) => {
+                self.update_restart = true;
+                self.ctx.request(ShellRequest::Close);
+            }
+            Some(update_dialog::UpdateAnswer::RemindLater | update_dialog::UpdateAnswer::Later)
             | None => {}
         }
     }
@@ -732,6 +768,12 @@ impl eframe::App for StudioApp {
             self.sidebar.about_open = false;
             #[cfg(not(target_arch = "wasm32"))]
             self.update_dialog.close();
+            // A held close drops Restart now for good: the member answers the tool's
+            // prompt, and a later close is an ordinary one.
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                self.update_restart = false;
+            }
         }
         let focused = egui_ctx.input(|input| input.focused);
         let activities = self.activities(true);
@@ -835,8 +877,12 @@ impl eframe::App for StudioApp {
 
     /// The window's last normal place, and whether it was maximized, go into `window_main` as
     /// the window closes. eframe calls this once, on every exit path. A running update
-    /// install is cancelled first and waited for, so its swap is never cut midway.
+    /// install is cancelled first and waited for, so its swap is never cut midway. After
+    /// Restart now, the new program in the program's folder is started last, once the
+    /// settings are saved, so it reads them as this window leaves them.
     fn on_exit(&mut self) {
+        #[cfg(not(target_arch = "wasm32"))]
+        let restart = std::mem::take(&mut self.update_restart);
         #[cfg(not(target_arch = "wasm32"))]
         self.update_dialog.stop_install();
         if let Some(place) = self.window_place {
@@ -845,6 +891,18 @@ impl eframe::App for StudioApp {
                 ..place
             });
             self.save_settings();
+        }
+        // The path is the bundle's own, never this program's: on Linux the running
+        // program has moved into `old/` by now.
+        #[cfg(not(target_arch = "wasm32"))]
+        if restart {
+            let program = updater::program_path(&self.ctx.paths().exe_dir);
+            if let Err(error) = (self.update_start)(&program) {
+                warn!(
+                    "the new program {} could not be started: {error}",
+                    program.display()
+                );
+            }
         }
     }
 }

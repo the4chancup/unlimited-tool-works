@@ -19,6 +19,7 @@ pub use install::{InstallError, Installed, OpenUrl, Progress, install};
 pub use swap::SwapStep;
 
 use std::io::Read;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -33,6 +34,11 @@ use crate::settings::CommonSettings;
 /// no release still leaves the newest release inside the one page.
 const RELEASES_URL: &str =
     "https://api.github.com/repos/the4chancup/unlimited-tool-works/releases?per_page=30";
+
+/// The environment variable that replaces `RELEASES_URL`: the end-to-end
+/// test's hook, so a test build reads a list served from this PC or a test
+/// repository instead of the releases members read.
+const RELEASES_URL_VARIABLE: &str = "UTW_RELEASES_URL";
 
 /// The whole check's budget: a list unanswered within it is a failed check,
 /// which shows nothing.
@@ -229,15 +235,31 @@ fn agent_config() -> ureq::config::ConfigBuilder<ureq::typestate::AgentScope> {
         .user_agent(concat!("unlimited-tool-works/", env!("CARGO_PKG_VERSION")))
 }
 
+/// The address the releases list is read from, given `UTW_RELEASES_URL`'s
+/// value: the value when it is set and not empty, else `RELEASES_URL`.
+fn releases_url(variable: Option<&str>) -> &str {
+    variable
+        .filter(|value| !value.is_empty())
+        .unwrap_or(RELEASES_URL)
+}
+
 /// The real fetch: one GET of the releases list, with one global timeout. The
 /// body is read with ureq's default cap; the list is a few dozen kilobytes.
+/// `UTW_RELEASES_URL` is read at each call (`releases_url`).
 pub fn fetch_releases() -> Result<String, UpdateError> {
     let agent = agent_config()
         .timeout_global(Some(FETCH_TIMEOUT))
         .build()
         .new_agent();
-    let mut response = agent.get(RELEASES_URL).call()?;
+    let variable = std::env::var(RELEASES_URL_VARIABLE).ok();
+    let mut response = agent.get(releases_url(variable.as_deref())).call()?;
     Ok(response.body_mut().read_to_string()?)
+}
+
+/// The bundle's program in the program's folder `bundle`: what an update
+/// puts there, and what Restart now starts.
+pub(crate) fn program_path(bundle: &Path) -> PathBuf {
+    bundle.join(swap::exe_file_name())
 }
 
 /// The real download stream: one GET of `url`, its body read as it arrives.
@@ -385,6 +407,17 @@ mod tests {
             release.version,
             Version::new(0, 0, 1),
             "a pre-release ranks under its release"
+        );
+    }
+
+    #[test]
+    fn the_releases_list_is_read_from_the_variable_when_it_is_set() {
+        assert_eq!(releases_url(None), RELEASES_URL, "unset");
+        assert_eq!(releases_url(Some("")), RELEASES_URL, "empty");
+        assert_eq!(
+            releases_url(Some("http://127.0.0.1:8000/releases.json")),
+            "http://127.0.0.1:8000/releases.json",
+            "set"
         );
     }
 

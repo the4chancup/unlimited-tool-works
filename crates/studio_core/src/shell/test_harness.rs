@@ -383,8 +383,17 @@ pub(super) fn shell_in(
         // A test never reaches the network: tests that exercise the update
         // check replace `update_fetch`, and the rest get an empty releases
         // list, which `test_settings` never asks for anyway (its
-        // `check_for_updates` is off).
+        // `check_for_updates` is off). The download answers 404 unless a
+        // test serves its own, and Restart now starts no program unless a
+        // test records the start.
         app.update_fetch = std::sync::Arc::new(|| Ok("[]".to_owned()));
+        app.update_open_url = std::sync::Arc::new(
+            |_: &str| -> Result<Box<dyn std::io::Read + Send>, ureq::Error> {
+                Err(ureq::Error::StatusCode(404))
+            },
+        );
+        app.update_start =
+            Box::new(|_: &Path| Err(std::io::Error::other("a test starts no program")));
     }
     Shell {
         app,
